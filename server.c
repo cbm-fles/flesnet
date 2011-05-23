@@ -139,10 +139,10 @@ main(int argc, char *argv[])
     struct ibv_qp_init_attr qp_attr = {
         .cap.max_send_wr = 1,  // max num of outstanding WRs in the SQ
         .cap.max_send_sge = 1, // max num of outstanding scatter/gather
-        // elements in a WR in the SQ
+                               // elements in a WR in the SQ
         .cap.max_recv_wr = 1,  // max num of outstanding WRs in the RQ
         .cap.max_recv_sge = 1, // max num of outstanding scatter/gather
-        // elements in a WR in the RQ
+                               // elements in a WR in the RQ
         .send_cq = cq,
         .recv_cq = cq,
         .qp_type = IBV_QPT_RC  // reliable connection

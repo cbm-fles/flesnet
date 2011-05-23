@@ -54,6 +54,7 @@ main(int argc, char *argv[])
 	ERROR("id creation failed");
 	return err;
     }
+    
     // Retrieve a list of IP addresses and port numbers
     // for given hostname and service
     struct addrinfo hints = {
@@ -61,8 +62,8 @@ main(int argc, char *argv[])
 	.ai_socktype = SOCK_STREAM
     };
     struct addrinfo *res;
-    int n = getaddrinfo(argv[1], "20079", &hints, &res);
-    if (n < 0) {
+    err = getaddrinfo(argv[1], "20079", &hints, &res);
+    if (err) {
 	ERROR("getaddrinfo failed");
 	return 1;
     }
@@ -170,13 +171,15 @@ main(int argc, char *argv[])
 
     // Allocate a queue pair (QP) associated with the specified rdma id    
     struct ibv_qp_init_attr qp_attr = {
-        .cap.max_send_wr = 2,
-	.cap.max_send_sge = 1,
-	.cap.max_recv_wr = 1,
-	.cap.max_recv_sge = 1,
+        .cap.max_send_wr = 2,  // max num of outstanding WRs in the SQ
+	.cap.max_send_sge = 1, // max num of outstanding scatter/gather
+                               // elements in a WR in the SQ
+	.cap.max_recv_wr = 1,  // max num of outstanding WRs in the RQ
+	.cap.max_recv_sge = 1, // max num of outstanding scatter/gather
+                               // elements in a WR in the RQ
 	.send_cq = cq,
 	.recv_cq = cq,
-	.qp_type = IBV_QPT_RC
+	.qp_type = IBV_QPT_RC  // reliable connection
     };
     err = rdma_create_qp(cm_id, pd, &qp_attr);
     if (err) {
@@ -243,11 +246,12 @@ main(int argc, char *argv[])
     // Fill buf[] with 2 values from command line
     buf[0] = strtoul(argv[2], NULL, 0);
     buf[1] = strtoul(argv[3], NULL, 0);
-    printf("%d + %d = ", buf[0], buf[1]);
+    printf("%d + %d = \n", buf[0], buf[1]);
     buf[0] = htonl(buf[0]);
     buf[1] = htonl(buf[1]);
 
     // Post an rdma write work request (WR) to the send queue
+    // (rdma write value of local buf[0] to remote buf[0])
     struct ibv_sge sge2 = {
         .addr = (uintptr_t) buf,
         .length = sizeof(uint32_t),
@@ -268,6 +272,7 @@ main(int argc, char *argv[])
     }
 
     // Post a send work request (WR) to the send queue
+    // (send value of buf[1])
     struct ibv_sge sge3 = {
         .addr = (uintptr_t) buf + sizeof(uint32_t),
 	.length = sizeof(uint32_t),
@@ -304,6 +309,7 @@ main(int argc, char *argv[])
 	}
         
         struct ibv_wc wc;
+        int n;
         // Poll the completion queue (CQ) for 1 work completion (WC)
 	while ((n = ibv_poll_cq(cq, 1, &wc)) > 0) {
 	    if (wc.status != IBV_WC_SUCCESS) {
