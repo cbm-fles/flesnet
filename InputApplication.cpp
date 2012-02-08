@@ -5,9 +5,6 @@
  */
 
 /*
- * usage:
- *   client <servername> <val1> <val2>
- *
  * connects to server, sends val1 via RDMA write and val2 via send,
  * and receives val1+val2 back from the server.
  *
@@ -27,14 +24,10 @@
 #include <rdma/rdma_cma.h>
 
 #include <sys/time.h>
-#include "common.h"
 
 #include "Application.hpp"
 #include "Parameters.hpp"
 
-enum {
-    RESOLVE_TIMEOUT_MS = 5000
-};
 
 struct pdata {
     uint64_t buf_va;
@@ -52,18 +45,14 @@ InputApplication::run()
 
     // Create an rdma event channel
     struct rdma_event_channel *cm_channel = rdma_create_event_channel();
-    if (!cm_channel) {
-	ERROR("event channel creation failed");
-	return 1;
-    }
-
+    if (!cm_channel)
+	throw ApplicationException("event channel creation failed");
+    
     // Create rdma id (for listening)
     struct rdma_cm_id *cm_id;
     int err = rdma_create_id(cm_channel, &cm_id, NULL, RDMA_PS_TCP);
-    if (err) {
-	ERROR("id creation failed");
-	return err;
-    }
+    if (err)
+	throw ApplicationException("id creation failed");
     
     // Retrieve a list of IP addresses and port numbers
     // for given hostname and service
@@ -74,10 +63,8 @@ InputApplication::run()
     struct addrinfo *res;
 
     err = getaddrinfo(hostname, "20079", &hints, &res);
-    if (err) {
-	ERROR("getaddrinfo failed");
-	return 1;
-    }
+    if (err)
+	throw ApplicationException("getaddrinfo failed");
   
     DEBUG("resolution of server address and route");
 
@@ -88,47 +75,35 @@ InputApplication::run()
 	if (!err)
 	    break;
     }
-    if (err) {
-	ERROR("RDMA address resolution failed");
-	return err;
-    }
+    if (err)
+        throw ApplicationException("RDMA address resolution failed");
 
     // Retrieve the next pending communication event    
     struct rdma_cm_event *event;
     err = rdma_get_cm_event(cm_channel, &event);
-    if (err) {
-	ERROR("retrieval of communication event failed");
-	return err;
-    }
+    if (err)
+        throw ApplicationException("retrieval of communication event failed");
 
     // Assert that event is address resolution completion
-    if (event->event != RDMA_CM_EVENT_ADDR_RESOLVED) {
-	ERROR("RDMA address resolution failed");
-	return 1;
-    }
+    if (event->event != RDMA_CM_EVENT_ADDR_RESOLVED)
+	throw ApplicationException("RDMA address resolution failed");
 
     // Free the communication event
     rdma_ack_cm_event(event);
 
     // Resolv an rdma route to the dest address to establish a connection
     err = rdma_resolve_route(cm_id, RESOLVE_TIMEOUT_MS);
-    if (err) {
-	ERROR("RDMA route resolution failed");
-	return err;
-    }
+    if (err)
+	throw ApplicationException("RDMA route resolution failed");
 
     // Retrieve the next pending communication event
     err = rdma_get_cm_event(cm_channel, &event);
-    if (err) {
-	ERROR("retrieval of communication event failed");
-	return err;
-    }
+    if (err)
+	throw ApplicationException("retrieval of communication event failed");
 
     // Assert that event is route resolution completion
-    if (event->event != RDMA_CM_EVENT_ROUTE_RESOLVED) {
-	ERROR("RDMA route resolution failed");
-	return 1;
-    }
+    if (event->event != RDMA_CM_EVENT_ROUTE_RESOLVED)
+	throw ApplicationException("RDMA route resolution failed");
 
     // Free the communication event
     rdma_ack_cm_event(event);
@@ -137,48 +112,36 @@ InputApplication::run()
 
     // Allocate a protection domain (PD) for the given context
     struct ibv_pd *pd = ibv_alloc_pd(cm_id->verbs);
-    if (!pd) {
-	ERROR("allocation of protection domain failed");
-	return 1;
-    }
+    if (!pd)
+	throw ApplicationException("allocation of protection domain failed");
 
     // Create a completion event channel for the given context
     struct ibv_comp_channel *comp_chan = ibv_create_comp_channel(cm_id->verbs);
-    if (!comp_chan) {
-	ERROR("creation of completion event channel failed");
-	return 1;
-    }
+    if (!comp_chan)
+	throw ApplicationException("creation of completion event channel failed");
 
     // Create a completion queue (CQ) for the given context with at least 2
     // entries, using the given completion channel to return completion events
     struct ibv_cq *cq = ibv_create_cq(cm_id->verbs, 2, NULL, comp_chan, 0);
-    if (!cq) {
-	ERROR("creation of completion queue failed");
-	return 1;
-    }
+    if (!cq)
+	throw ApplicationException("creation of completion queue failed");
 
     // Request a completion notification on the given completion queue
     // ("one shot" - only one completion event will be generated)
-    if (ibv_req_notify_cq(cq, 0)) {
-	ERROR("request of completion notification failed");
-	return 1;
-    }
+    if (ibv_req_notify_cq(cq, 0))
+	throw ApplicationException("request of completion notification failed");
 
     // Allocate buffer space
     uint32_t* buf = (uint32_t *) calloc(2, sizeof(uint32_t));
-    if (!buf) {
-	ERROR("allocation of buffer space failed");
-	return 1;
-    }
+    if (!buf)
+	throw ApplicationException("allocation of buffer space failed");
     
     // Register a memory region (MR) associated with the given protection domain
     // (local read access is always enabled)
     struct ibv_mr *mr = ibv_reg_mr(pd, buf, 2 * sizeof(uint32_t),
                                    IBV_ACCESS_LOCAL_WRITE);
-    if (!mr) {
-	ERROR("registration of memory region for RECV failed");
-	return 1;
-    }
+    if (!mr)
+	throw ApplicationException("registration of memory region for RECV failed");
 
     // Allocate a queue pair (QP) associated with the specified rdma id    
     struct ibv_qp_init_attr qp_attr;
@@ -193,10 +156,8 @@ InputApplication::run()
     qp_attr.recv_cq = cq;
     qp_attr.qp_type = IBV_QPT_RC; // reliable connection
     err = rdma_create_qp(cm_id, pd, &qp_attr);
-    if (err) {
-	ERROR("creation of QP failed");
-	return err;
-    }
+    if (err)
+	throw ApplicationException("creation of QP failed");
     
     DEBUG("Connect to server");
 
@@ -206,23 +167,17 @@ InputApplication::run()
     conn_param.initiator_depth = 1;
     conn_param.retry_count = 7;
     err = rdma_connect(cm_id, &conn_param);
-    if (err) {
-	ERROR("RDMA connect failed");
-	return err;
-    }
+    if (err)
+	throw ApplicationException("RDMA connect failed");
 
     // Retrieve next pending communication event on the given channel (BLOCKING)
     err = rdma_get_cm_event(cm_channel, &event);
-    if (err) {
-	ERROR("retrieval of communication event failed");
-	return err;
-    }
+    if (err)
+	throw ApplicationException("retrieval of communication event failed");
 
     // Assert that a connection has been established with the remote end point
-    if (event->event != RDMA_CM_EVENT_ESTABLISHED) {
-	ERROR("connection could not be established");
-	return 1;
-    }
+    if (event->event != RDMA_CM_EVENT_ESTABLISHED)
+	throw ApplicationException("connection could not be established");
 
     // Copy server private data from event
     struct pdata server_pdata;
@@ -247,10 +202,8 @@ InputApplication::run()
     recv_wr.sg_list = &sge;
     recv_wr.num_sge = 1;
     struct ibv_recv_wr *bad_recv_wr;
-    if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr)) {
-	ERROR("post_recv failed");
-	return 1;
-    }
+    if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
+	throw ApplicationException("post_recv failed");
 
     DEBUG("Write/send two integers to be added");
 
@@ -277,10 +230,8 @@ InputApplication::run()
     send_wr.wr.rdma.rkey = ntohl(server_pdata.buf_rkey);
     send_wr.wr.rdma.remote_addr = ntohll(server_pdata.buf_va);
     struct ibv_send_wr *bad_send_wr;
-    if (ibv_post_send(cm_id->qp, &send_wr, &bad_send_wr)) {
-	ERROR("post_send failed");
-	return 1;
-    }
+    if (ibv_post_send(cm_id->qp, &send_wr, &bad_send_wr))
+	throw ApplicationException("post_send failed");
 
     // Post a send work request (WR) to the send queue
     // (send value of buf[1])
@@ -296,10 +247,8 @@ InputApplication::run()
     send_wr2.send_flags = IBV_SEND_SIGNALED;
     send_wr2.sg_list = &sge3;
     send_wr2.num_sge = 1;
-    if (ibv_post_send(cm_id->qp, &send_wr2, &bad_send_wr)) {
-	ERROR("post_send failed");
-	return 1;
-    }
+    if (ibv_post_send(cm_id->qp, &send_wr2, &bad_send_wr))
+	throw ApplicationException("post_send failed");
     
     DEBUG("Wait for receive completion");
 
@@ -307,36 +256,28 @@ InputApplication::run()
         // Wait for the next completion event in the given channel (BLOCKING)
         struct ibv_cq *evt_cq;
         void *cq_context;
-	if (ibv_get_cq_event(comp_chan, &evt_cq, &cq_context)) {
-	    ERROR("retrieval of cq event failed");
-	    return 1;
-	}
+	if (ibv_get_cq_event(comp_chan, &evt_cq, &cq_context))
+	    throw ApplicationException("retrieval of cq event failed");
 
         // Request a completion notification on the given completion queue
         // ("one shot" - only one completion event will be generated)
-	if (ibv_req_notify_cq(cq, 0)) {
-	    ERROR("request of completion notification failed");
-	    return 1;
-	}
+	if (ibv_req_notify_cq(cq, 0))
+	    throw ApplicationException("request of completion notification failed");
         
         struct ibv_wc wc;
         int n;
         // Poll the completion queue (CQ) for 1 work completion (WC)
 	while ((n = ibv_poll_cq(cq, 1, &wc)) > 0) {
-	    if (wc.status != IBV_WC_SUCCESS) {
-		ERROR("SEND was unsuccessful");
-		return 1;
-	    }
+	    if (wc.status != IBV_WC_SUCCESS)
+		throw ApplicationException("SEND was unsuccessful");
 	    if (wc.wr_id == 0) {
 		DEBUG("transmission successful");
 		printf("%d\n", ntohl(buf[0]));
 		return 0;
 	    }
 	}
-	if (n < 0) {
-	    ERROR("polling the completion queue failed");
-	    return 1;
-	}
+	if (n < 0)
+	    throw ApplicationException("polling the completion queue failed");
     }
 
     return 0;

@@ -7,16 +7,28 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 
+#include <iostream>
 #include "Parameters.hpp"
+
+
+class ApplicationException : public std::runtime_error {
+public:
+    explicit ApplicationException(const std::string& what_arg = "")
+        : std::runtime_error(what_arg) { }
+};
 
 
 class Application
 {
 public:
-    explicit Application(Parameters& par) : _par(par) { };
+    explicit Application(Parameters const& par) : _par(par) { };
     virtual int run() = 0;
 protected:
-    Parameters& _par;
+    void DEBUG(std::string const& s) const {
+        if (_par.verbose())
+            std::cout << "Debug: " << s << std::endl;
+    }
+    Parameters const& _par;
 };
 
 
@@ -25,6 +37,8 @@ class InputApplication : public Application
 public:
     explicit InputApplication(Parameters& par) : Application(par) { };
     virtual int run();
+private:
+    enum { RESOLVE_TIMEOUT_MS = 5000 };
 };
 
 

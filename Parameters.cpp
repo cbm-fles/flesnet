@@ -92,9 +92,8 @@ Parameters::parse_options(int argc, char* argv[])
         }
     }
         
-    if (_verbose) {
+    if (_verbose)
         std::cout << desc();
-    }
 }
 
 

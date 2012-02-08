@@ -11,11 +11,13 @@
 #include <string>
 #include <stdexcept>
 
+
 class ParametersException : public std::runtime_error {
 public:
     explicit ParametersException(const std::string& what_arg = "")
         : std::runtime_error(what_arg) { }
 };
+
 
 class Parameters
 {
@@ -44,5 +46,6 @@ private:
     unsigned _node_index;
     bool _verbose;
 };
+
 
 #endif /* PARAMETERS_HPP */
