@@ -1,7 +1,4 @@
 /*
- * build:
- *   cc -o client client.c -lrdmacm
- *
  * usage:
  *   client <servername> <val1> <val2>
  *
@@ -36,7 +33,7 @@ struct pdata {
 };
 
 int 
-main(int argc, char *argv[])
+run_client(int argc, char *argv[])
 {
     DEBUG("Setting up RDMA CM structures");
 

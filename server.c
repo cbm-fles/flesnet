@@ -1,7 +1,4 @@
 /*
- * build:
- *   cc -o server server.c -lrdmacm
- *
  * usage:
  *   server
  *
@@ -27,7 +24,7 @@ struct pdata {
 };
 
 int 
-main(int argc, char *argv[])
+run_server(int argc, char *argv[])
 {
     DEBUG("Setting up RDMA CM structures");
 

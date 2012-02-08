@@ -2,10 +2,11 @@ cmake_minimum_required (VERSION 2.6)
 project (RDMA)
 
 set (CMAKE_C_FLAGS "-std=c99 -D_POSIX_SOURCE -Wall -pedantic")
+set (CMAKE_CXX_FLAGS "-Wall -pedantic")
 
-add_executable (client client.c) 
-add_executable (server server.c) 
+FIND_PACKAGE (Boost 1.40 COMPONENTS program_options REQUIRED)
 
-target_link_libraries (client rdmacm) 
-target_link_libraries (server rdmacm) 
+add_executable (ibtsb ibtsb.cpp Parameters.cpp)
 
+target_link_libraries (ibtsb rdmacm) 
+target_link_libraries (ibtsb ${Boost_PROGRAM_OPTIONS_LIBRARY}) 
