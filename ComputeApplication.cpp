@@ -1,4 +1,10 @@
 /*
+ * ComputeApplication.hpp
+ *
+ * 2012, Jan de Cuveland
+ */
+
+/*
  * usage:
  *   server
  *
@@ -12,11 +18,14 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 #include <infiniband/arch.h>
 #include <rdma/rdma_cma.h>
 
 #include "common.h"
+
+#include "Application.hpp"
 
 struct pdata {
     uint64_t buf_va;
@@ -24,7 +33,7 @@ struct pdata {
 };
 
 int 
-run_server(int argc, char *argv[])
+ComputeApplication::run()
 {
     DEBUG("Setting up RDMA CM structures");
 
@@ -44,11 +53,11 @@ run_server(int argc, char *argv[])
     }
 
     // Bind rdma id (for listening) to socket address (local port)
-    struct sockaddr_in sin = {
-        .sin_family = AF_INET,
-        .sin_port = htons(20079),
-        .sin_addr.s_addr = INADDR_ANY
-    };
+    struct sockaddr_in sin;
+    memset(&sin, 0, sizeof sin);
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(20079);
+    sin.sin_addr.s_addr = INADDR_ANY;
     err = rdma_bind_addr(listen_id, (struct sockaddr *) & sin);
     if (err) {
         ERROR("RDMA bind_addr failed");
@@ -115,7 +124,7 @@ run_server(int argc, char *argv[])
     }
 
     // Allocate buffer space
-    uint32_t *buf = calloc(2, sizeof(uint32_t));
+    uint32_t* buf = (uint32_t *) calloc(2, sizeof(uint32_t));
     if (!buf) {
         ERROR("allocation of buffer space failed");
         return 1;
@@ -133,17 +142,17 @@ run_server(int argc, char *argv[])
     }
 
     // Allocate a queue pair (QP) associated with the specified rdma id
-    struct ibv_qp_init_attr qp_attr = {
-        .cap.max_send_wr = 1,  // max num of outstanding WRs in the SQ
-        .cap.max_send_sge = 1, // max num of outstanding scatter/gather
-                               // elements in a WR in the SQ
-        .cap.max_recv_wr = 1,  // max num of outstanding WRs in the RQ
-        .cap.max_recv_sge = 1, // max num of outstanding scatter/gather
-                               // elements in a WR in the RQ
-        .send_cq = cq,
-        .recv_cq = cq,
-        .qp_type = IBV_QPT_RC  // reliable connection
-    };
+    struct ibv_qp_init_attr qp_attr;
+    memset(&qp_attr, 0, sizeof qp_attr);
+    qp_attr.cap.max_send_wr = 1;  // max num of outstanding WRs in the SQ
+    qp_attr.cap.max_send_sge = 1; // max num of outstanding scatter/gather
+                                  // elements in a WR in the SQ
+    qp_attr.cap.max_recv_wr = 1;  // max num of outstanding WRs in the RQ
+    qp_attr.cap.max_recv_sge = 1; // max num of outstanding scatter/gather
+                                  // elements in a WR in the RQ
+    qp_attr.send_cq = cq;
+    qp_attr.recv_cq = cq;
+    qp_attr.qp_type = IBV_QPT_RC; // reliable connection
     err = rdma_create_qp(cm_id, pd, &qp_attr);
     if (err) {
         ERROR("creation of QP failed");
@@ -154,16 +163,16 @@ run_server(int argc, char *argv[])
 
     // Post a receive work request (WR) to the receive queue
     // (received value will be written to buf[1])
-    struct ibv_sge sge = {
-        .addr = (uintptr_t) buf + sizeof(uint32_t),
-        .length = sizeof(uint32_t),
-        .lkey = mr->lkey
-    };
-    struct ibv_recv_wr recv_wr = {
-        .next = NULL,
-        .sg_list = &sge,
-        .num_sge = 1
-    };
+    struct ibv_sge sge;
+    memset(&sge, 0, sizeof sge);
+    sge.addr = (uintptr_t) buf + sizeof(uint32_t);
+    sge.length = sizeof(uint32_t);
+    sge.lkey = mr->lkey;
+    struct ibv_recv_wr recv_wr;
+    memset(&recv_wr, 0, sizeof recv_wr);
+    recv_wr.next = NULL;
+    recv_wr.sg_list = &sge;
+    recv_wr.num_sge = 1;
     struct ibv_recv_wr *bad_recv_wr;
     if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr)) {
         ERROR("post_recv failed");
@@ -173,15 +182,15 @@ run_server(int argc, char *argv[])
     DEBUG("Accepting connection");
 
     // Accept rdma connection request
-    struct pdata rep_pdata = {
-        .buf_va = htonll((uintptr_t) buf),
-        .buf_rkey = htonl(mr->rkey)
-    };
-    struct rdma_conn_param conn_param = {
-        .responder_resources = 1,
-        .private_data = &rep_pdata,
-        .private_data_len = sizeof rep_pdata
-    };
+    struct pdata rep_pdata;
+    memset(&rep_pdata, 0, sizeof rep_pdata);
+    rep_pdata.buf_va = htonll((uintptr_t) buf);
+    rep_pdata.buf_rkey = htonl(mr->rkey);
+    struct rdma_conn_param conn_param;
+    memset(&conn_param, 0, sizeof conn_param);
+    conn_param.responder_resources = 1;
+    conn_param.private_data = &rep_pdata;
+    conn_param.private_data_len = sizeof rep_pdata;
     err = rdma_accept(cm_id, &conn_param);
     if (err) {
         ERROR("RDMA accept failed");
@@ -240,17 +249,17 @@ run_server(int argc, char *argv[])
     buf[0] = htonl(ntohl(buf[0]) + ntohl(buf[1]));
 
     // Post a send work request (WR) to the send queue
-    struct ibv_sge sge2 = {
-        .addr = (uintptr_t) buf,
-        .length = sizeof(uint32_t),
-        .lkey = mr->lkey
-    };
-    struct ibv_send_wr send_wr = {
-        .opcode = IBV_WR_SEND,
-        .send_flags = IBV_SEND_SIGNALED,
-        .sg_list = &sge2,
-        .num_sge = 1,
-    };
+    struct ibv_sge sge2;
+    memset(&sge2, 0, sizeof sge2);
+    sge2.addr = (uintptr_t) buf;
+    sge2.length = sizeof(uint32_t);
+    sge2.lkey = mr->lkey;
+    struct ibv_send_wr send_wr;
+    memset(&send_wr, 0, sizeof send_wr);
+    send_wr.opcode = IBV_WR_SEND;
+    send_wr.send_flags = IBV_SEND_SIGNALED;
+    send_wr.sg_list = &sge2;
+    send_wr.num_sge = 1;
     struct ibv_send_wr *bad_send_wr;
     if (ibv_post_send(cm_id->qp, &send_wr, &bad_send_wr)) {
         ERROR("post_send failed");

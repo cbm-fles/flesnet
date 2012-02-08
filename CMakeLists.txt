@@ -6,7 +6,7 @@ set (CMAKE_CXX_FLAGS "-Wall -pedantic")
 
 FIND_PACKAGE (Boost 1.40 COMPONENTS program_options REQUIRED)
 
-add_executable (ibtsb ibtsb.cpp Parameters.cpp)
+add_executable (ibtsb ibtsb.cpp Parameters.cpp InputApplication.cpp ComputeApplication.cpp)
 
 target_link_libraries (ibtsb rdmacm) 
 target_link_libraries (ibtsb ${Boost_PROGRAM_OPTIONS_LIBRARY}) 

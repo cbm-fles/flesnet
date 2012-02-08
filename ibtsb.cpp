@@ -8,6 +8,7 @@
 #include <cstdlib>
 
 #include "Parameters.hpp"
+#include "Application.hpp"
 
 int 
 main(int argc, char* argv[])
@@ -16,12 +17,12 @@ main(int argc, char* argv[])
         Parameters par(argc, argv);
 
         if (par.node_type() == Parameters::INPUT_NODE) {
-            std::cout << "i";
+            InputApplication app(par);
+            app.run();
         } else {
-            std::cout << "p";
+            ComputeApplication app(par);
+            app.run();
         }
-        //run_server(argc, argv);
-        //run_client(argc, argv);
     }
     catch (std::exception const& e) {
         std::cerr << "error: " << e.what() << "\n";

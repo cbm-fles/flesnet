@@ -1,4 +1,10 @@
 /*
+ * InputApplication.hpp
+ *
+ * 2012, Jan de Cuveland
+ */
+
+/*
  * usage:
  *   client <servername> <val1> <val2>
  *
@@ -23,8 +29,11 @@
 #include <sys/time.h>
 #include "common.h"
 
+#include "Application.hpp"
+#include "Parameters.hpp"
+
 enum {
-    RESOLVE_TIMEOUT_MS = 5000,
+    RESOLVE_TIMEOUT_MS = 5000
 };
 
 struct pdata {
@@ -33,8 +42,12 @@ struct pdata {
 };
 
 int 
-run_client(int argc, char *argv[])
+InputApplication::run()
 {
+    uint32_t int1 = 2;
+    uint32_t int2 = 3;
+    const char *hostname = _par.compute_nodes().at(0).c_str();
+    
     DEBUG("Setting up RDMA CM structures");
 
     // Create an rdma event channel
@@ -54,12 +67,13 @@ run_client(int argc, char *argv[])
     
     // Retrieve a list of IP addresses and port numbers
     // for given hostname and service
-    struct addrinfo hints = {
-	.ai_family = AF_INET,
-	.ai_socktype = SOCK_STREAM
-    };
+    struct addrinfo hints; 
+    memset(&hints, 0, sizeof hints); 
+    hints.ai_family = AF_INET; 
+    hints.ai_socktype = SOCK_STREAM; 
     struct addrinfo *res;
-    err = getaddrinfo(argv[1], "20079", &hints, &res);
+DEBUG(hostname);
+    err = getaddrinfo(hostname, "20079", &hints, &res);
     if (err) {
 	ERROR("getaddrinfo failed");
 	return 1;
@@ -151,7 +165,7 @@ run_client(int argc, char *argv[])
     }
 
     // Allocate buffer space
-    uint32_t *buf = calloc(2, sizeof(uint32_t));
+    uint32_t* buf = (uint32_t *) calloc(2, sizeof(uint32_t));
     if (!buf) {
 	ERROR("allocation of buffer space failed");
 	return 1;
@@ -167,17 +181,17 @@ run_client(int argc, char *argv[])
     }
 
     // Allocate a queue pair (QP) associated with the specified rdma id    
-    struct ibv_qp_init_attr qp_attr = {
-        .cap.max_send_wr = 2,  // max num of outstanding WRs in the SQ
-	.cap.max_send_sge = 1, // max num of outstanding scatter/gather
-                               // elements in a WR in the SQ
-	.cap.max_recv_wr = 1,  // max num of outstanding WRs in the RQ
-	.cap.max_recv_sge = 1, // max num of outstanding scatter/gather
-                               // elements in a WR in the RQ
-	.send_cq = cq,
-	.recv_cq = cq,
-	.qp_type = IBV_QPT_RC  // reliable connection
-    };
+    struct ibv_qp_init_attr qp_attr;
+    memset(&qp_attr, 0, sizeof qp_attr); 
+    qp_attr.cap.max_send_wr = 2;  // max num of outstanding WRs in the SQ
+    qp_attr.cap.max_send_sge = 1; // max num of outstanding scatter/gather
+                                  // elements in a WR in the SQ
+    qp_attr.cap.max_recv_wr = 1;  // max num of outstanding WRs in the RQ
+    qp_attr.cap.max_recv_sge = 1; // max num of outstanding scatter/gather
+                                  // elements in a WR in the RQ
+    qp_attr.send_cq = cq;
+    qp_attr.recv_cq = cq;
+    qp_attr.qp_type = IBV_QPT_RC; // reliable connection
     err = rdma_create_qp(cm_id, pd, &qp_attr);
     if (err) {
 	ERROR("creation of QP failed");
@@ -187,10 +201,10 @@ run_client(int argc, char *argv[])
     DEBUG("Connect to server");
 
     // Initiate an active connection request
-    struct rdma_conn_param conn_param = {
-        .initiator_depth = 1,
-	.retry_count = 7
-    };
+    struct rdma_conn_param conn_param;
+    memset(&conn_param, 0, sizeof conn_param); 
+    conn_param.initiator_depth = 1;
+    conn_param.retry_count = 7;
     err = rdma_connect(cm_id, &conn_param);
     if (err) {
 	ERROR("RDMA connect failed");
@@ -222,16 +236,16 @@ run_client(int argc, char *argv[])
 
     // Post a receive work request (WR) to the receive queue
     // (received value will be written to buf[0])
-    struct ibv_sge sge = {
-        .addr = (uintptr_t) buf,
-	.length = sizeof(uint32_t),
-	.lkey = mr->lkey
-    };
-    struct ibv_recv_wr recv_wr = {
-        .wr_id = 0,
-        .sg_list = &sge,
-        .num_sge = 1
-    };
+    struct ibv_sge sge;
+    memset(&sge, 0, sizeof sge); 
+    sge.addr = (uintptr_t) buf;
+    sge.length = sizeof(uint32_t);
+    sge.lkey = mr->lkey;
+    struct ibv_recv_wr recv_wr;
+    memset(&recv_wr, 0, sizeof recv_wr); 
+    recv_wr.wr_id = 0;
+    recv_wr.sg_list = &sge;
+    recv_wr.num_sge = 1;
     struct ibv_recv_wr *bad_recv_wr;
     if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr)) {
 	ERROR("post_recv failed");
@@ -240,28 +254,28 @@ run_client(int argc, char *argv[])
 
     DEBUG("Write/send two integers to be added");
 
-    // Fill buf[] with 2 values from command line
-    buf[0] = strtoul(argv[2], NULL, 0);
-    buf[1] = strtoul(argv[3], NULL, 0);
+    // Fill buf[] with 2 values
+    buf[0] = int1;
+    buf[1] = int2;
     printf("%d + %d = \n", buf[0], buf[1]);
     buf[0] = htonl(buf[0]);
     buf[1] = htonl(buf[1]);
 
     // Post an rdma write work request (WR) to the send queue
     // (rdma write value of local buf[0] to remote buf[0])
-    struct ibv_sge sge2 = {
-        .addr = (uintptr_t) buf,
-        .length = sizeof(uint32_t),
-        .lkey = mr->lkey
-    };
-    struct ibv_send_wr send_wr = {
-        .wr_id = 1,
-        .opcode = IBV_WR_RDMA_WRITE,
-        .sg_list = &sge2,
-        .num_sge = 1,
-        .wr.rdma.rkey = ntohl(server_pdata.buf_rkey),
-        .wr.rdma.remote_addr = ntohll(server_pdata.buf_va),
-    };
+    struct ibv_sge sge2;
+    memset(&sge2, 0, sizeof sge2); 
+    sge2.addr = (uintptr_t) buf;
+    sge2.length = sizeof(uint32_t);
+    sge2.lkey = mr->lkey;
+    struct ibv_send_wr send_wr;
+    memset(&send_wr, 0, sizeof send_wr); 
+    send_wr.wr_id = 1;
+    send_wr.opcode = IBV_WR_RDMA_WRITE;
+    send_wr.sg_list = &sge2;
+    send_wr.num_sge = 1;
+    send_wr.wr.rdma.rkey = ntohl(server_pdata.buf_rkey);
+    send_wr.wr.rdma.remote_addr = ntohll(server_pdata.buf_va);
     struct ibv_send_wr *bad_send_wr;
     if (ibv_post_send(cm_id->qp, &send_wr, &bad_send_wr)) {
 	ERROR("post_send failed");
@@ -270,18 +284,18 @@ run_client(int argc, char *argv[])
 
     // Post a send work request (WR) to the send queue
     // (send value of buf[1])
-    struct ibv_sge sge3 = {
-        .addr = (uintptr_t) buf + sizeof(uint32_t),
-	.length = sizeof(uint32_t),
-	.lkey = mr->lkey
-    };
-    struct ibv_send_wr send_wr2 = {
-        .wr_id = 2,
-        .opcode = IBV_WR_SEND,
-        .send_flags = IBV_SEND_SIGNALED,
-        .sg_list = &sge3,
-        .num_sge = 1
-    };
+    struct ibv_sge sge3;
+    memset(&sge3, 0, sizeof sge3); 
+    sge3.addr = (uintptr_t) buf + sizeof(uint32_t);
+    sge3.length = sizeof(uint32_t);
+    sge3.lkey = mr->lkey;
+    struct ibv_send_wr send_wr2;
+    memset(&send_wr2, 0, sizeof send_wr2); 
+    send_wr2.wr_id = 2;
+    send_wr2.opcode = IBV_WR_SEND;
+    send_wr2.send_flags = IBV_SEND_SIGNALED;
+    send_wr2.sg_list = &sge3;
+    send_wr2.num_sge = 1;
     if (ibv_post_send(cm_id->qp, &send_wr2, &bad_send_wr)) {
 	ERROR("post_send failed");
 	return 1;
