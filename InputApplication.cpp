@@ -72,7 +72,7 @@ InputApplication::run()
     hints.ai_family = AF_INET; 
     hints.ai_socktype = SOCK_STREAM; 
     struct addrinfo *res;
-DEBUG(hostname);
+
     err = getaddrinfo(hostname, "20079", &hints, &res);
     if (err) {
 	ERROR("getaddrinfo failed");
