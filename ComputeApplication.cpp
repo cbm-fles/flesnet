@@ -11,21 +11,15 @@
  * Based on an example by Roland Dreier, http://www.digitalvampire.org/
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <arpa/inet.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
+#include <arpa/inet.h>
 #include <infiniband/arch.h>
 #include <rdma/rdma_cma.h>
 
 #include "Application.hpp"
 
-struct pdata {
-    uint64_t buf_va;
-    uint32_t buf_rkey;
-};
 
 int 
 ComputeApplication::run()
@@ -149,8 +143,7 @@ ComputeApplication::run()
     DEBUG("Accepting connection");
 
     // Accept rdma connection request
-    struct pdata rep_pdata;
-    memset(&rep_pdata, 0, sizeof rep_pdata);
+    pdata_t rep_pdata;
     rep_pdata.buf_va = htonll((uintptr_t) buf);
     rep_pdata.buf_rkey = htonl(mr->rkey);
     struct rdma_conn_param conn_param;

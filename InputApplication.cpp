@@ -11,35 +11,22 @@
  * Based on an example by Roland Dreier, http://www.digitalvampire.org/
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <cstdlib>
+#include <cstring>
+
 #include <netdb.h>
 #include <arpa/inet.h>
-
 #include <infiniband/arch.h>
 #include <rdma/rdma_cma.h>
 
-#include <sys/time.h>
-
 #include "Application.hpp"
-#include "Parameters.hpp"
 
-
-struct pdata {
-    uint64_t buf_va;
-    uint32_t buf_rkey;
-};
 
 int 
 InputApplication::run()
 {
     uint32_t int1 = 2;
     uint32_t int2 = 3;
-    const char *hostname = _par.compute_nodes().at(0).c_str();
     
     DEBUG("Setting up RDMA CM structures");
 
@@ -62,6 +49,7 @@ InputApplication::run()
     hints.ai_socktype = SOCK_STREAM; 
     struct addrinfo *res;
 
+    const char *hostname = _par.compute_nodes().at(0).c_str();
     err = getaddrinfo(hostname, "20079", &hints, &res);
     if (err)
 	throw ApplicationException("getaddrinfo failed");
@@ -180,7 +168,7 @@ InputApplication::run()
 	throw ApplicationException("connection could not be established");
 
     // Copy server private data from event
-    struct pdata server_pdata;
+    pdata_t server_pdata;
     memcpy(&server_pdata, event->param.conn.private_data,
 	   sizeof server_pdata);
 
@@ -210,7 +198,7 @@ InputApplication::run()
     // Fill buf[] with 2 values
     buf[0] = int1;
     buf[1] = int2;
-    printf("%d + %d = \n", buf[0], buf[1]);
+    std::cout << buf[0] << " + " << buf[1] << " = " << std::endl;
     buf[0] = htonl(buf[0]);
     buf[1] = htonl(buf[1]);
 
@@ -272,7 +260,7 @@ InputApplication::run()
 		throw ApplicationException("SEND was unsuccessful");
 	    if (wc.wr_id == 0) {
 		DEBUG("transmission successful");
-		printf("%d\n", ntohl(buf[0]));
+                std::cout << ntohl(buf[0]) << std::endl;
 		return 0;
 	    }
 	}

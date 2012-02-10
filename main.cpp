@@ -1,14 +1,13 @@
 /*
- * ibtsb.cpp
+ * main.cpp
  *
  * 2012, Jan de Cuveland
  */
 
-#include <iostream>
 #include <cstdlib>
 
-#include "Parameters.hpp"
 #include "Application.hpp"
+
 
 int 
 main(int argc, char* argv[])

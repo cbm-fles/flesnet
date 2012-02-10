@@ -8,6 +8,8 @@
 #define APPLICATION_HPP
 
 #include <iostream>
+#include <boost/cstdint.hpp>
+
 #include "Parameters.hpp"
 
 
@@ -21,6 +23,10 @@ public:
 class Application
 {
 public:
+    typedef struct {
+        uint64_t buf_va;
+        uint32_t buf_rkey;
+    } pdata_t;
     explicit Application(Parameters const& par) : _par(par) { };
     virtual int run() = 0;
 protected:
