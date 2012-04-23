@@ -13,6 +13,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <sstream>
 
 #include <netdb.h>
 #include <arpa/inet.h>
@@ -108,9 +109,9 @@ InputApplication::run()
     if (!comp_chan)
 	throw ApplicationException("creation of completion event channel failed");
 
-    // Create a completion queue (CQ) for the given context with at least 2
+    // Create a completion queue (CQ) for the given context with at least 4
     // entries, using the given completion channel to return completion events
-    struct ibv_cq *cq = ibv_create_cq(cm_id->verbs, 2, NULL, comp_chan, 0);
+    struct ibv_cq *cq = ibv_create_cq(cm_id->verbs, 4, NULL, comp_chan, 0);
     if (!cq)
 	throw ApplicationException("creation of completion queue failed");
 
@@ -131,6 +132,18 @@ InputApplication::run()
     if (!mr)
 	throw ApplicationException("registration of memory region for RECV failed");
 
+
+    //// ATOMIC
+    uint64_t* atomic_buf = (uint64_t *) calloc(2, sizeof(uint64_t));
+    if (!atomic_buf)
+	throw ApplicationException("allocation of buffer space failed");
+
+    struct ibv_mr *atomic_mr = ibv_reg_mr(pd, atomic_buf, 2 * sizeof(uint64_t),
+                                          IBV_ACCESS_LOCAL_WRITE);
+    if (!atomic_mr)
+	throw ApplicationException("registration of memory region for RECV failed");
+    //// ATOMIC
+    
     // Allocate a queue pair (QP) associated with the specified rdma id    
     struct ibv_qp_init_attr qp_attr;
     memset(&qp_attr, 0, sizeof qp_attr); 
@@ -168,8 +181,8 @@ InputApplication::run()
 	throw ApplicationException("connection could not be established");
 
     // Copy server private data from event
-    pdata_t server_pdata;
-    memcpy(&server_pdata, event->param.conn.private_data,
+    pdata_t server_pdata[2];
+    memcpy(server_pdata, event->param.conn.private_data,
 	   sizeof server_pdata);
 
     // Free the communication event
@@ -202,6 +215,52 @@ InputApplication::run()
     buf[0] = htonl(buf[0]);
     buf[1] = htonl(buf[1]);
 
+    //// ATOMIC
+    // Post an atomic work request (WR) to the send queue
+    // (atomic fetch and add of remote atomic_buf[0] to local atomic_buf[0])
+    struct ibv_sge sge_atomic;
+    memset(&sge_atomic, 0, sizeof sge_atomic);
+    sge_atomic.addr = (uintptr_t) atomic_buf;
+    sge_atomic.length = sizeof(uint64_t);
+    sge_atomic.lkey = atomic_mr->lkey;
+    struct ibv_send_wr atomic_wr;
+    memset(&atomic_wr, 0, sizeof atomic_wr);
+    atomic_wr.wr_id = 666;
+    atomic_wr.opcode = IBV_WR_ATOMIC_FETCH_AND_ADD;
+    atomic_wr.sg_list = &sge_atomic;
+    atomic_wr.num_sge = 1;
+    atomic_wr.send_flags = IBV_SEND_SIGNALED;
+    atomic_wr.wr.atomic.rkey = server_pdata[1].buf_rkey;
+    atomic_wr.wr.atomic.remote_addr = (uintptr_t) server_pdata[1].buf_va;
+    atomic_wr.wr.atomic.compare_add = htonll(1);
+    struct ibv_send_wr *bad_atomic_wr;
+    if (ibv_post_send(cm_id->qp, &atomic_wr, &bad_atomic_wr))
+	throw ApplicationException("post_send failed");
+
+    // Post an atomic work request (WR) to the send queue
+    // (atomic compare and swap of remote atomic_buf[1] to local atomic_buf[1])
+    struct ibv_sge sge_atomic2;
+    memset(&sge_atomic2, 0, sizeof sge_atomic2);
+    sge_atomic2.addr = (uintptr_t) &atomic_buf[1];
+    sge_atomic2.length = sizeof(uint64_t);
+    sge_atomic2.lkey = atomic_mr->lkey;
+    struct ibv_send_wr atomic_wr2;
+    memset(&atomic_wr2, 0, sizeof atomic_wr2);
+    atomic_wr2.wr_id = 667;
+    atomic_wr2.opcode = IBV_WR_ATOMIC_CMP_AND_SWP;
+    atomic_wr2.sg_list = &sge_atomic2;
+    atomic_wr2.num_sge = 1;
+    atomic_wr2.send_flags = IBV_SEND_SIGNALED;
+    atomic_wr2.wr.atomic.rkey = server_pdata[1].buf_rkey;
+    atomic_wr2.wr.atomic.remote_addr = (uintptr_t) (server_pdata[1].buf_va + 8);
+    atomic_wr2.wr.atomic.compare_add = htonll(42);
+    atomic_wr2.wr.atomic.swap = htonll(333);
+    struct ibv_send_wr *bad_atomic_wr2;
+    if (ibv_post_send(cm_id->qp, &atomic_wr2, &bad_atomic_wr2))
+	throw ApplicationException("post_send failed");
+    //// ATOMIC
+
+    
     // Post an rdma write work request (WR) to the send queue
     // (rdma write value of local buf[0] to remote buf[0])
     struct ibv_sge sge2;
@@ -215,8 +274,8 @@ InputApplication::run()
     send_wr.opcode = IBV_WR_RDMA_WRITE;
     send_wr.sg_list = &sge2;
     send_wr.num_sge = 1;
-    send_wr.wr.rdma.rkey = ntohl(server_pdata.buf_rkey);
-    send_wr.wr.rdma.remote_addr = ntohll(server_pdata.buf_va);
+    send_wr.wr.rdma.rkey = server_pdata[0].buf_rkey;
+    send_wr.wr.rdma.remote_addr = (uintptr_t) server_pdata[0].buf_va;
     struct ibv_send_wr *bad_send_wr;
     if (ibv_post_send(cm_id->qp, &send_wr, &bad_send_wr))
 	throw ApplicationException("post_send failed");
@@ -242,30 +301,61 @@ InputApplication::run()
 
     while (1) {
         // Wait for the next completion event in the given channel (BLOCKING)
-        struct ibv_cq *evt_cq;
-        void *cq_context;
-	if (ibv_get_cq_event(comp_chan, &evt_cq, &cq_context))
+        struct ibv_cq *ev_cq;
+        void *ev_ctx;
+        
+	if (ibv_get_cq_event(comp_chan, &ev_cq, &ev_ctx))
 	    throw ApplicationException("retrieval of cq event failed");
+
+        // Acknowledge the completion queue (CQ) event
+        ibv_ack_cq_events(ev_cq, 1);
+
+        if (ev_cq != cq)
+            throw ApplicationException("CQ event for unknown CQ");
 
         // Request a completion notification on the given completion queue
         // ("one shot" - only one completion event will be generated)
 	if (ibv_req_notify_cq(cq, 0))
 	    throw ApplicationException("request of completion notification failed");
+        struct ibv_wc wc[2];
+        int ne;
         
-        struct ibv_wc wc;
-        int n;
         // Poll the completion queue (CQ) for 1 work completion (WC)
-	while ((n = ibv_poll_cq(cq, 1, &wc)) > 0) {
-	    if (wc.status != IBV_WC_SUCCESS)
-		throw ApplicationException("SEND was unsuccessful");
-	    if (wc.wr_id == 0) {
-		DEBUG("transmission successful");
+        ne = ibv_poll_cq(cq, 2, wc);
+        if (ne < 0)
+            throw ApplicationException("polling the completion queue failed");
+        
+        for (int i = 0; i < ne; i++) {
+            if (wc[i].status != IBV_WC_SUCCESS) {
+                std::ostringstream s;
+                s << "failed status " << ibv_wc_status_str(wc[i].status)
+                  << " (" << wc[i].status << ") for wr_id "
+                  << (int) wc[i].wr_id;
+                throw ApplicationException(s.str());
+            }
+            
+            switch ((int) wc[i].wr_id) {
+            case 666:
+                DEBUG("atomic transaction successful");
+                std::cout << ntohll(atomic_buf[0]) << std::endl;
+                break;
+                
+            case 667:
+                DEBUG("atomic transaction 2 successful");
+                std::cout << ntohll(atomic_buf[1]) << std::endl;
+                break;
+                
+            case 0:
+                DEBUG("transmission successful");
                 std::cout << ntohl(buf[0]) << std::endl;
-		return 0;
-	    }
-	}
-	if (n < 0)
-	    throw ApplicationException("polling the completion queue failed");
+                return 0;
+                break;
+                
+            default:
+                DEBUG("completion for unknown wr_id");
+                break;
+            }
+        }
     }
 
     return 0;

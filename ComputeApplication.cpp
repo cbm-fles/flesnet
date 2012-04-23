@@ -99,13 +99,27 @@ ComputeApplication::run()
 
     // Register a memory region (MR) associated with the given protection domain
     // (local read access is always enabled)
-    struct ibv_mr  *mr = ibv_reg_mr(pd, buf, 2 * sizeof(uint32_t),
-                                    IBV_ACCESS_LOCAL_WRITE |
-                                    IBV_ACCESS_REMOTE_READ |
-                                    IBV_ACCESS_REMOTE_WRITE);
+    struct ibv_mr *mr = ibv_reg_mr(pd, buf, 2 * sizeof(uint32_t),
+                                   IBV_ACCESS_LOCAL_WRITE |
+                                   IBV_ACCESS_REMOTE_READ |
+                                   IBV_ACCESS_REMOTE_WRITE);
     if (!mr)
         throw ApplicationException("registration of memory region failed");
 
+    ////
+    uint64_t *atomic_buf = (uint64_t *) calloc(2, sizeof(uint64_t));
+    atomic_buf[0] = htonll(23);
+    atomic_buf[1] = htonll(42);
+    if (!atomic_buf)
+        throw ApplicationException("allocation of buffer space failed");
+    
+    struct ibv_mr *atomic_mr = ibv_reg_mr(pd, atomic_buf, 2 * sizeof(uint64_t),
+                                          IBV_ACCESS_LOCAL_WRITE |
+                                          IBV_ACCESS_REMOTE_ATOMIC);
+    if (!atomic_mr)
+        throw ApplicationException("registration of memory region failed");
+    ////
+    
     // Allocate a queue pair (QP) associated with the specified rdma id
     struct ibv_qp_init_attr qp_attr;
     memset(&qp_attr, 0, sizeof qp_attr);
@@ -143,13 +157,15 @@ ComputeApplication::run()
     DEBUG("Accepting connection");
 
     // Accept rdma connection request
-    pdata_t rep_pdata;
-    rep_pdata.buf_va = htonll((uintptr_t) buf);
-    rep_pdata.buf_rkey = htonl(mr->rkey);
+    pdata_t rep_pdata[2];
+    rep_pdata[0].buf_va = (uintptr_t) buf;
+    rep_pdata[0].buf_rkey = mr->rkey;
+    rep_pdata[1].buf_va = (uintptr_t) atomic_buf;
+    rep_pdata[1].buf_rkey = atomic_mr->rkey;
     struct rdma_conn_param conn_param;
     memset(&conn_param, 0, sizeof conn_param);
     conn_param.responder_resources = 1;
-    conn_param.private_data = &rep_pdata;
+    conn_param.private_data = rep_pdata;
     conn_param.private_data_len = sizeof rep_pdata;
     err = rdma_accept(cm_id, &conn_param);
     if (err)
@@ -225,6 +241,10 @@ ComputeApplication::run()
 
     // Acknowledge 2 completion queue (CQ) events
     ibv_ack_cq_events(cq, 2);
+
+    std::cout << "local atomic buffer: "
+              << ntohll(atomic_buf[0]) << " "
+              << ntohll(atomic_buf[1]) << std::endl;
 
     return 0;
 }
