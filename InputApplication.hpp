@@ -13,10 +13,23 @@ void DEBUG(std::string const& s) {
     std::cout << "Debug: " << s << std::endl;
 }
 
-//#define BUFDEBUG
+#define BUFDEBUG
 #define CHATTY
 
-int _send_requests_in_queue = 0;
+enum REQUEST_ID { ID_RDMA_WRITE1 = 1, ID_RDMA_WRITE2, ID_RDMA_WRITE3,
+                  ID_SEND, ID_RECEIVE };
+
+inline std::ostream &operator<<(std::ostream &s, REQUEST_ID v) {
+    switch (v) {
+    case ID_RDMA_WRITE1: return s << "ID_RDMA_WRITE1";
+    case ID_RDMA_WRITE2: return s << "ID_RDMA_WRITE2";
+    case ID_RDMA_WRITE3: return s << "ID_RDMA_WRITE3";
+    case ID_SEND: return s << "ID_SEND";
+    case ID_RECEIVE: return s << "ID_RECEIVE";
+    default: return s << (int) v;
+    }
+}
+
 
 class InputContext {
 public:
@@ -231,9 +244,6 @@ public:
 #endif
     
 private:
-    enum { ID_RDMA_WRITE1 = 1, ID_RDMA_WRITE2, ID_RDMA_WRITE3,
-           ID_SEND, ID_RECEIVE };
-    
     void
     wait_for_data(uint64_t min_mc_number)
     {
@@ -385,7 +395,6 @@ public:
         while (wr) {
             // !!!
             wr->send_flags |= IBV_SEND_SIGNALED;
-            _send_requests_in_queue++;
             // !!!
             if (verbose)
                 std::cout << "| wr" << wr_num << ": id=" << wr->wr_id
@@ -443,10 +452,6 @@ public:
         if (verbose)
             std::cout << "\\---------" << std::endl;
 
-        // !!!
-        std::cout << "POST SEND: new _send_requests_in_queue="
-                  << _send_requests_in_queue << std::endl;
-        // !!!
 #endif
         return ibv_post_send(qp, wr_first, bad_wr);
     }
@@ -737,61 +742,52 @@ public:
             throw ApplicationException("post_send cn_wp failed");
     }
 
+    
     void
     completion_handler()
-    {        
-        while (1) {
-            // Wait for next completion event in given channel (BLOCKING)
-            struct ibv_cq *ev_cq;
-            void *ev_ctx;
-            if (ibv_get_cq_event(_ctx->_comp_chan, &ev_cq, &ev_ctx))
-                throw ApplicationException("retrieval of cq event failed");
+    {
+        const int ne_max = 10;
         
-            // Acknowledge the completion queue (CQ) event
+        struct ibv_cq *ev_cq;
+        void *ev_ctx;
+        struct ibv_wc wc[ne_max];
+        int ne;
+
+        while (true) {
+            if (ibv_get_cq_event(_ctx->_comp_chan, &ev_cq, &ev_ctx))
+                throw ApplicationException("ibv_get_cq_event failed");
+        
             ibv_ack_cq_events(ev_cq, 1);
         
             if (ev_cq != _ctx->_cq)
                 throw ApplicationException("CQ event for unknown CQ");
         
-            // Request a completion notification on the given completion queue
-            // ("one shot" - only one completion event will be generated)
             if (ibv_req_notify_cq(_ctx->_cq, 0))
-                throw ApplicationException("request of completion notification failed");
-            struct ibv_wc wc[1];
-            int ne;
+                throw ApplicationException("ibv_req_notify_cq failed");
         
-            // Poll the completion queue (CQ) for work completions(WC)
-            while((ne = ibv_poll_cq(_ctx->_cq, 1, wc))) {
+            while((ne = ibv_poll_cq(_ctx->_cq, ne_max, wc))) {
                 if (ne < 0)
-                    throw ApplicationException("polling the completion queue failed");
+                    throw ApplicationException("ibv_poll_cq failed");
                 
                 for (int i = 0; i < ne; i++) {
                     if (wc[i].status != IBV_WC_SUCCESS) {
                         std::ostringstream s;
-                        s << "failed status " << ibv_wc_status_str(wc[i].status)
-                          << " (" << wc[i].status << ") for wr_id "
-                          << (int) wc[i].wr_id;
+                        s << ibv_wc_status_str(wc[i].status)
+                          << " for wr_id " << (int) wc[i].wr_id;
                         throw ApplicationException(s.str());
                     }
             
-                    switch ((int) wc[i].wr_id) {
+                    switch (wc[i].wr_id) {
                     case ID_SEND:
                     case ID_RDMA_WRITE1:
                     case ID_RDMA_WRITE2:
                     case ID_RDMA_WRITE3:
-                        _send_requests_in_queue--;
-                        //#ifdef CHATTY
-                        std::cout << "COMPLETION send id " << wc[i].wr_id
-                                  << " ok, now send_requests_in_queue="
-                                  << _send_requests_in_queue << std::endl;
-                        //#endif
+                        // do nothing (for now)
                         break;
                     
                     case ID_RECEIVE:
-                        //#ifdef CHATTY
-                        std::cout << "COMPLETION receive ok, new _cn_ack.data="
-                                  << _receive_cn_ack.data << std::endl;
-                        //#endif
+                        DEBUG("COMPLETION receive ok, new _cn_ack.data=");
+                        //                              + _receive_cn_ack.data);
                         {
                             boost::mutex::scoped_lock lock(_cn_ack_mutex);
                             _cn_ack = _receive_cn_ack;
@@ -811,13 +807,13 @@ public:
                         break;
 
                     default:
-                        throw ApplicationException("completion for unknown wr_id");
-                        break;
+                        throw ApplicationException("wc for unknown wr_id");
                     }
                 }
             }
         }
     }
+
     
     //private:
 public:

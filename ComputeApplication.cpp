@@ -103,10 +103,10 @@ int
 ComputeApplication::run()
 {
     enum { ID_SEND = 4, ID_RECEIVE };
-    const int CN_DATABUF_WORDS = 128*1024;
-    const int CN_DESCBUF_WORDS = 80;
-        //const int CN_DATABUF_WORDS = 32;
-        //const int CN_DESCBUF_WORDS = 4;
+    //const int CN_DATABUF_WORDS = 128*1024;
+    //const int CN_DESCBUF_WORDS = 80;
+    const int CN_DATABUF_WORDS = 32;
+    const int CN_DESCBUF_WORDS = 4;
 
 
     
