@@ -8,10 +8,7 @@
 #define INPUTAPPLICATION_HPP
 
 #include <boost/thread.hpp>
-
-void DEBUG(std::string const& s) {
-    std::cout << "Debug: " << s << std::endl;
-}
+#include "log.hpp"
 
 #define BUFDEBUG
 #define CHATTY
@@ -51,7 +48,9 @@ public:
 
     
     void connect(const char *hostname) {
-        DEBUG("Setting up RDMA CM structures");
+        Log.info() << "INFO output";
+        
+        Log.debug() << "Setting up RDMA CM structures";
         
         // Create an rdma event channel
         struct rdma_event_channel *cm_channel = rdma_create_event_channel();
@@ -76,7 +75,7 @@ public:
         if (err)
             throw ApplicationException("getaddrinfo failed");
         
-        DEBUG("resolution of server address and route");
+        Log.debug() << "resolution of server address and route";
         
         // Resolve destination address from IP address to rdma address
         // (binds cm_id to a local device)
@@ -118,7 +117,7 @@ public:
         // Free the communication event
         rdma_ack_cm_event(event);
         
-        DEBUG("creating verbs objects");
+        Log.debug() << "creating verbs objects";
         
         // Allocate a protection domain (PD) for the given context
         _pd = ibv_alloc_pd(cm_id->verbs);
@@ -158,7 +157,7 @@ public:
         if (err)
             throw ApplicationException("creation of QP failed");
     
-        DEBUG("Connect to server");
+        Log.debug() << "Connect to server";
 
         // Initiate an active connection request
         struct rdma_conn_param conn_param;
@@ -187,7 +186,7 @@ public:
 
         _qp = cm_id->qp;
 
-        DEBUG("--------- CONNECT DONE ---------");
+        Log.debug() << "--------- CONNECT DONE ---------";
     }
 
 private:
@@ -247,15 +246,15 @@ private:
     void
     wait_for_data(uint64_t min_mc_number)
     {
-        //DEBUG("wait_for_data()");
-        //        std::cout << "min_mc_number: " << min_mc_number << std::endl;
-        //        std::cout << "_mc_written: " << _mc_written << std::endl;
+        //Log.debug() << "wait_for_data()";
+        //        Log.info() << "min_mc_number: " << min_mc_number;
+        //        Log.info() << "_mc_written: " << _mc_written;
 
         uint64_t mcs_to_write = min_mc_number - _mc_written;
         // write more data than requested (up to 2 additional TSs)
         mcs_to_write += random() % (TS_SIZE * 2);
         
-        //        std::cout << "mcs_to_write: " << mcs_to_write << std::endl;
+        //        Log.info() << "mcs_to_write: " << mcs_to_write;
 
         while (mcs_to_write-- > 0) {
             int content_words = random() % (TYP_CNT_WORDS * 2);
@@ -276,21 +275,21 @@ private:
             hdr1 = time;
             // DEBUG
             
-            //std::cout << "_data_written: " << _data_written << std::endl;
-            //std::cout << "_acked_data: " << _acked_data << std::endl;
-            //std::cout << "content_words: " << content_words << std::endl;
-            //std::cout << "DATA_WORDS: " << DATA_WORDS << std::endl;
+            //Log.info() << "_data_written: " << _data_written;
+            //Log.info() << "_acked_data: " << _acked_data;
+            //Log.info() << "content_words: " << content_words;
+            //Log.info() << "DATA_WORDS: " << DATA_WORDS;
 
                 // check for space in data buffer
             if (_data_written - _acked_data + content_words + 2 > DATA_WORDS) {
-                DEBUG("data buffer full");
-                DEBUG("ERROR"); exit(1);// TODO: remove
+                Log.debug() << "data buffer full";
+                Log.debug() << "ERROR"; exit(1);// TODO: remove
                 break;
             }
             
             // check for space in addr buffer
             if (_mc_written - _acked_mc == ADDR_WORDS) {
-                DEBUG("addr buffer full");
+                Log.debug() << "addr buffer full";
                 break;
             }
             
@@ -342,25 +341,29 @@ public:
             throw ApplicationException("registration of memory region failed");
     }
 
-    void
-    dump_state()
+    std::string
+    getStateString()
     {
-        std::cout << "/--- addr buf ---" << std::endl;
-        std::cout << "|";
+        std::ostringstream s;
+        
+        s << "/--- addr buf ---" << std::endl;
+        s << "|";
         for (int i = 0; i < ADDR_WORDS; i++)
-            std::cout << " (" << i << ")" << _addr[i];
-        std::cout << std::endl;
-        std::cout << "| _mc_written = " << _mc_written << std::endl;
-        std::cout << "| _acked_mc = " << _acked_mc << std::endl;
-        std::cout << "/--- data buf ---" << std::endl;
-        std::cout << "|";
+            s << " (" << i << ")" << _addr[i];
+        s << std::endl;
+        s << "| _mc_written = " << _mc_written << std::endl;
+        s << "| _acked_mc = " << _acked_mc << std::endl;
+        s << "/--- data buf ---" << std::endl;
+        s << "|";
         for (int i = 0; i < DATA_WORDS; i++)
-            std::cout << " (" << i << ")"
-                      << std::hex << (_data[i] & 0xFFFF) << std::dec;
-        std::cout << std::endl;
-        std::cout << "| _data_written = " << _data_written << std::endl;
-        std::cout << "| _acked_data = " << _acked_data << std::endl;
-        std::cout << "\\---------" << std::endl;
+            s << " (" << i << ")"
+              << std::hex << (_data[i] & 0xFFFF) << std::dec;
+        s << std::endl;
+        s << "| _data_written = " << _data_written << std::endl;
+        s << "| _acked_data = " << _acked_data << std::endl;
+        s << "\\---------" << std::endl;
+        
+        return s.str();
     }
 
     int my_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
@@ -368,6 +371,9 @@ public:
         struct ibv_send_wr *wr_first = wr;
         const int verbose = 0;
 #ifdef CHATTY
+
+        std::ostringstream s;
+                        
         struct bufdesc {
             uint64_t addr;
             size_t nmemb;
@@ -390,26 +396,23 @@ public:
         };
 
         if (verbose)
-            std::cout << "/--- ibv_post_send() ---" << std::endl;
+            s << "/--- ibv_post_send() ---" << std::endl;
         int wr_num = 0;
         while (wr) {
-            // !!!
-            wr->send_flags |= IBV_SEND_SIGNALED;
-            // !!!
             if (verbose)
-                std::cout << "| wr" << wr_num << ": id=" << wr->wr_id
+                s << "| wr" << wr_num << ": id=" << wr->wr_id
                           << " opcode=" << wr->opcode
                           << " num_sge=" << wr->num_sge;
             if (wr->wr.rdma.remote_addr) {
                 uint64_t addr = wr->wr.rdma.remote_addr;
                 if (verbose)
-                    std::cout << " rdma.remote_addr=";
+                    s << " rdma.remote_addr=";
                 struct bufdesc *b = target_desc;
                 while (b->name) {
                     if (addr >= b->addr
                         && addr < b->addr + b->nmemb * b->size) {
                         if (verbose)
-                            std::cout << b->name << "["
+                            s << b->name << "["
                                       << (addr - b->addr) / b->size << "]";
                         break;
                     }
@@ -417,12 +420,12 @@ public:
                 }
                 if (!b->name) {
                     if (verbose)
-                        std::cout << addr;
+                        s << addr;
                 }
             }
             if (verbose) {
-                std::cout << std::endl;
-                std::cout << "|   sg_list=";
+                s << std::endl;
+                s << "|   sg_list=";
             }
             uint32_t total_length = 0;
             for (int i = 0; i < wr->num_sge; i++) {
@@ -433,25 +436,26 @@ public:
                     if (addr >= b->addr
                         && addr < b->addr + b->nmemb * b->size) {
                         if (verbose)
-                            std::cout << b->name << "["
+                            s << b->name << "["
                                       << (addr - b->addr) / b->size << "]:";
                         break;
                     }
                     b++;
                 }
                 if (verbose)
-                    std::cout << length / (sizeof(uint64_t)) << " ";
+                    s << length / (sizeof(uint64_t)) << " ";
                 total_length += length;
             }
             if (verbose)
-                std::cout << "(" << total_length / (sizeof(uint64_t))
+                s << "(" << total_length / (sizeof(uint64_t))
                           << " words total)" << std::endl;
             wr = wr->next;
             wr_num++;
         }
         if (verbose)
-            std::cout << "\\---------" << std::endl;
-
+            s << "\\---------" << std::endl;
+        if (verbose)
+            Log.debug() << s.str();
 #endif
         return ibv_post_send(qp, wr_first, bad_wr);
     }
@@ -540,6 +544,7 @@ public:
         memset(&send_wr_ts, 0, sizeof(send_wr_ts));
         send_wr_ts.wr_id = ID_RDMA_WRITE1;
         send_wr_ts.opcode = IBV_WR_RDMA_WRITE;
+        send_wr_ts.send_flags = IBV_SEND_SIGNALED;
         send_wr_ts.sg_list = sge;
         send_wr_ts.num_sge = num_sge;
         send_wr_ts.wr.rdma.rkey = _ctx->_server_pdata[0].buf_rkey;
@@ -551,6 +556,7 @@ public:
             memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
             send_wr_tswrap.wr_id = ID_RDMA_WRITE2;
             send_wr_tswrap.opcode = IBV_WR_RDMA_WRITE;
+            send_wr_tswrap.send_flags = IBV_SEND_SIGNALED;
             send_wr_tswrap.sg_list = sge2;
             send_wr_tswrap.num_sge = num_sge2;
             send_wr_tswrap.wr.rdma.rkey = _ctx->_server_pdata[0].buf_rkey;
@@ -575,6 +581,7 @@ public:
         memset(&send_wr_tscdesc, 0, sizeof(send_wr_tscdesc));
         send_wr_tscdesc.wr_id = ID_RDMA_WRITE3;
         send_wr_tscdesc.opcode = IBV_WR_RDMA_WRITE;
+        send_wr_tscdesc.send_flags = IBV_SEND_SIGNALED;
         send_wr_tscdesc.send_flags = IBV_SEND_INLINE;
         send_wr_tscdesc.sg_list = &sge3;
         send_wr_tscdesc.num_sge = 1;
@@ -584,7 +591,7 @@ public:
                          + (_cn_wp.desc % CN_DESCBUF_WORDS)
                          * sizeof(tscdesc_t));
 
-        std::cout << "POST SEND data (TS " << timeslice << ")" << std::endl;
+        Log.info() << "POST SEND data (TS " << timeslice << ")";
         
         // send everything
         struct ibv_send_wr *bad_send_wr;
@@ -600,7 +607,7 @@ public:
         setup_send();
         post_recv_cn_ack();
 
-        //        boost::this_thread::sleep(boost::posix_time::millisec(1000));
+        //boost::this_thread::sleep(boost::posix_time::millisec(1000));
 
         for (uint64_t timeslice = 0; timeslice < NUM_TS; timeslice++) {
             
@@ -617,12 +624,12 @@ public:
 
             // debug output
             if (0) {
-                std::cout << "SENDER working on TS " << timeslice
-                          << ", MCs " << mc_offset << ".."
-                          << (mc_offset + mc_length - 1)
-                          << ", data words " << data_offset << ".."
-                          << (data_offset + data_length - 1) << std::endl;
-                dump_state();
+                Log.info() << "SENDER working on TS " << timeslice
+                           << ", MCs " << mc_offset << ".."
+                           << (mc_offset + mc_length - 1)
+                           << ", data words " << data_offset << ".."
+                           << (data_offset + data_length - 1);
+                Log.info() << getStateString();
             }
 
             // wait until enough space is available at target compute node
@@ -630,17 +637,15 @@ public:
                 boost::mutex::scoped_lock lock(_cn_ack_mutex);
 #ifdef CHATTY
                 // DEBUG            
-                std::cout << "SENDER data space (words) required="
-                          << data_length + mc_length
-                          << ", avail="
-                          << _cn_ack.data + CN_DATABUF_WORDS - _cn_wp.data
-                          << std::endl;
-                //std::cout << _cn_ack.data << "+" << CN_DATABUF_WORDS
-                //<< "-" << _cn_wp.data << std::endl;
-                std::cout << "SENDER desc space (words) required=" << 1
-                          << ", avail="
-                          << _cn_ack.desc + CN_DESCBUF_WORDS - _cn_wp.desc
-                          << std::endl;
+                Log.info() << "SENDER data space (words) required="
+                           << data_length + mc_length
+                           << ", avail="
+                           << _cn_ack.data + CN_DATABUF_WORDS - _cn_wp.data;
+                //Log.info() << _cn_ack.data << "+" << CN_DATABUF_WORDS
+                //<< "-" << _cn_wp.data;
+                Log.info() << "SENDER desc space (words) required=" << 1
+                           << ", avail="
+                           << _cn_ack.desc + CN_DESCBUF_WORDS - _cn_wp.desc;
 #endif
                 while (_cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS
                        < data_length + mc_length
@@ -652,8 +657,7 @@ public:
                         if (_our_turn) {
                             // send phony update to receive new pointers
                             {
-                                std::cout << "*** SEND PHONY UPDATE ***"
-                                          << std::endl;
+                                Log.info() << "*** SEND PHONY UPDATE ***";
                                 _our_turn = 0;
                                 _send_cn_wp = _cn_wp;
                                 post_send_cn_wp();
@@ -661,13 +665,10 @@ public:
                         }
                     }
                     _cn_ack_cond.wait(lock);
-                    std::cout << "SENDER (next try) space avail="
-                              << _cn_ack.data - _cn_wp.data
-                        + CN_DATABUF_WORDS
-                              << " desc_avail="
-                              << _cn_ack.desc - _cn_wp.desc
-                        + CN_DESCBUF_WORDS
-                              << std::endl;
+                    Log.info() << "SENDER (next try) space avail="
+                               << _cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS
+                               << " desc_avail="
+                               << _cn_ack.desc - _cn_wp.desc + CN_DESCBUF_WORDS;
                 }
             }
 
@@ -687,11 +688,11 @@ public:
 
             _acked_mc += TS_SIZE;
             _acked_data = data_ack;
-            //            boost::this_thread::sleep(boost::posix_time::millisec(10));
-            std::cout << std::endl;
+            //boost::this_thread::sleep(boost::posix_time::millisec(10));
+            Log.info() << "--- --- ---";
         }
 
-        std::cout << "SENDER loop done" << std::endl;
+        Log.info() << "SENDER loop done";
     }
 
     struct ibv_sge recv_sge;
@@ -719,6 +720,7 @@ public:
         memset(&_send_cn_wp, 0, sizeof _send_cn_wp);
         send_wr.wr_id = ID_SEND;
         send_wr.opcode = IBV_WR_SEND;
+        send_wr.send_flags = IBV_SEND_SIGNALED;
         send_wr.sg_list = &send_sge;
         send_wr.num_sge = 1;
     }
@@ -726,7 +728,7 @@ public:
     void post_recv_cn_ack() {
         // Post a receive work request (WR) to the receive queue
         if (1) {
-            std::cout << "POST RECEIVE _receive_cn_ack" << std::endl;
+            Log.info() << "POST RECEIVE _receive_cn_ack";
         }
         if (ibv_post_recv(_ctx->_qp, &recv_wr, &bad_recv_wr))
             throw ApplicationException("post_recv failed");
@@ -735,8 +737,8 @@ public:
     void post_send_cn_wp() {
         // Post a send work request (WR) to the send queue
         if (1) {
-            std::cout << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
-                      << " desc=" << _send_cn_wp.desc << ")" << std::endl;
+            Log.info() << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
+                       << " desc=" << _send_cn_wp.desc << ")";
         }
         if (my_post_send(_ctx->_qp, &send_wr, &bad_send_wr))
             throw ApplicationException("post_send cn_wp failed");
@@ -786,7 +788,7 @@ public:
                         break;
                     
                     case ID_RECEIVE:
-                        DEBUG("COMPLETION receive ok, new _cn_ack.data=");
+                        Log.debug() << "COMPLETION receive ok, new _cn_ack.data=";
                         //                              + _receive_cn_ack.data);
                         {
                             boost::mutex::scoped_lock lock(_cn_ack_mutex);
