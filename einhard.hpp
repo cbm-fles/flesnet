@@ -112,9 +112,9 @@ template<typename Parent> struct Color {
     }
 };
 #define _COLOR(name, code) \
-	struct _##name { static char const * ANSI(); }; \
-	inline char const * _##name::ANSI() { return "\33[" code "m"; } \
-	typedef Color<_##name> name
+    struct _##name { static char const * ANSI(); }; \
+    inline char const * _##name::ANSI() { return "\33[" code "m"; } \
+    typedef Color<_##name> name
 
 _COLOR(DGray,   "01;30");
 _COLOR(Black,   "00;30");
