@@ -9,7 +9,7 @@
 #include "Application.hpp"
 
 
-int 
+int
 main(int argc, char* argv[])
 {
     try {
@@ -27,6 +27,6 @@ main(int argc, char* argv[])
         std::cerr << "error: " << e.what() << "\n";
         return EXIT_FAILURE;
     }
-    
+
     return EXIT_SUCCESS;
 }

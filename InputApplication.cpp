@@ -31,7 +31,7 @@ InputApplication::run()
 {
     InputContext ctx;
     ctx.connect(_par.compute_nodes().at(0).c_str());
-        
+
     InputBuffer ib(&ctx);
     ib.setup();
     boost::thread t1(&InputBuffer::sender_loop, &ib);

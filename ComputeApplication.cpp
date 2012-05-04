@@ -26,78 +26,79 @@ cn_bufpos_t _cn_wp = {0};
 
 
 
-    int my_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
-                     struct ibv_send_wr **bad_wr) {
-        struct ibv_send_wr *wr_first = wr;
+int my_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
+                 struct ibv_send_wr **bad_wr) {
+    struct ibv_send_wr *wr_first = wr;
 #ifdef CHATTY
-        struct bufdesc {
-            uint64_t addr;
-            size_t nmemb;
-            size_t size;
-            char *name;
-        };
+    struct bufdesc {
+        uint64_t addr;
+        size_t nmemb;
+        size_t size;
+        char *name;
+    };
 
-        struct bufdesc source_desc[] = {
-            {(uint64_t) &send_cn_ack, 1, sizeof(cn_bufpos_t),
-             (char *) "send_cn_ack"},
-            {0, 0, 0, 0}
-        };
-        
-        struct bufdesc target_desc[] = {
-            {0, 0, 0, 0}
-        };
-    
-        std::cout << "/--- ibv_post_send() ---" << std::endl;
-        int wr_num = 0;
-        while (wr) {
-            std::cout << "| wr" << wr_num << ": id=" << wr->wr_id
-                      << " opcode=" << wr->opcode
-                      << " num_sge=" << wr->num_sge;
-            if (wr->wr.rdma.remote_addr) {
-                uint64_t addr = wr->wr.rdma.remote_addr;
-                std::cout << " rdma.remote_addr=";
-                struct bufdesc *b = target_desc;
-                while (b->name) {
-                    if (addr >= b->addr
+    struct bufdesc source_desc[] = {
+        {   (uint64_t) &send_cn_ack, 1, sizeof(cn_bufpos_t),
+            (char *) "send_cn_ack"
+        },
+        {0, 0, 0, 0}
+    };
+
+    struct bufdesc target_desc[] = {
+        {0, 0, 0, 0}
+    };
+
+    std::cout << "/--- ibv_post_send() ---" << std::endl;
+    int wr_num = 0;
+    while (wr) {
+        std::cout << "| wr" << wr_num << ": id=" << wr->wr_id
+                  << " opcode=" << wr->opcode
+                  << " num_sge=" << wr->num_sge;
+        if (wr->wr.rdma.remote_addr) {
+            uint64_t addr = wr->wr.rdma.remote_addr;
+            std::cout << " rdma.remote_addr=";
+            struct bufdesc *b = target_desc;
+            while (b->name) {
+                if (addr >= b->addr
                         && addr < b->addr + b->nmemb * b->size) {
-                        std::cout << b->name << "["
-                                  << (addr - b->addr) / b->size << "]";
-                        break;
-                    }
-                    b++;
+                    std::cout << b->name << "["
+                              << (addr - b->addr) / b->size << "]";
+                    break;
                 }
-                if (!b->name) {
-                    std::cout << addr;
-                }
+                b++;
             }
-            std::cout << std::endl;
-            std::cout << "|   sg_list=";
-            uint32_t total_length = 0;
-            for (int i = 0; i < wr->num_sge; i++) {
-                uint64_t addr = wr->sg_list[i].addr;
-                uint32_t length =  wr->sg_list[i].length;
-                struct bufdesc *b = source_desc;
-                while (b->name) {
-                    if (addr >= b->addr
-                        && addr < b->addr + b->nmemb * b->size) {
-                        std::cout << b->name << "["
-                                  << (addr - b->addr) / b->size << "]:";
-                        break;
-                    }
-                    b++;
-                }
-                std::cout << length / (sizeof(uint64_t)) << " ";
-                total_length += length;
+            if (!b->name) {
+                std::cout << addr;
             }
-            std::cout << "(" << total_length / (sizeof(uint64_t))
-                      << " words total)" << std::endl;
-            wr = wr->next;
-            wr_num++;
         }
-        std::cout << "\\---------" << std::endl;
-#endif
-        return ibv_post_send(qp, wr_first, bad_wr);
+        std::cout << std::endl;
+        std::cout << "|   sg_list=";
+        uint32_t total_length = 0;
+        for (int i = 0; i < wr->num_sge; i++) {
+            uint64_t addr = wr->sg_list[i].addr;
+            uint32_t length =  wr->sg_list[i].length;
+            struct bufdesc *b = source_desc;
+            while (b->name) {
+                if (addr >= b->addr
+                        && addr < b->addr + b->nmemb * b->size) {
+                    std::cout << b->name << "["
+                              << (addr - b->addr) / b->size << "]:";
+                    break;
+                }
+                b++;
+            }
+            std::cout << length / (sizeof(uint64_t)) << " ";
+            total_length += length;
+        }
+        std::cout << "(" << total_length / (sizeof(uint64_t))
+                  << " words total)" << std::endl;
+        wr = wr->next;
+        wr_num++;
     }
+    std::cout << "\\---------" << std::endl;
+#endif
+    return ibv_post_send(qp, wr_first, bad_wr);
+}
 
 int
 ComputeApplication::run()
@@ -109,7 +110,7 @@ ComputeApplication::run()
     const int CN_DESCBUF_WORDS = 4;
 
 
-    
+
     DEBUG("Setting up RDMA CM structures");
 
     // Create an rdma event channel
@@ -207,17 +208,17 @@ ComputeApplication::run()
     memset(&qp_attr, 0, sizeof qp_attr);
     qp_attr.cap.max_send_wr = 1;  // max num of outstanding WRs in the SQ
     qp_attr.cap.max_send_sge = 1; // max num of outstanding scatter/gather
-                                  // elements in a WR in the SQ
+    // elements in a WR in the SQ
     qp_attr.cap.max_recv_wr = 1;  // max num of outstanding WRs in the RQ
     qp_attr.cap.max_recv_sge = 1; // max num of outstanding scatter/gather
-                                  // elements in a WR in the RQ
+    // elements in a WR in the RQ
     qp_attr.send_cq = cq;
     qp_attr.recv_cq = cq;
     qp_attr.qp_type = IBV_QPT_RC; // reliable connection
     err = rdma_create_qp(cm_id, pd, &qp_attr);
     if (err)
         throw ApplicationException("creation of QP failed");
-  
+
     DEBUG("Post receive before accepting connection");
 
     // post initial receive request
@@ -227,7 +228,7 @@ ComputeApplication::run()
         sge.length = sizeof(cn_bufpos_t);
         sge.lkey = mr_recv->lkey;
         struct ibv_recv_wr recv_wr;
-        memset(&recv_wr, 0, sizeof recv_wr); 
+        memset(&recv_wr, 0, sizeof recv_wr);
         recv_wr.wr_id = ID_RECEIVE;
         recv_wr.sg_list = &sge;
         recv_wr.num_sge = 1;
@@ -235,7 +236,7 @@ ComputeApplication::run()
         if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
             throw ApplicationException("post_recv failed");
     }
-  
+
     DEBUG("Accepting connection");
 
     // Accept rdma connection request
@@ -264,35 +265,35 @@ ComputeApplication::run()
 
     // Free the communication event
     rdma_ack_cm_event(event);
-  
+
     DEBUG("Wait for completion");
 
     while (1) {
         // Wait for the next completion event in the given channel (BLOCKING)
         struct ibv_cq *ev_cq;
         void *ev_ctx;
-        
+
         if (ibv_get_cq_event(comp_chan, &ev_cq, &ev_ctx))
             throw ApplicationException("retrieval of cq event failed");
-        
+
         // Acknowledge the completion queue (CQ) event
         ibv_ack_cq_events(ev_cq, 1);
-        
+
         if (ev_cq != cq)
             throw ApplicationException("CQ event for unknown CQ");
-        
+
         // Request a completion notification on the given completion queue
         // ("one shot" - only one completion event will be generated)
         if (ibv_req_notify_cq(cq, 0))
             throw ApplicationException("request of completion notification failed");
         struct ibv_wc wc[1];
         int ne;
-        
+
         // Poll the completion queue (CQ) for work completions (WC)
         ne = ibv_poll_cq(cq, 1, wc);
         if (ne < 0)
             throw ApplicationException("polling the completion queue failed");
-        
+
         for (int i = 0; i < ne; i++) {
             if (wc[i].status != IBV_WC_SUCCESS) {
                 std::ostringstream s;
@@ -301,7 +302,7 @@ ComputeApplication::run()
                   << (int) wc[i].wr_id;
                 throw ApplicationException(s.str());
             }
-            
+
             switch ((int) wc[i].wr_id) {
             case ID_SEND:
                 std::cout << "SEND complete" << std::endl;
@@ -309,63 +310,63 @@ ComputeApplication::run()
 
             case ID_RECEIVE:
                 // post new receive request
-                {
-                    struct ibv_sge sge;
-                    sge.addr = (uintptr_t) &_recv_cn_wp;
-                    sge.length = sizeof(cn_bufpos_t);
-                    sge.lkey = mr_recv->lkey;
-                    struct ibv_recv_wr recv_wr;
-                    memset(&recv_wr, 0, sizeof recv_wr); 
-                    recv_wr.wr_id = ID_RECEIVE;
-                    recv_wr.sg_list = &sge;
-                    recv_wr.num_sge = 1;
-                    struct ibv_recv_wr *bad_recv_wr;
-                    if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
-                        throw ApplicationException("post_recv failed");
-                }
-                _cn_wp = _recv_cn_wp;
-                // debug output
-                std::cout << "RECEIVE _cn_wp: data=" << _cn_wp.data
-                          << " desc=" << _cn_wp.desc << std::endl;
+            {
+                struct ibv_sge sge;
+                sge.addr = (uintptr_t) &_recv_cn_wp;
+                sge.length = sizeof(cn_bufpos_t);
+                sge.lkey = mr_recv->lkey;
+                struct ibv_recv_wr recv_wr;
+                memset(&recv_wr, 0, sizeof recv_wr);
+                recv_wr.wr_id = ID_RECEIVE;
+                recv_wr.sg_list = &sge;
+                recv_wr.num_sge = 1;
+                struct ibv_recv_wr *bad_recv_wr;
+                if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
+                    throw ApplicationException("post_recv failed");
+            }
+            _cn_wp = _recv_cn_wp;
+            // debug output
+            std::cout << "RECEIVE _cn_wp: data=" << _cn_wp.data
+                      << " desc=" << _cn_wp.desc << std::endl;
 #ifdef CHATTY
-                std::cout << "/--- data buf ---" << std::endl << "|";
-                for (unsigned int i = tscdesc.offset;
-                     i < tscdesc.offset + tscdesc.size; i++) {
-                    std::cout << " (" << (i % CN_DATABUF_WORDS) << ")" << std::hex
-                              << _data[i % CN_DATABUF_WORDS]
-                              << std::dec;
-                }
-                std::cout << std::endl << "\\---------" << std::endl;
+            std::cout << "/--- data buf ---" << std::endl << "|";
+            for (unsigned int i = tscdesc.offset;
+                    i < tscdesc.offset + tscdesc.size; i++) {
+                std::cout << " (" << (i % CN_DATABUF_WORDS) << ")" << std::hex
+                          << _data[i % CN_DATABUF_WORDS]
+                          << std::dec;
+            }
+            std::cout << std::endl << "\\---------" << std::endl;
 #endif
-                // end debug output
+            // end debug output
 
-                // check buffer contents
-                //boost::this_thread::sleep(boost::posix_time::millisec(500));
-                // end check buffer contents
+            // check buffer contents
+            //boost::this_thread::sleep(boost::posix_time::millisec(500));
+            // end check buffer contents
 
-                // DEBUG: empty the buffer
-                _cn_ack = _cn_wp;
-                
-                // send ack
-                {
-                    _send_cn_ack = _cn_ack;
-                    std::cout << "SEND posted" << std::endl;
-                    struct ibv_sge sge3;
-                    sge3.addr = (uintptr_t) &_send_cn_ack;
-                    sge3.length = sizeof(cn_bufpos_t);
-                    sge3.lkey = mr_send->lkey;
-                    struct ibv_send_wr send_wr2;
-                    memset(&send_wr2, 0, sizeof send_wr2); 
-                    send_wr2.wr_id = ID_SEND;
-                    send_wr2.opcode = IBV_WR_SEND;
-                    send_wr2.send_flags = IBV_SEND_SIGNALED;
-                    send_wr2.sg_list = &sge3;
-                    send_wr2.num_sge = 1;
-                    struct ibv_send_wr *bad_send_wr;
-                    if (my_post_send(cm_id->qp, &send_wr2, &bad_send_wr))
-                        throw ApplicationException("post_send failed");
-                }
-                break;
+            // DEBUG: empty the buffer
+            _cn_ack = _cn_wp;
+
+            // send ack
+            {
+                _send_cn_ack = _cn_ack;
+                std::cout << "SEND posted" << std::endl;
+                struct ibv_sge sge3;
+                sge3.addr = (uintptr_t) &_send_cn_ack;
+                sge3.length = sizeof(cn_bufpos_t);
+                sge3.lkey = mr_send->lkey;
+                struct ibv_send_wr send_wr2;
+                memset(&send_wr2, 0, sizeof send_wr2);
+                send_wr2.wr_id = ID_SEND;
+                send_wr2.opcode = IBV_WR_SEND;
+                send_wr2.send_flags = IBV_SEND_SIGNALED;
+                send_wr2.sg_list = &sge3;
+                send_wr2.num_sge = 1;
+                struct ibv_send_wr *bad_send_wr;
+                if (my_post_send(cm_id->qp, &send_wr2, &bad_send_wr))
+                    throw ApplicationException("post_send failed");
+            }
+            break;
 
             default:
                 throw ApplicationException("completion for unknown wr_id");

@@ -19,33 +19,33 @@ Parameters::parse_options(int argc, char* argv[])
 {
     po::options_description generic("Generic options");
     generic.add_options()
-        ("version,V", "print version string")
-        ("help,h", "produce help message")
-        ("verbose,v", po::bool_switch(&_verbose), "produce verbose output")
-        ;
+    ("version,V", "print version string")
+    ("help,h", "produce help message")
+    ("verbose,v", po::bool_switch(&_verbose), "produce verbose output")
+    ;
 
     po::options_description config("Configuration");
     config.add_options()
-        ("input-node,i", po::value<unsigned>(&_node_index),
-         "act as input node with given index")
-        ("compute-node,c", po::value<unsigned>(&_node_index),
-         "act as compute node with given index")
-        ("input-nodes,I",
-         po::value< std::vector<std::string> >()->multitoken(),
-         "add host to the list of input nodes")
-        ("compute-nodes,C",
-         po::value< std::vector<std::string> >()->multitoken(),
-         "add host to the list of compute nodes")
-        ;
+    ("input-node,i", po::value<unsigned>(&_node_index),
+     "act as input node with given index")
+    ("compute-node,c", po::value<unsigned>(&_node_index),
+     "act as compute node with given index")
+    ("input-nodes,I",
+     po::value< std::vector<std::string> >()->multitoken(),
+     "add host to the list of input nodes")
+    ("compute-nodes,C",
+     po::value< std::vector<std::string> >()->multitoken(),
+     "add host to the list of compute nodes")
+    ;
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
-        
+
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
     std::ifstream ifs("ibtsb.cfg");
     po::store(po::parse_config_file(ifs, config), vm);
-    po::notify(vm);    
+    po::notify(vm);
 
     if (vm.count("help")) {
         std::cout << cmdline_options << "\n";
@@ -59,7 +59,7 @@ Parameters::parse_options(int argc, char* argv[])
 
     if (!vm.count("input-nodes"))
         throw ParametersException("list of input nodes is empty");
-        
+
     if (!vm.count("compute-nodes"))
         throw ParametersException("list of compute nodes is empty");
 
@@ -91,7 +91,7 @@ Parameters::parse_options(int argc, char* argv[])
             throw ParametersException("no node type specifed");
         }
     }
-        
+
     if (_verbose)
         std::cout << desc();
 }
@@ -100,7 +100,7 @@ Parameters::parse_options(int argc, char* argv[])
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
-    copy(v.begin(), v.end(), std::ostream_iterator<T>(os, " ")); 
+    copy(v.begin(), v.end(), std::ostream_iterator<T>(os, " "));
     return os;
 }
 
@@ -108,15 +108,15 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 std::string const
 Parameters::desc() const
 {
-   std::stringstream st;
-   
-   st << "input nodes (" << _input_nodes.size() << "): "
-      << _input_nodes << std::endl;
-   st << "compute nodes (" << _compute_nodes.size() << "): "
-      << _compute_nodes << std::endl;
-   st << "this node: "
-      << (_node_type == INPUT_NODE ? "input" : "compute")
-      << " node #" << _node_index << std::endl;
+    std::stringstream st;
 
-   return st.str();
+    st << "input nodes (" << _input_nodes.size() << "): "
+       << _input_nodes << std::endl;
+    st << "compute nodes (" << _compute_nodes.size() << "): "
+       << _compute_nodes << std::endl;
+    st << "this node: "
+       << (_node_type == INPUT_NODE ? "input" : "compute")
+       << " node #" << _node_index << std::endl;
+
+    return st.str();
 }

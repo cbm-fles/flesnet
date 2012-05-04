@@ -3,7 +3,7 @@
  *
  * 2012, Jan de Cuveland
  */
- 
+
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 
