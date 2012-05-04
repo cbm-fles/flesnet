@@ -596,9 +596,9 @@ public:
         send_wr_tscdesc.num_sge = 1;
         send_wr_tscdesc.wr.rdma.rkey = _ctx->_server_pdata[1].buf_rkey;
         send_wr_tscdesc.wr.rdma.remote_addr =
-            (uintptr_t) (_ctx->_server_pdata[1].buf_va
-                         + (_cn_wp.desc % CN_DESCBUF_WORDS)
-                         * sizeof(tscdesc_t));
+            (uintptr_t)(_ctx->_server_pdata[1].buf_va
+                        + (_cn_wp.desc % CN_DESCBUF_WORDS)
+                        * sizeof(tscdesc_t));
 
         Log.info() << "POST SEND data (TS " << timeslice << ")";
 
@@ -774,7 +774,7 @@ public:
             if (ibv_req_notify_cq(_ctx->_cq, 0))
                 throw ApplicationException("ibv_req_notify_cq failed");
 
-            while((ne = ibv_poll_cq(_ctx->_cq, ne_max, wc))) {
+            while ((ne = ibv_poll_cq(_ctx->_cq, ne_max, wc))) {
                 if (ne < 0)
                     throw ApplicationException("ibv_poll_cq failed");
 

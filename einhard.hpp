@@ -91,7 +91,7 @@ enum LogLevel { ALL, /**< Log all message */
 /**
  * Retrieve a human readable representation of the given log level value.
  */
-inline char const * getLogLevelString( const LogLevel level );
+inline char const * getLogLevelString(const LogLevel level);
 
 /**
  * A stream modifier that allows to colorize the log output.
@@ -132,7 +132,7 @@ _COLOR(Cyan,    "01;36");
 _COLOR(DCyan,   "00;36");
 _COLOR(White,   "01;37");
 _COLOR(Gray,    "00;37");
-_COLOR(NoColor, "0"    );
+_COLOR(NoColor, "0");
 #undef _COLOR
 
 #define ANSI_COLOR_WARN  _Orange::ANSI()
@@ -154,18 +154,18 @@ private:
     mutable bool resetColor;
 
 public:
-    OutputFormatter( std::ostream * const out, bool const colorize ) : out( out ), colorize( colorize ),
+    OutputFormatter(std::ostream * const out, bool const colorize) : out(out), colorize(colorize),
         resetColor(false) {
-        if( out != 0 ) {
+        if (out != 0) {
             // Figure out current time
             time_t rawtime;
             tm * timeinfo;
-            time( &rawtime );
-            timeinfo = localtime( &rawtime );
+            time(&rawtime);
+            timeinfo = localtime(&rawtime);
 
-            if( colorize ) {
+            if (colorize) {
                 // set color according to log level
-                switch ( VERBOSITY ) {
+                switch (VERBOSITY) {
                 case WARN:
                     *out << ANSI_COLOR_WARN;
                     break;
@@ -199,11 +199,11 @@ public:
             // for non-console output pure timestamp would probably be better
 
             // output the log level of the message
-            *out << ' ' << getLogLevelString( VERBOSITY ) << ": ";
+            *out << ' ' << getLogLevelString(VERBOSITY) << ": ";
 
-            if( colorize ) {
+            if (colorize) {
                 // reset color according to log level
-                switch ( VERBOSITY ) {
+                switch (VERBOSITY) {
                 case INFO:
                 case DEBUG:
                 case WARN:
@@ -219,7 +219,7 @@ public:
         }
     }
 
-    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<( const Color<T> &col ) const {
+    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<(const Color<T> &col) const {
         if (out && colorize) {
             *out << col.ansiCode();
             resetColor = col.resetColor();
@@ -227,9 +227,9 @@ public:
         return *this;
     }
 
-    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<( const T &msg ) const {
+    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<(const T &msg) const {
         // output the log message
-        if( out != 0 ) {
+        if (out != 0) {
             *out << msg;
             if (resetColor) {
                 *out << ANSI_COLOR_CLEAR;
@@ -240,13 +240,13 @@ public:
         return *this;
     }
 
-    ~OutputFormatter( ) {
-        if( out != 0 ) {
+    ~OutputFormatter() {
+        if (out != 0) {
             // make sure there is no strange formatting set anymore
-            *out << std::resetiosflags(  std::ios_base::floatfield  | std::ios_base::basefield
-                                         | std::ios_base::adjustfield | std::ios_base::uppercase
-                                         | std::ios_base::showpos     | std::ios_base::showpoint
-                                         | std::ios_base::showbase    |  std::ios_base::boolalpha );
+            *out << std::resetiosflags(std::ios_base::floatfield  | std::ios_base::basefield
+                                       | std::ios_base::adjustfield | std::ios_base::uppercase
+                                       | std::ios_base::showpos     | std::ios_base::showpoint
+                                       | std::ios_base::showbase    |  std::ios_base::boolalpha);
 
             *out << std::endl; // TODO this would probably better be only '\n' as to not flush the buffers
         }
@@ -274,10 +274,10 @@ public:
      * The object will automatically colorize output on ttys and not colorize output
      * on non ttys.
      */
-    Logger( const LogLevel verbosity = WARN ) : verbosity( verbosity ) {
+    Logger(const LogLevel verbosity = WARN) : verbosity(verbosity) {
         // use some, sadly not c++-ways to figure out whether we are writing ot a terminal
         // only colorize when we are writing ot a terminal
-        colorize = isatty( fileno( stdout ) );
+        colorize = isatty(fileno(stdout));
     };
     /**
      * Create a new Logger object explicitly selecting whether to colorize the output or not.
@@ -285,7 +285,7 @@ public:
      * Be aware that if output colorization is selected output will even be colorized if
      * output is to a non tty.
      */
-    Logger( const LogLevel verbosity, const bool colorize ) : verbosity( verbosity ), colorize( colorize ) { };
+    Logger(const LogLevel verbosity, const bool colorize) : verbosity(verbosity), colorize(colorize) { };
 
     /** Access to the trace message stream. */
     inline const OutputFormatter<TRACE> trace() const;
@@ -318,7 +318,7 @@ public:
      * Be aware that the verbosity can not be increased over the level given by the template
      * parameter
      */
-    inline void setVerbosity( LogLevel verbosity ) {
+    inline void setVerbosity(LogLevel verbosity) {
         this->verbosity = verbosity;
     }
     /** Retrieve the current log level.
@@ -327,25 +327,25 @@ public:
      * methos beTrace(), beDebug(), beInfo(), beWarn(), beError() and beFatal() should be
      * preffered.
      */
-    inline LogLevel getVerbosity( ) const {
+    inline LogLevel getVerbosity() const {
         return this->verbosity;
     }
     /**
      * Retrieve a human readable representation of the current log level
      */
-    inline char const * getVerbosityString( ) const {
-        return getLogLevelString( this->verbosity );
+    inline char const * getVerbosityString() const {
+        return getLogLevelString(this->verbosity);
     }
     /**
      * Select whether the output stream should be colorized.
      */
-    inline void setColorize( bool colorize ) {
+    inline void setColorize(bool colorize) {
         this->colorize = colorize;
     }
     /**
      * Check whether the output stream is colorized.
      */
-    inline void getColorize( ) const {
+    inline void getColorize() const {
         return this->colorize;
     }
 };
@@ -354,9 +354,9 @@ public:
  * IMPLEMENTATIONS
  */
 
-inline char const * getLogLevelString( const LogLevel level )
+inline char const * getLogLevelString(const LogLevel level)
 {
-    switch( level ) {
+    switch (level) {
     case ALL:
         return "ALL";
     case TRACE:
@@ -380,10 +380,10 @@ inline char const * getLogLevelString( const LogLevel level )
 
 template<LogLevel MAX> const OutputFormatter<TRACE> Logger<MAX>::trace() const
 {
-    if( beTrace() )
-        return OutputFormatter<TRACE>( &std::cout, colorize );
+    if (beTrace())
+        return OutputFormatter<TRACE>(&std::cout, colorize);
     else
-        return OutputFormatter<TRACE>( 0, colorize );
+        return OutputFormatter<TRACE>(0, colorize);
 }
 
 template<LogLevel MAX> bool Logger<MAX>::beTrace() const
@@ -391,16 +391,16 @@ template<LogLevel MAX> bool Logger<MAX>::beTrace() const
 #ifdef NDEBUG
     return false;
 #else
-    return ( MAX <= TRACE && verbosity <= TRACE );
+    return (MAX <= TRACE && verbosity <= TRACE);
 #endif
 }
 
 template<LogLevel MAX> const OutputFormatter<DEBUG> Logger<MAX>::debug() const
 {
-    if( beDebug() )
-        return OutputFormatter<DEBUG>( &std::cout, colorize );
+    if (beDebug())
+        return OutputFormatter<DEBUG>(&std::cout, colorize);
     else
-        return OutputFormatter<DEBUG>( 0, colorize );
+        return OutputFormatter<DEBUG>(0, colorize);
 }
 
 template<LogLevel MAX> bool Logger<MAX>::beDebug() const
@@ -408,60 +408,60 @@ template<LogLevel MAX> bool Logger<MAX>::beDebug() const
 #ifdef NDEBUG
     return false;
 #else
-    return ( MAX <= DEBUG && verbosity <= DEBUG );
+    return (MAX <= DEBUG && verbosity <= DEBUG);
 #endif
 }
 
 template<LogLevel MAX> const OutputFormatter<INFO> Logger<MAX>::info() const
 {
-    if( beInfo() )
-        return OutputFormatter<INFO>( &std::cout, colorize );
+    if (beInfo())
+        return OutputFormatter<INFO>(&std::cout, colorize);
     else
-        return OutputFormatter<INFO>( 0, colorize );
+        return OutputFormatter<INFO>(0, colorize);
 }
 
 template<LogLevel MAX> bool Logger<MAX>::beInfo() const
 {
-    return ( MAX <= INFO && verbosity <= INFO );
+    return (MAX <= INFO && verbosity <= INFO);
 }
 
 template<LogLevel MAX> const OutputFormatter<WARN> Logger<MAX>::warn() const
 {
-    if( beWarn() )
-        return OutputFormatter<WARN>( &std::cout, colorize );
+    if (beWarn())
+        return OutputFormatter<WARN>(&std::cout, colorize);
     else
-        return OutputFormatter<WARN>( 0, colorize );
+        return OutputFormatter<WARN>(0, colorize);
 }
 
 template<LogLevel MAX> bool Logger<MAX>::beWarn() const
 {
-    return ( MAX <= WARN && verbosity <= WARN );
+    return (MAX <= WARN && verbosity <= WARN);
 }
 
 template<LogLevel MAX> const OutputFormatter<ERROR> Logger<MAX>::error() const
 {
-    if( beError() )
-        return OutputFormatter<ERROR>( &std::cout, colorize );
+    if (beError())
+        return OutputFormatter<ERROR>(&std::cout, colorize);
     else
-        return OutputFormatter<ERROR>( 0, colorize );
+        return OutputFormatter<ERROR>(0, colorize);
 }
 
 template<LogLevel MAX> bool Logger<MAX>::beError() const
 {
-    return ( MAX <= ERROR && verbosity <= ERROR );
+    return (MAX <= ERROR && verbosity <= ERROR);
 }
 
 template<LogLevel MAX> const OutputFormatter<FATAL> Logger<MAX>::fatal() const
 {
-    if( beFatal() )
-        return OutputFormatter<FATAL>( &std::cout, colorize );
+    if (beFatal())
+        return OutputFormatter<FATAL>(&std::cout, colorize);
     else
-        return OutputFormatter<FATAL>( 0, colorize );
+        return OutputFormatter<FATAL>(0, colorize);
 }
 
 template<LogLevel MAX> bool Logger<MAX>::beFatal() const
 {
-    return ( MAX <= FATAL && verbosity <= FATAL );
+    return (MAX <= FATAL && verbosity <= FATAL);
 }
 
 }
