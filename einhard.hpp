@@ -59,6 +59,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 #include <ctime>
 
 // This C header is sadly required to check whether writing to a terminal or a file
@@ -148,15 +149,23 @@ _COLOR(NoColor, "0");
 template<LogLevel VERBOSITY> class OutputFormatter {
 private:
     // The output stream to print to
-    std::ostream* const out;
+    std::ostream* out;
+#ifdef THREADSAFE
+    std::ostream* real_out;
+#endif
     // Whether to colorize the output
     bool const colorize;
     mutable bool resetColor;
 
 public:
-    OutputFormatter(std::ostream* const out, bool const colorize) : out(out), colorize(colorize),
+    OutputFormatter(std::ostream* out, bool const colorize) : colorize(colorize),
         resetColor(false) {
         if (out != 0) {
+#ifdef THREADSAFE
+            this->real_out = out;
+            out = new std::ostringstream;
+#endif
+            this->out = out;
             // Figure out current time
             time_t rawtime;
             tm* timeinfo;
@@ -249,6 +258,10 @@ public:
                                        | std::ios_base::showbase    |  std::ios_base::boolalpha);
 
             *out << std::endl; // TODO this would probably better be only '\n' as to not flush the buffers
+#ifdef THREADSAFE
+            *real_out << static_cast<std::ostringstream*>(out)->str();
+            delete out;
+#endif
         }
     }
 };

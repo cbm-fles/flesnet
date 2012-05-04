@@ -6,6 +6,8 @@ set (CMAKE_CXX_FLAGS "-g -Wall -pedantic")
 
 FIND_PACKAGE (Boost 1.40 COMPONENTS program_options thread REQUIRED)
 
+add_definitions(-DTHREADSAFE)
+
 add_executable (ibtsb main.cpp Parameters.cpp InputApplication.cpp ComputeApplication.cpp log.cpp)
 
 target_link_libraries (ibtsb rdmacm) 
