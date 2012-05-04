@@ -127,7 +127,7 @@ _COLOR(Orange,  "00;33");
 _COLOR(Blue,    "01;34");
 _COLOR(DBlue,   "00;34");
 _COLOR(Magenta, "01;35");
-_COLOR(DMagenta,"00;35");
+_COLOR(DMagenta, "00;35");
 _COLOR(Cyan,    "01;36");
 _COLOR(DCyan,   "00;36");
 _COLOR(White,   "01;37");

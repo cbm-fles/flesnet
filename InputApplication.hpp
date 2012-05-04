@@ -229,12 +229,12 @@ public:
     enum {
         TS_SIZE = 100, // timeslice size in number of MCs
         TS_OVERLAP = 2, // overlap region in number of MCs
-        DATA_WORDS = 64*1024*1024, // data buffer in 64-bit words
-        ADDR_WORDS = 1024*1024, // address buffer in 64-bit words
-        CN_DATABUF_WORDS = 128*1024, // data buffer in 64-bit words
+        DATA_WORDS = 64 * 1024 * 1024, // data buffer in 64-bit words
+        ADDR_WORDS = 1024 * 1024, // address buffer in 64-bit words
+        CN_DATABUF_WORDS = 128 * 1024, // data buffer in 64-bit words
         CN_DESCBUF_WORDS = 80, // desc buffer in entries
         TYP_CNT_WORDS = 128, // typical content words in MC
-        NUM_TS = 1024*1024*1024
+        NUM_TS = 1024 * 1024 * 1024
     };
 #else
     enum {
