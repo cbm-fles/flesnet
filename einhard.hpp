@@ -48,11 +48,11 @@
  * \section install_sec Installation
  *
  * Einhard is build using cmake. You can install it using the usual cmake triplet:
- * |code
+ * \code
  * cmake
  * make
  * sudo make install
- * |endcode
+ * \endcode
  * If you want to build a static lib or install to a custom path you can use the usual cmake
  * utilities to adjust the configuration.
  */
@@ -69,7 +69,7 @@
  */
 namespace einhard {
 /**
- * Version string of the Enhard library
+ * Version string of the Einhard library
  */
 static char const VERSION[] = "0.3+";
 
