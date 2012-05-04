@@ -42,8 +42,7 @@ public:
 };
 
 
-class Application
-{
+class Application {
 public:
     typedef struct {
         uint64_t buf_va;
@@ -60,16 +59,14 @@ protected:
 };
 
 
-class InputApplication : public Application
-{
+class InputApplication : public Application {
 public:
     explicit InputApplication(Parameters& par) : Application(par) { };
     virtual int run();
 };
 
 
-class ComputeApplication : public Application
-{
+class ComputeApplication : public Application {
 public:
     explicit ComputeApplication(Parameters& par) : Application(par) { };
     virtual int run();

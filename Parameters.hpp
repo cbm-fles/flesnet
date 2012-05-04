@@ -19,8 +19,7 @@ public:
 };
 
 
-class Parameters
-{
+class Parameters {
 public:
     typedef enum { COMPUTE_NODE, INPUT_NODE } node_type_t;
 

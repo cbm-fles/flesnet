@@ -22,8 +22,7 @@ main(int argc, char* argv[])
             ComputeApplication app(par);
             app.run();
         }
-    }
-    catch (std::exception const& e) {
+    } catch (std::exception const& e) {
         std::cerr << "error: " << e.what() << "\n";
         return EXIT_FAILURE;
     }

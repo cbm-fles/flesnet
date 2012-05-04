@@ -67,8 +67,7 @@
 /**
  * This namespace contains all objects required for logging using Einhard.
  */
-namespace einhard
-{
+namespace einhard {
 /**
  * Version string of the Enhard library
  */
@@ -97,8 +96,7 @@ inline char const * getLogLevelString( const LogLevel level );
 /**
  * A stream modifier that allows to colorize the log output.
  */
-template<typename Parent> struct Color
-{
+template<typename Parent> struct Color {
     bool reset;
     Color() : reset(true) {}
     Color<Parent> operator~() const {
@@ -147,8 +145,7 @@ _COLOR(NoColor, "0"    );
 /**
  * A wrapper for the output stream taking care proper formatting and colorization of the output.
  */
-template<LogLevel VERBOSITY> class OutputFormatter
-{
+template<LogLevel VERBOSITY> class OutputFormatter {
 private:
     // The output stream to print to
     std::ostream * const out;
@@ -158,18 +155,15 @@ private:
 
 public:
     OutputFormatter( std::ostream * const out, bool const colorize ) : out( out ), colorize( colorize ),
-        resetColor(false)
-    {
-        if( out != 0 )
-        {
+        resetColor(false) {
+        if( out != 0 ) {
             // Figure out current time
             time_t rawtime;
             tm * timeinfo;
             time( &rawtime );
             timeinfo = localtime( &rawtime );
 
-            if( colorize )
-            {
+            if( colorize ) {
                 // set color according to log level
                 switch ( VERBOSITY ) {
                 case WARN:
@@ -225,8 +219,7 @@ public:
         }
     }
 
-    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<( const Color<T> &col ) const
-    {
+    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<( const Color<T> &col ) const {
         if (out && colorize) {
             *out << col.ansiCode();
             resetColor = col.resetColor();
@@ -234,8 +227,7 @@ public:
         return *this;
     }
 
-    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<( const T &msg ) const
-    {
+    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<( const T &msg ) const {
         // output the log message
         if( out != 0 ) {
             *out << msg;
@@ -248,10 +240,8 @@ public:
         return *this;
     }
 
-    ~OutputFormatter( )
-    {
-        if( out != 0 )
-        {
+    ~OutputFormatter( ) {
+        if( out != 0 ) {
             // make sure there is no strange formatting set anymore
             *out << std::resetiosflags(  std::ios_base::floatfield  | std::ios_base::basefield
                                          | std::ios_base::adjustfield | std::ios_base::uppercase
@@ -272,8 +262,7 @@ public:
  *
  * The class can automatically detect non-tty output and will not colorize output in that case.
  */
-template<LogLevel MAX = ALL> class Logger
-{
+template<LogLevel MAX = ALL> class Logger {
 private:
     LogLevel verbosity;
     bool colorize;
@@ -329,8 +318,7 @@ public:
      * Be aware that the verbosity can not be increased over the level given by the template
      * parameter
      */
-    inline void setVerbosity( LogLevel verbosity )
-    {
+    inline void setVerbosity( LogLevel verbosity ) {
         this->verbosity = verbosity;
     }
     /** Retrieve the current log level.
@@ -339,29 +327,25 @@ public:
      * methos beTrace(), beDebug(), beInfo(), beWarn(), beError() and beFatal() should be
      * preffered.
      */
-    inline LogLevel getVerbosity( ) const
-    {
+    inline LogLevel getVerbosity( ) const {
         return this->verbosity;
     }
     /**
      * Retrieve a human readable representation of the current log level
      */
-    inline char const * getVerbosityString( ) const
-    {
+    inline char const * getVerbosityString( ) const {
         return getLogLevelString( this->verbosity );
     }
     /**
      * Select whether the output stream should be colorized.
      */
-    inline void setColorize( bool colorize )
-    {
+    inline void setColorize( bool colorize ) {
         this->colorize = colorize;
     }
     /**
      * Check whether the output stream is colorized.
      */
-    inline void getColorize( ) const
-    {
+    inline void getColorize( ) const {
         return this->colorize;
     }
 };
@@ -372,8 +356,7 @@ public:
 
 inline char const * getLogLevelString( const LogLevel level )
 {
-    switch( level )
-    {
+    switch( level ) {
     case ALL:
         return "ALL";
     case TRACE:

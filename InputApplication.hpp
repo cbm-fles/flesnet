@@ -17,7 +17,8 @@ enum REQUEST_ID { ID_RDMA_WRITE1 = 1, ID_RDMA_WRITE2, ID_RDMA_WRITE3,
                   ID_SEND, ID_RECEIVE
                 };
 
-inline std::ostream &operator<<(std::ostream &s, REQUEST_ID v) {
+inline std::ostream &operator<<(std::ostream &s, REQUEST_ID v)
+{
     switch (v) {
     case ID_RDMA_WRITE1:
         return s << "ID_RDMA_WRITE1";
@@ -202,8 +203,7 @@ private:
 };
 
 
-class InputBuffer
-{
+class InputBuffer {
 public:
     InputContext *_ctx;
 
@@ -251,8 +251,7 @@ public:
 
 private:
     void
-    wait_for_data(uint64_t min_mc_number)
-    {
+    wait_for_data(uint64_t min_mc_number) {
         //Log.debug() << "wait_for_data()";
         //        Log.info() << "min_mc_number: " << min_mc_number;
         //        Log.info() << "_mc_written: " << _mc_written;
@@ -322,8 +321,7 @@ private:
 
 public:
     void
-    setup()
-    {
+    setup() {
         // register memory regions
         _mr_recv = ibv_reg_mr(_ctx->_pd, &_receive_cn_ack,
                               sizeof(cn_bufpos_t),
@@ -350,8 +348,7 @@ public:
     }
 
     std::string
-    getStateString()
-    {
+    getStateString() {
         std::ostringstream s;
 
         s << "/--- addr buf ---" << std::endl;
@@ -396,10 +393,12 @@ public:
         };
 
         struct bufdesc target_desc[] = {
-            {   _ctx->_server_pdata[0].buf_va, CN_DATABUF_WORDS, sizeof(uint64_t),
+            {
+                _ctx->_server_pdata[0].buf_va, CN_DATABUF_WORDS, sizeof(uint64_t),
                 (char *) "cn_data"
             },
-            {   _ctx->_server_pdata[1].buf_va, CN_DESCBUF_WORDS, sizeof(tscdesc_t),
+            {
+                _ctx->_server_pdata[1].buf_va, CN_DESCBUF_WORDS, sizeof(tscdesc_t),
                 (char *) "cn_desc"
             },
             {0, 0, 0, 0}
@@ -611,8 +610,7 @@ public:
 
 
     void
-    sender_loop()
-    {
+    sender_loop() {
         setup_recv();
         setup_send();
         post_recv_cn_ack();
@@ -756,8 +754,7 @@ public:
 
 
     void
-    completion_handler()
-    {
+    completion_handler() {
         const int ne_max = 10;
 
         struct ibv_cq *ev_cq;

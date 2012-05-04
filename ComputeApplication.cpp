@@ -27,7 +27,8 @@ cn_bufpos_t _cn_wp = {0};
 
 
 int my_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
-                 struct ibv_send_wr **bad_wr) {
+                 struct ibv_send_wr **bad_wr)
+{
     struct ibv_send_wr *wr_first = wr;
 #ifdef CHATTY
     struct bufdesc {
@@ -38,7 +39,8 @@ int my_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
     };
 
     struct bufdesc source_desc[] = {
-        {   (uint64_t) &send_cn_ack, 1, sizeof(cn_bufpos_t),
+        {
+            (uint64_t) &send_cn_ack, 1, sizeof(cn_bufpos_t),
             (char *) "send_cn_ack"
         },
         {0, 0, 0, 0}
