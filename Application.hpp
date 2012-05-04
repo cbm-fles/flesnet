@@ -13,6 +13,28 @@
 #include "Parameters.hpp"
 
 
+// timeslice component descriptor
+typedef struct {
+    uint64_t ts_num;
+    uint64_t offset;
+    uint64_t size;
+} tscdesc_t;
+
+
+typedef struct {
+    uint64_t data;
+    uint64_t desc;
+} cn_bufpos_t;
+
+typedef struct {
+    uint8_t hdrrev;
+    uint8_t sysid;
+    uint16_t flags;
+    uint32_t size;
+    uint64_t time;
+} mc_hdr_t;
+
+
 class ApplicationException : public std::runtime_error {
 public:
     explicit ApplicationException(const std::string& what_arg = "")
@@ -43,8 +65,6 @@ class InputApplication : public Application
 public:
     explicit InputApplication(Parameters& par) : Application(par) { };
     virtual int run();
-private:
-    enum { RESOLVE_TIMEOUT_MS = 5000 };
 };
 
 
@@ -56,4 +76,4 @@ public:
 };
 
 
-#endif /* IBTSB_HPP */
+#endif /* APPLICATION_HPP */

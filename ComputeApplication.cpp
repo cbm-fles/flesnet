@@ -1,29 +1,115 @@
 /*
- * ComputeApplication.hpp
+ * ComputeApplication.cpp
  *
  * 2012, Jan de Cuveland
  */
 
-/*
- * waits for client to connect, receives two integers, and sends their
- * sum back to the client.
- *
- * Based on an example by Roland Dreier, http://www.digitalvampire.org/
- */
-
 #include <cstdlib>
 #include <cstring>
+#include <sstream>
 
 #include <arpa/inet.h>
 #include <infiniband/arch.h>
 #include <rdma/rdma_cma.h>
 
+#include <boost/thread.hpp>
+
 #include "Application.hpp"
 
+//#define CHATTY
 
-int 
+cn_bufpos_t _send_cn_ack = {0};
+cn_bufpos_t _cn_ack = {0};
+
+cn_bufpos_t _recv_cn_wp = {0};
+cn_bufpos_t _cn_wp = {0};
+
+
+
+    int my_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
+                     struct ibv_send_wr **bad_wr) {
+        struct ibv_send_wr *wr_first = wr;
+#ifdef CHATTY
+        struct bufdesc {
+            uint64_t addr;
+            size_t nmemb;
+            size_t size;
+            char *name;
+        };
+
+        struct bufdesc source_desc[] = {
+            {(uint64_t) &send_cn_ack, 1, sizeof(cn_bufpos_t),
+             (char *) "send_cn_ack"},
+            {0, 0, 0, 0}
+        };
+        
+        struct bufdesc target_desc[] = {
+            {0, 0, 0, 0}
+        };
+    
+        std::cout << "/--- ibv_post_send() ---" << std::endl;
+        int wr_num = 0;
+        while (wr) {
+            std::cout << "| wr" << wr_num << ": id=" << wr->wr_id
+                      << " opcode=" << wr->opcode
+                      << " num_sge=" << wr->num_sge;
+            if (wr->wr.rdma.remote_addr) {
+                uint64_t addr = wr->wr.rdma.remote_addr;
+                std::cout << " rdma.remote_addr=";
+                struct bufdesc *b = target_desc;
+                while (b->name) {
+                    if (addr >= b->addr
+                        && addr < b->addr + b->nmemb * b->size) {
+                        std::cout << b->name << "["
+                                  << (addr - b->addr) / b->size << "]";
+                        break;
+                    }
+                    b++;
+                }
+                if (!b->name) {
+                    std::cout << addr;
+                }
+            }
+            std::cout << std::endl;
+            std::cout << "|   sg_list=";
+            uint32_t total_length = 0;
+            for (int i = 0; i < wr->num_sge; i++) {
+                uint64_t addr = wr->sg_list[i].addr;
+                uint32_t length =  wr->sg_list[i].length;
+                struct bufdesc *b = source_desc;
+                while (b->name) {
+                    if (addr >= b->addr
+                        && addr < b->addr + b->nmemb * b->size) {
+                        std::cout << b->name << "["
+                                  << (addr - b->addr) / b->size << "]:";
+                        break;
+                    }
+                    b++;
+                }
+                std::cout << length / (sizeof(uint64_t)) << " ";
+                total_length += length;
+            }
+            std::cout << "(" << total_length / (sizeof(uint64_t))
+                      << " words total)" << std::endl;
+            wr = wr->next;
+            wr_num++;
+        }
+        std::cout << "\\---------" << std::endl;
+#endif
+        return ibv_post_send(qp, wr_first, bad_wr);
+    }
+
+int
 ComputeApplication::run()
 {
+    enum { ID_SEND = 4, ID_RECEIVE };
+    const int CN_DATABUF_WORDS = 128*1024;
+    const int CN_DESCBUF_WORDS = 80;
+        //const int CN_DATABUF_WORDS = 32;
+        //const int CN_DESCBUF_WORDS = 4;
+
+
+    
     DEBUG("Setting up RDMA CM structures");
 
     // Create an rdma event channel
@@ -72,7 +158,7 @@ ComputeApplication::run()
     DEBUG("Creating verbs objects");
 
     // Allocate a protection domain (PD) for the given context
-    struct ibv_pd  *pd = ibv_alloc_pd(cm_id->verbs);
+    struct ibv_pd *pd = ibv_alloc_pd(cm_id->verbs);
     if (!pd)
         throw ApplicationException("allocation of protection domain failed");
 
@@ -81,9 +167,9 @@ ComputeApplication::run()
     if (!comp_chan)
         throw ApplicationException("creation of completion event channel failed");
 
-    // Create a completion queue (CQ) for the given context with at least 2
+    // Create a completion queue (CQ) for the given context with at least 20
     // entries, using the given completion channel to return completion events
-    struct ibv_cq  *cq = ibv_create_cq(cm_id->verbs, 2, NULL, comp_chan, 0);
+    struct ibv_cq  *cq = ibv_create_cq(cm_id->verbs, 20, NULL, comp_chan, 0);
     if (!cq)
         throw ApplicationException("creation of completion queue failed");
 
@@ -93,33 +179,29 @@ ComputeApplication::run()
         throw ApplicationException("request of completion notification failed");
 
     // Allocate buffer space
-    uint32_t* buf = (uint32_t *) calloc(2, sizeof(uint32_t));
-    if (!buf)
+    uint64_t* _data = (uint64_t *) calloc(CN_DATABUF_WORDS, sizeof(uint64_t));
+    tscdesc_t * _desc = (tscdesc_t *) calloc(CN_DESCBUF_WORDS, sizeof(tscdesc_t));
+    if (!_data || !_desc)
         throw ApplicationException("allocation of buffer space failed");
 
     // Register a memory region (MR) associated with the given protection domain
     // (local read access is always enabled)
-    struct ibv_mr *mr = ibv_reg_mr(pd, buf, 2 * sizeof(uint32_t),
-                                   IBV_ACCESS_LOCAL_WRITE |
-                                   IBV_ACCESS_REMOTE_READ |
-                                   IBV_ACCESS_REMOTE_WRITE);
-    if (!mr)
+    struct ibv_mr *mr_data = ibv_reg_mr(pd, _data,
+                                        CN_DATABUF_WORDS * sizeof(uint64_t),
+                                        IBV_ACCESS_LOCAL_WRITE |
+                                        IBV_ACCESS_REMOTE_WRITE);
+    struct ibv_mr *mr_desc = ibv_reg_mr(pd, _desc,
+                                        CN_DESCBUF_WORDS * sizeof(tscdesc_t),
+                                        IBV_ACCESS_LOCAL_WRITE |
+                                        IBV_ACCESS_REMOTE_WRITE);
+    struct ibv_mr *mr_send = ibv_reg_mr(pd, &_send_cn_ack,
+                                        sizeof(cn_bufpos_t), 0);
+    struct ibv_mr *mr_recv = ibv_reg_mr(pd, &_recv_cn_wp,
+                                        sizeof(cn_bufpos_t),
+                                        IBV_ACCESS_LOCAL_WRITE);
+    if (!mr_data || !mr_desc || !mr_recv || !mr_send)
         throw ApplicationException("registration of memory region failed");
 
-    ////
-    uint64_t *atomic_buf = (uint64_t *) calloc(2, sizeof(uint64_t));
-    atomic_buf[0] = htonll(23);
-    atomic_buf[1] = htonll(42);
-    if (!atomic_buf)
-        throw ApplicationException("allocation of buffer space failed");
-    
-    struct ibv_mr *atomic_mr = ibv_reg_mr(pd, atomic_buf, 2 * sizeof(uint64_t),
-                                          IBV_ACCESS_LOCAL_WRITE |
-                                          IBV_ACCESS_REMOTE_ATOMIC);
-    if (!atomic_mr)
-        throw ApplicationException("registration of memory region failed");
-    ////
-    
     // Allocate a queue pair (QP) associated with the specified rdma id
     struct ibv_qp_init_attr qp_attr;
     memset(&qp_attr, 0, sizeof qp_attr);
@@ -138,30 +220,30 @@ ComputeApplication::run()
   
     DEBUG("Post receive before accepting connection");
 
-    // Post a receive work request (WR) to the receive queue
-    // (received value will be written to buf[1])
-    struct ibv_sge sge;
-    memset(&sge, 0, sizeof sge);
-    sge.addr = (uintptr_t) buf + sizeof(uint32_t);
-    sge.length = sizeof(uint32_t);
-    sge.lkey = mr->lkey;
-    struct ibv_recv_wr recv_wr;
-    memset(&recv_wr, 0, sizeof recv_wr);
-    recv_wr.next = NULL;
-    recv_wr.sg_list = &sge;
-    recv_wr.num_sge = 1;
-    struct ibv_recv_wr *bad_recv_wr;
-    if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
-        throw ApplicationException("post_recv failed");
+    // post initial receive request
+    {
+        struct ibv_sge sge;
+        sge.addr = (uintptr_t) &_recv_cn_wp;
+        sge.length = sizeof(cn_bufpos_t);
+        sge.lkey = mr_recv->lkey;
+        struct ibv_recv_wr recv_wr;
+        memset(&recv_wr, 0, sizeof recv_wr); 
+        recv_wr.wr_id = ID_RECEIVE;
+        recv_wr.sg_list = &sge;
+        recv_wr.num_sge = 1;
+        struct ibv_recv_wr *bad_recv_wr;
+        if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
+            throw ApplicationException("post_recv failed");
+    }
   
     DEBUG("Accepting connection");
 
     // Accept rdma connection request
     pdata_t rep_pdata[2];
-    rep_pdata[0].buf_va = (uintptr_t) buf;
-    rep_pdata[0].buf_rkey = mr->rkey;
-    rep_pdata[1].buf_va = (uintptr_t) atomic_buf;
-    rep_pdata[1].buf_rkey = atomic_mr->rkey;
+    rep_pdata[0].buf_va = (uintptr_t) _data;
+    rep_pdata[0].buf_rkey = mr_data->rkey;
+    rep_pdata[1].buf_va = (uintptr_t) _desc;
+    rep_pdata[1].buf_rkey = mr_desc->rkey;
     struct rdma_conn_param conn_param;
     memset(&conn_param, 0, sizeof conn_param);
     conn_param.responder_resources = 1;
@@ -185,66 +267,114 @@ ComputeApplication::run()
   
     DEBUG("Wait for completion");
 
-    // Wait for the next completion event in the given channel (BLOCKING)
-    struct ibv_cq *evt_cq;
-    void *cq_context;
-    if (ibv_get_cq_event(comp_chan, &evt_cq, &cq_context))
-        throw ApplicationException("retrieval of cq event failed");
+    while (1) {
+        // Wait for the next completion event in the given channel (BLOCKING)
+        struct ibv_cq *ev_cq;
+        void *ev_ctx;
+        
+        if (ibv_get_cq_event(comp_chan, &ev_cq, &ev_ctx))
+            throw ApplicationException("retrieval of cq event failed");
+        
+        // Acknowledge the completion queue (CQ) event
+        ibv_ack_cq_events(ev_cq, 1);
+        
+        if (ev_cq != cq)
+            throw ApplicationException("CQ event for unknown CQ");
+        
+        // Request a completion notification on the given completion queue
+        // ("one shot" - only one completion event will be generated)
+        if (ibv_req_notify_cq(cq, 0))
+            throw ApplicationException("request of completion notification failed");
+        struct ibv_wc wc[1];
+        int ne;
+        
+        // Poll the completion queue (CQ) for work completions (WC)
+        ne = ibv_poll_cq(cq, 1, wc);
+        if (ne < 0)
+            throw ApplicationException("polling the completion queue failed");
+        
+        for (int i = 0; i < ne; i++) {
+            if (wc[i].status != IBV_WC_SUCCESS) {
+                std::ostringstream s;
+                s << "failed status " << ibv_wc_status_str(wc[i].status)
+                  << " (" << wc[i].status << ") for wr_id "
+                  << (int) wc[i].wr_id;
+                throw ApplicationException(s.str());
+            }
+            
+            switch ((int) wc[i].wr_id) {
+            case ID_SEND:
+                std::cout << "SEND complete" << std::endl;
+                break;
 
-    // Request a completion notification on the given completion queue
-    // ("one shot" - only one completion event will be generated)
-    if (ibv_req_notify_cq(cq, 0))
-        throw ApplicationException("request of completion notification failed");
+            case ID_RECEIVE:
+                // post new receive request
+                {
+                    struct ibv_sge sge;
+                    sge.addr = (uintptr_t) &_recv_cn_wp;
+                    sge.length = sizeof(cn_bufpos_t);
+                    sge.lkey = mr_recv->lkey;
+                    struct ibv_recv_wr recv_wr;
+                    memset(&recv_wr, 0, sizeof recv_wr); 
+                    recv_wr.wr_id = ID_RECEIVE;
+                    recv_wr.sg_list = &sge;
+                    recv_wr.num_sge = 1;
+                    struct ibv_recv_wr *bad_recv_wr;
+                    if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
+                        throw ApplicationException("post_recv failed");
+                }
+                _cn_wp = _recv_cn_wp;
+                // debug output
+                std::cout << "RECEIVE _cn_wp: data=" << _cn_wp.data
+                          << " desc=" << _cn_wp.desc << std::endl;
+#ifdef CHATTY
+                std::cout << "/--- data buf ---" << std::endl << "|";
+                for (unsigned int i = tscdesc.offset;
+                     i < tscdesc.offset + tscdesc.size; i++) {
+                    std::cout << " (" << (i % CN_DATABUF_WORDS) << ")" << std::hex
+                              << _data[i % CN_DATABUF_WORDS]
+                              << std::dec;
+                }
+                std::cout << std::endl << "\\---------" << std::endl;
+#endif
+                // end debug output
 
-    // Poll the completion queue (CQ) for 1 work completion (WC)
-    struct ibv_wc wc;
-    if (ibv_poll_cq(cq, 1, &wc) < 1)
-        throw ApplicationException("polling the completion queue failed");
-    if (wc.opcode & IBV_WC_RECV)
-        DEBUG("RECV completion received");
-    if (wc.status != IBV_WC_SUCCESS)
-        throw ApplicationException("transmission unsuccessful");
-  
-    DEBUG("Add two integers and send reply back");
+                // check buffer contents
+                //boost::this_thread::sleep(boost::posix_time::millisec(500));
+                // end check buffer contents
 
-    // Add the two numbers
-    buf[0] = htonl(ntohl(buf[0]) + ntohl(buf[1]));
+                // DEBUG: empty the buffer
+                _cn_ack = _cn_wp;
+                
+                // send ack
+                {
+                    _send_cn_ack = _cn_ack;
+                    std::cout << "SEND posted" << std::endl;
+                    struct ibv_sge sge3;
+                    sge3.addr = (uintptr_t) &_send_cn_ack;
+                    sge3.length = sizeof(cn_bufpos_t);
+                    sge3.lkey = mr_send->lkey;
+                    struct ibv_send_wr send_wr2;
+                    memset(&send_wr2, 0, sizeof send_wr2); 
+                    send_wr2.wr_id = ID_SEND;
+                    send_wr2.opcode = IBV_WR_SEND;
+                    send_wr2.send_flags = IBV_SEND_SIGNALED;
+                    send_wr2.sg_list = &sge3;
+                    send_wr2.num_sge = 1;
+                    struct ibv_send_wr *bad_send_wr;
+                    if (my_post_send(cm_id->qp, &send_wr2, &bad_send_wr))
+                        throw ApplicationException("post_send failed");
+                }
+                break;
 
-    // Post a send work request (WR) to the send queue
-    struct ibv_sge sge2;
-    memset(&sge2, 0, sizeof sge2);
-    sge2.addr = (uintptr_t) buf;
-    sge2.length = sizeof(uint32_t);
-    sge2.lkey = mr->lkey;
-    struct ibv_send_wr send_wr;
-    memset(&send_wr, 0, sizeof send_wr);
-    send_wr.opcode = IBV_WR_SEND;
-    send_wr.send_flags = IBV_SEND_SIGNALED;
-    send_wr.sg_list = &sge2;
-    send_wr.num_sge = 1;
-    struct ibv_send_wr *bad_send_wr;
-    if (ibv_post_send(cm_id->qp, &send_wr, &bad_send_wr))
-        throw ApplicationException("post_send failed");
-
-    DEBUG("Wait for send completion");
-
-    // Wait for the next completion event in the given channel
-    if (ibv_get_cq_event(comp_chan, &evt_cq, &cq_context))
-        throw ApplicationException("retrieval of cq event failed");
-
-    // Poll the completion queue (CQ) for 1 work completion (WC)
-    if (ibv_poll_cq(cq, 1, &wc) < 1)
-        throw ApplicationException("polling the completion queue failed");
-    if (wc.status != IBV_WC_SUCCESS)
-        throw ApplicationException("SEND unsuccessful");
-    DEBUG("SEND successful");
-
-    // Acknowledge 2 completion queue (CQ) events
-    ibv_ack_cq_events(cq, 2);
-
-    std::cout << "local atomic buffer: "
-              << ntohll(atomic_buf[0]) << " "
-              << ntohll(atomic_buf[1]) << std::endl;
+            default:
+                throw ApplicationException("completion for unknown wr_id");
+            }
+        }
+    }
 
     return 0;
 }
+
+
+
