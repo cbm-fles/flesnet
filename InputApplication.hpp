@@ -17,7 +17,7 @@ enum REQUEST_ID { ID_RDMA_WRITE1 = 1, ID_RDMA_WRITE2, ID_RDMA_WRITE3,
                   ID_SEND, ID_RECEIVE
                 };
 
-inline std::ostream &operator<<(std::ostream &s, REQUEST_ID v)
+inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
 {
     switch (v) {
     case ID_RDMA_WRITE1:
@@ -49,24 +49,24 @@ public:
     // int                      rx_depth;
     // int                      pending;
     Application::pdata_t _server_pdata[2];
-    struct ibv_pd *_pd;
-    struct ibv_comp_channel *_comp_chan;
-    struct ibv_qp *_qp;
-    struct ibv_cq *_cq;
+    struct ibv_pd* _pd;
+    struct ibv_comp_channel* _comp_chan;
+    struct ibv_qp* _qp;
+    struct ibv_cq* _cq;
 
 
-    void connect(const char *hostname) {
+    void connect(const char* hostname) {
         Log.info() << "INFO output";
 
         Log.debug() << "Setting up RDMA CM structures";
 
         // Create an rdma event channel
-        struct rdma_event_channel *cm_channel = rdma_create_event_channel();
+        struct rdma_event_channel* cm_channel = rdma_create_event_channel();
         if (!cm_channel)
             throw ApplicationException("event channel creation failed");
 
         // Create rdma id (for listening)
-        struct rdma_cm_id *cm_id;
+        struct rdma_cm_id* cm_id;
         int err = rdma_create_id(cm_channel, &cm_id, NULL, RDMA_PS_TCP);
         if (err)
             throw ApplicationException("id creation failed");
@@ -77,7 +77,7 @@ public:
         memset(&hints, 0, sizeof hints);
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
-        struct addrinfo *res;
+        struct addrinfo* res;
 
         err = getaddrinfo(hostname, "20079", &hints, &res);
         if (err)
@@ -87,7 +87,7 @@ public:
 
         // Resolve destination address from IP address to rdma address
         // (binds cm_id to a local device)
-        for (struct addrinfo *t = res; t; t = t->ai_next) {
+        for (struct addrinfo* t = res; t; t = t->ai_next) {
             err = rdma_resolve_addr(cm_id, NULL, t->ai_addr, RESOLVE_TIMEOUT_MS);
             if (!err)
                 break;
@@ -96,7 +96,7 @@ public:
             throw ApplicationException("RDMA address resolution failed");
 
         // Retrieve the next pending communication event
-        struct rdma_cm_event *event;
+        struct rdma_cm_event* event;
         err = rdma_get_cm_event(cm_channel, &event);
         if (err)
             throw ApplicationException("retrieval of communication event failed");
@@ -205,9 +205,9 @@ private:
 
 class InputBuffer {
 public:
-    InputContext *_ctx;
+    InputContext* _ctx;
 
-    InputBuffer(InputContext *ctx) :
+    InputBuffer(InputContext* ctx) :
         _our_turn(1),
         _acked_mc(0), _acked_data(0),
         _mc_written(0), _data_written(0) {
@@ -314,10 +314,10 @@ private:
         }
     };
 
-    struct ibv_mr *_mr_recv;
-    struct ibv_mr *_mr_send;
-    struct ibv_mr *_mr_data;
-    struct ibv_mr *_mr_addr;
+    struct ibv_mr* _mr_recv;
+    struct ibv_mr* _mr_send;
+    struct ibv_mr* _mr_data;
+    struct ibv_mr* _mr_addr;
 
 public:
     void
@@ -371,9 +371,9 @@ public:
         return s.str();
     }
 
-    int my_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
-                     struct ibv_send_wr **bad_wr) {
-        struct ibv_send_wr *wr_first = wr;
+    int my_post_send(struct ibv_qp* qp, struct ibv_send_wr* wr,
+                     struct ibv_send_wr** bad_wr) {
+        struct ibv_send_wr* wr_first = wr;
         const int verbose = 0;
 #ifdef CHATTY
 
@@ -383,23 +383,23 @@ public:
             uint64_t addr;
             size_t nmemb;
             size_t size;
-            char *name;
+            char* name;
         };
 
         struct bufdesc source_desc[] = {
-            {(uint64_t) _data, DATA_WORDS, sizeof(uint64_t), (char *) "data"},
-            {(uint64_t) _addr, ADDR_WORDS, sizeof(uint64_t), (char *) "addr"},
+            {(uint64_t) _data, DATA_WORDS, sizeof(uint64_t), (char*) "data"},
+            {(uint64_t) _addr, ADDR_WORDS, sizeof(uint64_t), (char*) "addr"},
             {0, 0, 0, 0}
         };
 
         struct bufdesc target_desc[] = {
             {
                 _ctx->_server_pdata[0].buf_va, CN_DATABUF_WORDS, sizeof(uint64_t),
-                (char *) "cn_data"
+                (char*) "cn_data"
             },
             {
                 _ctx->_server_pdata[1].buf_va, CN_DESCBUF_WORDS, sizeof(tscdesc_t),
-                (char *) "cn_desc"
+                (char*) "cn_desc"
             },
             {0, 0, 0, 0}
         };
@@ -416,7 +416,7 @@ public:
                 uint64_t addr = wr->wr.rdma.remote_addr;
                 if (verbose)
                     s << " rdma.remote_addr=";
-                struct bufdesc *b = target_desc;
+                struct bufdesc* b = target_desc;
                 while (b->name) {
                     if (addr >= b->addr
                             && addr < b->addr + b->nmemb * b->size) {
@@ -440,7 +440,7 @@ public:
             for (int i = 0; i < wr->num_sge; i++) {
                 uint64_t addr = wr->sg_list[i].addr;
                 uint32_t length =  wr->sg_list[i].length;
-                struct bufdesc *b = source_desc;
+                struct bufdesc* b = source_desc;
                 while (b->name) {
                     if (addr >= b->addr
                             && addr < b->addr + b->nmemb * b->size) {
@@ -603,7 +603,7 @@ public:
         Log.info() << "POST SEND data (TS " << timeslice << ")";
 
         // send everything
-        struct ibv_send_wr *bad_send_wr;
+        struct ibv_send_wr* bad_send_wr;
         if (my_post_send(_ctx->_qp, &send_wr_ts, &bad_send_wr))
             throw ApplicationException("post_send (rdma) failed");
     }
@@ -705,11 +705,11 @@ public:
 
     struct ibv_sge recv_sge;
     struct ibv_recv_wr recv_wr;
-    struct ibv_recv_wr *bad_recv_wr;
+    struct ibv_recv_wr* bad_recv_wr;
 
     struct ibv_sge send_sge;
     struct ibv_send_wr send_wr;
-    struct ibv_send_wr *bad_send_wr;
+    struct ibv_send_wr* bad_send_wr;
 
     void setup_recv() {
         recv_sge.addr = (uintptr_t) &_receive_cn_ack;
@@ -757,8 +757,8 @@ public:
     completion_handler() {
         const int ne_max = 10;
 
-        struct ibv_cq *ev_cq;
-        void *ev_ctx;
+        struct ibv_cq* ev_cq;
+        void* ev_ctx;
         struct ibv_wc wc[ne_max];
         int ne;
 
@@ -834,8 +834,8 @@ public:
     cn_bufpos_t _cn_wp;
     cn_bufpos_t _send_cn_wp;
 
-    uint64_t *_data;
-    uint64_t *_addr;
+    uint64_t* _data;
+    uint64_t* _addr;
 
     boost::mutex _cn_ack_mutex;
     boost::mutex _cn_wp_mutex;

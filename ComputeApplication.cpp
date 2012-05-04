@@ -26,22 +26,22 @@ cn_bufpos_t _cn_wp = {0};
 
 
 
-int my_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
-                 struct ibv_send_wr **bad_wr)
+int my_post_send(struct ibv_qp* qp, struct ibv_send_wr* wr,
+                 struct ibv_send_wr** bad_wr)
 {
-    struct ibv_send_wr *wr_first = wr;
+    struct ibv_send_wr* wr_first = wr;
 #ifdef CHATTY
     struct bufdesc {
         uint64_t addr;
         size_t nmemb;
         size_t size;
-        char *name;
+        char* name;
     };
 
     struct bufdesc source_desc[] = {
         {
-            (uint64_t) &send_cn_ack, 1, sizeof(cn_bufpos_t),
-            (char *) "send_cn_ack"
+            (uint64_t)& send_cn_ack, 1, sizeof(cn_bufpos_t),
+            (char*) "send_cn_ack"
         },
         {0, 0, 0, 0}
     };
@@ -59,7 +59,7 @@ int my_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
         if (wr->wr.rdma.remote_addr) {
             uint64_t addr = wr->wr.rdma.remote_addr;
             std::cout << " rdma.remote_addr=";
-            struct bufdesc *b = target_desc;
+            struct bufdesc* b = target_desc;
             while (b->name) {
                 if (addr >= b->addr
                         && addr < b->addr + b->nmemb * b->size) {
@@ -79,7 +79,7 @@ int my_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
         for (int i = 0; i < wr->num_sge; i++) {
             uint64_t addr = wr->sg_list[i].addr;
             uint32_t length =  wr->sg_list[i].length;
-            struct bufdesc *b = source_desc;
+            struct bufdesc* b = source_desc;
             while (b->name) {
                 if (addr >= b->addr
                         && addr < b->addr + b->nmemb * b->size) {
@@ -116,12 +116,12 @@ ComputeApplication::run()
     DEBUG("Setting up RDMA CM structures");
 
     // Create an rdma event channel
-    struct rdma_event_channel *cm_channel = rdma_create_event_channel();
+    struct rdma_event_channel* cm_channel = rdma_create_event_channel();
     if (!cm_channel)
         throw ApplicationException("event channel creation failed");
 
     // Create rdma id (for listening)
-    struct rdma_cm_id *listen_id;
+    struct rdma_cm_id* listen_id;
     int err = rdma_create_id(cm_channel, &listen_id, NULL, RDMA_PS_TCP);
     if (err)
         throw ApplicationException("id creation failed");
@@ -132,7 +132,7 @@ ComputeApplication::run()
     sin.sin_family = AF_INET;
     sin.sin_port = htons(20079);
     sin.sin_addr.s_addr = INADDR_ANY;
-    err = rdma_bind_addr(listen_id, (struct sockaddr *) & sin);
+    err = rdma_bind_addr(listen_id, (struct sockaddr*) & sin);
     if (err)
         throw ApplicationException("RDMA bind_addr failed");
 
@@ -144,7 +144,7 @@ ComputeApplication::run()
     DEBUG("Waiting for connection");
 
     // Retrieve the next pending communication event (BLOCKING)
-    struct rdma_cm_event *event;
+    struct rdma_cm_event* event;
     err = rdma_get_cm_event(cm_channel, &event);
     if (err)
         throw ApplicationException("retrieval of communication event failed");
@@ -153,7 +153,7 @@ ComputeApplication::run()
     // Retrieve rdma id (for communicating) from event
     if (event->event != RDMA_CM_EVENT_CONNECT_REQUEST)
         throw ApplicationException("connection failed");
-    struct rdma_cm_id *cm_id = event->id;
+    struct rdma_cm_id* cm_id = event->id;
 
     // Free the communication event
     rdma_ack_cm_event(event);
@@ -161,18 +161,18 @@ ComputeApplication::run()
     DEBUG("Creating verbs objects");
 
     // Allocate a protection domain (PD) for the given context
-    struct ibv_pd *pd = ibv_alloc_pd(cm_id->verbs);
+    struct ibv_pd* pd = ibv_alloc_pd(cm_id->verbs);
     if (!pd)
         throw ApplicationException("allocation of protection domain failed");
 
     // Create a completion event channel for the given context
-    struct ibv_comp_channel *comp_chan = ibv_create_comp_channel(cm_id->verbs);
+    struct ibv_comp_channel* comp_chan = ibv_create_comp_channel(cm_id->verbs);
     if (!comp_chan)
         throw ApplicationException("creation of completion event channel failed");
 
     // Create a completion queue (CQ) for the given context with at least 20
     // entries, using the given completion channel to return completion events
-    struct ibv_cq  *cq = ibv_create_cq(cm_id->verbs, 20, NULL, comp_chan, 0);
+    struct ibv_cq*  cq = ibv_create_cq(cm_id->verbs, 20, NULL, comp_chan, 0);
     if (!cq)
         throw ApplicationException("creation of completion queue failed");
 
@@ -182,24 +182,24 @@ ComputeApplication::run()
         throw ApplicationException("request of completion notification failed");
 
     // Allocate buffer space
-    uint64_t* _data = (uint64_t *) calloc(CN_DATABUF_WORDS, sizeof(uint64_t));
-    tscdesc_t * _desc = (tscdesc_t *) calloc(CN_DESCBUF_WORDS, sizeof(tscdesc_t));
+    uint64_t* _data = (uint64_t*) calloc(CN_DATABUF_WORDS, sizeof(uint64_t));
+    tscdesc_t* _desc = (tscdesc_t*) calloc(CN_DESCBUF_WORDS, sizeof(tscdesc_t));
     if (!_data || !_desc)
         throw ApplicationException("allocation of buffer space failed");
 
     // Register a memory region (MR) associated with the given protection domain
     // (local read access is always enabled)
-    struct ibv_mr *mr_data = ibv_reg_mr(pd, _data,
+    struct ibv_mr* mr_data = ibv_reg_mr(pd, _data,
                                         CN_DATABUF_WORDS * sizeof(uint64_t),
                                         IBV_ACCESS_LOCAL_WRITE |
                                         IBV_ACCESS_REMOTE_WRITE);
-    struct ibv_mr *mr_desc = ibv_reg_mr(pd, _desc,
+    struct ibv_mr* mr_desc = ibv_reg_mr(pd, _desc,
                                         CN_DESCBUF_WORDS * sizeof(tscdesc_t),
                                         IBV_ACCESS_LOCAL_WRITE |
                                         IBV_ACCESS_REMOTE_WRITE);
-    struct ibv_mr *mr_send = ibv_reg_mr(pd, &_send_cn_ack,
+    struct ibv_mr* mr_send = ibv_reg_mr(pd, &_send_cn_ack,
                                         sizeof(cn_bufpos_t), 0);
-    struct ibv_mr *mr_recv = ibv_reg_mr(pd, &_recv_cn_wp,
+    struct ibv_mr* mr_recv = ibv_reg_mr(pd, &_recv_cn_wp,
                                         sizeof(cn_bufpos_t),
                                         IBV_ACCESS_LOCAL_WRITE);
     if (!mr_data || !mr_desc || !mr_recv || !mr_send)
@@ -234,7 +234,7 @@ ComputeApplication::run()
         recv_wr.wr_id = ID_RECEIVE;
         recv_wr.sg_list = &sge;
         recv_wr.num_sge = 1;
-        struct ibv_recv_wr *bad_recv_wr;
+        struct ibv_recv_wr* bad_recv_wr;
         if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
             throw ApplicationException("post_recv failed");
     }
@@ -272,8 +272,8 @@ ComputeApplication::run()
 
     while (1) {
         // Wait for the next completion event in the given channel (BLOCKING)
-        struct ibv_cq *ev_cq;
-        void *ev_ctx;
+        struct ibv_cq* ev_cq;
+        void* ev_ctx;
 
         if (ibv_get_cq_event(comp_chan, &ev_cq, &ev_ctx))
             throw ApplicationException("retrieval of cq event failed");
@@ -322,7 +322,7 @@ ComputeApplication::run()
                 recv_wr.wr_id = ID_RECEIVE;
                 recv_wr.sg_list = &sge;
                 recv_wr.num_sge = 1;
-                struct ibv_recv_wr *bad_recv_wr;
+                struct ibv_recv_wr* bad_recv_wr;
                 if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
                     throw ApplicationException("post_recv failed");
             }
@@ -364,7 +364,7 @@ ComputeApplication::run()
                 send_wr2.send_flags = IBV_SEND_SIGNALED;
                 send_wr2.sg_list = &sge3;
                 send_wr2.num_sge = 1;
-                struct ibv_send_wr *bad_send_wr;
+                struct ibv_send_wr* bad_send_wr;
                 if (my_post_send(cm_id->qp, &send_wr2, &bad_send_wr))
                     throw ApplicationException("post_send failed");
             }

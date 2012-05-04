@@ -91,7 +91,7 @@ enum LogLevel { ALL, /**< Log all message */
 /**
  * Retrieve a human readable representation of the given log level value.
  */
-inline char const * getLogLevelString(const LogLevel level);
+inline char const* getLogLevelString(const LogLevel level);
 
 /**
  * A stream modifier that allows to colorize the log output.
@@ -104,7 +104,7 @@ template<typename Parent> struct Color {
         tmp.reset = false;
         return tmp;
     }
-    char const *ansiCode() const {
+    char const* ansiCode() const {
         return Parent::ANSI();
     }
     bool resetColor() const {
@@ -148,18 +148,18 @@ _COLOR(NoColor, "0");
 template<LogLevel VERBOSITY> class OutputFormatter {
 private:
     // The output stream to print to
-    std::ostream * const out;
+    std::ostream* const out;
     // Whether to colorize the output
     bool const colorize;
     mutable bool resetColor;
 
 public:
-    OutputFormatter(std::ostream * const out, bool const colorize) : out(out), colorize(colorize),
+    OutputFormatter(std::ostream* const out, bool const colorize) : out(out), colorize(colorize),
         resetColor(false) {
         if (out != 0) {
             // Figure out current time
             time_t rawtime;
-            tm * timeinfo;
+            tm* timeinfo;
             time(&rawtime);
             timeinfo = localtime(&rawtime);
 
@@ -219,7 +219,7 @@ public:
         }
     }
 
-    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<(const Color<T> &col) const {
+    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<(const Color<T>& col) const {
         if (out && colorize) {
             *out << col.ansiCode();
             resetColor = col.resetColor();
@@ -227,7 +227,7 @@ public:
         return *this;
     }
 
-    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<(const T &msg) const {
+    template<typename T> inline const OutputFormatter<VERBOSITY>& operator<<(const T& msg) const {
         // output the log message
         if (out != 0) {
             *out << msg;
@@ -333,7 +333,7 @@ public:
     /**
      * Retrieve a human readable representation of the current log level
      */
-    inline char const * getVerbosityString() const {
+    inline char const* getVerbosityString() const {
         return getLogLevelString(this->verbosity);
     }
     /**
@@ -354,7 +354,7 @@ public:
  * IMPLEMENTATIONS
  */
 
-inline char const * getLogLevelString(const LogLevel level)
+inline char const* getLogLevelString(const LogLevel level)
 {
     switch (level) {
     case ALL:
