@@ -12,23 +12,23 @@
 
 #define BUFDEBUG
 
-enum REQUEST_ID { ID_RDMA_WRITE1 = 1, ID_RDMA_WRITE2, ID_RDMA_WRITE3,
-                  ID_SEND, ID_RECEIVE
+enum REQUEST_ID { ID_WRITE_DATA = 1, ID_WRITE_DATA_WRAP, ID_WRITE_DESC,
+                  ID_SEND_CN_WP, ID_RECEIVE_CN_ACK
                 };
 
 inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
 {
     switch (v) {
-    case ID_RDMA_WRITE1:
-        return s << "ID_RDMA_WRITE1";
-    case ID_RDMA_WRITE2:
-        return s << "ID_RDMA_WRITE2";
-    case ID_RDMA_WRITE3:
-        return s << "ID_RDMA_WRITE3";
-    case ID_SEND:
-        return s << "ID_SEND";
-    case ID_RECEIVE:
-        return s << "ID_RECEIVE";
+    case ID_WRITE_DATA:
+        return s << "ID_WRITE_DATA";
+    case ID_WRITE_DATA_WRAP:
+        return s << "ID_WRITE_DATA_WRAP";
+    case ID_WRITE_DESC:
+        return s << "ID_WRITE_DESC";
+    case ID_SEND_CN_WP:
+        return s << "ID_SEND_CN_WP";
+    case ID_RECEIVE_CN_ACK:
+        return s << "ID_RECEIVE_CN_ACK";
     default:
         return s << (int) v;
     }
@@ -199,6 +199,7 @@ private:
 
 };
 
+#define ACK_WORDS (ADDR_WORDS / TS_SIZE + 1) // TODO: clean up
 
 class InputBuffer {
 public:
@@ -210,6 +211,7 @@ public:
         _mc_written(0), _data_written(0) {
         _data = new uint64_t[DATA_WORDS]();
         _addr = new uint64_t[ADDR_WORDS]();
+        _ack = new uint64_t[ACK_WORDS]();
         memset(&_receive_cn_ack, 0, sizeof(cn_bufpos_t));
         memset(&_cn_ack, 0, sizeof(cn_bufpos_t));
         memset(&_cn_wp, 0, sizeof(cn_bufpos_t));
@@ -220,6 +222,7 @@ public:
     ~InputBuffer() {
         delete [] _data;
         delete [] _addr;
+        delete [] _ack;
     };
 
 #ifndef BUFDEBUG
@@ -242,7 +245,7 @@ public:
         CN_DATABUF_WORDS = 32, // data buffer in 64-bit words
         CN_DESCBUF_WORDS = 4, // desc buffer in entries
         TYP_CNT_WORDS = 2, // typical content words in MC
-        NUM_TS = 100
+        NUM_TS = 10
     };
 #endif
 
@@ -281,12 +284,14 @@ private:
             // check for space in data buffer
             if (_data_written - _acked_data + content_words + 2 > DATA_WORDS) {
                 Log.error() << "data buffer full";
+                boost::this_thread::sleep(boost::posix_time::millisec(1));
                 break;
             }
 
             // check for space in addr buffer
             if (_mc_written - _acked_mc == ADDR_WORDS) {
                 Log.error() << "addr buffer full";
+                boost::this_thread::sleep(boost::posix_time::millisec(1));
                 break;
             }
 
@@ -530,9 +535,8 @@ public:
 
         struct ibv_send_wr send_wr_ts, send_wr_tswrap, send_wr_tscdesc;
         memset(&send_wr_ts, 0, sizeof(send_wr_ts));
-        send_wr_ts.wr_id = ID_RDMA_WRITE1;
+        send_wr_ts.wr_id = ID_WRITE_DATA;
         send_wr_ts.opcode = IBV_WR_RDMA_WRITE;
-        send_wr_ts.send_flags = IBV_SEND_SIGNALED;
         send_wr_ts.sg_list = sge;
         send_wr_ts.num_sge = num_sge;
         send_wr_ts.wr.rdma.rkey = _ctx->_server_pdata[0].buf_rkey;
@@ -542,9 +546,8 @@ public:
         
         if (num_sge2) {
             memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
-            send_wr_tswrap.wr_id = ID_RDMA_WRITE2;
+            send_wr_tswrap.wr_id = ID_WRITE_DATA_WRAP;
             send_wr_tswrap.opcode = IBV_WR_RDMA_WRITE;
-            send_wr_tswrap.send_flags = IBV_SEND_SIGNALED;
             send_wr_tswrap.sg_list = sge2;
             send_wr_tswrap.num_sge = num_sge2;
             send_wr_tswrap.wr.rdma.rkey = _ctx->_server_pdata[0].buf_rkey;
@@ -567,10 +570,10 @@ public:
         sge3.lkey = 0;
 
         memset(&send_wr_tscdesc, 0, sizeof(send_wr_tscdesc));
-        send_wr_tscdesc.wr_id = ID_RDMA_WRITE3;
+        send_wr_tscdesc.wr_id = ID_WRITE_DESC | (timeslice << 8);
         send_wr_tscdesc.opcode = IBV_WR_RDMA_WRITE;
-        send_wr_tscdesc.send_flags = IBV_SEND_SIGNALED;
-        send_wr_tscdesc.send_flags = IBV_SEND_INLINE;
+        send_wr_tscdesc.send_flags =
+            IBV_SEND_INLINE | IBV_SEND_FENCE | IBV_SEND_SIGNALED;
         send_wr_tscdesc.sg_list = &sge3;
         send_wr_tscdesc.num_sge = 1;
         send_wr_tscdesc.wr.rdma.rkey = _ctx->_server_pdata[1].buf_rkey;
@@ -605,7 +608,6 @@ public:
             uint64_t data_offset = _addr[mc_offset % ADDR_WORDS];
             uint64_t data_length = _addr[(mc_offset + mc_length) % ADDR_WORDS]
                                    - data_offset;
-            uint64_t data_ack = _addr[(mc_offset + TS_SIZE) % ADDR_WORDS];
 
             Log.trace() << "SENDER working on TS " << timeslice
                         << ", MCs " << mc_offset << ".."
@@ -663,9 +665,6 @@ public:
                     post_send_cn_wp();
                 }
             }
-
-            _acked_mc += TS_SIZE;
-            _acked_data = data_ack;
         }
 
         Log.info() << "SENDER loop done";
@@ -684,7 +683,7 @@ public:
         recv_sge.length = sizeof(cn_bufpos_t);
         recv_sge.lkey = _mr_recv->lkey;
         memset(&_receive_cn_ack, 0, sizeof _receive_cn_ack);
-        recv_wr.wr_id = ID_RECEIVE;
+        recv_wr.wr_id = ID_RECEIVE_CN_ACK;
         recv_wr.sg_list = &recv_sge;
         recv_wr.num_sge = 1;
     }
@@ -694,9 +693,8 @@ public:
         send_sge.length = sizeof(cn_bufpos_t);
         send_sge.lkey = _mr_send->lkey;
         memset(&_send_cn_wp, 0, sizeof _send_cn_wp);
-        send_wr.wr_id = ID_SEND;
+        send_wr.wr_id = ID_SEND_CN_WP;
         send_wr.opcode = IBV_WR_SEND;
-        send_wr.send_flags = IBV_SEND_SIGNALED;
         send_wr.sg_list = &send_sge;
         send_wr.num_sge = 1;
     }
@@ -750,15 +748,20 @@ public:
                         throw ApplicationException(s.str());
                     }
 
-                    switch (wc[i].wr_id) {
-                    case ID_SEND:
-                    case ID_RDMA_WRITE1:
-                    case ID_RDMA_WRITE2:
-                    case ID_RDMA_WRITE3:
-                        // do nothing (for now)
+                    switch (wc[i].wr_id & 0xFF) {
+                    case ID_WRITE_DESC:
+                        {
+                            uint64_t ts = wc[i].wr_id >> 8;
+                            Log.debug() << "write completion for timeslice "
+                                        << ts;
+                            // TODO: use _ack[]!
+                            _acked_data =
+                                _addr[((ts + 1) * TS_SIZE) % ADDR_WORDS];
+                            _acked_mc += TS_SIZE;
+                        }
                         break;
 
-                    case ID_RECEIVE:
+                    case ID_RECEIVE_CN_ACK:
                         Log.debug()
                             << "receive completion, new _cn_ack.data="
                             << _receive_cn_ack.data;
@@ -801,6 +804,7 @@ public:
 
     uint64_t* _data;
     uint64_t* _addr;
+    uint64_t* _ack;
 
     boost::mutex _cn_ack_mutex;
     boost::mutex _cn_wp_mutex;
