@@ -13,15 +13,19 @@ namespace po = boost::program_options;
 #include <iterator>
 
 #include "Parameters.hpp"
+#include "log.hpp"
 
 void
 Parameters::parse_options(int argc, char* argv[])
 {
+    unsigned log_level = 3;
+    
     po::options_description generic("Generic options");
     generic.add_options()
     ("version,V", "print version string")
     ("help,h", "produce help message")
-    ("verbose,v", po::bool_switch(&_verbose), "produce verbose output")
+    ("log-level,l", po::value<unsigned>(&log_level),
+     "set the log level (default:3, all:0)")
     ;
 
     po::options_description config("Configuration");
@@ -92,8 +96,15 @@ Parameters::parse_options(int argc, char* argv[])
         }
     }
 
-    if (_verbose)
-        std::cout << desc();
+    Log.setVerbosity((einhard::LogLevel)log_level);
+
+    Log.debug() << "input nodes (" << _input_nodes.size() << "): "
+                << _input_nodes;
+    Log.debug() << "compute nodes (" << _compute_nodes.size() << "): "
+                << _compute_nodes;
+    Log.debug() << "this node: "
+                << (_node_type == INPUT_NODE ? "input" : "compute")
+                << " node #" << _node_index;
 }
 
 
@@ -116,7 +127,7 @@ Parameters::desc() const
        << _compute_nodes << std::endl;
     st << "this node: "
        << (_node_type == INPUT_NODE ? "input" : "compute")
-       << " node #" << _node_index << std::endl;
+       << " node #" << _node_index;
 
     return st.str();
 }

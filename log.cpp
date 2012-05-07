@@ -1,4 +1,4 @@
 
 #include "log.hpp"
 
-einhard::Logger<> Log(einhard::DEBUG);
+einhard::Logger<einhard::ALL> Log;

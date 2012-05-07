@@ -11,7 +11,6 @@
 #include "log.hpp"
 
 #define BUFDEBUG
-#define CHATTY
 
 enum REQUEST_ID { ID_RDMA_WRITE1 = 1, ID_RDMA_WRITE2, ID_RDMA_WRITE3,
                   ID_SEND, ID_RECEIVE
@@ -38,7 +37,6 @@ inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
 
 class InputContext {
 public:
-    // struct ibv_context      *context;
     // struct ibv_comp_channel *channel;
     // struct ibv_pd           *pd;
     // struct ibv_mr           *mr;
@@ -56,9 +54,7 @@ public:
 
 
     void connect(const char* hostname) {
-        Log.info() << "INFO output";
-
-        Log.debug() << "Setting up RDMA CM structures";
+        Log.debug() << "setting up RDMA CM structures";
 
         // Create an rdma event channel
         struct rdma_event_channel* cm_channel = rdma_create_event_channel();
@@ -88,18 +84,19 @@ public:
         // Resolve destination address from IP address to rdma address
         // (binds cm_id to a local device)
         for (struct addrinfo* t = res; t; t = t->ai_next) {
-            err = rdma_resolve_addr(cm_id, NULL, t->ai_addr, RESOLVE_TIMEOUT_MS);
+            err = rdma_resolve_addr(cm_id, NULL, t->ai_addr,
+                                    RESOLVE_TIMEOUT_MS);
             if (!err)
                 break;
         }
         if (err)
-            throw ApplicationException("RDMA address resolution failed");
+            throw ApplicationException("rdma_resolve_addr failed");
 
         // Retrieve the next pending communication event
         struct rdma_cm_event* event;
         err = rdma_get_cm_event(cm_channel, &event);
         if (err)
-            throw ApplicationException("retrieval of communication event failed");
+            throw ApplicationException("rdma_get_cm_event failed");
 
         // Assert that event is address resolution completion
         if (event->event != RDMA_CM_EVENT_ADDR_RESOLVED)
@@ -111,12 +108,12 @@ public:
         // Resolv an rdma route to the dest address to establish a connection
         err = rdma_resolve_route(cm_id, RESOLVE_TIMEOUT_MS);
         if (err)
-            throw ApplicationException("RDMA route resolution failed");
+            throw ApplicationException("rdma_resolve_route failed");
 
         // Retrieve the next pending communication event
         err = rdma_get_cm_event(cm_channel, &event);
         if (err)
-            throw ApplicationException("retrieval of communication event failed");
+            throw ApplicationException("rdma_get_cm_event failed");
 
         // Assert that event is route resolution completion
         if (event->event != RDMA_CM_EVENT_ROUTE_RESOLVED)
@@ -130,23 +127,23 @@ public:
         // Allocate a protection domain (PD) for the given context
         _pd = ibv_alloc_pd(cm_id->verbs);
         if (!_pd)
-            throw ApplicationException("allocation of protection domain failed");
+            throw ApplicationException("ibv_alloc_pd failed");
 
         // Create a completion event channel for the given context
         _comp_chan = ibv_create_comp_channel(cm_id->verbs);
         if (!_comp_chan)
-            throw ApplicationException("creation of completion event channel failed");
+            throw ApplicationException("ibv_create_comp_channel failed");
 
         // Create a completion queue (CQ) for the given context with at least 40
         // entries, using the given completion channel to return completion events
         _cq = ibv_create_cq(cm_id->verbs, 40, NULL, _comp_chan, 0);
         if (!_cq)
-            throw ApplicationException("creation of completion queue failed");
+            throw ApplicationException("ibv_create_cq failed");
 
         // Request a completion notification on the given completion queue
         // ("one shot" - only one completion event will be generated)
         if (ibv_req_notify_cq(_cq, 0))
-            throw ApplicationException("request of completion notification failed");
+            throw ApplicationException("ibv_req_notify_cq failed");
 
         // Allocate a queue pair (QP) associated with the specified rdma id
         struct ibv_qp_init_attr qp_attr;
@@ -165,7 +162,7 @@ public:
         if (err)
             throw ApplicationException("creation of QP failed");
 
-        Log.debug() << "Connect to server";
+        Log.debug() << "connect to server";
 
         // Initiate an active connection request
         struct rdma_conn_param conn_param;
@@ -174,7 +171,7 @@ public:
         conn_param.retry_count = 7;
         err = rdma_connect(cm_id, &conn_param);
         if (err)
-            throw ApplicationException("RDMA connect failed");
+            throw ApplicationException("rdma_connect failed");
 
         // Retrieve next pending communication event on the given channel (BLOCKING)
         err = rdma_get_cm_event(cm_channel, &event);
@@ -194,7 +191,7 @@ public:
 
         _qp = cm_id->qp;
 
-        Log.debug() << "--------- CONNECT DONE ---------";
+        Log.info() << "connection established";
     }
 
 private:
@@ -245,22 +242,21 @@ public:
         CN_DATABUF_WORDS = 32, // data buffer in 64-bit words
         CN_DESCBUF_WORDS = 4, // desc buffer in entries
         TYP_CNT_WORDS = 2, // typical content words in MC
-        NUM_TS = 10
+        NUM_TS = 100
     };
 #endif
 
 private:
     void
     wait_for_data(uint64_t min_mc_number) {
-        //Log.debug() << "wait_for_data()";
-        //        Log.info() << "min_mc_number: " << min_mc_number;
-        //        Log.info() << "_mc_written: " << _mc_written;
-
         uint64_t mcs_to_write = min_mc_number - _mc_written;
         // write more data than requested (up to 2 additional TSs)
         mcs_to_write += random() % (TS_SIZE * 2);
 
-        //        Log.info() << "mcs_to_write: " << mcs_to_write;
+        Log.trace() << "wait_for_data():"
+                    << " min_mc_number=" << min_mc_number
+                    << " _mc_written=" << _mc_written
+                    << " mcs_to_write= " << mcs_to_write;
 
         while (mcs_to_write-- > 0) {
             int content_words = random() % (TYP_CNT_WORDS * 2);
@@ -276,27 +272,21 @@ private:
                             | (uint64_t) flags << 32 | (uint64_t) size;
             uint64_t hdr1 = (uint64_t) rsvd << 48 | (time & 0xFFFFFFFFFFFF);
 
-            // DEBUG
-            hdr0 = time;
-            hdr1 = time;
-            // DEBUG
-
-            //Log.info() << "_data_written: " << _data_written;
-            //Log.info() << "_acked_data: " << _acked_data;
-            //Log.info() << "content_words: " << content_words;
-            //Log.info() << "DATA_WORDS: " << DATA_WORDS;
+            Log.trace() << "wait_for_data():"
+                        << " _data_written=" << _data_written
+                        << " _acked_data=" << _acked_data
+                        << " content_words=" << content_words
+                        << " DATA_WORDS=" << DATA_WORDS + 0;
 
             // check for space in data buffer
             if (_data_written - _acked_data + content_words + 2 > DATA_WORDS) {
-                Log.debug() << "data buffer full";
-                Log.debug() << "ERROR";
-                exit(1);// TODO: remove
+                Log.error() << "data buffer full";
                 break;
             }
 
             // check for space in addr buffer
             if (_mc_written - _acked_mc == ADDR_WORDS) {
-                Log.debug() << "addr buffer full";
+                Log.error() << "addr buffer full";
                 break;
             }
 
@@ -366,7 +356,7 @@ public:
         s << std::endl;
         s << "| _data_written = " << _data_written << std::endl;
         s << "| _acked_data = " << _acked_data << std::endl;
-        s << "\\---------" << std::endl;
+        s << "\\---------";
 
         return s.str();
     }
@@ -374,10 +364,6 @@ public:
     int my_post_send(struct ibv_qp* qp, struct ibv_send_wr* wr,
                      struct ibv_send_wr** bad_wr) {
         struct ibv_send_wr* wr_first = wr;
-        const int verbose = 0;
-#ifdef CHATTY
-
-        std::ostringstream s;
 
         struct bufdesc {
             uint64_t addr;
@@ -394,78 +380,69 @@ public:
 
         struct bufdesc target_desc[] = {
             {
-                _ctx->_server_pdata[0].buf_va, CN_DATABUF_WORDS, sizeof(uint64_t),
-                (char*) "cn_data"
+                _ctx->_server_pdata[0].buf_va, CN_DATABUF_WORDS,
+                sizeof(uint64_t), (char*) "cn_data"
             },
             {
-                _ctx->_server_pdata[1].buf_va, CN_DESCBUF_WORDS, sizeof(tscdesc_t),
-                (char*) "cn_desc"
+                _ctx->_server_pdata[1].buf_va, CN_DESCBUF_WORDS,
+                sizeof(tscdesc_t), (char*) "cn_desc"
             },
             {0, 0, 0, 0}
         };
 
-        if (verbose)
+        if (Log.beTrace()) {
+            std::ostringstream s;
+
             s << "/--- ibv_post_send() ---" << std::endl;
-        int wr_num = 0;
-        while (wr) {
-            if (verbose)
+            int wr_num = 0;
+            while (wr) {
                 s << "| wr" << wr_num << ": id=" << wr->wr_id
                   << " opcode=" << wr->opcode
                   << " num_sge=" << wr->num_sge;
-            if (wr->wr.rdma.remote_addr) {
-                uint64_t addr = wr->wr.rdma.remote_addr;
-                if (verbose)
+                if (wr->wr.rdma.remote_addr) {
+                    uint64_t addr = wr->wr.rdma.remote_addr;
                     s << " rdma.remote_addr=";
-                struct bufdesc* b = target_desc;
-                while (b->name) {
-                    if (addr >= b->addr
+                    struct bufdesc* b = target_desc;
+                    while (b->name) {
+                        if (addr >= b->addr
                             && addr < b->addr + b->nmemb * b->size) {
-                        if (verbose)
                             s << b->name << "["
                               << (addr - b->addr) / b->size << "]";
-                        break;
+                            break;
+                        }
+                        b++;
                     }
-                    b++;
-                }
-                if (!b->name) {
-                    if (verbose)
+                    if (!b->name)
                         s << addr;
                 }
-            }
-            if (verbose) {
                 s << std::endl;
                 s << "|   sg_list=";
-            }
-            uint32_t total_length = 0;
-            for (int i = 0; i < wr->num_sge; i++) {
-                uint64_t addr = wr->sg_list[i].addr;
-                uint32_t length =  wr->sg_list[i].length;
-                struct bufdesc* b = source_desc;
-                while (b->name) {
-                    if (addr >= b->addr
+                uint32_t total_length = 0;
+                for (int i = 0; i < wr->num_sge; i++) {
+                    uint64_t addr = wr->sg_list[i].addr;
+                    uint32_t length =  wr->sg_list[i].length;
+                    struct bufdesc* b = source_desc;
+                    while (b->name) {
+                        if (addr >= b->addr
                             && addr < b->addr + b->nmemb * b->size) {
-                        if (verbose)
                             s << b->name << "["
                               << (addr - b->addr) / b->size << "]:";
-                        break;
+                            break;
+                        }
+                        b++;
                     }
-                    b++;
-                }
-                if (verbose)
                     s << length / (sizeof(uint64_t)) << " ";
-                total_length += length;
-            }
-            if (verbose)
+                    total_length += length;
+                }
                 s << "(" << total_length / (sizeof(uint64_t))
                   << " words total)" << std::endl;
-            wr = wr->next;
-            wr_num++;
+                wr = wr->next;
+                wr_num++;
+            }
+            s << "\\---------";
+            Log.trace() << s.str();
         }
-        if (verbose)
-            s << "\\---------" << std::endl;
-        if (verbose)
-            Log.debug() << s.str();
-#endif
+
         return ibv_post_send(qp, wr_first, bad_wr);
     }
 
@@ -533,10 +510,12 @@ public:
                     target_words_left -= sge[i].length / sizeof(uint64_t);
                 } else {
                     if (target_words_left) {
-                        sge2[num_sge2].addr = sge[i].addr
-                                              + sizeof(uint64_t) * target_words_left;
-                        sge2[num_sge2].length = sge[i].length
-                                                - sizeof(uint64_t) * target_words_left;
+                        sge2[num_sge2].addr =
+                            sge[i].addr
+                            + sizeof(uint64_t) * target_words_left;
+                        sge2[num_sge2].length =
+                            sge[i].length
+                            - sizeof(uint64_t) * target_words_left;
                         sge2[num_sge2++].lkey = sge[i].lkey;
                         sge[i].length = sizeof(uint64_t) * target_words_left;
                         target_words_left = 0;
@@ -557,10 +536,10 @@ public:
         send_wr_ts.sg_list = sge;
         send_wr_ts.num_sge = num_sge;
         send_wr_ts.wr.rdma.rkey = _ctx->_server_pdata[0].buf_rkey;
-        send_wr_ts.wr.rdma.remote_addr = (uintptr_t)
-                                         (_ctx->_server_pdata[0].buf_va + (_cn_wp.data % CN_DATABUF_WORDS)
-                                          * sizeof(uint64_t));
-
+        send_wr_ts.wr.rdma.remote_addr =
+            (uintptr_t)(_ctx->_server_pdata[0].buf_va +
+                        (_cn_wp.data % CN_DATABUF_WORDS) * sizeof(uint64_t));
+        
         if (num_sge2) {
             memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
             send_wr_tswrap.wr_id = ID_RDMA_WRITE2;
@@ -600,12 +579,12 @@ public:
                         + (_cn_wp.desc % CN_DESCBUF_WORDS)
                         * sizeof(tscdesc_t));
 
-        Log.info() << "POST SEND data (TS " << timeslice << ")";
+        Log.debug() << "post_send(timeslice " << timeslice << ")";
 
         // send everything
         struct ibv_send_wr* bad_send_wr;
         if (my_post_send(_ctx->_qp, &send_wr_ts, &bad_send_wr))
-            throw ApplicationException("post_send (rdma) failed");
+            throw ApplicationException("ibv_post_send failed");
     }
 
 
@@ -614,9 +593,7 @@ public:
         setup_recv();
         setup_send();
         post_recv_cn_ack();
-
-        //boost::this_thread::sleep(boost::posix_time::millisec(1000));
-
+        
         for (uint64_t timeslice = 0; timeslice < NUM_TS; timeslice++) {
 
             // wait until a complete TS is available in the input buffer
@@ -630,31 +607,23 @@ public:
                                    - data_offset;
             uint64_t data_ack = _addr[(mc_offset + TS_SIZE) % ADDR_WORDS];
 
-            // debug output
-            if (0) {
-                Log.info() << "SENDER working on TS " << timeslice
-                           << ", MCs " << mc_offset << ".."
-                           << (mc_offset + mc_length - 1)
-                           << ", data words " << data_offset << ".."
-                           << (data_offset + data_length - 1);
-                Log.info() << getStateString();
-            }
+            Log.trace() << "SENDER working on TS " << timeslice
+                        << ", MCs " << mc_offset << ".."
+                        << (mc_offset + mc_length - 1)
+                        << ", data words " << data_offset << ".."
+                        << (data_offset + data_length - 1);
+            Log.trace() << getStateString();
 
             // wait until enough space is available at target compute node
             {
                 boost::mutex::scoped_lock lock(_cn_ack_mutex);
-#ifdef CHATTY
-                // DEBUG
-                Log.info() << "SENDER data space (words) required="
-                           << data_length + mc_length
-                           << ", avail="
-                           << _cn_ack.data + CN_DATABUF_WORDS - _cn_wp.data;
-                //Log.info() << _cn_ack.data << "+" << CN_DATABUF_WORDS
-                //<< "-" << _cn_wp.data;
-                Log.info() << "SENDER desc space (words) required=" << 1
-                           << ", avail="
-                           << _cn_ack.desc + CN_DESCBUF_WORDS - _cn_wp.desc;
-#endif
+                Log.trace() << "SENDER data space (words) required="
+                            << data_length + mc_length
+                            << ", avail="
+                            << _cn_ack.data + CN_DATABUF_WORDS - _cn_wp.data;
+                Log.trace() << "SENDER desc space (words) required=" << 1
+                            << ", avail="
+                            << _cn_ack.desc + CN_DESCBUF_WORDS - _cn_wp.desc;
                 while (_cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS
                         < data_length + mc_length
                         ||
@@ -665,7 +634,7 @@ public:
                         if (_our_turn) {
                             // send phony update to receive new pointers
                             {
-                                Log.info() << "*** SEND PHONY UPDATE ***";
+                                Log.info() << "SENDER send phony update";
                                 _our_turn = 0;
                                 _send_cn_wp = _cn_wp;
                                 post_send_cn_wp();
@@ -673,10 +642,11 @@ public:
                         }
                     }
                     _cn_ack_cond.wait(lock);
-                    Log.info() << "SENDER (next try) space avail="
-                               << _cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS
-                               << " desc_avail="
-                               << _cn_ack.desc - _cn_wp.desc + CN_DESCBUF_WORDS;
+                    Log.trace() << "SENDER (next try) space avail="
+                                << _cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS
+                                << " desc_avail="
+                                << _cn_ack.desc - _cn_wp.desc
+                        + CN_DESCBUF_WORDS;
                 }
             }
 
@@ -696,8 +666,6 @@ public:
 
             _acked_mc += TS_SIZE;
             _acked_data = data_ack;
-            //boost::this_thread::sleep(boost::posix_time::millisec(10));
-            Log.info() << "--- --- ---";
         }
 
         Log.info() << "SENDER loop done";
@@ -735,21 +703,17 @@ public:
 
     void post_recv_cn_ack() {
         // Post a receive work request (WR) to the receive queue
-        if (1) {
-            Log.info() << "POST RECEIVE _receive_cn_ack";
-        }
+        Log.trace() << "POST RECEIVE _receive_cn_ack";
         if (ibv_post_recv(_ctx->_qp, &recv_wr, &bad_recv_wr))
             throw ApplicationException("post_recv failed");
     }
 
     void post_send_cn_wp() {
         // Post a send work request (WR) to the send queue
-        if (1) {
-            Log.info() << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
-                       << " desc=" << _send_cn_wp.desc << ")";
-        }
+        Log.trace() << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
+                    << " desc=" << _send_cn_wp.desc << ")";
         if (my_post_send(_ctx->_qp, &send_wr, &bad_send_wr))
-            throw ApplicationException("post_send cn_wp failed");
+            throw ApplicationException("ibv_post_send(cn_wp) failed");
     }
 
 
@@ -795,8 +759,9 @@ public:
                         break;
 
                     case ID_RECEIVE:
-                        Log.debug() << "COMPLETION receive ok, new _cn_ack.data=";
-                        //                              + _receive_cn_ack.data);
+                        Log.debug()
+                            << "receive completion, new _cn_ack.data="
+                            << _receive_cn_ack.data;
                         {
                             boost::mutex::scoped_lock lock(_cn_ack_mutex);
                             _cn_ack = _receive_cn_ack;

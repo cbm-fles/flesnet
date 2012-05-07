@@ -51,10 +51,6 @@ public:
     explicit Application(Parameters const& par) : _par(par) { };
     virtual int run() = 0;
 protected:
-    void DEBUG(std::string const& s) const {
-        if (_par.verbose())
-            std::cout << "Debug: " << s << std::endl;
-    }
     Parameters const& _par;
 };
 

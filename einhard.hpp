@@ -149,23 +149,29 @@ _COLOR(NoColor, "0");
 template<LogLevel VERBOSITY> class OutputFormatter {
 private:
     // The output stream to print to
-    std::ostream* out;
 #ifdef THREADSAFE
+    std::ostream* out;
     std::ostream* real_out;
+#else
+    std::ostream* const out;
 #endif
     // Whether to colorize the output
     bool const colorize;
     mutable bool resetColor;
 
 public:
+#ifdef THREADSAFE
     OutputFormatter(std::ostream* out, bool const colorize) : colorize(colorize),
+#else
+    OutputFormatter(std::ostream* out, bool const colorize) : out(out), colorize(colorize),
+#endif
         resetColor(false) {
         if (out != 0) {
 #ifdef THREADSAFE
             this->real_out = out;
             out = new std::ostringstream;
-#endif
             this->out = out;
+#endif
             // Figure out current time
             time_t rawtime;
             tm* timeinfo;

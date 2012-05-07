@@ -4,13 +4,6 @@
  * 2012, Jan de Cuveland
  */
 
-/*
- * connects to server, sends val1 via RDMA write and val2 via send,
- * and receives val1+val2 back from the server.
- *
- * Based on an example by Roland Dreier, http://www.digitalvampire.org/
- */
-
 #include <cstdlib>
 #include <cstring>
 #include <sstream>
@@ -24,6 +17,7 @@
 
 #include "Application.hpp"
 #include "InputApplication.hpp"
+#include "log.hpp"
 
 
 int

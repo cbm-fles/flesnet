@@ -15,6 +15,7 @@
 #include <boost/thread.hpp>
 
 #include "Application.hpp"
+#include "log.hpp"
 
 //#define CHATTY
 
@@ -24,83 +25,6 @@ cn_bufpos_t _cn_ack = {0};
 cn_bufpos_t _recv_cn_wp = {0};
 cn_bufpos_t _cn_wp = {0};
 
-
-
-int my_post_send(struct ibv_qp* qp, struct ibv_send_wr* wr,
-                 struct ibv_send_wr** bad_wr)
-{
-    struct ibv_send_wr* wr_first = wr;
-#ifdef CHATTY
-    struct bufdesc {
-        uint64_t addr;
-        size_t nmemb;
-        size_t size;
-        char* name;
-    };
-
-    struct bufdesc source_desc[] = {
-        {
-            (uint64_t)& send_cn_ack, 1, sizeof(cn_bufpos_t),
-            (char*) "send_cn_ack"
-        },
-        {0, 0, 0, 0}
-    };
-
-    struct bufdesc target_desc[] = {
-        {0, 0, 0, 0}
-    };
-
-    std::cout << "/--- ibv_post_send() ---" << std::endl;
-    int wr_num = 0;
-    while (wr) {
-        std::cout << "| wr" << wr_num << ": id=" << wr->wr_id
-                  << " opcode=" << wr->opcode
-                  << " num_sge=" << wr->num_sge;
-        if (wr->wr.rdma.remote_addr) {
-            uint64_t addr = wr->wr.rdma.remote_addr;
-            std::cout << " rdma.remote_addr=";
-            struct bufdesc* b = target_desc;
-            while (b->name) {
-                if (addr >= b->addr
-                        && addr < b->addr + b->nmemb * b->size) {
-                    std::cout << b->name << "["
-                              << (addr - b->addr) / b->size << "]";
-                    break;
-                }
-                b++;
-            }
-            if (!b->name) {
-                std::cout << addr;
-            }
-        }
-        std::cout << std::endl;
-        std::cout << "|   sg_list=";
-        uint32_t total_length = 0;
-        for (int i = 0; i < wr->num_sge; i++) {
-            uint64_t addr = wr->sg_list[i].addr;
-            uint32_t length =  wr->sg_list[i].length;
-            struct bufdesc* b = source_desc;
-            while (b->name) {
-                if (addr >= b->addr
-                        && addr < b->addr + b->nmemb * b->size) {
-                    std::cout << b->name << "["
-                              << (addr - b->addr) / b->size << "]:";
-                    break;
-                }
-                b++;
-            }
-            std::cout << length / (sizeof(uint64_t)) << " ";
-            total_length += length;
-        }
-        std::cout << "(" << total_length / (sizeof(uint64_t))
-                  << " words total)" << std::endl;
-        wr = wr->next;
-        wr_num++;
-    }
-    std::cout << "\\---------" << std::endl;
-#endif
-    return ibv_post_send(qp, wr_first, bad_wr);
-}
 
 int
 ComputeApplication::run()
@@ -113,7 +37,7 @@ ComputeApplication::run()
 
 
 
-    DEBUG("Setting up RDMA CM structures");
+    Log.debug() << "Setting up RDMA CM structures";
 
     // Create an rdma event channel
     struct rdma_event_channel* cm_channel = rdma_create_event_channel();
@@ -141,7 +65,7 @@ ComputeApplication::run()
     if (err)
         throw ApplicationException("RDMA listen failed");
 
-    DEBUG("Waiting for connection");
+    Log.info() << "Waiting for connection";
 
     // Retrieve the next pending communication event (BLOCKING)
     struct rdma_cm_event* event;
@@ -158,7 +82,7 @@ ComputeApplication::run()
     // Free the communication event
     rdma_ack_cm_event(event);
 
-    DEBUG("Creating verbs objects");
+    Log.debug() << "Creating verbs objects";
 
     // Allocate a protection domain (PD) for the given context
     struct ibv_pd* pd = ibv_alloc_pd(cm_id->verbs);
@@ -221,7 +145,7 @@ ComputeApplication::run()
     if (err)
         throw ApplicationException("creation of QP failed");
 
-    DEBUG("Post receive before accepting connection");
+    Log.debug() << "Post receive before accepting connection";
 
     // post initial receive request
     {
@@ -239,7 +163,7 @@ ComputeApplication::run()
             throw ApplicationException("post_recv failed");
     }
 
-    DEBUG("Accepting connection");
+    Log.debug() << "accepting connection";
 
     // Accept rdma connection request
     pdata_t rep_pdata[2];
@@ -268,7 +192,7 @@ ComputeApplication::run()
     // Free the communication event
     rdma_ack_cm_event(event);
 
-    DEBUG("Wait for completion");
+    Log.info() << "connection established";
 
     while (1) {
         // Wait for the next completion event in the given channel (BLOCKING)
@@ -307,7 +231,7 @@ ComputeApplication::run()
 
             switch ((int) wc[i].wr_id) {
             case ID_SEND:
-                std::cout << "SEND complete" << std::endl;
+                Log.debug() << "SEND complete";
                 break;
 
             case ID_RECEIVE:
@@ -328,8 +252,8 @@ ComputeApplication::run()
             }
             _cn_wp = _recv_cn_wp;
             // debug output
-            std::cout << "RECEIVE _cn_wp: data=" << _cn_wp.data
-                      << " desc=" << _cn_wp.desc << std::endl;
+            Log.debug() << "RECEIVE _cn_wp: data=" << _cn_wp.data
+                        << " desc=" << _cn_wp.desc;
 #ifdef CHATTY
             std::cout << "/--- data buf ---" << std::endl << "|";
             for (unsigned int i = tscdesc.offset;
@@ -352,7 +276,7 @@ ComputeApplication::run()
             // send ack
             {
                 _send_cn_ack = _cn_ack;
-                std::cout << "SEND posted" << std::endl;
+                Log.debug() << "SEND posted";
                 struct ibv_sge sge3;
                 sge3.addr = (uintptr_t) &_send_cn_ack;
                 sge3.length = sizeof(cn_bufpos_t);
@@ -365,7 +289,7 @@ ComputeApplication::run()
                 send_wr2.sg_list = &sge3;
                 send_wr2.num_sge = 1;
                 struct ibv_send_wr* bad_send_wr;
-                if (my_post_send(cm_id->qp, &send_wr2, &bad_send_wr))
+                if (ibv_post_send(cm_id->qp, &send_wr2, &bad_send_wr))
                     throw ApplicationException("post_send failed");
             }
             break;

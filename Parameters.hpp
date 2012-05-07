@@ -41,9 +41,6 @@ public:
     unsigned node_index() const {
         return _node_index;
     };
-    bool verbose() const {
-        return _verbose;
-    };
 
 private:
     void parse_options(int argc, char* argv[]);
@@ -53,7 +50,6 @@ private:
     std::vector<std::string> _compute_nodes;
     node_type_t _node_type;
     unsigned _node_index;
-    bool _verbose;
 };
 
 
