@@ -23,13 +23,13 @@
 int
 InputApplication::run()
 {
-    InputContext ctx;
-    ctx.connect(_par.compute_nodes().at(0).c_str());
+    InputContext ctx(_par);
+    ctx.connect();
 
     InputBuffer ib(&ctx);
     ib.setup();
-    boost::thread t1(&InputBuffer::sender_loop, &ib);
-    boost::thread t2(&InputBuffer::completion_handler, &ib);
+    boost::thread t1(&InputBuffer::sender_thread, &ib);
+    boost::thread t2(&InputBuffer::completion_thread, &ib);
 
     t1.join();
     t2.join();

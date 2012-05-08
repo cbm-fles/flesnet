@@ -26,8 +26,6 @@ cn_bufpos_t _recv_cn_wp = {0};
 cn_bufpos_t _cn_wp = {0};
 
 
-define BASE_PORT 20079
-
 int
 ComputeApplication::run()
 {
@@ -53,10 +51,11 @@ ComputeApplication::run()
         throw ApplicationException("id creation failed");
 
     // Bind rdma id (for listening) to socket address (local port)
+    unsigned short port = BASE_PORT + _par.node_index();
     struct sockaddr_in sin;
     memset(&sin, 0, sizeof sin);
     sin.sin_family = AF_INET;
-    sin.sin_port = htons(BASE_PORT);
+    sin.sin_port = htons(port);
     sin.sin_addr.s_addr = INADDR_ANY;
     err = rdma_bind_addr(listen_id, (struct sockaddr*) & sin);
     if (err)

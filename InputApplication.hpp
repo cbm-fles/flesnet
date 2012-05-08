@@ -10,30 +10,6 @@
 #include <boost/thread.hpp>
 #include "log.hpp"
 
-#define BUFDEBUG
-
-enum REQUEST_ID { ID_WRITE_DATA = 1, ID_WRITE_DATA_WRAP, ID_WRITE_DESC,
-                  ID_SEND_CN_WP, ID_RECEIVE_CN_ACK
-                };
-
-inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
-{
-    switch (v) {
-    case ID_WRITE_DATA:
-        return s << "ID_WRITE_DATA";
-    case ID_WRITE_DATA_WRAP:
-        return s << "ID_WRITE_DATA_WRAP";
-    case ID_WRITE_DESC:
-        return s << "ID_WRITE_DESC";
-    case ID_SEND_CN_WP:
-        return s << "ID_SEND_CN_WP";
-    case ID_RECEIVE_CN_ACK:
-        return s << "ID_RECEIVE_CN_ACK";
-    default:
-        return s << (int) v;
-    }
-}
-
 
 class InputContext {
 public:
@@ -43,17 +19,17 @@ public:
     // struct ibv_cq           *cq;
     // struct ibv_qp           *qp;
     // void                    *buf;
-    // int                      size;
-    // int                      rx_depth;
-    // int                      pending;
     Application::pdata_t _server_pdata[2];
     struct ibv_pd* _pd;
     struct ibv_comp_channel* _comp_chan;
     struct ibv_qp* _qp;
     struct ibv_cq* _cq;
 
+    InputContext(Parameters const& par) : _par(par) { };
 
-    void connect(const char* hostname) {
+    void connect() {
+        const char* hostname = _par.compute_nodes().at(0).c_str();
+
         Log.debug() << "setting up RDMA CM structures";
 
         // Create an rdma event channel
@@ -75,7 +51,11 @@ public:
         hints.ai_socktype = SOCK_STREAM;
         struct addrinfo* res;
 
-        err = getaddrinfo(hostname, "20079", &hints, &res);
+        char* service;
+        if (asprintf(&service, "%d", BASE_PORT) < 0)
+            throw ApplicationException("invalid port");
+
+        err = getaddrinfo(hostname, service, &hints, &res);
         if (err)
             throw ApplicationException("getaddrinfo failed");
 
@@ -91,6 +71,9 @@ public:
         }
         if (err)
             throw ApplicationException("rdma_resolve_addr failed");
+
+        freeaddrinfo(res);
+        free(service);
 
         // Retrieve the next pending communication event
         struct rdma_cm_event* event;
@@ -195,16 +178,12 @@ public:
     }
 
 private:
-    enum { RESOLVE_TIMEOUT_MS = 5000 };
-
+    Parameters const& _par;
 };
 
-#define ACK_WORDS (ADDR_WORDS / TS_SIZE + 1) // TODO: clean up
 
 class InputBuffer {
 public:
-    InputContext* _ctx;
-
     InputBuffer(InputContext* ctx) :
         _our_turn(1),
         _acked_mc(0), _acked_data(0),
@@ -225,29 +204,39 @@ public:
         delete [] _ack;
     };
 
-#ifndef BUFDEBUG
-    enum {
-        TS_SIZE = 100, // timeslice size in number of MCs
-        TS_OVERLAP = 2, // overlap region in number of MCs
-        DATA_WORDS = 64 * 1024 * 1024, // data buffer in 64-bit words
-        ADDR_WORDS = 1024 * 1024, // address buffer in 64-bit words
-        CN_DATABUF_WORDS = 128 * 1024, // data buffer in 64-bit words
-        CN_DESCBUF_WORDS = 80, // desc buffer in entries
-        TYP_CNT_WORDS = 128, // typical content words in MC
-        NUM_TS = 1024 * 1024 * 1024
+    void sender_thread() {
+        sender_loop();
     };
-#else
-    enum {
-        TS_SIZE = 2, // timeslice size in number of MCs
-        TS_OVERLAP = 1, // overlap region in number of MCs
-        DATA_WORDS = 32, // data buffer in 64-bit words
-        ADDR_WORDS = 10, // address buffer in 64-bit words
-        CN_DATABUF_WORDS = 32, // data buffer in 64-bit words
-        CN_DESCBUF_WORDS = 4, // desc buffer in entries
-        TYP_CNT_WORDS = 2, // typical content words in MC
-        NUM_TS = 10
+    void completion_thread() {
+        completion_handler();
     };
-#endif
+
+    void
+    setup() {
+        // register memory regions
+        _mr_recv = ibv_reg_mr(_ctx->_pd, &_receive_cn_ack,
+                              sizeof(cn_bufpos_t),
+                              IBV_ACCESS_LOCAL_WRITE);
+        if (!_mr_recv)
+            throw ApplicationException("registration of memory region failed");
+
+        _mr_send = ibv_reg_mr(_ctx->_pd, &_send_cn_wp,
+                              sizeof(cn_bufpos_t), 0);
+        if (!_mr_send)
+            throw ApplicationException("registration of memory region failed");
+
+        _mr_data = ibv_reg_mr(_ctx->_pd, _data,
+                              DATA_WORDS * sizeof(uint64_t),
+                              IBV_ACCESS_LOCAL_WRITE);
+        if (!_mr_data)
+            throw ApplicationException("registration of memory region failed");
+
+        _mr_addr = ibv_reg_mr(_ctx->_pd, _addr,
+                              ADDR_WORDS * sizeof(uint64_t),
+                              IBV_ACCESS_LOCAL_WRITE);
+        if (!_mr_addr)
+            throw ApplicationException("registration of memory region failed");
+    }
 
 private:
     void
@@ -309,38 +298,6 @@ private:
         }
     };
 
-    struct ibv_mr* _mr_recv;
-    struct ibv_mr* _mr_send;
-    struct ibv_mr* _mr_data;
-    struct ibv_mr* _mr_addr;
-
-public:
-    void
-    setup() {
-        // register memory regions
-        _mr_recv = ibv_reg_mr(_ctx->_pd, &_receive_cn_ack,
-                              sizeof(cn_bufpos_t),
-                              IBV_ACCESS_LOCAL_WRITE);
-        if (!_mr_recv)
-            throw ApplicationException("registration of memory region failed");
-
-        _mr_send = ibv_reg_mr(_ctx->_pd, &_send_cn_wp,
-                              sizeof(cn_bufpos_t), 0);
-        if (!_mr_send)
-            throw ApplicationException("registration of memory region failed");
-
-        _mr_data = ibv_reg_mr(_ctx->_pd, _data,
-                              DATA_WORDS * sizeof(uint64_t),
-                              IBV_ACCESS_LOCAL_WRITE);
-        if (!_mr_data)
-            throw ApplicationException("registration of memory region failed");
-
-        _mr_addr = ibv_reg_mr(_ctx->_pd, _addr,
-                              ADDR_WORDS * sizeof(uint64_t),
-                              IBV_ACCESS_LOCAL_WRITE);
-        if (!_mr_addr)
-            throw ApplicationException("registration of memory region failed");
-    }
 
     std::string
     getStateString() {
@@ -365,6 +322,7 @@ public:
 
         return s.str();
     }
+
 
     int my_post_send(struct ibv_qp* qp, struct ibv_send_wr* wr,
                      struct ibv_send_wr** bad_wr) {
@@ -451,7 +409,6 @@ public:
         return ibv_post_send(qp, wr_first, bad_wr);
     }
 
-public:
 
     void post_send_data(uint64_t timeslice,
                         uint64_t mc_offset, uint64_t mc_length,
@@ -801,8 +758,15 @@ public:
     }
 
 
-    //private:
-public:
+private:
+
+    struct ibv_mr* _mr_recv;
+    struct ibv_mr* _mr_send;
+    struct ibv_mr* _mr_data;
+    struct ibv_mr* _mr_addr;
+
+    InputContext* _ctx;
+
     int _our_turn;
 
     cn_bufpos_t _receive_cn_ack;
