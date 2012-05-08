@@ -19,7 +19,7 @@ void
 Parameters::parse_options(int argc, char* argv[])
 {
     unsigned log_level = 3;
-    
+
     po::options_description generic("Generic options");
     generic.add_options()
     ("version,V", "print version string")

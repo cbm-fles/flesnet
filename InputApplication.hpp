@@ -410,7 +410,7 @@ public:
                     struct bufdesc* b = target_desc;
                     while (b->name) {
                         if (addr >= b->addr
-                            && addr < b->addr + b->nmemb * b->size) {
+                                && addr < b->addr + b->nmemb * b->size) {
                             s << b->name << "["
                               << (addr - b->addr) / b->size << "]";
                             break;
@@ -429,7 +429,7 @@ public:
                     struct bufdesc* b = source_desc;
                     while (b->name) {
                         if (addr >= b->addr
-                            && addr < b->addr + b->nmemb * b->size) {
+                                && addr < b->addr + b->nmemb * b->size) {
                             s << b->name << "["
                               << (addr - b->addr) / b->size << "]:";
                             break;
@@ -543,7 +543,7 @@ public:
         send_wr_ts.wr.rdma.remote_addr =
             (uintptr_t)(_ctx->_server_pdata[0].buf_va +
                         (_cn_wp.data % CN_DATABUF_WORDS) * sizeof(uint64_t));
-        
+
         if (num_sge2) {
             memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
             send_wr_tswrap.wr_id = ID_WRITE_DATA_WRAP;
@@ -596,7 +596,7 @@ public:
         setup_recv();
         setup_send();
         post_recv_cn_ack();
-        
+
         for (uint64_t timeslice = 0; timeslice < NUM_TS; timeslice++) {
 
             // wait until a complete TS is available in the input buffer
@@ -648,7 +648,7 @@ public:
                                 << _cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS
                                 << " desc_avail="
                                 << _cn_ack.desc - _cn_wp.desc
-                        + CN_DESCBUF_WORDS;
+                                + CN_DESCBUF_WORDS;
                 }
             }
 
@@ -749,32 +749,31 @@ public:
                     }
 
                     switch (wc[i].wr_id & 0xFF) {
-                    case ID_WRITE_DESC:
-                        {
-                            uint64_t ts = wc[i].wr_id >> 8;
-                            Log.debug() << "write completion for timeslice "
-                                        << ts;
+                    case ID_WRITE_DESC: {
+                        uint64_t ts = wc[i].wr_id >> 8;
+                        Log.debug() << "write completion for timeslice "
+                                    << ts;
 
-                            uint64_t acked_ts = _acked_mc / TS_SIZE;
-                            if (ts == acked_ts)
-                                do
-                                    acked_ts++;
-                                while (_ack[acked_ts % ACK_WORDS] > ts);
-                            else
-                                _ack[ts % ACK_WORDS] = ts;
-                            _acked_data =
-                                _addr[(acked_ts * TS_SIZE) % ADDR_WORDS];
-                            _acked_mc = acked_ts * TS_SIZE;
-                            Log.debug() << "new values: _acked_data="
-                                        << _acked_data
-                                        << " _acked_mc=" << _acked_mc;
-                        }
-                        break;
+                        uint64_t acked_ts = _acked_mc / TS_SIZE;
+                        if (ts == acked_ts)
+                            do
+                                acked_ts++;
+                            while (_ack[acked_ts % ACK_WORDS] > ts);
+                        else
+                            _ack[ts % ACK_WORDS] = ts;
+                        _acked_data =
+                            _addr[(acked_ts * TS_SIZE) % ADDR_WORDS];
+                        _acked_mc = acked_ts * TS_SIZE;
+                        Log.debug() << "new values: _acked_data="
+                                    << _acked_data
+                                    << " _acked_mc=" << _acked_mc;
+                    }
+                    break;
 
                     case ID_RECEIVE_CN_ACK:
                         Log.debug()
-                            << "receive completion, new _cn_ack.data="
-                            << _receive_cn_ack.data;
+                                << "receive completion, new _cn_ack.data="
+                                << _receive_cn_ack.data;
                         {
                             boost::mutex::scoped_lock lock(_cn_ack_mutex);
                             _cn_ack = _receive_cn_ack;
