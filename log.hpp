@@ -4,6 +4,6 @@
 
 #include "einhard.hpp"
 
-extern einhard::Logger<einhard::ALL> Log;
+extern einhard::Logger<einhard::ALL,true> Log;
 
 #endif /* LOG_HPP */

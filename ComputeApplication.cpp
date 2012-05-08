@@ -26,6 +26,8 @@ cn_bufpos_t _recv_cn_wp = {0};
 cn_bufpos_t _cn_wp = {0};
 
 
+define BASE_PORT 20079
+
 int
 ComputeApplication::run()
 {
@@ -54,7 +56,7 @@ ComputeApplication::run()
     struct sockaddr_in sin;
     memset(&sin, 0, sizeof sin);
     sin.sin_family = AF_INET;
-    sin.sin_port = htons(20079);
+    sin.sin_port = htons(BASE_PORT);
     sin.sin_addr.s_addr = INADDR_ANY;
     err = rdma_bind_addr(listen_id, (struct sockaddr*) & sin);
     if (err)
