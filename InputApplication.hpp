@@ -754,10 +754,20 @@ public:
                             uint64_t ts = wc[i].wr_id >> 8;
                             Log.debug() << "write completion for timeslice "
                                         << ts;
-                            // TODO: use _ack[]!
+
+                            uint64_t acked_ts = _acked_mc / TS_SIZE;
+                            if (ts == acked_ts)
+                                do
+                                    acked_ts++;
+                                while (_ack[acked_ts % ACK_WORDS] > ts);
+                            else
+                                _ack[ts % ACK_WORDS] = ts;
                             _acked_data =
-                                _addr[((ts + 1) * TS_SIZE) % ADDR_WORDS];
-                            _acked_mc += TS_SIZE;
+                                _addr[(acked_ts * TS_SIZE) % ADDR_WORDS];
+                            _acked_mc = acked_ts * TS_SIZE;
+                            Log.debug() << "new values: _acked_data="
+                                        << _acked_data
+                                        << " _acked_mc=" << _acked_mc;
                         }
                         break;
 
