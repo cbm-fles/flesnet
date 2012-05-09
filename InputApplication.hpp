@@ -11,47 +11,50 @@
 #include "log.hpp"
 
 
-class InputContext {
+class IBConnection {
 public:
-    // struct ibv_comp_channel *channel;
-    // struct ibv_pd           *pd;
-    // struct ibv_mr           *mr;
-    // struct ibv_cq           *cq;
-    // struct ibv_qp           *qp;
-    // void                    *buf;
     Application::pdata_t _server_pdata[2];
-    struct ibv_pd* _pd;
-    struct ibv_comp_channel* _comp_chan;
     struct ibv_qp* _qp;
+};
+
+
+class IBConnectionGroup {
+public:
+    IBConnection* _conn;
+    struct ibv_pd* _pd;
+    struct ibv_comp_channel* _comp_channel;
     struct ibv_cq* _cq;
 
-    InputContext(Parameters const& par) : _par(par) { };
+    IBConnectionGroup(Parameters const& par) : _par(par) {
+        _conn = new IBConnection();
+    };
+
+    ~IBConnectionGroup() {
+        delete _conn;
+    }
 
     void connect() {
         const char* hostname = _par.compute_nodes().at(0).c_str();
 
-        Log.debug() << "setting up RDMA CM structures";
+        Log.trace() << "setting up RDMA CM structures";
 
-        // Create an rdma event channel
-        struct rdma_event_channel* cm_channel = rdma_create_event_channel();
-        if (!cm_channel)
-            throw ApplicationException("event channel creation failed");
+        struct rdma_event_channel* event_channel = rdma_create_event_channel();
+        if (!event_channel)
+            throw ApplicationException("rdma_create_event_channel failed");
 
-        // Create rdma id (for listening)
         struct rdma_cm_id* cm_id;
-        int err = rdma_create_id(cm_channel, &cm_id, NULL, RDMA_PS_TCP);
+        int err = rdma_create_id(event_channel, &cm_id, NULL, RDMA_PS_TCP);
         if (err)
-            throw ApplicationException("id creation failed");
+            throw ApplicationException("rdma_create_id failed");
 
-        // Retrieve a list of IP addresses and port numbers
-        // for given hostname and service
         struct addrinfo hints;
-        memset(&hints, 0, sizeof hints);
-        hints.ai_family = AF_INET;
+        memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_family = AF_UNSPEC;
         hints.ai_socktype = SOCK_STREAM;
         struct addrinfo* res;
 
         char* service;
+
         if (asprintf(&service, "%d", BASE_PORT) < 0)
             throw ApplicationException("invalid port");
 
@@ -61,8 +64,6 @@ public:
 
         Log.debug() << "resolution of server address and route";
 
-        // Resolve destination address from IP address to rdma address
-        // (binds cm_id to a local device)
         for (struct addrinfo* t = res; t; t = t->ai_next) {
             err = rdma_resolve_addr(cm_id, NULL, t->ai_addr,
                                     RESOLVE_TIMEOUT_MS);
@@ -75,79 +76,62 @@ public:
         freeaddrinfo(res);
         free(service);
 
-        // Retrieve the next pending communication event
         struct rdma_cm_event* event;
-        err = rdma_get_cm_event(cm_channel, &event);
+        err = rdma_get_cm_event(event_channel, &event);
         if (err)
             throw ApplicationException("rdma_get_cm_event failed");
 
-        // Assert that event is address resolution completion
         if (event->event != RDMA_CM_EVENT_ADDR_RESOLVED)
             throw ApplicationException("RDMA address resolution failed");
 
-        // Free the communication event
         rdma_ack_cm_event(event);
 
-        // Resolv an rdma route to the dest address to establish a connection
         err = rdma_resolve_route(cm_id, RESOLVE_TIMEOUT_MS);
         if (err)
             throw ApplicationException("rdma_resolve_route failed");
 
-        // Retrieve the next pending communication event
-        err = rdma_get_cm_event(cm_channel, &event);
+        err = rdma_get_cm_event(event_channel, &event);
         if (err)
             throw ApplicationException("rdma_get_cm_event failed");
 
-        // Assert that event is route resolution completion
         if (event->event != RDMA_CM_EVENT_ROUTE_RESOLVED)
             throw ApplicationException("RDMA route resolution failed");
 
-        // Free the communication event
         rdma_ack_cm_event(event);
 
         Log.debug() << "creating verbs objects";
 
-        // Allocate a protection domain (PD) for the given context
         _pd = ibv_alloc_pd(cm_id->verbs);
         if (!_pd)
             throw ApplicationException("ibv_alloc_pd failed");
 
-        // Create a completion event channel for the given context
-        _comp_chan = ibv_create_comp_channel(cm_id->verbs);
-        if (!_comp_chan)
+        _comp_channel = ibv_create_comp_channel(cm_id->verbs);
+        if (!_comp_channel)
             throw ApplicationException("ibv_create_comp_channel failed");
 
-        // Create a completion queue (CQ) for the given context with at least 40
-        // entries, using the given completion channel to return completion events
-        _cq = ibv_create_cq(cm_id->verbs, 40, NULL, _comp_chan, 0);
+        _cq = ibv_create_cq(cm_id->verbs, 40, NULL, _comp_channel, 0);
         if (!_cq)
             throw ApplicationException("ibv_create_cq failed");
 
-        // Request a completion notification on the given completion queue
-        // ("one shot" - only one completion event will be generated)
         if (ibv_req_notify_cq(_cq, 0))
             throw ApplicationException("ibv_req_notify_cq failed");
 
-        // Allocate a queue pair (QP) associated with the specified rdma id
         struct ibv_qp_init_attr qp_attr;
         memset(&qp_attr, 0, sizeof qp_attr);
-        qp_attr.cap.max_send_wr = 20; // max num of outstanding WRs in the SQ
-        qp_attr.cap.max_send_sge = 8; // max num of outstanding scatter/gather
-        // elements in a WR in the SQ
-        qp_attr.cap.max_recv_wr = 20;  // max num of outstanding WRs in the RQ
-        qp_attr.cap.max_recv_sge = 8; // max num of outstanding scatter/gather
-        // elements in a WR in the RQ
+        qp_attr.cap.max_send_wr = 20;
+        qp_attr.cap.max_send_sge = 8;
+        qp_attr.cap.max_recv_wr = 20;
+        qp_attr.cap.max_recv_sge = 8;
         qp_attr.cap.max_inline_data = sizeof(tscdesc_t) * 10;
         qp_attr.send_cq = _cq;
         qp_attr.recv_cq = _cq;
-        qp_attr.qp_type = IBV_QPT_RC; // reliable connection
+        qp_attr.qp_type = IBV_QPT_RC;
         err = rdma_create_qp(cm_id, _pd, &qp_attr);
         if (err)
             throw ApplicationException("creation of QP failed");
 
         Log.debug() << "connect to server";
 
-        // Initiate an active connection request
         struct rdma_conn_param conn_param;
         memset(&conn_param, 0, sizeof conn_param);
         conn_param.initiator_depth = 1;
@@ -156,23 +140,19 @@ public:
         if (err)
             throw ApplicationException("rdma_connect failed");
 
-        // Retrieve next pending communication event on the given channel (BLOCKING)
-        err = rdma_get_cm_event(cm_channel, &event);
+        err = rdma_get_cm_event(event_channel, &event);
         if (err)
-            throw ApplicationException("retrieval of communication event failed");
+            throw ApplicationException("rdma_get_cm_event failed");
 
-        // Assert that a connection has been established with the remote end point
         if (event->event != RDMA_CM_EVENT_ESTABLISHED)
             throw ApplicationException("connection could not be established");
 
-        // Copy server private data from event
-        memcpy(&_server_pdata, event->param.conn.private_data,
-               sizeof _server_pdata);
+        memcpy(&_conn[0]._server_pdata, event->param.conn.private_data,
+               sizeof _conn[0]._server_pdata);
 
-        // Free the communication event
         rdma_ack_cm_event(event);
 
-        _qp = cm_id->qp;
+        _conn[0]._qp = cm_id->qp;
 
         Log.info() << "connection established";
     }
@@ -184,7 +164,7 @@ private:
 
 class InputBuffer {
 public:
-    InputBuffer(InputContext* ctx) :
+    InputBuffer(IBConnectionGroup* cg) :
         _our_turn(1),
         _acked_mc(0), _acked_data(0),
         _mc_written(0), _data_written(0) {
@@ -195,7 +175,7 @@ public:
         memset(&_cn_ack, 0, sizeof(cn_bufpos_t));
         memset(&_cn_wp, 0, sizeof(cn_bufpos_t));
         memset(&_send_cn_wp, 0, sizeof(cn_bufpos_t));
-        _ctx = ctx;
+        _cg = cg;
     };
 
     ~InputBuffer() {
@@ -214,24 +194,24 @@ public:
     void
     setup() {
         // register memory regions
-        _mr_recv = ibv_reg_mr(_ctx->_pd, &_receive_cn_ack,
+        _mr_recv = ibv_reg_mr(_cg->_pd, &_receive_cn_ack,
                               sizeof(cn_bufpos_t),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_recv)
             throw ApplicationException("registration of memory region failed");
 
-        _mr_send = ibv_reg_mr(_ctx->_pd, &_send_cn_wp,
+        _mr_send = ibv_reg_mr(_cg->_pd, &_send_cn_wp,
                               sizeof(cn_bufpos_t), 0);
         if (!_mr_send)
             throw ApplicationException("registration of memory region failed");
 
-        _mr_data = ibv_reg_mr(_ctx->_pd, _data,
+        _mr_data = ibv_reg_mr(_cg->_pd, _data,
                               DATA_WORDS * sizeof(uint64_t),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_data)
             throw ApplicationException("registration of memory region failed");
 
-        _mr_addr = ibv_reg_mr(_ctx->_pd, _addr,
+        _mr_addr = ibv_reg_mr(_cg->_pd, _addr,
                               ADDR_WORDS * sizeof(uint64_t),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_addr)
@@ -239,6 +219,12 @@ public:
     }
 
 private:
+    int
+    target_cn_index(uint64_t timeslice) {
+        //return timeslice % _par.compute_nodes().length();
+        return 0;
+    }
+
     void
     wait_for_data(uint64_t min_mc_number) {
         uint64_t mcs_to_write = min_mc_number - _mc_written;
@@ -343,11 +329,11 @@ private:
 
         struct bufdesc target_desc[] = {
             {
-                _ctx->_server_pdata[0].buf_va, CN_DATABUF_WORDS,
+                _cg->_conn[0]._server_pdata[0].buf_va, CN_DATABUF_WORDS,
                 sizeof(uint64_t), (char*) "cn_data"
             },
             {
-                _ctx->_server_pdata[1].buf_va, CN_DESCBUF_WORDS,
+                _cg->_conn[0]._server_pdata[1].buf_va, CN_DESCBUF_WORDS,
                 sizeof(tscdesc_t), (char*) "cn_desc"
             },
             {0, 0, 0, 0}
@@ -496,9 +482,9 @@ private:
         send_wr_ts.opcode = IBV_WR_RDMA_WRITE;
         send_wr_ts.sg_list = sge;
         send_wr_ts.num_sge = num_sge;
-        send_wr_ts.wr.rdma.rkey = _ctx->_server_pdata[0].buf_rkey;
+        send_wr_ts.wr.rdma.rkey = _cg->_conn[0]._server_pdata[0].buf_rkey;
         send_wr_ts.wr.rdma.remote_addr =
-            (uintptr_t)(_ctx->_server_pdata[0].buf_va +
+            (uintptr_t)(_cg->_conn[0]._server_pdata[0].buf_va +
                         (_cn_wp.data % CN_DATABUF_WORDS) * sizeof(uint64_t));
 
         if (num_sge2) {
@@ -507,9 +493,9 @@ private:
             send_wr_tswrap.opcode = IBV_WR_RDMA_WRITE;
             send_wr_tswrap.sg_list = sge2;
             send_wr_tswrap.num_sge = num_sge2;
-            send_wr_tswrap.wr.rdma.rkey = _ctx->_server_pdata[0].buf_rkey;
+            send_wr_tswrap.wr.rdma.rkey = _cg->_conn[0]._server_pdata[0].buf_rkey;
             send_wr_tswrap.wr.rdma.remote_addr =
-                (uintptr_t) _ctx->_server_pdata[0].buf_va;
+                (uintptr_t) _cg->_conn[0]._server_pdata[0].buf_va;
             send_wr_ts.next = &send_wr_tswrap;
             send_wr_tswrap.next = &send_wr_tscdesc;
         } else {
@@ -533,9 +519,9 @@ private:
             IBV_SEND_INLINE | IBV_SEND_FENCE | IBV_SEND_SIGNALED;
         send_wr_tscdesc.sg_list = &sge3;
         send_wr_tscdesc.num_sge = 1;
-        send_wr_tscdesc.wr.rdma.rkey = _ctx->_server_pdata[1].buf_rkey;
+        send_wr_tscdesc.wr.rdma.rkey = _cg->_conn[0]._server_pdata[1].buf_rkey;
         send_wr_tscdesc.wr.rdma.remote_addr =
-            (uintptr_t)(_ctx->_server_pdata[1].buf_va
+            (uintptr_t)(_cg->_conn[0]._server_pdata[1].buf_va
                         + (_cn_wp.desc % CN_DESCBUF_WORDS)
                         * sizeof(tscdesc_t));
 
@@ -543,7 +529,7 @@ private:
 
         // send everything
         struct ibv_send_wr* bad_send_wr;
-        if (my_post_send(_ctx->_qp, &send_wr_ts, &bad_send_wr))
+        if (my_post_send(_cg->_conn[0]._qp, &send_wr_ts, &bad_send_wr))
             throw ApplicationException("ibv_post_send failed");
     }
 
@@ -659,7 +645,7 @@ private:
     void post_recv_cn_ack() {
         // Post a receive work request (WR) to the receive queue
         Log.trace() << "POST RECEIVE _receive_cn_ack";
-        if (ibv_post_recv(_ctx->_qp, &recv_wr, &bad_recv_wr))
+        if (ibv_post_recv(_cg->_conn[0]._qp, &recv_wr, &bad_recv_wr))
             throw ApplicationException("post_recv failed");
     }
 
@@ -667,7 +653,7 @@ private:
         // Post a send work request (WR) to the send queue
         Log.trace() << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
                     << " desc=" << _send_cn_wp.desc << ")";
-        if (my_post_send(_ctx->_qp, &send_wr, &bad_send_wr))
+        if (my_post_send(_cg->_conn[0]._qp, &send_wr, &bad_send_wr))
             throw ApplicationException("ibv_post_send(cn_wp) failed");
     }
 
@@ -682,18 +668,18 @@ private:
         int ne;
 
         while (true) {
-            if (ibv_get_cq_event(_ctx->_comp_chan, &ev_cq, &ev_ctx))
+            if (ibv_get_cq_event(_cg->_comp_channel, &ev_cq, &ev_ctx))
                 throw ApplicationException("ibv_get_cq_event failed");
 
             ibv_ack_cq_events(ev_cq, 1);
 
-            if (ev_cq != _ctx->_cq)
+            if (ev_cq != _cg->_cq)
                 throw ApplicationException("CQ event for unknown CQ");
 
-            if (ibv_req_notify_cq(_ctx->_cq, 0))
+            if (ibv_req_notify_cq(_cg->_cq, 0))
                 throw ApplicationException("ibv_req_notify_cq failed");
 
-            while ((ne = ibv_poll_cq(_ctx->_cq, ne_max, wc))) {
+            while ((ne = ibv_poll_cq(_cg->_cq, ne_max, wc))) {
                 if (ne < 0)
                     throw ApplicationException("ibv_poll_cq failed");
 
@@ -765,7 +751,7 @@ private:
     struct ibv_mr* _mr_data;
     struct ibv_mr* _mr_addr;
 
-    InputContext* _ctx;
+    IBConnectionGroup* _cg;
 
     int _our_turn;
 

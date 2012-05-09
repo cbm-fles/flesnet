@@ -23,10 +23,10 @@
 int
 InputApplication::run()
 {
-    InputContext ctx(_par);
-    ctx.connect();
+    IBConnectionGroup cg(_par);
+    cg.connect();
 
-    InputBuffer ib(&ctx);
+    InputBuffer ib(&cg);
     ib.setup();
     boost::thread t1(&InputBuffer::sender_thread, &ib);
     boost::thread t2(&InputBuffer::completion_thread, &ib);
