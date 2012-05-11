@@ -16,7 +16,7 @@
 #include <rdma/rdma_cma.h>
 
 #include "Application.hpp"
-#include "InputApplication.hpp"
+#include "InputBuffer.hpp"
 #include "log.hpp"
 
 
