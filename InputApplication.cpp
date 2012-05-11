@@ -23,13 +23,11 @@
 int
 InputApplication::run()
 {
-    IBConnectionGroup cg(_par);
-    cg.connect();
-
-    InputBuffer ib(&cg);
+    InputBuffer ib;
+    ib.initiateConnect(_par.compute_nodes());
     ib.setup();
     boost::thread t1(&InputBuffer::sender_thread, &ib);
-    boost::thread t2(&InputBuffer::completion_thread, &ib);
+    boost::thread t2(&InputBuffer::completionHandler, &ib);
 
     t1.join();
     t2.join();
