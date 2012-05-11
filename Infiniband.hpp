@@ -77,6 +77,9 @@ public:
         
         return 0;
     }
+    
+    /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
+    virtual void onAddrResolved(struct ibv_pd* pd) { };
 
 protected:
 
@@ -91,6 +94,14 @@ protected:
 
     /// Index of this connection in a group of connections.
     int _index;
+
+    /// Post InfiniBand SEND work request.
+    void postSend(struct ibv_send_wr *wr) {
+        struct ibv_send_wr* bad_send_wr;
+        
+        if (ibv_post_send(qp(), wr, &bad_send_wr))
+            throw ApplicationException("ibv_post_send failed");
+    }
 
 private:
 
@@ -110,7 +121,7 @@ public:
 
     /// The IBConnectionGroup default constructor.
     IBConnectionGroup() :
-        _pd(0), _connected(0), _ec(0),  _context(0), _comp_channel(0), _cq(0) {
+        _pd(0), _connected(0), _ec(0),  _context(0), _compChannel(0), _cq(0) {
         _ec = rdma_create_event_channel();
         if (!_ec)
             throw ApplicationException("rdma_create_event_channel failed");
@@ -162,7 +173,7 @@ public:
         int ne;
 
         while (true) {
-            if (ibv_get_cq_event(_comp_channel, &ev_cq, &ev_ctx))
+            if (ibv_get_cq_event(_compChannel, &ev_cq, &ev_ctx))
                 throw ApplicationException("ibv_get_cq_event failed");
 
             ibv_ack_cq_events(ev_cq, 1);
@@ -211,7 +222,7 @@ private:
     struct ibv_context* _context;
 
     /// InfiniBand completion channel
-    struct ibv_comp_channel* _comp_channel;
+    struct ibv_comp_channel* _compChannel;
 
     /// InfiniBand completion queue
     struct ibv_cq* _cq;
@@ -315,11 +326,11 @@ private:
         if (!_pd)
             throw ApplicationException("ibv_alloc_pd failed");
 
-        _comp_channel = ibv_create_comp_channel(context);
-        if (!_comp_channel)
+        _compChannel = ibv_create_comp_channel(context);
+        if (!_compChannel)
             throw ApplicationException("ibv_create_comp_channel failed");
 
-        _cq = ibv_create_cq(context, 40, NULL, _comp_channel, 0);
+        _cq = ibv_create_cq(context, 40, NULL, _compChannel, 0);
         if (!_cq)
             throw ApplicationException("ibv_create_cq failed");
 

@@ -31,7 +31,9 @@ public:
     }
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
-    void onAddrResolved(struct ibv_pd* pd) {
+    virtual void onAddrResolved(struct ibv_pd* pd) {
+        IBConnection::onAddrResolved(pd);
+        
         // register memory regions
         _mr_recv = ibv_reg_mr(pd, &_receive_cn_ack,
                               sizeof(cn_bufpos_t),
@@ -83,7 +85,7 @@ public:
             if (_cn_wp.data != _send_cn_wp.data
                     || _cn_wp.desc != _send_cn_wp.desc) {
                 _send_cn_wp = _cn_wp;
-                post_send_cn_wp();
+                postSendCnWp();
             } else {
                 _our_turn = 1;
             }
@@ -99,7 +101,7 @@ public:
     }
 
     /// Post a send work request (WR) to the send queue
-    void post_send_cn_wp() {
+    void postSendCnWp() {
         Log.trace() << "[" << _index << "] "
                     << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
                     << " desc=" << _send_cn_wp.desc << ")";
@@ -194,12 +196,10 @@ public:
                     << "post_send (timeslice " << timeslice << ")";
 
         // send everything
-        struct ibv_send_wr* bad_send_wr;
-        if (ibv_post_send(qp(), &send_wr_ts, &bad_send_wr))
-            throw ApplicationException("ibv_post_send failed");
+        postSend(&send_wr_ts);
     }
 
-    // wait until enough space is available at target compute node
+    /// Wait until enough space is available at target compute node.
     void waitForBufferSpace(uint64_t dataSize, uint64_t descSize) {
         boost::mutex::scoped_lock lock(_cn_ack_mutex);
         Log.trace() << "[" << _index << "] "
@@ -222,7 +222,7 @@ public:
                                    << "SENDER send phony update";
                         _our_turn = 0;
                         _send_cn_wp = _cn_wp;
-                        post_send_cn_wp();
+                        postSendCnWp();
                     }
                 }
             }
@@ -235,7 +235,7 @@ public:
         }
     }
 
-
+    /// Increment target write pointers after data has been sent.
     void incWritePointers(uint64_t dataSize, uint64_t descSize) {
         boost::mutex::scoped_lock lock(_cn_wp_mutex);
         _cn_wp.data += dataSize;
@@ -243,7 +243,7 @@ public:
         if (_our_turn) {
             _our_turn = 0;
             _send_cn_wp = _cn_wp;
-            post_send_cn_wp();
+            postSendCnWp();
         }
     }
 
