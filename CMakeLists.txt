@@ -13,3 +13,11 @@ add_executable (ibtsb main.cpp Parameters.cpp InputApplication.cpp ComputeApplic
 target_link_libraries (ibtsb rdmacm) 
 target_link_libraries (ibtsb ${Boost_PROGRAM_OPTIONS_LIBRARY}) 
 target_link_libraries (ibtsb ${Boost_THREAD_LIBRARY}) 
+
+# Documentation
+include(FindDoxygen)
+if(DOXYGEN_FOUND)
+    add_subdirectory(doc)
+else(DOXYGEN_FOUND)
+    message(STATUS "WARNING: Failed to find Doxygen - won't build documentation")
+endif(DOXYGEN_FOUND)

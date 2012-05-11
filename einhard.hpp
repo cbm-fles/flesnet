@@ -21,42 +21,6 @@
  * along with Einhard.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \mainpage Einhard Logging Library
- *
- * \section intro_sec Introduction
- *
- * Einhard aims at being a lightweight logging library with the following features:
- *  - Severity filtering
- *  - Automatic output colorization
- *  - Output timestamping
- *  - Low performance overhead
- *
- * To use Einhard all you need to do is create an einhard::Logger object and push messages into its output
- * streams.
- *
- * \code
- * using namespace einhard;
- * Logger logger( INFO );
- * logger.trace() << "Trace message"; // will not be printed
- * logger.error() << "Error message"; // will be printed
- * \endcode
- *
- * To reduce the performance overhad you can specify NDEBUG during compile. This will disable trace
- * and debug messages in a way that should allow the compilers dead code elimination to remove
- * everything that is only pushed into such a stream.
- *
- * \section install_sec Installation
- *
- * Einhard is build using cmake. You can install it using the usual cmake triplet:
- * \code
- * cmake
- * make
- * sudo make install
- * \endcode
- * If you want to build a static lib or install to a custom path you can use the usual cmake
- * utilities to adjust the configuration.
- */
-
 #include <iostream>
 #include <iomanip>
 #include <ctime>

@@ -1,20 +1,27 @@
-/*
- * ComputeNodeConnection.hpp
+/**
+ * \file ComputeNodeConnection.hpp
  *
- * 2012, Jan de Cuveland
+ * 2012, Jan de Cuveland <cmail@cuveland.de>
  */
 
 #ifndef COMPUTENODECONNECTION_HPP
 #define COMPUTENODECONNECTION_HPP
 
 #include <boost/thread.hpp>
-
 #include "Infiniband.hpp"
 #include "log.hpp"
 
 
-class ComputeNodeConnection : public IBConnection {
+/// Compute node connection class.
+/** A ComputeNodeConnection object represents the endpoint of a single
+    timeslice building connection from an input node to a compute
+    node. */
+
+class ComputeNodeConnection : public IBConnection
+{
 public:
+
+    /// The ComputeNodeConnection constructor.
     ComputeNodeConnection(struct rdma_event_channel* ec, int index) :
         IBConnection(ec, index), _our_turn(1) {
         memset(&_receive_cn_ack, 0, sizeof(cn_bufpos_t));
@@ -23,8 +30,8 @@ public:
         memset(&_send_cn_wp, 0, sizeof(cn_bufpos_t));
     }
 
-    void
-    onAddrResolved(struct ibv_pd* pd) {
+    /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
+    void onAddrResolved(struct ibv_pd* pd) {
         // register memory regions
         _mr_recv = ibv_reg_mr(pd, &_receive_cn_ack,
                               sizeof(cn_bufpos_t),
@@ -37,12 +44,7 @@ public:
         if (!_mr_send)
             throw ApplicationException("registration of memory region failed");
 
-        setup_recv();
-        setup_send();
-        post_recv_cn_ack();
-    }
-
-    void setup_recv() {
+        // setup send and receive buffers
         recv_sge.addr = (uintptr_t) &_receive_cn_ack;
         recv_sge.length = sizeof(cn_bufpos_t);
         recv_sge.lkey = _mr_recv->lkey;
@@ -50,9 +52,7 @@ public:
         recv_wr.wr_id = ID_RECEIVE_CN_ACK | (_index << 8);
         recv_wr.sg_list = &recv_sge;
         recv_wr.num_sge = 1;
-    }
 
-    void setup_send() {
         send_sge.addr = (uintptr_t) &_send_cn_wp;
         send_sge.length = sizeof(cn_bufpos_t);
         send_sge.lkey = _mr_send->lkey;
@@ -61,8 +61,12 @@ public:
         send_wr.opcode = IBV_WR_SEND;
         send_wr.sg_list = &send_sge;
         send_wr.num_sge = 1;
+
+        // post initial receive request
+        postReceiveCnAck();
     }
 
+    /// Handle Infiniband receive completion notification
     void onCompleteRecv() {
         Log.debug()
                 << "[" << _index << "] "
@@ -73,7 +77,7 @@ public:
             _cn_ack = _receive_cn_ack;
             _cn_ack_cond.notify_one();
         }
-        post_recv_cn_ack();
+        postReceiveCnAck();
         {
             boost::mutex::scoped_lock lock(_cn_wp_mutex);
             if (_cn_wp.data != _send_cn_wp.data
@@ -86,16 +90,16 @@ public:
         }
     }
 
-    void post_recv_cn_ack() {
-        // Post a receive work request (WR) to the receive queue
+    /// Post a receive work request (WR) to the receive queue
+    void postReceiveCnAck() {
         Log.trace() << "[" << _index << "] "
                     << "POST RECEIVE _receive_cn_ack";
         if (ibv_post_recv(qp(), &recv_wr, &bad_recv_wr))
             throw ApplicationException("ibv_post_recv failed");
     }
 
+    /// Post a send work request (WR) to the send queue
     void post_send_cn_wp() {
-        // Post a send work request (WR) to the send queue
         Log.trace() << "[" << _index << "] "
                     << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
                     << " desc=" << _send_cn_wp.desc << ")";

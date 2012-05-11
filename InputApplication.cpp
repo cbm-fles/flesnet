@@ -24,7 +24,13 @@ int
 InputApplication::run()
 {
     InputBuffer ib;
-    ib.initiateConnect(_par.compute_nodes());
+
+    std::vector<std::string> services;
+    for (unsigned int i = 0; i < _par.compute_nodes().size(); i++)
+        services.push_back(boost::lexical_cast<std::string>(BASE_PORT + i));
+    
+    ib.initiateConnect(_par.compute_nodes(), services);
+    ib.handleCmEvents();
     ib.setup();
     boost::thread t1(&InputBuffer::sender_thread, &ib);
     boost::thread t2(&InputBuffer::completionHandler, &ib);
