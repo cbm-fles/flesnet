@@ -278,7 +278,7 @@ private:
     /// Mutex protecting access to CN write pointers
     boost::mutex _cn_wp_mutex;
    
-    /// Infiniband receive work request
+    /// InfiniBand receive work request
     struct ibv_recv_wr recv_wr;
 
     /// Scatter/gather list entry for receive work request

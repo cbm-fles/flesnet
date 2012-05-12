@@ -73,8 +73,8 @@ public:
         Log.info() << "SENDER loop done";
     }
 
+    /// Register memory regions.
     void setup() {
-        // register memory regions
         _mr_data = ibv_reg_mr(_pd, _data,
                               DATA_WORDS * sizeof(uint64_t),
                               IBV_ACCESS_LOCAL_WRITE);
@@ -89,13 +89,41 @@ public:
     }
 
 private:
-    int
-    target_cn_index(uint64_t timeslice) {
+
+    /// Input data buffer. Filled by FLIB.
+    uint64_t* _data;
+
+    /// InfiniBand memory region descriptor for input data buffer.
+    struct ibv_mr* _mr_data;
+
+    /// Input address buffer. Filled by FLIB.
+    uint64_t* _addr;
+
+    /// InfiniBand memory region descriptor for input address buffer.
+    struct ibv_mr* _mr_addr;
+
+    /// Buffer to store acknowledged status of timeslices.
+    uint64_t* _ack;
+
+    /// Number of acknowledged MCs. Can be read by FLIB.
+    uint64_t _acked_mc;
+    
+    /// Number of acknowledged data words. Can be read by FLIB.
+    uint64_t _acked_data;
+    
+    /// FLIB-internal number of written MCs. 
+    uint64_t _mc_written;
+
+    /// FLIB-internal number of written data words. 
+    uint64_t _data_written;
+
+    /// Return target computation node for given timeslice.
+    int target_cn_index(uint64_t timeslice) {
         return timeslice % _conn.size();
     }
 
-    void
-    wait_for_data(uint64_t min_mc_number) {
+    /// Generate FLIB input data.
+    void wait_for_data(uint64_t min_mc_number) {
         uint64_t mcs_to_write = min_mc_number - _mc_written;
         // write more data than requested (up to 2 additional TSs)
         mcs_to_write += random() % (TS_SIZE * 2);
@@ -153,9 +181,8 @@ private:
         }
     };
 
-
-    std::string
-    getStateString() {
+    /// Return string describing buffer contents, suitable for debug output.
+    std::string getStateString() {
         std::ostringstream s;
 
         s << "/--- addr buf ---" << std::endl;
@@ -231,7 +258,7 @@ private:
         _conn[cn]->sendData(sge, num_sge, timeslice, mc_length, data_length);
     }
 
-
+    /// Completion notification event dispatcher. Called by the event loop.
     virtual void onCompletion(const struct ibv_wc& wc) {
         switch (wc.wr_id & 0xFF) {
         case ID_WRITE_DESC: {
@@ -265,24 +292,6 @@ private:
             throw ApplicationException("wc for unknown wr_id");
         }
     };
-
-
-private:
-
-    uint64_t* _data;
-    uint64_t* _addr;
-    uint64_t* _ack;
-
-    struct ibv_mr* _mr_data;
-    struct ibv_mr* _mr_addr;
-
-    // can be read by FLIB
-    uint64_t _acked_mc;
-    uint64_t _acked_data;
-
-    // FLIB only
-    uint64_t _mc_written;
-    uint64_t _data_written;
 };
 
 
