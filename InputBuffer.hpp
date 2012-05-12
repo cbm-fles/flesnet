@@ -1,7 +1,7 @@
 /*
- * InputBuffer.hpp
+ * \file InputBuffer.hpp
  *
- * 2012, Jan de Cuveland
+ * 2012, Jan de Cuveland <cmail@cuveland.de>
  */
 
 #ifndef INPUTBUFFER_HPP
@@ -11,8 +11,16 @@
 #include "log.hpp"
 
 
-class InputBuffer : public IBConnectionGroup<ComputeNodeConnection> {
+/// Input buffer and compute node connection container class.
+/** An InputBuffer object represents an input buffer (filled by a
+    FLIB) and a group of timeslice building connections to compute
+    nodes. */
+
+class InputBuffer : public IBConnectionGroup<ComputeNodeConnection>
+{
 public:
+
+    /// The InputBuffer default constructor.
     InputBuffer() :
         _acked_mc(0), _acked_data(0),
         _mc_written(0), _data_written(0) {
@@ -21,18 +29,51 @@ public:
         _ack = new uint64_t[ACK_WORDS]();
     };
 
+    /// The InputBuffer default destructor.
     ~InputBuffer() {
         delete [] _data;
         delete [] _addr;
         delete [] _ack;
     };
 
-    void sender_thread() {
-        sender_loop();
-    };
+    /// The central loop for distributing timeslice data.
+    void senderLoop() {
+        for (uint64_t timeslice = 0; timeslice < NUM_TS; timeslice++) {
 
-    void
-    setup() {
+            boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+            
+            // wait until a complete TS is available in the input buffer
+            uint64_t mc_offset = timeslice * TS_SIZE;
+            uint64_t mc_length = TS_SIZE + TS_OVERLAP;
+            while (_addr[(mc_offset + mc_length) % ADDR_WORDS] <= _acked_data)
+                wait_for_data(mc_offset + mc_length + 1);
+
+            uint64_t data_offset = _addr[mc_offset % ADDR_WORDS];
+            uint64_t data_length = _addr[(mc_offset + mc_length) % ADDR_WORDS]
+                                   - data_offset;
+
+            Log.trace() << "SENDER working on TS " << timeslice
+                        << ", MCs " << mc_offset << ".."
+                        << (mc_offset + mc_length - 1)
+                        << ", data words " << data_offset << ".."
+                        << (data_offset + data_length - 1);
+            Log.trace() << getStateString();
+
+            int cn = target_cn_index(timeslice);
+
+            _conn[cn]->waitForBufferSpace(data_length + mc_length, 1);
+
+            post_send_data(timeslice, cn, mc_offset, mc_length,
+                           data_offset, data_length);
+
+            _conn[cn]->incWritePointers(data_length + mc_length, 1);
+
+        }
+
+        Log.info() << "SENDER loop done";
+    }
+
+    void setup() {
         // register memory regions
         _mr_data = ibv_reg_mr(_pd, _data,
                               DATA_WORDS * sizeof(uint64_t),
@@ -87,14 +128,14 @@ private:
             // check for space in data buffer
             if (_data_written - _acked_data + content_words + 2 > DATA_WORDS) {
                 Log.warn() << "data buffer full";
-                boost::this_thread::sleep(boost::posix_time::millisec(1));
+                boost::this_thread::sleep(boost::posix_time::millisec(1000));
                 break;
             }
 
             // check for space in addr buffer
             if (_mc_written - _acked_mc == ADDR_WORDS) {
                 Log.warn() << "addr buffer full";
-                boost::this_thread::sleep(boost::posix_time::millisec(1));
+                boost::this_thread::sleep(boost::posix_time::millisec(1000));
                 break;
             }
 
@@ -137,11 +178,10 @@ private:
         return s.str();
     }
 
-
+    /// Create gather list for transmission of timeslice
     void post_send_data(uint64_t timeslice, int cn,
                         uint64_t mc_offset, uint64_t mc_length,
                         uint64_t data_offset, uint64_t data_length) {
-        // initiate Infiniband transmission of TS
         int num_sge = 0;
         struct ibv_sge sge[4];
         // addr words
@@ -188,49 +228,11 @@ private:
             sge[num_sge++].lkey = _mr_data->lkey;
         }
 
-        _conn[cn]->post_send_data(sge, num_sge, timeslice, mc_length,
-                                  data_length);
+        _conn[cn]->sendData(sge, num_sge, timeslice, mc_length, data_length);
     }
 
 
-    void
-    sender_loop() {
-        for (uint64_t timeslice = 0; timeslice < NUM_TS; timeslice++) {
-
-            // wait until a complete TS is available in the input buffer
-            uint64_t mc_offset = timeslice * TS_SIZE;
-            uint64_t mc_length = TS_SIZE + TS_OVERLAP;
-            while (_addr[(mc_offset + mc_length) % ADDR_WORDS] <= _acked_data)
-                wait_for_data(mc_offset + mc_length + 1);
-
-            uint64_t data_offset = _addr[mc_offset % ADDR_WORDS];
-            uint64_t data_length = _addr[(mc_offset + mc_length) % ADDR_WORDS]
-                                   - data_offset;
-
-            Log.trace() << "SENDER working on TS " << timeslice
-                        << ", MCs " << mc_offset << ".."
-                        << (mc_offset + mc_length - 1)
-                        << ", data words " << data_offset << ".."
-                        << (data_offset + data_length - 1);
-            Log.trace() << getStateString();
-
-            int cn = target_cn_index(timeslice);
-
-            _conn[cn]->waitForBufferSpace(data_length + mc_length, 1);
-
-            post_send_data(timeslice, cn, mc_offset, mc_length,
-                           data_offset, data_length);
-
-            _conn[cn]->incWritePointers(data_length + mc_length, 1);
-
-        }
-
-        Log.info() << "SENDER loop done";
-    }
-
-    // TODO: split files: ibconn, cn-conn, inputbuffer
-
-    virtual void onCompletion(struct ibv_wc& wc) {
+    virtual void onCompletion(const struct ibv_wc& wc) {
         switch (wc.wr_id & 0xFF) {
         case ID_WRITE_DESC: {
             uint64_t ts = wc.wr_id >> 8;

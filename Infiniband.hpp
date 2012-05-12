@@ -95,12 +95,20 @@ protected:
     /// Index of this connection in a group of connections.
     int _index;
 
-    /// Post InfiniBand SEND work request.
+    /// Post an InfiniBand SEND work request (WR) to the send queue
     void postSend(struct ibv_send_wr *wr) {
         struct ibv_send_wr* bad_send_wr;
         
         if (ibv_post_send(qp(), wr, &bad_send_wr))
             throw ApplicationException("ibv_post_send failed");
+    }
+
+    /// Post an InfiniBand RECV work request (WR) to the receive queue.
+    void postRecv(struct ibv_recv_wr *wr) {
+        struct ibv_recv_wr* bad_recv_wr;
+        
+        if (ibv_post_recv(qp(), wr, &bad_recv_wr))
+            throw ApplicationException("ibv_post_recv failed");
     }
 
 private:

@@ -23,94 +23,52 @@ public:
 
     /// The ComputeNodeConnection constructor.
     ComputeNodeConnection(struct rdma_event_channel* ec, int index) :
-        IBConnection(ec, index), _our_turn(1) {
+        IBConnection(ec, index), _ourTurn(true) {
         memset(&_receive_cn_ack, 0, sizeof(cn_bufpos_t));
         memset(&_cn_ack, 0, sizeof(cn_bufpos_t));
         memset(&_cn_wp, 0, sizeof(cn_bufpos_t));
         memset(&_send_cn_wp, 0, sizeof(cn_bufpos_t));
     }
 
-    /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
-    virtual void onAddrResolved(struct ibv_pd* pd) {
-        IBConnection::onAddrResolved(pd);
-        
-        // register memory regions
-        _mr_recv = ibv_reg_mr(pd, &_receive_cn_ack,
-                              sizeof(cn_bufpos_t),
-                              IBV_ACCESS_LOCAL_WRITE);
-        if (!_mr_recv)
-            throw ApplicationException("registration of memory region failed");
-
-        _mr_send = ibv_reg_mr(pd, &_send_cn_wp,
-                              sizeof(cn_bufpos_t), 0);
-        if (!_mr_send)
-            throw ApplicationException("registration of memory region failed");
-
-        // setup send and receive buffers
-        recv_sge.addr = (uintptr_t) &_receive_cn_ack;
-        recv_sge.length = sizeof(cn_bufpos_t);
-        recv_sge.lkey = _mr_recv->lkey;
-        memset(&recv_wr, 0, sizeof recv_wr);
-        recv_wr.wr_id = ID_RECEIVE_CN_ACK | (_index << 8);
-        recv_wr.sg_list = &recv_sge;
-        recv_wr.num_sge = 1;
-
-        send_sge.addr = (uintptr_t) &_send_cn_wp;
-        send_sge.length = sizeof(cn_bufpos_t);
-        send_sge.lkey = _mr_send->lkey;
-        memset(&send_wr, 0, sizeof send_wr);
-        send_wr.wr_id = ID_SEND_CN_WP;
-        send_wr.opcode = IBV_WR_SEND;
-        send_wr.sg_list = &send_sge;
-        send_wr.num_sge = 1;
-
-        // post initial receive request
-        postReceiveCnAck();
-    }
-
-    /// Handle Infiniband receive completion notification
-    void onCompleteRecv() {
-        Log.debug()
-                << "[" << _index << "] "
-                << "receive completion, new _cn_ack.data="
-                << _receive_cn_ack.data;
-        {
-            boost::mutex::scoped_lock lock(_cn_ack_mutex);
-            _cn_ack = _receive_cn_ack;
-            _cn_ack_cond.notify_one();
-        }
-        postReceiveCnAck();
-        {
-            boost::mutex::scoped_lock lock(_cn_wp_mutex);
-            if (_cn_wp.data != _send_cn_wp.data
-                    || _cn_wp.desc != _send_cn_wp.desc) {
-                _send_cn_wp = _cn_wp;
-                postSendCnWp();
-            } else {
-                _our_turn = 1;
+    /// Wait until enough space is available at target compute node.
+    void waitForBufferSpace(uint64_t dataSize, uint64_t descSize) {
+        boost::mutex::scoped_lock lock(_cn_ack_mutex);
+        Log.trace() << "[" << _index << "] "
+                    << "SENDER data space (words) required="
+                    << dataSize << ", avail="
+                    << _cn_ack.data + CN_DATABUF_WORDS - _cn_wp.data;
+        Log.trace() << "[" << _index << "] "
+                    << "SENDER desc space (words) required="
+                    << descSize << ", avail="
+                    << _cn_ack.desc + CN_DESCBUF_WORDS - _cn_wp.desc;
+        while (_cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS < dataSize
+                || _cn_ack.desc - _cn_wp.desc + CN_DESCBUF_WORDS
+                < descSize) {
+            {
+                boost::mutex::scoped_lock lock2(_cn_wp_mutex);
+                if (_ourTurn) {
+                    // send phony update to receive new pointers
+                    {
+                        Log.info() << "[" << _index << "] "
+                                   << "SENDER send phony update";
+                        _ourTurn = false;
+                        _send_cn_wp = _cn_wp;
+                        postSendCnWp();
+                    }
+                }
             }
+            _cn_ack_cond.wait(lock);
+            Log.trace() << "[" << _index << "] "
+                        << "SENDER (next try) space avail="
+                        << _cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS
+                        << " desc_avail=" << _cn_ack.desc - _cn_wp.desc
+                        + CN_DESCBUF_WORDS;
         }
     }
 
-    /// Post a receive work request (WR) to the receive queue
-    void postReceiveCnAck() {
-        Log.trace() << "[" << _index << "] "
-                    << "POST RECEIVE _receive_cn_ack";
-        if (ibv_post_recv(qp(), &recv_wr, &bad_recv_wr))
-            throw ApplicationException("ibv_post_recv failed");
-    }
-
-    /// Post a send work request (WR) to the send queue
-    void postSendCnWp() {
-        Log.trace() << "[" << _index << "] "
-                    << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
-                    << " desc=" << _send_cn_wp.desc << ")";
-        if (ibv_post_send(qp(), &send_wr, &bad_send_wr))
-            throw ApplicationException("ibv_post_send failed");
-    }
-
-    void post_send_data(struct ibv_sge* sge, int num_sge, uint64_t timeslice,
-                        uint64_t mc_length, uint64_t data_length) {
+    /// Send data and descriptors to compute node.
+    void sendData(struct ibv_sge* sge, int num_sge, uint64_t timeslice,
+                  uint64_t mc_length, uint64_t data_length) {
         int num_sge2 = 0;
         struct ibv_sge sge2[4];
 
@@ -199,76 +157,138 @@ public:
         postSend(&send_wr_ts);
     }
 
-    /// Wait until enough space is available at target compute node.
-    void waitForBufferSpace(uint64_t dataSize, uint64_t descSize) {
-        boost::mutex::scoped_lock lock(_cn_ack_mutex);
-        Log.trace() << "[" << _index << "] "
-                    << "SENDER data space (words) required="
-                    << dataSize << ", avail="
-                    << _cn_ack.data + CN_DATABUF_WORDS - _cn_wp.data;
-        Log.trace() << "[" << _index << "] "
-                    << "SENDER desc space (words) required="
-                    << descSize << ", avail="
-                    << _cn_ack.desc + CN_DESCBUF_WORDS - _cn_wp.desc;
-        while (_cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS < dataSize
-                || _cn_ack.desc - _cn_wp.desc + CN_DESCBUF_WORDS
-                < descSize) {
-            {
-                boost::mutex::scoped_lock lock2(_cn_wp_mutex);
-                if (_our_turn) {
-                    // send phony update to receive new pointers
-                    {
-                        Log.info() << "[" << _index << "] "
-                                   << "SENDER send phony update";
-                        _our_turn = 0;
-                        _send_cn_wp = _cn_wp;
-                        postSendCnWp();
-                    }
-                }
-            }
-            _cn_ack_cond.wait(lock);
-            Log.trace() << "[" << _index << "] "
-                        << "SENDER (next try) space avail="
-                        << _cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS
-                        << " desc_avail=" << _cn_ack.desc - _cn_wp.desc
-                        + CN_DESCBUF_WORDS;
-        }
-    }
-
     /// Increment target write pointers after data has been sent.
     void incWritePointers(uint64_t dataSize, uint64_t descSize) {
         boost::mutex::scoped_lock lock(_cn_wp_mutex);
         _cn_wp.data += dataSize;
         _cn_wp.desc += descSize;
-        if (_our_turn) {
-            _our_turn = 0;
+        if (_ourTurn) {
+            _ourTurn = false;
             _send_cn_wp = _cn_wp;
             postSendCnWp();
         }
     }
 
-    struct ibv_mr* _mr_recv;
-    struct ibv_mr* _mr_send;
+    /// Handle Infiniband receive completion notification
+    void onCompleteRecv() {
+        Log.debug()
+                << "[" << _index << "] "
+                << "receive completion, new _cn_ack.data="
+                << _receive_cn_ack.data;
+        {
+            boost::mutex::scoped_lock lock(_cn_ack_mutex);
+            _cn_ack = _receive_cn_ack;
+            _cn_ack_cond.notify_one();
+        }
+        postRecvCnAck();
+        {
+            boost::mutex::scoped_lock lock(_cn_wp_mutex);
+            if (_cn_wp.data != _send_cn_wp.data
+                    || _cn_wp.desc != _send_cn_wp.desc) {
+                _send_cn_wp = _cn_wp;
+                postSendCnWp();
+            } else {
+                _ourTurn = true;
+            }
+        }
+    }
 
-    int _our_turn;
+    /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
+    virtual void onAddrResolved(struct ibv_pd* pd) {
+        IBConnection::onAddrResolved(pd);
+        
+        // register memory regions
+        _mr_recv = ibv_reg_mr(pd, &_receive_cn_ack,
+                              sizeof(cn_bufpos_t),
+                              IBV_ACCESS_LOCAL_WRITE);
+        if (!_mr_recv)
+            throw ApplicationException("registration of memory region failed");
 
-    cn_bufpos_t _receive_cn_ack;
+        _mr_send = ibv_reg_mr(pd, &_send_cn_wp,
+                              sizeof(cn_bufpos_t), 0);
+        if (!_mr_send)
+            throw ApplicationException("registration of memory region failed");
+
+        // setup send and receive buffers
+        recv_sge.addr = (uintptr_t) &_receive_cn_ack;
+        recv_sge.length = sizeof(cn_bufpos_t);
+        recv_sge.lkey = _mr_recv->lkey;
+        memset(&recv_wr, 0, sizeof recv_wr);
+        recv_wr.wr_id = ID_RECEIVE_CN_ACK | (_index << 8);
+        recv_wr.sg_list = &recv_sge;
+        recv_wr.num_sge = 1;
+
+        send_sge.addr = (uintptr_t) &_send_cn_wp;
+        send_sge.length = sizeof(cn_bufpos_t);
+        send_sge.lkey = _mr_send->lkey;
+        memset(&send_wr, 0, sizeof send_wr);
+        send_wr.wr_id = ID_SEND_CN_WP;
+        send_wr.opcode = IBV_WR_SEND;
+        send_wr.sg_list = &send_sge;
+        send_wr.num_sge = 1;
+
+        // post initial receive request
+        postRecvCnAck();
+    }
+
+private:
+
+    /// Post a receive work request (WR) to the receive queue
+    void postRecvCnAck() {
+        Log.trace() << "[" << _index << "] "
+                    << "POST RECEIVE _receive_cn_ack";
+        postRecv(&recv_wr);
+    }
+
+    /// Post a send work request (WR) to the send queue
+    void postSendCnWp() {
+        Log.trace() << "[" << _index << "] "
+                    << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
+                    << " desc=" << _send_cn_wp.desc << ")";
+        postSend(&send_wr);
+    }
+
+    /// Flag, true if it is the input nodes's turn to send a pointer update.
+    bool _ourTurn;
+
+    /// Local copy of acknowledged-by-CN pointers
     cn_bufpos_t _cn_ack;
 
-    cn_bufpos_t _cn_wp;
-    cn_bufpos_t _send_cn_wp;
+    /// Receive buffer for acknowledged-by-CN pointers
+    cn_bufpos_t _receive_cn_ack;
 
+    /// Infiniband memory region descriptor for acknowledged-by-CN pointers
+    struct ibv_mr* _mr_recv;
+
+    /// Mutex protecting access to acknowledged-by-CN pointers
     boost::mutex _cn_ack_mutex;
-    boost::mutex _cn_wp_mutex;
+
+    /// Condition variable for acknowledged-by-CN pointers    
     boost::condition_variable_any _cn_ack_cond;
 
-    struct ibv_sge recv_sge;
-    struct ibv_recv_wr recv_wr;
-    struct ibv_recv_wr* bad_recv_wr;
+    /// Local version of CN write pointers
+    cn_bufpos_t _cn_wp;
 
+    /// Send buffer for CN write pointers
+    cn_bufpos_t _send_cn_wp;
+
+    /// Infiniband memory region descriptor for CN write pointers
+    struct ibv_mr* _mr_send;
+
+    /// Mutex protecting access to CN write pointers
+    boost::mutex _cn_wp_mutex;
+   
+    /// Infiniband receive work request
+    struct ibv_recv_wr recv_wr;
+
+    /// Scatter/gather list entry for receive work request
+    struct ibv_sge recv_sge;
+
+    /// Infiniband send work request
     struct ibv_sge send_sge;
+
+    /// Scatter/gather list entry for send work request
     struct ibv_send_wr send_wr;
-    struct ibv_send_wr* bad_send_wr;
 };
 
 
