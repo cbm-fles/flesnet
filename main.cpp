@@ -1,5 +1,5 @@
 /*
- * main.cpp
+ * \file main.cpp
  *
  * 2012, Jan de Cuveland
  */
@@ -7,19 +7,23 @@
 #include <cstdlib>
 
 #include "Application.hpp"
+#include "global.hpp"
 
+einhard::Logger<einhard::ALL, true> Log;
+Parameters* Par;
 
 int
 main(int argc, char* argv[])
 {
     try {
-        Parameters par(argc, argv);
+        Par = new Parameters(argc, argv);
+        Par->selectDebugValues();
 
-        if (par.node_type() == Parameters::INPUT_NODE) {
-            InputApplication app(par);
+        if (Par->nodeType() == Parameters::INPUT_NODE) {
+            InputApplication app(*Par);
             app.run();
         } else {
-            ComputeApplication app(par);
+            ComputeApplication app(*Par);
             app.run();
         }
     } catch (std::exception const& e) {
@@ -27,5 +31,6 @@ main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    delete Par;
     return EXIT_SUCCESS;
 }

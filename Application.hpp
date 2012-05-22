@@ -1,7 +1,7 @@
 /*
- * Application.hpp
+ * \file Application.hpp
  *
- * 2012, Jan de Cuveland
+ * 2012, Jan de Cuveland <cmail@cuveland.de>
  */
 
 #ifndef APPLICATION_HPP
@@ -9,22 +9,19 @@
 
 #include <iostream>
 #include <boost/cstdint.hpp>
-
+#include <boost/thread.hpp>
 #include "Parameters.hpp"
+#include "InputBuffer.hpp"
 
 
 // timeslice component descriptor
-typedef struct {
+/*
+  typedef struct {
     uint64_t ts_num;
     uint64_t offset;
     uint64_t size;
 } tscdesc_t;
-
-
-typedef struct {
-    uint64_t data;
-    uint64_t desc;
-} cn_bufpos_t;
+*/
 
 typedef struct {
     uint8_t hdrrev;
@@ -33,42 +30,6 @@ typedef struct {
     uint32_t size;
     uint64_t time;
 } mc_hdr_t;
-
-
-enum REQUEST_ID { ID_WRITE_DATA = 1, ID_WRITE_DATA_WRAP, ID_WRITE_DESC,
-                  ID_SEND_CN_WP, ID_RECEIVE_CN_ACK
-                };
-
-#define ACK_WORDS (ADDR_WORDS / TS_SIZE + 1) // TODO: clean up
-
-enum { RESOLVE_TIMEOUT_MS = 5000 };
-
-#define BUFDEBUG
-#ifndef BUFDEBUG
-enum {
-    TS_SIZE = 100, // timeslice size in number of MCs
-    TS_OVERLAP = 2, // overlap region in number of MCs
-    DATA_WORDS = 64 * 1024 * 1024, // data buffer in 64-bit words
-    ADDR_WORDS = 1024 * 1024, // address buffer in 64-bit words
-    CN_DATABUF_WORDS = 128 * 1024, // data buffer in 64-bit words
-    CN_DESCBUF_WORDS = 80, // desc buffer in entries
-    TYP_CNT_WORDS = 128, // typical content words in MC
-    NUM_TS = 1024 * 1024 * 1024
-};
-#else
-enum {
-    TS_SIZE = 2, // timeslice size in number of MCs
-    TS_OVERLAP = 1, // overlap region in number of MCs
-    DATA_WORDS = 32, // data buffer in 64-bit words
-    ADDR_WORDS = 10, // address buffer in 64-bit words
-    CN_DATABUF_WORDS = 32, // data buffer in 64-bit words
-    CN_DESCBUF_WORDS = 4, // desc buffer in entries
-    TYP_CNT_WORDS = 2, // typical content words in MC
-    NUM_TS = 10
-};
-#endif
-
-#define BASE_PORT 20079
 
 
 inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
@@ -90,6 +51,10 @@ inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
 }
 
 
+/// Application exception class.
+/** An ApplicationException object signals a general error in the flow
+    of the application. */
+
 class ApplicationException : public std::runtime_error {
 public:
     explicit ApplicationException(const std::string& what_arg = "")
@@ -97,29 +62,76 @@ public:
 };
 
 
-class Application {
+/// Application base class.
+/** The Application object represents an instance of the running
+    application. */
+
+class Application
+{
 public:
+    
     typedef struct {
         uint64_t buf_va;
         uint32_t buf_rkey;
     } pdata_t;
+
+    /// The Application contructor.
     explicit Application(Parameters const& par) : _par(par) { };
+
+    /// The "main" function of an application.
     virtual int run() = 0;
+    
 protected:
+
+    /// The run parameters object.
     Parameters const& _par;
 };
 
 
-class InputApplication : public Application {
+/// Input application class.
+/** The InputApplication object represents an instance of the running
+    input node application. */
+
+class InputApplication : public Application
+{
 public:
+
+    /// The InputApplication contructor.
     explicit InputApplication(Parameters& par) : Application(par) { };
-    virtual int run();
+    
+    /// The "main" function of an input node application.
+    virtual int run() {
+        InputBuffer ib;
+
+        std::vector<std::string> services;
+        for (unsigned int i = 0; i < _par.computeNodes().size(); i++)
+            services.push_back(boost::lexical_cast<std::string>(Par->basePort() + i));
+    
+        ib.initiateConnect(_par.computeNodes(), services);
+        ib.handleCmEvents();
+        ib.setup();
+        boost::thread t1(&InputBuffer::senderLoop, &ib);
+        boost::thread t2(&InputBuffer::completionHandler, &ib);
+
+        t1.join();
+        t2.join();
+        return 0;        
+    };
 };
 
 
-class ComputeApplication : public Application {
+/// Compute application class.
+/** The ComputeApplication object represents an instance of the
+    running compute node application. */
+
+class ComputeApplication : public Application
+{
 public:
+
+    /// The ComputeApplication contructor.
     explicit ComputeApplication(Parameters& par) : Application(par) { };
+
+    /// The "main" function of a compute node application.
     virtual int run();
 };
 

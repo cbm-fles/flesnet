@@ -9,7 +9,18 @@
 
 #include <boost/thread.hpp>
 #include "Infiniband.hpp"
-#include "log.hpp"
+#include "global.hpp"
+
+// TODO: encapsulate?
+typedef struct {
+    uint64_t data;
+    uint64_t desc;
+} cn_bufpos_t;
+
+// TODO: encapsulate?
+enum REQUEST_ID { ID_WRITE_DATA = 1, ID_WRITE_DATA_WRAP, ID_WRITE_DESC,
+                  ID_SEND_CN_WP, ID_RECEIVE_CN_ACK
+                };
 
 
 /// Compute node connection class.
@@ -36,33 +47,31 @@ public:
         Log.trace() << "[" << _index << "] "
                     << "SENDER data space (words) required="
                     << dataSize << ", avail="
-                    << _cn_ack.data + CN_DATABUF_WORDS - _cn_wp.data;
+                    << _cn_ack.data + Par->cnDataBufferSize() - _cn_wp.data;
         Log.trace() << "[" << _index << "] "
                     << "SENDER desc space (words) required="
                     << descSize << ", avail="
-                    << _cn_ack.desc + CN_DESCBUF_WORDS - _cn_wp.desc;
-        while (_cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS < dataSize
-                || _cn_ack.desc - _cn_wp.desc + CN_DESCBUF_WORDS
+                    << _cn_ack.desc + Par->cnDescBufferSize() - _cn_wp.desc;
+        while (_cn_ack.data - _cn_wp.data + Par->cnDataBufferSize() < dataSize
+                || _cn_ack.desc - _cn_wp.desc + Par->cnDescBufferSize()
                 < descSize) {
             {
                 boost::mutex::scoped_lock lock2(_cn_wp_mutex);
                 if (_ourTurn) {
                     // send phony update to receive new pointers
-                    {
-                        Log.info() << "[" << _index << "] "
-                                   << "SENDER send phony update";
-                        _ourTurn = false;
-                        _send_cn_wp = _cn_wp;
-                        postSendCnWp();
-                    }
+                    Log.info() << "[" << _index << "] "
+                               << "SENDER send phony update";
+                    _ourTurn = false;
+                    _send_cn_wp = _cn_wp;
+                    postSendCnWp();
                 }
             }
             _cn_ack_cond.wait(lock);
             Log.trace() << "[" << _index << "] "
                         << "SENDER (next try) space avail="
-                        << _cn_ack.data - _cn_wp.data + CN_DATABUF_WORDS
+                        << _cn_ack.data - _cn_wp.data + Par->cnDataBufferSize()
                         << " desc_avail=" << _cn_ack.desc - _cn_wp.desc
-                        + CN_DESCBUF_WORDS;
+                        + Par->cnDescBufferSize();
         }
     }
 
@@ -73,7 +82,7 @@ public:
         struct ibv_sge sge2[4];
 
         uint64_t target_words_left =
-            CN_DATABUF_WORDS - _cn_wp.data % CN_DATABUF_WORDS;
+            Par->cnDataBufferSize() - _cn_wp.data % Par->cnDataBufferSize();
 
         // split sge list if necessary
         int num_sge_cut = 0;
@@ -110,7 +119,8 @@ public:
         send_wr_ts.wr.rdma.rkey = _serverInfo[0].rkey;
         send_wr_ts.wr.rdma.remote_addr =
             (uintptr_t)(_serverInfo[0].addr +
-                        (_cn_wp.data % CN_DATABUF_WORDS) * sizeof(uint64_t));
+                        (_cn_wp.data % Par->cnDataBufferSize())
+                        * sizeof(uint64_t));
 
         if (num_sge2) {
             memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
@@ -147,7 +157,7 @@ public:
         send_wr_tscdesc.wr.rdma.rkey = _serverInfo[1].rkey;
         send_wr_tscdesc.wr.rdma.remote_addr =
             (uintptr_t)(_serverInfo[1].addr
-                        + (_cn_wp.desc % CN_DESCBUF_WORDS)
+                        + (_cn_wp.desc % Par->cnDescBufferSize())
                         * sizeof(tscdesc_t));
 
         Log.debug() << "[" << _index << "] "
@@ -202,12 +212,12 @@ public:
                               sizeof(cn_bufpos_t),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_recv)
-            throw ApplicationException("registration of memory region failed");
+            throw InfinibandException("registration of memory region failed");
 
         _mr_send = ibv_reg_mr(pd, &_send_cn_wp,
                               sizeof(cn_bufpos_t), 0);
         if (!_mr_send)
-            throw ApplicationException("registration of memory region failed");
+            throw InfinibandException("registration of memory region failed");
 
         // setup send and receive buffers
         recv_sge.addr = (uintptr_t) &_receive_cn_ack;

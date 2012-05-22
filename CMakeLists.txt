@@ -8,11 +8,11 @@ FIND_PACKAGE (Boost 1.40 COMPONENTS program_options thread REQUIRED)
 
 #add_definitions(-DTHREADSAFE)
 
-add_executable (ibtsb main.cpp InputApplication.cpp ComputeApplication.cpp log.cpp)
+add_executable (ibtsb main.cpp ComputeApplication.cpp)
 
-target_link_libraries (ibtsb rdmacm) 
-target_link_libraries (ibtsb ${Boost_PROGRAM_OPTIONS_LIBRARY}) 
-target_link_libraries (ibtsb ${Boost_THREAD_LIBRARY}) 
+target_link_libraries (ibtsb rdmacm)
+target_link_libraries (ibtsb ${Boost_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries (ibtsb ${Boost_THREAD_LIBRARY})
 
 # Documentation
 include(FindDoxygen)

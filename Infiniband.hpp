@@ -8,7 +8,31 @@
 #define INFINIBAND_HPP
 
 #include <vector>
-#include "log.hpp"
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <infiniband/arch.h>
+#include <rdma/rdma_cma.h>
+#include "global.hpp"
+
+
+// TODO: remove here!
+// timeslice component descriptor
+typedef struct {
+    uint64_t ts_num;
+    uint64_t offset;
+    uint64_t size;
+} tscdesc_t;
+
+
+/// InfiniBand exception class.
+/** An InfinbandException object signals an error that occured in the
+    InfiniBand communication functions. */
+
+class InfinibandException : public std::runtime_error {
+public:
+    explicit InfinibandException(const std::string& what_arg = "")
+        : std::runtime_error(what_arg) { }
+};
 
 
 /// InfiniBand connection base class.
@@ -23,7 +47,7 @@ public:
     IBConnection(struct rdma_event_channel* ec, int index) : _index(index) {
         int err = rdma_create_id(ec, &_cmId, this, RDMA_PS_TCP);
         if (err)
-            throw ApplicationException("rdma_create_id failed");
+            throw InfinibandException("rdma_create_id failed");
     };
 
     /// Retrieve the InfiniBand queue pair associated with the connection.
@@ -46,7 +70,7 @@ public:
 
         int err = getaddrinfo(hostname.c_str(), service.c_str(), &hints, &res);
         if (err)
-            throw ApplicationException("getaddrinfo failed");
+            throw InfinibandException("getaddrinfo failed");
 
         Log.debug() << "[" << _index << "] "
                     << "resolution of server address and route";
@@ -58,7 +82,7 @@ public:
                 break;
         }
         if (err)
-            throw ApplicationException("rdma_resolve_addr failed");
+            throw InfinibandException("rdma_resolve_addr failed");
 
         freeaddrinfo(res);
     }
@@ -79,8 +103,12 @@ public:
     }
     
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
-    virtual void onAddrResolved(struct ibv_pd* pd) { };
-
+    virtual void onAddrResolved(struct ibv_pd* pd) {
+        int err = rdma_resolve_route(_cmId, RESOLVE_TIMEOUT_MS);
+        if (err)
+            throw InfinibandException("rdma_resolve_route failed");
+    };
+    
 protected:
 
     /// Access information for a remote memory region.
@@ -100,7 +128,7 @@ protected:
         struct ibv_send_wr* bad_send_wr;
         
         if (ibv_post_send(qp(), wr, &bad_send_wr))
-            throw ApplicationException("ibv_post_send failed");
+            throw InfinibandException("ibv_post_send failed");
     }
 
     /// Post an InfiniBand RECV work request (WR) to the receive queue.
@@ -108,13 +136,19 @@ protected:
         struct ibv_recv_wr* bad_recv_wr;
         
         if (ibv_post_recv(qp(), wr, &bad_recv_wr))
-            throw ApplicationException("ibv_post_recv failed");
+            throw InfinibandException("ibv_post_recv failed");
     }
 
 private:
 
     /// RDMA connection manager ID.
     struct rdma_cm_id* _cmId;
+
+    /// Low-level communication parameters
+    enum {
+        RESOLVE_TIMEOUT_MS = 5000 ///< Resolve timeout in milliseconds.
+    };
+
 };
 
 
@@ -129,10 +163,11 @@ public:
 
     /// The IBConnectionGroup default constructor.
     IBConnectionGroup() :
-        _pd(0), _connected(0), _ec(0),  _context(0), _compChannel(0), _cq(0) {
+        _pd(0), _connected(0), _ec(0),  _context(0), _compChannel(0),
+        _cq(0), _qp_cap(0) {
         _ec = rdma_create_event_channel();
         if (!_ec)
-            throw ApplicationException("rdma_create_event_channel failed");
+            throw InfinibandException("rdma_create_event_channel failed");
     };
 
     /// The IBConnectionGroup default destructor.
@@ -166,7 +201,7 @@ public:
                 break;
         };
         if (err)
-            throw ApplicationException("rdma_get_cm_event failed");
+            throw InfinibandException("rdma_get_cm_event failed");
         
         Log.info() << "number of connections: " << _connected;
     };
@@ -182,26 +217,26 @@ public:
 
         while (true) {
             if (ibv_get_cq_event(_compChannel, &ev_cq, &ev_ctx))
-                throw ApplicationException("ibv_get_cq_event failed");
+                throw InfinibandException("ibv_get_cq_event failed");
 
             ibv_ack_cq_events(ev_cq, 1);
 
             if (ev_cq != _cq)
-                throw ApplicationException("CQ event for unknown CQ");
+                throw InfinibandException("CQ event for unknown CQ");
 
             if (ibv_req_notify_cq(_cq, 0))
-                throw ApplicationException("ibv_req_notify_cq failed");
+                throw InfinibandException("ibv_req_notify_cq failed");
 
             while ((ne = ibv_poll_cq(_cq, ne_max, wc))) {
                 if (ne < 0)
-                    throw ApplicationException("ibv_poll_cq failed");
+                    throw InfinibandException("ibv_poll_cq failed");
 
                 for (int i = 0; i < ne; i++) {
                     if (wc[i].status != IBV_WC_SUCCESS) {
                         std::ostringstream s;
                         s << ibv_wc_status_str(wc[i].status)
                           << " for wr_id " << (int) wc[i].wr_id;
-                        throw ApplicationException(s.str());
+                        throw InfinibandException(s.str());
                     }
 
                     onCompletion(wc[i]);
@@ -235,27 +270,30 @@ private:
     /// InfiniBand completion queue
     struct ibv_cq* _cq;
 
+    /// InfiniBand queue pair capabilities
+    struct ibv_qp_cap* _qp_cap;
+
     /// Connection manager event dispatcher. Called by the CM event loop.
     int onCmEvent(struct rdma_cm_event* event) {
         switch (event->event) {
         case RDMA_CM_EVENT_ADDR_RESOLVED:
             return onAddrResolved(event->id);
         case RDMA_CM_EVENT_ADDR_ERROR:
-            throw ApplicationException("rdma_resolve_addr failed");
+            throw InfinibandException("rdma_resolve_addr failed");
         case RDMA_CM_EVENT_ROUTE_RESOLVED:
             return onRouteResolved(event->id);
         case RDMA_CM_EVENT_ROUTE_ERROR:
-            throw ApplicationException("rdma_resolve_route failed");
+            throw InfinibandException("rdma_resolve_route failed");
         case RDMA_CM_EVENT_CONNECT_ERROR:
-            throw ApplicationException("could not establish connection");
+            throw InfinibandException("could not establish connection");
         case RDMA_CM_EVENT_UNREACHABLE:
-            throw ApplicationException("remote server is not reachable");
+            throw InfinibandException("remote server is not reachable");
         case RDMA_CM_EVENT_REJECTED:
-            throw ApplicationException("request rejected by remote endpoint");
+            throw InfinibandException("request rejected by remote endpoint");
         case RDMA_CM_EVENT_ESTABLISHED:
             return onConnection(event);
         case RDMA_CM_EVENT_DISCONNECTED:
-            throw ApplicationException("connection has been disconnected");
+            throw InfinibandException("connection has been disconnected");
         case RDMA_CM_EVENT_CONNECT_REQUEST:
         case RDMA_CM_EVENT_CONNECT_RESPONSE:
         case RDMA_CM_EVENT_DEVICE_REMOVAL:
@@ -264,7 +302,7 @@ private:
         case RDMA_CM_EVENT_ADDR_CHANGE:
         case RDMA_CM_EVENT_TIMEWAIT_EXIT:
         default:
-            throw ApplicationException("unknown cm event");
+            throw InfinibandException("unknown cm event");
         }
     }
 
@@ -287,14 +325,10 @@ private:
         qp_attr.qp_type = IBV_QPT_RC;
         int err = rdma_create_qp(id, _pd, &qp_attr);
         if (err)
-            throw ApplicationException("creation of QP failed");
+            throw InfinibandException("creation of QP failed");
 
         CONNECTION* conn = (CONNECTION*) id->context;
         conn->onAddrResolved(_pd);
-
-        err = rdma_resolve_route(id, RESOLVE_TIMEOUT_MS);
-        if (err)
-            throw ApplicationException("rdma_resolve_route failed");
 
         return 0;
     }
@@ -309,7 +343,7 @@ private:
         conn_param.retry_count = 7;
         int err = rdma_connect(id, &conn_param);
         if (err)
-            throw ApplicationException("rdma_connect failed");
+            throw InfinibandException("rdma_connect failed");
 
         return 0;
     }
@@ -332,18 +366,18 @@ private:
 
         _pd = ibv_alloc_pd(context);
         if (!_pd)
-            throw ApplicationException("ibv_alloc_pd failed");
+            throw InfinibandException("ibv_alloc_pd failed");
 
         _compChannel = ibv_create_comp_channel(context);
         if (!_compChannel)
-            throw ApplicationException("ibv_create_comp_channel failed");
+            throw InfinibandException("ibv_create_comp_channel failed");
 
         _cq = ibv_create_cq(context, 40, NULL, _compChannel, 0);
         if (!_cq)
-            throw ApplicationException("ibv_create_cq failed");
+            throw InfinibandException("ibv_create_cq failed");
 
         if (ibv_req_notify_cq(_cq, 0))
-            throw ApplicationException("ibv_req_notify_cq failed");
+            throw InfinibandException("ibv_req_notify_cq failed");
     }
 
     /// Completion notification event dispatcher. Called by the event loop.

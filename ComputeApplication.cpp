@@ -15,9 +15,8 @@
 #include <boost/thread.hpp>
 
 #include "Application.hpp"
-#include "log.hpp"
+#include "global.hpp"
 
-//#define CHATTY
 
 cn_bufpos_t _send_cn_ack = {0};
 cn_bufpos_t _cn_ack = {0};
@@ -30,12 +29,6 @@ int
 ComputeApplication::run()
 {
     enum { ID_SEND = 4, ID_RECEIVE };
-    //const int CN_DATABUF_WORDS = 128*1024;
-    //const int CN_DESCBUF_WORDS = 80;
-    const int CN_DATABUF_WORDS = 32;
-    const int CN_DESCBUF_WORDS = 4;
-
-
 
     Log.debug() << "Setting up RDMA CM structures";
 
@@ -51,7 +44,7 @@ ComputeApplication::run()
         throw ApplicationException("id creation failed");
 
     // Bind rdma id (for listening) to socket address (local port)
-    unsigned short port = BASE_PORT + _par.node_index();
+    unsigned short port = Par->basePort() + _par.nodeIndex();
     struct sockaddr_in sin;
     memset(&sin, 0, sizeof sin);
     sin.sin_family = AF_INET;
@@ -107,19 +100,19 @@ ComputeApplication::run()
         throw ApplicationException("request of completion notification failed");
 
     // Allocate buffer space
-    uint64_t* _data = (uint64_t*) calloc(CN_DATABUF_WORDS, sizeof(uint64_t));
-    tscdesc_t* _desc = (tscdesc_t*) calloc(CN_DESCBUF_WORDS, sizeof(tscdesc_t));
+    uint64_t* _data = (uint64_t*) calloc(Par->cnDataBufferSize(), sizeof(uint64_t));
+    tscdesc_t* _desc = (tscdesc_t*) calloc(Par->cnDescBufferSize(), sizeof(tscdesc_t));
     if (!_data || !_desc)
         throw ApplicationException("allocation of buffer space failed");
 
     // Register a memory region (MR) associated with the given protection domain
     // (local read access is always enabled)
     struct ibv_mr* mr_data = ibv_reg_mr(pd, _data,
-                                        CN_DATABUF_WORDS * sizeof(uint64_t),
+                                        Par->cnDataBufferSize() * sizeof(uint64_t),
                                         IBV_ACCESS_LOCAL_WRITE |
                                         IBV_ACCESS_REMOTE_WRITE);
     struct ibv_mr* mr_desc = ibv_reg_mr(pd, _desc,
-                                        CN_DESCBUF_WORDS * sizeof(tscdesc_t),
+                                        Par->cnDescBufferSize() * sizeof(tscdesc_t),
                                         IBV_ACCESS_LOCAL_WRITE |
                                         IBV_ACCESS_REMOTE_WRITE);
     struct ibv_mr* mr_send = ibv_reg_mr(pd, &_send_cn_ack,
@@ -259,8 +252,8 @@ ComputeApplication::run()
             std::cout << "/--- data buf ---" << std::endl << "|";
             for (unsigned int i = tscdesc.offset;
                     i < tscdesc.offset + tscdesc.size; i++) {
-                std::cout << " (" << (i % CN_DATABUF_WORDS) << ")" << std::hex
-                          << _data[i % CN_DATABUF_WORDS]
+                std::cout << " (" << (i % Par->cnDataBufferSize()) << ")" << std::hex
+                          << _data[i % Par->cnDataBufferSize()]
                           << std::dec;
             }
             std::cout << std::endl << "\\---------" << std::endl;

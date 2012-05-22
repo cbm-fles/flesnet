@@ -14,7 +14,7 @@ namespace po = boost::program_options;
 #include <string>
 #include <stdexcept>
 #include <fstream>
-#include "log.hpp"
+#include "global.hpp"
 
 
 template<class T>
@@ -51,82 +51,174 @@ public:
     typedef enum {
         COMPUTE_NODE, ///< Node is a compute node.
         INPUT_NODE    ///< Node is an input node.
-    } node_type_t;
-
-    /// The Parameters default constructor.
-    Parameters() { };
+    } NodeType;
 
     /// The Parameters command-line parsing constructor.
-    Parameters(int argc, char* argv[]) {
-        parse_options(argc, argv);
+    Parameters(int argc, char* argv[]) :
+        _timesliceSize(100),
+        _overlapSize(2),
+        _inDataBufferSize(64 * 1024 * 1024),
+        _inAddrBufferSize(1024 * 1024),
+        _cnDataBufferSize(128 * 1024),
+        _cnDescBufferSize(80),
+        _typicalContentSize(128),
+        _maxTimesliceNumber(1024 * 1024 * 1024),
+        _basePort(20079)
+    {
+        parseOptions(argc, argv);
     };
+
+    void selectDebugValues() {
+        _timesliceSize = 2;
+        _overlapSize = 1;
+        _inDataBufferSize = 32;
+        _inAddrBufferSize = 10;
+        _cnDataBufferSize = 32;
+        _cnDescBufferSize = 4;
+        _typicalContentSize = 2;
+        _maxTimesliceNumber = 10;
+    }
 
     /// Return a description of active nodes, suitable for debug output.
     std::string const desc() const {
         std::stringstream st;
 
-        st << "input nodes (" << _input_nodes.size() << "): "
-           << _input_nodes << std::endl;
-        st << "compute nodes (" << _compute_nodes.size() << "): "
-           << _compute_nodes << std::endl;
+        st << "input nodes (" << _inputNodes.size() << "): "
+           << _inputNodes << std::endl;
+        st << "compute nodes (" << _computeNodes.size() << "): "
+           << _computeNodes << std::endl;
         st << "this node: "
-           << (_node_type == INPUT_NODE ? "input" : "compute")
-           << " node #" << _node_index;
+           << (_nodeType == INPUT_NODE ? "input" : "compute")
+           << " node #" << _nodeIndex;
 
         return st.str();
     };
 
+    /// Retrieve the global timeslice size in number of MCs.
+    uint32_t timesliceSize() const {
+        return _timesliceSize;
+    };
+    
+    /// Retrieve the size of the overlap region in number of MCs.
+    uint32_t overlapSize() const {
+        return _overlapSize;
+    };
+
+    /// Retrieve the size of the input node's data buffer in 64-bit words.
+    uint32_t inDataBufferSize() const {
+        return _inDataBufferSize;
+    };
+
+    /// Retrieve the size of the input node's address buffer in 64-bit words.
+    uint32_t inAddrBufferSize() const {
+        return _inAddrBufferSize;
+    };
+
+    /// Retrieve the size of the compute node's data buffer in 64-bit words.
+    uint32_t cnDataBufferSize() const {
+        return _cnDataBufferSize;
+    };
+
+    /// Retrieve the size of the compute node's description buffer
+    /// (number of entries).
+    uint32_t cnDescBufferSize() const {
+        return _cnDescBufferSize;
+    };
+
+    /// Retrieve the typical number of content words per MC.
+    uint32_t typicalContentSize() const {
+        return _typicalContentSize;
+    };
+
+    /// Retrieve the global maximum timeslice number.
+    uint32_t maxTimesliceNumber() const {
+        return _maxTimesliceNumber;
+    };
+
+    /// Retrieve the global base port.
+    uint32_t basePort() const {
+        return _basePort;
+    };
+    
     /// Retrieve the list of participating input nodes.
-    std::vector<std::string> const input_nodes() const {
-        return _input_nodes;
+    std::vector<std::string> const inputNodes() const {
+        return _inputNodes;
     };
 
     /// Retrieve the list of participating compute nodes.
-    std::vector<std::string> const compute_nodes() const {
-        return _compute_nodes;
+    std::vector<std::string> const computeNodes() const {
+        return _computeNodes;
     };
     
     /// Retrieve this node's type.
-    node_type_t node_type() const {
-        return _node_type;
+    NodeType nodeType() const {
+        return _nodeType;
     };
 
     /// Retrieve this node's index in the list of nodes of same type.
-    unsigned node_index() const {
-        return _node_index;
+    unsigned nodeIndex() const {
+        return _nodeIndex;
     };
 
 private:
 
+    /// The global timeslice size in number of MCs.
+    uint32_t _timesliceSize;
+
+    /// The size of the overlap region in number of MCs.
+    uint32_t _overlapSize;
+
+    /// The size of the input node's data buffer in 64-bit words.
+    uint32_t _inDataBufferSize;
+
+    /// The size of the input node's address buffer in 64-bit words.
+    uint32_t _inAddrBufferSize;
+
+    /// The size of the compute node's data buffer in 64-bit words.
+    uint32_t _cnDataBufferSize;
+
+    /// The size of the compute node's description buffer (number of
+    /// entries).
+    uint32_t _cnDescBufferSize;
+
+    /// A typical number of content words per MC.
+    uint32_t _typicalContentSize;
+
+    /// The global maximum timeslice number.
+    uint32_t _maxTimesliceNumber;
+
+    /// The global base port.
+    uint32_t _basePort;
+
     /// The list of participating input nodes.
-    std::vector<std::string> _input_nodes;
+    std::vector<std::string> _inputNodes;
     
     /// The list of participating compute nodes.
-    std::vector<std::string> _compute_nodes;
+    std::vector<std::string> _computeNodes;
 
     /// This node's type.
-    node_type_t _node_type;
+    NodeType _nodeType;
 
     /// This node's index in the list of nodes of same type.
-    unsigned _node_index;
+    unsigned _nodeIndex;
 
     /// Parse command line options.
-    void parse_options(int argc, char* argv[]) {
-        unsigned log_level = 3;
+    void parseOptions(int argc, char* argv[]) {
+        unsigned logLevel = 3;
 
         po::options_description generic("Generic options");
         generic.add_options()
             ("version,V", "print version string")
             ("help,h", "produce help message")
-            ("log-level,l", po::value<unsigned>(&log_level),
+            ("log-level,l", po::value<unsigned>(&logLevel),
              "set the log level (default:3, all:0)")
             ;
 
         po::options_description config("Configuration");
         config.add_options()
-            ("input-node,i", po::value<unsigned>(&_node_index),
+            ("input-node,i", po::value<unsigned>(&_nodeIndex),
              "act as input node with given index")
-            ("compute-node,c", po::value<unsigned>(&_node_index),
+            ("compute-node,c", po::value<unsigned>(&_nodeIndex),
              "act as compute node with given index")
             ("input-nodes,I",
              po::value< std::vector<std::string> >()->multitoken(),
@@ -161,46 +253,46 @@ private:
         if (!vm.count("compute-nodes"))
             throw ParametersException("list of compute nodes is empty");
 
-        _input_nodes = vm["input-nodes"].as< std::vector<std::string> >();
-        _compute_nodes = vm["compute-nodes"].as< std::vector<std::string> >();
+        _inputNodes = vm["input-nodes"].as< std::vector<std::string> >();
+        _computeNodes = vm["compute-nodes"].as< std::vector<std::string> >();
 
         if (vm.count("input-node")) {
             if (vm.count("compute-node")) {
                 throw ParametersException("more than one node type specifed");
             } else {
-                if (_node_index < 0 || _node_index >= _input_nodes.size()) {
+                if (_nodeIndex < 0 || _nodeIndex >= _inputNodes.size()) {
                     std::ostringstream oss;
-                    oss << "node index (" << _node_index
+                    oss << "node index (" << _nodeIndex
                         << ") out of range (0.."
-                        << _input_nodes.size() - 1 << ")";
+                        << _inputNodes.size() - 1 << ")";
                     throw ParametersException(oss.str());
                 }
-                _node_type = INPUT_NODE;
+                _nodeType = INPUT_NODE;
             }
         } else {
             if (vm.count("compute-node")) {
-                if (_node_index < 0 || _node_index >= _compute_nodes.size()) {
+                if (_nodeIndex < 0 || _nodeIndex >= _computeNodes.size()) {
                     std::ostringstream oss;
-                    oss << "node index (" << _node_index
+                    oss << "node index (" << _nodeIndex
                         << ") out of range (0.."
-                        << _compute_nodes.size() - 1 << ")";
+                        << _computeNodes.size() - 1 << ")";
                     throw ParametersException(oss.str());
                 }
-                _node_type = COMPUTE_NODE;
+                _nodeType = COMPUTE_NODE;
             } else {
                 throw ParametersException("no node type specifed");
             }
         }
 
-        Log.setVerbosity((einhard::LogLevel)log_level);
+        Log.setVerbosity((einhard::LogLevel)logLevel);
 
-        Log.debug() << "input nodes (" << _input_nodes.size() << "): "
-                    << _input_nodes;
-        Log.debug() << "compute nodes (" << _compute_nodes.size() << "): "
-                    << _compute_nodes;
+        Log.debug() << "input nodes (" << _inputNodes.size() << "): "
+                    << _inputNodes;
+        Log.debug() << "compute nodes (" << _computeNodes.size() << "): "
+                    << _computeNodes;
         Log.debug() << "this node: "
-                    << (_node_type == INPUT_NODE ? "input" : "compute")
-                    << " node #" << _node_index;
+                    << (_nodeType == INPUT_NODE ? "input" : "compute")
+                    << " node #" << _nodeIndex;
     }
 };
 

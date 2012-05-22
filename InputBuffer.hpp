@@ -8,7 +8,7 @@
 #define INPUTBUFFER_HPP
 
 #include "ComputeNodeConnection.hpp"
-#include "log.hpp"
+#include "global.hpp"
 
 
 /// Input buffer and compute node connection container class.
@@ -23,10 +23,12 @@ public:
     /// The InputBuffer default constructor.
     InputBuffer() :
         _acked_mc(0), _acked_data(0),
-        _mc_written(0), _data_written(0) {
-        _data = new uint64_t[DATA_WORDS]();
-        _addr = new uint64_t[ADDR_WORDS]();
-        _ack = new uint64_t[ACK_WORDS]();
+        _mc_written(0), _data_written(0)
+    {
+        _inAckBufferSize = Par->inAddrBufferSize() / Par->timesliceSize() + 1;
+        _data = new uint64_t[Par->inDataBufferSize()]();
+        _addr = new uint64_t[Par->inAddrBufferSize()]();
+        _ack = new uint64_t[_inAckBufferSize]();
     };
 
     /// The InputBuffer default destructor.
@@ -38,18 +40,21 @@ public:
 
     /// The central loop for distributing timeslice data.
     void senderLoop() {
-        for (uint64_t timeslice = 0; timeslice < NUM_TS; timeslice++) {
+        for (uint64_t timeslice = 0; timeslice < Par->maxTimesliceNumber();
+             timeslice++) {
 
             boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
             
             // wait until a complete TS is available in the input buffer
-            uint64_t mc_offset = timeslice * TS_SIZE;
-            uint64_t mc_length = TS_SIZE + TS_OVERLAP;
-            while (_addr[(mc_offset + mc_length) % ADDR_WORDS] <= _acked_data)
+            uint64_t mc_offset = timeslice * Par->timesliceSize();
+            uint64_t mc_length = Par->timesliceSize() + Par->overlapSize();
+            while (_addr[(mc_offset + mc_length) % Par->inAddrBufferSize()]
+                   <= _acked_data)
                 wait_for_data(mc_offset + mc_length + 1);
 
-            uint64_t data_offset = _addr[mc_offset % ADDR_WORDS];
-            uint64_t data_length = _addr[(mc_offset + mc_length) % ADDR_WORDS]
+            uint64_t data_offset = _addr[mc_offset % Par->inAddrBufferSize()];
+            uint64_t data_length = _addr[(mc_offset + mc_length) %
+                                         Par->inAddrBufferSize()]
                                    - data_offset;
 
             Log.trace() << "SENDER working on TS " << timeslice
@@ -76,19 +81,22 @@ public:
     /// Register memory regions.
     void setup() {
         _mr_data = ibv_reg_mr(_pd, _data,
-                              DATA_WORDS * sizeof(uint64_t),
+                              Par->inDataBufferSize() * sizeof(uint64_t),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_data)
-            throw ApplicationException("registration of memory region failed");
+            throw InfinibandException("registration of memory region failed");
 
         _mr_addr = ibv_reg_mr(_pd, _addr,
-                              ADDR_WORDS * sizeof(uint64_t),
+                              Par->inAddrBufferSize() * sizeof(uint64_t),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_addr)
-            throw ApplicationException("registration of memory region failed");
+            throw InfinibandException("registration of memory region failed");
     }
 
 private:
+
+    /// The size of the input node's acknowledge buffer in 64-bit words.
+    uint32_t _inAckBufferSize;
 
     /// Input data buffer. Filled by FLIB.
     uint64_t* _data;
@@ -126,7 +134,7 @@ private:
     void wait_for_data(uint64_t min_mc_number) {
         uint64_t mcs_to_write = min_mc_number - _mc_written;
         // write more data than requested (up to 2 additional TSs)
-        mcs_to_write += random() % (TS_SIZE * 2);
+        mcs_to_write += random() % (Par->timesliceSize() * 2);
 
         Log.trace() << "wait_for_data():"
                     << " min_mc_number=" << min_mc_number
@@ -134,7 +142,7 @@ private:
                     << " mcs_to_write= " << mcs_to_write;
 
         while (mcs_to_write-- > 0) {
-            int content_words = random() % (TYP_CNT_WORDS * 2);
+            int content_words = random() % (Par->typicalContentSize() * 2);
 
             uint8_t hdrrev = 0x01;
             uint8_t sysid = 0x01;
@@ -151,17 +159,17 @@ private:
                         << " _data_written=" << _data_written
                         << " _acked_data=" << _acked_data
                         << " content_words=" << content_words
-                        << " DATA_WORDS=" << DATA_WORDS + 0;
+                        << " Par->inDataBufferSize()=" << Par->inDataBufferSize() + 0;
 
             // check for space in data buffer
-            if (_data_written - _acked_data + content_words + 2 > DATA_WORDS) {
+            if (_data_written - _acked_data + content_words + 2 > Par->inDataBufferSize()) {
                 Log.warn() << "data buffer full";
                 boost::this_thread::sleep(boost::posix_time::millisec(1000));
                 break;
             }
 
             // check for space in addr buffer
-            if (_mc_written - _acked_mc == ADDR_WORDS) {
+            if (_mc_written - _acked_mc == Par->inAddrBufferSize()) {
                 Log.warn() << "addr buffer full";
                 boost::this_thread::sleep(boost::posix_time::millisec(1000));
                 break;
@@ -169,15 +177,15 @@ private:
 
             // write to data buffer
             uint64_t start_addr = _data_written;
-            _data[_data_written++ % DATA_WORDS] = hdr0;
-            _data[_data_written++ % DATA_WORDS] = hdr1;
+            _data[_data_written++ % Par->inDataBufferSize()] = hdr0;
+            _data[_data_written++ % Par->inDataBufferSize()] = hdr1;
             for (int i = 0; i < content_words; i++) {
-                //_data[_data_written++ % DATA_WORDS] = i << 16 | content_words;
-                _data[_data_written++ % DATA_WORDS] = i + 0xA;
+                //_data[_data_written++ % Par->inDataBufferSize()] = i << 16 | content_words;
+                _data[_data_written++ % Par->inDataBufferSize()] = i + 0xA;
             }
 
             // write to addr buffer
-            _addr[_mc_written++ % ADDR_WORDS] = start_addr;
+            _addr[_mc_written++ % Par->inAddrBufferSize()] = start_addr;
         }
     };
 
@@ -187,14 +195,14 @@ private:
 
         s << "/--- addr buf ---" << std::endl;
         s << "|";
-        for (int i = 0; i < ADDR_WORDS; i++)
+        for (unsigned int i = 0; i < Par->inAddrBufferSize(); i++)
             s << " (" << i << ")" << _addr[i];
         s << std::endl;
         s << "| _mc_written = " << _mc_written << std::endl;
         s << "| _acked_mc = " << _acked_mc << std::endl;
         s << "/--- data buf ---" << std::endl;
         s << "|";
-        for (int i = 0; i < DATA_WORDS; i++)
+        for (unsigned int i = 0; i < Par->inDataBufferSize(); i++)
             s << " (" << i << ")"
               << std::hex << (_data[i] & 0xFFFF) << std::dec;
         s << std::endl;
@@ -212,46 +220,46 @@ private:
         int num_sge = 0;
         struct ibv_sge sge[4];
         // addr words
-        if (mc_offset % ADDR_WORDS
-                < (mc_offset + mc_length - 1) % ADDR_WORDS) {
+        if (mc_offset % Par->inAddrBufferSize()
+                < (mc_offset + mc_length - 1) % Par->inAddrBufferSize()) {
             // one chunk
             sge[num_sge].addr =
-                (uintptr_t) &_addr[mc_offset % ADDR_WORDS];
+                (uintptr_t) &_addr[mc_offset % Par->inAddrBufferSize()];
             sge[num_sge].length = sizeof(uint64_t) * mc_length;
             sge[num_sge++].lkey = _mr_addr->lkey;
         } else {
             // two chunks
             sge[num_sge].addr =
-                (uintptr_t) &_addr[mc_offset % ADDR_WORDS];
+                (uintptr_t) &_addr[mc_offset % Par->inAddrBufferSize()];
             sge[num_sge].length =
-                sizeof(uint64_t) * (ADDR_WORDS - mc_offset % ADDR_WORDS);
+                sizeof(uint64_t) * (Par->inAddrBufferSize() - mc_offset % Par->inAddrBufferSize());
             sge[num_sge++].lkey = _mr_addr->lkey;
             sge[num_sge].addr = (uintptr_t) _addr;
             sge[num_sge].length =
-                sizeof(uint64_t) * (mc_length - ADDR_WORDS
-                                    + mc_offset % ADDR_WORDS);
+                sizeof(uint64_t) * (mc_length - Par->inAddrBufferSize()
+                                    + mc_offset % Par->inAddrBufferSize());
             sge[num_sge++].lkey = _mr_addr->lkey;
         }
         // data words
-        if (data_offset % DATA_WORDS
-                < (data_offset + data_length - 1) % DATA_WORDS) {
+        if (data_offset % Par->inDataBufferSize()
+                < (data_offset + data_length - 1) % Par->inDataBufferSize()) {
             // one chunk
             sge[num_sge].addr =
-                (uintptr_t) &_data[data_offset % DATA_WORDS];
+                (uintptr_t) &_data[data_offset % Par->inDataBufferSize()];
             sge[num_sge].length = sizeof(uint64_t) * data_length;
             sge[num_sge++].lkey = _mr_data->lkey;
         } else {
             // two chunks
             sge[num_sge].addr =
-                (uintptr_t) &_data[data_offset % DATA_WORDS];
+                (uintptr_t) &_data[data_offset % Par->inDataBufferSize()];
             sge[num_sge].length =
                 sizeof(uint64_t)
-                * (DATA_WORDS - data_offset % DATA_WORDS);
+                * (Par->inDataBufferSize() - data_offset % Par->inDataBufferSize());
             sge[num_sge++].lkey = _mr_data->lkey;
             sge[num_sge].addr = (uintptr_t) _data;
             sge[num_sge].length =
-                sizeof(uint64_t) * (data_length - DATA_WORDS
-                                    + data_offset % DATA_WORDS);
+                sizeof(uint64_t) * (data_length - Par->inDataBufferSize()
+                                    + data_offset % Par->inDataBufferSize());
             sge[num_sge++].lkey = _mr_data->lkey;
         }
 
@@ -266,16 +274,16 @@ private:
             Log.debug() << "write completion for timeslice "
                         << ts;
 
-            uint64_t acked_ts = _acked_mc / TS_SIZE;
+            uint64_t acked_ts = _acked_mc / Par->timesliceSize();
             if (ts == acked_ts)
                 do
                     acked_ts++;
-                while (_ack[acked_ts % ACK_WORDS] > ts);
+                while (_ack[acked_ts % _inAckBufferSize] > ts);
             else
-                _ack[ts % ACK_WORDS] = ts;
+                _ack[ts % _inAckBufferSize] = ts;
             _acked_data =
-                _addr[(acked_ts * TS_SIZE) % ADDR_WORDS];
-            _acked_mc = acked_ts * TS_SIZE;
+                _addr[(acked_ts * Par->timesliceSize()) % Par->inAddrBufferSize()];
+            _acked_mc = acked_ts * Par->timesliceSize();
             Log.debug() << "new values: _acked_data="
                         << _acked_data
                         << " _acked_mc=" << _acked_mc;
@@ -289,7 +297,7 @@ private:
         break;
 
         default:
-            throw ApplicationException("wc for unknown wr_id");
+            throw InfinibandException("wc for unknown wr_id");
         }
     };
 };
