@@ -24,6 +24,10 @@ cn_bufpos_t _cn_ack = {0};
 cn_bufpos_t _recv_cn_wp = {0};
 cn_bufpos_t _cn_wp = {0};
 
+typedef struct {
+    uint64_t buf_va;
+    uint32_t buf_rkey;
+} pdata_t;
 
 int
 ComputeApplication::run()

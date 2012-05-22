@@ -1,3 +1,8 @@
+/*
+ * \file global.hpp
+ *
+ * 2012, Jan de Cuveland <cmail@cuveland.de>
+ */
 
 #ifndef GLOBAL_HPP
 #define GLOBAL_HPP

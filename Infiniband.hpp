@@ -8,6 +8,7 @@
 #define INFINIBAND_HPP
 
 #include <vector>
+#include <cstring> // Required for "memset".
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <infiniband/arch.h>

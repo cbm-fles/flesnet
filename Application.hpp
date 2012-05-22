@@ -10,8 +10,8 @@
 #include <iostream>
 #include <boost/cstdint.hpp>
 #include <boost/thread.hpp>
-#include "Parameters.hpp"
 #include "InputBuffer.hpp"
+#include "global.hpp"
 
 
 // timeslice component descriptor
@@ -70,11 +70,6 @@ class Application
 {
 public:
     
-    typedef struct {
-        uint64_t buf_va;
-        uint32_t buf_rkey;
-    } pdata_t;
-
     /// The Application contructor.
     explicit Application(Parameters const& par) : _par(par) { };
 

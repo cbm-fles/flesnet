@@ -9,6 +9,7 @@
 
 #include <boost/thread.hpp>
 #include "Infiniband.hpp"
+#include "Parameters.hpp"
 #include "global.hpp"
 
 // TODO: encapsulate?

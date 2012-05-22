@@ -5,7 +5,6 @@
  */
 
 #include <cstdlib>
-
 #include "Application.hpp"
 #include "global.hpp"
 
