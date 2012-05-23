@@ -8,21 +8,12 @@
 #define INFINIBAND_HPP
 
 #include <vector>
-#include <cstring> // Required for "memset".
+#include <cstring> // Required for memset().
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <infiniband/arch.h>
 #include <rdma/rdma_cma.h>
 #include "global.hpp"
-
-
-// TODO: remove here!
-// timeslice component descriptor
-typedef struct {
-    uint64_t ts_num;
-    uint64_t offset;
-    uint64_t size;
-} tscdesc_t;
 
 
 /// InfiniBand exception class.
@@ -45,10 +36,18 @@ class IBConnection
 public:
 
     /// The IBConnection constructor. Creates a connection manager ID.
-    IBConnection(struct rdma_event_channel* ec, int index) : _index(index) {
+    IBConnection(struct rdma_event_channel* ec, int index) :
+        _index(index)
+    {
         int err = rdma_create_id(ec, &_cmId, this, RDMA_PS_TCP);
         if (err)
             throw InfinibandException("rdma_create_id failed");
+
+        _qp_cap.max_send_wr = 16;
+        _qp_cap.max_recv_wr = 16;
+        _qp_cap.max_send_sge = 8;
+        _qp_cap.max_recv_sge = 8;
+        _qp_cap.max_inline_data = 0;
     };
 
     /// Retrieve the InfiniBand queue pair associated with the connection.
@@ -104,12 +103,37 @@ public:
     }
     
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
-    virtual void onAddrResolved(struct ibv_pd* pd) {
-        int err = rdma_resolve_route(_cmId, RESOLVE_TIMEOUT_MS);
+    virtual void onAddrResolved(struct ibv_pd* pd, struct ibv_cq* cq) {
+        Log.debug() << "address resolved";
+
+        struct ibv_qp_init_attr qp_attr;
+        memset(&qp_attr, 0, sizeof qp_attr);
+        qp_attr.cap = _qp_cap;
+        qp_attr.send_cq = cq;
+        qp_attr.recv_cq = cq;
+        qp_attr.qp_type = IBV_QPT_RC;
+        int err = rdma_create_qp(_cmId, pd, &qp_attr);
+        if (err)
+            throw InfinibandException("creation of QP failed");
+        
+        err = rdma_resolve_route(_cmId, RESOLVE_TIMEOUT_MS);
         if (err)
             throw InfinibandException("rdma_resolve_route failed");
     };
     
+    /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event for this connection.
+    virtual void onRouteResolved() {
+        Log.debug() << "route resolved";
+
+        struct rdma_conn_param conn_param;
+        memset(&conn_param, 0, sizeof conn_param);
+        conn_param.initiator_depth = 1;
+        conn_param.retry_count = 7;
+        int err = rdma_connect(_cmId, &conn_param);
+        if (err)
+            throw InfinibandException("rdma_connect failed");
+    };
+
 protected:
 
     /// Access information for a remote memory region.
@@ -124,6 +148,9 @@ protected:
     /// Index of this connection in a group of connections.
     int _index;
 
+    /// The queue pair capabilities.
+    struct ibv_qp_cap _qp_cap;
+    
     /// Post an InfiniBand SEND work request (WR) to the send queue
     void postSend(struct ibv_send_wr *wr) {
         struct ibv_send_wr* bad_send_wr;
@@ -165,7 +192,7 @@ public:
     /// The IBConnectionGroup default constructor.
     IBConnectionGroup() :
         _pd(0), _connected(0), _ec(0),  _context(0), _compChannel(0),
-        _cq(0), _qp_cap(0) {
+        _cq(0) {
         _ec = rdma_create_event_channel();
         if (!_ec)
             throw InfinibandException("rdma_create_event_channel failed");
@@ -246,6 +273,16 @@ public:
         }
     }
 
+    /// Retrieve the InfiniBand protection domain.
+    struct ibv_pd* protectionDomain() const {
+        return _pd;
+    }
+
+    /// Retrieve the InfiniBand completion queue.
+    struct ibv_cq* completionQueue() const {
+        return _cq;
+    }
+
 protected:
 
     /// InfiniBand protection domain
@@ -270,9 +307,6 @@ private:
 
     /// InfiniBand completion queue
     struct ibv_cq* _cq;
-
-    /// InfiniBand queue pair capabilities
-    struct ibv_qp_cap* _qp_cap;
 
     /// Connection manager event dispatcher. Called by the CM event loop.
     int onCmEvent(struct rdma_cm_event* event) {
@@ -309,42 +343,21 @@ private:
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
     int onAddrResolved(struct rdma_cm_id* id) {
-        Log.debug() << "address resolved";
-
         if (!_pd)
             initContext(id->verbs);
 
-        struct ibv_qp_init_attr qp_attr;
-        memset(&qp_attr, 0, sizeof qp_attr);
-        qp_attr.cap.max_send_wr = 20;
-        qp_attr.cap.max_send_sge = 8;
-        qp_attr.cap.max_recv_wr = 20;
-        qp_attr.cap.max_recv_sge = 8;
-        qp_attr.cap.max_inline_data = sizeof(tscdesc_t) * 10;
-        qp_attr.send_cq = _cq;
-        qp_attr.recv_cq = _cq;
-        qp_attr.qp_type = IBV_QPT_RC;
-        int err = rdma_create_qp(id, _pd, &qp_attr);
-        if (err)
-            throw InfinibandException("creation of QP failed");
-
         CONNECTION* conn = (CONNECTION*) id->context;
-        conn->onAddrResolved(_pd);
+        
+        conn->onAddrResolved(_pd, _cq);
 
         return 0;
     }
 
     /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event.
     int onRouteResolved(struct rdma_cm_id* id) {
-        Log.debug() << "route resolved";
+        CONNECTION* conn = (CONNECTION*) id->context;
 
-        struct rdma_conn_param conn_param;
-        memset(&conn_param, 0, sizeof conn_param);
-        conn_param.initiator_depth = 1;
-        conn_param.retry_count = 7;
-        int err = rdma_connect(id, &conn_param);
-        if (err)
-            throw InfinibandException("rdma_connect failed");
+        conn->onRouteResolved();
 
         return 0;
     }

@@ -15,19 +15,21 @@
 #include <boost/thread.hpp>
 
 #include "Application.hpp"
+#include "Timeslice.hpp"
 #include "global.hpp"
 
 
-cn_bufpos_t _send_cn_ack = {0};
-cn_bufpos_t _cn_ack = {0};
+ComputeNodeBufferPosition _send_cn_ack = {0};
+ComputeNodeBufferPosition _cn_ack = {0};
 
-cn_bufpos_t _recv_cn_wp = {0};
-cn_bufpos_t _cn_wp = {0};
+ComputeNodeBufferPosition _recv_cn_wp = {0};
+ComputeNodeBufferPosition _cn_wp = {0};
 
+/// Access information for a remote memory region.
 typedef struct {
-    uint64_t buf_va;
-    uint32_t buf_rkey;
-} pdata_t;
+    uint64_t addr; ///< Target memory address
+    uint32_t rkey; ///< Target remote access key
+} ServerInfo;
 
 int
 ComputeApplication::run()
@@ -105,7 +107,7 @@ ComputeApplication::run()
 
     // Allocate buffer space
     uint64_t* _data = (uint64_t*) calloc(Par->cnDataBufferSize(), sizeof(uint64_t));
-    tscdesc_t* _desc = (tscdesc_t*) calloc(Par->cnDescBufferSize(), sizeof(tscdesc_t));
+    TimesliceComponentDescriptor* _desc = (TimesliceComponentDescriptor*) calloc(Par->cnDescBufferSize(), sizeof(TimesliceComponentDescriptor));
     if (!_data || !_desc)
         throw ApplicationException("allocation of buffer space failed");
 
@@ -116,13 +118,13 @@ ComputeApplication::run()
                                         IBV_ACCESS_LOCAL_WRITE |
                                         IBV_ACCESS_REMOTE_WRITE);
     struct ibv_mr* mr_desc = ibv_reg_mr(pd, _desc,
-                                        Par->cnDescBufferSize() * sizeof(tscdesc_t),
+                                        Par->cnDescBufferSize() * sizeof(TimesliceComponentDescriptor),
                                         IBV_ACCESS_LOCAL_WRITE |
                                         IBV_ACCESS_REMOTE_WRITE);
     struct ibv_mr* mr_send = ibv_reg_mr(pd, &_send_cn_ack,
-                                        sizeof(cn_bufpos_t), 0);
+                                        sizeof(ComputeNodeBufferPosition), 0);
     struct ibv_mr* mr_recv = ibv_reg_mr(pd, &_recv_cn_wp,
-                                        sizeof(cn_bufpos_t),
+                                        sizeof(ComputeNodeBufferPosition),
                                         IBV_ACCESS_LOCAL_WRITE);
     if (!mr_data || !mr_desc || !mr_recv || !mr_send)
         throw ApplicationException("registration of memory region failed");
@@ -149,7 +151,7 @@ ComputeApplication::run()
     {
         struct ibv_sge sge;
         sge.addr = (uintptr_t) &_recv_cn_wp;
-        sge.length = sizeof(cn_bufpos_t);
+        sge.length = sizeof(ComputeNodeBufferPosition);
         sge.lkey = mr_recv->lkey;
         struct ibv_recv_wr recv_wr;
         memset(&recv_wr, 0, sizeof recv_wr);
@@ -164,11 +166,11 @@ ComputeApplication::run()
     Log.debug() << "accepting connection";
 
     // Accept rdma connection request
-    pdata_t rep_pdata[2];
-    rep_pdata[0].buf_va = (uintptr_t) _data;
-    rep_pdata[0].buf_rkey = mr_data->rkey;
-    rep_pdata[1].buf_va = (uintptr_t) _desc;
-    rep_pdata[1].buf_rkey = mr_desc->rkey;
+    ServerInfo rep_pdata[2];
+    rep_pdata[0].addr = (uintptr_t) _data;
+    rep_pdata[0].rkey = mr_data->rkey;
+    rep_pdata[1].addr = (uintptr_t) _desc;
+    rep_pdata[1].rkey = mr_desc->rkey;
     struct rdma_conn_param conn_param;
     memset(&conn_param, 0, sizeof conn_param);
     conn_param.responder_resources = 1;
@@ -237,7 +239,7 @@ ComputeApplication::run()
             {
                 struct ibv_sge sge;
                 sge.addr = (uintptr_t) &_recv_cn_wp;
-                sge.length = sizeof(cn_bufpos_t);
+                sge.length = sizeof(ComputeNodeBufferPosition);
                 sge.lkey = mr_recv->lkey;
                 struct ibv_recv_wr recv_wr;
                 memset(&recv_wr, 0, sizeof recv_wr);
@@ -277,7 +279,7 @@ ComputeApplication::run()
                 Log.debug() << "SEND posted";
                 struct ibv_sge sge3;
                 sge3.addr = (uintptr_t) &_send_cn_ack;
-                sge3.length = sizeof(cn_bufpos_t);
+                sge3.length = sizeof(ComputeNodeBufferPosition);
                 sge3.lkey = mr_send->lkey;
                 struct ibv_send_wr send_wr2;
                 memset(&send_wr2, 0, sizeof send_wr2);

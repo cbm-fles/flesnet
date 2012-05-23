@@ -10,18 +10,8 @@
 #include <boost/thread.hpp>
 #include "Infiniband.hpp"
 #include "Parameters.hpp"
+#include "Timeslice.hpp"
 #include "global.hpp"
-
-// TODO: encapsulate?
-typedef struct {
-    uint64_t data;
-    uint64_t desc;
-} cn_bufpos_t;
-
-// TODO: encapsulate?
-enum REQUEST_ID { ID_WRITE_DATA = 1, ID_WRITE_DATA_WRAP, ID_WRITE_DESC,
-                  ID_SEND_CN_WP, ID_RECEIVE_CN_ACK
-                };
 
 
 /// Compute node connection class.
@@ -36,10 +26,16 @@ public:
     /// The ComputeNodeConnection constructor.
     ComputeNodeConnection(struct rdma_event_channel* ec, int index) :
         IBConnection(ec, index), _ourTurn(true) {
-        memset(&_receive_cn_ack, 0, sizeof(cn_bufpos_t));
-        memset(&_cn_ack, 0, sizeof(cn_bufpos_t));
-        memset(&_cn_wp, 0, sizeof(cn_bufpos_t));
-        memset(&_send_cn_wp, 0, sizeof(cn_bufpos_t));
+        _qp_cap.max_send_wr = 20;
+        _qp_cap.max_send_sge = 8;
+        _qp_cap.max_recv_wr = 20;
+        _qp_cap.max_recv_sge = 8;
+        _qp_cap.max_inline_data = sizeof(TimesliceComponentDescriptor) * 10;
+
+        memset(&_receive_cn_ack, 0, sizeof(ComputeNodeBufferPosition));
+        memset(&_cn_ack, 0, sizeof(ComputeNodeBufferPosition));
+        memset(&_cn_wp, 0, sizeof(ComputeNodeBufferPosition));
+        memset(&_send_cn_wp, 0, sizeof(ComputeNodeBufferPosition));
     }
 
     /// Wait until enough space is available at target compute node.
@@ -139,7 +135,7 @@ public:
         }
 
         // timeslice component descriptor
-        tscdesc_t tscdesc;
+        TimesliceComponentDescriptor tscdesc;
         tscdesc.ts_num = timeslice;
         tscdesc.offset = _cn_wp.data;
         tscdesc.size = data_length + mc_length;
@@ -159,7 +155,7 @@ public:
         send_wr_tscdesc.wr.rdma.remote_addr =
             (uintptr_t)(_serverInfo[1].addr
                         + (_cn_wp.desc % Par->cnDescBufferSize())
-                        * sizeof(tscdesc_t));
+                        * sizeof(TimesliceComponentDescriptor));
 
         Log.debug() << "[" << _index << "] "
                     << "post_send (timeslice " << timeslice << ")";
@@ -205,24 +201,24 @@ public:
     }
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
-    virtual void onAddrResolved(struct ibv_pd* pd) {
-        IBConnection::onAddrResolved(pd);
+    virtual void onAddrResolved(struct ibv_pd* pd, struct ibv_cq* cq) {
+        IBConnection::onAddrResolved(pd, cq);
         
         // register memory regions
         _mr_recv = ibv_reg_mr(pd, &_receive_cn_ack,
-                              sizeof(cn_bufpos_t),
+                              sizeof(ComputeNodeBufferPosition),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_recv)
             throw InfinibandException("registration of memory region failed");
 
         _mr_send = ibv_reg_mr(pd, &_send_cn_wp,
-                              sizeof(cn_bufpos_t), 0);
+                              sizeof(ComputeNodeBufferPosition), 0);
         if (!_mr_send)
             throw InfinibandException("registration of memory region failed");
 
         // setup send and receive buffers
         recv_sge.addr = (uintptr_t) &_receive_cn_ack;
-        recv_sge.length = sizeof(cn_bufpos_t);
+        recv_sge.length = sizeof(ComputeNodeBufferPosition);
         recv_sge.lkey = _mr_recv->lkey;
         memset(&recv_wr, 0, sizeof recv_wr);
         recv_wr.wr_id = ID_RECEIVE_CN_ACK | (_index << 8);
@@ -230,7 +226,7 @@ public:
         recv_wr.num_sge = 1;
 
         send_sge.addr = (uintptr_t) &_send_cn_wp;
-        send_sge.length = sizeof(cn_bufpos_t);
+        send_sge.length = sizeof(ComputeNodeBufferPosition);
         send_sge.lkey = _mr_send->lkey;
         memset(&send_wr, 0, sizeof send_wr);
         send_wr.wr_id = ID_SEND_CN_WP;
@@ -263,10 +259,10 @@ private:
     bool _ourTurn;
 
     /// Local copy of acknowledged-by-CN pointers
-    cn_bufpos_t _cn_ack;
+    ComputeNodeBufferPosition _cn_ack;
 
     /// Receive buffer for acknowledged-by-CN pointers
-    cn_bufpos_t _receive_cn_ack;
+    ComputeNodeBufferPosition _receive_cn_ack;
 
     /// Infiniband memory region descriptor for acknowledged-by-CN pointers
     struct ibv_mr* _mr_recv;
@@ -278,10 +274,10 @@ private:
     boost::condition_variable_any _cn_ack_cond;
 
     /// Local version of CN write pointers
-    cn_bufpos_t _cn_wp;
+    ComputeNodeBufferPosition _cn_wp;
 
     /// Send buffer for CN write pointers
-    cn_bufpos_t _send_cn_wp;
+    ComputeNodeBufferPosition _send_cn_wp;
 
     /// Infiniband memory region descriptor for CN write pointers
     struct ibv_mr* _mr_send;

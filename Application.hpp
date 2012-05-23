@@ -14,43 +14,6 @@
 #include "global.hpp"
 
 
-// timeslice component descriptor
-/*
-  typedef struct {
-    uint64_t ts_num;
-    uint64_t offset;
-    uint64_t size;
-} tscdesc_t;
-*/
-
-typedef struct {
-    uint8_t hdrrev;
-    uint8_t sysid;
-    uint16_t flags;
-    uint32_t size;
-    uint64_t time;
-} mc_hdr_t;
-
-
-inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
-{
-    switch (v) {
-    case ID_WRITE_DATA:
-        return s << "ID_WRITE_DATA";
-    case ID_WRITE_DATA_WRAP:
-        return s << "ID_WRITE_DATA_WRAP";
-    case ID_WRITE_DESC:
-        return s << "ID_WRITE_DESC";
-    case ID_SEND_CN_WP:
-        return s << "ID_SEND_CN_WP";
-    case ID_RECEIVE_CN_ACK:
-        return s << "ID_RECEIVE_CN_ACK";
-    default:
-        return s << (int) v;
-    }
-}
-
-
 /// Application exception class.
 /** An ApplicationException object signals a general error in the flow
     of the application. */
