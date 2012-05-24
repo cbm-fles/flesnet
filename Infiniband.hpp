@@ -22,6 +22,7 @@
 
 class InfinibandException : public std::runtime_error {
 public:
+    /// The InfinibandException default constructor.
     explicit InfinibandException(const std::string& what_arg = "")
         : std::runtime_error(what_arg) { }
 };

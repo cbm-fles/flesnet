@@ -1,4 +1,4 @@
-/*
+/**
  * \file InputBuffer.hpp
  *
  * 2012, Jan de Cuveland <cmail@cuveland.de>

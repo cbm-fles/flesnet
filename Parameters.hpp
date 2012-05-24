@@ -1,4 +1,4 @@
-/*
+/**
  * \file Parameters.hpp
  *
  * 2012, Jan de Cuveland <cmail@cuveland.de>
@@ -17,6 +17,7 @@ namespace po = boost::program_options;
 #include "global.hpp"
 
 
+/// Overloaded output operator for STL vectors.
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
@@ -68,6 +69,8 @@ public:
         parseOptions(argc, argv);
     };
 
+    /// Enable use of (small) debug values for buffer sizes to enable
+    /// manual buffer state analysis.
     void selectDebugValues() {
         _timesliceSize = 2;
         _overlapSize = 1;

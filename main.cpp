@@ -1,7 +1,19 @@
-/*
+/**
  * \file main.cpp
  *
  * 2012, Jan de Cuveland
+ */
+
+/**
+ * \mainpage InfiniBand-based Timeslice Building
+ *
+ * \section intro_sec Introduction
+ *
+ * The First-Level Event Selector (FLES) system of the CBM experiment
+ * employs a scheme of timeslices (consisting of microslices) instead
+ * of events in data aquisition. This software demonstrates the
+ * timeslice building process between several nodes of the FLES
+ * cluster over an Infiniband network.
  */
 
 #include <cstdlib>

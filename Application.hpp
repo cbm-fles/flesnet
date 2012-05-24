@@ -1,4 +1,4 @@
-/*
+/**
  * \file Application.hpp
  *
  * 2012, Jan de Cuveland <cmail@cuveland.de>
@@ -14,18 +14,19 @@
 #include "global.hpp"
 
 
-/// Application exception class.
+/// %Application exception class.
 /** An ApplicationException object signals a general error in the flow
     of the application. */
 
 class ApplicationException : public std::runtime_error {
 public:
+    /// The ApplicationException default constructor.
     explicit ApplicationException(const std::string& what_arg = "")
         : std::runtime_error(what_arg) { }
 };
 
 
-/// Application base class.
+/// %Application base class.
 /** The Application object represents an instance of the running
     application. */
 

@@ -1,3 +1,4 @@
+/// @cond EINHARD
 /**
  * @file
  *
@@ -457,3 +458,4 @@ template<einhard::LogLevel VERBOSITY, bool THREADSAFE, T1, T2> \
 inline const einhard::OutputFormatter<VERBOSITY, THREADSAFE>& operator<<(const einhard::OutputFormatter<VERBOSITY, THREADSAFE> &out, arg1, arg2)
 
 // vim: ts=4 sw=4 tw=100 noet
+/// @endcond

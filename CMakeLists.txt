@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6) 
-project (RDMA)
+project (IBTSB)
 
 set (CMAKE_C_FLAGS "-g -std=c99 -D_POSIX_SOURCE -Wall -pedantic")
 set (CMAKE_CXX_FLAGS "-g -Wall -pedantic")

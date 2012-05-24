@@ -1,4 +1,4 @@
-/*
+/**
  * ComputeApplication.cpp
  *
  * 2012, Jan de Cuveland

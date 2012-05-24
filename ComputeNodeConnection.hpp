@@ -136,7 +136,7 @@ public:
 
         // timeslice component descriptor
         TimesliceComponentDescriptor tscdesc;
-        tscdesc.ts_num = timeslice;
+        tscdesc.tsNum = timeslice;
         tscdesc.offset = _cn_wp.data;
         tscdesc.size = data_length + mc_length;
         struct ibv_sge sge3;
