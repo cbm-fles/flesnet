@@ -43,8 +43,6 @@ public:
         for (uint64_t timeslice = 0; timeslice < Par->maxTimesliceNumber();
              timeslice++) {
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-            
             // wait until a complete TS is available in the input buffer
             uint64_t mc_offset = timeslice * Par->timesliceSize();
             uint64_t mc_length = Par->timesliceSize() + Par->overlapSize();
