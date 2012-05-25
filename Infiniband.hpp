@@ -292,6 +292,37 @@ protected:
     /// Vector of associated connection objects
     std::vector<CONNECTION*> _conn;
 
+    /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
+    virtual int onAddrResolved(struct rdma_cm_id* id) {
+        if (!_pd)
+            initContext(id->verbs);
+
+        CONNECTION* conn = (CONNECTION*) id->context;
+        
+        conn->onAddrResolved(_pd, _cq);
+
+        return 0;
+    }
+
+    /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event.
+    virtual int onRouteResolved(struct rdma_cm_id* id) {
+        CONNECTION* conn = (CONNECTION*) id->context;
+
+        conn->onRouteResolved();
+
+        return 0;
+    }
+
+    /// Handle RDMA_CM_EVENT_ESTABLISHED event.
+    virtual int onConnection(struct rdma_cm_event* event) {
+        CONNECTION* conn = (CONNECTION*) event->id->context;
+
+        conn->onConnection(event);
+        _connected++;
+
+        return 0;
+    }
+
 private:
 
     /// Number of established connections
@@ -340,37 +371,6 @@ private:
         default:
             throw InfinibandException("unknown cm event");
         }
-    }
-
-    /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
-    int onAddrResolved(struct rdma_cm_id* id) {
-        if (!_pd)
-            initContext(id->verbs);
-
-        CONNECTION* conn = (CONNECTION*) id->context;
-        
-        conn->onAddrResolved(_pd, _cq);
-
-        return 0;
-    }
-
-    /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event.
-    int onRouteResolved(struct rdma_cm_id* id) {
-        CONNECTION* conn = (CONNECTION*) id->context;
-
-        conn->onRouteResolved();
-
-        return 0;
-    }
-
-    /// Handle RDMA_CM_EVENT_ESTABLISHED event.
-    int onConnection(struct rdma_cm_event* event) {
-        CONNECTION* conn = (CONNECTION*) event->id->context;
-
-        conn->onConnection(event);
-        _connected++;
-
-        return 0;
     }
 
     /// Initialize the InfiniBand verbs context.

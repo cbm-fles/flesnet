@@ -22,6 +22,7 @@ public:
 
     /// The InputBuffer default constructor.
     InputBuffer() :
+        _mr_data(0), _mr_addr(0),
         _acked_mc(0), _acked_data(0),
         _mc_written(0), _data_written(0)
     {
@@ -76,21 +77,6 @@ public:
         Log.info() << "SENDER loop done";
     }
 
-    /// Register memory regions.
-    void setup() {
-        _mr_data = ibv_reg_mr(_pd, _data,
-                              Par->inDataBufferSize() * sizeof(uint64_t),
-                              IBV_ACCESS_LOCAL_WRITE);
-        if (!_mr_data)
-            throw InfinibandException("registration of memory region failed");
-
-        _mr_addr = ibv_reg_mr(_pd, _addr,
-                              Par->inAddrBufferSize() * sizeof(uint64_t),
-                              IBV_ACCESS_LOCAL_WRITE);
-        if (!_mr_addr)
-            throw InfinibandException("registration of memory region failed");
-    }
-
 private:
 
     /// The size of the input node's acknowledge buffer in 64-bit words.
@@ -128,6 +114,28 @@ private:
         return timeslice % _conn.size();
     }
 
+    /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
+    virtual int onAddrResolved(struct rdma_cm_id* id) {
+        int ret = IBConnectionGroup<ComputeNodeConnection>::onAddrResolved(id);
+
+        if (!_mr_data) {
+            // Register memory regions.
+            _mr_data = ibv_reg_mr(_pd, _data,
+                                  Par->inDataBufferSize() * sizeof(uint64_t),
+                                  IBV_ACCESS_LOCAL_WRITE);
+            if (!_mr_data)
+                throw InfinibandException("registration of memory region failed");
+
+            _mr_addr = ibv_reg_mr(_pd, _addr,
+                                  Par->inAddrBufferSize() * sizeof(uint64_t),
+                                  IBV_ACCESS_LOCAL_WRITE);
+            if (!_mr_addr)
+                throw InfinibandException("registration of memory region failed");
+        }
+        
+        return ret;
+    }
+    
     /// Generate FLIB input data.
     void wait_for_data(uint64_t min_mc_number) {
         uint64_t mcs_to_write = min_mc_number - _mc_written;

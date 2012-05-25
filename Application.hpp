@@ -68,7 +68,6 @@ public:
     
         ib.initiateConnect(_par.computeNodes(), services);
         ib.handleCmEvents();
-        ib.setup();
         boost::thread t1(&InputBuffer::senderLoop, &ib);
         boost::thread t2(&InputBuffer::completionHandler, &ib);
 
