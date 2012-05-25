@@ -236,7 +236,7 @@ private:
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
-        std::ifstream ifs("ibtsb.cfg");
+        std::ifstream ifs("flesnet.cfg");
         po::store(po::parse_config_file(ifs, config), vm);
         po::notify(vm);
 
@@ -246,7 +246,7 @@ private:
         }
 
         if (vm.count("version")) {
-            std::cout << "ibtsb, version 0.0" << "\n";
+            std::cout << "flesnet, version 0.0" << "\n";
             exit(EXIT_SUCCESS);
         }
 

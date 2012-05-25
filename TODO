@@ -1,0 +1,3 @@
+- setup() should be done automatically (onWhatever()...)
+- restruture: generate sglist, then send
+- restructure InputApplication.cpp such that threads are started by InputBuffer etc.
