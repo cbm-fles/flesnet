@@ -25,7 +25,9 @@ public:
 
     /// The ComputeNodeConnection constructor.
     ComputeNodeConnection(struct rdma_event_channel* ec, int index) :
-        IBConnection(ec, index), _ourTurn(true) {
+        IBConnection(ec, index),
+        _ourTurn(true)
+    {
         _qp_cap.max_send_wr = 20;
         _qp_cap.max_send_sge = 8;
         _qp_cap.max_recv_wr = 20;
