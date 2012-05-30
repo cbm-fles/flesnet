@@ -50,7 +50,7 @@ ComputeApplication::run()
         throw ApplicationException("id creation failed");
 
     // Bind rdma id (for listening) to socket address (local port)
-    unsigned short port = Par->basePort() + Par->.nodeIndex();
+    unsigned short port = Par->basePort() + Par->nodeIndex();
     struct sockaddr_in sin;
     memset(&sin, 0, sizeof sin);
     sin.sin_family = AF_INET;
