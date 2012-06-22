@@ -64,15 +64,21 @@ public:
 
         std::vector<std::string> services;
         for (unsigned int i = 0; i < _par.computeNodes().size(); i++)
-            services.push_back(boost::lexical_cast<std::string>(Par->basePort() + i));
+            services.push_back(boost::lexical_cast<std::string>
+                               (Par->basePort() + i));
     
-        ib.initiateConnect(_par.computeNodes(), services);
-        ib.handleCmEvents();
-        boost::thread t1(&InputBuffer::senderLoop, &ib);
-        boost::thread t2(&InputBuffer::completionHandler, &ib);
+        ib.connect(_par.computeNodes(), services);
+        ib.handleCmEvents(true);
+        boost::thread t1(&InputBuffer::completionHandler, &ib);
+        ib.senderLoop();
 
-        t1.join();
-        t2.join();
+        //        boost::this_thread::sleep(boost::posix_time::millisec(5000));
+
+        //        t1.join();
+        boost::thread tdebug(&InputBuffer::handleCmEvents, &ib, false);
+        ib.disconnect();
+        tdebug.join();
+        
         return 0;        
     };
 };

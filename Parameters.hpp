@@ -63,7 +63,9 @@ public:
         _cnDataBufferSize(128 * 1024),
         _cnDescBufferSize(80),
         _typicalContentSize(128),
-        _maxTimesliceNumber(1024 * 1024 * 1024),
+        // TODO: DEBUG
+        //        _maxTimesliceNumber(1024 * 1024 * 1024),
+        _maxTimesliceNumber(100000),
         _basePort(20079)
     {
         parseOptions(argc, argv);

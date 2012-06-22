@@ -11,6 +11,52 @@
 #include "global.hpp"
 
 
+/// Simple generic ring buffer class.
+template<typename T>
+class RingBuffer
+{
+    /// The RingBuffer default constructor.
+    RingBuffer() : _sizeExponent(0), _buf(0) { }
+    
+    /// The RingBuffer initializing constructor.
+    RingBuffer(size_t sizeExponent) {
+        alloc(sizeExponent);
+    }
+
+    /// The RingBuffer destructor.
+    ~RingBuffer() {
+        delete [] _buf;
+    }
+
+    /// Create and initialize buffer.
+    void alloc(size_t sizeExponent) {
+        _sizeExponent = sizeExponent;
+        _sizeMask = (1 << sizeExponent) - 1;
+        _buf = new T[1 << _sizeExponent]();        
+    }
+    
+    /// The element accessor operator.
+    T& at(size_t n) {
+        return _buf[n & _sizeMask];
+    }
+
+    /// The const element accessor operator.
+    const T& at(size_t n) const {
+        return _buf[n & _sizeMask];
+    }
+
+private:
+    /// Buffer size given as two's exponent.
+    size_t _sizeExponent;
+
+    /// Buffer addressing bit mask
+    size_t _sizeMask;
+    
+    /// The data buffer.
+    T* _buf;
+};
+
+
 /// Input buffer and compute node connection container class.
 /** An InputBuffer object represents an input buffer (filled by a
     FLIB) and a group of timeslice building connections to compute
@@ -24,7 +70,8 @@ public:
     InputBuffer() :
         _mr_data(0), _mr_addr(0),
         _acked_mc(0), _acked_data(0),
-        _mc_written(0), _data_written(0)
+        _mc_written(0), _data_written(0),
+        _senderLoopDone(false), _connectionsDone(0)
     {
         _inAckBufferSize = Par->inAddrBufferSize() / Par->timesliceSize() + 1;
         _data = new uint64_t[Par->inDataBufferSize()]();
@@ -56,12 +103,14 @@ public:
                                          Par->inAddrBufferSize()]
                                    - data_offset;
 
-            Log.trace() << "SENDER working on TS " << timeslice
-                        << ", MCs " << mc_offset << ".."
-                        << (mc_offset + mc_length - 1)
-                        << ", data words " << data_offset << ".."
-                        << (data_offset + data_length - 1);
-            Log.trace() << getStateString();
+            if (Log.beTrace()) {
+                Log.trace() << "SENDER working on TS " << timeslice
+                            << ", MCs " << mc_offset << ".."
+                            << (mc_offset + mc_length - 1)
+                            << ", data words " << data_offset << ".."
+                            << (data_offset + data_length - 1);
+                Log.trace() << getStateString();
+            }
 
             int cn = target_cn_index(timeslice);
 
@@ -109,6 +158,12 @@ private:
     /// FLIB-internal number of written data words. 
     uint64_t _data_written;
 
+    /// Flag indicating completion of the sender loop for this run.
+    bool _senderLoopDone;
+
+    /// Number of connections in the done state.
+    unsigned int _connectionsDone;
+
     /// Return target computation node for given timeslice.
     int target_cn_index(uint64_t timeslice) {
         return timeslice % _conn.size();
@@ -142,10 +197,12 @@ private:
         // write more data than requested (up to 2 additional TSs)
         mcs_to_write += random() % (Par->timesliceSize() * 2);
 
-        Log.trace() << "wait_for_data():"
-                    << " min_mc_number=" << min_mc_number
-                    << " _mc_written=" << _mc_written
-                    << " mcs_to_write= " << mcs_to_write;
+        if (Log.beTrace()) {
+            Log.trace() << "wait_for_data():"
+                        << " min_mc_number=" << min_mc_number
+                        << " _mc_written=" << _mc_written
+                        << " mcs_to_write= " << mcs_to_write;
+        }
 
         while (mcs_to_write-- > 0) {
             int content_words = random() % (Par->typicalContentSize() * 2);
@@ -161,23 +218,27 @@ private:
                             | (uint64_t) flags << 32 | (uint64_t) size;
             uint64_t hdr1 = (uint64_t) rsvd << 48 | (time & 0xFFFFFFFFFFFF);
 
-            Log.trace() << "wait_for_data():"
-                        << " _data_written=" << _data_written
-                        << " _acked_data=" << _acked_data
-                        << " content_words=" << content_words
-                        << " Par->inDataBufferSize()=" << Par->inDataBufferSize() + 0;
-
+            if (Log.beTrace()) {
+                Log.trace() << "wait_for_data():"
+                            << " _data_written=" << _data_written
+                            << " _acked_data=" << _acked_data
+                            << " content_words=" << content_words
+                            << " Par->inDataBufferSize()="
+                            << Par->inDataBufferSize() + 0;
+            }
+            
             // check for space in data buffer
             if (_data_written - _acked_data + content_words + 2 > Par->inDataBufferSize()) {
-                Log.warn() << "data buffer full";
-                boost::this_thread::sleep(boost::posix_time::millisec(1000));
+                //Log.warn() << "data buffer full";
+                //boost::this_thread::sleep(boost::posix_time::millisec(1000));
+                // TODO: handle sensibly!
                 break;
             }
 
             // check for space in addr buffer
             if (_mc_written - _acked_mc == Par->inAddrBufferSize()) {
                 Log.warn() << "addr buffer full";
-                boost::this_thread::sleep(boost::posix_time::millisec(1000));
+                //                boost::this_thread::sleep(boost::posix_time::millisec(1000));
                 break;
             }
 
@@ -186,7 +247,6 @@ private:
             _data[_data_written++ % Par->inDataBufferSize()] = hdr0;
             _data[_data_written++ % Par->inDataBufferSize()] = hdr1;
             for (int i = 0; i < content_words; i++) {
-                //_data[_data_written++ % Par->inDataBufferSize()] = i << 16 | content_words;
                 _data[_data_written++ % Par->inDataBufferSize()] = i + 0xA;
             }
 
@@ -288,17 +348,28 @@ private:
             else
                 _ack[ts % _inAckBufferSize] = ts;
             _acked_data =
-                _addr[(acked_ts * Par->timesliceSize()) % Par->inAddrBufferSize()];
+                _addr[(acked_ts * Par->timesliceSize())
+                      % Par->inAddrBufferSize()];
             _acked_mc = acked_ts * Par->timesliceSize();
             Log.debug() << "new values: _acked_data="
                         << _acked_data
                         << " _acked_mc=" << _acked_mc;
+            if (acked_ts == Par->maxTimesliceNumber() - 1) {
+                _senderLoopDone = true;                
+                for(auto it = _conn.begin(); it != _conn.end(); ++it)
+                    _connectionsDone += (*it)->doneIfCnEmpty();
+                _allDone = (_connectionsDone == _conn.size());
+            }
         }
         break;
 
         case ID_RECEIVE_CN_ACK: {
             int cn = wc.wr_id >> 8;
             _conn[cn]->onCompleteRecv();
+            if (_senderLoopDone) {
+                _connectionsDone += _conn[cn]->doneIfCnEmpty();
+                _allDone = (_connectionsDone == _conn.size());
+            }
         }
         break;
 

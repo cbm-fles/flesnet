@@ -86,16 +86,20 @@ private:
 
     /// Post a receive work request (WR) to the receive queue
     void postRecvCnAck() {
-        Log.trace() << "[" << _index << "] "
-                    << "POST RECEIVE _receive_cn_ack";
+        if (Log.beTrace()) {
+            Log.trace() << "[" << _index << "] "
+                        << "POST RECEIVE _receive_cn_ack";
+        }
         postRecv(&recv_wr);
     }
 
     /// Post a send work request (WR) to the send queue
     void postSendCnWp() {
-        Log.trace() << "[" << _index << "] "
-                    << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
-                    << " desc=" << _send_cn_wp.desc << ")";
+        if (Log.beTrace()) {
+            Log.trace() << "[" << _index << "] "
+                        << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
+                        << " desc=" << _send_cn_wp.desc << ")";
+        }
         postSend(&send_wr);
     }
 

@@ -9,7 +9,7 @@
 
 #include "einhard.hpp"
 
-extern einhard::Logger<einhard::ALL, true> Log;
+extern einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> Log;
 
 class Parameters;
 extern Parameters* Par;

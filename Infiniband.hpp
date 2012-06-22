@@ -38,7 +38,7 @@ public:
 
     /// The IBConnection constructor. Creates a connection manager ID.
     IBConnection(struct rdma_event_channel* ec, int index) :
-        _index(index)
+        _index(index), _done(false)
     {
         int err = rdma_create_id(ec, &_cmId, this, RDMA_PS_TCP);
         if (err)
@@ -51,6 +51,13 @@ public:
         _qp_cap.max_inline_data = 0;
     };
 
+    /// The IBConnection destructor.
+    ~IBConnection() {
+        int err = rdma_destroy_id(_cmId);
+        if (err)
+            throw InfinibandException("rdma_destroy_id() failed");
+    }
+    
     /// Retrieve the InfiniBand queue pair associated with the connection.
     struct ibv_qp* qp() const {
         return _cmId->qp;
@@ -61,7 +68,7 @@ public:
        \param hostname The target hostname
        \param service  The target service or port number
     */
-    void initiateConnect(const std::string& hostname,
+    void connect(const std::string& hostname,
                          const std::string& service) {
         struct addrinfo hints;
         memset(&hints, 0, sizeof(struct addrinfo));
@@ -88,6 +95,14 @@ public:
         freeaddrinfo(res);
     }
 
+    void disconnect() {
+        Log.debug() << "[" << _index << "] "
+                    << "disconnect";
+        int err = rdma_disconnect(_cmId);
+        if (err)
+            throw InfinibandException("rdma_disconnect() failed");
+    }
+    
     /// Connection handler function, called on successful connection.
     /**
        \param event RDMA connection manager event structure
@@ -97,9 +112,17 @@ public:
         memcpy(&_serverInfo, event->param.conn.private_data,
                sizeof _serverInfo);
         
-        Log.debug() << "[" << _index << "] "
-                    << "connection established";
+        Log.debug() << "[" << _index << "] " << "connection established";
         
+        return 0;
+    }
+    
+    /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
+    virtual int onDisconnect() {
+        Log.debug() << "[" << _index << "] " << "connection disconnected";
+
+        rdma_destroy_qp(_cmId);
+            
         return 0;
     }
     
@@ -135,6 +158,9 @@ public:
             throw InfinibandException("rdma_connect failed");
     };
 
+    /// Retrieve index of this connection in the connection group.
+    int index() const { return _index; };
+
 protected:
 
     /// Access information for a remote memory region.
@@ -148,6 +174,9 @@ protected:
 
     /// Index of this connection in a group of connections.
     int _index;
+
+    /// Flag indicating connection finished state.
+    bool _done;
 
     /// The queue pair capabilities.
     struct ibv_qp_cap _qp_cap;
@@ -192,8 +221,8 @@ public:
 
     /// The IBConnectionGroup default constructor.
     IBConnectionGroup() :
-        _pd(0), _connected(0), _ec(0),  _context(0), _compChannel(0),
-        _cq(0) {
+        _pd(0), _allDone(false), _connected(0), _ec(0),  _context(0),
+        _compChannel(0), _cq(0) {
         _ec = rdma_create_event_channel();
         if (!_ec)
             throw InfinibandException("rdma_create_event_channel failed");
@@ -209,24 +238,36 @@ public:
        \param hostnames The list of target hostnames
        \param services  The list of target services or port numbers
     */
-    void initiateConnect(const std::vector<std::string>& hostnames,
+    void connect(const std::vector<std::string>& hostnames,
                          const std::vector<std::string>& services) {
         for (unsigned int i = 0; i < hostnames.size(); i++) {
             CONNECTION* connection = new CONNECTION(_ec, i);
             _conn.push_back(connection);
-            connection->initiateConnect(hostnames[i], services[i]);
+            connection->connect(hostnames[i], services[i]);
         }
     };
 
+    /// Initiate disconnection.
+    void disconnect() {
+        for (auto it = _conn.begin(); it != _conn.end(); ++it)
+            (*it)->disconnect();
+        /*        if (!_conn.empty())
+                  _conn.back()->disconnect();*/
+    };
+
     /// The connection manager event loop.
-    void handleCmEvents() {
+    void handleCmEvents(bool isConnect = true) {
         int err;
         struct rdma_cm_event* event;
+        struct rdma_cm_event event_copy;
         
         while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
-            int err = onCmEvent(event);
+            memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
             rdma_ack_cm_event(event);
-            if (err || _conn.size() == _connected)
+            int err = onCmEvent(&event_copy);
+            if (err)
+                break;
+            if (_connected == (isConnect ? _conn.size() : 0))
                 break;
         };
         if (err)
@@ -244,7 +285,7 @@ public:
         struct ibv_wc wc[ne_max];
         int ne;
 
-        while (true) {
+        while (!_allDone) {
             if (ibv_get_cq_event(_compChannel, &ev_cq, &ev_ctx))
                 throw InfinibandException("ibv_get_cq_event failed");
 
@@ -265,13 +306,16 @@ public:
                         std::ostringstream s;
                         s << ibv_wc_status_str(wc[i].status)
                           << " for wr_id " << (int) wc[i].wr_id;
-                        throw InfinibandException(s.str());
+                        Log.error() << s.str();
+                        continue;
                     }
 
                     onCompletion(wc[i]);
                 }
             }
         }
+
+        Log.info() << "COMPLETION loop done";
     }
 
     /// Retrieve the InfiniBand protection domain.
@@ -286,11 +330,14 @@ public:
 
 protected:
 
-    /// InfiniBand protection domain
+    /// InfiniBand protection domain.
     struct ibv_pd* _pd;
 
-    /// Vector of associated connection objects
+    /// Vector of associated connection objects.
     std::vector<CONNECTION*> _conn;
+
+    /// Flag causing termination of completion handler.
+    bool _allDone;
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
     virtual int onAddrResolved(struct rdma_cm_id* id) {
@@ -319,6 +366,18 @@ protected:
 
         conn->onConnection(event);
         _connected++;
+
+        return 0;
+    }
+
+    /// Handle RDMA_CM_EVENT_DISCONNECTED event.
+    virtual int onDisconnect(struct rdma_cm_id* id) {
+        CONNECTION* conn = (CONNECTION*) id->context;
+
+        conn->onDisconnect();
+        _conn[conn->index()] = 0;
+        delete conn;
+        _connected--;
 
         return 0;
     }
@@ -360,16 +419,10 @@ private:
         case RDMA_CM_EVENT_ESTABLISHED:
             return onConnection(event);
         case RDMA_CM_EVENT_DISCONNECTED:
-            throw InfinibandException("connection has been disconnected");
-        case RDMA_CM_EVENT_CONNECT_REQUEST:
-        case RDMA_CM_EVENT_CONNECT_RESPONSE:
-        case RDMA_CM_EVENT_DEVICE_REMOVAL:
-        case RDMA_CM_EVENT_MULTICAST_JOIN:
-        case RDMA_CM_EVENT_MULTICAST_ERROR:
-        case RDMA_CM_EVENT_ADDR_CHANGE:
-        case RDMA_CM_EVENT_TIMEWAIT_EXIT:
+            return onDisconnect(event->id);
         default:
-            throw InfinibandException("unknown cm event");
+            Log.error() << rdma_event_str(event->event);
+            return 0;
         }
     }
 

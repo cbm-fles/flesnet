@@ -20,7 +20,7 @@
 #include "Application.hpp"
 #include "global.hpp"
 
-einhard::Logger<einhard::ALL, true> Log;
+einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> Log;
 Parameters* Par;
 
 int
@@ -28,7 +28,7 @@ main(int argc, char* argv[])
 {
     try {
         Par = new Parameters(argc, argv);
-        Par->selectDebugValues();
+        //        Par->selectDebugValues();
 
         if (Par->nodeType() == Parameters::INPUT_NODE) {
             InputApplication app(*Par);

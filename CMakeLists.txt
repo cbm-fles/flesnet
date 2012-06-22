@@ -1,18 +1,20 @@
-cmake_minimum_required (VERSION 2.6) 
-project (flesnet)
+cmake_minimum_required(VERSION 2.6)
+project(flesnet)
 
-set (CMAKE_C_FLAGS "-g -std=c99 -D_POSIX_SOURCE -Wall -pedantic")
-set (CMAKE_CXX_FLAGS "-g -Wall -pedantic")
+set(CMAKE_CXX_FLAGS "-std=gnu++0x -g -Wall -pedantic -O3")
 
-FIND_PACKAGE (Boost 1.40 COMPONENTS program_options thread REQUIRED)
+#set(CMAKE_CXX_LINK_FLAGS "-pg")
+
+find_package(Boost 1.40 COMPONENTS program_options thread REQUIRED)
 
 #add_definitions(-DTHREADSAFE)
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=2)
 
-add_executable (flesnet main.cpp ComputeApplication.cpp)
+add_executable(flesnet main.cpp ComputeApplication.cpp)
 
-target_link_libraries (flesnet rdmacm)
-target_link_libraries (flesnet ${Boost_PROGRAM_OPTIONS_LIBRARY})
-target_link_libraries (flesnet ${Boost_THREAD_LIBRARY})
+target_link_libraries(flesnet rdmacm)
+target_link_libraries(flesnet ${Boost_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(flesnet ${Boost_THREAD_LIBRARY})
 
 # Documentation
 include(FindDoxygen)

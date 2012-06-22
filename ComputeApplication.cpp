@@ -31,6 +31,76 @@ typedef struct {
     uint32_t rkey; ///< Target remote access key
 } ServerInfo;
 
+void
+checkBuffer(ComputeNodeBufferPosition ack, ComputeNodeBufferPosition wp,
+            TimesliceComponentDescriptor* desc, void *data)
+{
+    int ts = wp.desc - ack.desc;
+    Log.debug() << "received " << ts << " timeslices";
+    for (uint64_t dp = ack.desc; dp < wp.desc; dp++) {
+        TimesliceComponentDescriptor tcd = desc[dp % Par->cnDescBufferSize()];
+        Log.debug() << "checking ts #" << tcd.tsNum;
+    }
+}
+
+
+struct rdma_event_channel* cm_channel;
+
+/// The connection manager event loop.
+void debugHandleCmEvents() {
+    int err;
+    struct rdma_cm_event* event;
+    
+    while ((err = rdma_get_cm_event(cm_channel, &event)) == 0) {
+        Log.info() << "DELME GOT cm event";
+        //int err = onCmEvent(event);
+
+        struct rdma_cm_id* cm_id = event->id;
+        switch (event->event) {
+        case RDMA_CM_EVENT_ADDR_RESOLVED:
+            throw InfinibandException("gaga");
+        case RDMA_CM_EVENT_ADDR_ERROR:
+            throw InfinibandException("rdma_resolve_addr failed");
+        case RDMA_CM_EVENT_ROUTE_RESOLVED:
+            throw InfinibandException("gaga");
+        case RDMA_CM_EVENT_ROUTE_ERROR:
+            throw InfinibandException("rdma_resolve_route failed");
+        case RDMA_CM_EVENT_CONNECT_ERROR:
+            throw InfinibandException("could not establish connection");
+        case RDMA_CM_EVENT_UNREACHABLE:
+            throw InfinibandException("remote server is not reachable");
+        case RDMA_CM_EVENT_REJECTED:
+            throw InfinibandException("request rejected by remote endpoint");
+        case RDMA_CM_EVENT_ESTABLISHED:
+            throw InfinibandException("gaga");
+        case RDMA_CM_EVENT_DISCONNECTED:
+            Log.info() << "DELME disconnect event";
+            rdma_disconnect(cm_id);
+            break;
+        case RDMA_CM_EVENT_CONNECT_REQUEST:
+        case RDMA_CM_EVENT_CONNECT_RESPONSE:
+        case RDMA_CM_EVENT_DEVICE_REMOVAL:
+        case RDMA_CM_EVENT_MULTICAST_JOIN:
+        case RDMA_CM_EVENT_MULTICAST_ERROR:
+        case RDMA_CM_EVENT_ADDR_CHANGE:
+            throw InfinibandException("unspecified cm event");
+        case RDMA_CM_EVENT_TIMEWAIT_EXIT:
+            Log.info() << "RDMA_CM_EVENT_TIMEWAIT_EXIT";
+            break;
+        default:
+            throw InfinibandException("unknown cm event");
+        }
+
+        
+        rdma_ack_cm_event(event);
+        if (err)
+            break;
+    };
+    if (err)
+        throw InfinibandException("rdma_get_cm_event failed");
+}
+
+
 int
 ComputeApplication::run()
 {
@@ -39,7 +109,7 @@ ComputeApplication::run()
     Log.debug() << "Setting up RDMA CM structures";
 
     // Create an rdma event channel
-    struct rdma_event_channel* cm_channel = rdma_create_event_channel();
+    cm_channel = rdma_create_event_channel();
     if (!cm_channel)
         throw ApplicationException("event channel creation failed");
 
@@ -194,6 +264,11 @@ ComputeApplication::run()
 
     Log.info() << "connection established";
 
+    /// DEBUG v
+    boost::thread t1(&debugHandleCmEvents);
+    /// DEBUG ^
+
+    
     while (1) {
         // Wait for the next completion event in the given channel (BLOCKING)
         struct ibv_cq* ev_cq;
@@ -226,7 +301,9 @@ ComputeApplication::run()
                 s << "failed status " << ibv_wc_status_str(wc[i].status)
                   << " (" << wc[i].status << ") for wr_id "
                   << (int) wc[i].wr_id;
-                throw ApplicationException(s.str());
+                //throw ApplicationException(s.str());
+                Log.error() << s.str();
+                break;
             }
 
             switch ((int) wc[i].wr_id) {
@@ -267,8 +344,9 @@ ComputeApplication::run()
             // end debug output
 
             // check buffer contents
-            //boost::this_thread::sleep(boost::posix_time::millisec(500));
+            //            boost::this_thread::sleep(boost::posix_time::millisec(1000));
             // end check buffer contents
+            checkBuffer(_cn_ack, _cn_wp, _desc, _data);
 
             // DEBUG: empty the buffer
             _cn_ack = _cn_wp;
