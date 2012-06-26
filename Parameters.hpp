@@ -58,14 +58,14 @@ public:
     Parameters(int argc, char* argv[]) :
         _timesliceSize(100),
         _overlapSize(2),
-        _inDataBufferSize(64 * 1024 * 1024),
-        _inAddrBufferSize(1024 * 1024),
+        _inDataBufferSizeExp(26),
+        _inAddrBufferSizeExp(20),
         _cnDataBufferSize(128 * 1024),
         _cnDescBufferSize(80),
         _typicalContentSize(128),
         // TODO: DEBUG
         //        _maxTimesliceNumber(1024 * 1024 * 1024),
-        _maxTimesliceNumber(100000),
+        _maxTimesliceNumber(10000),
         _basePort(20079)
     {
         parseOptions(argc, argv);
@@ -76,8 +76,8 @@ public:
     void selectDebugValues() {
         _timesliceSize = 2;
         _overlapSize = 1;
-        _inDataBufferSize = 32;
-        _inAddrBufferSize = 10;
+        _inDataBufferSizeExp = 5;
+        _inAddrBufferSizeExp = 3;
         _cnDataBufferSize = 32;
         _cnDescBufferSize = 4;
         _typicalContentSize = 2;
@@ -109,14 +109,14 @@ public:
         return _overlapSize;
     };
 
-    /// Retrieve the size of the input node's data buffer in 64-bit words.
-    uint32_t inDataBufferSize() const {
-        return _inDataBufferSize;
+    /// Retrieve the exp. size of the input node's data buffer in 64-bit words.
+    uint32_t inDataBufferSizeExp() const {
+        return _inDataBufferSizeExp;
     };
 
     /// Retrieve the size of the input node's address buffer in 64-bit words.
-    uint32_t inAddrBufferSize() const {
-        return _inAddrBufferSize;
+    uint32_t inAddrBufferSizeExp() const {
+        return _inAddrBufferSizeExp;
     };
 
     /// Retrieve the size of the compute node's data buffer in 64-bit words.
@@ -173,11 +173,11 @@ private:
     /// The size of the overlap region in number of MCs.
     uint32_t _overlapSize;
 
-    /// The size of the input node's data buffer in 64-bit words.
-    uint32_t _inDataBufferSize;
+    /// The exp. size of the input node's data buffer in 64-bit words.
+    uint32_t _inDataBufferSizeExp;
 
     /// The size of the input node's address buffer in 64-bit words.
-    uint32_t _inAddrBufferSize;
+    uint32_t _inAddrBufferSizeExp;
 
     /// The size of the compute node's data buffer in 64-bit words.
     uint32_t _cnDataBufferSize;
