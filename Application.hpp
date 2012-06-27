@@ -78,8 +78,10 @@ public:
         boost::thread tdebug(&InputBuffer::handleCmEvents, &ib, false);
         ib.disconnect();
         tdebug.join();
+
+        Log.info() << "total bytes sent: " << ib.aggregateBytesSent();
         
-        return 0;        
+        return 0;
     };
 };
 

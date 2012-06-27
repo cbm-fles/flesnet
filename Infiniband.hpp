@@ -251,8 +251,6 @@ public:
     void disconnect() {
         for (auto it = _conn.begin(); it != _conn.end(); ++it)
             (*it)->disconnect();
-        /*        if (!_conn.empty())
-                  _conn.back()->disconnect();*/
     };
 
     /// The connection manager event loop.

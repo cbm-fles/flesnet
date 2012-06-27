@@ -110,7 +110,8 @@ public:
         _addr(Par->inAddrBufferSizeExp()), _mr_addr(0),
         _acked_mc(0), _acked_data(0),
         _mc_written(0), _data_written(0),
-        _senderLoopDone(false), _connectionsDone(0)
+        _senderLoopDone(false), _connectionsDone(0),
+        _aggregateBytesSent(0)
     {
         size_t minAckBufferSize = _addr.size() / Par->timesliceSize() + 1;
         _ack.allocWithSize(minAckBufferSize);
@@ -157,10 +158,20 @@ public:
         Log.info() << "SENDER loop done";
     }
 
-private:
+    /// Handle RDMA_CM_EVENT_DISCONNECTED event.
+    virtual int onDisconnect(struct rdma_cm_id* id) {
+        ComputeNodeConnection* conn = (ComputeNodeConnection*) id->context;
 
-    /// The size of the input node's acknowledge buffer in 64-bit words.
-    uint32_t _inAckBufferSize;
+        _aggregateBytesSent += conn->bytesSent();
+
+        return IBConnectionGroup<ComputeNodeConnection>::onDisconnect(id);
+    }
+
+    uint64_t aggregateBytesSent() const {
+        return _aggregateBytesSent;
+    }
+    
+private:
 
     /// Input data buffer. Filled by FLIB.
     RingBuffer<uint64_t> _data;
@@ -194,6 +205,9 @@ private:
 
     /// Number of connections in the done state.
     unsigned int _connectionsDone;
+
+    /// Total number of bytes transmitted (without pointer updates)
+    uint64_t _aggregateBytesSent;
 
     /// Return target computation node for given timeslice.
     int target_cn_index(uint64_t timeslice) {
