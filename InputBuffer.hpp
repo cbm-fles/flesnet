@@ -290,6 +290,7 @@ private:
             uint64_t start_addr = _data_written;
             _data.at(_data_written++) = hdr0;
             _data.at(_data_written++) = hdr1;
+
             for (int i = 0; i < content_words; i++) {
                 _data.at(_data_written++) = i + 0xA;
             }

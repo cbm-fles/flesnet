@@ -11,6 +11,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/thread.hpp>
 #include "InputBuffer.hpp"
+#include "klepsydra.hpp"
 #include "global.hpp"
 
 
@@ -70,7 +71,9 @@ public:
         ib.connect(_par.computeNodes(), services);
         ib.handleCmEvents(true);
         boost::thread t1(&InputBuffer::completionHandler, &ib);
+        klepsydra::Monotonic timer;
         ib.senderLoop();
+        uint64_t runtime = timer.getTime();
 
         //        boost::this_thread::sleep(boost::posix_time::millisec(5000));
 
@@ -79,7 +82,10 @@ public:
         ib.disconnect();
         tdebug.join();
 
-        Log.info() << "total bytes sent: " << ib.aggregateBytesSent();
+        double rate = (double) ib.aggregateBytesSent() / (double) runtime;
+        Log.info() << "summary: " << ib.aggregateBytesSent()
+                   << " bytes sent in "
+                   << runtime << " µs (" << rate << " MB/s)";
         
         return 0;
     };

@@ -21,7 +21,7 @@
  * along with Klepsydra.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <klepsydra/timer.hpp>
+#include "timer.hpp"
 
 using namespace klepsydra;
 

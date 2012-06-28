@@ -22,7 +22,7 @@
  */
 
 
-#include <klepsydra/monotonic.hpp>
+#include "monotonic.hpp"
 
 #if __APPLE__ 
 #include <mach/mach_time.h>
