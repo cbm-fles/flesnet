@@ -29,7 +29,7 @@ public:
         _ourTurn(true),
         _mr_recv(0),
         _mr_send(0),
-        _bytesSent(0)
+        _contentBytesSent(0)
     {
         _qp_cap.max_send_wr = 20;
         _qp_cap.max_send_sge = 8;
@@ -173,7 +173,7 @@ public:
         // send everything
         postSend(&send_wr_ts);
 
-        _bytesSent += (data_length + mc_length) * sizeof(uint64_t)
+        _contentBytesSent += (data_length + mc_length) * sizeof(uint64_t)
             + sizeof(TimesliceComponentDescriptor);                             
     }
 
@@ -279,8 +279,9 @@ public:
         return IBConnection::onDisconnect();
     }
 
-    uint64_t bytesSent() const {
-        return _bytesSent;
+    /// Retrieve the number of bytes transmitted (without pointer updates).
+    uint64_t contentBytesSent() const {
+        return _contentBytesSent;
     }
     
 private:
@@ -347,7 +348,7 @@ private:
     struct ibv_send_wr send_wr;
 
     /// Total number of bytes transmitted (without pointer updates)
-    uint64_t _bytesSent;
+    uint64_t _contentBytesSent;
 };
 
 

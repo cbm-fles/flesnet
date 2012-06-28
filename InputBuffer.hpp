@@ -111,7 +111,10 @@ public:
         _acked_mc(0), _acked_data(0),
         _mc_written(0), _data_written(0),
         _senderLoopDone(false), _connectionsDone(0),
-        _aggregateBytesSent(0)
+        _aggregateContentBytesSent(0),
+        _aggregateBytesSent(0),
+        _aggregateSendRequests(0),
+        _aggregateRecvRequests(0)
     {
         size_t minAckBufferSize = _addr.size() / Par->timesliceSize() + 1;
         _ack.allocWithSize(minAckBufferSize);
@@ -162,14 +165,34 @@ public:
     virtual int onDisconnect(struct rdma_cm_id* id) {
         ComputeNodeConnection* conn = (ComputeNodeConnection*) id->context;
 
-        _aggregateBytesSent += conn->bytesSent();
+        _aggregateContentBytesSent += conn->contentBytesSent();
+        _aggregateBytesSent += conn->totalBytesSent();
+        _aggregateSendRequests += conn->totalSendRequests();
+        _aggregateRecvRequests += conn->totalRecvRequests();        
 
         return IBConnectionGroup<ComputeNodeConnection>::onDisconnect(id);
     }
 
+    /// Retrieve the number of bytes transmitted (without pointer updates).
+    uint64_t aggregateContentBytesSent() const {
+        return _aggregateContentBytesSent;
+    }
+
+    /// Retrieve the total number of bytes transmitted.
     uint64_t aggregateBytesSent() const {
         return _aggregateBytesSent;
     }
+
+    /// Retrieve the total number of SEND work requests.
+    uint64_t aggregateSendRequests() const {
+        return _aggregateSendRequests;
+    }
+
+    /// Retrieve the total number of RECV work requests.
+    uint64_t aggregateRecvRequests() const {
+        return _aggregateRecvRequests;
+    }
+
     
 private:
 
@@ -206,8 +229,17 @@ private:
     /// Number of connections in the done state.
     unsigned int _connectionsDone;
 
-    /// Total number of bytes transmitted (without pointer updates)
+    /// Total number of bytes transmitted (without pointer updates).
+    uint64_t _aggregateContentBytesSent;
+
+    /// Total number of bytes transmitted.
     uint64_t _aggregateBytesSent;
+
+    /// Total number of SEND work requests.
+    uint64_t _aggregateSendRequests;
+
+    /// Total number of RECV work requests.
+    uint64_t _aggregateRecvRequests;
 
     /// Return target computation node for given timeslice.
     int target_cn_index(uint64_t timeslice) {

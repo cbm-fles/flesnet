@@ -82,6 +82,9 @@ public:
         ib.disconnect();
         tdebug.join();
 
+        Log.info() << ib.aggregateContentBytesSent() << " content bytes";
+        Log.info() << ib.aggregateSendRequests() << " SEND requests";
+        Log.info() << ib.aggregateRecvRequests() << " RECV requests";
         double rate = (double) ib.aggregateBytesSent() / (double) runtime;
         Log.info() << "summary: " << ib.aggregateBytesSent()
                    << " bytes sent in "

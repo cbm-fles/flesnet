@@ -38,7 +38,11 @@ public:
 
     /// The IBConnection constructor. Creates a connection manager ID.
     IBConnection(struct rdma_event_channel* ec, int index) :
-        _index(index), _done(false)
+        _index(index),
+        _done(false),
+        _totalBytesSent(0),
+        _totalSendRequests(0),
+        _totalRecvRequests(0)
     {
         int err = rdma_create_id(ec, &_cmId, this, RDMA_PS_TCP);
         if (err)
@@ -69,7 +73,7 @@ public:
        \param service  The target service or port number
     */
     void connect(const std::string& hostname,
-                         const std::string& service) {
+                 const std::string& service) {
         struct addrinfo hints;
         memset(&hints, 0, sizeof(struct addrinfo));
         hints.ai_family = AF_UNSPEC;
@@ -159,8 +163,25 @@ public:
     };
 
     /// Retrieve index of this connection in the connection group.
-    int index() const { return _index; };
+    int index() const {
+        return _index;
+    };
 
+    /// Retrieve the total number of bytes transmitted.
+    uint64_t totalBytesSent() const {
+        return _totalBytesSent;
+    }
+    
+    /// Retrieve the total number of SEND work requests.
+    uint64_t totalSendRequests() const {
+        return _totalSendRequests;
+    }
+    
+    /// Retrieve the total number of RECV work requests.
+    uint64_t totalRecvRequests() const {
+        return _totalRecvRequests;
+    }
+    
 protected:
 
     /// Access information for a remote memory region.
@@ -187,6 +208,14 @@ protected:
         
         if (ibv_post_send(qp(), wr, &bad_send_wr))
             throw InfinibandException("ibv_post_send failed");
+
+        _totalSendRequests++;
+        
+        while (wr) {
+            for (int i = 0; i < wr->num_sge; i++)
+                _totalBytesSent += wr->sg_list[i].length;
+            wr = wr->next;
+        }
     }
 
     /// Post an InfiniBand RECV work request (WR) to the receive queue.
@@ -195,6 +224,8 @@ protected:
         
         if (ibv_post_recv(qp(), wr, &bad_recv_wr))
             throw InfinibandException("ibv_post_recv failed");
+
+        _totalRecvRequests++;
     }
 
 private:
@@ -202,7 +233,16 @@ private:
     /// RDMA connection manager ID.
     struct rdma_cm_id* _cmId;
 
-    /// Low-level communication parameters
+    /// Total number of bytes transmitted.
+    uint64_t _totalBytesSent;
+
+    /// Total number of SEND work requests.
+    uint64_t _totalSendRequests;
+
+    /// Total number of RECV work requests.
+    uint64_t _totalRecvRequests;
+
+    /// Low-level communication parameters.
     enum {
         RESOLVE_TIMEOUT_MS = 5000 ///< Resolve timeout in milliseconds.
     };
