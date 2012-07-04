@@ -7,6 +7,9 @@
 #ifndef DATASOURCE_HPP
 #define DATASOURCE_HPP
 
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/poisson_distribution.hpp>
+#include <boost/random/variate_generator.hpp>
 #include "RingBuffer.hpp"
 #include "global.hpp"
 
@@ -43,13 +46,21 @@ public:
               RingBuffer<uint64_t>& addrBuffer) :
         DataSource(dataBuffer, addrBuffer),
         _ackedData(0),
-        _ackedMc(0) {};
+        _ackedMc(0),
+        _dataWritten(0),
+        _mcWritten(0),
+        _pd(Par->typicalContentSize()),
+        _randContentWords(_rng, _pd) { };
     
     /// Generate FLIB input data.
     virtual void waitForData(uint64_t minMcNumber) {
+        
         uint64_t mcsToWrite = minMcNumber - _mcWritten;
-        // write more data than requested (up to 2 additional TSs)
-        mcsToWrite += random() % (Par->timesliceSize() * 2);
+
+        if (Par->randomizeSizes()) {
+            // write more data than requested (up to 2 additional TSs)
+            mcsToWrite += random() % (Par->timesliceSize() * 2);
+        }
 
         if (Log.beTrace()) {
             Log.trace() << "waitForData():"
@@ -59,7 +70,9 @@ public:
         }
 
         while (mcsToWrite-- > 0) {
-            int contentWords = random() % (Par->typicalContentSize() * 2);
+            int contentWords = Par->typicalContentSize();
+            if (Par->randomizeSizes())
+                contentWords = _randContentWords();
 
             uint8_t hdrrev = 0x01;
             uint8_t sysid = 0x01;
@@ -81,19 +94,20 @@ public:
                             << _dataBuffer.size() + 0;
             }
             
-            // check for space in data buffer
+            // check for space in data buffer, busy wait if required
             if (_dataWritten - _ackedData + contentWords + 2 >
                 _dataBuffer.size()) {
-                //Log.warn() << "data buffer full";
-                //boost::this_thread::sleep(boost::posix_time::millisec(1000));
-                // TODO: handle sensibly!
+                if (Log.beTrace())
+                    Log.trace() << "data buffer full";
+                boost::this_thread::sleep(boost::posix_time::millisec(10));
                 break;
             }
 
-            // check for space in addr buffer
+            // check for space in addr buffer, busy wait if required
             if (_mcWritten - _ackedMc == _addrBuffer.size()) {
-                Log.warn() << "addr buffer full";
-                //                boost::this_thread::sleep(boost::posix_time::millisec(1000));
+                if (Log.beTrace())
+                    Log.trace() << "addr buffer full";
+                boost::this_thread::sleep(boost::posix_time::millisec(10));
                 break;
             }
 
@@ -128,6 +142,16 @@ private:
 
     /// FLIB-internal number of written MCs. 
     uint64_t _mcWritten;
+
+    /// A pseudo-random number generator.
+    boost::mt19937 _rng;
+
+    /// Distribution to use in determining data content sizes.
+    boost::poisson_distribution<> _pd;
+
+    /// Generate random number of content words.
+    boost::variate_generator<boost::mt19937&,
+                             boost::poisson_distribution<> > _randContentWords;
 };
     
 

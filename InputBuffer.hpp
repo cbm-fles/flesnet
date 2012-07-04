@@ -7,6 +7,7 @@
 #ifndef INPUTBUFFER_HPP
 #define INPUTBUFFER_HPP
 
+#include <cassert>
 #include "ComputeNodeConnection.hpp"
 #include "DataSource.hpp"
 #include "global.hpp"
@@ -48,9 +49,11 @@ public:
             // wait until a complete TS is available in the input buffer
             uint64_t mc_offset = timeslice * Par->timesliceSize();
             uint64_t mc_length = Par->timesliceSize() + Par->overlapSize();
-            while (_addr.at(mc_offset + mc_length) <= _acked_data)
+            
+            if (_addr.at(mc_offset + mc_length) <= _acked_data)
                 _dataSource.waitForData(mc_offset + mc_length + 1);
-
+            assert(_addr.at(mc_offset + mc_length) > _acked_data);
+            
             uint64_t data_offset = _addr.at(mc_offset);
             uint64_t data_length = _addr.at(mc_offset + mc_length)
                 - data_offset;

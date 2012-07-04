@@ -63,6 +63,7 @@ public:
         _cnDataBufferSize(128 * 1024),
         _cnDescBufferSize(80),
         _typicalContentSize(128),
+        _randomizeSizes(false),
         // TODO: DEBUG
         //        _maxTimesliceNumber(1024 * 1024 * 1024),
         _maxTimesliceNumber(100000),
@@ -81,6 +82,7 @@ public:
         _cnDataBufferSize = 32;
         _cnDescBufferSize = 4;
         _typicalContentSize = 2;
+        _randomizeSizes = true;
         _maxTimesliceNumber = 10;
     }
 
@@ -133,6 +135,11 @@ public:
     /// Retrieve the typical number of content words per MC.
     uint32_t typicalContentSize() const {
         return _typicalContentSize;
+    };
+
+    /// Retrieve the randomize sizes flag.
+    bool randomizeSizes() const {
+        return _randomizeSizes;
     };
 
     /// Retrieve the global maximum timeslice number.
@@ -188,6 +195,9 @@ private:
 
     /// A typical number of content words per MC.
     uint32_t _typicalContentSize;
+
+    /// The randomize sizes flag.
+    bool _randomizeSizes;
 
     /// The global maximum timeslice number.
     uint32_t _maxTimesliceNumber;
