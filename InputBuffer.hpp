@@ -8,7 +8,7 @@
 #define INPUTBUFFER_HPP
 
 #include <cassert>
-#include "ComputeNodeConnection.hpp"
+#include "InputNodeConnection.hpp"
 #include "DataSource.hpp"
 #include "global.hpp"
 
@@ -18,7 +18,7 @@
     FLIB) and a group of timeslice building connections to compute
     nodes. */
 
-class InputBuffer : public IBConnectionGroup<ComputeNodeConnection>
+class InputBuffer : public IBConnectionGroup<InputNodeConnection>
 {
 public:
 
@@ -83,14 +83,14 @@ public:
 
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
     virtual int onDisconnect(struct rdma_cm_id* id) {
-        ComputeNodeConnection* conn = (ComputeNodeConnection*) id->context;
+        InputNodeConnection* conn = (InputNodeConnection*) id->context;
 
         _aggregateContentBytesSent += conn->contentBytesSent();
         _aggregateBytesSent += conn->totalBytesSent();
         _aggregateSendRequests += conn->totalSendRequests();
         _aggregateRecvRequests += conn->totalRecvRequests();        
 
-        return IBConnectionGroup<ComputeNodeConnection>::onDisconnect(id);
+        return IBConnectionGroup<InputNodeConnection>::onDisconnect(id);
     }
 
     /// Retrieve the number of bytes transmitted (without pointer updates).
@@ -165,7 +165,7 @@ private:
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
     virtual int onAddrResolved(struct rdma_cm_id* id) {
-        int ret = IBConnectionGroup<ComputeNodeConnection>::onAddrResolved(id);
+        int ret = IBConnectionGroup<InputNodeConnection>::onAddrResolved(id);
 
         if (!_mr_data) {
             // Register memory regions.
