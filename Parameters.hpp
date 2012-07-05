@@ -64,27 +64,11 @@ public:
         _cnDescBufferSize(80),
         _typicalContentSize(128),
         _randomizeSizes(false),
-        // TODO: DEBUG
-        //        _maxTimesliceNumber(1024 * 1024 * 1024),
         _maxTimesliceNumber(100000),
         _basePort(20079)
     {
         parseOptions(argc, argv);
     };
-
-    /// Enable use of (small) debug values for buffer sizes to enable
-    /// manual buffer state analysis.
-    void selectDebugValues() {
-        _timesliceSize = 2;
-        _overlapSize = 1;
-        _inDataBufferSizeExp = 5;
-        _inAddrBufferSizeExp = 3;
-        _cnDataBufferSize = 32;
-        _cnDescBufferSize = 4;
-        _typicalContentSize = 2;
-        _randomizeSizes = true;
-        _maxTimesliceNumber = 10;
-    }
 
     /// Return a description of active nodes, suitable for debug output.
     std::string const desc() const {
@@ -116,7 +100,8 @@ public:
         return _inDataBufferSizeExp;
     };
 
-    /// Retrieve the size of the input node's address buffer in 64-bit words.
+    /// Retrieve the exp. size of the input node's address buffer in
+    /// 64-bit words.
     uint32_t inAddrBufferSizeExp() const {
         return _inAddrBufferSizeExp;
     };
@@ -183,7 +168,7 @@ private:
     /// The exp. size of the input node's data buffer in 64-bit words.
     uint32_t _inDataBufferSizeExp;
 
-    /// The size of the input node's address buffer in 64-bit words.
+    /// The exp. size of the input node's address buffer in 64-bit words.
     uint32_t _inAddrBufferSizeExp;
 
     /// The size of the compute node's data buffer in 64-bit words.
@@ -241,6 +226,27 @@ private:
             ("compute-nodes,C",
              po::value< std::vector<std::string> >()->multitoken(),
              "add host to the list of compute nodes")
+            ("timeslice-size", po::value<uint32_t>(&_timesliceSize),
+             "global timeslice size in number of MCs")
+            ("overlap-size", po::value<uint32_t>(&_overlapSize),
+             "size of the overlap region in number of MCs")
+            ("in-data-buffer-size-exp",
+             po::value<uint32_t>(&_inDataBufferSizeExp),
+             "exp. size of the input node's data buffer in 64-bit words")
+             ("in-addr-buffer-size-exp",
+              po::value<uint32_t>(&_inAddrBufferSizeExp),
+             "exp. size of the input node's address buffer in 64-bit words")
+            ("cn-data-buffer-size", po::value<uint32_t>(&_cnDataBufferSize),
+             "size of the compute node's data buffer in 64-bit words")
+            ("cn-desc-buffer-size", po::value<uint32_t>(&_cnDescBufferSize),
+             "size of the compute node's description buffer"
+             " (number of entries).")
+            ("typical-content-size", po::value<uint32_t>(&_typicalContentSize),
+             "typical number of content words per MC")
+            ("randomize-sizes", po::value<bool>(&_randomizeSizes),
+             "randomize sizes flag")
+            ("max-timeslice-number", po::value<uint32_t>(&_maxTimesliceNumber),
+             "global maximum timeslice number")
             ;
 
         po::options_description cmdline_options("Allowed options");

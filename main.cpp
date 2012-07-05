@@ -28,7 +28,6 @@ main(int argc, char* argv[])
 {
     try {
         Par = new Parameters(argc, argv);
-        //        Par->selectDebugValues();
 
         if (Par->nodeType() == Parameters::INPUT_NODE) {
             InputApplication app(*Par);
