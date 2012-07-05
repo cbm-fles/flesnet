@@ -15,6 +15,7 @@ namespace po = boost::program_options;
 #include <stdexcept>
 #include <fstream>
 #include "global.hpp"
+#include "Timeslice.hpp"
 
 
 /// Overloaded output operator for STL vectors.
@@ -314,6 +315,20 @@ private:
         Log.debug() << "this node: "
                     << (_nodeType == INPUT_NODE ? "input" : "compute")
                     << " node #" << _nodeIndex;
+
+        Log.info() << "timeslice size: (" << _timesliceSize
+                   << " + " << _overlapSize << ") microslices";
+        Log.info() << "microslice size: ("
+                   << _typicalContentSize * sizeof(uint64_t)
+                   << " + " << 2 * sizeof(uint64_t) << ") bytes";
+        Log.info() << "input node buffer size: ("
+                   << (1 << _inDataBufferSizeExp) * sizeof(uint64_t)
+                   << " + " <<  (1 << _inAddrBufferSizeExp) * sizeof(uint64_t)
+                   << ") bytes";
+        Log.info() << "compute node buffer size: ("
+                   << _cnDataBufferSize * sizeof(uint64_t) << " + "
+                   << _cnDescBufferSize * sizeof(TimesliceComponentDescriptor)
+                   << ") bytes";
     }
 };
 
