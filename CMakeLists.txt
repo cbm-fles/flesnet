@@ -12,7 +12,9 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=2)
 
 add_executable(flesnet main.cpp ComputeApplication.cpp timer.cpp monotonic.cpp)
 
+target_link_libraries(flesnet ibverbs)
 target_link_libraries(flesnet rdmacm)
+target_link_libraries(flesnet rt)
 target_link_libraries(flesnet ${Boost_PROGRAM_OPTIONS_LIBRARY})
 target_link_libraries(flesnet ${Boost_THREAD_LIBRARY})
 
