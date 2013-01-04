@@ -74,10 +74,7 @@ public:
         klepsydra::Monotonic timer;
         ib.senderLoop();
         uint64_t runtime = timer.getTime();
-
-        //        boost::this_thread::sleep(boost::posix_time::millisec(5000));
-
-        //        t1.join();
+        t1.join();
         boost::thread tdebug(&InputBuffer::handleCmEvents, &ib, false);
         ib.disconnect();
         tdebug.join();

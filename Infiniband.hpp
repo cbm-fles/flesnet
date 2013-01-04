@@ -167,6 +167,10 @@ public:
         return _index;
     };
 
+    bool done() const {
+        return _done;
+    };
+
     /// Retrieve the total number of bytes transmitted.
     uint64_t totalBytesSent() const {
         return _totalBytesSent;

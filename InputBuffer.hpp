@@ -27,7 +27,7 @@ public:
         _data(Par->inDataBufferSizeExp()), _mr_data(0),
         _addr(Par->inAddrBufferSizeExp()), _mr_addr(0),
         _acked_mc(0), _acked_data(0),
-        _senderLoopDone(false), _connectionsDone(0),
+        _connectionsDone(0),
         _aggregateContentBytesSent(0),
         _aggregateBytesSent(0),
         _aggregateSendRequests(0),
@@ -75,8 +75,10 @@ public:
                            data_offset, data_length);
 
             _conn[cn]->incWritePointers(data_length + mc_length, 1);
-
         }
+
+        for(auto it = _conn.begin(); it != _conn.end(); ++it)
+            (*it)->finalize();
 
         Log.info() << "SENDER loop done";
     }
@@ -274,24 +276,18 @@ private:
             _acked_data = _addr.at(acked_ts * Par->timesliceSize());
             _acked_mc = acked_ts * Par->timesliceSize();
             _dataSource.updateAckPointers(_acked_data, _acked_mc);
-            Log.debug() << "new values: _acked_data="
-                        << _acked_data
+            Log.debug() << "new values: _acked_data=" << _acked_data
                         << " _acked_mc=" << _acked_mc;
-            if (acked_ts == Par->maxTimesliceNumber() - 1) {
-                _senderLoopDone = true;                
-                for(auto it = _conn.begin(); it != _conn.end(); ++it)
-                    _connectionsDone += (*it)->doneIfCnEmpty();
-                _allDone = (_connectionsDone == _conn.size());
-            }
         }
         break;
 
         case ID_RECEIVE_CN_ACK: {
             int cn = wc.wr_id >> 8;
             _conn[cn]->onCompleteRecv();
-            if (_senderLoopDone) {
-                _connectionsDone += _conn[cn]->doneIfCnEmpty();
+            if (_conn[cn]->done()) {
+                _connectionsDone++;
                 _allDone = (_connectionsDone == _conn.size());
+                Log.debug() << "ID_RECEIVE_CN_ACK final for id " << cn << " alldone=" << _allDone;
             }
         }
         break;

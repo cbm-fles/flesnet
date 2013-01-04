@@ -27,6 +27,7 @@ public:
     InputNodeConnection(struct rdma_event_channel* ec, int index) :
         IBConnection(ec, index),
         _ourTurn(true),
+        _finalize(false),
         _mr_recv(0),
         _mr_send(0),
         _contentBytesSent(0)
@@ -189,8 +190,24 @@ public:
         }
     }
 
-    /// Handle Infiniband receive completion notification
+    ///
+    void finalize() {
+        boost::mutex::scoped_lock lock(_cn_wp_mutex);
+        _finalize = true;
+        if (_ourTurn && _cn_wp.desc == _cn_ack.desc) {
+            _ourTurn = false;
+            _send_cn_wp.data = UINT64_MAX;
+            _send_cn_wp.desc = UINT64_MAX;
+            postSendCnWp();
+        }
+    }
+
+    /// Handle Infiniband receive completion notification.
     void onCompleteRecv() {
+        if (_receive_cn_ack.data == UINT64_MAX && _receive_cn_ack.desc == UINT64_MAX) {
+            _done = true;
+            return;
+        }
         Log.debug()
                 << "[" << _index << "] "
                 << "receive completion, new _cn_ack.data="
@@ -207,24 +224,16 @@ public:
                     || _cn_wp.desc != _send_cn_wp.desc) {
                 _send_cn_wp = _cn_wp;
                 postSendCnWp();
+            } else if (_finalize && _cn_wp.desc == _cn_ack.desc) {
+                _send_cn_wp.data = UINT64_MAX;
+                _send_cn_wp.desc = UINT64_MAX;
+                postSendCnWp();
             } else {
                 _ourTurn = true;
             }
         }
     }
 
-    /// Set done flag if compute node buffer is completely acknowledged.
-    int doneIfCnEmpty() {
-        if (_done)
-            return 0;
-        if (_cn_wp.desc == _cn_ack.desc) {
-            _done = true;
-            Log.debug() << "[" << _index << "] "
-                        << "connection done";
-        }
-        return _done;
-    }
-    
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
     virtual void onAddrResolved(struct ibv_pd* pd, struct ibv_cq* cq) {
         IBConnection::onAddrResolved(pd, cq);
@@ -288,8 +297,8 @@ private:
 
     /// Post a receive work request (WR) to the receive queue
     void postRecvCnAck() {
-        if (Log.beTrace()) {
-            Log.trace() << "[" << _index << "] "
+        if (Log.beDebug()) {
+            Log.debug() << "[" << _index << "] "
                         << "POST RECEIVE _receive_cn_ack";
         }
         postRecv(&recv_wr);
@@ -297,8 +306,8 @@ private:
 
     /// Post a send work request (WR) to the send queue
     void postSendCnWp() {
-        if (Log.beTrace()) {
-            Log.trace() << "[" << _index << "] "
+        if (Log.beDebug()) {
+            Log.debug() << "[" << _index << "] "
                         << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
                         << " desc=" << _send_cn_wp.desc << ")";
         }
@@ -308,6 +317,8 @@ private:
     /// Flag, true if it is the input nodes's turn to send a pointer update.
     bool _ourTurn;
 
+    bool _finalize;
+    
     /// Local copy of acknowledged-by-CN pointers
     ComputeNodeBufferPosition _cn_ack;
 

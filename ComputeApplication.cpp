@@ -104,7 +104,7 @@ void debugHandleCmEvents() {
 int
 ComputeApplication::run()
 {
-    enum { ID_SEND = 4, ID_RECEIVE };
+    enum { ID_SEND = 4, ID_RECEIVE, ID_SEND_FINALIZE };
 
     Log.debug() << "Setting up RDMA CM structures";
 
@@ -311,66 +311,94 @@ ComputeApplication::run()
                 Log.debug() << "SEND complete";
                 break;
 
+            case ID_SEND_FINALIZE:
+                Log.debug() << "SEND FINALIZE complete";
+                return 0;
+
             case ID_RECEIVE:
+                if (_recv_cn_wp.data == UINT64_MAX && _recv_cn_wp.desc == UINT64_MAX) {
+                    Log.info() << "received FINAL pointer update";
+                    // send FINAL ack
+                    {
+                        _send_cn_ack = _recv_cn_wp;
+                        Log.debug() << "SEND posted";
+                        struct ibv_sge sge3;
+                        sge3.addr = (uintptr_t) &_send_cn_ack;
+                        sge3.length = sizeof(ComputeNodeBufferPosition);
+                        sge3.lkey = mr_send->lkey;
+                        struct ibv_send_wr send_wr2;
+                        memset(&send_wr2, 0, sizeof send_wr2);
+                        send_wr2.wr_id = ID_SEND_FINALIZE;
+                        send_wr2.opcode = IBV_WR_SEND;
+                        send_wr2.send_flags = IBV_SEND_SIGNALED;
+                        send_wr2.sg_list = &sge3;
+                        send_wr2.num_sge = 1;
+                        struct ibv_send_wr* bad_send_wr;
+                        if (ibv_post_send(cm_id->qp, &send_wr2, &bad_send_wr))
+                            throw ApplicationException("post_send failed");
+                    }
+                    break;
+                }
+                
                 // post new receive request
-            {
-                struct ibv_sge sge;
-                sge.addr = (uintptr_t) &_recv_cn_wp;
-                sge.length = sizeof(ComputeNodeBufferPosition);
-                sge.lkey = mr_recv->lkey;
-                struct ibv_recv_wr recv_wr;
-                memset(&recv_wr, 0, sizeof recv_wr);
-                recv_wr.wr_id = ID_RECEIVE;
-                recv_wr.sg_list = &sge;
-                recv_wr.num_sge = 1;
-                struct ibv_recv_wr* bad_recv_wr;
-                if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
-                    throw ApplicationException("post_recv failed");
-            }
-            _cn_wp = _recv_cn_wp;
-            // debug output
-            Log.debug() << "RECEIVE _cn_wp: data=" << _cn_wp.data
-                        << " desc=" << _cn_wp.desc;
+                {
+                    struct ibv_sge sge;
+                    sge.addr = (uintptr_t) &_recv_cn_wp;
+                    sge.length = sizeof(ComputeNodeBufferPosition);
+                    sge.lkey = mr_recv->lkey;
+                    struct ibv_recv_wr recv_wr;
+                    memset(&recv_wr, 0, sizeof recv_wr);
+                    recv_wr.wr_id = ID_RECEIVE;
+                    recv_wr.sg_list = &sge;
+                    recv_wr.num_sge = 1;
+                    struct ibv_recv_wr* bad_recv_wr;
+                    if (ibv_post_recv(cm_id->qp, &recv_wr, &bad_recv_wr))
+                        throw ApplicationException("post_recv failed");
+                }
+                _cn_wp = _recv_cn_wp;
+                // debug output
+                Log.debug() << "RECEIVE _cn_wp: data=" << _cn_wp.data
+                            << " desc=" << _cn_wp.desc;
 #ifdef CHATTY
-            std::cout << "/--- data buf ---" << std::endl << "|";
-            for (unsigned int i = tscdesc.offset;
-                    i < tscdesc.offset + tscdesc.size; i++) {
-                std::cout << " (" << (i % Par->cnDataBufferSize()) << ")" << std::hex
-                          << _data[i % Par->cnDataBufferSize()]
-                          << std::dec;
-            }
-            std::cout << std::endl << "\\---------" << std::endl;
+                std::cout << "/--- data buf ---" << std::endl << "|";
+                for (unsigned int i = tscdesc.offset;
+                     i < tscdesc.offset + tscdesc.size; i++) {
+                    std::cout << " (" << (i % Par->cnDataBufferSize()) << ")" << std::hex
+                              << _data[i % Par->cnDataBufferSize()]
+                              << std::dec;
+                }
+                std::cout << std::endl << "\\---------" << std::endl;
 #endif
-            // end debug output
+                // end debug output
 
-            // check buffer contents
-            //            boost::this_thread::sleep(boost::posix_time::millisec(1000));
-            // end check buffer contents
-            checkBuffer(_cn_ack, _cn_wp, _desc, _data);
+                // check buffer contents
+                //            boost::this_thread::sleep(boost::posix_time::millisec(1000));
+                // end check buffer contents
+                checkBuffer(_cn_ack, _cn_wp, _desc, _data);
 
-            // DEBUG: empty the buffer
-            _cn_ack = _cn_wp;
+                // DEBUG: empty the buffer
+                _cn_ack = _cn_wp;
 
-            // send ack
-            {
-                _send_cn_ack = _cn_ack;
-                Log.debug() << "SEND posted";
-                struct ibv_sge sge3;
-                sge3.addr = (uintptr_t) &_send_cn_ack;
-                sge3.length = sizeof(ComputeNodeBufferPosition);
-                sge3.lkey = mr_send->lkey;
-                struct ibv_send_wr send_wr2;
-                memset(&send_wr2, 0, sizeof send_wr2);
-                send_wr2.wr_id = ID_SEND;
-                send_wr2.opcode = IBV_WR_SEND;
-                send_wr2.send_flags = IBV_SEND_SIGNALED;
-                send_wr2.sg_list = &sge3;
-                send_wr2.num_sge = 1;
-                struct ibv_send_wr* bad_send_wr;
-                if (ibv_post_send(cm_id->qp, &send_wr2, &bad_send_wr))
-                    throw ApplicationException("post_send failed");
-            }
-            break;
+                // send ack
+                {
+                    _send_cn_ack = _cn_ack;
+                    Log.debug() << "SEND posted";
+                    struct ibv_sge sge3;
+                    sge3.addr = (uintptr_t) &_send_cn_ack;
+                    sge3.length = sizeof(ComputeNodeBufferPosition);
+                    sge3.lkey = mr_send->lkey;
+                    struct ibv_send_wr send_wr2;
+                    memset(&send_wr2, 0, sizeof send_wr2);
+                    send_wr2.wr_id = ID_SEND;
+                    send_wr2.opcode = IBV_WR_SEND;
+                    send_wr2.send_flags = IBV_SEND_SIGNALED;
+                    send_wr2.sg_list = &sge3;
+                    send_wr2.num_sge = 1;
+                    struct ibv_send_wr* bad_send_wr;
+                    if (ibv_post_send(cm_id->qp, &send_wr2, &bad_send_wr))
+                        throw ApplicationException("post_send failed");
+                }
+                break;
 
             default:
                 throw ApplicationException("completion for unknown wr_id");
