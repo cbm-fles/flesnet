@@ -75,9 +75,9 @@ public:
         ib.senderLoop();
         uint64_t runtime = timer.getTime();
         t1.join();
-        boost::thread tdebug(&InputBuffer::handleCmEvents, &ib, false);
+        boost::thread t2(&InputBuffer::handleCmEvents, &ib, false);
         ib.disconnect();
-        tdebug.join();
+        t2.join();
 
         Log.info() << ib.aggregateContentBytesSent() << " content bytes";
         Log.info() << ib.aggregateSendRequests() << " SEND requests";
@@ -105,6 +105,30 @@ public:
 
     /// The "main" function of a compute node application.
     virtual int run();
+//    virtual int run() {
+//        ComputeBuffer cb;
+// 
+//        cb.connect(_par.inputNodes(), _par->basePort() + _par->nodeIndex());
+//        cb.handleCmEvents(true);
+//        boost::thread t1(&ComputeBuffer::completionHandler, &cb);
+//        klepsydra::Monotonic timer;
+//        //cb.dispatchLoop();
+//        uint64_t runtime = timer.getTime();
+//        t1.join();
+//        boost::thread t2(&ComputeBuffer::handleCmEvents, &cb, false);
+//        cb.disconnect();
+//        t2.join();
+// 
+//        Log.info() << cb.aggregateContentBytesReceived() << " content bytes";
+//        Log.info() << cb.aggregateSendRequests() << " SEND requests";
+//        Log.info() << cb.aggregateRecvRequests() << " RECV requests";
+//        double rate = (double) cb.aggregateBytesReceived() / (double) runtime;
+//        Log.info() << "summary: " << cb.aggregateBytesReceived()
+//                   << " bytes received in "
+//                   << runtime << " µs (" << rate << " MB/s)";
+//        
+//        return 0;
+//    }
 };
 
 
