@@ -63,6 +63,9 @@ public:
     virtual int run() {
         InputBuffer ib;
 
+        // hacky delay to give CNs time to start
+        boost::this_thread::sleep(boost::posix_time::millisec(500));
+
         std::vector<std::string> services;
         for (unsigned int i = 0; i < _par.computeNodes().size(); i++)
             services.push_back(boost::lexical_cast<std::string>
