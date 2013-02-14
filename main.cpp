@@ -20,7 +20,7 @@
 #include "Application.hpp"
 #include "global.hpp"
 
-einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> Log;
+einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> Log(einhard::WARN, true);
 Parameters* Par;
 
 int
