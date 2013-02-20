@@ -281,130 +281,139 @@ void connect()
 
 }
 
-void completionHandler() {
-    while (1) {
-        // Wait for the next completion event in the given channel (BLOCKING)
-        struct ibv_cq* ev_cq;
-        void* ev_ctx;
 
-        if (ibv_get_cq_event(the_cp._comp_chan, &ev_cq, &ev_ctx))
-            throw ApplicationException("retrieval of cq event failed");
+bool _allDone = false;
 
-        // Acknowledge the completion queue (CQ) event
-        ibv_ack_cq_events(ev_cq, 1);
 
-        if (ev_cq != the_cp._cq)
-            throw ApplicationException("CQ event for unknown CQ");
+void onCompletion(const struct ibv_wc& wc) {
+    switch (wc.wr_id & 0xFF) {
+    case ID_SEND:
+        Log.debug() << "SEND complete";
+        break;
 
-        // Request a completion notification on the given completion queue
-        // ("one shot" - only one completion event will be generated)
-        if (ibv_req_notify_cq(the_cp._cq, 0))
-            throw ApplicationException("request of completion notification failed");
-        struct ibv_wc wc[1];
-        int ne;
+    case ID_SEND_FINALIZE:
+        Log.debug() << "SEND FINALIZE complete";
+        _allDone = true;
+        return;
 
-        // Poll the completion queue (CQ) for work completions (WC)
-        ne = ibv_poll_cq(the_cp._cq, 1, wc);
-        if (ne < 0)
-            throw ApplicationException("polling the completion queue failed");
-
-        for (int i = 0; i < ne; i++) {
-            if (wc[i].status != IBV_WC_SUCCESS) {
-                std::ostringstream s;
-                s << "failed status " << ibv_wc_status_str(wc[i].status)
-                  << " (" << wc[i].status << ") for wr_id "
-                  << (int) wc[i].wr_id;
-                //throw ApplicationException(s.str());
-                Log.error() << s.str();
-                break;
+    case ID_RECEIVE:
+        if (_recv_cn_wp.data == UINT64_MAX && _recv_cn_wp.desc == UINT64_MAX) {
+            Log.info() << "received FINAL pointer update";
+            // send FINAL ack
+            {
+                _send_cn_ack = _recv_cn_wp;
+                Log.debug() << "SEND posted";
+                struct ibv_sge sge3;
+                sge3.addr = (uintptr_t) &_send_cn_ack;
+                sge3.length = sizeof(ComputeNodeBufferPosition);
+                sge3.lkey = the_cp._mr_send->lkey;
+                struct ibv_send_wr send_wr2;
+                memset(&send_wr2, 0, sizeof send_wr2);
+                send_wr2.wr_id = ID_SEND_FINALIZE;
+                send_wr2.opcode = IBV_WR_SEND;
+                send_wr2.send_flags = IBV_SEND_SIGNALED;
+                send_wr2.sg_list = &sge3;
+                send_wr2.num_sge = 1;
+                struct ibv_send_wr* bad_send_wr;
+                if (ibv_post_send(the_cp._cm_id->qp, &send_wr2, &bad_send_wr))
+                    throw ApplicationException("post_send failed");
             }
+            break;
+        }
+                
+        // post new receive request
+        {
+            struct ibv_sge sge;
+            sge.addr = (uintptr_t) &_recv_cn_wp;
+            sge.length = sizeof(ComputeNodeBufferPosition);
+            sge.lkey = the_cp._mr_recv->lkey;
+            struct ibv_recv_wr recv_wr;
+            memset(&recv_wr, 0, sizeof recv_wr);
+            recv_wr.wr_id = ID_RECEIVE;
+            recv_wr.sg_list = &sge;
+            recv_wr.num_sge = 1;
+            struct ibv_recv_wr* bad_recv_wr;
+            if (ibv_post_recv(the_cp._cm_id->qp, &recv_wr, &bad_recv_wr))
+                throw ApplicationException("post_recv failed");
+        }
+        _cn_wp = _recv_cn_wp;
+        // debug output
+        Log.debug() << "RECEIVE _cn_wp: data=" << _cn_wp.data
+                    << " desc=" << _cn_wp.desc;
 
-            switch ((int) wc[i].wr_id) {
-            case ID_SEND:
-                Log.debug() << "SEND complete";
-                break;
+        // check buffer contents
+        checkBuffer(_cn_ack, _cn_wp, the_cp._desc, the_cp._data);
 
-            case ID_SEND_FINALIZE:
-                Log.debug() << "SEND FINALIZE complete";
-                return;
+        // DEBUG: empty the buffer
+        _cn_ack = _cn_wp;
 
-            case ID_RECEIVE:
-                if (_recv_cn_wp.data == UINT64_MAX && _recv_cn_wp.desc == UINT64_MAX) {
-                    Log.info() << "received FINAL pointer update";
-                    // send FINAL ack
-                    {
-                        _send_cn_ack = _recv_cn_wp;
-                        Log.debug() << "SEND posted";
-                        struct ibv_sge sge3;
-                        sge3.addr = (uintptr_t) &_send_cn_ack;
-                        sge3.length = sizeof(ComputeNodeBufferPosition);
-                        sge3.lkey = the_cp._mr_send->lkey;
-                        struct ibv_send_wr send_wr2;
-                        memset(&send_wr2, 0, sizeof send_wr2);
-                        send_wr2.wr_id = ID_SEND_FINALIZE;
-                        send_wr2.opcode = IBV_WR_SEND;
-                        send_wr2.send_flags = IBV_SEND_SIGNALED;
-                        send_wr2.sg_list = &sge3;
-                        send_wr2.num_sge = 1;
-                        struct ibv_send_wr* bad_send_wr;
-                        if (ibv_post_send(the_cp._cm_id->qp, &send_wr2, &bad_send_wr))
-                            throw ApplicationException("post_send failed");
-                    }
-                    break;
+        // send ack
+        {
+            _send_cn_ack = _cn_ack;
+            Log.debug() << "SEND posted";
+            struct ibv_sge sge3;
+            sge3.addr = (uintptr_t) &_send_cn_ack;
+            sge3.length = sizeof(ComputeNodeBufferPosition);
+            sge3.lkey = the_cp._mr_send->lkey;
+            struct ibv_send_wr send_wr2;
+            memset(&send_wr2, 0, sizeof send_wr2);
+            send_wr2.wr_id = ID_SEND;
+            send_wr2.opcode = IBV_WR_SEND;
+            send_wr2.send_flags = IBV_SEND_SIGNALED;
+            send_wr2.sg_list = &sge3;
+            send_wr2.num_sge = 1;
+            struct ibv_send_wr* bad_send_wr;
+            if (ibv_post_send(the_cp._cm_id->qp, &send_wr2, &bad_send_wr))
+                throw ApplicationException("post_send failed");
+        }
+        break;
+
+    default:
+        throw InfinibandException("wc for unknown wr_id");
+    }
+}
+
+
+/// The InfiniBand completion notification event loop.
+void completionHandler() {
+    const int ne_max = 10;
+    
+    struct ibv_cq* ev_cq;
+    void* ev_ctx;
+    struct ibv_wc wc[ne_max];
+    int ne;
+    
+    while (!_allDone) {
+        if (ibv_get_cq_event(the_cp._comp_chan, &ev_cq, &ev_ctx))
+            throw InfinibandException("ibv_get_cq_event failed");
+        
+        ibv_ack_cq_events(ev_cq, 1);
+        
+        if (ev_cq != the_cp._cq)
+            throw InfinibandException("CQ event for unknown CQ");
+        
+        if (ibv_req_notify_cq(the_cp._cq, 0))
+            throw InfinibandException("ibv_req_notify_cq failed");
+        
+        while ((ne = ibv_poll_cq(the_cp._cq, ne_max, wc))) {
+            if (ne < 0)
+                throw InfinibandException("ibv_poll_cq failed");
+
+            for (int i = 0; i < ne; i++) {
+                if (wc[i].status != IBV_WC_SUCCESS) {
+                    std::ostringstream s;
+                    s << ibv_wc_status_str(wc[i].status)
+                      << " for wr_id " << (int) wc[i].wr_id;
+                    Log.error() << s.str();
+                    continue;
                 }
                 
-                // post new receive request
-                {
-                    struct ibv_sge sge;
-                    sge.addr = (uintptr_t) &_recv_cn_wp;
-                    sge.length = sizeof(ComputeNodeBufferPosition);
-                    sge.lkey = the_cp._mr_recv->lkey;
-                    struct ibv_recv_wr recv_wr;
-                    memset(&recv_wr, 0, sizeof recv_wr);
-                    recv_wr.wr_id = ID_RECEIVE;
-                    recv_wr.sg_list = &sge;
-                    recv_wr.num_sge = 1;
-                    struct ibv_recv_wr* bad_recv_wr;
-                    if (ibv_post_recv(the_cp._cm_id->qp, &recv_wr, &bad_recv_wr))
-                        throw ApplicationException("post_recv failed");
-                }
-                _cn_wp = _recv_cn_wp;
-                // debug output
-                Log.debug() << "RECEIVE _cn_wp: data=" << _cn_wp.data
-                            << " desc=" << _cn_wp.desc;
-
-                // check buffer contents
-                checkBuffer(_cn_ack, _cn_wp, the_cp._desc, the_cp._data);
-
-                // DEBUG: empty the buffer
-                _cn_ack = _cn_wp;
-
-                // send ack
-                {
-                    _send_cn_ack = _cn_ack;
-                    Log.debug() << "SEND posted";
-                    struct ibv_sge sge3;
-                    sge3.addr = (uintptr_t) &_send_cn_ack;
-                    sge3.length = sizeof(ComputeNodeBufferPosition);
-                    sge3.lkey = the_cp._mr_send->lkey;
-                    struct ibv_send_wr send_wr2;
-                    memset(&send_wr2, 0, sizeof send_wr2);
-                    send_wr2.wr_id = ID_SEND;
-                    send_wr2.opcode = IBV_WR_SEND;
-                    send_wr2.send_flags = IBV_SEND_SIGNALED;
-                    send_wr2.sg_list = &sge3;
-                    send_wr2.num_sge = 1;
-                    struct ibv_send_wr* bad_send_wr;
-                    if (ibv_post_send(the_cp._cm_id->qp, &send_wr2, &bad_send_wr))
-                        throw ApplicationException("post_send failed");
-                }
-                break;
-
-            default:
-                throw ApplicationException("completion for unknown wr_id");
+                onCompletion(wc[i]);
             }
         }
     }
+
+    Log.info() << "COMPLETION loop done";
 }
 
 
