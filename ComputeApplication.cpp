@@ -46,60 +46,6 @@ checkBuffer(ComputeNodeBufferPosition ack, ComputeNodeBufferPosition wp,
 
 struct rdma_event_channel* cm_channel;
 
-/// The connection manager event loop.
-void debugHandleCmEvents() {
-    int err;
-    struct rdma_cm_event* event;
-    
-    while ((err = rdma_get_cm_event(cm_channel, &event)) == 0) {
-        Log.info() << "DELME GOT cm event";
-        //int err = onCmEvent(event);
-
-        struct rdma_cm_id* cm_id = event->id;
-        switch (event->event) {
-        case RDMA_CM_EVENT_ADDR_RESOLVED:
-            throw InfinibandException("gaga");
-        case RDMA_CM_EVENT_ADDR_ERROR:
-            throw InfinibandException("rdma_resolve_addr failed");
-        case RDMA_CM_EVENT_ROUTE_RESOLVED:
-            throw InfinibandException("gaga");
-        case RDMA_CM_EVENT_ROUTE_ERROR:
-            throw InfinibandException("rdma_resolve_route failed");
-        case RDMA_CM_EVENT_CONNECT_ERROR:
-            throw InfinibandException("could not establish connection");
-        case RDMA_CM_EVENT_UNREACHABLE:
-            throw InfinibandException("remote server is not reachable");
-        case RDMA_CM_EVENT_REJECTED:
-            throw InfinibandException("request rejected by remote endpoint");
-        case RDMA_CM_EVENT_ESTABLISHED:
-            throw InfinibandException("gaga");
-        case RDMA_CM_EVENT_DISCONNECTED:
-            Log.info() << "DELME disconnect event";
-            rdma_disconnect(cm_id);
-            break;
-        case RDMA_CM_EVENT_CONNECT_REQUEST:
-        case RDMA_CM_EVENT_CONNECT_RESPONSE:
-        case RDMA_CM_EVENT_DEVICE_REMOVAL:
-        case RDMA_CM_EVENT_MULTICAST_JOIN:
-        case RDMA_CM_EVENT_MULTICAST_ERROR:
-        case RDMA_CM_EVENT_ADDR_CHANGE:
-            throw InfinibandException("unspecified cm event");
-        case RDMA_CM_EVENT_TIMEWAIT_EXIT:
-            Log.info() << "RDMA_CM_EVENT_TIMEWAIT_EXIT";
-            break;
-        default:
-            throw InfinibandException("unknown cm event");
-        }
-
-        
-        rdma_ack_cm_event(event);
-        if (err)
-            break;
-    };
-    if (err)
-        throw InfinibandException("rdma_get_cm_event failed");
-}
-
 
 enum { ID_SEND = 4, ID_RECEIVE, ID_SEND_FINALIZE };
 
@@ -132,54 +78,9 @@ void post_receive() {
 }
 
 
-void connect()
-{
-    Log.debug() << "Setting up RDMA CM structures";
-
-    // Create an rdma event channel
-    cm_channel = rdma_create_event_channel();
-    if (!cm_channel)
-        throw ApplicationException("event channel creation failed");
-
-    // Create rdma id (for listening)
-    struct rdma_cm_id* listen_id;
-    int err = rdma_create_id(cm_channel, &listen_id, NULL, RDMA_PS_TCP);
-    if (err)
-        throw ApplicationException("id creation failed");
-
-    // Bind rdma id (for listening) to socket address (local port)
-    unsigned short port = Par->basePort() + Par->nodeIndex();
-    struct sockaddr_in sin;
-    memset(&sin, 0, sizeof sin);
-    sin.sin_family = AF_INET;
-    sin.sin_port = htons(port);
-    sin.sin_addr.s_addr = INADDR_ANY;
-    err = rdma_bind_addr(listen_id, (struct sockaddr*) & sin);
-    if (err)
-        throw ApplicationException("RDMA bind_addr failed");
-
-    // Listen for connection request on rdma id
-    err = rdma_listen(listen_id, 1);
-    if (err)
-        throw ApplicationException("RDMA listen failed");
-
-    Log.info() << "Waiting for connection";
-
-    // Retrieve the next pending communication event (BLOCKING)
-    struct rdma_cm_event* event;
-    err = rdma_get_cm_event(cm_channel, &event);
-    if (err)
-        throw ApplicationException("retrieval of communication event failed");
-
-    // Assert that event is a new connection request
-    // Retrieve rdma id (for communicating) from event
-    if (event->event != RDMA_CM_EVENT_CONNECT_REQUEST)
-        throw ApplicationException("connection failed");
+int onConnectRequest(struct rdma_cm_event* event) {
     the_cp._cm_id = event->id;
-
-    // Free the communication event
-    rdma_ack_cm_event(event);
-
+ 
     Log.debug() << "Creating verbs objects";
 
     // Allocate a protection domain (PD) for the given context
@@ -239,7 +140,7 @@ void connect()
     qp_attr.send_cq = the_cp._cq;
     qp_attr.recv_cq = the_cp._cq;
     qp_attr.qp_type = IBV_QPT_RC; // reliable connection
-    err = rdma_create_qp(the_cp._cm_id, pd, &qp_attr);
+    int err = rdma_create_qp(the_cp._cm_id, pd, &qp_attr);
     if (err)
         throw ApplicationException("creation of QP failed");
 
@@ -265,20 +166,107 @@ void connect()
     if (err)
         throw ApplicationException("RDMA accept failed");
 
-    // Retrieve next pending communication event on the given channel (BLOCKING)
-    err = rdma_get_cm_event(cm_channel, &event);
-    if (err)
-        throw ApplicationException("retrieval of communication event failed");
+    return 0;
+}
 
-    // Assert that a connection has been established with the remote end point
-    if (event->event != RDMA_CM_EVENT_ESTABLISHED)
-        throw ApplicationException("connection could not be established");
 
-    // Free the communication event
-    rdma_ack_cm_event(event);
+bool _connected = false;
 
+
+int onConnection(struct rdma_cm_event* event) {
+    _connected = true;
     Log.info() << "connection established";
 
+    return 0;
+}
+
+
+int onDisconnect(struct rdma_cm_event* event) {
+    Log.info() << "DELME disconnect event";
+    struct rdma_cm_id* cm_id = event->id;
+    rdma_disconnect(cm_id);
+    return 0;
+}
+
+
+/// Connection manager event dispatcher. Called by the CM event loop.
+int onCmEvent(struct rdma_cm_event* event) {
+    switch (event->event) {
+    case RDMA_CM_EVENT_CONNECT_ERROR:
+        throw InfinibandException("could not establish connection");
+    case RDMA_CM_EVENT_UNREACHABLE:
+        throw InfinibandException("remote server is not reachable");
+    case RDMA_CM_EVENT_REJECTED:
+        throw InfinibandException("request rejected by remote endpoint");
+    case RDMA_CM_EVENT_ESTABLISHED:
+        return onConnection(event);
+    case RDMA_CM_EVENT_CONNECT_REQUEST:
+        return onConnectRequest(event);
+    case RDMA_CM_EVENT_DISCONNECTED:
+        return onDisconnect(event);
+    default:
+        Log.error() << rdma_event_str(event->event);
+        return 0;
+    }
+}
+
+
+/// The connection manager event loop.
+void handleCmEvents(bool isConnect = true) {
+    int err;
+    struct rdma_cm_event* event;
+    struct rdma_cm_event event_copy;
+    
+    while ((err = rdma_get_cm_event(cm_channel, &event)) == 0) {
+        memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
+        rdma_ack_cm_event(event);
+        int err = onCmEvent(&event_copy);
+        if (err)
+            break;
+        if (isConnect && _connected)
+            break;
+    };
+    if (err)
+        throw InfinibandException("rdma_get_cm_event failed");
+    
+    Log.info() << "number of connections: " << _connected;
+}
+
+
+void connect()
+{
+    Log.debug() << "Setting up RDMA CM structures";
+
+    // Create an rdma event channel
+    cm_channel = rdma_create_event_channel();
+    if (!cm_channel)
+        throw ApplicationException("event channel creation failed");
+
+    // Create rdma id (for listening)
+    struct rdma_cm_id* listen_id;
+    int err = rdma_create_id(cm_channel, &listen_id, NULL, RDMA_PS_TCP);
+    if (err)
+        throw ApplicationException("id creation failed");
+
+    // Bind rdma id (for listening) to socket address (local port)
+    unsigned short port = Par->basePort() + Par->nodeIndex();
+    struct sockaddr_in sin;
+    memset(&sin, 0, sizeof sin);
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(port);
+    sin.sin_addr.s_addr = INADDR_ANY;
+    err = rdma_bind_addr(listen_id, (struct sockaddr*) & sin);
+    if (err)
+        throw ApplicationException("RDMA bind_addr failed");
+
+    // Listen for connection request on rdma id
+    err = rdma_listen(listen_id, 1);
+    if (err)
+        throw ApplicationException("RDMA listen failed");
+
+    Log.info() << "Waiting for connection";
+
+    handleCmEvents(true);
 }
 
 
@@ -395,7 +383,7 @@ ComputeApplication::run()
 {
     connect();
     /// DEBUG v
-    boost::thread t1(&debugHandleCmEvents);
+    boost::thread t1(&handleCmEvents, false);
     /// DEBUG ^
 
     completionHandler();
