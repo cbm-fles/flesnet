@@ -279,7 +279,7 @@ private:
             Log.debug() << "new values: _acked_data=" << _acked_data
                         << " _acked_mc=" << _acked_mc;
         }
-        break;
+            break;
 
         case ID_RECEIVE_CN_ACK: {
             int cn = wc.wr_id >> 8;
@@ -290,8 +290,8 @@ private:
                 Log.debug() << "ID_RECEIVE_CN_ACK final for id " << cn << " alldone=" << _allDone;
             }
         }
-        break;
-
+            break;
+            
         default:
             throw InfinibandException("wc for unknown wr_id");
         }

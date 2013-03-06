@@ -24,8 +24,8 @@ class InputNodeConnection : public IBConnection
 public:
 
     /// The InputNodeConnection constructor.
-    InputNodeConnection(struct rdma_event_channel* ec, int index) :
-        IBConnection(ec, index),
+    InputNodeConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id* id = 0) :
+        IBConnection(ec, index, id),
         _ourTurn(true),
         _finalize(false),
         _mr_recv(0),
@@ -271,6 +271,20 @@ public:
         // post initial receive request
         postRecvCnAck();
     }
+
+    /// Connection handler function, called on successful connection.
+    /**
+       \param event RDMA connection manager event structure
+       \return      Non-zero if an error occured
+    */
+    virtual int onConnection(struct rdma_cm_event* event) {
+        int ret = IBConnection::onConnection(event);
+
+        memcpy(&_serverInfo, event->param.conn.private_data,
+               sizeof _serverInfo);
+                
+        return ret;
+    }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
     virtual int onDisconnect() {
@@ -318,6 +332,9 @@ private:
     bool _ourTurn;
 
     bool _finalize;
+
+    /// Access information for memory regions on remote end.
+    ServerInfo _serverInfo[2];    
     
     /// Local copy of acknowledged-by-CN pointers
     ComputeNodeBufferPosition _cn_ack;

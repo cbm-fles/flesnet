@@ -37,17 +37,22 @@ class IBConnection
 public:
 
     /// The IBConnection constructor. Creates a connection manager ID.
-    IBConnection(struct rdma_event_channel* ec, int index) :
+    IBConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id *id = 0) :
         _index(index),
         _done(false),
+        _cmId(id),
         _totalBytesSent(0),
         _totalSendRequests(0),
         _totalRecvRequests(0)
     {
-        int err = rdma_create_id(ec, &_cmId, this, RDMA_PS_TCP);
-        if (err)
-            throw InfinibandException("rdma_create_id failed");
-
+        if (!_cmId) {
+            int err = rdma_create_id(ec, &_cmId, this, RDMA_PS_TCP);
+            if (err)
+                throw InfinibandException("rdma_create_id failed");
+        } else {
+            _cmId->context = this;
+        }
+            
         _qp_cap.max_send_wr = 16;
         _qp_cap.max_recv_wr = 16;
         _qp_cap.max_send_sge = 8;
@@ -112,10 +117,7 @@ public:
        \param event RDMA connection manager event structure
        \return      Non-zero if an error occured
     */
-    int onConnection(struct rdma_cm_event* event) {
-        memcpy(&_serverInfo, event->param.conn.private_data,
-               sizeof _serverInfo);
-        
+    virtual int onConnection(struct rdma_cm_event* event) {
         Log.debug() << "[" << _index << "] " << "connection established";
         
         return 0;
@@ -147,6 +149,20 @@ public:
         err = rdma_resolve_route(_cmId, RESOLVE_TIMEOUT_MS);
         if (err)
             throw InfinibandException("rdma_resolve_route failed");
+    };
+
+    /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event for this connection.
+    virtual void onConnectRequest(struct ibv_pd* pd, struct ibv_cq* cq) {
+
+        struct ibv_qp_init_attr qp_attr;
+        memset(&qp_attr, 0, sizeof qp_attr);
+        qp_attr.cap = _qp_cap;
+        qp_attr.send_cq = cq;
+        qp_attr.recv_cq = cq;
+        qp_attr.qp_type = IBV_QPT_RC;
+        int err = rdma_create_qp(_cmId, pd, &qp_attr);
+        if (err)
+            throw InfinibandException("creation of QP failed");
     };
     
     /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event for this connection.
@@ -188,20 +204,17 @@ public:
     
 protected:
 
-    /// Access information for a remote memory region.
-    typedef struct {
-        uint64_t addr; ///< Target memory address
-        uint32_t rkey; ///< Target remote access key
-    } ServerInfo;
-
-    /// Access information for memory regions on remote end.
-    ServerInfo _serverInfo[2];
-
     /// Index of this connection in a group of connections.
     int _index;
 
     /// Flag indicating connection finished state.
     bool _done;
+
+    /// Access information for a remote memory region.
+    typedef struct {
+        uint64_t addr; ///< Target memory address
+        uint32_t rkey; ///< Target remote access key
+    } ServerInfo;
 
     /// The queue pair capabilities.
     struct ibv_qp_cap _qp_cap;
@@ -232,11 +245,11 @@ protected:
         _totalRecvRequests++;
     }
 
-private:
+    //private: TODO
 
     /// RDMA connection manager ID.
     struct rdma_cm_id* _cmId;
-
+private:
     /// Total number of bytes transmitted.
     uint64_t _totalBytesSent;
 
@@ -265,7 +278,7 @@ public:
 
     /// The IBConnectionGroup default constructor.
     IBConnectionGroup() :
-        _pd(0), _allDone(false), _connected(0), _ec(0),  _context(0),
+        _pd(0), _allDone(false), _connected(0), _ec(0), _context(0),
         _compChannel(0), _cq(0) {
         _ec = rdma_create_event_channel();
         if (!_ec)
@@ -412,6 +425,18 @@ protected:
         return 0;
     }
 
+    /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
+    virtual int onConnectRequest(struct rdma_cm_id* id) {
+        if (!_pd)
+            initContext(id->verbs);
+
+        CONNECTION* conn = new CONNECTION(_ec, 0, id);
+        _conn.push_back(conn);
+        conn->onConnectRequest(_pd, _cq);
+
+        return 0;
+    }
+    
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
     virtual int onDisconnect(struct rdma_cm_id* id) {
         CONNECTION* conn = (CONNECTION*) id->context;
@@ -430,7 +455,9 @@ private:
     unsigned int _connected;
 
     /// RDMA event channel
+public: //TODO
     struct rdma_event_channel* _ec;
+private: //TODO
 
     /// InfiniBand verbs context
     struct ibv_context* _context;
@@ -460,6 +487,8 @@ private:
             throw InfinibandException("request rejected by remote endpoint");
         case RDMA_CM_EVENT_ESTABLISHED:
             return onConnection(event);
+        case RDMA_CM_EVENT_CONNECT_REQUEST:
+            return onConnectRequest(event->id);
         case RDMA_CM_EVENT_DISCONNECTED:
             return onDisconnect(event->id);
         default:
