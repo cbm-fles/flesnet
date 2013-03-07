@@ -178,36 +178,6 @@ public:
 class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
 {
 public:
-    void accept()
-    {
-        Log.debug() << "Setting up RDMA CM structures";
-
-        // Create rdma id (for listening)
-        struct rdma_cm_id* listen_id;
-        int err = rdma_create_id(_ec, &listen_id, NULL, RDMA_PS_TCP);
-        if (err)
-            throw ApplicationException("id creation failed");
-
-        // Bind rdma id (for listening) to socket address (local port)
-        unsigned short port = Par->basePort() + Par->nodeIndex();
-        struct sockaddr_in sin;
-        memset(&sin, 0, sizeof sin);
-        sin.sin_family = AF_INET;
-        sin.sin_port = htons(port);
-        sin.sin_addr.s_addr = INADDR_ANY;
-        err = rdma_bind_addr(listen_id, (struct sockaddr*) & sin);
-        if (err)
-            throw ApplicationException("RDMA bind_addr failed");
-
-        // Listen for connection request on rdma id
-        err = rdma_listen(listen_id, 1);
-        if (err)
-            throw ApplicationException("RDMA listen failed");
-
-        Log.info() << "Waiting for connection";
-    }
-    
-    
     /// Completion notification event dispatcher. Called by the event loop.
     virtual void onCompletion(const struct ibv_wc& wc) {
         switch (wc.wr_id & 0xFF) {
@@ -228,39 +198,14 @@ public:
             throw InfinibandException("wc for unknown wr_id");
         }
     }
-
-    
 };
-
-
-//struct rdma_event_channel* cm_channel;
-// 
-//struct connparams {
-//    uint64_t* _data;
-//    TimesliceComponentDescriptor* _desc;
-//    struct ibv_mr* _mr_data;
-//    struct ibv_mr* _mr_desc;
-//    struct ibv_mr* _mr_send;
-//    struct ibv_mr* _mr_recv;
-//    struct rdma_cm_id* _cm_id;
-//    struct ibv_comp_channel* _comp_chan;
-//    struct ibv_cq* _cq;
-//} the_cp;
-
-
-//bool _connected = false;
-
-
-//bool _allDone = false;
-
-
 
 
 int
 ComputeApplication::run()
 {
     ComputeBuffer* cb = new ComputeBuffer();
-    cb->accept();
+    cb->accept(Par->basePort() + Par->nodeIndex());
     cb->handleCmEvents(true);
     
     /// DEBUG v

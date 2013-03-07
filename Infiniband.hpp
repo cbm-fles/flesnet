@@ -304,6 +304,33 @@ public:
         }
     };
 
+    void accept(unsigned short port) {
+        Log.debug() << "Setting up RDMA CM structures";
+
+        // Create rdma id (for listening)
+        struct rdma_cm_id* listen_id;
+        int err = rdma_create_id(_ec, &listen_id, NULL, RDMA_PS_TCP);
+        if (err)
+            throw InfinibandException("id creation failed");
+
+        // Bind rdma id (for listening) to socket address (local port)
+        struct sockaddr_in sin;
+        memset(&sin, 0, sizeof sin);
+        sin.sin_family = AF_INET;
+        sin.sin_port = htons(port);
+        sin.sin_addr.s_addr = INADDR_ANY;
+        err = rdma_bind_addr(listen_id, (struct sockaddr*) & sin);
+        if (err)
+            throw InfinibandException("RDMA bind_addr failed");
+
+        // Listen for connection request on rdma id
+        err = rdma_listen(listen_id, 1);
+        if (err)
+            throw InfinibandException("RDMA listen failed");
+
+        Log.info() << "Waiting for connection";
+    }
+
     /// Initiate disconnection.
     void disconnect() {
         for (auto it = _conn.begin(); it != _conn.end(); ++it)
@@ -455,9 +482,7 @@ private:
     unsigned int _connected;
 
     /// RDMA event channel
-public: //TODO
     struct rdma_event_channel* _ec;
-private: //TODO
 
     /// InfiniBand verbs context
     struct ibv_context* _context;
