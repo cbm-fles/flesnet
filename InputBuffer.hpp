@@ -84,7 +84,7 @@ public:
     }
 
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
-    virtual int onDisconnect(struct rdma_cm_id* id) {
+    virtual void onDisconnect(struct rdma_cm_id* id) {
         InputNodeConnection* conn = (InputNodeConnection*) id->context;
 
         _aggregateContentBytesSent += conn->contentBytesSent();
@@ -92,7 +92,7 @@ public:
         _aggregateSendRequests += conn->totalSendRequests();
         _aggregateRecvRequests += conn->totalRecvRequests();        
 
-        return IBConnectionGroup<InputNodeConnection>::onDisconnect(id);
+        IBConnectionGroup<InputNodeConnection>::onDisconnect(id);
     }
 
     /// Retrieve the number of bytes transmitted (without pointer updates).
@@ -166,8 +166,8 @@ private:
     }
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
-    virtual int onAddrResolved(struct rdma_cm_id* id) {
-        int ret = IBConnectionGroup<InputNodeConnection>::onAddrResolved(id);
+    virtual void onAddrResolved(struct rdma_cm_id* id) {
+        IBConnectionGroup<InputNodeConnection>::onAddrResolved(id);
 
         if (!_mr_data) {
             // Register memory regions.
@@ -183,8 +183,6 @@ private:
                 throw InfinibandException
                     ("registration of memory region failed");
         }
-        
-        return ret;
     }
     
     /// Return string describing buffer contents, suitable for debug output.

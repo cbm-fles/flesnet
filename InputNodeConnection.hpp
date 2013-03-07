@@ -277,18 +277,15 @@ public:
        \param event RDMA connection manager event structure
        \return      Non-zero if an error occured
     */
-    virtual int onConnection(struct rdma_cm_event* event) {
-        int ret = IBConnection::onConnection(event);
+    virtual void onConnection(struct rdma_cm_event* event) {
+        IBConnection::onConnection(event);
 
         memcpy(&_serverInfo, event->param.conn.private_data,
                sizeof _serverInfo);
-                
-        return ret;
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
-    virtual int onDisconnect() {
-
+    virtual void onDisconnect() {
         if (_mr_recv) {
             ibv_dereg_mr(_mr_recv);
             _mr_recv = 0;
@@ -299,7 +296,7 @@ public:
             _mr_send = 0;
         }
         
-        return IBConnection::onDisconnect();
+        IBConnection::onDisconnect();
     }
 
     /// Retrieve the number of bytes transmitted (without pointer updates).

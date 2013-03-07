@@ -117,19 +117,15 @@ public:
        \param event RDMA connection manager event structure
        \return      Non-zero if an error occured
     */
-    virtual int onConnection(struct rdma_cm_event* event) {
+    virtual void onConnection(struct rdma_cm_event* event) {
         Log.debug() << "[" << _index << "] " << "connection established";
-        
-        return 0;
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
-    virtual int onDisconnect() {
+    virtual void onDisconnect() {
         Log.debug() << "[" << _index << "] " << "connection disconnected";
 
         rdma_destroy_qp(_cmId);
-            
-        return 0;
     }
     
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
@@ -346,9 +342,7 @@ public:
         while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
             memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
             rdma_ack_cm_event(event);
-            int err = onCmEvent(&event_copy);
-            if (err)
-                break;
+            onCmEvent(&event_copy);
             if (_connected == (isConnect ? _conn.size() : 0))
                 break;
         };
@@ -422,58 +416,48 @@ protected:
     bool _allDone;
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
-    virtual int onAddrResolved(struct rdma_cm_id* id) {
+    virtual void onAddrResolved(struct rdma_cm_id* id) {
         if (!_pd)
             initContext(id->verbs);
 
         CONNECTION* conn = (CONNECTION*) id->context;
         
         conn->onAddrResolved(_pd, _cq);
-
-        return 0;
     }
 
     /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event.
-    virtual int onRouteResolved(struct rdma_cm_id* id) {
+    virtual void onRouteResolved(struct rdma_cm_id* id) {
         CONNECTION* conn = (CONNECTION*) id->context;
 
         conn->onRouteResolved();
-
-        return 0;
     }
 
     /// Handle RDMA_CM_EVENT_ESTABLISHED event.
-    virtual int onConnection(struct rdma_cm_event* event) {
+    virtual void onConnection(struct rdma_cm_event* event) {
         CONNECTION* conn = (CONNECTION*) event->id->context;
 
         conn->onConnection(event);
         _connected++;
-
-        return 0;
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual int onConnectRequest(struct rdma_cm_id* id) {
+    virtual void onConnectRequest(struct rdma_cm_id* id) {
         if (!_pd)
             initContext(id->verbs);
 
         CONNECTION* conn = new CONNECTION(_ec, 0, id);
         _conn.push_back(conn);
         conn->onConnectRequest(_pd, _cq);
-
-        return 0;
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
-    virtual int onDisconnect(struct rdma_cm_id* id) {
+    virtual void onDisconnect(struct rdma_cm_id* id) {
         CONNECTION* conn = (CONNECTION*) id->context;
 
         conn->onDisconnect();
         _conn[conn->index()] = 0;
         delete conn;
         _connected--;
-
-        return 0;
     }
 
 private:
@@ -494,16 +478,18 @@ private:
     struct ibv_cq* _cq;
 
     /// Connection manager event dispatcher. Called by the CM event loop.
-    int onCmEvent(struct rdma_cm_event* event) {
+    void onCmEvent(struct rdma_cm_event* event) {
         switch (event->event) {
         case RDMA_CM_EVENT_ADDR_RESOLVED:
-            return onAddrResolved(event->id);
+            onAddrResolved(event->id);
+            return;
         case RDMA_CM_EVENT_ADDR_ERROR:
             throw InfinibandException("rdma_resolve_addr failed");
         case RDMA_CM_EVENT_ROUTE_RESOLVED:
-            return onRouteResolved(event->id);
+            onRouteResolved(event->id);
+            return;
         case RDMA_CM_EVENT_ROUTE_ERROR:
-            throw InfinibandException("rdma_resolve_route failed");
+            throw InfinibandException("rdma_resolve_route failed");            
         case RDMA_CM_EVENT_CONNECT_ERROR:
             throw InfinibandException("could not establish connection");
         case RDMA_CM_EVENT_UNREACHABLE:
@@ -511,14 +497,16 @@ private:
         case RDMA_CM_EVENT_REJECTED:
             throw InfinibandException("request rejected by remote endpoint");
         case RDMA_CM_EVENT_ESTABLISHED:
-            return onConnection(event);
+            onConnection(event);
+            return;
         case RDMA_CM_EVENT_CONNECT_REQUEST:
-            return onConnectRequest(event->id);
+            onConnectRequest(event->id);
+            return;
         case RDMA_CM_EVENT_DISCONNECTED:
-            return onDisconnect(event->id);
+            onDisconnect(event->id);
+            return;
         default:
             Log.error() << rdma_event_str(event->event);
-            return 0;
         }
     }
 
