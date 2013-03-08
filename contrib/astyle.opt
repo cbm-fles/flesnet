@@ -1,0 +1,6 @@
+style=kr
+pad-oper
+pad-header
+unpad-paren
+convert-tabs
+align-pointer=type

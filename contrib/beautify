@@ -1,0 +1,17 @@
+#!/bin/bash
+
+astyle --options=contrib/astyle.opt --suffix=none \
+  Application.hpp \
+  ComputeBuffer.hpp \
+  ComputeNodeConnection.hpp \
+  DataSource.hpp \
+  Infiniband.hpp \
+  InputBuffer.hpp \
+  InputNodeConnection.hpp \
+  Parameters.hpp \
+  RingBuffer.hpp \
+  TimesliceAnalyzer.hpp \
+  Timeslice.hpp \
+  global.hpp \
+  main.cpp
+
