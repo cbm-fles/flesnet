@@ -314,7 +314,7 @@ public:
        \param services  The list of target services or port numbers
     */
     void connect(const std::vector<std::string>& hostnames,
-                         const std::vector<std::string>& services) {
+                 const std::vector<std::string>& services) {
         for (unsigned int i = 0; i < hostnames.size(); i++) {
             CONNECTION* connection = new CONNECTION(_ec, i);
             _conn.push_back(connection);
