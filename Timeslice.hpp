@@ -9,28 +9,28 @@
 
 
 /// Timeslice component descriptor.
-typedef struct {
+struct TimesliceComponentDescriptor {
     uint64_t ts_num; ///< Timeslice number.
     uint64_t offset; ///< Start offset (in words) of corresponding data.
     uint64_t size;   ///< Size (in words) of corresponding data.
-} TimesliceComponentDescriptor;
+};
 
 
 /// Structure representing the header of a microslice container.
-typedef struct {
+struct MicrosliceHeader {
     uint8_t hdrrev; ///< Header revision.
     uint8_t sysid;  ///< System ID.
     uint16_t flags; ///< Flags.
     uint32_t size;  ///< Size of the microslice container in words.
     uint64_t time;  ///< Number of previous microslice containers.
-} MicrosliceHeader;
+};
 
 
 /// Structure representing a set of compute node buffer positions.
-typedef struct {
+struct ComputeNodeBufferPosition {
     uint64_t data; ///< The position in the data buffer.
     uint64_t desc; ///< The position in the description buffer.
-} ComputeNodeBufferPosition;
+};
 
 
 /// InfiniBand request IDs.

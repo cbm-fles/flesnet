@@ -204,10 +204,10 @@ protected:
     bool _done = false;
 
     /// Access information for a remote memory region.
-    typedef struct {
+    struct ServerInfo {
         uint64_t addr; ///< Target memory address
         uint32_t rkey; ///< Target remote access key
-    } ServerInfo;
+    };
 
     /// The queue pair capabilities.
     struct ibv_qp_cap _qp_cap;

@@ -50,10 +50,10 @@ class Parameters
 public:
 
     /// The function of a node in timeslice building.
-    typedef enum {
+    enum NodeType {
         COMPUTE_NODE, ///< Node is a compute node.
         INPUT_NODE    ///< Node is an input node.
-    } NodeType;
+    };
 
     /// The Parameters command-line parsing constructor.
     Parameters(int argc, char* argv[]) {
