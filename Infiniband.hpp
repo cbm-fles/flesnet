@@ -114,12 +114,12 @@ public:
        \param event RDMA connection manager event structure
        \return      Non-zero if an error occured
     */
-    virtual void on_connection(struct rdma_cm_event* event) {
+    virtual void on_established(struct rdma_cm_event* event) {
         out.debug() << "[" << _index << "] " << "connection established";
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
-    virtual void on_disconnect() {
+    virtual void on_disconnected() {
         out.info() << "[" << _index << "] " << "connection disconnected";
 
         rdma_destroy_qp(_cm_id);
@@ -467,10 +467,10 @@ protected:
     }
 
     /// Handle RDMA_CM_EVENT_ESTABLISHED event.
-    virtual void on_connection(struct rdma_cm_event* event) {
+    virtual void on_established(struct rdma_cm_event* event) {
         CONNECTION* conn = (CONNECTION*) event->id->context;
 
-        conn->on_connection(event);
+        conn->on_established(event);
         _connected++;
     }
 
@@ -485,10 +485,10 @@ protected:
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
-    virtual void on_disconnect(struct rdma_cm_id* id) {
+    virtual void on_disconnected(struct rdma_cm_id* id) {
         CONNECTION* conn = (CONNECTION*) id->context;
 
-        conn->on_disconnect();
+        conn->on_disconnected();
         _conn[conn->index()] = 0;
         delete conn;
         _connected--;
@@ -533,13 +533,13 @@ private:
         case RDMA_CM_EVENT_REJECTED:
             throw InfinibandException("request rejected by remote endpoint");
         case RDMA_CM_EVENT_ESTABLISHED:
-            on_connection(event);
+            on_established(event);
             return;
         case RDMA_CM_EVENT_CONNECT_REQUEST:
             on_connect_request(event->id);
             return;
         case RDMA_CM_EVENT_DISCONNECTED:
-            on_disconnect(event->id);
+            on_disconnected(event->id);
             return;
         default:
             out.error() << rdma_event_str(event->event);

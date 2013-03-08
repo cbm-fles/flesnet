@@ -115,7 +115,7 @@ public:
             throw InfinibandException("RDMA accept failed");
     }
 
-    virtual void on_disconnect() {
+    virtual void on_disconnected() {
         if (_mr_recv) {
             ibv_dereg_mr(_mr_recv);
             _mr_recv = 0;
@@ -136,7 +136,7 @@ public:
             _mr_data = 0;
         }
 
-        IBConnection::on_disconnect();
+        IBConnection::on_disconnected();
     }
 
     void

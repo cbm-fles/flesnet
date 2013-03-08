@@ -87,7 +87,7 @@ public:
         out.info() << "SENDER loop done";
     }
 
-    virtual void on_disconnect(struct rdma_cm_id* id) {
+    virtual void on_disconnected(struct rdma_cm_id* id) {
         InputNodeConnection* conn = (InputNodeConnection*) id->context;
 
         _aggregate_content_bytes_sent += conn->content_bytes_sent();
@@ -95,7 +95,7 @@ public:
         _aggregate_send_requests += conn->total_send_requests();
         _aggregate_recv_requests += conn->total_recv_requests();        
 
-        IBConnectionGroup<InputNodeConnection>::on_disconnect(id);
+        IBConnectionGroup<InputNodeConnection>::on_disconnected(id);
     }
 
     /// Retrieve the number of bytes transmitted (without pointer updates).
