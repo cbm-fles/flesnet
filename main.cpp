@@ -29,7 +29,7 @@ main(int argc, char* argv[])
     try {
         Par = new Parameters(argc, argv);
 
-        if (Par->nodeType() == Parameters::INPUT_NODE) {
+        if (Par->node_type() == Parameters::INPUT_NODE) {
             InputApplication app(*Par);
             app.run();
         } else {

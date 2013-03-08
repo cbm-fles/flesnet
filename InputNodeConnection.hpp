@@ -40,30 +40,30 @@ public:
     }
 
     /// Wait until enough space is available at target compute node.
-    void waitForBufferSpace(uint64_t dataSize, uint64_t descSize) {
+    void wait_for_buffer_space(uint64_t data_size, uint64_t desc_size) {
         boost::mutex::scoped_lock lock(_cn_ack_mutex);
         if (Log.beTrace()) {
             Log.trace() << "[" << _index << "] "
                         << "SENDER data space (words) required="
-                        << dataSize << ", avail="
-                        << _cn_ack.data + Par->cnDataBufferSize() - _cn_wp.data;
+                        << data_size << ", avail="
+                        << _cn_ack.data + Par->cn_data_buffer_size() - _cn_wp.data;
             Log.trace() << "[" << _index << "] "
                         << "SENDER desc space (words) required="
-                        << descSize << ", avail="
-                        << _cn_ack.desc + Par->cnDescBufferSize() - _cn_wp.desc;
+                        << desc_size << ", avail="
+                        << _cn_ack.desc + Par->cn_desc_buffer_size() - _cn_wp.desc;
         }
-        while (_cn_ack.data - _cn_wp.data + Par->cnDataBufferSize() < dataSize
-                || _cn_ack.desc - _cn_wp.desc + Par->cnDescBufferSize()
-                < descSize) {
+        while (_cn_ack.data - _cn_wp.data + Par->cn_data_buffer_size() < data_size
+                || _cn_ack.desc - _cn_wp.desc + Par->cn_desc_buffer_size()
+                < desc_size) {
             {
                 boost::mutex::scoped_lock lock2(_cn_wp_mutex);
-                if (_ourTurn) {
+                if (_our_turn) {
                     // send phony update to receive new pointers
                     Log.info() << "[" << _index << "] "
                                << "SENDER send phony update";
-                    _ourTurn = false;
+                    _our_turn = false;
                     _send_cn_wp = _cn_wp;
-                    postSendCnWp();
+                    post_send_cn_wp();
                 }
             }
             _cn_ack_cond.wait(lock);
@@ -71,21 +71,21 @@ public:
                 Log.trace() << "[" << _index << "] "
                             << "SENDER (next try) space avail="
                             << _cn_ack.data - _cn_wp.data
-                    + Par->cnDataBufferSize()
+                    + Par->cn_data_buffer_size()
                             << " desc_avail=" << _cn_ack.desc - _cn_wp.desc
-                    + Par->cnDescBufferSize();
+                    + Par->cn_desc_buffer_size();
             }
         }
     }
 
     /// Send data and descriptors to compute node.
-    void sendData(struct ibv_sge* sge, int num_sge, uint64_t timeslice,
+    void send_data(struct ibv_sge* sge, int num_sge, uint64_t timeslice,
                   uint64_t mc_length, uint64_t data_length) {
         int num_sge2 = 0;
         struct ibv_sge sge2[4];
 
         uint64_t target_words_left =
-            Par->cnDataBufferSize() - _cn_wp.data % Par->cnDataBufferSize();
+            Par->cn_data_buffer_size() - _cn_wp.data % Par->cn_data_buffer_size();
 
         // split sge list if necessary
         int num_sge_cut = 0;
@@ -119,10 +119,10 @@ public:
         send_wr_ts.opcode = IBV_WR_RDMA_WRITE;
         send_wr_ts.sg_list = sge;
         send_wr_ts.num_sge = num_sge;
-        send_wr_ts.wr.rdma.rkey = _serverInfo[0].rkey;
+        send_wr_ts.wr.rdma.rkey = _server_info[0].rkey;
         send_wr_ts.wr.rdma.remote_addr =
-            (uintptr_t)(_serverInfo[0].addr +
-                        (_cn_wp.data % Par->cnDataBufferSize())
+            (uintptr_t)(_server_info[0].addr +
+                        (_cn_wp.data % Par->cn_data_buffer_size())
                         * sizeof(uint64_t));
 
         if (num_sge2) {
@@ -131,9 +131,9 @@ public:
             send_wr_tswrap.opcode = IBV_WR_RDMA_WRITE;
             send_wr_tswrap.sg_list = sge2;
             send_wr_tswrap.num_sge = num_sge2;
-            send_wr_tswrap.wr.rdma.rkey = _serverInfo[0].rkey;
+            send_wr_tswrap.wr.rdma.rkey = _server_info[0].rkey;
             send_wr_tswrap.wr.rdma.remote_addr =
-                (uintptr_t) _serverInfo[0].addr;
+                (uintptr_t) _server_info[0].addr;
             send_wr_ts.next = &send_wr_tswrap;
             send_wr_tswrap.next = &send_wr_tscdesc;
         } else {
@@ -142,7 +142,7 @@ public:
 
         // timeslice component descriptor
         TimesliceComponentDescriptor tscdesc;
-        tscdesc.tsNum = timeslice;
+        tscdesc.ts_num = timeslice;
         tscdesc.offset = _cn_wp.data;
         tscdesc.size = data_length + mc_length;
         struct ibv_sge sge3;
@@ -157,31 +157,31 @@ public:
             IBV_SEND_INLINE | IBV_SEND_FENCE | IBV_SEND_SIGNALED;
         send_wr_tscdesc.sg_list = &sge3;
         send_wr_tscdesc.num_sge = 1;
-        send_wr_tscdesc.wr.rdma.rkey = _serverInfo[1].rkey;
+        send_wr_tscdesc.wr.rdma.rkey = _server_info[1].rkey;
         send_wr_tscdesc.wr.rdma.remote_addr =
-            (uintptr_t)(_serverInfo[1].addr
-                        + (_cn_wp.desc % Par->cnDescBufferSize())
+            (uintptr_t)(_server_info[1].addr
+                        + (_cn_wp.desc % Par->cn_desc_buffer_size())
                         * sizeof(TimesliceComponentDescriptor));
 
         Log.debug() << "[" << _index << "] "
                     << "post_send (timeslice " << timeslice << ")";
 
         // send everything
-        postSend(&send_wr_ts);
+        post_send(&send_wr_ts);
 
-        _contentBytesSent += (data_length + mc_length) * sizeof(uint64_t)
+        _content_bytes_sent += (data_length + mc_length) * sizeof(uint64_t)
             + sizeof(TimesliceComponentDescriptor);                             
     }
 
     /// Increment target write pointers after data has been sent.
-    void incWritePointers(uint64_t dataSize, uint64_t descSize) {
+    void inc_write_pointers(uint64_t data_size, uint64_t desc_size) {
         boost::mutex::scoped_lock lock(_cn_wp_mutex);
-        _cn_wp.data += dataSize;
-        _cn_wp.desc += descSize;
-        if (_ourTurn) {
-            _ourTurn = false;
+        _cn_wp.data += data_size;
+        _cn_wp.desc += desc_size;
+        if (_our_turn) {
+            _our_turn = false;
             _send_cn_wp = _cn_wp;
-            postSendCnWp();
+            post_send_cn_wp();
         }
     }
 
@@ -189,16 +189,16 @@ public:
     void finalize() {
         boost::mutex::scoped_lock lock(_cn_wp_mutex);
         _finalize = true;
-        if (_ourTurn && _cn_wp.desc == _cn_ack.desc) {
-            _ourTurn = false;
+        if (_our_turn && _cn_wp.desc == _cn_ack.desc) {
+            _our_turn = false;
             _send_cn_wp.data = UINT64_MAX;
             _send_cn_wp.desc = UINT64_MAX;
-            postSendCnWp();
+            post_send_cn_wp();
         }
     }
 
     /// Handle Infiniband receive completion notification.
-    void onCompleteRecv() {
+    void on_complete_recv() {
         if (_receive_cn_ack.data == UINT64_MAX && _receive_cn_ack.desc == UINT64_MAX) {
             _done = true;
             return;
@@ -212,26 +212,26 @@ public:
             _cn_ack = _receive_cn_ack;
             _cn_ack_cond.notify_one();
         }
-        postRecvCnAck();
+        post_recv_cn_ack();
         {
             boost::mutex::scoped_lock lock(_cn_wp_mutex);
             if (_cn_wp.data != _send_cn_wp.data
                     || _cn_wp.desc != _send_cn_wp.desc) {
                 _send_cn_wp = _cn_wp;
-                postSendCnWp();
+                post_send_cn_wp();
             } else if (_finalize && _cn_wp.desc == _cn_ack.desc) {
                 _send_cn_wp.data = UINT64_MAX;
                 _send_cn_wp.desc = UINT64_MAX;
-                postSendCnWp();
+                post_send_cn_wp();
             } else {
-                _ourTurn = true;
+                _our_turn = true;
             }
         }
     }
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
-    virtual void onAddrResolved(struct ibv_pd* pd, struct ibv_cq* cq) {
-        IBConnection::onAddrResolved(pd, cq);
+    virtual void on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq) {
+        IBConnection::on_addr_resolved(pd, cq);
         
         // register memory regions
         _mr_recv = ibv_reg_mr(pd, &_receive_cn_ack,
@@ -264,7 +264,7 @@ public:
         send_wr.num_sge = 1;
 
         // post initial receive request
-        postRecvCnAck();
+        post_recv_cn_ack();
     }
 
     /// Connection handler function, called on successful connection.
@@ -272,14 +272,14 @@ public:
        \param event RDMA connection manager event structure
        \return      Non-zero if an error occured
     */
-    virtual void onConnection(struct rdma_cm_event* event) {
-        IBConnection::onConnection(event);
+    virtual void on_connection(struct rdma_cm_event* event) {
+        IBConnection::on_connection(event);
 
-        memcpy(&_serverInfo, event->param.conn.private_data, sizeof _serverInfo);
+        memcpy(&_server_info, event->param.conn.private_data, sizeof _server_info);
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
-    virtual void onDisconnect() {
+    virtual void on_disconnect() {
         if (_mr_recv) {
             ibv_dereg_mr(_mr_recv);
             _mr_recv = 0;
@@ -290,42 +290,42 @@ public:
             _mr_send = 0;
         }
         
-        IBConnection::onDisconnect();
+        IBConnection::on_disconnect();
     }
 
     /// Retrieve the number of bytes transmitted (without pointer updates).
-    uint64_t contentBytesSent() const {
-        return _contentBytesSent;
+    uint64_t content_bytes_sent() const {
+        return _content_bytes_sent;
     }
     
 private:
 
     /// Post a receive work request (WR) to the receive queue
-    void postRecvCnAck() {
+    void post_recv_cn_ack() {
         if (Log.beDebug()) {
             Log.debug() << "[" << _index << "] "
                         << "POST RECEIVE _receive_cn_ack";
         }
-        postRecv(&recv_wr);
+        post_recv(&recv_wr);
     }
 
     /// Post a send work request (WR) to the send queue
-    void postSendCnWp() {
+    void post_send_cn_wp() {
         if (Log.beDebug()) {
             Log.debug() << "[" << _index << "] "
                         << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
                         << " desc=" << _send_cn_wp.desc << ")";
         }
-        postSend(&send_wr);
+        post_send(&send_wr);
     }
 
     /// Flag, true if it is the input nodes's turn to send a pointer update.
-    bool _ourTurn = true;
+    bool _our_turn = true;
 
     bool _finalize = false;
 
     /// Access information for memory regions on remote end.
-    ServerInfo _serverInfo[2];    
+    ServerInfo _server_info[2];    
     
     /// Local copy of acknowledged-by-CN pointers
     ComputeNodeBufferPosition _cn_ack;
@@ -367,7 +367,7 @@ private:
     struct ibv_send_wr send_wr;
 
     /// Total number of bytes transmitted (without pointer updates)
-    uint64_t _contentBytesSent = 0;
+    uint64_t _content_bytes_sent = 0;
 };
 
 

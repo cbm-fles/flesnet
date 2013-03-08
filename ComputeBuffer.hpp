@@ -20,7 +20,7 @@ class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
 public:
     
     /// Completion notification event dispatcher. Called by the event loop.
-    virtual void onCompletion(const struct ibv_wc& wc) {
+    virtual void on_completion(const struct ibv_wc& wc) {
         switch (wc.wr_id & 0xFF) {
         case ID_SEND_CN_ACK:
             Log.debug() << "SEND complete";
@@ -28,11 +28,11 @@ public:
 
         case ID_SEND_FINALIZE:
             Log.debug() << "SEND FINALIZE complete";
-            _allDone = true;
+            _all_done = true;
             break;
 
         case ID_RECEIVE_CN_WP:
-            _conn[0]->onCompleteRecv();            
+            _conn[0]->on_complete_recv();
             break;
 
         default:

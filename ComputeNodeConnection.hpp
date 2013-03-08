@@ -31,8 +31,8 @@ public:
         memset(&_recv_cn_wp, 0, sizeof(ComputeNodeBufferPosition));
 
         // Allocate buffer space
-        _data = (uint64_t*) calloc(Par->cnDataBufferSize(), sizeof(uint64_t));
-        _desc = (TimesliceComponentDescriptor*) calloc(Par->cnDescBufferSize(),
+        _data = (uint64_t*) calloc(Par->cn_data_buffer_size(), sizeof(uint64_t));
+        _desc = (TimesliceComponentDescriptor*) calloc(Par->cn_desc_buffer_size(),
                                                        sizeof(TimesliceComponentDescriptor));
         if (!_data || !_desc)
             throw InfinibandException("allocation of buffer space failed");
@@ -53,7 +53,7 @@ public:
         recv_wr.wr_id = ID_RECEIVE_CN_WP;
         recv_wr.sg_list = &sge;
         recv_wr.num_sge = 1;
-        postRecv(&recv_wr);
+        post_recv(&recv_wr);
     }
 
     void send_ack(bool final = false) {
@@ -70,19 +70,19 @@ public:
         send_wr.send_flags = IBV_SEND_SIGNALED;
         send_wr.sg_list = &sge;
         send_wr.num_sge = 1;
-        postSend(&send_wr);
+        post_send(&send_wr);
     }
 
-    virtual void onConnectRequest(struct ibv_pd* pd, struct ibv_cq* cq) {
-        IBConnection::onConnectRequest(pd, cq);
+    virtual void on_connect_request(struct ibv_pd* pd, struct ibv_cq* cq) {
+        IBConnection::on_connect_request(pd, cq);
         
         // register memory regions
         _mr_data = ibv_reg_mr(pd, _data,
-                              Par->cnDataBufferSize() * sizeof(uint64_t),
+                              Par->cn_data_buffer_size() * sizeof(uint64_t),
                               IBV_ACCESS_LOCAL_WRITE |
                               IBV_ACCESS_REMOTE_WRITE);
         _mr_desc = ibv_reg_mr(pd, _desc,
-                              Par->cnDescBufferSize() * sizeof(TimesliceComponentDescriptor),
+                              Par->cn_desc_buffer_size() * sizeof(TimesliceComponentDescriptor),
                               IBV_ACCESS_LOCAL_WRITE |
                               IBV_ACCESS_REMOTE_WRITE);
         _mr_send = ibv_reg_mr(pd, &_send_cn_ack,
@@ -110,12 +110,12 @@ public:
         conn_param.responder_resources = 1;
         conn_param.private_data = rep_pdata;
         conn_param.private_data_len = sizeof rep_pdata;
-        int err = rdma_accept(_cmId, &conn_param);
+        int err = rdma_accept(_cm_id, &conn_param);
         if (err)
             throw InfinibandException("RDMA accept failed");
     }
 
-    virtual void onDisconnect() {
+    virtual void on_disconnect() {
         if (_mr_recv) {
             ibv_dereg_mr(_mr_recv);
             _mr_recv = 0;
@@ -136,22 +136,22 @@ public:
             _mr_data = 0;
         }
 
-        IBConnection::onDisconnect();
+        IBConnection::on_disconnect();
     }
 
     void
-    checkBuffer(ComputeNodeBufferPosition ack, ComputeNodeBufferPosition wp,
+    check_buffer(ComputeNodeBufferPosition ack, ComputeNodeBufferPosition wp,
                 TimesliceComponentDescriptor* desc, void *data)
     {
         int ts = wp.desc - ack.desc;
         Log.debug() << "received " << ts << " timeslices";
         for (uint64_t dp = ack.desc; dp < wp.desc; dp++) {
-            TimesliceComponentDescriptor tcd = desc[dp % Par->cnDescBufferSize()];
-            Log.debug() << "checking ts #" << tcd.tsNum;
+            TimesliceComponentDescriptor tcd = desc[dp % Par->cn_desc_buffer_size()];
+            Log.debug() << "checking ts #" << tcd.ts_num;
         }
     }
 
-    void onCompleteRecv()
+    void on_complete_recv()
     {
         if (_recv_cn_wp.data == UINT64_MAX && _recv_cn_wp.desc == UINT64_MAX) {
             Log.info() << "received FINAL pointer update";
@@ -168,7 +168,7 @@ public:
                     << " desc=" << _cn_wp.desc;
 
         // check buffer contents
-        checkBuffer(_cn_ack, _cn_wp, _desc, _data);
+        check_buffer(_cn_ack, _cn_wp, _desc, _data);
 
         // DEBUG: empty the buffer
         _cn_ack = _cn_wp;

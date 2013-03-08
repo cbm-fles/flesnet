@@ -19,21 +19,21 @@ class DataSource
 {
 public:
     /// The DataSource constructor.
-    DataSource(RingBuffer<uint64_t>& dataBuffer,
-               RingBuffer<uint64_t>& addrBuffer) :
-        _dataBuffer(dataBuffer),
-        _addrBuffer(addrBuffer) { };
+    DataSource(RingBuffer<uint64_t>& data_buffer,
+               RingBuffer<uint64_t>& addr_buffer) :
+        _data_buffer(data_buffer),
+        _addr_buffer(addr_buffer) { };
     
-    virtual void waitForData(uint64_t minMcNumber) = 0;
+    virtual void wait_for_data(uint64_t min_mcNumber) = 0;
 
-    virtual void updateAckPointers(uint64_t ackedData, uint64_t ackedMc) = 0;
+    virtual void update_ack_pointers(uint64_t acked_data, uint64_t acked_mc) = 0;
     
 protected:
     /// Input data buffer.
-    RingBuffer<uint64_t>& _dataBuffer;
+    RingBuffer<uint64_t>& _data_buffer;
 
     /// Input address buffer.
-    RingBuffer<uint64_t>& _addrBuffer;
+    RingBuffer<uint64_t>& _addr_buffer;
 };
 
 
@@ -42,57 +42,57 @@ class DummyFlib : DataSource
 {
 public:
     /// The DummyFlib constructor.
-    DummyFlib(RingBuffer<uint64_t>& dataBuffer,
-              RingBuffer<uint64_t>& addrBuffer) :
-        DataSource(dataBuffer, addrBuffer),
-        _pd(Par->typicalContentSize()),
-        _randContentWords(_rng, _pd) { };
+    DummyFlib(RingBuffer<uint64_t>& data_buffer,
+              RingBuffer<uint64_t>& addr_buffer) :
+        DataSource(data_buffer, addr_buffer),
+        _pd(Par->typical_content_size()),
+        _rand_content_words(_rng, _pd) { };
     
     /// Generate FLIB input data.
-    virtual void waitForData(uint64_t minMcNumber) {
+    virtual void wait_for_data(uint64_t min_mc_number) {
         
-        uint64_t mcsToWrite = minMcNumber - _mcWritten;
+        uint64_t mcs_to_write = min_mc_number - _mc_written;
 
-        if (Par->randomizeSizes()) {
+        if (Par->randomize_sizes()) {
             // write more data than requested (up to 2 additional TSs)
-            mcsToWrite += random() % (Par->timesliceSize() * 2);
+            mcs_to_write += random() % (Par->timeslice_size() * 2);
         }
 
         if (Log.beTrace()) {
-            Log.trace() << "waitForData():"
-                        << " minMcNumber=" << minMcNumber
-                        << " _mcWritten=" << _mcWritten
-                        << " mcsToWrite= " << mcsToWrite;
+            Log.trace() << "wait_for_data():"
+                        << " min_mc_number=" << min_mc_number
+                        << " _mc_written=" << _mc_written
+                        << " mcs_to_write= " << mcs_to_write;
         }
 
-        while (mcsToWrite-- > 0) {
-            int contentWords = Par->typicalContentSize();
-            if (Par->randomizeSizes())
-                contentWords = _randContentWords();
+        while (mcs_to_write-- > 0) {
+            int content_words = Par->typical_content_size();
+            if (Par->randomize_sizes())
+                content_words = _rand_content_words();
 
             uint8_t hdrrev = 0x01;
             uint8_t sysid = 0x01;
             uint16_t flags = 0x0000;
-            uint32_t size = (contentWords + 2) * 8;
+            uint32_t size = (content_words + 2) * 8;
             uint16_t rsvd = 0x0000;
-            uint64_t time = _mcWritten;
+            uint64_t time = _mc_written;
 
             uint64_t hdr0 = (uint64_t) hdrrev << 56 | (uint64_t) sysid << 48
                             | (uint64_t) flags << 32 | (uint64_t) size;
             uint64_t hdr1 = (uint64_t) rsvd << 48 | (time & 0xFFFFFFFFFFFF);
 
             if (Log.beTrace()) {
-                Log.trace() << "waitForData():"
-                            << " _dataWritten=" << _dataWritten
-                            << " _ackedData=" << _ackedData
-                            << " contentWords=" << contentWords
-                            << " Par->inDataBufferSize()="
-                            << _dataBuffer.size() + 0;
+                Log.trace() << "wait_for_data():"
+                            << " _data_written=" << _data_written
+                            << " _acked_data=" << _acked_data
+                            << " content_words=" << content_words
+                            << " Par->in_dataBufferSize()="
+                            << _data_buffer.size() + 0;
             }
             
             // check for space in data buffer, busy wait if required
-            if (_dataWritten - _ackedData + contentWords + 2 >
-                _dataBuffer.size()) {
+            if (_data_written - _acked_data + content_words + 2 >
+                _data_buffer.size()) {
                 if (Log.beTrace())
                     Log.trace() << "data buffer full";
                 boost::this_thread::sleep(boost::posix_time::millisec(10));
@@ -100,7 +100,7 @@ public:
             }
 
             // check for space in addr buffer, busy wait if required
-            if (_mcWritten - _ackedMc == _addrBuffer.size()) {
+            if (_mc_written - _acked_mc == _addr_buffer.size()) {
                 if (Log.beTrace())
                     Log.trace() << "addr buffer full";
                 boost::this_thread::sleep(boost::posix_time::millisec(10));
@@ -108,36 +108,36 @@ public:
             }
 
             // write to data buffer
-            uint64_t startAddr = _dataWritten;
-            _dataBuffer.at(_dataWritten++) = hdr0;
-            _dataBuffer.at(_dataWritten++) = hdr1;
+            uint64_t start_addr = _data_written;
+            _data_buffer.at(_data_written++) = hdr0;
+            _data_buffer.at(_data_written++) = hdr1;
 
-            for (int i = 0; i < contentWords; i++) {
-                _dataBuffer.at(_dataWritten++) = i + 0xA;
+            for (int i = 0; i < content_words; i++) {
+                _data_buffer.at(_data_written++) = i + 0xA;
             }
 
             // write to addr buffer
-            _addrBuffer.at(_mcWritten++) = startAddr;
+            _addr_buffer.at(_mc_written++) = start_addr;
         }
     };
 
-    virtual void updateAckPointers(uint64_t ackedData, uint64_t ackedMc) {
-        _ackedData = ackedData;
-        _ackedMc = ackedMc;
+    virtual void update_ack_pointers(uint64_t acked_data, uint64_t acked_mc) {
+        _acked_data = acked_data;
+        _acked_mc = acked_mc;
     };
             
 private:
     /// Number of acknowledged data words. Updated by input node.
-    uint64_t _ackedData = 0;
+    uint64_t _acked_data = 0;
     
     /// Number of acknowledged MCs. Updated by input node.
-    uint64_t _ackedMc = 0;
+    uint64_t _acked_mc = 0;
     
     /// FLIB-internal number of written data words. 
-    uint64_t _dataWritten = 0;
+    uint64_t _data_written = 0;
 
     /// FLIB-internal number of written MCs. 
-    uint64_t _mcWritten = 0;
+    uint64_t _mc_written = 0;
 
     /// A pseudo-random number generator.
     boost::mt19937 _rng;
@@ -147,7 +147,7 @@ private:
 
     /// Generate random number of content words.
     boost::variate_generator<boost::mt19937&,
-                             boost::poisson_distribution<> > _randContentWords;
+                             boost::poisson_distribution<> > _rand_content_words;
 };
     
 

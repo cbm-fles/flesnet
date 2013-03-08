@@ -10,7 +10,7 @@
 
 /// Timeslice component descriptor.
 typedef struct {
-    uint64_t tsNum; ///< Timeslice number.
+    uint64_t ts_num; ///< Timeslice number.
     uint64_t offset; ///< Start offset (in words) of corresponding data.
     uint64_t size;   ///< Size (in words) of corresponding data.
 } TimesliceComponentDescriptor;

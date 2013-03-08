@@ -40,14 +40,14 @@ public:
     /// The IBConnection constructor. Creates a connection manager ID.
     IBConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id *id = 0) :
         _index(index),
-        _cmId(id)
+        _cm_id(id)
     {
-        if (!_cmId) {
-            int err = rdma_create_id(ec, &_cmId, this, RDMA_PS_TCP);
+        if (!_cm_id) {
+            int err = rdma_create_id(ec, &_cm_id, this, RDMA_PS_TCP);
             if (err)
                 throw InfinibandException("rdma_create_id failed");
         } else {
-            _cmId->context = this;
+            _cm_id->context = this;
         }
             
         _qp_cap.max_send_wr = 16;
@@ -59,14 +59,14 @@ public:
 
     /// The IBConnection destructor.
     virtual ~IBConnection() {
-        int err = rdma_destroy_id(_cmId);
+        int err = rdma_destroy_id(_cm_id);
         if (err)
             throw InfinibandException("rdma_destroy_id() failed");
     }
     
     /// Retrieve the InfiniBand queue pair associated with the connection.
     struct ibv_qp* qp() const {
-        return _cmId->qp;
+        return _cm_id->qp;
     };
 
     /// Initiate a connection request to target hostname and service.
@@ -90,7 +90,7 @@ public:
                     << "resolution of server address and route";
 
         for (struct addrinfo* t = res; t; t = t->ai_next) {
-            err = rdma_resolve_addr(_cmId, NULL, t->ai_addr,
+            err = rdma_resolve_addr(_cm_id, NULL, t->ai_addr,
                                     RESOLVE_TIMEOUT_MS);
             if (!err)
                 break;
@@ -104,7 +104,7 @@ public:
     void disconnect() {
         Log.debug() << "[" << _index << "] "
                     << "disconnect";
-        int err = rdma_disconnect(_cmId);
+        int err = rdma_disconnect(_cm_id);
         if (err)
             throw InfinibandException("rdma_disconnect() failed");
     }
@@ -114,19 +114,19 @@ public:
        \param event RDMA connection manager event structure
        \return      Non-zero if an error occured
     */
-    virtual void onConnection(struct rdma_cm_event* event) {
+    virtual void on_connection(struct rdma_cm_event* event) {
         Log.debug() << "[" << _index << "] " << "connection established";
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
-    virtual void onDisconnect() {
+    virtual void on_disconnect() {
         Log.info() << "[" << _index << "] " << "connection disconnected";
 
-        rdma_destroy_qp(_cmId);
+        rdma_destroy_qp(_cm_id);
     }
     
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
-    virtual void onAddrResolved(struct ibv_pd* pd, struct ibv_cq* cq) {
+    virtual void on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq) {
         Log.debug() << "address resolved";
 
         struct ibv_qp_init_attr qp_attr;
@@ -135,17 +135,17 @@ public:
         qp_attr.send_cq = cq;
         qp_attr.recv_cq = cq;
         qp_attr.qp_type = IBV_QPT_RC;
-        int err = rdma_create_qp(_cmId, pd, &qp_attr);
+        int err = rdma_create_qp(_cm_id, pd, &qp_attr);
         if (err)
             throw InfinibandException("creation of QP failed");
         
-        err = rdma_resolve_route(_cmId, RESOLVE_TIMEOUT_MS);
+        err = rdma_resolve_route(_cm_id, RESOLVE_TIMEOUT_MS);
         if (err)
             throw InfinibandException("rdma_resolve_route failed");
     };
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event for this connection.
-    virtual void onConnectRequest(struct ibv_pd* pd, struct ibv_cq* cq) {
+    virtual void on_connect_request(struct ibv_pd* pd, struct ibv_cq* cq) {
 
         struct ibv_qp_init_attr qp_attr;
         memset(&qp_attr, 0, sizeof qp_attr);
@@ -153,20 +153,20 @@ public:
         qp_attr.send_cq = cq;
         qp_attr.recv_cq = cq;
         qp_attr.qp_type = IBV_QPT_RC;
-        int err = rdma_create_qp(_cmId, pd, &qp_attr);
+        int err = rdma_create_qp(_cm_id, pd, &qp_attr);
         if (err)
             throw InfinibandException("creation of QP failed");
     };
     
     /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event for this connection.
-    virtual void onRouteResolved() {
+    virtual void on_route_resolved() {
         Log.debug() << "route resolved";
 
         struct rdma_conn_param conn_param;
         memset(&conn_param, 0, sizeof conn_param);
         conn_param.initiator_depth = 1;
         conn_param.retry_count = 7;
-        int err = rdma_connect(_cmId, &conn_param);
+        int err = rdma_connect(_cm_id, &conn_param);
         if (err)
             throw InfinibandException("rdma_connect failed");
     };
@@ -181,18 +181,18 @@ public:
     };
 
     /// Retrieve the total number of bytes transmitted.
-    uint64_t totalBytesSent() const {
-        return _totalBytesSent;
+    uint64_t total_bytes_sent() const {
+        return _total_bytes_sent;
     }
     
     /// Retrieve the total number of SEND work requests.
-    uint64_t totalSendRequests() const {
-        return _totalSendRequests;
+    uint64_t total_send_requests() const {
+        return _total_send_requests;
     }
     
     /// Retrieve the total number of RECV work requests.
-    uint64_t totalRecvRequests() const {
-        return _totalRecvRequests;
+    uint64_t total_recv_requests() const {
+        return _total_recv_requests;
     }
     
 protected:
@@ -213,44 +213,44 @@ protected:
     struct ibv_qp_cap _qp_cap;
     
     /// Post an InfiniBand SEND work request (WR) to the send queue
-    void postSend(struct ibv_send_wr *wr) {
+    void post_send(struct ibv_send_wr *wr) {
         struct ibv_send_wr* bad_send_wr;
         
         if (ibv_post_send(qp(), wr, &bad_send_wr))
             throw InfinibandException("ibv_post_send failed");
 
-        _totalSendRequests++;
+        _total_send_requests++;
         
         while (wr) {
             for (int i = 0; i < wr->num_sge; i++)
-                _totalBytesSent += wr->sg_list[i].length;
+                _total_bytes_sent += wr->sg_list[i].length;
             wr = wr->next;
         }
     }
 
     /// Post an InfiniBand RECV work request (WR) to the receive queue.
-    void postRecv(struct ibv_recv_wr *wr) {
+    void post_recv(struct ibv_recv_wr *wr) {
         struct ibv_recv_wr* bad_recv_wr;
         
         if (ibv_post_recv(qp(), wr, &bad_recv_wr))
             throw InfinibandException("ibv_post_recv failed");
 
-        _totalRecvRequests++;
+        _total_recv_requests++;
     }
 
     //private: TODO
 
     /// RDMA connection manager ID.
-    struct rdma_cm_id* _cmId = nullptr;
+    struct rdma_cm_id* _cm_id = nullptr;
 private:
     /// Total number of bytes transmitted.
-    uint64_t _totalBytesSent = 0;
+    uint64_t _total_bytes_sent = 0;
 
     /// Total number of SEND work requests.
-    uint64_t _totalSendRequests = 0;
+    uint64_t _total_send_requests = 0;
 
     /// Total number of RECV work requests.
-    uint64_t _totalRecvRequests = 0;
+    uint64_t _total_recv_requests = 0;
 
     /// Low-level communication parameters.
     enum {
@@ -291,11 +291,11 @@ public:
             _cq = 0;
         }
 
-        if (_compChannel) {
-            int err = ibv_destroy_comp_channel(_compChannel);
+        if (_comp_channel) {
+            int err = ibv_destroy_comp_channel(_comp_channel);
             if (err)
                 throw InfinibandException("ibv_destroy_comp_channel failed");
-            _compChannel = 0;
+            _comp_channel = 0;
         }
 
         if (_pd) {
@@ -355,7 +355,7 @@ public:
     };
 
     /// The connection manager event loop.
-    void handleCmEvents(bool isConnect = true) {
+    void handle_cm_events(bool is_connect = true) {
         int err;
         struct rdma_cm_event* event;
         struct rdma_cm_event event_copy;
@@ -372,12 +372,12 @@ public:
                 event_copy.param.conn.private_data = private_data_copy;
             }
             rdma_ack_cm_event(event);
-            onCmEvent(&event_copy);
+            on_cm_event(&event_copy);
             if (private_data_copy) {
                 free(private_data_copy);
                 private_data_copy = 0;
             }
-            if (_connected == (isConnect ? _conn.size() : 0))
+            if (_connected == (is_connect ? _conn.size() : 0))
                 break;
         };
         if (err)
@@ -387,7 +387,7 @@ public:
     };
 
     /// The InfiniBand completion notification event loop.
-    void completionHandler() {
+    void completion_handler() {
         const int ne_max = 10;
 
         struct ibv_cq* ev_cq;
@@ -395,8 +395,8 @@ public:
         struct ibv_wc wc[ne_max];
         int ne;
 
-        while (!_allDone) {
-            if (ibv_get_cq_event(_compChannel, &ev_cq, &ev_ctx))
+        while (!_all_done) {
+            if (ibv_get_cq_event(_comp_channel, &ev_cq, &ev_ctx))
                 throw InfinibandException("ibv_get_cq_event failed");
 
             ibv_ack_cq_events(ev_cq, 1);
@@ -420,7 +420,7 @@ public:
                         continue;
                     }
 
-                    onCompletion(wc[i]);
+                    on_completion(wc[i]);
                 }
             }
         }
@@ -429,12 +429,12 @@ public:
     }
 
     /// Retrieve the InfiniBand protection domain.
-    struct ibv_pd* protectionDomain() const {
+    struct ibv_pd* protection_domain() const {
         return _pd;
     }
 
     /// Retrieve the InfiniBand completion queue.
-    struct ibv_cq* completionQueue() const {
+    struct ibv_cq* completion_queue() const {
         return _cq;
     }
 
@@ -447,48 +447,48 @@ protected:
     std::vector<CONNECTION*> _conn;
 
     /// Flag causing termination of completion handler.
-    bool _allDone = false;
+    bool _all_done = false;
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
-    virtual void onAddrResolved(struct rdma_cm_id* id) {
+    virtual void on_addr_resolved(struct rdma_cm_id* id) {
         if (!_pd)
-            initContext(id->verbs);
+            init_context(id->verbs);
 
         CONNECTION* conn = (CONNECTION*) id->context;
         
-        conn->onAddrResolved(_pd, _cq);
+        conn->on_addr_resolved(_pd, _cq);
     }
 
     /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event.
-    virtual void onRouteResolved(struct rdma_cm_id* id) {
+    virtual void on_route_resolved(struct rdma_cm_id* id) {
         CONNECTION* conn = (CONNECTION*) id->context;
 
-        conn->onRouteResolved();
+        conn->on_route_resolved();
     }
 
     /// Handle RDMA_CM_EVENT_ESTABLISHED event.
-    virtual void onConnection(struct rdma_cm_event* event) {
+    virtual void on_connection(struct rdma_cm_event* event) {
         CONNECTION* conn = (CONNECTION*) event->id->context;
 
-        conn->onConnection(event);
+        conn->on_connection(event);
         _connected++;
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void onConnectRequest(struct rdma_cm_id* id) {
+    virtual void on_connect_request(struct rdma_cm_id* id) {
         if (!_pd)
-            initContext(id->verbs);
+            init_context(id->verbs);
 
         CONNECTION* conn = new CONNECTION(_ec, 0, id);
         _conn.push_back(conn);
-        conn->onConnectRequest(_pd, _cq);
+        conn->on_connect_request(_pd, _cq);
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
-    virtual void onDisconnect(struct rdma_cm_id* id) {
+    virtual void on_disconnect(struct rdma_cm_id* id) {
         CONNECTION* conn = (CONNECTION*) id->context;
 
-        conn->onDisconnect();
+        conn->on_disconnect();
         _conn[conn->index()] = 0;
         delete conn;
         _connected--;
@@ -506,7 +506,7 @@ private:
     struct ibv_context* _context = nullptr;
 
     /// InfiniBand completion channel
-    struct ibv_comp_channel* _compChannel = nullptr;
+    struct ibv_comp_channel* _comp_channel = nullptr;
 
     /// InfiniBand completion queue
     struct ibv_cq* _cq = nullptr;
@@ -514,15 +514,15 @@ private:
     struct rdma_cm_id* _listen_id = 0;
 
     /// Connection manager event dispatcher. Called by the CM event loop.
-    void onCmEvent(struct rdma_cm_event* event) {
+    void on_cm_event(struct rdma_cm_event* event) {
         switch (event->event) {
         case RDMA_CM_EVENT_ADDR_RESOLVED:
-            onAddrResolved(event->id);
+            on_addr_resolved(event->id);
             return;
         case RDMA_CM_EVENT_ADDR_ERROR:
             throw InfinibandException("rdma_resolve_addr failed");
         case RDMA_CM_EVENT_ROUTE_RESOLVED:
-            onRouteResolved(event->id);
+            on_route_resolved(event->id);
             return;
         case RDMA_CM_EVENT_ROUTE_ERROR:
             throw InfinibandException("rdma_resolve_route failed");            
@@ -533,13 +533,13 @@ private:
         case RDMA_CM_EVENT_REJECTED:
             throw InfinibandException("request rejected by remote endpoint");
         case RDMA_CM_EVENT_ESTABLISHED:
-            onConnection(event);
+            on_connection(event);
             return;
         case RDMA_CM_EVENT_CONNECT_REQUEST:
-            onConnectRequest(event->id);
+            on_connect_request(event->id);
             return;
         case RDMA_CM_EVENT_DISCONNECTED:
-            onDisconnect(event->id);
+            on_disconnect(event->id);
             return;
         default:
             Log.error() << rdma_event_str(event->event);
@@ -547,7 +547,7 @@ private:
     }
 
     /// Initialize the InfiniBand verbs context.
-    void initContext(struct ibv_context* context) {
+    void init_context(struct ibv_context* context) {
         _context = context;
 
         Log.debug() << "create verbs objects";
@@ -556,11 +556,11 @@ private:
         if (!_pd)
             throw InfinibandException("ibv_alloc_pd failed");
 
-        _compChannel = ibv_create_comp_channel(context);
-        if (!_compChannel)
+        _comp_channel = ibv_create_comp_channel(context);
+        if (!_comp_channel)
             throw InfinibandException("ibv_create_comp_channel failed");
 
-        _cq = ibv_create_cq(context, 40, NULL, _compChannel, 0);
+        _cq = ibv_create_cq(context, 40, NULL, _comp_channel, 0);
         if (!_cq)
             throw InfinibandException("ibv_create_cq failed");
 
@@ -569,7 +569,7 @@ private:
     }
 
     /// Completion notification event dispatcher. Called by the event loop.
-    virtual void onCompletion(const struct ibv_wc& wc) { };
+    virtual void on_completion(const struct ibv_wc& wc) { };
 };
 
 
