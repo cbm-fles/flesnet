@@ -229,7 +229,6 @@ public:
         }
     }
 
-    /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
     virtual void on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq) {
         IBConnection::on_addr_resolved(pd, cq);
         
@@ -278,7 +277,6 @@ public:
         memcpy(&_server_info, event->param.conn.private_data, sizeof _server_info);
     }
     
-    /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
     virtual void on_disconnect() {
         if (_mr_recv) {
             ibv_dereg_mr(_mr_recv);

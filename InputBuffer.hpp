@@ -87,7 +87,6 @@ public:
         out.info() << "SENDER loop done";
     }
 
-    /// Handle RDMA_CM_EVENT_DISCONNECTED event.
     virtual void on_disconnect(struct rdma_cm_id* id) {
         InputNodeConnection* conn = (InputNodeConnection*) id->context;
 
@@ -169,7 +168,6 @@ private:
         return timeslice % _conn.size();
     }
 
-    /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
     virtual void on_addr_resolved(struct rdma_cm_id* id) {
         IBConnectionGroup<InputNodeConnection>::on_addr_resolved(id);
 
