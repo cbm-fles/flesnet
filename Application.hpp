@@ -9,7 +9,6 @@
 
 #include <iostream>
 #include <chrono>
-#include <boost/cstdint.hpp>
 #include <boost/thread.hpp>
 #include "InputBuffer.hpp"
 #include "ComputeBuffer.hpp"
