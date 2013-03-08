@@ -80,12 +80,13 @@ public:
 
     /// Send data and descriptors to compute node.
     void send_data(struct ibv_sge* sge, int num_sge, uint64_t timeslice,
-                  uint64_t mc_length, uint64_t data_length) {
+                   uint64_t mc_length, uint64_t data_length) {
         int num_sge2 = 0;
         struct ibv_sge sge2[4];
 
         uint64_t target_words_left =
-            (1 << par->cn_data_buffer_size_exp()) - _cn_wp.data % (1 << par->cn_data_buffer_size_exp());
+            (1 << par->cn_data_buffer_size_exp())
+            - _cn_wp.data % (1 << par->cn_data_buffer_size_exp()); // TODO
 
         // split sge list if necessary
         int num_sge_cut = 0;
@@ -122,7 +123,7 @@ public:
         send_wr_ts.wr.rdma.rkey = _server_info[0].rkey;
         send_wr_ts.wr.rdma.remote_addr =
             (uintptr_t)(_server_info[0].addr +
-                        (_cn_wp.data % (1 << par->cn_data_buffer_size_exp()))
+                        (_cn_wp.data % (1 << par->cn_data_buffer_size_exp())) // TODO
                         * sizeof(uint64_t));
 
         if (num_sge2) {
@@ -160,7 +161,7 @@ public:
         send_wr_tscdesc.wr.rdma.rkey = _server_info[1].rkey;
         send_wr_tscdesc.wr.rdma.remote_addr =
             (uintptr_t)(_server_info[1].addr
-                        + (_cn_wp.desc % par->cn_desc_buffer_size())
+                        + (_cn_wp.desc % par->cn_desc_buffer_size()) // TODO
                         * sizeof(TimesliceComponentDescriptor));
 
         out.debug() << "[" << _index << "] "
