@@ -42,24 +42,24 @@ public:
     /// Wait until enough space is available at target compute node.
     void wait_for_buffer_space(uint64_t data_size, uint64_t desc_size) {
         boost::mutex::scoped_lock lock(_cn_ack_mutex);
-        if (Log.beTrace()) {
-            Log.trace() << "[" << _index << "] "
+        if (out.beTrace()) {
+            out.trace() << "[" << _index << "] "
                         << "SENDER data space (words) required="
                         << data_size << ", avail="
-                        << _cn_ack.data + Par->cn_data_buffer_size() - _cn_wp.data;
-            Log.trace() << "[" << _index << "] "
+                        << _cn_ack.data + par->cn_data_buffer_size() - _cn_wp.data;
+            out.trace() << "[" << _index << "] "
                         << "SENDER desc space (words) required="
                         << desc_size << ", avail="
-                        << _cn_ack.desc + Par->cn_desc_buffer_size() - _cn_wp.desc;
+                        << _cn_ack.desc + par->cn_desc_buffer_size() - _cn_wp.desc;
         }
-        while (_cn_ack.data - _cn_wp.data + Par->cn_data_buffer_size() < data_size
-                || _cn_ack.desc - _cn_wp.desc + Par->cn_desc_buffer_size()
+        while (_cn_ack.data - _cn_wp.data + par->cn_data_buffer_size() < data_size
+                || _cn_ack.desc - _cn_wp.desc + par->cn_desc_buffer_size()
                 < desc_size) {
             {
                 boost::mutex::scoped_lock lock2(_cn_wp_mutex);
                 if (_our_turn) {
                     // send phony update to receive new pointers
-                    Log.info() << "[" << _index << "] "
+                    out.info() << "[" << _index << "] "
                                << "SENDER send phony update";
                     _our_turn = false;
                     _send_cn_wp = _cn_wp;
@@ -67,13 +67,13 @@ public:
                 }
             }
             _cn_ack_cond.wait(lock);
-            if (Log.beTrace()) {
-                Log.trace() << "[" << _index << "] "
+            if (out.beTrace()) {
+                out.trace() << "[" << _index << "] "
                             << "SENDER (next try) space avail="
                             << _cn_ack.data - _cn_wp.data
-                    + Par->cn_data_buffer_size()
+                    + par->cn_data_buffer_size()
                             << " desc_avail=" << _cn_ack.desc - _cn_wp.desc
-                    + Par->cn_desc_buffer_size();
+                    + par->cn_desc_buffer_size();
             }
         }
     }
@@ -85,7 +85,7 @@ public:
         struct ibv_sge sge2[4];
 
         uint64_t target_words_left =
-            Par->cn_data_buffer_size() - _cn_wp.data % Par->cn_data_buffer_size();
+            par->cn_data_buffer_size() - _cn_wp.data % par->cn_data_buffer_size();
 
         // split sge list if necessary
         int num_sge_cut = 0;
@@ -122,7 +122,7 @@ public:
         send_wr_ts.wr.rdma.rkey = _server_info[0].rkey;
         send_wr_ts.wr.rdma.remote_addr =
             (uintptr_t)(_server_info[0].addr +
-                        (_cn_wp.data % Par->cn_data_buffer_size())
+                        (_cn_wp.data % par->cn_data_buffer_size())
                         * sizeof(uint64_t));
 
         if (num_sge2) {
@@ -160,10 +160,10 @@ public:
         send_wr_tscdesc.wr.rdma.rkey = _server_info[1].rkey;
         send_wr_tscdesc.wr.rdma.remote_addr =
             (uintptr_t)(_server_info[1].addr
-                        + (_cn_wp.desc % Par->cn_desc_buffer_size())
+                        + (_cn_wp.desc % par->cn_desc_buffer_size())
                         * sizeof(TimesliceComponentDescriptor));
 
-        Log.debug() << "[" << _index << "] "
+        out.debug() << "[" << _index << "] "
                     << "post_send (timeslice " << timeslice << ")";
 
         // send everything
@@ -203,7 +203,7 @@ public:
             _done = true;
             return;
         }
-        Log.debug()
+        out.debug()
                 << "[" << _index << "] "
                 << "receive completion, new _cn_ack.data="
                 << _receive_cn_ack.data;
@@ -302,8 +302,8 @@ private:
 
     /// Post a receive work request (WR) to the receive queue
     void post_recv_cn_ack() {
-        if (Log.beDebug()) {
-            Log.debug() << "[" << _index << "] "
+        if (out.beDebug()) {
+            out.debug() << "[" << _index << "] "
                         << "POST RECEIVE _receive_cn_ack";
         }
         post_recv(&recv_wr);
@@ -311,8 +311,8 @@ private:
 
     /// Post a send work request (WR) to the send queue
     void post_send_cn_wp() {
-        if (Log.beDebug()) {
-            Log.debug() << "[" << _index << "] "
+        if (out.beDebug()) {
+            out.debug() << "[" << _index << "] "
                         << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
                         << " desc=" << _send_cn_wp.desc << ")";
         }

@@ -31,8 +31,8 @@ public:
         memset(&_recv_cn_wp, 0, sizeof(ComputeNodeBufferPosition));
 
         // Allocate buffer space
-        _data = (uint64_t*) calloc(Par->cn_data_buffer_size(), sizeof(uint64_t));
-        _desc = (TimesliceComponentDescriptor*) calloc(Par->cn_desc_buffer_size(),
+        _data = (uint64_t*) calloc(par->cn_data_buffer_size(), sizeof(uint64_t));
+        _desc = (TimesliceComponentDescriptor*) calloc(par->cn_desc_buffer_size(),
                                                        sizeof(TimesliceComponentDescriptor));
         if (!_data || !_desc)
             throw InfinibandException("allocation of buffer space failed");
@@ -58,7 +58,7 @@ public:
 
     void send_ack(bool final = false) {
         _send_cn_ack = final ? _recv_cn_wp : _cn_ack;
-        Log.debug() << "SEND posted";
+        out.debug() << "SEND posted";
         struct ibv_sge sge;
         sge.addr = (uintptr_t) &_send_cn_ack;
         sge.length = sizeof(ComputeNodeBufferPosition);
@@ -78,11 +78,11 @@ public:
         
         // register memory regions
         _mr_data = ibv_reg_mr(pd, _data,
-                              Par->cn_data_buffer_size() * sizeof(uint64_t),
+                              par->cn_data_buffer_size() * sizeof(uint64_t),
                               IBV_ACCESS_LOCAL_WRITE |
                               IBV_ACCESS_REMOTE_WRITE);
         _mr_desc = ibv_reg_mr(pd, _desc,
-                              Par->cn_desc_buffer_size() * sizeof(TimesliceComponentDescriptor),
+                              par->cn_desc_buffer_size() * sizeof(TimesliceComponentDescriptor),
                               IBV_ACCESS_LOCAL_WRITE |
                               IBV_ACCESS_REMOTE_WRITE);
         _mr_send = ibv_reg_mr(pd, &_send_cn_ack,
@@ -96,7 +96,7 @@ public:
         // post initial receive request
         post_receive();
 
-        Log.debug() << "accepting connection";
+        out.debug() << "accepting connection";
 
         // Accept rdma connection request
         ServerInfo rep_pdata[2];
@@ -144,17 +144,17 @@ public:
                 TimesliceComponentDescriptor* desc, void *data)
     {
         int ts = wp.desc - ack.desc;
-        Log.debug() << "received " << ts << " timeslices";
+        out.debug() << "received " << ts << " timeslices";
         for (uint64_t dp = ack.desc; dp < wp.desc; dp++) {
-            TimesliceComponentDescriptor tcd = desc[dp % Par->cn_desc_buffer_size()];
-            Log.debug() << "checking ts #" << tcd.ts_num;
+            TimesliceComponentDescriptor tcd = desc[dp % par->cn_desc_buffer_size()];
+            out.debug() << "checking ts #" << tcd.ts_num;
         }
     }
 
     void on_complete_recv()
     {
         if (_recv_cn_wp.data == UINT64_MAX && _recv_cn_wp.desc == UINT64_MAX) {
-            Log.info() << "received FINAL pointer update";
+            out.info() << "received FINAL pointer update";
             // send FINAL ack
             send_ack(true);
             return;
@@ -164,7 +164,7 @@ public:
         post_receive();
         _cn_wp = _recv_cn_wp;
         // debug output
-        Log.debug() << "RECEIVE _cn_wp: data=" << _cn_wp.data
+        out.debug() << "RECEIVE _cn_wp: data=" << _cn_wp.data
                     << " desc=" << _cn_wp.desc;
 
         // check buffer contents

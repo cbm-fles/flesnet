@@ -20,27 +20,27 @@
 #include "Application.hpp"
 #include "global.hpp"
 
-einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> Log(einhard::WARN, true);
-Parameters* Par;
+einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out(einhard::WARN, true);
+Parameters* par;
 
 int
 main(int argc, char* argv[])
 {
     try {
-        Par = new Parameters(argc, argv);
+        par = new Parameters(argc, argv);
 
-        if (Par->node_type() == Parameters::INPUT_NODE) {
-            InputApplication app(*Par);
+        if (par->node_type() == Parameters::INPUT_NODE) {
+            InputApplication app(*par);
             app.run();
         } else {
-            ComputeApplication app(*Par);
+            ComputeApplication app(*par);
             app.run();
         }
     } catch (std::exception const& e) {
-        Log.fatal() << e.what();
+        out.fatal() << e.what();
         return EXIT_FAILURE;
     }
 
-    delete Par;
+    delete par;
     return EXIT_SUCCESS;
 }

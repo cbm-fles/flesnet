@@ -70,7 +70,7 @@ public:
         std::vector<std::string> services;
         for (unsigned int i = 0; i < _par.compute_nodes().size(); i++)
             services.push_back(boost::lexical_cast<std::string>
-                               (Par->base_port() + i));
+                               (par->base_port() + i));
     
         ib.connect(_par.compute_nodes(), services);
         ib.handle_cm_events(true);
@@ -83,11 +83,11 @@ public:
         ib.disconnect();
         t2.join();
 
-        Log.info() << ib.aggregate_content_bytes_sent() << " content bytes";
-        Log.info() << ib.aggregate_send_requests() << " SEND requests";
-        Log.info() << ib.aggregate_recv_requests() << " RECV requests";
+        out.info() << ib.aggregate_content_bytes_sent() << " content bytes";
+        out.info() << ib.aggregate_send_requests() << " SEND requests";
+        out.info() << ib.aggregate_recv_requests() << " RECV requests";
         double rate = (double) ib.aggregate_bytes_sent() / (double) runtime;
-        Log.info() << "summary: " << ib.aggregate_bytes_sent()
+        out.info() << "summary: " << ib.aggregate_bytes_sent()
                    << " bytes sent in "
                    << runtime << " µs (" << rate << " MB/s)";
         
@@ -110,7 +110,7 @@ public:
     /// The "main" function of a compute node application.
     virtual int run() {
         ComputeBuffer* cb = new ComputeBuffer();
-        cb->accept(Par->base_port() + Par->node_index());
+        cb->accept(par->base_port() + par->node_index());
         cb->handle_cm_events(true);
         
         /// DEBUG v

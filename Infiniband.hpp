@@ -86,7 +86,7 @@ public:
         if (err)
             throw InfinibandException("getaddrinfo failed");
 
-        Log.debug() << "[" << _index << "] "
+        out.debug() << "[" << _index << "] "
                     << "resolution of server address and route";
 
         for (struct addrinfo* t = res; t; t = t->ai_next) {
@@ -102,7 +102,7 @@ public:
     }
 
     void disconnect() {
-        Log.debug() << "[" << _index << "] "
+        out.debug() << "[" << _index << "] "
                     << "disconnect";
         int err = rdma_disconnect(_cm_id);
         if (err)
@@ -115,19 +115,19 @@ public:
        \return      Non-zero if an error occured
     */
     virtual void on_connection(struct rdma_cm_event* event) {
-        Log.debug() << "[" << _index << "] " << "connection established";
+        out.debug() << "[" << _index << "] " << "connection established";
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
     virtual void on_disconnect() {
-        Log.info() << "[" << _index << "] " << "connection disconnected";
+        out.info() << "[" << _index << "] " << "connection disconnected";
 
         rdma_destroy_qp(_cm_id);
     }
     
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
     virtual void on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq) {
-        Log.debug() << "address resolved";
+        out.debug() << "address resolved";
 
         struct ibv_qp_init_attr qp_attr;
         memset(&qp_attr, 0, sizeof qp_attr);
@@ -160,7 +160,7 @@ public:
     
     /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event for this connection.
     virtual void on_route_resolved() {
-        Log.debug() << "route resolved";
+        out.debug() << "route resolved";
 
         struct rdma_conn_param conn_param;
         memset(&conn_param, 0, sizeof conn_param);
@@ -323,7 +323,7 @@ public:
     };
 
     void accept(unsigned short port) {
-        Log.debug() << "Setting up RDMA CM structures";
+        out.debug() << "Setting up RDMA CM structures";
 
         // Create rdma id (for listening)
         int err = rdma_create_id(_ec, &_listen_id, NULL, RDMA_PS_TCP);
@@ -345,7 +345,7 @@ public:
         if (err)
             throw InfinibandException("RDMA listen failed");
 
-        Log.info() << "Waiting for connection";
+        out.info() << "Waiting for connection";
     }
 
     /// Initiate disconnection.
@@ -383,7 +383,7 @@ public:
         if (err)
             throw InfinibandException("rdma_get_cm_event failed");
         
-        Log.info() << "number of connections: " << _connected;
+        out.info() << "number of connections: " << _connected;
     };
 
     /// The InfiniBand completion notification event loop.
@@ -416,7 +416,7 @@ public:
                         std::ostringstream s;
                         s << ibv_wc_status_str(wc[i].status)
                           << " for wr_id " << (int) wc[i].wr_id;
-                        Log.error() << s.str();
+                        out.error() << s.str();
                         continue;
                     }
 
@@ -425,7 +425,7 @@ public:
             }
         }
 
-        Log.info() << "COMPLETION loop done";
+        out.info() << "COMPLETION loop done";
     }
 
     /// Retrieve the InfiniBand protection domain.
@@ -542,7 +542,7 @@ private:
             on_disconnect(event->id);
             return;
         default:
-            Log.error() << rdma_event_str(event->event);
+            out.error() << rdma_event_str(event->event);
         }
     }
 
@@ -550,7 +550,7 @@ private:
     void init_context(struct ibv_context* context) {
         _context = context;
 
-        Log.debug() << "create verbs objects";
+        out.debug() << "create verbs objects";
 
         _pd = ibv_alloc_pd(context);
         if (!_pd)

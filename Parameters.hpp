@@ -295,26 +295,26 @@ private:
             }
         }
 
-        Log.setVerbosity((einhard::LogLevel)log_level);
+        out.setVerbosity((einhard::LogLevel)log_level);
 
-        Log.debug() << "input nodes (" << _input_nodes.size() << "): "
+        out.debug() << "input nodes (" << _input_nodes.size() << "): "
                     << _input_nodes;
-        Log.debug() << "compute nodes (" << _compute_nodes.size() << "): "
+        out.debug() << "compute nodes (" << _compute_nodes.size() << "): "
                     << _compute_nodes;
-        Log.debug() << "this node: "
+        out.debug() << "this node: "
                     << (_node_type == INPUT_NODE ? "input" : "compute")
                     << " node #" << _node_index;
 
-        Log.info() << "timeslice size: (" << _timeslice_size
+        out.info() << "timeslice size: (" << _timeslice_size
                    << " + " << _overlap_size << ") microslices";
-        Log.info() << "microslice size: ("
+        out.info() << "microslice size: ("
                    << _typical_content_size * sizeof(uint64_t)
                    << " + " << 2 * sizeof(uint64_t) << ") bytes";
-        Log.info() << "input node buffer size: ("
+        out.info() << "input node buffer size: ("
                    << (1 << _in_data_buffer_size_exp) * sizeof(uint64_t)
                    << " + " <<  (1 << _in_addr_buffer_size_exp) * sizeof(uint64_t)
                    << ") bytes";
-        Log.info() << "compute node buffer size: ("
+        out.info() << "compute node buffer size: ("
                    << _cn_data_buffer_size * sizeof(uint64_t) << " + "
                    << _cn_desc_buffer_size * sizeof(TimesliceComponentDescriptor)
                    << ") bytes";

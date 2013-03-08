@@ -23,11 +23,11 @@ public:
     virtual void on_completion(const struct ibv_wc& wc) {
         switch (wc.wr_id & 0xFF) {
         case ID_SEND_CN_ACK:
-            Log.debug() << "SEND complete";
+            out.debug() << "SEND complete";
             break;
 
         case ID_SEND_FINALIZE:
-            Log.debug() << "SEND FINALIZE complete";
+            out.debug() << "SEND FINALIZE complete";
             _all_done = true;
             break;
 

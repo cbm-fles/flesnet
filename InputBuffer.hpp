@@ -24,11 +24,11 @@ public:
 
     /// The InputBuffer default constructor.
     InputBuffer() :
-        _data(Par->in_data_buffer_size_exp()),
-        _addr(Par->in_addr_buffer_size_exp()),
+        _data(par->in_data_buffer_size_exp()),
+        _addr(par->in_addr_buffer_size_exp()),
         _data_source(_data, _addr)
     {
-        size_t min_ack_buffer_size = _addr.size() / Par->timeslice_size() + 1;
+        size_t min_ack_buffer_size = _addr.size() / par->timeslice_size() + 1;
         _ack.alloc_with_size(min_ack_buffer_size);
     }
 
@@ -47,12 +47,12 @@ public:
 
     /// The central loop for distributing timeslice data.
     void sender_loop() {
-        for (uint64_t timeslice = 0; timeslice < Par->max_timeslice_number();
+        for (uint64_t timeslice = 0; timeslice < par->max_timeslice_number();
              timeslice++) {
 
             // wait until a complete TS is available in the input buffer
-            uint64_t mc_offset = timeslice * Par->timeslice_size();
-            uint64_t mc_length = Par->timeslice_size() + Par->overlap_size();
+            uint64_t mc_offset = timeslice * par->timeslice_size();
+            uint64_t mc_length = par->timeslice_size() + par->overlap_size();
             
             if (_addr.at(mc_offset + mc_length) <= _acked_data)
                 _data_source.wait_for_data(mc_offset + mc_length + 1);
@@ -62,13 +62,13 @@ public:
             uint64_t data_length = _addr.at(mc_offset + mc_length)
                 - data_offset;
 
-            if (Log.beTrace()) {
-                Log.trace() << "SENDER working on TS " << timeslice
+            if (out.beTrace()) {
+                out.trace() << "SENDER working on TS " << timeslice
                             << ", MCs " << mc_offset << ".."
                             << (mc_offset + mc_length - 1)
                             << ", data words " << data_offset << ".."
                             << (data_offset + data_length - 1);
-                Log.trace() << get_state_string();
+                out.trace() << get_state_string();
             }
 
             int cn = target_cn_index(timeslice);
@@ -84,7 +84,7 @@ public:
         for(auto it = _conn.begin(); it != _conn.end(); ++it)
             (*it)->finalize();
 
-        Log.info() << "SENDER loop done";
+        out.info() << "SENDER loop done";
     }
 
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
@@ -266,19 +266,19 @@ private:
         switch (wc.wr_id & 0xFF) {
         case ID_WRITE_DESC: {
             uint64_t ts = wc.wr_id >> 8;
-            Log.debug() << "write completion for timeslice " << ts;
+            out.debug() << "write completion for timeslice " << ts;
 
-            uint64_t acked_ts = _acked_mc / Par->timeslice_size();
+            uint64_t acked_ts = _acked_mc / par->timeslice_size();
             if (ts == acked_ts)
                 do
                     acked_ts++;
                 while (_ack.at(acked_ts) > ts);
             else
                 _ack.at(ts) = ts;
-            _acked_data = _addr.at(acked_ts * Par->timeslice_size());
-            _acked_mc = acked_ts * Par->timeslice_size();
+            _acked_data = _addr.at(acked_ts * par->timeslice_size());
+            _acked_mc = acked_ts * par->timeslice_size();
             _data_source.update_ack_pointers(_acked_data, _acked_mc);
-            Log.debug() << "new values: _acked_data=" << _acked_data
+            out.debug() << "new values: _acked_data=" << _acked_data
                         << " _acked_mc=" << _acked_mc;
         }
             break;
@@ -289,7 +289,7 @@ private:
             if (_conn[cn]->done()) {
                 _connections_done++;
                 _all_done = (_connections_done == _conn.size());
-                Log.debug() << "ID_RECEIVE_CN_ACK final for id " << cn << " alldone=" << _all_done;
+                out.debug() << "ID_RECEIVE_CN_ACK final for id " << cn << " alldone=" << _all_done;
             }
         }
             break;

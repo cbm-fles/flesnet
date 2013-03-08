@@ -9,9 +9,9 @@
 
 #include "einhard.hpp"
 
-extern einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> Log;
+extern einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out;
 
 class Parameters;
-extern Parameters* Par;
+extern Parameters* par;
 
 #endif /* GLOBAL_HPP */

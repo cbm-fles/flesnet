@@ -45,7 +45,7 @@ public:
     DummyFlib(RingBuffer<uint64_t>& data_buffer,
               RingBuffer<uint64_t>& addr_buffer) :
         DataSource(data_buffer, addr_buffer),
-        _pd(Par->typical_content_size()),
+        _pd(par->typical_content_size()),
         _rand_content_words(_rng, _pd) { };
     
     /// Generate FLIB input data.
@@ -53,21 +53,21 @@ public:
         
         uint64_t mcs_to_write = min_mc_number - _mc_written;
 
-        if (Par->randomize_sizes()) {
+        if (par->randomize_sizes()) {
             // write more data than requested (up to 2 additional TSs)
-            mcs_to_write += random() % (Par->timeslice_size() * 2);
+            mcs_to_write += random() % (par->timeslice_size() * 2);
         }
 
-        if (Log.beTrace()) {
-            Log.trace() << "wait_for_data():"
+        if (out.beTrace()) {
+            out.trace() << "wait_for_data():"
                         << " min_mc_number=" << min_mc_number
                         << " _mc_written=" << _mc_written
                         << " mcs_to_write= " << mcs_to_write;
         }
 
         while (mcs_to_write-- > 0) {
-            int content_words = Par->typical_content_size();
-            if (Par->randomize_sizes())
+            int content_words = par->typical_content_size();
+            if (par->randomize_sizes())
                 content_words = _rand_content_words();
 
             uint8_t hdrrev = 0x01;
@@ -81,28 +81,28 @@ public:
                             | (uint64_t) flags << 32 | (uint64_t) size;
             uint64_t hdr1 = (uint64_t) rsvd << 48 | (time & 0xFFFFFFFFFFFF);
 
-            if (Log.beTrace()) {
-                Log.trace() << "wait_for_data():"
+            if (out.beTrace()) {
+                out.trace() << "wait_for_data():"
                             << " _data_written=" << _data_written
                             << " _acked_data=" << _acked_data
                             << " content_words=" << content_words
-                            << " Par->in_dataBufferSize()="
+                            << " par->in_dataBufferSize()="
                             << _data_buffer.size() + 0;
             }
             
             // check for space in data buffer, busy wait if required
             if (_data_written - _acked_data + content_words + 2 >
                 _data_buffer.size()) {
-                if (Log.beTrace())
-                    Log.trace() << "data buffer full";
+                if (out.beTrace())
+                    out.trace() << "data buffer full";
                 boost::this_thread::sleep(boost::posix_time::millisec(10));
                 break;
             }
 
             // check for space in addr buffer, busy wait if required
             if (_mc_written - _acked_mc == _addr_buffer.size()) {
-                if (Log.beTrace())
-                    Log.trace() << "addr buffer full";
+                if (out.beTrace())
+                    out.trace() << "addr buffer full";
                 boost::this_thread::sleep(boost::posix_time::millisec(10));
                 break;
             }
