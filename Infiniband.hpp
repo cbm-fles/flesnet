@@ -13,6 +13,7 @@
 #include <arpa/inet.h>
 #include <infiniband/arch.h>
 #include <rdma/rdma_cma.h>
+#include <valgrind/memcheck.h>
 #include "global.hpp"
 
 
@@ -61,7 +62,7 @@ public:
     };
 
     /// The IBConnection destructor.
-    ~IBConnection() {
+    virtual ~IBConnection() {
         int err = rdma_destroy_id(_cmId);
         if (err)
             throw InfinibandException("rdma_destroy_id() failed");
@@ -123,7 +124,7 @@ public:
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
     virtual void onDisconnect() {
-        Log.debug() << "[" << _index << "] " << "connection disconnected";
+        Log.info() << "[" << _index << "] " << "connection disconnected";
 
         rdma_destroy_qp(_cmId);
     }
@@ -282,7 +283,28 @@ public:
     };
 
     /// The IBConnectionGroup default destructor.
-    ~IBConnectionGroup() {
+    virtual ~IBConnectionGroup() {
+        if (_cq) {
+            int err = ibv_destroy_cq(_cq);
+            if (err)
+                throw InfinibandException("ibv_destroy_cq failed");
+            _cq = 0;
+        }
+
+        if (_compChannel) {
+            int err = ibv_destroy_comp_channel(_compChannel);
+            if (err)
+                throw InfinibandException("ibv_destroy_comp_channel failed");
+            _compChannel = 0;
+        }
+
+        if (_pd && 0) { // TODO
+            int err = ibv_dealloc_pd(_pd);
+            if (err)
+                throw InfinibandException("ibv_dealloc_pd failed");
+            _pd = 0;
+        }
+
         rdma_destroy_event_channel(_ec);
     };
     
@@ -304,8 +326,7 @@ public:
         Log.debug() << "Setting up RDMA CM structures";
 
         // Create rdma id (for listening)
-        struct rdma_cm_id* listen_id;
-        int err = rdma_create_id(_ec, &listen_id, NULL, RDMA_PS_TCP);
+        int err = rdma_create_id(_ec, &_listen_id, NULL, RDMA_PS_TCP);
         if (err)
             throw InfinibandException("id creation failed");
 
@@ -315,12 +336,12 @@ public:
         sin.sin_family = AF_INET;
         sin.sin_port = htons(port);
         sin.sin_addr.s_addr = INADDR_ANY;
-        err = rdma_bind_addr(listen_id, (struct sockaddr*) & sin);
+        err = rdma_bind_addr(_listen_id, (struct sockaddr*) & sin);
         if (err)
             throw InfinibandException("RDMA bind_addr failed");
 
         // Listen for connection request on rdma id
-        err = rdma_listen(listen_id, 1);
+        err = rdma_listen(_listen_id, 1);
         if (err)
             throw InfinibandException("RDMA listen failed");
 
@@ -338,8 +359,8 @@ public:
         int err;
         struct rdma_cm_event* event;
         struct rdma_cm_event event_copy;
-        
         while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
+            VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
             memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
             rdma_ack_cm_event(event);
             onCmEvent(&event_copy);
@@ -476,6 +497,8 @@ private:
 
     /// InfiniBand completion queue
     struct ibv_cq* _cq;
+
+    struct rdma_cm_id* _listen_id = 0;
 
     /// Connection manager event dispatcher. Called by the CM event loop.
     void onCmEvent(struct rdma_cm_event* event) {

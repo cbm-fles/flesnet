@@ -37,7 +37,7 @@ main(int argc, char* argv[])
             app.run();
         }
     } catch (std::exception const& e) {
-        std::cerr << "error: " << e.what() << "\n";
+        Log.fatal() << e.what();
         return EXIT_FAILURE;
     }
 

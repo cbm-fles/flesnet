@@ -120,6 +120,30 @@ public:
             throw ApplicationException("RDMA accept failed");
     }
 
+    virtual void onDisconnect() {
+        if (_mr_recv) {
+            ibv_dereg_mr(_mr_recv);
+            _mr_recv = 0;
+        }
+
+        if (_mr_send) {
+            ibv_dereg_mr(_mr_send);
+            _mr_send = 0;
+        }
+
+        if (_mr_desc) {
+            ibv_dereg_mr(_mr_desc);
+            _mr_desc = 0;
+        }
+
+        if (_mr_data) {
+            ibv_dereg_mr(_mr_data);
+            _mr_data = 0;
+        }
+
+        IBConnection::onDisconnect();
+    }
+
     void
     checkBuffer(ComputeNodeBufferPosition ack, ComputeNodeBufferPosition wp,
                 TimesliceComponentDescriptor* desc, void *data)
@@ -213,10 +237,8 @@ ComputeApplication::run()
     /// DEBUG ^
 
     cb->completionHandler();
+    t1.join();
     delete cb;
     
     return 0;
 }
-
-
-

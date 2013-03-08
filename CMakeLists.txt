@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(flesnet)
 
-#set(CMAKE_CXX_FLAGS "-std=gnu++0x -g -Wall -pedantic -O3")
-set(CMAKE_CXX_FLAGS "-std=gnu++0x -g -Wall -pedantic")
+#set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -pedantic -O3")
+set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -pedantic")
 
 #set(CMAKE_CXX_LINK_FLAGS "-pg")
 
