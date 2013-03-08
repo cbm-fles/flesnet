@@ -11,7 +11,7 @@ find_package(Boost 1.40 COMPONENTS program_options thread REQUIRED)
 #add_definitions(-DTHREADSAFE)
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=2)
 
-add_executable(flesnet main.cpp timer.cpp monotonic.cpp)
+add_executable(flesnet main.cpp)
 
 target_link_libraries(flesnet ibverbs)
 target_link_libraries(flesnet rdmacm)

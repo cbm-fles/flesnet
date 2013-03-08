@@ -8,11 +8,11 @@
 #define APPLICATION_HPP
 
 #include <iostream>
+#include <chrono>
 #include <boost/cstdint.hpp>
 #include <boost/thread.hpp>
 #include "InputBuffer.hpp"
 #include "ComputeBuffer.hpp"
-#include "klepsydra.hpp"
 #include "global.hpp"
 
 
@@ -75,9 +75,10 @@ public:
         ib.connect(_par.compute_nodes(), services);
         ib.handle_cm_events(true);
         boost::thread t1(&InputBuffer::completion_handler, &ib);
-        klepsydra::Monotonic timer;
+        auto time1 = std::chrono::high_resolution_clock::now();
         ib.sender_loop();
-        uint64_t runtime = timer.getTime();
+        auto time2 = std::chrono::high_resolution_clock::now();
+        auto runtime = std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count();
         t1.join();
         boost::thread t2(&InputBuffer::handle_cm_events, &ib, false);
         ib.disconnect();
