@@ -46,14 +46,14 @@ public:
             out.trace() << "[" << _index << "] "
                         << "SENDER data space (words) required="
                         << data_size << ", avail="
-                        << _cn_ack.data + par->cn_data_buffer_size() - _cn_wp.data;
+                        << _cn_ack.data + (1 << par->cn_data_buffer_size_exp()) - _cn_wp.data;
             out.trace() << "[" << _index << "] "
                         << "SENDER desc space (words) required="
                         << desc_size << ", avail="
                         << _cn_ack.desc + par->cn_desc_buffer_size() - _cn_wp.desc;
         }
-        while (_cn_ack.data - _cn_wp.data + par->cn_data_buffer_size() < data_size
-                || _cn_ack.desc - _cn_wp.desc + par->cn_desc_buffer_size()
+        while (_cn_ack.data - _cn_wp.data + (1 << par->cn_data_buffer_size_exp()) < data_size
+                || _cn_ack.desc - _cn_wp.desc + (1 << par->cn_data_buffer_size_exp())
                 < desc_size) {
             {
                 boost::mutex::scoped_lock lock2(_cn_wp_mutex);
@@ -71,7 +71,7 @@ public:
                 out.trace() << "[" << _index << "] "
                             << "SENDER (next try) space avail="
                             << _cn_ack.data - _cn_wp.data
-                    + par->cn_data_buffer_size()
+                    +  (1 << par->cn_data_buffer_size_exp())
                             << " desc_avail=" << _cn_ack.desc - _cn_wp.desc
                     + par->cn_desc_buffer_size();
             }
@@ -85,7 +85,7 @@ public:
         struct ibv_sge sge2[4];
 
         uint64_t target_words_left =
-            par->cn_data_buffer_size() - _cn_wp.data % par->cn_data_buffer_size();
+            (1 << par->cn_data_buffer_size_exp()) - _cn_wp.data % (1 << par->cn_data_buffer_size_exp());
 
         // split sge list if necessary
         int num_sge_cut = 0;
@@ -122,7 +122,7 @@ public:
         send_wr_ts.wr.rdma.rkey = _server_info[0].rkey;
         send_wr_ts.wr.rdma.remote_addr =
             (uintptr_t)(_server_info[0].addr +
-                        (_cn_wp.data % par->cn_data_buffer_size())
+                        (_cn_wp.data % (1 << par->cn_data_buffer_size_exp()))
                         * sizeof(uint64_t));
 
         if (num_sge2) {

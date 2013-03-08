@@ -9,6 +9,7 @@
 
 #include <boost/thread.hpp>
 #include "Infiniband.hpp"
+#include "RingBuffer.hpp"
 #include "Parameters.hpp"
 #include "Timeslice.hpp"
 #include "global.hpp"
@@ -23,7 +24,8 @@ class ComputeNodeConnection : public IBConnection
 {
 public:
     ComputeNodeConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id* id = 0) :
-        IBConnection(ec, index, id)
+        IBConnection(ec, index, id),
+        _data(par->cn_data_buffer_size_exp())
     {
         memset(&_send_cn_ack, 0, sizeof(ComputeNodeBufferPosition));
         memset(&_cn_ack, 0, sizeof(ComputeNodeBufferPosition));
@@ -31,16 +33,14 @@ public:
         memset(&_recv_cn_wp, 0, sizeof(ComputeNodeBufferPosition));
 
         // Allocate buffer space
-        _data = (uint64_t*) calloc(par->cn_data_buffer_size(), sizeof(uint64_t));
         _desc = (TimesliceComponentDescriptor*) calloc(par->cn_desc_buffer_size(),
                                                        sizeof(TimesliceComponentDescriptor));
-        if (!_data || !_desc)
+        if (!_desc)
             throw InfinibandException("allocation of buffer space failed");
     }
 
     virtual ~ComputeNodeConnection() {
         free(_desc);
-        free(_data);
     }
 
     void post_receive() {
@@ -77,8 +77,7 @@ public:
         IBConnection::on_connect_request(pd, cq);
         
         // register memory regions
-        _mr_data = ibv_reg_mr(pd, _data,
-                              par->cn_data_buffer_size() * sizeof(uint64_t),
+        _mr_data = ibv_reg_mr(pd, _data.ptr(), _data.bytes(),
                               IBV_ACCESS_LOCAL_WRITE |
                               IBV_ACCESS_REMOTE_WRITE);
         _mr_desc = ibv_reg_mr(pd, _desc,
@@ -100,7 +99,7 @@ public:
 
         // Accept rdma connection request
         ServerInfo rep_pdata[2];
-        rep_pdata[0].addr = (uintptr_t) _data;
+        rep_pdata[0].addr = (uintptr_t) _data.ptr();
         rep_pdata[0].rkey = _mr_data->rkey;
         rep_pdata[1].addr = (uintptr_t) _desc;
         rep_pdata[1].rkey = _mr_desc->rkey;
@@ -168,7 +167,7 @@ public:
                     << " desc=" << _cn_wp.desc;
 
         // check buffer contents
-        check_buffer(_cn_ack, _cn_wp, _desc, _data);
+        check_buffer(_cn_ack, _cn_wp, _desc, _data.ptr());
 
         // DEBUG: empty the buffer
         _cn_ack = _cn_wp;
@@ -183,7 +182,7 @@ public:
     ComputeNodeBufferPosition _recv_cn_wp;
     ComputeNodeBufferPosition _cn_wp;
 
-    uint64_t* _data = nullptr;
+    RingBuffer<uint64_t> _data;
     TimesliceComponentDescriptor* _desc = nullptr;
 
     struct ibv_mr* _mr_data = nullptr;

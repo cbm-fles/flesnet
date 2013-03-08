@@ -96,9 +96,9 @@ public:
         return _in_addr_buffer_size_exp;
     };
 
-    /// Retrieve the size of the compute node's data buffer in 64-bit words.
-    uint32_t cn_data_buffer_size() const {
-        return _cn_data_buffer_size;
+    /// Retrieve the exp. size of the compute node's data buffer in 64-bit words.
+    uint32_t cn_data_buffer_size_exp() const {
+        return _cn_data_buffer_size_exp;
     };
 
     /// Retrieve the size of the compute node's description buffer
@@ -162,7 +162,7 @@ private:
     uint32_t _in_addr_buffer_size_exp = 20;
 
     /// The size of the compute node's data buffer in 64-bit words.
-    uint32_t _cn_data_buffer_size = 128 * 1024;
+    uint32_t _cn_data_buffer_size_exp = 17;
 
     /// The size of the compute node's description buffer (number of
     /// entries).
@@ -226,8 +226,8 @@ private:
              ("in-addr-buffer-size-exp",
               po::value<uint32_t>(&_in_addr_buffer_size_exp),
              "exp. size of the input node's address buffer in 64-bit words")
-            ("cn-data-buffer-size", po::value<uint32_t>(&_cn_data_buffer_size),
-             "size of the compute node's data buffer in 64-bit words")
+            ("cn-data-buffer-size-exp", po::value<uint32_t>(&_cn_data_buffer_size_exp),
+             "exp. size of the compute node's data buffer in 64-bit words")
             ("cn-desc-buffer-size", po::value<uint32_t>(&_cn_desc_buffer_size),
              "size of the compute node's description buffer"
              " (number of entries).")
@@ -315,7 +315,7 @@ private:
                    << " + " <<  (1 << _in_addr_buffer_size_exp) * sizeof(uint64_t)
                    << ") bytes";
         out.info() << "compute node buffer size: ("
-                   << _cn_data_buffer_size * sizeof(uint64_t) << " + "
+                   << (1 << _cn_data_buffer_size_exp) * sizeof(uint64_t) << " + "
                    << _cn_desc_buffer_size * sizeof(TimesliceComponentDescriptor)
                    << ") bytes";
     }

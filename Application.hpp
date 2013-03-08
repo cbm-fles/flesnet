@@ -111,12 +111,8 @@ public:
     virtual int run() {
         ComputeBuffer* cb = new ComputeBuffer();
         cb->accept(par->base_port() + par->node_index());
-        cb->handle_cm_events(true);
-        
-        /// DEBUG v
+        cb->handle_cm_events(true);       
         boost::thread t1(&ComputeBuffer::handle_cm_events, cb, false);
-        /// DEBUG ^
-
         cb->completion_handler();
         t1.join();
         delete cb;
