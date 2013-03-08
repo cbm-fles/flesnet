@@ -38,7 +38,7 @@ class IBConnection
 public:
 
     /// The IBConnection constructor. Creates a connection manager ID.
-    IBConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id *id = 0) :
+    IBConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id* id = 0) :
         _index(index),
         _cm_id(id)
     {
@@ -213,7 +213,7 @@ protected:
     struct ibv_qp_cap _qp_cap;
     
     /// Post an InfiniBand SEND work request (WR) to the send queue
-    void post_send(struct ibv_send_wr *wr) {
+    void post_send(struct ibv_send_wr* wr) {
         struct ibv_send_wr* bad_send_wr;
         
         if (ibv_post_send(qp(), wr, &bad_send_wr))
@@ -229,7 +229,7 @@ protected:
     }
 
     /// Post an InfiniBand RECV work request (WR) to the receive queue.
-    void post_recv(struct ibv_recv_wr *wr) {
+    void post_recv(struct ibv_recv_wr* wr) {
         struct ibv_recv_wr* bad_recv_wr;
         
         if (ibv_post_recv(qp(), wr, &bad_recv_wr))

@@ -141,7 +141,7 @@ public:
 
     void
     check_buffer(ComputeNodeBufferPosition ack, ComputeNodeBufferPosition wp,
-                TimesliceComponentDescriptor* desc, void *data)
+                TimesliceComponentDescriptor* desc, void* data)
     {
         int ts = wp.desc - ack.desc;
         out.debug() << "received " << ts << " timeslices";
