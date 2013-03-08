@@ -284,6 +284,12 @@ public:
 
     /// The IBConnectionGroup default destructor.
     virtual ~IBConnectionGroup() {
+        if (_listen_id) {
+            int err = rdma_destroy_id(_listen_id);
+            if (err)
+                throw InfinibandException("rdma_destroy_id() failed");
+        }
+
         if (_cq) {
             int err = ibv_destroy_cq(_cq);
             if (err)
@@ -298,7 +304,7 @@ public:
             _compChannel = 0;
         }
 
-        if (_pd && 0) { // TODO
+        if (_pd) {
             int err = ibv_dealloc_pd(_pd);
             if (err)
                 throw InfinibandException("ibv_dealloc_pd failed");
@@ -359,11 +365,24 @@ public:
         int err;
         struct rdma_cm_event* event;
         struct rdma_cm_event event_copy;
+        void* private_data_copy = 0;
         while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
             VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
             memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
+            if (event_copy.param.conn.private_data) {
+                private_data_copy = malloc(event_copy.param.conn.private_data_len);
+                if (!private_data_copy)
+                    throw InfinibandException("malloc failed");
+                memcpy(private_data_copy, event_copy.param.conn.private_data,
+                       event_copy.param.conn.private_data_len);
+                event_copy.param.conn.private_data = private_data_copy;
+            }
             rdma_ack_cm_event(event);
             onCmEvent(&event_copy);
+            if (private_data_copy) {
+                free(private_data_copy);
+                private_data_copy = 0;
+            }
             if (_connected == (isConnect ? _conn.size() : 0))
                 break;
         };

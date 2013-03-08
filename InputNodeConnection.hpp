@@ -280,8 +280,7 @@ public:
     virtual void onConnection(struct rdma_cm_event* event) {
         IBConnection::onConnection(event);
 
-        memcpy(&_serverInfo, event->param.conn.private_data,
-               sizeof _serverInfo);
+        memcpy(&_serverInfo, event->param.conn.private_data, sizeof _serverInfo);
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.

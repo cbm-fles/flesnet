@@ -48,6 +48,11 @@ public:
             throw ApplicationException("allocation of buffer space failed");
     }
 
+    virtual ~ComputeNodeConnection() {
+        free(_desc);
+        free(_data);
+    }
+
     void post_receive() {
         struct ibv_sge sge;
         sge.addr = (uintptr_t) &_recv_cn_wp;

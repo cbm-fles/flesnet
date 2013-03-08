@@ -39,7 +39,17 @@ public:
     }
 
     /// The InputBuffer default destructor.
-    ~InputBuffer() { }
+    virtual ~InputBuffer() {
+        if (_mr_addr) {
+            ibv_dereg_mr(_mr_addr);
+            _mr_addr = 0;
+        }
+
+        if (_mr_data) {
+            ibv_dereg_mr(_mr_data);
+            _mr_data = 0;
+        }
+    }
 
     /// The central loop for distributing timeslice data.
     void senderLoop() {
