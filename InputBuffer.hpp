@@ -24,14 +24,8 @@ public:
 
     /// The InputBuffer default constructor.
     InputBuffer() :
-        _data(Par->inDataBufferSizeExp()), _mr_data(0),
-        _addr(Par->inAddrBufferSizeExp()), _mr_addr(0),
-        _acked_mc(0), _acked_data(0),
-        _connectionsDone(0),
-        _aggregateContentBytesSent(0),
-        _aggregateBytesSent(0),
-        _aggregateSendRequests(0),
-        _aggregateRecvRequests(0),
+        _data(Par->inDataBufferSizeExp()),
+        _addr(Par->inAddrBufferSizeExp()),
         _dataSource(_data, _addr)
     {
         size_t minAckBufferSize = _addr.size() / Par->timesliceSize() + 1;
@@ -132,40 +126,40 @@ private:
     RingBuffer<uint64_t> _data;
 
     /// InfiniBand memory region descriptor for input data buffer.
-    struct ibv_mr* _mr_data;
+    struct ibv_mr* _mr_data = nullptr;
 
     /// Input address buffer. Filled by FLIB.
     RingBuffer<uint64_t> _addr;
 
     /// InfiniBand memory region descriptor for input address buffer.
-    struct ibv_mr* _mr_addr;
+    struct ibv_mr* _mr_addr = nullptr;
 
     /// Buffer to store acknowledged status of timeslices.
     RingBuffer<uint64_t> _ack;
 
     /// Number of acknowledged MCs. Written to FLIB.
-    uint64_t _acked_mc;
+    uint64_t _acked_mc = 0;
     
     /// Number of acknowledged data words. Written to FLIB.
-    uint64_t _acked_data;
+    uint64_t _acked_data = 0;
     
     /// Flag indicating completion of the sender loop for this run.
     bool _senderLoopDone;
 
     /// Number of connections in the done state.
-    unsigned int _connectionsDone;
+    unsigned int _connectionsDone = 0;
 
     /// Total number of bytes transmitted (without pointer updates).
-    uint64_t _aggregateContentBytesSent;
+    uint64_t _aggregateContentBytesSent = 0;
 
     /// Total number of bytes transmitted.
-    uint64_t _aggregateBytesSent;
+    uint64_t _aggregateBytesSent = 0;
 
     /// Total number of SEND work requests.
-    uint64_t _aggregateSendRequests;
+    uint64_t _aggregateSendRequests = 0;
 
     /// Total number of RECV work requests.
-    uint64_t _aggregateRecvRequests;
+    uint64_t _aggregateRecvRequests = 0;
 
     /// Data source (e.g., FLIB).
     DummyFlib _dataSource;

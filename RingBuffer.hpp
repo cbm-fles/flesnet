@@ -14,7 +14,7 @@ class RingBuffer
 {
 public:
     /// The RingBuffer default constructor.
-    RingBuffer() : _sizeExponent(0), _buf(0) { }
+    RingBuffer() { }
     
     /// The RingBuffer initializing constructor.
     RingBuffer(size_t sizeExponent) {
@@ -82,13 +82,13 @@ public:
 
 private:
     /// Buffer size given as two's exponent.
-    size_t _sizeExponent;
+    size_t _sizeExponent = 0;
 
     /// Buffer addressing bit mask
     size_t _sizeMask;
     
     /// The data buffer.
-    T* _buf;
+    T* _buf = nullptr;
 };
 
 

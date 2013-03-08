@@ -45,10 +45,6 @@ public:
     DummyFlib(RingBuffer<uint64_t>& dataBuffer,
               RingBuffer<uint64_t>& addrBuffer) :
         DataSource(dataBuffer, addrBuffer),
-        _ackedData(0),
-        _ackedMc(0),
-        _dataWritten(0),
-        _mcWritten(0),
         _pd(Par->typicalContentSize()),
         _randContentWords(_rng, _pd) { };
     
@@ -132,16 +128,16 @@ public:
             
 private:
     /// Number of acknowledged data words. Updated by input node.
-    uint64_t _ackedData;
+    uint64_t _ackedData = 0;
     
     /// Number of acknowledged MCs. Updated by input node.
-    uint64_t _ackedMc;
+    uint64_t _ackedMc = 0;
     
     /// FLIB-internal number of written data words. 
-    uint64_t _dataWritten;
+    uint64_t _dataWritten = 0;
 
     /// FLIB-internal number of written MCs. 
-    uint64_t _mcWritten;
+    uint64_t _mcWritten = 0;
 
     /// A pseudo-random number generator.
     boost::mt19937 _rng;

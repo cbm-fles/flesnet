@@ -40,11 +40,7 @@ public:
     /// The IBConnection constructor. Creates a connection manager ID.
     IBConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id *id = 0) :
         _index(index),
-        _done(false),
-        _cmId(id),
-        _totalBytesSent(0),
-        _totalSendRequests(0),
-        _totalRecvRequests(0)
+        _cmId(id)
     {
         if (!_cmId) {
             int err = rdma_create_id(ec, &_cmId, this, RDMA_PS_TCP);
@@ -202,10 +198,10 @@ public:
 protected:
 
     /// Index of this connection in a group of connections.
-    int _index;
+    int _index = 0;
 
     /// Flag indicating connection finished state.
-    bool _done;
+    bool _done = false;
 
     /// Access information for a remote memory region.
     typedef struct {
@@ -245,16 +241,16 @@ protected:
     //private: TODO
 
     /// RDMA connection manager ID.
-    struct rdma_cm_id* _cmId;
+    struct rdma_cm_id* _cmId = nullptr;
 private:
     /// Total number of bytes transmitted.
-    uint64_t _totalBytesSent;
+    uint64_t _totalBytesSent = 0;
 
     /// Total number of SEND work requests.
-    uint64_t _totalSendRequests;
+    uint64_t _totalSendRequests = 0;
 
     /// Total number of RECV work requests.
-    uint64_t _totalRecvRequests;
+    uint64_t _totalRecvRequests = 0;
 
     /// Low-level communication parameters.
     enum {
@@ -274,9 +270,7 @@ class IBConnectionGroup
 public:
 
     /// The IBConnectionGroup default constructor.
-    IBConnectionGroup() :
-        _pd(0), _allDone(false), _connected(0), _ec(0), _context(0),
-        _compChannel(0), _cq(0) {
+    IBConnectionGroup() {
         _ec = rdma_create_event_channel();
         if (!_ec)
             throw InfinibandException("rdma_create_event_channel failed");
@@ -447,13 +441,13 @@ public:
 protected:
 
     /// InfiniBand protection domain.
-    struct ibv_pd* _pd;
+    struct ibv_pd* _pd = nullptr;
 
     /// Vector of associated connection objects.
     std::vector<CONNECTION*> _conn;
 
     /// Flag causing termination of completion handler.
-    bool _allDone;
+    bool _allDone = false;
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
     virtual void onAddrResolved(struct rdma_cm_id* id) {
@@ -503,19 +497,19 @@ protected:
 private:
 
     /// Number of established connections
-    unsigned int _connected;
+    unsigned int _connected = 0;
 
     /// RDMA event channel
-    struct rdma_event_channel* _ec;
+    struct rdma_event_channel* _ec = nullptr;
 
     /// InfiniBand verbs context
-    struct ibv_context* _context;
+    struct ibv_context* _context = nullptr;
 
     /// InfiniBand completion channel
-    struct ibv_comp_channel* _compChannel;
+    struct ibv_comp_channel* _compChannel = nullptr;
 
     /// InfiniBand completion queue
-    struct ibv_cq* _cq;
+    struct ibv_cq* _cq = nullptr;
 
     struct rdma_cm_id* _listen_id = 0;
 

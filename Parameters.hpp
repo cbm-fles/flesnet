@@ -56,18 +56,7 @@ public:
     } NodeType;
 
     /// The Parameters command-line parsing constructor.
-    Parameters(int argc, char* argv[]) :
-        _timesliceSize(100),
-        _overlapSize(2),
-        _inDataBufferSizeExp(26),
-        _inAddrBufferSizeExp(20),
-        _cnDataBufferSize(128 * 1024),
-        _cnDescBufferSize(80),
-        _typicalContentSize(128),
-        _randomizeSizes(false),
-        _maxTimesliceNumber(100000),
-        _basePort(20079)
-    {
+    Parameters(int argc, char* argv[]) {
         parseOptions(argc, argv);
     };
 
@@ -161,35 +150,35 @@ public:
 private:
 
     /// The global timeslice size in number of MCs.
-    uint32_t _timesliceSize;
+    uint32_t _timesliceSize = 100;
 
     /// The size of the overlap region in number of MCs.
-    uint32_t _overlapSize;
+    uint32_t _overlapSize = 2;
 
     /// The exp. size of the input node's data buffer in 64-bit words.
-    uint32_t _inDataBufferSizeExp;
+    uint32_t _inDataBufferSizeExp = 26;
 
     /// The exp. size of the input node's address buffer in 64-bit words.
-    uint32_t _inAddrBufferSizeExp;
+    uint32_t _inAddrBufferSizeExp = 20;
 
     /// The size of the compute node's data buffer in 64-bit words.
-    uint32_t _cnDataBufferSize;
+    uint32_t _cnDataBufferSize = 128 * 1024;
 
     /// The size of the compute node's description buffer (number of
     /// entries).
-    uint32_t _cnDescBufferSize;
+    uint32_t _cnDescBufferSize = 80;
 
     /// A typical number of content words per MC.
-    uint32_t _typicalContentSize;
+    uint32_t _typicalContentSize = 128;
 
     /// The randomize sizes flag.
-    bool _randomizeSizes;
+    bool _randomizeSizes = false;
 
     /// The global maximum timeslice number.
-    uint32_t _maxTimesliceNumber;
+    uint32_t _maxTimesliceNumber = 100000;
 
     /// The global base port.
-    uint32_t _basePort;
+    uint32_t _basePort = 20079;
 
     /// The list of participating input nodes.
     std::vector<std::string> _inputNodes;

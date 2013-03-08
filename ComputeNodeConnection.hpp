@@ -23,13 +23,7 @@ class ComputeNodeConnection : public IBConnection
 {
 public:
     ComputeNodeConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id* id = 0) :
-        IBConnection(ec, index, id),
-        _data(0),
-        _desc(0),
-        _mr_data(0),
-        _mr_desc(0),
-        _mr_send(0),
-        _mr_recv(0)
+        IBConnection(ec, index, id)
     {
         memset(&_send_cn_ack, 0, sizeof(ComputeNodeBufferPosition));
         memset(&_cn_ack, 0, sizeof(ComputeNodeBufferPosition));
@@ -189,13 +183,13 @@ public:
     ComputeNodeBufferPosition _recv_cn_wp;
     ComputeNodeBufferPosition _cn_wp;
 
-    uint64_t* _data;
-    TimesliceComponentDescriptor* _desc;
+    uint64_t* _data = nullptr;
+    TimesliceComponentDescriptor* _desc = nullptr;
 
-    struct ibv_mr* _mr_data;
-    struct ibv_mr* _mr_desc;
-    struct ibv_mr* _mr_send;
-    struct ibv_mr* _mr_recv;
+    struct ibv_mr* _mr_data = nullptr;
+    struct ibv_mr* _mr_desc = nullptr;
+    struct ibv_mr* _mr_send = nullptr;
+    struct ibv_mr* _mr_recv = nullptr;
 
 };
 

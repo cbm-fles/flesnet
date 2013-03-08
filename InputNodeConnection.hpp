@@ -25,12 +25,7 @@ public:
 
     /// The InputNodeConnection constructor.
     InputNodeConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id* id = 0) :
-        IBConnection(ec, index, id),
-        _ourTurn(true),
-        _finalize(false),
-        _mr_recv(0),
-        _mr_send(0),
-        _contentBytesSent(0)
+        IBConnection(ec, index, id)
     {
         _qp_cap.max_send_wr = 20;
         _qp_cap.max_send_sge = 8;
@@ -325,9 +320,9 @@ private:
     }
 
     /// Flag, true if it is the input nodes's turn to send a pointer update.
-    bool _ourTurn;
+    bool _ourTurn = true;
 
-    bool _finalize;
+    bool _finalize = false;
 
     /// Access information for memory regions on remote end.
     ServerInfo _serverInfo[2];    
@@ -339,7 +334,7 @@ private:
     ComputeNodeBufferPosition _receive_cn_ack;
 
     /// Infiniband memory region descriptor for acknowledged-by-CN pointers
-    struct ibv_mr* _mr_recv;
+    struct ibv_mr* _mr_recv = nullptr;
 
     /// Mutex protecting access to acknowledged-by-CN pointers
     boost::mutex _cn_ack_mutex;
@@ -354,7 +349,7 @@ private:
     ComputeNodeBufferPosition _send_cn_wp;
 
     /// Infiniband memory region descriptor for CN write pointers
-    struct ibv_mr* _mr_send;
+    struct ibv_mr* _mr_send = nullptr;
 
     /// Mutex protecting access to CN write pointers
     boost::mutex _cn_wp_mutex;
@@ -372,7 +367,7 @@ private:
     struct ibv_send_wr send_wr;
 
     /// Total number of bytes transmitted (without pointer updates)
-    uint64_t _contentBytesSent;
+    uint64_t _contentBytesSent = 0;
 };
 
 
