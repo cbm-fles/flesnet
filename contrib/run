@@ -1,0 +1,12 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+cat <<EOF > run.conf
+0	$DIR/flesnet -i %o
+1	$DIR/flesnet -c %o
+EOF
+
+srun -w node0,node1 -n 2 -N 2 -l --multi-prog run.conf
+
+rm run.conf

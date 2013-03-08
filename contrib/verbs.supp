@@ -1,0 +1,51 @@
+{
+   ibv_value8
+   Memcheck:Value8
+   ...
+   fun:ibv_*
+}
+
+{
+   ibv_cond
+   Memcheck:Cond
+   ...
+   fun:ibv_*
+}
+
+{
+   ibv_param
+   Memcheck:Param
+   write(buf)
+   ...
+   fun:ibv_*
+}
+
+{
+   ibv_param
+   Memcheck:Param
+   close(fd)
+   ...
+   fun:ibv_*
+}
+
+{
+   rdma_value8
+   Memcheck:Value8
+   ...
+   fun:rdma_*
+}
+
+{
+   rdma_cond
+   Memcheck:Cond
+   ...
+   fun:rdma_*
+}
+
+{
+   rdma_param
+   Memcheck:Param
+   write(buf)
+   ...
+   fun:rdma_*
+}
