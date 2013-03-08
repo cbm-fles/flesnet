@@ -1,7 +1,7 @@
 /**
  * \file DataSource.hpp
  *
- * 2012, Jan de Cuveland <cmail@cuveland.de>
+ * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
 #ifndef DATASOURCE_HPP

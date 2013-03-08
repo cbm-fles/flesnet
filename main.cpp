@@ -1,7 +1,7 @@
 /**
  * \file main.cpp
  *
- * 2012, Jan de Cuveland
+ * 2012, 2013, Jan de Cuveland
  */
 
 /**
