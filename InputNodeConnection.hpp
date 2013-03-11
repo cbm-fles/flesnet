@@ -281,12 +281,12 @@ public:
     virtual void on_disconnected() {
         if (_mr_recv) {
             ibv_dereg_mr(_mr_recv);
-            _mr_recv = 0;
+            _mr_recv = nullptr;
         }
             
         if (_mr_send) {
             ibv_dereg_mr(_mr_send);
-            _mr_send = 0;
+            _mr_send = nullptr;
         }
         
         IBConnection::on_disconnected();

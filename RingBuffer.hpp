@@ -28,7 +28,7 @@ public:
 
     /// Create and initialize buffer with given minimum size.
     void alloc_with_size(size_t minimum_size) {
-        int size_exponent = 0;
+        size_t size_exponent = 0;
         if (minimum_size > 1) {
             minimum_size--;
             size_exponent++;

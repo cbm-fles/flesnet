@@ -23,7 +23,8 @@
 class ComputeNodeConnection : public IBConnection
 {
 public:
-    ComputeNodeConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id* id = 0) :
+    ComputeNodeConnection(struct rdma_event_channel* ec, int index,
+                          struct rdma_cm_id* id = nullptr) :
         IBConnection(ec, index, id),
         _data(par->cn_data_buffer_size_exp())
     {
@@ -117,22 +118,22 @@ public:
     virtual void on_disconnected() {
         if (_mr_recv) {
             ibv_dereg_mr(_mr_recv);
-            _mr_recv = 0;
+            _mr_recv = nullptr;
         }
 
         if (_mr_send) {
             ibv_dereg_mr(_mr_send);
-            _mr_send = 0;
+            _mr_send = nullptr;
         }
 
         if (_mr_desc) {
             ibv_dereg_mr(_mr_desc);
-            _mr_desc = 0;
+            _mr_desc = nullptr;
         }
 
         if (_mr_data) {
             ibv_dereg_mr(_mr_data);
-            _mr_data = 0;
+            _mr_data = nullptr;
         }
 
         IBConnection::on_disconnected();

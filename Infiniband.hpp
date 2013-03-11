@@ -288,21 +288,21 @@ public:
             int err = ibv_destroy_cq(_cq);
             if (err)
                 throw InfinibandException("ibv_destroy_cq failed");
-            _cq = 0;
+            _cq = nullptr;
         }
 
         if (_comp_channel) {
             int err = ibv_destroy_comp_channel(_comp_channel);
             if (err)
                 throw InfinibandException("ibv_destroy_comp_channel failed");
-            _comp_channel = 0;
+            _comp_channel = nullptr;
         }
 
         if (_pd) {
             int err = ibv_dealloc_pd(_pd);
             if (err)
                 throw InfinibandException("ibv_dealloc_pd failed");
-            _pd = 0;
+            _pd = nullptr;
         }
 
         rdma_destroy_event_channel(_ec);
@@ -511,7 +511,7 @@ private:
     /// InfiniBand completion queue
     struct ibv_cq* _cq = nullptr;
 
-    struct rdma_cm_id* _listen_id = 0;
+    struct rdma_cm_id* _listen_id = nullptr;
 
     /// Connection manager event dispatcher. Called by the CM event loop.
     void on_cm_event(struct rdma_cm_event* event) {

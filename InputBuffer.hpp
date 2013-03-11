@@ -36,12 +36,12 @@ public:
     virtual ~InputBuffer() {
         if (_mr_addr) {
             ibv_dereg_mr(_mr_addr);
-            _mr_addr = 0;
+            _mr_addr = nullptr;
         }
 
         if (_mr_data) {
             ibv_dereg_mr(_mr_data);
-            _mr_data = 0;
+            _mr_data = nullptr;
         }
     }
 
