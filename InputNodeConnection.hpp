@@ -50,7 +50,7 @@ public:
             out.trace() << "[" << _index << "] "
                         << "SENDER desc space (words) required="
                         << desc_size << ", avail="
-                        << _cn_ack.desc + par->cn_desc_buffer_size() - _cn_wp.desc;
+                        << _cn_ack.desc + (1 << par->cn_desc_buffer_size_exp()) - _cn_wp.desc;
         }
         while (_cn_ack.data - _cn_wp.data + (1 << par->cn_data_buffer_size_exp()) < data_size
                 || _cn_ack.desc - _cn_wp.desc + (1 << par->cn_data_buffer_size_exp())
@@ -71,9 +71,9 @@ public:
                 out.trace() << "[" << _index << "] "
                             << "SENDER (next try) space avail="
                             << _cn_ack.data - _cn_wp.data
-                    +  (1 << par->cn_data_buffer_size_exp())
+                    + (1 << par->cn_data_buffer_size_exp())
                             << " desc_avail=" << _cn_ack.desc - _cn_wp.desc
-                    + par->cn_desc_buffer_size();
+                    + (1 << par->cn_desc_buffer_size_exp());
             }
         }
     }
@@ -161,7 +161,7 @@ public:
         send_wr_tscdesc.wr.rdma.rkey = _server_info[1].rkey;
         send_wr_tscdesc.wr.rdma.remote_addr =
             (uintptr_t)(_server_info[1].addr
-                        + (_cn_wp.desc % par->cn_desc_buffer_size()) // TODO
+                        + (_cn_wp.desc % (1 << par->cn_desc_buffer_size_exp())) // TODO
                         * sizeof(TimesliceComponentDescriptor));
 
         out.debug() << "[" << _index << "] "

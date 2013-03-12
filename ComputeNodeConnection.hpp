@@ -26,17 +26,12 @@ public:
     ComputeNodeConnection(struct rdma_event_channel* ec, int index,
                           struct rdma_cm_id* id = nullptr) :
         IBConnection(ec, index, id),
-        _data(par->cn_data_buffer_size_exp())
+        _data(par->cn_data_buffer_size_exp()),
+        _desc(par->cn_desc_buffer_size_exp())
     {
-        // Allocate buffer space
-        _desc = (TimesliceComponentDescriptor*) calloc(par->cn_desc_buffer_size(),
-                                                       sizeof(TimesliceComponentDescriptor));
-        if (!_desc)
-            throw InfinibandException("allocation of buffer space failed");
     }
 
     virtual ~ComputeNodeConnection() {
-        free(_desc);
     }
 
     void post_receive() {
@@ -76,8 +71,7 @@ public:
         _mr_data = ibv_reg_mr(pd, _data.ptr(), _data.bytes(),
                               IBV_ACCESS_LOCAL_WRITE |
                               IBV_ACCESS_REMOTE_WRITE);
-        _mr_desc = ibv_reg_mr(pd, _desc,
-                              par->cn_desc_buffer_size() * sizeof(TimesliceComponentDescriptor),
+        _mr_desc = ibv_reg_mr(pd, _desc.ptr(), _desc.bytes(),
                               IBV_ACCESS_LOCAL_WRITE |
                               IBV_ACCESS_REMOTE_WRITE);
         _mr_send = ibv_reg_mr(pd, &_send_cn_ack,
@@ -97,7 +91,7 @@ public:
         ServerInfo rep_pdata[2];
         rep_pdata[0].addr = (uintptr_t) _data.ptr();
         rep_pdata[0].rkey = _mr_data->rkey;
-        rep_pdata[1].addr = (uintptr_t) _desc;
+        rep_pdata[1].addr = (uintptr_t) _desc.ptr();
         rep_pdata[1].rkey = _mr_desc->rkey;
         
         struct rdma_conn_param conn_param;
@@ -136,12 +130,12 @@ public:
 
     void
     check_buffer(ComputeNodeBufferPosition ack, ComputeNodeBufferPosition wp,
-                TimesliceComponentDescriptor* desc, void* data)
+                 TimesliceComponentDescriptor* desc, void* data)
     {
         int ts = wp.desc - ack.desc;
         out.debug() << "received " << ts << " timeslices";
         for (uint64_t dp = ack.desc; dp < wp.desc; dp++) {
-            TimesliceComponentDescriptor tcd = desc[dp % par->cn_desc_buffer_size()];
+            TimesliceComponentDescriptor tcd = desc[dp % (1 << par->cn_desc_buffer_size_exp())];
             out.debug() << "checking ts #" << tcd.ts_num;
         }
     }
@@ -163,7 +157,7 @@ public:
                     << " desc=" << _cn_wp.desc;
 
         // check buffer contents
-        check_buffer(_cn_ack, _cn_wp, _desc, _data.ptr());
+        check_buffer(_cn_ack, _cn_wp, _desc.ptr(), _data.ptr());
 
         // DEBUG: empty the buffer
         _cn_ack = _cn_wp;
@@ -179,7 +173,7 @@ public:
     ComputeNodeBufferPosition _cn_wp = {};
 
     RingBuffer<uint64_t> _data;
-    TimesliceComponentDescriptor* _desc = nullptr;
+    RingBuffer<TimesliceComponentDescriptor> _desc;
 
     struct ibv_mr* _mr_data = nullptr;
     struct ibv_mr* _mr_desc = nullptr;

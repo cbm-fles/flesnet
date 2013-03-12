@@ -103,8 +103,8 @@ public:
 
     /// Retrieve the size of the compute node's description buffer
     /// (number of entries).
-    uint32_t cn_desc_buffer_size() const {
-        return _cn_desc_buffer_size;
+    uint32_t cn_desc_buffer_size_exp() const {
+        return _cn_desc_buffer_size_exp;
     };
 
     /// Retrieve the typical number of content words per MC.
@@ -161,12 +161,12 @@ private:
     /// The exp. size of the input node's address buffer in 64-bit words.
     uint32_t _in_addr_buffer_size_exp = 20;
 
-    /// The size of the compute node's data buffer in 64-bit words.
+    /// The exp. size of the compute node's data buffer in 64-bit words.
     uint32_t _cn_data_buffer_size_exp = 17;
 
-    /// The size of the compute node's description buffer (number of
+    /// The exp. size of the compute node's description buffer (number of
     /// entries).
-    uint32_t _cn_desc_buffer_size = 80;
+    uint32_t _cn_desc_buffer_size_exp = 6;
 
     /// A typical number of content words per MC.
     uint32_t _typical_content_size = 128;
@@ -228,8 +228,8 @@ private:
              "exp. size of the input node's address buffer in 64-bit words")
             ("cn-data-buffer-size-exp", po::value<uint32_t>(&_cn_data_buffer_size_exp),
              "exp. size of the compute node's data buffer in 64-bit words")
-            ("cn-desc-buffer-size", po::value<uint32_t>(&_cn_desc_buffer_size),
-             "size of the compute node's description buffer"
+            ("cn-desc-buffer-size-exp", po::value<uint32_t>(&_cn_desc_buffer_size_exp),
+             "exp. size of the compute node's description buffer"
              " (number of entries).")
             ("typical-content-size", po::value<uint32_t>(&_typical_content_size),
              "typical number of content words per MC")
@@ -316,7 +316,7 @@ private:
                    << ") bytes";
         out.info() << "compute node buffer size: ("
                    << (1 << _cn_data_buffer_size_exp) * sizeof(uint64_t) << " + "
-                   << _cn_desc_buffer_size * sizeof(TimesliceComponentDescriptor)
+                   << (1 << _cn_desc_buffer_size_exp) * sizeof(TimesliceComponentDescriptor)
                    << ") bytes";
     }
 };
