@@ -249,7 +249,7 @@ public:
         recv_sge.addr = (uintptr_t) &_receive_cn_ack;
         recv_sge.length = sizeof(ComputeNodeBufferPosition);
         recv_sge.lkey = _mr_recv->lkey;
-        memset(&recv_wr, 0, sizeof recv_wr);
+
         recv_wr.wr_id = ID_RECEIVE_CN_ACK | (_index << 8);
         recv_wr.sg_list = &recv_sge;
         recv_wr.num_sge = 1;
@@ -257,7 +257,7 @@ public:
         send_sge.addr = (uintptr_t) &_send_cn_wp;
         send_sge.length = sizeof(ComputeNodeBufferPosition);
         send_sge.lkey = _mr_send->lkey;
-        memset(&send_wr, 0, sizeof send_wr);
+
         send_wr.wr_id = ID_SEND_CN_WP;
         send_wr.opcode = IBV_WR_SEND;
         send_wr.sg_list = &send_sge;
@@ -354,16 +354,16 @@ private:
     boost::mutex _cn_wp_mutex;
    
     /// InfiniBand receive work request
-    struct ibv_recv_wr recv_wr;
+    struct ibv_recv_wr recv_wr = {};
 
     /// Scatter/gather list entry for receive work request
     struct ibv_sge recv_sge;
 
     /// Infiniband send work request
-    struct ibv_sge send_sge;
+    struct ibv_send_wr send_wr = {};
 
     /// Scatter/gather list entry for send work request
-    struct ibv_send_wr send_wr;
+    struct ibv_sge send_sge;
 
     /// Total number of bytes transmitted (without pointer updates)
     uint64_t _content_bytes_sent = 0;

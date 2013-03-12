@@ -31,33 +31,29 @@ public:
     {
     }
 
-    void post_receive() {
-        struct ibv_sge sge;
-        sge.addr = (uintptr_t) &_recv_cn_wp;
-        sge.length = sizeof(ComputeNodeBufferPosition);
-        sge.lkey = _mr_recv->lkey;
-        struct ibv_recv_wr recv_wr;
-        memset(&recv_wr, 0, sizeof recv_wr);
-        recv_wr.wr_id = ID_RECEIVE_CN_WP | (_index << 8);
-        recv_wr.sg_list = &sge;
-        recv_wr.num_sge = 1;
+    /// Post a receive work request (WR) to the receive queue
+    void post_recv_cn_wp() {
+        if (out.beDebug()) {
+            out.debug() << "[" << _index << "] "
+                        << "POST RECEIVE _receive_cn_wp";
+        }
         post_recv(&recv_wr);
     }
 
-    void send_ack(bool final = false) {
-        _send_cn_ack = final ? _recv_cn_wp : _cn_ack;
-        out.debug() << "SEND posted";
-        struct ibv_sge sge;
-        sge.addr = (uintptr_t) &_send_cn_ack;
-        sge.length = sizeof(ComputeNodeBufferPosition);
-        sge.lkey = _mr_send->lkey;
-        struct ibv_send_wr send_wr;
-        memset(&send_wr, 0, sizeof send_wr);
-        send_wr.wr_id = final ? ID_SEND_FINALIZE : ID_SEND_CN_ACK;
-        send_wr.opcode = IBV_WR_SEND;
-        send_wr.send_flags = IBV_SEND_SIGNALED;
-        send_wr.sg_list = &sge;
-        send_wr.num_sge = 1;
+    void post_send_cn_ack() {
+        if (out.beDebug()) {
+            out.debug() << "[" << _index << "] "
+                        << "POST SEND _send_cp_ack";
+        }
+        post_send(&send_wr);
+    }
+
+    void post_send_final_ack() {
+        if (out.beDebug()) {
+            out.debug() << "[" << _index << "] "
+                        << "POST SEND FINAL ack";
+        }
+        send_wr.wr_id = ID_SEND_FINALIZE;
         post_send(&send_wr);
     }
 
@@ -79,8 +75,27 @@ public:
         if (!_mr_data || !_mr_desc || !_mr_recv || !_mr_send)
             throw InfinibandException("registration of memory region failed");
 
+        // setup send and receive buffers
+        recv_sge.addr = (uintptr_t) &_recv_cn_wp;
+        recv_sge.length = sizeof(ComputeNodeBufferPosition);
+        recv_sge.lkey = _mr_recv->lkey;
+
+        recv_wr.wr_id = ID_RECEIVE_CN_WP | (_index << 8);
+        recv_wr.sg_list = &recv_sge;
+        recv_wr.num_sge = 1;
+
+        send_sge.addr = (uintptr_t) &_send_cn_ack;
+        send_sge.length = sizeof(ComputeNodeBufferPosition);
+        send_sge.lkey = _mr_send->lkey;
+
+        send_wr.wr_id = ID_SEND_CN_ACK;
+        send_wr.opcode = IBV_WR_SEND;
+        send_wr.send_flags = IBV_SEND_SIGNALED;
+        send_wr.sg_list = &send_sge;
+        send_wr.num_sge = 1;
+
         // post initial receive request
-        post_receive();
+        post_recv_cn_wp();
 
         out.debug() << "accepting connection";
 
@@ -142,12 +157,13 @@ public:
         if (_recv_cn_wp.data == UINT64_MAX && _recv_cn_wp.desc == UINT64_MAX) {
             out.info() << "received FINAL pointer update";
             // send FINAL ack
-            send_ack(true);
+            _send_cn_ack = _recv_cn_wp;
+            post_send_final_ack();
             return;
         }
                 
         // post new receive request
-        post_receive();
+        post_recv_cn_wp();
         _cn_wp = _recv_cn_wp;
         // debug output
         out.debug() << "RECEIVE _cn_wp: data=" << _cn_wp.data
@@ -160,7 +176,8 @@ public:
         _cn_ack = _cn_wp;
 
         // send ack
-        send_ack();
+        _send_cn_ack = _cn_ack;
+        post_send_cn_ack();
     }
 
     void on_complete_send_finalize() {
@@ -181,6 +198,18 @@ public:
     struct ibv_mr* _mr_send = nullptr;
     struct ibv_mr* _mr_recv = nullptr;
 
+private:
+    /// InfiniBand receive work request
+    struct ibv_recv_wr recv_wr = {};
+
+    /// Scatter/gather list entry for receive work request
+    struct ibv_sge recv_sge;
+
+    /// Infiniband send work request
+    struct ibv_send_wr send_wr = {};
+
+    /// Scatter/gather list entry for send work request
+    struct ibv_sge send_sge;
 };
 
 
