@@ -149,7 +149,6 @@ public:
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event for this connection.
     virtual void on_connect_request(struct rdma_cm_event* event,
                                     struct ibv_pd* pd, struct ibv_cq* cq) {
-        out.info() << "on_connect_request for index " << _index;
         struct ibv_qp_init_attr qp_attr;
         memset(&qp_attr, 0, sizeof qp_attr);
         qp_attr.cap = _qp_cap;

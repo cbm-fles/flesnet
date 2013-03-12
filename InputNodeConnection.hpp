@@ -275,7 +275,7 @@ public:
         assert(event->param.conn.private_data_len >= sizeof(ComputeNodeInfo));
         memcpy(&_remote_info, event->param.conn.private_data, sizeof(ComputeNodeInfo));
 
-        out.info() << "remote index: " << _remote_info.index;
+        out.debug() << "remote index: " << _remote_info.index;
     }
     
     virtual void on_disconnected() {
@@ -302,7 +302,7 @@ public:
             private_data(new std::vector<uint8_t>(sizeof(InputNodeInfo)));
 
         InputNodeInfo* in_info = reinterpret_cast<InputNodeInfo*>(private_data->data());
-        in_info->index = 5; // TODO
+        in_info->index = par->node_index();
 
         return private_data;
     }

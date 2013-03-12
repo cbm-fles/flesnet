@@ -111,7 +111,7 @@ public:
     virtual void on_established(struct rdma_cm_event* event) {
         IBConnection::on_established(event);
 
-        out.info() << "remote index: " << _remote_info.index;
+        out.debug() << "remote index: " << _remote_info.index;
     }
 
     virtual void on_disconnected() {
@@ -205,7 +205,7 @@ public:
         cn_info->data.rkey = _mr_data->rkey;
         cn_info->desc.addr = (uintptr_t) _desc.ptr();
         cn_info->desc.rkey = _mr_desc->rkey;
-        cn_info->index = _index;
+        cn_info->index = par->node_index();
 
         return private_data;
     }
