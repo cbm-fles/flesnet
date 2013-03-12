@@ -322,7 +322,7 @@ public:
         }
     };
 
-    void accept(unsigned short port) {
+    void accept(unsigned short port, unsigned int count) {
         out.debug() << "Setting up RDMA CM structures";
 
         // Create rdma id (for listening)
@@ -341,11 +341,11 @@ public:
             throw InfinibandException("RDMA bind_addr failed");
 
         // Listen for connection request on rdma id
-        err = rdma_listen(_listen_id, 1);
+        err = rdma_listen(_listen_id, count);
         if (err)
             throw InfinibandException("RDMA listen failed");
 
-        out.info() << "Waiting for connection";
+        out.info() << "Waiting for connections";
     }
 
     /// Initiate disconnection.
@@ -355,7 +355,7 @@ public:
     };
 
     /// The connection manager event loop.
-    void handle_cm_events(bool is_connect = true) {
+    void handle_cm_events(unsigned int target_num_connections) {
         int err;
         struct rdma_cm_event* event;
         struct rdma_cm_event event_copy;
@@ -377,7 +377,7 @@ public:
                 free(private_data_copy);
                 private_data_copy = 0;
             }
-            if (_connected == (is_connect ? _conn.size() : 0))
+            if (_connected == target_num_connections)
                 break;
         };
         if (err)

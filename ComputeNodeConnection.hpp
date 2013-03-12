@@ -38,7 +38,7 @@ public:
         sge.lkey = _mr_recv->lkey;
         struct ibv_recv_wr recv_wr;
         memset(&recv_wr, 0, sizeof recv_wr);
-        recv_wr.wr_id = ID_RECEIVE_CN_WP;
+        recv_wr.wr_id = ID_RECEIVE_CN_WP | (_index << 8);
         recv_wr.sg_list = &sge;
         recv_wr.num_sge = 1;
         post_recv(&recv_wr);

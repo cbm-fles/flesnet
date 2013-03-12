@@ -31,9 +31,11 @@ public:
             _all_done = true;
             break;
 
-        case ID_RECEIVE_CN_WP:
-            _conn[0]->on_complete_recv();
+        case ID_RECEIVE_CN_WP: {           
+            int in = wc.wr_id >> 8;
+            _conn[in]->on_complete_recv();
             break;
+        }
 
         default:
             throw InfinibandException("wc for unknown wr_id");

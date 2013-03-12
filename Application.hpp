@@ -69,17 +69,17 @@ public:
         std::vector<std::string> services;
         for (unsigned int i = 0; i < _par.compute_nodes().size(); i++)
             services.push_back(boost::lexical_cast<std::string>
-                               (par->base_port() + i));
+                               (_par.base_port() + i));
     
         ib.connect(_par.compute_nodes(), services);
-        ib.handle_cm_events(true);
+        ib.handle_cm_events(_par.compute_nodes().size());
         boost::thread t1(&InputBuffer::completion_handler, &ib);
         auto time1 = std::chrono::high_resolution_clock::now();
         ib.sender_loop();
         auto time2 = std::chrono::high_resolution_clock::now();
         auto runtime = std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count();
         t1.join();
-        boost::thread t2(&InputBuffer::handle_cm_events, &ib, false);
+        boost::thread t2(&InputBuffer::handle_cm_events, &ib, 0);
         ib.disconnect();
         t2.join();
 
@@ -110,9 +110,9 @@ public:
     /// The "main" function of a compute node application.
     virtual int run() {
         ComputeBuffer* cb = new ComputeBuffer();
-        cb->accept(par->base_port() + par->node_index());
-        cb->handle_cm_events(true);       
-        boost::thread t1(&ComputeBuffer::handle_cm_events, cb, false);
+        cb->accept(_par.base_port() + _par.node_index(), _par.input_nodes().size());
+        cb->handle_cm_events(_par.input_nodes().size());       
+        boost::thread t1(&ComputeBuffer::handle_cm_events, cb, 0);
         cb->completion_handler();
         t1.join();
         delete cb;
