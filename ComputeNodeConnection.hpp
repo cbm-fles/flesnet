@@ -28,11 +28,6 @@ public:
         IBConnection(ec, index, id),
         _data(par->cn_data_buffer_size_exp())
     {
-        memset(&_send_cn_ack, 0, sizeof(ComputeNodeBufferPosition));
-        memset(&_cn_ack, 0, sizeof(ComputeNodeBufferPosition));
-        memset(&_cn_wp, 0, sizeof(ComputeNodeBufferPosition));
-        memset(&_recv_cn_wp, 0, sizeof(ComputeNodeBufferPosition));
-
         // Allocate buffer space
         _desc = (TimesliceComponentDescriptor*) calloc(par->cn_desc_buffer_size(),
                                                        sizeof(TimesliceComponentDescriptor));
@@ -177,11 +172,11 @@ public:
         send_ack();
     }
 
-    ComputeNodeBufferPosition _send_cn_ack;
-    ComputeNodeBufferPosition _cn_ack;
+    ComputeNodeBufferPosition _send_cn_ack = {};
+    ComputeNodeBufferPosition _cn_ack = {};
 
-    ComputeNodeBufferPosition _recv_cn_wp;
-    ComputeNodeBufferPosition _cn_wp;
+    ComputeNodeBufferPosition _recv_cn_wp = {};
+    ComputeNodeBufferPosition _cn_wp = {};
 
     RingBuffer<uint64_t> _data;
     TimesliceComponentDescriptor* _desc = nullptr;
