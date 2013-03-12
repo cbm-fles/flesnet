@@ -26,16 +26,20 @@ public:
             out.debug() << "SEND complete";
             break;
 
-        case ID_SEND_FINALIZE:
-            out.debug() << "SEND FINALIZE complete";
-            _all_done = true;
+        case ID_SEND_FINALIZE: {
+            int in = wc.wr_id >> 8;
+            _conn[in]->on_complete_send_finalize();
+            _connections_done++;
+            _all_done = (_connections_done == _conn.size());
+            out.info() << "SEND FINALIZE complete for id " << in << " alldone=" << _all_done;
+        }
             break;
 
         case ID_RECEIVE_CN_WP: {           
             int in = wc.wr_id >> 8;
             _conn[in]->on_complete_recv();
-            break;
         }
+            break;
 
         default:
             throw InfinibandException("wc for unknown wr_id");

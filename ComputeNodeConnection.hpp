@@ -163,6 +163,10 @@ public:
         send_ack();
     }
 
+    void on_complete_send_finalize() {
+        _done = true;
+    }
+
     ComputeNodeBufferPosition _send_cn_ack = {};
     ComputeNodeBufferPosition _cn_ack = {};
 

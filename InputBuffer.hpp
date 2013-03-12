@@ -145,9 +145,6 @@ private:
     /// Flag indicating completion of the sender loop for this run.
     bool _sender_loop_done;
 
-    /// Number of connections in the done state.
-    unsigned int _connections_done = 0;
-
     /// Total number of bytes transmitted (without pointer updates).
     uint64_t _aggregate_content_bytes_sent = 0;
 

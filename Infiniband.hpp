@@ -147,6 +147,7 @@ public:
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event for this connection.
     virtual void on_connect_request(struct ibv_pd* pd, struct ibv_cq* cq) {
 
+        out.info() << "on_connect_request for index " << _index;
         struct ibv_qp_init_attr qp_attr;
         memset(&qp_attr, 0, sizeof qp_attr);
         qp_attr.cap = _qp_cap;
@@ -345,7 +346,7 @@ public:
         if (err)
             throw InfinibandException("RDMA listen failed");
 
-        out.info() << "Waiting for connections";
+        out.info() << "Waiting for " << count << " connections";
     }
 
     /// Initiate disconnection.
@@ -446,6 +447,9 @@ protected:
     /// Vector of associated connection objects.
     std::vector<CONNECTION*> _conn;
 
+    /// Number of connections in the done state.
+    unsigned int _connections_done = 0;
+
     /// Flag causing termination of completion handler.
     bool _all_done = false;
 
@@ -479,7 +483,7 @@ protected:
         if (!_pd)
             init_context(id->verbs);
 
-        CONNECTION* conn = new CONNECTION(_ec, 0, id);
+        CONNECTION* conn = new CONNECTION(_ec, _conn.size(), id);
         _conn.push_back(conn);
         conn->on_connect_request(_pd, _cq);
     }
@@ -489,7 +493,7 @@ protected:
         CONNECTION* conn = (CONNECTION*) id->context;
 
         conn->on_disconnected();
-        _conn[conn->index()] = 0;
+        _conn[conn->index()] = nullptr;
         delete conn;
         _connected--;
     }
