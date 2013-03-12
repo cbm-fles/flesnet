@@ -57,9 +57,7 @@ public:
         post_send(&send_wr);
     }
 
-    virtual void on_connect_request(struct ibv_pd* pd, struct ibv_cq* cq) {
-        IBConnection::on_connect_request(pd, cq);
-        
+    virtual void setup(struct ibv_pd* pd) {
         // register memory regions
         _mr_data = ibv_reg_mr(pd, _data.ptr(), _data.bytes(),
                               IBV_ACCESS_LOCAL_WRITE |
@@ -96,24 +94,24 @@ public:
 
         // post initial receive request
         post_recv_cn_wp();
+    }
 
-        out.debug() << "accepting connection";
+    virtual void on_connect_request(struct rdma_cm_event* event,
+                                    struct ibv_pd* pd, struct ibv_cq* cq) {
+        IBConnection::on_connect_request(event, pd, cq);
 
-        // Accept rdma connection request
-        ServerInfo rep_pdata[2];
-        rep_pdata[0].addr = (uintptr_t) _data.ptr();
-        rep_pdata[0].rkey = _mr_data->rkey;
-        rep_pdata[1].addr = (uintptr_t) _desc.ptr();
-        rep_pdata[1].rkey = _mr_desc->rkey;
-        
-        struct rdma_conn_param conn_param;
-        memset(&conn_param, 0, sizeof conn_param);
-        conn_param.responder_resources = 1;
-        conn_param.private_data = rep_pdata;
-        conn_param.private_data_len = sizeof rep_pdata;
-        int err = rdma_accept(_cm_id, &conn_param);
-        if (err)
-            throw InfinibandException("RDMA accept failed");
+        assert(event->param.conn.private_data_len >= sizeof(InputNodeInfo));
+        memcpy(&_remote_info, event->param.conn.private_data, sizeof(InputNodeInfo));
+    }
+
+    /// Connection handler function, called on successful connection.
+    /**
+       \param event RDMA connection manager event structure
+    */
+    virtual void on_established(struct rdma_cm_event* event) {
+        IBConnection::on_established(event);
+
+        out.info() << "remote index: " << _remote_info.index;
     }
 
     virtual void on_disconnected() {
@@ -198,7 +196,25 @@ public:
     struct ibv_mr* _mr_send = nullptr;
     struct ibv_mr* _mr_recv = nullptr;
 
+    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() {
+        std::unique_ptr<std::vector<uint8_t> >
+            private_data(new std::vector<uint8_t>(sizeof(ComputeNodeInfo)));
+
+        ComputeNodeInfo* cn_info = reinterpret_cast<ComputeNodeInfo*>(private_data->data());
+        cn_info->data.addr = (uintptr_t) _data.ptr();
+        cn_info->data.rkey = _mr_data->rkey;
+        cn_info->desc.addr = (uintptr_t) _desc.ptr();
+        cn_info->desc.rkey = _mr_desc->rkey;
+        cn_info->index = _index;
+
+        return private_data;
+    }
+
 private:
+
+    /// Information on remote end.
+    InputNodeInfo _remote_info = {};
+
     /// InfiniBand receive work request
     struct ibv_recv_wr recv_wr = {};
 

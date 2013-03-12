@@ -142,11 +142,13 @@ public:
         err = rdma_resolve_route(_cm_id, RESOLVE_TIMEOUT_MS);
         if (err)
             throw InfinibandException("rdma_resolve_route failed");
+
+        setup(pd);
     };
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event for this connection.
-    virtual void on_connect_request(struct ibv_pd* pd, struct ibv_cq* cq) {
-
+    virtual void on_connect_request(struct rdma_cm_event* event,
+                                    struct ibv_pd* pd, struct ibv_cq* cq) {
         out.info() << "on_connect_request for index " << _index;
         struct ibv_qp_init_attr qp_attr;
         memset(&qp_attr, 0, sizeof qp_attr);
@@ -157,16 +159,48 @@ public:
         int err = rdma_create_qp(_cm_id, pd, &qp_attr);
         if (err)
             throw InfinibandException("creation of QP failed");
+
+        setup(pd);
+
+        out.debug() << "accepting connection";
+
+        // Accept rdma connection request
+        auto private_data = get_private_data();
+        assert(private_data->size() <= 255);
+
+        struct rdma_conn_param conn_param = {};
+        conn_param.responder_resources = 1;
+        conn_param.private_data = private_data->data();
+        conn_param.private_data_len = (uint8_t) private_data->size();
+        err = rdma_accept(_cm_id, &conn_param);
+        if (err)
+            throw InfinibandException("RDMA accept failed");
     };
+
+    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() {
+        std::unique_ptr<std::vector<uint8_t> >
+            private_data(new std::vector<uint8_t>());
+
+        return private_data;
+    }
+
+    virtual void setup(struct ibv_pd* pd) {
+    }
     
     /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event for this connection.
     virtual void on_route_resolved() {
         out.debug() << "route resolved";
 
+        // Initiate rdma connection
+        auto private_data = get_private_data();
+        assert(private_data->size() <= 255);
+
         struct rdma_conn_param conn_param;
         memset(&conn_param, 0, sizeof conn_param);
         conn_param.initiator_depth = 1;
         conn_param.retry_count = 7;
+        conn_param.private_data = private_data->data();
+        conn_param.private_data_len = (uint8_t) private_data->size();
         int err = rdma_connect(_cm_id, &conn_param);
         if (err)
             throw InfinibandException("rdma_connect failed");
@@ -204,15 +238,9 @@ protected:
     /// Flag indicating connection finished state.
     bool _done = false;
 
-    /// Access information for a remote memory region.
-    struct ServerInfo {
-        uint64_t addr; ///< Target memory address
-        uint32_t rkey; ///< Target remote access key
-    };
-
     /// The queue pair capabilities.
     struct ibv_qp_cap _qp_cap;
-    
+
     /// Post an InfiniBand SEND work request (WR) to the send queue
     void post_send(struct ibv_send_wr* wr) {
         struct ibv_send_wr* bad_send_wr;
@@ -239,11 +267,11 @@ protected:
         _total_recv_requests++;
     }
 
-    //private: TODO
+private:
 
     /// RDMA connection manager ID.
     struct rdma_cm_id* _cm_id = nullptr;
-private:
+
     /// Total number of bytes transmitted.
     uint64_t _total_bytes_sent = 0;
 
@@ -479,13 +507,13 @@ protected:
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct rdma_cm_id* id) {
+    virtual void on_connect_request(struct rdma_cm_event* event) {
         if (!_pd)
-            init_context(id->verbs);
+            init_context(event->id->verbs);
 
-        CONNECTION* conn = new CONNECTION(_ec, _conn.size(), id);
+        CONNECTION* conn = new CONNECTION(_ec, _conn.size(), event->id);
         _conn.push_back(conn);
-        conn->on_connect_request(_pd, _cq);
+        conn->on_connect_request(event, _pd, _cq);
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
@@ -540,7 +568,7 @@ private:
             on_established(event);
             return;
         case RDMA_CM_EVENT_CONNECT_REQUEST:
-            on_connect_request(event->id);
+            on_connect_request(event);
             return;
         case RDMA_CM_EVENT_DISCONNECTED:
             on_disconnected(event->id);

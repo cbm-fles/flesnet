@@ -120,9 +120,9 @@ public:
         send_wr_ts.opcode = IBV_WR_RDMA_WRITE;
         send_wr_ts.sg_list = sge;
         send_wr_ts.num_sge = num_sge;
-        send_wr_ts.wr.rdma.rkey = _server_info[0].rkey;
+        send_wr_ts.wr.rdma.rkey = _remote_info.data.rkey;
         send_wr_ts.wr.rdma.remote_addr =
-            (uintptr_t)(_server_info[0].addr +
+            (uintptr_t)(_remote_info.data.addr +
                         (_cn_wp.data % (1 << par->cn_data_buffer_size_exp())) // TODO
                         * sizeof(uint64_t));
 
@@ -132,9 +132,9 @@ public:
             send_wr_tswrap.opcode = IBV_WR_RDMA_WRITE;
             send_wr_tswrap.sg_list = sge2;
             send_wr_tswrap.num_sge = num_sge2;
-            send_wr_tswrap.wr.rdma.rkey = _server_info[0].rkey;
+            send_wr_tswrap.wr.rdma.rkey = _remote_info.data.rkey;
             send_wr_tswrap.wr.rdma.remote_addr =
-                (uintptr_t) _server_info[0].addr;
+                (uintptr_t) _remote_info.data.addr;
             send_wr_ts.next = &send_wr_tswrap;
             send_wr_tswrap.next = &send_wr_tscdesc;
         } else {
@@ -158,9 +158,9 @@ public:
             IBV_SEND_INLINE | IBV_SEND_FENCE | IBV_SEND_SIGNALED;
         send_wr_tscdesc.sg_list = &sge3;
         send_wr_tscdesc.num_sge = 1;
-        send_wr_tscdesc.wr.rdma.rkey = _server_info[1].rkey;
+        send_wr_tscdesc.wr.rdma.rkey = _remote_info.desc.rkey;
         send_wr_tscdesc.wr.rdma.remote_addr =
-            (uintptr_t)(_server_info[1].addr
+            (uintptr_t)(_remote_info.desc.addr
                         + (_cn_wp.desc % (1 << par->cn_desc_buffer_size_exp())) // TODO
                         * sizeof(TimesliceComponentDescriptor));
 
@@ -230,9 +230,7 @@ public:
         }
     }
 
-    virtual void on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq) {
-        IBConnection::on_addr_resolved(pd, cq);
-        
+    virtual void setup(struct ibv_pd* pd) {
         // register memory regions
         _mr_recv = ibv_reg_mr(pd, &_receive_cn_ack,
                               sizeof(ComputeNodeBufferPosition),
@@ -270,12 +268,14 @@ public:
     /// Connection handler function, called on successful connection.
     /**
        \param event RDMA connection manager event structure
-       \return      Non-zero if an error occured
     */
     virtual void on_established(struct rdma_cm_event* event) {
         IBConnection::on_established(event);
 
-        memcpy(&_server_info, event->param.conn.private_data, sizeof _server_info);
+        assert(event->param.conn.private_data_len >= sizeof(ComputeNodeInfo));
+        memcpy(&_remote_info, event->param.conn.private_data, sizeof(ComputeNodeInfo));
+
+        out.info() << "remote index: " << _remote_info.index;
     }
     
     virtual void on_disconnected() {
@@ -297,6 +297,16 @@ public:
         return _content_bytes_sent;
     }
     
+    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() {
+        std::unique_ptr<std::vector<uint8_t> >
+            private_data(new std::vector<uint8_t>(sizeof(InputNodeInfo)));
+
+        InputNodeInfo* in_info = reinterpret_cast<InputNodeInfo*>(private_data->data());
+        in_info->index = 5; // TODO
+
+        return private_data;
+    }
+
 private:
 
     /// Post a receive work request (WR) to the receive queue
@@ -324,8 +334,8 @@ private:
     bool _finalize = false;
 
     /// Access information for memory regions on remote end.
-    ServerInfo _server_info[2];    
-    
+    ComputeNodeInfo _remote_info = {};
+
     /// Local copy of acknowledged-by-CN pointers
     ComputeNodeBufferPosition _cn_ack;
 
