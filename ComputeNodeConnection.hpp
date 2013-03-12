@@ -31,9 +31,6 @@ public:
     {
     }
 
-    virtual ~ComputeNodeConnection() {
-    }
-
     void post_receive() {
         struct ibv_sge sge;
         sge.addr = (uintptr_t) &_recv_cn_wp;
