@@ -36,9 +36,11 @@ public:
 class IBConnection
 {
 public:
+    IBConnection(const IBConnection&) = delete;
+    IBConnection& operator=(const IBConnection&) = delete;
 
     /// The IBConnection constructor. Creates a connection manager ID.
-    IBConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id* id = 0) :
+    IBConnection(struct rdma_event_channel* ec, uint_fast16_t index, struct rdma_cm_id* id = 0) :
         _index(index),
         _cm_id(id)
     {
@@ -206,7 +208,7 @@ public:
     };
 
     /// Retrieve index of this connection in the connection group.
-    int index() const {
+    uint_fast16_t index() const {
         return _index;
     };
 
@@ -232,7 +234,7 @@ public:
 protected:
 
     /// Index of this connection in a group of connections.
-    int _index = 0;
+    uint_fast16_t _index = UINT_FAST16_MAX;
 
     /// Flag indicating connection finished state.
     bool _done = false;
@@ -296,6 +298,8 @@ template <typename CONNECTION>
 class IBConnectionGroup
 {
 public:
+    IBConnectionGroup(const IBConnectionGroup&) = delete;
+    IBConnectionGroup& operator=(const IBConnectionGroup&) = delete;
 
     /// The IBConnectionGroup default constructor.
     IBConnectionGroup() {
@@ -322,7 +326,7 @@ public:
         if (_comp_channel) {
             int err = ibv_destroy_comp_channel(_comp_channel);
             if (err)
-                throw InfinibandException("ibv_destroy_comp_channel failed");
+                throw InfinibandException("wibv_destroy_comp_channel failed");
             _comp_channel = nullptr;
         }
 
@@ -344,13 +348,15 @@ public:
     void connect(const std::vector<std::string>& hostnames,
                  const std::vector<std::string>& services) {
         for (unsigned int i = 0; i < hostnames.size(); i++) {
-            CONNECTION* connection = new CONNECTION(_ec, i);
-            _conn.push_back(connection);
+            std::unique_ptr<CONNECTION> connection(new CONNECTION(_ec, i));
             connection->connect(hostnames[i], services[i]);
+            _conn.push_back(std::move(connection));
         }
     };
 
     void accept(unsigned short port, unsigned int count) {
+        _conn.resize(count);
+
         out.debug() << "Setting up RDMA CM structures";
 
         // Create rdma id (for listening)
@@ -378,7 +384,7 @@ public:
 
     /// Initiate disconnection.
     void disconnect() {
-        for (auto c : _conn)
+        for (auto& c : _conn)
             c->disconnect();
     };
 
@@ -472,7 +478,7 @@ protected:
     struct ibv_pd* _pd = nullptr;
 
     /// Vector of associated connection objects.
-    std::vector<CONNECTION*> _conn;
+    std::vector<std::unique_ptr<CONNECTION> > _conn;
 
     /// Number of connections in the done state.
     unsigned int _connections_done = 0;
@@ -510,9 +516,9 @@ protected:
         if (!_pd)
             init_context(event->id->verbs);
 
-        CONNECTION* conn = new CONNECTION(_ec, _conn.size(), event->id);
-        _conn.push_back(conn);
+        std::unique_ptr<CONNECTION> conn(new CONNECTION(_ec, UINT_FAST16_MAX, event->id));
         conn->on_connect_request(event, _pd, _cq);
+        _conn.at(conn->index()) = std::move(conn);
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
@@ -520,8 +526,7 @@ protected:
         CONNECTION* conn = (CONNECTION*) id->context;
 
         conn->on_disconnected();
-        _conn[conn->index()] = nullptr;
-        delete conn;
+        _conn.at(conn->index()) = nullptr;
         _connected--;
     }
 

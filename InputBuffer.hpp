@@ -81,7 +81,7 @@ public:
             _conn[cn]->inc_write_pointers(data_length + mc_length, 1);
         }
 
-        for (auto c : _conn)
+        for (auto& c : _conn)
             c->finalize();
 
         out.info() << "SENDER loop done";

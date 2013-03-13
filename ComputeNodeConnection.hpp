@@ -23,7 +23,7 @@
 class ComputeNodeConnection : public IBConnection
 {
 public:
-    ComputeNodeConnection(struct rdma_event_channel* ec, int index,
+    ComputeNodeConnection(struct rdma_event_channel* ec, uint_fast16_t index,
                           struct rdma_cm_id* id = nullptr) :
         IBConnection(ec, index, id),
         _data(par->cn_data_buffer_size_exp()),
@@ -98,10 +98,12 @@ public:
 
     virtual void on_connect_request(struct rdma_cm_event* event,
                                     struct ibv_pd* pd, struct ibv_cq* cq) {
-        IBConnection::on_connect_request(event, pd, cq);
-
         assert(event->param.conn.private_data_len >= sizeof(InputNodeInfo));
         memcpy(&_remote_info, event->param.conn.private_data, sizeof(InputNodeInfo));
+
+        _index = _remote_info.index;
+
+        IBConnection::on_connect_request(event, pd, cq);
     }
 
     /// Connection handler function, called on successful connection.

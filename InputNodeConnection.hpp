@@ -24,7 +24,8 @@ class InputNodeConnection : public IBConnection
 public:
 
     /// The InputNodeConnection constructor.
-    InputNodeConnection(struct rdma_event_channel* ec, int index, struct rdma_cm_id* id = 0) :
+    InputNodeConnection(struct rdma_event_channel* ec, uint_fast16_t index,
+                        struct rdma_cm_id* id = 0) :
         IBConnection(ec, index, id)
     {
         _qp_cap.max_send_wr = 20;
@@ -270,12 +271,10 @@ public:
        \param event RDMA connection manager event structure
     */
     virtual void on_established(struct rdma_cm_event* event) {
-        IBConnection::on_established(event);
-
         assert(event->param.conn.private_data_len >= sizeof(ComputeNodeInfo));
         memcpy(&_remote_info, event->param.conn.private_data, sizeof(ComputeNodeInfo));
 
-        out.debug() << "remote index: " << _remote_info.index;
+        IBConnection::on_established(event);
     }
     
     virtual void on_disconnected() {
