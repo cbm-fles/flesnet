@@ -21,13 +21,14 @@
 #include "global.hpp"
 
 einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out(einhard::WARN, true);
-Parameters* par;
+std::unique_ptr<Parameters> par;
 
 int
 main(int argc, char* argv[])
 {
     try {
-        par = new Parameters(argc, argv);
+        std::unique_ptr<Parameters> parameters(new Parameters(argc, argv));
+        par = std::move(parameters);
 
         if (par->node_type() == Parameters::INPUT_NODE) {
             InputApplication app(*par);
@@ -41,6 +42,5 @@ main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    delete par;
     return EXIT_SUCCESS;
 }
