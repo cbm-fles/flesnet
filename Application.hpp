@@ -109,13 +109,12 @@ public:
 
     /// The "main" function of a compute node application.
     virtual int run() {
-        ComputeBuffer* cb = new ComputeBuffer();
+        std::unique_ptr<ComputeBuffer> cb(new ComputeBuffer());
         cb->accept(_par.base_port() + _par.node_index(), _par.input_nodes().size());
         cb->handle_cm_events(_par.input_nodes().size());       
-        boost::thread t1(&ComputeBuffer::handle_cm_events, cb, 0);
+        boost::thread t1(&ComputeBuffer::handle_cm_events, cb.get(), 0);
         cb->completion_handler();
         t1.join();
-        delete cb;
         
         return 0;
     }
