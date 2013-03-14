@@ -21,11 +21,6 @@ public:
         alloc_with_size_exponent(size_exponent);
     }
 
-    /// The RingBuffer destructor.
-    ~RingBuffer() {
-        delete [] _buf;
-    }
-
     /// Create and initialize buffer with given minimum size.
     void alloc_with_size(size_t minimum_size) {
         size_t size_exponent = 0;
@@ -42,7 +37,8 @@ public:
     void alloc_with_size_exponent(size_t size_exponent) {
         _size_exponent = size_exponent;
         _size_mask = (1 << size_exponent) - 1;
-        _buf = new T[1 << _size_exponent]();
+        std::unique_ptr<T[]> buf(new T[1 << _size_exponent]);
+        _buf = std::move(buf);
     }
     
     /// The element accessor operator.
@@ -57,12 +53,12 @@ public:
 
     /// Retrieve pointer to memory buffer.
     T* ptr() {
-        return _buf;
+        return _buf.get();
     }
 
     /// Retrieve const pointer to memory buffer.
     const T* ptr() const {
-        return _buf;
+        return _buf.get();
     }
 
     /// Retrieve buffer size in maximum number of entries.
@@ -88,7 +84,7 @@ private:
     size_t _size_mask;
     
     /// The data buffer.
-    T* _buf = nullptr;
+    std::unique_ptr<T[]> _buf;
 };
 
 
