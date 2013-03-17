@@ -7,6 +7,7 @@
 #ifndef COMPUTEBUFFER_HPP
 #define COMPUTEBUFFER_HPP
 
+#include <algorithm>
 #include "ComputeNodeConnection.hpp"
 
 
@@ -17,6 +18,9 @@
 
 class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
 {
+    size_t _red_lantern = 0;
+    uint64_t _completely_written = 0;
+
 public:
     
     /// Completion notification event dispatcher. Called by the event loop.
@@ -35,9 +39,24 @@ public:
         }
             break;
 
-        case ID_RECEIVE_CN_WP: {           
-            int in = wc.wr_id >> 8;
+        case ID_RECEIVE_CN_WP: {
+            size_t in = wc.wr_id >> 8;
             _conn[in]->on_complete_recv();
+            if (in == _red_lantern) {
+                auto new_red_lantern =
+                    std::min_element(std::begin(_conn), std::end(_conn),
+                                     [] (const std::unique_ptr<ComputeNodeConnection>& v1,
+                                         const std::unique_ptr<ComputeNodeConnection> &v2)
+                                     { return v1->cn_wp().desc < v2->cn_wp().desc; } );
+
+                uint64_t new_completely_written = (*new_red_lantern)->cn_wp().desc;
+                _red_lantern = std::distance(std::begin(_conn), new_red_lantern);
+
+                for (uint64_t tpos = _completely_written; tpos < new_completely_written; tpos++)
+                    submit_timeslice(tpos);
+
+                _completely_written = new_completely_written;
+            }
         }
             break;
 
@@ -45,6 +64,14 @@ public:
             throw InfinibandException("wc for unknown wr_id");
         }
     }
+
+    void submit_timeslice(uint64_t tpos) {
+        out.info() << "timeslice submitted, position=" << tpos;
+        for (auto& c : _conn) {
+            out.info() << "timeslice number = " << c->_desc.at(tpos).ts_num;
+        }
+    }
+
 };
 
 

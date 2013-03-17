@@ -184,6 +184,10 @@ public:
         _done = true;
     }
 
+    const ComputeNodeBufferPosition& cn_wp() const {
+        return _cn_wp;
+    }
+
     ComputeNodeBufferPosition _send_cn_ack = {};
     ComputeNodeBufferPosition _cn_ack = {};
 
