@@ -66,7 +66,7 @@ public:
         }
 
         while (mcs_to_write-- > 0) {
-            int content_words = par->typical_content_size();
+            unsigned int content_words = par->typical_content_size();
             if (par->randomize_sizes())
                 content_words = _rand_content_words();
 
@@ -112,8 +112,9 @@ public:
             _data_buffer.at(_data_written++) = hdr0;
             _data_buffer.at(_data_written++) = hdr1;
 
-            for (int i = 0; i < content_words; i++) {
-                _data_buffer.at(_data_written++) = i + 0xA;
+            for (uint64_t i = 0; i < content_words; i++) {
+                _data_buffer.at(_data_written++) =
+                    ((uint64_t) par->node_index() << 48) | i;
             }
 
             // write to addr buffer

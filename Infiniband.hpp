@@ -472,6 +472,10 @@ public:
         return _cq;
     }
 
+    size_t size() const {
+        return _conn.size();
+    }
+
 protected:
 
     /// InfiniBand protection domain.

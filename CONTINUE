@@ -1,2 +1,5 @@
+- remove sleep, TODO; test with larger sizes, more nodes
+- rework time/performance measurement
+- rework all (debug) output
 - correct exception if IN started without CN
 - ...

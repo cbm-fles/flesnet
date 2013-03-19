@@ -107,6 +107,14 @@ public:
         }
     }
 
+    const RingBuffer<uint64_t>& data(int i) const {
+        return _conn[i]->_data;
+    }
+
+    const RingBuffer<TimesliceComponentDescriptor>& desc(int i) const {
+        return _conn[i]->_desc;
+    }
+
 };
 
 
