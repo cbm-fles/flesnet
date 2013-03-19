@@ -188,7 +188,7 @@ public:
         _finalize = true;
         if (_our_turn) {
             _our_turn = false;
-            if (_cn_wp.desc == _cn_ack.desc)
+            if (_cn_wp == _cn_ack)
                 _send_cn_wp = CN_WP_FINAL;
             else
                 _send_cn_wp = _cn_wp;
@@ -198,7 +198,7 @@ public:
 
     /// Handle Infiniband receive completion notification.
     void on_complete_recv() {
-        if (_receive_cn_ack.data == UINT64_MAX && _receive_cn_ack.desc == UINT64_MAX) {
+        if (_receive_cn_ack == CN_WP_FINAL) {
             _done = true;
             return;
         }
@@ -214,11 +214,11 @@ public:
         post_recv_cn_ack();
         {
             boost::mutex::scoped_lock lock(_cn_wp_mutex);
-            if (_cn_wp.data != _send_cn_wp.data || _cn_wp.desc != _send_cn_wp.desc) {
+            if (_cn_wp != _send_cn_wp) {
                 _send_cn_wp = _cn_wp;
                 post_send_cn_wp();
             } else if (_finalize) {
-                if (_cn_wp.desc == _cn_ack.desc)
+                if (_cn_wp == _cn_ack)
                     _send_cn_wp = CN_WP_FINAL;
                 post_send_cn_wp();
             } else {

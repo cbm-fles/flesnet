@@ -155,7 +155,7 @@ public:
 
     void on_complete_recv()
     {
-        if (_recv_cn_wp.data == CN_WP_FINAL.data && _recv_cn_wp.desc == CN_WP_FINAL.desc) {
+        if (_recv_cn_wp == CN_WP_FINAL) {
             out.info() << "received FINAL pointer update";
             // send FINAL ack
             _send_cn_ack = CN_WP_FINAL;
@@ -166,7 +166,7 @@ public:
         post_recv_cn_wp();
         {
             boost::mutex::scoped_lock lock(_cn_ack_mutex);
-            if (_cn_ack.desc != _send_cn_ack.desc) {
+            if (_cn_ack != _send_cn_ack) {
                 _send_cn_ack = _cn_ack;
                 post_send_cn_ack();
             } else
