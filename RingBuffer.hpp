@@ -9,7 +9,7 @@
 
 
 /// Simple generic ring buffer class.
-template<typename T>
+template<typename T, bool CLEARED = false>
 class RingBuffer
 {
 public:
@@ -37,8 +37,13 @@ public:
     void alloc_with_size_exponent(size_t size_exponent) {
         _size_exponent = size_exponent;
         _size_mask = (1 << size_exponent) - 1;
-        std::unique_ptr<T[]> buf(new T[1 << _size_exponent]);
-        _buf = std::move(buf);
+        if (CLEARED) {
+            std::unique_ptr<T[]> buf(new T[1 << _size_exponent]{});
+            _buf = std::move(buf);
+        } else {
+            std::unique_ptr<T[]> buf(new T[1 << _size_exponent]);
+            _buf = std::move(buf);
+        }
     }
     
     /// The element accessor operator.
@@ -74,6 +79,10 @@ public:
     /// Retrieve buffer size in bytes.
     size_t bytes() const {
         return (1 << _size_exponent) * sizeof(T);
+    }
+
+    const void clear() {
+        *_buf = {};
     }
 
 private:

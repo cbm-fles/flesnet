@@ -140,44 +140,38 @@ public:
         IBConnection::on_disconnected();
     }
 
-    void
-    check_buffer(ComputeNodeBufferPosition ack, ComputeNodeBufferPosition wp,
-                 TimesliceComponentDescriptor* desc, void* data)
-    {
-        int ts = wp.desc - ack.desc;
-        out.debug() << "received " << ts << " timeslices";
-        for (uint64_t dp = ack.desc; dp < wp.desc; dp++) {
-            TimesliceComponentDescriptor tcd = desc[dp % (1 << par->cn_desc_buffer_size_exp())];
-            out.debug() << "checking ts #" << tcd.ts_num;
+    void inc_ack_pointers(uint64_t ack_pos) {
+        boost::mutex::scoped_lock lock(_cn_ack_mutex);
+        _cn_ack.desc = ack_pos;
+        const TimesliceComponentDescriptor& acked_ts = _desc.at(ack_pos - 1);
+        _cn_ack.data = acked_ts.offset + acked_ts.size;
+        out.info() << _index << ": inc_ack_pointer:" << ack_pos << " our_turn:" << _our_turn;
+        if (_our_turn) {
+            _our_turn = false;
+            _send_cn_ack = _cn_ack;
+            post_send_cn_ack();
         }
     }
 
     void on_complete_recv()
     {
-        if (_recv_cn_wp.data == UINT64_MAX && _recv_cn_wp.desc == UINT64_MAX) {
+        if (_recv_cn_wp.data == CN_WP_FINAL.data && _recv_cn_wp.desc == CN_WP_FINAL.desc) {
             out.info() << "received FINAL pointer update";
             // send FINAL ack
-            _send_cn_ack = _recv_cn_wp;
+            _send_cn_ack = CN_WP_FINAL;
             post_send_final_ack();
             return;
         }
-                
-        // post new receive request
-        post_recv_cn_wp();
         _cn_wp = _recv_cn_wp;
-        // debug output
-        out.debug() << "RECEIVE _cn_wp: data=" << _cn_wp.data
-                    << " desc=" << _cn_wp.desc;
-
-        // check buffer contents
-        check_buffer(_cn_ack, _cn_wp, _desc.ptr(), _data.ptr());
-
-        // DEBUG: empty the buffer
-        _cn_ack = _cn_wp;
-
-        // send ack
-        _send_cn_ack = _cn_ack;
-        post_send_cn_ack();
+        post_recv_cn_wp();
+        {
+            boost::mutex::scoped_lock lock(_cn_ack_mutex);
+            if (_cn_ack.desc != _send_cn_ack.desc) {
+                _send_cn_ack = _cn_ack;
+                post_send_cn_ack();
+            } else
+                _our_turn = true;
+        }
     }
 
     void on_complete_send_finalize() {
@@ -190,6 +184,7 @@ public:
 
     ComputeNodeBufferPosition _send_cn_ack = {};
     ComputeNodeBufferPosition _cn_ack = {};
+    boost::mutex _cn_ack_mutex;
 
     ComputeNodeBufferPosition _recv_cn_wp = {};
     ComputeNodeBufferPosition _cn_wp = {};
@@ -217,6 +212,9 @@ public:
     }
 
 private:
+
+    /// Flag, true if it is the input nodes's turn to send a pointer update.
+    bool _our_turn = false;
 
     /// Information on remote end.
     InputNodeInfo _remote_info = {};

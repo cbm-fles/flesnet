@@ -12,6 +12,7 @@
 #include <boost/thread.hpp>
 #include "InputBuffer.hpp"
 #include "ComputeBuffer.hpp"
+#include "TimesliceProcessor.hpp"
 #include "global.hpp"
 
 
@@ -110,10 +111,18 @@ public:
     /// The "main" function of a compute node application.
     virtual int run() {
         std::unique_ptr<ComputeBuffer> cb(new ComputeBuffer());
+
+        boost::thread_group analysis_threads;
+        analysis_threads.create_thread(TimesliceProcessor(*cb, 1));
+        analysis_threads.create_thread(TimesliceProcessor(*cb, 2));
+        boost::thread ts_compl(&ComputeBuffer::handle_ts_completion, cb.get());
+
         cb->accept(_par.base_port() + _par.node_index(), _par.input_nodes().size());
-        cb->handle_cm_events(_par.input_nodes().size());       
+        cb->handle_cm_events(_par.input_nodes().size());
         boost::thread t1(&ComputeBuffer::handle_cm_events, cb.get(), 0);
         cb->completion_handler();
+        analysis_threads.join_all();
+        ts_compl.join();
         t1.join();
         
         return 0;

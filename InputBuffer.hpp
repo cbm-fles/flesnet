@@ -134,7 +134,7 @@ private:
     struct ibv_mr* _mr_addr = nullptr;
 
     /// Buffer to store acknowledged status of timeslices.
-    RingBuffer<uint64_t> _ack;
+    RingBuffer<uint64_t, true> _ack;
 
     /// Number of acknowledged MCs. Written to FLIB.
     uint64_t _acked_mc = 0;

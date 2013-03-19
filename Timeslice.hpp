@@ -34,6 +34,9 @@ struct ComputeNodeBufferPosition {
 };
 
 
+const ComputeNodeBufferPosition CN_WP_FINAL = {UINT64_MAX, UINT64_MAX};
+
+
 /// InfiniBand request IDs.
 enum REQUEST_ID {
     ID_WRITE_DATA = 1,
@@ -66,6 +69,16 @@ struct InputNodeInfo {
 };
 
 #pragma pack()
+
+struct TimesliceWorkItem {
+    uint64_t ts_pos;
+};
+
+
+struct TimesliceCompletion {
+    uint64_t ts_pos;
+};
+
 
 /// Overloaded output operator for REQUEST_ID values.
 inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)

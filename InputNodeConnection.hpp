@@ -33,11 +33,6 @@ public:
         _qp_cap.max_recv_wr = 20;
         _qp_cap.max_recv_sge = 8;
         _qp_cap.max_inline_data = sizeof(TimesliceComponentDescriptor) * 10;
-
-        memset(&_receive_cn_ack, 0, sizeof(ComputeNodeBufferPosition));
-        memset(&_cn_ack, 0, sizeof(ComputeNodeBufferPosition));
-        memset(&_cn_wp, 0, sizeof(ComputeNodeBufferPosition));
-        memset(&_send_cn_wp, 0, sizeof(ComputeNodeBufferPosition));
     }
 
     /// Wait until enough space is available at target compute node.
@@ -191,10 +186,12 @@ public:
     void finalize() {
         boost::mutex::scoped_lock lock(_cn_wp_mutex);
         _finalize = true;
-        if (_our_turn && _cn_wp.desc == _cn_ack.desc) {
+        if (_our_turn) {
             _our_turn = false;
-            _send_cn_wp.data = UINT64_MAX;
-            _send_cn_wp.desc = UINT64_MAX;
+            if (_cn_wp.desc == _cn_ack.desc)
+                _send_cn_wp = CN_WP_FINAL;
+            else
+                _send_cn_wp = _cn_wp;
             post_send_cn_wp();
         }
     }
@@ -217,13 +214,12 @@ public:
         post_recv_cn_ack();
         {
             boost::mutex::scoped_lock lock(_cn_wp_mutex);
-            if (_cn_wp.data != _send_cn_wp.data
-                    || _cn_wp.desc != _send_cn_wp.desc) {
+            if (_cn_wp.data != _send_cn_wp.data || _cn_wp.desc != _send_cn_wp.desc) {
                 _send_cn_wp = _cn_wp;
                 post_send_cn_wp();
-            } else if (_finalize && _cn_wp.desc == _cn_ack.desc) {
-                _send_cn_wp.data = UINT64_MAX;
-                _send_cn_wp.desc = UINT64_MAX;
+            } else if (_finalize) {
+                if (_cn_wp.desc == _cn_ack.desc)
+                    _send_cn_wp = CN_WP_FINAL;
                 post_send_cn_wp();
             } else {
                 _our_turn = true;
@@ -336,10 +332,10 @@ private:
     ComputeNodeInfo _remote_info = {};
 
     /// Local copy of acknowledged-by-CN pointers
-    ComputeNodeBufferPosition _cn_ack;
+    ComputeNodeBufferPosition _cn_ack = {};
 
     /// Receive buffer for acknowledged-by-CN pointers
-    ComputeNodeBufferPosition _receive_cn_ack;
+    ComputeNodeBufferPosition _receive_cn_ack = {};
 
     /// Infiniband memory region descriptor for acknowledged-by-CN pointers
     struct ibv_mr* _mr_recv = nullptr;
@@ -351,10 +347,10 @@ private:
     boost::condition_variable_any _cn_ack_cond;
 
     /// Local version of CN write pointers
-    ComputeNodeBufferPosition _cn_wp;
+    ComputeNodeBufferPosition _cn_wp = {};
 
     /// Send buffer for CN write pointers
-    ComputeNodeBufferPosition _send_cn_wp;
+    ComputeNodeBufferPosition _send_cn_wp = {};
 
     /// Infiniband memory region descriptor for CN write pointers
     struct ibv_mr* _mr_send = nullptr;
