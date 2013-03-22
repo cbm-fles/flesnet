@@ -15,7 +15,7 @@ LIST="$INLIST,$CNLIST"
 ((LASTCN=INCOUNT+CNCOUNT-1))
 
 cat <<EOF > run.conf
-0,$LASTIN	$DIR/flesnet -i %o
+0-$LASTIN	$DIR/flesnet -i %o
 $INCOUNT-$LASTCN	$DIR/flesnet -c %o
 EOF
 
