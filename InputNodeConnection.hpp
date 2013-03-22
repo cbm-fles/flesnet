@@ -28,7 +28,7 @@ public:
                         struct rdma_cm_id* id = 0) :
         IBConnection(ec, index, id)
     {
-        _qp_cap.max_send_wr = 20;
+        _qp_cap.max_send_wr = 40;
         _qp_cap.max_send_sge = 8;
         _qp_cap.max_recv_wr = 20;
         _qp_cap.max_recv_sge = 8;
@@ -165,9 +165,6 @@ public:
 
         // send everything
         post_send(&send_wr_ts);
-
-        _content_bytes_sent += (data_length + mc_length) * sizeof(uint64_t)
-            + sizeof(TimesliceComponentDescriptor);                             
     }
 
     /// Increment target write pointers after data has been sent.
@@ -286,11 +283,6 @@ public:
         
         IBConnection::on_disconnected();
     }
-
-    /// Retrieve the number of bytes transmitted (without pointer updates).
-    uint64_t content_bytes_sent() const {
-        return _content_bytes_sent;
-    }
     
     virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() {
         std::unique_ptr<std::vector<uint8_t> >
@@ -298,6 +290,7 @@ public:
 
         InputNodeInfo* in_info = reinterpret_cast<InputNodeInfo*>(private_data->data());
         in_info->index = par->node_index();
+        //out.error() << "providing node index: " << in_info->index;
 
         return private_data;
     }
@@ -369,9 +362,6 @@ private:
 
     /// Scatter/gather list entry for send work request
     struct ibv_sge send_sge;
-
-    /// Total number of bytes transmitted (without pointer updates)
-    uint64_t _content_bytes_sent = 0;
 };
 
 

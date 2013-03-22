@@ -30,6 +30,9 @@ public:
     {
         size_t min_ack_buffer_size = _addr.size() / par->timeslice_size() + 1;
         _ack.alloc_with_size(min_ack_buffer_size);
+
+        VALGRIND_MAKE_MEM_DEFINED(_data.ptr(), _data.bytes());
+        VALGRIND_MAKE_MEM_DEFINED(_addr.ptr(), _addr.bytes());
     }
 
     /// The InputBuffer default destructor.
@@ -87,37 +90,6 @@ public:
         out.info() << "SENDER loop done";
     }
 
-    virtual void on_disconnected(struct rdma_cm_id* id) {
-        InputNodeConnection* conn = (InputNodeConnection*) id->context;
-
-        _aggregate_content_bytes_sent += conn->content_bytes_sent();
-        _aggregate_bytes_sent += conn->total_bytes_sent();
-        _aggregate_send_requests += conn->total_send_requests();
-        _aggregate_recv_requests += conn->total_recv_requests();        
-
-        IBConnectionGroup<InputNodeConnection>::on_disconnected(id);
-    }
-
-    /// Retrieve the number of bytes transmitted (without pointer updates).
-    uint64_t aggregate_content_bytes_sent() const {
-        return _aggregate_content_bytes_sent;
-    }
-
-    /// Retrieve the total number of bytes transmitted.
-    uint64_t aggregate_bytes_sent() const {
-        return _aggregate_bytes_sent;
-    }
-
-    /// Retrieve the total number of SEND work requests.
-    uint64_t aggregate_send_requests() const {
-        return _aggregate_send_requests;
-    }
-
-    /// Retrieve the total number of RECV work requests.
-    uint64_t aggregate_recv_requests() const {
-        return _aggregate_recv_requests;
-    }
-
 
 private:
 
@@ -144,18 +116,6 @@ private:
     
     /// Flag indicating completion of the sender loop for this run.
     bool _sender_loop_done;
-
-    /// Total number of bytes transmitted (without pointer updates).
-    uint64_t _aggregate_content_bytes_sent = 0;
-
-    /// Total number of bytes transmitted.
-    uint64_t _aggregate_bytes_sent = 0;
-
-    /// Total number of SEND work requests.
-    uint64_t _aggregate_send_requests = 0;
-
-    /// Total number of RECV work requests.
-    uint64_t _aggregate_recv_requests = 0;
 
     /// Data source (e.g., FLIB).
     DummyFlib _data_source;

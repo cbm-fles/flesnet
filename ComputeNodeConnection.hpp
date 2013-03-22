@@ -29,6 +29,13 @@ public:
         _data(par->cn_data_buffer_size_exp()),
         _desc(par->cn_desc_buffer_size_exp())
     {
+        _qp_cap.max_send_wr = 1;
+        _qp_cap.max_send_sge = 1;
+        _qp_cap.max_recv_wr = 1;
+        _qp_cap.max_recv_sge = 1;
+
+        VALGRIND_MAKE_MEM_DEFINED(_data.ptr(), _data.bytes());
+        VALGRIND_MAKE_MEM_DEFINED(_desc.ptr(), _desc.bytes());
     }
 
     /// Post a receive work request (WR) to the receive queue
@@ -37,6 +44,7 @@ public:
             out.debug() << "[" << _index << "] "
                         << "POST RECEIVE _receive_cn_wp";
         }
+        //out.error() << "[" << _index << "] " << "POST RECEIVE _receive_cn_wp";
         post_recv(&recv_wr);
     }
 
@@ -45,6 +53,7 @@ public:
             out.debug() << "[" << _index << "] "
                         << "POST SEND _send_cp_ack";
         }
+        //out.error() << "[" << _index << "] " << "POST SEND _send_cp_ack";
         post_send(&send_wr);
     }
 
@@ -53,7 +62,9 @@ public:
             out.debug() << "[" << _index << "] "
                         << "POST SEND FINAL ack";
         }
-        send_wr.wr_id = ID_SEND_FINALIZE;
+        //out.error() << "[" << _index << "] " << "POST SEND FINAL ack";
+        send_wr.wr_id = ID_SEND_FINALIZE | (_index << 8);
+        send_wr.send_flags = IBV_SEND_SIGNALED;
         post_send(&send_wr);
     }
 
@@ -101,6 +112,7 @@ public:
         assert(event->param.conn.private_data_len >= sizeof(InputNodeInfo));
         memcpy(&_remote_info, event->param.conn.private_data, sizeof(InputNodeInfo));
 
+        //out.error() << "receiving node index: " << _remote_info.index;
         _index = _remote_info.index;
 
         IBConnection::on_connect_request(event, pd, cq);
@@ -145,7 +157,6 @@ public:
         _cn_ack.desc = ack_pos;
         const TimesliceComponentDescriptor& acked_ts = _desc.at(ack_pos - 1);
         _cn_ack.data = acked_ts.offset + acked_ts.size;
-        out.info() << _index << ": inc_ack_pointer:" << ack_pos << " our_turn:" << _our_turn;
         if (_our_turn) {
             _our_turn = false;
             _send_cn_ack = _cn_ack;
@@ -156,12 +167,13 @@ public:
     void on_complete_recv()
     {
         if (_recv_cn_wp == CN_WP_FINAL) {
-            out.info() << "received FINAL pointer update";
+            out.info() << "[" << _index << "] " << "received FINAL pointer update";
             // send FINAL ack
             _send_cn_ack = CN_WP_FINAL;
             post_send_final_ack();
             return;
         }
+        //out.error() << "[" << _index << "] " << "COMPLETE RECEIVE _receive_cn_wp";
         _cn_wp = _recv_cn_wp;
         post_recv_cn_wp();
         {

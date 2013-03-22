@@ -40,7 +40,8 @@ public:
     IBConnection& operator=(const IBConnection&) = delete;
 
     /// The IBConnection constructor. Creates a connection manager ID.
-    IBConnection(struct rdma_event_channel* ec, uint_fast16_t index, struct rdma_cm_id* id = 0) :
+    IBConnection(struct rdma_event_channel* ec, uint_fast16_t index,
+                 struct rdma_cm_id* id = nullptr) :
         _index(index),
         _cm_id(id)
     {
@@ -51,7 +52,7 @@ public:
         } else {
             _cm_id->context = this;
         }
-            
+
         _qp_cap.max_send_wr = 16;
         _qp_cap.max_recv_wr = 16;
         _qp_cap.max_send_sge = 8;
@@ -61,9 +62,12 @@ public:
 
     /// The IBConnection destructor.
     virtual ~IBConnection() {
-        int err = rdma_destroy_id(_cm_id);
-        if (err)
-            throw InfinibandException("rdma_destroy_id() failed");
+        if (_cm_id) {
+            int err = rdma_destroy_id(_cm_id);
+            if (err)
+                throw InfinibandException("rdma_destroy_id() failed");
+            _cm_id = nullptr;
+        }
     }
     
     /// Retrieve the InfiniBand queue pair associated with the connection.
@@ -245,9 +249,14 @@ protected:
     /// Post an InfiniBand SEND work request (WR) to the send queue
     void post_send(struct ibv_send_wr* wr) {
         struct ibv_send_wr* bad_send_wr;
-        
-        if (ibv_post_send(qp(), wr, &bad_send_wr))
+
+        int err = ibv_post_send(qp(), wr, &bad_send_wr);
+        if (err) {
+            out.fatal() << strerror(err) << " (" << err << ")";
+            out.fatal() << "SEND requests: " << _total_send_requests;
+            out.fatal() << "RECV requests: " << _total_recv_requests;
             throw InfinibandException("ibv_post_send failed");
+        }
 
         _total_send_requests++;
         
@@ -261,9 +270,14 @@ protected:
     /// Post an InfiniBand RECV work request (WR) to the receive queue.
     void post_recv(struct ibv_recv_wr* wr) {
         struct ibv_recv_wr* bad_recv_wr;
-        
-        if (ibv_post_recv(qp(), wr, &bad_recv_wr))
+
+        int err = ibv_post_recv(qp(), wr, &bad_recv_wr);
+        if (err) {
+            out.fatal() << strerror(err) << " (" << err << ")";
+            out.fatal() << "SEND requests: " << _total_send_requests;
+            out.fatal() << "RECV requests: " << _total_recv_requests;
             throw InfinibandException("ibv_post_recv failed");
+        }
 
         _total_recv_requests++;
     }
@@ -310,10 +324,14 @@ public:
 
     /// The IBConnectionGroup default destructor.
     virtual ~IBConnectionGroup() {
+        for (auto& c : _conn)
+            c = nullptr;
+
         if (_listen_id) {
             int err = rdma_destroy_id(_listen_id);
             if (err)
                 throw InfinibandException("rdma_destroy_id() failed");
+            _listen_id = nullptr;
         }
 
         if (_cq) {
@@ -398,6 +416,8 @@ public:
             VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
             memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
             if (event_copy.param.conn.private_data) {
+                VALGRIND_MAKE_MEM_DEFINED(event_copy.param.conn.private_data,
+                                          event_copy.param.conn.private_data_len);
                 private_data_copy = malloc(event_copy.param.conn.private_data_len);
                 if (!private_data_copy)
                     throw InfinibandException("malloc failed");
@@ -476,6 +496,21 @@ public:
         return _conn.size();
     }
 
+    /// Retrieve the total number of bytes transmitted.
+    uint64_t aggregate_bytes_sent() const {
+        return _aggregate_bytes_sent;
+    }
+
+    /// Retrieve the total number of SEND work requests.
+    uint64_t aggregate_send_requests() const {
+        return _aggregate_send_requests;
+    }
+
+    /// Retrieve the total number of RECV work requests.
+    uint64_t aggregate_recv_requests() const {
+        return _aggregate_recv_requests;
+    }
+
 protected:
 
     /// InfiniBand protection domain.
@@ -483,6 +518,9 @@ protected:
 
     /// Vector of associated connection objects.
     std::vector<std::unique_ptr<CONNECTION> > _conn;
+
+    /// Number of established connections
+    unsigned int _connected = 0;
 
     /// Number of connections in the done state.
     unsigned int _connections_done = 0;
@@ -522,6 +560,8 @@ protected:
 
         std::unique_ptr<CONNECTION> conn(new CONNECTION(_ec, UINT_FAST16_MAX, event->id));
         conn->on_connect_request(event, _pd, _cq);
+        //out.error() << "setting connection at " << conn->index();
+        assert(conn->index() < _conn.size() && _conn.at(conn->index()) == nullptr);
         _conn.at(conn->index()) = std::move(conn);
     }
     
@@ -529,15 +569,15 @@ protected:
     virtual void on_disconnected(struct rdma_cm_id* id) {
         CONNECTION* conn = (CONNECTION*) id->context;
 
+        _aggregate_bytes_sent += conn->total_bytes_sent();
+        _aggregate_send_requests += conn->total_send_requests();
+        _aggregate_recv_requests += conn->total_recv_requests();
+
         conn->on_disconnected();
-        _conn.at(conn->index()) = nullptr;
         _connected--;
     }
 
 private:
-
-    /// Number of established connections
-    unsigned int _connected = 0;
 
     /// RDMA event channel
     struct rdma_event_channel* _ec = nullptr;
@@ -552,6 +592,15 @@ private:
     struct ibv_cq* _cq = nullptr;
 
     struct rdma_cm_id* _listen_id = nullptr;
+
+    /// Total number of bytes transmitted.
+    uint64_t _aggregate_bytes_sent = 0;
+
+    /// Total number of SEND work requests.
+    uint64_t _aggregate_send_requests = 0;
+
+    /// Total number of RECV work requests.
+    uint64_t _aggregate_recv_requests = 0;
 
     /// Connection manager event dispatcher. Called by the CM event loop.
     void on_cm_event(struct rdma_cm_event* event) {

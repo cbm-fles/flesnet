@@ -24,7 +24,7 @@ public:
             }
         }
         catch (concurrent_queue<TimesliceWorkItem>::Stopped) {
-            out.debug() << _index << " thread done";
+            out.trace() << "processor thread " << _index << " done";
         }
     }
 
@@ -33,8 +33,9 @@ public:
         uint64_t ts_num = _cb.desc(0).at(ts_pos).ts_num;
         uint64_t ts_size = par->timeslice_size() + par->overlap_size();
 
-        out.info() << _index << " processing ts_pos=" << ts_pos << " ts_num=" << ts_num;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        if (out.beTrace()) {
+            out.trace() << "processor thread " << _index << " working on timeslice " << ts_num;
+        }
 
         for (size_t in = 0; in < _cb.size(); in++) {
             assert(_cb.desc(0).at(ts_pos).ts_num == ts_num);

@@ -84,7 +84,6 @@ public:
         ib.disconnect();
         t2.join();
 
-        out.info() << ib.aggregate_content_bytes_sent() << " content bytes";
         out.info() << ib.aggregate_send_requests() << " SEND requests";
         out.info() << ib.aggregate_recv_requests() << " RECV requests";
         double rate = (double) ib.aggregate_bytes_sent() / (double) runtime;
@@ -106,27 +105,41 @@ class ComputeApplication : public Application
 public:
 
     /// The ComputeApplication contructor.
-    explicit ComputeApplication(Parameters& par) : Application(par) { };
+    explicit ComputeApplication(Parameters& par) : Application(par) {
+        std::unique_ptr<ComputeBuffer> cb(new ComputeBuffer());
+        _cb = std::move(cb);
+    };
 
     /// The "main" function of a compute node application.
     virtual int run() {
-        std::unique_ptr<ComputeBuffer> cb(new ComputeBuffer());
-
         boost::thread_group analysis_threads;
-        analysis_threads.create_thread(TimesliceProcessor(*cb, 1));
-        analysis_threads.create_thread(TimesliceProcessor(*cb, 2));
-        boost::thread ts_compl(&ComputeBuffer::handle_ts_completion, cb.get());
+        analysis_threads.create_thread(TimesliceProcessor(*_cb, 1));
+        analysis_threads.create_thread(TimesliceProcessor(*_cb, 2));
+        boost::thread ts_compl(&ComputeBuffer::handle_ts_completion, _cb.get());
 
-        cb->accept(_par.base_port() + _par.node_index(), _par.input_nodes().size());
-        cb->handle_cm_events(_par.input_nodes().size());
-        boost::thread t1(&ComputeBuffer::handle_cm_events, cb.get(), 0);
-        cb->completion_handler();
+        _cb->accept(_par.base_port() + _par.node_index(), _par.input_nodes().size());
+        _cb->handle_cm_events(_par.input_nodes().size());
+        boost::thread t1(&ComputeBuffer::handle_cm_events, _cb.get(), 0);
+        auto time1 = std::chrono::high_resolution_clock::now();
+        _cb->completion_handler();
+        auto time2 = std::chrono::high_resolution_clock::now();
+        auto runtime = std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count();
         analysis_threads.join_all();
         ts_compl.join();
         t1.join();
+
+        out.info() << _cb->aggregate_send_requests() << " SEND requests";
+        out.info() << _cb->aggregate_recv_requests() << " RECV requests";
+        double rate = (double) _cb->aggregate_bytes_sent() / (double) runtime;
+        out.info() << "summary: " << _cb->aggregate_bytes_sent()
+                   << " bytes sent in "
+                   << runtime << " µs (" << rate << " MB/s)";
         
         return 0;
     }
+
+private:
+    std::unique_ptr<ComputeBuffer> _cb;
 };
 
 

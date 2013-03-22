@@ -26,16 +26,20 @@ std::unique_ptr<Parameters> par;
 int
 main(int argc, char* argv[])
 {
+    std::unique_ptr<Application> _app;
+
     try {
         std::unique_ptr<Parameters> parameters(new Parameters(argc, argv));
         par = std::move(parameters);
 
         if (par->node_type() == Parameters::INPUT_NODE) {
-            InputApplication app(*par);
-            app.run();
+            std::unique_ptr<Application> app(new InputApplication(*par));
+            _app = std::move(app);
+            _app->run();
         } else {
-            ComputeApplication app(*par);
-            app.run();
+            std::unique_ptr<Application> app(new ComputeApplication(*par));
+            _app = std::move(app);
+            _app->run();
         }
     } catch (std::exception const& e) {
         out.fatal() << e.what();

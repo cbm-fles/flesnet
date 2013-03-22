@@ -39,13 +39,15 @@ public:
 
     /// Completion notification event dispatcher. Called by the event loop.
     virtual void on_completion(const struct ibv_wc& wc) {
+        size_t in = wc.wr_id >> 8;
+        assert(in < _conn.size());
         switch (wc.wr_id & 0xFF) {
+
         case ID_SEND_CN_ACK:
-            out.debug() << "SEND complete";
+            //out.error() << "[" << in << "] " << "COMPLETE SEND _send_cp_ack";
             break;
 
         case ID_SEND_FINALIZE: {
-            int in = wc.wr_id >> 8;
             assert(_work_items.empty());
             assert(_completions.empty());
             _conn[in]->on_complete_send_finalize();
@@ -60,13 +62,12 @@ public:
             break;
 
         case ID_RECEIVE_CN_WP: {
-            size_t in = wc.wr_id >> 8;
             _conn[in]->on_complete_recv();
-            if (in == _red_lantern) {
+            if (_connected == _conn.size() && in == _red_lantern) {
                 auto new_red_lantern =
                     std::min_element(std::begin(_conn), std::end(_conn),
                                      [] (const std::unique_ptr<ComputeNodeConnection>& v1,
-                                         const std::unique_ptr<ComputeNodeConnection> &v2)
+                                         const std::unique_ptr<ComputeNodeConnection>& v2)
                                      { return v1->cn_wp().desc < v2->cn_wp().desc; } );
 
                 uint64_t new_completely_written = (*new_red_lantern)->cn_wp().desc;
@@ -103,7 +104,7 @@ public:
             }
         }
         catch (concurrent_queue<TimesliceCompletion>::Stopped) {
-            out.info() << "thread done.";
+            out.trace() << "handle_ts_completion thread done";
         }
     }
 
