@@ -65,7 +65,7 @@ public:
         if (_cm_id) {
             int err = rdma_destroy_id(_cm_id);
             if (err)
-                throw InfinibandException("rdma_destroy_id() failed");
+                throw InfinibandException("rdma_destroy_id failed");
             _cm_id = nullptr;
         }
     }
@@ -112,7 +112,7 @@ public:
                     << "disconnect";
         int err = rdma_disconnect(_cm_id);
         if (err)
-            throw InfinibandException("rdma_disconnect() failed");
+            throw InfinibandException("rdma_disconnect failed");
     }
     
     /// Connection handler function, called on successful connection.
@@ -324,7 +324,7 @@ public:
         if (_listen_id) {
             int err = rdma_destroy_id(_listen_id);
             if (err)
-                throw InfinibandException("rdma_destroy_id() failed");
+                throw InfinibandException("rdma_destroy_id failed");
             _listen_id = nullptr;
         }
 
@@ -338,7 +338,7 @@ public:
         if (_comp_channel) {
             int err = ibv_destroy_comp_channel(_comp_channel);
             if (err)
-                throw InfinibandException("wibv_destroy_comp_channel failed");
+                throw InfinibandException("ibv_destroy_comp_channel failed");
             _comp_channel = nullptr;
         }
 
