@@ -2,11 +2,23 @@
 
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 
+CFG="$DIR/flesnet.cfg"
+
+INCOUNT=`grep input-nodes "$CFG" | wc -l`
+CNCOUNT=`grep compute-nodes "$CFG" | wc -l`
+INLIST=`grep input-nodes "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/,/g'`
+CNLIST=`grep compute-nodes "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/,/g'`
+
+((COUNT=INCOUNT+CNCOUNT))
+LIST="$INLIST,$CNLIST"
+((LASTIN=INCOUNT-1))
+((LASTCN=INCOUNT+CNCOUNT-1))
+
 cat <<EOF > run.conf
-0	$DIR/flesnet -i %o
-1	$DIR/flesnet -c %o
+0,$LASTIN	$DIR/flesnet -i %o
+$INCOUNT-$LASTCN	$DIR/flesnet -c %o
 EOF
 
-srun -w node0,node1 -n 2 -N 2 -l --multi-prog run.conf
+srun -w "$LIST" -n "$COUNT" -N "$COUNT" -l --multi-prog run.conf
 
 rm run.conf
