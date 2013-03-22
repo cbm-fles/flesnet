@@ -40,29 +40,23 @@ public:
 
     /// Post a receive work request (WR) to the receive queue
     void post_recv_cn_wp() {
-        if (out.beDebug()) {
-            out.debug() << "[" << _index << "] "
-                        << "POST RECEIVE _receive_cn_wp";
+        if (out.beTrace()) {
+            out.trace() << "[" << _index << "] " << "POST RECEIVE _receive_cn_wp";
         }
-        //out.error() << "[" << _index << "] " << "POST RECEIVE _receive_cn_wp";
         post_recv(&recv_wr);
     }
 
     void post_send_cn_ack() {
-        if (out.beDebug()) {
-            out.debug() << "[" << _index << "] "
-                        << "POST SEND _send_cp_ack";
+        if (out.beTrace()) {
+            out.trace() << "[" << _index << "] " << "POST SEND _send_cp_ack";
         }
-        //out.error() << "[" << _index << "] " << "POST SEND _send_cp_ack";
         post_send(&send_wr);
     }
 
     void post_send_final_ack() {
-        if (out.beDebug()) {
-            out.debug() << "[" << _index << "] "
-                        << "POST SEND FINAL ack";
+        if (out.beTrace()) {
+            out.trace() << "[" << _index << "] " << "POST SEND FINAL ack";
         }
-        //out.error() << "[" << _index << "] " << "POST SEND FINAL ack";
         send_wr.wr_id = ID_SEND_FINALIZE | (_index << 8);
         send_wr.send_flags = IBV_SEND_SIGNALED;
         post_send(&send_wr);
@@ -112,7 +106,6 @@ public:
         assert(event->param.conn.private_data_len >= sizeof(InputNodeInfo));
         memcpy(&_remote_info, event->param.conn.private_data, sizeof(InputNodeInfo));
 
-        //out.error() << "receiving node index: " << _remote_info.index;
         _index = _remote_info.index;
 
         IBConnection::on_connect_request(event, pd, cq);
@@ -167,13 +160,15 @@ public:
     void on_complete_recv()
     {
         if (_recv_cn_wp == CN_WP_FINAL) {
-            out.info() << "[" << _index << "] " << "received FINAL pointer update";
+            out.debug() << "[" << _index << "] " << "received FINAL pointer update";
             // send FINAL ack
             _send_cn_ack = CN_WP_FINAL;
             post_send_final_ack();
             return;
         }
-        //out.error() << "[" << _index << "] " << "COMPLETE RECEIVE _receive_cn_wp";
+        if (out.beTrace()) {
+            out.trace() << "[" << _index << "] " << "COMPLETE RECEIVE _receive_cn_wp";
+        }
         _cn_wp = _recv_cn_wp;
         post_recv_cn_wp();
         {

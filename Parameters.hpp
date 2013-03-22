@@ -301,23 +301,28 @@ private:
                     << _input_nodes;
         out.debug() << "compute nodes (" << _compute_nodes.size() << "): "
                     << _compute_nodes;
-        out.debug() << "this node: "
-                    << (_node_type == INPUT_NODE ? "input" : "compute")
-                    << " node #" << _node_index;
+        out.info() << "this is "
+                   << (_node_type == INPUT_NODE ? "input" : "compute")
+                   << " node " << _node_index << " (of "
+                   << (_node_type == INPUT_NODE ? _input_nodes.size() :  _compute_nodes.size())
+                   << ")";
 
-        out.info() << "timeslice size: (" << _timeslice_size
-                   << " + " << _overlap_size << ") microslices";
-        out.info() << "microslice size: ("
-                   << _typical_content_size * sizeof(uint64_t)
-                   << " + " << 2 * sizeof(uint64_t) << ") bytes";
-        out.info() << "input node buffer size: ("
-                   << (1 << _in_data_buffer_size_exp) * sizeof(uint64_t)
-                   << " + " <<  (1 << _in_addr_buffer_size_exp) * sizeof(uint64_t)
-                   << ") bytes";
-        out.info() << "compute node buffer size: ("
-                   << (1 << _cn_data_buffer_size_exp) * sizeof(uint64_t) << " + "
-                   << (1 << _cn_desc_buffer_size_exp) * sizeof(TimesliceComponentDescriptor)
-                   << ") bytes";
+        if (_node_type == INPUT_NODE && _node_index == 0) {
+            out.info() << "microslice size: ("
+                       << _typical_content_size * sizeof(uint64_t)
+                       << " + " << 2 * sizeof(uint64_t) << ") bytes";
+            out.info() << "timeslice size: (" << _timeslice_size
+                       << " + " << _overlap_size << ") microslices";
+            out.info() << "number of timeslices: " << _max_timeslice_number;
+            out.info() << "input node buffer size: ("
+                       << (1 << _in_data_buffer_size_exp) * sizeof(uint64_t)
+                       << " + " <<  (1 << _in_addr_buffer_size_exp) * sizeof(uint64_t)
+                       << ") bytes";
+            out.info() << "compute node buffer size: ("
+                       << (1 << _cn_data_buffer_size_exp) * sizeof(uint64_t) << " + "
+                       << (1 << _cn_desc_buffer_size_exp) * sizeof(TimesliceComponentDescriptor)
+                       << ") bytes";
+        }
     }
 };
 

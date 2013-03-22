@@ -84,13 +84,7 @@ public:
         ib.disconnect();
         t2.join();
 
-        out.info() << ib.aggregate_send_requests() << " SEND requests";
-        out.info() << ib.aggregate_recv_requests() << " RECV requests";
-        double rate = (double) ib.aggregate_bytes_sent() / (double) runtime;
-        out.info() << "summary: " << ib.aggregate_bytes_sent()
-                   << " bytes sent in "
-                   << runtime << " µs (" << rate << " MB/s)";
-        
+        ib.summary(runtime);
         return 0;
     };
 };
@@ -128,13 +122,7 @@ public:
         ts_compl.join();
         t1.join();
 
-        out.info() << _cb->aggregate_send_requests() << " SEND requests";
-        out.info() << _cb->aggregate_recv_requests() << " RECV requests";
-        double rate = (double) _cb->aggregate_bytes_sent() / (double) runtime;
-        out.info() << "summary: " << _cb->aggregate_bytes_sent()
-                   << " bytes sent in "
-                   << runtime << " µs (" << rate << " MB/s)";
-        
+        _cb->summary(runtime);
         return 0;
     }
 

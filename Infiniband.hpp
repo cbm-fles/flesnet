@@ -126,7 +126,7 @@ public:
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
     virtual void on_disconnected() {
-        out.info() << "[" << _index << "] " << "connection disconnected";
+        out.debug() << "[" << _index << "] " << "connection disconnected";
 
         rdma_destroy_qp(_cm_id);
     }
@@ -234,7 +234,7 @@ public:
     uint64_t total_recv_requests() const {
         return _total_recv_requests;
     }
-    
+
 protected:
 
     /// Index of this connection in a group of connections.
@@ -252,9 +252,6 @@ protected:
 
         int err = ibv_post_send(qp(), wr, &bad_send_wr);
         if (err) {
-            out.fatal() << strerror(err) << " (" << err << ")";
-            out.fatal() << "SEND requests: " << _total_send_requests;
-            out.fatal() << "RECV requests: " << _total_recv_requests;
             throw InfinibandException("ibv_post_send failed");
         }
 
@@ -273,9 +270,6 @@ protected:
 
         int err = ibv_post_recv(qp(), wr, &bad_recv_wr);
         if (err) {
-            out.fatal() << strerror(err) << " (" << err << ")";
-            out.fatal() << "SEND requests: " << _total_send_requests;
-            out.fatal() << "RECV requests: " << _total_recv_requests;
             throw InfinibandException("ibv_post_recv failed");
         }
 
@@ -397,7 +391,7 @@ public:
         if (err)
             throw InfinibandException("RDMA listen failed");
 
-        out.info() << "Waiting for " << count << " connections";
+        out.debug() << "waiting for " << count << " connections";
     }
 
     /// Initiate disconnection.
@@ -437,7 +431,7 @@ public:
         if (err)
             throw InfinibandException("rdma_get_cm_event failed");
         
-        out.info() << "number of connections: " << _connected;
+        out.debug() << "number of connections: " << _connected;
     };
 
     /// The InfiniBand completion notification event loop.
@@ -479,7 +473,7 @@ public:
             }
         }
 
-        out.info() << "COMPLETION loop done";
+        out.debug() << "COMPLETION loop done";
     }
 
     /// Retrieve the InfiniBand protection domain.
@@ -509,6 +503,15 @@ public:
     /// Retrieve the total number of RECV work requests.
     uint64_t aggregate_recv_requests() const {
         return _aggregate_recv_requests;
+    }
+
+    void summary(double runtime) const {
+        out.info() << "summary: " << _aggregate_send_requests << " SEND, "
+                   << _aggregate_recv_requests << " RECV requests";
+        double rate = (double) _aggregate_bytes_sent / runtime;
+        out.info() << "summary: " << _aggregate_bytes_sent
+                   << " bytes sent in "
+                   << runtime << " µs (" << rate << " MB/s)";
     }
 
 protected:
@@ -560,7 +563,6 @@ protected:
 
         std::unique_ptr<CONNECTION> conn(new CONNECTION(_ec, UINT_FAST16_MAX, event->id));
         conn->on_connect_request(event, _pd, _cq);
-        //out.error() << "setting connection at " << conn->index();
         assert(conn->index() < _conn.size() && _conn.at(conn->index()) == nullptr);
         _conn.at(conn->index()) = std::move(conn);
     }

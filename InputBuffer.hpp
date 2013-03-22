@@ -87,7 +87,7 @@ public:
         for (auto& c : _conn)
             c->finalize();
 
-        out.info() << "SENDER loop done";
+        out.debug() << "SENDER loop done";
     }
 
 
@@ -244,7 +244,7 @@ private:
             if (_conn[cn]->done()) {
                 _connections_done++;
                 _all_done = (_connections_done == _conn.size());
-                out.debug() << "ID_RECEIVE_CN_ACK final for id " << cn << " alldone=" << _all_done;
+                out.debug() << "ID_RECEIVE_CN_ACK final for id " << cn << " all_done=" << _all_done;
             }
         }
             break;

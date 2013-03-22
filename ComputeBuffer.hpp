@@ -44,7 +44,9 @@ public:
         switch (wc.wr_id & 0xFF) {
 
         case ID_SEND_CN_ACK:
-            //out.error() << "[" << in << "] " << "COMPLETE SEND _send_cp_ack";
+            if (out.beTrace()) {
+                out.trace() << "[" << in << "] " << "COMPLETE SEND _send_cp_ack";
+            }
             break;
 
         case ID_SEND_FINALIZE: {
@@ -53,7 +55,7 @@ public:
             _conn[in]->on_complete_send_finalize();
             _connections_done++;
             _all_done = (_connections_done == _conn.size());
-            out.info() << "SEND FINALIZE complete for id " << in << " alldone=" << _all_done;
+            out.debug() << "SEND FINALIZE complete for id " << in << " all_done=" << _all_done;
             if (_all_done) {
                 _work_items.stop();
                 _completions.stop();

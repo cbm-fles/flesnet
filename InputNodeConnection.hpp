@@ -290,7 +290,6 @@ public:
 
         InputNodeInfo* in_info = reinterpret_cast<InputNodeInfo*>(private_data->data());
         in_info->index = par->node_index();
-        //out.error() << "providing node index: " << in_info->index;
 
         return private_data;
     }
