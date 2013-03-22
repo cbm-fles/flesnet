@@ -4,10 +4,10 @@ DIR="$( cd "$( dirname "$0" )" && pwd )"
 
 CFG="$DIR/flesnet.cfg"
 
-INCOUNT=`grep input-nodes "$CFG" | wc -l`
-CNCOUNT=`grep compute-nodes "$CFG" | wc -l`
-INLIST=`grep input-nodes "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/,/g'`
-CNLIST=`grep compute-nodes "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/,/g'`
+INCOUNT=`grep -E "^[^#]*input-nodes\s*=" "$CFG" | wc -l`
+CNCOUNT=`grep -E "^[^#]*compute-nodes\s*=" "$CFG" | wc -l`
+INLIST=`grep "^[^#]*input-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/,/g'`
+CNLIST=`grep "^[^#]*compute-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/,/g'`
 
 ((COUNT=INCOUNT+CNCOUNT))
 LIST="$INLIST,$CNLIST"
@@ -19,6 +19,6 @@ cat <<EOF > run.conf
 $INCOUNT-$LASTCN	$DIR/flesnet -c %o
 EOF
 
-srun -w "$LIST" -n "$COUNT" -N "$COUNT" -l --multi-prog run.conf
+srun -w "$LIST" -n "$COUNT" -l --multi-prog run.conf
 
 rm run.conf

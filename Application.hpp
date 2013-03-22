@@ -65,7 +65,7 @@ public:
         InputBuffer ib;
 
         // hacky delay to give CNs time to start
-        boost::this_thread::sleep(boost::posix_time::millisec(500));
+        boost::this_thread::sleep(boost::posix_time::millisec(1000));
 
         std::vector<std::string> services;
         for (unsigned int i = 0; i < _par.compute_nodes().size(); i++)
