@@ -1,5 +1,7 @@
 - test with larger data sizes
+  - analyze performance, "valgrind --tool=callgrind"
 - test with all nodes
+  - resolve connection issues with 2x8 nodes
 - ensure correct exception handling
   - handle tasks by buffer objects (enable correct destruction)
   - correct exception if IN started without CN
