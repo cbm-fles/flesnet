@@ -80,9 +80,10 @@ public:
         int num_sge2 = 0;
         struct ibv_sge sge2[4];
 
+        uint64_t cn_data_buffer_mask = (1L << par->cn_data_buffer_size_exp()) - 1L;
+        uint64_t cn_desc_buffer_mask = (1L << par->cn_desc_buffer_size_exp()) - 1L;
         uint64_t target_words_left =
-            (1 << par->cn_data_buffer_size_exp())
-            - _cn_wp.data % (1 << par->cn_data_buffer_size_exp()); // TODO
+            (1 << par->cn_data_buffer_size_exp()) - (_cn_wp.data & cn_data_buffer_mask);
 
         // split sge list if necessary
         int num_sge_cut = 0;
@@ -119,8 +120,7 @@ public:
         send_wr_ts.wr.rdma.rkey = _remote_info.data.rkey;
         send_wr_ts.wr.rdma.remote_addr =
             (uintptr_t)(_remote_info.data.addr +
-                        (_cn_wp.data % (1 << par->cn_data_buffer_size_exp())) // TODO
-                        * sizeof(uint64_t));
+                        (_cn_wp.data & cn_data_buffer_mask) * sizeof(uint64_t));
 
         if (num_sge2) {
             memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
@@ -157,7 +157,7 @@ public:
         send_wr_tscdesc.wr.rdma.rkey = _remote_info.desc.rkey;
         send_wr_tscdesc.wr.rdma.remote_addr =
             (uintptr_t)(_remote_info.desc.addr
-                        + (_cn_wp.desc % (1 << par->cn_desc_buffer_size_exp())) // TODO
+                        + (_cn_wp.desc & cn_desc_buffer_mask)
                         * sizeof(TimesliceComponentDescriptor));
 
         out.debug() << "[" << _index << "] "
