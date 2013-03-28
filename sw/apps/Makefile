@@ -8,7 +8,7 @@ all: release
 clean: subdirs-clean
 	$(RM) -rf build
 
-release: CFLAGS += -g -Wall -O2
+release: CFLAGS += -g -Wall -pedantic -O2
 release: BUILD_ID := release
 release: subdirs
 

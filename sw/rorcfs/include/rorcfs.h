@@ -27,7 +27,7 @@ struct rorcfs_event_descriptor {
  * to be transfered to the RORC
  **/
 typedef struct rorcfs_dma_desc {
-	unsigned long long		addr;
+	unsigned long		addr;
 	unsigned long					len;
 } trorcfs_dma_desc, *prorcfs_dma_desc;
 
