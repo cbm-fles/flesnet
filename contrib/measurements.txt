@@ -1,0 +1,10 @@
+Infiniband Performance
+
+Effective unidirectional theoretical throughput
+(actual data rate, not signaling rate)
+4xFDR: 54.54 Gbit/s (6.8175 MByte/s)
+
+$ ib_rdma_bw -c -n100000
+Bandwidth peak (#0 to #2761): 6000.22 MB/s
+Bandwidth average: 5987.19 MB/s
+
