@@ -246,17 +246,36 @@ protected:
     /// The queue pair capabilities.
     struct ibv_qp_cap _qp_cap;
 
+    void dump_send_wr(struct ibv_send_wr* wr) {
+        for (int i = 0; wr; i++, wr = wr->next) {
+            out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id;
+            out.fatal() << " opcode=" << wr->opcode;
+            out.fatal() << " send_flags=" << wr->send_flags;
+            out.fatal() << " num_sge=" << wr->num_sge;
+            for (int j = 0; j < wr->num_sge; j++) {
+                out.fatal() << "  sg_list[" << j << "] "
+                            << "addr=" << wr->sg_list[j].addr;
+                out.fatal() << "  sg_list[" << j << "] "
+                            << "length=" << wr->sg_list[j].length;
+                out.fatal() << "  sg_list[" << j << "] "
+                            << "lkey=" << wr->sg_list[j].lkey;
+            }
+        }
+    }
+
     /// Post an InfiniBand SEND work request (WR) to the send queue
     void post_send(struct ibv_send_wr* wr) {
         struct ibv_send_wr* bad_send_wr;
 
         int err = ibv_post_send(qp(), wr, &bad_send_wr);
         if (err) {
+            out.fatal() << "ibv_post_send failed: " << strerror(err);
+            dump_send_wr(wr);
             throw InfinibandException("ibv_post_send failed");
         }
 
         _total_send_requests++;
-        
+
         while (wr) {
             for (int i = 0; i < wr->num_sge; i++)
                 _total_bytes_sent += wr->sg_list[i].length;
@@ -270,6 +289,7 @@ protected:
 
         int err = ibv_post_recv(qp(), wr, &bad_recv_wr);
         if (err) {
+            out.fatal() << "ibv_post_recv failed: " << strerror(err);
             throw InfinibandException("ibv_post_recv failed");
         }
 
@@ -465,6 +485,7 @@ public:
                         s << ibv_wc_status_str(wc[i].status)
                           << " for wr_id " << (int) wc[i].wr_id;
                         out.error() << s.str();
+
                         continue;
                     }
 
