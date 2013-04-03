@@ -185,7 +185,8 @@ public:
         //
 
         // send everything
-        while (_pending_write_requests >= _max_pending_write_requests); // busy wait
+        while (_pending_write_requests >= _max_pending_write_requests)
+            boost::this_thread::yield(); // busy wait
         post_send(&send_wr_ts);
         _pending_write_requests++;
     }
