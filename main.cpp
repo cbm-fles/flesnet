@@ -35,12 +35,11 @@ main(int argc, char* argv[])
         if (par->node_type() == Parameters::INPUT_NODE) {
             std::unique_ptr<Application> app(new InputApplication(*par));
             _app = std::move(app);
-            _app->run();
         } else {
             std::unique_ptr<Application> app(new ComputeApplication(*par));
             _app = std::move(app);
-            _app->run();
         }
+        _app->run();
     } catch (std::exception const& e) {
         out.fatal() << e.what();
         return EXIT_FAILURE;

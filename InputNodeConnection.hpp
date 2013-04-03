@@ -298,8 +298,8 @@ public:
 
         IBConnection::on_established(event);
     }
-    
-    virtual void on_disconnected() {
+
+    void dereg_mr() {
         if (_mr_recv) {
             ibv_dereg_mr(_mr_recv);
             _mr_recv = nullptr;
@@ -309,8 +309,16 @@ public:
             ibv_dereg_mr(_mr_send);
             _mr_send = nullptr;
         }
-        
-        IBConnection::on_disconnected();
+    }
+
+    virtual void on_rejected(struct rdma_cm_event* event) {
+        dereg_mr();
+        IBConnection::on_rejected(event);
+    }
+
+    virtual void on_disconnected(struct rdma_cm_event* event) {
+        dereg_mr();
+        IBConnection::on_disconnected(event);
     }
     
     virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() {

@@ -62,8 +62,7 @@ public:
             assert(_addr.at(mc_offset + mc_length) > _acked_data);
             
             uint64_t data_offset = _addr.at(mc_offset);
-            uint64_t data_length = _addr.at(mc_offset + mc_length)
-                - data_offset;
+            uint64_t data_length = _addr.at(mc_offset + mc_length) - data_offset;
 
             if (out.beTrace()) {
                 out.trace() << "SENDER working on TS " << timeslice

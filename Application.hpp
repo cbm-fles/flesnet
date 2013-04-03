@@ -62,23 +62,25 @@ public:
     
     /// The "main" function of an input node application.
     virtual int run() {
-        InputBuffer ib;
-
-        // hacky delay to give CNs time to start
-        boost::this_thread::sleep(boost::posix_time::millisec(1000));
-
         std::vector<std::string> services;
         for (unsigned int i = 0; i < _par.compute_nodes().size(); i++)
             services.push_back(boost::lexical_cast<std::string>
                                (_par.base_port() + i));
-    
+
+        // hacky delay to give CNs time to start
+        boost::this_thread::sleep(boost::posix_time::millisec(1000));
+
+        InputBuffer ib;
+
         ib.connect(_par.compute_nodes(), services);
         ib.handle_cm_events(_par.compute_nodes().size());
         boost::thread t1(&InputBuffer::completion_handler, &ib);
+
         auto time1 = std::chrono::high_resolution_clock::now();
         ib.sender_loop();
         auto time2 = std::chrono::high_resolution_clock::now();
         auto runtime = std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count();
+
         t1.join();
         boost::thread t2(&InputBuffer::handle_cm_events, &ib, 0);
         ib.disconnect();

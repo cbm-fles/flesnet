@@ -69,7 +69,7 @@ public:
             _cm_id = nullptr;
         }
     }
-    
+
     /// Retrieve the InfiniBand queue pair associated with the connection.
     struct ibv_qp* qp() const {
         return _cm_id->qp;
@@ -115,6 +115,12 @@ public:
             throw InfinibandException("rdma_disconnect failed");
     }
     
+    virtual void on_rejected(struct rdma_cm_event* event) {
+        out.error() << "[" << _index << "] " << "connection rejected";
+
+        rdma_destroy_qp(_cm_id);
+    }
+
     /// Connection handler function, called on successful connection.
     /**
        \param event RDMA connection manager event structure
@@ -125,7 +131,7 @@ public:
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
-    virtual void on_disconnected() {
+    virtual void on_disconnected(struct rdma_cm_event* event) {
         out.debug() << "[" << _index << "] " << "connection disconnected";
 
         rdma_destroy_qp(_cm_id);
@@ -379,9 +385,11 @@ public:
     */
     void connect(const std::vector<std::string>& hostnames,
                  const std::vector<std::string>& services) {
-        for (unsigned int i = 0; i < hostnames.size(); i++) {
+        _hostnames = hostnames;
+        _services = services;
+        for (unsigned int i = 0; i < _hostnames.size(); i++) {
             std::unique_ptr<CONNECTION> connection(new CONNECTION(_ec, i));
-            connection->connect(hostnames[i], services[i]);
+            connection->connect(_hostnames[i], _services[i]);
             _conn.push_back(std::move(connection));
         }
     };
@@ -552,6 +560,9 @@ protected:
     /// Flag causing termination of completion handler.
     bool _all_done = false;
 
+    std::vector<std::string> _hostnames;
+    std::vector<std::string> _services;
+
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
     virtual void on_addr_resolved(struct rdma_cm_id* id) {
         if (!_pd)
@@ -567,6 +578,19 @@ protected:
         CONNECTION* conn = (CONNECTION*) id->context;
 
         conn->on_route_resolved();
+    }
+
+    /// Handle RDMA_CM_REJECTED event.
+    virtual void on_rejected(struct rdma_cm_event* event) {
+        CONNECTION* conn = (CONNECTION*) event->id->context;
+
+        conn->on_rejected(event);
+        uint_fast16_t i = conn->index();
+        _conn.at(i) = nullptr;
+
+        std::unique_ptr<CONNECTION> connection(new CONNECTION(_ec, i));
+        connection->connect(_hostnames[i], _services[i]);
+        _conn.at(i) = std::move(connection);
     }
 
     /// Handle RDMA_CM_EVENT_ESTABLISHED event.
@@ -589,14 +613,14 @@ protected:
     }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
-    virtual void on_disconnected(struct rdma_cm_id* id) {
-        CONNECTION* conn = (CONNECTION*) id->context;
+    virtual void on_disconnected(struct rdma_cm_event* event) {
+        CONNECTION* conn = (CONNECTION*) event->id->context;
 
         _aggregate_bytes_sent += conn->total_bytes_sent();
         _aggregate_send_requests += conn->total_send_requests();
         _aggregate_recv_requests += conn->total_recv_requests();
 
-        conn->on_disconnected();
+        conn->on_disconnected(event);
         _connected--;
     }
 
@@ -627,6 +651,7 @@ private:
 
     /// Connection manager event dispatcher. Called by the CM event loop.
     void on_cm_event(struct rdma_cm_event* event) {
+        out.trace() << rdma_event_str(event->event);
         switch (event->event) {
         case RDMA_CM_EVENT_ADDR_RESOLVED:
             on_addr_resolved(event->id);
@@ -643,7 +668,8 @@ private:
         case RDMA_CM_EVENT_UNREACHABLE:
             throw InfinibandException("remote server is not reachable");
         case RDMA_CM_EVENT_REJECTED:
-            throw InfinibandException("request rejected by remote endpoint");
+            on_rejected(event);
+            return;
         case RDMA_CM_EVENT_ESTABLISHED:
             on_established(event);
             return;
@@ -651,7 +677,7 @@ private:
             on_connect_request(event);
             return;
         case RDMA_CM_EVENT_DISCONNECTED:
-            on_disconnected(event->id);
+            on_disconnected(event);
             return;
         default:
             out.error() << rdma_event_str(event->event);

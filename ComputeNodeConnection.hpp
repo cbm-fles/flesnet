@@ -121,7 +121,7 @@ public:
         out.debug() << "remote index: " << _remote_info.index;
     }
 
-    virtual void on_disconnected() {
+    virtual void on_disconnected(struct rdma_cm_event* event) {
         if (_mr_recv) {
             ibv_dereg_mr(_mr_recv);
             _mr_recv = nullptr;
@@ -142,7 +142,7 @@ public:
             _mr_data = nullptr;
         }
 
-        IBConnection::on_disconnected();
+        IBConnection::on_disconnected(event);
     }
 
     void inc_ack_pointers(uint64_t ack_pos) {
