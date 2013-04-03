@@ -67,9 +67,6 @@ public:
             services.push_back(boost::lexical_cast<std::string>
                                (_par.base_port() + i));
 
-        // hacky delay to give CNs time to start
-        boost::this_thread::sleep(boost::posix_time::millisec(1000));
-
         InputBuffer ib;
 
         ib.connect(_par.compute_nodes(), services);

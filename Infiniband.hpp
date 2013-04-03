@@ -108,15 +108,14 @@ public:
     }
 
     void disconnect() {
-        out.debug() << "[" << _index << "] "
-                    << "disconnect";
+        out.debug() << "[" << _index << "] " << "disconnect";
         int err = rdma_disconnect(_cm_id);
         if (err)
             throw InfinibandException("rdma_disconnect failed");
     }
     
     virtual void on_rejected(struct rdma_cm_event* event) {
-        out.error() << "[" << _index << "] " << "connection rejected";
+        out.debug() << "[" << _index << "] " << "connection rejected";
 
         rdma_destroy_qp(_cm_id);
     }
@@ -588,6 +587,7 @@ protected:
         uint_fast16_t i = conn->index();
         _conn.at(i) = nullptr;
 
+        // immediately initiate retry
         std::unique_ptr<CONNECTION> connection(new CONNECTION(_ec, i));
         connection->connect(_hostnames[i], _services[i]);
         _conn.at(i) = std::move(connection);
