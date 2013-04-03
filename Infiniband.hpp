@@ -539,7 +539,7 @@ public:
         double rate = (double) _aggregate_bytes_sent / runtime;
         out.info() << "summary: " << _aggregate_bytes_sent
                    << " bytes sent in "
-                   << runtime << " µs (" << rate << " MB/s)";
+                   << runtime/1000000. << " s (" << rate << " MB/s)";
     }
 
 protected:
