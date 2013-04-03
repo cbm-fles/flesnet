@@ -8,6 +8,7 @@
 #define INPUTNODECONNECTION_HPP
 
 #include <boost/thread.hpp>
+#include <atomic>
 #include "Infiniband.hpp"
 #include "Parameters.hpp"
 #include "Timeslice.hpp"
@@ -28,11 +29,15 @@ public:
                         struct rdma_cm_id* id = 0) :
         IBConnection(ec, index, id)
     {
-        _qp_cap.max_send_wr = 40;
-        _qp_cap.max_send_sge = 8;
-        _qp_cap.max_recv_wr = 20;
-        _qp_cap.max_recv_sge = 8;
-        _qp_cap.max_inline_data = sizeof(TimesliceComponentDescriptor) * 10;
+        _qp_cap.max_send_wr = 8000; // typical hca maximum: 16k
+        _qp_cap.max_send_sge = 4; // max. two chunks each for addr and data words
+        _max_pending_write_requests = (_qp_cap.max_send_wr - 1) / 3;
+        assert(_max_pending_write_requests > 0);
+
+        _qp_cap.max_recv_wr = 1; // receive only single ComputeNodeBufferPosition struct
+        _qp_cap.max_recv_sge = 1;
+
+        _qp_cap.max_inline_data = sizeof(TimesliceComponentDescriptor);
     }
 
     /// Wait until enough space is available at target compute node.
@@ -148,7 +153,7 @@ public:
         sge3.lkey = 0;
 
         memset(&send_wr_tscdesc, 0, sizeof(send_wr_tscdesc));
-        send_wr_tscdesc.wr_id = ID_WRITE_DESC | (timeslice << 8);
+        send_wr_tscdesc.wr_id = ID_WRITE_DESC | (timeslice << 24) | (_index << 8);
         send_wr_tscdesc.opcode = IBV_WR_RDMA_WRITE;
         send_wr_tscdesc.send_flags =
             IBV_SEND_INLINE | IBV_SEND_FENCE | IBV_SEND_SIGNALED;
@@ -163,8 +168,26 @@ public:
         out.debug() << "[" << _index << "] "
                     << "post_send (timeslice " << timeslice << ")";
 
+        // DEBUG TODO REMOVE
+        // check sg_lists
+        struct ibv_send_wr* check_wr = &send_wr_ts;
+        while (check_wr) {
+            if ((check_wr->send_flags & IBV_SEND_INLINE) == 0)
+                for (int i = 0; i < check_wr->num_sge; i++) {
+                    //                    check_wr->sg_list[i].addr;
+                    //out.info() << (uint64_t) check_wr->sg_list[i].lkey;
+                    //                    check_wr->sg_list[i].length;
+                    //                    check_wr->sg_list[i].lkey;
+                    assert(check_wr->sg_list[i].lkey != 0);
+                }
+            check_wr = check_wr->next;
+        }
+        //
+
         // send everything
+        while (_pending_write_requests >= _max_pending_write_requests); // busy wait
         post_send(&send_wr_ts);
+        _pending_write_requests++;
     }
 
     /// Increment target write pointers after data has been sent.
@@ -191,6 +214,10 @@ public:
                 _send_cn_wp = _cn_wp;
             post_send_cn_wp();
         }
+    }
+
+    void on_complete_write() {
+        _pending_write_requests--;
     }
 
     /// Handle Infiniband receive completion notification.
@@ -250,8 +277,9 @@ public:
         send_sge.length = sizeof(ComputeNodeBufferPosition);
         send_sge.lkey = _mr_send->lkey;
 
-        send_wr.wr_id = ID_SEND_CN_WP;
+        send_wr.wr_id = ID_SEND_CN_WP | (_index << 8);
         send_wr.opcode = IBV_WR_SEND;
+        send_wr.send_flags = IBV_SEND_SIGNALED;
         send_wr.sg_list = &send_sge;
         send_wr.num_sge = 1;
 
@@ -361,6 +389,10 @@ private:
 
     /// Scatter/gather list entry for send work request
     struct ibv_sge send_sge;
+
+    std::atomic_uint _pending_write_requests{0};
+
+    unsigned int _max_pending_write_requests = 0;
 };
 
 

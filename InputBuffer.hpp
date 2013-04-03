@@ -125,6 +125,14 @@ private:
         return timeslice % _conn.size();
     }
 
+    void dump_mr(struct ibv_mr* mr) {
+        out.debug() << "ibv_mr dump:";
+        out.debug() << " addr=" << (uint64_t) mr->addr;
+        out.debug() << " length=" << (uint64_t) mr->length;
+        out.debug() << " lkey=" << (uint64_t) mr->lkey;
+        out.debug() << " rkey=" << (uint64_t) mr->rkey;
+    }
+
     virtual void on_addr_resolved(struct rdma_cm_id* id) {
         IBConnectionGroup<InputNodeConnection>::on_addr_resolved(id);
 
@@ -141,6 +149,11 @@ private:
             if (!_mr_addr)
                 throw InfinibandException
                     ("registration of memory region failed");
+
+            if (out.beDebug()) {
+                dump_mr(_mr_addr);
+                dump_mr(_mr_data);
+            }
         }
     }
     
@@ -220,8 +233,11 @@ private:
     virtual void on_completion(const struct ibv_wc& wc) {
         switch (wc.wr_id & 0xFF) {
         case ID_WRITE_DESC: {
-            uint64_t ts = wc.wr_id >> 8;
+            uint64_t ts = wc.wr_id >> 24;
             out.debug() << "write completion for timeslice " << ts;
+
+            int cn = (wc.wr_id >> 8) & 0xFFFF;
+            _conn[cn]->on_complete_write();
 
             uint64_t acked_ts = _acked_mc / par->timeslice_size();
             if (ts == acked_ts)
@@ -248,8 +264,13 @@ private:
             }
         }
             break;
+
+        case ID_SEND_CN_WP: {
+        }
+            break;
             
         default:
+            out.error() << "wc for unknown wr_id=" << (wc.wr_id & 0xFF);
             throw InfinibandException("wc for unknown wr_id");
         }
     }
