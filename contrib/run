@@ -4,21 +4,29 @@ DIR="$( cd "$( dirname "$0" )" && pwd )"
 
 CFG="$DIR/flesnet.cfg"
 
-INCOUNT=`grep -E "^[^#]*input-nodes\s*=" "$CFG" | wc -l`
-CNCOUNT=`grep -E "^[^#]*compute-nodes\s*=" "$CFG" | wc -l`
-INLIST=`grep "^[^#]*input-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/,/g'`
-CNLIST=`grep "^[^#]*compute-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/,/g'`
+if [[ "$SLURMD_NODENAME" ]]; then
+	# started by slurm
+	HOST=$SLURMD_NODENAME
 
-((COUNT=INCOUNT+CNCOUNT))
-LIST="$INLIST,$CNLIST"
-((LASTIN=INCOUNT-1))
-((LASTCN=INCOUNT+CNCOUNT-1))
+	INLIST=(`grep "^[^#]*input-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/ /g'`)
+	CNLIST=(`grep "^[^#]*compute-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/ /g'`)
 
-cat <<EOF > run.conf
-0-$LASTIN	$DIR/flesnet -i %o
-$INCOUNT-$LASTCN	$DIR/flesnet -c %o
-EOF
+	for ((i=0; i<${#INLIST[@]}; i++)); do
+		if [[ ${INLIST[$i]} = $HOST ]]; then
+			"$DIR/flesnet" -i$i &
+		fi
+	done
 
-srun -w "$LIST" -n "$COUNT" -l --multi-prog run.conf
+	for ((i=0; i<${#CNLIST[@]}; i++)); do
+		if [[ ${CNLIST[$i]} = $HOST ]]; then
+			"$DIR/flesnet" -c$i &
+		fi
+	done
+	wait
+else
+	# started directly
+	COUNT=`grep -E "^[^#]*(input|compute)-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sort -u | wc -l`
+	LIST=`grep -E "^[^#]*(input|compute)-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sort -u | sed -e ':a;N;$!ba;s/\n/,/g'`
 
-rm run.conf
+	srun -w "$LIST" -N "$COUNT" -l "$0"
+fi
