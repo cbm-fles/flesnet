@@ -7,7 +7,6 @@
 #ifndef INPUTBUFFER_HPP
 #define INPUTBUFFER_HPP
 
-#include <cassert>
 #include "InputNodeConnection.hpp"
 #include "DataSource.hpp"
 #include "global.hpp"
@@ -57,9 +56,7 @@ public:
             uint64_t mc_offset = timeslice * par->timeslice_size();
             uint64_t mc_length = par->timeslice_size() + par->overlap_size();
             
-            if (_addr.at(mc_offset + mc_length) <= _acked_data)
-                _data_source.wait_for_data(mc_offset + mc_length + 1);
-            assert(_addr.at(mc_offset + mc_length) > _acked_data);
+            _data_source.wait_for_data(mc_offset + mc_length + 1);
             
             uint64_t data_offset = _addr.at(mc_offset);
             uint64_t data_length = _addr.at(mc_offset + mc_length) - data_offset;

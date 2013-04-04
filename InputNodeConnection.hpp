@@ -60,8 +60,8 @@ public:
                 boost::mutex::scoped_lock lock2(_cn_wp_mutex);
                 if (_our_turn) {
                     // send phony update to receive new pointers
-                    out.info() << "[" << _index << "] "
-                               << "SENDER send phony update";
+                    out.debug() << "[" << _index << "] "
+                                << "SENDER send phony update";
                     _our_turn = false;
                     _send_cn_wp = _cn_wp;
                     post_send_cn_wp();
