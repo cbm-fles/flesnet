@@ -7,14 +7,6 @@
 #ifndef DATASOURCE_HPP
 #define DATASOURCE_HPP
 
-#include <boost/thread/thread.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/poisson_distribution.hpp>
-#include <boost/random/variate_generator.hpp>
-#include "RingBuffer.hpp"
-#include "global.hpp"
-
-
 /// Abstract FLES data source class.
 class DataSource
 {

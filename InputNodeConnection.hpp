@@ -7,14 +7,6 @@
 #ifndef INPUTNODECONNECTION_HPP
 #define INPUTNODECONNECTION_HPP
 
-#include <boost/thread.hpp>
-#include <atomic>
-#include "Infiniband.hpp"
-#include "Parameters.hpp"
-#include "Timeslice.hpp"
-#include "global.hpp"
-
-
 /// Input node connection class.
 /** An InputNodeConnection object represents the endpoint of a single
     timeslice building connection from an input node to a compute

@@ -7,11 +7,6 @@
 #ifndef COMPUTEBUFFER_HPP
 #define COMPUTEBUFFER_HPP
 
-#include <algorithm>
-#include "concurrent_queue.hpp"
-#include "ComputeNodeConnection.hpp"
-
-
 /// Compute buffer and input node connection container class.
 /** A ComputeBuffer object represents a timeslice buffer (filled by
     the input nodes) and a group of timeslice building connections to

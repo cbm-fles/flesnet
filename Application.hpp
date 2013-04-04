@@ -7,15 +7,6 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 
-#include <iostream>
-#include <chrono>
-#include <boost/thread.hpp>
-#include "InputBuffer.hpp"
-#include "ComputeBuffer.hpp"
-#include "TimesliceProcessor.hpp"
-#include "global.hpp"
-
-
 /// %Application exception class.
 /** An ApplicationException object signals a general error in the flow
     of the application. */

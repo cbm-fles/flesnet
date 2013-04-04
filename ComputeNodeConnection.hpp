@@ -7,14 +7,6 @@
 #ifndef COMPUTENODECONNECTION_HPP
 #define COMPUTENODECONNECTION_HPP
 
-#include <boost/thread.hpp>
-#include "Infiniband.hpp"
-#include "RingBuffer.hpp"
-#include "Parameters.hpp"
-#include "Timeslice.hpp"
-#include "global.hpp"
-
-
 /// Compute node connection class.
 /** A ComputeNodeConnection object represents the endpoint of a single
     timeslice building connection from a compute node to an input

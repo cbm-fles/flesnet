@@ -7,10 +7,6 @@
 #ifndef CONCURRENT_QUEUE_HPP
 #define CONCURRENT_QUEUE_HPP
 
-#include <boost/thread.hpp>
-#include <queue>
-
-
 template<typename T>
 class concurrent_queue : private boost::noncopyable
 {

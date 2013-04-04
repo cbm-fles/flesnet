@@ -16,9 +16,22 @@
  * cluster over an Infiniband network.
  */
 
-#include <cstdlib>
-#include "Application.hpp"
+#include "include.hpp"
+
 #include "global.hpp"
+
+#include "Timeslice.hpp"
+#include "Parameters.hpp"
+#include "RingBuffer.hpp"
+#include "Infiniband.hpp"
+#include "InputNodeConnection.hpp"
+#include "DataSource.hpp"
+#include "InputBuffer.hpp"
+#include "ComputeNodeConnection.hpp"
+#include "concurrent_queue.hpp"
+#include "ComputeBuffer.hpp"
+#include "TimesliceProcessor.hpp"
+#include "Application.hpp"
 
 einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out(einhard::WARN, true);
 std::unique_ptr<Parameters> par;

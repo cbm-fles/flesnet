@@ -7,16 +7,6 @@
 #ifndef INFINIBAND_HPP
 #define INFINIBAND_HPP
 
-#include <vector>
-#include <cstring> // Required for memset().
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <infiniband/arch.h>
-#include <rdma/rdma_cma.h>
-#include <valgrind/memcheck.h>
-#include "global.hpp"
-
-
 /// InfiniBand exception class.
 /** An InfinbandException object signals an error that occured in the
     InfiniBand communication functions. */

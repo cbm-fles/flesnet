@@ -7,11 +7,6 @@
 #ifndef INPUTBUFFER_HPP
 #define INPUTBUFFER_HPP
 
-#include "InputNodeConnection.hpp"
-#include "DataSource.hpp"
-#include "global.hpp"
-
-
 /// Input buffer and compute node connection container class.
 /** An InputBuffer object represents an input buffer (filled by a
     FLIB) and a group of timeslice building connections to compute

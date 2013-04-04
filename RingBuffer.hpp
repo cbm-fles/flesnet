@@ -7,7 +7,6 @@
 #ifndef RINGBUFFER_HPP
 #define RINGBUFFER_HPP
 
-
 /// Simple generic ring buffer class.
 template<typename T, bool CLEARED = false>
 class RingBuffer

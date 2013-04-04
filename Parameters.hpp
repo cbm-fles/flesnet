@@ -7,16 +7,7 @@
 #ifndef PARAMETERS_HPP
 #define PARAMETERS_HPP
 
-#include <boost/program_options.hpp>
 namespace po = boost::program_options;
-
-#include <vector>
-#include <string>
-#include <stdexcept>
-#include <fstream>
-#include "global.hpp"
-#include "Timeslice.hpp"
-
 
 /// Overloaded output operator for STL vectors.
 template<class T>
