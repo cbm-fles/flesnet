@@ -39,8 +39,8 @@ public:
         switch (wc.wr_id & 0xFF) {
 
         case ID_SEND_CN_ACK:
-            if (out.beTrace()) {
-                out.trace() << "[" << in << "] " << "COMPLETE SEND _send_cp_ack";
+            if (out.beDebug()) {
+                out.debug() << "[" << in << "] " << "COMPLETE SEND _send_cp_ack";
             }
             break;
 

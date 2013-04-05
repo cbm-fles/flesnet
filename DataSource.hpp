@@ -39,18 +39,23 @@ public:
               RingBuffer<uint64_t>& addr_buffer) :
         DataSource(data_buffer, addr_buffer),
         _pd(par->typical_content_size()),
-        _rand_content_words(_rng, _pd) {
+        _rand_content_words(_rng, _pd)
+    {
         _generator_thread = new boost::thread(&DummyFlib::generate_data, this);
     };
 
-    ~DummyFlib() {
-        _generator_thread->interrupt();
+    ~DummyFlib()
+    {
+        _is_stopped = true;
         _generator_thread->join();
         delete _generator_thread;
     };
     
     /// Generate FLIB input data.
-    void generate_data() {
+    void generate_data()
+    {
+        bool generate_pattern = par->check_pattern();
+
         while (true) {
             unsigned int content_words = par->typical_content_size();
             if (par->randomize_sizes())
@@ -67,18 +72,14 @@ public:
                             | (uint64_t) flags << 32 | (uint64_t) size;
             uint64_t hdr1 = (uint64_t) rsvd << 48 | (time & 0xFFFFFFFFFFFF);
 
-            // check for space in data buffer, busy wait if required
-            while (_data_written - _acked_data + content_words + 2 > _data_buffer.size()) {
-                if (out.beTrace())
-                    out.trace() << "data buffer full";
-                boost::this_thread::sleep(boost::posix_time::millisec(10));
-            }
-
-            // check for space in addr buffer, busy wait if required
-            while (_mc_written - _acked_mc == _addr_buffer.size()) {
-                if (out.beTrace())
-                    out.trace() << "addr buffer full";
-                boost::this_thread::sleep(boost::posix_time::millisec(10));
+            // check for space in data and addr buffers, wait if required
+            {
+                //                boost::unique_lock<boost::mutex> lock(_acked_mutex);
+                while ((_data_written - _acked_data + content_words + 2 > _data_buffer.size())
+                       || (_mc_written - _acked_mc + 1 > _addr_buffer.size())) {
+                    //                    _cond_acked.wait(lock);
+                    if (_is_stopped) return;
+                }
             }
 
             // write to data buffer
@@ -86,29 +87,60 @@ public:
             _data_buffer.at(_data_written++) = hdr0;
             _data_buffer.at(_data_written++) = hdr1;
 
-            for (uint64_t i = 0; i < content_words; i++) {
-                _data_buffer.at(_data_written++) =
-                    ((uint64_t) par->node_index() << 48) | i;
+            if (generate_pattern) {
+                for (uint64_t i = 0; i < content_words; i++) {
+                    _data_buffer.at(_data_written++) = ((uint64_t) par->node_index() << 48) | i;
+                }
             }
 
             // write to addr buffer
-            _addr_buffer.at(_mc_written++) = start_addr;
+            _addr_buffer.at(_mc_written) = start_addr;
+            {
+                //                boost::unique_lock<boost::mutex> lock(_written_mutex);
+                _mc_written++;
+            }
+            //_cond_written.notify_all();
+            if (_is_stopped) return;
         }
     }
 
-    virtual void wait_for_data(uint64_t min_mc_number) {
-        while (min_mc_number > _mc_written) {
-            boost::this_thread::sleep(boost::posix_time::millisec(10));
+
+    //    to do: this is a bad idea (performance). minimize inter-thread comm!
+
+    virtual void wait_for_data(uint64_t min_mc_number)
+    {
+        static uint64_t local_mc_written = 0;
+
+        if (min_mc_number > local_mc_written) {
+            //            boost::unique_lock<boost::mutex> lock(_written_mutex);
+            while (min_mc_number > _mc_written) {
+                //                _cond_written.wait(lock);
+                boost::this_thread::yield();
+            }
+            local_mc_written = _mc_written;
         }
     };
 
-    virtual void update_ack_pointers(uint64_t acked_data, uint64_t acked_mc) {
-        _acked_data = acked_data;
-        _acked_mc = acked_mc;
+    virtual void update_ack_pointers(uint64_t acked_data, uint64_t acked_mc)
+    {
+        {
+            //            boost::unique_lock<boost::mutex> lock(_acked_mutex);
+            _acked_data = acked_data;
+            _acked_mc = acked_mc;
+        }
+        //        _cond_acked.notify_all();
     };
 
 private:
+    std::atomic<bool> _is_stopped{false};
+
     boost::thread* _generator_thread;
+
+    boost::mutex _acked_mutex;
+    boost::condition_variable _cond_acked;
+
+    boost::mutex _written_mutex;
+    boost::condition_variable _cond_written;
 
     /// Number of acknowledged data words. Updated by input node.
     std::atomic<uint64_t> _acked_data{0};

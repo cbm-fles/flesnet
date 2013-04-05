@@ -23,7 +23,11 @@ public:
     {
         _qp_cap.max_send_wr = 8000; // typical hca maximum: 16k
         _qp_cap.max_send_sge = 4; // max. two chunks each for addr and data words
-        _max_pending_write_requests = (_qp_cap.max_send_wr - 1) / 3;
+
+        // limit pending write requests so that send queue and completion queue do not overflow
+        _max_pending_write_requests =
+            std::min(static_cast<unsigned int>((_qp_cap.max_send_wr - 1) / 3),
+                     static_cast<unsigned int>((par->num_cqe() - 1) / par->input_nodes().size()));
         assert(_max_pending_write_requests > 0);
 
         _qp_cap.max_recv_wr = 1; // receive only single ComputeNodeBufferPosition struct
@@ -158,27 +162,13 @@ public:
                         * sizeof(TimesliceComponentDescriptor));
 
         out.debug() << "[" << _index << "] "
-                    << "post_send (timeslice " << timeslice << ")";
-
-        // DEBUG TODO REMOVE
-        // check sg_lists
-        struct ibv_send_wr* check_wr = &send_wr_ts;
-        while (check_wr) {
-            if ((check_wr->send_flags & IBV_SEND_INLINE) == 0)
-                for (int i = 0; i < check_wr->num_sge; i++) {
-                    //                    check_wr->sg_list[i].addr;
-                    //out.info() << (uint64_t) check_wr->sg_list[i].lkey;
-                    //                    check_wr->sg_list[i].length;
-                    //                    check_wr->sg_list[i].lkey;
-                    assert(check_wr->sg_list[i].lkey != 0);
-                }
-            check_wr = check_wr->next;
-        }
-        //
+                    << "POST SEND data (timeslice " << timeslice << ")";
 
         // send everything
-        while (_pending_write_requests >= _max_pending_write_requests)
-            boost::this_thread::yield(); // busy wait
+        while (_pending_write_requests >= _max_pending_write_requests) {
+            //out.fatal() << "MAX REQUESTS! ###";
+            boost::this_thread::yield(); // busy wait // TODO
+        }
         post_send(&send_wr_ts);
         _pending_write_requests++;
     }

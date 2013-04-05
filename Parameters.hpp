@@ -108,6 +108,11 @@ public:
         return _randomize_sizes;
     };
 
+    /// Retrieve the check pattern sizes flag.
+    bool check_pattern() const {
+        return _check_pattern;
+    };
+
     /// Retrieve the global maximum timeslice number.
     uint32_t max_timeslice_number() const {
         return _max_timeslice_number;
@@ -118,6 +123,11 @@ public:
         return _base_port;
     };
     
+    /// Retrieve the global base port.
+    uint32_t num_cqe() const {
+        return _num_cqe;
+    };
+
     /// Retrieve the list of participating input nodes.
     std::vector<std::string> const input_nodes() const {
         return _input_nodes;
@@ -165,11 +175,16 @@ private:
     /// The randomize sizes flag.
     bool _randomize_sizes = false;
 
+    /// The check pattern sizes flag.
+    bool _check_pattern = true;
+
     /// The global maximum timeslice number.
     uint32_t _max_timeslice_number = 100000;
 
     /// The global base port.
     uint32_t _base_port = 20079;
+
+    uint32_t _num_cqe = 1000000;
 
     /// The list of participating input nodes.
     std::vector<std::string> _input_nodes;
@@ -226,6 +241,8 @@ private:
              "typical number of content words per MC")
             ("randomize-sizes", po::value<bool>(&_randomize_sizes),
              "randomize sizes flag")
+            ("check-pattern", po::value<bool>(&_check_pattern),
+             "check pattern flag")
             ("max-timeslice-number", po::value<uint32_t>(&_max_timeslice_number),
              "global maximum timeslice number")
             ;

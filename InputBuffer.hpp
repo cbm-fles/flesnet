@@ -105,9 +105,6 @@ private:
     /// Number of acknowledged data words. Written to FLIB.
     uint64_t _acked_data = 0;
     
-    /// Flag indicating completion of the sender loop for this run.
-    bool _sender_loop_done;
-
     /// Data source (e.g., FLIB).
     DummyFlib _data_source;
     
@@ -225,7 +222,6 @@ private:
         switch (wc.wr_id & 0xFF) {
         case ID_WRITE_DESC: {
             uint64_t ts = wc.wr_id >> 24;
-            out.debug() << "write completion for timeslice " << ts;
 
             int cn = (wc.wr_id >> 8) & 0xFFFF;
             _conn[cn]->on_complete_write();
@@ -240,7 +236,7 @@ private:
             _acked_data = _addr.at(acked_ts * par->timeslice_size());
             _acked_mc = acked_ts * par->timeslice_size();
             _data_source.update_ack_pointers(_acked_data, _acked_mc);
-            out.debug() << "new values: _acked_data=" << _acked_data
+            out.debug() << "write timeslice " << ts << " complete, now: _acked_data=" << _acked_data
                         << " _acked_mc=" << _acked_mc;
         }
             break;

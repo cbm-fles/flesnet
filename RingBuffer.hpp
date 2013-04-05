@@ -35,7 +35,8 @@ public:
     /// Create and initialize buffer with given size exponent.
     void alloc_with_size_exponent(size_t size_exponent) {
         _size_exponent = size_exponent;
-        _size_mask = (1 << size_exponent) - 1;
+        _size = (1 << _size_exponent);
+        _size_mask = _size - 1;
         if (CLEARED) {
             std::unique_ptr<T[]> buf(new T[1 << _size_exponent]{});
             _buf = std::move(buf);
@@ -67,7 +68,7 @@ public:
 
     /// Retrieve buffer size in maximum number of entries.
     size_t size() const {
-        return (1 << _size_exponent);
+        return _size;
     }
 
     /// Retrieve buffer size bit mask.
@@ -77,7 +78,7 @@ public:
 
     /// Retrieve buffer size in bytes.
     size_t bytes() const {
-        return (1 << _size_exponent) * sizeof(T);
+        return _size * sizeof(T);
     }
 
     const void clear() {
@@ -85,11 +86,14 @@ public:
     }
 
 private:
+    /// Buffer size (maximum number of entries).
+    size_t _size = 0;
+
     /// Buffer size given as two's exponent.
     size_t _size_exponent = 0;
 
-    /// Buffer addressing bit mask
-    size_t _size_mask;
+    /// Buffer addressing bit mask.
+    size_t _size_mask = 0;
     
     /// The data buffer.
     std::unique_ptr<T[]> _buf;

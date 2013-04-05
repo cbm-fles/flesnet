@@ -3,11 +3,15 @@
 - test with all nodes
   - resolve connection issues with 2x8 nodes
 - synchronize DataSource
-  - should resolve some errors
+  - remove sleeps, use condition vars
+  - should resolve some errors, does it still hang sometimes? auto-test...
   - increase in performance?
 - ensure correct exception handling
   - handle tasks by buffer objects (enable correct destruction)
   - correct exception if IN started without CN
 - refactoring:
   - revisit public/private
+  - doxygen
+- valgrind again, helgrind
+- move from boost to c++11 threads
 - ...

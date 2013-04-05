@@ -29,12 +29,14 @@ public:
     }
 
     void process(TimesliceWorkItem wi) {
+        bool check_pattern = par->check_pattern();
+
         uint64_t ts_pos = wi.ts_pos;
         uint64_t ts_num = _cb.desc(0).at(ts_pos).ts_num;
         uint64_t ts_size = par->timeslice_size() + par->overlap_size();
 
-        if (out.beTrace()) {
-            out.trace() << "processor thread " << _index << " working on timeslice " << ts_num;
+        if (out.beDebug()) {
+            out.debug() << "processor thread " << _index << " working on timeslice " << ts_num;
         }
 
         for (size_t in = 0; in < _cb.size(); in++) {
@@ -55,10 +57,12 @@ public:
                 uint64_t mc_time = hdr1 & 0xFFFFFFFFFFFF;
                 assert(mc_time == ts_num * par->timeslice_size() + mc);
 
-                for (size_t pos = 0; pos < content_words; pos++) {
-                    uint64_t this_data = data.at(this_offset + 2 + pos);
-                    uint64_t expected = ((uint64_t) in << 48) | pos;
-                    assert(this_data == expected);
+                if (check_pattern) {
+                    for (size_t pos = 0; pos < content_words; pos++) {
+                        uint64_t this_data = data.at(this_offset + 2 + pos);
+                        uint64_t expected = ((uint64_t) in << 48) | pos;
+                        assert(this_data == expected);
+                    }
                 }
             }
         }

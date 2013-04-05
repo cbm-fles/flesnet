@@ -32,15 +32,16 @@ public:
 
     /// Post a receive work request (WR) to the receive queue
     void post_recv_cn_wp() {
-        if (out.beTrace()) {
-            out.trace() << "[" << _index << "] " << "POST RECEIVE _receive_cn_wp";
+        if (out.beDebug()) {
+            out.debug() << "[" << _index << "] " << "POST RECEIVE _receive_cn_wp";
         }
         post_recv(&recv_wr);
     }
 
     void post_send_cn_ack() {
-        if (out.beTrace()) {
-            out.trace() << "[" << _index << "] " << "POST SEND _send_cp_ack";
+        if (out.beDebug()) {
+            out.debug() << "[" << _index << "] " << "POST SEND _send_cn_ack"
+                        << " (desc=" << _send_cn_ack.desc << ")";
         }
         post_send(&send_wr);
     }
@@ -158,8 +159,9 @@ public:
             post_send_final_ack();
             return;
         }
-        if (out.beTrace()) {
-            out.trace() << "[" << _index << "] " << "COMPLETE RECEIVE _receive_cn_wp";
+        if (out.beDebug()) {
+            out.debug() << "[" << _index << "] " << "COMPLETE RECEIVE _receive_cn_wp"
+                        << " (desc=" << _recv_cn_wp.desc << ")";
         }
         _cn_wp = _recv_cn_wp;
         post_recv_cn_wp();
