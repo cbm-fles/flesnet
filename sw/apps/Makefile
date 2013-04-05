@@ -3,24 +3,26 @@ TOP_DIR := $(shell pwd)
 FIRMWARE_BASE :=  ../../
 include prefix.make
 
+CFLAGS += -g -Wall -pedantic -Wno-variadic-macros
+
 all: release
 
 clean: subdirs-clean
 	$(RM) -rf build
 
-release: CFLAGS += -g -Wall -pedantic -O2
+release: CFLAGS += -O3
 release: BUILD_ID := release
 release: subdirs
 
-sim: CFLAGS += -DSIM -g -Wall
+sim: CFLAGS += -DSIM
 sim: BUILD_ID := sim
 sim: subdirs
 
-sim-debug: CFLAGS += -DSIM -DDEBUG -g -Wall
+sim-debug: CFLAGS += -DSIM -DDEBUG
 sim-debug: BUILD_ID := sim-debug
 sim-debug: subdirs
 
-debug: CFLAGS += -DDEBUG -g -Wall
+debug: CFLAGS += -DDEBUG
 debug: BUILD_ID := debug
 debug: subdirs
 

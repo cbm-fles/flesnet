@@ -13,15 +13,14 @@
 
 using namespace std;
 
+// EventBuffer size in bytes
+#define EBUFSIZE_z (((unsigned long)1) << 22)
+// ReportBuffer size in bytes
+#define RBUFSIZE (((unsigned long)1) << 20)
+// number of bytes to transfer
+#define N_BYTES_TRANSFER (((unsigned long)1) << 10)
 
-struct ch_stats {
-  unsigned long n_events;
-  unsigned long bytes_received;
-  unsigned long index;
-  unsigned long error_count;
-  int last_id;
-  unsigned int channel;
-};
+#define CHANNELS 1
 
 struct rb_entry {
   uint64_t offset; // bytes
@@ -30,6 +29,228 @@ struct rb_entry {
   uint32_t mc_size; // 16 bit words
   uint64_t dummy; // Pad to next 128 Bit entry, filled with 0 by HW
 };
+
+struct mc_desc {
+  uint64_t nr;
+  uint64_t* addr;
+  uint32_t size; // bytes
+  uint64_t length; // bytes
+};
+
+class cbm_link {
+  
+  rorcfs_buffer* _ebuf;
+  rorcfs_buffer* _rbuf;
+  rorcfs_dma_channel* _ch;
+  unsigned int _channel;
+  
+  unsigned int _index;
+  unsigned int _mc_nr;
+  unsigned int _wrap;
+  
+  uint64_t* _eb;
+  struct rb_entry* _rb;
+  
+  unsigned long _rbsize;
+  unsigned long _rbentries;
+
+
+
+public:
+  
+  struct mc_desc mc;
+
+  cbm_link() : _ebuf(NULL), _rbuf(NULL), _ch(NULL), _index(0), _mc_nr(0), _wrap(0) { }
+
+  ~cbm_link() {
+    if(_ch)
+      delete _ch;
+    if(_ebuf)
+      delete _ebuf;
+    if(_rbuf)
+    delete _rbuf;
+  }
+  
+
+  int init(unsigned int channel,
+           rorcfs_device* dev,
+           rorcfs_bar* bar) {
+    
+    _channel = channel;
+    
+    // create new DMA event buffer
+    _ebuf = new rorcfs_buffer();			
+    if ( _ebuf->allocate(dev, EBUFSIZE_z, 2*_channel, 
+                           1, RORCFS_DMA_FROM_DEVICE)!=0 ) {
+      if ( errno == EEXIST ) {
+        printf("INFO: Buffer ebuf %d already exists, trying to connect ...\n", 2*_channel);
+        if ( _ebuf->connect(dev, 2*_channel) != 0 ) {
+          perror("ERROR: ebuf->connect");
+          return -1;
+        }
+      } else {
+        perror("ERROR: ebuf->allocate");
+        return -1;
+      }
+    }
+    printf("INFO: pEBUF=%p, PhysicalSize=%ld MBytes, MappingSize=%ld MBytes,\n    EndAddr=%p, nSGEntries=%ld\n", 
+           (void *)_ebuf->getMem(), _ebuf->getPhysicalSize() >> 20, _ebuf->getMappingSize() >> 20, 
+           (uint8_t *)_ebuf->getMem() + _ebuf->getPhysicalSize(), 
+           _ebuf->getnSGEntries());
+
+    // create new DMA report buffer
+    _rbuf = new rorcfs_buffer();
+    if ( _rbuf->allocate(dev, RBUFSIZE, 2*_channel+1, 
+                           1, RORCFS_DMA_FROM_DEVICE)!=0 ) {
+      if ( errno == EEXIST ) {
+        printf("INFO: Buffer rbuf %d already exists, trying to connect ...\n", 2*_channel+1);
+        if ( _rbuf->connect(dev, 2*_channel+1) != 0 ) {
+          perror("ERROR: rbuf->connect");
+          return -1;
+        }
+      } else {
+        perror("ERROR: rbuf->allocate");
+        return -1;
+      }
+    }
+    printf("INFO: pRBUF=%p, PhysicalSize=%ld MBytes, MappingSize=%ld MBytes,\n    EndAddr=%p, nSGEntries=%ld, MaxRBEntries=%ld\n", 
+           (void *)_rbuf->getMem(), _rbuf->getPhysicalSize() >> 20, _rbuf->getMappingSize() >> 20, 
+           (uint8_t *)_rbuf->getMem() + _rbuf->getPhysicalSize(), 
+           _rbuf->getnSGEntries(), _rbuf->getMaxRBEntries() );
+
+    // create DMA channel
+    _ch = new rorcfs_dma_channel();
+    // bind channel to BAR1, channel offset 0
+    _ch->init(bar, (_channel+1)*RORC_CHANNEL_OFFSET);
+
+    // prepare EventBufferDescriptorManager
+    // and ReportBufferDescriptorManage
+    // with scatter-gather list
+    if( _ch->prepareEB(_ebuf) < 0 ) {
+      perror("prepareEB()");
+      return -1;
+    }
+    if( _ch->prepareRB(_rbuf) < 0 ) {
+      perror("prepareRB()");
+      return -1;
+    }
+
+    //TODO: is this max payload size?
+    if( _ch->configureChannel(_ebuf, _rbuf, 128) < 0) {
+      perror("configureChannel()");
+      return -1;
+    }
+
+    // clear eb for debugging
+    memset(_ebuf->getMem(), 0, _ebuf->getMappingSize());
+    // clear rb for polling
+    memset(_rbuf->getMem(), 0, _rbuf->getMappingSize());
+
+    _eb = (uint64_t *)_ebuf->getMem();
+    _rb = (struct rb_entry *)_rbuf->getMem();
+
+    _rbsize = _rbuf->getPhysicalSize();
+    _rbentries = _rbuf->getMaxRBEntries();
+    
+    return 0;
+  };
+
+  int deinit() {
+    if(_ebuf->deallocate() != 0) {
+      perror("ERROR: ebuf->deallocate");
+      return -1;
+    }
+    if(_rbuf->deallocate() != 0) {
+      perror("ERROR: rbuf->deallocate");
+      return -1;
+    }
+
+    delete _ebuf;
+    _ebuf = NULL;
+    delete _rbuf;
+    _rbuf = NULL;
+    delete _ch;
+    _ch = NULL;
+    
+    return 0;
+  }
+
+  int enable() {
+    _ch->setEnableEB(1);
+    _ch->setEnableRB(1);
+    _ch->setDMAConfig( _ch->getDMAConfig() | 0x01 );
+    return 0; 
+  }
+
+  int disable() {
+    // disable DMA Engine
+    _ch->setEnableEB(0);
+    // wait for pending transfers to complete (dma_busy->0)
+    while( _ch->getDMABusy() )
+      usleep(100); 
+    // disable RBDM
+    _ch->setEnableRB(0);
+    // reset DFIFO, disable DMA PKT
+    _ch->setDMAConfig(0X00000002);
+    return 0;
+  }
+
+  mc_desc* get_mc() {
+    if(_rb[_index].length != 0) {
+      mc.nr = _mc_nr;
+      mc.addr = _eb + _rb[_index].offset/8;
+      mc.size = _rb[_index].mc_size;
+      mc.length = _rb[_index].length; // for checks only
+      return &mc;
+    }
+    else
+      printf("EB offset %ld", _ch->getEBOffset());
+      return NULL;
+  }
+
+  int ack_mc() {
+    // TODO: pointers are set to begin of actual entry, pointers are one entry delayed
+    // to calculete end wrapping logic is required
+    
+    uint64_t eb_offset = _rb[_index].offset;
+
+    // clear report buffer entry befor setting new pointers
+    memset(&_rb[_index], 0, sizeof(struct rb_entry));
+    
+    // set pointers in HW
+    _ch->setEBOffset(eb_offset);
+    _ch->setRBOffset(_index*sizeof(struct rb_entry) % _rbsize);
+
+#ifdef DEBUG  
+    printf("index %d EB offset set: %ld, get: %ld\n", _index, eb_offset, _ch->getEBOffset());
+    printf("index %d RB offset set: %ld, get: %ld, wrap %d\n", _index, _index*sizeof(struct rb_entry) % _rbsize, _ch->getRBOffset(), _wrap);
+#endif
+    
+    // calculate next rb index
+    if( _index < _rbentries-1 ) 
+      _index++;
+    else {
+      _wrap++;
+      _index = 0;
+    }
+    _mc_nr++;    
+    
+    return 0;
+  }
+  
+  rorcfs_buffer* ebuf() const {
+    return _ebuf;
+  }
+
+  rorcfs_buffer* rbuf() const {
+    return _rbuf;
+  }
+
+  rorcfs_dma_channel* get_ch() const {
+    return _ch;
+  }
+};
+
 
 // DUMP functions
 void dump_raw(uint64_t *buf, unsigned int size)
@@ -71,18 +292,20 @@ void dump_mc(uint64_t *eb,
 #define MCH_RSVD 0xabcd
 
 //--------------------------------
-// poll for event outside of handler
-int process_mc(uint64_t *eb, rb_entry *rb, unsigned int nr) {
-  //DEBUG
-  //printf("*** Process MC %d\n", nr);
-  int error = 0;
-  if( rb[nr].length == 0 ) {
-    printf("ERROR: no MC available, rb.length = 0");
-    error++;
-    return error;
+int process_mc(cbm_link* link) {
+  
+  mc_desc* mc = link->get_mc();
+
+  while( mc == NULL ) {
+    sleep(1);
+    printf("waiting\n");
+    mc = link->get_mc();
   }
-  uint64_t mc_size = rb[nr].mc_size; // size is in 16 bit words
-  uint64_t* mc_word = eb + rb[nr].offset/8; // offset is in bytes
+
+  int error = 0;
+  uint64_t mc_nr = mc->nr;
+  uint32_t mc_size = mc->size; // size is in 16 bit words
+  uint64_t* mc_word = mc->addr;
   // hdr words
   uint64_t hdr0 = mc_word[0];
   uint64_t hdr1 = mc_word[1];
@@ -93,22 +316,21 @@ int process_mc(uint64_t *eb, rb_entry *rb, unsigned int nr) {
   unsigned int mch_rsvd = (hdr1 >> 48) & 0xffff;
   uint64_t mch_mc_nr = hdr1 & 0xffffffffffff;
 
-  //printf("MC header :\n hdrrev 0x%02x, sysid 0x%02x, flags 0x%04x size 0x%08x\n rsvd 0x%04x mc_nr 0x%012lx\n",
+#ifdef DEBUG
+  printf("MC nr %ld, addr %p, size %d \n", mc_nr, (void *)mc_word, mc_size*2);
+  //  printf("MC header :\n hdrrev 0x%02x, sysid 0x%02x, flags 0x%04x size 0x%08x\n rsvd 0x%04x mc_nr 0x%012lx\n",
   //         mch_hdrrev, mch_sysid, mch_flags, mch_size, mch_rsvd, mch_mc_nr);
+#endif
 
   if( mch_hdrrev != MCH_HDRREV || mch_sysid != MCH_SYSID || mch_flags != MCH_FLAGS || mch_size != MCH_SIZE || mch_rsvd != MCH_RSVD ) {
-    printf("ERROR: header wrong\n");
+    printf("ERROR: wrong MC header\n");
+    printf("MC header :\n hdrrev 0x%02x, sysid 0x%02x, flags 0x%04x size 0x%08x\n rsvd 0x%04x mc_nr 0x%012lx\n", mch_hdrrev, mch_sysid, mch_flags, mch_size, mch_rsvd, mch_mc_nr);
     error++;
   }
   
   uint8_t cneth_msg_cnt_save = 0;
 
   uint16_t* cnet_word = (uint16_t*) &(mc_word[2]);
-
-//  for (int i = 0; i < whatever; i++) {
-//    int j = (i & ~3) | (3 - (i & 3));
-//    check(cnet_word[j]);
-//  }
 
   // Check cnet messages
   unsigned int w = 0;
@@ -141,13 +363,15 @@ int process_mc(uint64_t *eb, rb_entry *rb, unsigned int nr) {
         return error;
       }
       cnet_word_save = cnet_word[w+i];
-      // DEBUG
-      //printf("Word %02d+%02d: %04x\n", w, i, cnet_word[w+i]);
+#ifdef DEBUG_2
+      printf("Word %02d+%02d: %04x\n", w, i, cnet_word[w+i]);
+#endif
     }
     // last word
     uint16_t cnet_msg_nr = cnet_word[w+i];
-    //DEBUG
-    //printf("Word %02d+%02d: msg_nr %04x\n", w, i, cnet_msg_nr);
+#ifdef DEBUG_2
+    printf("Word %02d+%02d: msg_nr %04x\n", w, i, cnet_msg_nr);
+#endif
     if( (cnet_msg_nr & 0xff) != ((cneth_msg_cnt+1) & 0xff)) { 
       printf("ERROR: wrong message number cnet_msg_nr 0x%02x cneth_msg_cnt 0x%02x\n",
              cnet_msg_nr, cneth_msg_cnt+1);
@@ -155,105 +379,29 @@ int process_mc(uint64_t *eb, rb_entry *rb, unsigned int nr) {
     }
     w = w+i+(4-(w+i)%4); //set start index for next cnet message
 }
-
+  
   return error;
 }
 
-//int handle_channel_data( 
-//                        struct rorcfs_event_descriptor *reportbuffer,
-//                        unsigned int *eventbuffer,
-//                        struct rorcfs_dma_channel *ch,
-//                        struct ch_stats *stats,
-//                        unsigned long rbsize,
-//                        unsigned long maxrbentries,
-//                        unsigned long max_events)
-//{
-//  unsigned long events_per_iteration = 0;
-//  int events_processed = 0;
-//  unsigned long eboffset = 0, rboffset = 0;
-//  unsigned long starting_index, entrysize;
-// 
-// 
-//  if( reportbuffer[stats->index].length!=0 ) { // new event received
-// 
-//    starting_index = stats->index;
-// 
-//    printf("handle_channel_data\n");
-//    while( reportbuffer[stats->index].length!=0 && events_per_iteration < max_events) {
-//      events_processed++;
-// 
-//      //stats->bytes_received += reportbuffer[stats->index].length;
-//      stats->bytes_received += 
-//        (reportbuffer[stats->index].size<<2);
-//      //printf("event sizes: %d %d\n", reportbuffer[stats->index].length, (reportbuffer[stats->index].size<<2));
-//      //dump_rb(rb, stats->index);
-// 
-//      
-//      // set new EBOffset
-//      eboffset = reportbuffer[stats->index].offset;
-// 
-//      // increment reportbuffer offset
-//      rboffset = ((stats->index)*
-//                  sizeof(struct rorcfs_event_descriptor)) % rbsize;
-// 
-//      // wrap RB pointer if necessary
-//      if( stats->index < maxrbentries-1 ) 
-//        stats->index++;
-//      else
-//        stats->index=0;
-//      stats->n_events++;
-//      events_per_iteration++;
-//    }
-// 
-//    printf("processing events %ld..%ld (%ld)\n", starting_index, stats->index, events_per_iteration);
-// 
-//    // clear processed reportbuffer entries
-//    entrysize = sizeof(struct rorcfs_event_descriptor);
-//    //printf("clearing RB: start: %ld entries: %ld, %ldb each\n",
-//    //	entrysize*starting_index, events_per_iteration, entrysize);
-// 
-//    memset(&reportbuffer[starting_index], 0, 
-//           events_per_iteration*entrysize);
-// 
-//    ch->setEBOffset(eboffset);
-//    ch->setRBOffset(rboffset);
-//  }
-// 
-//  return events_processed;
-//}
-
-
-// EventBuffer size in bytes
-#define EBUFSIZE (((unsigned long)1) << 30)
-// ReportBuffer size in bytes
-#define RBUFSIZE (((unsigned long)1) << 28)
-// number of bytes to transfer
-#define N_BYTES_TRANSFER (((unsigned long)1) << 10)
-
-#define CHANNELS 1
-
-
-int main()
-{
-  int result = 0;
-  unsigned long i;
-  rorcfs_device *dev = NULL;
-  rorcfs_bar *bar1 = NULL;
-  rorcfs_buffer *ebuf[CHANNELS];
-  rorcfs_buffer *rbuf[CHANNELS];
-  rorcfs_dma_channel *ch[CHANNELS];
-
-  struct ch_stats *chstats[CHANNELS];
-
+int main(int argc, char *argv[])
+{ 
+  int i = 0;
   uint64_t *eb[CHANNELS];
   struct rb_entry *rb[CHANNELS];
+  rorcfs_dma_channel* chan[CHANNELS] = {NULL};
+  cbm_link* link[CHANNELS];
 
-  for (i=0;i<CHANNELS;i++) {
-    ebuf[i]=NULL;
-    rbuf[i]=NULL;
-    ch[i]=NULL;
-    chstats[i]=NULL;
+  rorcfs_device *dev = NULL;
+  rorcfs_bar *bar1 = NULL;
+  for(i=0;i<CHANNELS;i++) {
+    link[i]=NULL;
   }
+
+  if(argc != 2) {
+    printf("Usage: %s #mc to check\n", argv[0]);
+  }
+
+  int mc_limit = atoi(argv[1]);
 
   // create new device class
   dev = new rorcfs_device();	
@@ -275,181 +423,63 @@ int main()
   printf("FirmwareDate: %08x\n", bar1->get(RORC_REG_FIRMWARE_DATE));
 
   for(i=0;i<CHANNELS;i++) {
-
-    // create new DMA event buffer
-    ebuf[i] = new rorcfs_buffer();			
-    if ( ebuf[i]->allocate(dev, EBUFSIZE, 2*i, 
-                           1, RORCFS_DMA_FROM_DEVICE)!=0 ) {
-      if ( errno == EEXIST ) {
-        if ( ebuf[i]->connect(dev, 2*i) != 0 ) {
-          perror("ERROR: ebuf->connect");
-          goto out;
-        }
-      } else {
-        perror("ERROR: ebuf->allocate");
-        goto out;
-      }
-    }
-
-    // create new DMA report buffer
-    rbuf[i] = new rorcfs_buffer();;
-    if ( rbuf[i]->allocate(dev, RBUFSIZE, 2*i+1, 
-                           1, RORCFS_DMA_FROM_DEVICE)!=0 ) {
-      if ( errno == EEXIST ) {
-        //printf("INFO: Buffer already exists, trying to connect...\n");
-        if ( rbuf[i]->connect(dev, 2*i+1) != 0 ) {
-          perror("ERROR: rbuf->connect");
-          goto out;
-        }
-      } else {
-        perror("ERROR: rbuf->allocate");
-        goto out;
-      }
-    }
-
-    chstats[i] = (struct ch_stats*)malloc(sizeof(struct ch_stats));
-    if ( chstats[i]==NULL ){
-      perror("alloc chstats");
-      result=-1;
-      goto out;
-    }
-
-    memset(chstats[i], 0, sizeof(struct ch_stats));
-
-    chstats[i]->index = 0;
-    chstats[i]->last_id = -1;
-    chstats[i]->channel = (unsigned int)i;
-
-
-    // create DMA channel
-    ch[i] = new rorcfs_dma_channel();
-
-    // bind channel to BAR1, channel offset 0
-    ch[i]->init(bar1, (i+1)*RORC_CHANNEL_OFFSET);
-
-    // prepare EventBufferDescriptorManager
-    // with scatter-gather list
-    result = ch[i]->prepareEB( ebuf[i] );
-    if (result < 0) {
-      perror("prepareEB()");
-      result = -1;
-      goto out;
-    }
-
-    // prepare ReportBufferDescriptorManager
-    // with scatter-gather list
-    result = ch[i]->prepareRB( rbuf[i] );
-    if (result < 0) {
-      perror("prepareRB()");
-      result = -1;
-      goto out;
-    }
-
-    result = ch[i]->configureChannel(ebuf[i], rbuf[i], 128);
-    if (result < 0) {
-      perror("configureChannel()");
-      result = -1;
-      goto out;
-    }
     
-    // get event buffer
-    eb[i] = (uint64_t *)ebuf[i]->getMem();
-    // clear for debugging
-    memset(eb[i], 0, ebuf[i]->getMappingSize());
-
-    // get report buffer and clear for polling
-    rb[i] = (struct rb_entry *)rbuf[i]->getMem();
-    memset(rb[i], 0, rbuf[i]->getMappingSize());
-    printf("pRBUF=%p, MappingSize=%ld\n", (void *)rbuf[i]->getMem(), rbuf[i]->getMappingSize() );
+    link[i] = new cbm_link();
+    
+    if( link[i]->init(i, dev, bar1) < 0) {
+      perror("ERROR: link->init");
+    }
   }
-
+  
   for(i=0;i<CHANNELS;i++) {
-    ch[i]->setEnableEB(1);
-    ch[i]->setEnableRB(1);
+    if (link[i]->enable() < 0) {
+      perror("ERROR: link->enable");
+    }
   }
-	
-  //  bar1->gettime(&start_time, 0);
-
-  for(i=0;i<CHANNELS;i++) {
-    // enable DMA channel
-    ch[i]->setDMAConfig( ch[i]->getDMAConfig() | 0x01 );
-  }
-
-  i = 0;
 
   sleep(1);
 
-  while( 1 ) {
-
-    for(i=0;i<CHANNELS;i++) {
-     // printf("RB raw\n");
-     // dump_raw((uint64_t*)rb[i], 16);
-     // printf("EB raw\n");
-     // dump_raw(eb[i], 64);
-//      for (int j = 1; j < 2; j++) {
-//        printf("***MC: %d\n", j);
-//        dump_mc(eb[i], rb[i], j);
-//      }
-      int error_cnt = 0;
-      int mc_limit = 1000;
-      for (int j = 1; j < mc_limit; j++) {
-	int error = process_mc(eb[i], rb[i], j);
-	error_cnt += error;
-        if(error){
-          dump_mc(eb[i], rb[i], j);	     
-	}
-      }
-      printf("MCs analysed %d\nTotal errors: %d\n", mc_limit, error_cnt);
-      goto out;
-    }
+  for(i=0;i<CHANNELS;i++) {
+    eb[i] = (uint64_t *)link[i]->ebuf()->getMem();
+    rb[i] = (struct rb_entry *)link[i]->rbuf()->getMem();
+    chan[i] = link[i]->get_ch();
   }
 
   for(i=0;i<CHANNELS;i++) {
-    // disable DMA Engine
-    ch[i]->setEnableEB(0);
+    // printf("RB raw\n");
+    // dump_raw((uint64_t*)rb[i], 16);
+    // printf("EB raw\n");
+    // dump_raw(eb[i], 64);
+    //      for (int j = 1; j < 2; j++) {
+    //        printf("***MC: %d\n", j);
+    //        dump_mc(eb[i], rb[i], j);
+    //      }
+    int error_cnt = 0;
+    for (int j = 0; j < mc_limit; j++) {
+      int error = process_mc(link[i]);
+      error_cnt += error;
+      if(error){
+        dump_mc(eb[i], rb[i], j);	     
+      }
+      link[i]->ack_mc();
+      if(j % 1000000 == 0) {
+        printf("%d analysed\n", j);
+      }
+
+    }
+    printf("MCs analysed %d\nTotal errors: %d\n", mc_limit, error_cnt);
   }
+
+//  for(i=0;i<CHANNELS;i++) {
+//    link[i]->disable();
+//  }
 	
   for(i=0;i<CHANNELS;i++) {
-
-    // wait for pending transfers to complete (dma_busy->0)
-    while( ch[i]->getDMABusy() )
-      usleep(100);
-
-    // disable RBDM
-    ch[i]->setEnableRB(0);
-
-    // reset DFIFO, disable DMA PKT
-    ch[i]->setDMAConfig(0X00000002);
-
-    if (chstats[i]) {
-      free(chstats[i]);
-      chstats[i] = NULL;
-    }
-    if (ch[i]) {
-      delete ch[i];
-      ch[i] = NULL;
-    }
-    if (ebuf[i]) {
-      delete ebuf[i];
-      ebuf[i] = NULL;
-    }
-    if (rbuf[i]) {
-      delete rbuf[i];
-      rbuf[i] = NULL;
-    }
+    link[i]->deinit();
   }
-
- out:
-
   for(i=0;i<CHANNELS;i++) {
-    if (chstats[i])
-      free(chstats[i]);
-    if (ch[i])
-      delete ch[i];
-    if (ebuf[i])
-      delete ebuf[i];
-    if (rbuf[i])
-      delete rbuf[i];
+    if (link[i])
+      delete link[i];
   }
 
   if (bar1)
@@ -457,5 +487,20 @@ int main()
   if (dev)
     delete dev;
 
-  return result;
+  return 0;
+
+
+ out:
+
+  for(i=0;i<CHANNELS;i++) {
+    if (link[i])
+      delete link[i];
+  }
+
+  if (bar1)
+    delete bar1;
+  if (dev)
+    delete dev;
+
+  return 0;
 }
