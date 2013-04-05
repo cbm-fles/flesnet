@@ -236,8 +236,9 @@ private:
             _acked_data = _addr.at(acked_ts * par->timeslice_size());
             _acked_mc = acked_ts * par->timeslice_size();
             _data_source.update_ack_pointers(_acked_data, _acked_mc);
-            out.debug() << "write timeslice " << ts << " complete, now: _acked_data=" << _acked_data
-                        << " _acked_mc=" << _acked_mc;
+            if (out.beDebug())
+                out.debug() << "write timeslice " << ts << " complete, now: _acked_data="
+                            << _acked_data << " _acked_mc=" << _acked_mc;
         }
             break;
 
