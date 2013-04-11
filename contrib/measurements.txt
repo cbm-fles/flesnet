@@ -8,3 +8,29 @@ $ ib_rdma_bw -c -n100000
 Bandwidth peak (#0 to #2761): 6000.22 MB/s
 Bandwidth average: 5987.19 MB/s
 
+
+
+####
+0->1
+1->0
+6->7
+7->6
+
+0: [23:06:39] INFO: microslice size: (1024 + 16) bytes
+0: [23:06:39] INFO: timeslice size: (100 + 2) microslices
+0: [23:06:39] INFO: number of timeslices: 5000000
+0: [23:06:39] INFO: input node buffer size: (536870912 + 8388608) bytes
+0: [23:06:39] INFO: compute node buffer size: (536870912 + 786432) bytes
+
+0: [23:08:41] INFO: summary: 5003135 SEND, 3135 RECV requests
+0: [23:08:41] INFO: summary: 534600050160 bytes sent in 121.763 s (4390.51 MB/s)
+
+1: [23:11:11] INFO: summary: 5003091 SEND, 3091 RECV requests
+1: [23:11:11] INFO: summary: 534600049456 bytes sent in 122.006 s (4381.74 MB/s)
+
+0: [23:16:36] INFO: summary: 5003082 SEND, 3082 RECV requests
+0: [23:16:36] INFO: summary: 534600049312 bytes sent in 119.146 s (4486.94 MB/s)
+
+1: [23:29:06] INFO: summary: 5003095 SEND, 3095 RECV requests
+1: [23:29:06] INFO: summary: 534600049520 bytes sent in 118.284 s (4519.63 MB/s)
+
