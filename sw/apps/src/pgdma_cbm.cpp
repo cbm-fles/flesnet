@@ -22,7 +22,7 @@ using namespace std;
 
 #define CHANNELS 1
 
-struct rb_entry {
+struct __attribute__ ((__packed__)) rb_entry {
   uint64_t offset; // bytes
   uint64_t length; // bytes
   uint32_t flags; // unused, filled with 0
@@ -35,6 +35,7 @@ struct mc_desc {
   uint64_t* addr;
   uint32_t size; // bytes
   uint64_t length; // bytes
+  uint64_t* rbaddr;  
 };
 
 class cbm_link {
@@ -45,6 +46,7 @@ class cbm_link {
   unsigned int _channel;
   
   unsigned int _index;
+  unsigned int _last_index;
   unsigned int _mc_nr;
   unsigned int _wrap;
   
@@ -60,7 +62,7 @@ public:
   
   struct mc_desc mc;
 
-  cbm_link() : _ebuf(NULL), _rbuf(NULL), _ch(NULL), _index(0), _mc_nr(0), _wrap(0) { }
+  cbm_link() : _ebuf(NULL), _rbuf(NULL), _ch(NULL), _index(0), _last_index(0), _mc_nr(0), _wrap(0) { }
 
   ~cbm_link() {
     if(_ch)
@@ -135,7 +137,7 @@ public:
       return -1;
     }
 
-    //TODO: is this max payload size?
+    //TODO: this is max payload size!!!
     if( _ch->configureChannel(_ebuf, _rbuf, 128) < 0) {
       perror("configureChannel()");
       return -1;
@@ -201,39 +203,44 @@ public:
       mc.addr = _eb + _rb[_index].offset/8;
       mc.size = _rb[_index].mc_size;
       mc.length = _rb[_index].length; // for checks only
+      mc.rbaddr = (uint64_t *)&_rb[_index];
+
+      // calculate next rb index
+      _last_index = _index;
+      if( _index < _rbentries-1 ) 
+        _index++;
+      else {
+        _wrap++;
+        _index = 0;
+      }
+      _mc_nr++;    
+
       return &mc;
     }
     else
-      printf("EB offset %ld", _ch->getEBOffset());
+#ifdef DEBUG  
+      printf("MC %ld not available", _mc_nr);
+#endif
       return NULL;
   }
 
   int ack_mc() {
-    // TODO: pointers are set to begin of actual entry, pointers are one entry delayed
+    // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
     // to calculete end wrapping logic is required
-    
-    uint64_t eb_offset = _rb[_index].offset;
+    uint64_t eb_offset = _rb[_last_index].offset;
+    uint64_t rb_offset = _last_index*sizeof(struct rb_entry) % _rbsize;
 
     // clear report buffer entry befor setting new pointers
-    memset(&_rb[_index], 0, sizeof(struct rb_entry));
+    memset(&_rb[_last_index], 0, sizeof(struct rb_entry));
     
     // set pointers in HW
     _ch->setEBOffset(eb_offset);
-    _ch->setRBOffset(_index*sizeof(struct rb_entry) % _rbsize);
+    _ch->setRBOffset(rb_offset);
 
 #ifdef DEBUG  
-    printf("index %d EB offset set: %ld, get: %ld\n", _index, eb_offset, _ch->getEBOffset());
-    printf("index %d RB offset set: %ld, get: %ld, wrap %d\n", _index, _index*sizeof(struct rb_entry) % _rbsize, _ch->getRBOffset(), _wrap);
+    printf("index %d EB offset set: %ld, get: %ld\n", _last_index, eb_offset, _ch->getEBOffset());
+    printf("index %d RB offset set: %ld, get: %ld, wrap %d\n", _last_index, rb_offset, _ch->getRBOffset(), _wrap);
 #endif
-    
-    // calculate next rb index
-    if( _index < _rbentries-1 ) 
-      _index++;
-    else {
-      _wrap++;
-      _index = 0;
-    }
-    _mc_nr++;    
     
     return 0;
   }
@@ -271,7 +278,24 @@ void dump_report(struct rb_entry *rb, unsigned int nr)
 	 rb[nr].mc_size<<1);
 }
 
-void dump_mc(uint64_t *eb, 
+void dump_mc(mc_desc* mc)
+{
+  printf("Report addr=%p :\n length=%lu, mc_size=%u Bytes\n",
+         (void *)mc->rbaddr,
+         mc->length,
+         mc->size<<1);
+  // length and offset is in bytes, adressing is per 8 Bytes 
+  uint64_t* mc_word = mc->addr;
+  printf("Event	 #%ld\n", mc->nr);
+  for (unsigned int i = 0; i < ((mc->length)/8); i+=2) {
+    printf("%4d addr=%p:    %016lx %016lx\n",
+	   i*8, (void *)&mc_word[i], mc_word[i+1], mc_word[i]);
+  }
+}
+
+// Dumps mc correponding to entry nr in report buffer
+// will not accout for wrapping, no range check
+void dump_mc_raw(uint64_t *eb,
 	     rb_entry *rb,
 	     unsigned int nr)
 {
@@ -292,16 +316,8 @@ void dump_mc(uint64_t *eb,
 #define MCH_RSVD 0xabcd
 
 //--------------------------------
-int process_mc(cbm_link* link) {
+int process_mc(mc_desc* mc) {
   
-  mc_desc* mc = link->get_mc();
-
-  while( mc == NULL ) {
-    sleep(1);
-    printf("waiting\n");
-    mc = link->get_mc();
-  }
-
   int error = 0;
   uint64_t mc_nr = mc->nr;
   uint32_t mc_size = mc->size; // size is in 16 bit words
@@ -383,22 +399,39 @@ int process_mc(cbm_link* link) {
   return error;
 }
 
+
+rorcfs_device *dev = NULL;
+rorcfs_bar *bar1 = NULL;
+cbm_link* cbmLink[CHANNELS] = {NULL};
+
+void fnExit (void)
+{
+  for(int i=0;i<CHANNELS;i++) {
+    if (cbmLink[i]){
+      //cbmLink[i]->disable();
+      cbmLink[i]->deinit();
+      delete cbmLink[i];
+    }
+  }
+  if (bar1)
+    delete bar1;
+  if (dev)
+    delete dev;  
+  printf("Exiting\n");
+}
+
 int main(int argc, char *argv[])
 { 
+  atexit(fnExit);
+  
   int i = 0;
   uint64_t *eb[CHANNELS];
   struct rb_entry *rb[CHANNELS];
   rorcfs_dma_channel* chan[CHANNELS] = {NULL};
-  cbm_link* link[CHANNELS];
-
-  rorcfs_device *dev = NULL;
-  rorcfs_bar *bar1 = NULL;
-  for(i=0;i<CHANNELS;i++) {
-    link[i]=NULL;
-  }
 
   if(argc != 2) {
-    printf("Usage: %s #mc to check\n", argv[0]);
+    printf("Usage: %s <#mc>\n", argv[0]);
+    return -1;
   }
 
   int mc_limit = atoi(argv[1]);
@@ -407,7 +440,7 @@ int main(int argc, char *argv[])
   dev = new rorcfs_device();	
   if (dev->init(0) == -1) {
     cout << "failed to initialize device 0" << endl;
-    goto out;
+    return -1;
   }
 
   printf("Bus %x, Slot %x, Func %x\n", dev->getBus(),
@@ -417,32 +450,30 @@ int main(int argc, char *argv[])
   bar1 = new rorcfs_bar(dev, 1);
   if ( bar1->init() == -1 ) {
     cout<<"BAR1 init failed\n";
-    goto out;
+    return -1;
   }
 
   printf("FirmwareDate: %08x\n", bar1->get(RORC_REG_FIRMWARE_DATE));
 
   for(i=0;i<CHANNELS;i++) {
     
-    link[i] = new cbm_link();
+    cbmLink[i] = new cbm_link();
     
-    if( link[i]->init(i, dev, bar1) < 0) {
-      perror("ERROR: link->init");
+    if( cbmLink[i]->init(i, dev, bar1) < 0) {
+      perror("ERROR: cbmLink->init");
     }
   }
   
   for(i=0;i<CHANNELS;i++) {
-    if (link[i]->enable() < 0) {
-      perror("ERROR: link->enable");
+    if (cbmLink[i]->enable() < 0) {
+      perror("ERROR: cbmLink->enable");
     }
   }
 
-  sleep(1);
-
   for(i=0;i<CHANNELS;i++) {
-    eb[i] = (uint64_t *)link[i]->ebuf()->getMem();
-    rb[i] = (struct rb_entry *)link[i]->rbuf()->getMem();
-    chan[i] = link[i]->get_ch();
+    eb[i] = (uint64_t *)cbmLink[i]->ebuf()->getMem();
+    rb[i] = (struct rb_entry *)cbmLink[i]->rbuf()->getMem();
+    chan[i] = cbmLink[i]->get_ch();
   }
 
   for(i=0;i<CHANNELS;i++) {
@@ -452,55 +483,36 @@ int main(int argc, char *argv[])
     // dump_raw(eb[i], 64);
     //      for (int j = 1; j < 2; j++) {
     //        printf("***MC: %d\n", j);
-    //        dump_mc(eb[i], rb[i], j);
+    //        dump_mc_raw(eb[i], rb[i], j);
     //      }
     int error_cnt = 0;
     for (int j = 0; j < mc_limit; j++) {
-      int error = process_mc(link[i]);
-      error_cnt += error;
-      if(error){
-        dump_mc(eb[i], rb[i], j);	     
+
+      // poll for mc
+      mc_desc* mc = cbmLink[i]->get_mc();
+      while( mc == NULL ) {
+        printf("waiting\n");
+        sleep(1);
+        mc = cbmLink[i]->get_mc();
       }
-      link[i]->ack_mc();
+//      int error = process_mc(mc);
+//      error_cnt += error;
+//      if(error){
+//        dump_mc(mc);	     
+//      }
       if(j % 1000000 == 0) {
+	dump_mc(mc);	     
+        //        dump_mc_raw(eb[i], rb[i], j);
+      }
+
+      cbmLink[i]->ack_mc();
+      if((j & 0xFFFFF) == 0xFFFFF) {
         printf("%d analysed\n", j);
       }
 
     }
     printf("MCs analysed %d\nTotal errors: %d\n", mc_limit, error_cnt);
   }
-
-//  for(i=0;i<CHANNELS;i++) {
-//    link[i]->disable();
-//  }
-	
-  for(i=0;i<CHANNELS;i++) {
-    link[i]->deinit();
-  }
-  for(i=0;i<CHANNELS;i++) {
-    if (link[i])
-      delete link[i];
-  }
-
-  if (bar1)
-    delete bar1;
-  if (dev)
-    delete dev;
-
-  return 0;
-
-
- out:
-
-  for(i=0;i<CHANNELS;i++) {
-    if (link[i])
-      delete link[i];
-  }
-
-  if (bar1)
-    delete bar1;
-  if (dev)
-    delete dev;
 
   return 0;
 }
