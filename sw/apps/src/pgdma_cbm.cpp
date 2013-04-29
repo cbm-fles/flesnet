@@ -399,6 +399,75 @@ int process_mc(mc_desc* mc) {
   return error;
 }
 
+int proc_pg(uint16_t* word, uint8_t wrd_cnt) {
+  for (int i = 0; i <= wrd_cnt-1; i+=3) {      
+#ifdef DEBUG
+    printf("msg: %04x %04x %04x\n", word[i+2], word[i+1], word[i]);
+#endif
+  }
+  return 0;
+}
+
+int process_mc_roc(mc_desc* mc) {
+  
+  int error = 0;
+  uint64_t mc_nr = mc->nr;
+  uint32_t mc_size = mc->size; // size is in 16 bit words
+  uint64_t* mc_word = mc->addr;
+  // hdr words
+  uint64_t hdr0 = mc_word[0];
+  uint64_t hdr1 = mc_word[1];
+  unsigned int mch_hdrrev = (hdr0 >> 56) & 0xff;
+  unsigned int mch_sysid =  (hdr0 >> 48) & 0xff;
+  unsigned int mch_flags =  (hdr0 >> 32) & 0xffff;
+  unsigned int mch_size =   hdr0 & 0xffffffff;
+  unsigned int mch_rsvd = (hdr1 >> 48) & 0xffff;
+  uint64_t mch_mc_nr = hdr1 & 0xffffffffffff;
+
+#ifdef DEBUG
+  printf("MC nr %ld, addr %p, size %d \n", mc_nr, (void *)mc_word, mc_size*2);
+#endif
+  // Check MC header
+  if( mch_hdrrev != MCH_HDRREV || mch_sysid != MCH_SYSID || mch_flags != MCH_FLAGS || mch_size != MCH_SIZE || mch_rsvd != MCH_RSVD ) {
+    printf("ERROR: wrong MC header\n");
+    printf("MC header :\n hdrrev 0x%02x, sysid 0x%02x, flags 0x%04x size 0x%08x\n rsvd 0x%04x mc_nr 0x%012lx\n", mch_hdrrev, mch_sysid, mch_flags, mch_size, mch_rsvd, mch_mc_nr);
+    error++;
+  }
+  
+  // Check cnet messages
+  uint16_t* cnet_word = (uint16_t*) &(mc_word[2]);
+  uint8_t cneth_msg_cnt_save = 0;
+  unsigned int w = 0;
+  while(w < mc_size-8) {
+    // first and second 
+    uint8_t cneth_wrd_cnt = cnet_word[w] & 0xff;
+    uint8_t cneth_msg_cnt = (cnet_word[w] >> 8) & 0xff;
+    uint16_t cnet_src_addr = cnet_word[w+1];
+#ifdef DEBUG
+    printf("msg_cnt: 0x%02x wrd_cnt 0x%02x ROCID 0x%04x\n", cneth_msg_cnt, cneth_wrd_cnt, cnet_src_addr);
+#endif
+   // check message count
+    if (cneth_msg_cnt != ((cneth_msg_cnt_save+1) & 0xff) && w > 0) {
+      printf("ERROR: wrong message count now: 0x%02x before+1: 0x%02x\n", cneth_msg_cnt, cneth_msg_cnt_save+1);
+      error++;
+    }
+    w +=2;
+    cneth_msg_cnt_save = cneth_msg_cnt;
+    
+    // process content
+    error += proc_pg(&(cnet_word[w]), cneth_wrd_cnt);
+
+    //set start index for next cnet message 
+    // (wrd_cnt is w/o first two words, -4 accounts for padding added)
+    w = w+cneth_wrd_cnt-4+(4-(cneth_wrd_cnt+2)%4);
+}
+  
+  return error;
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////
 
 rorcfs_device *dev = NULL;
 rorcfs_bar *bar1 = NULL;
@@ -495,15 +564,15 @@ int main(int argc, char *argv[])
         sleep(1);
         mc = cbmLink[i]->get_mc();
       }
-//      int error = process_mc(mc);
-//      error_cnt += error;
-//      if(error){
-//        dump_mc(mc);	     
-//      }
-      if(j % 1000000 == 0) {
+      int error = process_mc_roc(mc);
+      error_cnt += error;
+      if(error){
 	dump_mc(mc);	     
-        //        dump_mc_raw(eb[i], rb[i], j);
       }
+//       if(j % 1000000 == 0) {
+//        dump_mc(mc);	     
+//        //        dump_mc_raw(eb[i], rb[i], j);
+//      //}
 
       cbmLink[i]->ack_mc();
       if((j & 0xFFFFF) == 0xFFFFF) {
