@@ -8,8 +8,6 @@
 #include "rorcfs_sysmon.hh"
 #include "rorcfs_buffer.hh" 
 #include "rorcfs_dma_channel.hh" 
-#include "rorcfs_diu.hh" 
-#include "rorcfs_pattern_generator.hh" 
 #ifdef SIM
 #include "rorcfs_dma_monitor.hh"
 #endif
