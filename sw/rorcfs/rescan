@@ -1,5 +1,5 @@
 #!/bin/bash
-if lspci | grep -q "02:00.0 Signal processing controller \[1109\]: CERN/ECP/EDU Device beaf"; then
+if lspci | grep -q "02:00.0 Signal processing controller \[1108\]: CERN/ECP/EDU Device beaf"; then
 if [ -f /sys/bus/pci/devices/0000\:02\:00.0/remove ]
 then
 	echo "removing"
