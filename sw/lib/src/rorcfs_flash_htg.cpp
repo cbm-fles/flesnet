@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include "rorcfs_bar.hh"
 #include "rorcfs_flash_htg.hh"
