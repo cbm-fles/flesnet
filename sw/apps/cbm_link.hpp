@@ -1,10 +1,15 @@
 #ifndef CBM_LINK_HPP
 #define CBM_LINK_HPP
 
+#include "librorc.h"
+
+const size_t log_ebufsize =  22;
+const size_t log_rbufsize =  20;
+
 // EventBuffer size in bytes
-const unsigned long EBUFSIZE_z = (((unsigned long)1) << 22);
+const unsigned long EBUFSIZE = (((unsigned long)1) << log_ebufsize);
 // ReportBuffer size in bytes
-const unsigned long RBUFSIZE = (((unsigned long)1) << 20);
+const unsigned long RBUFSIZE = (((unsigned long)1) << log_rbufsize);
 
 struct __attribute__ ((__packed__)) rb_entry {
     uint64_t offset; // bytes
@@ -16,10 +21,10 @@ struct __attribute__ ((__packed__)) rb_entry {
 
 struct mc_desc {
     uint64_t nr;
-    uint64_t* addr;
+    volatile uint64_t* addr;
     uint32_t size; // bytes
     uint64_t length; // bytes
-    uint64_t* rbaddr;
+    volatile uint64_t* rbaddr;
 };
 
 class cbm_link {
@@ -31,31 +36,45 @@ class cbm_link {
   
     unsigned int _index;
     unsigned int _last_index;
+    unsigned int _last_acked;
     unsigned int _mc_nr;
     unsigned int _wrap;
   
-    uint64_t* _eb;
-    struct rb_entry* _rb;
+    volatile uint64_t* _eb;
+    volatile struct rb_entry* _rb;
   
     unsigned long _rbsize;
     unsigned long _rbentries;
 
 public:
   
-    struct mc_desc mc;
+    //    struct mc_desc mc;
 
     cbm_link() : _ebuf(NULL), _rbuf(NULL), _ch(NULL), _index(0), _last_index(0),
-                 _mc_nr(0), _wrap(0) { }
+                 _last_acked(0), _mc_nr(0), _wrap(0) { }
 
     ~cbm_link() {
-        if(_ch)
-            delete _ch;
-        if(_ebuf)
+        if(_ebuf){
+            if(_ebuf->deallocate() != 0) {
+                std::cout << "ERROR: ebuf->deallocate" << std::endl;
+                throw 1;
+            }
             delete _ebuf;
-        if(_rbuf)
+            _ebuf = NULL;
+        }
+        if(_rbuf){
+            if(_rbuf->deallocate() != 0) {
+                std::cout << "ERROR: rbuf->deallocate" << std::endl;
+                throw 1;
+            }
             delete _rbuf;
-    }
-  
+            _rbuf = NULL;
+        }
+        if(_ch) {
+            delete _ch;
+            _ch = NULL;
+        }
+    }  
 
     int init(unsigned int channel,
              rorcfs_device* dev,
@@ -65,7 +84,7 @@ public:
     
         // create new DMA event buffer
         _ebuf = new rorcfs_buffer();			
-        if (_ebuf->allocate(dev, EBUFSIZE_z, 2*_channel, 
+        if (_ebuf->allocate(dev, EBUFSIZE, 2*_channel, 
                             1, RORCFS_DMA_FROM_DEVICE)!=0) {
             if (errno == EEXIST) {
                 printf("INFO: Buffer ebuf %d already exists, trying to connect ...\n", 2*_channel);
@@ -145,26 +164,7 @@ public:
         return 0;
     };
 
-    int deinit() {
-        if(_ebuf->deallocate() != 0) {
-            perror("ERROR: ebuf->deallocate");
-            return -1;
-        }
-        if(_rbuf->deallocate() != 0) {
-            perror("ERROR: rbuf->deallocate");
-            return -1;
-        }
-
-        delete _ebuf;
-        _ebuf = NULL;
-        delete _rbuf;
-        _rbuf = NULL;
-        delete _ch;
-        _ch = NULL;
-    
-        return 0;
-    }
-
+    // TODO: maybe do not allow seperate enabel and disable for fma engines, better add some busys to hold everything
     int enable() {
         _ch->setEnableEB(1);
         _ch->setEnableRB(1);
@@ -184,15 +184,17 @@ public:
         _ch->setDMAConfig(0X00000002);
         return 0;
     }
-
-    mc_desc* get_mc() {
+  
+    std::pair<mc_desc, bool> get_mc() {
+        struct mc_desc mc;
+    
         if(_rb[_index].length != 0) {
             mc.nr = _mc_nr;
-            mc.addr = _eb + _rb[_index].offset/8;
+            mc.addr = _eb + _rb[_index].offset/8; // TODO Why 8
             mc.size = _rb[_index].mc_size;
             mc.length = _rb[_index].length; // for checks only
             mc.rbaddr = (uint64_t *)&_rb[_index];
-
+      
             // calculate next rb index
             _last_index = _index;
             if( _index < _rbentries-1 ) 
@@ -202,39 +204,45 @@ public:
                 _index = 0;
             }
             _mc_nr++;    
-
-            return &mc;
+      
+            return std::make_pair(mc, true);
         }
         else
 #ifdef DEBUG  
             printf("MC %ld not available", _mc_nr);
 #endif
-        return NULL;
-    }
-
-    int ack_mc() {
-        // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
-        // to calculete end wrapping logic is required
-        uint64_t eb_offset = _rb[_last_index].offset;
-        uint64_t rb_offset = _last_index*sizeof(struct rb_entry) % _rbsize;
-
-        // clear report buffer entry befor setting new pointers
-        memset(&_rb[_last_index], 0, sizeof(struct rb_entry));
-    
-        // set pointers in HW
-        _ch->setEBOffset(eb_offset);
-        _ch->setRBOffset(rb_offset);
-
-#ifdef DEBUG  
-        printf("index %d EB offset set: %ld, get: %ld\n",
-               _last_index, eb_offset, _ch->getEBOffset());
-        printf("index %d RB offset set: %ld, get: %ld, wrap %d\n",
-               _last_index, rb_offset, _ch->getRBOffset(), _wrap);
-#endif
-    
-        return 0;
+        return std::make_pair(mc, false);
     }
   
+  int ack_mc() {
+        
+    // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
+    // to calculate end wrapping logic is required
+    uint64_t eb_offset = _rb[_last_index].offset;
+    uint64_t rb_offset = _last_index*sizeof(struct rb_entry) % _rbsize;
+
+    memset((void *)&_rb[_last_index], 0, sizeof(struct rb_entry));
+
+    _last_acked++;
+    if (_last_acked == 1000) {
+      _ch->setEBOffset(eb_offset);
+      _ch->setRBOffset(rb_offset);
+      _last_acked = 0;
+    }
+
+#ifdef DEBUG  
+    printf("index %d EB offset set: %ld, get: %ld\n",
+           _last_index, eb_offset, _ch->getEBOffset());
+    printf("index %d RB offset set: %ld, get: %ld, wrap %d\n",
+           _last_index, rb_offset, _ch->getRBOffset(), _wrap);
+#endif
+
+    return 0;
+    }
+  
+    // TODO: Add funtions to set channel properties like data source, link reset, activate busys 
+
+
     rorcfs_buffer* ebuf() const {
         return _ebuf;
     }
