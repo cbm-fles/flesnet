@@ -11,12 +11,15 @@ const unsigned long EBUFSIZE = (((unsigned long)1) << log_ebufsize);
 // ReportBuffer size in bytes
 const unsigned long RBUFSIZE = (((unsigned long)1) << log_rbufsize);
 
+// size depends on chosen payload_size
 struct __attribute__ ((__packed__)) rb_entry {
     uint64_t offset; // bytes
     uint64_t length; // bytes
-    uint32_t flags; // unused, filled with 0
     uint32_t mc_size; // 16 bit words
-    uint64_t dummy; // Pad to next 128 Bit entry, filled with 0 by HW
+    uint16_t flags; // filled with 0s
+    uint8_t  sysid; // AA
+    uint8_t  hdrrev; // 01
+    uint64_t mc_nr;
 };
 
 struct mc_desc {
@@ -187,29 +190,27 @@ public:
   
     std::pair<mc_desc, bool> get_mc() {
         struct mc_desc mc;
-    
-        if(_rb[_index].length != 0) {
-            mc.nr = _mc_nr;
-            mc.addr = _eb + _rb[_index].offset/8; // TODO Why 8
-            mc.size = _rb[_index].mc_size;
-            mc.length = _rb[_index].length; // for checks only
-            mc.rbaddr = (uint64_t *)&_rb[_index];
-      
-            // calculate next rb index
-            _last_index = _index;
-            if( _index < _rbentries-1 ) 
-                _index++;
-            else {
-                _wrap++;
-                _index = 0;
-            }
-            _mc_nr++;    
-      
-            return std::make_pair(mc, true);
+        if(_rb[_index].mc_nr > _mc_nr) { // mc_nr counts from 1 in HW
+          _mc_nr = _rb[_index].mc_nr;
+          mc.nr = _mc_nr;
+          mc.addr = _eb + _rb[_index].offset/sizeof(uint64_t);
+          mc.size = _rb[_index].mc_size << 1; // size in rb is in 16 bit words
+          mc.length = _rb[_index].length; // for checks only
+          mc.rbaddr = (uint64_t *)&_rb[_index];
+
+          // calculate next rb index
+          _last_index = _index;
+          if( _index < _rbentries-1 ) 
+            _index++;
+          else {
+            _wrap++;
+            _index = 0;
+          }
+          return std::make_pair(mc, true);
         }
         else
 #ifdef DEBUG  
-            printf("MC %ld not available", _mc_nr);
+          printf("MC %ld not available", _mc_nr);
 #endif
         return std::make_pair(mc, false);
     }
@@ -220,8 +221,6 @@ public:
     // to calculate end wrapping logic is required
     uint64_t eb_offset = _rb[_last_index].offset;
     uint64_t rb_offset = _last_index*sizeof(struct rb_entry) % _rbsize;
-
-    memset((void *)&_rb[_last_index], 0, sizeof(struct rb_entry));
 
     _last_acked++;
     if (_last_acked == 1000) {

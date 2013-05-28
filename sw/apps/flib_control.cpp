@@ -33,6 +33,7 @@ static void s_signal_handler (int signal_value)
 {
   s_interrupted = 1;
   printf("Signal detected\n");
+  exit(EXIT_SUCCESS);
 }
 
 static void s_catch_signals (void)
@@ -79,36 +80,34 @@ int main(int argc, char *argv[])
 
     std::pair<mc_desc, bool> mc_pair;
     while((mc_pair = MyFlib->link[0]->get_mc()).second == false ) {
-      printf("waiting\n");
-      usleep(1);
+      //      printf("waiting\n");
+      usleep(1000);
       waited = true;
-      if (s_interrupted) {
-        printf ("interrupt received\n");
-        exit(EXIT_SUCCESS);
-      }
     }
     if(waited) {
-      printf(".\n");
+      //printf(".\n");
       waited = false;
     }
 
-    //  usleep(1);
     int error = process_mc(&mc_pair.first);
     error_cnt += error;
     if(error){
       dump_mc(&mc_pair.first);
+      //      exit(EXIT_SUCCESS);
       printf("\n");
     }
-       
+    // dump_raw((uint64_t *)(rb+j), 4);
+    // dump_mc(&mc_pair.first);
+
     MyFlib->link[0]->ack_mc();
       
-    if((j & 0xFFFF) == 0xFFFF) {
+    if((j & 0xFFFFFF) == 0xFFFFFF) {
       printf("%d analysed\n", j);
-      dump_mc(&mc_pair.first);
+      //dump_mc(&mc_pair.first);
       // MyFlib->link[0]->ack_mc();
     }
     if (s_interrupted) {
-      printf ("interrupt received\n");
+      printf ("interrupt here received\n");
       break;
     }
   }
