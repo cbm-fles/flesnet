@@ -11,22 +11,23 @@ const unsigned long EBUFSIZE = (((unsigned long)1) << log_ebufsize);
 // ReportBuffer size in bytes
 const unsigned long RBUFSIZE = (((unsigned long)1) << log_rbufsize);
 
-// size depends on chosen payload_size
 struct __attribute__ ((__packed__)) rb_entry {
-    uint64_t offset; // bytes
-    uint64_t length; // bytes
-    uint32_t mc_size; // 16 bit words
-    uint16_t flags; // filled with 0s
-    uint8_t  sysid; // AA
-    uint8_t  hdrrev; // 01
-    uint64_t mc_nr;
+  uint8_t   hdr_id;  // "Header format identifier" DD
+  uint8_t   hdr_ver; // "Header format version"    01
+  uint16_t  eq_id;   // "Equipment identifier"     F001
+  uint16_t  flags;   // "Status and error flags"   0s
+  uint8_t   sys_id;  // "Subsystem identifier"     AA
+  uint8_t   sys_ver; // "Subsystem format version" AA
+  uint64_t  idx;     // "Microslice index"
+  uint32_t  crc;     // "CRC32 checksum"
+  uint32_t  size;    // "Size in 16 bit words"
+  uint64_t  offset;  // "Ofsset in event buffer"
 };
 
 struct mc_desc {
     uint64_t nr;
     volatile uint64_t* addr;
     uint32_t size; // bytes
-    uint64_t length; // bytes
     volatile uint64_t* rbaddr;
 };
 
@@ -57,26 +58,38 @@ public:
                  _last_acked(0), _mc_nr(0), _wrap(0) { }
 
     ~cbm_link() {
-        if(_ebuf){
-            if(_ebuf->deallocate() != 0) {
-                std::cout << "ERROR: ebuf->deallocate" << std::endl;
-                throw 1;
-            }
-            delete _ebuf;
-            _ebuf = NULL;
+      if(_ch) {
+        // disable DMA Engine
+        _ch->setEnableEB(0);
+        // wait for pending transfers to complete (dma_busy->0)
+        while( _ch->getDMABusy() )
+          usleep(100);
+        // disable RBDM
+        _ch->setEnableRB(0);
+        // disable DMA PKT
+        //TODO: if resetting DFIFO by setting 0x2 restart is impossible
+        _ch->setDMAConfig(0X00000000);
+      }
+      if(_ebuf){
+        if(_ebuf->deallocate() != 0) {
+          std::cout << "ERROR: ebuf->deallocate" << std::endl;
+          throw 1;
         }
-        if(_rbuf){
-            if(_rbuf->deallocate() != 0) {
-                std::cout << "ERROR: rbuf->deallocate" << std::endl;
-                throw 1;
-            }
-            delete _rbuf;
-            _rbuf = NULL;
+        delete _ebuf;
+        _ebuf = NULL;
+      }
+      if(_rbuf){
+        if(_rbuf->deallocate() != 0) {
+          std::cout << "ERROR: rbuf->deallocate" << std::endl;
+          throw 1;
         }
-        if(_ch) {
-            delete _ch;
-            _ch = NULL;
-        }
+        delete _rbuf;
+        _rbuf = NULL;
+      }
+      if(_ch) {
+        delete _ch;
+        _ch = NULL;
+      }
     }  
 
     int init(unsigned int channel,
@@ -147,7 +160,6 @@ public:
             return -1;
         }
 
-        //TODO: this is max payload size!!!
         if( _ch->configureChannel(_ebuf, _rbuf, 128) < 0) {
             perror("configureChannel()");
             return -1;
@@ -163,39 +175,31 @@ public:
 
         _rbsize = _rbuf->getPhysicalSize();
         _rbentries = _rbuf->getMaxRBEntries();
+
+        // Enable desciptor buffers and dma engine
+        _ch->setEnableEB(1);
+        _ch->setEnableRB(1);
+        _ch->setDMAConfig( _ch->getDMAConfig() | 0x01 );
     
         return 0;
     };
 
-    // TODO: maybe do not allow seperate enabel and disable for fma engines, better add some busys to hold everything
-    int enable() {
-        _ch->setEnableEB(1);
-        _ch->setEnableRB(1);
-        _ch->setDMAConfig( _ch->getDMAConfig() | 0x01 );
+    int enable_TODO() {
+      // hold data source here
         return 0; 
     }
 
-    int disable() {
-        // disable DMA Engine
-        _ch->setEnableEB(0);
-        // wait for pending transfers to complete (dma_busy->0)
-        while( _ch->getDMABusy() )
-            usleep(100); 
-        // disable RBDM
-        _ch->setEnableRB(0);
-        // reset DFIFO, disable DMA PKT
-        _ch->setDMAConfig(0X00000002);
+    int disable_TODO() {
         return 0;
     }
   
     std::pair<mc_desc, bool> get_mc() {
         struct mc_desc mc;
-        if(_rb[_index].mc_nr > _mc_nr) { // mc_nr counts from 1 in HW
-          _mc_nr = _rb[_index].mc_nr;
+        if(_rb[_index].idx > _mc_nr) { // mc_nr counts from 1 in HW
+          _mc_nr = _rb[_index].idx;
           mc.nr = _mc_nr;
           mc.addr = _eb + _rb[_index].offset/sizeof(uint64_t);
-          mc.size = _rb[_index].mc_size << 1; // size in rb is in 16 bit words
-          mc.length = _rb[_index].length; // for checks only
+          mc.size = _rb[_index].size << 1; // size in rb is in 16 bit words
           mc.rbaddr = (uint64_t *)&_rb[_index];
 
           // calculate next rb index

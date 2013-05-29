@@ -4,17 +4,37 @@ hdrrev  8       dpb
 sysid	8       dpb
 linkid  16      dpb
 sysrev  8       dpb
-flags	8       dpb
+flags	8+      dpb
 
 msnr	48/64   dpb
 
 size	32      flib
 offset  64      flib
 
+CRC     32   flib/dpb Footer
+
+|        |        |        |        |        |        |        |        |
+ hdr_id   hdr_ver   eq_id            flags             sys_id   sys_ver
+ mc_nr
+ crc                                 size
+ offset
 
 
-  hdr_word_0 <= hdrrev & sysid & flags & size;
-  hdr_word_1 <= rsvd & std_logic_vector(mc_nr);
+
+
+unsigned:8   hdr_id  "Header format identifier"
+unsigned:8   hdr_ver "Header format version"
+unsigned:16  eq_id   "Equipment identifier"
+unsigned:16  flags   "Status and error flags"
+unsigned:8   sys_id  "Subsystem identifier"
+unsigned:8   sys_ver "Subsystem format version"
+unsigned:64  idx     "Microslice index"
+unsigned:32  crc     "CRC32 checksum"
+unsigned:32  size
+unsigned:64  offset
+
+
+
 
 
 
@@ -22,7 +42,7 @@ offset  64      flib
 header revision	internal revision specifier
 		8bit = 265 formats
 		
-timestamp	gobble timestamp: 	64bit * 1ns = 585a
+timestamp	globle timestamp: 	64bit * 1ns = 585a
 					48bit * 1ns = 3,3d
 
 		header timestamp	38bit * 1us ~ 3d

@@ -48,7 +48,6 @@ public:
       std::cout << "link" << i << "init failed" << std::endl;
       throw 1;
     }
-    link[i]->enable();
   }
  
   void add_links() {
@@ -68,7 +67,6 @@ public:
   }
   
   void remove_link(uint32_t i) {
-    // link[i]->disable();
     delete link[i];
     link[i] = NULL;
   }
