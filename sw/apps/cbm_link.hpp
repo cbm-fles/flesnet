@@ -11,6 +11,7 @@ const unsigned long EBUFSIZE = (((unsigned long)1) << log_ebufsize);
 // ReportBuffer size in bytes
 const unsigned long RBUFSIZE = (((unsigned long)1) << log_rbufsize);
 
+// has to be 256 Bit, this is hard coded in hw
 struct __attribute__ ((__packed__)) rb_entry {
   uint8_t   hdr_id;  // "Header format identifier" DD
   uint8_t   hdr_ver; // "Header format version"    01
@@ -62,13 +63,14 @@ public:
         // disable DMA Engine
         _ch->setEnableEB(0);
         // wait for pending transfers to complete (dma_busy->0)
-        while( _ch->getDMABusy() )
-          usleep(100);
+        //while( _ch->getDMABusy() ) TODO
+         usleep(100);
         // disable RBDM
         _ch->setEnableRB(0);
         // disable DMA PKT
         //TODO: if resetting DFIFO by setting 0x2 restart is impossible
         _ch->setDMAConfig(0X00000000);
+        printf("DMA disabled\n");
       }
       if(_ebuf){
         if(_ebuf->deallocate() != 0) {
@@ -213,10 +215,7 @@ public:
           return std::make_pair(mc, true);
         }
         else
-#ifdef DEBUG  
-          printf("MC %ld not available", _mc_nr);
-#endif
-        return std::make_pair(mc, false);
+          return std::make_pair(mc, false);
     }
   
   int ack_mc() {
@@ -224,14 +223,13 @@ public:
     // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
     // to calculate end wrapping logic is required
     uint64_t eb_offset = _rb[_last_index].offset;
+    // each rbenty is 32 bytes, this is hard coded in HW
     uint64_t rb_offset = _last_index*sizeof(struct rb_entry) % _rbsize;
 
-    _last_acked++;
-    if (_last_acked == 1000) {
-      _ch->setEBOffset(eb_offset);
-      _ch->setRBOffset(rb_offset);
-      _last_acked = 0;
-    }
+    //_ch->setEBOffset(eb_offset);
+    //_ch->setRBOffset(rb_offset);
+
+    _ch->setOffsets(eb_offset, rb_offset);
 
 #ifdef DEBUG  
     printf("index %d EB offset set: %ld, get: %ld\n",

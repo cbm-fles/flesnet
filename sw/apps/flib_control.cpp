@@ -73,45 +73,89 @@ int main(int argc, char *argv[])
 
   uint64_t* eb = (uint64_t *)MyFlib->link[0]->ebuf()->getMem();
   rb_entry* rb = (rb_entry *)MyFlib->link[0]->rbuf()->getMem();
+  uint32_t pending_acks = 0;
+
+  printf("misc mc_gen cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_MC_GEN_CFG));
+
+  printf("pending mc : %08x%08x\n", 
+         MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_PENDING_MC_H), 
+         MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_PENDING_MC_L));
+
+
+  printf("misc datapath cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_DATAPATH_CFG));
   
+  // datapath_cfg
+  // bit 0-1 data_rx_sel (10: link, 11: pgen, 0x: disable)
+  uint32_t datapath_cfg = 0x0;
+
+  MyFlib->link[0]->get_ch()->setGTX(RORC_REG_GTX_DATAPATH_CFG, datapath_cfg);
+  
+  // mc_gen_cfg
+  // bit 0 mc_enable 
+  // bit 1 rst_pending_mc
+  
+  // enabel mc gen
+  MyFlib->link[0]->get_ch()->setGTX(RORC_REG_GTX_MC_GEN_CFG, 0x1);
+ 
+  printf("misc datapath cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_DATAPATH_CFG));
+
   int error_cnt = 0;
   for (int j = 0; j < mc_limit; j++) {
     bool waited = false;
 
     std::pair<mc_desc, bool> mc_pair;
     while((mc_pair = MyFlib->link[0]->get_mc()).second == false ) {
-      //      printf("waiting\n");
-      usleep(1000);
+      //printf("waiting\n");
+      usleep(10);
+      //      MyFlib->link[0]->ack_mc();
+      //pending_acks = 0;
       waited = true;
     }
+    pending_acks++;
     if(waited) {
       //printf(".\n");
       waited = false;
     }
-
+    if(j == 0) {
+      printf("First mc seen\n");
+      dump_raw((uint64_t *)(rb+j), 4);
+      dump_mc_light(&mc_pair.first);
+    }
     int error = process_mc(&mc_pair.first);
     error_cnt += error;
     if(error){
+      dump_raw((uint64_t *)(rb+j), 4);
       dump_mc(&mc_pair.first);
       //      exit(EXIT_SUCCESS);
       printf("\n");
     }
-    // dump_raw((uint64_t *)(rb+j), 4);
-    // dump_mc(&mc_pair.first);
+    //      dump_mc(&mc_pair.first);
 
-    MyFlib->link[0]->ack_mc();
-      
-    if((j & 0xFFFFFF) == 0xFFFFFF) {
+    if((j & 0xFFFFF) == 0xFFFFF) {
       printf("%d analysed\n", j);
-      //dump_mc(&mc_pair.first);
-      // MyFlib->link[0]->ack_mc();
+      dump_mc_light(&mc_pair.first);
     }
+    //    usleep(1);
+    if (pending_acks == 100) {
+      // MyFlib->link[0]->ack_mc();
+      pending_acks = 0;
+    }
+
     if (s_interrupted) {
       printf ("interrupt here received\n");
       break;
     }
   }
-     
+  // disabel mc_gen
+  //  MyFlib->link[0]->get_ch()->setGTX(RORC_REG_GTX_MC_GEN_CFG, 0x0);
+  // print pending mc
+  printf("pending mc : %08x%08x\n", 
+         MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_PENDING_MC_H), 
+         MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_PENDING_MC_L));
+  // rest mc pending‚
+  // MyFlib->link[0]->get_ch()->setGTX(RORC_REG_GTX_MC_GEN_CFG, 0x2);
+  //MyFlib->link[0]->get_ch()->setGTX(RORC_REG_GTX_MC_GEN_CFG, 0x0);
+
   delete MyFlib;
   MyFlib = nullptr;
   printf("MCs analysed %d\nTotal errors: %d\n", mc_limit, error_cnt);

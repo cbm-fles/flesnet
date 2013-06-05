@@ -30,6 +30,15 @@ void dump_mc(mc_desc* mc)
   }
 }
 
+void dump_mc_light(mc_desc* mc)
+{
+  printf("Report addr=%p :\n mc_nr %ld mc_size=%u Bytes\n",
+         (void *)mc->rbaddr,
+         mc->nr,
+         mc->size);
+}
+
+
 // Dumps mc correponding to entry nr in report buffer
 // will not accout for wrapping, no range check
 void dump_mc_raw(volatile uint64_t *eb,
