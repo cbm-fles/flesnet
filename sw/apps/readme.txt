@@ -1,26 +1,9 @@
-
-
-hdrrev  8       dpb
-sysid	8       dpb
-linkid  16      dpb
-sysrev  8       dpb
-flags	8+      dpb
-
-msnr	48/64   dpb
-
-size	32      flib
-offset  64      flib
-
-CRC     32   flib/dpb Footer
-
+MC descriptor
 |        |        |        |        |        |        |        |        |
  hdr_id   hdr_ver   eq_id            flags             sys_id   sys_ver
- mc_nr
+ idx
  crc                                 size
  offset
-
-
-
 
 unsigned:8   hdr_id  "Header format identifier"
 unsigned:8   hdr_ver "Header format version"
@@ -32,10 +15,6 @@ unsigned:64  idx     "Microslice index"
 unsigned:32  crc     "CRC32 checksum"
 unsigned:32  size
 unsigned:64  offset
-
-
-
-
 
 
 

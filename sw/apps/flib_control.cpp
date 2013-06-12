@@ -74,28 +74,15 @@ int main(int argc, char *argv[])
   uint64_t* eb = (uint64_t *)MyFlib->link[0]->ebuf()->getMem();
   rb_entry* rb = (rb_entry *)MyFlib->link[0]->rbuf()->getMem();
   uint32_t pending_acks = 0;
-
+  
   printf("misc mc_gen cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_MC_GEN_CFG));
-
-  printf("pending mc : %08x%08x\n", 
-         MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_PENDING_MC_H), 
-         MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_PENDING_MC_L));
-
-
   printf("misc datapath cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_DATAPATH_CFG));
+  printf("pending mc : %016lx\n", MyFlib->link[0]->get_pending_mc());
   
-  // datapath_cfg
-  // bit 0-1 data_rx_sel (10: link, 11: pgen, 0x: disable)
-  uint32_t datapath_cfg = 0x0;
+  MyFlib->link[0]->set_data_rx_sel(cbm_link::pgen);
 
-  MyFlib->link[0]->get_ch()->setGTX(RORC_REG_GTX_DATAPATH_CFG, datapath_cfg);
-  
-  // mc_gen_cfg
-  // bit 0 mc_enable 
-  // bit 1 rst_pending_mc
-  
   // enabel mc gen
-  MyFlib->link[0]->get_ch()->setGTX(RORC_REG_GTX_MC_GEN_CFG, 0x1);
+  MyFlib->link[0]->set_enable_mc_gen(1);
  
   printf("misc datapath cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_DATAPATH_CFG));
 
@@ -107,8 +94,8 @@ int main(int argc, char *argv[])
     while((mc_pair = MyFlib->link[0]->get_mc()).second == false ) {
       //printf("waiting\n");
       usleep(10);
-      //      MyFlib->link[0]->ack_mc();
-      //pending_acks = 0;
+      MyFlib->link[0]->ack_mc();
+      pending_acks = 0;
       waited = true;
     }
     pending_acks++;
@@ -124,12 +111,12 @@ int main(int argc, char *argv[])
     int error = process_mc(&mc_pair.first);
     error_cnt += error;
     if(error){
-      dump_raw((uint64_t *)(rb+j), 4);
-      dump_mc(&mc_pair.first);
-      //      exit(EXIT_SUCCESS);
+      //dump_raw((uint64_t *)(rb+j), 4);
+      //dump_mc(&mc_pair.first);
+      //exit(EXIT_SUCCESS);
       printf("\n");
     }
-    //      dump_mc(&mc_pair.first);
+    //dump_mc(&mc_pair.first);
 
     if((j & 0xFFFFF) == 0xFFFFF) {
       printf("%d analysed\n", j);
@@ -147,14 +134,10 @@ int main(int argc, char *argv[])
     }
   }
   // disabel mc_gen
-  //  MyFlib->link[0]->get_ch()->setGTX(RORC_REG_GTX_MC_GEN_CFG, 0x0);
-  // print pending mc
-  printf("pending mc : %08x%08x\n", 
-         MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_PENDING_MC_H), 
-         MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_PENDING_MC_L));
+  MyFlib->link[0]->set_enable_mc_gen(0);
+  printf("pending mc : %016lx\n", MyFlib->link[0]->get_pending_mc());
   // rest mc pending‚
-  // MyFlib->link[0]->get_ch()->setGTX(RORC_REG_GTX_MC_GEN_CFG, 0x2);
-  //MyFlib->link[0]->get_ch()->setGTX(RORC_REG_GTX_MC_GEN_CFG, 0x0);
+  MyFlib->link[0]->rst_pending_mc();
 
   delete MyFlib;
   MyFlib = nullptr;

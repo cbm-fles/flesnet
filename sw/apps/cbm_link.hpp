@@ -243,6 +243,44 @@ public:
   
     // TODO: Add funtions to set channel properties like data source, link reset, activate busys 
 
+  // REG: mc_gen_cfg
+  // bit 0 mc_enable
+  // bit 1 rst_pending_mc
+
+  void set_enable_mc_gen(int enable) {
+    uint32_t mc_gen_cfg= _ch->getGTX(RORC_REG_GTX_MC_GEN_CFG);
+    if ( enable ) {
+      _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
+    }
+    else {
+      _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
+    }
+  }
+
+  void rst_pending_mc() {
+    uint32_t mc_gen_cfg= _ch->getGTX(RORC_REG_GTX_MC_GEN_CFG);
+    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
+    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
+  }
+
+  uint64_t get_pending_mc() {
+    uint64_t pend_mc = _ch->getGTX(RORC_REG_GTX_PENDING_MC_L);
+    pend_mc = pend_mc | ((uint64_t)(_ch->getGTX(RORC_REG_GTX_PENDING_MC_H))<<32);
+    return pend_mc;
+  }
+
+  // REG: datapath_cfg
+  // bit 0-1 data_rx_sel (10: link, 11: pgen, 0x: disable)
+  enum data_rx_sel {disable, link, pgen};
+
+  void set_data_rx_sel(data_rx_sel rx_sel) {
+    uint32_t dp_cfg = _ch->getGTX(RORC_REG_GTX_DATAPATH_CFG);
+    switch (rx_sel) {
+    case disable : _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3)); break;
+    case link :    _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
+    case pgen :    _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
+    }
+  }
 
     rorcfs_buffer* ebuf() const {
         return _ebuf;
