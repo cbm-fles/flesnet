@@ -135,9 +135,9 @@ int main(int argc, char *argv[])
       printf("%d analysed\n", j);
       dump_mc_light(&mc_pair.first);
     }
-    //    usleep(1);
+
     if (pending_acks == 100) {
-      // MyFlib->link[0]->ack_mc();
+      MyFlib->link[0]->ack_mc();
       pending_acks = 0;
     }
 
