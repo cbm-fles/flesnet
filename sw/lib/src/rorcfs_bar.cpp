@@ -35,6 +35,7 @@
 #include <arpa/inet.h>
 #endif
 #include <sys/wait.h>
+#include <stdint.h>
 
 #include "rorcfs_bar.hh"
 #include "rorcfs_device.hh"
@@ -322,6 +323,38 @@ void rorcfs_bar::memcpy_bar(unsigned long addr, const void *source, size_t num) 
 #endif
 }
 
+void rorcfs_bar::set_mem(unsigned long addr, const void *source, size_t n) {
+  // Size n (in bytes) must be devidable by 32 bit
+  assert ( bar!=NULL );
+  assert ( n%4 == 0 );
+  size_t words = n>>2;
+  if ( (addr<<2)<barstat.st_size ) {
+    pthread_mutex_lock(&mtx);
+    for (size_t i = 0; i < words; i++) {
+      bar[addr+i] = *((uint32_t*)source+i);
+      msync( (bar + (((addr+i)<<2) & PAGE_MASK)), PAGE_SIZE, MS_SYNC);
+#ifdef DEBUG
+    printf("rorcfs_bar::set_mem(%lx, %08x)\n", addr+i, *((uint32_t*)source + i));
+    fflush(stdout);
+#endif
+    }
+    pthread_mutex_unlock(&mtx);
+  }
+}
+void rorcfs_bar::get_mem(unsigned long addr, void *dest, size_t n) {
+  assert ( bar!=NULL );
+  assert ( n%4 == 0 );
+  size_t words = n>>2;
+  if ( (addr<<2)<barstat.st_size ) {
+    for (size_t i = 0; i < words; i++) {
+      *((uint32_t*)dest+i) = bar[addr+i];
+#ifdef DEBUG
+      printf("rorcfs_bar::get_mem(%lx)=%08x\n", addr+i, *((uint32_t*)dest+i));
+      fflush(stdout);
+#endif
+    }
+  }
+}
 
 unsigned short rorcfs_bar::get16(unsigned long addr) 
 {

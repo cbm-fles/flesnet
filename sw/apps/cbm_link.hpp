@@ -2,6 +2,7 @@
 #define CBM_LINK_HPP
 
 #include "librorc.h"
+#include <cassert>
 
 const size_t log_ebufsize =  22;
 const size_t log_rbufsize =  20;
@@ -33,10 +34,10 @@ struct mc_desc {
 };
 
 struct ctrl_msg {
-  uint32_t words; // num data words
+  uint32_t words; // num 16 bit data words
   uint16_t data[32];
 };
-
+  
 class cbm_link {
   
     rorcfs_buffer* _ebuf;
@@ -289,63 +290,57 @@ public:
 
   // Control Interface ////////////////////////////
 
-  int send_msg(const uint16_t *msg, size_t words) {
-  
-  // check if send FSM is ready (bit 31 in r_ctrl_tx = 0)
-  // TODO: could also implement blocking call 
-  //       and check if sending is done at the end
-  if ( (_ch->getGTX(RORC_REG_GTX_CTRL_TX) & (1<<31)) != 0 ) {
+  int send_msg(const struct ctrl_msg* msg) {
+    // TODO: could also implement blocking call 
+    //       and check if sending is done at the end
+
+    assert (msg->words >= 4 && msg->words <= 32);
+    
+    // check if send FSM is ready (bit 31 in r_ctrl_tx = 0)
+    if ( (_ch->getGTX(RORC_REG_GTX_CTRL_TX) & (1<<31)) != 0 ) {
       return -1;
     }
-
-  // copy msg to board memory
-  uint32_t* msg_32 = (uint32_t*)msg;
-  for (size_t i = 0; i < (words>>1); i++) {
-    _ch->setGTX(RORC_MEM_BASE_CTRL_TX+i, msg_32[i]);
-    printf("mem_32 a: %04lx d: %08x\n", RORC_MEM_BASE_CTRL_TX+i, msg_32[i]);
-  }
-  if (words&1) { // odd words
-    _ch->setGTX(RORC_MEM_BASE_CTRL_TX+(words>>1), msg[words-1]);
-    printf("mem_16 a: %04lx d: %08x\n", RORC_MEM_BASE_CTRL_TX+(words>>1), msg[words-1]);
-  }
-
-  // start send FSM
-  uint32_t ctrl_tx = 0;
-  ctrl_tx = 1<<31 | (words-1);
-  _ch->setGTX(RORC_REG_GTX_CTRL_TX, ctrl_tx);
-  printf("set ctrl_tx: %08x\n", ctrl_tx);
-
-  return 0;
+    
+    // copy msg to board memory
+    size_t bytes = msg->words*2 + (msg->words*2)%4;
+    _ch->set_memGTX(RORC_MEM_BASE_CTRL_TX, (const void*)msg->data, bytes);
+    
+    // start send FSM
+    uint32_t ctrl_tx = 0;
+    ctrl_tx = 1<<31 | (msg->words-1);
+    _ch->setGTX(RORC_REG_GTX_CTRL_TX, ctrl_tx);
+    printf("set ctrl_tx: %08x\n", ctrl_tx);
+    
+    return 0;
 }
 
-size_t rcv_msg(uint16_t *buf) {
-  
-  uint32_t status = _ch->getGTX(RORC_REG_GTX_CTRL_RX);
-  size_t words = (status & 0x1F)+1;
-  printf("r_ctrl_tx %08x\n", status);
-
-  // check if a msg is available
-  if ((status & (1<<31)) == 0) {
-    return -1;
-  }
-  
-  // read msg from board memory
-  uint32_t* buf_32 = (uint32_t*)buf;
-  for (size_t i = 0; i < words>>1; i++) {
-    buf_32[i] = _ch->getGTX(RORC_MEM_BASE_CTRL_RX+i);
-    printf("mem_32 a: %04lx d: %08x\n", RORC_MEM_BASE_CTRL_RX+i, buf_32[i]);
-  }
-  if (words&1) { // odd words
-    buf[words-1] = _ch->getGTX(RORC_MEM_BASE_CTRL_RX+(words>>1));
-    printf("mem_16 a: %04lx d: %08x\n", RORC_MEM_BASE_CTRL_RX+(words>>1), buf[words-1]);
-  }
-  
-  // acknowledge msg
-  _ch->setGTX(RORC_REG_GTX_CTRL_RX, 0);
-  printf("ctrl_rx cleard\n");
-
-  return words;
-} 
+  int rcv_msg(struct ctrl_msg* msg) {
+    
+    int ret = 0;
+    uint32_t ctrl_rx = _ch->getGTX(RORC_REG_GTX_CTRL_RX);
+    msg->words = (ctrl_rx & 0x1F)+1;
+    printf("r_ctrl_tx %08x\n", ctrl_rx);
+    
+    // check if received words are in boundary
+    if (msg->words < 4 || msg->words > 32) {
+      msg->words = 32;
+      ret = -2;
+    }
+    // check if a msg is available
+    if ((ctrl_rx & (1<<31)) == 0) {
+      return -1;
+    }
+    
+    // read msg from board memory
+    size_t bytes = msg->words*2 + (msg->words*2)%4;
+    _ch->get_memGTX(RORC_MEM_BASE_CTRL_RX, (void*)msg->data, bytes);
+    
+    // acknowledge msg
+    _ch->setGTX(RORC_REG_GTX_CTRL_RX, 0);
+    printf("ctrl_rx cleard\n");
+    
+    return ret;
+  } 
 
     rorcfs_buffer* ebuf() const {
         return _ebuf;

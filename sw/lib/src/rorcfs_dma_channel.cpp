@@ -504,3 +504,23 @@ unsigned int rorcfs_dma_channel::getGTX(unsigned int addr)
 {
 	return bar->get(base + (1<<RORC_DMA_CMP_SEL) + addr);
 }
+
+void rorcfs_dma_channel::set_memPKT(uint32_t addr, const void *source, size_t num)
+{
+  bar->memcpy_bar(base + addr, source, num);
+}
+
+void rorcfs_dma_channel::get_memPKT(uint32_t addr, void *dest, size_t num)
+{
+  bar->get_mem(base + addr, dest, num);
+}
+
+void rorcfs_dma_channel::set_memGTX(uint32_t addr, const void *source, size_t num)
+{
+  bar->set_mem(base + (1<<RORC_DMA_CMP_SEL) + addr, source, num);
+}
+
+void rorcfs_dma_channel::get_memGTX(uint32_t addr, void *dest, size_t num)
+{
+  bar->get_mem(base + (1<<RORC_DMA_CMP_SEL) + addr, dest, num);
+}

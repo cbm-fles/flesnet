@@ -43,44 +43,45 @@ int main(int argc, char *argv[])
   printf("START\n");
 
   size_t words = 4; // number of 16 Bit words in message
-  if(argc == 2) {
+  uint16_t offset = 0;
+  if(argc == 3) {
     size_t arg = atoi(argv[1]);
     if (arg < 4 || arg > 32) {
       printf("wrong argument\n");
     }
     else
       words = arg;
+    offset = atoi(argv[2]);
   }
 
-  uint16_t* msg = (uint16_t*)malloc(words<<1);
-  uint16_t* buf = (uint16_t*)malloc(64);
+  ctrl_msg s_msg;
+  ctrl_msg r_msg;
+
+  // fill message
+  for (size_t i = 0; i < 32; i++) {
+    s_msg.data[i] = offset+i;
+  }
+  s_msg.words = words;
+
 
   // receive to flush hw buffers
-  if ( MyFlib->link[0]->rcv_msg(buf) < 0)  {
+  if ( MyFlib->link[0]->rcv_msg(&r_msg) < 0)  {
     printf("nothing to receive\n");
   }
   
-  // fill buffer
-  for (size_t i = 0; i < words; i++) {
-    msg[i] = i;
-  }
 
-  if ( MyFlib->link[0]->send_msg(msg, words) < 0)  {
+  if ( MyFlib->link[0]->send_msg(&s_msg) < 0)  {
     printf("sending failed\n");
-  }
+  }                      
     
-  size_t words_rcvd = 0;
   // receive msg
-  if ( (words_rcvd = MyFlib->link[0]->rcv_msg(buf)) < 0)  {
-    printf("nothing to receive\n");
+  if ( MyFlib->link[0]->rcv_msg(&r_msg) < 0)  {
+    printf("error receiving\n");
   }
 
-  for (size_t i = 0; i < words_rcvd; i++) {
-    printf("buf: %04x\n", buf[i]);
+  for (size_t i = 0; i < r_msg.words; i++) {
+    printf("buf: 0x%04x\n", r_msg.data[i]);
   }
-
-  free(msg);
-  free(buf);
 
   if (MyFlib)
     delete MyFlib;

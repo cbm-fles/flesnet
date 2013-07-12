@@ -81,8 +81,24 @@ class rorcfs_bar
 		 * @param num number of bytes to be copied to destination
 		 * */
 		void memcpy_bar( unsigned long addr, const void *source, size_t num );
-
-		/**
+		
+                /**
+		 * copy buffer range into BAR
+		 * @param addr address in current BAR
+		 * @param source pointer to source data field
+		 * @param n number of bytes to be copied to BAR, must be multible of 4
+		 * */
+		void set_mem( unsigned long addr, const void *source, size_t n );
+		
+                /**
+		 * copy buffer range from BAR
+		 * @param addr address in current BAR
+		 * @param dest pointer to destination data field
+		 * @param n number of bytes to be copied to destination, must be multible of 4
+		 * */
+                void get_mem( unsigned long addr, void *dest, size_t n );
+		
+                /**
 		 * write DWORD to BAR address
 		 * @param addr (unsigned int) aligned address within the 
 		 * 				BAR to write to

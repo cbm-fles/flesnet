@@ -398,8 +398,35 @@ class rorcfs_dma_channel
 		 **/
 		unsigned int getGTX( unsigned int addr );
 
+		/**
+		 * copy buffer range to Packetizer regfile
+		 * @param addr address in PKT component
+		 * @param source pointer to source data field
+		 * @param num number of bytes to be copied to destination
+		 * */
+                 void set_memPKT( uint32_t addr, const void *source, size_t num); 
+		/**
+		 * copy buffer range from Packetizer regfile
+		 * @param addr address in PKT component
+		 * @param dest pointer to destination data field
+		 * @param num number of bytes to be copied from destination
+		 * */
+                 void get_memPKT( uint32_t addr, void *dest, size_t num); 
 
-
+		/**
+		 * copy buffer range to GTX regfile
+		 * @param addr address in GTX component
+		 * @param source pointer to source data field
+		 * @param num number of bytes to be copied to destination
+		 * */
+                 void set_memGTX( uint32_t addr, const void *source, size_t num);
+		/**
+		 * copy buffer range to GTX regfile
+		 * @param addr address in GTX component
+		 * @param dest pointer to destination data field
+		 * @param num number of bytes to be copied from destination
+		 * */
+                 void get_memGTX( uint32_t addr, void *dest, size_t num);
 
 	private:
 		unsigned int base;
