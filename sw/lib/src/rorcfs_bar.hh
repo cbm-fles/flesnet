@@ -106,6 +106,15 @@ class rorcfs_bar
 		 **/
 		void set( unsigned long addr, unsigned int data );
 
+  /**
+   * set or unset single bit in register at address
+   * @param addr aligned address within the 
+   * 				BAR to write to
+   * @param pos bit possition to modify
+   * @param enable true enables the bit
+   **/
+  void set_bit(uint64_t addr, int pos, bool enable);
+
 		/**
 		 * write WORD to BAR address
 		 * @param addr within the BAR to write to

@@ -376,6 +376,21 @@ class rorcfs_dma_channel
 		 * @param data data to be writtem
 		 **/
 		void setPKT( unsigned int addr, unsigned int data );
+  /**
+   * set or unset single bit in register at address in PKT
+   * @param addr aligned address within the packetizer regfile
+   * @param pos bit possition to modify
+   * @param enable true enables the bit
+   **/
+  void set_bitPKT(uint64_t addr, int pos, bool enable);
+
+  /**
+   * set or unset single bit in register at address in GTX
+   * @param addr aligned address within the gtx regfile
+   * @param pos bit possition to modify
+   * @param enable true enables the bit
+   **/
+  void set_bitGTX(uint64_t addr, int pos, bool enable);
 
 		/**
 		 * get DW from  Packtizer

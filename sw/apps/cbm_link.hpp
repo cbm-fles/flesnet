@@ -250,23 +250,26 @@ public:
     // TODO: Add funtions to set channel properties like data source, link reset, activate busys 
 
   // REG: mc_gen_cfg
-  // bit 0 mc_enable
+  // bit 0 set_start_index
   // bit 1 rst_pending_mc
+  // bit 2 packer enable
 
-  void set_enable_mc_gen(int enable) {
+  void set_start_idx() {
+    // TODO implenet edge detection and 'pulse only' in HW
     uint32_t mc_gen_cfg= _ch->getGTX(RORC_REG_GTX_MC_GEN_CFG);
-    if ( enable ) {
-      _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
-    }
-    else {
-      _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
-    }
+    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
+    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
   }
 
   void rst_pending_mc() {
+    // TODO implenet edge detection and 'pulse only' in HW
     uint32_t mc_gen_cfg= _ch->getGTX(RORC_REG_GTX_MC_GEN_CFG);
     _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
     _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
+  }
+
+  void enable_cbmnet_packer(bool enable) {
+    _ch->set_bitGTX(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
   }
 
   uint64_t get_pending_mc() {

@@ -77,12 +77,13 @@ int main(int argc, char *argv[])
   
   printf("misc mc_gen cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_MC_GEN_CFG));
   printf("misc datapath cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_DATAPATH_CFG));
-  printf("pending mc : %016lx\n", MyFlib->link[0]->get_pending_mc());
+  printf("pending mc: %016lx\n", MyFlib->link[0]->get_pending_mc());
   
   MyFlib->link[0]->set_data_rx_sel(cbm_link::pgen);
+  MyFlib->link[0]->enable_cbmnet_packer(true);
 
-  // enabel mc gen
-  MyFlib->link[0]->set_enable_mc_gen(1);
+  // enable mc gen
+  MyFlib->enable_mc_cnt(true);
  
   printf("misc datapath cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_DATAPATH_CFG));
 
@@ -91,7 +92,7 @@ int main(int argc, char *argv[])
     bool waited = false;
 
     std::pair<mc_desc, bool> mc_pair;
-    while((mc_pair = MyFlib->link[0]->get_mc()).second == false ) {
+    while ((mc_pair = MyFlib->link[0]->get_mc()).second == false ) {
       //printf("waiting\n");
       usleep(10);
       MyFlib->link[0]->ack_mc();
@@ -99,18 +100,18 @@ int main(int argc, char *argv[])
       waited = true;
     }
     pending_acks++;
-    if(waited) {
+    if (waited) {
       //printf(".\n");
       waited = false;
     }
-    if(j == 0) {
+    if (j == 0) {
       printf("First mc seen\n");
       dump_raw((uint64_t *)(rb+j), 4);
       dump_mc_light(&mc_pair.first);
     }
     int error = process_mc(&mc_pair.first);
     error_cnt += error;
-    if(error){
+    if (error){
       //dump_raw((uint64_t *)(rb+j), 4);
       //dump_mc(&mc_pair.first);
       //exit(EXIT_SUCCESS);
@@ -118,7 +119,7 @@ int main(int argc, char *argv[])
     }
     //dump_mc(&mc_pair.first);
 
-    if((j & 0xFFFFF) == 0xFFFFF) {
+    if ((j & 0xFFFFF) == 0xFFFFF) {
       printf("%d analysed\n", j);
       dump_mc_light(&mc_pair.first);
     }
@@ -133,10 +134,10 @@ int main(int argc, char *argv[])
       break;
     }
   }
-  // disabel mc_gen
-  MyFlib->link[0]->set_enable_mc_gen(0);
+  // disable mc_gen
+  MyFlib->enable_mc_cnt(false);
   printf("pending mc : %016lx\n", MyFlib->link[0]->get_pending_mc());
-  // rest mc pending‚
+  // reset mc pending‚
   MyFlib->link[0]->rst_pending_mc();
 
   delete MyFlib;

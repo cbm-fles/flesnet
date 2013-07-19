@@ -495,6 +495,14 @@ unsigned int rorcfs_dma_channel::getPKT(unsigned int addr)
 	return bar->get(base + addr);
 }
 
+void rorcfs_dma_channel::set_bitPKT(uint64_t addr, int pos, bool enable) {
+  bar->set_bit(base + addr, pos, enable);
+}
+
+void rorcfs_dma_channel::set_bitGTX(uint64_t addr, int pos, bool enable) {
+  bar->set_bit(base + (1<<RORC_DMA_CMP_SEL) + addr, pos, enable);
+}
+
 // GTX Domain
 void rorcfs_dma_channel::setGTX(unsigned int addr, unsigned int data)
 {

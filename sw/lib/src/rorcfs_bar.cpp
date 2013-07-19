@@ -356,6 +356,16 @@ void rorcfs_bar::get_mem(unsigned long addr, void *dest, size_t n) {
   }
 }
 
+void rorcfs_bar::set_bit(uint64_t addr, int pos, bool enable) {
+  uint32_t reg= get(addr);
+  if ( enable ) {
+    set(addr, (reg | (1<<pos)));
+  }
+  else {
+    set(addr, (reg & ~(1<<pos)));
+  }    
+}
+
 unsigned short rorcfs_bar::get16(unsigned long addr) 
 {
 #ifndef SIM

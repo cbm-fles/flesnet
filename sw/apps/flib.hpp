@@ -87,6 +87,9 @@ public:
     }  
   }
 
+  void enable_mc_cnt(bool enable) {
+    _bar->set_bit(RORC_REG_MC_CNT_CFG, 31, enable);
+  }
 
   void get_fwdate() {
     std::cout << "Firmware Date:" 
