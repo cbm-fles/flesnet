@@ -36,16 +36,6 @@ int main()
 
         printf("FirmwareDate: %08x\n", bar->get(RORC_REG_FIRMWARE_DATE));
 
-	for (int i = 0; i < RORC_MEM_SIZE_CTRL_TX; i++) {
-	  printf("addr: %d data: %08x\n", i, ch->getGTX(RORC_MEM_BASE_CTRL_TX+i));
-	}
-	for (int i = 0; i < RORC_MEM_SIZE_CTRL_TX; i++) {
-          ch->setGTX(RORC_MEM_BASE_CTRL_TX+i, 256+i);
-        }
-	for (int i = 0; i < RORC_MEM_SIZE_CTRL_TX; i++) {
-	  printf("addr: %d data: %08x\n", i, ch->getGTX(RORC_MEM_BASE_CTRL_TX+i));
-	}
-
 
 	//struct misc_bits { 
 	//  unsigned int led0 : 1;

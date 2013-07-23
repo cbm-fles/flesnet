@@ -74,7 +74,13 @@ int main(int argc, char *argv[])
   uint64_t* eb = (uint64_t *)MyFlib->link[0]->ebuf()->getMem();
   rb_entry* rb = (rb_entry *)MyFlib->link[0]->rbuf()->getMem();
   uint32_t pending_acks = 0;
-  
+
+  hdr_config config = {};
+  config.eq_id = 0xE003;
+  config.sys_id = 0xBC;
+  config.sys_ver = 0xFD;
+  MyFlib->link[0]->set_hdr_config(&config);
+
   printf("misc mc_gen cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_MC_GEN_CFG));
   printf("misc datapath cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_DATAPATH_CFG));
   printf("pending mc: %016lx\n", MyFlib->link[0]->get_pending_mc());
@@ -117,6 +123,7 @@ int main(int argc, char *argv[])
       //exit(EXIT_SUCCESS);
       printf("\n");
     }
+    //dump_report((rb_entry*)(mc_pair.first.rbaddr));
     //dump_mc(&mc_pair.first);
 
     if ((j & 0xFFFFF) == 0xFFFFF) {

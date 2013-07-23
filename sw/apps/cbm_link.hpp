@@ -16,14 +16,20 @@ const unsigned long RBUFSIZE = (((unsigned long)1) << log_rbufsize);
 struct __attribute__ ((__packed__)) rb_entry {
   uint8_t   hdr_id;  // "Header format identifier" DD
   uint8_t   hdr_ver; // "Header format version"    01
-  uint16_t  eq_id;   // "Equipment identifier"     F001
-  uint16_t  flags;   // "Status and error flags"   0s
-  uint8_t   sys_id;  // "Subsystem identifier"     AA
-  uint8_t   sys_ver; // "Subsystem format version" AA
+  uint16_t  eq_id;   // "Equipment identifier"
+  uint16_t  flags;   // "Status and error flags"
+  uint8_t   sys_id;  // "Subsystem identifier"
+  uint8_t   sys_ver; // "Subsystem format version"
   uint64_t  idx;     // "Microslice index"
   uint32_t  crc;     // "CRC32 checksum"
   uint32_t  size;    // "Size in 16 bit words"
   uint64_t  offset;  // "Ofsset in event buffer"
+};
+
+struct __attribute__ ((__packed__)) hdr_config {
+  uint16_t  eq_id;   // "Equipment identifier"
+  uint8_t   sys_id;  // "Subsystem identifier"
+  uint8_t   sys_ver; // "Subsystem format version"
 };
 
 struct mc_desc {
@@ -289,6 +295,10 @@ public:
     case link :    _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
     case pgen :    _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
     }
+  }
+
+  void set_hdr_config(struct hdr_config* config) {
+    _ch->set_memGTX(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config, sizeof(hdr_config));
   }
 
   // Control Interface ////////////////////////////

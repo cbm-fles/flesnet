@@ -7,13 +7,30 @@ void dump_raw(volatile uint64_t *buf, unsigned int size)
   }
 }
 
-void dump_report(volatile struct rb_entry *rb, unsigned int nr)
+void dump_report(volatile struct rb_entry *rb)
 {
-  printf("Report #%d addr=%p :\n offset=%lu,  mc_size=%u Bytes\n",
-         nr,
-         (void *)&rb[nr],
-         rb[nr].offset,
-	 rb[nr].size);
+  printf("Report addr=%p :\n"
+         " hdr id  %02x\n"
+         " hdr ver %02x\n"
+         " eq id   %04x\n"
+         " flags   %04x\n"
+	 " sys id  %02x\n"
+	 " sys ver %02x\n"
+	 " idx     %016lx\n"
+	 " crc     %08x\n"
+	 " size    %08x\n"
+         " offset  %016lx\n",
+         (void*)rb,
+         rb->hdr_id,
+	 rb->hdr_ver,
+	 rb->eq_id,
+	 rb->flags,
+	 rb->sys_id,
+	 rb->sys_ver,
+	 rb->idx,
+	 rb->crc,
+	 rb->size,
+	 rb->offset);
 }
 
 void dump_mc(mc_desc* mc)
@@ -42,10 +59,10 @@ void dump_mc_light(mc_desc* mc)
 // Dumps mc correponding to entry nr in report buffer
 // will not accout for wrapping, no range check
 void dump_mc_raw(volatile uint64_t *eb,
-                 volatile rb_entry *rb,
-                 unsigned int nr)
+		 volatile rb_entry *rb,
+		 unsigned int nr)
 {
-  dump_report(rb, nr);
+  dump_report(rb + nr);
   printf("Event	 #%d\n", nr);
   // size and offset is in bytes, adressing is per uint64 
   volatile uint64_t* mc_word = eb + rb[nr].offset/sizeof(uint64_t);
@@ -57,21 +74,18 @@ void dump_mc_raw(volatile uint64_t *eb,
 
 #define MCH_HDR_ID 0xDD
 #define MCH_HDR_VER 0x01
-#define MCH_EQ_ID 0xF001
-#define MCH_SYS_ID 0xAA
-#define MCH_SYS_VER 0xAA
 #define MCH_FLAGS 0x0000
 
 //--------------------------------
 int process_mc(mc_desc* mc) {
 
   struct __attribute__ ((__packed__)) s_mc_header {
-    uint8_t   hdr_id;  // "Header format identifier" DD
-    uint8_t   hdr_ver; // "Header format version"    01
-    uint16_t  eq_id;   // "Equipment identifier"     F001
-    uint16_t  flags;   // "Status and error flags"   0s
-    uint8_t   sys_id;  // "Subsystem identifier"     AA
-    uint8_t   sys_ver; // "Subsystem format version" AA
+    uint8_t   hdr_id;  // "Header format identifier"
+    uint8_t   hdr_ver; // "Header format version"   
+    uint16_t  eq_id;   // "Equipment identifier"    
+    uint16_t  flags;   // "Status and error flags"   
+    uint8_t   sys_id;  // "Subsystem identifier"     
+    uint8_t   sys_ver; // "Subsystem format version" 
     uint64_t  idx;     // "Microslice index"
   };
   
@@ -92,8 +106,8 @@ int process_mc(mc_desc* mc) {
   printf("MC nr %ld, addr %p, size %d \n", mc_nr, (void *)mc_word, mc_size);
 #endif
 
-  if( mch->hdr_id != MCH_HDR_ID || mch->hdr_ver != MCH_HDR_VER || mch->eq_id != MCH_EQ_ID
-      || mch->flags != MCH_FLAGS || mch->sys_id != MCH_SYS_ID || mch->sys_ver != MCH_SYS_VER ) {
+  if( mch->hdr_id != MCH_HDR_ID || mch->hdr_ver != MCH_HDR_VER
+      || mch->flags != MCH_FLAGS ) {
     printf("ERROR: wrong MC header\n");
     printf("MC header :\n hdr_id 0x%02x, hdr_ver 0x%02x, eq_id 0x%04x,"
            " flags 0x%04x, sys_id 0x%02x, sys_ver 0x%02x\n"
