@@ -7,13 +7,15 @@
 #ifndef TIMESLICEPROCESSOR_HPP
 #define TIMESLICEPROCESSOR_HPP
 
-class TimesliceProcessor
+class TimesliceProcessor : public ThreadContainer
 {
 public:
     explicit TimesliceProcessor(ComputeBuffer& cb, int index) : _cb(cb), _index(index) {}
 
     void operator()()
     {
+        //set_cpu(2 + _index);
+
         try {           
             while (true) {
                 TimesliceWorkItem wi;

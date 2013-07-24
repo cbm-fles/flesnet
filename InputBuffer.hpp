@@ -44,6 +44,8 @@ public:
 
     /// The central loop for distributing timeslice data.
     void sender_loop() {
+        set_cpu(2);
+
         for (uint64_t timeslice = 0; timeslice < par->max_timeslice_number();
              timeslice++) {
 

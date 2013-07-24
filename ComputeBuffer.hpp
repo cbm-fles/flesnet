@@ -86,6 +86,8 @@ public:
     }
 
     virtual void handle_ts_completion() {
+        //set_cpu(2);
+
         try {
             while (true) {
                 TimesliceCompletion c;

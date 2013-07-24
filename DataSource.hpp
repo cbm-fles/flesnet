@@ -31,7 +31,7 @@ protected:
 
 
 /// Simple software pattern generator used as FLIB replacement.
-class DummyFlib : DataSource
+class DummyFlib : public DataSource, public ThreadContainer
 {
 public:
     /// The DummyFlib constructor.
@@ -53,11 +53,19 @@ public:
         _cond_producer.notify_one();
         _producer_thread->join();
         delete _producer_thread;
+
+
+        for (int i = 0; i < 10; i++)
+            out.error() << "DCOUNT[" << i << "] = " << DCOUNT[i];
     };
+
+    uint64_t DCOUNT[10] = {};
     
     /// Generate FLIB input data.
     void produce_data()
     {
+        set_cpu(3);
+
         bool generate_pattern = par->check_pattern();
 
         uint64_t written_mc = 0;
@@ -80,6 +88,7 @@ public:
             last_written_mc = written_mc;
             last_written_data = written_data;
             {
+DCOUNT[0]++;
                 boost::unique_lock<boost::mutex> l(_mutex);
                 _written_mc = written_mc;
                 _written_data = written_data;
@@ -87,6 +96,7 @@ public:
                     return;
                 while ((written_data - _acked_data + min_avail_data > _data_buffer.size())
                        || (written_mc - _acked_mc + min_avail_mc > _addr_buffer.size())) {
+DCOUNT[1]++;
                     _cond_producer.wait(l);
                     if (_is_stopped)
                         return;
@@ -137,6 +147,7 @@ public:
                     last_written_mc = written_mc;
                     last_written_data = written_data;
                     {
+DCOUNT[2]++;
                         boost::unique_lock<boost::mutex> l(_mutex);
                         _written_mc = written_mc;
                         _written_data = written_data;
@@ -151,9 +162,11 @@ public:
     {
         static uint64_t written_mc = 0;
 
+DCOUNT[3]++;
         if (min_mc_number > written_mc) {
             boost::unique_lock<boost::mutex> l(_mutex);
             while (min_mc_number > _written_mc) {
+DCOUNT[4]++;
                 _cond_consumer.wait(l);
             }
             written_mc = _written_mc;
@@ -168,10 +181,12 @@ public:
         const uint64_t min_acked_mc = _addr_buffer.size() / 4;
         const uint64_t min_acked_data = _data_buffer.size() / 4;
 
+DCOUNT[5]++;
         if (new_acked_data >= acked_data + min_acked_data
             || new_acked_mc >= acked_mc + min_acked_mc) {
             acked_data = new_acked_data;
             acked_mc = new_acked_mc;
+DCOUNT[6]++;
             {
                 boost::unique_lock<boost::mutex> l(_mutex);
                 _acked_data = acked_data;

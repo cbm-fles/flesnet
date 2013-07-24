@@ -1,0 +1,17 @@
+#!/usr/bin/python
+
+import glob
+import re
+
+with open("summary", "wb") as out:
+  for filename in sorted(glob.glob("*-*")):
+    data = filename.split("/")[-1].split("-")
+    sum = 0
+    with open(filename) as f:
+      for line in f:      
+        m = re.search('[\d.e+-]+(?= MB/s)', line)
+        if m:
+          sum += float(m.group(0))
+    data.append(str(sum))
+    out.write("\t".join(data) + "\n")
+

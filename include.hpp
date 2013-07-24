@@ -24,6 +24,8 @@
 #include <netdb.h>
 #include <rdma/rdma_cma.h>
 #include <valgrind/memcheck.h>
+#include <sched.h>
+#include <numa.h>
 
 #include <boost/program_options.hpp>
 #include <boost/random/mersenne_twister.hpp>

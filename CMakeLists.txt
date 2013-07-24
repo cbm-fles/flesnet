@@ -39,6 +39,7 @@ add_precompiled_header(flesnet ${CMAKE_SOURCE_DIR}/include.hpp)
 target_link_libraries(flesnet ibverbs)
 target_link_libraries(flesnet rdmacm)
 target_link_libraries(flesnet rt)
+target_link_libraries(flesnet numa)
 target_link_libraries(flesnet ${Boost_PROGRAM_OPTIONS_LIBRARY})
 target_link_libraries(flesnet ${Boost_THREAD_LIBRARY})
 

@@ -318,7 +318,7 @@ private:
     connections that use the same completion queue. */
 
 template <typename CONNECTION>
-class IBConnectionGroup
+class IBConnectionGroup : public ThreadContainer
 {
 public:
     IBConnectionGroup(const IBConnectionGroup&) = delete;
@@ -419,6 +419,8 @@ public:
 
     /// The connection manager event loop.
     void handle_cm_events(unsigned int target_num_connections) {
+        set_cpu(0);
+
         int err;
         struct rdma_cm_event* event;
         struct rdma_cm_event event_copy;
@@ -453,6 +455,8 @@ public:
 
     /// The InfiniBand completion notification event loop.
     void completion_handler() {
+        set_cpu(1);
+
         const int ne_max = 10;
 
         struct ibv_cq* ev_cq;

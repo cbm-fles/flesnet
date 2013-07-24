@@ -23,7 +23,7 @@ public:
 /** The Application object represents an instance of the running
     application. */
 
-class Application
+class Application : public ThreadContainer
 {
 public:
     
@@ -53,6 +53,8 @@ public:
     
     /// The "main" function of an input node application.
     virtual int run() {
+        set_cpu(0);
+
         std::vector<std::string> services;
         for (unsigned int i = 0; i < _par.compute_nodes().size(); i++)
             services.push_back(boost::lexical_cast<std::string>
@@ -90,12 +92,24 @@ public:
 
     /// The ComputeApplication contructor.
     explicit ComputeApplication(Parameters& par) : Application(par) {
+        //set_cpu(1);
+
+        assert(numa_available() != -1);
+
+        struct bitmask* nodemask = numa_allocate_nodemask();
+        numa_bitmask_setbit(nodemask, 0);
+        numa_bitmask_setbit(nodemask, 1);
+        numa_bind(nodemask);
+        numa_free_nodemask(nodemask);
+
         std::unique_ptr<ComputeBuffer> cb(new ComputeBuffer());
         _cb = std::move(cb);
     };
 
     /// The "main" function of a compute node application.
     virtual int run() {
+        //set_cpu(0);
+
         boost::thread_group analysis_threads;
         analysis_threads.create_thread(TimesliceProcessor(*_cb, 1));
         analysis_threads.create_thread(TimesliceProcessor(*_cb, 2));
