@@ -22,7 +22,7 @@ public:
         IBConnection(ec, index, id)
     {
         _qp_cap.max_send_wr = 8000; // typical hca maximum: 16k
-        _qp_cap.max_send_sge = 4; // max. two chunks each for descriptor and data words
+        _qp_cap.max_send_sge = 4; // max. two chunks each for descriptors and data
 
         // limit pending write requests so that send queue and completion queue do not overflow
         _max_pending_write_requests =
@@ -41,11 +41,11 @@ public:
         boost::mutex::scoped_lock lock(_cn_ack_mutex);
         if (out.beTrace()) {
             out.trace() << "[" << _index << "] "
-                        << "SENDER data space (words) required="
+                        << "SENDER data space (bytes) required="
                         << data_size << ", avail="
                         << _cn_ack.data + (1 << par->cn_data_buffer_size_exp()) - _cn_wp.data;
             out.trace() << "[" << _index << "] "
-                        << "SENDER desc space (words) required="
+                        << "SENDER desc space (entries) required="
                         << desc_size << ", avail="
                         << _cn_ack.desc + (1 << par->cn_desc_buffer_size_exp()) - _cn_wp.desc;
         }
@@ -83,26 +83,22 @@ public:
 
         uint64_t cn_data_buffer_mask = (1L << par->cn_data_buffer_size_exp()) - 1L;
         uint64_t cn_desc_buffer_mask = (1L << par->cn_desc_buffer_size_exp()) - 1L;
-        uint64_t target_words_left =
+        uint64_t target_bytes_left =
             (1 << par->cn_data_buffer_size_exp()) - (_cn_wp.data & cn_data_buffer_mask);
 
         // split sge list if necessary
         int num_sge_cut = 0;
-        if (data_length + mc_length > target_words_left) {
+        if (data_length + mc_length * sizeof(MicrosliceDescriptor) > target_bytes_left) {
             for (int i = 0; i < num_sge; i++) {
-                if (sge[i].length <= (target_words_left * sizeof(uint64_t))) {
-                    target_words_left -= sge[i].length / sizeof(uint64_t);
+                if (sge[i].length <= target_bytes_left) {
+                    target_bytes_left -= sge[i].length;
                 } else {
-                    if (target_words_left) {
-                        sge2[num_sge2].addr =
-                            sge[i].addr
-                            + sizeof(uint64_t) * target_words_left;
-                        sge2[num_sge2].length =
-                            sge[i].length
-                            - sizeof(uint64_t) * target_words_left;
+                    if (target_bytes_left) {
+                        sge2[num_sge2].addr = sge[i].addr + target_bytes_left;
+                        sge2[num_sge2].length = sge[i].length - target_bytes_left;
                         sge2[num_sge2++].lkey = sge[i].lkey;
-                        sge[i].length = sizeof(uint64_t) * target_words_left;
-                        target_words_left = 0;
+                        sge[i].length = target_bytes_left;
+                        target_bytes_left = 0;
                     } else {
                         sge2[num_sge2++] = sge[i];
                         num_sge_cut++;
@@ -120,8 +116,7 @@ public:
         send_wr_ts.num_sge = num_sge;
         send_wr_ts.wr.rdma.rkey = _remote_info.data.rkey;
         send_wr_ts.wr.rdma.remote_addr =
-            (uintptr_t)(_remote_info.data.addr +
-                        (_cn_wp.data & cn_data_buffer_mask) * sizeof(uint64_t));
+            (uintptr_t)(_remote_info.data.addr + (_cn_wp.data & cn_data_buffer_mask));
 
         if (num_sge2) {
             memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
@@ -130,8 +125,7 @@ public:
             send_wr_tswrap.sg_list = sge2;
             send_wr_tswrap.num_sge = num_sge2;
             send_wr_tswrap.wr.rdma.rkey = _remote_info.data.rkey;
-            send_wr_tswrap.wr.rdma.remote_addr =
-                (uintptr_t) _remote_info.data.addr;
+            send_wr_tswrap.wr.rdma.remote_addr = (uintptr_t) _remote_info.data.addr;
             send_wr_ts.next = &send_wr_tswrap;
             send_wr_tswrap.next = &send_wr_tscdesc;
         } else {
@@ -142,7 +136,7 @@ public:
         TimesliceComponentDescriptor tscdesc;
         tscdesc.ts_num = timeslice;
         tscdesc.offset = _cn_wp.data;
-        tscdesc.size = data_length + mc_length;
+        tscdesc.size = data_length + mc_length * sizeof(MicrosliceDescriptor);
         struct ibv_sge sge3;
         sge3.addr = (uintptr_t) &tscdesc;
         sge3.length = sizeof(tscdesc);

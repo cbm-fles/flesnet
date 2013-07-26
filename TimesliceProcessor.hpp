@@ -47,22 +47,23 @@ public:
             //uint64_t size = _cb.desc(in).at(ts_pos).size;
             uint64_t offset = _cb.desc(in).at(ts_pos).offset;
 
-            const RingBuffer<MicrosliceDataWord>& data = _cb.data(in);
+            const RingBuffer<>& data = _cb.data(in);
 
-            uint64_t mc_offset = data.at(offset);
+            uint64_t mc_offset = (uint64_t&) data.at(offset);
             for (size_t mc = 0; mc < ts_size; mc++) {
-                uint64_t this_offset = data.at(offset + mc) - mc_offset + offset + ts_size;
-                uint64_t hdr0 = data.at(this_offset + 0);
-                uint64_t hdr1 = data.at(this_offset + 1);
+                uint64_t this_offset = (uint64_t&) data.at(offset + mc * 8)
+                    - mc_offset + offset + ts_size * 8;
+                uint64_t hdr0 = (uint64_t&) data.at(this_offset + 0);
+                uint64_t hdr1 = (uint64_t&) data.at(this_offset + sizeof(uint64_t));
                 uint64_t mc_size = hdr0 & 0xFFFFFFFF;
-                size_t content_words = (mc_size >> 3) - 2;
+                size_t content_bytes = mc_size - 2 * 8;
                 uint64_t mc_time = hdr1 & 0xFFFFFFFFFFFF;
                 assert(mc_time == ts_num * par->timeslice_size() + mc);
 
                 if (check_pattern) {
-                    for (size_t pos = 0; pos < content_words; pos++) {
-                        MicrosliceDataWord this_data = data.at(this_offset + 2 + pos);
-                        MicrosliceDataWord expected = ((uint64_t) in << 48) | pos;
+                    for (size_t pos = 0; pos < content_bytes; pos += sizeof(uint64_t)) {
+                        uint64_t this_data = (uint64_t &) data.at(this_offset + 2 * 8 + pos);
+                        uint64_t expected = ((uint64_t) in << 48) | pos;
                         assert(this_data == expected);
                     }
                 }

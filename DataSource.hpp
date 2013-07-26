@@ -12,7 +12,7 @@ class DataSource
 {
 public:
     /// The DataSource constructor.
-    DataSource(RingBuffer<MicrosliceDataWord>& data_buffer,
+    DataSource(RingBuffer<>& data_buffer,
                RingBuffer<MicrosliceDescriptor>& desc_buffer) :
         _data_buffer(data_buffer),
         _desc_buffer(desc_buffer) { };
@@ -23,7 +23,7 @@ public:
     
 protected:
     /// Input data buffer.
-    RingBuffer<MicrosliceDataWord>& _data_buffer;
+    RingBuffer<>& _data_buffer;
 
     /// Input descriptor buffer.
     RingBuffer<MicrosliceDescriptor>& _desc_buffer;
@@ -35,11 +35,11 @@ class DummyFlib : public DataSource, public ThreadContainer
 {
 public:
     /// The DummyFlib constructor.
-    DummyFlib(RingBuffer<MicrosliceDataWord>& data_buffer,
+    DummyFlib(RingBuffer<>& data_buffer,
               RingBuffer<MicrosliceDescriptor>& desc_buffer) :
         DataSource(data_buffer, desc_buffer),
         _pd(par->typical_content_size()),
-        _rand_content_words(_rng, _pd)
+        _rand_content_bytes(_rng, _pd)
     {
         _producer_thread = new boost::thread(&DummyFlib::produce_data, this);
     };
@@ -78,10 +78,10 @@ public:
         uint64_t acked_data = 0;
 
         const uint64_t min_avail_mc = _desc_buffer.size() / 4;
-        const uint64_t min_avail_data = _data_buffer.size() / 4;
+        const uint64_t min_avail_data = _data_buffer.bytes() / 4;
 
         const uint64_t min_written_mc = _desc_buffer.size() / 4;
-        const uint64_t min_written_data = _data_buffer.size() / 4;
+        const uint64_t min_written_data = _data_buffer.bytes() / 4;
 
         while (true) {
             // wait until significant space is available
@@ -94,7 +94,7 @@ DCOUNT[0]++;
                 _written_data = written_data;
                 if (_is_stopped)
                     return;
-                while ((written_data - _acked_data + min_avail_data > _data_buffer.size())
+                while ((written_data - _acked_data + min_avail_data > _data_buffer.bytes())
                        || (written_mc - _acked_mc + min_avail_mc > _desc_buffer.size())) {
 DCOUNT[1]++;
                     _cond_producer.wait(l);
@@ -106,19 +106,19 @@ DCOUNT[1]++;
             }
 
             while (true) {
-                unsigned int content_words = par->typical_content_size();
+                unsigned int content_bytes = par->typical_content_size();
                 if (par->randomize_sizes())
-                    content_words = _rand_content_words();
+                    content_bytes = _rand_content_bytes();
 
                 // check for space in data and descriptor buffers
-                if ((written_data - acked_data + content_words + 2 > _data_buffer.size())
+                if ((written_data - acked_data + content_bytes + 2 * 8 > _data_buffer.bytes())
                     || (written_mc - acked_mc + 1 > _desc_buffer.size()))
                     break;
 
                 uint8_t hdrrev = 0x01;
                 uint8_t sysid = 0x01;
                 uint16_t flags = 0x0000;
-                uint32_t size = (content_words + 2) * 8;
+                uint32_t size = content_bytes + 2 * 8;
                 uint16_t rsvd = 0x0000;
                 uint64_t time = written_mc;
 
@@ -128,15 +128,19 @@ DCOUNT[1]++;
 
                 // write to data buffer
                 uint64_t start_addr = written_data;
-                _data_buffer.at(written_data++) = hdr0;
-                _data_buffer.at(written_data++) = hdr1;
+                (uint64_t&) _data_buffer.at(written_data) = hdr0;
+                written_data += sizeof(uint64_t);
+                (uint64_t&) _data_buffer.at(written_data) = hdr1;
+                written_data += sizeof(uint64_t);
 
                 if (generate_pattern) {
-                    for (uint64_t i = 0; i < content_words; i++) {
-                        _data_buffer.at(written_data++) = ((uint64_t) par->node_index() << 48) | i;
+                    for (uint64_t i = 0; i < content_bytes; i+= sizeof(uint64_t)) {
+                        (uint64_t&) _data_buffer.at(written_data) =
+                            ((uint64_t) par->node_index() << 48) | i;
+                        written_data += sizeof(uint64_t);
                     }
                 } else {
-                    written_data += content_words;
+                    written_data += content_bytes;
                 }
 
                 // write to descriptor buffer
@@ -205,13 +209,13 @@ private:
     boost::condition_variable _cond_producer;
     boost::condition_variable _cond_consumer;
 
-    /// Number of acknowledged data words. Updated by input node.
+    /// Number of acknowledged data bytes. Updated by input node.
     uint64_t _acked_data{0};
     
     /// Number of acknowledged MCs. Updated by input node.
     uint64_t _acked_mc{0};
     
-    /// FLIB-internal number of written data words. 
+    /// FLIB-internal number of written data bytes.
     uint64_t _written_data{0};
 
     /// FLIB-internal number of written MCs. 
@@ -223,9 +227,9 @@ private:
     /// Distribution to use in determining data content sizes.
     boost::poisson_distribution<> _pd;
 
-    /// Generate random number of content words.
+    /// Generate random number of content bytes.
     boost::variate_generator<boost::mt19937&,
-                             boost::poisson_distribution<> > _rand_content_words;
+                             boost::poisson_distribution<> > _rand_content_bytes;
 };
     
 

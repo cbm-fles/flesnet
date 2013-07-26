@@ -62,19 +62,21 @@ public:
                 out.trace() << "SENDER working on TS " << timeslice
                             << ", MCs " << mc_offset << ".."
                             << (mc_offset + mc_length - 1)
-                            << ", data words " << data_offset << ".."
+                            << ", data bytes " << data_offset << ".."
                             << (data_offset + data_length - 1);
                 out.trace() << get_state_string();
             }
 
             int cn = target_cn_index(timeslice);
 
-            _conn[cn]->wait_for_buffer_space(data_length + mc_length, 1);
+            _conn[cn]->wait_for_buffer_space(data_length
+                                             + mc_length * sizeof(MicrosliceDescriptor), 1);
 
             post_send_data(timeslice, cn, mc_offset, mc_length,
                            data_offset, data_length);
 
-            _conn[cn]->inc_write_pointers(data_length + mc_length, 1);
+            _conn[cn]->inc_write_pointers(data_length
+                                          + mc_length * sizeof(MicrosliceDescriptor), 1);
         }
 
         for (auto& c : _conn)
@@ -87,7 +89,7 @@ public:
 private:
 
     /// Input data buffer. Filled by FLIB.
-    RingBuffer<MicrosliceDataWord> _data;
+    RingBuffer<> _data;
 
     /// InfiniBand memory region descriptor for input data buffer.
     struct ibv_mr* _mr_data = nullptr;
@@ -104,7 +106,7 @@ private:
     /// Number of acknowledged MCs. Written to FLIB.
     uint64_t _acked_mc = 0;
     
-    /// Number of acknowledged data words. Written to FLIB.
+    /// Number of acknowledged data bytes. Written to FLIB.
     uint64_t _acked_data = 0;
     
     /// Data source (e.g., FLIB).
@@ -160,8 +162,7 @@ private:
         s << "/--- data buf ---" << std::endl;
         s << "|";
         for (unsigned int i = 0; i < _data.size(); i++)
-            s << " (" << i << ")"
-              << std::hex << (_data.at(i) & 0xFFFF) << std::dec;
+            s << " (" << i << ")" << std::hex << _data.at(i) << std::dec;
         s << std::endl;
         s << "| _acked_data = " << _acked_data << std::endl;
         s << "\\---------";
@@ -175,7 +176,7 @@ private:
                         uint64_t data_offset, uint64_t data_length) {
         int num_sge = 0;
         struct ibv_sge sge[4];
-        // descriptor words
+        // descriptors
         if ((mc_offset & _desc.size_mask())
             < ((mc_offset + mc_length - 1) & _desc.size_mask())) {
             // one chunk
@@ -195,24 +196,20 @@ private:
                                               + (mc_offset & _desc.size_mask()));
             sge[num_sge++].lkey = _mr_desc->lkey;
         }
-        // data words
+        // data
         if ((data_offset & _data.size_mask())
             < ((data_offset + data_length - 1) & _data.size_mask())) {
             // one chunk
             sge[num_sge].addr = (uintptr_t) &_data.at(data_offset);
-            sge[num_sge].length = sizeof(MicrosliceDataWord) * data_length;
+            sge[num_sge].length = data_length;
             sge[num_sge++].lkey = _mr_data->lkey;
         } else {
             // two chunks
             sge[num_sge].addr = (uintptr_t) &_data.at(data_offset);
-            sge[num_sge].length =
-              sizeof(MicrosliceDataWord)
-              * (_data.size() - (data_offset & _data.size_mask()));
+            sge[num_sge].length = _data.size() - (data_offset & _data.size_mask());
             sge[num_sge++].lkey = _mr_data->lkey;
             sge[num_sge].addr = (uintptr_t) _data.ptr();
-            sge[num_sge].length =
-              sizeof(MicrosliceDataWord) * (data_length - _data.size()
-                                            + (data_offset & _data.size_mask()));
+            sge[num_sge].length = data_length - _data.size() + (data_offset & _data.size_mask());
             sge[num_sge++].lkey = _mr_data->lkey;
         }
 

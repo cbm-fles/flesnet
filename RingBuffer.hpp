@@ -8,7 +8,7 @@
 #define RINGBUFFER_HPP
 
 /// Simple generic ring buffer class.
-template<typename T, bool CLEARED = false>
+template<typename T = uint8_t, bool CLEARED = false>
 class RingBuffer
 {
 public:

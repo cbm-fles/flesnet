@@ -7,7 +7,6 @@
 #ifndef TIMESLICE_HPP
 #define TIMESLICE_HPP
 
-typedef uint64_t MicrosliceDataWord;
 typedef uint64_t MicrosliceDescriptor;
 
 #pragma pack(1)
@@ -30,8 +29,8 @@ typedef uint64_t MicrosliceDescriptor;
 /// Timeslice component descriptor.
 struct TimesliceComponentDescriptor {
     uint64_t ts_num; ///< Timeslice number.
-    uint64_t offset; ///< Start offset (in words) of corresponding data.
-    uint64_t size;   ///< Size (in words) of corresponding data.
+    uint64_t offset; ///< Start offset (in bytes) of corresponding data.
+    uint64_t size;   ///< Size (in bytes) of corresponding data.
 };
 
 
@@ -40,7 +39,7 @@ struct MicrosliceHeader {
     uint8_t hdrrev; ///< Header revision.
     uint8_t sysid;  ///< System ID.
     uint16_t flags; ///< Flags.
-    uint32_t size;  ///< Size of the microslice container in words.
+    uint32_t size;  ///< Size of the microslice container in bytes.
     uint64_t time;  ///< Number of previous microslice containers.
 };
 

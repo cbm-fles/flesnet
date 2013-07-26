@@ -107,7 +107,7 @@ public:
         }
     }
 
-    const RingBuffer<MicrosliceDataWord>& data(int i) const {
+    const RingBuffer<>& data(int i) const {
         return _conn[i]->_data;
     }
 

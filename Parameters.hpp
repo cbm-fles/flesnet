@@ -76,7 +76,7 @@ public:
         return _overlap_size;
     };
 
-    /// Retrieve the exp. size of the input node's data buffer in 64-bit words.
+    /// Retrieve the exp. size of the input node's data buffer in bytes.
     uint32_t in_data_buffer_size_exp() const {
         return _in_data_buffer_size_exp;
     };
@@ -87,7 +87,7 @@ public:
         return _in_desc_buffer_size_exp;
     };
 
-    /// Retrieve the exp. size of the compute node's data buffer in 64-bit words.
+    /// Retrieve the exp. size of the compute node's data buffer in bytes.
     uint32_t cn_data_buffer_size_exp() const {
         return _cn_data_buffer_size_exp;
     };
@@ -98,7 +98,7 @@ public:
         return _cn_desc_buffer_size_exp;
     };
 
-    /// Retrieve the typical number of content words per MC.
+    /// Retrieve the typical number of content bytes per MC.
     uint32_t typical_content_size() const {
         return _typical_content_size;
     };
@@ -156,22 +156,22 @@ private:
     /// The size of the overlap region in number of MCs.
     uint32_t _overlap_size = 2;
 
-    /// The exp. size of the input node's data buffer in 64-bit words.
+    /// The exp. size of the input node's data buffer in bytes.
     uint32_t _in_data_buffer_size_exp = 26;
 
     /// The exp. size of the input node's descriptor buffer (number of
     /// entries).
     uint32_t _in_desc_buffer_size_exp = 20;
 
-    /// The exp. size of the compute node's data buffer in 64-bit words.
+    /// The exp. size of the compute node's data buffer in bytes.
     uint32_t _cn_data_buffer_size_exp = 17;
 
     /// The exp. size of the compute node's descriptor buffer (number of
     /// entries).
     uint32_t _cn_desc_buffer_size_exp = 6;
 
-    /// A typical number of content words per MC.
-    uint32_t _typical_content_size = 128;
+    /// A typical number of content bytes per MC.
+    uint32_t _typical_content_size = 1024;
 
     /// The randomize sizes flag.
     bool _randomize_sizes = false;
@@ -229,18 +229,18 @@ private:
              "size of the overlap region in number of MCs")
             ("in-data-buffer-size-exp",
              po::value<uint32_t>(&_in_data_buffer_size_exp),
-             "exp. size of the input node's data buffer in 64-bit words")
+             "exp. size of the input node's data buffer in bytes")
             ("in-desc-buffer-size-exp",
              po::value<uint32_t>(&_in_desc_buffer_size_exp),
              "exp. size of the input node's descriptor buffer"
              " (number of entries).")
             ("cn-data-buffer-size-exp", po::value<uint32_t>(&_cn_data_buffer_size_exp),
-             "exp. size of the compute node's data buffer in 64-bit words")
+             "exp. size of the compute node's data buffer in bytes")
             ("cn-desc-buffer-size-exp", po::value<uint32_t>(&_cn_desc_buffer_size_exp),
              "exp. size of the compute node's descriptor buffer"
              " (number of entries).")
             ("typical-content-size", po::value<uint32_t>(&_typical_content_size),
-             "typical number of content words per MC")
+             "typical number of content bytes per MC")
             ("randomize-sizes", po::value<bool>(&_randomize_sizes),
              "randomize sizes flag")
             ("check-pattern", po::value<bool>(&_check_pattern),
@@ -318,18 +318,16 @@ private:
                    << ")";
 
         if (_node_type == INPUT_NODE && _node_index == 0) {
-            out.info() << "microslice size: ("
-                       << _typical_content_size * sizeof(MicrosliceDataWord)
-                       << " + " << 2 * sizeof(MicrosliceDataWord) << ") bytes";
+            out.info() << "microslice size: (" << _typical_content_size
+                       << " + " << 2 * 8 << ") bytes";
             out.info() << "timeslice size: (" << _timeslice_size
                        << " + " << _overlap_size << ") microslices";
             out.info() << "number of timeslices: " << _max_timeslice_number;
-            out.info() << "input node buffer size: ("
-                       << (1 << _in_data_buffer_size_exp) * sizeof(MicrosliceDataWord)
+            out.info() << "input node buffer size: (" << (1 << _in_data_buffer_size_exp)
                        << " + " <<  (1 << _in_desc_buffer_size_exp) * sizeof(MicrosliceDescriptor)
                        << ") bytes";
             out.info() << "compute node buffer size: ("
-                       << (1 << _cn_data_buffer_size_exp) * sizeof(MicrosliceDataWord) << " + "
+                       << (1 << _cn_data_buffer_size_exp) << " + "
                        << (1 << _cn_desc_buffer_size_exp) * sizeof(TimesliceComponentDescriptor)
                        << ") bytes";
         }
