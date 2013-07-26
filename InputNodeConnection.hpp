@@ -22,7 +22,7 @@ public:
         IBConnection(ec, index, id)
     {
         _qp_cap.max_send_wr = 8000; // typical hca maximum: 16k
-        _qp_cap.max_send_sge = 4; // max. two chunks each for addr and data words
+        _qp_cap.max_send_sge = 4; // max. two chunks each for descriptor and data words
 
         // limit pending write requests so that send queue and completion queue do not overflow
         _max_pending_write_requests =

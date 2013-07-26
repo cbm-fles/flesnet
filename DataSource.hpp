@@ -13,9 +13,9 @@ class DataSource
 public:
     /// The DataSource constructor.
     DataSource(RingBuffer<uint64_t>& data_buffer,
-               RingBuffer<uint64_t>& addr_buffer) :
+               RingBuffer<uint64_t>& desc_buffer) :
         _data_buffer(data_buffer),
-        _addr_buffer(addr_buffer) { };
+        _desc_buffer(desc_buffer) { };
     
     virtual void wait_for_data(uint64_t min_mcNumber) = 0;
 
@@ -25,8 +25,8 @@ protected:
     /// Input data buffer.
     RingBuffer<uint64_t>& _data_buffer;
 
-    /// Input address buffer.
-    RingBuffer<uint64_t>& _addr_buffer;
+    /// Input descriptor buffer.
+    RingBuffer<uint64_t>& _desc_buffer;
 };
 
 
@@ -36,8 +36,8 @@ class DummyFlib : public DataSource, public ThreadContainer
 public:
     /// The DummyFlib constructor.
     DummyFlib(RingBuffer<uint64_t>& data_buffer,
-              RingBuffer<uint64_t>& addr_buffer) :
-        DataSource(data_buffer, addr_buffer),
+              RingBuffer<uint64_t>& desc_buffer) :
+        DataSource(data_buffer, desc_buffer),
         _pd(par->typical_content_size()),
         _rand_content_words(_rng, _pd)
     {
@@ -60,7 +60,7 @@ public:
     };
 
     uint64_t DCOUNT[10] = {};
-    
+
     /// Generate FLIB input data.
     void produce_data()
     {
@@ -77,10 +77,10 @@ public:
         uint64_t acked_mc = 0;
         uint64_t acked_data = 0;
 
-        const uint64_t min_avail_mc = _addr_buffer.size() / 4;
+        const uint64_t min_avail_mc = _desc_buffer.size() / 4;
         const uint64_t min_avail_data = _data_buffer.size() / 4;
 
-        const uint64_t min_written_mc = _addr_buffer.size() / 4;
+        const uint64_t min_written_mc = _desc_buffer.size() / 4;
         const uint64_t min_written_data = _data_buffer.size() / 4;
 
         while (true) {
@@ -95,7 +95,7 @@ DCOUNT[0]++;
                 if (_is_stopped)
                     return;
                 while ((written_data - _acked_data + min_avail_data > _data_buffer.size())
-                       || (written_mc - _acked_mc + min_avail_mc > _addr_buffer.size())) {
+                       || (written_mc - _acked_mc + min_avail_mc > _desc_buffer.size())) {
 DCOUNT[1]++;
                     _cond_producer.wait(l);
                     if (_is_stopped)
@@ -110,9 +110,9 @@ DCOUNT[1]++;
                 if (par->randomize_sizes())
                     content_words = _rand_content_words();
 
-                // check for space in data and addr buffers
+                // check for space in data and descriptor buffers
                 if ((written_data - acked_data + content_words + 2 > _data_buffer.size())
-                    || (written_mc - acked_mc + 1 > _addr_buffer.size()))
+                    || (written_mc - acked_mc + 1 > _desc_buffer.size()))
                     break;
 
                 uint8_t hdrrev = 0x01;
@@ -139,8 +139,8 @@ DCOUNT[1]++;
                     written_data += content_words;
                 }
 
-                // write to addr buffer
-                _addr_buffer.at(written_mc++) = start_addr;
+                // write to descriptor buffer
+                _desc_buffer.at(written_mc++) = start_addr;
 
                 if (written_mc >= last_written_mc + min_written_mc
                     || written_data >= last_written_data + min_written_data) {
@@ -178,7 +178,7 @@ DCOUNT[4]++;
         static uint64_t acked_mc = 0;
         static uint64_t acked_data = 0;
 
-        const uint64_t min_acked_mc = _addr_buffer.size() / 4;
+        const uint64_t min_acked_mc = _desc_buffer.size() / 4;
         const uint64_t min_acked_data = _data_buffer.size() / 4;
 
 DCOUNT[5]++;

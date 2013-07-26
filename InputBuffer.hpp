@@ -19,21 +19,21 @@ public:
     /// The InputBuffer default constructor.
     InputBuffer() :
         _data(par->in_data_buffer_size_exp()),
-        _addr(par->in_addr_buffer_size_exp()),
-        _data_source(_data, _addr)
+        _desc(par->in_desc_buffer_size_exp()),
+        _data_source(_data, _desc)
     {
-        size_t min_ack_buffer_size = _addr.size() / par->timeslice_size() + 1;
+        size_t min_ack_buffer_size = _desc.size() / par->timeslice_size() + 1;
         _ack.alloc_with_size(min_ack_buffer_size);
 
         VALGRIND_MAKE_MEM_DEFINED(_data.ptr(), _data.bytes());
-        VALGRIND_MAKE_MEM_DEFINED(_addr.ptr(), _addr.bytes());
+        VALGRIND_MAKE_MEM_DEFINED(_desc.ptr(), _desc.bytes());
     }
 
     /// The InputBuffer default destructor.
     virtual ~InputBuffer() {
-        if (_mr_addr) {
-            ibv_dereg_mr(_mr_addr);
-            _mr_addr = nullptr;
+        if (_mr_desc) {
+            ibv_dereg_mr(_mr_desc);
+            _mr_desc = nullptr;
         }
 
         if (_mr_data) {
@@ -55,8 +55,8 @@ public:
             
             _data_source.wait_for_data(mc_offset + mc_length + 1);
             
-            uint64_t data_offset = _addr.at(mc_offset);
-            uint64_t data_length = _addr.at(mc_offset + mc_length) - data_offset;
+            uint64_t data_offset = _desc.at(mc_offset);
+            uint64_t data_length = _desc.at(mc_offset + mc_length) - data_offset;
 
             if (out.beTrace()) {
                 out.trace() << "SENDER working on TS " << timeslice
@@ -92,11 +92,11 @@ private:
     /// InfiniBand memory region descriptor for input data buffer.
     struct ibv_mr* _mr_data = nullptr;
 
-    /// Input address buffer. Filled by FLIB.
-    RingBuffer<uint64_t> _addr;
+    /// Input descriptor buffer. Filled by FLIB.
+    RingBuffer<uint64_t> _desc;
 
-    /// InfiniBand memory region descriptor for input address buffer.
-    struct ibv_mr* _mr_addr = nullptr;
+    /// InfiniBand memory region descriptor for input descriptor buffer.
+    struct ibv_mr* _mr_desc = nullptr;
 
     /// Buffer to store acknowledged status of timeslices.
     RingBuffer<uint64_t, true> _ack;
@@ -134,14 +134,14 @@ private:
                 throw InfinibandException
                     ("registration of memory region failed");
 
-            _mr_addr = ibv_reg_mr(_pd, _addr.ptr(), _addr.bytes(),
+            _mr_desc = ibv_reg_mr(_pd, _desc.ptr(), _desc.bytes(),
                                   IBV_ACCESS_LOCAL_WRITE);
-            if (!_mr_addr)
+            if (!_mr_desc)
                 throw InfinibandException
                     ("registration of memory region failed");
 
             if (out.beDebug()) {
-                dump_mr(_mr_addr);
+                dump_mr(_mr_desc);
                 dump_mr(_mr_data);
             }
         }
@@ -151,10 +151,10 @@ private:
     std::string get_state_string() {
         std::ostringstream s;
 
-        s << "/--- addr buf ---" << std::endl;
+        s << "/--- desc buf ---" << std::endl;
         s << "|";
-        for (unsigned int i = 0; i < _addr.size(); i++)
-            s << " (" << i << ")" << _addr.at(i);
+        for (unsigned int i = 0; i < _desc.size(); i++)
+            s << " (" << i << ")" << _desc.at(i);
         s << std::endl;
         s << "| _acked_mc = " << _acked_mc << std::endl;
         s << "/--- data buf ---" << std::endl;
@@ -175,25 +175,25 @@ private:
                         uint64_t data_offset, uint64_t data_length) {
         int num_sge = 0;
         struct ibv_sge sge[4];
-        // addr words
-        if ((mc_offset & _addr.size_mask())
-            < ((mc_offset + mc_length - 1) & _addr.size_mask())) {
+        // descriptor words
+        if ((mc_offset & _desc.size_mask())
+            < ((mc_offset + mc_length - 1) & _desc.size_mask())) {
             // one chunk
-            sge[num_sge].addr = (uintptr_t) &_addr.at(mc_offset);
+            sge[num_sge].addr = (uintptr_t) &_desc.at(mc_offset);
             sge[num_sge].length = sizeof(uint64_t) * mc_length;
-            sge[num_sge++].lkey = _mr_addr->lkey;
+            sge[num_sge++].lkey = _mr_desc->lkey;
         } else {
             // two chunks
-            sge[num_sge].addr = (uintptr_t) &_addr.at(mc_offset);
+            sge[num_sge].addr = (uintptr_t) &_desc.at(mc_offset);
             sge[num_sge].length =
-                sizeof(uint64_t) * (_addr.size()
-                                    - (mc_offset & _addr.size_mask()));
-            sge[num_sge++].lkey = _mr_addr->lkey;
-            sge[num_sge].addr = (uintptr_t) _addr.ptr();
+                sizeof(uint64_t) * (_desc.size()
+                                    - (mc_offset & _desc.size_mask()));
+            sge[num_sge++].lkey = _mr_desc->lkey;
+            sge[num_sge].addr = (uintptr_t) _desc.ptr();
             sge[num_sge].length =
-                sizeof(uint64_t) * (mc_length - _addr.size()
-                                    + (mc_offset & _addr.size_mask()));
-            sge[num_sge++].lkey = _mr_addr->lkey;
+                sizeof(uint64_t) * (mc_length - _desc.size()
+                                    + (mc_offset & _desc.size_mask()));
+            sge[num_sge++].lkey = _mr_desc->lkey;
         }
         // data words
         if ((data_offset & _data.size_mask())
@@ -235,7 +235,7 @@ private:
                 while (_ack.at(acked_ts) > ts);
             else
                 _ack.at(ts) = ts;
-            _acked_data = _addr.at(acked_ts * par->timeslice_size());
+            _acked_data = _desc.at(acked_ts * par->timeslice_size());
             _acked_mc = acked_ts * par->timeslice_size();
             _data_source.update_ack_pointers(_acked_data, _acked_mc);
             if (out.beDebug())
