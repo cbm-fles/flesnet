@@ -12,8 +12,8 @@ class DataSource
 {
 public:
     /// The DataSource constructor.
-    DataSource(RingBuffer<uint64_t>& data_buffer,
-               RingBuffer<uint64_t>& desc_buffer) :
+    DataSource(RingBuffer<MicrosliceDataWord>& data_buffer,
+               RingBuffer<MicrosliceDescriptor>& desc_buffer) :
         _data_buffer(data_buffer),
         _desc_buffer(desc_buffer) { };
     
@@ -23,10 +23,10 @@ public:
     
 protected:
     /// Input data buffer.
-    RingBuffer<uint64_t>& _data_buffer;
+    RingBuffer<MicrosliceDataWord>& _data_buffer;
 
     /// Input descriptor buffer.
-    RingBuffer<uint64_t>& _desc_buffer;
+    RingBuffer<MicrosliceDescriptor>& _desc_buffer;
 };
 
 
@@ -35,8 +35,8 @@ class DummyFlib : public DataSource, public ThreadContainer
 {
 public:
     /// The DummyFlib constructor.
-    DummyFlib(RingBuffer<uint64_t>& data_buffer,
-              RingBuffer<uint64_t>& desc_buffer) :
+    DummyFlib(RingBuffer<MicrosliceDataWord>& data_buffer,
+              RingBuffer<MicrosliceDescriptor>& desc_buffer) :
         DataSource(data_buffer, desc_buffer),
         _pd(par->typical_content_size()),
         _rand_content_words(_rng, _pd)

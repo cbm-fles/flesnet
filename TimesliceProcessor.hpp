@@ -47,7 +47,7 @@ public:
             //uint64_t size = _cb.desc(in).at(ts_pos).size;
             uint64_t offset = _cb.desc(in).at(ts_pos).offset;
 
-            const RingBuffer<uint64_t>& data = _cb.data(in);
+            const RingBuffer<MicrosliceDataWord>& data = _cb.data(in);
 
             uint64_t mc_offset = data.at(offset);
             for (size_t mc = 0; mc < ts_size; mc++) {
@@ -61,8 +61,8 @@ public:
 
                 if (check_pattern) {
                     for (size_t pos = 0; pos < content_words; pos++) {
-                        uint64_t this_data = data.at(this_offset + 2 + pos);
-                        uint64_t expected = ((uint64_t) in << 48) | pos;
+                        MicrosliceDataWord this_data = data.at(this_offset + 2 + pos);
+                        MicrosliceDataWord expected = ((uint64_t) in << 48) | pos;
                         assert(this_data == expected);
                     }
                 }

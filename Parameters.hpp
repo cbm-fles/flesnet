@@ -319,17 +319,17 @@ private:
 
         if (_node_type == INPUT_NODE && _node_index == 0) {
             out.info() << "microslice size: ("
-                       << _typical_content_size * sizeof(uint64_t)
-                       << " + " << 2 * sizeof(uint64_t) << ") bytes";
+                       << _typical_content_size * sizeof(MicrosliceDataWord)
+                       << " + " << 2 * sizeof(MicrosliceDataWord) << ") bytes";
             out.info() << "timeslice size: (" << _timeslice_size
                        << " + " << _overlap_size << ") microslices";
             out.info() << "number of timeslices: " << _max_timeslice_number;
             out.info() << "input node buffer size: ("
-                       << (1 << _in_data_buffer_size_exp) * sizeof(uint64_t)
-                       << " + " <<  (1 << _in_desc_buffer_size_exp) * sizeof(uint64_t)
+                       << (1 << _in_data_buffer_size_exp) * sizeof(MicrosliceDataWord)
+                       << " + " <<  (1 << _in_desc_buffer_size_exp) * sizeof(MicrosliceDescriptor)
                        << ") bytes";
             out.info() << "compute node buffer size: ("
-                       << (1 << _cn_data_buffer_size_exp) * sizeof(uint64_t) << " + "
+                       << (1 << _cn_data_buffer_size_exp) * sizeof(MicrosliceDataWord) << " + "
                        << (1 << _cn_desc_buffer_size_exp) * sizeof(TimesliceComponentDescriptor)
                        << ") bytes";
         }

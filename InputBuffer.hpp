@@ -87,13 +87,13 @@ public:
 private:
 
     /// Input data buffer. Filled by FLIB.
-    RingBuffer<uint64_t> _data;
+    RingBuffer<MicrosliceDataWord> _data;
 
     /// InfiniBand memory region descriptor for input data buffer.
     struct ibv_mr* _mr_data = nullptr;
 
     /// Input descriptor buffer. Filled by FLIB.
-    RingBuffer<uint64_t> _desc;
+    RingBuffer<MicrosliceDescriptor> _desc;
 
     /// InfiniBand memory region descriptor for input descriptor buffer.
     struct ibv_mr* _mr_desc = nullptr;
@@ -180,19 +180,19 @@ private:
             < ((mc_offset + mc_length - 1) & _desc.size_mask())) {
             // one chunk
             sge[num_sge].addr = (uintptr_t) &_desc.at(mc_offset);
-            sge[num_sge].length = sizeof(uint64_t) * mc_length;
+            sge[num_sge].length = sizeof(MicrosliceDescriptor) * mc_length;
             sge[num_sge++].lkey = _mr_desc->lkey;
         } else {
             // two chunks
             sge[num_sge].addr = (uintptr_t) &_desc.at(mc_offset);
             sge[num_sge].length =
-                sizeof(uint64_t) * (_desc.size()
-                                    - (mc_offset & _desc.size_mask()));
+              sizeof(MicrosliceDescriptor) * (_desc.size()
+                                              - (mc_offset & _desc.size_mask()));
             sge[num_sge++].lkey = _mr_desc->lkey;
             sge[num_sge].addr = (uintptr_t) _desc.ptr();
             sge[num_sge].length =
-                sizeof(uint64_t) * (mc_length - _desc.size()
-                                    + (mc_offset & _desc.size_mask()));
+              sizeof(MicrosliceDescriptor) * (mc_length - _desc.size()
+                                              + (mc_offset & _desc.size_mask()));
             sge[num_sge++].lkey = _mr_desc->lkey;
         }
         // data words
@@ -200,19 +200,19 @@ private:
             < ((data_offset + data_length - 1) & _data.size_mask())) {
             // one chunk
             sge[num_sge].addr = (uintptr_t) &_data.at(data_offset);
-            sge[num_sge].length = sizeof(uint64_t) * data_length;
+            sge[num_sge].length = sizeof(MicrosliceDataWord) * data_length;
             sge[num_sge++].lkey = _mr_data->lkey;
         } else {
             // two chunks
             sge[num_sge].addr = (uintptr_t) &_data.at(data_offset);
             sge[num_sge].length =
-                sizeof(uint64_t)
-                * (_data.size() - (data_offset & _data.size_mask()));
+              sizeof(MicrosliceDataWord)
+              * (_data.size() - (data_offset & _data.size_mask()));
             sge[num_sge++].lkey = _mr_data->lkey;
             sge[num_sge].addr = (uintptr_t) _data.ptr();
             sge[num_sge].length =
-                sizeof(uint64_t) * (data_length - _data.size()
-                                    + (data_offset & _data.size_mask()));
+              sizeof(MicrosliceDataWord) * (data_length - _data.size()
+                                            + (data_offset & _data.size_mask()));
             sge[num_sge++].lkey = _mr_data->lkey;
         }
 

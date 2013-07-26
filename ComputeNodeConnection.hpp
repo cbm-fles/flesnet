@@ -190,7 +190,7 @@ public:
     ComputeNodeBufferPosition _recv_cn_wp = {};
     ComputeNodeBufferPosition _cn_wp = {};
 
-    RingBuffer<uint64_t> _data;
+    RingBuffer<MicrosliceDataWord> _data;
     RingBuffer<TimesliceComponentDescriptor> _desc;
 
     struct ibv_mr* _mr_data = nullptr;

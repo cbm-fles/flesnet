@@ -7,6 +7,9 @@
 #ifndef TIMESLICE_HPP
 #define TIMESLICE_HPP
 
+typedef uint64_t MicrosliceDataWord;
+typedef uint64_t MicrosliceDescriptor;
+
 #pragma pack(1)
 
 /// Timeslice component descriptor.

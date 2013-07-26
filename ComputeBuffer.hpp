@@ -107,7 +107,7 @@ public:
         }
     }
 
-    const RingBuffer<uint64_t>& data(int i) const {
+    const RingBuffer<MicrosliceDataWord>& data(int i) const {
         return _conn[i]->_data;
     }
 
