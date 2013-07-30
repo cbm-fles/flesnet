@@ -77,6 +77,14 @@ void dump_mc_raw(volatile uint64_t *eb,
 #define MCH_FLAGS 0x0000
 
 //--------------------------------
+size_t get_size(mc_desc* mc) {
+  size_t size_bytes = mc->size;
+  size_t max_payload_bytes = 128;
+  size_t datasize = ((size_bytes-1) | (max_payload_bytes-1))+1;
+  return datasize;
+}
+
+
 int process_mc(mc_desc* mc) {
 
   struct __attribute__ ((__packed__)) s_mc_header {
@@ -98,8 +106,7 @@ int process_mc(mc_desc* mc) {
 
   if(mc_size == 0) {
     printf("MC has size 0");
-    error++;
-    return error;
+    return -1;
   }
 
 #ifdef DEBUG
@@ -108,12 +115,14 @@ int process_mc(mc_desc* mc) {
 
   if( mch->hdr_id != MCH_HDR_ID || mch->hdr_ver != MCH_HDR_VER
       || mch->flags != MCH_FLAGS ) {
+#ifdef DEBUG
     printf("ERROR: wrong MC header\n");
     printf("MC header :\n hdr_id 0x%02x, hdr_ver 0x%02x, eq_id 0x%04x,"
            " flags 0x%04x, sys_id 0x%02x, sys_ver 0x%02x\n"
            " mc_nr 0x%016lx\n",
            mch->hdr_id, mch->hdr_ver, mch->eq_id, mch->flags, mch->sys_id, mch->sys_ver, mc_nr);
-    error++;
+#endif
+    return -2;
   }
   
   // loop over cnet messages
@@ -132,11 +141,11 @@ int process_mc(mc_desc* mc) {
 
     // check header message count
     if (cneth_msg_cnt != ((cneth_msg_cnt_save+1) & 0xff) && w > 2) {
-      //#ifdef DEBUG
+#ifdef DEBUG
       printf("ERROR: wrong header message count now: 0x%02x before+1: 0x%02x\n",
              cneth_msg_cnt, cneth_msg_cnt_save+1);
-      //#endif
-      error++;
+#endif
+      return -3;
     }
     cneth_msg_cnt_save = cneth_msg_cnt;
     
@@ -146,11 +155,10 @@ int process_mc(mc_desc* mc) {
     for (i = 0; i <= cneth_wrd_cnt-2; i++) {      
       if (((cnet_word[w+i] & 0xff) != (cnet_word_save & 0xff) + 1 && i > 0) || 
           (cnet_word[w] != 0xbc00 && i == 0) ) {
-        //#ifdef DEBUG
+#ifdef DEBUG
         printf("ERROR: wrong cnet word 0x%04x 0x%04x\n", cnet_word[w+i], cnet_word_save);
-        //#endif
-        error++;
-        return error;
+#endif
+        return -4;
       }
       cnet_word_save = cnet_word[w+i];
     }
@@ -158,12 +166,11 @@ int process_mc(mc_desc* mc) {
     // last word
     uint16_t cnet_msg_nr = cnet_word[w+i];
     if (cnet_msg_nr != ((cnet_msg_nr_save+1) & 0xffff) && w > 2) {
-      //#ifdef DEBUG
+#ifdef DEBUG
       printf("ERROR: wrong pgen message number now: 0x%04x before+1: 0x%04x\n",
              cnet_msg_nr, cnet_msg_nr_save+1);
-      //#endif
-      error++;
-      return error;
+#endif
+      return -5;
     }
     cnet_msg_nr_save = cnet_msg_nr;
     
@@ -183,7 +190,7 @@ int process_mc(mc_desc* mc) {
 //    printf("Process MC finished with errors for:\n");
 //    printf("MC nr %ld, addr %p, size %d Bytes\n", mc_nr, (void *)mc_word, mc_size);
 //  }
-  return error;
+  return 0;
 }
 
 

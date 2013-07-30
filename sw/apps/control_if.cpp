@@ -83,6 +83,14 @@ int main(int argc, char *argv[])
     printf("buf: 0x%04x\n", r_msg.data[i]);
   }
 
+  printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
+  MyFlib->link[0]->set_dlm_cfg(0x5, true);
+  MyFlib->send_dlm();
+  printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
+  MyFlib->link[0]->clr_dlm();
+  printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
+  MyFlib->link[0]->set_dlm_cfg(0x2, false);
+
   if (MyFlib)
     delete MyFlib;
   return 0;

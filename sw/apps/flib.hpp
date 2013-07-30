@@ -91,6 +91,10 @@ public:
     _bar->set_bit(RORC_REG_MC_CNT_CFG, 31, enable);
   }
 
+  void send_dlm() {
+    set_reg(RORC_REG_DLM_CFG, 1);
+  }
+
   void get_fwdate() {
     std::cout << "Firmware Date:" 
               << std::hex << std::showbase << std::setw(8) << std::setfill('0') 

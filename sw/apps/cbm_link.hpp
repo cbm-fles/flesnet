@@ -51,17 +51,17 @@ class cbm_link {
     rorcfs_dma_channel* _ch;
     unsigned int _channel;
   
-    unsigned int _index;
-    unsigned int _last_index;
-    unsigned int _last_acked;
-    unsigned int _mc_nr;
-    unsigned int _wrap;
+    uint64_t _index;
+    uint64_t _last_index;
+    uint64_t _last_acked;
+    uint64_t _mc_nr;
+    uint64_t _wrap;
   
     volatile uint64_t* _eb;
     volatile struct rb_entry* _rb;
   
-    unsigned long _rbsize;
-    unsigned long _rbentries;
+    uint64_t _rbsize;
+    uint64_t _rbentries;
 
 public:
   
@@ -354,6 +354,30 @@ public:
     
     return ret;
   } 
+
+  // RORC_REG_DLM_CFG 0 set to send
+  // RORC_REG_GTX_DLM 3..0 tx type, 4 enable,
+  //                  8..5 rx type, 31 set to clear rx reg
+  void set_dlm_cfg(uint8_t type, bool enable) {
+    uint32_t reg = 0;
+    if (enable)
+      reg = (1<<4) | (type & 0xF);
+    else
+      reg = (type & 0xF);
+
+    _ch->setGTX(RORC_REG_GTX_DLM, reg);
+    return 0;
+  }
+
+  uint8_t get_dlm() {
+    uint32_t reg = _ch->getGTX(RORC_REG_GTX_DLM);
+    uint8_t type = (reg>>5) & 0xF;
+    return type;
+  }
+
+  void clr_dlm() {
+    _ch->setGTX(RORC_REG_GTX_DLM, 1<<31);
+  }
 
     rorcfs_buffer* ebuf() const {
         return _ebuf;
