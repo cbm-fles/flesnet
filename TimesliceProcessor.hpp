@@ -36,7 +36,6 @@ public:
         uint64_t ts_pos = wi.ts_pos;
         uint64_t ts_num = _cb.desc(0).at(ts_pos).ts_num;
         uint64_t ts_size = par->timeslice_size() + par->overlap_size();
-
         if (out.beDebug()) {
             out.debug() << "processor thread " << _index << " working on timeslice " << ts_num;
         }
@@ -49,10 +48,9 @@ public:
 
             const RingBuffer<>& data = _cb.data(in);
 
-            uint64_t mc_offset = (uint64_t&) data.at(offset);
+            uint64_t mc_offset = ((MicrosliceDescriptor&) data.at(offset)).offset;
             for (size_t mc = 0; mc < ts_size; mc++) {
-                uint64_t this_offset = (uint64_t&) data.at(offset + mc * 8)
-                    - mc_offset + offset + ts_size * 8;
+                uint64_t this_offset = ((MicrosliceDescriptor&) data.at(offset + mc * sizeof(MicrosliceDescriptor))).offset - mc_offset + offset + ts_size * sizeof(MicrosliceDescriptor);
                 uint64_t hdr0 = (uint64_t&) data.at(this_offset + 0);
                 uint64_t hdr1 = (uint64_t&) data.at(this_offset + sizeof(uint64_t));
                 uint64_t mc_size = hdr0 & 0xFFFFFFFF;

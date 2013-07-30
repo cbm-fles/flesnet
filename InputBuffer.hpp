@@ -55,8 +55,8 @@ public:
             
             _data_source.wait_for_data(mc_offset + mc_length + 1);
             
-            uint64_t data_offset = _desc.at(mc_offset);
-            uint64_t data_length = _desc.at(mc_offset + mc_length) - data_offset;
+            uint64_t data_offset = _desc.at(mc_offset).offset;
+            uint64_t data_length = _desc.at(mc_offset + mc_length).offset - data_offset;
 
             if (out.beTrace()) {
                 out.trace() << "SENDER working on TS " << timeslice
@@ -156,7 +156,7 @@ private:
         s << "/--- desc buf ---" << std::endl;
         s << "|";
         for (unsigned int i = 0; i < _desc.size(); i++)
-            s << " (" << i << ")" << _desc.at(i);
+            s << " (" << i << ")" << _desc.at(i).offset;
         s << std::endl;
         s << "| _acked_mc = " << _acked_mc << std::endl;
         s << "/--- data buf ---" << std::endl;
@@ -232,7 +232,7 @@ private:
                 while (_ack.at(acked_ts) > ts);
             else
                 _ack.at(ts) = ts;
-            _acked_data = _desc.at(acked_ts * par->timeslice_size());
+            _acked_data = _desc.at(acked_ts * par->timeslice_size()).offset;
             _acked_mc = acked_ts * par->timeslice_size();
             _data_source.update_ack_pointers(_acked_data, _acked_mc);
             if (out.beDebug())

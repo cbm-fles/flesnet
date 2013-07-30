@@ -144,7 +144,7 @@ DCOUNT[1]++;
                 }
 
                 // write to descriptor buffer
-                _desc_buffer.at(written_mc++) = start_addr;
+                _desc_buffer.at(written_mc++).offset = start_addr;
 
                 if (written_mc >= last_written_mc + min_written_mc
                     || written_data >= last_written_data + min_written_data) {

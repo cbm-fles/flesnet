@@ -7,23 +7,21 @@
 #ifndef TIMESLICE_HPP
 #define TIMESLICE_HPP
 
-typedef uint64_t MicrosliceDescriptor;
-
 #pragma pack(1)
 
 // Microslice descriptor.
-//struct MicrosliceDescriptor {
-//  uint8_t   hdr_id;  // "Header format identifier" DD
-//  uint8_t   hdr_ver; // "Header format version"    01
-//  uint16_t  eq_id;   // "Equipment identifier"
-//  uint16_t  flags;   // "Status and error flags"
-//  uint8_t   sys_id;  // "Subsystem identifier"
-//  uint8_t   sys_ver; // "Subsystem format version"
-//  uint64_t  idx;     // "Microslice index"
-//  uint32_t  crc;     // "CRC32 checksum"
-//  uint32_t  size;    // "Size (in bytes)"
-//  uint64_t  offset;  // "Offset in event buffer (in bytes)"
-//};
+struct MicrosliceDescriptor {
+    uint8_t   hdr_id;  // "Header format identifier" (0xDD)
+    uint8_t   hdr_ver; // "Header format version"    (0x01)
+    uint16_t  eq_id;   // "Equipment identifier"
+    uint16_t  flags;   // "Status and error flags"
+    uint8_t   sys_id;  // "Subsystem identifier"
+    uint8_t   sys_ver; // "Subsystem format version"
+    uint64_t  idx;     // "Microslice index"
+    uint32_t  crc;     // "CRC32 checksum"
+    uint32_t  size;    // "Content size (bytes)"
+    uint64_t  offset;  // "Offset in event buffer (bytes)"
+};
 
 
 /// Timeslice component descriptor.
