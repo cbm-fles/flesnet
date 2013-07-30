@@ -364,9 +364,7 @@ public:
       reg = (1<<4) | (type & 0xF);
     else
       reg = (type & 0xF);
-
     _ch->setGTX(RORC_REG_GTX_DLM, reg);
-    return 0;
   }
 
   uint8_t get_dlm() {
