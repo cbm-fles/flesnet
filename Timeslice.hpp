@@ -34,16 +34,6 @@ struct TimesliceComponentDescriptor {
 };
 
 
-/// Structure representing the header of a microslice container.
-struct MicrosliceHeader {
-    uint8_t hdrrev; ///< Header revision.
-    uint8_t sysid;  ///< System ID.
-    uint16_t flags; ///< Flags.
-    uint32_t size;  ///< Size of the microslice container in bytes.
-    uint64_t time;  ///< Number of previous microslice containers.
-};
-
-
 /// Structure representing a set of compute node buffer positions.
 struct ComputeNodeBufferPosition {
     uint64_t data; ///< The position in the data buffer.
