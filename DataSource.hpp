@@ -17,7 +17,7 @@ public:
         _data_buffer(data_buffer),
         _desc_buffer(desc_buffer) { };
     
-    virtual void wait_for_data(uint64_t min_mcNumber) = 0;
+    virtual uint64_t wait_for_data(uint64_t min_mcNumber) = 0;
 
     virtual void update_ack_pointers(uint64_t new_acked_data, uint64_t new_acked_mc) = 0;
     
@@ -158,7 +158,7 @@ DCOUNT[2]++;
         }
     }
 
-    virtual void wait_for_data(uint64_t min_mc_number)
+    virtual uint64_t wait_for_data(uint64_t min_mc_number)
     {
         static uint64_t written_mc = 0;
 
@@ -171,6 +171,7 @@ DCOUNT[4]++;
             }
             written_mc = _written_mc;
         }
+        return written_mc;
     };
 
     virtual void update_ack_pointers(uint64_t new_acked_data, uint64_t new_acked_mc)
