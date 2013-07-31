@@ -50,20 +50,21 @@ public:
 
             uint64_t mc_offset = ((MicrosliceDescriptor&) data.at(offset)).offset;
             for (size_t mc = 0; mc < ts_size; mc++) {
-                uint64_t this_offset = ((MicrosliceDescriptor&) data.at(offset + mc * sizeof(MicrosliceDescriptor))).offset - mc_offset + offset + ts_size * sizeof(MicrosliceDescriptor);
-                uint64_t hdr0 = (uint64_t&) data.at(this_offset + 0);
-                uint64_t hdr1 = (uint64_t&) data.at(this_offset + sizeof(uint64_t));
-                uint64_t mc_size = hdr0 & 0xFFFFFFFF;
-                size_t content_bytes = mc_size - 2 * 8;
-                uint64_t mc_time = hdr1 & 0xFFFFFFFFFFFF;
-                assert(mc_time == ts_num * par->timeslice_size() + mc);
+                MicrosliceDescriptor& mc_desc =
+                    ((MicrosliceDescriptor&) data.at(offset +  mc * sizeof(MicrosliceDescriptor)));
+                uint64_t this_offset = mc_desc.offset - mc_offset + offset
+                    + ts_size * sizeof(MicrosliceDescriptor);
+                assert(mc_desc.idx == ts_num * par->timeslice_size() + mc);
 
                 if (check_pattern) {
-                    for (size_t pos = 0; pos < content_bytes; pos += sizeof(uint64_t)) {
-                        uint64_t this_data = (uint64_t &) data.at(this_offset + 2 * 8 + pos);
+                    uint32_t crc = 0x00000000;
+                    for (size_t pos = 0; pos < mc_desc.size; pos += sizeof(uint64_t)) {
+                        uint64_t data_word = (uint64_t &) data.at(this_offset + pos);
+                        crc ^= (data_word & 0xffffffff) ^ (data_word >> 32);
                         uint64_t expected = ((uint64_t) in << 48) | pos;
-                        assert(this_data == expected);
+                        assert(data_word == expected);
                     }
+                    assert(crc == mc_desc.crc);
                 }
             }
         }

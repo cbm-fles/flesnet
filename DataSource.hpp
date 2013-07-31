@@ -111,40 +111,36 @@ DCOUNT[1]++;
                     content_bytes = _rand_content_bytes();
 
                 // check for space in data and descriptor buffers
-                if ((written_data - acked_data + content_bytes + 2 * 8 > _data_buffer.bytes())
+                if ((written_data - acked_data + content_bytes > _data_buffer.bytes())
                     || (written_mc - acked_mc + 1 > _desc_buffer.size()))
                     break;
 
-                uint8_t hdrrev = 0x01;
-                uint8_t sysid = 0x01;
-                uint16_t flags = 0x0000;
-                uint32_t size = content_bytes + 2 * 8;
-                uint16_t rsvd = 0x0000;
-                uint64_t time = written_mc;
-
-                uint64_t hdr0 = (uint64_t) hdrrev << 56 | (uint64_t) sysid << 48
-                    | (uint64_t) flags << 32 | (uint64_t) size;
-                uint64_t hdr1 = (uint64_t) rsvd << 48 | (time & 0xFFFFFFFFFFFF);
+                const uint8_t hdr_id = 0xdd;
+                const uint8_t hdr_ver = 0x01;
+                const uint16_t eq_id = 0x1001;
+                const uint16_t flags = 0x0000;
+                const uint8_t sys_id = 0x01;
+                const uint8_t sys_ver = 0x01;
+                uint64_t idx = written_mc;
+                uint32_t crc = 0x00000000;
+                uint32_t size = content_bytes;
+                uint64_t offset = written_data;
 
                 // write to data buffer
-                uint64_t start_addr = written_data;
-                (uint64_t&) _data_buffer.at(written_data) = hdr0;
-                written_data += sizeof(uint64_t);
-                (uint64_t&) _data_buffer.at(written_data) = hdr1;
-                written_data += sizeof(uint64_t);
-
                 if (generate_pattern) {
                     for (uint64_t i = 0; i < content_bytes; i+= sizeof(uint64_t)) {
-                        (uint64_t&) _data_buffer.at(written_data) =
-                            ((uint64_t) par->node_index() << 48) | i;
+                        uint64_t data_word = ((uint64_t) par->node_index() << 48) | i;
+                        (uint64_t&) _data_buffer.at(written_data) = data_word;
                         written_data += sizeof(uint64_t);
+                        crc ^= (data_word & 0xffffffff) ^ (data_word >> 32);
                     }
                 } else {
                     written_data += content_bytes;
                 }
 
                 // write to descriptor buffer
-                _desc_buffer.at(written_mc++).offset = start_addr;
+                _desc_buffer.at(written_mc++) = MicrosliceDescriptor({hdr_id, hdr_ver,
+                            eq_id, flags, sys_id, sys_ver, idx, crc, size, offset});
 
                 if (written_mc >= last_written_mc + min_written_mc
                     || written_data >= last_written_data + min_written_data) {

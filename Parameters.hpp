@@ -318,8 +318,7 @@ private:
                    << ")";
 
         if (_node_type == INPUT_NODE && _node_index == 0) {
-            out.info() << "microslice size: (" << _typical_content_size
-                       << " + " << 2 * 8 << ") bytes";
+            out.info() << "microslice size: " << _typical_content_size << " bytes";
             out.info() << "timeslice size: (" << _timeslice_size
                        << " + " << _overlap_size << ") microslices";
             out.info() << "number of timeslices: " << _max_timeslice_number;
