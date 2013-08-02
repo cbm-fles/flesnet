@@ -202,8 +202,10 @@ public:
         conn_param.private_data = private_data->data();
         conn_param.private_data_len = (uint8_t) private_data->size();
         int err = rdma_connect(_cm_id, &conn_param);
-        if (err)
+        if (err) {
+            out.fatal() << "rdma_connect failed: " << strerror(err);
             throw InfinibandException("rdma_connect failed");
+        }
     };
 
     /// Retrieve index of this connection in the connection group.
