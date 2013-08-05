@@ -21,7 +21,8 @@ public:
         _data(par->cn_data_buffer_size_exp()),
         _desc(par->cn_desc_buffer_size_exp())
     {
-        _qp_cap.max_send_wr = 1;
+        // send and receive only single ComputeNodeBufferPosition struct
+        _qp_cap.max_send_wr = 2; // one additional wr to avoid race (recv before send completion)
         _qp_cap.max_send_sge = 1;
         _qp_cap.max_recv_wr = 1;
         _qp_cap.max_recv_sge = 1;
@@ -43,16 +44,17 @@ public:
             out.debug() << "[" << _index << "] " << "POST SEND _send_cn_ack"
                         << " (desc=" << _send_cn_ack.desc << ")";
         }
+        while (_pending_send_requests >= _qp_cap.max_send_wr) {
+            throw InfinibandException("Max number of pending send requests exceeded");
+        }
+        _pending_send_requests++;
         post_send(&send_wr);
     }
 
     void post_send_final_ack() {
-        if (out.beTrace()) {
-            out.trace() << "[" << _index << "] " << "POST SEND FINAL ack";
-        }
         send_wr.wr_id = ID_SEND_FINALIZE | (_index << 8);
         send_wr.send_flags = IBV_SEND_SIGNALED;
-        post_send(&send_wr);
+        post_send_cn_ack();
     }
 
     virtual void setup(struct ibv_pd* pd) {
@@ -175,6 +177,10 @@ public:
         }
     }
 
+    void on_complete_send() {
+        _pending_send_requests--;
+    }
+
     void on_complete_send_finalize() {
         _done = true;
     }
@@ -231,6 +237,8 @@ private:
 
     /// Scatter/gather list entry for send work request
     struct ibv_sge send_sge;
+
+    std::atomic_uint _pending_send_requests{0};
 };
 
 

@@ -42,11 +42,13 @@ public:
             if (out.beDebug()) {
                 out.debug() << "[" << in << "] " << "COMPLETE SEND _send_cp_ack";
             }
+            _conn[in]->on_complete_send();
             break;
 
         case ID_SEND_FINALIZE: {
             assert(_work_items.empty());
             assert(_completions.empty());
+            _conn[in]->on_complete_send();
             _conn[in]->on_complete_send_finalize();
             _connections_done++;
             _all_done = (_connections_done == _conn.size());

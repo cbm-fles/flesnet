@@ -245,9 +245,10 @@ protected:
 
     void dump_send_wr(struct ibv_send_wr* wr) {
         for (int i = 0; wr; i++, wr = wr->next) {
-            out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id;
+            out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id
+                        << " (" << (REQUEST_ID) wr->wr_id << ")";
             out.fatal() << " opcode=" << wr->opcode;
-            out.fatal() << " send_flags=" << wr->send_flags;
+            out.fatal() << " send_flags=" << (ibv_send_flags) wr->send_flags;
             out.fatal() << " num_sge=" << wr->num_sge;
             for (int j = 0; j < wr->num_sge; j++) {
                 out.fatal() << "  sg_list[" << j << "] "
@@ -268,6 +269,8 @@ protected:
         if (err) {
             out.fatal() << "ibv_post_send failed: " << strerror(err);
             dump_send_wr(wr);
+            out.fatal() << "previous send requests: " << _total_send_requests;
+            out.fatal() << "previous recv requests: " << _total_recv_requests;
             throw InfinibandException("ibv_post_send failed");
         }
 

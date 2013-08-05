@@ -163,8 +163,8 @@ public:
             //out.fatal() << "MAX REQUESTS! ###";
             boost::this_thread::yield(); // busy wait // TODO
         }
-        post_send(&send_wr_ts);
         _pending_write_requests++;
+        post_send(&send_wr_ts);
     }
 
     /// Increment target write pointers after data has been sent.

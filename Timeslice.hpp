@@ -111,9 +111,56 @@ inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
         return s << "ID_SEND_CN_WP";
     case ID_RECEIVE_CN_ACK:
         return s << "ID_RECEIVE_CN_ACK";
+    case ID_SEND_CN_ACK:
+        return s << "ID_SEND_CN_ACK";
+    case ID_RECEIVE_CN_WP:
+        return s << "ID_RECEIVE_CN_WP";
+    case ID_SEND_FINALIZE:
+        return s << "ID_SEND_FINALIZE";
     default:
         return s << (int) v;
     }
+}
+
+
+inline std::ostream& operator<<(std::ostream& s, ibv_wr_opcode v)
+{
+    switch (v) {
+    case IBV_WR_RDMA_WRITE:
+        return s << "IBV_WR_RDMA_WRITE";
+    case IBV_WR_RDMA_WRITE_WITH_IMM:
+        return s << "IBV_WR_RDMA_WRITE_WITH_IMM";
+    case IBV_WR_SEND:
+        return s << "IBV_WR_SEND";
+    case IBV_WR_SEND_WITH_IMM:
+        return s << "IBV_WR_SEND_WITH_IMM";
+    case IBV_WR_RDMA_READ:
+        return s << "IBV_WR_RDMA_READ";
+    case IBV_WR_ATOMIC_CMP_AND_SWP:
+        return s << "IBV_WR_ATOMIC_CMP_AND_SWP";
+    case IBV_WR_ATOMIC_FETCH_AND_ADD:
+        return s << "IBV_WR_ATOMIC_FETCH_AND_ADD";
+    default:
+        return s << (int) v;
+    }
+}
+
+
+inline std::ostream& operator<<(std::ostream& s, ibv_send_flags v)
+{
+    std::string str;
+    if (v & IBV_SEND_FENCE)
+        str += std::string(str.empty() ? "" : " | ") + "IBV_SEND_FENCE";
+    if (v & IBV_SEND_SIGNALED)
+        str += std::string(str.empty() ? "" : " | ") + "IBV_SEND_SIGNALED";
+    if (v & IBV_SEND_SOLICITED)
+        str += std::string(str.empty() ? "" : " | ") + "IBV_SEND_SOLICITED";
+    if (v & IBV_SEND_INLINE)
+        str += std::string(str.empty() ? "" : " | ") + "IBV_SEND_INLINE";
+    if (str.empty())
+        return s << (int) v;
+    else
+        return s << str;
 }
 
 
