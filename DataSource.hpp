@@ -56,7 +56,7 @@ public:
 
 
         for (int i = 0; i < 10; i++)
-            out.error() << "DCOUNT[" << i << "] = " << DCOUNT[i];
+            out.trace() << "DCOUNT[" << i << "] = " << DCOUNT[i];
     };
 
     uint64_t DCOUNT[10] = {};
