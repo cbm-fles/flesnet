@@ -30,10 +30,10 @@
 #include <sys/mman.h>
 
 #include "rorcfs.h"
-#include "rorcfs_buffer.hh"
+#include "../include/libflib/rorcfs_buffer.hh"
 
 /** errno */
-extern int errno;
+//extern int errno;
 
 /**
  * Constructor

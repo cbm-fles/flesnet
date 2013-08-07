@@ -27,19 +27,12 @@
 #include <sys/mman.h>
 #include <assert.h>
 #include <sys/time.h>
-#ifdef SIM
-#include "mti.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h> 
-#include <arpa/inet.h>
-#endif
 #include <sys/wait.h>
 #include <stdint.h>
 
-#include "rorcfs_bar.hh"
-#include "rorcfs_device.hh"
-#include "rorc_registers.h"
+#include "../include/libflib/rorcfs_bar.hh"
+#include "../include/libflib/rorcfs_device.hh"
+#include "../include/libflib/rorc_registers.h"
 
 /**
  * usleep time for FLI read polling
@@ -64,7 +57,7 @@ rorcfs_bar::rorcfs_bar(rorcfs_device *dev, int n)
 	bar = NULL;
 
 	fname = (char *) malloc(strlen(basedir) + 12	+ 
-			strlen(subdir) + 3 + digits);
+			strlen(subdir) + 3 + digits +1);
 
 	// get sysfs file name for selected bar
 	sprintf(fname, "%s0000:%02x:%02x.%x%sbar%d", 
@@ -154,7 +147,7 @@ unsigned int rorcfs_bar::get(unsigned long addr) {
 #ifndef SIM
 	unsigned int result;
 	assert ( bar!=NULL );
-	if ( (addr<<2)<barstat.st_size ) {
+	if ( (addr<<2)<(unsigned long)barstat.st_size ) {
 		result = bar[addr];
 #ifdef DEBUG
 	printf("rorcfs_bar::get(%lx)=%08x\n", addr, result);
@@ -209,7 +202,7 @@ void rorcfs_bar::set(unsigned long addr, unsigned int data)
 #ifndef SIM
 	// access mmap'ed BAR region
 	assert ( bar!=NULL );
-	if ( (addr<<2)<barstat.st_size ) {
+	if ( (addr<<2)<(unsigned long)barstat.st_size ) {
 		pthread_mutex_lock(&mtx);
 		bar[addr] = data;
 		msync( (bar + ((addr<<2) & PAGE_MASK)), PAGE_SIZE, MS_SYNC);
@@ -328,7 +321,7 @@ void rorcfs_bar::set_mem(unsigned long addr, const void *source, size_t n) {
   assert ( bar!=NULL );
   assert ( n%4 == 0 );
   size_t words = n>>2;
-  if ( (addr<<2)<barstat.st_size ) {
+  if ( (addr<<2)<(unsigned long)barstat.st_size ) {
     pthread_mutex_lock(&mtx);
     for (size_t i = 0; i < words; i++) {
       bar[addr+i] = *((uint32_t*)source+i);
@@ -345,7 +338,7 @@ void rorcfs_bar::get_mem(unsigned long addr, void *dest, size_t n) {
   assert ( bar!=NULL );
   assert ( n%4 == 0 );
   size_t words = n>>2;
-  if ( (addr<<2)<barstat.st_size ) {
+  if ( (addr<<2)<(unsigned long)barstat.st_size ) {
     for (size_t i = 0; i < words; i++) {
       *((uint32_t*)dest+i) = bar[addr+i];
 #ifdef DEBUG
@@ -373,7 +366,7 @@ unsigned short rorcfs_bar::get16(unsigned long addr)
 	sbar = (unsigned short *)bar;
 	unsigned short result;
 	assert ( sbar!=NULL );
-	if ( (addr<<1)<barstat.st_size ) {
+	if ( (addr<<1)<(unsigned long)barstat.st_size ) {
 		result = sbar[addr];
 #ifdef DEBUG
 		printf("rorcfs_bar::get16(%lx)=%04x\n", addr, result);
@@ -438,7 +431,7 @@ void rorcfs_bar::set16(unsigned long addr, unsigned short data)
 	sbar = (unsigned short *)bar;
 	// access mmap'ed BAR region
 	assert ( sbar!=NULL );
-	if ( (addr<<1)<barstat.st_size ) {
+	if ( (addr<<1)<(unsigned long)barstat.st_size ) {
 		pthread_mutex_lock(&mtx);
 		sbar[addr] = data;
 		msync( (sbar + ((addr<<1) & PAGE_MASK)), 

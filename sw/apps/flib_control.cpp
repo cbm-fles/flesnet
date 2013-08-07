@@ -11,10 +11,8 @@
 #include <csignal>
 #include <syslog.h>
 
-#include "librorc.h"
+#include <libflib.h>
 
-#include "cbm_link.hpp"
-#include "flib.hpp"
 #include "mc_functions.h"
 
 using namespace std;

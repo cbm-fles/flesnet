@@ -5,7 +5,6 @@
 #include <iomanip>
 #include <array>
 
-#include "librorc.h"
 #include "cbm_link.hpp"
 
 class flib {

@@ -37,11 +37,11 @@
 #include <dirent.h>
 
 #include "rorcfs.h"
-#include "rorcfs_bar.hh"
-#include "rorcfs_buffer.hh"
-#include "rorcfs_dma_channel.hh"
-#include "rorcfs_dma_monitor.hh"
-#include "rorc_registers.h"
+#include "../include/libflib/rorcfs_bar.hh"
+#include "../include/libflib/rorcfs_buffer.hh"
+#include "../include/libflib/rorcfs_dma_channel.hh"
+#include "../include/libflib/rorcfs_dma_monitor.hh"
+#include "../include/libflib/rorc_registers.h"
 
 //#define MAX_PAYLOAD 128*1024
 
@@ -173,10 +173,10 @@ void *dma_monitor( void *buf )
 						printf("DMA_MON ERROR: mmap %s\n", dname);
 
 					if( (offset + (unsigned long)n - sizeof(addr)) > 
-							deststat.st_size ) 
+							(unsigned long)deststat.st_size ) 
 					{
 						// wrap at EOF
-						wraplen = offset + n-sizeof(addr) - deststat.st_size;
+                                               wraplen = offset + n-sizeof(addr) - deststat.st_size;
 						memcpy( mem+offset, buffer+sizeof(addr), wraplen);
 						memcpy( mem, buffer+sizeof(addr)+wraplen, n-sizeof(addr)-wraplen );
 #ifdef DEBUG

@@ -1,8 +1,13 @@
 #ifndef CBM_LINK_HPP
 #define CBM_LINK_HPP
 
-#include "librorc.h"
+#include "rorc_registers.h"
+#include "rorcfs_bar.hh"
+#include "rorcfs_device.hh"
+#include "rorcfs_buffer.hh"
+#include "rorcfs_dma_channel.hh"
 #include <cassert>
+#include <string.h>
 
 const size_t log_ebufsize =  22;
 const size_t log_rbufsize =  20;
@@ -285,8 +290,8 @@ public:
   }
 
   // REG: datapath_cfg
-  // bit 0-1 data_rx_sel (10: link, 11: pgen, 0x: disable)
-  enum data_rx_sel {disable, link, pgen};
+  // bit 0-1 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
+  enum data_rx_sel {disable, link, pgen, emu};
 
   void set_data_rx_sel(data_rx_sel rx_sel) {
     uint32_t dp_cfg = _ch->getGTX(RORC_REG_GTX_DATAPATH_CFG);
@@ -294,6 +299,7 @@ public:
     case disable : _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3)); break;
     case link :    _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
     case pgen :    _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
+    case emu :     _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1<<1)); break;
     }
   }
 

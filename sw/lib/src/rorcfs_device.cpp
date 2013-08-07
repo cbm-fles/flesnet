@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include "rorcfs_device.hh"
+#include "../include/libflib/rorcfs_device.hh"
 
 
 rorcfs_device::rorcfs_device()
