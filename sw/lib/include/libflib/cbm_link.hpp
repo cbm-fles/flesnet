@@ -27,7 +27,7 @@ struct __attribute__ ((__packed__)) rb_entry {
   uint8_t   sys_ver; // "Subsystem format version"
   uint64_t  idx;     // "Microslice index"
   uint32_t  crc;     // "CRC32 checksum"
-  uint32_t  size;    // "Size in 16 bit words"
+  uint32_t  size;    // "Size bytes"
   uint64_t  offset;  // "Ofsset in event buffer"
 };
 
@@ -218,7 +218,7 @@ public:
           _mc_nr = _rb[_index].idx;
           mc.nr = _mc_nr;
           mc.addr = _eb + _rb[_index].offset/sizeof(uint64_t);
-          mc.size = _rb[_index].size << 1; // size in rb is in 16 bit words
+          mc.size = _rb[_index].size;
           mc.rbaddr = (uint64_t *)&_rb[_index];
 
           // calculate next rb index
