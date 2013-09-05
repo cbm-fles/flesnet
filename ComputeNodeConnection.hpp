@@ -86,7 +86,7 @@ public:
         send_sge.length = sizeof(ComputeNodeBufferPosition);
         send_sge.lkey = _mr_send->lkey;
 
-        send_wr.wr_id = ID_SEND_CN_ACK;
+        send_wr.wr_id = ID_SEND_CN_ACK | (_index << 8);
         send_wr.opcode = IBV_WR_SEND;
         send_wr.send_flags = IBV_SEND_SIGNALED;
         send_wr.sg_list = &send_sge;
