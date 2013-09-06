@@ -1,5 +1,5 @@
 /**
- * \file RingutBuffer.hpp
+ * \file RingBuffer.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
