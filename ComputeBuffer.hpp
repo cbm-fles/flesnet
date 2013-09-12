@@ -21,6 +21,11 @@ class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
     /// Buffer to store acknowledged status of timeslices.
     RingBuffer<uint64_t, true> _ack;
 
+    std::unique_ptr<boost::interprocess::shared_memory_object> _data_shm;
+    std::unique_ptr<boost::interprocess::shared_memory_object> _desc_shm;
+
+    std::unique_ptr<boost::interprocess::mapped_region> _data_region;
+    std::unique_ptr<boost::interprocess::mapped_region> _desc_region;
 
 public:
     concurrent_queue<TimesliceWorkItem> _work_items;
@@ -30,6 +35,95 @@ public:
     ComputeBuffer() :
         _ack(par->cn_desc_buffer_size_exp())
     {
+        boost::interprocess::shared_memory_object::remove("flesnet_data");
+        boost::interprocess::shared_memory_object::remove("flesnet_desc");
+
+        std::unique_ptr<boost::interprocess::shared_memory_object>
+            data_shm(new boost::interprocess::shared_memory_object
+                     (boost::interprocess::create_only, "flesnet_data",
+                      boost::interprocess::read_write));
+        _data_shm = std::move(data_shm);
+
+        std::unique_ptr<boost::interprocess::shared_memory_object>
+            desc_shm(new boost::interprocess::shared_memory_object
+                     (boost::interprocess::create_only, "flesnet_desc",
+                      boost::interprocess::read_write));
+        _desc_shm = std::move(desc_shm);
+
+        std::size_t data_size = (1 << par->cn_data_buffer_size_exp()) * par->input_nodes().size();
+        _data_shm->truncate(data_size);
+
+        std::size_t desc_size = (1 << par->cn_desc_buffer_size_exp()) * par->input_nodes().size()
+            * sizeof(TimesliceComponentDescriptor);
+        _desc_shm->truncate(desc_size);
+
+        std::unique_ptr<boost::interprocess::mapped_region>
+            data_region(new boost::interprocess::mapped_region
+                        (*_data_shm, boost::interprocess::read_write));
+        _data_region = std::move(data_region);
+
+        std::unique_ptr<boost::interprocess::mapped_region>
+            desc_region(new boost::interprocess::mapped_region
+                        (*_desc_shm, boost::interprocess::read_write));
+        _desc_region = std::move(desc_region);
+
+        VALGRIND_MAKE_MEM_DEFINED(_data_region->get_address(), _data_region->get_size());
+        VALGRIND_MAKE_MEM_DEFINED(_desc_region->get_address(), _desc_region->get_size());
+    }
+
+    /// The ComputeBuffer destructor.
+    ~ComputeBuffer() {
+        boost::interprocess::shared_memory_object::remove("flesnet_data");
+        boost::interprocess::shared_memory_object::remove("flesnet_desc");
+    }
+
+    ///
+    uint8_t* get_data_ptr(uint_fast16_t index) {
+        return static_cast<uint8_t*>(_data_region->get_address())
+            + index * (1 << par->cn_data_buffer_size_exp());
+    }
+
+    ///
+    TimesliceComponentDescriptor* get_desc_ptr(uint_fast16_t index) {
+        return reinterpret_cast<TimesliceComponentDescriptor*>(_desc_region->get_address())
+            + index * (1 << par->cn_desc_buffer_size_exp());
+    }
+
+    uint8_t& get_data(uint_fast16_t index, uint64_t offset) {
+        offset &= (1 << par->cn_data_buffer_size_exp()) - 1;
+        return get_data_ptr(index)[offset];
+    }
+
+    TimesliceComponentDescriptor& get_desc(uint_fast16_t index, uint64_t offset) {
+        offset &= (1 << par->cn_desc_buffer_size_exp()) - 1;
+        return get_desc_ptr(index)[offset];
+    }
+
+    /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
+    virtual void on_connect_request(struct rdma_cm_event* event) {
+        if (!_pd)
+            init_context(event->id->verbs);
+
+        assert(event->param.conn.private_data_len >= sizeof(InputNodeInfo));
+        InputNodeInfo remote_info =
+            *reinterpret_cast<const InputNodeInfo*>(event->param.conn.private_data);
+
+        uint_fast16_t index = remote_info.index;
+        assert(index < _conn.size() && _conn.at(index) == nullptr);
+
+        uint8_t* data_ptr = get_data_ptr(index);
+        std::size_t data_bytes = 1 << par->cn_data_buffer_size_exp();
+
+        TimesliceComponentDescriptor* desc_ptr = get_desc_ptr(index);
+        std::size_t desc_bytes = (1 << par->cn_desc_buffer_size_exp())
+            * sizeof(TimesliceComponentDescriptor);
+
+        std::unique_ptr<ComputeNodeConnection> conn(new ComputeNodeConnection
+                                                    (_ec, index, event->id, remote_info,
+                                                     data_ptr, data_bytes, desc_ptr, desc_bytes));
+        _conn.at(index) = std::move(conn);
+
+        _conn.at(index)->on_connect_request(event, _pd, _cq);
     }
 
     /// Completion notification event dispatcher. Called by the event loop.
@@ -107,14 +201,6 @@ public:
         catch (concurrent_queue<TimesliceCompletion>::Stopped) {
             out.trace() << "handle_ts_completion thread done";
         }
-    }
-
-    const RingBuffer<>& data(int i) const {
-        return _conn[i]->_data;
-    }
-
-    const RingBuffer<TimesliceComponentDescriptor>& desc(int i) const {
-        return _conn[i]->_desc;
     }
 
 };

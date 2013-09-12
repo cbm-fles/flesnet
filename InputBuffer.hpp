@@ -149,6 +149,20 @@ private:
         }
     }
     
+    /// Handle RDMA_CM_REJECTED event.
+    virtual void on_rejected(struct rdma_cm_event* event) {
+        InputNodeConnection* conn = (InputNodeConnection*) event->id->context;
+
+        conn->on_rejected(event);
+        uint_fast16_t i = conn->index();
+        _conn.at(i) = nullptr;
+
+        // immediately initiate retry
+        std::unique_ptr<InputNodeConnection> connection(new InputNodeConnection(_ec, i));
+        connection->connect(_hostnames[i], _services[i]);
+        _conn.at(i) = std::move(connection);
+    }
+
     /// Return string describing buffer contents, suitable for debug output.
     std::string get_state_string() {
         std::ostringstream s;

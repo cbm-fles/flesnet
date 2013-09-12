@@ -32,9 +32,7 @@
 #include <boost/random/poisson_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <boost/thread.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread/thread.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/mapped_region.hpp>
 
 #endif /* INCLUDE_HPP */

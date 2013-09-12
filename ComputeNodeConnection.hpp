@@ -15,20 +15,26 @@
 class ComputeNodeConnection : public IBConnection
 {
 public:
-    ComputeNodeConnection(struct rdma_event_channel* ec, uint_fast16_t index,
-                          struct rdma_cm_id* id = nullptr) :
+    ComputeNodeConnection(struct rdma_event_channel* ec,
+                          uint_fast16_t index,
+                          struct rdma_cm_id* id,
+                          InputNodeInfo remote_info,
+                          uint8_t* data_ptr,
+                          std::size_t data_bytes,
+                          TimesliceComponentDescriptor* desc_ptr,
+                          std::size_t desc_bytes) :
         IBConnection(ec, index, id),
-        _data(par->cn_data_buffer_size_exp()),
-        _desc(par->cn_desc_buffer_size_exp())
+        _remote_info(remote_info),
+        _data_ptr(data_ptr),
+        _data_bytes(data_bytes),
+        _desc_ptr(desc_ptr),
+        _desc_bytes(desc_bytes)
     {
         // send and receive only single ComputeNodeBufferPosition struct
         _qp_cap.max_send_wr = 2; // one additional wr to avoid race (recv before send completion)
         _qp_cap.max_send_sge = 1;
         _qp_cap.max_recv_wr = 1;
         _qp_cap.max_recv_sge = 1;
-
-        VALGRIND_MAKE_MEM_DEFINED(_data.ptr(), _data.bytes());
-        VALGRIND_MAKE_MEM_DEFINED(_desc.ptr(), _desc.bytes());
     }
 
     /// Post a receive work request (WR) to the receive queue
@@ -58,11 +64,13 @@ public:
     }
 
     virtual void setup(struct ibv_pd* pd) {
+        assert(_data_ptr && _desc_ptr && _data_bytes && _desc_bytes);
+
         // register memory regions
-        _mr_data = ibv_reg_mr(pd, _data.ptr(), _data.bytes(),
+        _mr_data = ibv_reg_mr(pd, _data_ptr, _data_bytes,
                               IBV_ACCESS_LOCAL_WRITE |
                               IBV_ACCESS_REMOTE_WRITE);
-        _mr_desc = ibv_reg_mr(pd, _desc.ptr(), _desc.bytes(),
+        _mr_desc = ibv_reg_mr(pd, _desc_ptr, _desc_bytes,
                               IBV_ACCESS_LOCAL_WRITE |
                               IBV_ACCESS_REMOTE_WRITE);
         _mr_send = ibv_reg_mr(pd, &_send_cn_ack,
@@ -70,6 +78,7 @@ public:
         _mr_recv = ibv_reg_mr(pd, &_recv_cn_wp,
                               sizeof(ComputeNodeBufferPosition),
                               IBV_ACCESS_LOCAL_WRITE);
+
         if (!_mr_data || !_mr_desc || !_mr_recv || !_mr_send)
             throw InfinibandException("registration of memory region failed");
 
@@ -94,16 +103,6 @@ public:
 
         // post initial receive request
         post_recv_cn_wp();
-    }
-
-    virtual void on_connect_request(struct rdma_cm_event* event,
-                                    struct ibv_pd* pd, struct ibv_cq* cq) {
-        assert(event->param.conn.private_data_len >= sizeof(InputNodeInfo));
-        memcpy(&_remote_info, event->param.conn.private_data, sizeof(InputNodeInfo));
-
-        _index = _remote_info.index;
-
-        IBConnection::on_connect_request(event, pd, cq);
     }
 
     /// Connection handler function, called on successful connection.
@@ -143,7 +142,10 @@ public:
     void inc_ack_pointers(uint64_t ack_pos) {
         boost::mutex::scoped_lock lock(_cn_ack_mutex);
         _cn_ack.desc = ack_pos;
-        const TimesliceComponentDescriptor& acked_ts = _desc.at(ack_pos - 1);
+
+        const TimesliceComponentDescriptor& acked_ts =
+            _desc_ptr[(ack_pos - 1) & ((1 << par->cn_desc_buffer_size_exp()) - 1)];
+
         _cn_ack.data = acked_ts.offset + acked_ts.size;
         if (_our_turn) {
             _our_turn = false;
@@ -196,22 +198,20 @@ public:
     ComputeNodeBufferPosition _recv_cn_wp = {};
     ComputeNodeBufferPosition _cn_wp = {};
 
-    RingBuffer<> _data;
-    RingBuffer<TimesliceComponentDescriptor> _desc;
-
     struct ibv_mr* _mr_data = nullptr;
     struct ibv_mr* _mr_desc = nullptr;
     struct ibv_mr* _mr_send = nullptr;
     struct ibv_mr* _mr_recv = nullptr;
 
     virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() {
+        assert(_data_ptr && _desc_ptr && _data_bytes && _desc_bytes);
         std::unique_ptr<std::vector<uint8_t> >
             private_data(new std::vector<uint8_t>(sizeof(ComputeNodeInfo)));
 
         ComputeNodeInfo* cn_info = reinterpret_cast<ComputeNodeInfo*>(private_data->data());
-        cn_info->data.addr = (uintptr_t) _data.ptr();
+        cn_info->data.addr = (uintptr_t) _data_ptr;
         cn_info->data.rkey = _mr_data->rkey;
-        cn_info->desc.addr = (uintptr_t) _desc.ptr();
+        cn_info->desc.addr = (uintptr_t) _desc_ptr;
         cn_info->desc.rkey = _mr_desc->rkey;
         cn_info->index = par->node_index();
 
@@ -225,6 +225,12 @@ private:
 
     /// Information on remote end.
     InputNodeInfo _remote_info = {};
+
+    uint8_t* _data_ptr = nullptr;
+    std::size_t _data_bytes = 0;
+
+    TimesliceComponentDescriptor* _desc_ptr = nullptr;
+    std::size_t _desc_bytes = 0;
 
     /// InfiniBand receive work request
     struct ibv_recv_wr recv_wr = {};
