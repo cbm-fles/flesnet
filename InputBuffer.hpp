@@ -58,6 +58,8 @@ public:
             uint64_t data_offset = _desc.at(mc_offset).offset;
             uint64_t data_length = _desc.at(mc_offset + mc_length).offset - data_offset;
 
+            uint64_t total_length = data_length + mc_length * sizeof(MicrosliceDescriptor);
+
             if (out.beTrace()) {
                 out.trace() << "SENDER working on TS " << timeslice
                             << ", MCs " << mc_offset << ".."
@@ -69,14 +71,15 @@ public:
 
             int cn = target_cn_index(timeslice);
 
-            _conn[cn]->wait_for_buffer_space(data_length
-                                             + mc_length * sizeof(MicrosliceDescriptor), 1);
+            // number of bytes to skip in advance (to avoid buffer wrap)
+            uint64_t skip = _conn[cn]->skip_required(total_length);
+            total_length += skip;
 
-            post_send_data(timeslice, cn, mc_offset, mc_length,
-                           data_offset, data_length);
+            _conn[cn]->wait_for_buffer_space(total_length, 1);
 
-            _conn[cn]->inc_write_pointers(data_length
-                                          + mc_length * sizeof(MicrosliceDescriptor), 1);
+            post_send_data(timeslice, cn, mc_offset, mc_length, data_offset, data_length, skip);
+
+            _conn[cn]->inc_write_pointers(total_length, 1);
         }
 
         for (auto& c : _conn)
@@ -187,7 +190,7 @@ private:
     /// Create gather list for transmission of timeslice
     void post_send_data(uint64_t timeslice, int cn,
                         uint64_t mc_offset, uint64_t mc_length,
-                        uint64_t data_offset, uint64_t data_length) {
+                        uint64_t data_offset, uint64_t data_length, uint64_t skip) {
         int num_sge = 0;
         struct ibv_sge sge[4];
         // descriptors
@@ -227,7 +230,7 @@ private:
             sge[num_sge++].lkey = _mr_data->lkey;
         }
 
-        _conn[cn]->send_data(sge, num_sge, timeslice, mc_length, data_length);
+        _conn[cn]->send_data(sge, num_sge, timeslice, mc_length, data_length, skip);
     }
 
     /// Completion notification event dispatcher. Called by the event loop.

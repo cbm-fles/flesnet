@@ -50,8 +50,8 @@ public:
                         << _cn_ack.desc + (1 << par->cn_desc_buffer_size_exp()) - _cn_wp.desc;
         }
         while (_cn_ack.data - _cn_wp.data + (1 << par->cn_data_buffer_size_exp()) < data_size
-                || _cn_ack.desc - _cn_wp.desc + (1 << par->cn_data_buffer_size_exp())
-                < desc_size) {
+               || _cn_ack.desc - _cn_wp.desc + (1 << par->cn_data_buffer_size_exp())
+               < desc_size) { // TODO: extend condition!
             {
                 boost::mutex::scoped_lock lock2(_cn_wp_mutex);
                 if (_our_turn) {
@@ -77,14 +77,17 @@ public:
 
     /// Send data and descriptors to compute node.
     void send_data(struct ibv_sge* sge, int num_sge, uint64_t timeslice,
-                   uint64_t mc_length, uint64_t data_length) {
+                   uint64_t mc_length, uint64_t data_length, uint64_t skip) {
         int num_sge2 = 0;
         struct ibv_sge sge2[4];
+
+        uint64_t cn_wp_data = _cn_wp.data;
+        cn_wp_data += skip;
 
         uint64_t cn_data_buffer_mask = (1L << par->cn_data_buffer_size_exp()) - 1L;
         uint64_t cn_desc_buffer_mask = (1L << par->cn_desc_buffer_size_exp()) - 1L;
         uint64_t target_bytes_left =
-            (1 << par->cn_data_buffer_size_exp()) - (_cn_wp.data & cn_data_buffer_mask);
+            (1L << par->cn_data_buffer_size_exp()) - (cn_wp_data & cn_data_buffer_mask);
 
         // split sge list if necessary
         int num_sge_cut = 0;
@@ -116,7 +119,7 @@ public:
         send_wr_ts.num_sge = num_sge;
         send_wr_ts.wr.rdma.rkey = _remote_info.data.rkey;
         send_wr_ts.wr.rdma.remote_addr =
-            (uintptr_t)(_remote_info.data.addr + (_cn_wp.data & cn_data_buffer_mask));
+            (uintptr_t)(_remote_info.data.addr + (cn_wp_data & cn_data_buffer_mask));
 
         if (num_sge2) {
             memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
@@ -135,7 +138,7 @@ public:
         // timeslice component descriptor
         TimesliceComponentDescriptor tscdesc;
         tscdesc.ts_num = timeslice;
-        tscdesc.offset = _cn_wp.data;
+        tscdesc.offset = cn_wp_data;
         tscdesc.size = data_length + mc_length * sizeof(MicrosliceDescriptor);
         struct ibv_sge sge3;
         sge3.addr = (uintptr_t) &tscdesc;
@@ -177,6 +180,16 @@ public:
             _send_cn_wp = _cn_wp;
             post_send_cn_wp();
         }
+    }
+
+    // Get number of bytes to skip in advance (to avoid buffer wrap)
+    uint64_t skip_required(uint64_t data_size) {
+        uint64_t databuf_size = 1L << par->cn_data_buffer_size_exp();
+        uint64_t databuf_wp = _cn_wp.data & (databuf_size - 1L);
+        if (databuf_wp + data_size <= databuf_size)
+            return 0;
+        else
+            return databuf_size - databuf_wp;
     }
 
     ///

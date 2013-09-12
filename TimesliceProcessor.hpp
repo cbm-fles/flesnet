@@ -40,6 +40,9 @@ public:
             out.debug() << "processor thread " << _index << " working on timeslice " << ts_num;
         }
 
+        const uint64_t data_size = (1 << par->cn_data_buffer_size_exp());
+        const uint64_t data_mask = data_size - 1;
+
         for (size_t in = 0; in < _cb.size(); in++) {
             assert(_cb.get_desc(0, ts_pos).ts_num == ts_num);
 
@@ -59,6 +62,9 @@ public:
 
                 if (check_pattern) {
                     uint32_t crc = 0x00000000;
+                    if ((this_offset & data_mask) + mc_desc.size > data_size) {
+                        out.warn() << "timeslice " << ts_num << " crosses buffer boundary";
+                    }
                     for (size_t pos = 0; pos < mc_desc.size; pos += sizeof(uint64_t)) {
                         uint64_t data_word = (uint64_t &) _cb.get_data(in, this_offset + pos);
                         crc ^= (data_word & 0xffffffff) ^ (data_word >> 32);
