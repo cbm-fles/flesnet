@@ -118,6 +118,16 @@ public:
         return _max_timeslice_number;
     };
 
+    /// Retrieve the name of the executable acting as timeslice processor.
+    std::string processor_executable() const {
+        return _processor_executable;
+    };
+
+    /// Retrieve the number of instances of the timeslice processor executable.
+    uint32_t processor_instances() const {
+        return _processor_instances;
+    };
+
     /// Retrieve the global base port.
     uint32_t base_port() const {
         return _base_port;
@@ -181,6 +191,12 @@ private:
 
     /// The global maximum timeslice number.
     uint32_t _max_timeslice_number = 100000;
+
+    /// The name of the executable acting as timeslice processor.
+    std::string _processor_executable{"./pattern-check"};
+
+    /// The number of instances of the timeslice processor executable.
+    uint32_t _processor_instances = 2;
 
     /// The global base port.
     uint32_t _base_port = 20079;
@@ -247,6 +263,10 @@ private:
              "check pattern flag")
             ("max-timeslice-number", po::value<uint32_t>(&_max_timeslice_number),
              "global maximum timeslice number")
+            ("processor-executable", po::value<std::string>(&_processor_executable),
+             "name of the executable acting as timeslice processor")
+            ("processor-instances", po::value<uint32_t>(&_processor_instances),
+             "number of instances of the timeslice processor executable")
             ;
 
         po::options_description cmdline_options("Allowed options");

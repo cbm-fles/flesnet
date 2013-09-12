@@ -111,8 +111,9 @@ public:
         //set_cpu(0);
 
         boost::thread_group analysis_threads;
-        analysis_threads.create_thread(TimesliceProcessor(*_cb, 1));
-        analysis_threads.create_thread(TimesliceProcessor(*_cb, 2));
+        for (uint_fast32_t i = 1; i <= _par.processor_instances(); i++) {
+            analysis_threads.create_thread(TimesliceProcessor(*_cb, i));
+        }
         boost::thread ts_compl(&ComputeBuffer::handle_ts_completion, _cb.get());
 
         _cb->accept(_par.base_port() + _par.node_index(), _par.input_nodes().size());
