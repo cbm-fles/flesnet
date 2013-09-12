@@ -44,7 +44,7 @@ public:
         const uint64_t data_mask = data_size - 1;
 
         for (size_t in = 0; in < _cb.size(); in++) {
-            assert(_cb.get_desc(0, ts_pos).ts_num == ts_num);
+            assert(_cb.get_desc(in, ts_pos).ts_num == ts_num);
 
             //uint64_t size = _cb.get_desc(in, ts_pos).size;
             uint64_t offset = _cb.get_desc(in, ts_pos).offset;
