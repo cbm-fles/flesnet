@@ -26,7 +26,7 @@ struct MicrosliceDescriptor {
 
 /// Timeslice component descriptor.
 struct TimesliceComponentDescriptor {
-    uint64_t ts_num; ///< Timeslice number.
+    uint64_t ts_num; ///< Timeslice index.
     uint64_t offset; ///< Start offset (in bytes) of corresponding data.
     uint64_t size;   ///< Size (in bytes) of corresponding data.
 };
