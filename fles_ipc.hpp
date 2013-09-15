@@ -14,6 +14,8 @@
 
 namespace fles {
 
+#pragma pack(1)
+
 //! Microslice descriptor struct.
 struct MicrosliceDescriptor
 {
@@ -53,6 +55,8 @@ struct TimesliceCompletion
 {
     uint64_t ts_pos; ///< Start offset (in items) of this timeslice
 };
+
+#pragma pack()
 
 //! The Timeslice class represents the data of a single timeslice.
 class Timeslice
