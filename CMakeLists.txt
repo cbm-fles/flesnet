@@ -46,6 +46,9 @@ target_link_libraries(flesnet ${Boost_THREAD_LIBRARY})
 add_executable(pattern-check pattern-check.cpp)
 target_link_libraries(pattern-check rt)
 
+add_executable(raw-storage raw-storage.cpp)
+target_link_libraries(raw-storage rt)
+
 # Documentation
 include(FindDoxygen)
 if(DOXYGEN_FOUND)
