@@ -14,4 +14,6 @@ extern einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out;
 class Parameters;
 extern std::unique_ptr<Parameters> par;
 
+extern std::vector<pid_t> child_pids;
+
 #endif /* GLOBAL_HPP */

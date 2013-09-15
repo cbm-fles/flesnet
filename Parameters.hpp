@@ -193,7 +193,7 @@ private:
     uint32_t _max_timeslice_number = 100000;
 
     /// The name of the executable acting as timeslice processor.
-    std::string _processor_executable{"./pattern-check"};
+    std::string _processor_executable;
 
     /// The number of instances of the timeslice processor executable.
     uint32_t _processor_instances = 2;

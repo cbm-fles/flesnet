@@ -36,6 +36,7 @@
 
 einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out(einhard::WARN, true);
 std::unique_ptr<Parameters> par;
+std::vector<pid_t> child_pids;
 
 int
 main(int argc, char* argv[])

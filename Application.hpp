@@ -104,6 +104,13 @@ public:
 
         std::unique_ptr<ComputeBuffer> cb(new ComputeBuffer());
         _cb = std::move(cb);
+
+        /* Establish SIGCHLD handler. */
+        struct sigaction sa;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = 0;
+        sa.sa_handler = child_handler;
+        sigaction(SIGCHLD, &sa, NULL);
     };
 
     /// The "main" function of a compute node application.
@@ -111,8 +118,15 @@ public:
         //set_cpu(0);
 
         boost::thread_group analysis_threads;
-        for (uint_fast32_t i = 1; i <= _par.processor_instances(); i++) {
-            analysis_threads.create_thread(TimesliceProcessor(*_cb, i));
+        if (_par.processor_executable().empty()) {
+            for (uint_fast32_t i = 1; i <= _par.processor_instances(); i++) {
+                analysis_threads.create_thread(TimesliceProcessor(*_cb, i));
+            }
+        } else {
+            child_pids.resize(_par.processor_instances());
+            for (uint_fast32_t i = 1; i <= _par.processor_instances(); i++) {
+                start_processor_task(i);
+            }
         }
         boost::thread ts_compl(&ComputeBuffer::handle_ts_completion, _cb.get());
 
@@ -123,7 +137,15 @@ public:
         _cb->completion_handler();
         auto time2 = std::chrono::high_resolution_clock::now();
         auto runtime = std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count();
-        analysis_threads.join_all();
+        if (_par.processor_executable().empty()) {
+            analysis_threads.join_all();
+        } else {
+            for (uint_fast32_t i = 1; i <= _par.processor_instances(); i++) {
+                pid_t pid = child_pids[i];
+                child_pids[i] = 0;
+                kill(pid, SIGTERM);
+            }
+        }
         ts_compl.join();
         t1.join();
 
@@ -133,6 +155,36 @@ public:
 
 private:
     std::unique_ptr<ComputeBuffer> _cb;
+
+    static void start_processor_task(int i) {
+        child_pids[i] = fork();
+        if (!child_pids[i]) {
+            std::stringstream s;
+            s << i;
+            execl(par->processor_executable().c_str(), s.str().c_str());
+            out.fatal() << "Could not start processor task '" << par->processor_executable()
+                        << " " << s.str() << "': " << strerror(errno);
+            exit(1);
+        }
+    };
+
+    static void child_handler(int sig) {
+        pid_t pid;
+        int status;
+
+        while((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+            /* Process with PID 'pid' has exited, handle it */
+            int idx = -1;
+            for (std::size_t i = 0; i != child_pids.size(); i++)
+                if (child_pids[i] == pid) idx = i;
+            if (idx < 0) {
+                //out.error() << "unknown child process died";
+            } else {
+                std::cerr << "child process " << idx << " died";
+                start_processor_task(idx);
+            }
+        }
+    };
 };
 
 

@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <csignal>
 #include <fstream>
 #include <iostream>
 #include <queue>
@@ -19,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include <sys/wait.h>
 #include <arpa/inet.h>
 #include <infiniband/arch.h>
 #include <netdb.h>
@@ -34,5 +36,6 @@
 #include <boost/thread.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/ipc/message_queue.hpp>
 
 #endif /* INCLUDE_HPP */

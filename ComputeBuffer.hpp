@@ -31,6 +31,9 @@ public:
     concurrent_queue<TimesliceWorkItem> _work_items;
     concurrent_queue<TimesliceCompletion> _completions;
 
+    std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
+    std::unique_ptr<boost::interprocess::message_queue> _completions_mq;
+
     /// The ComputeBuffer default constructor.
     ComputeBuffer() :
         _ack(par->cn_desc_buffer_size_exp())
@@ -69,12 +72,29 @@ public:
 
         VALGRIND_MAKE_MEM_DEFINED(_data_region->get_address(), _data_region->get_size());
         VALGRIND_MAKE_MEM_DEFINED(_desc_region->get_address(), _desc_region->get_size());
+
+        boost::interprocess::message_queue::remove("flesnet_work_items");
+        boost::interprocess::message_queue::remove("flesnet_completions");
+
+        std::unique_ptr<boost::interprocess::message_queue>
+            work_items_mq(new boost::interprocess::message_queue
+                          (boost::interprocess::create_only,
+                           "flesnet_work_items", 1000, sizeof(TimesliceWorkItem)));
+        _work_items_mq = std::move(work_items_mq);
+
+        std::unique_ptr<boost::interprocess::message_queue>
+            completions_mq(new boost::interprocess::message_queue
+                           (boost::interprocess::create_only,
+                            "flesnet_completions", 1000, sizeof(TimesliceCompletion)));
+        _completions_mq = std::move(completions_mq);
     }
 
     /// The ComputeBuffer destructor.
     ~ComputeBuffer() {
         boost::interprocess::shared_memory_object::remove("flesnet_data");
         boost::interprocess::shared_memory_object::remove("flesnet_desc");
+        boost::interprocess::message_queue::remove("flesnet_work_items");
+        boost::interprocess::message_queue::remove("flesnet_completions");
     }
 
     ///
@@ -140,16 +160,25 @@ public:
             break;
 
         case ID_SEND_FINALIZE: {
-            assert(_work_items.empty());
-            assert(_completions.empty());
+            if (par->processor_executable().empty()) {
+                assert(_work_items.empty());
+                assert(_completions.empty());
+            } else {
+                assert(_work_items_mq->get_num_msg() == 0);
+                assert(_completions_mq->get_num_msg() == 0);
+            }
             _conn[in]->on_complete_send();
             _conn[in]->on_complete_send_finalize();
             _connections_done++;
             _all_done = (_connections_done == _conn.size());
             out.debug() << "SEND FINALIZE complete for id " << in << " all_done=" << _all_done;
             if (_all_done) {
-                _work_items.stop();
-                _completions.stop();
+                if (par->processor_executable().empty()) {
+                    _work_items.stop();
+                    _completions.stop();
+                } else {
+                    _completions_mq->send(nullptr, 0, 0);
+                }
             }
         }
             break;
@@ -167,8 +196,15 @@ public:
                 _red_lantern = std::distance(std::begin(_conn), new_red_lantern);
 
                 for (uint64_t tpos = _completely_written; tpos < new_completely_written; tpos++) {
-                    TimesliceWorkItem wi = {tpos};
-                    _work_items.push(wi);
+                    TimesliceWorkItem wi = {tpos, par->timeslice_size(), par->overlap_size(),
+                                            static_cast<uint32_t>(_conn.size()),
+                                            par->cn_data_buffer_size_exp(),
+                                            par->cn_desc_buffer_size_exp()};
+                    if (par->processor_executable().empty()) {
+                        _work_items.push(wi);
+                    } else {
+                        _work_items_mq->send(&wi, sizeof(wi), 0);
+                    }
                 }
 
                 _completely_written = new_completely_written;
@@ -187,7 +223,15 @@ public:
         try {
             while (true) {
                 TimesliceCompletion c;
-                _completions.wait_and_pop(c);
+                if (par->processor_executable().empty()) {
+                    _completions.wait_and_pop(c);
+                } else {
+                    std::size_t recvd_size;
+                    unsigned int priority;
+                    _completions_mq->receive(&c, sizeof(c), recvd_size, priority);
+                    if (recvd_size == 0) return;
+                    assert(recvd_size == sizeof(c));
+                }
                 if (c.ts_pos == _acked) {
                     do
                         _acked++;

@@ -43,6 +43,9 @@ target_link_libraries(flesnet numa)
 target_link_libraries(flesnet ${Boost_PROGRAM_OPTIONS_LIBRARY})
 target_link_libraries(flesnet ${Boost_THREAD_LIBRARY})
 
+add_executable(pattern-check pattern-check.cpp)
+target_link_libraries(pattern-check rt)
+
 # Documentation
 include(FindDoxygen)
 if(DOXYGEN_FOUND)
