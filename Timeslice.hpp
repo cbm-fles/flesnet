@@ -85,7 +85,6 @@ struct InputNodeInfo {
     uint32_t index;
 };
 
-#pragma pack()
 
 struct TimesliceWorkItem {
     uint64_t ts_pos;
@@ -101,6 +100,7 @@ struct TimesliceCompletion {
     uint64_t ts_pos;
 };
 
+#pragma pack()
 
 /// Overloaded output operator for REQUEST_ID values.
 inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
