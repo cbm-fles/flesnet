@@ -160,30 +160,24 @@ public:
         _data_shm = std::unique_ptr<boost::interprocess::shared_memory_object>
             (new boost::interprocess::shared_memory_object
              (boost::interprocess::open_only, "flesnet_data", boost::interprocess::read_only));
-        std::cout << "1" << std::endl;
 
         _desc_shm = std::unique_ptr<boost::interprocess::shared_memory_object>
             (new boost::interprocess::shared_memory_object
              (boost::interprocess::open_only, "flesnet_desc", boost::interprocess::read_only));
-        std::cout << "2" << std::endl;
 
         _data_region = std::unique_ptr<boost::interprocess::mapped_region>
             (new boost::interprocess::mapped_region(*_data_shm, boost::interprocess::read_only));
-        std::cout << "3" << std::endl;
 
         _desc_region = std::unique_ptr<boost::interprocess::mapped_region>
             (new boost::interprocess::mapped_region(*_desc_shm, boost::interprocess::read_only));
-        std::cout << "4" << std::endl;
         
         _work_items_mq = std::unique_ptr<boost::interprocess::message_queue>
             (new boost::interprocess::message_queue
              (boost::interprocess::open_only, "flesnet_work_items"));
-        std::cout << "5" << std::endl;
 
         _completions_mq = std::shared_ptr<boost::interprocess::message_queue>
             (new boost::interprocess::message_queue
              (boost::interprocess::open_only, "flesnet_completions"));
-        std::cout << "6" << std::endl;
     }
 
     /// Receive the next timeslice, block if not yet available.
@@ -193,7 +187,6 @@ public:
         std::size_t recvd_size;
         unsigned int priority;
 
-        std::cout << "P" << std::endl;
         _work_items_mq->receive(&wi, sizeof(wi), recvd_size, priority);
         assert(recvd_size == sizeof(wi));
         
