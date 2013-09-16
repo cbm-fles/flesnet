@@ -87,12 +87,12 @@ struct InputNodeInfo {
 
 
 struct TimesliceWorkItem {
-    uint64_t ts_pos;
-    uint32_t timeslice_size;
-    uint32_t overlap_size;
-    uint32_t num_components;
-    uint32_t data_buffer_size_exp;
-    uint32_t desc_buffer_size_exp;
+    uint64_t ts_pos;                  ///< Start offset (in items) of this timeslice
+    uint32_t num_core_microslices;    ///< Number of core microslices
+    uint32_t num_overlap_microslices; ///< Number of overlapping microslices
+    uint32_t num_components;          ///< Number of components (contributing input channels)
+    uint32_t data_buffer_size_exp;    ///< Exp. size (in bytes) of each data buffer
+    uint32_t desc_buffer_size_exp;    ///< Exp. size (in bytes) of each descriptor buffer
 };
 
 

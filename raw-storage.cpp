@@ -29,7 +29,7 @@ void install_term_handler() {
 
 void store_timeslice(const fles::Timeslice& ts) {
     for (size_t c = 0; c < ts.num_components(); c++) {
-        for (size_t m = 0; m < ts.total_size(); m++) {
+        for (size_t m = 0; m < ts.num_microslices(); m++) {
             fwrite(&ts.descriptor(c, m), sizeof(fles::MicrosliceDescriptor), 1, fp);
             fwrite(ts.content(c, m), ts.descriptor(c, m).size, 1, fp);
         }
