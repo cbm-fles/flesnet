@@ -54,7 +54,7 @@ public:
   {
     // initialize FLIB
     _flib.add_link(0);
-    _flib.link[0]->set_data_rx_sel(cbm_link::pgen);
+    _flib.link[0]->set_data_rx_sel(cbm_link::emu);
 
     // setup fd for stopping driver
     _stop_fd = ::eventfd(0,0);
@@ -139,26 +139,26 @@ public:
 
   void ProcEvent()
   {
-    zmq::message_t zmq_r_msg;
-
     ctrl_msg cnet_r_msg;
     ctrl_msg cnet_s_msg;
    
-    // get incoming messsage
-    _driver_req.recv(&zmq_r_msg);
-    
-    cnet_s_msg.words = zmq_r_msg.size()/sizeof(uint16_t);
-    for (size_t i = 0; i< cnet_s_msg.words; i++) {
-      cnet_s_msg.data[i] = ((uint16_t*)zmq_r_msg.data())[i];
+    // get messsage
+    size_t msg_size = _driver_req.recv(cnet_s_msg.data, sizeof(cnet_s_msg.data));
+    if (msg_size > sizeof(cnet_s_msg.data)) {
+      cnet_s_msg.words = sizeof(cnet_s_msg.data)/sizeof(cnet_s_msg.data[0]);
+      std::cout << "message truncated" << std::endl;
     }
-
+    else {
+      cnet_s_msg.words = msg_size/sizeof(cnet_s_msg.data[0]);
+    }
+   
     //DEBUG
     for (size_t i = 0; i < cnet_s_msg.words; i++) {
-      printf("msg to send: 0x%04x\n", ((uint16_t*)zmq_r_msg.data())[i]);
+      printf("msg to send: 0x%04x\n", cnet_s_msg.data[i]);
     }
 
-      // receive to flush hw buffers
-    if ( _flib.link[0]->rcv_msg(&cnet_r_msg) == 0)  {
+    // receive to flush hw buffers
+    if ( _flib.link[0]->rcv_msg(&cnet_r_msg) != -1)  {
       printf("spurious message dropped\n");
     }
   
@@ -176,9 +176,8 @@ public:
       printf("msg received: 0x%04x\n", cnet_r_msg.data[i]);
     }
 
-    _driver_res.send(cnet_r_msg.data, cnet_r_msg.words*sizeof(uint16_t));
+    _driver_res.send(cnet_r_msg.data, cnet_r_msg.words*sizeof(cnet_r_msg.data[0]));
     return;
   }
-  
 
 };
