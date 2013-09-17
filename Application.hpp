@@ -130,7 +130,7 @@ public:
         }
         boost::thread ts_compl(&ComputeBuffer::handle_ts_completion, _cb.get());
 
-        _cb->accept(_par.base_port() + _par.node_index(), _par.input_nodes().size());
+        _cb->accept(_par.base_port() + _par.compute_indexes().at(0), _par.input_nodes().size());
         _cb->handle_cm_events(_par.input_nodes().size());
         boost::thread t1(&ComputeBuffer::handle_cm_events, _cb.get(), 0);
         auto time1 = std::chrono::high_resolution_clock::now();

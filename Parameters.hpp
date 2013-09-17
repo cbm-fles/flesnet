@@ -40,12 +40,6 @@ class Parameters
 {
 public:
 
-    /// The function of a node in timeslice building.
-    enum NodeType {
-        COMPUTE_NODE, ///< Node is a compute node.
-        INPUT_NODE    ///< Node is an input node.
-    };
-
     /// The Parameters command-line parsing constructor.
     Parameters(int argc, char* argv[]) {
         parse_options(argc, argv);
@@ -59,9 +53,14 @@ public:
            << _input_nodes << std::endl;
         st << "compute nodes (" << _compute_nodes.size() << "): "
            << _compute_nodes << std::endl;
-        st << "this node: "
-           << (_node_type == INPUT_NODE ? "input" : "compute")
-           << " node #" << _node_index;
+        for (auto input_index: _input_indexes) {
+            st << "this is input node " << input_index << " (of "
+               << _input_nodes.size() << ")" << std::endl;
+        }
+        for (auto compute_index: _compute_indexes) {
+            st << "this is compute node " << compute_index << " (of "
+               << _compute_nodes.size() << ")" << std::endl;
+        }
 
         return st.str();
     };
@@ -148,14 +147,14 @@ public:
         return _compute_nodes;
     };
     
-    /// Retrieve this node's type.
-    NodeType node_type() const {
-        return _node_type;
+    /// Retrieve this applications's indexes in the list of input nodes.
+    std::vector<unsigned> input_indexes() const {
+        return _input_indexes;
     };
 
-    /// Retrieve this node's index in the list of nodes of same type.
-    unsigned node_index() const {
-        return _node_index;
+    /// Retrieve this applications's indexes in the list of compute nodes.
+    std::vector<unsigned> compute_indexes() const {
+        return _compute_indexes;
     };
 
 private:
@@ -209,11 +208,11 @@ private:
     /// The list of participating compute nodes.
     std::vector<std::string> _compute_nodes;
 
-    /// This node's type.
-    NodeType _node_type;
+    /// This applications's indexes in the list of input nodes.
+    std::vector<unsigned> _input_indexes;
 
-    /// This node's index in the list of nodes of same type.
-    unsigned _node_index;
+    /// This applications's indexes in the list of compute nodes.
+    std::vector<unsigned> _compute_indexes;
 
     /// Parse command line options.
     void parse_options(int argc, char* argv[]) {
@@ -229,10 +228,10 @@ private:
 
         po::options_description config("Configuration");
         config.add_options()
-            ("input-node,i", po::value<unsigned>(&_node_index),
-             "act as input node with given index")
-            ("compute-node,c", po::value<unsigned>(&_node_index),
-             "act as compute node with given index")
+            ("input-index,i", po::value< std::vector<unsigned> >()->multitoken(),
+             "this application's index in the list of input nodes")
+            ("compute-index,c", po::value< std::vector<unsigned> >()->multitoken(),
+             "this application's index in the list of compute nodes")
             ("input-nodes,I",
              po::value< std::vector<std::string> >()->multitoken(),
              "add host to the list of input nodes")
@@ -297,31 +296,32 @@ private:
         _input_nodes = vm["input-nodes"].as< std::vector<std::string> >();
         _compute_nodes = vm["compute-nodes"].as< std::vector<std::string> >();
 
-        if (vm.count("input-node")) {
-            if (vm.count("compute-node")) {
-                throw ParametersException("more than one node type specifed");
-            } else {
-                if (_node_index < 0 || _node_index >= _input_nodes.size()) {
-                    std::ostringstream oss;
-                    oss << "node index (" << _node_index
-                        << ") out of range (0.."
-                        << _input_nodes.size() - 1 << ")";
-                    throw ParametersException(oss.str());
-                }
-                _node_type = INPUT_NODE;
+        if (vm.count("input-index"))
+            _input_indexes = vm["input-index"].as< std::vector<unsigned> >();
+        if (vm.count("compute-index"))
+            _compute_indexes = vm["compute-index"].as< std::vector<unsigned> >();
+
+        if (_input_nodes.empty() && _compute_nodes.empty()) {
+            throw ParametersException("no node type specified");
+        }
+
+        for (auto input_index: _input_indexes) {
+            if (input_index < 0 || input_index >= _input_nodes.size()) {
+                std::ostringstream oss;
+                oss << "input node index (" << input_index
+                    << ") out of range (0.."
+                    << _input_nodes.size() - 1 << ")";
+                throw ParametersException(oss.str());
             }
-        } else {
-            if (vm.count("compute-node")) {
-                if (_node_index < 0 || _node_index >= _compute_nodes.size()) {
-                    std::ostringstream oss;
-                    oss << "node index (" << _node_index
-                        << ") out of range (0.."
-                        << _compute_nodes.size() - 1 << ")";
-                    throw ParametersException(oss.str());
-                }
-                _node_type = COMPUTE_NODE;
-            } else {
-                throw ParametersException("no node type specifed");
+        }
+
+        for (auto compute_index: _compute_indexes) {
+            if (compute_index < 0 || compute_index >= _compute_nodes.size()) {
+                std::ostringstream oss;
+                oss << "compute node index (" << compute_index
+                    << ") out of range (0.."
+                    << _compute_nodes.size() - 1 << ")";
+                throw ParametersException(oss.str());
             }
         }
 
@@ -331,24 +331,29 @@ private:
                     << _input_nodes;
         out.debug() << "compute nodes (" << _compute_nodes.size() << "): "
                     << _compute_nodes;
-        out.info() << "this is "
-                   << (_node_type == INPUT_NODE ? "input" : "compute")
-                   << " node " << _node_index << " (of "
-                   << (_node_type == INPUT_NODE ? _input_nodes.size() :  _compute_nodes.size())
-                   << ")";
+        for (auto input_index: _input_indexes) {
+            out.info() << "this is input node " << input_index << " (of "
+                       << _input_nodes.size() << ")";
+        }
+        for (auto compute_index: _compute_indexes) {
+            out.info() << "this is compute node " << compute_index << " (of "
+                       << _compute_nodes.size() << ")";
+        }
 
-        if (_node_type == INPUT_NODE && _node_index == 0) {
-            out.info() << "microslice size: " << _typical_content_size << " bytes";
-            out.info() << "timeslice size: (" << _timeslice_size
-                       << " + " << _overlap_size << ") microslices";
-            out.info() << "number of timeslices: " << _max_timeslice_number;
-            out.info() << "input node buffer size: (" << (1 << _in_data_buffer_size_exp)
-                       << " + " <<  (1 << _in_desc_buffer_size_exp) * sizeof(MicrosliceDescriptor)
-                       << ") bytes";
-            out.info() << "compute node buffer size: ("
-                       << (1 << _cn_data_buffer_size_exp) << " + "
-                       << (1 << _cn_desc_buffer_size_exp) * sizeof(TimesliceComponentDescriptor)
-                       << ") bytes";
+        for (auto input_index: _input_indexes) {
+            if (input_index == 0) {
+                out.info() << "microslice size: " << _typical_content_size << " bytes";
+                out.info() << "timeslice size: (" << _timeslice_size
+                           << " + " << _overlap_size << ") microslices";
+                out.info() << "number of timeslices: " << _max_timeslice_number;
+                out.info() << "input node buffer size: (" << (1 << _in_data_buffer_size_exp) << " + "
+                           <<  (1 << _in_desc_buffer_size_exp) * sizeof(MicrosliceDescriptor)
+                           << ") bytes";
+                out.info() << "compute node buffer size: ("
+                           << (1 << _cn_data_buffer_size_exp) << " + "
+                           << (1 << _cn_desc_buffer_size_exp) * sizeof(TimesliceComponentDescriptor)
+                           << ") bytes";
+            }
         }
     }
 };

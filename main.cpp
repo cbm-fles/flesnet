@@ -47,7 +47,7 @@ main(int argc, char* argv[])
         std::unique_ptr<Parameters> parameters(new Parameters(argc, argv));
         par = std::move(parameters);
 
-        if (par->node_type() == Parameters::INPUT_NODE) {
+        if (!par->input_indexes().empty()) {
             std::unique_ptr<Application> app(new InputApplication(*par));
             _app = std::move(app);
         } else {

@@ -213,7 +213,7 @@ public:
         cn_info->data.rkey = _mr_data->rkey;
         cn_info->desc.addr = (uintptr_t) _desc_ptr;
         cn_info->desc.rkey = _mr_desc->rkey;
-        cn_info->index = par->node_index();
+        cn_info->index = par->compute_indexes().at(0);
 
         return private_data;
     }

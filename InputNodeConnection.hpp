@@ -315,7 +315,7 @@ public:
             private_data(new std::vector<uint8_t>(sizeof(InputNodeInfo)));
 
         InputNodeInfo* in_info = reinterpret_cast<InputNodeInfo*>(private_data->data());
-        in_info->index = par->node_index();
+        in_info->index = par->input_indexes().at(0);
 
         return private_data;
     }

@@ -83,6 +83,8 @@ public:
         const uint64_t min_written_mc = _desc_buffer.size() / 4;
         const uint64_t min_written_data = _data_buffer.bytes() / 4;
 
+        const uint64_t input_index = par->input_indexes().at(0);
+
         while (true) {
             // wait until significant space is available
             last_written_mc = written_mc;
@@ -129,10 +131,10 @@ DCOUNT[1]++;
                 // write to data buffer
                 if (generate_pattern) {
                     for (uint64_t i = 0; i < content_bytes; i+= sizeof(uint64_t)) {
-                        uint64_t data_word = ((uint64_t) par->node_index() << 48) | i;
+                        uint64_t data_word = (input_index << 48L) | i;
                         (uint64_t&) _data_buffer.at(written_data) = data_word;
                         written_data += sizeof(uint64_t);
-                        crc ^= (data_word & 0xffffffff) ^ (data_word >> 32);
+                        crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);
                     }
                 } else {
                     written_data += content_bytes;
