@@ -265,7 +265,11 @@ public:
   // bit 1 rst_pending_mc
   // bit 2 packer enable
 
-  void set_start_idx() {
+  void set_start_idx(uint64_t index) {
+    // set reset value
+    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG_IDX_L, (uint32_t)(index & 0xffffffff));
+    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG_IDX_H, (uint32_t)(index >> 32));
+    // reste mc counter 
     // TODO implenet edge detection and 'pulse only' in HW
     uint32_t mc_gen_cfg= _ch->getGTX(RORC_REG_GTX_MC_GEN_CFG);
     _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
@@ -287,6 +291,12 @@ public:
     uint64_t pend_mc = _ch->getGTX(RORC_REG_GTX_PENDING_MC_L);
     pend_mc = pend_mc | ((uint64_t)(_ch->getGTX(RORC_REG_GTX_PENDING_MC_H))<<32);
     return pend_mc;
+  }
+
+  uint64_t get_mc_index() {
+    uint64_t mc_index = _ch->getGTX(RORC_REG_GTX_MC_INDEX_L);
+    mc_index = mc_index | ((uint64_t)(_ch->getGTX(RORC_REG_GTX_MC_INDEX_H))<<32);
+    return mc_index;
   }
 
   // REG: datapath_cfg

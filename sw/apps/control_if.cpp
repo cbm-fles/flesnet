@@ -89,6 +89,12 @@ int main(int argc, char *argv[])
   printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
   MyFlib->link[0]->set_dlm_cfg(0x2, false);
 
+  printf("mc_index: %01x\n", MyFlib->link[0]->get_mc_index());
+  MyFlib->link[0]->set_start_idx(5);
+  
+  printf("mc_index: %01x\n", MyFlib->link[0]->get_mc_index());
+
+
   if (MyFlib)
     delete MyFlib;
   return 0;
