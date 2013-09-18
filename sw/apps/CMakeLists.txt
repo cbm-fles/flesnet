@@ -8,6 +8,8 @@ include_directories("${PROJECT_SOURCE_DIR}/../rorcfs/include")
 include_directories("${PROJECT_SOURCE_DIR}/../../../usbdaq-test/cbmnet/")
 #include_directories("${PROJECT_SOURCE_DIR}/../../../usbdaq-test/cbmnet/lib")
 
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=2)
+
 add_subdirectory("${PROJECT_SOURCE_DIR}/../lib" "${PROJECT_SOURCE_DIR}/../lib/build")
 
 add_executable(flib_control flib_control.cpp)

@@ -2,14 +2,16 @@
 
 #include <vector>
 #include <iostream>
+#include <iomanip>
 #include <cstdint>
 #include <sys/eventfd.h>
 
 #include <libflib.h>
 #include "zmq.hpp"
+#include "global.hpp"
 
 class FlibServer {
-
+  
   flib _flib;
   zmq::context_t& _zmq_context;
   zmq::socket_t _driver_req;
@@ -54,7 +56,7 @@ public:
   {
     // initialize FLIB
     _flib.add_link(0);
-    _flib.link[0]->set_data_rx_sel(cbm_link::emu);
+    _flib.link[0]->set_data_rx_sel(cbm_link::pgen);
 
     // setup fd for stopping driver
     _stop_fd = ::eventfd(0,0);
@@ -139,6 +141,8 @@ public:
 
   void ProcEvent()
   {
+    out.setVerbosity(einhard::DEBUG);
+
     ctrl_msg cnet_r_msg;
     ctrl_msg cnet_s_msg;
    
@@ -151,29 +155,31 @@ public:
     else {
       cnet_s_msg.words = msg_size/sizeof(cnet_s_msg.data[0]);
     }
-   
+
     //DEBUG
     for (size_t i = 0; i < cnet_s_msg.words; i++) {
-      printf("msg to send: 0x%04x\n", cnet_s_msg.data[i]);
+      out.debug() << "msg to send " << std::hex << std::setfill('0') 
+                  <<  "0x" << std::setw(4) << cnet_s_msg.data[i];
     }
-
+    
     // receive to flush hw buffers
     if ( _flib.link[0]->rcv_msg(&cnet_r_msg) != -1)  {
-      printf("spurious message dropped\n");
+      out.warn() << "sprious message dropped";
     }
   
     if ( _flib.link[0]->send_msg(&cnet_s_msg) < 0)  {
-      printf("sending message failed\n");
+      out.error() << "sending message failed";
     }                      
     
     // receive msg
     if ( _flib.link[0]->rcv_msg(&cnet_r_msg) < 0)  {
-      printf("receiving message failed\n");
+      out.error() << "receiving message failed";
     }
 
     //DEBUG
     for (size_t i = 0; i < cnet_r_msg.words; i++) {
-      printf("msg received: 0x%04x\n", cnet_r_msg.data[i]);
+      out.debug() << "msg received " << std::hex << std::setfill('0') 
+                  <<  "0x" << std::setw(4) << cnet_r_msg.data[i];
     }
 
     _driver_res.send(cnet_r_msg.data, cnet_r_msg.words*sizeof(cnet_r_msg.data[0]));
