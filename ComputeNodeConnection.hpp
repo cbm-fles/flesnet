@@ -116,6 +116,8 @@ public:
     }
 
     virtual void on_disconnected(struct rdma_cm_event* event) {
+        disconnect();
+
         if (_mr_recv) {
             ibv_dereg_mr(_mr_recv);
             _mr_recv = nullptr;
