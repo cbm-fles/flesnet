@@ -10,19 +10,21 @@ if [[ "$SLURMD_NODENAME" ]]; then
 
 	INLIST=(`grep "^[^#]*input-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/ /g'`)
 	CNLIST=(`grep "^[^#]*compute-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/ /g'`)
+	declare -a ARGS
 
 	for ((i=0; i<${#INLIST[@]}; i++)); do
 		if [[ ${INLIST[$i]} = $HOST ]]; then
-			"$DIR/flesnet" -i$i &
+			ARGS=("${ARGS[@]}" "-i$i")
 		fi
 	done
 
 	for ((i=0; i<${#CNLIST[@]}; i++)); do
 		if [[ ${CNLIST[$i]} = $HOST ]]; then
-			"$DIR/flesnet" -c$i &
+			ARGS=("${ARGS[@]}" "-c$i")
 		fi
 	done
-	wait
+
+	"$DIR/flesnet" "${ARGS[@]}"
 else
 	# started directly
 	COUNT=`grep -E "^[^#]*(input|compute)-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sort -u | wc -l`
