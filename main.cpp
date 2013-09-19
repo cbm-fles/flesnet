@@ -41,20 +41,32 @@ std::vector<pid_t> child_pids;
 int
 main(int argc, char* argv[])
 {
-    std::unique_ptr<Application> _app;
+    std::unique_ptr<InputApplication> _input_app;
+    std::unique_ptr<ComputeApplication> _compute_app;
+
+    boost::thread _input_thread;
+    boost::thread _compute_thread;
 
     try {
         std::unique_ptr<Parameters> parameters(new Parameters(argc, argv));
         par = std::move(parameters);
 
-        if (!par->input_indexes().empty()) {
-            std::unique_ptr<Application> app(new InputApplication(*par));
-            _app = std::move(app);
-        } else {
-            std::unique_ptr<Application> app(new ComputeApplication(*par));
-            _app = std::move(app);
+        if (!par->compute_indexes().empty()) {
+            _compute_app = std::unique_ptr<ComputeApplication>(new ComputeApplication(*par));
+            _compute_app->start();
         }
-        _app->run();
+
+        if (!par->input_indexes().empty()) {
+            _input_app = std::unique_ptr<InputApplication>(new InputApplication(*par));
+            _input_app->start();
+        }
+
+        if (_input_app)
+            _input_app->join();
+
+        if (_compute_app)
+            _compute_app->join();
+
     } catch (std::exception const& e) {
         out.fatal() << e.what();
         return EXIT_FAILURE;

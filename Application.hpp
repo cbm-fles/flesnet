@@ -31,12 +31,23 @@ public:
     explicit Application(Parameters const& par) : _par(par) { };
 
     /// The "main" function of an application.
-    virtual int run() = 0;
+    virtual void run() = 0;
+
+    void start() {
+        _thread = boost::thread(&Application::run, this);
+    }
+
+    void join() {
+        _thread.join();
+    }
     
 protected:
 
     /// The run parameters object.
     Parameters const& _par;
+
+    /// The application's primary thread object
+    boost::thread _thread;
 };
 
 
@@ -52,7 +63,7 @@ public:
     explicit InputApplication(Parameters& par) : Application(par) { };
     
     /// The "main" function of an input node application.
-    virtual int run() {
+    virtual void run() {
         set_cpu(0);
 
         std::vector<std::string> services;
@@ -77,7 +88,6 @@ public:
         t2.join();
 
         ib.summary(runtime);
-        return 0;
     };
 };
 
@@ -114,7 +124,7 @@ public:
     };
 
     /// The "main" function of a compute node application.
-    virtual int run() {
+    virtual void run() {
         //set_cpu(0);
 
         boost::thread_group analysis_threads;
@@ -150,7 +160,6 @@ public:
         t1.join();
 
         _cb->summary(runtime);
-        return 0;
     }
 
 private:
@@ -161,7 +170,7 @@ private:
         if (!child_pids[i]) {
             std::stringstream s;
             s << i;
-            execl(par->processor_executable().c_str(), s.str().c_str());
+            execl(par->processor_executable().c_str(), s.str().c_str(), (char*) 0);
             out.fatal() << "Could not start processor task '" << par->processor_executable()
                         << " " << s.str() << "': " << strerror(errno);
             exit(1);
