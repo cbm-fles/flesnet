@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <sys/eventfd.h>
 
-#include <libflib.h>
+#include <flib.h>
 #include "zmq.hpp"
 #include "global.hpp"
 

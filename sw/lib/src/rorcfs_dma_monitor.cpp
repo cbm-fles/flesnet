@@ -36,12 +36,12 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 
-#include "rorcfs.h"
-#include "../include/libflib/rorcfs_bar.hh"
-#include "../include/libflib/rorcfs_buffer.hh"
-#include "../include/libflib/rorcfs_dma_channel.hh"
-#include "../include/libflib/rorcfs_dma_monitor.hh"
-#include "../include/libflib/rorc_registers.h"
+#include "../include/flib/rorcfs.h"
+#include "../include/flib/rorcfs_bar.hh"
+#include "../include/flib/rorcfs_buffer.hh"
+#include "../include/flib/rorcfs_dma_channel.hh"
+#include "../include/flib/rorcfs_dma_monitor.hh"
+#include "../include/flib/rorc_registers.h"
 
 //#define MAX_PAYLOAD 128*1024
 

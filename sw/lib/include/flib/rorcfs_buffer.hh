@@ -25,6 +25,7 @@
 
 
 #include "rorcfs_device.hh"
+#include "rorcfs.h"
 
 /**
  * @class rorcfs_buffer

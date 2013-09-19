@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#include <libflib.h>
+#include <flib.h>
 
 int main()
 {

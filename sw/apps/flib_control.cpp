@@ -11,7 +11,7 @@
 #include <csignal>
 #include <syslog.h>
 
-#include <libflib.h>
+#include <flib.h>
 
 #include "mc_functions.h"
 

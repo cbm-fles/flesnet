@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <csignal>
 
-#include <libflib.h>
+#include <flib.h>
 
 #include "mc_functions.h"
 

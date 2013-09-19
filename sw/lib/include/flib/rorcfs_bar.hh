@@ -28,7 +28,6 @@
 #define _RORCLIB_RORCFS_BAR_H
 
 #include "rorcfs_device.hh"
-#include "rorcfs.h"
 #include <sys/stat.h>
 #include <pthread.h>
 

@@ -29,10 +29,10 @@
 #include <assert.h>
 #include <stdint.h>
 
-#include "../include/libflib/rorcfs_bar.hh"
-#include "../include/libflib/rorcfs_buffer.hh"
-#include "../include/libflib/rorc_registers.h"
-#include "../include/libflib/rorcfs_dma_channel.hh"
+#include "../include/flib/rorcfs_bar.hh"
+#include "../include/flib/rorcfs_buffer.hh"
+#include "../include/flib/rorc_registers.h"
+#include "../include/flib/rorcfs_dma_channel.hh"
 
 /** extern error number **/
 //extern int errno;

@@ -30,9 +30,10 @@
 #include <sys/wait.h>
 #include <stdint.h>
 
-#include "../include/libflib/rorcfs_bar.hh"
-#include "../include/libflib/rorcfs_device.hh"
-#include "../include/libflib/rorc_registers.h"
+#include "../include/flib/rorcfs.h"
+#include "../include/flib/rorcfs_bar.hh"
+#include "../include/flib/rorcfs_device.hh"
+#include "../include/flib/rorc_registers.h"
 
 /**
  * usleep time for FLI read polling

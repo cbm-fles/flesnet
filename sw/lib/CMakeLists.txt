@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 2.8.8)
 project(libflib)
 
 set(HW_DIR ${PROJECT_SOURCE_DIR}/../../hw)
-set(DRIVER_DIR ${PROJECT_SOURCE_DIR}/../rorcfs)
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3")
 
 set(LIB_SRC
@@ -14,16 +13,14 @@ set(LIB_SRC
  ${PROJECT_SOURCE_DIR}/src/rorcfs_dma_monitor.cpp
  )
 set(LIB_HDR
- ${DRIVER_DIR}/include/rorcfs.h
- ${PROJECT_SOURCE_DIR}/include/libflib.h
- ${PROJECT_SOURCE_DIR}/include/libflib/rorcfs_bar.hh
- ${PROJECT_SOURCE_DIR}/include/libflib/rorcfs_buffer.hh
- ${PROJECT_SOURCE_DIR}/include/libflib/rorcfs_device.hh
- ${PROJECT_SOURCE_DIR}/include/libflib/rorcfs_dma_channel.hh
- ${PROJECT_SOURCE_DIR}/include/libflib/rorcfs_dma_monitor.hh
+ ${PROJECT_SOURCE_DIR}/include/flib.h
+ ${PROJECT_SOURCE_DIR}/include/flib/rorcfs_bar.hh
+ ${PROJECT_SOURCE_DIR}/include/flib/rorcfs_buffer.hh
+ ${PROJECT_SOURCE_DIR}/include/flib/rorcfs_device.hh
+ ${PROJECT_SOURCE_DIR}/include/flib/rorcfs_dma_channel.hh
+ ${PROJECT_SOURCE_DIR}/include/flib/rorcfs_dma_monitor.hh
+ ${PROJECT_SOURCE_DIR}/include/flib/rorcfs.h
 )
-
-include_directories(${DRIVER_DIR}/include)
 
 add_library(flib SHARED ${LIB_HDR} ${LIB_SRC})
 add_library(flib-static STATIC ${LIB_HDR} ${LIB_SRC})
