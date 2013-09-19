@@ -7,7 +7,7 @@ void dump_raw(volatile uint64_t *buf, unsigned int size)
   }
 }
 
-void dump_report(volatile struct rb_entry *rb)
+void dump_report(volatile struct MicrosliceDescriptor *rb)
 {
   printf("Report addr=%p :\n"
          " hdr id  %02x\n"
@@ -59,7 +59,7 @@ void dump_mc_light(mc_desc* mc)
 // Dumps mc correponding to entry nr in report buffer
 // will not accout for wrapping, no range check
 void dump_mc_raw(volatile uint64_t *eb,
-		 volatile rb_entry *rb,
+		 volatile MicrosliceDescriptor *rb,
 		 unsigned int nr)
 {
   dump_report(rb + nr);

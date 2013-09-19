@@ -67,18 +67,13 @@ int main(int argc, char *argv[])
   int mc_limit = atoi(argv[1]);
 
   MyFlib = new flib(0);
+  
+  printf("links in flib %d\n", MyFlib->get_num_links());
 
-  MyFlib->add_link(0);
-
-  if(MyFlib->link[0]) {
-    printf("link set\n");
-  }
-  else {
-    printf("link not set\n");    
-  };
+  MyFlib->link[0]->init_dma(22, 20);
 
   uint64_t* eb = (uint64_t *)MyFlib->link[0]->ebuf()->getMem();
-  rb_entry* rb = (rb_entry *)MyFlib->link[0]->rbuf()->getMem();
+  MicrosliceDescriptor* rb = (MicrosliceDescriptor *)MyFlib->link[0]->rbuf()->getMem();
   uint32_t pending_acks = 0;
 
   hdr_config config = {};
@@ -134,10 +129,11 @@ int main(int argc, char *argv[])
       //printf("\n");
       break;
     }
-    //dump_report((rb_entry*)(mc_pair.first.rbaddr));
+    //dump_report((MicrosliceDescriptor*)(mc_pair.first.rbaddr));
     //dump_mc(&mc_pair.first);
 
-    if ((j & 0x3FFFFFF) == 0x3FFFFFF) {
+    //    if ((j & 0x3FFFFFF) == 0x3FFFFFF) {
+    if ((j & 0x3FFFFF) == 0x3FFFFF) {
       syslog(LOG_INFO, "%ld analysed\n", j);
       //      dump_mc_light(&mc_pair.first);
     }
@@ -148,6 +144,7 @@ int main(int argc, char *argv[])
     }
 
     if (s_interrupted) {
+      printf("analysed %d", j);
       break;
     }
     j++;

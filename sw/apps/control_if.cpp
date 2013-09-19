@@ -22,8 +22,6 @@ int main(int argc, char *argv[])
 {
   MyFlib = new flib(0);
 
-  MyFlib->add_link(0);
-
   if(MyFlib->link[0]) {
     printf("link set\n");
   }
@@ -39,6 +37,8 @@ int main(int argc, char *argv[])
   MyFlib->link[0]->set_data_rx_sel(cbm_link::pgen);
     
   printf("START\n");
+
+  std::cout << MyFlib->get_devinfo();
 
   size_t words = 4; // number of 16 Bit words in message
   uint16_t offset = 0;

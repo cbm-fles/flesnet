@@ -55,7 +55,6 @@ public:
   bool Start()
   {
     // initialize FLIB
-    _flib.add_link(0);
     _flib.link[0]->set_data_rx_sel(cbm_link::pgen);
 
     // setup fd for stopping driver
