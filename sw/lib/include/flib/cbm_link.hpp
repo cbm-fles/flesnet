@@ -65,173 +65,173 @@ public:
   
   //    struct mc_desc mc;
   
-    cbm_link(uint8_t channel, rorcfs_device* dev, rorcfs_bar* bar) 
-      :  _ebuf(NULL), _dbuf(NULL), _index(0), _last_index(0), _last_acked(0), _mc_nr(0), _wrap(0) { 
-      
-      _channel = channel;
-      _dev = dev;
-      // create DMA channel and bind to BAR1, no HW initialization is done here
-      _ch = new rorcfs_dma_channel();
-      _ch->init(bar, (_channel+1)*RORC_CHANNEL_OFFSET);
+  cbm_link(uint8_t channel, rorcfs_device* dev, rorcfs_bar* bar) 
+    :  _ebuf(NULL), _dbuf(NULL), _index(0), _last_index(0), _last_acked(0), _mc_nr(0), _wrap(0) { 
+    
+    _channel = channel;
+    _dev = dev;
+    // create DMA channel and bind to BAR1, no HW initialization is done here
+    _ch = new rorcfs_dma_channel();
+    _ch->init(bar, (_channel+1)*RORC_CHANNEL_OFFSET);
+  }
+  
+  ~cbm_link() {
+    if(_ch) {
+      // disable DMA Engine
+      _ch->setEnableEB(0);
+      // wait for pending transfers to complete (dma_busy->0)
+      //while( _ch->getDMABusy() ) TODO
+      usleep(100);
+      // disable RBDM
+      _ch->setEnableRB(0);
+      // disable DMA PKT
+      //TODO: if resetting DFIFO by setting 0x2 restart is impossible
+      _ch->setDMAConfig(0X00000000);
     }
-
-    ~cbm_link() {
-      if(_ch) {
-        // disable DMA Engine
-        _ch->setEnableEB(0);
-        // wait for pending transfers to complete (dma_busy->0)
-        //while( _ch->getDMABusy() ) TODO
-         usleep(100);
-        // disable RBDM
-        _ch->setEnableRB(0);
-        // disable DMA PKT
-        //TODO: if resetting DFIFO by setting 0x2 restart is impossible
-        _ch->setDMAConfig(0X00000000);
+    if(_ebuf){
+      if(_ebuf->deallocate() != 0) {
+        std::cout << "ERROR: ebuf->deallocate" << std::endl;
+        throw 1;
       }
-      if(_ebuf){
-        if(_ebuf->deallocate() != 0) {
-          std::cout << "ERROR: ebuf->deallocate" << std::endl;
-          throw 1;
-        }
-        delete _ebuf;
-        _ebuf = NULL;
+      delete _ebuf;
+      _ebuf = NULL;
+    }
+    if(_dbuf){
+      if(_dbuf->deallocate() != 0) {
+        std::cout << "ERROR: rbuf->deallocate" << std::endl;
+        throw 1;
       }
-      if(_dbuf){
-        if(_dbuf->deallocate() != 0) {
-          std::cout << "ERROR: rbuf->deallocate" << std::endl;
-          throw 1;
-        }
-        delete _dbuf;
-        _dbuf = NULL;
-      }
-      if(_ch) {
-        delete _ch;
-        _ch = NULL;
-      }
-    }  
-
+      delete _dbuf;
+      _dbuf = NULL;
+    }
+    if(_ch) {
+      delete _ch;
+      _ch = NULL;
+    }
+  }  
+  
   int init_dma(size_t log_ebufsize, size_t log_dbufsize) {
 
     // Buffer sizes in bytes
     unsigned long ebufsize = (((unsigned long)1) << log_ebufsize);
     unsigned long rbufsize = (((unsigned long)1) << log_dbufsize);
 
-        // create new DMA event buffer
-        _ebuf = new rorcfs_buffer();			
-        if (_ebuf->allocate(_dev, ebufsize, 2*_channel, 
-                            1, RORCFS_DMA_FROM_DEVICE)!=0) {
-            if (errno == EEXIST) {
-                printf("INFO: Buffer ebuf %d already exists, trying to connect ...\n", 2*_channel);
-                if ( _ebuf->connect(_dev, 2*_channel) != 0 ) {
-                    perror("ERROR: ebuf->connect");
-                    return -1;
-                }
-            } else {
-                perror("ERROR: ebuf->allocate");
-                return -1;
-            }
+    // create new DMA event buffer
+    _ebuf = new rorcfs_buffer();			
+    if (_ebuf->allocate(_dev, ebufsize, 2*_channel, 
+                        1, RORCFS_DMA_FROM_DEVICE)!=0) {
+      if (errno == EEXIST) {
+        printf("INFO: Buffer ebuf %d already exists, trying to connect ...\n", 2*_channel);
+        if ( _ebuf->connect(_dev, 2*_channel) != 0 ) {
+          perror("ERROR: ebuf->connect");
+          return -1;
         }
-        printf("INFO: pEBUF=%p, PhysicalSize=%ld MBytes, MappingSize=%ld MBytes,\n"
-               "    EndAddr=%p, nSGEntries=%ld\n", 
-               (void *)_ebuf->getMem(), _ebuf->getPhysicalSize() >> 20,
-               _ebuf->getMappingSize() >> 20, 
-               (uint8_t *)_ebuf->getMem() + _ebuf->getPhysicalSize(), 
-               _ebuf->getnSGEntries());
-
-        // create new DMA report buffer
-        _dbuf = new rorcfs_buffer();
-        if (_dbuf->allocate(_dev, rbufsize, 2*_channel+1, 
-                            1, RORCFS_DMA_FROM_DEVICE)!=0) {
-            if (errno == EEXIST) {
-                printf("INFO: Buffer rbuf %d already exists, trying to connect ...\n",
-                       2*_channel+1);
-                if (_dbuf->connect(_dev, 2*_channel+1) != 0) {
-                    perror("ERROR: rbuf->connect");
-                    return -1;
-                }
-            } else {
-                perror("ERROR: rbuf->allocate");
-                return -1;
-            }
-        }
-        printf("INFO: pRBUF=%p, PhysicalSize=%ld MBytes, MappingSize=%ld MBytes,\n"
-               "    EndAddr=%p, nSGEntries=%ld, MaxRBEntries=%ld\n", 
-               (void *)_dbuf->getMem(), _dbuf->getPhysicalSize() >> 20,
-               _dbuf->getMappingSize() >> 20, 
-               (uint8_t *)_dbuf->getMem() + _dbuf->getPhysicalSize(), 
-               _dbuf->getnSGEntries(), _dbuf->getMaxRBEntries() );
-
-        // prepare EventBufferDescriptorManager
-        // and ReportBufferDescriptorManage
-        // with scatter-gather list
-        if( _ch->prepareEB(_ebuf) < 0 ) {
-            perror("prepareEB()");
-            return -1;
-        }
-        if( _ch->prepareRB(_dbuf) < 0 ) {
-            perror("prepareRB()");
-            return -1;
-        }
-
-        if( _ch->configureChannel(_ebuf, _dbuf, 128) < 0) {
-            perror("configureChannel()");
-            return -1;
-        }
-
-        // clear eb for debugging
-        memset(_ebuf->getMem(), 0, _ebuf->getMappingSize());
-        // clear rb for polling
-        memset(_dbuf->getMem(), 0, _dbuf->getMappingSize());
-
-        _eb = (uint64_t *)_ebuf->getMem();
-        _db = (struct MicrosliceDescriptor *)_dbuf->getMem();
-        
-        // TODO check if sizes can be deduced from init velues
-        _dbsize = _dbuf->getPhysicalSize();
-        _dbentries = _dbuf->getMaxRBEntries();
-
-        // Enable desciptor buffers and dma engine
-        _ch->setEnableEB(1);
-        _ch->setEnableRB(1);
-        _ch->setDMAConfig( _ch->getDMAConfig() | 0x01 );
+      } else {
+        perror("ERROR: ebuf->allocate");
+        return -1;
+      }
+    }
+    printf("INFO: pEBUF=%p, PhysicalSize=%ld MBytes, MappingSize=%ld MBytes,\n"
+           "    EndAddr=%p, nSGEntries=%ld\n", 
+           (void *)_ebuf->getMem(), _ebuf->getPhysicalSize() >> 20,
+           _ebuf->getMappingSize() >> 20, 
+           (uint8_t *)_ebuf->getMem() + _ebuf->getPhysicalSize(), 
+           _ebuf->getnSGEntries());
     
-        return 0;
-    };
-
-    int enable_TODO() {
-      // hold data source here
-        return 0; 
-    }
-
-    int disable_TODO() {
-        return 0;
-    }
-  
-    std::pair<mc_desc, bool> get_mc() {
-        struct mc_desc mc;
-        if(_db[_index].idx > _mc_nr) { // mc_nr counts from 1 in HW
-          _mc_nr = _db[_index].idx;
-          mc.nr = _mc_nr;
-          mc.addr = _eb + _db[_index].offset/sizeof(uint64_t);
-          mc.size = _db[_index].size;
-          mc.rbaddr = (uint64_t *)&_db[_index];
-
-          // calculate next rb index
-          _last_index = _index;
-          if( _index < _dbentries-1 ) 
-            _index++;
-          else {
-            _wrap++;
-            _index = 0;
-          }
-          return std::make_pair(mc, true);
+    // create new DMA report buffer
+    _dbuf = new rorcfs_buffer();
+    if (_dbuf->allocate(_dev, rbufsize, 2*_channel+1, 
+                        1, RORCFS_DMA_FROM_DEVICE)!=0) {
+      if (errno == EEXIST) {
+        printf("INFO: Buffer rbuf %d already exists, trying to connect ...\n",
+               2*_channel+1);
+        if (_dbuf->connect(_dev, 2*_channel+1) != 0) {
+          perror("ERROR: rbuf->connect");
+          return -1;
         }
-        else
-          return std::make_pair(mc, false);
+      } else {
+        perror("ERROR: rbuf->allocate");
+        return -1;
+      }
     }
+    printf("INFO: pRBUF=%p, PhysicalSize=%ld MBytes, MappingSize=%ld MBytes,\n"
+           "    EndAddr=%p, nSGEntries=%ld, MaxRBEntries=%ld\n", 
+           (void *)_dbuf->getMem(), _dbuf->getPhysicalSize() >> 20,
+           _dbuf->getMappingSize() >> 20, 
+           (uint8_t *)_dbuf->getMem() + _dbuf->getPhysicalSize(), 
+           _dbuf->getnSGEntries(), _dbuf->getMaxRBEntries() );
+
+    // prepare EventBufferDescriptorManager
+    // and ReportBufferDescriptorManage
+    // with scatter-gather list
+    if( _ch->prepareEB(_ebuf) < 0 ) {
+      perror("prepareEB()");
+      return -1;
+    }
+    if( _ch->prepareRB(_dbuf) < 0 ) {
+      perror("prepareRB()");
+      return -1;
+    }
+    
+    if( _ch->configureChannel(_ebuf, _dbuf, 128) < 0) {
+      perror("configureChannel()");
+      return -1;
+    }
+    
+    // clear eb for debugging
+    memset(_ebuf->getMem(), 0, _ebuf->getMappingSize());
+    // clear rb for polling
+    memset(_dbuf->getMem(), 0, _dbuf->getMappingSize());
+    
+    _eb = (uint64_t *)_ebuf->getMem();
+    _db = (struct MicrosliceDescriptor *)_dbuf->getMem();
+    
+    // TODO check if sizes can be deduced from init velues
+    _dbsize = _dbuf->getPhysicalSize();
+    _dbentries = _dbuf->getMaxRBEntries();
+    
+    // Enable desciptor buffers and dma engine
+    _ch->setEnableEB(1);
+    _ch->setEnableRB(1);
+    _ch->setDMAConfig( _ch->getDMAConfig() | 0x01 );
+    
+    return 0;
+  };
+  
+  int enable_TODO() {
+    // hold data source here
+    return 0; 
+  }
+  
+  int disable_TODO() {
+    return 0;
+  }
+  
+  std::pair<mc_desc, bool> get_mc() {
+    struct mc_desc mc;
+    if(_db[_index].idx > _mc_nr) { // mc_nr counts from 1 in HW
+      _mc_nr = _db[_index].idx;
+      mc.nr = _mc_nr;
+      mc.addr = _eb + _db[_index].offset/sizeof(uint64_t);
+      mc.size = _db[_index].size;
+      mc.rbaddr = (uint64_t *)&_db[_index];
+      
+      // calculate next rb index
+      _last_index = _index;
+      if( _index < _dbentries-1 ) 
+        _index++;
+      else {
+        _wrap++;
+        _index = 0;
+      }
+      return std::make_pair(mc, true);
+    }
+    else
+      return std::make_pair(mc, false);
+  }
   
   int ack_mc() {
-        
+    
     // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
     // to calculate end wrapping logic is required
     uint64_t eb_offset = _db[_last_index].offset;
@@ -277,7 +277,7 @@ public:
     _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
     _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
   }
-
+  
   void enable_cbmnet_packer(bool enable) {
     _ch->set_bitGTX(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
   }
@@ -293,7 +293,7 @@ public:
     mc_index = mc_index | ((uint64_t)(_ch->getGTX(RORC_REG_GTX_MC_INDEX_H))<<32);
     return mc_index;
   }
-
+  
   // REG: datapath_cfg
   // bit 0-1 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
   enum data_rx_sel {disable, link, pgen, emu};
@@ -313,7 +313,7 @@ public:
   }
 
   // Control Interface ////////////////////////////
-
+  
   int send_msg(const struct ctrl_msg* msg) {
     // TODO: could also implement blocking call 
     //       and check if sending is done at the end
@@ -336,7 +336,7 @@ public:
     printf("set ctrl_tx: %08x\n", ctrl_tx);
     
     return 0;
-}
+  }
 
   int rcv_msg(struct ctrl_msg* msg) {
     
@@ -383,22 +383,22 @@ public:
     uint8_t type = (reg>>5) & 0xF;
     return type;
   }
-
+  
   void clr_dlm() {
     _ch->setGTX(RORC_REG_GTX_DLM, 1<<31);
   }
-
-    rorcfs_buffer* ebuf() const {
-        return _ebuf;
-    }
-
-    rorcfs_buffer* rbuf() const {
-        return _dbuf;
-    }
-
-    rorcfs_dma_channel* get_ch() const {
-        return _ch;
-    }
+  
+  rorcfs_buffer* ebuf() const {
+    return _ebuf;
+  }
+  
+  rorcfs_buffer* rbuf() const {
+    return _dbuf;
+  }
+  
+  rorcfs_dma_channel* get_ch() const {
+    return _ch;
+  }
 };
 
 #endif // CBM_LINK_HPP
