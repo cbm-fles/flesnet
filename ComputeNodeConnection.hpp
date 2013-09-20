@@ -17,13 +17,14 @@ class ComputeNodeConnection : public IBConnection
 public:
     ComputeNodeConnection(struct rdma_event_channel* ec,
                           uint_fast16_t index,
+                          uint_fast16_t remote_index,
                           struct rdma_cm_id* id,
                           InputNodeInfo remote_info,
                           uint8_t* data_ptr,
                           std::size_t data_bytes,
                           TimesliceComponentDescriptor* desc_ptr,
                           std::size_t desc_bytes) :
-        IBConnection(ec, index, id),
+        IBConnection(ec, index, remote_index, id),
         _remote_info(remote_info),
         _data_ptr(data_ptr),
         _data_bytes(data_bytes),
@@ -215,7 +216,7 @@ public:
         cn_info->data.rkey = _mr_data->rkey;
         cn_info->desc.addr = (uintptr_t) _desc_ptr;
         cn_info->desc.rkey = _mr_desc->rkey;
-        cn_info->index = par->compute_indexes().at(0);
+        cn_info->index = _remote_index;
 
         return private_data;
     }

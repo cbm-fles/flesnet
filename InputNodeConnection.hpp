@@ -18,8 +18,8 @@ public:
 
     /// The InputNodeConnection constructor.
     InputNodeConnection(struct rdma_event_channel* ec, uint_fast16_t index,
-                        struct rdma_cm_id* id = 0) :
-        IBConnection(ec, index, id)
+                        uint_fast16_t remote_index, struct rdma_cm_id* id = nullptr) :
+        IBConnection(ec, index, remote_index, id)
     {
         _qp_cap.max_send_wr = 8000; // typical hca maximum: 16k
         _qp_cap.max_send_sge = 4; // max. two chunks each for descriptors and data
@@ -315,7 +315,7 @@ public:
             private_data(new std::vector<uint8_t>(sizeof(InputNodeInfo)));
 
         InputNodeInfo* in_info = reinterpret_cast<InputNodeInfo*>(private_data->data());
-        in_info->index = par->input_indexes().at(0);
+        in_info->index = _remote_index;
 
         return private_data;
     }

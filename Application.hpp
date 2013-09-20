@@ -71,7 +71,7 @@ public:
             services.push_back(boost::lexical_cast<std::string>
                                (_par.base_port() + i));
 
-        InputBuffer ib;
+        InputBuffer ib(_par.input_indexes().at(0));
 
         ib.connect(_par.compute_nodes(), services);
         ib.handle_cm_events(_par.compute_nodes().size());
@@ -112,7 +112,7 @@ public:
         numa_bind(nodemask);
         numa_free_nodemask(nodemask);
 
-        std::unique_ptr<ComputeBuffer> cb(new ComputeBuffer());
+        std::unique_ptr<ComputeBuffer> cb(new ComputeBuffer(_par.compute_indexes().at(0)));
         _cb = std::move(cb);
 
         /* Establish SIGCHLD handler. */

@@ -17,10 +17,11 @@ class InputBuffer : public IBConnectionGroup<InputNodeConnection>
 public:
 
     /// The InputBuffer default constructor.
-    InputBuffer() :
+    InputBuffer(uint64_t input_index) :
+        _input_index(input_index),
         _data(par->in_data_buffer_size_exp()),
         _desc(par->in_desc_buffer_size_exp()),
-        _data_source(_data, _desc)
+        _data_source(_data, _desc, input_index)
     {
         size_t min_ack_buffer_size = _desc.size() / par->timeslice_size() + 1;
         _ack.alloc_with_size(min_ack_buffer_size);
@@ -88,8 +89,25 @@ public:
         out.debug() << "SENDER loop done";
     }
 
+    /// Initiate connection requests to list of target hostnames.
+    /**
+       \param hostnames The list of target hostnames
+       \param services  The list of target services or port numbers
+    */
+    void connect(const std::vector<std::string>& hostnames,
+                 const std::vector<std::string>& services) {
+        _hostnames = hostnames;
+        _services = services;
+        for (unsigned int i = 0; i < hostnames.size(); i++) {
+            std::unique_ptr<InputNodeConnection> connection
+                (new InputNodeConnection(_ec, i, _input_index));
+            connection->connect(hostnames[i], services[i]);
+            _conn.push_back(std::move(connection));
+        }
+    };
 
 private:
+    uint64_t _input_index;
 
     /// Input data buffer. Filled by FLIB.
     RingBuffer<> _data;
@@ -115,6 +133,9 @@ private:
     /// Data source (e.g., FLIB).
     DummyFlib _data_source;
     
+    std::vector<std::string> _hostnames;
+    std::vector<std::string> _services;
+
     /// Return target computation node for given timeslice.
     int target_cn_index(uint64_t timeslice) {
         return timeslice % _conn.size();
@@ -161,7 +182,8 @@ private:
         _conn.at(i) = nullptr;
 
         // immediately initiate retry
-        std::unique_ptr<InputNodeConnection> connection(new InputNodeConnection(_ec, i));
+        std::unique_ptr<InputNodeConnection> connection
+            (new InputNodeConnection(_ec, i, _input_index));
         connection->connect(_hostnames[i], _services[i]);
         _conn.at(i) = std::move(connection);
     }

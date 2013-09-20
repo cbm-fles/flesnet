@@ -13,9 +13,11 @@ class DataSource
 public:
     /// The DataSource constructor.
     DataSource(RingBuffer<>& data_buffer,
-               RingBuffer<MicrosliceDescriptor>& desc_buffer) :
+               RingBuffer<MicrosliceDescriptor>& desc_buffer,
+               uint64_t input_index) :
         _data_buffer(data_buffer),
-        _desc_buffer(desc_buffer) { };
+        _desc_buffer(desc_buffer),
+        _input_index(input_index) { };
     
     virtual uint64_t wait_for_data(uint64_t min_mcNumber) = 0;
 
@@ -27,6 +29,9 @@ protected:
 
     /// Input descriptor buffer.
     RingBuffer<MicrosliceDescriptor>& _desc_buffer;
+
+    /// This node's index in the list of input nodes
+    uint64_t _input_index;
 };
 
 
@@ -36,8 +41,9 @@ class DummyFlib : public DataSource, public ThreadContainer
 public:
     /// The DummyFlib constructor.
     DummyFlib(RingBuffer<>& data_buffer,
-              RingBuffer<MicrosliceDescriptor>& desc_buffer) :
-        DataSource(data_buffer, desc_buffer),
+              RingBuffer<MicrosliceDescriptor>& desc_buffer,
+              uint64_t input_index) :
+        DataSource(data_buffer, desc_buffer, input_index),
         _pd(par->typical_content_size()),
         _rand_content_bytes(_rng, _pd)
     {
@@ -82,8 +88,6 @@ public:
 
         const uint64_t min_written_mc = _desc_buffer.size() / 4;
         const uint64_t min_written_data = _data_buffer.bytes() / 4;
-
-        const uint64_t input_index = par->input_indexes().at(0);
 
         while (true) {
             // wait until significant space is available
@@ -131,7 +135,7 @@ DCOUNT[1]++;
                 // write to data buffer
                 if (generate_pattern) {
                     for (uint64_t i = 0; i < content_bytes; i+= sizeof(uint64_t)) {
-                        uint64_t data_word = (input_index << 48L) | i;
+                        uint64_t data_word = (_input_index << 48L) | i;
                         (uint64_t&) _data_buffer.at(written_data) = data_word;
                         written_data += sizeof(uint64_t);
                         crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);

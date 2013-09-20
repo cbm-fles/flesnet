@@ -14,6 +14,8 @@
 
 class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
 {
+    uint64_t _compute_index;
+
     size_t _red_lantern = 0;
     uint64_t _completely_written = 0;
     uint64_t _acked = 0;
@@ -35,7 +37,8 @@ public:
     std::unique_ptr<boost::interprocess::message_queue> _completions_mq;
 
     /// The ComputeBuffer default constructor.
-    ComputeBuffer() :
+    ComputeBuffer(uint64_t compute_index) :
+        _compute_index(compute_index),
         _ack(par->cn_desc_buffer_size_exp())
     {
         boost::interprocess::shared_memory_object::remove("flesnet_data");
@@ -138,9 +141,9 @@ public:
         std::size_t desc_bytes = (1 << par->cn_desc_buffer_size_exp())
             * sizeof(TimesliceComponentDescriptor);
 
-        std::unique_ptr<ComputeNodeConnection> conn(new ComputeNodeConnection
-                                                    (_ec, index, event->id, remote_info,
-                                                     data_ptr, data_bytes, desc_ptr, desc_bytes));
+        std::unique_ptr<ComputeNodeConnection> conn
+            (new ComputeNodeConnection(_ec, index, _compute_index, event->id, remote_info,
+                                       data_ptr, data_bytes, desc_ptr, desc_bytes));
         _conn.at(index) = std::move(conn);
 
         _conn.at(index)->on_connect_request(event, _pd, _cq);

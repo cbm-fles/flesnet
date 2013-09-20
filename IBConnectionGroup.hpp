@@ -61,22 +61,6 @@ public:
         rdma_destroy_event_channel(_ec);
     };
     
-    /// Initiate connection requests to list of target hostnames.
-    /**
-       \param hostnames The list of target hostnames
-       \param services  The list of target services or port numbers
-    */
-    void connect(const std::vector<std::string>& hostnames,
-                 const std::vector<std::string>& services) {
-        _hostnames = hostnames;
-        _services = services;
-        for (unsigned int i = 0; i < _hostnames.size(); i++) {
-            std::unique_ptr<CONNECTION> connection(new CONNECTION(_ec, i));
-            connection->connect(_hostnames[i], _services[i]);
-            _conn.push_back(std::move(connection));
-        }
-    };
-
     void accept(unsigned short port, unsigned int count) {
         _conn.resize(count);
 
@@ -252,9 +236,6 @@ protected:
 
     /// RDMA event channel
     struct rdma_event_channel* _ec = nullptr;
-
-    std::vector<std::string> _hostnames;
-    std::vector<std::string> _services;
 
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
     virtual void on_addr_resolved(struct rdma_cm_id* id) {

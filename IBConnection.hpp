@@ -31,8 +31,9 @@ public:
 
     /// The IBConnection constructor. Creates a connection manager ID.
     IBConnection(struct rdma_event_channel* ec, uint_fast16_t index,
-                 struct rdma_cm_id* id = nullptr) :
+                 uint_fast16_t remote_index, struct rdma_cm_id* id = nullptr) :
         _index(index),
+        _remote_index(remote_index),
         _cm_id(id)
     {
         if (!_cm_id) {
@@ -213,9 +214,14 @@ public:
         }
     };
 
-    /// Retrieve index of this connection in the connection group.
+    /// Retrieve index of this connection in the local connection group.
     uint_fast16_t index() const {
         return _index;
+    };
+
+    /// Retrieve index of this connection in the remote connection group.
+    uint_fast16_t remote_index() const {
+        return _remote_index;
     };
 
     bool done() const {
@@ -239,8 +245,11 @@ public:
 
 protected:
 
-    /// Index of this connection in a group of connections.
-    uint_fast16_t _index = UINT_FAST16_MAX;
+    /// Index of this connection in the local group of connections.
+    uint_fast16_t _index;
+
+    /// Index of this connection in the remote group of connections.
+    uint_fast16_t _remote_index;
 
     /// Flag indicating connection finished state.
     bool _done = false;
