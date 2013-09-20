@@ -1,3 +1,5 @@
+
+using namespace flib;
 // DUMP functions
 void dump_raw(volatile uint64_t *buf, unsigned int size)
 {
@@ -97,8 +99,6 @@ int process_mc(mc_desc* mc) {
     uint64_t  idx;     // "Microslice index"
   };
   
-  int error = 0;
-  uint64_t mc_nr = mc->nr;
   uint32_t mc_size = mc->size; // bytes
   volatile uint64_t* mc_word = mc->addr;
   
@@ -136,7 +136,7 @@ int process_mc(mc_desc* mc) {
     // first and second 
     uint8_t cneth_wrd_cnt = cnet_word[w] & 0xff;
     uint8_t cneth_msg_cnt = (cnet_word[w] >> 8) & 0xff;
-    uint16_t cnet_src_addr = cnet_word[w+1];
+    //    uint16_t cnet_src_addr = cnet_word[w+1];
     w +=2;
 
     // check header message count

@@ -10,9 +10,11 @@
 #include "zmq.hpp"
 #include "global.hpp"
 
+using namespace flib;
+
 class FlibServer {
   
-  flib _flib;
+  flib_device _flib;
   zmq::context_t& _zmq_context;
   zmq::socket_t _driver_req;
   zmq::socket_t _driver_res;
@@ -55,7 +57,7 @@ public:
   bool Start()
   {
     // initialize FLIB
-    _flib.link[0]->set_data_rx_sel(cbm_link::pgen);
+    _flib.link[0]->set_data_rx_sel(flib_link::pgen);
 
     // setup fd for stopping driver
     _stop_fd = ::eventfd(0,0);

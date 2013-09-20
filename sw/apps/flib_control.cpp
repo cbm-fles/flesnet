@@ -17,7 +17,7 @@
 
 using namespace std;
 
-flib* MyFlib = NULL;
+flib_device* MyFlib = NULL;
 
 void fnExit (void)
 {
@@ -64,15 +64,17 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  int mc_limit = atoi(argv[1]);
+  //int mc_limit = atoi(argv[1]);
 
-  MyFlib = new flib(0);
+  MyFlib = new flib_device(0);
   
-  printf("links in flib %d\n", MyFlib->get_num_links());
+  MyFlib->link[0]->init_dma(create_only, 22, 20);
+  //MyFlib->link[0]->init_dma(22, 20);
 
-  MyFlib->link[0]->init_dma(22, 20);
+  std::cout << MyFlib->link[0]->get_ebuf_info() << std::endl;
+  std::cout << MyFlib->link[0]->get_dbuf_info() << std::endl;
 
-  uint64_t* eb = (uint64_t *)MyFlib->link[0]->ebuf()->getMem();
+  //  uint64_t* eb = (uint64_t *)MyFlib->link[0]->ebuf()->getMem();
   MicrosliceDescriptor* rb = (MicrosliceDescriptor *)MyFlib->link[0]->rbuf()->getMem();
   uint32_t pending_acks = 0;
 
@@ -87,7 +89,7 @@ int main(int argc, char *argv[])
   syslog(LOG_NOTICE, "misc datapath cfg: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_DATAPATH_CFG));
   syslog(LOG_NOTICE, "pending mc: %016lx\n", MyFlib->link[0]->get_pending_mc());
   
-  MyFlib->link[0]->set_data_rx_sel(cbm_link::pgen);
+  MyFlib->link[0]->set_data_rx_sel(flib_link::pgen);
   MyFlib->link[0]->enable_cbmnet_packer(true);
 
   // enable mc gen
@@ -133,7 +135,7 @@ int main(int argc, char *argv[])
     //dump_mc(&mc_pair.first);
 
     //    if ((j & 0x3FFFFFF) == 0x3FFFFFF) {
-    if ((j & 0x3FFFFF) == 0x3FFFFF) {
+    if ((j & 0x3FFFF) == 0x3FFFF) {
       syslog(LOG_INFO, "%ld analysed\n", j);
       //      dump_mc_light(&mc_pair.first);
     }
@@ -144,7 +146,7 @@ int main(int argc, char *argv[])
     }
 
     if (s_interrupted) {
-      printf("analysed %d", j);
+      printf("analysed %ld", j);
       break;
     }
     j++;

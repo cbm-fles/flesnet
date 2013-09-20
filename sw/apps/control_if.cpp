@@ -14,13 +14,13 @@
 
 #include "mc_functions.h"
 
-using namespace std;
+using namespace flib;
 
-flib* MyFlib = NULL;
+flib_device* MyFlib = NULL;
 
 int main(int argc, char *argv[])
 {
-  MyFlib = new flib(0);
+  MyFlib = new flib_device(0);
 
   if(MyFlib->link[0]) {
     printf("link set\n");
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
   printf("Firmware Date: %08x\n", MyFlib->get_reg(RORC_REG_FIRMWARE_DATE));
   printf("r_ctrl_tx: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_CTRL_TX));
 
-  MyFlib->link[0]->set_data_rx_sel(cbm_link::pgen);
+  MyFlib->link[0]->set_data_rx_sel(flib_link::pgen);
     
   printf("START\n");
 
@@ -89,10 +89,10 @@ int main(int argc, char *argv[])
   printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
   MyFlib->link[0]->set_dlm_cfg(0x2, false);
 
-  printf("mc_index: %01x\n", MyFlib->link[0]->get_mc_index());
+  printf("mc_index: %01lx\n", MyFlib->link[0]->get_mc_index());
   MyFlib->link[0]->set_start_idx(5);
   
-  printf("mc_index: %01x\n", MyFlib->link[0]->get_mc_index());
+  printf("mc_index: %01lx\n", MyFlib->link[0]->get_mc_index());
 
 
   if (MyFlib)
