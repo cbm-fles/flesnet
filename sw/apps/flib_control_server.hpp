@@ -12,7 +12,7 @@
 
 using namespace flib;
 
-class FlibServer {
+class flib_control_server {
   
   flib_device _flib;
   zmq::context_t& _zmq_context;
@@ -33,7 +33,7 @@ class FlibServer {
 public:
   
 
-  FlibServer(zmq::context_t&  context)
+  flib_control_server(zmq::context_t&  context)
     :       _flib(0),
             _zmq_context(context),
             _driver_req(context, ZMQ_PULL),
@@ -42,7 +42,7 @@ public:
             _driver_state(DriverStateStopped)
   { }
   
-  ~FlibServer()
+  ~flib_control_server()
   {
     Stop();
   }
@@ -79,7 +79,7 @@ public:
     _poll_items.push_back(zpi);
 
     // start driver thread
-    _driver_thread =  boost::thread(boost::bind(&FlibServer::Driver, this));
+    _driver_thread =  boost::thread(boost::bind(&flib_control_server::Driver, this));
     
     return true;
   }

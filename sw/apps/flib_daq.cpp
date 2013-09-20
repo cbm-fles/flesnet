@@ -6,7 +6,7 @@
 #include "../../../usbdaq-test/cbmnet/control/libserver/ControlServer.hpp"
 
 #include "global.hpp"
-#include "FlibServer.hpp"
+#include "flib_control_server.hpp"
 
 int s_interrupted = 0;
 static void s_signal_handler (int signal_value)
@@ -33,7 +33,7 @@ int main(int argc, const char* argv[])
 
   zmq::context_t zmq_context(1);
 
-  FlibServer flibserver(zmq_context);
+  flib_control_server flibserver(zmq_context);
   flibserver.Bind();
   flibserver.Start();
   
