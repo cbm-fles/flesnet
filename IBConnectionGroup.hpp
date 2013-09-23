@@ -233,6 +233,8 @@ public:
 
 protected:
 
+    const uint32_t _num_cqe = 1000000;
+
     /// InfiniBand protection domain.
     struct ibv_pd* _pd = nullptr;
 
@@ -311,7 +313,7 @@ protected:
         if (!_comp_channel)
             throw InfinibandException("ibv_create_comp_channel failed");
 
-        _cq = ibv_create_cq(context, par->num_cqe(), NULL, _comp_channel, 0);
+        _cq = ibv_create_cq(context, _num_cqe, NULL, _comp_channel, 0);
         if (!_cq)
             throw InfinibandException("ibv_create_cq failed");
 

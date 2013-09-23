@@ -122,7 +122,7 @@ public:
         // limit pending write requests so that send queue and completion queue do not overflow
         unsigned int max_pending_write_requests =
             std::min(static_cast<unsigned int>((max_send_wr - 1) / 3),
-                     static_cast<unsigned int>((par->num_cqe() - 1) / _compute_hostnames.size()));
+                     static_cast<unsigned int>((_num_cqe - 1) / _compute_hostnames.size()));
 
         std::unique_ptr<InputNodeConnection> connection
             (new InputNodeConnection(_ec, index, _input_index, max_send_wr,
