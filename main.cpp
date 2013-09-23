@@ -27,7 +27,7 @@
 #include "IBConnectionGroup.hpp"
 #include "InputNodeConnection.hpp"
 #include "DataSource.hpp"
-#include "InputBuffer.hpp"
+#include "InputChannelSender.hpp"
 #include "ComputeNodeConnection.hpp"
 #include "concurrent_queue.hpp"
 #include "ComputeBuffer.hpp"

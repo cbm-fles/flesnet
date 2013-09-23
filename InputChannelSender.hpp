@@ -1,23 +1,23 @@
 /**
- * \file InputBuffer.hpp
+ * \file InputChannelSender.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#ifndef INPUTBUFFER_HPP
-#define INPUTBUFFER_HPP
+#ifndef INPUTCHANNELSENDER_HPP
+#define INPUTCHANNELSENDER_HPP
 
 /// Input buffer and compute node connection container class.
-/** An InputBuffer object represents an input buffer (filled by a
+/** An InputChannelSender object represents an input buffer (filled by a
     FLIB) and a group of timeslice building connections to compute
     nodes. */
 
-class InputBuffer : public IBConnectionGroup<InputNodeConnection>
+class InputChannelSender : public IBConnectionGroup<InputNodeConnection>
 {
 public:
 
-    /// The InputBuffer default constructor.
-    InputBuffer(uint64_t input_index,
+    /// The InputChannelSender default constructor.
+    InputChannelSender(uint64_t input_index,
                 DataSource& data_source,
                 const std::vector<std::string>& compute_hostnames,
                 const std::vector<std::string>& compute_services,
@@ -39,8 +39,8 @@ public:
         VALGRIND_MAKE_MEM_DEFINED(_data_source.desc_buffer().ptr(), _data_source.desc_buffer().bytes());
     }
 
-    /// The InputBuffer default destructor.
-    virtual ~InputBuffer() {
+    /// The InputChannelSender default destructor.
+    virtual ~InputChannelSender() {
         if (_mr_desc) {
             ibv_dereg_mr(_mr_desc);
             _mr_desc = nullptr;
@@ -57,12 +57,13 @@ public:
 
         connect();
         handle_cm_events(_compute_hostnames.size());
-        boost::thread t1(&InputBuffer::completion_handler, this);
+        boost::thread t1(&InputChannelSender::completion_handler, this);
 
         sender_loop();
 
         t1.join();
-        boost::thread t2(&InputBuffer::handle_cm_events, this, 0);
+
+        boost::thread t2(&InputChannelSender::handle_cm_events, this, 0);
         disconnect();
         t2.join();
 
@@ -83,7 +84,8 @@ public:
             _data_source.wait_for_data(mc_offset + mc_length + 1);
             
             uint64_t data_offset = _data_source.desc_buffer().at(mc_offset).offset;
-            uint64_t data_length = _data_source.desc_buffer().at(mc_offset + mc_length).offset - data_offset;
+            uint64_t data_length = _data_source.desc_buffer().at(mc_offset + mc_length).offset
+                - data_offset;
 
             uint64_t total_length = data_length + mc_length * sizeof(MicrosliceDescriptor);
 
@@ -342,4 +344,4 @@ private:
 };
 
 
-#endif /* INPUTBUFFER_HPP */
+#endif /* INPUTCHANNELSENDER_HPP */

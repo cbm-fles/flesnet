@@ -60,13 +60,13 @@ protected:
 /** The InputApplication object represents an instance of the running
     input node application. */
 
-class InputApplication : public Application<InputBuffer>
+class InputApplication : public Application<InputChannelSender>
 {
 public:
 
     /// The InputApplication contructor.
     explicit InputApplication(Parameters& par, std::vector<unsigned> indexes) :
-        Application<InputBuffer>(par),
+        Application<InputChannelSender>(par),
         _compute_hostnames(par.compute_nodes())
     {
         for (unsigned int i = 0; i < par.compute_nodes().size(); i++)
@@ -77,8 +77,8 @@ public:
                 (new DummyFlib(par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
                                i, par.check_pattern(), par.typical_content_size(),
                                par.randomize_sizes()));
-            std::unique_ptr<InputBuffer> buffer
-                (new InputBuffer(i, *data_source, _compute_hostnames, _compute_services,
+            std::unique_ptr<InputChannelSender> buffer
+                (new InputChannelSender(i, *data_source, _compute_hostnames, _compute_services,
                                  par.timeslice_size(), par.overlap_size(),
                                  par.max_timeslice_number()));
             _data_sources.push_back(std::move(data_source));
