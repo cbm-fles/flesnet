@@ -18,26 +18,25 @@ public:
 
     /// The InputBuffer default constructor.
     InputBuffer(uint64_t input_index,
+                DataSource& data_source,
                 const std::vector<std::string>& compute_hostnames,
                 const std::vector<std::string>& compute_services,
                 uint32_t timeslice_size,
                 uint32_t overlap_size,
                 uint32_t max_timeslice_number) :
         _input_index(input_index),
-        _data(par->in_data_buffer_size_exp()),
-        _desc(par->in_desc_buffer_size_exp()),
-        _data_source(_data, _desc, input_index),
+        _data_source(data_source),
         _compute_hostnames(compute_hostnames),
         _compute_services(compute_services),
         _timeslice_size(timeslice_size),
         _overlap_size(overlap_size),
         _max_timeslice_number(max_timeslice_number)
     {
-        size_t min_ack_buffer_size = _desc.size() / _timeslice_size + 1;
+        size_t min_ack_buffer_size = _data_source.desc_buffer().size() / _timeslice_size + 1;
         _ack.alloc_with_size(min_ack_buffer_size);
 
-        VALGRIND_MAKE_MEM_DEFINED(_data.ptr(), _data.bytes());
-        VALGRIND_MAKE_MEM_DEFINED(_desc.ptr(), _desc.bytes());
+        VALGRIND_MAKE_MEM_DEFINED(_data_source.data_buffer().ptr(), _data_source.data_buffer().bytes());
+        VALGRIND_MAKE_MEM_DEFINED(_data_source.desc_buffer().ptr(), _data_source.desc_buffer().bytes());
     }
 
     /// The InputBuffer default destructor.
@@ -83,8 +82,8 @@ public:
             
             _data_source.wait_for_data(mc_offset + mc_length + 1);
             
-            uint64_t data_offset = _desc.at(mc_offset).offset;
-            uint64_t data_length = _desc.at(mc_offset + mc_length).offset - data_offset;
+            uint64_t data_offset = _data_source.desc_buffer().at(mc_offset).offset;
+            uint64_t data_length = _data_source.desc_buffer().at(mc_offset + mc_length).offset - data_offset;
 
             uint64_t total_length = data_length + mc_length * sizeof(MicrosliceDescriptor);
 
@@ -167,7 +166,7 @@ private:
     uint64_t _acked_data = 0;
     
     /// Data source (e.g., FLIB).
-    DummyFlib _data_source;
+    DataSource& _data_source;
     
     const std::vector<std::string>& _compute_hostnames;
     const std::vector<std::string>& _compute_services;
@@ -194,13 +193,13 @@ private:
 
         if (!_mr_data) {
             // Register memory regions.
-            _mr_data = ibv_reg_mr(_pd, _data.ptr(), _data.bytes(),
+            _mr_data = ibv_reg_mr(_pd, _data_source.data_buffer().ptr(), _data_source.data_buffer().bytes(),
                                   IBV_ACCESS_LOCAL_WRITE);
             if (!_mr_data)
                 throw InfinibandException
                     ("registration of memory region failed");
 
-            _mr_desc = ibv_reg_mr(_pd, _desc.ptr(), _desc.bytes(),
+            _mr_desc = ibv_reg_mr(_pd, _data_source.desc_buffer().ptr(), _data_source.desc_buffer().bytes(),
                                   IBV_ACCESS_LOCAL_WRITE);
             if (!_mr_desc)
                 throw InfinibandException
@@ -233,14 +232,14 @@ private:
 
         s << "/--- desc buf ---" << std::endl;
         s << "|";
-        for (unsigned int i = 0; i < _desc.size(); i++)
-            s << " (" << i << ")" << _desc.at(i).offset;
+        for (unsigned int i = 0; i < _data_source.desc_buffer().size(); i++)
+            s << " (" << i << ")" << _data_source.desc_buffer().at(i).offset;
         s << std::endl;
         s << "| _acked_mc = " << _acked_mc << std::endl;
         s << "/--- data buf ---" << std::endl;
         s << "|";
-        for (unsigned int i = 0; i < _data.size(); i++)
-            s << " (" << i << ")" << std::hex << _data.at(i) << std::dec;
+        for (unsigned int i = 0; i < _data_source.data_buffer().size(); i++)
+            s << " (" << i << ")" << std::hex << _data_source.data_buffer().at(i) << std::dec;
         s << std::endl;
         s << "| _acked_data = " << _acked_data << std::endl;
         s << "\\---------";
@@ -255,39 +254,39 @@ private:
         int num_sge = 0;
         struct ibv_sge sge[4];
         // descriptors
-        if ((mc_offset & _desc.size_mask())
-            < ((mc_offset + mc_length - 1) & _desc.size_mask())) {
+        if ((mc_offset & _data_source.desc_buffer().size_mask())
+            < ((mc_offset + mc_length - 1) & _data_source.desc_buffer().size_mask())) {
             // one chunk
-            sge[num_sge].addr = (uintptr_t) &_desc.at(mc_offset);
+            sge[num_sge].addr = (uintptr_t) &_data_source.desc_buffer().at(mc_offset);
             sge[num_sge].length = sizeof(MicrosliceDescriptor) * mc_length;
             sge[num_sge++].lkey = _mr_desc->lkey;
         } else {
             // two chunks
-            sge[num_sge].addr = (uintptr_t) &_desc.at(mc_offset);
+            sge[num_sge].addr = (uintptr_t) &_data_source.desc_buffer().at(mc_offset);
             sge[num_sge].length =
-              sizeof(MicrosliceDescriptor) * (_desc.size()
-                                              - (mc_offset & _desc.size_mask()));
+              sizeof(MicrosliceDescriptor) * (_data_source.desc_buffer().size()
+                                              - (mc_offset & _data_source.desc_buffer().size_mask()));
             sge[num_sge++].lkey = _mr_desc->lkey;
-            sge[num_sge].addr = (uintptr_t) _desc.ptr();
+            sge[num_sge].addr = (uintptr_t) _data_source.desc_buffer().ptr();
             sge[num_sge].length =
-              sizeof(MicrosliceDescriptor) * (mc_length - _desc.size()
-                                              + (mc_offset & _desc.size_mask()));
+              sizeof(MicrosliceDescriptor) * (mc_length - _data_source.desc_buffer().size()
+                                              + (mc_offset & _data_source.desc_buffer().size_mask()));
             sge[num_sge++].lkey = _mr_desc->lkey;
         }
         // data
-        if ((data_offset & _data.size_mask())
-            < ((data_offset + data_length - 1) & _data.size_mask())) {
+        if ((data_offset & _data_source.data_buffer().size_mask())
+            < ((data_offset + data_length - 1) & _data_source.data_buffer().size_mask())) {
             // one chunk
-            sge[num_sge].addr = (uintptr_t) &_data.at(data_offset);
+            sge[num_sge].addr = (uintptr_t) &_data_source.data_buffer().at(data_offset);
             sge[num_sge].length = data_length;
             sge[num_sge++].lkey = _mr_data->lkey;
         } else {
             // two chunks
-            sge[num_sge].addr = (uintptr_t) &_data.at(data_offset);
-            sge[num_sge].length = _data.size() - (data_offset & _data.size_mask());
+            sge[num_sge].addr = (uintptr_t) &_data_source.data_buffer().at(data_offset);
+            sge[num_sge].length = _data_source.data_buffer().size() - (data_offset & _data_source.data_buffer().size_mask());
             sge[num_sge++].lkey = _mr_data->lkey;
-            sge[num_sge].addr = (uintptr_t) _data.ptr();
-            sge[num_sge].length = data_length - _data.size() + (data_offset & _data.size_mask());
+            sge[num_sge].addr = (uintptr_t) _data_source.data_buffer().ptr();
+            sge[num_sge].length = data_length - _data_source.data_buffer().size() + (data_offset & _data_source.data_buffer().size_mask());
             sge[num_sge++].lkey = _mr_data->lkey;
         }
 
@@ -310,7 +309,7 @@ private:
                 while (_ack.at(acked_ts) > ts);
             else
                 _ack.at(ts) = ts;
-            _acked_data = _desc.at(acked_ts * _timeslice_size).offset;
+            _acked_data = _data_source.desc_buffer().at(acked_ts * _timeslice_size).offset;
             _acked_mc = acked_ts * _timeslice_size;
             _data_source.update_ack_pointers(_acked_data, _acked_mc);
             if (out.beDebug())

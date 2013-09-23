@@ -12,26 +12,32 @@ class DataSource
 {
 public:
     /// The DataSource constructor.
-    DataSource(RingBuffer<>& data_buffer,
-               RingBuffer<MicrosliceDescriptor>& desc_buffer,
-               uint64_t input_index) :
-        _data_buffer(data_buffer),
-        _desc_buffer(desc_buffer),
-        _input_index(input_index) { };
-    
+    DataSource() :
+        _data_buffer(par->in_data_buffer_size_exp()),
+        _desc_buffer(par->in_desc_buffer_size_exp())
+    { };
+
     virtual uint64_t wait_for_data(uint64_t min_mcNumber) = 0;
 
     virtual void update_ack_pointers(uint64_t new_acked_data, uint64_t new_acked_mc) = 0;
+
+    RingBuffer<>& data_buffer()
+    {
+        return _data_buffer;
+    }
+
+    RingBuffer<MicrosliceDescriptor>& desc_buffer()
+    {
+        return _desc_buffer;
+    }
+
     
 protected:
     /// Input data buffer.
-    RingBuffer<>& _data_buffer;
+    RingBuffer<> _data_buffer;
 
     /// Input descriptor buffer.
-    RingBuffer<MicrosliceDescriptor>& _desc_buffer;
-
-    /// This node's index in the list of input nodes
-    uint64_t _input_index;
+    RingBuffer<MicrosliceDescriptor> _desc_buffer;
 };
 
 
@@ -40,10 +46,8 @@ class DummyFlib : public DataSource, public ThreadContainer
 {
 public:
     /// The DummyFlib constructor.
-    DummyFlib(RingBuffer<>& data_buffer,
-              RingBuffer<MicrosliceDescriptor>& desc_buffer,
-              uint64_t input_index) :
-        DataSource(data_buffer, desc_buffer, input_index),
+    DummyFlib(uint64_t input_index) :
+        _input_index(input_index),
         _pd(par->typical_content_size()),
         _rand_content_bytes(_rng, _pd)
     {
@@ -199,6 +203,9 @@ DCOUNT[6]++;
     };
 
 private:
+    /// This node's index in the list of input nodes
+    uint64_t _input_index;
+
     std::atomic<bool> _is_stopped{false};
 
     boost::thread* _producer_thread;

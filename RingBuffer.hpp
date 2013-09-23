@@ -71,6 +71,11 @@ public:
         return _size;
     }
 
+    /// Retrieve buffer size in maximum number of entries as two's exponent.
+    size_t size_exponent() const {
+        return _size_exponent;
+    }
+
     /// Retrieve buffer size bit mask.
     size_t size_mask() const {
         return _size_mask;
