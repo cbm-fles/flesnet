@@ -25,7 +25,7 @@
 #include "RingBuffer.hpp"
 #include "IBConnection.hpp"
 #include "IBConnectionGroup.hpp"
-#include "InputNodeConnection.hpp"
+#include "InputChannelConnection.hpp"
 #include "DataSource.hpp"
 #include "InputChannelSender.hpp"
 #include "ComputeNodeConnection.hpp"

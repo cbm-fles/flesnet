@@ -1,23 +1,23 @@
 /**
- * \file InputNodeConnection.hpp
+ * \file InputChannelConnection.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#ifndef INPUTNODECONNECTION_HPP
-#define INPUTNODECONNECTION_HPP
+#ifndef INPUTCHANNELCONNECTION_HPP
+#define INPUTCHANNELCONNECTION_HPP
 
 /// Input node connection class.
-/** An InputNodeConnection object represents the endpoint of a single
+/** An InputChannelConnection object represents the endpoint of a single
     timeslice building connection from an input node to a compute
     node. */
 
-class InputNodeConnection : public IBConnection
+class InputChannelConnection : public IBConnection
 {
 public:
 
-    /// The InputNodeConnection constructor.
-    InputNodeConnection(struct rdma_event_channel* ec,
+    /// The InputChannelConnection constructor.
+    InputChannelConnection(struct rdma_event_channel* ec,
                         uint_fast16_t index,
                         uint_fast16_t remote_index,
                         unsigned int max_send_wr,
@@ -394,4 +394,4 @@ private:
 };
 
 
-#endif /* INPUTNODECONNECTION_HPP */
+#endif /* INPUTCHANNELCONNECTION_HPP */

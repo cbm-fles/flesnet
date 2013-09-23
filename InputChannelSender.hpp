@@ -12,7 +12,7 @@
     FLIB) and a group of timeslice building connections to compute
     nodes. */
 
-class InputChannelSender : public IBConnectionGroup<InputNodeConnection>
+class InputChannelSender : public IBConnectionGroup<InputChannelConnection>
 {
 public:
 
@@ -117,7 +117,7 @@ public:
         out.debug() << "[i" << _input_index << "] " << "SENDER loop done";
     }
 
-    std::unique_ptr<InputNodeConnection> create_input_node_connection(uint_fast16_t index)
+    std::unique_ptr<InputChannelConnection> create_input_node_connection(uint_fast16_t index)
     {
         unsigned int max_send_wr = 8000;
 
@@ -126,8 +126,8 @@ public:
             std::min(static_cast<unsigned int>((max_send_wr - 1) / 3),
                      static_cast<unsigned int>((_num_cqe - 1) / _compute_hostnames.size()));
 
-        std::unique_ptr<InputNodeConnection> connection
-            (new InputNodeConnection(_ec, index, _input_index, max_send_wr,
+        std::unique_ptr<InputChannelConnection> connection
+            (new InputChannelConnection(_ec, index, _input_index, max_send_wr,
                                      max_pending_write_requests));
         return connection;
     }
@@ -135,7 +135,7 @@ public:
     /// Initiate connection requests to list of target hostnames.
     void connect() {
         for (unsigned int i = 0; i < _compute_hostnames.size(); i++) {
-            std::unique_ptr<InputNodeConnection> connection = create_input_node_connection(i);
+            std::unique_ptr<InputChannelConnection> connection = create_input_node_connection(i);
             connection->connect(_compute_hostnames[i], _compute_services[i]);
             _conn.push_back(std::move(connection));
         }
@@ -189,7 +189,7 @@ private:
     }
 
     virtual void on_addr_resolved(struct rdma_cm_id* id) {
-        IBConnectionGroup<InputNodeConnection>::on_addr_resolved(id);
+        IBConnectionGroup<InputChannelConnection>::on_addr_resolved(id);
 
         if (!_mr_data) {
             // Register memory regions.
@@ -214,14 +214,14 @@ private:
     
     /// Handle RDMA_CM_REJECTED event.
     virtual void on_rejected(struct rdma_cm_event* event) {
-        InputNodeConnection* conn = (InputNodeConnection*) event->id->context;
+        InputChannelConnection* conn = (InputChannelConnection*) event->id->context;
 
         conn->on_rejected(event);
         uint_fast16_t i = conn->index();
         _conn.at(i) = nullptr;
 
         // immediately initiate retry
-        std::unique_ptr<InputNodeConnection> connection = create_input_node_connection(i);
+        std::unique_ptr<InputChannelConnection> connection = create_input_node_connection(i);
         connection->connect(_compute_hostnames[i], _compute_services[i]);
         _conn.at(i) = std::move(connection);
     }
