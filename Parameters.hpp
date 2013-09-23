@@ -132,7 +132,7 @@ public:
         return _base_port;
     };
     
-    /// Retrieve the global base port.
+    /// Retrieve the number of completion queue entries.
     uint32_t num_cqe() const {
         return _num_cqe;
     };
