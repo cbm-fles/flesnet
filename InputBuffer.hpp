@@ -17,11 +17,15 @@ class InputBuffer : public IBConnectionGroup<InputNodeConnection>
 public:
 
     /// The InputBuffer default constructor.
-    InputBuffer(uint64_t input_index) :
+    InputBuffer(uint64_t input_index,
+                const std::vector<std::string>& compute_hostnames,
+                const std::vector<std::string>& compute_services) :
         _input_index(input_index),
         _data(par->in_data_buffer_size_exp()),
         _desc(par->in_desc_buffer_size_exp()),
-        _data_source(_data, _desc, input_index)
+        _data_source(_data, _desc, input_index),
+        _compute_hostnames(compute_hostnames),
+        _compute_services(compute_services)
     {
         size_t min_ack_buffer_size = _desc.size() / par->timeslice_size() + 1;
         _ack.alloc_with_size(min_ack_buffer_size);
@@ -46,12 +50,8 @@ public:
     virtual void run() {
         set_cpu(0);
 
-        std::vector<std::string> services;
-        for (unsigned int i = 0; i < par->compute_nodes().size(); i++)
-            services.push_back(boost::lexical_cast<std::string>(par->base_port() + i));
-
-        connect(par->compute_nodes(), services);
-        handle_cm_events(par->compute_nodes().size());
+        connect();
+        handle_cm_events(_compute_hostnames.size());
         boost::thread t1(&InputBuffer::completion_handler, this);
 
         sender_loop();
@@ -117,7 +117,7 @@ public:
         // limit pending write requests so that send queue and completion queue do not overflow
         unsigned int max_pending_write_requests =
             std::min(static_cast<unsigned int>((max_send_wr - 1) / 3),
-                     static_cast<unsigned int>((par->num_cqe() - 1) / par->compute_nodes().size()));
+                     static_cast<unsigned int>((par->num_cqe() - 1) / _compute_hostnames.size()));
 
         std::unique_ptr<InputNodeConnection> connection
             (new InputNodeConnection(_ec, index, _input_index, max_send_wr,
@@ -128,17 +128,10 @@ public:
     }
 
     /// Initiate connection requests to list of target hostnames.
-    /**
-       \param hostnames The list of target hostnames
-       \param services  The list of target services or port numbers
-    */
-    void connect(const std::vector<std::string>& hostnames,
-                 const std::vector<std::string>& services) {
-        _hostnames = hostnames;
-        _services = services;
-        for (unsigned int i = 0; i < hostnames.size(); i++) {
+    void connect() {
+        for (unsigned int i = 0; i < _compute_hostnames.size(); i++) {
             std::unique_ptr<InputNodeConnection> connection = create_input_node_connection(i);
-            connection->connect(hostnames[i], services[i]);
+            connection->connect(_compute_hostnames[i], _compute_services[i]);
             _conn.push_back(std::move(connection));
         }
     };
@@ -170,8 +163,8 @@ private:
     /// Data source (e.g., FLIB).
     DummyFlib _data_source;
     
-    std::vector<std::string> _hostnames;
-    std::vector<std::string> _services;
+    const std::vector<std::string>& _compute_hostnames;
+    const std::vector<std::string>& _compute_services;
 
     /// Return target computation node for given timeslice.
     int target_cn_index(uint64_t timeslice) {
@@ -220,7 +213,7 @@ private:
 
         // immediately initiate retry
         std::unique_ptr<InputNodeConnection> connection = create_input_node_connection(i);
-        connection->connect(_hostnames[i], _services[i]);
+        connection->connect(_compute_hostnames[i], _compute_services[i]);
         _conn.at(i) = std::move(connection);
     }
 

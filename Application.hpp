@@ -29,20 +29,18 @@ class Application : public ThreadContainer
 public:
     
     /// The Application contructor.
-    explicit Application(Parameters const& par, std::vector<unsigned> indexes) : _par(par) {
-        for (unsigned i: indexes) {
-            std::unique_ptr<T> buffer(new T(i));
-            _buffers.push_back(std::move(buffer));
-        }
-    }
+    explicit Application(Parameters const& par) : _par(par)
+    { }
 
-    void start() {
+    void start()
+    {
         for (auto& buffer: _buffers) {
             buffer->start();
         }
     }
 
-    void join() {
+    void join()
+    {
         for (auto& buffer: _buffers) {
             buffer->join();
         }
@@ -68,8 +66,22 @@ public:
 
     /// The InputApplication contructor.
     explicit InputApplication(Parameters& par, std::vector<unsigned> indexes) :
-        Application<InputBuffer>(par, indexes)
-    { }
+        Application<InputBuffer>(par),
+        _compute_hostnames(par.compute_nodes())
+    {
+        for (unsigned int i = 0; i < par.compute_nodes().size(); i++)
+            _compute_services.push_back(boost::lexical_cast<std::string>(par.base_port() + i));
+
+        for (unsigned i: indexes) {
+            std::unique_ptr<InputBuffer> buffer
+                (new InputBuffer(i, _compute_hostnames, _compute_services));
+            _buffers.push_back(std::move(buffer));
+        }
+    }
+
+private:
+    std::vector<std::string> _compute_hostnames;
+    std::vector<std::string> _compute_services;
 };
 
 
@@ -83,9 +95,14 @@ public:
 
     /// The ComputeApplication contructor.
     explicit ComputeApplication(Parameters& par, std::vector<unsigned> indexes) :
-        Application<ComputeBuffer>(par, indexes)
+        Application<ComputeBuffer>(par)
     {
         //set_cpu(1);
+
+        for (unsigned i: indexes) {
+            std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(i));
+            _buffers.push_back(std::move(buffer));
+        }
 
         assert(numa_available() != -1);
 
