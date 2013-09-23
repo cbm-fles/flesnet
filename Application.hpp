@@ -7,18 +7,6 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 
-/// %Application exception class.
-/** An ApplicationException object signals a general error in the flow
-    of the application. */
-
-class ApplicationException : public std::runtime_error {
-public:
-    /// The ApplicationException default constructor.
-    explicit ApplicationException(const std::string& what_arg = "")
-        : std::runtime_error(what_arg) { }
-};
-
-
 /// %Application base class.
 /** The Application object represents an instance of the running
     application. */
@@ -57,15 +45,15 @@ protected:
 
 
 /// Input application class.
-/** The InputApplication object represents an instance of the running
+/** The InputNodeApplication object represents an instance of the running
     input node application. */
 
-class InputApplication : public Application<InputChannelSender>
+class InputNodeApplication : public Application<InputChannelSender>
 {
 public:
 
-    /// The InputApplication contructor.
-    explicit InputApplication(Parameters& par, std::vector<unsigned> indexes) :
+    /// The InputNodeApplication contructor.
+    explicit InputNodeApplication(Parameters& par, std::vector<unsigned> indexes) :
         Application<InputChannelSender>(par),
         _compute_hostnames(par.compute_nodes())
     {
@@ -95,15 +83,15 @@ private:
 
 
 /// Compute application class.
-/** The ComputeApplication object represents an instance of the
+/** The ComputeNodeApplication object represents an instance of the
     running compute node application. */
 
-class ComputeApplication : public Application<ComputeBuffer>
+class ComputeNodeApplication : public Application<ComputeBuffer>
 {
 public:
 
-    /// The ComputeApplication contructor.
-    explicit ComputeApplication(Parameters& par, std::vector<unsigned> indexes) :
+    /// The ComputeNodeApplication contructor.
+    explicit ComputeNodeApplication(Parameters& par, std::vector<unsigned> indexes) :
         Application<ComputeBuffer>(par)
     {
         //set_cpu(1);

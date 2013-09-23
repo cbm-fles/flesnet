@@ -40,8 +40,8 @@ std::vector<pid_t> child_pids;
 int
 main(int argc, char* argv[])
 {
-    std::unique_ptr<InputApplication> _input_app;
-    std::unique_ptr<ComputeApplication> _compute_app;
+    std::unique_ptr<InputNodeApplication> _input_app;
+    std::unique_ptr<ComputeNodeApplication> _compute_app;
 
     boost::thread _input_thread;
     boost::thread _compute_thread;
@@ -51,14 +51,14 @@ main(int argc, char* argv[])
         par = std::move(parameters);
 
         if (!par->compute_indexes().empty()) {
-            _compute_app = std::unique_ptr<ComputeApplication>
-                (new ComputeApplication(*par, par->compute_indexes()));
+            _compute_app = std::unique_ptr<ComputeNodeApplication>
+                (new ComputeNodeApplication(*par, par->compute_indexes()));
             _compute_app->start();
         }
 
         if (!par->input_indexes().empty()) {
-            _input_app = std::unique_ptr<InputApplication>
-                (new InputApplication(*par, par->input_indexes()));
+            _input_app = std::unique_ptr<InputNodeApplication>
+                (new InputNodeApplication(*par, par->input_indexes()));
             _input_app->start();
         }
 
