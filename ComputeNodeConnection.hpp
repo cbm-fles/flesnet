@@ -221,6 +221,8 @@ public:
         cn_info->desc.addr = (uintptr_t) _desc_ptr;
         cn_info->desc.rkey = _mr_desc->rkey;
         cn_info->index = _remote_index;
+        cn_info->data_buffer_size_exp = par->cn_data_buffer_size_exp();
+        cn_info->desc_buffer_size_exp = par->cn_desc_buffer_size_exp();
 
         return private_data;
     }

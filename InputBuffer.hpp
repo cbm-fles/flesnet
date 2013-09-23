@@ -126,9 +126,7 @@ public:
 
         std::unique_ptr<InputNodeConnection> connection
             (new InputNodeConnection(_ec, index, _input_index, max_send_wr,
-                                     max_pending_write_requests,
-                                     par->cn_data_buffer_size_exp(),
-                                     par->cn_desc_buffer_size_exp()));
+                                     max_pending_write_requests));
         return connection;
     }
 

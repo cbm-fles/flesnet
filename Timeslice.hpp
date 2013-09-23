@@ -78,6 +78,8 @@ struct ComputeNodeInfo {
     BufferInfo data;
     BufferInfo desc;
     uint32_t index;
+    uint32_t data_buffer_size_exp;
+    uint32_t desc_buffer_size_exp;
 };
 
 
