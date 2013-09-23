@@ -1,4 +1,16 @@
 {
+   rdma_value8_obj
+   Memcheck:Value8
+   obj:/usr/lib/libibverbs/libmlx4-rdmav2.so
+}
+
+{
+   rdma_cond_obj
+   Memcheck:Cond
+   obj:/usr/lib/libibverbs/libmlx4-rdmav2.so
+}
+
+{
    ibv_value8
    Memcheck:Value8
    ...
@@ -13,7 +25,7 @@
 }
 
 {
-   ibv_param
+   ibv_param_write
    Memcheck:Param
    write(buf)
    ...
@@ -21,9 +33,17 @@
 }
 
 {
-   ibv_param
+   ibv_param_close
    Memcheck:Param
    close(fd)
+   ...
+   fun:ibv_*
+}
+
+{
+   ibv_param_read
+   Memcheck:Param
+   read(fd)
    ...
    fun:ibv_*
 }
