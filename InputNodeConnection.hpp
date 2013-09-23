@@ -27,7 +27,7 @@ public:
         // limit pending write requests so that send queue and completion queue do not overflow
         _max_pending_write_requests =
             std::min(static_cast<unsigned int>((_qp_cap.max_send_wr - 1) / 3),
-                     static_cast<unsigned int>((par->num_cqe() - 1) / par->input_nodes().size()));
+                     static_cast<unsigned int>((par->num_cqe() - 1) / par->compute_nodes().size()));
         assert(_max_pending_write_requests > 0);
 
         _qp_cap.max_recv_wr = 1; // receive only single ComputeNodeBufferPosition struct
