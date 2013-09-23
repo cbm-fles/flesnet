@@ -12,9 +12,9 @@ class DataSource
 {
 public:
     /// The DataSource constructor.
-    DataSource() :
-        _data_buffer(par->in_data_buffer_size_exp()),
-        _desc_buffer(par->in_desc_buffer_size_exp())
+    DataSource(std::size_t data_buffer_size_exp, std::size_t desc_buffer_size_exp) :
+        _data_buffer(data_buffer_size_exp),
+        _desc_buffer(desc_buffer_size_exp)
     { }
 
     virtual uint64_t wait_for_data(uint64_t min_mcNumber) = 0;
@@ -46,10 +46,13 @@ class DummyFlib : public DataSource, public ThreadContainer
 {
 public:
     /// The DummyFlib constructor.
-    DummyFlib(uint64_t input_index,
+    DummyFlib(std::size_t data_buffer_size_exp,
+              std::size_t desc_buffer_size_exp,
+              uint64_t input_index,
               bool generate_pattern,
               uint32_t typical_content_size,
               bool randomize_sizes) :
+        DataSource(data_buffer_size_exp, desc_buffer_size_exp),
         _input_index(input_index),
         _generate_pattern(generate_pattern),
         _typical_content_size(typical_content_size),
