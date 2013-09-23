@@ -14,7 +14,7 @@ using namespace flib;
 
 class flib_control_server {
   
-  flib_device _flib;
+  flib_link &_link;
   zmq::context_t& _zmq_context;
   zmq::socket_t _driver_req;
   zmq::socket_t _driver_res;
@@ -33,8 +33,9 @@ class flib_control_server {
 public:
   
 
-  flib_control_server(zmq::context_t&  context)
-    :       _flib(0),
+  flib_control_server(zmq::context_t&  context, 
+		      flib_link &link)
+    :       _link(link),
             _zmq_context(context),
             _driver_req(context, ZMQ_PULL),
             _driver_res(context, ZMQ_PUSH),
@@ -56,9 +57,6 @@ public:
 
   bool Start()
   {
-    // initialize FLIB
-    _flib.link[0]->set_data_rx_sel(flib_link::pgen);
-
     // setup fd for stopping driver
     _stop_fd = ::eventfd(0,0);
     if (_stop_fd < 0) {
@@ -164,16 +162,16 @@ public:
     }
     
     // receive to flush hw buffers
-    if ( _flib.link[0]->rcv_msg(&cnet_r_msg) != -1)  {
+    if ( _link.rcv_msg(&cnet_r_msg) != -1)  {
       out.warn() << "sprious message dropped";
     }
   
-    if ( _flib.link[0]->send_msg(&cnet_s_msg) < 0)  {
+    if ( _link.send_msg(&cnet_s_msg) < 0)  {
       out.error() << "sending message failed";
     }                      
     
     // receive msg
-    if ( _flib.link[0]->rcv_msg(&cnet_r_msg) < 0)  {
+    if ( _link.rcv_msg(&cnet_r_msg) < 0)  {
       out.error() << "receiving message failed";
     }
 

@@ -32,8 +32,12 @@ int main(int argc, const char* argv[])
   s_catch_signals();
 
   zmq::context_t zmq_context(1);
+  flib::flib_device flib(0);
 
-  flib_control_server flibserver(zmq_context);
+  // initialize FLIB link
+  flib.link[0]->set_data_rx_sel(flib_link::pgen);
+
+  flib_control_server flibserver(zmq_context, *flib.link[0]);
   flibserver.Bind();
   flibserver.Start();
   
