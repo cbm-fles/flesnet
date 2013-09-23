@@ -73,7 +73,9 @@ public:
             _compute_services.push_back(boost::lexical_cast<std::string>(par.base_port() + i));
 
         for (unsigned i: indexes) {
-            std::unique_ptr<DataSource> data_source(new DummyFlib(i));
+            std::unique_ptr<DataSource> data_source
+                (new DummyFlib(i, par.check_pattern(), par.typical_content_size(),
+                               par.randomize_sizes()));
             std::unique_ptr<InputBuffer> buffer
                 (new InputBuffer(i, *data_source, _compute_hostnames, _compute_services,
                                  par.timeslice_size(), par.overlap_size(),

@@ -15,7 +15,7 @@ public:
     DataSource() :
         _data_buffer(par->in_data_buffer_size_exp()),
         _desc_buffer(par->in_desc_buffer_size_exp())
-    { };
+    { }
 
     virtual uint64_t wait_for_data(uint64_t min_mcNumber) = 0;
 
@@ -46,13 +46,19 @@ class DummyFlib : public DataSource, public ThreadContainer
 {
 public:
     /// The DummyFlib constructor.
-    DummyFlib(uint64_t input_index) :
+    DummyFlib(uint64_t input_index,
+              bool generate_pattern,
+              uint32_t typical_content_size,
+              bool randomize_sizes) :
         _input_index(input_index),
-        _pd(par->typical_content_size()),
+        _generate_pattern(generate_pattern),
+        _typical_content_size(typical_content_size),
+        _randomize_sizes(randomize_sizes),
+        _pd(typical_content_size),
         _rand_content_bytes(_rng, _pd)
     {
         _producer_thread = new boost::thread(&DummyFlib::produce_data, this);
-    };
+    }
 
     ~DummyFlib()
     {
@@ -67,7 +73,7 @@ public:
 
         for (int i = 0; i < 10; i++)
             out.trace() << "DCOUNT[" << i << "] = " << DCOUNT[i];
-    };
+    }
 
     uint64_t DCOUNT[10] = {};
 
@@ -75,8 +81,6 @@ public:
     void produce_data()
     {
         set_cpu(3);
-
-        bool generate_pattern = par->check_pattern();
 
         uint64_t written_mc = 0;
         uint64_t written_data = 0;
@@ -116,8 +120,8 @@ DCOUNT[1]++;
             }
 
             while (true) {
-                unsigned int content_bytes = par->typical_content_size();
-                if (par->randomize_sizes())
+                unsigned int content_bytes = _typical_content_size;
+                if (_randomize_sizes)
                     content_bytes = _rand_content_bytes();
 
                 // check for space in data and descriptor buffers
@@ -137,7 +141,7 @@ DCOUNT[1]++;
                 uint64_t offset = written_data;
 
                 // write to data buffer
-                if (generate_pattern) {
+                if (_generate_pattern) {
                     for (uint64_t i = 0; i < content_bytes; i+= sizeof(uint64_t)) {
                         uint64_t data_word = (_input_index << 48L) | i;
                         (uint64_t&) _data_buffer.at(written_data) = data_word;
@@ -180,7 +184,7 @@ DCOUNT[4]++;
             cached_written_mc = _written_mc;
         }
         return cached_written_mc;
-    };
+    }
 
     virtual void update_ack_pointers(uint64_t new_acked_data, uint64_t new_acked_mc)
     {
@@ -200,11 +204,15 @@ DCOUNT[6]++;
             }
             _cond_producer.notify_one();
         }
-    };
+    }
 
 private:
     /// This node's index in the list of input nodes
     uint64_t _input_index;
+
+    bool _generate_pattern;
+    uint32_t _typical_content_size;
+    bool _randomize_sizes;
 
     std::atomic<bool> _is_stopped{false};
 
