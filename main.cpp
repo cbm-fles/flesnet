@@ -32,6 +32,8 @@
 #include "concurrent_queue.hpp"
 #include "ComputeBuffer.hpp"
 #include "Application.hpp"
+#include "InputNodeApplication.hpp"
+#include "ComputeNodeApplication.hpp"
 
 einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out(einhard::WARN, true);
 std::unique_ptr<Parameters> par;
