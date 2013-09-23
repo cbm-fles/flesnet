@@ -110,6 +110,23 @@ public:
         out.debug() << "[i" << _input_index << "] " << "SENDER loop done";
     }
 
+    std::unique_ptr<InputNodeConnection> create_input_node_connection(uint_fast16_t index)
+    {
+        unsigned int max_send_wr = 8000;
+
+        // limit pending write requests so that send queue and completion queue do not overflow
+        unsigned int max_pending_write_requests =
+            std::min(static_cast<unsigned int>((max_send_wr - 1) / 3),
+                     static_cast<unsigned int>((par->num_cqe() - 1) / par->compute_nodes().size()));
+
+        std::unique_ptr<InputNodeConnection> connection
+            (new InputNodeConnection(_ec, index, _input_index, max_send_wr,
+                                     max_pending_write_requests,
+                                     par->cn_data_buffer_size_exp(),
+                                     par->cn_desc_buffer_size_exp()));
+        return connection;
+    }
+
     /// Initiate connection requests to list of target hostnames.
     /**
        \param hostnames The list of target hostnames
@@ -120,8 +137,7 @@ public:
         _hostnames = hostnames;
         _services = services;
         for (unsigned int i = 0; i < hostnames.size(); i++) {
-            std::unique_ptr<InputNodeConnection> connection
-                (new InputNodeConnection(_ec, i, _input_index));
+            std::unique_ptr<InputNodeConnection> connection = create_input_node_connection(i);
             connection->connect(hostnames[i], services[i]);
             _conn.push_back(std::move(connection));
         }
@@ -203,8 +219,7 @@ private:
         _conn.at(i) = nullptr;
 
         // immediately initiate retry
-        std::unique_ptr<InputNodeConnection> connection
-            (new InputNodeConnection(_ec, i, _input_index));
+        std::unique_ptr<InputNodeConnection> connection = create_input_node_connection(i);
         connection->connect(_hostnames[i], _services[i]);
         _conn.at(i) = std::move(connection);
     }

@@ -17,18 +17,23 @@ class InputNodeConnection : public IBConnection
 public:
 
     /// The InputNodeConnection constructor.
-    InputNodeConnection(struct rdma_event_channel* ec, uint_fast16_t index,
-                        uint_fast16_t remote_index, struct rdma_cm_id* id = nullptr) :
-        IBConnection(ec, index, remote_index, id)
+    InputNodeConnection(struct rdma_event_channel* ec,
+                        uint_fast16_t index,
+                        uint_fast16_t remote_index,
+                        unsigned int max_send_wr,
+                        unsigned int max_pending_write_requests,
+                        uint32_t cn_data_buffer_size_exp,
+                        uint32_t cn_desc_buffer_size_exp,
+                        struct rdma_cm_id* id = nullptr) :
+        IBConnection(ec, index, remote_index, id),
+        _max_pending_write_requests(max_pending_write_requests),
+        _cn_data_buffer_size_exp(cn_data_buffer_size_exp),
+        _cn_desc_buffer_size_exp(cn_desc_buffer_size_exp)
     {
-        _qp_cap.max_send_wr = 8000; // typical hca maximum: 16k
-        _qp_cap.max_send_sge = 4; // max. two chunks each for descriptors and data
-
-        // limit pending write requests so that send queue and completion queue do not overflow
-        _max_pending_write_requests =
-            std::min(static_cast<unsigned int>((_qp_cap.max_send_wr - 1) / 3),
-                     static_cast<unsigned int>((par->num_cqe() - 1) / par->compute_nodes().size()));
         assert(_max_pending_write_requests > 0);
+
+        _qp_cap.max_send_wr = max_send_wr; // typical hca maximum: 16k
+        _qp_cap.max_send_sge = 4; // max. two chunks each for descriptors and data
 
         _qp_cap.max_recv_wr = 1; // receive only single ComputeNodeBufferPosition struct
         _qp_cap.max_recv_sge = 1;
@@ -43,14 +48,14 @@ public:
             out.trace() << "[" << _index << "] "
                         << "SENDER data space (bytes) required="
                         << data_size << ", avail="
-                        << _cn_ack.data + (1 << par->cn_data_buffer_size_exp()) - _cn_wp.data;
+                        << _cn_ack.data + (1 << _cn_data_buffer_size_exp) - _cn_wp.data;
             out.trace() << "[" << _index << "] "
                         << "SENDER desc space (entries) required="
                         << desc_size << ", avail="
-                        << _cn_ack.desc + (1 << par->cn_desc_buffer_size_exp()) - _cn_wp.desc;
+                        << _cn_ack.desc + (1 << _cn_desc_buffer_size_exp) - _cn_wp.desc;
         }
-        while (_cn_ack.data - _cn_wp.data + (1 << par->cn_data_buffer_size_exp()) < data_size
-               || _cn_ack.desc - _cn_wp.desc + (1 << par->cn_data_buffer_size_exp())
+        while (_cn_ack.data - _cn_wp.data + (1 << _cn_data_buffer_size_exp) < data_size
+               || _cn_ack.desc - _cn_wp.desc + (1 << _cn_data_buffer_size_exp)
                < desc_size) { // TODO: extend condition!
             {
                 boost::mutex::scoped_lock lock2(_cn_wp_mutex);
@@ -68,9 +73,9 @@ public:
                 out.trace() << "[" << _index << "] "
                             << "SENDER (next try) space avail="
                             << _cn_ack.data - _cn_wp.data
-                    + (1 << par->cn_data_buffer_size_exp())
+                    + (1 << _cn_data_buffer_size_exp)
                             << " desc_avail=" << _cn_ack.desc - _cn_wp.desc
-                    + (1 << par->cn_desc_buffer_size_exp());
+                    + (1 << _cn_desc_buffer_size_exp);
             }
         }
     }
@@ -84,10 +89,10 @@ public:
         uint64_t cn_wp_data = _cn_wp.data;
         cn_wp_data += skip;
 
-        uint64_t cn_data_buffer_mask = (1L << par->cn_data_buffer_size_exp()) - 1L;
-        uint64_t cn_desc_buffer_mask = (1L << par->cn_desc_buffer_size_exp()) - 1L;
+        uint64_t cn_data_buffer_mask = (1L << _cn_data_buffer_size_exp) - 1L;
+        uint64_t cn_desc_buffer_mask = (1L << _cn_desc_buffer_size_exp) - 1L;
         uint64_t target_bytes_left =
-            (1L << par->cn_data_buffer_size_exp()) - (cn_wp_data & cn_data_buffer_mask);
+            (1L << _cn_data_buffer_size_exp) - (cn_wp_data & cn_data_buffer_mask);
 
         // split sge list if necessary
         int num_sge_cut = 0;
@@ -184,7 +189,7 @@ public:
 
     // Get number of bytes to skip in advance (to avoid buffer wrap)
     uint64_t skip_required(uint64_t data_size) {
-        uint64_t databuf_size = 1L << par->cn_data_buffer_size_exp();
+        uint64_t databuf_size = 1L << _cn_data_buffer_size_exp;
         uint64_t databuf_wp = _cn_wp.data & (databuf_size - 1L);
         if (databuf_wp + data_size <= databuf_size)
             return 0;
@@ -390,6 +395,9 @@ private:
     std::atomic_uint _pending_write_requests{0};
 
     unsigned int _max_pending_write_requests = 0;
+
+    uint32_t _cn_data_buffer_size_exp;
+    uint32_t _cn_desc_buffer_size_exp;
 };
 
 
