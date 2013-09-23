@@ -74,7 +74,9 @@ public:
 
         for (unsigned i: indexes) {
             std::unique_ptr<InputBuffer> buffer
-                (new InputBuffer(i, _compute_hostnames, _compute_services));
+                (new InputBuffer(i, _compute_hostnames, _compute_services,
+                                 par.timeslice_size(), par.overlap_size(),
+                                 par.max_timeslice_number()));
             _buffers.push_back(std::move(buffer));
         }
     }

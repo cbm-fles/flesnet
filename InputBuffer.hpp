@@ -19,15 +19,21 @@ public:
     /// The InputBuffer default constructor.
     InputBuffer(uint64_t input_index,
                 const std::vector<std::string>& compute_hostnames,
-                const std::vector<std::string>& compute_services) :
+                const std::vector<std::string>& compute_services,
+                uint32_t timeslice_size,
+                uint32_t overlap_size,
+                uint32_t max_timeslice_number) :
         _input_index(input_index),
         _data(par->in_data_buffer_size_exp()),
         _desc(par->in_desc_buffer_size_exp()),
         _data_source(_data, _desc, input_index),
         _compute_hostnames(compute_hostnames),
-        _compute_services(compute_services)
+        _compute_services(compute_services),
+        _timeslice_size(timeslice_size),
+        _overlap_size(overlap_size),
+        _max_timeslice_number(max_timeslice_number)
     {
-        size_t min_ack_buffer_size = _desc.size() / par->timeslice_size() + 1;
+        size_t min_ack_buffer_size = _desc.size() / _timeslice_size + 1;
         _ack.alloc_with_size(min_ack_buffer_size);
 
         VALGRIND_MAKE_MEM_DEFINED(_data.ptr(), _data.bytes());
@@ -68,12 +74,12 @@ public:
     void sender_loop() {
         set_cpu(2);
 
-        for (uint64_t timeslice = 0; timeslice < par->max_timeslice_number();
+        for (uint64_t timeslice = 0; timeslice < _max_timeslice_number;
              timeslice++) {
 
             // wait until a complete TS is available in the input buffer
-            uint64_t mc_offset = timeslice * par->timeslice_size();
-            uint64_t mc_length = par->timeslice_size() + par->overlap_size();
+            uint64_t mc_offset = timeslice * _timeslice_size;
+            uint64_t mc_length = _timeslice_size + _overlap_size;
             
             _data_source.wait_for_data(mc_offset + mc_length + 1);
             
@@ -165,6 +171,10 @@ private:
     
     const std::vector<std::string>& _compute_hostnames;
     const std::vector<std::string>& _compute_services;
+
+    const uint32_t _timeslice_size;
+    const uint32_t _overlap_size;
+    const uint32_t _max_timeslice_number;
 
     /// Return target computation node for given timeslice.
     int target_cn_index(uint64_t timeslice) {
@@ -293,15 +303,15 @@ private:
             int cn = (wc.wr_id >> 8) & 0xFFFF;
             _conn[cn]->on_complete_write();
 
-            uint64_t acked_ts = _acked_mc / par->timeslice_size();
+            uint64_t acked_ts = _acked_mc / _timeslice_size;
             if (ts == acked_ts)
                 do
                     acked_ts++;
                 while (_ack.at(acked_ts) > ts);
             else
                 _ack.at(ts) = ts;
-            _acked_data = _desc.at(acked_ts * par->timeslice_size()).offset;
-            _acked_mc = acked_ts * par->timeslice_size();
+            _acked_data = _desc.at(acked_ts * _timeslice_size).offset;
+            _acked_mc = acked_ts * _timeslice_size;
             _data_source.update_ack_pointers(_acked_data, _acked_mc);
             if (out.beDebug())
                 out.debug() << "[i" << _input_index << "] "
