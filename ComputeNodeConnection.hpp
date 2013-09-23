@@ -41,14 +41,16 @@ public:
     /// Post a receive work request (WR) to the receive queue
     void post_recv_cn_wp() {
         if (out.beDebug()) {
-            out.debug() << "[" << _index << "] " << "POST RECEIVE _receive_cn_wp";
+            out.debug() << "[c" << _remote_index << "] "
+                        << "[" << _index << "] " << "POST RECEIVE _receive_cn_wp";
         }
         post_recv(&recv_wr);
     }
 
     void post_send_cn_ack() {
         if (out.beDebug()) {
-            out.debug() << "[" << _index << "] " << "POST SEND _send_cn_ack"
+            out.debug()  << "[c" << _remote_index << "] "
+                         << "[" << _index << "] " << "POST SEND _send_cn_ack"
                         << " (desc=" << _send_cn_ack.desc << ")";
         }
         while (_pending_send_requests >= _qp_cap.max_send_wr) {
@@ -113,7 +115,7 @@ public:
     virtual void on_established(struct rdma_cm_event* event) {
         IBConnection::on_established(event);
 
-        out.debug() << "remote index: " << _remote_info.index;
+        out.debug() << "[c" << _remote_index << "] " << "remote index: " << _remote_info.index;
     }
 
     virtual void on_disconnected(struct rdma_cm_event* event) {
@@ -160,14 +162,16 @@ public:
     void on_complete_recv()
     {
         if (_recv_cn_wp == CN_WP_FINAL) {
-            out.debug() << "[" << _index << "] " << "received FINAL pointer update";
+            out.debug() << "[c" << _remote_index << "] "
+                        << "[" << _index << "] " << "received FINAL pointer update";
             // send FINAL ack
             _send_cn_ack = CN_WP_FINAL;
             post_send_final_ack();
             return;
         }
         if (out.beDebug()) {
-            out.debug() << "[" << _index << "] " << "COMPLETE RECEIVE _receive_cn_wp"
+            out.debug() << "[c" << _remote_index << "] "
+                        << "[" << _index << "] " << "COMPLETE RECEIVE _receive_cn_wp"
                         << " (desc=" << _recv_cn_wp.desc << ")";
         }
         _cn_wp = _recv_cn_wp;

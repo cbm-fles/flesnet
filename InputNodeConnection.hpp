@@ -56,7 +56,7 @@ public:
                 boost::mutex::scoped_lock lock2(_cn_wp_mutex);
                 if (_our_turn) {
                     // send phony update to receive new pointers
-                    out.debug() << "[" << _index << "] "
+                    out.debug() << "[i" << _remote_index << "] " << "[" << _index << "] "
                                 << "SENDER send phony update";
                     _our_turn = false;
                     _send_cn_wp = _cn_wp;
@@ -158,7 +158,7 @@ public:
                         + (_cn_wp.desc & cn_desc_buffer_mask)
                         * sizeof(TimesliceComponentDescriptor));
 
-        out.debug() << "[" << _index << "] "
+        out.debug() << "[i" << _remote_index << "] " << "[" << _index << "] "
                     << "POST SEND data (timeslice " << timeslice << ")";
 
         // send everything
@@ -216,10 +216,9 @@ public:
             _done = true;
             return;
         }
-        out.debug()
-                << "[" << _index << "] "
-                << "receive completion, new _cn_ack.data="
-                << _receive_cn_ack.data;
+        out.debug() << "[i" << _remote_index << "] " << "[" << _index << "] "
+                    << "receive completion, new _cn_ack.data="
+                    << _receive_cn_ack.data;
         {
             boost::mutex::scoped_lock lock(_cn_ack_mutex);
             _cn_ack = _receive_cn_ack;
@@ -325,7 +324,7 @@ private:
     /// Post a receive work request (WR) to the receive queue
     void post_recv_cn_ack() {
         if (out.beDebug()) {
-            out.debug() << "[" << _index << "] "
+            out.debug() << "[i" << _remote_index << "] " << "[" << _index << "] "
                         << "POST RECEIVE _receive_cn_ack";
         }
         post_recv(&recv_wr);
@@ -334,7 +333,7 @@ private:
     /// Post a send work request (WR) to the send queue
     void post_send_cn_wp() {
         if (out.beDebug()) {
-            out.debug() << "[" << _index << "] "
+            out.debug() << "[i" << _remote_index << "] " << "[" << _index << "] "
                         << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
                         << " desc=" << _send_cn_wp.desc << ")";
         }
@@ -362,7 +361,7 @@ private:
     boost::mutex _cn_ack_mutex;
 
     /// Condition variable for acknowledged-by-CN pointers    
-    boost::condition_variable_any _cn_ack_cond;
+    boost::condition_variable _cn_ack_cond;
 
     /// Local version of CN write pointers
     ComputeNodeBufferPosition _cn_wp = {};

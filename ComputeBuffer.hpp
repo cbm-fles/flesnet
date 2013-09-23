@@ -100,6 +100,43 @@ public:
         boost::interprocess::message_queue::remove("flesnet_completions");
     }
 
+    virtual void run() {
+        //set_cpu(0);
+
+        assert(!par->processor_executable().empty());
+        child_pids.resize(par->processor_instances());
+        for (uint_fast32_t i = 0; i < par->processor_instances(); i++) {
+            start_processor_task(i);
+        }
+        boost::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
+
+        accept(par->base_port() + par->compute_indexes().at(0), par->input_nodes().size());
+        handle_cm_events(par->input_nodes().size());
+        boost::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
+        completion_handler();
+        for (uint_fast32_t i = 0; i < par->processor_instances(); i++) {
+            pid_t pid = child_pids.at(i);
+            child_pids.at(i) = 0;
+            kill(pid, SIGTERM);
+        }
+        ts_compl.join();
+        t1.join();
+
+        summary();
+    }
+
+    static void start_processor_task(int i) {
+        child_pids.at(i) = fork();
+        if (!child_pids.at(i)) {
+            std::stringstream s;
+            s << i;
+            execl(par->processor_executable().c_str(), s.str().c_str(), (char*) 0);
+            out.fatal() << "Could not start processor task '" << par->processor_executable()
+                        << " " << s.str() << "': " << strerror(errno);
+            exit(1);
+        }
+    };
+
     ///
     uint8_t* get_data_ptr(uint_fast16_t index) {
         return static_cast<uint8_t*>(_data_region->get_address())
@@ -157,7 +194,8 @@ public:
 
         case ID_SEND_CN_ACK:
             if (out.beDebug()) {
-                out.debug() << "[" << in << "] " << "COMPLETE SEND _send_cp_ack";
+                out.debug() << "[c" << _compute_index << "] "
+                            << "[" << in << "] " << "COMPLETE SEND _send_cp_ack";
             }
             _conn[in]->on_complete_send();
             break;
@@ -174,7 +212,8 @@ public:
             _conn[in]->on_complete_send_finalize();
             _connections_done++;
             _all_done = (_connections_done == _conn.size());
-            out.debug() << "SEND FINALIZE complete for id " << in << " all_done=" << _all_done;
+            out.debug() << "[c" << _compute_index << "] "
+                        << "SEND FINALIZE complete for id " << in << " all_done=" << _all_done;
             if (_all_done) {
                 if (par->processor_executable().empty()) {
                     _work_items.stop();
@@ -246,7 +285,7 @@ public:
             }
         }
         catch (concurrent_queue<TimesliceCompletion>::Stopped) {
-            out.trace() << "handle_ts_completion thread done";
+            out.trace() << "[c" << _compute_index << "] " << "handle_ts_completion thread done";
         }
     }
 

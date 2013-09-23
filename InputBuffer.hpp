@@ -43,6 +43,27 @@ public:
         }
     }
 
+    virtual void run() {
+        set_cpu(0);
+
+        std::vector<std::string> services;
+        for (unsigned int i = 0; i < par->compute_nodes().size(); i++)
+            services.push_back(boost::lexical_cast<std::string>(par->base_port() + i));
+
+        connect(par->compute_nodes(), services);
+        handle_cm_events(par->compute_nodes().size());
+        boost::thread t1(&InputBuffer::completion_handler, this);
+
+        sender_loop();
+
+        t1.join();
+        boost::thread t2(&InputBuffer::handle_cm_events, this, 0);
+        disconnect();
+        t2.join();
+
+        summary();
+    }
+
     /// The central loop for distributing timeslice data.
     void sender_loop() {
         set_cpu(2);
@@ -86,7 +107,7 @@ public:
         for (auto& c : _conn)
             c->finalize();
 
-        out.debug() << "SENDER loop done";
+        out.debug() << "[i" << _input_index << "] " << "SENDER loop done";
     }
 
     /// Initiate connection requests to list of target hostnames.
@@ -142,7 +163,7 @@ private:
     }
 
     void dump_mr(struct ibv_mr* mr) {
-        out.debug() << "ibv_mr dump:";
+        out.debug() << "[i" << _input_index << "] " << "ibv_mr dump:";
         out.debug() << " addr=" << (uint64_t) mr->addr;
         out.debug() << " length=" << (uint64_t) mr->length;
         out.debug() << " lkey=" << (uint64_t) mr->lkey;
@@ -275,7 +296,8 @@ private:
             _acked_mc = acked_ts * par->timeslice_size();
             _data_source.update_ack_pointers(_acked_data, _acked_mc);
             if (out.beDebug())
-                out.debug() << "write timeslice " << ts << " complete, now: _acked_data="
+                out.debug() << "[i" << _input_index << "] "
+                            << "write timeslice " << ts << " complete, now: _acked_data="
                             << _acked_data << " _acked_mc=" << _acked_mc;
         }
             break;
@@ -286,7 +308,8 @@ private:
             if (_conn[cn]->done()) {
                 _connections_done++;
                 _all_done = (_connections_done == _conn.size());
-                out.debug() << "ID_RECEIVE_CN_ACK final for id " << cn << " all_done=" << _all_done;
+                out.debug() << "[i" << _input_index << "] "
+                            << "ID_RECEIVE_CN_ACK final for id " << cn << " all_done=" << _all_done;
             }
         }
             break;
@@ -296,7 +319,8 @@ private:
             break;
             
         default:
-            out.error() << "wc for unknown wr_id=" << (wc.wr_id & 0xFF);
+            out.error() << "[i" << _input_index << "] "
+                        << "wc for unknown wr_id=" << (wc.wr_id & 0xFF);
             throw InfinibandException("wc for unknown wr_id");
         }
     }

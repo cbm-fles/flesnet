@@ -135,6 +135,8 @@ public:
     void completion_handler() {
         set_cpu(1);
 
+        _time_begin = std::chrono::high_resolution_clock::now();
+
         const int ne_max = 10;
 
         struct ibv_cq* ev_cq;
@@ -173,6 +175,8 @@ public:
             }
         }
 
+        _time_end = std::chrono::high_resolution_clock::now();
+
         out.debug() << "COMPLETION loop done";
     }
 
@@ -205,13 +209,26 @@ public:
         return _aggregate_recv_requests;
     }
 
-    void summary(double runtime) const {
+    void summary() const {
+        double runtime =
+            std::chrono::duration_cast<std::chrono::microseconds>(_time_end - _time_begin).count();
         out.info() << "summary: " << _aggregate_send_requests << " SEND, "
                    << _aggregate_recv_requests << " RECV requests";
         double rate = (double) _aggregate_bytes_sent / runtime;
         out.info() << "summary: " << _aggregate_bytes_sent
                    << " bytes sent in "
                    << runtime/1000000. << " s (" << rate << " MB/s)";
+    }
+
+    /// The "main" function of an IBConnectionGroup decendant.
+    virtual void run() = 0;
+
+    void start() {
+        _thread = std::unique_ptr<boost::thread>(new boost::thread(&IBConnectionGroup::run, this));
+    }
+
+    void join() {
+        _thread->join();
     }
 
 protected:
@@ -302,6 +319,10 @@ protected:
             throw InfinibandException("ibv_req_notify_cq failed");
     }
 
+    std::chrono::high_resolution_clock::time_point _time_begin;
+
+    std::chrono::high_resolution_clock::time_point _time_end;
+
 private:
 
     /// InfiniBand verbs context
@@ -358,6 +379,8 @@ private:
 
     /// Completion notification event dispatcher. Called by the event loop.
     virtual void on_completion(const struct ibv_wc& wc) = 0;
+
+    std::unique_ptr<boost::thread> _thread;
 };
 
 

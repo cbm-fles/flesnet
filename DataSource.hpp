@@ -166,38 +166,33 @@ DCOUNT[2]++;
 
     virtual uint64_t wait_for_data(uint64_t min_mc_number)
     {
-        static uint64_t written_mc = 0;
-
 DCOUNT[3]++;
-        if (min_mc_number > written_mc) {
+        if (min_mc_number > cached_written_mc) {
             boost::unique_lock<boost::mutex> l(_mutex);
             while (min_mc_number > _written_mc) {
 DCOUNT[4]++;
                 _cond_consumer.wait(l);
             }
-            written_mc = _written_mc;
+            cached_written_mc = _written_mc;
         }
-        return written_mc;
+        return cached_written_mc;
     };
 
     virtual void update_ack_pointers(uint64_t new_acked_data, uint64_t new_acked_mc)
     {
-        static uint64_t acked_mc = 0;
-        static uint64_t acked_data = 0;
-
         const uint64_t min_acked_mc = _desc_buffer.size() / 4;
         const uint64_t min_acked_data = _data_buffer.size() / 4;
 
 DCOUNT[5]++;
-        if (new_acked_data >= acked_data + min_acked_data
-            || new_acked_mc >= acked_mc + min_acked_mc) {
-            acked_data = new_acked_data;
-            acked_mc = new_acked_mc;
+        if (new_acked_data >= cached_acked_data + min_acked_data
+            || new_acked_mc >= cached_acked_mc + min_acked_mc) {
+            cached_acked_data = new_acked_data;
+            cached_acked_mc = new_acked_mc;
 DCOUNT[6]++;
             {
                 boost::unique_lock<boost::mutex> l(_mutex);
-                _acked_data = acked_data;
-                _acked_mc = acked_mc;
+                _acked_data = cached_acked_data;
+                _acked_mc = cached_acked_mc;
             }
             _cond_producer.notify_one();
         }
@@ -223,6 +218,10 @@ private:
 
     /// FLIB-internal number of written MCs. 
     uint64_t _written_mc{0};
+
+    uint64_t cached_acked_data = 0;
+    uint64_t cached_acked_mc = 0;
+    uint64_t cached_written_mc = 0;
 
     /// A pseudo-random number generator.
     boost::mt19937 _rng;

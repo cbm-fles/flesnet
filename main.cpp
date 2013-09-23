@@ -31,7 +31,6 @@
 #include "ComputeNodeConnection.hpp"
 #include "concurrent_queue.hpp"
 #include "ComputeBuffer.hpp"
-#include "TimesliceProcessor.hpp"
 #include "Application.hpp"
 
 einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out(einhard::WARN, true);
@@ -52,12 +51,14 @@ main(int argc, char* argv[])
         par = std::move(parameters);
 
         if (!par->compute_indexes().empty()) {
-            _compute_app = std::unique_ptr<ComputeApplication>(new ComputeApplication(*par));
+            _compute_app = std::unique_ptr<ComputeApplication>
+                (new ComputeApplication(*par, par->compute_indexes()));
             _compute_app->start();
         }
 
         if (!par->input_indexes().empty()) {
-            _input_app = std::unique_ptr<InputApplication>(new InputApplication(*par));
+            _input_app = std::unique_ptr<InputApplication>
+                (new InputApplication(*par, par->input_indexes()));
             _input_app->start();
         }
 
