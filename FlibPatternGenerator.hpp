@@ -7,20 +7,6 @@
 #ifndef FLIBPATTERNGENERATOR_HPP
 #define FLIBPATTERNGENERATOR_HPP
 
-/// Abstract FLES data source class.
-class DataSource
-{
-public:
-    virtual uint64_t wait_for_data(uint64_t min_mcNumber) = 0;
-
-    virtual void update_ack_pointers(uint64_t new_acked_data, uint64_t new_acked_mc) = 0;
-
-    virtual RingBufferView<>& data_buffer() = 0;
-
-    virtual RingBufferView<MicrosliceDescriptor>& desc_buffer() = 0;
-};
-
-
 /// Simple software pattern generator used as FLIB replacement.
 class FlibPatternGenerator : public DataSource, public ThreadContainer
 {

@@ -27,6 +27,7 @@
 #include "IBConnection.hpp"
 #include "IBConnectionGroup.hpp"
 #include "InputChannelConnection.hpp"
+#include "DataSource.hpp"
 #include "FlibPatternGenerator.hpp"
 #include "InputChannelSender.hpp"
 #include "ComputeNodeConnection.hpp"
