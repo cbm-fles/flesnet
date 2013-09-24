@@ -74,14 +74,19 @@ public:
     void sender_loop() {
         set_cpu(2);
 
+        uint64_t cached_written_mc = 0;
+
         for (uint64_t timeslice = 0; timeslice < _max_timeslice_number;
              timeslice++) {
 
             // wait until a complete TS is available in the input buffer
             uint64_t mc_offset = timeslice * _timeslice_size;
             uint64_t mc_length = _timeslice_size + _overlap_size;
-            
-            _data_source.wait_for_data(mc_offset + mc_length + 1);
+
+            uint64_t min_mc_number = mc_offset + mc_length + 1;
+            if (min_mc_number > cached_written_mc) {
+                cached_written_mc = _data_source.wait_for_data(min_mc_number);
+            }
             
             uint64_t data_offset = _data_source.desc_buffer().at(mc_offset).offset;
             uint64_t data_length = _data_source.desc_buffer().at(mc_offset + mc_length).offset

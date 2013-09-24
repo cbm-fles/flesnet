@@ -178,15 +178,12 @@ DCOUNT[2]++;
     virtual uint64_t wait_for_data(uint64_t min_mc_number)
     {
 DCOUNT[3]++;
-        if (min_mc_number > cached_written_mc) {
-            boost::unique_lock<boost::mutex> l(_mutex);
-            while (min_mc_number > _written_mc) {
+        boost::unique_lock<boost::mutex> l(_mutex);
+        while (min_mc_number > _written_mc) {
 DCOUNT[4]++;
-                _cond_consumer.wait(l);
-            }
-            cached_written_mc = _written_mc;
+            _cond_consumer.wait(l);
         }
-        return cached_written_mc;
+        return _written_mc;
     }
 
     virtual void update_ack_pointers(uint64_t new_acked_data, uint64_t new_acked_mc)
@@ -239,7 +236,6 @@ private:
 
     uint64_t cached_acked_data = 0;
     uint64_t cached_acked_mc = 0;
-    uint64_t cached_written_mc = 0;
 
     /// A pseudo-random number generator.
     boost::mt19937 _rng;
