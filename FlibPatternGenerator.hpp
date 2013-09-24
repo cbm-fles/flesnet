@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file FlibPatternGenerator.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef FLIBPATTERNGENERATOR_HPP
-#define FLIBPATTERNGENERATOR_HPP
 
 /// Simple software pattern generator used as FLIB replacement.
 class FlibPatternGenerator : public DataSource, public ThreadContainer
@@ -223,6 +221,3 @@ private:
     boost::variate_generator<boost::mt19937&,
                              boost::poisson_distribution<> > _rand_content_bytes;
 };
-    
-
-#endif /* FLIBPATTERNGENERATOR_HPP */

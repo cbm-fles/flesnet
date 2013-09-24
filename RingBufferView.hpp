@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file RingBufferView.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef RINGBUFFERVIEW_HPP
-#define RINGBUFFERVIEW_HPP
 
 /// Simple generic ring buffer view class.
 template<typename T = uint8_t>
@@ -73,6 +71,3 @@ private:
     /// Buffer addressing bit mask.
     const std::size_t _size_mask;
 };
-
-
-#endif /* RINGBUFFERVIEW_HPP */

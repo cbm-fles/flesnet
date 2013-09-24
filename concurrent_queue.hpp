@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file concurrent_queue.hpp
  *
  * 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef CONCURRENT_QUEUE_HPP
-#define CONCURRENT_QUEUE_HPP
 
 template<typename T>
 class concurrent_queue : private boost::noncopyable
@@ -125,6 +123,3 @@ private:
     mutable boost::condition_variable _cond_empty;
     bool _is_stopped = false;
 };
-
-
-#endif /* CONCURRENT_QUEUE_HPP */

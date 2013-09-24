@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file DataSource.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef DATASOURCE_HPP
-#define DATASOURCE_HPP
 
 /// Abstract FLES data source class.
 class DataSource
@@ -19,6 +17,3 @@ public:
 
     virtual RingBufferView<MicrosliceDescriptor>& desc_buffer() = 0;
 };
-    
-
-#endif /* DATASOURCE_HPP */

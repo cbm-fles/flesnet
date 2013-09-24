@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file ComputeNodeApplication.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef COMPUTENODEAPPLICATION_HPP
-#define COMPUTENODEAPPLICATION_HPP
 
 /// Compute application class.
 /** The ComputeNodeApplication object represents an instance of the
@@ -62,6 +60,3 @@ private:
         }
     };
 };
-
-
-#endif /* COMPUTENODEAPPLICATION_HPP */

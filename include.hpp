@@ -4,9 +4,6 @@
  * 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#ifndef INCLUDE_HPP
-#define INCLUDE_HPP
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -37,5 +34,3 @@
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
-
-#endif /* INCLUDE_HPP */

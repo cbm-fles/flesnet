@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file IBConnection.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef IBCONNECTION_HPP
-#define IBCONNECTION_HPP
 
 /// InfiniBand exception class.
 /** An InfinbandException object signals an error that occured in the
@@ -330,6 +328,3 @@ private:
     };
 
 };
-
-
-#endif /* IBCONNECTION_HPP */

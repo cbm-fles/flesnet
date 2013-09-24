@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file IBConnectionGroup.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef IBCONNECTIONGROUP_HPP
-#define IBCONNECTIONGROUP_HPP
 
 /// InfiniBand connection group base class.
 /** An IBConnectionGroup object represents a group of InfiniBand
@@ -384,6 +382,3 @@ private:
 
     std::unique_ptr<boost::thread> _thread;
 };
-
-
-#endif /* IBCONNECTIONGROUP_HPP */

@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file InputChannelConnection.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef INPUTCHANNELCONNECTION_HPP
-#define INPUTCHANNELCONNECTION_HPP
 
 /// Input node connection class.
 /** An InputChannelConnection object represents the endpoint of a single
@@ -392,6 +390,3 @@ private:
 
     unsigned int _max_pending_write_requests = 0;
 };
-
-
-#endif /* INPUTCHANNELCONNECTION_HPP */

@@ -1,7 +1,5 @@
+#pragma once
 // 2013, Jan de Cuveland <cmail@cuveland.de>
-
-#ifndef FLES_IPC_HPP
-#define FLES_IPC_HPP
 
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
@@ -198,5 +196,3 @@ public:
 };
 
 } // namespace fles {
-
-#endif // FLES_IPC_HPP

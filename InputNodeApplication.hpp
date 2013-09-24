@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file InputNodeApplication.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef INPUTNODEAPPLICATION_HPP
-#define INPUTNODEAPPLICATION_HPP
 
 /// Input application class.
 /** The InputNodeApplication object represents an instance of the running
@@ -43,6 +41,3 @@ private:
 
     std::vector<std::unique_ptr<DataSource> > _data_sources;
 };
-
-
-#endif /* INPUTNODEAPPLICATION_HPP */

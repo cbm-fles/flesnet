@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file Parameters.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef PARAMETERS_HPP
-#define PARAMETERS_HPP
 
 namespace po = boost::program_options;
 
@@ -357,6 +355,3 @@ private:
         }
     }
 };
-
-
-#endif /* PARAMETERS_HPP */

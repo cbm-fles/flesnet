@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file ComputeNodeConnection.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef COMPUTENODECONNECTION_HPP
-#define COMPUTENODECONNECTION_HPP
 
 /// Compute node connection class.
 /** A ComputeNodeConnection object represents the endpoint of a single
@@ -255,6 +253,3 @@ private:
 
     std::atomic_uint _pending_send_requests{0};
 };
-
-
-#endif /* COMPUTENODECONNECTION_HPP */

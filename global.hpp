@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file global.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef GLOBAL_HPP
-#define GLOBAL_HPP
 
 #include "einhard.hpp"
 
@@ -15,5 +13,3 @@ class Parameters;
 extern std::unique_ptr<Parameters> par;
 
 extern std::vector<pid_t> child_pids;
-
-#endif /* GLOBAL_HPP */

@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file RingBuffer.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef RINGBUFFER_HPP
-#define RINGBUFFER_HPP
 
 /// Simple generic ring buffer class.
 template<typename T = uint8_t, bool CLEARED = false>
@@ -103,6 +101,3 @@ private:
     /// The data buffer.
     std::unique_ptr<T[]> _buf;
 };
-
-
-#endif /* RINGBUFFER_HPP */

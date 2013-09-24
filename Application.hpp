@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file Application.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef APPLICATION_HPP
-#define APPLICATION_HPP
 
 /// %Application base class.
 /** The Application object represents an instance of the running
@@ -42,6 +40,3 @@ protected:
     /// The application's connection group / buffer objects
     std::vector<std::unique_ptr<T> > _buffers;
 };
-
-
-#endif /* APPLICATION_HPP */

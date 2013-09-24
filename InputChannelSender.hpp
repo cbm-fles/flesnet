@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file InputChannelSender.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef INPUTCHANNELSENDER_HPP
-#define INPUTCHANNELSENDER_HPP
 
 /// Input buffer and compute node connection container class.
 /** An InputChannelSender object represents an input buffer (filled by a
@@ -354,6 +352,3 @@ private:
         }
     }
 };
-
-
-#endif /* INPUTCHANNELSENDER_HPP */

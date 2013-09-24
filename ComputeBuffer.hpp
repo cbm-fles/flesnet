@@ -1,11 +1,9 @@
+#pragma once
 /**
  * \file ComputeBuffer.hpp
  *
  * 2013, Jan de Cuveland <cmail@cuveland.de>
  */
-
-#ifndef COMPUTEBUFFER_HPP
-#define COMPUTEBUFFER_HPP
 
 /// Compute buffer and input node connection container class.
 /** A ComputeBuffer object represents a timeslice buffer (filled by
@@ -290,6 +288,3 @@ public:
     }
 
 };
-
-
-#endif /* COMPUTEBUFFER_HPP */
