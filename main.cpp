@@ -23,6 +23,7 @@
 #include "Timeslice.hpp"
 #include "Parameters.hpp"
 #include "RingBuffer.hpp"
+#include "RingBufferView.hpp"
 #include "IBConnection.hpp"
 #include "IBConnectionGroup.hpp"
 #include "InputChannelConnection.hpp"

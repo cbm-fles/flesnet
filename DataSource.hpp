@@ -11,33 +11,13 @@
 class DataSource
 {
 public:
-    /// The DataSource constructor.
-    DataSource(std::size_t data_buffer_size_exp, std::size_t desc_buffer_size_exp) :
-        _data_buffer(data_buffer_size_exp),
-        _desc_buffer(desc_buffer_size_exp)
-    { }
-
     virtual uint64_t wait_for_data(uint64_t min_mcNumber) = 0;
 
     virtual void update_ack_pointers(uint64_t new_acked_data, uint64_t new_acked_mc) = 0;
 
-    RingBuffer<>& data_buffer()
-    {
-        return _data_buffer;
-    }
+    virtual RingBufferView<>& data_buffer() = 0;
 
-    RingBuffer<MicrosliceDescriptor>& desc_buffer()
-    {
-        return _desc_buffer;
-    }
-
-    
-protected:
-    /// Input data buffer.
-    RingBuffer<> _data_buffer;
-
-    /// Input descriptor buffer.
-    RingBuffer<MicrosliceDescriptor> _desc_buffer;
+    virtual RingBufferView<MicrosliceDescriptor>& desc_buffer() = 0;
 };
 
 
@@ -52,7 +32,10 @@ public:
               bool generate_pattern,
               uint32_t typical_content_size,
               bool randomize_sizes) :
-        DataSource(data_buffer_size_exp, desc_buffer_size_exp),
+        _data_buffer(data_buffer_size_exp),
+        _desc_buffer(desc_buffer_size_exp),
+        _data_buffer_view(_data_buffer.ptr(), data_buffer_size_exp),
+        _desc_buffer_view(_desc_buffer.ptr(), desc_buffer_size_exp),
         _input_index(input_index),
         _generate_pattern(generate_pattern),
         _typical_content_size(typical_content_size),
@@ -76,6 +59,16 @@ public:
 
         for (int i = 0; i < 10; i++)
             out.trace() << "DCOUNT[" << i << "] = " << DCOUNT[i];
+    }
+
+    virtual RingBufferView<>& data_buffer()
+    {
+        return _data_buffer_view;
+    }
+
+    virtual RingBufferView<MicrosliceDescriptor>& desc_buffer()
+    {
+        return _desc_buffer_view;
     }
 
     uint64_t DCOUNT[10] = {};
@@ -198,6 +191,15 @@ DCOUNT[6]++;
     }
 
 private:
+    /// Input data buffer.
+    RingBuffer<> _data_buffer;
+
+    /// Input descriptor buffer.
+    RingBuffer<MicrosliceDescriptor> _desc_buffer;
+
+    RingBufferView<> _data_buffer_view;
+    RingBufferView<MicrosliceDescriptor> _desc_buffer_view;
+
     /// This node's index in the list of input nodes
     uint64_t _input_index;
 
