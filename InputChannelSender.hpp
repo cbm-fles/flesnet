@@ -30,7 +30,9 @@ public:
         _compute_services(compute_services),
         _timeslice_size(timeslice_size),
         _overlap_size(overlap_size),
-        _max_timeslice_number(max_timeslice_number)
+        _max_timeslice_number(max_timeslice_number),
+        _min_acked_mc(data_source.desc_buffer().size() / 4),
+        _min_acked_data(data_source.data_buffer().size() / 4)
     {
         size_t min_ack_buffer_size = _data_source.desc_buffer().size() / _timeslice_size + 1;
         _ack.alloc_with_size(min_ack_buffer_size);
@@ -149,14 +151,8 @@ public:
 private:
     uint64_t _input_index;
 
-    /// Input data buffer. Filled by FLIB.
-    RingBuffer<> _data;
-
     /// InfiniBand memory region descriptor for input data buffer.
     struct ibv_mr* _mr_data = nullptr;
-
-    /// Input descriptor buffer. Filled by FLIB.
-    RingBuffer<MicrosliceDescriptor> _desc;
 
     /// InfiniBand memory region descriptor for input descriptor buffer.
     struct ibv_mr* _mr_desc = nullptr;
@@ -179,6 +175,12 @@ private:
     const uint32_t _timeslice_size;
     const uint32_t _overlap_size;
     const uint32_t _max_timeslice_number;
+
+    const uint64_t _min_acked_mc;
+    const uint64_t _min_acked_data;
+
+    uint64_t _cached_acked_data = 0;
+    uint64_t _cached_acked_mc = 0;
 
     /// Return target computation node for given timeslice.
     int target_cn_index(uint64_t timeslice) {
@@ -316,7 +318,12 @@ private:
                 _ack.at(ts) = ts;
             _acked_data = _data_source.desc_buffer().at(acked_ts * _timeslice_size).offset;
             _acked_mc = acked_ts * _timeslice_size;
-            _data_source.update_ack_pointers(_acked_data, _acked_mc);
+            if (_acked_data >= _cached_acked_data + _min_acked_data
+                || _acked_mc >= _cached_acked_mc + _min_acked_mc) {
+                _cached_acked_data = _acked_data;
+                _cached_acked_mc = _acked_mc;
+                _data_source.update_ack_pointers(_cached_acked_data, _cached_acked_mc);
+            }
             if (out.beDebug())
                 out.debug() << "[i" << _input_index << "] "
                             << "write timeslice " << ts << " complete, now: _acked_data="

@@ -188,22 +188,13 @@ DCOUNT[4]++;
 
     virtual void update_ack_pointers(uint64_t new_acked_data, uint64_t new_acked_mc)
     {
-        const uint64_t min_acked_mc = _desc_buffer.size() / 4;
-        const uint64_t min_acked_data = _data_buffer.size() / 4;
-
-DCOUNT[5]++;
-        if (new_acked_data >= cached_acked_data + min_acked_data
-            || new_acked_mc >= cached_acked_mc + min_acked_mc) {
-            cached_acked_data = new_acked_data;
-            cached_acked_mc = new_acked_mc;
 DCOUNT[6]++;
-            {
-                boost::unique_lock<boost::mutex> l(_mutex);
-                _acked_data = cached_acked_data;
-                _acked_mc = cached_acked_mc;
-            }
-            _cond_producer.notify_one();
+        {
+            boost::unique_lock<boost::mutex> l(_mutex);
+            _acked_data = new_acked_data;
+            _acked_mc = new_acked_mc;
         }
+        _cond_producer.notify_one();
     }
 
 private:
@@ -233,9 +224,6 @@ private:
 
     /// FLIB-internal number of written MCs. 
     uint64_t _written_mc{0};
-
-    uint64_t cached_acked_data = 0;
-    uint64_t cached_acked_mc = 0;
 
     /// A pseudo-random number generator.
     boost::mt19937 _rng;
