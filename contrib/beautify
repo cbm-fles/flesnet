@@ -1,17 +1,12 @@
 #!/bin/bash
 
 astyle --options=contrib/astyle.opt --suffix=none \
-  Application.hpp \
-  ComputeBuffer.hpp \
-  ComputeNodeConnection.hpp \
-  DataSource.hpp \
-  Infiniband.hpp \
-  InputBuffer.hpp \
-  InputNodeConnection.hpp \
-  Parameters.hpp \
-  RingBuffer.hpp \
-  TimesliceAnalyzer.hpp \
-  Timeslice.hpp \
+  [A-Z]*.hpp \
+  include.hpp \
+  fles_ipc.hpp \
+  concurrent_queue.hpp \
   global.hpp \
-  main.cpp
+  main.cpp \
+  pattern-check.cpp \
+  raw-storage.cpp \
 
