@@ -1,11 +1,11 @@
 /**
- * \file DataSource.hpp
+ * \file FlibPatternGenerator.hpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#ifndef DATASOURCE_HPP
-#define DATASOURCE_HPP
+#ifndef FLIBPATTERNGENERATOR_HPP
+#define FLIBPATTERNGENERATOR_HPP
 
 /// Abstract FLES data source class.
 class DataSource
@@ -22,11 +22,11 @@ public:
 
 
 /// Simple software pattern generator used as FLIB replacement.
-class DummyFlib : public DataSource, public ThreadContainer
+class FlibPatternGenerator : public DataSource, public ThreadContainer
 {
 public:
-    /// The DummyFlib constructor.
-    DummyFlib(std::size_t data_buffer_size_exp,
+    /// The FlibPatternGenerator constructor.
+    FlibPatternGenerator(std::size_t data_buffer_size_exp,
               std::size_t desc_buffer_size_exp,
               uint64_t input_index,
               bool generate_pattern,
@@ -43,10 +43,10 @@ public:
         _pd(typical_content_size),
         _rand_content_bytes(_rng, _pd)
     {
-        _producer_thread = new boost::thread(&DummyFlib::produce_data, this);
+        _producer_thread = new boost::thread(&FlibPatternGenerator::produce_data, this);
     }
 
-    ~DummyFlib()
+    ~FlibPatternGenerator()
     {
         {
             boost::unique_lock<boost::mutex> l(_mutex);
@@ -239,4 +239,4 @@ private:
 };
     
 
-#endif /* DATASOURCE_HPP */
+#endif /* FLIBPATTERNGENERATOR_HPP */

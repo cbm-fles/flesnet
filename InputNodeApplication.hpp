@@ -25,9 +25,9 @@ public:
 
         for (unsigned i: indexes) {
             std::unique_ptr<DataSource> data_source
-                (new DummyFlib(par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
-                               i, par.check_pattern(), par.typical_content_size(),
-                               par.randomize_sizes()));
+                (new FlibPatternGenerator(par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
+                                          i, par.check_pattern(), par.typical_content_size(),
+                                          par.randomize_sizes()));
             std::unique_ptr<InputChannelSender> buffer
                 (new InputChannelSender(i, *data_source, _compute_hostnames, _compute_services,
                                  par.timeslice_size(), par.overlap_size(),
