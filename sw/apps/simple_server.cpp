@@ -41,12 +41,12 @@ int main(int argc, const char* argv[])
   flib::flib_device flib(0);
 
   // create a device control server, initialize and start server thread
-  flib_control_server flibserver(zmq_context, *flib.link[0]);
+  flib_control_server flibserver(zmq_context, "CbmNet::Driver0", *flib.link[0]);
   flibserver.Bind();
   flibserver.Start();
   
   // create control server and start
-  CbmNet::ControlServer cntlserv(zmq_context);
+  CbmNet::ControlServer cntlserv(zmq_context, "CbmNet::Driver0");
   cntlserv.SetDebugFlags(CbmNet::ControlServer::kDbgDumpRpc);
   cntlserv.Bind();
   cntlserv.ConnectDriver();

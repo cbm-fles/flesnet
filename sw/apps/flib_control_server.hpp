@@ -14,8 +14,9 @@ using namespace flib;
 
 class flib_control_server {
   
-  flib_link &_link;
   zmq::context_t& _zmq_context;
+  std::string _path;
+  flib_link &_link;
   zmq::socket_t _driver_req;
   zmq::socket_t _driver_res;
   boost::thread _driver_thread;
@@ -33,14 +34,16 @@ class flib_control_server {
 public:
   
 
-  flib_control_server(zmq::context_t&  context, 
+  flib_control_server(zmq::context_t&  context,
+                      std::string path,
 		      flib_link &link)
-    :       _link(link),
-            _zmq_context(context),
-            _driver_req(context, ZMQ_PULL),
-            _driver_res(context, ZMQ_PUSH),
-            _stop_fd(-1),
-            _driver_state(DriverStateStopped)
+    : _zmq_context(context),
+      _path(path),
+      _link(link),
+      _driver_req(context, ZMQ_PULL),
+      _driver_res(context, ZMQ_PUSH),
+      _stop_fd(-1),
+      _driver_state(DriverStateStopped)
   { }
   
   ~flib_control_server()
@@ -50,8 +53,10 @@ public:
 
   void Bind()
   {
-    _driver_req.bind("inproc://CbmNet::ControlServer::DriverReq");
-    _driver_res.bind("inproc://CbmNet::ControlServer::DriverRes");
+    std::string req = "inproc://" + _path + "req";
+    std::string res = "inproc://" + _path + "res";;
+    _driver_req.bind(req.c_str());
+    _driver_res.bind(res.c_str());
     return;
   }
 

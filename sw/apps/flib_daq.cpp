@@ -37,11 +37,11 @@ int main(int argc, const char* argv[])
   // initialize FLIB link
   flib.link[0]->set_data_rx_sel(flib_link::pgen);
 
-  flib_control_server flibserver(zmq_context, *flib.link[0]);
+  flib_control_server flibserver(zmq_context, "Driver0", *flib.link[0]);
   flibserver.Bind();
   flibserver.Start();
   
-  CbmNet::ControlServer cntlserv(zmq_context);
+  CbmNet::ControlServer cntlserv(zmq_context, "Driver0");
   cntlserv.SetDebugFlags(CbmNet::ControlServer::kDbgDumpRpc);
   cntlserv.Bind();
   cntlserv.ConnectDriver();
