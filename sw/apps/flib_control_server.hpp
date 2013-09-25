@@ -112,7 +112,6 @@ public:
     _stop_fd = -1;
     
     _poll_items.clear();
-    std::cout << "driver thread terminated" << std::endl;
 
     return;
   }
