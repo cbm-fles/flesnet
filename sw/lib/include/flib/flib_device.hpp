@@ -54,6 +54,18 @@ public:
     return link.size();
   }
 
+  flib_link& get_link(size_t n) {
+    return *link.at(n);
+  }
+
+  std::vector<flib_link*> get_links() {
+    std::vector<flib_link*> links;
+    for (auto& l : link) {
+      links.push_back(l.get());
+    }
+    return links;
+  }
+  
   void enable_mc_cnt(bool enable) {
     _bar->set_bit(RORC_REG_MC_CNT_CFG, 31, enable);
   }
