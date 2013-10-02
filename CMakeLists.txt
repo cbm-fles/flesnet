@@ -11,7 +11,7 @@ project(flesnet)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -pedantic -O3")
 
-find_package(Boost 1.40 COMPONENTS program_options thread REQUIRED)
+find_package(Boost 1.40 COMPONENTS program_options thread serialization REQUIRED)
 
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=2)
 
@@ -48,6 +48,7 @@ target_link_libraries(pattern-check rt)
 
 add_executable(raw-storage raw-storage.cpp)
 target_link_libraries(raw-storage rt)
+target_link_libraries(raw-storage ${Boost_SERIALIZATION_LIBRARY})
 
 # Documentation
 include(FindDoxygen)

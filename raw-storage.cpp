@@ -5,15 +5,15 @@
  */
 
 #include "fles_ipc.hpp"
+#include <boost/archive/binary_oarchive.hpp>
+#include <fstream>
 #include <iostream>
 #include <csignal>
 
 int count = 0;
-FILE *fp;
 
 /// The SIGTERM handler.
 static void term_handler(int sig) {
-    fclose(fp);
     std::cout << "timeslices stored: " << count << std::endl;
     exit(0);
 }
@@ -27,24 +27,18 @@ void install_term_handler() {
     sigaction(SIGTERM, &sa, NULL);
 }
 
-void store_timeslice(const fles::Timeslice& ts) {
-    for (size_t c = 0; c < ts.num_components(); c++) {
-        for (size_t m = 0; m < ts.num_microslices(); m++) {
-            fwrite(&ts.descriptor(c, m), sizeof(fles::MicrosliceDescriptor), 1, fp);
-            fwrite(ts.content(c, m), ts.descriptor(c, m).size, 1, fp);
-        }
-    }
-}
-
 int main() {
-    fp = fopen("storage.data", "w");
     install_term_handler();
-    
+
+    std::ofstream ofs("storage.data");
+    boost::archive::binary_oarchive oa(ofs);
+
     fles::TimesliceReceiver tsr;
     
     while (true) {
         std::unique_ptr<const fles::Timeslice> ts = tsr.receive();
-        store_timeslice(*ts);
+        fles::StorableTimeslice sts(*ts);
+        oa << sts;
         count++;
     }
 

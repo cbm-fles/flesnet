@@ -4,6 +4,8 @@
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/vector.hpp>
 #include <memory>
 #include <cstdint>
 
@@ -46,6 +48,18 @@ struct TimesliceWorkItem
     uint32_t num_components;          ///< Number of components (contributing input channels)
     uint32_t data_buffer_size_exp;    ///< Exp. size (in bytes) of each data buffer
     uint32_t desc_buffer_size_exp;    ///< Exp. size (in bytes) of each descriptor buffer
+
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        ar & ts_pos;
+        ar & num_core_microslices;
+        ar & num_overlap_microslices;
+        ar & num_components;
+        ar & data_buffer_size_exp;
+        ar & desc_buffer_size_exp;
+    }
 };
 
 //! Timeslice completion struct.
@@ -56,10 +70,11 @@ struct TimesliceCompletion
 
 #pragma pack()
 
-//! The Timeslice class represents the data of a single timeslice.
+//! The Timeslice class provides access to the data of a single timeslice.
 class Timeslice
 {
     friend class TimesliceReceiver;
+    friend class StorableTimeslice;
 
     TimesliceWorkItem _work_item;
     TimesliceCompletion _completion{};
@@ -136,6 +151,72 @@ public:
     {
         return (&reinterpret_cast<const MicrosliceDescriptor&>
                 (data(component, desc(component).offset)))[microslice];
+    }
+};
+
+//! The StorableTimeslice class contains the data of a single timeslice.
+class StorableTimeslice
+{
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        ar & _work_item;
+        ar & _data;
+        ar & _index;
+    }
+
+    TimesliceWorkItem _work_item;
+    std::vector<std::vector<uint8_t> > _data;
+    uint64_t _index;
+
+public:
+
+    StorableTimeslice(const Timeslice& ts) :
+        _work_item(ts._work_item),
+        _data(ts._work_item.num_components),
+        _index(ts.index())
+    {
+        for (std::size_t component= 0; component < ts._work_item.num_components; component++) {
+            uint64_t size = ts.desc(component).size;
+            const uint8_t* begin = &ts.data(component, ts.desc(component).offset);
+            _data[component].resize(size);
+            std::copy_n(begin, size, _data[component].begin());
+        }
+    }
+
+    /// Retrieve the timeslice index.
+    uint64_t index() const
+    { return _index; }
+
+    /// Retrieve the number of core microslices.
+    uint64_t num_core_microslices() const
+    { return _work_item.num_core_microslices; }
+
+    /// Retrieve the number of overlapping microslices.
+    uint64_t num_overlap_microslices() const
+    { return _work_item.num_overlap_microslices; }
+
+    /// Retrieve the total number of microslices.
+    uint64_t num_microslices() const
+    { return _work_item.num_core_microslices + _work_item.num_overlap_microslices; }
+
+    /// Retrieve the number of components (contributing input channels).
+    uint64_t num_components() const
+    { return _work_item.num_components; }
+
+    /// Retrieve a pointer to the data content of a given microslice
+    const uint8_t* content(uint64_t component, uint64_t microslice) const
+    {
+        return &_data[component][num_microslices() * sizeof(MicrosliceDescriptor)
+                                 + descriptor(component, microslice).offset
+                                 - descriptor(component, 0).offset];
+    }
+
+    /// Retrieve the descriptor of a given microslice
+    const MicrosliceDescriptor& descriptor(uint64_t component, uint64_t microslice) const
+    {
+        return (&reinterpret_cast<const MicrosliceDescriptor&>(_data[component][0]))[microslice];
     }
 };
 
