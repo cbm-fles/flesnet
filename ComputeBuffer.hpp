@@ -12,6 +12,10 @@
 
 class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
 {
+private:
+    ComputeBuffer(const ComputeBuffer&) = delete;
+    void operator=(const ComputeBuffer&) = delete;
+
     uint64_t _compute_index;
 
     size_t _red_lantern = 0;

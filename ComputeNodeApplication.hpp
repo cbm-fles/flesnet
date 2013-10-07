@@ -12,9 +12,11 @@
 class ComputeNodeApplication : public Application<ComputeBuffer>
 {
 public:
+    ComputeNodeApplication(const ComputeNodeApplication&) = delete;
+    void operator=(const ComputeNodeApplication&) = delete;
 
     /// The ComputeNodeApplication contructor.
-    explicit ComputeNodeApplication(Parameters& par, std::vector<unsigned> indexes) :
+    ComputeNodeApplication(Parameters& par, std::vector<unsigned> indexes) :
         Application<ComputeBuffer>(par)
     {
         //set_cpu(1);
@@ -41,7 +43,6 @@ public:
     };
 
 private:
-
     static void child_handler(int sig) {
         pid_t pid;
         int status;

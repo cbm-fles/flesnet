@@ -55,8 +55,6 @@ public:
         return _desc_buffer_view;
     }
 
-    uint64_t DCOUNT[10] = {};
-
     /// Generate FLIB input data.
     void produce_data()
     {
@@ -175,6 +173,9 @@ DCOUNT[6]++;
     }
 
 private:
+
+    uint64_t DCOUNT[10] = {};
+
     /// Input data buffer.
     RingBuffer<> _data_buffer;
 

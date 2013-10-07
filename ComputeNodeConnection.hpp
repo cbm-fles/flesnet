@@ -196,18 +196,6 @@ public:
         return _cn_wp;
     }
 
-    ComputeNodeBufferPosition _send_cn_ack = {};
-    ComputeNodeBufferPosition _cn_ack = {};
-    boost::mutex _cn_ack_mutex;
-
-    ComputeNodeBufferPosition _recv_cn_wp = {};
-    ComputeNodeBufferPosition _cn_wp = {};
-
-    struct ibv_mr* _mr_data = nullptr;
-    struct ibv_mr* _mr_desc = nullptr;
-    struct ibv_mr* _mr_send = nullptr;
-    struct ibv_mr* _mr_recv = nullptr;
-
     virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() {
         assert(_data_ptr && _desc_ptr && _data_bytes && _desc_bytes);
         std::unique_ptr<std::vector<uint8_t> >
@@ -226,6 +214,18 @@ public:
     }
 
 private:
+
+    ComputeNodeBufferPosition _send_cn_ack = {};
+    ComputeNodeBufferPosition _cn_ack = {};
+    boost::mutex _cn_ack_mutex;
+
+    ComputeNodeBufferPosition _recv_cn_wp = {};
+    ComputeNodeBufferPosition _cn_wp = {};
+
+    struct ibv_mr* _mr_data = nullptr;
+    struct ibv_mr* _mr_desc = nullptr;
+    struct ibv_mr* _mr_send = nullptr;
+    struct ibv_mr* _mr_recv = nullptr;
 
     /// Flag, true if it is the input nodes's turn to send a pointer update.
     bool _our_turn = false;

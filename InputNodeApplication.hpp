@@ -14,7 +14,7 @@ class InputNodeApplication : public Application<InputChannelSender>
 public:
 
     /// The InputNodeApplication contructor.
-    explicit InputNodeApplication(Parameters& par, std::vector<unsigned> indexes) :
+    InputNodeApplication(Parameters& par, std::vector<unsigned> indexes) :
         Application<InputChannelSender>(par),
         _compute_hostnames(par.compute_nodes())
     {
@@ -36,6 +36,7 @@ public:
     }
 
 private:
+
     std::vector<std::string> _compute_hostnames;
     std::vector<std::string> _compute_services;
 

@@ -13,6 +13,8 @@
 class InputChannelSender : public IBConnectionGroup<InputChannelConnection>
 {
 public:
+    InputChannelSender(const InputChannelSender&) = delete;
+    void operator=(const InputChannelSender&) = delete;
 
     /// The InputChannelSender default constructor.
     InputChannelSender(uint64_t input_index,
@@ -152,38 +154,6 @@ public:
     };
 
 private:
-    uint64_t _input_index;
-
-    /// InfiniBand memory region descriptor for input data buffer.
-    struct ibv_mr* _mr_data = nullptr;
-
-    /// InfiniBand memory region descriptor for input descriptor buffer.
-    struct ibv_mr* _mr_desc = nullptr;
-
-    /// Buffer to store acknowledged status of timeslices.
-    RingBuffer<uint64_t, true> _ack;
-
-    /// Number of acknowledged MCs. Written to FLIB.
-    uint64_t _acked_mc = 0;
-    
-    /// Number of acknowledged data bytes. Written to FLIB.
-    uint64_t _acked_data = 0;
-    
-    /// Data source (e.g., FLIB).
-    DataSource& _data_source;
-    
-    const std::vector<std::string>& _compute_hostnames;
-    const std::vector<std::string>& _compute_services;
-
-    const uint32_t _timeslice_size;
-    const uint32_t _overlap_size;
-    const uint32_t _max_timeslice_number;
-
-    const uint64_t _min_acked_mc;
-    const uint64_t _min_acked_data;
-
-    uint64_t _cached_acked_data = 0;
-    uint64_t _cached_acked_mc = 0;
 
     /// Return target computation node for given timeslice.
     int target_cn_index(uint64_t timeslice) {
@@ -364,4 +334,37 @@ private:
             throw InfinibandException("wc for unknown wr_id");
         }
     }
+
+    uint64_t _input_index;
+
+    /// InfiniBand memory region descriptor for input data buffer.
+    struct ibv_mr* _mr_data = nullptr;
+
+    /// InfiniBand memory region descriptor for input descriptor buffer.
+    struct ibv_mr* _mr_desc = nullptr;
+
+    /// Buffer to store acknowledged status of timeslices.
+    RingBuffer<uint64_t, true> _ack;
+
+    /// Number of acknowledged MCs. Written to FLIB.
+    uint64_t _acked_mc = 0;
+
+    /// Number of acknowledged data bytes. Written to FLIB.
+    uint64_t _acked_data = 0;
+
+    /// Data source (e.g., FLIB).
+    DataSource& _data_source;
+
+    const std::vector<std::string>& _compute_hostnames;
+    const std::vector<std::string>& _compute_services;
+
+    const uint32_t _timeslice_size;
+    const uint32_t _overlap_size;
+    const uint32_t _max_timeslice_number;
+
+    const uint64_t _min_acked_mc;
+    const uint64_t _min_acked_data;
+
+    uint64_t _cached_acked_data = 0;
+    uint64_t _cached_acked_mc = 0;
 };

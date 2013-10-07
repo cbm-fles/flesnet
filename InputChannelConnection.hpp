@@ -13,6 +13,8 @@
 class InputChannelConnection : public IBConnection
 {
 public:
+    InputChannelConnection(const InputChannelConnection&) = delete;
+    void operator=(const InputChannelConnection&) = delete;
 
     /// The InputChannelConnection constructor.
     InputChannelConnection(struct rdma_event_channel* ec,
