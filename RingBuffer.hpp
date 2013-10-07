@@ -14,25 +14,25 @@ public:
     RingBuffer() { }
     
     /// The RingBuffer initializing constructor.
-    RingBuffer(size_t size_exponent) {
-        alloc_with_size_exponent(size_exponent);
+    RingBuffer(size_t new_size_exponent) {
+        alloc_with_size_exponent(new_size_exponent);
     }
 
     /// Create and initialize buffer with given minimum size.
     void alloc_with_size(size_t minimum_size) {
-        size_t size_exponent = 0;
+        size_t new_size_exponent = 0;
         if (minimum_size > 1) {
             minimum_size--;
-            size_exponent++;
+            new_size_exponent++;
             while (minimum_size >>= 1)
-                size_exponent++;
+                new_size_exponent++;
         }
-        alloc_with_size_exponent(size_exponent);
+        alloc_with_size_exponent(new_size_exponent);
     }
 
     /// Create and initialize buffer with given size exponent.
-    void alloc_with_size_exponent(size_t size_exponent) {
-        _size_exponent = size_exponent;
+    void alloc_with_size_exponent(size_t new_size_exponent) {
+        _size_exponent = new_size_exponent;
         _size = (1 << _size_exponent);
         _size_mask = _size - 1;
         if (CLEARED) {

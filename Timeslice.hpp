@@ -123,7 +123,7 @@ inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
     case ID_SEND_FINALIZE:
         return s << "ID_SEND_FINALIZE";
     default:
-        return s << (int) v;
+        return s << static_cast<int>(v);
     }
 }
 
@@ -146,7 +146,7 @@ inline std::ostream& operator<<(std::ostream& s, ibv_wr_opcode v)
     case IBV_WR_ATOMIC_FETCH_AND_ADD:
         return s << "IBV_WR_ATOMIC_FETCH_AND_ADD";
     default:
-        return s << (int) v;
+        return s << static_cast<int>(v);
     }
 }
 
@@ -163,11 +163,13 @@ inline std::ostream& operator<<(std::ostream& s, ibv_send_flags v)
     if (v & IBV_SEND_INLINE)
         str += std::string(str.empty() ? "" : " | ") + "IBV_SEND_INLINE";
     if (str.empty())
-        return s << (int) v;
+        return s << static_cast<int>(v);
     else
         return s << str;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 
 class ThreadContainer {
 protected:
@@ -188,3 +190,5 @@ protected:
         }
     }
 };
+
+#pragma GCC diagnostic pop

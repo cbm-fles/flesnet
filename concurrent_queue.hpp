@@ -9,8 +9,8 @@ template<typename T>
 class concurrent_queue : private boost::noncopyable
 {
 public:
-    concurrent_queue(size_t max_size = 1000) :
-        _max_size(max_size)
+    concurrent_queue(size_t new_max_size = 1000) :
+        _max_size(new_max_size)
     { }
 
     struct Stopped { };

@@ -14,15 +14,15 @@ class ComputeNodeConnection : public IBConnection
 {
 public:
     ComputeNodeConnection(struct rdma_event_channel* ec,
-                          uint_fast16_t index,
-                          uint_fast16_t remote_index,
+                          uint_fast16_t connection_index,
+                          uint_fast16_t remote_connection_index,
                           struct rdma_cm_id* id,
                           InputNodeInfo remote_info,
                           uint8_t* data_ptr,
                           std::size_t data_bytes,
                           TimesliceComponentDescriptor* desc_ptr,
                           std::size_t desc_bytes) :
-        IBConnection(ec, index, remote_index, id),
+        IBConnection(ec, connection_index, remote_connection_index, id),
         _remote_info(remote_info),
         _data_ptr(data_ptr),
         _data_bytes(data_bytes),
@@ -84,7 +84,7 @@ public:
             throw InfinibandException("registration of memory region failed");
 
         // setup send and receive buffers
-        recv_sge.addr = (uintptr_t) &_recv_cn_wp;
+        recv_sge.addr = reinterpret_cast<uintptr_t>(&_recv_cn_wp);
         recv_sge.length = sizeof(ComputeNodeBufferPosition);
         recv_sge.lkey = _mr_recv->lkey;
 
@@ -92,7 +92,7 @@ public:
         recv_wr.sg_list = &recv_sge;
         recv_wr.num_sge = 1;
 
-        send_sge.addr = (uintptr_t) &_send_cn_ack;
+        send_sge.addr = reinterpret_cast<uintptr_t>(&_send_cn_ack);
         send_sge.length = sizeof(ComputeNodeBufferPosition);
         send_sge.lkey = _mr_send->lkey;
 
@@ -214,9 +214,9 @@ public:
             private_data(new std::vector<uint8_t>(sizeof(ComputeNodeInfo)));
 
         ComputeNodeInfo* cn_info = reinterpret_cast<ComputeNodeInfo*>(private_data->data());
-        cn_info->data.addr = (uintptr_t) _data_ptr;
+        cn_info->data.addr = reinterpret_cast<uintptr_t>(_data_ptr);
         cn_info->data.rkey = _mr_data->rkey;
-        cn_info->desc.addr = (uintptr_t) _desc_ptr;
+        cn_info->desc.addr = reinterpret_cast<uintptr_t>(_desc_ptr);
         cn_info->desc.rkey = _mr_desc->rkey;
         cn_info->index = _remote_index;
         cn_info->data_buffer_size_exp = par->cn_data_buffer_size_exp();

@@ -124,7 +124,7 @@ DCOUNT[1]++;
                 if (_generate_pattern) {
                     for (uint64_t i = 0; i < content_bytes; i+= sizeof(uint64_t)) {
                         uint64_t data_word = (_input_index << 48L) | i;
-                        (uint64_t&) _data_buffer.at(written_data) = data_word;
+                        reinterpret_cast<uint64_t&>(_data_buffer.at(written_data)) = data_word;
                         written_data += sizeof(uint64_t);
                         crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);
                     }

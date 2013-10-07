@@ -16,12 +16,12 @@ public:
 
     /// The InputChannelConnection constructor.
     InputChannelConnection(struct rdma_event_channel* ec,
-                        uint_fast16_t index,
-                        uint_fast16_t remote_index,
+                        uint_fast16_t connection_index,
+                        uint_fast16_t remote_connection_index,
                         unsigned int max_send_wr,
                         unsigned int max_pending_write_requests,
                         struct rdma_cm_id* id = nullptr) :
-        IBConnection(ec, index, remote_index, id),
+        IBConnection(ec, connection_index, remote_connection_index, id),
         _max_pending_write_requests(max_pending_write_requests)
     {
         assert(_max_pending_write_requests > 0);
@@ -118,7 +118,7 @@ public:
         send_wr_ts.num_sge = num_sge;
         send_wr_ts.wr.rdma.rkey = _remote_info.data.rkey;
         send_wr_ts.wr.rdma.remote_addr =
-            (uintptr_t)(_remote_info.data.addr + (cn_wp_data & cn_data_buffer_mask));
+            static_cast<uintptr_t>(_remote_info.data.addr + (cn_wp_data & cn_data_buffer_mask));
 
         if (num_sge2) {
             memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
@@ -127,7 +127,7 @@ public:
             send_wr_tswrap.sg_list = sge2;
             send_wr_tswrap.num_sge = num_sge2;
             send_wr_tswrap.wr.rdma.rkey = _remote_info.data.rkey;
-            send_wr_tswrap.wr.rdma.remote_addr = (uintptr_t) _remote_info.data.addr;
+            send_wr_tswrap.wr.rdma.remote_addr = static_cast<uintptr_t>(_remote_info.data.addr);
             send_wr_ts.next = &send_wr_tswrap;
             send_wr_tswrap.next = &send_wr_tscdesc;
         } else {
@@ -140,7 +140,7 @@ public:
         tscdesc.offset = cn_wp_data;
         tscdesc.size = data_length + mc_length * sizeof(MicrosliceDescriptor);
         struct ibv_sge sge3;
-        sge3.addr = (uintptr_t) &tscdesc;
+        sge3.addr = reinterpret_cast<uintptr_t>(&tscdesc);
         sge3.length = sizeof(tscdesc);
         sge3.lkey = 0;
 
@@ -153,9 +153,9 @@ public:
         send_wr_tscdesc.num_sge = 1;
         send_wr_tscdesc.wr.rdma.rkey = _remote_info.desc.rkey;
         send_wr_tscdesc.wr.rdma.remote_addr =
-            (uintptr_t)(_remote_info.desc.addr
-                        + (_cn_wp.desc & cn_desc_buffer_mask)
-                        * sizeof(TimesliceComponentDescriptor));
+            static_cast<uintptr_t>(_remote_info.desc.addr
+                                   + (_cn_wp.desc & cn_desc_buffer_mask)
+                                   * sizeof(TimesliceComponentDescriptor));
 
         out.debug() << "[i" << _remote_index << "] " << "[" << _index << "] "
                     << "POST SEND data (timeslice " << timeslice << ")";
@@ -253,7 +253,7 @@ public:
             throw InfinibandException("registration of memory region failed");
 
         // setup send and receive buffers
-        recv_sge.addr = (uintptr_t) &_receive_cn_ack;
+        recv_sge.addr = reinterpret_cast<uintptr_t>(&_receive_cn_ack);
         recv_sge.length = sizeof(ComputeNodeBufferPosition);
         recv_sge.lkey = _mr_recv->lkey;
 
@@ -261,7 +261,7 @@ public:
         recv_wr.sg_list = &recv_sge;
         recv_wr.num_sge = 1;
 
-        send_sge.addr = (uintptr_t) &_send_cn_wp;
+        send_sge.addr = reinterpret_cast<uintptr_t>(&_send_cn_wp);
         send_sge.length = sizeof(ComputeNodeBufferPosition);
         send_sge.lkey = _mr_send->lkey;
 

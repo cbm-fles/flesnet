@@ -323,7 +323,7 @@ private:
             }
         }
 
-        out.setVerbosity((einhard::LogLevel)log_level);
+        out.setVerbosity(static_cast<einhard::LogLevel>(log_level));
 
         out.debug() << "input nodes (" << _input_nodes.size() << "): "
                     << _input_nodes;

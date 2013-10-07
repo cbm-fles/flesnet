@@ -73,9 +73,12 @@ public:
         struct sockaddr_in sin;
         memset(&sin, 0, sizeof sin);
         sin.sin_family = AF_INET;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
         sin.sin_port = htons(port);
         sin.sin_addr.s_addr = INADDR_ANY;
-        err = rdma_bind_addr(_listen_id, (struct sockaddr*) & sin);
+#pragma GCC diagnostic pop
+        err = rdma_bind_addr(_listen_id, reinterpret_cast<struct sockaddr*>(&sin));
         if (err)
             throw InfinibandException("RDMA bind_addr failed");
 
@@ -102,6 +105,8 @@ public:
         struct rdma_cm_event event_copy;
         void* private_data_copy = 0;
         while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
             VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
             memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
             if (event_copy.param.conn.private_data) {
@@ -114,6 +119,7 @@ public:
                        event_copy.param.conn.private_data_len);
                 event_copy.param.conn.private_data = private_data_copy;
             }
+#pragma GCC diagnostic pop
             rdma_ack_cm_event(event);
             on_cm_event(&event_copy);
             if (private_data_copy) {
@@ -162,7 +168,7 @@ public:
                     if (wc[i].status != IBV_WC_SUCCESS) {
                         std::ostringstream s;
                         s << ibv_wc_status_str(wc[i].status)
-                          << " for wr_id " << (int) wc[i].wr_id;
+                          << " for wr_id " << static_cast<int>(wc[i].wr_id);
                         out.error() << s.str();
 
                         continue;
@@ -212,7 +218,7 @@ public:
             std::chrono::duration_cast<std::chrono::microseconds>(_time_end - _time_begin).count();
         out.info() << "summary: " << _aggregate_send_requests << " SEND, "
                    << _aggregate_recv_requests << " RECV requests";
-        double rate = (double) _aggregate_bytes_sent / runtime;
+        double rate = static_cast<double>(_aggregate_bytes_sent) / runtime;
         out.info() << "summary: " << _aggregate_bytes_sent
                    << " bytes sent in "
                    << runtime/1000000. << " s (" << rate << " MB/s)";
@@ -259,14 +265,14 @@ protected:
         if (!_pd)
             init_context(id->verbs);
 
-        CONNECTION* conn = (CONNECTION*) id->context;
+        CONNECTION* conn = static_cast<CONNECTION*>(id->context);
         
         conn->on_addr_resolved(_pd, _cq);
     }
 
     /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event.
     virtual void on_route_resolved(struct rdma_cm_id* id) {
-        CONNECTION* conn = (CONNECTION*) id->context;
+        CONNECTION* conn = static_cast<CONNECTION*>(id->context);
 
         conn->on_route_resolved();
     }
@@ -276,7 +282,7 @@ protected:
 
     /// Handle RDMA_CM_EVENT_ESTABLISHED event.
     virtual void on_established(struct rdma_cm_event* event) {
-        CONNECTION* conn = (CONNECTION*) event->id->context;
+        CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
 
         conn->on_established(event);
         _connected++;
@@ -287,7 +293,7 @@ protected:
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
     virtual void on_disconnected(struct rdma_cm_event* event) {
-        CONNECTION* conn = (CONNECTION*) event->id->context;
+        CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
 
         _aggregate_bytes_sent += conn->total_bytes_sent();
         _aggregate_send_requests += conn->total_send_requests();

@@ -71,8 +71,11 @@ public:
                         (*_desc_shm, boost::interprocess::read_write));
         _desc_region = std::move(desc_region);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
         VALGRIND_MAKE_MEM_DEFINED(_data_region->get_address(), _data_region->get_size());
         VALGRIND_MAKE_MEM_DEFINED(_desc_region->get_address(), _desc_region->get_size());
+#pragma GCC diagnostic pop
 
         boost::interprocess::message_queue::remove("flesnet_work_items");
         boost::interprocess::message_queue::remove("flesnet_completions");
@@ -128,7 +131,7 @@ public:
         if (!child_pids.at(i)) {
             std::stringstream s;
             s << i;
-            execl(par->processor_executable().c_str(), s.str().c_str(), (char*) 0);
+            execl(par->processor_executable().c_str(), s.str().c_str(), static_cast<char*>(0));
             out.fatal() << "Could not start processor task '" << par->processor_executable()
                         << " " << s.str() << "': " << strerror(errno);
             exit(1);
@@ -276,8 +279,8 @@ public:
                     do
                         _acked++;
                     while (_ack.at(_acked) > c.ts_pos);
-                    for (auto& c : _conn)
-                        c->inc_ack_pointers(_acked);
+                    for (auto& connection : _conn)
+                        connection->inc_ack_pointers(_acked);
                 } else
                     _ack.at(c.ts_pos) = c.ts_pos;
             }

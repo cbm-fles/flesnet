@@ -28,10 +28,10 @@ public:
     IBConnection& operator=(const IBConnection&) = delete;
 
     /// The IBConnection constructor. Creates a connection manager ID.
-    IBConnection(struct rdma_event_channel* ec, uint_fast16_t index,
-                 uint_fast16_t remote_index, struct rdma_cm_id* id = nullptr) :
-        _index(index),
-        _remote_index(remote_index),
+    IBConnection(struct rdma_event_channel* ec, uint_fast16_t connection_index,
+                 uint_fast16_t remote_connection_index, struct rdma_cm_id* id = nullptr) :
+        _index(connection_index),
+        _remote_index(remote_connection_index),
         _cm_id(id)
     {
         if (!_cm_id) {
@@ -168,7 +168,7 @@ public:
         struct rdma_conn_param conn_param = {};
         conn_param.responder_resources = 1;
         conn_param.private_data = private_data->data();
-        conn_param.private_data_len = (uint8_t) private_data->size();
+        conn_param.private_data_len = static_cast<uint8_t>(private_data->size());
         int err = rdma_accept(_cm_id, &conn_param);
         if (err)
             throw InfinibandException("RDMA accept failed");
@@ -204,7 +204,7 @@ public:
         conn_param.initiator_depth = 1;
         conn_param.retry_count = 7;
         conn_param.private_data = private_data->data();
-        conn_param.private_data_len = (uint8_t) private_data->size();
+        conn_param.private_data_len = static_cast<uint8_t>(private_data->size());
         int err = rdma_connect(_cm_id, &conn_param);
         if (err) {
             out.fatal() << "rdma_connect failed: " << strerror(err);
@@ -258,9 +258,9 @@ protected:
     void dump_send_wr(struct ibv_send_wr* wr) {
         for (int i = 0; wr; i++, wr = wr->next) {
             out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id
-                        << " (" << (REQUEST_ID) wr->wr_id << ")";
+                        << " (" << static_cast<REQUEST_ID>(wr->wr_id) << ")";
             out.fatal() << " opcode=" << wr->opcode;
-            out.fatal() << " send_flags=" << (ibv_send_flags) wr->send_flags;
+            out.fatal() << " send_flags=" << static_cast<ibv_send_flags>(wr->send_flags);
             out.fatal() << " num_sge=" << wr->num_sge;
             for (int j = 0; j < wr->num_sge; j++) {
                 out.fatal() << "  sg_list[" << j << "] "

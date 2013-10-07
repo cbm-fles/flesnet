@@ -35,8 +35,13 @@ public:
         size_t min_ack_buffer_size = _data_source.desc_buffer().size() / _timeslice_size + 1;
         _ack.alloc_with_size(min_ack_buffer_size);
 
-        VALGRIND_MAKE_MEM_DEFINED(_data_source.data_buffer().ptr(), _data_source.data_buffer().bytes());
-        VALGRIND_MAKE_MEM_DEFINED(_data_source.desc_buffer().ptr(), _data_source.desc_buffer().bytes());
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+        VALGRIND_MAKE_MEM_DEFINED(_data_source.data_buffer().ptr(),
+                                  _data_source.data_buffer().bytes());
+        VALGRIND_MAKE_MEM_DEFINED(_data_source.desc_buffer().ptr(),
+                                  _data_source.desc_buffer().bytes());
+#pragma GCC diagnostic pop
     }
 
     /// The InputChannelSender default destructor.
@@ -187,10 +192,10 @@ private:
 
     void dump_mr(struct ibv_mr* mr) {
         out.debug() << "[i" << _input_index << "] " << "ibv_mr dump:";
-        out.debug() << " addr=" << (uint64_t) mr->addr;
-        out.debug() << " length=" << (uint64_t) mr->length;
-        out.debug() << " lkey=" << (uint64_t) mr->lkey;
-        out.debug() << " rkey=" << (uint64_t) mr->rkey;
+        out.debug() << " addr=" << reinterpret_cast<uint64_t>(mr->addr);
+        out.debug() << " length=" << static_cast<uint64_t>(mr->length);
+        out.debug() << " lkey=" << static_cast<uint64_t>(mr->lkey);
+        out.debug() << " rkey=" << static_cast<uint64_t>(mr->rkey);
     }
 
     virtual void on_addr_resolved(struct rdma_cm_id* id) {
@@ -219,7 +224,7 @@ private:
     
     /// Handle RDMA_CM_REJECTED event.
     virtual void on_rejected(struct rdma_cm_event* event) {
-        InputChannelConnection* conn = (InputChannelConnection*) event->id->context;
+        InputChannelConnection* conn = static_cast<InputChannelConnection*>(event->id->context);
 
         conn->on_rejected(event);
         uint_fast16_t i = conn->index();
@@ -262,36 +267,44 @@ private:
         if ((mc_offset & _data_source.desc_buffer().size_mask())
             < ((mc_offset + mc_length - 1) & _data_source.desc_buffer().size_mask())) {
             // one chunk
-            sge[num_sge].addr = (uintptr_t) &_data_source.desc_buffer().at(mc_offset);
+            sge[num_sge].addr = reinterpret_cast<uintptr_t>
+                (&_data_source.desc_buffer().at(mc_offset));
             sge[num_sge].length = sizeof(MicrosliceDescriptor) * mc_length;
             sge[num_sge++].lkey = _mr_desc->lkey;
         } else {
             // two chunks
-            sge[num_sge].addr = (uintptr_t) &_data_source.desc_buffer().at(mc_offset);
+            sge[num_sge].addr = reinterpret_cast<uintptr_t>
+                (&_data_source.desc_buffer().at(mc_offset));
             sge[num_sge].length =
-              sizeof(MicrosliceDescriptor) * (_data_source.desc_buffer().size()
-                                              - (mc_offset & _data_source.desc_buffer().size_mask()));
+                sizeof(MicrosliceDescriptor)
+                * (_data_source.desc_buffer().size()
+                   - (mc_offset & _data_source.desc_buffer().size_mask()));
             sge[num_sge++].lkey = _mr_desc->lkey;
-            sge[num_sge].addr = (uintptr_t) _data_source.desc_buffer().ptr();
+            sge[num_sge].addr = reinterpret_cast<uintptr_t>(_data_source.desc_buffer().ptr());
             sge[num_sge].length =
-              sizeof(MicrosliceDescriptor) * (mc_length - _data_source.desc_buffer().size()
-                                              + (mc_offset & _data_source.desc_buffer().size_mask()));
+              sizeof(MicrosliceDescriptor)
+                * (mc_length - _data_source.desc_buffer().size()
+                   + (mc_offset & _data_source.desc_buffer().size_mask()));
             sge[num_sge++].lkey = _mr_desc->lkey;
         }
         // data
         if ((data_offset & _data_source.data_buffer().size_mask())
             < ((data_offset + data_length - 1) & _data_source.data_buffer().size_mask())) {
             // one chunk
-            sge[num_sge].addr = (uintptr_t) &_data_source.data_buffer().at(data_offset);
+            sge[num_sge].addr = reinterpret_cast<uintptr_t>
+                (&_data_source.data_buffer().at(data_offset));
             sge[num_sge].length = data_length;
             sge[num_sge++].lkey = _mr_data->lkey;
         } else {
             // two chunks
-            sge[num_sge].addr = (uintptr_t) &_data_source.data_buffer().at(data_offset);
-            sge[num_sge].length = _data_source.data_buffer().size() - (data_offset & _data_source.data_buffer().size_mask());
+            sge[num_sge].addr = reinterpret_cast<uintptr_t>
+                (&_data_source.data_buffer().at(data_offset));
+            sge[num_sge].length = _data_source.data_buffer().size()
+                - (data_offset & _data_source.data_buffer().size_mask());
             sge[num_sge++].lkey = _mr_data->lkey;
-            sge[num_sge].addr = (uintptr_t) _data_source.data_buffer().ptr();
-            sge[num_sge].length = data_length - _data_source.data_buffer().size() + (data_offset & _data_source.data_buffer().size_mask());
+            sge[num_sge].addr = reinterpret_cast<uintptr_t>(_data_source.data_buffer().ptr());
+            sge[num_sge].length = data_length - _data_source.data_buffer().size()
+                + (data_offset & _data_source.data_buffer().size_mask());
             sge[num_sge++].lkey = _mr_data->lkey;
         }
 

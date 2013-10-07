@@ -9,7 +9,7 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 
 project(flesnet)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -pedantic -O3")
+set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -pedantic -Wold-style-cast -Wfloat-equal -Woverloaded-virtual -Wundef -O3")
 
 find_package(Boost 1.40 COMPONENTS program_options thread serialization REQUIRED)
 

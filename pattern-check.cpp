@@ -33,7 +33,7 @@ void check_timeslice(const fles::Timeslice& ts) {
             for (size_t pos = 0; pos < ts.descriptor(c, m).size; pos += sizeof(uint64_t)) {
                 uint64_t data_word = content[pos / sizeof(uint64_t)];
                 crc ^= (data_word & 0xffffffff) ^ (data_word >> 32);
-                uint64_t expected = ((uint64_t) c << 48) | pos;
+                uint64_t expected = (static_cast<uint64_t>(c) << 48) | pos;
                 assert(data_word == expected);
             }
             assert(crc == ts.descriptor(c, m).crc);

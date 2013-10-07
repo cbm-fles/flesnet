@@ -11,9 +11,9 @@ class RingBufferView
 {
 public:
     /// The RingBufferView constructor.
-    RingBufferView(T* buffer, std::size_t size_exponent) :
+    RingBufferView(T* buffer, std::size_t new_size_exponent) :
         _buf(buffer),
-        _size_exponent(size_exponent),
+        _size_exponent(new_size_exponent),
         _size(1 << _size_exponent),
         _size_mask((1 << _size_exponent) - 1)
     { }
