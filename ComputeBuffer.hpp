@@ -121,7 +121,7 @@ public:
             std::stringstream s;
             s << i;
             execl(par->processor_executable().c_str(), s.str().c_str(),
-                  static_cast<char*>(0));
+                  static_cast<char*>(nullptr));
             out.fatal() << "Could not start processor task '"
                         << par->processor_executable() << " " << s.str()
                         << "': " << strerror(errno);

@@ -68,7 +68,7 @@ public:
         out.debug() << "Setting up RDMA CM structures";
 
         // Create rdma id (for listening)
-        int err = rdma_create_id(_ec, &_listen_id, NULL, RDMA_PS_TCP);
+        int err = rdma_create_id(_ec, &_listen_id, nullptr, RDMA_PS_TCP);
         if (err)
             throw InfinibandException("id creation failed");
 
@@ -109,7 +109,7 @@ public:
         int err;
         struct rdma_cm_event* event;
         struct rdma_cm_event event_copy;
-        void* private_data_copy = 0;
+        void* private_data_copy = nullptr;
         while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -132,7 +132,7 @@ public:
             on_cm_event(&event_copy);
             if (private_data_copy) {
                 free(private_data_copy);
-                private_data_copy = 0;
+                private_data_copy = nullptr;
             }
             if (_connected == target_num_connections)
                 break;
@@ -320,7 +320,7 @@ protected:
         if (!_comp_channel)
             throw InfinibandException("ibv_create_comp_channel failed");
 
-        _cq = ibv_create_cq(context, _num_cqe, NULL, _comp_channel, 0);
+        _cq = ibv_create_cq(context, _num_cqe, nullptr, _comp_channel, 0);
         if (!_cq)
             throw InfinibandException("ibv_create_cq failed");
 

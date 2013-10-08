@@ -36,7 +36,7 @@ public:
         sigemptyset(&sa.sa_mask);
         sa.sa_flags = 0;
         sa.sa_handler = child_handler;
-        sigaction(SIGCHLD, &sa, NULL);
+        sigaction(SIGCHLD, &sa, nullptr);
     }
 
     ComputeNodeApplication(const ComputeNodeApplication&) = delete;

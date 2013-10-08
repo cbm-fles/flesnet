@@ -24,7 +24,7 @@ void install_term_handler()
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
     sa.sa_handler = term_handler;
-    sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGTERM, &sa, nullptr);
 }
 
 void check_timeslice(const fles::Timeslice& ts)

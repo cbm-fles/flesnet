@@ -90,7 +90,7 @@ public:
                     << "resolution of server address and route";
 
         for (struct addrinfo* t = res; t; t = t->ai_next) {
-            err = rdma_resolve_addr(_cm_id, NULL, t->ai_addr,
+            err = rdma_resolve_addr(_cm_id, nullptr, t->ai_addr,
                                     RESOLVE_TIMEOUT_MS);
             if (!err)
                 break;
