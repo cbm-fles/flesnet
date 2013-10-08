@@ -6,15 +6,18 @@
  */
 
 /// Simple generic ring buffer class.
-template<typename T = uint8_t, bool CLEARED = false>
+template <typename T = uint8_t, bool CLEARED = false>
 class RingBuffer
 {
 public:
     /// The RingBuffer default constructor.
-    RingBuffer() { }
-    
+    RingBuffer()
+    {
+    }
+
     /// The RingBuffer initializing constructor.
-    explicit RingBuffer(size_t new_size_exponent) {
+    explicit RingBuffer(size_t new_size_exponent)
+    {
         alloc_with_size_exponent(new_size_exponent);
     }
 
@@ -22,7 +25,8 @@ public:
     void operator=(const RingBuffer&) = delete;
 
     /// Create and initialize buffer with given minimum size.
-    void alloc_with_size(size_t minimum_size) {
+    void alloc_with_size(size_t minimum_size)
+    {
         size_t new_size_exponent = 0;
         if (minimum_size > 1) {
             minimum_size--;
@@ -34,7 +38,8 @@ public:
     }
 
     /// Create and initialize buffer with given size exponent.
-    void alloc_with_size_exponent(size_t new_size_exponent) {
+    void alloc_with_size_exponent(size_t new_size_exponent)
+    {
         _size_exponent = new_size_exponent;
         _size = (1 << _size_exponent);
         _size_mask = _size - 1;
@@ -46,48 +51,57 @@ public:
             _buf = std::move(buf);
         }
     }
-    
+
     /// The element accessor operator.
-    T& at(size_t n) {
+    T& at(size_t n)
+    {
         return _buf[n & _size_mask];
     }
 
     /// The const element accessor operator.
-    const T& at(size_t n) const {
+    const T& at(size_t n) const
+    {
         return _buf[n & _size_mask];
     }
 
     /// Retrieve pointer to memory buffer.
-    T* ptr() {
+    T* ptr()
+    {
         return _buf.get();
     }
 
     /// Retrieve const pointer to memory buffer.
-    const T* ptr() const {
+    const T* ptr() const
+    {
         return _buf.get();
     }
 
     /// Retrieve buffer size in maximum number of entries.
-    size_t size() const {
+    size_t size() const
+    {
         return _size;
     }
 
     /// Retrieve buffer size in maximum number of entries as two's exponent.
-    size_t size_exponent() const {
+    size_t size_exponent() const
+    {
         return _size_exponent;
     }
 
     /// Retrieve buffer size bit mask.
-    size_t size_mask() const {
+    size_t size_mask() const
+    {
         return _size_mask;
     }
 
     /// Retrieve buffer size in bytes.
-    size_t bytes() const {
+    size_t bytes() const
+    {
         return _size * sizeof(T);
     }
 
-    const void clear() {
+    const void clear()
+    {
         *_buf = {};
     }
 
@@ -100,7 +114,7 @@ private:
 
     /// Buffer addressing bit mask.
     size_t _size_mask = 0;
-    
+
     /// The data buffer.
     std::unique_ptr<T[]> _buf;
 };

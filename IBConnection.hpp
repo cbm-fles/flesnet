@@ -9,13 +9,15 @@
 /** An InfinbandException object signals an error that occured in the
     InfiniBand communication functions. */
 
-class InfinibandException : public std::runtime_error {
+class InfinibandException : public std::runtime_error
+{
 public:
     /// The InfinibandException default constructor.
     explicit InfinibandException(const std::string& what_arg = "")
-        : std::runtime_error(what_arg) { }
+        : std::runtime_error(what_arg)
+    {
+    }
 };
-
 
 /// InfiniBand connection base class.
 /** An IBConnection object represents the endpoint of a single
@@ -26,10 +28,11 @@ class IBConnection
 public:
     /// The IBConnection constructor. Creates a connection manager ID.
     IBConnection(struct rdma_event_channel* ec, uint_fast16_t connection_index,
-                 uint_fast16_t remote_connection_index, struct rdma_cm_id* id = nullptr) :
-        _index(connection_index),
-        _remote_index(remote_connection_index),
-        _cm_id(id)
+                 uint_fast16_t remote_connection_index,
+                 struct rdma_cm_id* id = nullptr)
+        : _index(connection_index),
+          _remote_index(remote_connection_index),
+          _cm_id(id)
     {
         if (!_cm_id) {
             int err = rdma_create_id(ec, &_cm_id, this, RDMA_PS_TCP);
@@ -50,7 +53,8 @@ public:
     IBConnection& operator=(const IBConnection&) = delete;
 
     /// The IBConnection destructor.
-    virtual ~IBConnection() {
+    virtual ~IBConnection()
+    {
         if (_cm_id) {
             int err = rdma_destroy_id(_cm_id);
             if (err)
@@ -60,7 +64,8 @@ public:
     }
 
     /// Retrieve the InfiniBand queue pair associated with the connection.
-    struct ibv_qp* qp() const {
+    struct ibv_qp* qp() const
+    {
         return _cm_id->qp;
     }
 
@@ -69,8 +74,8 @@ public:
        \param hostname The target hostname
        \param service  The target service or port number
     */
-    void connect(const std::string& hostname,
-                 const std::string& service) {
+    void connect(const std::string& hostname, const std::string& service)
+    {
         struct addrinfo hints;
         memset(&hints, 0, sizeof(struct addrinfo));
         hints.ai_family = AF_UNSPEC;
@@ -96,15 +101,19 @@ public:
         freeaddrinfo(res);
     }
 
-    void disconnect() {
-        out.debug() << "[" << _index << "] " << "disconnect";
+    void disconnect()
+    {
+        out.debug() << "[" << _index << "] "
+                    << "disconnect";
         int err = rdma_disconnect(_cm_id);
         if (err)
             throw InfinibandException("rdma_disconnect failed");
     }
-    
-    virtual void on_rejected(struct rdma_cm_event* event) {
-        out.debug() << "[" << _index << "] " << "connection rejected";
+
+    virtual void on_rejected(struct rdma_cm_event* event)
+    {
+        out.debug() << "[" << _index << "] "
+                    << "connection rejected";
 
         rdma_destroy_qp(_cm_id);
     }
@@ -114,19 +123,24 @@ public:
        \param event RDMA connection manager event structure
        \return      Non-zero if an error occured
     */
-    virtual void on_established(struct rdma_cm_event* event) {
-        out.debug() << "[" << _index << "] " << "connection established";
+    virtual void on_established(struct rdma_cm_event* event)
+    {
+        out.debug() << "[" << _index << "] "
+                    << "connection established";
     }
-    
+
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
-    virtual void on_disconnected(struct rdma_cm_event* event) {
-        out.debug() << "[" << _index << "] " << "connection disconnected";
+    virtual void on_disconnected(struct rdma_cm_event* event)
+    {
+        out.debug() << "[" << _index << "] "
+                    << "connection disconnected";
 
         rdma_destroy_qp(_cm_id);
     }
-    
+
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
-    virtual void on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq) {
+    virtual void on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq)
+    {
         out.debug() << "address resolved";
 
         struct ibv_qp_init_attr qp_attr;
@@ -138,7 +152,7 @@ public:
         int err = rdma_create_qp(_cm_id, pd, &qp_attr);
         if (err)
             throw InfinibandException("creation of QP failed");
-        
+
         err = rdma_resolve_route(_cm_id, RESOLVE_TIMEOUT_MS);
         if (err)
             throw InfinibandException("rdma_resolve_route failed");
@@ -146,7 +160,8 @@ public:
         setup(pd);
     }
 
-    virtual void create_qp(struct ibv_pd* pd, struct ibv_cq* cq) {
+    virtual void create_qp(struct ibv_pd* pd, struct ibv_cq* cq)
+    {
         struct ibv_qp_init_attr qp_attr;
         memset(&qp_attr, 0, sizeof qp_attr);
         qp_attr.cap = _qp_cap;
@@ -158,7 +173,8 @@ public:
             throw InfinibandException("creation of QP failed");
     }
 
-    virtual void accept_connect_request() {
+    virtual void accept_connect_request()
+    {
         out.debug() << "accepting connection";
 
         // Accept rdma connection request
@@ -168,7 +184,8 @@ public:
         struct rdma_conn_param conn_param = {};
         conn_param.responder_resources = 1;
         conn_param.private_data = private_data->data();
-        conn_param.private_data_len = static_cast<uint8_t>(private_data->size());
+        conn_param.private_data_len = static_cast
+            <uint8_t>(private_data->size());
         int err = rdma_accept(_cm_id, &conn_param);
         if (err)
             throw InfinibandException("RDMA accept failed");
@@ -176,15 +193,17 @@ public:
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event for this connection.
     virtual void on_connect_request(struct rdma_cm_event* event,
-                                    struct ibv_pd* pd, struct ibv_cq* cq) {
+                                    struct ibv_pd* pd, struct ibv_cq* cq)
+    {
         create_qp(pd, cq);
         setup(pd);
         accept_connect_request();
     }
 
-    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data() {
-        std::unique_ptr<std::vector<uint8_t> >
-            private_data(new std::vector<uint8_t>());
+    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data()
+    {
+        std::unique_ptr
+            <std::vector<uint8_t> > private_data(new std::vector<uint8_t>());
 
         return private_data;
     }
@@ -192,7 +211,8 @@ public:
     virtual void setup(struct ibv_pd* pd) = 0;
 
     /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event for this connection.
-    virtual void on_route_resolved() {
+    virtual void on_route_resolved()
+    {
         out.debug() << "route resolved";
 
         // Initiate rdma connection
@@ -204,7 +224,8 @@ public:
         conn_param.initiator_depth = 1;
         conn_param.retry_count = 7;
         conn_param.private_data = private_data->data();
-        conn_param.private_data_len = static_cast<uint8_t>(private_data->size());
+        conn_param.private_data_len = static_cast
+            <uint8_t>(private_data->size());
         int err = rdma_connect(_cm_id, &conn_param);
         if (err) {
             out.fatal() << "rdma_connect failed: " << strerror(err);
@@ -213,41 +234,49 @@ public:
     }
 
     /// Retrieve index of this connection in the local connection group.
-    uint_fast16_t index() const {
+    uint_fast16_t index() const
+    {
         return _index;
     }
 
     /// Retrieve index of this connection in the remote connection group.
-    uint_fast16_t remote_index() const {
+    uint_fast16_t remote_index() const
+    {
         return _remote_index;
     }
 
-    bool done() const {
+    bool done() const
+    {
         return _done;
     }
 
     /// Retrieve the total number of bytes transmitted.
-    uint64_t total_bytes_sent() const {
+    uint64_t total_bytes_sent() const
+    {
         return _total_bytes_sent;
     }
-    
+
     /// Retrieve the total number of SEND work requests.
-    uint64_t total_send_requests() const {
+    uint64_t total_send_requests() const
+    {
         return _total_send_requests;
     }
-    
+
     /// Retrieve the total number of RECV work requests.
-    uint64_t total_recv_requests() const {
+    uint64_t total_recv_requests() const
+    {
         return _total_recv_requests;
     }
 
 protected:
-    void dump_send_wr(struct ibv_send_wr* wr) {
+    void dump_send_wr(struct ibv_send_wr* wr)
+    {
         for (int i = 0; wr; ++i, wr = wr->next) {
-            out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id
-                        << " (" << static_cast<REQUEST_ID>(wr->wr_id) << ")";
+            out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id << " ("
+                        << static_cast<REQUEST_ID>(wr->wr_id) << ")";
             out.fatal() << " opcode=" << wr->opcode;
-            out.fatal() << " send_flags=" << static_cast<ibv_send_flags>(wr->send_flags);
+            out.fatal() << " send_flags=" << static_cast
+                <ibv_send_flags>(wr->send_flags);
             out.fatal() << " num_sge=" << wr->num_sge;
             for (int j = 0; j < wr->num_sge; ++j) {
                 out.fatal() << "  sg_list[" << j << "] "
@@ -261,7 +290,8 @@ protected:
     }
 
     /// Post an InfiniBand SEND work request (WR) to the send queue
-    void post_send(struct ibv_send_wr* wr) {
+    void post_send(struct ibv_send_wr* wr)
+    {
         struct ibv_send_wr* bad_send_wr;
 
         int err = ibv_post_send(qp(), wr, &bad_send_wr);
@@ -283,7 +313,8 @@ protected:
     }
 
     /// Post an InfiniBand RECV work request (WR) to the receive queue.
-    void post_recv(struct ibv_recv_wr* wr) {
+    void post_recv(struct ibv_recv_wr* wr)
+    {
         struct ibv_recv_wr* bad_recv_wr;
 
         int err = ibv_post_recv(qp(), wr, &bad_recv_wr);

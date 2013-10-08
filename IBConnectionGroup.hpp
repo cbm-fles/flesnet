@@ -14,7 +14,8 @@ class IBConnectionGroup : public ThreadContainer
 {
 public:
     /// The IBConnectionGroup default constructor.
-    IBConnectionGroup() {
+    IBConnectionGroup()
+    {
         _ec = rdma_create_event_channel();
         if (!_ec)
             throw InfinibandException("rdma_create_event_channel failed");
@@ -24,7 +25,8 @@ public:
     IBConnectionGroup& operator=(const IBConnectionGroup&) = delete;
 
     /// The IBConnectionGroup default destructor.
-    virtual ~IBConnectionGroup() {
+    virtual ~IBConnectionGroup()
+    {
         for (auto& c : _conn)
             c = nullptr;
 
@@ -58,8 +60,9 @@ public:
 
         rdma_destroy_event_channel(_ec);
     }
-    
-    void accept(unsigned short port, unsigned int count) {
+
+    void accept(unsigned short port, unsigned int count)
+    {
         _conn.resize(count);
 
         out.debug() << "Setting up RDMA CM structures";
@@ -78,7 +81,8 @@ public:
         sin.sin_port = htons(port);
         sin.sin_addr.s_addr = INADDR_ANY;
 #pragma GCC diagnostic pop
-        err = rdma_bind_addr(_listen_id, reinterpret_cast<struct sockaddr*>(&sin));
+        err = rdma_bind_addr(_listen_id,
+                             reinterpret_cast<struct sockaddr*>(&sin));
         if (err)
             throw InfinibandException("RDMA bind_addr failed");
 
@@ -91,13 +95,15 @@ public:
     }
 
     /// Initiate disconnection.
-    void disconnect() {
+    void disconnect()
+    {
         for (auto& c : _conn)
             c->disconnect();
     }
 
     /// The connection manager event loop.
-    void handle_cm_events(unsigned int target_num_connections) {
+    void handle_cm_events(unsigned int target_num_connections)
+    {
         set_cpu(0);
 
         int err;
@@ -110,9 +116,11 @@ public:
             VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
             memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
             if (event_copy.param.conn.private_data) {
-                VALGRIND_MAKE_MEM_DEFINED(event_copy.param.conn.private_data,
-                                          event_copy.param.conn.private_data_len);
-                private_data_copy = malloc(event_copy.param.conn.private_data_len);
+                VALGRIND_MAKE_MEM_DEFINED(
+                    event_copy.param.conn.private_data,
+                    event_copy.param.conn.private_data_len);
+                private_data_copy
+                    = malloc(event_copy.param.conn.private_data_len);
                 if (!private_data_copy)
                     throw InfinibandException("malloc failed");
                 memcpy(private_data_copy, event_copy.param.conn.private_data,
@@ -131,12 +139,13 @@ public:
         }
         if (err)
             throw InfinibandException("rdma_get_cm_event failed");
-        
+
         out.debug() << "number of connections: " << _connected;
     }
 
     /// The InfiniBand completion notification event loop.
-    void completion_handler() {
+    void completion_handler()
+    {
         set_cpu(1);
 
         _time_begin = std::chrono::high_resolution_clock::now();
@@ -167,8 +176,8 @@ public:
                 for (int i = 0; i < ne; ++i) {
                     if (wc[i].status != IBV_WC_SUCCESS) {
                         std::ostringstream s;
-                        s << ibv_wc_status_str(wc[i].status)
-                          << " for wr_id " << static_cast<int>(wc[i].wr_id);
+                        s << ibv_wc_status_str(wc[i].status) << " for wr_id "
+                          << static_cast<int>(wc[i].wr_id);
                         out.error() << s.str();
 
                         continue;
@@ -185,79 +194,93 @@ public:
     }
 
     /// Retrieve the InfiniBand protection domain.
-    struct ibv_pd* protection_domain() const {
+    struct ibv_pd* protection_domain() const
+    {
         return _pd;
     }
 
     /// Retrieve the InfiniBand completion queue.
-    struct ibv_cq* completion_queue() const {
+    struct ibv_cq* completion_queue() const
+    {
         return _cq;
     }
 
-    size_t size() const {
+    size_t size() const
+    {
         return _conn.size();
     }
 
     /// Retrieve the total number of bytes transmitted.
-    uint64_t aggregate_bytes_sent() const {
+    uint64_t aggregate_bytes_sent() const
+    {
         return _aggregate_bytes_sent;
     }
 
     /// Retrieve the total number of SEND work requests.
-    uint64_t aggregate_send_requests() const {
+    uint64_t aggregate_send_requests() const
+    {
         return _aggregate_send_requests;
     }
 
     /// Retrieve the total number of RECV work requests.
-    uint64_t aggregate_recv_requests() const {
+    uint64_t aggregate_recv_requests() const
+    {
         return _aggregate_recv_requests;
     }
 
-    void summary() const {
-        double runtime =
-            std::chrono::duration_cast<std::chrono::microseconds>(_time_end - _time_begin).count();
+    void summary() const
+    {
+        double runtime = std::chrono::duration_cast<std::chrono::microseconds>(
+            _time_end - _time_begin).count();
         out.info() << "summary: " << _aggregate_send_requests << " SEND, "
                    << _aggregate_recv_requests << " RECV requests";
         double rate = static_cast<double>(_aggregate_bytes_sent) / runtime;
-        out.info() << "summary: " << _aggregate_bytes_sent
-                   << " bytes sent in "
-                   << runtime/1000000. << " s (" << rate << " MB/s)";
+        out.info() << "summary: " << _aggregate_bytes_sent << " bytes sent in "
+                   << runtime / 1000000. << " s (" << rate << " MB/s)";
     }
 
     /// The "main" function of an IBConnectionGroup decendant.
     virtual void run() = 0;
 
-    void start() {
-        _thread = std::unique_ptr<std::thread>(new std::thread(&IBConnectionGroup::run, this));
+    void start()
+    {
+        _thread = std::unique_ptr
+            <std::thread>(new std::thread(&IBConnectionGroup::run, this));
     }
 
-    void join() {
+    void join()
+    {
         _thread->join();
     }
 
 protected:
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
-    virtual void on_addr_resolved(struct rdma_cm_id* id) {
+    virtual void on_addr_resolved(struct rdma_cm_id* id)
+    {
         if (!_pd)
             init_context(id->verbs);
 
         CONNECTION* conn = static_cast<CONNECTION*>(id->context);
-        
+
         conn->on_addr_resolved(_pd, _cq);
     }
 
     /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event.
-    virtual void on_route_resolved(struct rdma_cm_id* id) {
+    virtual void on_route_resolved(struct rdma_cm_id* id)
+    {
         CONNECTION* conn = static_cast<CONNECTION*>(id->context);
 
         conn->on_route_resolved();
     }
 
     /// Handle RDMA_CM_REJECTED event.
-    virtual void on_rejected(struct rdma_cm_event* event) { }
+    virtual void on_rejected(struct rdma_cm_event* event)
+    {
+    }
 
     /// Handle RDMA_CM_EVENT_ESTABLISHED event.
-    virtual void on_established(struct rdma_cm_event* event) {
+    virtual void on_established(struct rdma_cm_event* event)
+    {
         CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
 
         conn->on_established(event);
@@ -265,10 +288,13 @@ protected:
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct rdma_cm_event* event) { }
-    
+    virtual void on_connect_request(struct rdma_cm_event* event)
+    {
+    }
+
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
-    virtual void on_disconnected(struct rdma_cm_event* event) {
+    virtual void on_disconnected(struct rdma_cm_event* event)
+    {
         CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
 
         _aggregate_bytes_sent += conn->total_bytes_sent();
@@ -280,7 +306,8 @@ protected:
     }
 
     /// Initialize the InfiniBand verbs context.
-    void init_context(struct ibv_context* context) {
+    void init_context(struct ibv_context* context)
+    {
         _context = context;
 
         out.debug() << "create verbs objects";
@@ -330,7 +357,8 @@ protected:
 
 private:
     /// Connection manager event dispatcher. Called by the CM event loop.
-    void on_cm_event(struct rdma_cm_event* event) {
+    void on_cm_event(struct rdma_cm_event* event)
+    {
         out.trace() << rdma_event_str(event->event);
         switch (event->event) {
         case RDMA_CM_EVENT_ADDR_RESOLVED:
@@ -342,7 +370,7 @@ private:
             on_route_resolved(event->id);
             return;
         case RDMA_CM_EVENT_ROUTE_ERROR:
-            throw InfinibandException("rdma_resolve_route failed");            
+            throw InfinibandException("rdma_resolve_route failed");
         case RDMA_CM_EVENT_CONNECT_ERROR:
             throw InfinibandException("could not establish connection");
         case RDMA_CM_EVENT_UNREACHABLE:

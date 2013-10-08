@@ -9,31 +9,32 @@
 /** The Application object represents an instance of the running
     application. */
 
-template<typename T>
+template <typename T>
 class Application : public ThreadContainer
 {
 public:
     /// The Application contructor.
     explicit Application(Parameters const& par) : _par(par)
-    { }
+    {
+    }
 
     Application(const Application&) = delete;
     void operator=(const Application&) = delete;
 
     void start()
     {
-        for (auto& buffer: _buffers) {
+        for (auto& buffer : _buffers) {
             buffer->start();
         }
     }
 
     void join()
     {
-        for (auto& buffer: _buffers) {
+        for (auto& buffer : _buffers) {
             buffer->join();
         }
     }
-    
+
 protected:
     /// The run parameters object.
     Parameters const& _par;

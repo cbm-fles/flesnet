@@ -6,55 +6,64 @@
  */
 
 /// Simple generic ring buffer view class.
-template<typename T = uint8_t>
+template <typename T = uint8_t>
 class RingBufferView
 {
 public:
     /// The RingBufferView constructor.
-    RingBufferView(T* buffer, std::size_t new_size_exponent) :
-        _buf(buffer),
-        _size_exponent(new_size_exponent),
-        _size(1 << _size_exponent),
-        _size_mask((1 << _size_exponent) - 1)
-    { }
-    
+    RingBufferView(T* buffer, std::size_t new_size_exponent)
+        : _buf(buffer),
+          _size_exponent(new_size_exponent),
+          _size(1 << _size_exponent),
+          _size_mask((1 << _size_exponent) - 1)
+    {
+    }
+
     /// The element accessor operator.
-    T& at(std::size_t n) {
+    T& at(std::size_t n)
+    {
         return _buf[n & _size_mask];
     }
 
     /// The const element accessor operator.
-    const T& at(std::size_t n) const {
+    const T& at(std::size_t n) const
+    {
         return _buf[n & _size_mask];
     }
 
     /// Retrieve pointer to memory buffer.
-    T* ptr() {
+    T* ptr()
+    {
         return _buf;
     }
 
     /// Retrieve const pointer to memory buffer.
-    const T* ptr() const {
+    const T* ptr() const
+    {
         return _buf;
     }
 
     /// Retrieve buffer size in maximum number of entries.
-    std::size_t size() const {
+    std::size_t size() const
+    {
         return _size;
     }
 
     /// Retrieve buffer size in maximum number of entries as two's exponent.
-    std::size_t size_exponent() const {
+    std::size_t size_exponent() const
+    {
         return _size_exponent;
     }
 
     /// Retrieve buffer size bit mask.
-    std::size_t size_mask() const {
+    std::size_t size_mask() const
+    {
         return _size_mask;
     }
 
     /// Retrieve buffer size in bytes.
-    std::size_t bytes() const {
+    std::size_t bytes() const
+    {
         return _size * sizeof(T);
     }
 

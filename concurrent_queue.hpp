@@ -5,15 +5,18 @@
  * 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-template<typename T>
+template <typename T>
 class concurrent_queue
 {
 public:
-    struct Stopped { };
+    struct Stopped
+    {
+    };
 
-    explicit concurrent_queue(size_t new_max_size = 1000) :
-        _max_size(new_max_size)
-    { }
+    explicit concurrent_queue(size_t new_max_size = 1000)
+        : _max_size(new_max_size)
+    {
+    }
 
     concurrent_queue(const concurrent_queue&) = delete;
     void operator=(const concurrent_queue&) = delete;
@@ -44,7 +47,7 @@ public:
         std::unique_lock<std::mutex> lock(_mutex);
         return _is_stopped;
     }
-    
+
     void push(const T& data)
     {
         {
@@ -116,7 +119,7 @@ public:
         if (_is_stopped)
             throw Stopped();
     }
-    
+
 private:
     std::queue<T> _queue;
     const size_t _max_size;

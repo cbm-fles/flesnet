@@ -21,16 +21,17 @@ public:
                           uint8_t* data_ptr,
                           std::size_t data_bytes,
                           TimesliceComponentDescriptor* desc_ptr,
-                          std::size_t desc_bytes) :
-        IBConnection(ec, connection_index, remote_connection_index, id),
-        _remote_info(remote_info),
-        _data_ptr(data_ptr),
-        _data_bytes(data_bytes),
-        _desc_ptr(desc_ptr),
-        _desc_bytes(desc_bytes)
+                          std::size_t desc_bytes)
+        : IBConnection(ec, connection_index, remote_connection_index, id),
+          _remote_info(remote_info),
+          _data_ptr(data_ptr),
+          _data_bytes(data_bytes),
+          _desc_ptr(desc_ptr),
+          _desc_bytes(desc_bytes)
     {
         // send and receive only single ComputeNodeBufferPosition struct
-        _qp_cap.max_send_wr = 2; // one additional wr to avoid race (recv before send completion)
+        _qp_cap.max_send_wr = 2; // one additional wr to avoid race (recv before
+                                 // send completion)
         _qp_cap.max_send_sge = 1;
         _qp_cap.max_recv_wr = 1;
         _qp_cap.max_recv_sge = 1;
@@ -40,48 +41,53 @@ public:
     void operator=(const ComputeNodeConnection&) = delete;
 
     /// Post a receive work request (WR) to the receive queue
-    void post_recv_cn_wp() {
+    void post_recv_cn_wp()
+    {
         if (out.beDebug()) {
             out.debug() << "[c" << _remote_index << "] "
-                        << "[" << _index << "] " << "POST RECEIVE _receive_cn_wp";
+                        << "[" << _index << "] "
+                        << "POST RECEIVE _receive_cn_wp";
         }
         post_recv(&recv_wr);
     }
 
-    void post_send_cn_ack() {
+    void post_send_cn_ack()
+    {
         if (out.beDebug()) {
-            out.debug()  << "[c" << _remote_index << "] "
-                         << "[" << _index << "] " << "POST SEND _send_cn_ack"
+            out.debug() << "[c" << _remote_index << "] "
+                        << "[" << _index << "] "
+                        << "POST SEND _send_cn_ack"
                         << " (desc=" << _send_cn_ack.desc << ")";
         }
         while (_pending_send_requests >= _qp_cap.max_send_wr) {
-            throw InfinibandException("Max number of pending send requests exceeded");
+            throw InfinibandException(
+                "Max number of pending send requests exceeded");
         }
         ++_pending_send_requests;
         post_send(&send_wr);
     }
 
-    void post_send_final_ack() {
+    void post_send_final_ack()
+    {
         send_wr.wr_id = ID_SEND_FINALIZE | (_index << 8);
         send_wr.send_flags = IBV_SEND_SIGNALED;
         post_send_cn_ack();
     }
 
-    virtual void setup(struct ibv_pd* pd) {
+    virtual void setup(struct ibv_pd* pd)
+    {
         assert(_data_ptr && _desc_ptr && _data_bytes && _desc_bytes);
 
         // register memory regions
         _mr_data = ibv_reg_mr(pd, _data_ptr, _data_bytes,
-                              IBV_ACCESS_LOCAL_WRITE |
-                              IBV_ACCESS_REMOTE_WRITE);
+                              IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE);
         _mr_desc = ibv_reg_mr(pd, _desc_ptr, _desc_bytes,
-                              IBV_ACCESS_LOCAL_WRITE |
-                              IBV_ACCESS_REMOTE_WRITE);
+                              IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE);
         _mr_send = ibv_reg_mr(pd, &_send_cn_ack,
                               sizeof(ComputeNodeBufferPosition), 0);
-        _mr_recv = ibv_reg_mr(pd, &_recv_cn_wp,
-                              sizeof(ComputeNodeBufferPosition),
-                              IBV_ACCESS_LOCAL_WRITE);
+        _mr_recv
+            = ibv_reg_mr(pd, &_recv_cn_wp, sizeof(ComputeNodeBufferPosition),
+                         IBV_ACCESS_LOCAL_WRITE);
 
         if (!_mr_data || !_mr_desc || !_mr_recv || !_mr_send)
             throw InfinibandException("registration of memory region failed");
@@ -113,13 +119,16 @@ public:
     /**
        \param event RDMA connection manager event structure
     */
-    virtual void on_established(struct rdma_cm_event* event) {
+    virtual void on_established(struct rdma_cm_event* event)
+    {
         IBConnection::on_established(event);
 
-        out.debug() << "[c" << _remote_index << "] " << "remote index: " << _remote_info.index;
+        out.debug() << "[c" << _remote_index << "] "
+                    << "remote index: " << _remote_info.index;
     }
 
-    virtual void on_disconnected(struct rdma_cm_event* event) {
+    virtual void on_disconnected(struct rdma_cm_event* event)
+    {
         disconnect();
 
         if (_mr_recv) {
@@ -145,12 +154,13 @@ public:
         IBConnection::on_disconnected(event);
     }
 
-    void inc_ack_pointers(uint64_t ack_pos) {
+    void inc_ack_pointers(uint64_t ack_pos)
+    {
         std::unique_lock<std::mutex> lock(_cn_ack_mutex);
         _cn_ack.desc = ack_pos;
 
-        const TimesliceComponentDescriptor& acked_ts =
-            _desc_ptr[(ack_pos - 1) & ((1 << par->cn_desc_buffer_size_exp()) - 1)];
+        const TimesliceComponentDescriptor& acked_ts = _desc_ptr
+            [(ack_pos - 1) & ((1 << par->cn_desc_buffer_size_exp()) - 1)];
 
         _cn_ack.data = acked_ts.offset + acked_ts.size;
         if (_our_turn) {
@@ -164,7 +174,8 @@ public:
     {
         if (_recv_cn_wp == CN_WP_FINAL) {
             out.debug() << "[c" << _remote_index << "] "
-                        << "[" << _index << "] " << "received FINAL pointer update";
+                        << "[" << _index << "] "
+                        << "received FINAL pointer update";
             // send FINAL ack
             _send_cn_ack = CN_WP_FINAL;
             post_send_final_ack();
@@ -172,7 +183,8 @@ public:
         }
         if (out.beDebug()) {
             out.debug() << "[c" << _remote_index << "] "
-                        << "[" << _index << "] " << "COMPLETE RECEIVE _receive_cn_wp"
+                        << "[" << _index << "] "
+                        << "COMPLETE RECEIVE _receive_cn_wp"
                         << " (desc=" << _recv_cn_wp.desc << ")";
         }
         _cn_wp = _recv_cn_wp;
@@ -187,24 +199,29 @@ public:
         }
     }
 
-    void on_complete_send() {
+    void on_complete_send()
+    {
         _pending_send_requests--;
     }
 
-    void on_complete_send_finalize() {
+    void on_complete_send_finalize()
+    {
         _done = true;
     }
 
-    const ComputeNodeBufferPosition& cn_wp() const {
+    const ComputeNodeBufferPosition& cn_wp() const
+    {
         return _cn_wp;
     }
 
-    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() {
+    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data()
+    {
         assert(_data_ptr && _desc_ptr && _data_bytes && _desc_bytes);
-        std::unique_ptr<std::vector<uint8_t> >
-            private_data(new std::vector<uint8_t>(sizeof(ComputeNodeInfo)));
+        std::unique_ptr<std::vector<uint8_t> > private_data(
+            new std::vector<uint8_t>(sizeof(ComputeNodeInfo)));
 
-        ComputeNodeInfo* cn_info = reinterpret_cast<ComputeNodeInfo*>(private_data->data());
+        ComputeNodeInfo* cn_info = reinterpret_cast
+            <ComputeNodeInfo*>(private_data->data());
         cn_info->data.addr = reinterpret_cast<uintptr_t>(_data_ptr);
         cn_info->data.rkey = _mr_data->rkey;
         cn_info->desc.addr = reinterpret_cast<uintptr_t>(_desc_ptr);

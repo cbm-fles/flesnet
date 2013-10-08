@@ -8,49 +8,52 @@
 #pragma pack(1)
 
 // Microslice descriptor.
-struct MicrosliceDescriptor {
-    uint8_t   hdr_id;  // "Header format identifier" (0xDD)
-    uint8_t   hdr_ver; // "Header format version"    (0x01)
-    uint16_t  eq_id;   // "Equipment identifier"
-    uint16_t  flags;   // "Status and error flags"
-    uint8_t   sys_id;  // "Subsystem identifier"
-    uint8_t   sys_ver; // "Subsystem format version"
-    uint64_t  idx;     // "Microslice index"
-    uint32_t  crc;     // "CRC32 checksum"
-    uint32_t  size;    // "Content size (bytes)"
-    uint64_t  offset;  // "Offset in event buffer (bytes)"
+struct MicrosliceDescriptor
+{
+    uint8_t hdr_id;  // "Header format identifier" (0xDD)
+    uint8_t hdr_ver; // "Header format version"    (0x01)
+    uint16_t eq_id;  // "Equipment identifier"
+    uint16_t flags;  // "Status and error flags"
+    uint8_t sys_id;  // "Subsystem identifier"
+    uint8_t sys_ver; // "Subsystem format version"
+    uint64_t idx;    // "Microslice index"
+    uint32_t crc;    // "CRC32 checksum"
+    uint32_t size;   // "Content size (bytes)"
+    uint64_t offset; // "Offset in event buffer (bytes)"
 };
 
-
 /// Timeslice component descriptor.
-struct TimesliceComponentDescriptor {
+struct TimesliceComponentDescriptor
+{
     uint64_t ts_num; ///< Timeslice index.
     uint64_t offset; ///< Start offset (in bytes) of corresponding data.
     uint64_t size;   ///< Size (in bytes) of corresponding data.
 };
 
-
 /// Structure representing a set of compute node buffer positions.
-struct ComputeNodeBufferPosition {
+struct ComputeNodeBufferPosition
+{
     uint64_t data; ///< The position in the data buffer.
     uint64_t desc; ///< The position in the description buffer.
-    bool operator< (const ComputeNodeBufferPosition& rhs) const {
+    bool operator<(const ComputeNodeBufferPosition& rhs) const
+    {
         return desc < rhs.desc;
     }
-    bool operator> (const ComputeNodeBufferPosition& rhs) const {
+    bool operator>(const ComputeNodeBufferPosition& rhs) const
+    {
         return desc > rhs.desc;
     }
-    bool operator== (const ComputeNodeBufferPosition& rhs) const {
+    bool operator==(const ComputeNodeBufferPosition& rhs) const
+    {
         return desc == rhs.desc && data == rhs.data;
     }
-    bool operator!= (const ComputeNodeBufferPosition& rhs) const {
+    bool operator!=(const ComputeNodeBufferPosition& rhs) const
+    {
         return desc != rhs.desc || data != rhs.data;
     }
 };
 
-
 const ComputeNodeBufferPosition CN_WP_FINAL = {UINT64_MAX, UINT64_MAX};
-
 
 /// InfiniBand request IDs.
 enum REQUEST_ID {
@@ -64,15 +67,15 @@ enum REQUEST_ID {
     ID_SEND_FINALIZE
 };
 
-
 /// Access information for a remote memory region.
-struct BufferInfo {
+struct BufferInfo
+{
     uint64_t addr; ///< Target memory address
     uint32_t rkey; ///< Target remote access key
 };
 
-
-struct ComputeNodeInfo {
+struct ComputeNodeInfo
+{
     BufferInfo data;
     BufferInfo desc;
     uint32_t index;
@@ -80,23 +83,25 @@ struct ComputeNodeInfo {
     uint32_t desc_buffer_size_exp;
 };
 
-
-struct InputNodeInfo {
+struct InputNodeInfo
+{
     uint32_t index;
 };
 
-
-struct TimesliceWorkItem {
-    uint64_t ts_pos;                  ///< Start offset (in items) of this timeslice
+struct TimesliceWorkItem
+{
+    uint64_t ts_pos; ///< Start offset (in items) of this timeslice
     uint32_t num_core_microslices;    ///< Number of core microslices
     uint32_t num_overlap_microslices; ///< Number of overlapping microslices
-    uint32_t num_components;          ///< Number of components (contributing input channels)
-    uint32_t data_buffer_size_exp;    ///< Exp. size (in bytes) of each data buffer
-    uint32_t desc_buffer_size_exp;    ///< Exp. size (in bytes) of each descriptor buffer
+    uint32_t num_components;       ///< Number of components (contributing input
+                                   ///channels)
+    uint32_t data_buffer_size_exp; ///< Exp. size (in bytes) of each data buffer
+    uint32_t desc_buffer_size_exp; ///< Exp. size (in bytes) of each descriptor
+                                   ///buffer
 };
 
-
-struct TimesliceCompletion {
+struct TimesliceCompletion
+{
     uint64_t ts_pos;
 };
 
@@ -127,7 +132,6 @@ inline std::ostream& operator<<(std::ostream& s, REQUEST_ID v)
     }
 }
 
-
 inline std::ostream& operator<<(std::ostream& s, ibv_wr_opcode v)
 {
     switch (v) {
@@ -150,7 +154,6 @@ inline std::ostream& operator<<(std::ostream& s, ibv_wr_opcode v)
     }
 }
 
-
 inline std::ostream& operator<<(std::ostream& s, ibv_send_flags v)
 {
     std::string str;
@@ -171,13 +174,15 @@ inline std::ostream& operator<<(std::ostream& s, ibv_send_flags v)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
-class ThreadContainer {
+class ThreadContainer
+{
 protected:
     void set_cpu(int n)
     {
         int nprocs = sysconf(_SC_NPROCESSORS_CONF);
         if (n >= nprocs) {
-            out.error() << "set_cpu: CPU " << n << " is not in range 0.." << (nprocs - 1);
+            out.error() << "set_cpu: CPU " << n << " is not in range 0.."
+                        << (nprocs - 1);
             return;
         }
 

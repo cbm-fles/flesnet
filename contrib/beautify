@@ -1,6 +1,9 @@
 #!/bin/bash
 
-astyle --options=contrib/astyle.opt --suffix=none \
+shopt -u nocaseglob
+LANG=C
+
+clang-format-3.4 -i \
   [A-Z]*.hpp \
   include.hpp \
   fles_ipc.hpp \
@@ -8,5 +11,4 @@ astyle --options=contrib/astyle.opt --suffix=none \
   global.hpp \
   main.cpp \
   pattern-check.cpp \
-  raw-storage.cpp \
-
+  raw-storage.cpp
