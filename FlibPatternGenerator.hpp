@@ -27,7 +27,7 @@ public:
         _pd(typical_content_size),
         _rand_content_bytes(_rng, _pd)
     {
-        _producer_thread = new boost::thread(&FlibPatternGenerator::produce_data, this);
+        _producer_thread = new std::thread(&FlibPatternGenerator::produce_data, this);
     }
 
     FlibPatternGenerator(const FlibPatternGenerator&) = delete;
@@ -36,7 +36,7 @@ public:
     ~FlibPatternGenerator()
     {
         {
-            boost::unique_lock<boost::mutex> l(_mutex);
+            std::unique_lock<std::mutex> l(_mutex);
             _is_stopped = true;
         }
         _cond_producer.notify_one();
@@ -84,7 +84,7 @@ public:
             last_written_data = written_data;
             {
 ++DCOUNT[0];
-                boost::unique_lock<boost::mutex> l(_mutex);
+                std::unique_lock<std::mutex> l(_mutex);
                 _written_mc = written_mc;
                 _written_data = written_data;
                 if (_is_stopped)
@@ -143,7 +143,7 @@ public:
                     last_written_data = written_data;
                     {
 ++DCOUNT[2];
-                        boost::unique_lock<boost::mutex> l(_mutex);
+                        std::unique_lock<std::mutex> l(_mutex);
                         _written_mc = written_mc;
                         _written_data = written_data;
                     }
@@ -156,7 +156,7 @@ public:
     virtual uint64_t wait_for_data(uint64_t min_mc_number)
     {
 ++DCOUNT[3];
-        boost::unique_lock<boost::mutex> l(_mutex);
+        std::unique_lock<std::mutex> l(_mutex);
         while (min_mc_number > _written_mc) {
 ++DCOUNT[4];
             _cond_consumer.wait(l);
@@ -168,7 +168,7 @@ public:
     {
 ++DCOUNT[6];
         {
-            boost::unique_lock<boost::mutex> l(_mutex);
+            std::unique_lock<std::mutex> l(_mutex);
             _acked_data = new_acked_data;
             _acked_mc = new_acked_mc;
         }
@@ -196,11 +196,11 @@ private:
 
     std::atomic<bool> _is_stopped{false};
 
-    boost::thread* _producer_thread;
+    std::thread* _producer_thread;
 
-    boost::mutex _mutex;
-    boost::condition_variable _cond_producer;
-    boost::condition_variable _cond_consumer;
+    std::mutex _mutex;
+    std::condition_variable _cond_producer;
+    std::condition_variable _cond_consumer;
 
     /// Number of acknowledged data bytes. Updated by input node.
     uint64_t _acked_data{0};

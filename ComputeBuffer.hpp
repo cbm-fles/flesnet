@@ -91,11 +91,11 @@ public:
         for (uint_fast32_t i = 0; i < par->processor_instances(); ++i) {
             start_processor_task(i);
         }
-        boost::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
+        std::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
 
         accept(par->base_port() + par->compute_indexes().at(0), par->input_nodes().size());
         handle_cm_events(par->input_nodes().size());
-        boost::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
+        std::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
         completion_handler();
         for (uint_fast32_t i = 0; i < par->processor_instances(); ++i) {
             pid_t pid = child_pids.at(i);

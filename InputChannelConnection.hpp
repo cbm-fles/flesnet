@@ -39,7 +39,7 @@ public:
 
     /// Wait until enough space is available at target compute node.
     void wait_for_buffer_space(uint64_t data_size, uint64_t desc_size) {
-        boost::mutex::scoped_lock lock(_cn_ack_mutex);
+        std::unique_lock<std::mutex> lock(_cn_ack_mutex);
         if (out.beTrace()) {
             out.trace() << "[" << _index << "] "
                         << "SENDER data space (bytes) required="
@@ -54,7 +54,7 @@ public:
                || _cn_ack.desc - _cn_wp.desc + (1 << _remote_info.data_buffer_size_exp)
                < desc_size) { // TODO: extend condition!
             {
-                boost::mutex::scoped_lock lock2(_cn_wp_mutex);
+                std::unique_lock<std::mutex> lock2(_cn_wp_mutex);
                 if (_our_turn) {
                     // send phony update to receive new pointers
                     out.debug() << "[i" << _remote_index << "] " << "[" << _index << "] "
@@ -165,7 +165,7 @@ public:
         // send everything
         while (_pending_write_requests >= _max_pending_write_requests) {
             //out.fatal() << "MAX REQUESTS! ###";
-            boost::this_thread::yield(); // busy wait // TODO
+            std::this_thread::yield(); // busy wait // TODO
         }
         ++_pending_write_requests;
         post_send(&send_wr_ts);
@@ -173,7 +173,7 @@ public:
 
     /// Increment target write pointers after data has been sent.
     void inc_write_pointers(uint64_t data_size, uint64_t desc_size) {
-        boost::mutex::scoped_lock lock(_cn_wp_mutex);
+        std::unique_lock<std::mutex> lock(_cn_wp_mutex);
         _cn_wp.data += data_size;
         _cn_wp.desc += desc_size;
         if (_our_turn) {
@@ -195,7 +195,7 @@ public:
 
     ///
     void finalize() {
-        boost::mutex::scoped_lock lock(_cn_wp_mutex);
+        std::unique_lock<std::mutex> lock(_cn_wp_mutex);
         _finalize = true;
         if (_our_turn) {
             _our_turn = false;
@@ -221,13 +221,13 @@ public:
                     << "receive completion, new _cn_ack.data="
                     << _receive_cn_ack.data;
         {
-            boost::mutex::scoped_lock lock(_cn_ack_mutex);
+            std::unique_lock<std::mutex> lock(_cn_ack_mutex);
             _cn_ack = _receive_cn_ack;
             _cn_ack_cond.notify_one();
         }
         post_recv_cn_ack();
         {
-            boost::mutex::scoped_lock lock(_cn_wp_mutex);
+            std::unique_lock<std::mutex> lock(_cn_wp_mutex);
             if (_cn_wp != _send_cn_wp) {
                 _send_cn_wp = _cn_wp;
                 post_send_cn_wp();
@@ -358,10 +358,10 @@ private:
     struct ibv_mr* _mr_recv = nullptr;
 
     /// Mutex protecting access to acknowledged-by-CN pointers
-    boost::mutex _cn_ack_mutex;
+    std::mutex _cn_ack_mutex;
 
     /// Condition variable for acknowledged-by-CN pointers    
-    boost::condition_variable _cn_ack_cond;
+    std::condition_variable _cn_ack_cond;
 
     /// Local version of CN write pointers
     ComputeNodeBufferPosition _cn_wp = {};
@@ -373,7 +373,7 @@ private:
     struct ibv_mr* _mr_send = nullptr;
 
     /// Mutex protecting access to CN write pointers
-    boost::mutex _cn_wp_mutex;
+    std::mutex _cn_wp_mutex;
    
     /// InfiniBand receive work request
     struct ibv_recv_wr recv_wr = {};

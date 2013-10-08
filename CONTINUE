@@ -11,5 +11,4 @@
   - revisit public/private
   - doxygen
 - valgrind again, helgrind
-- move from boost to c++11 threads
 - ...

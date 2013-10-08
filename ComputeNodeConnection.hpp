@@ -146,7 +146,7 @@ public:
     }
 
     void inc_ack_pointers(uint64_t ack_pos) {
-        boost::mutex::scoped_lock lock(_cn_ack_mutex);
+        std::unique_lock<std::mutex> lock(_cn_ack_mutex);
         _cn_ack.desc = ack_pos;
 
         const TimesliceComponentDescriptor& acked_ts =
@@ -178,7 +178,7 @@ public:
         _cn_wp = _recv_cn_wp;
         post_recv_cn_wp();
         {
-            boost::mutex::scoped_lock lock(_cn_ack_mutex);
+            std::unique_lock<std::mutex> lock(_cn_ack_mutex);
             if (_cn_ack != _send_cn_ack) {
                 _send_cn_ack = _cn_ack;
                 post_send_cn_ack();
@@ -219,7 +219,7 @@ public:
 private:
     ComputeNodeBufferPosition _send_cn_ack = {};
     ComputeNodeBufferPosition _cn_ack = {};
-    boost::mutex _cn_ack_mutex;
+    std::mutex _cn_ack_mutex;
 
     ComputeNodeBufferPosition _recv_cn_wp = {};
     ComputeNodeBufferPosition _cn_wp = {};

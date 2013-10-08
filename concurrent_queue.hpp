@@ -25,7 +25,7 @@ public:
 
     bool empty() const
     {
-        boost::unique_lock<boost::mutex> lock(_mutex);
+        std::unique_lock<std::mutex> lock(_mutex);
         if (_is_stopped)
             throw Stopped();
         return _queue.empty();
@@ -33,7 +33,7 @@ public:
 
     size_t size() const
     {
-        boost::unique_lock<boost::mutex> lock(_mutex);
+        std::unique_lock<std::mutex> lock(_mutex);
         if (_is_stopped)
             throw Stopped();
         return _queue.size();
@@ -41,14 +41,14 @@ public:
 
     bool stopped() const
     {
-        boost::unique_lock<boost::mutex> lock(_mutex);
+        std::unique_lock<std::mutex> lock(_mutex);
         return _is_stopped;
     }
     
     void push(const T& data)
     {
         {
-            boost::unique_lock<boost::mutex> lock(_mutex);
+            std::unique_lock<std::mutex> lock(_mutex);
             if (_is_stopped)
                 throw Stopped();
             while (_queue.size() == _max_size) {
@@ -62,7 +62,7 @@ public:
     bool try_pop(T& data)
     {
         {
-            boost::mutex::scoped_lock lock(_mutex);
+            std::unique_lock<std::mutex> lock(_mutex);
             if (_is_stopped)
                 throw Stopped();
             if (_queue.empty())
@@ -80,7 +80,7 @@ public:
     void wait_and_pop(T& data)
     {
         {
-            boost::unique_lock<boost::mutex> lock(_mutex);
+            std::unique_lock<std::mutex> lock(_mutex);
             while (_queue.empty() && !_is_stopped) {
                 _cond_not_empty.wait(lock);
             }
@@ -97,7 +97,7 @@ public:
     void stop()
     {
         {
-            boost::mutex::scoped_lock lock(_mutex);
+            std::unique_lock<std::mutex> lock(_mutex);
             if (_is_stopped)
                 throw Stopped();
             _is_stopped = true;
@@ -109,7 +109,7 @@ public:
 
     void wait_until_empty() const
     {
-        boost::unique_lock<boost::mutex> lock(_mutex);
+        std::unique_lock<std::mutex> lock(_mutex);
         while (!_queue.empty() && !_is_stopped) {
             _cond_empty.wait(lock);
         }
@@ -120,9 +120,9 @@ public:
 private:
     std::queue<T> _queue;
     const size_t _max_size;
-    mutable boost::mutex _mutex;
-    boost::condition_variable _cond_not_empty;
-    boost::condition_variable _cond_not_full;
-    mutable boost::condition_variable _cond_empty;
+    mutable std::mutex _mutex;
+    std::condition_variable _cond_not_empty;
+    std::condition_variable _cond_not_full;
+    mutable std::condition_variable _cond_empty;
     bool _is_stopped = false;
 };

@@ -228,7 +228,7 @@ public:
     virtual void run() = 0;
 
     void start() {
-        _thread = std::unique_ptr<boost::thread>(new boost::thread(&IBConnectionGroup::run, this));
+        _thread = std::unique_ptr<std::thread>(new std::thread(&IBConnectionGroup::run, this));
     }
 
     void join() {
@@ -384,5 +384,5 @@ private:
     /// Total number of RECV work requests.
     uint64_t _aggregate_recv_requests = 0;
 
-    std::unique_ptr<boost::thread> _thread;
+    std::unique_ptr<std::thread> _thread;
 };

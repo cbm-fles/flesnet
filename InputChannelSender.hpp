@@ -64,13 +64,13 @@ public:
 
         connect();
         handle_cm_events(_compute_hostnames.size());
-        boost::thread t1(&InputChannelSender::completion_handler, this);
+        std::thread t1(&InputChannelSender::completion_handler, this);
 
         sender_loop();
 
         t1.join();
 
-        boost::thread t2(&InputChannelSender::handle_cm_events, this, 0);
+        std::thread t2(&InputChannelSender::handle_cm_events, this, 0);
         disconnect();
         t2.join();
 
