@@ -33,7 +33,7 @@ add_custom_command(
           ${CMAKE_CURRENT_SOURCE_DIR}/contrib/verbs.supp verbs.supp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/contrib/verbs.supp)
 
-add_executable(flesnet main.cpp flesnet.cfg run verbs.supp)
+add_executable(flesnet Parameters.cpp IBConnection.cpp FlibPatternGenerator.cpp InputChannelSender.cpp InputChannelConnection.cpp ComputeNodeConnection.cpp ComputeBuffer.cpp InputNodeApplication.cpp ComputeNodeApplication.cpp main.cpp flesnet.cfg run verbs.supp)
 add_precompiled_header(flesnet ${CMAKE_SOURCE_DIR}/include.hpp)
 
 target_link_libraries(flesnet ibverbs)

@@ -4,7 +4,7 @@ shopt -u nocaseglob
 LANG=C
 
 clang-format-3.4 -i \
-  [A-Z]*.hpp \
+  [A-Z]*.[hc]pp \
   include.hpp \
   fles_ipc.hpp \
   concurrent_queue.hpp \
