@@ -14,7 +14,7 @@ class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
 {
 public:
     /// The ComputeBuffer default constructor.
-    ComputeBuffer(uint64_t compute_index) :
+    explicit ComputeBuffer(uint64_t compute_index) :
         _compute_index(compute_index),
         _ack(par->cn_desc_buffer_size_exp())
     {
@@ -88,7 +88,7 @@ public:
 
         assert(!par->processor_executable().empty());
         child_pids.resize(par->processor_instances());
-        for (uint_fast32_t i = 0; i < par->processor_instances(); i++) {
+        for (uint_fast32_t i = 0; i < par->processor_instances(); ++i) {
             start_processor_task(i);
         }
         boost::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
@@ -97,7 +97,7 @@ public:
         handle_cm_events(par->input_nodes().size());
         boost::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
         completion_handler();
-        for (uint_fast32_t i = 0; i < par->processor_instances(); i++) {
+        for (uint_fast32_t i = 0; i < par->processor_instances(); ++i) {
             pid_t pid = child_pids.at(i);
             child_pids.at(i) = 0;
             kill(pid, SIGTERM);
@@ -191,7 +191,7 @@ public:
             }
             _conn[in]->on_complete_send();
             _conn[in]->on_complete_send_finalize();
-            _connections_done++;
+            ++_connections_done;
             _all_done = (_connections_done == _conn.size());
             out.debug() << "[c" << _compute_index << "] "
                         << "SEND FINALIZE complete for id " << in << " all_done=" << _all_done;
@@ -218,7 +218,7 @@ public:
                 uint64_t new_completely_written = (*new_red_lantern)->cn_wp().desc;
                 _red_lantern = std::distance(std::begin(_conn), new_red_lantern);
 
-                for (uint64_t tpos = _completely_written; tpos < new_completely_written; tpos++) {
+                for (uint64_t tpos = _completely_written; tpos < new_completely_written; ++tpos) {
                     TimesliceWorkItem wi = {tpos, par->timeslice_size(), par->overlap_size(),
                                             static_cast<uint32_t>(_conn.size()),
                                             par->cn_data_buffer_size_exp(),
@@ -257,7 +257,7 @@ public:
                 }
                 if (c.ts_pos == _acked) {
                     do
-                        _acked++;
+                        ++_acked;
                     while (_ack.at(_acked) > c.ts_pos);
                     for (auto& connection : _conn)
                         connection->inc_ack_pointers(_acked);

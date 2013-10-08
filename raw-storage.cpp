@@ -39,7 +39,7 @@ int main() {
         std::unique_ptr<const fles::Timeslice> ts = tsr.receive();
         fles::StorableTimeslice sts(*ts);
         oa << sts;
-        count++;
+        ++count;
     }
 
     return 0;

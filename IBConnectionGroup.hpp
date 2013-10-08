@@ -164,7 +164,7 @@ public:
                 if (ne < 0)
                     throw InfinibandException("ibv_poll_cq failed");
 
-                for (int i = 0; i < ne; i++) {
+                for (int i = 0; i < ne; ++i) {
                     if (wc[i].status != IBV_WC_SUCCESS) {
                         std::ostringstream s;
                         s << ibv_wc_status_str(wc[i].status)
@@ -261,7 +261,7 @@ protected:
         CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
 
         conn->on_established(event);
-        _connected++;
+        ++_connected;
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.

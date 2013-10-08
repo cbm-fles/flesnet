@@ -83,8 +83,7 @@ public:
 
         uint64_t cached_written_mc = 0;
 
-        for (uint64_t timeslice = 0; timeslice < _max_timeslice_number;
-             timeslice++) {
+        for (uint64_t timeslice = 0; timeslice < _max_timeslice_number; ++timeslice) {
 
             // wait until a complete TS is available in the input buffer
             uint64_t mc_offset = timeslice * _timeslice_size;
@@ -146,7 +145,7 @@ public:
 
     /// Initiate connection requests to list of target hostnames.
     void connect() {
-        for (unsigned int i = 0; i < _compute_hostnames.size(); i++) {
+        for (unsigned int i = 0; i < _compute_hostnames.size(); ++i) {
             std::unique_ptr<InputChannelConnection> connection = create_input_node_connection(i);
             connection->connect(_compute_hostnames[i], _compute_services[i]);
             _conn.push_back(std::move(connection));
@@ -213,13 +212,13 @@ private:
 
         s << "/--- desc buf ---" << std::endl;
         s << "|";
-        for (unsigned int i = 0; i < _data_source.desc_buffer().size(); i++)
+        for (unsigned int i = 0; i < _data_source.desc_buffer().size(); ++i)
             s << " (" << i << ")" << _data_source.desc_buffer().at(i).offset;
         s << std::endl;
         s << "| _acked_mc = " << _acked_mc << std::endl;
         s << "/--- data buf ---" << std::endl;
         s << "|";
-        for (unsigned int i = 0; i < _data_source.data_buffer().size(); i++)
+        for (unsigned int i = 0; i < _data_source.data_buffer().size(); ++i)
             s << " (" << i << ")" << std::hex << _data_source.data_buffer().at(i) << std::dec;
         s << std::endl;
         s << "| _acked_data = " << _acked_data << std::endl;
@@ -294,7 +293,7 @@ private:
             uint64_t acked_ts = _acked_mc / _timeslice_size;
             if (ts == acked_ts)
                 do
-                    acked_ts++;
+                    ++acked_ts;
                 while (_ack.at(acked_ts) > ts);
             else
                 _ack.at(ts) = ts;
@@ -317,7 +316,7 @@ private:
             int cn = wc.wr_id >> 8;
             _conn[cn]->on_complete_recv();
             if (_conn[cn]->done()) {
-                _connections_done++;
+                ++_connections_done;
                 _all_done = (_connections_done == _conn.size());
                 out.debug() << "[i" << _input_index << "] "
                             << "ID_RECEIVE_CN_ACK final for id " << cn << " all_done=" << _all_done;

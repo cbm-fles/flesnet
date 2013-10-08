@@ -93,7 +93,7 @@ public:
         // split sge list if necessary
         int num_sge_cut = 0;
         if (data_length + mc_length * sizeof(MicrosliceDescriptor) > target_bytes_left) {
-            for (int i = 0; i < num_sge; i++) {
+            for (int i = 0; i < num_sge; ++i) {
                 if (sge[i].length <= target_bytes_left) {
                     target_bytes_left -= sge[i].length;
                 } else {
@@ -105,7 +105,7 @@ public:
                         target_bytes_left = 0;
                     } else {
                         sge2[num_sge2++] = sge[i];
-                        num_sge_cut++;
+                        ++num_sge_cut;
                     }
                 }
             }
@@ -167,7 +167,7 @@ public:
             //out.fatal() << "MAX REQUESTS! ###";
             boost::this_thread::yield(); // busy wait // TODO
         }
-        _pending_write_requests++;
+        ++_pending_write_requests;
         post_send(&send_wr_ts);
     }
 

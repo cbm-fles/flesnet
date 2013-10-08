@@ -57,7 +57,7 @@ public:
         while (_pending_send_requests >= _qp_cap.max_send_wr) {
             throw InfinibandException("Max number of pending send requests exceeded");
         }
-        _pending_send_requests++;
+        ++_pending_send_requests;
         post_send(&send_wr);
     }
 

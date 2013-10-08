@@ -17,7 +17,7 @@ public:
         Application<InputChannelSender>(par),
         _compute_hostnames(par.compute_nodes())
     {
-        for (unsigned int i = 0; i < par.compute_nodes().size(); i++)
+        for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
             _compute_services.push_back(boost::lexical_cast<std::string>(par.base_port() + i));
 
         for (unsigned i: indexes) {

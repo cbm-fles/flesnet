@@ -26,8 +26,8 @@ void install_term_handler() {
 }
 
 void check_timeslice(const fles::Timeslice& ts) {
-    for (size_t c = 0; c < ts.num_components(); c++) {
-        for (size_t m = 0; m < ts.num_microslices(); m++) {
+    for (size_t c = 0; c < ts.num_components(); ++c) {
+        for (size_t m = 0; m < ts.num_microslices(); ++m) {
             const uint64_t* content = reinterpret_cast<const uint64_t*>(ts.content(c, m));
             uint32_t crc = 0x00000000;
             for (size_t pos = 0; pos < ts.descriptor(c, m).size; pos += sizeof(uint64_t)) {
@@ -49,7 +49,7 @@ int main() {
     while (true) {
         std::unique_ptr<const fles::Timeslice> ts = tsr.receive();
         check_timeslice(*ts);
-        count++;
+        ++count;
     }
 
     return 0;

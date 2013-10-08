@@ -44,7 +44,7 @@ public:
         delete _producer_thread;
 
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 10; ++i)
             out.trace() << "DCOUNT[" << i << "] = " << DCOUNT[i];
     }
 
@@ -83,7 +83,7 @@ public:
             last_written_mc = written_mc;
             last_written_data = written_data;
             {
-DCOUNT[0]++;
+++DCOUNT[0];
                 boost::unique_lock<boost::mutex> l(_mutex);
                 _written_mc = written_mc;
                 _written_data = written_data;
@@ -91,7 +91,7 @@ DCOUNT[0]++;
                     return;
                 while ((written_data - _acked_data + min_avail_data > _data_buffer.bytes())
                        || (written_mc - _acked_mc + min_avail_mc > _desc_buffer.size())) {
-DCOUNT[1]++;
+++DCOUNT[1];
                     _cond_producer.wait(l);
                     if (_is_stopped)
                         return;
@@ -142,7 +142,7 @@ DCOUNT[1]++;
                     last_written_mc = written_mc;
                     last_written_data = written_data;
                     {
-DCOUNT[2]++;
+++DCOUNT[2];
                         boost::unique_lock<boost::mutex> l(_mutex);
                         _written_mc = written_mc;
                         _written_data = written_data;
@@ -155,10 +155,10 @@ DCOUNT[2]++;
 
     virtual uint64_t wait_for_data(uint64_t min_mc_number)
     {
-DCOUNT[3]++;
+++DCOUNT[3];
         boost::unique_lock<boost::mutex> l(_mutex);
         while (min_mc_number > _written_mc) {
-DCOUNT[4]++;
+++DCOUNT[4];
             _cond_consumer.wait(l);
         }
         return _written_mc;
@@ -166,7 +166,7 @@ DCOUNT[4]++;
 
     virtual void update_ack_pointers(uint64_t new_acked_data, uint64_t new_acked_mc)
     {
-DCOUNT[6]++;
+++DCOUNT[6];
         {
             boost::unique_lock<boost::mutex> l(_mutex);
             _acked_data = new_acked_data;

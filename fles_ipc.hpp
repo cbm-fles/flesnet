@@ -166,7 +166,7 @@ public:
         _data(ts._work_item.num_components),
         _index(ts.index())
     {
-        for (std::size_t component= 0; component < ts._work_item.num_components; component++) {
+        for (std::size_t component= 0; component < ts._work_item.num_components; ++component) {
             uint64_t size = ts.desc(component).size;
             const uint8_t* begin = &ts.data(component, ts.desc(component).offset);
             _data[component].resize(size);

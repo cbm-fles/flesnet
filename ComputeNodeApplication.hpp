@@ -50,7 +50,7 @@ private:
         while((pid = waitpid(-1, &status, WNOHANG)) > 0) {
             /* Process with PID 'pid' has exited, handle it */
             int idx = -1;
-            for (std::size_t i = 0; i != child_pids.size(); i++)
+            for (std::size_t i = 0; i != child_pids.size(); ++i)
                 if (child_pids[i] == pid) idx = i;
             if (idx < 0) {
                 //out.error() << "unknown child process died";

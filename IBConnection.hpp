@@ -243,13 +243,13 @@ public:
 
 protected:
     void dump_send_wr(struct ibv_send_wr* wr) {
-        for (int i = 0; wr; i++, wr = wr->next) {
+        for (int i = 0; wr; ++i, wr = wr->next) {
             out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id
                         << " (" << static_cast<REQUEST_ID>(wr->wr_id) << ")";
             out.fatal() << " opcode=" << wr->opcode;
             out.fatal() << " send_flags=" << static_cast<ibv_send_flags>(wr->send_flags);
             out.fatal() << " num_sge=" << wr->num_sge;
-            for (int j = 0; j < wr->num_sge; j++) {
+            for (int j = 0; j < wr->num_sge; ++j) {
                 out.fatal() << "  sg_list[" << j << "] "
                             << "addr=" << wr->sg_list[j].addr;
                 out.fatal() << "  sg_list[" << j << "] "
@@ -273,10 +273,10 @@ protected:
             throw InfinibandException("ibv_post_send failed");
         }
 
-        _total_send_requests++;
+        ++_total_send_requests;
 
         while (wr) {
-            for (int i = 0; i < wr->num_sge; i++)
+            for (int i = 0; i < wr->num_sge; ++i)
                 _total_bytes_sent += wr->sg_list[i].length;
             wr = wr->next;
         }
@@ -292,7 +292,7 @@ protected:
             throw InfinibandException("ibv_post_recv failed");
         }
 
-        _total_recv_requests++;
+        ++_total_recv_requests;
     }
 
     /// Index of this connection in the local group of connections.
