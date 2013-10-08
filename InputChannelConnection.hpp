@@ -5,6 +5,9 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include "IBConnection.hpp"
+#include "Timeslice.hpp"
+
 /// Input node connection class.
 /** An InputChannelConnection object represents the endpoint of a single
     timeslice building connection from an input node to a compute

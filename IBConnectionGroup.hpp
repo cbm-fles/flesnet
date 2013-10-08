@@ -5,6 +5,10 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include "ThreadContainer.hpp"
+#include "InfinibandException.hpp"
+#include "global.hpp"
+
 /// InfiniBand connection group base class.
 /** An IBConnectionGroup object represents a group of InfiniBand
     connections that use the same completion queue. */

@@ -4,12 +4,9 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#include "include.hpp"
-
-#include "global.hpp"
-
-#include "Timeslice.hpp"
 #include "Parameters.hpp"
+#include "Timeslice.hpp"
+#include "global.hpp"
 
 namespace po = boost::program_options;
 

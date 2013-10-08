@@ -5,6 +5,9 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include "IBConnection.hpp"
+#include "Timeslice.hpp"
+
 /// Compute node connection class.
 /** A ComputeNodeConnection object represents the endpoint of a single
     timeslice building connection from a compute node to an input

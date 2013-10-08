@@ -5,6 +5,11 @@
  * 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include "IBConnectionGroup.hpp"
+#include "ComputeNodeConnection.hpp"
+#include "RingBuffer.hpp"
+#include "concurrent_queue.hpp"
+
 /// Compute buffer and input node connection container class.
 /** A ComputeBuffer object represents a timeslice buffer (filled by
     the input nodes) and a group of timeslice building connections to

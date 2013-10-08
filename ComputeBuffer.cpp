@@ -4,23 +4,8 @@
  * 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#include "include.hpp"
-
-#include "global.hpp"
-
-#include "Timeslice.hpp"
-#include "Parameters.hpp"
-#include "RingBuffer.hpp"
-#include "RingBufferView.hpp"
-#include "IBConnection.hpp"
-#include "IBConnectionGroup.hpp"
-#include "InputChannelConnection.hpp"
-#include "DataSource.hpp"
-#include "FlibPatternGenerator.hpp"
-#include "InputChannelSender.hpp"
-#include "ComputeNodeConnection.hpp"
-#include "concurrent_queue.hpp"
 #include "ComputeBuffer.hpp"
+#include "Parameters.hpp"
 
 ComputeBuffer::ComputeBuffer(uint64_t compute_index)
     : _compute_index(compute_index), _ack(par->cn_desc_buffer_size_exp())

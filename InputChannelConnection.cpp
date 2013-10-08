@@ -4,18 +4,8 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#include "include.hpp"
-
-#include "global.hpp"
-
-#include "Timeslice.hpp"
-#include "Parameters.hpp"
-#include "RingBuffer.hpp"
-#include "RingBufferView.hpp"
-#include "IBConnection.hpp"
-#include "IBConnectionGroup.hpp"
-
 #include "InputChannelConnection.hpp"
+#include "global.hpp"
 
 InputChannelConnection::InputChannelConnection(
     struct rdma_event_channel* ec,

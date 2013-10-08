@@ -4,14 +4,9 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#include "include.hpp"
-
-#include "global.hpp"
-
-#include "Timeslice.hpp"
-#include "Parameters.hpp"
-
 #include "IBConnection.hpp"
+#include "Timeslice.hpp"
+#include "global.hpp"
 
 IBConnection::IBConnection(struct rdma_event_channel* ec,
                            uint_fast16_t connection_index,

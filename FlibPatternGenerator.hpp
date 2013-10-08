@@ -5,18 +5,11 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#include "include.hpp"
-
-#include "global.hpp"
-
-#include "Timeslice.hpp"
-#include "Parameters.hpp"
+#include "DataSource.hpp"
+#include "ThreadContainer.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
-#include "IBConnection.hpp"
-#include "IBConnectionGroup.hpp"
-#include "InputChannelConnection.hpp"
-#include "DataSource.hpp"
+#include "global.hpp"
 
 /// Simple software pattern generator used as FLIB replacement.
 class FlibPatternGenerator : public DataSource, public ThreadContainer

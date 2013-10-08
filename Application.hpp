@@ -5,6 +5,9 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include "ThreadContainer.hpp"
+#include "Parameters.hpp"
+
 /// %Application base class.
 /** The Application object represents an instance of the running
     application. */

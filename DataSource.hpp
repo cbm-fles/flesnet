@@ -5,6 +5,9 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include "RingBufferView.hpp"
+#include "Timeslice.hpp"
+
 /// Abstract FLES data source class.
 class DataSource
 {

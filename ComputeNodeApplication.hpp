@@ -5,6 +5,9 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include "Application.hpp"
+#include "ComputeBuffer.hpp"
+
 /// Compute application class.
 /** The ComputeNodeApplication object represents an instance of the
     running compute node application. */

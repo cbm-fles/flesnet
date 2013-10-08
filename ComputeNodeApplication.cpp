@@ -4,25 +4,6 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#include "include.hpp"
-
-#include "global.hpp"
-
-#include "Timeslice.hpp"
-#include "Parameters.hpp"
-#include "RingBuffer.hpp"
-#include "RingBufferView.hpp"
-#include "IBConnection.hpp"
-#include "IBConnectionGroup.hpp"
-#include "InputChannelConnection.hpp"
-#include "DataSource.hpp"
-#include "FlibPatternGenerator.hpp"
-#include "InputChannelSender.hpp"
-#include "ComputeNodeConnection.hpp"
-#include "concurrent_queue.hpp"
-#include "ComputeBuffer.hpp"
-#include "Application.hpp"
-#include "InputNodeApplication.hpp"
 #include "ComputeNodeApplication.hpp"
 
 ComputeNodeApplication::ComputeNodeApplication(Parameters& par,

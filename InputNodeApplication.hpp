@@ -5,6 +5,9 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include "Application.hpp"
+#include "InputChannelSender.hpp"
+
 /// Input application class.
 /** The InputNodeApplication object represents an instance of the running
     input node application. */

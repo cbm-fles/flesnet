@@ -5,6 +5,11 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include "IBConnectionGroup.hpp"
+#include "InputChannelConnection.hpp"
+#include "DataSource.hpp"
+#include "RingBuffer.hpp"
+
 /// Input buffer and compute node connection container class.
 /** An InputChannelSender object represents an input buffer (filled by a
     FLIB) and a group of timeslice building connections to compute
