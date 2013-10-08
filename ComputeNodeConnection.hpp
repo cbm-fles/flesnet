@@ -23,7 +23,7 @@ public:
                           TimesliceComponentDescriptor* desc_ptr,
                           std::size_t desc_bytes)
         : IBConnection(ec, connection_index, remote_connection_index, id),
-          _remote_info(remote_info),
+          _remote_info(std::move(remote_info)),
           _data_ptr(data_ptr),
           _data_bytes(data_bytes),
           _desc_ptr(desc_ptr),

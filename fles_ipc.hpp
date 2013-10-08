@@ -8,6 +8,7 @@
 #include <boost/serialization/vector.hpp>
 #include <memory>
 #include <cstdint>
+#include <utility>
 
 //! \file
 //! This file describes the timeslice-based interface to FLES.
@@ -142,10 +143,10 @@ private:
               TimesliceComponentDescriptor* desc,
               std::shared_ptr
               <boost::interprocess::message_queue> completions_mq)
-        : _work_item(work_item),
+        : _work_item(std::move(work_item)),
           _data(data),
           _desc(desc),
-          _completions_mq(completions_mq)
+          _completions_mq(std::move(completions_mq))
     {
         _completion = {_work_item.ts_pos};
         _descriptor_offset = _work_item.ts_pos
