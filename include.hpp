@@ -19,6 +19,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <random>
 
 #include <sys/wait.h>
 #include <arpa/inet.h>
@@ -30,10 +31,6 @@
 #include <numa.h>
 
 #include <boost/program_options.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/poisson_distribution.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/thread.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>

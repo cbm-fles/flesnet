@@ -23,9 +23,7 @@ public:
         _input_index(input_index),
         _generate_pattern(generate_pattern),
         _typical_content_size(typical_content_size),
-        _randomize_sizes(randomize_sizes),
-        _pd(typical_content_size),
-        _rand_content_bytes(_rng, _pd)
+        _randomize_sizes(randomize_sizes)
     {
         _producer_thread = new std::thread(&FlibPatternGenerator::produce_data, this);
     }
@@ -62,6 +60,12 @@ public:
     void produce_data()
     {
         set_cpu(3);
+
+        /// A pseudo-random number generator.
+        std::default_random_engine random_generator;
+
+        /// Distribution to use in determining data content sizes.
+        std::poisson_distribution<> random_distribution(_typical_content_size);
 
         uint64_t written_mc = 0;
         uint64_t written_data = 0;
@@ -103,7 +107,7 @@ public:
             while (true) {
                 unsigned int content_bytes = _typical_content_size;
                 if (_randomize_sizes)
-                    content_bytes = _rand_content_bytes();
+                    content_bytes = random_distribution(random_generator);
 
                 // check for space in data and descriptor buffers
                 if ((written_data - acked_data + content_bytes > _data_buffer.bytes())
@@ -213,14 +217,4 @@ private:
 
     /// FLIB-internal number of written MCs. 
     uint64_t _written_mc{0};
-
-    /// A pseudo-random number generator.
-    boost::mt19937 _rng;
-
-    /// Distribution to use in determining data content sizes.
-    boost::poisson_distribution<> _pd;
-
-    /// Generate random number of content bytes.
-    boost::variate_generator<boost::mt19937&,
-                             boost::poisson_distribution<> > _rand_content_bytes;
 };
