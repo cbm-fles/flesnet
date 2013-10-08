@@ -47,9 +47,6 @@ main(int argc, char* argv[])
     std::unique_ptr<InputNodeApplication> _input_app;
     std::unique_ptr<ComputeNodeApplication> _compute_app;
 
-    boost::thread _input_thread;
-    boost::thread _compute_thread;
-
     try {
         std::unique_ptr<Parameters> parameters(new Parameters(argc, argv));
         par = std::move(parameters);
