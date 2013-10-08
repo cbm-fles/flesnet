@@ -7,14 +7,6 @@
 
 namespace po = boost::program_options;
 
-/// Overloaded output operator for STL vectors.
-template <class T>
-std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
-{
-    copy(v.begin(), v.end(), std::ostream_iterator<T>(os, " "));
-    return os;
-}
-
 /// Run parameter exception class.
 /** A ParametersException object signals an error in a given parameter
     on the command line or in a configuration file. */
@@ -272,7 +264,7 @@ private:
         }
 
         for (auto input_index : _input_indexes) {
-            if (input_index < 0 || input_index >= _input_nodes.size()) {
+            if (input_index >= _input_nodes.size()) {
                 std::ostringstream oss;
                 oss << "input node index (" << input_index
                     << ") out of range (0.." << _input_nodes.size() - 1 << ")";
@@ -281,7 +273,7 @@ private:
         }
 
         for (auto compute_index : _compute_indexes) {
-            if (compute_index < 0 || compute_index >= _compute_nodes.size()) {
+            if (compute_index >= _compute_nodes.size()) {
                 std::ostringstream oss;
                 oss << "compute node index (" << compute_index
                     << ") out of range (0.." << _compute_nodes.size() - 1
