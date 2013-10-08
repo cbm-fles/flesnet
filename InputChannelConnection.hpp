@@ -7,6 +7,9 @@
 
 #include "IBConnection.hpp"
 #include "Timeslice.hpp"
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
 
 /// Input node connection class.
 /** An InputChannelConnection object represents the endpoint of a single

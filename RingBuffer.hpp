@@ -5,6 +5,8 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include <memory>
+
 /// Simple generic ring buffer class.
 template <typename T = uint8_t, bool CLEARED = false>
 class RingBuffer

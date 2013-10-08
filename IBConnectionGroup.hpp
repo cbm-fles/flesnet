@@ -8,6 +8,11 @@
 #include "ThreadContainer.hpp"
 #include "InfinibandException.hpp"
 #include "global.hpp"
+#include <chrono>
+#include <thread>
+#include <cstring>
+#include <rdma/rdma_cma.h>
+#include <valgrind/memcheck.h>
 
 /// InfiniBand connection group base class.
 /** An IBConnectionGroup object represents a group of InfiniBand

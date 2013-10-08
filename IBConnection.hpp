@@ -6,6 +6,9 @@
  */
 
 #include "InfinibandException.hpp"
+#include <rdma/rdma_cma.h>
+#include <memory>
+#include <vector>
 
 /// InfiniBand connection base class.
 /** An IBConnection object represents the endpoint of a single

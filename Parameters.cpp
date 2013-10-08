@@ -8,6 +8,9 @@
 #include "Timeslice.hpp"
 #include "global.hpp"
 
+#include <boost/program_options.hpp>
+#include <fstream>
+
 namespace po = boost::program_options;
 
 /// Overloaded output operator for STL vectors.

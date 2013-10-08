@@ -5,6 +5,8 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include <stdexcept>
+
 /// InfiniBand exception class.
 /** An InfinbandException object signals an error that occured in the
     InfiniBand communication functions. */

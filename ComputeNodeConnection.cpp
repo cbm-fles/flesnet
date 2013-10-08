@@ -7,6 +7,7 @@
 #include "ComputeNodeConnection.hpp"
 #include "Parameters.hpp"
 #include "global.hpp"
+#include <cassert>
 
 ComputeNodeConnection::ComputeNodeConnection(
     struct rdma_event_channel* ec,

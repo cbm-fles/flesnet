@@ -5,6 +5,8 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include <cstdint>
+
 /// Simple generic ring buffer view class.
 template <typename T = uint8_t>
 class RingBufferView

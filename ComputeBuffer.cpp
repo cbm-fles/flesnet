@@ -6,6 +6,7 @@
 
 #include "ComputeBuffer.hpp"
 #include "Parameters.hpp"
+#include <csignal>
 
 ComputeBuffer::ComputeBuffer(uint64_t compute_index)
     : _compute_index(compute_index), _ack(par->cn_desc_buffer_size_exp())

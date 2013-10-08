@@ -10,6 +10,11 @@
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
 #include "global.hpp"
+#include <atomic>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <random>
 
 /// Simple software pattern generator used as FLIB replacement.
 class FlibPatternGenerator : public DataSource, public ThreadContainer

@@ -5,7 +5,8 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-namespace po = boost::program_options;
+#include <stdexcept>
+#include <vector>
 
 /// Run parameter exception class.
 /** A ParametersException object signals an error in a given parameter

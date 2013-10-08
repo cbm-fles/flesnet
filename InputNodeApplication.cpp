@@ -6,6 +6,7 @@
 
 #include "InputNodeApplication.hpp"
 #include "FlibPatternGenerator.hpp"
+#include <boost/lexical_cast.hpp>
 
 InputNodeApplication::InputNodeApplication(Parameters& par,
                                            std::vector<unsigned> indexes)

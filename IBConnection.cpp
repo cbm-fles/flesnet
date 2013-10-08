@@ -7,6 +7,9 @@
 #include "IBConnection.hpp"
 #include "Timeslice.hpp"
 #include "global.hpp"
+#include <netdb.h>
+#include <cstring>
+#include <cassert>
 
 IBConnection::IBConnection(struct rdma_event_channel* ec,
                            uint_fast16_t connection_index,

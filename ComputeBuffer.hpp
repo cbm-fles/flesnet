@@ -9,6 +9,9 @@
 #include "ComputeNodeConnection.hpp"
 #include "RingBuffer.hpp"
 #include "concurrent_queue.hpp"
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/ipc/message_queue.hpp>
 
 /// Compute buffer and input node connection container class.
 /** A ComputeBuffer object represents a timeslice buffer (filled by

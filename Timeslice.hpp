@@ -5,6 +5,9 @@
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include <iostream>
+#include <rdma/rdma_cma.h>
+
 #pragma pack(1)
 
 // Microslice descriptor.

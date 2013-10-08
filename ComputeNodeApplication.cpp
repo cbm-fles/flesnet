@@ -5,6 +5,9 @@
  */
 
 #include "ComputeNodeApplication.hpp"
+#include <csignal>
+#include <numa.h>
+#include <sys/wait.h>
 
 ComputeNodeApplication::ComputeNodeApplication(Parameters& par,
                                                std::vector<unsigned> indexes)

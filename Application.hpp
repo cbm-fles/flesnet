@@ -7,6 +7,8 @@
 
 #include "ThreadContainer.hpp"
 #include "Parameters.hpp"
+#include <vector>
+#include <memory>
 
 /// %Application base class.
 /** The Application object represents an instance of the running

@@ -6,6 +6,9 @@
 
 #include "InputChannelConnection.hpp"
 #include "global.hpp"
+#include <cassert>
+#include <cstring>
+#include <thread>
 
 InputChannelConnection::InputChannelConnection(
     struct rdma_event_channel* ec,

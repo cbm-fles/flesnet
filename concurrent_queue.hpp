@@ -5,6 +5,10 @@
  * 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+
 template <typename T>
 class concurrent_queue
 {
