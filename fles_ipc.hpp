@@ -73,45 +73,9 @@ struct TimesliceCompletion
 //! The Timeslice class provides access to the data of a single timeslice.
 class Timeslice
 {
-    friend class TimesliceReceiver;
-    friend class StorableTimeslice;
-
-    TimesliceWorkItem _work_item;
-    TimesliceCompletion _completion{};
-
-    const uint8_t* const _data;
-    const TimesliceComponentDescriptor* const _desc;
-
-    std::shared_ptr<boost::interprocess::message_queue> _completions_mq;
-
-    uint64_t _descriptor_offset;
-    uint64_t _data_offset_mask;
-
-    const uint8_t& data(uint64_t component, uint64_t offset) const
-    {
-        return (_data + (component << _work_item.data_buffer_size_exp))[offset & _data_offset_mask];
-    }
-
-    const TimesliceComponentDescriptor& desc(uint64_t component) const
-    {
-        return (_desc + (component << _work_item.desc_buffer_size_exp))[_descriptor_offset];
-    }
-
-    Timeslice(TimesliceWorkItem work_item,
-              uint8_t* data,
-              TimesliceComponentDescriptor* desc,
-              std::shared_ptr<boost::interprocess::message_queue> completions_mq) :
-        _work_item(work_item),
-        _data(data),
-        _desc(desc),
-        _completions_mq(completions_mq)
-    {
-        _completion = {_work_item.ts_pos};
-        _descriptor_offset = _work_item.ts_pos & ((1L << _work_item.desc_buffer_size_exp) - 1L);
-        _data_offset_mask = (1L << _work_item.data_buffer_size_exp) - 1L;
-    }
-
 public:
+    Timeslice(const Timeslice&) = delete;
+    void operator=(const Timeslice&) = delete;
 
     ~Timeslice()
     {
@@ -152,27 +116,52 @@ public:
         return (&reinterpret_cast<const MicrosliceDescriptor&>
                 (data(component, desc(component).offset)))[microslice];
     }
+
+private:
+    friend class TimesliceReceiver;
+    friend class StorableTimeslice;
+
+    Timeslice(TimesliceWorkItem work_item,
+              uint8_t* data,
+              TimesliceComponentDescriptor* desc,
+              std::shared_ptr<boost::interprocess::message_queue> completions_mq) :
+        _work_item(work_item),
+        _data(data),
+        _desc(desc),
+        _completions_mq(completions_mq)
+    {
+        _completion = {_work_item.ts_pos};
+        _descriptor_offset = _work_item.ts_pos & ((1L << _work_item.desc_buffer_size_exp) - 1L);
+        _data_offset_mask = (1L << _work_item.data_buffer_size_exp) - 1L;
+    }
+
+    const uint8_t& data(uint64_t component, uint64_t offset) const
+    {
+        return (_data + (component << _work_item.data_buffer_size_exp))[offset & _data_offset_mask];
+    }
+
+    const TimesliceComponentDescriptor& desc(uint64_t component) const
+    {
+        return (_desc + (component << _work_item.desc_buffer_size_exp))[_descriptor_offset];
+    }
+
+    TimesliceWorkItem _work_item;
+    TimesliceCompletion _completion{};
+
+    const uint8_t* const _data;
+    const TimesliceComponentDescriptor* const _desc;
+
+    std::shared_ptr<boost::interprocess::message_queue> _completions_mq;
+
+    uint64_t _descriptor_offset;
+    uint64_t _data_offset_mask;
 };
 
 //! The StorableTimeslice class contains the data of a single timeslice.
 class StorableTimeslice
 {
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int version)
-    {
-        ar & _work_item;
-        ar & _data;
-        ar & _index;
-    }
-
-    TimesliceWorkItem _work_item;
-    std::vector<std::vector<uint8_t> > _data;
-    uint64_t _index;
-
 public:
-
-    StorableTimeslice(const Timeslice& ts) :
+    explicit StorableTimeslice(const Timeslice& ts) :
         _work_item(ts._work_item),
         _data(ts._work_item.num_components),
         _index(ts.index())
@@ -218,20 +207,25 @@ public:
     {
         return (&reinterpret_cast<const MicrosliceDescriptor&>(_data[component][0]))[microslice];
     }
+
+private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        ar & _work_item;
+        ar & _data;
+        ar & _index;
+    }
+
+    TimesliceWorkItem _work_item;
+    std::vector<std::vector<uint8_t> > _data;
+    uint64_t _index;
 };
 
 //! The TimesliceReveicer class implements the IPC mechanisms to receive a timeslice.
 class TimesliceReceiver
 {
-    std::unique_ptr<boost::interprocess::shared_memory_object> _data_shm;
-    std::unique_ptr<boost::interprocess::shared_memory_object> _desc_shm;
-
-    std::unique_ptr<boost::interprocess::mapped_region> _data_region;
-    std::unique_ptr<boost::interprocess::mapped_region> _desc_region;
-
-    std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
-    std::shared_ptr<boost::interprocess::message_queue> _completions_mq;
-
 public:
     /// The TimesliceReceiver default constructor.
     TimesliceReceiver()
@@ -259,6 +253,9 @@ public:
              (boost::interprocess::open_only, "flesnet_completions"));
     }
 
+    TimesliceReceiver(const TimesliceReceiver&) = delete;
+    void operator=(const TimesliceReceiver&) = delete;
+
     /// Receive the next timeslice, block if not yet available.
     std::unique_ptr<const Timeslice> receive()
     {       
@@ -274,6 +271,16 @@ public:
                            reinterpret_cast<TimesliceComponentDescriptor*>
                            (_desc_region->get_address()), _completions_mq));
     }
+
+private:
+    std::unique_ptr<boost::interprocess::shared_memory_object> _data_shm;
+    std::unique_ptr<boost::interprocess::shared_memory_object> _desc_shm;
+
+    std::unique_ptr<boost::interprocess::mapped_region> _data_region;
+    std::unique_ptr<boost::interprocess::mapped_region> _desc_region;
+
+    std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
+    std::shared_ptr<boost::interprocess::message_queue> _completions_mq;
 };
 
 } // namespace fles {

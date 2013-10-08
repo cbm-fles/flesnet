@@ -13,9 +13,6 @@
 class InputChannelConnection : public IBConnection
 {
 public:
-    InputChannelConnection(const InputChannelConnection&) = delete;
-    void operator=(const InputChannelConnection&) = delete;
-
     /// The InputChannelConnection constructor.
     InputChannelConnection(struct rdma_event_channel* ec,
                         uint_fast16_t connection_index,
@@ -36,6 +33,9 @@ public:
 
         _qp_cap.max_inline_data = sizeof(TimesliceComponentDescriptor);
     }
+
+    InputChannelConnection(const InputChannelConnection&) = delete;
+    void operator=(const InputChannelConnection&) = delete;
 
     /// Wait until enough space is available at target compute node.
     void wait_for_buffer_space(uint64_t data_size, uint64_t desc_size) {
@@ -310,7 +310,7 @@ public:
         IBConnection::on_disconnected(event);
     }
     
-    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() {
+    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data() {
         std::unique_ptr<std::vector<uint8_t> >
             private_data(new std::vector<uint8_t>(sizeof(InputNodeInfo)));
 
@@ -321,7 +321,6 @@ public:
     }
 
 private:
-
     /// Post a receive work request (WR) to the receive queue
     void post_recv_cn_ack() {
         if (out.beDebug()) {

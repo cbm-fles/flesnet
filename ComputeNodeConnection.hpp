@@ -36,6 +36,9 @@ public:
         _qp_cap.max_recv_sge = 1;
     }
 
+    ComputeNodeConnection(const ComputeNodeConnection&) = delete;
+    void operator=(const ComputeNodeConnection&) = delete;
+
     /// Post a receive work request (WR) to the receive queue
     void post_recv_cn_wp() {
         if (out.beDebug()) {
@@ -214,7 +217,6 @@ public:
     }
 
 private:
-
     ComputeNodeBufferPosition _send_cn_ack = {};
     ComputeNodeBufferPosition _cn_ack = {};
     boost::mutex _cn_ack_mutex;

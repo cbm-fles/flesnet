@@ -24,9 +24,6 @@ public:
 class IBConnection
 {
 public:
-    IBConnection(const IBConnection&) = delete;
-    IBConnection& operator=(const IBConnection&) = delete;
-
     /// The IBConnection constructor. Creates a connection manager ID.
     IBConnection(struct rdma_event_channel* ec, uint_fast16_t connection_index,
                  uint_fast16_t remote_connection_index, struct rdma_cm_id* id = nullptr) :
@@ -48,6 +45,9 @@ public:
         _qp_cap.max_recv_sge = 8;
         _qp_cap.max_inline_data = 0;
     };
+
+    IBConnection(const IBConnection&) = delete;
+    IBConnection& operator=(const IBConnection&) = delete;
 
     /// The IBConnection destructor.
     virtual ~IBConnection() {
@@ -182,7 +182,7 @@ public:
         accept_connect_request();
     };
 
-    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() {
+    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data() {
         std::unique_ptr<std::vector<uint8_t> >
             private_data(new std::vector<uint8_t>());
 
@@ -242,19 +242,6 @@ public:
     }
 
 protected:
-
-    /// Index of this connection in the local group of connections.
-    uint_fast16_t _index;
-
-    /// Index of this connection in the remote group of connections.
-    uint_fast16_t _remote_index;
-
-    /// Flag indicating connection finished state.
-    bool _done = false;
-
-    /// The queue pair capabilities.
-    struct ibv_qp_cap _qp_cap;
-
     void dump_send_wr(struct ibv_send_wr* wr) {
         for (int i = 0; wr; i++, wr = wr->next) {
             out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id
@@ -308,7 +295,23 @@ protected:
         _total_recv_requests++;
     }
 
+    /// Index of this connection in the local group of connections.
+    uint_fast16_t _index;
+
+    /// Index of this connection in the remote group of connections.
+    uint_fast16_t _remote_index;
+
+    /// Flag indicating connection finished state.
+    bool _done = false;
+
+    /// The queue pair capabilities.
+    struct ibv_qp_cap _qp_cap;
+
 private:
+    /// Low-level communication parameters.
+    enum {
+        RESOLVE_TIMEOUT_MS = 5000 ///< Resolve timeout in milliseconds.
+    };
 
     /// RDMA connection manager ID.
     struct rdma_cm_id* _cm_id = nullptr;
@@ -321,10 +324,4 @@ private:
 
     /// Total number of RECV work requests.
     uint64_t _total_recv_requests = 0;
-
-    /// Low-level communication parameters.
-    enum {
-        RESOLVE_TIMEOUT_MS = 5000 ///< Resolve timeout in milliseconds.
-    };
-
 };

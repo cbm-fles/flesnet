@@ -14,9 +14,12 @@ public:
     RingBuffer() { }
     
     /// The RingBuffer initializing constructor.
-    RingBuffer(size_t new_size_exponent) {
+    explicit RingBuffer(size_t new_size_exponent) {
         alloc_with_size_exponent(new_size_exponent);
     }
+
+    RingBuffer(const RingBuffer&) = delete;
+    void operator=(const RingBuffer&) = delete;
 
     /// Create and initialize buffer with given minimum size.
     void alloc_with_size(size_t minimum_size) {

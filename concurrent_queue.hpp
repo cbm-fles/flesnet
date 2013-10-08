@@ -6,14 +6,17 @@
  */
 
 template<typename T>
-class concurrent_queue : private boost::noncopyable
+class concurrent_queue
 {
 public:
-    concurrent_queue(size_t new_max_size = 1000) :
+    struct Stopped { };
+
+    explicit concurrent_queue(size_t new_max_size = 1000) :
         _max_size(new_max_size)
     { }
 
-    struct Stopped { };
+    concurrent_queue(const concurrent_queue&) = delete;
+    void operator=(const concurrent_queue&) = delete;
 
     size_t max_size() const
     {

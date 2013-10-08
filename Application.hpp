@@ -13,10 +13,12 @@ template<typename T>
 class Application : public ThreadContainer
 {
 public:
-    
     /// The Application contructor.
     explicit Application(Parameters const& par) : _par(par)
     { }
+
+    Application(const Application&) = delete;
+    void operator=(const Application&) = delete;
 
     void start()
     {
@@ -33,7 +35,6 @@ public:
     }
     
 protected:
-
     /// The run parameters object.
     Parameters const& _par;
 

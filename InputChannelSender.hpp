@@ -13,9 +13,6 @@
 class InputChannelSender : public IBConnectionGroup<InputChannelConnection>
 {
 public:
-    InputChannelSender(const InputChannelSender&) = delete;
-    void operator=(const InputChannelSender&) = delete;
-
     /// The InputChannelSender default constructor.
     InputChannelSender(uint64_t input_index,
                 DataSource& data_source,
@@ -45,6 +42,9 @@ public:
                                   _data_source.desc_buffer().bytes());
 #pragma GCC diagnostic pop
     }
+
+    InputChannelSender(const InputChannelSender&) = delete;
+    void operator=(const InputChannelSender&) = delete;
 
     /// The InputChannelSender default destructor.
     virtual ~InputChannelSender() {
@@ -154,7 +154,6 @@ public:
     };
 
 private:
-
     /// Return target computation node for given timeslice.
     int target_cn_index(uint64_t timeslice) {
         return timeslice % _conn.size();
@@ -173,13 +172,15 @@ private:
 
         if (!_mr_data) {
             // Register memory regions.
-            _mr_data = ibv_reg_mr(_pd, _data_source.data_buffer().ptr(), _data_source.data_buffer().bytes(),
+            _mr_data = ibv_reg_mr(_pd, _data_source.data_buffer().ptr(),
+                                  _data_source.data_buffer().bytes(),
                                   IBV_ACCESS_LOCAL_WRITE);
             if (!_mr_data)
                 throw InfinibandException
                     ("registration of memory region failed");
 
-            _mr_desc = ibv_reg_mr(_pd, _data_source.desc_buffer().ptr(), _data_source.desc_buffer().bytes(),
+            _mr_desc = ibv_reg_mr(_pd, _data_source.desc_buffer().ptr(),
+                                  _data_source.desc_buffer().bytes(),
                                   IBV_ACCESS_LOCAL_WRITE);
             if (!_mr_desc)
                 throw InfinibandException

@@ -12,32 +12,7 @@
 
 class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
 {
-private:
-    ComputeBuffer(const ComputeBuffer&) = delete;
-    void operator=(const ComputeBuffer&) = delete;
-
-    uint64_t _compute_index;
-
-    size_t _red_lantern = 0;
-    uint64_t _completely_written = 0;
-    uint64_t _acked = 0;
-
-    /// Buffer to store acknowledged status of timeslices.
-    RingBuffer<uint64_t, true> _ack;
-
-    std::unique_ptr<boost::interprocess::shared_memory_object> _data_shm;
-    std::unique_ptr<boost::interprocess::shared_memory_object> _desc_shm;
-
-    std::unique_ptr<boost::interprocess::mapped_region> _data_region;
-    std::unique_ptr<boost::interprocess::mapped_region> _desc_region;
-
 public:
-    concurrent_queue<TimesliceWorkItem> _work_items;
-    concurrent_queue<TimesliceCompletion> _completions;
-
-    std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
-    std::unique_ptr<boost::interprocess::message_queue> _completions_mq;
-
     /// The ComputeBuffer default constructor.
     ComputeBuffer(uint64_t compute_index) :
         _compute_index(compute_index),
@@ -97,6 +72,9 @@ public:
         _completions_mq = std::move(completions_mq);
     }
 
+    ComputeBuffer(const ComputeBuffer&) = delete;
+    void operator=(const ComputeBuffer&) = delete;
+
     /// The ComputeBuffer destructor.
     ~ComputeBuffer() {
         boost::interprocess::shared_memory_object::remove("flesnet_data");
@@ -142,13 +120,11 @@ public:
         }
     };
 
-    ///
     uint8_t* get_data_ptr(uint_fast16_t index) {
         return static_cast<uint8_t*>(_data_region->get_address())
             + index * (1 << par->cn_data_buffer_size_exp());
     }
 
-    ///
     TimesliceComponentDescriptor* get_desc_ptr(uint_fast16_t index) {
         return reinterpret_cast<TimesliceComponentDescriptor*>(_desc_region->get_address())
             + index * (1 << par->cn_desc_buffer_size_exp());
@@ -294,4 +270,25 @@ public:
         }
     }
 
+private:
+    uint64_t _compute_index;
+
+    size_t _red_lantern = 0;
+    uint64_t _completely_written = 0;
+    uint64_t _acked = 0;
+
+    /// Buffer to store acknowledged status of timeslices.
+    RingBuffer<uint64_t, true> _ack;
+
+    std::unique_ptr<boost::interprocess::shared_memory_object> _data_shm;
+    std::unique_ptr<boost::interprocess::shared_memory_object> _desc_shm;
+
+    std::unique_ptr<boost::interprocess::mapped_region> _data_region;
+    std::unique_ptr<boost::interprocess::mapped_region> _desc_region;
+
+    concurrent_queue<TimesliceWorkItem> _work_items;
+    concurrent_queue<TimesliceCompletion> _completions;
+
+    std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
+    std::unique_ptr<boost::interprocess::message_queue> _completions_mq;
 };

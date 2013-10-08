@@ -30,6 +30,9 @@ public:
         _producer_thread = new boost::thread(&FlibPatternGenerator::produce_data, this);
     }
 
+    FlibPatternGenerator(const FlibPatternGenerator&) = delete;
+    void operator=(const FlibPatternGenerator&) = delete;
+
     ~FlibPatternGenerator()
     {
         {
@@ -173,7 +176,6 @@ DCOUNT[6]++;
     }
 
 private:
-
     uint64_t DCOUNT[10] = {};
 
     /// Input data buffer.

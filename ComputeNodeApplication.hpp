@@ -12,9 +12,6 @@
 class ComputeNodeApplication : public Application<ComputeBuffer>
 {
 public:
-    ComputeNodeApplication(const ComputeNodeApplication&) = delete;
-    void operator=(const ComputeNodeApplication&) = delete;
-
     /// The ComputeNodeApplication contructor.
     ComputeNodeApplication(Parameters& par, std::vector<unsigned> indexes) :
         Application<ComputeBuffer>(par)
@@ -41,6 +38,9 @@ public:
         sa.sa_handler = child_handler;
         sigaction(SIGCHLD, &sa, NULL);
     };
+
+    ComputeNodeApplication(const ComputeNodeApplication&) = delete;
+    void operator=(const ComputeNodeApplication&) = delete;
 
 private:
     static void child_handler(int sig) {

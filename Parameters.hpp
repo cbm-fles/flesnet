@@ -23,7 +23,6 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 class ParametersException : public std::runtime_error
 {
 public:
-
     /// The ParametersException constructor.
     explicit ParametersException(const std::string& what_arg = "")
         : std::runtime_error(what_arg) { };
@@ -37,11 +36,13 @@ public:
 class Parameters
 {
 public:
-
     /// The Parameters command-line parsing constructor.
     Parameters(int argc, char* argv[]) {
         parse_options(argc, argv);
     };
+
+    Parameters(const Parameters&) = delete;
+    void operator=(const Parameters&) = delete;
 
     /// Return a description of active nodes, suitable for debug output.
     std::string const desc() const {
@@ -156,62 +157,6 @@ public:
     };
 
 private:
-
-    /// The global timeslice size in number of MCs.
-    uint32_t _timeslice_size = 100;
-
-    /// The size of the overlap region in number of MCs.
-    uint32_t _overlap_size = 2;
-
-    /// The exp. size of the input node's data buffer in bytes.
-    uint32_t _in_data_buffer_size_exp = 26;
-
-    /// The exp. size of the input node's descriptor buffer (number of
-    /// entries).
-    uint32_t _in_desc_buffer_size_exp = 20;
-
-    /// The exp. size of the compute node's data buffer in bytes.
-    uint32_t _cn_data_buffer_size_exp = 17;
-
-    /// The exp. size of the compute node's descriptor buffer (number of
-    /// entries).
-    uint32_t _cn_desc_buffer_size_exp = 6;
-
-    /// A typical number of content bytes per MC.
-    uint32_t _typical_content_size = 1024;
-
-    /// The randomize sizes flag.
-    bool _randomize_sizes = false;
-
-    /// The check pattern sizes flag.
-    bool _check_pattern = true;
-
-    /// The global maximum timeslice number.
-    uint32_t _max_timeslice_number = 100000;
-
-    /// The name of the executable acting as timeslice processor.
-    std::string _processor_executable;
-
-    /// The number of instances of the timeslice processor executable.
-    uint32_t _processor_instances = 2;
-
-    /// The global base port.
-    uint32_t _base_port = 20079;
-
-    uint32_t _num_cqe = 1000000;
-
-    /// The list of participating input nodes.
-    std::vector<std::string> _input_nodes;
-    
-    /// The list of participating compute nodes.
-    std::vector<std::string> _compute_nodes;
-
-    /// This applications's indexes in the list of input nodes.
-    std::vector<unsigned> _input_indexes;
-
-    /// This applications's indexes in the list of compute nodes.
-    std::vector<unsigned> _compute_indexes;
-
     /// Parse command line options.
     void parse_options(int argc, char* argv[]) {
         unsigned log_level = 3;
@@ -354,4 +299,59 @@ private:
             }
         }
     }
+
+    /// The global timeslice size in number of MCs.
+    uint32_t _timeslice_size = 100;
+
+    /// The size of the overlap region in number of MCs.
+    uint32_t _overlap_size = 2;
+
+    /// The exp. size of the input node's data buffer in bytes.
+    uint32_t _in_data_buffer_size_exp = 26;
+
+    /// The exp. size of the input node's descriptor buffer (number of
+    /// entries).
+    uint32_t _in_desc_buffer_size_exp = 20;
+
+    /// The exp. size of the compute node's data buffer in bytes.
+    uint32_t _cn_data_buffer_size_exp = 17;
+
+    /// The exp. size of the compute node's descriptor buffer (number of
+    /// entries).
+    uint32_t _cn_desc_buffer_size_exp = 6;
+
+    /// A typical number of content bytes per MC.
+    uint32_t _typical_content_size = 1024;
+
+    /// The randomize sizes flag.
+    bool _randomize_sizes = false;
+
+    /// The check pattern sizes flag.
+    bool _check_pattern = true;
+
+    /// The global maximum timeslice number.
+    uint32_t _max_timeslice_number = 100000;
+
+    /// The name of the executable acting as timeslice processor.
+    std::string _processor_executable;
+
+    /// The number of instances of the timeslice processor executable.
+    uint32_t _processor_instances = 2;
+
+    /// The global base port.
+    uint32_t _base_port = 20079;
+
+    uint32_t _num_cqe = 1000000;
+
+    /// The list of participating input nodes.
+    std::vector<std::string> _input_nodes;
+
+    /// The list of participating compute nodes.
+    std::vector<std::string> _compute_nodes;
+
+    /// This applications's indexes in the list of input nodes.
+    std::vector<unsigned> _input_indexes;
+
+    /// This applications's indexes in the list of compute nodes.
+    std::vector<unsigned> _compute_indexes;
 };

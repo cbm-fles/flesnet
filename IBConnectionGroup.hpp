@@ -13,15 +13,15 @@ template <typename CONNECTION>
 class IBConnectionGroup : public ThreadContainer
 {
 public:
-    IBConnectionGroup(const IBConnectionGroup&) = delete;
-    IBConnectionGroup& operator=(const IBConnectionGroup&) = delete;
-
     /// The IBConnectionGroup default constructor.
     IBConnectionGroup() {
         _ec = rdma_create_event_channel();
         if (!_ec)
             throw InfinibandException("rdma_create_event_channel failed");
     };
+
+    IBConnectionGroup(const IBConnectionGroup&) = delete;
+    IBConnectionGroup& operator=(const IBConnectionGroup&) = delete;
 
     /// The IBConnectionGroup default destructor.
     virtual ~IBConnectionGroup() {
@@ -236,30 +236,6 @@ public:
     }
 
 protected:
-
-    const uint32_t _num_cqe = 1000000;
-
-    /// InfiniBand protection domain.
-    struct ibv_pd* _pd = nullptr;
-
-    /// InfiniBand completion queue
-    struct ibv_cq* _cq = nullptr;
-
-    /// Vector of associated connection objects.
-    std::vector<std::unique_ptr<CONNECTION> > _conn;
-
-    /// Number of established connections
-    unsigned int _connected = 0;
-
-    /// Number of connections in the done state.
-    unsigned int _connections_done = 0;
-
-    /// Flag causing termination of completion handler.
-    bool _all_done = false;
-
-    /// RDMA event channel
-    struct rdma_event_channel* _ec = nullptr;
-
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
     virtual void on_addr_resolved(struct rdma_cm_id* id) {
         if (!_pd)
@@ -325,29 +301,34 @@ protected:
             throw InfinibandException("ibv_req_notify_cq failed");
     }
 
+    const uint32_t _num_cqe = 1000000;
+
+    /// InfiniBand protection domain.
+    struct ibv_pd* _pd = nullptr;
+
+    /// InfiniBand completion queue
+    struct ibv_cq* _cq = nullptr;
+
+    /// Vector of associated connection objects.
+    std::vector<std::unique_ptr<CONNECTION> > _conn;
+
+    /// Number of established connections
+    unsigned int _connected = 0;
+
+    /// Number of connections in the done state.
+    unsigned int _connections_done = 0;
+
+    /// Flag causing termination of completion handler.
+    bool _all_done = false;
+
+    /// RDMA event channel
+    struct rdma_event_channel* _ec = nullptr;
+
     std::chrono::high_resolution_clock::time_point _time_begin;
 
     std::chrono::high_resolution_clock::time_point _time_end;
 
 private:
-
-    /// InfiniBand verbs context
-    struct ibv_context* _context = nullptr;
-
-    /// InfiniBand completion channel
-    struct ibv_comp_channel* _comp_channel = nullptr;
-
-    struct rdma_cm_id* _listen_id = nullptr;
-
-    /// Total number of bytes transmitted.
-    uint64_t _aggregate_bytes_sent = 0;
-
-    /// Total number of SEND work requests.
-    uint64_t _aggregate_send_requests = 0;
-
-    /// Total number of RECV work requests.
-    uint64_t _aggregate_recv_requests = 0;
-
     /// Connection manager event dispatcher. Called by the CM event loop.
     void on_cm_event(struct rdma_cm_event* event) {
         out.trace() << rdma_event_str(event->event);
@@ -385,6 +366,23 @@ private:
 
     /// Completion notification event dispatcher. Called by the event loop.
     virtual void on_completion(const struct ibv_wc& wc) = 0;
+
+    /// InfiniBand verbs context
+    struct ibv_context* _context = nullptr;
+
+    /// InfiniBand completion channel
+    struct ibv_comp_channel* _comp_channel = nullptr;
+
+    struct rdma_cm_id* _listen_id = nullptr;
+
+    /// Total number of bytes transmitted.
+    uint64_t _aggregate_bytes_sent = 0;
+
+    /// Total number of SEND work requests.
+    uint64_t _aggregate_send_requests = 0;
+
+    /// Total number of RECV work requests.
+    uint64_t _aggregate_recv_requests = 0;
 
     std::unique_ptr<boost::thread> _thread;
 };
