@@ -44,7 +44,7 @@ public:
         _qp_cap.max_send_sge = 8;
         _qp_cap.max_recv_sge = 8;
         _qp_cap.max_inline_data = 0;
-    };
+    }
 
     IBConnection(const IBConnection&) = delete;
     IBConnection& operator=(const IBConnection&) = delete;
@@ -62,7 +62,7 @@ public:
     /// Retrieve the InfiniBand queue pair associated with the connection.
     struct ibv_qp* qp() const {
         return _cm_id->qp;
-    };
+    }
 
     /// Initiate a connection request to target hostname and service.
     /**
@@ -144,7 +144,7 @@ public:
             throw InfinibandException("rdma_resolve_route failed");
 
         setup(pd);
-    };
+    }
 
     virtual void create_qp(struct ibv_pd* pd, struct ibv_cq* cq) {
         struct ibv_qp_init_attr qp_attr;
@@ -156,7 +156,7 @@ public:
         int err = rdma_create_qp(_cm_id, pd, &qp_attr);
         if (err)
             throw InfinibandException("creation of QP failed");
-    };
+    }
 
     virtual void accept_connect_request() {
         out.debug() << "accepting connection";
@@ -172,7 +172,7 @@ public:
         int err = rdma_accept(_cm_id, &conn_param);
         if (err)
             throw InfinibandException("RDMA accept failed");
-    };
+    }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event for this connection.
     virtual void on_connect_request(struct rdma_cm_event* event,
@@ -180,14 +180,14 @@ public:
         create_qp(pd, cq);
         setup(pd);
         accept_connect_request();
-    };
+    }
 
     virtual std::unique_ptr<std::vector<uint8_t> > get_private_data() {
         std::unique_ptr<std::vector<uint8_t> >
             private_data(new std::vector<uint8_t>());
 
         return private_data;
-    };
+    }
 
     virtual void setup(struct ibv_pd* pd) = 0;
 
@@ -210,21 +210,21 @@ public:
             out.fatal() << "rdma_connect failed: " << strerror(err);
             throw InfinibandException("rdma_connect failed");
         }
-    };
+    }
 
     /// Retrieve index of this connection in the local connection group.
     uint_fast16_t index() const {
         return _index;
-    };
+    }
 
     /// Retrieve index of this connection in the remote connection group.
     uint_fast16_t remote_index() const {
         return _remote_index;
-    };
+    }
 
     bool done() const {
         return _done;
-    };
+    }
 
     /// Retrieve the total number of bytes transmitted.
     uint64_t total_bytes_sent() const {

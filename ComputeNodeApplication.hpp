@@ -37,7 +37,7 @@ public:
         sa.sa_flags = 0;
         sa.sa_handler = child_handler;
         sigaction(SIGCHLD, &sa, NULL);
-    };
+    }
 
     ComputeNodeApplication(const ComputeNodeApplication&) = delete;
     void operator=(const ComputeNodeApplication&) = delete;
@@ -59,5 +59,5 @@ private:
                 ComputeBuffer::start_processor_task(idx);
             }
         }
-    };
+    }
 };

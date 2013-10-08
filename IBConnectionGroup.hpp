@@ -18,7 +18,7 @@ public:
         _ec = rdma_create_event_channel();
         if (!_ec)
             throw InfinibandException("rdma_create_event_channel failed");
-    };
+    }
 
     IBConnectionGroup(const IBConnectionGroup&) = delete;
     IBConnectionGroup& operator=(const IBConnectionGroup&) = delete;
@@ -57,7 +57,7 @@ public:
         }
 
         rdma_destroy_event_channel(_ec);
-    };
+    }
     
     void accept(unsigned short port, unsigned int count) {
         _conn.resize(count);
@@ -94,7 +94,7 @@ public:
     void disconnect() {
         for (auto& c : _conn)
             c->disconnect();
-    };
+    }
 
     /// The connection manager event loop.
     void handle_cm_events(unsigned int target_num_connections) {
@@ -128,12 +128,12 @@ public:
             }
             if (_connected == target_num_connections)
                 break;
-        };
+        }
         if (err)
             throw InfinibandException("rdma_get_cm_event failed");
         
         out.debug() << "number of connections: " << _connected;
-    };
+    }
 
     /// The InfiniBand completion notification event loop.
     void completion_handler() {
@@ -254,7 +254,7 @@ protected:
     }
 
     /// Handle RDMA_CM_REJECTED event.
-    virtual void on_rejected(struct rdma_cm_event* event) { };
+    virtual void on_rejected(struct rdma_cm_event* event) { }
 
     /// Handle RDMA_CM_EVENT_ESTABLISHED event.
     virtual void on_established(struct rdma_cm_event* event) {
@@ -265,7 +265,7 @@ protected:
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct rdma_cm_event* event) { };
+    virtual void on_connect_request(struct rdma_cm_event* event) { }
     
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
     virtual void on_disconnected(struct rdma_cm_event* event) {

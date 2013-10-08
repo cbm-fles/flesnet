@@ -150,7 +150,7 @@ public:
             connection->connect(_compute_hostnames[i], _compute_services[i]);
             _conn.push_back(std::move(connection));
         }
-    };
+    }
 
 private:
     /// Return target computation node for given timeslice.

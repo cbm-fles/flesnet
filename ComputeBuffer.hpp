@@ -118,7 +118,7 @@ public:
                         << " " << s.str() << "': " << strerror(errno);
             exit(1);
         }
-    };
+    }
 
     uint8_t* get_data_ptr(uint_fast16_t index) {
         return static_cast<uint8_t*>(_data_region->get_address())
