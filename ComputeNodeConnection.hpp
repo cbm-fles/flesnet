@@ -74,7 +74,7 @@ public:
         post_send_cn_ack();
     }
 
-    virtual void setup(struct ibv_pd* pd)
+    virtual void setup(struct ibv_pd* pd) override
     {
         assert(_data_ptr && _desc_ptr && _data_bytes && _desc_bytes);
 
@@ -119,7 +119,7 @@ public:
     /**
        \param event RDMA connection manager event structure
     */
-    virtual void on_established(struct rdma_cm_event* event)
+    virtual void on_established(struct rdma_cm_event* event) override
     {
         IBConnection::on_established(event);
 
@@ -127,7 +127,7 @@ public:
                     << "remote index: " << _remote_info.index;
     }
 
-    virtual void on_disconnected(struct rdma_cm_event* event)
+    virtual void on_disconnected(struct rdma_cm_event* event) override
     {
         disconnect();
 
@@ -214,7 +214,7 @@ public:
         return _cn_wp;
     }
 
-    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data()
+    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data() override
     {
         assert(_data_ptr && _desc_ptr && _data_bytes && _desc_bytes);
         std::unique_ptr<std::vector<uint8_t> > private_data(

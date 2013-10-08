@@ -46,12 +46,12 @@ public:
             out.trace() << "DCOUNT[" << i << "] = " << DCOUNT[i];
     }
 
-    virtual RingBufferView<>& data_buffer()
+    virtual RingBufferView<>& data_buffer() override
     {
         return _data_buffer_view;
     }
 
-    virtual RingBufferView<MicrosliceDescriptor>& desc_buffer()
+    virtual RingBufferView<MicrosliceDescriptor>& desc_buffer() override
     {
         return _desc_buffer_view;
     }
@@ -164,7 +164,7 @@ public:
         }
     }
 
-    virtual uint64_t wait_for_data(uint64_t min_mc_number)
+    virtual uint64_t wait_for_data(uint64_t min_mc_number) override
     {
         ++DCOUNT[3];
         std::unique_lock<std::mutex> l(_mutex);
@@ -176,7 +176,7 @@ public:
     }
 
     virtual void update_ack_pointers(uint64_t new_acked_data,
-                                     uint64_t new_acked_mc)
+                                     uint64_t new_acked_mc) override
     {
         ++DCOUNT[6];
         {

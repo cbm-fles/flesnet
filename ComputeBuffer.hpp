@@ -87,7 +87,7 @@ public:
         boost::interprocess::message_queue::remove("flesnet_completions");
     }
 
-    virtual void run()
+    virtual void run() override
     {
         // set_cpu(0);
 
@@ -155,7 +155,7 @@ public:
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct rdma_cm_event* event)
+    virtual void on_connect_request(struct rdma_cm_event* event) override
     {
         if (!_pd)
             init_context(event->id->verbs);
@@ -183,7 +183,7 @@ public:
     }
 
     /// Completion notification event dispatcher. Called by the event loop.
-    virtual void on_completion(const struct ibv_wc& wc)
+    virtual void on_completion(const struct ibv_wc& wc) override
     {
         size_t in = wc.wr_id >> 8;
         assert(in < _conn.size());
@@ -239,7 +239,8 @@ public:
                     = std::distance(std::begin(_conn), new_red_lantern);
 
                 for (uint64_t tpos = _completely_written;
-                     tpos < new_completely_written; ++tpos) {
+                     tpos < new_completely_written;
+                     ++tpos) {
                     TimesliceWorkItem wi = {tpos,
                                             par->timeslice_size(),
                                             par->overlap_size(),

@@ -46,11 +46,11 @@ struct TimesliceWorkItem
     uint64_t ts_pos; ///< Start offset (in items) of this timeslice
     uint32_t num_core_microslices;    ///< Number of core microslices
     uint32_t num_overlap_microslices; ///< Number of overlapping microslices
-    uint32_t num_components;       ///< Number of components (contributing input
-                                   ///channels)
+    uint32_t num_components; ///< Number of components (contributing input
+    /// channels)
     uint32_t data_buffer_size_exp; ///< Exp. size (in bytes) of each data buffer
     uint32_t desc_buffer_size_exp; ///< Exp. size (in bytes) of each descriptor
-                                   ///buffer
+    /// buffer
 
     friend class boost::serialization::access;
     template <class Archive>
@@ -187,7 +187,8 @@ public:
           _index(ts.index())
     {
         for (std::size_t component = 0;
-             component < ts._work_item.num_components; ++component) {
+             component < ts._work_item.num_components;
+             ++component) {
             uint64_t size = ts.desc(component).size;
             const uint8_t* begin =
                 &ts.data(component, ts.desc(component).offset);
@@ -260,7 +261,7 @@ private:
 };
 
 //! The TimesliceReveicer class implements the IPC mechanisms to receive a
-//timeslice.
+// timeslice.
 class TimesliceReceiver
 {
 public:

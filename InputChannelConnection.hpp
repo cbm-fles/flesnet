@@ -265,7 +265,7 @@ public:
         }
     }
 
-    virtual void setup(struct ibv_pd* pd)
+    virtual void setup(struct ibv_pd* pd) override
     {
         // register memory regions
         _mr_recv = ibv_reg_mr(pd, &_receive_cn_ack,
@@ -306,7 +306,7 @@ public:
     /**
        \param event RDMA connection manager event structure
     */
-    virtual void on_established(struct rdma_cm_event* event)
+    virtual void on_established(struct rdma_cm_event* event) override
     {
         assert(event->param.conn.private_data_len >= sizeof(ComputeNodeInfo));
         memcpy(&_remote_info, event->param.conn.private_data,
@@ -328,19 +328,19 @@ public:
         }
     }
 
-    virtual void on_rejected(struct rdma_cm_event* event)
+    virtual void on_rejected(struct rdma_cm_event* event) override
     {
         dereg_mr();
         IBConnection::on_rejected(event);
     }
 
-    virtual void on_disconnected(struct rdma_cm_event* event)
+    virtual void on_disconnected(struct rdma_cm_event* event) override
     {
         dereg_mr();
         IBConnection::on_disconnected(event);
     }
 
-    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data()
+    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data() override
     {
         std::unique_ptr<std::vector<uint8_t> > private_data(
             new std::vector<uint8_t>(sizeof(InputNodeInfo)));

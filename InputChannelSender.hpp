@@ -61,7 +61,7 @@ public:
         }
     }
 
-    virtual void run()
+    virtual void run() override
     {
         set_cpu(0);
 
@@ -183,7 +183,7 @@ private:
         out.debug() << " rkey=" << static_cast<uint64_t>(mr->rkey);
     }
 
-    virtual void on_addr_resolved(struct rdma_cm_id* id)
+    virtual void on_addr_resolved(struct rdma_cm_id* id) override
     {
         IBConnectionGroup<InputChannelConnection>::on_addr_resolved(id);
 
@@ -211,7 +211,7 @@ private:
     }
 
     /// Handle RDMA_CM_REJECTED event.
-    virtual void on_rejected(struct rdma_cm_event* event)
+    virtual void on_rejected(struct rdma_cm_event* event) override
     {
         InputChannelConnection* conn = static_cast
             <InputChannelConnection*>(event->id->context);
@@ -313,7 +313,7 @@ private:
     }
 
     /// Completion notification event dispatcher. Called by the event loop.
-    virtual void on_completion(const struct ibv_wc& wc)
+    virtual void on_completion(const struct ibv_wc& wc) override
     {
         switch (wc.wr_id & 0xFF) {
         case ID_WRITE_DESC: {
