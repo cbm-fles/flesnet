@@ -45,8 +45,7 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
     std::size_t data_size = (1 << _data_buffer_size_exp) * _num_input_nodes;
     _data_shm->truncate(data_size);
 
-    std::size_t desc_size = (1 << _desc_buffer_size_exp)
-                            * _num_input_nodes
+    std::size_t desc_size = (1 << _desc_buffer_size_exp) * _num_input_nodes
                             * sizeof(TimesliceComponentDescriptor);
     _desc_shm->truncate(desc_size);
 
@@ -118,7 +117,8 @@ void ComputeBuffer::run()
     summary();
 }
 
-void ComputeBuffer::start_processor_task(int i, const std::string& processor_executable)
+void ComputeBuffer::start_processor_task(int i, const std::string
+                                         & processor_executable)
 {
     child_pids.at(i) = fork();
     if (!child_pids.at(i)) {
@@ -239,12 +239,10 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
             for (uint64_t tpos = _completely_written;
                  tpos < new_completely_written;
                  ++tpos) {
-                TimesliceWorkItem wi = {tpos,
-                                        _timeslice_size,
-                                        _overlap_size,
-                                        static_cast<uint32_t>(_conn.size()),
-                                        _data_buffer_size_exp,
-                                        _desc_buffer_size_exp};
+                TimesliceWorkItem wi = {
+                    tpos,                  _timeslice_size,
+                    _overlap_size,         static_cast<uint32_t>(_conn.size()),
+                    _data_buffer_size_exp, _desc_buffer_size_exp};
                 if (_processor_executable.empty()) {
                     _work_items.push(wi);
                 } else {

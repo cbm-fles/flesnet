@@ -40,7 +40,8 @@ public:
 
     virtual void run() override;
 
-    static void start_processor_task(int i, const std::string& processor_executable);
+    static void start_processor_task(int i,
+                                     const std::string& processor_executable);
 
     uint8_t* get_data_ptr(uint_fast16_t index);
 

@@ -60,7 +60,8 @@ void ComputeNodeApplication::child_handler(int sig)
             // out.error() << "unknown child process died";
         } else {
             std::cerr << "child process " << idx << " died";
-            ComputeBuffer::start_processor_task(idx, par->processor_executable());
+            ComputeBuffer::start_processor_task(idx,
+                                                par->processor_executable());
         }
     }
 }

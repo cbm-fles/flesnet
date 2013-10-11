@@ -3,12 +3,4 @@
 shopt -u nocaseglob
 LANG=C
 
-clang-format-3.4 -i \
-  lib/core/[A-Z]*.[hc]pp \
-  app/flesnet/[A-Z]*.[hc]pp \
-  lib/ipc/fles_ipc.hpp \
-  lib/core/concurrent_queue.hpp \
-  app/flesnet/global.hpp \
-  app/flesnet/main.cpp \
-  app/ipc-demo/pattern-check.cpp \
-  app/ipc-demo/raw-storage.cpp
+clang-format-3.4 -i lib/{core,ipc}/*.[hc]pp app/*/*.[hc]pp
