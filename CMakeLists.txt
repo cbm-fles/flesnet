@@ -34,18 +34,13 @@ add_custom_command(
 
 add_executable(flesnet Parameters.cpp IBConnection.cpp FlibPatternGenerator.cpp InputChannelSender.cpp InputChannelConnection.cpp ComputeNodeConnection.cpp ComputeBuffer.cpp InputNodeApplication.cpp ComputeNodeApplication.cpp ThreadContainer.cpp main.cpp flesnet.cfg run verbs.supp)
 
-target_link_libraries(flesnet ibverbs)
-target_link_libraries(flesnet rdmacm)
-target_link_libraries(flesnet rt)
-target_link_libraries(flesnet numa)
-target_link_libraries(flesnet ${Boost_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(flesnet ibverbs rdmacm rt numa ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
 add_executable(pattern-check pattern-check.cpp)
 target_link_libraries(pattern-check rt)
 
 add_executable(raw-storage raw-storage.cpp)
-target_link_libraries(raw-storage rt)
-target_link_libraries(raw-storage ${Boost_SERIALIZATION_LIBRARY})
+target_link_libraries(raw-storage rt ${Boost_SERIALIZATION_LIBRARY})
 
 # Documentation
 include(FindDoxygen)
