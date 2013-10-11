@@ -21,8 +21,16 @@
 class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
 {
 public:
-    /// The ComputeBuffer default constructor.
-    explicit ComputeBuffer(uint64_t compute_index);
+    /// The ComputeBuffer constructor.
+    ComputeBuffer(uint64_t compute_index,
+                  uint32_t data_buffer_size_exp,
+                  uint32_t desc_buffer_size_exp,
+                  unsigned short service,
+                  uint32_t num_input_nodes,
+                  uint32_t timeslice_size,
+                  uint32_t overlap_size,
+                  uint32_t processor_instances,
+                  const std::string processor_executable);
 
     ComputeBuffer(const ComputeBuffer&) = delete;
     void operator=(const ComputeBuffer&) = delete;
@@ -32,7 +40,7 @@ public:
 
     virtual void run() override;
 
-    static void start_processor_task(int i);
+    static void start_processor_task(int i, const std::string& processor_executable);
 
     uint8_t* get_data_ptr(uint_fast16_t index);
 
@@ -53,6 +61,18 @@ public:
 
 private:
     uint64_t _compute_index;
+
+    uint32_t _data_buffer_size_exp;
+    uint32_t _desc_buffer_size_exp;
+
+    unsigned short _service;
+    uint32_t _num_input_nodes;
+
+    uint32_t _timeslice_size;
+    uint32_t _overlap_size;
+
+    uint32_t _processor_instances;
+    const std::string _processor_executable;
 
     size_t _red_lantern = 0;
     uint64_t _completely_written = 0;

@@ -16,7 +16,16 @@ ComputeNodeApplication::ComputeNodeApplication(Parameters& par,
     // set_cpu(1);
 
     for (unsigned i : indexes) {
-        std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(i));
+        std::unique_ptr<ComputeBuffer> buffer(
+            new ComputeBuffer(i,
+                              _par.cn_data_buffer_size_exp(),
+                              _par.cn_desc_buffer_size_exp(),
+                              _par.base_port() + _par.compute_indexes().at(0),
+                              _par.input_nodes().size(),
+                              _par.timeslice_size(),
+                              _par.overlap_size(),
+                              _par.processor_instances(),
+                              _par.processor_executable()));
         _buffers.push_back(std::move(buffer));
     }
 
@@ -51,7 +60,7 @@ void ComputeNodeApplication::child_handler(int sig)
             // out.error() << "unknown child process died";
         } else {
             std::cerr << "child process " << idx << " died";
-            ComputeBuffer::start_processor_task(idx);
+            ComputeBuffer::start_processor_task(idx, par->processor_executable());
         }
     }
 }

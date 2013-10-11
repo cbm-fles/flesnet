@@ -21,8 +21,8 @@ public:
     /// The InputChannelSender default constructor.
     InputChannelSender(uint64_t input_index,
                        DataSource& data_source,
-                       const std::vector<std::string>& compute_hostnames,
-                       const std::vector<std::string>& compute_services,
+                       const std::vector<std::string> compute_hostnames,
+                       const std::vector<std::string> compute_services,
                        uint32_t timeslice_size,
                        uint32_t overlap_size,
                        uint32_t max_timeslice_number);
@@ -86,8 +86,8 @@ private:
     /// Data source (e.g., FLIB).
     DataSource& _data_source;
 
-    const std::vector<std::string>& _compute_hostnames;
-    const std::vector<std::string>& _compute_services;
+    const std::vector<std::string> _compute_hostnames;
+    const std::vector<std::string> _compute_services;
 
     const uint32_t _timeslice_size;
     const uint32_t _overlap_size;

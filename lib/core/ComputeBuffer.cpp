@@ -5,11 +5,27 @@
  */
 
 #include "ComputeBuffer.hpp"
-#include "Parameters.hpp"
 #include <csignal>
 
-ComputeBuffer::ComputeBuffer(uint64_t compute_index)
-    : _compute_index(compute_index), _ack(par->cn_desc_buffer_size_exp())
+ComputeBuffer::ComputeBuffer(uint64_t compute_index,
+                             uint32_t data_buffer_size_exp,
+                             uint32_t desc_buffer_size_exp,
+                             unsigned short service,
+                             uint32_t num_input_nodes,
+                             uint32_t timeslice_size,
+                             uint32_t overlap_size,
+                             uint32_t processor_instances,
+                             const std::string processor_executable)
+    : _compute_index(compute_index),
+      _data_buffer_size_exp(data_buffer_size_exp),
+      _desc_buffer_size_exp(desc_buffer_size_exp),
+      _service(service),
+      _num_input_nodes(num_input_nodes),
+      _timeslice_size(timeslice_size),
+      _overlap_size(overlap_size),
+      _processor_instances(processor_instances),
+      _processor_executable(processor_executable),
+      _ack(desc_buffer_size_exp)
 {
     boost::interprocess::shared_memory_object::remove("flesnet_data");
     boost::interprocess::shared_memory_object::remove("flesnet_desc");
@@ -26,12 +42,11 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index)
             boost::interprocess::read_write));
     _desc_shm = std::move(desc_shm);
 
-    std::size_t data_size = (1 << par->cn_data_buffer_size_exp())
-                            * par->input_nodes().size();
+    std::size_t data_size = (1 << _data_buffer_size_exp) * _num_input_nodes;
     _data_shm->truncate(data_size);
 
-    std::size_t desc_size = (1 << par->cn_desc_buffer_size_exp())
-                            * par->input_nodes().size()
+    std::size_t desc_size = (1 << _desc_buffer_size_exp)
+                            * _num_input_nodes
                             * sizeof(TimesliceComponentDescriptor);
     _desc_shm->truncate(desc_size);
 
@@ -81,19 +96,18 @@ void ComputeBuffer::run()
 {
     // set_cpu(0);
 
-    assert(!par->processor_executable().empty());
-    child_pids.resize(par->processor_instances());
-    for (uint_fast32_t i = 0; i < par->processor_instances(); ++i) {
-        start_processor_task(i);
+    assert(!_processor_executable.empty());
+    child_pids.resize(_processor_instances);
+    for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
+        start_processor_task(i, _processor_executable);
     }
     std::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
 
-    accept(par->base_port() + par->compute_indexes().at(0),
-           par->input_nodes().size());
-    handle_cm_events(par->input_nodes().size());
+    accept(_service, _num_input_nodes);
+    handle_cm_events(_num_input_nodes);
     std::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
     completion_handler();
-    for (uint_fast32_t i = 0; i < par->processor_instances(); ++i) {
+    for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
         pid_t pid = child_pids.at(i);
         child_pids.at(i) = 0;
         kill(pid, SIGTERM);
@@ -104,16 +118,16 @@ void ComputeBuffer::run()
     summary();
 }
 
-void ComputeBuffer::start_processor_task(int i)
+void ComputeBuffer::start_processor_task(int i, const std::string& processor_executable)
 {
     child_pids.at(i) = fork();
     if (!child_pids.at(i)) {
         std::stringstream s;
         s << i;
-        execl(par->processor_executable().c_str(), s.str().c_str(),
+        execl(processor_executable.c_str(), s.str().c_str(),
               static_cast<char*>(nullptr));
         out.fatal() << "Could not start processor task '"
-                    << par->processor_executable() << " " << s.str()
+                    << processor_executable << " " << s.str()
                     << "': " << strerror(errno);
         exit(1);
     }
@@ -122,26 +136,26 @@ void ComputeBuffer::start_processor_task(int i)
 uint8_t* ComputeBuffer::get_data_ptr(uint_fast16_t index)
 {
     return static_cast<uint8_t*>(_data_region->get_address())
-           + index * (1 << par->cn_data_buffer_size_exp());
+           + index * (1 << _data_buffer_size_exp);
 }
 
 TimesliceComponentDescriptor* ComputeBuffer::get_desc_ptr(uint_fast16_t index)
 {
     return reinterpret_cast
            <TimesliceComponentDescriptor*>(_desc_region->get_address())
-           + index * (1 << par->cn_desc_buffer_size_exp());
+           + index * (1 << _desc_buffer_size_exp);
 }
 
 uint8_t& ComputeBuffer::get_data(uint_fast16_t index, uint64_t offset)
 {
-    offset &= (1 << par->cn_data_buffer_size_exp()) - 1;
+    offset &= (1 << _data_buffer_size_exp) - 1;
     return get_data_ptr(index)[offset];
 }
 
 TimesliceComponentDescriptor& ComputeBuffer::get_desc(uint_fast16_t index,
                                                       uint64_t offset)
 {
-    offset &= (1 << par->cn_desc_buffer_size_exp()) - 1;
+    offset &= (1 << _desc_buffer_size_exp) - 1;
     return get_desc_ptr(index)[offset];
 }
 
@@ -158,15 +172,11 @@ void ComputeBuffer::on_connect_request(struct rdma_cm_event* event)
     assert(index < _conn.size() && _conn.at(index) == nullptr);
 
     uint8_t* data_ptr = get_data_ptr(index);
-    std::size_t data_bytes = 1 << par->cn_data_buffer_size_exp();
-
     TimesliceComponentDescriptor* desc_ptr = get_desc_ptr(index);
-    std::size_t desc_bytes = (1 << par->cn_desc_buffer_size_exp())
-                             * sizeof(TimesliceComponentDescriptor);
 
     std::unique_ptr<ComputeNodeConnection> conn(new ComputeNodeConnection(
         _ec, index, _compute_index, event->id, remote_info, data_ptr,
-        data_bytes, desc_ptr, desc_bytes));
+        _data_buffer_size_exp, desc_ptr, _desc_buffer_size_exp));
     _conn.at(index) = std::move(conn);
 
     _conn.at(index)->on_connect_request(event, _pd, _cq);
@@ -189,7 +199,7 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
         break;
 
     case ID_SEND_FINALIZE: {
-        if (par->processor_executable().empty()) {
+        if (_processor_executable.empty()) {
             assert(_work_items.empty());
             assert(_completions.empty());
         } else {
@@ -204,7 +214,7 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
                     << "SEND FINALIZE complete for id " << in
                     << " all_done=" << _all_done;
         if (_all_done) {
-            if (par->processor_executable().empty()) {
+            if (_processor_executable.empty()) {
                 _work_items.stop();
                 _completions.stop();
             } else {
@@ -230,12 +240,12 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
                  tpos < new_completely_written;
                  ++tpos) {
                 TimesliceWorkItem wi = {tpos,
-                                        par->timeslice_size(),
-                                        par->overlap_size(),
+                                        _timeslice_size,
+                                        _overlap_size,
                                         static_cast<uint32_t>(_conn.size()),
-                                        par->cn_data_buffer_size_exp(),
-                                        par->cn_desc_buffer_size_exp()};
-                if (par->processor_executable().empty()) {
+                                        _data_buffer_size_exp,
+                                        _desc_buffer_size_exp};
+                if (_processor_executable.empty()) {
                     _work_items.push(wi);
                 } else {
                     _work_items_mq->send(&wi, sizeof(wi), 0);
@@ -259,7 +269,7 @@ void ComputeBuffer::handle_ts_completion()
     {
         while (true) {
             TimesliceCompletion c;
-            if (par->processor_executable().empty()) {
+            if (_processor_executable.empty()) {
                 _completions.wait_and_pop(c);
             } else {
                 std::size_t recvd_size;

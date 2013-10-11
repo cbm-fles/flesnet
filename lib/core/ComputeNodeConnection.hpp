@@ -24,9 +24,9 @@ public:
                           struct rdma_cm_id* id,
                           InputNodeInfo remote_info,
                           uint8_t* data_ptr,
-                          std::size_t data_bytes,
+                          uint32_t data_buffer_size_exp,
                           TimesliceComponentDescriptor* desc_ptr,
-                          std::size_t desc_bytes);
+                          uint32_t desc_buffer_size_exp);
 
     ComputeNodeConnection(const ComputeNodeConnection&) = delete;
     void operator=(const ComputeNodeConnection&) = delete;
@@ -83,10 +83,10 @@ private:
     InputNodeInfo _remote_info = {};
 
     uint8_t* _data_ptr = nullptr;
-    std::size_t _data_bytes = 0;
+    std::size_t _data_buffer_size_exp = 0;
 
     TimesliceComponentDescriptor* _desc_ptr = nullptr;
-    std::size_t _desc_bytes = 0;
+    std::size_t _desc_buffer_size_exp = 0;
 
     /// InfiniBand receive work request
     struct ibv_recv_wr recv_wr = {};

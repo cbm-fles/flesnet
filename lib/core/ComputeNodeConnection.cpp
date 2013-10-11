@@ -5,7 +5,6 @@
  */
 
 #include "ComputeNodeConnection.hpp"
-#include "Parameters.hpp"
 #include "global.hpp"
 #include <cassert>
 
@@ -16,15 +15,15 @@ ComputeNodeConnection::ComputeNodeConnection(
     struct rdma_cm_id* id,
     InputNodeInfo remote_info,
     uint8_t* data_ptr,
-    std::size_t data_bytes,
+    uint32_t data_buffer_size_exp,
     TimesliceComponentDescriptor* desc_ptr,
-    std::size_t desc_bytes)
+    uint32_t desc_buffer_size_exp)
     : IBConnection(ec, connection_index, remote_connection_index, id),
       _remote_info(std::move(remote_info)),
       _data_ptr(data_ptr),
-      _data_bytes(data_bytes),
+      _data_buffer_size_exp(data_buffer_size_exp),
       _desc_ptr(desc_ptr),
-      _desc_bytes(desc_bytes)
+      _desc_buffer_size_exp(desc_buffer_size_exp)
 {
     // send and receive only single ComputeNodeBufferPosition struct
     _qp_cap.max_send_wr = 2; // one additional wr to avoid race (recv before
@@ -69,12 +68,14 @@ void ComputeNodeConnection::post_send_final_ack()
 
 void ComputeNodeConnection::setup(struct ibv_pd* pd)
 {
-    assert(_data_ptr && _desc_ptr && _data_bytes && _desc_bytes);
+    assert(_data_ptr && _desc_ptr && _data_buffer_size_exp && _desc_buffer_size_exp);
 
     // register memory regions
-    _mr_data = ibv_reg_mr(pd, _data_ptr, _data_bytes,
+    std::size_t data_bytes = 1 << _data_buffer_size_exp;
+    std::size_t desc_bytes = (1 << _desc_buffer_size_exp) * sizeof(TimesliceComponentDescriptor);
+    _mr_data = ibv_reg_mr(pd, _data_ptr, data_bytes,
                           IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE);
-    _mr_desc = ibv_reg_mr(pd, _desc_ptr, _desc_bytes,
+    _mr_desc = ibv_reg_mr(pd, _desc_ptr, desc_bytes,
                           IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE);
     _mr_send
         = ibv_reg_mr(pd, &_send_cn_ack, sizeof(ComputeNodeBufferPosition), 0);
@@ -148,7 +149,7 @@ void ComputeNodeConnection::inc_ack_pointers(uint64_t ack_pos)
     _cn_ack.desc = ack_pos;
 
     const TimesliceComponentDescriptor& acked_ts = _desc_ptr
-        [(ack_pos - 1) & ((1 << par->cn_desc_buffer_size_exp()) - 1)];
+        [(ack_pos - 1) & ((1 << _desc_buffer_size_exp) - 1)];
 
     _cn_ack.data = acked_ts.offset + acked_ts.size;
     if (_our_turn) {
@@ -199,7 +200,7 @@ void ComputeNodeConnection::on_complete_send_finalize()
 
 std::unique_ptr<std::vector<uint8_t> > ComputeNodeConnection::get_private_data()
 {
-    assert(_data_ptr && _desc_ptr && _data_bytes && _desc_bytes);
+    assert(_data_ptr && _desc_ptr && _data_buffer_size_exp && _desc_buffer_size_exp);
     std::unique_ptr<std::vector<uint8_t> > private_data(
         new std::vector<uint8_t>(sizeof(ComputeNodeInfo)));
 
@@ -210,8 +211,8 @@ std::unique_ptr<std::vector<uint8_t> > ComputeNodeConnection::get_private_data()
     cn_info->desc.addr = reinterpret_cast<uintptr_t>(_desc_ptr);
     cn_info->desc.rkey = _mr_desc->rkey;
     cn_info->index = _remote_index;
-    cn_info->data_buffer_size_exp = par->cn_data_buffer_size_exp();
-    cn_info->desc_buffer_size_exp = par->cn_desc_buffer_size_exp();
+    cn_info->data_buffer_size_exp = _data_buffer_size_exp;
+    cn_info->desc_buffer_size_exp = _desc_buffer_size_exp;
 
     return private_data;
 }

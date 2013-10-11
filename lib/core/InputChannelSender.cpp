@@ -9,9 +9,9 @@
 InputChannelSender::InputChannelSender(uint64_t input_index,
                                        DataSource& data_source,
                                        const std::vector
-                                       <std::string>& compute_hostnames,
+                                       <std::string> compute_hostnames,
                                        const std::vector
-                                       <std::string>& compute_services,
+                                       <std::string> compute_services,
                                        uint32_t timeslice_size,
                                        uint32_t overlap_size,
                                        uint32_t max_timeslice_number)
