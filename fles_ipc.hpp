@@ -8,7 +8,6 @@
 #include <boost/serialization/vector.hpp>
 #include <memory>
 #include <cstdint>
-#include <utility>
 
 //! \file
 //! This file describes the timeslice-based interface to FLES.
@@ -81,58 +80,29 @@ public:
     Timeslice(const Timeslice&) = delete;
     void operator=(const Timeslice&) = delete;
 
-    ~Timeslice()
-    {
-        _completions_mq->send(&_completion, sizeof(_completion), 0);
-    }
+    ~Timeslice();
 
     /// Retrieve the timeslice index.
-    uint64_t index() const
-    {
-        return desc(0).ts_num;
-    }
+    uint64_t index() const;
 
     /// Retrieve the number of core microslices.
-    uint64_t num_core_microslices() const
-    {
-        return _work_item.num_core_microslices;
-    }
+    uint64_t num_core_microslices() const;
 
     /// Retrieve the number of overlapping microslices.
-    uint64_t num_overlap_microslices() const
-    {
-        return _work_item.num_overlap_microslices;
-    }
+    uint64_t num_overlap_microslices() const;
 
     /// Retrieve the total number of microslices.
-    uint64_t num_microslices() const
-    {
-        return _work_item.num_core_microslices
-               + _work_item.num_overlap_microslices;
-    }
+    uint64_t num_microslices() const;
 
     /// Retrieve the number of components (contributing input channels).
-    uint64_t num_components() const
-    {
-        return _work_item.num_components;
-    }
+    uint64_t num_components() const;
 
     /// Retrieve a pointer to the data content of a given microslice
-    const uint8_t* content(uint64_t component, uint64_t microslice) const
-    {
-        return &data(component, desc(component).offset)
-               + num_microslices() * sizeof(MicrosliceDescriptor)
-               + descriptor(component, microslice).offset
-               - descriptor(component, 0).offset;
-    }
+    const uint8_t* content(uint64_t component, uint64_t microslice) const;
 
     /// Retrieve the descriptor of a given microslice
     const MicrosliceDescriptor& descriptor(uint64_t component,
-                                           uint64_t microslice) const
-    {
-        return (&reinterpret_cast<const MicrosliceDescriptor&>(
-                     data(component, desc(component).offset)))[microslice];
-    }
+                                           uint64_t microslice) const;
 
 private:
     friend class TimesliceReceiver;
@@ -142,29 +112,11 @@ private:
               uint8_t* data,
               TimesliceComponentDescriptor* desc,
               std::shared_ptr
-              <boost::interprocess::message_queue> completions_mq)
-        : _work_item(std::move(work_item)),
-          _data(data),
-          _desc(desc),
-          _completions_mq(std::move(completions_mq))
-    {
-        _completion = {_work_item.ts_pos};
-        _descriptor_offset = _work_item.ts_pos
-                             & ((1L << _work_item.desc_buffer_size_exp) - 1L);
-        _data_offset_mask = (1L << _work_item.data_buffer_size_exp) - 1L;
-    }
+              <boost::interprocess::message_queue> completions_mq);
 
-    const uint8_t& data(uint64_t component, uint64_t offset) const
-    {
-        return (_data + (component << _work_item.data_buffer_size_exp))
-            [offset & _data_offset_mask];
-    }
+    const uint8_t& data(uint64_t component, uint64_t offset) const;
 
-    const TimesliceComponentDescriptor& desc(uint64_t component) const
-    {
-        return (_desc + (component << _work_item.desc_buffer_size_exp))
-            [_descriptor_offset];
-    }
+    const TimesliceComponentDescriptor& desc(uint64_t component) const;
 
     TimesliceWorkItem _work_item;
     TimesliceCompletion _completion{};
@@ -182,69 +134,29 @@ private:
 class StorableTimeslice
 {
 public:
-    explicit StorableTimeslice(const Timeslice& ts)
-        : _work_item(ts._work_item),
-          _data(ts._work_item.num_components),
-          _index(ts.index())
-    {
-        for (std::size_t component = 0;
-             component < ts._work_item.num_components;
-             ++component) {
-            uint64_t size = ts.desc(component).size;
-            const uint8_t* begin =
-                &ts.data(component, ts.desc(component).offset);
-            _data[component].resize(size);
-            std::copy_n(begin, size, _data[component].begin());
-        }
-    }
+    explicit StorableTimeslice(const Timeslice& ts);
 
     /// Retrieve the timeslice index.
-    uint64_t index() const
-    {
-        return _index;
-    }
+    uint64_t index() const;
 
     /// Retrieve the number of core microslices.
-    uint64_t num_core_microslices() const
-    {
-        return _work_item.num_core_microslices;
-    }
+    uint64_t num_core_microslices() const;
 
     /// Retrieve the number of overlapping microslices.
-    uint64_t num_overlap_microslices() const
-    {
-        return _work_item.num_overlap_microslices;
-    }
+    uint64_t num_overlap_microslices() const;
 
     /// Retrieve the total number of microslices.
-    uint64_t num_microslices() const
-    {
-        return _work_item.num_core_microslices
-               + _work_item.num_overlap_microslices;
-    }
+    uint64_t num_microslices() const;
 
     /// Retrieve the number of components (contributing input channels).
-    uint64_t num_components() const
-    {
-        return _work_item.num_components;
-    }
+    uint64_t num_components() const;
 
     /// Retrieve a pointer to the data content of a given microslice
-    const uint8_t* content(uint64_t component, uint64_t microslice) const
-    {
-        return
-            &_data[component][num_microslices() * sizeof(MicrosliceDescriptor)
-                              + descriptor(component, microslice).offset
-                              - descriptor(component, 0).offset];
-    }
+    const uint8_t* content(uint64_t component, uint64_t microslice) const;
 
     /// Retrieve the descriptor of a given microslice
     const MicrosliceDescriptor& descriptor(uint64_t component,
-                                           uint64_t microslice) const
-    {
-        return (&reinterpret_cast
-                <const MicrosliceDescriptor&>(_data[component][0]))[microslice];
-    }
+                                           uint64_t microslice) const;
 
 private:
     friend class boost::serialization::access;
@@ -267,54 +179,13 @@ class TimesliceReceiver
 {
 public:
     /// The TimesliceReceiver default constructor.
-    TimesliceReceiver()
-    {
-        _data_shm = std::unique_ptr<boost::interprocess::shared_memory_object>(
-            new boost::interprocess::shared_memory_object(
-                boost::interprocess::open_only, "flesnet_data",
-                boost::interprocess::read_only));
-
-        _desc_shm = std::unique_ptr<boost::interprocess::shared_memory_object>(
-            new boost::interprocess::shared_memory_object(
-                boost::interprocess::open_only, "flesnet_desc",
-                boost::interprocess::read_only));
-
-        _data_region = std::unique_ptr<boost::interprocess::mapped_region>(
-            new boost::interprocess::mapped_region(
-                *_data_shm, boost::interprocess::read_only));
-
-        _desc_region = std::unique_ptr<boost::interprocess::mapped_region>(
-            new boost::interprocess::mapped_region(
-                *_desc_shm, boost::interprocess::read_only));
-
-        _work_items_mq = std::unique_ptr<boost::interprocess::message_queue>(
-            new boost::interprocess::message_queue(
-                boost::interprocess::open_only, "flesnet_work_items"));
-
-        _completions_mq = std::shared_ptr<boost::interprocess::message_queue>(
-            new boost::interprocess::message_queue(
-                boost::interprocess::open_only, "flesnet_completions"));
-    }
+    TimesliceReceiver();
 
     TimesliceReceiver(const TimesliceReceiver&) = delete;
     void operator=(const TimesliceReceiver&) = delete;
 
     /// Receive the next timeslice, block if not yet available.
-    std::unique_ptr<const Timeslice> receive()
-    {
-        TimesliceWorkItem wi;
-        std::size_t recvd_size;
-        unsigned int priority;
-
-        _work_items_mq->receive(&wi, sizeof(wi), recvd_size, priority);
-        assert(recvd_size == sizeof(wi));
-
-        return std::unique_ptr<Timeslice>(new Timeslice(
-            wi, reinterpret_cast<uint8_t*>(_data_region->get_address()),
-            reinterpret_cast
-            <TimesliceComponentDescriptor*>(_desc_region->get_address()),
-            _completions_mq));
-    }
+    std::unique_ptr<const Timeslice> receive();
 
 private:
     std::unique_ptr<boost::interprocess::shared_memory_object> _data_shm;
