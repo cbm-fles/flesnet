@@ -7,6 +7,7 @@
 #include "InputNodeApplication.hpp"
 #include "FlibPatternGenerator.hpp"
 #include <boost/lexical_cast.hpp>
+#include <flib.h>
 
 InputNodeApplication::InputNodeApplication(Parameters& par,
                                            std::vector<unsigned> indexes)
@@ -16,6 +17,19 @@ InputNodeApplication::InputNodeApplication(Parameters& par,
     for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
         _compute_services.push_back(boost::lexical_cast
                                     <std::string>(par.base_port() + i));
+
+    std::unique_ptr<flib::flib_device> flib;
+    std::unique_ptr<std::vector<flib::flib_link*> > links;
+
+    try
+    {
+        flib = std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
+        // links =
+        // std::unique_ptr<std::vector<flib::flib_link*>>(flib->get_links());
+    }
+    catch (std::exception const& e)
+    {
+    }
 
     for (unsigned i : indexes) {
         std::unique_ptr<DataSource> data_source(new FlibPatternGenerator(
