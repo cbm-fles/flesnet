@@ -8,6 +8,8 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 
 project(flesnet)
 
+add_subdirectory(lib/core)
+
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -pedantic -Wold-style-cast -Wfloat-equal -Woverloaded-virtual -Wundef -O3")
 
 find_package(Boost 1.48 COMPONENTS program_options serialization REQUIRED)
@@ -34,9 +36,9 @@ add_custom_command(
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/core" "${PROJECT_SOURCE_DIR}/app/flesnet" "${PROJECT_SOURCE_DIR}/lib/ipc")
 
-add_executable(flesnet app/flesnet/Parameters.cpp lib/core/IBConnection.cpp lib/core/FlibPatternGenerator.cpp lib/core/InputChannelSender.cpp lib/core/InputChannelConnection.cpp lib/core/ComputeNodeConnection.cpp lib/core/ComputeBuffer.cpp lib/core/InputNodeApplication.cpp lib/core/ComputeNodeApplication.cpp lib/core/ThreadContainer.cpp app/flesnet/main.cpp flesnet.cfg run verbs.supp)
+add_executable(flesnet app/flesnet/Parameters.cpp app/flesnet/main.cpp flesnet.cfg run verbs.supp)
 
-target_link_libraries(flesnet ibverbs rdmacm rt numa ${Boost_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(flesnet core ibverbs rdmacm rt numa ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
 add_executable(pattern-check app/ipc-demo/pattern-check.cpp)
 target_link_libraries(pattern-check rt)
