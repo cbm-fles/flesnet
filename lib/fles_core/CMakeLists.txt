@@ -7,4 +7,4 @@ include_directories("${PROJECT_SOURCE_DIR}/app/flesnet" "${PROJECT_SOURCE_DIR}/l
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -pedantic -Wold-style-cast -Wfloat-equal -Woverloaded-virtual -Wundef -O3")
 
-add_library(core ${LIB_SOURCES} ${LIB_HEADERS})
+add_library(fles_core ${LIB_SOURCES} ${LIB_HEADERS})

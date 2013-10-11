@@ -10,7 +10,7 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_subdirectory(lib/fles_core)
-#add_subdirectory(lib/fles_ipc)
+add_subdirectory(lib/fles_ipc)
 
 add_subdirectory(app/flesnet)
 add_subdirectory(app/ipc-demo)

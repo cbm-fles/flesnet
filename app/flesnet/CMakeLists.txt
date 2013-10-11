@@ -11,4 +11,4 @@ set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -pedantic -Wold-style-cast -Wfloat-equa
 
 add_executable(flesnet ${APP_SOURCES} ${APP_HEADERS})
 
-target_link_libraries(flesnet core ibverbs rdmacm rt numa ${Boost_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(flesnet fles_core ibverbs rdmacm rt numa ${Boost_PROGRAM_OPTIONS_LIBRARY})
