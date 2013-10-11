@@ -32,14 +32,16 @@ add_custom_command(
           ${CMAKE_CURRENT_SOURCE_DIR}/contrib/verbs.supp verbs.supp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/contrib/verbs.supp)
 
-add_executable(flesnet Parameters.cpp IBConnection.cpp FlibPatternGenerator.cpp InputChannelSender.cpp InputChannelConnection.cpp ComputeNodeConnection.cpp ComputeBuffer.cpp InputNodeApplication.cpp ComputeNodeApplication.cpp ThreadContainer.cpp main.cpp flesnet.cfg run verbs.supp)
+include_directories("${PROJECT_SOURCE_DIR}/lib/core" "${PROJECT_SOURCE_DIR}/app/flesnet" "${PROJECT_SOURCE_DIR}/lib/ipc")
+
+add_executable(flesnet app/flesnet/Parameters.cpp lib/core/IBConnection.cpp lib/core/FlibPatternGenerator.cpp lib/core/InputChannelSender.cpp lib/core/InputChannelConnection.cpp lib/core/ComputeNodeConnection.cpp lib/core/ComputeBuffer.cpp lib/core/InputNodeApplication.cpp lib/core/ComputeNodeApplication.cpp lib/core/ThreadContainer.cpp app/flesnet/main.cpp flesnet.cfg run verbs.supp)
 
 target_link_libraries(flesnet ibverbs rdmacm rt numa ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
-add_executable(pattern-check pattern-check.cpp)
+add_executable(pattern-check app/ipc-demo/pattern-check.cpp)
 target_link_libraries(pattern-check rt)
 
-add_executable(raw-storage raw-storage.cpp)
+add_executable(raw-storage app/ipc-demo/raw-storage.cpp)
 target_link_libraries(raw-storage rt ${Boost_SERIALIZATION_LIBRARY})
 
 # Documentation
