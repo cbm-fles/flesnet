@@ -5,6 +5,8 @@
  */
 
 #include "FlibHardwareChannel.hpp"
+#include <chrono>
+#include <thread>
 
 FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                                          std::size_t desc_buffer_size_exp,
@@ -14,7 +16,7 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
 {
     _flib_link->init_dma(
         flib::create_only, data_buffer_size_exp, desc_buffer_size_exp);
-    // TODO: reduce desc_buffer_size_exp (sizeof MicrosliceDescriptor)?
+    // TODO?: reduce desc_buffer_size_exp (for sizeof MicrosliceDescriptor)?
 
     uint8_t* data_buffer = reinterpret_cast
         <uint8_t*>(_flib_link->ebuf()->getMem());
@@ -44,7 +46,14 @@ FlibHardwareChannel::~FlibHardwareChannel()
 
 uint64_t FlibHardwareChannel::wait_for_data(uint64_t min_mc_number)
 {
-    return 0;
+    uint64_t hw_mc_index = 0;
+    std::chrono::microseconds interval(100);
+
+    while ((hw_mc_index = _flib_link->get_mc_index()) < min_mc_number) {
+        std::this_thread::sleep_for(interval);
+    }
+
+    return hw_mc_index;
 }
 
 void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
