@@ -176,14 +176,18 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id)
         _mr_data = ibv_reg_mr(_pd, _data_source.data_buffer().ptr(),
                               _data_source.data_buffer().bytes(),
                               IBV_ACCESS_LOCAL_WRITE);
-        if (!_mr_data)
+        if (!_mr_data) {
+            out.error() << "ibv_reg_mr failed for mr_data: " << strerror(errno);
             throw InfinibandException("registration of memory region failed");
+        }
 
         _mr_desc = ibv_reg_mr(_pd, _data_source.desc_buffer().ptr(),
                               _data_source.desc_buffer().bytes(),
                               IBV_ACCESS_LOCAL_WRITE);
-        if (!_mr_desc)
+        if (!_mr_desc) {
+            out.error() << "ibv_reg_mr failed for mr_desc: " << strerror(errno);
             throw InfinibandException("registration of memory region failed");
+        }
 
         if (out.beDebug()) {
             dump_mr(_mr_desc);
