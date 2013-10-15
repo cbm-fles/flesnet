@@ -46,11 +46,11 @@ void check_timeslice(const fles::Timeslice& ts)
     }
 }
 
-int main()
+int main(int argc, char* argv[])
 {
     install_term_handler();
 
-    fles::TimesliceReceiver tsr;
+    fles::TimesliceReceiver tsr(argv[1]);
 
     while (true) {
         std::unique_ptr<const fles::Timeslice> ts = tsr.receive();

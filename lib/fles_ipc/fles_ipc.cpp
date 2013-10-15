@@ -133,16 +133,21 @@ StorableTimeslice::descriptor(uint64_t component, uint64_t microslice) const
             <const MicrosliceDescriptor&>(_data[component][0]))[microslice];
 }
 
-TimesliceReceiver::TimesliceReceiver()
+TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
+    : _shared_memory_identifier(shared_memory_identifier)
 {
+    std::cerr << _shared_memory_identifier << std::endl;
+
     _data_shm = std::unique_ptr<boost::interprocess::shared_memory_object>(
         new boost::interprocess::shared_memory_object(
-            boost::interprocess::open_only, "flesnet_data",
+            boost::interprocess::open_only,
+            (shared_memory_identifier + "_data").c_str(),
             boost::interprocess::read_only));
 
     _desc_shm = std::unique_ptr<boost::interprocess::shared_memory_object>(
         new boost::interprocess::shared_memory_object(
-            boost::interprocess::open_only, "flesnet_desc",
+            boost::interprocess::open_only,
+            (shared_memory_identifier + "_desc").c_str(),
             boost::interprocess::read_only));
 
     _data_region = std::unique_ptr<boost::interprocess::mapped_region>(
@@ -154,12 +159,14 @@ TimesliceReceiver::TimesliceReceiver()
                                                boost::interprocess::read_only));
 
     _work_items_mq = std::unique_ptr<boost::interprocess::message_queue>(
-        new boost::interprocess::message_queue(boost::interprocess::open_only,
-                                               "flesnet_work_items"));
+        new boost::interprocess::message_queue(
+            boost::interprocess::open_only,
+            (shared_memory_identifier + "_work_items").c_str()));
 
     _completions_mq = std::shared_ptr<boost::interprocess::message_queue>(
-        new boost::interprocess::message_queue(boost::interprocess::open_only,
-                                               "flesnet_completions"));
+        new boost::interprocess::message_queue(
+            boost::interprocess::open_only,
+            (shared_memory_identifier + "_completions").c_str()));
 }
 
 std::unique_ptr<const Timeslice> TimesliceReceiver::receive()

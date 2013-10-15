@@ -19,3 +19,5 @@ class Parameters;
 extern std::unique_ptr<Parameters> par;
 
 extern std::vector<pid_t> child_pids;
+
+extern std::string shared_memory_identifier;

@@ -21,10 +21,23 @@
 
 #include "global.hpp"
 
+#include <boost/lexical_cast.hpp>
+#include <random>
+
 einhard::Logger<static_cast<einhard::LogLevel>(MINLOGLEVEL), true>
 out(einhard::WARN, true);
 std::unique_ptr<Parameters> par;
 std::vector<pid_t> child_pids;
+
+std::string shared_memory_identifier;
+
+std::string random_string()
+{
+    std::random_device random_device;
+    std::uniform_int_distribution<uint64_t> uint_distribution;
+    uint64_t random_number = uint_distribution(random_device);
+    return boost::lexical_cast<std::string>(random_number);
+}
 
 int main(int argc, char* argv[])
 {
@@ -35,6 +48,8 @@ int main(int argc, char* argv[])
     {
         std::unique_ptr<Parameters> parameters(new Parameters(argc, argv));
         par = std::move(parameters);
+
+        shared_memory_identifier = "flesnet_" + random_string();
 
         if (!par->compute_indexes().empty()) {
             _compute_app = std::unique_ptr<ComputeNodeApplication>(

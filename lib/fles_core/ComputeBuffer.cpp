@@ -15,7 +15,8 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
                              uint32_t timeslice_size,
                              uint32_t overlap_size,
                              uint32_t processor_instances,
-                             const std::string processor_executable)
+                             const std::string processor_executable,
+                             const std::string shared_memory_identifier)
     : _compute_index(compute_index),
       _data_buffer_size_exp(data_buffer_size_exp),
       _desc_buffer_size_exp(desc_buffer_size_exp),
@@ -25,20 +26,25 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
       _overlap_size(overlap_size),
       _processor_instances(processor_instances),
       _processor_executable(processor_executable),
+      _shared_memory_identifier(shared_memory_identifier),
       _ack(desc_buffer_size_exp)
 {
-    boost::interprocess::shared_memory_object::remove("flesnet_data");
-    boost::interprocess::shared_memory_object::remove("flesnet_desc");
+    boost::interprocess::shared_memory_object::remove(
+        (_shared_memory_identifier + "_data").c_str());
+    boost::interprocess::shared_memory_object::remove(
+        (_shared_memory_identifier + "_desc").c_str());
 
     std::unique_ptr<boost::interprocess::shared_memory_object> data_shm(
         new boost::interprocess::shared_memory_object(
-            boost::interprocess::create_only, "flesnet_data",
+            boost::interprocess::create_only,
+            (_shared_memory_identifier + "_data").c_str(),
             boost::interprocess::read_write));
     _data_shm = std::move(data_shm);
 
     std::unique_ptr<boost::interprocess::shared_memory_object> desc_shm(
         new boost::interprocess::shared_memory_object(
-            boost::interprocess::create_only, "flesnet_desc",
+            boost::interprocess::create_only,
+            (_shared_memory_identifier + "_desc").c_str(),
             boost::interprocess::read_write));
     _desc_shm = std::move(desc_shm);
 
@@ -67,28 +73,36 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
                               _desc_region->get_size());
 #pragma GCC diagnostic pop
 
-    boost::interprocess::message_queue::remove("flesnet_work_items");
-    boost::interprocess::message_queue::remove("flesnet_completions");
+    boost::interprocess::message_queue::remove(
+        (_shared_memory_identifier + "_work_items").c_str());
+    boost::interprocess::message_queue::remove(
+        (_shared_memory_identifier + "_completions").c_str());
 
     std::unique_ptr<boost::interprocess::message_queue> work_items_mq(
-        new boost::interprocess::message_queue(boost::interprocess::create_only,
-                                               "flesnet_work_items", 1000,
-                                               sizeof(TimesliceWorkItem)));
+        new boost::interprocess::message_queue(
+            boost::interprocess::create_only,
+            (_shared_memory_identifier + "_work_items").c_str(), 1000,
+            sizeof(TimesliceWorkItem)));
     _work_items_mq = std::move(work_items_mq);
 
     std::unique_ptr<boost::interprocess::message_queue> completions_mq(
-        new boost::interprocess::message_queue(boost::interprocess::create_only,
-                                               "flesnet_completions", 1000,
-                                               sizeof(TimesliceCompletion)));
+        new boost::interprocess::message_queue(
+            boost::interprocess::create_only,
+            (_shared_memory_identifier + "_completions").c_str(), 1000,
+            sizeof(TimesliceCompletion)));
     _completions_mq = std::move(completions_mq);
 }
 
 ComputeBuffer::~ComputeBuffer()
 {
-    boost::interprocess::shared_memory_object::remove("flesnet_data");
-    boost::interprocess::shared_memory_object::remove("flesnet_desc");
-    boost::interprocess::message_queue::remove("flesnet_work_items");
-    boost::interprocess::message_queue::remove("flesnet_completions");
+    boost::interprocess::shared_memory_object::remove(
+        (_shared_memory_identifier + "_data").c_str());
+    boost::interprocess::shared_memory_object::remove(
+        (_shared_memory_identifier + "_desc").c_str());
+    boost::interprocess::message_queue::remove(
+        (_shared_memory_identifier + "_work_items").c_str());
+    boost::interprocess::message_queue::remove(
+        (_shared_memory_identifier + "_completions").c_str());
 }
 
 void ComputeBuffer::run()
@@ -98,7 +112,8 @@ void ComputeBuffer::run()
     assert(!_processor_executable.empty());
     child_pids.resize(_processor_instances);
     for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
-        start_processor_task(i, _processor_executable);
+        start_processor_task(i, _processor_executable,
+                             _shared_memory_identifier);
     }
     std::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
 
@@ -118,17 +133,20 @@ void ComputeBuffer::run()
 }
 
 void ComputeBuffer::start_processor_task(int i, const std::string
-                                         & processor_executable)
+                                         & processor_executable,
+                                         const std::string
+                                         & shared_memory_identifier)
 {
     child_pids.at(i) = fork();
     if (!child_pids.at(i)) {
-        std::stringstream s;
-        s << i;
-        execl(processor_executable.c_str(), s.str().c_str(),
+        std::stringstream index;
+        index << i;
+        execl(processor_executable.c_str(), processor_executable.c_str(),
+              shared_memory_identifier.c_str(), index.str().c_str(),
               static_cast<char*>(nullptr));
         out.fatal() << "Could not start processor task '"
-                    << processor_executable << " " << s.str()
-                    << "': " << strerror(errno);
+                    << processor_executable << " " << shared_memory_identifier
+                    << " " << index.str() << "': " << strerror(errno);
         exit(1);
     }
 }

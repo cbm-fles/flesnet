@@ -25,7 +25,8 @@ ComputeNodeApplication::ComputeNodeApplication(Parameters& par,
                               _par.timeslice_size(),
                               _par.overlap_size(),
                               _par.processor_instances(),
-                              _par.processor_executable()));
+                              _par.processor_executable(),
+                              shared_memory_identifier));
         _buffers.push_back(std::move(buffer));
     }
 
@@ -60,8 +61,8 @@ void ComputeNodeApplication::child_handler(int sig)
             // out.error() << "unknown child process died";
         } else {
             std::cerr << "child process " << idx << " died";
-            ComputeBuffer::start_processor_task(idx,
-                                                par->processor_executable());
+            ComputeBuffer::start_processor_task(
+                idx, par->processor_executable(), shared_memory_identifier);
         }
     }
 }

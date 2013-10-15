@@ -178,8 +178,8 @@ private:
 class TimesliceReceiver
 {
 public:
-    /// The TimesliceReceiver default constructor.
-    TimesliceReceiver();
+    /// The TimesliceReceiver constructor.
+    TimesliceReceiver(const std::string shared_memory_identifier);
 
     TimesliceReceiver(const TimesliceReceiver&) = delete;
     void operator=(const TimesliceReceiver&) = delete;
@@ -188,6 +188,8 @@ public:
     std::unique_ptr<const Timeslice> receive();
 
 private:
+    const std::string _shared_memory_identifier;
+
     std::unique_ptr<boost::interprocess::shared_memory_object> _data_shm;
     std::unique_ptr<boost::interprocess::shared_memory_object> _desc_shm;
 
