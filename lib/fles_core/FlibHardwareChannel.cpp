@@ -16,10 +16,10 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
 {
     constexpr std::size_t microslice_descriptor_size_exp = 5;
     std::size_t desc_buffer_bytes_exp = desc_buffer_size_exp
-                                        - microslice_descriptor_size_exp;
+                                        + microslice_descriptor_size_exp;
 
     _flib_link->init_dma(
-        flib::create_only, data_buffer_size_exp, desc_buffer_bytes_exp);
+        flib::open_or_create, data_buffer_size_exp, desc_buffer_bytes_exp);
 
     uint8_t* data_buffer = reinterpret_cast
         <uint8_t*>(_flib_link->ebuf()->getMem());
