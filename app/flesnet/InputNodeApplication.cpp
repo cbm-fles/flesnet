@@ -30,8 +30,14 @@ InputNodeApplication::InputNodeApplication(Parameters& par,
 
         if (_flib) {
             _flib_links = _flib->get_links();
+            if (_flib_links.size() == 255) {
+                _flib = nullptr;
+                _flib_links.clear();
+            }
         }
         out.info() << "flib hardware links: " << _flib_links.size();
+        if (_flib_links.empty())
+            out.warn() << "no flib links detected";
     }
 
     for (size_t c = 0; c < indexes.size(); ++c) {
