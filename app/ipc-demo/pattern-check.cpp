@@ -54,8 +54,15 @@ bool check_flib_pattern(const fles::MicrosliceDescriptor& descriptor,
 }
 
 bool check_microslice(const fles::MicrosliceDescriptor& descriptor,
-                      const uint64_t* content, size_t component)
+                      const uint64_t* content, size_t component,
+                      size_t microslice)
 {
+    if (descriptor.idx != microslice) {
+        std::cerr << "microslice index " << descriptor.idx
+                  << " found in descriptor " << microslice << std::endl;
+        return false;
+    }
+
     switch (descriptor.sys_id) {
     case 0x01:
         return check_flesnet_pattern(descriptor, content, component);
@@ -74,7 +81,8 @@ bool check_timeslice(const fles::Timeslice& ts)
         for (size_t m = 0; m < ts.num_microslices(); ++m) {
             bool success = check_microslice(
                 ts.descriptor(c, m),
-                reinterpret_cast<const uint64_t*>(ts.content(c, m)), c);
+                reinterpret_cast<const uint64_t*>(ts.content(c, m)), c,
+                ts.index() * ts.num_core_microslices() + m);
             if (!success) {
                 std::cerr << "-- pattern error in TS " << ts.index() << ", MC "
                           << m << ", component " << c << std::endl;
