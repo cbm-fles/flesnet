@@ -173,16 +173,16 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id)
 
     if (!_mr_data) {
         // Register memory regions.
-        _mr_data = ibv_reg_mr(_pd, _data_source.data_buffer().ptr(),
-                              _data_source.data_buffer().bytes(),
+        _mr_data = ibv_reg_mr(_pd, _data_source.data_send_buffer().ptr(),
+                              _data_source.data_send_buffer().bytes(),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_data) {
             out.error() << "ibv_reg_mr failed for mr_data: " << strerror(errno);
             throw InfinibandException("registration of memory region failed");
         }
 
-        _mr_desc = ibv_reg_mr(_pd, _data_source.desc_buffer().ptr(),
-                              _data_source.desc_buffer().bytes(),
+        _mr_desc = ibv_reg_mr(_pd, _data_source.desc_send_buffer().ptr(),
+                              _data_source.desc_send_buffer().bytes(),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_desc) {
             out.error() << "ibv_reg_mr failed for mr_desc: " << strerror(errno);
@@ -242,54 +242,69 @@ void InputChannelSender::post_send_data(uint64_t timeslice, int cn,
     int num_sge = 0;
     struct ibv_sge sge[4];
     // descriptors
-    if ((mc_offset & _data_source.desc_buffer().size_mask())
+    if ((mc_offset & _data_source.desc_send_buffer().size_mask())
         < ((mc_offset + mc_length - 1)
-           & _data_source.desc_buffer().size_mask())) {
+           & _data_source.desc_send_buffer().size_mask())) {
         // one chunk
         sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(&_data_source.desc_buffer().at(mc_offset));
+            <uintptr_t>(&_data_source.desc_send_buffer().at(mc_offset));
         sge[num_sge].length = sizeof(MicrosliceDescriptor) * mc_length;
         sge[num_sge++].lkey = _mr_desc->lkey;
     } else {
         // two chunks
         sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(&_data_source.desc_buffer().at(mc_offset));
+            <uintptr_t>(&_data_source.desc_send_buffer().at(mc_offset));
         sge[num_sge].length
             = sizeof(MicrosliceDescriptor)
-              * (_data_source.desc_buffer().size()
-                 - (mc_offset & _data_source.desc_buffer().size_mask()));
+              * (_data_source.desc_send_buffer().size()
+                 - (mc_offset & _data_source.desc_send_buffer().size_mask()));
         sge[num_sge++].lkey = _mr_desc->lkey;
         sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(_data_source.desc_buffer().ptr());
+            <uintptr_t>(_data_source.desc_send_buffer().ptr());
         sge[num_sge].length
             = sizeof(MicrosliceDescriptor)
-              * (mc_length - _data_source.desc_buffer().size()
-                 + (mc_offset & _data_source.desc_buffer().size_mask()));
+              * (mc_length - _data_source.desc_send_buffer().size()
+                 + (mc_offset & _data_source.desc_send_buffer().size_mask()));
         sge[num_sge++].lkey = _mr_desc->lkey;
     }
+    int num_desc_sge = num_sge;
     // data
-    if ((data_offset & _data_source.data_buffer().size_mask())
+    if ((data_offset & _data_source.data_send_buffer().size_mask())
         < ((data_offset + data_length - 1)
-           & _data_source.data_buffer().size_mask())) {
+           & _data_source.data_send_buffer().size_mask())) {
         // one chunk
         sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(&_data_source.data_buffer().at(data_offset));
+            <uintptr_t>(&_data_source.data_send_buffer().at(data_offset));
         sge[num_sge].length = data_length;
         sge[num_sge++].lkey = _mr_data->lkey;
     } else {
         // two chunks
         sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(&_data_source.data_buffer().at(data_offset));
+            <uintptr_t>(&_data_source.data_send_buffer().at(data_offset));
         sge[num_sge].length
-            = _data_source.data_buffer().size()
-              - (data_offset & _data_source.data_buffer().size_mask());
+            = _data_source.data_send_buffer().size()
+              - (data_offset & _data_source.data_send_buffer().size_mask());
         sge[num_sge++].lkey = _mr_data->lkey;
         sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(_data_source.data_buffer().ptr());
+            <uintptr_t>(_data_source.data_send_buffer().ptr());
         sge[num_sge].length
-            = data_length - _data_source.data_buffer().size()
-              + (data_offset & _data_source.data_buffer().size_mask());
+            = data_length - _data_source.data_send_buffer().size()
+              + (data_offset & _data_source.data_send_buffer().size_mask());
         sge[num_sge++].lkey = _mr_data->lkey;
+    }
+    // copy between buffers
+    for (int i = 0; i < num_sge; ++i) {
+        if (i < num_desc_sge) {
+            _data_source.copy_to_desc_send_buffer(
+                reinterpret_cast<MicrosliceDescriptor*>(sge[i].addr)
+                - _data_source.desc_send_buffer().ptr(),
+                sge[i].length / sizeof(MicrosliceDescriptor));
+        } else {
+            _data_source.copy_to_data_send_buffer(
+                reinterpret_cast<uint8_t*>(sge[i].addr)
+                - _data_source.data_send_buffer().ptr(),
+                sge[i].length);
+        }
     }
 
     _conn[cn]->send_data(sge, num_sge, timeslice, mc_length, data_length, skip);
