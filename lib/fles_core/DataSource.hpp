@@ -21,13 +21,21 @@ public:
 
     virtual RingBufferView<MicrosliceDescriptor>& desc_buffer() = 0;
 
-    virtual RingBufferView<>& data_send_buffer() = 0;
+    virtual RingBufferView<>& data_send_buffer()
+    {
+        return data_buffer();
+    }
 
-    virtual RingBufferView<MicrosliceDescriptor>& desc_send_buffer() = 0;
+    virtual RingBufferView<MicrosliceDescriptor>& desc_send_buffer()
+    {
+        return desc_buffer();
+    }
 
     virtual void copy_to_data_send_buffer(std::size_t start, std::size_t count)
-        = 0;
+    {
+    }
 
     virtual void copy_to_desc_send_buffer(std::size_t start, std::size_t count)
-        = 0;
+    {
+    }
 };

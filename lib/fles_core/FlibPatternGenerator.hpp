@@ -68,16 +68,6 @@ public:
         return _desc_buffer_view;
     }
 
-    virtual RingBufferView<>& data_send_buffer() override
-    {
-        return _data_buffer_view;
-    }
-
-    virtual RingBufferView<MicrosliceDescriptor>& desc_send_buffer() override
-    {
-        return _desc_buffer_view;
-    }
-
     /// Generate FLIB input data.
     void produce_data();
 
@@ -102,16 +92,6 @@ public:
             _acked_mc = new_acked_mc;
         }
         _cond_producer.notify_one();
-    }
-
-    virtual void copy_to_data_send_buffer(std::size_t start, std::size_t count)
-        override
-    {
-    }
-
-    virtual void copy_to_desc_send_buffer(std::size_t start, std::size_t count)
-        override
-    {
     }
 
 private:
