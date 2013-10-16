@@ -136,8 +136,6 @@ StorableTimeslice::descriptor(uint64_t component, uint64_t microslice) const
 TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
     : _shared_memory_identifier(shared_memory_identifier)
 {
-    std::cerr << _shared_memory_identifier << std::endl;
-
     _data_shm = std::unique_ptr<boost::interprocess::shared_memory_object>(
         new boost::interprocess::shared_memory_object(
             boost::interprocess::open_only,
