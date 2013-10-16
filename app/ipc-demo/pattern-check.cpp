@@ -27,23 +27,62 @@ void install_term_handler()
     sigaction(SIGTERM, &sa, nullptr);
 }
 
-void check_timeslice(const fles::Timeslice& ts)
+bool check_flesnet_pattern(const fles::MicrosliceDescriptor& descriptor,
+                           const uint64_t* content, size_t component)
+{
+    uint32_t crc = 0x00000000;
+    for (size_t pos = 0; pos < descriptor.size; pos += sizeof(uint64_t)) {
+        uint64_t data_word = content[pos / sizeof(uint64_t)];
+        crc ^= (data_word & 0xffffffff) ^ (data_word >> 32);
+        uint64_t expected = (static_cast<uint64_t>(component) << 48) | pos;
+        if (data_word != expected)
+            return false;
+    }
+    if (crc != descriptor.crc)
+        return false;
+    return true;
+}
+
+bool check_flib_pattern(const fles::MicrosliceDescriptor& descriptor,
+                        const uint64_t* content, size_t component)
+{
+    if (content[0] != reinterpret_cast<const uint64_t*>(&descriptor)[0]
+        || content[1] != reinterpret_cast<const uint64_t*>(&descriptor)[1]) {
+        return false;
+    }
+    return true;
+}
+
+bool check_microslice(const fles::MicrosliceDescriptor& descriptor,
+                      const uint64_t* content, size_t component)
+{
+    switch (descriptor.sys_id) {
+    case 0x01:
+        return check_flesnet_pattern(descriptor, content, component);
+    case 0xBC:
+        return check_flib_pattern(descriptor, content, component);
+    default:
+        std::cerr << "unknown subsystem identifier" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+bool check_timeslice(const fles::Timeslice& ts)
 {
     for (size_t c = 0; c < ts.num_components(); ++c) {
         for (size_t m = 0; m < ts.num_microslices(); ++m) {
-            const uint64_t* content = reinterpret_cast
-                <const uint64_t*>(ts.content(c, m));
-            uint32_t crc = 0x00000000;
-            for (size_t pos = 0; pos < ts.descriptor(c, m).size;
-                 pos += sizeof(uint64_t)) {
-                uint64_t data_word = content[pos / sizeof(uint64_t)];
-                crc ^= (data_word & 0xffffffff) ^ (data_word >> 32);
-                uint64_t expected = (static_cast<uint64_t>(c) << 48) | pos;
-                assert(data_word == expected);
+            bool success = check_microslice(
+                ts.descriptor(c, m),
+                reinterpret_cast<const uint64_t*>(ts.content(c, m)), c);
+            if (!success) {
+                std::cerr << "-- pattern error in TS " << ts.index() << ", MC "
+                          << m << ", component " << c << std::endl;
+                return false;
             }
-            assert(crc == ts.descriptor(c, m).crc);
         }
     }
+    return true;
 }
 
 int main(int argc, char* argv[])
