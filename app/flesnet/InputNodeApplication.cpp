@@ -18,18 +18,21 @@ InputNodeApplication::InputNodeApplication(Parameters& par,
         _compute_services.push_back(boost::lexical_cast
                                     <std::string>(par.base_port() + i));
 
-    try
-    {
-        _flib = std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
-    }
-    catch (std::exception const& e)
-    {
-    }
+    if (par.use_flib()) {
+        try
+        {
+            _flib = std::unique_ptr
+                <flib::flib_device>(new flib::flib_device(0));
+        }
+        catch (std::exception const& e)
+        {
+        }
 
-    if (_flib) {
-        _flib_links = _flib->get_links();
+        if (_flib) {
+            _flib_links = _flib->get_links();
+        }
+        out.info() << "flib hardware links: " << _flib_links.size();
     }
-    out.info() << "flib hardware links: " << _flib_links.size();
 
     for (size_t c = 0; c < indexes.size(); ++c) {
         unsigned index = indexes.at(c);

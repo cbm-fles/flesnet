@@ -88,6 +88,7 @@ void Parameters::parse_options(int argc, char* argv[])
         "randomize sizes flag")("check-pattern",
                                 po::value<bool>(&_check_pattern),
                                 "check pattern flag")(
+        "use-flib", po::value<bool>(&_use_flib), "use flib flag")(
         "max-timeslice-number", po::value<uint32_t>(&_max_timeslice_number),
         "global maximum timeslice number")(
         "processor-executable",

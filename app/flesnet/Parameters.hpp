@@ -91,10 +91,16 @@ public:
         return _randomize_sizes;
     }
 
-    /// Retrieve the check pattern sizes flag.
+    /// Retrieve the check pattern flag.
     bool check_pattern() const
     {
         return _check_pattern;
+    }
+
+    /// Retrieve the use flib flag.
+    bool use_flib() const
+    {
+        return _use_flib;
     }
 
     /// Retrieve the global maximum timeslice number.
@@ -181,8 +187,11 @@ private:
     /// The randomize sizes flag.
     bool _randomize_sizes = false;
 
-    /// The check pattern sizes flag.
+    /// The check pattern flag.
     bool _check_pattern = true;
+
+    /// The use flib flag.
+    bool _use_flib = true;
 
     /// The global maximum timeslice number.
     uint32_t _max_timeslice_number = 100000;
