@@ -30,12 +30,8 @@ public:
                          bool randomize_sizes)
         : _data_buffer(data_buffer_size_exp),
           _desc_buffer(desc_buffer_size_exp),
-          _data_send_buffer(data_buffer_size_exp),
-          _desc_send_buffer(desc_buffer_size_exp),
           _data_buffer_view(_data_buffer.ptr(), data_buffer_size_exp),
           _desc_buffer_view(_desc_buffer.ptr(), desc_buffer_size_exp),
-          _data_send_buffer_view(_data_send_buffer.ptr(), data_buffer_size_exp),
-          _desc_send_buffer_view(_desc_send_buffer.ptr(), desc_buffer_size_exp),
           _input_index(input_index),
           _generate_pattern(generate_pattern),
           _typical_content_size(typical_content_size),
@@ -74,12 +70,12 @@ public:
 
     virtual RingBufferView<>& data_send_buffer() override
     {
-        return _data_send_buffer_view;
+        return _data_buffer_view;
     }
 
     virtual RingBufferView<MicrosliceDescriptor>& desc_send_buffer() override
     {
-        return _desc_send_buffer_view;
+        return _desc_buffer_view;
     }
 
     /// Generate FLIB input data.
@@ -111,17 +107,11 @@ public:
     virtual void copy_to_data_send_buffer(std::size_t start, std::size_t count)
         override
     {
-        std::copy_n(&_data_buffer_view.at(start),
-                    count,
-                    &_data_send_buffer_view.at(start));
     }
 
     virtual void copy_to_desc_send_buffer(std::size_t start, std::size_t count)
         override
     {
-        std::copy_n(&_desc_buffer_view.at(start),
-                    count,
-                    &_desc_send_buffer_view.at(start));
     }
 
 private:
@@ -133,14 +123,8 @@ private:
     /// Input descriptor buffer.
     RingBuffer<MicrosliceDescriptor> _desc_buffer;
 
-    RingBuffer<> _data_send_buffer;
-    RingBuffer<MicrosliceDescriptor> _desc_send_buffer;
-
     RingBufferView<> _data_buffer_view;
     RingBufferView<MicrosliceDescriptor> _desc_buffer_view;
-
-    RingBufferView<> _data_send_buffer_view;
-    RingBufferView<MicrosliceDescriptor> _desc_send_buffer_view;
 
     /// This node's index in the list of input nodes
     uint64_t _input_index;
