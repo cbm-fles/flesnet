@@ -86,13 +86,19 @@ void InputChannelSender::sender_loop()
         uint64_t min_mc_number = mc_offset + mc_length + 1;
         if (min_mc_number > cached_written_mc) {
             cached_written_mc = _data_source.wait_for_data(min_mc_number);
+            out.trace() << "SENDER new cached_written_mc: "
+                        << cached_written_mc;
         }
 
         uint64_t data_offset = _data_source.desc_buffer().at(mc_offset).offset;
-        uint64_t data_length
-            = _data_source.desc_buffer().at(mc_offset + mc_length).offset
-              - data_offset;
+        uint64_t data_end
+            = _data_source.desc_buffer().at(mc_offset + mc_length).offset;
 
+        // FIXME: work around wrapping pointers in current hw implementation
+        if (data_end < data_offset)
+            data_end += _data_source.data_buffer().size();
+
+        uint64_t data_length = data_end - data_offset;
         uint64_t total_length = data_length + mc_length
                                               * sizeof(MicrosliceDescriptor);
 
