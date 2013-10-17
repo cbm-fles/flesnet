@@ -8,6 +8,8 @@
 #include "FlibHardwareChannel.hpp"
 #include "FlibPatternGenerator.hpp"
 #include <boost/lexical_cast.hpp>
+#include <chrono>
+#include <thread>
 
 InputNodeApplication::InputNodeApplication(Parameters& par,
                                            std::vector<unsigned> indexes)
@@ -18,6 +20,7 @@ InputNodeApplication::InputNodeApplication(Parameters& par,
         _compute_services.push_back(boost::lexical_cast
                                     <std::string>(par.base_port() + i));
 
+    // FIXME: all of this is a terrible mess
     if (par.use_flib()) {
         try
         {
@@ -35,9 +38,34 @@ InputNodeApplication::InputNodeApplication(Parameters& par,
                 _flib_links.clear();
             }
         }
-        out.info() << "flib hardware links: " << _flib_links.size();
+
         if (_flib_links.empty())
             out.warn() << "no flib links detected";
+        else
+            out.info() << "flib hardware links: " << _flib_links.size();
+
+        if (_flib) {
+            _flib->enable_mc_cnt(false);
+            for (auto fl : _flib_links) {
+                fl->enable_cbmnet_packer(false);
+                fl->rst_pending_mc();
+                fl->set_start_idx(0);
+                fl->init_dma(flib::open_or_create, 20, 15);
+            }
+            _flib->enable_mc_cnt(true);
+            std::chrono::microseconds interval1(10);
+            std::this_thread::sleep_for(interval1);
+            _flib->enable_mc_cnt(false);
+
+            std::chrono::milliseconds interval2(100);
+            std::this_thread::sleep_for(interval2);
+            _flib = nullptr;
+            _flib_links.clear();
+
+            _flib = std::unique_ptr
+                <flib::flib_device>(new flib::flib_device(0));
+            _flib_links = _flib->get_links();
+        }
     }
 
     for (size_t c = 0; c < indexes.size(); ++c) {

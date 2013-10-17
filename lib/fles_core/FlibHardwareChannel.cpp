@@ -23,6 +23,10 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
     std::size_t desc_buffer_bytes_exp = desc_buffer_size_exp
                                         + microslice_descriptor_size_exp;
 
+    _flib_link->enable_cbmnet_packer(false);
+    _flib_link->rst_pending_mc();
+    _flib_link->set_start_idx(0);
+
     _flib_link->init_dma(
         flib::open_or_create, data_buffer_size_exp, desc_buffer_bytes_exp);
 
@@ -41,10 +45,11 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                             0xFD};
     _flib_link->set_hdr_config(&config);
 
-    _flib_link->rst_pending_mc();
-
     _flib_link->set_data_rx_sel(flib::flib_link::pgen);
     _flib_link->enable_cbmnet_packer(true);
+
+    //assert(_flib_link->get_mc_index() == 0);
+    //assert(_flib_link->get_pending_mc() == 0);
 }
 
 FlibHardwareChannel::~FlibHardwareChannel()
