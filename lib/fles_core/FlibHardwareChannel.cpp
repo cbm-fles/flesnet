@@ -57,16 +57,16 @@ FlibHardwareChannel::~FlibHardwareChannel()
     _flib_link->rst_pending_mc();
 }
 
-uint64_t FlibHardwareChannel::wait_for_data(uint64_t min_mc_number)
+uint64_t FlibHardwareChannel::wait_for_data(uint64_t min_written_mc)
 {
-    uint64_t hw_mc_index = 0;
+    uint64_t written_mc = 0;
     std::chrono::microseconds interval(100);
 
-    while ((hw_mc_index = _flib_link->get_mc_index()) < min_mc_number) {
+    while ((written_mc = _flib_link->get_mc_index()) < min_written_mc) {
         std::this_thread::sleep_for(interval);
     }
 
-    return hw_mc_index;
+    return written_mc;
 }
 
 void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,

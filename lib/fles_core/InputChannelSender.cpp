@@ -85,9 +85,9 @@ void InputChannelSender::sender_loop()
         uint64_t mc_offset = timeslice * _timeslice_size;
         uint64_t mc_length = _timeslice_size + _overlap_size;
 
-        uint64_t min_mc_number = mc_offset + mc_length + 1;
-        if (min_mc_number > cached_written_mc) {
-            cached_written_mc = _data_source.wait_for_data(min_mc_number);
+        uint64_t min_written_mc = mc_offset + mc_length + 1;
+        if (min_written_mc > cached_written_mc) {
+            cached_written_mc = _data_source.wait_for_data(min_written_mc);
             out.trace() << "SENDER new cached_written_mc: "
                         << cached_written_mc;
         }
