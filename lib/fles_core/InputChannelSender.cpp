@@ -5,6 +5,7 @@
  */
 
 #include "InputChannelSender.hpp"
+#include <cassert>
 
 InputChannelSender::InputChannelSender(uint64_t input_index,
                                        DataSource& data_source,
@@ -75,6 +76,7 @@ void InputChannelSender::sender_loop()
     set_cpu(2);
 
     uint64_t cached_written_mc = 0;
+    uint64_t previous_offset = 0;
 
     for (uint64_t timeslice = 0; timeslice < _max_timeslice_number;
          ++timeslice) {
@@ -90,13 +92,17 @@ void InputChannelSender::sender_loop()
                         << cached_written_mc;
         }
 
+        // busy wait until last microslice has really been written to memory
+        while (_data_source.desc_buffer().at(mc_offset + mc_length).offset
+               < previous_offset)
+            ;
+        previous_offset
+            = _data_source.desc_buffer().at(mc_offset + mc_length).offset;
+
         uint64_t data_offset = _data_source.desc_buffer().at(mc_offset).offset;
         uint64_t data_end
             = _data_source.desc_buffer().at(mc_offset + mc_length).offset;
-
-        // FIXME: work around wrapping pointers in current hw implementation
-        if (data_end < data_offset)
-            data_end += _data_source.data_buffer().size();
+        assert(data_end >= data_offset);
 
         uint64_t data_length = data_end - data_offset;
         uint64_t total_length = data_length + mc_length
