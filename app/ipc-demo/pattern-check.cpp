@@ -13,7 +13,7 @@ int count = 0;
 /// The SIGTERM handler.
 static void term_handler(int sig)
 {
-    std::cout << "timeslices checked: " << count << std::endl;
+    std::cout << "total timeslices checked: " << count << std::endl;
     exit(0);
 }
 
@@ -84,7 +84,7 @@ bool check_timeslice(const fles::Timeslice& ts)
                 reinterpret_cast<const uint64_t*>(ts.content(c, m)), c,
                 ts.index() * ts.num_core_microslices() + m);
             if (!success) {
-                std::cerr << "-- pattern error in TS " << ts.index() << ", MC "
+                std::cerr << "pattern error in TS " << ts.index() << ", MC "
                           << m << ", component " << c << std::endl;
                 return false;
             }
@@ -103,6 +103,9 @@ int main(int argc, char* argv[])
         std::unique_ptr<const fles::Timeslice> ts = tsr.receive();
         check_timeslice(*ts);
         ++count;
+        if ((count % 10000) == 0) {
+            std::cout << "timeslices checked: " << count << std::endl;
+        }
     }
 
     return 0;
