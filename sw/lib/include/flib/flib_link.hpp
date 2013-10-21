@@ -85,15 +85,17 @@ class flib_link {
   volatile uint64_t* _eb;
   volatile struct MicrosliceDescriptor* _db;
   
-  uint64_t _dbsize;
   uint64_t _dbentries;
+  size_t _log_ebufsize;
+  size_t _log_dbufsize;
   
 public:
   
   //    struct mc_desc mc;
   
   flib_link(uint8_t channel, rorcfs_device* dev, rorcfs_bar* bar) 
-    : _index(0), _last_index(0), _last_acked(0), _mc_nr(0), _wrap(0) { 
+    : _index(0), _last_index(0), _last_acked(0), _mc_nr(0), _wrap(0),
+      _dbentries(0), _log_ebufsize(0), _log_dbufsize(0) {
     
     _channel = channel;
     _dev = dev;
@@ -129,6 +131,8 @@ public:
   }  
   
   int init_dma(create_only_t, size_t log_ebufsize, size_t log_dbufsize) {
+    _log_ebufsize = log_ebufsize;
+    _log_dbufsize = log_dbufsize;
     _ebuf = _create_buffer(0, log_ebufsize);
     _dbuf = _create_buffer(1, log_dbufsize);
     _init_hardware();
@@ -136,6 +140,8 @@ public:
   }
 
   int init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize) {
+    _log_ebufsize = log_ebufsize;
+    _log_dbufsize = log_dbufsize;
     _ebuf = _open_buffer(0);
     _dbuf = _open_buffer(1);
     _init_hardware();
@@ -143,6 +149,8 @@ public:
   }
  
   int init_dma(open_or_create_t, size_t log_ebufsize, size_t log_dbufsize) {
+    _log_ebufsize = log_ebufsize;
+    _log_dbufsize = log_dbufsize;
     _ebuf = _open_or_create_buffer(0, log_ebufsize);
     _dbuf = _open_or_create_buffer(1, log_dbufsize);
     _init_hardware();
@@ -163,7 +171,7 @@ public:
     if(_db[_index].idx > _mc_nr) { // mc_nr counts from 1 in HW
       _mc_nr = _db[_index].idx;
       mc.nr = _mc_nr;
-      mc.addr = _eb + _db[_index].offset/sizeof(uint64_t);
+      mc.addr = _eb + (_db[_index].offset & ((1<<_log_ebufsize)-1))/sizeof(uint64_t);
       mc.size = _db[_index].size;
       mc.rbaddr = (uint64_t *)&_db[_index];
       
@@ -185,9 +193,9 @@ public:
     
     // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
     // to calculate end wrapping logic is required
-    uint64_t eb_offset = _db[_last_index].offset;
+    uint64_t eb_offset = _db[_last_index].offset & ((1<<_log_ebufsize)-1);
     // each rbenty is 32 bytes, this is hard coded in HW
-    uint64_t rb_offset = _last_index*sizeof(struct MicrosliceDescriptor) % _dbsize;
+    uint64_t rb_offset = _last_index*sizeof(struct MicrosliceDescriptor) & ((1<<_log_dbufsize)-1);
 
     //_ch->setEBOffset(eb_offset);
     //_ch->setRBOffset(rb_offset);
@@ -419,8 +427,6 @@ private:
     _eb = (uint64_t *)_ebuf->getMem();
     _db = (struct MicrosliceDescriptor *)_dbuf->getMem();
     
-    // TODO check if sizes can be deduced from init velues
-    _dbsize = _dbuf->getPhysicalSize();
     _dbentries = _dbuf->getMaxRBEntries();
     
     // Enable desciptor buffers and dma engine
