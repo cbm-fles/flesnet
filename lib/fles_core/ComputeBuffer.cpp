@@ -5,6 +5,9 @@
  */
 
 #include "ComputeBuffer.hpp"
+#include "ChildProcessManager.hpp"
+#include <boost/lexical_cast.hpp>
+#include <random>
 #include <csignal>
 
 ComputeBuffer::ComputeBuffer(uint64_t compute_index,
@@ -15,8 +18,7 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
                              uint32_t timeslice_size,
                              uint32_t overlap_size,
                              uint32_t processor_instances,
-                             const std::string processor_executable,
-                             const std::string shared_memory_identifier)
+                             const std::string processor_executable)
     : _compute_index(compute_index),
       _data_buffer_size_exp(data_buffer_size_exp),
       _desc_buffer_size_exp(desc_buffer_size_exp),
@@ -26,9 +28,14 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
       _overlap_size(overlap_size),
       _processor_instances(processor_instances),
       _processor_executable(processor_executable),
-      _shared_memory_identifier(shared_memory_identifier),
       _ack(desc_buffer_size_exp)
 {
+    std::random_device random_device;
+    std::uniform_int_distribution<uint64_t> uint_distribution;
+    uint64_t random_number = uint_distribution(random_device);
+    _shared_memory_identifier = "flesnet_" + boost::lexical_cast
+                                <std::string>(random_number);
+
     boost::interprocess::shared_memory_object::remove(
         (_shared_memory_identifier + "_data").c_str());
     boost::interprocess::shared_memory_object::remove(
@@ -110,45 +117,28 @@ void ComputeBuffer::run()
     // set_cpu(0);
 
     assert(!_processor_executable.empty());
-    child_pids.resize(_processor_instances);
     for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
-        start_processor_task(i, _processor_executable,
-                             _shared_memory_identifier);
+        std::stringstream index;
+        index << i;
+        ChildProcess cp{};
+        cp.owner = this;
+        cp.path = _processor_executable;
+        cp.arg
+            = {_processor_executable, _shared_memory_identifier, index.str()};
+        ChildProcessManager::get().start_process(cp);
     }
+
     std::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
 
     accept(_service, _num_input_nodes);
     handle_cm_events(_num_input_nodes);
     std::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
     completion_handler();
-    for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
-        pid_t pid = child_pids.at(i);
-        child_pids.at(i) = 0;
-        kill(pid, SIGTERM);
-    }
+    ChildProcessManager::get().stop_processes(this);
     ts_compl.join();
     t1.join();
 
     summary();
-}
-
-void ComputeBuffer::start_processor_task(int i, const std::string
-                                         & processor_executable,
-                                         const std::string
-                                         & shared_memory_identifier)
-{
-    child_pids.at(i) = fork();
-    if (!child_pids.at(i)) {
-        std::stringstream index;
-        index << i;
-        execl(processor_executable.c_str(), processor_executable.c_str(),
-              shared_memory_identifier.c_str(), index.str().c_str(),
-              static_cast<char*>(nullptr));
-        out.fatal() << "Could not start processor task '"
-                    << processor_executable << " " << shared_memory_identifier
-                    << " " << index.str() << "': " << strerror(errno);
-        exit(1);
-    }
 }
 
 uint8_t* ComputeBuffer::get_data_ptr(uint_fast16_t index)

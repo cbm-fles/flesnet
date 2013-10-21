@@ -5,9 +5,7 @@
  */
 
 #include "ComputeNodeApplication.hpp"
-#include <csignal>
 #include <numa.h>
-#include <sys/wait.h>
 
 ComputeNodeApplication::ComputeNodeApplication(Parameters& par,
                                                std::vector<unsigned> indexes)
@@ -25,8 +23,7 @@ ComputeNodeApplication::ComputeNodeApplication(Parameters& par,
                               _par.timeslice_size(),
                               _par.overlap_size(),
                               _par.processor_instances(),
-                              _par.processor_executable(),
-                              shared_memory_identifier));
+                              _par.processor_executable()));
         _buffers.push_back(std::move(buffer));
     }
 
@@ -37,32 +34,4 @@ ComputeNodeApplication::ComputeNodeApplication(Parameters& par,
     numa_bitmask_setbit(nodemask, 1);
     numa_bind(nodemask);
     numa_free_nodemask(nodemask);
-
-    /* Establish SIGCHLD handler. */
-    struct sigaction sa;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sa.sa_handler = child_handler;
-    sigaction(SIGCHLD, &sa, nullptr);
-}
-
-void ComputeNodeApplication::child_handler(int sig)
-{
-    pid_t pid;
-    int status;
-
-    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        /* Process with PID 'pid' has exited, handle it */
-        int idx = -1;
-        for (std::size_t i = 0; i != child_pids.size(); ++i)
-            if (child_pids[i] == pid)
-                idx = i;
-        if (idx < 0) {
-            // out.error() << "unknown child process died";
-        } else {
-            std::cerr << "child process " << idx << " died";
-            ComputeBuffer::start_processor_task(
-                idx, par->processor_executable(), shared_memory_identifier);
-        }
-    }
 }

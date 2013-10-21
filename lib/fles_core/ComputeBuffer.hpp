@@ -30,8 +30,7 @@ public:
                   uint32_t timeslice_size,
                   uint32_t overlap_size,
                   uint32_t processor_instances,
-                  const std::string processor_executable,
-                  const std::string shared_memory_identifier);
+                  const std::string processor_executable);
 
     ComputeBuffer(const ComputeBuffer&) = delete;
     void operator=(const ComputeBuffer&) = delete;
@@ -40,11 +39,6 @@ public:
     ~ComputeBuffer();
 
     virtual void run() override;
-
-    static void start_processor_task(int i,
-                                     const std::string& processor_executable,
-                                     const std::string
-                                     & shared_memory_identifier);
 
     uint8_t* get_data_ptr(uint_fast16_t index);
 
@@ -77,7 +71,7 @@ private:
 
     uint32_t _processor_instances;
     const std::string _processor_executable;
-    const std::string _shared_memory_identifier;
+    std::string _shared_memory_identifier;
 
     size_t _red_lantern = 0;
     uint64_t _completely_written = 0;

@@ -20,7 +20,4 @@ public:
 
     ComputeNodeApplication(const ComputeNodeApplication&) = delete;
     void operator=(const ComputeNodeApplication&) = delete;
-
-private:
-    static void child_handler(int sig);
 };
