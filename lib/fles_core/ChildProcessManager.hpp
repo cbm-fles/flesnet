@@ -138,7 +138,7 @@ private:
                 case Running:
                 case None:
                     out.error() << "child process died unexpectedly";
-                    out.error() << "TODO: restart not yet implemented";
+                    out.error() << "TODO: restart not yet implemented"; // TODO!
                     break;
                 }
             }
