@@ -67,6 +67,7 @@ InputNodeApplication::InputNodeApplication(Parameters& par,
             _flib_links = _flib->get_links();
         }
     }
+    // end FIXME
 
     for (size_t c = 0; c < indexes.size(); ++c) {
         unsigned index = indexes.at(c);
@@ -99,7 +100,15 @@ InputNodeApplication::InputNodeApplication(Parameters& par,
 
 InputNodeApplication::~InputNodeApplication()
 {
-    if (_flib) {
-        _flib->enable_mc_cnt(false);
+    try
+    {
+        if (_flib) {
+            _flib->enable_mc_cnt(false);
+        }
+    }
+    catch (std::exception& e)
+    {
+        out.error() << "exception in destructor ~InputNodeApplication(): "
+                    << e.what();
     }
 }

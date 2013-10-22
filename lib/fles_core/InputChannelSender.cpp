@@ -52,23 +52,31 @@ InputChannelSender::~InputChannelSender()
     }
 }
 
+/// The thread main function.
 void InputChannelSender::run()
 {
-    set_cpu(0);
+    try
+    {
+        set_cpu(0);
 
-    connect();
-    handle_cm_events(_compute_hostnames.size());
-    std::thread t1(&InputChannelSender::completion_handler, this);
+        connect();
+        handle_cm_events(_compute_hostnames.size());
+        std::thread t1(&InputChannelSender::completion_handler, this);
 
-    sender_loop();
+        sender_loop();
 
-    t1.join();
+        t1.join();
 
-    std::thread t2(&InputChannelSender::handle_cm_events, this, 0);
-    disconnect();
-    t2.join();
+        std::thread t2(&InputChannelSender::handle_cm_events, this, 0);
+        disconnect();
+        t2.join();
 
-    summary();
+        summary();
+    }
+    catch (std::exception& e)
+    {
+        out.error() << "exception in InputChannelSender: " << e.what();
+    }
 }
 
 void InputChannelSender::sender_loop()

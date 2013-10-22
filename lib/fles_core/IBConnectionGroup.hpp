@@ -42,29 +42,33 @@ public:
 
         if (_listen_id) {
             int err = rdma_destroy_id(_listen_id);
-            if (err)
-                throw InfinibandException("rdma_destroy_id failed");
+            if (err) {
+                out.error() << "rdma_destroy_id() failed";
+            }
             _listen_id = nullptr;
         }
 
         if (_cq) {
             int err = ibv_destroy_cq(_cq);
-            if (err)
-                throw InfinibandException("ibv_destroy_cq failed");
+            if (err) {
+                out.error() << "ibv_destroy_cq() failed";
+            }
             _cq = nullptr;
         }
 
         if (_comp_channel) {
             int err = ibv_destroy_comp_channel(_comp_channel);
-            if (err)
-                throw InfinibandException("ibv_destroy_comp_channel failed");
+            if (err) {
+                out.error() << "ibv_destroy_comp_channel() failed";
+            }
             _comp_channel = nullptr;
         }
 
         if (_pd) {
             int err = ibv_dealloc_pd(_pd);
-            if (err)
-                throw InfinibandException("ibv_dealloc_pd failed");
+            if (err) {
+                out.error() << "ibv_dealloc_pd() failed";
+            }
             _pd = nullptr;
         }
 
@@ -112,95 +116,112 @@ public:
     }
 
     /// The connection manager event loop.
+    /// The thread main function.
     void handle_cm_events(unsigned int target_num_connections)
     {
-        set_cpu(0);
+        try
+        {
+            set_cpu(0);
 
-        int err;
-        struct rdma_cm_event* event;
-        struct rdma_cm_event event_copy;
-        void* private_data_copy = nullptr;
-        while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
+            int err;
+            struct rdma_cm_event* event;
+            struct rdma_cm_event event_copy;
+            void* private_data_copy = nullptr;
+            while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-            VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
-            memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
-            if (event_copy.param.conn.private_data) {
-                VALGRIND_MAKE_MEM_DEFINED(
-                    event_copy.param.conn.private_data,
-                    event_copy.param.conn.private_data_len);
-                private_data_copy
-                    = malloc(event_copy.param.conn.private_data_len);
-                if (!private_data_copy)
-                    throw InfinibandException("malloc failed");
-                memcpy(private_data_copy, event_copy.param.conn.private_data,
-                       event_copy.param.conn.private_data_len);
-                event_copy.param.conn.private_data = private_data_copy;
-            }
+                VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
+                memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
+                if (event_copy.param.conn.private_data) {
+                    VALGRIND_MAKE_MEM_DEFINED(
+                        event_copy.param.conn.private_data,
+                        event_copy.param.conn.private_data_len);
+                    private_data_copy
+                        = malloc(event_copy.param.conn.private_data_len);
+                    if (!private_data_copy)
+                        throw InfinibandException("malloc failed");
+                    memcpy(private_data_copy,
+                           event_copy.param.conn.private_data,
+                           event_copy.param.conn.private_data_len);
+                    event_copy.param.conn.private_data = private_data_copy;
+                }
 #pragma GCC diagnostic pop
-            rdma_ack_cm_event(event);
-            on_cm_event(&event_copy);
-            if (private_data_copy) {
-                free(private_data_copy);
-                private_data_copy = nullptr;
+                rdma_ack_cm_event(event);
+                on_cm_event(&event_copy);
+                if (private_data_copy) {
+                    free(private_data_copy);
+                    private_data_copy = nullptr;
+                }
+                if (_connected == target_num_connections)
+                    break;
             }
-            if (_connected == target_num_connections)
-                break;
-        }
-        if (err)
-            throw InfinibandException("rdma_get_cm_event failed");
+            if (err)
+                throw InfinibandException("rdma_get_cm_event failed");
 
-        out.debug() << "number of connections: " << _connected;
+            out.debug() << "number of connections: " << _connected;
+        }
+        catch (std::exception& e)
+        {
+            out.error() << "exception in handle_cm_events(): " << e.what();
+        }
     }
 
     /// The InfiniBand completion notification event loop.
+    /// The thread main function.
     void completion_handler()
     {
-        set_cpu(1);
+        try
+        {
+            set_cpu(1);
 
-        _time_begin = std::chrono::high_resolution_clock::now();
+            _time_begin = std::chrono::high_resolution_clock::now();
 
-        const int ne_max = 10;
+            const int ne_max = 10;
 
-        struct ibv_cq* ev_cq;
-        void* ev_ctx;
-        struct ibv_wc wc[ne_max];
-        int ne;
+            struct ibv_cq* ev_cq;
+            void* ev_ctx;
+            struct ibv_wc wc[ne_max];
+            int ne;
 
-        while (!_all_done) {
-            if (ibv_get_cq_event(_comp_channel, &ev_cq, &ev_ctx))
-                throw InfinibandException("ibv_get_cq_event failed");
+            while (!_all_done) {
+                if (ibv_get_cq_event(_comp_channel, &ev_cq, &ev_ctx))
+                    throw InfinibandException("ibv_get_cq_event failed");
 
-            ibv_ack_cq_events(ev_cq, 1);
+                ibv_ack_cq_events(ev_cq, 1);
 
-            if (ev_cq != _cq)
-                throw InfinibandException("CQ event for unknown CQ");
+                if (ev_cq != _cq)
+                    throw InfinibandException("CQ event for unknown CQ");
 
-            if (ibv_req_notify_cq(_cq, 0))
-                throw InfinibandException("ibv_req_notify_cq failed");
+                if (ibv_req_notify_cq(_cq, 0))
+                    throw InfinibandException("ibv_req_notify_cq failed");
 
-            while ((ne = ibv_poll_cq(_cq, ne_max, wc))) {
-                if (ne < 0)
-                    throw InfinibandException("ibv_poll_cq failed");
+                while ((ne = ibv_poll_cq(_cq, ne_max, wc))) {
+                    if (ne < 0)
+                        throw InfinibandException("ibv_poll_cq failed");
 
-                for (int i = 0; i < ne; ++i) {
-                    if (wc[i].status != IBV_WC_SUCCESS) {
-                        std::ostringstream s;
-                        s << ibv_wc_status_str(wc[i].status) << " for wr_id "
-                          << static_cast<int>(wc[i].wr_id);
-                        out.error() << s.str();
+                    for (int i = 0; i < ne; ++i) {
+                        if (wc[i].status != IBV_WC_SUCCESS) {
+                            std::ostringstream s;
+                            s << ibv_wc_status_str(wc[i].status)
+                              << " for wr_id " << static_cast<int>(wc[i].wr_id);
+                            out.error() << s.str();
 
-                        continue;
+                            continue;
+                        }
+
+                        on_completion(wc[i]);
                     }
-
-                    on_completion(wc[i]);
                 }
             }
+
+            _time_end = std::chrono::high_resolution_clock::now();
+
+            out.debug() << "COMPLETION loop done";
         }
-
-        _time_end = std::chrono::high_resolution_clock::now();
-
-        out.debug() << "COMPLETION loop done";
+        catch (std::exception& e)
+        {
+            out.error() << "exception in completion_handler(): " << e.what();
+        }
     }
 
     /// Retrieve the InfiniBand protection domain.

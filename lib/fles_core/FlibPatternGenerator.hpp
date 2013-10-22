@@ -46,16 +46,24 @@ public:
 
     ~FlibPatternGenerator()
     {
+        try
         {
-            std::unique_lock<std::mutex> l(_mutex);
-            _is_stopped = true;
-        }
-        _cond_producer.notify_one();
-        _producer_thread->join();
-        delete _producer_thread;
+            for (int i = 0; i < 10; ++i)
+                out.trace() << "DCOUNT[" << i << "] = " << DCOUNT[i];
 
-        for (int i = 0; i < 10; ++i)
-            out.trace() << "DCOUNT[" << i << "] = " << DCOUNT[i];
+            {
+                std::unique_lock<std::mutex> l(_mutex);
+                _is_stopped = true;
+            }
+            _cond_producer.notify_one();
+            _producer_thread->join();
+            delete _producer_thread;
+        }
+        catch (std::exception& e)
+        {
+            out.error() << "exception in destructor ~FlibPatternGenerator(): "
+                        << e.what();
+        }
     }
 
     virtual RingBufferView<>& data_buffer() override
