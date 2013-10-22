@@ -271,18 +271,7 @@ public:
     }
 
     /// The "main" function of an IBConnectionGroup decendant.
-    virtual void run() = 0;
-
-    void start()
-    {
-        _thread = std::unique_ptr
-            <std::thread>(new std::thread(&IBConnectionGroup::run, this));
-    }
-
-    void join()
-    {
-        _thread->join();
-    }
+    virtual bool operator()() = 0;
 
 protected:
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
@@ -442,6 +431,4 @@ private:
 
     /// Total number of RECV work requests.
     uint64_t _aggregate_recv_requests = 0;
-
-    std::unique_ptr<std::thread> _thread;
 };

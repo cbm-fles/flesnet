@@ -33,7 +33,7 @@ public:
     /// The InputChannelSender default destructor.
     virtual ~InputChannelSender();
 
-    virtual void run() override;
+    virtual bool operator()() override;
 
     /// The central loop for distributing timeslice data.
     void sender_loop();

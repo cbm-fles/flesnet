@@ -16,8 +16,8 @@
  * cluster over an Infiniband network.
  */
 
-#include "InputNodeApplication.hpp"
-#include "ComputeNodeApplication.hpp"
+#include "Parameters.hpp"
+#include "Application.hpp"
 
 #include "global.hpp"
 
@@ -26,30 +26,11 @@ out(einhard::WARN, true);
 
 int main(int argc, char* argv[])
 {
-    std::unique_ptr<InputNodeApplication> _input_app;
-    std::unique_ptr<ComputeNodeApplication> _compute_app;
-
     try
     {
-        std::unique_ptr<Parameters> par(new Parameters(argc, argv));
-
-        if (!par->compute_indexes().empty()) {
-            _compute_app = std::unique_ptr<ComputeNodeApplication>(
-                new ComputeNodeApplication(*par, par->compute_indexes()));
-            _compute_app->start();
-        }
-
-        if (!par->input_indexes().empty()) {
-            _input_app = std::unique_ptr<InputNodeApplication>(
-                new InputNodeApplication(*par, par->input_indexes()));
-            _input_app->start();
-        }
-
-        if (_input_app)
-            _input_app->join();
-
-        if (_compute_app)
-            _compute_app->join();
+        Parameters par(argc, argv);
+        Application app(par);
+        app.run();
     }
     catch (std::exception const& e)
     {

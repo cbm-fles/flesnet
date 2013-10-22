@@ -38,7 +38,7 @@ public:
     /// The ComputeBuffer destructor.
     ~ComputeBuffer();
 
-    virtual void run() override;
+    virtual bool operator()() override;
 
     uint8_t* get_data_ptr(uint_fast16_t index);
 

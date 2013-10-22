@@ -1,21 +1,38 @@
 /**
- * \file InputNodeApplication.cpp
+ * \file Application.cpp
  *
  * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
  */
 
-#include "InputNodeApplication.hpp"
+#include "Application.hpp"
 #include "FlibHardwareChannel.hpp"
 #include "FlibPatternGenerator.hpp"
-#include <boost/lexical_cast.hpp>
-#include <chrono>
-#include <thread>
 
-InputNodeApplication::InputNodeApplication(Parameters& par,
-                                           std::vector<unsigned> indexes)
-    : Application<InputChannelSender>(par),
-      _compute_hostnames(par.compute_nodes())
+Application::Application(Parameters const& par)
+    : _par(par), _compute_hostnames(par.compute_nodes())
 {
+    // Compute node application
+
+    // set_cpu(1);
+
+    for (unsigned i : _par.compute_indexes()) {
+        std::unique_ptr<ComputeBuffer> buffer(
+            new ComputeBuffer(i,
+                              _par.cn_data_buffer_size_exp(),
+                              _par.cn_desc_buffer_size_exp(),
+                              _par.base_port() + _par.compute_indexes().at(0),
+                              _par.input_nodes().size(),
+                              _par.timeslice_size(),
+                              _par.overlap_size(),
+                              _par.processor_instances(),
+                              _par.processor_executable()));
+        _compute_buffers.push_back(std::move(buffer));
+    }
+
+    set_node();
+
+    // Input node application
+
     for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
         _compute_services.push_back(boost::lexical_cast
                                     <std::string>(par.base_port() + i));
@@ -69,8 +86,8 @@ InputNodeApplication::InputNodeApplication(Parameters& par,
     }
     // end FIXME
 
-    for (size_t c = 0; c < indexes.size(); ++c) {
-        unsigned index = indexes.at(c);
+    for (size_t c = 0; c < _par.input_indexes().size(); ++c) {
+        unsigned index = _par.input_indexes().at(c);
         std::unique_ptr<DataSource> data_source;
 
         if (c < _flib_links.size()) {
@@ -90,7 +107,7 @@ InputNodeApplication::InputNodeApplication(Parameters& par,
             par.max_timeslice_number()));
 
         _data_sources.push_back(std::move(data_source));
-        _buffers.push_back(std::move(buffer));
+        _input_channel_senders.push_back(std::move(buffer));
     }
 
     if (_flib) {
@@ -98,8 +115,9 @@ InputNodeApplication::InputNodeApplication(Parameters& par,
     }
 }
 
-InputNodeApplication::~InputNodeApplication()
+Application::~Application()
 {
+    // Input node application
     try
     {
         if (_flib) {
@@ -110,5 +128,21 @@ InputNodeApplication::~InputNodeApplication()
     {
         out.error() << "exception in destructor ~InputNodeApplication(): "
                     << e.what();
+    }
+}
+
+void Application::run()
+{
+    // FIXME: temporary code, use futures, fix leak
+    std::vector<std::thread*> threads;
+    for (auto& buffer : _compute_buffers) {
+        threads.push_back(new std::thread(std::ref(*buffer)));
+    }
+    for (auto& buffer : _input_channel_senders) {
+        threads.push_back(new std::thread(std::ref(*buffer)));
+    }
+
+    for (auto& thread : threads) {
+        thread->join();
     }
 }

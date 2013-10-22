@@ -53,7 +53,7 @@ InputChannelSender::~InputChannelSender()
 }
 
 /// The thread main function.
-void InputChannelSender::run()
+bool InputChannelSender::operator()()
 {
     try
     {
@@ -77,6 +77,7 @@ void InputChannelSender::run()
     {
         out.error() << "exception in InputChannelSender: " << e.what();
     }
+    return true;
 }
 
 void InputChannelSender::sender_loop()

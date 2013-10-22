@@ -113,7 +113,7 @@ ComputeBuffer::~ComputeBuffer()
 }
 
 /// The thread main function.
-void ComputeBuffer::run()
+bool ComputeBuffer::operator()()
 {
     try
     {
@@ -147,6 +147,7 @@ void ComputeBuffer::run()
     {
         out.error() << "exception in ComputeBuffer: " << e.what();
     }
+    return true;
 }
 
 uint8_t* ComputeBuffer::get_data_ptr(uint_fast16_t index)
