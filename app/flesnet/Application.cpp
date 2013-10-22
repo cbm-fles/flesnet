@@ -8,8 +8,7 @@
 #include "FlibHardwareChannel.hpp"
 #include "FlibPatternGenerator.hpp"
 
-Application::Application(Parameters const& par)
-    : _par(par), _compute_hostnames(par.compute_nodes())
+Application::Application(Parameters const& par) : _par(par)
 {
     // Compute node application
 
@@ -32,10 +31,6 @@ Application::Application(Parameters const& par)
     set_node();
 
     // Input node application
-
-    for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
-        _compute_services.push_back(boost::lexical_cast
-                                    <std::string>(par.base_port() + i));
 
     // FIXME: all of this is a terrible mess
     if (par.use_flib()) {
@@ -86,6 +81,11 @@ Application::Application(Parameters const& par)
     }
     // end FIXME
 
+    std::vector<std::string> compute_services;
+    for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
+        compute_services.push_back(boost::lexical_cast
+                                   <std::string>(par.base_port() + i));
+
     for (size_t c = 0; c < _par.input_indexes().size(); ++c) {
         unsigned index = _par.input_indexes().at(c);
         std::unique_ptr<DataSource> data_source;
@@ -102,7 +102,7 @@ Application::Application(Parameters const& par)
         }
 
         std::unique_ptr<InputChannelSender> buffer(new InputChannelSender(
-            index, *data_source, _compute_hostnames, _compute_services,
+            index, *data_source, par.compute_nodes(), compute_services,
             par.timeslice_size(), par.overlap_size(),
             par.max_timeslice_number()));
 

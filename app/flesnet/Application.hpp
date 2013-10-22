@@ -40,9 +40,6 @@ private:
     std::vector<std::unique_ptr<InputChannelSender> > _input_channel_senders;
 
     // Input node application
-    std::vector<std::string> _compute_hostnames;
-    std::vector<std::string> _compute_services;
-
     std::unique_ptr<flib::flib_device> _flib;
     std::vector<flib::flib_link*> _flib_links;
 
