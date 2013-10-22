@@ -6,15 +6,31 @@
 
 #include "ThreadContainer.hpp"
 #include "global.hpp"
+#include <numa.h>
+
+void ThreadContainer::set_node()
+{
+    if (numa_available() == -1) {
+        out.error() << "numa_available() failed";
+        return;
+    }
+
+    struct bitmask* nodemask = numa_allocate_nodemask();
+    numa_bitmask_setbit(nodemask, 0);
+    if (numa_max_node() > 0)
+        numa_bitmask_setbit(nodemask, 1);
+    numa_bind(nodemask);
+    numa_free_nodemask(nodemask);
+}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
 void ThreadContainer::set_cpu(int n)
 {
-    int nprocs = sysconf(_SC_NPROCESSORS_CONF);
+    int nprocs = sysconf(_SC_NPROCESSORS_ONLN);
     if (n >= nprocs) {
-        out.error() << "set_cpu: CPU " << n << " is not in range 0.."
+        out.debug() << "set_cpu: CPU " << n << " is not in range 0.."
                     << (nprocs - 1);
         return;
     }

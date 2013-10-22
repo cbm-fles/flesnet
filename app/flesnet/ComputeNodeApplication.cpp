@@ -5,7 +5,6 @@
  */
 
 #include "ComputeNodeApplication.hpp"
-#include <numa.h>
 
 ComputeNodeApplication::ComputeNodeApplication(Parameters& par,
                                                std::vector<unsigned> indexes)
@@ -27,11 +26,5 @@ ComputeNodeApplication::ComputeNodeApplication(Parameters& par,
         _buffers.push_back(std::move(buffer));
     }
 
-    assert(numa_available() != -1);
-
-    struct bitmask* nodemask = numa_allocate_nodemask();
-    numa_bitmask_setbit(nodemask, 0);
-    numa_bitmask_setbit(nodemask, 1);
-    numa_bind(nodemask);
-    numa_free_nodemask(nodemask);
+    set_node();
 }
