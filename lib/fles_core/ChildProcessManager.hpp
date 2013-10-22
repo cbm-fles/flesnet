@@ -100,7 +100,13 @@ private:
 
     ~ChildProcessManager()
     {
+        uninstall_sigchld_handler();
         stop_all_processes();
+    }
+
+    void uninstall_sigchld_handler()
+    {
+        sigaction(SIGCHLD, &_oldact, nullptr);
     }
 
     void install_sigchld_handler()
@@ -109,7 +115,7 @@ private:
         sigemptyset(&sa.sa_mask);
         sa.sa_flags = 0;
         sa.sa_handler = sigchld_handler;
-        sigaction(SIGCHLD, &sa, nullptr);
+        sigaction(SIGCHLD, &sa, &_oldact);
     }
 
     static void sigchld_handler(int sig)
@@ -151,4 +157,8 @@ private:
     }
 
     std::vector<ChildProcess> _child_processes;
+
+    struct sigaction _oldact
+    {
+    };
 };

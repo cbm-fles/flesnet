@@ -112,33 +112,41 @@ ComputeBuffer::~ComputeBuffer()
         (_shared_memory_identifier + "_completions").c_str());
 }
 
+/// The thread main function.
 void ComputeBuffer::run()
 {
-    // set_cpu(0);
+    try
+    {
+        // set_cpu(0);
 
-    assert(!_processor_executable.empty());
-    for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
-        std::stringstream index;
-        index << i;
-        ChildProcess cp{};
-        cp.owner = this;
-        cp.path = _processor_executable;
-        cp.arg
-            = {_processor_executable, _shared_memory_identifier, index.str()};
-        ChildProcessManager::get().start_process(cp);
+        assert(!_processor_executable.empty());
+        for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
+            std::stringstream index;
+            index << i;
+            ChildProcess cp{};
+            cp.owner = this;
+            cp.path = _processor_executable;
+            cp.arg = {_processor_executable, _shared_memory_identifier,
+                      index.str()};
+            ChildProcessManager::get().start_process(cp);
+        }
+
+        std::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
+
+        accept(_service, _num_input_nodes);
+        handle_cm_events(_num_input_nodes);
+        std::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
+        completion_handler();
+        ChildProcessManager::get().stop_processes(this);
+        ts_compl.join();
+        t1.join();
+
+        summary();
     }
-
-    std::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
-
-    accept(_service, _num_input_nodes);
-    handle_cm_events(_num_input_nodes);
-    std::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
-    completion_handler();
-    ChildProcessManager::get().stop_processes(this);
-    ts_compl.join();
-    t1.join();
-
-    summary();
+    catch (std::exception& e)
+    {
+        out.error() << "exception in ComputeBuffer: " << e.what();
+    }
 }
 
 uint8_t* ComputeBuffer::get_data_ptr(uint_fast16_t index)
@@ -267,6 +275,7 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
     }
 }
 
+/// The thread main function.
 void ComputeBuffer::handle_ts_completion()
 {
     // set_cpu(2);
@@ -299,5 +308,10 @@ void ComputeBuffer::handle_ts_completion()
     {
         out.trace() << "[c" << _compute_index << "] "
                     << "handle_ts_completion thread done";
+    }
+    catch (std::exception& e)
+    {
+        out.error() << "exception in ComputeBuffer::handle_ts_completion(): "
+                    << e.what();
     }
 }

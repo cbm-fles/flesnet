@@ -38,8 +38,9 @@ IBConnection::~IBConnection()
 {
     if (_cm_id) {
         int err = rdma_destroy_id(_cm_id);
-        if (err)
-            throw InfinibandException("rdma_destroy_id failed");
+        if (err) {
+            out.error() << "rdma_destroy_id() failed";
+        }
         _cm_id = nullptr;
     }
 }

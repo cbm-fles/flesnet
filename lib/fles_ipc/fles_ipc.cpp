@@ -7,7 +7,15 @@ namespace fles
 
 Timeslice::~Timeslice()
 {
-    _completions_mq->send(&_completion, sizeof(_completion), 0);
+    try
+    {
+        _completions_mq->send(&_completion, sizeof(_completion), 0);
+    }
+    catch (boost::interprocess::interprocess_exception& e)
+    {
+        // TODO: this is not sufficient
+        std::cerr << "exception in destructor ~Timeslice(): " << e.what();
+    }
 }
 
 uint64_t Timeslice::index() const
