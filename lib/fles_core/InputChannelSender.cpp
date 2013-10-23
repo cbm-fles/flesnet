@@ -77,7 +77,6 @@ void InputChannelSender::operator()()
     {
         out.error() << "exception in InputChannelSender: " << e.what();
     }
-    return true;
 }
 
 void InputChannelSender::sender_loop()
