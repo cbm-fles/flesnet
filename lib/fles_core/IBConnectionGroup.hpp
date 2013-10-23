@@ -83,8 +83,10 @@ public:
 
         // Create rdma id (for listening)
         int err = rdma_create_id(_ec, &_listen_id, nullptr, RDMA_PS_TCP);
-        if (err)
+        if (err) {
+            out.error() << "rdma_create_id() failed";
             throw InfinibandException("id creation failed");
+        }
 
         // Bind rdma id (for listening) to socket address (local port)
         struct sockaddr_in sin;
@@ -97,13 +99,18 @@ public:
 #pragma GCC diagnostic pop
         err = rdma_bind_addr(_listen_id,
                              reinterpret_cast<struct sockaddr*>(&sin));
-        if (err)
+        if (err) {
+            out.error() << "rdma_bind_addr(port=" << port
+                        << ") failed: " << strerror(errno);
             throw InfinibandException("RDMA bind_addr failed");
+        }
 
         // Listen for connection request on rdma id
         err = rdma_listen(_listen_id, count);
-        if (err)
+        if (err) {
+            out.error() << "rdma_listen() failed";
             throw InfinibandException("RDMA listen failed");
+        }
 
         out.debug() << "waiting for " << count << " connections";
     }
@@ -271,7 +278,7 @@ public:
     }
 
     /// The "main" function of an IBConnectionGroup decendant.
-    virtual bool operator()() = 0;
+    virtual void operator()() = 0;
 
 protected:
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.

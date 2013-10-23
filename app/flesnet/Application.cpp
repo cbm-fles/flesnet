@@ -7,6 +7,8 @@
 #include "Application.hpp"
 #include "FlibHardwareChannel.hpp"
 #include "FlibPatternGenerator.hpp"
+#include <boost/thread/thread.hpp>
+#include <boost/thread/future.hpp>
 
 Application::Application(Parameters const& par) : _par(par)
 {
@@ -19,7 +21,7 @@ Application::Application(Parameters const& par) : _par(par)
             new ComputeBuffer(i,
                               _par.cn_data_buffer_size_exp(),
                               _par.cn_desc_buffer_size_exp(),
-                              _par.base_port() + _par.compute_indexes().at(0),
+                              _par.base_port() + _par.compute_indexes().at(i),
                               _par.input_nodes().size(),
                               _par.timeslice_size(),
                               _par.overlap_size(),
@@ -133,16 +135,39 @@ Application::~Application()
 
 void Application::run()
 {
-    // FIXME: temporary code, use futures, fix leak
-    std::vector<std::thread*> threads;
+    // FIXME: temporary code, need to implement interrupt
+    boost::thread_group threads;
+    std::vector<boost::unique_future<void> > futures;
+    bool stop = false;
+
     for (auto& buffer : _compute_buffers) {
-        threads.push_back(new std::thread(std::ref(*buffer)));
+        boost::packaged_task<void> task(std::ref(*buffer));
+        futures.push_back(task.get_future());
+        threads.add_thread(new boost::thread(std::move(task)));
     }
     for (auto& buffer : _input_channel_senders) {
-        threads.push_back(new std::thread(std::ref(*buffer)));
+        boost::packaged_task<void> task(std::ref(*buffer));
+        futures.push_back(task.get_future());
+        threads.add_thread(new boost::thread(std::move(task)));
     }
 
-    for (auto& thread : threads) {
-        thread->join();
+    out.debug() << "threads started: " << threads.size();
+
+    while (!futures.empty()) {
+        auto it = boost::wait_for_any(futures.begin(), futures.end());
+        try
+        {
+            it->get();
+        }
+        catch (const std::exception& e)
+        {
+            out.fatal() << "exception from thread: " << e.what();
+            stop = true;
+        }
+        futures.erase(it);
+        if (stop)
+            threads.interrupt_all();
     }
+
+    threads.join_all();
 }

@@ -53,7 +53,7 @@ InputChannelSender::~InputChannelSender()
 }
 
 /// The thread main function.
-bool InputChannelSender::operator()()
+void InputChannelSender::operator()()
 {
     try
     {
