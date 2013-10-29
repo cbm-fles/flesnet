@@ -35,13 +35,13 @@ private:
     /// The run parameters object.
     Parameters const& _par;
 
-    /// The application's connection group / buffer objects
-    std::vector<std::unique_ptr<ComputeBuffer> > _compute_buffers;
-    std::vector<std::unique_ptr<InputChannelSender> > _input_channel_senders;
-
     // Input node application
     std::unique_ptr<flib::flib_device> _flib;
     std::vector<flib::flib_link*> _flib_links;
 
     std::vector<std::unique_ptr<DataSource> > _data_sources;
+
+    /// The application's connection group / buffer objects
+    std::vector<std::unique_ptr<ComputeBuffer> > _compute_buffers;
+    std::vector<std::unique_ptr<InputChannelSender> > _input_channel_senders;
 };
