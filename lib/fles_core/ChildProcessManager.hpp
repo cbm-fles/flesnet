@@ -36,6 +36,11 @@ public:
 
     bool start_process(ChildProcess child_process)
     {
+        std::stringstream args;
+        copy(child_process.arg.begin(), child_process.arg.end(),
+             std::ostream_iterator<std::string>(args, " "));
+        out.debug() << "starting " << child_process.path << " with args " << args.str();
+
         pid_t pid = fork();
         if (pid == 0) {
             // child
