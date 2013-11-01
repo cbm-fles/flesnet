@@ -72,6 +72,13 @@ Timeslice::Timeslice(TimesliceWorkItem work_item,
     _descriptor_offset = _work_item.ts_pos
                          & ((1L << _work_item.desc_buffer_size_exp) - 1L);
     _data_offset_mask = (1L << _work_item.data_buffer_size_exp) - 1L;
+
+    // consistency check
+    for (size_t c = 1; c < num_components(); ++c)
+        if (this->desc(0).ts_num != this->desc(c).ts_num)
+            std::cerr << "error: ts_num[0]=" << this->desc(0).ts_num
+                      << ", ts_num[" << c << "]=" << this->desc(c).ts_num
+                      << std::endl;
 }
 
 const uint8_t& Timeslice::data(uint64_t component, uint64_t offset) const

@@ -50,7 +50,7 @@ void InputChannelConnection::wait_for_buffer_space(uint64_t data_size,
     }
     while (_cn_ack.data - _cn_wp.data + (1 << _remote_info.data_buffer_size_exp)
            < data_size || _cn_ack.desc - _cn_wp.desc
-                          + (1 << _remote_info.data_buffer_size_exp)
+                          + (1 << _remote_info.desc_buffer_size_exp)
                           < desc_size) { // TODO: extend condition!
         {
             std::unique_lock<std::mutex> lock2(_cn_wp_mutex);
