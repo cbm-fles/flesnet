@@ -44,7 +44,7 @@ public:
     FlibPatternGenerator(const FlibPatternGenerator&) = delete;
     void operator=(const FlibPatternGenerator&) = delete;
 
-    ~FlibPatternGenerator()
+    virtual ~FlibPatternGenerator()
     {
         try
         {

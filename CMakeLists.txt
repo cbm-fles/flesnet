@@ -9,7 +9,7 @@ project(flesnet)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wextra -pedantic -Wold-style-cast -Wfloat-equal -Woverloaded-virtual -Wundef -O3")
+set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -g -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor")
 
 add_subdirectory(lib/fles_core)
 add_subdirectory(lib/fles_ipc)

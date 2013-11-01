@@ -25,7 +25,7 @@ public:
     FlibHardwareChannel(const FlibHardwareChannel&) = delete;
     void operator=(const FlibHardwareChannel&) = delete;
 
-    ~FlibHardwareChannel();
+    virtual ~FlibHardwareChannel();
 
     virtual RingBufferView<>& data_buffer() override
     {
