@@ -301,7 +301,7 @@ protected:
     }
 
     /// Handle RDMA_CM_REJECTED event.
-    virtual void on_rejected(struct rdma_cm_event* event)
+    virtual void on_rejected(struct rdma_cm_event* /* event */)
     {
     }
 
@@ -315,7 +315,7 @@ protected:
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct rdma_cm_event* event)
+    virtual void on_connect_request(struct rdma_cm_event* /* event */)
     {
     }
 

@@ -82,7 +82,7 @@ void IBConnection::disconnect()
         throw InfinibandException("rdma_disconnect failed");
 }
 
-void IBConnection::on_rejected(struct rdma_cm_event* event)
+void IBConnection::on_rejected(struct rdma_cm_event* /* event */)
 {
     out.debug() << "[" << _index << "] "
                 << "connection rejected";
@@ -90,13 +90,13 @@ void IBConnection::on_rejected(struct rdma_cm_event* event)
     rdma_destroy_qp(_cm_id);
 }
 
-void IBConnection::on_established(struct rdma_cm_event* event)
+void IBConnection::on_established(struct rdma_cm_event* /* event */)
 {
     out.debug() << "[" << _index << "] "
                 << "connection established";
 }
 
-void IBConnection::on_disconnected(struct rdma_cm_event* event)
+void IBConnection::on_disconnected(struct rdma_cm_event* /* event */)
 {
     out.debug() << "[" << _index << "] "
                 << "connection disconnected";
@@ -146,7 +146,7 @@ void IBConnection::accept_connect_request()
     auto private_data = get_private_data();
     assert(private_data->size() <= 255);
 
-    struct rdma_conn_param conn_param = {};
+    struct rdma_conn_param conn_param = rdma_conn_param();
     conn_param.responder_resources = 1;
     conn_param.private_data = private_data->data();
     conn_param.private_data_len = static_cast<uint8_t>(private_data->size());
@@ -155,7 +155,7 @@ void IBConnection::accept_connect_request()
         throw InfinibandException("RDMA accept failed");
 }
 
-void IBConnection::on_connect_request(struct rdma_cm_event* event,
+void IBConnection::on_connect_request(struct rdma_cm_event* /* event */,
                                       struct ibv_pd* pd, struct ibv_cq* cq)
 {
     create_qp(pd, cq);
@@ -179,8 +179,7 @@ void IBConnection::on_route_resolved()
     auto private_data = get_private_data();
     assert(private_data->size() <= 255);
 
-    struct rdma_conn_param conn_param;
-    memset(&conn_param, 0, sizeof conn_param);
+    struct rdma_conn_param conn_param = rdma_conn_param();
     conn_param.initiator_depth = 1;
     conn_param.retry_count = 7;
     conn_param.private_data = private_data->data();

@@ -11,7 +11,7 @@
 int count = 0;
 
 /// The SIGTERM handler.
-static void term_handler(int sig)
+static void term_handler(int /* sig */)
 {
     std::cout << "total timeslices checked: " << count << std::endl;
     exit(0);
@@ -23,7 +23,7 @@ struct monitor_t
     size_t content_bytes;
 };
 
-monitor_t monitor = {};
+monitor_t monitor = monitor_t();
 
 /// Establish SIGTERM handler.
 void install_term_handler()
@@ -110,7 +110,7 @@ bool check_cbmnet_frames(const uint16_t* content, size_t size)
 }
 
 bool check_flib_pattern(const fles::MicrosliceDescriptor& descriptor,
-                        const uint64_t* content, size_t component)
+                        const uint64_t* content, size_t /* component */)
 {
     if (content[0] != reinterpret_cast<const uint64_t*>(&descriptor)[0]
         || content[1] != reinterpret_cast<const uint64_t*>(&descriptor)[1]) {
@@ -165,6 +165,8 @@ bool check_timeslice(const fles::Timeslice& ts)
 
 int main(int argc, char* argv[])
 {
+    assert(argc > 1);
+
     install_term_handler();
 
     fles::TimesliceReceiver tsr(argv[1]);
@@ -179,7 +181,7 @@ int main(int argc, char* argv[])
                       << monitor.microslice_count << " microslices, avg: "
                       << static_cast<double>(monitor.content_bytes)
                          / monitor.microslice_count << ")" << std::endl;
-            monitor = {};
+            monitor = monitor_t();
         }
     }
 

@@ -13,7 +13,7 @@
 int count = 0;
 
 /// The SIGTERM handler.
-static void term_handler(int sig)
+static void term_handler(int /* sig */)
 {
     std::cout << "timeslices stored: " << count << std::endl;
     exit(0);
@@ -31,6 +31,8 @@ void install_term_handler()
 
 int main(int argc, char* argv[])
 {
+    assert(argc > 1);
+
     install_term_handler();
 
     std::ofstream ofs("storage.data");

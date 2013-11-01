@@ -123,7 +123,7 @@ void ComputeBuffer::operator()()
         for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
             std::stringstream index;
             index << i;
-            ChildProcess cp{};
+            ChildProcess cp = ChildProcess();
             cp.owner = this;
             cp.path = _processor_executable;
             cp.arg = {_processor_executable, _shared_memory_identifier,

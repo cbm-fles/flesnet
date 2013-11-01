@@ -9,6 +9,8 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wextra -pedantic -Wold-style-cast -Wfloat-equal -Woverloaded-virtual -Wundef -O3")
+
 add_subdirectory(lib/fles_core)
 add_subdirectory(lib/fles_ipc)
 

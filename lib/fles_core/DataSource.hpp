@@ -31,11 +31,13 @@ public:
         return desc_buffer();
     }
 
-    virtual void copy_to_data_send_buffer(std::size_t start, std::size_t count)
+    virtual void copy_to_data_send_buffer(std::size_t /* start */,
+                                          std::size_t /* count */)
     {
     }
 
-    virtual void copy_to_desc_send_buffer(std::size_t start, std::size_t count)
+    virtual void copy_to_desc_send_buffer(std::size_t /* start */,
+                                          std::size_t /* count */)
     {
     }
 };

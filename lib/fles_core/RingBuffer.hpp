@@ -46,7 +46,7 @@ public:
         _size = (1 << _size_exponent);
         _size_mask = _size - 1;
         if (CLEARED) {
-            std::unique_ptr<T[]> buf(new T[1 << _size_exponent]{});
+            std::unique_ptr<T[]> buf(new T[1 << _size_exponent]());
             _buf = std::move(buf);
         } else {
             std::unique_ptr<T[]> buf(new T[1 << _size_exponent]);
@@ -102,9 +102,9 @@ public:
         return _size * sizeof(T);
     }
 
-    const void clear()
+    void clear()
     {
-        *_buf = {};
+        std::fill_n(_buf, _size, T());
     }
 
 private:

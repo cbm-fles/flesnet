@@ -80,16 +80,16 @@ private:
     bool _finalize = false;
 
     /// Access information for memory regions on remote end.
-    ComputeNodeInfo _remote_info = {};
+    ComputeNodeInfo _remote_info = ComputeNodeInfo();
 
     /// Local copy of acknowledged-by-CN pointers
-    ComputeNodeBufferPosition _cn_ack = {};
+    ComputeNodeBufferPosition _cn_ack = ComputeNodeBufferPosition();
 
     /// Receive buffer for acknowledged-by-CN pointers
-    ComputeNodeBufferPosition _receive_cn_ack = {};
+    ComputeNodeBufferPosition _receive_cn_ack = ComputeNodeBufferPosition();
 
     /// Infiniband memory region descriptor for acknowledged-by-CN pointers
-    struct ibv_mr* _mr_recv = nullptr;
+    ibv_mr* _mr_recv = nullptr;
 
     /// Mutex protecting access to acknowledged-by-CN pointers
     std::mutex _cn_ack_mutex;
@@ -98,30 +98,30 @@ private:
     std::condition_variable _cn_ack_cond;
 
     /// Local version of CN write pointers
-    ComputeNodeBufferPosition _cn_wp = {};
+    ComputeNodeBufferPosition _cn_wp = ComputeNodeBufferPosition();
 
     /// Send buffer for CN write pointers
-    ComputeNodeBufferPosition _send_cn_wp = {};
+    ComputeNodeBufferPosition _send_cn_wp = ComputeNodeBufferPosition();
 
     /// Infiniband memory region descriptor for CN write pointers
-    struct ibv_mr* _mr_send = nullptr;
+    ibv_mr* _mr_send = nullptr;
 
     /// Mutex protecting access to CN write pointers
     std::mutex _cn_wp_mutex;
 
     /// InfiniBand receive work request
-    struct ibv_recv_wr recv_wr = {};
+    ibv_recv_wr recv_wr = ibv_recv_wr();
 
     /// Scatter/gather list entry for receive work request
-    struct ibv_sge recv_sge;
+    ibv_sge recv_sge = ibv_sge();
 
     /// Infiniband send work request
-    struct ibv_send_wr send_wr = {};
+    ibv_send_wr send_wr = ibv_send_wr();
 
     /// Scatter/gather list entry for send work request
-    struct ibv_sge send_sge;
+    ibv_sge send_sge = ibv_sge();
 
     std::atomic_uint _pending_write_requests{0};
 
-    unsigned int _max_pending_write_requests = 0;
+    unsigned int _max_pending_write_requests{0};
 };

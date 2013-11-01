@@ -39,7 +39,8 @@ public:
         std::stringstream args;
         copy(child_process.arg.begin(), child_process.arg.end(),
              std::ostream_iterator<std::string>(args, " "));
-        out.debug() << "starting " << child_process.path << " with args " << args.str();
+        out.debug() << "starting " << child_process.path << " with args "
+                    << args.str();
 
         pid_t pid = fork();
         if (pid == 0) {
@@ -98,6 +99,8 @@ public:
     }
 
 private:
+    typedef struct sigaction sigaction_struct;
+
     ChildProcessManager()
     {
         install_sigchld_handler();
@@ -116,7 +119,7 @@ private:
 
     void install_sigchld_handler()
     {
-        struct sigaction sa;
+        sigaction_struct sa;
         sigemptyset(&sa.sa_mask);
         sa.sa_flags = 0;
         sa.sa_handler = sigchld_handler;
@@ -163,7 +166,5 @@ private:
 
     std::vector<ChildProcess> _child_processes;
 
-    struct sigaction _oldact
-    {
-    };
+    sigaction_struct _oldact = sigaction_struct();
 };

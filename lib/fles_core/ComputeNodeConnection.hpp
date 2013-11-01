@@ -64,12 +64,12 @@ public:
     virtual std::unique_ptr<std::vector<uint8_t> > get_private_data() override;
 
 private:
-    ComputeNodeBufferPosition _send_cn_ack = {};
-    ComputeNodeBufferPosition _cn_ack = {};
+    ComputeNodeBufferPosition _send_cn_ack = ComputeNodeBufferPosition();
+    ComputeNodeBufferPosition _cn_ack = ComputeNodeBufferPosition();
     std::mutex _cn_ack_mutex;
 
-    ComputeNodeBufferPosition _recv_cn_wp = {};
-    ComputeNodeBufferPosition _cn_wp = {};
+    ComputeNodeBufferPosition _recv_cn_wp{0, 0};
+    ComputeNodeBufferPosition _cn_wp{0, 0};
 
     struct ibv_mr* _mr_data = nullptr;
     struct ibv_mr* _mr_desc = nullptr;
@@ -80,7 +80,7 @@ private:
     bool _our_turn = false;
 
     /// Information on remote end.
-    InputNodeInfo _remote_info = {};
+    InputNodeInfo _remote_info{0};
 
     uint8_t* _data_ptr = nullptr;
     std::size_t _data_buffer_size_exp = 0;
@@ -89,16 +89,16 @@ private:
     std::size_t _desc_buffer_size_exp = 0;
 
     /// InfiniBand receive work request
-    struct ibv_recv_wr recv_wr = {};
+    ibv_recv_wr recv_wr = ibv_recv_wr();
 
     /// Scatter/gather list entry for receive work request
-    struct ibv_sge recv_sge;
+    ibv_sge recv_sge = ibv_sge();
 
     /// Infiniband send work request
-    struct ibv_send_wr send_wr = {};
+    ibv_send_wr send_wr = ibv_send_wr();
 
     /// Scatter/gather list entry for send work request
-    struct ibv_sge send_sge;
+    ibv_sge send_sge = ibv_sge();
 
     std::atomic_uint _pending_send_requests{0};
 };
