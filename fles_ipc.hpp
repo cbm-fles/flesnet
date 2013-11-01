@@ -54,7 +54,7 @@ struct TimesliceWorkItem
 
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int version)
+    void serialize(Archive& ar, const unsigned int /* version */)
     {
         ar& ts_pos;
         ar& num_core_microslices;
@@ -119,7 +119,7 @@ private:
     const TimesliceComponentDescriptor& desc(uint64_t component) const;
 
     TimesliceWorkItem _work_item;
-    TimesliceCompletion _completion{};
+    TimesliceCompletion _completion = TimesliceCompletion();
 
     const uint8_t* const _data;
     const TimesliceComponentDescriptor* const _desc;
@@ -161,7 +161,7 @@ public:
 private:
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int version)
+    void serialize(Archive& ar, const unsigned int /* version */)
     {
         ar& _work_item;
         ar& _data;
