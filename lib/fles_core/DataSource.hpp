@@ -12,7 +12,9 @@
 class DataSource
 {
 public:
-    virtual ~DataSource() {}
+    virtual ~DataSource()
+    {
+    }
 
     virtual uint64_t wait_for_data(uint64_t min_mcNumber) = 0;
 
