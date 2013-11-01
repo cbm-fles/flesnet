@@ -41,6 +41,77 @@ std::string const Parameters::desc() const
     return st.str();
 }
 
+uint32_t Parameters::suggest_in_desc_buffer_size_exp()
+{
+    // make desc buffer larger by this factor to account for data size
+    // fluctuations
+    constexpr float in_desc_buffer_oversize_factor = 4.0;
+
+    // ensure value in sensible range
+    constexpr float max_desc_data_ratio = 1.0;
+    constexpr float min_desc_data_ratio = 0.1;
+
+    static_assert(min_desc_data_ratio <= max_desc_data_ratio,
+                  "invalid range for desc_data_ratio");
+
+    float in_data_buffer_size = 1 << _in_data_buffer_size_exp;
+    float suggest_in_desc_buffer_size = in_data_buffer_size
+                                        / _typical_content_size
+                                        * in_desc_buffer_oversize_factor;
+    uint32_t suggest_in_desc_buffer_size_exp
+        = ceilf(log2f(suggest_in_desc_buffer_size));
+
+    float relative_size = in_data_buffer_size / sizeof(MicrosliceDescriptor);
+    uint32_t max_in_desc_buffer_size_exp
+        = floorf(log2f(relative_size * max_desc_data_ratio));
+    uint32_t min_in_desc_buffer_size_exp
+        = ceilf(log2f(relative_size * min_desc_data_ratio));
+
+    if (suggest_in_desc_buffer_size_exp > max_in_desc_buffer_size_exp)
+        suggest_in_desc_buffer_size_exp = max_in_desc_buffer_size_exp;
+    if (suggest_in_desc_buffer_size_exp < min_in_desc_buffer_size_exp)
+        suggest_in_desc_buffer_size_exp = min_in_desc_buffer_size_exp;
+
+    return suggest_in_desc_buffer_size_exp;
+}
+
+uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
+{
+    // make desc buffer larger by this factor to account for data size
+    // fluctuations
+    constexpr float cn_desc_buffer_oversize_factor = 8.0;
+
+    // ensure value in sensible range
+    constexpr float min_desc_data_ratio = 0.1;
+    constexpr float max_desc_data_ratio = 1.0;
+
+    static_assert(min_desc_data_ratio <= max_desc_data_ratio,
+                  "invalid range for desc_data_ratio");
+
+    float cn_data_buffer_size = 1 << _cn_data_buffer_size_exp;
+    float suggest_cn_desc_buffer_size
+        = cn_data_buffer_size
+          / (_typical_content_size * (_timeslice_size + _overlap_size))
+          * cn_desc_buffer_oversize_factor;
+
+    uint32_t suggest_cn_desc_buffer_size_exp
+        = ceilf(log2f(suggest_cn_desc_buffer_size));
+
+    float relative_size = cn_data_buffer_size
+                          / sizeof(TimesliceComponentDescriptor);
+    uint32_t min_cn_desc_buffer_size_exp
+        = ceilf(log2f(relative_size * min_desc_data_ratio));
+    uint32_t max_cn_desc_buffer_size_exp
+        = floorf(log2f(relative_size * max_desc_data_ratio));
+
+    if (suggest_cn_desc_buffer_size_exp < min_cn_desc_buffer_size_exp)
+        suggest_cn_desc_buffer_size_exp = min_cn_desc_buffer_size_exp;
+    if (suggest_cn_desc_buffer_size_exp > max_cn_desc_buffer_size_exp)
+        suggest_cn_desc_buffer_size_exp = max_cn_desc_buffer_size_exp;
+
+    return suggest_cn_desc_buffer_size_exp;
+}
+
 void Parameters::parse_options(int argc, char* argv[])
 {
     unsigned log_level = 3;
@@ -74,16 +145,16 @@ void Parameters::parse_options(int argc, char* argv[])
         "in-desc-buffer-size-exp",
         po::value<uint32_t>(&_in_desc_buffer_size_exp),
         "exp. size of the input node's descriptor buffer"
-        " (number of entries).")(
+        " (number of entries)")(
         "cn-data-buffer-size-exp",
         po::value<uint32_t>(&_cn_data_buffer_size_exp),
         "exp. size of the compute node's data buffer in bytes")(
         "cn-desc-buffer-size-exp",
         po::value<uint32_t>(&_cn_desc_buffer_size_exp),
         "exp. size of the compute node's descriptor buffer"
-        " (number of entries).")("typical-content-size",
-                                 po::value<uint32_t>(&_typical_content_size),
-                                 "typical number of content bytes per MC")(
+        " (number of entries)")("typical-content-size",
+                                po::value<uint32_t>(&_typical_content_size),
+                                "typical number of content bytes per MC")(
         "randomize-sizes", po::value<bool>(&_randomize_sizes),
         "randomize sizes flag")("check-pattern",
                                 po::value<bool>(&_check_pattern),
@@ -152,6 +223,12 @@ void Parameters::parse_options(int argc, char* argv[])
             throw ParametersException(oss.str());
         }
     }
+
+    if (_in_desc_buffer_size_exp == 0)
+        _in_desc_buffer_size_exp = suggest_in_desc_buffer_size_exp();
+
+    if (_cn_desc_buffer_size_exp == 0)
+        _cn_desc_buffer_size_exp = suggest_cn_desc_buffer_size_exp();
 
     out.setVerbosity(static_cast<einhard::LogLevel>(log_level));
 

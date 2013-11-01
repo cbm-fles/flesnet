@@ -41,6 +41,9 @@ public:
     /// Return a description of active nodes, suitable for debug output.
     std::string const desc() const;
 
+    uint32_t suggest_in_desc_buffer_size_exp();
+    uint32_t suggest_cn_desc_buffer_size_exp();
+
     /// Retrieve the global timeslice size in number of MCs.
     uint32_t timeslice_size() const
     {
@@ -167,22 +170,22 @@ private:
     /// The size of the overlap region in number of MCs.
     uint32_t _overlap_size = 2;
 
+    /// A typical number of content bytes per MC.
+    uint32_t _typical_content_size = 1024;
+
     /// The exp. size of the input node's data buffer in bytes.
     uint32_t _in_data_buffer_size_exp = 26;
 
     /// The exp. size of the input node's descriptor buffer (number of
     /// entries).
-    uint32_t _in_desc_buffer_size_exp = 20;
+    uint32_t _in_desc_buffer_size_exp = 0;
 
     /// The exp. size of the compute node's data buffer in bytes.
     uint32_t _cn_data_buffer_size_exp = 17;
 
     /// The exp. size of the compute node's descriptor buffer (number of
     /// entries).
-    uint32_t _cn_desc_buffer_size_exp = 6;
-
-    /// A typical number of content bytes per MC.
-    uint32_t _typical_content_size = 1024;
+    uint32_t _cn_desc_buffer_size_exp = 0;
 
     /// The randomize sizes flag.
     bool _randomize_sizes = false;
