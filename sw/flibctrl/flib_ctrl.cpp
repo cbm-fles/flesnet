@@ -1,12 +1,10 @@
 #include <csignal>
 
-//#include "../../../usbdaq-test/cbmnet/zmq.hpp"
-//#include "../../../usbdaq-test/cbmnet/control/libserver/ControlServer.hpp"
 #include <zmq.hpp>
 #include <control/libserver/ControlServer.hpp>
 
 #include "global.hpp"
-#include "flib_control_server.hpp"
+#include "flib_server.hpp"
 
 int s_interrupted = 0;
 static void s_signal_handler (int signal_value)
@@ -44,7 +42,7 @@ int main(int argc, const char* argv[])
   links.at(0)->set_data_rx_sel(flib::flib_link::pgen);
 
   // create device control server, initialize and start server thread
-  flib_control_server flibserver(zmq_context, "CbmNet::Driver0", *links.at(0));
+  flib_server flibserver(zmq_context, "CbmNet::Driver0", *links.at(0));
   flibserver.Bind();
   flibserver.Start();
   
