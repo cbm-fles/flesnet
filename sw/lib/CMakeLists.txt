@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(libflib)
 
 set(HW_DIR ${PROJECT_SOURCE_DIR}/../../hw)
-set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3")
+set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3 -Wstack-usage=2048")
 
 set(LIB_SRC
  ${PROJECT_SOURCE_DIR}/src/rorcfs_bar.cpp
