@@ -11,13 +11,11 @@
 #include <zmq.hpp>
 #include "global.hpp"
 
-using namespace flib;
-
 class flib_control_server {
   
   zmq::context_t& _zmq_context;
   std::string _path;
-  flib_link &_link;
+  flib::flib_link &_link;
   zmq::socket_t _driver_req;
   zmq::socket_t _driver_res;
   boost::thread _driver_thread;
@@ -35,7 +33,7 @@ public:
 
   flib_control_server(zmq::context_t&  context,
                       std::string path,
-		      flib_link &link)
+		      flib::flib_link &link)
     : _zmq_context(context),
       _path(path),
       _link(link),
@@ -143,8 +141,8 @@ public:
 
   void ProcEvent()
   {
-    ctrl_msg cnet_r_msg;
-    ctrl_msg cnet_s_msg;
+    flib::ctrl_msg cnet_r_msg;
+    flib::ctrl_msg cnet_s_msg;
    
     // get messsage
     size_t msg_size = _driver_req.recv(cnet_s_msg.data, sizeof(cnet_s_msg.data));

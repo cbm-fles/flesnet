@@ -41,7 +41,7 @@ int main(int argc, const char* argv[])
   std::vector<flib::flib_link*> links = flib.get_links();
 
   // configure FLIB link
-  links.at(0)->set_data_rx_sel(flib_link::pgen);
+  links.at(0)->set_data_rx_sel(flib::flib_link::pgen);
 
   // create device control server, initialize and start server thread
   flib_control_server flibserver(zmq_context, "CbmNet::Driver0", *links.at(0));

@@ -55,7 +55,7 @@ int main(int argc, const char* argv[])
 
   // initialize FLIB links: ////
   // initialize a DMA buffer
-  links.at(0)->init_dma(create_only, 22, 20);
+  links.at(0)->init_dma(flib::create_only, 22, 20);
   out.info() << "Event Buffer: " << links.at(0)->get_ebuf_info();
   out.info() << "Desciptor Buffer" << links.at(0)->get_dbuf_info();
 
@@ -70,7 +70,7 @@ int main(int argc, const char* argv[])
   links.at(0)->rst_pending_mc();
 
   // set data source and enable
-  links.at(0)->set_data_rx_sel(flib_link::pgen);
+  links.at(0)->set_data_rx_sel(flib::flib_link::pgen);
   links.at(0)->enable_cbmnet_packer(true);
   flib.enable_mc_cnt(true);
 
@@ -80,7 +80,7 @@ int main(int argc, const char* argv[])
   size_t j = 0;
   
   while(s_interrupted==0) {
-    std::pair<mc_desc, bool> mc_pair;
+    std::pair<flib::mc_desc, bool> mc_pair;
     while ((mc_pair = links.at(0)->get_mc()).second == false && s_interrupted==0) {
       usleep(10);
       links.at(0)->ack_mc();
