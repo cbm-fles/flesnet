@@ -8,7 +8,7 @@
 #include "../../../usbdaq-test/cbmnet/control/libserver/ControlServer.hpp"
 
 #include "global.hpp"
-#include "flib_control_server.hpp"
+#include "flib_server.hpp"
 
 int s_interrupted = 0;
 static void s_signal_handler (int signal_value)
@@ -42,7 +42,7 @@ int main(int argc, const char* argv[])
   std::vector<flib::flib_link*> links = flib.get_links();
 
   // create a device control server, initialize and start server thread
-  flib_control_server flibserver(zmq_context, "CbmNet::Driver0", *links.at(0));
+  flib_server flibserver(zmq_context, "CbmNet::Driver0", *links.at(0));
   flibserver.Bind();
   flibserver.Start();
   
