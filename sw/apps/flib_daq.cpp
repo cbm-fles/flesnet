@@ -1,9 +1,9 @@
-#include <iostream>
 #include <csignal>
-#include <boost/thread.hpp>
 
-#include "../../../usbdaq-test/cbmnet/zmq.hpp"
-#include "../../../usbdaq-test/cbmnet/control/libserver/ControlServer.hpp"
+//#include "../../../usbdaq-test/cbmnet/zmq.hpp"
+//#include "../../../usbdaq-test/cbmnet/control/libserver/ControlServer.hpp"
+#include <zmq.hpp>
+#include <control/libserver/ControlServer.hpp>
 
 #include "global.hpp"
 #include "flib_control_server.hpp"
@@ -31,28 +31,35 @@ int main(int argc, const char* argv[])
 {
   s_catch_signals();
 
+  out.setVerbosity(einhard::DEBUG);
+
+  // create ZMQ context
   zmq::context_t zmq_context(1);
+
+  // create FLIB
   flib::flib_device flib(0);
+  std::vector<flib::flib_link*> links = flib.get_links();
 
-  // initialize FLIB link
-  flib.link[0]->set_data_rx_sel(flib_link::pgen);
+  // configure FLIB link
+  links.at(0)->set_data_rx_sel(flib_link::pgen);
 
-  flib_control_server flibserver(zmq_context, "Driver0", *flib.link[0]);
+  // create device control server, initialize and start server thread
+  flib_control_server flibserver(zmq_context, "CbmNet::Driver0", *links.at(0));
   flibserver.Bind();
   flibserver.Start();
   
-  CbmNet::ControlServer cntlserv(zmq_context, "Driver0");
-  cntlserv.SetDebugFlags(CbmNet::ControlServer::kDbgDumpRpc);
+  // create control server and start
+  CbmNet::ControlServer cntlserv(zmq_context, "CbmNet::Driver0");
+  //cntlserv.SetDebugFlags(CbmNet::ControlServer::kDbgDumpRpc);
   cntlserv.Bind();
   cntlserv.ConnectDriver();
   cntlserv.Start();
 
+  // main loop
   while(s_interrupted==0) {
     ::sleep(1);
   }
-  
-  out.setVerbosity(einhard::DEBUG);
-  out.debug() << "exiting";
-  
+  out.debug() << "Exiting";
+
   return 0;
 }

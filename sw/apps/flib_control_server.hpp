@@ -5,9 +5,10 @@
 #include <iomanip>
 #include <cstdint>
 #include <sys/eventfd.h>
+#include <boost/thread.hpp>
 
 #include <flib.h>
-#include "zmq.hpp"
+#include <zmq.hpp>
 #include "global.hpp"
 
 using namespace flib;
@@ -29,10 +30,8 @@ class flib_control_server {
     DriverStateStopping
   };
   driver_state_t _driver_state;
-  
 
 public:
-  
 
   flib_control_server(zmq::context_t&  context,
                       std::string path,
@@ -144,8 +143,6 @@ public:
 
   void ProcEvent()
   {
-    out.setVerbosity(einhard::DEBUG);
-
     ctrl_msg cnet_r_msg;
     ctrl_msg cnet_s_msg;
    
@@ -161,7 +158,7 @@ public:
 
     //DEBUG
     for (size_t i = 0; i < cnet_s_msg.words; i++) {
-      out.debug() << "msg to send " << std::hex << std::setfill('0') 
+      out.trace() << "msg to send " << std::hex << std::setfill('0') 
                   <<  "0x" << std::setw(4) << cnet_s_msg.data[i];
     }
     
@@ -181,7 +178,7 @@ public:
 
     //DEBUG
     for (size_t i = 0; i < cnet_r_msg.words; i++) {
-      out.debug() << "msg received " << std::hex << std::setfill('0') 
+      out.trace() << "msg received " << std::hex << std::setfill('0') 
                   <<  "0x" << std::setw(4) << cnet_r_msg.data[i];
     }
 
