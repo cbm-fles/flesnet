@@ -21,7 +21,7 @@ Application::Application(Parameters const& par) : _par(par)
             new ComputeBuffer(i,
                               _par.cn_data_buffer_size_exp(),
                               _par.cn_desc_buffer_size_exp(),
-                              _par.base_port() + _par.compute_indexes().at(i),
+                              _par.base_port() + i,
                               _par.input_nodes().size(),
                               _par.timeslice_size(),
                               _par.overlap_size(),
