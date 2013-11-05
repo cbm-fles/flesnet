@@ -213,7 +213,9 @@ void Parameters::parse_options(int argc, char* argv[])
         po::value<std::string>(&_processor_executable),
         "name of the executable acting as timeslice processor")(
         "processor-instances", po::value<uint32_t>(&_processor_instances),
-        "number of instances of the timeslice processor executable");
+        "number of instances of the timeslice processor executable")(
+        "base-port", po::value<uint32_t>(&_base_port),
+        "base IP port to use for listening");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
