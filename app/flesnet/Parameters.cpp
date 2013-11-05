@@ -41,6 +41,53 @@ std::string const Parameters::desc() const
     return st.str();
 }
 
+uint32_t Parameters::suggest_in_data_buffer_size_exp()
+{
+    constexpr float buffer_ram_usage_ratio = 0.05;
+
+    // ensure value in sensible range
+    constexpr uint32_t max_in_data_buffer_size_exp = 30; // 30: 1 GByte
+    constexpr uint32_t min_in_data_buffer_size_exp = 20; // 20: 1 MByte
+
+    float total_ram = sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
+    float suggest_in_data_buffer_size = buffer_ram_usage_ratio * total_ram
+                                        / _input_indexes.size();
+
+    uint32_t suggest_in_data_buffer_size_exp
+        = ceilf(log2f(suggest_in_data_buffer_size));
+
+    if (suggest_in_data_buffer_size_exp > max_in_data_buffer_size_exp)
+        suggest_in_data_buffer_size_exp = max_in_data_buffer_size_exp;
+    if (suggest_in_data_buffer_size_exp < min_in_data_buffer_size_exp)
+        suggest_in_data_buffer_size_exp = min_in_data_buffer_size_exp;
+
+    return suggest_in_data_buffer_size_exp;
+}
+
+uint32_t Parameters::suggest_cn_data_buffer_size_exp()
+{
+    constexpr float buffer_ram_usage_ratio = 0.05;
+
+    // ensure value in sensible range
+    constexpr uint32_t max_cn_data_buffer_size_exp = 30; // 30: 1 GByte
+    constexpr uint32_t min_cn_data_buffer_size_exp = 20; // 20: 1 MByte
+
+    float total_ram = sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
+    float suggest_cn_data_buffer_size
+        = buffer_ram_usage_ratio * total_ram
+          / (_compute_indexes.size() * _input_nodes.size());
+
+    uint32_t suggest_cn_data_buffer_size_exp
+        = ceilf(log2f(suggest_cn_data_buffer_size));
+
+    if (suggest_cn_data_buffer_size_exp > max_cn_data_buffer_size_exp)
+        suggest_cn_data_buffer_size_exp = max_cn_data_buffer_size_exp;
+    if (suggest_cn_data_buffer_size_exp < min_cn_data_buffer_size_exp)
+        suggest_cn_data_buffer_size_exp = min_cn_data_buffer_size_exp;
+
+    return suggest_cn_data_buffer_size_exp;
+}
+
 uint32_t Parameters::suggest_in_desc_buffer_size_exp()
 {
     // make desc buffer larger by this factor to account for data size
@@ -223,6 +270,12 @@ void Parameters::parse_options(int argc, char* argv[])
             throw ParametersException(oss.str());
         }
     }
+
+    if (_in_data_buffer_size_exp == 0)
+        _in_data_buffer_size_exp = suggest_in_data_buffer_size_exp();
+
+    if (_cn_data_buffer_size_exp == 0)
+        _cn_data_buffer_size_exp = suggest_cn_data_buffer_size_exp();
 
     if (_in_desc_buffer_size_exp == 0)
         _in_desc_buffer_size_exp = suggest_in_desc_buffer_size_exp();
