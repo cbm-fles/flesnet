@@ -46,7 +46,7 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
     _flib_link->set_hdr_config(&config);
 
     //_flib_link->set_data_rx_sel(flib::flib_link::pgen);
-    _flib_link->set_data_rx_sel(flib::flib_link::link);
+    //_flib_link->set_data_rx_sel(flib::flib_link::link);
     _flib_link->enable_cbmnet_packer(true);
 
     // assert(_flib_link->get_mc_index() == 0);
