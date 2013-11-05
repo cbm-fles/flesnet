@@ -112,24 +112,27 @@ ComputeBuffer::~ComputeBuffer()
         (_shared_memory_identifier + "_completions").c_str());
 }
 
+void ComputeBuffer::start_processes()
+{
+    assert(!_processor_executable.empty());
+    for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
+        std::stringstream index;
+        index << i;
+        ChildProcess cp = ChildProcess();
+        cp.owner = this;
+        cp.path = _processor_executable;
+        cp.arg
+            = {_processor_executable, _shared_memory_identifier, index.str()};
+        ChildProcessManager::get().start_process(cp);
+    }
+}
+
 /// The thread main function.
 void ComputeBuffer::operator()()
 {
     try
     {
         // set_cpu(0);
-
-        assert(!_processor_executable.empty());
-        for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
-            std::stringstream index;
-            index << i;
-            ChildProcess cp = ChildProcess();
-            cp.owner = this;
-            cp.path = _processor_executable;
-            cp.arg = {_processor_executable, _shared_memory_identifier,
-                      index.str()};
-            ChildProcessManager::get().start_process(cp);
-        }
 
         std::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
 

@@ -38,6 +38,8 @@ public:
     /// The ComputeBuffer destructor.
     ~ComputeBuffer();
 
+    void start_processes();
+
     virtual void operator()() override;
 
     uint8_t* get_data_ptr(uint_fast16_t index);

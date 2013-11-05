@@ -27,6 +27,7 @@ Application::Application(Parameters const& par) : _par(par)
                               _par.overlap_size(),
                               _par.processor_instances(),
                               _par.processor_executable()));
+        buffer->start_processes();
         _compute_buffers.push_back(std::move(buffer));
     }
 
