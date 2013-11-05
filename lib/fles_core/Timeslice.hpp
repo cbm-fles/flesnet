@@ -6,6 +6,8 @@
  */
 
 #include <iostream>
+#include <sstream>
+#include <cmath>
 #include <rdma/rdma_cma.h>
 
 #pragma pack(1)
@@ -172,4 +174,25 @@ inline std::ostream& operator<<(std::ostream& s, ibv_send_flags v)
         return s << static_cast<int>(v);
     else
         return s << str;
+}
+
+inline std::string human_readable_byte_count(uint64_t bytes, bool use_si = false)
+{
+    uint64_t unit = use_si ? 1000 : 1024;
+
+    if (bytes < unit)
+        return bytes + " B";
+
+    uint32_t exponent = static_cast<uint64_t>(std::log(bytes) / std::log(unit));
+
+    std::string prefix
+        = std::string(use_si ? "kMGTPE" : "KMGTPE").substr(exponent - 1, 1);
+    if (!use_si)
+        prefix += "i";
+
+    std::stringstream st;
+    st.precision(4);
+    st << (bytes / std::pow(unit, exponent)) << " " << prefix << "B";
+
+    return st.str();
 }

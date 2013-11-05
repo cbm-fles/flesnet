@@ -7,6 +7,7 @@
 
 #include "ThreadContainer.hpp"
 #include "InfinibandException.hpp"
+#include "Timeslice.hpp"
 #include "global.hpp"
 #include <chrono>
 #include <vector>
@@ -273,8 +274,10 @@ public:
         out.info() << "summary: " << _aggregate_send_requests << " SEND, "
                    << _aggregate_recv_requests << " RECV requests";
         double rate = static_cast<double>(_aggregate_bytes_sent) / runtime;
-        out.info() << "summary: " << _aggregate_bytes_sent << " bytes sent in "
-                   << runtime / 1000000. << " s (" << rate << " MB/s)";
+        out.info() << "summary: "
+                   << human_readable_byte_count(_aggregate_bytes_sent)
+                   << " sent in " << runtime / 1000000. << " s (" << rate
+                   << " MB/s)";
     }
 
     /// The "main" function of an IBConnectionGroup decendant.
