@@ -146,6 +146,10 @@ void Application::run()
         futures.push_back(task.get_future());
         threads.add_thread(new boost::thread(std::move(task)));
     }
+
+    // FIXME
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
     for (auto& buffer : _input_channel_senders) {
         boost::packaged_task<void> task(std::ref(*buffer));
         futures.push_back(task.get_future());
