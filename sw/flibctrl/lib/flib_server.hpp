@@ -15,6 +15,7 @@ class flib_server {
   
   zmq::context_t& _zmq_context;
   std::string _path;
+  flib::flib_device &_device;
   flib::flib_link &_link;
   zmq::socket_t _driver_req;
   zmq::socket_t _driver_res;
@@ -31,11 +32,13 @@ class flib_server {
 
 public:
 
-  flib_server(zmq::context_t&  context,
-                      std::string path,
-		      flib::flib_link &link)
+  flib_server(zmq::context_t& context,
+              std::string path,
+              flib::flib_device &device,
+              flib::flib_link &link)
     : _zmq_context(context),
       _path(path),
+      _device(device),
       _link(link),
       _driver_req(context, ZMQ_PULL),
       _driver_res(context, ZMQ_PUSH),
@@ -141,14 +144,13 @@ public:
 
   void ProcEvent()
   {
-    flib::ctrl_msg cnet_r_msg;
     flib::ctrl_msg cnet_s_msg;
    
     // get messsage
     size_t msg_size = _driver_req.recv(cnet_s_msg.data, sizeof(cnet_s_msg.data));
     if (msg_size > sizeof(cnet_s_msg.data)) {
       cnet_s_msg.words = sizeof(cnet_s_msg.data)/sizeof(cnet_s_msg.data[0]);
-      std::cout << "message truncated" << std::endl;
+      out.error() << "Message truncated";
     }
     else {
       cnet_s_msg.words = msg_size/sizeof(cnet_s_msg.data[0]);
@@ -160,13 +162,30 @@ public:
                   <<  "0x" << std::setw(4) << cnet_s_msg.data[i];
     }
     
+    // TODO: Hack! single word request is DLM request
+    if (msg_size/sizeof(uint16_t) == 1) {
+      SendDlm(cnet_s_msg);
+    } 
+    else {
+      SendCtrl(cnet_s_msg);
+    }
+    
+    return;
+  }
+
+  void SendCtrl(flib::ctrl_msg& cnet_s_msg)
+  {
+    flib::ctrl_msg cnet_r_msg;
+
+    out.debug() << "Sending control message";
+
     // receive to flush hw buffers
     if ( _link.rcv_msg(&cnet_r_msg) != -1)  {
       out.warn() << "sprious message dropped";
     }
   
     if ( _link.send_msg(&cnet_s_msg) < 0)  {
-      out.error() << "sending message failed";
+      out.error() << "Sending message failed";
     }                      
     
     // receive msg
@@ -183,5 +202,30 @@ public:
     _driver_res.send(cnet_r_msg.data, cnet_r_msg.words*sizeof(cnet_r_msg.data[0]));
     return;
   }
+
+  void SendDlm(flib::ctrl_msg& cnet_s_msg)
+  {
+    out.debug() << "Sending DLM";
+
+    //DEBUG
+    _link.clr_dlm();
+    uint8_t dlm_test = _link.get_dlm();
+    out.debug() << std::hex << (uint32_t)dlm_test;
+
+    // set dlm config for single link
+    _link.set_dlm_cfg((cnet_s_msg.data[0] & 0xF), true);
+    
+    // send dlm
+    // TODO: this is a global operation for all links!
+    // This has to be done global for a multi link version
+    _device.send_dlm();
+
+    //DEBUG
+    uint8_t dlm_rx = _link.get_dlm();
+    out.debug() << std::hex << (uint32_t)dlm_rx;
+
+    return;
+  }
+
 
 };

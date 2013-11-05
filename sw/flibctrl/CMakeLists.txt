@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3")
 include_directories("${PROJECT_SOURCE_DIR}/lib/")
 include_directories("${PROJECT_SOURCE_DIR}/../../../usbdaq-test/cbmnet/")
 
-set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=2)
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=1)
 
 add_executable(flib_ctrl flib_ctrl.cpp)
 
