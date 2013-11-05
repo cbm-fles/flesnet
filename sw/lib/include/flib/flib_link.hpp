@@ -81,6 +81,7 @@ class flib_link {
   uint64_t _last_acked;
   uint64_t _mc_nr;
   uint64_t _wrap;
+  bool _dma_initialized;
   
   volatile uint64_t* _eb;
   volatile struct MicrosliceDescriptor* _db;
@@ -95,6 +96,7 @@ public:
   
   flib_link(uint8_t channel, rorcfs_device* dev, rorcfs_bar* bar) 
     : _index(0), _last_index(0), _last_acked(0), _mc_nr(0), _wrap(0),
+      _dma_initialized(false),
       _dbentries(0), _log_ebufsize(0), _log_dbufsize(0) {
     
     _channel = channel;
@@ -105,7 +107,7 @@ public:
   }
   
   ~flib_link() {
-    if(_ch) {
+    if(_ch && _dma_initialized ) {
       // disable DMA Engine
       _ch->setEnableEB(0);
       // wait for pending transfers to complete (dma_busy->0)
@@ -136,6 +138,7 @@ public:
     _ebuf = _create_buffer(0, log_ebufsize);
     _dbuf = _create_buffer(1, log_dbufsize);
     _init_hardware();
+    _dma_initialized = true;
     return 0;
   }
 
@@ -145,6 +148,7 @@ public:
     _ebuf = _open_buffer(0);
     _dbuf = _open_buffer(1);
     _init_hardware();
+    _dma_initialized = true;
     return 0;
   }
  
@@ -154,6 +158,7 @@ public:
     _ebuf = _open_or_create_buffer(0, log_ebufsize);
     _dbuf = _open_or_create_buffer(1, log_dbufsize);
     _init_hardware();
+    _dma_initialized = true;
     return 0;
   }
 
