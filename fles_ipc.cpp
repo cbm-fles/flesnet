@@ -5,7 +5,7 @@
 namespace fles
 {
 
-Timeslice::~Timeslice()
+TimesliceView::~TimesliceView()
 {
     try
     {
@@ -14,36 +14,37 @@ Timeslice::~Timeslice()
     catch (boost::interprocess::interprocess_exception& e)
     {
         // TODO: this is not sufficient
-        std::cerr << "exception in destructor ~Timeslice(): " << e.what();
+        std::cerr << "exception in destructor ~TimesliceView(): " << e.what();
     }
 }
 
-uint64_t Timeslice::index() const
+uint64_t TimesliceView::index() const
 {
     return desc(0).ts_num;
 }
 
-uint64_t Timeslice::num_core_microslices() const
+uint64_t TimesliceView::num_core_microslices() const
 {
     return _work_item.num_core_microslices;
 }
 
-uint64_t Timeslice::num_overlap_microslices() const
+uint64_t TimesliceView::num_overlap_microslices() const
 {
     return _work_item.num_overlap_microslices;
 }
 
-uint64_t Timeslice::num_microslices() const
+uint64_t TimesliceView::num_microslices() const
 {
     return _work_item.num_core_microslices + _work_item.num_overlap_microslices;
 }
 
-uint64_t Timeslice::num_components() const
+uint64_t TimesliceView::num_components() const
 {
     return _work_item.num_components;
 }
 
-const uint8_t* Timeslice::content(uint64_t component, uint64_t microslice) const
+const uint8_t* TimesliceView::content(uint64_t component,
+                                      uint64_t microslice) const
 {
     return &data(component, desc(component).offset)
            + num_microslices() * sizeof(MicrosliceDescriptor)
@@ -51,18 +52,18 @@ const uint8_t* Timeslice::content(uint64_t component, uint64_t microslice) const
            - descriptor(component, 0).offset;
 }
 
-const MicrosliceDescriptor& Timeslice::descriptor(uint64_t component,
-                                                  uint64_t microslice) const
+const MicrosliceDescriptor& TimesliceView::descriptor(uint64_t component,
+                                                      uint64_t microslice) const
 {
     return (&reinterpret_cast<const MicrosliceDescriptor&>(
                  data(component, desc(component).offset)))[microslice];
 }
 
-Timeslice::Timeslice(TimesliceWorkItem work_item,
-                     uint8_t* data,
-                     TimesliceComponentDescriptor* desc,
-                     std::shared_ptr
-                     <boost::interprocess::message_queue> completions_mq)
+TimesliceView::TimesliceView(
+    TimesliceWorkItem work_item,
+    uint8_t* data,
+    TimesliceComponentDescriptor* desc,
+    std::shared_ptr<boost::interprocess::message_queue> completions_mq)
     : _work_item(std::move(work_item)),
       _data(data),
       _desc(desc),
@@ -81,20 +82,21 @@ Timeslice::Timeslice(TimesliceWorkItem work_item,
                       << std::endl;
 }
 
-const uint8_t& Timeslice::data(uint64_t component, uint64_t offset) const
+const uint8_t& TimesliceView::data(uint64_t component, uint64_t offset) const
 {
     return (_data + (component << _work_item.data_buffer_size_exp))
         [offset & _data_offset_mask];
 }
 
-const TimesliceComponentDescriptor& Timeslice::desc(uint64_t component) const
+const TimesliceComponentDescriptor&
+TimesliceView::desc(uint64_t component) const
 {
     return (
         _desc
         + (component << _work_item.desc_buffer_size_exp))[_descriptor_offset];
 }
 
-StorableTimeslice::StorableTimeslice(const Timeslice& ts)
+StorableTimeslice::StorableTimeslice(const TimesliceView& ts)
     : _work_item(ts._work_item),
       _data(ts._work_item.num_components),
       _index(ts.index())
@@ -182,7 +184,7 @@ TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
             (shared_memory_identifier + "_completions").c_str()));
 }
 
-std::unique_ptr<const Timeslice> TimesliceReceiver::receive()
+std::unique_ptr<const TimesliceView> TimesliceReceiver::receive()
 {
     TimesliceWorkItem wi;
     std::size_t recvd_size;
@@ -191,7 +193,7 @@ std::unique_ptr<const Timeslice> TimesliceReceiver::receive()
     _work_items_mq->receive(&wi, sizeof(wi), recvd_size, priority);
     assert(recvd_size == sizeof(wi));
 
-    return std::unique_ptr<Timeslice>(new Timeslice(
+    return std::unique_ptr<TimesliceView>(new TimesliceView(
         wi, reinterpret_cast<uint8_t*>(_data_region->get_address()),
         reinterpret_cast
         <TimesliceComponentDescriptor*>(_desc_region->get_address()),
