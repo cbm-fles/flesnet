@@ -41,6 +41,9 @@ public:
     /// Return a description of active nodes, suitable for debug output.
     std::string const desc() const;
 
+    uint32_t suggest_in_data_buffer_size_exp();
+    uint32_t suggest_cn_data_buffer_size_exp();
+
     uint32_t suggest_in_desc_buffer_size_exp();
     uint32_t suggest_cn_desc_buffer_size_exp();
 
@@ -174,14 +177,14 @@ private:
     uint32_t _typical_content_size = 1024;
 
     /// The exp. size of the input node's data buffer in bytes.
-    uint32_t _in_data_buffer_size_exp = 26;
+    uint32_t _in_data_buffer_size_exp = 0;
 
     /// The exp. size of the input node's descriptor buffer (number of
     /// entries).
     uint32_t _in_desc_buffer_size_exp = 0;
 
     /// The exp. size of the compute node's data buffer in bytes.
-    uint32_t _cn_data_buffer_size_exp = 17;
+    uint32_t _cn_data_buffer_size_exp = 0;
 
     /// The exp. size of the compute node's descriptor buffer (number of
     /// entries).

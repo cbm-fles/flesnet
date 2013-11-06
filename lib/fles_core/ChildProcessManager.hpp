@@ -42,18 +42,19 @@ public:
         out.debug() << "starting " << child_process.path << " with args "
                     << args.str();
 
-        pid_t pid = fork();
+        std::vector<const char*> c_arg;
+        std::transform(child_process.arg.begin(), child_process.arg.end(),
+                       std::back_inserter(c_arg),
+                       [](std::string & s) { return s.c_str(); });
+        c_arg.push_back(nullptr);
+
+        pid_t pid = vfork();
         if (pid == 0) {
             // child
-            std::vector<const char*> c_arg;
-            std::transform(child_process.arg.begin(), child_process.arg.end(),
-                           std::back_inserter(c_arg),
-                           [](std::string & s) { return s.c_str(); });
-            c_arg.push_back(nullptr);
             execvp(child_process.path.c_str(),
                    const_cast<char* const*>(&c_arg[0]));
             out.error() << "execvp() failed: " << strerror(errno);
-            exit(0);
+            _exit(0);
         } else {
             // parent
             if (pid > 0) {
@@ -63,7 +64,7 @@ public:
                 out.debug() << "child process started";
                 return true;
             } else {
-                out.error() << "fork() failed: " << strerror(errno);
+                out.error() << "vfork() failed: " << strerror(errno);
                 return false;
             }
         }
