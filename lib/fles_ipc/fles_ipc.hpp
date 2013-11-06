@@ -73,14 +73,15 @@ struct TimesliceCompletion
 
 #pragma pack()
 
-//! The Timeslice class provides access to the data of a single timeslice.
-class Timeslice
+//! The TimesliceView class provides access to the data of a single timeslice in
+// memory.
+class TimesliceView
 {
 public:
-    Timeslice(const Timeslice&) = delete;
-    void operator=(const Timeslice&) = delete;
+    TimesliceView(const TimesliceView&) = delete;
+    void operator=(const TimesliceView&) = delete;
 
-    ~Timeslice();
+    ~TimesliceView();
 
     /// Retrieve the timeslice index.
     uint64_t index() const;
@@ -108,11 +109,11 @@ private:
     friend class TimesliceReceiver;
     friend class StorableTimeslice;
 
-    Timeslice(TimesliceWorkItem work_item,
-              uint8_t* data,
-              TimesliceComponentDescriptor* desc,
-              std::shared_ptr
-              <boost::interprocess::message_queue> completions_mq);
+    TimesliceView(TimesliceWorkItem work_item,
+                  uint8_t* data,
+                  TimesliceComponentDescriptor* desc,
+                  std::shared_ptr
+                  <boost::interprocess::message_queue> completions_mq);
 
     const uint8_t& data(uint64_t component, uint64_t offset) const;
 
@@ -134,7 +135,7 @@ private:
 class StorableTimeslice
 {
 public:
-    explicit StorableTimeslice(const Timeslice& ts);
+    explicit StorableTimeslice(const TimesliceView& ts);
 
     /// Retrieve the timeslice index.
     uint64_t index() const;
@@ -185,7 +186,7 @@ public:
     void operator=(const TimesliceReceiver&) = delete;
 
     /// Receive the next timeslice, block if not yet available.
-    std::unique_ptr<const Timeslice> receive();
+    std::unique_ptr<const TimesliceView> receive();
 
 private:
     const std::string _shared_memory_identifier;

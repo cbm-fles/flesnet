@@ -145,7 +145,7 @@ bool check_microslice(const fles::MicrosliceDescriptor& descriptor,
     return true;
 }
 
-bool check_timeslice(const fles::Timeslice& ts)
+bool check_timeslice(const fles::TimesliceView& ts)
 {
     for (size_t c = 0; c < ts.num_components(); ++c) {
         for (size_t m = 0; m < ts.num_microslices(); ++m) {
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
     fles::TimesliceReceiver tsr(argv[1]);
 
     while (true) {
-        std::unique_ptr<const fles::Timeslice> ts = tsr.receive();
+        std::unique_ptr<const fles::TimesliceView> ts = tsr.receive();
         check_timeslice(*ts);
         ++count;
         if ((count % 10000) == 0) {

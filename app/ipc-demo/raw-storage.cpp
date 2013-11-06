@@ -36,14 +36,14 @@ int main(int argc, char* argv[])
     install_term_handler();
 
     std::ofstream ofs("storage.data");
-    boost::archive::binary_oarchive oa(ofs);
+    boost::archive::binary_oarchive output_archive(ofs);
 
     fles::TimesliceReceiver tsr(argv[1]);
 
     while (true) {
-        std::unique_ptr<const fles::Timeslice> ts = tsr.receive();
-        fles::StorableTimeslice sts(*ts);
-        oa << sts;
+        std::unique_ptr<const fles::TimesliceView> tsv = tsr.receive();
+        fles::StorableTimeslice sts(*tsv);
+        output_archive << sts;
         ++count;
     }
 
