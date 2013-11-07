@@ -6,8 +6,13 @@
 #include <boost/interprocess/ipc/message_queue.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 #include <memory>
 #include <cstdint>
+#include <ctime>
+#include <chrono>
+#include <fstream>
 
 //! \file
 //! This file describes the timeslice-based interface to FLES.
@@ -135,7 +140,9 @@ private:
 class StorableTimeslice
 {
 public:
-    explicit StorableTimeslice(const TimesliceView& ts);
+    StorableTimeslice() {}; // FIXME!
+
+    StorableTimeslice(const TimesliceView& ts);
 
     /// Retrieve the timeslice index.
     uint64_t index() const;
@@ -174,6 +181,94 @@ private:
     uint64_t _index;
 };
 
+//! The TimesliceArchiveDescriptor precedes a stream of serialized
+// StorableTimeslice objects.
+class TimesliceArchiveDescriptor
+{
+public:
+    TimesliceArchiveDescriptor()
+        : _time_created(std::chrono::system_clock::to_time_t(
+              std::chrono::system_clock::now()))
+    {
+    }
+
+    /// Retrieve the time of creation of the archive.
+    std::time_t time_created() const;
+
+private:
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int /* version */)
+    {
+        ar& _time_created;
+    }
+
+    std::time_t _time_created;
+};
+
+//! The TimesliceOutputArchive...
+class TimesliceOutputArchive
+{
+public:
+    TimesliceOutputArchive(const std::string& filename)
+        : _ofstream(filename, std::ios::binary), _oarchive(_ofstream)
+    {
+        _oarchive << _descriptor;
+    }
+
+    TimesliceOutputArchive(const TimesliceOutputArchive&) = delete;
+    void operator=(const TimesliceOutputArchive&) = delete;
+
+    /// Store a timeslice.
+    void write(const StorableTimeslice& timeslice)
+    {
+        _oarchive << timeslice;
+    }
+
+private:
+    std::ofstream _ofstream;
+    boost::archive::binary_oarchive _oarchive;
+    TimesliceArchiveDescriptor _descriptor;
+};
+
+//! The TimesliceInputArchive...
+class TimesliceInputArchive
+{
+public:
+    TimesliceInputArchive(const std::string& filename)
+        : _ifstream(filename, std::ios::binary), _iarchive(_ifstream)
+    {
+        _iarchive >> _descriptor;
+    }
+
+    TimesliceInputArchive(const TimesliceInputArchive&) = delete;
+    void operator=(const TimesliceInputArchive&) = delete;
+
+    /// Read the next timeslice.
+    std::unique_ptr<StorableTimeslice> read()
+    {
+        StorableTimeslice s;
+        try
+        {
+            _iarchive >> s;
+        }
+        catch (boost::archive::archive_exception e)
+        {
+            //          if (_ifstream.eof())
+            return nullptr;
+            //          throw;
+        }
+        std::unique_ptr<StorableTimeslice> sts = std::unique_ptr
+            <StorableTimeslice>(new StorableTimeslice(s));
+        return sts;
+    }
+
+private:
+    std::ifstream _ifstream;
+    boost::archive::binary_iarchive _iarchive;
+    TimesliceArchiveDescriptor _descriptor;
+};
+
 //! The TimesliceReveicer class implements the IPC mechanisms to receive a
 // timeslice.
 class TimesliceReceiver
@@ -199,6 +294,8 @@ private:
 
     std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
     std::shared_ptr<boost::interprocess::message_queue> _completions_mq;
+
+    bool _eof = false;
 };
 
 } // namespace fles {

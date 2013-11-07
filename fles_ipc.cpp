@@ -150,6 +150,11 @@ StorableTimeslice::descriptor(uint64_t component, uint64_t microslice) const
             <const MicrosliceDescriptor&>(_data[component][0]))[microslice];
 }
 
+time_t TimesliceArchiveDescriptor::time_created() const
+{
+    return _time_created;
+}
+
 TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
     : _shared_memory_identifier(shared_memory_identifier)
 {
@@ -186,11 +191,18 @@ TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
 
 std::unique_ptr<const TimesliceView> TimesliceReceiver::receive()
 {
+    if (_eof)
+        return nullptr;
+
     TimesliceWorkItem wi;
     std::size_t recvd_size;
     unsigned int priority;
 
     _work_items_mq->receive(&wi, sizeof(wi), recvd_size, priority);
+    if (recvd_size == 0) {
+        _eof = true;
+        return nullptr;
+    }
     assert(recvd_size == sizeof(wi));
 
     return std::unique_ptr<TimesliceView>(new TimesliceView(
