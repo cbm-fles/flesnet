@@ -18,47 +18,6 @@ TimesliceView::~TimesliceView()
     }
 }
 
-uint64_t TimesliceView::index() const
-{
-    return desc(0).ts_num;
-}
-
-uint64_t TimesliceView::num_core_microslices() const
-{
-    return _work_item.num_core_microslices;
-}
-
-uint64_t TimesliceView::num_overlap_microslices() const
-{
-    return _work_item.num_overlap_microslices;
-}
-
-uint64_t TimesliceView::num_microslices() const
-{
-    return _work_item.num_core_microslices + _work_item.num_overlap_microslices;
-}
-
-uint64_t TimesliceView::num_components() const
-{
-    return _work_item.num_components;
-}
-
-const uint8_t* TimesliceView::content(uint64_t component,
-                                      uint64_t microslice) const
-{
-    return &data(component, desc(component).offset)
-           + num_microslices() * sizeof(MicrosliceDescriptor)
-           + descriptor(component, microslice).offset
-           - descriptor(component, 0).offset;
-}
-
-const MicrosliceDescriptor& TimesliceView::descriptor(uint64_t component,
-                                                      uint64_t microslice) const
-{
-    return (&reinterpret_cast<const MicrosliceDescriptor&>(
-                 data(component, desc(component).offset)))[microslice];
-}
-
 TimesliceView::TimesliceView(
     TimesliceWorkItem work_item,
     uint8_t* data,
@@ -82,20 +41,6 @@ TimesliceView::TimesliceView(
                       << std::endl;
 }
 
-const uint8_t& TimesliceView::data(uint64_t component, uint64_t offset) const
-{
-    return (_data + (component << _work_item.data_buffer_size_exp))
-        [offset & _data_offset_mask];
-}
-
-const TimesliceComponentDescriptor&
-TimesliceView::desc(uint64_t component) const
-{
-    return (
-        _desc
-        + (component << _work_item.desc_buffer_size_exp))[_descriptor_offset];
-}
-
 StorableTimeslice::StorableTimeslice(const TimesliceView& ts)
     : _work_item(ts._work_item),
       _data(ts._work_item.num_components),
@@ -108,46 +53,6 @@ StorableTimeslice::StorableTimeslice(const TimesliceView& ts)
         _data[component].resize(size);
         std::copy_n(begin, size, _data[component].begin());
     }
-}
-
-uint64_t StorableTimeslice::index() const
-{
-    return _index;
-}
-
-uint64_t StorableTimeslice::num_core_microslices() const
-{
-    return _work_item.num_core_microslices;
-}
-
-uint64_t StorableTimeslice::num_overlap_microslices() const
-{
-    return _work_item.num_overlap_microslices;
-}
-
-uint64_t StorableTimeslice::num_microslices() const
-{
-    return _work_item.num_core_microslices + _work_item.num_overlap_microslices;
-}
-
-uint64_t StorableTimeslice::num_components() const
-{
-    return _work_item.num_components;
-}
-
-const uint8_t* StorableTimeslice::content(uint64_t component,
-                                          uint64_t microslice) const
-{
-    return &_data[component][num_microslices() * sizeof(MicrosliceDescriptor)
-                             + descriptor(component, microslice).offset
-                             - descriptor(component, 0).offset];
-}
-
-const MicrosliceDescriptor&
-StorableTimeslice::descriptor(uint64_t component, uint64_t microslice) const
-{
-    return (&reinterpret_cast
-            <const MicrosliceDescriptor&>(_data[component][0]))[microslice];
 }
 
 time_t TimesliceArchiveDescriptor::time_created() const
