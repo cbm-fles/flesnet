@@ -251,6 +251,9 @@ void Parameters::parse_options(int argc, char* argv[])
         throw ParametersException("no node type specified");
     }
 
+    if (!_compute_nodes.empty() && _processor_executable.empty())
+        throw ParametersException("processor executable not specified");
+
     for (auto input_index : _input_indexes) {
         if (input_index >= _input_nodes.size()) {
             std::ostringstream oss;
