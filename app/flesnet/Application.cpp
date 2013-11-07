@@ -100,8 +100,7 @@ Application::Application(Parameters const& par) : _par(par)
         } else {
             data_source = std::unique_ptr<DataSource>(new FlibPatternGenerator(
                 par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
-                index, par.check_pattern(), par.typical_content_size(),
-                par.randomize_sizes()));
+                index, par.typical_content_size()));
         }
 
         std::unique_ptr<InputChannelSender> buffer(new InputChannelSender(

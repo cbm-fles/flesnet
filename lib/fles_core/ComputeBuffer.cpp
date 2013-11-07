@@ -143,15 +143,10 @@ void ComputeBuffer::operator()()
 
         ChildProcessManager::get().allow_stop_processes(this);
 
-        if (_processor_executable.empty()) {
-            _work_items.stop();
-            _completions.stop();
-        } else {
-            for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
-                _work_items_mq->send(nullptr, 0, 0);
-            }
-            _completions_mq->send(nullptr, 0, 0);
+        for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
+            _work_items_mq->send(nullptr, 0, 0);
         }
+        _completions_mq->send(nullptr, 0, 0);
 
         ts_compl.join();
         t1.join();
@@ -230,13 +225,8 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
         break;
 
     case ID_SEND_FINALIZE: {
-        if (_processor_executable.empty()) {
-            assert(_work_items.empty());
-            assert(_completions.empty());
-        } else {
-            assert(_work_items_mq->get_num_msg() == 0);
-            assert(_completions_mq->get_num_msg() == 0);
-        }
+        assert(_work_items_mq->get_num_msg() == 0);
+        assert(_completions_mq->get_num_msg() == 0);
         _conn[in]->on_complete_send();
         _conn[in]->on_complete_send_finalize();
         ++_connections_done;
@@ -266,11 +256,7 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
                     tpos,                  _timeslice_size,
                     _overlap_size,         static_cast<uint32_t>(_conn.size()),
                     _data_buffer_size_exp, _desc_buffer_size_exp};
-                if (_processor_executable.empty()) {
-                    _work_items.push(wi);
-                } else {
-                    _work_items_mq->send(&wi, sizeof(wi), 0);
-                }
+                _work_items_mq->send(&wi, sizeof(wi), 0);
             }
 
             _completely_written = new_completely_written;
@@ -291,16 +277,12 @@ void ComputeBuffer::handle_ts_completion()
     {
         while (true) {
             TimesliceCompletion c;
-            if (_processor_executable.empty()) {
-                _completions.wait_and_pop(c);
-            } else {
-                std::size_t recvd_size;
-                unsigned int priority;
-                _completions_mq->receive(&c, sizeof(c), recvd_size, priority);
-                if (recvd_size == 0)
-                    return;
-                assert(recvd_size == sizeof(c));
-            }
+            std::size_t recvd_size;
+            unsigned int priority;
+            _completions_mq->receive(&c, sizeof(c), recvd_size, priority);
+            if (recvd_size == 0)
+                return;
+            assert(recvd_size == sizeof(c));
             if (c.ts_pos == _acked) {
                 do
                     ++_acked;
@@ -310,11 +292,6 @@ void ComputeBuffer::handle_ts_completion()
             } else
                 _ack.at(c.ts_pos) = c.ts_pos;
         }
-    }
-    catch (concurrent_queue<TimesliceCompletion>::Stopped)
-    {
-        out.trace() << "[c" << _compute_index << "] "
-                    << "handle_ts_completion thread done";
     }
     catch (std::exception& e)
     {

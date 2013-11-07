@@ -8,7 +8,6 @@
 #include "IBConnectionGroup.hpp"
 #include "ComputeNodeConnection.hpp"
 #include "RingBuffer.hpp"
-#include "concurrent_queue.hpp"
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
@@ -87,9 +86,6 @@ private:
 
     std::unique_ptr<boost::interprocess::mapped_region> _data_region;
     std::unique_ptr<boost::interprocess::mapped_region> _desc_region;
-
-    concurrent_queue<TimesliceWorkItem> _work_items;
-    concurrent_queue<TimesliceCompletion> _completions;
 
     std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
     std::unique_ptr<boost::interprocess::message_queue> _completions_mq;

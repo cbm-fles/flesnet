@@ -91,18 +91,6 @@ public:
         return _typical_content_size;
     }
 
-    /// Retrieve the randomize sizes flag.
-    bool randomize_sizes() const
-    {
-        return _randomize_sizes;
-    }
-
-    /// Retrieve the check pattern flag.
-    bool check_pattern() const
-    {
-        return _check_pattern;
-    }
-
     /// Retrieve the use flib flag.
     bool use_flib() const
     {
@@ -189,9 +177,6 @@ private:
     /// The exp. size of the compute node's descriptor buffer (number of
     /// entries).
     uint32_t _cn_desc_buffer_size_exp = 0;
-
-    /// The randomize sizes flag.
-    bool _randomize_sizes = false;
 
     /// The check pattern flag.
     bool _check_pattern = true;

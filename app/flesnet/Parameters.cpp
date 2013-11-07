@@ -202,14 +202,10 @@ void Parameters::parse_options(int argc, char* argv[])
         " (number of entries)")("typical-content-size",
                                 po::value<uint32_t>(&_typical_content_size),
                                 "typical number of content bytes per MC")(
-        "randomize-sizes", po::value<bool>(&_randomize_sizes),
-        "randomize sizes flag")("check-pattern",
-                                po::value<bool>(&_check_pattern),
-                                "check pattern flag")(
         "use-flib", po::value<bool>(&_use_flib), "use flib flag")(
-        "max-timeslice-number", po::value<uint32_t>(&_max_timeslice_number),
+        "max-timeslice-number,n", po::value<uint32_t>(&_max_timeslice_number),
         "global maximum timeslice number")(
-        "processor-executable",
+        "processor-executable,e",
         po::value<std::string>(&_processor_executable),
         "name of the executable acting as timeslice processor")(
         "processor-instances", po::value<uint32_t>(&_processor_instances),
