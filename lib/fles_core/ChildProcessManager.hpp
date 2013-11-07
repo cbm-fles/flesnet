@@ -91,6 +91,26 @@ public:
         }
     }
 
+    bool allow_stop_process(std::vector<ChildProcess>::iterator child_process)
+    {
+        if (child_process >= _child_processes.begin()
+            && child_process < _child_processes.end()) {
+            child_process->status = Terminating;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    void allow_stop_processes(void* owner)
+    {
+        for (auto it = _child_processes.begin(); it < _child_processes.end();
+             ++it) {
+            if (it->owner == owner)
+                allow_stop_process(it);
+        }
+    }
+
     void stop_all_processes()
     {
         for (auto it = _child_processes.begin(); it < _child_processes.end();

@@ -140,7 +140,19 @@ void ComputeBuffer::operator()()
         handle_cm_events(_num_input_nodes);
         std::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
         completion_handler();
-        ChildProcessManager::get().stop_processes(this);
+
+        ChildProcessManager::get().allow_stop_processes(this);
+
+        if (_processor_executable.empty()) {
+            _work_items.stop();
+            _completions.stop();
+        } else {
+            for (uint_fast32_t i = 0; i < _processor_instances; ++i) {
+                _work_items_mq->send(nullptr, 0, 0);
+            }
+            _completions_mq->send(nullptr, 0, 0);
+        }
+
         ts_compl.join();
         t1.join();
 
@@ -232,14 +244,6 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
         out.debug() << "[c" << _compute_index << "] "
                     << "SEND FINALIZE complete for id " << in
                     << " all_done=" << _all_done;
-        if (_all_done) {
-            if (_processor_executable.empty()) {
-                _work_items.stop();
-                _completions.stop();
-            } else {
-                _completions_mq->send(nullptr, 0, 0);
-            }
-        }
     } break;
 
     case ID_RECEIVE_CN_WP: {
