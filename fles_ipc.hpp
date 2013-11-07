@@ -89,26 +89,52 @@ public:
     ~TimesliceView();
 
     /// Retrieve the timeslice index.
-    uint64_t index() const;
+    uint64_t index() const
+    {
+        return desc(0).ts_num;
+    }
 
     /// Retrieve the number of core microslices.
-    uint64_t num_core_microslices() const;
+    uint64_t num_core_microslices() const
+    {
+        return _work_item.num_core_microslices;
+    }
 
     /// Retrieve the number of overlapping microslices.
-    uint64_t num_overlap_microslices() const;
+    uint64_t num_overlap_microslices() const
+    {
+        return _work_item.num_overlap_microslices;
+    }
 
     /// Retrieve the total number of microslices.
-    uint64_t num_microslices() const;
+    uint64_t num_microslices() const
+    {
+        return _work_item.num_core_microslices
+               + _work_item.num_overlap_microslices;
+    }
 
     /// Retrieve the number of components (contributing input channels).
-    uint64_t num_components() const;
+    uint64_t num_components() const
+    {
+        return _work_item.num_components;
+    }
 
     /// Retrieve a pointer to the data content of a given microslice
-    const uint8_t* content(uint64_t component, uint64_t microslice) const;
+    const uint8_t* content(uint64_t component, uint64_t microslice) const
+    {
+        return &data(component, desc(component).offset)
+               + num_microslices() * sizeof(MicrosliceDescriptor)
+               + descriptor(component, microslice).offset
+               - descriptor(component, 0).offset;
+    }
 
     /// Retrieve the descriptor of a given microslice
     const MicrosliceDescriptor& descriptor(uint64_t component,
-                                           uint64_t microslice) const;
+                                           uint64_t microslice) const
+    {
+        return (&reinterpret_cast<const MicrosliceDescriptor&>(
+                     data(component, desc(component).offset)))[microslice];
+    }
 
 private:
     friend class TimesliceReceiver;
@@ -120,9 +146,17 @@ private:
                   std::shared_ptr
                   <boost::interprocess::message_queue> completions_mq);
 
-    const uint8_t& data(uint64_t component, uint64_t offset) const;
+    const uint8_t& data(uint64_t component, uint64_t offset) const
+    {
+        return (_data + (component << _work_item.data_buffer_size_exp))
+            [offset & _data_offset_mask];
+    }
 
-    const TimesliceComponentDescriptor& desc(uint64_t component) const;
+    const TimesliceComponentDescriptor& desc(uint64_t component) const
+    {
+        return (_desc + (component << _work_item.desc_buffer_size_exp))
+            [_descriptor_offset];
+    }
 
     TimesliceWorkItem _work_item;
     TimesliceCompletion _completion = TimesliceCompletion();
@@ -145,26 +179,52 @@ public:
     StorableTimeslice(const TimesliceView& ts);
 
     /// Retrieve the timeslice index.
-    uint64_t index() const;
+    uint64_t index() const
+    {
+        return _index;
+    }
 
     /// Retrieve the number of core microslices.
-    uint64_t num_core_microslices() const;
+    uint64_t num_core_microslices() const
+    {
+        return _work_item.num_core_microslices;
+    }
 
     /// Retrieve the number of overlapping microslices.
-    uint64_t num_overlap_microslices() const;
+    uint64_t num_overlap_microslices() const
+    {
+        return _work_item.num_overlap_microslices;
+    }
 
     /// Retrieve the total number of microslices.
-    uint64_t num_microslices() const;
+    uint64_t num_microslices() const
+    {
+        return _work_item.num_core_microslices
+               + _work_item.num_overlap_microslices;
+    }
 
     /// Retrieve the number of components (contributing input channels).
-    uint64_t num_components() const;
+    uint64_t num_components() const
+    {
+        return _work_item.num_components;
+    }
 
     /// Retrieve a pointer to the data content of a given microslice
-    const uint8_t* content(uint64_t component, uint64_t microslice) const;
+    const uint8_t* content(uint64_t component, uint64_t microslice) const
+    {
+        return
+            &_data[component][num_microslices() * sizeof(MicrosliceDescriptor)
+                              + descriptor(component, microslice).offset
+                              - descriptor(component, 0).offset];
+    }
 
     /// Retrieve the descriptor of a given microslice
     const MicrosliceDescriptor& descriptor(uint64_t component,
-                                           uint64_t microslice) const;
+                                           uint64_t microslice) const
+    {
+        return (&reinterpret_cast
+                <const MicrosliceDescriptor&>(_data[component][0]))[microslice];
+    }
 
 private:
     friend class boost::serialization::access;
@@ -254,9 +314,7 @@ public:
         }
         catch (boost::archive::archive_exception e)
         {
-            //          if (_ifstream.eof())
             return nullptr;
-            //          throw;
         }
         std::unique_ptr<StorableTimeslice> sts = std::unique_ptr
             <StorableTimeslice>(new StorableTimeslice(s));
