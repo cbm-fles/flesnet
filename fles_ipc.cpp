@@ -1,4 +1,4 @@
-// 2013, Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "fles_ipc.hpp"
 
