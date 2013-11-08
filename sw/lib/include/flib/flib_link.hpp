@@ -73,34 +73,29 @@ class flib_link {
   std::unique_ptr<rorcfs_dma_channel> _ch;
   std::unique_ptr<rorcfs_buffer> _ebuf;
   std::unique_ptr<rorcfs_buffer> _dbuf;
-
   rorcfs_device* _dev;
-  uint8_t _channel; 
-  uint64_t _index;
-  uint64_t _last_index;
-  uint64_t _last_acked;
-  uint64_t _mc_nr;
-  uint64_t _wrap;
-  bool _dma_initialized;
+  uint8_t _channel;
+
+  uint64_t _index = 0;
+  uint64_t _last_index = 0;
+  uint64_t _last_acked = 0;
+  uint64_t _mc_nr = 0;
+  uint64_t _wrap = 0;
+  bool _dma_initialized = false;
   
-  volatile uint64_t* _eb;
-  volatile struct MicrosliceDescriptor* _db;
+  volatile uint64_t* _eb = nullptr;
+  volatile struct MicrosliceDescriptor* _db = nullptr;
   
-  uint64_t _dbentries;
-  size_t _log_ebufsize;
-  size_t _log_dbufsize;
+  uint64_t _dbentries = 0;
+  size_t _log_ebufsize = 0;
+  size_t _log_dbufsize = 0;
+
   
 public:
   
-  //    struct mc_desc mc;
-  
   flib_link(uint8_t channel, rorcfs_device* dev, rorcfs_bar* bar) 
-    : _index(0), _last_index(0), _last_acked(0), _mc_nr(0), _wrap(0),
-      _dma_initialized(false),
-      _dbentries(0), _log_ebufsize(0), _log_dbufsize(0) {
-    
-    _channel = channel;
-    _dev = dev;
+    : _dev(dev), _channel(channel) {
+
     // create DMA channel and bind to BAR1, no HW initialization is done here
     _ch = std::unique_ptr<rorcfs_dma_channel>(new rorcfs_dma_channel());
     _ch->init(bar, (_channel+1)*RORC_CHANNEL_OFFSET);
