@@ -1,3 +1,5 @@
+# Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+
 include(FindDoxygen)
 
 if(DOXYGEN_FOUND)

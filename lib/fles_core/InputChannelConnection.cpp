@@ -1,8 +1,4 @@
-/**
- * \file InputChannelConnection.cpp
- *
- * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
- */
+// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "InputChannelConnection.hpp"
 #include "global.hpp"

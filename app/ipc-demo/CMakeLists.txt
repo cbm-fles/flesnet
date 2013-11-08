@@ -1,3 +1,5 @@
+# Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+
 find_package(Boost 1.48 COMPONENTS serialization REQUIRED)
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/fles_core" "${PROJECT_SOURCE_DIR}/app/flesnet" "${PROJECT_SOURCE_DIR}/lib/fles_ipc")

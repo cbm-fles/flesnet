@@ -1,9 +1,5 @@
+// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
-/**
- * \file ChildProcessManager.hpp
- *
- * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
- */
 
 #include "global.hpp"
 #include <sys/wait.h>

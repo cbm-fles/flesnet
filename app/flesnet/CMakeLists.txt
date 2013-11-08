@@ -1,3 +1,5 @@
+# Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+
 file(GLOB APP_SOURCES *.cpp)
 file(GLOB APP_HEADERS *.h)
 

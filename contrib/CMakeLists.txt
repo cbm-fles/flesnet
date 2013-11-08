@@ -1,3 +1,5 @@
+# Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+
 add_custom_command(
   OUTPUT run
   COMMAND ${CMAKE_COMMAND} -E create_symlink

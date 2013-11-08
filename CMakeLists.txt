@@ -1,3 +1,5 @@
+# Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(flesnet)
 

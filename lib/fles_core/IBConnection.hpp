@@ -1,9 +1,5 @@
+// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
-/**
- * \file IBConnection.hpp
- *
- * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
- */
 
 #include "InfinibandException.hpp"
 #include <rdma/rdma_cma.h>

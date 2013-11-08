@@ -1,8 +1,4 @@
-/**
- * \file IBConnection.cpp
- *
- * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
- */
+// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "IBConnection.hpp"
 #include "Timeslice.hpp"

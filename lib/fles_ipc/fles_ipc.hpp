@@ -1,5 +1,5 @@
+// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
-// 2013, Jan de Cuveland <cmail@cuveland.de>
 
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>

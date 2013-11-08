@@ -1,8 +1,4 @@
-/**
- * \file FlibPatternGenerator.cpp
- *
- * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
- */
+// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "FlibPatternGenerator.hpp"
 

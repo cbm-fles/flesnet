@@ -1,9 +1,5 @@
+// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
-/**
- * \file ComputeBuffer.hpp
- *
- * 2013, Jan de Cuveland <cmail@cuveland.de>
- */
 
 #include "IBConnectionGroup.hpp"
 #include "ComputeNodeConnection.hpp"

@@ -1,8 +1,4 @@
-/**
- * \file ComputeNodeConnection.cpp
- *
- * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
- */
+// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "ComputeNodeConnection.hpp"
 #include "global.hpp"

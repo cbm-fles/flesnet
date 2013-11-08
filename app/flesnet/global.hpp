@@ -1,9 +1,5 @@
+// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
-/**
- * \file global.hpp
- *
- * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
- */
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"

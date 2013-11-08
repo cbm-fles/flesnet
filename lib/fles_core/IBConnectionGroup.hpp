@@ -1,9 +1,5 @@
+// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
-/**
- * \file IBConnectionGroup.hpp
- *
- * 2012, 2013, Jan de Cuveland <cmail@cuveland.de>
- */
 
 #include "ThreadContainer.hpp"
 #include "InfinibandException.hpp"

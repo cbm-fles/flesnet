@@ -1,8 +1,4 @@
-/**
- * \file main.cpp
- *
- * 2012, 2013, Jan de Cuveland
- */
+// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 /**
  * \mainpage InfiniBand-based Timeslice Building
