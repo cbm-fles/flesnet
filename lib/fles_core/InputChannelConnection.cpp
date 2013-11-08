@@ -147,6 +147,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
     tscdesc.ts_num = timeslice;
     tscdesc.offset = cn_wp_data;
     tscdesc.size = data_length + mc_length * sizeof(MicrosliceDescriptor);
+    tscdesc.num_microslices = mc_length;
     struct ibv_sge sge3;
     sge3.addr = reinterpret_cast<uintptr_t>(&tscdesc);
     sge3.length = sizeof(tscdesc);

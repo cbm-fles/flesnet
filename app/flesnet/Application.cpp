@@ -24,7 +24,6 @@ Application::Application(Parameters const& par) : _par(par)
                               _par.base_port() + i,
                               _par.input_nodes().size(),
                               _par.timeslice_size(),
-                              _par.overlap_size(),
                               _par.processor_instances(),
                               _par.processor_executable()));
         buffer->start_processes();

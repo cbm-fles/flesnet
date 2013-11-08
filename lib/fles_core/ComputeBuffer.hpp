@@ -27,7 +27,6 @@ public:
                   unsigned short service,
                   uint32_t num_input_nodes,
                   uint32_t timeslice_size,
-                  uint32_t overlap_size,
                   uint32_t processor_instances,
                   const std::string processor_executable);
 
@@ -68,7 +67,6 @@ private:
     uint32_t _num_input_nodes;
 
     uint32_t _timeslice_size;
-    uint32_t _overlap_size;
 
     uint32_t _processor_instances;
     const std::string _processor_executable;

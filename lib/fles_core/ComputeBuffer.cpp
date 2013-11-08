@@ -16,7 +16,6 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
                              unsigned short service,
                              uint32_t num_input_nodes,
                              uint32_t timeslice_size,
-                             uint32_t overlap_size,
                              uint32_t processor_instances,
                              const std::string processor_executable)
     : _compute_index(compute_index),
@@ -25,7 +24,6 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
       _service(service),
       _num_input_nodes(num_input_nodes),
       _timeslice_size(timeslice_size),
-      _overlap_size(overlap_size),
       _processor_instances(processor_instances),
       _processor_executable(processor_executable),
       _ack(desc_buffer_size_exp)
@@ -253,9 +251,9 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
                  tpos < new_completely_written;
                  ++tpos) {
                 TimesliceWorkItem wi = {
-                    tpos,                  _timeslice_size,
-                    _overlap_size,         static_cast<uint32_t>(_conn.size()),
-                    _data_buffer_size_exp, _desc_buffer_size_exp};
+                    tpos,                                _timeslice_size,
+                    static_cast<uint32_t>(_conn.size()), _data_buffer_size_exp,
+                    _desc_buffer_size_exp};
                 _work_items_mq->send(&wi, sizeof(wi), 0);
             }
 

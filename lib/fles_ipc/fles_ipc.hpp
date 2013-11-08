@@ -43,15 +43,15 @@ struct TimesliceComponentDescriptor
     uint64_t ts_num; ///< Timeslice index.
     uint64_t offset; ///< Start offset (in bytes) of corresponding data.
     uint64_t size;   ///< Size (in bytes) of corresponding data.
+    uint64_t num_microslices; ///< Number of microslices.
 };
 
 //! Timeslice work item struct.
 struct TimesliceWorkItem
 {
     uint64_t ts_pos; ///< Start offset (in items) of this timeslice
-    uint32_t num_core_microslices;    ///< Number of core microslices
-    uint32_t num_overlap_microslices; ///< Number of overlapping microslices
-    uint32_t num_components; ///< Number of components (contributing input
+    uint32_t num_core_microslices; ///< Number of core microslices
+    uint32_t num_components;       ///< Number of components (contributing input
     /// channels)
     uint32_t data_buffer_size_exp; ///< Exp. size (in bytes) of each data buffer
     uint32_t desc_buffer_size_exp; ///< Exp. size (in bytes) of each descriptor
@@ -63,7 +63,6 @@ struct TimesliceWorkItem
     {
         ar& ts_pos;
         ar& num_core_microslices;
-        ar& num_overlap_microslices;
         ar& num_components;
         ar& data_buffer_size_exp;
         ar& desc_buffer_size_exp;
@@ -100,17 +99,10 @@ public:
         return _work_item.num_core_microslices;
     }
 
-    /// Retrieve the number of overlapping microslices.
-    uint64_t num_overlap_microslices() const
-    {
-        return _work_item.num_overlap_microslices;
-    }
-
     /// Retrieve the total number of microslices.
-    uint64_t num_microslices() const
+    uint64_t num_microslices(uint64_t component) const
     {
-        return _work_item.num_core_microslices
-               + _work_item.num_overlap_microslices;
+        return desc(component).num_microslices;
     }
 
     /// Retrieve the number of components (contributing input channels).
@@ -123,7 +115,7 @@ public:
     const uint8_t* content(uint64_t component, uint64_t microslice) const
     {
         return &data(component, desc(component).offset)
-               + num_microslices() * sizeof(MicrosliceDescriptor)
+               + desc(component).num_microslices * sizeof(MicrosliceDescriptor)
                + descriptor(component, microslice).offset
                - descriptor(component, 0).offset;
     }
@@ -190,17 +182,10 @@ public:
         return _work_item.num_core_microslices;
     }
 
-    /// Retrieve the number of overlapping microslices.
-    uint64_t num_overlap_microslices() const
-    {
-        return _work_item.num_overlap_microslices;
-    }
-
     /// Retrieve the total number of microslices.
     uint64_t num_microslices() const
     {
-        return _work_item.num_core_microslices
-               + _work_item.num_overlap_microslices;
+        return 0; //_work_item.num_core_microslices // TODO FIXME!
     }
 
     /// Retrieve the number of components (contributing input channels).

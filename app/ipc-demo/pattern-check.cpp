@@ -132,7 +132,7 @@ bool check_microslice(const fles::MicrosliceDescriptor& descriptor,
 bool check_timeslice(const fles::TimesliceView& ts)
 {
     for (size_t c = 0; c < ts.num_components(); ++c) {
-        for (size_t m = 0; m < ts.num_microslices(); ++m) {
+        for (size_t m = 0; m < ts.num_microslices(c); ++m) {
             bool success = check_microslice(
                 ts.descriptor(c, m),
                 reinterpret_cast<const uint64_t*>(ts.content(c, m)), c,
