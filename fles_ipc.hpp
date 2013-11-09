@@ -46,6 +46,11 @@ struct TimesliceComponentDescriptor
     uint64_t num_microslices; ///< Number of microslices.
 };
 
+//! Timeslice descriptor struct.
+// struct TimesliceDescriptor
+//{
+//}
+
 //! Timeslice work item struct.
 struct TimesliceWorkItem
 {
@@ -90,7 +95,7 @@ public:
     /// Retrieve the timeslice index.
     uint64_t index() const
     {
-        return desc(0).ts_num;
+        return _desc_ptr[0]->ts_num;
     }
 
     /// Retrieve the number of core microslices.
@@ -102,7 +107,7 @@ public:
     /// Retrieve the total number of microslices.
     uint64_t num_microslices(uint64_t component) const
     {
-        return desc(component).num_microslices;
+        return _desc_ptr[component]->num_microslices;
     }
 
     /// Retrieve the number of components (contributing input channels).
@@ -114,8 +119,8 @@ public:
     /// Retrieve a pointer to the data content of a given microslice
     const uint8_t* content(uint64_t component, uint64_t microslice) const
     {
-        return &data(component, desc(component).offset)
-               + desc(component).num_microslices * sizeof(MicrosliceDescriptor)
+        return _data_ptr[component] + _desc_ptr[component]->num_microslices
+                                      * sizeof(MicrosliceDescriptor)
                + descriptor(component, microslice).offset
                - descriptor(component, 0).offset;
     }
@@ -124,8 +129,8 @@ public:
     const MicrosliceDescriptor& descriptor(uint64_t component,
                                            uint64_t microslice) const
     {
-        return (&reinterpret_cast<const MicrosliceDescriptor&>(
-                     data(component, desc(component).offset)))[microslice];
+        return reinterpret_cast
+            <const MicrosliceDescriptor*>(_data_ptr[component])[microslice];
     }
 
 private:
@@ -160,6 +165,9 @@ private:
 
     uint64_t _descriptor_offset;
     uint64_t _data_offset_mask;
+
+    std::vector<const uint8_t*> _data_ptr;
+    std::vector<const TimesliceComponentDescriptor*> _desc_ptr;
 };
 
 //! The StorableTimeslice class contains the data of a single timeslice.

@@ -33,11 +33,19 @@ TimesliceView::TimesliceView(
                          & ((1L << _work_item.desc_buffer_size_exp) - 1L);
     _data_offset_mask = (1L << _work_item.data_buffer_size_exp) - 1L;
 
+    // initialize access pointer vectors
+    _data_ptr.resize(num_components());
+    _desc_ptr.resize(num_components());
+    for (size_t c = 0; c < num_components(); ++c) {
+        _desc_ptr[c] = &this->desc(c);
+        _data_ptr[c] = &this->data(c, _desc_ptr[c]->offset);
+    }
+
     // consistency check
     for (size_t c = 1; c < num_components(); ++c)
-        if (this->desc(0).ts_num != this->desc(c).ts_num)
-            std::cerr << "error: ts_num[0]=" << this->desc(0).ts_num
-                      << ", ts_num[" << c << "]=" << this->desc(c).ts_num
+        if (_desc_ptr[0]->ts_num != _desc_ptr[c]->ts_num)
+            std::cerr << "error: ts_num[0]=" << _desc_ptr[0]->ts_num
+                      << ", ts_num[" << c << "]=" << _desc_ptr[c]->ts_num
                       << std::endl;
 }
 
