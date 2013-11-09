@@ -35,6 +35,22 @@ struct MicrosliceDescriptor
     uint32_t crc;    ///< CRC32 checksum
     uint32_t size;   ///< Content size (bytes)
     uint64_t offset; ///< Offset in event buffer (bytes)
+
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int /* version */)
+    {
+        ar& hdr_id;
+        ar& hdr_ver;
+        ar& eq_id;
+        ar& flags;
+        ar& sys_id;
+        ar& sys_ver;
+        ar& idx;
+        ar& crc;
+        ar& size;
+        ar& offset;
+    }
 };
 
 //! Timeslice component descriptor struct.
@@ -44,6 +60,16 @@ struct TimesliceComponentDescriptor
     uint64_t offset; ///< Start offset (in bytes) of corresponding data.
     uint64_t size;   ///< Size (in bytes) of corresponding data.
     uint64_t num_microslices; ///< Number of microslices.
+
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int /* version */)
+    {
+        ar& ts_num;
+        ar& offset;
+        ar& size;
+        ar& num_microslices;
+    }
 };
 
 //! Timeslice descriptor struct.
@@ -78,6 +104,13 @@ struct TimesliceWorkItem
 struct TimesliceCompletion
 {
     uint64_t ts_pos; ///< Start offset (in items) of this timeslice
+
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int /* version */)
+    {
+        ar& ts_pos;
+    }
 };
 
 #pragma pack()
