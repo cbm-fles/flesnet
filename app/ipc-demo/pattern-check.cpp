@@ -127,7 +127,16 @@ bool check_microslice(const fles::MicrosliceDescriptor& descriptor,
 
 bool check_timeslice(const fles::TimesliceView& ts)
 {
+    if (ts.num_components() == 0) {
+        std::cerr << "no component in TS " << ts.index() << std::endl;
+        return false;
+    }
     for (size_t c = 0; c < ts.num_components(); ++c) {
+        if (ts.num_microslices(c) == 0) {
+            std::cerr << "no microslices in TS " << ts.index() << ", component "
+                      << c << std::endl;
+            return false;
+        }
         for (size_t m = 0; m < ts.num_microslices(c); ++m) {
             bool success = check_microslice(
                 ts.descriptor(c, m),
@@ -146,7 +155,7 @@ bool check_timeslice(const fles::TimesliceView& ts)
 bool check_timeslice(const fles::StorableTimeslice& ts)
 {
     for (size_t c = 0; c < ts.num_components(); ++c) {
-        for (size_t m = 0; m < ts.num_microslices(); ++m) {
+        for (size_t m = 0; m < ts.num_microslices(c); ++m) {
             bool success = check_microslice(
                 ts.descriptor(c, m),
                 reinterpret_cast<const uint64_t*>(ts.content(c, m)), c,
