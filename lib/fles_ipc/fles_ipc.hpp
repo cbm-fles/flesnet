@@ -73,20 +73,12 @@ struct TimesliceComponentDescriptor
 };
 
 //! Timeslice descriptor struct.
-// struct TimesliceDescriptor
-//{
-//}
-
-//! Timeslice work item struct.
-struct TimesliceWorkItem
+struct TimesliceDescriptor
 {
     uint64_t ts_pos; ///< Start offset (in items) of this timeslice
     uint32_t num_core_microslices; ///< Number of core microslices
     uint32_t num_components;       ///< Number of components (contributing input
     /// channels)
-    uint32_t data_buffer_size_exp; ///< Exp. size (in bytes) of each data buffer
-    uint32_t desc_buffer_size_exp; ///< Exp. size (in bytes) of each descriptor
-    /// buffer
 
     friend class boost::serialization::access;
     template <class Archive>
@@ -95,6 +87,22 @@ struct TimesliceWorkItem
         ar& ts_pos;
         ar& num_core_microslices;
         ar& num_components;
+    }
+};
+
+//! Timeslice work item struct.
+struct TimesliceWorkItem
+{
+    TimesliceDescriptor ts_desc;
+    uint32_t data_buffer_size_exp; ///< Exp. size (in bytes) of each data buffer
+    uint32_t desc_buffer_size_exp; ///< Exp. size (in bytes) of each descriptor
+    /// buffer
+
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int /* version */)
+    {
+        ar& ts_desc;
         ar& data_buffer_size_exp;
         ar& desc_buffer_size_exp;
     }
@@ -134,7 +142,7 @@ public:
     /// Retrieve the number of core microslices.
     uint64_t num_core_microslices() const
     {
-        return _work_item.num_core_microslices;
+        return _work_item.ts_desc.num_core_microslices;
     }
 
     /// Retrieve the total number of microslices.
@@ -146,7 +154,7 @@ public:
     /// Retrieve the number of components (contributing input channels).
     uint64_t num_components() const
     {
-        return _work_item.num_components;
+        return _work_item.ts_desc.num_components;
     }
 
     /// Retrieve a pointer to the data content of a given microslice
@@ -223,7 +231,7 @@ public:
     /// Retrieve the number of core microslices.
     uint64_t num_core_microslices() const
     {
-        return _work_item.num_core_microslices;
+        return _work_item.ts_desc.num_core_microslices;
     }
 
     /// Retrieve the total number of microslices.
@@ -236,7 +244,7 @@ public:
     /// Retrieve the number of components (contributing input channels).
     uint64_t num_components() const
     {
-        return _work_item.num_components;
+        return _work_item.ts_desc.num_components;
     }
 
     /// Retrieve a pointer to the data content of a given microslice

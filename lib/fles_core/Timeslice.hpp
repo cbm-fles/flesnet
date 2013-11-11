@@ -6,6 +6,7 @@
 #include <cmath>
 #include <rdma/rdma_cma.h>
 #include <boost/lexical_cast.hpp>
+#include <boost/serialization/access.hpp>
 
 #pragma pack(1)
 
@@ -91,15 +92,40 @@ struct InputNodeInfo
     uint32_t index;
 };
 
-struct TimesliceWorkItem
+//! Timeslice descriptor struct.
+struct TimesliceDescriptor
 {
     uint64_t ts_pos; ///< Start offset (in items) of this timeslice
     uint32_t num_core_microslices; ///< Number of core microslices
     uint32_t num_components;       ///< Number of components (contributing input
     /// channels)
+
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int /* version */)
+    {
+        ar& ts_pos;
+        ar& num_core_microslices;
+        ar& num_components;
+    }
+};
+
+//! Timeslice work item struct.
+struct TimesliceWorkItem
+{
+    TimesliceDescriptor ts_desc;
     uint32_t data_buffer_size_exp; ///< Exp. size (in bytes) of each data buffer
     uint32_t desc_buffer_size_exp; ///< Exp. size (in bytes) of each descriptor
-                                   /// buffer
+    /// buffer
+
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int /* version */)
+    {
+        ar& ts_desc;
+        ar& data_buffer_size_exp;
+        ar& desc_buffer_size_exp;
+    }
 };
 
 struct TimesliceCompletion

@@ -28,8 +28,8 @@ TimesliceView::TimesliceView(
       _desc(desc),
       _completions_mq(std::move(completions_mq))
 {
-    _completion = {_work_item.ts_pos};
-    _descriptor_offset = _work_item.ts_pos
+    _completion = {_work_item.ts_desc.ts_pos};
+    _descriptor_offset = _work_item.ts_desc.ts_pos
                          & ((1L << _work_item.desc_buffer_size_exp) - 1L);
     _data_offset_mask = (1L << _work_item.data_buffer_size_exp) - 1L;
 
@@ -51,10 +51,11 @@ TimesliceView::TimesliceView(
 
 StorableTimeslice::StorableTimeslice(const TimesliceView& ts)
     : _work_item(ts._work_item),
-      _data(ts._work_item.num_components),
-      _desc(ts._work_item.num_components)
+      _data(ts._work_item.ts_desc.num_components),
+      _desc(ts._work_item.ts_desc.num_components)
 {
-    for (std::size_t component = 0; component < ts._work_item.num_components;
+    for (std::size_t component = 0;
+         component < ts._work_item.ts_desc.num_components;
          ++component) {
         uint64_t size = ts.desc(component).size;
         const uint8_t* begin = &ts.data(component, ts.desc(component).offset);

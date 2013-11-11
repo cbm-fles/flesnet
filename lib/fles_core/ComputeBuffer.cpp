@@ -246,10 +246,10 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
             for (uint64_t tpos = _completely_written;
                  tpos < new_completely_written;
                  ++tpos) {
-                TimesliceWorkItem wi = {
-                    tpos,                                _timeslice_size,
-                    static_cast<uint32_t>(_conn.size()), _data_buffer_size_exp,
-                    _desc_buffer_size_exp};
+                TimesliceWorkItem wi
+                    = {{tpos, _timeslice_size,
+                        static_cast<uint32_t>(_conn.size())},
+                       _data_buffer_size_exp, _desc_buffer_size_exp};
                 _work_items_mq->send(&wi, sizeof(wi), 0);
             }
 
