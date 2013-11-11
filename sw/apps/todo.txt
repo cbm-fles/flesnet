@@ -5,6 +5,10 @@ Integrate Versioning
 - flib presence detection without exception?
 - get_fw_info liefert struct oder string
 
+Implemnt HW-deinit function that destoys buffers
+
+Add Link_active and other status signals to MC HDR Flags
+
 Fix Reset problematic
 - reste Dfifo from both sides. 
 - Maybe reset whole data path.
@@ -13,8 +17,6 @@ Create full simulation
 
 Integrate SW into flesnet repo
 - Check everything for correct headers
-
-Überprüfen warum pattern generator im aktuellen design nur minimale messages schickt
 
 Patch SC CDC to support burst wirtes. Adopt setmem*.
 
