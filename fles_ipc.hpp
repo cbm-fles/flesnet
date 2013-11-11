@@ -207,14 +207,17 @@ private:
 class StorableTimeslice
 {
 public:
-    StorableTimeslice() {}; // FIXME!
+    StorableTimeslice();
 
     StorableTimeslice(const TimesliceView& ts);
+
+    //    StorableTimeslice(const StorableTimeslice& other) = delete; // FIXME
 
     /// Retrieve the timeslice index.
     uint64_t index() const
     {
-        return _index;
+        init_pointers(); // FIXME!
+        return _desc_ptr[0]->ts_num;
     }
 
     /// Retrieve the number of core microslices.
@@ -224,9 +227,10 @@ public:
     }
 
     /// Retrieve the total number of microslices.
-    uint64_t num_microslices() const
+    uint64_t num_microslices(uint64_t component) const
     {
-        return 0; //_work_item.num_core_microslices // TODO FIXME!
+        init_pointers(); // FIXME!
+        return _desc_ptr[component]->num_microslices;
     }
 
     /// Retrieve the number of components (contributing input channels).
@@ -238,18 +242,29 @@ public:
     /// Retrieve a pointer to the data content of a given microslice
     const uint8_t* content(uint64_t component, uint64_t microslice) const
     {
-        return
-            &_data[component][num_microslices() * sizeof(MicrosliceDescriptor)
-                              + descriptor(component, microslice).offset
-                              - descriptor(component, 0).offset];
+        return _data_ptr[component] + _desc_ptr[component]->num_microslices
+                                      * sizeof(MicrosliceDescriptor)
+               + descriptor(component, microslice).offset
+               - descriptor(component, 0).offset;
     }
 
     /// Retrieve the descriptor of a given microslice
     const MicrosliceDescriptor& descriptor(uint64_t component,
                                            uint64_t microslice) const
     {
-        return (&reinterpret_cast
-                <const MicrosliceDescriptor&>(_data[component][0]))[microslice];
+        init_pointers(); // FIXME!
+        return (reinterpret_cast<const MicrosliceDescriptor*>(
+            _data_ptr[component]))[microslice];
+    }
+
+    void init_pointers() const
+    {
+        _data_ptr.resize(num_components());
+        _desc_ptr.resize(num_components());
+        for (size_t c = 0; c < num_components(); ++c) {
+            _desc_ptr[c] = &_desc[c];
+            _data_ptr[c] = _data[c].data();
+        }
     }
 
 private:
@@ -259,12 +274,17 @@ private:
     {
         ar& _work_item;
         ar& _data;
-        ar& _index;
+        ar& _desc;
+
+        init_pointers();
     }
 
     TimesliceWorkItem _work_item;
     std::vector<std::vector<uint8_t> > _data;
-    uint64_t _index;
+    std::vector<TimesliceComponentDescriptor> _desc;
+
+    mutable std::vector<const uint8_t*> _data_ptr;
+    mutable std::vector<const TimesliceComponentDescriptor*> _desc_ptr;
 };
 
 //! The TimesliceArchiveDescriptor precedes a stream of serialized
@@ -280,6 +300,7 @@ public:
 
     /// Retrieve the time of creation of the archive.
     std::time_t time_created() const;
+    // TODO: add hostname, username etc.
 
 private:
     friend class boost::serialization::access;

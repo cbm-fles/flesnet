@@ -52,7 +52,7 @@ TimesliceView::TimesliceView(
 StorableTimeslice::StorableTimeslice(const TimesliceView& ts)
     : _work_item(ts._work_item),
       _data(ts._work_item.num_components),
-      _index(ts.index())
+      _desc(ts._work_item.num_components)
 {
     for (std::size_t component = 0; component < ts._work_item.num_components;
          ++component) {
@@ -60,7 +60,14 @@ StorableTimeslice::StorableTimeslice(const TimesliceView& ts)
         const uint8_t* begin = &ts.data(component, ts.desc(component).offset);
         _data[component].resize(size);
         std::copy_n(begin, size, _data[component].begin());
+        _desc[component] = ts.desc(component);
     }
+
+    init_pointers();
+}
+
+StorableTimeslice::StorableTimeslice()
+{
 }
 
 time_t TimesliceArchiveDescriptor::time_created() const
