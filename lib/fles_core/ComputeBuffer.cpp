@@ -2,6 +2,10 @@
 
 #include "ComputeBuffer.hpp"
 #include "ChildProcessManager.hpp"
+#include "TimesliceWorkItem.hpp"
+#include "TimesliceCompletion.hpp"
+#include "InputNodeInfo.hpp"
+#include "RequestIdentifier.hpp"
 #include <boost/lexical_cast.hpp>
 #include <random>
 #include <csignal>
@@ -53,7 +57,7 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
     _data_shm->truncate(data_size);
 
     std::size_t desc_size = (1 << _desc_buffer_size_exp) * _num_input_nodes
-                            * sizeof(TimesliceComponentDescriptor);
+                            * sizeof(fles::TimesliceComponentDescriptor);
     _desc_shm->truncate(desc_size);
 
     std::unique_ptr<boost::interprocess::mapped_region> data_region(
@@ -83,14 +87,14 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
         new boost::interprocess::message_queue(
             boost::interprocess::create_only,
             (_shared_memory_identifier + "_work_items").c_str(), 1000,
-            sizeof(TimesliceWorkItem)));
+            sizeof(fles::TimesliceWorkItem)));
     _work_items_mq = std::move(work_items_mq);
 
     std::unique_ptr<boost::interprocess::message_queue> completions_mq(
         new boost::interprocess::message_queue(
             boost::interprocess::create_only,
             (_shared_memory_identifier + "_completions").c_str(), 1000,
-            sizeof(TimesliceCompletion)));
+            sizeof(fles::TimesliceCompletion)));
     _completions_mq = std::move(completions_mq);
 }
 
@@ -159,10 +163,11 @@ uint8_t* ComputeBuffer::get_data_ptr(uint_fast16_t index)
            + index * (1 << _data_buffer_size_exp);
 }
 
-TimesliceComponentDescriptor* ComputeBuffer::get_desc_ptr(uint_fast16_t index)
+fles::TimesliceComponentDescriptor*
+ComputeBuffer::get_desc_ptr(uint_fast16_t index)
 {
     return reinterpret_cast
-           <TimesliceComponentDescriptor*>(_desc_region->get_address())
+           <fles::TimesliceComponentDescriptor*>(_desc_region->get_address())
            + index * (1 << _desc_buffer_size_exp);
 }
 
@@ -172,8 +177,8 @@ uint8_t& ComputeBuffer::get_data(uint_fast16_t index, uint64_t offset)
     return get_data_ptr(index)[offset];
 }
 
-TimesliceComponentDescriptor& ComputeBuffer::get_desc(uint_fast16_t index,
-                                                      uint64_t offset)
+fles::TimesliceComponentDescriptor& ComputeBuffer::get_desc(uint_fast16_t index,
+                                                            uint64_t offset)
 {
     offset &= (1 << _desc_buffer_size_exp) - 1;
     return get_desc_ptr(index)[offset];
@@ -192,7 +197,7 @@ void ComputeBuffer::on_connect_request(struct rdma_cm_event* event)
     assert(index < _conn.size() && _conn.at(index) == nullptr);
 
     uint8_t* data_ptr = get_data_ptr(index);
-    TimesliceComponentDescriptor* desc_ptr = get_desc_ptr(index);
+    fles::TimesliceComponentDescriptor* desc_ptr = get_desc_ptr(index);
 
     std::unique_ptr<ComputeNodeConnection> conn(new ComputeNodeConnection(
         _ec, index, _compute_index, event->id, remote_info, data_ptr,
@@ -246,7 +251,7 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
             for (uint64_t tpos = _completely_written;
                  tpos < new_completely_written;
                  ++tpos) {
-                TimesliceWorkItem wi
+                fles::TimesliceWorkItem wi
                     = {{tpos, _timeslice_size,
                         static_cast<uint32_t>(_conn.size())},
                        _data_buffer_size_exp, _desc_buffer_size_exp};
@@ -270,7 +275,7 @@ void ComputeBuffer::handle_ts_completion()
     try
     {
         while (true) {
-            TimesliceCompletion c;
+            fles::TimesliceCompletion c;
             std::size_t recvd_size;
             unsigned int priority;
             _completions_mq->receive(&c, sizeof(c), recvd_size, priority);

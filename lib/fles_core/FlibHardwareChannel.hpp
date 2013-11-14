@@ -4,6 +4,7 @@
 #include "DataSource.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
+#include "MicrosliceDescriptor.hpp"
 #include <unistd.h> // <- TODO: required due to bug in flib.h
 #include <flib.h>
 #include <algorithm>
@@ -28,7 +29,7 @@ public:
         return *_data_buffer_view;
     }
 
-    virtual RingBufferView<MicrosliceDescriptor>& desc_buffer() override
+    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
     {
         return *_desc_buffer_view;
     }
@@ -38,7 +39,8 @@ public:
         return _data_send_buffer_view;
     }
 
-    virtual RingBufferView<MicrosliceDescriptor>& desc_send_buffer() override
+    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_send_buffer()
+        override
     {
         return _desc_send_buffer_view;
     }
@@ -66,13 +68,14 @@ public:
 
 private:
     std::unique_ptr<RingBufferView<> > _data_buffer_view;
-    std::unique_ptr<RingBufferView<MicrosliceDescriptor> > _desc_buffer_view;
+    std::unique_ptr
+        <RingBufferView<fles::MicrosliceDescriptor> > _desc_buffer_view;
 
     RingBuffer<> _data_send_buffer;
-    RingBuffer<MicrosliceDescriptor> _desc_send_buffer;
+    RingBuffer<fles::MicrosliceDescriptor> _desc_send_buffer;
 
     RingBufferView<> _data_send_buffer_view;
-    RingBufferView<MicrosliceDescriptor> _desc_send_buffer_view;
+    RingBufferView<fles::MicrosliceDescriptor> _desc_send_buffer_view;
 
     /// This node's index in the list of input nodes
     uint64_t _input_index;

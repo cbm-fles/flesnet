@@ -28,14 +28,15 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
 
     uint8_t* data_buffer = reinterpret_cast
         <uint8_t*>(_flib_link->ebuf()->getMem());
-    MicrosliceDescriptor* desc_buffer = reinterpret_cast
-        <MicrosliceDescriptor*>(_flib_link->rbuf()->getMem());
+    fles::MicrosliceDescriptor* desc_buffer = reinterpret_cast
+        <fles::MicrosliceDescriptor*>(_flib_link->rbuf()->getMem());
 
     _data_buffer_view = std::unique_ptr<RingBufferView<> >(
         new RingBufferView<>(data_buffer, data_buffer_size_exp));
-    _desc_buffer_view = std::unique_ptr<RingBufferView<MicrosliceDescriptor> >(
-        new RingBufferView
-        <MicrosliceDescriptor>(desc_buffer, desc_buffer_size_exp));
+    _desc_buffer_view = std::unique_ptr
+        <RingBufferView<fles::MicrosliceDescriptor> >(
+            new RingBufferView
+            <fles::MicrosliceDescriptor>(desc_buffer, desc_buffer_size_exp));
 
     flib::hdr_config config{static_cast<uint16_t>(0xE000 + input_index), 0xBC,
                             0xFD};
@@ -72,5 +73,5 @@ void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
     _flib_link->get_ch()->setOffsets(
         new_acked_data & _data_buffer_view->size_mask(),
         (new_acked_mc & _desc_buffer_view->size_mask())
-        * sizeof(MicrosliceDescriptor));
+        * sizeof(fles::MicrosliceDescriptor));
 }

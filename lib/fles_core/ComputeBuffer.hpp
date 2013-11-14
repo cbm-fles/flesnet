@@ -4,6 +4,7 @@
 #include "IBConnectionGroup.hpp"
 #include "ComputeNodeConnection.hpp"
 #include "RingBuffer.hpp"
+#include "TimesliceComponentDescriptor.hpp"
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
@@ -38,12 +39,12 @@ public:
 
     uint8_t* get_data_ptr(uint_fast16_t index);
 
-    TimesliceComponentDescriptor* get_desc_ptr(uint_fast16_t index);
+    fles::TimesliceComponentDescriptor* get_desc_ptr(uint_fast16_t index);
 
     uint8_t& get_data(uint_fast16_t index, uint64_t offset);
 
-    TimesliceComponentDescriptor& get_desc(uint_fast16_t index,
-                                           uint64_t offset);
+    fles::TimesliceComponentDescriptor& get_desc(uint_fast16_t index,
+                                                 uint64_t offset);
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
     virtual void on_connect_request(struct rdma_cm_event* event) override;

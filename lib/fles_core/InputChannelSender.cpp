@@ -1,6 +1,8 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "InputChannelSender.hpp"
+#include "MicrosliceDescriptor.hpp"
+#include "RequestIdentifier.hpp"
 #include <cassert>
 
 InputChannelSender::InputChannelSender(uint64_t input_index,
@@ -109,8 +111,8 @@ void InputChannelSender::sender_loop()
         assert(data_end >= data_offset);
 
         uint64_t data_length = data_end - data_offset;
-        uint64_t total_length = data_length + mc_length
-                                              * sizeof(MicrosliceDescriptor);
+        uint64_t total_length
+            = data_length + mc_length * sizeof(fles::MicrosliceDescriptor);
 
         if (out.beTrace()) {
             out.trace() << "SENDER working on TS " << timeslice << ", MCs "
@@ -264,21 +266,21 @@ void InputChannelSender::post_send_data(uint64_t timeslice, int cn,
         // one chunk
         sge[num_sge].addr = reinterpret_cast
             <uintptr_t>(&_data_source.desc_send_buffer().at(mc_offset));
-        sge[num_sge].length = sizeof(MicrosliceDescriptor) * mc_length;
+        sge[num_sge].length = sizeof(fles::MicrosliceDescriptor) * mc_length;
         sge[num_sge++].lkey = _mr_desc->lkey;
     } else {
         // two chunks
         sge[num_sge].addr = reinterpret_cast
             <uintptr_t>(&_data_source.desc_send_buffer().at(mc_offset));
         sge[num_sge].length
-            = sizeof(MicrosliceDescriptor)
+            = sizeof(fles::MicrosliceDescriptor)
               * (_data_source.desc_send_buffer().size()
                  - (mc_offset & _data_source.desc_send_buffer().size_mask()));
         sge[num_sge++].lkey = _mr_desc->lkey;
         sge[num_sge].addr = reinterpret_cast
             <uintptr_t>(_data_source.desc_send_buffer().ptr());
         sge[num_sge].length
-            = sizeof(MicrosliceDescriptor)
+            = sizeof(fles::MicrosliceDescriptor)
               * (mc_length - _data_source.desc_send_buffer().size()
                  + (mc_offset & _data_source.desc_send_buffer().size_mask()));
         sge[num_sge++].lkey = _mr_desc->lkey;
@@ -312,9 +314,9 @@ void InputChannelSender::post_send_data(uint64_t timeslice, int cn,
     for (int i = 0; i < num_sge; ++i) {
         if (i < num_desc_sge) {
             _data_source.copy_to_desc_send_buffer(
-                reinterpret_cast<MicrosliceDescriptor*>(sge[i].addr)
+                reinterpret_cast<fles::MicrosliceDescriptor*>(sge[i].addr)
                 - _data_source.desc_send_buffer().ptr(),
-                sge[i].length / sizeof(MicrosliceDescriptor));
+                sge[i].length / sizeof(fles::MicrosliceDescriptor));
         } else {
             _data_source.copy_to_data_send_buffer(
                 reinterpret_cast<uint8_t*>(sge[i].addr)

@@ -5,6 +5,7 @@
 #include "ThreadContainer.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
+#include "MicrosliceDescriptor.hpp"
 #include "global.hpp"
 #include <atomic>
 #include <thread>
@@ -65,7 +66,7 @@ public:
         return _data_buffer_view;
     }
 
-    virtual RingBufferView<MicrosliceDescriptor>& desc_buffer() override
+    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
     {
         return _desc_buffer_view;
     }
@@ -103,10 +104,10 @@ private:
     RingBuffer<> _data_buffer;
 
     /// Input descriptor buffer.
-    RingBuffer<MicrosliceDescriptor> _desc_buffer;
+    RingBuffer<fles::MicrosliceDescriptor> _desc_buffer;
 
     RingBufferView<> _data_buffer_view;
-    RingBufferView<MicrosliceDescriptor> _desc_buffer_view;
+    RingBufferView<fles::MicrosliceDescriptor> _desc_buffer_view;
 
     /// This node's index in the list of input nodes
     uint64_t _input_index;

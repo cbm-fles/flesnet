@@ -1,6 +1,8 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "ComputeNodeConnection.hpp"
+#include "ComputeNodeInfo.hpp"
+#include "RequestIdentifier.hpp"
 #include "global.hpp"
 #include <cassert>
 
@@ -12,7 +14,7 @@ ComputeNodeConnection::ComputeNodeConnection(
     InputNodeInfo remote_info,
     uint8_t* data_ptr,
     uint32_t data_buffer_size_exp,
-    TimesliceComponentDescriptor* desc_ptr,
+    fles::TimesliceComponentDescriptor* desc_ptr,
     uint32_t desc_buffer_size_exp)
     : IBConnection(ec, connection_index, remote_connection_index, id),
       _remote_info(std::move(remote_info)),
@@ -70,7 +72,7 @@ void ComputeNodeConnection::setup(struct ibv_pd* pd)
     // register memory regions
     std::size_t data_bytes = 1 << _data_buffer_size_exp;
     std::size_t desc_bytes = (1 << _desc_buffer_size_exp)
-                             * sizeof(TimesliceComponentDescriptor);
+                             * sizeof(fles::TimesliceComponentDescriptor);
     _mr_data = ibv_reg_mr(pd, _data_ptr, data_bytes,
                           IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE);
     _mr_desc = ibv_reg_mr(pd, _desc_ptr, desc_bytes,
@@ -146,7 +148,7 @@ void ComputeNodeConnection::inc_ack_pointers(uint64_t ack_pos)
     std::unique_lock<std::mutex> lock(_cn_ack_mutex);
     _cn_ack.desc = ack_pos;
 
-    const TimesliceComponentDescriptor& acked_ts
+    const fles::TimesliceComponentDescriptor& acked_ts
         = _desc_ptr[(ack_pos - 1) & ((1 << _desc_buffer_size_exp) - 1)];
 
     _cn_ack.data = acked_ts.offset + acked_ts.size;

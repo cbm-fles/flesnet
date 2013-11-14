@@ -2,7 +2,7 @@
 #pragma once
 
 #include "RingBufferView.hpp"
-#include "Timeslice.hpp"
+#include "MicrosliceDescriptor.hpp"
 
 /// Abstract FLES data source class.
 class DataSource
@@ -19,14 +19,14 @@ public:
 
     virtual RingBufferView<>& data_buffer() = 0;
 
-    virtual RingBufferView<MicrosliceDescriptor>& desc_buffer() = 0;
+    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() = 0;
 
     virtual RingBufferView<>& data_send_buffer()
     {
         return data_buffer();
     }
 
-    virtual RingBufferView<MicrosliceDescriptor>& desc_send_buffer()
+    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_send_buffer()
     {
         return desc_buffer();
     }

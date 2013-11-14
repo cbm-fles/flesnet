@@ -1,6 +1,10 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "InputChannelConnection.hpp"
+#include "TimesliceComponentDescriptor.hpp"
+#include "MicrosliceDescriptor.hpp"
+#include "InputNodeInfo.hpp"
+#include "RequestIdentifier.hpp"
 #include "global.hpp"
 #include <cassert>
 #include <cstring>
@@ -25,7 +29,7 @@ InputChannelConnection::InputChannelConnection(
         = 1; // receive only single ComputeNodeBufferPosition struct
     _qp_cap.max_recv_sge = 1;
 
-    _qp_cap.max_inline_data = sizeof(TimesliceComponentDescriptor);
+    _qp_cap.max_inline_data = sizeof(fles::TimesliceComponentDescriptor);
 }
 
 void InputChannelConnection::wait_for_buffer_space(uint64_t data_size,
@@ -92,7 +96,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
 
     // split sge list if necessary
     int num_sge_cut = 0;
-    if (data_length + mc_length * sizeof(MicrosliceDescriptor)
+    if (data_length + mc_length * sizeof(fles::MicrosliceDescriptor)
         > target_bytes_left) {
         for (int i = 0; i < num_sge; ++i) {
             if (sge[i].length <= target_bytes_left) {
@@ -139,10 +143,10 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
     }
 
     // timeslice component descriptor
-    TimesliceComponentDescriptor tscdesc;
+    fles::TimesliceComponentDescriptor tscdesc;
     tscdesc.ts_num = timeslice;
     tscdesc.offset = cn_wp_data;
-    tscdesc.size = data_length + mc_length * sizeof(MicrosliceDescriptor);
+    tscdesc.size = data_length + mc_length * sizeof(fles::MicrosliceDescriptor);
     tscdesc.num_microslices = mc_length;
     struct ibv_sge sge3;
     sge3.addr = reinterpret_cast<uintptr_t>(&tscdesc);
@@ -159,7 +163,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
     send_wr_tscdesc.wr.rdma.rkey = _remote_info.desc.rkey;
     send_wr_tscdesc.wr.rdma.remote_addr = static_cast<uintptr_t>(
         _remote_info.desc.addr + (_cn_wp.desc & cn_desc_buffer_mask)
-                                 * sizeof(TimesliceComponentDescriptor));
+                                 * sizeof(fles::TimesliceComponentDescriptor));
 
     out.debug() << "[i" << _remote_index << "] "
                 << "[" << _index << "] "

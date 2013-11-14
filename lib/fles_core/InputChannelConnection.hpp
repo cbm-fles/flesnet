@@ -2,7 +2,8 @@
 #pragma once
 
 #include "IBConnection.hpp"
-#include "Timeslice.hpp"
+#include "ComputeNodeBufferPosition.hpp"
+#include "ComputeNodeInfo.hpp"
 #include <mutex>
 #include <condition_variable>
 #include <atomic>

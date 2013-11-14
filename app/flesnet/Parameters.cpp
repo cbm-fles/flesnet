@@ -1,7 +1,9 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Parameters.hpp"
-#include "Timeslice.hpp"
+#include "MicrosliceDescriptor.hpp"
+#include "TimesliceComponentDescriptor.hpp"
+#include "Utility.hpp"
 #include "global.hpp"
 
 #include <boost/program_options.hpp>
@@ -104,7 +106,8 @@ uint32_t Parameters::suggest_in_desc_buffer_size_exp()
     uint32_t suggest_in_desc_buffer_size_exp
         = ceilf(log2f(suggest_in_desc_buffer_size));
 
-    float relative_size = in_data_buffer_size / sizeof(MicrosliceDescriptor);
+    float relative_size = in_data_buffer_size
+                          / sizeof(fles::MicrosliceDescriptor);
     uint32_t max_in_desc_buffer_size_exp
         = floorf(log2f(relative_size * max_desc_data_ratio));
     uint32_t min_in_desc_buffer_size_exp
@@ -141,7 +144,7 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
         = ceilf(log2f(suggest_cn_desc_buffer_size));
 
     float relative_size = cn_data_buffer_size
-                          / sizeof(TimesliceComponentDescriptor);
+                          / sizeof(fles::TimesliceComponentDescriptor);
     uint32_t min_cn_desc_buffer_size_exp
         = ceilf(log2f(relative_size * min_desc_data_ratio));
     uint32_t max_cn_desc_buffer_size_exp
@@ -307,13 +310,13 @@ void Parameters::parse_options(int argc, char* argv[])
                                                     << _in_data_buffer_size_exp)
                        << " + " << human_readable_byte_count(
                                        (1 << _in_desc_buffer_size_exp)
-                                       * sizeof(MicrosliceDescriptor));
+                                       * sizeof(fles::MicrosliceDescriptor));
             out.info() << "compute node buffer size: "
-                       << human_readable_byte_count(1
-                                                    << _cn_data_buffer_size_exp)
-                       << " + " << human_readable_byte_count(
-                                       (1 << _cn_desc_buffer_size_exp)
-                                       * sizeof(TimesliceComponentDescriptor));
+                       << human_readable_byte_count(
+                              1 << _cn_data_buffer_size_exp) << " + "
+                       << human_readable_byte_count(
+                              (1 << _cn_desc_buffer_size_exp)
+                              * sizeof(fles::TimesliceComponentDescriptor));
         }
     }
 }

@@ -2,7 +2,9 @@
 #pragma once
 
 #include "IBConnection.hpp"
-#include "Timeslice.hpp"
+#include "TimesliceComponentDescriptor.hpp"
+#include "ComputeNodeBufferPosition.hpp"
+#include "InputNodeInfo.hpp"
 #include <mutex>
 #include <atomic>
 
@@ -21,7 +23,7 @@ public:
                           InputNodeInfo remote_info,
                           uint8_t* data_ptr,
                           uint32_t data_buffer_size_exp,
-                          TimesliceComponentDescriptor* desc_ptr,
+                          fles::TimesliceComponentDescriptor* desc_ptr,
                           uint32_t desc_buffer_size_exp);
 
     ComputeNodeConnection(const ComputeNodeConnection&) = delete;
@@ -81,7 +83,7 @@ private:
     uint8_t* _data_ptr = nullptr;
     std::size_t _data_buffer_size_exp = 0;
 
-    TimesliceComponentDescriptor* _desc_ptr = nullptr;
+    fles::TimesliceComponentDescriptor* _desc_ptr = nullptr;
     std::size_t _desc_buffer_size_exp = 0;
 
     /// InfiniBand receive work request

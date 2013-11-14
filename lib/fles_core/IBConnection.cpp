@@ -1,7 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "IBConnection.hpp"
-#include "Timeslice.hpp"
+#include "RequestIdentifier.hpp"
 #include "global.hpp"
 #include <netdb.h>
 #include <cstring>
@@ -191,7 +191,7 @@ void IBConnection::dump_send_wr(struct ibv_send_wr* wr)
 {
     for (int i = 0; wr; ++i, wr = wr->next) {
         out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id << " ("
-                    << static_cast<REQUEST_ID>(wr->wr_id) << ")";
+                    << static_cast<RequestIdentifier>(wr->wr_id) << ")";
         out.fatal() << " opcode=" << wr->opcode;
         out.fatal() << " send_flags=" << static_cast
             <ibv_send_flags>(wr->send_flags);

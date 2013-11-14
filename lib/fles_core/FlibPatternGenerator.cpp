@@ -92,7 +92,7 @@ void FlibPatternGenerator::produce_data()
                 }
 
                 // write to descriptor buffer
-                _desc_buffer.at(written_mc++) = MicrosliceDescriptor(
+                _desc_buffer.at(written_mc++) = fles::MicrosliceDescriptor(
                     {hdr_id,  hdr_ver, eq_id, flags, sys_id,
                      sys_ver, idx,     crc,   size,  offset});
 
