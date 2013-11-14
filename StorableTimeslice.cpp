@@ -6,18 +6,17 @@ namespace fles
 {
 
 StorableTimeslice::StorableTimeslice(const TimesliceView& ts)
-    : _work_item(ts._work_item),
-      _data(ts._work_item.ts_desc.num_components),
-      _desc(ts._work_item.ts_desc.num_components)
+    : _data(ts._timeslice_descriptor.num_components),
+      _desc(ts._timeslice_descriptor.num_components)
 {
+    _timeslice_descriptor = std::move(ts._timeslice_descriptor);
     for (std::size_t component = 0;
-         component < ts._work_item.ts_desc.num_components;
+         component < ts._timeslice_descriptor.num_components;
          ++component) {
-        uint64_t size = ts.desc(component).size;
-        const uint8_t* begin = &ts.data(component, ts.desc(component).offset);
+        uint64_t size = ts._desc_ptr[component]->size;
         _data[component].resize(size);
-        std::copy_n(begin, size, _data[component].begin());
-        _desc[component] = ts.desc(component);
+        std::copy_n(ts._data_ptr[component], size, _data[component].begin());
+        _desc[component] = *ts._desc_ptr[component];
     }
 
     init_pointers();
