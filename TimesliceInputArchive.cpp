@@ -13,17 +13,16 @@ TimesliceInputArchive::TimesliceInputArchive(const std::string& filename)
 
 std::unique_ptr<StorableTimeslice> TimesliceInputArchive::read()
 {
-    StorableTimeslice s;
+    std::unique_ptr<StorableTimeslice> sts;
     try
     {
-        _iarchive >> s;
+        sts = std::unique_ptr<StorableTimeslice>(new StorableTimeslice());
+        _iarchive >> (*sts);
     }
     catch (boost::archive::archive_exception e)
     {
         return nullptr;
     }
-    std::unique_ptr<StorableTimeslice> sts = std::unique_ptr
-        <StorableTimeslice>(new StorableTimeslice(s));
     return sts;
 }
 
