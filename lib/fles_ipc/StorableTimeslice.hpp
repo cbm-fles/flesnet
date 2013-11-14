@@ -23,16 +23,14 @@ namespace fles
 class StorableTimeslice
 {
 public:
-    StorableTimeslice();
-
     StorableTimeslice(const TimesliceView& ts);
 
-    //    StorableTimeslice(const StorableTimeslice& other) = delete; // FIXME
+    StorableTimeslice(const StorableTimeslice& other) = delete;
+    void operator=(const StorableTimeslice&) = delete;
 
     /// Retrieve the timeslice index.
     uint64_t index() const
     {
-        init_pointers(); // FIXME!
         return _desc_ptr[0]->ts_num;
     }
 
@@ -45,7 +43,6 @@ public:
     /// Retrieve the total number of microslices.
     uint64_t num_microslices(uint64_t component) const
     {
-        init_pointers(); // FIXME!
         return _desc_ptr[component]->num_microslices;
     }
 
@@ -68,12 +65,11 @@ public:
     const MicrosliceDescriptor& descriptor(uint64_t component,
                                            uint64_t microslice) const
     {
-        init_pointers(); // FIXME!
         return (reinterpret_cast<const MicrosliceDescriptor*>(
             _data_ptr[component]))[microslice];
     }
 
-    void init_pointers() const
+    void init_pointers()
     {
         _data_ptr.resize(num_components());
         _desc_ptr.resize(num_components());
@@ -85,6 +81,10 @@ public:
 
 private:
     friend class boost::serialization::access;
+    friend class TimesliceInputArchive;
+
+    StorableTimeslice();
+
     template <class Archive>
     void serialize(Archive& ar, const unsigned int /* version */)
     {
@@ -99,8 +99,8 @@ private:
     std::vector<std::vector<uint8_t> > _data;
     std::vector<TimesliceComponentDescriptor> _desc;
 
-    mutable std::vector<const uint8_t*> _data_ptr;
-    mutable std::vector<const TimesliceComponentDescriptor*> _desc_ptr;
+    std::vector<const uint8_t*> _data_ptr;
+    std::vector<const TimesliceComponentDescriptor*> _desc_ptr;
 };
 
 } // namespace fles {
