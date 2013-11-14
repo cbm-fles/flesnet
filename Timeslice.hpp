@@ -6,6 +6,8 @@
 #include "TimesliceComponentDescriptor.hpp"
 #include <cstdint>
 #include <vector>
+#include <fstream>
+#include <boost/serialization/access.hpp>
 // Note: <fstream> has to precede boost/serialization includes for non-obvious
 // reasons to avoid segfault similar to
 // http://lists.debian.org/debian-hppa/2009/11/msg00069.html
@@ -18,6 +20,8 @@ namespace fles
 class Timeslice
 {
 public:
+    virtual ~Timeslice() {};
+
     /// Retrieve the timeslice index.
     uint64_t index() const
     {
@@ -60,6 +64,8 @@ public:
     }
 
 protected:
+    friend class StorableTimeslice;
+
     TimesliceDescriptor _timeslice_descriptor;
     std::vector<const uint8_t*> _data_ptr;
     std::vector<const TimesliceComponentDescriptor*> _desc_ptr;

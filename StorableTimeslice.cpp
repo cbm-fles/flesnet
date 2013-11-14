@@ -5,11 +5,11 @@
 namespace fles
 {
 
-StorableTimeslice::StorableTimeslice(const TimesliceView& ts)
+StorableTimeslice::StorableTimeslice(const Timeslice& ts)
     : _data(ts._timeslice_descriptor.num_components),
       _desc(ts._timeslice_descriptor.num_components)
 {
-    _timeslice_descriptor = std::move(ts._timeslice_descriptor);
+    _timeslice_descriptor = ts._timeslice_descriptor;
     for (std::size_t component = 0;
          component < ts._timeslice_descriptor.num_components;
          ++component) {

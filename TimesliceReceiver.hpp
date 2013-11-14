@@ -1,6 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "TimesliceSource.hpp"
 #include "TimesliceView.hpp"
 #include <string>
 #include <memory>
@@ -16,19 +17,24 @@ namespace fles
 
 //! The TimesliceReveicer class implements the IPC mechanisms to receive a
 // timeslice.
-class TimesliceReceiver
+class TimesliceReceiver : public TimesliceSource
 {
 public:
-    /// The TimesliceReceiver constructor.
     TimesliceReceiver(const std::string shared_memory_identifier);
 
     TimesliceReceiver(const TimesliceReceiver&) = delete;
     void operator=(const TimesliceReceiver&) = delete;
 
-    /// Receive the next timeslice, block if not yet available.
-    std::unique_ptr<const TimesliceView> receive();
+    virtual ~TimesliceReceiver() {};
+
+    std::unique_ptr<TimesliceView> get()
+    {
+        return std::unique_ptr<TimesliceView>(do_get());
+    };
 
 private:
+    virtual TimesliceView* do_get();
+
     const std::string _shared_memory_identifier;
 
     std::unique_ptr<boost::interprocess::shared_memory_object> _data_shm;
@@ -39,8 +45,6 @@ private:
 
     std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
     std::shared_ptr<boost::interprocess::message_queue> _completions_mq;
-
-    bool _eof = false;
 };
 
 } // namespace fles {

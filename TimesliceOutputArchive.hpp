@@ -10,7 +10,7 @@
 namespace fles
 {
 
-//! The TimesliceOutputArchive...
+//! The TimesliceOutputArchive serializes timeslice data sets to an output file.
 class TimesliceOutputArchive
 {
 public:

@@ -46,7 +46,7 @@ TimesliceView::~TimesliceView()
     catch (boost::interprocess::interprocess_exception& e)
     {
         std::cerr << "exception in destructor ~TimesliceView(): " << e.what();
-        // TODO: this is not sufficient
+        // FIXME: this may not be sufficient in case of error
     }
 }
 

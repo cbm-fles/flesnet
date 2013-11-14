@@ -22,7 +22,7 @@ public:
     TimesliceView(const TimesliceView&) = delete;
     void operator=(const TimesliceView&) = delete;
 
-    ~TimesliceView();
+    virtual ~TimesliceView();
 
 private:
     friend class TimesliceReceiver;

@@ -39,7 +39,7 @@ TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
             (shared_memory_identifier + "_completions").c_str()));
 }
 
-std::unique_ptr<const TimesliceView> TimesliceReceiver::receive()
+TimesliceView* TimesliceReceiver::do_get()
 {
     if (_eof)
         return nullptr;
@@ -55,11 +55,11 @@ std::unique_ptr<const TimesliceView> TimesliceReceiver::receive()
     }
     assert(recvd_size == sizeof(wi));
 
-    return std::unique_ptr<TimesliceView>(new TimesliceView(
+    return new TimesliceView(
         wi, reinterpret_cast<uint8_t*>(_data_region->get_address()),
         reinterpret_cast
         <TimesliceComponentDescriptor*>(_desc_region->get_address()),
-        _completions_mq));
+        _completions_mq);
 }
 
 } // namespace fles {

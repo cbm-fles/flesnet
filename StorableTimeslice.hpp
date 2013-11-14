@@ -2,7 +2,6 @@
 #pragma once
 
 #include "Timeslice.hpp"
-#include "TimesliceView.hpp"
 #include <cstdint>
 #include <vector>
 #include <fstream>
@@ -19,7 +18,7 @@ namespace fles
 class StorableTimeslice : public Timeslice
 {
 public:
-    StorableTimeslice(const TimesliceView& ts);
+    StorableTimeslice(const Timeslice& ts);
 
     StorableTimeslice(const StorableTimeslice& other) = delete;
     void operator=(const StorableTimeslice&) = delete;
