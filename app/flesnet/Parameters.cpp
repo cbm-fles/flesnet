@@ -11,14 +11,6 @@
 
 namespace po = boost::program_options;
 
-/// Overloaded output operator for STL vectors.
-template <class T>
-std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
-{
-    copy(v.begin(), v.end(), std::ostream_iterator<T>(os, " "));
-    return os;
-}
-
 std::string const Parameters::desc() const
 {
     std::stringstream st;

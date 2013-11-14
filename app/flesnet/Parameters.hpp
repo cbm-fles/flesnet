@@ -174,9 +174,6 @@ private:
     /// entries).
     uint32_t _cn_desc_buffer_size_exp = 0;
 
-    /// The check pattern flag.
-    bool _check_pattern = true;
-
     /// The use flib flag.
     bool _use_flib = true;
 

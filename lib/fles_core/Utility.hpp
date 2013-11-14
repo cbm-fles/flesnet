@@ -7,6 +7,15 @@
 #include <rdma/rdma_cma.h>
 #include <boost/lexical_cast.hpp>
 
+/// Overloaded output operator for STL vectors.
+template <class T>
+inline std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
+{
+    copy(v.begin(), v.end(), std::ostream_iterator<T>(os, " "));
+    return os;
+}
+
+/// Overloaded output operator for ibv_wr_opcode.
 inline std::ostream& operator<<(std::ostream& s, ibv_wr_opcode v)
 {
     switch (v) {
@@ -29,6 +38,7 @@ inline std::ostream& operator<<(std::ostream& s, ibv_wr_opcode v)
     }
 }
 
+/// Overloaded output operator for ibv_send_flags.
 inline std::ostream& operator<<(std::ostream& s, ibv_send_flags v)
 {
     std::string str;

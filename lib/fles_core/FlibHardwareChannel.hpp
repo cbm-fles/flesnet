@@ -77,21 +77,6 @@ private:
     RingBufferView<> _data_send_buffer_view;
     RingBufferView<fles::MicrosliceDescriptor> _desc_send_buffer_view;
 
-    /// This node's index in the list of input nodes
-    uint64_t _input_index;
-
     /// Associated FLIB link class.
     flib::flib_link* _flib_link;
-
-    /// Number of acknowledged data bytes. Updated by input node.
-    uint64_t _acked_data{0};
-
-    /// Number of acknowledged MCs. Updated by input node.
-    uint64_t _acked_mc{0};
-
-    /// FLIB-internal number of written data bytes.
-    uint64_t _written_data{0};
-
-    /// FLIB-internal number of written MCs.
-    uint64_t _written_mc{0};
 };
