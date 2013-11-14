@@ -13,7 +13,7 @@ namespace fles
 {
 
 //! The TimesliceInputArchive deserializes timeslice data sets from an input
-//file.
+// file.
 class TimesliceInputArchive : public TimesliceSource
 {
 public:
