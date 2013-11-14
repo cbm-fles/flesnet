@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     fles::TimesliceOutputArchive output_archive("storage.data");
 
     int count = 0;
-    while (auto timeslice = tsr.receive()) {
+    while (auto timeslice = tsr.get()) {
         output_archive.write(*timeslice);
         ++count;
     }

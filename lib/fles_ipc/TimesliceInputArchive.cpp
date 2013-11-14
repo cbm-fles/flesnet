@@ -11,16 +11,17 @@ TimesliceInputArchive::TimesliceInputArchive(const std::string& filename)
     _iarchive >> _descriptor;
 }
 
-std::unique_ptr<StorableTimeslice> TimesliceInputArchive::read()
+StorableTimeslice* TimesliceInputArchive::do_get()
 {
-    std::unique_ptr<StorableTimeslice> sts;
+    StorableTimeslice* sts = nullptr;
     try
     {
-        sts = std::unique_ptr<StorableTimeslice>(new StorableTimeslice());
-        _iarchive >> (*sts);
+        sts = new StorableTimeslice();
+        _iarchive >> *sts;
     }
     catch (boost::archive::archive_exception e)
     {
+        delete sts;
         return nullptr;
     }
     return sts;

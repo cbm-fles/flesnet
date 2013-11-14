@@ -1,10 +1,11 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
-#include "StorableTimeslice.hpp"
+#include "TimesliceSource.hpp"
 #include "TimesliceReceiver.hpp"
 #include "TimesliceInputArchive.hpp"
 #include <iostream>
-#include <csignal>
+#include <memory>
+#include <cassert>
 
 int count = 0;
 
@@ -127,7 +128,7 @@ bool check_microslice(const fles::MicrosliceDescriptor& descriptor,
     return true;
 }
 
-bool check_timeslice(const fles::TimesliceView& ts)
+bool check_timeslice(const fles::Timeslice& ts)
 {
     if (ts.num_components() == 0) {
         std::cerr << "no component in TS " << ts.index() << std::endl;
@@ -154,58 +155,29 @@ bool check_timeslice(const fles::TimesliceView& ts)
     return true;
 }
 
-bool check_timeslice(const fles::StorableTimeslice& ts)
-{
-    for (size_t c = 0; c < ts.num_components(); ++c) {
-        for (size_t m = 0; m < ts.num_microslices(c); ++m) {
-            bool success = check_microslice(
-                ts.descriptor(c, m),
-                reinterpret_cast<const uint64_t*>(ts.content(c, m)), c,
-                ts.index() * ts.num_core_microslices() + m);
-            if (!success) {
-                std::cerr << "pattern error in TS " << ts.index() << ", MC "
-                          << m << ", component " << c << std::endl;
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 int main(int argc, char* argv[])
 {
     assert(argc > 1);
     std::string param(argv[1]);
 
+    std::unique_ptr<fles::TimesliceSource> timeslice_source;
+
     if (param.find("flesnet_") == 0) {
-        fles::TimesliceReceiver tsr(param);
-
-        while (auto ts = tsr.receive()) {
-            check_timeslice(*ts);
-            ++count;
-            if ((count % 10000) == 0) {
-                std::cout << "timeslices checked: " << count;
-                std::cout << " (" << monitor.content_bytes << " bytes in "
-                          << monitor.microslice_count << " microslices, avg: "
-                          << static_cast<double>(monitor.content_bytes)
-                             / monitor.microslice_count << ")" << std::endl;
-                monitor = monitor_t();
-            }
-        }
+        timeslice_source.reset(new fles::TimesliceReceiver(param));
     } else {
-        fles::TimesliceInputArchive tsia(param);
+        timeslice_source.reset(new fles::TimesliceInputArchive(param));
+    }
 
-        while (auto ts = tsia.read()) {
-            check_timeslice(*ts);
-            ++count;
-            if ((count % 10000) == 0) {
-                std::cout << "timeslices checked: " << count;
-                std::cout << " (" << monitor.content_bytes << " bytes in "
-                          << monitor.microslice_count << " microslices, avg: "
-                          << static_cast<double>(monitor.content_bytes)
-                             / monitor.microslice_count << ")" << std::endl;
-                monitor = monitor_t();
-            }
+    while (auto ts = timeslice_source->get()) {
+        check_timeslice(*ts);
+        ++count;
+        if ((count % 10000) == 0) {
+            std::cout << "timeslices checked: " << count;
+            std::cout << " (" << monitor.content_bytes << " bytes in "
+                      << monitor.microslice_count << " microslices, avg: "
+                      << static_cast<double>(monitor.content_bytes)
+                         / monitor.microslice_count << ")" << std::endl;
+            monitor = monitor_t();
         }
     }
 
