@@ -1,6 +1,8 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
-#include "fles_ipc.hpp"
+#include "StorableTimeslice.hpp"
+#include "TimesliceReceiver.hpp"
+#include "TimesliceInputArchive.hpp"
 #include <iostream>
 #include <csignal>
 

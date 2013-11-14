@@ -1,10 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
-#include "fles_ipc.hpp"
-#include <boost/archive/binary_oarchive.hpp>
-#include <fstream>
-#include <iostream>
-#include <csignal>
+#include "TimesliceReceiver.hpp"
+#include "TimesliceOutputArchive.hpp"
 
 int main(int argc, char* argv[])
 {

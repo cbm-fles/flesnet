@@ -1,80 +1,9 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
-#include "fles_ipc.hpp"
+#include "TimesliceReceiver.hpp"
 
 namespace fles
 {
-
-TimesliceView::~TimesliceView()
-{
-    try
-    {
-        _completions_mq->send(&_completion, sizeof(_completion), 0);
-    }
-    catch (boost::interprocess::interprocess_exception& e)
-    {
-        // TODO: this is not sufficient
-        std::cerr << "exception in destructor ~TimesliceView(): " << e.what();
-    }
-}
-
-TimesliceView::TimesliceView(
-    TimesliceWorkItem work_item,
-    uint8_t* data,
-    TimesliceComponentDescriptor* desc,
-    std::shared_ptr<boost::interprocess::message_queue> completions_mq)
-    : _work_item(std::move(work_item)),
-      _data(data),
-      _desc(desc),
-      _completions_mq(std::move(completions_mq))
-{
-    _completion = {_work_item.ts_desc.ts_pos};
-    _descriptor_offset = _work_item.ts_desc.ts_pos
-                         & ((1L << _work_item.desc_buffer_size_exp) - 1L);
-    _data_offset_mask = (1L << _work_item.data_buffer_size_exp) - 1L;
-
-    // initialize access pointer vectors
-    _data_ptr.resize(num_components());
-    _desc_ptr.resize(num_components());
-    for (size_t c = 0; c < num_components(); ++c) {
-        _desc_ptr[c] = &this->desc(c);
-        _data_ptr[c] = &this->data(c, _desc_ptr[c]->offset);
-    }
-
-    // consistency check
-    for (size_t c = 1; c < num_components(); ++c)
-        if (_desc_ptr[0]->ts_num != _desc_ptr[c]->ts_num)
-            std::cerr << "error: ts_num[0]=" << _desc_ptr[0]->ts_num
-                      << ", ts_num[" << c << "]=" << _desc_ptr[c]->ts_num
-                      << std::endl;
-}
-
-StorableTimeslice::StorableTimeslice(const TimesliceView& ts)
-    : _work_item(ts._work_item),
-      _data(ts._work_item.ts_desc.num_components),
-      _desc(ts._work_item.ts_desc.num_components)
-{
-    for (std::size_t component = 0;
-         component < ts._work_item.ts_desc.num_components;
-         ++component) {
-        uint64_t size = ts.desc(component).size;
-        const uint8_t* begin = &ts.data(component, ts.desc(component).offset);
-        _data[component].resize(size);
-        std::copy_n(begin, size, _data[component].begin());
-        _desc[component] = ts.desc(component);
-    }
-
-    init_pointers();
-}
-
-StorableTimeslice::StorableTimeslice()
-{
-}
-
-time_t TimesliceArchiveDescriptor::time_created() const
-{
-    return _time_created;
-}
 
 TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
     : _shared_memory_identifier(shared_memory_identifier)
