@@ -41,7 +41,7 @@ public:
         std::vector<const char*> c_arg;
         std::transform(child_process.arg.begin(), child_process.arg.end(),
                        std::back_inserter(c_arg),
-                       [](std::string & s) { return s.c_str(); });
+                       [](std::string& s) { return s.c_str(); });
         c_arg.push_back(nullptr);
 
         pid_t pid = vfork();

@@ -161,9 +161,9 @@ void Parameters::parse_options(int argc, char* argv[])
 
     po::options_description generic("Generic options");
     generic.add_options()("version,V", "print version string")(
-        "help,h", "produce help message")(
-        "log-level,l", po::value<unsigned>(&log_level),
-        "set the log level (default:3, all:0)");
+        "help,h",
+        "produce help message")("log-level,l", po::value<unsigned>(&log_level),
+                                "set the log level (default:3, all:0)");
 
     po::options_description config("Configuration");
     config.add_options()("input-index,i",

@@ -235,8 +235,8 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
         if (_connected == _conn.size() && in == _red_lantern) {
             auto new_red_lantern = std::min_element(
                 std::begin(_conn), std::end(_conn),
-                [](const std::unique_ptr<ComputeNodeConnection> & v1,
-                   const std::unique_ptr<ComputeNodeConnection> & v2) {
+                [](const std::unique_ptr<ComputeNodeConnection>& v1,
+                   const std::unique_ptr<ComputeNodeConnection>& v2) {
                     return v1->cn_wp().desc < v2->cn_wp().desc;
                 });
 
