@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <cmath>
+#include <iterator>
 #include <rdma/rdma_cma.h>
 #include <boost/lexical_cast.hpp>
 
