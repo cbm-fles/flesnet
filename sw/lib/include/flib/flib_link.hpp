@@ -56,14 +56,14 @@ static const open_or_create_t open_or_create = open_or_create_t();
   
 class FlibException : public std::runtime_error {
 public:
-  // default constructor
+
   explicit FlibException(const std::string& what_arg = "")
     : std::runtime_error(what_arg) { }
 };
 
 class RorcfsException : public FlibException {
 public:
-  // default constructor
+
   explicit RorcfsException(const std::string& what_arg = "")
     : FlibException(what_arg) { }
 };
@@ -102,18 +102,7 @@ public:
   }
   
   ~flib_link() {
-    if(_ch && _dma_initialized ) {
-      // disable DMA Engine
-      _ch->setEnableEB(0);
-      // wait for pending transfers to complete (dma_busy->0)
-      //while( _ch->getDMABusy() ) TODO
-      usleep(100);
-      // disable RBDM
-      _ch->setEnableRB(0);
-      // disable DMA PKT
-      //TODO: if resetting DFIFO by setting 0x2 restart is impossible
-      _ch->setDMAConfig(0X00000000);
-    }
+    _stop();
     //TODO move deallocte to destructro of buffer
     if(_ebuf){
       if(_ebuf->deallocate() != 0) {
@@ -230,7 +219,7 @@ public:
     _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
   }
 
-  void rst_pending_mc() {
+  void rst_pending_mc() { // is also resetted with datapath reset
     // TODO implenet edge detection and 'pulse only' in HW
     uint32_t mc_gen_cfg= _ch->getGTX(RORC_REG_GTX_MC_GEN_CFG);
     _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
@@ -403,8 +392,40 @@ private:
     return buffer;
   }
 
+  void _rst_channel() {
+    // datapath reset, will also cause hw defaults for
+    // - pending mc  = 0
+    _ch->set_bitGTX(RORC_REG_GTX_DATAPATH_CFG, 2, true);
+     // rst packetizer fifos
+    _ch->setDMAConfig(0X2);
+    // release datapath reset
+    _ch->set_bitGTX(RORC_REG_GTX_DATAPATH_CFG, 2, false);
+  }
+
+  void _stop() {
+    if(_ch && _dma_initialized ) {
+      // disable packer
+      enable_cbmnet_packer(false);
+      // disable DMA Engine
+      _ch->setEnableEB(0);
+      // wait for pending transfers to complete (dma_busy->0)
+      while( _ch->getDMABusy() ) {
+        usleep(100);
+      }
+      // disable RBDM
+      _ch->setEnableRB(0);
+      // reset
+      _rst_channel();
+    }
+  }
+
   // initializes hardware to perform DMA transfers
   int _init_hardware() {
+    // disable packer if still enabled
+    enable_cbmnet_packer(false);
+    // reset everything to ensure clean startup
+    _rst_channel();
+    set_start_idx(1);
     // prepare EventBufferDescriptorManager
     // and ReportBufferDescriptorManage
     // with scatter-gather list
