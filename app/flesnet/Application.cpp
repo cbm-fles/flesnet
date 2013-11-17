@@ -32,6 +32,7 @@ Application::Application(Parameters const& par) : _par(par)
 
     // FIXME: all of this is a terrible mess
     if (par.use_flib()) {
+        // TODO: precence detection #524
         try
         {
             _flib = std::unique_ptr
@@ -41,6 +42,7 @@ Application::Application(Parameters const& par) : _par(par)
         {
         }
 
+        // TODO: HW error detection #526
         if (_flib) {
             _flib_links = _flib->get_links();
             if (_flib_links.size() == 255) {
@@ -53,29 +55,6 @@ Application::Application(Parameters const& par) : _par(par)
             out.warn() << "no flib links detected";
         else
             out.info() << "flib hardware links: " << _flib_links.size();
-
-        if (_flib) {
-            _flib->enable_mc_cnt(false);
-            for (auto fl : _flib_links) {
-                fl->enable_cbmnet_packer(false);
-                fl->rst_pending_mc();
-                fl->set_start_idx(0);
-                fl->init_dma(flib::open_or_create, 20, 15);
-            }
-            _flib->enable_mc_cnt(true);
-            std::chrono::microseconds interval1(10);
-            std::this_thread::sleep_for(interval1);
-            _flib->enable_mc_cnt(false);
-
-            std::chrono::milliseconds interval2(100);
-            std::this_thread::sleep_for(interval2);
-            _flib = nullptr;
-            _flib_links.clear();
-
-            _flib = std::unique_ptr
-                <flib::flib_device>(new flib::flib_device(0));
-            _flib_links = _flib->get_links();
-        }
     }
     // end FIXME
 
