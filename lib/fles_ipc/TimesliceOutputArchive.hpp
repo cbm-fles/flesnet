@@ -32,7 +32,7 @@ public:
 private:
     std::ofstream _ofstream;
     boost::archive::binary_oarchive _oarchive;
-    TimesliceArchiveDescriptor _descriptor;
+    TimesliceArchiveDescriptor _descriptor{true};
 };
 
 } // namespace fles {

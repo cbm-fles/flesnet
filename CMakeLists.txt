@@ -11,8 +11,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -g -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor")
 
 set(Boost_NO_SYSTEM_PATHS TRUE)
-set(BOOST_ROOT "/home/cuveland/src/boost_1_54_0")
-#set(BOOST_ROOT "/opt/fairsoft/apr13_build")
+set(BOOST_ROOT "/opt/fairsoft/oct13_build")
 
 find_package(Boost 1.48.0 COMPONENTS serialization thread program_options system REQUIRED)
 find_package(Threads)

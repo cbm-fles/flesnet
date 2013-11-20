@@ -1,6 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "System.hpp"
 #include <chrono>
 #include <string>
 #include <boost/serialization/access.hpp>
@@ -13,13 +14,15 @@ namespace fles
 class TimesliceArchiveDescriptor
 {
 public:
-    TimesliceArchiveDescriptor()
-        : _time_created(std::chrono::system_clock::to_time_t(
-              std::chrono::system_clock::now()))
+    TimesliceArchiveDescriptor(bool auto_initialize = false)
+
     {
-        _hostname = std::string("---");
-        _username = current_username();
-        // TODO: add hostname, username
+        if (auto_initialize) {
+            _time_created = std::chrono::system_clock::to_time_t(
+                std::chrono::system_clock::now());
+            _hostname = fles::system::current_hostname();
+            _username = fles::system::current_username();
+        }
     }
 
     /// Retrieve the time of creation of the archive.
@@ -50,9 +53,7 @@ private:
         ar& _username;
     }
 
-    std::string current_username() const;
-
-    std::time_t _time_created;
+    std::time_t _time_created = std::time_t();
     std::string _hostname;
     std::string _username;
 };
