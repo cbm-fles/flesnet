@@ -7,6 +7,7 @@
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <random>
 #include <csignal>
 
@@ -118,9 +119,13 @@ void ComputeBuffer::start_processes()
         index << i;
         ChildProcess cp = ChildProcess();
         cp.owner = this;
-        cp.path = _processor_executable;
-        cp.arg
-            = {_processor_executable, _shared_memory_identifier, index.str()};
+        boost::split(cp.arg, _processor_executable, boost::is_any_of(" \t"),
+                     boost::token_compress_on);
+        cp.path = cp.arg.at(0);
+        for (auto& arg : cp.arg) {
+            boost::replace_all(arg, "%s", _shared_memory_identifier);
+            boost::replace_all(arg, "%i", index.str());
+        }
         ChildProcessManager::get().start_process(cp);
     }
 }
