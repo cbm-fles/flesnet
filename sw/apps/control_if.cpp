@@ -30,9 +30,11 @@ int main(int argc, char *argv[])
   };
 
   ////////////////////////////////////////////////////////
+ 
+  std::cout << "Build Date: " << MyFlib->get_build_date() << std::endl;
+  std::cout << "Build Revision: " << std::hex << MyFlib->get_build_revision() << std::endl;
 
-  printf("Firmware Date: %08x\n", MyFlib->get_reg(RORC_REG_FIRMWARE_DATE));
-  printf("r_ctrl_tx: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_CTRL_TX));
+printf("r_ctrl_tx: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_CTRL_TX));
 
   MyFlib->link[0]->set_data_rx_sel(flib_link::pgen);
     

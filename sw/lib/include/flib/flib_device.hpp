@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <memory>
+#include "boost/date_time/posix_time/posix_time.hpp" //include all types plus i/o
 
 #include "flib_link.hpp"
 
@@ -74,9 +75,16 @@ public:
     set_reg(RORC_REG_DLM_CFG, 1);
   }
 
-  uint32_t get_fwdate() {
-    uint32_t date = _bar->get(RORC_REG_FIRMWARE_DATE);
-    return date;
+  boost::posix_time::ptime get_build_date() {
+    time_t time = static_cast<time_t>(_bar->get(RORC_REG_FIRMWARE_DATE_L) \
+                                     | ((uint64_t)(_bar->get(RORC_REG_FIRMWARE_DATE_H))<<32));
+    boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
+    return t;
+  }
+
+  uint32_t get_build_revision() {
+    uint32_t rev = _bar->get(RORC_REG_FIRMWARE_REVISION);
+    return rev;
   }
 
   std::string get_devinfo() {

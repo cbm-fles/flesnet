@@ -34,9 +34,6 @@ int main()
         // bind channel to BAR1, channel offset 0
         ch->init(bar, (channel+1)*RORC_CHANNEL_OFFSET);
 
-        printf("FirmwareDate: %08x\n", bar->get(RORC_REG_FIRMWARE_DATE));
-
-
 	//struct misc_bits { 
 	//  unsigned int led0 : 1;
         //  unsigned int      : 1;
