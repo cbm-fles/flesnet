@@ -31,8 +31,17 @@ int main(int argc, char *argv[])
 
   ////////////////////////////////////////////////////////
  
-  std::cout << "Build Date: " << MyFlib->get_build_date() << std::endl;
-  std::cout << "Build Revision: " << std::hex << MyFlib->get_build_revision() << std::endl;
+  flib_device::build_info build = MyFlib->get_build_info();
+  std::cout << "Build Date:     " << build.date << std::endl;
+  std::cout << "Build Revision: " << std::hex \
+            << build.rev[4] << build.rev[3] << build.rev[2] \
+            << build.rev[1] << build.rev[0] << std::endl;
+  if (build.clean)
+    std::cout << "Repository was clean " << std::endl;
+  else
+    std::cout << "Repository was not clean " << std::endl;
+
+  std::cout << MyFlib->print_build_info();
 
 printf("r_ctrl_tx: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_CTRL_TX));
 

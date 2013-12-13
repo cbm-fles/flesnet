@@ -76,17 +76,50 @@ public:
   }
 
   boost::posix_time::ptime get_build_date() {
-    time_t time = static_cast<time_t>(_bar->get(RORC_REG_FIRMWARE_DATE_L) \
-                                     | ((uint64_t)(_bar->get(RORC_REG_FIRMWARE_DATE_H))<<32));
+    time_t time = static_cast<time_t>(_bar->get(RORC_REG_BUILD_DATE_L) \
+                                     | ((uint64_t)(_bar->get(RORC_REG_BUILD_DATE_H))<<32));
     boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
     return t;
   }
+ 
+  struct build_info {
+    boost::posix_time::ptime date;
+    uint32_t rev[5];
+    uint32_t hw_ver;
+    bool clean;
+  };
 
-  uint32_t get_build_revision() {
-    uint32_t rev = _bar->get(RORC_REG_FIRMWARE_REVISION);
-    return rev;
+  struct build_info get_build_info() {
+    build_info info;
+
+    time_t time = static_cast<time_t>(_bar->get(RORC_REG_BUILD_DATE_L) \
+                | ((uint64_t)(_bar->get(RORC_REG_BUILD_DATE_H))<<32));
+    info.date = boost::posix_time::from_time_t(time);
+    info.rev[0] = _bar->get(RORC_REG_BUILD_REV_0);
+    info.rev[1] = _bar->get(RORC_REG_BUILD_REV_1);
+    info.rev[2] = _bar->get(RORC_REG_BUILD_REV_2);
+    info.rev[3] = _bar->get(RORC_REG_BUILD_REV_3);
+    info.rev[4] = _bar->get(RORC_REG_BUILD_REV_4);
+    info.hw_ver = _bar->get(RORC_REG_HARDWARE_VERSION);
+    info.clean = (_bar->get(RORC_REG_BUILD_INFO) & 0x1);
+    return info;
   }
 
+  std::string print_build_info() {
+    build_info build = get_build_info();
+    std::stringstream ss;
+    ss << "Build Date:     " << build.date << std::endl
+       << "Build Revision: " << std::hex
+       << build.rev[4] << build.rev[3] << build.rev[2]
+       << build.rev[1] << build.rev[0] << std::endl;
+    if (build.clean)
+      ss << "Repository was clean " << std::endl;
+    else
+      ss << "Repository was not clean " << std::endl;
+    ss << "Hardware Version: " << build.hw_ver << std::endl;
+    return ss.str();
+  }
+  
   std::string get_devinfo() {
     std::stringstream ss;
     ss << "Bus "  << (uint32_t)_dev->getBus()
