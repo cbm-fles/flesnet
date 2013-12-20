@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <array>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -13,8 +14,10 @@
 
 namespace flib {
 
+  constexpr std::array<uint32_t, 2> hw_ver_table = {{ 1, 2}};
+
 class flib_device {
-  
+
 private:
 
   std::unique_ptr<rorcfs_device> _dev;
@@ -23,6 +26,17 @@ private:
   uint8_t _get_num_hw_links() {
     uint8_t n = (_bar->get(RORC_REG_N_CHANNELS) & 0xFF);
     return n;
+  }
+
+  bool _check_hw_ver() {
+    build_info build = get_build_info();
+    bool match = false;
+    for (auto it = hw_ver_table.begin(); it != hw_ver_table.end() && match == false; ++it) {
+      if (build.hw_ver == *it) {
+        match = true;
+      }
+    }
+    return match;
   }
 
 public:
@@ -50,6 +64,9 @@ public:
   // destructor
   ~flib_device() { }
   
+  bool check_hw_ver() {
+    return _check_hw_ver();
+  }
   
   size_t get_num_links() {
     return link.size();

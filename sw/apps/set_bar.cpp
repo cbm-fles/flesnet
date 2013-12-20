@@ -14,9 +14,6 @@ int main()
           
         int channel = 0;
           
-	printf("librorc header \tRev. %08x, Date: %08x\n",
-			RORC_REVISION, RORC_BUILD_DATE);
-
 	dev = new rorcfs_device();
 	if ( dev->init(0) == -1 ) {
 		printf("failed to initialize device 0\n");
