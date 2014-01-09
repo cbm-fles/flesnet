@@ -6,7 +6,7 @@ struct rorcfs_sync_range {
 	void *end;
 };
 
-struct t_rorcfs_buffer {
+struct __attribute__ ((__packed__)) t_rorcfs_buffer {
 	unsigned long id;
 	unsigned long bytes;
 	short overmap;
@@ -14,7 +14,7 @@ struct t_rorcfs_buffer {
 };
 
 
-struct rorcfs_event_descriptor {
+struct __attribute__ ((__packed__)) rorcfs_event_descriptor {
 	unsigned long offset;
 	unsigned long length;
 	unsigned int calc_event_size;
