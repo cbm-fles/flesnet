@@ -14,7 +14,7 @@
 
 namespace flib {
 
-  constexpr std::array<uint32_t, 2> hw_ver_table = {{ 1, 2}};
+  constexpr std::array<uint16_t, 2> hw_ver_table = {{ 1, 2}};
 
 class flib_device {
 
@@ -28,13 +28,26 @@ private:
     return n;
   }
 
-  bool _check_hw_ver() {
-    build_info build = get_build_info();
+  bool _check_magic_number() {
     bool match = false;
+    if (((uint16_t)(_bar->get(0) & 0xFFFF)) == 0x4844) { // RORC_REG_HARDWARE_INFO
+      match = true;
+    }
+    return match;
+  }
+
+  bool _check_hw_ver() {
+    uint16_t hw_ver = get_hw_ver();
+    bool match = false;
+    // check if version of hardware is part of suported versions
     for (auto it = hw_ver_table.begin(); it != hw_ver_table.end() && match == false; ++it) {
-      if (build.hw_ver == *it) {
+      if (hw_ver == *it) {
         match = true;
       }
+    }
+    // check if version of hardware matches exactly version of header
+    if (hw_ver != RORC_C_HARDWARE_VERSION) {
+      match = false;
     }
     return match;
   }
@@ -53,6 +66,10 @@ public:
     _bar = std::unique_ptr<rorcfs_bar>(new rorcfs_bar(_dev.get(), 1));
     if ( _bar->init() == -1 ) {
       throw RorcfsException("BAR1 init failed");
+    }
+    // enforce correct hw version
+    if (!_check_hw_ver() | !_check_magic_number()) {
+      throw FlibException("Unsupported hardware version");
     }
     // create link objects
     uint8_t num_links = _get_num_hw_links();
@@ -99,10 +116,15 @@ public:
     return t;
   }
  
+  uint16_t get_hw_ver() {
+    uint16_t ver = (uint16_t)(_bar->get(0) >> 16); // RORC_REG_HARDWARE_INFO
+    return ver;
+  }
+
   struct build_info {
     boost::posix_time::ptime date;
     uint32_t rev[5];
-    uint32_t hw_ver;
+    uint16_t hw_ver;
     bool clean;
   };
 
@@ -117,8 +139,8 @@ public:
     info.rev[2] = _bar->get(RORC_REG_BUILD_REV_2);
     info.rev[3] = _bar->get(RORC_REG_BUILD_REV_3);
     info.rev[4] = _bar->get(RORC_REG_BUILD_REV_4);
-    info.hw_ver = _bar->get(RORC_REG_HARDWARE_VERSION);
-    info.clean = (_bar->get(RORC_REG_BUILD_INFO) & 0x1);
+    info.hw_ver = get_hw_ver();
+    info.clean = (_bar->get(RORC_REG_BUILD_FLAGS) & 0x1);
     return info;
   }
 
@@ -126,14 +148,14 @@ public:
     build_info build = get_build_info();
     std::stringstream ss;
     ss << "Build Date:     " << build.date << std::endl
-       << "Build Revision: " << std::hex
+       << "Repository Revision: " << std::hex
        << build.rev[4] << build.rev[3] << build.rev[2]
        << build.rev[1] << build.rev[0] << std::endl;
     if (build.clean)
-      ss << "Repository was clean " << std::endl;
+      ss << "Repository Status:   clean " << std::endl;
     else
-      ss << "Repository was not clean " << std::endl;
-    ss << "Hardware Version: " << build.hw_ver << std::endl;
+      ss << "Repository Status:   NOT clean " << std::endl
+         << "Hardware Version:    " << build.hw_ver;
     return ss.str();
   }
   

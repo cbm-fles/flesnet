@@ -1,14 +1,13 @@
-// Simpel example application initializing a FLIB for date and control transfer
+// Simpel example application initializing a FLIB for date transfer
 
 #include <iostream>
 #include <csignal>
-#include <boost/thread.hpp>
+#include <unistd.h>
 
-#include "../../../usbdaq-test/cbmnet/zmq.hpp"
-#include "../../../usbdaq-test/cbmnet/control/libserver/ControlServer.hpp"
-
+#include <flib.h>
 #include "global.hpp"
-#include "flib_server.hpp"
+
+#include "mc_functions.h"
 
 int s_interrupted = 0;
 static void s_signal_handler (int signal_value)
@@ -35,29 +34,25 @@ int main(int argc, const char* argv[])
 
   out.setVerbosity(einhard::DEBUG);
 
-  zmq::context_t zmq_context(1);
-
   // create FLIB
+  try 
+  {
   flib::flib_device flib(0);
+
   std::vector<flib::flib_link*> links = flib.get_links();
 
-  // create a device control server, initialize and start server thread
-  flib_server flibserver(zmq_context, "CbmNet::Driver0", *links.at(0));
-  flibserver.Bind();
-  flibserver.Start();
-  
-  // create control server and start
-  CbmNet::ControlServer cntlserv(zmq_context, "CbmNet::Driver0");
-  cntlserv.SetDebugFlags(CbmNet::ControlServer::kDbgDumpRpc);
-  cntlserv.Bind();
-  cntlserv.ConnectDriver();
-  cntlserv.Start();
+  out.info() << flib.print_build_info();
 
-  // initialize FLIB links: ////
   // initialize a DMA buffer
   links.at(0)->init_dma(flib::create_only, 22, 20);
   out.info() << "Event Buffer: " << links.at(0)->get_ebuf_info();
   out.info() << "Desciptor Buffer" << links.at(0)->get_dbuf_info();
+  // get raw pointers for debugging
+  uint64_t* eb = (uint64_t *)links.at(0)->ebuf()->getMem();
+  MicrosliceDescriptor* rb = (MicrosliceDescriptor *)links.at(0)->rbuf()->getMem();
+
+  // set start index
+  links.at(0)->set_start_idx(1);
 
   // set the aproriate header config
   flib::hdr_config config = {};
@@ -66,15 +61,23 @@ int main(int argc, const char* argv[])
   config.sys_ver = 0xFD;
   links.at(0)->set_hdr_config(&config);
 
-  // reset pending mc from potential previous run
-  links.at(0)->rst_pending_mc();
-
-  // set data source and enable
-  links.at(0)->set_data_rx_sel(flib::flib_link::pgen);
-  links.at(0)->enable_cbmnet_packer(true);
+  // enable data source
+  bool use_sp = false; 
+  if (use_sp == true) {
+    links.at(0)->set_data_rx_sel(flib::flib_link::link);
+    links.at(0)->set_dlm_cfg(0x8, true); // enable DAQ
+    flib.send_dlm();
+  } 
+  else {
+    links.at(0)->set_data_rx_sel(flib::flib_link::pgen);
+  }
+ 
   flib.enable_mc_cnt(true);
+  links.at(0)->enable_cbmnet_packer(true);
 
-  // main loop
+  out.debug() << "current mc nr: " <<  links.at(0)->get_mc_index();
+
+  /////////// THE MAIN LOOP ///////////
 
   size_t pending_acks = 0;
   size_t j = 0;
@@ -87,26 +90,52 @@ int main(int argc, const char* argv[])
       pending_acks = 0;
     }
     pending_acks++;
+ 
+    if (s_interrupted != 0) {
+      break;
+    }
 
     if (j == 0) {
       out.info() << "First MC seen.";
+      dump_mc_light(&mc_pair.first);
+      std::cout << "RB:" << std::endl;
+      dump_raw((uint64_t *)(rb+j), 8);
+      std::cout << "EB:" << std::endl;
+      dump_raw((uint64_t *)(eb), 64);
     }
+ 
+    if (j != 0 && j < 1) {
+      out.info() << "MC analysed " << j;
+      dump_mc_light(&mc_pair.first);
+      dump_mc(&mc_pair.first);
+    }
+  
     if ((j & 0xFFFFF) == 0xFFFFF) {
-      out.info() << "MC analysed" << j;
+      out.info() << "MC analysed " << j;
+      dump_mc_light(&mc_pair.first);
+      dump_mc(&mc_pair.first);
     }
-    if (pending_acks == 100) {
+ 
+    if (pending_acks == 10) {
       links.at(0)->ack_mc();
       pending_acks = 0;
     }
+ 
     j++;
   }
   
   // disable data source
   flib.enable_mc_cnt(false);
-  out.debug() << "pending mc :" <<  links.at(0)->get_pending_mc();
-  links.at(0)->rst_pending_mc();
+  out.debug() << "current mc nr 0x: " << std::hex <<  links.at(0)->get_mc_index();
+  out.debug() << "pending mc: "  << links.at(0)->get_pending_mc();
+  out.debug() << "busy: " <<  links.at(0)->get_ch()->getDMABusy();
 
   out.debug() << "Exiting";
   
+    }
+  catch (std::exception& e) 
+    {
+      out.error() << e.what();
+    }
   return 0;
 }
