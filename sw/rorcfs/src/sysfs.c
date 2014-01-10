@@ -538,7 +538,7 @@ void rorcfs_bar_vma_close(struct vm_area_struct *vma)
 			break;
 	}
 
-	iounmap(base);
+	iounmap(base); // TODO not unmaped in case of error
 
 	return count;
 }
