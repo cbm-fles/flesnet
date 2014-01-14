@@ -207,11 +207,6 @@ public:
   {
     out.debug() << "Sending DLM";
 
-    //DEBUG
-    _link.clr_dlm();
-    uint8_t dlm_test = _link.get_dlm();
-    out.debug() << std::hex << (uint32_t)dlm_test;
-
     // set dlm config for single link
     _link.set_dlm_cfg((cnet_s_msg.data[0] & 0xF), true);
     
@@ -219,10 +214,6 @@ public:
     // TODO: this is a global operation for all links!
     // This has to be done global for a multi link version
     _device.send_dlm();
-
-    //DEBUG
-    uint8_t dlm_rx = _link.get_dlm();
-    out.debug() << std::hex << (uint32_t)dlm_rx;
 
     return;
   }
