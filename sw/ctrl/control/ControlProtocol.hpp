@@ -15,7 +15,9 @@ namespace CbmNet {
   enum ControlMethod  {kMethodGetBOM = 0,
                        kMethodDoListParSeq,
                        kMethodDoListParSeqTmp,
-                       kMethodSendDLM
+                       kMethodSendDLM,
+                       kMethodFlibRead,
+                       kMethodFlibWrite
                       };
 
   enum ControlStatus  {kStatusOK = 0,

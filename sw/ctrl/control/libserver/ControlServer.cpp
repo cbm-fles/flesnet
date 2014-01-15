@@ -166,6 +166,12 @@ void ControlServer::ServerLoop()
       case kMethodSendDLM:
         mstat = ProcessSendDLM(preq, preq_end);
         break;
+      case kMethodFlibRead:
+        mstat = ProcessFlibRead(preq, preq_end, res);
+        break;
+      case kMethodFlibWrite:
+        mstat = ProcessFlibWrite(preq, preq_end);
+        break;
 
       default:
         break;
@@ -424,6 +430,45 @@ uint32_t ControlServer::ProcessSendDLM(const uint32_t* preq,
   uint16_t dnum16 = dnum;
   fZsocketCntlDriverReq.send(&
 dnum16, sizeof(uint16_t));
+  return kStatusOK;
+}
+
+//------------------------------------------+-----------------------------------
+//! FIXME_docs
+
+uint32_t ControlServer::ProcessFlibRead(const uint32_t* preq, 
+                                        const uint32_t* preq_end,
+                                        std::vector<uint32_t>& res)
+{
+ 
+  zmq::message_t resmsg;
+  res.resize(2); // response is fixed size of 32 Bit, Word0 is filled with status later
+
+  if (preq >= preq_end) return kStatusFailRMC;
+
+  fZsocketCntlDriverReq.send(preq, sizeof(uint32_t));
+
+  if (PollDriverRes(1000) > 0) {
+    fZsocketCntlDriverRes.recv(&resmsg);
+    if (resmsg.size() > 4) return kStatusFailRMC;
+    uint32_t* data = (uint32_t*)resmsg.data();
+    res[1] = data[0];
+  } 
+  
+  return kStatusOK;
+}
+
+//------------------------------------------+-----------------------------------
+//! FIXME_docs
+
+uint32_t ControlServer::ProcessFlibWrite(const uint32_t* preq, 
+                                        const uint32_t* preq_end)
+{
+ 
+  if (preq >= preq_end) return kStatusFailRMC;
+
+  fZsocketCntlDriverReq.send(preq, 2*sizeof(uint32_t));
+  
   return kStatusOK;
 }
 

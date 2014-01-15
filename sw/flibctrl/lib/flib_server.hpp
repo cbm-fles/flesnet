@@ -166,6 +166,14 @@ public:
     if (msg_size/sizeof(uint16_t) == 1) {
       SendDlm(cnet_s_msg);
     } 
+    // single double word is flib read
+    else if (msg_size == sizeof(uint32_t)) {
+      FlibRead(cnet_s_msg);
+    }
+    // double doule word is flib write
+    else if (msg_size == 2*sizeof(uint32_t)) {
+      FlibWrite(cnet_s_msg);
+    }
     else {
       SendCtrl(cnet_s_msg);
     }
@@ -205,7 +213,8 @@ public:
 
   void SendDlm(flib::ctrl_msg& cnet_s_msg)
   {
-    out.debug() << "Sending DLM";
+    out.debug() << "Sending DLM "
+                << std::hex << "0x" << cnet_s_msg.data[0];
 
     // set dlm config for single link
     _link.set_dlm_cfg((cnet_s_msg.data[0] & 0xF), true);
@@ -214,6 +223,31 @@ public:
     // TODO: this is a global operation for all links!
     // This has to be done global for a multi link version
     _device.send_dlm();
+
+    return;
+  }
+
+  void FlibRead(flib::ctrl_msg& cnet_s_msg)
+  {
+    out.debug() << "Reading FLIB link register: " << std::hex
+                << "addr " << cnet_s_msg.data[0];
+
+    // TODO read acctual flib register
+    uint32_t val = 0x1+cnet_s_msg.data[0];
+
+    _driver_res.send(&val, sizeof(uint32_t));
+
+    return;
+  }
+
+  void FlibWrite(flib::ctrl_msg& cnet_s_msg)
+  {
+    uint32_t addr = cnet_s_msg.data[1]<<16 | cnet_s_msg.data[0];
+    uint32_t data = cnet_s_msg.data[3]<<16 | cnet_s_msg.data[2];
+
+    out.debug() << "Writing FLIB link register: " << std::hex
+                << "addr " << addr
+                << " data " << data;
 
     return;
   }

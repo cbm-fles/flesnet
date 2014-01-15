@@ -55,6 +55,8 @@ void usage()
   cout << "  listparseq [-n nodeid [[-r addr] [-w addr value] ... ]..." << endl;
   cout << "  bom nodeid" << endl;
   cout << "  dlm nodeid dnum" << endl;
+  cout << "  fread nodeid addr" << endl;
+  cout << "  fwirte nodeid addr data" << endl;
   return;
 }
 
@@ -287,6 +289,45 @@ int main(int argc, const char* argv[])
       convert(argv[iarg++], dnum);
       int rc = conn.SendDLM(nodeid, dnum);
       if (rc<0) cout << "  status=" << Status2String(-rc) << endl;
+
+    } else if (cmd == "fread") {              // -- flib read ------------------------
+      if (iarg+2 > argc) quit("Missing arguments after 'fread'");
+      
+      uint32_t nodeid;
+      uint32_t addr;
+      uint32_t value;
+      convert(argv[iarg++], nodeid);
+      convert(argv[iarg++], addr);
+
+      int rc = conn.FlibRead(nodeid, addr, value);
+      
+      cout << "rc=" << RosPrintf(rc,"d",4)
+           << "  addr=" << RosPrintf(addr,"x0",8)
+           << "  value=" << RosPrintf(value,"x0",8)
+           << " (" << RosPrintf(value,"d",10) << ")";
+ 
+      if (rc<0) cout << "  status=" << Status2String(-rc); 
+      cout << endl;
+
+    } else if (cmd == "fwrite") {              // -- flib write ------------------------
+      if (iarg+3 > argc) quit("Missing arguments after 'fwrite'");
+      
+      uint32_t nodeid;
+      uint32_t addr;
+      uint32_t value;
+      convert(argv[iarg++], nodeid);
+      convert(argv[iarg++], addr);
+      convert(argv[iarg++], value);
+
+      int rc = conn.FlibWrite(nodeid, addr, value);
+      
+      cout << "rc=" << RosPrintf(rc,"d",4)
+           << "  addr=" << RosPrintf(addr,"x0",8)
+           << "  value=" << RosPrintf(value,"x0",8)
+           << " (" << RosPrintf(value,"d",10) << ")";
+ 
+      if (rc<0) cout << "  status=" << Status2String(-rc); 
+      cout << endl;
 
     } else {                                // -- ... unknown command ... ----
       quit(string("unknown command '") + cmd + "'. Check with usage with -h");

@@ -83,6 +83,13 @@ namespace CbmNet {
     
     // this is currently a hack, will most likely be removed later
       int           SendDLM(uint32_t nodeid, uint32_t num);
+
+    int FlibRead(uint32_t nodeid, uint32_t addr, 
+                                uint32_t& value);
+
+    int FlibWrite(uint32_t nodeid, uint32_t addr, 
+                                uint32_t value);
+
  
     protected:
       int           HandleParSeqResponse(ListSeq* plists, size_t npar,

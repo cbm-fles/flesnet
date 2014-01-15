@@ -70,6 +70,13 @@ namespace CbmNet {
 
       void          DumpRpc(const std::string& text, uint32_t* p, size_t n);
       void          DumpCbmNet(const std::string& text, uint16_t* p, size_t n);
+    
+    uint32_t ProcessFlibRead(const uint32_t* preq, 
+                             const uint32_t* preq_end,
+                             std::vector<uint32_t>& res);
+
+    uint32_t ProcessFlibWrite(const uint32_t* preq, 
+                             const uint32_t* preq_end);
 
     protected:
       zmq::context_t&   fZcontext;

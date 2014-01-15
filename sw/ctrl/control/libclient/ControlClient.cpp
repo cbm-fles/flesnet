@@ -403,6 +403,42 @@ int ControlClient::SendDLM(uint32_t nodeid, uint32_t num)
 
 //------------------------------------------+-----------------------------------
 //! FIXME_docs
+  int ControlClient::FlibRead(uint32_t nodeid, uint32_t addr, uint32_t& value)
+  {
+  vector<uint32_t> req;
+  req.push_back(kMethodFlibRead);
+  req.push_back(addr);
+  fZsocket.send(req.data(), sizeof(uint32_t)*req.size());
+
+  zmq::message_t resmsg;
+  fZsocket.recv(&resmsg);
+  uint32_t* pres = (uint32_t*)resmsg.data();
+  size_t    nres = resmsg.size()/sizeof(uint32_t);
+  value = pres[1];
+
+  return nres>0 ? -pres[0] : -kStatusFail;
+  }
+
+//------------------------------------------+-----------------------------------
+//! FIXME_docs
+  int ControlClient::FlibWrite(uint32_t nodeid, uint32_t addr, uint32_t value)
+  {
+  vector<uint32_t> req;
+  req.push_back(kMethodFlibWrite);
+  req.push_back(addr);
+  req.push_back(value);
+  fZsocket.send(req.data(), sizeof(uint32_t)*req.size());
+
+  zmq::message_t resmsg;
+  fZsocket.recv(&resmsg);
+  uint32_t* pres = (uint32_t*)resmsg.data();
+  size_t    nres = resmsg.size()/sizeof(uint32_t);
+
+  return nres>0 ? -pres[0] : -kStatusFail;
+  }
+
+//------------------------------------------+-----------------------------------
+//! FIXME_docs
 
 int ControlClient::HandleParSeqResponse(ListSeq* plists, size_t npar,
                                         zmq::message_t& resmsg)
