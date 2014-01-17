@@ -29,7 +29,7 @@ int main(int argc, const char* argv[])
 {
   s_catch_signals();
 
-  out.setVerbosity(einhard::DEBUG);
+  out.setVerbosity(einhard::TRACE);
 
   // create ZMQ context
   zmq::context_t zmq_context(1);
@@ -39,8 +39,8 @@ int main(int argc, const char* argv[])
   std::vector<flib::flib_link*> links = flib.get_links();
 
   // configure FLIB link
-  //  links.at(0)->set_data_rx_sel(flib::flib_link::pgen);
-  links.at(0)->set_data_rx_sel(flib::flib_link::link);
+  links.at(0)->set_data_rx_sel(flib::flib_link::pgen);
+  //links.at(0)->set_data_rx_sel(flib::flib_link::link);
 
   // create device control server, initialize and start server thread
   flib_server flibserver(zmq_context, "CbmNet::Driver0", flib, *links.at(0));
