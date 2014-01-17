@@ -24,6 +24,7 @@ add_subdirectory(lib/flib)
 
 add_subdirectory(app/flesnet)
 add_subdirectory(app/ipc-demo)
+add_subdirectory(app/flib_debug)
 
 add_subdirectory(doc)
 

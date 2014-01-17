@@ -1,7 +1,7 @@
 #ifndef GLOBAL_HPP
 #define GLOBAL_HPP
 
-#include "einhard.hpp"
+#include <einhard.hpp>
 
 extern einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out;
 
