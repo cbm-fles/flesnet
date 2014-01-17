@@ -5,4 +5,4 @@
 export CBMNETPATH=$PWD
 #
 export PATH=$CBMNETPATH/usb/bin:$PATH
-export LD_LIBRARY_PATH=$CBMNETPATH/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$CBMNETPATH/lib:/opt/fairsoft/oct13_build/lib:$LD_LIBRARY_PATH
