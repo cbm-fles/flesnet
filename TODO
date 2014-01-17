@@ -1,0 +1,20 @@
+flesnet:
+
+- exception safety, error handling
+- sensible thread exception handling
+- forked processes: kill on error
+- allow storage plus checker
+- on cbmdaq: IN does not retry, fails if CN not ready -> hacky sleep
+- use ibv_fork_init?
+
+./run: processed-messages missing if instances>1?
+
+directly serialize char*?
+
+ - http://stackoverflow.com/questions/5094750/boost-c-serializing-a-char?rq=1
+additional boost ser stuff (version, macros)?
+ - http://www.boost.org/doc/libs/1_33_1/libs/serialization/doc/special.html
+ - http://www.boost.org/doc/libs/1_37_0/libs/serialization/doc/special.html#multi_threading
+ - http://www.boost.org/doc/libs/1_45_0/libs/serialization/doc/traits.html#export
+ - http://stackoverflow.com/questions/3386991/c-boost-serialization-serializing-templated-derived-classes?rq=1
+ - http://stackoverflow.com/questions/6734814/boostserialization-reconstruction-loading
