@@ -1,0 +1,70 @@
+TODO
+
+Integrate Versioning
+-Check FW version on FLIB startup. Thro failture if not correct.
+- flib presence detection without exception?
+- get_fw_info liefert struct oder string
+
+Implemnt HW-deinit function that destoys buffers
+
+Add Link_active and other status signals to MC HDR Flags
+
+Fix Reset problematic
+- reste Dfifo from both sides. 
+- Maybe reset whole data path.
+
+Create full simulation
+
+Integrate SW into flesnet repo
+- Check everything for correct headers
+
+Patch SC CDC to support burst wirtes. Adopt setmem*.
+
+Interrupts mit Dominic testen
+
+
+IDEAS / REWORK
+
+Init_dma could take hdr config stuct
+
+get size from link
+
+Use Oszillator for non CBMnet Clocking instead of PCIe clock
+
+High level BAR SC Funtionen sollten belibige anzahl Bytes entgenen nehmen.
+Bisher müssen Multible von 4 Bytes übergeben werden. 
+Darunterliegende Funtionen sollten das umsetzen.
+
+Daten und Contrl klarer auftrenne. Evtl auch mit neuen Klassen link_data link_contrl oder ähnlichem.
+
+Kerne Treiber muss exclusiven Zugriff auf global Resourcen managen.
+
+FACTS
+
+Microslice:
+1µs von 16Bit@125Mhz sind 200Byte
+
+CBMnet:
+alles synchron zu link_clk
+kein stop beim empfange erlaubt, stop tritt beim empfangen nicht auf
+pakete müssen gestreamt werden, valid darf nicht unterbrochen werden
+Paketgrößen: min max 8+2 bis 64+2
+Kontrollnachriten haben zwei 2 byte routing infos. 
+
+CBMnet des sp605 liefert seltsame messages auf ctrl_rx
+
+Controls:
+Walter implementiert multi part messages vom control_server zum flib_server. Part 1 gibt Flavour und Link an. Part 2 enthält das Datenpaket wie es zu versenden ist.
+
+Datennahme:
+Flesnet nimmt Daten
+Controls steuert die Datennahme, also auch die Quelle und andere Parameter im FLIB. 
+Adressen im FLIB könnten auch über zmq geschrieben werden können (Zusätzliches Flavour in der Controls SW).
+Problematisch: Reset des Datenpfades muss vom Kontrollpfad getrennt sein.
+
+Startup Prossedure:
+Controls, Configure Fromt End -> Fles Net (bring up DMA) -> start MC gen an release BP
+
+
+
+
