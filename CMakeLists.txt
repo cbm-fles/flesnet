@@ -1,7 +1,7 @@
 # Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(flesnet)
+project(fles)
 
 #set(CMAKE_C_COMPILER clang)
 #set(CMAKE_CXX_COMPILER clang++)
@@ -20,6 +20,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 add_subdirectory(lib/fles_core)
 add_subdirectory(lib/fles_ipc)
+add_subdirectory(lib/flib)
 
 add_subdirectory(app/flesnet)
 add_subdirectory(app/ipc-demo)
