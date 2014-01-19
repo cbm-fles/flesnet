@@ -11,5 +11,7 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=1)
 
 add_executable(flib_ctrl flib_ctrl.cpp)
 
-target_link_libraries(flib_ctrl flib zmq ${Boost_LIBRARIES})
+add_dependencies(flib_ctrl lib_control)
+
+target_link_libraries(flib_ctrl flib ${ZMQ_LIBRARIES} ${Boost_LIBRARIES})
 target_link_libraries(flib_ctrl ${PROJECT_SOURCE_DIR}/ctrl/lib/libcbmnetcntlserver.so)

@@ -1,8 +1,12 @@
-# $Id: config.sh 18 2013-08-10 14:22:00Z mueller $
-#
 # source it to configure for compile and execution
 #
+if [ -z "$SIMPATH" ]; then
+  echo "SIMPATH not defined"
+  return 1
+fi
+
+if [ -z "$CBMNETPATH" ]; then
 export CBMNETPATH=$PWD
 #
-export PATH=$CBMNETPATH/usb/bin:$PATH
-export LD_LIBRARY_PATH=$CBMNETPATH/lib:/opt/fairsoft/oct13_build/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$CBMNETPATH/lib:$SIMPATH/lib:$LD_LIBRARY_PATH
+fi
