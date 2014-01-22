@@ -138,6 +138,8 @@ class rorcfs_device
 		uint8 slot;
 		uint8 func;
 
+                void free_namelist(struct dirent **namelist, int n);
+
 	protected:
 		int find_rorc(char *basedir, struct dirent ***namelist);
 };

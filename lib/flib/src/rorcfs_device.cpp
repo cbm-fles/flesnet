@@ -33,7 +33,11 @@ rorcfs_device::rorcfs_device()
 }
 
 rorcfs_device::~rorcfs_device()
-{ }
+{
+  if (dname) {
+    free(dname);
+  }
+}
 
 int rorcfs_device::init(int n) {
 	int n_dev;
@@ -45,8 +49,10 @@ int rorcfs_device::init(int n) {
 		free(dname);
 	
 	n_dev = find_rorc(basedir, &namelist);
-	if ( n_dev <= 0 || n<0 || n > n_dev )
-		return -1;
+	if ( n_dev <= 0 || n<0 || n > n_dev ) {
+          free_namelist(namelist, n_dev);
+          return -1;
+        }
 
 	bus = (uint8) strtoul(namelist[n]->d_name+5, &pEnd, 16);
 	slot = (uint8) strtoul(pEnd+1, &pEnd, 16);
@@ -57,13 +63,23 @@ int rorcfs_device::init(int n) {
 	dname_size++;
 
 	dname = (char *) malloc(dname_size);
-	if ( !dname )
-		return -1;
-
+	if ( !dname ) {
+          free_namelist(namelist, n_dev);
+          return -1;
+        }
 	snprintf(dname, dname_size, "%s0000:%02x:%02x.%x/mmap/", 
 			basedir, bus, slot, func);
 
+        free_namelist(namelist, n_dev);
 	return 0;
+}
+
+void rorcfs_device::free_namelist(struct dirent **namelist, int n) {
+  while (n--) {
+    free(namelist[n]);
+  }
+  free(namelist);
+  return;
 }
 
 
@@ -97,15 +113,13 @@ int scandir_filter(const struct dirent* entry) {
 int rorcfs_device::find_rorc(char *basedir, struct dirent ***namelist) {
 	int err, n;
 	struct stat filestat;
-	struct dirent **namelist_i;
 
 	err = stat(basedir, &filestat);
 	if (err) {
 		return -ENOTDIR;
 	}
 
-	n = scandir(basedir, &namelist_i, scandir_filter, alphasort);
-	*namelist = namelist_i;
+	n = scandir(basedir, namelist, scandir_filter, alphasort);
 
 	return n;
 }
