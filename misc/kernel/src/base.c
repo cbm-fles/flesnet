@@ -163,10 +163,8 @@ static int rorcfs_init_one(struct pci_dev *pdev,
 	// create attributes for BAR mappings
 	for (i=0; i< PCI_NUM_RESOURCES; i++) {
 		r = &pdev->resource[i];
-                rorcfs_debug("%d: %d", __LINE__, i);
 		if ( !r->flags || !(r->flags & IORESOURCE_MEM) )
 			continue;
-                rorcfs_debug("%d: %d, here", __LINE__, i);
 
 		attr_bin_bar[i].size = pci_resource_end(priv->pdev, i) - 
 			pci_resource_start(priv->pdev, i);
