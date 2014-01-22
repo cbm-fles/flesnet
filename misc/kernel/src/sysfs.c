@@ -531,6 +531,12 @@ void rorcfs_bar_vma_close(struct vm_area_struct *vma)
 			}
 			*(u32 *)buffer = readl( base + offset );
 			break;
+
+        case 1024: //make valgrid happy
+                  *(u32 *)buffer = 0;
+                  printk(KERN_ERR "%s rorcfs_attr_bar_read 1024 byte fake read\n", DRV_NAME);
+                  break;
+
 		default:
 			printk(KERN_ERR "%s rorcfs_attr_bar_read invalid byte count: %ld\n",
 					DRV_NAME, count);

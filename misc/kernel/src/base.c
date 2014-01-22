@@ -45,7 +45,7 @@ static BIN_ATTR(alloc_buffer, sizeof(struct t_rorcfs_buffer), S_IWUGO, NULL, ror
 struct bin_attribute attr_bin_bar[PCI_NUM_RESOURCES] = {
 	BIN_ATTR_CORE(bar0, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
 		rorcfs_attr_bar_write, rorcfs_bar_mmap),
-	BIN_ATTR_CORE(bar1, 0, S_IRUGO|S_IWUGO, NULL, 
+	BIN_ATTR_CORE(bar1, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read,
 		rorcfs_attr_bar_write, rorcfs_bar_mmap),
 	BIN_ATTR_CORE(bar2, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
 		rorcfs_attr_bar_write, rorcfs_bar_mmap),
