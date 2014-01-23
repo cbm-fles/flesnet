@@ -2,10 +2,10 @@
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3")
 
-include_directories("${PROJECT_SOURCE_DIR}/lib/einhard")
-include_directories("${PROJECT_SOURCE_DIR}/lib/flib")
-include_directories("${PROJECT_SOURCE_DIR}/lib/flib_server")
-include_directories("${PROJECT_SOURCE_DIR}/ctrl")
+include_directories("${PROJECT_SOURCE_DIR}/lib/einhard"
+                    "${PROJECT_SOURCE_DIR}/lib/flib/include"
+                    "${PROJECT_SOURCE_DIR}/lib/flib_server"
+                    "${PROJECT_SOURCE_DIR}/ctrl")
 
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=1)
 
@@ -13,5 +13,5 @@ add_executable(flib_ctrl flib_ctrl.cpp)
 
 add_dependencies(flib_ctrl lib_control)
 
-target_link_libraries(flib_ctrl flib ${ZMQ_LIBRARIES} ${Boost_LIBRARIES})
-target_link_libraries(flib_ctrl ${PROJECT_SOURCE_DIR}/ctrl/lib/libcbmnetcntlserver.so)
+target_link_libraries(flib_ctrl flib ${ZMQ_LIBRARIES} ${Boost_LIBRARIES}
+                      ${PROJECT_SOURCE_DIR}/ctrl/lib/libcbmnetcntlserver.so)
