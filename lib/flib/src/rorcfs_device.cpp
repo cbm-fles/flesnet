@@ -75,10 +75,12 @@ int rorcfs_device::init(int n) {
 }
 
 void rorcfs_device::free_namelist(struct dirent **namelist, int n) {
-  while (n--) {
-    free(namelist[n]);
+  if (n > 0) {
+    while (n--) {
+      free(namelist[n]);
+    }
+    free(namelist);
   }
-  free(namelist);
   return;
 }
 
