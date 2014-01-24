@@ -37,24 +37,16 @@ Application::Application(Parameters const& par) : _par(par)
         {
             _flib = std::unique_ptr
                 <flib::flib_device>(new flib::flib_device(0));
+            _flib_links = _flib->get_links();
+            out.info() << "flib hardware links: " << _flib_links.size();
         }
         catch (std::exception const& e)
         {
+          out.error() << "exception while creating flib: "
+                      << e.what();
+
         }
 
-        // TODO: HW error detection #526
-        if (_flib) {
-            _flib_links = _flib->get_links();
-            if (_flib_links.size() == 255) {
-                _flib = nullptr;
-                _flib_links.clear();
-            }
-        }
-
-        if (_flib_links.empty())
-            out.warn() << "no flib links detected";
-        else
-            out.info() << "flib hardware links: " << _flib_links.size();
     }
     // end FIXME
 
