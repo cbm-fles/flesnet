@@ -1,5 +1,5 @@
-#ifndef FLIB_HPP
-#define FILB_HPP
+#ifndef FLIB_DEVICE_HPP
+#define FLIB_DEVICE_HPP
 
 #include <iostream>
 #include <iomanip>
@@ -177,4 +177,4 @@ public:
   
 };
 } // namespace flib
-#endif // FLIB_HPP
+#endif // FLIB_DEVICE_HPP

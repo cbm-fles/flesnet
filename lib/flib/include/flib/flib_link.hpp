@@ -1,5 +1,5 @@
-#ifndef CBM_LINK_HPP
-#define CBM_LINK_HPP
+#ifndef FLIB_LINK_HPP
+#define FLIB_LINK_HPP
 
 #include "rorc_registers.h"
 #include "rorcfs_bar.hh"
@@ -473,4 +473,4 @@ private:
 };
 } // manespace flib
 
-#endif // CBM_LINK_HPP
+#endif // FLIB_LINK_HPP
