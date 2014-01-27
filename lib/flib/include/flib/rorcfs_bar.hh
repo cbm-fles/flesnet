@@ -122,14 +122,6 @@ class rorcfs_bar
 		void set16( unsigned long addr, unsigned short data );
 
 		/**
-		 * get current time of day
-		 * @param tv pointer to struct timeval
-		 * @param tz pointer to struct timezone
-		 * @return return valiue from gettimeof day or zero for FLI simulation
-		 **/
-		int gettime(struct timeval *tv, struct timezone *tz);
-
-		/**
 		 * get file handle for sysfs file
 		 * @return int file handle
 		 **/

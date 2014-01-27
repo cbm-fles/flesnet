@@ -496,48 +496,6 @@ void rorcfs_bar::set16(unsigned long addr, unsigned short data)
 }
 
 
-int rorcfs_bar::gettime(struct timeval *tv, struct timezone *tz)
-{
-#ifndef SIM
-	return gettimeofday(tv, tz);
-#else
-	flicmdT cmd;
-	flimsgT msg;
-	int n;
-	
-	pthread_mutex_lock(&mtx);
-
-	cmd.type = CMD_TIME;
-	cmd.addr = 0;
-	cmd.bar = 0;
-	cmd.id = msgid;
-	cmd.byte_enable = 0;
-
-	n = write(sockfd, &cmd, sizeof(cmd));
-	if ( n < 0 )
-		perror("ERROR writing to socket");
-	
-	// wait for completion
-	while( read( sockfd, &msg, sizeof(msg)) != sizeof(msg) )
-		usleep(USLEEP_TIME);
-	
-	if ( msg.id!=msgid ) {
-		printf("ERROR: out of order message ID: "
-				"rorcfs_bar::gettime()=%dx\n", msg.data);
-	}
-
-	//mti_Now is in [ps]
-	tv->tv_sec = (msg.data/1000/1000/1000/1000);
-	tv->tv_usec = (msg.data/1000/1000)%1000000;
-
-	msgid++;
-
-	pthread_mutex_unlock(&mtx);
-
-	return 0;
-#endif
-}
-
 char *getChOff(unsigned int addr) {
 	int channel = (addr>>15)&0xf;
 	int comp = (addr>>RORC_DMA_CMP_SEL) & 0x01;
