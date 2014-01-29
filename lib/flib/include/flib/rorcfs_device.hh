@@ -72,9 +72,9 @@ typedef unsigned char uint8;
 
 /** conditional debug printout command **/
 #ifdef DEBUG
-#define librorc_debug(fmt, args...) printf(fmt, ## args)
+#define librorc_debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
 #else
-#define librorc_debug(fmt, args...)
+#define librorc_debug(fmt, ...)
 #endif
 
 
