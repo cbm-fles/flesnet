@@ -317,6 +317,7 @@ void rorcfs_bar::memcpy_bar(unsigned long addr, const void *source, size_t num) 
 #endif
 }
 
+// TODO basic functions should be able to report error
 void rorcfs_bar::set_mem(unsigned long addr, const void *source, size_t n) {
   // Size n (in bytes) must be devidable by 32 bit
   assert ( bar!=NULL );

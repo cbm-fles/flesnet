@@ -46,6 +46,9 @@ Application::Application(Parameters const& par) : _par(par)
                       << e.what();
 
         }
+        _dev_ctrl_ch = std::unique_ptr
+          <flib::device_ctrl_channel>
+          (new flib::device_ctrl_channel_local(_flib->get_bar_ptr()));
 
     }
     // end FIXME
@@ -79,7 +82,7 @@ Application::Application(Parameters const& par) : _par(par)
     }
 
     if (_flib) {
-        _flib->enable_mc_cnt(true);
+        _dev_ctrl_ch->enable_mc_cnt(true);
     }
 }
 
@@ -89,7 +92,7 @@ Application::~Application()
     try
     {
         if (_flib) {
-            _flib->enable_mc_cnt(false);
+            _dev_ctrl_ch->enable_mc_cnt(false);
         }
     }
     catch (std::exception& e)
