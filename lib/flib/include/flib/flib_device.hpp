@@ -12,9 +12,12 @@
 
 #include "flib_link.hpp"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+
 namespace flib {
 
-  constexpr std::array<uint16_t, 2> hw_ver_table = {{ 1, 2}};
+ constexpr std::array<uint16_t, 2> hw_ver_table = {{ 1, 2}};
 
 class flib_device {
 
@@ -176,5 +179,9 @@ public:
   }
   
 };
+
 } // namespace flib
+
+#pragma GCC diagnostic pop
+
 #endif // FLIB_DEVICE_HPP
