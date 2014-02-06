@@ -11,7 +11,7 @@ void Parameters::parse_options(int argc, char* argv[])
     desc.add_options()("version,V", "print version string")(
         "help,h", "produce help message")(
         "client-index,c", po::value<int32_t>(&_client_index),
-        "global timeslice size in number of MCs")(
+        "index of this executable in the list of processor tasks")(
         "analyze-pattern,a", po::value<bool>(&_analyze)->implicit_value(true),
         "enable/disable pattern check")(
         "shm-identifier,s",
