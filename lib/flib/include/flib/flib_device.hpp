@@ -108,6 +108,13 @@ public:
     _bar->set_bit(RORC_REG_MC_CNT_CFG, 31, enable);
   }
 
+  void set_mc_time(uint16_t time) {
+    // time: 10 bit wide, in units of 8 ns
+    uint32_t reg = get_reg(RORC_REG_MC_CNT_CFG);
+    reg = (reg & ~0x3FF) | (time & 0x3FF);
+    set_reg(RORC_REG_MC_CNT_CFG, reg);
+  }
+
   void send_dlm() {
     set_reg(RORC_REG_DLM_CFG, 1);
   }
