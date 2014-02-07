@@ -17,11 +17,15 @@ Application::Application(Parameters const& par) : _par(par)
 
     if (!_par.output_archive().empty())
         _output.reset(new fles::TimesliceOutputArchive(_par.output_archive()));
+
+    std::cout << "tsclient " << _par.client_index() << ": "
+              << par.shm_identifier() << std::endl;
 }
 
 Application::~Application()
 {
-    std::cout << "total timeslices processed: " << _count << std::endl;
+    std::cout << "tsclient " << _par.client_index() << ": "
+              << "total timeslices processed: " << _count << std::endl;
 }
 
 void Application::run()
@@ -30,7 +34,8 @@ void Application::run()
         if (_analyzer) {
             _analyzer->check_timeslice(*timeslice);
             if ((_analyzer->count() % 10000) == 0) {
-                std::cout << _analyzer->statistics() << std::endl;
+                std::cout << _par.client_index() << ": "
+                          << _analyzer->statistics() << std::endl;
                 _analyzer->reset();
             }
         }
