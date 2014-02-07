@@ -42,11 +42,8 @@ Application::Application(Parameters const& par) : _par(par)
         }
         catch (std::exception const& e)
         {
-          out.error() << "exception while creating flib: "
-                      << e.what();
-
+            out.error() << "exception while creating flib: " << e.what();
         }
-
     }
     // end FIXME
 
