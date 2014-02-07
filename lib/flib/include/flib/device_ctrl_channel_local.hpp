@@ -37,12 +37,12 @@ public:
 
   uint32_t get_reg(uint64_t addr) override {
     uint32_t val;
-    get_mem(addr, (void*)&val, 4);
+    get_mem(addr, static_cast<void*>(&val), 4);
     return val;
   }
   
   void set_reg(uint64_t addr, uint32_t data) override {
-    set_mem(addr, (const void*)&data, 4);
+    set_mem(addr, static_cast<const void*>(&data), 4);
   }
 
   bool get_bit(uint64_t addr, int pos) override {

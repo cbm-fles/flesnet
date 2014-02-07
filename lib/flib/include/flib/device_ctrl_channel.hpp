@@ -44,13 +44,13 @@ public:
   boost::posix_time::ptime get_build_date() {
     time_t time = 
       static_cast<time_t>(get_reg(RORC_REG_BUILD_DATE_L)
-                          | ((uint64_t)(get_reg(RORC_REG_BUILD_DATE_H))<<32));
+                          | (static_cast<uint64_t>(get_reg(RORC_REG_BUILD_DATE_H))<<32));
     boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
     return t;
   }
  
   uint16_t get_hw_ver() {
-    uint16_t ver = (uint16_t)(get_reg(0) >> 16); // RORC_REG_HARDWARE_INFO
+    uint16_t ver = static_cast<uint16_t>(get_reg(0) >> 16); // RORC_REG_HARDWARE_INFO
     return ver;
   }
 
@@ -94,7 +94,6 @@ public:
   }
 
 };
-
 
 } // namespace flib
 #endif // DEVICE_CTRL_CHANNEL_HPP
