@@ -5,18 +5,24 @@ set(ZMQ_UTILS_H zmq_utils.h)
 set(LIBZMQ_SHARED libzmq.so)
 set(LIBZMQ_STATIC libzmq.a)
 
+# Find ZMQ libraries in external packages.
+# Do not search somewhere else.
+
 find_path(ZMQ_INCLUDE_DIR NAMES ${ZMQ_H} ${ZMQ_UTILS_H}
   PATHS ${SIMPATH}/include
+  NO_DEFAULT_PATH
   DOC   "Path to ZeroMQ include header files."
 )
 
 find_library(ZMQ_LIBRARY_SHARED NAMES ${LIBZMQ_SHARED}
   PATHS ${SIMPATH}/lib
+  NO_DEFAULT_PATH
   DOC   "Path to ${LIBZMQ_SHARED}."
 )
 
 find_library(ZMQ_LIBRARY_STATIC NAMES ${LIBZMQ_STATIC}
   PATHS ${SIMPATH}/lib
+  NO_DEFAULT_PATH 
   DOC   "Path to ${LIBZMQ_STATIC}."
 )
 
