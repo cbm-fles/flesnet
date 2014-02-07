@@ -130,8 +130,10 @@ public:
         if (_poll_items[i].fd == _stop_fd) {
           // stop driver
           uint64_t ret;
-          ::read(_stop_fd, &ret, sizeof(ret)); // todo
-          _driver_state = DriverStateStopped;
+          ssize_t rc = ::read(_stop_fd, &ret, sizeof(ret));
+          if (rc != -1 && ret == 1) {
+            _driver_state = DriverStateStopped;
+          }
         }
         else if (_poll_items[i].socket == _driver_req) {
           // process message
