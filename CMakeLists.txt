@@ -33,7 +33,7 @@ add_subdirectory(lib/flib)
 add_subdirectory(ctrl)
 
 add_subdirectory(app/flesnet)
-add_subdirectory(app/ipc-demo)
+add_subdirectory(app/tsclient)
 add_subdirectory(app/flib_debug)
 add_subdirectory(app/flib_ctrl)
 
