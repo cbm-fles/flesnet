@@ -11,6 +11,9 @@
 #include <memory>
 #include <stdexcept>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+
 namespace flib {
   
 // has to be 256 Bit, this is hard coded in hw
@@ -471,6 +474,8 @@ private:
   }
 
 };
-} // manespace flib
+} // namespace flib
+
+#pragma GCC diagnostic pop
 
 #endif // FLIB_LINK_HPP

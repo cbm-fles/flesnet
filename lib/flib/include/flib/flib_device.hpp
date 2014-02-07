@@ -12,9 +12,12 @@
 
 #include "flib_link.hpp"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+
 namespace flib {
 
-  constexpr std::array<uint16_t, 2> hw_ver_table = {{ 1, 2}};
+ constexpr std::array<uint16_t, 2> hw_ver_table = {{ 1, 2}};
 
 class flib_device {
 
@@ -100,11 +103,96 @@ public:
     }
     return links;
   }
+  
+  void enable_mc_cnt(bool enable) {
+    _bar->set_bit(RORC_REG_MC_CNT_CFG, 31, enable);
+  }
+
+  void set_mc_time(uint16_t time) {
+    // time: 10 bit wide, in units of 8 ns
+    uint32_t reg = get_reg(RORC_REG_MC_CNT_CFG);
+    reg = (reg & ~0x3FF) | (time & 0x3FF);
+    set_reg(RORC_REG_MC_CNT_CFG, reg);
+  }
+
+  void send_dlm() {
+    set_reg(RORC_REG_DLM_CFG, 1);
+  }
+
+  boost::posix_time::ptime get_build_date() {
+    time_t time = static_cast<time_t>(_bar->get(RORC_REG_BUILD_DATE_L) \
+                                     | ((uint64_t)(_bar->get(RORC_REG_BUILD_DATE_H))<<32));
+    boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
+    return t;
+  }
+ 
+  uint16_t get_hw_ver() {
+    uint16_t ver = (uint16_t)(_bar->get(0) >> 16); // RORC_REG_HARDWARE_INFO
+    return ver;
+  }
+
+  struct build_info {
+    boost::posix_time::ptime date;
+    uint32_t rev[5];
+    uint16_t hw_ver;
+    bool clean;
+  };
+
+  struct build_info get_build_info() {
+    build_info info;
+
+    time_t time = static_cast<time_t>(_bar->get(RORC_REG_BUILD_DATE_L) \
+                | ((uint64_t)(_bar->get(RORC_REG_BUILD_DATE_H))<<32));
+    info.date = boost::posix_time::from_time_t(time);
+    info.rev[0] = _bar->get(RORC_REG_BUILD_REV_0);
+    info.rev[1] = _bar->get(RORC_REG_BUILD_REV_1);
+    info.rev[2] = _bar->get(RORC_REG_BUILD_REV_2);
+    info.rev[3] = _bar->get(RORC_REG_BUILD_REV_3);
+    info.rev[4] = _bar->get(RORC_REG_BUILD_REV_4);
+    info.hw_ver = get_hw_ver();
+    info.clean = (_bar->get(RORC_REG_BUILD_FLAGS) & 0x1);
+    return info;
+  }
+
+  std::string print_build_info() {
+    build_info build = get_build_info();
+    std::stringstream ss;
+    ss << "Build Date:     " << build.date << std::endl
+       << "Repository Revision: " << std::hex
+       << build.rev[4] << build.rev[3] << build.rev[2]
+       << build.rev[1] << build.rev[0] << std::endl;
+    if (build.clean)
+      ss << "Repository Status:   clean " << std::endl;
+    else
+      ss << "Repository Status:   NOT clean " << std::endl
+         << "Hardware Version:    " << build.hw_ver;
+    return ss.str();
+  }
+  
+  std::string get_devinfo() {
+    std::stringstream ss;
+    ss << "Bus "  << (uint32_t)_dev->getBus()
+       << " Slot " << (uint32_t)_dev->getSlot()
+       << " Func " << (uint32_t)_dev->getFunc();
+    return ss.str();
+  }
+
+  uint32_t get_reg(uint64_t addr) {
+    return _bar->get(addr);
+  }
+
+  void set_reg(uint64_t addr, uint32_t data) {
+    _bar->set(addr, data);
+  }
 
   rorcfs_bar* get_bar_ptr() {
     return _bar.get();
   }
   
 };
+
 } // namespace flib
+
+#pragma GCC diagnostic pop
+
 #endif // FLIB_DEVICE_HPP

@@ -70,8 +70,8 @@ void ComputeNodeConnection::setup(struct ibv_pd* pd)
            && _desc_buffer_size_exp);
 
     // register memory regions
-    std::size_t data_bytes = 1 << _data_buffer_size_exp;
-    std::size_t desc_bytes = (1 << _desc_buffer_size_exp)
+    std::size_t data_bytes = UINT64_C(1) << _data_buffer_size_exp;
+    std::size_t desc_bytes = (UINT64_C(1) << _desc_buffer_size_exp)
                              * sizeof(fles::TimesliceComponentDescriptor);
     _mr_data = ibv_reg_mr(pd, _data_ptr, data_bytes,
                           IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE);
@@ -148,8 +148,8 @@ void ComputeNodeConnection::inc_ack_pointers(uint64_t ack_pos)
     std::unique_lock<std::mutex> lock(_cn_ack_mutex);
     _cn_ack.desc = ack_pos;
 
-    const fles::TimesliceComponentDescriptor& acked_ts
-        = _desc_ptr[(ack_pos - 1) & ((1 << _desc_buffer_size_exp) - 1)];
+    const fles::TimesliceComponentDescriptor& acked_ts = _desc_ptr
+        [(ack_pos - 1) & ((UINT64_C(1) << _desc_buffer_size_exp) - 1)];
 
     _cn_ack.data = acked_ts.offset + acked_ts.size;
     if (_our_turn) {
