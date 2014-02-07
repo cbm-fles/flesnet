@@ -39,19 +39,22 @@ void InputChannelConnection::wait_for_buffer_space(uint64_t data_size,
     if (out.beTrace()) {
         out.trace() << "[" << _index << "] "
                     << "SENDER data space (bytes) required=" << data_size
-                    << ", avail=" << _cn_ack.data
-                                     + (1 << _remote_info.data_buffer_size_exp)
-                                     - _cn_wp.data;
+                    << ", avail="
+                    << _cn_ack.data
+                       + (UINT64_C(1) << _remote_info.data_buffer_size_exp)
+                       - _cn_wp.data;
         out.trace() << "[" << _index << "] "
                     << "SENDER desc space (entries) required=" << desc_size
-                    << ", avail=" << _cn_ack.desc
-                                     + (1 << _remote_info.desc_buffer_size_exp)
-                                     - _cn_wp.desc;
+                    << ", avail="
+                    << _cn_ack.desc
+                       + (UINT64_C(1) << _remote_info.desc_buffer_size_exp)
+                       - _cn_wp.desc;
     }
-    while (_cn_ack.data - _cn_wp.data + (1 << _remote_info.data_buffer_size_exp)
-           < data_size || _cn_ack.desc - _cn_wp.desc
-                          + (1 << _remote_info.desc_buffer_size_exp)
-                          < desc_size) { // TODO: extend condition!
+    while (_cn_ack.data - _cn_wp.data
+           + (UINT64_C(1) << _remote_info.data_buffer_size_exp) < data_size
+           || _cn_ack.desc - _cn_wp.desc
+              + (UINT64_C(1) << _remote_info.desc_buffer_size_exp)
+              < desc_size) { // TODO: extend condition!
         {
             std::unique_lock<std::mutex> lock2(_cn_wp_mutex);
             if (_our_turn) {
@@ -69,10 +72,10 @@ void InputChannelConnection::wait_for_buffer_space(uint64_t data_size,
             out.trace() << "[" << _index << "] "
                         << "SENDER (next try) space avail="
                         << _cn_ack.data - _cn_wp.data
-                           + (1 << _remote_info.data_buffer_size_exp)
+                           + (UINT64_C(1) << _remote_info.data_buffer_size_exp)
                         << " desc_avail="
                         << _cn_ack.desc - _cn_wp.desc
-                           + (1 << _remote_info.desc_buffer_size_exp);
+                           + (UINT64_C(1) << _remote_info.desc_buffer_size_exp);
         }
     }
 }
@@ -87,12 +90,13 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
     uint64_t cn_wp_data = _cn_wp.data;
     cn_wp_data += skip;
 
-    uint64_t cn_data_buffer_mask = (1L << _remote_info.data_buffer_size_exp)
-                                   - 1L;
-    uint64_t cn_desc_buffer_mask = (1L << _remote_info.desc_buffer_size_exp)
-                                   - 1L;
-    uint64_t target_bytes_left = (1L << _remote_info.data_buffer_size_exp)
-                                 - (cn_wp_data & cn_data_buffer_mask);
+    uint64_t cn_data_buffer_mask
+        = (UINT64_C(1) << _remote_info.data_buffer_size_exp) - 1;
+    uint64_t cn_desc_buffer_mask
+        = (UINT64_C(1) << _remote_info.desc_buffer_size_exp) - 1;
+    uint64_t target_bytes_left
+        = (UINT64_C(1) << _remote_info.data_buffer_size_exp)
+          - (cn_wp_data & cn_data_buffer_mask);
 
     // split sge list if necessary
     int num_sge_cut = 0;
@@ -193,8 +197,8 @@ void InputChannelConnection::inc_write_pointers(uint64_t data_size,
 
 uint64_t InputChannelConnection::skip_required(uint64_t data_size)
 {
-    uint64_t databuf_size = 1L << _remote_info.data_buffer_size_exp;
-    uint64_t databuf_wp = _cn_wp.data & (databuf_size - 1L);
+    uint64_t databuf_size = UINT64_C(1) << _remote_info.data_buffer_size_exp;
+    uint64_t databuf_wp = _cn_wp.data & (databuf_size - 1);
     if (databuf_wp + data_size <= databuf_size)
         return 0;
     else

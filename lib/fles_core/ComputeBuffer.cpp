@@ -54,11 +54,15 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
             boost::interprocess::read_write));
     _desc_shm = std::move(desc_shm);
 
-    std::size_t data_size = (1 << _data_buffer_size_exp) * _num_input_nodes;
+    std::size_t data_size = (UINT64_C(1) << _data_buffer_size_exp)
+                            * _num_input_nodes;
+    assert(data_size != 0);
     _data_shm->truncate(data_size);
 
-    std::size_t desc_size = (1 << _desc_buffer_size_exp) * _num_input_nodes
+    std::size_t desc_size = (UINT64_C(1) << _desc_buffer_size_exp)
+                            * _num_input_nodes
                             * sizeof(fles::TimesliceComponentDescriptor);
+    assert(desc_size != 0);
     _desc_shm->truncate(desc_size);
 
     std::unique_ptr<boost::interprocess::mapped_region> data_region(
@@ -165,7 +169,7 @@ void ComputeBuffer::operator()()
 uint8_t* ComputeBuffer::get_data_ptr(uint_fast16_t index)
 {
     return static_cast<uint8_t*>(_data_region->get_address())
-           + index * (1 << _data_buffer_size_exp);
+           + index * (UINT64_C(1) << _data_buffer_size_exp);
 }
 
 fles::TimesliceComponentDescriptor*
@@ -173,19 +177,19 @@ ComputeBuffer::get_desc_ptr(uint_fast16_t index)
 {
     return reinterpret_cast
            <fles::TimesliceComponentDescriptor*>(_desc_region->get_address())
-           + index * (1 << _desc_buffer_size_exp);
+           + index * (UINT64_C(1) << _desc_buffer_size_exp);
 }
 
 uint8_t& ComputeBuffer::get_data(uint_fast16_t index, uint64_t offset)
 {
-    offset &= (1 << _data_buffer_size_exp) - 1;
+    offset &= (UINT64_C(1) << _data_buffer_size_exp) - 1;
     return get_data_ptr(index)[offset];
 }
 
 fles::TimesliceComponentDescriptor& ComputeBuffer::get_desc(uint_fast16_t index,
                                                             uint64_t offset)
 {
-    offset &= (1 << _desc_buffer_size_exp) - 1;
+    offset &= (UINT64_C(1) << _desc_buffer_size_exp) - 1;
     return get_desc_ptr(index)[offset];
 }
 

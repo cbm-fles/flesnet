@@ -91,7 +91,7 @@ uint32_t Parameters::suggest_in_desc_buffer_size_exp()
     static_assert(min_desc_data_ratio <= max_desc_data_ratio,
                   "invalid range for desc_data_ratio");
 
-    float in_data_buffer_size = 1 << _in_data_buffer_size_exp;
+    float in_data_buffer_size = UINT64_C(1) << _in_data_buffer_size_exp;
     float suggest_in_desc_buffer_size = in_data_buffer_size
                                         / _typical_content_size
                                         * in_desc_buffer_oversize_factor;
@@ -126,7 +126,7 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
     static_assert(min_desc_data_ratio <= max_desc_data_ratio,
                   "invalid range for desc_data_ratio");
 
-    float cn_data_buffer_size = 1 << _cn_data_buffer_size_exp;
+    float cn_data_buffer_size = UINT64_C(1) << _cn_data_buffer_size_exp;
     float suggest_cn_desc_buffer_size
         = cn_data_buffer_size
           / (_typical_content_size * (_timeslice_size + _overlap_size))
@@ -298,16 +298,16 @@ void Parameters::parse_options(int argc, char* argv[])
                        << _overlap_size << ") microslices";
             out.info() << "number of timeslices: " << _max_timeslice_number;
             out.info() << "input node buffer size: "
-                       << human_readable_byte_count(1
+                       << human_readable_byte_count(UINT64_C(1)
                                                     << _in_data_buffer_size_exp)
                        << " + " << human_readable_byte_count(
-                                       (1 << _in_desc_buffer_size_exp)
+                                       (UINT64_C(1) << _in_desc_buffer_size_exp)
                                        * sizeof(fles::MicrosliceDescriptor));
             out.info() << "compute node buffer size: "
                        << human_readable_byte_count(
-                              1 << _cn_data_buffer_size_exp) << " + "
+                              UINT64_C(1) << _cn_data_buffer_size_exp) << " + "
                        << human_readable_byte_count(
-                              (1 << _cn_desc_buffer_size_exp)
+                              (UINT64_C(1) << _cn_desc_buffer_size_exp)
                               * sizeof(fles::TimesliceComponentDescriptor));
         }
     }
