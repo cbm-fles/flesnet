@@ -20,8 +20,9 @@ TimesliceView::TimesliceView(
     _desc_ptr.resize(num_components());
     uint64_t descriptor_offset
         = _timeslice_descriptor.ts_pos
-          & ((1L << work_item.desc_buffer_size_exp) - 1L);
-    uint64_t data_offset_mask = (1L << work_item.data_buffer_size_exp) - 1L;
+          & ((UINT64_C(1) << work_item.desc_buffer_size_exp) - 1);
+    uint64_t data_offset_mask = (UINT64_C(1) << work_item.data_buffer_size_exp)
+                                - 1;
     for (size_t c = 0; c < num_components(); ++c) {
         _desc_ptr[c] = desc + (c << work_item.desc_buffer_size_exp)
                        + descriptor_offset;
