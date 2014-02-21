@@ -269,7 +269,7 @@ static struct pci_driver rorcfs_driver = {
 	.name			= DRV_NAME,
 	.id_table	= rorcfs_pci_table,
 	.probe		= rorcfs_init_one,
-	.remove		= __devexit_p(rorcfs_remove_one)
+	.remove		= rorcfs_remove_one
 };
 
 static int __init rorcfs_init(void)
