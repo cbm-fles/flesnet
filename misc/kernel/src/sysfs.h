@@ -21,7 +21,7 @@
 #ifndef _RORCFS_SYSFS_H
 #define _RORCFS_SYSFS_H
 
-#define BIN_ATTR(_name, _size, _mode, _read, _write, _mmap) \
+#define RORC_BIN_ATTR(_name, _size, _mode, _read, _write, _mmap) \
 	struct bin_attribute attr_bin_##_name = { \
 		.attr = { .name = __stringify(_name), .mode = _mode }, \
 		.size = _size, \
@@ -30,7 +30,7 @@
 		.mmap = _mmap, \
 	}
 
-#define BIN_ATTR_CORE(_name, _size, _mode, _read, _write, _mmap) \
+#define RORC_BIN_ATTR_CORE(_name, _size, _mode, _read, _write, _mmap) \
 { \
 	.attr = { .name = __stringify(_name), .mode = _mode }, \
 	.size = _size, \

@@ -35,25 +35,25 @@
 #include "sysfs.h"
 #include "../include/rorcfs.h"
 
-static BIN_ATTR(free_buffer, sizeof(unsigned long), S_IWUGO, NULL, rorcfs_attr_free_buffer, NULL);
-static BIN_ATTR(alloc_buffer, sizeof(struct t_rorcfs_buffer), S_IWUGO, NULL, rorcfs_attr_alloc_buffer, NULL);
+static RORC_BIN_ATTR(free_buffer, sizeof(unsigned long), S_IWUGO, NULL, rorcfs_attr_free_buffer, NULL);
+static RORC_BIN_ATTR(alloc_buffer, sizeof(struct t_rorcfs_buffer), S_IWUGO, NULL, rorcfs_attr_alloc_buffer, NULL);
 
 /**
  * sysfs attribute for each possible bar
  * attribute is only created if corresponding BAR actually exists
  * */
 struct bin_attribute attr_bin_bar[PCI_NUM_RESOURCES] = {
-	BIN_ATTR_CORE(bar0, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
+	RORC_BIN_ATTR_CORE(bar0, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
 		rorcfs_attr_bar_write, rorcfs_bar_mmap),
-	BIN_ATTR_CORE(bar1, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read,
+	RORC_BIN_ATTR_CORE(bar1, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read,
 		rorcfs_attr_bar_write, rorcfs_bar_mmap),
-	BIN_ATTR_CORE(bar2, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
+	RORC_BIN_ATTR_CORE(bar2, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
 		rorcfs_attr_bar_write, rorcfs_bar_mmap),
-	BIN_ATTR_CORE(bar3, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
+	RORC_BIN_ATTR_CORE(bar3, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
 		rorcfs_attr_bar_write, rorcfs_bar_mmap),
-	BIN_ATTR_CORE(bar4, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
+	RORC_BIN_ATTR_CORE(bar4, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
 		rorcfs_attr_bar_write, rorcfs_bar_mmap),
-	BIN_ATTR_CORE(bar5, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
+	RORC_BIN_ATTR_CORE(bar5, 0, S_IRUGO|S_IWUGO, rorcfs_attr_bar_read, 
 		rorcfs_attr_bar_write, rorcfs_bar_mmap),
 };
 

@@ -161,7 +161,7 @@ unsigned int rorcfs_sg_coalesce(struct rorcfs_dma_desc **desc_buffer, struct sca
 
 	// print dma_list entries to stdout
 	for(i=0;i<nents;i++)
-		rorcfs_debug("%s rorcfs_sg_coalesce: addr %llx len %lx\n",
+		rorcfs_debug("%s rorcfs_sg_coalesce: addr %lx len %lx\n",
 				DRV_NAME, mem[i].addr, mem[i].len);
 
 	rorcfs_debug("%s rorcfs_sg_coalesce: nents=%lu\n", 

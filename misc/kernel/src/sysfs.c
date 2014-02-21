@@ -37,24 +37,24 @@
  **************************************************/
 
 /* DMA memory region: RORC writes event data into this buffer */
-static BIN_ATTR(mem, 0, S_IRUGO|S_IWUGO, 
+static RORC_BIN_ATTR(mem, 0, S_IRUGO|S_IWUGO, 
 		rorcfs_attr_bin_read, NULL, rorcfs_attr_bin_mmap);
 
 /* sync: initiate a dma_sync_for_cpu of a buffer range
  * feed with struct rorcfs_attr_sync_range */
-static BIN_ATTR(sync, sizeof(struct rorcfs_sync_range), S_IWUGO, 
+static RORC_BIN_ATTR(sync, sizeof(struct rorcfs_sync_range), S_IWUGO, 
 		NULL, rorcfs_attr_bin_write, NULL);
 
 /* sglist: export sg-list to userspace */
-static BIN_ATTR(sglist, 0, S_IRUGO, 
+static RORC_BIN_ATTR(sglist, 0, S_IRUGO, 
 		rorcfs_attr_bin_read, NULL, rorcfs_mmap_virtual);
 
 /* overmapped: export overmap-flag to userspace */
-static BIN_ATTR(overmapped, 4, S_IRUGO,
+static RORC_BIN_ATTR(overmapped, 4, S_IRUGO,
 		rorcfs_attr_bin_read, NULL, NULL);
 
 /* overmapped: export DMA direction flag to userspace */
-static BIN_ATTR(dma_direction, 4, S_IRUGO,
+static RORC_BIN_ATTR(dma_direction, 4, S_IRUGO,
 		rorcfs_attr_bin_read, NULL, NULL);
 
 
