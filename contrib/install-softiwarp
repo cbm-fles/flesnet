@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -ex
+
+DIR=/tmp/src/softiwarp
+
+echo "=== Installing dependencies"
+sudo aptitude install gcc autoconf automake libtool librdmacm-dev ibverbs-utils rdmacm-utils linux-headers-`uname -r`
+
+echo "=== Downloading sources"
+mkdir -p "$DIR"
+cd "$DIR"
+rm -rf kernel userlib
+git clone http://git.gitorious.org/softiwarp/kernel.git
+git clone http://git.gitorious.org/softiwarp/userlib.git
+
+echo "=== Building userspace library"
+cd "$DIR"/userlib/libsiw-*
+./autogen.sh || true
+./autogen.sh
+./configure
+make
+
+echo "=== Installing userspace library"
+sudo make install
+sudo ldconfig
+sudo mkdir -p /etc/libibverbs.d
+sudo ln -sf /usr/local/etc/libibverbs.d/siw.driver /etc/libibverbs.d/
+
+echo "=== Building kernel module"
+cd "$DIR/kernel/softiwarp"
+patch siw_debug.h <<EOF
+diff a/softiwarp/siw_debug.h b/softiwarp/siw_debug.h
+--- a/softiwarp/siw_debug.h
++++ b/softiwarp/siw_debug.h
+@@ -101,4 +101,4 @@
+  */
+-#define DPRINT_MASK	0
++#define DPRINT_MASK	(DBG_WR & 0)
+
+ extern void siw_debug_init(void);
+EOF
+make
+
+echo "=== Installing kernel module"
+sudo make install
+sudo depmod
+
+echo "=== Loading kernel modules"
+for m in rdma_cm ib_uverbs rdma_ucm siw; do
+	grep -q "^$m$" /etc/modules || sudo bash -c "echo '$m' >> /etc/modules"
+	sudo modprobe "$m"
+done
+
+echo "=== Disabling kernel memlock limit"
+sudo bash -c 'echo -e "* soft memlock unlimited\n* hard memlock unlimited" > /etc/security/limits.d/10-infiniband.conf'
+echo "Re-login for new memlock limit to take effect."
+
+echo "=== Verify install"
+ibv_devices
