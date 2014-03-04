@@ -15,8 +15,8 @@ class flib_server {
   
   zmq::context_t& _zmq_context;
   std::string _path;
+  flib::flib_device &_device;
   flib::flib_link &_link;
-  flib::device_ctrl_channel &_dev_ctrl_ch;
   zmq::socket_t _driver_req;
   zmq::socket_t _driver_res;
   boost::thread _driver_thread;
@@ -34,12 +34,12 @@ public:
 
   flib_server(zmq::context_t& context,
               std::string path,
-              flib::flib_link &link,
-              flib::device_ctrl_channel &dev_ctrl_ch)
+              flib::flib_device &device,
+              flib::flib_link &link)
     : _zmq_context(context),
       _path(path),
+      _device(device),
       _link(link),
-      _dev_ctrl_ch(dev_ctrl_ch),
       _driver_req(context, ZMQ_PULL),
       _driver_res(context, ZMQ_PUSH),
       _stop_fd(-1),
@@ -224,7 +224,7 @@ public:
     // send dlm
     // TODO: this is a global operation for all links!
     // This has to be done global for a multi link version
-    _dev_ctrl_ch.send_dlm();
+    _device.send_dlm();
 
     return;
   }

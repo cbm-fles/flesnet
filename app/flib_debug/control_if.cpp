@@ -18,8 +18,6 @@ using namespace flib;
 
 flib_device* MyFlib = NULL;
 
-device_ctrl_channel* dev_ctrl = NULL;
-
 int main(int argc, char *argv[])
 {
   MyFlib = new flib_device(0);
@@ -31,17 +29,17 @@ int main(int argc, char *argv[])
     printf("link not set\n");    
   };
 
-  dev_ctrl = new device_ctrl_channel_local(MyFlib->get_bar_ptr());
-
   ////////////////////////////////////////////////////////
  
-  std::cout << dev_ctrl->print_build_info() << std::endl;
+  std::cout << MyFlib->print_build_info() << std::endl;
 
   printf("r_ctrl_tx: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_CTRL_TX));
 
   MyFlib->link[0]->set_data_rx_sel(flib_link::pgen);
     
   printf("START\n");
+
+  std::cout << MyFlib->get_devinfo() << std::endl;
 
   size_t words = 4; // number of 16 Bit words in message
   uint16_t offset = 0;
@@ -86,7 +84,7 @@ int main(int argc, char *argv[])
 
   printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
   MyFlib->link[0]->set_dlm_cfg(0x5, true);
-  dev_ctrl->send_dlm();
+  MyFlib->send_dlm();
   printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
   MyFlib->link[0]->clr_dlm();
   printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
@@ -100,8 +98,5 @@ int main(int argc, char *argv[])
 
   if (MyFlib)
     delete MyFlib;
-
-  if (dev_ctrl)
-    delete dev_ctrl;
   return 0;
 }

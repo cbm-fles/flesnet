@@ -185,10 +185,6 @@ public:
     _bar->set(addr, data);
   }
 
-  rorcfs_bar* get_bar_ptr() {
-    return _bar.get();
-  }
-  
 };
 
 } // namespace flib
