@@ -11,9 +11,10 @@
 #include "boost/date_time/posix_time/posix_time.hpp" //include all types plus i/o
 
 #include "flib_link.hpp"
+#include "system_bus_bar.hpp"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Wold-style-cast"
 
 namespace flib {
 
@@ -25,22 +26,23 @@ private:
 
   std::unique_ptr<rorcfs_device> _dev;
   std::unique_ptr<rorcfs_bar> _bar;
+  std::unique_ptr<system_bus_bar> _bus;
 
   uint8_t _get_num_hw_links() {
-    uint8_t n = (_bar->get(RORC_REG_N_CHANNELS) & 0xFF);
+    uint8_t n = (_bus->get_reg(RORC_REG_N_CHANNELS) & 0xFF);
     return n;
   }
 
   bool _check_magic_number() {
     bool match = false;
-    if (((uint16_t)(_bar->get(0) & 0xFFFF)) == 0x4844) { // RORC_REG_HARDWARE_INFO
+    if ((_bus->get_reg(0) & 0xFFFF) == 0x4844) { // RORC_REG_HARDWARE_INFO
       match = true;
     }
     return match;
   }
 
   bool _check_hw_ver() {
-    uint16_t hw_ver =  (uint16_t)(_bar->get(0) >> 16); // RORC_REG_HARDWARE_INFO;
+    uint16_t hw_ver = _bus->get_reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
     bool match = false;
     // check if version of hardware is part of suported versions
     for (auto it = hw_ver_table.begin(); it != hw_ver_table.end() && match == false; ++it) {
@@ -70,6 +72,9 @@ public:
     if ( _bar->init() == -1 ) {
       throw RorcfsException("BAR1 init failed");
     }
+    // create system bus
+    _bus = std::unique_ptr<system_bus_bar>(new system_bus_bar(_bar.get()));
+
     // enforce correct hw version
     if (!_check_hw_ver() | !_check_magic_number()) {
       throw FlibException("Unsupported hardware version");
@@ -105,29 +110,31 @@ public:
   }
   
   void enable_mc_cnt(bool enable) {
-    _bar->set_bit(RORC_REG_MC_CNT_CFG, 31, enable);
+    _bus->set_bit(RORC_REG_MC_CNT_CFG, 31, enable);
   }
 
   void set_mc_time(uint16_t time) {
     // time: 10 bit wide, in units of 8 ns
-    uint32_t reg = get_reg(RORC_REG_MC_CNT_CFG);
+    uint32_t reg = _bus->get_reg(RORC_REG_MC_CNT_CFG);
     reg = (reg & ~0x3FF) | (time & 0x3FF);
-    set_reg(RORC_REG_MC_CNT_CFG, reg);
+    _bus->set_reg(RORC_REG_MC_CNT_CFG, reg);
   }
 
+  // global dlm send, rquires link local prepare_dlm beforehand
   void send_dlm() {
-    set_reg(RORC_REG_DLM_CFG, 1);
+    _bus->set_reg(RORC_REG_DLM_CFG, 1);
   }
 
   boost::posix_time::ptime get_build_date() {
-    time_t time = static_cast<time_t>(_bar->get(RORC_REG_BUILD_DATE_L) \
-                                     | ((uint64_t)(_bar->get(RORC_REG_BUILD_DATE_H))<<32));
+    time_t time = 
+      static_cast<time_t>(_bus->get_reg(RORC_REG_BUILD_DATE_L)
+                          | (static_cast<uint64_t>(_bus->get_reg(RORC_REG_BUILD_DATE_H))<<32));
     boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
     return t;
   }
- 
-  uint16_t get_hw_ver() {
-    uint16_t ver = (uint16_t)(_bar->get(0) >> 16); // RORC_REG_HARDWARE_INFO
+
+   uint16_t get_hw_ver() {
+    uint16_t ver = static_cast<uint16_t>(_bus->get_reg(0) >> 16); // RORC_REG_HARDWARE_INFO
     return ver;
   }
 
@@ -140,17 +147,15 @@ public:
 
   struct build_info get_build_info() {
     build_info info;
-
-    time_t time = static_cast<time_t>(_bar->get(RORC_REG_BUILD_DATE_L) \
-                | ((uint64_t)(_bar->get(RORC_REG_BUILD_DATE_H))<<32));
-    info.date = boost::posix_time::from_time_t(time);
-    info.rev[0] = _bar->get(RORC_REG_BUILD_REV_0);
-    info.rev[1] = _bar->get(RORC_REG_BUILD_REV_1);
-    info.rev[2] = _bar->get(RORC_REG_BUILD_REV_2);
-    info.rev[3] = _bar->get(RORC_REG_BUILD_REV_3);
-    info.rev[4] = _bar->get(RORC_REG_BUILD_REV_4);
+    
+    info.date = get_build_date();
+    info.rev[0] = _bus->get_reg(RORC_REG_BUILD_REV_0);
+    info.rev[1] = _bus->get_reg(RORC_REG_BUILD_REV_1);
+    info.rev[2] = _bus->get_reg(RORC_REG_BUILD_REV_2);
+    info.rev[3] = _bus->get_reg(RORC_REG_BUILD_REV_3);
+    info.rev[4] = _bus->get_reg(RORC_REG_BUILD_REV_4);
     info.hw_ver = get_hw_ver();
-    info.clean = (_bar->get(RORC_REG_BUILD_FLAGS) & 0x1);
+    info.clean = (_bus->get_reg(RORC_REG_BUILD_FLAGS) & 0x1);
     return info;
   }
 
@@ -171,24 +176,16 @@ public:
   
   std::string get_devinfo() {
     std::stringstream ss;
-    ss << "Bus "  << (uint32_t)_dev->getBus()
-       << " Slot " << (uint32_t)_dev->getSlot()
-       << " Func " << (uint32_t)_dev->getFunc();
+    ss << "Bus "  << static_cast<uint32_t>(_dev->getBus())
+       << " Slot " << static_cast<uint32_t>(_dev->getSlot())
+       << " Func " << static_cast<uint32_t>(_dev->getFunc());
     return ss.str();
-  }
-
-  uint32_t get_reg(uint64_t addr) {
-    return _bar->get(addr);
-  }
-
-  void set_reg(uint64_t addr, uint32_t data) {
-    _bar->set(addr, data);
   }
 
 };
 
 } // namespace flib
 
-#pragma GCC diagnostic pop
+// #pragma GCC diagnostic pop
 
 #endif // FLIB_DEVICE_HPP

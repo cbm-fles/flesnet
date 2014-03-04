@@ -136,6 +136,14 @@ class rorcfs_bar
 		 **/
 		int init();
 
+  void* get_mem_ptr() {
+    return static_cast<void*>(bar);
+  };
+
+  size_t get_size() {
+    return static_cast<size_t>(barstat.st_size);
+  };
+
 		/**
 		 * get size of mapped BAR. This value is only valid after init()
 		 * @return size of mapped BAR in (unsigned long) bytes

@@ -4,6 +4,8 @@
 
 #include <flib/flib_device.hpp>
 #include <flib/flib_link.hpp>
+#include <flib/system_bus.hpp>
+#include <flib/system_bus_bar.hpp>
 #include <flib/rorcfs_device.hh> 
 #include <flib/rorcfs_bar.hh>
 #include <flib/rorcfs_buffer.hh> 
