@@ -1,13 +1,13 @@
 // Copyright 2014 Dirk Hutter
 // Abstract interface class to access flib system bus
-#ifndef SYSTEM_BUS_HPP
-#define SYSTEM_BUS_HPP
+#ifndef REGISTER_FILE_HPP
+#define REGISTER_FILE_HPP
 
 namespace flib {
 
   typedef uint64_t sys_bus_addr;
 
-class system_bus {
+class register_file {
 
 public:
 
@@ -41,8 +41,8 @@ public:
     }    
   }
 
-  virtual ~system_bus() {};
+  virtual ~register_file() {};
 
 };
 } // namespace flib
-#endif // SYSTEM_BUS_HPP
+#endif // REGISTER_FILE_HPP
