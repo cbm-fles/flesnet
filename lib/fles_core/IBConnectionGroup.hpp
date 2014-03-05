@@ -16,8 +16,7 @@
 /** An IBConnectionGroup object represents a group of InfiniBand
     connections that use the same completion queue. */
 
-template <typename CONNECTION>
-class IBConnectionGroup : public ThreadContainer
+template <typename CONNECTION> class IBConnectionGroup : public ThreadContainer
 {
 public:
     /// The IBConnectionGroup default constructor.

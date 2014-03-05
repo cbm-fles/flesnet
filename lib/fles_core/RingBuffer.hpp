@@ -4,8 +4,7 @@
 #include <memory>
 
 /// Simple generic ring buffer class.
-template <typename T = uint8_t, bool CLEARED = false>
-class RingBuffer
+template <typename T = uint8_t, bool CLEARED = false> class RingBuffer
 {
 public:
     /// The RingBuffer default constructor.

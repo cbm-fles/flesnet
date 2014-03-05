@@ -11,8 +11,7 @@ IBConnection::IBConnection(struct rdma_event_channel* ec,
                            uint_fast16_t connection_index,
                            uint_fast16_t remote_connection_index,
                            struct rdma_cm_id* id)
-    : _index(connection_index),
-      _remote_index(remote_connection_index),
+    : _index(connection_index), _remote_index(remote_connection_index),
       _cm_id(id)
 {
     if (!_cm_id) {

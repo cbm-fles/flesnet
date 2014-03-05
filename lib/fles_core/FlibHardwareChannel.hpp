@@ -15,8 +15,7 @@ class FlibHardwareChannel : public DataSource
 public:
     /// The FlibHardwareChannel constructor.
     FlibHardwareChannel(std::size_t data_buffer_size_exp,
-                        std::size_t desc_buffer_size_exp,
-                        uint64_t input_index,
+                        std::size_t desc_buffer_size_exp, uint64_t input_index,
                         flib::flib_link* flib_link);
 
     FlibHardwareChannel(const FlibHardwareChannel&) = delete;
@@ -48,16 +47,14 @@ public:
     virtual void copy_to_data_send_buffer(std::size_t start, std::size_t count)
         override
     {
-        std::copy_n(&_data_buffer_view->at(start),
-                    count,
+        std::copy_n(&_data_buffer_view->at(start), count,
                     &_data_send_buffer_view.at(start));
     }
 
     virtual void copy_to_desc_send_buffer(std::size_t start, std::size_t count)
         override
     {
-        std::copy_n(&_desc_buffer_view->at(start),
-                    count,
+        std::copy_n(&_desc_buffer_view->at(start), count,
                     &_desc_send_buffer_view.at(start));
     }
 

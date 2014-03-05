@@ -5,8 +5,7 @@
 #include <sstream>
 
 bool TimesliceAnalyzer::check_flesnet_pattern(
-    const fles::MicrosliceDescriptor& descriptor,
-    const uint64_t* content,
+    const fles::MicrosliceDescriptor& descriptor, const uint64_t* content,
     size_t component)
 {
     uint32_t crc = 0x00000000;
@@ -84,8 +83,7 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
 }
 
 bool TimesliceAnalyzer::check_flib_pattern(
-    const fles::MicrosliceDescriptor& descriptor,
-    const uint64_t* content,
+    const fles::MicrosliceDescriptor& descriptor, const uint64_t* content,
     size_t /* component */)
 {
     if (content[0] != reinterpret_cast<const uint64_t*>(&descriptor)[0] ||

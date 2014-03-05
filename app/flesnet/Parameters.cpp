@@ -164,14 +164,11 @@ void Parameters::parse_options(int argc, char* argv[])
     config.add_options()("input-index,i",
                          po::value<std::vector<unsigned>>()->multitoken(),
                          "this application's index in the list of input nodes")(
-        "compute-index,c",
-        po::value<std::vector<unsigned>>()->multitoken(),
+        "compute-index,c", po::value<std::vector<unsigned>>()->multitoken(),
         "this application's index in the list of compute nodes")(
-        "input-nodes,I",
-        po::value<std::vector<std::string>>()->multitoken(),
+        "input-nodes,I", po::value<std::vector<std::string>>()->multitoken(),
         "add host to the list of input nodes")(
-        "compute-nodes,C",
-        po::value<std::vector<std::string>>()->multitoken(),
+        "compute-nodes,C", po::value<std::vector<std::string>>()->multitoken(),
         "add host to the list of compute nodes")(
         "timeslice-size", po::value<uint32_t>(&_timeslice_size),
         "global timeslice size in number of MCs")(

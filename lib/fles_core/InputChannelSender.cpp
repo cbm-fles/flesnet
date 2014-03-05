@@ -6,20 +6,14 @@
 #include <cassert>
 
 InputChannelSender::InputChannelSender(
-    uint64_t input_index,
-    DataSource& data_source,
+    uint64_t input_index, DataSource& data_source,
     const std::vector<std::string> compute_hostnames,
-    const std::vector<std::string> compute_services,
-    uint32_t timeslice_size,
-    uint32_t overlap_size,
-    uint32_t max_timeslice_number)
-    : _input_index(input_index),
-      _data_source(data_source),
+    const std::vector<std::string> compute_services, uint32_t timeslice_size,
+    uint32_t overlap_size, uint32_t max_timeslice_number)
+    : _input_index(input_index), _data_source(data_source),
       _compute_hostnames(compute_hostnames),
-      _compute_services(compute_services),
-      _timeslice_size(timeslice_size),
-      _overlap_size(overlap_size),
-      _max_timeslice_number(max_timeslice_number),
+      _compute_services(compute_services), _timeslice_size(timeslice_size),
+      _overlap_size(overlap_size), _max_timeslice_number(max_timeslice_number),
       _min_acked_mc(data_source.desc_buffer().size() / 4),
       _min_acked_data(data_source.data_buffer().size() / 4)
 {

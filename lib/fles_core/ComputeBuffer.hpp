@@ -18,12 +18,9 @@ class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
 {
 public:
     /// The ComputeBuffer constructor.
-    ComputeBuffer(uint64_t compute_index,
-                  uint32_t data_buffer_size_exp,
-                  uint32_t desc_buffer_size_exp,
-                  unsigned short service,
-                  uint32_t num_input_nodes,
-                  uint32_t timeslice_size,
+    ComputeBuffer(uint64_t compute_index, uint32_t data_buffer_size_exp,
+                  uint32_t desc_buffer_size_exp, unsigned short service,
+                  uint32_t num_input_nodes, uint32_t timeslice_size,
                   uint32_t processor_instances,
                   const std::string processor_executable);
 

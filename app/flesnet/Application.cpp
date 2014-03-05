@@ -13,15 +13,11 @@ Application::Application(Parameters const& par) : _par(par)
     // set_cpu(1);
 
     for (unsigned i : _par.compute_indexes()) {
-        std::unique_ptr<ComputeBuffer> buffer(
-            new ComputeBuffer(i,
-                              _par.cn_data_buffer_size_exp(),
-                              _par.cn_desc_buffer_size_exp(),
-                              _par.base_port() + i,
-                              _par.input_nodes().size(),
-                              _par.timeslice_size(),
-                              _par.processor_instances(),
-                              _par.processor_executable()));
+        std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(
+            i, _par.cn_data_buffer_size_exp(), _par.cn_desc_buffer_size_exp(),
+            _par.base_port() + i, _par.input_nodes().size(),
+            _par.timeslice_size(), _par.processor_instances(),
+            _par.processor_executable()));
         buffer->start_processes();
         _compute_buffers.push_back(std::move(buffer));
     }

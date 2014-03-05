@@ -14,20 +14,16 @@
 ComputeBuffer::ComputeBuffer(uint64_t compute_index,
                              uint32_t data_buffer_size_exp,
                              uint32_t desc_buffer_size_exp,
-                             unsigned short service,
-                             uint32_t num_input_nodes,
+                             unsigned short service, uint32_t num_input_nodes,
                              uint32_t timeslice_size,
                              uint32_t processor_instances,
                              const std::string processor_executable)
     : _compute_index(compute_index),
       _data_buffer_size_exp(data_buffer_size_exp),
-      _desc_buffer_size_exp(desc_buffer_size_exp),
-      _service(service),
-      _num_input_nodes(num_input_nodes),
-      _timeslice_size(timeslice_size),
+      _desc_buffer_size_exp(desc_buffer_size_exp), _service(service),
+      _num_input_nodes(num_input_nodes), _timeslice_size(timeslice_size),
       _processor_instances(processor_instances),
-      _processor_executable(processor_executable),
-      _ack(desc_buffer_size_exp)
+      _processor_executable(processor_executable), _ack(desc_buffer_size_exp)
 {
     std::random_device random_device;
     std::uniform_int_distribution<uint64_t> uint_distribution;
@@ -258,8 +254,7 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
             _red_lantern = std::distance(std::begin(_conn), new_red_lantern);
 
             for (uint64_t tpos = _completely_written;
-                 tpos < new_completely_written;
-                 ++tpos) {
+                 tpos < new_completely_written; ++tpos) {
                 fles::TimesliceWorkItem wi = {
                     {tpos, _timeslice_size,
                      static_cast<uint32_t>(_conn.size())},

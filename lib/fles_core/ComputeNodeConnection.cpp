@@ -7,20 +7,13 @@
 #include <cassert>
 
 ComputeNodeConnection::ComputeNodeConnection(
-    struct rdma_event_channel* ec,
-    uint_fast16_t connection_index,
-    uint_fast16_t remote_connection_index,
-    struct rdma_cm_id* id,
-    InputNodeInfo remote_info,
-    uint8_t* data_ptr,
-    uint32_t data_buffer_size_exp,
-    fles::TimesliceComponentDescriptor* desc_ptr,
-    uint32_t desc_buffer_size_exp)
+    struct rdma_event_channel* ec, uint_fast16_t connection_index,
+    uint_fast16_t remote_connection_index, struct rdma_cm_id* id,
+    InputNodeInfo remote_info, uint8_t* data_ptr, uint32_t data_buffer_size_exp,
+    fles::TimesliceComponentDescriptor* desc_ptr, uint32_t desc_buffer_size_exp)
     : IBConnection(ec, connection_index, remote_connection_index, id),
-      _remote_info(std::move(remote_info)),
-      _data_ptr(data_ptr),
-      _data_buffer_size_exp(data_buffer_size_exp),
-      _desc_ptr(desc_ptr),
+      _remote_info(std::move(remote_info)), _data_ptr(data_ptr),
+      _data_buffer_size_exp(data_buffer_size_exp), _desc_ptr(desc_ptr),
       _desc_buffer_size_exp(desc_buffer_size_exp)
 {
     // send and receive only single ComputeNodeBufferPosition struct

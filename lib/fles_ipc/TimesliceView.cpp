@@ -6,8 +6,7 @@ namespace fles
 {
 
 TimesliceView::TimesliceView(
-    TimesliceWorkItem work_item,
-    uint8_t* data,
+    TimesliceWorkItem work_item, uint8_t* data,
     TimesliceComponentDescriptor* desc,
     std::shared_ptr<boost::interprocess::message_queue> completions_mq)
     : _completions_mq(std::move(completions_mq))

@@ -4,14 +4,12 @@
 #include <cstdint>
 
 /// Simple generic ring buffer view class.
-template <typename T = uint8_t>
-class RingBufferView
+template <typename T = uint8_t> class RingBufferView
 {
 public:
     /// The RingBufferView constructor.
     RingBufferView(T* buffer, std::size_t new_size_exponent)
-        : _buf(buffer),
-          _size_exponent(new_size_exponent),
+        : _buf(buffer), _size_exponent(new_size_exponent),
           _size(UINT64_C(1) << _size_exponent),
           _size_mask((UINT64_C(1) << _size_exponent) - 1)
     {

@@ -11,12 +11,9 @@
 #include <thread>
 
 InputChannelConnection::InputChannelConnection(
-    struct rdma_event_channel* ec,
-    uint_fast16_t connection_index,
-    uint_fast16_t remote_connection_index,
-    unsigned int max_send_wr,
-    unsigned int max_pending_write_requests,
-    struct rdma_cm_id* id)
+    struct rdma_event_channel* ec, uint_fast16_t connection_index,
+    uint_fast16_t remote_connection_index, unsigned int max_send_wr,
+    unsigned int max_pending_write_requests, struct rdma_cm_id* id)
     : IBConnection(ec, connection_index, remote_connection_index, id),
       _max_pending_write_requests(max_pending_write_requests)
 {

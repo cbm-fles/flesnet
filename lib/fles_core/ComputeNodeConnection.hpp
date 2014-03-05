@@ -19,10 +19,8 @@ public:
     ComputeNodeConnection(struct rdma_event_channel* ec,
                           uint_fast16_t connection_index,
                           uint_fast16_t remote_connection_index,
-                          struct rdma_cm_id* id,
-                          InputNodeInfo remote_info,
-                          uint8_t* data_ptr,
-                          uint32_t data_buffer_size_exp,
+                          struct rdma_cm_id* id, InputNodeInfo remote_info,
+                          uint8_t* data_ptr, uint32_t data_buffer_size_exp,
                           fles::TimesliceComponentDescriptor* desc_ptr,
                           uint32_t desc_buffer_size_exp);
 
