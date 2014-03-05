@@ -67,9 +67,9 @@ public:
                                      uint64_t new_acked_mc) override;
 
 private:
-    std::unique_ptr<RingBufferView<> > _data_buffer_view;
-    std::unique_ptr
-        <RingBufferView<fles::MicrosliceDescriptor> > _desc_buffer_view;
+    std::unique_ptr<RingBufferView<>> _data_buffer_view;
+    std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor>>
+    _desc_buffer_view;
 
     RingBuffer<> _data_send_buffer;
     RingBuffer<fles::MicrosliceDescriptor> _desc_send_buffer;

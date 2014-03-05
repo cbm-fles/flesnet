@@ -66,19 +66,19 @@ void ComputeNodeConnection::post_send_final_ack()
 
 void ComputeNodeConnection::setup(struct ibv_pd* pd)
 {
-    assert(_data_ptr && _desc_ptr && _data_buffer_size_exp
-           && _desc_buffer_size_exp);
+    assert(_data_ptr && _desc_ptr && _data_buffer_size_exp &&
+           _desc_buffer_size_exp);
 
     // register memory regions
     std::size_t data_bytes = UINT64_C(1) << _data_buffer_size_exp;
-    std::size_t desc_bytes = (UINT64_C(1) << _desc_buffer_size_exp)
-                             * sizeof(fles::TimesliceComponentDescriptor);
+    std::size_t desc_bytes = (UINT64_C(1) << _desc_buffer_size_exp) *
+                             sizeof(fles::TimesliceComponentDescriptor);
     _mr_data = ibv_reg_mr(pd, _data_ptr, data_bytes,
                           IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE);
     _mr_desc = ibv_reg_mr(pd, _desc_ptr, desc_bytes,
                           IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE);
-    _mr_send
-        = ibv_reg_mr(pd, &_send_cn_ack, sizeof(ComputeNodeBufferPosition), 0);
+    _mr_send =
+        ibv_reg_mr(pd, &_send_cn_ack, sizeof(ComputeNodeBufferPosition), 0);
     _mr_recv = ibv_reg_mr(pd, &_recv_cn_wp, sizeof(ComputeNodeBufferPosition),
                           IBV_ACCESS_LOCAL_WRITE);
 
@@ -148,8 +148,8 @@ void ComputeNodeConnection::inc_ack_pointers(uint64_t ack_pos)
     std::unique_lock<std::mutex> lock(_cn_ack_mutex);
     _cn_ack.desc = ack_pos;
 
-    const fles::TimesliceComponentDescriptor& acked_ts = _desc_ptr
-        [(ack_pos - 1) & ((UINT64_C(1) << _desc_buffer_size_exp) - 1)];
+    const fles::TimesliceComponentDescriptor& acked_ts =
+        _desc_ptr[(ack_pos - 1) & ((UINT64_C(1) << _desc_buffer_size_exp) - 1)];
 
     _cn_ack.data = acked_ts.offset + acked_ts.size;
     if (_our_turn) {
@@ -198,15 +198,15 @@ void ComputeNodeConnection::on_complete_send_finalize()
     _done = true;
 }
 
-std::unique_ptr<std::vector<uint8_t> > ComputeNodeConnection::get_private_data()
+std::unique_ptr<std::vector<uint8_t>> ComputeNodeConnection::get_private_data()
 {
-    assert(_data_ptr && _desc_ptr && _data_buffer_size_exp
-           && _desc_buffer_size_exp);
-    std::unique_ptr<std::vector<uint8_t> > private_data(
+    assert(_data_ptr && _desc_ptr && _data_buffer_size_exp &&
+           _desc_buffer_size_exp);
+    std::unique_ptr<std::vector<uint8_t>> private_data(
         new std::vector<uint8_t>(sizeof(ComputeNodeInfo)));
 
-    ComputeNodeInfo* cn_info = reinterpret_cast
-        <ComputeNodeInfo*>(private_data->data());
+    ComputeNodeInfo* cn_info =
+        reinterpret_cast<ComputeNodeInfo*>(private_data->data());
     cn_info->data.addr = reinterpret_cast<uintptr_t>(_data_ptr);
     cn_info->data.rkey = _mr_data->rkey;
     cn_info->desc.addr = reinterpret_cast<uintptr_t>(_desc_ptr);

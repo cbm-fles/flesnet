@@ -57,8 +57,8 @@ TimesliceView* TimesliceReceiver::do_get()
 
     return new TimesliceView(
         wi, reinterpret_cast<uint8_t*>(_data_region->get_address()),
-        reinterpret_cast
-        <TimesliceComponentDescriptor*>(_desc_region->get_address()),
+        reinterpret_cast<TimesliceComponentDescriptor*>(
+            _desc_region->get_address()),
         _completions_mq);
 }
 

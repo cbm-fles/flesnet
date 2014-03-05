@@ -3,4 +3,4 @@
 shopt -u nocaseglob
 LANG=C
 
-clang-format-3.4 -i lib/fles_{core,ipc}/*.[hc]pp app/{flesnet,tsclient}/*.[hc]pp
+clang-format-3.5 -i lib/fles_{core,ipc}/*.[hc]pp app/{flesnet,tsclient}/*.[hc]pp

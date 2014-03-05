@@ -25,8 +25,8 @@ InputChannelConnection::InputChannelConnection(
     _qp_cap.max_send_wr = max_send_wr; // typical hca maximum: 16k
     _qp_cap.max_send_sge = 4; // max. two chunks each for descriptors and data
 
-    _qp_cap.max_recv_wr
-        = 1; // receive only single ComputeNodeBufferPosition struct
+    _qp_cap.max_recv_wr =
+        1; // receive only single ComputeNodeBufferPosition struct
     _qp_cap.max_recv_sge = 1;
 
     _qp_cap.max_inline_data = sizeof(fles::TimesliceComponentDescriptor);
@@ -40,21 +40,22 @@ void InputChannelConnection::wait_for_buffer_space(uint64_t data_size,
         out.trace() << "[" << _index << "] "
                     << "SENDER data space (bytes) required=" << data_size
                     << ", avail="
-                    << _cn_ack.data
-                       + (UINT64_C(1) << _remote_info.data_buffer_size_exp)
-                       - _cn_wp.data;
+                    << _cn_ack.data +
+                           (UINT64_C(1) << _remote_info.data_buffer_size_exp) -
+                           _cn_wp.data;
         out.trace() << "[" << _index << "] "
                     << "SENDER desc space (entries) required=" << desc_size
                     << ", avail="
-                    << _cn_ack.desc
-                       + (UINT64_C(1) << _remote_info.desc_buffer_size_exp)
-                       - _cn_wp.desc;
+                    << _cn_ack.desc +
+                           (UINT64_C(1) << _remote_info.desc_buffer_size_exp) -
+                           _cn_wp.desc;
     }
-    while (_cn_ack.data - _cn_wp.data
-           + (UINT64_C(1) << _remote_info.data_buffer_size_exp) < data_size
-           || _cn_ack.desc - _cn_wp.desc
-              + (UINT64_C(1) << _remote_info.desc_buffer_size_exp)
-              < desc_size) { // TODO: extend condition!
+    while (_cn_ack.data - _cn_wp.data +
+                   (UINT64_C(1) << _remote_info.data_buffer_size_exp) <
+               data_size ||
+           _cn_ack.desc - _cn_wp.desc +
+                   (UINT64_C(1) << _remote_info.desc_buffer_size_exp) <
+               desc_size) { // TODO: extend condition!
         {
             std::unique_lock<std::mutex> lock2(_cn_wp_mutex);
             if (_our_turn) {
@@ -71,11 +72,13 @@ void InputChannelConnection::wait_for_buffer_space(uint64_t data_size,
         if (out.beTrace()) {
             out.trace() << "[" << _index << "] "
                         << "SENDER (next try) space avail="
-                        << _cn_ack.data - _cn_wp.data
-                           + (UINT64_C(1) << _remote_info.data_buffer_size_exp)
+                        << _cn_ack.data - _cn_wp.data +
+                               (UINT64_C(1)
+                                << _remote_info.data_buffer_size_exp)
                         << " desc_avail="
-                        << _cn_ack.desc - _cn_wp.desc
-                           + (UINT64_C(1) << _remote_info.desc_buffer_size_exp);
+                        << _cn_ack.desc - _cn_wp.desc +
+                               (UINT64_C(1)
+                                << _remote_info.desc_buffer_size_exp);
         }
     }
 }
@@ -90,18 +93,18 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
     uint64_t cn_wp_data = _cn_wp.data;
     cn_wp_data += skip;
 
-    uint64_t cn_data_buffer_mask
-        = (UINT64_C(1) << _remote_info.data_buffer_size_exp) - 1;
-    uint64_t cn_desc_buffer_mask
-        = (UINT64_C(1) << _remote_info.desc_buffer_size_exp) - 1;
-    uint64_t target_bytes_left
-        = (UINT64_C(1) << _remote_info.data_buffer_size_exp)
-          - (cn_wp_data & cn_data_buffer_mask);
+    uint64_t cn_data_buffer_mask =
+        (UINT64_C(1) << _remote_info.data_buffer_size_exp) - 1;
+    uint64_t cn_desc_buffer_mask =
+        (UINT64_C(1) << _remote_info.desc_buffer_size_exp) - 1;
+    uint64_t target_bytes_left =
+        (UINT64_C(1) << _remote_info.data_buffer_size_exp) -
+        (cn_wp_data & cn_data_buffer_mask);
 
     // split sge list if necessary
     int num_sge_cut = 0;
-    if (data_length + mc_length * sizeof(fles::MicrosliceDescriptor)
-        > target_bytes_left) {
+    if (data_length + mc_length * sizeof(fles::MicrosliceDescriptor) >
+        target_bytes_left) {
         for (int i = 0; i < num_sge; ++i) {
             if (sge[i].length <= target_bytes_left) {
                 target_bytes_left -= sge[i].length;
@@ -138,8 +141,8 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
         send_wr_tswrap.sg_list = sge2;
         send_wr_tswrap.num_sge = num_sge2;
         send_wr_tswrap.wr.rdma.rkey = _remote_info.data.rkey;
-        send_wr_tswrap.wr.rdma.remote_addr = static_cast
-            <uintptr_t>(_remote_info.data.addr);
+        send_wr_tswrap.wr.rdma.remote_addr =
+            static_cast<uintptr_t>(_remote_info.data.addr);
         send_wr_ts.next = &send_wr_tswrap;
         send_wr_tswrap.next = &send_wr_tscdesc;
     } else {
@@ -160,14 +163,15 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
     memset(&send_wr_tscdesc, 0, sizeof(send_wr_tscdesc));
     send_wr_tscdesc.wr_id = ID_WRITE_DESC | (timeslice << 24) | (_index << 8);
     send_wr_tscdesc.opcode = IBV_WR_RDMA_WRITE;
-    send_wr_tscdesc.send_flags = IBV_SEND_INLINE | IBV_SEND_FENCE
-                                 | IBV_SEND_SIGNALED;
+    send_wr_tscdesc.send_flags =
+        IBV_SEND_INLINE | IBV_SEND_FENCE | IBV_SEND_SIGNALED;
     send_wr_tscdesc.sg_list = &sge3;
     send_wr_tscdesc.num_sge = 1;
     send_wr_tscdesc.wr.rdma.rkey = _remote_info.desc.rkey;
-    send_wr_tscdesc.wr.rdma.remote_addr = static_cast<uintptr_t>(
-        _remote_info.desc.addr + (_cn_wp.desc & cn_desc_buffer_mask)
-                                 * sizeof(fles::TimesliceComponentDescriptor));
+    send_wr_tscdesc.wr.rdma.remote_addr =
+        static_cast<uintptr_t>(_remote_info.desc.addr +
+                               (_cn_wp.desc & cn_desc_buffer_mask) *
+                                   sizeof(fles::TimesliceComponentDescriptor));
 
     out.debug() << "[i" << _remote_index << "] "
                 << "[" << _index << "] "
@@ -258,14 +262,14 @@ void InputChannelConnection::on_complete_recv()
 void InputChannelConnection::setup(struct ibv_pd* pd)
 {
     // register memory regions
-    _mr_recv
-        = ibv_reg_mr(pd, &_receive_cn_ack, sizeof(ComputeNodeBufferPosition),
-                     IBV_ACCESS_LOCAL_WRITE);
+    _mr_recv =
+        ibv_reg_mr(pd, &_receive_cn_ack, sizeof(ComputeNodeBufferPosition),
+                   IBV_ACCESS_LOCAL_WRITE);
     if (!_mr_recv)
         throw InfinibandException("registration of memory region failed");
 
-    _mr_send
-        = ibv_reg_mr(pd, &_send_cn_wp, sizeof(ComputeNodeBufferPosition), 0);
+    _mr_send =
+        ibv_reg_mr(pd, &_send_cn_wp, sizeof(ComputeNodeBufferPosition), 0);
     if (!_mr_send)
         throw InfinibandException("registration of memory region failed");
 
@@ -330,14 +334,13 @@ void InputChannelConnection::on_disconnected(struct rdma_cm_event* event)
     IBConnection::on_disconnected(event);
 }
 
-std::unique_ptr<std::vector<uint8_t> >
-InputChannelConnection::get_private_data()
+std::unique_ptr<std::vector<uint8_t>> InputChannelConnection::get_private_data()
 {
-    std::unique_ptr<std::vector<uint8_t> > private_data(
+    std::unique_ptr<std::vector<uint8_t>> private_data(
         new std::vector<uint8_t>(sizeof(InputNodeInfo)));
 
-    InputNodeInfo* in_info = reinterpret_cast
-        <InputNodeInfo*>(private_data->data());
+    InputNodeInfo* in_info =
+        reinterpret_cast<InputNodeInfo*>(private_data->data());
     in_info->index = _remote_index;
 
     return private_data;

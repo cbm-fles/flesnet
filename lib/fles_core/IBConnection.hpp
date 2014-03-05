@@ -62,7 +62,7 @@ public:
     virtual void on_connect_request(struct rdma_cm_event* event,
                                     struct ibv_pd* pd, struct ibv_cq* cq);
 
-    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data();
+    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data();
 
     virtual void setup(struct ibv_pd* pd) = 0;
 

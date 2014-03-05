@@ -140,8 +140,8 @@ public:
                     VALGRIND_MAKE_MEM_DEFINED(
                         event_copy.param.conn.private_data,
                         event_copy.param.conn.private_data_len);
-                    private_data_copy
-                        = malloc(event_copy.param.conn.private_data_len);
+                    private_data_copy =
+                        malloc(event_copy.param.conn.private_data_len);
                     if (!private_data_copy)
                         throw InfinibandException("malloc failed");
                     memcpy(private_data_copy,
@@ -266,7 +266,7 @@ public:
     void summary() const
     {
         double runtime = std::chrono::duration_cast<std::chrono::microseconds>(
-            _time_end - _time_begin).count();
+                             _time_end - _time_begin).count();
         out.info() << "summary: " << _aggregate_send_requests << " SEND, "
                    << _aggregate_recv_requests << " RECV requests";
         double rate = static_cast<double>(_aggregate_bytes_sent) / runtime;
@@ -363,7 +363,7 @@ protected:
     struct ibv_cq* _cq = nullptr;
 
     /// Vector of associated connection objects.
-    std::vector<std::unique_ptr<CONNECTION> > _conn;
+    std::vector<std::unique_ptr<CONNECTION>> _conn;
 
     /// Number of established connections
     unsigned int _connected = 0;

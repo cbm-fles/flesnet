@@ -35,8 +35,8 @@ Application::Application(Parameters const& par) : _par(par)
         // TODO: precence detection #524
         try
         {
-            _flib = std::unique_ptr
-                <flib::flib_device>(new flib::flib_device(0));
+            _flib =
+                std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
             _flib_links = _flib->get_links();
             out.info() << "flib hardware links: " << _flib_links.size();
         }
@@ -44,17 +44,15 @@ Application::Application(Parameters const& par) : _par(par)
         {
             out.error() << "exception while creating flib: " << e.what();
         }
-        _dev_ctrl_ch = std::unique_ptr
-          <flib::device_ctrl_channel>
-          (new flib::device_ctrl_channel_local(_flib->get_bar_ptr()));
-
+        _dev_ctrl_ch = std::unique_ptr<flib::device_ctrl_channel>(
+            new flib::device_ctrl_channel_local(_flib->get_bar_ptr()));
     }
     // end FIXME
 
     std::vector<std::string> compute_services;
     for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
-        compute_services.push_back(boost::lexical_cast
-                                   <std::string>(par.base_port() + i));
+        compute_services.push_back(
+            boost::lexical_cast<std::string>(par.base_port() + i));
 
     for (size_t c = 0; c < _par.input_indexes().size(); ++c) {
         unsigned index = _par.input_indexes().at(c);
@@ -104,7 +102,7 @@ void Application::run()
 {
     // FIXME: temporary code, need to implement interrupt
     boost::thread_group threads;
-    std::vector<boost::unique_future<void> > futures;
+    std::vector<boost::unique_future<void>> futures;
     bool stop = false;
 
     for (auto& buffer : _compute_buffers) {

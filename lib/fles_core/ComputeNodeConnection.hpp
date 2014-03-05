@@ -59,7 +59,7 @@ public:
         return _cn_wp;
     }
 
-    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data() override;
+    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
 private:
     ComputeNodeBufferPosition _send_cn_ack = ComputeNodeBufferPosition();

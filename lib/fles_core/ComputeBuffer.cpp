@@ -32,8 +32,8 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
     std::random_device random_device;
     std::uniform_int_distribution<uint64_t> uint_distribution;
     uint64_t random_number = uint_distribution(random_device);
-    _shared_memory_identifier = "flesnet_" + boost::lexical_cast
-                                <std::string>(random_number);
+    _shared_memory_identifier =
+        "flesnet_" + boost::lexical_cast<std::string>(random_number);
 
     boost::interprocess::shared_memory_object::remove(
         (_shared_memory_identifier + "_data").c_str());
@@ -54,14 +54,14 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
             boost::interprocess::read_write));
     _desc_shm = std::move(desc_shm);
 
-    std::size_t data_size = (UINT64_C(1) << _data_buffer_size_exp)
-                            * _num_input_nodes;
+    std::size_t data_size =
+        (UINT64_C(1) << _data_buffer_size_exp) * _num_input_nodes;
     assert(data_size != 0);
     _data_shm->truncate(data_size);
 
-    std::size_t desc_size = (UINT64_C(1) << _desc_buffer_size_exp)
-                            * _num_input_nodes
-                            * sizeof(fles::TimesliceComponentDescriptor);
+    std::size_t desc_size = (UINT64_C(1) << _desc_buffer_size_exp) *
+                            _num_input_nodes *
+                            sizeof(fles::TimesliceComponentDescriptor);
     assert(desc_size != 0);
     _desc_shm->truncate(desc_size);
 
@@ -168,16 +168,16 @@ void ComputeBuffer::operator()()
 
 uint8_t* ComputeBuffer::get_data_ptr(uint_fast16_t index)
 {
-    return static_cast<uint8_t*>(_data_region->get_address())
-           + index * (UINT64_C(1) << _data_buffer_size_exp);
+    return static_cast<uint8_t*>(_data_region->get_address()) +
+           index * (UINT64_C(1) << _data_buffer_size_exp);
 }
 
 fles::TimesliceComponentDescriptor*
 ComputeBuffer::get_desc_ptr(uint_fast16_t index)
 {
-    return reinterpret_cast
-           <fles::TimesliceComponentDescriptor*>(_desc_region->get_address())
-           + index * (UINT64_C(1) << _desc_buffer_size_exp);
+    return reinterpret_cast<fles::TimesliceComponentDescriptor*>(
+               _desc_region->get_address()) +
+           index * (UINT64_C(1) << _desc_buffer_size_exp);
 }
 
 uint8_t& ComputeBuffer::get_data(uint_fast16_t index, uint64_t offset)
@@ -260,10 +260,11 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
             for (uint64_t tpos = _completely_written;
                  tpos < new_completely_written;
                  ++tpos) {
-                fles::TimesliceWorkItem wi
-                    = {{tpos, _timeslice_size,
-                        static_cast<uint32_t>(_conn.size())},
-                       _data_buffer_size_exp, _desc_buffer_size_exp};
+                fles::TimesliceWorkItem wi = {
+                    {tpos, _timeslice_size,
+                     static_cast<uint32_t>(_conn.size())},
+                    _data_buffer_size_exp,
+                    _desc_buffer_size_exp};
                 _work_items_mq->send(&wi, sizeof(wi), 0);
             }
 

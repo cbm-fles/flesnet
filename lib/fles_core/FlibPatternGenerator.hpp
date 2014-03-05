@@ -32,8 +32,8 @@ public:
           _typical_content_size(typical_content_size),
           _randomize_sizes(false)
     {
-        _producer_thread
-            = new std::thread(&FlibPatternGenerator::produce_data, this);
+        _producer_thread =
+            new std::thread(&FlibPatternGenerator::produce_data, this);
     }
 
     FlibPatternGenerator(const FlibPatternGenerator&) = delete;

@@ -58,8 +58,8 @@ void IBConnection::connect(const std::string& hostname,
                 << "resolution of server address and route";
 
     for (struct addrinfo* t = res; t; t = t->ai_next) {
-        err = rdma_resolve_addr(_cm_id, nullptr, t->ai_addr,
-                                RESOLVE_TIMEOUT_MS);
+        err =
+            rdma_resolve_addr(_cm_id, nullptr, t->ai_addr, RESOLVE_TIMEOUT_MS);
         if (!err)
             break;
     }
@@ -159,10 +159,10 @@ void IBConnection::on_connect_request(struct rdma_cm_event* /* event */,
     accept_connect_request();
 }
 
-std::unique_ptr<std::vector<uint8_t> > IBConnection::get_private_data()
+std::unique_ptr<std::vector<uint8_t>> IBConnection::get_private_data()
 {
-    std::unique_ptr
-        <std::vector<uint8_t> > private_data(new std::vector<uint8_t>());
+    std::unique_ptr<std::vector<uint8_t>> private_data(
+        new std::vector<uint8_t>());
 
     return private_data;
 }
@@ -193,8 +193,8 @@ void IBConnection::dump_send_wr(struct ibv_send_wr* wr)
         out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id << " ("
                     << static_cast<RequestIdentifier>(wr->wr_id) << ")";
         out.fatal() << " opcode=" << wr->opcode;
-        out.fatal() << " send_flags=" << static_cast
-            <ibv_send_flags>(wr->send_flags);
+        out.fatal() << " send_flags="
+                    << static_cast<ibv_send_flags>(wr->send_flags);
         out.fatal() << " num_sge=" << wr->num_sge;
         for (int j = 0; j < wr->num_sge; ++j) {
             out.fatal() << "  sg_list[" << j << "] "

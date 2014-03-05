@@ -6,11 +6,7 @@
 #include <vector>
 #include <csignal>
 
-enum ProcessStatus {
-    None,
-    Running,
-    Terminating
-};
+enum ProcessStatus { None, Running, Terminating };
 
 struct ChildProcess
 {
@@ -68,8 +64,8 @@ public:
 
     bool stop_process(std::vector<ChildProcess>::iterator child_process)
     {
-        if (child_process >= _child_processes.begin()
-            && child_process < _child_processes.end()) {
+        if (child_process >= _child_processes.begin() &&
+            child_process < _child_processes.end()) {
             child_process->status = Terminating;
             kill(child_process->pid, SIGTERM);
             return true;
@@ -89,8 +85,8 @@ public:
 
     bool allow_stop_process(std::vector<ChildProcess>::iterator child_process)
     {
-        if (child_process >= _child_processes.begin()
-            && child_process < _child_processes.end()) {
+        if (child_process >= _child_processes.begin() &&
+            child_process < _child_processes.end()) {
             child_process->status = Terminating;
             return true;
         } else {
@@ -150,8 +146,8 @@ private:
         pid_t pid;
         int status;
 
-        std::vector<ChildProcess>& child_processes
-            = ChildProcessManager::get().child_processes();
+        std::vector<ChildProcess>& child_processes =
+            ChildProcessManager::get().child_processes();
 
         while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
             // process with given pid has exited

@@ -36,9 +36,9 @@ private:
     std::vector<flib::flib_link*> _flib_links;
     std::unique_ptr<flib::device_ctrl_channel> _dev_ctrl_ch;
 
-    std::vector<std::unique_ptr<DataSource> > _data_sources;
+    std::vector<std::unique_ptr<DataSource>> _data_sources;
 
     /// The application's connection group / buffer objects
-    std::vector<std::unique_ptr<ComputeBuffer> > _compute_buffers;
-    std::vector<std::unique_ptr<InputChannelSender> > _input_channel_senders;
+    std::vector<std::unique_ptr<ComputeBuffer>> _compute_buffers;
+    std::vector<std::unique_ptr<InputChannelSender>> _input_channel_senders;
 };

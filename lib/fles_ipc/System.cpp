@@ -25,8 +25,8 @@ std::string stringerror(int errnum)
 
     int err = strerror_r(errnum, buf.data(), buf.size());
     if (err)
-        return std::string("Unknown error ") + boost::lexical_cast
-               <std::string>(err);
+        return std::string("Unknown error ") +
+               boost::lexical_cast<std::string>(err);
 
     return std::string(buf.data());
 
