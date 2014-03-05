@@ -11,8 +11,7 @@ StorableTimeslice::StorableTimeslice(const Timeslice& ts)
 {
     _timeslice_descriptor = ts._timeslice_descriptor;
     for (std::size_t component = 0;
-         component < ts._timeslice_descriptor.num_components;
-         ++component) {
+         component < ts._timeslice_descriptor.num_components; ++component) {
         uint64_t size = ts._desc_ptr[component]->size;
         _data[component].resize(size);
         std::copy_n(ts._data_ptr[component], size, _data[component].begin());

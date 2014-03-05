@@ -29,8 +29,7 @@ private:
     friend class StorableTimeslice;
 
     TimesliceView(
-        TimesliceWorkItem work_item,
-        uint8_t* data,
+        TimesliceWorkItem work_item, uint8_t* data,
         TimesliceComponentDescriptor* desc,
         std::shared_ptr<boost::interprocess::message_queue> completions_mq);
 
