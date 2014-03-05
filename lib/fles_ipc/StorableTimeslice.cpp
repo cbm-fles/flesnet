@@ -21,8 +21,6 @@ StorableTimeslice::StorableTimeslice(const Timeslice& ts)
     init_pointers();
 }
 
-StorableTimeslice::StorableTimeslice()
-{
-}
+StorableTimeslice::StorableTimeslice() {}
 
 } // namespace fles {

@@ -52,10 +52,7 @@ public:
 
     void on_complete_send_finalize();
 
-    const ComputeNodeBufferPosition& cn_wp() const
-    {
-        return _cn_wp;
-    }
+    const ComputeNodeBufferPosition& cn_wp() const { return _cn_wp; }
 
     virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 

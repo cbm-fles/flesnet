@@ -1,5 +1,4 @@
 AccessModifierOffset: -4
-AllowShortFunctionsOnASingleLine: false
 PointerBindsToType: true
 IndentWidth: 4
 BreakBeforeBraces: Linux

@@ -47,10 +47,7 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
     // assert(_flib_link->get_pending_mc() == 0);
 }
 
-FlibHardwareChannel::~FlibHardwareChannel()
-{
-    _flib_link->rst_pending_mc();
-}
+FlibHardwareChannel::~FlibHardwareChannel() { _flib_link->rst_pending_mc(); }
 
 uint64_t FlibHardwareChannel::wait_for_data(uint64_t min_written_mc)
 {

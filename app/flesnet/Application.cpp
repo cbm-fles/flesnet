@@ -118,10 +118,7 @@ void Application::run()
 
     while (!futures.empty()) {
         auto it = boost::wait_for_any(futures.begin(), futures.end());
-        try
-        {
-            it->get();
-        }
+        try { it->get(); }
         catch (const std::exception& e)
         {
             out.fatal() << "exception from thread: " << e.what();

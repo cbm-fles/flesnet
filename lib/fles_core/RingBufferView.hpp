@@ -16,52 +16,28 @@ public:
     }
 
     /// The element accessor operator.
-    T& at(std::size_t n)
-    {
-        return _buf[n & _size_mask];
-    }
+    T& at(std::size_t n) { return _buf[n & _size_mask]; }
 
     /// The const element accessor operator.
-    const T& at(std::size_t n) const
-    {
-        return _buf[n & _size_mask];
-    }
+    const T& at(std::size_t n) const { return _buf[n & _size_mask]; }
 
     /// Retrieve pointer to memory buffer.
-    T* ptr()
-    {
-        return _buf;
-    }
+    T* ptr() { return _buf; }
 
     /// Retrieve const pointer to memory buffer.
-    const T* ptr() const
-    {
-        return _buf;
-    }
+    const T* ptr() const { return _buf; }
 
     /// Retrieve buffer size in maximum number of entries.
-    std::size_t size() const
-    {
-        return _size;
-    }
+    std::size_t size() const { return _size; }
 
     /// Retrieve buffer size in maximum number of entries as two's exponent.
-    std::size_t size_exponent() const
-    {
-        return _size_exponent;
-    }
+    std::size_t size_exponent() const { return _size_exponent; }
 
     /// Retrieve buffer size bit mask.
-    std::size_t size_mask() const
-    {
-        return _size_mask;
-    }
+    std::size_t size_mask() const { return _size_mask; }
 
     /// Retrieve buffer size in bytes.
-    std::size_t bytes() const
-    {
-        return _size * sizeof(T);
-    }
+    std::size_t bytes() const { return _size * sizeof(T); }
 
 private:
     /// The data buffer.

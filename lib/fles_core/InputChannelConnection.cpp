@@ -220,10 +220,7 @@ void InputChannelConnection::finalize()
     }
 }
 
-void InputChannelConnection::on_complete_write()
-{
-    _pending_write_requests--;
-}
+void InputChannelConnection::on_complete_write() { _pending_write_requests--; }
 
 void InputChannelConnection::on_complete_recv()
 {

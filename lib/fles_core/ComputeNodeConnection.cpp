@@ -181,15 +181,9 @@ void ComputeNodeConnection::on_complete_recv()
     }
 }
 
-void ComputeNodeConnection::on_complete_send()
-{
-    _pending_send_requests--;
-}
+void ComputeNodeConnection::on_complete_send() { _pending_send_requests--; }
 
-void ComputeNodeConnection::on_complete_send_finalize()
-{
-    _done = true;
-}
+void ComputeNodeConnection::on_complete_send_finalize() { _done = true; }
 
 std::unique_ptr<std::vector<uint8_t>> ComputeNodeConnection::get_private_data()
 {

@@ -114,10 +114,7 @@ public:
 private:
     typedef struct sigaction sigaction_struct;
 
-    ChildProcessManager()
-    {
-        install_sigchld_handler();
-    }
+    ChildProcessManager() { install_sigchld_handler(); }
 
     ~ChildProcessManager()
     {
@@ -125,10 +122,7 @@ private:
         stop_all_processes();
     }
 
-    void uninstall_sigchld_handler()
-    {
-        sigaction(SIGCHLD, &_oldact, nullptr);
-    }
+    void uninstall_sigchld_handler() { sigaction(SIGCHLD, &_oldact, nullptr); }
 
     void install_sigchld_handler()
     {
@@ -172,10 +166,7 @@ private:
         }
     }
 
-    std::vector<ChildProcess>& child_processes()
-    {
-        return _child_processes;
-    }
+    std::vector<ChildProcess>& child_processes() { return _child_processes; }
 
     std::vector<ChildProcess> _child_processes;
 

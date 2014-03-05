@@ -8,9 +8,7 @@ template <typename T = uint8_t, bool CLEARED = false> class RingBuffer
 {
 public:
     /// The RingBuffer default constructor.
-    RingBuffer()
-    {
-    }
+    RingBuffer() {}
 
     /// The RingBuffer initializing constructor.
     explicit RingBuffer(size_t new_size_exponent)
@@ -50,57 +48,30 @@ public:
     }
 
     /// The element accessor operator.
-    T& at(size_t n)
-    {
-        return _buf[n & _size_mask];
-    }
+    T& at(size_t n) { return _buf[n & _size_mask]; }
 
     /// The const element accessor operator.
-    const T& at(size_t n) const
-    {
-        return _buf[n & _size_mask];
-    }
+    const T& at(size_t n) const { return _buf[n & _size_mask]; }
 
     /// Retrieve pointer to memory buffer.
-    T* ptr()
-    {
-        return _buf.get();
-    }
+    T* ptr() { return _buf.get(); }
 
     /// Retrieve const pointer to memory buffer.
-    const T* ptr() const
-    {
-        return _buf.get();
-    }
+    const T* ptr() const { return _buf.get(); }
 
     /// Retrieve buffer size in maximum number of entries.
-    size_t size() const
-    {
-        return _size;
-    }
+    size_t size() const { return _size; }
 
     /// Retrieve buffer size in maximum number of entries as two's exponent.
-    size_t size_exponent() const
-    {
-        return _size_exponent;
-    }
+    size_t size_exponent() const { return _size_exponent; }
 
     /// Retrieve buffer size bit mask.
-    size_t size_mask() const
-    {
-        return _size_mask;
-    }
+    size_t size_mask() const { return _size_mask; }
 
     /// Retrieve buffer size in bytes.
-    size_t bytes() const
-    {
-        return _size * sizeof(T);
-    }
+    size_t bytes() const { return _size * sizeof(T); }
 
-    void clear()
-    {
-        std::fill_n(_buf, _size, T());
-    }
+    void clear() { std::fill_n(_buf, _size, T()); }
 
 private:
     /// Buffer size (maximum number of entries).

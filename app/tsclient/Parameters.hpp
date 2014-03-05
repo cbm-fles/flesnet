@@ -17,38 +17,20 @@ public:
 class Parameters
 {
 public:
-    Parameters(int argc, char* argv[])
-    {
-        parse_options(argc, argv);
-    }
+    Parameters(int argc, char* argv[]) { parse_options(argc, argv); }
 
     Parameters(const Parameters&) = delete;
     void operator=(const Parameters&) = delete;
 
-    uint32_t client_index() const
-    {
-        return _client_index;
-    }
+    uint32_t client_index() const { return _client_index; }
 
-    std::string shm_identifier() const
-    {
-        return _shm_identifier;
-    }
+    std::string shm_identifier() const { return _shm_identifier; }
 
-    std::string input_archive() const
-    {
-        return _input_archive;
-    }
+    std::string input_archive() const { return _input_archive; }
 
-    std::string output_archive() const
-    {
-        return _output_archive;
-    }
+    std::string output_archive() const { return _output_archive; }
 
-    bool analyze() const
-    {
-        return _analyze;
-    }
+    bool analyze() const { return _analyze; }
 
 private:
     void parse_options(int argc, char* argv[]);

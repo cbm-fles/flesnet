@@ -16,10 +16,7 @@ public:
         _content_bytes = 0;
     }
 
-    size_t count() const
-    {
-        return _timeslice_count;
-    }
+    size_t count() const { return _timeslice_count; }
 
 private:
     bool check_flesnet_pattern(const fles::MicrosliceDescriptor& descriptor,

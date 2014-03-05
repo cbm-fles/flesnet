@@ -228,27 +228,15 @@ public:
     }
 
     /// Retrieve the InfiniBand protection domain.
-    struct ibv_pd* protection_domain() const
-    {
-        return _pd;
-    }
+    struct ibv_pd* protection_domain() const { return _pd; }
 
     /// Retrieve the InfiniBand completion queue.
-    struct ibv_cq* completion_queue() const
-    {
-        return _cq;
-    }
+    struct ibv_cq* completion_queue() const { return _cq; }
 
-    size_t size() const
-    {
-        return _conn.size();
-    }
+    size_t size() const { return _conn.size(); }
 
     /// Retrieve the total number of bytes transmitted.
-    uint64_t aggregate_bytes_sent() const
-    {
-        return _aggregate_bytes_sent;
-    }
+    uint64_t aggregate_bytes_sent() const { return _aggregate_bytes_sent; }
 
     /// Retrieve the total number of SEND work requests.
     uint64_t aggregate_send_requests() const
@@ -299,9 +287,7 @@ protected:
     }
 
     /// Handle RDMA_CM_REJECTED event.
-    virtual void on_rejected(struct rdma_cm_event* /* event */)
-    {
-    }
+    virtual void on_rejected(struct rdma_cm_event* /* event */) {}
 
     /// Handle RDMA_CM_EVENT_ESTABLISHED event.
     virtual void on_established(struct rdma_cm_event* event)
@@ -313,9 +299,7 @@ protected:
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct rdma_cm_event* /* event */)
-    {
-    }
+    virtual void on_connect_request(struct rdma_cm_event* /* event */) {}
 
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
     virtual void on_disconnected(struct rdma_cm_event* event)

@@ -26,10 +26,7 @@ class Parameters
 {
 public:
     /// The Parameters command-line parsing constructor.
-    Parameters(int argc, char* argv[])
-    {
-        parse_options(argc, argv);
-    }
+    Parameters(int argc, char* argv[]) { parse_options(argc, argv); }
 
     Parameters(const Parameters&) = delete;
     void operator=(const Parameters&) = delete;
@@ -44,16 +41,10 @@ public:
     uint32_t suggest_cn_desc_buffer_size_exp();
 
     /// Retrieve the global timeslice size in number of MCs.
-    uint32_t timeslice_size() const
-    {
-        return _timeslice_size;
-    }
+    uint32_t timeslice_size() const { return _timeslice_size; }
 
     /// Retrieve the size of the overlap region in number of MCs.
-    uint32_t overlap_size() const
-    {
-        return _overlap_size;
-    }
+    uint32_t overlap_size() const { return _overlap_size; }
 
     /// Retrieve the exp. size of the input node's data buffer in bytes.
     uint32_t in_data_buffer_size_exp() const
@@ -82,52 +73,28 @@ public:
     }
 
     /// Retrieve the typical number of content bytes per MC.
-    uint32_t typical_content_size() const
-    {
-        return _typical_content_size;
-    }
+    uint32_t typical_content_size() const { return _typical_content_size; }
 
     /// Retrieve the use flib flag.
-    bool use_flib() const
-    {
-        return _use_flib;
-    }
+    bool use_flib() const { return _use_flib; }
 
     /// Retrieve the global maximum timeslice number.
-    uint32_t max_timeslice_number() const
-    {
-        return _max_timeslice_number;
-    }
+    uint32_t max_timeslice_number() const { return _max_timeslice_number; }
 
     /// Retrieve the name of the executable acting as timeslice processor.
-    std::string processor_executable() const
-    {
-        return _processor_executable;
-    }
+    std::string processor_executable() const { return _processor_executable; }
 
     /// Retrieve the number of instances of the timeslice processor executable.
-    uint32_t processor_instances() const
-    {
-        return _processor_instances;
-    }
+    uint32_t processor_instances() const { return _processor_instances; }
 
     /// Retrieve the global base port.
-    uint32_t base_port() const
-    {
-        return _base_port;
-    }
+    uint32_t base_port() const { return _base_port; }
 
     /// Retrieve the number of completion queue entries.
-    uint32_t num_cqe() const
-    {
-        return _num_cqe;
-    }
+    uint32_t num_cqe() const { return _num_cqe; }
 
     /// Retrieve the list of participating input nodes.
-    std::vector<std::string> const input_nodes() const
-    {
-        return _input_nodes;
-    }
+    std::vector<std::string> const input_nodes() const { return _input_nodes; }
 
     /// Retrieve the list of participating compute nodes.
     std::vector<std::string> const compute_nodes() const
@@ -136,16 +103,10 @@ public:
     }
 
     /// Retrieve this applications's indexes in the list of input nodes.
-    std::vector<unsigned> input_indexes() const
-    {
-        return _input_indexes;
-    }
+    std::vector<unsigned> input_indexes() const { return _input_indexes; }
 
     /// Retrieve this applications's indexes in the list of compute nodes.
-    std::vector<unsigned> compute_indexes() const
-    {
-        return _compute_indexes;
-    }
+    std::vector<unsigned> compute_indexes() const { return _compute_indexes; }
 
 private:
     /// Parse command line options.
