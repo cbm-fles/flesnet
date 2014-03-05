@@ -13,15 +13,11 @@ Application::Application(Parameters const& par) : _par(par)
     // set_cpu(1);
 
     for (unsigned i : _par.compute_indexes()) {
-        std::unique_ptr<ComputeBuffer> buffer(
-            new ComputeBuffer(i,
-                              _par.cn_data_buffer_size_exp(),
-                              _par.cn_desc_buffer_size_exp(),
-                              _par.base_port() + i,
-                              _par.input_nodes().size(),
-                              _par.timeslice_size(),
-                              _par.processor_instances(),
-                              _par.processor_executable()));
+        std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(
+            i, _par.cn_data_buffer_size_exp(), _par.cn_desc_buffer_size_exp(),
+            _par.base_port() + i, _par.input_nodes().size(),
+            _par.timeslice_size(), _par.processor_instances(),
+            _par.processor_executable()));
         buffer->start_processes();
         _compute_buffers.push_back(std::move(buffer));
     }
@@ -35,25 +31,22 @@ Application::Application(Parameters const& par) : _par(par)
         // TODO: precence detection #524
         try
         {
-            _flib = std::unique_ptr
-                <flib::flib_device>(new flib::flib_device(0));
+            _flib =
+                std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
             _flib_links = _flib->get_links();
             out.info() << "flib hardware links: " << _flib_links.size();
         }
         catch (std::exception const& e)
         {
-          out.error() << "exception while creating flib: "
-                      << e.what();
-
+            out.error() << "exception while creating flib: " << e.what();
         }
-
     }
     // end FIXME
 
     std::vector<std::string> compute_services;
     for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
-        compute_services.push_back(boost::lexical_cast
-                                   <std::string>(par.base_port() + i));
+        compute_services.push_back(
+            boost::lexical_cast<std::string>(par.base_port() + i));
 
     for (size_t c = 0; c < _par.input_indexes().size(); ++c) {
         unsigned index = _par.input_indexes().at(c);
@@ -103,7 +96,7 @@ void Application::run()
 {
     // FIXME: temporary code, need to implement interrupt
     boost::thread_group threads;
-    std::vector<boost::unique_future<void> > futures;
+    std::vector<boost::unique_future<void>> futures;
     bool stop = false;
 
     for (auto& buffer : _compute_buffers) {
@@ -125,10 +118,7 @@ void Application::run()
 
     while (!futures.empty()) {
         auto it = boost::wait_for_any(futures.begin(), futures.end());
-        try
-        {
-            it->get();
-        }
+        try { it->get(); }
         catch (const std::exception& e)
         {
             out.fatal() << "exception from thread: " << e.what();

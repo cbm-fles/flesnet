@@ -23,10 +23,7 @@ public:
     virtual ~Timeslice() {};
 
     /// Retrieve the timeslice index.
-    uint64_t index() const
-    {
-        return _desc_ptr[0]->ts_num;
-    }
+    uint64_t index() const { return _desc_ptr[0]->ts_num; }
 
     /// Retrieve the number of core microslices.
     uint64_t num_core_microslices() const
@@ -49,18 +46,18 @@ public:
     /// Retrieve a pointer to the data content of a given microslice
     const uint8_t* content(uint64_t component, uint64_t microslice) const
     {
-        return _data_ptr[component] + _desc_ptr[component]->num_microslices
-                                      * sizeof(MicrosliceDescriptor)
-               + descriptor(component, microslice).offset
-               - descriptor(component, 0).offset;
+        return _data_ptr[component] + _desc_ptr[component]->num_microslices *
+                                          sizeof(MicrosliceDescriptor) +
+               descriptor(component, microslice).offset -
+               descriptor(component, 0).offset;
     }
 
     /// Retrieve the descriptor of a given microslice
     const MicrosliceDescriptor& descriptor(uint64_t component,
                                            uint64_t microslice) const
     {
-        return reinterpret_cast
-            <const MicrosliceDescriptor*>(_data_ptr[component])[microslice];
+        return reinterpret_cast<const MicrosliceDescriptor*>(
+            _data_ptr[component])[microslice];
     }
 
 protected:

@@ -4,17 +4,16 @@
 #include <iostream>
 #include <sstream>
 
-bool TimesliceAnalyzer::check_flesnet_pattern(const fles::MicrosliceDescriptor
-                                              & descriptor,
-                                              const uint64_t* content,
-                                              size_t component)
+bool TimesliceAnalyzer::check_flesnet_pattern(
+    const fles::MicrosliceDescriptor& descriptor, const uint64_t* content,
+    size_t component)
 {
     uint32_t crc = 0x00000000;
     for (size_t pos = 0; pos < descriptor.size / sizeof(uint64_t); ++pos) {
         uint64_t data_word = content[pos];
         crc ^= (data_word & 0xffffffff) ^ (data_word >> 32);
-        uint64_t expected = (static_cast<uint64_t>(component) << 48)
-                            | (pos * sizeof(uint64_t));
+        uint64_t expected =
+            (static_cast<uint64_t>(component) << 48) | (pos * sizeof(uint64_t));
         if (data_word != expected)
             return false;
     }
@@ -54,21 +53,21 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
     size_t i = 0;
     while (i < size) {
         uint8_t frame_number = (content[i] >> 8) & 0xff;
-        uint8_t word_count = (content[i] & 0xff)
-                             + 1; // FIXME: Definition in hardware
+        uint8_t word_count =
+            (content[i] & 0xff) + 1; // FIXME: Definition in hardware
         uint8_t padding_count = (4 - ((word_count + 1) & 0x3)) & 0x3;
         ++i;
 
         uint8_t expected_frame_number = previous_frame_number + 1;
-        if (previous_frame_number != 0 && frame_number
-                                          != expected_frame_number) {
+        if (previous_frame_number != 0 &&
+            frame_number != expected_frame_number) {
             std::cerr << "unexpected cbmnet frame number" << std::endl;
             return false;
         }
         previous_frame_number = frame_number;
 
-        if (word_count < 4 || word_count > 64 || i + word_count + padding_count
-                                                 > size) {
+        if (word_count < 4 || word_count > 64 ||
+            i + word_count + padding_count > size) {
             std::cerr << "invalid cbmnet frame word count: " << word_count
                       << std::endl;
             return false;
@@ -83,23 +82,21 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
     return true;
 }
 
-bool TimesliceAnalyzer::check_flib_pattern(const fles::MicrosliceDescriptor
-                                           & descriptor,
-                                           const uint64_t* content,
-                                           size_t /* component */)
+bool TimesliceAnalyzer::check_flib_pattern(
+    const fles::MicrosliceDescriptor& descriptor, const uint64_t* content,
+    size_t /* component */)
 {
-    if (content[0] != reinterpret_cast<const uint64_t*>(&descriptor)[0]
-        || content[1] != reinterpret_cast<const uint64_t*>(&descriptor)[1]) {
+    if (content[0] != reinterpret_cast<const uint64_t*>(&descriptor)[0] ||
+        content[1] != reinterpret_cast<const uint64_t*>(&descriptor)[1]) {
         return false;
     }
     return check_cbmnet_frames(reinterpret_cast<const uint16_t*>(&content[2]),
                                (descriptor.size - 16) / sizeof(uint16_t));
 }
 
-bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceDescriptor
-                                         & descriptor,
-                                         const uint64_t* content,
-                                         size_t component, size_t microslice)
+bool TimesliceAnalyzer::check_microslice(
+    const fles::MicrosliceDescriptor& descriptor, const uint64_t* content,
+    size_t component, size_t microslice)
 {
     if (descriptor.idx != microslice) {
         std::cerr << "microslice index " << descriptor.idx

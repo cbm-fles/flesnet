@@ -8,9 +8,7 @@
 class DataSource
 {
 public:
-    virtual ~DataSource()
-    {
-    }
+    virtual ~DataSource() {}
 
     virtual uint64_t wait_for_data(uint64_t min_mcNumber) = 0;
 
@@ -21,10 +19,7 @@ public:
 
     virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() = 0;
 
-    virtual RingBufferView<>& data_send_buffer()
-    {
-        return data_buffer();
-    }
+    virtual RingBufferView<>& data_send_buffer() { return data_buffer(); }
 
     virtual RingBufferView<fles::MicrosliceDescriptor>& desc_send_buffer()
     {

@@ -5,27 +5,20 @@
 #include "RequestIdentifier.hpp"
 #include <cassert>
 
-InputChannelSender::InputChannelSender(uint64_t input_index,
-                                       DataSource& data_source,
-                                       const std::vector
-                                       <std::string> compute_hostnames,
-                                       const std::vector
-                                       <std::string> compute_services,
-                                       uint32_t timeslice_size,
-                                       uint32_t overlap_size,
-                                       uint32_t max_timeslice_number)
-    : _input_index(input_index),
-      _data_source(data_source),
+InputChannelSender::InputChannelSender(
+    uint64_t input_index, DataSource& data_source,
+    const std::vector<std::string> compute_hostnames,
+    const std::vector<std::string> compute_services, uint32_t timeslice_size,
+    uint32_t overlap_size, uint32_t max_timeslice_number)
+    : _input_index(input_index), _data_source(data_source),
       _compute_hostnames(compute_hostnames),
-      _compute_services(compute_services),
-      _timeslice_size(timeslice_size),
-      _overlap_size(overlap_size),
-      _max_timeslice_number(max_timeslice_number),
+      _compute_services(compute_services), _timeslice_size(timeslice_size),
+      _overlap_size(overlap_size), _max_timeslice_number(max_timeslice_number),
       _min_acked_mc(data_source.desc_buffer().size() / 4),
       _min_acked_data(data_source.data_buffer().size() / 4)
 {
-    size_t min_ack_buffer_size = _data_source.desc_buffer().size()
-                                 / _timeslice_size + 1;
+    size_t min_ack_buffer_size =
+        _data_source.desc_buffer().size() / _timeslice_size + 1;
     _ack.alloc_with_size(min_ack_buffer_size);
 
 #pragma GCC diagnostic push
@@ -99,20 +92,20 @@ void InputChannelSender::sender_loop()
         }
 
         // busy wait until last microslice has really been written to memory
-        while (_data_source.desc_buffer().at(mc_offset + mc_length).offset
-               < previous_offset)
+        while (_data_source.desc_buffer().at(mc_offset + mc_length).offset <
+               previous_offset)
             ;
-        previous_offset
-            = _data_source.desc_buffer().at(mc_offset + mc_length).offset;
+        previous_offset =
+            _data_source.desc_buffer().at(mc_offset + mc_length).offset;
 
         uint64_t data_offset = _data_source.desc_buffer().at(mc_offset).offset;
-        uint64_t data_end
-            = _data_source.desc_buffer().at(mc_offset + mc_length).offset;
+        uint64_t data_end =
+            _data_source.desc_buffer().at(mc_offset + mc_length).offset;
         assert(data_end >= data_offset);
 
         uint64_t data_length = data_end - data_offset;
-        uint64_t total_length
-            = data_length + mc_length * sizeof(fles::MicrosliceDescriptor);
+        uint64_t total_length =
+            data_length + mc_length * sizeof(fles::MicrosliceDescriptor);
 
         if (out.beTrace()) {
             out.trace() << "SENDER working on TS " << timeslice << ", MCs "
@@ -154,17 +147,17 @@ InputChannelSender::create_input_node_connection(uint_fast16_t index)
         static_cast<unsigned int>((max_send_wr - 1) / 3),
         static_cast<unsigned int>((_num_cqe - 1) / _compute_hostnames.size()));
 
-    std::unique_ptr
-        <InputChannelConnection> connection(new InputChannelConnection(
-            _ec, index, _input_index, max_send_wr, max_pending_write_requests));
+    std::unique_ptr<InputChannelConnection> connection(
+        new InputChannelConnection(_ec, index, _input_index, max_send_wr,
+                                   max_pending_write_requests));
     return connection;
 }
 
 void InputChannelSender::connect()
 {
     for (unsigned int i = 0; i < _compute_hostnames.size(); ++i) {
-        std::unique_ptr<InputChannelConnection> connection
-            = create_input_node_connection(i);
+        std::unique_ptr<InputChannelConnection> connection =
+            create_input_node_connection(i);
         connection->connect(_compute_hostnames[i], _compute_services[i]);
         _conn.push_back(std::move(connection));
     }
@@ -216,16 +209,16 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id)
 
 void InputChannelSender::on_rejected(struct rdma_cm_event* event)
 {
-    InputChannelConnection* conn = static_cast
-        <InputChannelConnection*>(event->id->context);
+    InputChannelConnection* conn =
+        static_cast<InputChannelConnection*>(event->id->context);
 
     conn->on_rejected(event);
     uint_fast16_t i = conn->index();
     _conn.at(i) = nullptr;
 
     // immediately initiate retry
-    std::unique_ptr<InputChannelConnection> connection
-        = create_input_node_connection(i);
+    std::unique_ptr<InputChannelConnection> connection =
+        create_input_node_connection(i);
     connection->connect(_compute_hostnames[i], _compute_services[i]);
     _conn.at(i) = std::move(connection);
 }
@@ -260,67 +253,67 @@ void InputChannelSender::post_send_data(uint64_t timeslice, int cn,
     int num_sge = 0;
     struct ibv_sge sge[4];
     // descriptors
-    if ((mc_offset & _data_source.desc_send_buffer().size_mask())
-        < ((mc_offset + mc_length - 1)
-           & _data_source.desc_send_buffer().size_mask())) {
+    if ((mc_offset & _data_source.desc_send_buffer().size_mask()) <
+        ((mc_offset + mc_length - 1) &
+         _data_source.desc_send_buffer().size_mask())) {
         // one chunk
-        sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(&_data_source.desc_send_buffer().at(mc_offset));
+        sge[num_sge].addr = reinterpret_cast<uintptr_t>(
+            &_data_source.desc_send_buffer().at(mc_offset));
         sge[num_sge].length = sizeof(fles::MicrosliceDescriptor) * mc_length;
         sge[num_sge++].lkey = _mr_desc->lkey;
     } else {
         // two chunks
-        sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(&_data_source.desc_send_buffer().at(mc_offset));
-        sge[num_sge].length
-            = sizeof(fles::MicrosliceDescriptor)
-              * (_data_source.desc_send_buffer().size()
-                 - (mc_offset & _data_source.desc_send_buffer().size_mask()));
+        sge[num_sge].addr = reinterpret_cast<uintptr_t>(
+            &_data_source.desc_send_buffer().at(mc_offset));
+        sge[num_sge].length =
+            sizeof(fles::MicrosliceDescriptor) *
+            (_data_source.desc_send_buffer().size() -
+             (mc_offset & _data_source.desc_send_buffer().size_mask()));
         sge[num_sge++].lkey = _mr_desc->lkey;
-        sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(_data_source.desc_send_buffer().ptr());
-        sge[num_sge].length
-            = sizeof(fles::MicrosliceDescriptor)
-              * (mc_length - _data_source.desc_send_buffer().size()
-                 + (mc_offset & _data_source.desc_send_buffer().size_mask()));
+        sge[num_sge].addr =
+            reinterpret_cast<uintptr_t>(_data_source.desc_send_buffer().ptr());
+        sge[num_sge].length =
+            sizeof(fles::MicrosliceDescriptor) *
+            (mc_length - _data_source.desc_send_buffer().size() +
+             (mc_offset & _data_source.desc_send_buffer().size_mask()));
         sge[num_sge++].lkey = _mr_desc->lkey;
     }
     int num_desc_sge = num_sge;
     // data
-    if ((data_offset & _data_source.data_send_buffer().size_mask())
-        < ((data_offset + data_length - 1)
-           & _data_source.data_send_buffer().size_mask())) {
+    if ((data_offset & _data_source.data_send_buffer().size_mask()) <
+        ((data_offset + data_length - 1) &
+         _data_source.data_send_buffer().size_mask())) {
         // one chunk
-        sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(&_data_source.data_send_buffer().at(data_offset));
+        sge[num_sge].addr = reinterpret_cast<uintptr_t>(
+            &_data_source.data_send_buffer().at(data_offset));
         sge[num_sge].length = data_length;
         sge[num_sge++].lkey = _mr_data->lkey;
     } else {
         // two chunks
-        sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(&_data_source.data_send_buffer().at(data_offset));
-        sge[num_sge].length
-            = _data_source.data_send_buffer().size()
-              - (data_offset & _data_source.data_send_buffer().size_mask());
+        sge[num_sge].addr = reinterpret_cast<uintptr_t>(
+            &_data_source.data_send_buffer().at(data_offset));
+        sge[num_sge].length =
+            _data_source.data_send_buffer().size() -
+            (data_offset & _data_source.data_send_buffer().size_mask());
         sge[num_sge++].lkey = _mr_data->lkey;
-        sge[num_sge].addr = reinterpret_cast
-            <uintptr_t>(_data_source.data_send_buffer().ptr());
-        sge[num_sge].length
-            = data_length - _data_source.data_send_buffer().size()
-              + (data_offset & _data_source.data_send_buffer().size_mask());
+        sge[num_sge].addr =
+            reinterpret_cast<uintptr_t>(_data_source.data_send_buffer().ptr());
+        sge[num_sge].length =
+            data_length - _data_source.data_send_buffer().size() +
+            (data_offset & _data_source.data_send_buffer().size_mask());
         sge[num_sge++].lkey = _mr_data->lkey;
     }
     // copy between buffers
     for (int i = 0; i < num_sge; ++i) {
         if (i < num_desc_sge) {
             _data_source.copy_to_desc_send_buffer(
-                reinterpret_cast<fles::MicrosliceDescriptor*>(sge[i].addr)
-                - _data_source.desc_send_buffer().ptr(),
+                reinterpret_cast<fles::MicrosliceDescriptor*>(sge[i].addr) -
+                    _data_source.desc_send_buffer().ptr(),
                 sge[i].length / sizeof(fles::MicrosliceDescriptor));
         } else {
             _data_source.copy_to_data_send_buffer(
-                reinterpret_cast<uint8_t*>(sge[i].addr)
-                - _data_source.data_send_buffer().ptr(),
+                reinterpret_cast<uint8_t*>(sge[i].addr) -
+                    _data_source.data_send_buffer().ptr(),
                 sge[i].length);
         }
     }
@@ -344,11 +337,11 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
             while (_ack.at(acked_ts) > ts);
         else
             _ack.at(ts) = ts;
-        _acked_data
-            = _data_source.desc_buffer().at(acked_ts * _timeslice_size).offset;
+        _acked_data =
+            _data_source.desc_buffer().at(acked_ts * _timeslice_size).offset;
         _acked_mc = acked_ts * _timeslice_size;
-        if (_acked_data >= _cached_acked_data + _min_acked_data
-            || _acked_mc >= _cached_acked_mc + _min_acked_mc) {
+        if (_acked_data >= _cached_acked_data + _min_acked_data ||
+            _acked_mc >= _cached_acked_mc + _min_acked_mc) {
             _cached_acked_data = _acked_data;
             _cached_acked_mc = _acked_mc;
             _data_source.update_ack_pointers(_cached_acked_data,

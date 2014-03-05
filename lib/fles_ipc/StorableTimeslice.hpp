@@ -49,7 +49,7 @@ private:
         }
     }
 
-    std::vector<std::vector<uint8_t> > _data;
+    std::vector<std::vector<uint8_t>> _data;
     std::vector<TimesliceComponentDescriptor> _desc;
 };
 

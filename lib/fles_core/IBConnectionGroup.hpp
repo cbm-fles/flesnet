@@ -16,8 +16,7 @@
 /** An IBConnectionGroup object represents a group of InfiniBand
     connections that use the same completion queue. */
 
-template <typename CONNECTION>
-class IBConnectionGroup : public ThreadContainer
+template <typename CONNECTION> class IBConnectionGroup : public ThreadContainer
 {
 public:
     /// The IBConnectionGroup default constructor.
@@ -140,8 +139,8 @@ public:
                     VALGRIND_MAKE_MEM_DEFINED(
                         event_copy.param.conn.private_data,
                         event_copy.param.conn.private_data_len);
-                    private_data_copy
-                        = malloc(event_copy.param.conn.private_data_len);
+                    private_data_copy =
+                        malloc(event_copy.param.conn.private_data_len);
                     if (!private_data_copy)
                         throw InfinibandException("malloc failed");
                     memcpy(private_data_copy,
@@ -229,27 +228,15 @@ public:
     }
 
     /// Retrieve the InfiniBand protection domain.
-    struct ibv_pd* protection_domain() const
-    {
-        return _pd;
-    }
+    struct ibv_pd* protection_domain() const { return _pd; }
 
     /// Retrieve the InfiniBand completion queue.
-    struct ibv_cq* completion_queue() const
-    {
-        return _cq;
-    }
+    struct ibv_cq* completion_queue() const { return _cq; }
 
-    size_t size() const
-    {
-        return _conn.size();
-    }
+    size_t size() const { return _conn.size(); }
 
     /// Retrieve the total number of bytes transmitted.
-    uint64_t aggregate_bytes_sent() const
-    {
-        return _aggregate_bytes_sent;
-    }
+    uint64_t aggregate_bytes_sent() const { return _aggregate_bytes_sent; }
 
     /// Retrieve the total number of SEND work requests.
     uint64_t aggregate_send_requests() const
@@ -266,7 +253,7 @@ public:
     void summary() const
     {
         double runtime = std::chrono::duration_cast<std::chrono::microseconds>(
-            _time_end - _time_begin).count();
+                             _time_end - _time_begin).count();
         out.info() << "summary: " << _aggregate_send_requests << " SEND, "
                    << _aggregate_recv_requests << " RECV requests";
         double rate = static_cast<double>(_aggregate_bytes_sent) / runtime;
@@ -300,9 +287,7 @@ protected:
     }
 
     /// Handle RDMA_CM_REJECTED event.
-    virtual void on_rejected(struct rdma_cm_event* /* event */)
-    {
-    }
+    virtual void on_rejected(struct rdma_cm_event* /* event */) {}
 
     /// Handle RDMA_CM_EVENT_ESTABLISHED event.
     virtual void on_established(struct rdma_cm_event* event)
@@ -314,9 +299,7 @@ protected:
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct rdma_cm_event* /* event */)
-    {
-    }
+    virtual void on_connect_request(struct rdma_cm_event* /* event */) {}
 
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
     virtual void on_disconnected(struct rdma_cm_event* event)
@@ -363,7 +346,7 @@ protected:
     struct ibv_cq* _cq = nullptr;
 
     /// Vector of associated connection objects.
-    std::vector<std::unique_ptr<CONNECTION> > _conn;
+    std::vector<std::unique_ptr<CONNECTION>> _conn;
 
     /// Number of established connections
     unsigned int _connected = 0;

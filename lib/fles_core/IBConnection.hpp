@@ -25,10 +25,7 @@ public:
     virtual ~IBConnection();
 
     /// Retrieve the InfiniBand queue pair associated with the connection.
-    struct ibv_qp* qp() const
-    {
-        return _cm_id->qp;
-    }
+    struct ibv_qp* qp() const { return _cm_id->qp; }
 
     /// Initiate a connection request to target hostname and service.
     /**
@@ -62,7 +59,7 @@ public:
     virtual void on_connect_request(struct rdma_cm_event* event,
                                     struct ibv_pd* pd, struct ibv_cq* cq);
 
-    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data();
+    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data();
 
     virtual void setup(struct ibv_pd* pd) = 0;
 
@@ -70,39 +67,21 @@ public:
     virtual void on_route_resolved();
 
     /// Retrieve index of this connection in the local connection group.
-    uint_fast16_t index() const
-    {
-        return _index;
-    }
+    uint_fast16_t index() const { return _index; }
 
     /// Retrieve index of this connection in the remote connection group.
-    uint_fast16_t remote_index() const
-    {
-        return _remote_index;
-    }
+    uint_fast16_t remote_index() const { return _remote_index; }
 
-    bool done() const
-    {
-        return _done;
-    }
+    bool done() const { return _done; }
 
     /// Retrieve the total number of bytes transmitted.
-    uint64_t total_bytes_sent() const
-    {
-        return _total_bytes_sent;
-    }
+    uint64_t total_bytes_sent() const { return _total_bytes_sent; }
 
     /// Retrieve the total number of SEND work requests.
-    uint64_t total_send_requests() const
-    {
-        return _total_send_requests;
-    }
+    uint64_t total_send_requests() const { return _total_send_requests; }
 
     /// Retrieve the total number of RECV work requests.
-    uint64_t total_recv_requests() const
-    {
-        return _total_recv_requests;
-    }
+    uint64_t total_recv_requests() const { return _total_recv_requests; }
 
 protected:
     void dump_send_wr(struct ibv_send_wr* wr);

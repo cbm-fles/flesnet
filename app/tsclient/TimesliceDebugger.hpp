@@ -8,8 +8,8 @@ class TimesliceDebugger
 {
 public:
     std::string dump_timeslice(const fles::Timeslice& ts) const;
-    std::string dump_microslice_descriptor(const fles::MicrosliceDescriptor
-                                           & md) const;
+    std::string
+    dump_microslice_descriptor(const fles::MicrosliceDescriptor& md) const;
     std::string dump_buffer(const void* buf, uint64_t size) const;
     std::string dump_microslice(const fles::MicrosliceDescriptor& md,
                                 const void* buf) const;

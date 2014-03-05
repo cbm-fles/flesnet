@@ -24,10 +24,7 @@ public:
     void operator=(const TimesliceOutputArchive&) = delete;
 
     /// Store a timeslice.
-    void write(const StorableTimeslice& timeslice)
-    {
-        _oarchive << timeslice;
-    }
+    void write(const StorableTimeslice& timeslice) { _oarchive << timeslice; }
 
 private:
     std::ofstream _ofstream;

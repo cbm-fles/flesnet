@@ -14,14 +14,11 @@ void Parameters::parse_options(int argc, char* argv[])
         "index of this executable in the list of processor tasks")(
         "analyze-pattern,a", po::value<bool>(&_analyze)->implicit_value(true),
         "enable/disable pattern check")(
-        "shm-identifier,s",
-        po::value<std::string>(&_shm_identifier),
+        "shm-identifier,s", po::value<std::string>(&_shm_identifier),
         "shared memory identifier used for receiving timeslices")(
-        "input-archive,i",
-        po::value<std::string>(&_input_archive),
+        "input-archive,i", po::value<std::string>(&_input_archive),
         "name of an input file archive to read")(
-        "output-archive,o",
-        po::value<std::string>(&_output_archive),
+        "output-archive,o", po::value<std::string>(&_output_archive),
         "name of an output file archive to write");
 
     po::variables_map vm;

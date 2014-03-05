@@ -6,11 +6,7 @@
 #include <vector>
 #include <csignal>
 
-enum ProcessStatus {
-    None,
-    Running,
-    Terminating
-};
+enum ProcessStatus { None, Running, Terminating };
 
 struct ChildProcess
 {
@@ -68,8 +64,8 @@ public:
 
     bool stop_process(std::vector<ChildProcess>::iterator child_process)
     {
-        if (child_process >= _child_processes.begin()
-            && child_process < _child_processes.end()) {
+        if (child_process >= _child_processes.begin() &&
+            child_process < _child_processes.end()) {
             child_process->status = Terminating;
             kill(child_process->pid, SIGTERM);
             return true;
@@ -89,8 +85,8 @@ public:
 
     bool allow_stop_process(std::vector<ChildProcess>::iterator child_process)
     {
-        if (child_process >= _child_processes.begin()
-            && child_process < _child_processes.end()) {
+        if (child_process >= _child_processes.begin() &&
+            child_process < _child_processes.end()) {
             child_process->status = Terminating;
             return true;
         } else {
@@ -118,10 +114,7 @@ public:
 private:
     typedef struct sigaction sigaction_struct;
 
-    ChildProcessManager()
-    {
-        install_sigchld_handler();
-    }
+    ChildProcessManager() { install_sigchld_handler(); }
 
     ~ChildProcessManager()
     {
@@ -129,10 +122,7 @@ private:
         stop_all_processes();
     }
 
-    void uninstall_sigchld_handler()
-    {
-        sigaction(SIGCHLD, &_oldact, nullptr);
-    }
+    void uninstall_sigchld_handler() { sigaction(SIGCHLD, &_oldact, nullptr); }
 
     void install_sigchld_handler()
     {
@@ -150,8 +140,8 @@ private:
         pid_t pid;
         int status;
 
-        std::vector<ChildProcess>& child_processes
-            = ChildProcessManager::get().child_processes();
+        std::vector<ChildProcess>& child_processes =
+            ChildProcessManager::get().child_processes();
 
         while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
             // process with given pid has exited
@@ -176,10 +166,7 @@ private:
         }
     }
 
-    std::vector<ChildProcess>& child_processes()
-    {
-        return _child_processes;
-    }
+    std::vector<ChildProcess>& child_processes() { return _child_processes; }
 
     std::vector<ChildProcess> _child_processes;
 

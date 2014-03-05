@@ -67,8 +67,8 @@ inline std::string human_readable_byte_count(uint64_t bytes,
 
     uint32_t exponent = static_cast<uint64_t>(std::log(bytes) / std::log(unit));
 
-    std::string prefix
-        = std::string(use_si ? "kMGTPE" : "KMGTPE").substr(exponent - 1, 1);
+    std::string prefix =
+        std::string(use_si ? "kMGTPE" : "KMGTPE").substr(exponent - 1, 1);
     if (!use_si)
         prefix += "i";
 

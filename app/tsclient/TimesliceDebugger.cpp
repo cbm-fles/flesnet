@@ -41,26 +41,26 @@ std::string TimesliceDebugger::dump_timeslice(const fles::Timeslice& ts) const
             s << min_overlap;
         s << " overlap) = " << total_num_microslices << "\n";
         s << "\tmicroslice size min/avg/max: " << min_microslice_size << "/"
-          << (static_cast<double>(total_microslice_size)
-              / total_num_microslices) << "/" << max_microslice_size << "\n";
+          << (static_cast<double>(total_microslice_size) /
+              total_num_microslices) << "/" << max_microslice_size << "\n";
     }
 
     return s.str();
 }
 
-std::string
-TimesliceDebugger::dump_microslice_descriptor(const fles::MicrosliceDescriptor
-                                              & md) const
+std::string TimesliceDebugger::dump_microslice_descriptor(
+    const fles::MicrosliceDescriptor& md) const
 {
     std::stringstream s;
 
     s << "hi hv eqid flag si sv idx              crc      size     offset\n";
     s << boost::format(
-             "%02x %02x %04x %04x %02x %02x %016lx %08x %08x %016lx\n")
-         % static_cast<unsigned int>(md.hdr_id) % static_cast
-         <unsigned int>(md.hdr_ver) % md.eq_id % md.flags % static_cast
-         <unsigned int>(md.sys_id) % static_cast<unsigned int>(md.sys_ver)
-         % md.idx % md.crc % md.size % md.offset;
+             "%02x %02x %04x %04x %02x %02x %016lx %08x %08x %016lx\n") %
+             static_cast<unsigned int>(md.hdr_id) %
+             static_cast<unsigned int>(md.hdr_ver) % md.eq_id % md.flags %
+             static_cast<unsigned int>(md.sys_id) %
+             static_cast<unsigned int>(md.sys_ver) % md.idx % md.crc % md.size %
+             md.offset;
 
     return s.str();
 }
@@ -77,8 +77,9 @@ std::string TimesliceDebugger::dump_buffer(const void* buf, uint64_t size) const
             if (i + j >= static_cast<int>(size))
                 s << "  ";
             else
-                s << boost::format("%02x") % static_cast
-                     <int>(static_cast<const uint8_t*>(buf)[i + j]);
+                s << boost::format("%02x") %
+                         static_cast<int>(
+                             static_cast<const uint8_t*>(buf)[i + j]);
             if ((j % bytes_per_block) == 0)
                 s << "  ";
         }
@@ -88,9 +89,9 @@ std::string TimesliceDebugger::dump_buffer(const void* buf, uint64_t size) const
     return s.str();
 }
 
-std::string TimesliceDebugger::dump_microslice(const fles::MicrosliceDescriptor
-                                               & md,
-                                               const void* buf) const
+std::string
+TimesliceDebugger::dump_microslice(const fles::MicrosliceDescriptor& md,
+                                   const void* buf) const
 {
     std::stringstream s;
 

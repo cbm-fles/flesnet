@@ -15,23 +15,24 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
       _flib_link(flib_link)
 {
     constexpr std::size_t microslice_descriptor_size_exp = 5;
-    std::size_t desc_buffer_bytes_exp = desc_buffer_size_exp
-                                        + microslice_descriptor_size_exp;
+    std::size_t desc_buffer_bytes_exp =
+        desc_buffer_size_exp + microslice_descriptor_size_exp;
 
-    _flib_link->init_dma(
-        flib::open_or_create, data_buffer_size_exp, desc_buffer_bytes_exp);
+    _flib_link->init_dma(flib::open_or_create, data_buffer_size_exp,
+                         desc_buffer_bytes_exp);
 
-    uint8_t* data_buffer = reinterpret_cast
-        <uint8_t*>(_flib_link->ebuf()->getMem());
-    fles::MicrosliceDescriptor* desc_buffer = reinterpret_cast
-        <fles::MicrosliceDescriptor*>(_flib_link->rbuf()->getMem());
+    uint8_t* data_buffer =
+        reinterpret_cast<uint8_t*>(_flib_link->ebuf()->getMem());
+    fles::MicrosliceDescriptor* desc_buffer =
+        reinterpret_cast<fles::MicrosliceDescriptor*>(
+            _flib_link->rbuf()->getMem());
 
-    _data_buffer_view = std::unique_ptr<RingBufferView<> >(
+    _data_buffer_view = std::unique_ptr<RingBufferView<>>(
         new RingBufferView<>(data_buffer, data_buffer_size_exp));
-    _desc_buffer_view = std::unique_ptr
-        <RingBufferView<fles::MicrosliceDescriptor> >(
-            new RingBufferView
-            <fles::MicrosliceDescriptor>(desc_buffer, desc_buffer_size_exp));
+    _desc_buffer_view =
+        std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor>>(
+            new RingBufferView<fles::MicrosliceDescriptor>(
+                desc_buffer, desc_buffer_size_exp));
 
     flib::hdr_config config{static_cast<uint16_t>(0xE000 + input_index), 0xBC,
                             0xFD};
@@ -46,10 +47,7 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
     // assert(_flib_link->get_pending_mc() == 0);
 }
 
-FlibHardwareChannel::~FlibHardwareChannel()
-{
-    _flib_link->rst_pending_mc();
-}
+FlibHardwareChannel::~FlibHardwareChannel() { _flib_link->rst_pending_mc(); }
 
 uint64_t FlibHardwareChannel::wait_for_data(uint64_t min_written_mc)
 {
@@ -68,6 +66,6 @@ void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
 {
     _flib_link->get_ch()->setOffsets(
         new_acked_data & _data_buffer_view->size_mask(),
-        (new_acked_mc & _desc_buffer_view->size_mask())
-        * sizeof(fles::MicrosliceDescriptor));
+        (new_acked_mc & _desc_buffer_view->size_mask()) *
+            sizeof(fles::MicrosliceDescriptor));
 }

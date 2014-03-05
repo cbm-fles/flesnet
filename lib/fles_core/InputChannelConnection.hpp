@@ -62,7 +62,7 @@ public:
 
     virtual void on_disconnected(struct rdma_cm_event* event) override;
 
-    virtual std::unique_ptr<std::vector<uint8_t> > get_private_data() override;
+    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
 private:
     /// Post a receive work request (WR) to the receive queue

@@ -40,11 +40,11 @@ uint32_t Parameters::suggest_in_data_buffer_size_exp()
     constexpr uint32_t min_in_data_buffer_size_exp = 20; // 20: 1 MByte
 
     float total_ram = sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
-    float suggest_in_data_buffer_size = buffer_ram_usage_ratio * total_ram
-                                        / _input_indexes.size();
+    float suggest_in_data_buffer_size =
+        buffer_ram_usage_ratio * total_ram / _input_indexes.size();
 
-    uint32_t suggest_in_data_buffer_size_exp
-        = ceilf(log2f(suggest_in_data_buffer_size));
+    uint32_t suggest_in_data_buffer_size_exp =
+        ceilf(log2f(suggest_in_data_buffer_size));
 
     if (suggest_in_data_buffer_size_exp > max_in_data_buffer_size_exp)
         suggest_in_data_buffer_size_exp = max_in_data_buffer_size_exp;
@@ -63,12 +63,12 @@ uint32_t Parameters::suggest_cn_data_buffer_size_exp()
     constexpr uint32_t min_cn_data_buffer_size_exp = 20; // 20: 1 MByte
 
     float total_ram = sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
-    float suggest_cn_data_buffer_size
-        = buffer_ram_usage_ratio * total_ram
-          / (_compute_indexes.size() * _input_nodes.size());
+    float suggest_cn_data_buffer_size =
+        buffer_ram_usage_ratio * total_ram /
+        (_compute_indexes.size() * _input_nodes.size());
 
-    uint32_t suggest_cn_data_buffer_size_exp
-        = ceilf(log2f(suggest_cn_data_buffer_size));
+    uint32_t suggest_cn_data_buffer_size_exp =
+        ceilf(log2f(suggest_cn_data_buffer_size));
 
     if (suggest_cn_data_buffer_size_exp > max_cn_data_buffer_size_exp)
         suggest_cn_data_buffer_size_exp = max_cn_data_buffer_size_exp;
@@ -92,18 +92,18 @@ uint32_t Parameters::suggest_in_desc_buffer_size_exp()
                   "invalid range for desc_data_ratio");
 
     float in_data_buffer_size = UINT64_C(1) << _in_data_buffer_size_exp;
-    float suggest_in_desc_buffer_size = in_data_buffer_size
-                                        / _typical_content_size
-                                        * in_desc_buffer_oversize_factor;
-    uint32_t suggest_in_desc_buffer_size_exp
-        = ceilf(log2f(suggest_in_desc_buffer_size));
+    float suggest_in_desc_buffer_size = in_data_buffer_size /
+                                        _typical_content_size *
+                                        in_desc_buffer_oversize_factor;
+    uint32_t suggest_in_desc_buffer_size_exp =
+        ceilf(log2f(suggest_in_desc_buffer_size));
 
-    float relative_size = in_data_buffer_size
-                          / sizeof(fles::MicrosliceDescriptor);
-    uint32_t max_in_desc_buffer_size_exp
-        = floorf(log2f(relative_size * max_desc_data_ratio));
-    uint32_t min_in_desc_buffer_size_exp
-        = ceilf(log2f(relative_size * min_desc_data_ratio));
+    float relative_size =
+        in_data_buffer_size / sizeof(fles::MicrosliceDescriptor);
+    uint32_t max_in_desc_buffer_size_exp =
+        floorf(log2f(relative_size * max_desc_data_ratio));
+    uint32_t min_in_desc_buffer_size_exp =
+        ceilf(log2f(relative_size * min_desc_data_ratio));
 
     if (suggest_in_desc_buffer_size_exp > max_in_desc_buffer_size_exp)
         suggest_in_desc_buffer_size_exp = max_in_desc_buffer_size_exp;
@@ -127,20 +127,20 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
                   "invalid range for desc_data_ratio");
 
     float cn_data_buffer_size = UINT64_C(1) << _cn_data_buffer_size_exp;
-    float suggest_cn_desc_buffer_size
-        = cn_data_buffer_size
-          / (_typical_content_size * (_timeslice_size + _overlap_size))
-          * cn_desc_buffer_oversize_factor;
+    float suggest_cn_desc_buffer_size =
+        cn_data_buffer_size /
+        (_typical_content_size * (_timeslice_size + _overlap_size)) *
+        cn_desc_buffer_oversize_factor;
 
-    uint32_t suggest_cn_desc_buffer_size_exp
-        = ceilf(log2f(suggest_cn_desc_buffer_size));
+    uint32_t suggest_cn_desc_buffer_size_exp =
+        ceilf(log2f(suggest_cn_desc_buffer_size));
 
-    float relative_size = cn_data_buffer_size
-                          / sizeof(fles::TimesliceComponentDescriptor);
-    uint32_t min_cn_desc_buffer_size_exp
-        = ceilf(log2f(relative_size * min_desc_data_ratio));
-    uint32_t max_cn_desc_buffer_size_exp
-        = floorf(log2f(relative_size * max_desc_data_ratio));
+    float relative_size =
+        cn_data_buffer_size / sizeof(fles::TimesliceComponentDescriptor);
+    uint32_t min_cn_desc_buffer_size_exp =
+        ceilf(log2f(relative_size * min_desc_data_ratio));
+    uint32_t max_cn_desc_buffer_size_exp =
+        floorf(log2f(relative_size * max_desc_data_ratio));
 
     if (suggest_cn_desc_buffer_size_exp < min_cn_desc_buffer_size_exp)
         suggest_cn_desc_buffer_size_exp = min_cn_desc_buffer_size_exp;
@@ -162,16 +162,13 @@ void Parameters::parse_options(int argc, char* argv[])
 
     po::options_description config("Configuration");
     config.add_options()("input-index,i",
-                         po::value<std::vector<unsigned> >()->multitoken(),
+                         po::value<std::vector<unsigned>>()->multitoken(),
                          "this application's index in the list of input nodes")(
-        "compute-index,c",
-        po::value<std::vector<unsigned> >()->multitoken(),
+        "compute-index,c", po::value<std::vector<unsigned>>()->multitoken(),
         "this application's index in the list of compute nodes")(
-        "input-nodes,I",
-        po::value<std::vector<std::string> >()->multitoken(),
+        "input-nodes,I", po::value<std::vector<std::string>>()->multitoken(),
         "add host to the list of input nodes")(
-        "compute-nodes,C",
-        po::value<std::vector<std::string> >()->multitoken(),
+        "compute-nodes,C", po::value<std::vector<std::string>>()->multitoken(),
         "add host to the list of compute nodes")(
         "timeslice-size", po::value<uint32_t>(&_timeslice_size),
         "global timeslice size in number of MCs")(
@@ -230,13 +227,13 @@ void Parameters::parse_options(int argc, char* argv[])
     if (!vm.count("compute-nodes"))
         throw ParametersException("list of compute nodes is empty");
 
-    _input_nodes = vm["input-nodes"].as<std::vector<std::string> >();
-    _compute_nodes = vm["compute-nodes"].as<std::vector<std::string> >();
+    _input_nodes = vm["input-nodes"].as<std::vector<std::string>>();
+    _compute_nodes = vm["compute-nodes"].as<std::vector<std::string>>();
 
     if (vm.count("input-index"))
-        _input_indexes = vm["input-index"].as<std::vector<unsigned> >();
+        _input_indexes = vm["input-index"].as<std::vector<unsigned>>();
     if (vm.count("compute-index"))
-        _compute_indexes = vm["compute-index"].as<std::vector<unsigned> >();
+        _compute_indexes = vm["compute-index"].as<std::vector<unsigned>>();
 
     if (_input_nodes.empty() && _compute_nodes.empty()) {
         throw ParametersException("no node type specified");
@@ -298,17 +295,17 @@ void Parameters::parse_options(int argc, char* argv[])
                        << _overlap_size << ") microslices";
             out.info() << "number of timeslices: " << _max_timeslice_number;
             out.info() << "input node buffer size: "
-                       << human_readable_byte_count(UINT64_C(1)
-                                                    << _in_data_buffer_size_exp)
-                       << " + " << human_readable_byte_count(
-                                       (UINT64_C(1) << _in_desc_buffer_size_exp)
-                                       * sizeof(fles::MicrosliceDescriptor));
+                       << human_readable_byte_count(
+                              UINT64_C(1) << _in_data_buffer_size_exp) << " + "
+                       << human_readable_byte_count(
+                              (UINT64_C(1) << _in_desc_buffer_size_exp) *
+                              sizeof(fles::MicrosliceDescriptor));
             out.info() << "compute node buffer size: "
                        << human_readable_byte_count(
                               UINT64_C(1) << _cn_data_buffer_size_exp) << " + "
                        << human_readable_byte_count(
-                              (UINT64_C(1) << _cn_desc_buffer_size_exp)
-                              * sizeof(fles::TimesliceComponentDescriptor));
+                              (UINT64_C(1) << _cn_desc_buffer_size_exp) *
+                              sizeof(fles::TimesliceComponentDescriptor));
         }
     }
 }
