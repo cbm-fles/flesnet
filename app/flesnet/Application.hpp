@@ -34,7 +34,6 @@ private:
     // Input node application
     std::unique_ptr<flib::flib_device> _flib;
     std::vector<flib::flib_link*> _flib_links;
-    std::unique_ptr<flib::device_ctrl_channel> _dev_ctrl_ch;
 
     std::vector<std::unique_ptr<DataSource>> _data_sources;
 

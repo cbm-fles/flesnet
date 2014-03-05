@@ -1,3 +1,3 @@
 BUILD DEPENDENCIES
 
-sudo aptitude install gcc make cmake valgrind doxygen libnuma-dev librdmacm-dev
+sudo aptitude install gcc make cmake valgrind doxygen libnuma-dev librdmacm-dev libibverbs-dev

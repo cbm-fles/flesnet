@@ -3,9 +3,9 @@
 
 
 #include <flib/flib_device.hpp>
-#include <flib/device_ctrl_channel.hpp>
-#include <flib/device_ctrl_channel_local.hpp>
 #include <flib/flib_link.hpp>
+#include <flib/register_file.hpp>
+#include <flib/register_file_bar.hpp>
 #include <flib/rorcfs_device.hh> 
 #include <flib/rorcfs_bar.hh>
 #include <flib/rorcfs_buffer.hh> 

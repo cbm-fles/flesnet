@@ -18,8 +18,6 @@ using namespace flib;
 
 flib_device* MyFlib = NULL;
 
-device_ctrl_channel* dev_ctrl = NULL;
-
 int main(int argc, char *argv[])
 {
   MyFlib = new flib_device(0);
@@ -31,17 +29,17 @@ int main(int argc, char *argv[])
     printf("link not set\n");    
   };
 
-  dev_ctrl = new device_ctrl_channel_local(MyFlib->get_bar_ptr());
-
   ////////////////////////////////////////////////////////
  
-  std::cout << dev_ctrl->print_build_info() << std::endl;
+  std::cout << MyFlib->print_build_info() << std::endl;
 
   printf("r_ctrl_tx: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_CTRL_TX));
 
   MyFlib->link[0]->set_data_rx_sel(flib_link::pgen);
     
   printf("START\n");
+
+  std::cout << MyFlib->get_devinfo() << std::endl;
 
   size_t words = 4; // number of 16 Bit words in message
   uint16_t offset = 0;
@@ -66,17 +64,17 @@ int main(int argc, char *argv[])
 
 
   // receive to flush hw buffers
-  if ( MyFlib->link[0]->rcv_msg(&r_msg) < 0)  {
+  if ( MyFlib->link[0]->recv_dcm(&r_msg) < 0)  {
     printf("nothing to receive\n");
   }
   
 
-  if ( MyFlib->link[0]->send_msg(&s_msg) < 0)  {
+  if ( MyFlib->link[0]->send_dcm(&s_msg) < 0)  {
     printf("sending failed\n");
   }                      
     
   // receive msg
-  if ( MyFlib->link[0]->rcv_msg(&r_msg) < 0)  {
+  if ( MyFlib->link[0]->recv_dcm(&r_msg) < 0)  {
     printf("error receiving\n");
   }
 
@@ -84,13 +82,12 @@ int main(int argc, char *argv[])
     printf("buf: 0x%04x\n", r_msg.data[i]);
   }
 
-  printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
-  MyFlib->link[0]->set_dlm_cfg(0x5, true);
-  dev_ctrl->send_dlm();
-  printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
-  MyFlib->link[0]->clr_dlm();
-  printf("dlm: %01x\n", MyFlib->link[0]->get_dlm());
-  MyFlib->link[0]->set_dlm_cfg(0x2, false);
+  printf("dlm: %01x\n", MyFlib->link[0]->recv_dlm());
+  MyFlib->link[0]->prepare_dlm(0x5, true);
+  MyFlib->link[0]->send_dlm();
+  printf("dlm: %01x\n", MyFlib->link[0]->recv_dlm());
+  printf("dlm: %01x\n", MyFlib->link[0]->recv_dlm());
+  MyFlib->link[0]->prepare_dlm(0x2, false);
 
   printf("mc_index: %01lx\n", MyFlib->link[0]->get_mc_index());
   MyFlib->link[0]->set_start_idx(5);
@@ -100,8 +97,5 @@ int main(int argc, char *argv[])
 
   if (MyFlib)
     delete MyFlib;
-
-  if (dev_ctrl)
-    delete dev_ctrl;
   return 0;
 }

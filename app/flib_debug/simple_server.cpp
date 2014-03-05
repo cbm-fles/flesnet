@@ -41,9 +41,7 @@ int main(int argc, const char* argv[])
 
   std::vector<flib::flib_link*> links = flib.get_links();
 
-  flib::device_ctrl_channel_local dev_ctrl_ch(flib.get_bar_ptr());
-  
-  out.info() << dev_ctrl_ch.print_build_info();
+  out.info() << flib.print_build_info();
 
   // initialize a DMA buffer
   links.at(0)->init_dma(flib::create_only, 22, 20);
@@ -67,14 +65,14 @@ int main(int argc, const char* argv[])
   bool use_sp = false; 
   if (use_sp == true) {
     links.at(0)->set_data_rx_sel(flib::flib_link::link);
-    links.at(0)->set_dlm_cfg(0x8, true); // enable DAQ
-    dev_ctrl_ch.send_dlm();
+    links.at(0)->prepare_dlm(0x8, true); // enable DAQ
+    links.at(0)->send_dlm();
   } 
   else {
     links.at(0)->set_data_rx_sel(flib::flib_link::pgen);
   }
  
-  dev_ctrl_ch.enable_mc_cnt(true);
+  flib.enable_mc_cnt(true);
   links.at(0)->enable_cbmnet_packer(true);
 
   out.debug() << "current mc nr: " <<  links.at(0)->get_mc_index();
@@ -127,7 +125,7 @@ int main(int argc, const char* argv[])
   }
   
   // disable data source
-  dev_ctrl_ch.enable_mc_cnt(false);
+  flib.enable_mc_cnt(false);
   out.debug() << "current mc nr 0x: " << std::hex <<  links.at(0)->get_mc_index();
   out.debug() << "pending mc: "  << links.at(0)->get_pending_mc();
   out.debug() << "busy: " <<  links.at(0)->get_ch()->getDMABusy();
