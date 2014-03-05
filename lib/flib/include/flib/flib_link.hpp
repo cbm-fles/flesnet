@@ -106,17 +106,18 @@ public:
     : _link_index(link_index), _dev(dev) {
 
     _base_addr =  (_link_index + 1) * RORC_CHANNEL_OFFSET;
-    // create DMA channel and bind to BAR1, no HW initialization is done here
-    _ch = std::unique_ptr<rorcfs_dma_channel>(new rorcfs_dma_channel());
-    _ch->init(bar, _base_addr);
-    
     // regiter file access
-    _rfpkt = std::unique_ptr<register_file_bar>(new register_file_bar(bar, _base_addr));
+    _rfpkt = std::unique_ptr<register_file_bar>(
+       new register_file_bar(bar, _base_addr));
     _rfgtx = std::unique_ptr<register_file_bar>(
        new register_file_bar(bar, (_base_addr + (1<<RORC_DMA_CMP_SEL))));
     _rfglobal = std::unique_ptr<register_file_bar>(
        new register_file_bar(bar, 0));
-
+    // create DMA channel and bind to register file, 
+    // no HW initialization is done here
+    _ch = std::unique_ptr<rorcfs_dma_channel>(
+       new rorcfs_dma_channel(_rfpkt.get() ));
+    
   }
 
   ~flib_link() {
@@ -378,6 +379,14 @@ public:
     return _ch.get();
   }
 
+  register_file_bar* get_rfpkt() const {
+    return _rfpkt.get();
+  }
+
+  register_file_bar* get_rfgtx() const {
+    return _rfgtx.get();
+  }
+
 private:
 
   // creates new buffer, throws an exception if buffer already exists
@@ -420,11 +429,11 @@ private:
   void _rst_channel() {
     // datapath reset, will also cause hw defaults for
     // - pending mc  = 0
-    _ch->set_bitGTX(RORC_REG_GTX_DATAPATH_CFG, 2, true);
+    _rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, true);
      // rst packetizer fifos
     _ch->setDMAConfig(0X2);
     // release datapath reset
-    _ch->set_bitGTX(RORC_REG_GTX_DATAPATH_CFG, 2, false);
+    _rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, false);
   }
 
   void _stop() {

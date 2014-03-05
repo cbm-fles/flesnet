@@ -21,11 +21,14 @@
 #ifndef _RORCLIB_RORCFS_DMA_CHANNEL_H
 #define _RORCLIB_RORCFS_DMA_CHANNEL_H
 
+#include "register_file_bar.hpp"
+using namespace flib;
+
+
 /** default maximum payload size in bytes. Check the capabilities
  * of the chipset and the FPGA PCIe core before modifying this value
  * Common values are 128 or 256 bytes.*/
 #define MAX_PAYLOAD 128
-
 
 /** struct holding both read pointers and the
  * DMA engine configuration register contents **/
@@ -86,18 +89,13 @@ struct t_sg_entry_cfg {
  * No DMA transfer will start unless setDMAEnable() has been called 
  * with enable=1.
  **/
+
 class rorcfs_dma_channel
 {
 	public:
-		rorcfs_dma_channel();
-		~rorcfs_dma_channel();
+                rorcfs_dma_channel(register_file_bar* rf);
 
-		/**
-		 * initialize DMA base address within BAR
-		 * @param dma_base unsigned int base address
-		 * @param dma_bar according instance of rorcfs_bar
-		 **/
-		void init(rorcfs_bar *dma_bar, unsigned int dma_base);
+		~rorcfs_dma_channel();
 
 		/**
 		 * prepare EventBuffer: copy scatterlist from 
@@ -230,22 +228,6 @@ class rorcfs_dma_channel
 				uint32_t max_payload);
 
 		/**
-		 * get base
-		 * @return channel base address
-		 **/
-		unsigned int getBase() {
-			return base;
-		}
-
-		/**
-		 * get BAR
-		 * @return bound rorcfs_bar
-		 **/
-		rorcfs_bar* getBar() {
-			return bar;
-		}
-
-		/**
 		 * set Event Buffer File Offset
 		 * the DMA engine only writes to the Event buffer as long as
 		 * its internal offset is at least (MaxPayload)-bytes smaller
@@ -369,83 +351,8 @@ class rorcfs_dma_channel
 		 **/
 		unsigned int getRBDRAM( unsigned int addr );
 
-
-		/**
-		 * set DW in Packtizer
-		 * @param addr address in PKT component
-		 * @param data data to be writtem
-		 **/
-		void setPKT( unsigned int addr, unsigned int data );
-  /**
-   * set or unset single bit in register at address in PKT
-   * @param addr aligned address within the packetizer regfile
-   * @param pos bit possition to modify
-   * @param enable true enables the bit
-   **/
-  void set_bitPKT(uint64_t addr, int pos, bool enable);
-
-  /**
-   * set or unset single bit in register at address in GTX
-   * @param addr aligned address within the gtx regfile
-   * @param pos bit possition to modify
-   * @param enable true enables the bit
-   **/
-  void set_bitGTX(uint64_t addr, int pos, bool enable);
-
-		/**
-		 * get DW from  Packtizer
-		 * @param addr address in PKT component
-		 * @return data read from PKT
-		 **/
-		unsigned int getPKT( unsigned int addr );
-
-		/**
-		 * set DW in GTX Domain
-		 * @param addr address in GTX component
-		 * @param data data to be writtem
-		 **/
-		void setGTX( unsigned int addr, unsigned int data );
-
-		/**
-		 * get DW from GTX Domain
-		 * @param addr address in GTX component
-		 * @return data read from GTX
-		 **/
-		unsigned int getGTX( unsigned int addr );
-
-		/**
-		 * copy buffer range to Packetizer regfile
-		 * @param addr address in PKT component
-		 * @param source pointer to source data field
-		 * @param num number of bytes to be copied to destination
-		 * */
-                 void set_memPKT( uint32_t addr, const void *source, size_t num); 
-		/**
-		 * copy buffer range from Packetizer regfile
-		 * @param addr address in PKT component
-		 * @param dest pointer to destination data field
-		 * @param num number of bytes to be copied from destination
-		 * */
-                 void get_memPKT( uint32_t addr, void *dest, size_t num); 
-
-		/**
-		 * copy buffer range to GTX regfile
-		 * @param addr address in GTX component
-		 * @param source pointer to source data field
-		 * @param num number of bytes to be copied to destination
-		 * */
-                 void set_memGTX( uint32_t addr, const void *source, size_t num);
-		/**
-		 * copy buffer range to GTX regfile
-		 * @param addr address in GTX component
-		 * @param dest pointer to destination data field
-		 * @param num number of bytes to be copied from destination
-		 * */
-                 void get_memGTX( uint32_t addr, void *dest, size_t num);
-
 	private:
-		unsigned int base;
-		rorcfs_bar *bar;
+                register_file_bar* _rfpkt;
 		unsigned int cMaxPayload;
 };
 

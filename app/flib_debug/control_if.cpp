@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
  
   std::cout << MyFlib->print_build_info() << std::endl;
 
-  printf("r_ctrl_tx: %08x\n", MyFlib->link[0]->get_ch()->getGTX(RORC_REG_GTX_CTRL_TX));
+  printf("r_ctrl_tx: %08x\n", MyFlib->link[0]->get_rfgtx()->get_reg(RORC_REG_GTX_CTRL_TX));
 
   MyFlib->link[0]->set_data_rx_sel(flib_link::pgen);
     
