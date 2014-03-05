@@ -39,10 +39,7 @@ TimesliceView::TimesliceView(
 
 TimesliceView::~TimesliceView()
 {
-    try
-    {
-        _completions_mq->send(&_completion, sizeof(_completion), 0);
-    }
+    try { _completions_mq->send(&_completion, sizeof(_completion), 0); }
     catch (boost::interprocess::interprocess_exception& e)
     {
         std::cerr << "exception in destructor ~TimesliceView(): " << e.what();

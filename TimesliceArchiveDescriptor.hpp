@@ -26,22 +26,13 @@ public:
     }
 
     /// Retrieve the time of creation of the archive.
-    std::time_t time_created() const
-    {
-        return _time_created;
-    }
+    std::time_t time_created() const { return _time_created; }
 
     /// Retrieve the hostname of the machine creating the archive.
-    std::string hostname() const
-    {
-        return _hostname;
-    }
+    std::string hostname() const { return _hostname; }
 
     /// Retrieve the hostname of the machine creating the archive.
-    std::string username() const
-    {
-        return _username;
-    }
+    std::string username() const { return _username; }
 
 private:
     friend class boost::serialization::access;
