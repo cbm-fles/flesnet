@@ -103,7 +103,7 @@ public:
     _ch = std::unique_ptr<rorcfs_dma_channel>(new rorcfs_dma_channel());
     _ch->init(bar, (_channel+1)*RORC_CHANNEL_OFFSET);
   }
-  
+
   ~flib_link() {
     _stop();
     //TODO move deallocte to destructro of buffer
@@ -149,15 +149,8 @@ public:
     return 0;
   }
 
-  int enable_TODO() {
-    // hold data source here
-    return 0; 
-  }
-  
-  int disable_TODO() {
-    return 0;
-  }
-  
+  ///// MC access funtions /////
+
   std::pair<mc_desc, bool> get_mc() {
     struct mc_desc mc;
     if(_db[_index].idx > _mc_nr) { // mc_nr counts from 1 in HW
@@ -204,7 +197,8 @@ public:
     return 0;
     }
   
-    // TODO: Add funtions to set channel properties like data source, link reset, activate busys 
+
+  ///// configuration and control /////
 
   // REG: mc_gen_cfg
   // bit 0 set_start_index
@@ -263,7 +257,7 @@ public:
     _ch->set_memGTX(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config, sizeof(hdr_config));
   }
 
-  // Control Interface ////////////////////////////
+  ///// CBMnet control interface /////
   
   int send_msg(const struct ctrl_msg* msg) {
     // TODO: could also implement blocking call 
@@ -335,6 +329,8 @@ public:
   void clr_dlm() {
     _ch->setGTX(RORC_REG_GTX_DLM, 1<<31);
   }
+
+  ///// getter funtions /////
   
   std::string get_ebuf_info() {
     return _get_buffer_info(_ebuf.get());
