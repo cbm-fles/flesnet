@@ -190,16 +190,16 @@ public:
     out.debug() << "Sending control message";
 
     // receive to flush hw buffers
-    if ( _link.rcv_msg(&cnet_r_msg) != -1)  {
+    if ( _link.recv_dcm(&cnet_r_msg) != -1)  {
       out.warn() << "sprious message dropped";
     }
   
-    if ( _link.send_msg(&cnet_s_msg) < 0)  {
+    if ( _link.send_dcm(&cnet_s_msg) < 0)  {
       out.error() << "Sending message failed";
     }                      
     
     // receive msg
-    if ( _link.rcv_msg(&cnet_r_msg) < 0)  {
+    if ( _link.recv_dcm(&cnet_r_msg) < 0)  {
       out.error() << "receiving message failed";
     }
 
@@ -219,12 +219,10 @@ public:
                 << std::hex << "0x" << cnet_s_msg.data[0];
 
     // set dlm config for single link
-    _link.set_dlm_cfg((cnet_s_msg.data[0] & 0xF), true);
+    _link.prepare_dlm((cnet_s_msg.data[0] & 0xF), true);
     
     // send dlm
-    // TODO: this is a global operation for all links!
-    // This has to be done global for a multi link version
-    _device.send_dlm();
+    _link.send_dlm();
 
     return;
   }

@@ -6,6 +6,8 @@
 #include "rorcfs_device.hh"
 #include "rorcfs_buffer.hh"
 #include "rorcfs_dma_channel.hh"
+#include "system_bus_bar.hpp"
+
 #include <cassert>
 #include <cstring>
 #include <memory>
@@ -76,8 +78,10 @@ class flib_link {
   std::unique_ptr<rorcfs_dma_channel> _ch;
   std::unique_ptr<rorcfs_buffer> _ebuf;
   std::unique_ptr<rorcfs_buffer> _dbuf;
+  size_t _link_index;
   rorcfs_device* _dev;
-  uint8_t _channel;
+  system_bus_bar* _bus;
+  sys_bus_addr _base_addr;
 
   uint64_t _index = 0;
   uint64_t _last_index = 0;
@@ -96,12 +100,14 @@ class flib_link {
   
 public:
   
-  flib_link(uint8_t channel, rorcfs_device* dev, rorcfs_bar* bar) 
-    : _dev(dev), _channel(channel) {
+  flib_link(size_t link_index, rorcfs_device* dev, rorcfs_bar* bar,
+            system_bus_bar* bus)
+    : _link_index(link_index), _dev(dev), _bus(bus) {
 
+    _base_addr =  (_link_index + 1) * RORC_CHANNEL_OFFSET;
     // create DMA channel and bind to BAR1, no HW initialization is done here
     _ch = std::unique_ptr<rorcfs_dma_channel>(new rorcfs_dma_channel());
-    _ch->init(bar, (_channel+1)*RORC_CHANNEL_OFFSET);
+    _ch->init(bar, _base_addr);
   }
 
   ~flib_link() {
@@ -197,7 +203,6 @@ public:
     return 0;
     }
   
-
   ///// configuration and control /////
 
   // REG: mc_gen_cfg
@@ -207,35 +212,40 @@ public:
 
   void set_start_idx(uint64_t index) {
     // set reset value
-    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG_IDX_L, (uint32_t)(index & 0xffffffff));
-    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG_IDX_H, (uint32_t)(index >> 32));
+    // TODO replace with set_mem_gtx()
+    set_reg_gtx(RORC_REG_GTX_MC_GEN_CFG_IDX_L, (uint32_t)(index & 0xffffffff));
+    set_reg_gtx(RORC_REG_GTX_MC_GEN_CFG_IDX_H, (uint32_t)(index >> 32));
     // reste mc counter 
     // TODO implenet edge detection and 'pulse only' in HW
-    uint32_t mc_gen_cfg= _ch->getGTX(RORC_REG_GTX_MC_GEN_CFG);
-    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
-    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
+    uint32_t mc_gen_cfg= get_reg_gtx(RORC_REG_GTX_MC_GEN_CFG);
+    // TODO replace with set_bit_gtx()
+    set_reg_gtx(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
+    set_reg_gtx(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
   }
-
+  
   void rst_pending_mc() { // is also resetted with datapath reset
     // TODO implenet edge detection and 'pulse only' in HW
-    uint32_t mc_gen_cfg= _ch->getGTX(RORC_REG_GTX_MC_GEN_CFG);
-    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
-    _ch->setGTX(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
+    uint32_t mc_gen_cfg= get_reg_gtx(RORC_REG_GTX_MC_GEN_CFG);
+    // TODO replace with set_bit_gtx()
+    set_reg_gtx(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
+    set_reg_gtx(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
   }
   
   void enable_cbmnet_packer(bool enable) {
-    _ch->set_bitGTX(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
+    set_bit_gtx(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
   }
 
   uint64_t get_pending_mc() {
-    uint64_t pend_mc = _ch->getGTX(RORC_REG_GTX_PENDING_MC_L);
-    pend_mc = pend_mc | ((uint64_t)(_ch->getGTX(RORC_REG_GTX_PENDING_MC_H))<<32);
+    // TODO replace with get_mem_gtx()
+    uint64_t pend_mc = get_reg_gtx(RORC_REG_GTX_PENDING_MC_L);
+    pend_mc = pend_mc | ((uint64_t)(get_reg_gtx(RORC_REG_GTX_PENDING_MC_H))<<32);
     return pend_mc;
   }
 
   uint64_t get_mc_index() {
-    uint64_t mc_index = _ch->getGTX(RORC_REG_GTX_MC_INDEX_L);
-    mc_index = mc_index | ((uint64_t)(_ch->getGTX(RORC_REG_GTX_MC_INDEX_H))<<32);
+    // TODO replace with get_mem_gtx()
+    uint64_t mc_index = get_reg_gtx(RORC_REG_GTX_MC_INDEX_L);
+    mc_index = mc_index | ((uint64_t)(get_reg_gtx(RORC_REG_GTX_MC_INDEX_H))<<32);
     return mc_index;
   }
   
@@ -244,90 +254,97 @@ public:
   enum data_rx_sel {disable, link, pgen, emu};
 
   void set_data_rx_sel(data_rx_sel rx_sel) {
-    uint32_t dp_cfg = _ch->getGTX(RORC_REG_GTX_DATAPATH_CFG);
+    uint32_t dp_cfg = get_reg_gtx(RORC_REG_GTX_DATAPATH_CFG);
     switch (rx_sel) {
-    case disable : _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3)); break;
-    case link :    _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
-    case pgen :    _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
-    case emu :     _ch->setGTX(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1<<1)); break;
+    case disable : set_reg_gtx(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3)); break;
+    case link :    set_reg_gtx(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
+    case pgen :    set_reg_gtx(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
+    case emu :     set_reg_gtx(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1<<1)); break;
     }
   }
 
-  void set_hdr_config(struct hdr_config* config) {
-    _ch->set_memGTX(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config, sizeof(hdr_config));
+  void set_hdr_config(const struct hdr_config* config) {
+    set_mem_gtx(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config, sizeof(hdr_config)>>2);
   }
+
 
   ///// CBMnet control interface /////
   
-  int send_msg(const struct ctrl_msg* msg) {
+  int send_dcm(const struct ctrl_msg* msg) {
     // TODO: could also implement blocking call 
     //       and check if sending is done at the end
 
     assert (msg->words >= 4 && msg->words <= 32);
     
     // check if send FSM is ready (bit 31 in r_ctrl_tx = 0)
-    if ( (_ch->getGTX(RORC_REG_GTX_CTRL_TX) & (1<<31)) != 0 ) {
+    if ( (get_reg_gtx(RORC_REG_GTX_CTRL_TX) & (1<<31)) != 0 ) {
       return -1;
     }
     
     // copy msg to board memory
     size_t bytes = msg->words*2 + (msg->words*2)%4;
-    _ch->set_memGTX(RORC_MEM_BASE_CTRL_TX, (const void*)msg->data, bytes);
+    set_mem_gtx(RORC_MEM_BASE_CTRL_TX, (const void*)msg->data, bytes>>2);
     
     // start send FSM
     uint32_t ctrl_tx = 0;
     ctrl_tx = 1<<31 | (msg->words-1);
-    _ch->setGTX(RORC_REG_GTX_CTRL_TX, ctrl_tx);
+    set_reg_gtx(RORC_REG_GTX_CTRL_TX, ctrl_tx);
     
     return 0;
   }
 
-  int rcv_msg(struct ctrl_msg* msg) {
+  int recv_dcm(struct ctrl_msg* msg) {
     
     int ret = 0;
-    uint32_t ctrl_rx = _ch->getGTX(RORC_REG_GTX_CTRL_RX);
+    uint32_t ctrl_rx = get_reg_gtx(RORC_REG_GTX_CTRL_RX);
     msg->words = (ctrl_rx & 0x1F)+1;
     
-    // check if received words are in boundary
-    if (msg->words < 4 || msg->words > 32) {
-      msg->words = 32;
-      ret = -2;
-    }
     // check if a msg is available
     if ((ctrl_rx & (1<<31)) == 0) {
       return -1;
     }
+    // check if received words are in boundary
+    // append or truncate if not
+    if (msg->words < 4 || msg->words > 32) {
+      msg->words = 32;
+      ret = -2;
+    }
     
     // read msg from board memory
     size_t bytes = msg->words*2 + (msg->words*2)%4;
-    _ch->get_memGTX(RORC_MEM_BASE_CTRL_RX, (void*)msg->data, bytes);
+    get_mem_gtx(RORC_MEM_BASE_CTRL_RX, (void*)msg->data, bytes>>2);
     
     // acknowledge msg
-    _ch->setGTX(RORC_REG_GTX_CTRL_RX, 0);
+    set_reg_gtx(RORC_REG_GTX_CTRL_RX, 0);
     
     return ret;
   } 
 
-  // RORC_REG_DLM_CFG 0 set to send
+  // RORC_REG_DLM_CFG 0 set to send (global reg)
   // RORC_REG_GTX_DLM 3..0 tx type, 4 enable,
   //                  8..5 rx type, 31 set to clear rx reg
-  void set_dlm_cfg(uint8_t type, bool enable) {
+  void prepare_dlm(uint8_t type, bool enable) {
     uint32_t reg = 0;
     if (enable)
       reg = (1<<4) | (type & 0xF);
     else
       reg = (type & 0xF);
-    _ch->setGTX(RORC_REG_GTX_DLM, reg);
+    set_reg_gtx(RORC_REG_GTX_DLM, reg);
   }
 
-  uint8_t get_dlm() {
-    uint32_t reg = _ch->getGTX(RORC_REG_GTX_DLM);
-    uint8_t type = (reg>>5) & 0xF;
-    return type;
+  void send_dlm() {
+    // TODO implemet local register in HW
+    // this causes all prepared links to send
+    _bus->set_reg(RORC_REG_DLM_CFG, 1);
   }
-  
-  void clr_dlm() {
-    _ch->setGTX(RORC_REG_GTX_DLM, 1<<31);
+
+  uint8_t recv_dlm() {
+    // get dlm rx reg
+    uint32_t reg = get_reg_gtx(RORC_REG_GTX_DLM);
+    uint8_t type = (reg>>5) & 0xF;
+    // clear dlm rx reg
+    set_bit_gtx(RORC_REG_GTX_DLM, 31, true);
+    return type;
   }
 
   ///// getter funtions /////
@@ -358,7 +375,7 @@ private:
   std::unique_ptr<rorcfs_buffer> _create_buffer(size_t idx, size_t log_size) {
     unsigned long size = (((unsigned long)1) << log_size);
     std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());			
-    if (buffer->allocate(_dev, size, 2*_channel+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0) {
+    if (buffer->allocate(_dev, size, 2*_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0) {
       if (errno == EEXIST)
         throw FlibException("Buffer already exists, not allowed to open in create only mode");
       else
@@ -370,7 +387,7 @@ private:
   // opens an existing buffer, throws an exception if buffer doesn't exists
   std::unique_ptr<rorcfs_buffer> _open_buffer(size_t idx) {
     std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());			
-    if ( buffer->connect(_dev, 2*_channel+idx) != 0 ) {
+    if ( buffer->connect(_dev, 2*_link_index+idx) != 0 ) {
       throw RorcfsException("Connect to buffer failed");
     }
     return buffer;    
@@ -380,9 +397,9 @@ private:
   std::unique_ptr<rorcfs_buffer> _open_or_create_buffer(size_t idx, size_t log_size) {
     unsigned long size = (((unsigned long)1) << log_size);
     std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());			
-    if (buffer->allocate(_dev, size, 2*_channel+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0) {
+    if (buffer->allocate(_dev, size, 2*_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0) {
       if (errno == EEXIST) {
-        if ( buffer->connect(_dev, 2*_channel+idx) != 0 )
+        if ( buffer->connect(_dev, 2*_link_index+idx) != 0 )
           throw RorcfsException("Buffer open failed");
       }
       else
@@ -467,6 +484,58 @@ private:
        << "num SG entries = " << buf->getnSGEntries() << ", "
        << "max SG entries = " << buf->getMaxRBEntries();
     return ss.str();
+  }
+
+  ///// system bus access /////
+
+  // access funtions for packetizer registerfile
+  void get_mem_pkt(sys_bus_addr addr, void *dest, size_t dwords) {
+    _bus->get_mem(_base_addr + addr, dest, dwords);
+  }
+
+  void set_mem_pkt(sys_bus_addr addr, const void *source, size_t dwords) {
+    _bus->set_mem(_base_addr + addr, source, dwords);
+  }
+
+  uint32_t get_reg_pkt(sys_bus_addr addr) {
+    return _bus->get_reg(_base_addr + addr);
+  }
+
+  void set_reg_pkt(sys_bus_addr addr, uint32_t data) {
+    return _bus->set_reg(_base_addr + addr, data);
+  }
+
+  bool get_bit_pkt(sys_bus_addr addr, int pos) {
+    return _bus->get_bit(_base_addr + addr, pos);
+  }
+
+  void set_bit_pkt(sys_bus_addr addr, int pos, bool enable) {
+    return _bus->set_bit(_base_addr + addr, pos, enable);
+  }
+
+  // access funtions for gtx registerfile
+  void get_mem_gtx(sys_bus_addr addr, void *dest, size_t dwords) {
+    _bus->get_mem(_base_addr + (1<<RORC_DMA_CMP_SEL) + addr, dest, dwords);
+  }
+
+  void set_mem_gtx(sys_bus_addr addr, const void *source, size_t dwords) {
+    _bus->set_mem(_base_addr + (1<<RORC_DMA_CMP_SEL) + addr, source, dwords);
+  }
+
+  uint32_t get_reg_gtx(sys_bus_addr addr) {
+    return _bus->get_reg(_base_addr + (1<<RORC_DMA_CMP_SEL) + addr);
+  }
+
+  void set_reg_gtx(sys_bus_addr addr, uint32_t data) {
+    return _bus->set_reg(_base_addr + (1<<RORC_DMA_CMP_SEL) + addr, data);
+  }
+
+  bool get_bit_gtx(sys_bus_addr addr, int pos) {
+    return _bus->get_bit(_base_addr + (1<<RORC_DMA_CMP_SEL) + addr, pos);
+  }
+
+  void set_bit_gtx(sys_bus_addr addr, int pos, bool enable) {
+    return _bus->set_bit(_base_addr + (1<<RORC_DMA_CMP_SEL) + addr, pos, enable);
   }
 
 };

@@ -65,8 +65,8 @@ int main(int argc, const char* argv[])
   bool use_sp = false; 
   if (use_sp == true) {
     links.at(0)->set_data_rx_sel(flib::flib_link::link);
-    links.at(0)->set_dlm_cfg(0x8, true); // enable DAQ
-    flib.send_dlm();
+    links.at(0)->prepare_dlm(0x8, true); // enable DAQ
+    links.at(0)->send_dlm();
   } 
   else {
     links.at(0)->set_data_rx_sel(flib::flib_link::pgen);

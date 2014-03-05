@@ -82,7 +82,9 @@ public:
     // create link objects
     uint8_t num_links = _get_num_hw_links();
     for (size_t i=0; i<num_links; i++) {
-      link.push_back(std::unique_ptr<flib_link>(new flib_link(i, _dev.get(), _bar.get())));
+      link.push_back(
+        std::unique_ptr<flib_link>(
+          new flib_link(i, _dev.get(), _bar.get(), _bus.get() )));
     }
   }
   
