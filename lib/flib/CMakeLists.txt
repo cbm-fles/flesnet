@@ -7,7 +7,6 @@ set(LIB_SRC
   src/rorcfs_buffer.cpp
   src/rorcfs_device.cpp
   src/rorcfs_dma_channel.cpp
-  src/rorcfs_dma_monitor.cpp
 )
 set(LIB_HDR
   include/flib.h
@@ -15,9 +14,12 @@ set(LIB_HDR
   include/flib/rorcfs_buffer.hh
   include/flib/rorcfs_device.hh
   include/flib/rorcfs_dma_channel.hh
-  include/flib/rorcfs_dma_monitor.hh
   include/flib/rorcfs.h
   include/flib/rorc_registers.h
+  include/flib/flib_device.hpp
+  include/flib/flib_link.hpp
+  include/flib/register_file.hpp
+  include/flib/register_file_bar.hpp
 )
 
 add_library(flib SHARED ${LIB_HDR} ${LIB_SRC})
