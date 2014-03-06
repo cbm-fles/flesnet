@@ -59,75 +59,6 @@ class rorcfs_bar
 		~rorcfs_bar();
 
 		/**
-		 * read DWORD from BAR address
-		 * @param addr (unsigned int) aligned address within the 
-		 * 				BAR to read from.
-		 * @return data read from BAR[addr]
-		 **/
-		unsigned int get( unsigned long addr );
-
-		/**
-		 * read WORD from BAR address
-		 * @param addr within the BAR to read from.
-		 * @return data read from BAR[addr]
-		 **/
-		unsigned short get16( unsigned long addr );
-
-		/**
-		 * copy buffer range into BAR
-		 * @param addr address in current BAR
-		 * @param source pointer to source data field
-		 * @param num number of bytes to be copied to destination
-		 * */
-		void memcpy_bar( unsigned long addr, const void *source, size_t num );
-		
-                /**
-		 * copy buffer range into BAR
-		 * @param addr address in current BAR
-		 * @param source pointer to source data field
-		 * @param n number of bytes to be copied to BAR, must be multible of 4
-		 * */
-		void set_mem( unsigned long addr, const void *source, size_t n );
-		
-                /**
-		 * copy buffer range from BAR
-		 * @param addr address in current BAR
-		 * @param dest pointer to destination data field
-		 * @param n number of bytes to be copied to destination, must be multible of 4
-		 * */
-                void get_mem( unsigned long addr, void *dest, size_t n );
-		
-                /**
-		 * write DWORD to BAR address
-		 * @param addr (unsigned int) aligned address within the 
-		 * 				BAR to write to
-		 * @param data (unsigned int) data word to be written.
-		 **/
-		void set( unsigned long addr, unsigned int data );
-
-  /**
-   * set or unset single bit in register at address
-   * @param addr aligned address within the 
-   * 				BAR to write to
-   * @param pos bit possition to modify
-   * @param enable true enables the bit
-   **/
-  void set_bit(uint64_t addr, int pos, bool enable);
-
-		/**
-		 * write WORD to BAR address
-		 * @param addr within the BAR to write to
-		 * @param data (unsigned int) data word to be written.
-		 **/
-		void set16( unsigned long addr, unsigned short data );
-
-		/**
-		 * get file handle for sysfs file
-		 * @return int file handle
-		 **/
-		int getHandle() { return handle; };
-
-		/**
 		 * initialize BAR mapping: open sysfs file, get file stats, 
 		 * mmap file. This has to be done before using any other 
 		 * member funtion. This function will fail if the requested 
@@ -140,15 +71,13 @@ class rorcfs_bar
     return static_cast<void*>(bar);
   };
 
+  /**
+   * get size of mapped BAR. This value is only valid after init()
+   * @return size of mapped BAR in (unsigned long) bytes
+   **/
   size_t get_size() {
     return static_cast<size_t>(barstat.st_size);
   };
-
-		/**
-		 * get size of mapped BAR. This value is only valid after init()
-		 * @return size of mapped BAR in (unsigned long) bytes
-		 **/
-		unsigned long getSize() { return barstat.st_size; }
 
 	private:
 		int handle;
@@ -157,32 +86,6 @@ class rorcfs_bar
 		unsigned int *bar;
 		int number;
 		pthread_mutex_t mtx;
-#ifdef SIM
-		int sockfd;
-		int msgid;
-#endif
 };
 
-#ifdef SIM
-typedef struct {
-	int wr_ack;
-	unsigned int data;
-	int id;
-} flimsgT;
-
-typedef struct {
-	unsigned int addr;
-	unsigned int bar;
-	unsigned char byte_enable;
-	unsigned char type;
-	unsigned short len;
-	int id;
-} flicmdT;
-
-/** bit encodings for command type **/
-#define CMD_READ (1<<0)
-#define CMD_WRITE (1<<1)
-#define CMD_TIME (1<<2)
-#endif
-
-#endif
+#endif // _RORCLIB_RORCFS_BAR_H
