@@ -1,0 +1,6 @@
+#!/bin/bash
+
+shopt -u nocaseglob
+LANG=C
+
+clang-format-3.5 -i lib/flib/{src,include/flib}/*.[hc]*

@@ -1,0 +1,5 @@
+BasedOnStyle: LLVM
+AccessModifierOffset: -2
+PointerBindsToType: true
+IndentWidth: 2
+AllowShortFunctionsOnASingleLine: true
