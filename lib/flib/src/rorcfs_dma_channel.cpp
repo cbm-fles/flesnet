@@ -34,9 +34,6 @@
 #include "../include/flib/rorc_registers.h"
 #include "../include/flib/rorcfs_dma_channel.hh"
 
-/** extern error number **/
-//extern int errno;
-
 /*
  * Constructor
  * */
