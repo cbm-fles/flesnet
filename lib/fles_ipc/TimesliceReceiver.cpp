@@ -39,6 +39,31 @@ TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
             (shared_memory_identifier + "_completions").c_str()));
 }
 
+/*
+ * This workaround is required for Boost versions 1.52.0 to 1.55.0, as there is
+ * a serious synchronization bug in boost::interprocess in these versions.
+ *
+ * For reference, see: https://svn.boost.org/trac/boost/ticket/9221
+ * ("message_queue deadlock on linux")
+ *
+ * This code should no longer be required when using Boost version 1.56.0 or
+ * newer.
+ *
+ * 2014-03-12, Jan de Cuveland <cuveland@fias.uni-frankfurt.de>
+ */
+void mq_receive_workaround(boost::interprocess::message_queue& mq, void* buffer,
+                           size_t buffer_size, size_t& recvd_size,
+                           unsigned int& priority)
+{
+    boost::posix_time::ptime abs_time;
+    do {
+        abs_time = boost::posix_time::ptime(
+                       boost::posix_time::microsec_clock::universal_time()) +
+                   boost::posix_time::milliseconds(10);
+    } while (
+        !mq.timed_receive(buffer, buffer_size, recvd_size, priority, abs_time));
+}
+
 TimesliceView* TimesliceReceiver::do_get()
 {
     if (_eof)
@@ -48,7 +73,12 @@ TimesliceView* TimesliceReceiver::do_get()
     std::size_t recvd_size;
     unsigned int priority;
 
+#if defined(BOOST_VERSION) and BOOST_VERSION >= 105600
     _work_items_mq->receive(&wi, sizeof(wi), recvd_size, priority);
+#else
+    mq_receive_workaround(*_work_items_mq, &wi, sizeof(wi), recvd_size,
+                          priority);
+#endif
     if (recvd_size == 0) {
         _eof = true;
         return nullptr;
