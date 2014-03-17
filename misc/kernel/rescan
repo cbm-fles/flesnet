@@ -1,12 +1,16 @@
 #!/bin/bash
-if lspci | grep -q "02:00.0 Signal processing controller \[1108\]: CERN/ECP/EDU Device beaf"; then
-if [ -f /sys/bus/pci/devices/0000\:02\:00.0/remove ]
-then
-	echo "removing"
-	echo 1 > /sys/bus/pci/devices/0000\:02\:00.0/remove
-fi
+echo "Searching for previous PCI device"
+NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
+if [ "$NODE" ]; then
+        echo "Found previous PCI decive at $NODE"
+        if [ -f "/sys/bus/pci/devices/0000:$NODE/remove" ]; then
+                echo "Removing previous PCI device"
+                sudo sh -c "echo 1 > /sys/bus/pci/devices/0000:$NODE/remove"
+        fi
 else
-echo "no decive found to remove"
+        echo "No previous PCI decive found"
 fi
 sleep 1
-echo 1 > /sys/bus/pci/rescan
+
+echo "Rescanning PCI bus"
+sudo sh -c 'echo 1 > /sys/bus/pci/rescan'
