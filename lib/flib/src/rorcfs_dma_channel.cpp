@@ -349,6 +349,8 @@ void rorcfs_dma_channel::setOffsets(
 		unsigned long eboffset, unsigned long rboffset)
 {
 	assert (_rfpkt!=NULL);
+        assert (eboffset % cMaxPayload == 0);
+        assert (rboffset % 32 == 0); // 32 is hard coded in HW
 	struct rorcfs_buffer_software_pointers offsets;
 	offsets.ebdm_software_read_pointer_low = 
 		(uint32_t)(eboffset & 0xffffffff);
