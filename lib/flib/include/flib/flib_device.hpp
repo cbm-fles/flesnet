@@ -77,7 +77,7 @@ public:
 
     // enforce correct hw version
     if (!_check_hw_ver() | !_check_magic_number()) {
-      throw FlibException("Unsupported hardware version");
+      throw FlibException("Error in magic number or hardware version! \n Try to rescan PCIe bus and reload kernel module.");
     }
     // create link objects
     uint8_t num_links = _get_num_hw_links();
