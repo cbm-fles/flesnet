@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ "$1" == "0" ]; then
+	./tsclient -c$1 -s$2 -a -o out.data
+else
+	./tsclient -c$1 -s$2 -a
+fi
