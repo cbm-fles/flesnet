@@ -45,6 +45,8 @@ void convert(const string& str, T& val, int base=0)
 void usage()
 {
   cout << "usage: cliclient dserv_path [command .. values] ..." << endl;
+  cout << "dserv_path: hostname:port" << endl;
+  cout << "  port = 9750 + flib_link_index" << endl;
   cout << "commands:" << endl;
   cout << "  read nodeid addr" << endl;
   cout << "  write nodeid addr value" << endl;
@@ -74,7 +76,7 @@ int main(int argc, const char* argv[])
   ControlClient conn;
   ostringstream dpath;
   // FIXME_code: connect now to control server, will later have two connects!!
-  dpath << "tcp://" << arg1 << ":" << kPortControl;
+  dpath << "tcp://" << arg1;
   conn.Connect(dpath.str());
 
   for (int iarg=2; iarg<argc; ) {
