@@ -18,14 +18,18 @@ Application::Application(Parameters const& par) : _par(par)
     if (!_par.output_archive().empty())
         _output.reset(new fles::TimesliceOutputArchive(_par.output_archive()));
 
-    std::cout << "tsclient " << _par.client_index() << ": "
-              << par.shm_identifier() << std::endl;
+    if (_par.client_index() != -1) {
+        std::cout << "tsclient " << _par.client_index() << ": "
+                  << par.shm_identifier() << std::endl;
+    }
 }
 
 Application::~Application()
 {
-    std::cout << "tsclient " << _par.client_index() << ": "
-              << "total timeslices processed: " << _count << std::endl;
+    if (_par.client_index() != -1) {
+        std::cout << "tsclient " << _par.client_index() << ": ";
+    }
+    std::cout << "total timeslices processed: " << _count << std::endl;
 }
 
 void Application::run()

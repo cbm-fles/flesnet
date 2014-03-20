@@ -22,7 +22,7 @@ public:
     Parameters(const Parameters&) = delete;
     void operator=(const Parameters&) = delete;
 
-    uint32_t client_index() const { return _client_index; }
+    int32_t client_index() const { return _client_index; }
 
     std::string shm_identifier() const { return _shm_identifier; }
 
