@@ -27,7 +27,7 @@ public:
           _data_buffer_view(_data_buffer.ptr(), data_buffer_size_exp),
           _desc_buffer_view(_desc_buffer.ptr(), desc_buffer_size_exp),
           _input_index(input_index), _generate_pattern(true),
-          _typical_content_size(typical_content_size), _randomize_sizes(false)
+          _typical_content_size(typical_content_size), _randomize_sizes(true)
     {
         _producer_thread =
             new std::thread(&FlibPatternGenerator::produce_data, this);
