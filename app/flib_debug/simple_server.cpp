@@ -43,50 +43,60 @@ int main(int argc, const char* argv[])
 
   out.info() << flib.print_build_info();
 
-  // initialize a DMA buffer
-  links.at(0)->init_dma(flib::create_only, 22, 20);
-  out.info() << "Event Buffer: " << links.at(0)->get_ebuf_info();
-  out.info() << "Desciptor Buffer" << links.at(0)->get_dbuf_info();
-  // get raw pointers for debugging
-  uint64_t* eb = (uint64_t *)links.at(0)->ebuf()->getMem();
-  MicrosliceDescriptor* rb = (MicrosliceDescriptor *)links.at(0)->rbuf()->getMem();
+  flib.set_mc_time(500);
 
-  // set start index
-  links.at(0)->set_start_idx(1);
+  std::vector<uint64_t*> eb;
+  std::vector<MicrosliceDescriptor*> rb;
 
-  // set the aproriate header config
-  flib::hdr_config config = {};
-  config.eq_id = 0xE003;
-  config.sys_id = 0xBC;
-  config.sys_ver = 0xFD;
-  links.at(0)->set_hdr_config(&config);
+  for (size_t i = 0; i < flib.get_num_links(); ++i) {
+    out.debug() << "initializing link " << i;
 
-  // enable data source
-  bool use_sp = false; 
-  if (use_sp == true) {
-    links.at(0)->set_data_rx_sel(flib::flib_link::link);
-    links.at(0)->prepare_dlm(0x8, true); // enable DAQ
-    links.at(0)->send_dlm();
-  } 
-  else {
-    links.at(0)->set_data_rx_sel(flib::flib_link::pgen);
+    // initialize a DMA buffer
+    links.at(i)->init_dma(flib::create_only, 22, 20);
+    out.info() << "Event Buffer: " << links.at(i)->get_ebuf_info();
+    out.info() << "Desciptor Buffer" << links.at(i)->get_dbuf_info();
+    // get raw pointers for debugging
+    eb.push_back((uint64_t *)links.at(i)->ebuf()->getMem());
+    rb.push_back((MicrosliceDescriptor *)links.at(i)->rbuf()->getMem());
+    
+    // set start index
+    links.at(i)->set_start_idx(1);
+    
+    // set the aproriate header config
+    flib::hdr_config config = {};
+    config.eq_id = 0xE003;
+    config.sys_id = 0xBC;
+    config.sys_ver = 0xFD;
+    links.at(i)->set_hdr_config(&config);
+    
+    // enable data source
+    bool use_sp = false; 
+    if (use_sp == true) {
+      links.at(i)->set_data_rx_sel(flib::flib_link::link);
+      links.at(i)->prepare_dlm(0x8, true); // enable DAQ
+      links.at(i)->send_dlm();
+    } 
+    else {
+      links.at(i)->set_data_rx_sel(flib::flib_link::pgen);
+    }
+    
+    flib.enable_mc_cnt(true);
+    links.at(i)->enable_cbmnet_packer(true);
+    
+    out.debug() << "current mc nr: " <<  links.at(i)->get_mc_index();
+    out.debug() << "link " << i << "initialized";
   }
- 
-  flib.enable_mc_cnt(true);
-  links.at(0)->enable_cbmnet_packer(true);
-
-  out.debug() << "current mc nr: " <<  links.at(0)->get_mc_index();
-
   /////////// THE MAIN LOOP ///////////
 
   size_t pending_acks = 0;
   size_t j = 0;
-  
+  size_t i = 0; // link number
+
   while(s_interrupted==0) {
     std::pair<flib::mc_desc, bool> mc_pair;
-    while ((mc_pair = links.at(0)->get_mc()).second == false && s_interrupted==0) {
+    while ((mc_pair = links.at(i)->get_mc()).second == false && s_interrupted==0) {
       usleep(10);
-      links.at(0)->ack_mc();
+      links.at(i)->ack_mc();
       pending_acks = 0;
     }
     pending_acks++;
@@ -99,9 +109,9 @@ int main(int argc, const char* argv[])
       out.info() << "First MC seen.";
       dump_mc_light(&mc_pair.first);
       std::cout << "RB:" << std::endl;
-      dump_raw((uint64_t *)(rb+j), 8);
+      dump_raw((uint64_t *)(rb.at(i)+j), 8);
       std::cout << "EB:" << std::endl;
-      dump_raw((uint64_t *)(eb), 64);
+      dump_raw((uint64_t *)(eb.at(i)), 64);
     }
  
     if (j != 0 && j < 1) {
@@ -117,18 +127,22 @@ int main(int argc, const char* argv[])
     }
  
     if (pending_acks == 10) {
-      links.at(0)->ack_mc();
+      links.at(i)->ack_mc();
       pending_acks = 0;
     }
  
     j++;
   }
+
+for (size_t i = 0; i < flib.get_num_links(); ++i) {
+  out.debug() << "disable link " << i;
   
   // disable data source
   flib.enable_mc_cnt(false);
-  out.debug() << "current mc nr 0x: " << std::hex <<  links.at(0)->get_mc_index();
-  out.debug() << "pending mc: "  << links.at(0)->get_pending_mc();
-  out.debug() << "busy: " <<  links.at(0)->get_ch()->getDMABusy();
+  out.debug() << "current mc nr 0x: " << std::hex <<  links.at(i)->get_mc_index();
+  out.debug() << "pending mc: "  << links.at(i)->get_pending_mc();
+  out.debug() << "busy: " <<  links.at(i)->get_ch()->getDMABusy();
+ }
 
   out.debug() << "Exiting";
   

@@ -1,0 +1,39 @@
+Usage for FLIB stand alone readout
+
+FLESnet:
+
+module add fairsoft/dec13
+cd build
+cp ../contrib/flesnet_flib_example.cfg ./flesnet.cfg
+nano flesnet.cfg:
+ - add as many lines 'input-nodes = localhost' as readout links
+ - choose 'processor-executable' ,e.g. to store data
+./flesnet --help
+
+Example: read 4 FLIB input links.
+Start flib_ctrl before starting flesnet!
+./flesnet -i0 -i1 -i2 -i3 -c0
+ - add as many -iN as readout links
+
+
+FLIB Control:
+
+module add fairsoft/dec13
+cd build
+./flib_ctrl --help
+
+Example: read flib input links with microslice size 8 µs.
+Do not start/stop while flesnet is running!
+./flib_ctrl -t 1000 -s link
+
+
+Control Client:
+
+module add fairsoft/dec13
+cd ctrl
+source config.sh
+cd control/cliclient
+./cliclient -help
+
+Example: send DLM 0x8 over flib link 0 to nodeid 0x1.
+./cliclient localhost:9750 dlm 0x1 0x8
