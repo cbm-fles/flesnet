@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# starts flesnet with the right ammount of input nodes derived from config file
+
+NODES=`sed -e /^\#/d flesnet.cfg | grep -w -c "input-nodes = localhost"`
+
+if [ $NODES -gt 4 ]
+then
+    echo "Can't run with $NODES links. A maximum of 4 links is supported!"
+    exit 1
+fi
+echo "Starting flesnet with $NODES links."
+
+i="0"
+I_PARAM=
+
+while [ $i -lt $NODES ]
+do
+    I_PARAM="$I_PARAM -i$i"
+    i=$[$i+1]
+done
+
+./flesnet $I_PARAM -c0 "$@"

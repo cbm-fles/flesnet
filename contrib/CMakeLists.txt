@@ -1,4 +1,5 @@
 # Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+#                Dirk Hutter <hutter@compeng.uni-frankfurt.de>
 
 add_custom_command(
   OUTPUT run
@@ -12,4 +13,10 @@ add_custom_command(
           ${CMAKE_CURRENT_SOURCE_DIR}/verbs.supp ${CMAKE_BINARY_DIR}/verbs.supp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/verbs.supp)
 
-add_custom_target(links ALL DEPENDS run verbs.supp)
+add_custom_command(
+  OUTPUT flib-readout
+  COMMAND ${CMAKE_COMMAND} -E create_symlink
+          ${CMAKE_CURRENT_SOURCE_DIR}/flib-readout ${CMAKE_BINARY_DIR}/flib-readout
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/flib-readout)
+
+add_custom_target(links ALL DEPENDS run verbs.supp flib-readout)
