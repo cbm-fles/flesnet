@@ -5,6 +5,7 @@
 #include <control/libserver/ControlServer.hpp>
 
 #include "global.hpp"
+#include "parameters.hpp"
 #include "flib_server.hpp"
 
 int s_interrupted = 0;
@@ -26,11 +27,14 @@ static void s_catch_signals (void)
 
 einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out(einhard::WARN, true);
 
-int main(int argc, const char* argv[])
+
+int main(int argc, char* argv[])
 {
   s_catch_signals();
 
   out.setVerbosity(einhard::TRACE);
+
+  parameters par(argc, argv);
 
   // create ZMQ context
   zmq::context_t zmq_context(1);
@@ -40,25 +44,23 @@ int main(int argc, const char* argv[])
   std::vector<flib::flib_link*> links = flib.get_links();
 
   // FLIB global configuration
-  flib.set_mc_time(1000);
+  flib.set_mc_time(par.mc_size());
+  out.debug() << "MC size is: " 
+              << (flib.get_rf()->get_reg(RORC_REG_MC_CNT_CFG) & 0x3FF);
 
   // FLIB per link configuration
   std::vector<std::unique_ptr<flib_server>> flibserver;
   std::vector<std::unique_ptr<CbmNet::ControlServer>> ctrlserver;
 
   for (size_t i = 0; i < flib.get_num_links(); ++i) {
-    out.debug() << "initializing link " << i;
+    out.debug() << "Initializing link " << i;
 
-    // enable data source
-    bool use_sp = false; 
-    if (use_sp == true) {
-      links.at(i)->set_data_rx_sel(flib::flib_link::link);
+    links.at(i)->set_data_rx_sel(par.rx_sel());
+
+    if (par.enable_daq() == true) {
       links.at(i)->prepare_dlm(0x8, true); // enable DAQ
       links.at(i)->send_dlm();
     } 
-    else {
-      links.at(i)->set_data_rx_sel(flib::flib_link::pgen);
-    }
 
     // create device control server, initialize and start server thread
     flibserver.push_back(std::unique_ptr<flib_server>(
@@ -76,7 +78,6 @@ int main(int argc, const char* argv[])
     ctrlserver.at(i)->Bind("tcp://*:" + boost::lexical_cast<std::string>(9750 + i));
     ctrlserver.at(i)->ConnectDriver();
     ctrlserver.at(i)->Start();
-
   }
 
   // main loop

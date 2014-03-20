@@ -111,6 +111,10 @@ public:
     return links;
   }
   
+  register_file_bar* get_rf() const {
+    return _rf.get();
+  }
+
   void enable_mc_cnt(bool enable) {
     _rf->set_bit(RORC_REG_MC_CNT_CFG, 31, enable);
   }

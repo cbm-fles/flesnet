@@ -1,5 +1,8 @@
 # Copyright 2014 Dirk Hutter, Jan de Cuveland
 
+file(GLOB SOURCES *.cpp)
+file(GLOB HEADERS *.hpp)
+
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3")
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/einhard"
@@ -9,7 +12,7 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/einhard"
 
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=1)
 
-add_executable(flib_ctrl flib_ctrl.cpp)
+add_executable(flib_ctrl flib_ctrl.cpp parameters.hpp)
 
 add_dependencies(flib_ctrl lib_control)
 
