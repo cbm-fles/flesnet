@@ -264,12 +264,17 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
 
             for (uint64_t tpos = _completely_written;
                  tpos < new_completely_written; ++tpos) {
-                fles::TimesliceWorkItem wi = {
-                    {tpos, _timeslice_size,
-                     static_cast<uint32_t>(_conn.size())},
-                    _data_buffer_size_exp,
-                    _desc_buffer_size_exp};
-                _work_items_mq->send(&wi, sizeof(wi), 0);
+                if (_processor_instances != 0) {
+                    fles::TimesliceWorkItem wi = {
+                        {tpos, _timeslice_size,
+                         static_cast<uint32_t>(_conn.size())},
+                        _data_buffer_size_exp,
+                        _desc_buffer_size_exp};
+                    _work_items_mq->send(&wi, sizeof(wi), 0);
+                } else {
+                    fles::TimesliceCompletion c = {tpos};
+                    _completions_mq->send(&c, sizeof(c), 0);
+                }
             }
 
             _completely_written = new_completely_written;
