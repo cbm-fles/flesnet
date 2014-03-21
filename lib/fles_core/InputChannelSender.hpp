@@ -29,10 +29,8 @@ public:
 
     virtual void operator()() override;
 
+    /// The central function for distributing timeslice data.
     bool try_send_timeslice(uint64_t timeslice);
-
-    /// The central loop for distributing timeslice data.
-    void sender_loop();
 
     std::unique_ptr<InputChannelConnection>
     create_input_node_connection(uint_fast16_t index);

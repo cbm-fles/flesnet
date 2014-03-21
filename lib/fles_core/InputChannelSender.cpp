@@ -56,7 +56,20 @@ void InputChannelSender::operator()()
         }
         std::thread t1(&InputChannelSender::completion_handler, this);
 
-        sender_loop();
+        set_cpu(2);
+
+        uint64_t timeslice = 0;
+        while (timeslice < _max_timeslice_number) {
+            if (try_send_timeslice(timeslice)) {
+                timeslice++;
+            }
+        }
+
+        for (auto& c : _conn)
+            c->finalize();
+
+        out.debug() << "[i" << _input_index << "] "
+                    << "SENDER loop done";
 
         t1.join();
 
@@ -122,24 +135,6 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
         }
     }
     return false;
-}
-
-void InputChannelSender::sender_loop()
-{
-    set_cpu(2);
-
-    uint64_t timeslice = 0;
-    while (timeslice < _max_timeslice_number) {
-        if (try_send_timeslice(timeslice)) {
-            timeslice++;
-        }
-    }
-
-    for (auto& c : _conn)
-        c->finalize();
-
-    out.debug() << "[i" << _input_index << "] "
-                << "SENDER loop done";
 }
 
 std::unique_ptr<InputChannelConnection>
