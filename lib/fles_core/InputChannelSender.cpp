@@ -72,62 +72,66 @@ void InputChannelSender::operator()()
     }
 }
 
+bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
+{
+    // wait until a complete TS is available in the input buffer
+    uint64_t mc_offset = timeslice * _timeslice_size;
+    uint64_t mc_length = _timeslice_size + _overlap_size;
+
+    uint64_t min_written_mc = mc_offset + mc_length + 1;
+    _data_source.wait_for_data(min_written_mc);
+
+    // check if last microslice has really been written to memory
+    if (_data_source.desc_buffer().at(mc_offset + mc_length).offset >=
+        _previous_offset) {
+
+        uint64_t data_offset = _data_source.desc_buffer().at(mc_offset).offset;
+        uint64_t data_end =
+            _data_source.desc_buffer().at(mc_offset + mc_length).offset;
+        assert(data_end >= data_offset);
+
+        uint64_t data_length = data_end - data_offset;
+        uint64_t total_length =
+            data_length + mc_length * sizeof(fles::MicrosliceDescriptor);
+
+        if (out.beTrace()) {
+            out.trace() << "SENDER working on TS " << timeslice << ", MCs "
+                        << mc_offset << ".." << (mc_offset + mc_length - 1)
+                        << ", data bytes " << data_offset << ".."
+                        << (data_offset + data_length - 1);
+            out.trace() << get_state_string();
+        }
+
+        int cn = target_cn_index(timeslice);
+
+        // number of bytes to skip in advance (to avoid buffer wrap)
+        uint64_t skip = _conn[cn]->skip_required(total_length);
+        total_length += skip;
+
+        if (_conn[cn]->check_for_buffer_space(total_length, 1)) {
+
+            _previous_offset =
+                _data_source.desc_buffer().at(mc_offset + mc_length).offset;
+
+            post_send_data(timeslice, cn, mc_offset, mc_length, data_offset,
+                           data_length, skip);
+
+            _conn[cn]->inc_write_pointers(total_length, 1);
+
+            return true;
+        }
+    }
+    return false;
+}
+
 void InputChannelSender::sender_loop()
 {
     set_cpu(2);
 
-    uint64_t previous_offset = 0;
-
     uint64_t timeslice = 0;
     while (timeslice < _max_timeslice_number) {
-
-        // wait until a complete TS is available in the input buffer
-        uint64_t mc_offset = timeslice * _timeslice_size;
-        uint64_t mc_length = _timeslice_size + _overlap_size;
-
-        uint64_t min_written_mc = mc_offset + mc_length + 1;
-        _data_source.wait_for_data(min_written_mc);
-
-        // wait until last microslice has really been written to memory
-        if (_data_source.desc_buffer().at(mc_offset + mc_length).offset >=
-            previous_offset) {
-
-            uint64_t data_offset =
-                _data_source.desc_buffer().at(mc_offset).offset;
-            uint64_t data_end =
-                _data_source.desc_buffer().at(mc_offset + mc_length).offset;
-            assert(data_end >= data_offset);
-
-            uint64_t data_length = data_end - data_offset;
-            uint64_t total_length =
-                data_length + mc_length * sizeof(fles::MicrosliceDescriptor);
-
-            if (out.beTrace()) {
-                out.trace() << "SENDER working on TS " << timeslice << ", MCs "
-                            << mc_offset << ".." << (mc_offset + mc_length - 1)
-                            << ", data bytes " << data_offset << ".."
-                            << (data_offset + data_length - 1);
-                out.trace() << get_state_string();
-            }
-
-            int cn = target_cn_index(timeslice);
-
-            // number of bytes to skip in advance (to avoid buffer wrap)
-            uint64_t skip = _conn[cn]->skip_required(total_length);
-            total_length += skip;
-
-            if (_conn[cn]->check_for_buffer_space(total_length, 1)) {
-
-                previous_offset =
-                    _data_source.desc_buffer().at(mc_offset + mc_length).offset;
-
-                post_send_data(timeslice, cn, mc_offset, mc_length, data_offset,
-                               data_length, skip);
-
-                _conn[cn]->inc_write_pointers(total_length, 1);
-
-                timeslice++;
-            }
+        if (try_send_timeslice(timeslice)) {
+            timeslice++;
         }
     }
 

@@ -29,6 +29,8 @@ public:
 
     virtual void operator()() override;
 
+    bool try_send_timeslice(uint64_t timeslice);
+
     /// The central loop for distributing timeslice data.
     void sender_loop();
 
@@ -92,4 +94,6 @@ private:
 
     uint64_t _cached_acked_data = 0;
     uint64_t _cached_acked_mc = 0;
+
+    uint64_t _previous_offset = 0;
 };
