@@ -49,7 +49,7 @@ public:
     /// Completion notification event dispatcher. Called by the event loop.
     virtual void on_completion(const struct ibv_wc& wc) override;
 
-    virtual void handle_ts_completion();
+    void poll_ts_completion();
 
 private:
     uint64_t _compute_index;

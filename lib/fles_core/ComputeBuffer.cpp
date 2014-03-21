@@ -137,12 +137,13 @@ void ComputeBuffer::operator()()
     {
         // set_cpu(0);
 
-        std::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
-
         accept(_service, _num_input_nodes);
         handle_cm_events(_num_input_nodes);
         std::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
-        completion_handler();
+        while (!_all_done) {
+            poll_completion();
+            poll_ts_completion();
+        }
 
         ChildProcessManager::get().allow_stop_processes(this);
 
@@ -151,7 +152,6 @@ void ComputeBuffer::operator()()
         }
         _completions_mq->send(nullptr, 0, 0);
 
-        ts_compl.join();
         t1.join();
 
         summary();
@@ -272,34 +272,22 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
     }
 }
 
-/// The thread main function.
-void ComputeBuffer::handle_ts_completion()
+void ComputeBuffer::poll_ts_completion()
 {
-    // set_cpu(2);
-
-    try
-    {
-        while (true) {
-            fles::TimesliceCompletion c;
-            std::size_t recvd_size;
-            unsigned int priority;
-            _completions_mq->receive(&c, sizeof(c), recvd_size, priority);
-            if (recvd_size == 0)
-                return;
-            assert(recvd_size == sizeof(c));
-            if (c.ts_pos == _acked) {
-                do
-                    ++_acked;
-                while (_ack.at(_acked) > c.ts_pos);
-                for (auto& connection : _conn)
-                    connection->inc_ack_pointers(_acked);
-            } else
-                _ack.at(c.ts_pos) = c.ts_pos;
-        }
-    }
-    catch (std::exception& e)
-    {
-        out.error() << "exception in ComputeBuffer::handle_ts_completion(): "
-                    << e.what();
-    }
+    fles::TimesliceCompletion c;
+    std::size_t recvd_size;
+    unsigned int priority;
+    if (!_completions_mq->try_receive(&c, sizeof(c), recvd_size, priority))
+        return;
+    if (recvd_size == 0)
+        return;
+    assert(recvd_size == sizeof(c));
+    if (c.ts_pos == _acked) {
+        do
+            ++_acked;
+        while (_ack.at(_acked) > c.ts_pos);
+        for (auto& connection : _conn)
+            connection->inc_ack_pointers(_acked);
+    } else
+        _ack.at(c.ts_pos) = c.ts_pos;
 }

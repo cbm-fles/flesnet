@@ -206,6 +206,47 @@ public:
         }
     }
 
+    void poll_completion()
+    {
+        try
+        {
+            // set_cpu(1);
+
+            //_time_begin = std::chrono::high_resolution_clock::now();
+
+            const int ne_max = 10;
+
+            struct ibv_wc wc[ne_max];
+            int ne;
+
+            while ((ne = ibv_poll_cq(_cq, ne_max, wc))) {
+                if (ne < 0)
+                    throw InfinibandException("ibv_poll_cq failed");
+
+                for (int i = 0; i < ne; ++i) {
+                    if (wc[i].status != IBV_WC_SUCCESS) {
+                        std::ostringstream s;
+                        s << ibv_wc_status_str(wc[i].status) << " for wr_id "
+                          << static_cast<int>(wc[i].wr_id);
+                        out.error() << s.str();
+
+                        continue;
+                    }
+
+                    on_completion(wc[i]);
+                }
+            }
+
+            //_time_end = std::chrono::high_resolution_clock::now();
+
+            // out.debug() << "COMPLETION loop done";
+        }
+        catch (std::exception& e)
+        {
+            out.error() << "exception in completion_handler(): " << e.what();
+        }
+    }
+
     /// Retrieve the InfiniBand protection domain.
     struct ibv_pd* protection_domain() const { return _pd; }
 
