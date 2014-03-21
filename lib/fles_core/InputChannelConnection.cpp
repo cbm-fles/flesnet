@@ -8,7 +8,6 @@
 #include "global.hpp"
 #include <cassert>
 #include <cstring>
-#include <thread>
 
 InputChannelConnection::InputChannelConnection(
     struct rdma_event_channel* ec, uint_fast16_t connection_index,

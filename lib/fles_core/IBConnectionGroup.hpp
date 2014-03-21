@@ -7,7 +7,6 @@
 #include "global.hpp"
 #include <chrono>
 #include <vector>
-#include <thread>
 #include <cstring>
 #include <rdma/rdma_cma.h>
 #include <valgrind/memcheck.h>
