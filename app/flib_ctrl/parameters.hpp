@@ -17,7 +17,7 @@ public:
   parameters(const parameters&) = delete;
   void operator=(const parameters&) = delete;
 
-  uint16_t mc_size() const { return _mc_size; }
+  uint32_t mc_size() const { return _mc_size; }
   
   flib::flib_link::data_rx_sel rx_sel() const { return _rx_sel; }
 
@@ -30,8 +30,8 @@ private:
     po::options_description cmdline("Allowed options");
     cmdline.add_options()
       ("help", "produce help message")
-      ("mc-size,t", po::value<uint16_t>(), 
-       "global size of microslices in units of 8 ns (10 bit wide)")
+      ("mc-size,t", po::value<uint32_t>(),
+       "global size of microslices in units of 8 ns (31 bit wide)")
       ("source,s", po::value<std::string>(), 
        "set data source to <disable|link|pgen|emu>")
       ("enable-daq,e", po::value<bool>(&_enable_daq), 
@@ -48,8 +48,8 @@ private:
     }
     
     if (vm.count("mc-size")) {
-      _mc_size = vm["mc-size"].as<uint16_t>();
-      if (_mc_size > 1023) { // 10 bit check
+      _mc_size = vm["mc-size"].as<uint32_t>();
+      if (_mc_size > 2147483647) { // 31 bit check
         std::cout << "Microslice size out of range" << std::endl;
         exit(EXIT_SUCCESS);
       } else {
@@ -81,7 +81,7 @@ private:
     }
   }
 
-  uint16_t _mc_size = 125; // 1 us
+  uint32_t _mc_size = 125; // 1 us
   flib::flib_link::data_rx_sel _rx_sel = flib::flib_link::pgen;
   bool _enable_daq = false;
 

@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
   // FLIB global configuration
   flib.set_mc_time(par.mc_size());
   out.debug() << "MC size is: " 
-              << (flib.get_rf()->get_reg(RORC_REG_MC_CNT_CFG) & 0x3FF);
+              << (flib.get_rf()->get_reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
 
   // FLIB per link configuration
   std::vector<std::unique_ptr<flib_server>> flibserver;

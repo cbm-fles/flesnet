@@ -18,7 +18,7 @@
 
 namespace flib {
 
- constexpr std::array<uint16_t, 2> hw_ver_table = {{ 1, 2}};
+ constexpr std::array<uint16_t, 1> hw_ver_table = {{ 3}};
 
 class flib_device {
 
@@ -119,10 +119,10 @@ public:
     _rf->set_bit(RORC_REG_MC_CNT_CFG, 31, enable);
   }
 
-  void set_mc_time(uint16_t time) {
-    // time: 10 bit wide, in units of 8 ns
+  void set_mc_time(uint32_t time) {
+    // time: 31 bit wide, in units of 8 ns
     uint32_t reg = _rf->get_reg(RORC_REG_MC_CNT_CFG);
-    reg = (reg & ~0x3FF) | (time & 0x3FF);
+    reg = (reg & ~0x7FFFFFFF) | (time & 0x7FFFFFFF);
     _rf->set_reg(RORC_REG_MC_CNT_CFG, reg);
   }
 
