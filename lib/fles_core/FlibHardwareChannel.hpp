@@ -58,7 +58,7 @@ public:
                     &_desc_send_buffer_view.at(start));
     }
 
-    virtual uint64_t wait_for_data(uint64_t min_mc_number) override;
+    virtual uint64_t written_mc() override;
 
     virtual void update_ack_pointers(uint64_t new_acked_data,
                                      uint64_t new_acked_mc) override;

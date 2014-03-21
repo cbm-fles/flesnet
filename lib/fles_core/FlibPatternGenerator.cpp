@@ -34,31 +34,26 @@ void FlibPatternGenerator::produce_data()
             // wait until significant space is available
             last_written_mc = written_mc;
             last_written_data = written_data;
-            {
-                ++DCOUNT[0];
-                std::unique_lock<std::mutex> l(_mutex);
-                _written_mc = written_mc;
-                _written_data = written_data;
+            _written_mc = written_mc;
+            _written_data = written_data;
+            if (_is_stopped)
+                return;
+            while (
+                (written_data - _acked_data + min_avail_data >
+                 _data_buffer.bytes()) ||
+                (written_mc - _acked_mc + min_avail_mc > _desc_buffer.size())) {
                 if (_is_stopped)
                     return;
-                while ((written_data - _acked_data + min_avail_data >
-                        _data_buffer.bytes()) ||
-                       (written_mc - _acked_mc + min_avail_mc >
-                        _desc_buffer.size())) {
-                    ++DCOUNT[1];
-                    _cond_producer.wait(l);
-                    if (_is_stopped)
-                        return;
-                }
-                acked_mc = _acked_mc;
-                acked_data = _acked_data;
             }
+            acked_mc = _acked_mc;
+            acked_data = _acked_data;
 
             while (true) {
                 unsigned int content_bytes = _typical_content_size;
                 if (_randomize_sizes)
                     content_bytes = random_distribution(random_generator);
-                content_bytes &= ~0x7; // round down to multiple of sizeof(uint64_t)
+                content_bytes &=
+                    ~0x7; // round down to multiple of sizeof(uint64_t)
 
                 // check for space in data and descriptor buffers
                 if ((written_data - acked_data + content_bytes >
@@ -100,13 +95,8 @@ void FlibPatternGenerator::produce_data()
                     written_data >= last_written_data + min_written_data) {
                     last_written_mc = written_mc;
                     last_written_data = written_data;
-                    {
-                        ++DCOUNT[2];
-                        std::unique_lock<std::mutex> l(_mutex);
-                        _written_mc = written_mc;
-                        _written_data = written_data;
-                    }
-                    _cond_consumer.notify_one();
+                    _written_mc = written_mc;
+                    _written_data = written_data;
                 }
             }
         }

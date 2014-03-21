@@ -48,8 +48,6 @@ void InputChannelSender::operator()()
 {
     try
     {
-        set_cpu(0);
-
         connect();
         while (_connected != _compute_hostnames.size()) {
             poll_cm_events();
@@ -99,7 +97,12 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
     uint64_t mc_length = _timeslice_size + _overlap_size;
 
     // uint64_t min_written_mc = mc_offset + mc_length + 1;
-    //_data_source.wait_for_data(min_written_mc);
+    // if (_cached_written_mc < min_written_mc) {
+    //     _cached_written_mc = _data_source.written_mc();
+    //     if (_cached_written_mc < min_written_mc) {
+    //         return false;
+    //     }
+    // }
 
     // check if last microslice has really been written to memory
     if (_data_source.desc_buffer().at(mc_offset + mc_length).offset >=

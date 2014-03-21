@@ -93,5 +93,7 @@ private:
     uint64_t _cached_acked_data = 0;
     uint64_t _cached_acked_mc = 0;
 
+    uint64_t _cached_written_mc = 0;
+
     uint64_t _previous_offset = 0;
 };
