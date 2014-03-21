@@ -54,7 +54,6 @@ void InputChannelSender::operator()()
         while (_connected != _compute_hostnames.size()) {
             poll_cm_events();
         }
-        // std::thread t1(&InputChannelSender::completion_handler, this);
 
         set_cpu(2);
 
@@ -79,8 +78,6 @@ void InputChannelSender::operator()()
         }
 
         _time_end = std::chrono::high_resolution_clock::now();
-
-        // t1.join();
 
         std::thread t2(&InputChannelSender::handle_cm_events, this, 0);
         disconnect();
