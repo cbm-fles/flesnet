@@ -142,10 +142,14 @@ void ComputeBuffer::operator()()
             poll_cm_events();
         }
 
-        std::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
-        while (!_all_done) {
-            poll_completion();
-            poll_ts_completion();
+        while (!_all_done || _connected != 0) {
+            if (!_all_done) {
+                poll_completion();
+                poll_ts_completion();
+            }
+            if (_connected != 0) {
+                poll_cm_events();
+            }
         }
 
         ChildProcessManager::get().allow_stop_processes(this);
@@ -154,8 +158,6 @@ void ComputeBuffer::operator()()
             _work_items_mq->send(nullptr, 0, 0);
         }
         _completions_mq->send(nullptr, 0, 0);
-
-        t1.join();
 
         summary();
     }
