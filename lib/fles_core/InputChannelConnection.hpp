@@ -28,7 +28,7 @@ public:
     void operator=(const InputChannelConnection&) = delete;
 
     /// Wait until enough space is available at target compute node.
-    void wait_for_buffer_space(uint64_t data_size, uint64_t desc_size);
+    bool check_for_buffer_space(uint64_t data_size, uint64_t desc_size);
 
     /// Send data and descriptors to compute node.
     void send_data(struct ibv_sge* sge, int num_sge, uint64_t timeslice,

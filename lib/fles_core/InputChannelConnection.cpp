@@ -29,8 +29,8 @@ InputChannelConnection::InputChannelConnection(
     _qp_cap.max_inline_data = sizeof(fles::TimesliceComponentDescriptor);
 }
 
-void InputChannelConnection::wait_for_buffer_space(uint64_t data_size,
-                                                   uint64_t desc_size)
+bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
+                                                    uint64_t desc_size)
 {
     std::unique_lock<std::mutex> lock(_cn_ack_mutex);
     if (out.beTrace()) {
@@ -47,12 +47,12 @@ void InputChannelConnection::wait_for_buffer_space(uint64_t data_size,
                            (UINT64_C(1) << _remote_info.desc_buffer_size_exp) -
                            _cn_wp.desc;
     }
-    while (_cn_ack.data - _cn_wp.data +
-                   (UINT64_C(1) << _remote_info.data_buffer_size_exp) <
-               data_size ||
-           _cn_ack.desc - _cn_wp.desc +
-                   (UINT64_C(1) << _remote_info.desc_buffer_size_exp) <
-               desc_size) { // TODO: extend condition!
+    if (_cn_ack.data - _cn_wp.data +
+                (UINT64_C(1) << _remote_info.data_buffer_size_exp) <
+            data_size ||
+        _cn_ack.desc - _cn_wp.desc +
+                (UINT64_C(1) << _remote_info.desc_buffer_size_exp) <
+            desc_size) { // TODO: extend condition!
         {
             std::unique_lock<std::mutex> lock2(_cn_wp_mutex);
             if (_our_turn) {
@@ -65,18 +65,9 @@ void InputChannelConnection::wait_for_buffer_space(uint64_t data_size,
                 post_send_cn_wp();
             }
         }
-        _cn_ack_cond.wait(lock);
-        if (out.beTrace()) {
-            out.trace() << "[" << _index << "] "
-                        << "SENDER (next try) space avail="
-                        << _cn_ack.data - _cn_wp.data +
-                               (UINT64_C(1)
-                                << _remote_info.data_buffer_size_exp)
-                        << " desc_avail="
-                        << _cn_ack.desc - _cn_wp.desc +
-                               (UINT64_C(1)
-                                << _remote_info.desc_buffer_size_exp);
-        }
+        return false;
+    } else {
+        return true;
     }
 }
 
