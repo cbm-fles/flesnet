@@ -51,7 +51,9 @@ void InputChannelSender::operator()()
         set_cpu(0);
 
         connect();
-        handle_cm_events(_compute_hostnames.size());
+        while (_connected != _compute_hostnames.size()) {
+            poll_cm_events();
+        }
         std::thread t1(&InputChannelSender::completion_handler, this);
 
         sender_loop();
