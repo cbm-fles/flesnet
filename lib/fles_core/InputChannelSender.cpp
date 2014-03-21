@@ -54,15 +54,18 @@ void InputChannelSender::operator()()
         while (_connected != _compute_hostnames.size()) {
             poll_cm_events();
         }
-        std::thread t1(&InputChannelSender::completion_handler, this);
+        // std::thread t1(&InputChannelSender::completion_handler, this);
 
         set_cpu(2);
+
+        _time_begin = std::chrono::high_resolution_clock::now();
 
         uint64_t timeslice = 0;
         while (timeslice < _max_timeslice_number) {
             if (try_send_timeslice(timeslice)) {
                 timeslice++;
             }
+            poll_completion();
         }
 
         for (auto& c : _conn)
@@ -71,7 +74,13 @@ void InputChannelSender::operator()()
         out.debug() << "[i" << _input_index << "] "
                     << "SENDER loop done";
 
-        t1.join();
+        while (!_all_done) {
+            poll_completion();
+        }
+
+        _time_end = std::chrono::high_resolution_clock::now();
+
+        // t1.join();
 
         std::thread t2(&InputChannelSender::handle_cm_events, this, 0);
         disconnect();
@@ -91,8 +100,8 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
     uint64_t mc_offset = timeslice * _timeslice_size;
     uint64_t mc_length = _timeslice_size + _overlap_size;
 
-    uint64_t min_written_mc = mc_offset + mc_length + 1;
-    _data_source.wait_for_data(min_written_mc);
+    // uint64_t min_written_mc = mc_offset + mc_length + 1;
+    //_data_source.wait_for_data(min_written_mc);
 
     // check if last microslice has really been written to memory
     if (_data_source.desc_buffer().at(mc_offset + mc_length).offset >=
@@ -116,6 +125,9 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
         }
 
         int cn = target_cn_index(timeslice);
+
+        if (!_conn[cn]->write_request_available())
+            return false;
 
         // number of bytes to skip in advance (to avoid buffer wrap)
         uint64_t skip = _conn[cn]->skip_required(total_length);

@@ -142,6 +142,8 @@ void ComputeBuffer::operator()()
             poll_cm_events();
         }
 
+        _time_begin = std::chrono::high_resolution_clock::now();
+
         while (!_all_done || _connected != 0) {
             if (!_all_done) {
                 poll_completion();
@@ -151,6 +153,8 @@ void ComputeBuffer::operator()()
                 poll_cm_events();
             }
         }
+
+        _time_end = std::chrono::high_resolution_clock::now();
 
         ChildProcessManager::get().allow_stop_processes(this);
 

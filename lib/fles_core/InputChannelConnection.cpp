@@ -32,7 +32,6 @@ InputChannelConnection::InputChannelConnection(
 bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
                                                     uint64_t desc_size)
 {
-    std::unique_lock<std::mutex> lock(_cn_ack_mutex);
     if (out.beTrace()) {
         out.trace() << "[" << _index << "] "
                     << "SENDER data space (bytes) required=" << data_size
@@ -54,7 +53,6 @@ bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
                 (UINT64_C(1) << _remote_info.desc_buffer_size_exp) <
             desc_size) { // TODO: extend condition!
         {
-            std::unique_lock<std::mutex> lock2(_cn_wp_mutex);
             if (_our_turn) {
                 // send phony update to receive new pointers
                 out.debug() << "[i" << _remote_index << "] "
@@ -166,18 +164,19 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
                 << "POST SEND data (timeslice " << timeslice << ")";
 
     // send everything
-    while (_pending_write_requests >= _max_pending_write_requests) {
-        // out.fatal() << "MAX REQUESTS! ###";
-        std::this_thread::yield(); // busy wait // TODO
-    }
+    assert(_pending_write_requests < _max_pending_write_requests);
     ++_pending_write_requests;
     post_send(&send_wr_ts);
+}
+
+bool InputChannelConnection::write_request_available()
+{
+    return (_pending_write_requests < _max_pending_write_requests);
 }
 
 void InputChannelConnection::inc_write_pointers(uint64_t data_size,
                                                 uint64_t desc_size)
 {
-    std::unique_lock<std::mutex> lock(_cn_wp_mutex);
     _cn_wp.data += data_size;
     _cn_wp.desc += desc_size;
     if (_our_turn) {
@@ -199,7 +198,6 @@ uint64_t InputChannelConnection::skip_required(uint64_t data_size)
 
 void InputChannelConnection::finalize()
 {
-    std::unique_lock<std::mutex> lock(_cn_wp_mutex);
     _finalize = true;
     if (_our_turn) {
         _our_turn = false;
@@ -223,14 +221,9 @@ void InputChannelConnection::on_complete_recv()
                 << "[" << _index << "] "
                 << "receive completion, new _cn_ack.data="
                 << _receive_cn_ack.data;
-    {
-        std::unique_lock<std::mutex> lock(_cn_ack_mutex);
-        _cn_ack = _receive_cn_ack;
-        _cn_ack_cond.notify_one();
-    }
+    _cn_ack = _receive_cn_ack;
     post_recv_cn_ack();
     {
-        std::unique_lock<std::mutex> lock(_cn_wp_mutex);
         if (_cn_wp != _send_cn_wp) {
             _send_cn_wp = _cn_wp;
             post_send_cn_wp();
