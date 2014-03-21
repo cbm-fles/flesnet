@@ -52,14 +52,6 @@ public:
             _cq = nullptr;
         }
 
-        if (_comp_channel) {
-            int err = ibv_destroy_comp_channel(_comp_channel);
-            if (err) {
-                out.error() << "ibv_destroy_comp_channel() failed";
-            }
-            _comp_channel = nullptr;
-        }
-
         if (_pd) {
             int err = ibv_dealloc_pd(_pd);
             if (err) {
@@ -181,23 +173,10 @@ public:
 
             const int ne_max = 10;
 
-            struct ibv_cq* ev_cq;
-            void* ev_ctx;
             struct ibv_wc wc[ne_max];
             int ne;
 
             while (!_all_done) {
-                if (ibv_get_cq_event(_comp_channel, &ev_cq, &ev_ctx))
-                    throw InfinibandException("ibv_get_cq_event failed");
-
-                ibv_ack_cq_events(ev_cq, 1);
-
-                if (ev_cq != _cq)
-                    throw InfinibandException("CQ event for unknown CQ");
-
-                if (ibv_req_notify_cq(_cq, 0))
-                    throw InfinibandException("ibv_req_notify_cq failed");
-
                 while ((ne = ibv_poll_cq(_cq, ne_max, wc))) {
                     if (ne < 0)
                         throw InfinibandException("ibv_poll_cq failed");
@@ -325,11 +304,7 @@ protected:
         if (!_pd)
             throw InfinibandException("ibv_alloc_pd failed");
 
-        _comp_channel = ibv_create_comp_channel(context);
-        if (!_comp_channel)
-            throw InfinibandException("ibv_create_comp_channel failed");
-
-        _cq = ibv_create_cq(context, _num_cqe, nullptr, _comp_channel, 0);
+        _cq = ibv_create_cq(context, _num_cqe, nullptr, nullptr, 0);
         if (!_cq)
             throw InfinibandException("ibv_create_cq failed");
 
@@ -406,9 +381,6 @@ private:
 
     /// InfiniBand verbs context
     struct ibv_context* _context = nullptr;
-
-    /// InfiniBand completion channel
-    struct ibv_comp_channel* _comp_channel = nullptr;
 
     struct rdma_cm_id* _listen_id = nullptr;
 
