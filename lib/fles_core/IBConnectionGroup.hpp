@@ -11,6 +11,7 @@
 #include <cstring>
 #include <rdma/rdma_cma.h>
 #include <valgrind/memcheck.h>
+#include <fcntl.h>
 
 /// InfiniBand connection group base class.
 /** An IBConnectionGroup object represents a group of InfiniBand
@@ -25,6 +26,7 @@ public:
         _ec = rdma_create_event_channel();
         if (!_ec)
             throw InfinibandException("rdma_create_event_channel failed");
+        fcntl(_ec->fd, F_SETFL, O_NONBLOCK);
     }
 
     IBConnectionGroup(const IBConnectionGroup&) = delete;
@@ -122,6 +124,7 @@ public:
             struct rdma_cm_event* event;
             struct rdma_cm_event event_copy;
             void* private_data_copy = nullptr;
+        start:
             while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -150,6 +153,7 @@ public:
                 if (_connected == target_num_connections)
                     break;
             }
+            if (err == -1 && errno == EAGAIN) goto start;
             if (err)
                 throw InfinibandException("rdma_get_cm_event failed");
 
