@@ -79,9 +79,10 @@ void InputChannelSender::operator()()
 
         _time_end = std::chrono::high_resolution_clock::now();
 
-        std::thread t2(&InputChannelSender::handle_cm_events, this, 0);
         disconnect();
-        t2.join();
+        while (_connected != 0) {
+            poll_cm_events();
+        }
 
         summary();
     }
