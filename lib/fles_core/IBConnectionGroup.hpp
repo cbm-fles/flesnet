@@ -153,7 +153,8 @@ public:
                 if (_connected == target_num_connections)
                     break;
             }
-            if (err == -1 && errno == EAGAIN) goto start;
+            if (err == -1 && errno == EAGAIN)
+                goto start;
             if (err)
                 throw InfinibandException("rdma_get_cm_event failed");
 
@@ -163,6 +164,44 @@ public:
         {
             out.error() << "exception in handle_cm_events(): " << e.what();
         }
+    }
+
+    void poll_cm_events()
+    {
+        int err;
+        struct rdma_cm_event* event;
+        struct rdma_cm_event event_copy;
+        void* private_data_copy = nullptr;
+
+        while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+            VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
+            memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
+            if (event_copy.param.conn.private_data) {
+                VALGRIND_MAKE_MEM_DEFINED(
+                    event_copy.param.conn.private_data,
+                    event_copy.param.conn.private_data_len);
+                private_data_copy =
+                    malloc(event_copy.param.conn.private_data_len);
+                if (!private_data_copy)
+                    throw InfinibandException("malloc failed");
+                memcpy(private_data_copy, event_copy.param.conn.private_data,
+                       event_copy.param.conn.private_data_len);
+                event_copy.param.conn.private_data = private_data_copy;
+            }
+#pragma GCC diagnostic pop
+            rdma_ack_cm_event(event);
+            on_cm_event(&event_copy);
+            if (private_data_copy) {
+                free(private_data_copy);
+                private_data_copy = nullptr;
+            }
+        }
+        if (err == -1 && errno == EAGAIN)
+            return;
+        if (err)
+            throw InfinibandException("rdma_get_cm_event failed");
     }
 
     /// The InfiniBand completion notification event loop.

@@ -138,7 +138,10 @@ void ComputeBuffer::operator()()
         // set_cpu(0);
 
         accept(_service, _num_input_nodes);
-        handle_cm_events(_num_input_nodes);
+        while (_connected != _num_input_nodes) {
+            poll_cm_events();
+        }
+
         std::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
         while (!_all_done) {
             poll_completion();
