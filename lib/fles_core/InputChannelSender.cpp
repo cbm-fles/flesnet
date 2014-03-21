@@ -48,12 +48,12 @@ void InputChannelSender::operator()()
 {
     try
     {
+        set_cpu(2);
+
         connect();
         while (_connected != _compute_hostnames.size()) {
             poll_cm_events();
         }
-
-        set_cpu(2);
 
         _time_begin = std::chrono::high_resolution_clock::now();
 
@@ -96,6 +96,7 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
     uint64_t mc_offset = timeslice * _timeslice_size;
     uint64_t mc_length = _timeslice_size + _overlap_size;
 
+    // This causes a decrease in performance.
     // uint64_t min_written_mc = mc_offset + mc_length + 1;
     // if (_cached_written_mc < min_written_mc) {
     //     _cached_written_mc = _data_source.written_mc();
