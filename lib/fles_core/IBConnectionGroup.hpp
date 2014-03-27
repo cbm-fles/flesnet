@@ -343,7 +343,7 @@ private:
             on_disconnected(event);
             return;
         default:
-            out.error() << rdma_event_str(event->event);
+            out.warn() << rdma_event_str(event->event);
         }
     }
 
