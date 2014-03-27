@@ -27,6 +27,8 @@ public:
     /// The InputChannelSender default destructor.
     virtual ~InputChannelSender();
 
+    void report_status();
+
     virtual void operator()() override;
 
     /// The central function for distributing timeslice data.

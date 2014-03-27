@@ -5,6 +5,7 @@
 #include "ComputeNodeConnection.hpp"
 #include "RingBuffer.hpp"
 #include "TimesliceComponentDescriptor.hpp"
+
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
@@ -31,6 +32,8 @@ public:
     ~ComputeBuffer();
 
     void start_processes();
+
+    void report_status();
 
     virtual void operator()() override;
 

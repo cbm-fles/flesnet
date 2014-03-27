@@ -130,6 +130,15 @@ void ComputeBuffer::start_processes()
     }
 }
 
+void ComputeBuffer::report_status()
+{
+    std::cerr << "report " << _completely_written << " " << _acked << std::endl;
+
+    auto now = std::chrono::system_clock::now();
+    _scheduler.add(std::bind(&ComputeBuffer::report_status, this),
+                  now + std::chrono::seconds(1));
+}
+
 /// The thread main function.
 void ComputeBuffer::operator()()
 {
@@ -144,6 +153,7 @@ void ComputeBuffer::operator()()
 
         _time_begin = std::chrono::high_resolution_clock::now();
 
+        report_status();
         while (!_all_done || _connected != 0) {
             if (!_all_done) {
                 poll_completion();
@@ -152,6 +162,7 @@ void ComputeBuffer::operator()()
             if (_connected != 0) {
                 poll_cm_events();
             }
+            _scheduler.timer();
         }
 
         _time_end = std::chrono::high_resolution_clock::now();

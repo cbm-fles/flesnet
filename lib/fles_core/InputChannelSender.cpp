@@ -43,6 +43,17 @@ InputChannelSender::~InputChannelSender()
     }
 }
 
+void InputChannelSender::report_status()
+{
+    uint64_t acked_ts = _acked_mc / _timeslice_size;
+
+    std::cerr << "report " << _acked_mc << " " << acked_ts << std::endl;
+
+    auto now = std::chrono::system_clock::now();
+    _scheduler.add(std::bind(&InputChannelSender::report_status, this),
+                   now + std::chrono::seconds(1));
+}
+
 /// The thread main function.
 void InputChannelSender::operator()()
 {
@@ -58,11 +69,13 @@ void InputChannelSender::operator()()
         _time_begin = std::chrono::high_resolution_clock::now();
 
         uint64_t timeslice = 0;
+        report_status();
         while (timeslice < _max_timeslice_number) {
             if (try_send_timeslice(timeslice)) {
                 timeslice++;
             }
             poll_completion();
+            _scheduler.timer();
         }
 
         for (auto& c : _conn)
@@ -73,6 +86,7 @@ void InputChannelSender::operator()()
 
         while (!_all_done) {
             poll_completion();
+            _scheduler.timer();
         }
 
         _time_end = std::chrono::high_resolution_clock::now();

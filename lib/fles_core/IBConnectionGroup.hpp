@@ -3,6 +3,7 @@
 
 #include "ThreadContainer.hpp"
 #include "InfinibandException.hpp"
+#include "Scheduler.hpp"
 #include "Utility.hpp"
 #include "global.hpp"
 #include <chrono>
@@ -309,6 +310,8 @@ protected:
     std::chrono::high_resolution_clock::time_point _time_begin;
 
     std::chrono::high_resolution_clock::time_point _time_end;
+
+    Scheduler _scheduler;
 
 private:
     /// Connection manager event dispatcher. Called by the CM event loop.
