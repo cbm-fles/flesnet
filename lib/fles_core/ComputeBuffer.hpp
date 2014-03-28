@@ -5,6 +5,7 @@
 #include "ComputeNodeConnection.hpp"
 #include "RingBuffer.hpp"
 #include "TimesliceComponentDescriptor.hpp"
+
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
@@ -32,6 +33,8 @@ public:
 
     void start_processes();
 
+    void report_status();
+
     virtual void operator()() override;
 
     uint8_t* get_data_ptr(uint_fast16_t index);
@@ -49,7 +52,7 @@ public:
     /// Completion notification event dispatcher. Called by the event loop.
     virtual void on_completion(const struct ibv_wc& wc) override;
 
-    virtual void handle_ts_completion();
+    void poll_ts_completion();
 
 private:
     uint64_t _compute_index;

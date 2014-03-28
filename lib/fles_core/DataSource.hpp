@@ -10,7 +10,7 @@ class DataSource
 public:
     virtual ~DataSource() {}
 
-    virtual uint64_t wait_for_data(uint64_t min_mcNumber) = 0;
+    virtual uint64_t written_mc() = 0;
 
     virtual void update_ack_pointers(uint64_t new_acked_data,
                                      uint64_t new_acked_mc) = 0;

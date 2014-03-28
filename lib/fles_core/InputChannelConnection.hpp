@@ -4,9 +4,6 @@
 #include "IBConnection.hpp"
 #include "ComputeNodeBufferPosition.hpp"
 #include "ComputeNodeInfo.hpp"
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
 
 /// Input node connection class.
 /** An InputChannelConnection object represents the endpoint of a single
@@ -28,11 +25,13 @@ public:
     void operator=(const InputChannelConnection&) = delete;
 
     /// Wait until enough space is available at target compute node.
-    void wait_for_buffer_space(uint64_t data_size, uint64_t desc_size);
+    bool check_for_buffer_space(uint64_t data_size, uint64_t desc_size);
 
     /// Send data and descriptors to compute node.
     void send_data(struct ibv_sge* sge, int num_sge, uint64_t timeslice,
                    uint64_t mc_length, uint64_t data_length, uint64_t skip);
+
+    bool write_request_available();
 
     /// Increment target write pointers after data has been sent.
     void inc_write_pointers(uint64_t data_size, uint64_t desc_size);
@@ -88,12 +87,6 @@ private:
     /// Infiniband memory region descriptor for acknowledged-by-CN pointers
     ibv_mr* _mr_recv = nullptr;
 
-    /// Mutex protecting access to acknowledged-by-CN pointers
-    std::mutex _cn_ack_mutex;
-
-    /// Condition variable for acknowledged-by-CN pointers
-    std::condition_variable _cn_ack_cond;
-
     /// Local version of CN write pointers
     ComputeNodeBufferPosition _cn_wp = ComputeNodeBufferPosition();
 
@@ -102,9 +95,6 @@ private:
 
     /// Infiniband memory region descriptor for CN write pointers
     ibv_mr* _mr_send = nullptr;
-
-    /// Mutex protecting access to CN write pointers
-    std::mutex _cn_wp_mutex;
 
     /// InfiniBand receive work request
     ibv_recv_wr recv_wr = ibv_recv_wr();
@@ -118,7 +108,7 @@ private:
     /// Scatter/gather list entry for send work request
     ibv_sge send_sge = ibv_sge();
 
-    std::atomic_uint _pending_write_requests{0};
+    unsigned int _pending_write_requests{0};
 
     unsigned int _max_pending_write_requests{0};
 };

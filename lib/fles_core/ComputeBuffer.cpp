@@ -130,6 +130,15 @@ void ComputeBuffer::start_processes()
     }
 }
 
+void ComputeBuffer::report_status()
+{
+    std::cerr << "report " << _completely_written << " " << _acked << std::endl;
+
+    auto now = std::chrono::system_clock::now();
+    _scheduler.add(std::bind(&ComputeBuffer::report_status, this),
+                  now + std::chrono::seconds(1));
+}
+
 /// The thread main function.
 void ComputeBuffer::operator()()
 {
@@ -137,12 +146,26 @@ void ComputeBuffer::operator()()
     {
         // set_cpu(0);
 
-        std::thread ts_compl(&ComputeBuffer::handle_ts_completion, this);
-
         accept(_service, _num_input_nodes);
-        handle_cm_events(_num_input_nodes);
-        std::thread t1(&ComputeBuffer::handle_cm_events, this, 0);
-        completion_handler();
+        while (_connected != _num_input_nodes) {
+            poll_cm_events();
+        }
+
+        _time_begin = std::chrono::high_resolution_clock::now();
+
+        report_status();
+        while (!_all_done || _connected != 0) {
+            if (!_all_done) {
+                poll_completion();
+                poll_ts_completion();
+            }
+            if (_connected != 0) {
+                poll_cm_events();
+            }
+            _scheduler.timer();
+        }
+
+        _time_end = std::chrono::high_resolution_clock::now();
 
         ChildProcessManager::get().allow_stop_processes(this);
 
@@ -150,9 +173,6 @@ void ComputeBuffer::operator()()
             _work_items_mq->send(nullptr, 0, 0);
         }
         _completions_mq->send(nullptr, 0, 0);
-
-        ts_compl.join();
-        t1.join();
 
         summary();
     }
@@ -255,12 +275,17 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
 
             for (uint64_t tpos = _completely_written;
                  tpos < new_completely_written; ++tpos) {
-                fles::TimesliceWorkItem wi = {
-                    {tpos, _timeslice_size,
-                     static_cast<uint32_t>(_conn.size())},
-                    _data_buffer_size_exp,
-                    _desc_buffer_size_exp};
-                _work_items_mq->send(&wi, sizeof(wi), 0);
+                if (_processor_instances != 0) {
+                    fles::TimesliceWorkItem wi = {
+                        {tpos, _timeslice_size,
+                         static_cast<uint32_t>(_conn.size())},
+                        _data_buffer_size_exp,
+                        _desc_buffer_size_exp};
+                    _work_items_mq->send(&wi, sizeof(wi), 0);
+                } else {
+                    fles::TimesliceCompletion c = {tpos};
+                    _completions_mq->send(&c, sizeof(c), 0);
+                }
             }
 
             _completely_written = new_completely_written;
@@ -272,34 +297,22 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
     }
 }
 
-/// The thread main function.
-void ComputeBuffer::handle_ts_completion()
+void ComputeBuffer::poll_ts_completion()
 {
-    // set_cpu(2);
-
-    try
-    {
-        while (true) {
-            fles::TimesliceCompletion c;
-            std::size_t recvd_size;
-            unsigned int priority;
-            _completions_mq->receive(&c, sizeof(c), recvd_size, priority);
-            if (recvd_size == 0)
-                return;
-            assert(recvd_size == sizeof(c));
-            if (c.ts_pos == _acked) {
-                do
-                    ++_acked;
-                while (_ack.at(_acked) > c.ts_pos);
-                for (auto& connection : _conn)
-                    connection->inc_ack_pointers(_acked);
-            } else
-                _ack.at(c.ts_pos) = c.ts_pos;
-        }
-    }
-    catch (std::exception& e)
-    {
-        out.error() << "exception in ComputeBuffer::handle_ts_completion(): "
-                    << e.what();
-    }
+    fles::TimesliceCompletion c;
+    std::size_t recvd_size;
+    unsigned int priority;
+    if (!_completions_mq->try_receive(&c, sizeof(c), recvd_size, priority))
+        return;
+    if (recvd_size == 0)
+        return;
+    assert(recvd_size == sizeof(c));
+    if (c.ts_pos == _acked) {
+        do
+            ++_acked;
+        while (_ack.at(_acked) > c.ts_pos);
+        for (auto& connection : _conn)
+            connection->inc_ack_pointers(_acked);
+    } else
+        _ack.at(c.ts_pos) = c.ts_pos;
 }
