@@ -273,6 +273,12 @@ public:
     }
   }
 
+  void set_mc_pgen_throttle(uint16_t val) {
+    uint32_t dp_cfg = _rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
+    uint32_t new_dp_cfg = (dp_cfg & 0xFFFF) | (((uint32_t)val<<16) & 0xFFFF0000);
+    _rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, new_dp_cfg);
+  }
+
   void set_hdr_config(const struct hdr_config* config) {
     _rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config, sizeof(hdr_config)>>2);
   }

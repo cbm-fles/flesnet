@@ -29,6 +29,9 @@ private:
     bool check_flib_pattern(const fles::MicrosliceDescriptor& descriptor,
                             const uint64_t* content, size_t /* component */);
 
+    bool check_mc_pgen_pattern(const fles::MicrosliceDescriptor& descriptor,
+                            const uint64_t* content, size_t /* component */);
+
     bool check_microslice(const fles::MicrosliceDescriptor& descriptor,
                           const uint64_t* content, size_t component,
                           size_t microslice);

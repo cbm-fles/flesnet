@@ -34,7 +34,7 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
             new RingBufferView<fles::MicrosliceDescriptor>(
                 desc_buffer, desc_buffer_size_exp));
 
-    flib::hdr_config config{static_cast<uint16_t>(0xE000 + input_index), 0xBC,
+    flib::hdr_config config{static_cast<uint16_t>(0xE000 + input_index), 0xAB,
                             0xFD};
     _flib_link->set_hdr_config(&config);
     _flib_link->set_start_idx(0);

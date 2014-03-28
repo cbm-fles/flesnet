@@ -69,7 +69,7 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
         if (word_count < 4 || word_count > 64 ||
             i + word_count + padding_count > size) {
             std::cerr << "invalid cbmnet frame word count: " << word_count
-                      << std::endl;
+                      << std::endl; // TODO word_count needs to be a number not char !!!
             return false;
         }
 
@@ -94,6 +94,29 @@ bool TimesliceAnalyzer::check_flib_pattern(
                                (descriptor.size - 16) / sizeof(uint16_t));
 }
 
+bool TimesliceAnalyzer::check_mc_pgen_pattern(
+    const fles::MicrosliceDescriptor& descriptor, const uint64_t* content,
+    size_t /* component */)
+{
+    if (content[0] != reinterpret_cast<const uint64_t*>(&descriptor)[0] ||
+        content[1] != reinterpret_cast<const uint64_t*>(&descriptor)[1]) {
+      std::cerr << "missmatch in mc header words" << std::endl;
+      return false;
+    }
+
+    uint64_t expected = 0xbeaf000000000000;
+
+    for (size_t pos = 2; pos < descriptor.size / sizeof(uint64_t); ++pos) {
+      if (content[pos] != expected) {
+        std::cerr << "missmatch in mc data content:" << std::endl;
+        return false;
+      }
+      // will break if MC is bigger than 2048 Petabyte
+      ++expected;
+    }
+    return true;
+}
+
 bool TimesliceAnalyzer::check_microslice(
     const fles::MicrosliceDescriptor& descriptor, const uint64_t* content,
     size_t component, size_t microslice)
@@ -112,6 +135,8 @@ bool TimesliceAnalyzer::check_microslice(
         return check_flesnet_pattern(descriptor, content, component);
     case 0xBC:
         return check_flib_pattern(descriptor, content, component);
+    case 0xAB:
+        return check_mc_pgen_pattern(descriptor, content, component);
     default:
         std::cerr << "unknown subsystem identifier" << std::endl;
         return false;
