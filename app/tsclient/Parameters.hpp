@@ -32,6 +32,8 @@ public:
 
     bool analyze() const { return _analyze; }
 
+    bool dump() const { return _dump; }
+
 private:
     void parse_options(int argc, char* argv[]);
 
@@ -40,4 +42,5 @@ private:
     std::string _input_archive;
     std::string _output_archive;
     bool _analyze = false;
+    bool _dump = false;
 };
