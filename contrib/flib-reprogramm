@@ -1,0 +1,57 @@
+#!/bin/bash
+# 2013, Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
+# 2013, Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+
+set -e
+
+# Add Cable serial number if more than one Xilinx-Cable is connected
+ESN=
+
+# Add full path to impact if Xilinx directory is not in PATH
+IMPACT=impact
+
+BITFILE=$1
+
+if [ $ESN ]; then
+	CABLE="-p usb210 -esn $ESN"
+else
+	CABLE="-p auto"
+fi
+
+if [ ! -r "$BITFILE" ]; then
+        echo "$BITFILE: not found"
+        exit
+fi
+
+# Ask for password at start
+sudo echo "Superuser access available"
+
+# Program FPGA
+"$IMPACT" -batch <<-EOF
+setMode -bscan
+setCable $CABLE
+identify
+assignfile -p 1 -file "$BITFILE"
+program -p 1
+quit
+EOF
+rm _impactbatch.log
+sleep 1
+
+echo "Searching for previous PCI device"
+NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
+if [ "$NODE" ]; then
+        echo "Found previous PCI decive at $NODE"
+        if [ -f "/sys/bus/pci/devices/0000:$NODE/remove" ]; then
+                echo "Removing previous PCI device"
+                sudo sh -c "echo 1 > /sys/bus/pci/devices/0000:$NODE/remove"
+        fi
+else
+        echo "No previous PCI decive found"
+fi
+sleep 1
+
+echo "Rescanning PCI bus"
+sudo sh -c 'echo 1 > /sys/bus/pci/rescan'
+
+echo "Done"
