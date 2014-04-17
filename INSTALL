@@ -1,3 +1,57 @@
-BUILD DEPENDENCIES
+FLESnet
+=======
 
-sudo aptitude install gcc make cmake valgrind doxygen libnuma-dev librdmacm-dev libibverbs-dev
+BUILD DEPENDENCIES
+------------------
+
+sudo aptitude install gcc make cmake valgrind \
+ doxygen libnuma-dev librdmacm-dev libibverbs-dev git
+
+Fairroot external packages
+ See http://fairroot.gsi.de/?q=node/8
+ After installing set SIMPATH to point to this installation
+
+If your machine doesn't feature InfiniBand you need to install SoftiWARP
+ cd contrib
+ ./install-softiwarp
+
+
+Building flesnet
+----------------
+
+mkdir build
+cd build && cmake ..
+make
+
+
+Xilinx Software for using a FLIB
+================================
+
+Xilinx Tools
+------------
+
+Install at least the Xilinx Lab Tools (newest version)
+
+./xsetup
+Don’t install cable drivers when asked!
+
+Xilinx Cable drivers
+--------------------
+
+sudo aptitude install libusb-dev fxload
+go to Xilinx install directory (e.g., /opt/xilinx/14.7/LabTools)
+. settings64.sh 
+cd LabTools/bin/lin64/install_script/install_drivers/linux_drivers/pcusb
+sudo ./setup_pcusb 1 (has to say “Using udev…“)
+sudo sed -i -e 's/TEMPNODE/tempnode/' -e 's/SYSFS/ATTRS/g' -e 's/BUS/SUBSYSTEMS/' /etc/udev/rules.d/xusbdfwu.rules
+sudo /etc/init.d/udev restart
+
+If cable drivers are working correctly and a cable is plugged in 
+lsusb should give you something like
+
+...
+Bus 001 Device 008: ID 03fd:0008 Xilinx, Inc. 
+...
+
+Note the 03fd:0008.
+

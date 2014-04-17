@@ -1,14 +1,20 @@
-Usage for FLIB stand alone readout
+FLESnet usage for FLIB stand alone readout
+==========================================
+
+General:
+--------
+
+SIMPATH has to point to a fairroot external packages installation
 
 FLESnet:
+--------
 
-module add fairsoft/dec13
 cd build
+./flesnet --help
 cp ../contrib/flesnet_flib_example.cfg ./flesnet.cfg
-nano flesnet.cfg:
+modify flesnet.cfg:
  - add as many lines 'input-nodes = localhost' as readout links
  - choose 'processor-executable' ,e.g. to store data
-./flesnet --help
 
 Example: read 4 FLIB input links.
 Start flib_ctrl before starting flesnet!
@@ -17,8 +23,8 @@ Start flib_ctrl before starting flesnet!
 
 
 FLIB Control:
+-------------
 
-module add fairsoft/dec13
 cd build
 ./flib_ctrl --help
 
@@ -28,8 +34,8 @@ Do not start/stop while flesnet is running!
 
 
 Control Client:
+---------------
 
-module add fairsoft/dec13
 cd ctrl
 source config.sh
 cd control/cliclient
@@ -37,3 +43,53 @@ cd control/cliclient
 
 Example: send DLM 0x8 over flib link 0 to nodeid 0x1.
 ./cliclient localhost:9750 dlm 0x1 0x8
+
+
+Preparing the FLIB
+==================
+
+Download a bitfile from the build server
+----------------------------------------
+
+run, e.g.:
+
+curl -O -u <GSI web login user> https://cbm-firmware.gsi.de/result/XX/flib_cnet_readout/XXX/htg_k7_cnet_readout.bit
+
+
+Programming the FPGA
+--------------------
+
+cp contrib/flib-reprogramm to a location in your path and adopt settings
+usage:
+flib-reprogramm path/to/bitfile.bit
+
+If programming the FPGA the first time since powerup or 
+your machine does not support PCIe hot-plugging you need to reboot 
+the machine after programming.
+
+
+Loading/reloading the kernel driver
+-----------------------------------
+
+After rebooting you machine you need to load the kernel driver
+
+cd misc/kernel
+sudo ./reload.sh
+
+
+Check
+-----
+
+lspci -v should give you something like
+
+...
+02:00.0 Signal processing controller [1108]: CERN/ECP/EDU Device beaf
+	Subsystem: CERN/ECP/EDU Device beaf
+	Flags: bus master, fast devsel, latency 0, IRQ 17
+	Memory at f8000000 (32-bit, non-prefetchable) [size=32M]
+	Memory at fa000000 (32-bit, non-prefetchable) [size=4M]
+	Capabilities: <access denied>
+	Kernel driver in use: rorcfs
+...
+
+Note the device and the "Kernel driver in use" line
