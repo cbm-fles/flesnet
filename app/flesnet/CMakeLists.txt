@@ -13,4 +13,7 @@ include_directories("${PROJECT_SOURCE_DIR}/app/flesnet"
 
 add_executable(flesnet ${APP_SOURCES} ${APP_HEADERS})
 
-target_link_libraries(flesnet fles_core flib ibverbs rdmacm rt numa ${Boost_LIBRARIES})
+target_link_libraries(flesnet fles_core flib ibverbs rdmacm numa ${Boost_LIBRARIES})
+if(UNIX AND NOT APPLE)
+    target_link_libraries(flesnet rt)
+endif()

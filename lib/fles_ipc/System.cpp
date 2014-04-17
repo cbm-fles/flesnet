@@ -21,8 +21,9 @@ std::string stringerror(int errnum)
 {
     std::vector<char> buf(256);
 
-#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE
+#ifndef _GNU_SOURCE
 
+    // XSI-compliant
     int err = strerror_r(errnum, buf.data(), buf.size());
     if (err)
         return std::string("Unknown error ") +
@@ -32,6 +33,7 @@ std::string stringerror(int errnum)
 
 #else
 
+    // GNU-specific
     char* s = strerror_r(errnum, buf.data(), buf.size());
     return std::string(s);
 

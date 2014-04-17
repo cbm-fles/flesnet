@@ -2,7 +2,11 @@ message(STATUS "Looking for ZeroMQ...")
 
 set(ZMQ_H zmq.hpp)
 set(ZMQ_UTILS_H zmq_utils.h)
-set(LIBZMQ_SHARED libzmq.so)
+if(APPLE)
+  set(LIBZMQ_SHARED libzmq.dylib)
+else()
+  set(LIBZMQ_SHARED libzmq.so)
+endif()
 set(LIBZMQ_STATIC libzmq.a)
 
 # Find ZMQ libraries in external packages.

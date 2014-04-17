@@ -2,6 +2,8 @@
 #pragma once
 
 #include <stdexcept>
+#include <cstdint>
+#include <string>
 
 /// Run parameter exception class.
 class ParametersException : public std::runtime_error
