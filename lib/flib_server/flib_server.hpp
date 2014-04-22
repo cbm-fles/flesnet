@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdint>
+#include <chrono>
 #include <sys/eventfd.h>
 #include <boost/thread.hpp>
 
@@ -187,28 +188,42 @@ public:
   {
     flib::ctrl_msg cnet_r_msg;
 
-    out.debug() << "Sending control message";
+    out.debug() << "sending control message";
 
     // receive to flush hw buffers
     if ( _link.recv_dcm(&cnet_r_msg) != -1)  {
       out.warn() << "sprious message dropped";
     }
   
+    // send command
     if ( _link.send_dcm(&cnet_s_msg) < 0)  {
-      out.error() << "Sending message failed";
+      out.error() << "sending message failed";
     }                      
-    
-    // receive msg
-    if ( _link.recv_dcm(&cnet_r_msg) < 0)  {
-      out.error() << "receiving message failed";
+
+    // receive response
+    int ret = -1;
+    int timeout = 900; // ControlServer has 1000 µs timeout
+    auto timeout_tp = std::chrono::high_resolution_clock::now()
+      + std::chrono::microseconds(timeout);
+    // poll till msg is available, error occures or timeout is reached
+    while ( ret == -1 &&
+            std::chrono::high_resolution_clock::now() < timeout_tp) {
+      ret = _link.recv_dcm(&cnet_r_msg);
     }
 
-    //DEBUG
-    for (size_t i = 0; i < cnet_r_msg.words; i++) {
-      out.trace() << "msg received " << std::hex << std::setfill('0') 
-                  <<  "0x" << std::setw(4) << cnet_r_msg.data[i];
+    if (ret == -2) {
+      out.error() << "received message with illegal size";
+    } else if ( ret == -1)  {
+      out.error() << "timeout receiving message";
+    } else {
+      //DEBUG
+      for (size_t i = 0; i < cnet_r_msg.words; i++) {
+        out.trace() << "msg received " << std::hex << std::setfill('0')
+                    <<  "0x" << std::setw(4) << cnet_r_msg.data[i];
+      }
     }
 
+    // response to driver no matter what happend
     _driver_res.send(cnet_r_msg.data, cnet_r_msg.words*sizeof(cnet_r_msg.data[0]));
     return;
   }
