@@ -51,10 +51,12 @@ void dump_mc(mc_desc* mc)
 
 void dump_mc_light(mc_desc* mc)
 {
-  printf("Report addr=%p :\n mc_nr %ld mc_size=%u Bytes\n",
+  printf("Report addr=%p :\n mc_nr %ld mc_size=%u Bytes (real size)\n mc size padded=%u Bytes\n",
          (void *)mc->rbaddr,
          mc->nr,
-         mc->size);
+         mc->size,
+         ((mc->size-1) & ~0x7F) + 128 // hard coded max payload size
+         );
 }
 
 
