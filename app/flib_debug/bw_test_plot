@@ -1,14 +1,33 @@
-set terminal pdf
+set terminal pdf size 21cm,15cm
 set output 'bw.pdf'
 
 set logscale x
 set xlabel 'max. mc size [Byte]'
+set xrange [200:1000000]
 set ylabel 'bandwidth [MB/s]'
-set ytics 250
+set ytics 500
 set grid ytics
-set yrange [0:4000]
+set yrange [500:4000]
 
-plot 'bw.dat' index 1 using 3:5 with lp title '1 link', \
- 'bw.dat' index 2 using 3:5 with lp title '2 link', \
- 'bw.dat' index 3 using 3:5 with lp title '3 link', \
- 'bw.dat' index 4 using 3:5 with lp title '4 link'
+set format x "%.0s %c"
+ 
+set key above
+
+set style line 1 lc rgb '#0060ad' lt 3 lw 1 pt 5 ps 0.2   # --- blue
+set style line 2 lc rgb '#0060ad' lt 3 lw 1 pt 5 ps 0.4   # --- blue
+set style line 3 lc rgb '#483D8B' lt 1 lw 1 pt 4 ps 0.2   # --- darkslateblue
+set style line 4 lc rgb '#483D8B' lt 1 lw 1 pt 4 ps 0.4   # --- darkslateblue
+set style line 5 lc rgb '#1E90FF' lt 2 lw 1 pt 5 ps 0.2   # --- dodgerblue
+set style line 6 lc rgb '#1E90FF' lt 2 lw 1 pt 5 ps 0.4   # --- dodgerblue
+set style line 7 lc rgb '#4B0082' lt 1 lw 1 pt 4 ps 0.2   # --- indigo
+set style line 8 lc rgb '#4B0082' lt 1 lw 1 pt 4 ps 0.4   # --- indigo
+
+plot \
+ 'bw.dat' index 1 using 4:6 with lp ls 1 title '1 link pcie', \
+ 'bw.dat' index 1 using 4:7 with lp ls 2 title '1 link payload', \
+ 'bw.dat' index 2 using 4:6 with lp ls 3 title '2 link pcie', \
+ 'bw.dat' index 2 using 4:7 with lp ls 4 title '2 link payload', \
+ 'bw.dat' index 3 using 4:6 with lp ls 5 title '3 link pcie', \
+ 'bw.dat' index 3 using 4:7 with lp ls 6 title '3 link payload', \
+ 'bw.dat' index 4 using 4:6 with lp ls 7 title '4 link pcie', \
+ 'bw.dat' index 4 using 4:7 with lp ls 8 title '4 link payload'

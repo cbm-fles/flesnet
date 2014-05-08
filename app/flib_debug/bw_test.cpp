@@ -47,6 +47,7 @@ int main(int argc, const char* argv[])
   }
 
   mc_time = atoi(argv[1]);
+  size_t mc_size = mc_time * 8;
   out.debug() << "mc_time set to " << mc_time;
 
   max_mc = atoi(argv[2]);
@@ -120,7 +121,8 @@ int main(int argc, const char* argv[])
 
   std::vector<size_t> mc_num (num_links, 0);
   std::vector<size_t> pending_acks (num_links, 0);
-  std::vector<size_t> rx_data (num_links, 0);
+  std::vector<size_t> pcie_data (num_links, 0);
+  std::vector<size_t> payload_data (num_links, 0);
   std::vector<size_t> wait (num_links, 0);
 
   auto time_begin = std::chrono::high_resolution_clock::now();
@@ -148,32 +150,27 @@ int main(int argc, const char* argv[])
         break;
       }
       
-      rx_data.at(i) = ((MicrosliceDescriptor*)mc_pair.first.rbaddr)->offset;
+      // byte count: pcie_data = mc_size incl. padding to max_payload
+      pcie_data.at(i) = ((MicrosliceDescriptor*)mc_pair.first.rbaddr)->offset;
+      payload_data.at(i) += mc_pair.first.size;
       
       if (mc_num.at(i) == 0) {
         out.info() << "First MC seen.";
         dump_mc_light(&mc_pair.first);
-        //std::cout << "RB:" << std::endl;
-        //dump_raw((uint64_t *)(rb.at(i)+mc_num.at(i)),16);
-        //std::cout << "EB:" << std::endl;
-        //dump_raw((uint64_t *)(eb.at(i)), 64);
       }
       
-      if (mc_num.at(i) != 0 && mc_num.at(i) < 1) {
+      if (mc_num.at(i) != 0 && mc_num.at(i) < 2) {
         out.info() << "MC analysed " << mc_num.at(i);
-        out.info() << "rx_data " << rx_data.at(i);
-        out.info() << "size per MC " << std::setprecision(10) << (double)rx_data.at(i) / (double)mc_num.at(i);
-        //dump_mc_light(&mc_pair.first);
-        //dump_mc(&mc_pair.first);
+        out.info() << "pcie_data (padded size) " << pcie_data.at(i) << " Bytes";
+        out.info() << "payload_data (payload size) " << payload_data.at(i) << " Bytes";
+        out.info() << "size per MC " << std::setprecision(10) << (double)pcie_data.at(i) / (double)mc_num.at(i);
       }
       
       if ((mc_num.at(i) & 0xFFFFF) == 0xFFFFF) {
         out.info() << "MC analysed " << mc_num.at(i);
-        out.info() << "rx_data (offset) " << rx_data.at(i);
-        out.info() << "size per MC " << std::setprecision(10) << (double)rx_data.at(i)  / (double)mc_num.at(i);
-        
-        //dump_mc_light(&mc_pair.first);
-        //dump_mc(&mc_pair.first);
+        out.info() << "pcie_data (padded size) " << pcie_data.at(i) << " Bytes";
+        out.info() << "payload_data (payload size) " << payload_data.at(i) << " Bytes";
+        out.info() << "size per MC " << std::setprecision(10) << (double)pcie_data.at(i)  / (double)mc_num.at(i);
       }
       
       if (pending_acks.at(i) == ack_delay) {
@@ -195,7 +192,8 @@ int main(int argc, const char* argv[])
   
   out.info() << "runtime " << runtime/1000000 << " s";
 
-  size_t acc_data = 0;
+  size_t acc_pcie_data = 0;
+  size_t acc_payload_data = 0;
 
 for (size_t i = 0; i < num_links; ++i) {
   out.debug() << "disable link " << i;
@@ -206,14 +204,27 @@ for (size_t i = 0; i < num_links; ++i) {
   out.debug() << "pending mc: "  << links.at(i)->get_pending_mc();
   out.debug() << "busy: " <<  links.at(i)->get_ch()->getDMABusy();
 
-  out.info() << "total data " << rx_data.at(i) << " Bytes";
-  out.info() << "bandwidth " << (double)rx_data.at(i) / runtime << " MB/s";
+  out.info() << "total pcie data " << pcie_data.at(i) << " Bytes";
+  out.info() << "total payload data " << payload_data.at(i) << " Bytes";
+  out.info() << "pcie bandwidth " << (double)pcie_data.at(i) / runtime << " MB/s";
+  out.info() << "payload bandwidth " << (double)payload_data.at(i) / runtime << " MB/s";
   out.info() << "SW waiting/mc_num " << (double)wait.at(i) / (double)mc_num.at(i);
 
-  acc_data += rx_data.at(i);
+  acc_pcie_data += pcie_data.at(i);
+  acc_payload_data += payload_data.at(i);
+
  }
 
- out.info() << "accumulated Bandwidth " << (double)acc_data / runtime << " MB/s";
+ double acc_pcie_bw =  (double)acc_pcie_data / runtime;
+ double acc_payload_bw =  (double)acc_payload_data / runtime;
+
+ out.info() << "accumulated pci bandwidth " << (double)acc_pcie_data / runtime << " MB/s";
+ out.info() << "accumulated payload bandwidth " << (double)acc_payload_data / runtime << " MB/s";
+ out.info() << "KEY num_links mc_time [8ns] mc_size [Bytes] num_mc pcie_bw [MB/s] payload_bw [MB/s]";
+ std::cout << "SUMMARY "
+           << num_links << " " << mc_time << " " << mc_size  << " " << max_mc << " " 
+           << acc_pcie_bw << " " << acc_payload_bw << std::endl;
+
  out.debug() << "Exiting";
   
     }

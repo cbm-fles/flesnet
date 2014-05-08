@@ -3,16 +3,13 @@
 outfile=bw.dat
 
 echo "Strat of run" > $outfile
-echo "num_links mc_time mc_size mc_num bw" >> $outfile
 for num_links in 1 2 3 4
 do
 echo -e "\n" >> $outfile
 for mc_time in 40 80 100 200 400 800 1000 2000 4000 8000 10000 20000 40000 80000
 do
 mc_num="$((100000000 / $mc_time))"
-# max. mc_size = mc_time * max. datarate * periode = mc_time * 1 GB/s * 8 ns = mc_time * 8 Byte  
-mc_size="$(( $mc_time * 8 ))"
-bw=$(./bw_test $mc_time $mc_num $num_links | grep "accumulated Bandwidth" | awk '{print $5}')
-echo "$num_links $mc_time $mc_size $mc_num $bw" | tee -a $outfile
+#echo "$num_links $mc_time $mc_size $mc_num $bw" | tee -a $outfile
+./bw_test $mc_time $mc_num $num_links | grep "SUMMARY" | tee -a $outfile
 done
 done
