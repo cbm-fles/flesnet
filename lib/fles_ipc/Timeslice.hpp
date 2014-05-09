@@ -61,6 +61,8 @@ public:
     }
 
 protected:
+    Timeslice() {};
+
     friend class StorableTimeslice;
 
     TimesliceDescriptor _timeslice_descriptor;
