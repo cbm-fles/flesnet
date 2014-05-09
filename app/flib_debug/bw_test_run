@@ -3,13 +3,14 @@
 outfile=bw.dat
 
 echo "Strat of run" > $outfile
+./bw_test 100 10 1 | grep "KEY" | tee -a $outfile
+
 for num_links in 1 2 3 4
 do
 echo -e "\n" >> $outfile
 for mc_time in 40 80 100 200 400 800 1000 2000 4000 8000 10000 20000 40000 80000
 do
 mc_num="$((100000000 / $mc_time))"
-#echo "$num_links $mc_time $mc_size $mc_num $bw" | tee -a $outfile
 ./bw_test $mc_time $mc_num $num_links | grep "SUMMARY" | tee -a $outfile
 done
 done

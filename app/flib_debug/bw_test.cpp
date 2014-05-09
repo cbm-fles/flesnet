@@ -1,4 +1,4 @@
-// Simpel example application initializing a FLIB for date transfer
+// FLIB Bandwidth micro benchmark
 
 #include <iostream>
 #include <csignal>
@@ -117,13 +117,13 @@ int main(int argc, const char* argv[])
   }
 
   /////////// THE MAIN LOOP ///////////
-  // service only one link for the moment
-
+ 
   std::vector<size_t> mc_num (num_links, 0);
   std::vector<size_t> pending_acks (num_links, 0);
   std::vector<size_t> pcie_data (num_links, 0);
   std::vector<size_t> payload_data (num_links, 0);
   std::vector<size_t> wait (num_links, 0);
+  std::vector<size_t> sum_mc (num_links, 0);
 
   auto time_begin = std::chrono::high_resolution_clock::now();
   flib.enable_mc_cnt(true);
@@ -194,12 +194,14 @@ int main(int argc, const char* argv[])
 
   size_t acc_pcie_data = 0;
   size_t acc_payload_data = 0;
-
+  size_t acc_sum_mc = 0;
+  
 for (size_t i = 0; i < num_links; ++i) {
   out.debug() << "disable link " << i;
   
   // disable data source
   flib.enable_mc_cnt(false);
+  
   out.debug() << "current mc nr 0x: " << std::hex <<  links.at(i)->get_mc_index();
   out.debug() << "pending mc: "  << links.at(i)->get_pending_mc();
   out.debug() << "busy: " <<  links.at(i)->get_ch()->getDMABusy();
@@ -210,20 +212,28 @@ for (size_t i = 0; i < num_links; ++i) {
   out.info() << "payload bandwidth " << (double)payload_data.at(i) / runtime << " MB/s";
   out.info() << "SW waiting/mc_num " << (double)wait.at(i) / (double)mc_num.at(i);
 
+  sum_mc.at(i) = links.at(i)->get_mc_index();
+
+  acc_sum_mc += sum_mc.at(i);
   acc_pcie_data += pcie_data.at(i);
   acc_payload_data += payload_data.at(i);
 
  }
 
- double acc_pcie_bw =  (double)acc_pcie_data / runtime;
- double acc_payload_bw =  (double)acc_payload_data / runtime;
+ double acc_pcie_bw = (double)acc_pcie_data / runtime;
+ double acc_payload_bw = (double)acc_payload_data / runtime;
+ double acc_desc_bw = (double)(acc_sum_mc * sizeof(MicrosliceDescriptor)) / runtime;
 
+
+ out.info() << "Total MCs submitted " << acc_sum_mc << " (expected " << max_mc * num_links << " )";
  out.info() << "accumulated pci bandwidth " << (double)acc_pcie_data / runtime << " MB/s";
  out.info() << "accumulated payload bandwidth " << (double)acc_payload_data / runtime << " MB/s";
- out.info() << "KEY num_links mc_time [8ns] mc_size [Bytes] num_mc pcie_bw [MB/s] payload_bw [MB/s]";
+ out.info() << "accumulated descriptor bandwidth " << acc_desc_bw << " MB/s";
+ std::cout << "KEY num_links mc_time [8ns] mc_size [Bytes] num_mc pcie_bw [MB/s] payload_bw [MB/s] dec_bw [MB/s] pcie_dec_bw [MB/s]" << std::endl;
  std::cout << "SUMMARY "
            << num_links << " " << mc_time << " " << mc_size  << " " << max_mc << " " 
-           << acc_pcie_bw << " " << acc_payload_bw << std::endl;
+           << acc_pcie_bw << " " << acc_payload_bw << " " 
+           << acc_desc_bw << " " <<  acc_desc_bw + acc_pcie_bw << std::endl;
 
  out.debug() << "Exiting";
   
