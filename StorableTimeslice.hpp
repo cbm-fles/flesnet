@@ -31,7 +31,7 @@ public:
     uint32_t append_component(uint64_t num_microslices,
                               uint64_t index = UINT64_MAX)
     {
-        TimesliceComponentDescriptor ts_desc{};
+        TimesliceComponentDescriptor ts_desc = TimesliceComponentDescriptor();
         ts_desc.ts_num = index;
         ts_desc.offset = 0;
         ts_desc.size = 0;
@@ -39,7 +39,7 @@ public:
 
         std::vector<uint8_t> data;
         for (uint64_t m = 0; m < num_microslices; ++m) {
-            MicrosliceDescriptor desc{};
+            MicrosliceDescriptor desc = MicrosliceDescriptor();
             uint8_t* desc_bytes = reinterpret_cast<uint8_t*>(&desc);
             data.insert(data.end(), desc_bytes,
                         desc_bytes + sizeof(MicrosliceDescriptor));
