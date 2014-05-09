@@ -14,7 +14,7 @@ struct F
     {
         // initialize microslice descriptors (for individual meaning cf.
         // MicrosliceDescriptor.hpp)
-        fles::MicrosliceDescriptor desc{};
+        fles::MicrosliceDescriptor desc = fles::MicrosliceDescriptor();
         desc.hdr_id = 0xDD;
         desc.hdr_ver = 0x01;
         desc.sys_id = 0xFF;
@@ -49,9 +49,9 @@ struct F
     std::array<uint8_t, 1> data_b{{11}};
     std::array<uint8_t, 3> data_c{{3, 4, 5}};
 
-    fles::MicrosliceDescriptor desc_a{};
-    fles::MicrosliceDescriptor desc_b{};
-    fles::MicrosliceDescriptor desc_c{};
+    fles::MicrosliceDescriptor desc_a = fles::MicrosliceDescriptor();
+    fles::MicrosliceDescriptor desc_b = fles::MicrosliceDescriptor();
+    fles::MicrosliceDescriptor desc_c = fles::MicrosliceDescriptor();
 
     fles::StorableTimeslice ts0{1, 1};
 };
