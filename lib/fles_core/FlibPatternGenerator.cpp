@@ -58,7 +58,8 @@ void FlibPatternGenerator::produce_data()
                 unsigned int content_bytes = _typical_content_size;
                 if (_randomize_sizes)
                     content_bytes = random_distribution(random_generator);
-                content_bytes &= ~0x7; // round down to multiple of sizeof(uint64_t)
+                content_bytes &=
+                    ~0x7; // round down to multiple of sizeof(uint64_t)
 
                 // check for space in data and descriptor buffers
                 if ((written_data - acked_data + content_bytes >

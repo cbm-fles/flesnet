@@ -47,7 +47,7 @@ void Application::run()
             }
         }
         if (_dump) {
-          std::cout << _dump->dump_timeslice(*timeslice) << std::endl;
+            std::cout << _dump->dump_timeslice(*timeslice) << std::endl;
         }
         if (_output)
             _output->write(*timeslice);

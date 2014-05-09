@@ -8,10 +8,12 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-struct F {
+struct F
+{
     F()
     {
-        // initialize microslice descriptors (for individual meaning cf. MicrosliceDescriptor.hpp)
+        // initialize microslice descriptors (for individual meaning cf.
+        // MicrosliceDescriptor.hpp)
         fles::MicrosliceDescriptor desc{};
         desc.hdr_id = 0xDD;
         desc.hdr_ver = 0x01;
@@ -50,10 +52,9 @@ struct F {
     fles::MicrosliceDescriptor desc_a{};
     fles::MicrosliceDescriptor desc_b{};
     fles::MicrosliceDescriptor desc_c{};
-    
+
     fles::StorableTimeslice ts0{1, 1};
 };
-
 
 BOOST_AUTO_TEST_CASE(constructors_test)
 {
