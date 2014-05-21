@@ -1,6 +1,6 @@
 # Copyright 2014 Jan de Cuveland <cmail@cuveland.de>
 
-find_package(Boost COMPONENTS system filesystem unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS system filesystem serialization unit_test_framework REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/lib/fles_ipc)
 
