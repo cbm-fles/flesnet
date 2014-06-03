@@ -55,7 +55,7 @@ Application::Application(Parameters const& par) : _par(par)
         if (c < _flib_links.size()) {
             data_source = std::unique_ptr<DataSource>(new FlibHardwareChannel(
                 par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
-                index, _flib_links.at(c)));
+                _flib_links.at(c)));
         } else {
             data_source = std::unique_ptr<DataSource>(new FlibPatternGenerator(
                 par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),

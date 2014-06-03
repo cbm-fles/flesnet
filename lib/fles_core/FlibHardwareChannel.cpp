@@ -6,7 +6,6 @@
 
 FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                                          std::size_t desc_buffer_size_exp,
-                                         uint64_t input_index,
                                          flib::flib_link* flib_link)
     : _data_send_buffer(data_buffer_size_exp),
       _desc_send_buffer(desc_buffer_size_exp),
@@ -34,13 +33,8 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
             new RingBufferView<fles::MicrosliceDescriptor>(
                 desc_buffer, desc_buffer_size_exp));
 
-    flib::hdr_config config{static_cast<uint16_t>(0xE000 + input_index), 0xBC,
-                            0xFD};
-    _flib_link->set_hdr_config(&config);
     _flib_link->set_start_idx(0);
 
-    //_flib_link->set_data_rx_sel(flib::flib_link::pgen);
-    //_flib_link->set_data_rx_sel(flib::flib_link::link);
     _flib_link->enable_cbmnet_packer(true);
 
     // assert(_flib_link->get_mc_index() == 0);

@@ -22,7 +22,7 @@ bool TimesliceAnalyzer::check_flesnet_pattern(
     return true;
 }
 
-bool TimesliceAnalyzer::check_cbmnet_content(const uint16_t* content,
+bool TimesliceAnalyzer::check_content_pgen(const uint16_t* content,
                                              size_t size)
 {
     constexpr uint16_t source_address = 0;
@@ -46,7 +46,9 @@ bool TimesliceAnalyzer::check_cbmnet_content(const uint16_t* content,
 }
 
 bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
-                                            size_t size)
+                                            size_t size,
+                                            uint8_t sys_id,
+                                            uint8_t sys_ver)
 {
     size_t frame_count = 0;
     uint8_t previous_frame_number = 0;
@@ -74,8 +76,11 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
         }
 
         ++frame_count;
-        if (check_cbmnet_content(&content[i], word_count) == false)
+        if (sys_id == static_cast<uint8_t>(0xF0) && 
+            sys_ver == static_cast<uint8_t>(0x1)) {
+          if (check_content_pgen(&content[i], word_count) == false)
             return false;
+        }
         i += word_count + padding_count;
     }
 
@@ -91,7 +96,8 @@ bool TimesliceAnalyzer::check_flib_pattern(
         return false;
     }
     return check_cbmnet_frames(reinterpret_cast<const uint16_t*>(&content[2]),
-                               (descriptor.size - 16) / sizeof(uint16_t));
+                               (descriptor.size - 16) / sizeof(uint16_t),
+                               descriptor.sys_id, descriptor.sys_ver);
 }
 
 bool TimesliceAnalyzer::check_microslice(
@@ -108,13 +114,10 @@ bool TimesliceAnalyzer::check_microslice(
     _content_bytes += descriptor.size;
 
     switch (descriptor.sys_id) {
-    case 0x01:
+    case 0xFA:
         return check_flesnet_pattern(descriptor, content, component);
-    case 0xBC:
-        return check_flib_pattern(descriptor, content, component);
     default:
-        std::cerr << "unknown subsystem identifier" << std::endl;
-        return false;
+        return check_flib_pattern(descriptor, content, component);
     }
     return true;
 }

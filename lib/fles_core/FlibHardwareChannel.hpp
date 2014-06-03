@@ -15,7 +15,7 @@ class FlibHardwareChannel : public DataSource
 public:
     /// The FlibHardwareChannel constructor.
     FlibHardwareChannel(std::size_t data_buffer_size_exp,
-                        std::size_t desc_buffer_size_exp, uint64_t input_index,
+                        std::size_t desc_buffer_size_exp,
                         flib::flib_link* flib_link);
 
     FlibHardwareChannel(const FlibHardwareChannel&) = delete;

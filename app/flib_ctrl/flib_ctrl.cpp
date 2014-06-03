@@ -55,6 +55,10 @@ int main(int argc, char* argv[])
   for (size_t i = 0; i < flib.get_num_links(); ++i) {
     out.debug() << "Initializing link " << i;
 
+    flib::hdr_config hdr_config = par.hdr_config();
+    hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
+    links.at(i)->set_hdr_config(&hdr_config);
+
     links.at(i)->set_data_rx_sel(par.rx_sel());
 
     if (par.enable_daq() == true) {

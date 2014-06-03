@@ -67,11 +67,11 @@ void FlibPatternGenerator::produce_data()
                     (written_mc - acked_mc + 1 > _desc_buffer.size()))
                     break;
 
-                const uint8_t hdr_id = 0xdd;
+                const uint8_t hdr_id = 0xDD;
                 const uint8_t hdr_ver = 0x01;
-                const uint16_t eq_id = 0x1001;
+                const uint16_t eq_id = 0xE001;
                 const uint16_t flags = 0x0000;
-                const uint8_t sys_id = 0x01;
+                const uint8_t sys_id = 0xFA;
                 const uint8_t sys_ver = 0x01;
                 uint64_t idx = written_mc;
                 uint32_t crc = 0x00000000;
