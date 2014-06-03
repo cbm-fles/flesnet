@@ -28,10 +28,30 @@ FLIB Control:
 cd build
 ./flib_ctrl --help
 
-Example: read flib input links with microslice size 8 µs.
-Do not start/stop while flesnet is running!
-./flib_ctrl -t 1000 -s link
+Example: read flib input links with microslice size 8 µs,
+sys_id 0x10 and sys_ver 0x01:
+./flib_ctrl -t 1000 -s link -i 0x10 -v 0x01
 
+Do not start/stop while flesnet is running!
+
+If link is selected as data source it is mandatory to provide 
+the subsystem identifier and the subsystem format version
+of the connected component. For all other data sources this is
+configured automatically. This information defines which 
+analysis code is called later on.
+
+Defined subsystem identifiers are:
+Silicon Tracking System (STS) 		0x10 
+Micro-Vertex Detector (MVD) 		0x20 
+Ring Imaging CHerenkov detector (RICH) 	0x30 
+Transition Radiation Detector (TRD) 	0x40 
+Muon Chamber system (MuCh) 		0x50 
+Resistive Plate Chambers (RPC) 		0x60 
+Electromagnetic CALorimeter (ECAL) 	0x70 
+Projectile Spectator Detector (PSD) 	0x80
+FLIB hardware pattern generator		0xF0
+FLIB front end emulation		0xF1
+Flesnet software pattern generator	0xFA
 
 Control Client:
 ---------------
