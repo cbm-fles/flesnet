@@ -1,10 +1,7 @@
 FLESnet usage for FLIB stand alone readout
 ==========================================
 
-General:
---------
-
-SIMPATH has to point to a fairroot external packages installation
+NOTE the new FAQ section at the end of the document!
 
 FLESnet:
 --------
@@ -21,6 +18,9 @@ Start flib_ctrl before starting flesnet!
 ./flesnet -i0 -i1 -i2 -i3 -c0
  - add as many -iN as readout links
 
+NOTE: In case flesnet crashed, exited with an exception, was stopped
+or is just not working you might need to cleanup some things.
+See the FAQs for the cleanup procedure.
 
 FLIB Control:
 -------------
@@ -64,6 +64,11 @@ cd control/cliclient
 Example: send DLM 0x8 over flib link 0 to nodeid 0x1.
 ./cliclient localhost:9750 dlm 0x1 0x8
 
+General:
+--------
+
+SIMPATH has to point to a fairroot external packages installation
+
 
 Preparing the FLIB
 ==================
@@ -75,6 +80,8 @@ run, e.g.:
 
 curl -O -u <GSI web login user> https://cbm-firmware.gsi.de/result/XX/flib_cnet_readout/XXX/htg_k7_cnet_readout.bit
 
+(NOTE: failing to provide a valid user/password won't give an error
+but result in an unuseable file.)
 
 Programming the FPGA
 --------------------
@@ -100,9 +107,9 @@ sudo ./reload.sh
 Check
 -----
 
-lspci -v should give you something like
+'lspci -v' should give you something like:
+(NOTE: the kernel driver should be listed)
 
-...
 02:00.0 Signal processing controller [1108]: CERN/ECP/EDU Device beaf
 	Subsystem: CERN/ECP/EDU Device beaf
 	Flags: bus master, fast devsel, latency 0, IRQ 17
@@ -110,6 +117,47 @@ lspci -v should give you something like
 	Memory at fa000000 (32-bit, non-prefetchable) [size=4M]
 	Capabilities: <access denied>
 	Kernel driver in use: rorcfs
-...
 
-Note the device and the "Kernel driver in use" line
+
+FAQ
+===
+
+Flesnet exits with:
+"ERROR: rdma_bind_addr(port=20079) failed: Cannot assign requested
+address terminate called without an active exception"
+
+- Check if there are leftover procecces for a previous run.
+- Check if 'localhost' is set properbly in /etc/hosts or
+  try to use '127.0.0.1' instead of 'localhost' in the flesnet.cfg
+
+
+What should I do if something went wrong?
+
+- If flesnet crashed, exited with an exception, was stopped
+  or is just not working you might need to cleanup some things.
+  Try to one or more of the following things:
+
+   Check if there are left over processes and kill them.
+   Most likely there is still a 'tsclient' process.
+
+   Remove leftover shared memories if present:
+   'sudo rm /dev/shm/flesnet_*'
+
+   Reprogramm the FLIB FPGA and reload the kernel module.
+
+
+How can I check if the FLIB is installed correctly?
+
+- See the 'Check' section in 'Preparing the FLIB'
+
+
+What to do if the FLIB gets unresponsible after a few minutes?
+
+- Try to disable ASPM in the BIOS settings of your host PC
+- Try the boot parameters 'pcie_aspm=off 'acpi=ht noapic'
+
+
+Felsnet can not allocate enough memory.
+
+- There are some problems with the ulimt on Ubuntu at the moment.
+  Use 'sudo ulimit -l unlimited' as a workaround.

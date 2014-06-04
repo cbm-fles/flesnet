@@ -23,6 +23,15 @@ mkdir build
 cd build && cmake ..
 make
 
+Building the FLIB kernel module
+-------------------------------
+
+The kernel module is not part of the CMake flow, so it is necessary to
+build it manually.
+
+cd misc/kernel
+make
+
 
 Xilinx Software for using a FLIB
 ================================
@@ -54,4 +63,3 @@ Bus 001 Device 008: ID 03fd:0008 Xilinx, Inc.
 ...
 
 Note the 03fd:0008.
-
