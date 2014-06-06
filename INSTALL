@@ -32,6 +32,11 @@ build it manually.
 cd misc/kernel
 make
 
+Preparing the operating system
+------------------------------
+
+Set the kernel boot options 'pcie_aspm=off 'acpi=ht noapic'
+
 
 Xilinx Software for using a FLIB
 ================================

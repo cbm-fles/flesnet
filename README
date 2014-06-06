@@ -104,10 +104,10 @@ cd misc/kernel
 sudo ./reload.sh
 
 
-Check
------
+Check if FLIB is operational
+----------------------------
 
-'lspci -v' should give you something like:
+'lspci -v -d 10dc:beaf' should give you something like:
 (NOTE: the kernel driver should be listed)
 
 02:00.0 Signal processing controller [1108]: CERN/ECP/EDU Device beaf
@@ -151,13 +151,46 @@ How can I check if the FLIB is installed correctly?
 - See the 'Check' section in 'Preparing the FLIB'
 
 
-What to do if the FLIB gets unresponsible after a few minutes?
+What to do if the FLIB/PC gets unresponsible after programming
+or a few minutes of use?
 
+- Set the boot parameters 'pcie_aspm=off 'acpi=ht noapic'
 - Try to disable ASPM in the BIOS settings of your host PC
-- Try the boot parameters 'pcie_aspm=off 'acpi=ht noapic'
+
+My syslog/kernel log is flooded with errors like:
+flip00 kernel: [  573.734102] pcieport 0000:00:01.0: AER: Corrected error received: id=0008
+flip00 kernel: [  573.734113] pcieport 0000:00:01.0: PCIe Bus Error: severity=Corrected, type=Physical Layer, id=0008(Receiver ID)
+flip00 kernel: [  573.734115] pcieport 0000:00:01.0:   device [8086:0e02] error status/mask=00000001/00002000
+flip00 kernel: [  573.734117] pcieport 0000:00:01.0:    [ 0] Receiver Error         (First)
+
+- Set the boot parameters 'pcie_aspm=off 'acpi=ht noapic'
 
 
 Felsnet can not allocate enough memory.
 
 - There are some problems with the ulimt on Ubuntu at the moment.
   Use 'sudo ulimit -l unlimited' as a workaround.
+
+
+Programming the FLIB FPGA is very slow (lasts longer than 60s).
+
+- There is an issue with the Xilinx Lab Tools.
+  Try this solution http://forums.xilinx.com/t5/Design-Tools-Others/iMPACT-severe-TCK-frequency-derating-under-Linux-still-the-same/m-p/422263#M5692
+
+
+The FLIB programming script reports the warning:
+Warning: Chain frequency (1000000) is less than the current cable speed (6000000).
+ Adjust to cable speed (1000000).
+Maximum TCK operating frequency for this device chain: 1000000.
+
+- See 'Programming the FLIB FPGA is very slow'
+
+
+The PC restarts immediately after I try to shut it down.
+
+This is an hardware issue with HTG-K7 rev 1.0 boards. It is caused by the PCIe
+wake signal changing its state when the FPGA looses configuration after power down.
+Workarounds:
+- Unplug the power after shutting down
+- Try to disable PCIe wake capability, e.g. by changing wake-on-lan BIOS settings
+- Isolate the wake# pin on the PCIe connector
