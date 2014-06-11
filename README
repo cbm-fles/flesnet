@@ -168,8 +168,9 @@ flip00 kernel: [  573.734117] pcieport 0000:00:01.0:    [ 0] Receiver Error     
 
 Felsnet can not allocate enough memory.
 
-- There are some problems with the ulimt on Ubuntu at the moment.
-  Use 'sudo ulimit -l unlimited' as a workaround.
+- The softiwarp install script installs a configuration to /etc/security/limits.d/.
+  You need to re-login after installing for these changes to take affect.
+- If the problem is still present try 'sudo ulimit -l unlimited' as a workaround.
 
 
 Programming the FLIB FPGA is very slow (lasts longer than 60s).
