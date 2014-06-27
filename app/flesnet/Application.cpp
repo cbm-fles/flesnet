@@ -8,25 +8,10 @@
 
 Application::Application(Parameters const& par) : _par(par)
 {
-    // Compute node application
+    unsigned input_nodes_size = par.input_nodes().size();
+    std::vector<unsigned> input_indexes = par.input_indexes();
 
-    // set_cpu(1);
-
-    for (unsigned i : _par.compute_indexes()) {
-        std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(
-            i, _par.cn_data_buffer_size_exp(), _par.cn_desc_buffer_size_exp(),
-            _par.base_port() + i, _par.input_nodes().size(),
-            _par.timeslice_size(), _par.processor_instances(),
-            _par.processor_executable()));
-        buffer->start_processes();
-        _compute_buffers.push_back(std::move(buffer));
-    }
-
-    set_node();
-
-    // Input node application
-
-    // FIXME: all of this is a terrible mess
+    // FIXME: some of this is a terrible mess
     if (par.use_flib()) {
         // TODO: presence detection #524
         try
@@ -42,7 +27,16 @@ Application::Application(Parameters const& par) : _par(par)
                                                      flib::flib_link::disable;}),
                               std::end(_flib_links));
 
-            out.info() << "flib hardware links: " << _flib_links.size();
+            out.info() << "enabled flib links detected: " << _flib_links.size();
+
+            // increase number of input nodes to match number of
+            // enabled FLIB links if in stand-alone mode
+            if (par.standalone() && _flib_links.size() > 1) {
+                input_nodes_size = _flib_links.size();
+                for (unsigned i = 1; i < input_nodes_size; i++) {
+                    input_indexes.push_back(i);
+                }
+            }
         }
         catch (std::exception const& e)
         {
@@ -51,13 +45,35 @@ Application::Application(Parameters const& par) : _par(par)
     }
     // end FIXME
 
+    if (par.standalone()) {
+        out.info() << "flesnet in stand-alone mode, inputs: " << input_nodes_size;
+    }
+
+    // Compute node application
+
+    // set_cpu(1);
+
+    for (unsigned i : _par.compute_indexes()) {
+        std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(
+            i, _par.cn_data_buffer_size_exp(), _par.cn_desc_buffer_size_exp(),
+            _par.base_port() + i, input_nodes_size,
+            _par.timeslice_size(), _par.processor_instances(),
+            _par.processor_executable()));
+        buffer->start_processes();
+        _compute_buffers.push_back(std::move(buffer));
+    }
+
+    set_node();
+
+    // Input node application
+
     std::vector<std::string> compute_services;
     for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
         compute_services.push_back(
             boost::lexical_cast<std::string>(par.base_port() + i));
 
-    for (size_t c = 0; c < _par.input_indexes().size(); ++c) {
-        unsigned index = _par.input_indexes().at(c);
+    for (size_t c = 0; c < input_indexes.size(); ++c) {
+        unsigned index = input_indexes.at(c);
         std::unique_ptr<DataSource> data_source;
 
         if (c < _flib_links.size()) {

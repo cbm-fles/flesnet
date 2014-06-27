@@ -191,6 +191,7 @@ void Parameters::parse_options(int argc, char* argv[])
                                 po::value<uint32_t>(&_typical_content_size),
                                 "typical number of content bytes per MC")(
         "use-flib", po::value<bool>(&_use_flib), "use flib flag")(
+        "standalone", po::value<bool>(&_standalone), "standalone mode flag")(
         "max-timeslice-number,n", po::value<uint32_t>(&_max_timeslice_number),
         "global maximum timeslice number")(
         "processor-executable,e",
@@ -221,44 +222,51 @@ void Parameters::parse_options(int argc, char* argv[])
         exit(EXIT_SUCCESS);
     }
 
-    if (!vm.count("input-nodes"))
-        throw ParametersException("list of input nodes is empty");
+    if (_standalone) {
+        _input_nodes = std::vector<std::string>{"127.0.0.1"};
+        _input_indexes = std::vector<unsigned>{0};
+        _compute_nodes = std::vector<std::string>{"127.0.0.1"};
+        _compute_indexes = std::vector<unsigned>{0};
+    } else {
+        if (!vm.count("input-nodes"))
+            throw ParametersException("list of input nodes is empty");
 
-    if (!vm.count("compute-nodes"))
-        throw ParametersException("list of compute nodes is empty");
+        if (!vm.count("compute-nodes"))
+            throw ParametersException("list of compute nodes is empty");
 
-    _input_nodes = vm["input-nodes"].as<std::vector<std::string>>();
-    _compute_nodes = vm["compute-nodes"].as<std::vector<std::string>>();
+        _input_nodes = vm["input-nodes"].as<std::vector<std::string>>();
+        _compute_nodes = vm["compute-nodes"].as<std::vector<std::string>>();
 
-    if (vm.count("input-index"))
-        _input_indexes = vm["input-index"].as<std::vector<unsigned>>();
-    if (vm.count("compute-index"))
-        _compute_indexes = vm["compute-index"].as<std::vector<unsigned>>();
+        if (vm.count("input-index"))
+            _input_indexes = vm["input-index"].as<std::vector<unsigned>>();
+        if (vm.count("compute-index"))
+            _compute_indexes = vm["compute-index"].as<std::vector<unsigned>>();
 
-    if (_input_nodes.empty() && _compute_nodes.empty()) {
-        throw ParametersException("no node type specified");
+        if (_input_nodes.empty() && _compute_nodes.empty()) {
+            throw ParametersException("no node type specified");
+        }
+
+        for (auto input_index : _input_indexes) {
+            if (input_index >= _input_nodes.size()) {
+                std::ostringstream oss;
+                oss << "input node index (" << input_index << ") out of range (0.."
+                    << _input_nodes.size() - 1 << ")";
+                throw ParametersException(oss.str());
+            }
+        }
+
+        for (auto compute_index : _compute_indexes) {
+            if (compute_index >= _compute_nodes.size()) {
+                std::ostringstream oss;
+                oss << "compute node index (" << compute_index
+                    << ") out of range (0.." << _compute_nodes.size() - 1 << ")";
+                throw ParametersException(oss.str());
+            }
+        }
     }
 
     if (!_compute_nodes.empty() && _processor_executable.empty())
         throw ParametersException("processor executable not specified");
-
-    for (auto input_index : _input_indexes) {
-        if (input_index >= _input_nodes.size()) {
-            std::ostringstream oss;
-            oss << "input node index (" << input_index << ") out of range (0.."
-                << _input_nodes.size() - 1 << ")";
-            throw ParametersException(oss.str());
-        }
-    }
-
-    for (auto compute_index : _compute_indexes) {
-        if (compute_index >= _compute_nodes.size()) {
-            std::ostringstream oss;
-            oss << "compute node index (" << compute_index
-                << ") out of range (0.." << _compute_nodes.size() - 1 << ")";
-            throw ParametersException(oss.str());
-        }
-    }
 
     if (_in_data_buffer_size_exp == 0)
         _in_data_buffer_size_exp = suggest_in_data_buffer_size_exp();
@@ -274,38 +282,46 @@ void Parameters::parse_options(int argc, char* argv[])
 
     out.setVerbosity(static_cast<einhard::LogLevel>(log_level));
 
-    out.debug() << "input nodes (" << _input_nodes.size()
-                << "): " << _input_nodes;
-    out.debug() << "compute nodes (" << _compute_nodes.size()
-                << "): " << _compute_nodes;
-    for (auto input_index : _input_indexes) {
-        out.info() << "this is input node " << input_index << " (of "
-                   << _input_nodes.size() << ")";
-    }
-    for (auto compute_index : _compute_indexes) {
-        out.info() << "this is compute node " << compute_index << " (of "
-                   << _compute_nodes.size() << ")";
-    }
-
-    for (auto input_index : _input_indexes) {
-        if (input_index == 0) {
-            out.info() << "microslice size: "
-                       << human_readable_byte_count(_typical_content_size);
-            out.info() << "timeslice size: (" << _timeslice_size << " + "
-                       << _overlap_size << ") microslices";
-            out.info() << "number of timeslices: " << _max_timeslice_number;
-            out.info() << "input node buffer size: "
-                       << human_readable_byte_count(
-                              UINT64_C(1) << _in_data_buffer_size_exp) << " + "
-                       << human_readable_byte_count(
-                              (UINT64_C(1) << _in_desc_buffer_size_exp) *
-                              sizeof(fles::MicrosliceDescriptor));
-            out.info() << "compute node buffer size: "
-                       << human_readable_byte_count(
-                              UINT64_C(1) << _cn_data_buffer_size_exp) << " + "
-                       << human_readable_byte_count(
-                              (UINT64_C(1) << _cn_desc_buffer_size_exp) *
-                              sizeof(fles::TimesliceComponentDescriptor));
+    if (!_standalone) {
+        out.debug() << "input nodes (" << _input_nodes.size()
+                    << "): " << _input_nodes;
+        out.debug() << "compute nodes (" << _compute_nodes.size()
+                    << "): " << _compute_nodes;
+        for (auto input_index : _input_indexes) {
+            out.info() << "this is input node " << input_index << " (of "
+                       << _input_nodes.size() << ")";
         }
+        for (auto compute_index : _compute_indexes) {
+            out.info() << "this is compute node " << compute_index << " (of "
+                       << _compute_nodes.size() << ")";
+        }
+
+        for (auto input_index : _input_indexes) {
+            if (input_index == 0) {
+                print_buffer_info();
+            }
+        }
+    } else {
+        print_buffer_info();
     }
+}
+
+void Parameters::print_buffer_info() {
+    out.info() << "microslice size: "
+               << human_readable_byte_count(_typical_content_size);
+    out.info() << "timeslice size: (" << _timeslice_size << " + "
+               << _overlap_size << ") microslices";
+    out.info() << "number of timeslices: " << _max_timeslice_number;
+    out.info() << "input node buffer size: "
+               << human_readable_byte_count(
+                      UINT64_C(1) << _in_data_buffer_size_exp) << " + "
+               << human_readable_byte_count(
+                      (UINT64_C(1) << _in_desc_buffer_size_exp) *
+                      sizeof(fles::MicrosliceDescriptor));
+    out.info() << "compute node buffer size: "
+               << human_readable_byte_count(
+                      UINT64_C(1) << _cn_data_buffer_size_exp) << " + "
+               << human_readable_byte_count(
+                      (UINT64_C(1) << _cn_desc_buffer_size_exp) *
+                      sizeof(fles::TimesliceComponentDescriptor));
 }

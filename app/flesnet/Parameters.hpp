@@ -78,6 +78,9 @@ public:
     /// Retrieve the use flib flag.
     bool use_flib() const { return _use_flib; }
 
+    /// Retrieve the standalone mode flag.
+    bool standalone() const { return _standalone; }
+
     /// Retrieve the global maximum timeslice number.
     uint32_t max_timeslice_number() const { return _max_timeslice_number; }
 
@@ -112,6 +115,9 @@ private:
     /// Parse command line options.
     void parse_options(int argc, char* argv[]);
 
+    /// Print buffer information
+    void print_buffer_info();
+
     /// The global timeslice size in number of MCs.
     uint32_t _timeslice_size = 100;
 
@@ -137,6 +143,9 @@ private:
 
     /// The use flib flag.
     bool _use_flib = true;
+
+    /// The standalone mode flag.
+    bool _standalone = true;
 
     /// The global maximum timeslice number.
     uint32_t _max_timeslice_number = 100000;
