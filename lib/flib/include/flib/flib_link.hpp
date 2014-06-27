@@ -261,7 +261,7 @@ public:
   
   // REG: datapath_cfg
   // bit 0-1 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
-  enum data_rx_sel {disable, link, pgen, emu};
+  enum data_rx_sel {disable, emu, link, pgen};
 
   void set_data_rx_sel(data_rx_sel rx_sel) {
     uint32_t dp_cfg = _rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
@@ -271,6 +271,11 @@ public:
     case pgen :    _rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
     case emu :     _rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1<<1)); break;
     }
+  }
+
+  data_rx_sel get_data_rx_sel() {
+    uint32_t dp_cfg = _rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
+    return static_cast<data_rx_sel>(dp_cfg & 0x3);
   }
 
   void set_hdr_config(const struct hdr_config* config) {

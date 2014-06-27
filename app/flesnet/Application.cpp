@@ -28,12 +28,20 @@ Application::Application(Parameters const& par) : _par(par)
 
     // FIXME: all of this is a terrible mess
     if (par.use_flib()) {
-        // TODO: precence detection #524
+        // TODO: presence detection #524
         try
         {
             _flib =
                 std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
             _flib_links = _flib->get_links();
+
+            // delete deactivated links from vector
+            _flib_links.erase(std::remove_if(std::begin(_flib_links), std::end(_flib_links),
+                                             [](decltype(_flib_links[0]) link) {
+                                                 return link->get_data_rx_sel() ==
+                                                     flib::flib_link::disable;}),
+                              std::end(_flib_links));
+
             out.info() << "flib hardware links: " << _flib_links.size();
         }
         catch (std::exception const& e)
