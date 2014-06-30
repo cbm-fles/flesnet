@@ -147,8 +147,8 @@ private:
         }
       
       } else { // set default parameters
-        _link_config.at(i).rx_sel = flib::flib_link::pgen;
-        std::cout << " data source: pgen (default)" << std::endl;
+        _link_config.at(i).rx_sel = flib::flib_link::disable;
+        std::cout << " data source: disable (default)" << std::endl;
         _link_config.at(i).hdr_config.sys_id = 0xF0;
         _link_config.at(i).hdr_config.sys_ver = 0x01;        
       }

@@ -9,14 +9,16 @@ FLESnet:
 cd build
 ./flesnet --help
 cp ../contrib/flesnet_flib_example.cfg ./flesnet.cfg
+
 modify flesnet.cfg:
- - add as many lines 'input-nodes = localhost' as readout links
  - choose 'processor-executable' ,e.g. to store data
 
-Example: read 4 FLIB input links.
-Start flib_ctrl before starting flesnet!
-./flesnet -i0 -i1 -i2 -i3 -c0
- - add as many -iN as readout links
+Usage:
+Start flib_ctrl to configure FLIB before starting flesnet!
+Flesnet will automatically read all activated FLIB links.
+
+./flesnet
+
 
 NOTE: In case flesnet crashed, exited with an exception, was stopped
 or is just not working you might need to cleanup some things.
@@ -27,18 +29,29 @@ FLIB Control:
 
 cd build
 ./flib_ctrl --help
+cp ../contrib/flib.cfg ./flib.cfg
 
-Example: read flib input links with microslice size 8 µs,
-sys_id 0x10 and sys_ver 0x01:
-./flib_ctrl -t 1000 -s link -i 0x10 -v 0x01
+modify flib.cfg:
+ - Set the data source for each FLIB link.
+   For reading from the optical link use 'link'.
+   Note: link 0 is the link closest to the PCIe connector.
+ - Set links you do not intend to use to 'disable'.
+ - If reading from a optical link you need to provide
+   sys_id and sys_ver of the connected source.
+
+The provided example flib.cfg will read 4 FLIB links with
+patten generator and a Microslice size of 10 µs.
+
+Usage:
+./flib_ctrl
 
 Do not start/stop while flesnet is running!
 
 If link is selected as data source it is mandatory to provide 
 the subsystem identifier and the subsystem format version
 of the connected component. For all other data sources this is
-configured automatically. This information defines which 
-analysis code is called later on.
+configured automatically. This information can be used to 
+determine which analysis code is called later on.
 
 Defined subsystem identifiers are:
 Silicon Tracking System (STS) 		0x10 
@@ -86,7 +99,9 @@ but result in an unuseable file.)
 Programming the FPGA
 --------------------
 
-cp contrib/flib-reprogramm to a location in your path and adopt settings
+cp contrib/flib-reprogramm to a location in your path and adopt settings.
+Add full path to impcat, do not source Xilinx settings when using flesnet!
+
 usage:
 flib-reprogramm path/to/bitfile.bit
 
