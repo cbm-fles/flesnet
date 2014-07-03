@@ -11,24 +11,21 @@
 #ifndef LIBFLIB_BAR_H
 #define LIBFLIB_BAR_H
 
+#include <pthread.h>
 #include <pda.h>
+#include "rorcfs_device.hh"
 
 #define BAR_ERROR_CONSTRUCTOR_FAILED 0
-
-#include "rorcfs_device.hh"
-#include <pthread.h>
 
 /**
  * @class
  * @brief Represents a Base Address Register (BAR) file
- * mapping of the RORCs PCIe address space
+ * mapping of the FLIBs PCIe address space
  */
 class rorcfs_bar
 {
 public:
     /**
-     * Constructor that sets fname accordingly. No mapping is
-     * performed at this point.
      * @param dev parent rorcfs_device
      * @param n number of BAR to be mapped [0-6]
     **/
@@ -39,8 +36,8 @@ public:
     void* get_mem_ptr(){return static_cast<void*>(m_bar);};
 
     /**
-     * Get size of mapped BAR. This value is only valid after init()
-     * @return size of mapped BAR in (unsigned long) bytes
+     * Get size of mapped BAR.
+     * @return size of mapped BAR in bytes
      **/
     size_t get_size(){return(m_size);};
 
