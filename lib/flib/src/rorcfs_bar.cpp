@@ -35,56 +35,31 @@
 #include "../include/flib/rorcfs_device.hh"
 #include "../include/flib/rorc_registers.h"
 
-rorcfs_bar::rorcfs_bar(device *dev, int n)
+rorcfs_bar::rorcfs_bar
+(
+    device *dev,
+    uint8_t number
+)
 {
-	char basedir[] = "/sys/module/rorcfs/drivers/pci:rorcfs/";
-	char subdir[] = "/mmap/";
-	int digits = snprintf(NULL, 0, "%d", n);
+    m_parent_dev     = dev;
+    m_number         = number;
+//    m_pda_pci_device = m_parent_dev->getPdaPciDevice();
+//    m_bar            = m_parent_dev->getBarMap(m_number);
+//    m_size           = m_parent_dev->getBarSize(m_number);
 
+    if(m_bar == NULL)
+    { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
 
-	bar = NULL;
-
-	fname = (char *) malloc(strlen(basedir) + 12	+ 
-			strlen(subdir) + 3 + digits +1);
-
-	// get sysfs file name for selected bar
-	sprintf(fname, "%s0000:%02x:%02x.%x%sbar%d", 
-			basedir, dev->getBus(),
-			dev->getSlot(), dev->getFunc(), subdir, n);
-
-	number = n;
-	
-	// initialize mutex
-	pthread_mutex_init(&mtx, NULL);
+    pthread_mutex_init(&m_mtx, NULL);
 }
 
 rorcfs_bar::~rorcfs_bar()
 {
-	pthread_mutex_destroy(&mtx);
-	if (fname)
-		free(fname);
-	if (bar)
-		munmap( bar, barstat.st_size);
-	if (handle)
-		close(handle);
+//	pthread_mutex_destroy(&mtx);
+//	if (fname)
+//		free(fname);
+//	if (bar)
+//		munmap( bar, barstat.st_size);
+//	if (handle)
+//		close(handle);
 }
-
-int rorcfs_bar::init()
-{
-	handle = open(fname, O_RDWR);
-	if ( handle == -1 )
-		return handle;
-
-	if ( fstat(handle, &barstat) == -1 )
-		return -1;
-
-	bar = (unsigned int*) mmap(0, barstat.st_size, 
-			PROT_READ|PROT_WRITE, MAP_SHARED, handle, 0);
-	if ( bar == MAP_FAILED ) {
-          return -1;
-        }
-
-	return 0;
-}
-
-

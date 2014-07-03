@@ -22,8 +22,12 @@
  * mapping of the RORCs PCIe address space
  */
 
-#ifndef _RORCLIB_RORCFS_BAR_H
-#define _RORCLIB_RORCFS_BAR_H
+#ifndef LIBFLIB_BAR_H
+#define LIBFLIB_BAR_H
+
+#include <pda.h>
+
+#define BAR_ERROR_CONSTRUCTOR_FAILED 0
 
 #include "rorcfs_device.hh"
 #include <sys/stat.h>
@@ -39,7 +43,8 @@
  * initialized (with init()) you can use get() and set() to
  * read from and/or write to the device.
  */
-class rorcfs_bar {
+class rorcfs_bar
+{
 public:
   /**
    * Constructor that sets fname accordingly. No mapping is
@@ -47,41 +52,44 @@ public:
    * @param dev parent rorcfs_device
    * @param n number of BAR to be mapped [0-6]
    **/
-  rorcfs_bar(device* dev, int n);
+  rorcfs_bar(device* dev, uint8_t n);
 
   /**
    * Deconstructor: free fname, unmap BAR, close file
    **/
   ~rorcfs_bar();
 
-  /**
-   * initialize BAR mapping: open sysfs file, get file stats,
-   * mmap file. This has to be done before using any other
-   * member funtion. This function will fail if the requested
-   * BAR does not exist.
-   * @return 0 on sucess, -1 on errors
-   **/
-  int init();
+//  /**
+//   * initialize BAR mapping: open sysfs file, get file stats,
+//   * mmap file. This has to be done before using any other
+//   * member funtion. This function will fail if the requested
+//   * BAR does not exist.
+//   * @return 0 on sucess, -1 on errors
+//   **/
+//  int init();
 
-  void* get_mem_ptr() {
-    return static_cast<void*>(bar);
-  };
+    void* get_mem_ptr(){return static_cast<void*>(m_bar);};
 
-  /**
-   * get size of mapped BAR. This value is only valid after init()
-   * @return size of mapped BAR in (unsigned long) bytes
-   **/
-  size_t get_size() {
-    return static_cast<size_t>(barstat.st_size);
-  };
+    /**
+     * get size of mapped BAR. This value is only valid after init()
+     * @return size of mapped BAR in (unsigned long) bytes
+     **/
+    size_t get_size(){return(m_size);};
 
-private:
-  int handle;
-  char* fname;
-  struct stat barstat;
-  unsigned int* bar;
-  int number;
-  pthread_mutex_t mtx;
+protected:
+    int handle;
+    char* fname;
+    struct stat barstat;
+    unsigned int* bar;
+    pthread_mutex_t mtx;
+
+    /** NEW */
+    device          *m_parent_dev;
+    PciDevice       *m_pda_pci_device;
+    pthread_mutex_t  m_mtx;
+    int32_t          m_number;
+    uint8_t         *m_bar;
+    size_t           m_size;
 };
 
-#endif // _RORCLIB_RORCFS_BAR_H
+#endif /* LIBFLIB_BAR_H */
