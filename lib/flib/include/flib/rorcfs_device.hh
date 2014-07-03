@@ -21,7 +21,7 @@ class device
 {
 
 public:
-   device();
+   device(int32_t device_index);
   ~device();
 
   uint16_t getDomain();

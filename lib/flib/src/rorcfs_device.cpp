@@ -17,7 +17,7 @@
 using namespace std;
 
 
-device::device()
+device::device(int32_t device_index)
 {
     const char *pci_ids[] =
     {
@@ -28,7 +28,7 @@ device::device()
     if( (m_dop = DeviceOperator_new(pci_ids)) == NULL)
     { throw DEVICE_CONSTRUCTOR_FAILED; }
 
-    if(DeviceOperator_getPciDevice(m_dop, &m_device, 0) != PDA_SUCCESS)
+    if(DeviceOperator_getPciDevice(m_dop, &m_device, device_index) != PDA_SUCCESS)
     { throw DEVICE_CONSTRUCTOR_FAILED; }
 
 
