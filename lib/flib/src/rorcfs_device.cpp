@@ -1,11 +1,3 @@
-/**
- *
- * @file
- * @author Dominic Eschweiler <dominic.eschweiler@cern.ch>
- * @date 2014-07-03
- *
- **/
-
 #include<iostream>
 #include<cstdlib>
 #include<cstring>
@@ -40,6 +32,8 @@ device::~device()
     { cout << "Deleting device operator failed!" << endl; }
 }
 
+
+
 uint16_t
 device::getDomain()
 {
@@ -49,8 +43,6 @@ device::getDomain()
 
     return(0);
 }
-
-
 
 uint8_t
 device::getBus()
@@ -62,8 +54,6 @@ device::getBus()
     return(0);
 }
 
-
-
 uint8_t
 device::getSlot()
 {
@@ -73,8 +63,6 @@ device::getSlot()
 
     return(0);
 }
-
-
 
 uint8_t
 device::getFunc()
