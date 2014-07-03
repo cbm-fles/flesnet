@@ -89,15 +89,6 @@ public:
    **/
   uint8 getFunc() { return func; }
 
-//  /**
-//   * get SysFS directory name
-//   * @param ptr char** pointer for the directory name
-//   * @return size of directory name
-//   **/
-//  int getDName(char** ptr);
-
-
-
 protected:
     char* dname;
     int dname_size;

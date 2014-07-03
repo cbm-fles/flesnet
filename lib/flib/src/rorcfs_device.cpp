@@ -1,19 +1,9 @@
 /**
- * @file rorcfs_device.cpp
- * @author Heiko Engel <hengel@cern.ch>
- * @date 2011-08-16
- * 
- * @section LICENSE
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
- * http://www.gnu.org/copyleft/gpl.html
+ *
+ * @file
+ * @author Dominic Eschweiler <dominic.eschweiler@cern.ch>
+ * @date 2014-07-03
+ *
  **/
 
 #include<cstdlib>
@@ -99,51 +89,4 @@ int device::init(int n)
 //    free(namelist);
 //  }
   return 0;
-}
-
-
-//int rorcfs_device::getDName ( char **ptr )
-//{
-//	*ptr = dname;
-//	return dname_size;
-//}
-
-
-///**
-// * scandir_filter:
-// * return nonzero if directory name starts with "0000:"
-// * This is a filter for PCI-IDs, e.g. "0000:03:00.0"
-// **/
-//int scandir_filter(const struct dirent* entry) {
-//	if( strncmp(entry->d_name, "0000:", 5)== 0)
-//		return 1;
-//	else
-//		return 0;
-//}
-
-/**
- * find PCIe devices bound with rorcfs
- *
- * the directory names can be found in namelist[n]->d_name
- * @param basedir sysfs directory to be listed
- * @param namelist struct dirent*** to contain the filtered list
- * @return number of devices found bound with rorcfs
- **/
-int device::find_rorc
-(
-    char *basedir,
-    struct dirent ***namelist
-)
-{
-//	int err, n;
-//	struct stat filestat;
-//
-//	err = stat(basedir, &filestat);
-//	if (err) {
-//		return -ENOTDIR;
-//	}
-//
-//	n = scandir(basedir, namelist, scandir_filter, alphasort);
-//
-//	return n;
 }
