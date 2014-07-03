@@ -16,16 +16,20 @@
  * http://www.gnu.org/copyleft/gpl.html
  **/
 
-#include <cstdlib>
-#include <stdio.h>
-#include <dirent.h>
-#include <cstring>
-#include <errno.h>
-#include <sys/stat.h>
+#include<cstdlib>
+#include<iostream>
+#include<cstring>
 
-#include <pda.h>
+#include<stdio.h>
+#include<dirent.h>
+#include<errno.h>
+#include<sys/stat.h>
+
+#include<pda.h>
 
 #include "../include/flib/rorcfs_device.hh"
+
+using namespace std;
 
 
 rorcfs_device::rorcfs_device()
@@ -36,7 +40,7 @@ rorcfs_device::rorcfs_device()
         NULL         /* Delimiter*/
     };
 
-    if( (m_dop = DeviceOperator_new(pci_ids) ) == NULL)
+    if( (m_dop = DeviceOperator_new(pci_ids)) == NULL)
     { throw DEVICE_CONSTRUCTOR_FAILED; }
 
     if(DeviceOperator_getPciDevice(m_dop, &m_device, 0) != PDA_SUCCESS)
@@ -47,9 +51,8 @@ rorcfs_device::rorcfs_device()
 
 rorcfs_device::~rorcfs_device()
 {
-  if (dname) {
-    free(dname);
-  }
+    if( DeviceOperator_delete(m_dop, PDA_DELETE_PERSISTANT) != PDA_SUCCESS)
+    { cout << "Deleting device operator failed!" << endl; }
 }
 
 int rorcfs_device::init(int n) {
