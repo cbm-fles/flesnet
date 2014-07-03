@@ -32,7 +32,7 @@
 using namespace std;
 
 
-rorcfs_device::rorcfs_device()
+device::device()
 {
     const char *pci_ids[] =
     {
@@ -49,76 +49,77 @@ rorcfs_device::rorcfs_device()
 
 }
 
-rorcfs_device::~rorcfs_device()
+device::~device()
 {
     if( DeviceOperator_delete(m_dop, PDA_DELETE_PERSISTANT) != PDA_SUCCESS)
     { cout << "Deleting device operator failed!" << endl; }
 }
 
-int rorcfs_device::init(int n) {
-	int n_dev;
-	char basedir[] = "/sys/module/rorcfs/drivers/pci:rorcfs/";
-	struct dirent **namelist;
-	char *pEnd;
-
-	if (dname)
-		free(dname);
-	
-	n_dev = find_rorc(basedir, &namelist);
-	if ( n_dev <= 0 || n<0 || n > n_dev ) {
-          free_namelist(namelist, n_dev);
-          return -1;
-        }
-
-	bus = (uint8) strtoul(namelist[n]->d_name+5, &pEnd, 16);
-	slot = (uint8) strtoul(pEnd+1, &pEnd, 16);
-	func= (uint8) strtoul(pEnd+1, &pEnd, 16);
-
-	dname_size = snprintf(NULL, 0, "%s0000:%02x:%02x.%x/mmap/", 
-			basedir, bus, slot, func);
-	dname_size++;
-
-	dname = (char *) malloc(dname_size);
-	if ( !dname ) {
-          free_namelist(namelist, n_dev);
-          return -1;
-        }
-	snprintf(dname, dname_size, "%s0000:%02x:%02x.%x/mmap/", 
-			basedir, bus, slot, func);
-
-        free_namelist(namelist, n_dev);
-	return 0;
-}
-
-void rorcfs_device::free_namelist(struct dirent **namelist, int n) {
-  if (n > 0) {
-    while (n--) {
-      free(namelist[n]);
-    }
-    free(namelist);
-  }
-  return;
-}
-
-
-int rorcfs_device::getDName ( char **ptr )
+int device::init(int n)
 {
-	*ptr = dname;
-	return dname_size;
+//	int n_dev;
+//	char basedir[] = "/sys/module/rorcfs/drivers/pci:rorcfs/";
+//	struct dirent **namelist;
+//	char *pEnd;
+//
+//	if (dname)
+//		free(dname);
+//
+//	n_dev = find_rorc(basedir, &namelist);
+//	if ( n_dev <= 0 || n<0 || n > n_dev ) {
+//          free_namelist(namelist, n_dev);
+//          return -1;
+//        }
+//
+//	bus = (uint8) strtoul(namelist[n]->d_name+5, &pEnd, 16);
+//	slot = (uint8) strtoul(pEnd+1, &pEnd, 16);
+//	func= (uint8) strtoul(pEnd+1, &pEnd, 16);
+//
+//	dname_size = snprintf(NULL, 0, "%s0000:%02x:%02x.%x/mmap/",
+//			basedir, bus, slot, func);
+//	dname_size++;
+//
+//	dname = (char *) malloc(dname_size);
+//	if ( !dname ) {
+//          free_namelist(namelist, n_dev);
+//          return -1;
+//        }
+//	snprintf(dname, dname_size, "%s0000:%02x:%02x.%x/mmap/",
+//			basedir, bus, slot, func);
+//
+//        free_namelist(namelist, n_dev);
+//	return 0;
+//}
+//
+//void device::free_namelist(struct dirent **namelist, int n) {
+//  if (n > 0) {
+//    while (n--) {
+//      free(namelist[n]);
+//    }
+//    free(namelist);
+//  }
+  return 0;
 }
 
 
-/**
- * scandir_filter:
- * return nonzero if directory name starts with "0000:"
- * This is a filter for PCI-IDs, e.g. "0000:03:00.0"
- **/
-int scandir_filter(const struct dirent* entry) {
-	if( strncmp(entry->d_name, "0000:", 5)== 0)
-		return 1;
-	else
-		return 0;
-}
+//int rorcfs_device::getDName ( char **ptr )
+//{
+//	*ptr = dname;
+//	return dname_size;
+//}
+
+
+///**
+// * scandir_filter:
+// * return nonzero if directory name starts with "0000:"
+// * This is a filter for PCI-IDs, e.g. "0000:03:00.0"
+// **/
+//int scandir_filter(const struct dirent* entry) {
+//	if( strncmp(entry->d_name, "0000:", 5)== 0)
+//		return 1;
+//	else
+//		return 0;
+//}
 
 /**
  * find PCIe devices bound with rorcfs
@@ -128,16 +129,21 @@ int scandir_filter(const struct dirent* entry) {
  * @param namelist struct dirent*** to contain the filtered list
  * @return number of devices found bound with rorcfs
  **/
-int rorcfs_device::find_rorc(char *basedir, struct dirent ***namelist) {
-	int err, n;
-	struct stat filestat;
-
-	err = stat(basedir, &filestat);
-	if (err) {
-		return -ENOTDIR;
-	}
-
-	n = scandir(basedir, namelist, scandir_filter, alphasort);
-
-	return n;
+int device::find_rorc
+(
+    char *basedir,
+    struct dirent ***namelist
+)
+{
+//	int err, n;
+//	struct stat filestat;
+//
+//	err = stat(basedir, &filestat);
+//	if (err) {
+//		return -ENOTDIR;
+//	}
+//
+//	n = scandir(basedir, namelist, scandir_filter, alphasort);
+//
+//	return n;
 }

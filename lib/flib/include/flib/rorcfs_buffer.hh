@@ -37,21 +37,27 @@ public:
   rorcfs_buffer();
   ~rorcfs_buffer();
 
-  /**
-   * Allocate buffer: This function initiates allocation of an
-   * EventBuffer of [size] bytes with Buffer-ID [id]. The size
-   * of the according ReportBuffer is determined by the driver.
-   * @param dev pointer to parent rorcfs_device instance
-   * @param size Size of EventBuffer in bytes
-   * @param id Buffer-ID to be used for this buffer. This ID has to
-   *        be unique within all instances of rorcfs_buffer on a machine.
-   * @param overmap enables overmapping of the physical pages if nonzero
-   * @param dma_direction select from RORCFS_DMA_FROM_DEVICE,
-   *        RORCFS_DMA_TO_DEVICE, RORCFS_DMA_BIDIRECTIONAL
-   * @return 0 on sucess, -1 on error
-   **/
-  int allocate(rorcfs_device* dev, unsigned long size, unsigned long id,
-               int overmap, int dma_direction);
+    /**
+    * Allocate buffer: This function initiates allocation of an
+    * EventBuffer of [size] bytes with Buffer-ID [id]. The size
+    * of the according ReportBuffer is determined by the driver.
+    * @param dev pointer to parent rorcfs_device instance
+    * @param size Size of EventBuffer in bytes
+    * @param id Buffer-ID to be used for this buffer. This ID has to
+    *        be unique within all instances of rorcfs_buffer on a machine.
+    * @param overmap enables overmapping of the physical pages if nonzero
+    * @param dma_direction select from RORCFS_DMA_FROM_DEVICE,
+    *        RORCFS_DMA_TO_DEVICE, RORCFS_DMA_BIDIRECTIONAL
+    * @return 0 on sucess, -1 on error
+    **/
+    int allocate
+    (
+      device* dev,
+      unsigned long size,
+      unsigned long id,
+      int overmap,
+      int dma_direction
+    );
 
   /**
    * Free Buffer: This functions initiates de-allocation of the
@@ -60,13 +66,18 @@ public:
    **/
   int deallocate();
 
-  /**
-   * Connect to an existing buffer
-   * @param dev parent rorcfs device
-   * @param id buffer ID of exisiting buffer
-   * @return 0 on sucessful connect, -EPERM or -ENOMEM on errors
-   **/
-  int connect(rorcfs_device* dev, unsigned long id);
+    /**
+    * Connect to an existing buffer
+    * @param dev parent rorcfs device
+    * @param id buffer ID of exisiting buffer
+    * @return 0 on sucessful connect, -EPERM or -ENOMEM on errors
+    **/
+    int
+    connect
+    (
+      device* dev,
+      unsigned long id
+    );
 
   /**
    * get Buffer-ID
@@ -127,7 +138,7 @@ public:
    **/
   unsigned int* getMem() { return mem; }
 
-private:
+protected:
   // sysfs directory of buffer
   char* dname;
 

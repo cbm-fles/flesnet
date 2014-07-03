@@ -35,7 +35,7 @@
 #include "../include/flib/rorcfs_device.hh"
 #include "../include/flib/rorc_registers.h"
 
-rorcfs_bar::rorcfs_bar(rorcfs_device *dev, int n)
+rorcfs_bar::rorcfs_bar(device *dev, int n)
 {
 	char basedir[] = "/sys/module/rorcfs/drivers/pci:rorcfs/";
 	char subdir[] = "/mmap/";

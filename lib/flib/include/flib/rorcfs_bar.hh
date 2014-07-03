@@ -47,7 +47,7 @@ public:
    * @param dev parent rorcfs_device
    * @param n number of BAR to be mapped [0-6]
    **/
-  rorcfs_bar(rorcfs_device* dev, int n);
+  rorcfs_bar(device* dev, int n);
 
   /**
    * Deconstructor: free fname, unmap BAR, close file

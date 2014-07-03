@@ -1,5 +1,5 @@
 /**
- * @file rorcfs_device.hh
+ * @file
  * @author Heiko Engel <hengel@cern.ch>
  * @version 0.1
  * @date 2011-08-16
@@ -20,45 +20,6 @@
  *
  * The rorcfs_device represents a RORC PCIe device
  */
-
-/**
- * @mainpage
- * @author Heiko Engel <hengel@cern.ch>
- * @date 2011-08-16
- * @brief Library to interface to rorcfs kernel driver
- *
- * \section Organization
- * A rorcfs_device object corresponds to a phsical RORC, resp. a PCI
- * device controlled by the rorcfs device driver. Use rorcfs_device::init()
- * to bind the object to the hardware.
- *
- * Objects of rorcfs_bar can be attached to a rorcfs_device to control
- * its PCIe Base Address Registers (BARs). Once the rorcfs_bar object is
- * initialized with rorcfs_bar::init() it can perform low level IO to/from
- * the RORC via rorcfs_bar::get() or rorcfs_bar::set() methods. These
- * methods are widely used in the rorcLib.
- *
- * A rorcfs_buffer object represents a DMA buffer on the host machine. This
- * buffers are mapped to the RORC for DMA transfers. Buffers can be
- * allocated and deallocated with rorcfs_buffer::allocate() and
- * rorcfs_buffer::deallocate(). The object can be bound to existing buffers
- * via the rorcfs_buffer::connect() method.
- *
- * All DMA operations are handled with objects of rorcfs_dma_channel. These
- * objects have to be initialized to a specific bar and offset within the
- * bar with rorcfs_dma_channel::init(). After initialization the DMA buffer
- * information can be copied to the RORC, the maximum payload can be set and
- * the DMA channel can be enabled. Once data is available it is written to the
- * buffers on the host machine.
- *
- * In order to receive data a DIU has to be instantiated. This is done with an
- * object of rorcfs_diu. The data source of the rorcfs_diu object can either
- * be an actual DIU or a pattern generator at the DIU Interface. The data source
- * can be selected with rorcfs_diu::setDataSource(). If a pattern generator is
- * chosen, an according rorcfs_pattern_generator object has to be attached to
- *the
- * DIU in order to control the pattern generator parameters.
- **/
 
 #include <pda.h>
 
@@ -92,10 +53,12 @@ typedef unsigned char uint8;
  * Once the device is sucessfully initialized you can attach
  * instances of rorcfs_bar.
  **/
-class rorcfs_device {
+class device
+{
+
 public:
-  rorcfs_device();
-  ~rorcfs_device();
+   device();
+  ~device();
 
   /**
    * Initialize device. This has to be done before using
@@ -126,12 +89,12 @@ public:
    **/
   uint8 getFunc() { return func; }
 
-  /**
-   * get SysFS directory name
-   * @param ptr char** pointer for the directory name
-   * @return size of directory name
-   **/
-  int getDName(char** ptr);
+//  /**
+//   * get SysFS directory name
+//   * @param ptr char** pointer for the directory name
+//   * @return size of directory name
+//   **/
+//  int getDName(char** ptr);
 
 
 

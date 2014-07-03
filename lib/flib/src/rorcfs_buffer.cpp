@@ -40,17 +40,17 @@
  **/
 rorcfs_buffer::rorcfs_buffer()
 {
-	dname = NULL;
-	dname_size = 0;
-	id = 0;
-	PhysicalSize = 0;
-	MappingSize = 0;
-	nSGEntries = 0;
-	mem = NULL;
-	overmapped = 0;
-	dma_direction = 0;
-	base_name_size = 0;
-	base_name = NULL;
+    dname          = NULL;
+    dname_size     = 0;
+    id             = 0;
+    PhysicalSize   = 0;
+    MappingSize    = 0;
+    nSGEntries     = 0;
+    mem            = NULL;
+    overmapped     = 0;
+    dma_direction  = 0;
+    base_name_size = 0;
+    base_name      = NULL;
 }
 
 /**
@@ -120,203 +120,210 @@ int rorcfs_buffer::deallocate()
  * Allocate Buffer: initiate memory allocation,
  * connect to new buffer & retrieve actual buffer sizes
  **/
-int rorcfs_buffer::allocate( 
-		rorcfs_device *dev, 
-		unsigned long size, 
-		unsigned long id,
-		int overmap,
-		int dma_direction)
+int rorcfs_buffer::allocate
+(
+    device *dev,
+    unsigned long  size,
+    unsigned long  id,
+    int            overmap,
+    int            dma_direction
+)
 {
-	char *fname;
-	struct t_rorcfs_buffer buf;
-	int fd, ret;
-
-	// already connected to another buffer? unmap first!
-	if ( mem!=NULL ) {
-		errno = EPERM;
-		return -1;
-	}
-
-	// get sysfs base directory name and size
-	base_name_size = dev->getDName( &base_name );
-
-	fname = (char *) malloc( base_name_size + 12 );
-	if (!fname) {
-		errno = ENOMEM;
-		return -1;
-	}
-
-	snprintf(fname, base_name_size + 12 , "%salloc_buffer",	base_name);
-	buf.id = id;
-	buf.bytes = size;
-	buf.overmap = overmap;
-	buf.dma_direction = dma_direction;
-
-	fd = open(fname, O_WRONLY);
-	if ( fd==-1 ) {
-		perror("open alloc_buffer");
-		free(fname);
-		return -1;
-	}
-
-	ret = write( fd, &buf, sizeof(buf) );
-	if ( ret != sizeof(buf) ) {
-		//perror("write to alloc_buffer");
-		close(fd);
-		free(fname);
-		return -1;
-	}
-
-	free(fname);
-	close(fd);
-
-	// connect to allocated buffer
-	if( connect(dev, id) == -1 ) {
-		return -1;
-	}
+//	char *fname;
+//	struct t_rorcfs_buffer buf;
+//	int fd, ret;
+//
+//	// already connected to another buffer? unmap first!
+//	if ( mem!=NULL ) {
+//		errno = EPERM;
+//		return -1;
+//	}
+//
+//	// get sysfs base directory name and size
+//	base_name_size = dev->getDName( &base_name );
+//
+//	fname = (char *) malloc( base_name_size + 12 );
+//	if (!fname) {
+//		errno = ENOMEM;
+//		return -1;
+//	}
+//
+//	snprintf(fname, base_name_size + 12 , "%salloc_buffer",	base_name);
+//	buf.id = id;
+//	buf.bytes = size;
+//	buf.overmap = overmap;
+//	buf.dma_direction = dma_direction;
+//
+//	fd = open(fname, O_WRONLY);
+//	if ( fd==-1 ) {
+//		perror("open alloc_buffer");
+//		free(fname);
+//		return -1;
+//	}
+//
+//	ret = write( fd, &buf, sizeof(buf) );
+//	if ( ret != sizeof(buf) ) {
+//		//perror("write to alloc_buffer");
+//		close(fd);
+//		free(fname);
+//		return -1;
+//	}
+//
+//	free(fname);
+//	close(fd);
+//
+//	// connect to allocated buffer
+//	if( connect(dev, id) == -1 ) {
+//		return -1;
+//	}
 
 	return 0;
 }
 
 
 
-int rorcfs_buffer::connect( rorcfs_device *dev, unsigned long id )
+int
+rorcfs_buffer::connect
+(
+    device *dev,
+    unsigned long id
+)
 {
-	char *fname;
-	int fd, fname_size;
-	struct stat filestat;
-	int nbytes = 0;
-
-	if ( mem!=NULL ) { //already connected, unmap first!
-		errno = EPERM;
-		return -1;
-	}
-
-	// get sysfs base directory name and size
-	base_name_size = dev->getDName( &base_name );
-
-	// get MappingSize from sysfs attribute
-	fname_size = snprintf(NULL, 0, "%s%03ld/mem", base_name, id);
-	fname_size++;
-	fname = (char *) malloc(fname_size);
-	if (!fname) {
-		errno = ENOMEM;
-		return -1;
-	}
-
-	snprintf(fname, fname_size, "%s%03ld/mem", base_name, id);
-	//printf("fname=%s\n", fname);
-	fdEB = open(fname, O_RDWR);
-	if (fdEB==-1) {
-		perror("open mem");
-		free(fname);
-		return -1;
-	}
-	free(fname);
-	
-	if ( fstat(fdEB, &filestat) == -1 ) {
-		close(fdEB);
-		return -1;
-	}
-	
-	// set MappingSize to the size of the sysfs file
-	MappingSize = filestat.st_size;
-
-	// calculate PhysicalSize with "overmapped" sysfs attribute
-	fname_size = snprintf(NULL, 0, "%s%03ld/overmapped", base_name, id);
-	fname_size++;
-	fname = (char *) malloc(fname_size);
-	if (!fname) {
-		errno = ENOMEM;
-		close(fdEB);
-		return -1;
-	}
-
-	snprintf(fname, fname_size, "%s%03ld/overmapped", base_name, id);
-	fd = open(fname, O_RDONLY);
-	if (fd==-1) {
-		perror("open overmapped");
-		free(fname);
-		close(fdEB);
-		return -1;
-	}
-	free(fname);
-
-	// read from "overmapped" - returns 1 or 0
-	nbytes = read( fd, &overmapped, sizeof(int) );
-	if( nbytes != sizeof(int) ) {
-		perror("read overmapped");
-		close(fd);
-		close(fdEB);
-		return -1;
-	}
-	close(fd);
-
-	// Set PhysicalSize attribute according to the contents of
-	// the sysfs file "overmapped" 
-	if ( overmapped )
-		PhysicalSize = MappingSize/2;
-	else
-		PhysicalSize = MappingSize;
-
-
-
-
-	// MMap Buffer
-	mem = (unsigned int*)mmap(0, MappingSize, PROT_READ|PROT_WRITE, 
-			MAP_SHARED, fdEB, 0);
-	if( mem==MAP_FAILED ) {
-		close(fdEB);
-		perror("mmap mem");
-		return -1;
-	}
-
-	// get nSGEntries from sysfs attribute
-	fname_size = snprintf(NULL, 0, "%s%03ld/sglist", base_name, id);
-	fname_size++;
-	fname = (char *) malloc(fname_size);
-	if (!fname) {
-		errno = ENOMEM;
-		return -1;
-	}
-
-	snprintf(fname, fname_size, "%s%03ld/sglist", base_name, id);
-	fd = open(fname, O_RDONLY);
-	if (fd==-1) {
-		free(fname);
-		perror("open sglist");
-		return -1;
-	}
-	free(fname);
-
-	if ( fstat(fd, &filestat) == -1 ) {
-		close(fd);
-		return -1;
-	}
-
-	nSGEntries = filestat.st_size / sizeof(struct rorcfs_dma_desc);
-
-	close(fd);
-
-	// store buffer id
-	this->id = id;
-		
-	// save sysfs directory name of created buffer
-	// e.g. /sys/module/rorcfs/drivers/pci:rorcfs/0000:03:00.0/mmap/001/
-	dname_size = snprintf(NULL, 0, "%s%03ld/", base_name, id);
-	dname_size++;
-	dname = (char *) malloc(dname_size);
-	if (!dname) {
-		errno = ENOMEM;
-		return -1;
-	}
-
-	snprintf(dname, dname_size, "%s%03ld/", base_name, id);
-	
-	librorc_debug("librorc::connect ID=%ld, PhysSize=%ld, MapSize=%ld, "
-			"nSG=%ld, overmapped=%d, dma_direction=%d\n",
-			id, PhysicalSize, MappingSize, nSGEntries, overmapped,
-			dma_direction );
-
-	return 0;
+//	char *fname;
+//	int fd, fname_size;
+//	struct stat filestat;
+//	int nbytes = 0;
+//
+//	if ( mem!=NULL ) { //already connected, unmap first!
+//		errno = EPERM;
+//		return -1;
+//	}
+//
+//	// get sysfs base directory name and size
+//	base_name_size = dev->getDName( &base_name );
+//
+//	// get MappingSize from sysfs attribute
+//	fname_size = snprintf(NULL, 0, "%s%03ld/mem", base_name, id);
+//	fname_size++;
+//	fname = (char *) malloc(fname_size);
+//	if (!fname) {
+//		errno = ENOMEM;
+//		return -1;
+//	}
+//
+//	snprintf(fname, fname_size, "%s%03ld/mem", base_name, id);
+//	//printf("fname=%s\n", fname);
+//	fdEB = open(fname, O_RDWR);
+//	if (fdEB==-1) {
+//		perror("open mem");
+//		free(fname);
+//		return -1;
+//	}
+//	free(fname);
+//
+//	if ( fstat(fdEB, &filestat) == -1 ) {
+//		close(fdEB);
+//		return -1;
+//	}
+//
+//	// set MappingSize to the size of the sysfs file
+//	MappingSize = filestat.st_size;
+//
+//	// calculate PhysicalSize with "overmapped" sysfs attribute
+//	fname_size = snprintf(NULL, 0, "%s%03ld/overmapped", base_name, id);
+//	fname_size++;
+//	fname = (char *) malloc(fname_size);
+//	if (!fname) {
+//		errno = ENOMEM;
+//		close(fdEB);
+//		return -1;
+//	}
+//
+//	snprintf(fname, fname_size, "%s%03ld/overmapped", base_name, id);
+//	fd = open(fname, O_RDONLY);
+//	if (fd==-1) {
+//		perror("open overmapped");
+//		free(fname);
+//		close(fdEB);
+//		return -1;
+//	}
+//	free(fname);
+//
+//	// read from "overmapped" - returns 1 or 0
+//	nbytes = read( fd, &overmapped, sizeof(int) );
+//	if( nbytes != sizeof(int) ) {
+//		perror("read overmapped");
+//		close(fd);
+//		close(fdEB);
+//		return -1;
+//	}
+//	close(fd);
+//
+//	// Set PhysicalSize attribute according to the contents of
+//	// the sysfs file "overmapped"
+//	if ( overmapped )
+//		PhysicalSize = MappingSize/2;
+//	else
+//		PhysicalSize = MappingSize;
+//
+//
+//
+//
+//	// MMap Buffer
+//	mem = (unsigned int*)mmap(0, MappingSize, PROT_READ|PROT_WRITE,
+//			MAP_SHARED, fdEB, 0);
+//	if( mem==MAP_FAILED ) {
+//		close(fdEB);
+//		perror("mmap mem");
+//		return -1;
+//	}
+//
+//	// get nSGEntries from sysfs attribute
+//	fname_size = snprintf(NULL, 0, "%s%03ld/sglist", base_name, id);
+//	fname_size++;
+//	fname = (char *) malloc(fname_size);
+//	if (!fname) {
+//		errno = ENOMEM;
+//		return -1;
+//	}
+//
+//	snprintf(fname, fname_size, "%s%03ld/sglist", base_name, id);
+//	fd = open(fname, O_RDONLY);
+//	if (fd==-1) {
+//		free(fname);
+//		perror("open sglist");
+//		return -1;
+//	}
+//	free(fname);
+//
+//	if ( fstat(fd, &filestat) == -1 ) {
+//		close(fd);
+//		return -1;
+//	}
+//
+//	nSGEntries = filestat.st_size / sizeof(struct rorcfs_dma_desc);
+//
+//	close(fd);
+//
+//	// store buffer id
+//	this->id = id;
+//
+//	// save sysfs directory name of created buffer
+//	// e.g. /sys/module/rorcfs/drivers/pci:rorcfs/0000:03:00.0/mmap/001/
+//	dname_size = snprintf(NULL, 0, "%s%03ld/", base_name, id);
+//	dname_size++;
+//	dname = (char *) malloc(dname_size);
+//	if (!dname) {
+//		errno = ENOMEM;
+//		return -1;
+//	}
+//
+//	snprintf(dname, dname_size, "%s%03ld/", base_name, id);
+//
+//	librorc_debug("librorc::connect ID=%ld, PhysSize=%ld, MapSize=%ld, "
+//			"nSG=%ld, overmapped=%d, dma_direction=%d\n",
+//			id, PhysicalSize, MappingSize, nSGEntries, overmapped,
+//			dma_direction );
+//
+    return 0;
 }
