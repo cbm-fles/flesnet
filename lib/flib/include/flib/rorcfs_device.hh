@@ -60,6 +60,10 @@
  * DIU in order to control the pattern generator parameters.
  **/
 
+#include <pda.h>
+
+#define DEVICE_CONSTRUCTOR_FAILED 0
+
 #ifndef _RORCLIB_RORCFS_DEVICE_H
 #define _RORCLIB_RORCFS_DEVICE_H
 
@@ -129,17 +133,21 @@ public:
    **/
   int getDName(char** ptr);
 
-private:
-  char* dname;
-  int dname_size;
-  uint8 bus;
-  uint8 slot;
-  uint8 func;
 
-  void free_namelist(struct dirent** namelist, int n);
 
 protected:
-  int find_rorc(char* basedir, struct dirent*** namelist);
+    char* dname;
+    int dname_size;
+    uint8 bus;
+    uint8 slot;
+    uint8 func;
+
+    int find_rorc(char* basedir, struct dirent*** namelist);
+    void free_namelist(struct dirent** namelist, int n);
+
+    /*NEW*/
+    DeviceOperator *m_dop;
+    PciDevice      *m_device;
 };
 
 #endif

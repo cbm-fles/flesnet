@@ -29,9 +29,20 @@
 
 
 rorcfs_device::rorcfs_device()
-{ 
-	dname = NULL;
-	dname_size = 0;
+{
+    const char *pci_ids[] =
+    {
+        "10dc beef", /* CRORC as registered at CERN */
+        NULL         /* Delimiter*/
+    };
+
+    if( (m_dop = DeviceOperator_new(pci_ids) ) == NULL)
+    { throw DEVICE_CONSTRUCTOR_FAILED; }
+
+    if(DeviceOperator_getPciDevice(m_dop, &m_device, 0) != PDA_SUCCESS)
+    { throw DEVICE_CONSTRUCTOR_FAILED; }
+
+
 }
 
 rorcfs_device::~rorcfs_device()
