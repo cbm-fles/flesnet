@@ -18,11 +18,21 @@ rorcfs_bar::rorcfs_bar
     m_parent_dev     = dev;
     m_number         = number;
     m_pda_pci_device = m_parent_dev->getPdaPciDevice();
-//    m_bar            = m_parent_dev->getBarMap(m_number);
-//    m_size           = m_parent_dev->getBarSize(m_number);
 
-    if(m_bar == NULL)
-    { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
+    getBarMap(number);
 
     pthread_mutex_init(&m_mtx, NULL);
+}
+
+void
+rorcfs_bar::getBarMap(uint8_t number)
+{
+
+    m_pda_bar = NULL;
+
+    if(PciDevice_getBar(m_pda_pci_device, &m_pda_bar, number) != PDA_SUCCESS)
+    { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
+
+    if(Bar_getMap(m_pda_bar, &m_bar, &m_size) != PDA_SUCCESS)
+    { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
 }
