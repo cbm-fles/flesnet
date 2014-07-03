@@ -6,21 +6,12 @@
  *
  **/
 
-#include <pda.h>
-
-#define DEVICE_CONSTRUCTOR_FAILED 0
-
 #ifndef DEVICE_H
 #define DEVICE_H
 
-#ifndef uint8
-/**
- * @typedef uint8
- * @brief typedef for unsigned 8 bit IDs
- **/
-typedef unsigned char uint8;
-#endif
+#include <pda.h>
 
+#define DEVICE_CONSTRUCTOR_FAILED 0
 
 /**
  * @class
@@ -36,22 +27,22 @@ public:
   uint16_t getDomain();
 
   /**
-   * get PCIe Bus-ID
+   * Get PCIe Bus-ID
    * @return uint8 Bus-ID
    **/
-  uint8 getBus();
+  uint8_t getBus();
 
   /**
-   * get PCIe Slot-ID
+   * Get PCIe Slot-ID
    * @return uint8 Slot-ID
    **/
-  uint8 getSlot();
+  uint8_t getSlot();
 
   /**
-   * get PCIe Function-ID
+   * Get PCIe Function-ID
    * @return uint8 Function-ID
    **/
-  uint8 getFunc();
+  uint8_t getFunc();
 
 protected:
     DeviceOperator *m_dop;
