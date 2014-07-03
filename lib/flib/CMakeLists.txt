@@ -1,2 +1,2 @@
-include(CMakeGlobal.txt)
-#include(CMakeStandAlone.txt)
+#include(CMakeGlobal.txt)
+include(CMakeStandAlone.txt)

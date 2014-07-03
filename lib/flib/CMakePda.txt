@@ -1,0 +1,52 @@
+#--- Find libPCI --------------------------------------------------------------
+
+find_library(PCI pci
+    PATHS ${LD_LIBRARY_PATH})
+
+#--- Find PDA -----------------------------------------------------------------
+
+EXECUTE_PROCESS(
+  COMMAND pda-config --include
+  RESULT_VARIABLE PDA_RETURN
+  OUTPUT_VARIABLE PDA_INCLUDE_DIR
+  )
+
+IF( PDA_RETURN )
+  MESSAGE( STATUS "Failed to run pda-config because it is not in the path. ")
+  MESSAGE( STATUS "Maybe the related module is not loaded? ")
+  MESSAGE( STATUS "Try \"module load pda\" ...")
+  MESSAGE( FATAL_ERROR "ABORT!!!")
+ENDIF()
+MESSAGE(STATUS "pda include         = ${PDA_INCLUDE_DIR}")
+
+include_directories ( ${PDA_INCLUDE_DIR}  )
+
+EXECUTE_PROCESS(
+  COMMAND pda-config --ldlibrarypath
+  RESULT_VARIABLE ret
+  OUTPUT_VARIABLE PDA_LD_LIBRARY_PATH
+  )
+
+MESSAGE(STATUS "pda LD_LIBRARY_PATH = ${PDA_LD_LIBRARY_PATH}")
+
+EXECUTE_PROCESS(
+  COMMAND pda-config --version
+  RESULT_VARIABLE ret
+  OUTPUT_VARIABLE PDA_VERSION
+  )
+
+MESSAGE(STATUS "pda VERSION         = ${PDA_VERSION}")
+
+set( DEBUG_PDA_VERSION "99:99:99" )
+IF( ${PDA_VERSION} STREQUAL ${DEBUG_PDA_VERSION} )
+  MESSAGE( STATUS "Debug version (99.99.99) of PDA found.")
+ELSEIF( NOT(${REQUIRED_PDA_VERSION} STREQUAL ${PDA_VERSION}) )
+  MESSAGE( STATUS "Wrong PDA version found.")
+  MESSAGE( STATUS "Found version ${PDA_VERSION} but require version ${REQUIRED_PDA_VERSION}.")
+  MESSAGE( STATUS "Try \"module load pda/${REQUIRED_PDA_VERSION}\" ...")
+  MESSAGE( FATAL_ERROR "ABORT!!!")
+ENDIF()
+
+find_library(PDA pda
+    PATHS ${PDA_LD_LIBRARY_PATH})
+set(EXTRA_LIBS ${EXTRA_LIBS} ${PDA})

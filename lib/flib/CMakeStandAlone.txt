@@ -1,4 +1,10 @@
-# Copyright 2014 Dirk Hutter, Jan de Cuveland
+cmake_minimum_required(VERSION 2.8.9 FATAL_ERROR)
+project(LIBFLIB)
+
+set( REQUIRED_PDA_VERSION "8:0:2" )
+set(VERSION "6.0.0")
+
+include(CMakePda.txt)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3 -Wstack-usage=2048")
 
