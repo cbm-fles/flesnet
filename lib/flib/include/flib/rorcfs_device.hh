@@ -10,8 +10,8 @@
 
 #define DEVICE_CONSTRUCTOR_FAILED 0
 
-#ifndef _RORCLIB_RORCFS_DEVICE_H
-#define _RORCLIB_RORCFS_DEVICE_H
+#ifndef DEVICE_H
+#define DEVICE_H
 
 #ifndef uint8
 /**
@@ -23,14 +23,8 @@ typedef unsigned char uint8;
 
 
 /**
- * @class rorcfs_device
- * @brief represents a RORC PCIe device
- *
- * The rorcfs_device class is the base class for all device
- * IO. Create a rorcfs_device instance and initialize
- * (via init(int n)) with the device you want to bind to.
- * Once the device is sucessfully initialized you can attach
- * instances of rorcfs_bar.
+ * @class
+ * @brief Represents a FLIB PCIe device
  **/
 class device
 {
@@ -39,33 +33,29 @@ public:
    device();
   ~device();
 
+  uint16_t getDomain();
+
   /**
    * get PCIe Bus-ID
    * @return uint8 Bus-ID
    **/
-  uint8 getBus() { return bus; }
+  uint8 getBus();
 
   /**
    * get PCIe Slot-ID
    * @return uint8 Slot-ID
    **/
-  uint8 getSlot() { return slot; }
+  uint8 getSlot();
 
   /**
    * get PCIe Function-ID
    * @return uint8 Function-ID
    **/
-  uint8 getFunc() { return func; }
+  uint8 getFunc();
 
 protected:
-
-    uint8 bus;
-    uint8 slot;
-    uint8 func;
-
-    /*NEW*/
     DeviceOperator *m_dop;
     PciDevice      *m_device;
 };
 
-#endif
+#endif /** DEVICE_H */
