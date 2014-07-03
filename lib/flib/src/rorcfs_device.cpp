@@ -23,6 +23,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+#include <pda.h>
+
 #include "../include/flib/rorcfs_device.hh"
 
 
