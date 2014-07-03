@@ -6,14 +6,9 @@
  *
  **/
 
-#include<cstdlib>
 #include<iostream>
+#include<cstdlib>
 #include<cstring>
-
-#include<stdio.h>
-#include<dirent.h>
-#include<errno.h>
-#include<sys/stat.h>
 
 #include<pda.h>
 
