@@ -5,9 +5,11 @@
 namespace flib_dpb {
 
 static const size_t DESC_OFFSET {16};
+static std::vector<DTM> get_dtms(const uint8_t *ms_data, size_t ms_size);
+static size_t next_dtm(std::vector<DTM>& dtms, const uint16_t *data);
 
 // extract DTM locations/sizes from a microslice in "packed DTM" format
-static std::vector<DTM> get_dtms(const uint8_t *ms_data, size_t ms_size)
+std::vector<DTM> get_dtms(const uint8_t *ms_data, size_t ms_size)
 {
     ms_data += DESC_OFFSET;
     ms_size -= DESC_OFFSET;
@@ -17,16 +19,21 @@ static std::vector<DTM> get_dtms(const uint8_t *ms_data, size_t ms_size)
     std::vector<DTM> dtms;
     auto end = data + size;
     while (data < end) {
-        size_t i {0};
-        size_t len ((data[i++] & 0xFF) + 1); // () -> explicit conversion
-        if (len > 1) {
-            dtms.push_back(DTM {data+i, len});
-            i += len;
-        }
-        i += (~i & 3) + 1; // skip padding (i -> k*4)
-        data += i;
+        data += next_dtm(dtms, data);
     }
     return dtms;
+}
+
+size_t next_dtm(std::vector<DTM>& dtms, const uint16_t *data)
+{
+    size_t i {0};
+    size_t len ((data[i++] & 0xFF) + 1); // () -> explicit conversion
+    if (len > 1) {
+        dtms.push_back(DTM {data+i, len});
+        i += len;
+    }
+    i += (~i & 3) + 1; // skip padding (i -> k*4)
+    return i;
 }
 
 MicrosliceContents::MicrosliceContents(const uint8_t *data, size_t size)
