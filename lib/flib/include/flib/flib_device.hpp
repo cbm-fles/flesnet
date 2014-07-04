@@ -41,7 +41,7 @@ public:
         _rf = std::unique_ptr<register_file_bar>(new register_file_bar(_bar.get(), 0));
 
         // enforce correct hw version
-        if (!_check_hw_ver() | !_check_magic_number())
+        if (!check_hw_ver() | !_check_magic_number())
         { throw FlibException("Error in magic number or hardware version! \n Try to rescan PCIe bus and reload kernel module."); }
 
         // create link objects
@@ -63,7 +63,19 @@ public:
 
     bool check_hw_ver()
     {
-        return _check_hw_ver();
+        uint16_t hw_ver = _rf->get_reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
+        bool match = false;
+
+        // check if version of hardware is part of suported versions
+        for(auto it = hw_ver_table.begin(); it != hw_ver_table.end() && match == false; ++it)
+        {
+            if(hw_ver == *it)
+            { match = true; }
+        }
+        // check if version of hardware matches exactly version of header
+        if (hw_ver != RORC_C_HARDWARE_VERSION)
+        { match = false; }
+        return match;
     }
 
     size_t get_num_links()
@@ -186,24 +198,6 @@ private:
     bool _check_magic_number()
     {
         return((_rf->get_reg(0) & 0xFFFF) == 0x4844);/** RORC_REG_HARDWARE_INFO */
-    }
-
-    bool _check_hw_ver()
-    {
-        uint16_t hw_ver = _rf->get_reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
-        bool match = false;
-
-        // check if version of hardware is part of suported versions
-        for(auto it = hw_ver_table.begin(); it != hw_ver_table.end() && match == false; ++it)
-        {
-            if(hw_ver == *it)
-            { match = true; }
-        }
-        // check if version of hardware matches exactly version of header
-        if (hw_ver != RORC_C_HARDWARE_VERSION) {
-        match = false;
-        }
-        return match;
     }
 
 };
