@@ -69,6 +69,24 @@ namespace flib
 
 
 
+    struct build_info
+    flib_device::get_build_info()
+    {
+        build_info info;
+
+        info.date = get_build_date();
+        info.rev[0] = m_register_file->get_reg(RORC_REG_BUILD_REV_0);
+        info.rev[1] = m_register_file->get_reg(RORC_REG_BUILD_REV_1);
+        info.rev[2] = m_register_file->get_reg(RORC_REG_BUILD_REV_2);
+        info.rev[3] = m_register_file->get_reg(RORC_REG_BUILD_REV_3);
+        info.rev[4] = m_register_file->get_reg(RORC_REG_BUILD_REV_4);
+        info.hw_ver = get_hw_ver();
+        info.clean = (m_register_file->get_reg(RORC_REG_BUILD_FLAGS) & 0x1);
+        return info;
+    }
+
+
+
     std::vector<flib_link*>
     flib_device::get_links()
     {
@@ -100,6 +118,12 @@ namespace flib
         boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
         return t;
     }
+
+
+
+    uint16_t
+    flib_device::get_hw_ver()
+    { return(static_cast<uint16_t>(m_register_file->get_reg(0) >> 16)); /** RORC_REG_HARDWARE_INFO */ }
 
 
 
