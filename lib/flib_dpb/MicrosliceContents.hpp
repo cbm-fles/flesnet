@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace fles {
+namespace flib_dpb {
 
 struct DTM {
     const uint16_t *data;

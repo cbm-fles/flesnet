@@ -2,7 +2,7 @@
 
 #include "MicrosliceContents.hpp"
 
-namespace fles {
+namespace flib_dpb {
 
 // extract pointers to DTMs from a microslice
 static std::vector<DTM> get_dtms(const uint16_t *data, size_t size)
