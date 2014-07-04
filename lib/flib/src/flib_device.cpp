@@ -15,15 +15,15 @@ namespace flib
 
     flib_device::flib_device(int device_nr)
     {
-        // init device class
-        m_device = std::unique_ptr<rorcfs_device>(new rorcfs_device());
-        if (m_device->init(device_nr) == -1)
-        { throw RorcfsException("Failed to initialize device"); }
+        /** TODO: add exception handling here */
+        m_device = std::unique_ptr<device>(new device(device_nr));
+//        if (m_device->init(device_nr) == -1)
+//        { throw RorcfsException("Failed to initialize device"); }
 
         // bind to BAR1
         m_bar = std::unique_ptr<rorcfs_bar>(new rorcfs_bar(m_device.get(), 1));
-        if ( m_bar->init() == -1 )
-        { throw RorcfsException("BAR1 init failed"); }
+//        if ( m_bar->init() == -1 )
+//        { throw RorcfsException("BAR1 init failed"); }
 
         // register file access
         m_register_file = std::unique_ptr<register_file_bar>(new register_file_bar(m_bar.get(), 0));

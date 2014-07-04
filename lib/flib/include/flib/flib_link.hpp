@@ -79,7 +79,7 @@ class flib_link {
   std::unique_ptr<rorcfs_buffer> _ebuf;
   std::unique_ptr<rorcfs_buffer> _dbuf;
   size_t _link_index;
-  rorcfs_device* _dev;
+  device *_dev;
   std::unique_ptr<register_file_bar> _rfglobal; // TODO remove this later
   std::unique_ptr<register_file_bar> _rfpkt;
   std::unique_ptr<register_file_bar> _rfgtx;
@@ -102,7 +102,7 @@ class flib_link {
   
 public:
   
-  flib_link(size_t link_index, rorcfs_device* dev, rorcfs_bar* bar)
+  flib_link(size_t link_index, device* dev, rorcfs_bar* bar)
     : _link_index(link_index), _dev(dev) {
 
     _base_addr =  (_link_index + 1) * RORC_CHANNEL_OFFSET;

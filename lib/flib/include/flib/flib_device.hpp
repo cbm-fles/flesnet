@@ -82,7 +82,7 @@ public:
 
 private:
 
-    std::unique_ptr<rorcfs_device>     m_device;
+    std::unique_ptr<device>            m_device;
     std::unique_ptr<rorcfs_bar>        m_bar;
     std::unique_ptr<register_file_bar> m_register_file;
 
