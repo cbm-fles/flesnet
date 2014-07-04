@@ -2,7 +2,6 @@
 #pragma once
 
 #include "MicrosliceDescriptor.hpp"
-#include "MicrosliceContents.hpp"
 #include "TimesliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include <cstdint>
@@ -59,21 +58,6 @@ public:
     {
         return reinterpret_cast<const MicrosliceDescriptor*>(
             _data_ptr[component])[microslice];
-    }
-
-    /// Retrieve a vector with pointers to all DTMs of a given microslice
-    std::vector<DTM> microslice_contents(uint64_t component,
-                                         uint64_t microslice) const
-    {
-        auto& desc = descriptor(component, microslice);
-        auto p = content(component, microslice);
-        // interpret as 16 bit words, skip descriptor offset
-#define DESC_OFFSET 16
-        auto mc_data = reinterpret_cast<const uint16_t*>(p+DESC_OFFSET);
-        auto mc_size = (desc.size-DESC_OFFSET)/sizeof(uint16_t);
-#undef DESC_OFFSET
-        MicrosliceContents mc {mc_data, mc_size};
-        return mc.dtms();
     }
 
 protected:

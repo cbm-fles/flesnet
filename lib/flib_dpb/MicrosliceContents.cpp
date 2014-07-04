@@ -4,9 +4,16 @@
 
 namespace flib_dpb {
 
-// extract pointers to DTMs from a microslice
-static std::vector<DTM> get_dtms(const uint16_t *data, size_t size)
+static const size_t DESC_OFFSET {16};
+
+// extract DTM locations/sizes from a microslice in "packed DTM" format
+static std::vector<DTM> get_dtms(const uint8_t *ms_data, size_t ms_size)
 {
+    ms_data += DESC_OFFSET;
+    ms_size -= DESC_OFFSET;
+    auto data = reinterpret_cast<const uint16_t*>(ms_data);
+    auto size = ms_size*sizeof(*ms_data)/sizeof(*data);
+
     std::vector<DTM> dtms;
     auto end = data + size;
     while (data < end) {
@@ -22,7 +29,7 @@ static std::vector<DTM> get_dtms(const uint16_t *data, size_t size)
     return dtms;
 }
 
-MicrosliceContents::MicrosliceContents(const uint16_t *data, size_t size)
+MicrosliceContents::MicrosliceContents(const uint8_t *data, size_t size)
 : _dtms {get_dtms(data, size)} {}
 
 } // namespace
