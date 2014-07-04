@@ -5,7 +5,7 @@
 namespace fles {
 
 // extract pointers to DTMs from a microslice
-std::vector<DTM> init_dtms(const uint16_t *data, size_t size)
+static std::vector<DTM> get_dtms(const uint16_t *data, size_t size)
 {
     std::vector<DTM> v;
     const uint16_t *end = data + size;
@@ -23,6 +23,6 @@ std::vector<DTM> init_dtms(const uint16_t *data, size_t size)
 }
 
 MicrosliceContents::MicrosliceContents(const uint16_t *data, size_t size)
-: _dtms(init_dtms(data, size)) {}
+: _dtms(get_dtms(data, size)) {}
 
 } // namespace
