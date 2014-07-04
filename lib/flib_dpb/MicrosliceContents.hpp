@@ -1,4 +1,5 @@
 //! \author Michael Krieger
+//! Representation of the "packed DTM" format used in FLIB-DPB microslices
 
 #pragma once
 
