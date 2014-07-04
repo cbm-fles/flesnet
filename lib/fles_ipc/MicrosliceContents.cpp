@@ -8,10 +8,10 @@ namespace fles {
 static std::vector<DTM> get_dtms(const uint16_t *data, size_t size)
 {
     std::vector<DTM> dtms;
-    const uint16_t *end = data + size;
+    auto end = data + size;
     while (data < end) {
-        size_t i = 0;
-        size_t len = (data[i++] & 0xFF) + 1;
+        size_t i {0};
+        size_t len ((data[i++] & 0xFF) + 1); // () -> explicit conversion
         if (len > 1) {
             dtms.push_back(DTM {data+i, len});
             i += len;
@@ -23,6 +23,6 @@ static std::vector<DTM> get_dtms(const uint16_t *data, size_t size)
 }
 
 MicrosliceContents::MicrosliceContents(const uint16_t *data, size_t size)
-: _dtms(get_dtms(data, size)) {}
+: _dtms {get_dtms(data, size)} {}
 
 } // namespace
