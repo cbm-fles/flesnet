@@ -1,12 +1,12 @@
 #ifndef FLIB_LINK_HPP
 #define FLIB_LINK_HPP
 
-#include "rorc_registers.h"
-#include "rorcfs_bar.hh"
-#include "rorcfs_device.hh"
-#include "rorcfs_buffer.hh"
-#include "rorcfs_dma_channel.hh"
-#include "register_file_bar.hpp"
+#include<flib/rorc_registers.h>
+#include<flib/rorcfs_bar.hh>
+#include<flib/rorcfs_device.hh>
+#include<flib/rorcfs_buffer.hh>
+#include<flib/rorcfs_dma_channel.hh>
+#include<flib/register_file_bar.hpp>
 
 #include <cassert>
 #include <cstring>

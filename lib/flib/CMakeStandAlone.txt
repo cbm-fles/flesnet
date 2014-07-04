@@ -15,6 +15,7 @@ set(LIB_SRC
   src/rorcfs_buffer.cpp
   src/rorcfs_device.cpp
   src/rorcfs_dma_channel.cpp
+  src/flib_device.cpp
 )
 set(LIB_HDR
   include/flib.h
