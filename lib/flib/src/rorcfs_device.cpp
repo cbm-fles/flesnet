@@ -23,8 +23,6 @@ namespace flib
 
         if(DeviceOperator_getPciDevice(m_dop, &m_device, device_index) != PDA_SUCCESS)
         { throw DEVICE_CONSTRUCTOR_FAILED; }
-
-
     }
 
     device::~device()
