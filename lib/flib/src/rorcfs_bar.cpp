@@ -1,5 +1,5 @@
-#include "../include/flib/rorcfs_bar.hh"
-#include "../include/flib/rorcfs_device.hh"
+#include <flib/rorcfs_bar.hh>
+#include <flib/rorcfs_device.hh>
 
 using namespace std;
 
@@ -27,6 +27,6 @@ rorcfs_bar::getBarMap(uint8_t number)
     if(PciDevice_getBar(m_pda_pci_device, &m_pda_bar, number) != PDA_SUCCESS)
     { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
 
-    if(Bar_getMap(m_pda_bar, &m_bar, &m_size) != PDA_SUCCESS)
+    if(Bar_getMap(m_pda_bar, (void**)&m_bar, &m_size) != PDA_SUCCESS)
     { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
 }

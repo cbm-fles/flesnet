@@ -1,7 +1,10 @@
 project(LIBFLIB)
 
+include_directories( ${LIBFLIB_SOURCE_DIR}/include )
+
+
 set( REQUIRED_PDA_VERSION "8:0:2" )
-set(VERSION "6.0.0")
+set(VERSION "0.0.0")
 
 include(CMakePda.txt)
 

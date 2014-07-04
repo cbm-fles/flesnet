@@ -29,8 +29,8 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-#include "../include/flib/rorcfs.h"
-#include "../include/flib/rorcfs_buffer.hh"
+#include <flib/rorcfs.h>
+#include <flib/rorcfs_buffer.hh>
 
 /** errno */
 //extern int errno;
