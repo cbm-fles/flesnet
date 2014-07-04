@@ -3,15 +3,21 @@
 
 #include"boost/date_time/posix_time/posix_time.hpp"
 
-#include<flib/flib_device.hpp>
-#include<flib/flib_link.hpp>
-#include<flib/rorcfs_device.hh>
+//#include<flib/flib_device.hpp>
+//#include<flib/flib_link.hpp>
+//#include<flib/rorcfs_device.hh>
 
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic ignored "-Wold-style-cast"
 
 namespace flib
 {
+    class flib_device;
+    class flib_link;
+
+    class device;
+    class rorcfs_bar;
+    class register_file_bar;
 
     struct build_info
     {
@@ -50,12 +56,11 @@ namespace flib
     private:
 
         std::vector<std::unique_ptr<flib_link> > link;
-        std::unique_ptr<device>            m_device;
-        std::unique_ptr<rorcfs_bar>        m_bar;
-        std::unique_ptr<register_file_bar> m_register_file;
+        std::unique_ptr<device>                  m_device;
+        std::unique_ptr<rorcfs_bar>              m_bar;
+        std::unique_ptr<register_file_bar>       m_register_file;
 
-        bool check_magic_number()
-        { return((m_register_file->get_reg(0) & 0xFFFF) == 0x4844); /** RORC_REG_HARDWARE_INFO */}
+        bool check_magic_number();
 
     };
 

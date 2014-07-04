@@ -1,13 +1,17 @@
-#include<iostream>
-#include<iomanip>
-#include<array>
-#include<vector>
-#include<string>
-#include<sstream>
-#include<memory>
+#include <iostream>
+#include <iomanip>
+#include <array>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <memory>
 
-#include<flib/flib_device.hpp>
-#include<flib/rorcfs_device.hh>
+#include <flib/flib_device.hpp>
+#include <flib/flib_link.hpp>
+#include <flib/rorcfs_device.hh>
+
+//#include<flib/flib_device.hpp>
+//#include<flib/rorcfs_device.hh>
 
 
 namespace flib
@@ -131,8 +135,6 @@ namespace flib
         return t;
     }
 
-
-
     uint16_t
     flib_device::get_hw_ver()
     { return(static_cast<uint16_t>(m_register_file->get_reg(0) >> 16)); /** RORC_REG_HARDWARE_INFO */ }
@@ -171,28 +173,24 @@ namespace flib
         return ss.str();
     }
 
-
-
     uint8_t
     flib_device::get_num_hw_links()
     { return(m_register_file->get_reg(RORC_REG_N_CHANNELS) & 0xFF); }
-
-
 
     register_file_bar*
     flib_device::get_rf() const
     { return m_register_file.get(); }
 
-
-
     flib_link&
     flib_device::get_link(size_t n)
     { return *link.at(n); }
 
-
-
     size_t
     flib_device::get_num_links()
     { return link.size(); }
+
+    bool
+    flib_device::check_magic_number()
+    { return((m_register_file->get_reg(0) & 0xFFFF) == 0x4844); /** RORC_REG_HARDWARE_INFO */}
 
 }

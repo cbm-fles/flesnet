@@ -1,12 +1,12 @@
 #ifndef FLIB_LINK_HPP
 #define FLIB_LINK_HPP
 
-#include<flib/rorc_registers.h>
-#include<flib/rorcfs_bar.hh>
-#include<flib/rorcfs_device.hh>
-#include<flib/rorcfs_buffer.hh>
-#include<flib/rorcfs_dma_channel.hh>
-#include<flib/register_file_bar.hpp>
+#include <flib/rorc_registers.h>
+#include <flib/rorcfs_bar.hh>
+#include <flib/rorcfs_device.hh>
+#include <flib/rorcfs_buffer.hh>
+#include <flib/rorcfs_dma_channel.hh>
+#include <flib/register_file_bar.hpp>
 
 #include <cassert>
 #include <cstring>
@@ -19,7 +19,9 @@
 namespace flib {
   
 // has to be 256 Bit, this is hard coded in hw
-struct __attribute__ ((__packed__)) MicrosliceDescriptor {
+struct __attribute__ ((__packed__))
+MicrosliceDescriptor
+{
   uint8_t   hdr_id;  // "Header format identifier" DD
   uint8_t   hdr_ver; // "Header format version"    01
   uint16_t  eq_id;   // "Equipment identifier"
@@ -32,20 +34,24 @@ struct __attribute__ ((__packed__)) MicrosliceDescriptor {
   uint64_t  offset;  // "Ofsset in event buffer"
 };
 
-struct __attribute__ ((__packed__)) hdr_config {
+struct __attribute__ ((__packed__))
+hdr_config
+{
   uint16_t  eq_id;   // "Equipment identifier"
   uint8_t   sys_id;  // "Subsystem identifier"
   uint8_t   sys_ver; // "Subsystem format version"
 };
 
-struct mc_desc {
+struct mc_desc
+{
     uint64_t nr;
     volatile uint64_t* addr;
     uint32_t size; // bytes
     volatile uint64_t* rbaddr;
 };
 
-struct ctrl_msg {
+struct ctrl_msg
+{
   uint32_t words; // num 16 bit data words
   uint16_t data[32];
 };
@@ -394,18 +400,21 @@ public:
 
 private:
 
-  // creates new buffer, throws an exception if buffer already exists
-  std::unique_ptr<rorcfs_buffer> _create_buffer(size_t idx, size_t log_size) {
-    unsigned long size = (((unsigned long)1) << log_size);
-    std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());			
-    if (buffer->allocate(_dev, size, 2*_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0) {
-      if (errno == EEXIST)
-        throw FlibException("Buffer already exists, not allowed to open in create only mode");
-      else
-        throw RorcfsException("Buffer allocation failed");
+    // creates new buffer, throws an exception if buffer already exists
+    std::unique_ptr<rorcfs_buffer>
+    _create_buffer(size_t idx, size_t log_size)
+    {
+        unsigned long size = (((unsigned long)1) << log_size);
+        std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());
+        if (buffer->allocate(_dev, size, 2*_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0)
+        {
+            if (errno == EEXIST)
+            { throw FlibException("Buffer already exists, not allowed to open in create only mode"); }
+            else
+            { throw RorcfsException("Buffer allocation failed"); }
+        }
+        return buffer;
     }
-    return buffer;
-  }
 
   // opens an existing buffer, throws an exception if buffer doesn't exists
   std::unique_ptr<rorcfs_buffer> _open_buffer(size_t idx) {

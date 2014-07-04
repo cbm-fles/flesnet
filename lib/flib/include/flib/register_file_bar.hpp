@@ -4,11 +4,16 @@
 #define REGISTER_FILE_BAR_HPP
 
 #include <sys/mman.h>
-#include "register_file.hpp"
 
-namespace flib {
+#include <flib/register_file.hpp>
+#include <flib/rorcfs_bar.hh>
 
-class register_file_bar : public register_file {
+
+namespace flib
+{
+
+class register_file_bar : public register_file
+{
   
 private:
   
