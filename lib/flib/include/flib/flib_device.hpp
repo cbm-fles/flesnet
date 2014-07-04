@@ -25,46 +25,31 @@ namespace flib
 
     class flib_device
     {
+
     public:
+
          flib_device(int device_nr);
         ~flib_device(){};
 
-        bool check_hw_ver();
+        bool                     check_hw_ver();
+        void                     enable_mc_cnt(bool enable);
+        void                     set_mc_time(uint32_t time);
+        void                     send_dlm();/** global dlm send, rquires link local prepare_dlm beforehand */
+        std::string              print_build_info();
 
-        size_t get_num_links()
-        { return link.size(); }
-
-        flib_link& get_link(size_t n)
-        { return *link.at(n); }
-
-        register_file_bar* get_rf() const
-        { return m_register_file.get(); }
-
-        std::vector<flib_link*> get_links();
-
-        void enable_mc_cnt(bool enable)
-        { m_register_file->set_bit(RORC_REG_MC_CNT_CFG, 31, enable); }
-
-        void set_mc_time(uint32_t time);
-
-        // global dlm send, rquires link local prepare_dlm beforehand
-        void send_dlm()
-        { m_register_file->set_reg(RORC_REG_DLM_CFG, 1); }
-
+        size_t                   get_num_links();
+        flib_link&               get_link(size_t n);
+        register_file_bar*       get_rf() const;
+        std::vector<flib_link*>  get_links();
         boost::posix_time::ptime get_build_date();
         uint16_t                 get_hw_ver();
         struct build_info        get_build_info();
-        std::string              print_build_info();
         std::string              get_devinfo();
-
-        uint8_t get_num_hw_links()
-        { return(m_register_file->get_reg(RORC_REG_N_CHANNELS) & 0xFF); }
-
-        /**TODO: Dirk, is this really needed to be public? */
-        std::vector<std::unique_ptr<flib_link> > link;
+        uint8_t                  get_num_hw_links();
 
     private:
 
+        std::vector<std::unique_ptr<flib_link> > link;
         std::unique_ptr<device>            m_device;
         std::unique_ptr<rorcfs_bar>        m_bar;
         std::unique_ptr<register_file_bar> m_register_file;

@@ -99,6 +99,12 @@ namespace flib
 
 
     void
+    flib_device::enable_mc_cnt(bool enable)
+    { m_register_file->set_bit(RORC_REG_MC_CNT_CFG, 31, enable); }
+
+
+
+    void
     flib_device::set_mc_time(uint32_t time)
     {
         // time: 31 bit wide, in units of 8 ns
@@ -106,6 +112,12 @@ namespace flib
         reg = (reg & ~0x7FFFFFFF) | (time & 0x7FFFFFFF);
         m_register_file->set_reg(RORC_REG_MC_CNT_CFG, reg);
     }
+
+
+
+    void
+    flib_device::send_dlm()
+    { m_register_file->set_reg(RORC_REG_DLM_CFG, 1); }
 
 
 
@@ -158,4 +170,29 @@ namespace flib
            << " Func " << static_cast<uint32_t>(m_device->getFunc());
         return ss.str();
     }
+
+
+
+    uint8_t
+    flib_device::get_num_hw_links()
+    { return(m_register_file->get_reg(RORC_REG_N_CHANNELS) & 0xFF); }
+
+
+
+    register_file_bar*
+    flib_device::get_rf() const
+    { return m_register_file.get(); }
+
+
+
+    flib_link&
+    flib_device::get_link(size_t n)
+    { return *link.at(n); }
+
+
+
+    size_t
+    flib_device::get_num_links()
+    { return link.size(); }
+
 }
