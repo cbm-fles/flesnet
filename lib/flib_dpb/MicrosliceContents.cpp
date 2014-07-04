@@ -8,7 +8,7 @@ static const size_t DESC_OFFSET {16};
 static std::vector<DTM> get_dtms(const uint8_t *ms_data, size_t ms_size);
 static size_t next_dtm(std::vector<DTM>& dtms, const uint16_t *data);
 
-// extract DTM locations/sizes from a microslice in "packed DTM" format
+//! extract all DTMs from a microslice in "packed DTM" format
 std::vector<DTM> get_dtms(const uint8_t *ms_data, size_t ms_size)
 {
     ms_data += DESC_OFFSET;
@@ -24,6 +24,7 @@ std::vector<DTM> get_dtms(const uint8_t *ms_data, size_t ms_size)
     return dtms;
 }
 
+//! extract location/size of a single DTM contained in a microslice
 size_t next_dtm(std::vector<DTM>& dtms, const uint16_t *data)
 {
     size_t i {0};
