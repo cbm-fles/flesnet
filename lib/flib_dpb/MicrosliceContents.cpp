@@ -28,7 +28,7 @@ std::vector<DTM> get_dtms(const uint8_t *ms_data, size_t ms_size)
 size_t next_dtm(std::vector<DTM>& dtms, const uint16_t *data)
 {
     size_t i {1};
-    size_t len ((*data++ & 0xFF)); // () -> explicit conversion
+    size_t len {(*data++ & 0xFFu)};
     if (len++) {
         dtms.push_back(DTM {data, len});
         i += len;
