@@ -33,7 +33,7 @@ size_t next_dtm(std::vector<DTM>& dtms, const uint16_t *data)
         dtms.push_back(DTM {data+i, len});
         i += len;
     }
-    i += (~i & 3) + 1; // skip padding (i -> k*4)
+    i += (~i % 4) + 1; // skip padding (i -> k*4)
     return i;
 }
 
