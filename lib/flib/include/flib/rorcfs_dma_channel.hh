@@ -21,10 +21,10 @@
 #ifndef _RORCLIB_RORCFS_DMA_CHANNEL_H
 #define _RORCLIB_RORCFS_DMA_CHANNEL_H
 
-#include <flib/register_file_bar.hpp>
-
 namespace flib
 {
+    class register_file_bar;
+
     /**
      * @class rorcfs_dma_channel
      * @brief DMA channel management class

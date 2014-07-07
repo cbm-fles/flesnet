@@ -33,6 +33,7 @@
 #include <flib/rorcfs_buffer.hh>
 #include <flib/rorc_registers.h>
 #include <flib/rorcfs_dma_channel.hh>
+#include <flib/register_file_bar.hpp>
 
 namespace flib
 {
