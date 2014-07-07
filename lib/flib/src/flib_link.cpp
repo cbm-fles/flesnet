@@ -2,6 +2,9 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <cassert>
+#include <memory>
+#include <stdexcept>
 
 #include <flib/flib_link.hpp>
 

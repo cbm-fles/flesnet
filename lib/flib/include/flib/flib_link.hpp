@@ -8,15 +8,11 @@
 #include <flib/rorcfs_dma_channel.hh>
 #include <flib/register_file_bar.hpp>
 
-#include <cassert>
-#include <cstring>
-#include <memory>
-#include <stdexcept>
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
-namespace flib {
+namespace flib
+{
 
 // REG: datapath_cfg
 // bit 0-1 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
