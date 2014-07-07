@@ -80,7 +80,7 @@ public:
 };
 
 class flib_link {
-  
+
   std::unique_ptr<rorcfs_dma_channel> _ch;
   std::unique_ptr<rorcfs_buffer> _ebuf;
   std::unique_ptr<rorcfs_buffer> _dbuf;
@@ -97,15 +97,15 @@ class flib_link {
   uint64_t _mc_nr = 0;
   uint64_t _wrap = 0;
   bool _dma_initialized = false;
-  
+
   volatile uint64_t* _eb = nullptr;
   volatile struct MicrosliceDescriptor* _db = nullptr;
-  
+
   uint64_t _dbentries = 0;
   size_t _log_ebufsize = 0;
   size_t _log_dbufsize = 0;
 
-  
+
 public:
   
   flib_link(size_t link_index, device* dev, rorcfs_bar* bar)
@@ -184,7 +184,7 @@ public:
       
       // calculate next rb index
       _last_index = _index;
-      if( _index < _dbentries-1 ) 
+      if( _index < _dbentries-1 )
         _index++;
       else {
         _wrap++;
