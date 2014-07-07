@@ -7,6 +7,38 @@
 
 namespace flib
 {
+    void
+    flib_link::set_start_idx(uint64_t index)
+    {
+        // set reset value
+        // TODO replace with _rfgtx->set_mem()
+        m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_L, (uint32_t)(index & 0xffffffff));
+        m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_H, (uint32_t)(index >> 32));
+        // reste mc counter
+        // TODO implenet edge detection and 'pulse only' in HW
+        uint32_t mc_gen_cfg= m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
+        // TODO replace with _rfgtx->set_bit()
+        m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
+        m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
+    }
+
+    void
+    flib_link::rst_pending_mc()
+    {
+        // Is also resetted with datapath reset
+        // TODO implenet edge detection and 'pulse only' in HW
+        uint32_t mc_gen_cfg= m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
+        // TODO replace with _rfgtx->set_bit()
+        m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
+        m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
+    }
+
+    void
+    flib_link::enable_cbmnet_packer(bool enable)
+    { m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable); }
+
+
+    /*** CBMnet control interface ***/
 
     int
     flib_link::send_dcm(const struct ctrl_msg* msg)
@@ -114,6 +146,25 @@ namespace flib
 
 
 /*** GETTER ***/
+    uint64_t
+    flib_link::get_pending_mc()
+    {
+        // TODO replace with _rfgtx->get_mem()
+        uint64_t pend_mc = m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_L);
+        pend_mc = pend_mc | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_H))<<32);
+        return pend_mc;
+    }
+
+
+    uint64_t
+    flib_link::get_mc_index()
+    {
+        // TODO replace with _rfgtx->get_mem()
+        uint64_t mc_index = m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_L);
+        mc_index = mc_index | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_H))<<32);
+        return mc_index;
+    }
+
     data_rx_sel
     flib_link::get_data_rx_sel()
     {

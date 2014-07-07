@@ -206,57 +206,17 @@ public:
     return 0;
     }
   
-  /*** configuration and control ***/
+    /*** configuration and control ***/
 
-  // REG: mc_gen_cfg
-  // bit 0 set_start_index
-  // bit 1 rst_pending_mc
-  // bit 2 packer enable
-
-  void set_start_idx(uint64_t index) {
-    // set reset value
-    // TODO replace with _rfgtx->set_mem()
-    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_L, (uint32_t)(index & 0xffffffff));
-    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_H, (uint32_t)(index >> 32));
-    // reste mc counter 
-    // TODO implenet edge detection and 'pulse only' in HW
-    uint32_t mc_gen_cfg= m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
-    // TODO replace with _rfgtx->set_bit()
-    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
-    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
-  }
-  
-    void rst_pending_mc()
-    {
-        // is also resetted with datapath reset
-        // TODO implenet edge detection and 'pulse only' in HW
-        uint32_t mc_gen_cfg= m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
-        // TODO replace with _rfgtx->set_bit()
-        m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
-        m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
-    }
-  
-    void enable_cbmnet_packer(bool enable)
-    { m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable); }
-
-    uint64_t get_pending_mc()
-    {
-        // TODO replace with _rfgtx->get_mem()
-        uint64_t pend_mc = m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_L);
-        pend_mc = pend_mc | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_H))<<32);
-        return pend_mc;
-    }
-
-    uint64_t get_mc_index()
-    {
-        // TODO replace with _rfgtx->get_mem()
-        uint64_t mc_index = m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_L);
-        mc_index = mc_index | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_H))<<32);
-        return mc_index;
-    }
-
-
-
+    /**
+     * REG: mc_gen_cfg
+     * bit 0 set_start_index
+     * bit 1 rst_pending_mc
+     * bit 2 packer enable
+     */
+    void set_start_idx(uint64_t index);
+    void rst_pending_mc();
+    void enable_cbmnet_packer(bool enable);
 
     /*** CBMnet control interface ***/
     
@@ -277,6 +237,8 @@ public:
     void set_hdr_config(const struct hdr_config* config);
 
     /*** getter methods ***/
+    uint64_t            get_pending_mc();
+    uint64_t            get_mc_index();
     data_rx_sel         get_data_rx_sel();
     std::string         get_ebuf_info();
     std::string         get_dbuf_info();
