@@ -124,7 +124,7 @@ public:
     m_event_buffer = _create_buffer(0, log_ebufsize);
     m_dbuffer = _create_buffer(1, log_dbufsize);
     _init_hardware();
-    _dma_initialized = true;
+    m_dma_initialized = true;
     return 0;
   }
 
@@ -134,7 +134,7 @@ public:
     m_event_buffer = _open_buffer(0);
     m_dbuffer = _open_buffer(1);
     _init_hardware();
-    _dma_initialized = true;
+    m_dma_initialized = true;
     return 0;
   }
  
@@ -144,7 +144,7 @@ public:
     m_event_buffer = _open_or_create_buffer(0, log_ebufsize);
     m_dbuffer = _open_or_create_buffer(1, log_dbufsize);
     _init_hardware();
-    _dma_initialized = true;
+    m_dma_initialized = true;
     return 0;
   }
 
@@ -152,12 +152,12 @@ public:
 
   std::pair<mc_desc, bool> get_mc() {
     struct mc_desc mc;
-    if(_db[m_index].idx > m_mc_nr) { // mc_nr counts from 1 in HW
-      m_mc_nr = _db[m_index].idx;
+    if(m_db[m_index].idx > m_mc_nr) { // mc_nr counts from 1 in HW
+      m_mc_nr = m_db[m_index].idx;
       mc.nr = m_mc_nr;
-      mc.addr = _eb + (_db[m_index].offset & ((1<<m_log_ebufsize)-1))/sizeof(uint64_t);
-      mc.size = _db[m_index].size;
-      mc.rbaddr = (uint64_t *)&_db[m_index];
+      mc.addr = m_eb + (m_db[m_index].offset & ((1<<m_log_ebufsize)-1))/sizeof(uint64_t);
+      mc.size = m_db[m_index].size;
+      mc.rbaddr = (uint64_t *)&m_db[m_index];
       
       // calculate next rb index
       m_last_index = m_index;
@@ -177,7 +177,7 @@ public:
     
     // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
     // to calculate end wrapping logic is required
-    uint64_t eb_offset = _db[m_last_index].offset & ((1<<m_log_ebufsize)-1);
+    uint64_t eb_offset = m_db[m_last_index].offset & ((1<<m_log_ebufsize)-1);
     // each rbenty is 32 bytes, this is hard coded in HW
     uint64_t rb_offset = m_last_index*sizeof(struct MicrosliceDescriptor) & ((1<<m_log_dbufsize)-1);
 
@@ -394,14 +394,13 @@ protected:
     uint64_t m_wrap         = 0;
     uint64_t m_dbentries    = 0;
 
+    bool m_dma_initialized = false;
 
-  bool _dma_initialized = false;
+    sys_bus_addr  m_base_addr;
+    device       *m_device;
 
-  sys_bus_addr  m_base_addr;
-  device       *m_device;
-
-  volatile uint64_t* _eb = nullptr;
-  volatile struct MicrosliceDescriptor* _db = nullptr;
+    volatile uint64_t                    *m_eb = nullptr;
+    volatile struct MicrosliceDescriptor *m_db = nullptr;
 
 
 
@@ -457,7 +456,7 @@ protected:
   }
 
   void _stop() {
-    if(m_channel && _dma_initialized ) {
+    if(m_channel && m_dma_initialized ) {
       // disable packer
       enable_cbmnet_packer(false);
       // disable DMA Engine
@@ -499,8 +498,8 @@ protected:
     // clear rb for polling
     memset(m_dbuffer->getMem(), 0, m_dbuffer->getMappingSize());
     
-    _eb = (uint64_t *)m_event_buffer->getMem();
-    _db = (struct MicrosliceDescriptor *)m_dbuffer->getMem();
+    m_eb = (uint64_t *)m_event_buffer->getMem();
+    m_db = (struct MicrosliceDescriptor *)m_dbuffer->getMem();
     
     m_dbentries = m_dbuffer->getMaxRBEntries();
     
