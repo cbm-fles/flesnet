@@ -65,47 +65,24 @@ static const create_only_t    create_only    = create_only_t();
 static const open_only_t      open_only      = open_only_t();
 static const open_or_create_t open_or_create = open_or_create_t();
   
-class FlibException : public std::runtime_error {
+class FlibException : public std::runtime_error
+{
 public:
 
   explicit FlibException(const std::string& what_arg = "")
     : std::runtime_error(what_arg) { }
 };
 
-class RorcfsException : public FlibException {
+class RorcfsException : public FlibException
+{
 public:
 
   explicit RorcfsException(const std::string& what_arg = "")
     : FlibException(what_arg) { }
 };
 
-class flib_link {
-
-  std::unique_ptr<rorcfs_dma_channel> _ch;
-  std::unique_ptr<rorcfs_buffer> _ebuf;
-  std::unique_ptr<rorcfs_buffer> _dbuf;
-  size_t _link_index;
-  device *_dev;
-  std::unique_ptr<register_file_bar> _rfglobal; // TODO remove this later
-  std::unique_ptr<register_file_bar> _rfpkt;
-  std::unique_ptr<register_file_bar> _rfgtx;
-  sys_bus_addr _base_addr;
-
-  uint64_t _index = 0;
-  uint64_t _last_index = 0;
-  uint64_t _last_acked = 0;
-  uint64_t _mc_nr = 0;
-  uint64_t _wrap = 0;
-  bool _dma_initialized = false;
-
-  volatile uint64_t* _eb = nullptr;
-  volatile struct MicrosliceDescriptor* _db = nullptr;
-
-  uint64_t _dbentries = 0;
-  size_t _log_ebufsize = 0;
-  size_t _log_dbufsize = 0;
-
-
+class flib_link
+{
 public:
   
   flib_link(size_t link_index, device* dev, rorcfs_bar* bar)
@@ -113,29 +90,29 @@ public:
 
     _base_addr =  (_link_index + 1) * RORC_CHANNEL_OFFSET;
     // regiter file access
-    _rfpkt = std::unique_ptr<register_file_bar>(
+    m_rfpkt = std::unique_ptr<register_file_bar>(
        new register_file_bar(bar, _base_addr));
-    _rfgtx = std::unique_ptr<register_file_bar>(
+    m_rfgtx = std::unique_ptr<register_file_bar>(
        new register_file_bar(bar, (_base_addr + (1<<RORC_DMA_CMP_SEL))));
-    _rfglobal = std::unique_ptr<register_file_bar>(
+    m_rfglobal = std::unique_ptr<register_file_bar>(
        new register_file_bar(bar, 0));
     // create DMA channel and bind to register file, 
     // no HW initialization is done here
-    _ch = std::unique_ptr<rorcfs_dma_channel>(
-       new rorcfs_dma_channel(_rfpkt.get() ));
+    m_channel = std::unique_ptr<rorcfs_dma_channel>(
+       new rorcfs_dma_channel(m_rfpkt.get() ));
     
   }
 
   ~flib_link() {
     _stop();
     //TODO move deallocte to destructro of buffer
-    if(_ebuf){
-      if(_ebuf->deallocate() != 0) {
+    if(m_event_buffer){
+      if(m_event_buffer->deallocate() != 0) {
         throw RorcfsException("ebuf->deallocate failed");
       }
     }
-    if(_dbuf){
-      if(_dbuf->deallocate() != 0) {
+    if(m_dbuffer){
+      if(m_dbuffer->deallocate() != 0) {
         throw RorcfsException("dbuf->deallocate failed");
       }
     }
@@ -144,8 +121,8 @@ public:
   int init_dma(create_only_t, size_t log_ebufsize, size_t log_dbufsize) {
     _log_ebufsize = log_ebufsize;
     _log_dbufsize = log_dbufsize;
-    _ebuf = _create_buffer(0, log_ebufsize);
-    _dbuf = _create_buffer(1, log_dbufsize);
+    m_event_buffer = _create_buffer(0, log_ebufsize);
+    m_dbuffer = _create_buffer(1, log_dbufsize);
     _init_hardware();
     _dma_initialized = true;
     return 0;
@@ -154,8 +131,8 @@ public:
   int init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize) {
     _log_ebufsize = log_ebufsize;
     _log_dbufsize = log_dbufsize;
-    _ebuf = _open_buffer(0);
-    _dbuf = _open_buffer(1);
+    m_event_buffer = _open_buffer(0);
+    m_dbuffer = _open_buffer(1);
     _init_hardware();
     _dma_initialized = true;
     return 0;
@@ -164,8 +141,8 @@ public:
   int init_dma(open_or_create_t, size_t log_ebufsize, size_t log_dbufsize) {
     _log_ebufsize = log_ebufsize;
     _log_dbufsize = log_dbufsize;
-    _ebuf = _open_or_create_buffer(0, log_ebufsize);
-    _dbuf = _open_or_create_buffer(1, log_dbufsize);
+    m_event_buffer = _open_or_create_buffer(0, log_ebufsize);
+    m_dbuffer = _open_or_create_buffer(1, log_dbufsize);
     _init_hardware();
     _dma_initialized = true;
     return 0;
@@ -207,13 +184,13 @@ public:
     //_ch->setEBOffset(eb_offset);
     //_ch->setRBOffset(rb_offset);
 
-    _ch->setOffsets(eb_offset, rb_offset);
+    m_channel->setOffsets(eb_offset, rb_offset);
 
 #ifdef DEBUG  
     printf("index %d EB offset set: %ld, get: %ld\n",
-           _last_index, eb_offset, _ch->getEBOffset());
+           _last_index, eb_offset, m_channel->getEBOffset());
     printf("index %d RB offset set: %ld, get: %ld, wrap %d\n",
-           _last_index, rb_offset, _ch->getRBOffset(), _wrap);
+           _last_index, rb_offset, m_channel->getRBOffset(), _wrap);
 #endif
 
     return 0;
@@ -229,39 +206,39 @@ public:
   void set_start_idx(uint64_t index) {
     // set reset value
     // TODO replace with _rfgtx->set_mem()
-    _rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_L, (uint32_t)(index & 0xffffffff));
-    _rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_H, (uint32_t)(index >> 32));
+    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_L, (uint32_t)(index & 0xffffffff));
+    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_H, (uint32_t)(index >> 32));
     // reste mc counter 
     // TODO implenet edge detection and 'pulse only' in HW
-    uint32_t mc_gen_cfg= _rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
+    uint32_t mc_gen_cfg= m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
     // TODO replace with _rfgtx->set_bit()
-    _rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
-    _rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
+    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
+    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
   }
   
   void rst_pending_mc() { // is also resetted with datapath reset
     // TODO implenet edge detection and 'pulse only' in HW
-    uint32_t mc_gen_cfg= _rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
+    uint32_t mc_gen_cfg= m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
     // TODO replace with _rfgtx->set_bit()
-    _rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
-    _rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
+    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
+    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
   }
   
   void enable_cbmnet_packer(bool enable) {
-    _rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
+    m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
   }
 
   uint64_t get_pending_mc() {
     // TODO replace with _rfgtx->get_mem()
-    uint64_t pend_mc = _rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_L);
-    pend_mc = pend_mc | ((uint64_t)(_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_H))<<32);
+    uint64_t pend_mc = m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_L);
+    pend_mc = pend_mc | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_H))<<32);
     return pend_mc;
   }
 
   uint64_t get_mc_index() {
     // TODO replace with _rfgtx->get_mem()
-    uint64_t mc_index = _rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_L);
-    mc_index = mc_index | ((uint64_t)(_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_H))<<32);
+    uint64_t mc_index = m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_L);
+    mc_index = mc_index | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_H))<<32);
     return mc_index;
   }
   
@@ -270,22 +247,22 @@ public:
   enum data_rx_sel {disable, emu, link, pgen};
 
   void set_data_rx_sel(data_rx_sel rx_sel) {
-    uint32_t dp_cfg = _rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
+    uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
     switch (rx_sel) {
-    case disable : _rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3)); break;
-    case link :    _rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
-    case pgen :    _rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
-    case emu :     _rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1<<1)); break;
+    case disable : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3)); break;
+    case link :    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
+    case pgen :    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
+    case emu :     m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1<<1)); break;
     }
   }
 
   data_rx_sel get_data_rx_sel() {
-    uint32_t dp_cfg = _rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
+    uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
     return static_cast<data_rx_sel>(dp_cfg & 0x3);
   }
 
   void set_hdr_config(const struct hdr_config* config) {
-    _rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config, sizeof(hdr_config)>>2);
+    m_rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config, sizeof(hdr_config)>>2);
   }
 
 
@@ -298,18 +275,18 @@ public:
     assert (msg->words >= 4 && msg->words <= 32);
     
     // check if send FSM is ready (bit 31 in r_ctrl_tx = 0)
-    if ( (_rfgtx->get_reg(RORC_REG_GTX_CTRL_TX) & (1<<31)) != 0 ) {
+    if ( (m_rfgtx->get_reg(RORC_REG_GTX_CTRL_TX) & (1<<31)) != 0 ) {
       return -1;
     }
     
     // copy msg to board memory
     size_t bytes = msg->words*2 + (msg->words*2)%4;
-    _rfgtx->set_mem(RORC_MEM_BASE_CTRL_TX, (const void*)msg->data, bytes>>2);
+    m_rfgtx->set_mem(RORC_MEM_BASE_CTRL_TX, (const void*)msg->data, bytes>>2);
     
     // start send FSM
     uint32_t ctrl_tx = 0;
     ctrl_tx = 1<<31 | (msg->words-1);
-    _rfgtx->set_reg(RORC_REG_GTX_CTRL_TX, ctrl_tx);
+    m_rfgtx->set_reg(RORC_REG_GTX_CTRL_TX, ctrl_tx);
     
     return 0;
   }
@@ -317,7 +294,7 @@ public:
   int recv_dcm(struct ctrl_msg* msg) {
     
     int ret = 0;
-    uint32_t ctrl_rx = _rfgtx->get_reg(RORC_REG_GTX_CTRL_RX);
+    uint32_t ctrl_rx = m_rfgtx->get_reg(RORC_REG_GTX_CTRL_RX);
     msg->words = (ctrl_rx & 0x1F)+1;
     
     // check if a msg is available
@@ -333,10 +310,10 @@ public:
     
     // read msg from board memory
     size_t bytes = msg->words*2 + (msg->words*2)%4;
-    _rfgtx->get_mem(RORC_MEM_BASE_CTRL_RX, (void*)msg->data, bytes>>2);
+    m_rfgtx->get_mem(RORC_MEM_BASE_CTRL_RX, (void*)msg->data, bytes>>2);
     
     // acknowledge msg
-    _rfgtx->set_reg(RORC_REG_GTX_CTRL_RX, 0);
+    m_rfgtx->set_reg(RORC_REG_GTX_CTRL_RX, 0);
     
     return ret;
   } 
@@ -350,55 +327,78 @@ public:
       reg = (1<<4) | (type & 0xF);
     else
       reg = (type & 0xF);
-    _rfgtx->set_reg(RORC_REG_GTX_DLM, reg);
+    m_rfgtx->set_reg(RORC_REG_GTX_DLM, reg);
   }
 
   void send_dlm() {
     // TODO implemet local register in HW
     // this causes all prepared links to send
-    _rfglobal->set_reg(RORC_REG_DLM_CFG, 1);
+    m_rfglobal->set_reg(RORC_REG_DLM_CFG, 1);
   }
 
   uint8_t recv_dlm() {
     // get dlm rx reg
-    uint32_t reg = _rfgtx->get_reg(RORC_REG_GTX_DLM);
+    uint32_t reg = m_rfgtx->get_reg(RORC_REG_GTX_DLM);
     uint8_t type = (reg>>5) & 0xF;
     // clear dlm rx reg
-    _rfgtx->set_bit(RORC_REG_GTX_DLM, 31, true);
+    m_rfgtx->set_bit(RORC_REG_GTX_DLM, 31, true);
     return type;
   }
 
   ///// getter funtions /////
   
   std::string get_ebuf_info() {
-    return _get_buffer_info(_ebuf.get());
+    return _get_buffer_info(m_event_buffer.get());
   }
   
   std::string get_dbuf_info() {
-    return _get_buffer_info(_dbuf.get());
+    return _get_buffer_info(m_dbuffer.get());
   }
 
   rorcfs_buffer* ebuf() const {
-    return _ebuf.get();
+    return m_event_buffer.get();
   }
   
   rorcfs_buffer* rbuf() const {
-    return _dbuf.get();
+    return m_dbuffer.get();
   }
   
   rorcfs_dma_channel* get_ch() const {
-    return _ch.get();
+    return m_channel.get();
   }
 
   register_file_bar* get_rfpkt() const {
-    return _rfpkt.get();
+    return m_rfpkt.get();
   }
 
   register_file_bar* get_rfgtx() const {
-    return _rfgtx.get();
+    return m_rfgtx.get();
   }
 
-private:
+protected:
+    std::unique_ptr<rorcfs_dma_channel> m_channel;
+    std::unique_ptr<rorcfs_buffer>      m_event_buffer;
+    std::unique_ptr<rorcfs_buffer>      m_dbuffer;
+    std::unique_ptr<register_file_bar>  m_rfglobal; // TODO remove this later
+    std::unique_ptr<register_file_bar>  m_rfpkt;
+    std::unique_ptr<register_file_bar>  m_rfgtx;
+
+    sys_bus_addr _base_addr;
+  size_t _link_index;
+  device *_dev;
+  uint64_t _index = 0;
+  uint64_t _last_index = 0;
+  uint64_t _last_acked = 0;
+  uint64_t _mc_nr = 0;
+  uint64_t _wrap = 0;
+  bool _dma_initialized = false;
+
+  volatile uint64_t* _eb = nullptr;
+  volatile struct MicrosliceDescriptor* _db = nullptr;
+
+  uint64_t _dbentries = 0;
+  size_t _log_ebufsize = 0;
+  size_t _log_dbufsize = 0;
 
     // creates new buffer, throws an exception if buffer already exists
     std::unique_ptr<rorcfs_buffer>
@@ -443,25 +443,25 @@ private:
   void _rst_channel() {
     // datapath reset, will also cause hw defaults for
     // - pending mc  = 0
-    _rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, true);
+    m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, true);
      // rst packetizer fifos
-    _ch->setDMAConfig(0X2);
+    m_channel->setDMAConfig(0X2);
     // release datapath reset
-    _rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, false);
+    m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, false);
   }
 
   void _stop() {
-    if(_ch && _dma_initialized ) {
+    if(m_channel && _dma_initialized ) {
       // disable packer
       enable_cbmnet_packer(false);
       // disable DMA Engine
-      _ch->setEnableEB(0);
+      m_channel->setEnableEB(0);
       // wait for pending transfers to complete (dma_busy->0)
-      while( _ch->getDMABusy() ) {
+      while( m_channel->getDMABusy() ) {
         usleep(100);
       }
       // disable RBDM
-      _ch->setEnableRB(0);
+      m_channel->setEnableRB(0);
       // reset
       _rst_channel();
     }
@@ -477,31 +477,31 @@ private:
     // prepare EventBufferDescriptorManager
     // and ReportBufferDescriptorManage
     // with scatter-gather list
-    if( _ch->prepareEB(_ebuf.get()) < 0 ) {
+    if( m_channel->prepareEB(m_event_buffer.get()) < 0 ) {
       return -1;
     }
-    if( _ch->prepareRB(_dbuf.get()) < 0 ) {
+    if( m_channel->prepareRB(m_dbuffer.get()) < 0 ) {
       return -1;
     }
     
-    if( _ch->configureChannel(_ebuf.get(), _dbuf.get(), 128) < 0) {
+    if( m_channel->configureChannel(m_event_buffer.get(), m_dbuffer.get(), 128) < 0) {
       return -1;
     }
     
     // clear eb for debugging
-    memset(_ebuf->getMem(), 0, _ebuf->getMappingSize());
+    memset(m_event_buffer->getMem(), 0, m_event_buffer->getMappingSize());
     // clear rb for polling
-    memset(_dbuf->getMem(), 0, _dbuf->getMappingSize());
+    memset(m_dbuffer->getMem(), 0, m_dbuffer->getMappingSize());
     
-    _eb = (uint64_t *)_ebuf->getMem();
-    _db = (struct MicrosliceDescriptor *)_dbuf->getMem();
+    _eb = (uint64_t *)m_event_buffer->getMem();
+    _db = (struct MicrosliceDescriptor *)m_dbuffer->getMem();
     
-    _dbentries = _dbuf->getMaxRBEntries();
+    _dbentries = m_dbuffer->getMaxRBEntries();
     
     // Enable desciptor buffers and dma engine
-    _ch->setEnableEB(1);
-    _ch->setEnableRB(1);
-    _ch->setDMAConfig( _ch->getDMAConfig() | 0x01 );
+    m_channel->setEnableEB(1);
+    m_channel->setEnableRB(1);
+    m_channel->setDMAConfig( m_channel->getDMAConfig() | 0x01 );
  
     return 0;
   }
