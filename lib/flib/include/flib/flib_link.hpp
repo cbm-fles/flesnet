@@ -95,118 +95,90 @@ class flib_link
 {
 public:
   
-  flib_link(size_t link_index, device* dev, rorcfs_bar* bar)
-    : m_link_index(link_index), m_device(dev) {
-
-    m_base_addr =  (m_link_index + 1) * RORC_CHANNEL_OFFSET;
-    // regiter file access
-    m_rfpkt = std::unique_ptr<register_file_bar>(
-       new register_file_bar(bar, m_base_addr));
-    m_rfgtx = std::unique_ptr<register_file_bar>(
-       new register_file_bar(bar, (m_base_addr + (1<<RORC_DMA_CMP_SEL))));
-    m_rfglobal = std::unique_ptr<register_file_bar>(
-       new register_file_bar(bar, 0));
-    // create DMA channel and bind to register file, 
-    // no HW initialization is done here
-    m_channel = std::unique_ptr<rorcfs_dma_channel>(
-       new rorcfs_dma_channel(m_rfpkt.get() ));
-    
-  }
-
-  ~flib_link() {
-    stop();
-    //TODO move deallocte to destructro of buffer
-    if(m_event_buffer){
-      if(m_event_buffer->deallocate() != 0) {
-        throw RorcfsException("ebuf->deallocate failed");
-      }
+    flib_link(size_t link_index, device* dev, rorcfs_bar* bar) : m_link_index(link_index), m_device(dev)
+    {
+        m_base_addr =  (m_link_index + 1) * RORC_CHANNEL_OFFSET;
+        // regiter file access
+        m_rfpkt     = std::unique_ptr<register_file_bar>(new register_file_bar(bar, m_base_addr));
+        m_rfgtx     = std::unique_ptr<register_file_bar>(new register_file_bar(bar, (m_base_addr + (1<<RORC_DMA_CMP_SEL))));
+        m_rfglobal  = std::unique_ptr<register_file_bar>(new register_file_bar(bar, 0));
+        // create DMA channel and bind to register file,
+        // no HW initialization is done here
+        m_channel   = std::unique_ptr<rorcfs_dma_channel>(new rorcfs_dma_channel(m_rfpkt.get() ));
     }
-    if(m_dbuffer){
-      if(m_dbuffer->deallocate() != 0) {
-        throw RorcfsException("dbuf->deallocate failed");
-      }
-    }
-  }  
-  
-  int init_dma(create_only_t, size_t log_ebufsize, size_t log_dbufsize) {
-    m_log_ebufsize = log_ebufsize;
-    m_log_dbufsize = log_dbufsize;
-    m_event_buffer = create_buffer(0, log_ebufsize);
-    m_dbuffer = create_buffer(1, log_dbufsize);
-    init_hardware();
-    m_dma_initialized = true;
-    return 0;
-  }
 
-  int init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize) {
-    m_log_ebufsize = log_ebufsize;
-    m_log_dbufsize = log_dbufsize;
-    m_event_buffer = open_buffer(0);
-    m_dbuffer = open_buffer(1);
-    init_hardware();
-    m_dma_initialized = true;
-    return 0;
-  }
+    ~flib_link()
+    {
+        stop();
+        //TODO move deallocte to destructor of buffer
+        if(m_event_buffer)
+        {
+            if(m_event_buffer->deallocate() != 0)
+            { throw RorcfsException("ebuf->deallocate failed"); }
+        }
+        if(m_dbuffer)
+        {
+            if(m_dbuffer->deallocate() != 0)
+            { throw RorcfsException("dbuf->deallocate failed"); }
+        }
+    }
+
+    int
+    init_dma
+    (
+        create_only_t,
+        size_t log_ebufsize,
+        size_t log_dbufsize
+    )
+    {
+        m_log_ebufsize    = log_ebufsize;
+        m_log_dbufsize    = log_dbufsize;
+        m_event_buffer    = create_buffer(0, log_ebufsize);
+        m_dbuffer         = create_buffer(1, log_dbufsize);
+        init_hardware();
+        m_dma_initialized = true;
+        return 0;
+    }
+
+    int
+    init_dma
+    (
+        open_only_t,
+        size_t log_ebufsize,
+        size_t log_dbufsize
+    )
+    {
+        m_log_ebufsize    = log_ebufsize;
+        m_log_dbufsize    = log_dbufsize;
+        m_event_buffer    = open_buffer(0);
+        m_dbuffer         = open_buffer(1);
+        init_hardware();
+        m_dma_initialized = true;
+        return 0;
+    }
  
-  int init_dma(open_or_create_t, size_t log_ebufsize, size_t log_dbufsize) {
-    m_log_ebufsize = log_ebufsize;
-    m_log_dbufsize = log_dbufsize;
-    m_event_buffer = open_or_create_buffer(0, log_ebufsize);
-    m_dbuffer = open_or_create_buffer(1, log_dbufsize);
-    init_hardware();
-    m_dma_initialized = true;
-    return 0;
-  }
-
-  ///// MC access funtions /////
-
-  std::pair<mc_desc, bool> get_mc() {
-    struct mc_desc mc;
-    if(m_db[m_index].idx > m_mc_nr) { // mc_nr counts from 1 in HW
-      m_mc_nr = m_db[m_index].idx;
-      mc.nr = m_mc_nr;
-      mc.addr = m_eb + (m_db[m_index].offset & ((1<<m_log_ebufsize)-1))/sizeof(uint64_t);
-      mc.size = m_db[m_index].size;
-      mc.rbaddr = (uint64_t *)&m_db[m_index];
-      
-      // calculate next rb index
-      m_last_index = m_index;
-      if( m_index < m_dbentries-1 )
-        m_index++;
-      else {
-        m_wrap++;
-        m_index = 0;
-      }
-      return std::make_pair(mc, true);
+    int
+    init_dma
+    (
+        open_or_create_t,
+        size_t log_ebufsize,
+        size_t log_dbufsize
+    )
+    {
+        m_log_ebufsize    = log_ebufsize;
+        m_log_dbufsize    = log_dbufsize;
+        m_event_buffer    = open_or_create_buffer(0, log_ebufsize);
+        m_dbuffer         = open_or_create_buffer(1, log_dbufsize);
+        init_hardware();
+        m_dma_initialized = true;
+        return 0;
     }
-    else
-      return std::make_pair(mc, false);
-  }
+
+    /*** MC access funtions ***/
+    std::pair<mc_desc, bool> get_mc();
+    int                      ack_mc();
   
-  int ack_mc() {
-    
-    // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
-    // to calculate end wrapping logic is required
-    uint64_t eb_offset = m_db[m_last_index].offset & ((1<<m_log_ebufsize)-1);
-    // each rbenty is 32 bytes, this is hard coded in HW
-    uint64_t rb_offset = m_last_index*sizeof(struct MicrosliceDescriptor) & ((1<<m_log_dbufsize)-1);
-
-    //_ch->setEBOffset(eb_offset);
-    //_ch->setRBOffset(rb_offset);
-
-    m_channel->setOffsets(eb_offset, rb_offset);
-
-#ifdef DEBUG  
-    printf("index %d EB offset set: %ld, get: %ld\n",
-           m_last_index, eb_offset, m_channel->getEBOffset());
-    printf("index %d RB offset set: %ld, get: %ld, wrap %d\n",
-           m_last_index, rb_offset, m_channel->getRBOffset(), m_wrap);
-#endif
-
-    return 0;
-    }
-  
-    /*** configuration and control ***/
+    /*** Configuration and control ***/
 
     /**
      * REG: mc_gen_cfg

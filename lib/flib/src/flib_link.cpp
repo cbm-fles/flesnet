@@ -7,6 +7,62 @@
 
 namespace flib
 {
+    /*** MC access funtions ***/
+
+    std::pair<mc_desc, bool>
+    flib_link::get_mc()
+    {
+        struct mc_desc mc;
+        if(m_db[m_index].idx > m_mc_nr)
+        { // mc_nr counts from 1 in HW
+            m_mc_nr = m_db[m_index].idx;
+            mc.nr = m_mc_nr;
+            mc.addr = m_eb + (m_db[m_index].offset & ((1<<m_log_ebufsize)-1))/sizeof(uint64_t);
+            mc.size = m_db[m_index].size;
+            mc.rbaddr = (uint64_t *)&m_db[m_index];
+
+            // calculate next rb index
+            m_last_index = m_index;
+            if( m_index < m_dbentries-1 )
+            { m_index++;}
+            else
+            {
+                m_wrap++;
+                m_index = 0;
+            }
+            return std::make_pair(mc, true);
+        }
+
+        return std::make_pair(mc, false);
+    }
+
+    int
+    flib_link::ack_mc()
+    {
+
+        // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
+        // to calculate end wrapping logic is required
+        uint64_t eb_offset = m_db[m_last_index].offset & ((1<<m_log_ebufsize)-1);
+        // each rbenty is 32 bytes, this is hard coded in HW
+        uint64_t rb_offset = m_last_index*sizeof(struct MicrosliceDescriptor) & ((1<<m_log_dbufsize)-1);
+
+        //_ch->setEBOffset(eb_offset);
+        //_ch->setRBOffset(rb_offset);
+
+        m_channel->setOffsets(eb_offset, rb_offset);
+
+        #ifdef DEBUG
+        printf("index %d EB offset set: %ld, get: %ld\n",
+        m_last_index, eb_offset, m_channel->getEBOffset());
+        printf("index %d RB offset set: %ld, get: %ld, wrap %d\n",
+        m_last_index, rb_offset, m_channel->getRBOffset(), m_wrap);
+        #endif
+
+        return 0;
+    }
+
+    /*** Configuration and control ***/
+
     void
     flib_link::set_start_idx(uint64_t index)
     {
