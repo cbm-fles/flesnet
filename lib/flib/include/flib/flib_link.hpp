@@ -86,7 +86,7 @@ class flib_link
 public:
   
   flib_link(size_t link_index, device* dev, rorcfs_bar* bar)
-    : m_link_index(link_index), _dev(dev) {
+    : m_link_index(link_index), m_device(dev) {
 
     m_base_addr =  (m_link_index + 1) * RORC_CHANNEL_OFFSET;
     // regiter file access
@@ -152,20 +152,20 @@ public:
 
   std::pair<mc_desc, bool> get_mc() {
     struct mc_desc mc;
-    if(_db[_index].idx > _mc_nr) { // mc_nr counts from 1 in HW
-      _mc_nr = _db[_index].idx;
-      mc.nr = _mc_nr;
-      mc.addr = _eb + (_db[_index].offset & ((1<<m_log_ebufsize)-1))/sizeof(uint64_t);
-      mc.size = _db[_index].size;
-      mc.rbaddr = (uint64_t *)&_db[_index];
+    if(_db[m_index].idx > m_mc_nr) { // mc_nr counts from 1 in HW
+      m_mc_nr = _db[m_index].idx;
+      mc.nr = m_mc_nr;
+      mc.addr = _eb + (_db[m_index].offset & ((1<<m_log_ebufsize)-1))/sizeof(uint64_t);
+      mc.size = _db[m_index].size;
+      mc.rbaddr = (uint64_t *)&_db[m_index];
       
       // calculate next rb index
-      _last_index = _index;
-      if( _index < _dbentries-1 )
-        _index++;
+      m_last_index = m_index;
+      if( m_index < m_dbentries-1 )
+        m_index++;
       else {
-        _wrap++;
-        _index = 0;
+        m_wrap++;
+        m_index = 0;
       }
       return std::make_pair(mc, true);
     }
@@ -177,9 +177,9 @@ public:
     
     // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
     // to calculate end wrapping logic is required
-    uint64_t eb_offset = _db[_last_index].offset & ((1<<m_log_ebufsize)-1);
+    uint64_t eb_offset = _db[m_last_index].offset & ((1<<m_log_ebufsize)-1);
     // each rbenty is 32 bytes, this is hard coded in HW
-    uint64_t rb_offset = _last_index*sizeof(struct MicrosliceDescriptor) & ((1<<m_log_dbufsize)-1);
+    uint64_t rb_offset = m_last_index*sizeof(struct MicrosliceDescriptor) & ((1<<m_log_dbufsize)-1);
 
     //_ch->setEBOffset(eb_offset);
     //_ch->setRBOffset(rb_offset);
@@ -188,9 +188,9 @@ public:
 
 #ifdef DEBUG  
     printf("index %d EB offset set: %ld, get: %ld\n",
-           _last_index, eb_offset, m_channel->getEBOffset());
+           m_last_index, eb_offset, m_channel->getEBOffset());
     printf("index %d RB offset set: %ld, get: %ld, wrap %d\n",
-           _last_index, rb_offset, m_channel->getRBOffset(), _wrap);
+           m_last_index, rb_offset, m_channel->getRBOffset(), m_wrap);
 #endif
 
     return 0;
@@ -383,25 +383,27 @@ protected:
     std::unique_ptr<register_file_bar>  m_rfpkt;
     std::unique_ptr<register_file_bar>  m_rfgtx;
 
-    size_t m_link_index;
-    size_t m_log_ebufsize = 0;
-    size_t m_log_dbufsize = 0;
+    size_t   m_link_index   = 0;
+    size_t   m_log_ebufsize = 0;
+    size_t   m_log_dbufsize = 0;
 
-    sys_bus_addr m_base_addr;
+    uint64_t m_index        = 0;
+    uint64_t m_last_index   = 0;
+    uint64_t m_last_acked   = 0;
+    uint64_t m_mc_nr        = 0;
+    uint64_t m_wrap         = 0;
+    uint64_t m_dbentries    = 0;
 
 
-  device *_dev;
-  uint64_t _index = 0;
-  uint64_t _last_index = 0;
-  uint64_t _last_acked = 0;
-  uint64_t _mc_nr = 0;
-  uint64_t _wrap = 0;
   bool _dma_initialized = false;
+
+  sys_bus_addr  m_base_addr;
+  device       *m_device;
 
   volatile uint64_t* _eb = nullptr;
   volatile struct MicrosliceDescriptor* _db = nullptr;
 
-  uint64_t _dbentries = 0;
+
 
 
     // creates new buffer, throws an exception if buffer already exists
@@ -410,7 +412,7 @@ protected:
     {
         unsigned long size = (((unsigned long)1) << log_size);
         std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());
-        if (buffer->allocate(_dev, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0)
+        if (buffer->allocate(m_device, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0)
         {
             if (errno == EEXIST)
             { throw FlibException("Buffer already exists, not allowed to open in create only mode"); }
@@ -423,7 +425,7 @@ protected:
   // opens an existing buffer, throws an exception if buffer doesn't exists
   std::unique_ptr<rorcfs_buffer> _open_buffer(size_t idx) {
     std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());			
-    if ( buffer->connect(_dev, 2*m_link_index+idx) != 0 ) {
+    if ( buffer->connect(m_device, 2*m_link_index+idx) != 0 ) {
       throw RorcfsException("Connect to buffer failed");
     }
     return buffer;    
@@ -433,9 +435,9 @@ protected:
   std::unique_ptr<rorcfs_buffer> _open_or_create_buffer(size_t idx, size_t log_size) {
     unsigned long size = (((unsigned long)1) << log_size);
     std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());			
-    if (buffer->allocate(_dev, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0) {
+    if (buffer->allocate(m_device, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0) {
       if (errno == EEXIST) {
-        if ( buffer->connect(_dev, 2*m_link_index+idx) != 0 )
+        if ( buffer->connect(m_device, 2*m_link_index+idx) != 0 )
           throw RorcfsException("Buffer open failed");
       }
       else
@@ -500,7 +502,7 @@ protected:
     _eb = (uint64_t *)m_event_buffer->getMem();
     _db = (struct MicrosliceDescriptor *)m_dbuffer->getMem();
     
-    _dbentries = m_dbuffer->getMaxRBEntries();
+    m_dbentries = m_dbuffer->getMaxRBEntries();
     
     // Enable desciptor buffers and dma engine
     m_channel->setEnableEB(1);
