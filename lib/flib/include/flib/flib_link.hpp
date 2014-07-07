@@ -121,8 +121,8 @@ public:
   int init_dma(create_only_t, size_t log_ebufsize, size_t log_dbufsize) {
     m_log_ebufsize = log_ebufsize;
     m_log_dbufsize = log_dbufsize;
-    m_event_buffer = _create_buffer(0, log_ebufsize);
-    m_dbuffer = _create_buffer(1, log_dbufsize);
+    m_event_buffer = create_buffer(0, log_ebufsize);
+    m_dbuffer = create_buffer(1, log_dbufsize);
     init_hardware();
     m_dma_initialized = true;
     return 0;
@@ -131,8 +131,8 @@ public:
   int init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize) {
     m_log_ebufsize = log_ebufsize;
     m_log_dbufsize = log_dbufsize;
-    m_event_buffer = _open_buffer(0);
-    m_dbuffer = _open_buffer(1);
+    m_event_buffer = open_buffer(0);
+    m_dbuffer = open_buffer(1);
     init_hardware();
     m_dma_initialized = true;
     return 0;
@@ -402,36 +402,19 @@ protected:
     volatile uint64_t                    *m_eb = nullptr;
     volatile struct MicrosliceDescriptor *m_db = nullptr;
 
-
-
-
-    // creates new buffer, throws an exception if buffer already exists
-    std::unique_ptr<rorcfs_buffer>
-    _create_buffer(size_t idx, size_t log_size)
-    {
-        unsigned long size = (((unsigned long)1) << log_size);
-        std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());
-        if (buffer->allocate(m_device, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0)
-        {
-            if (errno == EEXIST)
-            { throw FlibException("Buffer already exists, not allowed to open in create only mode"); }
-            else
-            { throw RorcfsException("Buffer allocation failed"); }
-        }
-        return buffer;
-    }
-
-  // opens an existing buffer, throws an exception if buffer doesn't exists
-  std::unique_ptr<rorcfs_buffer> _open_buffer(size_t idx) {
-    std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());			
-    if ( buffer->connect(m_device, 2*m_link_index+idx) != 0 ) {
-      throw RorcfsException("Connect to buffer failed");
-    }
-    return buffer;    
-  }
+    /**
+     * creates new buffer, throws an exception if buffer already exists
+     */
+    std::unique_ptr<rorcfs_buffer> create_buffer(size_t idx, size_t log_size);
 
     /**
-     * opens existing buffer or creates new buffer if non exists
+     * opens an existing buffer, throws an exception if buffer
+     * doesn't exists
+     */
+    std::unique_ptr<rorcfs_buffer> open_buffer(size_t idx);
+
+    /**
+     * opens an existing buffer or creates new buffer if non exists
      */
     std::unique_ptr<rorcfs_buffer>
     open_or_create_buffer(size_t idx, size_t log_size);
@@ -450,4 +433,4 @@ protected:
 
 #pragma GCC diagnostic pop
 
-#endif // FLIB_LINK_HPP
+#endif /** FLIB_LINK_HPP */
