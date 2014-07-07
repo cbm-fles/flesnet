@@ -21,12 +21,12 @@
 #ifndef _RORCLIB_RORCFS_BUFFER_H
 #define _RORCLIB_RORCFS_BUFFER_H
 
-#include <flib/rorcfs_device.hh>
 #include <flib/rorcfs.h>
-
 
 namespace flib
 {
+    class device;
+
     /**
      * @class rorcfs_buffer
      * @brief buffer management class

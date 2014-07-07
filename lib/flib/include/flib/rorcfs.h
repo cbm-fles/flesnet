@@ -1,34 +1,38 @@
 #ifndef _RORCFS_RORCFS_H
 #define _RORCFS_RORCFS_H
 
-struct rorcfs_sync_range {
-	void *start;
-	void *end;
+struct rorcfs_sync_range
+{
+    void *start;
+    void *end;
 };
 
-struct __attribute__ ((__packed__)) t_rorcfs_buffer {
-	unsigned long id;
-	unsigned long bytes;
-	short overmap;
-	short dma_direction;
+struct __attribute__ ((__packed__)) t_rorcfs_buffer
+{
+    unsigned long id;
+    unsigned long bytes;
+    short overmap;
+    short dma_direction;
 };
 
 
-struct __attribute__ ((__packed__)) rorcfs_event_descriptor {
-	unsigned long offset;
-	unsigned long length;
-	unsigned int calc_event_size;
-	unsigned int reported_event_size;
-	unsigned long dummy; //do not use!
+struct __attribute__ ((__packed__)) rorcfs_event_descriptor
+{
+    unsigned long offset;
+    unsigned long length;
+    unsigned int calc_event_size;
+    unsigned int reported_event_size;
+    unsigned long dummy; //do not use!
 };
 
 /**
  * struct rorcfs_dma_desc: dma address and length
  * to be transfered to the RORC
  **/
-typedef struct rorcfs_dma_desc {
-	unsigned long		addr;
-	unsigned long					len;
+typedef struct rorcfs_dma_desc
+{
+    unsigned long   addr;
+    unsigned long   len;
 } trorcfs_dma_desc, *prorcfs_dma_desc;
 
 #define RORCFS_DMA_FROM_DEVICE 2

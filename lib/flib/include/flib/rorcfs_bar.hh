@@ -13,10 +13,11 @@
 
 #include <pthread.h>
 #include <pda.h>
-#include <flib/rorcfs_device.hh>
 
 namespace flib
 {
+    class device;
+
     #define BAR_ERROR_CONSTRUCTOR_FAILED 0
 
     /**
