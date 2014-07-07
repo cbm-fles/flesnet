@@ -129,16 +129,7 @@ public:
         create_only_t,
         size_t log_ebufsize,
         size_t log_dbufsize
-    )
-    {
-        m_log_ebufsize    = log_ebufsize;
-        m_log_dbufsize    = log_dbufsize;
-        m_event_buffer    = create_buffer(0, log_ebufsize);
-        m_dbuffer         = create_buffer(1, log_dbufsize);
-        init_hardware();
-        m_dma_initialized = true;
-        return 0;
-    }
+    );
 
     int
     init_dma
@@ -146,16 +137,7 @@ public:
         open_only_t,
         size_t log_ebufsize,
         size_t log_dbufsize
-    )
-    {
-        m_log_ebufsize    = log_ebufsize;
-        m_log_dbufsize    = log_dbufsize;
-        m_event_buffer    = open_buffer(0);
-        m_dbuffer         = open_buffer(1);
-        init_hardware();
-        m_dma_initialized = true;
-        return 0;
-    }
+    );
  
     int
     init_dma
@@ -163,16 +145,7 @@ public:
         open_or_create_t,
         size_t log_ebufsize,
         size_t log_dbufsize
-    )
-    {
-        m_log_ebufsize    = log_ebufsize;
-        m_log_dbufsize    = log_dbufsize;
-        m_event_buffer    = open_or_create_buffer(0, log_ebufsize);
-        m_dbuffer         = open_or_create_buffer(1, log_dbufsize);
-        init_hardware();
-        m_dma_initialized = true;
-        return 0;
-    }
+    );
 
     /*** MC access funtions ***/
     std::pair<mc_desc, bool> get_mc();
