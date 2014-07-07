@@ -86,14 +86,14 @@ class flib_link
 public:
   
   flib_link(size_t link_index, device* dev, rorcfs_bar* bar)
-    : _link_index(link_index), _dev(dev) {
+    : m_link_index(link_index), _dev(dev) {
 
-    _base_addr =  (_link_index + 1) * RORC_CHANNEL_OFFSET;
+    m_base_addr =  (m_link_index + 1) * RORC_CHANNEL_OFFSET;
     // regiter file access
     m_rfpkt = std::unique_ptr<register_file_bar>(
-       new register_file_bar(bar, _base_addr));
+       new register_file_bar(bar, m_base_addr));
     m_rfgtx = std::unique_ptr<register_file_bar>(
-       new register_file_bar(bar, (_base_addr + (1<<RORC_DMA_CMP_SEL))));
+       new register_file_bar(bar, (m_base_addr + (1<<RORC_DMA_CMP_SEL))));
     m_rfglobal = std::unique_ptr<register_file_bar>(
        new register_file_bar(bar, 0));
     // create DMA channel and bind to register file, 
@@ -119,8 +119,8 @@ public:
   }  
   
   int init_dma(create_only_t, size_t log_ebufsize, size_t log_dbufsize) {
-    _log_ebufsize = log_ebufsize;
-    _log_dbufsize = log_dbufsize;
+    m_log_ebufsize = log_ebufsize;
+    m_log_dbufsize = log_dbufsize;
     m_event_buffer = _create_buffer(0, log_ebufsize);
     m_dbuffer = _create_buffer(1, log_dbufsize);
     _init_hardware();
@@ -129,8 +129,8 @@ public:
   }
 
   int init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize) {
-    _log_ebufsize = log_ebufsize;
-    _log_dbufsize = log_dbufsize;
+    m_log_ebufsize = log_ebufsize;
+    m_log_dbufsize = log_dbufsize;
     m_event_buffer = _open_buffer(0);
     m_dbuffer = _open_buffer(1);
     _init_hardware();
@@ -139,8 +139,8 @@ public:
   }
  
   int init_dma(open_or_create_t, size_t log_ebufsize, size_t log_dbufsize) {
-    _log_ebufsize = log_ebufsize;
-    _log_dbufsize = log_dbufsize;
+    m_log_ebufsize = log_ebufsize;
+    m_log_dbufsize = log_dbufsize;
     m_event_buffer = _open_or_create_buffer(0, log_ebufsize);
     m_dbuffer = _open_or_create_buffer(1, log_dbufsize);
     _init_hardware();
@@ -155,7 +155,7 @@ public:
     if(_db[_index].idx > _mc_nr) { // mc_nr counts from 1 in HW
       _mc_nr = _db[_index].idx;
       mc.nr = _mc_nr;
-      mc.addr = _eb + (_db[_index].offset & ((1<<_log_ebufsize)-1))/sizeof(uint64_t);
+      mc.addr = _eb + (_db[_index].offset & ((1<<m_log_ebufsize)-1))/sizeof(uint64_t);
       mc.size = _db[_index].size;
       mc.rbaddr = (uint64_t *)&_db[_index];
       
@@ -177,9 +177,9 @@ public:
     
     // TODO: EB pointers are set to begin of acknoledged entry, pointers are one entry delayed
     // to calculate end wrapping logic is required
-    uint64_t eb_offset = _db[_last_index].offset & ((1<<_log_ebufsize)-1);
+    uint64_t eb_offset = _db[_last_index].offset & ((1<<m_log_ebufsize)-1);
     // each rbenty is 32 bytes, this is hard coded in HW
-    uint64_t rb_offset = _last_index*sizeof(struct MicrosliceDescriptor) & ((1<<_log_dbufsize)-1);
+    uint64_t rb_offset = _last_index*sizeof(struct MicrosliceDescriptor) & ((1<<m_log_dbufsize)-1);
 
     //_ch->setEBOffset(eb_offset);
     //_ch->setRBOffset(rb_offset);
@@ -383,8 +383,13 @@ protected:
     std::unique_ptr<register_file_bar>  m_rfpkt;
     std::unique_ptr<register_file_bar>  m_rfgtx;
 
-    sys_bus_addr _base_addr;
-  size_t _link_index;
+    size_t m_link_index;
+    size_t m_log_ebufsize = 0;
+    size_t m_log_dbufsize = 0;
+
+    sys_bus_addr m_base_addr;
+
+
   device *_dev;
   uint64_t _index = 0;
   uint64_t _last_index = 0;
@@ -397,8 +402,7 @@ protected:
   volatile struct MicrosliceDescriptor* _db = nullptr;
 
   uint64_t _dbentries = 0;
-  size_t _log_ebufsize = 0;
-  size_t _log_dbufsize = 0;
+
 
     // creates new buffer, throws an exception if buffer already exists
     std::unique_ptr<rorcfs_buffer>
@@ -406,7 +410,7 @@ protected:
     {
         unsigned long size = (((unsigned long)1) << log_size);
         std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());
-        if (buffer->allocate(_dev, size, 2*_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0)
+        if (buffer->allocate(_dev, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0)
         {
             if (errno == EEXIST)
             { throw FlibException("Buffer already exists, not allowed to open in create only mode"); }
@@ -419,7 +423,7 @@ protected:
   // opens an existing buffer, throws an exception if buffer doesn't exists
   std::unique_ptr<rorcfs_buffer> _open_buffer(size_t idx) {
     std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());			
-    if ( buffer->connect(_dev, 2*_link_index+idx) != 0 ) {
+    if ( buffer->connect(_dev, 2*m_link_index+idx) != 0 ) {
       throw RorcfsException("Connect to buffer failed");
     }
     return buffer;    
@@ -429,9 +433,9 @@ protected:
   std::unique_ptr<rorcfs_buffer> _open_or_create_buffer(size_t idx, size_t log_size) {
     unsigned long size = (((unsigned long)1) << log_size);
     std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());			
-    if (buffer->allocate(_dev, size, 2*_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0) {
+    if (buffer->allocate(_dev, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0) {
       if (errno == EEXIST) {
-        if ( buffer->connect(_dev, 2*_link_index+idx) != 0 )
+        if ( buffer->connect(_dev, 2*m_link_index+idx) != 0 )
           throw RorcfsException("Buffer open failed");
       }
       else
