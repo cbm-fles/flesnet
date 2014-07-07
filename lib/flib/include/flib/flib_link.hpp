@@ -17,7 +17,11 @@
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
 namespace flib {
-  
+
+// REG: datapath_cfg
+// bit 0-1 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
+enum data_rx_sel {disable, emu, link, pgen};
+
 // has to be 256 Bit, this is hard coded in hw
 struct __attribute__ ((__packed__))
 MicrosliceDescriptor
@@ -242,28 +246,7 @@ public:
     return mc_index;
   }
   
-  // REG: datapath_cfg
-  // bit 0-1 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
-  enum data_rx_sel {disable, emu, link, pgen};
 
-  void set_data_rx_sel(data_rx_sel rx_sel) {
-    uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
-    switch (rx_sel) {
-    case disable : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3)); break;
-    case link :    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
-    case pgen :    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
-    case emu :     m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1<<1)); break;
-    }
-  }
-
-  data_rx_sel get_data_rx_sel() {
-    uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
-    return static_cast<data_rx_sel>(dp_cfg & 0x3);
-  }
-
-  void set_hdr_config(const struct hdr_config* config) {
-    m_rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config, sizeof(hdr_config)>>2);
-  }
 
 
     /*** CBMnet control interface ***/
@@ -280,8 +263,12 @@ public:
     void    send_dlm();
     uint8_t recv_dlm();
 
-    /*** getter funtions ***/
+    /*** setter methods ***/
+    void set_data_rx_sel(data_rx_sel rx_sel);
+    void set_hdr_config(const struct hdr_config* config);
 
+    /*** getter methods ***/
+    data_rx_sel         get_data_rx_sel();
     std::string         get_ebuf_info();
     std::string         get_dbuf_info();
     rorcfs_buffer*      ebuf()          const;

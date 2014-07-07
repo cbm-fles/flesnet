@@ -92,6 +92,35 @@ namespace flib
     }
 
 
+
+/*** SETTER ***/
+    void
+    flib_link::set_data_rx_sel(data_rx_sel rx_sel)
+    {
+        uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
+        switch(rx_sel)
+        {
+            case disable : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3)); break;
+            case link    : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
+            case pgen    : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
+            case emu     : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1<<1)); break;
+        }
+    }
+
+    void
+    flib_link::set_hdr_config(const struct hdr_config* config)
+    { m_rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config, sizeof(hdr_config)>>2); }
+
+
+
+/*** GETTER ***/
+    data_rx_sel
+    flib_link::get_data_rx_sel()
+    {
+        uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
+        return static_cast<data_rx_sel>(dp_cfg & 0x3);
+    }
+
     std::string
     flib_link::get_ebuf_info()
     { return get_buffer_info(m_event_buffer.get()); }
@@ -121,6 +150,8 @@ namespace flib
     { return m_rfgtx.get(); }
 
 
+
+/*** PROTECTED ***/
 
     std::unique_ptr<rorcfs_buffer>
     flib_link::create_buffer(size_t idx, size_t log_size)
