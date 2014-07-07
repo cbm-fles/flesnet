@@ -95,33 +95,13 @@ class flib_link
 {
 public:
   
-    flib_link(size_t link_index, device* dev, rorcfs_bar* bar) : m_link_index(link_index), m_device(dev)
-    {
-        m_base_addr =  (m_link_index + 1) * RORC_CHANNEL_OFFSET;
-        // regiter file access
-        m_rfpkt     = std::unique_ptr<register_file_bar>(new register_file_bar(bar, m_base_addr));
-        m_rfgtx     = std::unique_ptr<register_file_bar>(new register_file_bar(bar, (m_base_addr + (1<<RORC_DMA_CMP_SEL))));
-        m_rfglobal  = std::unique_ptr<register_file_bar>(new register_file_bar(bar, 0));
-        // create DMA channel and bind to register file,
-        // no HW initialization is done here
-        m_channel   = std::unique_ptr<rorcfs_dma_channel>(new rorcfs_dma_channel(m_rfpkt.get() ));
-    }
-
-    ~flib_link()
-    {
-        stop();
-        //TODO move deallocte to destructor of buffer
-        if(m_event_buffer)
-        {
-            if(m_event_buffer->deallocate() != 0)
-            { throw RorcfsException("ebuf->deallocate failed"); }
-        }
-        if(m_dbuffer)
-        {
-            if(m_dbuffer->deallocate() != 0)
-            { throw RorcfsException("dbuf->deallocate failed"); }
-        }
-    }
+     flib_link
+     (
+         size_t      link_index,
+         device     *dev,
+         rorcfs_bar *bar
+     );
+    ~flib_link();
 
     int
     init_dma
