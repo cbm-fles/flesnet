@@ -348,11 +348,11 @@ public:
   ///// getter funtions /////
   
   std::string get_ebuf_info() {
-    return _get_buffer_info(m_event_buffer.get());
+    return get_buffer_info(m_event_buffer.get());
   }
   
   std::string get_dbuf_info() {
-    return _get_buffer_info(m_dbuffer.get());
+    return get_buffer_info(m_dbuffer.get());
   }
 
   rorcfs_buffer* ebuf() const {
@@ -511,17 +511,7 @@ protected:
     return 0;
   }
 
-  std::string _get_buffer_info(rorcfs_buffer* buf) {
-    std::stringstream ss;
-    ss << "start address = " << buf->getMem() <<", "
-       << "physical size = " << (buf->getPhysicalSize() >> 20) << " MByte, "
-       << "mapping size = "   << (buf->getMappingSize() >> 20) << " MByte, "
-       << std::endl
-       << "  end address = "    << (void*)((uint8_t *)buf->getMem() + buf->getPhysicalSize()) << ", "
-       << "num SG entries = " << buf->getnSGEntries() << ", "
-       << "max SG entries = " << buf->getMaxRBEntries();
-    return ss.str();
-  }
+    std::string get_buffer_info(rorcfs_buffer* buf);
 
 };
 } // namespace flib
