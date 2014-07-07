@@ -7,6 +7,26 @@
 
 namespace flib
 {
+    void
+    flib_link::send_dlm()
+    {
+        // TODO implemet local register in HW
+        // this causes all prepared links to send
+        m_rfglobal->set_reg(RORC_REG_DLM_CFG, 1);
+    }
+
+    uint8_t
+    flib_link::recv_dlm()
+    {
+        // get dlm rx reg
+        uint32_t reg = m_rfgtx->get_reg(RORC_REG_GTX_DLM);
+        uint8_t type = (reg>>5) & 0xF;
+        // clear dlm rx reg
+        m_rfgtx->set_bit(RORC_REG_GTX_DLM, 31, true);
+        return type;
+    }
+
+
     std::string
     flib_link::get_ebuf_info()
     { return get_buffer_info(m_event_buffer.get()); }

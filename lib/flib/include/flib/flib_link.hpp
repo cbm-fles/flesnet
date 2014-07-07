@@ -318,34 +318,21 @@ public:
     return ret;
   } 
 
-  // RORC_REG_DLM_CFG 0 set to send (global reg)
-  // RORC_REG_GTX_DLM 3..0 tx type, 4 enable,
-  //                  8..5 rx type, 31 set to clear rx reg
-  void prepare_dlm(uint8_t type, bool enable) {
-    uint32_t reg = 0;
-    if (enable)
-      reg = (1<<4) | (type & 0xF);
-    else
-      reg = (type & 0xF);
-    m_rfgtx->set_reg(RORC_REG_GTX_DLM, reg);
-  }
-
-    void send_dlm()
+    // RORC_REG_DLM_CFG 0 set to send (global reg)
+    // RORC_REG_GTX_DLM 3..0 tx type, 4 enable,
+    //                  8..5 rx type, 31 set to clear rx reg
+    void prepare_dlm(uint8_t type, bool enable)
     {
-        // TODO implemet local register in HW
-        // this causes all prepared links to send
-        m_rfglobal->set_reg(RORC_REG_DLM_CFG, 1);
+        uint32_t reg = 0;
+        if (enable)
+        { reg = (1<<4) | (type & 0xF); }
+        else
+        { reg = (type & 0xF); }
+        m_rfgtx->set_reg(RORC_REG_GTX_DLM, reg);
     }
 
-    uint8_t recv_dlm()
-    {
-        // get dlm rx reg
-        uint32_t reg = m_rfgtx->get_reg(RORC_REG_GTX_DLM);
-        uint8_t type = (reg>>5) & 0xF;
-        // clear dlm rx reg
-        m_rfgtx->set_bit(RORC_REG_GTX_DLM, 31, true);
-        return type;
-    }
+    void    send_dlm();
+    uint8_t recv_dlm();
 
     /*** getter funtions ***/
 
