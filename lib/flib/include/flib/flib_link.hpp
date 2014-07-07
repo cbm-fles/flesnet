@@ -141,8 +141,8 @@ public:
   int init_dma(open_or_create_t, size_t log_ebufsize, size_t log_dbufsize) {
     m_log_ebufsize = log_ebufsize;
     m_log_dbufsize = log_dbufsize;
-    m_event_buffer = _open_or_create_buffer(0, log_ebufsize);
-    m_dbuffer = _open_or_create_buffer(1, log_dbufsize);
+    m_event_buffer = open_or_create_buffer(0, log_ebufsize);
+    m_dbuffer = open_or_create_buffer(1, log_dbufsize);
     init_hardware();
     m_dma_initialized = true;
     return 0;
@@ -430,20 +430,11 @@ protected:
     return buffer;    
   }
 
-  // opens existing buffer or creates new buffer if non exists
-  std::unique_ptr<rorcfs_buffer> _open_or_create_buffer(size_t idx, size_t log_size) {
-    unsigned long size = (((unsigned long)1) << log_size);
-    std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());			
-    if (buffer->allocate(m_device, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0) {
-      if (errno == EEXIST) {
-        if ( buffer->connect(m_device, 2*m_link_index+idx) != 0 )
-          throw RorcfsException("Buffer open failed");
-      }
-      else
-        throw RorcfsException("Buffer allocation failed");
-      }
-    return buffer;
-  }
+    /**
+     * opens existing buffer or creates new buffer if non exists
+     */
+    std::unique_ptr<rorcfs_buffer>
+    open_or_create_buffer(size_t idx, size_t log_size);
 
     void reset_channel();
     void stop();

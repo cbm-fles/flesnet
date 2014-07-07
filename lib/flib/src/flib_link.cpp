@@ -7,6 +7,26 @@
 
 namespace flib
 {
+    std::unique_ptr<rorcfs_buffer>
+    flib_link::open_or_create_buffer(size_t idx, size_t log_size)
+    {
+        unsigned long size = (((unsigned long)1) << log_size);
+        std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());
+
+        if (buffer->allocate(m_device, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0)
+        {
+            if (errno == EEXIST)
+            {
+                if ( buffer->connect(m_device, 2*m_link_index+idx) != 0 )
+                { throw RorcfsException("Buffer open failed"); }
+            }
+            else
+            { throw RorcfsException("Buffer allocation failed"); }
+        }
+
+        return buffer;
+    }
+
     void
     flib_link::reset_channel()
     {
