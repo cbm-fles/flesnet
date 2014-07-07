@@ -445,16 +445,7 @@ protected:
     return buffer;
   }
 
-  void _rst_channel() {
-    // datapath reset, will also cause hw defaults for
-    // - pending mc  = 0
-    m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, true);
-     // rst packetizer fifos
-    m_channel->setDMAConfig(0X2);
-    // release datapath reset
-    m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, false);
-  }
-
+    void reset_channel();
     void stop();
 
     /** Initializes hardware to perform DMA transfers

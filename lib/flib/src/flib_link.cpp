@@ -8,6 +8,18 @@
 namespace flib
 {
     void
+    flib_link::reset_channel()
+    {
+        // datapath reset, will also cause hw defaults for
+        // - pending mc  = 0
+        m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, true);
+        // rst packetizer fifos
+        m_channel->setDMAConfig(0X2);
+        // release datapath reset
+        m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, false);
+    }
+
+    void
     flib_link::stop()
     {
         if(m_channel && m_dma_initialized )
@@ -23,7 +35,7 @@ namespace flib
             // disable RBDM
             m_channel->setEnableRB(0);
             // reset
-            _rst_channel();
+            reset_channel();
         }
     }
 
@@ -33,7 +45,7 @@ namespace flib
         // disable packer if still enabled
         enable_cbmnet_packer(false);
         // reset everything to ensure clean startup
-        _rst_channel();
+        reset_channel();
         set_start_idx(1);
 
         /** prepare EventBufferDescriptorManager
