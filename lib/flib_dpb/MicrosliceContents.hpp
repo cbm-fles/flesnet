@@ -5,10 +5,10 @@
  * Data format as defined in flib/hw/src/cbmnet/cbmnet_packer.vhd:
  * (see also: D. Hutter, CBM Collaboration Meeting, 04/2014)
  *
- *      nnll dddd dddd dddd
- *      dddd dddd dddd dddd
- *      ...
- *      dddd pppp pppp pppp
+ *     nnll dddd dddd dddd
+ *     dddd dddd dddd dddd
+ *     ...
+ *     dddd pppp pppp pppp
  *
  * where
  * - `nn`:   8-bit DTM index
@@ -28,10 +28,10 @@
  * With this in mind, the `ll` field can more naturally be interpreted as
  * the number of `dddd` words (excluding `aaaa`):
  *
- *      nnll aaaa dddd dddd
- *      dddd dddd dddd dddd
- *      ...
- *      dddd pppp pppp pppp
+ *     nnll aaaa dddd dddd
+ *     dddd dddd dddd dddd
+ *     ...
+ *     dddd pppp pppp pppp
  */
 
 #pragma once
