@@ -266,71 +266,17 @@ public:
   }
 
 
-  ///// CBMnet control interface /////
-  
-  int send_dcm(const struct ctrl_msg* msg) {
-    // TODO: could also implement blocking call 
-    //       and check if sending is done at the end
+    /*** CBMnet control interface ***/
+    
+    int send_dcm(const struct ctrl_msg* msg);
+    int recv_dcm(struct ctrl_msg* msg);
 
-    assert (msg->words >= 4 && msg->words <= 32);
-    
-    // check if send FSM is ready (bit 31 in r_ctrl_tx = 0)
-    if ( (m_rfgtx->get_reg(RORC_REG_GTX_CTRL_TX) & (1<<31)) != 0 ) {
-      return -1;
-    }
-    
-    // copy msg to board memory
-    size_t bytes = msg->words*2 + (msg->words*2)%4;
-    m_rfgtx->set_mem(RORC_MEM_BASE_CTRL_TX, (const void*)msg->data, bytes>>2);
-    
-    // start send FSM
-    uint32_t ctrl_tx = 0;
-    ctrl_tx = 1<<31 | (msg->words-1);
-    m_rfgtx->set_reg(RORC_REG_GTX_CTRL_TX, ctrl_tx);
-    
-    return 0;
-  }
-
-  int recv_dcm(struct ctrl_msg* msg) {
-    
-    int ret = 0;
-    uint32_t ctrl_rx = m_rfgtx->get_reg(RORC_REG_GTX_CTRL_RX);
-    msg->words = (ctrl_rx & 0x1F)+1;
-    
-    // check if a msg is available
-    if ((ctrl_rx & (1<<31)) == 0) {
-      return -1;
-    }
-    // check if received words are in boundary
-    // append or truncate if not
-    if (msg->words < 4 || msg->words > 32) {
-      msg->words = 32;
-      ret = -2;
-    }
-    
-    // read msg from board memory
-    size_t bytes = msg->words*2 + (msg->words*2)%4;
-    m_rfgtx->get_mem(RORC_MEM_BASE_CTRL_RX, (void*)msg->data, bytes>>2);
-    
-    // acknowledge msg
-    m_rfgtx->set_reg(RORC_REG_GTX_CTRL_RX, 0);
-    
-    return ret;
-  } 
-
-    // RORC_REG_DLM_CFG 0 set to send (global reg)
-    // RORC_REG_GTX_DLM 3..0 tx type, 4 enable,
-    //                  8..5 rx type, 31 set to clear rx reg
-    void prepare_dlm(uint8_t type, bool enable)
-    {
-        uint32_t reg = 0;
-        if (enable)
-        { reg = (1<<4) | (type & 0xF); }
-        else
-        { reg = (type & 0xF); }
-        m_rfgtx->set_reg(RORC_REG_GTX_DLM, reg);
-    }
-
+    /**
+     * RORC_REG_DLM_CFG 0 set to send (global reg)
+     * RORC_REG_GTX_DLM 3..0 tx type, 4 enable,
+     * 8..5 rx type, 31 set to clear rx reg
+     */
+    void    prepare_dlm(uint8_t type, bool enable);
     void    send_dlm();
     uint8_t recv_dlm();
 
