@@ -3,11 +3,10 @@
 #ifndef REGISTER_FILE_HPP
 #define REGISTER_FILE_HPP
 
+#include <flib/data_structures.hh>
+
 namespace flib
 {
-
-    typedef uint64_t sys_bus_addr;
-
     class register_file
     {
         public:

@@ -2,6 +2,10 @@
 #define FLIB_DEVICE_HPP
 
 #include"boost/date_time/posix_time/posix_time.hpp"
+#include <flib/rorcfs.h>
+#include <flib/rorcfs_bar.hh>
+#include <flib/flib_device.hpp>
+#include <flib/register_file_bar.hpp>
 
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic ignored "-Wold-style-cast"

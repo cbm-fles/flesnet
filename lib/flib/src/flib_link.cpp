@@ -8,6 +8,18 @@
 
 #include <flib/flib_link.hpp>
 
+
+#include <flib/rorcfs_device.hh>
+#include <flib/rorcfs_buffer.hh>
+#include <flib/rorcfs_bar.hh>
+#include <flib/rorcfs_dma_channel.hh>
+#include <flib/flib_device.hpp>
+#include <flib/flib_link.hpp>
+#include <flib/register_file.hpp>
+#include <flib/register_file_bar.hpp>
+
+
+
 namespace flib
 {
     flib_link::flib_link
@@ -277,10 +289,10 @@ namespace flib
         uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
         switch(rx_sel)
         {
-            case disable : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3)); break;
-            case link    : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
-            case pgen    : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
-            case emu     : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1<<1)); break;
+            case rx_disable : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3)); break;
+            case rx_link    : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1<<1)) & ~1) ); break;
+            case rx_pgen    : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3) ); break;
+            case rx_emu     : m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1<<1)); break;
         }
     }
 
