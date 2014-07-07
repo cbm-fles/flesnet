@@ -330,50 +330,32 @@ public:
     m_rfgtx->set_reg(RORC_REG_GTX_DLM, reg);
   }
 
-  void send_dlm() {
-    // TODO implemet local register in HW
-    // this causes all prepared links to send
-    m_rfglobal->set_reg(RORC_REG_DLM_CFG, 1);
-  }
+    void send_dlm()
+    {
+        // TODO implemet local register in HW
+        // this causes all prepared links to send
+        m_rfglobal->set_reg(RORC_REG_DLM_CFG, 1);
+    }
 
-  uint8_t recv_dlm() {
-    // get dlm rx reg
-    uint32_t reg = m_rfgtx->get_reg(RORC_REG_GTX_DLM);
-    uint8_t type = (reg>>5) & 0xF;
-    // clear dlm rx reg
-    m_rfgtx->set_bit(RORC_REG_GTX_DLM, 31, true);
-    return type;
-  }
+    uint8_t recv_dlm()
+    {
+        // get dlm rx reg
+        uint32_t reg = m_rfgtx->get_reg(RORC_REG_GTX_DLM);
+        uint8_t type = (reg>>5) & 0xF;
+        // clear dlm rx reg
+        m_rfgtx->set_bit(RORC_REG_GTX_DLM, 31, true);
+        return type;
+    }
 
-  ///// getter funtions /////
-  
-  std::string get_ebuf_info() {
-    return get_buffer_info(m_event_buffer.get());
-  }
-  
-  std::string get_dbuf_info() {
-    return get_buffer_info(m_dbuffer.get());
-  }
+    /*** getter funtions ***/
 
-  rorcfs_buffer* ebuf() const {
-    return m_event_buffer.get();
-  }
-  
-  rorcfs_buffer* rbuf() const {
-    return m_dbuffer.get();
-  }
-  
-  rorcfs_dma_channel* get_ch() const {
-    return m_channel.get();
-  }
-
-  register_file_bar* get_rfpkt() const {
-    return m_rfpkt.get();
-  }
-
-  register_file_bar* get_rfgtx() const {
-    return m_rfgtx.get();
-  }
+    std::string         get_ebuf_info();
+    std::string         get_dbuf_info();
+    rorcfs_buffer*      ebuf()          const;
+    rorcfs_buffer*      rbuf()          const;
+    rorcfs_dma_channel* get_ch()        const;
+    register_file_bar*  get_rfpkt()     const;
+    register_file_bar*  get_rfgtx()     const;
 
 protected:
     std::unique_ptr<rorcfs_dma_channel> m_channel;
@@ -422,8 +404,9 @@ protected:
     void reset_channel();
     void stop();
 
-    /** Initializes hardware to perform DMA transfers
-     **/
+    /**
+     * Initializes hardware to perform DMA transfers
+     */
     int init_hardware();
 
     std::string get_buffer_info(rorcfs_buffer* buf);

@@ -7,6 +7,36 @@
 
 namespace flib
 {
+    std::string
+    flib_link::get_ebuf_info()
+    { return get_buffer_info(m_event_buffer.get()); }
+
+    std::string
+    flib_link::get_dbuf_info()
+    { return get_buffer_info(m_dbuffer.get()); }
+
+    rorcfs_buffer*
+    flib_link::ebuf() const
+    { return m_event_buffer.get(); }
+
+    rorcfs_buffer*
+    flib_link::rbuf() const
+    { return m_dbuffer.get(); }
+
+    rorcfs_dma_channel*
+    flib_link::get_ch() const
+    { return m_channel.get(); }
+
+    register_file_bar*
+    flib_link::get_rfpkt() const
+    { return m_rfpkt.get(); }
+
+    register_file_bar*
+    flib_link::get_rfgtx() const
+    { return m_rfgtx.get(); }
+
+
+
     std::unique_ptr<rorcfs_buffer>
     flib_link::create_buffer(size_t idx, size_t log_size)
     {
