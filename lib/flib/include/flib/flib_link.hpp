@@ -26,24 +26,24 @@ enum data_rx_sel {disable, emu, link, pgen};
 struct __attribute__ ((__packed__))
 MicrosliceDescriptor
 {
-  uint8_t   hdr_id;  // "Header format identifier" DD
-  uint8_t   hdr_ver; // "Header format version"    01
-  uint16_t  eq_id;   // "Equipment identifier"
-  uint16_t  flags;   // "Status and error flags"
-  uint8_t   sys_id;  // "Subsystem identifier"
-  uint8_t   sys_ver; // "Subsystem format version"
-  uint64_t  idx;     // "Microslice index"
-  uint32_t  crc;     // "CRC32 checksum"
-  uint32_t  size;    // "Size bytes"
-  uint64_t  offset;  // "Ofsset in event buffer"
+    uint8_t   hdr_id;  // "Header format identifier" DD
+    uint8_t   hdr_ver; // "Header format version"    01
+    uint16_t  eq_id;   // "Equipment identifier"
+    uint16_t  flags;   // "Status and error flags"
+    uint8_t   sys_id;  // "Subsystem identifier"
+    uint8_t   sys_ver; // "Subsystem format version"
+    uint64_t  idx;     // "Microslice index"
+    uint32_t  crc;     // "CRC32 checksum"
+    uint32_t  size;    // "Size bytes"
+    uint64_t  offset;  // "Ofsset in event buffer"
 };
 
 struct __attribute__ ((__packed__))
 hdr_config
 {
-  uint16_t  eq_id;   // "Equipment identifier"
-  uint8_t   sys_id;  // "Subsystem identifier"
-  uint8_t   sys_ver; // "Subsystem format version"
+    uint16_t  eq_id;   // "Equipment identifier"
+    uint8_t   sys_id;  // "Subsystem identifier"
+    uint8_t   sys_ver; // "Subsystem format version"
 };
 
 struct mc_desc
@@ -64,11 +64,13 @@ struct ctrl_msg
 struct create_only_t {};
 struct open_only_t {};
 struct open_or_create_t {};
- 
+
 static const create_only_t    create_only    = create_only_t();
 static const open_only_t      open_only      = open_only_t();
 static const open_or_create_t open_or_create = open_or_create_t();
-  
+
+
+
 class FlibException : public std::runtime_error
 {
 public:
@@ -77,6 +79,8 @@ public:
     : std::runtime_error(what_arg) { }
 };
 
+
+
 class RorcfsException : public FlibException
 {
 public:
@@ -84,6 +88,8 @@ public:
   explicit RorcfsException(const std::string& what_arg = "")
     : FlibException(what_arg) { }
 };
+
+
 
 class flib_link
 {
@@ -200,7 +206,7 @@ public:
     return 0;
     }
   
-  ///// configuration and control /////
+  /*** configuration and control ***/
 
   // REG: mc_gen_cfg
   // bit 0 set_start_index
@@ -220,32 +226,35 @@ public:
     m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
   }
   
-  void rst_pending_mc() { // is also resetted with datapath reset
-    // TODO implenet edge detection and 'pulse only' in HW
-    uint32_t mc_gen_cfg= m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
-    // TODO replace with _rfgtx->set_bit()
-    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
-    m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
-  }
+    void rst_pending_mc()
+    {
+        // is also resetted with datapath reset
+        // TODO implenet edge detection and 'pulse only' in HW
+        uint32_t mc_gen_cfg= m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
+        // TODO replace with _rfgtx->set_bit()
+        m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1<<1)));
+        m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1<<1)));
+    }
   
-  void enable_cbmnet_packer(bool enable) {
-    m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
-  }
+    void enable_cbmnet_packer(bool enable)
+    { m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable); }
 
-  uint64_t get_pending_mc() {
-    // TODO replace with _rfgtx->get_mem()
-    uint64_t pend_mc = m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_L);
-    pend_mc = pend_mc | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_H))<<32);
-    return pend_mc;
-  }
+    uint64_t get_pending_mc()
+    {
+        // TODO replace with _rfgtx->get_mem()
+        uint64_t pend_mc = m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_L);
+        pend_mc = pend_mc | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_H))<<32);
+        return pend_mc;
+    }
 
-  uint64_t get_mc_index() {
-    // TODO replace with _rfgtx->get_mem()
-    uint64_t mc_index = m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_L);
-    mc_index = mc_index | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_H))<<32);
-    return mc_index;
-  }
-  
+    uint64_t get_mc_index()
+    {
+        // TODO replace with _rfgtx->get_mem()
+        uint64_t mc_index = m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_L);
+        mc_index = mc_index | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_H))<<32);
+        return mc_index;
+    }
+
 
 
 
@@ -271,11 +280,11 @@ public:
     data_rx_sel         get_data_rx_sel();
     std::string         get_ebuf_info();
     std::string         get_dbuf_info();
-    rorcfs_buffer*      ebuf()          const;
-    rorcfs_buffer*      rbuf()          const;
-    rorcfs_dma_channel* get_ch()        const;
-    register_file_bar*  get_rfpkt()     const;
-    register_file_bar*  get_rfgtx()     const;
+    rorcfs_buffer*      ebuf()             const;
+    rorcfs_buffer*      rbuf()             const;
+    rorcfs_dma_channel* get_ch()           const;
+    register_file_bar*  get_rfpkt()        const;
+    register_file_bar*  get_rfgtx()        const;
 
 protected:
     std::unique_ptr<rorcfs_dma_channel> m_channel;
@@ -305,18 +314,18 @@ protected:
     volatile struct MicrosliceDescriptor *m_db = nullptr;
 
     /**
-     * creates new buffer, throws an exception if buffer already exists
+     * Creates new buffer, throws an exception if buffer already exists
      */
     std::unique_ptr<rorcfs_buffer> create_buffer(size_t idx, size_t log_size);
 
     /**
-     * opens an existing buffer, throws an exception if buffer
+     * Opens an existing buffer, throws an exception if buffer
      * doesn't exists
      */
     std::unique_ptr<rorcfs_buffer> open_buffer(size_t idx);
 
     /**
-     * opens an existing buffer or creates new buffer if non exists
+     * Opens an existing buffer or creates new buffer if non exists
      */
     std::unique_ptr<rorcfs_buffer>
     open_or_create_buffer(size_t idx, size_t log_size);
