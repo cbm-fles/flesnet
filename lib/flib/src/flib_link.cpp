@@ -7,6 +7,26 @@
 
 namespace flib
 {
+    void
+    flib_link::stop()
+    {
+        if(m_channel && m_dma_initialized )
+        {
+            // disable packer
+            enable_cbmnet_packer(false);
+            // disable DMA Engine
+            m_channel->setEnableEB(0);
+            // wait for pending transfers to complete (dma_busy->0)
+            while( m_channel->getDMABusy() )
+            { usleep(100); }
+
+            // disable RBDM
+            m_channel->setEnableRB(0);
+            // reset
+            _rst_channel();
+        }
+    }
+
     int
     flib_link::init_hardware()
     {

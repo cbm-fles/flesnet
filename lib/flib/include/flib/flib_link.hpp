@@ -104,7 +104,7 @@ public:
   }
 
   ~flib_link() {
-    _stop();
+    stop();
     //TODO move deallocte to destructro of buffer
     if(m_event_buffer){
       if(m_event_buffer->deallocate() != 0) {
@@ -455,22 +455,7 @@ protected:
     m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, false);
   }
 
-  void _stop() {
-    if(m_channel && m_dma_initialized ) {
-      // disable packer
-      enable_cbmnet_packer(false);
-      // disable DMA Engine
-      m_channel->setEnableEB(0);
-      // wait for pending transfers to complete (dma_busy->0)
-      while( m_channel->getDMABusy() ) {
-        usleep(100);
-      }
-      // disable RBDM
-      m_channel->setEnableRB(0);
-      // reset
-      _rst_channel();
-    }
-  }
+    void stop();
 
     /** Initializes hardware to perform DMA transfers
      **/
