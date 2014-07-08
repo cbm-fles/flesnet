@@ -8,9 +8,12 @@
 #ifndef _RORCLIB_RORCFS_DMA_CHANNEL_H
 #define _RORCLIB_RORCFS_DMA_CHANNEL_H
 
+#include <flib/data_structures.hpp>
+
 namespace flib
 {
     class register_file_bar;
+    class dma_buffer;
 
     /**
      * @class
@@ -29,7 +32,7 @@ namespace flib
     class dma_channel
     {
     public:
-        dma_channel(register_file_bar* rf);
+         dma_channel(register_file_bar* rf);
 
         ~dma_channel();
 

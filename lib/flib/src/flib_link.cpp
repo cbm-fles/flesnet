@@ -7,10 +7,11 @@
 #include <stdexcept>
 
 #include <flib/flib_link.hpp>
+
 #include <flib/device.hpp>
 #include <flib/dma_buffer.hpp>
 #include <flib/pci_bar.hpp>
-#include <flib/rorcfs_dma_channel.hh>
+#include <flib/dma_channel.hpp>
 #include <flib/flib_device.hpp>
 #include <flib/flib_link.hpp>
 #include <flib/register_file.hpp>

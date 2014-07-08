@@ -9,10 +9,11 @@
 #include <assert.h>
 #include <stdint.h>
 
+#include <flib/dma_channel.hpp>
+
 #include <flib/pci_bar.hpp>
 #include <flib/dma_buffer.hpp>
 #include <flib/registers.h>
-#include <flib/rorcfs_dma_channel.hh>
 #include <flib/register_file_bar.hpp>
 
 namespace flib
@@ -112,10 +113,12 @@ namespace flib
      * configure DMA engine for the current
      * set of buffers
      * */
-    int dma_channel::configureChannel(
-            struct dma_buffer *ebuf,
-            struct dma_buffer *rbuf,
-            uint32_t max_payload)
+    int dma_channel::configureChannel
+    (
+        struct dma_buffer *ebuf,
+        struct dma_buffer *rbuf,
+        uint32_t max_payload
+    )
     {
         struct rorcfs_channel_config config;
 
