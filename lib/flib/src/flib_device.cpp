@@ -10,7 +10,6 @@
 #include <flib/flib_link.hpp>
 #include <flib/device.hh>
 
-#include <flib/rorcfs.h>
 #include <flib/rorcfs_bar.hh>
 #include <flib/register_file_bar.hpp>
 

@@ -29,7 +29,6 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-#include <flib/rorcfs.h>
 #include <flib/rorcfs_buffer.hh>
 
 namespace flib
