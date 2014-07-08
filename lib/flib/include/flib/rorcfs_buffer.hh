@@ -38,29 +38,29 @@ namespace flib
     class rorcfs_buffer
     {
     public:
-      rorcfs_buffer();
-      ~rorcfs_buffer();
+         rorcfs_buffer();
+        ~rorcfs_buffer();
 
         /**
-        * Allocate buffer: This function initiates allocation of an
-        * EventBuffer of [size] bytes with Buffer-ID [id]. The size
-        * of the according ReportBuffer is determined by the driver.
-        * @param dev pointer to parent rorcfs_device instance
-        * @param size Size of EventBuffer in bytes
-        * @param id Buffer-ID to be used for this buffer. This ID has to
-        *        be unique within all instances of rorcfs_buffer on a machine.
-        * @param overmap enables overmapping of the physical pages if nonzero
-        * @param dma_direction select from RORCFS_DMA_FROM_DEVICE,
-        *        RORCFS_DMA_TO_DEVICE, RORCFS_DMA_BIDIRECTIONAL
-        * @return 0 on sucess, -1 on error
-        **/
+         * Allocate buffer: This function initiates allocation of an
+         * EventBuffer of [size] bytes with Buffer-ID [id]. The size
+         * of the according ReportBuffer is determined by the driver.
+         * @param dev pointer to parent rorcfs_device instance
+         * @param size Size of EventBuffer in bytes
+         * @param id Buffer-ID to be used for this buffer. This ID has to
+         *        be unique within all instances of rorcfs_buffer on a machine.
+         * @param overmap enables overmapping of the physical pages if nonzero
+         * @param dma_direction select from RORCFS_DMA_FROM_DEVICE,
+         *        RORCFS_DMA_TO_DEVICE, RORCFS_DMA_BIDIRECTIONAL
+         * @return 0 on sucess, -1 on error
+         */
         int allocate
         (
-          device* dev,
-          unsigned long size,
-          unsigned long id,
-          int overmap,
-          int dma_direction
+            device* dev,
+            unsigned long size,
+            unsigned long id,
+            int overmap,
+            int dma_direction
         );
 
       /**
@@ -143,25 +143,18 @@ namespace flib
       unsigned int* getMem() { return mem; }
 
     protected:
-      // sysfs directory of buffer
-      char* dname;
-
-      // sysfs-mmap directory of driver
-      char* base_name;
-
-      int dname_size;
-      int base_name_size;
-
-      unsigned long id;
-      unsigned long PhysicalSize;
-      unsigned long MappingSize;
-      unsigned long nSGEntries;
-      int overmapped;
-      int dma_direction;
-
+      char* dname                = NULL;
+      char* base_name            = NULL;
+      int   dname_size           = 0;
+      int   base_name_size       = 0;
+      unsigned long id           = 0;
+      unsigned long PhysicalSize = 0;
+      unsigned long MappingSize  = 0;
+      unsigned long nSGEntries   = 0;
+      int overmapped             = 0;
+      int dma_direction          = 0;
       int fdEB;
-
-      unsigned int* mem;
+      unsigned int* mem = NULL;
     };
 }
 #endif

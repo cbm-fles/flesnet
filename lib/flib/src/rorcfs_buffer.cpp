@@ -37,17 +37,7 @@ namespace flib
 
     rorcfs_buffer::rorcfs_buffer()
     {
-        dname          = NULL;
-        dname_size     = 0;
-        id             = 0;
-        PhysicalSize   = 0;
-        MappingSize    = 0;
-        nSGEntries     = 0;
-        mem            = NULL;
-        overmapped     = 0;
-        dma_direction  = 0;
-        base_name_size = 0;
-        base_name      = NULL;
+
     }
 
     rorcfs_buffer::~rorcfs_buffer()
