@@ -27,8 +27,9 @@ namespace flib
 
     dma_buffer::~dma_buffer()
     {
-        munmap(m_mem, m_mapping_size);
-        m_mem = NULL;
+        m_physical_size = 0;
+        m_mapping_size  = 0;
+        m_mem           = NULL;
     }
 
 
@@ -107,56 +108,15 @@ namespace flib
         //m_mapping_size
         //m_overmapped
 
+        if(DMABuffer_getSGList(m_buffer, &m_sglist)!=PDA_SUCCESS)
+        { return -1; }
 
+        m_scatter_gather_entries = 0;
+        for(DMABuffer_SGNode *sg=m_sglist; sg!=NULL; sg=sg->next)
+        { m_scatter_gather_entries++; }
 
+        //TODO : add sg vector here!!
 
-    //	// get nSGEntries from sysfs attribute
-    //	fname_size = snprintf(NULL, 0, "%s%03ld/sglist", base_name, id);
-    //	fname_size++;
-    //	fname = (char *) malloc(fname_size);
-    //	if (!fname) {
-    //		errno = ENOMEM;
-    //		return -1;
-    //	}
-    //
-    //	snprintf(fname, fname_size, "%s%03ld/sglist", base_name, id);
-    //	fd = open(fname, O_RDONLY);
-    //	if (fd==-1) {
-    //		free(fname);
-    //		perror("open sglist");
-    //		return -1;
-    //	}
-    //	free(fname);
-    //
-    //	if ( fstat(fd, &filestat) == -1 ) {
-    //		close(fd);
-    //		return -1;
-    //	}
-    //
-    //	nSGEntries = filestat.st_size / sizeof(struct rorcfs_dma_desc);
-    //
-    //	close(fd);
-    //
-    //	// store buffer id
-    //	this->id = id;
-    //
-    //	// save sysfs directory name of created buffer
-    //	// e.g. /sys/module/rorcfs/drivers/pci:rorcfs/0000:03:00.0/mmap/001/
-    //	dname_size = snprintf(NULL, 0, "%s%03ld/", base_name, id);
-    //	dname_size++;
-    //	dname = (char *) malloc(dname_size);
-    //	if (!dname) {
-    //		errno = ENOMEM;
-    //		return -1;
-    //	}
-    //
-    //	snprintf(dname, dname_size, "%s%03ld/", base_name, id);
-    //
-    //	librorc_debug("librorc::connect ID=%ld, PhysSize=%ld, MapSize=%ld, "
-    //			"nSG=%ld, overmapped=%d, dma_direction=%d\n",
-    //			id, PhysicalSize, MappingSize, nSGEntries, overmapped,
-    //			dma_direction );
-    //
         return 0;
     }
 
