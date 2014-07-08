@@ -24,7 +24,7 @@ namespace flib
 //        { throw RorcfsException("Failed to initialize device"); }
 
         // bind to BAR1
-        m_bar = std::unique_ptr<rorcfs_bar>(new rorcfs_bar(m_device.get(), 1));
+        m_bar = std::unique_ptr<pci_bar>(new pci_bar(m_device.get(), 1));
 //        if ( m_bar->init() == -1 )
 //        { throw RorcfsException("BAR1 init failed"); }
 

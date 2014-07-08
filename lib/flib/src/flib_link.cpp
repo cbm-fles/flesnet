@@ -26,7 +26,7 @@ namespace flib
     (
         size_t      link_index,
         device     *dev,
-        rorcfs_bar *bar
+        pci_bar *bar
     ) : m_link_index(link_index), m_device(dev)
     {
         m_base_addr =  (m_link_index + 1) * RORC_CHANNEL_OFFSET;

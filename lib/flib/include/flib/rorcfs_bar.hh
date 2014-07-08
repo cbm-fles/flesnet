@@ -25,15 +25,15 @@ namespace flib
      * @brief Represents a Base Address Register (BAR) file
      * mapping of the FLIBs PCIe address space
      */
-    class rorcfs_bar
+    class pci_bar
     {
         public:
             /**
              * @param dev parent rorcfs_device
              * @param n number of BAR to be mapped [0-6]
             **/
-             rorcfs_bar(device* dev, uint8_t number);
-            ~rorcfs_bar();
+             pci_bar(device* dev, uint8_t number);
+            ~pci_bar();
 
 
             void* get_mem_ptr(){return static_cast<void*>(m_bar);};

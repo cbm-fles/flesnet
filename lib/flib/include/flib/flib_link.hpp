@@ -35,7 +35,7 @@ namespace flib
     };
 
     class device;
-    class rorcfs_bar;
+    class pci_bar;
     class rorcfs_buffer;
     class rorcfs_dma_channel;
     class register_file_bar;
@@ -48,7 +48,7 @@ namespace flib
          (
              size_t      link_index,
              device     *dev,
-             rorcfs_bar *bar
+             pci_bar *bar
          );
         ~flib_link();
 

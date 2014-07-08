@@ -6,7 +6,7 @@ using namespace std;
 namespace flib
 {
 
-    rorcfs_bar::rorcfs_bar
+    pci_bar::pci_bar
     (
         device *dev,
         uint8_t number
@@ -22,7 +22,7 @@ namespace flib
     }
 
     void
-    rorcfs_bar::getBarMap(uint8_t number)
+    pci_bar::getBarMap(uint8_t number)
     {
 
         m_pda_bar = NULL;

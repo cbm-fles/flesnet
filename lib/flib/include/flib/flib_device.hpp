@@ -12,7 +12,7 @@ namespace flib
     class flib_link;
 
     class device;
-    class rorcfs_bar;
+    class pci_bar;
     class register_file_bar;
 
     struct build_info
@@ -53,7 +53,7 @@ namespace flib
 
         std::vector<std::unique_ptr<flib_link> > link;
         std::unique_ptr<device>                  m_device;
-        std::unique_ptr<rorcfs_bar>              m_bar;
+        std::unique_ptr<pci_bar>              m_bar;
         std::unique_ptr<register_file_bar>       m_register_file;
 
         bool check_magic_number();

@@ -17,7 +17,7 @@ namespace flib
 
     public:
 
-        register_file_bar(rorcfs_bar* bar, sys_bus_addr base_addr)
+        register_file_bar(pci_bar* bar, sys_bus_addr base_addr)
         : _base_addr(base_addr)
         {
             _bar = static_cast<uint32_t*>(bar->get_mem_ptr());
