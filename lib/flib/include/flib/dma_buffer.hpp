@@ -74,23 +74,25 @@ namespace flib
          * get Buffer-ID
          * @return unsigned long Buffer-ID
          */
-        unsigned long
+        uint64_t
         getID(){return m_id;}
 
-      /**
-       * Get physical Buffer size in bytes. Requested buffer
-       * size from init() is rounded up to the next PAGE_SIZE
-       * boundary.
-       * @return number of bytes allocated as Buffer
-       **/
-      unsigned long getPhysicalSize() { return m_physical_size; }
+        /**
+         * Get physical Buffer size in bytes. Requested buffer
+         * size from init() is rounded up to the next PAGE_SIZE
+         * boundary.
+         * @return number of bytes allocated as Buffer
+         */
+        uint64_t
+        getPhysicalSize(){ return m_physical_size; }
 
-      /**
-       * Get size of the EB mapping. THis is double the size of
-       * the physical buffer size due to overmapping
-       * @return size of the EB mapping in bytes
-       **/
-      unsigned long getMappingSize() { return m_mapping_size; }
+        /**
+         * Get size of the EB mapping. THis is double the size of
+         * the physical buffer size due to overmapping
+         * @return size of the EB mapping in bytes
+         */
+        uint64_t
+        getMappingSize(){ return m_mapping_size; }
 
       /**
        * get the overmapped flag of the buffer
@@ -149,7 +151,6 @@ namespace flib
         char* m_base_name                      = NULL;
         int   m_dname_size                     = 0;
         int   m_base_name_size                 = 0;
-        int m_fdEB                   = 0;
     };
 }
 #endif

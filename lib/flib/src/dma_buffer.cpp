@@ -1,14 +1,5 @@
-#include <cstdlib>
-#include <cstring>
-#include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <errno.h>
-#include <sys/mman.h>
-
-
 #include <iostream>
+
 #include <pda.h>
 
 #include <flib/dma_buffer.hpp>
