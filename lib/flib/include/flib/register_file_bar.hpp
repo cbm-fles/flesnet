@@ -1,5 +1,12 @@
-// Copyright 2014 Dirk Hutter, Dominic Eschweiler
-// Interface class to access register files via bar memory transfers
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>, Dominic Eschweiler <dominic.eschweiler@cern.ch>
+ * @version 0.1
+ * @date 2014-07-08
+ *
+ * Interface class to access register files via bar memory transfers
+ */
+
 #ifndef REGISTER_FILE_BAR_HPP
 #define REGISTER_FILE_BAR_HPP
 

@@ -1,3 +1,10 @@
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>, Dominic Eschweiler <dominic.eschweiler@cern.ch>
+ * @version 0.1
+ * @date 2014-07-08
+ */
+
 #ifndef FLIB_DEVICE_HPP
 #define FLIB_DEVICE_HPP
 

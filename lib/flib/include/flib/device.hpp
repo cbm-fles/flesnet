@@ -1,8 +1,9 @@
 /**
  * @file
- * @author Dominic Eschweiler <dominic.eschweiler@cern.ch>
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>, Dominic Eschweiler <dominic.eschweiler@cern.ch>
+ * @version 0.1
  * @date 2014-07-03
- **/
+ */
 
 #ifndef PCI_DEVICE_H
 #define PCI_DEVICE_H
