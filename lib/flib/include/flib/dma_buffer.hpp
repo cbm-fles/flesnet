@@ -94,43 +94,47 @@ namespace flib
         uint64_t
         getMappingSize(){ return m_mapping_size; }
 
-      /**
-       * get the overmapped flag of the buffer
-       * @return 0 if unset, nonzero if set
-       **/
-      int getOvermapped() { return m_overmapped; }
+        /**
+         * get the overmapped flag of the buffer
+         * @return 0 if unset, nonzero if set
+         */
+        int
+        getOvermapped(){ return m_overmapped; }
 
-      /**
-       * Get number of scatter-gather entries for the Buffer
-       * @return (unsigned long) number of entries
-       **/
-      unsigned long getnSGEntries() { return m_scatter_gather_entries; }
+        /**
+         * Get number of scatter-gather entries for the Buffer
+         * @return number of entries
+         */
+        uint64_t
+        getnSGEntries(){ return m_scatter_gather_entries; }
 
-      /**
-       * Get the maximum number of report buffer entries in the RB
-       * @return maximum number of report buffer entries
-       **/
-      unsigned long getMaxRBEntries()
-      { return (m_physical_size / sizeof(struct rorcfs_event_descriptor)); }
+        /**
+         * Get the maximum number of report buffer entries in the RB
+         * @return maximum number of report buffer entries
+         */
+        uint64_t
+        getMaxRBEntries()
+        { return (m_physical_size / sizeof(struct rorcfs_event_descriptor)); }
 
-      /**
-       * get sysfs directory name of the buffer
-       * @return pointer to char string
-       **/
-      char* getDName() { return m_dname; }
+        /**
+         * get memory buffer
+         * @return pointer to mmap'ed buffer memory
+         **/
+        unsigned int*
+        getMem(){return m_mem;}
 
-      /**
-       * get size of the dname string
-       * @return size of the dname string in number of bytes
-       **/
-      int getDNameSize() { return m_dname_size; }
 
-      /**
-       * get memory buffer
-       * @return pointer to mmap'ed buffer memory
-       **/
-      unsigned int*
-      getMem(){return m_mem;}
+/**
+* get sysfs directory name of the buffer
+* @return pointer to char string
+**/
+char* getDName() { return m_dname; }
+
+/**
+* get size of the dname string
+* @return size of the dname string in number of bytes
+**/
+int getDNameSize() { return m_dname_size; }
 
     protected:
         PciDevice        *m_device                 = NULL;
@@ -148,9 +152,8 @@ namespace flib
         //OLD
 
         char* m_dname                          = NULL;
-        char* m_base_name                      = NULL;
         int   m_dname_size                     = 0;
-        int   m_base_name_size                 = 0;
+
     };
 }
 #endif
