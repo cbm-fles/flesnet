@@ -44,7 +44,7 @@ namespace flib
     class device;
     class pci_bar;
     class dma_buffer;
-    class rorcfs_dma_channel;
+    class dma_channel;
     class register_file_bar;
 
     class flib_link
@@ -125,12 +125,12 @@ namespace flib
         std::string         get_dbuf_info();
         dma_buffer*      ebuf()             const;
         dma_buffer*      rbuf()             const;
-        rorcfs_dma_channel* get_ch()           const;
+        dma_channel* get_ch()           const;
         register_file_bar*  get_rfpkt()        const;
         register_file_bar*  get_rfgtx()        const;
 
     protected:
-        std::unique_ptr<rorcfs_dma_channel> m_channel;
+        std::unique_ptr<dma_channel> m_channel;
         std::unique_ptr<dma_buffer>      m_event_buffer;
         std::unique_ptr<dma_buffer>      m_dbuffer;
         std::unique_ptr<register_file_bar>  m_rfglobal; // TODO remove this later

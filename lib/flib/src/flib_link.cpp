@@ -34,7 +34,7 @@ namespace flib
         m_rfglobal  = std::unique_ptr<register_file_bar>(new register_file_bar(bar, 0));
         // create DMA channel and bind to register file,
         // no HW initialization is done here
-        m_channel   = std::unique_ptr<rorcfs_dma_channel>(new rorcfs_dma_channel(m_rfpkt.get() ));
+        m_channel   = std::unique_ptr<dma_channel>(new dma_channel(m_rfpkt.get() ));
     }
 
     flib_link::~flib_link()
@@ -343,7 +343,7 @@ namespace flib
     flib_link::rbuf() const
     { return m_dbuffer.get(); }
 
-    rorcfs_dma_channel*
+    dma_channel*
     flib_link::get_ch() const
     { return m_channel.get(); }
 

@@ -13,7 +13,7 @@ namespace flib
     class register_file_bar;
 
     /**
-     * @class rorcfs_dma_channel
+     * @class
      * @brief DMA channel management class
      *
      * Initialize DMA channel with init() before using any other member
@@ -26,12 +26,12 @@ namespace flib
      * with enable=1.
      **/
 
-    class rorcfs_dma_channel
+    class dma_channel
     {
     public:
-        rorcfs_dma_channel(register_file_bar* rf);
+        dma_channel(register_file_bar* rf);
 
-        ~rorcfs_dma_channel();
+        ~dma_channel();
 
         /**
         * prepare EventBuffer: copy scatterlist from
