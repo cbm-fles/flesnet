@@ -7,8 +7,6 @@
 #include <stdexcept>
 
 #include <flib/flib_link.hpp>
-
-
 #include <flib/device.hpp>
 #include <flib/dma_buffer.hpp>
 #include <flib/pci_bar.hpp>
