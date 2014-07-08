@@ -96,8 +96,10 @@ namespace flib
         if( DMABuffer_getLength( m_buffer, &m_physical_size) != PDA_SUCCESS )
         { return -1; }
 
-        //m_mapping_size
-        //m_overmapped
+        if(getOvermapped() == 1)
+        { m_mapping_size = 2 * m_physical_size; }
+        else
+        { m_mapping_size = m_physical_size; }
 
         if(DMABuffer_getSGList(m_buffer, &m_sglist)!=PDA_SUCCESS)
         { return -1; }
@@ -107,6 +109,17 @@ namespace flib
         { m_scatter_gather_entries++; }
 
         //TODO : add sg vector here!!
+
+        return 0;
+    }
+
+    int
+    dma_buffer::getOvermapped()
+    {
+        void *map_two = NULL;
+
+        if(DMABuffer_getMapTwo(m_buffer, &map_two) != PDA_SUCCESS)
+        { if(map_two != NULL){ return 1; } }
 
         return 0;
     }

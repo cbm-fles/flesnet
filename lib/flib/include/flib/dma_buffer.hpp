@@ -98,8 +98,7 @@ namespace flib
          * get the overmapped flag of the buffer
          * @return 0 if unset, nonzero if set
          */
-        int
-        getOvermapped(){ return m_overmapped; }
+        int getOvermapped();
 
         /**
          * Get number of scatter-gather entries for the Buffer
@@ -145,14 +144,12 @@ int getDNameSize() { return m_dname_size; }
         unsigned int     *m_mem                    = NULL;
         uint64_t          m_physical_size          = 0;
         uint64_t          m_mapping_size           = 0;
-        int               m_overmapped             = 0;
 
         uint64_t          m_scatter_gather_entries = 0;
 
-        //OLD
-
-        char* m_dname                          = NULL;
-        int   m_dname_size                     = 0;
+//OLD
+char* m_dname                          = NULL;
+int   m_dname_size                     = 0;
 
     };
 }
