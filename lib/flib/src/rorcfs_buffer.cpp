@@ -29,6 +29,8 @@
 #include <errno.h>
 #include <sys/mman.h>
 
+#include <pda.h>
+
 #include <flib/rorcfs_buffer.hh>
 
 namespace flib
@@ -42,61 +44,10 @@ namespace flib
 
     rorcfs_buffer::~rorcfs_buffer()
     {
-        munmap(mem, MappingSize);
-        mem = NULL;
+        munmap(m_mem, m_mapping_size);
+        m_mem = NULL;
     }
 
-
-    /**
-     * Release buffer
-     **/
-    int rorcfs_buffer::deallocate()
-    {
-        char *fname;
-        int fd, ret;
-
-        // not initialized!
-        if(dname==NULL || dname_size==0 || PhysicalSize==0)
-            return -EINVAL;
-
-        close(fdEB);
-
-        fname = (char *) malloc( base_name_size + 11 );
-        if (!fname)
-            return -ENOMEM;
-
-        snprintf(fname, base_name_size + 11 , "%sfree_buffer",	base_name);
-
-        // open /sys/module/rorcfs/drivers/pci:rorcfs/[pci-ID]/mmap/free_buffer
-        fd = open(fname, O_WRONLY);
-        if ( fd==-1 ) {
-            perror("open free_buffer");
-            free(fname);
-            return -1;
-        }
-
-        // write buffer-ID of buffer to be de-allocated
-        ret = write( fd, &id, sizeof(id) );
-        if ( ret != sizeof(id) ) {
-            perror("write to free_buffer");
-            free(fname);
-            close(fd);
-            return -1;
-        }
-
-        base_name = NULL;
-        base_name_size = 0;
-        PhysicalSize = 0;
-        MappingSize = 0;
-        overmapped = 0;
-
-        dname_size = 0;
-        dname = NULL;
-
-        free(fname);
-        close(fd);
-        return 0;
-    }
 
 
     /**
@@ -112,54 +63,107 @@ namespace flib
         int            dma_direction
     )
     {
-    //	char *fname;
-    //	struct t_rorcfs_buffer buf;
-    //	int fd, ret;
+    //  char *fname;
+    //  struct t_rorcfs_buffer buf;
+    //  int fd, ret;
     //
-    //	// already connected to another buffer? unmap first!
-    //	if ( mem!=NULL ) {
-    //		errno = EPERM;
-    //		return -1;
-    //	}
+    //  // already connected to another buffer? unmap first!
+    //  if ( mem!=NULL ) {
+    //      errno = EPERM;
+    //      return -1;
+    //  }
     //
-    //	// get sysfs base directory name and size
-    //	base_name_size = dev->getDName( &base_name );
+    //  // get sysfs base directory name and size
+    //  base_name_size = dev->getDName( &base_name );
     //
-    //	fname = (char *) malloc( base_name_size + 12 );
-    //	if (!fname) {
-    //		errno = ENOMEM;
-    //		return -1;
-    //	}
+    //  fname = (char *) malloc( base_name_size + 12 );
+    //  if (!fname) {
+    //      errno = ENOMEM;
+    //      return -1;
+    //  }
     //
-    //	snprintf(fname, base_name_size + 12 , "%salloc_buffer",	base_name);
-    //	buf.id = id;
-    //	buf.bytes = size;
-    //	buf.overmap = overmap;
-    //	buf.dma_direction = dma_direction;
+    //  snprintf(fname, base_name_size + 12 , "%salloc_buffer", base_name);
+    //  buf.id = id;
+    //  buf.bytes = size;
+    //  buf.overmap = overmap;
+    //  buf.dma_direction = dma_direction;
     //
-    //	fd = open(fname, O_WRONLY);
-    //	if ( fd==-1 ) {
-    //		perror("open alloc_buffer");
-    //		free(fname);
-    //		return -1;
-    //	}
+    //  fd = open(fname, O_WRONLY);
+    //  if ( fd==-1 ) {
+    //      perror("open alloc_buffer");
+    //      free(fname);
+    //      return -1;
+    //  }
     //
-    //	ret = write( fd, &buf, sizeof(buf) );
-    //	if ( ret != sizeof(buf) ) {
-    //		//perror("write to alloc_buffer");
-    //		close(fd);
-    //		free(fname);
-    //		return -1;
-    //	}
+    //  ret = write( fd, &buf, sizeof(buf) );
+    //  if ( ret != sizeof(buf) ) {
+    //      //perror("write to alloc_buffer");
+    //      close(fd);
+    //      free(fname);
+    //      return -1;
+    //  }
     //
-    //	free(fname);
-    //	close(fd);
+    //  free(fname);
+    //  close(fd);
     //
-    //	// connect to allocated buffer
-    //	if( connect(dev, id) == -1 ) {
-    //		return -1;
-    //	}
+    //  // connect to allocated buffer
+    //  if( connect(dev, id) == -1 ) {
+    //      return -1;
+    //  }
 
+        return 0;
+    }
+
+
+
+    /**
+     * Release buffer
+     **/
+    int rorcfs_buffer::deallocate()
+    {
+        char *fname;
+        int fd, ret;
+
+        // not initialized!
+        if(m_dname==NULL || m_dname_size==0 || m_physical_size==0)
+            return -EINVAL;
+
+        close(m_fdEB);
+
+        fname = (char *) malloc( m_base_name_size + 11 );
+        if (!fname)
+            return -ENOMEM;
+
+        snprintf(fname, m_base_name_size + 11 , "%sfree_buffer",	m_base_name);
+
+        // open /sys/module/rorcfs/drivers/pci:rorcfs/[pci-ID]/mmap/free_buffer
+        fd = open(fname, O_WRONLY);
+        if ( fd==-1 ) {
+            perror("open free_buffer");
+            free(fname);
+            return -1;
+        }
+
+        // write buffer-ID of buffer to be de-allocated
+        ret = write( fd, &m_id, sizeof(m_id) );
+        if ( ret != sizeof(m_id) ) {
+            perror("write to free_buffer");
+            free(fname);
+            close(fd);
+            return -1;
+        }
+
+        m_base_name = NULL;
+        m_base_name_size = 0;
+        m_physical_size = 0;
+        m_mapping_size = 0;
+        m_overmapped = 0;
+
+        m_dname_size = 0;
+        m_dname = NULL;
+
+        free(fname);
+        close(fd);
         return 0;
     }
 
