@@ -23,7 +23,7 @@ namespace flib
      * Constructor
      * */
     dma_channel::dma_channel(register_file_bar* rf)
-      : _rfpkt(rf), cMaxPayload(0) {}
+      : m_rfpkt(rf), m_MaxPayload(0) {}
 
 
     /**
@@ -31,8 +31,8 @@ namespace flib
      * */
     dma_channel::~dma_channel()
     {
-        _rfpkt = NULL;
-        cMaxPayload = 0;
+        m_rfpkt = NULL;
+        m_MaxPayload = 0;
     }
 
 
@@ -41,7 +41,7 @@ namespace flib
      * Fill ReportBufferDescriptorRAM with scatter-gather
      * entries of DMA buffer
      * */
-    int dma_channel::prepareEB ( dma_buffer *buf )
+    int dma_channel::prepareEB( dma_buffer *buf )
     {
         char *fname;
         int fd, nbytes, ret = 0;
@@ -50,7 +50,7 @@ namespace flib
         struct rorcfs_dma_desc dma_desc;
         struct t_sg_entry_cfg sg_entry;
 
-        assert( _rfpkt!=NULL );
+        assert( m_rfpkt!=NULL );
 
         //open buf->mem_sglist
         fname = (char *) malloc(buf->getDNameSize() + 6);
@@ -70,10 +70,11 @@ namespace flib
          * [15:0] : actual number of sg entries in RAM
          * [31:16]: maximum number of entries
          * */
-        bdcfg = _rfpkt->get_reg( RORC_REG_EBDM_N_SG_CONFIG );
+        bdcfg = m_rfpkt->get_reg( RORC_REG_EBDM_N_SG_CONFIG );
 
         // check if buffers SGList fits into EBDRAM
-        if(buf->getnSGEntries() > (bdcfg>>16) ) {
+        if(buf->getnSGEntries() > (bdcfg>>16) )
+        {
             ret = -EFBIG;
             errno = EFBIG;
             goto close_fd;
@@ -94,13 +95,13 @@ namespace flib
             sg_entry.ctrl = (1<<31) | (0<<30) | ((uint32_t)i);
 
             //write rorcfs_dma_desc to RORC EBDM
-            _rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW,
+            m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW,
                     &sg_entry, sizeof(sg_entry)>>2);
         }
 
         // clear following BD entry (required!)
         memset(&sg_entry, 0, sizeof(sg_entry));
-        _rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW,
+        m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW,
                 &sg_entry, sizeof(sg_entry)>>2);
 
     close_fd:
@@ -129,8 +130,8 @@ namespace flib
         // N_SG_CONFIG:
         // [15:0] : actual number of sg entries in RAM
         // [31:16]: maximum number of entries
-        uint32_t rbdmnsgcfg = _rfpkt->get_reg( RORC_REG_RBDM_N_SG_CONFIG );
-        uint32_t ebdmnsgcfg = _rfpkt->get_reg( RORC_REG_RBDM_N_SG_CONFIG );
+        uint32_t rbdmnsgcfg = m_rfpkt->get_reg( RORC_REG_RBDM_N_SG_CONFIG );
+        uint32_t ebdmnsgcfg = m_rfpkt->get_reg( RORC_REG_RBDM_N_SG_CONFIG );
 
         // check if sglist fits into FPGA buffers
         if ( ((rbdmnsgcfg>>16) < rbuf->getnSGEntries()) |
@@ -172,25 +173,25 @@ namespace flib
 
         // copy configuration struct to RORC, starting
         // at the address of the lowest register(EBDM_N_SG_CONFIG)
-        _rfpkt->set_mem(RORC_REG_EBDM_N_SG_CONFIG, &config,
+        m_rfpkt->set_mem(RORC_REG_EBDM_N_SG_CONFIG, &config,
                 sizeof(struct rorcfs_channel_config)>>2);
-        cMaxPayload = max_payload;
+        m_MaxPayload = max_payload;
 
         return 0;
     }
 
     void dma_channel::setEnableEB( int enable )
     {
-        unsigned int bdcfg = _rfpkt->get_reg( RORC_REG_DMA_CTRL );
+        unsigned int bdcfg = m_rfpkt->get_reg( RORC_REG_DMA_CTRL );
         if ( enable )
-            _rfpkt->set_reg(RORC_REG_DMA_CTRL, ( bdcfg | (1<<2) ) );
+            m_rfpkt->set_reg(RORC_REG_DMA_CTRL, ( bdcfg | (1<<2) ) );
         else
-            _rfpkt->set_reg(RORC_REG_DMA_CTRL, ( bdcfg & ~(1<<2) ) );
+            m_rfpkt->set_reg(RORC_REG_DMA_CTRL, ( bdcfg & ~(1<<2) ) );
     }
 
     unsigned int dma_channel::getEnableEB()
     {
-        return (_rfpkt->get_reg( RORC_REG_DMA_CTRL ) >> 2 ) & 0x01;
+        return (m_rfpkt->get_reg( RORC_REG_DMA_CTRL ) >> 2 ) & 0x01;
     }
 
     int dma_channel::prepareRB ( dma_buffer *buf )
@@ -202,7 +203,7 @@ namespace flib
         struct rorcfs_dma_desc dma_desc;
         struct t_sg_entry_cfg sg_entry;
 
-        assert( _rfpkt!=NULL );
+        assert( m_rfpkt!=NULL );
 
         //open buf->mem_sglist
         fname = (char *) malloc(buf->getDNameSize() + 6);
@@ -218,7 +219,7 @@ namespace flib
         // N_SG_CONFIG:
         // [15:0] : actual number of sg entries in RAM
         // [31:16]: maximum number of entries
-        bdcfg = _rfpkt->get_reg( RORC_REG_RBDM_N_SG_CONFIG );
+        bdcfg = m_rfpkt->get_reg( RORC_REG_RBDM_N_SG_CONFIG );
 
         // check if buffers SGList fits into RBDRAM
         if(buf->getnSGEntries() > (bdcfg>>16) ) {
@@ -241,12 +242,12 @@ namespace flib
             sg_entry.ctrl = (1<<31) | (1<<30) | ((uint32_t)i);
 
             //write rorcfs_dma_desc to RORC EBDM
-            _rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
+            m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
         }
 
         // clear following BD entry (required!)
         memset(&sg_entry, 0, sizeof(sg_entry));
-        _rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
+        m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
 
     close_fd:
         close(fd);
@@ -255,55 +256,42 @@ namespace flib
 
     void dma_channel::setEnableRB( int enable )
     {
-        unsigned int bdcfg = _rfpkt->get_reg( RORC_REG_DMA_CTRL );
+        unsigned int bdcfg = m_rfpkt->get_reg( RORC_REG_DMA_CTRL );
         if ( enable )
-            _rfpkt->set_reg(RORC_REG_DMA_CTRL, ( bdcfg | (1<<3) ) );
+            m_rfpkt->set_reg(RORC_REG_DMA_CTRL, ( bdcfg | (1<<3) ) );
         else
-            _rfpkt->set_reg(RORC_REG_DMA_CTRL, ( bdcfg & ~(1<<3) ) );
+            m_rfpkt->set_reg(RORC_REG_DMA_CTRL, ( bdcfg & ~(1<<3) ) );
     }
 
     unsigned int dma_channel::getEnableRB()
     {
-        return (_rfpkt->get_reg( RORC_REG_DMA_CTRL ) >> 3 ) & 0x01;
+        return (m_rfpkt->get_reg( RORC_REG_DMA_CTRL ) >> 3 ) & 0x01;
     }
 
 
     void dma_channel::setDMAConfig( unsigned int config)
     {
-        _rfpkt->set_reg(RORC_REG_DMA_CTRL, config);
+        m_rfpkt->set_reg(RORC_REG_DMA_CTRL, config);
     }
 
 
     unsigned int dma_channel::getDMAConfig()
     {
-        return _rfpkt->get_reg(RORC_REG_DMA_CTRL);
+        return m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
     }
-
 
     void dma_channel::setMaxPayload( int size )
-    {
-        _setMaxPayload( size );
-    }
-
-
-    void dma_channel::setMaxPayload()
-    {
-        _setMaxPayload( MAX_PAYLOAD );
-    }
-
-
-    void dma_channel::_setMaxPayload( int size )
     {
         // MAX_PAYLOAD is located in the higher WORD of
         // RORC_REG_DMA_CTRL: [25:16], 10 bits wide
 
-        assert( _rfpkt!=NULL );
+        assert( m_rfpkt!=NULL );
 
         // assure valid values for "size":
         // size <= systems MAX_PAYLOAD
         assert( size<=MAX_PAYLOAD );
 
-        unsigned int status = _rfpkt->get_reg(RORC_REG_DMA_CTRL);
+        unsigned int status = m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
 
         // MAX_PAYLOAD has to be provided as #DWs
         // -> divide size by 4
@@ -315,15 +303,15 @@ namespace flib
         status |= (mp_size<<16);
 
         // write DMA_CTRL
-        _rfpkt->set_reg(RORC_REG_DMA_CTRL, status);
-        cMaxPayload = size;
+        m_rfpkt->set_reg(RORC_REG_DMA_CTRL, status);
+        m_MaxPayload = size;
     }
 
 
     unsigned int dma_channel::getMaxPayload()
     {
-        assert( _rfpkt!=NULL );
-        unsigned int status = _rfpkt->get_reg(RORC_REG_DMA_CTRL);
+        assert( m_rfpkt!=NULL );
+        unsigned int status = m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
 
         status = (status >> 16);
         status = status<<2;
@@ -332,11 +320,14 @@ namespace flib
     }
 
 
-    void dma_channel::setOffsets(
-            unsigned long eboffset, unsigned long rboffset)
+    void dma_channel::setOffsets
+    (
+        unsigned long eboffset,
+        unsigned long rboffset
+    )
     {
-        assert (_rfpkt!=NULL);
-            assert (eboffset % cMaxPayload == 0);
+        assert (m_rfpkt!=NULL);
+            assert (eboffset % m_MaxPayload == 0);
             assert (rboffset % 32 == 0); // 32 is hard coded in HW
         struct rorcfs_buffer_software_pointers offsets;
         offsets.ebdm_software_read_pointer_low =
@@ -350,12 +341,12 @@ namespace flib
             (uint32_t)(rboffset>>32 & 0xffffffff);
 
         offsets.dma_ctrl = (1<<31) | // sync pointers
-            ((cMaxPayload>>2)<<16) | //max_payload
+            ((m_MaxPayload>>2)<<16) | //max_payload
             (1<<2) | // enable EB
             (1<<3) | // enable RB
             (1<<0); // enable DMA engine
 
-        _rfpkt->set_mem(RORC_REG_EBDM_SW_READ_POINTER_L,
+        m_rfpkt->set_mem(RORC_REG_EBDM_SW_READ_POINTER_L,
                 &offsets, sizeof(offsets)>>2);
     }
 
@@ -363,21 +354,21 @@ namespace flib
 
     void dma_channel::setEBOffset( unsigned long offset )
     {
-        assert( _rfpkt!=NULL );
+        assert( m_rfpkt!=NULL );
         unsigned int status;
 
-        _rfpkt->set_mem(RORC_REG_EBDM_SW_READ_POINTER_L,
+        m_rfpkt->set_mem(RORC_REG_EBDM_SW_READ_POINTER_L,
                 &offset, sizeof(offset)>>2);
-        status = _rfpkt->get_reg(RORC_REG_DMA_CTRL);
-        _rfpkt->set_reg(RORC_REG_DMA_CTRL, status | (1<<31) );
+        status = m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
+        m_rfpkt->set_reg(RORC_REG_DMA_CTRL, status | (1<<31) );
     }
 
 
     unsigned long dma_channel::getEBOffset()
     {
         unsigned long offset =
-            ((unsigned long)_rfpkt->get_reg(RORC_REG_EBDM_SW_READ_POINTER_H)<<32);
-        offset += (unsigned long)_rfpkt->get_reg(RORC_REG_EBDM_SW_READ_POINTER_L);
+            ((unsigned long)m_rfpkt->get_reg(RORC_REG_EBDM_SW_READ_POINTER_H)<<32);
+        offset += (unsigned long)m_rfpkt->get_reg(RORC_REG_EBDM_SW_READ_POINTER_L);
         return offset;
     }
 
@@ -385,31 +376,31 @@ namespace flib
     unsigned long dma_channel::getEBDMAOffset()
     {
         unsigned long offset =
-            ((unsigned long)_rfpkt->get_reg(RORC_REG_EBDM_FPGA_WRITE_POINTER_H)<<32);
-        offset += (unsigned long)_rfpkt->get_reg(RORC_REG_EBDM_FPGA_WRITE_POINTER_L);
+            ((unsigned long)m_rfpkt->get_reg(RORC_REG_EBDM_FPGA_WRITE_POINTER_H)<<32);
+        offset += (unsigned long)m_rfpkt->get_reg(RORC_REG_EBDM_FPGA_WRITE_POINTER_L);
         return offset;
     }
 
 
     void dma_channel::setRBOffset( unsigned long offset )
     {
-        assert( _rfpkt!=NULL );
+        assert( m_rfpkt!=NULL );
         unsigned int status;
 
-        _rfpkt->set_mem(RORC_REG_RBDM_SW_READ_POINTER_L,
+        m_rfpkt->set_mem(RORC_REG_RBDM_SW_READ_POINTER_L,
                 &offset, sizeof(offset)>>2);
-        status = _rfpkt->get_reg(RORC_REG_DMA_CTRL);
+        status = m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
 
-        status = _rfpkt->get_reg(RORC_REG_DMA_CTRL);
-        _rfpkt->set_reg(RORC_REG_DMA_CTRL, status | (1<<31) );
+        status = m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
+        m_rfpkt->set_reg(RORC_REG_DMA_CTRL, status | (1<<31) );
     }
 
 
     unsigned long dma_channel::getRBOffset()
     {
         unsigned long offset =
-            ((unsigned long)_rfpkt->get_reg(RORC_REG_RBDM_SW_READ_POINTER_H)<<32);
-        offset += (unsigned long)_rfpkt->get_reg(RORC_REG_RBDM_SW_READ_POINTER_L);
+            ((unsigned long)m_rfpkt->get_reg(RORC_REG_RBDM_SW_READ_POINTER_H)<<32);
+        offset += (unsigned long)m_rfpkt->get_reg(RORC_REG_RBDM_SW_READ_POINTER_L);
         return offset;
     }
 
@@ -417,40 +408,40 @@ namespace flib
     unsigned long dma_channel::getRBDMAOffset()
     {
         unsigned long offset =
-            ((unsigned long)_rfpkt->get_reg(RORC_REG_RBDM_FPGA_WRITE_POINTER_H)<<32);
-        offset += (unsigned long)_rfpkt->get_reg(RORC_REG_RBDM_FPGA_WRITE_POINTER_L);
+            ((unsigned long)m_rfpkt->get_reg(RORC_REG_RBDM_FPGA_WRITE_POINTER_H)<<32);
+        offset += (unsigned long)m_rfpkt->get_reg(RORC_REG_RBDM_FPGA_WRITE_POINTER_L);
         return offset;
     }
 
 
     unsigned int dma_channel::getEBDMnSGEntries()
     {
-        return (_rfpkt->get_reg(RORC_REG_EBDM_N_SG_CONFIG) & 0x0000ffff);
+        return (m_rfpkt->get_reg(RORC_REG_EBDM_N_SG_CONFIG) & 0x0000ffff);
     }
 
     unsigned int dma_channel::getRBDMnSGEntries()
     {
-        return (_rfpkt->get_reg(RORC_REG_RBDM_N_SG_CONFIG) & 0x0000ffff);
+        return (m_rfpkt->get_reg(RORC_REG_RBDM_N_SG_CONFIG) & 0x0000ffff);
     }
 
     unsigned int dma_channel::getDMABusy()
     {
-        return ((_rfpkt->get_reg(RORC_REG_DMA_CTRL)>>7) & 0x01);
+        return ((m_rfpkt->get_reg(RORC_REG_DMA_CTRL)>>7) & 0x01);
     }
 
     unsigned long dma_channel::getEBSize()
     {
         unsigned long size =
-            ((unsigned long)_rfpkt->get_reg(RORC_REG_EBDM_BUFFER_SIZE_H)<<32);
-        size += (unsigned long)_rfpkt->get_reg(RORC_REG_EBDM_BUFFER_SIZE_L);
+            ((unsigned long)m_rfpkt->get_reg(RORC_REG_EBDM_BUFFER_SIZE_H)<<32);
+        size += (unsigned long)m_rfpkt->get_reg(RORC_REG_EBDM_BUFFER_SIZE_L);
         return size;
     }
 
     unsigned long dma_channel::getRBSize()
     {
         unsigned long size =
-            ((unsigned long)_rfpkt->get_reg(RORC_REG_RBDM_BUFFER_SIZE_H)<<32);
-        size += (unsigned long)_rfpkt->get_reg(RORC_REG_RBDM_BUFFER_SIZE_L);
+            ((unsigned long)m_rfpkt->get_reg(RORC_REG_RBDM_BUFFER_SIZE_H)<<32);
+        size += (unsigned long)m_rfpkt->get_reg(RORC_REG_RBDM_BUFFER_SIZE_L);
         return size;
     }
 

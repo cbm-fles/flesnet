@@ -94,25 +94,6 @@ namespace flib
         unsigned int getDMAConfig();
 
         /**
-        * set PCIe maximum payload size
-        * @param size maximum payload size in byte
-        **/
-        void setMaxPayload(int size);
-
-        /**
-        * set PCIe maximum payload size to the default
-        * value (MAX_PAYLOAD)
-        **/
-        void setMaxPayload();
-
-        /** INTERNAL ONLY, DO NOT CALL DIRECTLY!
-        * setMaxPayload( int size ) and setMaxPayload()
-        * are wrappers around _setMaxPayload and should
-        * be called instead
-        **/
-        void _setMaxPayload(int size);
-
-        /**
         * get maximum payload size from current HW configuration
         * @return maximum payload size in bytes
         **/
@@ -283,9 +264,16 @@ namespace flib
         **/
         unsigned int getRBDRAM(unsigned int addr);
 
-    private:
-        register_file_bar* _rfpkt;
-        unsigned int cMaxPayload;
+    protected:
+        register_file_bar *m_rfpkt;
+        unsigned int       m_MaxPayload;
+
+        /**
+         * setMaxPayload( int size ) and setMaxPayload()
+         * are wrappers around _setMaxPayload and should
+         * be called instead
+         */
+        void setMaxPayload(int size);
     };
 
 }
