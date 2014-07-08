@@ -9,7 +9,7 @@
 #include <flib/flib_link.hpp>
 
 
-#include <flib/rorcfs_device.hh>
+#include <flib/device.hh>
 #include <flib/rorcfs_buffer.hh>
 #include <flib/rorcfs_bar.hh>
 #include <flib/rorcfs_dma_channel.hh>

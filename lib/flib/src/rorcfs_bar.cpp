@@ -1,5 +1,5 @@
 #include <flib/rorcfs_bar.hh>
-#include <flib/rorcfs_device.hh>
+#include <flib/device.hh>
 
 using namespace std;
 

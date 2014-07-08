@@ -4,7 +4,7 @@
 
 #include<pda.h>
 
-#include <flib/rorcfs_device.hh>
+#include <flib/device.hh>
 
 using namespace std;
 
