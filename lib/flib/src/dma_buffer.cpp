@@ -31,7 +31,7 @@
 
 #include <pda.h>
 
-#include <flib/rorcfs_buffer.hh>
+#include <flib/dma_buffer.hpp>
 
 namespace flib
 {

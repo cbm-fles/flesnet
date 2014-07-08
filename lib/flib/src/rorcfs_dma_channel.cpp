@@ -30,7 +30,7 @@
 #include <stdint.h>
 
 #include <flib/pci_bar.hpp>
-#include <flib/rorcfs_buffer.hh>
+#include <flib/dma_buffer.hpp>
 #include <flib/registers.h>
 #include <flib/rorcfs_dma_channel.hh>
 #include <flib/register_file_bar.hpp>

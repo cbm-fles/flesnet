@@ -12,7 +12,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3 -Wst
 
 set(LIB_SRC
   src/pci_bar.cpp
-  src/rorcfs_buffer.cpp
+  src/dma_buffer.cpp
   src/device.cpp
   src/rorcfs_dma_channel.cpp
   src/flib_device.cpp
@@ -21,7 +21,7 @@ set(LIB_SRC
 set(LIB_HDR
   include/flib.h
   include/flib/pci_bar.hpp
-  include/flib/rorcfs_buffer.hh
+  include/flib/dma_buffer.hpp
   include/flib/device.hpp
   include/flib/rorcfs_dma_channel.hh
   include/flib/registers.h

@@ -10,7 +10,7 @@
 
 
 #include <flib/device.hpp>
-#include <flib/rorcfs_buffer.hh>
+#include <flib/dma_buffer.hpp>
 #include <flib/pci_bar.hpp>
 #include <flib/rorcfs_dma_channel.hh>
 #include <flib/flib_device.hpp>
