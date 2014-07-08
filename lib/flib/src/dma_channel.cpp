@@ -1,34 +1,37 @@
-#include <iostream>
 #include <sys/stat.h>
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
 #include <stdint.h>
 
+#include <iostream>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+
+#include <pda.h>
+
 #include <flib/dma_channel.hpp>
 
+#include <flib/device.hpp>
 #include <flib/pci_bar.hpp>
 #include <flib/dma_buffer.hpp>
 #include <flib/registers.h>
 #include <flib/register_file_bar.hpp>
 
+using namespace std;
+
 namespace flib
 {
 
-    /*
-     * Constructor
-     * */
-    dma_channel::dma_channel(register_file_bar* rf)
-      : m_rfpkt(rf), m_MaxPayload(0) {}
+    dma_channel::dma_channel
+    (
+        register_file_bar *rf,
+        device            *parent_device
+    ) : m_rfpkt(rf), m_MaxPayload(0)
+    {}
 
-
-    /**
-     * Desctructor
-     * */
     dma_channel::~dma_channel()
     {
         m_rfpkt = NULL;
@@ -280,43 +283,27 @@ namespace flib
         return m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
     }
 
-    void dma_channel::setMaxPayload( int size )
+    void dma_channel::setMaxPayload()
     {
-        // MAX_PAYLOAD is located in the higher WORD of
-        // RORC_REG_DMA_CTRL: [25:16], 10 bits wide
+        uint64_t max_payload_size = 0;
 
-        assert( m_rfpkt!=NULL );
+        if
+        (
+            PciDevice_getmaxPayloadSize(parent_device->m_device, &max_payload_size)
+                != PDA_SUCCESS
+        )
+        {
+            cout << "Maximum payload size reading failed!\n" << endl;
+            abort();
+        }
 
-        // assure valid values for "size":
-        // size <= systems MAX_PAYLOAD
-        assert( size<=MAX_PAYLOAD );
-
-        unsigned int status = m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
-
-        // MAX_PAYLOAD has to be provided as #DWs
-        // -> divide size by 4
-        unsigned int mp_size = size>>2;
-
-        // clear current MAX_PAYLOAD setting
-        status &= 0x8000ffff; //clear bits 30:16
-        // set new MAX_PAYLOAD size
-        status |= (mp_size<<16);
-
-        // write DMA_CTRL
-        m_rfpkt->set_reg(RORC_REG_DMA_CTRL, status);
-        m_MaxPayload = size;
+        m_MaxPayload = max_payload_size;
     }
 
 
-    unsigned int dma_channel::getMaxPayload()
+    uint64_t dma_channel::getMaxPayload()
     {
-        assert( m_rfpkt!=NULL );
-        unsigned int status = m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
-
-        status = (status >> 16);
-        status = status<<2;
-
-        return status;
+        return m_MaxPayload;
     }
 
 

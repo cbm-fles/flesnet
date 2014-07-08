@@ -25,7 +25,7 @@ namespace flib
     (
         size_t      link_index,
         device     *dev,
-        pci_bar *bar
+        pci_bar    *bar
     ) : m_link_index(link_index), m_device(dev)
     {
         m_base_addr =  (m_link_index + 1) * RORC_CHANNEL_OFFSET;
@@ -35,7 +35,7 @@ namespace flib
         m_rfglobal  = std::unique_ptr<register_file_bar>(new register_file_bar(bar, 0));
         // create DMA channel and bind to register file,
         // no HW initialization is done here
-        m_channel   = std::unique_ptr<dma_channel>(new dma_channel(m_rfpkt.get() ));
+        m_channel   = std::unique_ptr<dma_channel>(new dma_channel(m_rfpkt.get(), dev ));
     }
 
     flib_link::~flib_link()

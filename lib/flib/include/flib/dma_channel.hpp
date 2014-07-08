@@ -14,6 +14,7 @@ namespace flib
 {
     class register_file_bar;
     class dma_buffer;
+    class device;
 
     /**
      * @class
@@ -32,7 +33,11 @@ namespace flib
     class dma_channel
     {
     public:
-         dma_channel(register_file_bar* rf);
+         dma_channel
+         (
+             register_file_bar *rf,
+             device            *parent_device
+         );
 
         ~dma_channel();
 
@@ -97,7 +102,7 @@ namespace flib
         * get maximum payload size from current HW configuration
         * @return maximum payload size in bytes
         **/
-        unsigned int getMaxPayload();
+        uint64_t getMaxPayload();
 
         /**
         * get number of Scatter Gather entries for the Event buffer
@@ -265,15 +270,16 @@ namespace flib
         unsigned int getRBDRAM(unsigned int addr);
 
     protected:
-        register_file_bar *m_rfpkt;
-        unsigned int       m_MaxPayload;
+        register_file_bar *m_rfpkt        = NULL;
+        device            *parent_device  = NULL;
+        uint64_t           m_MaxPayload   = 0;
 
         /**
          * setMaxPayload( int size ) and setMaxPayload()
          * are wrappers around _setMaxPayload and should
          * be called instead
          */
-        void setMaxPayload(int size);
+        void setMaxPayload();
     };
 
 }
