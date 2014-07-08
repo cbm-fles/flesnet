@@ -2,13 +2,7 @@
 #define FLIB_LINK_HPP
 
 #include <flib/rorc_registers.h>
-#include <flib/data_structures.hh>
-
-//#include <flib/rorcfs_bar.hh>
-//#include <flib/rorcfs_device.hh>
-//#include <flib/rorcfs_buffer.hh>
-//#include <flib/rorcfs_dma_channel.hh>
-//#include <flib/register_file_bar.hpp>
+#include <flib/data_structures.hpp>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"

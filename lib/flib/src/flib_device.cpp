@@ -10,10 +10,6 @@
 #include <flib/flib_link.hpp>
 #include <flib/rorcfs_device.hh>
 
-//#include<flib/flib_device.hpp>
-//#include<flib/rorcfs_device.hh>
-
-
 namespace flib
 {
 

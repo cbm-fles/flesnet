@@ -3,7 +3,7 @@
 #ifndef REGISTER_FILE_HPP
 #define REGISTER_FILE_HPP
 
-#include <flib/data_structures.hh>
+#include <flib/data_structures.hpp>
 
 namespace flib
 {
