@@ -40,7 +40,7 @@ namespace flib
     int
     dma_buffer::allocate
     (
-        device   *dev,
+        device   *device,
         uint64_t  size,
         uint64_t  id,
         int       overmap,
@@ -48,7 +48,7 @@ namespace flib
     )
     {
         m_dma_direction = dma_direction;
-        m_device        = dev->m_device;
+        m_device        = device->m_device;
         m_id            = id;
 
         if
@@ -78,6 +78,9 @@ namespace flib
     {
         if(DMABuffer_free(m_buffer, PDA_DELETE) != PDA_SUCCESS)
         { return -1; }
+
+        m_id = 0;
+        m_dma_direction = 0;
 
         return 0;
     }
