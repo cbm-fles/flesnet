@@ -1,25 +1,3 @@
- /**
- * @file rorcfs_buffer.cpp
- * @author Heiko Engel <hengel@cern.ch>
- * @version 0.1
- * @date 2011-08-17
- * 
- * @section LICENSE
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
- * http://www.gnu.org/copyleft/gpl.html
- *
- * @section DESCRIPTION
- *
- */
-
 #include <cstdlib>
 #include <cstring>
 #include <stdio.h>
@@ -29,9 +7,14 @@
 #include <errno.h>
 #include <sys/mman.h>
 
+
+#include <iostream>
 #include <pda.h>
 
 #include <flib/dma_buffer.hpp>
+#include <flib/device.hpp>
+
+using namespace std;
 
 namespace flib
 {
@@ -57,60 +40,31 @@ namespace flib
     int
     dma_buffer::allocate
     (
-        device        *dev,
-        unsigned long  size,
-        unsigned long  id,
-        int            overmap,
-        int            dma_direction
+        device   *dev,
+        uint64_t  size,
+        uint64_t  id,
+        int       overmap,
+        int       dma_direction
     )
     {
-    //  char *fname;
-    //  struct t_rorcfs_buffer buf;
-    //  int fd, ret;
-    //
-    //  // already connected to another buffer? unmap first!
-    //  if ( mem!=NULL ) {
-    //      errno = EPERM;
-    //      return -1;
-    //  }
-    //
-    //  // get sysfs base directory name and size
-    //  base_name_size = dev->getDName( &base_name );
-    //
-    //  fname = (char *) malloc( base_name_size + 12 );
-    //  if (!fname) {
-    //      errno = ENOMEM;
-    //      return -1;
-    //  }
-    //
-    //  snprintf(fname, base_name_size + 12 , "%salloc_buffer", base_name);
-    //  buf.id = id;
-    //  buf.bytes = size;
-    //  buf.overmap = overmap;
-    //  buf.dma_direction = dma_direction;
-    //
-    //  fd = open(fname, O_WRONLY);
-    //  if ( fd==-1 ) {
-    //      perror("open alloc_buffer");
-    //      free(fname);
-    //      return -1;
-    //  }
-    //
-    //  ret = write( fd, &buf, sizeof(buf) );
-    //  if ( ret != sizeof(buf) ) {
-    //      //perror("write to alloc_buffer");
-    //      close(fd);
-    //      free(fname);
-    //      return -1;
-    //  }
-    //
-    //  free(fname);
-    //  close(fd);
-    //
-    //  // connect to allocated buffer
-    //  if( connect(dev, id) == -1 ) {
-    //      return -1;
-    //  }
+        m_dma_direction = dma_direction;
+        m_device        = dev->m_device;
+        m_id            = id;
+
+        if
+        (
+            PDA_SUCCESS !=
+                PciDevice_allocDMABuffer
+                    (m_device, id, size, PDABUFFER_DIRECTION_BI, &m_buffer)
+        )
+        { return -1; }
+
+        if(overmap == 1)
+        {
+            if(PDA_SUCCESS != DMABuffer_wrapMap(m_buffer) )
+            { return -1; }
+        }
+
 
         return 0;
     }
@@ -122,49 +76,9 @@ namespace flib
      **/
     int dma_buffer::deallocate()
     {
-        char *fname;
-        int fd, ret;
+        if(DMABuffer_free(m_buffer, PDA_DELETE) != PDA_SUCCESS)
+        { return -1; }
 
-        // not initialized!
-        if(m_dname==NULL || m_dname_size==0 || m_physical_size==0)
-            return -EINVAL;
-
-        close(m_fdEB);
-
-        fname = (char *) malloc( m_base_name_size + 11 );
-        if (!fname)
-            return -ENOMEM;
-
-        snprintf(fname, m_base_name_size + 11 , "%sfree_buffer",	m_base_name);
-
-        // open /sys/module/rorcfs/drivers/pci:rorcfs/[pci-ID]/mmap/free_buffer
-        fd = open(fname, O_WRONLY);
-        if ( fd==-1 ) {
-            perror("open free_buffer");
-            free(fname);
-            return -1;
-        }
-
-        // write buffer-ID of buffer to be de-allocated
-        ret = write( fd, &m_id, sizeof(m_id) );
-        if ( ret != sizeof(m_id) ) {
-            perror("write to free_buffer");
-            free(fname);
-            close(fd);
-            return -1;
-        }
-
-        m_base_name = NULL;
-        m_base_name_size = 0;
-        m_physical_size = 0;
-        m_mapping_size = 0;
-        m_overmapped = 0;
-
-        m_dname_size = 0;
-        m_dname = NULL;
-
-        free(fname);
-        close(fd);
         return 0;
     }
 

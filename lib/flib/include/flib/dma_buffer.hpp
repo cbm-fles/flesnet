@@ -1,26 +1,13 @@
 /**
- * @file rorcfs_buffer.hh
- * @author Heiko Engel <hengel@cern.ch>
- * @version 0.1
- * @date 2011-08-17
- *
- * @section LICENSE
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
- * http://www.gnu.org/copyleft/gpl.html
- *
- */
+ * @file
+ * @author Dominic Eschweiler <dominic.eschweiler@cern.ch>
+ * @date 2014-07-08
+ **/
 
-#ifndef _RORCLIB_RORCFS_BUFFER_H
-#define _RORCLIB_RORCFS_BUFFER_H
+#ifndef PCI_DMA_BUFFER_H
+#define PCI_DMA_BUFFER_H
 
+#include <stdint.h>
 #include <flib/data_structures.hpp>
 
 namespace flib
@@ -56,11 +43,11 @@ namespace flib
          */
         int allocate
         (
-            device* dev,
-            unsigned long size,
-            unsigned long id,
-            int overmap,
-            int dma_direction
+            device   *dev,
+            uint64_t  size,
+            uint64_t  id,
+            int       overmap,
+            int       dma_direction
         );
 
       /**
@@ -143,16 +130,21 @@ namespace flib
       unsigned int* getMem() { return m_mem; }
 
     protected:
+        PciDevice *m_device        = NULL;
+        DMABuffer *m_buffer        = NULL;
+        int        m_dma_direction = 0;
+        uint64_t   m_id            = 0;
+
+        //OLD
+
         char* m_dname                          = NULL;
         char* m_base_name                      = NULL;
         int   m_dname_size                     = 0;
         int   m_base_name_size                 = 0;
-        unsigned long m_id                     = 0;
         unsigned long m_physical_size          = 0;
         unsigned long m_mapping_size           = 0;
         unsigned long m_scatter_gather_entries = 0;
         int m_overmapped             = 0;
-        int m_dma_direction          = 0;
         int m_fdEB                   = 0;
         unsigned int* m_mem          = NULL;
     };

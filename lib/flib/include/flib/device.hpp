@@ -4,8 +4,8 @@
  * @date 2014-07-03
  **/
 
-#ifndef DEVICE_H
-#define DEVICE_H
+#ifndef PCI_DEVICE_H
+#define PCI_DEVICE_H
 
 #include <pda.h>
 
@@ -19,6 +19,7 @@ namespace flib
      **/
     class device
     {
+        friend class dma_buffer;
 
     public:
         device(int32_t device_index);
