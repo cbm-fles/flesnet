@@ -37,12 +37,12 @@ namespace flib
 {
 
 
-    rorcfs_buffer::rorcfs_buffer()
+    dma_buffer::dma_buffer()
     {
 
     }
 
-    rorcfs_buffer::~rorcfs_buffer()
+    dma_buffer::~dma_buffer()
     {
         munmap(m_mem, m_mapping_size);
         m_mem = NULL;
@@ -54,9 +54,10 @@ namespace flib
      * Allocate Buffer: initiate memory allocation,
      * connect to new buffer & retrieve actual buffer sizes
      **/
-    int rorcfs_buffer::allocate
+    int
+    dma_buffer::allocate
     (
-        device *dev,
+        device        *dev,
         unsigned long  size,
         unsigned long  id,
         int            overmap,
@@ -119,7 +120,7 @@ namespace flib
     /**
      * Release buffer
      **/
-    int rorcfs_buffer::deallocate()
+    int dma_buffer::deallocate()
     {
         char *fname;
         int fd, ret;
@@ -170,7 +171,7 @@ namespace flib
 
 
     int
-    rorcfs_buffer::connect
+    dma_buffer::connect
     (
         device *dev,
         unsigned long id

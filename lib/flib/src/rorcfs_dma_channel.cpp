@@ -60,7 +60,7 @@ namespace flib
      * Fill ReportBufferDescriptorRAM with scatter-gather
      * entries of DMA buffer
      * */
-    int rorcfs_dma_channel::prepareEB ( rorcfs_buffer *buf )
+    int rorcfs_dma_channel::prepareEB ( dma_buffer *buf )
     {
         char *fname;
         int fd, nbytes, ret = 0;
@@ -133,8 +133,8 @@ namespace flib
      * set of buffers
      * */
     int rorcfs_dma_channel::configureChannel(
-            struct rorcfs_buffer *ebuf,
-            struct rorcfs_buffer *rbuf,
+            struct dma_buffer *ebuf,
+            struct dma_buffer *rbuf,
             uint32_t max_payload)
     {
         struct rorcfs_channel_config config;
@@ -210,7 +210,7 @@ namespace flib
         return (_rfpkt->get_reg( RORC_REG_DMA_CTRL ) >> 2 ) & 0x01;
     }
 
-    int rorcfs_dma_channel::prepareRB ( rorcfs_buffer *buf )
+    int rorcfs_dma_channel::prepareRB ( dma_buffer *buf )
     {
         char *fname;
         int fd, nbytes, ret = 0;

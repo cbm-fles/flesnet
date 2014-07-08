@@ -54,7 +54,7 @@ namespace flib
         * @return 0 on sucess, -1 on errors, -EFBIG if more
         *         than 2048 sg-entries
         **/
-        int prepareEB(rorcfs_buffer* buf);
+        int prepareEB(dma_buffer* buf);
 
         /**
         * prepare ReportBuffer: copy scatterlist from
@@ -64,7 +64,7 @@ namespace flib
         *        report destination buffer
         * @return 0 on sucess, -1 on errors
         **/
-        int prepareRB(rorcfs_buffer* buf);
+        int prepareRB(dma_buffer* buf);
 
         /**
         * set Enable Bit of EBDM
@@ -170,7 +170,7 @@ namespace flib
         * @param max_payload maximum payload size to be used (in bytes)
         * @return 0 on sucess, <0 on error
         * */
-        int configureChannel(struct rorcfs_buffer* ebuf, struct rorcfs_buffer* rbuf,
+        int configureChannel(struct dma_buffer* ebuf, struct dma_buffer* rbuf,
                            uint32_t max_payload);
 
         /**

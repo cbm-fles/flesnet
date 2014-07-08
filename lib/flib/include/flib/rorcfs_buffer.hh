@@ -35,11 +35,11 @@ namespace flib
      * class represents one couple of EventBuffer and ReportBuffer with
      * their corresponding sysfs attributes
      **/
-    class rorcfs_buffer
+    class dma_buffer
     {
     public:
-         rorcfs_buffer();
-        ~rorcfs_buffer();
+         dma_buffer();
+        ~dma_buffer();
 
         /**
          * Allocate buffer: This function initiates allocation of an

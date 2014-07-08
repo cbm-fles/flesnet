@@ -337,11 +337,11 @@ namespace flib
     flib_link::get_dbuf_info()
     { return get_buffer_info(m_dbuffer.get()); }
 
-    rorcfs_buffer*
+    dma_buffer*
     flib_link::ebuf() const
     { return m_event_buffer.get(); }
 
-    rorcfs_buffer*
+    dma_buffer*
     flib_link::rbuf() const
     { return m_dbuffer.get(); }
 
@@ -361,11 +361,11 @@ namespace flib
 
 /*** PROTECTED ***/
 
-    std::unique_ptr<rorcfs_buffer>
+    std::unique_ptr<dma_buffer>
     flib_link::create_buffer(size_t idx, size_t log_size)
     {
         unsigned long size = (((unsigned long)1) << log_size);
-        std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());
+        std::unique_ptr<dma_buffer> buffer(new dma_buffer());
         if (buffer->allocate(m_device, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0)
         {
             if (errno == EEXIST)
@@ -377,21 +377,21 @@ namespace flib
     }
 
 
-    std::unique_ptr<rorcfs_buffer>
+    std::unique_ptr<dma_buffer>
     flib_link::open_buffer(size_t idx)
     {
-        std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());
+        std::unique_ptr<dma_buffer> buffer(new dma_buffer());
         if ( buffer->connect(m_device, 2*m_link_index+idx) != 0 )
         { throw RorcfsException("Connect to buffer failed"); }
         return buffer;
     }
 
 
-    std::unique_ptr<rorcfs_buffer>
+    std::unique_ptr<dma_buffer>
     flib_link::open_or_create_buffer(size_t idx, size_t log_size)
     {
         unsigned long size = (((unsigned long)1) << log_size);
-        std::unique_ptr<rorcfs_buffer> buffer(new rorcfs_buffer());
+        std::unique_ptr<dma_buffer> buffer(new dma_buffer());
 
         if (buffer->allocate(m_device, size, 2*m_link_index+idx, 1, RORCFS_DMA_FROM_DEVICE)!=0)
         {
@@ -484,7 +484,7 @@ namespace flib
 
 
     std::string
-    flib_link::get_buffer_info(rorcfs_buffer* buf)
+    flib_link::get_buffer_info(dma_buffer* buf)
     {
         std::stringstream ss;
         ss  << "start address = "  << buf->getMem() <<", "

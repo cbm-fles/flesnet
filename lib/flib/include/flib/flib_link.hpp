@@ -36,7 +36,7 @@ namespace flib
 
     class device;
     class pci_bar;
-    class rorcfs_buffer;
+    class dma_buffer;
     class rorcfs_dma_channel;
     class register_file_bar;
 
@@ -116,16 +116,16 @@ namespace flib
         data_rx_sel         get_data_rx_sel();
         std::string         get_ebuf_info();
         std::string         get_dbuf_info();
-        rorcfs_buffer*      ebuf()             const;
-        rorcfs_buffer*      rbuf()             const;
+        dma_buffer*      ebuf()             const;
+        dma_buffer*      rbuf()             const;
         rorcfs_dma_channel* get_ch()           const;
         register_file_bar*  get_rfpkt()        const;
         register_file_bar*  get_rfgtx()        const;
 
     protected:
         std::unique_ptr<rorcfs_dma_channel> m_channel;
-        std::unique_ptr<rorcfs_buffer>      m_event_buffer;
-        std::unique_ptr<rorcfs_buffer>      m_dbuffer;
+        std::unique_ptr<dma_buffer>      m_event_buffer;
+        std::unique_ptr<dma_buffer>      m_dbuffer;
         std::unique_ptr<register_file_bar>  m_rfglobal; // TODO remove this later
         std::unique_ptr<register_file_bar>  m_rfpkt;
         std::unique_ptr<register_file_bar>  m_rfgtx;
@@ -152,18 +152,18 @@ namespace flib
         /**
          * Creates new buffer, throws an exception if buffer already exists
          */
-        std::unique_ptr<rorcfs_buffer> create_buffer(size_t idx, size_t log_size);
+        std::unique_ptr<dma_buffer> create_buffer(size_t idx, size_t log_size);
 
         /**
          * Opens an existing buffer, throws an exception if buffer
          * doesn't exists
          */
-        std::unique_ptr<rorcfs_buffer> open_buffer(size_t idx);
+        std::unique_ptr<dma_buffer> open_buffer(size_t idx);
 
         /**
          * Opens an existing buffer or creates new buffer if non exists
          */
-        std::unique_ptr<rorcfs_buffer>
+        std::unique_ptr<dma_buffer>
         open_or_create_buffer(size_t idx, size_t log_size);
 
         void reset_channel();
@@ -174,7 +174,7 @@ namespace flib
          */
         int init_hardware();
 
-        std::string get_buffer_info(rorcfs_buffer* buf);
+        std::string get_buffer_info(dma_buffer* buf);
     
     };
 }
