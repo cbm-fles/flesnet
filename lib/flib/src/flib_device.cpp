@@ -8,10 +8,9 @@
 
 #include <flib/flib_device.hpp>
 #include <flib/flib_link.hpp>
-#include <flib/device.hh>
-
-#include <flib/rorcfs_bar.hh>
 #include <flib/register_file_bar.hpp>
+#include <flib/device.hpp>
+#include <flib/pci_bar.hpp>
 
 namespace flib
 {

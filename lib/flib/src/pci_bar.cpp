@@ -1,5 +1,5 @@
-#include <flib/rorcfs_bar.hh>
-#include <flib/device.hh>
+#include <flib/pci_bar.hpp>
+#include <flib/device.hpp>
 
 using namespace std;
 

@@ -29,7 +29,7 @@
 #include <assert.h>
 #include <stdint.h>
 
-#include <flib/rorcfs_bar.hh>
+#include <flib/pci_bar.hpp>
 #include <flib/rorcfs_buffer.hh>
 #include <flib/registers.h>
 #include <flib/rorcfs_dma_channel.hh>

@@ -4,7 +4,7 @@
 
 #include<pda.h>
 
-#include <flib/device.hh>
+#include <flib/device.hpp>
 
 using namespace std;
 

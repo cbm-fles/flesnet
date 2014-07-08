@@ -6,7 +6,7 @@
 #include <sys/mman.h>
 
 #include <flib/register_file.hpp>
-#include <flib/rorcfs_bar.hh>
+#include <flib/pci_bar.hpp>
 
 
 namespace flib

@@ -9,9 +9,9 @@
 #include <flib/flib_link.hpp>
 
 
-#include <flib/device.hh>
+#include <flib/device.hpp>
 #include <flib/rorcfs_buffer.hh>
-#include <flib/rorcfs_bar.hh>
+#include <flib/pci_bar.hpp>
 #include <flib/rorcfs_dma_channel.hh>
 #include <flib/flib_device.hpp>
 #include <flib/flib_link.hpp>
