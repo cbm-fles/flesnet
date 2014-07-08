@@ -47,10 +47,6 @@ namespace flib
         int       dma_direction
     )
     {
-        m_dma_direction = dma_direction;
-        m_device        = device->m_device;
-        m_id            = id;
-
         if
         (
             PDA_SUCCESS !=
@@ -78,8 +74,8 @@ namespace flib
         if(DMABuffer_free(m_buffer, PDA_DELETE) != PDA_SUCCESS)
         { return -1; }
 
-        m_id            = 0;
-        m_dma_direction = 0;
+        m_id  = 0;
+        m_mem = NULL;
 
         return 0;
     }
@@ -89,97 +85,31 @@ namespace flib
     int
     dma_buffer::connect
     (
-        device *dev,
-        unsigned long id
+        device   *device,
+        uint64_t  id
     )
     {
+        m_device        = device->m_device;
+        m_id            = id;
 
-    if( m_mem!=NULL )
-    {
-        errno = EPERM;
-        return -1;
-    }
+        if(m_mem!=NULL)
+        {
+            errno = EPERM;
+            return -1;
+        }
 
-    //
-    //	// get sysfs base directory name and size
-    //	base_name_size = dev->getDName( &base_name );
-    //
-    //	// get MappingSize from sysfs attribute
-    //	fname_size = snprintf(NULL, 0, "%s%03ld/mem", base_name, id);
-    //	fname_size++;
-    //	fname = (char *) malloc(fname_size);
-    //	if (!fname) {
-    //		errno = ENOMEM;
-    //		return -1;
-    //	}
-    //
-    //	snprintf(fname, fname_size, "%s%03ld/mem", base_name, id);
-    //	//printf("fname=%s\n", fname);
-    //	fdEB = open(fname, O_RDWR);
-    //	if (fdEB==-1) {
-    //		perror("open mem");
-    //		free(fname);
-    //		return -1;
-    //	}
-    //	free(fname);
-    //
-    //	if ( fstat(fdEB, &filestat) == -1 ) {
-    //		close(fdEB);
-    //		return -1;
-    //	}
-    //
-    //	// set MappingSize to the size of the sysfs file
-    //	MappingSize = filestat.st_size;
-    //
-    //	// calculate PhysicalSize with "overmapped" sysfs attribute
-    //	fname_size = snprintf(NULL, 0, "%s%03ld/overmapped", base_name, id);
-    //	fname_size++;
-    //	fname = (char *) malloc(fname_size);
-    //	if (!fname) {
-    //		errno = ENOMEM;
-    //		close(fdEB);
-    //		return -1;
-    //	}
-    //
-    //	snprintf(fname, fname_size, "%s%03ld/overmapped", base_name, id);
-    //	fd = open(fname, O_RDONLY);
-    //	if (fd==-1) {
-    //		perror("open overmapped");
-    //		free(fname);
-    //		close(fdEB);
-    //		return -1;
-    //	}
-    //	free(fname);
-    //
-    //	// read from "overmapped" - returns 1 or 0
-    //	nbytes = read( fd, &overmapped, sizeof(int) );
-    //	if( nbytes != sizeof(int) ) {
-    //		perror("read overmapped");
-    //		close(fd);
-    //		close(fdEB);
-    //		return -1;
-    //	}
-    //	close(fd);
-    //
-    //	// Set PhysicalSize attribute according to the contents of
-    //	// the sysfs file "overmapped"
-    //	if ( overmapped )
-    //		PhysicalSize = MappingSize/2;
-    //	else
-    //		PhysicalSize = MappingSize;
-    //
-    //
-    //
-    //
-    //	// MMap Buffer
-    //	mem = (unsigned int*)mmap(0, MappingSize, PROT_READ|PROT_WRITE,
-    //			MAP_SHARED, fdEB, 0);
-    //	if( mem==MAP_FAILED ) {
-    //		close(fdEB);
-    //		perror("mmap mem");
-    //		return -1;
-    //	}
-    //
+        if( DMABuffer_getMap(m_buffer, (void**)(&m_mem) )!=PDA_SUCCESS )
+        { return -1; }
+
+        if( DMABuffer_getLength( m_buffer, &m_physical_size) != PDA_SUCCESS )
+        { return -1; }
+
+        //m_mapping_size
+        //m_overmapped
+
+
+
+
     //	// get nSGEntries from sysfs attribute
     //	fname_size = snprintf(NULL, 0, "%s%03ld/sglist", base_name, id);
     //	fname_size++;

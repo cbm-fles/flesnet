@@ -50,31 +50,32 @@ namespace flib
             int       dma_direction
         );
 
-      /**
-       * Free Buffer: This functions initiates de-allocation of the
-       * attaced DMA buffers
-       * @return 0 on sucess, <0 on error ( use perror() )
-       **/
-      int deallocate();
+        /**
+         * Free Buffer: This functions initiates de-allocation of the
+         * attaced DMA buffers
+         * @return 0 on sucess, <0 on error ( use perror() )
+         */
+        int deallocate();
 
         /**
-        * Connect to an existing buffer
-        * @param dev parent rorcfs device
-        * @param id buffer ID of exisiting buffer
-        * @return 0 on sucessful connect, -EPERM or -ENOMEM on errors
-        **/
+         * Connect to an existing buffer
+         * @param dev parent rorcfs device
+         * @param id buffer ID of exisiting buffer
+         * @return 0 on sucessful connect, -EPERM or -ENOMEM on errors
+         */
         int
         connect
         (
-          device* dev,
-          unsigned long id
+          device   *dev,
+          uint64_t  id
         );
 
-      /**
-       * get Buffer-ID
-       * @return unsigned long Buffer-ID
-       **/
-      unsigned long getID() { return m_id; }
+        /**
+         * get Buffer-ID
+         * @return unsigned long Buffer-ID
+         */
+        unsigned long
+        getID(){return m_id;}
 
       /**
        * Get physical Buffer size in bytes. Requested buffer
@@ -107,9 +108,8 @@ namespace flib
        * Get the maximum number of report buffer entries in the RB
        * @return maximum number of report buffer entries
        **/
-      unsigned long getMaxRBEntries() {
-        return (m_physical_size / sizeof(struct rorcfs_event_descriptor));
-      }
+      unsigned long getMaxRBEntries()
+      { return (m_physical_size / sizeof(struct rorcfs_event_descriptor)); }
 
       /**
        * get sysfs directory name of the buffer
@@ -127,13 +127,21 @@ namespace flib
        * get memory buffer
        * @return pointer to mmap'ed buffer memory
        **/
-      unsigned int* getMem() { return m_mem; }
+      unsigned int*
+      getMem(){return m_mem;}
 
     protected:
-        PciDevice *m_device        = NULL;
-        DMABuffer *m_buffer        = NULL;
-        int        m_dma_direction = 0;
-        uint64_t   m_id            = 0;
+        PciDevice        *m_device                 = NULL;
+        DMABuffer        *m_buffer                 = NULL;
+        DMABuffer_SGNode *m_sglist                 = NULL;
+        uint64_t          m_id                     = 0;
+
+        unsigned int     *m_mem                    = NULL;
+        uint64_t          m_physical_size          = 0;
+        uint64_t          m_mapping_size           = 0;
+        int               m_overmapped             = 0;
+
+        uint64_t          m_scatter_gather_entries = 0;
 
         //OLD
 
@@ -141,12 +149,7 @@ namespace flib
         char* m_base_name                      = NULL;
         int   m_dname_size                     = 0;
         int   m_base_name_size                 = 0;
-        unsigned long m_physical_size          = 0;
-        unsigned long m_mapping_size           = 0;
-        unsigned long m_scatter_gather_entries = 0;
-        int m_overmapped             = 0;
         int m_fdEB                   = 0;
-        unsigned int* m_mem          = NULL;
     };
 }
 #endif
