@@ -345,6 +345,9 @@ public:
     else
       reg = (type & 0xF);
     _rfgtx->set_reg(RORC_REG_GTX_DLM, reg);
+    // dummy read on GTX regfile to ensure reg written
+    // before issuing send pulse in send_dlm()
+    _rfgtx->get_reg(RORC_REG_GTX_DLM);
   }
 
   void send_dlm() {
