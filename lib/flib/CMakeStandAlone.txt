@@ -25,7 +25,7 @@ set(LIB_HDR
   include/flib/rorcfs_device.hh
   include/flib/rorcfs_dma_channel.hh
   include/flib/rorcfs.h
-  include/flib/rorc_registers.h
+  include/flib/registers.h
   include/flib/flib_device.hpp
   include/flib/flib_link.hpp
   include/flib/register_file.hpp

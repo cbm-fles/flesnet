@@ -1,7 +1,7 @@
 #ifndef FLIB_LINK_HPP
 #define FLIB_LINK_HPP
 
-#include <flib/rorc_registers.h>
+#include <flib/registers.h>
 #include <flib/data_structures.hpp>
 
 #pragma GCC diagnostic push
