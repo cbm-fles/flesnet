@@ -21,7 +21,7 @@
 #ifndef _RORCLIB_RORCFS_BUFFER_H
 #define _RORCLIB_RORCFS_BUFFER_H
 
-#include <flib/rorcfs.h>
+#include <flib/data_structures.hpp>
 
 namespace flib
 {
