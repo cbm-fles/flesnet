@@ -65,8 +65,7 @@ namespace flib
             { return -1; }
         }
 
-
-        return 0;
+        return connect(device, id);
     }
 
 
@@ -79,7 +78,7 @@ namespace flib
         if(DMABuffer_free(m_buffer, PDA_DELETE) != PDA_SUCCESS)
         { return -1; }
 
-        m_id = 0;
+        m_id            = 0;
         m_dma_direction = 0;
 
         return 0;
@@ -94,15 +93,13 @@ namespace flib
         unsigned long id
     )
     {
-    //	char *fname;
-    //	int fd, fname_size;
-    //	struct stat filestat;
-    //	int nbytes = 0;
-    //
-    //	if ( mem!=NULL ) { //already connected, unmap first!
-    //		errno = EPERM;
-    //		return -1;
-    //	}
+
+    if( m_mem!=NULL )
+    {
+        errno = EPERM;
+        return -1;
+    }
+
     //
     //	// get sysfs base directory name and size
     //	base_name_size = dev->getDName( &base_name );
