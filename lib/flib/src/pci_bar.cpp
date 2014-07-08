@@ -34,4 +34,4 @@ namespace flib
         { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
     }
 
-} /** namespace flib */
+}

@@ -11,7 +11,7 @@ include(CMakePda.txt)
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3 -Wstack-usage=2048")
 
 set(LIB_SRC
-  src/rorcfs_bar.cpp
+  src/pci_bar.cpp
   src/rorcfs_buffer.cpp
   src/device.cpp
   src/rorcfs_dma_channel.cpp
@@ -20,7 +20,7 @@ set(LIB_SRC
 )
 set(LIB_HDR
   include/flib.h
-  include/flib/rorcfs_bar.hh
+  include/flib/pci_bar.hh
   include/flib/rorcfs_buffer.hh
   include/flib/device.hh
   include/flib/rorcfs_dma_channel.hh
