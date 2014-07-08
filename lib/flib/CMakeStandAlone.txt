@@ -15,6 +15,7 @@ set(LIB_SRC
   src/dma_buffer.cpp
   src/device.cpp
   src/rorcfs_dma_channel.cpp
+  src/register_file_bar.cpp
   src/flib_device.cpp
   src/flib_link.cpp
 )
