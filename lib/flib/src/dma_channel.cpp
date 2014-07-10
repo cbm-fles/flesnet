@@ -38,13 +38,22 @@ namespace flib
         m_MaxPayload = 0;
     }
 
-
-    /**
-     * prepareRB
-     * Fill ReportBufferDescriptorRAM with scatter-gather
-     * entries of DMA buffer
-     * */
     int dma_channel::prepareEB( dma_buffer *buf )
+    {
+        return( prepareBuffer(buf, RORC_REG_EBDM_N_SG_CONFIG, 0) );
+    }
+
+    int dma_channel::prepareRB ( dma_buffer *buf )
+    {
+        return( prepareBuffer(buf, RORC_REG_RBDM_N_SG_CONFIG, 1) );
+    }
+
+    int dma_channel::prepareBuffer
+    (
+        dma_buffer   *buf,
+        sys_bus_addr  addr,
+        uint32_t      flag
+    )
     {
         char *fname;
         int fd, nbytes, ret = 0;
@@ -57,8 +66,7 @@ namespace flib
 
         //open buf->mem_sglist
         fname = (char *) malloc(buf->getDNameSize() + 6);
-        snprintf(fname, buf->getDNameSize() + 6, "%ssglist",
-                buf->getDName());
+        snprintf(fname, buf->getDNameSize() + 6, "%ssglist", buf->getDName());
         fd = open(fname, O_RDONLY);
         if (fd==-1) {
             free(fname);
@@ -67,13 +75,9 @@ namespace flib
         free(fname);
 
         /**
-         * get maximum number of sg-entries supported
-         * by the firmware
-         * N_SG_CONFIG:
-         * [15:0] : actual number of sg entries in RAM
-         * [31:16]: maximum number of entries
-         * */
-        bdcfg = m_rfpkt->get_reg( RORC_REG_EBDM_N_SG_CONFIG );
+         * get maximum number of sg-entries supported by the firmware
+         **/
+        bdcfg = m_rfpkt->get_reg( addr );
 
         // check if buffers SGList fits into EBDRAM
         if(buf->getnSGEntries() > (bdcfg>>16) )
@@ -95,17 +99,15 @@ namespace flib
             sg_entry.sg_addr_low = (uint32_t)(dma_desc.addr & 0xffffffff);
             sg_entry.sg_addr_high = (uint32_t)(dma_desc.addr >> 32);
             sg_entry.sg_len = (uint32_t)(dma_desc.len);
-            sg_entry.ctrl = (1<<31) | (0<<30) | ((uint32_t)i);
+            sg_entry.ctrl = (1<<31) | (flag<<30) | ((uint32_t)i); // 0 == eb
 
             //write rorcfs_dma_desc to RORC EBDM
-            m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW,
-                    &sg_entry, sizeof(sg_entry)>>2);
+            m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
         }
 
         // clear following BD entry (required!)
         memset(&sg_entry, 0, sizeof(sg_entry));
-        m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW,
-                &sg_entry, sizeof(sg_entry)>>2);
+        m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
 
     close_fd:
         close(fd);
@@ -195,66 +197,6 @@ namespace flib
     unsigned int dma_channel::getEnableEB()
     {
         return (m_rfpkt->get_reg( RORC_REG_DMA_CTRL ) >> 2 ) & 0x01;
-    }
-
-    int dma_channel::prepareRB ( dma_buffer *buf )
-    {
-        char *fname;
-        int fd, nbytes, ret = 0;
-        unsigned int bdcfg;
-        unsigned long i;
-        struct rorcfs_dma_desc dma_desc;
-        struct t_sg_entry_cfg sg_entry;
-
-        assert( m_rfpkt!=NULL );
-
-        //open buf->mem_sglist
-        fname = (char *) malloc(buf->getDNameSize() + 6);
-        snprintf(fname, buf->getDNameSize() + 6, "%ssglist",
-                buf->getDName());
-        fd = open(fname, O_RDONLY);
-        if (fd==-1) {
-            free(fname);
-            return -1;
-        }
-        free(fname);
-
-        // N_SG_CONFIG:
-        // [15:0] : actual number of sg entries in RAM
-        // [31:16]: maximum number of entries
-        bdcfg = m_rfpkt->get_reg( RORC_REG_RBDM_N_SG_CONFIG );
-
-        // check if buffers SGList fits into RBDRAM
-        if(buf->getnSGEntries() > (bdcfg>>16) ) {
-            ret = -EFBIG;
-            errno = EFBIG;
-            goto close_fd;
-        }
-
-        for(i=0;i<buf->getnSGEntries();i++) {
-            //read multiples of struct rorcfs_dma_desc
-            nbytes = read(fd, &dma_desc, sizeof(struct rorcfs_dma_desc));
-            if(nbytes!=sizeof(struct rorcfs_dma_desc)) {
-                ret = -EBUSY;
-                perror("prepareRB:read(rorcfs_dma_desc)");
-                goto close_fd;
-            }
-            sg_entry.sg_addr_low = (uint32_t)(dma_desc.addr & 0xffffffff);
-            sg_entry.sg_addr_high = (uint32_t)(dma_desc.addr >> 32);
-            sg_entry.sg_len = (uint32_t)(dma_desc.len);
-            sg_entry.ctrl = (1<<31) | (1<<30) | ((uint32_t)i);
-
-            //write rorcfs_dma_desc to RORC EBDM
-            m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
-        }
-
-        // clear following BD entry (required!)
-        memset(&sg_entry, 0, sizeof(sg_entry));
-        m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
-
-    close_fd:
-        close(fd);
-        return ret;
     }
 
     void dma_channel::setEnableRB( int enable )
