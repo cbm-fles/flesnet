@@ -55,65 +55,37 @@ namespace flib
         uint32_t      flag
     )
     {
-        char *fname;
-        int fd, nbytes, ret = 0;
-        unsigned int bdcfg;
-        unsigned long i;
         struct rorcfs_dma_desc dma_desc;
-        struct t_sg_entry_cfg sg_entry;
 
         assert( m_rfpkt!=NULL );
-
-        //open buf->mem_sglist
-        fname = (char *) malloc(buf->getDNameSize() + 6);
-        snprintf(fname, buf->getDNameSize() + 6, "%ssglist", buf->getDName());
-        fd = open(fname, O_RDONLY);
-        if (fd==-1) {
-            free(fname);
-            return -1;
-        }
-        free(fname);
+        unsigned int bdcfg = m_rfpkt->get_reg( addr );
 
         /**
-         * get maximum number of sg-entries supported by the firmware
-         **/
-        bdcfg = m_rfpkt->get_reg( addr );
-
-        // check if buffers SGList fits into EBDRAM
+         *  check that buffers SGList fits into EBDRAM
+         */
         if(buf->getnSGEntries() > (bdcfg>>16) )
         {
-            ret = -EFBIG;
             errno = EFBIG;
-            goto close_fd;
+            return(-EFBIG);
         }
 
-        // fetch all sg-entries from sglist
-        for(i=0;i<buf->getnSGEntries();i++)
+        struct t_sg_entry_cfg sg_entry;
+        for(uint64_t i=0;i<buf->getnSGEntries();i++)
         {
-            //read multiples of struct rorcfs_dma_desc
-            nbytes = read(fd, &dma_desc, sizeof(struct rorcfs_dma_desc));
-            if(nbytes!=sizeof(struct rorcfs_dma_desc))
-            {
-                ret = -EBUSY;
-                perror("prepareEB:read(rorcfs_dma_desc)");
-                goto close_fd;
-            }
-            sg_entry.sg_addr_low = (uint32_t)(dma_desc.addr & 0xffffffff);
-            sg_entry.sg_addr_high = (uint32_t)(dma_desc.addr >> 32);
-            sg_entry.sg_len = (uint32_t)(dma_desc.len);
-            sg_entry.ctrl = (1<<31) | (flag<<30) | ((uint32_t)i); // 0 == eb
 
-            //write rorcfs_dma_desc to RORC EBDM
+            sg_entry.sg_addr_low  = (uint32_t)(dma_desc.addr & 0xffffffff);
+            sg_entry.sg_addr_high = (uint32_t)(dma_desc.addr >> 32);
+            sg_entry.sg_len       = (uint32_t)(dma_desc.len);
+            sg_entry.ctrl         = (1<<31) | (flag<<30) | ((uint32_t)i);
+
             m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
         }
 
-        // clear following BD entry (required!)
+        /** clear following BD entry (required!) **/
         memset(&sg_entry, 0, sizeof(sg_entry));
         m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
 
-    close_fd:
-        close(fd);
-        return ret;
+        return 0;
     }
 
 
