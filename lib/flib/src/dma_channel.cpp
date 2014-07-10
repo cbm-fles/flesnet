@@ -88,10 +88,12 @@ namespace flib
         }
 
         // fetch all sg-entries from sglist
-        for(i=0;i<buf->getnSGEntries();i++) {
+        for(i=0;i<buf->getnSGEntries();i++)
+        {
             //read multiples of struct rorcfs_dma_desc
             nbytes = read(fd, &dma_desc, sizeof(struct rorcfs_dma_desc));
-            if(nbytes!=sizeof(struct rorcfs_dma_desc)) {
+            if(nbytes!=sizeof(struct rorcfs_dma_desc))
+            {
                 ret = -EBUSY;
                 perror("prepareEB:read(rorcfs_dma_desc)");
                 goto close_fd;
@@ -139,17 +141,24 @@ namespace flib
         uint32_t ebdmnsgcfg = m_rfpkt->get_reg( RORC_REG_RBDM_N_SG_CONFIG );
 
         // check if sglist fits into FPGA buffers
-        if ( ((rbdmnsgcfg>>16) < rbuf->getnSGEntries()) |
-                ((ebdmnsgcfg>>16) < ebuf->getnSGEntries())) {
+        if
+        (
+            ((rbdmnsgcfg>>16) < rbuf->getnSGEntries()) |
+            ((ebdmnsgcfg>>16) < ebuf->getnSGEntries())
+        )
+        {
             errno = -EFBIG;
             return errno;
         }
 
-        if ( max_payload & 0x3 ) {
+        if( max_payload & 0x3 )
+        {
             // max_payload must be a multiple of 4 byte
             errno = -EINVAL;
             return errno;
-        }	else if (max_payload>1024) {
+        }
+        else if(max_payload>1024)
+        {
             errno = -ERANGE;
             return errno;
         }
@@ -173,7 +182,7 @@ namespace flib
 
         // set new MAX_PAYLOAD size
         config.swptrs.dma_ctrl =
-            (1<<31) | // sync software read pointers
+            (1<<31) |      // sync software read pointers
             (mp_size<<16); // set max_payload
 
         // copy configuration struct to RORC, starting
