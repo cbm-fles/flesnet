@@ -108,8 +108,6 @@ namespace flib
         for(DMABuffer_SGNode *sg=m_sglist; sg!=NULL; sg=sg->next)
         { m_scatter_gather_entries++; }
 
-        //TODO : add sg vector here!!
-
         return 0;
     }
 

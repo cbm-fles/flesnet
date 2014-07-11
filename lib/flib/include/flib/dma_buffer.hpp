@@ -124,19 +124,6 @@ namespace flib
         unsigned int*
         getMem(){return m_mem;}
 
-
-///**
-//* get sysfs directory name of the buffer
-//* @return pointer to char string
-//**/
-//char* getDName() { return m_dname; }
-//
-///**
-//* get size of the dname string
-//* @return size of the dname string in number of bytes
-//**/
-//int getDNameSize() { return m_dname_size; }
-
     protected:
         PciDevice        *m_device                 = NULL;
         DMABuffer        *m_buffer                 = NULL;
@@ -148,11 +135,6 @@ namespace flib
         uint64_t          m_mapping_size           = 0;
 
         uint64_t          m_scatter_gather_entries = 0;
-
-////OLD
-//char* m_dname                          = NULL;
-//int   m_dname_size                     = 0;
-
     };
 }
 #endif
