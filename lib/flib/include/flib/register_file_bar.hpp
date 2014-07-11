@@ -13,11 +13,11 @@
 #include <sys/mman.h>
 
 #include <flib/register_file.hpp>
-#include <flib/pci_bar.hpp>
-
 
 namespace flib
 {
+
+    class pci_bar;
 
     class register_file_bar : public register_file
     {
