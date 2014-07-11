@@ -29,6 +29,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 add_subdirectory(lib/fles_core)
 add_subdirectory(lib/fles_ipc)
 add_subdirectory(lib/flib)
+add_subdirectory(lib/flib_dpb)
 
 add_subdirectory(ctrl)
 
