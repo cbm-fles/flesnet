@@ -55,8 +55,6 @@ namespace flib
         uint32_t      flag
     )
     {
-        struct rorcfs_dma_desc dma_desc;
-
         assert( m_rfpkt!=NULL );
         unsigned int bdcfg = m_rfpkt->get_reg( addr );
 
@@ -70,15 +68,17 @@ namespace flib
         }
 
         struct t_sg_entry_cfg sg_entry;
-        for(uint64_t i=0;i<buf->getnSGEntries();i++)
+        uint64_t i = 0;
+        for(DMABuffer_SGNode *sg=buf->m_sglist; sg!=NULL; sg=sg->next)
         {
 
-            sg_entry.sg_addr_low  = (uint32_t)(dma_desc.addr & 0xffffffff);
-            sg_entry.sg_addr_high = (uint32_t)(dma_desc.addr >> 32);
-            sg_entry.sg_len       = (uint32_t)(dma_desc.len);
+            sg_entry.sg_addr_low  = (uint32_t)(((uint64_t)sg->d_pointer) & 0xffffffff);
+            sg_entry.sg_addr_high = (uint32_t)(((uint64_t)sg->d_pointer) >> 32);
+            sg_entry.sg_len       = (uint32_t)(sg->length & 0xffffffff);
             sg_entry.ctrl         = (1<<31) | (flag<<30) | ((uint32_t)i);
 
             m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry, sizeof(sg_entry)>>2);
+            i++;
         }
 
         /** clear following BD entry (required!) **/
