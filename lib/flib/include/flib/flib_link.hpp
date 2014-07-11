@@ -14,6 +14,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
+
 namespace flib
 {
     // Tags to indicate mode of buffer initialization
@@ -185,6 +186,7 @@ namespace flib
     
     };
 }
+
 
 #pragma GCC diagnostic pop
 

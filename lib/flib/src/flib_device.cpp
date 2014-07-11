@@ -38,7 +38,7 @@ namespace flib
         uint8_t num_links = get_num_hw_links();
         for (size_t i=0; i<num_links; i++)
         {
-            link.push_back
+            m_link.push_back
             (
                 std::unique_ptr<flib_link>
                 (
@@ -93,7 +93,7 @@ namespace flib
     flib_device::get_links()
     {
         std::vector<flib_link*> links;
-        for(auto& l : link)
+        for(auto& l : m_link)
         { links.push_back(l.get()); }
         return links;
     }
@@ -181,11 +181,11 @@ namespace flib
 
     flib_link&
     flib_device::get_link(size_t n)
-    { return *link.at(n); }
+    { return *m_link.at(n); }
 
     size_t
     flib_device::get_num_links()
-    { return link.size(); }
+    { return m_link.size(); }
 
     bool
     flib_device::check_magic_number()

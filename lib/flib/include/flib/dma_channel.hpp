@@ -280,6 +280,13 @@ namespace flib
          * be called instead
          */
         void setMaxPayload();
+
+        int prepareBuffer
+        (
+            dma_buffer   *buf,
+            sys_bus_addr  addr,
+            uint32_t      flag
+        );
     };
 
 }

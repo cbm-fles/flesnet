@@ -43,7 +43,7 @@ namespace flib
         bool                     check_hw_ver();
         void                     enable_mc_cnt(bool enable);
         void                     set_mc_time(uint32_t time);
-        void                     send_dlm();/** global dlm send, rquires link local prepare_dlm beforehand */
+        void                     send_dlm();/** global dlm send, requires link local prepare_dlm beforehand */
         std::string              print_build_info();
 
         size_t                   get_num_links();
@@ -58,9 +58,9 @@ namespace flib
 
     private:
 
-        std::vector<std::unique_ptr<flib_link> > link;
+        std::vector<std::unique_ptr<flib_link>>  m_link;
         std::unique_ptr<device>                  m_device;
-        std::unique_ptr<pci_bar>              m_bar;
+        std::unique_ptr<pci_bar>                 m_bar;
         std::unique_ptr<register_file_bar>       m_register_file;
 
         bool check_magic_number();
