@@ -258,14 +258,25 @@ namespace flib
         else
         { reg = (type & 0xF); }
         m_rfgtx->set_reg(RORC_REG_GTX_DLM, reg);
+        // dummy read on GTX regfile to ensure reg written
+        // before issuing send pulse in send_dlm()
+        m_rfgtx->get_reg(RORC_REG_GTX_DLM);
     }
 
     void
     flib_link::send_dlm()
     {
-        // TODO implemet local register in HW
-        // this causes all prepared links to send
+        // TODO: hack to overcome SW issues
+        // DLM send is also avialable in link
+        // will send DLMs on all prepared links
+
+        // TODO; HW link could unprepare automatically
+        // after one DLM is sent
+
+        // global send
         m_rfglobal->set_reg(RORC_REG_DLM_CFG, 1);
+        // local HW send, not well tested
+        // _rfgtx->set_bit(RORC_REG_GTX_DLM, 30, true);
     }
 
     uint8_t
