@@ -1,6 +1,8 @@
 #include <flib/pci_bar.hpp>
 #include <flib/device.hpp>
 
+#include <pda.h>
+
 using namespace std;
 
 namespace flib

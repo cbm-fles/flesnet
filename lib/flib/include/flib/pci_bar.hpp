@@ -12,7 +12,10 @@
 #define LIBFLIB_BAR_H
 
 #include <pthread.h>
-#include <pda.h>
+#include <stdint.h>
+
+typedef struct PciDevice_struct PciDevice;
+typedef struct Bar_struct Bar;
 
 namespace flib
 {

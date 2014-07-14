@@ -11,6 +11,7 @@
 #define DATA_STRUCTURES_HH
 
     #include <stdint.h>
+    #include <unistd.h>
 
     typedef uint64_t sys_bus_addr;
 
