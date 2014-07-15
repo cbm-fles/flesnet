@@ -1,0 +1,166 @@
+#!/bin/bash
+# 2013, Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
+# 2013, Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+
+set -e
+
+### user configuration ###
+
+# Add Xilinx cable serial number if more than one Xilinx-Cable is connected
+ESN=
+
+# Add full path to impact if Xilinx directory is not in PATH
+IMPACT=impact
+
+# CSE server
+# start with cse_server -port <cse_port> on given <cse_host>
+# leave empty if script runs locally
+CSE_HOST=
+CSE_PORT=51001
+
+# remote mashine the FLIB is installed to
+# leave empty if script runs locally
+FLIB_HOST=
+
+### do not change thing below this line ###
+
+# second parameter is bitfile
+BITFILE=$2
+
+if [ $CSE_HOST ]; then
+    CSE_SERVER="-server $CSE_HOST:$CSE_PORT"
+else
+    CSE_SERVER=
+fi
+
+if [ $ESN ]; then
+	CABLE="-p usb210 -esn $ESN"
+else
+	CABLE="-p auto"
+fi
+
+# Ask for lacal password at start if needed
+if [ ! $FLIB_HOST ]; then
+    sudo echo "Superuser access available"
+fi
+
+# Reload design from Flash
+function reload_fpga {
+"$IMPACT" -batch <<-EOF
+setMode -bscan
+setCable $CABLE $CSE_SERVER
+Identify -inferir 
+identifyMPM 
+bsdebug -start 
+bsdebug -scanir 001011 
+bsdebug -reset 
+quit
+EOF
+rm _impactbatch.log
+sleep 1
+echo "Done"
+}
+
+# Program FPGA
+function program_fpga {
+"$IMPACT" -batch <<-EOF
+setMode -bscan
+setCable $CABLE $CSE_SERVER
+identify
+assignfile -p 1 -file "$BITFILE"
+program -p 1
+quit
+EOF
+rm _impactbatch.log
+sleep 1
+echo "Done"
+}
+
+# Program Flash
+# use 'Erase -p 1 -o -bpionly' to erase Flash 
+function program_flash {
+"$IMPACT" -batch <<-EOF
+setMode -bscan
+setCable $CABLE $CSE_SERVER
+Identify -inferir 
+identifyMPM 
+attachflash -position 1 -bpi "28F512G18F"
+assignfiletoattachedflash -position 1 -file "$BITFILE"
+Program -p 1 -dataWidth 16 -rs1 NONE -rs0 NONE -bpionly -e -v -loadfpga 
+quit
+EOF
+rm _impactbatch.log
+sleep 1
+echo "Done"
+}
+
+function rescan_pci_base {
+echo "Searching for previous PCI device"
+NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
+if [ "$NODE" ]; then
+        echo "Found previous PCI decive at $NODE"
+        if [ -f "/sys/bus/pci/devices/0000:$NODE/remove" ]; then
+                echo "Removing previous PCI device"
+                sudo sh -c "echo 1 > /sys/bus/pci/devices/0000:$NODE/remove"
+        fi
+else
+        echo "No previous PCI decive found"
+fi
+sleep 1
+
+echo "Rescanning PCI bus"
+sudo sh -c 'echo 1 > /sys/bus/pci/rescan'
+
+echo "Done"
+}
+
+function rescan_pci {
+if [ $FLIB_HOST ]; then
+    echo "Rescanning PCI on $FLIB_HOST."
+    echo "Provide password for $FLIB_HOST when prompted."
+    ssh -t $FLIB_HOST "$(declare -f rescan_pci_base); rescan_pci_base"
+else
+    rescan_pci_base
+fi
+}
+
+### MAIN ###
+
+case $1 in
+    reload)
+        echo -e "Reloading FPGA configuration from Flash and rescanning PCI Bus"
+        reload_fpga
+        rescan_pci
+        exit
+        ;;
+    prog)
+        echo -e "Programing FPGA and rescanning PCI Bus"
+        if [ ! -r "$BITFILE" ]; then
+            echo "Bitfile '$BITFILE' not found"
+            exit
+        fi
+        program_fpga
+        rescan_pci
+        exit
+        ;;
+    flash)
+        echo -e "Programing onboard Flash"
+        if [ ! -r "$BITFILE" ]; then
+            echo "Mcsfile '$BITFILE' not found"
+            exit
+        fi
+        program_flash
+        rescan_pci
+        exit
+        ;;
+    *)
+        echo -e "SYNOPSIS"
+        echo -e "       $0 reload"
+        echo -e "       $0 prog BITFILE"
+        echo -e "       $0 flash MCSFILE"
+        exit
+        ;;
+esac
+
+
+
