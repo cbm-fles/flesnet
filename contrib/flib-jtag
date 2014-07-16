@@ -20,6 +20,8 @@ CSE_PORT=51001
 
 # remote mashine the FLIB is installed to
 # leave empty if script runs locally
+# Will be passed to ssh, you can use entries from your ssh config
+# and the user@host notation
 FLIB_HOST=
 
 ### do not change thing below this line ###
@@ -154,10 +156,10 @@ case $1 in
         exit
         ;;
     *)
-        echo -e "SYNOPSIS"
-        echo -e "       $0 reload"
-        echo -e "       $0 prog BITFILE"
-        echo -e "       $0 flash MCSFILE"
+        echo -e "usage"
+        echo -e "   reload FPGA configuration from Flash:   $0 reload"
+        echo -e "   program FPGA:                           $0 prog BITFILE"
+        echo -e "   program onboard Flash:                  $0 flash MCSFILE"
         exit
         ;;
 esac
