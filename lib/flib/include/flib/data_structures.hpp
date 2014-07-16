@@ -15,6 +15,11 @@
 
     typedef uint64_t sys_bus_addr;
 
+    /** default maximum payload size in bytes. Check the capabilities
+     * of the chipset and the FPGA PCIe core before modifying this value
+     * Common values are 128 or 256 bytes.*/
+    #define MAX_PAYLOAD 128
+
 namespace flib
 {
     struct mc_desc
@@ -25,6 +30,13 @@ namespace flib
         volatile uint64_t* rbaddr;
     };
 
+    struct __attribute__ ((__packed__))
+    hdr_config
+    {
+        uint16_t  eq_id;   // "Equipment identifier"
+        uint8_t   sys_id;  // "Subsystem identifier"
+        uint8_t   sys_ver; // "Subsystem format version"
+    };
 }
 
     // has to be 256 Bit, this is hard coded in hw
@@ -43,24 +55,11 @@ namespace flib
         uint64_t  offset;  // "Ofsset in event buffer"
     };
 
-    struct __attribute__ ((__packed__))
-    hdr_config
-    {
-        uint16_t  eq_id;   // "Equipment identifier"
-        uint8_t   sys_id;  // "Subsystem identifier"
-        uint8_t   sys_ver; // "Subsystem format version"
-    };
-
     struct ctrl_msg
     {
         uint32_t words; // num 16 bit data words
         uint16_t data[32];
     };
-
-    /** default maximum payload size in bytes. Check the capabilities
-     * of the chipset and the FPGA PCIe core before modifying this value
-     * Common values are 128 or 256 bytes.*/
-    #define MAX_PAYLOAD 128
 
     /** struct holding both read pointers and the
      * DMA engine configuration register contents **/
