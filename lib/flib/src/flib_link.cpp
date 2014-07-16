@@ -332,7 +332,7 @@ namespace flib
         return mc_index;
     }
 
-    data_rx_sel
+    flib_link::data_rx_sel
     flib_link::get_data_rx_sel()
     {
         uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
