@@ -37,6 +37,12 @@ namespace flib
         uint8_t   sys_id;  // "Subsystem identifier"
         uint8_t   sys_ver; // "Subsystem format version"
     };
+
+    struct ctrl_msg
+    {
+        uint32_t words; // num 16 bit data words
+        uint16_t data[32];
+    };
 }
 
     // has to be 256 Bit, this is hard coded in hw
@@ -53,12 +59,6 @@ namespace flib
         uint32_t  crc;     // "CRC32 checksum"
         uint32_t  size;    // "Size bytes"
         uint64_t  offset;  // "Ofsset in event buffer"
-    };
-
-    struct ctrl_msg
-    {
-        uint32_t words; // num 16 bit data words
-        uint16_t data[32];
     };
 
     /** struct holding both read pointers and the
