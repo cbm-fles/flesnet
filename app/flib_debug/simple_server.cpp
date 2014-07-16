@@ -77,7 +77,7 @@ int main(int argc, const char* argv[])
       links.at(i)->send_dlm();
     } 
     else {
-      links.at(i)->set_data_rx_sel(flib::flib_link::pgen);
+      links.at(i)->set_data_rx_sel(flib::flib_link::rx_pgen);
     }
     
     flib.enable_mc_cnt(true);
