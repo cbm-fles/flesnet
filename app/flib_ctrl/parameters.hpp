@@ -107,7 +107,7 @@ private:
         std::string source = vm["l" + std::to_string(i) + "_source"].as<std::string>();
         
         if ( source == "link" ) {
-          _link_config.at(i).rx_sel = flib::flib_link::m_link;
+          _link_config.at(i).rx_sel = flib::flib_link::rx_link;
           std::cout << " data source: link" << std::endl;
           if (vm.count("l" + std::to_string(i) + "_sys_id") && vm.count("l" + std::to_string(i) + "_sys_ver")) {
             _link_config.at(i).hdr_config.sys_id = boost::numeric_cast<uint8_t>
