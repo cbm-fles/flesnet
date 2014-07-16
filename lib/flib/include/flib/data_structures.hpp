@@ -15,10 +15,6 @@
 
     typedef uint64_t sys_bus_addr;
 
-    // REG: datapath_cfg
-    // bit 0-1 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
-    enum data_rx_sel {rx_disable, rx_emu, rx_link, rx_pgen};
-
     // has to be 256 Bit, this is hard coded in hw
     struct __attribute__ ((__packed__))
     MicrosliceDescriptor

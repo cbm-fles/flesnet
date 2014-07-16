@@ -115,6 +115,9 @@ namespace flib
         uint8_t recv_dlm();
 
         /*** setter methods ***/
+        // REG: datapath_cfg
+        // bit 0-1 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
+        enum data_rx_sel {rx_disable, rx_emu, rx_link, rx_pgen};
         void set_data_rx_sel(data_rx_sel rx_sel);
         void set_hdr_config(const struct hdr_config* config);
 
@@ -131,9 +134,9 @@ namespace flib
         register_file_bar*  get_rfgtx()        const;
 
     protected:
-        std::unique_ptr<dma_channel> m_channel;
-        std::unique_ptr<dma_buffer>      m_event_buffer;
-        std::unique_ptr<dma_buffer>      m_dbuffer;
+        std::unique_ptr<dma_channel>        m_channel;
+        std::unique_ptr<dma_buffer>         m_event_buffer;
+        std::unique_ptr<dma_buffer>         m_dbuffer;
         std::unique_ptr<register_file_bar>  m_rfglobal; // TODO remove this later
         std::unique_ptr<register_file_bar>  m_rfpkt;
         std::unique_ptr<register_file_bar>  m_rfgtx;
