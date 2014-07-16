@@ -127,9 +127,9 @@ namespace flib
         data_rx_sel         get_data_rx_sel();
         std::string         get_ebuf_info();
         std::string         get_dbuf_info();
-        dma_buffer*      ebuf()             const;
-        dma_buffer*      rbuf()             const;
-        dma_channel* get_ch()           const;
+        dma_buffer*         ebuf()             const;
+        dma_buffer*         rbuf()             const;
+        dma_channel*        get_ch()           const;
         register_file_bar*  get_rfpkt()        const;
         register_file_bar*  get_rfgtx()        const;
 

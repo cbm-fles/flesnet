@@ -15,6 +15,18 @@
 
     typedef uint64_t sys_bus_addr;
 
+namespace flib
+{
+    struct mc_desc
+    {
+        uint64_t nr;
+        volatile uint64_t* addr;
+        uint32_t size; // bytes
+        volatile uint64_t* rbaddr;
+    };
+
+}
+
     // has to be 256 Bit, this is hard coded in hw
     struct __attribute__ ((__packed__))
     MicrosliceDescriptor
@@ -37,14 +49,6 @@
         uint16_t  eq_id;   // "Equipment identifier"
         uint8_t   sys_id;  // "Subsystem identifier"
         uint8_t   sys_ver; // "Subsystem format version"
-    };
-
-    struct mc_desc
-    {
-        uint64_t nr;
-        volatile uint64_t* addr;
-        uint32_t size; // bytes
-        volatile uint64_t* rbaddr;
     };
 
     struct ctrl_msg
