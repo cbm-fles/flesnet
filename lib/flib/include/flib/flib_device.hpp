@@ -56,12 +56,13 @@ namespace flib
         std::string              get_devinfo();
         uint8_t                  get_num_hw_links();
 
-    private:
-
+        /** Member variables */
         std::vector<std::unique_ptr<flib_link>>  m_link;
         std::unique_ptr<device>                  m_device;
         std::unique_ptr<pci_bar>                 m_bar;
         std::unique_ptr<register_file_bar>       m_register_file;
+
+    private:
 
         bool check_magic_number();
 
