@@ -39,6 +39,8 @@ namespace flib
         int       dma_direction
     )
     {
+        m_device = device;
+
         if
         (
             PDA_SUCCESS !=

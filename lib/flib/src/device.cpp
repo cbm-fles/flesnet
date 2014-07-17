@@ -14,7 +14,7 @@ namespace flib
     {
         const char *pci_ids[] =
         {
-            "10dc beef", /* CRORC as registered at CERN */
+            "10dc beaf", /* CRORC as registered at CERN */
             NULL         /* Delimiter*/
         };
 
