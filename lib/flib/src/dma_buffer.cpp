@@ -39,7 +39,7 @@ namespace flib
         int       dma_direction
     )
     {
-        m_device = device;
+        m_device = device->m_device;
 
         if
         (
