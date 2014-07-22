@@ -153,12 +153,16 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
 void Parameters::parse_options(int argc, char* argv[])
 {
     unsigned log_level = 3;
+    std::string config_file;
 
     po::options_description generic("Generic options");
     generic.add_options()("version,V", "print version string")(
         "help,h",
         "produce help message")("log-level,l", po::value<unsigned>(&log_level),
-                                "set the log level (default:3, all:0)");
+                                "set the log level (default:3, all:0)")
+        ("config-file,f", po::value<std::string>(&config_file)->default_value("flesnet.cfg"),
+         "name of a configuration file.")
+      ;
 
     po::options_description config("Configuration");
     config.add_options()("input-index,i",
@@ -207,9 +211,19 @@ void Parameters::parse_options(int argc, char* argv[])
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
-    std::ifstream ifs("flesnet.cfg");
-    po::store(po::parse_config_file(ifs, config), vm);
     po::notify(vm);
+
+    std::ifstream ifs(config_file.c_str());
+    if (!ifs)
+      {
+        std::cout << "can not open config file: " << config_file << "\n";
+        exit(EXIT_SUCCESS);
+      }
+    else
+      {
+        po::store(po::parse_config_file(ifs, config), vm);
+        notify(vm);
+      }
 
     if (vm.count("help")) {
         std::cout << cmdline_options << "\n";
