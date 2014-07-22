@@ -34,10 +34,12 @@ private:
   
   void parse_options(int argc, char* argv[]) {
     
+    std::string config_file;
+
     po::options_description generic("Generic options");
     generic.add_options()
       ("help,h", "produce help message")
-      ("config-file,c", po::value<std::string>(&_config_file)->default_value("flib.cfg"),
+      ("config-file,c", po::value<std::string>(&config_file)->default_value("flib.cfg"),
        "name of a configuration file")
       ;
 
@@ -85,10 +87,10 @@ private:
     po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
     po::notify(vm);    
 
-    std::ifstream ifs(_config_file.c_str());
+    std::ifstream ifs(config_file.c_str());
     if (!ifs)
       {
-        std::cout << "can not open config file: " << _config_file << "\n";
+        std::cout << "can not open config file: " << config_file << "\n";
         exit(EXIT_SUCCESS);
       }
     else
@@ -173,6 +175,5 @@ private:
     
   uint32_t _mc_size = 125; // 1 us
   std::array<struct link_config, _num_flib_links> _link_config;
-  std::string _config_file;
 
 };
