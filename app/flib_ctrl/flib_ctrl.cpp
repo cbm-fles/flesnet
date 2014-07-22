@@ -32,8 +32,6 @@ int main(int argc, char* argv[])
 {
   s_catch_signals();
 
-  out.setVerbosity(einhard::TRACE);
-
   parameters par(argc, argv);
 
   // create ZMQ context

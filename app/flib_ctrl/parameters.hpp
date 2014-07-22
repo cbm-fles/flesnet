@@ -8,6 +8,8 @@
 #include <fstream>
 #include <flib.h>
 
+#include "global.hpp"
+
 namespace po = boost::program_options;
 
 static const size_t _num_flib_links = 4;  
@@ -35,12 +37,15 @@ private:
   void parse_options(int argc, char* argv[]) {
     
     std::string config_file;
+    unsigned log_level;
 
     po::options_description generic("Generic options");
     generic.add_options()
       ("help,h", "produce help message")
       ("config-file,c", po::value<std::string>(&config_file)->default_value("flib.cfg"),
        "name of a configuration file")
+      ("log-level,l", po::value<unsigned>(&log_level)->default_value(3),
+       "set the log level (all:0)")
       ;
 
     po::options_description config("Configuration (flib.cfg or cmd line)");
@@ -104,6 +109,8 @@ private:
       exit(EXIT_SUCCESS);
     }
     
+    out.setVerbosity(static_cast<einhard::LogLevel>(log_level));
+
     if (vm.count("mc-size")) {
       _mc_size = vm["mc-size"].as<uint32_t>();
       if (_mc_size > 2147483647) { // 31 bit check
