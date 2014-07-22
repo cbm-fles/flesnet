@@ -3,13 +3,13 @@
 // Note:
 // This file was automatically generated from:
 // src/packages/registers.vhd
-// Reposotory Revision: 77e3519cd6c21f81f8debba853f22d361c097307
-// Repository Status: dirty
-// Build Timestamp: Fr 21. Mär 16:22:55 CET 2014
-#define RORC_C_BUILD_DATE 1395415375
-#define RORC_C_BUILD_REVISION 0x77e3519cd6c21f81f8debba853f22d361c097307
-#define RORC_C_BUILD_STATUS_CLEAN 0
-#define RORC_C_HARDWARE_VERSION 3
+// Reposotory Revision: cabf3ee9c5178c501ac7716c3a01b7747834fe38
+// Repository Status: clean
+// Build Timestamp: Di 22. Jul 16:18:52 CEST 2014
+#define RORC_C_BUILD_DATE 1406038732
+#define RORC_C_BUILD_REVISION 0xcabf3ee9c5178c501ac7716c3a01b7747834fe38
+#define RORC_C_BUILD_STATUS_CLEAN 1
+#define RORC_C_HARDWARE_VERSION 4
 #define RORC_CHANNEL_OFFSET 0x00008000
 #define RORC_DMA_CMP_SEL 13
 #define RORC_REG_HARDWARE_INFO 0
