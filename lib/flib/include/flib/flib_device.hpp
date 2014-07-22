@@ -18,7 +18,7 @@
 
 namespace flib {
 
- constexpr std::array<uint16_t, 1> hw_ver_table = {{ 3}};
+ constexpr std::array<uint16_t, 1> hw_ver_table = {{ 4}};
 
 class flib_device {
 
@@ -75,9 +75,12 @@ public:
     // register file access
     _rf = std::unique_ptr<register_file_bar>(new register_file_bar(_bar.get(), 0));
 
-    // enforce correct hw version
-    if (!_check_hw_ver() | !_check_magic_number()) {
-      throw FlibException("Error in magic number or hardware version! \n Try to rescan PCIe bus and reload kernel module.");
+    // enforce correct magic numebr and hw version
+    if (!_check_magic_number()) {
+      throw FlibException("Can not read magic number! \n Try to reinitialize FLIB.");
+    }
+    if (!_check_hw_ver()) {
+      throw FlibException("Hardware - libflib version missmatch!");
     }
     // create link objects
     uint8_t num_links = _get_num_hw_links();

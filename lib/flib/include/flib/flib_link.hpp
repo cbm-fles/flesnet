@@ -278,6 +278,28 @@ public:
     return static_cast<data_rx_sel>(dp_cfg & 0x3);
   }
 
+  void rst_cnet_link() {
+    _rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, true);
+    _rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, false);
+  }
+
+  struct link_status {
+    bool link_active;
+    bool data_rx_stop;
+    bool ctrl_rx_stop;
+    bool ctrl_tx_stop;
+  };
+
+  struct link_status get_link_status() {
+    uint32_t sts = _rfgtx->get_reg(RORC_REG_GTX_DATAPATH_STS);
+    struct link_status link_status;
+    link_status.link_active = (sts & (1));
+    link_status.data_rx_stop = (sts & (1<<1));
+    link_status.ctrl_rx_stop = (sts & (1<<2));
+    link_status.ctrl_tx_stop = (sts & (1<<3));
+    return link_status;
+  }
+  
   void set_hdr_config(const struct hdr_config* config) {
     _rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config, sizeof(hdr_config)>>2);
   }
