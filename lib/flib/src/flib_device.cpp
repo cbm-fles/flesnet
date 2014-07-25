@@ -30,9 +30,12 @@ namespace flib
         // register file access
         m_register_file = std::unique_ptr<register_file_bar>(new register_file_bar(m_bar.get(), 0));
 
-        // enforce correct hw version
-        if (!check_hw_ver() | !check_magic_number())
-        { throw FlibException("Error in magic number or hardware version! \n Try to rescan PCIe bus and reload kernel module."); }
+        // enforce correct magic numebr and hw version
+        if(!check_magic_number())
+        { throw FlibException("Cannot read magic number! \n Try to reinitialize FLIB."); }
+
+        if(!check_hw_ver())
+        { throw FlibException("Hardware - libflib version missmatch!"); }
 
         // create link objects
         uint8_t num_links = get_num_hw_links();

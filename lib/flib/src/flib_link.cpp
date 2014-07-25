@@ -190,6 +190,13 @@ namespace flib
     }
 
     void
+    flib_link::rst_cnet_link()
+    {
+        m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, true);
+        m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, false);
+    }
+
+    void
     flib_link::enable_cbmnet_packer(bool enable)
     { m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable); }
 
@@ -366,6 +373,22 @@ namespace flib
     register_file_bar*
     flib_link::get_rfgtx() const
     { return m_rfgtx.get(); }
+
+    flib_link::link_status
+    flib_link::get_link_status()
+    {
+        uint32_t sts = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_STS);
+
+        struct link_status
+        link_status;
+        link_status.link_active = (sts & (1));
+        link_status.data_rx_stop = (sts & (1<<1));
+        link_status.ctrl_rx_stop = (sts & (1<<2));
+        link_status.ctrl_tx_stop = (sts & (1<<3));
+
+        return link_status;
+    }
+
 
 
 
