@@ -188,7 +188,7 @@ public:
   {
     flib::ctrl_msg cnet_r_msg;
 
-    out.debug() << "sending control message";
+    out.info() << "sending control message";
 
     // receive to flush hw buffers
     if ( _link.recv_dcm(&cnet_r_msg) != -1)  {
@@ -230,7 +230,7 @@ public:
 
   void SendDlm(flib::ctrl_msg& cnet_s_msg)
   {
-    out.debug() << "Sending DLM "
+    out.info() << "Sending DLM "
                 << std::hex << "0x" << cnet_s_msg.data[0];
 
     // set dlm config for single link

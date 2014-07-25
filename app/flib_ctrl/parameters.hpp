@@ -8,6 +8,8 @@
 #include <fstream>
 #include <flib.h>
 
+#include "global.hpp"
+
 namespace po = boost::program_options;
 
 static const size_t _num_flib_links = 4;  
@@ -34,9 +36,16 @@ private:
   
   void parse_options(int argc, char* argv[]) {
     
+    std::string config_file;
+    unsigned log_level;
+
     po::options_description generic("Generic options");
     generic.add_options()
       ("help,h", "produce help message")
+      ("config-file,c", po::value<std::string>(&config_file)->default_value("flib.cfg"),
+       "name of a configuration file")
+      ("log-level,l", po::value<unsigned>(&log_level)->default_value(3),
+       "set the log level (all:0)")
       ;
 
     po::options_description config("Configuration (flib.cfg or cmd line)");
@@ -73,20 +82,35 @@ private:
        "Subsystem format version of link 3 data source (8 Bit)")
       ;
 
-    po::options_description cmdline("Allowed options");
-    cmdline.add(generic).add(config);
+    po::options_description cmdline_options("Allowed options");
+    cmdline_options.add(generic).add(config);
+
+    po::options_description config_file_options;
+    config_file_options.add(config);
 
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, cmdline), vm);
-    std::ifstream ifs("flib.cfg");
-    po::store(po::parse_config_file(ifs, config), vm);
+    po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
     po::notify(vm);    
-    
+
+    std::ifstream ifs(config_file.c_str());
+    if (!ifs)
+      {
+        std::cout << "can not open config file: " << config_file << "\n";
+        exit(EXIT_SUCCESS);
+      }
+    else
+      {
+        po::store(po::parse_config_file(ifs, config_file_options), vm);
+        notify(vm);
+      }
+
     if (vm.count("help")) {
-      std::cout << cmdline << "\n";
+      std::cout << cmdline_options << "\n";
       exit(EXIT_SUCCESS);
     }
     
+    out.setVerbosity(static_cast<einhard::LogLevel>(log_level));
+
     if (vm.count("mc-size")) {
       _mc_size = vm["mc-size"].as<uint32_t>();
       if (_mc_size > 2147483647) { // 31 bit check
@@ -132,7 +156,7 @@ private:
         } else if (source == "disable") {
           _link_config.at(i).rx_sel = flib::flib_link::rx_disable;
           std::cout << " data source: disable" << std::endl;
-          _link_config.at(i).hdr_config.sys_id = 0xF0;
+          _link_config.at(i).hdr_config.sys_id = 0xF2;
           _link_config.at(i).hdr_config.sys_ver = 0x01;
         
         } else if (source == "emu") {
@@ -149,7 +173,7 @@ private:
       } else { // set default parameters
         _link_config.at(i).rx_sel = flib::flib_link::rx_disable;
         std::cout << " data source: disable (default)" << std::endl;
-        _link_config.at(i).hdr_config.sys_id = 0xF0;
+        _link_config.at(i).hdr_config.sys_id = 0xF2;
         _link_config.at(i).hdr_config.sys_ver = 0x01;        
       }
     

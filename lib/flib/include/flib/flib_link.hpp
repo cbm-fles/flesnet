@@ -14,7 +14,6 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
-
 namespace flib
 {
     // Tags to indicate mode of buffer initialization
@@ -98,6 +97,7 @@ namespace flib
          */
         void set_start_idx(uint64_t index);
         void rst_pending_mc();
+        void rst_cnet_link();
         void enable_cbmnet_packer(bool enable);
 
         /*** CBMnet control interface ***/
@@ -132,6 +132,16 @@ namespace flib
         dma_channel*        get_ch()           const;
         register_file_bar*  get_rfpkt()        const;
         register_file_bar*  get_rfgtx()        const;
+
+        struct link_status
+        {
+            bool link_active;
+            bool data_rx_stop;
+            bool ctrl_rx_stop;
+            bool ctrl_tx_stop;
+        };
+
+        struct link_status  get_link_status();
 
     protected:
         std::unique_ptr<dma_channel>        m_channel;
