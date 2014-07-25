@@ -65,7 +65,7 @@ namespace flib
      **/
     int dma_buffer::deallocate()
     {
-        if(DMABuffer_free(m_buffer, PDA_DELETE) != PDA_SUCCESS)
+        if(PciDevice_deleteDMABuffer(m_device, m_buffer) != PDA_SUCCESS)
         { return -1; }
 
         m_id  = 0;
