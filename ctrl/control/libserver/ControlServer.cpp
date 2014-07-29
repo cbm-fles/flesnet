@@ -352,7 +352,7 @@ void ControlServer::ProcessSeqItemSimple(ServSeqItem& item)
 
     if (item.Type(iseq)==kOperWrite) {
       uint32_t device_data = item.Value(iseq);
-      uint16_t device_data_msb = (device_data>>16) & 0x00ff;
+      uint16_t device_data_msb = (device_data>>16) & 0xffff;
       uint16_t device_data_lsb = device_data & 0xffff;
       req.push_back(device_data_msb);
       req.push_back(device_data_lsb);      
