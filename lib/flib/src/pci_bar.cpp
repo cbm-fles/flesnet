@@ -32,7 +32,7 @@ namespace flib
         if(PciDevice_getBar(m_pda_pci_device, &m_pda_bar, number) != PDA_SUCCESS)
         { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
 
-        if(Bar_getMap(m_pda_bar, (void**)&m_bar, &m_size) != PDA_SUCCESS)
+        if(Bar_getMap(m_pda_bar, &m_bar, &m_size) != PDA_SUCCESS)
         { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
     }
 
