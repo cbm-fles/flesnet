@@ -1,5 +1,6 @@
 #include <flib/pci_bar.hpp>
 #include <flib/device.hpp>
+#include <flib/data_structures.hpp>
 
 #include <pda.h>
 
@@ -30,10 +31,10 @@ namespace flib
         m_pda_bar = NULL;
 
         if(PciDevice_getBar(m_pda_pci_device, &m_pda_bar, number) != PDA_SUCCESS)
-        { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
+        { throw FlibException("Bar fetching failed!"); }
 
         if(Bar_getMap(m_pda_bar, &m_bar, &m_size) != PDA_SUCCESS)
-        { throw BAR_ERROR_CONSTRUCTOR_FAILED; }
+        { throw FlibException("Bar mapping failed!"); }
     }
 
 }
