@@ -25,22 +25,6 @@ namespace flib
     static const open_only_t      open_only      = open_only_t();
     static const open_or_create_t open_or_create = open_or_create_t();
 
-    class FlibException : public std::runtime_error
-    {
-    public:
-
-      explicit FlibException(const std::string& what_arg = "")
-        : std::runtime_error(what_arg) { }
-    };
-
-//    class RorcfsException : public FlibException
-//    {
-//    public:
-//
-//      explicit RorcfsException(const std::string& what_arg = "")
-//        : FlibException(what_arg) { }
-//    };
-
     class device;
     class pci_bar;
     class dma_buffer;

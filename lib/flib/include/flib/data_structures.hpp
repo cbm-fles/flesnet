@@ -10,8 +10,15 @@
 #ifndef DATA_STRUCTURES_HH
 #define DATA_STRUCTURES_HH
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+
     #include <stdint.h>
     #include <unistd.h>
+
+    #include <string>
+    #include <stdexcept>
+
 
     typedef uint64_t sys_bus_addr;
 
@@ -22,6 +29,14 @@
 
 namespace flib
 {
+    class FlibException : public std::runtime_error
+    {
+    public:
+
+      explicit FlibException(const std::string& what_arg = "")
+        : std::runtime_error(what_arg) { }
+    };
+
     struct mc_desc
     {
         uint64_t nr;
@@ -154,5 +169,7 @@ namespace flib
     #define PAGE_SIZE sysconf(_SC_PAGESIZE)
     #endif
 
+
+#pragma GCC diagnostic pop
 
 #endif /** DATA_STRUCTURES_HH */
