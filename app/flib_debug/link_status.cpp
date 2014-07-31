@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 {
   MyFlib = new flib_device(0);
 
-  if(MyFlib->link[0]) {
+  if(MyFlib->m_link[0]) {
     printf("link set\n");
   }
   else {
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
   //MyFlib->link[0]->set_data_rx_sel(flib_link::pgen);
     
-  flib::flib_link::link_status status = MyFlib->link[0]->get_link_status();
+  flib::flib_link::link_status status = MyFlib->m_link[0]->get_link_status();
   
   std::stringstream ss;
   ss << "link status" << "\n"
