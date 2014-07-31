@@ -40,6 +40,8 @@ namespace flib
 
     flib_link::~flib_link()
     {
+       std::cout << "flib_link destructor" << std::endl;
+
         stop();
         //TODO move deallocte to destructor of buffer
         if(m_event_buffer)
@@ -52,6 +54,8 @@ namespace flib
             if(m_dbuffer->deallocate() != 0)
             { throw RorcfsException("dbuf->deallocate failed"); }
         }
+
+       std::cout << "flib_link destructor" << std::endl;
     }
 
     int
