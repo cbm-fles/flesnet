@@ -33,13 +33,13 @@ namespace flib
         : std::runtime_error(what_arg) { }
     };
 
-    class RorcfsException : public FlibException
-    {
-    public:
-
-      explicit RorcfsException(const std::string& what_arg = "")
-        : FlibException(what_arg) { }
-    };
+//    class RorcfsException : public FlibException
+//    {
+//    public:
+//
+//      explicit RorcfsException(const std::string& what_arg = "")
+//        : FlibException(what_arg) { }
+//    };
 
     class device;
     class pci_bar;

@@ -47,12 +47,12 @@ namespace flib
         if(m_event_buffer)
         {
             if(m_event_buffer->deallocate() != 0)
-            { throw RorcfsException("ebuf->deallocate failed"); }
+            { throw FlibException("ebuf->deallocate failed"); }
         }
         if(m_dbuffer)
         {
             if(m_dbuffer->deallocate() != 0)
-            { throw RorcfsException("dbuf->deallocate failed"); }
+            { throw FlibException("dbuf->deallocate failed"); }
         }
 
        std::cout << "flib_link destructor" << std::endl;
@@ -408,7 +408,7 @@ namespace flib
             if (errno == EEXIST)
             { throw FlibException("Buffer already exists, not allowed to open in create only mode"); }
             else
-            { throw RorcfsException("Buffer allocation failed"); }
+            { throw FlibException("Buffer allocation failed"); }
         }
         return buffer;
     }
@@ -419,7 +419,7 @@ namespace flib
     {
         std::unique_ptr<dma_buffer> buffer(new dma_buffer());
         if ( buffer->connect(m_device, 2*m_link_index+idx) != 0 )
-        { throw RorcfsException("Connect to buffer failed"); }
+        { throw FlibException("Connect to buffer failed"); }
         return buffer;
     }
 
@@ -435,10 +435,10 @@ namespace flib
             if (errno == EEXIST)
             {
                 if ( buffer->connect(m_device, 2*m_link_index+idx) != 0 )
-                { throw RorcfsException("Buffer open failed"); }
+                { throw FlibException("Buffer open failed"); }
             }
             else
-            { throw RorcfsException("Buffer allocation failed"); }
+            { throw FlibException("Buffer allocation failed"); }
         }
 
         return buffer;
