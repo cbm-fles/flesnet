@@ -19,13 +19,7 @@ namespace flib
     {
         /** TODO: add exception handling here */
         m_device = std::unique_ptr<device>(new device(device_nr));
-//        if (m_device->init(device_nr) == -1)
-//        { throw RorcfsException("Failed to initialize device"); }
-
-        // bind to BAR1
         m_bar = std::unique_ptr<pci_bar>(new pci_bar(m_device.get(), 1));
-//        if ( m_bar->init() == -1 )
-//        { throw RorcfsException("BAR1 init failed"); }
 
         // register file access
         m_register_file = std::unique_ptr<register_file_bar>(new register_file_bar(m_bar.get(), 0));
@@ -43,10 +37,7 @@ namespace flib
         {
             m_link.push_back
             (
-                std::unique_ptr<flib_link>
-                (
-                    new flib_link(i, m_device.get(), m_bar.get())
-                )
+                std::unique_ptr<flib_link>( new flib_link(i, m_device.get(), m_bar.get()) )
             );
         }
     }
@@ -66,9 +57,9 @@ namespace flib
             { match = true; }
         }
 
-        // check if version of hardware matches exactly version of header
-        if (hw_ver != RORC_C_HARDWARE_VERSION)
-        { match = false; }
+//        // check if version of hardware matches exactly version of header
+//        if (hw_ver != RORC_C_HARDWARE_VERSION)
+//        { match = false; }
         return match;
     }
 

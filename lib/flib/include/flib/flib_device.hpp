@@ -30,7 +30,7 @@ namespace flib
         bool clean;
     };
 
-    constexpr std::array<uint16_t, 1> hw_ver_table = {{4}};
+    constexpr std::array<uint16_t, 1> hw_ver_table = {{3}};
 
     class flib_device
     {
@@ -57,7 +57,7 @@ namespace flib
         uint8_t                  get_num_hw_links();
 
         /** Member variables */
-        std::vector<std::unique_ptr<flib_link>>  m_link;
+        std::vector<std::unique_ptr<flib_link> > m_link;
         std::unique_ptr<device>                  m_device;
         std::unique_ptr<pci_bar>                 m_bar;
         std::unique_ptr<register_file_bar>       m_register_file;
