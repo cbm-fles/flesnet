@@ -21,8 +21,6 @@ namespace flib
 {
     class device;
 
-    #define BAR_ERROR_CONSTRUCTOR_FAILED 0
-
     /**
      * @class
      * @brief Represents a Base Address Register (BAR) file
