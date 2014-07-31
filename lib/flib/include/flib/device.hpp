@@ -13,9 +13,6 @@ typedef struct PciDevice_struct PciDevice;
 
 namespace flib
 {
-
-    #define DEVICE_CONSTRUCTOR_FAILED 0
-
     /**
      * @class
      * @brief Represents a FLIB PCIe device

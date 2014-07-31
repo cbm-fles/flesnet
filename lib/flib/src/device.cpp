@@ -5,6 +5,7 @@
 #include <pda.h>
 
 #include <flib/device.hpp>
+#include <flib/data_structures.hpp>
 
 using namespace std;
 
@@ -19,10 +20,10 @@ namespace flib
         };
 
         if( (m_dop = DeviceOperator_new(pci_ids)) == NULL)
-        { throw DEVICE_CONSTRUCTOR_FAILED; }
+        { throw FlibException("Device operator instantiation failed."); }
 
         if(DeviceOperator_getPciDevice(m_dop, &m_device, device_index) != PDA_SUCCESS)
-        { throw DEVICE_CONSTRUCTOR_FAILED; }
+        { throw FlibException("Device object creation failed."); }
     }
 
     device::~device()
