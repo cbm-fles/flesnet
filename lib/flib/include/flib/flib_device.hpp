@@ -38,10 +38,7 @@ namespace flib
     public:
 
          flib_device(int device_nr);
-        ~flib_device()
-        {
-            std::cout << "destructor device!" << std::endl;
-        };
+        ~flib_device(){};
 
         bool                     check_hw_ver();
         void                     enable_mc_cnt(bool enable);

@@ -29,7 +29,7 @@ namespace flib
     ) : m_link_index(link_index), m_device(dev)
     {
         m_base_addr =  (m_link_index + 1) * RORC_CHANNEL_OFFSET;
-        // regiter file access
+        // register file access
         m_rfpkt     = std::unique_ptr<register_file_bar>(new register_file_bar(bar, m_base_addr));
         m_rfgtx     = std::unique_ptr<register_file_bar>(new register_file_bar(bar, (m_base_addr + (1<<RORC_DMA_CMP_SEL))));
         m_rfglobal  = std::unique_ptr<register_file_bar>(new register_file_bar(bar, 0));
@@ -40,8 +40,6 @@ namespace flib
 
     flib_link::~flib_link()
     {
-       std::cout << "flib_link destructor" << std::endl;
-
         stop();
         //TODO move deallocte to destructor of buffer
         if(m_event_buffer)
@@ -54,8 +52,6 @@ namespace flib
             if(m_dbuffer->deallocate() != 0)
             { throw FlibException("dbuf->deallocate failed"); }
         }
-
-       std::cout << "flib_link destructor" << std::endl;
     }
 
     int
