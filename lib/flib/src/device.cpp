@@ -28,8 +28,8 @@ namespace flib
 
     device::~device()
     {
-//        if( DeviceOperator_delete(m_dop, PDA_DELETE_PERSISTANT) != PDA_SUCCESS)
-//        { cout << "Deleting device operator failed!" << endl; }
+        if( DeviceOperator_delete(m_dop, PDA_DELETE_PERSISTANT) != PDA_SUCCESS)
+        { cout << "Deleting device operator failed!" << endl; }
     }
 
 
