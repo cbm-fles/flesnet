@@ -28,8 +28,6 @@ namespace flib
         if(!check_magic_number())
         { throw FlibException("Cannot read magic number! \n Try to reinitialize FLIB."); }
 
-	std::cout << std::hex <<  m_register_file->get_reg(0) << std::endl;
-
         if(!check_hw_ver())
         { throw FlibException("Hardware - libflib version missmatch!"); }
 

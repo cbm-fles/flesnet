@@ -38,7 +38,10 @@ namespace flib
     public:
 
          flib_device(int device_nr);
-        ~flib_device(){};
+        ~flib_device()
+        {
+            std::cout << "destructor device!" << std::endl;
+        };
 
         bool                     check_hw_ver();
         void                     enable_mc_cnt(bool enable);
@@ -57,10 +60,10 @@ namespace flib
         uint8_t                  get_num_hw_links();
 
         /** Member variables */
-        std::vector<std::unique_ptr<flib_link> > m_link;
         std::unique_ptr<device>                  m_device;
         std::unique_ptr<pci_bar>                 m_bar;
         std::unique_ptr<register_file_bar>       m_register_file;
+        std::vector<std::unique_ptr<flib_link> > m_link;
 
     private:
 
