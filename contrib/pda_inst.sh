@@ -36,6 +36,7 @@ patchudev()
 {
   cat /etc/pda_sysfs.sh | sed 's|root:pda|root:users|' > /etc/pda_sysfs.tmp
   mv /etc/pda_sysfs.tmp /etc/pda_sysfs.sh
+  chmod a+x /etc/pda_sysfs.sh
 }
 
 patchmodulelist()
