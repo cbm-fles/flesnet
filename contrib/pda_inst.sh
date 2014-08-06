@@ -20,7 +20,7 @@ install()
 
   tar -xf pda-$1.tar.gz
   cd pda-$1
-  mkdir /opt/pda/
+  mkdir -p /opt/pda/
   ./configure --debug=true --prefix=/opt/pda/$1/
   make install
 
