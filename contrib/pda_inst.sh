@@ -19,13 +19,17 @@ install()
   wget http://compeng.uni-frankfurt.de/fileadmin/Images/pda/pda-$1.tar.gz
 
   tar -xf pda-$1.tar.gz
-  cd pda-$1
+  rm -f pda-$1.tar.gz
+  cd /tmp/pda-$1
   mkdir -p /opt/pda/
   ./configure --debug=true --prefix=/opt/pda/$1/
   make install
 
-  cd patches/linux_uio/
+  cd /tmp/pda-$1/patches/linux_uio/
   make install
+
+  cd /tmp
+  rm -rf /tmp/pda-$1
 }
 
 patchudev()
