@@ -29,7 +29,7 @@ struct build_info {
   bool clean;
 };
 
-constexpr std::array<uint16_t, 1> hw_ver_table = { { 3 } };
+constexpr std::array<uint16_t, 1> hw_ver_table = { { 4 } };
 
 class flib_device {
 

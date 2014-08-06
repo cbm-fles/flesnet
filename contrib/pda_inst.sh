@@ -1,7 +1,7 @@
 #!/bin/bash
 
-set -e
-set -u
+#set -e
+#set -u
 
 PDA_VERSION="99.99.99"
 USER_NAME=`id -u -n`
@@ -63,13 +63,13 @@ then
     patchudev
     patchmodulelist
 
-    echo -en '\E[5m'
+    echo -en '\e[5m'
     echo -e "$CTRL NOW YOU MUST EXTEND (!!) YOUR PATH ENVIRONMENT VARIABLE WITH /opt/pda/$PDA_VERSION/bin/"
     echo -e "$CTRL PLEASE ADD (OR REPLACE IF THE VERSION CHANGED) THE FOLLOWING TO ~/.profile/ :"  
     echo -e "$CTRL export PATH=\"/opt/pda/$PDA_VERSION/bin/:\$PATH\" "
     echo -e ""
     echo -e "$CTRL YOU ALSO MUST RESTART UDEV. A REBOOT WILL DO THE JOB IF IT'S UNCERTAIN WHAT TO DO!"
-    echo -en '\E[25m'
+    echo -en '\e[25m'
 else
     echo "Running as user!"
     sudo $0
