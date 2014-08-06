@@ -13,13 +13,13 @@ getdeps()
 
 install()
 {
+  rm -rf /tmp/pda-$1*
+
   cd /tmp
-
-  rm -f pda-$1*
   wget http://compeng.uni-frankfurt.de/fileadmin/Images/pda/pda-$1.tar.gz
-
   tar -xf pda-$1.tar.gz
   rm -f pda-$1.tar.gz
+
   cd /tmp/pda-$1
   mkdir -p /opt/pda/
   ./configure --debug=true --prefix=/opt/pda/$1/
