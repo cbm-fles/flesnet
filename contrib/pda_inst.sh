@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -u
+
 PDA_VERSION="99.99.99"
 USER_NAME=`id -u -n`
 
@@ -13,7 +16,7 @@ install()
   cd /tmp
 
   rm pda-$1.tar.gz
-  wget https://compeng.uni-frankfurt.de/fileadmin/Images/pda/pda-$1.tar.gz
+  wget http://compeng.uni-frankfurt.de/fileadmin/Images/pda/pda-$1.tar.gz
 
   tar -xf pda-$1.tar.gz
   cd pda-$1
