@@ -1,7 +1,5 @@
-#--- COMMENT THIS IF YOU ARE NOT COMPILING STANDALONE
 cmake_minimum_required(VERSION 2.8.9 FATAL_ERROR)
 project(LIBFLIB)
-#--- THIS IS ALWAYS NEEDED
 
 include_directories( ${LIBFLIB_SOURCE_DIR}/include )
 
@@ -45,7 +43,3 @@ install(TARGETS flib flib-static
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)
-
-
-
-#include(CMakeStandAlone.txt)
