@@ -1,6 +1,7 @@
 /**
  * @file
- * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>, Dominic Eschweiler <dominic.eschweiler@cern.ch>
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>, Dominic Eschweiler
+ * <dominic.eschweiler@cern.ch>
  * @version 0.1
  * @date 2014-07-03
  */
@@ -11,52 +12,49 @@
 typedef struct DeviceOperator_struct DeviceOperator;
 typedef struct PciDevice_struct PciDevice;
 
-namespace flib
-{
-    /**
-     * @class
-     * @brief Represents a FLIB PCIe device
-     **/
-    class device
-    {
-        friend class dma_buffer;
-        friend class dma_channel;
+namespace flib {
+/**
+ * @class
+ * @brief Represents a FLIB PCIe device
+ **/
+class device {
+  friend class dma_buffer;
+  friend class dma_channel;
 
-    public:
-        device(int32_t device_index);
-        ~device();
+public:
+  device(int32_t device_index);
+  ~device();
 
-        uint16_t getDomain();
+  uint16_t getDomain();
 
-        /**
-         * Get PCIe Bus-ID
-         * @return uint8 Bus-ID
-        **/
-        uint8_t getBus();
+  /**
+   * Get PCIe Bus-ID
+   * @return uint8 Bus-ID
+  **/
+  uint8_t getBus();
 
-        /**
-         * Get PCIe Slot-ID
-         * @return uint8 Slot-ID
-        **/
-        uint8_t getSlot();
+  /**
+   * Get PCIe Slot-ID
+   * @return uint8 Slot-ID
+  **/
+  uint8_t getSlot();
 
-        /**
-         * Get PCIe Function-ID
-         * @return uint8 Function-ID
-        **/
-        uint8_t getFunc();
+  /**
+   * Get PCIe Function-ID
+   * @return uint8 Function-ID
+  **/
+  uint8_t getFunc();
 
-        /**
-         * get PCI-Device
-         * @return PCI-Device-Pointer
-        **/
-        PciDevice *getPdaPciDevice()
-        { return(m_device); }
+  /**
+   * get PCI-Device
+   * @return PCI-Device-Pointer
+  **/
+  PciDevice *getPdaPciDevice() { return (m_device); }
 
-    protected:
-        DeviceOperator *m_dop;
-        PciDevice      *m_device;
-    };
+protected:
+  DeviceOperator *m_dop;
+  PciDevice *m_device;
+};
 }
 
 #endif /** DEVICE_H */

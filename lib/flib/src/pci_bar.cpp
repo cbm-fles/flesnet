@@ -6,35 +6,29 @@
 
 using namespace std;
 
-namespace flib
-{
+namespace flib {
 
-    pci_bar::pci_bar
-    (
-        device *dev,
-        uint8_t number
-    )
-    {
-        m_parent_dev     = dev;
-        m_number         = number;
-        m_pda_pci_device = m_parent_dev->getPdaPciDevice();
+pci_bar::pci_bar(device *dev, uint8_t number) {
+  m_parent_dev = dev;
+  m_number = number;
+  m_pda_pci_device = m_parent_dev->getPdaPciDevice();
 
-        getBarMap(number);
+  getBarMap(number);
 
-        pthread_mutex_init(&m_mtx, NULL);
-    }
+  pthread_mutex_init(&m_mtx, NULL);
+}
 
-    void
-    pci_bar::getBarMap(uint8_t number)
-    {
+void pci_bar::getBarMap(uint8_t number) {
 
-        m_pda_bar = NULL;
+  m_pda_bar = NULL;
 
-        if(PciDevice_getBar(m_pda_pci_device, &m_pda_bar, number) != PDA_SUCCESS)
-        { throw FlibException("Bar fetching failed!"); }
+  if (PciDevice_getBar(m_pda_pci_device, &m_pda_bar, number) != PDA_SUCCESS) {
+    throw FlibException("Bar fetching failed!");
+  }
 
-        if(Bar_getMap(m_pda_bar, &m_bar, &m_size) != PDA_SUCCESS)
-        { throw FlibException("Bar mapping failed!"); }
-    }
+  if (Bar_getMap(m_pda_bar, &m_bar, &m_size) != PDA_SUCCESS) {
+    throw FlibException("Bar mapping failed!");
+  }
+}
 
 }
