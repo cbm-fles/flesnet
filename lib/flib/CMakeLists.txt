@@ -8,7 +8,7 @@ set(VERSION "0.0.0")
 
 include(CMakePda.txt)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3 -Wstack-usage=2048")
+set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3 -Wstack-usage=2048 -fno-tree-vectorize")
 
 set(LIB_SRC
   src/pci_bar.cpp
