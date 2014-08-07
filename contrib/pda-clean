@@ -21,3 +21,5 @@ free_dma_buffers
 killall tsclient
 
 sudo rm /dev/shm/flesnet*
+
+echo "Please reconfigure FPGA"
