@@ -54,9 +54,9 @@ bool flib_device::check_hw_ver() {
     }
   }
 
-  //        // check if version of hardware matches exactly version of header
-  //        if (hw_ver != RORC_C_HARDWARE_VERSION)
-  //        { match = false; }
+  // check if version of hardware matches exactly version of header
+  if (hw_ver != RORC_C_HARDWARE_VERSION)
+    { match = false; }
   return match;
 }
 

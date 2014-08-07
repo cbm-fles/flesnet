@@ -1,0 +1,25 @@
+#!/bin/bash
+# 2014, Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+# 2014, Dominic Eschweiler <eschweiler@fias.uni-frankfurt.de>
+
+# cleanup script for flib readout
+
+# TODO: will try to remove 4 buffer no matter what
+# TODO: will grap first FLIB found
+function free_dma_buffers {
+NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
+if [ "$NODE" ]; then
+        echo "Freeing DMA buffer for PCI device at $NODE"
+        for i in 0 1 2 3 4 5 6 7 ; do
+            sudo sh -c "echo $i > /sys/bus/pci/drivers/uio_pci_dma/0000:$NODE/dma/free";
+        done
+fi
+}
+
+free_dma_buffers
+
+killall tsclient
+
+sudo rm /dev/shm/flesnet*
+
+echo "Please reconfigure FPGA"
