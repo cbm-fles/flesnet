@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     
   printf("START\n");
 
-  std::cout << MyFlib->get_devinfo() << std::endl;
+  std::cout << MyFlib->print_devinfo() << std::endl;
 
   size_t words = 4; // number of 16 Bit words in message
   uint16_t offset = 0;
