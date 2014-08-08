@@ -55,8 +55,9 @@ bool flib_device::check_hw_ver() {
   }
 
   // check if version of hardware matches exactly version of header
-  if (hw_ver != RORC_C_HARDWARE_VERSION)
-    { match = false; }
+  if (hw_ver != RORC_C_HARDWARE_VERSION) {
+    match = false;
+  }
   return match;
 }
 
@@ -74,9 +75,9 @@ struct build_info flib_device::get_build_info() {
   return info;
 }
 
-std::vector<flib_link *> flib_device::get_links() {
-  std::vector<flib_link *> links;
-  for (auto &l : m_link) {
+std::vector<flib_link*> flib_device::get_links() {
+  std::vector<flib_link*> links;
+  for (auto& l : m_link) {
     links.push_back(l.get());
   }
   return links;
@@ -106,7 +107,7 @@ boost::posix_time::ptime flib_device::get_build_date() {
 
 uint16_t flib_device::get_hw_ver() {
   return (static_cast<uint16_t>(m_register_file->get_reg(0) >> 16));
-         /** RORC_REG_HARDWARE_INFO */
+  /** RORC_REG_HARDWARE_INFO */
 }
 
 std::string flib_device::print_build_info() {
@@ -137,15 +138,14 @@ uint8_t flib_device::get_num_hw_links() {
   return (m_register_file->get_reg(RORC_REG_N_CHANNELS) & 0xFF);
 }
 
-register_file_bar *flib_device::get_rf() const { return m_register_file.get(); }
+register_file_bar* flib_device::get_rf() const { return m_register_file.get(); }
 
-flib_link &flib_device::get_link(size_t n) { return *m_link.at(n); }
+flib_link& flib_device::get_link(size_t n) { return *m_link.at(n); }
 
 size_t flib_device::get_num_links() { return m_link.size(); }
 
 bool flib_device::check_magic_number() {
   return ((m_register_file->get_reg(0) & 0xFFFF) == 0x4844);
-         /** RORC_REG_HARDWARE_INFO */
+  /** RORC_REG_HARDWARE_INFO */
 }
-
 }

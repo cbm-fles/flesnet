@@ -11,8 +11,9 @@ using namespace std;
 
 namespace flib {
 device::device(int32_t device_index) {
-  const char *pci_ids[] = { "10dc beaf", /* CRORC as registered at CERN */
-                            NULL         /* Delimiter*/
+  const char* pci_ids[] = {
+      "10dc beaf", /* CRORC as registered at CERN */
+      NULL         /* Delimiter*/
   };
 
   if ((m_dop = DeviceOperator_new(pci_ids)) == NULL) {

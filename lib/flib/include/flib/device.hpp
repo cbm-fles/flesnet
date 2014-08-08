@@ -49,11 +49,11 @@ public:
    * get PCI-Device
    * @return PCI-Device-Pointer
   **/
-  PciDevice *getPdaPciDevice() { return (m_device); }
+  PciDevice* getPdaPciDevice() { return (m_device); }
 
 protected:
-  DeviceOperator *m_dop;
-  PciDevice *m_device;
+  DeviceOperator* m_dop;
+  PciDevice* m_device;
 };
 }
 

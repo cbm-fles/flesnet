@@ -18,7 +18,7 @@
 #include <flib/register_file_bar.hpp>
 
 namespace flib {
-flib_link::flib_link(size_t link_index, device *dev, pci_bar *bar)
+flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)
     : m_link_index(link_index), m_device(dev) {
   m_base_addr = (m_link_index + 1) * RORC_CHANNEL_OFFSET;
   // register file access
@@ -35,7 +35,7 @@ flib_link::flib_link(size_t link_index, device *dev, pci_bar *bar)
 
 flib_link::~flib_link() {
   stop();
-  //TODO move deallocte to destructor of buffer
+  // TODO move deallocte to destructor of buffer
   if (m_event_buffer) {
     if (m_event_buffer->deallocate() != 0) {
       throw FlibException("ebuf->deallocate failed");
@@ -87,10 +87,11 @@ std::pair<mc_desc, bool> flib_link::get_mc() {
   if (m_db[m_index].idx > m_mc_nr) { // mc_nr counts from 1 in HW
     m_mc_nr = m_db[m_index].idx;
     mc.nr = m_mc_nr;
-    mc.addr = m_eb + (m_db[m_index].offset & ((1 << m_log_ebufsize) - 1)) /
-                         sizeof(uint64_t);
+    mc.addr =
+        m_eb +
+        (m_db[m_index].offset & ((1 << m_log_ebufsize) - 1)) / sizeof(uint64_t);
     mc.size = m_db[m_index].size;
-    mc.rbaddr = (uint64_t *)&m_db[m_index];
+    mc.rbaddr = (uint64_t*)&m_db[m_index];
 
     // calculate next rb index
     m_last_index = m_index;
@@ -167,7 +168,7 @@ void flib_link::enable_cbmnet_packer(bool enable) {
 
 /*** CBMnet control interface ***/
 
-int flib_link::send_dcm(const struct ctrl_msg *msg) {
+int flib_link::send_dcm(const struct ctrl_msg* msg) {
   // TODO: could also implement blocking call
   //       and check if sending is done at the end
 
@@ -180,7 +181,7 @@ int flib_link::send_dcm(const struct ctrl_msg *msg) {
 
   // copy msg to board memory
   size_t bytes = msg->words * 2 + (msg->words * 2) % 4;
-  m_rfgtx->set_mem(RORC_MEM_BASE_CTRL_TX, (const void *)msg->data, bytes >> 2);
+  m_rfgtx->set_mem(RORC_MEM_BASE_CTRL_TX, (const void*)msg->data, bytes >> 2);
 
   // start send FSM
   uint32_t ctrl_tx = 0;
@@ -190,7 +191,7 @@ int flib_link::send_dcm(const struct ctrl_msg *msg) {
   return 0;
 }
 
-int flib_link::recv_dcm(struct ctrl_msg *msg) {
+int flib_link::recv_dcm(struct ctrl_msg* msg) {
 
   int ret = 0;
   uint32_t ctrl_rx = m_rfgtx->get_reg(RORC_REG_GTX_CTRL_RX);
@@ -209,7 +210,7 @@ int flib_link::recv_dcm(struct ctrl_msg *msg) {
 
   // read msg from board memory
   size_t bytes = msg->words * 2 + (msg->words * 2) % 4;
-  m_rfgtx->get_mem(RORC_MEM_BASE_CTRL_RX, (void *)msg->data, bytes >> 2);
+  m_rfgtx->get_mem(RORC_MEM_BASE_CTRL_RX, (void*)msg->data, bytes >> 2);
 
   // acknowledge msg
   m_rfgtx->set_reg(RORC_REG_GTX_CTRL_RX, 0);
@@ -272,8 +273,8 @@ void flib_link::set_data_rx_sel(data_rx_sel rx_sel) {
   }
 }
 
-void flib_link::set_hdr_config(const struct hdr_config *config) {
-  m_rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void *)config,
+void flib_link::set_hdr_config(const struct hdr_config* config) {
+  m_rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config,
                    sizeof(hdr_config) >> 2);
 }
 
@@ -307,15 +308,15 @@ std::string flib_link::get_dbuf_info() {
   return get_buffer_info(m_dbuffer.get());
 }
 
-dma_buffer *flib_link::ebuf() const { return m_event_buffer.get(); }
+dma_buffer* flib_link::ebuf() const { return m_event_buffer.get(); }
 
-dma_buffer *flib_link::rbuf() const { return m_dbuffer.get(); }
+dma_buffer* flib_link::rbuf() const { return m_dbuffer.get(); }
 
-dma_channel *flib_link::get_ch() const { return m_channel.get(); }
+dma_channel* flib_link::get_ch() const { return m_channel.get(); }
 
-register_file_bar *flib_link::get_rfpkt() const { return m_rfpkt.get(); }
+register_file_bar* flib_link::get_rfpkt() const { return m_rfpkt.get(); }
 
-register_file_bar *flib_link::get_rfgtx() const { return m_rfgtx.get(); }
+register_file_bar* flib_link::get_rfgtx() const { return m_rfgtx.get(); }
 
 flib_link::link_status flib_link::get_link_status() {
   uint32_t sts = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_STS);
@@ -333,7 +334,7 @@ flib_link::link_status flib_link::get_link_status() {
 
 std::unique_ptr<dma_buffer> flib_link::create_buffer(size_t idx,
                                                      size_t log_size) {
-  unsigned long size = (((unsigned long) 1) << log_size);
+  unsigned long size = (((unsigned long)1) << log_size);
   std::unique_ptr<dma_buffer> buffer(new dma_buffer());
   if (buffer->allocate(m_device, size, 2 * m_link_index + idx, 1,
                        RORCFS_DMA_FROM_DEVICE) != 0) {
@@ -357,7 +358,7 @@ std::unique_ptr<dma_buffer> flib_link::open_buffer(size_t idx) {
 
 std::unique_ptr<dma_buffer> flib_link::open_or_create_buffer(size_t idx,
                                                              size_t log_size) {
-  unsigned long size = (((unsigned long) 1) << log_size);
+  unsigned long size = (((unsigned long)1) << log_size);
   std::unique_ptr<dma_buffer> buffer(new dma_buffer());
 
   if (buffer->allocate(m_device, size, 2 * m_link_index + idx, 1,
@@ -431,8 +432,8 @@ int flib_link::init_hardware() {
   // clear rb for polling
   memset(m_dbuffer->getMem(), 0, m_dbuffer->getMappingSize());
 
-  m_eb = (uint64_t *)m_event_buffer->getMem();
-  m_db = (struct MicrosliceDescriptor *)m_dbuffer->getMem();
+  m_eb = (uint64_t*)m_event_buffer->getMem();
+  m_db = (struct MicrosliceDescriptor*)m_dbuffer->getMem();
 
   m_dbentries = m_dbuffer->getMaxRBEntries();
 
@@ -444,17 +445,15 @@ int flib_link::init_hardware() {
   return 0;
 }
 
-std::string flib_link::get_buffer_info(dma_buffer *buf) {
+std::string flib_link::get_buffer_info(dma_buffer* buf) {
   std::stringstream ss;
   ss << "start address = " << buf->getMem() << ", "
      << "physical size = " << (buf->getPhysicalSize() >> 20) << " MByte, "
      << "mapping size = " << (buf->getMappingSize() >> 20) << " MByte, "
-     << std::endl << "  end address = " << (void *)((uint8_t *)buf->getMem() +
-                                                    buf->getPhysicalSize())
-     << ", "
+     << std::endl << "  end address = "
+     << (void*)((uint8_t*)buf->getMem() + buf->getPhysicalSize()) << ", "
      << "num SG entries = " << buf->getnSGEntries() << ", "
      << "max SG entries = " << buf->getMaxRBEntries();
   return ss.str();
 }
-
 }

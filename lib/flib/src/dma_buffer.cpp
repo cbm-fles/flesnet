@@ -21,13 +21,13 @@ dma_buffer::~dma_buffer() {
  * Allocate Buffer: initiate memory allocation,
  * connect to new buffer & retrieve actual buffer sizes
  **/
-int dma_buffer::allocate(device *device, uint64_t size, uint64_t id,
+int dma_buffer::allocate(device* device, uint64_t size, uint64_t id,
                          int overmap, int dma_direction) {
   m_device = device->m_device;
 
-  if (PDA_SUCCESS !=
-      PciDevice_allocDMABuffer(m_device, id, size, PDABUFFER_DIRECTION_BI,
-                               &m_buffer)) {
+  if (PDA_SUCCESS != PciDevice_allocDMABuffer(m_device, id, size,
+                                              PDABUFFER_DIRECTION_BI,
+                                              &m_buffer)) {
     return -1;
   }
 
@@ -54,7 +54,7 @@ int dma_buffer::deallocate() {
   return 0;
 }
 
-int dma_buffer::connect(device *device, uint64_t id) {
+int dma_buffer::connect(device* device, uint64_t id) {
   m_device = device->m_device;
   m_id = id;
 
@@ -63,7 +63,7 @@ int dma_buffer::connect(device *device, uint64_t id) {
     return -1;
   }
 
-  if (DMABuffer_getMap(m_buffer, (void **)(&m_mem)) != PDA_SUCCESS) {
+  if (DMABuffer_getMap(m_buffer, (void**)(&m_mem)) != PDA_SUCCESS) {
     return -1;
   }
 
@@ -82,7 +82,7 @@ int dma_buffer::connect(device *device, uint64_t id) {
   }
 
   m_scatter_gather_entries = 0;
-  for (DMABuffer_SGNode *sg = m_sglist; sg != NULL; sg = sg->next) {
+  for (DMABuffer_SGNode* sg = m_sglist; sg != NULL; sg = sg->next) {
     m_scatter_gather_entries++;
   }
 
@@ -90,7 +90,7 @@ int dma_buffer::connect(device *device, uint64_t id) {
 }
 
 int dma_buffer::getOvermapped() {
-  void *map_two = NULL;
+  void* map_two = NULL;
 
   if (DMABuffer_getMapTwo(m_buffer, &map_two) != PDA_SUCCESS) {
     if (map_two != NULL) {
@@ -100,5 +100,4 @@ int dma_buffer::getOvermapped() {
 
   return 0;
 }
-
 }

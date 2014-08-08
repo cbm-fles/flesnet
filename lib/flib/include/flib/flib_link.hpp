@@ -17,12 +17,9 @@
 
 namespace flib {
 // Tags to indicate mode of buffer initialization
-struct create_only_t {
-};
-struct open_only_t {
-};
-struct open_or_create_t {
-};
+struct create_only_t {};
+struct open_only_t {};
+struct open_or_create_t {};
 
 static const create_only_t create_only = create_only_t();
 static const open_only_t open_only = open_only_t();
@@ -36,8 +33,7 @@ class register_file_bar;
 
 class flib_link {
 public:
-
-  flib_link(size_t link_index, device *dev, pci_bar *bar);
+  flib_link(size_t link_index, device* dev, pci_bar* bar);
   ~flib_link();
 
   int init_dma(create_only_t, size_t log_ebufsize, size_t log_dbufsize);
@@ -65,8 +61,8 @@ public:
 
   /*** CBMnet control interface ***/
 
-  int send_dcm(const struct ctrl_msg *msg);
-  int recv_dcm(struct ctrl_msg *msg);
+  int send_dcm(const struct ctrl_msg* msg);
+  int recv_dcm(struct ctrl_msg* msg);
 
   /**
    * RORC_REG_DLM_CFG 0 set to send (global reg)
@@ -80,14 +76,9 @@ public:
   /*** setter methods ***/
   // REG: datapath_cfg
   // bit 0-1 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
-  enum data_rx_sel {
-    rx_disable,
-    rx_emu,
-    rx_link,
-    rx_pgen
-  };
+  enum data_rx_sel { rx_disable, rx_emu, rx_link, rx_pgen };
   void set_data_rx_sel(data_rx_sel rx_sel);
-  void set_hdr_config(const struct hdr_config *config);
+  void set_hdr_config(const struct hdr_config* config);
 
   /*** getter methods ***/
   uint64_t get_pending_mc();
@@ -95,11 +86,11 @@ public:
   data_rx_sel get_data_rx_sel();
   std::string get_ebuf_info();
   std::string get_dbuf_info();
-  dma_buffer *ebuf() const;
-  dma_buffer *rbuf() const;
-  dma_channel *get_ch() const;
-  register_file_bar *get_rfpkt() const;
-  register_file_bar *get_rfgtx() const;
+  dma_buffer* ebuf() const;
+  dma_buffer* rbuf() const;
+  dma_channel* get_ch() const;
+  register_file_bar* get_rfpkt() const;
+  register_file_bar* get_rfgtx() const;
 
   struct link_status {
     bool link_active;
@@ -132,10 +123,10 @@ protected:
   bool m_dma_initialized = false;
 
   sys_bus_addr m_base_addr;
-  device *m_device;
+  device* m_device;
 
-  volatile uint64_t *m_eb = nullptr;
-  volatile struct MicrosliceDescriptor *m_db = nullptr;
+  volatile uint64_t* m_eb = nullptr;
+  volatile struct MicrosliceDescriptor* m_db = nullptr;
 
   /**
    * Creates new buffer, throws an exception if buffer already exists
@@ -162,8 +153,7 @@ protected:
    */
   int init_hardware();
 
-  std::string get_buffer_info(dma_buffer *buf);
-
+  std::string get_buffer_info(dma_buffer* buf);
 };
 }
 

@@ -32,7 +32,7 @@ class device;
 
 class dma_channel {
 public:
-  dma_channel(register_file_bar *rf, device *parent_device);
+  dma_channel(register_file_bar* rf, device* parent_device);
 
   ~dma_channel();
 
@@ -44,7 +44,7 @@ public:
   * @return 0 on sucess, -1 on errors, -EFBIG if more
   *         than 2048 sg-entries
   **/
-  int prepareEB(dma_buffer *buf);
+  int prepareEB(dma_buffer* buf);
 
   /**
   * prepare ReportBuffer: copy scatterlist from
@@ -54,7 +54,7 @@ public:
   *        report destination buffer
   * @return 0 on sucess, -1 on errors
   **/
-  int prepareRB(dma_buffer *buf);
+  int prepareRB(dma_buffer* buf);
 
   /**
   * set Enable Bit of EBDM
@@ -141,7 +141,7 @@ public:
   * @param max_payload maximum payload size to be used (in bytes)
   * @return 0 on sucess, <0 on error
   * */
-  int configureChannel(struct dma_buffer *ebuf, struct dma_buffer *rbuf,
+  int configureChannel(struct dma_buffer* ebuf, struct dma_buffer* rbuf,
                        uint32_t max_payload);
 
   /**
@@ -233,7 +233,7 @@ public:
   * @param dma_desc pointer to struct rorcfs_dma_desc
   * */
   void memcpyEBDRAMentry(unsigned int startaddr,
-                         struct rorcfs_dma_desc *dma_desc);
+                         struct rorcfs_dma_desc* dma_desc);
 
   /**
   * get DW from EBDRAM
@@ -255,7 +255,7 @@ public:
   * @param dma_desc pointer to struct rorcfs_dma_desc
   * */
   void memcpyRBDRAMentry(unsigned int startaddr,
-                         struct rorcfs_dma_desc *dma_desc);
+                         struct rorcfs_dma_desc* dma_desc);
 
   /**
   * get DW from RBDRAM
@@ -265,8 +265,8 @@ public:
   unsigned int getRBDRAM(unsigned int addr);
 
 protected:
-  register_file_bar *m_rfpkt = NULL;
-  device *parent_device = NULL;
+  register_file_bar* m_rfpkt = NULL;
+  device* parent_device = NULL;
   uint64_t m_MaxPayload = 0;
 
   /**
@@ -276,9 +276,8 @@ protected:
    */
   void setMaxPayload();
 
-  int prepareBuffer(dma_buffer *buf, sys_bus_addr addr, uint32_t flag);
+  int prepareBuffer(dma_buffer* buf, sys_bus_addr addr, uint32_t flag);
 };
-
 }
 
 #endif

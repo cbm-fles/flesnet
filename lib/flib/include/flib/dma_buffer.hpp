@@ -44,7 +44,7 @@ public:
    *        RORCFS_DMA_TO_DEVICE, RORCFS_DMA_BIDIRECTIONAL
    * @return 0 on sucess, -1 on error
    */
-  int allocate(device *dev, uint64_t size, uint64_t id, int overmap,
+  int allocate(device* dev, uint64_t size, uint64_t id, int overmap,
                int dma_direction);
 
   /**
@@ -60,7 +60,7 @@ public:
    * @param id buffer ID of exisiting buffer
    * @return 0 on sucessful connect, -EPERM or -ENOMEM on errors
    */
-  int connect(device *dev, uint64_t id);
+  int connect(device* dev, uint64_t id);
 
   /**
    * get Buffer-ID
@@ -107,15 +107,15 @@ public:
    * get memory buffer
    * @return pointer to mmap'ed buffer memory
    **/
-  unsigned int *getMem() { return m_mem; }
+  unsigned int* getMem() { return m_mem; }
 
 protected:
-  PciDevice *m_device = NULL;
-  DMABuffer *m_buffer = NULL;
-  DMABuffer_SGNode *m_sglist = NULL;
+  PciDevice* m_device = NULL;
+  DMABuffer* m_buffer = NULL;
+  DMABuffer_SGNode* m_sglist = NULL;
   uint64_t m_id = 0;
 
-  unsigned int *m_mem = NULL;
+  unsigned int* m_mem = NULL;
   uint64_t m_physical_size = 0;
   uint64_t m_mapping_size = 0;
 

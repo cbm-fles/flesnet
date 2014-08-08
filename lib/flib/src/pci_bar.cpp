@@ -8,7 +8,7 @@ using namespace std;
 
 namespace flib {
 
-pci_bar::pci_bar(device *dev, uint8_t number) {
+pci_bar::pci_bar(device* dev, uint8_t number) {
   m_parent_dev = dev;
   m_number = number;
   m_pda_pci_device = m_parent_dev->getPdaPciDevice();
@@ -30,5 +30,4 @@ void pci_bar::getBarMap(uint8_t number) {
     throw FlibException("Bar mapping failed!");
   }
 }
-
 }

@@ -32,27 +32,24 @@ public:
    * @param dev parent rorcfs_device
    * @param n number of BAR to be mapped [0-6]
   **/
-  pci_bar(device *dev, uint8_t number);
-  ~pci_bar() {}
-  ;
+  pci_bar(device* dev, uint8_t number);
+  ~pci_bar(){};
 
-  void *get_mem_ptr() { return static_cast<void *>(m_bar); }
-  ;
+  void* get_mem_ptr() { return static_cast<void*>(m_bar); };
 
   /**
    * Get size of mapped BAR.
    * @return size of mapped BAR in bytes
    **/
-  size_t get_size() { return (m_size); }
-  ;
+  size_t get_size() { return (m_size); };
 
 protected:
-  device *m_parent_dev;
-  PciDevice *m_pda_pci_device;
-  Bar *m_pda_bar;
+  device* m_parent_dev;
+  PciDevice* m_pda_pci_device;
+  Bar* m_pda_bar;
   pthread_mutex_t m_mtx;
   uint8_t m_number;
-  uint8_t *m_bar;
+  uint8_t* m_bar;
   size_t m_size;
 
   void getBarMap(uint8_t number);

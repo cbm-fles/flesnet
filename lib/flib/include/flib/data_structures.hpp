@@ -30,16 +30,15 @@ typedef uint64_t sys_bus_addr;
 namespace flib {
 class FlibException : public std::runtime_error {
 public:
-
-  explicit FlibException(const std::string &what_arg = "")
+  explicit FlibException(const std::string& what_arg = "")
       : std::runtime_error(what_arg) {}
 };
 
 struct mc_desc {
   uint64_t nr;
-  volatile uint64_t *addr;
+  volatile uint64_t* addr;
   uint32_t size; // bytes
-  volatile uint64_t *rbaddr;
+  volatile uint64_t* rbaddr;
 };
 
 struct __attribute__((__packed__)) hdr_config {
@@ -114,8 +113,8 @@ struct t_sg_entry_cfg {
 };
 
 struct rorcfs_sync_range {
-  void *start;
-  void *end;
+  void* start;
+  void* end;
 };
 
 struct __attribute__((__packed__)) t_rorcfs_buffer {
@@ -130,7 +129,7 @@ struct __attribute__((__packed__)) rorcfs_event_descriptor {
   unsigned long length;
   unsigned int calc_event_size;
   unsigned int reported_event_size;
-  unsigned long dummy; //do not use!
+  unsigned long dummy; // do not use!
 };
 
 /**
