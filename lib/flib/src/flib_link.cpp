@@ -169,8 +169,6 @@ void flib_link::enable_cbmnet_packer(bool enable) {
 /*** CBMnet control interface ***/
 
 int flib_link::send_dcm(const struct ctrl_msg* msg) {
-  // TODO: could also implement blocking call
-  //       and check if sending is done at the end
 
   assert(msg->words >= 4 && msg->words <= 32);
 
