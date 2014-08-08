@@ -27,10 +27,10 @@ int main(int argc, char *argv[])
       
   MyFlib = new flib_device(0);
 
-  //MyFlib->m_link[0]->set_data_rx_sel(flib_link::link);
+  //MyFlib->get_link(0).set_data_rx_sel(flib_link::link);
 
-  MyFlib->m_link[0]->prepare_dlm(dlm, true);
-  MyFlib->m_link[0]->send_dlm();
+  MyFlib->get_link(0).prepare_dlm(dlm, true);
+  MyFlib->get_link(0).send_dlm();
 
   if (MyFlib) delete MyFlib;
   

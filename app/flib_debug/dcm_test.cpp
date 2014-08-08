@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
   MyFlib = new flib_device(0);
  
-  //MyFlib->m_link[0]->set_data_rx_sel(flib_link::link);
+  //MyFlib->get_link(0).set_data_rx_sel(flib_link::link);
  
   ctrl_msg s_msg;
   ctrl_msg r_msg;
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
   uint16_t offset;
 
   // receive to flush hw buffers
-  if ( MyFlib->m_link[0]->recv_dcm(&r_msg) >= 0)  {
+  if ( MyFlib->get_link(0).recv_dcm(&r_msg) >= 0)  {
     printf("Error Message in cue\n");
     return -1;
   }
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     s_msg.words = words;
 
     // send msg
-    if ( MyFlib->m_link[0]->send_dcm(&s_msg) < 0)  {
+    if ( MyFlib->get_link(0).send_dcm(&s_msg) < 0)  {
       printf("sending failed\n");
       return -1;
     }                      
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     //    usleep(1);
     
 //    // receive msg
-//    if ( MyFlib->m_link[0]->recv_dcm(&r_msg) < 0)  {
+//    if ( MyFlib->get_link(0).recv_dcm(&r_msg) < 0)  {
 //      printf("error receiving\n");
 //      return -1;
 //    }
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     // poll till msg is available, error occures or timeout is reached
     while ( ret == -1 &&
             std::chrono::high_resolution_clock::now() < timeout_tp) {
-      ret = MyFlib->m_link[0]->recv_dcm(&r_msg);
+      ret = MyFlib->get_link(0).recv_dcm(&r_msg);
     }
     if (ret == -2) {
       cout<< "received message with illegal size" << endl;
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
  
 //    // extra receive
 //    for (size_t j = 0; j < r_msg.words/2 + 1; ++j) {
-//      ((uint32_t*)extra_msg.data)[j] = MyFlib->m_link[0]->get_rfgtx()->get_reg(RORC_MEM_BASE_CTRL_RX+j);
+//      ((uint32_t*)extra_msg.data)[j] = MyFlib->get_link(0).get_rfgtx()->get_reg(RORC_MEM_BASE_CTRL_RX+j);
 //    }
 //    extra_msg.words = words;
 //    

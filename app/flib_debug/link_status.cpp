@@ -22,19 +22,12 @@ int main(int argc, char *argv[])
 {
   MyFlib = new flib_device(0);
 
-  if(MyFlib->m_link[0]) {
-    printf("link set\n");
-  }
-  else {
-    printf("link not set\n");    
-  };
-
   std::cout << MyFlib->print_build_info() << std::endl;
   std::cout << MyFlib->print_devinfo() << std::endl;
 
-  //MyFlib->link[0]->set_data_rx_sel(flib_link::pgen);
+  //MyFlib->get_link(0).set_data_rx_sel(flib_link::pgen);
     
-  flib::flib_link::link_status status = MyFlib->m_link[0]->get_link_status();
+  flib::flib_link::link_status status = MyFlib->get_link(0).get_link_status();
   
   std::stringstream ss;
   ss << "link status" << "\n"

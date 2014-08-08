@@ -55,6 +55,7 @@ public:
   flib_link& get_link(size_t n);
   register_file_bar* get_rf() const;
 
+private:
 
   /** Member variables */
   std::unique_ptr<device> m_device;
@@ -62,7 +63,6 @@ public:
   std::unique_ptr<register_file_bar> m_register_file;
   std::vector<std::unique_ptr<flib_link>> m_link;
 
-private:
   bool check_magic_number();
 };
 
