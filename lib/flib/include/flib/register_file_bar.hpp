@@ -25,7 +25,7 @@ public:
     _bar_size = bar->get_size();
   }
 
-  int get_mem(sys_bus_addr addr, void *dest, size_t dwords) override {
+  __attribute__((__target__("no-sse"))) int get_mem(sys_bus_addr addr, void *dest, size_t dwords) override {
     // sys_bus hw only supports single 32 bit reads
     sys_bus_addr sys_addr = _base_addr + addr;
     if( ((sys_addr + dwords) << 2) < _bar_size) {      
@@ -38,7 +38,7 @@ public:
     }        
   }
   
-  int set_mem(sys_bus_addr addr, const void *source, size_t dwords) override {
+  __attribute__((__target__("no-sse"))) int set_mem(sys_bus_addr addr, const void *source, size_t dwords) override {
     sys_bus_addr sys_addr = _base_addr + addr;
     if( ((sys_addr + dwords) << 2) < _bar_size) {      
       // memcpy(reinterpret_cast<uint8_t*>(_bar) + (sys_addr<<2), source, dwords<<2);
