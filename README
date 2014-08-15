@@ -69,13 +69,9 @@ Flesnet software pattern generator	0xFA
 Control Client:
 ---------------
 
-cd ctrl
-source config.sh
-cd control/cliclient
-./cliclient -help
-
-Example: send DLM 0x8 over flib link 0 to nodeid 0x1.
-./cliclient localhost:9750 dlm 0x1 0x8
+The control library including th cliclient is now part of 
+the CBMroot repository.
+Please see the CBMroot repository for furter infomation.
 
 General:
 --------
