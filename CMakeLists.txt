@@ -31,8 +31,6 @@ add_subdirectory(lib/fles_ipc)
 add_subdirectory(lib/flib)
 add_subdirectory(lib/flib_dpb)
 
-add_subdirectory(ctrl)
-
 add_subdirectory(app/flesnet)
 add_subdirectory(app/tsclient)
 add_subdirectory(app/flib_debug)

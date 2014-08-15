@@ -2,7 +2,9 @@
 
 #include <zmq.hpp>
 #include <boost/lexical_cast.hpp>
+#ifdef CNETCNTLSERVER
 #include <control/libserver/ControlServer.hpp>
+#endif
 
 #include "global.hpp"
 #include "parameters.hpp"
@@ -47,8 +49,12 @@ int main(int argc, char* argv[])
               << (flib.get_rf()->get_reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
 
   // FLIB per link configuration
+#ifdef CNETCNTLSERVER
   std::vector<std::unique_ptr<flib_server>> flibserver;
   std::vector<std::unique_ptr<CbmNet::ControlServer>> ctrlserver;
+#else
+  out.info() << "Running without Controls API.";
+#endif
 
   for (size_t i = 0; i < flib.get_num_links(); ++i) {
     out.debug() << "Initializing link " << i;
@@ -58,6 +64,7 @@ int main(int argc, char* argv[])
     links.at(i)->set_hdr_config(&link_config.hdr_config);
     links.at(i)->set_data_rx_sel(link_config.rx_sel);
 
+#ifdef CNETCNTLSERVER
     // create device control server, initialize and start server thread
     flibserver.push_back(std::unique_ptr<flib_server>(
         new flib_server(zmq_context, "CbmNet::Driver" + 
@@ -74,12 +81,15 @@ int main(int argc, char* argv[])
     ctrlserver.at(i)->Bind("tcp://*:" + boost::lexical_cast<std::string>(9750 + i));
     ctrlserver.at(i)->ConnectDriver();
     ctrlserver.at(i)->Start();
+#endif
   }
 
+#ifdef CNETCNTLSERVER
   // main loop
   while(s_interrupted==0) {
     ::sleep(1);
   }
+#endif
   out.debug() << "Exiting";
 
   return 0;
