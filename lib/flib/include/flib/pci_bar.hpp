@@ -47,7 +47,6 @@ protected:
   device* m_parent_dev;
   PciDevice* m_pda_pci_device;
   Bar* m_pda_bar;
-  pthread_mutex_t m_mtx;
   uint8_t m_number;
   uint8_t* m_bar;
   size_t m_size;
