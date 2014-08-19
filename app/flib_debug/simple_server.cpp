@@ -53,11 +53,11 @@ int main(int argc, const char* argv[])
 
     // initialize a DMA buffer
     links.at(i)->init_dma(flib::create_only, 22, 20);
-    out.info() << "Event Buffer: " << links.at(i)->get_ebuf_info();
-    out.info() << "Desciptor Buffer" << links.at(i)->get_dbuf_info();
+    out.info() << "Event Buffer: " << links.at(i)->data_buffer_info();
+    out.info() << "Desciptor Buffer" << links.at(i)->desc_buffer_info();
     // get raw pointers for debugging
-    eb.push_back((uint64_t *)links.at(i)->ebuf()->getMem());
-    rb.push_back((MicrosliceDescriptor *)links.at(i)->rbuf()->getMem());
+    eb.push_back((uint64_t *)links.at(i)->data_buffer()->getMem());
+    rb.push_back((MicrosliceDescriptor *)links.at(i)->desc_buffer()->getMem());
     
     // set start index
     links.at(i)->set_start_idx(1);
