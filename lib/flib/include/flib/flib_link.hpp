@@ -76,18 +76,18 @@ public:
   /*** setter methods ***/
   // REG: datapath_cfg
   // bit 1-0 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
-  enum data_rx_sel { rx_disable, rx_emu, rx_link, rx_pgen };
-  void set_data_rx_sel(data_rx_sel rx_sel);
+  enum data_sel { rx_disable, rx_emu, rx_link, rx_pgen };
+  void set_data_sel(data_sel rx_sel);
   void set_hdr_config(const struct hdr_config* config);
 
   /*** getter methods ***/
   uint64_t get_pending_mc();
   uint64_t get_mc_index();
-  data_rx_sel get_data_rx_sel();
-  std::string get_ebuf_info();
-  std::string get_dbuf_info();
-  dma_buffer* ebuf() const;
-  dma_buffer* rbuf() const;
+  data_sel data_sel();
+  std::string data_buffer_info();
+  std::string desc_buffer_info();
+  dma_buffer* data_buffer() const;
+  dma_buffer* desc_buffer() const;
   dma_channel* get_ch() const;
   register_file_bar* get_rfpkt() const;
   register_file_bar* get_rfgtx() const;

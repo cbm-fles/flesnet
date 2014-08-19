@@ -36,8 +36,8 @@ flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)
 flib_link::~flib_link() {
   stop();
   // TODO move deallocte to destructor of buffer
-  if (m_event_buffer) {
-    if (m_event_buffer->deallocate() != 0) {
+  if (m_data_buffer) {
+    if (m_data_buffer->deallocate() != 0) {
       throw FlibException("ebuf->deallocate failed");
     }
   }
@@ -52,7 +52,7 @@ int flib_link::init_dma(create_only_t, size_t log_ebufsize,
                         size_t log_dbufsize) {
   m_log_ebufsize = log_ebufsize;
   m_log_dbufsize = log_dbufsize;
-  m_event_buffer = create_buffer(0, log_ebufsize);
+  m_data_buffer = create_buffer(0, log_ebufsize);
   m_dbuffer = create_buffer(1, log_dbufsize);
   init_hardware();
   m_dma_initialized = true;
@@ -62,7 +62,7 @@ int flib_link::init_dma(create_only_t, size_t log_ebufsize,
 int flib_link::init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize) {
   m_log_ebufsize = log_ebufsize;
   m_log_dbufsize = log_dbufsize;
-  m_event_buffer = open_buffer(0);
+  m_data_buffer = open_buffer(0);
   m_dbuffer = open_buffer(1);
   init_hardware();
   m_dma_initialized = true;
@@ -73,7 +73,7 @@ int flib_link::init_dma(open_or_create_t, size_t log_ebufsize,
                         size_t log_dbufsize) {
   m_log_ebufsize = log_ebufsize;
   m_log_dbufsize = log_dbufsize;
-  m_event_buffer = open_or_create_buffer(0, log_ebufsize);
+  m_data_buffer = open_or_create_buffer(0, log_ebufsize);
   m_dbuffer = open_or_create_buffer(1, log_dbufsize);
   init_hardware();
   m_dma_initialized = true;
@@ -253,7 +253,7 @@ uint8_t flib_link::recv_dlm() {
 }
 
 /*** SETTER ***/
-void flib_link::set_data_rx_sel(data_rx_sel rx_sel) {
+void flib_link::set_data_rx_sel(data_sel rx_sel) {
   uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
   switch (rx_sel) {
   case rx_disable:
@@ -293,22 +293,22 @@ uint64_t flib_link::get_mc_index() {
   return mc_index;
 }
 
-flib_link::data_rx_sel flib_link::get_data_rx_sel() {
+flib_link::data_sel flib_link::data_sel() {
   uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
-  return static_cast<data_rx_sel>(dp_cfg & 0x3);
+  return static_cast<data_sel>(dp_cfg & 0x3);
 }
 
 std::string flib_link::get_ebuf_info() {
-  return get_buffer_info(m_event_buffer.get());
+  return get_buffer_info(m_data_buffer.get());
 }
 
 std::string flib_link::get_dbuf_info() {
   return get_buffer_info(m_dbuffer.get());
 }
 
-dma_buffer* flib_link::ebuf() const { return m_event_buffer.get(); }
+dma_buffer* flib_link::data_buffer() const { return m_data_buffer.get(); }
 
-dma_buffer* flib_link::rbuf() const { return m_dbuffer.get(); }
+dma_buffer* flib_link::desc_buffer() const { return m_dbuffer.get(); }
 
 dma_channel* flib_link::get_ch() const { return m_channel.get(); }
 
@@ -412,7 +412,7 @@ int flib_link::init_hardware() {
    * and ReportBufferDescriptorManage
    * with scatter-gather list
    **/
-  if (m_channel->prepareEB(m_event_buffer.get()) < 0) {
+  if (m_channel->prepareEB(m_data_buffer.get()) < 0) {
     return -1;
   }
 
@@ -420,17 +420,17 @@ int flib_link::init_hardware() {
     return -1;
   }
 
-  if (m_channel->configureChannel(m_event_buffer.get(), m_dbuffer.get(), 128) <
+  if (m_channel->configureChannel(m_data_buffer.get(), m_dbuffer.get(), 128) <
       0) {
     return -1;
   }
 
   // clear eb for debugging
-  memset(m_event_buffer->getMem(), 0, m_event_buffer->getMappingSize());
+  memset(m_data_buffer->getMem(), 0, m_data_buffer->getMappingSize());
   // clear rb for polling
   memset(m_dbuffer->getMem(), 0, m_dbuffer->getMappingSize());
 
-  m_eb = (uint64_t*)m_event_buffer->getMem();
+  m_eb = (uint64_t*)m_data_buffer->getMem();
   m_db = (struct MicrosliceDescriptor*)m_dbuffer->getMem();
 
   m_dbentries = m_dbuffer->getMaxRBEntries();
