@@ -50,7 +50,7 @@ flib_device::flib_device(int device_nr) {
 
 bool flib_device::check_hw_ver() {
   uint16_t hw_ver =
-      m_register_file->get_reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
+      m_register_file->reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
   bool match = false;
 
   // check if version of hardware is part of suported versions
@@ -74,7 +74,7 @@ void flib_device::enable_mc_cnt(bool enable) {
 
 void flib_device::set_mc_time(uint32_t time) {
   // time: 31 bit wide, in units of 8 ns
-  uint32_t reg = m_register_file->get_reg(RORC_REG_MC_CNT_CFG);
+  uint32_t reg = m_register_file->reg(RORC_REG_MC_CNT_CFG);
   reg = (reg & ~0x7FFFFFFF) | (time & 0x7FFFFFFF);
   m_register_file->set_reg(RORC_REG_MC_CNT_CFG, reg);
 }
@@ -82,19 +82,19 @@ void flib_device::set_mc_time(uint32_t time) {
 void flib_device::send_dlm() { m_register_file->set_reg(RORC_REG_DLM_CFG, 1); }
 
 uint8_t flib_device::get_num_hw_links() {
-  return (m_register_file->get_reg(RORC_REG_N_CHANNELS) & 0xFF);
+  return (m_register_file->reg(RORC_REG_N_CHANNELS) & 0xFF);
 }
 
 uint16_t flib_device::get_hw_ver() {
-  return (static_cast<uint16_t>(m_register_file->get_reg(0) >>
-                                16)); // RORC_REG_HARDWARE_INFO
+  return (static_cast<uint16_t>(m_register_file->reg(0) >> 16));
+  // RORC_REG_HARDWARE_INFO
 
 }
 
 boost::posix_time::ptime flib_device::get_build_date() {
   time_t time =
-      (static_cast<time_t>(m_register_file->get_reg(RORC_REG_BUILD_DATE_L)) |
-       (static_cast<uint64_t>(m_register_file->get_reg(RORC_REG_BUILD_DATE_H))
+      (static_cast<time_t>(m_register_file->reg(RORC_REG_BUILD_DATE_L)) |
+       (static_cast<uint64_t>(m_register_file->reg(RORC_REG_BUILD_DATE_H))
         << 32));
   boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
   return t;
@@ -104,13 +104,13 @@ struct build_info flib_device::get_build_info() {
   build_info info;
 
   info.date = get_build_date();
-  info.rev[0] = m_register_file->get_reg(RORC_REG_BUILD_REV_0);
-  info.rev[1] = m_register_file->get_reg(RORC_REG_BUILD_REV_1);
-  info.rev[2] = m_register_file->get_reg(RORC_REG_BUILD_REV_2);
-  info.rev[3] = m_register_file->get_reg(RORC_REG_BUILD_REV_3);
-  info.rev[4] = m_register_file->get_reg(RORC_REG_BUILD_REV_4);
+  info.rev[0] = m_register_file->reg(RORC_REG_BUILD_REV_0);
+  info.rev[1] = m_register_file->reg(RORC_REG_BUILD_REV_1);
+  info.rev[2] = m_register_file->reg(RORC_REG_BUILD_REV_2);
+  info.rev[3] = m_register_file->reg(RORC_REG_BUILD_REV_3);
+  info.rev[4] = m_register_file->reg(RORC_REG_BUILD_REV_4);
   info.hw_ver = get_hw_ver();
-  info.clean = (m_register_file->get_reg(RORC_REG_BUILD_FLAGS) & 0x1);
+  info.clean = (m_register_file->reg(RORC_REG_BUILD_FLAGS) & 0x1);
   return info;
 }
 
@@ -153,6 +153,6 @@ flib_link& flib_device::get_link(size_t n) { return *m_link.at(n); }
 register_file_bar* flib_device::get_rf() const { return m_register_file.get(); }
 
 bool flib_device::check_magic_number() {
-  return ((m_register_file->get_reg(0) & 0xFFFF) == 0x4844); //RORC_REG_HARDWARE_INFO
+  return ((m_register_file->reg(0) & 0xFFFF) == 0x4844); //RORC_REG_HARDWARE_INFO
 }
 }

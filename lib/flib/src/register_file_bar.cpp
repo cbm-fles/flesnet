@@ -20,7 +20,7 @@ register_file_bar::register_file_bar(pci_bar* bar, sys_bus_addr base_addr)
   m_bar_size = bar->size();
 }
 
-__attribute__((__target__("no-sse"))) int register_file_bar::get_mem(
+__attribute__((__target__("no-sse"))) int register_file_bar::mem(
     sys_bus_addr addr, void* dest, size_t dwords) {
   // sys_bus hw only supports single 32 bit reads
   sys_bus_addr sys_addr = m_base_addr + addr;

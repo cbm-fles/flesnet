@@ -149,7 +149,7 @@ void flib_link::set_start_idx(uint64_t index) {
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_H, (uint32_t)(index >> 32));
   // reste mc counter
   // TODO implenet edge detection and 'pulse only' in HW
-  uint32_t mc_gen_cfg = m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
+  uint32_t mc_gen_cfg = m_rfgtx->reg(RORC_REG_GTX_MC_GEN_CFG);
   // TODO replace with _rfgtx->set_bit()
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
@@ -158,7 +158,7 @@ void flib_link::set_start_idx(uint64_t index) {
 void flib_link::rst_pending_mc() {
   // Is also resetted with datapath reset
   // TODO implenet edge detection and 'pulse only' in HW
-  uint32_t mc_gen_cfg = m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
+  uint32_t mc_gen_cfg = m_rfgtx->reg(RORC_REG_GTX_MC_GEN_CFG);
   // TODO replace with _rfgtx->set_bit()
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1 << 1)));
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1 << 1)));
@@ -180,7 +180,7 @@ int flib_link::send_dcm(const struct ctrl_msg* msg) {
   assert(msg->words >= 4 && msg->words <= 32);
 
   // check if send FSM is ready (bit 31 in r_ctrl_tx = 0)
-  if ((m_rfgtx->get_reg(RORC_REG_GTX_CTRL_TX) & (1 << 31)) != 0) {
+  if ((m_rfgtx->reg(RORC_REG_GTX_CTRL_TX) & (1 << 31)) != 0) {
     return -1;
   }
 
@@ -199,7 +199,7 @@ int flib_link::send_dcm(const struct ctrl_msg* msg) {
 int flib_link::recv_dcm(struct ctrl_msg* msg) {
 
   int ret = 0;
-  uint32_t ctrl_rx = m_rfgtx->get_reg(RORC_REG_GTX_CTRL_RX);
+  uint32_t ctrl_rx = m_rfgtx->reg(RORC_REG_GTX_CTRL_RX);
   msg->words = (ctrl_rx & 0x1F) + 1;
 
   // check if a msg is available
@@ -215,7 +215,7 @@ int flib_link::recv_dcm(struct ctrl_msg* msg) {
 
   // read msg from board memory
   size_t bytes = msg->words * 2 + (msg->words * 2) % 4;
-  m_rfgtx->get_mem(RORC_MEM_BASE_CTRL_RX, (void*)msg->data, bytes >> 2);
+  m_rfgtx->mem(RORC_MEM_BASE_CTRL_RX, (void*)msg->data, bytes >> 2);
 
   // acknowledge msg
   m_rfgtx->set_reg(RORC_REG_GTX_CTRL_RX, 0);
@@ -233,7 +233,7 @@ void flib_link::prepare_dlm(uint8_t type, bool enable) {
   m_rfgtx->set_reg(RORC_REG_GTX_DLM, reg);
   // dummy read on GTX regfile to ensure reg written
   // before issuing send pulse in send_dlm()
-  m_rfgtx->get_reg(RORC_REG_GTX_DLM);
+  m_rfgtx->reg(RORC_REG_GTX_DLM);
 }
 
 void flib_link::send_dlm() {
@@ -252,7 +252,7 @@ void flib_link::send_dlm() {
 
 uint8_t flib_link::recv_dlm() {
   // get dlm rx reg
-  uint32_t reg = m_rfgtx->get_reg(RORC_REG_GTX_DLM);
+  uint32_t reg = m_rfgtx->reg(RORC_REG_GTX_DLM);
   uint8_t type = (reg >> 5) & 0xF;
   // clear dlm rx reg
   m_rfgtx->set_bit(RORC_REG_GTX_DLM, 31, true);
@@ -261,7 +261,7 @@ uint8_t flib_link::recv_dlm() {
 
 /*** SETTER ***/
 void flib_link::set_data_sel(data_sel_t rx_sel) {
-  uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
+  uint32_t dp_cfg = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_CFG);
   switch (rx_sel) {
   case rx_disable:
     m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3));
@@ -286,22 +286,22 @@ void flib_link::set_hdr_config(const struct hdr_config* config) {
 /*** GETTER ***/
 uint64_t flib_link::get_pending_mc() {
   // TODO replace with _rfgtx->get_mem()
-  uint64_t pend_mc = m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_L);
+  uint64_t pend_mc = m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_L);
   pend_mc =
-      pend_mc | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_H)) << 32);
+      pend_mc | ((uint64_t)(m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_H)) << 32);
   return pend_mc;
 }
 
 uint64_t flib_link::get_mc_index() {
   // TODO replace with _rfgtx->get_mem()
-  uint64_t mc_index = m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_L);
+  uint64_t mc_index = m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_L);
   mc_index =
-      mc_index | ((uint64_t)(m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_H)) << 32);
+      mc_index | ((uint64_t)(m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_H)) << 32);
   return mc_index;
 }
 
 flib_link::data_sel_t flib_link::data_sel() {
-  uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
+  uint32_t dp_cfg = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_CFG);
   return static_cast<data_sel_t>(dp_cfg & 0x3);
 }
 
@@ -324,7 +324,7 @@ register_file_bar* flib_link::get_rfpkt() const { return m_rfpkt.get(); }
 register_file_bar* flib_link::get_rfgtx() const { return m_rfgtx.get(); }
 
 flib_link::link_status flib_link::get_link_status() {
-  uint32_t sts = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_STS);
+  uint32_t sts = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_STS);
 
   struct link_status link_status;
   link_status.link_active = (sts & (1));
