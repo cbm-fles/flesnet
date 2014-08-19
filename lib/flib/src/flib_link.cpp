@@ -253,7 +253,7 @@ uint8_t flib_link::recv_dlm() {
 }
 
 /*** SETTER ***/
-void flib_link::set_data_sel(data_sel rx_sel) {
+void flib_link::set_data_sel(data_sel_t rx_sel) {
   uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
   switch (rx_sel) {
   case rx_disable:
@@ -293,16 +293,16 @@ uint64_t flib_link::get_mc_index() {
   return mc_index;
 }
 
-flib_link::data_sel flib_link::data_sel() {
+flib_link::data_sel_t flib_link::data_sel() {
   uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
-  return static_cast<data_sel>(dp_cfg & 0x3);
+  return static_cast<data_sel_t>(dp_cfg & 0x3);
 }
 
-std::string flib_link::get_ebuf_info() {
+std::string flib_link::data_buffer_info() {
   return get_buffer_info(m_data_buffer.get());
 }
 
-std::string flib_link::get_dbuf_info() {
+std::string flib_link::desc_buffer_info() {
   return get_buffer_info(m_desc_buffer.get());
 }
 
