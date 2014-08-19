@@ -1,0 +1,3 @@
+killall tsclient
+sudo rm /dev/shm/flesnet_*
+echo "Please reproroam FPGA"
