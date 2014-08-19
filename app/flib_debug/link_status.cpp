@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   std::cout << MyFlib->print_build_info() << std::endl;
   std::cout << MyFlib->print_devinfo() << std::endl;
 
-  //MyFlib->get_link(0).set_data_rx_sel(flib_link::pgen);
+  //MyFlib->get_link(0).set_data_sel(flib_link::pgen);
     
   flib::flib_link::link_status status = MyFlib->get_link(0).get_link_status();
   

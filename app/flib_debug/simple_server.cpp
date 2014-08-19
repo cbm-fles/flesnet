@@ -72,12 +72,12 @@ int main(int argc, const char* argv[])
     // enable data source
     bool use_sp = false; 
     if (use_sp == true) {
-      links.at(i)->set_data_rx_sel(flib::flib_link::rx_link);
+      links.at(i)->set_data_sel(flib::flib_link::rx_link);
       links.at(i)->prepare_dlm(0x8, true); // enable DAQ
       links.at(i)->send_dlm();
     } 
     else {
-      links.at(i)->set_data_rx_sel(flib::flib_link::rx_pgen);
+      links.at(i)->set_data_sel(flib::flib_link::rx_pgen);
     }
     
     flib.enable_mc_cnt(true);

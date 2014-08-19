@@ -23,7 +23,7 @@ Application::Application(Parameters const& par) : _par(par)
             // delete deactivated links from vector
             _flib_links.erase(std::remove_if(std::begin(_flib_links), std::end(_flib_links),
                                              [](decltype(_flib_links[0]) link) {
-                                                 return link->get_data_rx_sel() ==
+                                                 return link->data_sel() ==
                                                      flib::flib_link::rx_disable;}),
                               std::end(_flib_links));
 

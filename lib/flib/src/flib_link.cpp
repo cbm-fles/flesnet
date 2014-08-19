@@ -253,7 +253,7 @@ uint8_t flib_link::recv_dlm() {
 }
 
 /*** SETTER ***/
-void flib_link::set_data_rx_sel(data_sel rx_sel) {
+void flib_link::set_data_sel(data_sel rx_sel) {
   uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
   switch (rx_sel) {
   case rx_disable:

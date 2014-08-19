@@ -75,7 +75,7 @@ public:
 
   /*** setter methods ***/
   // REG: datapath_cfg
-  // bit 1-0 data_rx_sel (10: link, 11: pgen, 01: emu, 00: disable)
+  // bit 1-0 data_sel (10: link, 11: pgen, 01: emu, 00: disable)
   enum data_sel { rx_disable, rx_emu, rx_link, rx_pgen };
   void set_data_sel(data_sel rx_sel);
   void set_hdr_config(const struct hdr_config* config);

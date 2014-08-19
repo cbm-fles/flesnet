@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
     struct link_config link_config = par.link_config(i);
     link_config.hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
     links.at(i)->set_hdr_config(&link_config.hdr_config);
-    links.at(i)->set_data_rx_sel(link_config.rx_sel);
+    links.at(i)->set_data_sel(link_config.rx_sel);
 
 #ifdef CNETCNTLSERVER
     // create device control server, initialize and start server thread

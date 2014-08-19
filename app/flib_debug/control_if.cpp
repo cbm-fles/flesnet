@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
   printf("r_ctrl_tx: %08x\n", MyFlib->get_link(0).get_rfgtx()->get_reg(RORC_REG_GTX_CTRL_TX));
 
-  MyFlib->get_link(0).set_data_rx_sel(flib_link::rx_pgen);
+  MyFlib->get_link(0).set_data_sel(flib_link::rx_pgen);
     
   printf("START\n");
 
