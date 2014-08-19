@@ -103,8 +103,8 @@ public:
 
 protected:
   std::unique_ptr<dma_channel> m_channel;
-  std::unique_ptr<dma_buffer> m_event_buffer;
-  std::unique_ptr<dma_buffer> m_dbuffer;
+  std::unique_ptr<dma_buffer> m_data_buffer;
+  std::unique_ptr<dma_buffer> m_desc_buffer;
   std::unique_ptr<register_file_bar> m_rfglobal; // TODO remove this later
   std::unique_ptr<register_file_bar> m_rfpkt;
   std::unique_ptr<register_file_bar> m_rfgtx;

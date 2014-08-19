@@ -41,8 +41,8 @@ flib_link::~flib_link() {
       throw FlibException("ebuf->deallocate failed");
     }
   }
-  if (m_dbuffer) {
-    if (m_dbuffer->deallocate() != 0) {
+  if (m_desc_buffer) {
+    if (m_desc_buffer->deallocate() != 0) {
       throw FlibException("dbuf->deallocate failed");
     }
   }
@@ -53,7 +53,7 @@ int flib_link::init_dma(create_only_t, size_t log_ebufsize,
   m_log_ebufsize = log_ebufsize;
   m_log_dbufsize = log_dbufsize;
   m_data_buffer = create_buffer(0, log_ebufsize);
-  m_dbuffer = create_buffer(1, log_dbufsize);
+  m_desc_buffer = create_buffer(1, log_dbufsize);
   init_hardware();
   m_dma_initialized = true;
   return 0;
@@ -63,7 +63,7 @@ int flib_link::init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize) {
   m_log_ebufsize = log_ebufsize;
   m_log_dbufsize = log_dbufsize;
   m_data_buffer = open_buffer(0);
-  m_dbuffer = open_buffer(1);
+  m_desc_buffer = open_buffer(1);
   init_hardware();
   m_dma_initialized = true;
   return 0;
@@ -74,7 +74,7 @@ int flib_link::init_dma(open_or_create_t, size_t log_ebufsize,
   m_log_ebufsize = log_ebufsize;
   m_log_dbufsize = log_dbufsize;
   m_data_buffer = open_or_create_buffer(0, log_ebufsize);
-  m_dbuffer = open_or_create_buffer(1, log_dbufsize);
+  m_desc_buffer = open_or_create_buffer(1, log_dbufsize);
   init_hardware();
   m_dma_initialized = true;
   return 0;
@@ -303,12 +303,12 @@ std::string flib_link::get_ebuf_info() {
 }
 
 std::string flib_link::get_dbuf_info() {
-  return get_buffer_info(m_dbuffer.get());
+  return get_buffer_info(m_desc_buffer.get());
 }
 
 dma_buffer* flib_link::data_buffer() const { return m_data_buffer.get(); }
 
-dma_buffer* flib_link::desc_buffer() const { return m_dbuffer.get(); }
+dma_buffer* flib_link::desc_buffer() const { return m_desc_buffer.get(); }
 
 dma_channel* flib_link::get_ch() const { return m_channel.get(); }
 
@@ -416,11 +416,11 @@ int flib_link::init_hardware() {
     return -1;
   }
 
-  if (m_channel->prepareRB(m_dbuffer.get()) < 0) {
+  if (m_channel->prepareRB(m_desc_buffer.get()) < 0) {
     return -1;
   }
 
-  if (m_channel->configureChannel(m_data_buffer.get(), m_dbuffer.get(), 128) <
+  if (m_channel->configureChannel(m_data_buffer.get(), m_desc_buffer.get(), 128) <
       0) {
     return -1;
   }
@@ -428,12 +428,12 @@ int flib_link::init_hardware() {
   // clear eb for debugging
   memset(m_data_buffer->getMem(), 0, m_data_buffer->getMappingSize());
   // clear rb for polling
-  memset(m_dbuffer->getMem(), 0, m_dbuffer->getMappingSize());
+  memset(m_desc_buffer->getMem(), 0, m_desc_buffer->getMappingSize());
 
   m_eb = (uint64_t*)m_data_buffer->getMem();
-  m_db = (struct MicrosliceDescriptor*)m_dbuffer->getMem();
+  m_db = (struct MicrosliceDescriptor*)m_desc_buffer->getMem();
 
-  m_dbentries = m_dbuffer->getMaxRBEntries();
+  m_dbentries = m_desc_buffer->getMaxRBEntries();
 
   // Enable desciptor buffers and dma engine
   m_channel->setEnableEB(1);
