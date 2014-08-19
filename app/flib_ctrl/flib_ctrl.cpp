@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
   // FLIB global configuration
   flib.set_mc_time(par.mc_size());
   out.debug() << "MC size is: " 
-              << (flib.get_rf()->get_reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
+              << (flib.get_rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
 
   // FLIB per link configuration
 #ifdef CNETCNTLSERVER
