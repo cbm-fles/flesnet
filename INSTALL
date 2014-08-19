@@ -11,14 +11,18 @@ Fairroot external packages
  See http://fairroot.gsi.de/?q=node/8
  After installing set SIMPATH to point to this installation
 
-sudo aptitude install subversion make cmake gcc gcc \
- gfortran binutils patch libX11-dev libXmu-dev libXpm-dev \
- libXft-dev libXext-dev dpkg-dev libglew1.5-dev
-
 If your machine doesn't feature InfiniBand you need to install SoftiWARP
  cd contrib
  ./install-softiwarp
 
+If you like to have controls access to CBMnet via the controls API
+you need the cbmnetcntlserver library found in the CBMroot repository.
+(Note: the make target is 'cbmnetcntlserver')
+
+For compiling flesnet with Controls API support set the environment Variables
+CNETCNTLSERVER_PATH to the cbmnetcntlserver library and include location, e.g.
+
+'export CNETCNTLSERVER_PATH=/opt/cbmroot/build/lib:/opt/cbmroot/fles/ctrl'
 
 Building flesnet
 ----------------
