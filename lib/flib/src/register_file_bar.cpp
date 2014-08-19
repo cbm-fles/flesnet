@@ -16,8 +16,8 @@
 namespace flib {
 register_file_bar::register_file_bar(pci_bar* bar, sys_bus_addr base_addr)
     : m_base_addr(base_addr) {
-  m_bar = static_cast<uint32_t*>(bar->get_mem_ptr());
-  m_bar_size = bar->get_size();
+  m_bar = static_cast<uint32_t*>(bar->mem_ptr());
+  m_bar_size = bar->size();
 }
 
 __attribute__((__target__("no-sse"))) int register_file_bar::get_mem(

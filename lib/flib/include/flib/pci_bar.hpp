@@ -31,13 +31,13 @@ public:
   pci_bar(device* dev, uint8_t number);
   ~pci_bar(){};
 
-  void* get_mem_ptr() { return static_cast<void*>(m_bar); };
+  void* mem_ptr() { return static_cast<void*>(m_bar); };
 
   /**
    * Get size of mapped BAR.
    * @return size of mapped BAR in bytes
    **/
-  size_t get_size() { return (m_size); };
+  size_t size() { return (m_size); };
 
 protected:
   device* m_parent_dev;
@@ -47,7 +47,7 @@ protected:
   uint8_t* m_bar;
   size_t m_size;
 
-  void getBarMap(uint8_t number);
+  void barMap(uint8_t number);
 };
 } /** namespace flib */
 

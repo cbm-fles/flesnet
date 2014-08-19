@@ -20,10 +20,10 @@ pci_bar::pci_bar(device* dev, uint8_t number) {
   m_number = number;
   m_pda_pci_device = m_parent_dev->getPdaPciDevice();
 
-  getBarMap(number);
+  barMap(number);
 }
 
-void pci_bar::getBarMap(uint8_t number) {
+void pci_bar::barMap(uint8_t number) {
 
   m_pda_bar = NULL;
 
