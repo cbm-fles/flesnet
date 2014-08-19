@@ -15,7 +15,7 @@ namespace po = boost::program_options;
 static const size_t _num_flib_links = 4;  
 
 struct link_config {
-  flib::flib_link::data_sel rx_sel;
+  flib::flib_link::data_sel_t rx_sel;
   flib::hdr_config hdr_config;
 };
 
