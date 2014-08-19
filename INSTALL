@@ -31,16 +31,26 @@ mkdir build
 cd build && cmake ..
 make
 
-Building the FLIB kernel module
+Building the PDA (for the FLIB driver)
 -------------------------------
 
-The kernel module is not part of the CMake flow, so it is necessary to
-build it manually.
+The PDA is the external library which is used to implement the FLIB driver lib-
+rary. The installation procedure is scripted, just run:
 
-sudo apt-get install linux-headers-$(uname -r)
+cd contrib
+./pda_inst.sh
 
-cd misc/kernel
-make
+BIG FAT WARNING: THIS SCRIPT IS _ONLY_ FOR DEBIAN.
+
+Note, user can only access the FLIB if they are member of the group "sudo". Al-
+so, the PDA udev rules might not be active after installing. The sure way to 
+make it active is to reboot the computer. Other procedures as ...
+
+udevadm control --reload-rules
+
+... might also work, but this is for sure system dependent. The script always
+installs the currently needed version. Please rerun the script if you encounter
+compilation errors.
 
 Preparing the operating system
 ------------------------------

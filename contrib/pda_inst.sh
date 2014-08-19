@@ -64,11 +64,7 @@ then
     patchmodulelist
 
     echo -en '\e[5m'
-    echo -e "$CTRL NOW YOU MUST EXTEND (!!) YOUR PATH ENVIRONMENT VARIABLE WITH /opt/pda/$PDA_VERSION/bin/"
-    echo -e "$CTRL PLEASE ADD (OR REPLACE IF THE VERSION CHANGED) THE FOLLOWING TO ~/.profile/ :"  
-    echo -e "$CTRL export PATH=\"/opt/pda/$PDA_VERSION/bin/:\$PATH\" "
-    echo -e ""
-    echo -e "$CTRL YOU ALSO MUST RESTART UDEV. A REBOOT WILL DO THE JOB IF IT'S UNCERTAIN WHAT TO DO!"
+    echo -e "$CTRL YOU MUST RESTART UDEV NOW. A REBOOT WILL DO THE JOB IF IT'S UNCERTAIN WHAT TO DO!"
     echo -en '\e[25m'
 else
     echo "Running as user!"

@@ -40,7 +40,7 @@ modify flib.cfg:
    sys_id and sys_ver of the connected source.
 
 The provided example flib.cfg will read 4 FLIB links with
-patten generator and a Microslice size of 10 µs.
+patten generator and a micro slice size of 10 µs.
 
 Usage:
 ./flib_ctrl
@@ -71,7 +71,7 @@ Control Client:
 
 The control library including th cliclient is now part of 
 the CBMroot repository.
-Please see the CBMroot repository for furter infomation.
+Please see the CBMroot repository for further information.
 
 General:
 --------
@@ -82,7 +82,7 @@ SIMPATH has to point to a fairroot external packages installation
 Preparing the FLIB
 ==================
 
-Download a bitfile from the build server
+Download a bit file from the build server
 ----------------------------------------
 
 run, e.g.:
@@ -90,7 +90,7 @@ run, e.g.:
 curl -O -u <GSI web login user> https://cbm-firmware.gsi.de/result/XX/flib_cnet_readout/XXX/htg_k7_cnet_readout.bit
 
 (NOTE: failing to provide a valid user/password won't give an error
-but result in an unuseable file.)
+but result in an unusable file.)
 
 Programming the FPGA
 --------------------
@@ -102,7 +102,7 @@ You can:
 - Choose if you like to use a CSE server
 - Choose if you like to run the script remotely
 
-Note: Do not source Xilinx settings.sh in the envoirenment/shell you
+Note: Do not source Xilinx settings.sh in the environment/shell you
 like to run/build flesnet! This will replace your glibc and cause
 problems. You might add the full path to impact to flib-jtag instead.
 
@@ -112,16 +112,6 @@ flib-jtag prog path/to/bitfile.bit
 If programming the FPGA the first time since powerup or 
 your machine does not support PCIe hot-plugging you need to reboot 
 the machine after programming.
-
-
-Loading/reloading the kernel driver
------------------------------------
-
-After rebooting you machine you need to load the kernel driver
-
-cd misc/kernel
-sudo ./reload.sh
-
 
 Check if FLIB is operational
 ----------------------------
@@ -161,10 +151,10 @@ The script 'contrib/flib-check' should give you something like:
 		LnkSta2: Current De-emphasis Level: -6dB, EqualizationComplete-, EqualizationPhase1-
 			 EqualizationPhase2-, EqualizationPhase3-, LinkEqualizationRequest-
 	Capabilities: [100 v1] Device Serial Number 00-00-00-00-00-00-00-00
-	Kernel driver in use: rorcfs
+	Kernel driver in use: uio_pci_dma
 
 Check if:
- 'Kernel driver in use' shows 'rorcfs'. Otherwise reload the Kernel driver.
+ 'Kernel driver in use' shows 'uio_pci_dma'. Otherwise reload the Kernel driver.
  'LnkSta:' shows 'Speed 5GT/s' and 'Width x8'. Otherwise the card is not running with full capabilities.
    Try to replug the card or switch to an other PCIe slot.
 
@@ -176,8 +166,8 @@ Flesnet exits with:
 "ERROR: rdma_bind_addr(port=20079) failed: Cannot assign requested
 address terminate called without an active exception"
 
-- Check if there are leftover procecces for a previous run.
-- Check if 'localhost' is set properbly in /etc/hosts or
+- Check if there are leftover processes for a previous run.
+- Check if 'localhost' is set properly in /etc/hosts or
   try to use '127.0.0.1' instead of 'localhost' in the flesnet.cfg
 
 
@@ -201,7 +191,7 @@ How can I check if the FLIB is installed correctly?
 - See the 'Check' section in 'Preparing the FLIB'
 
 
-What to do if the FLIB/PC gets unresponsible after programming
+What to do if the FLIB/PC gets unresponsive after programming
 or a few minutes of use?
 
 - Set the boot parameters 'pcie_aspm=off 'acpi=ht noapic'
@@ -216,7 +206,7 @@ flip00 kernel: [  573.734117] pcieport 0000:00:01.0:    [ 0] Receiver Error     
 - Set the boot parameters 'pcie_aspm=off 'acpi=ht noapic'
 
 
-Felsnet can not allocate enough memory.
+Flesnet can not allocate enough memory.
 
 - The softiwarp install script installs a configuration to /etc/security/limits.d/.
   You need to re-login after installing for these changes to take affect.
