@@ -1,3 +1,10 @@
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
+ *
+ */
+
 #include <flib/pci_bar.hpp>
 #include <flib/device.hpp>
 #include <flib/data_structures.hpp>

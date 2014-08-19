@@ -1,12 +1,8 @@
 /**
  * @file
- * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>, Dominic Eschweiler
- * <dominic.eschweiler@cern.ch>
- * @version 0.1
- * @date 2014-07-03
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
- * The bar class represents a Base Address Register (BAR) file
- * mapping of the RORCs PCIe address space
  */
 
 #ifndef LIBFLIB_BAR_H

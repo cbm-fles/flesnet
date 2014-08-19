@@ -1,3 +1,10 @@
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
+ *
+ */
+
 #include <iostream>
 #include <cstdlib>
 #include <cstring>

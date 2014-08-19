@@ -1,8 +1,9 @@
 /**
  * @file
- * @author Dominic Eschweiler <dominic.eschweiler@cern.ch>
- * @date 2014-07-08
- **/
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
+ *
+ */
 
 #ifndef PCI_DMA_BUFFER_H
 #define PCI_DMA_BUFFER_H

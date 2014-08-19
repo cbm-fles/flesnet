@@ -1,3 +1,10 @@
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
+ *
+ */
+
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>

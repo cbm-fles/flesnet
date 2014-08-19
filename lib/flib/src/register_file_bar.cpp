@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
+ *
+ */
 
 #include <flib/register_file_bar.hpp>
 

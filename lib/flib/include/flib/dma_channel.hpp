@@ -1,13 +1,12 @@
 /**
  * @file
- * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>, Dominic Eschweiler
- * <dominic.eschweiler@cern.ch>
- * @version 0.1
- * @date 2014-07-08
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
+ *
  */
 
-#ifndef _RORCLIB_RORCFS_DMA_CHANNEL_H
-#define _RORCLIB_RORCFS_DMA_CHANNEL_H
+#ifndef DMA_CHANNEL_H
+#define DMA_CHANNEL_H
 
 #include <flib/data_structures.hpp>
 

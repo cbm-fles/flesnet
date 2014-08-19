@@ -1,3 +1,10 @@
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
+ *
+ */
+
 #ifndef FLIB_H
 #define FLIB_H
 
