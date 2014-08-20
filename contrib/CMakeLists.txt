@@ -13,4 +13,17 @@ add_custom_command(
           ${CMAKE_CURRENT_SOURCE_DIR}/verbs.supp ${CMAKE_BINARY_DIR}/verbs.supp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/verbs.supp)
 
+
+add_custom_target (
+	cfg-files ALL
+	COMMAND ${CMAKE_COMMAND} 
+          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/flib.cfg 
+          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/flib.cfg
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
+	COMMAND ${CMAKE_COMMAND} 
+          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/flesnet_flib_example.cfg 
+          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/flesnet.cfg
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
+)
+
 add_custom_target(links ALL DEPENDS run verbs.supp)

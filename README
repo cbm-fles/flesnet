@@ -8,7 +8,6 @@ FLESnet:
 
 cd build
 ./flesnet --help
-cp ../contrib/flesnet_flib_example.cfg ./flesnet.cfg
 
 modify flesnet.cfg:
  - choose 'processor-executable' ,e.g. to store data
@@ -29,7 +28,6 @@ FLIB Control:
 
 cd build
 ./flib_ctrl --help
-cp ../contrib/flib.cfg ./flib.cfg
 
 modify flib.cfg:
  - Set the data source for each FLIB link.
