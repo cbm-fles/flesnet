@@ -26,9 +26,9 @@ int main(int argc, char *argv[])
  
   std::cout << MyFlib->print_build_info() << std::endl;
 
-  printf("r_ctrl_tx: %08x\n", MyFlib->get_link(0).get_rfgtx()->reg(RORC_REG_GTX_CTRL_TX));
+  printf("r_ctrl_tx: %08x\n", MyFlib->link(0).get_rfgtx()->reg(RORC_REG_GTX_CTRL_TX));
 
-  MyFlib->get_link(0).set_data_sel(flib_link::rx_pgen);
+  MyFlib->link(0).set_data_sel(flib_link::rx_pgen);
     
   printf("START\n");
 
@@ -57,17 +57,17 @@ int main(int argc, char *argv[])
 
 
   // receive to flush hw buffers
-  if ( MyFlib->get_link(0).recv_dcm(&r_msg) < 0)  {
+  if ( MyFlib->link(0).recv_dcm(&r_msg) < 0)  {
     printf("nothing to receive\n");
   }
   
 
-  if ( MyFlib->get_link(0).send_dcm(&s_msg) < 0)  {
+  if ( MyFlib->link(0).send_dcm(&s_msg) < 0)  {
     printf("sending failed\n");
   }                      
     
   // receive msg
-  if ( MyFlib->get_link(0).recv_dcm(&r_msg) < 0)  {
+  if ( MyFlib->link(0).recv_dcm(&r_msg) < 0)  {
     printf("error receiving\n");
   }
 
@@ -75,17 +75,17 @@ int main(int argc, char *argv[])
     printf("buf: 0x%04x\n", r_msg.data[i]);
   }
 
-  printf("dlm: %01x\n", MyFlib->get_link(0).recv_dlm());
-  MyFlib->get_link(0).prepare_dlm(0x5, true);
-  MyFlib->get_link(0).send_dlm();
-  printf("dlm: %01x\n", MyFlib->get_link(0).recv_dlm());
-  printf("dlm: %01x\n", MyFlib->get_link(0).recv_dlm());
-  MyFlib->get_link(0).prepare_dlm(0x2, false);
+  printf("dlm: %01x\n", MyFlib->link(0).recv_dlm());
+  MyFlib->link(0).prepare_dlm(0x5, true);
+  MyFlib->link(0).send_dlm();
+  printf("dlm: %01x\n", MyFlib->link(0).recv_dlm());
+  printf("dlm: %01x\n", MyFlib->link(0).recv_dlm());
+  MyFlib->link(0).prepare_dlm(0x2, false);
 
-  printf("mc_index: %01lx\n", MyFlib->get_link(0).get_mc_index());
-  MyFlib->get_link(0).set_start_idx(5);
+  printf("mc_index: %01lx\n", MyFlib->link(0).get_mc_index());
+  MyFlib->link(0).set_start_idx(5);
   
-  printf("mc_index: %01lx\n", MyFlib->get_link(0).get_mc_index());
+  printf("mc_index: %01lx\n", MyFlib->link(0).get_mc_index());
 
 
   if (MyFlib)
