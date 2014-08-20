@@ -168,7 +168,7 @@ public:
   * get Report Buffer File Offset
   * @return unsigned long offset
   **/
-  unsigned long getRBOffset();
+  unsigned long RBOffset();
 
   /**
   * setOffsets
@@ -182,86 +182,14 @@ public:
   * DMA destination
   * @return 64bit offset in report buffer file
   **/
-  unsigned long getRBDMAOffset();
+  unsigned long RBDMAOffset();
 
   /**
   * get buffer offset that is currently used as
   * DMA destination
   * @return 64bit offset in event buffer file
   **/
-  unsigned long getEBDMAOffset();
-
-//  /**
-//  * set DW in EBDM
-//  * @param addr address in EBDM component
-//  * @param data data to be writtem
-//  **/
-//  void setEBDM(unsigned int addr, unsigned int data);
-
-//  /**
-//  * get DW from EBDM
-//  * @param addr address in EBDM component
-//  * @return data read from EBDM
-//  **/
-//  unsigned int getEBDM(unsigned int addr);
-
-//  /**
-//  * set DW in RBDM
-//  * @param addr address in RBDM component
-//  * @param data data to be writtem
-//  **/
-//  void setRBDM(unsigned int addr, unsigned int data);
-
-//  /**
-//  * get DW from RBDM
-//  * @param addr address in RBDM component
-//  * @return data read from RBDM
-//  **/
-//  unsigned int getRBDM(unsigned int addr);
-
-//  /**
-//  * set DW in EBDRAM
-//  * @param addr address in EBDRAM component
-//  * @param data data to be writtem
-//  **/
-//  void setEBDRAM(unsigned int addr, unsigned int data);
-
-//  /**
-//  * memcpy into EBDRAM
-//  * @param startaddr address in EBDRAM component
-//  * @param dma_desc pointer to struct rorcfs_dma_desc
-//  * */
-//  void memcpyEBDRAMentry(unsigned int startaddr,
-//                         struct rorcfs_dma_desc* dma_desc);
-
-//  /**
-//  * get DW from EBDRAM
-//  * @param addr address in EBDRAM component
-//  * @return data read from EBDRAM
-//  **/
-//  unsigned int getEBDRAM(unsigned int addr);
-
-//  /**
-//  * set DW in RBDRAM
-//  * @param addr address in RBDRAM component
-//  * @param data data to be writtem
-//  **/
-//  void setRBDRAM(unsigned int addr, unsigned int data);
-
-//  /**
-//  * memcpy into RBDRAM
-//  * @param startaddr address in EBDRAM component
-//  * @param dma_desc pointer to struct rorcfs_dma_desc
-//  * */
-//  void memcpyRBDRAMentry(unsigned int startaddr,
-//                         struct rorcfs_dma_desc* dma_desc);
-
-//  /**
-//  * get DW from RBDRAM
-//  * @param addr address in RBDRAM component
-//  * @return data read from RBDRAM
-//  **/
-//  unsigned int RBDRAM(unsigned int addr);
+  unsigned long EBDMAOffset();
 
 protected:
   register_file_bar* m_rfpkt = NULL;

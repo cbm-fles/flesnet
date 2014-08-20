@@ -232,7 +232,7 @@ unsigned long dma_channel::getEBOffset() {
   return offset;
 }
 
-unsigned long dma_channel::getEBDMAOffset() {
+unsigned long dma_channel::EBDMAOffset() {
   unsigned long offset =
       ((unsigned long)m_rfpkt->reg(RORC_REG_EBDM_FPGA_WRITE_POINTER_H)
        << 32);
@@ -252,14 +252,14 @@ void dma_channel::setRBOffset(unsigned long offset) {
   m_rfpkt->set_reg(RORC_REG_DMA_CTRL, status | (1 << 31));
 }
 
-unsigned long dma_channel::getRBOffset() {
+unsigned long dma_channel::RBOffset() {
   unsigned long offset =
       ((unsigned long)m_rfpkt->reg(RORC_REG_RBDM_SW_READ_POINTER_H) << 32);
   offset += (unsigned long)m_rfpkt->reg(RORC_REG_RBDM_SW_READ_POINTER_L);
   return offset;
 }
 
-unsigned long dma_channel::getRBDMAOffset() {
+unsigned long dma_channel::RBDMAOffset() {
   unsigned long offset =
       ((unsigned long)m_rfpkt->reg(RORC_REG_RBDM_FPGA_WRITE_POINTER_H)
        << 32);
