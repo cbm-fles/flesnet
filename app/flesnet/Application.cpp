@@ -18,7 +18,7 @@ Application::Application(Parameters const& par) : _par(par)
         {
             _flib =
                 std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
-            _flib_links = _flib->get_links();
+            _flib_links = _flib->links();
 
             // delete deactivated links from vector
             _flib_links.erase(std::remove_if(std::begin(_flib_links), std::end(_flib_links),
