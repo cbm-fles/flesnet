@@ -39,7 +39,7 @@ int main(int argc, const char* argv[])
   {
   flib::flib_device flib(0);
 
-  std::vector<flib::flib_link*> links = flib.get_links();
+  std::vector<flib::flib_link*> links = flib.links();
 
   out.info() << flib.print_build_info();
 
@@ -48,7 +48,7 @@ int main(int argc, const char* argv[])
   std::vector<uint64_t*> eb;
   std::vector<MicrosliceDescriptor*> rb;
 
-  for (size_t i = 0; i < flib.get_num_links(); ++i) {
+  for (size_t i = 0; i < flib.number_of_links(); ++i) {
     out.debug() << "initializing link " << i;
 
     // initialize a DMA buffer
@@ -134,7 +134,7 @@ int main(int argc, const char* argv[])
     j++;
   }
 
-for (size_t i = 0; i < flib.get_num_links(); ++i) {
+for (size_t i = 0; i < flib.number_of_links(); ++i) {
   out.debug() << "disable link " << i;
   
   // disable data source

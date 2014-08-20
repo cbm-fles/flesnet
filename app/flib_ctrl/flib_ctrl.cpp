@@ -41,12 +41,12 @@ int main(int argc, char* argv[])
 
   // create FLIB
   flib::flib_device flib(0);
-  std::vector<flib::flib_link*> links = flib.get_links();
+  std::vector<flib::flib_link*> links = flib.links();
 
   // FLIB global configuration
   flib.set_mc_time(par.mc_size());
   out.debug() << "MC size is: " 
-              << (flib.get_rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
+              << (flib.rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
 
   // FLIB per link configuration
 #ifdef CNETCNTLSERVER
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
   out.info() << "Running without Controls API.";
 #endif
 
-  for (size_t i = 0; i < flib.get_num_links(); ++i) {
+  for (size_t i = 0; i < flib.number_of_links(); ++i) {
     out.debug() << "Initializing link " << i;
 
     struct link_config link_config = par.link_config(i);

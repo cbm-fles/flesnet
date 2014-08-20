@@ -21,7 +21,7 @@ class device;
 class pci_bar;
 class register_file_bar;
 
-struct build_info {
+struct build_info_t {
   boost::posix_time::ptime date;
   uint32_t rev[5];
   uint16_t hw_ver;
@@ -41,18 +41,18 @@ public:
   void set_mc_time(uint32_t time);
   void send_dlm();
   /** global dlm send, requires link local prepare_dlm beforehand */
-  uint8_t get_num_hw_links();
+  uint8_t number_of_hw_links();
 
-  uint16_t get_hw_ver();
-  boost::posix_time::ptime get_build_date();
-  struct build_info get_build_info();
+  uint16_t hardware_version();
+  boost::posix_time::ptime build_date();
+  struct build_info_t build_info();
   std::string print_build_info();
   std::string print_devinfo();
 
-  size_t get_num_links();
-  std::vector<flib_link*> get_links();
-  flib_link& get_link(size_t n);
-  register_file_bar* get_rf() const;
+  size_t number_of_links();
+  std::vector<flib_link*> links();
+  flib_link& link(size_t n);
+  register_file_bar* rf() const;
 
 private:
 
