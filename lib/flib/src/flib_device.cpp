@@ -132,9 +132,9 @@ std::string flib_device::print_build_info() {
 
 std::string flib_device::print_devinfo() {
   std::stringstream ss;
-  ss << " Bus  " << static_cast<uint32_t>(m_device->getBus()) << " Slot "
-     << static_cast<uint32_t>(m_device->getSlot()) << " Func "
-     << static_cast<uint32_t>(m_device->getFunc());
+  ss << " Bus  " << static_cast<uint32_t>(m_device->bus()) << " Slot "
+     << static_cast<uint32_t>(m_device->slot()) << " Func "
+     << static_cast<uint32_t>(m_device->func());
   return ss.str();
 }
 

@@ -24,31 +24,31 @@ public:
   device(int32_t device_index);
   ~device();
 
-  uint16_t getDomain();
+  uint16_t domain();
 
   /**
-   * Get PCIe Bus-ID
+   * PCIe Bus-ID
    * @return uint8 Bus-ID
   **/
-  uint8_t getBus();
+  uint8_t bus();
 
   /**
-   * Get PCIe Slot-ID
+   * PCIe Slot-ID
    * @return uint8 Slot-ID
   **/
-  uint8_t getSlot();
+  uint8_t slot();
 
   /**
-   * Get PCIe Function-ID
+   * PCIe Function-ID
    * @return uint8 Function-ID
   **/
-  uint8_t getFunc();
+  uint8_t func();
 
   /**
-   * get PCI-Device
+   * PCI-Device
    * @return PCI-Device-Pointer
   **/
-  PciDevice* getPdaPciDevice() { return (m_device); }
+  PciDevice* PDAPciDevice() { return (m_device); }
 
 protected:
   DeviceOperator* m_dop;

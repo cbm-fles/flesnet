@@ -39,7 +39,7 @@ device::~device() {
   }
 }
 
-uint16_t device::getDomain() {
+uint16_t device::domain() {
   uint16_t domain_id;
   if (PciDevice_getDomainID(m_device, &domain_id) == PDA_SUCCESS) {
     return (domain_id);
@@ -48,7 +48,7 @@ uint16_t device::getDomain() {
   return (0);
 }
 
-uint8_t device::getBus() {
+uint8_t device::bus() {
   uint8_t bus_id;
   if (PciDevice_getBusID(m_device, &bus_id) == PDA_SUCCESS) {
     return (bus_id);
@@ -57,7 +57,7 @@ uint8_t device::getBus() {
   return (0);
 }
 
-uint8_t device::getSlot() {
+uint8_t device::slot() {
   uint8_t device_id;
   if (PciDevice_getDeviceID(m_device, &device_id) == PDA_SUCCESS) {
     return (device_id);
@@ -66,7 +66,7 @@ uint8_t device::getSlot() {
   return (0);
 }
 
-uint8_t device::getFunc() {
+uint8_t device::func() {
   uint8_t function_id;
   if (PciDevice_getFunctionID(m_device, &function_id) == PDA_SUCCESS) {
     return (function_id);
