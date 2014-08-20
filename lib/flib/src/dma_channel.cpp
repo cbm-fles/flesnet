@@ -146,7 +146,7 @@ int dma_channel::configureChannel(struct dma_buffer* ebuf,
   return 0;
 }
 
-void dma_channel::setEnableEB(int enable) {
+void dma_channel::enableEB(int enable) {
   unsigned int bdcfg = m_rfpkt->reg(RORC_REG_DMA_CTRL);
   if (enable)
     m_rfpkt->set_reg(RORC_REG_DMA_CTRL, (bdcfg | (1 << 2)));
@@ -154,11 +154,11 @@ void dma_channel::setEnableEB(int enable) {
     m_rfpkt->set_reg(RORC_REG_DMA_CTRL, (bdcfg & ~(1 << 2)));
 }
 
-unsigned int dma_channel::EBEnabled() {
+unsigned int dma_channel::isEBEnabled() {
   return (m_rfpkt->reg(RORC_REG_DMA_CTRL) >> 2) & 0x01;
 }
 
-void dma_channel::setEnableRB(int enable) {
+void dma_channel::enableRB(int enable) {
   unsigned int bdcfg = m_rfpkt->reg(RORC_REG_DMA_CTRL);
   if (enable)
     m_rfpkt->set_reg(RORC_REG_DMA_CTRL, (bdcfg | (1 << 3)));
@@ -166,7 +166,7 @@ void dma_channel::setEnableRB(int enable) {
     m_rfpkt->set_reg(RORC_REG_DMA_CTRL, (bdcfg & ~(1 << 3)));
 }
 
-unsigned int dma_channel::RBEnabled() {
+unsigned int dma_channel::isRBEnabled() {
   return (m_rfpkt->reg(RORC_REG_DMA_CTRL) >> 3) & 0x01;
 }
 
@@ -174,7 +174,7 @@ void dma_channel::setDMAConfig(unsigned int config) {
   m_rfpkt->set_reg(RORC_REG_DMA_CTRL, config);
 }
 
-unsigned int dma_channel::getDMAConfig() {
+unsigned int dma_channel::DMAConfig() {
   return m_rfpkt->reg(RORC_REG_DMA_CTRL);
 }
 
@@ -190,7 +190,7 @@ void dma_channel::setMaxPayload() {
   m_MaxPayload = max_payload_size;
 }
 
-uint64_t dma_channel::getMaxPayload() { return m_MaxPayload; }
+uint64_t dma_channel::maxPayload() { return m_MaxPayload; }
 
 void dma_channel::setOffsets(unsigned long eboffset, unsigned long rboffset) {
   assert(m_rfpkt != NULL);
@@ -225,7 +225,7 @@ void dma_channel::setEBOffset(unsigned long offset) {
   m_rfpkt->set_reg(RORC_REG_DMA_CTRL, status | (1 << 31));
 }
 
-unsigned long dma_channel::getEBOffset() {
+unsigned long dma_channel::EBOffset() {
   unsigned long offset =
       ((unsigned long)m_rfpkt->reg(RORC_REG_EBDM_SW_READ_POINTER_H) << 32);
   offset += (unsigned long)m_rfpkt->reg(RORC_REG_EBDM_SW_READ_POINTER_L);
@@ -267,26 +267,26 @@ unsigned long dma_channel::RBDMAOffset() {
   return offset;
 }
 
-unsigned int dma_channel::getEBDMnSGEntries() {
+unsigned int dma_channel::EBDMnSGEntries() {
   return (m_rfpkt->reg(RORC_REG_EBDM_N_SG_CONFIG) & 0x0000ffff);
 }
 
-unsigned int dma_channel::getRBDMnSGEntries() {
+unsigned int dma_channel::RBDMnSGEntries() {
   return (m_rfpkt->reg(RORC_REG_RBDM_N_SG_CONFIG) & 0x0000ffff);
 }
 
-unsigned int dma_channel::getDMABusy() {
+unsigned int dma_channel::isDMABusy() {
   return ((m_rfpkt->reg(RORC_REG_DMA_CTRL) >> 7) & 0x01);
 }
 
-unsigned long dma_channel::getEBSize() {
+unsigned long dma_channel::EBSize() {
   unsigned long size =
       ((unsigned long)m_rfpkt->reg(RORC_REG_EBDM_BUFFER_SIZE_H) << 32);
   size += (unsigned long)m_rfpkt->reg(RORC_REG_EBDM_BUFFER_SIZE_L);
   return size;
 }
 
-unsigned long dma_channel::getRBSize() {
+unsigned long dma_channel::RBSize() {
   unsigned long size =
       ((unsigned long)m_rfpkt->reg(RORC_REG_RBDM_BUFFER_SIZE_H) << 32);
   size += (unsigned long)m_rfpkt->reg(RORC_REG_RBDM_BUFFER_SIZE_L);

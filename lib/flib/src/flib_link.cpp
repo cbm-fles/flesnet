@@ -395,14 +395,14 @@ void flib_link::stop() {
     // disable packer
     enable_cbmnet_packer(false);
     // disable DMA Engine
-    m_channel->setEnableEB(0);
+    m_channel->enableEB(0);
     // wait for pending transfers to complete (dma_busy->0)
-    while (m_channel->getDMABusy()) {
+    while (m_channel->isDMABusy()) {
       usleep(100);
     }
 
     // disable RBDM
-    m_channel->setEnableRB(0);
+    m_channel->enableRB(0);
     // reset
     reset_channel();
   }
@@ -443,9 +443,9 @@ int flib_link::init_hardware() {
   m_dbentries = m_desc_buffer->getMaxRBEntries();
 
   // Enable desciptor buffers and dma engine
-  m_channel->setEnableEB(1);
-  m_channel->setEnableRB(1);
-  m_channel->setDMAConfig(m_channel->getDMAConfig() | 0x01);
+  m_channel->enableEB(1);
+  m_channel->enableRB(1);
+  m_channel->setDMAConfig(m_channel->DMAConfig() | 0x01);
 
   return 0;
 }

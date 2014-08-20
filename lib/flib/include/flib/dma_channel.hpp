@@ -59,25 +59,25 @@ public:
   * set Enable Bit of EBDM
   * @param enable nonzero param will enable, zero will disable
   **/
-  void setEnableEB(int enable);
+  void enableEB(int enable);
 
   /**
   * set Enable Bit of RBDM
   * @param enable nonzero param will enable, zero will disable
   **/
-  void setEnableRB(int enable);
+  void enableRB(int enable);
 
   /**
   * Enable Bit of EBDM
   * @return enable bit
   **/
-  unsigned int EBEnabled();
+  unsigned int isEBEnabled();
 
   /**
   * Enable Bit of RBDM
   * @return enable bit
   **/
-  unsigned int RBEnabled();
+  unsigned int isRBEnabled();
 
   /**
   * setDMAConfig set the DMA Controller operation mode
@@ -90,31 +90,31 @@ public:
   * getDMAConfig
   * @return DMA Packetizer COnfiguration and Status
   **/
-  unsigned int getDMAConfig();
+  unsigned int DMAConfig();
 
   /**
   * get maximum payload size from current HW configuration
   * @return maximum payload size in bytes
   **/
-  uint64_t getMaxPayload();
+  uint64_t maxPayload();
 
   /**
   * get number of Scatter Gather entries for the Event buffer
   * @return number of entries
   **/
-  unsigned int getEBDMnSGEntries();
+  unsigned int EBDMnSGEntries();
 
   /**
   * get number of Scatter Gather entries for the Report buffer
   * @return number of entries
   **/
-  unsigned int getRBDMnSGEntries();
+  unsigned int RBDMnSGEntries();
 
   /**
   * get DMA Packetizer 'Busy' flag
   * @return 1 if busy, 0 if idle
   **/
-  unsigned int getDMABusy();
+  unsigned int isDMABusy();
 
   /**
   * get buffer size set in EBDM. This returns the size of the
@@ -122,14 +122,14 @@ public:
   * size of the associated DMA buffer.
   * @return buffer size in bytes
   **/
-  unsigned long getEBSize();
+  unsigned long EBSize();
 
   /**
   * get buffer size set in RBDM. As the RB is not overmapped this size
   * should be equal to the sysfs file size and buf->getRBSize()
   * @return buffer size in bytes
   **/
-  unsigned long getRBSize();
+  unsigned long RBSize();
 
   /**
   * configure DMA engine for current set of buffers
@@ -157,7 +157,7 @@ public:
   * get current Event Buffer File Offset
   * @return unsigned long offset
   **/
-  unsigned long getEBOffset();
+  unsigned long EBOffset();
 
   /**
   * set Report Buffer File Offset
