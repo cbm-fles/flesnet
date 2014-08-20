@@ -87,37 +87,36 @@ public:
   void setDMAConfig(unsigned int config);
 
   /**
-  * getDMAConfig
   * @return DMA Packetizer COnfiguration and Status
   **/
   unsigned int DMAConfig();
 
   /**
-  * get maximum payload size from current HW configuration
+  * maximum payload size from current HW configuration
   * @return maximum payload size in bytes
   **/
   uint64_t maxPayload();
 
   /**
-  * get number of Scatter Gather entries for the Event buffer
+  * number of Scatter Gather entries for the Event buffer
   * @return number of entries
   **/
   unsigned int EBDMnSGEntries();
 
   /**
-  * get number of Scatter Gather entries for the Report buffer
+  * number of Scatter Gather entries for the Report buffer
   * @return number of entries
   **/
   unsigned int RBDMnSGEntries();
 
   /**
-  * get DMA Packetizer 'Busy' flag
+  * DMA Packetizer 'Busy' flag
   * @return 1 if busy, 0 if idle
   **/
   unsigned int isDMABusy();
 
   /**
-  * get buffer size set in EBDM. This returns the size of the
+  * buffer size set in EBDM. This returns the size of the
   * DMA buffer set in the DMA enginge and has to be the physical
   * size of the associated DMA buffer.
   * @return buffer size in bytes
@@ -125,8 +124,8 @@ public:
   unsigned long EBSize();
 
   /**
-  * get buffer size set in RBDM. As the RB is not overmapped this size
-  * should be equal to the sysfs file size and buf->getRBSize()
+  * buffer size set in RBDM. As the RB is not overmapped this size
+  * should be equal to the sysfs file size and buf->RBSize()
   * @return buffer size in bytes
   **/
   unsigned long RBSize();
@@ -154,7 +153,7 @@ public:
   void setEBOffset(unsigned long offset);
 
   /**
-  * get current Event Buffer File Offset
+  * current Event Buffer File Offset
   * @return unsigned long offset
   **/
   unsigned long EBOffset();
@@ -165,7 +164,7 @@ public:
   void setRBOffset(unsigned long offset);
 
   /**
-  * get Report Buffer File Offset
+  * Report Buffer File Offset
   * @return unsigned long offset
   **/
   unsigned long RBOffset();
@@ -178,14 +177,14 @@ public:
   void setOffsets(unsigned long eboffset, unsigned long rboffset);
 
   /**
-  * get buffer offset that is currently used as
+  * buffer offset that is currently used as
   * DMA destination
   * @return 64bit offset in report buffer file
   **/
   unsigned long RBDMAOffset();
 
   /**
-  * get buffer offset that is currently used as
+  * buffer offset that is currently used as
   * DMA destination
   * @return 64bit offset in event buffer file
   **/

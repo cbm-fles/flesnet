@@ -141,7 +141,7 @@ for (size_t i = 0; i < flib.get_num_links(); ++i) {
   flib.enable_mc_cnt(false);
   out.debug() << "current mc nr 0x: " << std::hex <<  links.at(i)->get_mc_index();
   out.debug() << "pending mc: "  << links.at(i)->get_pending_mc();
-  out.debug() << "busy: " <<  links.at(i)->get_ch()->getDMABusy();
+  out.debug() << "busy: " <<  links.at(i)->get_ch()->isDMABusy();
  }
 
   out.debug() << "Exiting";
