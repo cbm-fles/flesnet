@@ -12,7 +12,7 @@
 
 namespace po = boost::program_options;
 
-static const size_t _num_flib_links = 4;  
+static const size_t _num_flib_links = 8;  
 
 struct link_config {
   flib::flib_link::data_sel_t rx_sel;
@@ -80,6 +80,34 @@ private:
        "Subsystem identifier of link 3 data source (8 Bit)")
       ("l3_sys_ver", po::value<std::string>(),
        "Subsystem format version of link 3 data source (8 Bit)")
+
+      ("l4_source", po::value<std::string>(), 
+       "Link 4 data source <disable|link|pgen|emu>")
+      ("l4_sys_id", po::value<std::string>(),
+       "Subsystem identifier of link 4 data source (8 Bit)")
+      ("l4_sys_ver", po::value<std::string>(),
+       "Subsystem format version of link 4 data source (8 Bit)")
+
+      ("l5_source", po::value<std::string>(), 
+       "Link 5 data source <disable|link|pgen|emu>")
+      ("l5_sys_id", po::value<std::string>(),
+       "Subsystem identifier of link 5 data source (8 Bit)")
+      ("l5_sys_ver", po::value<std::string>(),
+       "Subsystem format version of link 5 data source (8 Bit)")
+
+      ("l6_source", po::value<std::string>(), 
+       "Link 6 data source <disable|link|pgen|emu>")
+      ("l6_sys_id", po::value<std::string>(),
+       "Subsystem identifier of link 6 data source (8 Bit)")
+      ("l6_sys_ver", po::value<std::string>(),
+       "Subsystem format version of link 6 data source (8 Bit)")
+
+      ("l7_source", po::value<std::string>(), 
+       "Link 7 data source <disable|link|pgen|emu>")
+      ("l7_sys_id", po::value<std::string>(),
+       "Subsystem identifier of link 7 data source (8 Bit)")
+      ("l7_sys_ver", po::value<std::string>(),
+       "Subsystem format version of link 7 data source (8 Bit)")
       ;
 
     po::options_description cmdline_options("Allowed options");
