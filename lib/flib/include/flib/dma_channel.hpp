@@ -71,13 +71,13 @@ public:
   * get Enable Bit of EBDM
   * @return enable bit
   **/
-  unsigned int getEnableEB();
+  unsigned int EBEnabled();
 
   /**
   * get Enable Bit of RBDM
   * @return enable bit
   **/
-  unsigned int getEnableRB();
+  unsigned int RBEnabled();
 
   /**
   * setDMAConfig set the DMA Controller operation mode

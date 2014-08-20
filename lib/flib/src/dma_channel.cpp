@@ -154,7 +154,7 @@ void dma_channel::setEnableEB(int enable) {
     m_rfpkt->set_reg(RORC_REG_DMA_CTRL, (bdcfg & ~(1 << 2)));
 }
 
-unsigned int dma_channel::getEnableEB() {
+unsigned int dma_channel::EBEnabled() {
   return (m_rfpkt->reg(RORC_REG_DMA_CTRL) >> 2) & 0x01;
 }
 
@@ -166,7 +166,7 @@ void dma_channel::setEnableRB(int enable) {
     m_rfpkt->set_reg(RORC_REG_DMA_CTRL, (bdcfg & ~(1 << 3)));
 }
 
-unsigned int dma_channel::getEnableRB() {
+unsigned int dma_channel::RBEnabled() {
   return (m_rfpkt->reg(RORC_REG_DMA_CTRL) >> 3) & 0x01;
 }
 
