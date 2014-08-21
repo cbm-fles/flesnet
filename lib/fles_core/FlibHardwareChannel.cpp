@@ -37,8 +37,8 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
 
     _flib_link->enable_cbmnet_packer(true);
 
-    // assert(_flib_link->get_mc_index() == 0);
-    // assert(_flib_link->get_pending_mc() == 0);
+    // assert(_flib_link->mc_index() == 0);
+    // assert(_flib_link->pending_mc() == 0);
 }
 
 FlibHardwareChannel::~FlibHardwareChannel() { _flib_link->rst_pending_mc(); }
@@ -48,7 +48,7 @@ uint64_t FlibHardwareChannel::wait_for_data(uint64_t min_written_mc)
     uint64_t written_mc = 0;
     std::chrono::microseconds interval(100);
 
-    while ((written_mc = _flib_link->get_mc_index()) < min_written_mc) {
+    while ((written_mc = _flib_link->mc_index()) < min_written_mc) {
         std::this_thread::sleep_for(interval);
     }
 
@@ -58,7 +58,7 @@ uint64_t FlibHardwareChannel::wait_for_data(uint64_t min_written_mc)
 void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
                                               uint64_t new_acked_mc)
 {
-    _flib_link->get_ch()->setOffsets(
+    _flib_link->channel()->setOffsets(
         new_acked_data & _data_buffer_view->size_mask(),
         (new_acked_mc & _desc_buffer_view->size_mask()) *
             sizeof(fles::MicrosliceDescriptor));
