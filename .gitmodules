@@ -1,0 +1,3 @@
+[submodule "lib/fles_ipc"]
+	path = lib/fles_ipc
+	url = git@github.com:cbm-fles/fles_ipc.git

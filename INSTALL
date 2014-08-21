@@ -19,14 +19,14 @@ If you like to have controls access to CBMnet via the controls API
 you need the cbmnetcntlserver library found in the CBMroot repository.
 (Note: the make target is 'cbmnetcntlserver')
 
-For compiling flesnet with Controls API support set the environment Variables
-CNETCNTLSERVER_PATH to the cbmnetcntlserver library and include location, e.g.
-
-'export CNETCNTLSERVER_PATH=/opt/cbmroot/build/lib:/opt/cbmroot/fles/ctrl'
-
 Building flesnet
 ----------------
+For compiling flesnet with Controls API support set the environment Variables
+CNETCNTLSERVER_PATH to the cbmnetcntlserver library and include location, e.g.
+'export CNETCNTLSERVER_PATH=/opt/cbmroot/build/lib:/opt/cbmroot/fles/ctrl'
 
+git submodule init
+git submodule update
 mkdir build
 cd build && cmake ..
 make
