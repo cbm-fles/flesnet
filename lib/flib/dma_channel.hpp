@@ -8,7 +8,7 @@
 #ifndef DMA_CHANNEL_H
 #define DMA_CHANNEL_H
 
-#include <flib/data_structures.hpp>
+#include <data_structures.hpp>
 
 namespace flib {
 class register_file_bar;

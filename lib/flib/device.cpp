@@ -11,8 +11,8 @@
 
 #include <pda.h>
 
-#include <flib/device.hpp>
-#include <flib/data_structures.hpp>
+#include <device.hpp>
+#include <data_structures.hpp>
 
 using namespace std;
 

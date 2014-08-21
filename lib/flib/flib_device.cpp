@@ -13,11 +13,11 @@
 #include <sstream>
 #include <memory>
 
-#include <flib/flib_device.hpp>
-#include <flib/flib_link.hpp>
-#include <flib/register_file_bar.hpp>
-#include <flib/device.hpp>
-#include <flib/pci_bar.hpp>
+#include <flib_device.hpp>
+#include <flib_link.hpp>
+#include <register_file_bar.hpp>
+#include <device.hpp>
+#include <pci_bar.hpp>
 
 namespace flib {
 

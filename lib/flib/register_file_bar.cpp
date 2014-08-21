@@ -5,13 +5,12 @@
  *
  */
 
-#include <flib/register_file_bar.hpp>
-
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 
-#include <flib/pci_bar.hpp>
+#include <register_file_bar.hpp>
+#include <pci_bar.hpp>
 
 namespace flib {
 register_file_bar::register_file_bar(pci_bar* bar, sys_bus_addr base_addr)

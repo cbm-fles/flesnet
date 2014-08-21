@@ -13,16 +13,15 @@
 #include <memory>
 #include <stdexcept>
 
-#include <flib/flib_link.hpp>
-
-#include <flib/device.hpp>
-#include <flib/dma_buffer.hpp>
-#include <flib/pci_bar.hpp>
-#include <flib/dma_channel.hpp>
-#include <flib/flib_device.hpp>
-#include <flib/flib_link.hpp>
-#include <flib/register_file.hpp>
-#include <flib/register_file_bar.hpp>
+#include <flib_link.hpp>
+#include <device.hpp>
+#include <dma_buffer.hpp>
+#include <pci_bar.hpp>
+#include <dma_channel.hpp>
+#include <flib_device.hpp>
+#include <flib_link.hpp>
+#include <register_file.hpp>
+#include <register_file_bar.hpp>
 
 namespace flib {
 flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)

@@ -19,13 +19,13 @@
 
 #include <pda.h>
 
-#include <flib/dma_channel.hpp>
+#include <dma_channel.hpp>
 
-#include <flib/device.hpp>
-#include <flib/pci_bar.hpp>
-#include <flib/dma_buffer.hpp>
-#include <flib/registers.h>
-#include <flib/register_file_bar.hpp>
+#include <device.hpp>
+#include <pci_bar.hpp>
+#include <dma_buffer.hpp>
+#include <registers.h>
+#include <register_file_bar.hpp>
 
 using namespace std;
 

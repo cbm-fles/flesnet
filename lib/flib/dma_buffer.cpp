@@ -9,8 +9,8 @@
 
 #include <pda.h>
 
-#include <flib/dma_buffer.hpp>
-#include <flib/device.hpp>
+#include <dma_buffer.hpp>
+#include <device.hpp>
 
 using namespace std;
 

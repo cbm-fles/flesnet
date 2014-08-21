@@ -8,8 +8,8 @@
 #ifndef PCI_DMA_BUFFER_H
 #define PCI_DMA_BUFFER_H
 
-#include <stdint.h>
-#include <flib/data_structures.hpp>
+#include <cstdint>
+#include <data_structures.hpp>
 
 typedef struct DMABuffer_struct DMABuffer;
 typedef struct DMABuffer_SGNode_struct DMABuffer_SGNode;

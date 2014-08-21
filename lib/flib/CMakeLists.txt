@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.9 FATAL_ERROR)
 project(LIBFLIB)
 
-include_directories( ${LIBFLIB_SOURCE_DIR}/include )
+include_directories( ${LIBFLIB_SOURCE_DIR}/)
 
 set( REQUIRED_PDA_VERSION "8:0:3" )
 set(VERSION "0.0.0")
@@ -20,16 +20,16 @@ set(LIB_SRC
   flib_link.cpp
 )
 set(LIB_HDR
-  include/flib.h
-  include/flib/pci_bar.hpp
-  include/flib/dma_buffer.hpp
-  include/flib/device.hpp
-  include/flib/dma_channel.hpp
-  include/flib/registers.h
-  include/flib/flib_device.hpp
-  include/flib/flib_link.hpp
-  include/flib/register_file.hpp
-  include/flib/register_file_bar.hpp
+  flib.h
+  pci_bar.hpp
+  dma_buffer.hpp
+  device.hpp
+  dma_channel.hpp
+  registers.h
+  flib_device.hpp
+  flib_link.hpp
+  register_file.hpp
+  register_file_bar.hpp
 )
 
 add_library(flib SHARED ${LIB_HDR} ${LIB_SRC})

@@ -10,7 +10,7 @@
 
 #include <sys/mman.h>
 
-#include <flib/register_file.hpp>
+#include <register_file.hpp>
 
 namespace flib {
 

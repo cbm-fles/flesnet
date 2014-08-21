@@ -5,9 +5,9 @@
  *
  */
 
-#include <flib/pci_bar.hpp>
-#include <flib/device.hpp>
-#include <flib/data_structures.hpp>
+#include <pci_bar.hpp>
+#include <device.hpp>
+#include <data_structures.hpp>
 
 #include <pda.h>
 

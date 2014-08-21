@@ -8,7 +8,7 @@
 #ifndef REGISTER_FILE_HPP
 #define REGISTER_FILE_HPP
 
-#include <flib/data_structures.hpp>
+#include <data_structures.hpp>
 
 namespace flib {
 class register_file {
