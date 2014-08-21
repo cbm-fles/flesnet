@@ -3,6 +3,8 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(fles)
 
+set( REQUIRED_PDA_VERSION "8:0:3" )
+
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 IF(NOT DEFINED ENV{SIMPATH})
@@ -23,6 +25,7 @@ set(BOOST_ROOT ${SIMPATH})
 find_package(Boost 1.48.0 COMPONENTS serialization thread program_options system REQUIRED)
 find_package(Threads)
 find_package(ZMQ REQUIRED)
+find_package(PDA REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 

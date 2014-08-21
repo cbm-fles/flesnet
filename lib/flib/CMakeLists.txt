@@ -3,10 +3,10 @@ project(LIBFLIB)
 
 include_directories( ${LIBFLIB_SOURCE_DIR}/ )
 
-set( REQUIRED_PDA_VERSION "8:0:3" )
 set(VERSION "0.0.0")
 
-include(CMakePda.txt)
+#set( REQUIRED_PDA_VERSION "8:0:3" )
+#include(CMakePda.txt)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3 -Wstack-usage=2048 -fno-tree-vectorize")
 
