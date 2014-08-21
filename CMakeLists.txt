@@ -1,6 +1,8 @@
 # Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+include(ExternalProject)
+
 project(fles)
 
 set( REQUIRED_PDA_VERSION "8:0:3" )
@@ -30,9 +32,17 @@ find_package(PDA REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 add_subdirectory(lib/fles_core)
-add_subdirectory(lib/fles_ipc)
 add_subdirectory(lib/flib)
 add_subdirectory(lib/flib_dpb)
+
+ExternalProject_add(
+ fles_ipc
+ PREFIX fles_ipc
+ DOWNLOAD_COMMAND ""
+ # GIT_SUBMODULES "" not supported in git 2.8
+ INSTALL_COMMAND ""
+ SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/fles_ipc
+ )
 
 add_subdirectory(app/flesnet)
 add_subdirectory(app/tsclient)
