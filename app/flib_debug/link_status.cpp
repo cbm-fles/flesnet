@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 
   //MyFlib->link(0).set_data_sel(flib_link::pgen);
     
-  flib::flib_link::link_status_t status = MyFlib->link(0).print_link_status();
+  flib::flib_link::link_status_t status = MyFlib->link(0).link_status();
   
   std::stringstream ss;
   ss << "link status" << "\n"
