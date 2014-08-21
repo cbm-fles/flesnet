@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.9 FATAL_ERROR)
 project(LIBFLIB)
 
-include_directories( ${LIBFLIB_SOURCE_DIR}/)
+include_directories( ${LIBFLIB_SOURCE_DIR}/ )
 
 set( REQUIRED_PDA_VERSION "8:0:3" )
 set(VERSION "0.0.0")

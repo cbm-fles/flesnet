@@ -9,7 +9,7 @@ include_directories("${PROJECT_SOURCE_DIR}/app/flesnet"
                     "${PROJECT_SOURCE_DIR}/lib/fles_core"
                     "${PROJECT_SOURCE_DIR}/lib/einhard"
                     "${PROJECT_SOURCE_DIR}/lib/fles_ipc"
-                    "${PROJECT_SOURCE_DIR}/lib/flib/include")
+                    "${PROJECT_SOURCE_DIR}/lib/flib")
 
 add_executable(flesnet ${APP_SOURCES} ${APP_HEADERS})
 
