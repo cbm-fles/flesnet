@@ -433,14 +433,14 @@ int flib_link::init_hardware() {
   }
 
   // clear eb for debugging
-  memset(m_data_buffer->getMem(), 0, m_data_buffer->getMappingSize());
+  memset(m_data_buffer->mem(), 0, m_data_buffer->mappingSize());
   // clear rb for polling
-  memset(m_desc_buffer->getMem(), 0, m_desc_buffer->getMappingSize());
+  memset(m_desc_buffer->mem(), 0, m_desc_buffer->mappingSize());
 
-  m_eb = (uint64_t*)m_data_buffer->getMem();
-  m_db = (struct MicrosliceDescriptor*)m_desc_buffer->getMem();
+  m_eb = (uint64_t*)m_data_buffer->mem();
+  m_db = (struct MicrosliceDescriptor*)m_desc_buffer->mem();
 
-  m_dbentries = m_desc_buffer->getMaxRBEntries();
+  m_dbentries = m_desc_buffer->maxRBEntries();
 
   // Enable desciptor buffers and dma engine
   m_channel->enableEB(1);
@@ -452,13 +452,13 @@ int flib_link::init_hardware() {
 
 std::string flib_link::print_buffer_info(dma_buffer* buf) {
   std::stringstream ss;
-  ss << "start address = " << buf->getMem() << ", "
-     << "physical size = " << (buf->getPhysicalSize() >> 20) << " MByte, "
-     << "mapping size = " << (buf->getMappingSize() >> 20) << " MByte, "
+  ss << "start address = " << buf->mem() << ", "
+     << "physical size = " << (buf->physicalSize() >> 20) << " MByte, "
+     << "mapping size = " << (buf->mappingSize() >> 20) << " MByte, "
      << std::endl << "  end address = "
-     << (void*)((uint8_t*)buf->getMem() + buf->getPhysicalSize()) << ", "
-     << "num SG entries = " << buf->getnSGEntries() << ", "
-     << "max SG entries = " << buf->getMaxRBEntries();
+     << (void*)((uint8_t*)buf->mem() + buf->physicalSize()) << ", "
+     << "num SG entries = " << buf->numberOfSGEntries() << ", "
+     << "max SG entries = " << buf->maxRBEntries();
   return ss.str();
 }
 }

@@ -117,21 +117,21 @@ int dma_channel::configureChannel(struct dma_buffer* ebuf,
   }
 
   config.ebdm_n_sg_config = ebuf->numberOfSGEntries();
-  config.ebdm_buffer_size_low = (ebuf->getPhysicalSize()) & 0xffffffff;
-  config.ebdm_buffer_size_high = ebuf->getPhysicalSize() >> 32;
+  config.ebdm_buffer_size_low = (ebuf->physicalSize()) & 0xffffffff;
+  config.ebdm_buffer_size_high = ebuf->physicalSize() >> 32;
   config.rbdm_n_sg_config = rbuf->numberOfSGEntries();
-  config.rbdm_buffer_size_low = rbuf->getPhysicalSize() & 0xffffffff;
-  config.rbdm_buffer_size_high = rbuf->getPhysicalSize() >> 32;
+  config.rbdm_buffer_size_low = rbuf->physicalSize() & 0xffffffff;
+  config.rbdm_buffer_size_high = rbuf->physicalSize() >> 32;
 
   config.swptrs.ebdm_software_read_pointer_low =
-      (ebuf->getPhysicalSize() - max_payload) & 0xffffffff;
+      (ebuf->physicalSize() - max_payload) & 0xffffffff;
   config.swptrs.ebdm_software_read_pointer_high =
-      (ebuf->getPhysicalSize() - max_payload) >> 32;
+      (ebuf->physicalSize() - max_payload) >> 32;
   config.swptrs.rbdm_software_read_pointer_low =
-      (rbuf->getPhysicalSize() - sizeof(struct rorcfs_event_descriptor)) &
+      (rbuf->physicalSize() - sizeof(struct rorcfs_event_descriptor)) &
       0xffffffff;
   config.swptrs.rbdm_software_read_pointer_high =
-      (rbuf->getPhysicalSize() - sizeof(struct rorcfs_event_descriptor)) >> 32;
+      (rbuf->physicalSize() - sizeof(struct rorcfs_event_descriptor)) >> 32;
 
   // set new MAX_PAYLOAD size
   config.swptrs.dma_ctrl = (1 << 31) |      // sync software read pointers
