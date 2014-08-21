@@ -89,7 +89,7 @@ int flib_link::init_dma(open_or_create_t, size_t log_ebufsize,
 
 /*** MC access funtions ***/
 
-std::pair<mc_desc, bool> flib_link::get_mc() {
+std::pair<mc_desc, bool> flib_link::mc() {
   struct mc_desc mc;
   if (m_db[m_index].idx > m_mc_nr) { // mc_nr counts from 1 in HW
     m_mc_nr = m_db[m_index].idx;
@@ -284,7 +284,7 @@ void flib_link::set_hdr_config(const struct hdr_config* config) {
 }
 
 /*** GETTER ***/
-uint64_t flib_link::get_pending_mc() {
+uint64_t flib_link::pending_mc() {
   // TODO replace with _rfgtx->get_mem()
   uint64_t pend_mc = m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_L);
   pend_mc =
@@ -292,7 +292,7 @@ uint64_t flib_link::get_pending_mc() {
   return pend_mc;
 }
 
-uint64_t flib_link::get_mc_index() {
+uint64_t flib_link::mc_index() {
   // TODO replace with _rfgtx->get_mem()
   uint64_t mc_index = m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_L);
   mc_index =
@@ -306,27 +306,27 @@ flib_link::data_sel_t flib_link::data_sel() {
 }
 
 std::string flib_link::data_buffer_info() {
-  return get_buffer_info(m_data_buffer.get());
+  return print_buffer_info(m_data_buffer.get());
 }
 
 std::string flib_link::desc_buffer_info() {
-  return get_buffer_info(m_desc_buffer.get());
+  return print_buffer_info(m_desc_buffer.get());
 }
 
 dma_buffer* flib_link::data_buffer() const { return m_data_buffer.get(); }
 
 dma_buffer* flib_link::desc_buffer() const { return m_desc_buffer.get(); }
 
-dma_channel* flib_link::get_ch() const { return m_channel.get(); }
+dma_channel* flib_link::channel() const { return m_channel.get(); }
 
-register_file_bar* flib_link::get_rfpkt() const { return m_rfpkt.get(); }
+register_file_bar* flib_link::register_file_packetizer() const { return m_rfpkt.get(); }
 
-register_file_bar* flib_link::get_rfgtx() const { return m_rfgtx.get(); }
+register_file_bar* flib_link::register_file_gtx() const { return m_rfgtx.get(); }
 
-flib_link::link_status flib_link::get_link_status() {
+flib_link::link_status_t flib_link::link_status() {
   uint32_t sts = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_STS);
 
-  struct link_status link_status;
+  struct link_status_t link_status;
   link_status.link_active = (sts & (1));
   link_status.data_rx_stop = (sts & (1 << 1));
   link_status.ctrl_rx_stop = (sts & (1 << 2));
@@ -450,7 +450,7 @@ int flib_link::init_hardware() {
   return 0;
 }
 
-std::string flib_link::get_buffer_info(dma_buffer* buf) {
+std::string flib_link::print_buffer_info(dma_buffer* buf) {
   std::stringstream ss;
   ss << "start address = " << buf->getMem() << ", "
      << "physical size = " << (buf->getPhysicalSize() >> 20) << " MByte, "

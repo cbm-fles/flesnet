@@ -42,7 +42,7 @@ public:
   int init_dma(open_or_create_t, size_t log_ebufsize, size_t log_dbufsize);
 
   /*** MC access funtions ***/
-  std::pair<mc_desc, bool> get_mc();
+  std::pair<mc_desc, bool> mc();
   int ack_mc();
 
   /*** Configuration and control ***/
@@ -72,33 +72,31 @@ public:
   void send_dlm();
   uint8_t recv_dlm();
 
-  /*** setter methods ***/
   // REG: datapath_cfg
   // bit 1-0 data_sel (10: link, 11: pgen, 01: emu, 00: disable)
   enum data_sel_t { rx_disable, rx_emu, rx_link, rx_pgen };
   void set_data_sel(data_sel_t rx_sel);
   void set_hdr_config(const struct hdr_config* config);
 
-  /*** getter methods ***/
-  uint64_t get_pending_mc();
-  uint64_t get_mc_index();
+  uint64_t pending_mc();
+  uint64_t mc_index();
   data_sel_t data_sel();
   std::string data_buffer_info();
   std::string desc_buffer_info();
   dma_buffer* data_buffer() const;
   dma_buffer* desc_buffer() const;
-  dma_channel* get_ch() const;
-  register_file_bar* get_rfpkt() const;
-  register_file_bar* get_rfgtx() const;
+  dma_channel* channel() const;
+  register_file_bar* register_file_packetizer() const;
+  register_file_bar* register_file_gtx() const;
 
-  struct link_status {
+  struct link_status_t {
     bool link_active;
     bool data_rx_stop;
     bool ctrl_rx_stop;
     bool ctrl_tx_stop;
   };
 
-  struct link_status get_link_status();
+  struct link_status_t link_status();
 
 protected:
   std::unique_ptr<dma_channel> m_channel;
@@ -152,7 +150,7 @@ protected:
    */
   int init_hardware();
 
-  std::string get_buffer_info(dma_buffer* buf);
+  std::string print_buffer_info(dma_buffer* buf);
 };
 }
 
