@@ -83,7 +83,7 @@ int main(int argc, const char* argv[])
     flib.enable_mc_cnt(true);
     links.at(i)->enable_cbmnet_packer(true);
     
-    out.debug() << "current mc nr: " <<  links.at(i)->get_mc_index();
+    out.debug() << "current mc nr: " <<  links.at(i)->mc_index();
     out.debug() << "link " << i << "initialized";
   }
   /////////// THE MAIN LOOP ///////////
@@ -94,7 +94,7 @@ int main(int argc, const char* argv[])
 
   while(s_interrupted==0) {
     std::pair<flib::mc_desc, bool> mc_pair;
-    while ((mc_pair = links.at(i)->get_mc()).second == false && s_interrupted==0) {
+    while ((mc_pair = links.at(i)->mc()).second == false && s_interrupted==0) {
       usleep(10);
       links.at(i)->ack_mc();
       pending_acks = 0;
@@ -139,9 +139,9 @@ for (size_t i = 0; i < flib.number_of_links(); ++i) {
   
   // disable data source
   flib.enable_mc_cnt(false);
-  out.debug() << "current mc nr 0x: " << std::hex <<  links.at(i)->get_mc_index();
-  out.debug() << "pending mc: "  << links.at(i)->get_pending_mc();
-  out.debug() << "busy: " <<  links.at(i)->get_ch()->isDMABusy();
+  out.debug() << "current mc nr 0x: " << std::hex <<  links.at(i)->mc_index();
+  out.debug() << "pending mc: "  << links.at(i)->pending_mc();
+  out.debug() << "busy: " <<  links.at(i)->channel()->isDMABusy();
  }
 
   out.debug() << "Exiting";
