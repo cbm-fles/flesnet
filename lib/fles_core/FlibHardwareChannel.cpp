@@ -21,10 +21,10 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                          desc_buffer_bytes_exp);
 
     uint8_t* data_buffer =
-        reinterpret_cast<uint8_t*>(_flib_link->data_buffer()->getMem());
+        reinterpret_cast<uint8_t*>(_flib_link->data_buffer()->mem());
     fles::MicrosliceDescriptor* desc_buffer =
         reinterpret_cast<fles::MicrosliceDescriptor*>(
-            _flib_link->desc_buffer()->getMem());
+            _flib_link->desc_buffer()->mem());
 
     _data_buffer_view = std::unique_ptr<RingBufferView<>>(
         new RingBufferView<>(data_buffer, data_buffer_size_exp));

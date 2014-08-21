@@ -55,7 +55,7 @@ int dma_channel::prepareBuffer(dma_buffer* buf, sys_bus_addr addr,
   /**
    *  check that buffers SGList fits into EBDRAM
    */
-  if (buf->getnSGEntries() > (bdcfg >> 16)) {
+  if (buf->numberOfSGEntries() > (bdcfg >> 16)) {
     errno = EFBIG;
     return (-EFBIG);
   }
@@ -101,8 +101,8 @@ int dma_channel::configureChannel(struct dma_buffer* ebuf,
   uint32_t ebdmnsgcfg = m_rfpkt->reg(RORC_REG_RBDM_N_SG_CONFIG);
 
   // check if sglist fits into FPGA buffers
-  if (((rbdmnsgcfg >> 16) < rbuf->getnSGEntries()) |
-      ((ebdmnsgcfg >> 16) < ebuf->getnSGEntries())) {
+  if (((rbdmnsgcfg >> 16) < rbuf->numberOfSGEntries()) |
+      ((ebdmnsgcfg >> 16) < ebuf->numberOfSGEntries())) {
     errno = -EFBIG;
     return errno;
   }
@@ -116,10 +116,10 @@ int dma_channel::configureChannel(struct dma_buffer* ebuf,
     return errno;
   }
 
-  config.ebdm_n_sg_config = ebuf->getnSGEntries();
+  config.ebdm_n_sg_config = ebuf->numberOfSGEntries();
   config.ebdm_buffer_size_low = (ebuf->getPhysicalSize()) & 0xffffffff;
   config.ebdm_buffer_size_high = ebuf->getPhysicalSize() >> 32;
-  config.rbdm_n_sg_config = rbuf->getnSGEntries();
+  config.rbdm_n_sg_config = rbuf->numberOfSGEntries();
   config.rbdm_buffer_size_low = rbuf->getPhysicalSize() & 0xffffffff;
   config.rbdm_buffer_size_high = rbuf->getPhysicalSize() >> 32;
 

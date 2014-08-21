@@ -64,51 +64,51 @@ public:
   int connect(device* dev, uint64_t id);
 
   /**
-   * get Buffer-ID
+   * Buffer-ID
    * @return unsigned long Buffer-ID
    */
-  uint64_t getID() { return m_id; }
+  uint64_t ID() { return m_id; }
 
   /**
-   * Get physical Buffer size in bytes. Requested buffer
+   * Physical Buffer size in bytes. Requested buffer
    * size from init() is rounded up to the next PAGE_SIZE
    * boundary.
    * @return number of bytes allocated as Buffer
    */
-  uint64_t getPhysicalSize() { return m_physical_size; }
+  uint64_t physicalSize() { return m_physical_size; }
 
   /**
-   * Get size of the EB mapping. THis is double the size of
+   * Size of the EB mapping. THis is double the size of
    * the physical buffer size due to overmapping
    * @return size of the EB mapping in bytes
    */
-  uint64_t getMappingSize() { return m_mapping_size; }
+  uint64_t mappingSize() { return m_mapping_size; }
 
   /**
-   * get the overmapped flag of the buffer
+   * Is the buffer overmapped or not
    * @return 0 if unset, nonzero if set
    */
-  int getOvermapped();
+  int isOvermapped();
 
   /**
-   * Get number of scatter-gather entries for the Buffer
+   * Number of scatter-gather entries for the Buffer
    * @return number of entries
    */
-  uint64_t getnSGEntries() { return m_scatter_gather_entries; }
+  uint64_t numberOfSGEntries() { return m_scatter_gather_entries; }
 
   /**
-   * Get the maximum number of report buffer entries in the RB
+   * Maximum number of report buffer entries in the RB
    * @return maximum number of report buffer entries
    */
-  uint64_t getMaxRBEntries() {
+  uint64_t maxRBEntries() {
     return (m_physical_size / sizeof(struct rorcfs_event_descriptor));
   }
 
   /**
-   * get memory buffer
+   * return memory buffer
    * @return pointer to mmap'ed buffer memory
    **/
-  unsigned int* getMem() { return m_mem; }
+  unsigned int* mem() { return m_mem; }
 
 protected:
   PciDevice* m_device = NULL;

@@ -78,7 +78,7 @@ int dma_buffer::connect(device* device, uint64_t id) {
     return -1;
   }
 
-  if (getOvermapped() == 1) {
+  if (isOvermapped() == 1) {
     m_mapping_size = 2 * m_physical_size;
   } else {
     m_mapping_size = m_physical_size;
@@ -96,7 +96,7 @@ int dma_buffer::connect(device* device, uint64_t id) {
   return 0;
 }
 
-int dma_buffer::getOvermapped() {
+int dma_buffer::isOvermapped() {
   void* map_two = NULL;
 
   if (DMABuffer_getMapTwo(m_buffer, &map_two) != PDA_SUCCESS) {
