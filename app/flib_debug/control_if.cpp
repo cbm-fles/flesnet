@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
  
   std::cout << MyFlib->print_build_info() << std::endl;
 
-  printf("r_ctrl_tx: %08x\n", MyFlib->link(0).get_rfgtx()->reg(RORC_REG_GTX_CTRL_TX));
+  printf("r_ctrl_tx: %08x\n", MyFlib->link(0).register_file_gtx()->reg(RORC_REG_GTX_CTRL_TX));
 
   MyFlib->link(0).set_data_sel(flib_link::rx_pgen);
     
@@ -82,10 +82,10 @@ int main(int argc, char *argv[])
   printf("dlm: %01x\n", MyFlib->link(0).recv_dlm());
   MyFlib->link(0).prepare_dlm(0x2, false);
 
-  printf("mc_index: %01lx\n", MyFlib->link(0).get_mc_index());
+  printf("mc_index: %01lx\n", MyFlib->link(0).mc_index());
   MyFlib->link(0).set_start_idx(5);
   
-  printf("mc_index: %01lx\n", MyFlib->link(0).get_mc_index());
+  printf("mc_index: %01lx\n", MyFlib->link(0).mc_index());
 
 
   if (MyFlib)
