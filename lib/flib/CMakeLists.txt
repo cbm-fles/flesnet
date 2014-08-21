@@ -11,13 +11,13 @@ include(CMakePda.txt)
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3 -Wstack-usage=2048 -fno-tree-vectorize")
 
 set(LIB_SRC
-  src/pci_bar.cpp
-  src/dma_buffer.cpp
-  src/device.cpp
-  src/dma_channel.cpp
-  src/register_file_bar.cpp
-  src/flib_device.cpp
-  src/flib_link.cpp
+  pci_bar.cpp
+  dma_buffer.cpp
+  device.cpp
+  dma_channel.cpp
+  register_file_bar.cpp
+  flib_device.cpp
+  flib_link.cpp
 )
 set(LIB_HDR
   include/flib.h
@@ -38,8 +38,3 @@ set_target_properties(flib-static PROPERTIES OUTPUT_NAME flib)
 
 target_link_libraries( flib ${EXTRA_LIBS})
 target_link_libraries( flib-static ${EXTRA_LIBS})
-
-install(TARGETS flib flib-static
-            LIBRARY DESTINATION lib
-            ARCHIVE DESTINATION lib)
-install(DIRECTORY include/ DESTINATION include)
