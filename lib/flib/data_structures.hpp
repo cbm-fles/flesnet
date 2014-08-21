@@ -11,7 +11,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
-#include <stdint.h>
+#include <cstdint>
 #include <unistd.h>
 
 #include <string>

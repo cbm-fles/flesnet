@@ -5,9 +5,7 @@
  *
  */
 
-#include <stdio.h>
 #include <string.h>
-#include <sys/mman.h>
 
 #include <register_file_bar.hpp>
 #include <pci_bar.hpp>
