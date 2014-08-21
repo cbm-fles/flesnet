@@ -6,8 +6,8 @@
  */
 
 #include <unistd.h>
-#include <errno.h>
 
+#include <cerrno>
 #include <cassert>
 #include <cstdint>
 #include <iostream>
