@@ -1,6 +1,24 @@
 FLESnet
 =======
 
+OS and Software Environment
+--------------------
+
+At the moment the official operating system for operating flesnet with
+a flib is: 
+
+Debian 7.6 / fairroot external packages jul14p3
+
+This doesn't imply that it is impossible to run a setup on any other 
+OS / external packages combination. But tests are only performed for the 
+official versions. If there are reasons to go to another version please 
+let me know.
+
+Earlier versions:
+
+Debian 7.6 / fairroot external packages jul14p2
+
+
 BUILD DEPENDENCIES
 ------------------
 
@@ -21,12 +39,23 @@ you need the cbmnetcntlserver library found in the CBMroot repository.
 
 Building flesnet
 ----------------
-For compiling flesnet with Controls API support set the environment Variables
-CNETCNTLSERVER_PATH to the cbmnetcntlserver library and include location, e.g.
+The environment variable SIMPATH has to point to the fairroot external 
+packages installation, e.g.
+'export SIMPATH /opt/fairsoft/jul14p3_build'
+
+For compiling flesnet with Controls API support set the environment variable
+CNETCNTLSERVER_PATH to the cbmnetcntlserver library and include location
+found in the cbmroot repository, e.g.
 'export CNETCNTLSERVER_PATH=/opt/cbmroot/build/lib:/opt/cbmroot/fles/ctrl'
+
+For every new clone of the repository run the following two commands a single 
+time form the repositories root directory
 
 git submodule init
 git submodule update
+
+Building flesnet:
+
 mkdir build
 cd build && cmake ..
 make
