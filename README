@@ -152,9 +152,9 @@ The script 'contrib/flib-check' should give you something like:
 	Kernel driver in use: uio_pci_dma
 
 Check if:
- 'Kernel driver in use' shows 'uio_pci_dma'. Otherwise reload the Kernel driver.
  'LnkSta:' shows 'Speed 5GT/s' and 'Width x8'. Otherwise the card is not running with full capabilities.
    Try to replug the card or switch to an other PCIe slot.
+ After you used the FLIB/flesnet the first time 'Kernel driver in use' shows 'uio_pci_dma'.
 
 
 FAQ
@@ -181,7 +181,7 @@ What should I do if something went wrong?
    Remove leftover shared memories if present:
    'sudo rm /dev/shm/flesnet_*'
 
-   Reprogramm the FLIB FPGA and reload the kernel module.
+   Reprogramm the FLIB FPGA.
 
 
 How can I check if the FLIB is installed correctly?
