@@ -92,6 +92,9 @@ int main(int argc, const char* argv[])
   size_t j = 0;
   size_t i = 0; // link number
 
+  size_t data_size = 0;
+  size_t mc_received = 0;
+
   while(s_interrupted==0) {
     std::pair<flib::mc_desc, bool> mc_pair;
     while ((mc_pair = links.at(i)->mc()).second == false && s_interrupted==0) {
@@ -104,6 +107,9 @@ int main(int argc, const char* argv[])
     if (s_interrupted != 0) {
       break;
     }
+
+    data_size += mc_pair.first.size;
+    ++mc_received;
 
     if (j == 0) {
       out.info() << "First MC seen.";
@@ -119,18 +125,24 @@ int main(int argc, const char* argv[])
       dump_mc_light(&mc_pair.first);
       dump_mc(&mc_pair.first);
     }
+
+    if (j % 10000 == 0) {
+      //usleep(39000);
+    }
   
-    if ((j & 0xFFFFF) == 0xFFFFF) {
+    if ((j & 0xFFFF) == 0xFFFF) {
       out.info() << "MC analysed " << j;
       dump_mc_light(&mc_pair.first);
-      dump_mc(&mc_pair.first);
+      out.info() << "avg size " << data_size / mc_received;
+      data_size = 0;
+      mc_received = 0;
+      //dump_mc(&mc_pair.first);
     }
  
     if (pending_acks == 10) {
       links.at(i)->ack_mc();
       pending_acks = 0;
     }
- 
     j++;
   }
 
