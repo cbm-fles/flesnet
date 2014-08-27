@@ -1,5 +1,5 @@
 EXECUTE_PROCESS(
-  COMMAND /opt/pda/99.99.99/bin/pda-config --include
+  COMMAND /opt/pda/8.0.4/bin/pda-config --include
   RESULT_VARIABLE PDA_RETURN
   OUTPUT_VARIABLE PDA_INCLUDE_DIR
   )
@@ -14,7 +14,7 @@ MESSAGE(STATUS "pda include         = ${PDA_INCLUDE_DIR}")
 include_directories ( ${PDA_INCLUDE_DIR}  )
 
 EXECUTE_PROCESS(
-  COMMAND /opt/pda/99.99.99/bin/pda-config --ldlibrarypath
+  COMMAND /opt/pda/8.0.4/bin/pda-config --ldlibrarypath
   RESULT_VARIABLE ret
   OUTPUT_VARIABLE PDA_LD_LIBRARY_PATH
   )
@@ -22,7 +22,7 @@ EXECUTE_PROCESS(
 MESSAGE(STATUS "pda LD_LIBRARY_PATH = ${PDA_LD_LIBRARY_PATH}")
 
 EXECUTE_PROCESS(
-  COMMAND /opt/pda/99.99.99/bin/pda-config --version
+  COMMAND /opt/pda/8.0.4/bin/pda-config --version
   RESULT_VARIABLE ret
   OUTPUT_VARIABLE PDA_VERSION
   )
