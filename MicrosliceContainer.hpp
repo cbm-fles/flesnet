@@ -4,28 +4,23 @@
 namespace fles {
 
 /**
- * Combines microslice metadata plus payload.
+ * Combine microslice metadata and content.
  */
 struct MicrosliceContainer {
-    MicrosliceDescriptor desc;
-    uint8_t * const content; // pointer is const, not data pointed to
-
-    /** `content` will point to external location */
-    MicrosliceContainer(MicrosliceDescriptor d, uint8_t *p)
-    : desc (d), content {p}, _content {}
-    {
-    };
-
-    /** `content` will point to contents of vector */
-    MicrosliceContainer(MicrosliceDescriptor d, std::vector<uint8_t> c)
-    : desc (d), // cannot use {}, see http://stackoverflow.com/q/19347004
-      content {c.data()}, // remains valid as c is moved
-      _content {std::move(c)}
-    {
-        desc.size = _content.size();
-    };
+    MicrosliceContainer(MicrosliceDescriptor d, uint8_t *content);
     /**<
-     * no vector is copied if an rvalue is passed for c,
+     * Use this constructor to combine an already existing descriptor and
+     * allocated memory for the payload. The MicrosliceContainer does not
+     * actually contain or own the payload in this case.
+     */
+
+    MicrosliceContainer(MicrosliceDescriptor d, std::vector<uint8_t> content);
+    /**<
+     * Use this constructor to pass ownership of microslice content to
+     * a MicrosliceContainer. The descriptor will be updated to match the
+     * size of the `content` vector.
+     *
+     * No vector is copied if `content` is passed as an rvalue,
      * like in
      *     MicrosliceContainer {..., std::move(some_vector)}
      * or
@@ -34,8 +29,12 @@ struct MicrosliceContainer {
      *     MicrosliceContainer {..., make_vector()}
      */
 
+    MicrosliceDescriptor desc; /**< the microslice descriptor... */
+    uint8_t * const content; /**< constant pointer to (non-const) data */
+
 private:
-    std::vector<uint8_t> _content; // left empty if payload stored externally
+    std::vector<uint8_t> _content;
+    /**< stores the data if the second constructor is used */
 };
 
 }
