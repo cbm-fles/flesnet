@@ -9,7 +9,7 @@ namespace fles {
  * Combine microslice metadata and content.
  */
 struct MicrosliceContainer {
-    MicrosliceContainer(MicrosliceDescriptor d, uint8_t *content);
+    MicrosliceContainer(MicrosliceDescriptor d, const uint8_t *content);
     /**<
      * Use this constructor to combine an already existing descriptor and
      * allocated memory for the payload. The MicrosliceContainer does not
@@ -32,7 +32,7 @@ struct MicrosliceContainer {
      */
 
     MicrosliceDescriptor desc; /**< the microslice descriptor... */
-    uint8_t * const content; /**< constant pointer to (non-const) data */
+    const uint8_t * const content; /**< pointer to data */
 
 private:
     std::vector<uint8_t> _content;

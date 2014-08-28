@@ -56,7 +56,7 @@ public:
 
     uint32_t append_microslice(uint64_t component, uint64_t microslice,
                                MicrosliceDescriptor& descriptor,
-                               uint8_t* content)
+                               const uint8_t* content)
     {
         assert(component < _timeslice_descriptor.num_components);
         std::vector<uint8_t>& this_data = _data[component];

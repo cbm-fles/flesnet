@@ -3,7 +3,7 @@
 namespace fles {
 
 MicrosliceContainer::MicrosliceContainer(MicrosliceDescriptor d,
-                                         uint8_t *content_p)
+                                         const uint8_t *content_p)
 : desc (d), // cannot use {}, see http://stackoverflow.com/q/19347004
   content {content_p},
   _content {}
