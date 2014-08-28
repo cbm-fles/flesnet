@@ -10,6 +10,13 @@ struct MicrosliceContainer {
     MicrosliceDescriptor desc;
     uint8_t * const content; // pointer is const, not data pointed to
 
+    /** `content` will point to external location */
+    MicrosliceContainer(MicrosliceDescriptor d, uint8_t *p)
+    : desc (d), content {p}, _content {}
+    {
+    };
+
+    /** `content` will point to contents of vector */
     MicrosliceContainer(MicrosliceDescriptor d, std::vector<uint8_t> c)
     : desc (d), // cannot use {}, see http://stackoverflow.com/q/19347004
       content {c.data()}, // remains valid as c is moved
