@@ -1,3 +1,5 @@
+#pragma once
+
 #include "MicrosliceDescriptor.hpp"
 #include <vector>
 
