@@ -11,7 +11,8 @@ struct MicrosliceContainer {
     std::vector<uint8_t> content;
 
     MicrosliceContainer(MicrosliceDescriptor d, std::vector<uint8_t> c)
-    : desc (d), content (std::move(c))
+    : desc (d), // cannot use {}, see http://stackoverflow.com/q/19347004
+      content {std::move(c)}
     {
         desc.size = content.size();
     };
