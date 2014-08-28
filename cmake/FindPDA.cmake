@@ -1,43 +1,29 @@
 EXECUTE_PROCESS(
-  COMMAND /opt/pda/8.0.4/bin/pda-config --include
+  COMMAND /opt/pda/${REQUIRED_PDA_VERSION}/bin/pda-config --include
   RESULT_VARIABLE PDA_RETURN
   OUTPUT_VARIABLE PDA_INCLUDE_DIR
   )
-
 IF( PDA_RETURN )
   MESSAGE( STATUS "Failed to run pda-config because it is not in the path. ")
   MESSAGE( STATUS "Seriously, have you ever even tried to install the PDA library? ")
   MESSAGE( FATAL_ERROR "ABORT!!!")
 ENDIF()
 MESSAGE(STATUS "pda include         = ${PDA_INCLUDE_DIR}")
-
 include_directories ( ${PDA_INCLUDE_DIR}  )
 
 EXECUTE_PROCESS(
-  COMMAND /opt/pda/8.0.4/bin/pda-config --ldlibrarypath
-  RESULT_VARIABLE ret
-  OUTPUT_VARIABLE PDA_LD_LIBRARY_PATH
-  )
-
-MESSAGE(STATUS "pda LD_LIBRARY_PATH = ${PDA_LD_LIBRARY_PATH}")
-
-EXECUTE_PROCESS(
-  COMMAND /opt/pda/8.0.4/bin/pda-config --version
+  COMMAND /opt/pda/${REQUIRED_PDA_VERSION}/bin/pda-config --version
   RESULT_VARIABLE ret
   OUTPUT_VARIABLE PDA_VERSION
   )
-
 MESSAGE(STATUS "pda VERSION         = ${PDA_VERSION}")
 
-set( DEBUG_PDA_VERSION "99:99:99" )
-IF( ${PDA_VERSION} STREQUAL ${DEBUG_PDA_VERSION} )
-  MESSAGE( STATUS "Debug version (99.99.99) of PDA found.")
-ELSEIF( NOT(${REQUIRED_PDA_VERSION} STREQUAL ${PDA_VERSION}) )
-  MESSAGE( STATUS "Wrong PDA version found.")
-  MESSAGE( STATUS "Found version ${PDA_VERSION} but require version ${REQUIRED_PDA_VERSION}.")
-  MESSAGE( STATUS "Try \"module load pda/${REQUIRED_PDA_VERSION}\" ...")
-  MESSAGE( FATAL_ERROR "ABORT!!!")
-ENDIF()
+EXECUTE_PROCESS(
+  COMMAND /opt/pda/${REQUIRED_PDA_VERSION}/bin/pda-config --ldlibrarypath
+  RESULT_VARIABLE ret
+  OUTPUT_VARIABLE PDA_LD_LIBRARY_PATH
+  )
+MESSAGE(STATUS "pda LD_LIBRARY_PATH = ${PDA_LD_LIBRARY_PATH}")
 
 find_library(PDA pda
     PATHS ${PDA_LD_LIBRARY_PATH})

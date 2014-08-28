@@ -5,7 +5,7 @@ include(ExternalProject)
 
 project(fles)
 
-set( REQUIRED_PDA_VERSION "8:0:4" )
+set( REQUIRED_PDA_VERSION "8.0.4" )
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
