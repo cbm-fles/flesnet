@@ -12,8 +12,8 @@ struct MicrosliceContainer {
     MicrosliceContainer(MicrosliceDescriptor d, const uint8_t *content);
     /**<
      * Use this constructor to combine an already existing descriptor and
-     * allocated memory for the payload. The MicrosliceContainer does not
-     * actually contain or own the payload in this case.
+     * allocated memory for the content. The MicrosliceContainer does not
+     * actually contain or own the data in this case.
      */
 
     MicrosliceContainer(MicrosliceDescriptor d, std::vector<uint8_t> content);
