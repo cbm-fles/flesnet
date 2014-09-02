@@ -24,8 +24,11 @@ class register_file_bar;
 struct build_info_t {
   boost::posix_time::ptime date;
   uint32_t rev[5];
+  std::string host;
+  std::string user;
   uint16_t hw_ver;
   bool clean;
+  uint8_t repo;
 };
 
 constexpr std::array<uint16_t, 1> hw_ver_table = {{4}};
@@ -45,6 +48,8 @@ public:
 
   uint16_t hardware_version();
   boost::posix_time::ptime build_date();
+  std::string build_host();
+  std::string build_user();
   struct build_info_t build_info();
   std::string print_build_info();
   std::string print_devinfo();

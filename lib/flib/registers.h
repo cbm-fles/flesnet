@@ -3,12 +3,17 @@
 // Note:
 // This file was automatically generated from:
 // src/packages/registers.vhd
-// Reposotory Revision: cabf3ee9c5178c501ac7716c3a01b7747834fe38
+// Repository is: git repository
+// Repository Revision: 68ded6953d25c483e054d75ef967925de53ba3ab
 // Repository Status: clean
-// Build Timestamp: Di 22. Jul 16:18:52 CEST 2014
-#define RORC_C_BUILD_DATE 1406038732
-#define RORC_C_BUILD_REVISION 0xcabf3ee9c5178c501ac7716c3a01b7747834fe38
+// Build Timestamp: Di 2. Sep 18:10:52 CEST 2014
+// Build System: hutter@eda
+#define RORC_C_BUILD_REPO 1
+#define RORC_C_BUILD_DATE 1409674252
+#define RORC_C_BUILD_REVISION 68ded6953d25c483e054d75ef967925de53ba3ab
 #define RORC_C_BUILD_STATUS_CLEAN 1
+#define RORC_C_BUILD_HOST 65646100000000000000000000000000
+#define RORC_C_BUILD_USER 68757474657200000000000000000000
 #define RORC_C_HARDWARE_VERSION 4
 #define RORC_CHANNEL_OFFSET 0x00008000
 #define RORC_DMA_CMP_SEL 13
@@ -32,6 +37,14 @@
 #define RORC_REG_BUILD_REV_2 17
 #define RORC_REG_BUILD_REV_3 18
 #define RORC_REG_BUILD_REV_4 19
+#define RORC_REG_BUILD_HOST_0 20
+#define RORC_REG_BUILD_HOST_1 21
+#define RORC_REG_BUILD_HOST_2 22
+#define RORC_REG_BUILD_HOST_3 23
+#define RORC_REG_BUILD_USER_0 24
+#define RORC_REG_BUILD_USER_1 25
+#define RORC_REG_BUILD_USER_2 26
+#define RORC_REG_BUILD_USER_3 27
 #define RORC_REG_EBDM_N_SG_CONFIG 0
 #define RORC_REG_EBDM_BUFFER_SIZE_L 1
 #define RORC_REG_EBDM_BUFFER_SIZE_H 2

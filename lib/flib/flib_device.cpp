@@ -12,6 +12,7 @@
 #include <string>
 #include <sstream>
 #include <memory>
+#include <arpa/inet.h>
 
 #include <flib_device.hpp>
 #include <flib_link.hpp>
@@ -100,10 +101,30 @@ boost::posix_time::ptime flib_device::build_date() {
   return t;
 }
 
+std::string flib_device::build_host() {
+  uint32_t host[4];
+  host[0] = ntohl(m_register_file->reg(RORC_REG_BUILD_HOST_3));
+  host[1] = ntohl(m_register_file->reg(RORC_REG_BUILD_HOST_2));
+  host[2] = ntohl(m_register_file->reg(RORC_REG_BUILD_HOST_1));
+  host[3] = ntohl(m_register_file->reg(RORC_REG_BUILD_HOST_0));
+  return std::string(reinterpret_cast<const char*>(host));
+}
+
+std::string flib_device::build_user() {
+  uint32_t user[4];
+  user[0] = ntohl(m_register_file->reg(RORC_REG_BUILD_USER_3));
+  user[1] = ntohl(m_register_file->reg(RORC_REG_BUILD_USER_2));
+  user[2] = ntohl(m_register_file->reg(RORC_REG_BUILD_USER_1));
+  user[3] = ntohl(m_register_file->reg(RORC_REG_BUILD_USER_0));
+  return std::string(reinterpret_cast<const char*>(user));
+}
+
 struct build_info_t flib_device::build_info() {
   build_info_t info;
 
   info.date = build_date();
+  info.host = build_host();
+  info.user = build_user();
   info.rev[0] = m_register_file->reg(RORC_REG_BUILD_REV_0);
   info.rev[1] = m_register_file->reg(RORC_REG_BUILD_REV_1);
   info.rev[2] = m_register_file->reg(RORC_REG_BUILD_REV_2);
@@ -111,22 +132,38 @@ struct build_info_t flib_device::build_info() {
   info.rev[4] = m_register_file->reg(RORC_REG_BUILD_REV_4);
   info.hw_ver = hardware_version();
   info.clean = (m_register_file->reg(RORC_REG_BUILD_FLAGS) & 0x1);
+  info.repo = (m_register_file->reg(RORC_REG_BUILD_FLAGS) & 0x6)>>1;
   return info;
 }
 
 std::string flib_device::print_build_info() {
   build_info_t build = build_info();
   std::stringstream ss;
-  ss << "Build Date:     " << build.date << std::endl
-     << "Repository Revision: " << std::hex << build.rev[4] << build.rev[3]
-     << build.rev[2] << build.rev[1] << build.rev[0] << std::endl;
-
+  ss << "Build Date:     " << build.date << " UTC" << std::endl
+     << "Build Source:   " << build.user << "@"<< build.host << std::endl;
+  switch(build.repo) {
+  case 1: ss << "Build from a git repository" << std::endl
+             << "Repository Revision: " << std::hex
+             << std::setfill('0') << std::setw(8) << build.rev[4]
+             << std::setfill('0') << std::setw(8) << build.rev[3]
+             << std::setfill('0') << std::setw(8) << build.rev[2]
+             << std::setfill('0') << std::setw(8) << build.rev[1]
+             << std::setfill('0') << std::setw(8) << build.rev[0]
+             << std::endl;
+    break;
+  case 2: ss << "Build from a svn repository" << std::endl
+             << "Repository Revision: "
+             << std::dec << build.rev[0] << std::endl;
+    break;
+  default: ss << "Build from a unknown repository" << std::endl;
+    break;
+  }
   if (build.clean) {
     ss << "Repository Status:   clean " << std::endl;
   } else {
-    ss << "Repository Status:   NOT clean " << std::endl
-       << "Hardware Version:    " << build.hw_ver;
+    ss << "Repository Status:   NOT clean " << std::endl;
   }
+  ss << "Hardware Version:    " << build.hw_ver;
   return ss.str();
 }
 
