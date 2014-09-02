@@ -19,6 +19,7 @@ class StorableTimeslice : public Timeslice
 {
 public:
     StorableTimeslice(const Timeslice& ts);
+    StorableTimeslice(Timeslice&& ts);
 
     StorableTimeslice(uint32_t num_core_microslices,
                       uint64_t ts_pos = UINT64_MAX)
