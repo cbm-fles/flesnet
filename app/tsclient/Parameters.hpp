@@ -34,7 +34,7 @@ public:
 
     bool analyze() const { return _analyze; }
 
-    bool dump() const { return _dump; }
+    size_t verbosity() const { return _verbosity; }
 
 private:
     void parse_options(int argc, char* argv[]);
@@ -44,5 +44,5 @@ private:
     std::string _input_archive;
     std::string _output_archive;
     bool _analyze = false;
-    bool _dump = false;
+    size_t _verbosity = 0;
 };
