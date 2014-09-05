@@ -37,4 +37,7 @@ private:
     size_t _timeslice_count = 0;
     size_t _microslice_count = 0;
     size_t _content_bytes = 0;
+
+  uint8_t _frame_number = 0;
+  uint16_t _pgen_sequence_number = 0;
 };

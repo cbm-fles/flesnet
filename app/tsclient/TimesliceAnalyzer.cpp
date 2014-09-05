@@ -1,5 +1,16 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
+// Info for FLIB pattern checking:
+// Timeslices are treated as independet
+// Microslices are treated as consecutive data stream
+// Checks for:
+// - consecutive CBMnet frame nubers across all microclices
+//   in one timeslice component
+// - cosecutive pgen sequence numbers across all microslices
+//   in one timeslice component
+// Implementation is not dump parallelizable across ts components!
+
+
 #include "TimesliceAnalyzer.hpp"
 #include <iostream>
 #include <sstream>
@@ -42,6 +53,22 @@ bool TimesliceAnalyzer::check_content_pgen(const uint16_t* content,
         }
     }
 
+    uint16_t pgen_sequence_number = content[size-1];
+    uint16_t expected_pgen_sequence_number = _pgen_sequence_number + 1;
+    // uncomment to check only for increasing sequence numbers
+//    if (_pgen_sequence_number != 0 && pgen_sequence_number != 0 &&
+//        pgen_sequence_number < expected_pgen_sequence_number) {
+    if (_pgen_sequence_number != 0 &&
+        pgen_sequence_number != expected_pgen_sequence_number) {
+      std::cerr << "unexpected pgen sequence number in frame "
+                << static_cast<unsigned>(_frame_number)
+                << ":  expected " << expected_pgen_sequence_number
+                << "  found " << pgen_sequence_number
+                << std::endl;
+      return false;
+    }
+    _pgen_sequence_number = pgen_sequence_number;
+
     return true;
 }
 
@@ -50,8 +77,6 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
                                             uint8_t sys_id,
                                             uint8_t sys_ver)
 {
-    size_t frame_count = 0;
-    uint8_t previous_frame_number = 0;
     size_t i = 0;
     while (i < size) {
         uint8_t frame_number = (content[i] >> 8) & 0xff;
@@ -60,13 +85,16 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
         uint8_t padding_count = (4 - ((word_count + 1) & 0x3)) & 0x3;
         ++i;
 
-        uint8_t expected_frame_number = previous_frame_number + 1;
-        if (previous_frame_number != 0 &&
+        uint8_t expected_frame_number = _frame_number + 1;
+        if (_frame_number != 0 &&
             frame_number != expected_frame_number) {
-            std::cerr << "unexpected cbmnet frame number" << std::endl;
+            std::cerr << "unexpected cbmnet frame number:"
+                      << "  expected: " << static_cast<uint32_t>(expected_frame_number)
+                      << "  found: "<< static_cast<uint32_t>(frame_number)
+                      << std::endl;
             return false;
         }
-        previous_frame_number = frame_number;
+        _frame_number = frame_number;
 
         if (word_count < 4 || word_count > 64 ||
             i + word_count + padding_count > size) {
@@ -75,7 +103,6 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
             return false;
         }
 
-        ++frame_count;
         if (sys_id == static_cast<uint8_t>(0xF0) && 
             sys_ver == static_cast<uint8_t>(0x1)) {
           if (check_content_pgen(&content[i], word_count) == false)
@@ -130,13 +157,14 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
     }
 
     ++_timeslice_count;
-
     for (size_t c = 0; c < ts.num_components(); ++c) {
         if (ts.num_microslices(c) == 0) {
             std::cerr << "no microslices in TS " << ts.index() << ", component "
                       << c << std::endl;
             return false;
         }
+        _frame_number = 0; // reset frame number for next component
+        _pgen_sequence_number = 0;
         for (size_t m = 0; m < ts.num_microslices(c); ++m) {
             bool success = check_microslice(
                 ts.descriptor(c, m),
