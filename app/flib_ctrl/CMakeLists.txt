@@ -46,7 +46,7 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=1)
 
 add_executable(flib_ctrl flib_ctrl.cpp parameters.hpp)
 
-target_link_libraries(flib_ctrl flib ${ZMQ_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(flib_ctrl flib ${ZMQ_LIBRARIES} ${Boost_LIBRARIES} rt)
 
 if(CNETCNTLSERVER)
     target_link_libraries(flib_ctrl ${CNETCNTLSERVER_LIB})
