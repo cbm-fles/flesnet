@@ -130,7 +130,7 @@ void Application::run()
     }
 
     // FIXME
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
     for (auto& buffer : _input_channel_senders) {
         boost::packaged_task<void> task(std::ref(*buffer));
