@@ -132,11 +132,13 @@ void ComputeBuffer::start_processes()
 
 void ComputeBuffer::report_status()
 {
-    std::cerr << "report " << _completely_written << " " << _acked << std::endl;
+    std::cerr << "compute buffer " << _compute_index << ": "
+              << _completely_written << " completely written, "
+              << _acked << " acked" << std::endl;
 
     auto now = std::chrono::system_clock::now();
     _scheduler.add(std::bind(&ComputeBuffer::report_status, this),
-                  now + std::chrono::seconds(1));
+                  now + std::chrono::seconds(3));
 }
 
 /// The thread main function.

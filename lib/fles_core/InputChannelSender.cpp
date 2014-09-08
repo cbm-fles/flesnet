@@ -47,11 +47,13 @@ void InputChannelSender::report_status()
 {
     uint64_t acked_ts = _acked_mc / _timeslice_size;
 
-    std::cerr << "report " << _acked_mc << " " << acked_ts << std::endl;
+    std::cerr << "input channel sender " << _input_index << ": "
+              << _acked_mc << " acked mc, "
+              << acked_ts << " acked ts" << std::endl;
 
     auto now = std::chrono::system_clock::now();
     _scheduler.add(std::bind(&InputChannelSender::report_status, this),
-                   now + std::chrono::seconds(1));
+                   now + std::chrono::seconds(3));
 }
 
 /// The thread main function.
