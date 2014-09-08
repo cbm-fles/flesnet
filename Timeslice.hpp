@@ -1,6 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "MicrosliceContainer.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
@@ -58,6 +59,13 @@ public:
     {
         return reinterpret_cast<const MicrosliceDescriptor*>(
             _data_ptr[component])[microslice];
+    }
+
+    /// Retrieve the descriptor and pointer to the data of a given microslice
+    const MicrosliceContainer get_microslice(uint64_t component,
+                                             uint64_t mc_index) const
+    {
+        return {descriptor(component, mc_index), content(component, mc_index)};
     }
 
 protected:
