@@ -1,5 +1,7 @@
 #include "StorableMicroslice.hpp"
 
+#include "MicrosliceView.hpp"
+
 namespace fles {
 
 StorableMicroslice::StorableMicroslice(const MicrosliceView& mc)

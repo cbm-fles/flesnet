@@ -5,6 +5,8 @@
 
 namespace fles {
 
+struct MicrosliceView;
+
 /**
  * Store microslice metadata and content in a single object.
  */
