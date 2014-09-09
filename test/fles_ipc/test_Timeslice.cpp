@@ -56,12 +56,10 @@ struct F
     fles::StorableTimeslice ts0{1, 1};
 };
 
-BOOST_AUTO_TEST_CASE(constructors_test)
+BOOST_AUTO_TEST_CASE(constructor_test)
 {
     fles::StorableTimeslice ts1{2};
     BOOST_CHECK_EQUAL(ts1.num_core_microslices(), 2);
-    fles::StorableTimeslice ts2{ts1};
-    BOOST_CHECK_EQUAL(ts2.num_core_microslices(), 2);
 }
 
 BOOST_FIXTURE_TEST_CASE(index_test, F)
