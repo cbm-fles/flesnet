@@ -16,7 +16,7 @@ StorableMicroslice::StorableMicroslice(MicrosliceDescriptor d,
 
 StorableMicroslice::StorableMicroslice(MicrosliceDescriptor d,
                                        std::vector<uint8_t> content_v)
-: desc (d),
+: _desc (d),
   _content {std::move(content_v)}
 {
     _desc.size = _content.size();
