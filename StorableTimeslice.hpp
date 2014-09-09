@@ -19,6 +19,9 @@ namespace fles
 class StorableTimeslice : public Timeslice
 {
 public:
+    StorableTimeslice(const StorableTimeslice&) = delete;
+    void operator=(const StorableTimeslice&) = delete;
+
     StorableTimeslice(const Timeslice& ts);
 
     StorableTimeslice(uint32_t num_core_microslices,
