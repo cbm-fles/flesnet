@@ -31,10 +31,11 @@ struct MicrosliceContainer {
      *     MicrosliceContainer {..., make_vector()}
      */
 
-    MicrosliceDescriptor desc; /**< the microslice descriptor... */
+    const MicrosliceDescriptor& desc() { return _desc; };
     const uint8_t *content() { return _content.data(); };
 
 private:
+    MicrosliceDescriptor _desc;
     std::vector<uint8_t> _content;
     /**< stores the data if the second constructor is used */
 };

@@ -4,7 +4,7 @@ namespace fles {
 
 MicrosliceContainer::MicrosliceContainer(MicrosliceDescriptor d,
                                          const uint8_t *content_p)
-: desc (d), // cannot use {}, see http://stackoverflow.com/q/19347004
+: _desc (d), // cannot use {}, see http://stackoverflow.com/q/19347004
   _content {content_p, content_p + d.size}
 {
 }
@@ -14,7 +14,7 @@ MicrosliceContainer::MicrosliceContainer(MicrosliceDescriptor d,
 : desc (d),
   _content {std::move(content_v)}
 {
-    desc.size = _content.size();
+    _desc.size = _content.size();
 }
 
 }
