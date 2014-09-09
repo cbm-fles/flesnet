@@ -1,6 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "MicrosliceContainer.hpp"
 #include "Timeslice.hpp"
 #include <cstdint>
 #include <vector>
@@ -58,7 +59,7 @@ public:
 
     uint32_t append_microslice(uint64_t component, uint64_t microslice,
                                MicrosliceDescriptor& descriptor,
-                               uint8_t* content)
+                               const uint8_t* content)
     {
         assert(component < _timeslice_descriptor.num_components);
         std::vector<uint8_t>& this_data = _data[component];
@@ -84,6 +85,12 @@ public:
 
         init_pointers();
         return microslice;
+    }
+
+    uint32_t append_microslice(uint64_t component, uint64_t microslice,
+                               MicrosliceContainer& mc)
+    {
+        return append_microslice(component, microslice, mc.desc, mc.content);
     }
 
 private:
