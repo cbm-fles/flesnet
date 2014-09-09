@@ -35,7 +35,6 @@ public:
         TimesliceComponentDescriptor ts_desc = TimesliceComponentDescriptor();
         ts_desc.ts_num = index;
         ts_desc.offset = 0;
-        ts_desc.size = 0;
         ts_desc.num_microslices = num_microslices;
 
         std::vector<uint8_t> data;
@@ -46,6 +45,7 @@ public:
                         desc_bytes + sizeof(MicrosliceDescriptor));
         }
 
+        ts_desc.size = data.size();
         _desc.push_back(ts_desc);
         _data.push_back(data);
         uint32_t component = _timeslice_descriptor.num_components++;
@@ -79,6 +79,7 @@ public:
                   &this_data[microslice * sizeof(MicrosliceDescriptor)]);
 
         this_data.insert(this_data.end(), content, content + descriptor.size);
+        this_desc.size = this_data.size();
 
         init_pointers();
         return microslice;
