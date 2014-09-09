@@ -2,6 +2,11 @@
 
 namespace fles {
 
+MicrosliceContainer::MicrosliceContainer(const MicrosliceView& mc)
+: MicrosliceContainer {mc.desc(), mc.content()}
+{
+}
+
 MicrosliceContainer::MicrosliceContainer(MicrosliceDescriptor d,
                                          const uint8_t *content_p)
 : _desc (d), // cannot use {}, see http://stackoverflow.com/q/19347004

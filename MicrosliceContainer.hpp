@@ -9,6 +9,8 @@ namespace fles {
  * Combine microslice metadata and content.
  */
 struct MicrosliceContainer {
+    MicrosliceContainer(const MicrosliceView& mc);
+
     MicrosliceContainer(MicrosliceDescriptor d, const uint8_t *content);
     /**<
      * Use this constructor to combine an already existing descriptor and
