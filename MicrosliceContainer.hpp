@@ -32,7 +32,7 @@ struct MicrosliceContainer {
      */
 
     MicrosliceDescriptor desc; /**< the microslice descriptor... */
-    const uint8_t * const content; /**< pointer to data */
+    const uint8_t *content() { return _content.data(); };
 
 private:
     std::vector<uint8_t> _content;
