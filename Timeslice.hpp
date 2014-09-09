@@ -21,7 +21,7 @@ namespace fles
 class Timeslice
 {
 public:
-    virtual ~Timeslice() {};
+    virtual ~Timeslice() = 0;
 
     /// Retrieve the timeslice index.
     uint64_t index() const { return _desc_ptr[0]->ts_num; }
