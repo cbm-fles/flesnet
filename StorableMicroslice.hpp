@@ -35,8 +35,9 @@ struct StorableMicroslice {
      *     StorableMicroslice {..., create_some_vector()}
      */
 
-    const MicrosliceDescriptor& desc() { return _desc; };
-    const uint8_t *content() { return _content.data(); };
+    MicrosliceDescriptor& desc() { return _desc; };
+    //< must be writable, e.g. by StorableTimeslice::append_microslice
+    const uint8_t *content() const { return _content.data(); };
 
 private:
     MicrosliceDescriptor _desc;

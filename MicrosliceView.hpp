@@ -11,8 +11,8 @@ namespace fles {
 struct MicrosliceView {
     MicrosliceView(MicrosliceDescriptor d, const uint8_t *content);
 
-    const MicrosliceDescriptor& desc() { return _desc; };
-    const uint8_t *content() { return _content; };
+    const MicrosliceDescriptor& desc() const { return _desc; };
+    const uint8_t *content() const { return _content; };
 
 private:
     MicrosliceDescriptor _desc; // TODO maybe store only pointer or reference

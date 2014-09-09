@@ -62,8 +62,7 @@ public:
     }
 
     /// Retrieve the descriptor and pointer to the data of a given microslice
-    const MicrosliceView get_microslice(uint64_t component,
-                                        uint64_t mc_index) const
+    MicrosliceView get_microslice(uint64_t component, uint64_t mc_index) const
     {
         return {descriptor(component, mc_index), content(component, mc_index)};
     }
