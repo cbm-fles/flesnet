@@ -1,7 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "MicrosliceContainer.hpp"
+#include "StorableMicroslice.hpp"
 #include "Timeslice.hpp"
 #include <cstdint>
 #include <vector>
@@ -89,9 +89,9 @@ public:
     }
 
     uint32_t append_microslice(uint64_t component, uint64_t microslice,
-                               MicrosliceContainer& mc)
+                               StorableMicroslice& mc)
     {
-        return append_microslice(component, microslice, mc.desc, mc.content);
+        return append_microslice(component, microslice, mc.desc(), mc.content());
     }
 
 private:
