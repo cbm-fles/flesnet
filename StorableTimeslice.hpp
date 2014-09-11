@@ -26,18 +26,19 @@ public:
     StorableTimeslice(const Timeslice& ts);
 
     StorableTimeslice(uint32_t num_core_microslices,
+                      uint64_t index = UINT64_MAX,
                       uint64_t ts_pos = UINT64_MAX)
     {
+        _timeslice_descriptor.index = index;
         _timeslice_descriptor.ts_pos = ts_pos;
         _timeslice_descriptor.num_core_microslices = num_core_microslices;
         _timeslice_descriptor.num_components = 0;
     }
 
-    uint32_t append_component(uint64_t num_microslices,
-                              uint64_t index = UINT64_MAX)
+    uint32_t append_component(uint64_t num_microslices, uint64_t /* dummy */ = 0)
     {
         TimesliceComponentDescriptor ts_desc = TimesliceComponentDescriptor();
-        ts_desc.ts_num = index;
+        ts_desc.ts_num = _timeslice_descriptor.index;
         ts_desc.offset = 0;
         ts_desc.num_microslices = num_microslices;
 

@@ -31,8 +31,8 @@ TimesliceView::TimesliceView(
 
     // consistency check
     for (size_t c = 1; c < num_components(); ++c)
-        if (_desc_ptr[0]->ts_num != _desc_ptr[c]->ts_num)
-            std::cerr << "error: ts_num[0]=" << _desc_ptr[0]->ts_num
+        if (_timeslice_descriptor.index != _desc_ptr[c]->ts_num)
+            std::cerr << "error: index=" << _timeslice_descriptor.index
                       << ", ts_num[" << c << "]=" << _desc_ptr[c]->ts_num
                       << std::endl;
 }

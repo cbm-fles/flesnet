@@ -24,7 +24,10 @@ public:
     virtual ~Timeslice() = 0;
 
     /// Retrieve the timeslice index.
-    uint64_t index() const { return _desc_ptr[0]->ts_num; }
+    uint64_t index() const
+    {
+        return _timeslice_descriptor.index;
+    }
 
     /// Retrieve the number of core microslices.
     uint64_t num_core_microslices() const
