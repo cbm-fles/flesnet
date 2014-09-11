@@ -5,7 +5,6 @@
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
-#include <cstdint>
 #include <vector>
 #include <fstream>
 #include <boost/serialization/access.hpp>
