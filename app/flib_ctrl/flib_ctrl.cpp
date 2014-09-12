@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
   std::vector<std::unique_ptr<flib_server>> flibserver;
   std::vector<std::unique_ptr<CbmNet::ControlServer>> ctrlserver;
 #else
-  out.info() << "Running without Controls API.";
+  out.info() << "Compiled without controls support. Configuring FLIB and exit.";
 #endif
 
   for (size_t i = 0; i < flib.get_num_links(); ++i) {
@@ -85,6 +85,7 @@ int main(int argc, char* argv[])
   }
 
 #ifdef CNETCNTLSERVER
+  out.info() << "FLIB configured successfully. Waiting to forward control commands. Send ctrl+c to exit.";
   // main loop
   while(s_interrupted==0) {
     ::sleep(1);
