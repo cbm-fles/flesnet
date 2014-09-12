@@ -14,7 +14,7 @@ void Parameters::parse_options(int argc, char* argv[])
         "index of this executable in the list of processor tasks")(
         "analyze-pattern,a", po::value<bool>(&_analyze)->implicit_value(true),
         "enable/disable pattern check")(
-        "vebose,v", po::value<size_t>(&_verbosity),
+        "verbose,v", po::value<size_t>(&_verbosity),
         "set output verbosity")(
         "shm-identifier,s", po::value<std::string>(&_shm_identifier),
         "shared memory identifier used for receiving timeslices")(
