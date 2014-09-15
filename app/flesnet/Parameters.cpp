@@ -236,6 +236,10 @@ void Parameters::parse_options(int argc, char* argv[])
         exit(EXIT_SUCCESS);
     }
 
+    if (_timeslice_size < 1) {
+        throw ParametersException("timeslice size cannot be zero");
+    }
+
     if (_standalone) {
         _input_nodes = std::vector<std::string>{"127.0.0.1"};
         _input_indexes = std::vector<unsigned>{0};

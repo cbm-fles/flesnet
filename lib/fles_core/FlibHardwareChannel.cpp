@@ -1,8 +1,6 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "FlibHardwareChannel.hpp"
-#include <chrono>
-#include <thread>
 
 FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                                          std::size_t desc_buffer_size_exp,
@@ -43,16 +41,9 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
 
 FlibHardwareChannel::~FlibHardwareChannel() { _flib_link->rst_pending_mc(); }
 
-uint64_t FlibHardwareChannel::wait_for_data(uint64_t min_written_mc)
+uint64_t FlibHardwareChannel::written_mc()
 {
-    uint64_t written_mc = 0;
-    std::chrono::microseconds interval(100);
-
-    while ((written_mc = _flib_link->mc_index()) < min_written_mc) {
-        std::this_thread::sleep_for(interval);
-    }
-
-    return written_mc;
+    return _flib_link->get_mc_index() - 1;
 }
 
 void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,

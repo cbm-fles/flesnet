@@ -3,14 +3,15 @@
 
 #include "ThreadContainer.hpp"
 #include "InfinibandException.hpp"
+#include "Scheduler.hpp"
 #include "Utility.hpp"
 #include "global.hpp"
 #include <chrono>
 #include <vector>
-#include <thread>
 #include <cstring>
 #include <rdma/rdma_cma.h>
 #include <valgrind/memcheck.h>
+#include <fcntl.h>
 
 /// InfiniBand connection group base class.
 /** An IBConnectionGroup object represents a group of InfiniBand
@@ -25,6 +26,7 @@ public:
         _ec = rdma_create_event_channel();
         if (!_ec)
             throw InfinibandException("rdma_create_event_channel failed");
+        fcntl(_ec->fd, F_SETFL, O_NONBLOCK);
     }
 
     IBConnectionGroup(const IBConnectionGroup&) = delete;
@@ -50,14 +52,6 @@ public:
                 out.error() << "ibv_destroy_cq() failed";
             }
             _cq = nullptr;
-        }
-
-        if (_comp_channel) {
-            int err = ibv_destroy_comp_channel(_comp_channel);
-            if (err) {
-                out.error() << "ibv_destroy_comp_channel() failed";
-            }
-            _comp_channel = nullptr;
         }
 
         if (_pd) {
@@ -118,112 +112,69 @@ public:
             c->disconnect();
     }
 
-    /// The connection manager event loop.
-    /// The thread main function.
-    void handle_cm_events(unsigned int target_num_connections)
+    /// The connection manager event handler.
+    void poll_cm_events()
     {
-        try
-        {
-            set_cpu(0);
+        int err;
+        struct rdma_cm_event* event;
+        struct rdma_cm_event event_copy;
+        void* private_data_copy = nullptr;
 
-            int err;
-            struct rdma_cm_event* event;
-            struct rdma_cm_event event_copy;
-            void* private_data_copy = nullptr;
-            while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
+        while ((err = rdma_get_cm_event(_ec, &event)) == 0) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-                VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
-                memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
-                if (event_copy.param.conn.private_data) {
-                    VALGRIND_MAKE_MEM_DEFINED(
-                        event_copy.param.conn.private_data,
-                        event_copy.param.conn.private_data_len);
-                    private_data_copy =
-                        malloc(event_copy.param.conn.private_data_len);
-                    if (!private_data_copy)
-                        throw InfinibandException("malloc failed");
-                    memcpy(private_data_copy,
-                           event_copy.param.conn.private_data,
-                           event_copy.param.conn.private_data_len);
-                    event_copy.param.conn.private_data = private_data_copy;
-                }
-#pragma GCC diagnostic pop
-                rdma_ack_cm_event(event);
-                on_cm_event(&event_copy);
-                if (private_data_copy) {
-                    free(private_data_copy);
-                    private_data_copy = nullptr;
-                }
-                if (_connected == target_num_connections)
-                    break;
+            VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
+            memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
+            if (event_copy.param.conn.private_data) {
+                VALGRIND_MAKE_MEM_DEFINED(
+                    event_copy.param.conn.private_data,
+                    event_copy.param.conn.private_data_len);
+                private_data_copy =
+                    malloc(event_copy.param.conn.private_data_len);
+                if (!private_data_copy)
+                    throw InfinibandException("malloc failed");
+                memcpy(private_data_copy, event_copy.param.conn.private_data,
+                       event_copy.param.conn.private_data_len);
+                event_copy.param.conn.private_data = private_data_copy;
             }
-            if (err)
-                throw InfinibandException("rdma_get_cm_event failed");
-
-            out.debug() << "number of connections: " << _connected;
+#pragma GCC diagnostic pop
+            rdma_ack_cm_event(event);
+            on_cm_event(&event_copy);
+            if (private_data_copy) {
+                free(private_data_copy);
+                private_data_copy = nullptr;
+            }
         }
-        catch (std::exception& e)
-        {
-            out.error() << "exception in handle_cm_events(): " << e.what();
-        }
+        if (err == -1 && errno == EAGAIN)
+            return;
+        if (err)
+            throw InfinibandException("rdma_get_cm_event failed");
     }
 
-    /// The InfiniBand completion notification event loop.
-    /// The thread main function.
-    void completion_handler()
+    /// The InfiniBand completion notification handler.
+    void poll_completion()
     {
-        try
-        {
-            set_cpu(1);
+        const int ne_max = 10;
 
-            _time_begin = std::chrono::high_resolution_clock::now();
+        struct ibv_wc wc[ne_max];
+        int ne;
 
-            const int ne_max = 10;
+        while ((ne = ibv_poll_cq(_cq, ne_max, wc))) {
+            if (ne < 0)
+                throw InfinibandException("ibv_poll_cq failed");
 
-            struct ibv_cq* ev_cq;
-            void* ev_ctx;
-            struct ibv_wc wc[ne_max];
-            int ne;
+            for (int i = 0; i < ne; ++i) {
+                if (wc[i].status != IBV_WC_SUCCESS) {
+                    std::ostringstream s;
+                    s << ibv_wc_status_str(wc[i].status) << " for wr_id "
+                      << static_cast<int>(wc[i].wr_id);
+                    out.error() << s.str();
 
-            while (!_all_done) {
-                if (ibv_get_cq_event(_comp_channel, &ev_cq, &ev_ctx))
-                    throw InfinibandException("ibv_get_cq_event failed");
-
-                ibv_ack_cq_events(ev_cq, 1);
-
-                if (ev_cq != _cq)
-                    throw InfinibandException("CQ event for unknown CQ");
-
-                if (ibv_req_notify_cq(_cq, 0))
-                    throw InfinibandException("ibv_req_notify_cq failed");
-
-                while ((ne = ibv_poll_cq(_cq, ne_max, wc))) {
-                    if (ne < 0)
-                        throw InfinibandException("ibv_poll_cq failed");
-
-                    for (int i = 0; i < ne; ++i) {
-                        if (wc[i].status != IBV_WC_SUCCESS) {
-                            std::ostringstream s;
-                            s << ibv_wc_status_str(wc[i].status)
-                              << " for wr_id " << static_cast<int>(wc[i].wr_id);
-                            out.error() << s.str();
-
-                            continue;
-                        }
-
-                        on_completion(wc[i]);
-                    }
+                    continue;
                 }
+
+                on_completion(wc[i]);
             }
-
-            _time_end = std::chrono::high_resolution_clock::now();
-
-            out.debug() << "COMPLETION loop done";
-        }
-        catch (std::exception& e)
-        {
-            out.error() << "exception in completion_handler(): " << e.what();
         }
     }
 
@@ -325,11 +276,7 @@ protected:
         if (!_pd)
             throw InfinibandException("ibv_alloc_pd failed");
 
-        _comp_channel = ibv_create_comp_channel(context);
-        if (!_comp_channel)
-            throw InfinibandException("ibv_create_comp_channel failed");
-
-        _cq = ibv_create_cq(context, _num_cqe, nullptr, _comp_channel, 0);
+        _cq = ibv_create_cq(context, _num_cqe, nullptr, nullptr, 0);
         if (!_cq)
             throw InfinibandException("ibv_create_cq failed");
 
@@ -364,6 +311,8 @@ protected:
 
     std::chrono::high_resolution_clock::time_point _time_end;
 
+    Scheduler _scheduler;
+
 private:
     /// Connection manager event dispatcher. Called by the CM event loop.
     void on_cm_event(struct rdma_cm_event* event)
@@ -397,7 +346,7 @@ private:
             on_disconnected(event);
             return;
         default:
-            out.error() << rdma_event_str(event->event);
+            out.warn() << rdma_event_str(event->event);
         }
     }
 
@@ -406,9 +355,6 @@ private:
 
     /// InfiniBand verbs context
     struct ibv_context* _context = nullptr;
-
-    /// InfiniBand completion channel
-    struct ibv_comp_channel* _comp_channel = nullptr;
 
     struct rdma_cm_id* _listen_id = nullptr;
 

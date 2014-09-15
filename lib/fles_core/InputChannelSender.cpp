@@ -43,24 +43,60 @@ InputChannelSender::~InputChannelSender()
     }
 }
 
+void InputChannelSender::report_status()
+{
+    uint64_t acked_ts = _acked_mc / _timeslice_size;
+
+    std::cerr << "input channel sender " << _input_index << ": "
+              << _acked_mc << " acked mc, "
+              << acked_ts << " acked ts" << std::endl;
+
+    auto now = std::chrono::system_clock::now();
+    _scheduler.add(std::bind(&InputChannelSender::report_status, this),
+                   now + std::chrono::seconds(3));
+}
+
 /// The thread main function.
 void InputChannelSender::operator()()
 {
     try
     {
-        set_cpu(0);
+        set_cpu(2);
 
         connect();
-        handle_cm_events(_compute_hostnames.size());
-        std::thread t1(&InputChannelSender::completion_handler, this);
+        while (_connected != _compute_hostnames.size()) {
+            poll_cm_events();
+        }
 
-        sender_loop();
+        _time_begin = std::chrono::high_resolution_clock::now();
 
-        t1.join();
+        uint64_t timeslice = 0;
+        report_status();
+        while (timeslice < _max_timeslice_number) {
+            if (try_send_timeslice(timeslice)) {
+                timeslice++;
+            }
+            poll_completion();
+            _scheduler.timer();
+        }
 
-        std::thread t2(&InputChannelSender::handle_cm_events, this, 0);
+        for (auto& c : _conn)
+            c->finalize();
+
+        out.debug() << "[i" << _input_index << "] "
+                    << "SENDER loop done";
+
+        while (!_all_done) {
+            poll_completion();
+            _scheduler.timer();
+        }
+
+        _time_end = std::chrono::high_resolution_clock::now();
+
         disconnect();
-        t2.join();
+        while (_connected != 0) {
+            poll_cm_events();
+        }
 
         summary();
     }
@@ -70,33 +106,24 @@ void InputChannelSender::operator()()
     }
 }
 
-void InputChannelSender::sender_loop()
+bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
 {
-    set_cpu(2);
+    // wait until a complete TS is available in the input buffer
+    uint64_t mc_offset = timeslice * _timeslice_size;
+    uint64_t mc_length = _timeslice_size + _overlap_size;
 
-    uint64_t cached_written_mc = 0;
-    uint64_t previous_offset = 0;
+    // This causes a decrease in performance.
+    // uint64_t min_written_mc = mc_offset + mc_length + 1;
+    // if (_cached_written_mc < min_written_mc) {
+    //     _cached_written_mc = _data_source.written_mc();
+    //     if (_cached_written_mc < min_written_mc) {
+    //         return false;
+    //     }
+    // }
 
-    for (uint64_t timeslice = 0; timeslice < _max_timeslice_number;
-         ++timeslice) {
-
-        // wait until a complete TS is available in the input buffer
-        uint64_t mc_offset = timeslice * _timeslice_size;
-        uint64_t mc_length = _timeslice_size + _overlap_size;
-
-        uint64_t min_written_mc = mc_offset + mc_length + 1;
-        if (min_written_mc > cached_written_mc) {
-            cached_written_mc = _data_source.wait_for_data(min_written_mc);
-            out.trace() << "SENDER new cached_written_mc: "
-                        << cached_written_mc;
-        }
-
-        // busy wait until last microslice has really been written to memory
-        while (_data_source.desc_buffer().at(mc_offset + mc_length).offset <
-               previous_offset)
-            ;
-        previous_offset =
-            _data_source.desc_buffer().at(mc_offset + mc_length).offset;
+    // check if last microslice has really been written to memory
+    if (_data_source.desc_buffer().at(mc_offset + mc_length).offset >=
+        _previous_offset) {
 
         uint64_t data_offset = _data_source.desc_buffer().at(mc_offset).offset;
         uint64_t data_end =
@@ -117,23 +144,27 @@ void InputChannelSender::sender_loop()
 
         int cn = target_cn_index(timeslice);
 
+        if (!_conn[cn]->write_request_available())
+            return false;
+
         // number of bytes to skip in advance (to avoid buffer wrap)
         uint64_t skip = _conn[cn]->skip_required(total_length);
         total_length += skip;
 
-        _conn[cn]->wait_for_buffer_space(total_length, 1);
+        if (_conn[cn]->check_for_buffer_space(total_length, 1)) {
 
-        post_send_data(timeslice, cn, mc_offset, mc_length, data_offset,
-                       data_length, skip);
+            _previous_offset =
+                _data_source.desc_buffer().at(mc_offset + mc_length).offset;
 
-        _conn[cn]->inc_write_pointers(total_length, 1);
+            post_send_data(timeslice, cn, mc_offset, mc_length, data_offset,
+                           data_length, skip);
+
+            _conn[cn]->inc_write_pointers(total_length, 1);
+
+            return true;
+        }
     }
-
-    for (auto& c : _conn)
-        c->finalize();
-
-    out.debug() << "[i" << _input_index << "] "
-                << "SENDER loop done";
+    return false;
 }
 
 std::unique_ptr<InputChannelConnection>

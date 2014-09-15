@@ -138,7 +138,6 @@ void ComputeNodeConnection::on_disconnected(struct rdma_cm_event* event)
 
 void ComputeNodeConnection::inc_ack_pointers(uint64_t ack_pos)
 {
-    std::unique_lock<std::mutex> lock(_cn_ack_mutex);
     _cn_ack.desc = ack_pos;
 
     const fles::TimesliceComponentDescriptor& acked_ts =
@@ -172,7 +171,6 @@ void ComputeNodeConnection::on_complete_recv()
     _cn_wp = _recv_cn_wp;
     post_recv_cn_wp();
     {
-        std::unique_lock<std::mutex> lock(_cn_ack_mutex);
         if (_cn_ack != _send_cn_ack) {
             _send_cn_ack = _cn_ack;
             post_send_cn_ack();

@@ -5,8 +5,6 @@
 #include "TimesliceComponentDescriptor.hpp"
 #include "ComputeNodeBufferPosition.hpp"
 #include "InputNodeInfo.hpp"
-#include <mutex>
-#include <atomic>
 
 /// Compute node connection class.
 /** A ComputeNodeConnection object represents the endpoint of a single
@@ -59,7 +57,6 @@ public:
 private:
     ComputeNodeBufferPosition _send_cn_ack = ComputeNodeBufferPosition();
     ComputeNodeBufferPosition _cn_ack = ComputeNodeBufferPosition();
-    std::mutex _cn_ack_mutex;
 
     ComputeNodeBufferPosition _recv_cn_wp{0, 0};
     ComputeNodeBufferPosition _cn_wp{0, 0};
@@ -93,5 +90,5 @@ private:
     /// Scatter/gather list entry for send work request
     ibv_sge send_sge = ibv_sge();
 
-    std::atomic_uint _pending_send_requests{0};
+    uint32_t _pending_send_requests{0};
 };

@@ -15,8 +15,8 @@ Application::Application(Parameters const& par) : _par(par)
     if (_par.analyze())
         _analyzer.reset(new TimesliceAnalyzer());
 
-    if (_par.dump())
-        _dump.reset(new TimesliceDebugger());
+    if (_par.verbosity() > 0)
+        _debug.reset(new TimesliceDebugger());
 
     if (!_par.output_archive().empty())
         _output.reset(new fles::TimesliceOutputArchive(_par.output_archive()));
@@ -46,8 +46,8 @@ void Application::run()
                 _analyzer->reset();
             }
         }
-        if (_dump) {
-            std::cout << _dump->dump_timeslice(*timeslice) << std::endl;
+        if (_debug) {
+          std::cout << _debug->dump_timeslice(*timeslice, _par.verbosity()) << std::endl;
         }
         if (_output)
             _output->write(*timeslice);

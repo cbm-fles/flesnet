@@ -9,8 +9,6 @@
 #include "global.hpp"
 #include <atomic>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
 #include <random>
 #include <algorithm>
 
@@ -40,14 +38,7 @@ public:
     {
         try
         {
-            for (int i = 0; i < 10; ++i)
-                out.trace() << "DCOUNT[" << i << "] = " << DCOUNT[i];
-
-            {
-                std::unique_lock<std::mutex> l(_mutex);
-                _is_stopped = true;
-            }
-            _cond_producer.notify_one();
+            _is_stopped = true;
             _producer_thread->join();
             delete _producer_thread;
         }
@@ -71,32 +62,16 @@ public:
     /// Generate FLIB input data.
     void produce_data();
 
-    virtual uint64_t wait_for_data(uint64_t min_mc_number) override
-    {
-        ++DCOUNT[3];
-        std::unique_lock<std::mutex> l(_mutex);
-        while (min_mc_number > _written_mc) {
-            ++DCOUNT[4];
-            _cond_consumer.wait(l);
-        }
-        return _written_mc;
-    }
+    virtual uint64_t written_mc() override { return _written_mc; }
 
     virtual void update_ack_pointers(uint64_t new_acked_data,
                                      uint64_t new_acked_mc) override
     {
-        ++DCOUNT[6];
-        {
-            std::unique_lock<std::mutex> l(_mutex);
-            _acked_data = new_acked_data;
-            _acked_mc = new_acked_mc;
-        }
-        _cond_producer.notify_one();
+        _acked_data = new_acked_data;
+        _acked_mc = new_acked_mc;
     }
 
 private:
-    uint64_t DCOUNT[10] = {};
-
     /// Input data buffer.
     RingBuffer<> _data_buffer;
 
@@ -117,19 +92,15 @@ private:
 
     std::thread* _producer_thread;
 
-    std::mutex _mutex;
-    std::condition_variable _cond_producer;
-    std::condition_variable _cond_consumer;
-
     /// Number of acknowledged data bytes. Updated by input node.
-    uint64_t _acked_data{0};
+    std::atomic<uint64_t> _acked_data{0};
 
     /// Number of acknowledged MCs. Updated by input node.
-    uint64_t _acked_mc{0};
+    std::atomic<uint64_t> _acked_mc{0};
 
     /// FLIB-internal number of written data bytes.
     uint64_t _written_data{0};
 
     /// FLIB-internal number of written MCs.
-    uint64_t _written_mc{0};
+    std::atomic<uint64_t> _written_mc{0};
 };

@@ -27,10 +27,12 @@ public:
     /// The InputChannelSender default destructor.
     virtual ~InputChannelSender();
 
+    void report_status();
+
     virtual void operator()() override;
 
-    /// The central loop for distributing timeslice data.
-    void sender_loop();
+    /// The central function for distributing timeslice data.
+    bool try_send_timeslice(uint64_t timeslice);
 
     std::unique_ptr<InputChannelConnection>
     create_input_node_connection(uint_fast16_t index);
@@ -92,4 +94,8 @@ private:
 
     uint64_t _cached_acked_data = 0;
     uint64_t _cached_acked_mc = 0;
+
+    uint64_t _cached_written_mc = 0;
+
+    uint64_t _previous_offset = 0;
 };
