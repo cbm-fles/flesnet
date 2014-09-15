@@ -43,7 +43,7 @@ FlibHardwareChannel::~FlibHardwareChannel() { _flib_link->rst_pending_mc(); }
 
 uint64_t FlibHardwareChannel::written_mc()
 {
-    return _flib_link->get_mc_index() - 1;
+    return _flib_link->mc_index() - 1;
 }
 
 void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
