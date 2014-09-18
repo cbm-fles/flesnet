@@ -1,6 +1,24 @@
 FLESnet
 =======
 
+OS and Software Environment
+--------------------
+
+At the moment the official operating system for operating flesnet with
+a flib is: 
+
+Debian 7.6 / fairroot external packages jul14p3
+
+This doesn't imply that it is impossible to run a setup on any other 
+OS / external packages combination. But tests are only performed for the 
+official versions. If there are reasons to go to another version please 
+let me know.
+
+Earlier versions:
+
+Debian 7.6 / fairroot external packages jul14p2
+
+
 BUILD DEPENDENCIES
 ------------------
 
@@ -21,26 +39,47 @@ you need the cbmnetcntlserver library found in the CBMroot repository.
 
 Building flesnet
 ----------------
-For compiling flesnet with Controls API support set the environment Variables
-CNETCNTLSERVER_PATH to the cbmnetcntlserver library and include location, e.g.
+The environment variable SIMPATH has to point to the fairroot external 
+packages installation, e.g.
+'export SIMPATH /opt/fairsoft/jul14p3_build'
+
+For compiling flesnet with Controls API support set the environment variable
+CNETCNTLSERVER_PATH to the cbmnetcntlserver library and include location
+found in the cbmroot repository, e.g.
 'export CNETCNTLSERVER_PATH=/opt/cbmroot/build/lib:/opt/cbmroot/fles/ctrl'
+
+For every new clone of the repository run the following two commands a single 
+time form the repositories root directory
 
 git submodule init
 git submodule update
+
+Building flesnet:
+
 mkdir build
 cd build && cmake ..
 make
 
-Building the FLIB kernel module
+Building the PDA (for the FLIB driver)
 -------------------------------
 
-The kernel module is not part of the CMake flow, so it is necessary to
-build it manually.
+The PDA is the external library which is used to implement the FLIB driver lib-
+rary. The installation procedure is scripted, just run:
 
-sudo apt-get install linux-headers-$(uname -r)
+cd contrib
+./pda_inst.sh
 
-cd misc/kernel
-make
+BIG FAT WARNING: THIS SCRIPT IS _ONLY_ FOR DEBIAN.
+
+Note, user can only access the FLIB if they are member of the group "sudo". Al-
+so, the PDA udev rules might not be active after installing. The sure way to 
+make it active is to reboot the computer. Other procedures as ...
+
+udevadm control --reload-rules
+
+... might also work, but this is for sure system dependent. The script always
+installs the currently needed version. Please rerun the script if you encounter
+compilation errors.
 
 Preparing the operating system
 ------------------------------

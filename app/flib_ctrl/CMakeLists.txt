@@ -39,7 +39,7 @@ ENDIF(NOT DEFINED ENV{CNETCNTLSERVER_PATH})
 
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/einhard"
-                    "${PROJECT_SOURCE_DIR}/lib/flib/include"
+                    "${PROJECT_SOURCE_DIR}/lib/flib"
                     "${PROJECT_SOURCE_DIR}/lib/flib_server")
 
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=1)

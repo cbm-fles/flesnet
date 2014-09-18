@@ -41,12 +41,12 @@ int main(int argc, char* argv[])
 
   // create FLIB
   flib::flib_device flib(0);
-  std::vector<flib::flib_link*> links = flib.get_links();
+  std::vector<flib::flib_link*> links = flib.links();
 
   // FLIB global configuration
   flib.set_mc_time(par.mc_size());
   out.debug() << "MC size is: " 
-              << (flib.get_rf()->get_reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
+              << (flib.rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
 
   // FLIB per link configuration
 #ifdef CNETCNTLSERVER
@@ -56,13 +56,13 @@ int main(int argc, char* argv[])
   out.info() << "Compiled without controls support. Configuring FLIB and exit.";
 #endif
 
-  for (size_t i = 0; i < flib.get_num_links(); ++i) {
+  for (size_t i = 0; i < flib.number_of_links(); ++i) {
     out.debug() << "Initializing link " << i;
 
     struct link_config link_config = par.link_config(i);
     link_config.hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
     links.at(i)->set_hdr_config(&link_config.hdr_config);
-    links.at(i)->set_data_rx_sel(link_config.rx_sel);
+    links.at(i)->set_data_sel(link_config.rx_sel);
 
 #ifdef CNETCNTLSERVER
     // create device control server, initialize and start server thread

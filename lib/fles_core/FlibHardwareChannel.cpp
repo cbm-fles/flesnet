@@ -19,10 +19,10 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                          desc_buffer_bytes_exp);
 
     uint8_t* data_buffer =
-        reinterpret_cast<uint8_t*>(_flib_link->ebuf()->getMem());
+        reinterpret_cast<uint8_t*>(_flib_link->data_buffer()->mem());
     fles::MicrosliceDescriptor* desc_buffer =
         reinterpret_cast<fles::MicrosliceDescriptor*>(
-            _flib_link->rbuf()->getMem());
+            _flib_link->desc_buffer()->mem());
 
     _data_buffer_view = std::unique_ptr<RingBufferView<>>(
         new RingBufferView<>(data_buffer, data_buffer_size_exp));
@@ -35,21 +35,21 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
 
     _flib_link->enable_cbmnet_packer(true);
 
-    // assert(_flib_link->get_mc_index() == 0);
-    // assert(_flib_link->get_pending_mc() == 0);
+    // assert(_flib_link->mc_index() == 0);
+    // assert(_flib_link->pending_mc() == 0);
 }
 
 FlibHardwareChannel::~FlibHardwareChannel() { _flib_link->rst_pending_mc(); }
 
 uint64_t FlibHardwareChannel::written_mc()
 {
-    return _flib_link->get_mc_index() - 1;
+    return _flib_link->mc_index() - 1;
 }
 
 void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
                                               uint64_t new_acked_mc)
 {
-    _flib_link->get_ch()->setOffsets(
+    _flib_link->channel()->setOffsets(
         new_acked_data & _data_buffer_view->size_mask(),
         (new_acked_mc & _desc_buffer_view->size_mask()) *
             sizeof(fles::MicrosliceDescriptor));
