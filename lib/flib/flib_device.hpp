@@ -31,7 +31,7 @@ struct build_info_t {
   uint8_t repo;
 };
 
-constexpr std::array<uint16_t, 1> hw_ver_table = {{4}};
+constexpr std::array<uint16_t, 1> hw_ver_table = {{5}};
 
 class flib_device {
 
