@@ -122,8 +122,8 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
     // }
 
     // check if last microslice has really been written to memory
-    if (_data_source.desc_buffer().at(mc_offset + mc_length).offset >=
-        _previous_offset) {
+    if (_data_source.desc_buffer().at(mc_offset + mc_length).idx >
+        _previous_mc_idx) {
 
         uint64_t data_offset = _data_source.desc_buffer().at(mc_offset).offset;
         uint64_t data_end =
@@ -153,8 +153,8 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
 
         if (_conn[cn]->check_for_buffer_space(total_length, 1)) {
 
-            _previous_offset =
-                _data_source.desc_buffer().at(mc_offset + mc_length).offset;
+            _previous_mc_idx =
+                _data_source.desc_buffer().at(mc_offset + mc_length).idx;
 
             post_send_data(timeslice, cn, mc_offset, mc_length, data_offset,
                            data_length, skip);
@@ -164,6 +164,7 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
             return true;
         }
     }
+
     return false;
 }
 
@@ -284,7 +285,7 @@ void InputChannelSender::post_send_data(uint64_t timeslice, int cn,
     int num_sge = 0;
     struct ibv_sge sge[4];
     // descriptors
-    if ((mc_offset & _data_source.desc_send_buffer().size_mask()) <
+    if ((mc_offset & _data_source.desc_send_buffer().size_mask()) <=
         ((mc_offset + mc_length - 1) &
          _data_source.desc_send_buffer().size_mask())) {
         // one chunk
@@ -311,7 +312,9 @@ void InputChannelSender::post_send_data(uint64_t timeslice, int cn,
     }
     int num_desc_sge = num_sge;
     // data
-    if ((data_offset & _data_source.data_send_buffer().size_mask()) <
+    if (data_length == 0) {
+        // zero chunks
+    } else if ((data_offset & _data_source.data_send_buffer().size_mask()) <=
         ((data_offset + data_length - 1) &
          _data_source.data_send_buffer().size_mask())) {
         // one chunk

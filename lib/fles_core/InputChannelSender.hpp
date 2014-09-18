@@ -97,5 +97,5 @@ private:
 
     uint64_t _cached_written_mc = 0;
 
-    uint64_t _previous_offset = 0;
+    uint64_t _previous_mc_idx = 0;
 };
