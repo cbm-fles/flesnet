@@ -44,6 +44,7 @@ public:
         return _desc_send_buffer_view;
     }
 
+#ifndef NO_DOUBLE_BUFFERING
     virtual void copy_to_data_send_buffer(std::size_t start, std::size_t count)
         override
     {
@@ -57,6 +58,7 @@ public:
         std::copy_n(&_desc_buffer_view->at(start), count,
                     &_desc_send_buffer_view.at(start));
     }
+#endif
 
     virtual uint64_t written_mc() override;
 

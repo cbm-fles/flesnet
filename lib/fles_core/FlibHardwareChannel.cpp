@@ -7,8 +7,17 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                                          flib::flib_link* flib_link)
     : _data_send_buffer(data_buffer_size_exp),
       _desc_send_buffer(desc_buffer_size_exp),
+#ifndef NO_DOUBLE_BUFFERING
       _data_send_buffer_view(_data_send_buffer.ptr(), data_buffer_size_exp),
       _desc_send_buffer_view(_desc_send_buffer.ptr(), desc_buffer_size_exp),
+#else
+      _data_send_buffer_view(
+          reinterpret_cast<uint8_t*>(_flib_link->data_buffer()->mem()),
+          data_buffer_size_exp),
+      _desc_send_buffer_view(reinterpret_cast<fles::MicrosliceDescriptor*>(
+                                 _flib_link->desc_buffer()->mem()),
+                             desc_buffer_size_exp),
+#endif
       _flib_link(flib_link)
 {
     constexpr std::size_t microslice_descriptor_size_exp = 5;
