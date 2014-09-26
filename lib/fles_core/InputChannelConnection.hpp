@@ -39,7 +39,8 @@ public:
     // Get number of bytes to skip in advance (to avoid buffer wrap)
     uint64_t skip_required(uint64_t data_size);
 
-    ///
+    bool try_sync_buffer_positions();
+
     void finalize();
 
     void on_complete_write();

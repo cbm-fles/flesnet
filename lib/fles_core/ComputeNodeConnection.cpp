@@ -144,11 +144,6 @@ void ComputeNodeConnection::inc_ack_pointers(uint64_t ack_pos)
         _desc_ptr[(ack_pos - 1) & ((UINT64_C(1) << _desc_buffer_size_exp) - 1)];
 
     _cn_ack.data = acked_ts.offset + acked_ts.size;
-    if (_our_turn) {
-        _our_turn = false;
-        _send_cn_ack = _cn_ack;
-        post_send_cn_ack();
-    }
 }
 
 void ComputeNodeConnection::on_complete_recv()
@@ -170,13 +165,8 @@ void ComputeNodeConnection::on_complete_recv()
     }
     _cn_wp = _recv_cn_wp;
     post_recv_cn_wp();
-    {
-        if (_cn_ack != _send_cn_ack) {
-            _send_cn_ack = _cn_ack;
-            post_send_cn_ack();
-        } else
-            _our_turn = true;
-    }
+    _send_cn_ack = _cn_ack;
+    post_send_cn_ack();
 }
 
 void ComputeNodeConnection::on_complete_send() { _pending_send_requests--; }

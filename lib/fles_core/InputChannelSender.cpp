@@ -47,13 +47,23 @@ void InputChannelSender::report_status()
 {
     uint64_t acked_ts = _acked_mc / _timeslice_size;
 
-    std::cerr << "input channel sender " << _input_index << ": "
-              << _acked_mc << " acked mc, "
-              << acked_ts << " acked ts" << std::endl;
+    std::cerr << "input channel sender " << _input_index << ": " << _acked_mc
+              << " acked mc, " << acked_ts << " acked ts" << std::endl;
 
     auto now = std::chrono::system_clock::now();
     _scheduler.add(std::bind(&InputChannelSender::report_status, this),
                    now + std::chrono::seconds(3));
+}
+
+void InputChannelSender::sync_buffer_positions()
+{
+    for (auto& c : _conn) {
+        c->try_sync_buffer_positions();
+    }
+
+    auto now = std::chrono::system_clock::now();
+    _scheduler.add(std::bind(&InputChannelSender::sync_buffer_positions, this),
+                   now + std::chrono::milliseconds(10));
 }
 
 /// The thread main function.
@@ -71,6 +81,7 @@ void InputChannelSender::operator()()
         _time_begin = std::chrono::high_resolution_clock::now();
 
         uint64_t timeslice = 0;
+        sync_buffer_positions();
         report_status();
         while (timeslice < _max_timeslice_number) {
             if (try_send_timeslice(timeslice)) {
@@ -80,8 +91,9 @@ void InputChannelSender::operator()()
             _scheduler.timer();
         }
 
-        for (auto& c : _conn)
+        for (auto& c : _conn) {
             c->finalize();
+        }
 
         out.debug() << "[i" << _input_index << "] "
                     << "SENDER loop done";
@@ -315,8 +327,8 @@ void InputChannelSender::post_send_data(uint64_t timeslice, int cn,
     if (data_length == 0) {
         // zero chunks
     } else if ((data_offset & _data_source.data_send_buffer().size_mask()) <=
-        ((data_offset + data_length - 1) &
-         _data_source.data_send_buffer().size_mask())) {
+               ((data_offset + data_length - 1) &
+                _data_source.data_send_buffer().size_mask())) {
         // one chunk
         sge[num_sge].addr = reinterpret_cast<uintptr_t>(
             &_data_source.data_send_buffer().at(data_offset));
