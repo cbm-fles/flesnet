@@ -55,8 +55,9 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
     assert(data_size != 0);
     _data_shm->truncate(data_size);
 
-    std::size_t desc_size = (UINT64_C(1) << _desc_buffer_size_exp) *
-                            _num_input_nodes *
+    std::size_t desc_buffer_size = (UINT64_C(1) << _desc_buffer_size_exp);
+
+    std::size_t desc_size = desc_buffer_size * _num_input_nodes *
                             sizeof(fles::TimesliceComponentDescriptor);
     assert(desc_size != 0);
     _desc_shm->truncate(desc_size);
@@ -87,15 +88,15 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
     std::unique_ptr<boost::interprocess::message_queue> work_items_mq(
         new boost::interprocess::message_queue(
             boost::interprocess::create_only,
-            (_shared_memory_identifier + "_work_items").c_str(), 1000,
-            sizeof(fles::TimesliceWorkItem)));
+            (_shared_memory_identifier + "_work_items").c_str(),
+            desc_buffer_size, sizeof(fles::TimesliceWorkItem)));
     _work_items_mq = std::move(work_items_mq);
 
     std::unique_ptr<boost::interprocess::message_queue> completions_mq(
         new boost::interprocess::message_queue(
             boost::interprocess::create_only,
-            (_shared_memory_identifier + "_completions").c_str(), 1000,
-            sizeof(fles::TimesliceCompletion)));
+            (_shared_memory_identifier + "_completions").c_str(),
+            desc_buffer_size, sizeof(fles::TimesliceCompletion)));
     _completions_mq = std::move(completions_mq);
 }
 
@@ -133,12 +134,12 @@ void ComputeBuffer::start_processes()
 void ComputeBuffer::report_status()
 {
     std::cerr << "compute buffer " << _compute_index << ": "
-              << _completely_written << " completely written, "
-              << _acked << " acked" << std::endl;
+              << _completely_written << " completely written, " << _acked
+              << " acked" << std::endl;
 
     auto now = std::chrono::system_clock::now();
     _scheduler.add(std::bind(&ComputeBuffer::report_status, this),
-                  now + std::chrono::seconds(3));
+                   now + std::chrono::seconds(3));
 }
 
 /// The thread main function.
