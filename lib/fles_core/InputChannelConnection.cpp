@@ -51,17 +51,6 @@ bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
         _cn_ack.desc - _cn_wp.desc +
                 (UINT64_C(1) << _remote_info.desc_buffer_size_exp) <
             desc_size) { // TODO: extend condition!
-        {
-            if (_our_turn) {
-                // send phony update to receive new pointers
-                out.debug() << "[i" << _remote_index << "] "
-                            << "[" << _index << "] "
-                            << "SENDER send phony update";
-                _our_turn = false;
-                _send_cn_wp = _cn_wp;
-                post_send_cn_wp();
-            }
-        }
         return false;
     } else {
         return true;
@@ -178,10 +167,17 @@ void InputChannelConnection::inc_write_pointers(uint64_t data_size,
 {
     _cn_wp.data += data_size;
     _cn_wp.desc += desc_size;
+}
+
+bool InputChannelConnection::try_sync_buffer_positions()
+{
     if (_our_turn) {
         _our_turn = false;
         _send_cn_wp = _cn_wp;
         post_send_cn_wp();
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -223,10 +219,7 @@ void InputChannelConnection::on_complete_recv()
     _cn_ack = _receive_cn_ack;
     post_recv_cn_ack();
     {
-        if (_cn_wp != _send_cn_wp) {
-            _send_cn_wp = _cn_wp;
-            post_send_cn_wp();
-        } else if (_finalize) {
+        if (_cn_wp == _send_cn_wp && _finalize) {
             if (_cn_wp == _cn_ack)
                 _send_cn_wp = CN_WP_FINAL;
             post_send_cn_wp();

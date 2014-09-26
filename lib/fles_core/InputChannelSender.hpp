@@ -29,6 +29,8 @@ public:
 
     void report_status();
 
+    void sync_buffer_positions();
+
     virtual void operator()() override;
 
     /// The central function for distributing timeslice data.

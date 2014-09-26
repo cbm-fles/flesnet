@@ -66,9 +66,6 @@ private:
     struct ibv_mr* _mr_send = nullptr;
     struct ibv_mr* _mr_recv = nullptr;
 
-    /// Flag, true if it is the input nodes's turn to send a pointer update.
-    bool _our_turn = false;
-
     /// Information on remote end.
     InputNodeInfo _remote_info{0};
 
