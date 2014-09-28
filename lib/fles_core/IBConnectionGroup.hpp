@@ -262,7 +262,7 @@ protected:
         _aggregate_recv_requests += conn->total_recv_requests();
 
         conn->on_disconnected(event);
-        _connected--;
+        --_connected;
     }
 
     /// Initialize the InfiniBand verbs context.

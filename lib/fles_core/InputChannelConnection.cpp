@@ -22,7 +22,7 @@ InputChannelConnection::InputChannelConnection(
     _qp_cap.max_send_sge = 4; // max. two chunks each for descriptors and data
 
     _qp_cap.max_recv_wr =
-        1; // receive only single ComputeNodeBufferPosition struct
+        1; // receive only single ComputeNodeStatusMessage struct
     _qp_cap.max_recv_sge = 1;
 
     _qp_cap.max_inline_data = sizeof(fles::TimesliceComponentDescriptor);
@@ -173,7 +173,7 @@ bool InputChannelConnection::try_sync_buffer_positions()
 {
     if (_our_turn) {
         _our_turn = false;
-        _send_cn_wp = _cn_wp;
+        _send_status_message.wp = _cn_wp;
         post_send_cn_wp();
         return true;
     } else {
@@ -196,10 +196,11 @@ void InputChannelConnection::finalize()
     _finalize = true;
     if (_our_turn) {
         _our_turn = false;
-        if (_cn_wp == _cn_ack)
-            _send_cn_wp = CN_WP_FINAL;
-        else
-            _send_cn_wp = _cn_wp;
+        if (_cn_wp == _cn_ack) {
+            _send_status_message.wp = CN_WP_FINAL;
+        } else {
+            _send_status_message.wp = _cn_wp;
+        }
         post_send_cn_wp();
     }
 }
@@ -208,20 +209,20 @@ void InputChannelConnection::on_complete_write() { _pending_write_requests--; }
 
 void InputChannelConnection::on_complete_recv()
 {
-    if (_receive_cn_ack == CN_WP_FINAL) {
+    if (_recv_status_message.ack == CN_WP_FINAL) {
         _done = true;
         return;
     }
     out.debug() << "[i" << _remote_index << "] "
                 << "[" << _index << "] "
                 << "receive completion, new _cn_ack.data="
-                << _receive_cn_ack.data;
-    _cn_ack = _receive_cn_ack;
+                << _recv_status_message.ack.data;
+    _cn_ack = _recv_status_message.ack;
     post_recv_cn_ack();
     {
-        if (_cn_wp == _send_cn_wp && _finalize) {
+        if (_cn_wp == _send_status_message.wp && _finalize) {
             if (_cn_wp == _cn_ack)
-                _send_cn_wp = CN_WP_FINAL;
+                _send_status_message.wp = CN_WP_FINAL;
             post_send_cn_wp();
         } else {
             _our_turn = true;
@@ -233,27 +234,27 @@ void InputChannelConnection::setup(struct ibv_pd* pd)
 {
     // register memory regions
     _mr_recv =
-        ibv_reg_mr(pd, &_receive_cn_ack, sizeof(ComputeNodeBufferPosition),
+        ibv_reg_mr(pd, &_recv_status_message, sizeof(ComputeNodeStatusMessage),
                    IBV_ACCESS_LOCAL_WRITE);
     if (!_mr_recv)
         throw InfinibandException("registration of memory region failed");
 
-    _mr_send =
-        ibv_reg_mr(pd, &_send_cn_wp, sizeof(ComputeNodeBufferPosition), 0);
+    _mr_send = ibv_reg_mr(pd, &_send_status_message,
+                          sizeof(InputChannelStatusMessage), 0);
     if (!_mr_send)
         throw InfinibandException("registration of memory region failed");
 
     // setup send and receive buffers
-    recv_sge.addr = reinterpret_cast<uintptr_t>(&_receive_cn_ack);
-    recv_sge.length = sizeof(ComputeNodeBufferPosition);
+    recv_sge.addr = reinterpret_cast<uintptr_t>(&_recv_status_message);
+    recv_sge.length = sizeof(ComputeNodeStatusMessage);
     recv_sge.lkey = _mr_recv->lkey;
 
     recv_wr.wr_id = ID_RECEIVE_CN_ACK | (_index << 8);
     recv_wr.sg_list = &recv_sge;
     recv_wr.num_sge = 1;
 
-    send_sge.addr = reinterpret_cast<uintptr_t>(&_send_cn_wp);
-    send_sge.length = sizeof(ComputeNodeBufferPosition);
+    send_sge.addr = reinterpret_cast<uintptr_t>(&_send_status_message);
+    send_sge.length = sizeof(InputChannelStatusMessage);
     send_sge.lkey = _mr_send->lkey;
 
     send_wr.wr_id = ID_SEND_CN_WP | (_index << 8);
@@ -321,7 +322,7 @@ void InputChannelConnection::post_recv_cn_ack()
     if (out.beDebug()) {
         out.debug() << "[i" << _remote_index << "] "
                     << "[" << _index << "] "
-                    << "POST RECEIVE _receive_cn_ack";
+                    << "POST RECEIVE _recv_cn_ack";
     }
     post_recv(&recv_wr);
 }
@@ -331,8 +332,9 @@ void InputChannelConnection::post_send_cn_wp()
     if (out.beDebug()) {
         out.debug() << "[i" << _remote_index << "] "
                     << "[" << _index << "] "
-                    << "POST SEND _send_cp_wp (data=" << _send_cn_wp.data
-                    << " desc=" << _send_cn_wp.desc << ")";
+                    << "POST SEND _send_cp_wp (data="
+                    << _send_status_message.wp.data
+                    << " desc=" << _send_status_message.wp.desc << ")";
     }
     post_send(&send_wr);
 }
