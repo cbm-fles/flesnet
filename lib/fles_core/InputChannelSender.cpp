@@ -400,19 +400,19 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
                         << " _acked_mc=" << _acked_mc;
     } break;
 
-    case ID_RECEIVE_CN_ACK: {
+    case ID_RECEIVE_STATUS: {
         int cn = wc.wr_id >> 8;
         _conn[cn]->on_complete_recv();
         if (_conn[cn]->done()) {
             ++_connections_done;
             _all_done = (_connections_done == _conn.size());
             out.debug() << "[i" << _input_index << "] "
-                        << "ID_RECEIVE_CN_ACK final for id " << cn
+                        << "ID_RECEIVE_STATUS final for id " << cn
                         << " all_done=" << _all_done;
         }
     } break;
 
-    case ID_SEND_CN_WP: {
+    case ID_SEND_STATUS: {
     } break;
 
     default:

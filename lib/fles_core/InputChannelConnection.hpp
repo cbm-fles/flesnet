@@ -67,10 +67,10 @@ public:
 
 private:
     /// Post a receive work request (WR) to the receive queue
-    void post_recv_cn_ack();
+    void post_recv_status_message();
 
     /// Post a send work request (WR) to the send queue
-    void post_send_cn_wp();
+    void post_send_status_message();
 
     /// Flag, true if it is the input nodes's turn to send a pointer update.
     bool _our_turn = true;

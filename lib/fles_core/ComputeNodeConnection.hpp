@@ -27,11 +27,11 @@ public:
     void operator=(const ComputeNodeConnection&) = delete;
 
     /// Post a receive work request (WR) to the receive queue
-    void post_recv_cn_wp();
+    void post_recv_status_message();
 
-    void post_send_cn_ack();
+    void post_send_status_message();
 
-    void post_send_final_ack();
+    void post_send_final_status_message();
 
     virtual void setup(struct ibv_pd* pd) override;
 
