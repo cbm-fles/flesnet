@@ -1,4 +1,4 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2014 Jan de Cuveland <cmail@cuveland.de>
 
 #include "InputChannelConnection.hpp"
 #include "TimesliceComponentDescriptor.hpp"
@@ -174,7 +174,7 @@ bool InputChannelConnection::try_sync_buffer_positions()
     if (_our_turn) {
         _our_turn = false;
         _send_status_message.wp = _cn_wp;
-        post_send_cn_wp();
+        post_send_status_message();
         return true;
     } else {
         return false;
@@ -201,7 +201,7 @@ void InputChannelConnection::finalize()
         } else {
             _send_status_message.wp = _cn_wp;
         }
-        post_send_cn_wp();
+        post_send_status_message();
     }
 }
 
@@ -218,12 +218,12 @@ void InputChannelConnection::on_complete_recv()
                 << "receive completion, new _cn_ack.data="
                 << _recv_status_message.ack.data;
     _cn_ack = _recv_status_message.ack;
-    post_recv_cn_ack();
+    post_recv_status_message();
     {
         if (_cn_wp == _send_status_message.wp && _finalize) {
             if (_cn_wp == _cn_ack)
                 _send_status_message.wp = CN_WP_FINAL;
-            post_send_cn_wp();
+            post_send_status_message();
         } else {
             _our_turn = true;
         }
@@ -249,7 +249,7 @@ void InputChannelConnection::setup(struct ibv_pd* pd)
     recv_sge.length = sizeof(ComputeNodeStatusMessage);
     recv_sge.lkey = _mr_recv->lkey;
 
-    recv_wr.wr_id = ID_RECEIVE_CN_ACK | (_index << 8);
+    recv_wr.wr_id = ID_RECEIVE_STATUS | (_index << 8);
     recv_wr.sg_list = &recv_sge;
     recv_wr.num_sge = 1;
 
@@ -257,14 +257,14 @@ void InputChannelConnection::setup(struct ibv_pd* pd)
     send_sge.length = sizeof(InputChannelStatusMessage);
     send_sge.lkey = _mr_send->lkey;
 
-    send_wr.wr_id = ID_SEND_CN_WP | (_index << 8);
+    send_wr.wr_id = ID_SEND_STATUS | (_index << 8);
     send_wr.opcode = IBV_WR_SEND;
     send_wr.send_flags = IBV_SEND_SIGNALED;
     send_wr.sg_list = &send_sge;
     send_wr.num_sge = 1;
 
     // post initial receive request
-    post_recv_cn_ack();
+    post_recv_status_message();
 }
 
 /// Connection handler function, called on successful connection.
@@ -317,24 +317,24 @@ std::unique_ptr<std::vector<uint8_t>> InputChannelConnection::get_private_data()
     return private_data;
 }
 
-void InputChannelConnection::post_recv_cn_ack()
+void InputChannelConnection::post_recv_status_message()
 {
     if (out.beDebug()) {
         out.debug() << "[i" << _remote_index << "] "
                     << "[" << _index << "] "
-                    << "POST RECEIVE _recv_cn_ack";
+                    << "POST RECEIVE status message";
     }
     post_recv(&recv_wr);
 }
 
-void InputChannelConnection::post_send_cn_wp()
+void InputChannelConnection::post_send_status_message()
 {
     if (out.beDebug()) {
         out.debug() << "[i" << _remote_index << "] "
                     << "[" << _index << "] "
-                    << "POST SEND _send_cp_wp (data="
+                    << "POST SEND status message (wp.data="
                     << _send_status_message.wp.data
-                    << " desc=" << _send_status_message.wp.desc << ")";
+                    << " wp.desc=" << _send_status_message.wp.desc << ")";
     }
     post_send(&send_wr);
 }

@@ -10,10 +10,8 @@ enum RequestIdentifier {
     ID_WRITE_DATA = 1,
     ID_WRITE_DATA_WRAP,
     ID_WRITE_DESC,
-    ID_SEND_CN_WP,
-    ID_RECEIVE_CN_ACK,
-    ID_SEND_CN_ACK,
-    ID_RECEIVE_CN_WP,
+    ID_SEND_STATUS,
+    ID_RECEIVE_STATUS,
     ID_SEND_FINALIZE
 };
 
@@ -29,14 +27,10 @@ inline std::ostream& operator<<(std::ostream& s, RequestIdentifier v)
         return s << "ID_WRITE_DATA_WRAP";
     case ID_WRITE_DESC:
         return s << "ID_WRITE_DESC";
-    case ID_SEND_CN_WP:
-        return s << "ID_SEND_CN_WP";
-    case ID_RECEIVE_CN_ACK:
-        return s << "ID_RECEIVE_CN_ACK";
-    case ID_SEND_CN_ACK:
-        return s << "ID_SEND_CN_ACK";
-    case ID_RECEIVE_CN_WP:
-        return s << "ID_RECEIVE_CN_WP";
+    case ID_SEND_STATUS:
+        return s << "ID_SEND_STATUS";
+    case ID_RECEIVE_STATUS:
+        return s << "ID_RECEIVE_STATUS";
     case ID_SEND_FINALIZE:
         return s << "ID_SEND_FINALIZE";
     default:

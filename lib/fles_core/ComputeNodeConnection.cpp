@@ -24,23 +24,23 @@ ComputeNodeConnection::ComputeNodeConnection(
     _qp_cap.max_recv_sge = 1;
 }
 
-void ComputeNodeConnection::post_recv_cn_wp()
+void ComputeNodeConnection::post_recv_status_message()
 {
     if (out.beDebug()) {
         out.debug() << "[c" << _remote_index << "] "
                     << "[" << _index << "] "
-                    << "POST RECEIVE _receive_cn_wp";
+                    << "POST RECEIVE status message";
     }
     post_recv(&recv_wr);
 }
 
-void ComputeNodeConnection::post_send_cn_ack()
+void ComputeNodeConnection::post_send_status_message()
 {
     if (out.beDebug()) {
         out.debug() << "[c" << _remote_index << "] "
                     << "[" << _index << "] "
-                    << "POST SEND _send_cn_ack"
-                    << " (desc=" << _send_status_message.ack.desc << ")";
+                    << "POST SEND status_message"
+                    << " (ack.desc=" << _send_status_message.ack.desc << ")";
     }
     while (_pending_send_requests >= _qp_cap.max_send_wr) {
         throw InfinibandException(
@@ -50,11 +50,11 @@ void ComputeNodeConnection::post_send_cn_ack()
     post_send(&send_wr);
 }
 
-void ComputeNodeConnection::post_send_final_ack()
+void ComputeNodeConnection::post_send_final_status_message()
 {
     send_wr.wr_id = ID_SEND_FINALIZE | (_index << 8);
     send_wr.send_flags = IBV_SEND_SIGNALED;
-    post_send_cn_ack();
+    post_send_status_message();
 }
 
 void ComputeNodeConnection::setup(struct ibv_pd* pd)
@@ -84,7 +84,7 @@ void ComputeNodeConnection::setup(struct ibv_pd* pd)
     recv_sge.length = sizeof(InputChannelStatusMessage);
     recv_sge.lkey = _mr_recv->lkey;
 
-    recv_wr.wr_id = ID_RECEIVE_CN_WP | (_index << 8);
+    recv_wr.wr_id = ID_RECEIVE_STATUS | (_index << 8);
     recv_wr.sg_list = &recv_sge;
     recv_wr.num_sge = 1;
 
@@ -92,14 +92,14 @@ void ComputeNodeConnection::setup(struct ibv_pd* pd)
     send_sge.length = sizeof(ComputeNodeStatusMessage);
     send_sge.lkey = _mr_send->lkey;
 
-    send_wr.wr_id = ID_SEND_CN_ACK | (_index << 8);
+    send_wr.wr_id = ID_SEND_STATUS | (_index << 8);
     send_wr.opcode = IBV_WR_SEND;
     send_wr.send_flags = IBV_SEND_SIGNALED;
     send_wr.sg_list = &send_sge;
     send_wr.num_sge = 1;
 
     // post initial receive request
-    post_recv_cn_wp();
+    post_recv_status_message();
 }
 
 void ComputeNodeConnection::on_established(struct rdma_cm_event* event)
@@ -152,22 +152,22 @@ void ComputeNodeConnection::on_complete_recv()
     if (_recv_status_message.wp == CN_WP_FINAL) {
         out.debug() << "[c" << _remote_index << "] "
                     << "[" << _index << "] "
-                    << "received FINAL pointer update";
-        // send FINAL ack
+                    << "received FINAL status message";
+        // send FINAL status message
         _send_status_message.ack = CN_WP_FINAL;
-        post_send_final_ack();
+        post_send_final_status_message();
         return;
     }
     if (out.beDebug()) {
         out.debug() << "[c" << _remote_index << "] "
                     << "[" << _index << "] "
-                    << "COMPLETE RECEIVE _receive_cn_wp"
-                    << " (desc=" << _recv_status_message.wp.desc << ")";
+                    << "COMPLETE RECEIVE status message"
+                    << " (wp.desc=" << _recv_status_message.wp.desc << ")";
     }
     _cn_wp = _recv_status_message.wp;
-    post_recv_cn_wp();
+    post_recv_status_message();
     _send_status_message.ack = _cn_ack;
-    post_send_cn_ack();
+    post_send_status_message();
 }
 
 void ComputeNodeConnection::on_complete_send() { _pending_send_requests--; }
