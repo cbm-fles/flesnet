@@ -159,10 +159,10 @@ void Parameters::parse_options(int argc, char* argv[])
     generic.add_options()("version,V", "print version string")(
         "help,h",
         "produce help message")("log-level,l", po::value<unsigned>(&log_level),
-                                "set the log level (default:3, all:0)")
-        ("config-file,f", po::value<std::string>(&config_file)->default_value("flesnet.cfg"),
-         "name of a configuration file.")
-      ;
+                                "set the log level (default:3, all:0)")(
+        "config-file,f",
+        po::value<std::string>(&config_file)->default_value("flesnet.cfg"),
+        "name of a configuration file.");
 
     po::options_description config("Configuration");
     config.add_options()("input-index,i",
@@ -214,16 +214,13 @@ void Parameters::parse_options(int argc, char* argv[])
     po::notify(vm);
 
     std::ifstream ifs(config_file.c_str());
-    if (!ifs)
-      {
+    if (!ifs) {
         std::cout << "can not open config file: " << config_file << "\n";
         exit(EXIT_SUCCESS);
-      }
-    else
-      {
+    } else {
         po::store(po::parse_config_file(ifs, config), vm);
         notify(vm);
-      }
+    }
 
     if (vm.count("help")) {
         std::cout << cmdline_options << "\n";
@@ -267,8 +264,8 @@ void Parameters::parse_options(int argc, char* argv[])
         for (auto input_index : _input_indexes) {
             if (input_index >= _input_nodes.size()) {
                 std::ostringstream oss;
-                oss << "input node index (" << input_index << ") out of range (0.."
-                    << _input_nodes.size() - 1 << ")";
+                oss << "input node index (" << input_index
+                    << ") out of range (0.." << _input_nodes.size() - 1 << ")";
                 throw ParametersException(oss.str());
             }
         }
@@ -277,7 +274,8 @@ void Parameters::parse_options(int argc, char* argv[])
             if (compute_index >= _compute_nodes.size()) {
                 std::ostringstream oss;
                 oss << "compute node index (" << compute_index
-                    << ") out of range (0.." << _compute_nodes.size() - 1 << ")";
+                    << ") out of range (0.." << _compute_nodes.size() - 1
+                    << ")";
                 throw ParametersException(oss.str());
             }
         }
@@ -324,22 +322,23 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 }
 
-void Parameters::print_buffer_info() {
+void Parameters::print_buffer_info()
+{
     out.info() << "microslice size: "
                << human_readable_byte_count(_typical_content_size);
     out.info() << "timeslice size: (" << _timeslice_size << " + "
                << _overlap_size << ") microslices";
     out.info() << "number of timeslices: " << _max_timeslice_number;
     out.info() << "input node buffer size: "
-               << human_readable_byte_count(
-                      UINT64_C(1) << _in_data_buffer_size_exp) << " + "
-               << human_readable_byte_count(
-                      (UINT64_C(1) << _in_desc_buffer_size_exp) *
-                      sizeof(fles::MicrosliceDescriptor));
+               << human_readable_byte_count(UINT64_C(1)
+                                            << _in_data_buffer_size_exp)
+               << " + " << human_readable_byte_count(
+                               (UINT64_C(1) << _in_desc_buffer_size_exp) *
+                               sizeof(fles::MicrosliceDescriptor));
     out.info() << "compute node buffer size: "
-               << human_readable_byte_count(
-                      UINT64_C(1) << _cn_data_buffer_size_exp) << " + "
-               << human_readable_byte_count(
-                      (UINT64_C(1) << _cn_desc_buffer_size_exp) *
-                      sizeof(fles::TimesliceComponentDescriptor));
+               << human_readable_byte_count(UINT64_C(1)
+                                            << _cn_data_buffer_size_exp)
+               << " + " << human_readable_byte_count(
+                               (UINT64_C(1) << _cn_desc_buffer_size_exp) *
+                               sizeof(fles::TimesliceComponentDescriptor));
 }
