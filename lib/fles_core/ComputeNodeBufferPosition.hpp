@@ -26,6 +26,4 @@ struct ComputeNodeBufferPosition
     }
 };
 
-constexpr ComputeNodeBufferPosition CN_WP_FINAL = {UINT64_MAX, UINT64_MAX};
-
 #pragma pack()

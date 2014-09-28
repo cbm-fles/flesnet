@@ -197,7 +197,7 @@ void InputChannelConnection::finalize()
     if (_our_turn) {
         _our_turn = false;
         if (_cn_wp == _cn_ack) {
-            _send_status_message.wp = CN_WP_FINAL;
+            _send_status_message.final = true;
         } else {
             _send_status_message.wp = _cn_wp;
         }
@@ -209,7 +209,7 @@ void InputChannelConnection::on_complete_write() { _pending_write_requests--; }
 
 void InputChannelConnection::on_complete_recv()
 {
-    if (_recv_status_message.ack == CN_WP_FINAL) {
+    if (_recv_status_message.final) {
         _done = true;
         return;
     }
@@ -222,7 +222,7 @@ void InputChannelConnection::on_complete_recv()
     {
         if (_cn_wp == _send_status_message.wp && _finalize) {
             if (_cn_wp == _cn_ack)
-                _send_status_message.wp = CN_WP_FINAL;
+                _send_status_message.final = true;
             post_send_status_message();
         } else {
             _our_turn = true;

@@ -149,12 +149,12 @@ void ComputeNodeConnection::inc_ack_pointers(uint64_t ack_pos)
 
 void ComputeNodeConnection::on_complete_recv()
 {
-    if (_recv_status_message.wp == CN_WP_FINAL) {
+    if (_recv_status_message.final) {
         out.debug() << "[c" << _remote_index << "] "
                     << "[" << _index << "] "
                     << "received FINAL status message";
         // send FINAL status message
-        _send_status_message.ack = CN_WP_FINAL;
+        _send_status_message.final = true;
         post_send_final_status_message();
         return;
     }
