@@ -10,6 +10,7 @@
 struct InputChannelStatusMessage
 {
     ComputeNodeBufferPosition wp;
+    bool final;
 };
 
 #pragma pack()

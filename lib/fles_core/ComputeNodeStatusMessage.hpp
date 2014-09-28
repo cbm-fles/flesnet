@@ -5,10 +5,12 @@
 
 #pragma pack(1)
 
-/// Structure representing a status update message sent from compute buffer to input channel.
+/// Structure representing a status update message sent from compute buffer to
+/// input channel.
 struct ComputeNodeStatusMessage
 {
     ComputeNodeBufferPosition ack;
+    bool final;
 };
 
 #pragma pack()
