@@ -191,12 +191,13 @@ uint64_t InputChannelConnection::skip_required(uint64_t data_size)
         return databuf_size - databuf_wp;
 }
 
-void InputChannelConnection::finalize()
+void InputChannelConnection::finalize(bool abort)
 {
     _finalize = true;
+    _abort = abort;
     if (_our_turn) {
         _our_turn = false;
-        if (_cn_wp == _cn_ack) {
+        if (_cn_wp == _cn_ack || _abort) {
             _send_status_message.final = true;
         } else {
             _send_status_message.wp = _cn_wp;
@@ -221,7 +222,7 @@ void InputChannelConnection::on_complete_recv()
     post_recv_status_message();
     {
         if (_cn_wp == _send_status_message.wp && _finalize) {
-            if (_cn_wp == _cn_ack)
+            if (_cn_wp == _cn_ack || _abort)
                 _send_status_message.final = true;
             post_send_status_message();
         } else {

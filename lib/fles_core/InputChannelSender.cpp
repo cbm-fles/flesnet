@@ -83,7 +83,7 @@ void InputChannelSender::operator()()
         uint64_t timeslice = 0;
         sync_buffer_positions();
         report_status();
-        while (timeslice < _max_timeslice_number) {
+        while (timeslice < _max_timeslice_number && !_abort) {
             if (try_send_timeslice(timeslice)) {
                 timeslice++;
             }
@@ -92,7 +92,7 @@ void InputChannelSender::operator()()
         }
 
         for (auto& c : _conn) {
-            c->finalize();
+            c->finalize(_abort);
         }
 
         out.debug() << "[i" << _input_index << "] "
@@ -394,6 +394,9 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
     case ID_RECEIVE_STATUS: {
         int cn = wc.wr_id >> 8;
         _conn[cn]->on_complete_recv();
+        if (_conn[cn]->request_abort_flag()) {
+            _abort = true;
+        }
         if (_conn[cn]->done()) {
             ++_connections_done;
             _all_done = (_connections_done == _conn.size());
