@@ -35,6 +35,8 @@ public:
 
     void report_status();
 
+    void request_abort();
+
     virtual void operator()() override;
 
     uint8_t* get_data_ptr(uint_fast16_t index);

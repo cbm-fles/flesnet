@@ -142,6 +142,16 @@ void ComputeBuffer::report_status()
                    now + std::chrono::seconds(3));
 }
 
+void ComputeBuffer::request_abort()
+{
+    out.info() << "[c" << _compute_index << "] "
+               << "request abort";
+
+    for (auto& connection : _conn) {
+        connection->request_abort();
+    }
+}
+
 /// The thread main function.
 void ComputeBuffer::operator()()
 {

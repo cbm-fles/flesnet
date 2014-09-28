@@ -10,6 +10,7 @@
 struct ComputeNodeStatusMessage
 {
     ComputeNodeBufferPosition ack;
+    bool request_abort;
     bool final;
 };
 

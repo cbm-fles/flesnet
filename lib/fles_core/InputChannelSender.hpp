@@ -98,4 +98,6 @@ private:
     uint64_t _cached_acked_mc = 0;
 
     uint64_t _previous_mc_idx = 0;
+
+    bool _abort = false;
 };

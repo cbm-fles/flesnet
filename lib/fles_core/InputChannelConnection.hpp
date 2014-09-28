@@ -42,7 +42,9 @@ public:
 
     bool try_sync_buffer_positions();
 
-    void finalize();
+    void finalize(bool abort);
+
+    bool request_abort_flag() { return _recv_status_message.request_abort; }
 
     void on_complete_write();
 
@@ -76,6 +78,7 @@ private:
     bool _our_turn = true;
 
     bool _finalize = false;
+    bool _abort = false;
 
     /// Access information for memory regions on remote end.
     ComputeNodeInfo _remote_info = ComputeNodeInfo();

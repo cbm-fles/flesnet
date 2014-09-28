@@ -33,6 +33,8 @@ public:
 
     void post_send_final_status_message();
 
+    void request_abort() { _send_status_message.request_abort = true; }
+
     virtual void setup(struct ibv_pd* pd) override;
 
     /// Connection handler function, called on successful connection.
