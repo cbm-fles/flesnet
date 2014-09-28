@@ -16,7 +16,7 @@ ComputeNodeConnection::ComputeNodeConnection(
       _data_buffer_size_exp(data_buffer_size_exp), _desc_ptr(desc_ptr),
       _desc_buffer_size_exp(desc_buffer_size_exp)
 {
-    // send and receive only single ComputeNodeBufferPosition struct
+    // send and receive only single StatusMessage struct
     _qp_cap.max_send_wr = 2; // one additional wr to avoid race (recv before
     // send completion)
     _qp_cap.max_send_sge = 1;
@@ -40,7 +40,7 @@ void ComputeNodeConnection::post_send_cn_ack()
         out.debug() << "[c" << _remote_index << "] "
                     << "[" << _index << "] "
                     << "POST SEND _send_cn_ack"
-                    << " (desc=" << _send_cn_ack.desc << ")";
+                    << " (desc=" << _send_status_message.ack.desc << ")";
     }
     while (_pending_send_requests >= _qp_cap.max_send_wr) {
         throw InfinibandException(
@@ -70,25 +70,26 @@ void ComputeNodeConnection::setup(struct ibv_pd* pd)
                           IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE);
     _mr_desc = ibv_reg_mr(pd, _desc_ptr, desc_bytes,
                           IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE);
-    _mr_send =
-        ibv_reg_mr(pd, &_send_cn_ack, sizeof(ComputeNodeBufferPosition), 0);
-    _mr_recv = ibv_reg_mr(pd, &_recv_cn_wp, sizeof(ComputeNodeBufferPosition),
-                          IBV_ACCESS_LOCAL_WRITE);
+    _mr_send = ibv_reg_mr(pd, &_send_status_message,
+                          sizeof(ComputeNodeStatusMessage), 0);
+    _mr_recv =
+        ibv_reg_mr(pd, &_recv_status_message, sizeof(InputChannelStatusMessage),
+                   IBV_ACCESS_LOCAL_WRITE);
 
     if (!_mr_data || !_mr_desc || !_mr_recv || !_mr_send)
         throw InfinibandException("registration of memory region failed");
 
     // setup send and receive buffers
-    recv_sge.addr = reinterpret_cast<uintptr_t>(&_recv_cn_wp);
-    recv_sge.length = sizeof(ComputeNodeBufferPosition);
+    recv_sge.addr = reinterpret_cast<uintptr_t>(&_recv_status_message);
+    recv_sge.length = sizeof(InputChannelStatusMessage);
     recv_sge.lkey = _mr_recv->lkey;
 
     recv_wr.wr_id = ID_RECEIVE_CN_WP | (_index << 8);
     recv_wr.sg_list = &recv_sge;
     recv_wr.num_sge = 1;
 
-    send_sge.addr = reinterpret_cast<uintptr_t>(&_send_cn_ack);
-    send_sge.length = sizeof(ComputeNodeBufferPosition);
+    send_sge.addr = reinterpret_cast<uintptr_t>(&_send_status_message);
+    send_sge.length = sizeof(ComputeNodeStatusMessage);
     send_sge.lkey = _mr_send->lkey;
 
     send_wr.wr_id = ID_SEND_CN_ACK | (_index << 8);
@@ -148,12 +149,12 @@ void ComputeNodeConnection::inc_ack_pointers(uint64_t ack_pos)
 
 void ComputeNodeConnection::on_complete_recv()
 {
-    if (_recv_cn_wp == CN_WP_FINAL) {
+    if (_recv_status_message.wp == CN_WP_FINAL) {
         out.debug() << "[c" << _remote_index << "] "
                     << "[" << _index << "] "
                     << "received FINAL pointer update";
         // send FINAL ack
-        _send_cn_ack = CN_WP_FINAL;
+        _send_status_message.ack = CN_WP_FINAL;
         post_send_final_ack();
         return;
     }
@@ -161,11 +162,11 @@ void ComputeNodeConnection::on_complete_recv()
         out.debug() << "[c" << _remote_index << "] "
                     << "[" << _index << "] "
                     << "COMPLETE RECEIVE _receive_cn_wp"
-                    << " (desc=" << _recv_cn_wp.desc << ")";
+                    << " (desc=" << _recv_status_message.wp.desc << ")";
     }
-    _cn_wp = _recv_cn_wp;
+    _cn_wp = _recv_status_message.wp;
     post_recv_cn_wp();
-    _send_cn_ack = _cn_ack;
+    _send_status_message.ack = _cn_ack;
     post_send_cn_ack();
 }
 

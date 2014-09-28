@@ -3,7 +3,8 @@
 
 #include "IBConnection.hpp"
 #include "TimesliceComponentDescriptor.hpp"
-#include "ComputeNodeBufferPosition.hpp"
+#include "ComputeNodeStatusMessage.hpp"
+#include "InputChannelStatusMessage.hpp"
 #include "InputNodeInfo.hpp"
 
 /// Compute node connection class.
@@ -55,11 +56,12 @@ public:
     virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
 private:
-    ComputeNodeBufferPosition _send_cn_ack = ComputeNodeBufferPosition();
+    ComputeNodeStatusMessage _send_status_message = ComputeNodeStatusMessage();
     ComputeNodeBufferPosition _cn_ack = ComputeNodeBufferPosition();
 
-    ComputeNodeBufferPosition _recv_cn_wp{0, 0};
-    ComputeNodeBufferPosition _cn_wp{0, 0};
+    InputChannelStatusMessage _recv_status_message =
+        InputChannelStatusMessage();
+    ComputeNodeBufferPosition _cn_wp = ComputeNodeBufferPosition();
 
     struct ibv_mr* _mr_data = nullptr;
     struct ibv_mr* _mr_desc = nullptr;

@@ -2,7 +2,8 @@
 #pragma once
 
 #include "IBConnection.hpp"
-#include "ComputeNodeBufferPosition.hpp"
+#include "InputChannelStatusMessage.hpp"
+#include "ComputeNodeStatusMessage.hpp"
 #include "ComputeNodeInfo.hpp"
 
 /// Input node connection class.
@@ -82,19 +83,22 @@ private:
     /// Local copy of acknowledged-by-CN pointers
     ComputeNodeBufferPosition _cn_ack = ComputeNodeBufferPosition();
 
-    /// Receive buffer for acknowledged-by-CN pointers
-    ComputeNodeBufferPosition _receive_cn_ack = ComputeNodeBufferPosition();
+    /// Receive buffer for CN status (including acknowledged-by-CN pointers)
+    ComputeNodeStatusMessage _recv_status_message = ComputeNodeStatusMessage();
 
-    /// Infiniband memory region descriptor for acknowledged-by-CN pointers
+    /// Infiniband memory region descriptor for CN status (including
+    /// acknowledged-by-CN pointers)
     ibv_mr* _mr_recv = nullptr;
 
     /// Local version of CN write pointers
     ComputeNodeBufferPosition _cn_wp = ComputeNodeBufferPosition();
 
-    /// Send buffer for CN write pointers
-    ComputeNodeBufferPosition _send_cn_wp = ComputeNodeBufferPosition();
+    /// Send buffer for input channel status (including CN write pointers)
+    InputChannelStatusMessage _send_status_message =
+        InputChannelStatusMessage();
 
-    /// Infiniband memory region descriptor for CN write pointers
+    /// Infiniband memory region descriptor for input channel status (including
+    /// CN write pointers)
     ibv_mr* _mr_send = nullptr;
 
     /// InfiniBand receive work request
