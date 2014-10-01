@@ -325,20 +325,20 @@ void Parameters::parse_options(int argc, char* argv[])
 void Parameters::print_buffer_info()
 {
     out.info() << "microslice size: "
-               << human_readable_byte_count(_typical_content_size);
+               << human_readable_count(_typical_content_size);
     out.info() << "timeslice size: (" << _timeslice_size << " + "
                << _overlap_size << ") microslices";
     out.info() << "number of timeslices: " << _max_timeslice_number;
     out.info() << "input node buffer size: "
-               << human_readable_byte_count(UINT64_C(1)
+               << human_readable_count(UINT64_C(1)
                                             << _in_data_buffer_size_exp)
-               << " + " << human_readable_byte_count(
+               << " + " << human_readable_count(
                                (UINT64_C(1) << _in_desc_buffer_size_exp) *
                                sizeof(fles::MicrosliceDescriptor));
     out.info() << "compute node buffer size: "
-               << human_readable_byte_count(UINT64_C(1)
+               << human_readable_count(UINT64_C(1)
                                             << _cn_data_buffer_size_exp)
-               << " + " << human_readable_byte_count(
+               << " + " << human_readable_count(
                                (UINT64_C(1) << _cn_desc_buffer_size_exp) *
                                sizeof(fles::TimesliceComponentDescriptor));
 }

@@ -57,13 +57,13 @@ inline std::ostream& operator<<(std::ostream& s, ibv_send_flags v)
         return s << str;
 }
 
-inline std::string human_readable_byte_count(uint64_t bytes,
-                                             bool use_si = false)
+inline std::string human_readable_count(uint64_t bytes, bool use_si = false,
+                                        std::string unit_string = "B")
 {
     uint64_t unit = use_si ? 1000 : 1024;
 
     if (bytes < unit)
-        return boost::lexical_cast<std::string>(bytes) + " B";
+        return boost::lexical_cast<std::string>(bytes) + " " + unit_string;
 
     uint32_t exponent = static_cast<uint64_t>(std::log(bytes) / std::log(unit));
 
@@ -74,7 +74,7 @@ inline std::string human_readable_byte_count(uint64_t bytes,
 
     std::stringstream st;
     st.precision(4);
-    st << (bytes / std::pow(unit, exponent)) << " " << prefix << "B";
+    st << (bytes / std::pow(unit, exponent)) << " " << prefix << unit_string;
 
     return st.str();
 }
