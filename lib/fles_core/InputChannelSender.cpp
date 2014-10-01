@@ -3,6 +3,7 @@
 #include "InputChannelSender.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "RequestIdentifier.hpp"
+#include "Utility.hpp"
 #include <cassert>
 
 InputChannelSender::InputChannelSender(
@@ -45,14 +46,55 @@ InputChannelSender::~InputChannelSender()
 
 void InputChannelSender::report_status()
 {
-    uint64_t acked_ts = _acked_mc / _timeslice_size;
+    constexpr auto interval = std::chrono::seconds(1);
 
-    std::cerr << "input channel sender " << _input_index << ": " << _acked_mc
-              << " acked mc, " << acked_ts << " acked ts" << std::endl;
+    // if data_source.written pointers are lagging behind due to lazy updates,
+    // use sent value instead
+    uint64_t written_mc = _data_source.written_mc();
+    if (written_mc < _sent_mc) {
+        written_mc = _sent_mc;
+    }
+    uint64_t written_data = _data_source.written_data();
+    if (written_data < _sent_data) {
+        written_data = _sent_data;
+    }
 
-    auto now = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point now =
+        std::chrono::system_clock::now();
+    SendBufferStatus status_mc{
+        now,       _data_source.desc_buffer().size(), _cached_acked_mc,
+        _acked_mc, _sent_mc,                          written_mc};
+    SendBufferStatus status_data{
+        now,         _data_source.data_buffer().size(), _cached_acked_data,
+        _acked_data, _sent_data,                        written_data};
+
+    double delta_t =
+        std::chrono::duration<double, std::chrono::seconds::period>(
+            status_mc.time - _previous_send_buffer_status_mc.time).count();
+    double rate_mc =
+        static_cast<double>(status_mc.acked -
+                            _previous_send_buffer_status_mc.acked) /
+        delta_t;
+    double rate_data =
+        static_cast<double>(status_data.acked -
+                            _previous_send_buffer_status_data.acked) /
+        delta_t;
+
+    out.info() << "[i" << _input_index << "] desc " << status_mc.percentages()
+               << " (used..free) | "
+               << human_readable_count(status_mc.acked, true, "") << " ("
+               << human_readable_count(rate_mc, true, "Hz") << ")";
+
+    out.info() << "[i" << _input_index << "] data " << status_data.percentages()
+               << " (used..free) | "
+               << human_readable_count(status_data.acked, true) << " ("
+               << human_readable_count(rate_data, true, "B/s") << ")";
+
+    _previous_send_buffer_status_mc = status_mc;
+    _previous_send_buffer_status_data = status_data;
+
     _scheduler.add(std::bind(&InputChannelSender::report_status, this),
-                   now + std::chrono::seconds(3));
+                   now + interval);
 }
 
 void InputChannelSender::sync_buffer_positions()
@@ -163,6 +205,9 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
                            data_length, skip);
 
             _conn[cn]->inc_write_pointers(total_length, 1);
+
+            _sent_mc = mc_offset + mc_length;
+            _sent_data = data_end;
 
             return true;
         }

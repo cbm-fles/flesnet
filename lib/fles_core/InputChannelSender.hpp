@@ -5,6 +5,7 @@
 #include "InputChannelConnection.hpp"
 #include "DataSource.hpp"
 #include "RingBuffer.hpp"
+#include <boost/format.hpp>
 
 /// Input buffer and compute node connection container class.
 /** An InputChannelSender object represents an input buffer (filled by a
@@ -84,6 +85,12 @@ private:
     /// Data source (e.g., FLIB).
     DataSource& _data_source;
 
+    /// Number of sent MCs, for statistics.
+    uint64_t _sent_mc = 0;
+
+    /// Number of sent data bytes, for statistics.
+    uint64_t _sent_data = 0;
+
     const std::vector<std::string> _compute_hostnames;
     const std::vector<std::string> _compute_services;
 
@@ -100,4 +107,47 @@ private:
     uint64_t _previous_mc_idx = 0;
 
     bool _abort = false;
+
+    struct SendBufferStatus
+    {
+        std::chrono::system_clock::time_point time;
+        uint64_t size;
+
+        uint64_t cached_acked;
+        uint64_t acked;
+        uint64_t sent;
+        uint64_t written;
+
+        int64_t used() { return written - sent; }
+        int64_t sending() { return sent - acked; }
+        int64_t freeing() { return acked - cached_acked; }
+        int64_t unused() { return cached_acked + size - written; }
+
+        float percentage(int64_t value)
+        {
+            return static_cast<float>(value) / static_cast<float>(size);
+        }
+
+        std::string caption()
+        {
+            return std::string("used/sending/freeing/free");
+        }
+
+        std::string percentage_str(int64_t value)
+        {
+            boost::format percent_fmt("%4.1f%%");
+            percent_fmt % (percentage(value) * 100);
+            return percent_fmt.str();
+        }
+
+        std::string percentages()
+        {
+            return percentage_str(used()) + " " + percentage_str(sending()) +
+                   " " + percentage_str(freeing()) + " " +
+                   percentage_str(unused());
+        }
+    };
+
+    SendBufferStatus _previous_send_buffer_status_mc = SendBufferStatus();
+    SendBufferStatus _previous_send_buffer_status_data = SendBufferStatus();
 };
