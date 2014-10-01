@@ -4,14 +4,14 @@
 // This file was automatically generated from:
 // src/packages/registers.vhd
 // Repository is: git repository
-// Repository Revision: 29909a36c32b9cdb63ecf4e545742682b30e5356
-// Repository Status: clean
-// Build Timestamp: Do 18. Sep 11:58:31 CEST 2014
+// Repository Revision: 07cae229195410d3c9870af75deb856d3a280dc7
+// Repository Status: dirty
+// Build Timestamp: Mi 1. Okt 15:21:37 CEST 2014
 // Build System: hutter@eda
 #define RORC_C_BUILD_REPO 1
-#define RORC_C_BUILD_DATE 1411034311
-#define RORC_C_BUILD_REVISION 29909a36c32b9cdb63ecf4e545742682b30e5356
-#define RORC_C_BUILD_STATUS_CLEAN 1
+#define RORC_C_BUILD_DATE 1412169697
+#define RORC_C_BUILD_REVISION 07cae229195410d3c9870af75deb856d3a280dc7
+#define RORC_C_BUILD_STATUS_CLEAN 0
 #define RORC_C_BUILD_HOST 65646100000000000000000000000000
 #define RORC_C_BUILD_USER 68757474657200000000000000000000
 #define RORC_C_HARDWARE_VERSION 5
@@ -68,6 +68,8 @@
 #define RORC_REG_DMA_STALL_CNT 20
 #define RORC_REG_MISC_CFG 21
 #define RORC_REG_MISC_STS 22
+#define RORC_REG_EBDM_OFFSET_H 23
+#define RORC_REG_EBDM_OFFSET_L 24
 #define RORC_REG_GTX_DATAPATH_CFG 0
 #define RORC_REG_GTX_DATAPATH_STS 1
 #define RORC_REG_GTX_MC_GEN_CFG 2
