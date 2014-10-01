@@ -63,6 +63,7 @@ public:
     void produce_data();
 
     virtual uint64_t written_mc() override { return _written_mc; }
+    virtual uint64_t written_data() override { return _written_data; }
 
     virtual void update_ack_pointers(uint64_t new_acked_data,
                                      uint64_t new_acked_mc) override

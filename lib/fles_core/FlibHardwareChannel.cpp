@@ -50,9 +50,12 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
 
 FlibHardwareChannel::~FlibHardwareChannel() { _flib_link->rst_pending_mc(); }
 
-uint64_t FlibHardwareChannel::written_mc()
+uint64_t FlibHardwareChannel::written_mc() { return _flib_link->mc_index(); }
+
+uint64_t FlibHardwareChannel::written_data()
 {
-    return _flib_link->mc_index() - 1;
+    // TODO: Implement hardware request
+    return 0;
 }
 
 void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
