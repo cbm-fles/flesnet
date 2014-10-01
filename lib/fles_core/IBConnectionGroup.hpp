@@ -208,8 +208,7 @@ public:
         out.info() << "summary: " << _aggregate_send_requests << " SEND, "
                    << _aggregate_recv_requests << " RECV requests";
         double rate = static_cast<double>(_aggregate_bytes_sent) / runtime;
-        out.info() << "summary: "
-                   << human_readable_byte_count(_aggregate_bytes_sent)
+        out.info() << "summary: " << human_readable_count(_aggregate_bytes_sent)
                    << " sent in " << runtime / 1000000. << " s (" << rate
                    << " MB/s)";
     }
