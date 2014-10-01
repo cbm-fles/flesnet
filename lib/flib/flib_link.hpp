@@ -80,6 +80,7 @@ public:
 
   uint64_t pending_mc();
   uint64_t mc_index();
+  uint64_t mc_offset();
   data_sel_t data_sel();
   std::string data_buffer_info();
   std::string desc_buffer_info();
