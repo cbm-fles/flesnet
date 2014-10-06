@@ -10,6 +10,8 @@
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
 
+#include <csignal>
+
 /// Compute buffer and input node connection container class.
 /** A ComputeBuffer object represents a timeslice buffer (filled by
     the input nodes) and a group of timeslice building connections to
@@ -23,7 +25,8 @@ public:
                   uint32_t desc_buffer_size_exp, unsigned short service,
                   uint32_t num_input_nodes, uint32_t timeslice_size,
                   uint32_t processor_instances,
-                  const std::string processor_executable);
+                  const std::string processor_executable,
+                  volatile sig_atomic_t* signal_status);
 
     ComputeBuffer(const ComputeBuffer&) = delete;
     void operator=(const ComputeBuffer&) = delete;
@@ -86,4 +89,6 @@ private:
 
     std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
     std::unique_ptr<boost::interprocess::message_queue> _completions_mq;
+
+    volatile sig_atomic_t* _signal_status;
 };

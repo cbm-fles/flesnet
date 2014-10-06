@@ -6,7 +6,9 @@
 #include <boost/thread/thread.hpp>
 #include <boost/thread/future.hpp>
 
-Application::Application(Parameters const& par) : _par(par)
+Application::Application(Parameters const& par,
+                         volatile sig_atomic_t* signal_status)
+    : _par(par), _signal_status(signal_status)
 {
     unsigned input_nodes_size = par.input_nodes().size();
     std::vector<unsigned> input_indexes = par.input_indexes();
@@ -21,11 +23,12 @@ Application::Application(Parameters const& par) : _par(par)
             _flib_links = _flib->links();
 
             // delete deactivated links from vector
-            _flib_links.erase(std::remove_if(std::begin(_flib_links), std::end(_flib_links),
-                                             [](decltype(_flib_links[0]) link) {
-                                                 return link->data_sel() ==
-                                                     flib::flib_link::rx_disable;}),
-                              std::end(_flib_links));
+            _flib_links.erase(
+                std::remove_if(std::begin(_flib_links), std::end(_flib_links),
+                               [](decltype(_flib_links[0]) link) {
+                    return link->data_sel() == flib::flib_link::rx_disable;
+                }),
+                std::end(_flib_links));
 
             out.info() << "enabled flib links detected: " << _flib_links.size();
 
@@ -46,7 +49,8 @@ Application::Application(Parameters const& par) : _par(par)
     // end FIXME
 
     if (par.standalone()) {
-        out.info() << "flesnet in stand-alone mode, inputs: " << input_nodes_size;
+        out.info() << "flesnet in stand-alone mode, inputs: "
+                   << input_nodes_size;
     }
 
     // Compute node application
@@ -56,9 +60,9 @@ Application::Application(Parameters const& par) : _par(par)
     for (unsigned i : _par.compute_indexes()) {
         std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(
             i, _par.cn_data_buffer_size_exp(), _par.cn_desc_buffer_size_exp(),
-            _par.base_port() + i, input_nodes_size,
-            _par.timeslice_size(), _par.processor_instances(),
-            _par.processor_executable()));
+            _par.base_port() + i, input_nodes_size, _par.timeslice_size(),
+            _par.processor_instances(), _par.processor_executable(),
+            _signal_status));
         buffer->start_processes();
         _compute_buffers.push_back(std::move(buffer));
     }
