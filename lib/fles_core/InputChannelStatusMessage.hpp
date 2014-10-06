@@ -10,6 +10,7 @@
 struct InputChannelStatusMessage
 {
     ComputeNodeBufferPosition wp;
+    bool abort;
     bool final;
 };
 
