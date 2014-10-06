@@ -299,6 +299,14 @@ uint64_t flib_link::mc_index() {
   return mc_index;
 }
 
+uint64_t flib_link::mc_offset() {
+  // TODO replace with _rfpkt->get_mem()
+  uint64_t mc_offset = m_rfpkt->reg(RORC_REG_EBDM_OFFSET_L);
+  mc_offset =
+      mc_offset | ((uint64_t)(m_rfpkt->reg(RORC_REG_EBDM_OFFSET_H)) << 32);
+  return mc_offset;
+}
+
 flib_link::data_sel_t flib_link::data_sel() {
   uint32_t dp_cfg = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_CFG);
   return static_cast<data_sel_t>(dp_cfg & 0x3);
