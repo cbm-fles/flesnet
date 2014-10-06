@@ -8,6 +8,7 @@
 #include <flib.h>
 #include <boost/lexical_cast.hpp>
 #include <memory>
+#include <csignal>
 
 /// %Application base class.
 /** The Application object represents an instance of the running
@@ -17,7 +18,8 @@ class Application : public ThreadContainer
 {
 public:
     /// The Application contructor.
-    explicit Application(Parameters const& par);
+    explicit Application(Parameters const& par,
+                         volatile sig_atomic_t* signal_status);
 
     /// The Application destructor.
     ~Application();
@@ -30,6 +32,7 @@ public:
 private:
     /// The run parameters object.
     Parameters const& _par;
+    volatile sig_atomic_t* _signal_status;
 
     // Input node application
     std::unique_ptr<flib::flib_device> _flib;

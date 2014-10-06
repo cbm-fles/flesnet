@@ -9,7 +9,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <random>
-#include <csignal>
 
 ComputeBuffer::ComputeBuffer(uint64_t compute_index,
                              uint32_t data_buffer_size_exp,
@@ -17,13 +16,15 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
                              unsigned short service, uint32_t num_input_nodes,
                              uint32_t timeslice_size,
                              uint32_t processor_instances,
-                             const std::string processor_executable)
+                             const std::string processor_executable,
+                             volatile sig_atomic_t* signal_status)
     : _compute_index(compute_index),
       _data_buffer_size_exp(data_buffer_size_exp),
       _desc_buffer_size_exp(desc_buffer_size_exp), _service(service),
       _num_input_nodes(num_input_nodes), _timeslice_size(timeslice_size),
       _processor_instances(processor_instances),
-      _processor_executable(processor_executable), _ack(desc_buffer_size_exp)
+      _processor_executable(processor_executable), _ack(desc_buffer_size_exp),
+      _signal_status(signal_status)
 {
     std::random_device random_device;
     std::uniform_int_distribution<uint64_t> uint_distribution;
@@ -176,6 +177,10 @@ void ComputeBuffer::operator()()
                 poll_cm_events();
             }
             _scheduler.timer();
+            if (*_signal_status != 0) {
+                *_signal_status = 0;
+                request_abort();
+            }
         }
 
         _time_end = std::chrono::high_resolution_clock::now();
@@ -262,8 +267,10 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
         break;
 
     case ID_SEND_FINALIZE: {
-        assert(_work_items_mq->get_num_msg() == 0);
-        assert(_completions_mq->get_num_msg() == 0);
+        if (!_conn[in]->abort_flag()) {
+            assert(_work_items_mq->get_num_msg() == 0);
+            assert(_completions_mq->get_num_msg() == 0);
+        }
         _conn[in]->on_complete_send();
         _conn[in]->on_complete_send_finalize();
         ++_connections_done;

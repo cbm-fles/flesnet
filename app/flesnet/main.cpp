@@ -17,15 +17,27 @@
 
 #include "global.hpp"
 
+#include <csignal>
+
 einhard::Logger<static_cast<einhard::LogLevel>(MINLOGLEVEL), true>
 out(einhard::WARN, true);
 
+namespace
+{
+volatile sig_atomic_t signal_status = 0;
+}
+
+static void signal_handler(int sig) { signal_status = sig; }
+
 int main(int argc, char* argv[])
 {
+    std::signal(SIGINT, signal_handler);
+    std::signal(SIGTERM, signal_handler);
+
     try
     {
         Parameters par(argc, argv);
-        Application app(par);
+        Application app(par, &signal_status);
         app.run();
     }
     catch (std::exception const& e)
