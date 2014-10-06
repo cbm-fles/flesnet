@@ -199,6 +199,7 @@ void InputChannelConnection::finalize(bool abort)
         _our_turn = false;
         if (_cn_wp == _cn_ack || _abort) {
             _send_status_message.final = true;
+            _send_status_message.abort = _abort;
         } else {
             _send_status_message.wp = _cn_wp;
         }
