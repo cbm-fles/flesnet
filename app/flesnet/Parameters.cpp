@@ -4,9 +4,10 @@
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "Utility.hpp"
-#include "global.hpp"
+#include "log.hpp"
 
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string/join.hpp>
 #include <fstream>
 
 namespace po = boost::program_options;
@@ -152,14 +153,14 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
 
 void Parameters::parse_options(int argc, char* argv[])
 {
-    unsigned log_level = 3;
+    unsigned log_level = 2;
     std::string config_file;
 
     po::options_description generic("Generic options");
     generic.add_options()("version,V", "print version string")(
         "help,h",
         "produce help message")("log-level,l", po::value<unsigned>(&log_level),
-                                "set the log level (default:3, all:0)")(
+                                "set the log level (default:2, all:0)")(
         "config-file,f",
         po::value<std::string>(&config_file)->default_value("flesnet.cfg"),
         "name of a configuration file.");
@@ -296,20 +297,20 @@ void Parameters::parse_options(int argc, char* argv[])
     if (_cn_desc_buffer_size_exp == 0)
         _cn_desc_buffer_size_exp = suggest_cn_desc_buffer_size_exp();
 
-    out.setVerbosity(static_cast<einhard::LogLevel>(log_level));
+    logging::add_console(static_cast<severity_level>(log_level));
 
     if (!_standalone) {
-        out.debug() << "input nodes (" << _input_nodes.size()
-                    << "): " << _input_nodes;
-        out.debug() << "compute nodes (" << _compute_nodes.size()
-                    << "): " << _compute_nodes;
+        L_(debug) << "input nodes (" << _input_nodes.size()
+                  << "): " << boost::algorithm::join(_input_nodes, " ");
+        L_(debug) << "compute nodes (" << _compute_nodes.size()
+                  << "): " << boost::algorithm::join(_compute_nodes, " ");
         for (auto input_index : _input_indexes) {
-            out.info() << "this is input node " << input_index << " (of "
-                       << _input_nodes.size() << ")";
+            L_(info) << "this is input node " << input_index << " (of "
+                     << _input_nodes.size() << ")";
         }
         for (auto compute_index : _compute_indexes) {
-            out.info() << "this is compute node " << compute_index << " (of "
-                       << _compute_nodes.size() << ")";
+            L_(info) << "this is compute node " << compute_index << " (of "
+                     << _compute_nodes.size() << ")";
         }
 
         for (auto input_index : _input_indexes) {
@@ -324,19 +325,19 @@ void Parameters::parse_options(int argc, char* argv[])
 
 void Parameters::print_buffer_info()
 {
-    out.info() << "microslice size: "
-               << human_readable_count(_typical_content_size);
-    out.info() << "timeslice size: (" << _timeslice_size << " + "
-               << _overlap_size << ") microslices";
-    out.info() << "number of timeslices: " << _max_timeslice_number;
-    out.info() << "input node buffer size: "
-               << human_readable_count(UINT64_C(1) << _in_data_buffer_size_exp)
-               << " + " << human_readable_count(
-                               (UINT64_C(1) << _in_desc_buffer_size_exp) *
-                               sizeof(fles::MicrosliceDescriptor));
-    out.info() << "compute node buffer size: "
-               << human_readable_count(UINT64_C(1) << _cn_data_buffer_size_exp)
-               << " + " << human_readable_count(
-                               (UINT64_C(1) << _cn_desc_buffer_size_exp) *
-                               sizeof(fles::TimesliceComponentDescriptor));
+    L_(info) << "microslice size: "
+             << human_readable_count(_typical_content_size);
+    L_(info) << "timeslice size: (" << _timeslice_size << " + " << _overlap_size
+             << ") microslices";
+    L_(info) << "number of timeslices: " << _max_timeslice_number;
+    L_(info) << "input node buffer size: "
+             << human_readable_count(UINT64_C(1) << _in_data_buffer_size_exp)
+             << " + "
+             << human_readable_count((UINT64_C(1) << _in_desc_buffer_size_exp) *
+                                     sizeof(fles::MicrosliceDescriptor));
+    L_(info) << "compute node buffer size: "
+             << human_readable_count(UINT64_C(1) << _cn_data_buffer_size_exp)
+             << " + " << human_readable_count(
+                             (UINT64_C(1) << _cn_desc_buffer_size_exp) *
+                             sizeof(fles::TimesliceComponentDescriptor));
 }

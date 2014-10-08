@@ -103,6 +103,6 @@ void FlibPatternGenerator::produce_data()
     }
     catch (std::exception& e)
     {
-        out.error() << "exception in FlibPatternGenerator: " << e.what();
+        L_(error) << "exception in FlibPatternGenerator: " << e.what();
     }
 }

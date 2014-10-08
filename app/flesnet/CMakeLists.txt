@@ -3,11 +3,8 @@
 file(GLOB APP_SOURCES *.cpp)
 file(GLOB APP_HEADERS *.h)
 
-set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS MINLOGLEVEL=2)
-
 include_directories("${PROJECT_SOURCE_DIR}/app/flesnet"
                     "${PROJECT_SOURCE_DIR}/lib/fles_core"
-                    "${PROJECT_SOURCE_DIR}/lib/einhard"
                     "${PROJECT_SOURCE_DIR}/lib/logging"
                     "${PROJECT_SOURCE_DIR}/lib/fles_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/flib")

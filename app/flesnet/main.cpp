@@ -14,13 +14,8 @@
 
 #include "Parameters.hpp"
 #include "Application.hpp"
-
-#include "global.hpp"
-
+#include "log.hpp"
 #include <csignal>
-
-einhard::Logger<static_cast<einhard::LogLevel>(MINLOGLEVEL), true>
-out(einhard::WARN, true);
 
 namespace
 {
@@ -42,7 +37,7 @@ int main(int argc, char* argv[])
     }
     catch (std::exception const& e)
     {
-        out.fatal() << e.what();
+        L_(fatal) << e.what();
         return EXIT_FAILURE;
     }
 

@@ -1,7 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "global.hpp"
+#include "log.hpp"
 #include <sys/wait.h>
 #include <vector>
 #include <csignal>
@@ -31,8 +31,8 @@ public:
         std::stringstream args;
         copy(child_process.arg.begin(), child_process.arg.end(),
              std::ostream_iterator<std::string>(args, " "));
-        out.debug() << "starting " << child_process.path << " with args "
-                    << args.str();
+        L_(debug) << "starting " << child_process.path << " with args "
+                  << args.str();
 
         std::vector<const char*> c_arg;
         std::transform(child_process.arg.begin(), child_process.arg.end(),
@@ -50,7 +50,7 @@ public:
 #pragma GCC diagnostic pop
             execvp(child_process.path.c_str(),
                    const_cast<char* const*>(&c_arg[0]));
-            out.error() << "execvp() failed: " << strerror(errno);
+            L_(error) << "execvp() failed: " << strerror(errno);
             _exit(0);
         } else {
             // parent
@@ -58,10 +58,10 @@ public:
                 child_process.pid = pid;
                 child_process.status = Running;
                 _child_processes.push_back(child_process);
-                out.debug() << "child process started";
+                L_(debug) << "child process started";
                 return true;
             } else {
-                out.error() << "vfork() failed: " << strerror(errno);
+                L_(error) << "vfork() failed: " << strerror(errno);
                 return false;
             }
         }
@@ -155,16 +155,16 @@ private:
                 if (child_processes[i].pid == pid)
                     idx = i;
             if (idx < 0) {
-                out.error() << "unknown child process died";
+                L_(error) << "unknown child process died";
             } else {
                 switch (child_processes.at(idx).status) {
                 case Terminating:
-                    out.debug() << "child process successfully terminated";
+                    L_(debug) << "child process successfully terminated";
                     break;
                 case Running:
                 case None:
-                    out.error() << "child process died unexpectedly";
-                    out.error() << "TODO: restart not yet implemented"; // TODO!
+                    L_(error) << "child process died unexpectedly";
+                    L_(error) << "TODO: restart not yet implemented"; // TODO!
                     break;
                 }
             }

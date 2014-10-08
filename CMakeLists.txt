@@ -29,6 +29,8 @@ find_package(PDA 8.0.4 REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
+add_definitions(-DBOOST_LOG_DYN_LINK)
+
 add_subdirectory(lib/fles_core)
 add_subdirectory(lib/logging)
 add_subdirectory(lib/flib)

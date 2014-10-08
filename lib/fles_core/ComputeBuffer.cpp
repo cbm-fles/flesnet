@@ -6,6 +6,7 @@
 #include "TimesliceCompletion.hpp"
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
+#include "log.hpp"
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <random>
@@ -145,8 +146,8 @@ void ComputeBuffer::report_status()
 
 void ComputeBuffer::request_abort()
 {
-    out.info() << "[c" << _compute_index << "] "
-               << "request abort";
+    L_(info) << "[c" << _compute_index << "] "
+             << "request abort";
 
     for (auto& connection : _conn) {
         connection->request_abort();
@@ -196,7 +197,7 @@ void ComputeBuffer::operator()()
     }
     catch (std::exception& e)
     {
-        out.error() << "exception in ComputeBuffer: " << e.what();
+        L_(error) << "exception in ComputeBuffer: " << e.what();
     }
 }
 
@@ -258,10 +259,10 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
     switch (wc.wr_id & 0xFF) {
 
     case ID_SEND_STATUS:
-        if (out.beDebug()) {
-            out.debug() << "[c" << _compute_index << "] "
-                        << "[" << in << "] "
-                        << "COMPLETE SEND status message";
+        if (false) {
+            L_(trace) << "[c" << _compute_index << "] "
+                      << "[" << in << "] "
+                      << "COMPLETE SEND status message";
         }
         _conn[in]->on_complete_send();
         break;
@@ -275,9 +276,9 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
         _conn[in]->on_complete_send_finalize();
         ++_connections_done;
         _all_done = (_connections_done == _conn.size());
-        out.debug() << "[c" << _compute_index << "] "
-                    << "SEND FINALIZE complete for id " << in
-                    << " all_done=" << _all_done;
+        L_(debug) << "[c" << _compute_index << "] "
+                  << "SEND FINALIZE complete for id " << in
+                  << " all_done=" << _all_done;
     } break;
 
     case ID_RECEIVE_STATUS: {

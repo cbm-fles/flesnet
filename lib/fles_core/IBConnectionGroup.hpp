@@ -5,7 +5,7 @@
 #include "InfinibandException.hpp"
 #include "Scheduler.hpp"
 #include "Utility.hpp"
-#include "global.hpp"
+#include "log.hpp"
 #include <chrono>
 #include <vector>
 #include <cstring>
@@ -41,7 +41,7 @@ public:
         if (_listen_id) {
             int err = rdma_destroy_id(_listen_id);
             if (err) {
-                out.error() << "rdma_destroy_id() failed";
+                L_(error) << "rdma_destroy_id() failed";
             }
             _listen_id = nullptr;
         }
@@ -49,7 +49,7 @@ public:
         if (_cq) {
             int err = ibv_destroy_cq(_cq);
             if (err) {
-                out.error() << "ibv_destroy_cq() failed";
+                L_(error) << "ibv_destroy_cq() failed";
             }
             _cq = nullptr;
         }
@@ -57,7 +57,7 @@ public:
         if (_pd) {
             int err = ibv_dealloc_pd(_pd);
             if (err) {
-                out.error() << "ibv_dealloc_pd() failed";
+                L_(error) << "ibv_dealloc_pd() failed";
             }
             _pd = nullptr;
         }
@@ -69,12 +69,12 @@ public:
     {
         _conn.resize(count);
 
-        out.debug() << "Setting up RDMA CM structures";
+        L_(debug) << "Setting up RDMA CM structures";
 
         // Create rdma id (for listening)
         int err = rdma_create_id(_ec, &_listen_id, nullptr, RDMA_PS_TCP);
         if (err) {
-            out.error() << "rdma_create_id() failed";
+            L_(error) << "rdma_create_id() failed";
             throw InfinibandException("id creation failed");
         }
 
@@ -90,19 +90,19 @@ public:
         err = rdma_bind_addr(_listen_id,
                              reinterpret_cast<struct sockaddr*>(&sin));
         if (err) {
-            out.error() << "rdma_bind_addr(port=" << port
-                        << ") failed: " << strerror(errno);
+            L_(error) << "rdma_bind_addr(port=" << port
+                      << ") failed: " << strerror(errno);
             throw InfinibandException("RDMA bind_addr failed");
         }
 
         // Listen for connection request on rdma id
         err = rdma_listen(_listen_id, count);
         if (err) {
-            out.error() << "rdma_listen() failed";
+            L_(error) << "rdma_listen() failed";
             throw InfinibandException("RDMA listen failed");
         }
 
-        out.debug() << "waiting for " << count << " connections";
+        L_(debug) << "waiting for " << count << " connections";
     }
 
     /// Initiate disconnection.
@@ -168,7 +168,7 @@ public:
                     std::ostringstream s;
                     s << ibv_wc_status_str(wc[i].status) << " for wr_id "
                       << static_cast<int>(wc[i].wr_id);
-                    out.error() << s.str();
+                    L_(error) << s.str();
 
                     continue;
                 }
@@ -205,12 +205,12 @@ public:
     {
         double runtime = std::chrono::duration_cast<std::chrono::microseconds>(
                              _time_end - _time_begin).count();
-        out.info() << "summary: " << _aggregate_send_requests << " SEND, "
-                   << _aggregate_recv_requests << " RECV requests";
+        L_(info) << "summary: " << _aggregate_send_requests << " SEND, "
+                 << _aggregate_recv_requests << " RECV requests";
         double rate = static_cast<double>(_aggregate_bytes_sent) / runtime;
-        out.info() << "summary: " << human_readable_count(_aggregate_bytes_sent)
-                   << " sent in " << runtime / 1000000. << " s (" << rate
-                   << " MB/s)";
+        L_(info) << "summary: " << human_readable_count(_aggregate_bytes_sent)
+                 << " sent in " << runtime / 1000000. << " s (" << rate
+                 << " MB/s)";
     }
 
     /// The "main" function of an IBConnectionGroup decendant.
@@ -269,7 +269,7 @@ protected:
     {
         _context = context;
 
-        out.debug() << "create verbs objects";
+        L_(debug) << "create verbs objects";
 
         _pd = ibv_alloc_pd(context);
         if (!_pd)
@@ -316,7 +316,7 @@ private:
     /// Connection manager event dispatcher. Called by the CM event loop.
     void on_cm_event(struct rdma_cm_event* event)
     {
-        out.trace() << rdma_event_str(event->event);
+        L_(trace) << rdma_event_str(event->event);
         switch (event->event) {
         case RDMA_CM_EVENT_ADDR_RESOLVED:
             on_addr_resolved(event->id);
@@ -345,7 +345,7 @@ private:
             on_disconnected(event);
             return;
         default:
-            out.warn() << rdma_event_str(event->event);
+            L_(warning) << rdma_event_str(event->event);
         }
     }
 

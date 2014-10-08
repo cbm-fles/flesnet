@@ -2,7 +2,7 @@
 
 #include "IBConnection.hpp"
 #include "RequestIdentifier.hpp"
-#include "global.hpp"
+#include "log.hpp"
 #include <netdb.h>
 #include <cstring>
 #include <cassert>
@@ -34,7 +34,7 @@ IBConnection::~IBConnection()
     if (_cm_id) {
         int err = rdma_destroy_id(_cm_id);
         if (err) {
-            out.error() << "rdma_destroy_id() failed";
+            L_(error) << "rdma_destroy_id() failed";
         }
         _cm_id = nullptr;
     }
@@ -53,8 +53,8 @@ void IBConnection::connect(const std::string& hostname,
     if (err)
         throw InfinibandException("getaddrinfo failed");
 
-    out.debug() << "[" << _index << "] "
-                << "resolution of server address and route";
+    L_(debug) << "[" << _index << "] "
+              << "resolution of server address and route";
 
     for (struct addrinfo* t = res; t; t = t->ai_next) {
         err =
@@ -70,8 +70,8 @@ void IBConnection::connect(const std::string& hostname,
 
 void IBConnection::disconnect()
 {
-    out.debug() << "[" << _index << "] "
-                << "disconnect";
+    L_(debug) << "[" << _index << "] "
+              << "disconnect";
     int err = rdma_disconnect(_cm_id);
     if (err)
         throw InfinibandException("rdma_disconnect failed");
@@ -79,29 +79,29 @@ void IBConnection::disconnect()
 
 void IBConnection::on_rejected(struct rdma_cm_event* /* event */)
 {
-    out.debug() << "[" << _index << "] "
-                << "connection rejected";
+    L_(debug) << "[" << _index << "] "
+              << "connection rejected";
 
     rdma_destroy_qp(_cm_id);
 }
 
 void IBConnection::on_established(struct rdma_cm_event* /* event */)
 {
-    out.debug() << "[" << _index << "] "
-                << "connection established";
+    L_(debug) << "[" << _index << "] "
+              << "connection established";
 }
 
 void IBConnection::on_disconnected(struct rdma_cm_event* /* event */)
 {
-    out.debug() << "[" << _index << "] "
-                << "connection disconnected";
+    L_(debug) << "[" << _index << "] "
+              << "connection disconnected";
 
     rdma_destroy_qp(_cm_id);
 }
 
 void IBConnection::on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq)
 {
-    out.debug() << "address resolved";
+    L_(debug) << "address resolved";
 
     struct ibv_qp_init_attr qp_attr;
     memset(&qp_attr, 0, sizeof qp_attr);
@@ -135,7 +135,7 @@ void IBConnection::create_qp(struct ibv_pd* pd, struct ibv_cq* cq)
 
 void IBConnection::accept_connect_request()
 {
-    out.debug() << "accepting connection";
+    L_(debug) << "accepting connection";
 
     // Accept rdma connection request
     auto private_data = get_private_data();
@@ -168,7 +168,7 @@ std::unique_ptr<std::vector<uint8_t>> IBConnection::get_private_data()
 
 void IBConnection::on_route_resolved()
 {
-    out.debug() << "route resolved";
+    L_(debug) << "route resolved";
 
     // Initiate rdma connection
     auto private_data = get_private_data();
@@ -181,7 +181,7 @@ void IBConnection::on_route_resolved()
     conn_param.private_data_len = static_cast<uint8_t>(private_data->size());
     int err = rdma_connect(_cm_id, &conn_param);
     if (err) {
-        out.fatal() << "rdma_connect failed: " << strerror(err);
+        L_(fatal) << "rdma_connect failed: " << strerror(err);
         throw InfinibandException("rdma_connect failed");
     }
 }
@@ -189,19 +189,19 @@ void IBConnection::on_route_resolved()
 void IBConnection::dump_send_wr(struct ibv_send_wr* wr)
 {
     for (int i = 0; wr; ++i, wr = wr->next) {
-        out.fatal() << "wr[" << i << "]: wr_id=" << wr->wr_id << " ("
-                    << static_cast<RequestIdentifier>(wr->wr_id) << ")";
-        out.fatal() << " opcode=" << wr->opcode;
-        out.fatal() << " send_flags="
-                    << static_cast<ibv_send_flags>(wr->send_flags);
-        out.fatal() << " num_sge=" << wr->num_sge;
+        L_(fatal) << "wr[" << i << "]: wr_id=" << wr->wr_id << " ("
+                  << static_cast<RequestIdentifier>(wr->wr_id) << ")";
+        L_(fatal) << " opcode=" << wr->opcode;
+        L_(fatal) << " send_flags="
+                  << static_cast<ibv_send_flags>(wr->send_flags);
+        L_(fatal) << " num_sge=" << wr->num_sge;
         for (int j = 0; j < wr->num_sge; ++j) {
-            out.fatal() << "  sg_list[" << j << "] "
-                        << "addr=" << wr->sg_list[j].addr;
-            out.fatal() << "  sg_list[" << j << "] "
-                        << "length=" << wr->sg_list[j].length;
-            out.fatal() << "  sg_list[" << j << "] "
-                        << "lkey=" << wr->sg_list[j].lkey;
+            L_(fatal) << "  sg_list[" << j << "] "
+                      << "addr=" << wr->sg_list[j].addr;
+            L_(fatal) << "  sg_list[" << j << "] "
+                      << "length=" << wr->sg_list[j].length;
+            L_(fatal) << "  sg_list[" << j << "] "
+                      << "lkey=" << wr->sg_list[j].lkey;
         }
     }
 }
@@ -212,10 +212,10 @@ void IBConnection::post_send(struct ibv_send_wr* wr)
 
     int err = ibv_post_send(qp(), wr, &bad_send_wr);
     if (err) {
-        out.fatal() << "ibv_post_send failed: " << strerror(err);
+        L_(fatal) << "ibv_post_send failed: " << strerror(err);
         dump_send_wr(wr);
-        out.fatal() << "previous send requests: " << _total_send_requests;
-        out.fatal() << "previous recv requests: " << _total_recv_requests;
+        L_(fatal) << "previous send requests: " << _total_send_requests;
+        L_(fatal) << "previous recv requests: " << _total_recv_requests;
         throw InfinibandException("ibv_post_send failed");
     }
 
@@ -234,7 +234,7 @@ void IBConnection::post_recv(struct ibv_recv_wr* wr)
 
     int err = ibv_post_recv(qp(), wr, &bad_recv_wr);
     if (err) {
-        out.fatal() << "ibv_post_recv failed: " << strerror(err);
+        L_(fatal) << "ibv_post_recv failed: " << strerror(err);
         throw InfinibandException("ibv_post_recv failed");
     }
 

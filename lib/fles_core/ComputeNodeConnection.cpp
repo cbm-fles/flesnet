@@ -3,7 +3,7 @@
 #include "ComputeNodeConnection.hpp"
 #include "ComputeNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
-#include "global.hpp"
+#include "log.hpp"
 #include <cassert>
 
 ComputeNodeConnection::ComputeNodeConnection(
@@ -26,21 +26,21 @@ ComputeNodeConnection::ComputeNodeConnection(
 
 void ComputeNodeConnection::post_recv_status_message()
 {
-    if (out.beDebug()) {
-        out.debug() << "[c" << _remote_index << "] "
-                    << "[" << _index << "] "
-                    << "POST RECEIVE status message";
+    if (false) {
+        L_(trace) << "[c" << _remote_index << "] "
+                  << "[" << _index << "] "
+                  << "POST RECEIVE status message";
     }
     post_recv(&recv_wr);
 }
 
 void ComputeNodeConnection::post_send_status_message()
 {
-    if (out.beDebug()) {
-        out.debug() << "[c" << _remote_index << "] "
-                    << "[" << _index << "] "
-                    << "POST SEND status_message"
-                    << " (ack.desc=" << _send_status_message.ack.desc << ")";
+    if (false) {
+        L_(trace) << "[c" << _remote_index << "] "
+                  << "[" << _index << "] "
+                  << "POST SEND status_message"
+                  << " (ack.desc=" << _send_status_message.ack.desc << ")";
     }
     while (_pending_send_requests >= _qp_cap.max_send_wr) {
         throw InfinibandException(
@@ -106,8 +106,8 @@ void ComputeNodeConnection::on_established(struct rdma_cm_event* event)
 {
     IBConnection::on_established(event);
 
-    out.debug() << "[c" << _remote_index << "] "
-                << "remote index: " << _remote_info.index;
+    L_(debug) << "[c" << _remote_index << "] "
+              << "remote index: " << _remote_info.index;
 }
 
 void ComputeNodeConnection::on_disconnected(struct rdma_cm_event* event)
@@ -150,19 +150,19 @@ void ComputeNodeConnection::inc_ack_pointers(uint64_t ack_pos)
 void ComputeNodeConnection::on_complete_recv()
 {
     if (_recv_status_message.final) {
-        out.debug() << "[c" << _remote_index << "] "
-                    << "[" << _index << "] "
-                    << "received FINAL status message";
+        L_(debug) << "[c" << _remote_index << "] "
+                  << "[" << _index << "] "
+                  << "received FINAL status message";
         // send FINAL status message
         _send_status_message.final = true;
         post_send_final_status_message();
         return;
     }
-    if (out.beDebug()) {
-        out.debug() << "[c" << _remote_index << "] "
-                    << "[" << _index << "] "
-                    << "COMPLETE RECEIVE status message"
-                    << " (wp.desc=" << _recv_status_message.wp.desc << ")";
+    if (false) {
+        L_(trace) << "[c" << _remote_index << "] "
+                  << "[" << _index << "] "
+                  << "COMPLETE RECEIVE status message"
+                  << " (wp.desc=" << _recv_status_message.wp.desc << ")";
     }
     _cn_wp = _recv_status_message.wp;
     post_recv_status_message();

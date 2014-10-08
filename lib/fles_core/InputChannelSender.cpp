@@ -4,6 +4,7 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RequestIdentifier.hpp"
 #include "Utility.hpp"
+#include "log.hpp"
 #include <cassert>
 
 InputChannelSender::InputChannelSender(
@@ -80,15 +81,15 @@ void InputChannelSender::report_status()
                             _previous_send_buffer_status_data.acked) /
         delta_t;
 
-    out.info() << "[i" << _input_index << "] desc " << status_mc.percentages()
-               << " (used..free) | "
-               << human_readable_count(status_mc.acked, true, "") << " ("
-               << human_readable_count(rate_mc, true, "Hz") << ")";
+    L_(info) << "[i" << _input_index << "] desc " << status_mc.percentages()
+             << " (used..free) | "
+             << human_readable_count(status_mc.acked, true, "") << " ("
+             << human_readable_count(rate_mc, true, "Hz") << ")";
 
-    out.info() << "[i" << _input_index << "] data " << status_data.percentages()
-               << " (used..free) | "
-               << human_readable_count(status_data.acked, true) << " ("
-               << human_readable_count(rate_data, true, "B/s") << ")";
+    L_(info) << "[i" << _input_index << "] data " << status_data.percentages()
+             << " (used..free) | "
+             << human_readable_count(status_data.acked, true) << " ("
+             << human_readable_count(rate_data, true, "B/s") << ")";
 
     _previous_send_buffer_status_mc = status_mc;
     _previous_send_buffer_status_data = status_data;
@@ -137,8 +138,8 @@ void InputChannelSender::operator()()
             c->finalize(_abort);
         }
 
-        out.debug() << "[i" << _input_index << "] "
-                    << "SENDER loop done";
+        L_(debug) << "[i" << _input_index << "] "
+                  << "SENDER loop done";
 
         while (!_all_done) {
             poll_completion();
@@ -156,7 +157,7 @@ void InputChannelSender::operator()()
     }
     catch (std::exception& e)
     {
-        out.error() << "exception in InputChannelSender: " << e.what();
+        L_(error) << "exception in InputChannelSender: " << e.what();
     }
 }
 
@@ -179,12 +180,12 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
         uint64_t total_length =
             data_length + mc_length * sizeof(fles::MicrosliceDescriptor);
 
-        if (out.beTrace()) {
-            out.trace() << "SENDER working on TS " << timeslice << ", MCs "
-                        << mc_offset << ".." << (mc_offset + mc_length - 1)
-                        << ", data bytes " << data_offset << ".."
-                        << (data_offset + data_length - 1);
-            out.trace() << get_state_string();
+        if (false) {
+            L_(trace) << "SENDER working on TS " << timeslice << ", MCs "
+                      << mc_offset << ".." << (mc_offset + mc_length - 1)
+                      << ", data bytes " << data_offset << ".."
+                      << (data_offset + data_length - 1);
+            L_(trace) << get_state_string();
         }
 
         int cn = target_cn_index(timeslice);
@@ -250,12 +251,12 @@ int InputChannelSender::target_cn_index(uint64_t timeslice)
 
 void InputChannelSender::dump_mr(struct ibv_mr* mr)
 {
-    out.debug() << "[i" << _input_index << "] "
-                << "ibv_mr dump:";
-    out.debug() << " addr=" << reinterpret_cast<uint64_t>(mr->addr);
-    out.debug() << " length=" << static_cast<uint64_t>(mr->length);
-    out.debug() << " lkey=" << static_cast<uint64_t>(mr->lkey);
-    out.debug() << " rkey=" << static_cast<uint64_t>(mr->rkey);
+    L_(debug) << "[i" << _input_index << "] "
+              << "ibv_mr dump:";
+    L_(debug) << " addr=" << reinterpret_cast<uint64_t>(mr->addr);
+    L_(debug) << " length=" << static_cast<uint64_t>(mr->length);
+    L_(debug) << " lkey=" << static_cast<uint64_t>(mr->lkey);
+    L_(debug) << " rkey=" << static_cast<uint64_t>(mr->rkey);
 }
 
 void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id)
@@ -268,7 +269,7 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id)
                               _data_source.data_send_buffer().bytes(),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_data) {
-            out.error() << "ibv_reg_mr failed for mr_data: " << strerror(errno);
+            L_(error) << "ibv_reg_mr failed for mr_data: " << strerror(errno);
             throw InfinibandException("registration of memory region failed");
         }
 
@@ -276,11 +277,11 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id)
                               _data_source.desc_send_buffer().bytes(),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_desc) {
-            out.error() << "ibv_reg_mr failed for mr_desc: " << strerror(errno);
+            L_(error) << "ibv_reg_mr failed for mr_desc: " << strerror(errno);
             throw InfinibandException("registration of memory region failed");
         }
 
-        if (out.beDebug()) {
+        if (true) {
             dump_mr(_mr_desc);
             dump_mr(_mr_data);
         }
@@ -429,11 +430,12 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
             _data_source.update_ack_pointers(_cached_acked_data,
                                              _cached_acked_mc);
         }
-        if (out.beDebug())
-            out.debug() << "[i" << _input_index << "] "
-                        << "write timeslice " << ts
-                        << " complete, now: _acked_data=" << _acked_data
-                        << " _acked_mc=" << _acked_mc;
+        if (false) {
+            L_(trace) << "[i" << _input_index << "] "
+                      << "write timeslice " << ts
+                      << " complete, now: _acked_data=" << _acked_data
+                      << " _acked_mc=" << _acked_mc;
+        }
     } break;
 
     case ID_RECEIVE_STATUS: {
@@ -445,9 +447,9 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
         if (_conn[cn]->done()) {
             ++_connections_done;
             _all_done = (_connections_done == _conn.size());
-            out.debug() << "[i" << _input_index << "] "
-                        << "ID_RECEIVE_STATUS final for id " << cn
-                        << " all_done=" << _all_done;
+            L_(debug) << "[i" << _input_index << "] "
+                      << "ID_RECEIVE_STATUS final for id " << cn
+                      << " all_done=" << _all_done;
         }
     } break;
 
@@ -455,8 +457,8 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
     } break;
 
     default:
-        out.error() << "[i" << _input_index << "] "
-                    << "wc for unknown wr_id=" << (wc.wr_id & 0xFF);
+        L_(error) << "[i" << _input_index << "] "
+                  << "wc for unknown wr_id=" << (wc.wr_id & 0xFF);
         throw InfinibandException("wc for unknown wr_id");
     }
 }

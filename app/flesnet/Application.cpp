@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "FlibHardwareChannel.hpp"
 #include "FlibPatternGenerator.hpp"
+#include "log.hpp"
 #include <boost/thread/thread.hpp>
 #include <boost/thread/future.hpp>
 
@@ -30,7 +31,7 @@ Application::Application(Parameters const& par,
                 }),
                 std::end(_flib_links));
 
-            out.info() << "enabled flib links detected: " << _flib_links.size();
+            L_(info) << "enabled flib links detected: " << _flib_links.size();
 
             // increase number of input nodes to match number of
             // enabled FLIB links if in stand-alone mode
@@ -43,14 +44,13 @@ Application::Application(Parameters const& par,
         }
         catch (std::exception const& e)
         {
-            out.error() << "exception while creating flib: " << e.what();
+            L_(error) << "exception while creating flib: " << e.what();
         }
     }
     // end FIXME
 
     if (par.standalone()) {
-        out.info() << "flesnet in stand-alone mode, inputs: "
-                   << input_nodes_size;
+        L_(info) << "flesnet in stand-alone mode, inputs: " << input_nodes_size;
     }
 
     // Compute node application
@@ -115,8 +115,8 @@ Application::~Application()
     }
     catch (std::exception& e)
     {
-        out.error() << "exception in destructor ~InputNodeApplication(): "
-                    << e.what();
+        L_(error) << "exception in destructor ~InputNodeApplication(): "
+                  << e.what();
     }
 }
 
@@ -139,14 +139,14 @@ void Application::run()
         threads.add_thread(new boost::thread(std::move(task)));
     }
 
-    out.debug() << "threads started: " << threads.size();
+    L_(debug) << "threads started: " << threads.size();
 
     while (!futures.empty()) {
         auto it = boost::wait_for_any(futures.begin(), futures.end());
         try { it->get(); }
         catch (const std::exception& e)
         {
-            out.fatal() << "exception from thread: " << e.what();
+            L_(fatal) << "exception from thread: " << e.what();
             stop = true;
         }
         futures.erase(it);

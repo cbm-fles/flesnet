@@ -6,7 +6,7 @@
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
 #include "MicrosliceDescriptor.hpp"
-#include "global.hpp"
+#include "log.hpp"
 #include <atomic>
 #include <thread>
 #include <random>
@@ -44,8 +44,8 @@ public:
         }
         catch (std::exception& e)
         {
-            out.error() << "exception in destructor ~FlibPatternGenerator(): "
-                        << e.what();
+            L_(error) << "exception in destructor ~FlibPatternGenerator(): "
+                      << e.what();
         }
     }
 
