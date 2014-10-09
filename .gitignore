@@ -2,3 +2,4 @@
 /lib/fles_core/Makefile
 /lib/fles_ipc/Makefile
 /lib/flib/Makefile
+/lib/logging/Makefile
