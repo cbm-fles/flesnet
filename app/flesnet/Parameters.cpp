@@ -4,8 +4,7 @@
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "Utility.hpp"
-#include "log.hpp"
-
+#include <log.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <fstream>

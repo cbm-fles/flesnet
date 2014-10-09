@@ -3,7 +3,7 @@
 #include "ComputeNodeConnection.hpp"
 #include "ComputeNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
-#include "log.hpp"
+#include <log.hpp>
 #include <cassert>
 
 ComputeNodeConnection::ComputeNodeConnection(

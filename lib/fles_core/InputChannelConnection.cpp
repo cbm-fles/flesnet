@@ -5,7 +5,7 @@
 #include "MicrosliceDescriptor.hpp"
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
-#include "log.hpp"
+#include <log.hpp>
 #include <cassert>
 #include <cstring>
 

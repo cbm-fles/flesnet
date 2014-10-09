@@ -6,7 +6,7 @@
 #include "TimesliceCompletion.hpp"
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
-#include "log.hpp"
+#include <log.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <random>

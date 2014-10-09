@@ -5,7 +5,7 @@
 #include "InfinibandException.hpp"
 #include "Scheduler.hpp"
 #include "Utility.hpp"
-#include "log.hpp"
+#include <log.hpp>
 #include <chrono>
 #include <vector>
 #include <cstring>

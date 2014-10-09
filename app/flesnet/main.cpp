@@ -14,7 +14,7 @@
 
 #include "Parameters.hpp"
 #include "Application.hpp"
-#include "log.hpp"
+#include <log.hpp>
 #include <csignal>
 
 namespace

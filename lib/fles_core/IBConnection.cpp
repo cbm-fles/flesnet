@@ -2,7 +2,7 @@
 
 #include "IBConnection.hpp"
 #include "RequestIdentifier.hpp"
-#include "log.hpp"
+#include <log.hpp>
 #include <netdb.h>
 #include <cstring>
 #include <cassert>

@@ -3,7 +3,7 @@
 #include "Application.hpp"
 #include "FlibHardwareChannel.hpp"
 #include "FlibPatternGenerator.hpp"
-#include "log.hpp"
+#include <log.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/future.hpp>
 

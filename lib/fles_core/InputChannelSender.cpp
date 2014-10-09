@@ -4,7 +4,7 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RequestIdentifier.hpp"
 #include "Utility.hpp"
-#include "log.hpp"
+#include <log.hpp>
 #include <cassert>
 
 InputChannelSender::InputChannelSender(
