@@ -36,25 +36,23 @@ public:
 
     virtual ~FlibPatternGenerator()
     {
-        try
-        {
+        try {
             _is_stopped = true;
             _producer_thread->join();
             delete _producer_thread;
-        }
-        catch (std::exception& e)
-        {
+        } catch (std::exception& e) {
             L_(error) << "exception in destructor ~FlibPatternGenerator(): "
                       << e.what();
         }
     }
 
-    virtual RingBufferView<>& data_buffer() override
+    virtual RingBufferView<volatile uint8_t>& data_buffer() override
     {
         return _data_buffer_view;
     }
 
-    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
+    virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
+    desc_buffer() override
     {
         return _desc_buffer_view;
     }
@@ -74,13 +72,13 @@ public:
 
 private:
     /// Input data buffer.
-    RingBuffer<> _data_buffer;
+    RingBuffer<volatile uint8_t> _data_buffer;
 
     /// Input descriptor buffer.
-    RingBuffer<fles::MicrosliceDescriptor> _desc_buffer;
+    RingBuffer<volatile fles::MicrosliceDescriptor> _desc_buffer;
 
-    RingBufferView<> _data_buffer_view;
-    RingBufferView<fles::MicrosliceDescriptor> _desc_buffer_view;
+    RingBufferView<volatile uint8_t> _data_buffer_view;
+    RingBufferView<volatile fles::MicrosliceDescriptor> _desc_buffer_view;
 
     /// This node's index in the list of input nodes
     uint64_t _input_index;

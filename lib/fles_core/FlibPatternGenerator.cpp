@@ -5,8 +5,7 @@
 /// The thread main function.
 void FlibPatternGenerator::produce_data()
 {
-    try
-    {
+    try {
         set_cpu(3);
 
         /// A pseudo-random number generator.
@@ -77,7 +76,7 @@ void FlibPatternGenerator::produce_data()
                     for (uint64_t i = 0; i < content_bytes;
                          i += sizeof(uint64_t)) {
                         uint64_t data_word = (_input_index << 48L) | i;
-                        reinterpret_cast<uint64_t&>(
+                        reinterpret_cast<volatile uint64_t&>(
                             _data_buffer.at(written_data)) = data_word;
                         written_data += sizeof(uint64_t);
                         crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);
@@ -87,9 +86,11 @@ void FlibPatternGenerator::produce_data()
                 }
 
                 // write to descriptor buffer
-                _desc_buffer.at(written_mc++) = fles::MicrosliceDescriptor(
-                    {hdr_id, hdr_ver, eq_id, flags, sys_id, sys_ver, idx, crc,
-                     size, offset});
+                const_cast<fles::MicrosliceDescriptor&>(
+                    _desc_buffer.at(written_mc++)) =
+                    fles::MicrosliceDescriptor({hdr_id, hdr_ver, eq_id, flags,
+                                                sys_id, sys_ver, idx, crc, size,
+                                                offset});
 
                 if (written_mc >= last_written_mc + min_written_mc ||
                     written_data >= last_written_data + min_written_data) {
@@ -100,9 +101,7 @@ void FlibPatternGenerator::produce_data()
                 }
             }
         }
-    }
-    catch (std::exception& e)
-    {
+    } catch (std::exception& e) {
         L_(error) << "exception in FlibPatternGenerator: " << e.what();
     }
 }

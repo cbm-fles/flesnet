@@ -16,13 +16,18 @@ public:
     virtual void update_ack_pointers(uint64_t new_acked_data,
                                      uint64_t new_acked_mc) = 0;
 
-    virtual RingBufferView<>& data_buffer() = 0;
+    virtual RingBufferView<volatile uint8_t>& data_buffer() = 0;
 
-    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() = 0;
+    virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
+    desc_buffer() = 0;
 
-    virtual RingBufferView<>& data_send_buffer() { return data_buffer(); }
+    virtual RingBufferView<volatile uint8_t>& data_send_buffer()
+    {
+        return data_buffer();
+    }
 
-    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_send_buffer()
+    virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
+    desc_send_buffer()
     {
         return desc_buffer();
     }

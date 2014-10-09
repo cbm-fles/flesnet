@@ -33,11 +33,12 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
         reinterpret_cast<fles::MicrosliceDescriptor*>(
             _flib_link->desc_buffer()->mem());
 
-    _data_buffer_view = std::unique_ptr<RingBufferView<>>(
-        new RingBufferView<>(data_buffer, data_buffer_size_exp));
+    _data_buffer_view = std::unique_ptr<RingBufferView<volatile uint8_t>>(
+        new RingBufferView<volatile uint8_t>(data_buffer,
+                                             data_buffer_size_exp));
     _desc_buffer_view =
-        std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor>>(
-            new RingBufferView<fles::MicrosliceDescriptor>(
+        std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>(
+            new RingBufferView<volatile fles::MicrosliceDescriptor>(
                 desc_buffer, desc_buffer_size_exp));
 
     _flib_link->set_start_idx(0);

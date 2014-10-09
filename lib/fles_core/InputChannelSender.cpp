@@ -112,8 +112,7 @@ void InputChannelSender::sync_buffer_positions()
 /// The thread main function.
 void InputChannelSender::operator()()
 {
-    try
-    {
+    try {
         set_cpu(2);
 
         connect();
@@ -154,9 +153,7 @@ void InputChannelSender::operator()()
         }
 
         summary();
-    }
-    catch (std::exception& e)
-    {
+    } catch (std::exception& e) {
         L_(error) << "exception in InputChannelSender: " << e.what();
     }
 }
@@ -265,15 +262,16 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id)
 
     if (!_mr_data) {
         // Register memory regions.
-        _mr_data = ibv_reg_mr(_pd, _data_source.data_send_buffer().ptr(),
-                              _data_source.data_send_buffer().bytes(),
-                              IBV_ACCESS_LOCAL_WRITE);
+        _mr_data = ibv_reg_mr(
+            _pd, const_cast<uint8_t*>(_data_source.data_send_buffer().ptr()),
+            _data_source.data_send_buffer().bytes(), IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_data) {
             L_(error) << "ibv_reg_mr failed for mr_data: " << strerror(errno);
             throw InfinibandException("registration of memory region failed");
         }
 
-        _mr_desc = ibv_reg_mr(_pd, _data_source.desc_send_buffer().ptr(),
+        _mr_desc = ibv_reg_mr(_pd, const_cast<fles::MicrosliceDescriptor*>(
+                                       _data_source.desc_send_buffer().ptr()),
                               _data_source.desc_send_buffer().bytes(),
                               IBV_ACCESS_LOCAL_WRITE);
         if (!_mr_desc) {
