@@ -4,8 +4,7 @@
 #pragma pack(1)
 
 /// Structure representing a set of compute node buffer positions.
-struct ComputeNodeBufferPosition
-{
+struct ComputeNodeBufferPosition {
     uint64_t data; ///< The position in the data buffer.
     uint64_t desc; ///< The position in the description buffer.
     bool operator<(const ComputeNodeBufferPosition& rhs) const

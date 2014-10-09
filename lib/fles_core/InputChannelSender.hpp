@@ -108,8 +108,7 @@ private:
 
     bool _abort = false;
 
-    struct SendBufferStatus
-    {
+    struct SendBufferStatus {
         std::chrono::system_clock::time_point time;
         uint64_t size;
 

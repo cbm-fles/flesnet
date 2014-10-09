@@ -62,12 +62,12 @@ void InputChannelSender::report_status()
 
     std::chrono::system_clock::time_point now =
         std::chrono::system_clock::now();
-    SendBufferStatus status_mc{
-        now,       _data_source.desc_buffer().size(), _cached_acked_mc,
-        _acked_mc, _sent_mc,                          written_mc};
-    SendBufferStatus status_data{
-        now,         _data_source.data_buffer().size(), _cached_acked_data,
-        _acked_data, _sent_data,                        written_data};
+    SendBufferStatus status_mc{now, _data_source.desc_buffer().size(),
+                               _cached_acked_mc, _acked_mc, _sent_mc,
+                               written_mc};
+    SendBufferStatus status_data{now, _data_source.data_buffer().size(),
+                                 _cached_acked_data, _acked_data, _sent_data,
+                                 written_data};
 
     double delta_t =
         std::chrono::duration<double, std::chrono::seconds::period>(

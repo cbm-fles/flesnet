@@ -10,7 +10,6 @@
 //   in one timeslice component
 // Implementation is not dump parallelizable across ts components!
 
-
 #include "TimesliceAnalyzer.hpp"
 #include <iostream>
 #include <sstream>
@@ -33,8 +32,7 @@ bool TimesliceAnalyzer::check_flesnet_pattern(
     return true;
 }
 
-bool TimesliceAnalyzer::check_content_pgen(const uint16_t* content,
-                                             size_t size)
+bool TimesliceAnalyzer::check_content_pgen(const uint16_t* content, size_t size)
 {
     constexpr uint16_t source_address = 0;
 
@@ -53,19 +51,18 @@ bool TimesliceAnalyzer::check_content_pgen(const uint16_t* content,
         }
     }
 
-    uint16_t pgen_sequence_number = content[size-1];
+    uint16_t pgen_sequence_number = content[size - 1];
     uint16_t expected_pgen_sequence_number = _pgen_sequence_number + 1;
     // uncomment to check only for increasing sequence numbers
-//    if (_pgen_sequence_number != 0 && pgen_sequence_number != 0 &&
-//        pgen_sequence_number < expected_pgen_sequence_number) {
+    //    if (_pgen_sequence_number != 0 && pgen_sequence_number != 0 &&
+    //        pgen_sequence_number < expected_pgen_sequence_number) {
     if (_pgen_sequence_number != 0 &&
         pgen_sequence_number != expected_pgen_sequence_number) {
-      std::cerr << "unexpected pgen sequence number in frame "
-                << static_cast<unsigned>(_frame_number)
-                << ":  expected " << expected_pgen_sequence_number
-                << "  found " << pgen_sequence_number
-                << std::endl;
-      return false;
+        std::cerr << "unexpected pgen sequence number in frame "
+                  << static_cast<unsigned>(_frame_number) << ":  expected "
+                  << expected_pgen_sequence_number << "  found "
+                  << pgen_sequence_number << std::endl;
+        return false;
     }
     _pgen_sequence_number = pgen_sequence_number;
 
@@ -73,8 +70,7 @@ bool TimesliceAnalyzer::check_content_pgen(const uint16_t* content,
 }
 
 bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
-                                            size_t size,
-                                            uint8_t sys_id,
+                                            size_t size, uint8_t sys_id,
                                             uint8_t sys_ver)
 {
     size_t i = 0;
@@ -86,11 +82,11 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
         ++i;
 
         uint8_t expected_frame_number = _frame_number + 1;
-        if (_frame_number != 0 &&
-            frame_number != expected_frame_number) {
+        if (_frame_number != 0 && frame_number != expected_frame_number) {
             std::cerr << "unexpected cbmnet frame number:"
-                      << "  expected: " << static_cast<uint32_t>(expected_frame_number)
-                      << "  found: "<< static_cast<uint32_t>(frame_number)
+                      << "  expected: "
+                      << static_cast<uint32_t>(expected_frame_number)
+                      << "  found: " << static_cast<uint32_t>(frame_number)
                       << std::endl;
             return false;
         }
@@ -103,10 +99,10 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
             return false;
         }
 
-        if (sys_id == static_cast<uint8_t>(0xF0) && 
+        if (sys_id == static_cast<uint8_t>(0xF0) &&
             sys_ver == static_cast<uint8_t>(0x1)) {
-          if (check_content_pgen(&content[i], word_count) == false)
-            return false;
+            if (check_content_pgen(&content[i], word_count) == false)
+                return false;
         }
         i += word_count + padding_count;
     }

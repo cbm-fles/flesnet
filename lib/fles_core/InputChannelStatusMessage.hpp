@@ -7,8 +7,7 @@
 
 /// Structure representing a status update message sent from input channel to
 /// compute buffer.
-struct InputChannelStatusMessage
-{
+struct InputChannelStatusMessage {
     ComputeNodeBufferPosition wp;
     bool abort;
     bool final;

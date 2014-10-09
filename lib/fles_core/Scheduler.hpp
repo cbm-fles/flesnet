@@ -9,8 +9,7 @@
 class Scheduler
 {
 public:
-    struct event
-    {
+    struct event {
         typedef std::function<void()> callback_type;
         typedef std::chrono::time_point<std::chrono::system_clock> time_type;
 
@@ -25,8 +24,7 @@ public:
         time_type when_;
     };
 
-    struct event_less : public std::less<event>
-    {
+    struct event_less : public std::less<event> {
         bool operator()(const event& e1, const event& e2) const
         {
             return (e2.when_ < e1.when_);

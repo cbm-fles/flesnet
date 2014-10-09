@@ -17,8 +17,7 @@ Application::Application(Parameters const& par,
     // FIXME: some of this is a terrible mess
     if (par.use_flib()) {
         // TODO: presence detection #524
-        try
-        {
+        try {
             _flib =
                 std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
             _flib_links = _flib->links();
@@ -41,9 +40,7 @@ Application::Application(Parameters const& par,
                     input_indexes.push_back(i);
                 }
             }
-        }
-        catch (std::exception const& e)
-        {
+        } catch (std::exception const& e) {
             L_(error) << "exception while creating flib: " << e.what();
         }
     }
@@ -107,14 +104,11 @@ Application::Application(Parameters const& par,
 Application::~Application()
 {
     // Input node application
-    try
-    {
+    try {
         if (_flib) {
             _flib->enable_mc_cnt(false);
         }
-    }
-    catch (std::exception& e)
-    {
+    } catch (std::exception& e) {
         L_(error) << "exception in destructor ~InputNodeApplication(): "
                   << e.what();
     }
@@ -143,9 +137,9 @@ void Application::run()
 
     while (!futures.empty()) {
         auto it = boost::wait_for_any(futures.begin(), futures.end());
-        try { it->get(); }
-        catch (const std::exception& e)
-        {
+        try {
+            it->get();
+        } catch (const std::exception& e) {
             L_(fatal) << "exception from thread: " << e.what();
             stop = true;
         }

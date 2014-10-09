@@ -5,7 +5,8 @@
 #include <algorithm>
 #include <boost/format.hpp>
 
-std::string TimesliceDebugger::dump_timeslice(const fles::Timeslice& ts, size_t verbosity) const
+std::string TimesliceDebugger::dump_timeslice(const fles::Timeslice& ts,
+                                              size_t verbosity) const
 {
     uint64_t min_num_microslices = UINT64_MAX;
     uint64_t max_num_microslices = 0;
@@ -26,9 +27,10 @@ std::string TimesliceDebugger::dump_timeslice(const fles::Timeslice& ts, size_t 
             min_microslice_size = std::min(min_microslice_size, size);
             max_microslice_size = std::max(max_microslice_size, size);
             if (verbosity > 1) {
-              s_mc << "timeslice " << ts.index()
-                   << " microslice " << m << " component " << c << "\n"
-                   << dump_microslice(ts.descriptor(c, m), ts.content(c, m)) << std::endl;
+                s_mc << "timeslice " << ts.index() << " microslice " << m
+                     << " component " << c << "\n"
+                     << dump_microslice(ts.descriptor(c, m), ts.content(c, m))
+                     << std::endl;
             }
         }
     }

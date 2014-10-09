@@ -157,8 +157,7 @@ void ComputeBuffer::request_abort()
 /// The thread main function.
 void ComputeBuffer::operator()()
 {
-    try
-    {
+    try {
         // set_cpu(0);
 
         accept(_service, _num_input_nodes);
@@ -194,9 +193,7 @@ void ComputeBuffer::operator()()
         _completions_mq->send(nullptr, 0, 0);
 
         summary();
-    }
-    catch (std::exception& e)
-    {
+    } catch (std::exception& e) {
         L_(error) << "exception in ComputeBuffer: " << e.what();
     }
 }

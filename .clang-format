@@ -1,3 +1,4 @@
+BasedOnStyle: llvm
 AccessModifierOffset: -4
 PointerBindsToType: true
 IndentWidth: 4

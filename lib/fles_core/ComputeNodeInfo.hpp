@@ -4,14 +4,12 @@
 #pragma pack(1)
 
 /// Access information for a remote memory region.
-struct BufferInfo
-{
+struct BufferInfo {
     uint64_t addr; ///< Target memory address
     uint32_t rkey; ///< Target remote access key
 };
 
-struct ComputeNodeInfo
-{
+struct ComputeNodeInfo {
     BufferInfo data;
     BufferInfo desc;
     uint32_t index;

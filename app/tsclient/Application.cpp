@@ -47,7 +47,8 @@ void Application::run()
             }
         }
         if (_debug) {
-          std::cout << _debug->dump_timeslice(*timeslice, _par.verbosity()) << std::endl;
+            std::cout << _debug->dump_timeslice(*timeslice, _par.verbosity())
+                      << std::endl;
         }
         if (_output)
             _output->write(*timeslice);

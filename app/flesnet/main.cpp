@@ -29,14 +29,11 @@ int main(int argc, char* argv[])
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
 
-    try
-    {
+    try {
         Parameters par(argc, argv);
         Application app(par, &signal_status);
         app.run();
-    }
-    catch (std::exception const& e)
-    {
+    } catch (std::exception const& e) {
         L_(fatal) << e.what();
         return EXIT_FAILURE;
     }

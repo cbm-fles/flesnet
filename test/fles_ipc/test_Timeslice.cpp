@@ -8,8 +8,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-struct F
-{
+struct F {
     F()
     {
         // initialize microslice descriptors (for individual meaning cf.

@@ -24,7 +24,7 @@ private:
 
     bool check_content_pgen(const uint16_t* content, size_t size);
 
-    bool check_cbmnet_frames(const uint16_t* content, size_t size, 
+    bool check_cbmnet_frames(const uint16_t* content, size_t size,
                              uint8_t sys_id, uint8_t sys_ver);
 
     bool check_flib_pattern(const fles::MicrosliceDescriptor& descriptor,
@@ -38,6 +38,6 @@ private:
     size_t _microslice_count = 0;
     size_t _content_bytes = 0;
 
-  uint8_t _frame_number = 0;
-  uint16_t _pgen_sequence_number = 0;
+    uint8_t _frame_number = 0;
+    uint16_t _pgen_sequence_number = 0;
 };

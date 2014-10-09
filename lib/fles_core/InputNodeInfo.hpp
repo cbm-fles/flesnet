@@ -3,8 +3,7 @@
 
 #pragma pack(1)
 
-struct InputNodeInfo
-{
+struct InputNodeInfo {
     uint32_t index;
 };
 

@@ -8,8 +8,7 @@
 
 enum ProcessStatus { None, Running, Terminating };
 
-struct ChildProcess
-{
+struct ChildProcess {
     pid_t pid;
     std::string path;
     std::vector<std::string> arg;
@@ -42,9 +41,9 @@ public:
 
         pid_t pid = vfork();
         if (pid == 0) {
-            // child
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+            // child
             std::signal(SIGINT, SIG_IGN);
             std::signal(SIGTERM, SIG_IGN);
 #pragma GCC diagnostic pop

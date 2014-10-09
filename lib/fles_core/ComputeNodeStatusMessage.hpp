@@ -7,8 +7,7 @@
 
 /// Structure representing a status update message sent from compute buffer to
 /// input channel.
-struct ComputeNodeStatusMessage
-{
+struct ComputeNodeStatusMessage {
     ComputeNodeBufferPosition ack;
     bool request_abort;
     bool final;
