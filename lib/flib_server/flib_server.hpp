@@ -8,9 +8,9 @@
 #include <sys/eventfd.h>
 #include <boost/thread.hpp>
 
+#include <log.hpp>
 #include <flib.h>
 #include <zmq.hpp>
-#include "global.hpp"
 
 class flib_server {
   
@@ -153,7 +153,7 @@ public:
     size_t msg_size = _driver_req.recv(cnet_s_msg.data, sizeof(cnet_s_msg.data));
     if (msg_size > sizeof(cnet_s_msg.data)) {
       cnet_s_msg.words = sizeof(cnet_s_msg.data)/sizeof(cnet_s_msg.data[0]);
-      out.error() << "Message truncated";
+      L_(error) << "Message truncated";
     }
     else {
       cnet_s_msg.words = msg_size/sizeof(cnet_s_msg.data[0]);
@@ -161,7 +161,7 @@ public:
 
     //DEBUG
     for (size_t i = 0; i < cnet_s_msg.words; i++) {
-      out.trace() << "msg to send " << std::hex << std::setfill('0') 
+      L_(trace) << "msg to send " << std::hex << std::setfill('0') 
                   <<  "0x" << std::setw(4) << cnet_s_msg.data[i];
     }
     
@@ -188,16 +188,16 @@ public:
   {
     flib::ctrl_msg cnet_r_msg;
 
-    out.info() << "sending control message";
+    L_(info) << "sending control message";
 
     // receive to flush hw buffers
     if ( _link.recv_dcm(&cnet_r_msg) != -1)  {
-      out.warn() << "sprious message dropped";
+      L_(warning) << "sprious message dropped";
     }
   
     // send command
     if ( _link.send_dcm(&cnet_s_msg) < 0)  {
-      out.error() << "sending message failed";
+      L_(error) << "sending message failed";
     }                      
 
     // receive response
@@ -212,13 +212,13 @@ public:
     }
 
     if (ret == -2) {
-      out.error() << "received message with illegal size";
+      L_(error) << "received message with illegal size";
     } else if ( ret == -1)  {
-      out.error() << "timeout receiving message";
+      L_(error) << "timeout receiving message";
     } else {
       //DEBUG
       for (size_t i = 0; i < cnet_r_msg.words; i++) {
-        out.trace() << "msg received " << std::hex << std::setfill('0')
+        L_(trace) << "msg received " << std::hex << std::setfill('0')
                     <<  "0x" << std::setw(4) << cnet_r_msg.data[i];
       }
     }
@@ -230,7 +230,7 @@ public:
 
   void SendDlm(flib::ctrl_msg& cnet_s_msg)
   {
-    out.info() << "Sending DLM "
+    L_(info) << "Sending DLM "
                 << std::hex << "0x" << cnet_s_msg.data[0];
 
     // set dlm config for single link
@@ -244,7 +244,7 @@ public:
 
   void FlibRead(flib::ctrl_msg& cnet_s_msg)
   {
-    out.debug() << "Reading FLIB link register: " << std::hex
+    L_(debug) << "Reading FLIB link register: " << std::hex
                 << "addr " << cnet_s_msg.data[0];
 
     // TODO read acctual flib register
@@ -260,7 +260,7 @@ public:
     uint32_t addr = cnet_s_msg.data[1]<<16 | cnet_s_msg.data[0];
     uint32_t data = cnet_s_msg.data[3]<<16 | cnet_s_msg.data[2];
 
-    out.debug() << "Writing FLIB link register: " << std::hex
+    L_(debug) << "Writing FLIB link register: " << std::hex
                 << "addr " << addr
                 << " data " << data;
 

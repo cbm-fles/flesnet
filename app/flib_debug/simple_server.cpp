@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 #include <flib.h>
-#include "global.hpp"
+#include <log.hpp>
 
 #include "mc_functions.h"
 
@@ -26,13 +26,12 @@ static void s_catch_signals (void)
   sigaction (SIGINT, &action, NULL);
 }
 
-einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out(einhard::WARN, true);
 
 int main(int argc, const char* argv[])
 {
   s_catch_signals();
 
-  out.setVerbosity(einhard::DEBUG);
+  logging::add_console(debug);
 
   // create FLIB
   try 
@@ -41,7 +40,7 @@ int main(int argc, const char* argv[])
 
   std::vector<flib::flib_link*> links = flib.links();
 
-  out.info() << flib.print_build_info();
+  L_(info) << flib.print_build_info();
 
   flib.set_mc_time(500);
 
@@ -49,12 +48,12 @@ int main(int argc, const char* argv[])
   std::vector<MicrosliceDescriptor*> rb;
 
   for (size_t i = 0; i < flib.number_of_links(); ++i) {
-    out.debug() << "initializing link " << i;
+    L_(debug) << "initializing link " << i;
 
     // initialize a DMA buffer
     links.at(i)->init_dma(flib::create_only, 22, 20);
-    out.info() << "Event Buffer: " << links.at(i)->data_buffer_info();
-    out.info() << "Desciptor Buffer" << links.at(i)->desc_buffer_info();
+    L_(info) << "Event Buffer: " << links.at(i)->data_buffer_info();
+    L_(info) << "Desciptor Buffer" << links.at(i)->desc_buffer_info();
     // get raw pointers for debugging
     eb.push_back((uint64_t *)links.at(i)->data_buffer()->mem());
     rb.push_back((MicrosliceDescriptor *)links.at(i)->desc_buffer()->mem());
@@ -83,8 +82,8 @@ int main(int argc, const char* argv[])
     flib.enable_mc_cnt(true);
     links.at(i)->enable_cbmnet_packer(true);
     
-    out.debug() << "current mc nr: " <<  links.at(i)->mc_index();
-    out.debug() << "link " << i << "initialized";
+    L_(debug) << "current mc nr: " <<  links.at(i)->mc_index();
+    L_(debug) << "link " << i << "initialized";
   }
   /////////// THE MAIN LOOP ///////////
 
@@ -112,7 +111,7 @@ int main(int argc, const char* argv[])
     ++mc_received;
 
     if (j == 0) {
-      out.info() << "First MC seen.";
+      L_(info) << "First MC seen.";
       dump_mc_light(&mc_pair.first);
       std::cout << "RB:" << std::endl;
       dump_raw((uint64_t *)(rb.at(i)+j), 8);
@@ -121,7 +120,7 @@ int main(int argc, const char* argv[])
     }
  
     if (j != 0 && j < 1) {
-      out.info() << "MC analysed " << j;
+      L_(info) << "MC analysed " << j;
       dump_mc_light(&mc_pair.first);
       dump_mc(&mc_pair.first);
     }
@@ -131,9 +130,9 @@ int main(int argc, const char* argv[])
     }
   
     if ((j & 0xFFFF) == 0xFFFF) {
-      out.info() << "MC analysed " << j;
+      L_(info) << "MC analysed " << j;
       dump_mc_light(&mc_pair.first);
-      out.info() << "avg size " << data_size / mc_received;
+      L_(info) << "avg size " << data_size / mc_received;
       data_size = 0;
       mc_received = 0;
       //dump_mc(&mc_pair.first);
@@ -147,21 +146,21 @@ int main(int argc, const char* argv[])
   }
 
 for (size_t i = 0; i < flib.number_of_links(); ++i) {
-  out.debug() << "disable link " << i;
+  L_(debug) << "disable link " << i;
   
   // disable data source
   flib.enable_mc_cnt(false);
-  out.debug() << "current mc nr 0x: " << std::hex <<  links.at(i)->mc_index();
-  out.debug() << "pending mc: "  << links.at(i)->pending_mc();
-  out.debug() << "busy: " <<  links.at(i)->channel()->isDMABusy();
+  L_(debug) << "current mc nr 0x: " << std::hex <<  links.at(i)->mc_index();
+  L_(debug) << "pending mc: "  << links.at(i)->pending_mc();
+  L_(debug) << "busy: " <<  links.at(i)->channel()->isDMABusy();
  }
 
-  out.debug() << "Exiting";
+  L_(debug) << "Exiting";
   
     }
   catch (std::exception& e) 
     {
-      out.error() << e.what();
+      L_(error) << e.what();
     }
   return 0;
 }

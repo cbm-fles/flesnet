@@ -6,7 +6,7 @@
 #include <control/libserver/ControlServer.hpp>
 #endif
 
-#include "global.hpp"
+#include <log.hpp>
 #include "parameters.hpp"
 #include "flib_server.hpp"
 
@@ -27,8 +27,6 @@ static void s_catch_signals (void)
   sigaction (SIGINT, &action, NULL);
 }
 
-einhard::Logger<(einhard::LogLevel) MINLOGLEVEL, true> out(einhard::WARN, true);
-
 
 int main(int argc, char* argv[])
 {
@@ -45,7 +43,7 @@ int main(int argc, char* argv[])
 
   // FLIB global configuration
   flib.set_mc_time(par.mc_size());
-  out.debug() << "MC size is: " 
+  L_(debug) << "MC size is: " 
               << (flib.rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
 
   // FLIB per link configuration
@@ -53,11 +51,11 @@ int main(int argc, char* argv[])
   std::vector<std::unique_ptr<flib_server>> flibserver;
   std::vector<std::unique_ptr<CbmNet::ControlServer>> ctrlserver;
 #else
-  out.info() << "Compiled without controls support. Configuring FLIB and exit.";
+  L_(info) << "Compiled without controls support. Configuring FLIB and exit.";
 #endif
 
   for (size_t i = 0; i < flib.number_of_links(); ++i) {
-    out.debug() << "Initializing link " << i;
+    L_(debug) << "Initializing link " << i;
 
     struct link_config link_config = par.link_config(i);
     link_config.hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
@@ -85,13 +83,13 @@ int main(int argc, char* argv[])
   }
 
 #ifdef CNETCNTLSERVER
-  out.info() << "FLIB configured successfully. Waiting to forward control commands. Send ctrl+c to exit.";
+  L_(info) << "FLIB configured successfully. Waiting to forward control commands. Send ctrl+c to exit.";
   // main loop
   while(s_interrupted==0) {
     ::sleep(1);
   }
 #endif
-  out.debug() << "Exiting";
+  L_(debug) << "Exiting";
 
   return 0;
 }

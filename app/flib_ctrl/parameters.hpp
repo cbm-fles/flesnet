@@ -8,7 +8,7 @@
 #include <fstream>
 #include <flib.h>
 
-#include "global.hpp"
+#include <log.hpp>
 
 namespace po = boost::program_options;
 
@@ -44,7 +44,7 @@ private:
       ("help,h", "produce help message")
       ("config-file,c", po::value<std::string>(&config_file)->default_value("flib.cfg"),
        "name of a configuration file")
-      ("log-level,l", po::value<unsigned>(&log_level)->default_value(3),
+      ("log-level,l", po::value<unsigned>(&log_level)->default_value(2),
        "set the log level (all:0)")
       ;
 
@@ -137,7 +137,7 @@ private:
       exit(EXIT_SUCCESS);
     }
     
-    out.setVerbosity(static_cast<einhard::LogLevel>(log_level));
+    logging::add_console(static_cast<severity_level>(log_level));
 
     if (vm.count("mc-size")) {
       _mc_size = vm["mc-size"].as<uint32_t>();
