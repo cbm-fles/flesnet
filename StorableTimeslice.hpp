@@ -99,6 +99,7 @@ public:
 private:
     friend class boost::serialization::access;
     friend class TimesliceInputArchive;
+    friend class TimesliceSubscriber;
 
     StorableTimeslice();
 
