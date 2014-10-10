@@ -21,10 +21,11 @@ void Parameters::parse_options(int argc, char* argv[])
         "name of an input file archive to read")(
         "output-archive,o", po::value<std::string>(&_output_archive),
         "name of an output file archive to write")(
-        "publish,p", po::value<std::string>(&_publish_address)
+        "publish,P", po::value<std::string>(&_publish_address)
                          ->implicit_value("tcp://*:5556"),
         "enable timeslice publisher on given address")(
-        "subscribe", po::value<std::string>(&_subscribe_address),
+        "subscribe,S", po::value<std::string>(&_subscribe_address)
+                           ->implicit_value("tcp://localhost:5556"),
         "subscribe to timeslice publisher on given address");
 
     po::variables_map vm;
