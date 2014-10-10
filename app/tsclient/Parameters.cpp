@@ -20,7 +20,12 @@ void Parameters::parse_options(int argc, char* argv[])
         "input-archive,i", po::value<std::string>(&_input_archive),
         "name of an input file archive to read")(
         "output-archive,o", po::value<std::string>(&_output_archive),
-        "name of an output file archive to write");
+        "name of an output file archive to write")(
+        "publish,p", po::value<std::string>(&_publish_address)
+                         ->implicit_value("tcp://*:5556"),
+        "enable timeslice publisher on given address")(
+        "subscribe", po::value<std::string>(&_subscribe_address),
+        "subscribe to timeslice publisher on given address");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -36,7 +41,8 @@ void Parameters::parse_options(int argc, char* argv[])
         exit(EXIT_SUCCESS);
     }
 
-    int input_sources = vm.count("shm-identifier") + vm.count("input-archive");
+    int input_sources = vm.count("shm-identifier") + vm.count("input-archive") +
+                        vm.count("subscribe");
     if (input_sources == 0)
         throw ParametersException("no input source specified");
     if (input_sources > 1)

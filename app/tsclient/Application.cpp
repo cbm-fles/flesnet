@@ -3,14 +3,17 @@
 #include "Application.hpp"
 #include "TimesliceReceiver.hpp"
 #include "TimesliceInputArchive.hpp"
+#include "TimesliceSubscriber.hpp"
 #include <iostream>
 
 Application::Application(Parameters const& par) : _par(par)
 {
     if (!_par.shm_identifier().empty())
         _source.reset(new fles::TimesliceReceiver(_par.shm_identifier()));
-    else
+    else if (!_par.input_archive().empty())
         _source.reset(new fles::TimesliceInputArchive(_par.input_archive()));
+    else
+        _source.reset(new fles::TimesliceSubscriber(_par.subscribe_address()));
 
     if (_par.analyze())
         _analyzer.reset(new TimesliceAnalyzer());
@@ -20,6 +23,9 @@ Application::Application(Parameters const& par) : _par(par)
 
     if (!_par.output_archive().empty())
         _output.reset(new fles::TimesliceOutputArchive(_par.output_archive()));
+
+    if (!_par.publish_address().empty())
+        _publisher.reset(new fles::TimeslicePublisher(_par.publish_address()));
 
     if (_par.client_index() != -1) {
         std::cout << "tsclient " << _par.client_index() << ": "
@@ -52,6 +58,8 @@ void Application::run()
         }
         if (_output)
             _output->write(*timeslice);
+        if (_publisher)
+            _publisher->publish(*timeslice);
         ++_count;
     }
 }

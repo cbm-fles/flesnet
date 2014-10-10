@@ -6,6 +6,7 @@
 #include "TimesliceOutputArchive.hpp"
 #include "TimesliceAnalyzer.hpp"
 #include "TimesliceDebugger.hpp"
+#include "TimeslicePublisher.hpp"
 #include <memory>
 
 /// %Application base class.
@@ -28,6 +29,7 @@ private:
     std::unique_ptr<TimesliceAnalyzer> _analyzer;
     std::unique_ptr<TimesliceDebugger> _debug;
     std::unique_ptr<fles::TimesliceOutputArchive> _output;
+    std::unique_ptr<fles::TimeslicePublisher> _publisher;
 
     uint64_t _count = 0;
 };
