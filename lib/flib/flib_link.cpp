@@ -165,6 +165,7 @@ void flib_link::rst_pending_mc() {
 
 void flib_link::rst_cnet_link() {
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, true);
+  usleep(1000);
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, false);
 }
 
