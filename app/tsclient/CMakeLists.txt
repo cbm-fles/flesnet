@@ -3,7 +3,7 @@
 file(GLOB APP_SOURCES *.cpp)
 file(GLOB APP_HEADERS *.h)
 
-include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc")
+include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc/src")
 
 add_executable(tsclient ${APP_SOURCES} ${APP_HEADERS})
 
