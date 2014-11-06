@@ -245,9 +245,9 @@ void flib_link::send_dlm() {
   // after one DLM is sent
 
   // global send
-  m_rfglobal->set_reg(RORC_REG_DLM_CFG, 1);
+  // m_rfglobal->set_reg(RORC_REG_DLM_CFG, 1);
   // local HW send, not well tested
-  // _rfgtx->set_bit(RORC_REG_GTX_DLM, 30, true);
+  m_rfgtx->set_bit(RORC_REG_GTX_DLM, 30, true);
 }
 
 uint8_t flib_link::recv_dlm() {
