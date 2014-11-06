@@ -1,3 +1,4 @@
+#include <cstdint> // needed before flib.h
 #include "flib.h"
 
 static const uint8_t DLM {1};
