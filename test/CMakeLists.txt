@@ -2,7 +2,7 @@
 
 find_package(Boost COMPONENTS system filesystem serialization unit_test_framework REQUIRED)
 
-include_directories(${PROJECT_SOURCE_DIR}/lib/fles_ipc)
+include_directories(${PROJECT_SOURCE_DIR}/lib/fles_ipc/src)
 
 add_definitions(-DBOOST_TEST_DYN_LINK)
 
