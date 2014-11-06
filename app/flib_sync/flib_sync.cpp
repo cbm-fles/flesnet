@@ -5,7 +5,7 @@ static const uint8_t DLM {1};
 
 int main()
 {
-    auto flib = flib_device {0};
+    flib::flib_device flib {0};
 
     for (auto link : flib.links()) {
         link->prepare_dlm(DLM, true);
