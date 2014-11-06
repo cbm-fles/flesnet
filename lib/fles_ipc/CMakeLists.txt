@@ -17,7 +17,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -g -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor")
 
-file(GLOB LIB_SOURCES *.cpp)
-file(GLOB LIB_HEADERS *.hpp)
+file(GLOB LIB_SOURCES src/*.cpp)
+file(GLOB LIB_HEADERS src/*.hpp)
 
 add_library(fles_ipc ${LIB_SOURCES} ${LIB_HEADERS})
