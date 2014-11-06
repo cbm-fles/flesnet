@@ -21,3 +21,6 @@ file(GLOB LIB_SOURCES src/*.cpp)
 file(GLOB LIB_HEADERS src/*.hpp)
 
 add_library(fles_ipc ${LIB_SOURCES} ${LIB_HEADERS})
+
+enable_testing()
+add_subdirectory(test)
