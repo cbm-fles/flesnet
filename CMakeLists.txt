@@ -52,6 +52,3 @@ add_subdirectory(app/flib_ctrl)
 add_subdirectory(doc)
 
 add_subdirectory(contrib)
-
-enable_testing()
-add_subdirectory(test)
