@@ -313,6 +313,52 @@ flib_link::data_sel_t flib_link::data_sel() {
   return static_cast<data_sel_t>(dp_cfg & 0x3);
 }
 
+  // CBMnet diagnostics
+uint32_t flib_link::diag_pcs_startup() {
+  return m_rfgtx->reg(RORC_REG_GTX_DIAG_PCS_STARTUP);
+}
+
+uint32_t flib_link::diag_ebtb_code_err() {
+  return m_rfgtx->reg(RORC_REG_GTX_DIAG_EBTB_CODE_ERR);
+}
+
+uint32_t flib_link::diag_ebtb_disp_err() {
+  return m_rfgtx->reg(RORC_REG_GTX_DIAG_EBTB_DISP_ERR);
+}
+
+uint32_t flib_link::diag_crc_error() {
+  return m_rfgtx->reg(RORC_REG_GTX_DIAG_CRC_ERROR);
+}
+
+uint32_t flib_link::diag_packet() {
+  return m_rfgtx->reg(RORC_REG_GTX_DIAG_PACKET);
+}
+
+uint32_t flib_link::diag_packet_err() {
+  return m_rfgtx->reg(RORC_REG_GTX_DIAG_PACKET_ERR);
+}
+
+flib_link::diag_flags_t flib_link::diag_flags() {
+  uint32_t reg =  m_rfgtx->reg(RORC_REG_GTX_DIAG_FLAGS);
+  diag_flags_t flags;
+  flags.pcs_startup   = (reg & (1));
+  flags.ebtb_code_err = (reg & (1 << 1));
+  flags.ebtb_disp_err = (reg & (1 << 2));
+  flags.crc_error     = (reg & (1 << 3));
+  flags.packet        = (reg & (1 << 4));
+  flags.packet_err    = (reg & (1 << 5));
+  flags.rx_clk_stable = (reg & (1 << 6));
+  flags.tx_clk_stable = (reg & (1 << 7));
+  flags.ebtb_detect   = (reg & (1 << 8));
+  flags.serdes_ready  = (reg & (1 << 9));
+  flags.link_active   = (reg & (1 << 10));
+  return flags;
+}
+
+void flib_link::diag_clear() {
+  m_rfgtx->set_reg(RORC_REG_GTX_DIAG_CLEAR, 0xFFFFFFFF);
+}
+
 std::string flib_link::data_buffer_info() {
   return print_buffer_info(m_data_buffer.get());
 }

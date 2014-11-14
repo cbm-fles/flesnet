@@ -99,6 +99,33 @@ public:
 
   struct link_status_t link_status();
 
+  struct diag_flags_t {
+    bool pcs_startup;
+    bool ebtb_code_err;
+    bool ebtb_disp_err;
+    bool crc_error;
+    bool packet;
+    bool packet_err;
+    bool rx_clk_stable;
+    bool tx_clk_stable;
+    bool ebtb_detect;
+    bool serdes_ready;
+    bool link_active;
+  };
+
+  // read counters
+  uint32_t diag_pcs_startup();
+  uint32_t diag_ebtb_code_err();
+  uint32_t diag_ebtb_disp_err();
+  uint32_t diag_crc_error();
+  uint32_t diag_packet();
+  uint32_t diag_packet_err();
+  // read all flags
+  diag_flags_t diag_flags();
+  // clear all counters
+  void diag_clear();
+
+
 protected:
   std::unique_ptr<dma_channel> m_channel;
   std::unique_ptr<dma_buffer> m_data_buffer;
