@@ -90,6 +90,8 @@ public:
   register_file_bar* register_file_packetizer() const;
   register_file_bar* register_file_gtx() const;
 
+  size_t link_index() { return m_link_index; };
+  
   struct link_status_t {
     bool link_active;
     bool data_rx_stop;
