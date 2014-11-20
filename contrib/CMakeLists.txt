@@ -24,6 +24,10 @@ add_custom_target (
           -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/flesnet_flib_example.cfg 
           -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/flesnet.cfg
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
+	COMMAND ${CMAKE_COMMAND} 
+          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/plesnet 
+          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/plesnet
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 )
 
 add_custom_target(links ALL DEPENDS run verbs.supp)

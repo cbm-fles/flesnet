@@ -1,0 +1,123 @@
+#!/bin/bash
+
+#
+##   plesnet calls flesnet and stores output to file with unique serial number
+#
+
+# 20.11.2014 by DE
+
+# config files
+FLIBCFG=flib.cfg
+FLESNETCFG=flesnet.cfg
+
+# variable definition
+DATAPATH=/data1/cbm
+DATANAME=cern2014.tsa
+
+if [ ! -e $DATAPATH ]; then
+  echo
+  echo please specify a valid output directory,
+  echo not: \"$DATAPATH\"
+  echo
+  #echo if you want to change this, exit now \(Ctrl-C\) 
+  #read keys
+  exit
+fi
+
+# generate a unique run number
+# cat /data1/cbm/RUNNUMBER
+RUNNR=`cat $DATAPATH/RUNNUMBER`
+echo `expr ${RUNNR} + 1` > $DATAPATH/RUNNUMBER
+RUNINFO=runinfo.txt
+
+PLEDITOR="emacs -nw"
+echo
+echo log message editor is \"$PLEDITOR\"
+
+# plesnet variables above ---------------------------------
+
+touch $DATAPATH/${RUNNR}_$RUNINFO
+echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
+echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
+echo put your log message above ^^^ >> $DATAPATH/${RUNNR}_$RUNINFO
+echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
+echo -n '# '                        >> $DATAPATH/${RUNNR}_$RUNINFO
+date                                >> $DATAPATH/${RUNNR}_$RUNINFO
+echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
+echo '#'                            >> $DATAPATH/${RUNNR}_$RUNINFO
+echo '##  ' Run ${RUNNR} logbook    >> $DATAPATH/${RUNNR}_$RUNINFO
+echo '#'                            >> $DATAPATH/${RUNNR}_$RUNINFO
+
+NLINES=`wc -c $DATAPATH/${RUNNR}_$RUNINFO | cut --delimiter=' ' -f 1`
+
+$PLEDITOR $DATAPATH/${RUNNR}_$RUNINFO
+
+# echo you wrote:
+# echo
+# 
+# cat $DATAPATH/${RUNNR}_$RUNINFO
+
+MLINES=`wc -c $DATAPATH/${RUNNR}_$RUNINFO | cut --delimiter=' ' -f 1`
+
+# echo $NLINES
+# echo $MLINES
+
+if [ $MLINES = $NLINES ]; then
+  echo
+#  echo you lazy shifter go home ...
+  echo I give you some time to think about a log message ...
+  echo
+  sleep 10
+  echo please restart plesnet and put a log message !
+  echo
+  exit
+fi
+
+# ---------------------------------------------------------
+
+ps caux | grep flesnet > /dev/null
+if [ $? -eq 0 ]; then
+  echo "ERROR: flesnet is already running."
+  exit 1
+else
+  echo -e "DEBUG: flesnet  is not running."
+fi
+ 
+ps caux | grep tsclient > /dev/null
+if [ $? -eq 0 ]; then
+  echo "ERROR: a instance of tsclient is already running."
+  exit 1
+else
+  echo -e "DEBUG: tsclient is not running."
+fi
+
+FLIB_CTRL_CHECK=`ps aux | grep flib_ctrl | grep -v grep`
+if [ $? -eq 0 ]; then
+  echo "DEBUG: flib_ctrl is running."
+else
+  echo better start flib_ctrl now ...
+  exit 1
+fi
+
+FLIB_CTRL_CHECK_OPT=`ps aux | grep flib_ctrl | grep -v grep | grep "ctrl -"`
+if [ $? -eq 0 ]; then
+  echo "ERROR: flib_ctrl is running with command line options."
+  echo exiting ...
+  exit 1
+fi
+
+# plesnet part below --------------------------------------
+
+cp $FLIBCFG $DATAPATH/${RUNNR}_$FLIBCFG
+cp $FLESNETCFG $DATAPATH/${RUNNR}_$FLESNETCFG
+./flesnet -e "./tsclient -c%i -s%s -a -P -o $DATAPATH/${RUNNR}_$DATANAME"
+
+echo
+echo stored as run ${RUNNR}_$DATANAME in $DATAPATH
+echo goodbye ...
+
+#./flesnet -n 10 -e "./tsclient -c%i -s%s -a -P -o $DATAPATH/${RUNNR}_$DATANAME"
+# echo
+# echo ./flesnet -n 10 -e "./tsclient -c%i -s%s -a -P -o $DATAPATH/${RUNNR}_$DATANAME"
+# ls -ls $DATAPATH
+
