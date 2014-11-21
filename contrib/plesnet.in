@@ -30,7 +30,7 @@ RUNNR=`cat $DATAPATH/RUNNUMBER`
 echo `expr ${RUNNR} + 1` > $DATAPATH/RUNNUMBER
 RUNINFO=runinfo.txt
 
-PLEDITOR="emacs -nw"
+PLEDITOR=${PLEDITOR:-nano}
 echo
 echo log message editor is \"$PLEDITOR\"
 
