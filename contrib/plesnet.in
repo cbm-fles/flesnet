@@ -5,23 +5,30 @@
 #
 
 # 20.11.2014 by DE
+# 24.11.2014 by DH
 
 # config files
 FLIBCFG=flib.cfg
 FLESNETCFG=flesnet.cfg
 
 # variable definition
-DATAPATH=/data1/cbm
-DATANAME=cern2014.tsa
+DATAPATH=
+DATANAME=
 
-if [ ! -e $DATAPATH ]; then
+# min free memory in kB
+MINMEM=14000000
+
+# plesnet variables above ---------------------------------
+
+# General checks
+
+if [ ! -e $DATAPATH/RUNNUMBER ]; then
   echo
-  echo please specify a valid output directory,
+  echo please specify a valid output directory 
+  echo cointaining a valid RUNNUMBER file,
   echo not: \"$DATAPATH\"
   echo
-  #echo if you want to change this, exit now \(Ctrl-C\) 
-  #read keys
-  exit
+  exit 1
 fi
 
 # generate a unique run number
@@ -29,17 +36,30 @@ fi
 RUNNR=`cat $DATAPATH/RUNNUMBER`
 echo `expr ${RUNNR} + 1` > $DATAPATH/RUNNUMBER
 RUNINFO=runinfo.txt
+RUNENDINFO=runinfo_end.txt
+
+source ../contrib/check_functions
+
+#check_mem $MINMEM
+check_is_not_running tsclient
+check_is_not_running flesnet
+check_is_running flib_ctrl
+check_no_params_flib_ctrl
+check_shm
+
+#----------------------------------------------------------
 
 PLEDITOR=${PLEDITOR:-nano}
 echo
 echo log message editor is \"$PLEDITOR\"
 
-# plesnet variables above ---------------------------------
-
 touch $DATAPATH/${RUNNR}_$RUNINFO
 echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
 echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
-echo put your log message above ^^^ >> $DATAPATH/${RUNNR}_$RUNINFO
+echo put your start-of-run log message above ^^^ >> $DATAPATH/${RUNNR}_$RUNINFO
+echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
+echo You can add additional comments during the run by edditing: >> $DATAPATH/${RUNNR}_$RUNINFO
+echo $DATAPATH/${RUNNR}_$RUNINFO    >> $DATAPATH/${RUNNR}_$RUNINFO
 echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
 echo -n '# '                        >> $DATAPATH/${RUNNR}_$RUNINFO
 date                                >> $DATAPATH/${RUNNR}_$RUNINFO
@@ -52,19 +72,10 @@ NLINES=`wc -c $DATAPATH/${RUNNR}_$RUNINFO | cut --delimiter=' ' -f 1`
 
 $PLEDITOR $DATAPATH/${RUNNR}_$RUNINFO
 
-# echo you wrote:
-# echo
-# 
-# cat $DATAPATH/${RUNNR}_$RUNINFO
-
 MLINES=`wc -c $DATAPATH/${RUNNR}_$RUNINFO | cut --delimiter=' ' -f 1`
-
-# echo $NLINES
-# echo $MLINES
 
 if [ $MLINES = $NLINES ]; then
   echo
-#  echo you lazy shifter go home ...
   echo I give you some time to think about a log message ...
   echo
   sleep 10
@@ -73,51 +84,40 @@ if [ $MLINES = $NLINES ]; then
   exit
 fi
 
-# ---------------------------------------------------------
-
-ps caux | grep flesnet > /dev/null
-if [ $? -eq 0 ]; then
-  echo "ERROR: flesnet is already running."
-  exit 1
-else
-  echo -e "DEBUG: flesnet  is not running."
-fi
- 
-ps caux | grep tsclient > /dev/null
-if [ $? -eq 0 ]; then
-  echo "ERROR: a instance of tsclient is already running."
-  exit 1
-else
-  echo -e "DEBUG: tsclient is not running."
-fi
-
-FLIB_CTRL_CHECK=`ps aux | grep flib_ctrl | grep -v grep`
-if [ $? -eq 0 ]; then
-  echo "DEBUG: flib_ctrl is running."
-else
-  echo better start flib_ctrl now ...
-  exit 1
-fi
-
-FLIB_CTRL_CHECK_OPT=`ps aux | grep flib_ctrl | grep -v grep | grep "ctrl -"`
-if [ $? -eq 0 ]; then
-  echo "ERROR: flib_ctrl is running with command line options."
-  echo exiting ...
-  exit 1
-fi
-
 # plesnet part below --------------------------------------
 
 cp $FLIBCFG $DATAPATH/${RUNNR}_$FLIBCFG
 cp $FLESNETCFG $DATAPATH/${RUNNR}_$FLESNETCFG
 ./flesnet -e "./tsclient -c%i -s%s -a -P -o $DATAPATH/${RUNNR}_$DATANAME"
 
+#---------------------------------------------------------
+
 echo
+touch $DATAPATH/${RUNNR}_$RUNENDINFO
+echo                                >> $DATAPATH/${RUNNR}_$RUNENDINFO
+echo                                >> $DATAPATH/${RUNNR}_$RUNENDINFO
+echo put your end-of-run log message above ^^^ >> $DATAPATH/${RUNNR}_$RUNENDINFO
+echo                                >> $DATAPATH/${RUNNR}_$RUNENDINFO
+echo -n '# '                        >> $DATAPATH/${RUNNR}_$RUNENDINFO
+date                                >> $DATAPATH/${RUNNR}_$RUNENDINFO
+echo                                >> $DATAPATH/${RUNNR}_$RUNENDINFO
+echo '#'                            >> $DATAPATH/${RUNNR}_$RUNENDINFO
+echo '##  ' Run ${RUNNR} logbook    >> $DATAPATH/${RUNNR}_$RUNENDINFO
+echo '#'                            >> $DATAPATH/${RUNNR}_$RUNENDINFO
+
+NLINES=`wc -c $DATAPATH/${RUNNR}_$RUNENDINFO | cut --delimiter=' ' -f 1`
+
+$PLEDITOR $DATAPATH/${RUNNR}_$RUNENDINFO
+
+MLINES=`wc -c $DATAPATH/${RUNNR}_$RUNENDINFO | cut --delimiter=' ' -f 1`
+
+if [ $MLINES = $NLINES ]; then
+  echo
+  echo I give you some time to think about a log message for the next time...
+  echo
+  sleep 10
+  exit
+fi
+
 echo stored as run ${RUNNR}_$DATANAME in $DATAPATH
 echo goodbye ...
-
-#./flesnet -n 10 -e "./tsclient -c%i -s%s -a -P -o $DATAPATH/${RUNNR}_$DATANAME"
-# echo
-# echo ./flesnet -n 10 -e "./tsclient -c%i -s%s -a -P -o $DATAPATH/${RUNNR}_$DATANAME"
-# ls -ls $DATAPATH
-

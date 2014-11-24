@@ -15,10 +15,10 @@ if [ "$NODE" ]; then
 fi
 }
 
-free_dma_buffers
+#free_dma_buffers
 
-killall tsclient
+killall -9 tsclient
 
 sudo rm /dev/shm/flesnet*
 
-echo "Please reconfigure FPGA"
+#echo "Please reconfigure FPGA"

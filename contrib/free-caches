@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# frees the disk caches 
+
+/sbin/sysctl vm.drop_caches=3
