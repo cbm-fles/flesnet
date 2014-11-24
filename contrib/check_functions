@@ -9,6 +9,7 @@ function check_mem {
     FREEMEM=`cat /proc/meminfo | grep MemFree | awk '{ print $2 }'`
     if [ $1 -gt $FREEMEM ]; then
 	echo ERROR: not enough memory: asked $1 kB avail $FREEMEM kB
+	exit 1
     else
 	echo INFO: $FREEMEM kB memory available
     fi
