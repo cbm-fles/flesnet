@@ -15,7 +15,7 @@ if [ "$NODE" ]; then
 fi
 }
 
-#free_dma_buffers
+free_dma_buffers
 
 killall -9 tsclient
 

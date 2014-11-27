@@ -56,3 +56,18 @@ function check_shm {
 	echo "INFO: no shard memory left."
     fi
 }
+
+function check_dma_buffers {
+NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
+if [ "$NODE" ]; then
+        for i in {0..15} ; do
+            ls /sys/bus/pci/drivers/uio_pci_dma/0000:$NODE/dma/$i > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+	        echo -e "ERROR: dma buffers left."
+	        exit 1
+            fi
+        done
+fi
+echo "INFO: no dma buffers left."
+
+}

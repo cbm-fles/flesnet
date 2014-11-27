@@ -25,12 +25,12 @@ add_custom_target (
           -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/flesnet.cfg
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 	COMMAND ${CMAKE_COMMAND}
-          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/plesnet.in
-          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/plesnet
+          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/record_data.in
+          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/record_data
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 	COMMAND ${CMAKE_COMMAND}
-          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/secure_flesnet.in
-          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/secure_flesnet
+          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/publish_data.in
+          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/publish_data
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 )
 
