@@ -1,16 +1,11 @@
-//! \author Michael Krieger
+//! \author Dirk Hutter
 
 /**
- * This program synchronizes all devices connected to a FLIB by sending
- * the appropriate DLM to all of them simultaneously.
+ * reads back cbmnet diagnostic counters for all active links
  */
 
-#include <unistd.h>
-#include <cstdint> // needed before flib.h
-#include <chrono> // needed before flib.h
+#include <chrono>
 #include "flib.h"
-
-static const uint8_t SYNC_DLM {1};
 
 int main()
 {
@@ -31,7 +26,7 @@ int main()
     << std::setw(14) << " time";
   for (auto link : flib_links) {
     // clear all counters
-    link->diag_clear();
+    // link->diag_clear();
     size_t index = link->link_index();
     std::cout
       << std::setw(16) << "mc_index_"        << index
