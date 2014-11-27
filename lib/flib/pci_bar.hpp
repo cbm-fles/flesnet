@@ -9,7 +9,7 @@
 #define LIBFLIB_BAR_H
 
 #include <pthread.h>
-#include <stdint.h>
+#include <cstdint>
 
 typedef struct PciDevice_struct PciDevice;
 typedef struct Bar_struct Bar;

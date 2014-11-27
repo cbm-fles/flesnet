@@ -8,6 +8,8 @@
 #ifndef PCI_DEVICE_H
 #define PCI_DEVICE_H
 
+#include <cstdint>
+
 typedef struct DeviceOperator_struct DeviceOperator;
 typedef struct PciDevice_struct PciDevice;
 
