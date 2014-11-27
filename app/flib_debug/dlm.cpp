@@ -1,3 +1,5 @@
+// sends link local dlms
+
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -18,19 +20,20 @@ using namespace flib;
 
 flib_device* MyFlib = NULL;
 
-
 int main(int argc, char *argv[])
 {
-  unsigned int dlm = atoi(argv[1]);
+  if (argc != 3) {printf("./dlm link num\n"); return -1;}
   
-  if (dlm > 15) {printf("./dlm num with 0 <= num <= 15\n"); return -1;}
+  unsigned int link = atoi(argv[1]);
+  if (link > 7) {printf("./dlm link num with 0 <= link <= 7\n"); return -1;}
+  
+  unsigned int dlm = atoi(argv[2]);
+  if (dlm > 15) {printf("./dlm link num with 0 <= num <= 15\n"); return -1;}
       
   MyFlib = new flib_device(0);
 
-  //MyFlib->link(0).set_data_sel(flib_link::link);
-
-  MyFlib->link(0).prepare_dlm(dlm, true);
-  MyFlib->link(0).send_dlm();
+  MyFlib->link(link).prepare_dlm(dlm, true);
+  MyFlib->link(link).send_dlm();
 
   if (MyFlib) delete MyFlib;
   
