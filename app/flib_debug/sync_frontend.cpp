@@ -5,7 +5,6 @@
  * the appropriate DLM to all of them simultaneously.
  */
 
-#include <cstdint> // needed before flib.h
 #include "flib.h"
 
 static const uint8_t SYNC_DLM {1};
