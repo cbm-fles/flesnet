@@ -148,7 +148,7 @@ private:
     bool _standalone = true;
 
     /// The global maximum timeslice number.
-    uint32_t _max_timeslice_number = 100000;
+    uint32_t _max_timeslice_number = UINT32_MAX;
 
     /// The name of the executable acting as timeslice processor.
     std::string _processor_executable;
