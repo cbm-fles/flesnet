@@ -12,7 +12,8 @@ InputChannelSender::InputChannelSender(
     uint32_t overlap_size, uint32_t max_timeslice_number)
     : _input_index(input_index), _data_source(data_source),
       _compute_hostnames(compute_hostnames),
-      _compute_services(compute_services), _timeslice_size(timeslice_size),
+      _compute_services(compute_services), _discard_nodes(0), 
+      _timeslice_size(timeslice_size),
       _overlap_size(overlap_size), _max_timeslice_number(max_timeslice_number),
       _min_acked_mc(data_source.desc_buffer().size() / 4),
       _min_acked_data(data_source.data_buffer().size() / 4)
@@ -51,7 +52,7 @@ void InputChannelSender::report_status()
 
     auto now = std::chrono::system_clock::now();
     _scheduler.add(std::bind(&InputChannelSender::report_status, this),
-                   now + std::chrono::seconds(1));
+                   now + std::chrono::seconds(10));
 }
 
 /// The thread main function.
@@ -97,6 +98,7 @@ void InputChannelSender::operator()()
         }
 
         summary();
+        sender_summary();
     }
     catch (std::exception& e)
     {
@@ -120,6 +122,7 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
     // }
 
     // check if last microslice has really been written to memory
+    // TODO: improve check when empty mcs are really empty in the future
     if (_data_source.desc_buffer().at(mc_offset + mc_length).offset >=
         _previous_offset) {
 
@@ -141,6 +144,16 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
         }
 
         int cn = target_cn_index(timeslice);
+
+        if (cn < 0) {
+            // discard data
+            _previous_offset =
+                _data_source.desc_buffer().at(mc_offset + mc_length).offset;
+
+            ack_timeslice(timeslice);
+
+            return true;
+        }
 
         if (!_conn[cn]->write_request_available())
             return false;
@@ -194,7 +207,11 @@ void InputChannelSender::connect()
 
 int InputChannelSender::target_cn_index(uint64_t timeslice)
 {
-    return timeslice % _conn.size();
+  return -1;
+  //return timeslice % _conn.size();
+
+    // negative return value means "discard data"
+    //return (timeslice % (_conn.size() + _discard_nodes)) - _discard_nodes;    
 }
 
 void InputChannelSender::dump_mr(struct ibv_mr* mr)
@@ -350,37 +367,41 @@ void InputChannelSender::post_send_data(uint64_t timeslice, int cn,
     _conn[cn]->send_data(sge, num_sge, timeslice, mc_length, data_length, skip);
 }
 
+void InputChannelSender::ack_timeslice(uint64_t ts)
+{
+    uint64_t acked_ts = _acked_mc / _timeslice_size;
+    if (ts == acked_ts)
+        do
+            ++acked_ts;
+        while (_ack.at(acked_ts) > ts);
+    else
+        _ack.at(ts) = ts;
+    _acked_data =
+        _data_source.desc_buffer().at(acked_ts * _timeslice_size).offset;
+    _acked_mc = acked_ts * _timeslice_size;
+    if (_acked_data >= _cached_acked_data + _min_acked_data ||
+        _acked_mc >= _cached_acked_mc + _min_acked_mc) {
+        _cached_acked_data = _acked_data;
+        _cached_acked_mc = _acked_mc;
+        _data_source.update_ack_pointers(_cached_acked_data,
+                                         _cached_acked_mc);
+    }
+    if (out.beDebug())
+        out.debug() << "[i" << _input_index << "] "
+                    << "write timeslice " << ts
+                    << " complete, now: _acked_data=" << _acked_data
+                    << " _acked_mc=" << _acked_mc;
+}
+
 void InputChannelSender::on_completion(const struct ibv_wc& wc)
 {
     switch (wc.wr_id & 0xFF) {
     case ID_WRITE_DESC: {
-        uint64_t ts = wc.wr_id >> 24;
-
         int cn = (wc.wr_id >> 8) & 0xFFFF;
         _conn[cn]->on_complete_write();
 
-        uint64_t acked_ts = _acked_mc / _timeslice_size;
-        if (ts == acked_ts)
-            do
-                ++acked_ts;
-            while (_ack.at(acked_ts) > ts);
-        else
-            _ack.at(ts) = ts;
-        _acked_data =
-            _data_source.desc_buffer().at(acked_ts * _timeslice_size).offset;
-        _acked_mc = acked_ts * _timeslice_size;
-        if (_acked_data >= _cached_acked_data + _min_acked_data ||
-            _acked_mc >= _cached_acked_mc + _min_acked_mc) {
-            _cached_acked_data = _acked_data;
-            _cached_acked_mc = _acked_mc;
-            _data_source.update_ack_pointers(_cached_acked_data,
-                                             _cached_acked_mc);
-        }
-        if (out.beDebug())
-            out.debug() << "[i" << _input_index << "] "
-                        << "write timeslice " << ts
-                        << " complete, now: _acked_data=" << _acked_data
-                        << " _acked_mc=" << _acked_mc;
+        uint64_t ts = wc.wr_id >> 24;
+        ack_timeslice(ts);
     } break;
 
     case ID_RECEIVE_CN_ACK: {
@@ -403,4 +424,17 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
                     << "wc for unknown wr_id=" << (wc.wr_id & 0xFF);
         throw InfinibandException("wc for unknown wr_id");
     }
+}
+
+void InputChannelSender::sender_summary() const
+{
+    double runtime = std::chrono::duration_cast<std::chrono::microseconds>
+        (_time_end - _time_begin).count();
+    uint64_t total_bytes =
+        _acked_mc * sizeof(fles::MicrosliceDescriptor) + _acked_data;
+    double rate = static_cast<double>(total_bytes) / runtime;
+    out.info() << "summary: "
+               << human_readable_byte_count(total_bytes)
+               << " acked in " << runtime / 1000000. << " s (" << rate
+               << " MB/s)";
 }

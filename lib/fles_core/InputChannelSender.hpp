@@ -59,8 +59,12 @@ private:
                         uint64_t mc_length, uint64_t data_offset,
                         uint64_t data_length, uint64_t skip);
 
+    void ack_timeslice(uint64_t ts);
+
     /// Completion notification event dispatcher. Called by the event loop.
     virtual void on_completion(const struct ibv_wc& wc) override;
+
+    void sender_summary() const;
 
     uint64_t _input_index;
 
@@ -84,6 +88,7 @@ private:
 
     const std::vector<std::string> _compute_hostnames;
     const std::vector<std::string> _compute_services;
+    const uint64_t _discard_nodes;
 
     const uint32_t _timeslice_size;
     const uint32_t _overlap_size;

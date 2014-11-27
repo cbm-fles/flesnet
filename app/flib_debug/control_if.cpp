@@ -67,12 +67,12 @@ int main(int argc, char *argv[])
   if ( MyFlib->link[0]->recv_dcm(&r_msg) < 0)  {
     printf("nothing to receive\n");
   }
-  
+
 
   if ( MyFlib->link[0]->send_dcm(&s_msg) < 0)  {
     printf("sending failed\n");
   }                      
-    
+
   // receive msg
   if ( MyFlib->link[0]->recv_dcm(&r_msg) < 0)  {
     printf("error receiving\n");
@@ -89,10 +89,12 @@ int main(int argc, char *argv[])
   printf("dlm: %01x\n", MyFlib->link[0]->recv_dlm());
   MyFlib->link[0]->prepare_dlm(0x2, false);
 
-  printf("mc_index: %01lx\n", MyFlib->link[0]->get_mc_index());
   MyFlib->link[0]->set_start_idx(5);
-  
   printf("mc_index: %01lx\n", MyFlib->link[0]->get_mc_index());
+  MyFlib->link[0]->set_start_idx(1);
+  printf("mc_index: %01lx\n", MyFlib->link[0]->get_mc_index());
+
+  MyFlib->link[0]->set_mc_pgen_throttle(0x7FFF);
 
 
   if (MyFlib)
