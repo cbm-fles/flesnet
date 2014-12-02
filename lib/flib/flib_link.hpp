@@ -57,6 +57,7 @@ public:
   void rst_pending_mc();
   void rst_cnet_link();
   void enable_cbmnet_packer(bool enable);
+  void enable_cbmnet_packer_debug_mode(bool enable);
 
   /*** CBMnet control interface ***/
 

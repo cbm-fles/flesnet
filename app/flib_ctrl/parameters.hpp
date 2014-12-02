@@ -29,6 +29,7 @@ public:
   void operator=(const parameters&) = delete;
 
   uint32_t mc_size() const { return _mc_size; }
+  bool debug_mode() const { return _debug_mode; }
   
   struct link_config link_config(size_t i) const { return _link_config.at(i); }
 
@@ -52,6 +53,8 @@ private:
     config.add_options()
       ("mc-size,t", po::value<uint32_t>(),
        "global size of microslices in units of 8 ns (31 bit wide)")
+      ("debug-mode", po::value<bool>(&_debug_mode)->default_value(false),
+       "enable readout debug mode")
             
       ("l0_source", po::value<std::string>(), 
        "Link 0 data source <disable|link|pgen|emu>")
@@ -210,5 +213,6 @@ private:
     
   uint32_t _mc_size = 125; // 1 us
   std::array<struct link_config, _num_flib_links> _link_config;
+  bool _debug_mode = false;
 
 };

@@ -173,6 +173,10 @@ void flib_link::enable_cbmnet_packer(bool enable) {
   m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
 }
 
+void flib_link::enable_cbmnet_packer_debug_mode(bool enable) {
+  m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 3, enable);
+}
+
 /*** CBMnet control interface ***/
 
 int flib_link::send_dcm(const struct ctrl_msg* msg) {
