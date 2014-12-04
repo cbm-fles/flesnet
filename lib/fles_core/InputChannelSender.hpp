@@ -136,7 +136,9 @@ private:
         {
             boost::format percent_fmt("%4.1f%%");
             percent_fmt % (percentage(value) * 100);
-            return percent_fmt.str();
+            std::string s = percent_fmt.str();
+            s.resize(4);
+            return s;
         }
 
         std::string percentages()
