@@ -135,13 +135,13 @@ void ComputeBuffer::start_processes()
 
 void ComputeBuffer::report_status()
 {
-    constexpr auto interval = std::chrono::seconds(3);
+    constexpr auto interval = std::chrono::seconds(1);
 
     std::chrono::system_clock::time_point now =
         std::chrono::system_clock::now();
 
     L_(info) << "[c" << _compute_index << "] " << _completely_written
-             << " completely written, " << _acked << " acked" << std::endl;
+             << " completely written, " << _acked << " acked";
 
     _scheduler.add(std::bind(&ComputeBuffer::report_status, this),
                    now + interval);
