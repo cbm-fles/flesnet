@@ -81,15 +81,20 @@ void InputChannelSender::report_status()
                             _previous_send_buffer_status_data.acked) /
         delta_t;
 
-    L_(info) << "[i" << _input_index << "] desc " << status_mc.percentages()
-             << " (used..free) | "
-             << human_readable_count(status_mc.acked, true, "") << " ("
-             << human_readable_count(rate_mc, true, "Hz") << ")";
+    L_(debug) << "[i" << _input_index << "] desc " << status_mc.percentages()
+              << " (used..free) | "
+              << human_readable_count(status_mc.acked, true, "") << " ("
+              << human_readable_count(rate_mc, true, "Hz") << ")";
 
-    L_(info) << "[i" << _input_index << "] data " << status_data.percentages()
-             << " (used..free) | "
-             << human_readable_count(status_data.acked, true) << " ("
-             << human_readable_count(rate_data, true, "B/s") << ")";
+    L_(debug) << "[i" << _input_index << "] data " << status_data.percentages()
+              << " (used..free) | "
+              << human_readable_count(status_data.acked, true) << " ("
+              << human_readable_count(rate_data, true, "B/s") << ")";
+
+    L_(info) << "[i" << _input_index << "]   |"
+             << bar_graph(status_data.vector(), "#x_.", 20) << "|"
+             << bar_graph(status_mc.vector(), "#x_.", 10) << "| "
+             << human_readable_count(rate_data, true, "B/s");
 
     _previous_send_buffer_status_mc = status_mc;
     _previous_send_buffer_status_data = status_data;

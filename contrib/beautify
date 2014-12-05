@@ -5,5 +5,4 @@ LANG=C
 
 clang-format-3.6 -style=file -i \
   lib/fles_core/*.[hc]pp \
-  app/{flesnet,tsclient}/*.[hc]pp \
-  test/fles_ipc/*.[hc]pp
+  app/{flesnet,tsclient}/*.[hc]pp

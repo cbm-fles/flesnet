@@ -78,3 +78,26 @@ inline std::string human_readable_count(uint64_t bytes, bool use_si = false,
 
     return st.str();
 }
+
+template <typename T>
+inline std::string bar_graph(std::vector<T> values, std::string symbols,
+                             uint32_t length)
+{
+    std::string s;
+    s.reserve(length);
+
+    T sum = 0;
+    for (T n : values) {
+        sum += n;
+    }
+
+    float filled = 0.0;
+    for (size_t i = 0; i < values.size(); ++i) {
+        filled += static_cast<float>(values[i]) / static_cast<float>(sum);
+        uint32_t chars =
+            static_cast<uint32_t>(round(filled * static_cast<float>(length)));
+        s.append(std::string(chars - s.size(), symbols[i % symbols.size()]));
+    }
+
+    return s;
+}
