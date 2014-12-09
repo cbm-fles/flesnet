@@ -117,33 +117,40 @@ private:
         uint64_t sent;
         uint64_t written;
 
-        int64_t used() { return written - sent; }
-        int64_t sending() { return sent - acked; }
-        int64_t freeing() { return acked - cached_acked; }
-        int64_t unused() { return cached_acked + size - written; }
+        int64_t used() const { return written - sent; }
+        int64_t sending() const { return sent - acked; }
+        int64_t freeing() const { return acked - cached_acked; }
+        int64_t unused() const { return cached_acked + size - written; }
 
-        float percentage(int64_t value)
+        float percentage(int64_t value) const
         {
             return static_cast<float>(value) / static_cast<float>(size);
         }
 
-        std::string caption()
+        std::string caption() const
         {
             return std::string("used/sending/freeing/free");
         }
 
-        std::string percentage_str(int64_t value)
+        std::string percentage_str(int64_t value) const
         {
             boost::format percent_fmt("%4.1f%%");
             percent_fmt % (percentage(value) * 100);
-            return percent_fmt.str();
+            std::string s = percent_fmt.str();
+            s.resize(4);
+            return s;
         }
 
-        std::string percentages()
+        std::string percentages() const
         {
             return percentage_str(used()) + " " + percentage_str(sending()) +
                    " " + percentage_str(freeing()) + " " +
                    percentage_str(unused());
+        }
+
+        std::vector<int64_t> vector() const
+        {
+            return std::vector<int64_t>{used(), sending(), freeing(), unused()};
         }
     };
 

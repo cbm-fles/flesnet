@@ -24,6 +24,9 @@ if [[ "$SLURMD_NODENAME" ]]; then
 		fi
 	done
 
+        rm -f /run/shm/flesnet_*
+        killall -q flesnet
+        killall -q tsclient
 	"$DIR/flesnet" "${ARGS[@]}"
 else
 	# started directly

@@ -6,6 +6,8 @@
 #include "ComputeNodeStatusMessage.hpp"
 #include "InputChannelStatusMessage.hpp"
 #include "InputNodeInfo.hpp"
+#include <boost/format.hpp>
+#include <chrono>
 
 /// Compute node connection class.
 /** A ComputeNodeConnection object represents the endpoint of a single
@@ -58,6 +60,62 @@ public:
     const ComputeNodeBufferPosition& cn_wp() const { return _cn_wp; }
 
     virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
+
+    struct BufferStatus {
+        std::chrono::system_clock::time_point time;
+        uint64_t size;
+
+        uint64_t cached_acked;
+        uint64_t acked;
+        uint64_t received;
+
+        int64_t used() const { return received - acked; }
+        int64_t freeing() const { return acked - cached_acked; }
+        int64_t unused() const { return cached_acked + size - received; }
+
+        float percentage(int64_t value) const
+        {
+            return static_cast<float>(value) / static_cast<float>(size);
+        }
+
+        std::string caption() const { return std::string("used/freeing/free"); }
+
+        std::string percentage_str(int64_t value) const
+        {
+            boost::format percent_fmt("%4.1f%%");
+            percent_fmt % (percentage(value) * 100);
+            std::string s = percent_fmt.str();
+            s.resize(4);
+            return s;
+        }
+
+        std::string percentages() const
+        {
+            return percentage_str(used()) + " " + percentage_str(freeing()) +
+                   " " + percentage_str(unused());
+        }
+
+        std::vector<int64_t> vector() const
+        {
+            return std::vector<int64_t>{used(), freeing(), unused()};
+        }
+    };
+
+    BufferStatus buffer_status_data() const
+    {
+        return BufferStatus{std::chrono::system_clock::now(),
+                            (UINT64_C(1) << _data_buffer_size_exp),
+                            _send_status_message.ack.data, _cn_ack.data,
+                            _cn_wp.data};
+    }
+
+    BufferStatus buffer_status_desc() const
+    {
+        return BufferStatus{std::chrono::system_clock::now(),
+                            (UINT64_C(1) << _desc_buffer_size_exp),
+                            _send_status_message.ack.desc, _cn_ack.desc,
+                            _cn_wp.desc};
+    }
 
 private:
     ComputeNodeStatusMessage _send_status_message = ComputeNodeStatusMessage();

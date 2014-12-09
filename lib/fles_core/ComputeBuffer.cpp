@@ -135,13 +135,27 @@ void ComputeBuffer::start_processes()
 
 void ComputeBuffer::report_status()
 {
-    constexpr auto interval = std::chrono::seconds(3);
+    constexpr auto interval = std::chrono::seconds(1);
 
     std::chrono::system_clock::time_point now =
         std::chrono::system_clock::now();
 
-    L_(info) << "[c" << _compute_index << "] " << _completely_written
-             << " completely written, " << _acked << " acked" << std::endl;
+    L_(debug) << "[c" << _compute_index << "] " << _completely_written
+              << " completely written, " << _acked << " acked";
+
+    for (auto& c : _conn) {
+        auto status_desc = c->buffer_status_desc();
+        auto status_data = c->buffer_status_data();
+        L_(debug) << "[c" << _compute_index << "] desc "
+                  << status_desc.percentages() << " (used..free) | "
+                  << human_readable_count(status_desc.acked, true, "") << " TS";
+        L_(debug) << "[c" << _compute_index << "] data "
+                  << status_data.percentages() << " (used..free) | "
+                  << human_readable_count(status_data.acked, true);
+        L_(info) << "[c" << _compute_index << "_" << c->index() << "] |"
+                 << bar_graph(status_data.vector(), "#x_.", 20) << "|"
+                 << bar_graph(status_desc.vector(), "#x_.", 10) << "| ";
+    }
 
     _scheduler.add(std::bind(&ComputeBuffer::report_status, this),
                    now + interval);
