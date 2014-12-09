@@ -48,13 +48,15 @@ fi
 
 # Reload design from Flash
 function reload_fpga {
+# from ISE/kintex7/data/xc7k325t_ffg900.bsd
+JPROGRAM=001011
 "$IMPACT" -batch <<-EOF
 setMode -bscan
 setCable $CABLE $CSE_SERVER
 Identify -inferir 
 identifyMPM 
 bsdebug -start 
-bsdebug -scanir 001011 
+bsdebug -scanir $JPROGRAM
 bsdebug -reset 
 quit
 EOF
