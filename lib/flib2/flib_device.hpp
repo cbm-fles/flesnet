@@ -42,8 +42,6 @@ public:
   bool check_hw_ver();
   void enable_mc_cnt(bool enable);
   void set_mc_time(uint32_t time);
-  void send_dlm();
-  /** global dlm send, requires link local prepare_dlm beforehand */
   uint8_t number_of_hw_links();
 
   uint16_t hardware_version();

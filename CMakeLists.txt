@@ -47,7 +47,7 @@ ExternalProject_add(
 
 add_subdirectory(app/flesnet)
 add_subdirectory(app/tsclient)
-add_subdirectory(app/flib_debug)
+#add_subdirectory(app/flib_debug)
 add_subdirectory(app/flib_ctrl)
 
 add_subdirectory(doc)

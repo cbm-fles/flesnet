@@ -59,20 +59,6 @@ public:
   void enable_cbmnet_packer(bool enable);
   void enable_cbmnet_packer_debug_mode(bool enable);
 
-  /*** CBMnet control interface ***/
-
-  int send_dcm(const struct ctrl_msg* msg);
-  int recv_dcm(struct ctrl_msg* msg);
-
-  /**
-   * RORC_REG_DLM_CFG 0 set to send (global reg)
-   * RORC_REG_GTX_DLM 3..0 tx type, 4 enable,
-   * 8..5 rx type, 31 set to clear rx reg
-   */
-  void prepare_dlm(uint8_t type, bool enable);
-  void send_dlm();
-  uint8_t recv_dlm();
-
   // REG: datapath_cfg
   // bit 1-0 data_sel (10: link, 11: pgen, 01: emu, 00: disable)
   enum data_sel_t { rx_disable, rx_emu, rx_link, rx_pgen };
@@ -101,33 +87,6 @@ public:
   };
 
   struct link_status_t link_status();
-
-  struct diag_flags_t {
-    bool pcs_startup;
-    bool ebtb_code_err;
-    bool ebtb_disp_err;
-    bool crc_error;
-    bool packet;
-    bool packet_err;
-    bool rx_clk_stable;
-    bool tx_clk_stable;
-    bool ebtb_detect;
-    bool serdes_ready;
-    bool link_active;
-  };
-
-  // read counters
-  uint32_t diag_pcs_startup();
-  uint32_t diag_ebtb_code_err();
-  uint32_t diag_ebtb_disp_err();
-  uint32_t diag_crc_error();
-  uint32_t diag_packet();
-  uint32_t diag_packet_err();
-  // read all flags
-  diag_flags_t diag_flags();
-  // clear all counters
-  void diag_clear();
-
 
 protected:
   std::unique_ptr<dma_channel> m_channel;

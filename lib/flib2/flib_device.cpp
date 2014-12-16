@@ -80,8 +80,6 @@ void flib_device::set_mc_time(uint32_t time) {
   m_register_file->set_reg(RORC_REG_MC_CNT_CFG, reg);
 }
 
-void flib_device::send_dlm() { m_register_file->set_reg(RORC_REG_DLM_CFG, 1); }
-
 uint8_t flib_device::number_of_hw_links() {
   return (m_register_file->reg(RORC_REG_N_CHANNELS) & 0xFF);
 }
