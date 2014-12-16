@@ -39,12 +39,12 @@ ENDIF(NOT DEFINED ENV{CNETCNTLSERVER_PATH})
 
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/logging"
-                    "${PROJECT_SOURCE_DIR}/lib/flib"
+                    "${PROJECT_SOURCE_DIR}/lib/flib2"
                     "${PROJECT_SOURCE_DIR}/lib/flib_server")
 
 add_executable(flib_ctrl flib_ctrl.cpp parameters.hpp)
 
-target_link_libraries(flib_ctrl flib logging ${ZMQ_LIBRARIES} ${Boost_LIBRARIES} rt)
+target_link_libraries(flib_ctrl flib2 logging ${ZMQ_LIBRARIES} ${Boost_LIBRARIES} rt)
 
 if(CNETCNTLSERVER)
     target_link_libraries(flib_ctrl ${CNETCNTLSERVER_LIB})

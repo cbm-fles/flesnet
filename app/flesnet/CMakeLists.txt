@@ -7,11 +7,11 @@ include_directories("${PROJECT_SOURCE_DIR}/app/flesnet"
                     "${PROJECT_SOURCE_DIR}/lib/fles_core"
                     "${PROJECT_SOURCE_DIR}/lib/logging"
                     "${PROJECT_SOURCE_DIR}/lib/fles_ipc/src"
-                    "${PROJECT_SOURCE_DIR}/lib/flib")
+                    "${PROJECT_SOURCE_DIR}/lib/flib2")
 
 add_executable(flesnet ${APP_SOURCES} ${APP_HEADERS})
 
-target_link_libraries(flesnet fles_core logging flib ibverbs rdmacm numa ${Boost_LIBRARIES})
+target_link_libraries(flesnet fles_core logging flib2 ibverbs rdmacm numa ${Boost_LIBRARIES})
 if(UNIX AND NOT APPLE)
     target_link_libraries(flesnet rt)
 endif()
