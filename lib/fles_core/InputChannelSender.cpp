@@ -125,6 +125,7 @@ void InputChannelSender::operator()()
             poll_cm_events();
         }
 
+        _data_source.proceed();
         _time_begin = std::chrono::high_resolution_clock::now();
 
         uint64_t timeslice = 0;
@@ -135,6 +136,7 @@ void InputChannelSender::operator()()
                 timeslice++;
             }
             poll_completion();
+            _data_source.proceed();
             _scheduler.timer();
         }
 

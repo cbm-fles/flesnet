@@ -10,6 +10,8 @@ class DataSource
 public:
     virtual ~DataSource() {}
 
+    virtual void proceed() {}
+
     virtual uint64_t written_mc() = 0;
     virtual uint64_t written_data() = 0;
 
