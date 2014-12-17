@@ -111,7 +111,7 @@ void InputChannelSender::sync_buffer_positions()
 
     auto now = std::chrono::system_clock::now();
     _scheduler.add(std::bind(&InputChannelSender::sync_buffer_positions, this),
-                   now + std::chrono::milliseconds(10));
+                   now + std::chrono::milliseconds(0));
 }
 
 /// The thread main function.
