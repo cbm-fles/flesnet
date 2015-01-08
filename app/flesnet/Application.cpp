@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "FlibHardwareChannel.hpp"
 #include "FlibPatternGenerator.hpp"
+#include "EmbeddedPatternGenerator.hpp"
 #include <log.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -82,9 +83,15 @@ Application::Application(Parameters const& par,
                 par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
                 _flib_links.at(c)));
         } else {
-            data_source = std::unique_ptr<DataSource>(new FlibPatternGenerator(
-                par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
-                index, par.typical_content_size()));
+            if (false) {
+                data_source = std::unique_ptr<DataSource>(new FlibPatternGenerator(
+                    par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
+                    index, par.typical_content_size()));
+            } else {
+                data_source = std::unique_ptr<DataSource>(new EmbeddedPatternGenerator(
+                    par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
+                    index, par.typical_content_size()));
+            }
         }
 
         std::unique_ptr<InputChannelSender> buffer(new InputChannelSender(
@@ -116,6 +123,18 @@ Application::~Application()
 
 void Application::run()
 {
+    // Do not spawn additional thread if only one is needed, simplifies debugging
+    if (_compute_buffers.size() == 1 && _input_channel_senders.empty()) {
+        L_(debug) << "using existing thread for single compute buffer";
+        (*_compute_buffers[0])();
+        return;
+    };
+    if (_input_channel_senders.size() == 1 && _compute_buffers.empty()) {
+        L_(debug) << "using existing thread for single input buffer";
+        (*_input_channel_senders[0])();
+        return;
+    };
+
     // FIXME: temporary code, need to implement interrupt
     boost::thread_group threads;
     std::vector<boost::unique_future<void>> futures;
