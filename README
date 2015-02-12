@@ -51,24 +51,7 @@ of the connected component. For all other data sources this is
 configured automatically. This information can be used to 
 determine which analysis code is called later on.
 
-Defined subsystem identifiers are:
-Silicon Tracking System (STS) 		0x10 
-Micro-Vertex Detector (MVD) 		0x20 
-Ring Imaging CHerenkov detector (RICH) 	0x30 
-Transition Radiation Detector (TRD) 	0x40 
-Muon Chamber system (MuCh) 		0x50 
-Resistive Plate Chambers (RPC) 		0x60 
-Electromagnetic CALorimeter (ECAL) 	0x70 
-Projectile Spectator Detector (PSD) 	0x80
-# Experimatal 0xEX
-TRB3 Stream				0xE0
-Fiber Hodoscope				0xE1
-Cheroncov				0xE2
-Lead Glas Calorimeter			0xE3
-# Debug 0xFX
-FLIB hardware pattern generator		0xF0
-FLIB front end emulation		0xF1
-Flesnet software pattern generator	0xFA
+For all defined subsystem identifiers check contrib/flib.cfg
 
 Control Client:
 ---------------
