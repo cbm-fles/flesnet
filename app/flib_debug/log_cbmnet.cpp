@@ -7,8 +7,29 @@
 #include <chrono>
 #include "flib.h"
 
-int main()
+int main(int argc, char *argv[])
 {
+  int doreset = 0;
+
+   if (argc == 2) {
+    //    printf("Input: %i %s %s\n", argc, argv[0], argv[1]);
+    //    printf("%s\n", argv[1]);
+
+    std::string str1 ("-help");  // define help option
+    if (str1.compare(argv[1]) == 0) {
+      std::cout << "Usage: log_cbmnet [-reset]" << '\n';
+      return -1;
+    }
+
+    std::string str2 ("-reset");  // define reset option
+    if (str2.compare(argv[1]) == 0)
+      doreset = 1;   // will reset statistics
+
+//    if (doreset != 0)      
+//    if (doreset)
+//      std::cout << "arg will reset" << '\n';
+//    printf("\n");
+  }
 
   std::unique_ptr<flib::flib_device> flib = std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
   std::vector<flib::flib_link*> flib_links = flib->links();
@@ -26,7 +47,7 @@ int main()
     << std::setw(14) << " time";
   for (auto link : flib_links) {
     // clear all counters
-    // link->diag_clear();
+    if (doreset) link->diag_clear();
     size_t index = link->link_index();
     std::cout
       << std::setw(16) << "mc_index_"        << index
