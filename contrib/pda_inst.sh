@@ -3,7 +3,7 @@
 #set -e
 #set -u
 
-PDA_VERSION="8.0.4"
+PDA_VERSION="10.0.6"
 USER_NAME=`id -u -n`
 
 getdeps()
