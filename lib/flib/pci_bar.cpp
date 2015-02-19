@@ -31,7 +31,7 @@ void pci_bar::barMap(uint8_t number) {
     throw FlibException("Bar fetching failed!");
   }
 
-  if (Bar_getMap(m_pda_bar, &m_bar, &m_size) != PDA_SUCCESS) {
+  if (Bar_getMap(m_pda_bar, (void**)&m_bar, &m_size) != PDA_SUCCESS) {
     throw FlibException("Bar mapping failed!");
   }
 }
