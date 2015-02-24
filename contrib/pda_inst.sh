@@ -34,7 +34,7 @@ install()
 
 patchudev()
 {
-  cat /etc/pda_sysfs.sh | sed 's|root:pda|root:sudo|' > /etc/pda_sysfs.tmp
+  cat /etc/pda_sysfs.sh | sed 's|UIO_GROUP="pda"|UIO_GROUP="sudo"|' > /etc/pda_sysfs.tmp
   mv /etc/pda_sysfs.tmp /etc/pda_sysfs.sh
   chmod a+x /etc/pda_sysfs.sh
 }
