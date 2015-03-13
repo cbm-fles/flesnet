@@ -25,7 +25,7 @@ set(BOOST_ROOT ${SIMPATH})
 find_package(Boost 1.54.0 COMPONENTS log serialization thread program_options system REQUIRED)
 find_package(Threads)
 find_package(ZMQ REQUIRED)
-find_package(PDA 10.0.6 REQUIRED)
+find_package(PDA 10.1.6 REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
