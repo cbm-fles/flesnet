@@ -8,8 +8,8 @@ if [[ "$SLURMD_NODENAME" ]]; then
 	# started by slurm
 	HOST=$SLURMD_NODENAME
 
-	INLIST=(`grep "^[^#]*input-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/ /g'`)
-	CNLIST=(`grep "^[^#]*compute-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sed -e ':a;N;$!ba;s/\n/ /g'`)
+	INLIST=(`grep "^[^#]*input-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib.//' | sed -e ':a;N;$!ba;s/\n/ /g'`)
+	CNLIST=(`grep "^[^#]*compute-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib.//' | sed -e ':a;N;$!ba;s/\n/ /g'`)
 	declare -a ARGS
 
 	for ((i=0; i<${#INLIST[@]}; i++)); do
@@ -27,11 +27,12 @@ if [[ "$SLURMD_NODENAME" ]]; then
         rm -f /run/shm/flesnet_*
         killall -q flesnet
         killall -q tsclient
+	#perf record -F 1100 --call-graph dwarf -s -o "perf.data.$HOST" -- "$DIR/flesnet" "${ARGS[@]}"
 	"$DIR/flesnet" "${ARGS[@]}"
 else
 	# started directly
-	COUNT=`grep -E "^[^#]*(input|compute)-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sort -u | wc -l`
-	LIST=`grep -E "^[^#]*(input|compute)-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib0//' | sort -u | sed -e ':a;N;$!ba;s/\n/,/g'`
+	COUNT=`grep -E "^[^#]*(input|compute)-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib.//' | sort -u | wc -l`
+	LIST=`grep -E "^[^#]*(input|compute)-nodes\s*=" "$CFG" | sed -e 's/.*=\s*//'  -e 's/ib.//' | sort -u | sed -e ':a;N;$!ba;s/\n/,/g'`
 
 	srun -w "$LIST" -N "$COUNT" -l "$0"
 fi

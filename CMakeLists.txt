@@ -17,7 +17,7 @@ SET(SIMPATH $ENV{SIMPATH})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -g -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor")
+set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
 
 set(Boost_NO_SYSTEM_PATHS TRUE)
 set(BOOST_ROOT ${SIMPATH})
@@ -25,7 +25,7 @@ set(BOOST_ROOT ${SIMPATH})
 find_package(Boost 1.54.0 COMPONENTS log serialization thread program_options system REQUIRED)
 find_package(Threads)
 find_package(ZMQ REQUIRED)
-find_package(PDA 8.0.4 REQUIRED)
+find_package(PDA 10.0.6 REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 

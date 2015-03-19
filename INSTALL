@@ -37,6 +37,12 @@ If you like to have controls access to CBMnet via the controls API
 you need the cbmnetcntlserver library found in the CBMroot repository.
 (Note: the make target is 'cbmnetcntlserver')
 
+Getting the Repository
+----------------------
+
+git clone git@code.compeng.uni-frankfurt.de:flesnet.git flesnet
+
+
 Building flesnet
 ----------------
 The environment variable SIMPATH has to point to the fairroot external 

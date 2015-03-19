@@ -111,7 +111,7 @@ void InputChannelSender::sync_buffer_positions()
 
     auto now = std::chrono::system_clock::now();
     _scheduler.add(std::bind(&InputChannelSender::sync_buffer_positions, this),
-                   now + std::chrono::milliseconds(10));
+                   now + std::chrono::milliseconds(0));
 }
 
 /// The thread main function.
@@ -125,6 +125,7 @@ void InputChannelSender::operator()()
             poll_cm_events();
         }
 
+        _data_source.proceed();
         _time_begin = std::chrono::high_resolution_clock::now();
 
         uint64_t timeslice = 0;
@@ -135,6 +136,7 @@ void InputChannelSender::operator()()
                 timeslice++;
             }
             poll_completion();
+            _data_source.proceed();
             _scheduler.timer();
         }
 

@@ -152,17 +152,19 @@ public:
     }
 
     /// The InfiniBand completion notification handler.
-    void poll_completion()
+    int poll_completion()
     {
         const int ne_max = 10;
 
         struct ibv_wc wc[ne_max];
         int ne;
+        int ne_total = 0;
 
         while ((ne = ibv_poll_cq(_cq, ne_max, wc))) {
             if (ne < 0)
                 throw InfinibandException("ibv_poll_cq failed");
 
+            ne_total += ne;
             for (int i = 0; i < ne; ++i) {
                 if (wc[i].status != IBV_WC_SUCCESS) {
                     std::ostringstream s;
@@ -176,6 +178,8 @@ public:
                 on_completion(wc[i]);
             }
         }
+
+        return ne_total;
     }
 
     /// Retrieve the InfiniBand protection domain.

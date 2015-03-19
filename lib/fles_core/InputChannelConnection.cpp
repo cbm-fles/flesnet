@@ -225,14 +225,15 @@ void InputChannelConnection::on_complete_recv()
     }
     _cn_ack = _recv_status_message.ack;
     post_recv_status_message();
-    {
-        if (_cn_wp == _send_status_message.wp && _finalize) {
-            if (_cn_wp == _cn_ack || _abort)
-                _send_status_message.final = true;
-            post_send_status_message();
-        } else {
-            _our_turn = true;
+
+    if (_cn_wp == _send_status_message.wp && _finalize) {
+        if (_cn_wp == _cn_ack || _abort) {
+            _send_status_message.final = true;
+            _send_status_message.abort = _abort;
         }
+        post_send_status_message();
+    } else {
+        _our_turn = true;
     }
 }
 

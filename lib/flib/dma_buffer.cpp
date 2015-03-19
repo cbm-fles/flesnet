@@ -32,11 +32,8 @@ int dma_buffer::allocate(device* device, uint64_t size, uint64_t id,
                          int overmap, int dma_direction) {
   m_device = device->m_device;
 
-  if (PDA_SUCCESS != PciDevice_allocDMABuffer(m_device, id, size,
-                                              PDABUFFER_DIRECTION_BI,
-                                              &m_buffer)) {
-    return -1;
-  }
+  if (PDA_SUCCESS != PciDevice_allocDMABuffer(m_device, id, size, &m_buffer))
+  { return -1; }
 
   if (overmap == 1) {
     if (PDA_SUCCESS != DMABuffer_wrapMap(m_buffer)) {
