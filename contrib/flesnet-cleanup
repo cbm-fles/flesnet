@@ -5,6 +5,14 @@
 # cleanup script for flib readout
 
 # TODO: will grap first FLIB found
+function check_dma_buffers {
+NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
+if [ "$NODE" ]; then
+        echo "Existing DMA buffers for PCI device at $NODE"
+        ls -l /sys/bus/pci/drivers/uio_pci_dma/0000:$NODE/dma/ | grep -v -e free -e max_payload_size -e max_read_request_size -e request
+fi
+}
+
 function free_dma_buffers {
 NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
 if [ "$NODE" ]; then
@@ -15,6 +23,7 @@ if [ "$NODE" ]; then
 fi
 }
 
+check_dma_buffers
 free_dma_buffers
 
 killall -9 tsclient
