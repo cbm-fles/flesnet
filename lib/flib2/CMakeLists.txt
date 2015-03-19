@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(LIBFLIB2)
 
-include_directories( ./ )
+include_directories( ${LIBFLIB2_SOURCE_DIR}/ )
 
 set(VERSION "0.0.0")
 
