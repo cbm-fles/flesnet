@@ -126,10 +126,10 @@ int dma_channel::configureChannel(struct dma_buffer* ebuf,
   config.swptrs.ebdm_software_read_pointer_high =
       (ebuf->physicalSize() - max_payload) >> 32;
   config.swptrs.rbdm_software_read_pointer_low =
-      (rbuf->physicalSize() - sizeof(struct rorcfs_event_descriptor)) &
+      (rbuf->physicalSize() - sizeof(struct MicrosliceDescriptor)) &
       0xffffffff;
   config.swptrs.rbdm_software_read_pointer_high =
-      (rbuf->physicalSize() - sizeof(struct rorcfs_event_descriptor)) >> 32;
+      (rbuf->physicalSize() - sizeof(struct MicrosliceDescriptor)) >> 32;
 
   // set new MAX_PAYLOAD size
   config.swptrs.dma_ctrl = (1 << 31) |      // sync software read pointers

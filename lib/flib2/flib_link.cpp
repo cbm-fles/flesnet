@@ -366,7 +366,8 @@ int flib_link::init_hardware() {
   m_eb = (uint64_t*)m_data_buffer->mem();
   m_db = (struct MicrosliceDescriptor*)m_desc_buffer->mem();
 
-  m_dbentries = m_desc_buffer->maxRBEntries();
+  m_dbentries = m_desc_buffer->physicalSize() /
+    sizeof(struct MicrosliceDescriptor))
 
   // Enable desciptor buffers and dma engine
   m_channel->enableEB(1);
@@ -383,8 +384,7 @@ std::string flib_link::print_buffer_info(dma_buffer* buf) {
      << "mapping size = " << (buf->mappingSize() >> 20) << " MByte, "
      << std::endl << "  end address = "
      << (void*)((uint8_t*)buf->mem() + buf->physicalSize()) << ", "
-     << "num SG entries = " << buf->numberOfSGEntries() << ", "
-     << "max SG entries = " << buf->maxRBEntries();
+     << "num SG entries = " << buf->numberOfSGEntries();
   return ss.str();
 }
 }
