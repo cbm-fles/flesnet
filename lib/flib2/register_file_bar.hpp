@@ -12,9 +12,13 @@
 
 #include <register_file.hpp>
 
-namespace flib {
-
+namespace pda {
 class pci_bar;
+}
+
+using namespace pda;
+
+namespace flib {
 
 class register_file_bar : public register_file {
 

@@ -10,10 +10,15 @@
 
 #include <data_structures.hpp>
 
-namespace flib {
-class register_file_bar;
+namespace pda {
 class dma_buffer;
 class device;
+}
+
+using namespace pda;
+
+namespace flib {
+class register_file_bar;
 
 /**
  * @class

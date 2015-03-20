@@ -14,6 +14,14 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
+namespace pda{
+  class device;
+  class pci_bar;
+  class dma_buffer;
+}
+
+using namespace pda;
+
 namespace flib {
 // Tags to indicate mode of buffer initialization
 struct create_only_t {};
@@ -24,9 +32,6 @@ static const create_only_t create_only = create_only_t();
 static const open_only_t open_only = open_only_t();
 static const open_or_create_t open_or_create = open_or_create_t();
 
-class device;
-class pci_bar;
-class dma_buffer;
 class dma_channel;
 class register_file_bar;
 

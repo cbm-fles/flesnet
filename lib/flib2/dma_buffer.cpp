@@ -14,7 +14,7 @@
 
 using namespace std;
 
-namespace flib {
+namespace pda{
 
 dma_buffer::dma_buffer() {}
 

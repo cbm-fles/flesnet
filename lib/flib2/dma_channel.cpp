@@ -26,6 +26,7 @@
 #include <register_file_bar.hpp>
 
 using namespace std;
+using namespace pda;
 
 namespace flib {
 
@@ -60,7 +61,7 @@ int dma_channel::prepareBuffer(dma_buffer* buf, sys_bus_addr addr,
 
   struct t_sg_entry_cfg sg_entry;
   uint64_t i = 0;
-  for (DMABuffer_SGNode* sg = buf->m_sglist; sg != NULL; sg = sg->next) {
+  for (DMABuffer_SGNode* sg = buf->sglist(); sg != NULL; sg = sg->next) {
 
     sg_entry.sg_addr_low = (uint32_t)(((uint64_t)sg->d_pointer) & 0xffffffff);
     sg_entry.sg_addr_high = (uint32_t)(((uint64_t)sg->d_pointer) >> 32);
@@ -179,7 +180,7 @@ unsigned int dma_channel::DMAConfig() {
 void dma_channel::setMaxPayload() {
   uint64_t max_payload_size = 0;
 
-  if (PciDevice_getmaxPayloadSize(parent_device->m_device, &max_payload_size) !=
+  if (PciDevice_getmaxPayloadSize(parent_device->PDAPciDevice(), &max_payload_size) !=
       PDA_SUCCESS) {
     cout << "Maximum payload size reading failed!\n" << endl;
     abort();

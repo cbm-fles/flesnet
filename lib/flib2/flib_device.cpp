@@ -20,6 +20,8 @@
 #include <device.hpp>
 #include <pci_bar.hpp>
 
+using namespace pda;
+
 namespace flib {
 
 flib_device::flib_device(int device_nr) {

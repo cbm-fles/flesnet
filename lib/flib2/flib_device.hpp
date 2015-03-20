@@ -13,12 +13,17 @@
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic ignored "-Wold-style-cast"
 
+namespace pda {
+class device;
+class pci_bar;
+}
+
+using namespace pda;
+
 namespace flib {
 class flib_device;
 class flib_link;
 
-class device;
-class pci_bar;
 class register_file_bar;
 
 struct build_info_t {

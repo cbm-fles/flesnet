@@ -14,7 +14,7 @@
 typedef struct PciDevice_struct PciDevice;
 typedef struct Bar_struct Bar;
 
-namespace flib {
+namespace pda {
 class device;
 
 /**

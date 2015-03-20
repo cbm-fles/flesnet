@@ -24,6 +24,14 @@ typedef uint64_t sys_bus_addr;
  * Common values are 128 or 256 bytes.*/
 #define MAX_PAYLOAD 128
 
+namespace pda {
+class PdaException : public std::runtime_error {
+public:
+  explicit PdaException(const std::string& what_arg = "")
+      : std::runtime_error(what_arg) {}
+};
+}
+
 namespace flib {
 class FlibException : public std::runtime_error {
 public:

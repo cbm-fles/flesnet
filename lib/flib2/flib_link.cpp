@@ -23,6 +23,8 @@
 #include <register_file.hpp>
 #include <register_file_bar.hpp>
 
+using namespace pda;
+
 namespace flib {
 flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)
     : m_link_index(link_index), m_device(dev) {

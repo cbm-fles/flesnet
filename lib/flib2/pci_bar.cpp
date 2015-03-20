@@ -13,7 +13,7 @@
 
 using namespace std;
 
-namespace flib {
+namespace pda {
 
 pci_bar::pci_bar(device* dev, uint8_t number) {
   m_parent_dev = dev;
@@ -28,11 +28,11 @@ void pci_bar::barMap(uint8_t number) {
   m_pda_bar = NULL;
 
   if (PciDevice_getBar(m_pda_pci_device, &m_pda_bar, number) != PDA_SUCCESS) {
-    throw FlibException("Bar fetching failed!");
+    throw PdaException("Bar fetching failed!");
   }
 
   if (Bar_getMap(m_pda_bar, (void**)&m_bar, &m_size) != PDA_SUCCESS) {
-    throw FlibException("Bar mapping failed!");
+    throw PdaException("Bar mapping failed!");
   }
 }
 }
