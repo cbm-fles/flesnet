@@ -367,7 +367,7 @@ int flib_link::init_hardware() {
   m_db = (struct MicrosliceDescriptor*)m_desc_buffer->mem();
 
   m_dbentries = m_desc_buffer->physicalSize() /
-    sizeof(struct MicrosliceDescriptor))
+    sizeof(struct MicrosliceDescriptor);
 
   // Enable desciptor buffers and dma engine
   m_channel->enableEB(1);
