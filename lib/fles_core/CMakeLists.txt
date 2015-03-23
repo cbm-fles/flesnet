@@ -5,7 +5,7 @@ file(GLOB LIB_HEADERS *.h)
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc/src"
                     "${PROJECT_SOURCE_DIR}/app/flesnet"
-                    "${PROJECT_SOURCE_DIR}/lib/flib"
+                    "${PROJECT_SOURCE_DIR}/lib/flib2"
                     "${PROJECT_SOURCE_DIR}/lib"
                     "${PROJECT_SOURCE_DIR}/lib/logging")
 
