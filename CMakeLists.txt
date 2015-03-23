@@ -33,7 +33,7 @@ add_definitions(-DBOOST_LOG_DYN_LINK)
 
 add_subdirectory(lib/logging)
 add_subdirectory(lib/fles_core)
-#add_subdirectory(lib/flib)
+add_subdirectory(lib/flib)
 add_subdirectory(lib/flib2)
 add_subdirectory(lib/pda)
 
@@ -51,6 +51,7 @@ add_subdirectory(app/tsclient)
 #add_subdirectory(app/flib_debug)
 add_subdirectory(app/flib_tools)
 add_subdirectory(app/flib_ctrl)
+add_subdirectory(app/flib_cfg)
 
 add_subdirectory(doc)
 
