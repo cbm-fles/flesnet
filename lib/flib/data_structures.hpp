@@ -4,9 +4,7 @@
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
  */
-
-#ifndef DATA_STRUCTURES_HH
-#define DATA_STRUCTURES_HH
+#pragma once
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -109,47 +107,4 @@ struct t_sg_entry_cfg {
   uint32_t ctrl;
 };
 
-struct rorcfs_sync_range {
-  void* start;
-  void* end;
-};
-
-struct __attribute__((__packed__)) t_rorcfs_buffer {
-  unsigned long id;
-  unsigned long bytes;
-  short overmap;
-  short dma_direction;
-};
-
-struct __attribute__((__packed__)) rorcfs_event_descriptor {
-  unsigned long offset;
-  unsigned long length;
-  unsigned int calc_event_size;
-  unsigned int reported_event_size;
-  unsigned long dummy; // do not use!
-};
-
-/**
- * struct rorcfs_dma_desc: dma address and length
- * to be transfered to the RORC
- **/
-typedef struct rorcfs_dma_desc {
-  unsigned long addr;
-  unsigned long len;
-} trorcfs_dma_desc, *prorcfs_dma_desc;
-
-#define RORCFS_DMA_FROM_DEVICE 2
-#define RORCFS_DMA_TO_DEVICE 1
-#define RORCFS_DMA_BIDIRECTIONAL 0
-
-#ifndef PAGE_MASK
-#define PAGE_MASK ~(sysconf(_SC_PAGESIZE) - 1)
-#endif
-
-#ifndef PAGE_SIZE
-#define PAGE_SIZE sysconf(_SC_PAGESIZE)
-#endif
-
 #pragma GCC diagnostic pop
-
-#endif /** DATA_STRUCTURES_HH */

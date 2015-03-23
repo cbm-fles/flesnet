@@ -10,15 +10,18 @@
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 
+#include <pda/device.hpp>
+#include <pda/pci_bar.hpp>
+
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic ignored "-Wold-style-cast"
+
+using namespace pda;
 
 namespace flib {
 class flib_device;
 class flib_link;
 
-class device;
-class pci_bar;
 class register_file_bar;
 
 struct build_info_t {

@@ -13,15 +13,19 @@
 #include <memory>
 #include <stdexcept>
 
+#include <pda/device.hpp>
+#include <pda/dma_buffer.hpp>
+#include <pda/pci_bar.hpp>
+#include <pda/data_structures.hpp>
+
 #include <flib_link.hpp>
-#include <device.hpp>
-#include <dma_buffer.hpp>
-#include <pci_bar.hpp>
 #include <dma_channel.hpp>
 #include <flib_device.hpp>
 #include <flib_link.hpp>
 #include <register_file.hpp>
 #include <register_file_bar.hpp>
+
+using namespace pda;
 
 namespace flib {
 flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)
@@ -371,9 +375,13 @@ std::string flib_link::desc_buffer_info() {
   return print_buffer_info(m_desc_buffer.get());
 }
 
-dma_buffer* flib_link::data_buffer() const { return m_data_buffer.get(); }
+void* flib_link::data_buffer() const {
+  return reinterpret_cast<void*>(m_data_buffer->mem());
+}
 
-dma_buffer* flib_link::desc_buffer() const { return m_desc_buffer.get(); }
+void* flib_link::desc_buffer() const {
+  return reinterpret_cast<void*>(m_desc_buffer->mem());
+}
 
 dma_channel* flib_link::channel() const { return m_channel.get(); }
 
@@ -498,7 +506,8 @@ int flib_link::init_hardware() {
   m_eb = (uint64_t*)m_data_buffer->mem();
   m_db = (struct MicrosliceDescriptor*)m_desc_buffer->mem();
 
-  m_dbentries = m_desc_buffer->maxRBEntries();
+  m_dbentries = m_desc_buffer->physicalSize() /
+    sizeof(struct MicrosliceDescriptor);
 
   // Enable desciptor buffers and dma engine
   m_channel->enableEB(1);
@@ -515,8 +524,7 @@ std::string flib_link::print_buffer_info(dma_buffer* buf) {
      << "mapping size = " << (buf->mappingSize() >> 20) << " MByte, "
      << std::endl << "  end address = "
      << (void*)((uint8_t*)buf->mem() + buf->physicalSize()) << ", "
-     << "num SG entries = " << buf->numberOfSGEntries() << ", "
-     << "max SG entries = " << buf->maxRBEntries();
+     << "num SG entries = " << buf->numberOfSGEntries();
   return ss.str();
 }
 }

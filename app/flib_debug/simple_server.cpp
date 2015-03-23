@@ -55,8 +55,8 @@ int main(int argc, const char* argv[])
     L_(info) << "Event Buffer: " << links.at(i)->data_buffer_info();
     L_(info) << "Desciptor Buffer" << links.at(i)->desc_buffer_info();
     // get raw pointers for debugging
-    eb.push_back((uint64_t *)links.at(i)->data_buffer()->mem());
-    rb.push_back((MicrosliceDescriptor *)links.at(i)->desc_buffer()->mem());
+    eb.push_back((uint64_t *)links.at(i)->data_buffer());
+    rb.push_back((MicrosliceDescriptor *)links.at(i)->desc_buffer());
     
     // set start index
     links.at(i)->set_start_idx(1);

@@ -17,8 +17,10 @@
 #include <flib_device.hpp>
 #include <flib_link.hpp>
 #include <register_file_bar.hpp>
-#include <device.hpp>
-#include <pci_bar.hpp>
+#include <pda/device.hpp>
+#include <pda/pci_bar.hpp>
+
+using namespace pda;
 
 namespace flib {
 
@@ -52,6 +54,7 @@ flib_device::flib_device(int device_nr) {
 bool flib_device::check_hw_ver() {
   uint16_t hw_ver =
       m_register_file->reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
+  std::cout << "HW Version: " << hw_ver << std::endl;
   bool match = false;
 
   // check if version of hardware is part of suported versions
@@ -64,6 +67,7 @@ bool flib_device::check_hw_ver() {
 
   // check if version of hardware matches exactly version of header
   if (hw_ver != RORC_C_HARDWARE_VERSION) {
+    std::cout << "header file version missmatch" << std::endl;
     match = false;
   }
   return match;
@@ -163,7 +167,7 @@ std::string flib_device::print_build_info() {
   } else {
     ss << "Repository Status:   NOT clean " << std::endl;
   }
-  ss << "Hardware Version:    " << build.hw_ver;
+  ss << "Hardware Version:    " << std::dec << build.hw_ver;
   return ss.str();
 }
 
