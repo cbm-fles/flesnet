@@ -20,14 +20,14 @@ Application::Application(Parameters const& par,
         // TODO: presence detection #524
         try {
             _flib =
-                std::unique_ptr<flib2::flib_device>(new flib2::flib_device(0));
+                std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
             _flib_links = _flib->links();
 
             // delete deactivated links from vector
             _flib_links.erase(
                 std::remove_if(std::begin(_flib_links), std::end(_flib_links),
                                [](decltype(_flib_links[0]) link) {
-                    return link->data_sel() == flib2::flib_link::rx_disable;
+                    return link->data_sel() == flib::flib_link::rx_disable;
                 }),
                 std::end(_flib_links));
 
