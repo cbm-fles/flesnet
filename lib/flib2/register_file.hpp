@@ -10,7 +10,7 @@
 
 #include <data_structures.hpp>
 
-namespace flib {
+namespace flib2 {
 class register_file {
 public:
   virtual ~register_file(){};

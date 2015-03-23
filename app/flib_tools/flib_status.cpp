@@ -2,7 +2,7 @@
 
 #include <flib.h>
 
-using namespace flib;
+using namespace flib2;
 
 flib_device* MyFlib = NULL;
 

@@ -20,7 +20,7 @@
 
 using namespace pda;
 
-namespace flib {
+namespace flib2 {
 // Tags to indicate mode of buffer initialization
 struct create_only_t {};
 struct open_only_t {};

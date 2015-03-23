@@ -18,7 +18,7 @@
 
 using namespace pda;
 
-namespace flib {
+namespace flib2 {
 class flib_device;
 class flib_link;
 
