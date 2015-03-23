@@ -17,11 +17,11 @@
 
 #include <pda.h>
 
-#include <dma_channel.hpp>
+#include <pda/dma_buffer.hpp>
+#include <pda/device.hpp>
+#include <pda/pci_bar.hpp>
 
-#include <device.hpp>
-#include <pci_bar.hpp>
-#include <dma_buffer.hpp>
+#include <dma_channel.hpp>
 #include <registers.h>
 #include <register_file_bar.hpp>
 

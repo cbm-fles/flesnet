@@ -4,9 +4,7 @@
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
  */
-
-#ifndef DATA_STRUCTURES_HH
-#define DATA_STRUCTURES_HH
+#pragma once
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -23,14 +21,6 @@ typedef uint64_t sys_bus_addr;
  * of the chipset and the FPGA PCIe core before modifying this value
  * Common values are 128 or 256 bytes.*/
 #define MAX_PAYLOAD 128
-
-namespace pda {
-class PdaException : public std::runtime_error {
-public:
-  explicit PdaException(const std::string& what_arg = "")
-      : std::runtime_error(what_arg) {}
-};
-}
 
 namespace flib {
 class FlibException : public std::runtime_error {
@@ -117,18 +107,4 @@ struct t_sg_entry_cfg {
   uint32_t ctrl;
 };
 
-#define RORCFS_DMA_FROM_DEVICE 2
-#define RORCFS_DMA_TO_DEVICE 1
-#define RORCFS_DMA_BIDIRECTIONAL 0
-
-#ifndef PAGE_MASK
-#define PAGE_MASK ~(sysconf(_SC_PAGESIZE) - 1)
-#endif
-
-#ifndef PAGE_SIZE
-#define PAGE_SIZE sysconf(_SC_PAGESIZE)
-#endif
-
 #pragma GCC diagnostic pop
-
-#endif /** DATA_STRUCTURES_HH */

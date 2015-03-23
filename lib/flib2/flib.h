@@ -34,9 +34,6 @@
 #define FLIB_H
 
 #include <registers.h>
-#include <device.hpp> 
-#include <pci_bar.hpp>
-#include <dma_buffer.hpp> 
 
 #include <flib_device.hpp>
 #include <flib_link.hpp>

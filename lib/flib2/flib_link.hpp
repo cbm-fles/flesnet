@@ -8,17 +8,15 @@
 #ifndef FLIB_LINK_HPP
 #define FLIB_LINK_HPP
 
+#include <pda/device.hpp>
+#include <pda/dma_buffer.hpp>
+#include <pda/pci_bar.hpp>
+
 #include <registers.h>
 #include <data_structures.hpp>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-
-namespace pda{
-  class device;
-  class pci_bar;
-  class dma_buffer;
-}
 
 using namespace pda;
 
@@ -76,8 +74,8 @@ public:
   data_sel_t data_sel();
   std::string data_buffer_info();
   std::string desc_buffer_info();
-  dma_buffer* data_buffer() const;
-  dma_buffer* desc_buffer() const;
+  void* data_buffer() const;
+  void* desc_buffer() const;
   dma_channel* channel() const;
   register_file_bar* register_file_packetizer() const;
   register_file_bar* register_file_gtx() const;

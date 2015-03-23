@@ -17,8 +17,8 @@
 #include <flib_device.hpp>
 #include <flib_link.hpp>
 #include <register_file_bar.hpp>
-#include <device.hpp>
-#include <pci_bar.hpp>
+#include <pda/device.hpp>
+#include <pda/pci_bar.hpp>
 
 using namespace pda;
 

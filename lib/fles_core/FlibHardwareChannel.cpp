@@ -28,10 +28,10 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                          desc_buffer_bytes_exp);
 
     uint8_t* data_buffer =
-        reinterpret_cast<uint8_t*>(_flib_link->data_buffer()->mem());
+        reinterpret_cast<uint8_t*>(_flib_link->data_buffer());
     fles::MicrosliceDescriptor* desc_buffer =
         reinterpret_cast<fles::MicrosliceDescriptor*>(
-            _flib_link->desc_buffer()->mem());
+            _flib_link->desc_buffer());
 
     _data_buffer_view = std::unique_ptr<RingBufferView<volatile uint8_t>>(
         new RingBufferView<volatile uint8_t>(data_buffer,

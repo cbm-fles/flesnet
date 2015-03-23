@@ -10,13 +10,11 @@
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 
+#include <pda/device.hpp>
+#include <pda/pci_bar.hpp>
+
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic ignored "-Wold-style-cast"
-
-namespace pda {
-class device;
-class pci_bar;
-}
 
 using namespace pda;
 

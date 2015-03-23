@@ -8,12 +8,10 @@
 #ifndef DMA_CHANNEL_H
 #define DMA_CHANNEL_H
 
-#include <data_structures.hpp>
+#include <pda/device.hpp>
+#include <pda/dma_buffer.hpp>
 
-namespace pda {
-class dma_buffer;
-class device;
-}
+#include <data_structures.hpp>
 
 using namespace pda;
 

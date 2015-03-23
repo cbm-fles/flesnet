@@ -13,10 +13,12 @@
 #include <memory>
 #include <stdexcept>
 
+#include <pda/device.hpp>
+#include <pda/dma_buffer.hpp>
+#include <pda/pci_bar.hpp>
+#include <pda/data_structures.hpp>
+
 #include <flib_link.hpp>
-#include <device.hpp>
-#include <dma_buffer.hpp>
-#include <pci_bar.hpp>
 #include <dma_channel.hpp>
 #include <flib_device.hpp>
 #include <flib_link.hpp>
@@ -241,9 +243,13 @@ std::string flib_link::desc_buffer_info() {
   return print_buffer_info(m_desc_buffer.get());
 }
 
-dma_buffer* flib_link::data_buffer() const { return m_data_buffer.get(); }
+void* flib_link::data_buffer() const {
+  return reinterpret_cast<void*>(m_data_buffer->mem());
+}
 
-dma_buffer* flib_link::desc_buffer() const { return m_desc_buffer.get(); }
+void* flib_link::desc_buffer() const {
+  return reinterpret_cast<void*>(m_desc_buffer->mem());
+}
 
 dma_channel* flib_link::channel() const { return m_channel.get(); }
 

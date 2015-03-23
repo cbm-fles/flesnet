@@ -7,8 +7,9 @@
 
 #include <string.h>
 
+#include <pda/pci_bar.hpp>
+#include <pda/data_structures.hpp>
 #include <register_file_bar.hpp>
-#include <pci_bar.hpp>
 
 namespace flib {
   register_file_bar::register_file_bar(pci_bar* bar, sys_bus_addr base_addr)
