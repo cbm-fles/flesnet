@@ -22,7 +22,7 @@
 
 using namespace pda;
 
-namespace flib {
+namespace flib2 {
 
 flib_device::flib_device(int device_nr) {
   /** TODO: add exception handling here */
@@ -83,8 +83,6 @@ void flib_device::set_mc_time(uint32_t time) {
   reg = (reg & ~0x7FFFFFFF) | (time & 0x7FFFFFFF);
   m_register_file->set_reg(RORC_REG_MC_CNT_CFG, reg);
 }
-
-void flib_device::send_dlm() { m_register_file->set_reg(RORC_REG_DLM_CFG, 1); }
 
 uint8_t flib_device::number_of_hw_links() {
   return (m_register_file->reg(RORC_REG_N_CHANNELS) & 0xFF);

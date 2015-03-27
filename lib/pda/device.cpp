@@ -16,7 +16,7 @@
 
 using namespace std;
 
-namespace flib {
+namespace pda {
 device::device(int32_t device_index) {
   const char* pci_ids[] = {
       "10dc beaf", /* CRORC as registered at CERN */
@@ -24,12 +24,12 @@ device::device(int32_t device_index) {
   };
 
   if ((m_dop = DeviceOperator_new(pci_ids)) == NULL) {
-    throw FlibException("Device operator instantiation failed.");
+    throw PdaException("Device operator instantiation failed.");
   }
 
   if (DeviceOperator_getPciDevice(m_dop, &m_device, device_index) !=
       PDA_SUCCESS) {
-    throw FlibException("Device object creation failed.");
+    throw PdaException("Device object creation failed.");
   }
 }
 

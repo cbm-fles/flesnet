@@ -22,7 +22,7 @@ typedef uint64_t sys_bus_addr;
  * Common values are 128 or 256 bytes.*/
 #define MAX_PAYLOAD 128
 
-namespace flib {
+namespace flib2 {
 class FlibException : public std::runtime_error {
 public:
   explicit FlibException(const std::string& what_arg = "")

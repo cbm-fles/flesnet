@@ -28,7 +28,7 @@
 using namespace std;
 using namespace pda;
 
-namespace flib {
+namespace flib2 {
 
 dma_channel::dma_channel(register_file_bar* rf, device* parent_device)
     : m_rfpkt(rf), m_MaxPayload(0) {}

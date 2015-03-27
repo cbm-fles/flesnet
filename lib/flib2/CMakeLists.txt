@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(LIBFLIB)
+project(LIBFLIB2)
 
-include_directories( ${LIBFLIB_SOURCE_DIR}/  ${LIBFLIB_SOURCE_DIR}/../)
+include_directories( ${LIBFLIB2_SOURCE_DIR}/  ${LIBFLIB2_SOURCE_DIR}/../)
 
 set(VERSION "0.0.0")
 
@@ -23,9 +23,9 @@ set(LIB_HDR
   register_file_bar.hpp
 )
 
-add_library(flib SHARED ${LIB_HDR} ${LIB_SRC})
-add_library(flib-static STATIC ${LIB_HDR} ${LIB_SRC})
-set_target_properties(flib-static PROPERTIES OUTPUT_NAME flib)
+add_library(flib2 SHARED ${LIB_HDR} ${LIB_SRC})
+add_library(flib-static2 STATIC ${LIB_HDR} ${LIB_SRC})
+set_target_properties(flib-static2 PROPERTIES OUTPUT_NAME flib2)
 
-target_link_libraries( flib pda)
-target_link_libraries( flib-static pda)
+target_link_libraries( flib2 pda)
+target_link_libraries( flib-static2 pda)

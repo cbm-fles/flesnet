@@ -18,7 +18,7 @@ class pci_bar;
 
 using namespace pda;
 
-namespace flib {
+namespace flib2 {
 
 class register_file_bar : public register_file {
 

@@ -13,14 +13,13 @@
 typedef struct DeviceOperator_struct DeviceOperator;
 typedef struct PciDevice_struct PciDevice;
 
-namespace flib {
+namespace pda {
 /**
  * @class
  * @brief Represents a FLIB PCIe device
  **/
 class device {
   friend class dma_buffer;
-  friend class dma_channel;
 
 public:
   device(int32_t device_index);

@@ -18,7 +18,7 @@
 
 using namespace pda;
 
-namespace flib {
+namespace flib2 {
 class flib_device;
 class flib_link;
 
@@ -34,7 +34,7 @@ struct build_info_t {
   uint8_t repo;
 };
 
-constexpr std::array<uint16_t, 1> hw_ver_table = {{8}};
+constexpr std::array<uint16_t, 1> hw_ver_table = {{20}};
 
 class flib_device {
 
@@ -45,8 +45,6 @@ public:
   bool check_hw_ver();
   void enable_mc_cnt(bool enable);
   void set_mc_time(uint32_t time);
-  void send_dlm();
-  /** global dlm send, requires link local prepare_dlm beforehand */
   uint8_t number_of_hw_links();
 
   uint16_t hardware_version();

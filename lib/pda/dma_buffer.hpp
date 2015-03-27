@@ -14,7 +14,7 @@
 typedef struct DMABuffer_struct DMABuffer;
 typedef struct DMABuffer_SGNode_struct DMABuffer_SGNode;
 
-namespace flib {
+namespace pda {
 class device;
 
 /**
@@ -27,7 +27,6 @@ class device;
  **/
 class dma_buffer {
 public:
-  friend class dma_channel;
 
   dma_buffer();
   ~dma_buffer();
@@ -97,18 +96,16 @@ public:
   uint64_t numberOfSGEntries() { return m_scatter_gather_entries; }
 
   /**
-   * Maximum number of report buffer entries in the RB
-   * @return maximum number of report buffer entries
-   */
-  uint64_t maxRBEntries() {
-    return (m_physical_size / sizeof(struct rorcfs_event_descriptor));
-  }
-
-  /**
    * return memory buffer
    * @return pointer to mmap'ed buffer memory
    **/
   unsigned int* mem() { return m_mem; }
+
+  /**
+   * return SG list
+   * @return pointer to scatter gather list
+   **/
+  DMABuffer_SGNode* sglist() { return m_sglist; }
 
 protected:
   PciDevice* m_device = NULL;

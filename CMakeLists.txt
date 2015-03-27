@@ -25,7 +25,7 @@ set(BOOST_ROOT ${SIMPATH})
 find_package(Boost 1.54.0 COMPONENTS log serialization thread program_options system REQUIRED)
 find_package(Threads)
 find_package(ZMQ REQUIRED)
-find_package(PDA 8.0.4 REQUIRED)
+find_package(PDA 10.1.6 REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
@@ -34,6 +34,8 @@ add_definitions(-DBOOST_LOG_DYN_LINK)
 add_subdirectory(lib/logging)
 add_subdirectory(lib/fles_core)
 add_subdirectory(lib/flib)
+add_subdirectory(lib/flib2)
+add_subdirectory(lib/pda)
 
 ExternalProject_add(
  fles_ipc
@@ -47,7 +49,9 @@ ExternalProject_add(
 add_subdirectory(app/flesnet)
 add_subdirectory(app/tsclient)
 add_subdirectory(app/flib_debug)
+add_subdirectory(app/flib_tools)
 add_subdirectory(app/flib_ctrl)
+add_subdirectory(app/flib_cfg)
 
 add_subdirectory(doc)
 
