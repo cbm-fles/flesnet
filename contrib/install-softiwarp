@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright 2014 Jan de Cuveland <cmail@cuveland.de>
 
 set -ex
 
