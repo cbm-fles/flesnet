@@ -63,7 +63,7 @@ int dma_buffer::reg(device* device, void *buf, uint64_t size, uint64_t id,
                          int overmap, int dma_direction) {
   m_device = device->m_device;
 
-  if (PDA_SUCCESS != registerDMABuffer(m_device, id, buf, size, &m_buffer))
+  if (PDA_SUCCESS != PciDevice_registerDMABuffer(m_device, id, buf, size, &m_buffer))
   { return -1; }
 
   if (overmap == 1) {
