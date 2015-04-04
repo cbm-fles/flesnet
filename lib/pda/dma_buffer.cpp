@@ -7,16 +7,23 @@
 
 #include <iostream>
 
+#include <stdio.h>
+#include <string.h>
+#include <malloc.h>
+#include <unistd.h>
+
 #include <pda.h>
 
 #include <dma_buffer.hpp>
 #include <device.hpp>
 
+#define PAGE_SIZE sysconf(_SC_PAGESIZE)
+
 using namespace std;
 
 namespace pda{
 
-dma_buffer::dma_buffer() {}
+dma_buffer::dma_buffer() { }
 
 dma_buffer::~dma_buffer() {
   m_physical_size = 0;
@@ -30,9 +37,33 @@ dma_buffer::~dma_buffer() {
  **/
 int dma_buffer::allocate(device* device, uint64_t size, uint64_t id,
                          int overmap, int dma_direction) {
+//  m_device = device->m_device;
+//
+//  if (PDA_SUCCESS != PciDevice_allocDMABuffer(m_device, id, size, &m_buffer))
+//  { return -1; }
+//
+//  if (overmap == 1) {
+//    if (PDA_SUCCESS != DMABuffer_wrapMap(m_buffer)) {
+//      return -1;
+//    }
+//  }
+//
+//  return connect(device, id);
+
+    m_alloced_mem = memalign(PAGE_SIZE, size);
+    if(m_alloced_mem == NULL)
+    { return -1; }
+
+    memset(m_alloced_mem, 0, size);
+    return(reg(device, m_alloced_mem, size, id, overmap, dma_direction));
+
+}
+
+int dma_buffer::reg(device* device, void *buf, uint64_t size, uint64_t id,
+                         int overmap, int dma_direction) {
   m_device = device->m_device;
 
-  if (PDA_SUCCESS != PciDevice_allocDMABuffer(m_device, id, size, &m_buffer))
+  if (PDA_SUCCESS != registerDMABuffer(m_device, id, buf, size, &m_buffer))
   { return -1; }
 
   if (overmap == 1) {
@@ -54,6 +85,11 @@ int dma_buffer::deallocate() {
 
   m_id = 0;
   m_mem = NULL;
+
+  if(m_alloced_mem != NULL){
+    free(m_alloced_mem);
+    m_alloced_mem = NULL;
+  }
 
   return 0;
 }

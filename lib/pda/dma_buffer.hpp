@@ -47,6 +47,9 @@ public:
   int allocate(device* dev, uint64_t size, uint64_t id, int overmap,
                int dma_direction);
 
+  int reg(device* device, void *buf, uint64_t size, uint64_t id,
+                           int overmap, int dma_direction);
+
   /**
    * Free Buffer: This functions initiates de-allocation of the
    * attaced DMA buffers
@@ -113,11 +116,12 @@ protected:
   DMABuffer_SGNode* m_sglist = NULL;
   uint64_t m_id = 0;
 
-  unsigned int* m_mem = NULL;
+  unsigned int* m_mem      = NULL;
   uint64_t m_physical_size = 0;
-  uint64_t m_mapping_size = 0;
+  uint64_t m_mapping_size  = 0;
 
   uint64_t m_scatter_gather_entries = 0;
+  void *m_alloced_mem = NULL;
 };
 }
 #endif
