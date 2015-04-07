@@ -407,7 +407,7 @@ std::unique_ptr<dma_buffer> flib_link::create_buffer(size_t idx,
                                                      size_t log_size) {
   unsigned long size = (((unsigned long)1) << log_size);
   std::unique_ptr<dma_buffer> buffer(new dma_buffer());
-  if (buffer->allocate(m_device, size, 2 * m_link_index + idx, 1,
+  if (buffer->allocate(m_device, size, 2 * m_link_index + idx, 0,
                        RORCFS_DMA_FROM_DEVICE) != 0) {
     if (errno == EEXIST) {
       throw FlibException(
@@ -432,7 +432,7 @@ std::unique_ptr<dma_buffer> flib_link::open_or_create_buffer(size_t idx,
   unsigned long size = (((unsigned long)1) << log_size);
   std::unique_ptr<dma_buffer> buffer(new dma_buffer());
 
-  if (buffer->allocate(m_device, size, 2 * m_link_index + idx, 1,
+  if (buffer->allocate(m_device, size, 2 * m_link_index + idx, 0,
                        RORCFS_DMA_FROM_DEVICE) != 0) {
     if (errno == EEXIST) {
       if (buffer->connect(m_device, 2 * m_link_index + idx) != 0) {
