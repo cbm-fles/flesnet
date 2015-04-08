@@ -397,41 +397,28 @@ flib_link::link_status_t flib_link::link_status() {
 std::unique_ptr<dma_buffer> flib_link::create_buffer(size_t idx,
                                                      size_t log_size) {
   unsigned long size = (((unsigned long)1) << log_size);
-  std::unique_ptr<dma_buffer> buffer(new dma_buffer());
-  if (buffer->allocate(m_device, size, 2 * m_link_index + idx, 0,
-                       RORCFS_DMA_FROM_DEVICE) != 0) {
-    if (errno == EEXIST) {
-      throw FlibException(
-          "Buffer already exists, not allowed to open in create only mode");
-    } else {
-      throw FlibException("Buffer allocation failed");
-    }
-  }
+  std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, size, (2*m_link_index+idx) ));
   return buffer;
 }
 
 std::unique_ptr<dma_buffer> flib_link::open_buffer(size_t idx) {
-  std::unique_ptr<dma_buffer> buffer(new dma_buffer());
-  if (buffer->connect(m_device, 2 * m_link_index + idx) != 0) {
-    throw FlibException("Connect to buffer failed");
-  }
+  std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, (2*m_link_index+idx)));
   return buffer;
 }
 
 std::unique_ptr<dma_buffer> flib_link::open_or_create_buffer(size_t idx,
                                                              size_t log_size) {
   unsigned long size = (((unsigned long)1) << log_size);
-  std::unique_ptr<dma_buffer> buffer(new dma_buffer());
 
-  if (buffer->allocate(m_device, size, 2 * m_link_index + idx, 0,
-                       RORCFS_DMA_FROM_DEVICE) != 0) {
-    if (errno == EEXIST) {
-      if (buffer->connect(m_device, 2 * m_link_index + idx) != 0) {
-        throw FlibException("Buffer open failed");
-      }
-    } else {
+  try
+  { std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, size, (2*m_link_index+idx))); }
+  catch(...)
+  {
+      try
+      { std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, (2*m_link_index+idx))); }
+      catch(...)
+      { throw FlibException("Buffer open failed"); }
       throw FlibException("Buffer allocation failed");
-    }
   }
 
   return buffer;
