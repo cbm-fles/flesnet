@@ -182,7 +182,7 @@ protected:
   /**
    * Initializes hardware to perform DMA transfers
    */
-  int init_hardware();
+  void init_hardware();
 
   std::string print_buffer_info(dma_buffer* buf);
 };
