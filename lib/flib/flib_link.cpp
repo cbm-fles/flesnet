@@ -410,12 +410,14 @@ std::unique_ptr<dma_buffer> flib_link::open_or_create_buffer(size_t idx,
                                                              size_t log_size) {
   unsigned long size = (((unsigned long)1) << log_size);
 
+
+
   try
-  { std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, size, (2*m_link_index+idx))); }
+  { return(std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, size, (2*m_link_index+idx)))); }
   catch(...)
   {
       try
-      { std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, (2*m_link_index+idx))); }
+      { return(std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, (2*m_link_index+idx)))); }
       catch(...)
       { throw FlibException("Buffer open failed"); }
       throw FlibException("Buffer allocation failed");
