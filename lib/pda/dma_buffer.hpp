@@ -98,7 +98,7 @@ public:
 
 protected:
 
-    void connect(device* dev, uint64_t id);
+    void connect(device* device, uint64_t id);
     int deallocate();
 
     PciDevice* m_device        = NULL;
