@@ -14,6 +14,14 @@
 typedef struct DMABuffer_struct DMABuffer;
 typedef struct DMABuffer_SGNode_struct DMABuffer_SGNode;
 
+#define DMA_BUFFER_FAULT_MAP       1
+#define DMA_BUFFER_FAULT_LENGTH    2
+#define DMA_BUFFER_FAULT_SGLIST    3
+#define DMA_BUFFER_FAULT_BUFFERREG 4
+#define DMA_BUFFER_FAULT_ALLOC     5
+#define DMA_BUFFER_FAULT_FREE      6
+
+
 namespace pda {
 class device;
 
@@ -28,100 +36,83 @@ class device;
 class dma_buffer {
 public:
 
-  dma_buffer();
-  ~dma_buffer();
+    /**
+     * Allocate buffer: This function initiates allocation of an
+     * EventBuffer of [size] bytes with Buffer-ID [id]. The size
+     * of the according ReportBuffer is determined by the driver.
+     * @param device pointer to parent rorcfs_device instance
+     * @param size Size of EventBuffer in bytes
+     * @param id Buffer-ID to be used for this buffer. This ID has to
+     *        be unique within all instances of rorcfs_buffer on a machine.
+     */
+     dma_buffer(device* device, uint64_t size, uint64_t id);
+     dma_buffer(device* device, void *buf, uint64_t size, uint64_t id);
+     dma_buffer(device* device, uint64_t id);
 
-  /**
-   * Allocate buffer: This function initiates allocation of an
-   * EventBuffer of [size] bytes with Buffer-ID [id]. The size
-   * of the according ReportBuffer is determined by the driver.
-   * @param dev pointer to parent rorcfs_device instance
-   * @param size Size of EventBuffer in bytes
-   * @param id Buffer-ID to be used for this buffer. This ID has to
-   *        be unique within all instances of rorcfs_buffer on a machine.
-   * @param overmap enables overmapping of the physical pages if nonzero
-   * @param dma_direction select from RORCFS_DMA_FROM_DEVICE,
-   *        RORCFS_DMA_TO_DEVICE, RORCFS_DMA_BIDIRECTIONAL
-   * @return 0 on sucess, -1 on error
-   */
-  int allocate(device* dev, uint64_t size, uint64_t id, int overmap,
-               int dma_direction);
+    ~dma_buffer();
 
-  int reg(device* device, void *buf, uint64_t size, uint64_t id,
-                           int overmap, int dma_direction);
+    /**
+     * Buffer-ID
+     * @return unsigned long Buffer-ID
+     */
+    uint64_t ID() { return m_id; }
 
-  /**
-   * Free Buffer: This functions initiates de-allocation of the
-   * attaced DMA buffers
-   * @return 0 on sucess, <0 on error ( use perror() )
-   */
-  int deallocate();
+    /**
+     * Physical Buffer size in bytes. Requested buffer
+     * size from init() is rounded up to the next PAGE_SIZE
+     * boundary.
+     * @return number of bytes allocated as Buffer
+     */
+    uint64_t physicalSize() { return m_physical_size; }
 
-  /**
-   * Connect to an existing buffer
-   * @param dev parent rorcfs device
-   * @param id buffer ID of exisiting buffer
-   * @return 0 on sucessful connect, -EPERM or -ENOMEM on errors
-   */
-  int connect(device* dev, uint64_t id);
+    /**
+     * Size of the EB mapping. THis is double the size of
+     * the physical buffer size due to overmapping
+     * @return size of the EB mapping in bytes
+     */
+    uint64_t mappingSize() { return m_mapping_size; }
 
-  /**
-   * Buffer-ID
-   * @return unsigned long Buffer-ID
-   */
-  uint64_t ID() { return m_id; }
+    /**
+     * Is the buffer overmapped or not
+     * @return 0 if unset, nonzero if set
+     */
+    int isOvermapped();
 
-  /**
-   * Physical Buffer size in bytes. Requested buffer
-   * size from init() is rounded up to the next PAGE_SIZE
-   * boundary.
-   * @return number of bytes allocated as Buffer
-   */
-  uint64_t physicalSize() { return m_physical_size; }
+    /**
+     * Number of scatter-gather entries for the Buffer
+     * @return number of entries
+     */
+    uint64_t numberOfSGEntries() { return m_scatter_gather_entries; }
 
-  /**
-   * Size of the EB mapping. THis is double the size of
-   * the physical buffer size due to overmapping
-   * @return size of the EB mapping in bytes
-   */
-  uint64_t mappingSize() { return m_mapping_size; }
+    /**
+     * return memory buffer
+     * @return pointer to mmap'ed buffer memory
+     **/
+    unsigned int* mem() { return m_mem; }
 
-  /**
-   * Is the buffer overmapped or not
-   * @return 0 if unset, nonzero if set
-   */
-  int isOvermapped();
-
-  /**
-   * Number of scatter-gather entries for the Buffer
-   * @return number of entries
-   */
-  uint64_t numberOfSGEntries() { return m_scatter_gather_entries; }
-
-  /**
-   * return memory buffer
-   * @return pointer to mmap'ed buffer memory
-   **/
-  unsigned int* mem() { return m_mem; }
-
-  /**
-   * return SG list
-   * @return pointer to scatter gather list
-   **/
-  DMABuffer_SGNode* sglist() { return m_sglist; }
+    /**
+     * return SG list
+     * @return pointer to scatter gather list
+     **/
+    DMABuffer_SGNode* sglist() { return m_sglist; }
 
 protected:
-  PciDevice* m_device = NULL;
-  DMABuffer* m_buffer = NULL;
-  DMABuffer_SGNode* m_sglist = NULL;
-  uint64_t m_id = 0;
 
-  unsigned int* m_mem      = NULL;
-  uint64_t m_physical_size = 0;
-  uint64_t m_mapping_size  = 0;
+    void connect(device* device, uint64_t id);
+    int deallocate();
 
-  uint64_t m_scatter_gather_entries = 0;
-  void *m_alloced_mem = NULL;
+    PciDevice* m_device        = NULL;
+    DMABuffer* m_buffer        = NULL;
+    DMABuffer_SGNode* m_sglist = NULL;
+    uint64_t m_id = 0;
+
+    unsigned int* m_mem        = NULL;
+    uint64_t m_physical_size   = 0;
+    uint64_t m_mapping_size    = 0;
+
+    uint64_t m_scatter_gather_entries = 0;
+    void *m_alloced_mem = NULL;
 };
+
 }
 #endif
