@@ -24,12 +24,10 @@ namespace flib {
 // Tags to indicate mode of buffer initialization
 struct create_only_t {};
 struct open_only_t {};
-struct open_or_create_t {};
 struct register_only_t {};
 
 static const create_only_t create_only = create_only_t();
 static const open_only_t open_only = open_only_t();
-static const open_or_create_t open_or_create = open_or_create_t();
 static const register_only_t register_only = register_only_t();
 
 class dma_channel;
@@ -40,17 +38,15 @@ public:
   flib_link(size_t link_index, device* dev, pci_bar* bar);
   ~flib_link();
 
-  int init_dma(create_only_t, size_t log_ebufsize, size_t log_dbufsize);
-
-  int init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize);
-
-  int init_dma(open_or_create_t, size_t log_ebufsize, size_t log_dbufsize);
-
-  int init_dma(register_only_t,
+  void init_dma(register_only_t,
                void* ebfu,
                size_t log_ebufsize,
                void* dbuf,
                size_t log_dbufsize);
+
+  void init_dma(create_only_t, size_t log_ebufsize, size_t log_dbufsize);
+
+  void init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize);
 
   /*** MC access funtions ***/
   std::pair<mc_desc, bool> mc();
@@ -166,30 +162,6 @@ protected:
 
   volatile uint64_t* m_eb = nullptr;
   volatile struct MicrosliceDescriptor* m_db = nullptr;
-
-  /**
-   * Creates new buffer, throws an exception if buffer already exists
-   */
-  std::unique_ptr<dma_buffer> create_buffer(size_t idx, size_t log_size);
-
-  /**
-   * Opens an existing buffer, throws an exception if buffer
-   * doesn't exists
-   */
-  std::unique_ptr<dma_buffer> open_buffer(size_t idx);
-
-  /**
-   * Opens an existing buffer or creates new buffer if non exists
-   */
-  std::unique_ptr<dma_buffer> open_or_create_buffer(size_t idx,
-                                                    size_t log_size);
-
-  /**
-   * Registers a given user space buffer for dma
-   */
-  std::unique_ptr<dma_buffer> register_buffer(size_t idx,
-                                              void* mem,
-                                              size_t log_size);
 
   void reset_channel();
   void stop();

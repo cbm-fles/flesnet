@@ -105,7 +105,7 @@ dma_buffer::connect(device* device, uint64_t id) {
     }
 }
 
-int dma_buffer::deallocate(){
+void dma_buffer::deallocate(){
     PciDevice_deleteDMABuffer(m_device, m_buffer);
 }
 

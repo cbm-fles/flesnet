@@ -99,7 +99,7 @@ public:
 protected:
 
     void connect(device* device, uint64_t id);
-    int deallocate();
+    void deallocate();
 
     PciDevice* m_device        = NULL;
     DMABuffer* m_buffer        = NULL;

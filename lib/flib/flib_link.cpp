@@ -45,55 +45,45 @@ flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)
 
 flib_link::~flib_link() {
   stop();
-//  delete m_data_buffer;
-//  delete m_desc_buffer;
 }
 
-int flib_link::init_dma(create_only_t, size_t log_ebufsize,
+void flib_link::init_dma(register_only_t,
+                        void* ebuf,
+                        size_t log_ebufsize,
+                        void* dbuf,
                         size_t log_dbufsize) {
   m_log_ebufsize = log_ebufsize;
   m_log_dbufsize = log_dbufsize;
-  m_data_buffer = create_buffer(0, log_ebufsize);
-  m_desc_buffer = create_buffer(1, log_dbufsize);
+  m_data_buffer =
+    std::unique_ptr<dma_buffer>(new dma_buffer(m_device, ebuf, (1ull << log_ebufsize), (2*m_link_index+0)));
+  m_desc_buffer =
+    std::unique_ptr<dma_buffer>(new dma_buffer(m_device, dbuf, (1ull << log_dbufsize), (2*m_link_index+1)));
   init_hardware();
   m_dma_initialized = true;
-  return 0;
 }
 
-int flib_link::init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize) {
+void flib_link::init_dma(create_only_t,
+                         size_t log_ebufsize,
+                         size_t log_dbufsize) {
   m_log_ebufsize = log_ebufsize;
   m_log_dbufsize = log_dbufsize;
-  m_data_buffer = open_buffer(0);
-  m_desc_buffer = open_buffer(1);
+  m_data_buffer =
+    std::unique_ptr<dma_buffer>(new dma_buffer(m_device, (1ull << log_ebufsize), (2*m_link_index+0)));
+  m_desc_buffer =
+    std::unique_ptr<dma_buffer>(new dma_buffer(m_device, (1ull << log_dbufsize), (2*m_link_index+1)));
   init_hardware();
   m_dma_initialized = true;
-  return 0;
 }
-
-int flib_link::init_dma(open_or_create_t, size_t log_ebufsize,
-                        size_t log_dbufsize) {
+   
+void flib_link::init_dma(open_only_t,
+                         size_t log_ebufsize,
+                         size_t log_dbufsize) {
   m_log_ebufsize = log_ebufsize;
   m_log_dbufsize = log_dbufsize;
-  m_data_buffer = open_or_create_buffer(0, log_ebufsize);
-  m_desc_buffer = open_or_create_buffer(1, log_dbufsize);
+  m_data_buffer = std::unique_ptr<dma_buffer>(new dma_buffer(m_device, (2*m_link_index+0)));
+  m_desc_buffer = std::unique_ptr<dma_buffer>(new dma_buffer(m_device, (2*m_link_index+1)));
   init_hardware();
   m_dma_initialized = true;
-  return 0;
-}
-
-  int flib_link::init_dma(register_only_t,
-                          void* ebuf,
-                          size_t log_ebufsize,
-                          void* dbuf,
-                          size_t log_dbufsize) {
-  m_log_ebufsize = log_ebufsize;
-  m_log_dbufsize = log_dbufsize;
-  // Register here !!!
-  //m_data_buffer = create_buffer(0, log_ebufsize);
-  //m_desc_buffer = create_buffer(1, log_dbufsize);
-  init_hardware();
-  m_dma_initialized = true;
-  return 0;
 }
 
 /*** MC access funtions ***/
@@ -408,47 +398,6 @@ flib_link::link_status_t flib_link::link_status() {
 }
 
 /*** PROTECTED ***/
-
-std::unique_ptr<dma_buffer> flib_link::create_buffer(size_t idx,
-                                                     size_t log_size) {
-  unsigned long size = (((unsigned long)1) << log_size);
-  std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, size, (2*m_link_index+idx) ));
-  return buffer;
-}
-
-std::unique_ptr<dma_buffer> flib_link::open_buffer(size_t idx) {
-  std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, (2*m_link_index+idx)));
-  return buffer;
-}
-
-std::unique_ptr<dma_buffer> flib_link::open_or_create_buffer(size_t idx,
-                                                             size_t log_size) {
-  unsigned long size = (((unsigned long)1) << log_size);
-
-
-
-  try
-  { return(std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, size, (2*m_link_index+idx)))); }
-  catch(...)
-  {
-      try
-      { return(std::unique_ptr<dma_buffer> buffer(new dma_buffer(m_device, (2*m_link_index+idx)))); }
-      catch(...)
-      { throw FlibException("Buffer open failed"); }
-      throw FlibException("Buffer allocation failed");
-  }
-}
-
-std::unique_ptr<dma_buffer> flib_link::register_buffer(size_t idx,
-                                                         void* mem,
-                                                         size_t log_size) {
-    std::unique_ptr<dma_buffer> buffer(new dma_buffer());
-    //DO stuff here
-    //    if (buffer->connect(m_device, 2 * m_link_index + idx) != 0) {
-    throw FlibException("Register buffer failed");
-    //}
-  return buffer;
-}
   
 void flib_link::reset_channel() {
   // datapath reset, will also cause hw defaults for
