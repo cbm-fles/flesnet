@@ -90,6 +90,21 @@ int flib_link::init_dma(open_or_create_t, size_t log_ebufsize,
   return 0;
 }
 
+  int flib_link::init_dma(register_only_t,
+                          void* ebuf,
+                          size_t log_ebufsize,
+                          void* dbuf,
+                          size_t log_dbufsize) {
+  m_log_ebufsize = log_ebufsize;
+  m_log_dbufsize = log_dbufsize;
+  // Register here !!!
+  //m_data_buffer = create_buffer(0, log_ebufsize);
+  //m_desc_buffer = create_buffer(1, log_dbufsize);
+  init_hardware();
+  m_dma_initialized = true;
+  return 0;
+}
+
 /*** MC access funtions ***/
 
 std::pair<mc_desc, bool> flib_link::mc() {
@@ -446,6 +461,17 @@ std::unique_ptr<dma_buffer> flib_link::open_or_create_buffer(size_t idx,
   return buffer;
 }
 
+std::unique_ptr<dma_buffer> flib_link::register_buffer(size_t idx,
+                                                         void* mem,
+                                                         size_t log_size) {
+    std::unique_ptr<dma_buffer> buffer(new dma_buffer());
+    //DO stuff here
+    //    if (buffer->connect(m_device, 2 * m_link_index + idx) != 0) {
+    throw FlibException("Register buffer failed");
+    //}
+  return buffer;
+}
+  
 void flib_link::reset_channel() {
   // datapath reset, will also cause hw defaults for
   // - pending mc  = 0

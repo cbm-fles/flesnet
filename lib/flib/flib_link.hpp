@@ -25,10 +25,12 @@ namespace flib {
 struct create_only_t {};
 struct open_only_t {};
 struct open_or_create_t {};
+struct register_only_t {};
 
 static const create_only_t create_only = create_only_t();
 static const open_only_t open_only = open_only_t();
 static const open_or_create_t open_or_create = open_or_create_t();
+static const register_only_t register_only = register_only_t();
 
 class dma_channel;
 class register_file_bar;
@@ -43,6 +45,12 @@ public:
   int init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize);
 
   int init_dma(open_or_create_t, size_t log_ebufsize, size_t log_dbufsize);
+
+  int init_dma(register_only_t,
+               void* ebfu,
+               size_t log_ebufsize,
+               void* dbuf,
+               size_t log_dbufsize);
 
   /*** MC access funtions ***/
   std::pair<mc_desc, bool> mc();
@@ -175,6 +183,13 @@ protected:
    */
   std::unique_ptr<dma_buffer> open_or_create_buffer(size_t idx,
                                                     size_t log_size);
+
+  /**
+   * Registers a given user space buffer for dma
+   */
+  std::unique_ptr<dma_buffer> register_buffer(size_t idx,
+                                              void* mem,
+                                              size_t log_size);
 
   void reset_channel();
   void stop();
