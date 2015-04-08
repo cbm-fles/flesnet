@@ -45,17 +45,8 @@ flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)
 
 flib_link::~flib_link() {
   stop();
-  // TODO move deallocte to destructor of buffer
-  if (m_data_buffer) {
-    if (m_data_buffer->deallocate() != 0) {
-      throw FlibException("ebuf->deallocate failed");
-    }
-  }
-  if (m_desc_buffer) {
-    if (m_desc_buffer->deallocate() != 0) {
-      throw FlibException("dbuf->deallocate failed");
-    }
-  }
+  delete m_data_buffer;
+  delete m_desc_buffer;
 }
 
 int flib_link::init_dma(create_only_t, size_t log_ebufsize,
