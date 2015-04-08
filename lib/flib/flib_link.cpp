@@ -45,8 +45,8 @@ flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)
 
 flib_link::~flib_link() {
   stop();
-  delete m_data_buffer;
-  delete m_desc_buffer;
+//  delete m_data_buffer;
+//  delete m_desc_buffer;
 }
 
 int flib_link::init_dma(create_only_t, size_t log_ebufsize,
