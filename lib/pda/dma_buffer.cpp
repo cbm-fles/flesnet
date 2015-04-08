@@ -50,6 +50,10 @@ dma_buffer::dma_buffer(device* device, void *buf, uint64_t size, uint64_t id)
 /** Attach an already existing buffer */
 dma_buffer::dma_buffer(device* device, uint64_t id)
 {
+    if(PDA_SUCCESS != PciDevice_getDMABuffer(device->m_device, id, &m_buffer)){
+        throw DMA_BUFFER_FAULT_BUFFERREG;
+    }
+
     connect(device, id);
 }
 
@@ -102,9 +106,7 @@ dma_buffer::connect(device* device, uint64_t id) {
 }
 
 int dma_buffer::deallocate(){
-    if(PciDevice_deleteDMABuffer(m_device, m_buffer) != PDA_SUCCESS) {
-        throw DMA_BUFFER_FAULT_FREE;
-    }
+    PciDevice_deleteDMABuffer(m_device, m_buffer);
 }
 
 
