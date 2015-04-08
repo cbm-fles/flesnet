@@ -422,8 +422,6 @@ std::unique_ptr<dma_buffer> flib_link::open_or_create_buffer(size_t idx,
       { throw FlibException("Buffer open failed"); }
       throw FlibException("Buffer allocation failed");
   }
-
-  return buffer;
 }
 
 void flib_link::reset_channel() {
