@@ -50,7 +50,7 @@ dma_buffer::dma_buffer(device* device, void *buf, uint64_t size, uint64_t id)
 /** Attach an already existing buffer */
 dma_buffer::dma_buffer(device* device, uint64_t id)
 {
-    connect(device->m_device, id);
+    connect(device, id);
 }
 
 
