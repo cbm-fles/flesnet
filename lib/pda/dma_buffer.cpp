@@ -79,7 +79,7 @@ int dma_buffer::isOvermapped()
 /** protected functions */
 
 void
-connect(device* dev, uint64_t id) {
+dma_buffer::connect(device* dev, uint64_t id) {
     m_device = device->m_device;
     m_id     = id;
 
