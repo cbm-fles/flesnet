@@ -14,13 +14,6 @@
 typedef struct DMABuffer_struct DMABuffer;
 typedef struct DMABuffer_SGNode_struct DMABuffer_SGNode;
 
-#define DMA_BUFFER_FAULT_MAP       1
-#define DMA_BUFFER_FAULT_LENGTH    2
-#define DMA_BUFFER_FAULT_SGLIST    3
-#define DMA_BUFFER_FAULT_BUFFERREG 4
-#define DMA_BUFFER_FAULT_ALLOC     5
-#define DMA_BUFFER_FAULT_FREE      6
-
 
 namespace pda {
 class device;

@@ -27,7 +27,7 @@ namespace pda{
 dma_buffer::dma_buffer(device* device, uint64_t size, uint64_t id)
 {
     if(PDA_SUCCESS != PciDevice_allocDMABuffer(device->m_device, id, size, &m_buffer)){
-        throw DMA_BUFFER_FAULT_ALLOC;
+      throw PdaException("DMA_BUFFER_FAULT_ALLOC");
     }
 
     connect(device, id);
@@ -39,7 +39,7 @@ dma_buffer::dma_buffer(device* device, uint64_t size, uint64_t id)
 dma_buffer::dma_buffer(device* device, void *buf, uint64_t size, uint64_t id)
 {
     if(PDA_SUCCESS != PciDevice_registerDMABuffer(device->m_device, id, buf, size, &m_buffer)){
-        throw DMA_BUFFER_FAULT_BUFFERREG;
+      throw PdaException("DMA_BUFFER_FAULT_REG");
     }
 
     connect(device, id);
@@ -51,7 +51,7 @@ dma_buffer::dma_buffer(device* device, void *buf, uint64_t size, uint64_t id)
 dma_buffer::dma_buffer(device* device, uint64_t id)
 {
     if(PDA_SUCCESS != PciDevice_getDMABuffer(device->m_device, id, &m_buffer)){
-        throw DMA_BUFFER_FAULT_BUFFERREG;
+        throw PdaException("DMA_BUFFER_FAULT_GET");
     }
 
     connect(device, id);
@@ -88,15 +88,15 @@ dma_buffer::connect(device* device, uint64_t id) {
     m_id     = id;
 
     if(DMABuffer_getMap(m_buffer, (void**)(&m_mem)) != PDA_SUCCESS) {
-        throw DMA_BUFFER_FAULT_MAP;
+      throw PdaException("DMA_BUFFER_FAULT_MAP");
     }
 
     if(DMABuffer_getLength(m_buffer, &m_physical_size) != PDA_SUCCESS) {
-        throw DMA_BUFFER_FAULT_LENGTH;
+        throw PdaException("DMA_BUFFER_FAULT_LENGTH");
     }
 
     if(DMABuffer_getSGList(m_buffer, &m_sglist) != PDA_SUCCESS) {
-        throw DMA_BUFFER_FAULT_SGLIST;
+      throw PdaException("DMA_BUFFER_FAULT_SGLIST");
     }
 
     m_scatter_gather_entries = 0;
