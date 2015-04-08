@@ -474,7 +474,7 @@ void flib_link::stop() {
   }
 }
 
-int flib_link::init_hardware() {
+void flib_link::init_hardware() {
   // disable packer if still enabled
   enable_cbmnet_packer(false);
   // reset everything to ensure clean startup
@@ -486,16 +486,16 @@ int flib_link::init_hardware() {
    * with scatter-gather list
    **/
   if (m_channel->prepareEB(m_data_buffer.get()) < 0) {
-    return -1;
+    throw FlibException("Preparing data buffer failed");
   }
 
   if (m_channel->prepareRB(m_desc_buffer.get()) < 0) {
-    return -1;
+    throw FlibException("Preparing descriptor buffer failed");
   }
 
   if (m_channel->configureChannel(m_data_buffer.get(), m_desc_buffer.get(), 128) <
       0) {
-    return -1;
+    throw FlibException("Configuring DMA channel failed");
   }
 
   // clear eb for debugging
@@ -513,8 +513,6 @@ int flib_link::init_hardware() {
   m_channel->enableEB(1);
   m_channel->enableRB(1);
   m_channel->setDMAConfig(m_channel->DMAConfig() | 0x01);
-
-  return 0;
 }
 
 std::string flib_link::print_buffer_info(dma_buffer* buf) {
