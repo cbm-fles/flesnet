@@ -26,9 +26,9 @@ namespace pda{
 /** Allocate a new one */
 dma_buffer::dma_buffer(device* device, uint64_t size, uint64_t id)
 {
-    if(PDA_SUCCESS != PciDevice_allocDMABuffer(device, id, size, &m_buffer)){
-    throw DMA_BUFFER_FAULT_ALLOC;
-}
+    if(PDA_SUCCESS != PciDevice_allocDMABuffer(device->m_device, id, size, &m_buffer)){
+        throw DMA_BUFFER_FAULT_ALLOC;
+    }
 
     connect(device, id);
 }
@@ -38,7 +38,7 @@ dma_buffer::dma_buffer(device* device, uint64_t size, uint64_t id)
 /** Register a malloced or memaligned buffer */
 dma_buffer::dma_buffer(device* device, void *buf, uint64_t size, uint64_t id)
 {
-    if(PDA_SUCCESS != PciDevice_registerDMABuffer(device, id, buf, size, &m_buffer)){
+    if(PDA_SUCCESS != PciDevice_registerDMABuffer(device->m_device, id, buf, size, &m_buffer)){
         throw DMA_BUFFER_FAULT_BUFFERREG;
     }
 
@@ -50,7 +50,7 @@ dma_buffer::dma_buffer(device* device, void *buf, uint64_t size, uint64_t id)
 /** Attach an already existing buffer */
 dma_buffer::dma_buffer(device* device, uint64_t id)
 {
-    connect(device, id);
+    connect(device->m_device, id);
 }
 
 
@@ -66,8 +66,8 @@ int dma_buffer::isOvermapped()
 {
     void* map_two = NULL;
 
-    if (DMABuffer_getMapTwo(m_buffer, &map_two) != PDA_SUCCESS) {
-        if (map_two != NULL) {
+    if(DMABuffer_getMapTwo(m_buffer, &map_two) != PDA_SUCCESS) {
+        if(map_two != NULL) {
             return 1;
         }
     }
