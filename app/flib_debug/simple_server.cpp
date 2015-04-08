@@ -7,7 +7,14 @@
 #include <flib.h>
 #include <log.hpp>
 
+#include <stdlib.h>
+#include <malloc.h>
+
 #include "mc_functions.h"
+
+#ifndef PAGE_SIZE
+#define PAGE_SIZE sysconf(_SC_PAGESIZE)
+#endif
 
 int s_interrupted = 0;
 static void s_signal_handler (int signal_value)
@@ -51,7 +58,28 @@ int main(int argc, const char* argv[])
     L_(debug) << "initializing link " << i;
 
     // initialize a DMA buffer
-    links.at(i)->init_dma(flib::create_only, 22, 20);
+    size_t data_mem_size_exp = 22;
+    size_t desc_mem_size_exp = 20;
+
+#ifdef KERNEL_BUFFER
+    links.at(i)->init_dma(flib::create_only,
+                          data_mem_size_exp,
+                          desc_mem_size_exp);
+#else
+    void* data_mem = memalign(PAGE_SIZE, 1ull << data_mem_size_exp);
+    if(data_mem == NULL)
+    { return -1; }
+    void* desc_mem = memalign(PAGE_SIZE, 1ull << desc_mem_size_exp);
+    if(desc_mem == NULL)
+    { return -1; }
+
+    links.at(i)->init_dma(flib::register_only,
+                          data_mem,
+                          data_mem_size_exp,
+                          desc_mem,
+                          desc_mem_size_exp);
+#endif
+
     L_(info) << "Event Buffer: " << links.at(i)->data_buffer_info();
     L_(info) << "Desciptor Buffer" << links.at(i)->desc_buffer_info();
     // get raw pointers for debugging
