@@ -9,6 +9,8 @@
 #include <flib.h>
 #include <algorithm>
 
+#define NO_DOUBLE_BUFFERING
+
 /// Wrapper around FLIB hardware channel.
 class FlibHardwareChannel : public DataSource
 {

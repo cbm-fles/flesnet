@@ -7,33 +7,24 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                                          flib::flib_link* flib_link)
     : _data_send_buffer(data_buffer_size_exp),
       _desc_send_buffer(desc_buffer_size_exp),
-#ifndef NO_DOUBLE_BUFFERING
       _data_send_buffer_view(_data_send_buffer.ptr(), data_buffer_size_exp),
       _desc_send_buffer_view(_desc_send_buffer.ptr(), desc_buffer_size_exp),
-#else
-      _data_send_buffer_view(
-          reinterpret_cast<uint8_t*>(_flib_link->data_buffer()->mem()),
-          data_buffer_size_exp),
-      _desc_send_buffer_view(reinterpret_cast<fles::MicrosliceDescriptor*>(
-                                 _flib_link->desc_buffer()->mem()),
-                             desc_buffer_size_exp),
-#endif
+      // _data_send_buffer_view(
+      //     reinterpret_cast<uint8_t*>(_flib_link->data_buffer()->mem()),
+      //     data_buffer_size_exp),
+      // _desc_send_buffer_view(reinterpret_cast<fles::MicrosliceDescriptor*>(
+      //                            _flib_link->desc_buffer()->mem()),
+      //                        desc_buffer_size_exp),
       _flib_link(flib_link)
 {
     constexpr std::size_t microslice_descriptor_size_exp = 5;
     std::size_t desc_buffer_bytes_exp =
         desc_buffer_size_exp + microslice_descriptor_size_exp;
 
+#ifndef NO_DOUBLE_BUFFERING
     _flib_link->init_dma(flib::create_only, data_buffer_size_exp,
                          desc_buffer_bytes_exp);
 
-// use something like this for user space buffers:
-//    _flib_link->init_dma(flib::register_only,
-//                         (void*)(_data_send_buffer.ptr()),
-//                         data_buffer_size_exp,
-//                         (void*)(_desc_send_buffer.ptr()),
-//                         desc_buffer_bytes_exp);
-    
     uint8_t* data_buffer =
         reinterpret_cast<uint8_t*>(_flib_link->data_buffer());
     fles::MicrosliceDescriptor* desc_buffer =
@@ -47,6 +38,22 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
         std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>(
             new RingBufferView<volatile fles::MicrosliceDescriptor>(
                 desc_buffer, desc_buffer_size_exp));
+#else
+    _flib_link->init_dma(
+        flib::register_only,
+        const_cast<void*>(static_cast<volatile void*>(_data_send_buffer.ptr())),
+        data_buffer_size_exp,
+        const_cast<void*>(static_cast<volatile void*>(_desc_send_buffer.ptr())),
+        desc_buffer_bytes_exp);
+
+    _data_buffer_view = std::unique_ptr<RingBufferView<volatile uint8_t>>(
+        new RingBufferView<volatile uint8_t>(_data_send_buffer.ptr(),
+                                             data_buffer_size_exp));
+    _desc_buffer_view =
+        std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>(
+            new RingBufferView<volatile fles::MicrosliceDescriptor>(
+                _desc_send_buffer.ptr(), desc_buffer_size_exp));
+#endif
 
     _flib_link->set_start_idx(0);
 

@@ -19,10 +19,11 @@ RingBufferView _send_buffer_view
 contructor:
 
 alloc _send_buffer
+_send_buffer_view <- _send_buffer
 
 with double buffering:
-  _send_buffer_view <- _send_buffer
+  init_dma(create_only)
+  _buffer_view <- _flib_link->buffer()
 else:
-  _send_buffer_view <- _flib_link->mem()
-
-_buffer_view <- _flib_link->mem()
+  init_dma(register_only, _send_buffer)
+  _buffer_view <- _send_buffer
