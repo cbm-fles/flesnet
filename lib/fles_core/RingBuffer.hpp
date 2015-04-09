@@ -39,10 +39,10 @@ public:
         _size = UINT64_C(1) << _size_exponent;
         _size_mask = _size - 1;
         if (CLEARED) {
-            std::unique_ptr<T[]> buf(new T[UINT64_C(1) << _size_exponent]());
+            std::unique_ptr<T[]> buf(new T[_size]());
             _buf = std::move(buf);
         } else {
-            std::unique_ptr<T[]> buf(new T[UINT64_C(1) << _size_exponent]);
+            std::unique_ptr<T[]> buf(new T[_size]);
             _buf = std::move(buf);
         }
     }
