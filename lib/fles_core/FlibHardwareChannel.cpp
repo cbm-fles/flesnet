@@ -27,6 +27,13 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
     _flib_link->init_dma(flib::create_only, data_buffer_size_exp,
                          desc_buffer_bytes_exp);
 
+// use something like this for user space buffers:
+//    _flib_link->init_dma(flib::register_only,
+//                         (void*)(_data_send_buffer.ptr()),
+//                         data_buffer_size_exp,
+//                         (void*)(_desc_send_buffer.ptr()),
+//                         desc_buffer_bytes_exp);
+    
     uint8_t* data_buffer =
         reinterpret_cast<uint8_t*>(_flib_link->data_buffer());
     fles::MicrosliceDescriptor* desc_buffer =
