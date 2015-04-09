@@ -17,8 +17,6 @@
 #include <dma_buffer.hpp>
 #include <device.hpp>
 
-#define PAGE_SIZE sysconf(_SC_PAGESIZE)
-
 using namespace std;
 
 namespace pda{
@@ -36,7 +34,7 @@ dma_buffer::dma_buffer(device* device, uint64_t size, uint64_t id)
 
 
 /** Register a malloced or memaligned buffer */
-dma_buffer::dma_buffer(device* device, void *buf, uint64_t size, uint64_t id)
+dma_buffer::dma_buffer(device* device, void* buf, uint64_t size, uint64_t id)
 {
     if(PDA_SUCCESS != PciDevice_registerDMABuffer(device->m_device, id, buf, size, &m_buffer)){
       throw PdaException("DMA_BUFFER_FAULT_REG");
@@ -91,7 +89,7 @@ dma_buffer::connect(device* device, uint64_t id) {
       throw PdaException("DMA_BUFFER_FAULT_MAP");
     }
 
-    if(DMABuffer_getLength(m_buffer, &m_physical_size) != PDA_SUCCESS) {
+    if(DMABuffer_getLength(m_buffer, &m_size) != PDA_SUCCESS) {
         throw PdaException("DMA_BUFFER_FAULT_LENGTH");
     }
 

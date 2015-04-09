@@ -39,7 +39,7 @@ public:
      *        be unique within all instances of rorcfs_buffer on a machine.
      */
      dma_buffer(device* device, uint64_t size, uint64_t id);
-     dma_buffer(device* device, void *buf, uint64_t size, uint64_t id);
+     dma_buffer(device* device, void* buf, uint64_t size, uint64_t id);
      dma_buffer(device* device, uint64_t id);
 
     ~dma_buffer();
@@ -56,14 +56,7 @@ public:
      * boundary.
      * @return number of bytes allocated as Buffer
      */
-    uint64_t physicalSize() { return m_physical_size; }
-
-    /**
-     * Size of the EB mapping. THis is double the size of
-     * the physical buffer size due to overmapping
-     * @return size of the EB mapping in bytes
-     */
-    uint64_t mappingSize() { return m_mapping_size; }
+    size_t size() { return m_size; }
 
     /**
      * Is the buffer overmapped or not
@@ -81,7 +74,7 @@ public:
      * return memory buffer
      * @return pointer to mmap'ed buffer memory
      **/
-    unsigned int* mem() { return m_mem; }
+    void* mem() { return m_mem; }
 
     /**
      * return SG list
@@ -99,12 +92,10 @@ protected:
     DMABuffer_SGNode* m_sglist = NULL;
     uint64_t m_id = 0;
 
-    unsigned int* m_mem        = NULL;
-    uint64_t m_physical_size   = 0;
-    uint64_t m_mapping_size    = 0;
+    void* m_mem                = NULL;
+    size_t m_size   = 0;
 
     uint64_t m_scatter_gather_entries = 0;
-    void *m_alloced_mem = NULL;
 };
 
 }

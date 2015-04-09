@@ -116,21 +116,21 @@ int dma_channel::configureChannel(struct dma_buffer* ebuf,
   }
 
   config.ebdm_n_sg_config = ebuf->numberOfSGEntries();
-  config.ebdm_buffer_size_low = (ebuf->physicalSize()) & 0xffffffff;
-  config.ebdm_buffer_size_high = ebuf->physicalSize() >> 32;
+  config.ebdm_buffer_size_low = (ebuf->size()) & 0xffffffff;
+  config.ebdm_buffer_size_high = ebuf->size() >> 32;
   config.rbdm_n_sg_config = rbuf->numberOfSGEntries();
-  config.rbdm_buffer_size_low = rbuf->physicalSize() & 0xffffffff;
-  config.rbdm_buffer_size_high = rbuf->physicalSize() >> 32;
+  config.rbdm_buffer_size_low = rbuf->size() & 0xffffffff;
+  config.rbdm_buffer_size_high = rbuf->size() >> 32;
 
   config.swptrs.ebdm_software_read_pointer_low =
-      (ebuf->physicalSize() - max_payload) & 0xffffffff;
+      (ebuf->size() - max_payload) & 0xffffffff;
   config.swptrs.ebdm_software_read_pointer_high =
-      (ebuf->physicalSize() - max_payload) >> 32;
+      (ebuf->size() - max_payload) >> 32;
   config.swptrs.rbdm_software_read_pointer_low =
-      (rbuf->physicalSize() - sizeof(struct MicrosliceDescriptor)) &
+      (rbuf->size() - sizeof(struct MicrosliceDescriptor)) &
       0xffffffff;
   config.swptrs.rbdm_software_read_pointer_high =
-      (rbuf->physicalSize() - sizeof(struct MicrosliceDescriptor)) >> 32;
+      (rbuf->size() - sizeof(struct MicrosliceDescriptor)) >> 32;
 
   // set new MAX_PAYLOAD size
   config.swptrs.dma_ctrl = (1 << 31) |      // sync software read pointers
