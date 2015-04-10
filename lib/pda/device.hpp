@@ -46,6 +46,12 @@ public:
   uint8_t func();
 
   /**
+   * PCIe max_payload_size
+   * @return size_t max_payload_size
+  **/
+  size_t max_payload_size();
+  
+  /**
    * PCI-Device
    * @return PCI-Device-Pointer
   **/

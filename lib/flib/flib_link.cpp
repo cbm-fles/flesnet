@@ -40,7 +40,7 @@ flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)
       std::unique_ptr<register_file_bar>(new register_file_bar(bar, 0));
   // create DMA channel and bind to register file,
   // no HW initialization is done here
-  m_channel = std::unique_ptr<dma_channel>(new dma_channel(m_rfpkt.get(), dev));
+  m_channel = std::unique_ptr<dma_channel>(new dma_channel(m_rfpkt.get(), dev, 128));
 }
 
 flib_link::~flib_link() {
@@ -404,7 +404,7 @@ void flib_link::reset_channel() {
   // - pending mc  = 0
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, true);
   // rst packetizer fifos
-  m_channel->setDMAConfig(0X2);
+  m_channel->rstPKTFifo(true);
   // release datapath reset
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, false);
 }
@@ -438,18 +438,9 @@ void flib_link::init_hardware() {
    * and ReportBufferDescriptorManage
    * with scatter-gather list
    **/
-  if (m_channel->prepareEB(m_data_buffer.get()) < 0) {
-    throw FlibException("Preparing data buffer failed");
-  }
-
-  if (m_channel->prepareRB(m_desc_buffer.get()) < 0) {
-    throw FlibException("Preparing descriptor buffer failed");
-  }
-
-  if (m_channel->configureChannel(m_data_buffer.get(), m_desc_buffer.get(), 128) <
-      0) {
-    throw FlibException("Configuring DMA channel failed");
-  }
+  m_channel->prepareEB(m_data_buffer.get());
+  m_channel->prepareRB(m_desc_buffer.get());
+  m_channel->configureChannel(m_data_buffer.get(), m_desc_buffer.get());
 
   // clear eb for debugging
   memset(m_data_buffer->mem(), 0, m_data_buffer->size());
@@ -463,9 +454,9 @@ void flib_link::init_hardware() {
     sizeof(struct MicrosliceDescriptor);
 
   // Enable desciptor buffers and dma engine
-  m_channel->enableEB(1);
-  m_channel->enableRB(1);
-  m_channel->setDMAConfig(m_channel->DMAConfig() | 0x01);
+  m_channel->enableEB(true);
+  m_channel->enableRB(true);
+  m_channel->enableDMAEngine(true);
 }
 
 std::string flib_link::print_buffer_info(dma_buffer* buf) {

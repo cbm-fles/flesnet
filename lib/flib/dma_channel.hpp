@@ -13,7 +13,7 @@
 
 #include <data_structures.hpp>
 
-using namespace pda;
+//using namespace pda;
 
 namespace flib {
 class register_file_bar;
@@ -34,7 +34,8 @@ class register_file_bar;
 
 class dma_channel {
 public:
-  dma_channel(register_file_bar* rf, device* parent_device);
+  dma_channel(register_file_bar* rf, pda::device* parent_device,
+              size_t dma_transfer_size);
 
   ~dma_channel();
 
@@ -46,7 +47,7 @@ public:
   * @return 0 on sucess, -1 on errors, -EFBIG if more
   *         than 2048 sg-entries
   **/
-  int prepareEB(dma_buffer* buf);
+  void prepareEB(pda::dma_buffer* buf);
 
   /**
   * prepare ReportBuffer: copy scatterlist from
@@ -56,7 +57,7 @@ public:
   *        report destination buffer
   * @return 0 on sucess, -1 on errors
   **/
-  int prepareRB(dma_buffer* buf);
+  void prepareRB(pda::dma_buffer* buf);
 
   /**
   * set Enable Bit of EBDM
@@ -82,12 +83,9 @@ public:
   **/
   unsigned int isRBEnabled();
 
-  /**
-  * setDMAConfig set the DMA Controller operation mode
-  * @param config Bit mapping:
-  * TODO
-  **/
-  void setDMAConfig(unsigned int config);
+  void enableDMAEngine(bool enable);
+
+  void rstPKTFifo(bool enable);
 
   /**
   * @return DMA Packetizer COnfiguration and Status
@@ -95,10 +93,10 @@ public:
   unsigned int DMAConfig();
 
   /**
-  * maximum payload size from current HW configuration
-  * @return maximum payload size in bytes
+  * dma transfer size from current HW configuration
+  * @return dma transfer size in bytes
   **/
-  uint64_t maxPayload();
+  size_t dma_transfer_size();
 
   /**
   * number of Scatter Gather entries for the Event buffer
@@ -139,19 +137,19 @@ public:
   * event buffer
   * @param rbuf pointer to struct rorcfs_buffer to be used as
   * report buffer
-  * @param max_payload maximum payload size to be used (in bytes)
+  * @param dma_transfer_size transfer packet size to be used (in bytes)
   * @return 0 on sucess, <0 on error
   * */
-  int configureChannel(struct dma_buffer* ebuf, struct dma_buffer* rbuf,
-                       uint32_t max_payload);
+  void configureChannel(pda::dma_buffer* data_buffer,
+                        pda::dma_buffer* desc_buffer);
 
   /**
   * set Event Buffer File Offset
   * the DMA engine only writes to the Event buffer as long as
-  * its internal offset is at least (MaxPayload)-bytes smaller
+  * its internal offset is at least (dma_transfer_size)-bytes smaller
   * than the Event Buffer Offset. In order to start a transfer,
-  * set EBOffset to (BufferSize-MaxPayload).
-  * IMPORTANT: offset has always to be a multiple of MaxPayload!
+  * set EBOffset to (BufferSize-dma_transfer_size).
+  * IMPORTANT: offset has always to be a multiple of dma_transfer_size!
   **/
   void setEBOffset(unsigned long offset);
 
@@ -195,17 +193,22 @@ public:
 
 protected:
   register_file_bar* m_rfpkt = NULL;
-  device* parent_device = NULL;
-  uint64_t m_MaxPayload = 0;
+  pda::device* m_parent_device = NULL;
+  size_t m_dma_transfer_size = 0;
+
+  void prepareBuffer(pda::dma_buffer* buf, uint32_t buf_sel);
+
+private:
+
+  void check_dma_transfer_size(size_t dma_transfer_size);
 
   /**
-   * setMaxPayload( int size ) and setMaxPayload()
-   * are wrappers around _setMaxPayload and should
-   * be called instead
-   */
-  void setMaxPayload();
-
-  int prepareBuffer(dma_buffer* buf, sys_bus_addr addr, uint32_t flag);
+  * setDMAConfig set the DMA Controller operation mode
+  * @param config Bit mapping:
+  * TODO
+  **/
+  void setDMAConfig(unsigned int config);
+  
 };
 }
 
