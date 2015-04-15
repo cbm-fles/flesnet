@@ -6,13 +6,6 @@
  */
 #pragma once
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-
-#include <cstdint>
-#include <unistd.h>
-
-#include <string>
 #include <stdexcept>
 
 namespace pda {
@@ -23,10 +16,6 @@ public:
 };
 }
 
-#define RORCFS_DMA_FROM_DEVICE 2
-#define RORCFS_DMA_TO_DEVICE 1
-#define RORCFS_DMA_BIDIRECTIONAL 0
- 
 #ifndef PAGE_MASK
 #define PAGE_MASK ~(sysconf(_SC_PAGESIZE) - 1)
 #endif
@@ -34,5 +23,3 @@ public:
 #ifndef PAGE_SIZE
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
 #endif
-
-#pragma GCC diagnostic pop

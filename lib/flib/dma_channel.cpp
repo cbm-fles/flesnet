@@ -1,295 +1,270 @@
 /**
  * @file
  * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
- * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
- *
+ * Derived form ALICE CRORC Project written by
+ * Heiko Engel <hengel@cern.ch>
  */
-
-#include <unistd.h>
-
-#include <cerrno>
 #include <cassert>
-#include <cstdint>
-#include <iostream>
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
 
-#include <pda.h>
-
-#include <pda/dma_buffer.hpp>
-#include <pda/device.hpp>
-#include <pda/pci_bar.hpp>
-
-#include <dma_channel.hpp>
 #include <registers.h>
-#include <register_file_bar.hpp>
-
-using namespace std;
-//using namespace pda;
+#include <dma_channel.hpp>
+#include <data_structures.hpp>
 
 namespace flib {
 
-  dma_channel::dma_channel(register_file_bar* rf,
+  dma_channel::dma_channel(register_file* rfpkt,
                            pda::device* parent_device,
+                           pda::dma_buffer* data_buffer,
+                           pda::dma_buffer* desc_buffer,
                            size_t dma_transfer_size)
-    : m_rfpkt(rf), m_parent_device(parent_device),
-      m_dma_transfer_size(dma_transfer_size) {
-  check_dma_transfer_size(dma_transfer_size);    
+    : m_rfpkt(rfpkt),
+      m_parent_device(parent_device),
+      m_data_buffer(data_buffer),
+      m_desc_buffer(desc_buffer),
+      m_dma_transfer_size(dma_transfer_size)
+  {
+    m_reg_dmactrl_cached =  m_rfpkt->reg(RORC_REG_DMA_CTRL);
+    // ensure HW is disabled
+    if (is_enabled()) {
+      throw FlibException("DMA Engine already enabled");
+    }
+    configure();
+    enable();
   }
 
-//dma_channel::dma_channel(register_file_bar* rf,
-//                         pda::device* parent_device,
-//                         pda::dma_buffer* data_buffer,
-//                         pda::dma_buffer* desc_buffer,
-//                         size_t dma_transfer_size
-//                         )
-//  : m_rfpkt(rf), m_parent_device(parent_device),
-//    m_data_buffer(data_buffer), m_desc_buffer(des_buffer)
-//    m_dma_transfer_size(dma_transfer_size) {
-// 
-//  check_dma_transfer_size(dma_transfer_size);
-//  
-//}
-  
-dma_channel::~dma_channel() {
-}
-
-void dma_channel::prepareEB(pda::dma_buffer* buf) {
-  prepareBuffer(buf, 0);
-}
-
-void dma_channel::prepareRB(pda::dma_buffer* buf) {
-  prepareBuffer(buf, 1);
-}
-
-void dma_channel::prepareBuffer(pda::dma_buffer* buf, uint32_t buf_sel) {
-  assert(m_rfpkt != NULL);
-  assert((buf_sel == 0) | (buf_sel == 1));
-  
-  // check if sglist fits into FPGA buffers
-  // N_SG_CONFIG:
-  // [15:0] : actual number of sg entries in RAM
-  // [31:16]: maximum number of entries
-  uint32_t bdcfg = 0;
-  if (buf_sel == 0) {
-    bdcfg = m_rfpkt->reg(RORC_REG_EBDM_N_SG_CONFIG);
-  } else if (buf_sel == 1) {
-    bdcfg = m_rfpkt->reg(RORC_REG_RBDM_N_SG_CONFIG);
-  } 
-  if (buf->numberOfSGEntries() > (bdcfg >> 16)) {
-    throw FlibException("Number of SG entries exceeds availabel HW memory");
+  dma_channel::~dma_channel() {
+    disable();
   }
-
-  // write sg entries to FPGA
-  struct t_sg_entry_cfg sg_entry;
-  uint64_t bram_addr = 0;
-  for (DMABuffer_SGNode* sg = buf->sglist(); sg != NULL; sg = sg->next) {
-
-    sg_entry.sg_addr_low = (uint32_t)(((uint64_t)sg->d_pointer) & 0xffffffff);
-    sg_entry.sg_addr_high = (uint32_t)(((uint64_t)sg->d_pointer) >> 32);
-    sg_entry.sg_len = (uint32_t)(sg->length & 0xffffffff);
-    sg_entry.ctrl = (1 << 31) | (buf_sel << 30) | ((uint32_t)bram_addr);
-
-    m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry,
-                     sizeof(sg_entry) >> 2);
-    bram_addr++;
-  }
-  /** clear following BD entry (required!) **/
-  memset(&sg_entry, 0, sizeof(sg_entry));
-  // TODO fixme ctrl not set!!!
-  m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &sg_entry,
-                   sizeof(sg_entry) >> 2);
-}
-
-  // TODO private
-void dma_channel::check_dma_transfer_size(size_t dma_transfer_size) {
-  // dma_transfer_size must be a multiple of 4 byte
-  assert ((dma_transfer_size & 0x3) == 0);
-  // dma_transfer_size must smaler absolute limit
-  assert (dma_transfer_size <= 1024);
-  if (dma_transfer_size > m_parent_device->max_payload_size()) {
-    throw FlibException("DMA transfer size exceeds PCI MaxPayload");
-  }
-}
   
-/**
- * configure DMA engine for the current
- * set of buffers
- * */
-void dma_channel::configureChannel(pda::dma_buffer* data_buffer,
-                                   pda::dma_buffer* desc_buffer) {
+void dma_channel::set_sw_read_pointers(uint64_t data_offset, uint64_t desc_offset) {
+  assert(data_offset % m_dma_transfer_size == 0);
+  assert(desc_offset % sizeof(MicrosliceDescriptor) == 0);
 
-  struct rorcfs_channel_config config;
-  config.ebdm_n_sg_config = data_buffer->numberOfSGEntries();
-  config.ebdm_buffer_size_low = (data_buffer->size()) & 0xffffffff;
-  config.ebdm_buffer_size_high = data_buffer->size() >> 32;
-  config.rbdm_n_sg_config = desc_buffer->numberOfSGEntries();
-  config.rbdm_buffer_size_low = desc_buffer->size() & 0xffffffff;
-  config.rbdm_buffer_size_high = desc_buffer->size() >> 32;
+  sw_read_pointers_t offsets;
+  offsets.data_low  = get_lo_32(data_offset);
+  offsets.data_high = get_hi_32(data_offset);
+  offsets.desc_low  = get_lo_32(desc_offset);
+  offsets.desc_high = get_hi_32(desc_offset);
 
-  config.swptrs.ebdm_software_read_pointer_low =
-      (data_buffer->size() - m_dma_transfer_size) & 0xffffffff;
-  config.swptrs.ebdm_software_read_pointer_high =
-      (data_buffer->size() - m_dma_transfer_size) >> 32;
-  config.swptrs.rbdm_software_read_pointer_low =
-      (desc_buffer->size() - sizeof(struct MicrosliceDescriptor)) &
-      0xffffffff;
-  config.swptrs.rbdm_software_read_pointer_high =
-      (desc_buffer->size() - sizeof(struct MicrosliceDescriptor)) >> 32;
-
-  // set new DMA_TRANSFER_SIZE size (has to be provided as #DWs)
-  uint32_t dma_size_dw = m_dma_transfer_size >> 2;
-  config.swptrs.dma_ctrl = (1 << 31) |          // sync software read pointers
-                           (dma_size_dw << 16); // set dma_transfer_size
-
-  // copy configuration struct to RORC, starting
-  // at the address of the lowest register(EBDM_N_SG_CONFIG)
-  m_rfpkt->set_mem(RORC_REG_EBDM_N_SG_CONFIG, &config,
-                   sizeof(struct rorcfs_channel_config) >> 2);
-
-}
-  
-void dma_channel::enableEB(int enable) {
-  unsigned int bdcfg = m_rfpkt->reg(RORC_REG_DMA_CTRL);
-  if (enable)
-    m_rfpkt->set_reg(RORC_REG_DMA_CTRL, (bdcfg | (1 << 2)));
-  else
-    m_rfpkt->set_reg(RORC_REG_DMA_CTRL, (bdcfg & ~(1 << 2)));
-}
-
-unsigned int dma_channel::isEBEnabled() {
-  return (m_rfpkt->reg(RORC_REG_DMA_CTRL) >> 2) & 0x01;
-}
-
-void dma_channel::enableRB(int enable) {
-  unsigned int bdcfg = m_rfpkt->reg(RORC_REG_DMA_CTRL);
-  if (enable)
-    m_rfpkt->set_reg(RORC_REG_DMA_CTRL, (bdcfg | (1 << 3)));
-  else
-    m_rfpkt->set_reg(RORC_REG_DMA_CTRL, (bdcfg & ~(1 << 3)));
-}
-
-unsigned int dma_channel::isRBEnabled() {
-  return (m_rfpkt->reg(RORC_REG_DMA_CTRL) >> 3) & 0x01;
-}
-
-void dma_channel::enableDMAEngine(bool enable) {
-  m_rfpkt->set_bit(RORC_REG_DMA_CTRL, 0, enable);
-}
-  
-void dma_channel::rstPKTFifo(bool enable) {
-  m_rfpkt->set_bit(RORC_REG_DMA_CTRL, 1, enable);
-}
-
-void dma_channel::setDMAConfig(unsigned int config) {
-  m_rfpkt->set_reg(RORC_REG_DMA_CTRL, config);
-}
-
-unsigned int dma_channel::DMAConfig() {
-  return m_rfpkt->reg(RORC_REG_DMA_CTRL);
-}
-
-size_t dma_channel::dma_transfer_size() { return m_dma_transfer_size; }
-
-void dma_channel::setOffsets(unsigned long eboffset, unsigned long rboffset) {
-  assert(m_rfpkt != NULL);
-  assert(eboffset % m_dma_transfer_size == 0);
-  assert(rboffset % 32 == 0); // 32 is hard coded in HW
-  struct rorcfs_buffer_software_pointers offsets;
-  offsets.ebdm_software_read_pointer_low = (uint32_t)(eboffset & 0xffffffff);
-  offsets.ebdm_software_read_pointer_high =
-      (uint32_t)(eboffset >> 32 & 0xffffffff);
-
-  offsets.rbdm_software_read_pointer_low = (uint32_t)(rboffset & 0xffffffff);
-  offsets.rbdm_software_read_pointer_high =
-      (uint32_t)(rboffset >> 32 & 0xffffffff);
-
-  offsets.dma_ctrl = (1 << 31) |                   // sync pointers
-                     ((m_dma_transfer_size >> 2) << 16) | // dma_transfer_size
-                     (1 << 2) |                    // enable EB
-                     (1 << 3) |                    // enable RB
-                     (1 << 0);                     // enable DMA engine
+  // TODO: hack to save read-modify-write on dma_ctrl register
+  // move sync pointers to exclusive HW register to avoid this
+  // no need to chache sync pointers bit because it is pulse only
+  offsets.dma_ctrl =
+    m_reg_dmactrl_cached |
+    (1<<BIT_DMACTRL_SYNC_SWRDPTRS);
 
   m_rfpkt->set_mem(RORC_REG_EBDM_SW_READ_POINTER_L, &offsets,
                    sizeof(offsets) >> 2);
 }
+  
+// PRIVATE MEMBERS /////////////////////////////////////
 
-void dma_channel::setEBOffset(unsigned long offset) {
-  assert(m_rfpkt != NULL);
-  unsigned int status;
-
-  m_rfpkt->set_mem(RORC_REG_EBDM_SW_READ_POINTER_L, &offset,
-                   sizeof(offset) >> 2);
-  status = m_rfpkt->reg(RORC_REG_DMA_CTRL);
-  m_rfpkt->set_reg(RORC_REG_DMA_CTRL, status | (1 << 31));
+void dma_channel::configure() {
+  configure_sg_manager(data_sg_bram);
+  configure_sg_manager(desc_sg_bram);  
+  set_dma_transfer_size();
+  uint64_t data_buffer_offset = m_data_buffer->size() - m_dma_transfer_size;
+  uint64_t desc_buffer_offset = m_desc_buffer->size() - sizeof(MicrosliceDescriptor);
+  set_sw_read_pointers(data_buffer_offset, desc_buffer_offset);
 }
 
-unsigned long dma_channel::EBOffset() {
-  unsigned long offset =
-      ((unsigned long)m_rfpkt->reg(RORC_REG_EBDM_SW_READ_POINTER_H) << 32);
-  offset += (unsigned long)m_rfpkt->reg(RORC_REG_EBDM_SW_READ_POINTER_L);
-  return offset;
+void dma_channel::configure_sg_manager(const sg_bram_t buf_sel) {
+  pda::dma_buffer* buffer = buf_sel ? m_desc_buffer : m_data_buffer;
+  // convert list
+  std::vector<sg_entry_hw_t> sg_list_hw = convert_sg_list(buffer->sg_list());
+
+  // check that sg list fits into HW bram
+  if (sg_list_hw.size() > get_max_sg_entries(buf_sel)) {
+    throw FlibException("Number of SG entries exceeds availabel HW memory");
+  }
+  // write sg list to bram
+  write_sg_list_to_device(sg_list_hw, buf_sel);
+  set_configured_buffer_size(buf_sel);
+}               
+
+  // TODO make vector a reference
+std::vector<sg_entry_hw_t> dma_channel::convert_sg_list(const std::vector<pda::sg_entry_t> sg_list) {
+
+  // convert pda scatter gather list into FLIB usable list
+  std::vector<sg_entry_hw_t> sg_list_hw;
+  sg_entry_hw_t hw_entry;
+  uint64_t cur_addr;
+  uint64_t cur_length;
+
+  for (const auto &entry : sg_list) {
+    cur_addr = reinterpret_cast<uint64_t>(entry.pointer);
+    cur_length = entry.length;
+
+    // split entries larger than 4GB (addr >32Bit) 
+    while (cur_length>>32 != 0) {
+      hw_entry.addr_low  = get_lo_32(cur_addr);
+      hw_entry.addr_high = get_hi_32(cur_addr);
+      hw_entry.length = (UINT64_C(1) << 32) - PAGE_SIZE; // TODO: why -page_size?
+      sg_list_hw.push_back(hw_entry);
+
+      cur_addr += hw_entry.length;
+      cur_length -= hw_entry.length;
+    }
+    hw_entry.addr_low  = get_lo_32(cur_addr);
+    hw_entry.addr_high = get_hi_32(cur_addr);
+    hw_entry.length = static_cast<uint32_t>(cur_length);
+    sg_list_hw.push_back(hw_entry);
+  }
+  
+  return sg_list_hw;
+}
+  
+  void dma_channel::write_sg_list_to_device(const std::vector<sg_entry_hw_t> sg_list,
+                                            const sg_bram_t buf_sel) {
+  uint32_t buf_addr = 0;
+  for (const auto &entry : sg_list) {
+    write_sg_entry_to_device(entry, buf_sel, buf_addr);
+    ++buf_addr;
+  }
+  // clear trailing sg entry in bram
+  sg_entry_hw_t clear = {0}; 
+  write_sg_entry_to_device(clear, buf_sel, buf_addr);  
+
+  // set number of configured sg entries
+  // this HW registers do not influence the dma engine
+  // they are for debug pourpouse only
+  set_configured_sg_entries(buf_sel, sg_list.size());
 }
 
-unsigned long dma_channel::EBDMAOffset() {
-  unsigned long offset =
-      ((unsigned long)m_rfpkt->reg(RORC_REG_EBDM_FPGA_WRITE_POINTER_H)
-       << 32);
-  offset += (unsigned long)m_rfpkt->reg(RORC_REG_EBDM_FPGA_WRITE_POINTER_L);
-  return offset;
+void dma_channel::write_sg_entry_to_device(const sg_entry_hw_t entry,
+                              const sg_bram_t buf_sel,
+                              const uint32_t buf_addr) {
+  
+  uint32_t sg_ctrl = (1 << BIT_SGENTRY_CTRL_WRITE_EN) | buf_addr;
+  sg_ctrl |= (buf_sel << BIT_SGENTRY_CTRL_TARGET);
+  
+  // write entry en block to mailbox register
+  m_rfpkt->set_mem(RORC_REG_SGENTRY_ADDR_LOW, &entry,sizeof(entry) >> 2);
+  // push mailbox to bram
+  m_rfpkt->set_reg(RORC_REG_SGENTRY_CTRL, sg_ctrl);
 }
 
-void dma_channel::setRBOffset(unsigned long offset) {
-  assert(m_rfpkt != NULL);
-  unsigned int status;
+size_t dma_channel::get_max_sg_entries(const sg_bram_t buf_sel) {
 
-  m_rfpkt->set_mem(RORC_REG_RBDM_SW_READ_POINTER_L, &offset,
-                   sizeof(offset) >> 2);
-  status = m_rfpkt->reg(RORC_REG_DMA_CTRL);
-
-  status = m_rfpkt->reg(RORC_REG_DMA_CTRL);
-  m_rfpkt->set_reg(RORC_REG_DMA_CTRL, status | (1 << 31));
+  sys_bus_addr addr = (buf_sel) ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
+  // N_SG_CONFIG:
+  // [15:0] : actual number of sg entries in RAM
+  // [31:16]: maximum number of entries (read only)
+  return (m_rfpkt->reg(addr) >> 16);  
 }
 
-unsigned long dma_channel::RBOffset() {
-  unsigned long offset =
-      ((unsigned long)m_rfpkt->reg(RORC_REG_RBDM_SW_READ_POINTER_H) << 32);
-  offset += (unsigned long)m_rfpkt->reg(RORC_REG_RBDM_SW_READ_POINTER_L);
-  return offset;
+size_t dma_channel::get_configured_sg_entries(const sg_bram_t buf_sel) {
+
+  sys_bus_addr addr = (buf_sel) ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
+  // N_SG_CONFIG:
+  // [15:0] : actual number of sg entries in RAM
+  // [31:16]: maximum number of entries (read only)
+  return (m_rfpkt->reg(addr) & 0x0000ffff);  
 }
 
-unsigned long dma_channel::RBDMAOffset() {
-  unsigned long offset =
-      ((unsigned long)m_rfpkt->reg(RORC_REG_RBDM_FPGA_WRITE_POINTER_H)
-       << 32);
-  offset += (unsigned long)m_rfpkt->reg(RORC_REG_RBDM_FPGA_WRITE_POINTER_L);
-  return offset;
+void dma_channel::set_configured_sg_entries(const sg_bram_t buf_sel,
+                               const uint16_t num_entries) {
+
+  sys_bus_addr addr = (buf_sel) ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
+  // N_SG_CONFIG:
+  // [15:0] : actual number of sg entries in RAM
+  // [31:16]: maximum number of entries (read only)
+  m_rfpkt->set_reg(addr, num_entries);  
 }
 
-unsigned int dma_channel::EBDMnSGEntries() {
-  return (m_rfpkt->reg(RORC_REG_EBDM_N_SG_CONFIG) & 0x0000ffff);
+void dma_channel::set_configured_buffer_size(const sg_bram_t buf_sel) {
+  // this HW registers do not influence the dma engine
+  // they are for debug pourpouse only
+  pda::dma_buffer* buffer = (buf_sel) ? m_desc_buffer : m_data_buffer;
+  sys_bus_addr addr = (buf_sel) ? RORC_REG_RBDM_BUFFER_SIZE_L : RORC_REG_EBDM_BUFFER_SIZE_L;
+  uint64_t size = buffer->size();
+  m_rfpkt->set_mem(addr, &size, sizeof(size)>>2);  
 }
 
-unsigned int dma_channel::RBDMnSGEntries() {
-  return (m_rfpkt->reg(RORC_REG_RBDM_N_SG_CONFIG) & 0x0000ffff);
+void dma_channel::set_dma_transfer_size() {
+  // dma_transfer_size must be a multiple of 4 byte
+  assert ((m_dma_transfer_size & 0x3) == 0);
+  // dma_transfer_size must smaler absolute limit
+  assert (m_dma_transfer_size <= 1024);
+  if (m_dma_transfer_size > m_parent_device->max_payload_size()) {
+    throw FlibException("DMA transfer size exceeds PCI MaxPayload");
+  }
+  // set DMA_TRANSFER_SIZE size (has to be provided as #DWs)
+  set_dmactrl((m_dma_transfer_size >> 2) << BIT_DMACTRL_TRANS_SIZE_LSB,
+                0x3ff<<BIT_DMACTRL_TRANS_SIZE_LSB);
 }
 
-unsigned int dma_channel::isDMABusy() {
-  return ((m_rfpkt->reg(RORC_REG_DMA_CTRL) >> 7) & 0x01);
+inline void dma_channel::enable() {
+  set_dmactrl((0<<BIT_DMACTRL_FIFO_RST |
+               1<<BIT_DMACTRL_EBDM_EN |
+               1<<BIT_DMACTRL_RBDM_EN |
+               1<<BIT_DMACTRL_DMA_EN),
+              (1<<BIT_DMACTRL_FIFO_RST |
+               1<<BIT_DMACTRL_EBDM_EN |
+               1<<BIT_DMACTRL_RBDM_EN |
+               1<<BIT_DMACTRL_DMA_EN));
 }
 
-unsigned long dma_channel::EBSize() {
-  unsigned long size =
-      ((unsigned long)m_rfpkt->reg(RORC_REG_EBDM_BUFFER_SIZE_H) << 32);
-  size += (unsigned long)m_rfpkt->reg(RORC_REG_EBDM_BUFFER_SIZE_L);
-  return size;
+void dma_channel::disable(size_t timeout) {
+  // disable data buffer
+  set_dmactrl((0<<BIT_DMACTRL_EBDM_EN),
+              (1<<BIT_DMACTRL_EBDM_EN));
+  // wait till ongoing transfer is finished
+  while (is_busy() && timeout!=0) {
+    usleep(100);
+    --timeout;
+  }
+  // disable everything else put fifo to reset
+  set_dmactrl((0<<BIT_DMACTRL_RBDM_EN |
+               0<<BIT_DMACTRL_DMA_EN |
+               1<<BIT_DMACTRL_FIFO_RST),
+              (1<<BIT_DMACTRL_RBDM_EN |
+               1<<BIT_DMACTRL_DMA_EN |
+               1<<BIT_DMACTRL_FIFO_RST));
 }
 
-unsigned long dma_channel::RBSize() {
-  unsigned long size =
-      ((unsigned long)m_rfpkt->reg(RORC_REG_RBDM_BUFFER_SIZE_H) << 32);
-  size += (unsigned long)m_rfpkt->reg(RORC_REG_RBDM_BUFFER_SIZE_L);
-  return size;
+inline void dma_channel::reset_fifo(bool enable) {
+  set_dmactrl((enable<<BIT_DMACTRL_FIFO_RST),
+              (1<<BIT_DMACTRL_FIFO_RST));
 }
+  
+inline bool dma_channel::is_enabled() {
+  uint32_t mask =
+    1<<BIT_DMACTRL_EBDM_EN |
+    1<<BIT_DMACTRL_RBDM_EN | 
+    1<<BIT_DMACTRL_DMA_EN;
+  return (m_reg_dmactrl_cached & mask);  
 }
+  
+inline bool dma_channel::is_busy() {
+  return m_rfpkt->bit(RORC_REG_DMA_CTRL, BIT_DMACTRL_BUSY);
+}
+
+void dma_channel::set_dmactrl(uint32_t reg, uint32_t mask) {
+  // acces to dma_ctrl register
+  // ensures proper caching of register value
+  // never cache BIT_DMACTRL_SYNC_SWRDPTRS
+  mask &= ~(1<<BIT_DMACTRL_SYNC_SWRDPTRS);
+  m_reg_dmactrl_cached = set_bits(m_reg_dmactrl_cached, reg, mask);
+  m_rfpkt->set_reg(RORC_REG_DMA_CTRL, m_reg_dmactrl_cached);
+}
+
+inline uint32_t dma_channel::set_bits(uint32_t old_val, uint32_t new_val, uint32_t mask) {
+    // clear all unselected bits in new_val
+    new_val &= mask;
+    // clear all selects bits and set according to new_val
+    old_val &= ~mask;
+    old_val |= new_val;
+    return old_val;
+}
+
+inline uint32_t dma_channel::get_lo_32(uint64_t val) {
+  return val;
+}
+
+inline uint32_t dma_channel::get_hi_32(uint64_t val) {
+  return (val >> 32);
+}
+
+
+} // namespace

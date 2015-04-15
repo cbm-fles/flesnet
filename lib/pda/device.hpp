@@ -9,6 +9,7 @@
 #define PCI_DEVICE_H
 
 #include <cstdint>
+#include <cstdio>
 
 typedef struct DeviceOperator_struct DeviceOperator;
 typedef struct PciDevice_struct PciDevice;
@@ -50,7 +51,7 @@ public:
    * @return size_t max_payload_size
   **/
   size_t max_payload_size();
-  
+
   /**
    * PCI-Device
    * @return PCI-Device-Pointer
