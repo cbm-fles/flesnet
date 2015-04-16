@@ -53,8 +53,13 @@ int main(int argc, const char* argv[])
 
   std::vector<uint64_t*> eb;
   std::vector<MicrosliceDescriptor*> rb;
+  std::vector<void*> data_mem;
+  std::vector<void*> desc_mem;
 
-  for (size_t i = 0; i < flib.number_of_links(); ++i) {
+  size_t active_links = 1;
+  //active_links = flib.number_of_links();
+    
+  for (size_t i = 0; i < active_links; ++i) {
     L_(debug) << "initializing link " << i;
 
     // initialize a DMA buffer
@@ -66,17 +71,17 @@ int main(int argc, const char* argv[])
                           data_mem_size_exp,
                           desc_mem_size_exp);
 #else
-    void* data_mem = memalign(PAGE_SIZE, 1ull << data_mem_size_exp);
-    if(data_mem == NULL)
+    data_mem.push_back(memalign(PAGE_SIZE, 1ull << data_mem_size_exp));
+    if(data_mem.at(i) == NULL)
     { return -1; }
-    void* desc_mem = memalign(PAGE_SIZE, 1ull << desc_mem_size_exp);
-    if(desc_mem == NULL)
+    desc_mem.push_back(memalign(PAGE_SIZE, 1ull << desc_mem_size_exp));
+    if(desc_mem.at(i) == NULL)
     { return -1; }
 
     links.at(i)->init_dma(flib::register_only,
-                          data_mem,
+                          data_mem.at(i),
                           data_mem_size_exp,
-                          desc_mem,
+                          desc_mem.at(i),
                           desc_mem_size_exp);
 #endif
 
@@ -173,7 +178,7 @@ int main(int argc, const char* argv[])
     j++;
   }
 
-for (size_t i = 0; i < flib.number_of_links(); ++i) {
+for (size_t i = 0; i < active_links; ++i) {
   L_(debug) << "disable link " << i;
   
   // disable data source
@@ -181,8 +186,12 @@ for (size_t i = 0; i < flib.number_of_links(); ++i) {
   L_(debug) << "current mc nr 0x: " << std::hex <<  links.at(i)->mc_index();
   L_(debug) << "pending mc: "  << links.at(i)->pending_mc();
   L_(debug) << "busy: " <<  links.at(i)->channel()->isDMABusy();
- }
 
+  free(data_mem.at(i));
+  free(desc_mem.at(i));
+
+ }
+ 
   L_(debug) << "Exiting";
   
     }

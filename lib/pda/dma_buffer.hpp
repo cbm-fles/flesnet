@@ -9,13 +9,20 @@
 #define PCI_DMA_BUFFER_H
 
 #include <cstdint>
+#include <vector>
 #include <data_structures.hpp>
+
+namespace pda {
 
 typedef struct DMABuffer_struct DMABuffer;
 typedef struct DMABuffer_SGNode_struct DMABuffer_SGNode;
+  
+typedef struct
+{
+    void* pointer;
+    size_t length;
+} sg_entry_t;
 
-
-namespace pda {
 class device;
 
 /**
@@ -59,18 +66,6 @@ public:
     size_t size() { return m_size; }
 
     /**
-     * Is the buffer overmapped or not
-     * @return 0 if unset, nonzero if set
-     */
-    int isOvermapped();
-
-    /**
-     * Number of scatter-gather entries for the Buffer
-     * @return number of entries
-     */
-    uint64_t numberOfSGEntries() { return m_scatter_gather_entries; }
-
-    /**
      * return memory buffer
      * @return pointer to mmap'ed buffer memory
      **/
@@ -78,24 +73,24 @@ public:
 
     /**
      * return SG list
-     * @return pointer to scatter gather list
+     * @return verctor of scatter gather list entries
      **/
-    DMABuffer_SGNode* sglist() { return m_sglist; }
+  std::vector<sg_entry_t>sg_list() { return m_sglist; }
 
-protected:
+  size_t num_sg_entries() { return m_sglist.size(); }; 
 
-    void connect(device* device, uint64_t id);
-    void deallocate();
+private:
 
-    PciDevice* m_device        = NULL;
-    DMABuffer* m_buffer        = NULL;
-    DMABuffer_SGNode* m_sglist = NULL;
-    uint64_t m_id = 0;
+  void connect();
+  void deallocate();
 
-    void* m_mem                = NULL;
-    size_t m_size   = 0;
+  DMABuffer* m_buffer  = NULL;
+  PciDevice* m_device  = NULL;
+  uint64_t m_id        = 0;
 
-    uint64_t m_scatter_gather_entries = 0;
+  void* m_mem          = NULL;
+  size_t m_size        = 0;
+  std::vector<sg_entry_t> m_sglist;
 };
 
 }

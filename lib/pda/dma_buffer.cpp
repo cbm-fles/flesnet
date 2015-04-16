@@ -28,7 +28,9 @@ dma_buffer::dma_buffer(device* device, uint64_t size, uint64_t id)
       throw PdaException("DMA_BUFFER_FAULT_ALLOC");
     }
 
-    connect(device, id);
+    m_device = device->m_device;
+    m_id     = id;
+    connect();
 }
 
 
@@ -40,7 +42,9 @@ dma_buffer::dma_buffer(device* device, void* buf, uint64_t size, uint64_t id)
       throw PdaException("DMA_BUFFER_FAULT_REG");
     }
 
-    connect(device, id);
+    m_device = device->m_device;
+    m_id     = id;
+    connect();
 }
 
 
@@ -52,7 +56,9 @@ dma_buffer::dma_buffer(device* device, uint64_t id)
         throw PdaException("DMA_BUFFER_FAULT_GET");
     }
 
-    connect(device, id);
+    m_device = device->m_device;
+    m_id     = id;
+    connect();
 }
 
 
@@ -63,44 +69,33 @@ dma_buffer::~dma_buffer()
 }
 
 
-
-int dma_buffer::isOvermapped()
-{
-    void* map_two = NULL;
-
-    if(DMABuffer_getMapTwo(m_buffer, &map_two) != PDA_SUCCESS) {
-        if(map_two != NULL) {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-
 /** protected functions */
 
 void
-dma_buffer::connect(device* device, uint64_t id) {
-    m_device = device->m_device;
-    m_id     = id;
+dma_buffer::connect() {
 
-    if(DMABuffer_getMap(m_buffer, (void**)(&m_mem)) != PDA_SUCCESS) {
-      throw PdaException("DMA_BUFFER_FAULT_MAP");
-    }
+  // get pointer to memory
+  if(DMABuffer_getMap(m_buffer, (void**)(&m_mem)) != PDA_SUCCESS) {
+    throw PdaException("DMA_BUFFER_FAULT_MAP");
+  }
 
-    if(DMABuffer_getLength(m_buffer, &m_size) != PDA_SUCCESS) {
-        throw PdaException("DMA_BUFFER_FAULT_LENGTH");
-    }
+  // get buffer size
+  if(DMABuffer_getLength(m_buffer, &m_size) != PDA_SUCCESS) {
+    throw PdaException("DMA_BUFFER_FAULT_LENGTH");
+  }
 
-    if(DMABuffer_getSGList(m_buffer, &m_sglist) != PDA_SUCCESS) {
-      throw PdaException("DMA_BUFFER_FAULT_SGLIST");
-    }
+  // get and prepare sg list
+  DMABuffer_SGNode* sglist = NULL;
+  if(DMABuffer_getSGList(m_buffer, &sglist) != PDA_SUCCESS) {
+    throw PdaException("DMA_BUFFER_FAULT_SGLIST");
+  }
+  sg_entry_t entry;
+  for(DMABuffer_SGNode *sg=sglist; sg!=NULL; sg=sg->next) {
+    entry.pointer = sg->d_pointer;
+    entry.length = sg->length;
+    m_sglist.push_back(entry);
+  }
 
-    m_scatter_gather_entries = 0;
-    for(DMABuffer_SGNode* sg = m_sglist; sg != NULL; sg = sg->next) {
-        m_scatter_gather_entries++;
-    }
 }
 
 void dma_buffer::deallocate(){
