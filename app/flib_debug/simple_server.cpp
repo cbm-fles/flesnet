@@ -167,6 +167,12 @@ int main(int argc, const char* argv[])
       data_size = 0;
       mc_received = 0;
       //dump_mc(&mc_pair.first);
+      L_(info) << "mc_index "
+               << std::setfill('0') << std::setw(7)
+               << links.at(i)->mc_index();
+      L_(info) << "data_offset "
+               << std::setfill('0') << std::setw(20)
+               << links.at(i)->channel()->get_data_offset();
     }
  
     if (pending_acks == 10) {

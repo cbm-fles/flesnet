@@ -56,7 +56,11 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
     // assert(_flib_link->pending_mc() == 0);
 }
 
-FlibHardwareChannel::~FlibHardwareChannel() { _flib_link->rst_pending_mc(); }
+FlibHardwareChannel::~FlibHardwareChannel()
+{
+    _flib_link->rst_pending_mc();
+    _flib_link->deinit_dma();
+}
 
 uint64_t FlibHardwareChannel::written_mc() { return _flib_link->mc_index(); }
 

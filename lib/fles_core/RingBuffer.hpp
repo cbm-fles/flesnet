@@ -5,6 +5,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <type_traits>
+#include <stdexcept>
 
 /// Simple generic ring buffer class.
 template <typename T, bool CLEARED = false, bool PAGE_ALIGNED = false> class RingBuffer
@@ -57,7 +58,12 @@ public:
                 throw std::runtime_error(std::string("posix_memalign: ") + strerror(ret));
             }
             if (CLEARED) {
-                _buf = buf_t(new(buf) T[_size](), [&](T* ptr){ _array_delete(ptr, _size); });
+                // TODO: hack for gcc < 4.8
+                //_buf = buf_t(new(buf) T[_size](), [&](T* ptr){ _array_delete(ptr, _size); });
+                _buf = buf_t(new(buf) T[_size](), [&](T* ptr){
+                    size_t size = _size;
+                    while(size) { ptr[--size].~T();}
+                    free(const_cast<typename std::remove_volatile<T>::type*>(ptr));});
             } else {
                 _buf = buf_t(new(buf) T[_size], [&](T* ptr){ _array_delete(ptr, _size); });
             }

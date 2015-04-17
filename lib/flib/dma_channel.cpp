@@ -122,11 +122,20 @@ void dma_channel::set_sw_read_pointers(uint64_t data_offset, uint64_t desc_offse
                    sizeof(offsets) >> 2);
 }
 
+// TODO function is not working
+//uint64_t dma_channel::get_data_offset() {
+//  uint64_t offset;
+//  m_rfpkt->mem(RORC_REG_EBDM_OFFSET_L, &offset, 2);
+//  return offset;
+//}
+
 uint64_t dma_channel::get_data_offset() {
-  uint64_t offset;
-  m_rfpkt->mem(RORC_REG_EBDM_OFFSET_L, &offset, 2);
+  uint64_t offset = m_rfpkt->reg(RORC_REG_EBDM_OFFSET_L);
+  offset =
+      offset | ((uint64_t)(m_rfpkt->reg(RORC_REG_EBDM_OFFSET_H)) << 32);
   return offset;
 }
+
   
 /*** MC access funtions ***/
 std::pair<mc_desc, bool> dma_channel::mc() {
