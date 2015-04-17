@@ -1,10 +1,12 @@
 /**
  * @file
  * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
- * Derived form ALICE CRORC Project written by
+ * Derived from ALICE CRORC Project written by
  * Heiko Engel <hengel@cern.ch>
  */
 #include <cassert>
+#include <cstring>
+#include <memory>
 
 #include <registers.h>
 #include <dma_channel.hpp>
@@ -12,22 +14,83 @@
 
 namespace flib {
 
-  dma_channel::dma_channel(register_file* rfpkt,
-                           pda::device* parent_device,
-                           pda::dma_buffer* data_buffer,
-                           pda::dma_buffer* desc_buffer,
+  // constructor for using user buffers
+  dma_channel::dma_channel(flib_link* parent_link,
+                           void* data_buffer,
+                           size_t data_buffer_log_size,
+                           void* desc_buffer,
+                           size_t desc_buffer_log_size,
                            size_t dma_transfer_size)
-    : m_rfpkt(rfpkt),
-      m_parent_device(parent_device),
-      m_data_buffer(data_buffer),
-      m_desc_buffer(desc_buffer),
+    : m_parent_link(parent_link),
+      m_data_buffer_log_size(data_buffer_log_size),
+      m_desc_buffer_log_size(desc_buffer_log_size),
       m_dma_transfer_size(dma_transfer_size)
   {
+    m_rfpkt = m_parent_link->register_file_packetizer();
+    m_reg_dmactrl_cached =  m_rfpkt->reg(RORC_REG_DMA_CTRL);
+    // ensure HW is disabled
+    if (is_enabled()) {
+      //      throw FlibException("DMA Engine already enabled");
+    }
+    m_data_buffer = 
+      std::unique_ptr<dma_buffer>(new dma_buffer(m_parent_link->parent_device(),
+                                                 data_buffer,
+                                                 (UINT64_C(1) << data_buffer_log_size),
+                                                 (2 * m_parent_link->link_index() + 0)));
+    
+    m_desc_buffer = 
+      std::unique_ptr<dma_buffer>(new dma_buffer(m_parent_link->parent_device(),
+                                                 desc_buffer,
+                                                 (UINT64_C(1) << desc_buffer_log_size),
+                                                 (2 * m_parent_link->link_index() + 1)));
+    // clear eb for debugging
+    memset(m_data_buffer->mem(), 0, m_data_buffer->size());
+    // clear rb for polling
+    memset(m_desc_buffer->mem(), 0, m_desc_buffer->size());
+
+    m_eb = reinterpret_cast<uint64_t*>(m_data_buffer->mem());
+    m_db = reinterpret_cast<struct MicrosliceDescriptor*>(m_desc_buffer->mem());
+    m_dbentries = m_desc_buffer->size() /
+      sizeof(struct MicrosliceDescriptor);
+
+    
+    configure();
+    enable();
+  }
+
+  // constructor for using kernel buffers
+  dma_channel::dma_channel(flib_link* parent_link,
+                           size_t data_buffer_log_size,
+                           size_t desc_buffer_log_size,
+                           size_t dma_transfer_size)
+    : m_parent_link(parent_link),
+      m_data_buffer_log_size(data_buffer_log_size),
+      m_desc_buffer_log_size(desc_buffer_log_size),
+      m_dma_transfer_size(dma_transfer_size)
+  {
+    m_rfpkt = m_parent_link->register_file_packetizer();
     m_reg_dmactrl_cached =  m_rfpkt->reg(RORC_REG_DMA_CTRL);
     // ensure HW is disabled
     if (is_enabled()) {
       throw FlibException("DMA Engine already enabled");
     }
+    m_data_buffer = 
+      std::unique_ptr<dma_buffer>(new dma_buffer(m_parent_link->parent_device(),
+                                                 (UINT64_C(1) << data_buffer_log_size),
+                                                 (2 * m_parent_link->link_index() + 0)));
+    
+    m_desc_buffer = 
+      std::unique_ptr<dma_buffer>(new dma_buffer(m_parent_link->parent_device(),
+                                                 (UINT64_C(1) << desc_buffer_log_size),
+                                                 (2 * m_parent_link->link_index() + 1)));
+    // clear eb for debugging
+    memset(m_data_buffer->mem(), 0, m_data_buffer->size());
+    // clear rb for polling
+    memset(m_desc_buffer->mem(), 0, m_desc_buffer->size());
+
+    m_eb = reinterpret_cast<uint64_t*>(m_data_buffer->mem());
+    m_db = reinterpret_cast<struct MicrosliceDescriptor*>(m_desc_buffer->mem());
+
     configure();
     enable();
   }
@@ -56,6 +119,69 @@ void dma_channel::set_sw_read_pointers(uint64_t data_offset, uint64_t desc_offse
   m_rfpkt->set_mem(RORC_REG_EBDM_SW_READ_POINTER_L, &offsets,
                    sizeof(offsets) >> 2);
 }
+
+uint64_t dma_channel::get_data_offset() {
+  uint64_t offset;
+  m_rfpkt->mem(RORC_REG_EBDM_OFFSET_L, &offset, 2);
+  return offset;
+}
+  
+/*** MC access funtions ***/
+std::pair<mc_desc, bool> dma_channel::mc() {
+  struct mc_desc mc;
+  if (m_db[m_index].idx > m_mc_nr) { // mc_nr counts from 1 in HW
+    m_mc_nr = m_db[m_index].idx;
+    mc.nr = m_mc_nr;
+    mc.addr =
+        m_eb +
+      (m_db[m_index].offset & ((UINT64_C(1) << m_data_buffer_log_size) - 1)) / sizeof(uint64_t);
+    mc.size = m_db[m_index].size;
+    mc.rbaddr = (uint64_t*)&m_db[m_index];
+
+    // calculate next rb index
+    m_last_index = m_index;
+    if (m_index < m_dbentries - 1) {
+      m_index++;
+    } else {
+      m_wrap++;
+      m_index = 0;
+    }
+    return std::make_pair(mc, true);
+  }
+
+  return std::make_pair(mc, false);
+}
+
+int dma_channel::ack_mc() {
+
+  // TODO: EB pointers are set to begin of acknoledged entry, pointers are one
+  // entry delayed
+  // to calculate end wrapping logic is required
+  uint64_t eb_offset = m_db[m_last_index].offset & ((UINT64_C(1) << m_data_buffer_log_size) - 1);
+  // each rbenty is 32 bytes, this is hard coded in HW
+  uint64_t rb_offset = m_last_index * sizeof(struct MicrosliceDescriptor) &
+                       ((1 << m_desc_buffer_log_size) - 1);
+
+  set_sw_read_pointers(eb_offset, rb_offset);
+
+#ifdef DEBUG
+  printf("index %d EB offset set: %ld, get: %ld\n", m_last_index, eb_offset,
+         m_channel->getEBOffset());
+  printf("index %d RB offset set: %ld, get: %ld, wrap %d\n", m_last_index,
+         rb_offset, m_channel->getRBOffset(), m_wrap);
+#endif
+
+  return 0;
+}
+
+std::string dma_channel::data_buffer_info() {
+  return m_data_buffer->print_buffer_info();
+}
+
+std::string dma_channel::desc_buffer_info() {
+  return m_desc_buffer->print_buffer_info();
+}
+
   
 // PRIVATE MEMBERS /////////////////////////////////////
 
@@ -69,13 +195,13 @@ void dma_channel::configure() {
 }
 
 void dma_channel::configure_sg_manager(const sg_bram_t buf_sel) {
-  pda::dma_buffer* buffer = buf_sel ? m_desc_buffer : m_data_buffer;
+  pda::dma_buffer* buffer = buf_sel ? m_desc_buffer.get() : m_data_buffer.get();
   // convert list
   std::vector<sg_entry_hw_t> sg_list_hw = convert_sg_list(buffer->sg_list());
 
   // check that sg list fits into HW bram
   if (sg_list_hw.size() > get_max_sg_entries(buf_sel)) {
-    throw FlibException("Number of SG entries exceeds availabel HW memory");
+    throw FlibException("Number of SG entries exceeds available HW memory");
   }
   // write sg list to bram
   write_sg_list_to_device(sg_list_hw, buf_sel);
@@ -126,8 +252,8 @@ std::vector<sg_entry_hw_t> dma_channel::convert_sg_list(const std::vector<pda::s
   write_sg_entry_to_device(clear, buf_sel, buf_addr);  
 
   // set number of configured sg entries
-  // this HW registers do not influence the dma engine
-  // they are for debug pourpouse only
+  // this HW register does not influence the dma engine
+  // they are for debug purpose only
   set_configured_sg_entries(buf_sel, sg_list.size());
 }
 
@@ -173,9 +299,9 @@ void dma_channel::set_configured_sg_entries(const sg_bram_t buf_sel,
 }
 
 void dma_channel::set_configured_buffer_size(const sg_bram_t buf_sel) {
-  // this HW registers do not influence the dma engine
-  // they are for debug pourpouse only
-  pda::dma_buffer* buffer = (buf_sel) ? m_desc_buffer : m_data_buffer;
+  // this HW register does not influence the dma engine
+  // they are for debug purpose only
+  pda::dma_buffer* buffer = (buf_sel) ? m_desc_buffer.get() : m_data_buffer.get();
   sys_bus_addr addr = (buf_sel) ? RORC_REG_RBDM_BUFFER_SIZE_L : RORC_REG_EBDM_BUFFER_SIZE_L;
   uint64_t size = buffer->size();
   m_rfpkt->set_mem(addr, &size, sizeof(size)>>2);  
@@ -184,9 +310,7 @@ void dma_channel::set_configured_buffer_size(const sg_bram_t buf_sel) {
 void dma_channel::set_dma_transfer_size() {
   // dma_transfer_size must be a multiple of 4 byte
   assert ((m_dma_transfer_size & 0x3) == 0);
-  // dma_transfer_size must smaler absolute limit
-  assert (m_dma_transfer_size <= 1024);
-  if (m_dma_transfer_size > m_parent_device->max_payload_size()) {
+  if (m_dma_transfer_size > m_parent_link->parent_device()->max_payload_size()) {
     throw FlibException("DMA transfer size exceeds PCI MaxPayload");
   }
   // set DMA_TRANSFER_SIZE size (has to be provided as #DWs)
@@ -223,7 +347,7 @@ void dma_channel::disable(size_t timeout) {
                1<<BIT_DMACTRL_FIFO_RST));
 }
 
-inline void dma_channel::reset_fifo(bool enable) {
+void dma_channel::reset_fifo(bool enable) {
   set_dmactrl((enable<<BIT_DMACTRL_FIFO_RST),
               (1<<BIT_DMACTRL_FIFO_RST));
 }
@@ -248,7 +372,7 @@ void dma_channel::set_dmactrl(uint32_t reg, uint32_t mask) {
   m_reg_dmactrl_cached = set_bits(m_reg_dmactrl_cached, reg, mask);
   m_rfpkt->set_reg(RORC_REG_DMA_CTRL, m_reg_dmactrl_cached);
 }
-
+  
 inline uint32_t dma_channel::set_bits(uint32_t old_val, uint32_t new_val, uint32_t mask) {
     // clear all unselected bits in new_val
     new_val &= mask;

@@ -22,121 +22,74 @@
 #include <dma_channel.hpp>
 #include <flib_device.hpp>
 #include <flib_link.hpp>
-#include <register_file.hpp>
-#include <register_file_bar.hpp>
+
+#define DMA_TRANSFER_SIZE 128
 
 using namespace pda;
 
 namespace flib {
 flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)
-    : m_link_index(link_index), m_device(dev) {
+    : m_link_index(link_index), m_parent_device(dev) {
   m_base_addr = (m_link_index + 1) * RORC_CHANNEL_OFFSET;
   // register file access
-  m_rfpkt = std::unique_ptr<register_file_bar>(
+  m_rfpkt = std::unique_ptr<register_file>(
       new register_file_bar(bar, m_base_addr));
-  m_rfgtx = std::unique_ptr<register_file_bar>(
+  m_rfgtx = std::unique_ptr<register_file>(
       new register_file_bar(bar, (m_base_addr + (1 << RORC_DMA_CMP_SEL))));
   m_rfglobal =
-      std::unique_ptr<register_file_bar>(new register_file_bar(bar, 0));
-  // create DMA channel and bind to register file,
-  // no HW initialization is done here
-  m_channel = std::unique_ptr<dma_channel>(new dma_channel(m_rfpkt.get(), dev, 128));
+      std::unique_ptr<register_file>(new register_file_bar(bar, 0));
 }
 
 flib_link::~flib_link() {
-  stop();
+  reset_datapath();
+  deinit_dma();
 }
 
-void flib_link::init_dma(register_only_t,
-                        void* ebuf,
-                        size_t log_ebufsize,
-                        void* dbuf,
-                        size_t log_dbufsize) {
-  m_log_ebufsize = log_ebufsize;
-  m_log_dbufsize = log_dbufsize;
-  m_data_buffer =
-    std::unique_ptr<dma_buffer>(new dma_buffer(m_device, ebuf, (1ull << log_ebufsize), (2*m_link_index+0)));
-  m_desc_buffer =
-    std::unique_ptr<dma_buffer>(new dma_buffer(m_device, dbuf, (1ull << log_dbufsize), (2*m_link_index+1)));
-  init_hardware();
-  m_dma_initialized = true;
+void flib_link::init_dma(void* data_buffer,
+                        size_t data_buffer_log_size,
+                         void* desc_buffer,
+                         size_t desc_buffer_log_size) {
+
+  m_dma_channel =
+    std::unique_ptr<dma_channel>(new dma_channel(this,
+                                                 data_buffer, data_buffer_log_size,
+                                                 desc_buffer, desc_buffer_log_size,
+                                                 DMA_TRANSFER_SIZE));
 }
 
-void flib_link::init_dma(create_only_t,
-                         size_t log_ebufsize,
-                         size_t log_dbufsize) {
-  m_log_ebufsize = log_ebufsize;
-  m_log_dbufsize = log_dbufsize;
-  m_data_buffer =
-    std::unique_ptr<dma_buffer>(new dma_buffer(m_device, (1ull << log_ebufsize), (2*m_link_index+0)));
-  m_desc_buffer =
-    std::unique_ptr<dma_buffer>(new dma_buffer(m_device, (1ull << log_dbufsize), (2*m_link_index+1)));
-  init_hardware();
-  m_dma_initialized = true;
-}
-   
-void flib_link::init_dma(open_only_t,
-                         size_t log_ebufsize,
-                         size_t log_dbufsize) {
-  m_log_ebufsize = log_ebufsize;
-  m_log_dbufsize = log_dbufsize;
-  m_data_buffer = std::unique_ptr<dma_buffer>(new dma_buffer(m_device, (2*m_link_index+0)));
-  m_desc_buffer = std::unique_ptr<dma_buffer>(new dma_buffer(m_device, (2*m_link_index+1)));
-  init_hardware();
-  m_dma_initialized = true;
-}
-
-/*** MC access funtions ***/
-
-std::pair<mc_desc, bool> flib_link::mc() {
-  struct mc_desc mc;
-  if (m_db[m_index].idx > m_mc_nr) { // mc_nr counts from 1 in HW
-    m_mc_nr = m_db[m_index].idx;
-    mc.nr = m_mc_nr;
-    mc.addr =
-        m_eb +
-        (m_db[m_index].offset & ((1 << m_log_ebufsize) - 1)) / sizeof(uint64_t);
-    mc.size = m_db[m_index].size;
-    mc.rbaddr = (uint64_t*)&m_db[m_index];
-
-    // calculate next rb index
-    m_last_index = m_index;
-    if (m_index < m_dbentries - 1) {
-      m_index++;
-    } else {
-      m_wrap++;
-      m_index = 0;
-    }
-    return std::make_pair(mc, true);
+void flib_link::deinit_dma() {
+    m_dma_channel = nullptr;
+    
   }
 
-  return std::make_pair(mc, false);
+dma_channel* flib_link::channel() const {
+  if (m_dma_channel) {
+    return m_dma_channel.get();
+  } else {
+    throw FlibException("DMA channel not initialized");
+  }
 }
 
-int flib_link::ack_mc() {
-
-  // TODO: EB pointers are set to begin of acknoledged entry, pointers are one
-  // entry delayed
-  // to calculate end wrapping logic is required
-  uint64_t eb_offset = m_db[m_last_index].offset & ((1 << m_log_ebufsize) - 1);
-  // each rbenty is 32 bytes, this is hard coded in HW
-  uint64_t rb_offset = m_last_index * sizeof(struct MicrosliceDescriptor) &
-                       ((1 << m_log_dbufsize) - 1);
-
-  //_ch->setEBOffset(eb_offset);
-  //_ch->setRBOffset(rb_offset);
-
-  m_channel->setOffsets(eb_offset, rb_offset);
-
-#ifdef DEBUG
-  printf("index %d EB offset set: %ld, get: %ld\n", m_last_index, eb_offset,
-         m_channel->getEBOffset());
-  printf("index %d RB offset set: %ld, get: %ld, wrap %d\n", m_last_index,
-         rb_offset, m_channel->getRBOffset(), m_wrap);
-#endif
-
-  return 0;
+ 
+void flib_link::init_datapath() {
+    set_start_idx(1);
 }
+  
+void flib_link::reset_datapath() {
+  // disable packer if still enabled
+  enable_cbmnet_packer(false);
+  // datapath reset, will also cause hw defaults for
+  // - pending mc  = 0
+  m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, true);
+  // TODO this may be needed in case of errors
+  //if (m_dma_channel) {
+  //  m_dma_channel->reset_fifo(true);
+  //}
+  m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, false);
+}
+
+   
+  ///////////////////////////////////////////////////////
 
 /*** Configuration and control ***/
 
@@ -177,7 +130,7 @@ void flib_link::enable_cbmnet_packer_debug_mode(bool enable) {
   m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 3, enable);
 }
 
-/*** CBMnet control interface ***/
+  /*** CBMnet control interface ***////////////////////////////////////
 
 int flib_link::send_dcm(const struct ctrl_msg* msg) {
 
@@ -296,20 +249,12 @@ uint64_t flib_link::pending_mc() {
   return pend_mc;
 }
 
+  // TODO this has to become desc_offset() in libflib2
 uint64_t flib_link::mc_index() {
-  // TODO replace with _rfgtx->get_mem()
   uint64_t mc_index = m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_L);
   mc_index =
       mc_index | ((uint64_t)(m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_H)) << 32);
   return mc_index;
-}
-
-uint64_t flib_link::mc_offset() {
-  // TODO replace with _rfpkt->get_mem()
-  uint64_t mc_offset = m_rfpkt->reg(RORC_REG_EBDM_OFFSET_L);
-  mc_offset =
-      mc_offset | ((uint64_t)(m_rfpkt->reg(RORC_REG_EBDM_OFFSET_H)) << 32);
-  return mc_offset;
 }
 
 flib_link::data_sel_t flib_link::data_sel() {
@@ -317,6 +262,18 @@ flib_link::data_sel_t flib_link::data_sel() {
   return static_cast<data_sel_t>(dp_cfg & 0x3);
 }
 
+flib_link::link_status_t flib_link::link_status() {
+  uint32_t sts = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_STS);
+
+  struct link_status_t link_status;
+  link_status.link_active = (sts & (1));
+  link_status.data_rx_stop = (sts & (1 << 1));
+  link_status.ctrl_rx_stop = (sts & (1 << 2));
+  link_status.ctrl_tx_stop = (sts & (1 << 3));
+
+  return link_status;
+}
+  
   // CBMnet diagnostics
 uint32_t flib_link::diag_pcs_startup() {
   return m_rfgtx->reg(RORC_REG_GTX_DIAG_PCS_STARTUP);
@@ -363,109 +320,7 @@ void flib_link::diag_clear() {
   m_rfgtx->set_reg(RORC_REG_GTX_DIAG_CLEAR, 0xFFFFFFFF);
 }
 
-std::string flib_link::data_buffer_info() {
-  return print_buffer_info(m_data_buffer.get());
-}
+  ///////////////////////////////////////////////////////////
 
-std::string flib_link::desc_buffer_info() {
-  return print_buffer_info(m_desc_buffer.get());
-}
-
-void* flib_link::data_buffer() const {
-  return reinterpret_cast<void*>(m_data_buffer->mem());
-}
-
-void* flib_link::desc_buffer() const {
-  return reinterpret_cast<void*>(m_desc_buffer->mem());
-}
-
-dma_channel* flib_link::channel() const { return m_channel.get(); }
-
-register_file_bar* flib_link::register_file_packetizer() const { return m_rfpkt.get(); }
-
-register_file_bar* flib_link::register_file_gtx() const { return m_rfgtx.get(); }
-
-flib_link::link_status_t flib_link::link_status() {
-  uint32_t sts = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_STS);
-
-  struct link_status_t link_status;
-  link_status.link_active = (sts & (1));
-  link_status.data_rx_stop = (sts & (1 << 1));
-  link_status.ctrl_rx_stop = (sts & (1 << 2));
-  link_status.ctrl_tx_stop = (sts & (1 << 3));
-
-  return link_status;
-}
-
-/*** PROTECTED ***/
   
-void flib_link::reset_channel() {
-  // datapath reset, will also cause hw defaults for
-  // - pending mc  = 0
-  m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, true);
-  // rst packetizer fifos
-  m_channel->rstPKTFifo(true);
-  // release datapath reset
-  m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, false);
-}
-
-void flib_link::stop() {
-  if (m_channel && m_dma_initialized) {
-    // disable packer
-    enable_cbmnet_packer(false);
-    // disable DMA Engine
-    m_channel->enableEB(0);
-    // wait for pending transfers to complete (dma_busy->0)
-    while (m_channel->isDMABusy()) {
-      usleep(100);
-    }
-
-    // disable RBDM
-    m_channel->enableRB(0);
-    // reset
-    reset_channel();
-  }
-}
-
-void flib_link::init_hardware() {
-  // disable packer if still enabled
-  enable_cbmnet_packer(false);
-  // reset everything to ensure clean startup
-  reset_channel();
-  set_start_idx(1);
-
-  /** prepare EventBufferDescriptorManager
-   * and ReportBufferDescriptorManage
-   * with scatter-gather list
-   **/
-  m_channel->prepareEB(m_data_buffer.get());
-  m_channel->prepareRB(m_desc_buffer.get());
-  m_channel->configureChannel(m_data_buffer.get(), m_desc_buffer.get());
-
-  // clear eb for debugging
-  memset(m_data_buffer->mem(), 0, m_data_buffer->size());
-  // clear rb for polling
-  memset(m_desc_buffer->mem(), 0, m_desc_buffer->size());
-
-  m_eb = (uint64_t*)m_data_buffer->mem();
-  m_db = (struct MicrosliceDescriptor*)m_desc_buffer->mem();
-
-  m_dbentries = m_desc_buffer->size() /
-    sizeof(struct MicrosliceDescriptor);
-
-  // Enable desciptor buffers and dma engine
-  m_channel->enableEB(true);
-  m_channel->enableRB(true);
-  m_channel->enableDMAEngine(true);
-}
-
-std::string flib_link::print_buffer_info(dma_buffer* buf) {
-  std::stringstream ss;
-  ss << "start address = " << buf->mem() << ", "
-     << "physical size = " << (buf->size() >> 20) << " MByte, "
-     << std::endl << "  end address = "
-     << (void*)((uint8_t*)buf->mem() + buf->size()) << ", "
-     << "num SG entries = " << buf->numberOfSGEntries();
-  return ss.str();
-}
 }

@@ -68,6 +68,15 @@ dma_buffer::~dma_buffer()
     deallocate();
 }
 
+std::string dma_buffer::print_buffer_info() {
+  std::stringstream ss;
+  ss << "start address = " << m_mem << ", "
+     << "physical size = " << (m_size >> 20) << " MByte, "
+     << std::endl << "  end address = "
+     << (void*)((uint8_t*)m_mem + m_size) << ", "
+     << "num SG entries = " << m_sglist.size();
+  return ss.str();
+}
 
 /** protected functions */
 

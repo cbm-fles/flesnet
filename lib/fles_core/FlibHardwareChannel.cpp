@@ -40,7 +40,6 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                 desc_buffer, desc_buffer_size_exp));
 #else
     _flib_link->init_dma(
-        flib::register_only,
         const_cast<void*>(static_cast<volatile void*>(_data_send_buffer.ptr())),
         data_buffer_size_exp,
         const_cast<void*>(static_cast<volatile void*>(_desc_send_buffer.ptr())),
@@ -67,12 +66,12 @@ FlibHardwareChannel::~FlibHardwareChannel() { _flib_link->rst_pending_mc(); }
 
 uint64_t FlibHardwareChannel::written_mc() { return _flib_link->mc_index(); }
 
-uint64_t FlibHardwareChannel::written_data() { return _flib_link->mc_offset(); }
+uint64_t FlibHardwareChannel::written_data() { return _flib_link->channel()->get_data_offset(); }
 
 void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
                                               uint64_t new_acked_mc)
 {
-    _flib_link->channel()->setOffsets(
+    _flib_link->channel()->set_sw_read_pointers(
         new_acked_data & _data_buffer_view->size_mask(),
         (new_acked_mc & _desc_buffer_view->size_mask()) *
             sizeof(fles::MicrosliceDescriptor));
