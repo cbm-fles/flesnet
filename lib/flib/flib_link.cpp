@@ -57,6 +57,16 @@ void flib_link::init_dma(void* data_buffer,
                                                  DMA_TRANSFER_SIZE));
 }
 
+void flib_link::init_dma(size_t data_buffer_log_size,
+                         size_t desc_buffer_log_size) {
+
+  m_dma_channel =
+    std::unique_ptr<dma_channel>(new dma_channel(this,
+                                                 data_buffer_log_size,
+                                                 desc_buffer_log_size,
+                                                 DMA_TRANSFER_SIZE));
+}
+
 void flib_link::deinit_dma() {
     m_dma_channel = nullptr;
     

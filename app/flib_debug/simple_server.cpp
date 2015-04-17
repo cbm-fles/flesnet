@@ -65,10 +65,9 @@ int main(int argc, const char* argv[])
     // initialize a DMA buffer
     size_t data_mem_size_exp = 22;
     size_t desc_mem_size_exp = 20;
-
+    
 #ifdef KERNEL_BUFFER
-    links.at(i)->init_dma(flib::create_only,
-                          data_mem_size_exp,
+    links.at(i)->init_dma(data_mem_size_exp,
                           desc_mem_size_exp);
 #else
     data_mem.push_back(memalign(PAGE_SIZE, 1ull << data_mem_size_exp));
@@ -185,11 +184,13 @@ for (size_t i = 0; i < active_links; ++i) {
   L_(debug) << "current mc nr 0x: " << std::hex <<  links.at(i)->mc_index();
   L_(debug) << "pending mc: "  << links.at(i)->pending_mc();
 
-
   links.at(i)->deinit_dma();
+
+#ifndef KERNEL_BUFFER  
   free(data_mem.at(i));
   free(desc_mem.at(i));
-
+#endif
+  
  }
  
   L_(debug) << "Exiting";

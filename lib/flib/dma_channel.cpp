@@ -30,7 +30,7 @@ namespace flib {
     m_reg_dmactrl_cached =  m_rfpkt->reg(RORC_REG_DMA_CTRL);
     // ensure HW is disabled
     if (is_enabled()) {
-      //      throw FlibException("DMA Engine already enabled");
+      throw FlibException("DMA Engine already enabled");
     }
     m_data_buffer = 
       std::unique_ptr<dma_buffer>(new dma_buffer(m_parent_link->parent_device(),
@@ -90,6 +90,8 @@ namespace flib {
 
     m_eb = reinterpret_cast<uint64_t*>(m_data_buffer->mem());
     m_db = reinterpret_cast<struct MicrosliceDescriptor*>(m_desc_buffer->mem());
+    m_dbentries = m_desc_buffer->size() /
+      sizeof(struct MicrosliceDescriptor);
 
     configure();
     enable();
@@ -162,14 +164,12 @@ int dma_channel::ack_mc() {
   uint64_t rb_offset = m_last_index * sizeof(struct MicrosliceDescriptor) &
                        ((1 << m_desc_buffer_log_size) - 1);
 
-  set_sw_read_pointers(eb_offset, rb_offset);
-
 #ifdef DEBUG
-  printf("index %d EB offset set: %ld, get: %ld\n", m_last_index, eb_offset,
-         m_channel->getEBOffset());
-  printf("index %d RB offset set: %ld, get: %ld, wrap %d\n", m_last_index,
-         rb_offset, m_channel->getRBOffset(), m_wrap);
+  printf("index %d EB offset set: %ld\n", m_last_index, eb_offset);
+  printf("index %d RB offset set: %ld, wrap %d\n", m_last_index,
+         rb_offset, m_wrap);
 #endif
+  set_sw_read_pointers(eb_offset, rb_offset);
 
   return 0;
 }
