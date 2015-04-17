@@ -9,6 +9,7 @@
 #define PCI_DMA_BUFFER_H
 
 #include <cstdint>
+#include <sstream>
 #include <vector>
 #include <data_structures.hpp>
 
@@ -77,7 +78,9 @@ public:
      **/
   std::vector<sg_entry_t>sg_list() { return m_sglist; }
 
-  size_t num_sg_entries() { return m_sglist.size(); }; 
+  size_t num_sg_entries() { return m_sglist.size(); };
+
+  std::string print_buffer_info();
 
 private:
 

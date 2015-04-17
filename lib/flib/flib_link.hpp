@@ -14,6 +14,7 @@
 
 #include <registers.h>
 #include <data_structures.hpp>
+#include <register_file_bar.hpp>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -34,23 +35,17 @@ class dma_channel;
 class register_file_bar;
 
 class flib_link {
+
 public:
   flib_link(size_t link_index, device* dev, pci_bar* bar);
   ~flib_link();
 
-  void init_dma(register_only_t,
-               void* ebfu,
-               size_t log_ebufsize,
-               void* dbuf,
-               size_t log_dbufsize);
+  void init_dma(void* data_buffer,
+                size_t data_buffer_log_size,
+                void* desc_buffer,
+                size_t desc_buffer_log_size);
 
-  void init_dma(create_only_t, size_t log_ebufsize, size_t log_dbufsize);
-
-  void init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize);
-
-  /*** MC access funtions ***/
-  std::pair<mc_desc, bool> mc();
-  int ack_mc();
+  void deinit_dma();
 
   /*** Configuration and control ***/
 
@@ -88,17 +83,15 @@ public:
 
   uint64_t pending_mc();
   uint64_t mc_index();
-  uint64_t mc_offset();
   data_sel_t data_sel();
-  std::string data_buffer_info();
-  std::string desc_buffer_info();
-  void* data_buffer() const;
-  void* desc_buffer() const;
-  dma_channel* channel() const;
-  register_file_bar* register_file_packetizer() const;
-  register_file_bar* register_file_gtx() const;
 
   size_t link_index() { return m_link_index; };
+  pda::device* parent_device() { return m_parent_device; };
+
+  dma_channel* channel() const;
+  register_file* register_file_packetizer() const { return m_rfpkt.get(); }
+  register_file* register_file_gtx() const { return m_rfgtx.get(); }
+
   
   struct link_status_t {
     bool link_active;
@@ -137,41 +130,20 @@ public:
 
 
 protected:
-  std::unique_ptr<dma_channel> m_channel;
-  std::unique_ptr<dma_buffer> m_data_buffer;
-  std::unique_ptr<dma_buffer> m_desc_buffer;
-  std::unique_ptr<register_file_bar> m_rfglobal; // TODO remove this later
-  std::unique_ptr<register_file_bar> m_rfpkt;
-  std::unique_ptr<register_file_bar> m_rfgtx;
+  std::unique_ptr<dma_channel> m_dma_channel;
+  std::unique_ptr<register_file> m_rfglobal; // TODO remove this later
+  std::unique_ptr<register_file> m_rfpkt;
+  std::unique_ptr<register_file> m_rfgtx;
 
   size_t m_link_index = 0;
-  size_t m_log_ebufsize = 0;
-  size_t m_log_dbufsize = 0;
-
-  uint64_t m_index = 0;
-  uint64_t m_last_index = 0;
-  uint64_t m_last_acked = 0;
-  uint64_t m_mc_nr = 0;
-  uint64_t m_wrap = 0;
-  uint64_t m_dbentries = 0;
-
-  bool m_dma_initialized = false;
 
   sys_bus_addr m_base_addr;
-  device* m_device;
+  pda::device* m_parent_device;
 
-  volatile uint64_t* m_eb = nullptr;
-  volatile struct MicrosliceDescriptor* m_db = nullptr;
 
-  void reset_channel();
-  void stop();
+  void init_datapath();
+  void reset_datapath();
 
-  /**
-   * Initializes hardware to perform DMA transfers
-   */
-  void init_hardware();
-
-  std::string print_buffer_info(dma_buffer* buf);
 };
 }
 

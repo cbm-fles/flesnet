@@ -1,7 +1,7 @@
 /**
  * @file
  * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
- * Derived form ALICE CRORC Project written by
+ * Derived from ALICE CRORC Project written by
  * Heiko Engel <hengel@cern.ch>
  */
 
@@ -13,6 +13,7 @@
 
 #include <pda/device.hpp>
 #include <pda/dma_buffer.hpp>
+#include <flib_link.hpp>
 #include <register_file.hpp>
 
 #define BIT_SGENTRY_CTRL_WRITE_EN 31
@@ -52,15 +53,42 @@ namespace flib {
   class dma_channel {
     
   public:
-    dma_channel(register_file* rfpkt,
-                pda::device* parent_device,
-                pda::dma_buffer* data_buffer,
-                pda::dma_buffer* desc_buffer,
+
+    dma_channel(flib_link* link,
+                void* data_buffer,
+                size_t data_buffer_log_size,
+                void* desc_buffer,
+                size_t desc_buffer_log_size,
                 size_t dma_transfer_size);
 
+    dma_channel(flib_link* link,
+                size_t data_buffer_log_size,
+                size_t desc_buffer_log_size,
+                size_t dma_transfer_size);
+    
     ~dma_channel();
 
     void set_sw_read_pointers(uint64_t data_offest, uint64_t desc_offset);
+
+    uint64_t get_data_offset();
+    
+    std::pair<mc_desc, bool> mc();
+
+    int ack_mc();
+
+    std::string data_buffer_info();
+    std::string desc_buffer_info();
+
+    void* data_buffer() const {
+      return reinterpret_cast<void*>(m_data_buffer->mem());
+    }
+    
+    void* desc_buffer() const {
+      return reinterpret_cast<void*>(m_desc_buffer->mem());
+    }
+
+    void reset_fifo(bool enable);
+
     
   private:
 
@@ -92,31 +120,37 @@ namespace flib {
     inline void enable();
 
     void disable(size_t timeout = 10000);
-
-    inline void reset_fifo(bool enable);
     
     inline bool is_enabled();
 
     inline bool is_busy();
 
     void set_dmactrl(uint32_t reg, uint32_t mask);
-
+    
     inline uint32_t set_bits(uint32_t old_val, uint32_t new_val, uint32_t mask);
 
     inline uint32_t get_lo_32(uint64_t val);
     
     inline uint32_t get_hi_32(uint64_t val);
     
+    flib_link* m_parent_link;
     register_file* m_rfpkt;
-    pda::device* m_parent_device;
-    pda::dma_buffer* m_data_buffer;
-    pda::dma_buffer* m_desc_buffer;
+    std::unique_ptr<dma_buffer> m_data_buffer;
+    std::unique_ptr<dma_buffer> m_desc_buffer;
+    size_t m_data_buffer_log_size;
+    size_t m_desc_buffer_log_size;
     size_t m_dma_transfer_size;
-
     uint32_t m_reg_dmactrl_cached;
 
+    volatile uint64_t* m_eb = nullptr;
+    volatile struct MicrosliceDescriptor* m_db = nullptr;
+    uint64_t m_index = 0;
+    uint64_t m_last_index = 0;
+    uint64_t m_last_acked = 0;
+    uint64_t m_mc_nr = 0;
+    uint64_t m_wrap = 0;
+    uint64_t m_dbentries = 0;
 
-    
   };
 
 

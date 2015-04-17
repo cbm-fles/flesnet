@@ -78,18 +78,17 @@ int main(int argc, const char* argv[])
     if(desc_mem.at(i) == NULL)
     { return -1; }
 
-    links.at(i)->init_dma(flib::register_only,
-                          data_mem.at(i),
+    links.at(i)->init_dma(data_mem.at(i),
                           data_mem_size_exp,
                           desc_mem.at(i),
                           desc_mem_size_exp);
 #endif
 
-    L_(info) << "Event Buffer: " << links.at(i)->data_buffer_info();
-    L_(info) << "Desciptor Buffer" << links.at(i)->desc_buffer_info();
+    L_(info) << "Event Buffer: " << links.at(i)->channel()->data_buffer_info();
+    L_(info) << "Desciptor Buffer" << links.at(i)->channel()->desc_buffer_info();
     // get raw pointers for debugging
-    eb.push_back((uint64_t *)links.at(i)->data_buffer());
-    rb.push_back((MicrosliceDescriptor *)links.at(i)->desc_buffer());
+    eb.push_back((uint64_t *)links.at(i)->channel()->data_buffer());
+    rb.push_back((MicrosliceDescriptor *)links.at(i)->channel()->desc_buffer());
     
     // set start index
     links.at(i)->set_start_idx(1);
@@ -129,9 +128,9 @@ int main(int argc, const char* argv[])
 
   while(s_interrupted==0) {
     std::pair<flib::mc_desc, bool> mc_pair;
-    while ((mc_pair = links.at(i)->mc()).second == false && s_interrupted==0) {
+    while ((mc_pair = links.at(i)->channel()->mc()).second == false && s_interrupted==0) {
       usleep(10);
-      links.at(i)->ack_mc();
+      links.at(i)->channel()->ack_mc();
       pending_acks = 0;
     }
     pending_acks++;
@@ -172,7 +171,7 @@ int main(int argc, const char* argv[])
     }
  
     if (pending_acks == 10) {
-      links.at(i)->ack_mc();
+      links.at(i)->channel()->ack_mc();
       pending_acks = 0;
     }
     j++;
@@ -185,8 +184,9 @@ for (size_t i = 0; i < active_links; ++i) {
   flib.enable_mc_cnt(false);
   L_(debug) << "current mc nr 0x: " << std::hex <<  links.at(i)->mc_index();
   L_(debug) << "pending mc: "  << links.at(i)->pending_mc();
-  L_(debug) << "busy: " <<  links.at(i)->channel()->isDMABusy();
 
+
+  links.at(i)->deinit_dma();
   free(data_mem.at(i));
   free(desc_mem.at(i));
 
