@@ -7,12 +7,12 @@
 
 #include <string.h>
 
-#include <pda/pci_bar.hpp>
 #include <pda/data_structures.hpp>
+
 #include <register_file_bar.hpp>
 
 namespace flib {
-  register_file_bar::register_file_bar(pci_bar* bar, sys_bus_addr base_addr)
+  register_file_bar::register_file_bar(pda::pci_bar* bar, sys_bus_addr base_addr)
     : m_base_addr(base_addr) {
   m_bar = static_cast<uint32_t*>(bar->mem_ptr());
   m_bar_size = bar->size();

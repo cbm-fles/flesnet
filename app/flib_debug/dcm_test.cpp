@@ -36,9 +36,9 @@ int main(int argc, char *argv[])
  
   //MyFlib->link(0).set_data_sel(flib_link::link);
  
-  ctrl_msg s_msg;
-  ctrl_msg r_msg;
-  // ctrl_msg extra_msg;
+  flib_link::ctrl_msg_t s_msg;
+  flib_link::ctrl_msg_t r_msg;
+  // flib_link::ctrl_msg_t extra_msg;
 
   size_t words;
   uint16_t offset;

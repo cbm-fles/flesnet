@@ -15,6 +15,7 @@
 
 namespace pda {
 
+typedef struct PciDevice_struct PciDevice;
 typedef struct DMABuffer_struct DMABuffer;
 typedef struct DMABuffer_SGNode_struct DMABuffer_SGNode;
   

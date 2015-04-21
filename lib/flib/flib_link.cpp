@@ -13,22 +13,12 @@
 #include <memory>
 #include <stdexcept>
 
-#include <pda/device.hpp>
-#include <pda/dma_buffer.hpp>
-#include <pda/pci_bar.hpp>
-#include <pda/data_structures.hpp>
-
-#include <flib_link.hpp>
-#include <dma_channel.hpp>
-#include <flib_device.hpp>
 #include <flib_link.hpp>
 
 #define DMA_TRANSFER_SIZE 128
 
-using namespace pda;
-
 namespace flib {
-flib_link::flib_link(size_t link_index, device* dev, pci_bar* bar)
+flib_link::flib_link(size_t link_index, pda::device* dev, pda::pci_bar* bar)
     : m_link_index(link_index), m_parent_device(dev) {
   m_base_addr = (m_link_index + 1) * RORC_CHANNEL_OFFSET;
   // register file access
@@ -79,8 +69,9 @@ dma_channel* flib_link::channel() const {
     throw FlibException("DMA channel not initialized");
   }
 }
-
- 
+  
+//////*** DPB Emualtion ***//////
+  
 void flib_link::init_datapath() {
     set_start_idx(1);
 }
@@ -98,10 +89,11 @@ void flib_link::reset_datapath() {
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, false);
 }
 
-   
-  ///////////////////////////////////////////////////////
-
-/*** Configuration and control ***/
+void flib_link::rst_cnet_link() {
+  m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, true);
+  usleep(1000);
+  m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, false);
+}
 
 void flib_link::set_start_idx(uint64_t index) {
   // set reset value
@@ -126,12 +118,6 @@ void flib_link::rst_pending_mc() {
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1 << 1)));
 }
 
-void flib_link::rst_cnet_link() {
-  m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, true);
-  usleep(1000);
-  m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, false);
-}
-
 void flib_link::enable_cbmnet_packer(bool enable) {
   m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
 }
@@ -140,9 +126,65 @@ void flib_link::enable_cbmnet_packer_debug_mode(bool enable) {
   m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 3, enable);
 }
 
-  /*** CBMnet control interface ***////////////////////////////////////
+void flib_link::set_data_sel(data_sel_t rx_sel) {
+  uint32_t dp_cfg = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_CFG);
+  switch (rx_sel) {
+  case rx_disable:
+    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3));
+    break;
+  case rx_link:
+    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1 << 1)) & ~1));
+    break;
+  case rx_pgen:
+    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3));
+    break;
+  case rx_emu:
+    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1 << 1));
+    break;
+  }
+}
 
-int flib_link::send_dcm(const struct ctrl_msg* msg) {
+flib_link::data_sel_t flib_link::data_sel() {
+  uint32_t dp_cfg = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_CFG);
+  return static_cast<data_sel_t>(dp_cfg & 0x3);
+}
+
+void flib_link::set_hdr_config(const hdr_config_t* config) {
+  m_rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config,
+                   sizeof(hdr_config_t) >> 2);
+}
+
+uint64_t flib_link::pending_mc() {
+  // TODO replace with _rfgtx->get_mem()
+  uint64_t pend_mc = m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_L);
+  pend_mc =
+      pend_mc | ((uint64_t)(m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_H)) << 32);
+  return pend_mc;
+}
+
+  // TODO this has to become desc_offset() in libflib2
+uint64_t flib_link::mc_index() {
+  uint64_t mc_index = m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_L);
+  mc_index =
+      mc_index | ((uint64_t)(m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_H)) << 32);
+  return mc_index;
+}
+
+flib_link::link_status_t flib_link::link_status() {
+  uint32_t sts = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_STS);
+
+  link_status_t link_status;
+  link_status.link_active = (sts & (1));
+  link_status.data_rx_stop = (sts & (1 << 1));
+  link_status.ctrl_rx_stop = (sts & (1 << 2));
+  link_status.ctrl_tx_stop = (sts & (1 << 3));
+
+  return link_status;
+}
+
+//////*** CBMnet control interface ***//////
+  
+int flib_link::send_dcm(const ctrl_msg_t* msg) {
 
   assert(msg->words >= 4 && msg->words <= 32);
 
@@ -163,7 +205,7 @@ int flib_link::send_dcm(const struct ctrl_msg* msg) {
   return 0;
 }
 
-int flib_link::recv_dcm(struct ctrl_msg* msg) {
+int flib_link::recv_dcm(ctrl_msg_t* msg) {
 
   int ret = 0;
   uint32_t ctrl_rx = m_rfgtx->reg(RORC_REG_GTX_CTRL_RX);
@@ -225,66 +267,9 @@ uint8_t flib_link::recv_dlm() {
   m_rfgtx->set_bit(RORC_REG_GTX_DLM, 31, true);
   return type;
 }
-
-/*** SETTER ***/
-void flib_link::set_data_sel(data_sel_t rx_sel) {
-  uint32_t dp_cfg = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_CFG);
-  switch (rx_sel) {
-  case rx_disable:
-    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3));
-    break;
-  case rx_link:
-    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1 << 1)) & ~1));
-    break;
-  case rx_pgen:
-    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg | 3));
-    break;
-  case rx_emu:
-    m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1 << 1));
-    break;
-  }
-}
-
-void flib_link::set_hdr_config(const struct hdr_config* config) {
-  m_rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config,
-                   sizeof(hdr_config) >> 2);
-}
-
-/*** GETTER ***/
-uint64_t flib_link::pending_mc() {
-  // TODO replace with _rfgtx->get_mem()
-  uint64_t pend_mc = m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_L);
-  pend_mc =
-      pend_mc | ((uint64_t)(m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_H)) << 32);
-  return pend_mc;
-}
-
-  // TODO this has to become desc_offset() in libflib2
-uint64_t flib_link::mc_index() {
-  uint64_t mc_index = m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_L);
-  mc_index =
-      mc_index | ((uint64_t)(m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_H)) << 32);
-  return mc_index;
-}
-
-flib_link::data_sel_t flib_link::data_sel() {
-  uint32_t dp_cfg = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_CFG);
-  return static_cast<data_sel_t>(dp_cfg & 0x3);
-}
-
-flib_link::link_status_t flib_link::link_status() {
-  uint32_t sts = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_STS);
-
-  struct link_status_t link_status;
-  link_status.link_active = (sts & (1));
-  link_status.data_rx_stop = (sts & (1 << 1));
-  link_status.ctrl_rx_stop = (sts & (1 << 2));
-  link_status.ctrl_tx_stop = (sts & (1 << 3));
-
-  return link_status;
-}
   
-  // CBMnet diagnostics
+//////*** CBMnet diagnostics ***//////
+
 uint32_t flib_link::diag_pcs_startup() {
   return m_rfgtx->reg(RORC_REG_GTX_DIAG_PCS_STARTUP);
 }
@@ -329,8 +314,5 @@ flib_link::diag_flags_t flib_link::diag_flags() {
 void flib_link::diag_clear() {
   m_rfgtx->set_reg(RORC_REG_GTX_DIAG_CLEAR, 0xFFFFFFFF);
 }
-
-  ///////////////////////////////////////////////////////////
-
   
-}
+} // namespace

@@ -14,9 +14,6 @@
 
 typedef uint64_t sys_bus_addr;
 
-// TODO
-// move structs to apropriate files
-
 namespace flib {
 class FlibException : public std::runtime_error {
 public:
@@ -31,16 +28,6 @@ struct mc_desc {
   volatile uint64_t* rbaddr;
 };
 
-struct __attribute__((__packed__)) hdr_config {
-  uint16_t eq_id;  // "Equipment identifier"
-  uint8_t sys_id;  // "Subsystem identifier"
-  uint8_t sys_ver; // "Subsystem format version"
-};
-
-struct ctrl_msg {
-  uint32_t words; // num 16 bit data words
-  uint16_t data[32];
-};
 }
 
 // has to be 256 Bit, this is hard coded in hw

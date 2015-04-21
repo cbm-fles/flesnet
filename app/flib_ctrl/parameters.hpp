@@ -16,7 +16,7 @@ static const size_t _num_flib_links = 8;
 
 struct link_config {
   flib::flib_link::data_sel_t rx_sel;
-  flib::hdr_config hdr_config;
+  flib::flib_link::hdr_config_t hdr_config;
 };
 
 class parameters {

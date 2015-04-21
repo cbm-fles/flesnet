@@ -93,7 +93,7 @@ int main(int argc, const char* argv[])
     links.at(i)->set_start_idx(1);
     
     // set the aproriate header config
-    hdr_config config = {};
+    flib_link::hdr_config_t config = {};
     config.eq_id = 0xE003;
     config.sys_id = 0xBC;
     config.sys_ver = 0xFD;

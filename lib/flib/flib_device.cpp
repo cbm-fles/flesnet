@@ -20,14 +20,12 @@
 #include <pda/device.hpp>
 #include <pda/pci_bar.hpp>
 
-using namespace pda;
-
 namespace flib {
 
 flib_device::flib_device(int device_nr) {
   /** TODO: add exception handling here */
-  m_device = std::unique_ptr<device>(new device(device_nr));
-  m_bar = std::unique_ptr<pci_bar>(new pci_bar(m_device.get(), 1));
+  m_device = std::unique_ptr<pda::device>(new pda::device(device_nr));
+  m_bar = std::unique_ptr<pda::pci_bar>(new pda::pci_bar(m_device.get(), 1));
 
   // register file access
   m_register_file =

@@ -11,7 +11,6 @@
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
 #endif
 
-#include <pda/device.hpp>
 #include <pda/dma_buffer.hpp>
 #include <flib_link.hpp>
 #include <register_file.hpp>
@@ -29,26 +28,7 @@
 
 namespace flib {
 
-  enum sg_bram_t {
-    data_sg_bram = 0,
-    desc_sg_bram = 1
-  };
-    
-  typedef struct __attribute__((__packed__)) {
-    uint32_t addr_low;
-    uint32_t addr_high;
-    uint32_t length;
-  } sg_entry_hw_t;
-
-  typedef struct __attribute__((__packed__)) {
-    uint32_t data_low;
-    uint32_t data_high;
-    uint32_t desc_low;
-    uint32_t desc_high;
-    uint32_t dma_ctrl;
-  } sw_read_pointers_t;
-
-
+  class flib_link;
   
   class dma_channel {
     
@@ -91,6 +71,25 @@ namespace flib {
 
     
   private:
+
+    enum sg_bram_t {
+      data_sg_bram = 0,
+      desc_sg_bram = 1
+    };
+
+    typedef struct __attribute__((__packed__)) {
+      uint32_t addr_low;
+      uint32_t addr_high;
+      uint32_t length;
+    } sg_entry_hw_t;
+
+    typedef struct __attribute__((__packed__)) {
+      uint32_t data_low;
+      uint32_t data_high;
+      uint32_t desc_low;
+      uint32_t desc_high;
+      uint32_t dma_ctrl;
+    } sw_read_pointers_t;
 
     void configure();
 
@@ -135,8 +134,8 @@ namespace flib {
     
     flib_link* m_parent_link;
     register_file* m_rfpkt;
-    std::unique_ptr<dma_buffer> m_data_buffer;
-    std::unique_ptr<dma_buffer> m_desc_buffer;
+    std::unique_ptr<pda::dma_buffer> m_data_buffer;
+    std::unique_ptr<pda::dma_buffer> m_desc_buffer;
     size_t m_data_buffer_log_size;
     size_t m_desc_buffer_log_size;
     size_t m_dma_transfer_size;

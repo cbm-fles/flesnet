@@ -9,8 +9,9 @@
 #include <memory>
 
 #include <registers.h>
-#include <dma_channel.hpp>
 #include <data_structures.hpp>
+
+#include <dma_channel.hpp>
 
 namespace flib {
 
@@ -33,13 +34,13 @@ namespace flib {
       throw FlibException("DMA Engine already enabled");
     }
     m_data_buffer = 
-      std::unique_ptr<dma_buffer>(new dma_buffer(m_parent_link->parent_device(),
+      std::unique_ptr<pda::dma_buffer>(new pda::dma_buffer(m_parent_link->parent_device(),
                                                  data_buffer,
                                                  (UINT64_C(1) << data_buffer_log_size),
                                                  (2 * m_parent_link->link_index() + 0)));
     
     m_desc_buffer = 
-      std::unique_ptr<dma_buffer>(new dma_buffer(m_parent_link->parent_device(),
+      std::unique_ptr<pda::dma_buffer>(new pda::dma_buffer(m_parent_link->parent_device(),
                                                  desc_buffer,
                                                  (UINT64_C(1) << desc_buffer_log_size),
                                                  (2 * m_parent_link->link_index() + 1)));
@@ -75,12 +76,12 @@ namespace flib {
       throw FlibException("DMA Engine already enabled");
     }
     m_data_buffer = 
-      std::unique_ptr<dma_buffer>(new dma_buffer(m_parent_link->parent_device(),
+      std::unique_ptr<pda::dma_buffer>(new pda::dma_buffer(m_parent_link->parent_device(),
                                                  (UINT64_C(1) << data_buffer_log_size),
                                                  (2 * m_parent_link->link_index() + 0)));
     
     m_desc_buffer = 
-      std::unique_ptr<dma_buffer>(new dma_buffer(m_parent_link->parent_device(),
+      std::unique_ptr<pda::dma_buffer>(new pda::dma_buffer(m_parent_link->parent_device(),
                                                  (UINT64_C(1) << desc_buffer_log_size),
                                                  (2 * m_parent_link->link_index() + 1)));
     // clear eb for debugging
@@ -218,7 +219,7 @@ void dma_channel::configure_sg_manager(const sg_bram_t buf_sel) {
 }               
 
   // TODO make vector a reference
-std::vector<sg_entry_hw_t> dma_channel::convert_sg_list(const std::vector<pda::sg_entry_t> sg_list) {
+std::vector<dma_channel::sg_entry_hw_t> dma_channel::convert_sg_list(const std::vector<pda::sg_entry_t> sg_list) {
 
   // convert pda scatter gather list into FLIB usable list
   std::vector<sg_entry_hw_t> sg_list_hw;
