@@ -35,7 +35,7 @@ void dump_report(volatile struct MicrosliceDescriptor *rb)
 	 rb->offset);
 }
 
-void dump_mc(mc_desc* mc)
+void dump_mc(dma_channel::mc_desc_t* mc)
 {
   printf("Report addr=%p :\n mc_size=%u Bytes\n",
          (void *)mc->rbaddr,
@@ -49,7 +49,7 @@ void dump_mc(mc_desc* mc)
   }
 }
 
-void dump_mc_light(mc_desc* mc)
+void dump_mc_light(dma_channel::mc_desc_t* mc)
 {
   printf("Report addr=%p :\n mc_nr %ld mc_size=%u Bytes\n",
          (void *)mc->rbaddr,
@@ -79,7 +79,7 @@ void dump_mc_raw(volatile uint64_t *eb,
 #define MCH_FLAGS 0x0000
 
 //--------------------------------
-size_t get_size(mc_desc* mc) {
+size_t get_size(dma_channel::mc_desc_t* mc) {
   size_t size_bytes = mc->size;
   size_t max_payload_bytes = 128;
   size_t datasize = ((size_bytes-1) | (max_payload_bytes-1))+1;
@@ -87,7 +87,7 @@ size_t get_size(mc_desc* mc) {
 }
 
 
-int process_mc(mc_desc* mc) {
+int process_mc(dma_channel::mc_desc_t* mc) {
 
   struct __attribute__ ((__packed__)) s_mc_header {
     uint8_t   hdr_id;  // "Header format identifier"
@@ -211,7 +211,7 @@ int proc_roc_pg(volatile uint16_t* word, uint8_t wrd_cnt) {
 }
 
 
-/*int process_mc_roc(mc_desc* mc) {
+/*int process_mc_roc(dma_channel::mc_desc_t* mc) {
   
   int error = 0;
   //  uint64_t mc_nr = mc->nr;

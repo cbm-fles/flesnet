@@ -6,9 +6,6 @@
  */
 #pragma once
 
-#include <cstdint>
-#include <unistd.h>
-
 #include <string>
 #include <stdexcept>
 
@@ -17,13 +14,6 @@ class FlibException : public std::runtime_error {
 public:
   explicit FlibException(const std::string& what_arg = "")
       : std::runtime_error(what_arg) {}
-};
-
-struct mc_desc {
-  uint64_t nr;
-  volatile uint64_t* addr;
-  uint32_t size; // bytes
-  volatile uint64_t* rbaddr;
 };
 
 }

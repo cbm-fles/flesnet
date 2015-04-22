@@ -7,13 +7,15 @@
 
 #pragma once
 
-#ifndef PAGE_SIZE
-#define PAGE_SIZE sysconf(_SC_PAGESIZE)
-#endif
+#include <unistd.h> //sysconf
 
 #include <pda/dma_buffer.hpp>
 #include <flib_link.hpp>
 #include <register_file.hpp>
+
+#ifndef PAGE_SIZE
+#define PAGE_SIZE sysconf(_SC_PAGESIZE)
+#endif
 
 #define BIT_SGENTRY_CTRL_WRITE_EN 31
 #define BIT_SGENTRY_CTRL_TARGET 30
@@ -51,8 +53,15 @@ namespace flib {
     void set_sw_read_pointers(uint64_t data_offest, uint64_t desc_offset);
 
     uint64_t get_data_offset();
-    
-    std::pair<mc_desc, bool> mc();
+
+    typedef struct {
+      uint64_t nr;
+      volatile uint64_t* addr;
+      uint32_t size; // bytes
+      volatile uint64_t* rbaddr;
+    } mc_desc_t;
+
+    std::pair<mc_desc_t, bool> mc();
 
     int ack_mc();
 

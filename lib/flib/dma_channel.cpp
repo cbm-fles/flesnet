@@ -139,8 +139,8 @@ uint64_t dma_channel::get_data_offset() {
 
   
 /*** MC access funtions ***/
-std::pair<mc_desc, bool> dma_channel::mc() {
-  struct mc_desc mc;
+std::pair<dma_channel::mc_desc_t, bool> dma_channel::mc() {
+  dma_channel::mc_desc_t mc;
   if (m_db[m_index].idx > m_mc_nr) { // mc_nr counts from 1 in HW
     m_mc_nr = m_db[m_index].idx;
     mc.nr = m_mc_nr;

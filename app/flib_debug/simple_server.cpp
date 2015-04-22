@@ -126,7 +126,7 @@ int main(int argc, const char* argv[])
   size_t mc_received = 0;
 
   while(s_interrupted==0) {
-    std::pair<flib::mc_desc, bool> mc_pair;
+    std::pair<flib::dma_channel::mc_desc_t, bool> mc_pair;
     while ((mc_pair = links.at(i)->channel()->mc()).second == false && s_interrupted==0) {
       usleep(10);
       links.at(i)->channel()->ack_mc();
