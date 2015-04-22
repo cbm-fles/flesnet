@@ -7,13 +7,10 @@
 
 #pragma once
 
-#include <sys/mman.h>
-
 #include <pda/pci_bar.hpp>
 #include <register_file.hpp>
 
 namespace flib {
-
 class register_file_bar : public register_file {
 
 public:
@@ -27,5 +24,4 @@ protected:
   size_t m_bar_size;
   sys_bus_addr m_base_addr;
 };
-  
 } // namespace

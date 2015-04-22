@@ -12,8 +12,6 @@
 #include <string>
 #include <stdexcept>
 
-typedef uint64_t sys_bus_addr;
-
 namespace flib {
 class FlibException : public std::runtime_error {
 public:

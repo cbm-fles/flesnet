@@ -5,10 +5,9 @@
  *
  */
 
-#include <string.h>
+#include <sys/mman.h>
 
 #include <pda/data_structures.hpp>
-
 #include <register_file_bar.hpp>
 
 namespace flib {
@@ -51,4 +50,5 @@ __attribute__((__target__("no-sse"))) int register_file_bar::set_mem(
     return -1;
   }
 }
-}
+
+} // namespace
