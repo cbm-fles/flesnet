@@ -5,14 +5,7 @@
  *
  */
 
-#include <iostream>
-#include <iomanip>
-#include <array>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <memory>
-#include <arpa/inet.h>
+#include <arpa/inet.h> // ntohl
 
 #include <flib_device.hpp>
 #include <flib_link.hpp>
