@@ -73,7 +73,7 @@ std::string dma_buffer::print_buffer_info() {
   ss << "start address = " << m_mem << ", "
      << "physical size = " << (m_size >> 20) << " MByte, "
      << std::endl << "  end address = "
-     << (void*)((uint8_t*)m_mem + m_size) << ", "
+     << static_cast<void*>(static_cast<uint8_t*>(m_mem) + m_size) << ", "
      << "num SG entries = " << m_sglist.size();
   return ss.str();
 }
@@ -84,7 +84,7 @@ void
 dma_buffer::connect() {
 
   // get pointer to memory
-  if(DMABuffer_getMap(m_buffer, (void**)(&m_mem)) != PDA_SUCCESS) {
+  if(DMABuffer_getMap(m_buffer, reinterpret_cast<void**>(&m_mem)) != PDA_SUCCESS) {
     throw PdaException("DMA_BUFFER_FAULT_MAP");
   }
 
