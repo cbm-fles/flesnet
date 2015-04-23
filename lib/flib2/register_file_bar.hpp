@@ -5,25 +5,16 @@
  *
  */
 
-#ifndef REGISTER_FILE_BAR_HPP
-#define REGISTER_FILE_BAR_HPP
+#pragma once
 
-#include <sys/mman.h>
-
+#include <pda/pci_bar.hpp>
 #include <register_file.hpp>
 
-namespace pda {
-class pci_bar;
-}
-
-using namespace pda;
-
-namespace flib2 {
-
+namespace flib {
 class register_file_bar : public register_file {
 
 public:
-  register_file_bar(pci_bar* bar, sys_bus_addr base_addr);
+  register_file_bar(pda::pci_bar* bar, sys_bus_addr base_addr);
 
   int mem(sys_bus_addr addr, void* dest, size_t dwords) override;
   int set_mem(sys_bus_addr addr, const void* source, size_t dwords) override;
@@ -33,5 +24,4 @@ protected:
   size_t m_bar_size;
   sys_bus_addr m_base_addr;
 };
-}
-#endif /** REGISTER_FILE_BAR_HPP */
+} // namespace

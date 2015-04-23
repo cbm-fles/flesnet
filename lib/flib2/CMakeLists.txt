@@ -5,7 +5,7 @@ include_directories( ${LIBFLIB2_SOURCE_DIR}/  ${LIBFLIB2_SOURCE_DIR}/../)
 
 set(VERSION "0.0.0")
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3 -Wstack-usage=2048 -fno-tree-vectorize")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-tree-vectorize -g")
 
 set(LIB_SRC
   dma_channel.cpp

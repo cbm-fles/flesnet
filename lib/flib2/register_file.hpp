@@ -5,12 +5,12 @@
  *
  */
 
-#ifndef REGISTER_FILE_HPP
-#define REGISTER_FILE_HPP
+#pragma once
 
-#include <data_structures.hpp>
+namespace flib {
 
-namespace flib2 {
+typedef uint64_t sys_bus_addr;
+
 class register_file {
 public:
   virtual ~register_file(){};
@@ -43,5 +43,4 @@ public:
     }
   }
 };
-}
-#endif /** REGISTER_FILE_HPP */
+} // namespace
