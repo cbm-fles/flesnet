@@ -94,8 +94,8 @@ void flib_link::set_start_idx(uint64_t index) {
   // set reset value
   // TODO replace with _rfgtx->set_mem()
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_L,
-                   (uint32_t)(index & 0xffffffff));
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_H, (uint32_t)(index >> 32));
+                   static_cast<uint32_t>(index & 0xffffffff));
+  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_H, static_cast<uint32_t>(index >> 32));
   // reste mc counter
   // TODO implenet edge detection and 'pulse only' in HW
   uint32_t mc_gen_cfg = m_rfgtx->reg(RORC_REG_GTX_MC_GEN_CFG);
@@ -145,7 +145,7 @@ flib_link::data_sel_t flib_link::data_sel() {
 }
 
 void flib_link::set_hdr_config(const hdr_config_t* config) {
-  m_rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, (const void*)config,
+  m_rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR, static_cast<const void*>(config),
                    sizeof(hdr_config_t) >> 2);
 }
 
@@ -153,7 +153,7 @@ uint64_t flib_link::pending_mc() {
   // TODO replace with _rfgtx->get_mem()
   uint64_t pend_mc = m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_L);
   pend_mc =
-      pend_mc | ((uint64_t)(m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_H)) << 32);
+      pend_mc | (static_cast<uint64_t>(m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_H)) << 32);
   return pend_mc;
 }
 
@@ -161,7 +161,7 @@ uint64_t flib_link::pending_mc() {
 uint64_t flib_link::mc_index() {
   uint64_t mc_index = m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_L);
   mc_index =
-      mc_index | ((uint64_t)(m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_H)) << 32);
+      mc_index | (static_cast<uint64_t>(m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_H)) << 32);
   return mc_index;
 }
 
@@ -190,7 +190,7 @@ int flib_link::send_dcm(const ctrl_msg_t* msg) {
 
   // copy msg to board memory
   size_t bytes = msg->words * 2 + (msg->words * 2) % 4;
-  m_rfgtx->set_mem(RORC_MEM_BASE_CTRL_TX, (const void*)msg->data, bytes >> 2);
+  m_rfgtx->set_mem(RORC_MEM_BASE_CTRL_TX, static_cast<const void*>(msg->data), bytes >> 2);
 
   // start send FSM
   uint32_t ctrl_tx = 0;
@@ -219,7 +219,7 @@ int flib_link::recv_dcm(ctrl_msg_t* msg) {
 
   // read msg from board memory
   size_t bytes = msg->words * 2 + (msg->words * 2) % 4;
-  m_rfgtx->mem(RORC_MEM_BASE_CTRL_RX, (void*)msg->data, bytes >> 2);
+  m_rfgtx->mem(RORC_MEM_BASE_CTRL_RX, static_cast<void*>(msg->data), bytes >> 2);
 
   // acknowledge msg
   m_rfgtx->set_reg(RORC_REG_GTX_CTRL_RX, 0);

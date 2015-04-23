@@ -133,7 +133,7 @@ void dma_channel::set_sw_read_pointers(uint64_t data_offset, uint64_t desc_offse
 uint64_t dma_channel::get_data_offset() {
   uint64_t offset = m_rfpkt->reg(RORC_REG_EBDM_OFFSET_L);
   offset =
-      offset | ((uint64_t)(m_rfpkt->reg(RORC_REG_EBDM_OFFSET_H)) << 32);
+      offset | (static_cast<uint64_t>(m_rfpkt->reg(RORC_REG_EBDM_OFFSET_H)) << 32);
   return offset;
 }
 
@@ -148,7 +148,7 @@ std::pair<dma_channel::mc_desc_t, bool> dma_channel::mc() {
         m_eb +
       (m_db[m_index].offset & ((UINT64_C(1) << m_data_buffer_log_size) - 1)) / sizeof(uint64_t);
     mc.size = m_db[m_index].size;
-    mc.rbaddr = (uint64_t*)&m_db[m_index];
+    mc.rbaddr = reinterpret_cast<volatile uint64_t*>(&m_db[m_index]);
 
     // calculate next rb index
     m_last_index = m_index;
@@ -258,7 +258,7 @@ std::vector<dma_channel::sg_entry_hw_t> dma_channel::convert_sg_list(const std::
     ++buf_addr;
   }
   // clear trailing sg entry in bram
-  sg_entry_hw_t clear = {0}; 
+  sg_entry_hw_t clear = sg_entry_hw_t(); 
   write_sg_entry_to_device(clear, buf_sel, buf_addr);  
 
   // set number of configured sg entries
