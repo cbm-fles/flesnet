@@ -12,7 +12,7 @@
 
 #define DMA_TRANSFER_SIZE 128
 
-namespace flib {
+namespace flib2 {
 flib_link::flib_link(size_t link_index, pda::device* dev, pda::pci_bar* bar)
     : m_link_index(link_index), m_parent_device(dev) {
   m_base_addr = (m_link_index + 1) * RORC_CHANNEL_OFFSET;

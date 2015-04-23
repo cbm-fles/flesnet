@@ -10,7 +10,7 @@
 #include <pda/pci_bar.hpp>
 #include <register_file.hpp>
 
-namespace flib {
+namespace flib2 {
 class register_file_bar : public register_file {
 
 public:

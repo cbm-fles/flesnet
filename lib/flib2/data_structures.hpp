@@ -9,7 +9,7 @@
 #include <string>
 #include <stdexcept>
 
-namespace flib {
+namespace flib2 {
 class FlibException : public std::runtime_error {
 public:
   explicit FlibException(const std::string& what_arg = "")

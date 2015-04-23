@@ -28,7 +28,7 @@
 #define BIT_DMACTRL_TRANS_SIZE_LSB 16
 #define BIT_DMACTRL_SYNC_SWRDPTRS 31
 
-namespace flib {
+namespace flib2 {
 
   class flib_link;
   

@@ -13,7 +13,7 @@
 #include <pda/device.hpp>
 #include <pda/pci_bar.hpp>
 
-namespace flib {
+namespace flib2 {
 
 flib_device::flib_device(int device_nr) {
   /** TODO: add exception handling here */

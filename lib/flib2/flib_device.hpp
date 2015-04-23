@@ -12,7 +12,7 @@
 #include <pda/device.hpp>
 #include <pda/pci_bar.hpp>
 
-namespace flib {
+namespace flib2 {
 class flib_device;
 class flib_link;
 
@@ -65,4 +65,4 @@ private:
   bool check_magic_number();
 };
 
-} /** namespace flib */
+} // namespace

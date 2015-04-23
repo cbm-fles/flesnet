@@ -7,7 +7,7 @@
 
 #pragma once
 
-namespace flib {
+namespace flib2 {
 
 typedef uint64_t sys_bus_addr;
 

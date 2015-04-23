@@ -13,7 +13,7 @@
 
 #include <dma_channel.hpp>
 
-namespace flib {
+namespace flib2 {
 
   // constructor for using user buffers
   dma_channel::dma_channel(flib_link* parent_link,

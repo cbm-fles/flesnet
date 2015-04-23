@@ -15,7 +15,7 @@
 #include <dma_channel.hpp>
 #include <register_file_bar.hpp>
 
-namespace flib {
+namespace flib2 {
 
 class dma_channel;
 

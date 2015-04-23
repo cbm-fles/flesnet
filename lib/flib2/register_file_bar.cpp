@@ -10,7 +10,7 @@
 #include <pda/data_structures.hpp>
 #include <register_file_bar.hpp>
 
-namespace flib {
+namespace flib2 {
   register_file_bar::register_file_bar(pda::pci_bar* bar, sys_bus_addr base_addr)
     : m_base_addr(base_addr) {
   m_bar = static_cast<uint32_t*>(bar->mem_ptr());
