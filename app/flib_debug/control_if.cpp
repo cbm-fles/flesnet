@@ -46,8 +46,8 @@ int main(int argc, char *argv[])
     offset = atoi(argv[2]);
   }
 
-  ctrl_msg s_msg;
-  ctrl_msg r_msg;
+  flib_link::ctrl_msg_t s_msg;
+  flib_link::ctrl_msg_t r_msg;
 
   // fill message
   for (size_t i = 0; i < 32; i++) {

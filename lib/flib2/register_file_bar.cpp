@@ -5,14 +5,13 @@
  *
  */
 
-#include <string.h>
+#include <sys/mman.h>
 
-#include <pda/pci_bar.hpp>
 #include <pda/data_structures.hpp>
 #include <register_file_bar.hpp>
 
 namespace flib2 {
-  register_file_bar::register_file_bar(pci_bar* bar, sys_bus_addr base_addr)
+  register_file_bar::register_file_bar(pda::pci_bar* bar, sys_bus_addr base_addr)
     : m_base_addr(base_addr) {
   m_bar = static_cast<uint32_t*>(bar->mem_ptr());
   m_bar_size = bar->size();
@@ -51,4 +50,5 @@ __attribute__((__target__("no-sse"))) int register_file_bar::set_mem(
     return -1;
   }
 }
-}
+
+} // namespace

@@ -147,7 +147,7 @@ public:
 
   void ProcEvent()
   {
-    flib::ctrl_msg cnet_s_msg;
+    flib::flib_link::ctrl_msg_t cnet_s_msg;
    
     // get messsage
     size_t msg_size = _driver_req.recv(cnet_s_msg.data, sizeof(cnet_s_msg.data));
@@ -184,9 +184,9 @@ public:
     return;
   }
 
-  void SendCtrl(flib::ctrl_msg& cnet_s_msg)
+  void SendCtrl(flib::flib_link::ctrl_msg_t& cnet_s_msg)
   {
-    flib::ctrl_msg cnet_r_msg;
+    flib::flib_link::ctrl_msg_t cnet_r_msg;
 
     L_(info) << "sending control message";
 
@@ -228,7 +228,7 @@ public:
     return;
   }
 
-  void SendDlm(flib::ctrl_msg& cnet_s_msg)
+  void SendDlm(flib::flib_link::ctrl_msg_t& cnet_s_msg)
   {
     L_(info) << "Sending DLM "
                 << std::hex << "0x" << cnet_s_msg.data[0];
@@ -242,7 +242,7 @@ public:
     return;
   }
 
-  void FlibRead(flib::ctrl_msg& cnet_s_msg)
+  void FlibRead(flib::flib_link::ctrl_msg_t& cnet_s_msg)
   {
     L_(debug) << "Reading FLIB link register: " << std::hex
                 << "addr " << cnet_s_msg.data[0];
@@ -255,7 +255,7 @@ public:
     return;
   }
 
-  void FlibWrite(flib::ctrl_msg& cnet_s_msg)
+  void FlibWrite(flib::flib_link::ctrl_msg_t& cnet_s_msg)
   {
     uint32_t addr = cnet_s_msg.data[1]<<16 | cnet_s_msg.data[0];
     uint32_t data = cnet_s_msg.data[3]<<16 | cnet_s_msg.data[2];

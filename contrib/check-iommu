@@ -1,0 +1,6 @@
+#!/bin/bash
+if ( egrep -q '^flags.*(svm|vmx)' /proc/cpuinfo ) then
+echo IOMMU available
+else
+echo Error: no IOMMU available!
+fi

@@ -9,12 +9,22 @@
 #define PCI_DMA_BUFFER_H
 
 #include <cstdint>
+#include <sstream>
+#include <vector>
 #include <data_structures.hpp>
 
+namespace pda {
+
+typedef struct PciDevice_struct PciDevice;
 typedef struct DMABuffer_struct DMABuffer;
 typedef struct DMABuffer_SGNode_struct DMABuffer_SGNode;
+  
+typedef struct
+{
+    void* pointer;
+    size_t length;
+} sg_entry_t;
 
-namespace pda {
 class device;
 
 /**
@@ -28,96 +38,64 @@ class device;
 class dma_buffer {
 public:
 
-  dma_buffer();
-  ~dma_buffer();
+    /**
+     * Allocate buffer: This function initiates allocation of an
+     * EventBuffer of [size] bytes with Buffer-ID [id]. The size
+     * of the according ReportBuffer is determined by the driver.
+     * @param device pointer to parent rorcfs_device instance
+     * @param size Size of EventBuffer in bytes
+     * @param id Buffer-ID to be used for this buffer. This ID has to
+     *        be unique within all instances of rorcfs_buffer on a machine.
+     */
+     dma_buffer(device* device, uint64_t size, uint64_t id);
+     dma_buffer(device* device, void* buf, uint64_t size, uint64_t id);
+     dma_buffer(device* device, uint64_t id);
 
-  /**
-   * Allocate buffer: This function initiates allocation of an
-   * EventBuffer of [size] bytes with Buffer-ID [id]. The size
-   * of the according ReportBuffer is determined by the driver.
-   * @param dev pointer to parent rorcfs_device instance
-   * @param size Size of EventBuffer in bytes
-   * @param id Buffer-ID to be used for this buffer. This ID has to
-   *        be unique within all instances of rorcfs_buffer on a machine.
-   * @param overmap enables overmapping of the physical pages if nonzero
-   * @param dma_direction select from RORCFS_DMA_FROM_DEVICE,
-   *        RORCFS_DMA_TO_DEVICE, RORCFS_DMA_BIDIRECTIONAL
-   * @return 0 on sucess, -1 on error
-   */
-  int allocate(device* dev, uint64_t size, uint64_t id, int overmap,
-               int dma_direction);
+    ~dma_buffer();
 
-  /**
-   * Free Buffer: This functions initiates de-allocation of the
-   * attaced DMA buffers
-   * @return 0 on sucess, <0 on error ( use perror() )
-   */
-  int deallocate();
+    /**
+     * Buffer-ID
+     * @return unsigned long Buffer-ID
+     */
+    uint64_t ID() { return m_id; }
 
-  /**
-   * Connect to an existing buffer
-   * @param dev parent rorcfs device
-   * @param id buffer ID of exisiting buffer
-   * @return 0 on sucessful connect, -EPERM or -ENOMEM on errors
-   */
-  int connect(device* dev, uint64_t id);
+    /**
+     * Physical Buffer size in bytes. Requested buffer
+     * size from init() is rounded up to the next PAGE_SIZE
+     * boundary.
+     * @return number of bytes allocated as Buffer
+     */
+    size_t size() { return m_size; }
 
-  /**
-   * Buffer-ID
-   * @return unsigned long Buffer-ID
-   */
-  uint64_t ID() { return m_id; }
+    /**
+     * return memory buffer
+     * @return pointer to mmap'ed buffer memory
+     **/
+    void* mem() { return m_mem; }
 
-  /**
-   * Physical Buffer size in bytes. Requested buffer
-   * size from init() is rounded up to the next PAGE_SIZE
-   * boundary.
-   * @return number of bytes allocated as Buffer
-   */
-  uint64_t physicalSize() { return m_physical_size; }
+    /**
+     * return SG list
+     * @return verctor of scatter gather list entries
+     **/
+  std::vector<sg_entry_t>sg_list() { return m_sglist; }
 
-  /**
-   * Size of the EB mapping. THis is double the size of
-   * the physical buffer size due to overmapping
-   * @return size of the EB mapping in bytes
-   */
-  uint64_t mappingSize() { return m_mapping_size; }
+  size_t num_sg_entries() { return m_sglist.size(); };
 
-  /**
-   * Is the buffer overmapped or not
-   * @return 0 if unset, nonzero if set
-   */
-  int isOvermapped();
+  std::string print_buffer_info();
 
-  /**
-   * Number of scatter-gather entries for the Buffer
-   * @return number of entries
-   */
-  uint64_t numberOfSGEntries() { return m_scatter_gather_entries; }
+private:
 
-  /**
-   * return memory buffer
-   * @return pointer to mmap'ed buffer memory
-   **/
-  unsigned int* mem() { return m_mem; }
+  void connect();
+  void deallocate();
 
-  /**
-   * return SG list
-   * @return pointer to scatter gather list
-   **/
-  DMABuffer_SGNode* sglist() { return m_sglist; }
+  DMABuffer* m_buffer  = NULL;
+  PciDevice* m_device  = NULL;
+  uint64_t m_id        = 0;
 
-protected:
-  PciDevice* m_device = NULL;
-  DMABuffer* m_buffer = NULL;
-  DMABuffer_SGNode* m_sglist = NULL;
-  uint64_t m_id = 0;
-
-  unsigned int* m_mem = NULL;
-  uint64_t m_physical_size = 0;
-  uint64_t m_mapping_size = 0;
-
-  uint64_t m_scatter_gather_entries = 0;
+  void* m_mem          = NULL;
+  size_t m_size        = 0;
+  std::vector<sg_entry_t> m_sglist;
 };
+
 }
 #endif

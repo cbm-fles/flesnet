@@ -7,6 +7,11 @@
 
 #include <iostream>
 
+#include <stdio.h>
+#include <string.h>
+#include <malloc.h>
+#include <unistd.h>
+
 #include <pda.h>
 
 #include <dma_buffer.hpp>
@@ -16,92 +21,95 @@ using namespace std;
 
 namespace pda{
 
-dma_buffer::dma_buffer() {}
-
-dma_buffer::~dma_buffer() {
-  m_physical_size = 0;
-  m_mapping_size = 0;
-  m_mem = NULL;
-}
-
-/**
- * Allocate Buffer: initiate memory allocation,
- * connect to new buffer & retrieve actual buffer sizes
- **/
-int dma_buffer::allocate(device* device, uint64_t size, uint64_t id,
-                         int overmap, int dma_direction) {
-  m_device = device->m_device;
-
-  if (PDA_SUCCESS != PciDevice_allocDMABuffer(m_device, id, size, &m_buffer))
-  { return -1; }
-
-  if (overmap == 1) {
-    if (PDA_SUCCESS != DMABuffer_wrapMap(m_buffer)) {
-      return -1;
+/** Allocate a new one */
+dma_buffer::dma_buffer(device* device, uint64_t size, uint64_t id)
+{
+    if(PDA_SUCCESS != PciDevice_allocDMABuffer(device->m_device, id, size, &m_buffer)){
+      throw PdaException("DMA_BUFFER_FAULT_ALLOC");
     }
-  }
 
-  return connect(device, id);
+    m_device = device->m_device;
+    m_id     = id;
+    connect();
 }
 
-/**
- * Release buffer
- **/
-int dma_buffer::deallocate() {
-  if (PciDevice_deleteDMABuffer(m_device, m_buffer) != PDA_SUCCESS) {
-    return -1;
-  }
 
-  m_id = 0;
-  m_mem = NULL;
 
-  return 0;
-}
-
-int dma_buffer::connect(device* device, uint64_t id) {
-  m_device = device->m_device;
-  m_id = id;
-
-  if (m_mem != NULL) {
-    errno = EPERM;
-    return -1;
-  }
-
-  if (DMABuffer_getMap(m_buffer, (void**)(&m_mem)) != PDA_SUCCESS) {
-    return -1;
-  }
-
-  if (DMABuffer_getLength(m_buffer, &m_physical_size) != PDA_SUCCESS) {
-    return -1;
-  }
-
-  if (isOvermapped() == 1) {
-    m_mapping_size = 2 * m_physical_size;
-  } else {
-    m_mapping_size = m_physical_size;
-  }
-
-  if (DMABuffer_getSGList(m_buffer, &m_sglist) != PDA_SUCCESS) {
-    return -1;
-  }
-
-  m_scatter_gather_entries = 0;
-  for (DMABuffer_SGNode* sg = m_sglist; sg != NULL; sg = sg->next) {
-    m_scatter_gather_entries++;
-  }
-
-  return 0;
-}
-
-int dma_buffer::isOvermapped() {
-  void* map_two = NULL;
-
-  if (DMABuffer_getMapTwo(m_buffer, &map_two) != PDA_SUCCESS) {
-    if (map_two != NULL) {
-      return 1;
+/** Register a malloced or memaligned buffer */
+dma_buffer::dma_buffer(device* device, void* buf, uint64_t size, uint64_t id)
+{
+    if(PDA_SUCCESS != PciDevice_registerDMABuffer(device->m_device, id, buf, size, &m_buffer)){
+      throw PdaException("DMA_BUFFER_FAULT_REG");
     }
+
+    m_device = device->m_device;
+    m_id     = id;
+    connect();
+}
+
+
+
+/** Attach an already existing buffer */
+dma_buffer::dma_buffer(device* device, uint64_t id)
+{
+    if(PDA_SUCCESS != PciDevice_getDMABuffer(device->m_device, id, &m_buffer)){
+        throw PdaException("DMA_BUFFER_FAULT_GET");
+    }
+
+    m_device = device->m_device;
+    m_id     = id;
+    connect();
+}
+
+
+
+dma_buffer::~dma_buffer()
+{
+    deallocate();
+}
+
+std::string dma_buffer::print_buffer_info() {
+  std::stringstream ss;
+  ss << "start address = " << m_mem << ", "
+     << "physical size = " << (m_size >> 20) << " MByte, "
+     << std::endl << "  end address = "
+     << static_cast<void*>(static_cast<uint8_t*>(m_mem) + m_size) << ", "
+     << "num SG entries = " << m_sglist.size();
+  return ss.str();
+}
+
+/** protected functions */
+
+void
+dma_buffer::connect() {
+
+  // get pointer to memory
+  if(DMABuffer_getMap(m_buffer, reinterpret_cast<void**>(&m_mem)) != PDA_SUCCESS) {
+    throw PdaException("DMA_BUFFER_FAULT_MAP");
   }
 
-  return 0;
+  // get buffer size
+  if(DMABuffer_getLength(m_buffer, &m_size) != PDA_SUCCESS) {
+    throw PdaException("DMA_BUFFER_FAULT_LENGTH");
+  }
+
+  // get and prepare sg list
+  DMABuffer_SGNode* sglist = NULL;
+  if(DMABuffer_getSGList(m_buffer, &sglist) != PDA_SUCCESS) {
+    throw PdaException("DMA_BUFFER_FAULT_SGLIST");
+  }
+  sg_entry_t entry;
+  for(DMABuffer_SGNode *sg=sglist; sg!=NULL; sg=sg->next) {
+    entry.pointer = sg->d_pointer;
+    entry.length = sg->length;
+    m_sglist.push_back(entry);
+  }
+
 }
+
+void dma_buffer::deallocate(){
+    PciDevice_deleteDMABuffer(m_device, m_buffer);
+}
+
+
 }

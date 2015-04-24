@@ -5,148 +5,94 @@
  *
  */
 
-#ifndef FLIB_LINK_HPP
-#define FLIB_LINK_HPP
+#pragma once
 
 #include <pda/device.hpp>
-#include <pda/dma_buffer.hpp>
 #include <pda/pci_bar.hpp>
 
 #include <registers.h>
 #include <data_structures.hpp>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-
-using namespace pda;
+#include <dma_channel.hpp>
+#include <register_file_bar.hpp>
 
 namespace flib2 {
-// Tags to indicate mode of buffer initialization
-struct create_only_t {};
-struct open_only_t {};
-struct open_or_create_t {};
-
-static const create_only_t create_only = create_only_t();
-static const open_only_t open_only = open_only_t();
-static const open_or_create_t open_or_create = open_or_create_t();
 
 class dma_channel;
-class register_file_bar;
 
 class flib_link {
+
 public:
-  flib_link(size_t link_index, device* dev, pci_bar* bar);
+  flib_link(size_t link_index, pda::device* dev, pda::pci_bar* bar);
   ~flib_link();
 
-  int init_dma(create_only_t, size_t log_ebufsize, size_t log_dbufsize);
+  void init_dma(void* data_buffer,
+                size_t data_buffer_log_size,
+                void* desc_buffer,
+                size_t desc_buffer_log_size);
 
-  int init_dma(open_only_t, size_t log_ebufsize, size_t log_dbufsize);
+  void init_dma(size_t data_buffer_log_size,
+                size_t desc_buffer_log_size);
 
-  int init_dma(open_or_create_t, size_t log_ebufsize, size_t log_dbufsize);
+  void deinit_dma();
 
-  /*** MC access funtions ***/
-  std::pair<mc_desc, bool> mc();
-  int ack_mc();
+  /*** DPB Emualtion ***/
 
-  /*** Configuration and control ***/
+  void init_datapath();
+  void reset_datapath();
+  void rst_cnet_link();
 
-  /**
-   * REG: mc_gen_cfg
-   * bit 0 set_start_index
-   * bit 1 rst_pending_mc
-   * bit 2 packer enable
-   */
   void set_start_idx(uint64_t index);
   void rst_pending_mc();
-  void rst_cnet_link();
   void enable_cbmnet_packer(bool enable);
   void enable_cbmnet_packer_debug_mode(bool enable);
 
-  // REG: datapath_cfg
-  // bit 1-0 data_sel (10: link, 11: pgen, 01: emu, 00: disable)
-  enum data_sel_t { rx_disable, rx_emu, rx_link, rx_pgen };
+  typedef enum { rx_disable = 0x0,
+                 rx_emu = 0x1,
+                 rx_link = 0x2,
+                 rx_pgen = 0x3
+  } data_sel_t;
+  
   void set_data_sel(data_sel_t rx_sel);
-  void set_hdr_config(const struct hdr_config* config);
+  data_sel_t data_sel();
 
+  typedef struct __attribute__((__packed__)) {
+    uint16_t eq_id;  // "Equipment identifier"
+    uint8_t sys_id;  // "Subsystem identifier"
+    uint8_t sys_ver; // "Subsystem format version"
+  } hdr_config_t;
+
+  void set_hdr_config(const hdr_config_t* config);
   uint64_t pending_mc();
   uint64_t mc_index();
-  uint64_t mc_offset();
-  data_sel_t data_sel();
-  std::string data_buffer_info();
-  std::string desc_buffer_info();
-  void* data_buffer() const;
-  void* desc_buffer() const;
-  dma_channel* channel() const;
-  register_file_bar* register_file_packetizer() const;
-  register_file_bar* register_file_gtx() const;
 
-  size_t link_index() { return m_link_index; };
-  
-  struct link_status_t {
+  typedef struct {
     bool link_active;
     bool data_rx_stop;
     bool ctrl_rx_stop;
     bool ctrl_tx_stop;
-  };
+  } link_status_t;
 
-  struct link_status_t link_status();
+  link_status_t link_status();
 
-protected:
-  std::unique_ptr<dma_channel> m_channel;
-  std::unique_ptr<dma_buffer> m_data_buffer;
-  std::unique_ptr<dma_buffer> m_desc_buffer;
-  std::unique_ptr<register_file_bar> m_rfglobal; // TODO remove this later
-  std::unique_ptr<register_file_bar> m_rfpkt;
-  std::unique_ptr<register_file_bar> m_rfgtx;
+  /*** Getter ***/
+  size_t link_index() { return m_link_index; };
+  pda::device* parent_device() { return m_parent_device; };
+
+  dma_channel* channel() const;
+  register_file* register_file_packetizer() const { return m_rfpkt.get(); }
+  register_file* register_file_gtx() const { return m_rfgtx.get(); }
+
+
+private:
+  std::unique_ptr<dma_channel> m_dma_channel;
+  std::unique_ptr<register_file> m_rfglobal; // TODO remove this later
+  std::unique_ptr<register_file> m_rfpkt;
+  std::unique_ptr<register_file> m_rfgtx;
 
   size_t m_link_index = 0;
-  size_t m_log_ebufsize = 0;
-  size_t m_log_dbufsize = 0;
-
-  uint64_t m_index = 0;
-  uint64_t m_last_index = 0;
-  uint64_t m_last_acked = 0;
-  uint64_t m_mc_nr = 0;
-  uint64_t m_wrap = 0;
-  uint64_t m_dbentries = 0;
-
-  bool m_dma_initialized = false;
 
   sys_bus_addr m_base_addr;
-  device* m_device;
+  pda::device* m_parent_device;
 
-  volatile uint64_t* m_eb = nullptr;
-  volatile struct MicrosliceDescriptor* m_db = nullptr;
-
-  /**
-   * Creates new buffer, throws an exception if buffer already exists
-   */
-  std::unique_ptr<dma_buffer> create_buffer(size_t idx, size_t log_size);
-
-  /**
-   * Opens an existing buffer, throws an exception if buffer
-   * doesn't exists
-   */
-  std::unique_ptr<dma_buffer> open_buffer(size_t idx);
-
-  /**
-   * Opens an existing buffer or creates new buffer if non exists
-   */
-  std::unique_ptr<dma_buffer> open_or_create_buffer(size_t idx,
-                                                    size_t log_size);
-
-  void reset_channel();
-  void stop();
-
-  /**
-   * Initializes hardware to perform DMA transfers
-   */
-  int init_hardware();
-
-  std::string print_buffer_info(dma_buffer* buf);
 };
 }
-
-#pragma GCC diagnostic pop
-
-#endif /** FLIB_LINK_HPP */

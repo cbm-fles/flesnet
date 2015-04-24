@@ -1,212 +1,166 @@
 /**
  * @file
  * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
- * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
- *
+ * Derived from ALICE CRORC Project written by
+ * Heiko Engel <hengel@cern.ch>
  */
 
-#ifndef DMA_CHANNEL_H
-#define DMA_CHANNEL_H
+#pragma once
 
-#include <pda/device.hpp>
+#include <unistd.h> //sysconf
+
 #include <pda/dma_buffer.hpp>
+#include <flib_link.hpp>
+#include <register_file.hpp>
 
-#include <data_structures.hpp>
+#ifndef PAGE_SIZE
+#define PAGE_SIZE sysconf(_SC_PAGESIZE)
+#endif
 
-using namespace pda;
+#define BIT_SGENTRY_CTRL_WRITE_EN 31
+#define BIT_SGENTRY_CTRL_TARGET 30
+
+#define BIT_DMACTRL_DMA_EN 0
+#define BIT_DMACTRL_FIFO_RST 1
+#define BIT_DMACTRL_EBDM_EN 2
+#define BIT_DMACTRL_RBDM_EN 3
+#define BIT_DMACTRL_BUSY 7
+#define BIT_DMACTRL_TRANS_SIZE_LSB 16
+#define BIT_DMACTRL_SYNC_SWRDPTRS 31
 
 namespace flib2 {
-class register_file_bar;
 
-/**
- * @class
- * @brief DMA channel management class
- *
- * Initialize DMA channel with init() before using any other member
- * function. Initialization sets the parent BAR and the channel offset
- * within the BAR (via dma_base). Use prepareEB() and prepareRB() to
- * fill the buffer descriptor memories, then configure Buffer-Enable
- * and -Continuous flags (setRBDMEnable(), setEBDMEnable(),
- * setRBDMContinuous(), setEBDMContinuous() ).
- * No DMA transfer will start unless setDMAEnable() has been called
- * with enable=1.
- **/
+  class flib_link;
+  
+  class dma_channel {
+    
+  public:
 
-class dma_channel {
-public:
-  dma_channel(register_file_bar* rf, device* parent_device);
+    dma_channel(flib_link* link,
+                void* data_buffer,
+                size_t data_buffer_log_size,
+                void* desc_buffer,
+                size_t desc_buffer_log_size,
+                size_t dma_transfer_size);
 
-  ~dma_channel();
+    dma_channel(flib_link* link,
+                size_t data_buffer_log_size,
+                size_t desc_buffer_log_size,
+                size_t dma_transfer_size);
+    
+    ~dma_channel();
 
-  /**
-  * prepare EventBuffer: copy scatterlist from
-  * rorcfs_buffer into the EventBufferDescriptorManager in the RORC
-  * @param buf rorcfs_buffer instance to be used as
-  *        event destination buffer
-  * @return 0 on sucess, -1 on errors, -EFBIG if more
-  *         than 2048 sg-entries
-  **/
-  int prepareEB(dma_buffer* buf);
+    void set_sw_read_pointers(uint64_t data_offest, uint64_t desc_offset);
 
-  /**
-  * prepare ReportBuffer: copy scatterlist from
-  * rorcfs_buffer into the ReportBufferDescriptorManager
-  * in the RORC
-  * @param buf rorcfs_buffer instance to be used as
-  *        report destination buffer
-  * @return 0 on sucess, -1 on errors
-  **/
-  int prepareRB(dma_buffer* buf);
+    uint64_t get_data_offset();
 
-  /**
-  * set Enable Bit of EBDM
-  * @param enable nonzero param will enable, zero will disable
-  **/
-  void enableEB(int enable);
+    typedef struct {
+      uint64_t nr;
+      volatile uint64_t* addr;
+      uint32_t size; // bytes
+      volatile uint64_t* rbaddr;
+    } mc_desc_t;
 
-  /**
-  * set Enable Bit of RBDM
-  * @param enable nonzero param will enable, zero will disable
-  **/
-  void enableRB(int enable);
+    std::pair<mc_desc_t, bool> mc();
 
-  /**
-  * Enable Bit of EBDM
-  * @return enable bit
-  **/
-  unsigned int isEBEnabled();
+    int ack_mc();
 
-  /**
-  * Enable Bit of RBDM
-  * @return enable bit
-  **/
-  unsigned int isRBEnabled();
+    std::string data_buffer_info();
+    std::string desc_buffer_info();
 
-  /**
-  * setDMAConfig set the DMA Controller operation mode
-  * @param config Bit mapping:
-  * TODO
-  **/
-  void setDMAConfig(unsigned int config);
+    void* data_buffer() const {
+      return reinterpret_cast<void*>(m_data_buffer->mem());
+    }
+    
+    void* desc_buffer() const {
+      return reinterpret_cast<void*>(m_desc_buffer->mem());
+    }
 
-  /**
-  * @return DMA Packetizer COnfiguration and Status
-  **/
-  unsigned int DMAConfig();
+    void reset_fifo(bool enable);
 
-  /**
-  * maximum payload size from current HW configuration
-  * @return maximum payload size in bytes
-  **/
-  uint64_t maxPayload();
+    
+  private:
 
-  /**
-  * number of Scatter Gather entries for the Event buffer
-  * @return number of entries
-  **/
-  unsigned int EBDMnSGEntries();
+    enum sg_bram_t {
+      data_sg_bram = 0,
+      desc_sg_bram = 1
+    };
 
-  /**
-  * number of Scatter Gather entries for the Report buffer
-  * @return number of entries
-  **/
-  unsigned int RBDMnSGEntries();
+    typedef struct __attribute__((__packed__)) {
+      uint32_t addr_low;
+      uint32_t addr_high;
+      uint32_t length;
+    } sg_entry_hw_t;
 
-  /**
-  * DMA Packetizer 'Busy' flag
-  * @return 1 if busy, 0 if idle
-  **/
-  unsigned int isDMABusy();
+    typedef struct __attribute__((__packed__)) {
+      uint32_t data_low;
+      uint32_t data_high;
+      uint32_t desc_low;
+      uint32_t desc_high;
+      uint32_t dma_ctrl;
+    } sw_read_pointers_t;
 
-  /**
-  * buffer size set in EBDM. This returns the size of the
-  * DMA buffer set in the DMA enginge and has to be the physical
-  * size of the associated DMA buffer.
-  * @return buffer size in bytes
-  **/
-  unsigned long EBSize();
+    void configure();
 
-  /**
-  * buffer size set in RBDM. As the RB is not overmapped this size
-  * should be equal to the sysfs file size and buf->RBSize()
-  * @return buffer size in bytes
-  **/
-  unsigned long RBSize();
+    void configure_sg_manager(const sg_bram_t buf_sel);
+    
+    std::vector<sg_entry_hw_t> convert_sg_list(const std::vector<pda::sg_entry_t> sg_list);
 
-  /**
-  * configure DMA engine for current set of buffers
-  * @param ebuf pointer to struct rorcfs_buffer to be used as
-  * event buffer
-  * @param rbuf pointer to struct rorcfs_buffer to be used as
-  * report buffer
-  * @param max_payload maximum payload size to be used (in bytes)
-  * @return 0 on sucess, <0 on error
-  * */
-  int configureChannel(struct dma_buffer* ebuf, struct dma_buffer* rbuf,
-                       uint32_t max_payload);
+    
+    void write_sg_list_to_device(const std::vector<sg_entry_hw_t> sg_list,
+                                 const sg_bram_t buf_sel);
 
-  /**
-  * set Event Buffer File Offset
-  * the DMA engine only writes to the Event buffer as long as
-  * its internal offset is at least (MaxPayload)-bytes smaller
-  * than the Event Buffer Offset. In order to start a transfer,
-  * set EBOffset to (BufferSize-MaxPayload).
-  * IMPORTANT: offset has always to be a multiple of MaxPayload!
-  **/
-  void setEBOffset(unsigned long offset);
+    void write_sg_entry_to_device(const sg_entry_hw_t entry,
+                                  const sg_bram_t buf_sel,
+                                  const uint32_t buf_addr);
 
-  /**
-  * current Event Buffer File Offset
-  * @return unsigned long offset
-  **/
-  unsigned long EBOffset();
+    size_t get_max_sg_entries(const sg_bram_t buf_sel);
 
-  /**
-  * set Report Buffer File Offset
-  **/
-  void setRBOffset(unsigned long offset);
+    size_t get_configured_sg_entries(const sg_bram_t buf_sel);
 
-  /**
-  * Report Buffer File Offset
-  * @return unsigned long offset
-  **/
-  unsigned long RBOffset();
+    void set_configured_sg_entries(const sg_bram_t buf_sel,
+                               const uint16_t num_entries);
 
-  /**
-  * setOffsets
-  * @param eboffset byte offset in event buffer
-  * @param rboffset byte offset in report buffer
-  **/
-  void setOffsets(unsigned long eboffset, unsigned long rboffset);
+    void set_configured_buffer_size(const sg_bram_t buf_sel);
 
-  /**
-  * buffer offset that is currently used as
-  * DMA destination
-  * @return 64bit offset in report buffer file
-  **/
-  unsigned long RBDMAOffset();
+    void set_dma_transfer_size();
 
-  /**
-  * buffer offset that is currently used as
-  * DMA destination
-  * @return 64bit offset in event buffer file
-  **/
-  unsigned long EBDMAOffset();
+    inline void enable();
 
-protected:
-  register_file_bar* m_rfpkt = NULL;
-  device* parent_device = NULL;
-  uint64_t m_MaxPayload = 0;
+    void disable(size_t timeout = 10000);
+    
+    inline bool is_enabled();
 
-  /**
-   * setMaxPayload( int size ) and setMaxPayload()
-   * are wrappers around _setMaxPayload and should
-   * be called instead
-   */
-  void setMaxPayload();
+    inline bool is_busy();
 
-  int prepareBuffer(dma_buffer* buf, sys_bus_addr addr, uint32_t flag);
-};
-}
+    void set_dmactrl(uint32_t reg, uint32_t mask);
+    
+    inline uint32_t set_bits(uint32_t old_val, uint32_t new_val, uint32_t mask);
 
-#endif
+    inline uint32_t get_lo_32(uint64_t val);
+    
+    inline uint32_t get_hi_32(uint64_t val);
+    
+    flib_link* m_parent_link;
+    register_file* m_rfpkt;
+    std::unique_ptr<pda::dma_buffer> m_data_buffer;
+    std::unique_ptr<pda::dma_buffer> m_desc_buffer;
+    size_t m_data_buffer_log_size;
+    size_t m_desc_buffer_log_size;
+    size_t m_dma_transfer_size;
+    uint32_t m_reg_dmactrl_cached;
+
+    volatile uint64_t* m_eb = nullptr;
+    volatile struct MicrosliceDescriptor* m_db = nullptr;
+    uint64_t m_index = 0;
+    uint64_t m_last_index = 0;
+    uint64_t m_last_acked = 0;
+    uint64_t m_mc_nr = 0;
+    uint64_t m_wrap = 0;
+    uint64_t m_dbentries = 0;
+
+  };
+
+
+  
+} // namespace

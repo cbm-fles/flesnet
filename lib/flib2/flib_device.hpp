@@ -5,18 +5,12 @@
  *
  */
 
-#ifndef FLIB_DEVICE_HPP
-#define FLIB_DEVICE_HPP
+#pragma once
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 
 #include <pda/device.hpp>
 #include <pda/pci_bar.hpp>
-
-//#pragma GCC diagnostic push
-//#pragma GCC diagnostic ignored "-Wold-style-cast"
-
-using namespace pda;
 
 namespace flib2 {
 class flib_device;
@@ -63,16 +57,12 @@ public:
 private:
 
   /** Member variables */
-  std::unique_ptr<device> m_device;
-  std::unique_ptr<pci_bar> m_bar;
+  std::unique_ptr<pda::device> m_device;
+  std::unique_ptr<pda::pci_bar> m_bar;
   std::unique_ptr<register_file_bar> m_register_file;
   std::vector<std::unique_ptr<flib_link>> m_link;
 
   bool check_magic_number();
 };
 
-} /** namespace flib */
-
-// #pragma GCC diagnostic pop
-
-#endif // FLIB_DEVICE_HPP
+} // namespace

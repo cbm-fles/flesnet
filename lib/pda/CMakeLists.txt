@@ -3,7 +3,7 @@ project(LIBPDA)
 
 include_directories( ${LIBPDA_SOURCE_DIR}/ )
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3 -Wstack-usage=2048 -fno-tree-vectorize")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-tree-vectorize -g")
 
 set(LIB_SRC
   pci_bar.cpp
