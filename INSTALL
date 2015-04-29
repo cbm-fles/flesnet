@@ -4,18 +4,19 @@ FLESnet
 OS and Software Environment
 --------------------
 
-At the moment the official operating system for operating flesnet with
+At the moment the official software environment for operating flesnet with
 a flib is: 
 
-Debian 7.6 / fairroot external packages jul14p3
+Debian 8.0 / fairsoft mar15p1 /fairroot v-15.03 /cbmroot trunk
 
 This doesn't imply that it is impossible to run a setup on any other 
 OS / external packages combination. But tests are only performed for the 
-official versions. If there are reasons to go to another version please 
+official environment. If there are reasons to go to another version please 
 let me know.
 
 Earlier versions:
 
+Debian 7.6 / fairroot external packages jul14p3
 Debian 7.6 / fairroot external packages jul14p2
 
 
