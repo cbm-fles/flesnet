@@ -8,7 +8,7 @@ USER_NAME=`id -u -n`
 
 getdeps()
 {
-  apt-get install libpci-dev gcc libtool libtool-bin linux-headers-`uname -r`
+  apt-get install libpci-dev gcc libtool libtool-bin libkmod-dev linux-headers-`uname -r`
 }
 
 install()
