@@ -41,7 +41,7 @@ ENDIF(NOT DEFINED ENV{CNETCNTLSERVER_PATH})
 include_directories("${PROJECT_SOURCE_DIR}/lib/logging"
                     "${PROJECT_SOURCE_DIR}/lib/flib"
                     "${PROJECT_SOURCE_DIR}/lib"
-                    "${PROJECT_SOURCE_DIR}/lib/flib_server")
+                    "${PROJECT_SOURCE_DIR}/lib/flib_ctrl_server")
 
 add_executable(flib_ctrl flib_ctrl.cpp parameters.hpp)
 
