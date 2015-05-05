@@ -56,7 +56,7 @@ For all defined subsystem identifiers check contrib/flib.cfg
 Control Client:
 ---------------
 
-The control library including th cliclient is now part of 
+The control library including the cliclient is now part of 
 the CBMroot repository.
 Please see the CBMroot repository for further information.
 
@@ -170,7 +170,7 @@ What should I do if something went wrong?
    Remove leftover shared memories if present:
    'sudo rm /dev/shm/flesnet_*'
 
-   Reprogramm the FLIB FPGA.
+   Reprogram the FLIB FPGA.
 
 
 How can I check if the FLIB is installed correctly?
