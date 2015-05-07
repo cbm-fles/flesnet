@@ -3,10 +3,10 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(fles_ipc)
 
-IF(NOT DEFINED ENV{SIMPATH})
- MESSAGE(FATAL_ERROR "Path to Fairroot external packages is not set. Please set SIMPATH.")
-ENDIF(NOT DEFINED ENV{SIMPATH})
-SET(SIMPATH $ENV{SIMPATH})
+if(NOT DEFINED ENV{SIMPATH})
+ message(FATAL_ERROR "Path to Fairroot external packages is not set. Please set SIMPATH.")
+endif(NOT DEFINED ENV{SIMPATH})
+set(SIMPATH $ENV{SIMPATH})
 
 set(Boost_NO_SYSTEM_PATHS TRUE)
 set(BOOST_ROOT ${SIMPATH})
