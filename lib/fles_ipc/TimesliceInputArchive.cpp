@@ -14,13 +14,10 @@ TimesliceInputArchive::TimesliceInputArchive(const std::string& filename)
 StorableTimeslice* TimesliceInputArchive::do_get()
 {
     StorableTimeslice* sts = nullptr;
-    try
-    {
+    try {
         sts = new StorableTimeslice();
         _iarchive >> *sts;
-    }
-    catch (boost::archive::archive_exception e)
-    {
+    } catch (boost::archive::archive_exception e) {
         delete sts;
         return nullptr;
     }

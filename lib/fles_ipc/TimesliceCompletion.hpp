@@ -10,8 +10,7 @@ namespace fles
 #pragma pack(1)
 
 //! Timeslice completion struct.
-struct TimesliceCompletion
-{
+struct TimesliceCompletion {
     uint64_t ts_pos; ///< Start offset (in items) of this timeslice
 
     friend class boost::serialization::access;

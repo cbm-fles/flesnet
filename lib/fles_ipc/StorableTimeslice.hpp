@@ -26,8 +26,7 @@ public:
     StorableTimeslice(const Timeslice& ts);
 
     StorableTimeslice(uint32_t num_core_microslices,
-                      uint64_t index = UINT64_MAX,
-                      uint64_t ts_pos = UINT64_MAX)
+                      uint64_t index = UINT64_MAX, uint64_t ts_pos = UINT64_MAX)
     {
         _timeslice_descriptor.index = index;
         _timeslice_descriptor.ts_pos = ts_pos;
@@ -35,7 +34,8 @@ public:
         _timeslice_descriptor.num_components = 0;
     }
 
-    uint32_t append_component(uint64_t num_microslices, uint64_t /* dummy */ = 0)
+    uint32_t append_component(uint64_t num_microslices,
+                              uint64_t /* dummy */ = 0)
     {
         TimesliceComponentDescriptor ts_desc = TimesliceComponentDescriptor();
         ts_desc.ts_num = _timeslice_descriptor.index;
@@ -75,8 +75,9 @@ public:
             uint64_t offset =
                 this_data.size() -
                 this_desc.num_microslices * sizeof(MicrosliceDescriptor);
-            uint64_t first_offset = reinterpret_cast<MicrosliceDescriptor*>(
-                                        this_data.data())->offset;
+            uint64_t first_offset =
+                reinterpret_cast<MicrosliceDescriptor*>(this_data.data())
+                    ->offset;
             descriptor.offset = offset + first_offset;
         }
 
@@ -93,7 +94,8 @@ public:
     uint32_t append_microslice(uint64_t component, uint64_t microslice,
                                StorableMicroslice& mc)
     {
-        return append_microslice(component, microslice, mc.desc(), mc.content());
+        return append_microslice(component, microslice, mc.desc(),
+                                 mc.content());
     }
 
 private:

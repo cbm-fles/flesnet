@@ -3,7 +3,8 @@
 #include "MicrosliceDescriptor.hpp"
 #include <vector>
 
-namespace fles {
+namespace fles
+{
 
 struct MicrosliceView;
 
@@ -13,7 +14,7 @@ struct MicrosliceView;
 struct StorableMicroslice {
     StorableMicroslice(const MicrosliceView& mc);
 
-    StorableMicroslice(MicrosliceDescriptor d, const uint8_t *content);
+    StorableMicroslice(MicrosliceDescriptor d, const uint8_t* content);
     /**<
      * Copy the descriptor and the data pointed to by `content` into the
      * StorableMicroslice. The `size` field of the descriptor must already
@@ -37,11 +38,10 @@ struct StorableMicroslice {
 
     MicrosliceDescriptor& desc() { return _desc; };
     //< must be writable, e.g. by StorableTimeslice::append_microslice
-    const uint8_t *content() const { return _content.data(); };
+    const uint8_t* content() const { return _content.data(); };
 
 private:
     MicrosliceDescriptor _desc;
     std::vector<uint8_t> _content;
 };
-
 }

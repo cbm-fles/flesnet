@@ -22,7 +22,7 @@ public:
     TimesliceInputArchive(const TimesliceInputArchive&) = delete;
     void operator=(const TimesliceInputArchive&) = delete;
 
-    virtual ~TimesliceInputArchive() {};
+    virtual ~TimesliceInputArchive(){};
 
     /// Read the next timeslice.
     std::unique_ptr<StorableTimeslice> get()

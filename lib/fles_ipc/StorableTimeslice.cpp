@@ -6,16 +6,13 @@ namespace fles
 {
 
 StorableTimeslice::StorableTimeslice(const StorableTimeslice& ts)
-    : Timeslice(ts),
-      _data(ts._data),
-      _desc(ts._desc)
+    : Timeslice(ts), _data(ts._data), _desc(ts._desc)
 {
     init_pointers();
 }
 
 StorableTimeslice::StorableTimeslice(StorableTimeslice&& ts)
-    : Timeslice(std::move(ts)),
-      _data(std::move(ts._data)),
+    : Timeslice(std::move(ts)), _data(std::move(ts._data)),
       _desc(std::move(ts._desc))
 {
     init_pointers();

@@ -25,7 +25,7 @@ public:
     TimesliceReceiver(const TimesliceReceiver&) = delete;
     void operator=(const TimesliceReceiver&) = delete;
 
-    virtual ~TimesliceReceiver() {};
+    virtual ~TimesliceReceiver(){};
 
     std::unique_ptr<TimesliceView> get()
     {

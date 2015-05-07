@@ -13,7 +13,7 @@ namespace fles
 {
 
 //! The TimesliceSubscriber receives serialized timeslice data sets from a
-//zeromq socket.
+// zeromq socket.
 class TimesliceSubscriber : public TimesliceSource
 {
 public:

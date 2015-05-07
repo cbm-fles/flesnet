@@ -10,8 +10,7 @@ namespace fles
 #pragma pack(1)
 
 //! Microslice descriptor struct.
-struct MicrosliceDescriptor
-{
+struct MicrosliceDescriptor {
     uint8_t hdr_id;  ///< Header format identifier (0xDD)
     uint8_t hdr_ver; ///< Header format version (0x01)
     uint16_t eq_id;  ///< Equipment identifier

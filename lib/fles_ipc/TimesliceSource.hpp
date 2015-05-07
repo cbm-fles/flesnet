@@ -19,7 +19,7 @@ public:
         return std::unique_ptr<Timeslice>(do_get());
     };
 
-    virtual ~TimesliceSource() {};
+    virtual ~TimesliceSource(){};
 
 protected:
     bool _eof = false;

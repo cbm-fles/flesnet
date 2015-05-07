@@ -10,8 +10,7 @@ namespace fles
 #pragma pack(1)
 
 //! Timeslice component descriptor struct.
-struct TimesliceComponentDescriptor
-{
+struct TimesliceComponentDescriptor {
     uint64_t ts_num; ///< Timeslice index.
     uint64_t offset; ///< Start offset (in bytes) of corresponding data.
     uint64_t size;   ///< Size (in bytes) of corresponding data.
