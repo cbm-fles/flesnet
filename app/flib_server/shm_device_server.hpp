@@ -1,17 +1,3 @@
-
-
-
-// create shared memory
-
-// create shm_device object
-// shared memory vector of handles to shm_channel
-// reimpliment push_back to push pointer to handle
-// or only increment link counter
-
-// loop over active links and create shm_channel server
-// (server will fill shm_device structure)
-
-
 class shm_device_server {
 
 public:
@@ -38,7 +24,10 @@ public:
     // loop over flib links and create channels
     for (size_t i = 0; i < num_links, ++i) {
       m_shm_ch_vec.push_back(std::unique_ptr<shm_channel_server>(
-         new shm_channel_server(data_buffer_size_exp)));
+     new shm_channel_server(&m_shm,
+                            i, m_flib_links.at(i),
+                            data_buffer_size_exp, desc_buffer_size_exp)));
+
       m_shm_dev->inc_num_channels();
     }
     

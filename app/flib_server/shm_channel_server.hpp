@@ -4,9 +4,10 @@ public:
 
   shm_channel_server(managed_shared_memory* shm,
                      size_t index,
+                     flib_link* flib_link,
                      size_t data_buffer_size_exp,
                      size_t desc_buffer_size_exp)
-    : m_shm(shm)
+    : m_shm(shm), m_index(index), m_flib_link(flib_link)
   {
     // allocate buffers
     m_data_buffer = alloc_buffer(data_buffer_size_exp);
@@ -14,9 +15,15 @@ public:
 
     // constuct channel exchange object in sharde memory
     std::string channel_name = "shm_channel_" +
-      boost::lexical_cast<std::string>(index);
+      boost::lexical_cast<std::string>(m_index);
     m_shm_ch = m_shm->construct<shm_cahnnel>(channel_name.c_str())
       (m_shm, m_data_buffer, m_desc_buffer);
+
+    // initialize flib DMA engine
+    m_flib_link->init_dma(m_data_buffer, m_data_buffer_size_exp,
+                          m_desc_buffer, m_desc_buffer_size_exp);
+
+    // TODO set start index and enable packer at matching position
   }
 
   ~shm_channel_server() {
@@ -41,7 +48,7 @@ public:
       m_shm_ch->set_req_ptr(lock, false);
       lock.unlock();
       // TODO do fancy HW stuff here
-      lock.lock();      
+      lock.lock();
     }
     
     if (m_shm_ch->req_offset(lock)) {
@@ -62,7 +69,9 @@ private:
   
   
   managed_shared_memory* m_shm;
-
+  size_t m_index;
+  flib_link* flib_link;
+  
   shm_channel* m_shm_ch;
   void* m_data_buffer;
   void* m_desc_buffer;

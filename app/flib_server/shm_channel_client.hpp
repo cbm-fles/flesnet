@@ -26,20 +26,20 @@ public:
   desc_buffer() { return m_desc_buffer; }
   
   set_ptrs(uint64_t data_ptr, uint64_t desc_ptr) {
-    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+    scoped_lock<interprocess_mutex> lock(m_shm_dev->mutex());
     m_shm_ch->set_ptrs(lock, data_ptr, desc_ptr)
     m_shm_ch->set_req_ptr(lock, true);
     m_shm_dev->cond_req().notify_one();
   }
 
   update_offsets() {
-    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+    scoped_lock<interprocess_mutex> lock(m_shm_dev->mutex());
     m_shm_ch->set_req_offset(lock, true);
     m_shm_dev->cond_req().notify_one();    
   }
   
   get_offsets(uint64_t& data_offset, uint64_t desc_offset) {
-    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex); // TODO could be a shared lock
+    scoped_lock<interprocess_mutex> lock(m_shm_dev->mutex()); // TODO could be a shared lock
     m_shm_ch->offsets(lock, data_offset, desc_offset);
   }
   
