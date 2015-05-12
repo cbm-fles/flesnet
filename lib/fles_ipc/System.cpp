@@ -87,7 +87,7 @@ std::string current_domainname()
 
     std::vector<char> buf(bufsize);
 
-    int err = getdomainname(buf.data(), buf.size());
+    int err = getdomainname(buf.data(), static_cast<int>(buf.size()));
     if (err)
         throw std::runtime_error(stringerror(errno));
 

@@ -59,7 +59,7 @@ public:
         return component;
     }
 
-    uint32_t append_microslice(uint64_t component, uint64_t microslice,
+    uint64_t append_microslice(uint32_t component, uint64_t microslice,
                                MicrosliceDescriptor& descriptor,
                                const uint8_t* content)
     {
@@ -91,7 +91,7 @@ public:
         return microslice;
     }
 
-    uint32_t append_microslice(uint64_t component, uint64_t microslice,
+    uint64_t append_microslice(uint32_t component, uint64_t microslice,
                                StorableMicroslice& mc)
     {
         return append_microslice(component, microslice, mc.desc(),
