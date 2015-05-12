@@ -1,0 +1,443 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3DA3FE671B0207FF008710E2 /* MicrosliceView.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */; };
+		3DA3FE681B0207FF008710E2 /* StorableMicroslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE4E1B0207FF008710E2 /* StorableMicroslice.cpp */; };
+		3DA3FE691B0207FF008710E2 /* StorableTimeslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE501B0207FF008710E2 /* StorableTimeslice.cpp */; };
+		3DA3FE6A1B0207FF008710E2 /* System.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE521B0207FF008710E2 /* System.cpp */; };
+		3DA3FE6B1B0207FF008710E2 /* Timeslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE541B0207FF008710E2 /* Timeslice.cpp */; };
+		3DA3FE6C1B0207FF008710E2 /* TimesliceInputArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE5A1B0207FF008710E2 /* TimesliceInputArchive.cpp */; };
+		3DA3FE6D1B0207FF008710E2 /* TimeslicePublisher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE5D1B0207FF008710E2 /* TimeslicePublisher.cpp */; };
+		3DA3FE6E1B0207FF008710E2 /* TimesliceReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE5F1B0207FF008710E2 /* TimesliceReceiver.cpp */; };
+		3DA3FE6F1B0207FF008710E2 /* TimesliceSubscriber.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE621B0207FF008710E2 /* TimesliceSubscriber.cpp */; };
+		3DA3FE701B0207FF008710E2 /* TimesliceView.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE641B0207FF008710E2 /* TimesliceView.cpp */; };
+		3DDAD8211B023A9200926C83 /* test_Timeslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DDAD8201B023A9200926C83 /* test_Timeslice.cpp */; };
+		3DDAD8221B023C1A00926C83 /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3DA3FE3D1B0206CB008710E2 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		3DDAD8151B023A0600926C83 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libfles_ipc.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		3DA3FE4B1B0207FF008710E2 /* MicrosliceDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceDescriptor.hpp; sourceTree = "<group>"; };
+		3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceView.cpp; sourceTree = "<group>"; };
+		3DA3FE4D1B0207FF008710E2 /* MicrosliceView.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceView.hpp; sourceTree = "<group>"; };
+		3DA3FE4E1B0207FF008710E2 /* StorableMicroslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = StorableMicroslice.cpp; sourceTree = "<group>"; };
+		3DA3FE4F1B0207FF008710E2 /* StorableMicroslice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = StorableMicroslice.hpp; sourceTree = "<group>"; };
+		3DA3FE501B0207FF008710E2 /* StorableTimeslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = StorableTimeslice.cpp; sourceTree = "<group>"; };
+		3DA3FE511B0207FF008710E2 /* StorableTimeslice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = StorableTimeslice.hpp; sourceTree = "<group>"; };
+		3DA3FE521B0207FF008710E2 /* System.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = System.cpp; sourceTree = "<group>"; };
+		3DA3FE531B0207FF008710E2 /* System.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = System.hpp; sourceTree = "<group>"; };
+		3DA3FE541B0207FF008710E2 /* Timeslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Timeslice.cpp; sourceTree = "<group>"; };
+		3DA3FE551B0207FF008710E2 /* Timeslice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Timeslice.hpp; sourceTree = "<group>"; };
+		3DA3FE561B0207FF008710E2 /* TimesliceArchiveDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceArchiveDescriptor.hpp; sourceTree = "<group>"; };
+		3DA3FE571B0207FF008710E2 /* TimesliceCompletion.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceCompletion.hpp; sourceTree = "<group>"; };
+		3DA3FE581B0207FF008710E2 /* TimesliceComponentDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceComponentDescriptor.hpp; sourceTree = "<group>"; };
+		3DA3FE591B0207FF008710E2 /* TimesliceDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceDescriptor.hpp; sourceTree = "<group>"; };
+		3DA3FE5A1B0207FF008710E2 /* TimesliceInputArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimesliceInputArchive.cpp; sourceTree = "<group>"; };
+		3DA3FE5B1B0207FF008710E2 /* TimesliceInputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceInputArchive.hpp; sourceTree = "<group>"; };
+		3DA3FE5C1B0207FF008710E2 /* TimesliceOutputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceOutputArchive.hpp; sourceTree = "<group>"; };
+		3DA3FE5D1B0207FF008710E2 /* TimeslicePublisher.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimeslicePublisher.cpp; sourceTree = "<group>"; };
+		3DA3FE5E1B0207FF008710E2 /* TimeslicePublisher.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimeslicePublisher.hpp; sourceTree = "<group>"; };
+		3DA3FE5F1B0207FF008710E2 /* TimesliceReceiver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimesliceReceiver.cpp; sourceTree = "<group>"; };
+		3DA3FE601B0207FF008710E2 /* TimesliceReceiver.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceReceiver.hpp; sourceTree = "<group>"; };
+		3DA3FE611B0207FF008710E2 /* TimesliceSource.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceSource.hpp; sourceTree = "<group>"; };
+		3DA3FE621B0207FF008710E2 /* TimesliceSubscriber.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimesliceSubscriber.cpp; sourceTree = "<group>"; };
+		3DA3FE631B0207FF008710E2 /* TimesliceSubscriber.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceSubscriber.hpp; sourceTree = "<group>"; };
+		3DA3FE641B0207FF008710E2 /* TimesliceView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimesliceView.cpp; sourceTree = "<group>"; };
+		3DA3FE651B0207FF008710E2 /* TimesliceView.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceView.hpp; sourceTree = "<group>"; };
+		3DA3FE661B0207FF008710E2 /* TimesliceWorkItem.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceWorkItem.hpp; sourceTree = "<group>"; };
+		3DDAD8171B023A0600926C83 /* test_Timeslice */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_Timeslice; sourceTree = BUILT_PRODUCTS_DIR; };
+		3DDAD8201B023A9200926C83 /* test_Timeslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_Timeslice.cpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3DA3FE3C1B0206CB008710E2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3DDAD8141B023A0600926C83 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DDAD8221B023C1A00926C83 /* libfles_ipc.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3DA3FE361B0206CB008710E2 = {
+			isa = PBXGroup;
+			children = (
+				3DA3FE4A1B0207FF008710E2 /* src */,
+				3DDAD81E1B023A9200926C83 /* test */,
+				3DA3FE401B0206CB008710E2 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3DA3FE401B0206CB008710E2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */,
+				3DDAD8171B023A0600926C83 /* test_Timeslice */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3DA3FE4A1B0207FF008710E2 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				3DA3FE4B1B0207FF008710E2 /* MicrosliceDescriptor.hpp */,
+				3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */,
+				3DA3FE4D1B0207FF008710E2 /* MicrosliceView.hpp */,
+				3DA3FE4E1B0207FF008710E2 /* StorableMicroslice.cpp */,
+				3DA3FE4F1B0207FF008710E2 /* StorableMicroslice.hpp */,
+				3DA3FE501B0207FF008710E2 /* StorableTimeslice.cpp */,
+				3DA3FE511B0207FF008710E2 /* StorableTimeslice.hpp */,
+				3DA3FE521B0207FF008710E2 /* System.cpp */,
+				3DA3FE531B0207FF008710E2 /* System.hpp */,
+				3DA3FE541B0207FF008710E2 /* Timeslice.cpp */,
+				3DA3FE551B0207FF008710E2 /* Timeslice.hpp */,
+				3DA3FE561B0207FF008710E2 /* TimesliceArchiveDescriptor.hpp */,
+				3DA3FE571B0207FF008710E2 /* TimesliceCompletion.hpp */,
+				3DA3FE581B0207FF008710E2 /* TimesliceComponentDescriptor.hpp */,
+				3DA3FE591B0207FF008710E2 /* TimesliceDescriptor.hpp */,
+				3DA3FE5A1B0207FF008710E2 /* TimesliceInputArchive.cpp */,
+				3DA3FE5B1B0207FF008710E2 /* TimesliceInputArchive.hpp */,
+				3DA3FE5C1B0207FF008710E2 /* TimesliceOutputArchive.hpp */,
+				3DA3FE5D1B0207FF008710E2 /* TimeslicePublisher.cpp */,
+				3DA3FE5E1B0207FF008710E2 /* TimeslicePublisher.hpp */,
+				3DA3FE5F1B0207FF008710E2 /* TimesliceReceiver.cpp */,
+				3DA3FE601B0207FF008710E2 /* TimesliceReceiver.hpp */,
+				3DA3FE611B0207FF008710E2 /* TimesliceSource.hpp */,
+				3DA3FE621B0207FF008710E2 /* TimesliceSubscriber.cpp */,
+				3DA3FE631B0207FF008710E2 /* TimesliceSubscriber.hpp */,
+				3DA3FE641B0207FF008710E2 /* TimesliceView.cpp */,
+				3DA3FE651B0207FF008710E2 /* TimesliceView.hpp */,
+				3DA3FE661B0207FF008710E2 /* TimesliceWorkItem.hpp */,
+			);
+			name = src;
+			path = ../src;
+			sourceTree = "<group>";
+		};
+		3DDAD81E1B023A9200926C83 /* test */ = {
+			isa = PBXGroup;
+			children = (
+				3DDAD8201B023A9200926C83 /* test_Timeslice.cpp */,
+			);
+			name = test;
+			path = ../test;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3DA3FE3E1B0206CB008710E2 /* fles_ipc */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3DA3FE461B0206CB008710E2 /* Build configuration list for PBXNativeTarget "fles_ipc" */;
+			buildPhases = (
+				3DA3FE3B1B0206CB008710E2 /* Sources */,
+				3DA3FE3C1B0206CB008710E2 /* Frameworks */,
+				3DA3FE3D1B0206CB008710E2 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = fles_ipc;
+			productName = fles_ipc;
+			productReference = 3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		3DDAD8161B023A0600926C83 /* test_Timeslice */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3DDAD81B1B023A0600926C83 /* Build configuration list for PBXNativeTarget "test_Timeslice" */;
+			buildPhases = (
+				3DDAD8131B023A0600926C83 /* Sources */,
+				3DDAD8141B023A0600926C83 /* Frameworks */,
+				3DDAD8151B023A0600926C83 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = test_Timeslice;
+			productName = test_Timeslice;
+			productReference = 3DDAD8171B023A0600926C83 /* test_Timeslice */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3DA3FE371B0206CB008710E2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0630;
+				ORGANIZATIONNAME = "Jan de Cuveland";
+				TargetAttributes = {
+					3DA3FE3E1B0206CB008710E2 = {
+						CreatedOnToolsVersion = 6.3.1;
+					};
+					3DDAD8161B023A0600926C83 = {
+						CreatedOnToolsVersion = 6.3.1;
+					};
+				};
+			};
+			buildConfigurationList = 3DA3FE3A1B0206CB008710E2 /* Build configuration list for PBXProject "fles_ipc" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 3DA3FE361B0206CB008710E2;
+			productRefGroup = 3DA3FE401B0206CB008710E2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3DA3FE3E1B0206CB008710E2 /* fles_ipc */,
+				3DDAD8161B023A0600926C83 /* test_Timeslice */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3DA3FE3B1B0206CB008710E2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DA3FE6A1B0207FF008710E2 /* System.cpp in Sources */,
+				3DA3FE6F1B0207FF008710E2 /* TimesliceSubscriber.cpp in Sources */,
+				3DA3FE6C1B0207FF008710E2 /* TimesliceInputArchive.cpp in Sources */,
+				3DA3FE6E1B0207FF008710E2 /* TimesliceReceiver.cpp in Sources */,
+				3DA3FE6D1B0207FF008710E2 /* TimeslicePublisher.cpp in Sources */,
+				3DA3FE6B1B0207FF008710E2 /* Timeslice.cpp in Sources */,
+				3DA3FE671B0207FF008710E2 /* MicrosliceView.cpp in Sources */,
+				3DA3FE691B0207FF008710E2 /* StorableTimeslice.cpp in Sources */,
+				3DA3FE701B0207FF008710E2 /* TimesliceView.cpp in Sources */,
+				3DA3FE681B0207FF008710E2 /* StorableMicroslice.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3DDAD8131B023A0600926C83 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DDAD8211B023A9200926C83 /* test_Timeslice.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		3DA3FE441B0206CB008710E2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = BOOST_TEST_DYN_LINK;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LIBRARY_SEARCH_PATHS = "$(SIMPATH)/lib";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-isystem",
+					"$(SIMPATH)/include",
+				);
+				OTHER_LDFLAGS = (
+					"-lboost_serialization",
+					"-lzmq",
+				);
+				SDKROOT = macosx;
+				SIMPATH = /opt/fairsoft/mar15_build;
+			};
+			name = Debug;
+		};
+		3DA3FE451B0206CB008710E2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = BOOST_TEST_DYN_LINK;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LIBRARY_SEARCH_PATHS = "$(SIMPATH)/lib";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-isystem",
+					"$(SIMPATH)/include",
+				);
+				OTHER_LDFLAGS = (
+					"-lboost_serialization",
+					"-lzmq",
+				);
+				SDKROOT = macosx;
+				SIMPATH = /opt/fairsoft/mar15_build;
+			};
+			name = Release;
+		};
+		3DA3FE471B0206CB008710E2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				MACH_O_TYPE = staticlib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		3DA3FE481B0206CB008710E2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				MACH_O_TYPE = staticlib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		3DDAD81C1B023A0600926C83 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MTL_ENABLE_DEBUG_INFO = YES;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lboost_unit_test_framework",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		3DDAD81D1B023A0600926C83 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lboost_unit_test_framework",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3DA3FE3A1B0206CB008710E2 /* Build configuration list for PBXProject "fles_ipc" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3DA3FE441B0206CB008710E2 /* Debug */,
+				3DA3FE451B0206CB008710E2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3DA3FE461B0206CB008710E2 /* Build configuration list for PBXNativeTarget "fles_ipc" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3DA3FE471B0206CB008710E2 /* Debug */,
+				3DA3FE481B0206CB008710E2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3DDAD81B1B023A0600926C83 /* Build configuration list for PBXNativeTarget "test_Timeslice" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3DDAD81C1B023A0600926C83 /* Debug */,
+				3DDAD81D1B023A0600926C83 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3DA3FE371B0206CB008710E2 /* Project object */;
+}
