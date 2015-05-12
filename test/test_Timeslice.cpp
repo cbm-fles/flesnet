@@ -2,6 +2,8 @@
 #include <boost/test/unit_test.hpp>
 
 #include "StorableTimeslice.hpp"
+#include "TimesliceInputArchive.hpp"
+#include "TimesliceOutputArchive.hpp"
 #include <array>
 #include <string>
 #include <fstream>
@@ -97,4 +99,23 @@ BOOST_FIXTURE_TEST_CASE(serialization_test, F)
     BOOST_CHECK_EQUAL(ts1.num_core_microslices(), 1);
     BOOST_CHECK_EQUAL(*ts1.content(0, 1), 11);
     BOOST_CHECK_EQUAL(*ts1.content(1, 0), 3);
+}
+
+BOOST_FIXTURE_TEST_CASE(archive_test, F)
+{
+    std::string filename("test1.tsa");
+    {
+        fles::TimesliceOutputArchive output(filename);
+        output.write(ts0);
+        output.write(ts0);
+    }
+    uint64_t count = 0;
+    fles::TimesliceInputArchive source(filename);
+    while (auto timeslice = source.get()) {
+        BOOST_CHECK_EQUAL(timeslice->num_core_microslices(), 1);
+        BOOST_CHECK_EQUAL(*timeslice->content(0, 1), 11);
+        BOOST_CHECK_EQUAL(*timeslice->content(1, 0), 3);
+        ++count;
+    }
+    BOOST_CHECK_EQUAL(count, 2);
 }
