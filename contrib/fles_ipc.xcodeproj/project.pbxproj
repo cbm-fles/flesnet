@@ -19,6 +19,8 @@
 		3DA3FE701B0207FF008710E2 /* TimesliceView.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE641B0207FF008710E2 /* TimesliceView.cpp */; };
 		3DDAD8211B023A9200926C83 /* test_Timeslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DDAD8201B023A9200926C83 /* test_Timeslice.cpp */; };
 		3DDAD8221B023C1A00926C83 /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */; };
+		3DDAD82F1B0253FC00926C83 /* test_Microslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DDAD82E1B0253FC00926C83 /* test_Microslice.cpp */; };
+		3DDAD8301B0254B000926C83 /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -32,6 +34,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		3DDAD8151B023A0600926C83 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		3DDAD8251B0253DE00926C83 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -74,6 +85,8 @@
 		3DA3FE661B0207FF008710E2 /* TimesliceWorkItem.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceWorkItem.hpp; sourceTree = "<group>"; };
 		3DDAD8171B023A0600926C83 /* test_Timeslice */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_Timeslice; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DDAD8201B023A9200926C83 /* test_Timeslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_Timeslice.cpp; sourceTree = "<group>"; };
+		3DDAD8271B0253DE00926C83 /* test_Microslice */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_Microslice; sourceTree = BUILT_PRODUCTS_DIR; };
+		3DDAD82E1B0253FC00926C83 /* test_Microslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_Microslice.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +102,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				3DDAD8221B023C1A00926C83 /* libfles_ipc.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3DDAD8241B0253DE00926C83 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DDAD8301B0254B000926C83 /* libfles_ipc.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,6 +130,7 @@
 			children = (
 				3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */,
 				3DDAD8171B023A0600926C83 /* test_Timeslice */,
+				3DDAD8271B0253DE00926C83 /* test_Microslice */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -153,6 +175,7 @@
 			isa = PBXGroup;
 			children = (
 				3DDAD8201B023A9200926C83 /* test_Timeslice.cpp */,
+				3DDAD82E1B0253FC00926C83 /* test_Microslice.cpp */,
 			);
 			name = test;
 			path = ../test;
@@ -195,6 +218,23 @@
 			productReference = 3DDAD8171B023A0600926C83 /* test_Timeslice */;
 			productType = "com.apple.product-type.tool";
 		};
+		3DDAD8261B0253DE00926C83 /* test_Microslice */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3DDAD82B1B0253DE00926C83 /* Build configuration list for PBXNativeTarget "test_Microslice" */;
+			buildPhases = (
+				3DDAD8231B0253DE00926C83 /* Sources */,
+				3DDAD8241B0253DE00926C83 /* Frameworks */,
+				3DDAD8251B0253DE00926C83 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = test_Microslice;
+			productName = test_Microslice;
+			productReference = 3DDAD8271B0253DE00926C83 /* test_Microslice */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -208,6 +248,9 @@
 						CreatedOnToolsVersion = 6.3.1;
 					};
 					3DDAD8161B023A0600926C83 = {
+						CreatedOnToolsVersion = 6.3.1;
+					};
+					3DDAD8261B0253DE00926C83 = {
 						CreatedOnToolsVersion = 6.3.1;
 					};
 				};
@@ -226,6 +269,7 @@
 			targets = (
 				3DA3FE3E1B0206CB008710E2 /* fles_ipc */,
 				3DDAD8161B023A0600926C83 /* test_Timeslice */,
+				3DDAD8261B0253DE00926C83 /* test_Microslice */,
 			);
 		};
 /* End PBXProject section */
@@ -253,6 +297,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				3DDAD8211B023A9200926C83 /* test_Timeslice.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3DDAD8231B0253DE00926C83 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DDAD82F1B0253FC00926C83 /* test_Microslice.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -409,6 +461,40 @@
 			};
 			name = Release;
 		};
+		3DDAD82C1B0253DE00926C83 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lboost_unit_test_framework",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		3DDAD82D1B0253DE00926C83 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lboost_unit_test_framework",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -435,6 +521,14 @@
 			buildConfigurations = (
 				3DDAD81C1B023A0600926C83 /* Debug */,
 				3DDAD81D1B023A0600926C83 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		3DDAD82B1B0253DE00926C83 /* Build configuration list for PBXNativeTarget "test_Microslice" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3DDAD82C1B0253DE00926C83 /* Debug */,
+				3DDAD82D1B0253DE00926C83 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 		};

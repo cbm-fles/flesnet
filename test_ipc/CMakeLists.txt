@@ -6,8 +6,11 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 
 add_definitions(-DBOOST_TEST_DYN_LINK)
 
-add_executable(test_fles_ipc test_Timeslice.cpp)
+add_executable(test_Timeslice test_Timeslice.cpp)
+add_executable(test_Microslice test_Microslice.cpp)
 
-target_link_libraries(test_fles_ipc ${CMAKE_BINARY_DIR}/libfles_ipc.a ${Boost_LIBRARIES})
+target_link_libraries(test_Timeslice ${CMAKE_BINARY_DIR}/libfles_ipc.a ${Boost_LIBRARIES})
+target_link_libraries(test_Microslice ${CMAKE_BINARY_DIR}/libfles_ipc.a ${Boost_LIBRARIES})
 
-add_test(NAME test_fles_ipc COMMAND test_fles_ipc)
+add_test(NAME test_Timeslice COMMAND test_Timeslice)
+add_test(NAME test_Microslice COMMAND test_Microslice)
