@@ -4,6 +4,7 @@
 #include "StorableTimeslice.hpp"
 #include "TimesliceInputArchive.hpp"
 #include "TimesliceOutputArchive.hpp"
+#include "MicrosliceView.hpp"
 #include <array>
 #include <string>
 #include <fstream>
@@ -118,4 +119,21 @@ BOOST_FIXTURE_TEST_CASE(archive_test, F)
         ++count;
     }
     BOOST_CHECK_EQUAL(count, 2);
+}
+
+BOOST_FIXTURE_TEST_CASE(microslice_access_test, F)
+{
+    fles::MicrosliceView m = ts0.get_microslice(1, 0);
+    const uint8_t* content = m.content();
+    BOOST_CHECK_EQUAL(content[2], 5);
+    BOOST_CHECK_EQUAL(m.desc().eq_id, 11);
+}
+
+BOOST_FIXTURE_TEST_CASE(microslice_storage_test, F)
+{
+    fles::MicrosliceView mv = ts0.get_microslice(0, 1);
+    uint32_t c = ts0.append_component(1);
+    fles::StorableMicroslice m = mv;
+    ts0.append_microslice(c, 0, m);
+    BOOST_CHECK_EQUAL(ts0.descriptor(c, 0).size, 1);
 }
