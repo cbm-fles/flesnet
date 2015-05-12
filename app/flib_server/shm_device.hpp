@@ -1,3 +1,10 @@
+
+#include <cstdint>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
+
+using namespace boost::interprocess;
+
 class shm_device {
 
 public:
@@ -16,14 +23,15 @@ public:
 
   size_t num_channels() { return m_num_channels; }
   
-  interprocess_mutex& mutex() { return m_mutex; }
+  //interprocess_mutex& mutex() { return m_mutex; }
 
-  interprocess_condition& cond_req() { return m_cond_req; }
+  //interprocess_condition& cond_req() { return m_cond_req; }
+
   
-private:
-
   interprocess_mutex m_mutex;
   interprocess_condition m_cond_req;
+
+private:
 
   size_t m_num_channels = 0;
   

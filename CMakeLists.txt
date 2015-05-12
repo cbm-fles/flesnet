@@ -52,6 +52,7 @@ add_subdirectory(app/flib_debug)
 add_subdirectory(app/flib_tools)
 add_subdirectory(app/flib_ctrl)
 add_subdirectory(app/flib_cfg)
+add_subdirectory(app/flib_server)
 
 add_subdirectory(doc)
 
