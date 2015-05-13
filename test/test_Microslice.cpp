@@ -2,6 +2,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "StorableMicroslice.hpp"
+#include "MicrosliceView.hpp"
 #include <array>
 
 struct F {
@@ -23,7 +24,7 @@ struct F {
     fles::MicrosliceDescriptor desc0 = fles::MicrosliceDescriptor();
 };
 
-BOOST_FIXTURE_TEST_CASE(constructors_test, F)
+BOOST_FIXTURE_TEST_CASE(storable_constructors_test, F)
 {
     fles::StorableMicroslice m1(desc0, data0.data());
 
@@ -32,6 +33,18 @@ BOOST_FIXTURE_TEST_CASE(constructors_test, F)
 
     BOOST_CHECK_EQUAL(m1.desc().eq_id, 10);
     BOOST_CHECK_EQUAL(m2.desc().eq_id, 10);
-    BOOST_CHECK_EQUAL(*m1.content(), 7);
-    BOOST_CHECK_EQUAL(*m2.content(), 7);
+    BOOST_CHECK_EQUAL(m1.content()[3], 8);
+    BOOST_CHECK_EQUAL(m2.content()[3], 8);
+}
+
+BOOST_FIXTURE_TEST_CASE(view_constructors_test, F)
+{
+    fles::MicrosliceView m1(desc0, data0.data());
+
+    fles::StorableMicroslice m2(m1);
+
+    BOOST_CHECK_EQUAL(m1.desc().eq_id, 10);
+    BOOST_CHECK_EQUAL(m2.desc().eq_id, 10);
+    BOOST_CHECK_EQUAL(m1.content()[3], 8);
+    BOOST_CHECK_EQUAL(m2.content()[3], 8);
 }
