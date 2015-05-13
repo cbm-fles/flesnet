@@ -37,9 +37,7 @@ public:
        (UINT64_C(1) << desc_buffer_size_exp) +
        sizeof(shm_channel)) * num_links +
       sizeof(shm_device) + 1000;
-    shared_memory_object::remove("flib_shared_memory");
-    m_shm = std::unique_ptr<managed_shared_memory>(new managed_shared_memory(create_only, "flib_shared_memory",
-                                                        shm_size));
+    m_shm = std::unique_ptr<managed_shared_memory>(new managed_shared_memory(create_only, "flib_shared_memory", shm_size));
     
     // constuct device exchange object in sharde memory
     std::string device_name = "shm_device";
@@ -60,11 +58,8 @@ public:
     }    
   }
 
-  ~shm_device_server() {
-    shared_memory_object::remove("flib_shared_memory");
-  }
+  ~shm_device_server() {}
 
-  
   void run() {
     if (!m_run) { // don't start twice
       m_run = true;
@@ -114,7 +109,15 @@ private:
     std::cout << "name " << managed_shared_memory::get_instance_name(m_shm_dev) << std::endl;
   }
 
+  // Members
   
+  //Remove shared memory on construction and destruction of class
+  struct shm_remove
+  {
+    shm_remove() { shared_memory_object::remove("flib_shared_memory");}
+    ~shm_remove(){ shared_memory_object::remove("flib_shared_memory");}
+  } remover;
+
   volatile std::sig_atomic_t* m_signal_status;
   std::unique_ptr<flib_device> m_flib;
   std::unique_ptr<managed_shared_memory> m_shm;
