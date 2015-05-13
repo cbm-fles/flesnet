@@ -7,6 +7,20 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/logging"
                     "${PROJECT_SOURCE_DIR}/lib/flib"
                     "${PROJECT_SOURCE_DIR}/lib")
 
-add_executable(flib_server ${APP_SOURCES} ${APP_HEADERS})
+set(SERVER_LIB
+        shm_device_server.hpp
+        shm_channel_server.hpp
+        shm_device.hpp
+        shm_channel.hpp)
+
+set(SERVER_LIB
+        shm_device_client.hpp
+        shm_channel_client.hpp
+        shm_device.hpp
+        shm_channel.hpp)
+
+add_executable(flib_server flib_server.cpp ${SERVER_LIB})
+add_executable(simple_consumer simple_consumer.cpp ${CLIENT_LIB})
 
 target_link_libraries(flib_server flib logging ${Boost_LIBRARIES} rt)
+target_link_libraries(simple_consumer logging ${Boost_LIBRARIES} rt)
