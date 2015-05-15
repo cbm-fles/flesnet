@@ -3,6 +3,8 @@
 
 #include "StorableMicroslice.hpp"
 #include "MicrosliceView.hpp"
+#include "MicrosliceInputArchive.hpp"
+#include "MicrosliceOutputArchive.hpp"
 #include <array>
 
 struct F {
@@ -65,4 +67,25 @@ BOOST_FIXTURE_TEST_CASE(view_assignment_test, F)
 
     BOOST_CHECK_EQUAL(m2.desc().eq_id, 10);
     BOOST_CHECK_EQUAL(m2.content()[3], 8);
+}
+
+BOOST_FIXTURE_TEST_CASE(archive_test, F)
+{
+    fles::StorableMicroslice m1(desc0, data0.data());
+    fles::MicrosliceView m2(desc0, data0.data());
+
+    std::string filename("test1.msa");
+    {
+        fles::MicrosliceOutputArchive output(filename);
+        output.write(m1);
+        output.write(m2);
+    }
+    uint64_t count = 0;
+    fles::MicrosliceInputArchive source(filename);
+    while (auto microslice = source.get()) {
+        BOOST_CHECK_EQUAL(microslice->desc().eq_id, 10);
+        BOOST_CHECK_EQUAL(microslice->content()[3], 8);
+        ++count;
+    }
+    BOOST_CHECK_EQUAL(count, 2);
 }

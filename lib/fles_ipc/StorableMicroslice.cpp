@@ -38,4 +38,6 @@ StorableMicroslice::StorableMicroslice(MicrosliceDescriptor d,
     init_pointers();
 }
 
+StorableMicroslice::StorableMicroslice() {}
+
 } // namespace fles {
