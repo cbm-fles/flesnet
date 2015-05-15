@@ -1,7 +1,14 @@
 #pragma once
 
+#include "Microslice.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include <vector>
+#include <fstream>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/vector.hpp>
+// Note: <fstream> has to precede boost/serialization includes for non-obvious
+// reasons to avoid segfault similar to
+// http://lists.debian.org/debian-hppa/2009/11/msg00069.html
 
 namespace fles
 {
@@ -41,7 +48,28 @@ public:
      */
 
 private:
+    friend class boost::serialization::access;
+    friend class MicrosliceInputArchive;
+
+    StorableMicroslice();
+
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int /* version */)
+    {
+        ar& _desc;
+        ar& _content;
+
+        init_pointers();
+    }
+
+    void init_pointers()
+    {
+        _desc_ptr = &_desc;
+        _content_ptr = _content.data();
+    }
+
     MicrosliceDescriptor _desc;
     std::vector<uint8_t> _content;
 };
-}
+
+} // namespace fles {

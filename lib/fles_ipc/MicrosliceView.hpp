@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MicrosliceDescriptor.hpp"
+#include "Microslice.hpp"
 
 namespace fles
 {
@@ -12,7 +13,7 @@ namespace fles
 class MicrosliceView : public Microslice
 {
 public:
-    MicrosliceView(const MicrosliceDescriptor& d, const uint8_t *content);
+    MicrosliceView(const MicrosliceDescriptor& d, const uint8_t* content);
 
     MicrosliceView(const MicrosliceView&) = delete;
     void operator=(const MicrosliceView&) = delete;

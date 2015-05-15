@@ -147,17 +147,17 @@
 		3DA3FE4A1B0207FF008710E2 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				3DA3FE4B1B0207FF008710E2 /* MicrosliceDescriptor.hpp */,
-				3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */,
-				3DA3FE4D1B0207FF008710E2 /* MicrosliceView.hpp */,
-				3DA3FE4E1B0207FF008710E2 /* StorableMicroslice.cpp */,
 				3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */,
 				3D448B8E1B05EBD700DD8E5D /* Microslice.hpp */,
 				3D448B8F1B05EBD700DD8E5D /* MicrosliceArchiveDescriptor.hpp */,
+				3DA3FE4B1B0207FF008710E2 /* MicrosliceDescriptor.hpp */,
 				3D448B901B05EBD700DD8E5D /* MicrosliceInputArchive.cpp */,
 				3D448B911B05EBD700DD8E5D /* MicrosliceInputArchive.hpp */,
 				3D448B921B05EBD700DD8E5D /* MicrosliceOutputArchive.hpp */,
 				3D448B931B05EBD700DD8E5D /* MicrosliceSource.hpp */,
+				3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */,
+				3DA3FE4D1B0207FF008710E2 /* MicrosliceView.hpp */,
+				3DA3FE4E1B0207FF008710E2 /* StorableMicroslice.cpp */,
 				3DA3FE4F1B0207FF008710E2 /* StorableMicroslice.hpp */,
 				3DA3FE501B0207FF008710E2 /* StorableTimeslice.cpp */,
 				3DA3FE511B0207FF008710E2 /* StorableTimeslice.hpp */,

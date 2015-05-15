@@ -60,7 +60,7 @@ public:
     }
 
     uint64_t append_microslice(uint32_t component, uint64_t microslice,
-                               MicrosliceDescriptor& descriptor,
+                               MicrosliceDescriptor descriptor,
                                const uint8_t* content)
     {
         assert(component < _timeslice_descriptor.num_components);

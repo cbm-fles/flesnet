@@ -7,7 +7,8 @@
 namespace fles
 {
 
-//! The MicrosliceSource base class implements the generic microslice-based input
+//! The MicrosliceSource base class implements the generic microslice-based
+// input
 // interface.
 class MicrosliceSource
 {
@@ -19,7 +20,7 @@ public:
         return std::unique_ptr<Microslice>(do_get());
     };
 
-    virtual ~MicrosliceSource() {};
+    virtual ~MicrosliceSource(){};
 
 protected:
     bool _eof = false;

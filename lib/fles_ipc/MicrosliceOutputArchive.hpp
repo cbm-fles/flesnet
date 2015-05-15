@@ -10,7 +10,8 @@
 namespace fles
 {
 
-//! The MicrosliceOutputArchive serializes microslice data sets to an output file.
+//! The MicrosliceOutputArchive serializes microslice data sets to an output
+// file.
 class MicrosliceOutputArchive
 {
 public:
@@ -24,7 +25,10 @@ public:
     void operator=(const MicrosliceOutputArchive&) = delete;
 
     /// Store a microslice.
-    void write(const StorableMicroslice& microslice) { _oarchive << microslice; }
+    void write(const StorableMicroslice& microslice)
+    {
+        _oarchive << microslice;
+    }
 
 private:
     std::ofstream _ofstream;

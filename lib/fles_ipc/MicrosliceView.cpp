@@ -3,9 +3,10 @@
 namespace fles
 {
 
-MicrosliceView::MicrosliceView(MicrosliceDescriptor& d, const uint8_t *content)
-    : _desc_ptr(*d),
-      _content_ptr(content)
+MicrosliceView::MicrosliceView(const MicrosliceDescriptor& d,
+                               const uint8_t* content)
+    : Microslice(&d, content)
 {
 }
-}
+
+} // namespace fles {

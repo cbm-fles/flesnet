@@ -14,13 +14,10 @@ MicrosliceInputArchive::MicrosliceInputArchive(const std::string& filename)
 StorableMicroslice* MicrosliceInputArchive::do_get()
 {
     StorableMicroslice* sts = nullptr;
-    try
-    {
+    try {
         sts = new StorableMicroslice();
         _iarchive >> *sts;
-    }
-    catch (boost::archive::archive_exception e)
-    {
+    } catch (boost::archive::archive_exception e) {
         delete sts;
         return nullptr;
     }

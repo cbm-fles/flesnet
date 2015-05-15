@@ -22,7 +22,7 @@ public:
     MicrosliceInputArchive(const MicrosliceInputArchive&) = delete;
     void operator=(const MicrosliceInputArchive&) = delete;
 
-    virtual ~MicrosliceInputArchive() {};
+    virtual ~MicrosliceInputArchive(){};
 
     /// Read the next microslice.
     std::unique_ptr<StorableMicroslice> get()
