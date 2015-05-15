@@ -174,3 +174,11 @@ BOOST_AUTO_TEST_CASE(reference_archive_test)
     BOOST_CHECK_EQUAL(source.descriptor().username(), "jan");
     BOOST_CHECK_EQUAL(source.descriptor().hostname(), "ten-3.fritz.box");
 }
+
+BOOST_AUTO_TEST_CASE(invalid_archive_test)
+{
+    // TODO: std::string filename("example1.msa");
+    std::string filename("test_Timeslice");
+    BOOST_CHECK_THROW(fles::TimesliceInputArchive source(filename),
+                      boost::archive::archive_exception);
+}
