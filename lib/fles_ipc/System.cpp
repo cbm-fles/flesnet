@@ -48,7 +48,7 @@ std::string current_username()
     if (bufsize == -1)
         bufsize = 16384;
 
-    std::vector<char> buf(bufsize);
+    std::vector<char> buf(static_cast<size_t>(bufsize));
 
     passwd pwd;
     passwd* result;
@@ -72,7 +72,7 @@ std::string current_hostname()
     if (bufsize == -1)
         bufsize = 257;
 
-    std::vector<char> buf(bufsize);
+    std::vector<char> buf(static_cast<size_t>(bufsize));
 
     int err = gethostname(buf.data(), buf.size());
     if (err)
@@ -85,7 +85,7 @@ std::string current_domainname()
 {
     long bufsize = 1024;
 
-    std::vector<char> buf(bufsize);
+    std::vector<char> buf(static_cast<size_t>(bufsize));
 
     int err = getdomainname(buf.data(), static_cast<int>(buf.size()));
     if (err)

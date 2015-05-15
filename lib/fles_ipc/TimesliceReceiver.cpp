@@ -1,6 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceReceiver.hpp"
+#include <boost/version.hpp>
 
 namespace fles
 {
@@ -51,6 +52,10 @@ TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
  *
  * 2014-03-12, Jan de Cuveland <cuveland@fias.uni-frankfurt.de>
  */
+#if BOOST_VERSION < 105600
+void mq_receive_workaround(boost::interprocess::message_queue& mq, void* buffer,
+                           size_t buffer_size, size_t& recvd_size,
+                           unsigned int& priority);
 void mq_receive_workaround(boost::interprocess::message_queue& mq, void* buffer,
                            size_t buffer_size, size_t& recvd_size,
                            unsigned int& priority)
@@ -63,6 +68,7 @@ void mq_receive_workaround(boost::interprocess::message_queue& mq, void* buffer,
     } while (
         !mq.timed_receive(buffer, buffer_size, recvd_size, priority, abs_time));
 }
+#endif
 
 TimesliceView* TimesliceReceiver::do_get()
 {
@@ -73,7 +79,7 @@ TimesliceView* TimesliceReceiver::do_get()
     std::size_t recvd_size;
     unsigned int priority;
 
-#if defined(BOOST_VERSION) and BOOST_VERSION >= 105600
+#if BOOST_VERSION >= 105600
     _work_items_mq->receive(&wi, sizeof(wi), recvd_size, priority);
 #else
     mq_receive_workaround(*_work_items_mq, &wi, sizeof(wi), recvd_size,
