@@ -1,3 +1,4 @@
+// Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
 #include "MicrosliceDescriptor.hpp"

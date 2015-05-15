@@ -1,6 +1,7 @@
-#include "StorableMicroslice.hpp"
+// Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "MicrosliceView.hpp"
+#include "StorableMicroslice.hpp"
 
 namespace fles
 {

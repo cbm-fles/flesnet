@@ -1,3 +1,4 @@
+// Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 #define BOOST_TEST_MODULE test_Microslice
 #include <boost/test/unit_test.hpp>
 
