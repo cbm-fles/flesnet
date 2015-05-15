@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		3D448B941B05EBD700DD8E5D /* Microslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */; };
 		3D448B951B05EBD700DD8E5D /* MicrosliceInputArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D448B901B05EBD700DD8E5D /* MicrosliceInputArchive.cpp */; };
+		3D76518F1B0670D100BECF69 /* example1.msa in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3D76518C1B06706C00BECF69 /* example1.msa */; };
+		3D7651901B0670DA00BECF69 /* example1.tsa in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3D76518B1B06705900BECF69 /* example1.tsa */; };
 		3DA3FE671B0207FF008710E2 /* MicrosliceView.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */; };
 		3DA3FE681B0207FF008710E2 /* StorableMicroslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE4E1B0207FF008710E2 /* StorableMicroslice.cpp */; };
 		3DA3FE691B0207FF008710E2 /* StorableTimeslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE501B0207FF008710E2 /* StorableTimeslice.cpp */; };
@@ -37,21 +39,23 @@
 		};
 		3DDAD8151B023A0600926C83 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 16;
 			files = (
+				3D7651901B0670DA00BECF69 /* example1.tsa in CopyFiles */,
 			);
-			runOnlyForDeploymentPostprocessing = 1;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		3DDAD8251B0253DE00926C83 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 16;
 			files = (
+				3D76518F1B0670D100BECF69 /* example1.msa in CopyFiles */,
 			);
-			runOnlyForDeploymentPostprocessing = 1;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -63,6 +67,8 @@
 		3D448B911B05EBD700DD8E5D /* MicrosliceInputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceInputArchive.hpp; sourceTree = "<group>"; };
 		3D448B921B05EBD700DD8E5D /* MicrosliceOutputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceOutputArchive.hpp; sourceTree = "<group>"; };
 		3D448B931B05EBD700DD8E5D /* MicrosliceSource.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceSource.hpp; sourceTree = "<group>"; };
+		3D76518B1B06705900BECF69 /* example1.tsa */ = {isa = PBXFileReference; lastKnownFileType = file; name = example1.tsa; path = ../test/reference/example1.tsa; sourceTree = "<group>"; };
+		3D76518C1B06706C00BECF69 /* example1.msa */ = {isa = PBXFileReference; lastKnownFileType = file; name = example1.msa; path = ../test/reference/example1.msa; sourceTree = "<group>"; };
 		3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libfles_ipc.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DA3FE4B1B0207FF008710E2 /* MicrosliceDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceDescriptor.hpp; sourceTree = "<group>"; };
 		3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceView.cpp; sourceTree = "<group>"; };
@@ -125,6 +131,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3D76518D1B06707700BECF69 /* reference */ = {
+			isa = PBXGroup;
+			children = (
+				3D76518C1B06706C00BECF69 /* example1.msa */,
+				3D76518B1B06705900BECF69 /* example1.tsa */,
+			);
+			name = reference;
+			path = ../contrib;
+			sourceTree = "<group>";
+		};
 		3DA3FE361B0206CB008710E2 = {
 			isa = PBXGroup;
 			children = (
@@ -192,6 +208,7 @@
 			children = (
 				3DDAD8201B023A9200926C83 /* test_Timeslice.cpp */,
 				3DDAD82E1B0253FC00926C83 /* test_Microslice.cpp */,
+				3D76518D1B06707700BECF69 /* reference */,
 			);
 			name = test;
 			path = ../test;

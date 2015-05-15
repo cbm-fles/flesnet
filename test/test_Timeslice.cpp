@@ -148,3 +148,9 @@ BOOST_FIXTURE_TEST_CASE(microslice_storage_test, F)
     ts0.append_microslice(c, 0, m);
     BOOST_CHECK_EQUAL(ts0.descriptor(c, 0).size, 1);
 }
+
+BOOST_AUTO_TEST_CASE(example_file_existence_test)
+{
+    std::string filename("example1.tsa");
+    BOOST_CHECK_NO_THROW(fles::TimesliceInputArchive source(filename));
+}

@@ -99,3 +99,9 @@ BOOST_AUTO_TEST_CASE(archive_exception_test)
     BOOST_CHECK_THROW(fles::MicrosliceInputArchive source(filename),
                       std::ios_base::failure)
 }
+
+BOOST_AUTO_TEST_CASE(example_file_existence_test)
+{
+    std::string filename("example1.msa");
+    BOOST_CHECK_NO_THROW(fles::MicrosliceInputArchive source(filename));
+}
