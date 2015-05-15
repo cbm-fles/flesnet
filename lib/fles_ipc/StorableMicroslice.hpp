@@ -6,13 +6,17 @@
 namespace fles
 {
 
-struct MicrosliceView;
-
 /**
  * Store microslice metadata and content in a single object.
  */
-struct StorableMicroslice {
-    StorableMicroslice(const MicrosliceView& mc);
+class StorableMicroslice : public Microslice
+{
+public:
+    StorableMicroslice(const StorableMicroslice& ms);
+    void operator=(const StorableMicroslice&) = delete;
+    StorableMicroslice(StorableMicroslice&& ms);
+
+    StorableMicroslice(const Microslice& ms);
 
     StorableMicroslice(MicrosliceDescriptor d, const uint8_t* content);
     /**<
@@ -35,10 +39,6 @@ struct StorableMicroslice {
      * or
      *     StorableMicroslice {..., create_some_vector()}
      */
-
-    MicrosliceDescriptor& desc() { return _desc; };
-    //< must be writable, e.g. by StorableTimeslice::append_microslice
-    const uint8_t* content() const { return _content.data(); };
 
 private:
     MicrosliceDescriptor _desc;

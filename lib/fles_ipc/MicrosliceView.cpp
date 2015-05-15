@@ -3,9 +3,9 @@
 namespace fles
 {
 
-MicrosliceView::MicrosliceView(MicrosliceDescriptor d, const uint8_t* content)
-    : _desc(d), // cannot use {}, see http://stackoverflow.com/q/19347004
-      _content{content}
+MicrosliceView::MicrosliceView(MicrosliceDescriptor& d, const uint8_t *content)
+    : _desc_ptr(*d),
+      _content_ptr(content)
 {
 }
 }
