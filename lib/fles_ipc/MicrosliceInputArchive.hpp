@@ -30,6 +30,11 @@ public:
         return std::unique_ptr<StorableMicroslice>(do_get());
     };
 
+    const MicrosliceArchiveDescriptor& descriptor() const
+    {
+        return _descriptor;
+    };
+
 private:
     virtual StorableMicroslice* do_get();
 

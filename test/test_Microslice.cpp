@@ -89,6 +89,8 @@ BOOST_FIXTURE_TEST_CASE(archive_test, F)
         ++count;
     }
     BOOST_CHECK_EQUAL(count, 2);
+    BOOST_CHECK_EQUAL(source.descriptor().username(),
+                      fles::system::current_username());
 }
 
 BOOST_AUTO_TEST_CASE(archive_exception_test)

@@ -30,6 +30,11 @@ public:
         return std::unique_ptr<StorableTimeslice>(do_get());
     };
 
+    const TimesliceArchiveDescriptor& descriptor() const
+    {
+        return _descriptor;
+    };
+
 private:
     virtual StorableTimeslice* do_get();
 
