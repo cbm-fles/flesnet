@@ -18,8 +18,11 @@ StorableTimeslice* TimesliceInputArchive::do_get()
         sts = new StorableTimeslice();
         _iarchive >> *sts;
     } catch (boost::archive::archive_exception e) {
-        delete sts;
-        return nullptr;
+        if (e.code == boost::archive::archive_exception::input_stream_error) {
+            delete sts;
+            return nullptr;
+        }
+        throw;
     }
     return sts;
 }

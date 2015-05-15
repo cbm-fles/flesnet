@@ -13,15 +13,18 @@ MicrosliceInputArchive::MicrosliceInputArchive(const std::string& filename)
 
 StorableMicroslice* MicrosliceInputArchive::do_get()
 {
-    StorableMicroslice* sts = nullptr;
+    StorableMicroslice* sms = nullptr;
     try {
-        sts = new StorableMicroslice();
-        _iarchive >> *sts;
+        sms = new StorableMicroslice();
+        _iarchive >> *sms;
     } catch (boost::archive::archive_exception e) {
-        delete sts;
-        return nullptr;
+        if (e.code == boost::archive::archive_exception::input_stream_error) {
+            delete sms;
+            return nullptr;
+        }
+        throw;
     }
-    return sts;
+    return sms;
 }
 
 } // namespace fles {
