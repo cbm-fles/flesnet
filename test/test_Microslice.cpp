@@ -90,3 +90,10 @@ BOOST_FIXTURE_TEST_CASE(archive_test, F)
     }
     BOOST_CHECK_EQUAL(count, 2);
 }
+
+BOOST_AUTO_TEST_CASE(archive_exception_test)
+{
+    std::string filename("does_not_exist.msa");
+    BOOST_CHECK_THROW(fles::MicrosliceInputArchive source(filename),
+                      boost::archive::archive_exception)
+}

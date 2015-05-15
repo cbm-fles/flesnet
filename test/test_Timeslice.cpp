@@ -122,6 +122,13 @@ BOOST_FIXTURE_TEST_CASE(archive_test, F)
     BOOST_CHECK_EQUAL(count, 2);
 }
 
+BOOST_AUTO_TEST_CASE(archive_exception_test)
+{
+    std::string filename("does_not_exist.tsa");
+    BOOST_CHECK_THROW(fles::TimesliceInputArchive source(filename),
+                      boost::archive::archive_exception)
+}
+
 BOOST_FIXTURE_TEST_CASE(microslice_access_test, F)
 {
     fles::MicrosliceView m = ts0.get_microslice(1, 0);
