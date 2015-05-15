@@ -149,8 +149,28 @@ BOOST_FIXTURE_TEST_CASE(microslice_storage_test, F)
     BOOST_CHECK_EQUAL(ts0.descriptor(c, 0).size, 1);
 }
 
-BOOST_AUTO_TEST_CASE(example_file_existence_test)
+BOOST_AUTO_TEST_CASE(reference_file_existence_test)
 {
     std::string filename("example1.tsa");
     BOOST_CHECK_NO_THROW(fles::TimesliceInputArchive source(filename));
+}
+
+BOOST_AUTO_TEST_CASE(reference_archive_test)
+{
+    std::string filename("example1.tsa");
+    uint64_t count = 0;
+    fles::TimesliceInputArchive source(filename);
+    while (auto timeslice = source.get()) {
+        BOOST_CHECK_EQUAL(timeslice->index(), 1);
+        BOOST_CHECK_EQUAL(timeslice->num_core_microslices(), 1);
+        BOOST_CHECK_EQUAL(timeslice->num_components(), 2);
+        BOOST_CHECK_EQUAL(timeslice->num_microslices(0), 2);
+        BOOST_CHECK_EQUAL(timeslice->num_microslices(1), 1);
+        BOOST_CHECK_EQUAL(*timeslice->content(0, 1), 11);
+        BOOST_CHECK_EQUAL(*timeslice->content(1, 0), 3);
+        ++count;
+    }
+    BOOST_CHECK_EQUAL(count, 2);
+    BOOST_CHECK_EQUAL(source.descriptor().username(), "jan");
+    BOOST_CHECK_EQUAL(source.descriptor().hostname(), "ten-3.fritz.box");
 }

@@ -100,8 +100,23 @@ BOOST_AUTO_TEST_CASE(archive_exception_test)
                       std::ios_base::failure)
 }
 
-BOOST_AUTO_TEST_CASE(example_file_existence_test)
+BOOST_AUTO_TEST_CASE(reference_file_existence_test)
 {
     std::string filename("example1.msa");
     BOOST_CHECK_NO_THROW(fles::MicrosliceInputArchive source(filename));
+}
+
+BOOST_AUTO_TEST_CASE(reference_archive_test)
+{
+    std::string filename("example1.msa");
+    uint64_t count = 0;
+    fles::MicrosliceInputArchive source(filename);
+    while (auto microslice = source.get()) {
+        BOOST_CHECK_EQUAL(microslice->desc().eq_id, 10);
+        BOOST_CHECK_EQUAL(microslice->content()[3], 8);
+        ++count;
+    }
+    BOOST_CHECK_EQUAL(count, 2);
+    BOOST_CHECK_EQUAL(source.descriptor().username(), "jan");
+    BOOST_CHECK_EQUAL(source.descriptor().hostname(), "ten-3.fritz.box");
 }
