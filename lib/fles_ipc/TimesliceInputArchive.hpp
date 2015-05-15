@@ -33,8 +33,8 @@ public:
 private:
     virtual StorableTimeslice* do_get();
 
-    std::ifstream _ifstream;
-    boost::archive::binary_iarchive _iarchive;
+    std::unique_ptr<std::ifstream> _ifstream;
+    std::unique_ptr<boost::archive::binary_iarchive> _iarchive;
     TimesliceArchiveDescriptor _descriptor;
 };
 
