@@ -14,9 +14,6 @@ class MicrosliceView : public Microslice
 {
 public:
     MicrosliceView(const MicrosliceDescriptor& d, const uint8_t* content);
-
-    MicrosliceView(const MicrosliceView&) = delete;
-    void operator=(const MicrosliceView&) = delete;
 };
 
 } // namespace fles {
