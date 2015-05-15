@@ -9,6 +9,9 @@ MicrosliceInputArchive::MicrosliceInputArchive(const std::string& filename)
 {
     _ifstream = std::unique_ptr<std::ifstream>(
         new std::ifstream(filename.c_str(), std::ios::binary));
+    if (!*_ifstream) {
+        throw std::ios_base::failure("error opening file \"" + filename + "\"");
+    }
 
     _iarchive = std::unique_ptr<boost::archive::binary_iarchive>(
         new boost::archive::binary_iarchive(*_ifstream));
