@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3D448B941B05EBD700DD8E5D /* Microslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */; };
+		3D448B951B05EBD700DD8E5D /* MicrosliceInputArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D448B901B05EBD700DD8E5D /* MicrosliceInputArchive.cpp */; };
 		3DA3FE671B0207FF008710E2 /* MicrosliceView.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */; };
 		3DA3FE681B0207FF008710E2 /* StorableMicroslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE4E1B0207FF008710E2 /* StorableMicroslice.cpp */; };
 		3DA3FE691B0207FF008710E2 /* StorableTimeslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE501B0207FF008710E2 /* StorableTimeslice.cpp */; };
@@ -54,6 +56,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Microslice.cpp; sourceTree = "<group>"; };
+		3D448B8E1B05EBD700DD8E5D /* Microslice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Microslice.hpp; sourceTree = "<group>"; };
+		3D448B8F1B05EBD700DD8E5D /* MicrosliceArchiveDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceArchiveDescriptor.hpp; sourceTree = "<group>"; };
+		3D448B901B05EBD700DD8E5D /* MicrosliceInputArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceInputArchive.cpp; sourceTree = "<group>"; };
+		3D448B911B05EBD700DD8E5D /* MicrosliceInputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceInputArchive.hpp; sourceTree = "<group>"; };
+		3D448B921B05EBD700DD8E5D /* MicrosliceOutputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceOutputArchive.hpp; sourceTree = "<group>"; };
+		3D448B931B05EBD700DD8E5D /* MicrosliceSource.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceSource.hpp; sourceTree = "<group>"; };
 		3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libfles_ipc.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DA3FE4B1B0207FF008710E2 /* MicrosliceDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceDescriptor.hpp; sourceTree = "<group>"; };
 		3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceView.cpp; sourceTree = "<group>"; };
@@ -142,6 +151,13 @@
 				3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */,
 				3DA3FE4D1B0207FF008710E2 /* MicrosliceView.hpp */,
 				3DA3FE4E1B0207FF008710E2 /* StorableMicroslice.cpp */,
+				3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */,
+				3D448B8E1B05EBD700DD8E5D /* Microslice.hpp */,
+				3D448B8F1B05EBD700DD8E5D /* MicrosliceArchiveDescriptor.hpp */,
+				3D448B901B05EBD700DD8E5D /* MicrosliceInputArchive.cpp */,
+				3D448B911B05EBD700DD8E5D /* MicrosliceInputArchive.hpp */,
+				3D448B921B05EBD700DD8E5D /* MicrosliceOutputArchive.hpp */,
+				3D448B931B05EBD700DD8E5D /* MicrosliceSource.hpp */,
 				3DA3FE4F1B0207FF008710E2 /* StorableMicroslice.hpp */,
 				3DA3FE501B0207FF008710E2 /* StorableTimeslice.cpp */,
 				3DA3FE511B0207FF008710E2 /* StorableTimeslice.hpp */,
@@ -282,8 +298,10 @@
 				3DA3FE6A1B0207FF008710E2 /* System.cpp in Sources */,
 				3DA3FE6F1B0207FF008710E2 /* TimesliceSubscriber.cpp in Sources */,
 				3DA3FE6C1B0207FF008710E2 /* TimesliceInputArchive.cpp in Sources */,
+				3D448B951B05EBD700DD8E5D /* MicrosliceInputArchive.cpp in Sources */,
 				3DA3FE6E1B0207FF008710E2 /* TimesliceReceiver.cpp in Sources */,
 				3DA3FE6D1B0207FF008710E2 /* TimeslicePublisher.cpp in Sources */,
+				3D448B941B05EBD700DD8E5D /* Microslice.cpp in Sources */,
 				3DA3FE6B1B0207FF008710E2 /* Timeslice.cpp in Sources */,
 				3DA3FE671B0207FF008710E2 /* MicrosliceView.cpp in Sources */,
 				3DA3FE691B0207FF008710E2 /* StorableTimeslice.cpp in Sources */,
@@ -523,6 +541,7 @@
 				3DDAD81D1B023A0600926C83 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		3DDAD82B1B0253DE00926C83 /* Build configuration list for PBXNativeTarget "test_Microslice" */ = {
 			isa = XCConfigurationList;
@@ -531,6 +550,7 @@
 				3DDAD82D1B0253DE00926C83 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
