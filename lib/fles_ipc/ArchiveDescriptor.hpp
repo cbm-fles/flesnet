@@ -14,16 +14,18 @@ namespace fles
 class ArchiveDescriptor
 {
 public:
-    ArchiveDescriptor(bool auto_initialize = false)
+    enum class ArchiveType { TimesliceArchive, MicrosliceArchive };
 
+    ArchiveDescriptor(ArchiveType archive_type) : _archive_type(archive_type)
     {
-        if (auto_initialize) {
-            _time_created = std::chrono::system_clock::to_time_t(
-                std::chrono::system_clock::now());
-            _hostname = fles::system::current_hostname();
-            _username = fles::system::current_username();
-        }
+        _time_created = std::chrono::system_clock::to_time_t(
+            std::chrono::system_clock::now());
+        _hostname = fles::system::current_hostname();
+        _username = fles::system::current_username();
     }
+
+    /// Retrieve the type of archive.
+    ArchiveType archive_type() const { return _archive_type; }
 
     /// Retrieve the time of creation of the archive.
     std::time_t time_created() const { return _time_created; }
@@ -35,9 +37,12 @@ public:
     std::string username() const { return _username; }
 
 private:
-    enum class ArchiveType { TimesliceArchive, MicrosliceArchive };
-
     friend class boost::serialization::access;
+    friend class TimesliceInputArchive;
+    friend class MicrosliceInputArchive;
+
+    ArchiveDescriptor(){};
+
     template <class Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
