@@ -16,7 +16,6 @@
 		3DA3FE691B0207FF008710E2 /* StorableTimeslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE501B0207FF008710E2 /* StorableTimeslice.cpp */; };
 		3DA3FE6A1B0207FF008710E2 /* System.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE521B0207FF008710E2 /* System.cpp */; };
 		3DA3FE6B1B0207FF008710E2 /* Timeslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE541B0207FF008710E2 /* Timeslice.cpp */; };
-		3DA3FE6C1B0207FF008710E2 /* TimesliceInputArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE5A1B0207FF008710E2 /* TimesliceInputArchive.cpp */; };
 		3DA3FE6D1B0207FF008710E2 /* TimeslicePublisher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE5D1B0207FF008710E2 /* TimeslicePublisher.cpp */; };
 		3DA3FE6E1B0207FF008710E2 /* TimesliceReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE5F1B0207FF008710E2 /* TimesliceReceiver.cpp */; };
 		3DA3FE6F1B0207FF008710E2 /* TimesliceSubscriber.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE621B0207FF008710E2 /* TimesliceSubscriber.cpp */; };
@@ -88,7 +87,6 @@
 		3DA3FE571B0207FF008710E2 /* TimesliceCompletion.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceCompletion.hpp; sourceTree = "<group>"; };
 		3DA3FE581B0207FF008710E2 /* TimesliceComponentDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceComponentDescriptor.hpp; sourceTree = "<group>"; };
 		3DA3FE591B0207FF008710E2 /* TimesliceDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceDescriptor.hpp; sourceTree = "<group>"; };
-		3DA3FE5A1B0207FF008710E2 /* TimesliceInputArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimesliceInputArchive.cpp; sourceTree = "<group>"; };
 		3DA3FE5B1B0207FF008710E2 /* TimesliceInputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceInputArchive.hpp; sourceTree = "<group>"; };
 		3DA3FE5C1B0207FF008710E2 /* OutputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = OutputArchive.hpp; sourceTree = "<group>"; };
 		3DA3FE5D1B0207FF008710E2 /* TimeslicePublisher.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimeslicePublisher.cpp; sourceTree = "<group>"; };
@@ -189,7 +187,6 @@
 				3DA3FE571B0207FF008710E2 /* TimesliceCompletion.hpp */,
 				3DA3FE581B0207FF008710E2 /* TimesliceComponentDescriptor.hpp */,
 				3DA3FE591B0207FF008710E2 /* TimesliceDescriptor.hpp */,
-				3DA3FE5A1B0207FF008710E2 /* TimesliceInputArchive.cpp */,
 				3DA3FE5B1B0207FF008710E2 /* TimesliceInputArchive.hpp */,
 				3DA3FE5C1B0207FF008710E2 /* OutputArchive.hpp */,
 				3DA3FE5D1B0207FF008710E2 /* TimeslicePublisher.cpp */,
@@ -320,7 +317,6 @@
 			files = (
 				3DA3FE6A1B0207FF008710E2 /* System.cpp in Sources */,
 				3DA3FE6F1B0207FF008710E2 /* TimesliceSubscriber.cpp in Sources */,
-				3DA3FE6C1B0207FF008710E2 /* TimesliceInputArchive.cpp in Sources */,
 				3D448B951B05EBD700DD8E5D /* MicrosliceInputArchive.cpp in Sources */,
 				3DA3FE6E1B0207FF008710E2 /* TimesliceReceiver.cpp in Sources */,
 				3DA3FE6D1B0207FF008710E2 /* TimeslicePublisher.cpp in Sources */,
