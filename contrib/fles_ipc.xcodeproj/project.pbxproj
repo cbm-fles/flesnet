@@ -25,6 +25,8 @@
 		3DDAD8221B023C1A00926C83 /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */; };
 		3DDAD82F1B0253FC00926C83 /* test_Microslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DDAD82E1B0253FC00926C83 /* test_Microslice.cpp */; };
 		3DDAD8301B0254B000926C83 /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */; };
+		3DE95F711B0B8D4600B90922 /* example1.tsa in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3D76518B1B06705900BECF69 /* example1.tsa */; };
+		3DE95F721B0B8D5000B90922 /* example1.msa in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3D76518C1B06706C00BECF69 /* example1.msa */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -43,6 +45,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
+				3DE95F721B0B8D5000B90922 /* example1.msa in CopyFiles */,
 				3D7651901B0670DA00BECF69 /* example1.tsa in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -53,6 +56,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
+				3DE95F711B0B8D4600B90922 /* example1.tsa in CopyFiles */,
 				3D76518F1B0670D100BECF69 /* example1.msa in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
