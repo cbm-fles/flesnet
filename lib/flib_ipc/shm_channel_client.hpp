@@ -1,3 +1,4 @@
+#pragma once
 
 #include <cstdint>
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -59,7 +60,7 @@ public:
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
 
   
-  void set_akc_ptrs(ack_ptrs_t ptrs) {
+  void set_ack_ptrs(ack_ptrs_t ptrs) {
     scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
     m_shm_ch->set_ack_ptrs(lock, ptrs);
     m_shm_ch->set_req_ptr(lock, true);
