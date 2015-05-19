@@ -1,7 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "MicrosliceArchiveDescriptor.hpp"
+#include "ArchiveDescriptor.hpp"
 #include "StorableMicroslice.hpp"
 #include <string>
 #include <fstream>
@@ -33,7 +33,8 @@ public:
 private:
     std::ofstream _ofstream;
     boost::archive::binary_oarchive _oarchive;
-    MicrosliceArchiveDescriptor _descriptor{true};
+    ArchiveDescriptor _descriptor{
+        ArchiveDescriptor::ArchiveType::MicrosliceArchive};
 };
 
 } // namespace fles {

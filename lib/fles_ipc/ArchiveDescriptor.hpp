@@ -5,6 +5,7 @@
 #include <chrono>
 #include <string>
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/version.hpp>
 
 namespace fles
 {

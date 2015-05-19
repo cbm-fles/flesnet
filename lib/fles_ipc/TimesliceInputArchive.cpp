@@ -17,6 +17,13 @@ TimesliceInputArchive::TimesliceInputArchive(const std::string& filename)
         new boost::archive::binary_iarchive(*_ifstream));
 
     *_iarchive >> _descriptor;
+
+    if (_descriptor.archive_type() !=
+        ArchiveDescriptor::ArchiveType::TimesliceArchive) {
+        throw std::runtime_error(
+            "File \"" + filename +
+            "\" is not of type ArchiveType::TimesliceArchive");
+    }
 }
 
 StorableTimeslice* TimesliceInputArchive::do_get()

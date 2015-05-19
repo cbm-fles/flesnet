@@ -17,6 +17,13 @@ MicrosliceInputArchive::MicrosliceInputArchive(const std::string& filename)
         new boost::archive::binary_iarchive(*_ifstream));
 
     *_iarchive >> _descriptor;
+
+    if (_descriptor.archive_type() !=
+        ArchiveDescriptor::ArchiveType::MicrosliceArchive) {
+        throw std::runtime_error(
+            "File \"" + filename +
+            "\" is not of type ArchiveType::MicrosliceArchive");
+    }
 }
 
 StorableMicroslice* MicrosliceInputArchive::do_get()

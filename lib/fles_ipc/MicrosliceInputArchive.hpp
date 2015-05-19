@@ -2,7 +2,7 @@
 #pragma once
 
 #include "MicrosliceSource.hpp"
-#include "MicrosliceArchiveDescriptor.hpp"
+#include "ArchiveDescriptor.hpp"
 #include "StorableMicroslice.hpp"
 #include <string>
 #include <fstream>
@@ -30,17 +30,14 @@ public:
         return std::unique_ptr<StorableMicroslice>(do_get());
     };
 
-    const MicrosliceArchiveDescriptor& descriptor() const
-    {
-        return _descriptor;
-    };
+    const ArchiveDescriptor& descriptor() const { return _descriptor; };
 
 private:
     virtual StorableMicroslice* do_get();
 
     std::unique_ptr<std::ifstream> _ifstream;
     std::unique_ptr<boost::archive::binary_iarchive> _iarchive;
-    MicrosliceArchiveDescriptor _descriptor;
+    ArchiveDescriptor _descriptor;
 };
 
 } // namespace fles {
