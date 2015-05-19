@@ -10,7 +10,7 @@ namespace fles
 {
 
 //! The ArchiveDescriptor precedes a stream of serialized
-// StorableTimeslice objects.
+// StorableTimeslice or StorableMicroslice objects.
 class ArchiveDescriptor
 {
 public:
@@ -35,18 +35,31 @@ public:
     std::string username() const { return _username; }
 
 private:
+    enum class ArchiveType { TimesliceArchive, MicrosliceArchive };
+
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int /* version */)
+    void serialize(Archive& ar, const unsigned int version)
     {
+        if (version > 0) {
+            ar& _archive_type;
+        } else {
+            _archive_type = ArchiveType::TimesliceArchive;
+        };
         ar& _time_created;
         ar& _hostname;
         ar& _username;
     }
 
+    ArchiveType _archive_type;
     std::time_t _time_created = std::time_t();
     std::string _hostname;
     std::string _username;
 };
 
 } // namespace fles {
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+BOOST_CLASS_VERSION(fles::ArchiveDescriptor, 1)
+#pragma GCC diagnostic pop
