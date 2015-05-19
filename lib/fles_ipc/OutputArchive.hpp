@@ -2,7 +2,6 @@
 #pragma once
 
 #include "ArchiveDescriptor.hpp"
-#include "StorableTimeslice.hpp"
 #include <string>
 #include <fstream>
 #include <boost/archive/binary_oarchive.hpp>
@@ -11,7 +10,8 @@ namespace fles
 {
 
 //! The OutputArchive serializes data sets to an output file.
-template <typename T> class OutputArchive
+template <class T, ArchiveDescriptor::ArchiveType archive_type>
+class OutputArchive
 {
 public:
     OutputArchive(const std::string& filename)
@@ -29,8 +29,7 @@ public:
 private:
     std::ofstream _ofstream;
     boost::archive::binary_oarchive _oarchive;
-    ArchiveDescriptor _descriptor{
-        ArchiveDescriptor::ArchiveType::TimesliceArchive};
+    ArchiveDescriptor _descriptor{archive_type};
 };
 
 } // namespace fles {

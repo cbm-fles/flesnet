@@ -7,6 +7,8 @@
 namespace fles
 {
 
-typedef OutputArchive<StorableTimeslice> TimesliceOutputArchive;
+typedef OutputArchive<StorableTimeslice,
+                      ArchiveDescriptor::ArchiveType::TimesliceArchive>
+    TimesliceOutputArchive;
 
 } // namespace fles {
