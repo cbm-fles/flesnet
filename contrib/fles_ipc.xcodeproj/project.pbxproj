@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		3D448B941B05EBD700DD8E5D /* Microslice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */; };
-		3D448B951B05EBD700DD8E5D /* MicrosliceInputArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D448B901B05EBD700DD8E5D /* MicrosliceInputArchive.cpp */; };
 		3D76518F1B0670D100BECF69 /* example1.msa in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3D76518C1B06706C00BECF69 /* example1.msa */; };
 		3D7651901B0670DA00BECF69 /* example1.tsa in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3D76518B1B06705900BECF69 /* example1.tsa */; };
 		3DA3FE671B0207FF008710E2 /* MicrosliceView.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */; };
@@ -65,7 +64,6 @@
 /* Begin PBXFileReference section */
 		3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Microslice.cpp; sourceTree = "<group>"; };
 		3D448B8E1B05EBD700DD8E5D /* Microslice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Microslice.hpp; sourceTree = "<group>"; };
-		3D448B901B05EBD700DD8E5D /* MicrosliceInputArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceInputArchive.cpp; sourceTree = "<group>"; };
 		3D448B911B05EBD700DD8E5D /* MicrosliceInputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceInputArchive.hpp; sourceTree = "<group>"; };
 		3D448B921B05EBD700DD8E5D /* MicrosliceOutputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceOutputArchive.hpp; sourceTree = "<group>"; };
 		3D448B931B05EBD700DD8E5D /* MicrosliceSource.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceSource.hpp; sourceTree = "<group>"; };
@@ -169,7 +167,6 @@
 				3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */,
 				3D448B8E1B05EBD700DD8E5D /* Microslice.hpp */,
 				3DA3FE4B1B0207FF008710E2 /* MicrosliceDescriptor.hpp */,
-				3D448B901B05EBD700DD8E5D /* MicrosliceInputArchive.cpp */,
 				3D448B911B05EBD700DD8E5D /* MicrosliceInputArchive.hpp */,
 				3D448B921B05EBD700DD8E5D /* MicrosliceOutputArchive.hpp */,
 				3D448B931B05EBD700DD8E5D /* MicrosliceSource.hpp */,
@@ -317,7 +314,6 @@
 			files = (
 				3DA3FE6A1B0207FF008710E2 /* System.cpp in Sources */,
 				3DA3FE6F1B0207FF008710E2 /* TimesliceSubscriber.cpp in Sources */,
-				3D448B951B05EBD700DD8E5D /* MicrosliceInputArchive.cpp in Sources */,
 				3DA3FE6E1B0207FF008710E2 /* TimesliceReceiver.cpp in Sources */,
 				3DA3FE6D1B0207FF008710E2 /* TimeslicePublisher.cpp in Sources */,
 				3D448B941B05EBD700DD8E5D /* Microslice.cpp in Sources */,
