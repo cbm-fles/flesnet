@@ -105,6 +105,7 @@
 		3DDAD8201B023A9200926C83 /* test_Timeslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_Timeslice.cpp; sourceTree = "<group>"; };
 		3DDAD8271B0253DE00926C83 /* test_Microslice */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_Microslice; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DDAD82E1B0253FC00926C83 /* test_Microslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_Microslice.cpp; sourceTree = "<group>"; };
+		3DE95F731B0B90AD00B90922 /* TimesliceOutputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceOutputArchive.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -192,6 +193,7 @@
 				3DA3FE5C1B0207FF008710E2 /* OutputArchive.hpp */,
 				3DA3FE5D1B0207FF008710E2 /* TimeslicePublisher.cpp */,
 				3DA3FE5E1B0207FF008710E2 /* TimeslicePublisher.hpp */,
+				3DE95F731B0B90AD00B90922 /* TimesliceOutputArchive.hpp */,
 				3DA3FE5F1B0207FF008710E2 /* TimesliceReceiver.cpp */,
 				3DA3FE601B0207FF008710E2 /* TimesliceReceiver.hpp */,
 				3DA3FE611B0207FF008710E2 /* TimesliceSource.hpp */,

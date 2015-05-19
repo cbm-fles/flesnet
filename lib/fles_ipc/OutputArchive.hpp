@@ -33,6 +33,4 @@ private:
         ArchiveDescriptor::ArchiveType::TimesliceArchive};
 };
 
-typedef OutputArchive<StorableTimeslice> TimesliceOutputArchive;
-
 } // namespace fles {
