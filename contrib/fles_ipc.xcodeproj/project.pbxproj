@@ -81,7 +81,7 @@
 		3DA3FE531B0207FF008710E2 /* System.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = System.hpp; sourceTree = "<group>"; };
 		3DA3FE541B0207FF008710E2 /* Timeslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Timeslice.cpp; sourceTree = "<group>"; };
 		3DA3FE551B0207FF008710E2 /* Timeslice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Timeslice.hpp; sourceTree = "<group>"; };
-		3DA3FE561B0207FF008710E2 /* TimesliceArchiveDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceArchiveDescriptor.hpp; sourceTree = "<group>"; };
+		3DA3FE561B0207FF008710E2 /* ArchiveDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ArchiveDescriptor.hpp; sourceTree = "<group>"; };
 		3DA3FE571B0207FF008710E2 /* TimesliceCompletion.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceCompletion.hpp; sourceTree = "<group>"; };
 		3DA3FE581B0207FF008710E2 /* TimesliceComponentDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceComponentDescriptor.hpp; sourceTree = "<group>"; };
 		3DA3FE591B0207FF008710E2 /* TimesliceDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceDescriptor.hpp; sourceTree = "<group>"; };
@@ -181,7 +181,7 @@
 				3DA3FE531B0207FF008710E2 /* System.hpp */,
 				3DA3FE541B0207FF008710E2 /* Timeslice.cpp */,
 				3DA3FE551B0207FF008710E2 /* Timeslice.hpp */,
-				3DA3FE561B0207FF008710E2 /* TimesliceArchiveDescriptor.hpp */,
+				3DA3FE561B0207FF008710E2 /* ArchiveDescriptor.hpp */,
 				3DA3FE571B0207FF008710E2 /* TimesliceCompletion.hpp */,
 				3DA3FE581B0207FF008710E2 /* TimesliceComponentDescriptor.hpp */,
 				3DA3FE591B0207FF008710E2 /* TimesliceDescriptor.hpp */,

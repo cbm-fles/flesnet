@@ -9,12 +9,12 @@
 namespace fles
 {
 
-//! The TimesliceArchiveDescriptor precedes a stream of serialized
+//! The ArchiveDescriptor precedes a stream of serialized
 // StorableTimeslice objects.
-class TimesliceArchiveDescriptor
+class ArchiveDescriptor
 {
 public:
-    TimesliceArchiveDescriptor(bool auto_initialize = false)
+    ArchiveDescriptor(bool auto_initialize = false)
 
     {
         if (auto_initialize) {

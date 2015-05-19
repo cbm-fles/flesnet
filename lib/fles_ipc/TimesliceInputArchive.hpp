@@ -2,7 +2,7 @@
 #pragma once
 
 #include "TimesliceSource.hpp"
-#include "TimesliceArchiveDescriptor.hpp"
+#include "ArchiveDescriptor.hpp"
 #include "StorableTimeslice.hpp"
 #include <string>
 #include <fstream>
@@ -30,17 +30,14 @@ public:
         return std::unique_ptr<StorableTimeslice>(do_get());
     };
 
-    const TimesliceArchiveDescriptor& descriptor() const
-    {
-        return _descriptor;
-    };
+    const ArchiveDescriptor& descriptor() const { return _descriptor; };
 
 private:
     virtual StorableTimeslice* do_get();
 
     std::unique_ptr<std::ifstream> _ifstream;
     std::unique_ptr<boost::archive::binary_iarchive> _iarchive;
-    TimesliceArchiveDescriptor _descriptor;
+    ArchiveDescriptor _descriptor;
 };
 
 } // namespace fles {

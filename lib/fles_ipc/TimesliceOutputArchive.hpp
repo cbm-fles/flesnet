@@ -1,7 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "TimesliceArchiveDescriptor.hpp"
+#include "ArchiveDescriptor.hpp"
 #include "StorableTimeslice.hpp"
 #include <string>
 #include <fstream>
@@ -29,7 +29,7 @@ public:
 private:
     std::ofstream _ofstream;
     boost::archive::binary_oarchive _oarchive;
-    TimesliceArchiveDescriptor _descriptor{true};
+    ArchiveDescriptor _descriptor{true};
 };
 
 } // namespace fles {
