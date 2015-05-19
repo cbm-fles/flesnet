@@ -10,8 +10,7 @@ namespace fles
 {
 
 //! The OutputArchive serializes data sets to an output file.
-template <class T, ArchiveDescriptor::ArchiveType archive_type>
-class OutputArchive
+template <class T, ArchiveType archive_type> class OutputArchive
 {
 public:
     OutputArchive(const std::string& filename)

@@ -10,13 +10,16 @@
 namespace fles
 {
 
+enum class ArchiveType { TimesliceArchive, MicrosliceArchive };
+
+template <class Base, class Derived, ArchiveType archive_type>
+class InputArchive;
+
 //! The ArchiveDescriptor precedes a stream of serialized
 // StorableTimeslice or StorableMicroslice objects.
 class ArchiveDescriptor
 {
 public:
-    enum class ArchiveType { TimesliceArchive, MicrosliceArchive };
-
     ArchiveDescriptor(ArchiveType archive_type) : _archive_type(archive_type)
     {
         _time_created = std::chrono::system_clock::to_time_t(
@@ -39,8 +42,8 @@ public:
 
 private:
     friend class boost::serialization::access;
-    friend class TimesliceInputArchive;
-    friend class MicrosliceInputArchive;
+    template <class Base, class Derived, ArchiveType archive_type>
+    friend class InputArchive;
 
     ArchiveDescriptor(){};
 

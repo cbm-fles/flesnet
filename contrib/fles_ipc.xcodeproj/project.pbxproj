@@ -102,6 +102,7 @@
 		3DDAD8271B0253DE00926C83 /* test_Microslice */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_Microslice; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DDAD82E1B0253FC00926C83 /* test_Microslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_Microslice.cpp; sourceTree = "<group>"; };
 		3DE2EF0A1B0BABE400BBE823 /* Source.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Source.hpp; sourceTree = "<group>"; };
+		3DE2EF0B1B0BB02000BBE823 /* InputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InputArchive.hpp; sourceTree = "<group>"; };
 		3DE95F731B0B90AD00B90922 /* TimesliceOutputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceOutputArchive.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -185,6 +186,7 @@
 				3DA3FE581B0207FF008710E2 /* TimesliceComponentDescriptor.hpp */,
 				3DA3FE591B0207FF008710E2 /* TimesliceDescriptor.hpp */,
 				3DA3FE5B1B0207FF008710E2 /* TimesliceInputArchive.hpp */,
+				3DE2EF0B1B0BB02000BBE823 /* InputArchive.hpp */,
 				3DA3FE5C1B0207FF008710E2 /* OutputArchive.hpp */,
 				3DA3FE5D1B0207FF008710E2 /* TimeslicePublisher.cpp */,
 				3DA3FE5E1B0207FF008710E2 /* TimeslicePublisher.hpp */,

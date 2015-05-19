@@ -1,6 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "ArchiveDescriptor.hpp"
 #include "StorableMicroslice.hpp"
 #include "Timeslice.hpp"
 #include <cstdint>
@@ -14,6 +15,9 @@
 
 namespace fles
 {
+
+template <class Base, class Derived, ArchiveType archive_type>
+class InputArchive;
 
 //! The StorableTimeslice class contains the data of a single timeslice.
 class StorableTimeslice : public Timeslice
@@ -100,7 +104,8 @@ public:
 
 private:
     friend class boost::serialization::access;
-    friend class TimesliceInputArchive;
+    friend class InputArchive<Timeslice, StorableTimeslice,
+                              ArchiveType::TimesliceArchive>;
     friend class TimesliceSubscriber;
 
     StorableTimeslice();

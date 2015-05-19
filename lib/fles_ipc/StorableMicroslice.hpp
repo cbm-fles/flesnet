@@ -1,6 +1,7 @@
 // Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "ArchiveDescriptor.hpp"
 #include "Microslice.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include <vector>
@@ -13,6 +14,9 @@
 
 namespace fles
 {
+
+template <class Base, class Derived, ArchiveType archive_type>
+class InputArchive;
 
 /**
  * Store microslice metadata and content in a single object.
@@ -50,7 +54,8 @@ public:
 
 private:
     friend class boost::serialization::access;
-    friend class MicrosliceInputArchive;
+    friend class InputArchive<Microslice, StorableMicroslice,
+                              ArchiveType::MicrosliceArchive>;
 
     StorableMicroslice();
 
