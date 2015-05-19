@@ -7,7 +7,7 @@
 namespace fles
 {
 
-typedef OutputArchive<StorableMicroslice, ArchiveType::MicrosliceArchive>
-    MicrosliceOutputArchive;
+using MicrosliceOutputArchive =
+    OutputArchive<StorableMicroslice, ArchiveType::MicrosliceArchive>;
 
 } // namespace fles {

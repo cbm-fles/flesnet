@@ -12,7 +12,7 @@ class StorableMicroslice;
 
 //! The MicrosliceInputArchive deserializes microslice data sets from an input
 // file.
-typedef InputArchive<Microslice, StorableMicroslice,
-                     ArchiveType::MicrosliceArchive> MicrosliceInputArchive;
+using MicrosliceInputArchive = InputArchive<Microslice, StorableMicroslice,
+                                            ArchiveType::MicrosliceArchive>;
 
 } // namespace fles {

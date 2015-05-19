@@ -12,7 +12,7 @@ class StorableTimeslice;
 
 //! The TimesliceInputArchive deserializes timeslice data sets from an input
 // file.
-typedef InputArchive<Timeslice, StorableTimeslice,
-                     ArchiveType::TimesliceArchive> TimesliceInputArchive;
+using TimesliceInputArchive =
+    InputArchive<Timeslice, StorableTimeslice, ArchiveType::TimesliceArchive>;
 
 } // namespace fles {

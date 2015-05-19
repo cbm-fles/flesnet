@@ -10,6 +10,6 @@ namespace fles
 //! The MicrosliceSource base class implements the generic microslice-based
 // input
 // interface.
-typedef Source<Microslice> MicrosliceSource;
+using MicrosliceSource = Source<Microslice>;
 
 } // namespace fles {

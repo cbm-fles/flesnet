@@ -7,7 +7,7 @@
 namespace fles
 {
 
-typedef OutputArchive<StorableTimeslice, ArchiveType::TimesliceArchive>
-    TimesliceOutputArchive;
+using TimesliceOutputArchive =
+    OutputArchive<StorableTimeslice, ArchiveType::TimesliceArchive>;
 
 } // namespace fles {

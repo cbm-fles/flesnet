@@ -9,6 +9,6 @@ namespace fles
 
 //! The TimesliceSource base class implements the generic timeslice-based input
 // interface.
-typedef Source<Timeslice> TimesliceSource;
+using TimesliceSource = Source<Timeslice>;
 
 } // namespace fles {
