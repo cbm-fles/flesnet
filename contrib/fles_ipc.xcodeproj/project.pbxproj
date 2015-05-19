@@ -66,7 +66,6 @@
 /* Begin PBXFileReference section */
 		3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Microslice.cpp; sourceTree = "<group>"; };
 		3D448B8E1B05EBD700DD8E5D /* Microslice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Microslice.hpp; sourceTree = "<group>"; };
-		3D448B8F1B05EBD700DD8E5D /* MicrosliceArchiveDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceArchiveDescriptor.hpp; sourceTree = "<group>"; };
 		3D448B901B05EBD700DD8E5D /* MicrosliceInputArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceInputArchive.cpp; sourceTree = "<group>"; };
 		3D448B911B05EBD700DD8E5D /* MicrosliceInputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceInputArchive.hpp; sourceTree = "<group>"; };
 		3D448B921B05EBD700DD8E5D /* MicrosliceOutputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceOutputArchive.hpp; sourceTree = "<group>"; };
@@ -169,7 +168,6 @@
 			children = (
 				3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */,
 				3D448B8E1B05EBD700DD8E5D /* Microslice.hpp */,
-				3D448B8F1B05EBD700DD8E5D /* MicrosliceArchiveDescriptor.hpp */,
 				3DA3FE4B1B0207FF008710E2 /* MicrosliceDescriptor.hpp */,
 				3D448B901B05EBD700DD8E5D /* MicrosliceInputArchive.cpp */,
 				3D448B911B05EBD700DD8E5D /* MicrosliceInputArchive.hpp */,
