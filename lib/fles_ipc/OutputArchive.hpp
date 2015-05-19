@@ -1,4 +1,4 @@
-// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013, 2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
 #include "ArchiveDescriptor.hpp"
@@ -10,21 +10,21 @@
 namespace fles
 {
 
-//! The TimesliceOutputArchive serializes timeslice data sets to an output file.
-class TimesliceOutputArchive
+//! The OutputArchive serializes data sets to an output file.
+template <typename T> class OutputArchive
 {
 public:
-    TimesliceOutputArchive(const std::string& filename)
+    OutputArchive(const std::string& filename)
         : _ofstream(filename, std::ios::binary), _oarchive(_ofstream)
     {
         _oarchive << _descriptor;
     }
 
-    TimesliceOutputArchive(const TimesliceOutputArchive&) = delete;
-    void operator=(const TimesliceOutputArchive&) = delete;
+    OutputArchive(const OutputArchive&) = delete;
+    void operator=(const OutputArchive&) = delete;
 
-    /// Store a timeslice.
-    void write(const StorableTimeslice& timeslice) { _oarchive << timeslice; }
+    /// Store an item.
+    void write(const T& item) { _oarchive << item; }
 
 private:
     std::ofstream _ofstream;
@@ -32,5 +32,7 @@ private:
     ArchiveDescriptor _descriptor{
         ArchiveDescriptor::ArchiveType::TimesliceArchive};
 };
+
+typedef OutputArchive<StorableTimeslice> TimesliceOutputArchive;
 
 } // namespace fles {
