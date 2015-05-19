@@ -2,7 +2,7 @@
 
 #include <csignal>
 
-//#include "shm_device_client.hpp"
+#include "shm_device_client.hpp"
 
 namespace
 {
@@ -21,6 +21,10 @@ int main(int argc, char* argv[])
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
+
+  shm_device_client dev;
+
+  
   while(signal_status == 0) {
   }
   

@@ -5,6 +5,16 @@
 
 using namespace boost::interprocess;
 
+typedef struct {
+  uint64_t data_offset;
+  uint64_t desc_offset;
+} offsets_t;
+
+typedef struct {
+  uint64_t data_ptr;
+  uint64_t desc_ptr;
+} ack_ptrs_t;
+
 class shm_channel {
 
 public:
@@ -28,6 +38,9 @@ public:
     return shm->get_address_from_handle(m_data_buffer_handle);
   }
 
+  size_t data_buffer_size_exp() { return m_data_buffer_size_exp; }
+  size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
+  
   // getter / setter
   bool req_ptr(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
@@ -48,44 +61,55 @@ public:
     assert(lock);
     m_req_offset = req;
   }
-  
-  void read_ptrs(scoped_lock<interprocess_mutex>& lock,
-                uint64_t& data_read_ptr,
-                uint64_t& desc_read_ptr) {
+    
+  offsets_t offsets(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    data_read_ptr = m_data_read_ptr;
-    desc_read_ptr = m_desc_read_ptr;
-    return;
-  }
-
-  void offsets(scoped_lock<interprocess_mutex>& lock,
-               uint64_t& data_offset,
-               uint64_t& desc_offset) {
-    assert(lock);
-    data_offset = m_data_offset;
-    desc_offset = m_desc_offset;
-    return;
+    offsets_t offsets;
+    offsets.data_offset = m_data_offset;
+    offsets.desc_offset = m_desc_offset;
+    return offsets;
   }
 
   void set_offsets(scoped_lock<interprocess_mutex>& lock,
-                   const uint64_t data_offset,
-                   const uint64_t desc_offset) {
+                   const offsets_t offsets) {
     assert(lock);
-    m_data_offset = data_offset;
-    m_desc_offset = desc_offset;
+    m_data_offset = offsets.data_offset;
+    m_desc_offset = offsets.desc_offset;
     return;
   }
-  
-  void set_read_ptrs(scoped_lock<interprocess_mutex>& lock,
-                    const uint64_t data_read_ptr,
-                    const uint64_t desc_read_ptr) {
-    assert(lock);
-    m_data_read_ptr = data_read_ptr;
-    m_desc_read_ptr = desc_read_ptr;
-    return;
-  }
-  
 
+  ack_ptrs_t ack_ptrs(scoped_lock<interprocess_mutex>& lock) {
+    assert(lock);
+    ack_ptrs_t ptrs;
+    ptrs.data_ptr = m_data_read_ptr;
+    ptrs.desc_ptr = m_desc_read_ptr;
+    return ptrs;
+  }
+  
+  void set_ack_ptrs(scoped_lock<interprocess_mutex>& lock,
+                    const ack_ptrs_t ack_ptrs) {
+    assert(lock);
+    m_data_read_ptr = ack_ptrs.data_ptr;
+    m_desc_read_ptr = ack_ptrs.desc_ptr;
+    return;
+  }
+
+  bool connect(scoped_lock<interprocess_mutex>& lock) {
+    assert(lock);
+    if ( m_clients != 0 ) {
+      return false;
+    } else {
+      m_clients = 1;
+      return true;
+    }
+  }
+
+  void disconnect(scoped_lock<interprocess_mutex>& lock) {
+    assert(lock);
+    m_clients = 0;
+  }
+
+  
 private:
 
   void set_buffer_handles(managed_shared_memory* shm,
@@ -108,4 +132,5 @@ private:
   uint64_t m_data_offset = 0;
   uint64_t m_desc_offset = 0;
   
+  size_t m_clients = 0;
 };

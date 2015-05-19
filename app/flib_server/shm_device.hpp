@@ -1,3 +1,4 @@
+#pragma once
 
 #include <cstdint>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>

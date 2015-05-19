@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "flib_link.hpp"
 
@@ -58,7 +59,7 @@ public:
     assert(lock); // ensure mutex is realy owned
     
     if (m_shm_ch->req_ptr(lock)) {
-      m_shm_ch->read_ptrs(lock, m_data_ptr_cached, m_desc_ptr_cached);
+      ack_ptrs_t ack_ptrs = m_shm_ch->ack_ptrs(lock);
       // reset req before releasing lock ensures not to miss last req
       m_shm_ch->set_req_ptr(lock, false);
       lock.unlock();
@@ -71,8 +72,9 @@ public:
       lock.unlock();
       // TODO fetch information from HW
       // set m_data_offset_cached
+      offsets_t offsets = {0, 0};
       lock.lock();
-      m_shm_ch->set_offsets(lock, m_data_offset_cached, m_desc_offset_cached);
+      m_shm_ch->set_offsets(lock, offsets);
     }
   }
   
@@ -93,9 +95,9 @@ private:
   size_t m_data_buffer_size_exp; // TODO do not double data, already in shm
   size_t m_desc_buffer_size_exp;
   
-  uint64_t m_data_ptr_cached = 0;
-  uint64_t m_desc_ptr_cached = 0;
-  uint64_t m_data_offset_cached = 0;
-  uint64_t m_desc_offset_cached = 0;
+  //uint64_t m_data_ptr_cached = 0;
+  //uint64_t m_desc_ptr_cached = 0;
+  //uint64_t m_data_offset_cached = 0;
+  //uint64_t m_desc_offset_cached = 0;
   
 };
