@@ -11,6 +11,7 @@
 
 #include "flib_device.hpp"
 #include "flib_link.hpp"
+#include "log.hpp"
 
 #include "shm_channel_server.hpp"
 #include "shm_device.hpp"
@@ -37,7 +38,6 @@ public:
                                     }),
                      std::end(flib_links));
     L_(info) << "enabled flib links detected: " << flib_links.size();
-
     
     // create a big enough shared memory segment
     size_t shm_size =
