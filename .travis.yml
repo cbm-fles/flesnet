@@ -1,13 +1,13 @@
 addons:
   apt:
     packages:
-      - libboost-dev
-      - libboost-filesystem-dev
-      - libboost-program-options-dev
-      - libboost-serialization-dev
-      - libboost-system-dev
-      - libboost-test-dev
-      - libboost-thread-dev
+      - libboost1.55-dev
+      - libboost-filesystem1.55-dev
+      - libboost-program-options1.55-dev
+      - libboost-serialization1.55-dev
+      - libboost-system1.55-dev
+      - libboost-test1.55-dev
+      - libboost-thread1.55-dev
       - libzmq-dev
     sources:
       - boost-latest
