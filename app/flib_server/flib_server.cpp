@@ -44,8 +44,17 @@ int main(int argc, char* argv[])
       links.at(i)->enable_cbmnet_packer_debug_mode(par.debug_mode());
     }
 
+    // convert sizes from 'entries' to 'bytes'
+    size_t data_buffer_size_bytes_exp = par.data_buffer_size_exp();
+    constexpr std::size_t microslice_descriptor_size_bytes_exp = 5;
+    size_t desc_buffer_size_bytes_exp = par.desc_buffer_size_exp()
+      + microslice_descriptor_size_bytes_exp;
+
     // create server
-    shm_device_server server(flib.get(), 27, 23, &signal_status);    
+    shm_device_server server(flib.get(),
+                             data_buffer_size_bytes_exp,
+                             desc_buffer_size_bytes_exp,
+                             &signal_status);
     server.run();
     
     

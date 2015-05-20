@@ -8,7 +8,9 @@
 #include <fstream>
 #include <flib.h>
 
-#include <log.hpp>
+#include "log.hpp"
+#include "Utility.hpp"
+#include "MicrosliceDescriptor.hpp"
 
 namespace po = boost::program_options;
 
@@ -28,11 +30,24 @@ public:
   parameters(const parameters&) = delete;
   void operator=(const parameters&) = delete;
 
+  size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
+  size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
+  
   uint32_t mc_size() const { return _mc_size; }
   bool debug_mode() const { return _debug_mode; }
   
   link_config_t link_config(size_t i) const { return _link_config.at(i); }
 
+  std::string print_buffer_info() {
+    std::stringstream ss;
+    ss << "Buffer size per link: "
+       << human_readable_count(UINT64_C(1) << _data_buffer_size_exp)
+       << " + "
+       << human_readable_count((UINT64_C(1) << _desc_buffer_size_exp) *
+                               sizeof(fles::MicrosliceDescriptor));
+    return ss.str();
+  }
+  
 private:
   
   void parse_options(int argc, char* argv[]) {
@@ -49,6 +64,13 @@ private:
 
     po::options_description config("Configuration (flib.cfg or cmd line)");
     config.add_options()
+
+      ("in-data-buffer-size-exp",
+       po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
+       "exp. size of the data buffer in bytes")
+      ("in-desc-buffer-size-exp",
+       po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
+       "exp. size of the descriptor buffer (number of entries)")
       ("log-level,l", po::value<unsigned>(&log_level)->default_value(2),
        "set the log level (all:0)")
       ("mc-size,t", po::value<uint32_t>(),
@@ -214,7 +236,12 @@ private:
       }
     
     } // end loop over links
+
+    L_(info) << print_buffer_info();
   }
+
+  size_t _data_buffer_size_exp;
+  size_t _desc_buffer_size_exp;
 
   uint32_t _mc_size = 125; // 1 us
   std::array<link_config_t, _num_flib_links> _link_config;

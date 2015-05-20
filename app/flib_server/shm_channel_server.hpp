@@ -90,6 +90,8 @@ public:
 private:
 
   void* alloc_buffer(size_t size_exp) {
+    L_(trace) << "allocating shm buffer of "
+              << (UINT64_C(1) << size_exp) << " bytes";
     return m_shm->allocate_aligned(UINT64_C(1) << size_exp, sysconf(_SC_PAGESIZE));
   }
   
@@ -103,10 +105,5 @@ private:
   void* m_desc_buffer;
   size_t m_data_buffer_size_exp; // TODO do not double data, already in shm
   size_t m_desc_buffer_size_exp;
-  
-  //uint64_t m_data_ptr_cached = 0;
-  //uint64_t m_desc_ptr_cached = 0;
-  //uint64_t m_data_offset_cached = 0;
-  //uint64_t m_desc_offset_cached = 0;
   
 };
