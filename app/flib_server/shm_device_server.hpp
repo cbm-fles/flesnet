@@ -22,23 +22,31 @@ class shm_device_server {
 
 public:
 
-  shm_device_server(size_t data_buffer_size_exp,
+  shm_device_server(flib_device* flib,
+                    size_t data_buffer_size_exp,
                     size_t desc_buffer_size_exp,
                     volatile std::sig_atomic_t* signal_status)
-    : m_signal_status(signal_status)
+    : m_flib(flib), m_signal_status(signal_status)
   {
-    // create flib device
-    m_flib = std::unique_ptr<flib_device>(new flib_device(0));
     std::vector<flib_link*> flib_links = m_flib->links();
-    size_t num_links = m_flib->number_of_links();
-    // TODO: add flib configuration from parameters here !
+
+    // delete deactivated links from vector
+    flib_links.erase(std::remove_if(std::begin(flib_links), std::end(flib_links),
+                                    [](decltype(flib_links[0]) link) {
+                                      return link->data_sel() == flib::flib_link::rx_disable;
+                                    }),
+                     std::end(flib_links));
+    L_(info) << "enabled flib links detected: " << flib_links.size();
+
     
     // create a big enough shared memory segment
     size_t shm_size =
       ((UINT64_C(1) << data_buffer_size_exp) +
        (UINT64_C(1) << desc_buffer_size_exp) +
-       sizeof(shm_channel)) * num_links +
-      sizeof(shm_device) + 1000;
+       2*sysconf(_SC_PAGESIZE) +
+       sizeof(shm_channel))
+      * flib_links.size()
+      + sizeof(shm_device) + 1000;
     m_shm = std::unique_ptr<managed_shared_memory>(new managed_shared_memory(create_only, "flib_shared_memory", shm_size));
     
     // constuct device exchange object in sharde memory
@@ -48,16 +56,14 @@ public:
     // create channels for active flib links
     size_t idx = 0;
     for (flib_link* link : flib_links) {
-      if (link->data_sel() != flib::flib_link::rx_disable) {
-        m_shm_ch_vec.push_back(std::unique_ptr
-                               <shm_channel_server>(new shm_channel_server(m_shm.get(),
-                                                                           idx, link,
-                                                                           data_buffer_size_exp,
-                                                                           desc_buffer_size_exp)));
-        ++idx;
-        m_shm_dev->inc_num_channels();
-      }
-    }    
+      m_shm_ch_vec.push_back(std::unique_ptr
+                             <shm_channel_server>(new shm_channel_server(m_shm.get(),
+                                                                         idx, link,
+                                                                         data_buffer_size_exp,
+                                                                         desc_buffer_size_exp)));
+      ++idx;
+      m_shm_dev->inc_num_channels();
+    }
   }
 
   ~shm_device_server() {}
@@ -124,8 +130,8 @@ private:
     ~shm_remove(){ shared_memory_object::remove("flib_shared_memory");}
   } remover;
 
+  flib_device* m_flib;
   volatile std::sig_atomic_t* m_signal_status;
-  std::unique_ptr<flib_device> m_flib;
   std::unique_ptr<managed_shared_memory> m_shm;
   shm_device* m_shm_dev = NULL;
   std::vector<std::unique_ptr<shm_channel_server>> m_shm_ch_vec;
