@@ -27,6 +27,11 @@ struct F {
     fles::MicrosliceDescriptor desc0 = fles::MicrosliceDescriptor();
 };
 
+BOOST_AUTO_TEST_CASE(descriptor_test)
+{
+    BOOST_CHECK_EQUAL(sizeof(fles::MicrosliceDescriptor), 32);
+}
+
 BOOST_FIXTURE_TEST_CASE(storable_constructors_test, F)
 {
     fles::StorableMicroslice m1(desc0, data0.data());
