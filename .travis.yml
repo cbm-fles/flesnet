@@ -1,12 +1,16 @@
 addons:
   apt:
     packages:
+      - libboost-dev
+      - libboost-filesystem-dev
       - libboost-program-options-dev
       - libboost-serialization-dev
       - libboost-system-dev
       - libboost-test-dev
       - libboost-thread-dev
       - libzmq-dev
+    sources:
+      - boost-latest
 
 before_script:
   - mkdir build
