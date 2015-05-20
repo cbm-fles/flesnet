@@ -1,6 +1,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <iostream>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
@@ -63,7 +64,7 @@ public:
   void run() {
     if (!m_run) { // don't start twice
       m_run = true;
-      std::cout << "start " << std::endl; 
+      m_flib->enable_mc_cnt(true);
       while (m_run) {
         // claim lock at start-up
         scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
@@ -78,9 +79,9 @@ public:
         if (!pending_req) {
           m_shm_dev->m_cond_req.wait(lock);
         }
-        if (*m_signal_status != 0) {
-          std::cout << "stopping " << std::endl;;
-        }
+//        if (*m_signal_status != 0) {
+//          std::cout << "stopping " << std::endl;;
+//        }
         
         // try to handle requests
         for (const std::unique_ptr<shm_channel_server>& shm_ch : m_shm_ch_vec) {
@@ -92,6 +93,7 @@ public:
 
   void stop() {
     m_run = false;
+    m_flib->enable_mc_cnt(false);
     // notify self to wake up, handle last requests if any and terminate
     m_shm_dev->m_cond_req.notify_one();
   }
@@ -99,14 +101,16 @@ public:
   
 private:
 
-  void dump_shm_info() {
-    std::cout << "INFO" << std::endl;
-    std::cout << "sanity "  << m_shm->check_sanity() << std::endl;
-    std::cout << "size "    << m_shm->get_size() << std::endl;
-    std::cout << "free_mem " << m_shm->get_free_memory() << std::endl;
-    std::cout << "named obj " << m_shm->get_num_named_objects() << std::endl;
-    std::cout << "unique obj " << m_shm->get_num_unique_objects() << std::endl;
-    std::cout << "name " << managed_shared_memory::get_instance_name(m_shm_dev) << std::endl;
+  std::string print_shm_info() {
+    std::stringstream ss;
+    ss  << "SHM INFO" << std::endl
+        << "sanity "  << m_shm->check_sanity() << std::endl
+        << "size "    << m_shm->get_size() << std::endl
+        << "free_mem " << m_shm->get_free_memory() << std::endl
+        << "num named obj " << m_shm->get_num_named_objects() << std::endl
+        << "num unique obj " << m_shm->get_num_unique_objects() << std::endl
+        << "name dev obj" << managed_shared_memory::get_instance_name(m_shm_dev) << std::endl;
+    return ss.str();
   }
 
   // Members

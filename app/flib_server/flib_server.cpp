@@ -1,6 +1,7 @@
 // Copyright 2015 Dirk Hutter
 
 #include <csignal>
+#include "log.hpp"
 
 #include "shm_device_server.hpp"
 
@@ -13,7 +14,7 @@ static void signal_handler(int sig) {
   signal_status = sig;
 }
 
-shm_device_server server(22, 22, &signal_status);
+shm_device_server server(27, 23, &signal_status);
 
 static void stop_server(int sig) {
   signal_status = sig;
@@ -24,18 +25,20 @@ static void stop_server(int sig) {
 int main(int argc, char* argv[])
 {
 
+logging::add_console(static_cast<severity_level>(trace));
+
 //  std::signal(SIGINT, signal_handler);
 //  std::signal(SIGTERM, signal_handler);
-  std::signal(SIGINT, stop_server);
-  std::signal(SIGTERM, stop_server);
+std::signal(SIGINT, stop_server);
+std::signal(SIGTERM, stop_server);
 
-  //  parameters par(argc, argv);
-  //shm_device_server server(22, 22, &signal);
+//  parameters par(argc, argv);
+//shm_device_server server(22, 22, &signal);
 
 
-  server.run();
-  
-  return 0;
+server.run();
+
+return 0;
 }
 
 

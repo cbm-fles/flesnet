@@ -4,6 +4,7 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "log.hpp"
 #include "flib_link.hpp"
 
 #include "shm_channel.hpp"
@@ -39,7 +40,8 @@ public:
     m_flib_link->init_dma(m_data_buffer, m_data_buffer_size_exp,
                           m_desc_buffer, m_desc_buffer_size_exp);
 
-    // TODO set start index and enable packer at matching position
+    m_flib_link->set_start_idx(0);
+    m_flib_link->enable_cbmnet_packer(true);
   }
 
   ~shm_channel_server() {
@@ -63,16 +65,23 @@ public:
       // reset req before releasing lock ensures not to miss last req
       m_shm_ch->set_req_ptr(lock, false);
       lock.unlock();
-      // TODO do fancy HW stuff here
+      L_(trace) << "updating ptrs: data " << ack_ptrs.data_ptr
+                << " desc " << ack_ptrs.desc_ptr;
+        
+      m_flib_link->channel()->set_sw_read_pointers(ack_ptrs.data_ptr,
+                                                   ack_ptrs.desc_ptr);
       lock.lock();
     }
     
     if (m_shm_ch->req_offset(lock)) {
       m_shm_ch->set_req_offset(lock, false);
       lock.unlock();
-      // TODO fetch information from HW
-      // set m_data_offset_cached
-      offsets_t offsets = {0, 0};
+      offsets_t offsets;
+      offsets.data_offset = m_flib_link->channel()->get_data_offset();
+      offsets.desc_offset = m_flib_link->mc_index();
+      L_(trace) << "fetching offsets: data " << offsets.data_offset
+                << " desc " << offsets.desc_offset;
+
       lock.lock();
       m_shm_ch->set_offsets(lock, offsets);
     }

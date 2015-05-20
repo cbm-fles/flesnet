@@ -36,7 +36,7 @@ public:
   }
 
   void* desc_buffer_ptr(managed_shared_memory* shm) const {
-    return shm->get_address_from_handle(m_data_buffer_handle);
+    return shm->get_address_from_handle(m_desc_buffer_handle);
   }
 
   size_t data_buffer_size_exp() { return m_data_buffer_size_exp; }
