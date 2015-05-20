@@ -1,8 +1,8 @@
 FLESnet
 =======
 
-OS and Software Environment
---------------------
+General remarks: OS and Software Environment
+--------------------------------------------
 
 At the moment the official software environment for operating flesnet with
 a FLIB is:
@@ -24,7 +24,13 @@ Debian 7.6 / fairroot external packages jul14p3
 Debian 7.6 / fairroot external packages jul14p2
 
 
-BUILD DEPENDENCIES
+Getting the Repository
+----------------------
+
+git clone git@code.compeng.uni-frankfurt.de:flesnet.git flesnet
+
+
+Build Dependencies
 ------------------
 
 sudo aptitude install gcc make cmake valgrind \
@@ -35,24 +41,40 @@ Fairroot external packages
  After installing set SIMPATH to point to this installation
 
 If your machine doesn't feature InfiniBand you need to install SoftiWARP
- cd contrib
+An install script can be found in the flesnet repository:
+  cd contrib
  ./install-softiwarp
 
 If you like to have controls access to CBMnet via the controls API
 you need the cbmnetcntlserver library found in the CBMroot repository.
 (Note: the make target is 'cbmnetcntlserver')
 
-Getting the Repository
-----------------------
 
-git clone git@code.compeng.uni-frankfurt.de:flesnet.git flesnet
+Installing the FLIB device driver (PDA)
+---------------------------------------
+
+The PDA is the external library which is used to implement the FLIB driver lib-
+rary. The installation procedure is scripted, just run:
+
+cd contrib
+./pda_inst.sh
+
+Note, user can only access the FLIB if they are member of the group "sudo". Al-
+so, the PDA udev rules might not be active after installing. The sure way to 
+make it active is to reboot the computer. Other procedures as ...
+
+udevadm control --reload-rules
+
+... might also work, but this is for sure system dependent. The script always
+installs the currently needed version. Please rerun the script if you encounter
+compilation errors.
 
 
 Building flesnet
 ----------------
 The environment variable SIMPATH has to point to the fairroot external 
 packages installation, e.g.
-'export SIMPATH /opt/fairsoft/jul14p3_build'
+'export SIMPATH /opt/fairsoft/mar15p1_build'
 
 For compiling flesnet with Controls API support set the environment variable
 CNETCNTLSERVER_PATH to the cbmnetcntlserver library and include location
@@ -71,24 +93,6 @@ mkdir build
 cd build && cmake ..
 make
 
-Building the PDA (for the FLIB driver)
--------------------------------
-
-The PDA is the external library which is used to implement the FLIB driver lib-
-rary. The installation procedure is scripted, just run:
-
-cd contrib
-./pda_inst.sh
-
-Note, user can only access the FLIB if they are member of the group "sudo". Al-
-so, the PDA udev rules might not be active after installing. The sure way to 
-make it active is to reboot the computer. Other procedures as ...
-
-udevadm control --reload-rules
-
-... might also work, but this is for sure system dependent. The script always
-installs the currently needed version. Please rerun the script if you encounter
-compilation errors.
 
 Preparing the system and OS
 ---------------------------

@@ -6,8 +6,8 @@ EXECUTE_PROCESS(
   OUTPUT_VARIABLE PDA_INCLUDE_DIR
   )
 IF( PDA_RETURN )
-  MESSAGE( STATUS "Failed to run pda-config because it is not in the path. ")
-  MESSAGE( STATUS "Seriously, have you ever even tried to install the PDA library? ")
+  MESSAGE( STATUS "Failed to find pda-config because in path. ")
+  MESSAGE( STATUS "Maybe you need to re-install the PDA library ")
   MESSAGE( FATAL_ERROR "ABORT!!!")
 ENDIF()
 MESSAGE(STATUS "pda include         = ${PDA_INCLUDE_DIR}")
