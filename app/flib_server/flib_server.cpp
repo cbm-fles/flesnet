@@ -14,27 +14,17 @@ static void signal_handler(int sig) {
   signal_status = sig;
 }
 
-shm_device_server server(27, 23, &signal_status);
-
-static void stop_server(int sig) {
-  signal_status = sig;
-  server.stop();
-}
-
 
 int main(int argc, char* argv[])
 {
 
 logging::add_console(static_cast<severity_level>(trace));
 
-//  std::signal(SIGINT, signal_handler);
-//  std::signal(SIGTERM, signal_handler);
-std::signal(SIGINT, stop_server);
-std::signal(SIGTERM, stop_server);
+std::signal(SIGINT, signal_handler);
+std::signal(SIGTERM, signal_handler);
 
 //  parameters par(argc, argv);
-//shm_device_server server(22, 22, &signal);
-
+shm_device_server server(27, 23, &signal_status);
 
 server.run();
 

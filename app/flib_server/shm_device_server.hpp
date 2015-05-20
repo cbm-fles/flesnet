@@ -7,6 +7,7 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 #include "flib_device.hpp"
 #include "flib_link.hpp"
@@ -77,11 +78,14 @@ public:
           pending_req |= shm_ch->check_pending_req(lock);
         }
         if (!pending_req) {
-          m_shm_dev->m_cond_req.wait(lock);
+          // sleep if nothing is pending
+          auto const abs_time = boost::posix_time::microsec_clock::universal_time()
+            + boost::posix_time::milliseconds(100);
+          m_shm_dev->m_cond_req.timed_wait(lock, abs_time);
         }
-//        if (*m_signal_status != 0) {
-//          std::cout << "stopping " << std::endl;;
-//        }
+        if (*m_signal_status != 0) {
+          stop();
+        }
         
         // try to handle requests
         for (const std::unique_ptr<shm_channel_server>& shm_ch : m_shm_ch_vec) {
@@ -94,8 +98,6 @@ public:
   void stop() {
     m_run = false;
     m_flib->enable_mc_cnt(false);
-    // notify self to wake up, handle last requests if any and terminate
-    m_shm_dev->m_cond_req.notify_one();
   }
 
   
