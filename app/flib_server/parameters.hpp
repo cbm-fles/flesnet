@@ -145,69 +145,69 @@ private:
     if (vm.count("mc-size")) {
       _mc_size = vm["mc-size"].as<uint32_t>();
       if (_mc_size > 2147483647) { // 31 bit check
-        std::cout << "Microslice size out of range" << std::endl;
+        L_(error) << "Microslice size out of range";
         exit(EXIT_SUCCESS);
       } else {
-        std::cout << "Microslice size set to " 
-           << _mc_size << " * 8 ns.\n";  
+        L_(info) << "Microslice size set to " 
+           << _mc_size << " * 8 ns.";  
       }
     } else {
-      std::cout << "Microslice size set to default.\n";
+      L_(info) << "Microslice size set to default.";
     }
 
     for (size_t i = 0; i < _num_flib_links; ++i) {
-      std::cout << "Link " << i << " config:" << std::endl;
+      L_(info) << "Link " << i << " config:";
       
       if (vm.count("l" + std::to_string(i) + "_source")) { // set given parameters
         std::string source = vm["l" + std::to_string(i) + "_source"].as<std::string>();
         
         if ( source == "link" ) {
           _link_config.at(i).rx_sel = flib::flib_link::rx_link;
-          std::cout << " data source: link" << std::endl;
+          L_(info) << " data source: link";
           if (vm.count("l" + std::to_string(i) + "_sys_id") && vm.count("l" + std::to_string(i) + "_sys_ver")) {
             _link_config.at(i).hdr_config.sys_id = boost::numeric_cast<uint8_t>
               (std::stoul(vm["l" + std::to_string(i) + "_sys_id"].as<std::string>(),nullptr,0));
             _link_config.at(i).hdr_config.sys_ver = boost::numeric_cast<uint8_t>
               (std::stoul(vm["l" + std::to_string(i) + "_sys_ver"].as<std::string>(),nullptr,0));
             _link_config.at(i).hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
-            std::cout << std::hex <<
+            L_(info) << std::hex <<
               " sys_id:      0x" << (static_cast<uint16_t>(_link_config.at(i).hdr_config.sys_id)) << "\n" <<
-              " sys_ver:     0x" << (static_cast<uint16_t>(_link_config.at(i).hdr_config.sys_ver)) << std::endl;
+              " sys_ver:     0x" << (static_cast<uint16_t>(_link_config.at(i).hdr_config.sys_ver));
           } else {
-            std::cout << 
-              " If reading from 'link' please provide sys_id and sys_ver.\n";
+            L_(error) << 
+              " If reading from 'link' please provide sys_id and sys_ver.";
             exit(EXIT_SUCCESS);
           }
         
         } else if (source == "pgen") {
           _link_config.at(i).rx_sel = flib::flib_link::rx_pgen;
-          std::cout << " data source: pgen" << std::endl;
+          L_(info) << " data source: pgen";
           _link_config.at(i).hdr_config.sys_id = 0xF0;
           _link_config.at(i).hdr_config.sys_ver = 0x01;
           _link_config.at(i).hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
         
         } else if (source == "disable") {
           _link_config.at(i).rx_sel = flib::flib_link::rx_disable;
-          std::cout << " data source: disable" << std::endl;
+          L_(info) << " data source: disable";
           _link_config.at(i).hdr_config.sys_id = 0xF2;
           _link_config.at(i).hdr_config.sys_ver = 0x01;
           _link_config.at(i).hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
         
         } else if (source == "emu") {
           _link_config.at(i).rx_sel = flib::flib_link::rx_emu;
-          std::cout << " data source: emu" << std::endl;
+          L_(info) << " data source: emu";
           _link_config.at(i).hdr_config.sys_id = 0xF1;
           _link_config.at(i).hdr_config.sys_ver = 0x01;
           _link_config.at(i).hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
         
         } else {
-          std::cout << " No valid arg for data source." << std::endl;
+          L_(error) << " No valid arg for data source.";
           exit(EXIT_SUCCESS);
         }
       
       } else { // set default parameters
         _link_config.at(i).rx_sel = flib::flib_link::rx_disable;
-        std::cout << " data source: disable (default)" << std::endl;
+        L_(info) << " data source: disable (default)";
         _link_config.at(i).hdr_config.sys_id = 0xF2;
         _link_config.at(i).hdr_config.sys_ver = 0x01;        
         _link_config.at(i).hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
@@ -215,7 +215,7 @@ private:
     
     } // end loop over links
   }
-    
+
   uint32_t _mc_size = 125; // 1 us
   std::array<link_config_t, _num_flib_links> _link_config;
   bool _debug_mode = false;
