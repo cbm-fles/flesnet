@@ -1,0 +1,26 @@
+addons:
+  apt:
+    packages:
+      - libboost-program-options-dev
+      - libboost-serialization-dev
+      - libboost-system-dev
+      - libboost-test-dev
+      - libboost-thread-dev
+      - libzmq-dev
+
+before_script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  
+compiler:
+  - clang
+  - gcc
+
+language: cpp
+
+script:
+  - make
+  - make test
+
+sudo: false
