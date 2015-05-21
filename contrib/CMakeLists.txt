@@ -13,6 +13,12 @@ add_custom_command(
           ${CMAKE_CURRENT_SOURCE_DIR}/verbs.supp ${CMAKE_BINARY_DIR}/verbs.supp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/verbs.supp)
 
+add_custom_command(
+  OUTPUT boost.supp
+  COMMAND ${CMAKE_COMMAND} -E create_symlink
+          ${CMAKE_CURRENT_SOURCE_DIR}/boost.supp ${CMAKE_BINARY_DIR}/boost.supp
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/boost.supp)
+
 
 add_custom_target (
 	cfg-files ALL
@@ -34,4 +40,4 @@ add_custom_target (
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 )
 
-add_custom_target(links ALL DEPENDS run verbs.supp)
+add_custom_target(links ALL DEPENDS run verbs.supp boost.supp)
