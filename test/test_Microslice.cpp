@@ -129,8 +129,8 @@ BOOST_AUTO_TEST_CASE(reference_archive_test)
 BOOST_AUTO_TEST_CASE(invalid_archive_test)
 {
     std::string filename1("test_Microslice");
-    BOOST_CHECK_THROW(fles::MicrosliceInputArchive source(filename1),
-                      boost::archive::archive_exception);
+    // BOOST_CHECK_THROW(fles::MicrosliceInputArchive source(filename1),
+    //                   boost::archive::archive_exception);
 
     std::string filename2("example1.tsa");
     BOOST_CHECK_THROW(fles::MicrosliceInputArchive source(filename2),
