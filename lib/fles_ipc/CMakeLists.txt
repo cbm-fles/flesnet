@@ -1,17 +1,16 @@
+# Copyright 2013, 2015 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
 # Copyright 2014 Dirk Hutter <hutter@compeng.uni-frankfurt.de>
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(fles_ipc)
 
-if(NOT DEFINED ENV{SIMPATH})
- message(FATAL_ERROR "Path to Fairroot external packages is not set. Please set SIMPATH.")
-endif(NOT DEFINED ENV{SIMPATH})
-set(SIMPATH $ENV{SIMPATH})
+if(DEFINED ENV{SIMPATH})
+  message(WARNING "SIMPATH set, using Fairroot external packages in build.")
+  set(Boost_NO_SYSTEM_PATHS TRUE)
+  set(BOOST_ROOT $ENV{SIMPATH})
+endif(DEFINED ENV{SIMPATH})
 
-set(Boost_NO_SYSTEM_PATHS TRUE)
-set(BOOST_ROOT ${SIMPATH})
-
-find_package(Boost 1.48.0 COMPONENTS serialization thread program_options system REQUIRED)
+find_package(Boost 1.48.0 COMPONENTS serialization unit_test_framework REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 

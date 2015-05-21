@@ -1,7 +1,5 @@
 # Copyright 2014 Jan de Cuveland <cmail@cuveland.de>
 
-find_package(Boost COMPONENTS system filesystem serialization unit_test_framework REQUIRED)
-
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
 add_definitions(-DBOOST_TEST_DYN_LINK)
