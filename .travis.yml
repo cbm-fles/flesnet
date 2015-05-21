@@ -2,7 +2,7 @@ before_install:
   - sudo -E add-apt-repository -y "ppa:boost-latest/ppa"
   - sudo -E apt-get -yq update
   - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install libboost1.55-dev libboost-filesystem1.55-dev libboost-program-options1.55-dev libboost-serialization1.55-dev libboost-system1.55-dev libboost-test1.55-dev libboost-thread1.55-dev
-  - sudo ln -s -f -t /usr/lib /usr/lib/x86_64-linux-gnu/*
+  - wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O src/zmq.hpp
 
 before_script:
   - mkdir build
@@ -11,9 +11,6 @@ before_script:
   
 compiler:
   - clang
-  - gcc
-
-env: SIMPATH=/usr
 
 language: cpp
 
