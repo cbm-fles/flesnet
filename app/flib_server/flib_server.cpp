@@ -29,22 +29,7 @@ int main(int argc, char* argv[])
     
     std::unique_ptr<flib_device> flib =
       std::unique_ptr<flib_device>(new flib_device(0));
-    std::vector<flib_link*> links = flib->links();
     
-    // FLIB global configuration
-    flib->set_mc_time(par.mc_size());
-    L_(debug) << "MC size is: " 
-              << (flib->rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
-    
-    // FLIB per link configuration
-    for (size_t i = 0; i < flib->number_of_links(); ++i) {
-      L_(debug) << "Initializing link " << i;   
-      link_config_t link_config = par.link_config(i);
-      links.at(i)->set_hdr_config(&link_config.hdr_config);
-      links.at(i)->set_data_sel(link_config.rx_sel);
-      links.at(i)->enable_cbmnet_packer_debug_mode(par.debug_mode());
-    }
-
     // convert sizes from 'entries' to 'bytes'
     size_t data_buffer_size_bytes_exp = par.data_buffer_size_exp();
     constexpr std::size_t microslice_descriptor_size_bytes_exp = 5;
