@@ -335,8 +335,10 @@ void Parameters::parse_options(int argc, char* argv[])
 
 void Parameters::print_buffer_info()
 {
-    L_(info) << "microslice size: "
-             << human_readable_count(_typical_content_size);
+    if (!_use_flib) {
+        L_(info) << "microslice size: "
+                 << human_readable_count(_typical_content_size);
+    }
     L_(info) << "timeslice size: (" << _timeslice_size << " + " << _overlap_size
              << ") microslices";
     L_(info) << "number of timeslices: " << _max_timeslice_number;
