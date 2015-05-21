@@ -20,7 +20,6 @@ class shm_channel {
 
 public:
 
-  // TODO: SAFE also size of buffers
   shm_channel(managed_shared_memory* shm,
               void* data_buffer, size_t data_buffer_size_exp,
               void* desc_buffer, size_t desc_buffer_size_exp)

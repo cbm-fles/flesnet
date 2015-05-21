@@ -6,6 +6,8 @@
 #include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "log.hpp"
+
 #include "shm_device.hpp"
 #include "shm_channel.hpp"
 
@@ -49,9 +51,12 @@ public:
   }
   
   ~shm_channel_client() {
-    // TODO catch mutex exception
-    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
-    m_shm_ch->disconnect(lock);
+    try {
+      scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+      m_shm_ch->disconnect(lock);
+    } catch (interprocess_exception const& e) {
+      L_(error) << "Failed to disconnect client: " << e.what();
+    }
   }
 
   void* data_buffer() { return m_data_buffer; }

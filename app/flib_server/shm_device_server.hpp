@@ -76,7 +76,7 @@ public:
         // claim lock at start-up
         scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
         
-        // check nothing is todo everytime before sleeping
+        // check nothing is pending everytime before sleeping
         // INFO: need to loop over all individual requests,
         // alternative would be global request cue.
         bool pending_req = false;

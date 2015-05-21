@@ -46,8 +46,7 @@ public:
 
   ~shm_channel_server() {
     m_flib_link->deinit_dma();
-    // TODO
-    // destroy channel object and deallocate buffers if it is worth to do
+    // TODO destroy channel object and deallocate buffers if it is worth to do
   }
 
 
@@ -103,7 +102,7 @@ private:
   shm_channel* m_shm_ch;
   void* m_data_buffer;
   void* m_desc_buffer;
-  size_t m_data_buffer_size_exp; // TODO do not double data, already in shm
+  size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
   
 };
