@@ -234,6 +234,8 @@ void Parameters::parse_options(int argc, char* argv[])
         exit(EXIT_SUCCESS);
     }
 
+    logging::add_console(static_cast<severity_level>(log_level));
+
     if (_timeslice_size < 1) {
         throw ParametersException("timeslice size cannot be zero");
     }
@@ -285,19 +287,27 @@ void Parameters::parse_options(int argc, char* argv[])
     if (!_compute_nodes.empty() && _processor_executable.empty())
         throw ParametersException("processor executable not specified");
 
-    if (_in_data_buffer_size_exp == 0)
+    if (_in_data_buffer_size_exp == 0 && !_use_shared_memory) {
         _in_data_buffer_size_exp = suggest_in_data_buffer_size_exp();
+    }
+    if (_in_data_buffer_size_exp != 0 && _use_shared_memory) {
+      L_(warning) << "using shared memory buffers, in_data_buffer_size_exp will be ignored";
+      _in_data_buffer_size_exp = 0;
+    }
 
     if (_cn_data_buffer_size_exp == 0)
         _cn_data_buffer_size_exp = suggest_cn_data_buffer_size_exp();
 
-    if (_in_desc_buffer_size_exp == 0)
+    if (_in_desc_buffer_size_exp == 0 && !_use_shared_memory) {
         _in_desc_buffer_size_exp = suggest_in_desc_buffer_size_exp();
+    }
+    if (_in_desc_buffer_size_exp != 0 && _use_shared_memory) {
+      L_(warning) << "using shared memory buffers, in_desc_buffer_size_exp will be ignored";
+      _in_desc_buffer_size_exp = 0;
+    }
 
     if (_cn_desc_buffer_size_exp == 0)
         _cn_desc_buffer_size_exp = suggest_cn_desc_buffer_size_exp();
-
-    logging::add_console(static_cast<severity_level>(log_level));
 
     if (!_standalone) {
         L_(debug) << "input nodes (" << _input_nodes.size()
@@ -330,11 +340,13 @@ void Parameters::print_buffer_info()
     L_(info) << "timeslice size: (" << _timeslice_size << " + " << _overlap_size
              << ") microslices";
     L_(info) << "number of timeslices: " << _max_timeslice_number;
-    L_(info) << "input node buffer size: "
-             << human_readable_count(UINT64_C(1) << _in_data_buffer_size_exp)
-             << " + "
-             << human_readable_count((UINT64_C(1) << _in_desc_buffer_size_exp) *
-                                     sizeof(fles::MicrosliceDescriptor));
+    if (!_use_shared_memory) {
+        L_(info) << "input node buffer size: "
+                 << human_readable_count(UINT64_C(1) << _in_data_buffer_size_exp)
+                 << " + "
+                 << human_readable_count((UINT64_C(1) << _in_desc_buffer_size_exp) *
+                                         sizeof(fles::MicrosliceDescriptor));
+    }
     L_(info) << "compute node buffer size: "
              << human_readable_count(UINT64_C(1) << _cn_data_buffer_size_exp)
              << " + " << human_readable_count(
