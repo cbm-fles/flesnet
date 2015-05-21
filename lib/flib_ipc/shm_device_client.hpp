@@ -23,6 +23,13 @@ public:
       throw std::runtime_error("Unable to find object" + device_name);
     }
 
+    {
+      scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+      if (!m_shm_dev->connect(lock)) {
+        throw std::runtime_error("Server already in use");
+      }
+    }
+
     size_t num_channels = m_shm_dev->num_channels();
     for (size_t i = 0; i < num_channels; ++i) {
       m_shm_ch_vec.push_back(std::unique_ptr
@@ -33,7 +40,9 @@ public:
 
   }
 
-  ~shm_device_client() {}
+  ~shm_device_client() {
+    // never disconnect to ensure server is only used once
+  }
 
   std::vector<shm_channel_client*> channels() {
   std::vector<shm_channel_client*> channels;

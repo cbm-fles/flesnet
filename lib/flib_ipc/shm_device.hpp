@@ -23,6 +23,21 @@ public:
   }
 
   size_t num_channels() { return m_num_channels; }
+
+  bool connect(scoped_lock<interprocess_mutex>& lock) {
+    assert(lock);
+    if ( m_clients != 0 ) {
+      return false;
+    } else {
+      m_clients = 1;
+      return true;
+    }
+  }
+
+  void disconnect(scoped_lock<interprocess_mutex>& lock) {
+    assert(lock);
+    m_clients = 0;
+  }
   
   //interprocess_mutex& mutex() { return m_mutex; }
 
@@ -35,5 +50,5 @@ public:
 private:
 
   size_t m_num_channels = 0;
-  
+  size_t m_clients = 0;
 };
