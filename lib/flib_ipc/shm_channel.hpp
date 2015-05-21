@@ -21,17 +21,16 @@ typedef struct {
 class shm_channel {
 
 public:
-
-  shm_channel(managed_shared_memory* shm,
-              void* data_buffer, size_t data_buffer_size_exp,
-              void* desc_buffer, size_t desc_buffer_size_exp)
-    : m_data_buffer_size_exp(data_buffer_size_exp),
-      m_desc_buffer_size_exp(desc_buffer_size_exp) {
+  shm_channel(managed_shared_memory* shm, void* data_buffer,
+              size_t data_buffer_size_exp, void* desc_buffer,
+              size_t desc_buffer_size_exp)
+      : m_data_buffer_size_exp(data_buffer_size_exp),
+        m_desc_buffer_size_exp(desc_buffer_size_exp) {
     set_buffer_handles(shm, data_buffer, desc_buffer);
   }
-  
+
   ~shm_channel() {}
-  
+
   void* data_buffer_ptr(managed_shared_memory* shm) const {
     return shm->get_address_from_handle(m_data_buffer_handle);
   }
@@ -42,13 +41,13 @@ public:
 
   size_t data_buffer_size_exp() { return m_data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
-  
+
   // getter / setter
   bool req_ptr(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
     return m_req_ptr;
   }
-  
+
   bool req_offset(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
     return m_req_offset;
@@ -63,7 +62,7 @@ public:
     assert(lock);
     m_req_offset = req;
   }
-    
+
   offsets_t offsets(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
     offsets_t offsets;
@@ -87,7 +86,7 @@ public:
     ptrs.desc_ptr = m_desc_read_ptr;
     return ptrs;
   }
-  
+
   void set_ack_ptrs(scoped_lock<interprocess_mutex>& lock,
                     const ack_ptrs_t ack_ptrs) {
     assert(lock);
@@ -98,7 +97,7 @@ public:
 
   bool connect(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    if ( m_clients != 0 ) {
+    if (m_clients != 0) {
       return false;
     } else {
       m_clients = 1;
@@ -111,28 +110,25 @@ public:
     m_clients = 0;
   }
 
-  
 private:
-
-  void set_buffer_handles(managed_shared_memory* shm,
-                          void* data_buffer,
+  void set_buffer_handles(managed_shared_memory* shm, void* data_buffer,
                           void* desc_buffer) {
     m_data_buffer_handle = shm->get_handle_from_address(data_buffer);
     m_desc_buffer_handle = shm->get_handle_from_address(desc_buffer);
   }
-  
+
   managed_shared_memory::handle_t m_data_buffer_handle;
   managed_shared_memory::handle_t m_desc_buffer_handle;
   size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
-  
+
   bool m_req_ptr = false;
   bool m_req_offset = false;
-  
+
   uint64_t m_data_read_ptr = 0; // TODO initialize from hw
-  uint64_t m_desc_read_ptr = 0;  
+  uint64_t m_desc_read_ptr = 0;
   uint64_t m_data_offset = 0;
   uint64_t m_desc_offset = 0;
-  
+
   size_t m_clients = 0;
 };
