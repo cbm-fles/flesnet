@@ -1,3 +1,5 @@
+// Copyright 2015 Dirk Hutter
+
 #pragma once
 
 #include <iostream>
@@ -6,11 +8,11 @@
 #include <boost/program_options.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 #include <fstream>
-#include <flib.h>
 
 #include "log.hpp"
 #include "Utility.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "flib.h"
 
 namespace po = boost::program_options;
 

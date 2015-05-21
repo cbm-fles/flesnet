@@ -1,3 +1,6 @@
+// Copyright 2015 Dirk Hutter
+
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -9,9 +12,9 @@
 #include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
+#include "log.hpp"
 #include "flib_device.hpp"
 #include "flib_link.hpp"
-#include "log.hpp"
 
 #include "shm_channel_server.hpp"
 #include "shm_device.hpp"

@@ -1,3 +1,5 @@
+// Copyright 2015 Dirk Hutter
+
 #pragma once
 
 #include <cstdint>

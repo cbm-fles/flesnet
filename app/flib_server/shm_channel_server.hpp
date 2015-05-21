@@ -1,3 +1,6 @@
+// Copyright 2015 Dirk Hutter
+
+#pragma once
 
 #include <cstdint>
 #include <boost/interprocess/managed_shared_memory.hpp>

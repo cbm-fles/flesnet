@@ -1,6 +1,7 @@
 // Copyright 2015 Dirk Hutter
 
 #include <csignal>
+
 #include "log.hpp"
 
 #include "parameters.hpp"
