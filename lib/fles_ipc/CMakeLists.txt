@@ -10,7 +10,7 @@ if(DEFINED ENV{SIMPATH})
   set(BOOST_ROOT $ENV{SIMPATH})
 endif(DEFINED ENV{SIMPATH})
 
-find_package(Boost 1.48.0 COMPONENTS serialization unit_test_framework REQUIRED)
+find_package(Boost 1.48.0 REQUIRED COMPONENTS serialization unit_test_framework)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
