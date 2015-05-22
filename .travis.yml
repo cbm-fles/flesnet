@@ -9,9 +9,7 @@ before_script:
   - cd build
   - cmake ..
   
-compiler:
-  - clang
-  - gcc
+compiler: clang
 
 language: cpp
 
