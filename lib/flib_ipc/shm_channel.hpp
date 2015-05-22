@@ -3,6 +3,8 @@
 #pragma once
 
 #include <cstdint>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
@@ -81,6 +83,7 @@ public:
     m_data_offset = offsets.data_offset;
     m_desc_offset = offsets.desc_offset;
     m_offsets_updated = offsets.updated;
+    m_cond_offsets.notify_all();
     return;
   }
 
@@ -114,6 +117,8 @@ public:
     assert(lock);
     m_clients = 0;
   }
+
+  interprocess_condition m_cond_offsets;
 
 private:
   void set_buffer_handles(managed_shared_memory* shm, void* data_buffer,

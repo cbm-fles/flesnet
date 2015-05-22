@@ -32,13 +32,13 @@ FlibShmChannel::~FlibShmChannel() {}
 uint64_t FlibShmChannel::written_mc()
 {
   return _channel->get_offsets_newer_than(
-      boost::posix_time::milliseconds(100)).desc_offset;
+      boost::posix_time::milliseconds(100)).first.desc_offset;
 }
 
 uint64_t FlibShmChannel::written_data()
 {
   return _channel->get_offsets_newer_than(
-      boost::posix_time::milliseconds(100)).data_offset;
+      boost::posix_time::milliseconds(100)).first.data_offset;
 }
 
 void FlibShmChannel::update_ack_pointers(uint64_t new_acked_data,

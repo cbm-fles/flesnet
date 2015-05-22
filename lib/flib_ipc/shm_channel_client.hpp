@@ -78,27 +78,40 @@ public:
     m_shm_dev->m_cond_req.notify_one();
   }
 
+  // get cached offsets
   offsets_t get_offsets() {
-    scoped_lock<interprocess_mutex> lock(
-        m_shm_dev->m_mutex); // TODO could be a shared lock
+    // TODO could be a shared lock
+    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
     return m_shm_ch->offsets(lock);
   }
 
-  // get offsets newer than given relative timepoint
-  offsets_t
-  get_offsets_newer_than(const boost::posix_time::time_duration& rel_time) {
+  // get latest offsets (blocking)
+  std::pair<offsets_t, bool>
+  get_offsets_latest(const boost::posix_time::ptime& abs_timeout) {
+    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+    m_shm_ch->set_req_offset(lock, true);
+    m_shm_dev->m_cond_req.notify_one();
+    bool ret = m_shm_ch->m_cond_offsets.timed_wait(lock, abs_timeout);
+    offsets_t offsets = m_shm_ch->offsets(lock);
+    return std::make_pair(offsets, ret);
+  }
+
+  // get offsets newer than given relative timepoint (blocking)
+  std::pair<offsets_t, bool>
+  get_offsets_newer_than(const boost::posix_time::time_duration& rel_time,
+                         const boost::posix_time::time_duration& rel_timeout =
+                             boost::posix_time::milliseconds(100)) {
     assert(!rel_time.is_negative());
-    boost::posix_time::ptime const abs_time =
-        boost::posix_time::microsec_clock::universal_time() - rel_time;
-    offsets_t offsets = get_offsets();
-    if (offsets.updated < abs_time) {
-      update_offsets();
+    auto const now = boost::posix_time::microsec_clock::universal_time();
+    boost::posix_time::ptime const abs_time = now - rel_time;
+    boost::posix_time::ptime const abs_timeout = now + rel_timeout;
+
+    std::pair<offsets_t, bool> ret(get_offsets(), true);
+    if (ret.first.updated < abs_time) {
+      ret = get_offsets_latest(abs_timeout);
     }
-    // TODO poll loop may be inefficient
-    while (offsets.updated < abs_time) {
-      offsets = get_offsets();
-    }
-    return offsets;
+    assert(!(ret.second && (ret.first.updated < abs_time)));
+    return ret;
   }
 
 private:
