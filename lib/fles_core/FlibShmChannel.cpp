@@ -1,4 +1,5 @@
 #include "FlibShmChannel.hpp"
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 FlibShmChannel::FlibShmChannel(shm_channel_client* channel)
     : _channel(channel)
@@ -28,17 +29,16 @@ FlibShmChannel::FlibShmChannel(shm_channel_client* channel)
 
 FlibShmChannel::~FlibShmChannel() {}
 
-// TODO external update function needed?
 uint64_t FlibShmChannel::written_mc()
 {
-  _channel->update_offsets();
-  return _channel->get_offsets().desc_offset;
+  return _channel->get_offsets_newer_than(
+      boost::posix_time::milliseconds(100)).desc_offset;
 }
 
 uint64_t FlibShmChannel::written_data()
 {
-  _channel->update_offsets();
-  return _channel->get_offsets().data_offset;
+  return _channel->get_offsets_newer_than(
+      boost::posix_time::milliseconds(100)).data_offset;
 }
 
 void FlibShmChannel::update_ack_pointers(uint64_t new_acked_data,

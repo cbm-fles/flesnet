@@ -3,10 +3,12 @@
 #pragma once
 
 #include <cstdint>
+#include <cassert>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 #include "log.hpp"
 
@@ -80,6 +82,23 @@ public:
     scoped_lock<interprocess_mutex> lock(
         m_shm_dev->m_mutex); // TODO could be a shared lock
     return m_shm_ch->offsets(lock);
+  }
+
+  // get offsets newer than given relative timepoint
+  offsets_t
+  get_offsets_newer_than(const boost::posix_time::time_duration& rel_time) {
+    assert(!rel_time.is_negative());
+    boost::posix_time::ptime const abs_time =
+        boost::posix_time::microsec_clock::universal_time() - rel_time;
+    offsets_t offsets = get_offsets();
+    if (offsets.updated < abs_time) {
+      update_offsets();
+    }
+    // TODO poll loop may be inefficient
+    while (offsets.updated < abs_time) {
+      offsets = get_offsets();
+    }
+    return offsets;
   }
 
 private:

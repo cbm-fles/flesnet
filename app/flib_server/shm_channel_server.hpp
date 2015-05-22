@@ -6,6 +6,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 #include "log.hpp"
 #include "flib_link.hpp"
@@ -75,6 +76,7 @@ public:
       offsets_t offsets;
       offsets.data_offset = m_flib_link->channel()->get_data_offset();
       offsets.desc_offset = m_flib_link->mc_index();
+      offsets.updated = boost::posix_time::microsec_clock::universal_time();
       L_(trace) << "fetching offsets: data " << offsets.data_offset << " desc "
                 << offsets.desc_offset;
 

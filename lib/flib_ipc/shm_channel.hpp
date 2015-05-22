@@ -5,12 +5,14 @@
 #include <cstdint>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 using namespace boost::interprocess;
 
 typedef struct {
   uint64_t data_offset;
   uint64_t desc_offset;
+  boost::posix_time::ptime updated;
 } offsets_t;
 
 typedef struct {
@@ -25,7 +27,8 @@ public:
               size_t data_buffer_size_exp, void* desc_buffer,
               size_t desc_buffer_size_exp)
       : m_data_buffer_size_exp(data_buffer_size_exp),
-        m_desc_buffer_size_exp(desc_buffer_size_exp) {
+        m_desc_buffer_size_exp(desc_buffer_size_exp),
+        m_offsets_updated(boost::posix_time::neg_infin) {
     set_buffer_handles(shm, data_buffer, desc_buffer);
   }
 
@@ -68,6 +71,7 @@ public:
     offsets_t offsets;
     offsets.data_offset = m_data_offset;
     offsets.desc_offset = m_desc_offset;
+    offsets.updated = m_offsets_updated;
     return offsets;
   }
 
@@ -76,6 +80,7 @@ public:
     assert(lock);
     m_data_offset = offsets.data_offset;
     m_desc_offset = offsets.desc_offset;
+    m_offsets_updated = offsets.updated;
     return;
   }
 
@@ -125,10 +130,11 @@ private:
   bool m_req_ptr = false;
   bool m_req_offset = false;
 
-  uint64_t m_data_read_ptr = 0; // TODO initialize from hw
+  uint64_t m_data_read_ptr = 0; // INFO not actual hw value
   uint64_t m_desc_read_ptr = 0;
   uint64_t m_data_offset = 0;
   uint64_t m_desc_offset = 0;
+  boost::posix_time::ptime m_offsets_updated;
 
   size_t m_clients = 0;
 };
