@@ -21,5 +21,5 @@ file(GLOB LIB_HEADERS src/*.hpp)
 
 add_library(fles_ipc ${LIB_SOURCES} ${LIB_HEADERS})
 
-enable_testing()
+include(CTest)
 add_subdirectory(test)
