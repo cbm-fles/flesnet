@@ -11,6 +11,7 @@ before_script:
   
 compiler:
   - clang
+  - gcc
 
 language: cpp
 
