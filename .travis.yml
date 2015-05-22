@@ -1,7 +1,7 @@
 before_install:
   - sudo -E add-apt-repository -y "ppa:boost-latest/ppa"
   - sudo -E apt-get -yq update
-  - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install libboost1.55-dev libboost-filesystem1.55-dev libboost-program-options1.55-dev libboost-serialization1.55-dev libboost-system1.55-dev libboost-test1.55-dev libboost-thread1.55-dev
+  - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install libboost1.55-dev libboost-filesystem1.55-dev libboost-program-options1.55-dev libboost-serialization1.55-dev libboost-system1.55-dev libboost-test1.55-dev libboost-thread1.55-dev libzmq3-dev
   - sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O /usr/local/include/zmq.hpp
 
 before_script:
