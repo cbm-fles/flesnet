@@ -98,9 +98,10 @@ set_property PROGRAM.FILE {$BITFILE} [lindex [get_hw_devices] 0]
 program_hw_devices [lindex [get_hw_devices] 0]
 close_hw
 EOF
-vivado -mode batch -source $t
+vivado -mode batch -nojournal -nolog -source $t
 rm -f -- "$t"
 trap - EXIT
+rm webtalk.log webtalk.jou
 }
 
 # Program Flash
