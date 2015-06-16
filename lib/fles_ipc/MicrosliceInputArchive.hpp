@@ -10,8 +10,10 @@ namespace fles
 class Microslice;
 class StorableMicroslice;
 
-//! The MicrosliceInputArchive deserializes microslice data sets from an input
-// file.
+/**
+ * @brief The MicrosliceInputArchive class deserializes microslice data sets
+ * from an input file.
+ */
 using MicrosliceInputArchive = InputArchive<Microslice, StorableMicroslice,
                                             ArchiveType::MicrosliceArchive>;
 

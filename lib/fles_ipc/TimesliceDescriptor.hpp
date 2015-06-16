@@ -10,7 +10,9 @@ namespace fles
 
 #pragma pack(1)
 
-//! Timeslice descriptor struct.
+/**
+ * @brief %Timeslice descriptor struct.
+ */
 struct TimesliceDescriptor {
     uint64_t index;  ///< Global index of this timeslice
     uint64_t ts_pos; ///< Start offset (in items) of this timeslice

@@ -19,7 +19,9 @@ namespace fles
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
 
-//! The StorableTimeslice class contains the data of a single timeslice.
+/**
+ * @brief The StorableTimeslice class contains the data of a single timeslice.
+ */
 class StorableTimeslice : public Timeslice
 {
 public:

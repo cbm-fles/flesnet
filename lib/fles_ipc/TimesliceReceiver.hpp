@@ -15,8 +15,10 @@
 namespace fles
 {
 
-//! The TimesliceReveicer class implements the IPC mechanisms to receive a
-// timeslice.
+/**
+ * @brief The TimesliceReceiver class implements the IPC mechanisms to receive a
+ * timeslice.
+ */
 class TimesliceReceiver : public TimesliceSource
 {
 public:

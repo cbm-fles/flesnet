@@ -10,8 +10,10 @@ namespace fles
 class Timeslice;
 class StorableTimeslice;
 
-//! The TimesliceInputArchive deserializes timeslice data sets from an input
-// file.
+/**
+ * @brief The TimesliceInputArchive deserializes timeslice data sets from an
+ * input file.
+ */
 using TimesliceInputArchive =
     InputArchive<Timeslice, StorableTimeslice, ArchiveType::TimesliceArchive>;
 

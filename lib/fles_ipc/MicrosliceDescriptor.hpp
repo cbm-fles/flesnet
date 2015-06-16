@@ -8,14 +8,14 @@ namespace fles
 {
 
 enum class SubsystemIdentifier : uint8_t {
-    STS = 0x10,  ///<  Silicon Tracking System (STS)
-    MVD = 0x20,  ///<  Micro-Vertex Detector (MVD)
-    RICH = 0x30, ///<  Ring Imaging CHerenkov detector (RICH)
-    TRD = 0x40,  ///<  Transition Radiation Detector (TRD)
-    MUCH = 0x50, ///<  Muon Chamber system (MuCh)
-    RPC = 0x60,  ///<  Resistive Plate Chambers (RPC)
-    ECAL = 0x70, ///<  Electromagnetic CALorimeter (ECAL)
-    PSD = 0x80,  ///<  Projectile Spectator Detector (PSD)
+    STS = 0x10,  ///< Silicon Tracking System (STS)
+    MVD = 0x20,  ///< Micro-Vertex Detector (MVD)
+    RICH = 0x30, ///< Ring Imaging CHerenkov detector (RICH)
+    TRD = 0x40,  ///< Transition Radiation Detector (TRD)
+    MUCH = 0x50, ///< Muon Chamber system (MuCh)
+    RPC = 0x60,  ///< Resistive Plate Chambers (RPC)
+    ECAL = 0x70, ///< Electromagnetic CALorimeter (ECAL)
+    PSD = 0x80,  ///< Projectile Spectator Detector (PSD)
     FLES = 0xF0  ///< First-level Event Selector (FLES)
 };
 
@@ -25,7 +25,9 @@ enum class HeaderFormatVersion : uint8_t { Standard = 0x01 };
 
 #pragma pack(1)
 
-//! Microslice descriptor struct.
+/**
+ * @brief %Microslice descriptor struct.
+ */
 struct MicrosliceDescriptor {
     uint8_t hdr_id;  ///< Header format identifier (0xDD)
     uint8_t hdr_ver; ///< Header format version (0x01)

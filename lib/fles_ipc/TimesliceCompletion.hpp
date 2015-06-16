@@ -9,7 +9,9 @@ namespace fles
 
 #pragma pack(1)
 
-//! Timeslice completion struct.
+/**
+ * @brief %Timeslice completion struct.
+ */
 struct TimesliceCompletion {
     uint64_t ts_pos; ///< Start offset (in items) of this timeslice
 

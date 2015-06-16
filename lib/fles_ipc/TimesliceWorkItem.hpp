@@ -10,7 +10,9 @@ namespace fles
 
 #pragma pack(1)
 
-//! Timeslice work item struct.
+/**
+ * @brief %Timeslice work item struct.
+ */
 struct TimesliceWorkItem {
     TimesliceDescriptor ts_desc;
     uint32_t data_buffer_size_exp; ///< Exp. size (in bytes) of each data buffer

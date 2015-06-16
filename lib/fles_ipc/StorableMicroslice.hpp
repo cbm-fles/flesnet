@@ -19,7 +19,9 @@ template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
 
 /**
- * Store microslice metadata and content in a single object.
+ * @brief The StorableMicroslice class contains the data of a single microslice.
+ *
+ * Both metadata and content are stored within the object.
  */
 class StorableMicroslice : public Microslice
 {
@@ -30,15 +32,14 @@ public:
 
     StorableMicroslice(const Microslice& ms);
 
-    StorableMicroslice(MicrosliceDescriptor d, const uint8_t* content);
-    /**<
+    /**
      * Copy the descriptor and the data pointed to by `content` into the
      * StorableMicroslice. The `size` field of the descriptor must already
      * be valid and will not be modified.
      */
+    StorableMicroslice(MicrosliceDescriptor d, const uint8_t* content);
 
-    StorableMicroslice(MicrosliceDescriptor d, std::vector<uint8_t> content);
-    /**<
+    /**
      * Copy the descriptor and copy or move the data contained in
      * `content` into the StorableMicroslice. The descriptor will be
      * updated to match the size of the `content` vector.
@@ -51,6 +52,7 @@ public:
      * or
      *     StorableMicroslice {..., create_some_vector()}
      */
+    StorableMicroslice(MicrosliceDescriptor d, std::vector<uint8_t> content);
 
 private:
     friend class boost::serialization::access;

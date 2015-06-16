@@ -11,8 +11,12 @@
 namespace fles
 {
 
-//! Microslice is the base class for all classes providing access to the data of
-// a single microslice.
+/**
+ * @brief The Microslice class provides read access to the data of a microslice.
+ *
+ * This class is an abstract base class for all classes providing access to the
+ * descriptor and data contents of a single microslice.
+ */
 class Microslice
 {
 public:

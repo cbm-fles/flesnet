@@ -15,8 +15,12 @@ enum class ArchiveType { TimesliceArchive, MicrosliceArchive };
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
 
-//! The ArchiveDescriptor precedes a stream of serialized
-// StorableTimeslice or StorableMicroslice objects.
+/**
+ * @brief The ArchiveDescriptor class contains metadata on an archive.
+ *
+ * This class class precedes a stream of serialized StorableTimeslice or
+ * StorableMicroslice objects.
+ */
 class ArchiveDescriptor
 {
 public:

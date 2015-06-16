@@ -8,8 +8,11 @@ namespace fles
 {
 
 /**
- * Provide read access to microslice metadata and content stored elsewhere
- * (for example in an already existing Timeslice), through a single object.
+ * @brief The MicrosliceView class provides read access to a microslice stored
+ * elsewhere.
+ *
+ * The data of the microslice (metadata and content) is not stored in the class,
+ * but elsewhere (e.g., in an already existing Timeslice object).
  */
 class MicrosliceView : public Microslice
 {

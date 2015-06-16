@@ -15,8 +15,12 @@
 namespace fles
 {
 
-//! Timeslice is the base class for all classes providing access to the data of
-// a single timeslice.
+/**
+ * @brief The Timeslice class provides read access to the data of a timeslice.
+ *
+ * This class is an abstract base class for all classes providing access to the
+ * contents of a single timeslice.
+ */
 class Timeslice
 {
 public:

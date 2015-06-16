@@ -8,8 +8,10 @@
 namespace fles
 {
 
-//! The TimeslicePublisher publishes serialized timeslice data sets to a zeromq
-// socket.
+/**
+ * @brief The TimeslicePublisher class publishes serialized timeslice data sets
+ * to a zeromq socket.
+ */
 class TimeslicePublisher
 {
 public:

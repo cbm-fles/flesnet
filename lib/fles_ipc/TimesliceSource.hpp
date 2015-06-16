@@ -7,8 +7,10 @@
 namespace fles
 {
 
-//! The TimesliceSource base class implements the generic timeslice-based input
-// interface.
+/**
+ * @brief The TimesliceSource base class implements the generic timeslice-based
+ * input interface.
+ */
 using TimesliceSource = Source<Timeslice>;
 
 } // namespace fles {

@@ -9,7 +9,9 @@
 namespace fles
 {
 
-//! The OutputArchive serializes data sets to an output file.
+/**
+ * @brief The OutputArchive class serializes data sets to an output file.
+ */
 template <class T, ArchiveType archive_type> class OutputArchive
 {
 public:

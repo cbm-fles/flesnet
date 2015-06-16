@@ -14,8 +14,10 @@
 namespace fles
 {
 
-//! The TimesliceView class provides access to the data of a single timeslice in
-// memory.
+/**
+ * @brief The TimesliceView class provides access to the data of a single
+ * timeslice in memory.
+ */
 class TimesliceView : public Timeslice
 {
 public:

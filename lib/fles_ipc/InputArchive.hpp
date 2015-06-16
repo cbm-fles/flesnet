@@ -11,7 +11,10 @@
 namespace fles
 {
 
-//! The InputArchive deserializes data sets from an input file.
+/**
+ * @brief The InputArchive class deserializes microslice data sets from an input
+ * file.
+ */
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive : public Source<Base>
 {
