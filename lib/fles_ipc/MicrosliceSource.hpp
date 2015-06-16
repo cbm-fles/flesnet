@@ -8,8 +8,7 @@ namespace fles
 {
 
 //! The MicrosliceSource base class implements the generic microslice-based
-// input
-// interface.
+// input interface.
 using MicrosliceSource = Source<Microslice>;
 
 } // namespace fles {
