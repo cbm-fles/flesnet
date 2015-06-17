@@ -82,8 +82,8 @@ protected:
     /// A vector of pointers to the data content, one per timeslice component.
     std::vector<const uint8_t*> _data_ptr;
 
-    /// A vector of pointers to the microslice descriptors, one per timeslice
-    /// component.
+    /// \brief A vector of pointers to the microslice descriptors, one per
+    /// timeslice component.
     std::vector<const TimesliceComponentDescriptor*> _desc_ptr;
 };
 

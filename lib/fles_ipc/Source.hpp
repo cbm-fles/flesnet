@@ -27,7 +27,7 @@ public:
     virtual ~Source(){};
 
 protected:
-    /// End-of-file flag.
+    /// The end-of-file flag.
     bool _eof = false;
 
 private:

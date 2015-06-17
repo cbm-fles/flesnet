@@ -14,10 +14,12 @@ namespace fles
  * \brief %Timeslice work item struct.
  */
 struct TimesliceWorkItem {
-    TimesliceDescriptor ts_desc;   ///< The timeslice descriptor
-    uint32_t data_buffer_size_exp; ///< Exp. size (in bytes) of each data buffer
-    uint32_t desc_buffer_size_exp; ///< Exp. size (in bytes) of each descriptor
-    /// buffer
+    /// The timeslice descriptor
+    TimesliceDescriptor ts_desc;
+    /// Size exponential (in bytes) of each data buffer
+    uint32_t data_buffer_size_exp;
+    /// Size exponential (in bytes) of each descriptor buffer
+    uint32_t desc_buffer_size_exp;
 
     friend class boost::serialization::access;
     /// Provide boost serialization access.
