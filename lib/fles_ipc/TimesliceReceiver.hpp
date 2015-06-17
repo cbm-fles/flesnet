@@ -1,4 +1,6 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+/// \file
+/// \brief Defines the fles::TimesliceReceiver class.
 #pragma once
 
 #include "TimesliceSource.hpp"
@@ -8,9 +10,6 @@
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
-
-/// \file
-/// This file describes the timeslice-based interface to FLES.
 
 namespace fles
 {

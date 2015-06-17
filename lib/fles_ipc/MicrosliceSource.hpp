@@ -1,4 +1,6 @@
 // Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
+/// \file
+/// \brief Defines the fles::MicrosliceSource class type.
 #pragma once
 
 #include "Microslice.hpp"

@@ -1,4 +1,6 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+/// \file
+/// \brief Defines the fles::Timeslice abstract base class.
 #pragma once
 
 #include "MicrosliceView.hpp"

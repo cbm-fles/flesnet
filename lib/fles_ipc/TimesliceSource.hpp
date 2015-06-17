@@ -1,4 +1,6 @@
 // Copyright 2013, 2015 Jan de Cuveland <cmail@cuveland.de>
+/// \file
+/// \brief Defines the fles::TimesliceSource class type.
 #pragma once
 
 #include "Timeslice.hpp"

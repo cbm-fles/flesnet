@@ -40,7 +40,10 @@ TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
             (shared_memory_identifier + "_completions").c_str()));
 }
 
-/*
+#if BOOST_VERSION < 105600
+/**
+ * \brief Workaround for bug in old Boost version
+ *
  * This workaround is required for Boost versions 1.52.0 to 1.55.0, as there is
  * a serious synchronization bug in boost::interprocess in these versions.
  *
@@ -52,7 +55,6 @@ TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
  *
  * 2014-03-12, Jan de Cuveland <cuveland@fias.uni-frankfurt.de>
  */
-#if BOOST_VERSION < 105600
 void mq_receive_workaround(boost::interprocess::message_queue& mq, void* buffer,
                            size_t buffer_size, size_t& recvd_size,
                            unsigned int& priority);

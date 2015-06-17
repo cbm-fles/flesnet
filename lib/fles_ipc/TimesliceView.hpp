@@ -1,4 +1,6 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+/// \file
+/// \brief Defines the fles::TimesliceView class.
 #pragma once
 
 #include "Timeslice.hpp"
@@ -7,9 +9,6 @@
 #include <cstdint>
 #include <memory>
 #include <boost/interprocess/ipc/message_queue.hpp>
-
-/// \file
-/// This file describes the timeslice-based interface to FLES.
 
 namespace fles
 {

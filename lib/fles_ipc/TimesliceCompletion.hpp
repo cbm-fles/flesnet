@@ -1,4 +1,6 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+/// \file
+/// \brief Defines the fles::TimesliceCompletion serializable struct.
 #pragma once
 
 #include <cstdint>

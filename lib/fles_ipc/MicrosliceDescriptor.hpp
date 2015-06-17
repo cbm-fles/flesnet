@@ -1,12 +1,22 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+/// \file
+/// \brief Defines the fles::MicrosliceDescriptor struct and corresponding
+/// enums.
 #pragma once
 
 #include <cstdint>
 #include <boost/serialization/access.hpp>
 
+/// Main FLES namespace.
 namespace fles
 {
 
+/**
+ * \brief Subsystem identifier enum.
+ *
+ * This enum defines the possible values for the
+ * fles::MicrosliceDescriptor::sys_id variable.
+ */
 enum class SubsystemIdentifier : uint8_t {
     STS = 0x10,  ///< Silicon Tracking System (STS)
     MVD = 0x20,  ///< Micro-Vertex Detector (MVD)
@@ -19,8 +29,20 @@ enum class SubsystemIdentifier : uint8_t {
     FLES = 0xF0  ///< First-level Event Selector (FLES)
 };
 
+/**
+ * \brief Header format identifier enum.
+ *
+ * This enum defines the possible values for the
+ * fles::MicrosliceDescriptor::hdr_id variable.
+ */
 enum class HeaderFormatIdentifier : uint8_t { Standard = 0xDD };
 
+/**
+ * \brief Header format version enum.
+ *
+ * This enum defines the possible values for the
+ * fles::MicrosliceDescriptor::hdr_ver variable.
+ */
 enum class HeaderFormatVersion : uint8_t { Standard = 0x01 };
 
 #pragma pack(1)

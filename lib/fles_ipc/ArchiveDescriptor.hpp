@@ -1,4 +1,6 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+/// \file
+/// \brief Defines the fles::ArchiveDescriptor class.
 #pragma once
 
 #include "System.hpp"
@@ -10,6 +12,7 @@
 namespace fles
 {
 
+/// The archive type enum (e.g., timeslice, microslice)
 enum class ArchiveType { TimesliceArchive, MicrosliceArchive };
 
 template <class Base, class Derived, ArchiveType archive_type>
