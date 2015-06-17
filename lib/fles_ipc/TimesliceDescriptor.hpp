@@ -11,7 +11,7 @@ namespace fles
 #pragma pack(1)
 
 /**
- * @brief %Timeslice descriptor struct.
+ * \brief %Timeslice descriptor struct.
  */
 struct TimesliceDescriptor {
     uint64_t index;  ///< Global index of this timeslice
@@ -21,6 +21,7 @@ struct TimesliceDescriptor {
     /// channels)
 
     friend class boost::serialization::access;
+    /// Provide boost serialization access.
     template <class Archive>
     void serialize(Archive& ar, const unsigned int version)
     {

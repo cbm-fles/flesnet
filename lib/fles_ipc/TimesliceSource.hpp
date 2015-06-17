@@ -8,7 +8,7 @@ namespace fles
 {
 
 /**
- * @brief The TimesliceSource base class implements the generic timeslice-based
+ * \brief The TimesliceSource base class implements the generic timeslice-based
  * input interface.
  */
 using TimesliceSource = Source<Timeslice>;

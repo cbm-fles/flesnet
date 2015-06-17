@@ -8,7 +8,7 @@ namespace fles
 {
 
 /**
- * @brief The MicrosliceSource base class implements the generic
+ * \brief The MicrosliceSource base class implements the generic
  * microslice-based input interface.
  */
 using MicrosliceSource = Source<Microslice>;

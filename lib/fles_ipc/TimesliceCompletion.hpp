@@ -10,12 +10,13 @@ namespace fles
 #pragma pack(1)
 
 /**
- * @brief %Timeslice completion struct.
+ * \brief %Timeslice completion struct.
  */
 struct TimesliceCompletion {
     uint64_t ts_pos; ///< Start offset (in items) of this timeslice
 
     friend class boost::serialization::access;
+    /// Provide boost serialization access.
     template <class Archive>
     void serialize(Archive& ar, const unsigned int /* version */)
     {

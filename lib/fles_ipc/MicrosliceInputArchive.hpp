@@ -11,7 +11,7 @@ class Microslice;
 class StorableMicroslice;
 
 /**
- * @brief The MicrosliceInputArchive class deserializes microslice data sets
+ * \brief The MicrosliceInputArchive class deserializes microslice data sets
  * from an input file.
  */
 using MicrosliceInputArchive = InputArchive<Microslice, StorableMicroslice,

@@ -11,15 +11,16 @@ namespace fles
 #pragma pack(1)
 
 /**
- * @brief %Timeslice work item struct.
+ * \brief %Timeslice work item struct.
  */
 struct TimesliceWorkItem {
-    TimesliceDescriptor ts_desc;
+    TimesliceDescriptor ts_desc;   ///< The timeslice descriptor
     uint32_t data_buffer_size_exp; ///< Exp. size (in bytes) of each data buffer
     uint32_t desc_buffer_size_exp; ///< Exp. size (in bytes) of each descriptor
     /// buffer
 
     friend class boost::serialization::access;
+    /// Provide boost serialization access.
     template <class Archive>
     void serialize(Archive& ar, const unsigned int /* version */)
     {

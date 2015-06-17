@@ -12,19 +12,29 @@
 namespace fles
 {
 /**
- * @brief The TimesliceSubscriber class receives serialized timeslice data sets
+ * \brief The TimesliceSubscriber class receives serialized timeslice data sets
  * from a zeromq socket.
  */
 class TimesliceSubscriber : public TimesliceSource
 {
 public:
+    /// Construct timeslice subscriber receiving from given ZMQ address.
     TimesliceSubscriber(const std::string& address);
 
+    /// Delete copy constructor (non-copyable).
     TimesliceSubscriber(const TimesliceSubscriber&) = delete;
+    /// Delete assignment operator (non-copyable).
     void operator=(const TimesliceSubscriber&) = delete;
 
     virtual ~TimesliceSubscriber(){};
 
+    /**
+     * \brief Retrieve the next item.
+     *
+     * This function blocks if the next item is not yet available.
+     *
+     * \return pointer to the item, or nullptr if end-of-file
+     */
     std::unique_ptr<StorableTimeslice> get()
     {
         return std::unique_ptr<StorableTimeslice>(do_get());

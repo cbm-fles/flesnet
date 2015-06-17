@@ -26,7 +26,7 @@ enum class HeaderFormatVersion : uint8_t { Standard = 0x01 };
 #pragma pack(1)
 
 /**
- * @brief %Microslice descriptor struct.
+ * \brief %Microslice descriptor struct.
  */
 struct MicrosliceDescriptor {
     uint8_t hdr_id;  ///< Header format identifier (0xDD)
@@ -41,6 +41,7 @@ struct MicrosliceDescriptor {
     uint64_t offset; ///< Offset in event buffer (bytes)
 
     friend class boost::serialization::access;
+    /// Provide boost serialization access.
     template <class Archive>
     void serialize(Archive& ar, const unsigned int /* version */)
     {

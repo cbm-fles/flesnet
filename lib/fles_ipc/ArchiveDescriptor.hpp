@@ -16,7 +16,7 @@ template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
 
 /**
- * @brief The ArchiveDescriptor class contains metadata on an archive.
+ * \brief The ArchiveDescriptor class contains metadata on an archive.
  *
  * This class class precedes a stream of serialized StorableTimeslice or
  * StorableMicroslice objects.
@@ -24,6 +24,11 @@ class InputArchive;
 class ArchiveDescriptor
 {
 public:
+    /**
+     * \brief Public constructor.
+     *
+     * \param archive_type The type of archive (e.g., timeslice, microslice).
+     */
     ArchiveDescriptor(ArchiveType archive_type) : _archive_type(archive_type)
     {
         _time_created = std::chrono::system_clock::to_time_t(
@@ -46,6 +51,7 @@ public:
 
 private:
     friend class boost::serialization::access;
+    /// Provide boost serialization access.
     template <class Base, class Derived, ArchiveType archive_type>
     friend class InputArchive;
 

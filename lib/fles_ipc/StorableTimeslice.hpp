@@ -20,17 +20,22 @@ template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
 
 /**
- * @brief The StorableTimeslice class contains the data of a single timeslice.
+ * \brief The StorableTimeslice class contains the data of a single timeslice.
  */
 class StorableTimeslice : public Timeslice
 {
 public:
+    /// Copy constructor.
     StorableTimeslice(const StorableTimeslice& ts);
+    /// Delete assignment operator (not implemented).
     void operator=(const StorableTimeslice&) = delete;
+    /// Move constructor.
     StorableTimeslice(StorableTimeslice&& ts);
 
+    /// Construct by copying from given Timeslice object.
     StorableTimeslice(const Timeslice& ts);
 
+    /// Construct and initialize empty timeslice to fill using append_component.
     StorableTimeslice(uint32_t num_core_microslices,
                       uint64_t index = UINT64_MAX, uint64_t ts_pos = UINT64_MAX)
     {
@@ -40,6 +45,7 @@ public:
         _timeslice_descriptor.num_components = 0;
     }
 
+    /// Append a single component to fill using append_microslice.
     uint32_t append_component(uint64_t num_microslices,
                               uint64_t /* dummy */ = 0)
     {
@@ -65,6 +71,7 @@ public:
         return component;
     }
 
+    /// Append a single microslice using given descriptor and content.
     uint64_t append_microslice(uint32_t component, uint64_t microslice,
                                MicrosliceDescriptor descriptor,
                                const uint8_t* content)
@@ -97,6 +104,7 @@ public:
         return microslice;
     }
 
+    /// Append a single microslice object.
     uint64_t append_microslice(uint32_t component, uint64_t microslice,
                                StorableMicroslice& mc)
     {

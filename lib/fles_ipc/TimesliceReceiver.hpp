@@ -9,26 +9,36 @@
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
 
-//! \file
-//! This file describes the timeslice-based interface to FLES.
+/// \file
+/// This file describes the timeslice-based interface to FLES.
 
 namespace fles
 {
 
 /**
- * @brief The TimesliceReceiver class implements the IPC mechanisms to receive a
+ * \brief The TimesliceReceiver class implements the IPC mechanisms to receive a
  * timeslice.
  */
 class TimesliceReceiver : public TimesliceSource
 {
 public:
+    /// Construct timeslice receiver connected to a given shared memory.
     TimesliceReceiver(const std::string shared_memory_identifier);
 
+    /// Delete copy constructor (non-copyable).
     TimesliceReceiver(const TimesliceReceiver&) = delete;
+    /// Delete assignment operator (non-copyable).
     void operator=(const TimesliceReceiver&) = delete;
 
     virtual ~TimesliceReceiver(){};
 
+    /**
+     * \brief Retrieve the next item.
+     *
+     * This function blocks if the next item is not yet available.
+     *
+     * \return pointer to the item, or nullptr if end-of-file
+     */
     std::unique_ptr<TimesliceView> get()
     {
         return std::unique_ptr<TimesliceView>(do_get());

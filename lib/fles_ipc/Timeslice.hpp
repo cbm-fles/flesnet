@@ -16,7 +16,7 @@ namespace fles
 {
 
 /**
- * @brief The Timeslice class provides read access to the data of a timeslice.
+ * \brief The Timeslice class provides read access to the data of a timeslice.
  *
  * This class is an abstract base class for all classes providing access to the
  * contents of a single timeslice.
@@ -76,8 +76,14 @@ protected:
 
     friend class StorableTimeslice;
 
+    /// The timeslice descriptor.
     TimesliceDescriptor _timeslice_descriptor;
+
+    /// A vector of pointers to the data content, one per timeslice component.
     std::vector<const uint8_t*> _data_ptr;
+
+    /// A vector of pointers to the microslice descriptors, one per timeslice
+    /// component.
     std::vector<const TimesliceComponentDescriptor*> _desc_ptr;
 };
 

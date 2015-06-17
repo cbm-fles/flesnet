@@ -10,7 +10,7 @@ namespace fles
 #pragma pack(1)
 
 /**
- * @brief %Timeslice component descriptor struct.
+ * \brief %Timeslice component descriptor struct.
  */
 struct TimesliceComponentDescriptor {
     uint64_t ts_num; ///< Timeslice index.
@@ -19,6 +19,7 @@ struct TimesliceComponentDescriptor {
     uint64_t num_microslices; ///< Number of microslices.
 
     friend class boost::serialization::access;
+    /// Provide boost serialization access.
     template <class Archive>
     void serialize(Archive& ar, const unsigned int /* version */)
     {

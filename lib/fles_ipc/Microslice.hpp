@@ -12,7 +12,7 @@ namespace fles
 {
 
 /**
- * @brief The Microslice class provides read access to the data of a microslice.
+ * \brief The Microslice class provides read access to the data of a microslice.
  *
  * This class is an abstract base class for all classes providing access to the
  * descriptor and data contents of a single microslice.
@@ -30,12 +30,17 @@ public:
 
 protected:
     Microslice(){};
+
+    /// Construct microslice with given content.
     Microslice(const MicrosliceDescriptor* desc_ptr, const uint8_t* content_ptr)
         : _desc_ptr(desc_ptr), _content_ptr(content_ptr){};
 
     friend class StorableMicroslice;
 
+    /// Pointer to the microslice descriptor
     const MicrosliceDescriptor* _desc_ptr;
+
+    /// Pointer to the microslice data content
     const uint8_t* _content_ptr;
 };
 

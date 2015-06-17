@@ -12,13 +12,19 @@ namespace fles
 {
 
 /**
- * @brief The InputArchive class deserializes microslice data sets from an input
+ * \brief The InputArchive class deserializes microslice data sets from an input
  * file.
  */
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive : public Source<Base>
 {
 public:
+    /**
+     * \brief Construct an input archive object, open the given archive file for
+     * reading, and read the archive descriptor.
+     *
+     * \param filename File name of the archive file
+     */
     InputArchive(const std::string& filename)
     {
         _ifstream = std::unique_ptr<std::ifstream>(
@@ -39,7 +45,9 @@ public:
         }
     }
 
+    /// Delete copy constructor (non-copyable).
     InputArchive(const InputArchive&) = delete;
+    /// Delete assignment operator (non-copyable).
     void operator=(const InputArchive&) = delete;
 
     virtual ~InputArchive(){};
@@ -50,6 +58,7 @@ public:
         return std::unique_ptr<Derived>(do_get());
     };
 
+    /// Retrieve the archive descriptor.
     const ArchiveDescriptor& descriptor() const { return _descriptor; };
 
 private:

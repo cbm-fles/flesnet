@@ -11,7 +11,7 @@ class Timeslice;
 class StorableTimeslice;
 
 /**
- * @brief The TimesliceInputArchive deserializes timeslice data sets from an
+ * \brief The TimesliceInputArchive deserializes timeslice data sets from an
  * input file.
  */
 using TimesliceInputArchive =

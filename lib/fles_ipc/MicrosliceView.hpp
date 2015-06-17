@@ -8,7 +8,7 @@ namespace fles
 {
 
 /**
- * @brief The MicrosliceView class provides read access to a microslice stored
+ * \brief The MicrosliceView class provides read access to a microslice stored
  * elsewhere.
  *
  * The data of the microslice (metadata and content) is not stored in the class,
@@ -17,6 +17,7 @@ namespace fles
 class MicrosliceView : public Microslice
 {
 public:
+    /// Construct microslice with given content.
     MicrosliceView(const MicrosliceDescriptor& d, const uint8_t* content);
 };
 

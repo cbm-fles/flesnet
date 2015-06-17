@@ -8,20 +8,22 @@
 #include <memory>
 #include <boost/interprocess/ipc/message_queue.hpp>
 
-//! \file
-//! This file describes the timeslice-based interface to FLES.
+/// \file
+/// This file describes the timeslice-based interface to FLES.
 
 namespace fles
 {
 
 /**
- * @brief The TimesliceView class provides access to the data of a single
+ * \brief The TimesliceView class provides access to the data of a single
  * timeslice in memory.
  */
 class TimesliceView : public Timeslice
 {
 public:
+    /// Delete copy constructor (non-copyable).
     TimesliceView(const TimesliceView&) = delete;
+    /// Delete assignment operator (non-copyable).
     void operator=(const TimesliceView&) = delete;
 
     virtual ~TimesliceView();
