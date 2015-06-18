@@ -1,0 +1,21 @@
+{
+   boost_log
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   obj:*/libboost_log.so.*
+}
+{
+   boost_filesystem
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   obj:*/libboost_filesystem.so.*
+}
+{
+   boost_programm_options
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   obj:*/libboost_program_options.so.*
+}

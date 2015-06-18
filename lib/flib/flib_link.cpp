@@ -26,7 +26,6 @@ flib_link::flib_link(size_t link_index, pda::device* dev, pda::pci_bar* bar)
 }
 
 flib_link::~flib_link() {
-  reset_datapath();
   deinit_dma();
 }
 
@@ -53,9 +52,11 @@ void flib_link::init_dma(size_t data_buffer_log_size,
 }
 
 void flib_link::deinit_dma() {
+  if (m_dma_channel) {
+    reset_datapath();
     m_dma_channel = nullptr;
-    
   }
+}
 
 dma_channel* flib_link::channel() const {
   if (m_dma_channel) {

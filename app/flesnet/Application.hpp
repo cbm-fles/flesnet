@@ -9,6 +9,7 @@
 #include <boost/lexical_cast.hpp>
 #include <memory>
 #include <csignal>
+#include "shm_device_client.hpp"
 
 /// %Application base class.
 /** The Application object represents an instance of the running
@@ -38,6 +39,9 @@ private:
     std::unique_ptr<flib2::flib_device> _flib;
     std::vector<flib2::flib_link*> _flib_links;
 
+  std::unique_ptr<shm_device_client> _shm_device;
+  std::size_t _shm_num_channels = 0;
+  
     std::vector<std::unique_ptr<DataSource>> _data_sources;
 
     /// The application's connection group / buffer objects

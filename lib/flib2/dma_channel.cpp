@@ -30,6 +30,7 @@ namespace flib2 {
     m_rfpkt = m_parent_link->register_file_packetizer();
     m_reg_dmactrl_cached =  m_rfpkt->reg(RORC_REG_DMA_CTRL);
     // ensure HW is disabled
+    // TODO: add global lock, otherwise this gives a race condition
     if (is_enabled()) {
       throw FlibException("DMA Engine already enabled");
     }

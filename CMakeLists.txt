@@ -25,7 +25,7 @@ set(BOOST_ROOT ${SIMPATH})
 find_package(Boost 1.54.0 COMPONENTS log serialization thread program_options system REQUIRED)
 find_package(Threads)
 find_package(ZMQ REQUIRED)
-find_package(PDA 10.1.6 REQUIRED)
+find_package(PDA 10.2.6 REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
@@ -52,6 +52,7 @@ add_subdirectory(app/flib_debug)
 add_subdirectory(app/flib_tools)
 add_subdirectory(app/flib_ctrl)
 add_subdirectory(app/flib_cfg)
+add_subdirectory(app/flib_server)
 
 add_subdirectory(doc)
 

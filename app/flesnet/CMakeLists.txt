@@ -8,6 +8,7 @@ include_directories("${PROJECT_SOURCE_DIR}/app/flesnet"
                     "${PROJECT_SOURCE_DIR}/lib/logging"
                     "${PROJECT_SOURCE_DIR}/lib/fles_ipc/src"
                     "${PROJECT_SOURCE_DIR}/lib"
+                    "${PROJECT_SOURCE_DIR}/lib/flib_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/flib2")
 
 add_executable(flesnet ${APP_SOURCES} ${APP_HEADERS})

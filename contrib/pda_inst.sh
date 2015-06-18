@@ -3,12 +3,12 @@
 set -e
 set -u
 
-PDA_VERSION="10.1.6"
+PDA_VERSION="10.2.6"
 USER_NAME=`id -u -n`
 
 getdeps()
 {
-  apt-get install libpci-dev gcc libtool linux-headers-`uname -r`
+  apt-get install libpci-dev gcc libtool libtool-bin libkmod-dev linux-headers-`uname -r`
 }
 
 install()

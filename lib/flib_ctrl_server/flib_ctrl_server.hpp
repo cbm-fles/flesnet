@@ -12,7 +12,7 @@
 #include <flib.h>
 #include <zmq.hpp>
 
-class flib_server {
+class flib_ctrl_server {
   
   zmq::context_t& _zmq_context;
   std::string _path;
@@ -33,7 +33,7 @@ class flib_server {
 
 public:
 
-  flib_server(zmq::context_t& context,
+  flib_ctrl_server(zmq::context_t& context,
               std::string path,
               flib::flib_device &device,
               flib::flib_link &link)
@@ -47,7 +47,7 @@ public:
       _driver_state(DriverStateStopped)
   { }
   
-  ~flib_server()
+  ~flib_ctrl_server()
   {
     Stop();
   }
@@ -83,7 +83,7 @@ public:
     _poll_items.push_back(zpi);
 
     // start driver thread
-    _driver_thread =  boost::thread(boost::bind(&flib_server::Driver, this));
+    _driver_thread =  boost::thread(boost::bind(&flib_ctrl_server::Driver, this));
     
     return true;
   }

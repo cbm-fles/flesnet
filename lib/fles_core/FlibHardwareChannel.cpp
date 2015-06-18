@@ -16,14 +16,14 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
         desc_buffer_size_exp + microslice_descriptor_size_exp;
 
 #ifndef NO_DOUBLE_BUFFERING
-    _flib_link->init_dma(flib2::create_only, data_buffer_size_exp,
+    _flib_link->init_dma(data_buffer_size_exp,
                          desc_buffer_bytes_exp);
 
     uint8_t* data_buffer =
-        reinterpret_cast<uint8_t*>(_flib_link->data_buffer());
+        reinterpret_cast<uint8_t*>(_flib_link->channel()->data_buffer());
     fles::MicrosliceDescriptor* desc_buffer =
         reinterpret_cast<fles::MicrosliceDescriptor*>(
-            _flib_link->desc_buffer());
+	     _flib_link->channel()->desc_buffer());
 
     _data_buffer_view = std::unique_ptr<RingBufferView<volatile uint8_t>>(
         new RingBufferView<volatile uint8_t>(data_buffer,

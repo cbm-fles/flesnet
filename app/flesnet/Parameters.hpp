@@ -78,6 +78,9 @@ public:
     /// Retrieve the use flib flag.
     bool use_flib() const { return _use_flib; }
 
+    /// Retrieve the use shared memory flag.
+    bool use_shared_memory() const { return _use_shared_memory; }
+
     /// Retrieve the standalone mode flag.
     bool standalone() const { return _standalone; }
 
@@ -143,6 +146,9 @@ private:
 
     /// The use flib flag.
     bool _use_flib = true;
+
+    /// The use shared memory flag.
+    bool _use_shared_memory = false;
 
     /// The standalone mode flag.
     bool _standalone = true;

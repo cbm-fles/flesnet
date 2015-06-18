@@ -3,6 +3,8 @@
 # 2013, Dirk Hutter <hutter@compeng.uni-frankfurt.de>
 
 set -e
+# TODO:
+# Vivado part only supports remote program with ESN
 
 ### user configuration ###
 
@@ -11,12 +13,14 @@ ESN=
 
 # Add full path to impact if Xilinx directory is not in PATH
 IMPACT=impact
+VIVADO=vivado
 
 # CSE server
 # start with cse_server -port <cse_port> on given <cse_host>
 # leave empty if script runs locally
 CSE_HOST=
 CSE_PORT=51001
+HWS_HOST=host:port
 
 # remote mashine the FLIB is installed to
 # leave empty if script runs locally
@@ -78,6 +82,26 @@ EOF
 rm _impactbatch.log
 sleep 1
 echo "Done"
+}
+
+# Program FPGA VIVADO
+function program_fpga_vivado {
+t=$(tempfile) || exit
+trap "rm -f -- '$t'" EXIT
+cat > $t <<-EOF
+open_hw
+connect_hw_server -url $HWS_HOST
+current_hw_target [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
+set_property PARAM.FREQUENCY 6000000 [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
+open_hw_target
+set_property PROGRAM.FILE {$BITFILE} [lindex [get_hw_devices] 0]
+program_hw_devices [lindex [get_hw_devices] 0]
+close_hw
+EOF
+vivado -mode batch -nojournal -nolog -source $t
+rm -f -- "$t"
+trap - EXIT
+rm webtalk.log webtalk.jou
 }
 
 # Program Flash
@@ -157,11 +181,17 @@ case $1 in
         rescan_pci
         exit
         ;;
+   rescan)
+	echo -e "Rescanning PCI Bus only"
+	rescan_pci
+	exit
+	;;
     *)
         echo -e "usage"
         echo -e "   reload FPGA configuration from Flash:   $0 reload"
         echo -e "   program FPGA:                           $0 prog BITFILE"
         echo -e "   program onboard Flash:                  $0 flash MCSFILE"
+        echo -e "   rescan pci bus only:                    $0 resan"
         exit
         ;;
 esac

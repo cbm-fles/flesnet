@@ -8,7 +8,7 @@
 
 #include <log.hpp>
 #include "parameters.hpp"
-#include "flib_server.hpp"
+#include "flib_ctrl_server.hpp"
 
 int s_interrupted = 0;
 static void s_signal_handler (int signal_value)
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 
   // FLIB per link configuration
 #ifdef CNETCNTLSERVER
-  std::vector<std::unique_ptr<flib_server>> flibserver;
+  std::vector<std::unique_ptr<flib_ctrl_server>> flibserver;
   std::vector<std::unique_ptr<CbmNet::ControlServer>> ctrlserver;
 #else
   L_(info) << "Compiled without controls support. Configuring FLIB and exit.";
@@ -65,8 +65,8 @@ int main(int argc, char* argv[])
 
 #ifdef CNETCNTLSERVER
     // create device control server, initialize and start server thread
-    flibserver.push_back(std::unique_ptr<flib_server>(
-        new flib_server(zmq_context, "CbmNet::Driver" + 
+    flibserver.push_back(std::unique_ptr<flib_ctrl_server>(
+        new flib_ctrl_server(zmq_context, "CbmNet::Driver" + 
                         boost::lexical_cast<std::string>(i), 
                         flib, *links.at(i))));
     flibserver.at(i)->Bind();

@@ -2,6 +2,7 @@
 
 #include "Application.hpp"
 #include "FlibHardwareChannel.hpp"
+#include "FlibShmChannel.hpp"
 #include "FlibPatternGenerator.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include <log.hpp>
@@ -17,6 +18,25 @@ Application::Application(Parameters const& par,
 
     // FIXME: some of this is a terrible mess
     if (par.use_flib()) {
+      if (par.use_shared_memory()) {
+        try {
+          _shm_device = std::unique_ptr<shm_device_client>(new shm_device_client());
+          _shm_num_channels = _shm_device->num_channels();
+          L_(info) << "using shared memory";
+
+          // increase number of input nodes to match number of
+          // enabled FLIB links if in stand-alone mode
+          if (par.standalone() && _shm_num_channels > 1) {
+            input_nodes_size = _shm_num_channels;
+            for (unsigned i = 1; i < input_nodes_size; i++) {
+              input_indexes.push_back(i);
+            }
+          }
+
+        } catch (std::exception const& e) {
+          L_(error) << "exception while creating flib: " << e.what();
+        }
+      } else {
         // TODO: presence detection #524
         try {
             _flib =
@@ -45,8 +65,9 @@ Application::Application(Parameters const& par,
             L_(error) << "exception while creating flib: " << e.what();
         }
     }
+    }
     // end FIXME
-
+    
     if (par.standalone()) {
         L_(info) << "flesnet in stand-alone mode, inputs: " << input_nodes_size;
     }
@@ -82,6 +103,9 @@ Application::Application(Parameters const& par,
             data_source = std::unique_ptr<DataSource>(new FlibHardwareChannel(
                 par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
                 _flib_links.at(c)));
+        } else if (c < _shm_num_channels) { 
+            data_source = std::unique_ptr<DataSource>(new FlibShmChannel(
+                _shm_device->channels().at(c)));
         } else {
             if (false) {
                 data_source = std::unique_ptr<DataSource>(new FlibPatternGenerator(
