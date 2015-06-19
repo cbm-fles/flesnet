@@ -2,6 +2,10 @@
 
 #include <flib.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 using namespace flib2;
 
 flib_device* MyFlib = NULL;
@@ -17,3 +21,4 @@ int main(int argc, char *argv[])
     delete MyFlib;
   return 0;
 }
+#pragma GCC diagnostic pop
