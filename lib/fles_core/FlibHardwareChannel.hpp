@@ -18,7 +18,7 @@ public:
     /// The FlibHardwareChannel constructor.
     FlibHardwareChannel(std::size_t data_buffer_size_exp,
                         std::size_t desc_buffer_size_exp,
-                        flib2::flib_link* flib_link);
+                        flib::flib_link* flib_link);
 
     FlibHardwareChannel(const FlibHardwareChannel&) = delete;
     void operator=(const FlibHardwareChannel&) = delete;
@@ -83,5 +83,5 @@ private:
     RingBufferView<volatile fles::MicrosliceDescriptor> _desc_send_buffer_view;
 
     /// Associated FLIB link class.
-    flib2::flib_link* _flib_link;
+    flib::flib_link* _flib_link;
 };

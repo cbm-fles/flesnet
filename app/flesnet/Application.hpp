@@ -36,8 +36,8 @@ private:
     volatile sig_atomic_t* _signal_status;
 
     // Input node application
-    std::unique_ptr<flib2::flib_device> _flib;
-    std::vector<flib2::flib_link*> _flib_links;
+    std::unique_ptr<flib::flib_device> _flib;
+    std::vector<flib::flib_link*> _flib_links;
 
   std::unique_ptr<shm_device_client> _shm_device;
   std::size_t _shm_num_channels = 0;
