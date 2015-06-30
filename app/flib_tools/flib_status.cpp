@@ -6,13 +6,13 @@
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-using namespace flib2;
+using namespace flib;
 
-flib_device* MyFlib = NULL;
+flib_device_flesin* MyFlib = NULL;
 
 int main(int argc, char *argv[])
 {
-  MyFlib = new flib_device(0);
+  MyFlib = new flib_device_flesin(0);
 
   std::cout << MyFlib->print_build_info() << std::endl;
   std::cout << MyFlib->print_devinfo() << std::endl;

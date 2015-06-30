@@ -21,7 +21,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
-using namespace flib2;
+using namespace flib;
 
 int s_interrupted = 0;
 static void s_signal_handler (int signal_value)
@@ -50,9 +50,9 @@ int main(int argc, const char* argv[])
   // create FLIB
   try 
   {
-  flib_device flib(0);
+  flib_device_flesin flib(0);
 
-  std::vector<flib_link*> links = flib.links();
+  std::vector<flib_link_flesin*> links = flib.links();
 
   L_(info) << flib.print_build_info();
 

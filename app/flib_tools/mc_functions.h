@@ -2,7 +2,7 @@
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-using namespace flib2;
+using namespace flib;
 // DUMP functions
 void dump_raw(volatile uint64_t *buf, unsigned int size)
 {
