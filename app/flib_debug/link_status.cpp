@@ -16,7 +16,7 @@
 
 using namespace flib;
 
-flib_device* MyFlib = NULL;
+flib_device_cnet* MyFlib = NULL;
 
 std::ostream& operator<<(std::ostream& os, flib_link::data_sel_t sel)
 {
@@ -32,13 +32,13 @@ std::ostream& operator<<(std::ostream& os, flib_link::data_sel_t sel)
 
 int main(int argc, char *argv[])
 {
-  MyFlib = new flib_device(0);
+  MyFlib = new flib_device_cnet(0);
 
   std::cout << MyFlib->print_build_info() << std::endl;
   std::cout << MyFlib->print_devinfo() << std::endl;
 
   size_t num_links = MyFlib->number_of_links();
-  std::vector<flib_link*>links = MyFlib->links();
+  std::vector<flib_link_cnet*>links = MyFlib->links();
 
   std::stringstream ss;
   ss << "\nlink  data_sel  link_active  data_rx_stop  ctrl_rx_stop  ctrl_tx_stop \n";

@@ -11,14 +11,18 @@ set(LIB_SRC
   dma_channel.cpp
   register_file_bar.cpp
   flib_device.cpp
+  flib_device_cnet.cpp
   flib_link.cpp
+  flib_link_cnet.cpp
 )
 set(LIB_HDR
   flib.h
   dma_channel.hpp
   registers.h
   flib_device.hpp
+  flib_device_cnet.hpp
   flib_link.hpp
+  flib_link_cnet.hpp
   register_file.hpp
   register_file_bar.hpp
 )

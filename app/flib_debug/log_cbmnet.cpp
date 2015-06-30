@@ -31,8 +31,8 @@ int main(int argc, char *argv[])
 //    printf("\n");
   }
 
-  std::unique_ptr<flib::flib_device> flib = std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
-  std::vector<flib::flib_link*> flib_links = flib->links();
+  std::unique_ptr<flib::flib_device_cnet> flib = std::unique_ptr<flib::flib_device_cnet>(new flib::flib_device_cnet(0));
+  std::vector<flib::flib_link_cnet*> flib_links = flib->links();
 
   // delete deactivated links from vector
   flib_links.erase(std::remove_if(std::begin(flib_links), std::end(flib_links),

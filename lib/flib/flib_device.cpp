@@ -29,20 +29,11 @@ flib_device::flib_device(int device_nr) {
     throw FlibException(
         "Cannot read magic number! \n Try to reinitialize FLIB.");
   }
-
-  if (!check_hw_ver()) {
-    throw FlibException("Hardware - libflib version missmatch!");
-  }
-
-  // create link objects
-  uint8_t num_links = number_of_hw_links();
-  for (size_t i = 0; i < num_links; i++) {
-    m_link.push_back(std::unique_ptr<flib_link>(
-        new flib_link(i, m_device.get(), m_bar.get())));
-  }
 }
 
-bool flib_device::check_hw_ver() {
+flib_device::~flib_device() {}
+
+bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
   uint16_t hw_ver =
       m_register_file->reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
   std::cout << "HW Version: " << hw_ver << std::endl;
@@ -74,8 +65,6 @@ void flib_device::set_mc_time(uint32_t time) {
   reg = (reg & ~0x7FFFFFFF) | (time & 0x7FFFFFFF);
   m_register_file->set_reg(RORC_REG_MC_CNT_CFG, reg);
 }
-
-void flib_device::send_dlm() { m_register_file->set_reg(RORC_REG_DLM_CFG, 1); }
 
 uint8_t flib_device::number_of_hw_links() {
   return (m_register_file->reg(RORC_REG_N_CHANNELS) & 0xFF);
@@ -180,7 +169,7 @@ std::vector<flib_link*> flib_device::links() {
   return links;
 }
 
-flib_link& flib_device::link(size_t n) { return *m_link.at(n); }
+flib_link* flib_device::link(size_t n) { return m_link.at(n).get(); }
 
 register_file_bar* flib_device::rf() const { return m_register_file.get(); }
 

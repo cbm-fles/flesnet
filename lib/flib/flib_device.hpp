@@ -28,19 +28,15 @@ struct build_info_t {
   uint8_t repo;
 };
 
-constexpr std::array<uint16_t, 1> hw_ver_table = {{8}};
-
 class flib_device {
 
 public:
   flib_device(int device_nr);
-  ~flib_device(){};
+  virtual ~flib_device() = 0;
 
-  bool check_hw_ver();
+  bool check_hw_ver(std::array<uint16_t, 1> hw_ver_table);
   void enable_mc_cnt(bool enable);
   void set_mc_time(uint32_t time);
-  void send_dlm();
-  /** global dlm send, requires link local prepare_dlm beforehand */
   uint8_t number_of_hw_links();
 
   uint16_t hardware_version();
@@ -53,10 +49,10 @@ public:
 
   size_t number_of_links();
   std::vector<flib_link*> links();
-  flib_link& link(size_t n);
+  flib_link* link(size_t n);
   register_file_bar* rf() const;
 
-private:
+protected:
 
   /** Member variables */
   std::unique_ptr<pda::device> m_device;
@@ -67,4 +63,4 @@ private:
   bool check_magic_number();
 };
 
-} /** namespace flib */
+} // namespace

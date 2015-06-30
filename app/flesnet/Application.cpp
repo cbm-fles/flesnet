@@ -40,7 +40,7 @@ Application::Application(Parameters const& par,
         // TODO: presence detection #524
         try {
             _flib =
-                std::unique_ptr<flib::flib_device>(new flib::flib_device(0));
+                std::unique_ptr<flib::flib_device>(new flib::flib_device_cnet(0));
             _flib_links = _flib->links();
 
             // delete deactivated links from vector

@@ -16,8 +16,8 @@ class flib_ctrl_server {
   
   zmq::context_t& _zmq_context;
   std::string _path;
-  flib::flib_device &_device;
-  flib::flib_link &_link;
+  flib::flib_device_cnet &_device;
+  flib::flib_link_cnet &_link;
   zmq::socket_t _driver_req;
   zmq::socket_t _driver_res;
   boost::thread _driver_thread;
@@ -35,8 +35,8 @@ public:
 
   flib_ctrl_server(zmq::context_t& context,
               std::string path,
-              flib::flib_device &device,
-              flib::flib_link &link)
+              flib::flib_device_cnet &device,
+              flib::flib_link_cnet &link)
     : _zmq_context(context),
       _path(path),
       _device(device),
@@ -147,7 +147,7 @@ public:
 
   void ProcEvent()
   {
-    flib::flib_link::ctrl_msg_t cnet_s_msg;
+    flib::flib_link_cnet::ctrl_msg_t cnet_s_msg;
    
     // get messsage
     size_t msg_size = _driver_req.recv(cnet_s_msg.data, sizeof(cnet_s_msg.data));
@@ -184,9 +184,9 @@ public:
     return;
   }
 
-  void SendCtrl(flib::flib_link::ctrl_msg_t& cnet_s_msg)
+  void SendCtrl(flib::flib_link_cnet::ctrl_msg_t& cnet_s_msg)
   {
-    flib::flib_link::ctrl_msg_t cnet_r_msg;
+    flib::flib_link_cnet::ctrl_msg_t cnet_r_msg;
 
     L_(info) << "sending control message";
 
@@ -228,7 +228,7 @@ public:
     return;
   }
 
-  void SendDlm(flib::flib_link::ctrl_msg_t& cnet_s_msg)
+  void SendDlm(flib::flib_link_cnet::ctrl_msg_t& cnet_s_msg)
   {
     L_(info) << "Sending DLM "
                 << std::hex << "0x" << cnet_s_msg.data[0];
@@ -242,7 +242,7 @@ public:
     return;
   }
 
-  void FlibRead(flib::flib_link::ctrl_msg_t& cnet_s_msg)
+  void FlibRead(flib::flib_link_cnet::ctrl_msg_t& cnet_s_msg)
   {
     L_(debug) << "Reading FLIB link register: " << std::hex
                 << "addr " << cnet_s_msg.data[0];
@@ -255,7 +255,7 @@ public:
     return;
   }
 
-  void FlibWrite(flib::flib_link::ctrl_msg_t& cnet_s_msg)
+  void FlibWrite(flib::flib_link_cnet::ctrl_msg_t& cnet_s_msg)
   {
     uint32_t addr = cnet_s_msg.data[1]<<16 | cnet_s_msg.data[0];
     uint32_t data = cnet_s_msg.data[3]<<16 | cnet_s_msg.data[2];

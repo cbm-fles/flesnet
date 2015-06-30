@@ -16,7 +16,7 @@
 
 using namespace flib;
 
-flib_device* MyFlib = NULL;
+flib_device_cnet* MyFlib = NULL;
 
 
 int main(int argc, char *argv[])
@@ -32,10 +32,10 @@ int main(int argc, char *argv[])
     return -1;
   }
       
-  MyFlib = new flib_device(0);
+  MyFlib = new flib_device_cnet(0);
 
   printf("reseting CBMnet link %lu\n", link_nr);
-  MyFlib->link(link_nr).rst_cnet_link();
+  MyFlib->link(link_nr)->rst_cnet_link();
 
   if (MyFlib) delete MyFlib;
   

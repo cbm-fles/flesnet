@@ -18,7 +18,7 @@
 
 using namespace flib;
 
-flib_device* MyFlib = NULL;
+flib_device_cnet* MyFlib = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -30,10 +30,10 @@ int main(int argc, char *argv[])
   unsigned int dlm = atoi(argv[2]);
   if (dlm > 15) {printf("./dlm link num with 0 <= num <= 15\n"); return -1;}
       
-  MyFlib = new flib_device(0);
+  MyFlib = new flib_device_cnet(0);
 
-  MyFlib->link(link).prepare_dlm(dlm, true);
-  MyFlib->link(link).send_dlm();
+  MyFlib->link(link)->prepare_dlm(dlm, true);
+  MyFlib->link(link)->send_dlm();
 
   if (MyFlib) delete MyFlib;
   

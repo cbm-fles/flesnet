@@ -11,7 +11,7 @@ static const uint8_t SYNC_DLM {1};
 
 int main()
 {
-    flib::flib_device flib {0};
+    flib::flib_device_cnet flib {0};
 
     for (auto link : flib.links()) {
         link->prepare_dlm(SYNC_DLM, true);

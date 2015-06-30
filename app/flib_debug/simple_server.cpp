@@ -43,9 +43,9 @@ int main(int argc, const char* argv[])
   // create FLIB
   try 
   {
-  flib::flib_device flib(0);
+  flib::flib_device_cnet flib(0);
 
-  std::vector<flib::flib_link*> links = flib.links();
+  std::vector<flib::flib_link_cnet*> links = flib.links();
 
   L_(info) << flib.print_build_info();
 
