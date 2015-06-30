@@ -34,9 +34,11 @@ Build Dependencies
 ------------------
 
 sudo aptitude install gcc make cmake valgrind \
- doxygen libnuma-dev librdmacm-dev libibverbs-dev git
+ doxygen libnuma-dev librdmacm-dev libibverbs-dev git \
+ libzmq3-dev libboost1.55-all-dev
 
-Fairroot external packages
+Optional: Fairroot external packages
+ ZMQ and Boost can alternatively be used from a Fairsoft external packages installation.
  See http://fairroot.gsi.de/?q=node/8
  After installing set SIMPATH to point to this installation
 
@@ -72,10 +74,6 @@ compilation errors.
 
 Building flesnet
 ----------------
-The environment variable SIMPATH has to point to the fairroot external 
-packages installation, e.g.
-'export SIMPATH /opt/fairsoft/mar15p1_build'
-
 For compiling flesnet with Controls API support set the environment variable
 CNETCNTLSERVER_PATH to the cbmnetcntlserver library and include location
 found in the cbmroot repository, e.g.

@@ -33,9 +33,8 @@ bool TimesliceAnalyzer::check_flesnet_pattern(
 }
 
 bool TimesliceAnalyzer::check_flib_pattern(
-                                           const fles::MicrosliceDescriptor& /* descriptor */,
-                                           const uint64_t* /* content */,
-                                           size_t /* component */)
+    const fles::MicrosliceDescriptor& /* descriptor */,
+    const uint64_t* /* content */, size_t /* component */)
 {
     // TODO
     return true;

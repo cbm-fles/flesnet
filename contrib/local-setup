@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+DIR="$(git rev-parse --show-toplevel)"
+cd "$DIR"
+
+# check if clang-format is installed
+if [ -z "`which clang-format`" -o -z "`which git-clang-format`" ]; then
+	echo "Please install clang-format."
+	echo "If using Mac OS X, use 'brew install clang-format'."
+	echo "Setup not successful."
+	exit 1
+fi
+
+# add configuration for git-clang-format
+git config --local --add clangFormat.style file
+git config --local --add clangFormat.extension hpp,cpp
+
+# install pre-commit hook
+cp -p contrib/pre-commit.hook .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit

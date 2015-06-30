@@ -77,7 +77,8 @@ private:
         _desc_buffer_view;
 
     RingBuffer<volatile uint8_t, true, true> _data_send_buffer;
-    RingBuffer<volatile fles::MicrosliceDescriptor, true, true> _desc_send_buffer;
+    RingBuffer<volatile fles::MicrosliceDescriptor, true, true>
+        _desc_send_buffer;
 
     RingBufferView<volatile uint8_t> _data_send_buffer_view;
     RingBufferView<volatile fles::MicrosliceDescriptor> _desc_send_buffer_view;

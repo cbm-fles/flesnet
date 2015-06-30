@@ -1,6 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Parameters.hpp"
+#include <iostream>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -42,8 +43,8 @@ void Parameters::parse_options(int argc, char* argv[])
         exit(EXIT_SUCCESS);
     }
 
-    int input_sources = vm.count("shm-identifier") + vm.count("input-archive") +
-                        vm.count("subscribe");
+    size_t input_sources = vm.count("shm-identifier") +
+                           vm.count("input-archive") + vm.count("subscribe");
     if (input_sources == 0)
         throw ParametersException("no input source specified");
     if (input_sources > 1)

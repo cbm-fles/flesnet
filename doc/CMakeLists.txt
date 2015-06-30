@@ -18,8 +18,8 @@ if(DOXYGEN_FOUND)
                     COMMAND ${DOXYGEN} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
                     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
-else(DOXYGEN_FOUND)
+else()
 
     message(STATUS "WARNING: Failed to find Doxygen - won't build documentation")
 
-endif(DOXYGEN_FOUND)
+endif()

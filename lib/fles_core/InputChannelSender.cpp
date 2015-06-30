@@ -71,7 +71,8 @@ void InputChannelSender::report_status()
 
     double delta_t =
         std::chrono::duration<double, std::chrono::seconds::period>(
-            status_mc.time - _previous_send_buffer_status_mc.time).count();
+            status_mc.time - _previous_send_buffer_status_mc.time)
+            .count();
     double rate_mc =
         static_cast<double>(status_mc.acked -
                             _previous_send_buffer_status_mc.acked) /

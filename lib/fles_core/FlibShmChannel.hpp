@@ -38,11 +38,9 @@ public:
                                      uint64_t new_acked_mc) override;
 
 private:
+    shm_channel_client* _channel;
 
-  shm_channel_client* _channel; 
-  
     std::unique_ptr<RingBufferView<volatile uint8_t>> _data_buffer_view;
     std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>
         _desc_buffer_view;
-
 };

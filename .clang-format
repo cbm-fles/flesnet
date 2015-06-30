@@ -1,5 +1,5 @@
-BasedOnStyle: llvm
-AccessModifierOffset: -4
-PointerBindsToType: true
+BasedOnStyle: LLVM
 IndentWidth: 4
+AccessModifierOffset: -4
+PointerAlignment: Left
 BreakBeforeBraces: Linux

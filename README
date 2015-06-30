@@ -60,11 +60,6 @@ The control library including the cliclient is now part of
 the CBMroot repository.
 Please see the CBMroot repository for further information.
 
-General:
---------
-
-SIMPATH has to point to a fairroot external packages installation
-
 
 Preparing the FLIB
 ==================

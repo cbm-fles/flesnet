@@ -18,56 +18,60 @@ Application::Application(Parameters const& par,
 
     // FIXME: some of this is a terrible mess
     if (par.use_flib()) {
-      if (par.use_shared_memory()) {
-        try {
-          _shm_device = std::unique_ptr<shm_device_client>(new shm_device_client());
-          _shm_num_channels = _shm_device->num_channels();
-          L_(info) << "using shared memory";
+        if (par.use_shared_memory()) {
+            try {
+                _shm_device =
+                    std::unique_ptr<shm_device_client>(new shm_device_client());
+                _shm_num_channels = _shm_device->num_channels();
+                L_(info) << "using shared memory";
 
-          // increase number of input nodes to match number of
-          // enabled FLIB links if in stand-alone mode
-          if (par.standalone() && _shm_num_channels > 1) {
-            input_nodes_size = _shm_num_channels;
-            for (unsigned i = 1; i < input_nodes_size; i++) {
-              input_indexes.push_back(i);
-            }
-          }
-
-        } catch (std::exception const& e) {
-          L_(error) << "exception while creating flib: " << e.what();
-        }
-      } else {
-        // TODO: presence detection #524
-        try {
-            _flib =
-                std::unique_ptr<flib::flib_device>(new flib::flib_device_cnet(0));
-            _flib_links = _flib->links();
-
-            // delete deactivated links from vector
-            _flib_links.erase(
-                std::remove_if(std::begin(_flib_links), std::end(_flib_links),
-                               [](decltype(_flib_links[0]) link) {
-                    return link->data_sel() == flib::flib_link::rx_disable;
-                }),
-                std::end(_flib_links));
-
-            L_(info) << "enabled flib links detected: " << _flib_links.size();
-
-            // increase number of input nodes to match number of
-            // enabled FLIB links if in stand-alone mode
-            if (par.standalone() && _flib_links.size() > 1) {
-                input_nodes_size = _flib_links.size();
-                for (unsigned i = 1; i < input_nodes_size; i++) {
-                    input_indexes.push_back(i);
+                // increase number of input nodes to match number of
+                // enabled FLIB links if in stand-alone mode
+                if (par.standalone() && _shm_num_channels > 1) {
+                    input_nodes_size = _shm_num_channels;
+                    for (unsigned i = 1; i < input_nodes_size; i++) {
+                        input_indexes.push_back(i);
+                    }
                 }
+
+            } catch (std::exception const& e) {
+                L_(error) << "exception while creating flib: " << e.what();
             }
-        } catch (std::exception const& e) {
-            L_(error) << "exception while creating flib: " << e.what();
+        } else {
+            // TODO: presence detection #524
+            try {
+                _flib = std::unique_ptr<flib::flib_device>(
+                    new flib::flib_device_cnet(0));
+                _flib_links = _flib->links();
+
+                // delete deactivated links from vector
+                _flib_links.erase(
+                    std::remove_if(std::begin(_flib_links),
+                                   std::end(_flib_links),
+                                   [](decltype(_flib_links[0]) link) {
+                                       return link->data_sel() ==
+                                              flib::flib_link::rx_disable;
+                                   }),
+                    std::end(_flib_links));
+
+                L_(info) << "enabled flib links detected: "
+                         << _flib_links.size();
+
+                // increase number of input nodes to match number of
+                // enabled FLIB links if in stand-alone mode
+                if (par.standalone() && _flib_links.size() > 1) {
+                    input_nodes_size = _flib_links.size();
+                    for (unsigned i = 1; i < input_nodes_size; i++) {
+                        input_indexes.push_back(i);
+                    }
+                }
+            } catch (std::exception const& e) {
+                L_(error) << "exception while creating flib: " << e.what();
+            }
         }
-    }
     }
     // end FIXME
-    
+
     if (par.standalone()) {
         L_(info) << "flesnet in stand-alone mode, inputs: " << input_nodes_size;
     }
@@ -103,18 +107,22 @@ Application::Application(Parameters const& par,
             data_source = std::unique_ptr<DataSource>(new FlibHardwareChannel(
                 par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
                 _flib_links.at(c)));
-        } else if (c < _shm_num_channels) { 
-            data_source = std::unique_ptr<DataSource>(new FlibShmChannel(
-                _shm_device->channels().at(c)));
+        } else if (c < _shm_num_channels) {
+            data_source = std::unique_ptr<DataSource>(
+                new FlibShmChannel(_shm_device->channels().at(c)));
         } else {
             if (false) {
-                data_source = std::unique_ptr<DataSource>(new FlibPatternGenerator(
-                    par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
-                    index, par.typical_content_size()));
+                data_source =
+                    std::unique_ptr<DataSource>(new FlibPatternGenerator(
+                        par.in_data_buffer_size_exp(),
+                        par.in_desc_buffer_size_exp(), index,
+                        par.typical_content_size()));
             } else {
-                data_source = std::unique_ptr<DataSource>(new EmbeddedPatternGenerator(
-                    par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
-                    index, par.typical_content_size()));
+                data_source =
+                    std::unique_ptr<DataSource>(new EmbeddedPatternGenerator(
+                        par.in_data_buffer_size_exp(),
+                        par.in_desc_buffer_size_exp(), index,
+                        par.typical_content_size()));
             }
         }
 
@@ -147,7 +155,8 @@ Application::~Application()
 
 void Application::run()
 {
-    // Do not spawn additional thread if only one is needed, simplifies debugging
+    // Do not spawn additional thread if only one is needed, simplifies
+    // debugging
     if (_compute_buffers.size() == 1 && _input_channel_senders.empty()) {
         L_(debug) << "using existing thread for single compute buffer";
         (*_compute_buffers[0])();
