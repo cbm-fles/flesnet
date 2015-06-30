@@ -3,3 +3,5 @@
 /lib/fles_ipc/Makefile
 /lib/flib/Makefile
 /lib/logging/Makefile
+project.xcworkspace/
+xcuserdata/
