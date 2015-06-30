@@ -36,10 +36,11 @@ namespace logging
 {
 std::string fancy_icon(severity_level level)
 {
-    static const char* icons[] = {u8"\U0001F463", // alternative: 2767
-                                  u8"\U0001F41B", // alternative: 2761
-                                  u8"\u2139",     u8"\u26a0", u8"\u2718",
-                                  u8"\U0001F480" // alternative: 26A1, 2762
+    static const char* icons[] = {
+        u8"\U0001F463", // alternative: 2767
+        u8"\U0001F41B", // alternative: 2761
+        u8"\u2139",     u8"\u26a0", u8"\u2718",
+        u8"\U0001F480" // alternative: 26A1, 2762
     };
 
     if (static_cast<std::size_t>(level) < sizeof(icons) / sizeof(*icons))
