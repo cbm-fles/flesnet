@@ -34,7 +34,6 @@ add_definitions(-DBOOST_LOG_DYN_LINK)
 add_subdirectory(lib/logging)
 add_subdirectory(lib/fles_core)
 add_subdirectory(lib/flib)
-add_subdirectory(lib/flib2)
 add_subdirectory(lib/pda)
 
 ExternalProject_add(
