@@ -25,7 +25,6 @@ set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -Wall -pedantic -Wextra -Winit-self -W
 
 find_package(Boost 1.54.0 REQUIRED COMPONENTS log serialization thread program_options system unit_test_framework)
 find_package(Threads)
-find_package(PDA 10.2.6 REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
@@ -33,19 +32,25 @@ add_definitions(-DBOOST_LOG_DYN_LINK)
 
 add_subdirectory(lib/logging)
 add_subdirectory(lib/fles_ipc)
-add_subdirectory(lib/fles_core)
-add_subdirectory(lib/flib)
-add_subdirectory(lib/flib2)
-add_subdirectory(lib/pda)
 
-add_subdirectory(app/flesnet)
 add_subdirectory(app/tsclient)
-add_subdirectory(app/flib_debug)
-add_subdirectory(app/flib_tools)
-add_subdirectory(app/flib_ctrl)
-add_subdirectory(app/flib_cfg)
-add_subdirectory(app/flib_server)
 
 add_subdirectory(doc)
 
-add_subdirectory(contrib)
+if(UNIX AND NOT APPLE)
+  find_package(PDA 10.2.6 REQUIRED)
+
+  add_subdirectory(lib/fles_core)
+  add_subdirectory(lib/flib)
+  add_subdirectory(lib/flib2)
+  add_subdirectory(lib/pda)
+
+  add_subdirectory(app/flesnet)
+  add_subdirectory(app/flib_debug)
+  add_subdirectory(app/flib_tools)
+  add_subdirectory(app/flib_ctrl)
+  add_subdirectory(app/flib_cfg)
+  add_subdirectory(app/flib_server)
+
+  add_subdirectory(contrib)
+endif()

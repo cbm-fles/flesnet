@@ -1,6 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Parameters.hpp"
+#include <iostream>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
