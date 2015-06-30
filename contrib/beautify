@@ -1,8 +1,12 @@
 #!/bin/bash
 
+set -e
 shopt -u nocaseglob
 LANG=C
 
-clang-format-3.6 -style=file -i \
+DIR="$(git rev-parse --show-toplevel)"
+cd "$DIR"
+
+clang-format -style=file -fallback-style=none -i \
   lib/fles_core/*.[hc]pp \
   app/{flesnet,tsclient}/*.[hc]pp
