@@ -1,4 +1,4 @@
-# Copyright 2013-2014 Jan de Cuveland <cmail@cuveland.de>
+# Copyright 2013-2015 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 include(ExternalProject)
@@ -7,10 +7,15 @@ project(fles)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
-IF(NOT DEFINED ENV{SIMPATH})
- MESSAGE(FATAL_ERROR "Path to Fairroot external packages is not set. Please set SIMPATH.")
-ENDIF(NOT DEFINED ENV{SIMPATH})
-SET(SIMPATH $ENV{SIMPATH})
+if(DEFINED ENV{SIMPATH})
+  message(WARNING "SIMPATH set, using Fairroot external packages in build.")
+  set(Boost_NO_SYSTEM_PATHS TRUE)
+  set(BOOST_ROOT $ENV{SIMPATH})
+  set(SIMPATH $ENV{SIMPATH})
+  find_package(ZMQ REQUIRED)
+else(DEFINED ENV{SIMPATH})
+  find_library(ZMQ_LIBRARIES zmq)
+endif(DEFINED ENV{SIMPATH})
 
 #set(CMAKE_C_COMPILER clang)
 #set(CMAKE_CXX_COMPILER clang++)
@@ -19,12 +24,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
 
-set(Boost_NO_SYSTEM_PATHS TRUE)
-set(BOOST_ROOT ${SIMPATH})
-
-find_package(Boost 1.54.0 COMPONENTS log serialization thread program_options system REQUIRED)
+find_package(Boost 1.54.0 REQUIRED COMPONENTS log serialization thread program_options system unit_test_framework)
 find_package(Threads)
-find_package(ZMQ REQUIRED)
 find_package(PDA 10.2.6 REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
