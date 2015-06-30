@@ -12,8 +12,10 @@ set(LIB_SRC
   register_file_bar.cpp
   flib_device.cpp
   flib_device_cnet.cpp
+  flib_device_flesin.cpp
   flib_link.cpp
   flib_link_cnet.cpp
+  flib_link_flesin.cpp
 )
 set(LIB_HDR
   flib.h
@@ -21,8 +23,10 @@ set(LIB_HDR
   registers.h
   flib_device.hpp
   flib_device_cnet.hpp
+  flib_device_flesin.hpp
   flib_link.hpp
   flib_link_cnet.hpp
+  flib_link_flesin.hpp
   register_file.hpp
   register_file_bar.hpp
 )

@@ -15,8 +15,8 @@ namespace po = boost::program_options;
 static const size_t _num_flib_links = 8;  
 
 struct link_config {
-  flib2::flib_link::data_sel_t rx_sel;
-  flib2::flib_link::hdr_config_t hdr_config;
+  flib::flib_link::data_sel_t rx_sel;
+  flib::flib_link::hdr_config_t hdr_config;
 };
 
 class parameters {
@@ -162,7 +162,7 @@ private:
         std::string source = vm["l" + std::to_string(i) + "_source"].as<std::string>();
         
         if ( source == "link" ) {
-          _link_config.at(i).rx_sel = flib2::flib_link::rx_link;
+          _link_config.at(i).rx_sel = flib::flib_link::rx_link;
           std::cout << " data source: link" << std::endl;
           if (vm.count("l" + std::to_string(i) + "_sys_id") && vm.count("l" + std::to_string(i) + "_sys_ver")) {
             _link_config.at(i).hdr_config.sys_id = boost::numeric_cast<uint8_t>
@@ -179,19 +179,19 @@ private:
           }
         
         } else if (source == "pgen") {
-          _link_config.at(i).rx_sel = flib2::flib_link::rx_pgen;
+          _link_config.at(i).rx_sel = flib::flib_link::rx_pgen;
           std::cout << " data source: pgen" << std::endl;
           _link_config.at(i).hdr_config.sys_id = 0xF0;
           _link_config.at(i).hdr_config.sys_ver = 0x01;
         
         } else if (source == "disable") {
-          _link_config.at(i).rx_sel = flib2::flib_link::rx_disable;
+          _link_config.at(i).rx_sel = flib::flib_link::rx_disable;
           std::cout << " data source: disable" << std::endl;
           _link_config.at(i).hdr_config.sys_id = 0xF2;
           _link_config.at(i).hdr_config.sys_ver = 0x01;
         
         } else if (source == "emu") {
-          _link_config.at(i).rx_sel = flib2::flib_link::rx_emu;
+          _link_config.at(i).rx_sel = flib::flib_link::rx_emu;
           std::cout << " data source: emu" << std::endl;
           _link_config.at(i).hdr_config.sys_id = 0xF1;
           _link_config.at(i).hdr_config.sys_ver = 0x01;
@@ -202,7 +202,7 @@ private:
         }
       
       } else { // set default parameters
-        _link_config.at(i).rx_sel = flib2::flib_link::rx_disable;
+        _link_config.at(i).rx_sel = flib::flib_link::rx_disable;
         std::cout << " data source: disable (default)" << std::endl;
         _link_config.at(i).hdr_config.sys_id = 0xF2;
         _link_config.at(i).hdr_config.sys_ver = 0x01;        

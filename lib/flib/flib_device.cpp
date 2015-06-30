@@ -47,11 +47,12 @@ bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
     }
   }
 
+  // INFO: disabled check to allow 'mixed' hw headers
   // check if version of hardware matches exactly version of header
-  if (hw_ver != RORC_C_HARDWARE_VERSION) {
-    std::cout << "header file version missmatch" << std::endl;
-    match = false;
-  }
+  //if (hw_ver != RORC_C_HARDWARE_VERSION) {
+  //  std::cout << "header file version missmatch" << std::endl;
+  //  match = false;
+  //}
   return match;
 }
 

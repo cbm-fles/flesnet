@@ -34,8 +34,8 @@ int main(int argc, char* argv[])
   zmq::context_t zmq_context(1);
 
   // create FLIB
-  flib2::flib_device flib(0);
-  std::vector<flib2::flib_link*> links = flib.links();
+  flib::flib_device_flesin flib(0);
+  std::vector<flib::flib_link_flesin*> links = flib.links();
 
   // FLIB global configuration
   flib.set_mc_time(par.mc_size());
