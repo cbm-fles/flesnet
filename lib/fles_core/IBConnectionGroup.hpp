@@ -208,7 +208,8 @@ public:
     void summary() const
     {
         double runtime = std::chrono::duration_cast<std::chrono::microseconds>(
-                             _time_end - _time_begin).count();
+                             _time_end - _time_begin)
+                             .count();
         L_(info) << "summary: " << _aggregate_send_requests << " SEND, "
                  << _aggregate_recv_requests << " RECV requests";
         double rate = static_cast<double>(_aggregate_bytes_sent) / runtime;

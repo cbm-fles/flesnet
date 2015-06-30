@@ -8,11 +8,13 @@
 #include <stdexcept>
 
 /// Simple generic ring buffer class.
-template <typename T, bool CLEARED = false, bool PAGE_ALIGNED = false> class RingBuffer
+template <typename T, bool CLEARED = false, bool PAGE_ALIGNED = false>
+class RingBuffer
 {
 public:
-    void _array_delete(T* ptr, size_t size) const {
-        while(size) {
+    void _array_delete(T* ptr, size_t size) const
+    {
+        while (size) {
             ptr[--size].~T();
         }
         free(const_cast<typename std::remove_volatile<T>::type*>(ptr));
@@ -53,25 +55,33 @@ public:
         _size_mask = _size - 1;
         if (PAGE_ALIGNED) {
             void* buf;
-            int ret = posix_memalign(&buf, sysconf(_SC_PAGESIZE), sizeof(T) * _size);
+            int ret =
+                posix_memalign(&buf, sysconf(_SC_PAGESIZE), sizeof(T) * _size);
             if (ret != 0) {
-                throw std::runtime_error(std::string("posix_memalign: ") + strerror(ret));
+                throw std::runtime_error(std::string("posix_memalign: ") +
+                                         strerror(ret));
             }
             if (CLEARED) {
                 // TODO: hack for gcc < 4.8
-                //_buf = buf_t(new(buf) T[_size](), [&](T* ptr){ _array_delete(ptr, _size); });
-                _buf = buf_t(new(buf) T[_size](), [&](T* ptr){
+                //_buf = buf_t(new(buf) T[_size](), [&](T* ptr){
+                //_array_delete(ptr, _size); });
+                _buf = buf_t(new (buf) T[_size](), [&](T* ptr) {
                     size_t size = _size;
-                    while(size) { ptr[--size].~T();}
-                    free(const_cast<typename std::remove_volatile<T>::type*>(ptr));});
+                    while (size) {
+                        ptr[--size].~T();
+                    }
+                    free(const_cast<typename std::remove_volatile<T>::type*>(
+                        ptr));
+                });
             } else {
-                _buf = buf_t(new(buf) T[_size], [&](T* ptr){ _array_delete(ptr, _size); });
+                _buf = buf_t(new (buf) T[_size],
+                             [&](T* ptr) { _array_delete(ptr, _size); });
             }
         } else {
             if (CLEARED) {
-                _buf = buf_t(new T[_size](), [&](T* ptr){ delete [] ptr; });
+                _buf = buf_t(new T[_size](), [&](T* ptr) { delete[] ptr; });
             } else {
-                _buf = buf_t(new T[_size], [&](T* ptr){ delete [] ptr; });
+                _buf = buf_t(new T[_size], [&](T* ptr) { delete[] ptr; });
             }
         }
     }
