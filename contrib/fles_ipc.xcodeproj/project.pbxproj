@@ -415,7 +415,7 @@
 					"-lzmq",
 				);
 				SDKROOT = macosx;
-				SIMPATH = /opt/fairsoft/mar15_build;
+				SIMPATH = /usr/local;
 			};
 			name = Debug;
 		};
@@ -486,7 +486,7 @@
 					"-lzmq",
 				);
 				SDKROOT = macosx;
-				SIMPATH = /opt/fairsoft/mar15_build;
+				SIMPATH = /usr/local;
 			};
 			name = Release;
 		};
