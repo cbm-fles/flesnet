@@ -51,9 +51,9 @@ namespace flib {
     memset(m_desc_buffer->mem(), 0, m_desc_buffer->size());
 
     m_eb = reinterpret_cast<uint64_t*>(m_data_buffer->mem());
-    m_db = reinterpret_cast<struct MicrosliceDescriptor*>(m_desc_buffer->mem());
+    m_db = reinterpret_cast<struct fles::MicrosliceDescriptor*>(m_desc_buffer->mem());
     m_dbentries = m_desc_buffer->size() /
-      sizeof(struct MicrosliceDescriptor);
+      sizeof(struct fles::MicrosliceDescriptor);
 
     
     configure();
@@ -91,9 +91,9 @@ namespace flib {
     memset(m_desc_buffer->mem(), 0, m_desc_buffer->size());
 
     m_eb = reinterpret_cast<uint64_t*>(m_data_buffer->mem());
-    m_db = reinterpret_cast<struct MicrosliceDescriptor*>(m_desc_buffer->mem());
+    m_db = reinterpret_cast<struct fles::MicrosliceDescriptor*>(m_desc_buffer->mem());
     m_dbentries = m_desc_buffer->size() /
-      sizeof(struct MicrosliceDescriptor);
+      sizeof(struct fles::MicrosliceDescriptor);
 
     configure();
     enable();
@@ -105,7 +105,7 @@ namespace flib {
   
 void dma_channel::set_sw_read_pointers(uint64_t data_offset, uint64_t desc_offset) {
   assert(data_offset % m_dma_transfer_size == 0);
-  assert(desc_offset % sizeof(MicrosliceDescriptor) == 0);
+  assert(desc_offset % sizeof(fles::MicrosliceDescriptor) == 0);
 
   sw_read_pointers_t offsets;
   offsets.data_low  = get_lo_32(data_offset);
@@ -172,7 +172,7 @@ int dma_channel::ack_mc() {
   // to calculate end wrapping logic is required
   uint64_t eb_offset = m_db[m_last_index].offset & ((UINT64_C(1) << m_data_buffer_log_size) - 1);
   // each rbenty is 32 bytes, this is hard coded in HW
-  uint64_t rb_offset = m_last_index * sizeof(struct MicrosliceDescriptor) &
+  uint64_t rb_offset = m_last_index * sizeof(struct fles::MicrosliceDescriptor) &
                        ((1 << m_desc_buffer_log_size) - 1);
 
 #ifdef DEBUG
@@ -201,7 +201,7 @@ void dma_channel::configure() {
   configure_sg_manager(desc_sg_bram);  
   set_dma_transfer_size();
   uint64_t data_buffer_offset = m_data_buffer->size() - m_dma_transfer_size;
-  uint64_t desc_buffer_offset = m_desc_buffer->size() - sizeof(MicrosliceDescriptor);
+  uint64_t desc_buffer_offset = m_desc_buffer->size() - sizeof(fles::MicrosliceDescriptor);
   set_sw_read_pointers(data_buffer_offset, desc_buffer_offset);
 }
 

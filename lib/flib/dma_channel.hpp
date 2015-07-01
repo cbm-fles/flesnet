@@ -11,6 +11,7 @@
 
 #include <pda/dma_buffer.hpp>
 #include <pda/data_structures.hpp>
+#include <fles_ipc/src/MicrosliceDescriptor.hpp>
 #include <flib_link.hpp>
 #include <register_file.hpp>
 
@@ -148,7 +149,7 @@ namespace flib {
     uint32_t m_reg_dmactrl_cached;
 
     volatile uint64_t* m_eb = nullptr;
-    volatile struct MicrosliceDescriptor* m_db = nullptr;
+    volatile struct fles::MicrosliceDescriptor* m_db = nullptr;
     uint64_t m_index = 0;
     uint64_t m_last_index = 0;
     uint64_t m_last_acked = 0;

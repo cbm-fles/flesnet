@@ -59,7 +59,7 @@ int main(int argc, const char* argv[])
   flib.set_mc_time(500);
 
   std::vector<uint64_t*> eb;
-  std::vector<MicrosliceDescriptor*> rb;
+  std::vector<fles::MicrosliceDescriptor*> rb;
   std::vector<void*> data_mem;
   std::vector<void*> desc_mem;
 
@@ -94,7 +94,7 @@ int main(int argc, const char* argv[])
     L_(info) << "Desciptor Buffer" << links.at(i)->channel()->desc_buffer_info();
     // get raw pointers for debugging
     eb.push_back((uint64_t *)links.at(i)->channel()->data_buffer());
-    rb.push_back((MicrosliceDescriptor *)links.at(i)->channel()->desc_buffer());
+    rb.push_back((fles::MicrosliceDescriptor *)links.at(i)->channel()->desc_buffer());
     
     // set start index
     links.at(i)->set_start_idx(1);
