@@ -10,12 +10,9 @@
 #include <unistd.h> //sysconf
 
 #include <pda/dma_buffer.hpp>
+#include <pda/data_structures.hpp>
 #include <flib_link.hpp>
 #include <register_file.hpp>
-
-#ifndef PAGE_SIZE
-#define PAGE_SIZE sysconf(_SC_PAGESIZE)
-#endif
 
 #define BIT_SGENTRY_CTRL_WRITE_EN 31
 #define BIT_SGENTRY_CTRL_TARGET 30
