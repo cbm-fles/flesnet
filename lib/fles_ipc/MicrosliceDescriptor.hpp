@@ -18,6 +18,7 @@ namespace fles
  * fles::MicrosliceDescriptor::sys_id variable.
  */
 enum class SubsystemIdentifier : uint8_t {
+    // CBM detectors
     STS = 0x10,  ///< Silicon Tracking System (STS)
     MVD = 0x20,  ///< Micro-Vertex Detector (MVD)
     RICH = 0x30, ///< Ring Imaging CHerenkov detector (RICH)
@@ -26,7 +27,26 @@ enum class SubsystemIdentifier : uint8_t {
     RPC = 0x60,  ///< Resistive Plate Chambers (RPC)
     ECAL = 0x70, ///< Electromagnetic CALorimeter (ECAL)
     PSD = 0x80,  ///< Projectile Spectator Detector (PSD)
-    FLES = 0xF0  ///< First-level Event Selector (FLES)
+
+    // Other detectors (experimental)
+    TRB3 = 0xE0,      ///< TRB3 Stream
+    Hodoscope = 0xE1, ///< Fiber Hodoscope
+    Cherenkov = 0xE2, ///< Cherenkov
+    LeadGlass = 0xE3, ///< Lead Glas Calorimeter
+
+    // FLES (pattern generators)
+    FLES = 0xF0 ///< First-level Event Selector (FLES)
+};
+
+enum class SubsystemFormatFLES : uint8_t {
+    // FLIB hardware pattern generators
+    CbmNetPattern = 0x10, ///< FLIB hardware pattern generator ("pgen")
+    CbmNetFrontendEmulation = 0x11, ///< FLIB front-end emulation ("emu")
+    FlibPattern = 0x20,
+
+    // Flesnet software pattern generators
+    Uninitialized = 0x80,   ///< Uninitialized data content (without crc)
+    BasicRampPattern = 0x81 ///< Basic test pattern (without crc)
 };
 
 /**
@@ -58,7 +78,7 @@ struct MicrosliceDescriptor {
     uint16_t eq_id;  ///< Equipment identifier
     uint16_t flags;  ///< Status and error flags
     uint8_t sys_id;  ///< Subsystem identifier
-    uint8_t sys_ver; ///< Subsystem format version
+    uint8_t sys_ver; ///< Subsystem format/version
     uint64_t idx;    ///< Microslice index
     uint32_t crc;    ///< CRC32 checksum
     uint32_t size;   ///< Content size (bytes)
