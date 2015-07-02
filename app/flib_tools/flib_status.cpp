@@ -10,8 +10,7 @@ using namespace flib;
 
 flib_device_flesin* MyFlib = NULL;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
   MyFlib = new flib_device_flesin(0);
 
   std::cout << MyFlib->print_build_info() << std::endl;

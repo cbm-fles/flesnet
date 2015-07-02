@@ -11,7 +11,7 @@
 #include <register_file_bar.hpp>
 
 namespace flib {
-  register_file_bar::register_file_bar(pda::pci_bar* bar, sys_bus_addr base_addr)
+register_file_bar::register_file_bar(pda::pci_bar* bar, sys_bus_addr base_addr)
     : m_base_addr(base_addr) {
   m_bar = static_cast<uint32_t*>(bar->mem_ptr());
   m_bar_size = bar->size();
@@ -45,7 +45,8 @@ __attribute__((__target__("no-sse"))) int register_file_bar::set_mem(
     }
     return msync(
         (reinterpret_cast<uint8_t*>(m_bar) + ((sys_addr << 2) & PAGE_MASK)),
-        PAGE_SIZE, MS_SYNC);
+        PAGE_SIZE,
+        MS_SYNC);
   } else {
     return -1;
   }

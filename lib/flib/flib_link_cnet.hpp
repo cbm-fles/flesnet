@@ -13,21 +13,20 @@ namespace flib {
 class flib_link_cnet : public flib_link {
 
 public:
-
   flib_link_cnet(size_t link_index, pda::device* dev, pda::pci_bar* bar);
 
   /*** CBMnet control interface ***/
   typedef struct {
     uint32_t words; // num 16 bit data words
     uint16_t data[32];
-  } ctrl_msg_t ;
+  } ctrl_msg_t;
 
   int send_dcm(const ctrl_msg_t* msg);
   int recv_dcm(ctrl_msg_t* msg);
   void prepare_dlm(uint8_t type, bool enable);
   void send_dlm();
   uint8_t recv_dlm();
-  
+
   /*** CBMnet diagnostics ***/
   typedef struct {
     bool pcs_startup;
@@ -62,6 +61,5 @@ public:
   } link_status_t;
 
   link_status_t link_status();
-
 };
 }

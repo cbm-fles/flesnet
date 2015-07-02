@@ -34,14 +34,14 @@ flib_device::flib_device(int device_nr) {
 flib_device::~flib_device() {}
 
 bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
-  uint16_t hw_ver =
-      m_register_file->reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
+  uint16_t hw_ver = m_register_file->reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
   std::cout << "HW Version: " << hw_ver << std::endl;
   bool match = false;
 
   // check if version of hardware is part of suported versions
   for (auto it = hw_ver_table.begin();
-       it != hw_ver_table.end() && match == false; ++it) {
+       it != hw_ver_table.end() && match == false;
+       ++it) {
     if (hw_ver == *it) {
       match = true;
     }
@@ -49,7 +49,7 @@ bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
 
   // INFO: disabled check to allow 'mixed' hw headers
   // check if version of hardware matches exactly version of header
-  //if (hw_ver != RORC_C_HARDWARE_VERSION) {
+  // if (hw_ver != RORC_C_HARDWARE_VERSION) {
   //  std::cout << "header file version missmatch" << std::endl;
   //  match = false;
   //}
@@ -74,7 +74,6 @@ uint8_t flib_device::number_of_hw_links() {
 uint16_t flib_device::hardware_version() {
   return (static_cast<uint16_t>(m_register_file->reg(0) >> 16));
   // RORC_REG_HARDWARE_INFO
-
 }
 
 boost::posix_time::ptime flib_device::build_date() {
@@ -117,7 +116,7 @@ struct build_info_t flib_device::build_info() {
   info.rev[4] = m_register_file->reg(RORC_REG_BUILD_REV_4);
   info.hw_ver = hardware_version();
   info.clean = (m_register_file->reg(RORC_REG_BUILD_FLAGS) & 0x1);
-  info.repo = (m_register_file->reg(RORC_REG_BUILD_FLAGS) & 0x6)>>1;
+  info.repo = (m_register_file->reg(RORC_REG_BUILD_FLAGS) & 0x6) >> 1;
   return info;
 }
 
@@ -125,22 +124,22 @@ std::string flib_device::print_build_info() {
   build_info_t build = build_info();
   std::stringstream ss;
   ss << "Build Date:     " << build.date << " UTC" << std::endl
-     << "Build Source:   " << build.user << "@"<< build.host << std::endl;
-  switch(build.repo) {
-  case 1: ss << "Build from a git repository" << std::endl
-             << "Repository Revision: " << std::hex
-             << std::setfill('0') << std::setw(8) << build.rev[4]
-             << std::setfill('0') << std::setw(8) << build.rev[3]
-             << std::setfill('0') << std::setw(8) << build.rev[2]
-             << std::setfill('0') << std::setw(8) << build.rev[1]
-             << std::setfill('0') << std::setw(8) << build.rev[0]
-             << std::endl;
+     << "Build Source:   " << build.user << "@" << build.host << std::endl;
+  switch (build.repo) {
+  case 1:
+    ss << "Build from a git repository" << std::endl
+       << "Repository Revision: " << std::hex << std::setfill('0')
+       << std::setw(8) << build.rev[4] << std::setfill('0') << std::setw(8)
+       << build.rev[3] << std::setfill('0') << std::setw(8) << build.rev[2]
+       << std::setfill('0') << std::setw(8) << build.rev[1] << std::setfill('0')
+       << std::setw(8) << build.rev[0] << std::endl;
     break;
-  case 2: ss << "Build from a svn repository" << std::endl
-             << "Repository Revision: "
-             << std::dec << build.rev[0] << std::endl;
+  case 2:
+    ss << "Build from a svn repository" << std::endl
+       << "Repository Revision: " << std::dec << build.rev[0] << std::endl;
     break;
-  default: ss << "Build from a unknown repository" << std::endl;
+  default:
+    ss << "Build from a unknown repository" << std::endl;
     break;
   }
   if (build.clean) {
@@ -175,6 +174,7 @@ flib_link* flib_device::link(size_t n) { return m_link.at(n).get(); }
 register_file_bar* flib_device::rf() const { return m_register_file.get(); }
 
 bool flib_device::check_magic_number() {
-  return ((m_register_file->reg(0) & 0xFFFF) == 0x4844); //RORC_REG_HARDWARE_INFO
+  return ((m_register_file->reg(0) & 0xFFFF) ==
+          0x4844); // RORC_REG_HARDWARE_INFO
 }
 }

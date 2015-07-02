@@ -7,25 +7,19 @@
 #include "parameters.hpp"
 
 int s_interrupted = 0;
-static void s_signal_handler (int signal_value)
-{
-  s_interrupted = 1;
-}
+static void s_signal_handler(int signal_value) { s_interrupted = 1; }
 
-static void s_catch_signals (void)
-{
+static void s_catch_signals(void) {
   struct sigaction action;
   action.sa_handler = s_signal_handler;
   action.sa_flags = 0;
-  sigemptyset (&action.sa_mask);
-  sigaction (SIGABRT, &action, NULL);
-  sigaction (SIGTERM, &action, NULL);
-  sigaction (SIGINT, &action, NULL);
+  sigemptyset(&action.sa_mask);
+  sigaction(SIGABRT, &action, NULL);
+  sigaction(SIGTERM, &action, NULL);
+  sigaction(SIGINT, &action, NULL);
 }
 
-
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   s_catch_signals();
 
   parameters par(argc, argv);
@@ -39,8 +33,8 @@ int main(int argc, char* argv[])
 
   // FLIB global configuration
   flib.set_mc_time(par.mc_size());
-  L_(debug) << "MC size is: " 
-              << (flib.rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
+  L_(debug) << "MC size is: "
+            << (flib.rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
 
   // FLIB per link configuration
   for (size_t i = 0; i < flib.number_of_links(); ++i) {

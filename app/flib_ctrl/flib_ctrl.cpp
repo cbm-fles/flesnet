@@ -11,25 +11,19 @@
 #include "flib_ctrl_server.hpp"
 
 int s_interrupted = 0;
-static void s_signal_handler (int signal_value)
-{
-  s_interrupted = 1;
-}
+static void s_signal_handler(int signal_value) { s_interrupted = 1; }
 
-static void s_catch_signals (void)
-{
+static void s_catch_signals(void) {
   struct sigaction action;
   action.sa_handler = s_signal_handler;
   action.sa_flags = 0;
-  sigemptyset (&action.sa_mask);
-  sigaction (SIGABRT, &action, NULL);
-  sigaction (SIGTERM, &action, NULL);
-  sigaction (SIGINT, &action, NULL);
+  sigemptyset(&action.sa_mask);
+  sigaction(SIGABRT, &action, NULL);
+  sigaction(SIGTERM, &action, NULL);
+  sigaction(SIGINT, &action, NULL);
 }
 
-
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   s_catch_signals();
 
   parameters par(argc, argv);
@@ -43,10 +37,10 @@ int main(int argc, char* argv[])
 
   // FLIB global configuration
   flib.set_mc_time(par.mc_size());
-  L_(debug) << "MC size is: " 
-              << (flib.rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
+  L_(debug) << "MC size is: "
+            << (flib.rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
 
-  // FLIB per link configuration
+// FLIB per link configuration
 #ifdef CNETCNTLSERVER
   std::vector<std::unique_ptr<flib_ctrl_server>> flibserver;
   std::vector<std::unique_ptr<CbmNet::ControlServer>> ctrlserver;
@@ -65,28 +59,30 @@ int main(int argc, char* argv[])
 
 #ifdef CNETCNTLSERVER
     // create device control server, initialize and start server thread
-    flibserver.push_back(std::unique_ptr<flib_ctrl_server>(
-        new flib_ctrl_server(zmq_context, "CbmNet::Driver" + 
-                        boost::lexical_cast<std::string>(i), 
-                        flib, *links.at(i))));
+    flibserver.push_back(std::unique_ptr<flib_ctrl_server>(new flib_ctrl_server(
+        zmq_context, "CbmNet::Driver" + boost::lexical_cast<std::string>(i),
+        flib, *links.at(i))));
     flibserver.at(i)->Bind();
     flibserver.at(i)->Start();
 
     // create control server and start
-    ctrlserver.push_back(std::unique_ptr<CbmNet::ControlServer>(
-         new CbmNet::ControlServer(zmq_context, "CbmNet::Driver" 
-                                   + boost::lexical_cast<std::string>(i))));
-    //ctrlserver.at(i)->SetDebugFlags(CbmNet::ControlServer::kDbgDumpRpc);    
-    ctrlserver.at(i)->Bind("tcp://*:" + boost::lexical_cast<std::string>(9750 + i));
+    ctrlserver.push_back(
+        std::unique_ptr<CbmNet::ControlServer>(new CbmNet::ControlServer(
+            zmq_context,
+            "CbmNet::Driver" + boost::lexical_cast<std::string>(i))));
+    // ctrlserver.at(i)->SetDebugFlags(CbmNet::ControlServer::kDbgDumpRpc);
+    ctrlserver.at(i)
+        ->Bind("tcp://*:" + boost::lexical_cast<std::string>(9750 + i));
     ctrlserver.at(i)->ConnectDriver();
     ctrlserver.at(i)->Start();
 #endif
   }
 
 #ifdef CNETCNTLSERVER
-  L_(info) << "FLIB configured successfully. Waiting to forward control commands. Send ctrl+c to exit.";
+  L_(info) << "FLIB configured successfully. Waiting to forward control "
+              "commands. Send ctrl+c to exit.";
   // main loop
-  while(s_interrupted==0) {
+  while (s_interrupted == 0) {
     ::sleep(1);
   }
 #endif

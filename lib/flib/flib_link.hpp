@@ -30,8 +30,7 @@ public:
                 void* desc_buffer,
                 size_t desc_buffer_log_size);
 
-  void init_dma(size_t data_buffer_log_size,
-                size_t desc_buffer_log_size);
+  void init_dma(size_t data_buffer_log_size, size_t desc_buffer_log_size);
 
   void deinit_dma();
 
@@ -46,12 +45,13 @@ public:
   void enable_cbmnet_packer(bool enable);
   void enable_cbmnet_packer_debug_mode(bool enable);
 
-  typedef enum { rx_disable = 0x0,
-                 rx_emu = 0x1,
-                 rx_link = 0x2,
-                 rx_pgen = 0x3
+  typedef enum {
+    rx_disable = 0x0,
+    rx_emu = 0x1,
+    rx_link = 0x2,
+    rx_pgen = 0x3
   } data_sel_t;
-  
+
   void set_data_sel(data_sel_t rx_sel);
   data_sel_t data_sel();
 
@@ -73,7 +73,6 @@ public:
   register_file* register_file_packetizer() const { return m_rfpkt.get(); }
   register_file* register_file_gtx() const { return m_rfgtx.get(); }
 
-
 protected:
   std::unique_ptr<dma_channel> m_dma_channel;
   std::unique_ptr<register_file> m_rfglobal; // TODO remove this later
@@ -84,6 +83,5 @@ protected:
 
   sys_bus_addr m_base_addr;
   pda::device* m_parent_device;
-
 };
 }

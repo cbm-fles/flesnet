@@ -9,8 +9,7 @@
 
 namespace flib {
 
-flib_device_flesin::flib_device_flesin(int device_nr)
-  : flib_device(device_nr) {
+flib_device_flesin::flib_device_flesin(int device_nr) : flib_device(device_nr) {
 
   if (!check_hw_ver(hw_ver_table_flesin)) {
     throw FlibException("Hardware - libflib version missmatch!");
@@ -35,5 +34,4 @@ std::vector<flib_link_flesin*> flib_device_flesin::links() {
 flib_link_flesin* flib_device_flesin::link(size_t n) {
   return static_cast<flib_link_flesin*>(m_link.at(n).get());
 }
-
 }

@@ -53,7 +53,6 @@ public:
   register_file_bar* rf() const;
 
 protected:
-
   /** Member variables */
   std::unique_ptr<pda::device> m_device;
   std::unique_ptr<pda::pci_bar> m_bar;

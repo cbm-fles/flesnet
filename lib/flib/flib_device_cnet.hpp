@@ -15,9 +15,8 @@ namespace flib {
 constexpr std::array<uint16_t, 1> hw_ver_table_cnet = {{8}};
 
 class flib_device_cnet : public flib_device {
-  
-public:
 
+public:
   flib_device_cnet(int device_nr);
 
   std::vector<flib_link_cnet*> links();
@@ -25,7 +24,6 @@ public:
 
   /** global dlm send, requires link local prepare_dlm beforehand */
   void send_dlm();
-
 };
 
 } /** namespace flib */

@@ -9,8 +9,7 @@
 
 namespace flib {
 
-flib_device_cnet::flib_device_cnet(int device_nr)
-  : flib_device(device_nr) {
+flib_device_cnet::flib_device_cnet(int device_nr) : flib_device(device_nr) {
 
   if (!check_hw_ver(hw_ver_table_cnet)) {
     throw FlibException("Hardware - libflib version missmatch!");
@@ -36,6 +35,7 @@ flib_link_cnet* flib_device_cnet::link(size_t n) {
   return static_cast<flib_link_cnet*>(m_link.at(n).get());
 }
 
-void flib_device_cnet::send_dlm() { m_register_file->set_reg(RORC_REG_DLM_CFG, 1); }
-
+void flib_device_cnet::send_dlm() {
+  m_register_file->set_reg(RORC_REG_DLM_CFG, 1);
+}
 }
