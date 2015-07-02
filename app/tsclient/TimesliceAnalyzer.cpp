@@ -99,8 +99,9 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
             return false;
         }
 
-        if (sys_id == static_cast<uint8_t>(0xF0) &&
-            sys_ver == static_cast<uint8_t>(0x1)) {
+        if (sys_id == static_cast<uint8_t>(fles::SubsystemIdentifier::FLES) &&
+            sys_ver == static_cast<uint8_t>(
+                           fles::SubsystemFormatFLES::CbmNetPattern)) {
             if (check_content_pgen(&content[i], word_count) == false)
                 return false;
         }
@@ -136,11 +137,19 @@ bool TimesliceAnalyzer::check_microslice(
     ++_microslice_count;
     _content_bytes += descriptor.size;
 
-    switch (descriptor.sys_id) {
-    case 0xFA:
+    if (static_cast<fles::SubsystemIdentifier>(descriptor.sys_id) !=
+        fles::SubsystemIdentifier::FLES) {
+        return true;
+    }
+
+    switch (static_cast<fles::SubsystemFormatFLES>(descriptor.sys_ver)) {
+    case fles::SubsystemFormatFLES::BasicRampPattern:
         return check_flesnet_pattern(descriptor, content, component);
-    default:
+    case fles::SubsystemFormatFLES::CbmNetPattern:
+    case fles::SubsystemFormatFLES::CbmNetFrontendEmulation:
         return check_flib_pattern(descriptor, content, component);
+    default:
+        return true;
     }
     return true;
 }

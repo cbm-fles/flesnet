@@ -220,19 +220,19 @@ private:
           _link_config.at(i).rx_sel = flib::flib_link::rx_pgen;
           std::cout << " data source: pgen" << std::endl;
           _link_config.at(i).hdr_config.sys_id = 0xF0;
-          _link_config.at(i).hdr_config.sys_ver = 0x01;
+          _link_config.at(i).hdr_config.sys_ver = 0x10;
 
         } else if (source == "disable") {
           _link_config.at(i).rx_sel = flib::flib_link::rx_disable;
           std::cout << " data source: disable" << std::endl;
-          _link_config.at(i).hdr_config.sys_id = 0xF2;
-          _link_config.at(i).hdr_config.sys_ver = 0x01;
+          _link_config.at(i).hdr_config.sys_id = 0xF0;
+          _link_config.at(i).hdr_config.sys_ver = 0x80;
 
         } else if (source == "emu") {
           _link_config.at(i).rx_sel = flib::flib_link::rx_emu;
           std::cout << " data source: emu" << std::endl;
-          _link_config.at(i).hdr_config.sys_id = 0xF1;
-          _link_config.at(i).hdr_config.sys_ver = 0x01;
+          _link_config.at(i).hdr_config.sys_id = 0xF0;
+          _link_config.at(i).hdr_config.sys_ver = 0x11;
 
         } else {
           std::cout << " No valid arg for data source." << std::endl;
@@ -243,7 +243,7 @@ private:
         _link_config.at(i).rx_sel = flib::flib_link::rx_disable;
         std::cout << " data source: disable (default)" << std::endl;
         _link_config.at(i).hdr_config.sys_id = 0xF2;
-        _link_config.at(i).hdr_config.sys_ver = 0x01;
+        _link_config.at(i).hdr_config.sys_ver = 0x80;
       }
 
     } // end loop over links

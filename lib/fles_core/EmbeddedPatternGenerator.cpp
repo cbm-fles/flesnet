@@ -25,12 +25,17 @@ void EmbeddedPatternGenerator::proceed()
             (_written_mc - _acked_mc + 1 > _desc_buffer.size()))
             return;
 
-        const uint8_t hdr_id = 0xDD;
-        const uint8_t hdr_ver = 0x01;
+        const uint8_t hdr_id =
+            static_cast<uint8_t>(fles::HeaderFormatIdentifier::Standard);
+        const uint8_t hdr_ver =
+            static_cast<uint8_t>(fles::HeaderFormatVersion::Standard);
         const uint16_t eq_id = 0xE001;
         const uint16_t flags = 0x0000;
-        const uint8_t sys_id = 0xFA;
-        const uint8_t sys_ver = 0x01;
+        const uint8_t sys_id =
+            static_cast<uint8_t>(fles::SubsystemIdentifier::FLES);
+        const uint8_t sys_ver = static_cast<uint8_t>(
+            _generate_pattern ? fles::SubsystemFormatFLES::BasicRampPattern
+                              : fles::SubsystemFormatFLES::Uninitialized);
         uint64_t idx = _written_mc;
         uint32_t crc = 0x00000000;
         uint32_t size = content_bytes;
