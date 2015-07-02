@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2012  Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ **/
+
 // server class to send dcm and dlm from zmq
 
 #include <vector>

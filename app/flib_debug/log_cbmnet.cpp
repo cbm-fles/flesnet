@@ -1,4 +1,8 @@
-//! \author Dirk Hutter
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ *
+ */
 
 /**
  * reads back cbmnet diagnostic counters for all active links

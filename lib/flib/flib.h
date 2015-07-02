@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2011, Heiko Engel <hengel@cern.ch>
  * Copyright (c) 2012  Dirk Hutter <hutter@compeng.uni-frankfurt.de>
- * Copyright (c) 2014, Dominic Eschweiler <dominic.eschweiler@cern.ch>
+ * Project is derived from ALICE CRORC Project written by
+ * Heiko Engel <hengel@cern.ch>
  **/
 
 #pragma once

@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ *
+ */
+
 // sends link local dlms
 
 #include <iostream>

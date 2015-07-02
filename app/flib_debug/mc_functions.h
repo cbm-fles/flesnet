@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ *
+ */
 
 using namespace flib;
 // DUMP functions

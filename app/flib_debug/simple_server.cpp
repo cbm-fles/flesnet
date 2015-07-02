@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+ *
+ */
+
 // Simpel example application initializing a FLIB for date transfer
 
 #include <iostream>

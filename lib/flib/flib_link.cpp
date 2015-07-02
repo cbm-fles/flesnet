@@ -2,6 +2,8 @@
  * @file
  * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
+ * Derived from ALICE CRORC Project written by
+ * Heiko Engel <hengel@cern.ch>
  *
  */
 
