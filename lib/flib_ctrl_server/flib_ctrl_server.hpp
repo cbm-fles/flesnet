@@ -32,8 +32,10 @@ class flib_ctrl_server {
   driver_state_t _driver_state;
 
 public:
-  flib_ctrl_server(zmq::context_t& context, std::string path,
-                   flib::flib_device_cnet& device, flib::flib_link_cnet& link)
+  flib_ctrl_server(zmq::context_t& context,
+                   std::string path,
+                   flib::flib_device_cnet& device,
+                   flib::flib_link_cnet& link)
       : _zmq_context(context), _path(path), _device(device), _link(link),
         _driver_req(context, ZMQ_PULL), _driver_res(context, ZMQ_PUSH),
         _stop_fd(-1), _driver_state(DriverStateStopped) {}
