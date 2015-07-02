@@ -20,13 +20,12 @@ struct F {
         // MicrosliceDescriptor.hpp)
         fles::MicrosliceDescriptor desc = fles::MicrosliceDescriptor();
         desc.hdr_id =
-            static_cast<const uint8_t>(fles::HeaderFormatIdentifier::Standard);
+            static_cast<uint8_t>(fles::HeaderFormatIdentifier::Standard);
         desc.hdr_ver =
-            static_cast<const uint8_t>(fles::HeaderFormatVersion::Standard);
-        desc.sys_id =
-            static_cast<const uint8_t>(fles::SubsystemIdentifier::FLES);
-        desc.sys_ver = static_cast<const uint8_t>(
-            fles::SubsystemFormatFLES::Uninitialized);
+            static_cast<uint8_t>(fles::HeaderFormatVersion::Standard);
+        desc.sys_id = static_cast<uint8_t>(fles::SubsystemIdentifier::FLES);
+        desc.sys_ver =
+            static_cast<uint8_t>(fles::SubsystemFormatFLES::Uninitialized);
 
         desc_a = desc;
         desc_a.eq_id = 10;
