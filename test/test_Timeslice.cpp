@@ -19,10 +19,14 @@ struct F {
         // initialize microslice descriptors (for individual meaning cf.
         // MicrosliceDescriptor.hpp)
         fles::MicrosliceDescriptor desc = fles::MicrosliceDescriptor();
-        desc.hdr_id = 0xDD;
-        desc.hdr_ver = 0x01;
-        desc.sys_id = 0xFF;
-        desc.sys_ver = 1;
+        desc.hdr_id =
+            static_cast<const uint8_t>(fles::HeaderFormatIdentifier::Standard);
+        desc.hdr_ver =
+            static_cast<const uint8_t>(fles::HeaderFormatVersion::Standard);
+        desc.sys_id =
+            static_cast<const uint8_t>(fles::SubsystemIdentifier::FLES);
+        desc.sys_ver = static_cast<const uint8_t>(
+            fles::SubsystemFormatFLES::Uninitialized);
 
         desc_a = desc;
         desc_a.eq_id = 10;
