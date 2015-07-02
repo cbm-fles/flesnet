@@ -5,7 +5,7 @@
  *
  */
 
-//TODO: Why is '0' returned everywere?
+// TODO: Why is '0' returned everywere?
 
 #include <iostream>
 #include <cstdlib>
@@ -77,13 +77,12 @@ uint8_t device::func() {
   return (0);
 }
 
-size_t device::max_payload_size(){
-  size_t max_payload_size;  
-  if (PciDevice_getmaxPayloadSize(m_device, &max_payload_size) ==
-      PDA_SUCCESS) {
+size_t device::max_payload_size() {
+  size_t max_payload_size;
+  if (PciDevice_getmaxPayloadSize(m_device, &max_payload_size) == PDA_SUCCESS) {
     return (max_payload_size);
   }
   return (0);
 }
- 
+
 } // namespace

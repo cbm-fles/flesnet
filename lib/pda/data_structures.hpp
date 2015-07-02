@@ -12,7 +12,7 @@
 #ifndef PAGE_MASK
 #define PAGE_MASK ~(sysconf(_SC_PAGESIZE) - 1)
 #endif
- 
+
 #ifndef PAGE_SIZE
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
 #endif

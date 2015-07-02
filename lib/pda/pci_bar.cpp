@@ -31,7 +31,8 @@ void pci_bar::barMap(uint8_t number) {
     throw PdaException("Bar fetching failed!");
   }
 
-  if (Bar_getMap(m_pda_bar, reinterpret_cast<void**>(&m_bar), &m_size) != PDA_SUCCESS) {
+  if (Bar_getMap(m_pda_bar, reinterpret_cast<void**>(&m_bar), &m_size) !=
+      PDA_SUCCESS) {
     throw PdaException("Bar mapping failed!");
   }
 }
