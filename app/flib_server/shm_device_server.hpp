@@ -25,7 +25,8 @@ using namespace flib;
 class shm_device_server {
 
 public:
-  shm_device_server(flib_device* flib, size_t data_buffer_size_exp,
+  shm_device_server(flib_device* flib,
+                    size_t data_buffer_size_exp,
                     size_t desc_buffer_size_exp,
                     volatile std::sig_atomic_t* signal_status)
       : m_flib(flib), m_signal_status(signal_status) {
@@ -56,9 +57,9 @@ public:
     // create channels for active flib links
     size_t idx = 0;
     for (flib_link* link : flib_links) {
-      m_shm_ch_vec.push_back(std::unique_ptr<shm_channel_server>(
-          new shm_channel_server(m_shm.get(), idx, link, data_buffer_size_exp,
-                                 desc_buffer_size_exp)));
+      m_shm_ch_vec.push_back(std::unique_ptr<
+          shm_channel_server>(new shm_channel_server(
+          m_shm.get(), idx, link, data_buffer_size_exp, desc_buffer_size_exp)));
       ++idx;
       m_shm_dev->inc_num_channels();
     }

@@ -19,8 +19,10 @@ using namespace flib;
 class shm_channel_server {
 
 public:
-  shm_channel_server(managed_shared_memory* shm, size_t index,
-                     flib_link* flib_link, size_t data_buffer_size_exp,
+  shm_channel_server(managed_shared_memory* shm,
+                     size_t index,
+                     flib_link* flib_link,
+                     size_t data_buffer_size_exp,
                      size_t desc_buffer_size_exp)
       : m_shm(shm), m_index(index), m_flib_link(flib_link),
         m_data_buffer_size_exp(data_buffer_size_exp),
@@ -33,11 +35,16 @@ public:
     std::string channel_name =
         "shm_channel_" + boost::lexical_cast<std::string>(m_index);
     m_shm_ch = m_shm->construct<shm_channel>(channel_name.c_str())(
-        m_shm, m_data_buffer, m_data_buffer_size_exp, m_desc_buffer,
+        m_shm,
+        m_data_buffer,
+        m_data_buffer_size_exp,
+        m_desc_buffer,
         m_desc_buffer_size_exp);
 
     // initialize flib DMA engine
-    m_flib_link->init_dma(m_data_buffer, m_data_buffer_size_exp, m_desc_buffer,
+    m_flib_link->init_dma(m_data_buffer,
+                          m_data_buffer_size_exp,
+                          m_desc_buffer,
                           m_desc_buffer_size_exp);
 
     m_flib_link->set_start_idx(0);

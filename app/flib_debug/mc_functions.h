@@ -20,8 +20,17 @@ void dump_report(volatile struct fles::MicrosliceDescriptor* rb) {
          " crc     %08x\n"
          " size    %08x\n"
          " offset  %016lx\n",
-         (void*)rb, rb->hdr_id, rb->hdr_ver, rb->eq_id, rb->flags, rb->sys_id,
-         rb->sys_ver, rb->idx, rb->crc, rb->size, rb->offset);
+         (void*)rb,
+         rb->hdr_id,
+         rb->hdr_ver,
+         rb->eq_id,
+         rb->flags,
+         rb->sys_id,
+         rb->sys_ver,
+         rb->idx,
+         rb->crc,
+         rb->size,
+         rb->offset);
 }
 
 void dump_mc(dma_channel::mc_desc_t* mc) {
@@ -30,27 +39,36 @@ void dump_mc(dma_channel::mc_desc_t* mc) {
   volatile uint64_t* mc_word = mc->addr;
   printf("Event	 #%ld\n", mc->nr);
   for (unsigned int i = 0; i < ((mc->size) / sizeof(uint64_t)) + 2; i += 2) {
-    printf("%4d addr=%p:    %016lx %016lx\n", i * 8, (void*)&mc_word[i],
-           mc_word[i + 1], mc_word[i]);
+    printf("%4d addr=%p:    %016lx %016lx\n",
+           i * 8,
+           (void*)&mc_word[i],
+           mc_word[i + 1],
+           mc_word[i]);
   }
 }
 
 void dump_mc_light(dma_channel::mc_desc_t* mc) {
-  printf("Report addr=%p :\n mc_nr %ld mc_size=%u Bytes\n", (void*)mc->rbaddr,
-         mc->nr, mc->size);
+  printf("Report addr=%p :\n mc_nr %ld mc_size=%u Bytes\n",
+         (void*)mc->rbaddr,
+         mc->nr,
+         mc->size);
 }
 
 // Dumps mc correponding to entry nr in report buffer
 // will not accout for wrapping, no range check
-void dump_mc_raw(volatile uint64_t* eb, volatile fles::MicrosliceDescriptor* rb,
+void dump_mc_raw(volatile uint64_t* eb,
+                 volatile fles::MicrosliceDescriptor* rb,
                  unsigned int nr) {
   dump_report(rb + nr);
   printf("Event	 #%d\n", nr);
   // size and offset is in bytes, adressing is per uint64
   volatile uint64_t* mc_word = eb + rb[nr].offset / sizeof(uint64_t);
   for (unsigned int i = 0; i <= (rb[nr].size / sizeof(uint64_t)); i += 2) {
-    printf("%4d addr=%p:    %016lx %016lx\n", i * 8, (void*)&mc_word[i],
-           mc_word[i + 1], mc_word[i]);
+    printf("%4d addr=%p:    %016lx %016lx\n",
+           i * 8,
+           (void*)&mc_word[i],
+           mc_word[i + 1],
+           mc_word[i]);
   }
 }
 
@@ -99,8 +117,13 @@ int process_mc(dma_channel::mc_desc_t* mc) {
     printf("MC header :\n hdr_id 0x%02x, hdr_ver 0x%02x, eq_id 0x%04x,"
            " flags 0x%04x, sys_id 0x%02x, sys_ver 0x%02x\n"
            " mc_nr 0x%016lx\n",
-           mch->hdr_id, mch->hdr_ver, mch->eq_id, mch->flags, mch->sys_id,
-           mch->sys_ver, mc_nr);
+           mch->hdr_id,
+           mch->hdr_ver,
+           mch->eq_id,
+           mch->flags,
+           mch->sys_id,
+           mch->sys_ver,
+           mc_nr);
 #endif
     return -2;
   }
@@ -123,7 +146,8 @@ int process_mc(dma_channel::mc_desc_t* mc) {
     if (cneth_msg_cnt != ((cneth_msg_cnt_save + 1) & 0xff) && w > 2) {
 #ifdef DEBUG
       printf("ERROR: wrong header message count now: 0x%02x before+1: 0x%02x\n",
-             cneth_msg_cnt, cneth_msg_cnt_save + 1);
+             cneth_msg_cnt,
+             cneth_msg_cnt_save + 1);
 #endif
       return -3;
     }
@@ -136,7 +160,8 @@ int process_mc(dma_channel::mc_desc_t* mc) {
       if (((cnet_word[w + i] & 0xff) != (cnet_word_save & 0xff) + 1 && i > 0) ||
           (cnet_word[w] != 0xbc00 && i == 0)) {
 #ifdef DEBUG
-        printf("ERROR: wrong cnet word 0x%04x 0x%04x\n", cnet_word[w + i],
+        printf("ERROR: wrong cnet word 0x%04x 0x%04x\n",
+               cnet_word[w + i],
                cnet_word_save);
 #endif
         return -4;
@@ -149,7 +174,8 @@ int process_mc(dma_channel::mc_desc_t* mc) {
     if (cnet_msg_nr != ((cnet_msg_nr_save + 1) & 0xffff) && w > 2) {
 #ifdef DEBUG
       printf("ERROR: wrong pgen message number now: 0x%04x before+1: 0x%04x\n",
-             cnet_msg_nr, cnet_msg_nr_save + 1);
+             cnet_msg_nr,
+             cnet_msg_nr_save + 1);
 #endif
       return -5;
     }

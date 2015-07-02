@@ -45,70 +45,97 @@ private:
         "config-file,c",
         po::value<std::string>(&config_file)->default_value("flib.cfg"),
         "name of a configuration file")(
-        "log-level,l", po::value<unsigned>(&log_level)->default_value(2),
+        "log-level,l",
+        po::value<unsigned>(&log_level)->default_value(2),
         "set the log level (all:0)");
 
     po::options_description config("Configuration (flib.cfg or cmd line)");
     config.add_options()(
-        "mc-size,t", po::value<uint32_t>(),
+        "mc-size,t",
+        po::value<uint32_t>(),
         "global size of microslices in units of 8 ns (31 bit wide)")(
-        "debug-mode", po::value<bool>(&_debug_mode)->default_value(false),
+        "debug-mode",
+        po::value<bool>(&_debug_mode)->default_value(false),
         "enable readout debug mode")
 
-        ("l0_source", po::value<std::string>(),
+        ("l0_source",
+         po::value<std::string>(),
          "Link 0 data source <disable|link|pgen|emu>")(
-            "l0_sys_id", po::value<std::string>(),
+            "l0_sys_id",
+            po::value<std::string>(),
             "Subsystem identifier of link 0 data source (8 Bit)")(
-            "l0_sys_ver", po::value<std::string>(),
+            "l0_sys_ver",
+            po::value<std::string>(),
             "Subsystem format version of link 0 data source (8 Bit)")
 
-        ("l1_source", po::value<std::string>(),
+        ("l1_source",
+         po::value<std::string>(),
          "Link 1 data source <disable|link|pgen|emu>")(
-            "l1_sys_id", po::value<std::string>(),
+            "l1_sys_id",
+            po::value<std::string>(),
             "Subsystem identifier of link 1 data source (8 Bit)")(
-            "l1_sys_ver", po::value<std::string>(),
+            "l1_sys_ver",
+            po::value<std::string>(),
             "Subsystem format version of link 1 data source (8 Bit)")
 
-        ("l2_source", po::value<std::string>(),
+        ("l2_source",
+         po::value<std::string>(),
          "Link 2 data source <disable|link|pgen|emu>")(
-            "l2_sys_id", po::value<std::string>(),
+            "l2_sys_id",
+            po::value<std::string>(),
             "Subsystem identifier of link 2 data source (8 Bit)")(
-            "l2_sys_ver", po::value<std::string>(),
+            "l2_sys_ver",
+            po::value<std::string>(),
             "Subsystem format version of link 2 data source (8 Bit)")
 
-        ("l3_source", po::value<std::string>(),
+        ("l3_source",
+         po::value<std::string>(),
          "Link 3 data source <disable|link|pgen|emu>")(
-            "l3_sys_id", po::value<std::string>(),
+            "l3_sys_id",
+            po::value<std::string>(),
             "Subsystem identifier of link 3 data source (8 Bit)")(
-            "l3_sys_ver", po::value<std::string>(),
+            "l3_sys_ver",
+            po::value<std::string>(),
             "Subsystem format version of link 3 data source (8 Bit)")
 
-        ("l4_source", po::value<std::string>(),
+        ("l4_source",
+         po::value<std::string>(),
          "Link 4 data source <disable|link|pgen|emu>")(
-            "l4_sys_id", po::value<std::string>(),
+            "l4_sys_id",
+            po::value<std::string>(),
             "Subsystem identifier of link 4 data source (8 Bit)")(
-            "l4_sys_ver", po::value<std::string>(),
+            "l4_sys_ver",
+            po::value<std::string>(),
             "Subsystem format version of link 4 data source (8 Bit)")
 
-        ("l5_source", po::value<std::string>(),
+        ("l5_source",
+         po::value<std::string>(),
          "Link 5 data source <disable|link|pgen|emu>")(
-            "l5_sys_id", po::value<std::string>(),
+            "l5_sys_id",
+            po::value<std::string>(),
             "Subsystem identifier of link 5 data source (8 Bit)")(
-            "l5_sys_ver", po::value<std::string>(),
+            "l5_sys_ver",
+            po::value<std::string>(),
             "Subsystem format version of link 5 data source (8 Bit)")
 
-        ("l6_source", po::value<std::string>(),
+        ("l6_source",
+         po::value<std::string>(),
          "Link 6 data source <disable|link|pgen|emu>")(
-            "l6_sys_id", po::value<std::string>(),
+            "l6_sys_id",
+            po::value<std::string>(),
             "Subsystem identifier of link 6 data source (8 Bit)")(
-            "l6_sys_ver", po::value<std::string>(),
+            "l6_sys_ver",
+            po::value<std::string>(),
             "Subsystem format version of link 6 data source (8 Bit)")
 
-        ("l7_source", po::value<std::string>(),
+        ("l7_source",
+         po::value<std::string>(),
          "Link 7 data source <disable|link|pgen|emu>")(
-            "l7_sys_id", po::value<std::string>(),
+            "l7_sys_id",
+            po::value<std::string>(),
             "Subsystem identifier of link 7 data source (8 Bit)")(
-            "l7_sys_ver", po::value<std::string>(),
+            "l7_sys_ver",
+            po::value<std::string>(),
             "Subsystem format version of link 7 data source (8 Bit)");
 
     po::options_description cmdline_options("Allowed options");
@@ -165,11 +192,13 @@ private:
             _link_config.at(i).hdr_config.sys_id =
                 boost::numeric_cast<uint8_t>(std::stoul(
                     vm["l" + std::to_string(i) + "_sys_id"].as<std::string>(),
-                    nullptr, 0));
+                    nullptr,
+                    0));
             _link_config.at(i).hdr_config.sys_ver =
                 boost::numeric_cast<uint8_t>(std::stoul(
                     vm["l" + std::to_string(i) + "_sys_ver"].as<std::string>(),
-                    nullptr, 0));
+                    nullptr,
+                    0));
             std::cout << std::hex << " sys_id:      0x"
                       << (uint32_t)_link_config.at(i).hdr_config.sys_id << "\n"
                       << " sys_ver:     0x"

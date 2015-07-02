@@ -25,8 +25,10 @@ typedef struct {
 class shm_channel {
 
 public:
-  shm_channel(managed_shared_memory* shm, void* data_buffer,
-              size_t data_buffer_size_exp, void* desc_buffer,
+  shm_channel(managed_shared_memory* shm,
+              void* data_buffer,
+              size_t data_buffer_size_exp,
+              void* desc_buffer,
               size_t desc_buffer_size_exp)
       : m_data_buffer_size_exp(data_buffer_size_exp),
         m_desc_buffer_size_exp(desc_buffer_size_exp),
@@ -121,7 +123,8 @@ public:
   interprocess_condition m_cond_offsets;
 
 private:
-  void set_buffer_handles(managed_shared_memory* shm, void* data_buffer,
+  void set_buffer_handles(managed_shared_memory* shm,
+                          void* data_buffer,
                           void* desc_buffer) {
     m_data_buffer_handle = shm->get_handle_from_address(data_buffer);
     m_desc_buffer_handle = shm->get_handle_from_address(desc_buffer);

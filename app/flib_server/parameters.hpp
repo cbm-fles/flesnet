@@ -58,7 +58,8 @@ private:
             "desc-buffer-size-exp",
             po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
             "exp. size of the descriptor buffer (number of entries)")(
-            "log-level,l", po::value<unsigned>(&log_level)->default_value(2),
+            "log-level,l",
+            po::value<unsigned>(&log_level)->default_value(2),
             "set the log level (all:0)");
 
     po::options_description cmdline_options("Allowed options");

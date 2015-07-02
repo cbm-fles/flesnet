@@ -60,8 +60,10 @@ int main(int argc, char* argv[]) {
 #ifdef CNETCNTLSERVER
     // create device control server, initialize and start server thread
     flibserver.push_back(std::unique_ptr<flib_ctrl_server>(new flib_ctrl_server(
-        zmq_context, "CbmNet::Driver" + boost::lexical_cast<std::string>(i),
-        flib, *links.at(i))));
+        zmq_context,
+        "CbmNet::Driver" + boost::lexical_cast<std::string>(i),
+        flib,
+        *links.at(i))));
     flibserver.at(i)->Bind();
     flibserver.at(i)->Start();
 

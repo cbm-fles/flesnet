@@ -35,7 +35,8 @@ int main(int argc, char* argv[]) {
   std::vector<flib::flib_link_cnet*> flib_links = flib->links();
 
   // delete deactivated links from vector
-  flib_links.erase(std::remove_if(std::begin(flib_links), std::end(flib_links),
+  flib_links.erase(std::remove_if(std::begin(flib_links),
+                                  std::end(flib_links),
                                   [](decltype(flib_links[0]) link) {
                      return link->data_sel() != flib::flib_link::rx_link;
                    }),
