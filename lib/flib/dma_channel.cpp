@@ -350,6 +350,7 @@ void dma_channel::disable(size_t timeout) {
   while (is_busy() && timeout != 0) {
     usleep(100);
     --timeout;
+    // TODO: add timeout feedback
   }
   // disable everything else put fifo to reset
   set_dmactrl((0 << BIT_DMACTRL_RBDM_EN | 0 << BIT_DMACTRL_DMA_EN |
