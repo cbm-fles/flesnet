@@ -40,8 +40,15 @@ Application::Application(Parameters const& par,
         } else {
             // TODO: presence detection #524
             try {
-                _flib = std::unique_ptr<flib::flib_device>(
-                    new flib::flib_device_cnet(0));
+                if (par.flib_legacy_mode()) {
+                    L_(info) << "initializing FLIB with legacy readout";
+                    _flib = std::unique_ptr<flib::flib_device>(
+                        new flib::flib_device_cnet(0));
+                } else {
+                    L_(info) << "initializing FLIB with DPB readout";
+                    _flib = std::unique_ptr<flib::flib_device>(
+                        new flib::flib_device_flesin(0));
+                }
                 _flib_links = _flib->links();
 
                 // delete deactivated links from vector

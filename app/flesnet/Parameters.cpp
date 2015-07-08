@@ -195,9 +195,10 @@ void Parameters::parse_options(int argc, char* argv[])
                                 po::value<uint32_t>(&_typical_content_size),
                                 "typical number of content bytes per MC")(
         "use-flib", po::value<bool>(&_use_flib), "use flib flag")(
-        "use-shm", po::value<bool>(&_use_shared_memory),
-        "use shared_meory flag")("standalone", po::value<bool>(&_standalone),
-                                 "standalone mode flag")(
+        "flib-legacy-mode", po::value<bool>(&_flib_legacy_mode),
+        "use cbmnet flib")("use-shm", po::value<bool>(&_use_shared_memory),
+                           "use shared_meory flag")(
+        "standalone", po::value<bool>(&_standalone), "standalone mode flag")(
         "max-timeslice-number,n", po::value<uint32_t>(&_max_timeslice_number),
         "global maximum timeslice number")(
         "processor-executable,e",

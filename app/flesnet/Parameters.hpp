@@ -78,6 +78,9 @@ public:
     /// Retrieve the use flib flag.
     bool use_flib() const { return _use_flib; }
 
+    /// Retrieve the flib legacy mode flag
+    bool flib_legacy_mode() const { return _flib_legacy_mode; }
+
     /// Retrieve the use shared memory flag.
     bool use_shared_memory() const { return _use_shared_memory; }
 
@@ -146,6 +149,9 @@ private:
 
     /// The use flib flag.
     bool _use_flib = true;
+
+    /// The flib legacy mode flag.
+    bool _flib_legacy_mode = true;
 
     /// The use shared memory flag.
     bool _use_shared_memory = false;
