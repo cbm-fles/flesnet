@@ -23,7 +23,7 @@ int flib_link_cnet::send_dcm(const ctrl_msg_t* msg) {
   assert(msg->words >= 4 && msg->words <= 32);
 
   // check if send FSM is ready (bit 31 in r_ctrl_tx = 0)
-  if ((m_rfgtx->reg(RORC_REG_GTX_CTRL_TX) & (1 << 31)) != 0) {
+  if ((m_rfgtx->get_reg(RORC_REG_GTX_CTRL_TX) & (1 << 31)) != 0) {
     return -1;
   }
 
@@ -43,7 +43,7 @@ int flib_link_cnet::send_dcm(const ctrl_msg_t* msg) {
 int flib_link_cnet::recv_dcm(ctrl_msg_t* msg) {
 
   int ret = 0;
-  uint32_t ctrl_rx = m_rfgtx->reg(RORC_REG_GTX_CTRL_RX);
+  uint32_t ctrl_rx = m_rfgtx->get_reg(RORC_REG_GTX_CTRL_RX);
   msg->words = (ctrl_rx & 0x1F) + 1;
 
   // check if a msg is available
@@ -59,7 +59,7 @@ int flib_link_cnet::recv_dcm(ctrl_msg_t* msg) {
 
   // read msg from board memory
   size_t bytes = msg->words * 2 + (msg->words * 2) % 4;
-  m_rfgtx->mem(
+  m_rfgtx->get_mem(
       RORC_MEM_BASE_CTRL_RX, static_cast<void*>(msg->data), bytes >> 2);
 
   // acknowledge msg
@@ -78,7 +78,7 @@ void flib_link_cnet::prepare_dlm(uint8_t type, bool enable) {
   m_rfgtx->set_reg(RORC_REG_GTX_DLM, reg);
   // dummy read on GTX regfile to ensure reg written
   // before issuing send pulse in send_dlm()
-  m_rfgtx->reg(RORC_REG_GTX_DLM);
+  m_rfgtx->get_reg(RORC_REG_GTX_DLM);
 }
 
 void flib_link_cnet::send_dlm() {
@@ -97,7 +97,7 @@ void flib_link_cnet::send_dlm() {
 
 uint8_t flib_link_cnet::recv_dlm() {
   // get dlm rx reg
-  uint32_t reg = m_rfgtx->reg(RORC_REG_GTX_DLM);
+  uint32_t reg = m_rfgtx->get_reg(RORC_REG_GTX_DLM);
   uint8_t type = (reg >> 5) & 0xF;
   // clear dlm rx reg
   m_rfgtx->set_bit(RORC_REG_GTX_DLM, 31, true);
@@ -107,31 +107,31 @@ uint8_t flib_link_cnet::recv_dlm() {
 //////*** CBMnet diagnostics ***//////
 
 uint32_t flib_link_cnet::diag_pcs_startup() {
-  return m_rfgtx->reg(RORC_REG_GTX_DIAG_PCS_STARTUP);
+  return m_rfgtx->get_reg(RORC_REG_GTX_DIAG_PCS_STARTUP);
 }
 
 uint32_t flib_link_cnet::diag_ebtb_code_err() {
-  return m_rfgtx->reg(RORC_REG_GTX_DIAG_EBTB_CODE_ERR);
+  return m_rfgtx->get_reg(RORC_REG_GTX_DIAG_EBTB_CODE_ERR);
 }
 
 uint32_t flib_link_cnet::diag_ebtb_disp_err() {
-  return m_rfgtx->reg(RORC_REG_GTX_DIAG_EBTB_DISP_ERR);
+  return m_rfgtx->get_reg(RORC_REG_GTX_DIAG_EBTB_DISP_ERR);
 }
 
 uint32_t flib_link_cnet::diag_crc_error() {
-  return m_rfgtx->reg(RORC_REG_GTX_DIAG_CRC_ERROR);
+  return m_rfgtx->get_reg(RORC_REG_GTX_DIAG_CRC_ERROR);
 }
 
 uint32_t flib_link_cnet::diag_packet() {
-  return m_rfgtx->reg(RORC_REG_GTX_DIAG_PACKET);
+  return m_rfgtx->get_reg(RORC_REG_GTX_DIAG_PACKET);
 }
 
 uint32_t flib_link_cnet::diag_packet_err() {
-  return m_rfgtx->reg(RORC_REG_GTX_DIAG_PACKET_ERR);
+  return m_rfgtx->get_reg(RORC_REG_GTX_DIAG_PACKET_ERR);
 }
 
 flib_link_cnet::diag_flags_t flib_link_cnet::diag_flags() {
-  uint32_t reg = m_rfgtx->reg(RORC_REG_GTX_DIAG_FLAGS);
+  uint32_t reg = m_rfgtx->get_reg(RORC_REG_GTX_DIAG_FLAGS);
   diag_flags_t flags;
   flags.pcs_startup = (reg & (1));
   flags.ebtb_code_err = (reg & (1 << 1));
@@ -152,7 +152,7 @@ void flib_link_cnet::diag_clear() {
 }
 
 flib_link_cnet::link_status_t flib_link_cnet::link_status() {
-  uint32_t sts = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_STS);
+  uint32_t sts = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_STS);
 
   link_status_t link_status;
   link_status.link_active = (sts & (1));

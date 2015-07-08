@@ -91,7 +91,7 @@ void flib_link::set_start_idx(uint64_t index) {
                    static_cast<uint32_t>(index >> 32));
   // reste mc counter
   // TODO implenet edge detection and 'pulse only' in HW
-  uint32_t mc_gen_cfg = m_rfgtx->reg(RORC_REG_GTX_MC_GEN_CFG);
+  uint32_t mc_gen_cfg = m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
   // TODO replace with _rfgtx->set_bit()
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
@@ -100,7 +100,7 @@ void flib_link::set_start_idx(uint64_t index) {
 void flib_link::rst_pending_mc() {
   // Is also resetted with datapath reset
   // TODO implenet edge detection and 'pulse only' in HW
-  uint32_t mc_gen_cfg = m_rfgtx->reg(RORC_REG_GTX_MC_GEN_CFG);
+  uint32_t mc_gen_cfg = m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
   // TODO replace with _rfgtx->set_bit()
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1 << 1)));
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1 << 1)));
@@ -115,7 +115,7 @@ void flib_link::enable_cbmnet_packer_debug_mode(bool enable) {
 }
 
 void flib_link::set_data_sel(data_sel_t rx_sel) {
-  uint32_t dp_cfg = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_CFG);
+  uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
   switch (rx_sel) {
   case rx_disable:
     m_rfgtx->set_reg(RORC_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3));
@@ -133,7 +133,7 @@ void flib_link::set_data_sel(data_sel_t rx_sel) {
 }
 
 flib_link::data_sel_t flib_link::data_sel() {
-  uint32_t dp_cfg = m_rfgtx->reg(RORC_REG_GTX_DATAPATH_CFG);
+  uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
   return static_cast<data_sel_t>(dp_cfg & 0x3);
 }
 
@@ -145,19 +145,19 @@ void flib_link::set_hdr_config(const hdr_config_t* config) {
 
 uint64_t flib_link::pending_mc() {
   // TODO replace with _rfgtx->get_mem()
-  uint64_t pend_mc = m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_L);
-  pend_mc =
-      pend_mc |
-      (static_cast<uint64_t>(m_rfgtx->reg(RORC_REG_GTX_PENDING_MC_H)) << 32);
+  uint64_t pend_mc = m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_L);
+  pend_mc = pend_mc |
+            (static_cast<uint64_t>(m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_H))
+             << 32);
   return pend_mc;
 }
 
 // TODO this has to become desc_offset() in libflib2
 uint64_t flib_link::mc_index() {
-  uint64_t mc_index = m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_L);
+  uint64_t mc_index = m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_L);
   mc_index =
       mc_index |
-      (static_cast<uint64_t>(m_rfgtx->reg(RORC_REG_GTX_MC_INDEX_H)) << 32);
+      (static_cast<uint64_t>(m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_H)) << 32);
   return mc_index;
 }
 

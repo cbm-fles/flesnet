@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
   // FLIB global configuration
   flib.set_mc_time(par.mc_size());
   L_(debug) << "MC size is: "
-            << (flib.rf()->reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
+            << (flib.rf()->get_reg(RORC_REG_MC_CNT_CFG) & 0x7FFFFFFF);
 
   // FLIB per link configuration
   for (size_t i = 0; i < flib.number_of_links(); ++i) {

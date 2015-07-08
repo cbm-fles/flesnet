@@ -26,7 +26,7 @@ dma_channel::dma_channel(flib_link* parent_link,
       m_desc_buffer_log_size(desc_buffer_log_size),
       m_dma_transfer_size(dma_transfer_size) {
   m_rfpkt = m_parent_link->register_file_packetizer();
-  m_reg_dmactrl_cached = m_rfpkt->reg(RORC_REG_DMA_CTRL);
+  m_reg_dmactrl_cached = m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
   // ensure HW is disabled
   // TODO: add global lock, otherwise this gives a race condition
   if (is_enabled()) {
@@ -68,7 +68,7 @@ dma_channel::dma_channel(flib_link* parent_link,
       m_desc_buffer_log_size(desc_buffer_log_size),
       m_dma_transfer_size(dma_transfer_size) {
   m_rfpkt = m_parent_link->register_file_packetizer();
-  m_reg_dmactrl_cached = m_rfpkt->reg(RORC_REG_DMA_CTRL);
+  m_reg_dmactrl_cached = m_rfpkt->get_reg(RORC_REG_DMA_CTRL);
   // ensure HW is disabled
   if (is_enabled()) {
     throw FlibException("DMA Engine already enabled");
@@ -123,7 +123,7 @@ void dma_channel::set_sw_read_pointers(uint64_t data_offset,
       RORC_REG_EBDM_SW_READ_POINTER_L, &offsets, sizeof(offsets) >> 2);
 }
 
-// TODO function is not working
+// TODO get_mem not applicable because _L _H regs are in wrong order
 // uint64_t dma_channel::get_data_offset() {
 //  uint64_t offset;
 //  m_rfpkt->mem(RORC_REG_EBDM_OFFSET_L, &offset, 2);
@@ -131,9 +131,10 @@ void dma_channel::set_sw_read_pointers(uint64_t data_offset,
 //}
 
 uint64_t dma_channel::get_data_offset() {
-  uint64_t offset = m_rfpkt->reg(RORC_REG_EBDM_OFFSET_L);
-  offset = offset |
-           (static_cast<uint64_t>(m_rfpkt->reg(RORC_REG_EBDM_OFFSET_H)) << 32);
+  uint64_t offset = m_rfpkt->get_reg(RORC_REG_EBDM_OFFSET_L);
+  offset =
+      offset |
+      (static_cast<uint64_t>(m_rfpkt->get_reg(RORC_REG_EBDM_OFFSET_H)) << 32);
   return offset;
 }
 
@@ -294,7 +295,7 @@ size_t dma_channel::get_max_sg_entries(const sg_bram_t buf_sel) {
   // N_SG_CONFIG:
   // [15:0] : actual number of sg entries in RAM
   // [31:16]: maximum number of entries (read only)
-  return (m_rfpkt->reg(addr) >> 16);
+  return (m_rfpkt->get_reg(addr) >> 16);
 }
 
 size_t dma_channel::get_configured_sg_entries(const sg_bram_t buf_sel) {
@@ -304,7 +305,7 @@ size_t dma_channel::get_configured_sg_entries(const sg_bram_t buf_sel) {
   // N_SG_CONFIG:
   // [15:0] : actual number of sg entries in RAM
   // [31:16]: maximum number of entries (read only)
-  return (m_rfpkt->reg(addr) & 0x0000ffff);
+  return (m_rfpkt->get_reg(addr) & 0x0000ffff);
 }
 
 void dma_channel::set_configured_sg_entries(const sg_bram_t buf_sel,
@@ -375,7 +376,7 @@ inline bool dma_channel::is_enabled() {
 }
 
 inline bool dma_channel::is_busy() {
-  return m_rfpkt->bit(RORC_REG_DMA_CTRL, BIT_DMACTRL_BUSY);
+  return m_rfpkt->get_bit(RORC_REG_DMA_CTRL, BIT_DMACTRL_BUSY);
 }
 
 void dma_channel::set_dmactrl(uint32_t reg, uint32_t mask) {

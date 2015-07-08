@@ -34,7 +34,8 @@ flib_device::flib_device(int device_nr) {
 flib_device::~flib_device() {}
 
 bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
-  uint16_t hw_ver = m_register_file->reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
+  uint16_t hw_ver =
+      m_register_file->get_reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
   std::cout << "HW Version: " << hw_ver << std::endl;
   bool match = false;
 
@@ -62,24 +63,24 @@ void flib_device::enable_mc_cnt(bool enable) {
 
 void flib_device::set_mc_time(uint32_t time) {
   // time: 31 bit wide, in units of 8 ns
-  uint32_t reg = m_register_file->reg(RORC_REG_MC_CNT_CFG);
+  uint32_t reg = m_register_file->get_reg(RORC_REG_MC_CNT_CFG);
   reg = (reg & ~0x7FFFFFFF) | (time & 0x7FFFFFFF);
   m_register_file->set_reg(RORC_REG_MC_CNT_CFG, reg);
 }
 
 uint8_t flib_device::number_of_hw_links() {
-  return (m_register_file->reg(RORC_REG_N_CHANNELS) & 0xFF);
+  return (m_register_file->get_reg(RORC_REG_N_CHANNELS) & 0xFF);
 }
 
 uint16_t flib_device::hardware_version() {
-  return (static_cast<uint16_t>(m_register_file->reg(0) >> 16));
+  return (static_cast<uint16_t>(m_register_file->get_reg(0) >> 16));
   // RORC_REG_HARDWARE_INFO
 }
 
 boost::posix_time::ptime flib_device::build_date() {
   time_t time =
-      (static_cast<time_t>(m_register_file->reg(RORC_REG_BUILD_DATE_L)) |
-       (static_cast<uint64_t>(m_register_file->reg(RORC_REG_BUILD_DATE_H))
+      (static_cast<time_t>(m_register_file->get_reg(RORC_REG_BUILD_DATE_L)) |
+       (static_cast<uint64_t>(m_register_file->get_reg(RORC_REG_BUILD_DATE_H))
         << 32));
   boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
   return t;
@@ -87,19 +88,19 @@ boost::posix_time::ptime flib_device::build_date() {
 
 std::string flib_device::build_host() {
   uint32_t host[4];
-  host[0] = ntohl(m_register_file->reg(RORC_REG_BUILD_HOST_3));
-  host[1] = ntohl(m_register_file->reg(RORC_REG_BUILD_HOST_2));
-  host[2] = ntohl(m_register_file->reg(RORC_REG_BUILD_HOST_1));
-  host[3] = ntohl(m_register_file->reg(RORC_REG_BUILD_HOST_0));
+  host[0] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_3));
+  host[1] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_2));
+  host[2] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_1));
+  host[3] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_0));
   return std::string(reinterpret_cast<const char*>(host));
 }
 
 std::string flib_device::build_user() {
   uint32_t user[4];
-  user[0] = ntohl(m_register_file->reg(RORC_REG_BUILD_USER_3));
-  user[1] = ntohl(m_register_file->reg(RORC_REG_BUILD_USER_2));
-  user[2] = ntohl(m_register_file->reg(RORC_REG_BUILD_USER_1));
-  user[3] = ntohl(m_register_file->reg(RORC_REG_BUILD_USER_0));
+  user[0] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_3));
+  user[1] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_2));
+  user[2] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_1));
+  user[3] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_0));
   return std::string(reinterpret_cast<const char*>(user));
 }
 
@@ -109,14 +110,14 @@ struct build_info_t flib_device::build_info() {
   info.date = build_date();
   info.host = build_host();
   info.user = build_user();
-  info.rev[0] = m_register_file->reg(RORC_REG_BUILD_REV_0);
-  info.rev[1] = m_register_file->reg(RORC_REG_BUILD_REV_1);
-  info.rev[2] = m_register_file->reg(RORC_REG_BUILD_REV_2);
-  info.rev[3] = m_register_file->reg(RORC_REG_BUILD_REV_3);
-  info.rev[4] = m_register_file->reg(RORC_REG_BUILD_REV_4);
+  info.rev[0] = m_register_file->get_reg(RORC_REG_BUILD_REV_0);
+  info.rev[1] = m_register_file->get_reg(RORC_REG_BUILD_REV_1);
+  info.rev[2] = m_register_file->get_reg(RORC_REG_BUILD_REV_2);
+  info.rev[3] = m_register_file->get_reg(RORC_REG_BUILD_REV_3);
+  info.rev[4] = m_register_file->get_reg(RORC_REG_BUILD_REV_4);
   info.hw_ver = hardware_version();
-  info.clean = (m_register_file->reg(RORC_REG_BUILD_FLAGS) & 0x1);
-  info.repo = (m_register_file->reg(RORC_REG_BUILD_FLAGS) & 0x6) >> 1;
+  info.clean = (m_register_file->get_reg(RORC_REG_BUILD_FLAGS) & 0x1);
+  info.repo = (m_register_file->get_reg(RORC_REG_BUILD_FLAGS) & 0x6) >> 1;
   return info;
 }
 
@@ -174,7 +175,7 @@ flib_link* flib_device::link(size_t n) { return m_link.at(n).get(); }
 register_file_bar* flib_device::rf() const { return m_register_file.get(); }
 
 bool flib_device::check_magic_number() {
-  return ((m_register_file->reg(0) & 0xFFFF) ==
+  return ((m_register_file->get_reg(0) & 0xFFFF) ==
           0x4844); // RORC_REG_HARDWARE_INFO
 }
 }
