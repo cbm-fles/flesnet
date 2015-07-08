@@ -49,12 +49,7 @@ void flib_link::init_dma(size_t data_buffer_log_size,
       this, data_buffer_log_size, desc_buffer_log_size, DMA_TRANSFER_SIZE));
 }
 
-void flib_link::deinit_dma() {
-  if (m_dma_channel) {
-    reset_datapath();
-    m_dma_channel = nullptr;
-  }
-}
+void flib_link::deinit_dma() { m_dma_channel = nullptr; }
 
 dma_channel* flib_link::channel() const {
   if (m_dma_channel) {

@@ -54,6 +54,7 @@ dma_channel::dma_channel(flib_link* parent_link,
   m_dbentries =
       m_desc_buffer->size() / sizeof(struct fles::MicrosliceDescriptor);
 
+  m_parent_link->reset_datapath();
   configure();
   enable();
 }
@@ -92,11 +93,15 @@ dma_channel::dma_channel(flib_link* parent_link,
   m_dbentries =
       m_desc_buffer->size() / sizeof(struct fles::MicrosliceDescriptor);
 
+  m_parent_link->reset_datapath();
   configure();
   enable();
 }
 
-dma_channel::~dma_channel() { disable(); }
+dma_channel::~dma_channel() {
+  disable();
+  m_parent_link->reset_datapath();
+}
 
 void dma_channel::set_sw_read_pointers(uint64_t data_offset,
                                        uint64_t desc_offset) {
