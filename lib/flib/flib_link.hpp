@@ -40,7 +40,7 @@ public:
 
   void init_datapath();
   void reset_datapath();
-  void rst_cnet_link();
+  void reset_link();
 
   void set_start_idx(uint64_t index);
   void rst_pending_mc();

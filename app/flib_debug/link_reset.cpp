@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
   MyFlib = new flib_device_cnet(0);
 
   printf("reseting CBMnet link %lu\n", link_nr);
-  MyFlib->link(link_nr)->rst_cnet_link();
+  MyFlib->link(link_nr)->reset_link();
 
   if (MyFlib)
     delete MyFlib;
