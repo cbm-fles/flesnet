@@ -64,8 +64,8 @@ dma_channel* flib_link::channel() const {
 void flib_link::init_datapath() { set_start_idx(1); }
 
 void flib_link::reset_datapath() {
-  // disable packer if still enabled
-  enable_cbmnet_packer(false);
+  // disable readout if still enabled
+  enable_readout(false);
   // datapath reset, will also cause hw defaults for
   // - pending mc  = 0
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, true);
@@ -104,14 +104,6 @@ void flib_link::rst_pending_mc() {
   // TODO replace with _rfgtx->set_bit()
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1 << 1)));
   m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1 << 1)));
-}
-
-void flib_link::enable_cbmnet_packer(bool enable) {
-  m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
-}
-
-void flib_link::enable_cbmnet_packer_debug_mode(bool enable) {
-  m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 3, enable);
 }
 
 void flib_link::set_data_sel(data_sel_t rx_sel) {

@@ -37,15 +37,12 @@ public:
   void deinit_dma();
 
   /*** DPB Emualtion ***/
-
   void init_datapath();
   void reset_datapath();
   void reset_link();
 
   void set_start_idx(uint64_t index);
   void rst_pending_mc();
-  void enable_cbmnet_packer(bool enable);
-  void enable_cbmnet_packer_debug_mode(bool enable);
 
   typedef enum {
     rx_disable = 0x0,
@@ -66,6 +63,8 @@ public:
   void set_hdr_config(const hdr_config_t* config);
   uint64_t pending_mc();
   uint64_t mc_index();
+
+  virtual void enable_readout(bool enable) = 0;
 
   /*** Getter ***/
   size_t link_index() { return m_link_index; };

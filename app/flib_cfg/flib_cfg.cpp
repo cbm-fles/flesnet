@@ -51,7 +51,6 @@ int main(int argc, char* argv[]) {
     link_config.hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
     links.at(i)->set_hdr_config(&link_config.hdr_config);
     links.at(i)->set_data_sel(link_config.rx_sel);
-    links.at(i)->enable_cbmnet_packer_debug_mode(par.debug_mode());
   }
 
   L_(debug) << "Exiting";

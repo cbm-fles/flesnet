@@ -49,7 +49,7 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
 
     _flib_link->set_start_idx(0);
 
-    _flib_link->enable_cbmnet_packer(true);
+    _flib_link->enable_readout(true);
 
     // assert(_flib_link->mc_index() == 0);
     // assert(_flib_link->pending_mc() == 0);

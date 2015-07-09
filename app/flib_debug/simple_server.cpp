@@ -111,7 +111,7 @@ int main(int argc, const char* argv[]) {
       }
 
       flib.enable_mc_cnt(true);
-      links.at(i)->enable_cbmnet_packer(true);
+      links.at(i)->enable_readout(true);
 
       L_(debug) << "current mc nr: " << links.at(i)->mc_index();
       L_(debug) << "link " << i << "initialized";

@@ -16,6 +16,20 @@ flib_link_cnet::flib_link_cnet(size_t link_index,
                                pda::pci_bar* bar)
     : flib_link(link_index, dev, bar) {}
 
+//////*** Readout ***//////
+
+void flib_link_cnet::enable_cbmnet_packer(bool enable) {
+  m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
+}
+
+void flib_link_cnet::enable_cbmnet_packer_debug_mode(bool enable) {
+  m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 3, enable);
+}
+
+void flib_link_cnet::enable_readout(bool enable) {
+  enable_cbmnet_packer(enable);
+}
+
 //////*** CBMnet control interface ***//////
 
 int flib_link_cnet::send_dcm(const ctrl_msg_t* msg) {

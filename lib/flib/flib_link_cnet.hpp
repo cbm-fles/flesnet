@@ -15,6 +15,12 @@ class flib_link_cnet : public flib_link {
 public:
   flib_link_cnet(size_t link_index, pda::device* dev, pda::pci_bar* bar);
 
+  /*** Readout ***/
+  void enable_cbmnet_packer(bool enable);
+  void enable_cbmnet_packer_debug_mode(bool enable);
+
+  void enable_readout(bool enable) override;
+
   /*** CBMnet control interface ***/
   typedef struct {
     uint32_t words; // num 16 bit data words

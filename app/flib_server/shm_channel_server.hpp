@@ -48,7 +48,7 @@ public:
                           m_desc_buffer_size_exp);
 
     m_flib_link->set_start_idx(0);
-    m_flib_link->enable_cbmnet_packer(true);
+    m_flib_link->enable_readout(true);
   }
 
   ~shm_channel_server() {

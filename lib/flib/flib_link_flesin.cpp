@@ -16,6 +16,10 @@ flib_link_flesin::flib_link_flesin(size_t link_index,
                                    pda::pci_bar* bar)
     : flib_link(link_index, dev, bar) {}
 
+//////*** Readout ***//////
+
+void flib_link_flesin::enable_readout(bool enable) { (void)enable; }
+
 void flib_link_flesin::set_pgen_rate(float val) {
   assert(val >= 0);
   assert(val <= 1);
