@@ -34,6 +34,7 @@ public:
   void operator=(const parameters&) = delete;
 
   uint32_t mc_size() const { return _mc_size; }
+  float pgen_rate() const { return _pgen_rate; }
   bool debug_mode() const { return _debug_mode; }
 
   struct link_config link_config(size_t i) const {
@@ -60,6 +61,9 @@ private:
         "mc-size,t",
         po::value<uint32_t>(),
         "global size of microslices in units of 8 ns (31 bit wide)")(
+        "pgen-rate,r",
+        po::value<float>(),
+        "MS fill level of pattern generator in [0,1]")(
         "debug-mode",
         po::value<bool>(&_debug_mode)->default_value(false),
         "enable readout debug mode")
@@ -156,7 +160,7 @@ private:
 
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
-      std::cout << "can not open config file: " << config_file << "\n";
+      std::cerr << "can not open config file: " << config_file << "\n";
       exit(EXIT_SUCCESS);
     } else {
       po::store(po::parse_config_file(ifs, config_file_options), vm);
@@ -173,13 +177,23 @@ private:
     if (vm.count("mc-size")) {
       _mc_size = vm["mc-size"].as<uint32_t>();
       if (_mc_size > 2147483647) { // 31 bit check
-        std::cout << "Microslice size out of range" << std::endl;
+        std::cerr << "Microslice size out of range" << std::endl;
         exit(EXIT_SUCCESS);
       } else {
         std::cout << "Microslice size set to " << _mc_size << " * 8 ns.\n";
       }
     } else {
       std::cout << "Microslice size set to default.\n";
+    }
+
+    if (vm.count("pgen-rate")) {
+      _pgen_rate = vm["pgen-rate"].as<float>();
+      if (_pgen_rate < 0 || _pgen_rate > 1) { // range check
+        std::cerr << "Pgen rate out of range" << std::endl;
+        exit(EXIT_SUCCESS);
+      } else {
+        std::cout << "Pgen rate set to " << _pgen_rate << "\n";
+      }
     }
 
     for (size_t i = 0; i < _num_flib_links; ++i) {
@@ -211,7 +225,7 @@ private:
                       << (uint32_t)_link_config.at(i).hdr_config.sys_ver
                       << std::endl;
           } else {
-            std::cout << " If reading from 'link' please provide sys_id and "
+            std::cerr << " If reading from 'link' please provide sys_id and "
                          "sys_ver.\n";
             exit(EXIT_SUCCESS);
           }
@@ -235,7 +249,7 @@ private:
           _link_config.at(i).hdr_config.sys_ver = 0x11;
 
         } else {
-          std::cout << " No valid arg for data source." << std::endl;
+          std::cerr << " No valid arg for data source." << std::endl;
           exit(EXIT_SUCCESS);
         }
 
@@ -250,6 +264,7 @@ private:
   }
 
   uint32_t _mc_size = 125; // 1 us
+  float _pgen_rate = 1;
   std::array<struct link_config, _num_flib_links> _link_config;
   bool _debug_mode = false;
 };

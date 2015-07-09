@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
   for (size_t i = 0; i < flib.number_of_links(); ++i) {
     L_(debug) << "Initializing link " << i;
 
+    links.at(i)->set_pgen_rate(par.pgen_rate());
     struct link_config link_config = par.link_config(i);
     link_config.hdr_config.eq_id = static_cast<uint16_t>(0xE000 + i);
     links.at(i)->set_hdr_config(&link_config.hdr_config);
