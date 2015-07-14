@@ -14,12 +14,12 @@
 #include <iostream>
 #include <sstream>
 
-bool TimesliceAnalyzer::check_flesnet_pattern(
-    const fles::MicrosliceDescriptor& descriptor, const uint64_t* content,
-    size_t component)
+bool TimesliceAnalyzer::check_flesnet_pattern(const fles::MicrosliceView m,
+                                              size_t component)
 {
+    const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
     uint32_t crc = 0x00000000;
-    for (size_t pos = 0; pos < descriptor.size / sizeof(uint64_t); ++pos) {
+    for (size_t pos = 0; pos < m.desc().size / sizeof(uint64_t); ++pos) {
         uint64_t data_word = content[pos];
         crc ^= (data_word & 0xffffffff) ^ (data_word >> 32);
         uint64_t expected =
@@ -27,7 +27,7 @@ bool TimesliceAnalyzer::check_flesnet_pattern(
         if (data_word != expected)
             return false;
     }
-    if (crc != descriptor.crc)
+    if (crc != m.desc().crc)
         return false;
     return true;
 }
@@ -111,48 +111,47 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
     return true;
 }
 
-bool TimesliceAnalyzer::check_flib_pattern(
-    const fles::MicrosliceDescriptor& descriptor, const uint64_t* content,
-    size_t /* component */)
+bool TimesliceAnalyzer::check_flib_pattern(const fles::MicrosliceView m,
+                                           size_t /* component */)
 {
-    if (content[0] != reinterpret_cast<const uint64_t*>(&descriptor)[0] ||
-        content[1] != reinterpret_cast<const uint64_t*>(&descriptor)[1]) {
+    const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
+    if (content[0] != reinterpret_cast<const uint64_t*>(&m.desc())[0] ||
+        content[1] != reinterpret_cast<const uint64_t*>(&m.desc())[1]) {
         return false;
     }
     return check_cbmnet_frames(reinterpret_cast<const uint16_t*>(&content[2]),
-                               (descriptor.size - 16) / sizeof(uint16_t),
-                               descriptor.sys_id, descriptor.sys_ver);
+                               (m.desc().size - 16) / sizeof(uint16_t),
+                               m.desc().sys_id, m.desc().sys_ver);
 }
 
-bool TimesliceAnalyzer::check_microslice(
-    const fles::MicrosliceDescriptor& descriptor, const uint64_t* content,
-    size_t component, size_t microslice)
+bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
+                                         size_t component, size_t microslice)
 {
-    if (descriptor.idx != microslice) {
-        std::cerr << "microslice index " << descriptor.idx
-                  << " found in descriptor " << microslice << std::endl;
+    if (m.desc().idx != microslice) {
+        std::cerr << "microslice index " << m.desc().idx
+                  << " found in m.desc() " << microslice << std::endl;
         return false;
     }
 
     ++_microslice_count;
-    _content_bytes += descriptor.size;
+    _content_bytes += m.desc().size;
 
-    if (descriptor.flags &
+    if (m.desc().flags &
         static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) {
         // TODO: check crc
     }
 
-    if (static_cast<fles::SubsystemIdentifier>(descriptor.sys_id) !=
+    if (static_cast<fles::SubsystemIdentifier>(m.desc().sys_id) !=
         fles::SubsystemIdentifier::FLES) {
         return true;
     }
 
-    switch (static_cast<fles::SubsystemFormatFLES>(descriptor.sys_ver)) {
+    switch (static_cast<fles::SubsystemFormatFLES>(m.desc().sys_ver)) {
     case fles::SubsystemFormatFLES::BasicRampPattern:
-        return check_flesnet_pattern(descriptor, content, component);
+        return check_flesnet_pattern(m, component);
     case fles::SubsystemFormatFLES::CbmNetPattern:
     case fles::SubsystemFormatFLES::CbmNetFrontendEmulation:
-        return check_flib_pattern(descriptor, content, component);
+        return check_flib_pattern(m, component);
     default:
         return true;
     }
@@ -176,10 +175,9 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
         _frame_number = 0; // reset frame number for next component
         _pgen_sequence_number = 0;
         for (size_t m = 0; m < ts.num_microslices(c); ++m) {
-            bool success = check_microslice(
-                ts.descriptor(c, m),
-                reinterpret_cast<const uint64_t*>(ts.content(c, m)), c,
-                ts.index() * ts.num_core_microslices() + m);
+            bool success =
+                check_microslice(ts.get_microslice(c, m), c,
+                                 ts.index() * ts.num_core_microslices() + m);
             if (!success) {
                 std::cerr << "pattern error in TS " << ts.index() << ", MC "
                           << m << ", component " << c << std::endl;
