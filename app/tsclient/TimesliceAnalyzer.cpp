@@ -137,6 +137,11 @@ bool TimesliceAnalyzer::check_microslice(
     ++_microslice_count;
     _content_bytes += descriptor.size;
 
+    if (descriptor.flags &
+        static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) {
+        // TODO: check crc
+    }
+
     if (static_cast<fles::SubsystemIdentifier>(descriptor.sys_id) !=
         fles::SubsystemIdentifier::FLES) {
         return true;
