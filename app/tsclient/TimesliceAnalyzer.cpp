@@ -137,8 +137,10 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
     _content_bytes += m.desc().size;
 
     if (m.desc().flags &
-        static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) {
-        // TODO: check crc
+            static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
+        m.check_crc() == false) {
+        std::cerr << "crc failure in microslice " << m.desc().idx << std::endl;
+        return false;
     }
 
     if (static_cast<fles::SubsystemIdentifier>(m.desc().sys_id) !=
