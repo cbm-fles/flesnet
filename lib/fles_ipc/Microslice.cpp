@@ -9,7 +9,7 @@ namespace fles
 
 Microslice::~Microslice() {}
 
-uint32_t Microslice::compute_crc()
+uint32_t Microslice::compute_crc() const
 {
     assert(_content_ptr);
     assert(_desc_ptr);
@@ -19,6 +19,6 @@ uint32_t Microslice::compute_crc()
     return crc_32();
 };
 
-bool Microslice::check_crc() { return compute_crc() == _desc_ptr->crc; }
+bool Microslice::check_crc() const { return compute_crc() == _desc_ptr->crc; }
 
 } // namespace fles {

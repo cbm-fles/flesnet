@@ -31,10 +31,10 @@ public:
     const uint8_t* content() const { return _content_ptr; }
 
     /// Compute CRC-32 checksum of microslice data content
-    uint32_t compute_crc();
+    uint32_t compute_crc() const;
 
     /// Compare computed CRC-32 checksum to value in header
-    bool check_crc();
+    bool check_crc() const;
 
 protected:
     Microslice(){};
