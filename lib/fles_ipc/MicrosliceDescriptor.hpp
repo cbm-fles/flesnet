@@ -65,6 +65,14 @@ enum class HeaderFormatIdentifier : uint8_t { Standard = 0xDD };
  */
 enum class HeaderFormatVersion : uint8_t { Standard = 0x01 };
 
+/**
+ * \brief Microslice status and error flags.
+ *
+ * This enum defines the bits in the
+ * fles::MicrosliceDescriptor::flags word.
+ */
+enum class MicrosliceFlags : uint16_t { CrcValid = 0x0001 };
+
 #pragma pack(1)
 
 /**
