@@ -4,6 +4,8 @@
 #include <boost/crc.hpp>
 #include <random>
 #include <iostream>
+#include <functional> // std::bind
+#include <algorithm> // std::generate_n
 #include <smmintrin.h>
 
 Benchmark::Benchmark()
