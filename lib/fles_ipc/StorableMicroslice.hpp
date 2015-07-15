@@ -63,6 +63,14 @@ public:
      */
     StorableMicroslice(MicrosliceDescriptor d, std::vector<uint8_t> content);
 
+    /// Retrieve non-const microslice descriptor reference
+    MicrosliceDescriptor& desc() { return *_desc_ptr; }
+
+    /// Retrieve a non-const pointer to the microslice data
+    uint8_t* content() { return _content_ptr; }
+
+    void initialize_crc();
+
 private:
     friend class boost::serialization::access;
     friend class InputArchive<Microslice, StorableMicroslice,

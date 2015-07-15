@@ -20,7 +20,7 @@ class MicrosliceView : public Microslice
 {
 public:
     /// Construct microslice with given content.
-    MicrosliceView(const MicrosliceDescriptor& d, const uint8_t* content);
+    MicrosliceView(MicrosliceDescriptor& d, uint8_t* content);
 };
 
 } // namespace fles {

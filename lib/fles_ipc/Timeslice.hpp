@@ -68,9 +68,23 @@ public:
     }
 
     /// Retrieve the descriptor and pointer to the data of a given microslice
-    MicrosliceView get_microslice(uint64_t component, uint64_t mc_index) const
+    const MicrosliceView get_microslice(uint64_t component,
+                                        uint64_t mc_index) const
     {
-        return {descriptor(component, mc_index), content(component, mc_index)};
+        uint8_t* component_data_ptr = _data_ptr[component];
+
+        MicrosliceDescriptor& dd = reinterpret_cast<MicrosliceDescriptor*>(
+            component_data_ptr)[mc_index];
+
+        MicrosliceDescriptor& dd0 =
+            reinterpret_cast<MicrosliceDescriptor*>(component_data_ptr)[0];
+
+        uint8_t* cc = component_data_ptr +
+                      _desc_ptr[component]->num_microslices *
+                          sizeof(MicrosliceDescriptor) +
+                      dd.offset - dd0.offset;
+
+        return MicrosliceView(dd, cc);
     }
 
 protected:
@@ -82,11 +96,11 @@ protected:
     TimesliceDescriptor _timeslice_descriptor;
 
     /// A vector of pointers to the data content, one per timeslice component.
-    std::vector<const uint8_t*> _data_ptr;
+    std::vector<uint8_t*> _data_ptr;
 
     /// \brief A vector of pointers to the microslice descriptors, one per
     /// timeslice component.
-    std::vector<const TimesliceComponentDescriptor*> _desc_ptr;
+    std::vector<TimesliceComponentDescriptor*> _desc_ptr;
 };
 
 } // namespace fles {

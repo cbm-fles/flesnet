@@ -25,7 +25,7 @@ struct F {
         desc0.size = static_cast<uint32_t>(data0.size());
     }
 
-    const std::array<uint8_t, 4> data0{{7, 13, 12, 8}};
+    std::array<uint8_t, 4> data0{{7, 13, 12, 8}};
 
     fles::MicrosliceDescriptor desc0 = fles::MicrosliceDescriptor();
 };
@@ -76,6 +76,16 @@ BOOST_FIXTURE_TEST_CASE(view_assignment_test, F)
 
     BOOST_CHECK_EQUAL(m2.desc().eq_id, 10);
     BOOST_CHECK_EQUAL(m2.content()[3], 8);
+}
+
+BOOST_FIXTURE_TEST_CASE(crc_test, F)
+{
+    fles::StorableMicroslice m1(desc0, data0.data());
+    BOOST_CHECK(!m1.check_crc());
+    m1.initialize_crc();
+    BOOST_CHECK(m1.check_crc());
+    m1.content()[3] = 9;
+    BOOST_CHECK(!m1.check_crc());
 }
 
 BOOST_FIXTURE_TEST_CASE(archive_test, F)

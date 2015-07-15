@@ -5,8 +5,7 @@
 namespace fles
 {
 
-MicrosliceView::MicrosliceView(const MicrosliceDescriptor& d,
-                               const uint8_t* content)
+MicrosliceView::MicrosliceView(MicrosliceDescriptor& d, uint8_t* content)
     : Microslice(&d, content)
 {
 }

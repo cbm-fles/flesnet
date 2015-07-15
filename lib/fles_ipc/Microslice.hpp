@@ -24,7 +24,7 @@ class Microslice
 public:
     virtual ~Microslice() = 0;
 
-    /// Retrieve microslice descriptor
+    /// Retrieve microslice descriptor reference
     const MicrosliceDescriptor& desc() const { return *_desc_ptr; }
 
     /// Retrieve a pointer to the microslice data
@@ -40,16 +40,16 @@ protected:
     Microslice(){};
 
     /// Construct microslice with given content.
-    Microslice(const MicrosliceDescriptor* desc_ptr, const uint8_t* content_ptr)
+    Microslice(MicrosliceDescriptor* desc_ptr, uint8_t* content_ptr)
         : _desc_ptr(desc_ptr), _content_ptr(content_ptr){};
 
     friend class StorableMicroslice;
 
     /// Pointer to the microslice descriptor
-    const MicrosliceDescriptor* _desc_ptr;
+    MicrosliceDescriptor* _desc_ptr;
 
     /// Pointer to the microslice data content
-    const uint8_t* _content_ptr;
+    uint8_t* _content_ptr;
 };
 
 } // namespace fles {
