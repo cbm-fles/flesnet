@@ -11,7 +11,9 @@ public:
     Benchmark();
     void run();
 
-    uint32_t crc32_boost();
+    enum class Algorithm { Boost, Intrinsic32, Intrinsic64 };
+    uint32_t compute_crc32(Algorithm algorithm);
+    void run_single(Algorithm algorithm);
 
     const size_t _size = 1048576;
     const size_t _cycles = 500;
