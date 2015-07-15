@@ -12,7 +12,7 @@ Application::Application(Parameters const& par) : _par(par)
         _source.reset(new fles::TimesliceReceiver(_par.shm_identifier()));
     else if (!_par.input_archive().empty())
         _source.reset(new fles::TimesliceInputArchive(_par.input_archive()));
-    else
+    else if (!_par.subscribe_address().empty())
         _source.reset(new fles::TimesliceSubscriber(_par.subscribe_address()));
 
     if (_par.analyze())
@@ -26,6 +26,9 @@ Application::Application(Parameters const& par) : _par(par)
 
     if (!_par.publish_address().empty())
         _publisher.reset(new fles::TimeslicePublisher(_par.publish_address()));
+
+    if (_par.benchmark())
+        _benchmark.reset(new Benchmark());
 
     if (_par.client_index() != -1) {
         std::cout << "tsclient " << _par.client_index() << ": "
@@ -43,6 +46,11 @@ Application::~Application()
 
 void Application::run()
 {
+    if (_benchmark) {
+        _benchmark->run();
+        return;
+    }
+
     while (auto timeslice = _source->get()) {
         if (_analyzer) {
             _analyzer->check_timeslice(*timeslice);

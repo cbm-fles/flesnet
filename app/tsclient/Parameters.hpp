@@ -34,6 +34,8 @@ public:
 
     bool analyze() const { return _analyze; }
 
+    bool benchmark() const { return _benchmark; }
+
     size_t verbosity() const { return _verbosity; }
 
     std::string publish_address() const { return _publish_address; }
@@ -48,6 +50,7 @@ private:
     std::string _input_archive;
     std::string _output_archive;
     bool _analyze = false;
+    bool _benchmark = false;
     size_t _verbosity = 0;
     std::string _publish_address;
     std::string _subscribe_address;

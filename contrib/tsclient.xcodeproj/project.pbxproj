@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3D06A82E1B56381B0039F5CD /* Benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A82C1B56381B0039F5CD /* Benchmark.cpp */; };
 		3D5656F31B42D0770052C86D /* Application.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656EA1B42D0770052C86D /* Application.cpp */; };
 		3D5656F41B42D0770052C86D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656EC1B42D0770052C86D /* main.cpp */; };
 		3D5656F51B42D0770052C86D /* Parameters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656ED1B42D0770052C86D /* Parameters.cpp */; };
@@ -59,6 +60,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3D06A82C1B56381B0039F5CD /* Benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Benchmark.cpp; path = ../app/tsclient/Benchmark.cpp; sourceTree = "<group>"; };
+		3D06A82D1B56381B0039F5CD /* Benchmark.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Benchmark.hpp; path = ../app/tsclient/Benchmark.hpp; sourceTree = "<group>"; };
 		3D462B871B42CC790017047A /* tsclient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tsclient; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D5656EA1B42D0770052C86D /* Application.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Application.cpp; path = ../app/tsclient/Application.cpp; sourceTree = "<group>"; };
 		3D5656EB1B42D0770052C86D /* Application.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Application.hpp; path = ../app/tsclient/Application.hpp; sourceTree = "<group>"; };
@@ -113,6 +116,8 @@
 				3D5656F01B42D0770052C86D /* TimesliceAnalyzer.hpp */,
 				3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */,
 				3D5656F21B42D0770052C86D /* TimesliceDebugger.hpp */,
+				3D06A82C1B56381B0039F5CD /* Benchmark.cpp */,
+				3D06A82D1B56381B0039F5CD /* Benchmark.hpp */,
 			);
 			name = tsclient;
 			sourceTree = "<group>";
@@ -215,6 +220,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D5656F51B42D0770052C86D /* Parameters.cpp in Sources */,
+				3D06A82E1B56381B0039F5CD /* Benchmark.cpp in Sources */,
 				3D5656F41B42D0770052C86D /* main.cpp in Sources */,
 				3D5656F31B42D0770052C86D /* Application.cpp in Sources */,
 				3D5656F71B42D0770052C86D /* TimesliceDebugger.cpp in Sources */,
