@@ -111,8 +111,8 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
     return true;
 }
 
-bool TimesliceAnalyzer::check_flib_pattern(const fles::MicrosliceView m,
-                                           size_t /* component */)
+bool TimesliceAnalyzer::check_flib_legacy_pattern(const fles::MicrosliceView m,
+                                                  size_t /* component */)
 {
     const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
     if (content[0] != reinterpret_cast<const uint64_t*>(&m.desc())[0] ||
@@ -153,7 +153,7 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
         return check_flesnet_pattern(m, component);
     case fles::SubsystemFormatFLES::CbmNetPattern:
     case fles::SubsystemFormatFLES::CbmNetFrontendEmulation:
-        return check_flib_pattern(m, component);
+        return check_flib_legacy_pattern(m, component);
     default:
         return true;
     }

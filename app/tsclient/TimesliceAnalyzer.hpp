@@ -26,8 +26,8 @@ private:
     bool check_cbmnet_frames(const uint16_t* content, size_t size,
                              uint8_t sys_id, uint8_t sys_ver);
 
-    bool check_flib_pattern(const fles::MicrosliceView m,
-                            size_t /* component */);
+    bool check_flib_legacy_pattern(const fles::MicrosliceView m,
+                                   size_t /* component */);
 
     bool check_microslice(const fles::MicrosliceView m, size_t component,
                           size_t microslice);
