@@ -13,6 +13,37 @@
 #include "TimesliceAnalyzer.hpp"
 #include <iostream>
 #include <sstream>
+#include <cassert>
+
+TimesliceAnalyzer::TimesliceAnalyzer()
+{
+    // create CRC-32C engine (Castagnoli polynomial)
+    _crc32_engine = crcutil_interface::CRC::Create(
+        0x82f63b78, 0, 32, true, 0, 0, 0,
+        crcutil_interface::CRC::IsSSE42Available(), NULL);
+}
+
+TimesliceAnalyzer::~TimesliceAnalyzer()
+{
+    if (_crc32_engine) {
+        _crc32_engine->Delete();
+    }
+}
+
+uint32_t TimesliceAnalyzer::compute_crc(const fles::MicrosliceView m) const
+{
+    assert(_crc32_engine);
+
+    crcutil_interface::UINT64 crc64 = 0;
+    _crc32_engine->Compute(m.content(), m.desc().size, &crc64);
+
+    return static_cast<uint32_t>(crc64);
+}
+
+bool TimesliceAnalyzer::check_crc(const fles::MicrosliceView m) const
+{
+    return compute_crc(m) == m.desc().crc;
+}
 
 bool TimesliceAnalyzer::check_flesnet_pattern(const fles::MicrosliceView m,
                                               size_t component)
@@ -216,7 +247,7 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
 
     if (m.desc().flags &
             static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
-        m.check_crc() == false) {
+        check_crc(m) == false) {
         std::cerr << "crc failure in microslice " << m.desc().idx << std::endl;
         return false;
     }

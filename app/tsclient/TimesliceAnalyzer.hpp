@@ -3,10 +3,14 @@
 
 #include "Timeslice.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "interface.h" // crcutil_interface
 
 class TimesliceAnalyzer
 {
 public:
+    TimesliceAnalyzer();
+    ~TimesliceAnalyzer();
+
     bool check_timeslice(const fles::Timeslice& ts);
 
     std::string statistics() const;
@@ -19,6 +23,10 @@ public:
     size_t count() const { return _timeslice_count; }
 
 private:
+    uint32_t compute_crc(const fles::MicrosliceView m) const;
+
+    bool check_crc(const fles::MicrosliceView m) const;
+
     bool check_flesnet_pattern(const fles::MicrosliceView m, size_t component);
 
     bool check_content_pgen(const uint16_t* content, size_t size);
@@ -33,6 +41,8 @@ private:
 
     bool check_microslice(const fles::MicrosliceView m, size_t component,
                           size_t microslice);
+
+    crcutil_interface::CRC* _crc32_engine = nullptr;
 
     size_t _timeslice_count = 0;
     size_t _microslice_count = 0;
