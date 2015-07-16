@@ -101,7 +101,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
         crcutil_interface::CRC* crc_32 = crcutil_interface::CRC::Create(
             0x82f63b78, 0, 32, true, 0, 0, 0,
             crcutil_interface::CRC::IsSSE42Available(), NULL);
-        uint64_t crc64 = 0;
+        crcutil_interface::UINT64 crc64 = 0;
         for (size_t i = 0; i < _cycles; ++i) {
             crc_32->Compute(_random_data.data(), _random_data.size(), &crc64);
         }
@@ -115,7 +115,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
         crcutil_interface::CRC* crc_32 = crcutil_interface::CRC::Create(
             0xedb88320, 0, 32, true, 0, 0, 0,
             crcutil_interface::CRC::IsSSE42Available(), NULL);
-        uint64_t crc64 = 0;
+        crcutil_interface::UINT64 crc64 = 0;
         for (size_t i = 0; i < _cycles; ++i) {
             crc_32->Compute(_random_data.data(), _random_data.size(), &crc64);
         }
