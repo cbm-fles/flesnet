@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vector>
-#include <chrono>
 
 /// %Benchmark class.
 class Benchmark
