@@ -88,7 +88,7 @@ struct MicrosliceDescriptor {
     uint8_t sys_id;  ///< Subsystem identifier
     uint8_t sys_ver; ///< Subsystem format/version
     uint64_t idx;    ///< Microslice index
-    uint32_t crc;    ///< CRC32 checksum
+    uint32_t crc;    ///< CRC-32C (Castagnoli polynomial) of data content
     uint32_t size;   ///< Content size (bytes)
     uint64_t offset; ///< Offset in event buffer (bytes)
 
