@@ -5,8 +5,11 @@
 #include <random>
 #include <iostream>
 #include <functional> // std::bind
-#include <algorithm> // std::generate_n
+#include <algorithm>  // std::generate_n
 #include <smmintrin.h>
+
+#include "std_headers.h"
+#include "interface.h"
 
 Benchmark::Benchmark()
 {
@@ -19,13 +22,40 @@ Benchmark::Benchmark()
     std::generate_n(std::back_inserter(_random_data), _size, generator);
 }
 
+// IEEE is by far and away the most common CRC-32 polynomial.
+// Used by ethernet (IEEE 802.3), v.42, fddi, gzip, zip, png, ...
+// IEEE = 0xedb88320
+
+// Castagnoli's polynomial, used in iSCSI.
+// Has better error detection characteristics than IEEE.
+// http://dx.doi.org/10.1109/26.231911
+// Castagnoli = 0x82f63b78
+
+// Koopman's polynomial.
+// Also has better error detection characteristics than IEEE.
+// http://dx.doi.org/10.1109/DSN.2002.1028931
+// Koopman = 0xeb31d82e
+
 uint32_t Benchmark::compute_crc32(Algorithm algorithm)
 {
     uint32_t crc = 0;
 
     switch (algorithm) {
 
-    case Algorithm::Boost: {
+    case Algorithm::Boost_C: {
+        // Castagnoli
+        boost::crc_optimal<32, 0x1EDC6F41, 0xFFFFFFFF, 0xFFFFFFFF, true, true>
+            crc_32;
+
+        for (size_t i = 0; i < _cycles; ++i) {
+            crc_32.process_bytes(_random_data.data(), _random_data.size());
+        }
+        crc = crc_32();
+        break;
+    }
+
+    case Algorithm::Boost_I: {
+        // IEEE
         boost::crc_32_type crc_32;
 
         for (size_t i = 0; i < _cycles; ++i) {
@@ -36,6 +66,8 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
     }
 
     case Algorithm::Intrinsic32: {
+        // Castagnoli
+        crc ^= 0xFFFFFFFF;
         for (size_t i = 0; i < _cycles; ++i) {
             uint32_t* p = reinterpret_cast<uint32_t*>(_random_data.data());
             const uint32_t* const end =
@@ -44,11 +76,13 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
                 crc = _mm_crc32_u32(crc, *p++);
             }
         }
+        crc ^= 0xFFFFFFFF;
         break;
     }
 
     case Algorithm::Intrinsic64: {
-        uint64_t crc64 = 0;
+        // Castagnoli
+        uint64_t crc64 = UINT64_C(0xFFFFFFFF);
         for (size_t i = 0; i < _cycles; ++i) {
             uint64_t* p = reinterpret_cast<uint64_t*>(_random_data.data());
             const uint64_t* const end =
@@ -58,6 +92,35 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
             }
         }
         crc = static_cast<uint32_t>(crc64 & 0xffffffffU);
+        crc ^= 0xFFFFFFFF;
+        break;
+    }
+
+    case Algorithm::CrcUtil_C: {
+        // Castagnoli
+        crcutil_interface::CRC* crc_32 = crcutil_interface::CRC::Create(
+            0x82f63b78, 0, 32, true, 0, 0, 0,
+            crcutil_interface::CRC::IsSSE42Available(), NULL);
+        uint64_t crc64 = 0;
+        for (size_t i = 0; i < _cycles; ++i) {
+            crc_32->Compute(_random_data.data(), _random_data.size(), &crc64);
+        }
+        crc = static_cast<uint32_t>(crc64 & 0xffffffffU);
+        crc_32->Delete();
+        break;
+    }
+
+    case Algorithm::CrcUtil_I: {
+        // IEEE
+        crcutil_interface::CRC* crc_32 = crcutil_interface::CRC::Create(
+            0xedb88320, 0, 32, true, 0, 0, 0,
+            crcutil_interface::CRC::IsSSE42Available(), NULL);
+        uint64_t crc64 = 0;
+        for (size_t i = 0; i < _cycles; ++i) {
+            crc_32->Compute(_random_data.data(), _random_data.size(), &crc64);
+        }
+        crc = static_cast<uint32_t>(crc64 & 0xffffffffU);
+        crc_32->Delete();
         break;
     }
     }
@@ -67,12 +130,18 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
 
 void Benchmark::run()
 {
-    std::cout << "CRC32 Benchmark: Boost" << std::endl;
-    run_single(Algorithm::Boost);
-    std::cout << "CRC32 Benchmark: Intrinsic32" << std::endl;
+    std::cout << "CRC32 Benchmark: Boost (Castagnoli)" << std::endl;
+    run_single(Algorithm::Boost_C);
+    std::cout << "CRC32 Benchmark: Boost (IEEE)" << std::endl;
+    run_single(Algorithm::Boost_I);
+    std::cout << "CRC32 Benchmark: Intrinsic32 (Castagnoli)" << std::endl;
     run_single(Algorithm::Intrinsic32);
-    std::cout << "CRC32 Benchmark: Intrinsic64" << std::endl;
+    std::cout << "CRC32 Benchmark: Intrinsic64 (Castagnoli)" << std::endl;
     run_single(Algorithm::Intrinsic64);
+    std::cout << "CRC32 Benchmark: CrcUtil (Castagnoli)" << std::endl;
+    run_single(Algorithm::CrcUtil_C);
+    std::cout << "CRC32 Benchmark: CrcUtil (IEEE)" << std::endl;
+    run_single(Algorithm::CrcUtil_I);
 }
 
 void Benchmark::run_single(Algorithm algorithm)
@@ -85,6 +154,6 @@ void Benchmark::run_single(Algorithm algorithm)
         std::chrono::system_clock::now() - start);
     const float rate =
         static_cast<float>(_bytes) / static_cast<float>(duration.count());
-    std::cout << "crc32=" << std::hex << crc32 << "\n";
-    std::cout << rate << " MiB/s" << std::endl;
+    std::cout << "crc32=" << std::hex << crc32 << "  " << rate << " MiB/s"
+              << std::endl;
 }

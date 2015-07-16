@@ -11,7 +11,14 @@ public:
     Benchmark();
     void run();
 
-    enum class Algorithm { Boost, Intrinsic32, Intrinsic64 };
+    enum class Algorithm {
+        Boost_C,
+        Boost_I,
+        Intrinsic32,
+        Intrinsic64,
+        CrcUtil_C,
+        CrcUtil_I
+    };
     uint32_t compute_crc32(Algorithm algorithm);
     void run_single(Algorithm algorithm);
 
