@@ -32,6 +32,7 @@ add_definitions(-DBOOST_LOG_DYN_LINK)
 
 add_subdirectory(lib/logging)
 add_subdirectory(lib/fles_ipc)
+add_subdirectory(lib/crcutil)
 
 add_subdirectory(app/tsclient)
 

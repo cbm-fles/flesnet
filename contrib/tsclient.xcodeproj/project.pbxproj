@@ -8,6 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		3D06A82E1B56381B0039F5CD /* Benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A82C1B56381B0039F5CD /* Benchmark.cpp */; };
+		3D06A8491B56BC2D0039F5CD /* crc32c_sse4.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8361B56BC2D0039F5CD /* crc32c_sse4.cc */; settings = {COMPILER_FLAGS = "-w"; }; };
+		3D06A84A1B56BC2D0039F5CD /* interface.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A83C1B56BC2D0039F5CD /* interface.cc */; };
+		3D06A84B1B56BC2D0039F5CD /* multiword_128_64_gcc_amd64_sse2.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A83F1B56BC2D0039F5CD /* multiword_128_64_gcc_amd64_sse2.cc */; };
+		3D06A84C1B56BC2D0039F5CD /* multiword_64_64_cl_i386_mmx.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8401B56BC2D0039F5CD /* multiword_64_64_cl_i386_mmx.cc */; };
+		3D06A84D1B56BC2D0039F5CD /* multiword_64_64_gcc_amd64_asm.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8411B56BC2D0039F5CD /* multiword_64_64_gcc_amd64_asm.cc */; };
+		3D06A84E1B56BC2D0039F5CD /* multiword_64_64_gcc_i386_mmx.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8421B56BC2D0039F5CD /* multiword_64_64_gcc_i386_mmx.cc */; };
+		3D06A84F1B56BC2D0039F5CD /* multiword_64_64_intrinsic_i386_mmx.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8431B56BC2D0039F5CD /* multiword_64_64_intrinsic_i386_mmx.cc */; };
 		3D5656F31B42D0770052C86D /* Application.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656EA1B42D0770052C86D /* Application.cpp */; };
 		3D5656F41B42D0770052C86D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656EC1B42D0770052C86D /* main.cpp */; };
 		3D5656F51B42D0770052C86D /* Parameters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656ED1B42D0770052C86D /* Parameters.cpp */; };
@@ -62,6 +69,26 @@
 /* Begin PBXFileReference section */
 		3D06A82C1B56381B0039F5CD /* Benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Benchmark.cpp; path = ../app/tsclient/Benchmark.cpp; sourceTree = "<group>"; };
 		3D06A82D1B56381B0039F5CD /* Benchmark.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Benchmark.hpp; path = ../app/tsclient/Benchmark.hpp; sourceTree = "<group>"; };
+		3D06A8321B56BC2D0039F5CD /* aligned_alloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = aligned_alloc.h; sourceTree = "<group>"; };
+		3D06A8341B56BC2D0039F5CD /* base_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = base_types.h; sourceTree = "<group>"; };
+		3D06A8361B56BC2D0039F5CD /* crc32c_sse4.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = crc32c_sse4.cc; sourceTree = "<group>"; };
+		3D06A8371B56BC2D0039F5CD /* crc32c_sse4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crc32c_sse4.h; sourceTree = "<group>"; };
+		3D06A8381B56BC2D0039F5CD /* crc32c_sse4_intrin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crc32c_sse4_intrin.h; sourceTree = "<group>"; };
+		3D06A8391B56BC2D0039F5CD /* crc_casts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crc_casts.h; sourceTree = "<group>"; };
+		3D06A83A1B56BC2D0039F5CD /* generic_crc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = generic_crc.h; sourceTree = "<group>"; };
+		3D06A83B1B56BC2D0039F5CD /* gf_util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gf_util.h; sourceTree = "<group>"; };
+		3D06A83C1B56BC2D0039F5CD /* interface.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = interface.cc; sourceTree = "<group>"; };
+		3D06A83D1B56BC2D0039F5CD /* interface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = interface.h; sourceTree = "<group>"; };
+		3D06A83F1B56BC2D0039F5CD /* multiword_128_64_gcc_amd64_sse2.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multiword_128_64_gcc_amd64_sse2.cc; sourceTree = "<group>"; };
+		3D06A8401B56BC2D0039F5CD /* multiword_64_64_cl_i386_mmx.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multiword_64_64_cl_i386_mmx.cc; sourceTree = "<group>"; };
+		3D06A8411B56BC2D0039F5CD /* multiword_64_64_gcc_amd64_asm.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multiword_64_64_gcc_amd64_asm.cc; sourceTree = "<group>"; };
+		3D06A8421B56BC2D0039F5CD /* multiword_64_64_gcc_i386_mmx.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multiword_64_64_gcc_i386_mmx.cc; sourceTree = "<group>"; };
+		3D06A8431B56BC2D0039F5CD /* multiword_64_64_intrinsic_i386_mmx.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multiword_64_64_intrinsic_i386_mmx.cc; sourceTree = "<group>"; };
+		3D06A8441B56BC2D0039F5CD /* platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = platform.h; sourceTree = "<group>"; };
+		3D06A8451B56BC2D0039F5CD /* protected_crc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = protected_crc.h; sourceTree = "<group>"; };
+		3D06A8461B56BC2D0039F5CD /* rolling_crc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rolling_crc.h; sourceTree = "<group>"; };
+		3D06A8471B56BC2D0039F5CD /* std_headers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = std_headers.h; sourceTree = "<group>"; };
+		3D06A8481B56BC2D0039F5CD /* uint128_sse2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uint128_sse2.h; sourceTree = "<group>"; };
 		3D462B871B42CC790017047A /* tsclient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tsclient; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D5656EA1B42D0770052C86D /* Application.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Application.cpp; path = ../app/tsclient/Application.cpp; sourceTree = "<group>"; };
 		3D5656EB1B42D0770052C86D /* Application.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Application.hpp; path = ../app/tsclient/Application.hpp; sourceTree = "<group>"; };
@@ -87,10 +114,39 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3D06A8311B56BC2D0039F5CD /* crcutil */ = {
+			isa = PBXGroup;
+			children = (
+				3D06A8321B56BC2D0039F5CD /* aligned_alloc.h */,
+				3D06A8341B56BC2D0039F5CD /* base_types.h */,
+				3D06A8361B56BC2D0039F5CD /* crc32c_sse4.cc */,
+				3D06A8371B56BC2D0039F5CD /* crc32c_sse4.h */,
+				3D06A8381B56BC2D0039F5CD /* crc32c_sse4_intrin.h */,
+				3D06A8391B56BC2D0039F5CD /* crc_casts.h */,
+				3D06A83A1B56BC2D0039F5CD /* generic_crc.h */,
+				3D06A83B1B56BC2D0039F5CD /* gf_util.h */,
+				3D06A83C1B56BC2D0039F5CD /* interface.cc */,
+				3D06A83D1B56BC2D0039F5CD /* interface.h */,
+				3D06A83F1B56BC2D0039F5CD /* multiword_128_64_gcc_amd64_sse2.cc */,
+				3D06A8401B56BC2D0039F5CD /* multiword_64_64_cl_i386_mmx.cc */,
+				3D06A8411B56BC2D0039F5CD /* multiword_64_64_gcc_amd64_asm.cc */,
+				3D06A8421B56BC2D0039F5CD /* multiword_64_64_gcc_i386_mmx.cc */,
+				3D06A8431B56BC2D0039F5CD /* multiword_64_64_intrinsic_i386_mmx.cc */,
+				3D06A8441B56BC2D0039F5CD /* platform.h */,
+				3D06A8451B56BC2D0039F5CD /* protected_crc.h */,
+				3D06A8461B56BC2D0039F5CD /* rolling_crc.h */,
+				3D06A8471B56BC2D0039F5CD /* std_headers.h */,
+				3D06A8481B56BC2D0039F5CD /* uint128_sse2.h */,
+			);
+			name = crcutil;
+			path = ../lib/crcutil;
+			sourceTree = "<group>";
+		};
 		3D462B7E1B42CC790017047A = {
 			isa = PBXGroup;
 			children = (
 				3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */,
+				3D06A8311B56BC2D0039F5CD /* crcutil */,
 				3D5656F81B42D0870052C86D /* tsclient */,
 				3D462B881B42CC790017047A /* Products */,
 			);
@@ -220,11 +276,18 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D5656F51B42D0770052C86D /* Parameters.cpp in Sources */,
+				3D06A84F1B56BC2D0039F5CD /* multiword_64_64_intrinsic_i386_mmx.cc in Sources */,
+				3D06A84A1B56BC2D0039F5CD /* interface.cc in Sources */,
+				3D06A84E1B56BC2D0039F5CD /* multiword_64_64_gcc_i386_mmx.cc in Sources */,
 				3D06A82E1B56381B0039F5CD /* Benchmark.cpp in Sources */,
 				3D5656F41B42D0770052C86D /* main.cpp in Sources */,
+				3D06A8491B56BC2D0039F5CD /* crc32c_sse4.cc in Sources */,
+				3D06A84C1B56BC2D0039F5CD /* multiword_64_64_cl_i386_mmx.cc in Sources */,
+				3D06A84B1B56BC2D0039F5CD /* multiword_128_64_gcc_amd64_sse2.cc in Sources */,
 				3D5656F31B42D0770052C86D /* Application.cpp in Sources */,
 				3D5656F71B42D0770052C86D /* TimesliceDebugger.cpp in Sources */,
 				3D5656F61B42D0770052C86D /* TimesliceAnalyzer.cpp in Sources */,
+				3D06A84D1B56BC2D0039F5CD /* multiword_64_64_gcc_amd64_asm.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -348,6 +411,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREPROCESSOR_DEFINITIONS = BOOST_TEST_DYN_LINK;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;

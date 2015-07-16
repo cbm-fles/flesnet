@@ -3,11 +3,11 @@
 file(GLOB APP_SOURCES *.cpp)
 file(GLOB APP_HEADERS *.h)
 
-include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc/src")
+include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc/src" "${PROJECT_SOURCE_DIR}/lib/crcutil")
 
 add_executable(tsclient ${APP_SOURCES} ${APP_HEADERS})
 
-target_link_libraries(tsclient fles_ipc ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(tsclient fles_ipc crcutil ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(tsclient ${ZMQ_LIBRARIES})
 if(UNIX AND NOT APPLE)
     target_link_libraries(tsclient rt)
