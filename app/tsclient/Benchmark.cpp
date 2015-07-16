@@ -8,6 +8,7 @@
 #include <algorithm>  // std::generate_n
 #include <smmintrin.h>
 
+// from crcutil:
 #include "std_headers.h"
 #include "interface.h"
 
@@ -119,7 +120,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
         for (size_t i = 0; i < _cycles; ++i) {
             crc_32->Compute(_random_data.data(), _random_data.size(), &crc64);
         }
-        crc = static_cast<uint32_t>(crc64 & 0xffffffffU);
+        crc = static_cast<uint32_t>(crc64);
         crc_32->Delete();
         break;
     }
