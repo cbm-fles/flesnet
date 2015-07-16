@@ -29,6 +29,8 @@ private:
     bool check_flib_legacy_pattern(const fles::MicrosliceView m,
                                    size_t /* component */);
 
+    bool check_flib_pattern(const fles::MicrosliceView m);
+
     bool check_microslice(const fles::MicrosliceView m, size_t component,
                           size_t microslice);
 
@@ -38,4 +40,5 @@ private:
 
     uint8_t _frame_number = 0;
     uint16_t _pgen_sequence_number = 0;
+    uint32_t _flib_pgen_packet_number = 0;
 };
