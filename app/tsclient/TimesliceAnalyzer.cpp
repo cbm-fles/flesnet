@@ -111,8 +111,8 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
     return true;
 }
 
-bool TimesliceAnalyzer::check_flib_pattern(const fles::MicrosliceView m,
-                                           size_t /* component */)
+bool TimesliceAnalyzer::check_flib_legacy_pattern(const fles::MicrosliceView m,
+                                                  size_t /* component */)
 {
     const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
     if (content[0] != reinterpret_cast<const uint64_t*>(&m.desc())[0] ||
@@ -122,6 +122,84 @@ bool TimesliceAnalyzer::check_flib_pattern(const fles::MicrosliceView m,
     return check_cbmnet_frames(reinterpret_cast<const uint16_t*>(&content[2]),
                                (m.desc().size - 16) / sizeof(uint16_t),
                                m.desc().sys_id, m.desc().sys_ver);
+}
+
+bool TimesliceAnalyzer::check_flib_pattern(const fles::MicrosliceView m)
+{
+    uint8_t last_word_size = 0;
+
+    // increment packte number if initialized
+    if (_flib_pgen_packet_number != 0) {
+        ++_flib_pgen_packet_number;
+    }
+
+    if (m.desc().size >= 1) {
+        last_word_size = m.content()[0];
+        if ((m.desc().size & 0x7) != (last_word_size & 0x7)) {
+            std::cerr << "Flib pgen: error in last word size" << std::endl;
+            return false;
+        }
+    }
+
+    if (m.desc().size >= 4) {
+        const uint16_t word = reinterpret_cast<const uint16_t*>(m.content())[1];
+        if (word != 0xBBFF) {
+            std::cerr << "Flib pgen: error in hdr word" << std::endl;
+            return false;
+        }
+    }
+
+    if (m.desc().size >= 8) {
+        uint32_t flib_pgen_packet_number =
+            reinterpret_cast<const uint32_t*>(m.content())[1];
+        // check if initalized
+        if (_flib_pgen_packet_number != 0 &&
+            _flib_pgen_packet_number != flib_pgen_packet_number) {
+            std::cerr << "Flib pgen: error in packet number" << std::endl;
+            return false;
+        }
+        // initialize if uninitialized
+        if (_flib_pgen_packet_number == 0) {
+            _flib_pgen_packet_number = flib_pgen_packet_number;
+        }
+    }
+
+    // check ramp, everything form second word but last word
+    // last word is ramp word if last_word_size is 0
+    if (m.desc().size > 8) {
+        size_t ramp_limit = 0;
+        if (last_word_size == 0) {
+            ramp_limit = 8;
+        } else {
+            ramp_limit = 9;
+        }
+        size_t pos = 1;
+        uint64_t ramp = 0xABCD000000000000;
+        const uint64_t* content =
+            reinterpret_cast<const uint64_t*>(m.content()) + 0;
+
+        while (pos <= ((m.desc().size - ramp_limit) / sizeof(uint64_t))) {
+            if (content[pos] != ramp) {
+                std::cerr << "Flib pgen: error in ramp word "
+                          << " exp " << std::hex << ramp << " seen "
+                          << content[pos] << std::endl;
+                return false;
+            }
+            ++ramp;
+            ++pos;
+        }
+
+        // check last word if any
+        size_t last_word_start = pos * sizeof(uint64_t);
+        for (size_t i = 0; i < last_word_size; ++i) {
+            if (m.content()[last_word_start + i] != 0xFA) {
+                std::cerr << "Flib pgen: error in last word" << std::endl;
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
@@ -153,7 +231,9 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
         return check_flesnet_pattern(m, component);
     case fles::SubsystemFormatFLES::CbmNetPattern:
     case fles::SubsystemFormatFLES::CbmNetFrontendEmulation:
-        return check_flib_pattern(m, component);
+        return check_flib_legacy_pattern(m, component);
+    case fles::SubsystemFormatFLES::FlibPattern:
+        return check_flib_pattern(m);
     default:
         return true;
     }
@@ -176,6 +256,7 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
         }
         _frame_number = 0; // reset frame number for next component
         _pgen_sequence_number = 0;
+        _flib_pgen_packet_number = 0;
         for (size_t m = 0; m < ts.num_microslices(c); ++m) {
             bool success =
                 check_microslice(ts.get_microslice(c, m), c,
