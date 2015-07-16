@@ -2,6 +2,8 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
+#include <cstddef>
 
 /// %Benchmark class.
 class Benchmark
