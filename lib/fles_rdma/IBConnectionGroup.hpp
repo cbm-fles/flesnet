@@ -6,6 +6,7 @@
 #include "Scheduler.hpp"
 #include "Utility.hpp"
 #include <log.hpp>
+#include <sstream>
 #include <chrono>
 #include <vector>
 #include <cstring>

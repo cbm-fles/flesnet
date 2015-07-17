@@ -42,6 +42,7 @@ if(UNIX AND NOT APPLE)
   find_package(PDA 10.2.6 REQUIRED)
 
   add_subdirectory(lib/fles_core)
+  add_subdirectory(lib/fles_rdma)
   add_subdirectory(lib/flib)
   add_subdirectory(lib/pda)
 
