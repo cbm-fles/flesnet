@@ -9,6 +9,6 @@ add_executable(tsclient ${APP_SOURCES} ${APP_HEADERS})
 
 target_link_libraries(tsclient fles_ipc crcutil ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(tsclient ${ZMQ_LIBRARIES})
-if(UNIX AND NOT APPLE)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(tsclient rt)
 endif()

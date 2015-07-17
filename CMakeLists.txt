@@ -38,7 +38,7 @@ add_subdirectory(app/tsclient)
 
 add_subdirectory(doc)
 
-if(UNIX AND NOT APPLE)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   find_package(PDA 10.2.6 REQUIRED)
 
   add_subdirectory(lib/fles_core)
