@@ -75,7 +75,7 @@ private:
     std::default_random_engine _random_generator;
 
     /// Distribution to use in determining data content sizes.
-    std::poisson_distribution<> _random_distribution;
+    std::poisson_distribution<unsigned int> _random_distribution;
 
     /// Number of acknowledged data bytes. Updated by input node.
     uint64_t _acked_data{0};

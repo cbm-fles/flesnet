@@ -46,6 +46,7 @@ void ThreadContainer::set_cpu(int n)
         L_(error) << "set_cpu: could not set CPU affinity";
     }
 #else
+    (void)n;
     L_(debug) << "set_cpu: built without libnuma";
 #endif
 }

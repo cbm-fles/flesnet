@@ -1,6 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 /// Simple generic ring buffer view class.

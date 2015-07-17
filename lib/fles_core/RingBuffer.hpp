@@ -6,6 +6,10 @@
 #include <unistd.h>
 #include <type_traits>
 #include <stdexcept>
+#include <functional>
+#include <algorithm>
+#include <string>
+#include <cstdlib>
 
 /// Simple generic ring buffer class.
 template <typename T, bool CLEARED = false, bool PAGE_ALIGNED = false>
@@ -55,8 +59,8 @@ public:
         _size_mask = _size - 1;
         if (PAGE_ALIGNED) {
             void* buf;
-            int ret =
-                posix_memalign(&buf, sysconf(_SC_PAGESIZE), sizeof(T) * _size);
+            const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
+            int ret = posix_memalign(&buf, page_size, sizeof(T) * _size);
             if (ret != 0) {
                 throw std::runtime_error(std::string("posix_memalign: ") +
                                          strerror(ret));

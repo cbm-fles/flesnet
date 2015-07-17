@@ -17,7 +17,7 @@ void EmbeddedPatternGenerator::proceed()
         unsigned int content_bytes = _typical_content_size;
         if (_randomize_sizes)
             content_bytes = _random_distribution(_random_generator);
-        content_bytes &= ~0x7; // round down to multiple of sizeof(uint64_t)
+        content_bytes &= ~0x7u; // round down to multiple of sizeof(uint64_t)
 
         // check for space in data and descriptor buffers
         if ((_written_data - _acked_data + content_bytes >

@@ -32,6 +32,7 @@
 #define __ansi_negative "7"
 #define __ansi_crossed "9"
 
+#if 0
 namespace logging
 {
 std::string fancy_icon(severity_level level)
@@ -49,6 +50,7 @@ std::string fancy_icon(severity_level level)
         return boost::lexical_cast<std::string>(static_cast<int>(level));
 }
 }
+#endif
 
 std::ostream& operator<<(std::ostream& strm, severity_level level)
 {

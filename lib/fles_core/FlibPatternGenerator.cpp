@@ -12,7 +12,8 @@ void FlibPatternGenerator::produce_data()
         std::default_random_engine random_generator;
 
         /// Distribution to use in determining data content sizes.
-        std::poisson_distribution<> random_distribution(_typical_content_size);
+        std::poisson_distribution<unsigned int> random_distribution(
+            _typical_content_size);
 
         uint64_t written_mc = 0;
         uint64_t written_data = 0;
@@ -52,7 +53,7 @@ void FlibPatternGenerator::produce_data()
                 if (_randomize_sizes)
                     content_bytes = random_distribution(random_generator);
                 content_bytes &=
-                    ~0x7; // round down to multiple of sizeof(uint64_t)
+                    ~0x7u; // round down to multiple of sizeof(uint64_t)
 
                 // check for space in data and descriptor buffers
                 if ((written_data - acked_data + content_bytes >
