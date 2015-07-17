@@ -1,7 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "ThreadContainer.hpp"
-#include <log.hpp>
+#include "log.hpp"
 #ifdef HAVE_LIBNUMA
 #include <numa.h>
 #endif

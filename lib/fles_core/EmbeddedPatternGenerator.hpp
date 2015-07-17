@@ -5,7 +5,7 @@
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
 #include "MicrosliceDescriptor.hpp"
-#include <log.hpp>
+#include "log.hpp"
 #include <random>
 #include <algorithm>
 

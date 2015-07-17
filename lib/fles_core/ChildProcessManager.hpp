@@ -1,7 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include <log.hpp>
+#include "log.hpp"
 #include <sys/wait.h>
 #include <vector>
 #include <csignal>
