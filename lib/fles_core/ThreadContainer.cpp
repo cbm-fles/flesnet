@@ -2,10 +2,13 @@
 
 #include "ThreadContainer.hpp"
 #include <log.hpp>
+#ifdef HAVE_LIBNUMA
 #include <numa.h>
+#endif
 
 void ThreadContainer::set_node()
 {
+#ifdef HAVE_LIBNUMA
     if (numa_available() == -1) {
         L_(error) << "numa_available() failed";
         return;
@@ -17,6 +20,9 @@ void ThreadContainer::set_node()
         numa_bitmask_setbit(nodemask, 1);
     numa_bind(nodemask);
     numa_free_nodemask(nodemask);
+#else
+    L_(debug) << "set_node: built without libnuma";
+#endif
 }
 
 #pragma GCC diagnostic push
@@ -24,6 +30,7 @@ void ThreadContainer::set_node()
 
 void ThreadContainer::set_cpu(int n)
 {
+#ifdef HAVE_LIBNUMA
     int nprocs = sysconf(_SC_NPROCESSORS_ONLN);
     if (n >= nprocs) {
         L_(debug) << "set_cpu: CPU " << n << " is not in range 0.."
@@ -38,6 +45,9 @@ void ThreadContainer::set_cpu(int n)
     if (sched_setaffinity(0, sizeof(cpu_mask), &cpu_mask) != 0) {
         L_(error) << "set_cpu: could not set CPU affinity";
     }
+#else
+    L_(debug) << "set_cpu: built without libnuma";
+#endif
 }
 
 #pragma GCC diagnostic pop

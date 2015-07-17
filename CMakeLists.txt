@@ -23,6 +23,15 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -msse4.2 -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
 
+find_library(LIBNUMA numa)
+set(USE_LIBNUMA TRUE CACHE BOOL "Use libnuma to schedule on specific NUMA nodes.")
+if(LIBNUMA AND USE_LIBNUMA)
+  add_definitions(-DHAVE_LIBNUMA)
+endif()
+if(USE_LIBNUMA AND NOT LIBNUMA)
+  message(WARNING "libnuma was not found. Building without.")
+endif()
+
 find_package(Boost 1.54.0 REQUIRED COMPONENTS log serialization thread program_options system unit_test_framework)
 find_package(Threads)
 
