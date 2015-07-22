@@ -40,8 +40,9 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
 add_subdirectory(lib/logging)
-add_subdirectory(lib/fles_ipc)
 add_subdirectory(lib/crcutil)
+add_subdirectory(lib/fles_ipc)
+add_subdirectory(lib/fles_core)
 
 add_subdirectory(app/tsclient)
 
@@ -50,8 +51,8 @@ add_subdirectory(doc)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   find_package(PDA 10.2.6 REQUIRED)
 
-  add_subdirectory(lib/fles_core)
   add_subdirectory(lib/fles_rdma)
+  add_subdirectory(lib/fles_flib)
   add_subdirectory(lib/flib)
   add_subdirectory(lib/pda)
 
