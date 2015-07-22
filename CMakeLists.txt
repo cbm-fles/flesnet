@@ -19,8 +19,6 @@ endif()
 #set(CMAKE_C_COMPILER clang)
 #set(CMAKE_CXX_COMPILER clang++)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -msse4.2 -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
 
 find_library(LIBNUMA numa)
@@ -44,7 +42,9 @@ add_subdirectory(lib/crcutil)
 add_subdirectory(lib/fles_ipc)
 add_subdirectory(lib/fles_core)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 add_subdirectory(app/tsclient)
+unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
 add_subdirectory(doc)
 
@@ -56,12 +56,17 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_subdirectory(lib/flib)
   add_subdirectory(lib/pda)
 
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
   add_subdirectory(app/flesnet)
   add_subdirectory(app/flib_debug)
   add_subdirectory(app/flib_tools)
   add_subdirectory(app/flib_ctrl)
   add_subdirectory(app/flib_cfg)
   add_subdirectory(app/flib_server)
+  unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
   add_subdirectory(contrib)
 endif()
+
+enable_testing()
+add_subdirectory(test)
