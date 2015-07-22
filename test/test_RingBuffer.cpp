@@ -6,17 +6,14 @@
 class Simple
 {
 public:
-    Simple(int n = 5) : i(n) {
-        std::cout << "Simple()\n";
-    }
-    ~Simple() {
-        std::cout << "~Simple()\n";
-    }
+    Simple(int n = 5) : i(n) { std::cout << "Simple()\n"; }
+    ~Simple() { std::cout << "~Simple()\n"; }
     int i;
 };
 
-int main() {
-    
+int main()
+{
+
     RingBuffer<Simple, false, true> s;
 
     s.alloc_with_size(4);

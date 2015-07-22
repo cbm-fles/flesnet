@@ -9,4 +9,5 @@ cd "$DIR"
 
 clang-format -style=file -fallback-style=none -i \
   lib/{fles_core,fles_rdma,fles_flib,logging}/*.[hc]pp \
-  app/{flesnet,tsclient}/*.[hc]pp
+  app/{flesnet,tsclient}/*.[hc]pp \
+  test/*.[hc]pp
