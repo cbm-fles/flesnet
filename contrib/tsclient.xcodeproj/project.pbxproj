@@ -22,6 +22,8 @@
 		3D5656F61B42D0770052C86D /* TimesliceAnalyzer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656EF1B42D0770052C86D /* TimesliceAnalyzer.cpp */; };
 		3D5656F71B42D0770052C86D /* TimesliceDebugger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */; };
 		3D56571F1B42D4490052C86D /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D5657181B42D3E90052C86D /* libfles_ipc.a */; };
+		3D5D3F2E1B60E2CC00497342 /* test_MicrosliceReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5D3F2D1B60E2CC00497342 /* test_MicrosliceReceiver.cpp */; };
+		3D5D3F301B60E2DE00497342 /* test_RingBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5D3F2F1B60E2DE00497342 /* test_RingBuffer.cpp */; };
 		3D9BCC361B591D10007C5C18 /* EmbeddedPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */; };
 		3D9BCC381B591D10007C5C18 /* FlibPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */; };
 		3D9BCC391B591D10007C5C18 /* FlibShmChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2E1B591D10007C5C18 /* FlibShmChannel.cpp */; };
@@ -70,6 +72,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		3D5D3F171B60E1CE00497342 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		3D5D3F241B60E1E800497342 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -108,6 +128,10 @@
 		3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TimesliceDebugger.cpp; path = ../app/tsclient/TimesliceDebugger.cpp; sourceTree = "<group>"; };
 		3D5656F21B42D0770052C86D /* TimesliceDebugger.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = TimesliceDebugger.hpp; path = ../app/tsclient/TimesliceDebugger.hpp; sourceTree = "<group>"; };
 		3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = fles_ipc.xcodeproj; path = ../lib/fles_ipc/contrib/fles_ipc.xcodeproj; sourceTree = "<group>"; };
+		3D5D3F191B60E1CE00497342 /* test_RingBuffer.cpp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_RingBuffer.cpp; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver.cpp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_MicrosliceReceiver.cpp; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D5D3F2D1B60E2CC00497342 /* test_MicrosliceReceiver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_MicrosliceReceiver.cpp; path = ../test/test_MicrosliceReceiver.cpp; sourceTree = "<group>"; };
+		3D5D3F2F1B60E2DE00497342 /* test_RingBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_RingBuffer.cpp; path = ../test/test_RingBuffer.cpp; sourceTree = "<group>"; };
 		3D9BCC251B591D10007C5C18 /* ChildProcessManager.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ChildProcessManager.hpp; sourceTree = "<group>"; };
 		3D9BCC271B591D10007C5C18 /* DataSource.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DataSource.hpp; sourceTree = "<group>"; };
 		3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EmbeddedPatternGenerator.cpp; sourceTree = "<group>"; };
@@ -136,6 +160,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D56571F1B42D4490052C86D /* libfles_ipc.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3D5D3F161B60E1CE00497342 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3D5D3F231B60E1E800497342 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -179,6 +217,7 @@
 				3D9BCC441B592087007C5C18 /* flib_ipc */,
 				3D9BCC3D1B591D54007C5C18 /* logging */,
 				3D5656F81B42D0870052C86D /* tsclient */,
+				3D5D3F311B60E2E500497342 /* test */,
 				3D462B881B42CC790017047A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -187,6 +226,8 @@
 			isa = PBXGroup;
 			children = (
 				3D462B871B42CC790017047A /* tsclient */,
+				3D5D3F191B60E1CE00497342 /* test_RingBuffer.cpp */,
+				3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver.cpp */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -217,6 +258,15 @@
 				3D56571C1B42D3E90052C86D /* test_Microslice */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3D5D3F311B60E2E500497342 /* test */ = {
+			isa = PBXGroup;
+			children = (
+				3D5D3F2F1B60E2DE00497342 /* test_RingBuffer.cpp */,
+				3D5D3F2D1B60E2CC00497342 /* test_MicrosliceReceiver.cpp */,
+			);
+			name = test;
 			sourceTree = "<group>";
 		};
 		3D9BCC241B591D10007C5C18 /* fles_core */ = {
@@ -286,6 +336,40 @@
 			productReference = 3D462B871B42CC790017047A /* tsclient */;
 			productType = "com.apple.product-type.tool";
 		};
+		3D5D3F181B60E1CE00497342 /* test_RingBuffer.cpp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3D5D3F211B60E1CE00497342 /* Build configuration list for PBXNativeTarget "test_RingBuffer.cpp" */;
+			buildPhases = (
+				3D5D3F151B60E1CE00497342 /* Sources */,
+				3D5D3F161B60E1CE00497342 /* Frameworks */,
+				3D5D3F171B60E1CE00497342 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = test_RingBuffer.cpp;
+			productName = test_RingBuffer.cpp;
+			productReference = 3D5D3F191B60E1CE00497342 /* test_RingBuffer.cpp */;
+			productType = "com.apple.product-type.tool";
+		};
+		3D5D3F251B60E1E800497342 /* test_MicrosliceReceiver.cpp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3D5D3F2A1B60E1E800497342 /* Build configuration list for PBXNativeTarget "test_MicrosliceReceiver.cpp" */;
+			buildPhases = (
+				3D5D3F221B60E1E800497342 /* Sources */,
+				3D5D3F231B60E1E800497342 /* Frameworks */,
+				3D5D3F241B60E1E800497342 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = test_MicrosliceReceiver.cpp;
+			productName = test_MicrosliceReceiver.cpp;
+			productReference = 3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver.cpp */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -297,6 +381,12 @@
 				TargetAttributes = {
 					3D462B861B42CC790017047A = {
 						CreatedOnToolsVersion = 6.3.2;
+					};
+					3D5D3F181B60E1CE00497342 = {
+						CreatedOnToolsVersion = 6.4;
+					};
+					3D5D3F251B60E1E800497342 = {
+						CreatedOnToolsVersion = 6.4;
 					};
 				};
 			};
@@ -319,6 +409,8 @@
 			projectRoot = "";
 			targets = (
 				3D462B861B42CC790017047A /* tsclient */,
+				3D5D3F181B60E1CE00497342 /* test_RingBuffer.cpp */,
+				3D5D3F251B60E1E800497342 /* test_MicrosliceReceiver.cpp */,
 			);
 		};
 /* End PBXProject section */
@@ -371,6 +463,22 @@
 				3D5656F61B42D0770052C86D /* TimesliceAnalyzer.cpp in Sources */,
 				3D06A84D1B56BC2D0039F5CD /* multiword_64_64_gcc_amd64_asm.cc in Sources */,
 				3D9BCC421B591D54007C5C18 /* log.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3D5D3F151B60E1CE00497342 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3D5D3F301B60E2DE00497342 /* test_RingBuffer.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3D5D3F221B60E1E800497342 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3D5D3F2E1B60E2CC00497342 /* test_MicrosliceReceiver.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -456,6 +564,7 @@
 					"-lboost_log-mt",
 					"-lboost_thread-mt",
 					"-lboost_system-mt",
+					"-lboost_unit_test_framework-mt",
 					"-lzmq",
 				);
 				SDKROOT = macosx;
@@ -534,6 +643,7 @@
 					"-lboost_log-mt",
 					"-lboost_thread-mt",
 					"-lboost_system-mt",
+					"-lboost_unit_test_framework-mt",
 					"-lzmq",
 				);
 				SDKROOT = macosx;
@@ -552,6 +662,56 @@
 		3D462B901B42CC790017047A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		3D5D3F1D1B60E1CE00497342 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		3D5D3F1E1B60E1CE00497342 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		3D5D3F2B1B60E1E800497342 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		3D5D3F2C1B60E1E800497342 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -576,6 +736,22 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		3D5D3F211B60E1CE00497342 /* Build configuration list for PBXNativeTarget "test_RingBuffer.cpp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3D5D3F1D1B60E1CE00497342 /* Debug */,
+				3D5D3F1E1B60E1CE00497342 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		3D5D3F2A1B60E1E800497342 /* Build configuration list for PBXNativeTarget "test_MicrosliceReceiver.cpp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3D5D3F2B1B60E1E800497342 /* Debug */,
+				3D5D3F2C1B60E1E800497342 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
