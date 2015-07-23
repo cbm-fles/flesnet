@@ -35,7 +35,7 @@ find_package(Threads)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
-add_definitions(-DBOOST_LOG_DYN_LINK)
+add_definitions(-DBOOST_ALL_DYN_LINK)
 
 add_subdirectory(lib/logging)
 add_subdirectory(lib/crcutil)
