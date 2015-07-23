@@ -24,6 +24,12 @@
 		3D56571F1B42D4490052C86D /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D5657181B42D3E90052C86D /* libfles_ipc.a */; };
 		3D5D3F2E1B60E2CC00497342 /* test_MicrosliceReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5D3F2D1B60E2CC00497342 /* test_MicrosliceReceiver.cpp */; };
 		3D5D3F301B60E2DE00497342 /* test_RingBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5D3F2F1B60E2DE00497342 /* test_RingBuffer.cpp */; };
+		3D5D3F371B60F24600497342 /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D5657181B42D3E90052C86D /* libfles_ipc.a */; };
+		3D5D3F381B60F28E00497342 /* EmbeddedPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */; };
+		3D5D3F391B60F28E00497342 /* FlibPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */; };
+		3D5D3F3A1B60F28E00497342 /* MicrosliceReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D0248B41B5FE75500AA4811 /* MicrosliceReceiver.cpp */; };
+		3D5D3F3B1B60F28E00497342 /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
+		3D5D3F3C1B60F28E00497342 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC3F1B591D54007C5C18 /* log.cpp */; };
 		3D9BCC361B591D10007C5C18 /* EmbeddedPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */; };
 		3D9BCC381B591D10007C5C18 /* FlibPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */; };
 		3D9BCC391B591D10007C5C18 /* FlibShmChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2E1B591D10007C5C18 /* FlibShmChannel.cpp */; };
@@ -54,6 +60,13 @@
 			remoteInfo = test_Microslice;
 		};
 		3D56571D1B42D4320052C86D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3DA3FE3E1B0206CB008710E2;
+			remoteInfo = fles_ipc;
+		};
+		3D5D3F351B60F23F00497342 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */;
 			proxyType = 1;
@@ -174,6 +187,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3D5D3F371B60F24600497342 /* libfles_ipc.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -364,6 +378,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				3D5D3F361B60F23F00497342 /* PBXTargetDependency */,
 			);
 			name = test_MicrosliceReceiver.cpp;
 			productName = test_MicrosliceReceiver.cpp;
@@ -478,6 +493,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3D5D3F381B60F28E00497342 /* EmbeddedPatternGenerator.cpp in Sources */,
+				3D5D3F391B60F28E00497342 /* FlibPatternGenerator.cpp in Sources */,
+				3D5D3F3A1B60F28E00497342 /* MicrosliceReceiver.cpp in Sources */,
+				3D5D3F3B1B60F28E00497342 /* ThreadContainer.cpp in Sources */,
+				3D5D3F3C1B60F28E00497342 /* log.cpp in Sources */,
 				3D5D3F2E1B60E2CC00497342 /* test_MicrosliceReceiver.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -489,6 +509,11 @@
 			isa = PBXTargetDependency;
 			name = fles_ipc;
 			targetProxy = 3D56571D1B42D4320052C86D /* PBXContainerItemProxy */;
+		};
+		3D5D3F361B60F23F00497342 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = fles_ipc;
+			targetProxy = 3D5D3F351B60F23F00497342 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
