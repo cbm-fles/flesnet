@@ -744,6 +744,7 @@
 				3D5D3F1E1B60E1CE00497342 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		3D5D3F2A1B60E1E800497342 /* Build configuration list for PBXNativeTarget "test_MicrosliceReceiver.cpp" */ = {
 			isa = XCConfigurationList;
@@ -752,6 +753,7 @@
 				3D5D3F2C1B60E1E800497342 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
