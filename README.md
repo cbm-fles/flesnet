@@ -12,9 +12,9 @@ Getting started
 ---------------
 
 If you are using *flesnet* for the first time or setting up a FLIB-based
-readout chain, please read `INSTALL.md` and `HOWTO.md` in this repository.
-These files will be continuously updated, so it might be worth checking them
-from time to time.
+readout chain, please read [`INSTALL.md`](INSTALL.md) and
+[`HOWTO.md`](HOWTO.md) in this repository. These files will be continuously
+updated, so it might be worth checking them from time to time.
 
 CBM scientists: For updates and information concerning *flesnet* and the
 operation of a readout chain, please join the
