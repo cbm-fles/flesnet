@@ -27,7 +27,7 @@ Debian 7.6 / fairroot external packages jul14p2
 Getting the Repository
 ----------------------
 
-git clone git@code.compeng.uni-frankfurt.de:flesnet.git flesnet
+git clone https://github.com/cbm-fles/flesnet.git flesnet
 
 
 Build Dependencies
