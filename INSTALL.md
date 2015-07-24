@@ -168,8 +168,9 @@ Power Management
 ----------------
 
 On some systems and depending on your BIOS settings, you may encounter
-problems with ASPM and ACPI. See also README.md Section *FAQ*: *What to do
-if the FLIB/PC becomes unresponsive after programming or a few minutes of use?*
+problems with ASPM and ACPI. See also [README.md](README.md) Section *FAQ*:
+*What to do if the FLIB/PC becomes unresponsive after programming or a few
+minutes of use?*
 
 To be on the safe side, please set the kernel boot options
 
