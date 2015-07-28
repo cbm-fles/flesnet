@@ -32,25 +32,25 @@ public:
      *
      * \param archive_type The type of archive (e.g., timeslice, microslice).
      */
-    ArchiveDescriptor(ArchiveType archive_type) : _archive_type(archive_type)
+    ArchiveDescriptor(ArchiveType archive_type) : archive_type_(archive_type)
     {
-        _time_created = std::chrono::system_clock::to_time_t(
+        time_created_ = std::chrono::system_clock::to_time_t(
             std::chrono::system_clock::now());
-        _hostname = fles::system::current_hostname();
-        _username = fles::system::current_username();
+        hostname_ = fles::system::current_hostname();
+        username_ = fles::system::current_username();
     }
 
     /// Retrieve the type of archive.
-    ArchiveType archive_type() const { return _archive_type; }
+    ArchiveType archive_type() const { return archive_type_; }
 
     /// Retrieve the time of creation of the archive.
-    std::time_t time_created() const { return _time_created; }
+    std::time_t time_created() const { return time_created_; }
 
     /// Retrieve the hostname of the machine creating the archive.
-    std::string hostname() const { return _hostname; }
+    std::string hostname() const { return hostname_; }
 
     /// Retrieve the hostname of the machine creating the archive.
-    std::string username() const { return _username; }
+    std::string username() const { return username_; }
 
 private:
     friend class boost::serialization::access;
@@ -64,19 +64,19 @@ private:
     void serialize(Archive& ar, const unsigned int version)
     {
         if (version > 0) {
-            ar& _archive_type;
+            ar& archive_type_;
         } else {
-            _archive_type = ArchiveType::TimesliceArchive;
+            archive_type_ = ArchiveType::TimesliceArchive;
         };
-        ar& _time_created;
-        ar& _hostname;
-        ar& _username;
+        ar& time_created_;
+        ar& hostname_;
+        ar& username_;
     }
 
-    ArchiveType _archive_type;
-    std::time_t _time_created = std::time_t();
-    std::string _hostname;
-    std::string _username;
+    ArchiveType archive_type_;
+    std::time_t time_created_ = std::time_t();
+    std::string hostname_;
+    std::string username_;
 };
 
 } // namespace fles {

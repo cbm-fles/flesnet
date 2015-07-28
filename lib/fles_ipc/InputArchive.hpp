@@ -29,19 +29,19 @@ public:
      */
     InputArchive(const std::string& filename)
     {
-        _ifstream = std::unique_ptr<std::ifstream>(
+        ifstream_ = std::unique_ptr<std::ifstream>(
             new std::ifstream(filename.c_str(), std::ios::binary));
-        if (!*_ifstream) {
+        if (!*ifstream_) {
             throw std::ios_base::failure("error opening file \"" + filename +
                                          "\"");
         }
 
-        _iarchive = std::unique_ptr<boost::archive::binary_iarchive>(
-            new boost::archive::binary_iarchive(*_ifstream));
+        iarchive_ = std::unique_ptr<boost::archive::binary_iarchive>(
+            new boost::archive::binary_iarchive(*ifstream_));
 
-        *_iarchive >> _descriptor;
+        *iarchive_ >> descriptor_;
 
-        if (_descriptor.archive_type() != archive_type) {
+        if (descriptor_.archive_type() != archive_type) {
             throw std::runtime_error("File \"" + filename +
                                      "\" is not of correct archive type");
         }
@@ -61,7 +61,7 @@ public:
     };
 
     /// Retrieve the archive descriptor.
-    const ArchiveDescriptor& descriptor() const { return _descriptor; };
+    const ArchiveDescriptor& descriptor() const { return descriptor_; };
 
 private:
     virtual Derived* do_get()
@@ -69,7 +69,7 @@ private:
         Derived* sts = nullptr;
         try {
             sts = new Derived();
-            *_iarchive >> *sts;
+            *iarchive_ >> *sts;
         } catch (boost::archive::archive_exception e) {
             if (e.code ==
                 boost::archive::archive_exception::input_stream_error) {
@@ -81,9 +81,9 @@ private:
         return sts;
     }
 
-    std::unique_ptr<std::ifstream> _ifstream;
-    std::unique_ptr<boost::archive::binary_iarchive> _iarchive;
-    ArchiveDescriptor _descriptor;
+    std::unique_ptr<std::ifstream> ifstream_;
+    std::unique_ptr<boost::archive::binary_iarchive> iarchive_;
+    ArchiveDescriptor descriptor_;
 };
 
 } // namespace fles {

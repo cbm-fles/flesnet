@@ -46,16 +46,16 @@ public:
 private:
     virtual TimesliceView* do_get();
 
-    const std::string _shared_memory_identifier;
+    const std::string shared_memory_identifier_;
 
-    std::unique_ptr<boost::interprocess::shared_memory_object> _data_shm;
-    std::unique_ptr<boost::interprocess::shared_memory_object> _desc_shm;
+    std::unique_ptr<boost::interprocess::shared_memory_object> data_shm_;
+    std::unique_ptr<boost::interprocess::shared_memory_object> desc_shm_;
 
-    std::unique_ptr<boost::interprocess::mapped_region> _data_region;
-    std::unique_ptr<boost::interprocess::mapped_region> _desc_region;
+    std::unique_ptr<boost::interprocess::mapped_region> data_region_;
+    std::unique_ptr<boost::interprocess::mapped_region> desc_region_;
 
-    std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
-    std::shared_ptr<boost::interprocess::message_queue> _completions_mq;
+    std::unique_ptr<boost::interprocess::message_queue> work_items_mq_;
+    std::shared_ptr<boost::interprocess::message_queue> completions_mq_;
 };
 
 } // namespace fles {

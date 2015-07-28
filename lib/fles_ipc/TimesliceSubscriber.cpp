@@ -7,14 +7,14 @@ namespace fles
 
 TimesliceSubscriber::TimesliceSubscriber(const std::string& address)
 {
-    _subscriber.connect(address.c_str());
-    _subscriber.setsockopt(ZMQ_SUBSCRIBE, nullptr, 0);
+    subscriber_.connect(address.c_str());
+    subscriber_.setsockopt(ZMQ_SUBSCRIBE, nullptr, 0);
 }
 
 fles::StorableTimeslice* TimesliceSubscriber::do_get()
 {
     zmq::message_t message;
-    _subscriber.recv(&message);
+    subscriber_.recv(&message);
 
     boost::iostreams::basic_array_source<char> device(
         static_cast<char*>(message.data()), message.size());

@@ -36,9 +36,9 @@ private:
         TimesliceComponentDescriptor* desc,
         std::shared_ptr<boost::interprocess::message_queue> completions_mq);
 
-    TimesliceCompletion _completion = TimesliceCompletion();
+    TimesliceCompletion completion_ = TimesliceCompletion();
 
-    std::shared_ptr<boost::interprocess::message_queue> _completions_mq;
+    std::shared_ptr<boost::interprocess::message_queue> completions_mq_;
 };
 
 } // namespace fles {

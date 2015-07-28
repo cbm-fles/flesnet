@@ -7,13 +7,13 @@ namespace fles
 {
 
 StorableMicroslice::StorableMicroslice(const StorableMicroslice& ms)
-    : Microslice(), _desc(ms._desc), _content(ms._content)
+    : Microslice(), desc_(ms.desc_), content_(ms.content_)
 {
     init_pointers();
 }
 
 StorableMicroslice::StorableMicroslice(StorableMicroslice&& ms)
-    : _desc(std::move(ms._desc)), _content(std::move(ms._content))
+    : desc_(std::move(ms.desc_)), content_(std::move(ms.content_))
 {
     init_pointers();
 }
@@ -25,22 +25,22 @@ StorableMicroslice::StorableMicroslice(const Microslice& ms)
 
 StorableMicroslice::StorableMicroslice(MicrosliceDescriptor d,
                                        const uint8_t* content_p)
-    : _desc(d), // cannot use {}, see http://stackoverflow.com/q/19347004
-      _content{content_p, content_p + d.size}
+    : desc_(d), // cannot use {}, see http://stackoverflow.com/q/19347004
+      content_{content_p, content_p + d.size}
 {
     init_pointers();
 }
 
 StorableMicroslice::StorableMicroslice(MicrosliceDescriptor d,
                                        std::vector<uint8_t> content_v)
-    : _desc(d), _content{std::move(content_v)}
+    : desc_(d), content_{std::move(content_v)}
 {
-    _desc.size = static_cast<uint32_t>(_content.size());
+    desc_.size = static_cast<uint32_t>(content_.size());
     init_pointers();
 }
 
 StorableMicroslice::StorableMicroslice() {}
 
-void StorableMicroslice::initialize_crc() { _desc.crc = compute_crc(); }
+void StorableMicroslice::initialize_crc() { desc_.crc = compute_crc(); }
 
 } // namespace fles {

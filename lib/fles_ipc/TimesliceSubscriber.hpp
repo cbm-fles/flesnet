@@ -45,8 +45,8 @@ public:
 private:
     virtual StorableTimeslice* do_get();
 
-    zmq::context_t _context{1};
-    zmq::socket_t _subscriber{_context, ZMQ_SUB};
+    zmq::context_t context_{1};
+    zmq::socket_t subscriber_{context_, ZMQ_SUB};
 };
 
 } // namespace fles {

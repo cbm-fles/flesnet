@@ -29,9 +29,9 @@ public:
     void publish(const fles::StorableTimeslice& timeslice);
 
 private:
-    zmq::context_t _context{1};
-    zmq::socket_t _publisher{_context, ZMQ_PUB};
-    std::string _serial_str;
+    zmq::context_t context_{1};
+    zmq::socket_t publisher_{context_, ZMQ_PUB};
+    std::string serial_str_;
 };
 
 } // namespace fles {

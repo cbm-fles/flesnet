@@ -6,29 +6,29 @@ namespace fles
 {
 
 StorableTimeslice::StorableTimeslice(const StorableTimeslice& ts)
-    : Timeslice(ts), _data(ts._data), _desc(ts._desc)
+    : Timeslice(ts), data_(ts.data_), desc_(ts.desc_)
 {
     init_pointers();
 }
 
 StorableTimeslice::StorableTimeslice(StorableTimeslice&& ts)
-    : Timeslice(std::move(ts)), _data(std::move(ts._data)),
-      _desc(std::move(ts._desc))
+    : Timeslice(std::move(ts)), data_(std::move(ts.data_)),
+      desc_(std::move(ts.desc_))
 {
     init_pointers();
 }
 
 StorableTimeslice::StorableTimeslice(const Timeslice& ts)
-    : _data(ts._timeslice_descriptor.num_components),
-      _desc(ts._timeslice_descriptor.num_components)
+    : data_(ts.timeslice_descriptor_.num_components),
+      desc_(ts.timeslice_descriptor_.num_components)
 {
-    _timeslice_descriptor = ts._timeslice_descriptor;
+    timeslice_descriptor_ = ts.timeslice_descriptor_;
     for (std::size_t component = 0;
-         component < ts._timeslice_descriptor.num_components; ++component) {
-        uint64_t size = ts._desc_ptr[component]->size;
-        _data[component].resize(size);
-        std::copy_n(ts._data_ptr[component], size, _data[component].begin());
-        _desc[component] = *ts._desc_ptr[component];
+         component < ts.timeslice_descriptor_.num_components; ++component) {
+        uint64_t size = ts.desc_ptr_[component]->size;
+        data_[component].resize(size);
+        std::copy_n(ts.data_ptr_[component], size, data_[component].begin());
+        desc_[component] = *ts.desc_ptr_[component];
     }
 
     init_pointers();

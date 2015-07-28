@@ -24,9 +24,9 @@ public:
      * \param filename File name of the archive file
      */
     OutputArchive(const std::string& filename)
-        : _ofstream(filename, std::ios::binary), _oarchive(_ofstream)
+        : ofstream_(filename, std::ios::binary), oarchive_(ofstream_)
     {
-        _oarchive << _descriptor;
+        oarchive_ << descriptor_;
     }
 
     /// Delete copy constructor (non-copyable).
@@ -35,12 +35,12 @@ public:
     void operator=(const OutputArchive&) = delete;
 
     /// Store an item.
-    void write(const T& item) { _oarchive << item; }
+    void write(const T& item) { oarchive_ << item; }
 
 private:
-    std::ofstream _ofstream;
-    boost::archive::binary_oarchive _oarchive;
-    ArchiveDescriptor _descriptor{archive_type};
+    std::ofstream ofstream_;
+    boost::archive::binary_oarchive oarchive_;
+    ArchiveDescriptor descriptor_{archive_type};
 };
 
 } // namespace fles {

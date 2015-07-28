@@ -64,10 +64,10 @@ public:
     StorableMicroslice(MicrosliceDescriptor d, std::vector<uint8_t> content);
 
     /// Retrieve non-const microslice descriptor reference
-    MicrosliceDescriptor& desc() { return *_desc_ptr; }
+    MicrosliceDescriptor& desc() { return *desc_ptr_; }
 
     /// Retrieve a non-const pointer to the microslice data
-    uint8_t* content() { return _content_ptr; }
+    uint8_t* content() { return content_ptr_; }
 
     void initialize_crc();
 
@@ -81,20 +81,20 @@ private:
     template <class Archive>
     void serialize(Archive& ar, const unsigned int /* version */)
     {
-        ar& _desc;
-        ar& _content;
+        ar& desc_;
+        ar& content_;
 
         init_pointers();
     }
 
     void init_pointers()
     {
-        _desc_ptr = &_desc;
-        _content_ptr = _content.data();
+        desc_ptr_ = &desc_;
+        content_ptr_ = content_.data();
     }
 
-    MicrosliceDescriptor _desc;
-    std::vector<uint8_t> _content;
+    MicrosliceDescriptor desc_;
+    std::vector<uint8_t> content_;
 };
 
 } // namespace fles {

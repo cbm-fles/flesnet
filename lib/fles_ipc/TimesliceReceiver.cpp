@@ -7,37 +7,37 @@ namespace fles
 {
 
 TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
-    : _shared_memory_identifier(shared_memory_identifier)
+    : shared_memory_identifier_(shared_memory_identifier)
 {
-    _data_shm = std::unique_ptr<boost::interprocess::shared_memory_object>(
+    data_shm_ = std::unique_ptr<boost::interprocess::shared_memory_object>(
         new boost::interprocess::shared_memory_object(
             boost::interprocess::open_only,
-            (shared_memory_identifier + "_data").c_str(),
+            (shared_memory_identifier + "data_").c_str(),
             boost::interprocess::read_only));
 
-    _desc_shm = std::unique_ptr<boost::interprocess::shared_memory_object>(
+    desc_shm_ = std::unique_ptr<boost::interprocess::shared_memory_object>(
         new boost::interprocess::shared_memory_object(
             boost::interprocess::open_only,
-            (shared_memory_identifier + "_desc").c_str(),
+            (shared_memory_identifier + "desc_").c_str(),
             boost::interprocess::read_only));
 
-    _data_region = std::unique_ptr<boost::interprocess::mapped_region>(
-        new boost::interprocess::mapped_region(*_data_shm,
+    data_region_ = std::unique_ptr<boost::interprocess::mapped_region>(
+        new boost::interprocess::mapped_region(*data_shm_,
                                                boost::interprocess::read_only));
 
-    _desc_region = std::unique_ptr<boost::interprocess::mapped_region>(
-        new boost::interprocess::mapped_region(*_desc_shm,
+    desc_region_ = std::unique_ptr<boost::interprocess::mapped_region>(
+        new boost::interprocess::mapped_region(*desc_shm_,
                                                boost::interprocess::read_only));
 
-    _work_items_mq = std::unique_ptr<boost::interprocess::message_queue>(
+    work_items_mq_ = std::unique_ptr<boost::interprocess::message_queue>(
         new boost::interprocess::message_queue(
             boost::interprocess::open_only,
-            (shared_memory_identifier + "_work_items").c_str()));
+            (shared_memory_identifier + "work_items_").c_str()));
 
-    _completions_mq = std::shared_ptr<boost::interprocess::message_queue>(
+    completions_mq_ = std::shared_ptr<boost::interprocess::message_queue>(
         new boost::interprocess::message_queue(
             boost::interprocess::open_only,
-            (shared_memory_identifier + "_completions").c_str()));
+            (shared_memory_identifier + "completions_").c_str()));
 }
 
 #if BOOST_VERSION < 105600
@@ -74,7 +74,7 @@ void mq_receive_workaround(boost::interprocess::message_queue& mq, void* buffer,
 
 TimesliceView* TimesliceReceiver::do_get()
 {
-    if (_eof)
+    if (eof_)
         return nullptr;
 
     TimesliceWorkItem wi;
@@ -82,22 +82,22 @@ TimesliceView* TimesliceReceiver::do_get()
     unsigned int priority;
 
 #if BOOST_VERSION >= 105600
-    _work_items_mq->receive(&wi, sizeof(wi), recvd_size, priority);
+    work_items_mq_->receive(&wi, sizeof(wi), recvd_size, priority);
 #else
-    mq_receive_workaround(*_work_items_mq, &wi, sizeof(wi), recvd_size,
+    mq_receive_workaround(*work_items_mq_, &wi, sizeof(wi), recvd_size,
                           priority);
 #endif
     if (recvd_size == 0) {
-        _eof = true;
+        eof_ = true;
         return nullptr;
     }
     assert(recvd_size == sizeof(wi));
 
     return new TimesliceView(
-        wi, reinterpret_cast<uint8_t*>(_data_region->get_address()),
+        wi, reinterpret_cast<uint8_t*>(data_region_->get_address()),
         reinterpret_cast<TimesliceComponentDescriptor*>(
-            _desc_region->get_address()),
-        _completions_mq);
+            desc_region_->get_address()),
+        completions_mq_);
 }
 
 } // namespace fles {

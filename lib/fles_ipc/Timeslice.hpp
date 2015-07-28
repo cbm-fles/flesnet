@@ -29,31 +29,31 @@ public:
     virtual ~Timeslice() = 0;
 
     /// Retrieve the timeslice index.
-    uint64_t index() const { return _timeslice_descriptor.index; }
+    uint64_t index() const { return timeslice_descriptor_.index; }
 
     /// Retrieve the number of core microslices.
     uint64_t num_core_microslices() const
     {
-        return _timeslice_descriptor.num_core_microslices;
+        return timeslice_descriptor_.num_core_microslices;
     }
 
     /// Retrieve the total number of microslices.
     uint64_t num_microslices(uint64_t component) const
     {
-        return _desc_ptr[component]->num_microslices;
+        return desc_ptr_[component]->num_microslices;
     }
 
     /// Retrieve the number of components (contributing input channels).
     uint64_t num_components() const
     {
-        return _timeslice_descriptor.num_components;
+        return timeslice_descriptor_.num_components;
     }
 
     /// Retrieve a pointer to the data content of a given microslice
     const uint8_t* content(uint64_t component, uint64_t microslice) const
     {
-        return _data_ptr[component] +
-               _desc_ptr[component]->num_microslices *
+        return data_ptr_[component] +
+               desc_ptr_[component]->num_microslices *
                    sizeof(MicrosliceDescriptor) +
                descriptor(component, microslice).offset -
                descriptor(component, 0).offset;
@@ -64,14 +64,14 @@ public:
                                            uint64_t microslice) const
     {
         return reinterpret_cast<const MicrosliceDescriptor*>(
-            _data_ptr[component])[microslice];
+            data_ptr_[component])[microslice];
     }
 
     /// Retrieve the descriptor and pointer to the data of a given microslice
     const MicrosliceView get_microslice(uint64_t component,
                                         uint64_t mc_index) const
     {
-        uint8_t* component_data_ptr = _data_ptr[component];
+        uint8_t* component_data_ptr = data_ptr_[component];
 
         MicrosliceDescriptor& dd = reinterpret_cast<MicrosliceDescriptor*>(
             component_data_ptr)[mc_index];
@@ -80,7 +80,7 @@ public:
             reinterpret_cast<MicrosliceDescriptor*>(component_data_ptr)[0];
 
         uint8_t* cc = component_data_ptr +
-                      _desc_ptr[component]->num_microslices *
+                      desc_ptr_[component]->num_microslices *
                           sizeof(MicrosliceDescriptor) +
                       dd.offset - dd0.offset;
 
@@ -93,14 +93,14 @@ protected:
     friend class StorableTimeslice;
 
     /// The timeslice descriptor.
-    TimesliceDescriptor _timeslice_descriptor;
+    TimesliceDescriptor timeslice_descriptor_;
 
     /// A vector of pointers to the data content, one per timeslice component.
-    std::vector<uint8_t*> _data_ptr;
+    std::vector<uint8_t*> data_ptr_;
 
     /// \brief A vector of pointers to the microslice descriptors, one per
     /// timeslice component.
-    std::vector<TimesliceComponentDescriptor*> _desc_ptr;
+    std::vector<TimesliceComponentDescriptor*> desc_ptr_;
 };
 
 } // namespace fles {

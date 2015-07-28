@@ -30,7 +30,7 @@ public:
 
 protected:
     /// The end-of-file flag.
-    bool _eof = false;
+    bool eof_ = false;
 
 private:
     virtual T* do_get() = 0;
