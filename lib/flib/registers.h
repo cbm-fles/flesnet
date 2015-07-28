@@ -1,13 +1,7 @@
 // rorc_registers.h: RORC Register Definitions
 //
-// Note:
-// This file was automatically generated from:
-// src/packages/registers.vhd
-// Repository is: git repository
-// Repository Revision: 33f97ce547f05b49ba0d90de62cda8ea8e2e421b
-// Repository Status: clean
-// Build Timestamp: Di 2. Dez 15:35:47 CET 2014
-// Build System: hutter@eda
+// manually composed register file
+// for cnet readout and flesin design
 #define RORC_C_BUILD_REPO 1
 #define RORC_C_BUILD_DATE 1417530947
 #define RORC_C_BUILD_REVISION 33f97ce547f05b49ba0d90de62cda8ea8e2e421b
@@ -27,7 +21,7 @@
 #define RORC_REG_PCIE_CTRL 7
 #define RORC_REG_PCIE_DST_BUSY 8
 #define RORC_REG_MC_CNT_CFG 9
-#define RORC_REG_DLM_CFG 10
+#define RORC_REG_DLM_CFG 10 // cnet only
 #define RORC_REG_APP_CFG 11
 #define RORC_REG_APP_STS 12
 #define RORC_REG_BUILD_DATE_L 13
@@ -75,23 +69,25 @@
 #define RORC_REG_GTX_MC_GEN_CFG 2
 #define RORC_REG_GTX_PENDING_MC_L 3
 #define RORC_REG_GTX_PENDING_MC_H 4
-#define RORC_REG_GTX_CTRL_TX 5
-#define RORC_REG_GTX_CTRL_RX 6
-#define RORC_REG_GTX_DLM 7
+#define RORC_REG_GTX_CTRL_TX 5 // cnet only
+#define RORC_REG_GTX_CTRL_RX 6 // cnet only
+#define RORC_REG_GTX_DLM 7     // cnet only
 #define RORC_REG_GTX_MC_GEN_CFG_HDR 8
 #define RORC_REG_GTX_MC_GEN_CFG_IDX_L 9
 #define RORC_REG_GTX_MC_GEN_CFG_IDX_H 10
 #define RORC_REG_GTX_MC_INDEX_L 11
 #define RORC_REG_GTX_MC_INDEX_H 12
-#define RORC_MEM_BASE_CTRL_TX 16
-#define RORC_MEM_SIZE_CTRL_TX 16
-#define RORC_MEM_BASE_CTRL_RX 32
-#define RORC_MEM_SIZE_CTRL_RX 16
-#define RORC_REG_GTX_DIAG_PCS_STARTUP 48
-#define RORC_REG_GTX_DIAG_EBTB_CODE_ERR 49
-#define RORC_REG_GTX_DIAG_EBTB_DISP_ERR 50
-#define RORC_REG_GTX_DIAG_CRC_ERROR 51
-#define RORC_REG_GTX_DIAG_PACKET 52
-#define RORC_REG_GTX_DIAG_PACKET_ERR 53
-#define RORC_REG_GTX_DIAG_FLAGS 54
-#define RORC_REG_GTX_DIAG_CLEAR 55
+#define RORC_MEM_BASE_CTRL_TX 16           // cnet only
+#define RORC_MEM_SIZE_CTRL_TX 16           // cnet only
+#define RORC_MEM_BASE_CTRL_RX 32           // cnet only
+#define RORC_MEM_SIZE_CTRL_RX 16           // cnet only
+#define RORC_REG_GTX_DIAG_PCS_STARTUP 48   // cnet only
+#define RORC_REG_GTX_DIAG_EBTB_CODE_ERR 49 // cnet only
+#define RORC_REG_GTX_DIAG_EBTB_DISP_ERR 50 // cnet only
+#define RORC_REG_GTX_DIAG_CRC_ERROR 51     // cnet only
+#define RORC_REG_GTX_DIAG_PACKET 52        // cnet only
+#define RORC_REG_GTX_DIAG_PACKET_ERR 53    // cnet only
+#define RORC_REG_GTX_DIAG_FLAGS 54         // cnet only
+#define RORC_REG_GTX_DIAG_CLEAR 55         // cnet only
+#define RORC_REG_LINK_CFG 0                // flesin only
+#define RORC_REG_LINK_TEST 31              // flesin only

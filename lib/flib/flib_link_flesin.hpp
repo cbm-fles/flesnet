@@ -17,5 +17,12 @@ public:
 
   void enable_readout(bool enable) override;
   void set_pgen_rate(float val);
+
+  void set_testreg(uint32_t data);
+
+  uint32_t get_testreg();
+
+private:
+  std::unique_ptr<register_file> m_rflink;
 };
 } // namespace
