@@ -10,7 +10,7 @@
 
 BOOST_AUTO_TEST_CASE(usage_test)
 {
-    uint32_t typical_content_size = 10240;
+    uint32_t typical_content_size = 10000;
     std::size_t desc_buffer_size_exp = 7;  // 128 entries
     std::size_t data_buffer_size_exp = 20; // 1 MiB
 
@@ -30,14 +30,14 @@ BOOST_AUTO_TEST_CASE(usage_test)
         new fles::MicrosliceOutputArchive("output.msa"));
 
     std::size_t count = 0;
-    while (auto microslice = ms0->get()) {
-        std::cout << microslice->desc().size << std::endl;
+    while (auto microslice = ms1->get()) {
+        // std::cout << count << ": " << microslice->desc().size << std::endl;
         output->write(*microslice);
         ++count;
-        if (count == 10) {
+        if (count == 1000) {
             break;
         }
     }
 
-    BOOST_CHECK_EQUAL(count, 10);
+    BOOST_CHECK_EQUAL(count, 1000);
 }
