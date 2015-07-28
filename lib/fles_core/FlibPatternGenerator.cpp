@@ -15,37 +15,37 @@ void FlibPatternGenerator::produce_data()
         std::poisson_distribution<unsigned int> random_distribution(
             _typical_content_size);
 
-        uint64_t written_mc = 0;
+        uint64_t written_desc = 0;
         uint64_t written_data = 0;
 
-        uint64_t last_written_mc = 0;
+        uint64_t last_written_desc = 0;
         uint64_t last_written_data = 0;
 
-        uint64_t acked_mc = 0;
+        uint64_t acked_desc = 0;
         uint64_t acked_data = 0;
 
-        const uint64_t min_avail_mc = _desc_buffer.size() / 4;
+        const uint64_t min_avail_desc = _desc_buffer.size() / 4;
         const uint64_t min_avail_data = _data_buffer.bytes() / 4;
 
-        const uint64_t min_written_mc = _desc_buffer.size() / 4;
+        const uint64_t min_written_desc = _desc_buffer.size() / 4;
         const uint64_t min_written_data = _data_buffer.bytes() / 4;
 
         while (true) {
             // wait until significant space is available
-            last_written_mc = written_mc;
+            last_written_desc = written_desc;
             last_written_data = written_data;
-            _written_mc = written_mc;
+            _written_desc = written_desc;
             _written_data = written_data;
             if (_is_stopped)
                 return;
-            while (
-                (written_data - _acked_data + min_avail_data >
-                 _data_buffer.bytes()) ||
-                (written_mc - _acked_mc + min_avail_mc > _desc_buffer.size())) {
+            while ((written_data - _acked_data + min_avail_data >
+                    _data_buffer.bytes()) ||
+                   (written_desc - _acked_desc + min_avail_desc >
+                    _desc_buffer.size())) {
                 if (_is_stopped)
                     return;
             }
-            acked_mc = _acked_mc;
+            acked_desc = _acked_desc;
             acked_data = _acked_data;
 
             while (true) {
@@ -58,7 +58,7 @@ void FlibPatternGenerator::produce_data()
                 // check for space in data and descriptor buffers
                 if ((written_data - acked_data + content_bytes >
                      _data_buffer.bytes()) ||
-                    (written_mc - acked_mc + 1 > _desc_buffer.size()))
+                    (written_desc - acked_desc + 1 > _desc_buffer.size()))
                     break;
 
                 const uint8_t hdr_id = static_cast<uint8_t>(
@@ -73,7 +73,7 @@ void FlibPatternGenerator::produce_data()
                     _generate_pattern
                         ? fles::SubsystemFormatFLES::BasicRampPattern
                         : fles::SubsystemFormatFLES::Uninitialized);
-                uint64_t idx = written_mc;
+                uint64_t idx = written_desc;
                 uint32_t crc = 0x00000000;
                 uint32_t size = content_bytes;
                 uint64_t offset = written_data;
@@ -94,16 +94,16 @@ void FlibPatternGenerator::produce_data()
 
                 // write to descriptor buffer
                 const_cast<fles::MicrosliceDescriptor&>(
-                    _desc_buffer.at(written_mc++)) =
+                    _desc_buffer.at(written_desc++)) =
                     fles::MicrosliceDescriptor({hdr_id, hdr_ver, eq_id, flags,
                                                 sys_id, sys_ver, idx, crc, size,
                                                 offset});
 
-                if (written_mc >= last_written_mc + min_written_mc ||
+                if (written_desc >= last_written_desc + min_written_desc ||
                     written_data >= last_written_data + min_written_data) {
-                    last_written_mc = written_mc;
+                    last_written_desc = written_desc;
                     last_written_data = written_data;
-                    _written_mc = written_mc;
+                    _written_desc = written_desc;
                     _written_data = written_data;
                 }
             }

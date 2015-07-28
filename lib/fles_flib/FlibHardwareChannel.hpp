@@ -65,11 +65,11 @@ public:
     }
 #endif
 
-    virtual uint64_t written_mc() override;
+    virtual uint64_t written_desc() override;
     virtual uint64_t written_data() override;
 
     virtual void update_ack_pointers(uint64_t new_acked_data,
-                                     uint64_t new_acked_mc) override;
+                                     uint64_t new_acked_desc) override;
 
 private:
     std::unique_ptr<RingBufferView<volatile uint8_t>> _data_buffer_view;

@@ -25,7 +25,7 @@ FlibShmChannel::FlibShmChannel(shm_channel_client* channel) : _channel(channel)
 
 FlibShmChannel::~FlibShmChannel() {}
 
-uint64_t FlibShmChannel::written_mc()
+uint64_t FlibShmChannel::written_desc()
 {
     return _channel->get_offsets_newer_than(
                        boost::posix_time::milliseconds(100))
@@ -40,11 +40,11 @@ uint64_t FlibShmChannel::written_data()
 }
 
 void FlibShmChannel::update_ack_pointers(uint64_t new_acked_data,
-                                         uint64_t new_acked_mc)
+                                         uint64_t new_acked_desc)
 {
     ack_ptrs_t ptrs;
     ptrs.data_ptr = new_acked_data & _data_buffer_view->size_mask();
-    ptrs.desc_ptr = (new_acked_mc & _desc_buffer_view->size_mask()) *
+    ptrs.desc_ptr = (new_acked_desc & _desc_buffer_view->size_mask()) *
                     sizeof(fles::MicrosliceDescriptor);
     _channel->set_ack_ptrs(ptrs);
 }

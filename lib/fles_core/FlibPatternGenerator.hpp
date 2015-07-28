@@ -60,14 +60,14 @@ public:
     /// Generate FLIB input data.
     void produce_data();
 
-    virtual uint64_t written_mc() override { return _written_mc; }
+    virtual uint64_t written_desc() override { return _written_desc; }
     virtual uint64_t written_data() override { return _written_data; }
 
     virtual void update_ack_pointers(uint64_t new_acked_data,
-                                     uint64_t new_acked_mc) override
+                                     uint64_t new_acked_desc) override
     {
         _acked_data = new_acked_data;
-        _acked_mc = new_acked_mc;
+        _acked_desc = new_acked_desc;
     }
 
 private:
@@ -95,11 +95,11 @@ private:
     std::atomic<uint64_t> _acked_data{0};
 
     /// Number of acknowledged MCs. Updated by input node.
-    std::atomic<uint64_t> _acked_mc{0};
+    std::atomic<uint64_t> _acked_desc{0};
 
     /// FLIB-internal number of written data bytes.
     uint64_t _written_data{0};
 
     /// FLIB-internal number of written MCs.
-    std::atomic<uint64_t> _written_mc{0};
+    std::atomic<uint64_t> _written_desc{0};
 };

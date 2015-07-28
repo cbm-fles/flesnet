@@ -61,7 +61,7 @@ FlibHardwareChannel::~FlibHardwareChannel()
     _flib_link->deinit_dma();
 }
 
-uint64_t FlibHardwareChannel::written_mc() { return _flib_link->mc_index(); }
+uint64_t FlibHardwareChannel::written_desc() { return _flib_link->mc_index(); }
 
 uint64_t FlibHardwareChannel::written_data()
 {
@@ -69,10 +69,10 @@ uint64_t FlibHardwareChannel::written_data()
 }
 
 void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
-                                              uint64_t new_acked_mc)
+                                              uint64_t new_acked_desc)
 {
     _flib_link->channel()->set_sw_read_pointers(
         new_acked_data & _data_buffer_view->size_mask(),
-        (new_acked_mc & _desc_buffer_view->size_mask()) *
+        (new_acked_desc & _desc_buffer_view->size_mask()) *
             sizeof(fles::MicrosliceDescriptor));
 }

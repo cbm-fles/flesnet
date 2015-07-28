@@ -51,6 +51,6 @@ private:
     DataSource& _data_source;
 
     uint64_t _microslice_index = 0;
-    uint64_t _previous_mc_idx = 0;
+    uint64_t _previous_desc_idx = 0;
 };
 }

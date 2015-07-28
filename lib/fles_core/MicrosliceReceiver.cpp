@@ -13,7 +13,7 @@ MicrosliceReceiver::MicrosliceReceiver(DataSource& data_source)
 StorableMicroslice* MicrosliceReceiver::try_get()
 {
     if (_data_source.desc_buffer().at(_microslice_index + 1).idx >
-        _previous_mc_idx) {
+        _previous_desc_idx) {
 
         const volatile MicrosliceDescriptor& desc =
             _data_source.desc_buffer().at(_microslice_index);
@@ -50,7 +50,8 @@ StorableMicroslice* MicrosliceReceiver::try_get()
 
         ++_microslice_index;
 
-        _previous_mc_idx = _data_source.desc_buffer().at(_microslice_index).idx;
+        _previous_desc_idx =
+            _data_source.desc_buffer().at(_microslice_index).idx;
 
         _data_source.update_ack_pointers(
             _data_source.desc_buffer().at(_microslice_index).offset,

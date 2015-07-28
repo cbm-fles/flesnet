@@ -77,7 +77,7 @@ private:
     RingBuffer<uint64_t, true> _ack;
 
     /// Number of acknowledged MCs. Written to FLIB.
-    uint64_t _acked_mc = 0;
+    uint64_t _acked_desc = 0;
 
     /// Number of acknowledged data bytes. Written to FLIB.
     uint64_t _acked_data = 0;
@@ -86,7 +86,7 @@ private:
     DataSource& _data_source;
 
     /// Number of sent MCs, for statistics.
-    uint64_t _sent_mc = 0;
+    uint64_t _sent_desc = 0;
 
     /// Number of sent data bytes, for statistics.
     uint64_t _sent_data = 0;
@@ -98,13 +98,13 @@ private:
     const uint32_t _overlap_size;
     const uint32_t _max_timeslice_number;
 
-    const uint64_t _min_acked_mc;
+    const uint64_t _min_acked_desc;
     const uint64_t _min_acked_data;
 
     uint64_t _cached_acked_data = 0;
-    uint64_t _cached_acked_mc = 0;
+    uint64_t _cached_acked_desc = 0;
 
-    uint64_t _previous_mc_idx = 0;
+    uint64_t _previous_desc_idx = 0;
 
     bool _abort = false;
 
@@ -154,6 +154,6 @@ private:
         }
     };
 
-    SendBufferStatus _previous_send_buffer_status_mc = SendBufferStatus();
+    SendBufferStatus _previous_send_buffer_status_desc = SendBufferStatus();
     SendBufferStatus _previous_send_buffer_status_data = SendBufferStatus();
 };
