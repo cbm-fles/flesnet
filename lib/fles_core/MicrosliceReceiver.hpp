@@ -4,8 +4,9 @@
 #pragma once
 
 #include "MicrosliceSource.hpp"
-#include "MicrosliceView.hpp"
+#include "StorableMicroslice.hpp"
 #include "DataSource.hpp"
+#include "RingBuffer.hpp"
 #include <string>
 #include <memory>
 
@@ -36,15 +37,20 @@ public:
      *
      * \return pointer to the item, or nullptr if end-of-file
      */
-    std::unique_ptr<MicrosliceView> get()
+    std::unique_ptr<StorableMicroslice> get()
     {
-        return std::unique_ptr<MicrosliceView>(do_get());
+        return std::unique_ptr<StorableMicroslice>(do_get());
     };
 
 private:
-    virtual MicrosliceView* do_get();
+    virtual StorableMicroslice* do_get() override;
+
+    StorableMicroslice* try_get();
 
     /// Data source (e.g., FLIB).
     DataSource& _data_source;
+
+    uint64_t _microslice_index = 0;
+    uint64_t _previous_mc_idx = 0;
 };
 }
