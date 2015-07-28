@@ -108,8 +108,8 @@
 /* Begin PBXFileReference section */
 		3D0248B41B5FE75500AA4811 /* MicrosliceReceiver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceReceiver.cpp; sourceTree = "<group>"; };
 		3D0248B51B5FE75500AA4811 /* MicrosliceReceiver.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceReceiver.hpp; sourceTree = "<group>"; };
-		3D06A82C1B56381B0039F5CD /* Benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Benchmark.cpp; path = ../app/tsclient/Benchmark.cpp; sourceTree = "<group>"; };
-		3D06A82D1B56381B0039F5CD /* Benchmark.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Benchmark.hpp; path = ../app/tsclient/Benchmark.hpp; sourceTree = "<group>"; };
+		3D06A82C1B56381B0039F5CD /* Benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Benchmark.cpp; sourceTree = "<group>"; };
+		3D06A82D1B56381B0039F5CD /* Benchmark.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Benchmark.hpp; sourceTree = "<group>"; };
 		3D06A8321B56BC2D0039F5CD /* aligned_alloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = aligned_alloc.h; sourceTree = "<group>"; };
 		3D06A8341B56BC2D0039F5CD /* base_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = base_types.h; sourceTree = "<group>"; };
 		3D06A8361B56BC2D0039F5CD /* crc32c_sse4.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = crc32c_sse4.cc; sourceTree = "<group>"; };
@@ -136,10 +136,10 @@
 		3D5656EC1B42D0770052C86D /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../app/tsclient/main.cpp; sourceTree = "<group>"; };
 		3D5656ED1B42D0770052C86D /* Parameters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Parameters.cpp; path = ../app/tsclient/Parameters.cpp; sourceTree = "<group>"; };
 		3D5656EE1B42D0770052C86D /* Parameters.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Parameters.hpp; path = ../app/tsclient/Parameters.hpp; sourceTree = "<group>"; };
-		3D5656EF1B42D0770052C86D /* TimesliceAnalyzer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TimesliceAnalyzer.cpp; path = ../app/tsclient/TimesliceAnalyzer.cpp; sourceTree = "<group>"; };
-		3D5656F01B42D0770052C86D /* TimesliceAnalyzer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = TimesliceAnalyzer.hpp; path = ../app/tsclient/TimesliceAnalyzer.hpp; sourceTree = "<group>"; };
-		3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TimesliceDebugger.cpp; path = ../app/tsclient/TimesliceDebugger.cpp; sourceTree = "<group>"; };
-		3D5656F21B42D0770052C86D /* TimesliceDebugger.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = TimesliceDebugger.hpp; path = ../app/tsclient/TimesliceDebugger.hpp; sourceTree = "<group>"; };
+		3D5656EF1B42D0770052C86D /* TimesliceAnalyzer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimesliceAnalyzer.cpp; sourceTree = "<group>"; };
+		3D5656F01B42D0770052C86D /* TimesliceAnalyzer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceAnalyzer.hpp; sourceTree = "<group>"; };
+		3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimesliceDebugger.cpp; sourceTree = "<group>"; };
+		3D5656F21B42D0770052C86D /* TimesliceDebugger.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceDebugger.hpp; sourceTree = "<group>"; };
 		3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = fles_ipc.xcodeproj; path = ../lib/fles_ipc/contrib/fles_ipc.xcodeproj; sourceTree = "<group>"; };
 		3D5D3F191B60E1CE00497342 /* test_RingBuffer.cpp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_RingBuffer.cpp; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver.cpp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_MicrosliceReceiver.cpp; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -254,12 +254,6 @@
 				3D5656EC1B42D0770052C86D /* main.cpp */,
 				3D5656ED1B42D0770052C86D /* Parameters.cpp */,
 				3D5656EE1B42D0770052C86D /* Parameters.hpp */,
-				3D5656EF1B42D0770052C86D /* TimesliceAnalyzer.cpp */,
-				3D5656F01B42D0770052C86D /* TimesliceAnalyzer.hpp */,
-				3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */,
-				3D5656F21B42D0770052C86D /* TimesliceDebugger.hpp */,
-				3D06A82C1B56381B0039F5CD /* Benchmark.cpp */,
-				3D06A82D1B56381B0039F5CD /* Benchmark.hpp */,
 			);
 			name = tsclient;
 			sourceTree = "<group>";
@@ -302,6 +296,12 @@
 				3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */,
 				3D9BCC341B591D10007C5C18 /* ThreadContainer.hpp */,
 				3D9BCC351B591D10007C5C18 /* Utility.hpp */,
+				3D5656EF1B42D0770052C86D /* TimesliceAnalyzer.cpp */,
+				3D5656F01B42D0770052C86D /* TimesliceAnalyzer.hpp */,
+				3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */,
+				3D5656F21B42D0770052C86D /* TimesliceDebugger.hpp */,
+				3D06A82C1B56381B0039F5CD /* Benchmark.cpp */,
+				3D06A82D1B56381B0039F5CD /* Benchmark.hpp */,
 			);
 			name = fles_core;
 			path = ../lib/fles_core;
