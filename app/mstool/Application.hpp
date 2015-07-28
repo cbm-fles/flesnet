@@ -2,12 +2,9 @@
 #pragma once
 
 #include "Parameters.hpp"
-#include "TimesliceSource.hpp"
-#include "TimesliceOutputArchive.hpp"
-#include "TimesliceAnalyzer.hpp"
-#include "TimesliceDebugger.hpp"
-#include "TimeslicePublisher.hpp"
-#include "Benchmark.hpp"
+#include "DataSource.hpp"
+#include "MicrosliceOutputArchive.hpp"
+#include "MicrosliceSource.hpp"
 #include <memory>
 
 /// %Application base class.
@@ -26,12 +23,9 @@ public:
 private:
     Parameters const& par_;
 
-    std::unique_ptr<fles::TimesliceSource> source_;
-    std::unique_ptr<TimesliceAnalyzer> analyzer_;
-    std::unique_ptr<TimesliceDebugger> debug_;
-    std::unique_ptr<fles::TimesliceOutputArchive> output_;
-    std::unique_ptr<fles::TimeslicePublisher> publisher_;
-    std::unique_ptr<Benchmark> benchmark_;
+    std::unique_ptr<DataSource> data_source_;
+    std::unique_ptr<fles::MicrosliceSource> source_;
+    std::unique_ptr<fles::MicrosliceOutputArchive> output_;
 
     uint64_t count_ = 0;
 };

@@ -414,9 +414,9 @@
 			productReference = 3D462B871B42CC790017047A /* tsclient */;
 			productType = "com.apple.product-type.tool";
 		};
-		3D5D3F181B60E1CE00497342 /* test_RingBuffer.cpp */ = {
+		3D5D3F181B60E1CE00497342 /* test_RingBuffer */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3D5D3F211B60E1CE00497342 /* Build configuration list for PBXNativeTarget "test_RingBuffer.cpp" */;
+			buildConfigurationList = 3D5D3F211B60E1CE00497342 /* Build configuration list for PBXNativeTarget "test_RingBuffer" */;
 			buildPhases = (
 				3D5D3F151B60E1CE00497342 /* Sources */,
 				3D5D3F161B60E1CE00497342 /* Frameworks */,
@@ -426,14 +426,14 @@
 			);
 			dependencies = (
 			);
-			name = test_RingBuffer.cpp;
+			name = test_RingBuffer;
 			productName = test_RingBuffer.cpp;
 			productReference = 3D5D3F191B60E1CE00497342 /* test_RingBuffer.cpp */;
 			productType = "com.apple.product-type.tool";
 		};
-		3D5D3F251B60E1E800497342 /* test_MicrosliceReceiver.cpp */ = {
+		3D5D3F251B60E1E800497342 /* test_MicrosliceReceiver */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3D5D3F2A1B60E1E800497342 /* Build configuration list for PBXNativeTarget "test_MicrosliceReceiver.cpp" */;
+			buildConfigurationList = 3D5D3F2A1B60E1E800497342 /* Build configuration list for PBXNativeTarget "test_MicrosliceReceiver" */;
 			buildPhases = (
 				3D5D3F221B60E1E800497342 /* Sources */,
 				3D5D3F231B60E1E800497342 /* Frameworks */,
@@ -444,7 +444,7 @@
 			dependencies = (
 				3D5D3F361B60F23F00497342 /* PBXTargetDependency */,
 			);
-			name = test_MicrosliceReceiver.cpp;
+			name = test_MicrosliceReceiver;
 			productName = test_MicrosliceReceiver.cpp;
 			productReference = 3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver.cpp */;
 			productType = "com.apple.product-type.tool";
@@ -510,8 +510,8 @@
 			targets = (
 				3D462B861B42CC790017047A /* tsclient */,
 				3D94C1C51B67EFB300FEE1EF /* mstool */,
-				3D5D3F181B60E1CE00497342 /* test_RingBuffer.cpp */,
-				3D5D3F251B60E1E800497342 /* test_MicrosliceReceiver.cpp */,
+				3D5D3F181B60E1CE00497342 /* test_RingBuffer */,
+				3D5D3F251B60E1E800497342 /* test_MicrosliceReceiver */,
 			);
 		};
 /* End PBXProject section */
@@ -904,7 +904,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		3D5D3F211B60E1CE00497342 /* Build configuration list for PBXNativeTarget "test_RingBuffer.cpp" */ = {
+		3D5D3F211B60E1CE00497342 /* Build configuration list for PBXNativeTarget "test_RingBuffer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3D5D3F1D1B60E1CE00497342 /* Debug */,
@@ -913,7 +913,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		3D5D3F2A1B60E1E800497342 /* Build configuration list for PBXNativeTarget "test_MicrosliceReceiver.cpp" */ = {
+		3D5D3F2A1B60E1E800497342 /* Build configuration list for PBXNativeTarget "test_MicrosliceReceiver" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3D5D3F2B1B60E1E800497342 /* Debug */,
