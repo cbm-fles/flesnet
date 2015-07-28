@@ -44,6 +44,7 @@ add_subdirectory(lib/fles_core)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 add_subdirectory(app/tsclient)
+add_subdirectory(app/mstool)
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
 add_subdirectory(doc)

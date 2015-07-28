@@ -30,6 +30,26 @@
 		3D5D3F3A1B60F28E00497342 /* MicrosliceReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D0248B41B5FE75500AA4811 /* MicrosliceReceiver.cpp */; };
 		3D5D3F3B1B60F28E00497342 /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
 		3D5D3F3C1B60F28E00497342 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC3F1B591D54007C5C18 /* log.cpp */; };
+		3D94C1D21B67F15600FEE1EF /* Application.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D94C1CD1B67F15600FEE1EF /* Application.cpp */; };
+		3D94C1D31B67F15600FEE1EF /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D94C1CF1B67F15600FEE1EF /* main.cpp */; };
+		3D94C1D41B67F15600FEE1EF /* Parameters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D94C1D01B67F15600FEE1EF /* Parameters.cpp */; };
+		3D94C1D71B67F18F00FEE1EF /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D5657181B42D3E90052C86D /* libfles_ipc.a */; };
+		3D94C1D81B67F1C500FEE1EF /* crc32c_sse4.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8361B56BC2D0039F5CD /* crc32c_sse4.cc */; settings = {COMPILER_FLAGS = "-w"; }; };
+		3D94C1D91B67F1C500FEE1EF /* interface.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A83C1B56BC2D0039F5CD /* interface.cc */; };
+		3D94C1DA1B67F1C500FEE1EF /* multiword_128_64_gcc_amd64_sse2.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A83F1B56BC2D0039F5CD /* multiword_128_64_gcc_amd64_sse2.cc */; };
+		3D94C1DB1B67F1C500FEE1EF /* multiword_64_64_cl_i386_mmx.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8401B56BC2D0039F5CD /* multiword_64_64_cl_i386_mmx.cc */; };
+		3D94C1DC1B67F1C500FEE1EF /* multiword_64_64_gcc_amd64_asm.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8411B56BC2D0039F5CD /* multiword_64_64_gcc_amd64_asm.cc */; };
+		3D94C1DD1B67F1C500FEE1EF /* multiword_64_64_gcc_i386_mmx.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8421B56BC2D0039F5CD /* multiword_64_64_gcc_i386_mmx.cc */; };
+		3D94C1DE1B67F1C500FEE1EF /* multiword_64_64_intrinsic_i386_mmx.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8431B56BC2D0039F5CD /* multiword_64_64_intrinsic_i386_mmx.cc */; };
+		3D94C1DF1B67F1E700FEE1EF /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC3F1B591D54007C5C18 /* log.cpp */; };
+		3D94C1E01B67F20200FEE1EF /* EmbeddedPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */; };
+		3D94C1E11B67F20200FEE1EF /* FlibPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */; };
+		3D94C1E21B67F20200FEE1EF /* FlibShmChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2E1B591D10007C5C18 /* FlibShmChannel.cpp */; };
+		3D94C1E31B67F20200FEE1EF /* MicrosliceReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D0248B41B5FE75500AA4811 /* MicrosliceReceiver.cpp */; };
+		3D94C1E41B67F20200FEE1EF /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
+		3D94C1E51B67F20200FEE1EF /* TimesliceAnalyzer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656EF1B42D0770052C86D /* TimesliceAnalyzer.cpp */; };
+		3D94C1E61B67F20200FEE1EF /* TimesliceDebugger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */; };
+		3D94C1E71B67F20200FEE1EF /* Benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A82C1B56381B0039F5CD /* Benchmark.cpp */; };
 		3D9BCC361B591D10007C5C18 /* EmbeddedPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */; };
 		3D9BCC381B591D10007C5C18 /* FlibPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */; };
 		3D9BCC391B591D10007C5C18 /* FlibShmChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2E1B591D10007C5C18 /* FlibShmChannel.cpp */; };
@@ -73,6 +93,13 @@
 			remoteGlobalIDString = 3DA3FE3E1B0206CB008710E2;
 			remoteInfo = fles_ipc;
 		};
+		3D94C1D51B67F18300FEE1EF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3DA3FE3E1B0206CB008710E2;
+			remoteInfo = fles_ipc;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -95,6 +122,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		3D5D3F241B60E1E800497342 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		3D94C1C41B67EFB300FEE1EF /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -145,6 +181,12 @@
 		3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver.cpp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_MicrosliceReceiver.cpp; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D5D3F2D1B60E2CC00497342 /* test_MicrosliceReceiver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_MicrosliceReceiver.cpp; path = ../test/test_MicrosliceReceiver.cpp; sourceTree = "<group>"; };
 		3D5D3F2F1B60E2DE00497342 /* test_RingBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_RingBuffer.cpp; path = ../test/test_RingBuffer.cpp; sourceTree = "<group>"; };
+		3D94C1C61B67EFB300FEE1EF /* mstool */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mstool; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D94C1CD1B67F15600FEE1EF /* Application.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Application.cpp; path = ../../app/mstool/Application.cpp; sourceTree = "<group>"; };
+		3D94C1CE1B67F15600FEE1EF /* Application.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Application.hpp; path = ../../app/mstool/Application.hpp; sourceTree = "<group>"; };
+		3D94C1CF1B67F15600FEE1EF /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../app/mstool/main.cpp; sourceTree = "<group>"; };
+		3D94C1D01B67F15600FEE1EF /* Parameters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Parameters.cpp; path = ../../app/mstool/Parameters.cpp; sourceTree = "<group>"; };
+		3D94C1D11B67F15600FEE1EF /* Parameters.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Parameters.hpp; path = ../../app/mstool/Parameters.hpp; sourceTree = "<group>"; };
 		3D9BCC251B591D10007C5C18 /* ChildProcessManager.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ChildProcessManager.hpp; sourceTree = "<group>"; };
 		3D9BCC271B591D10007C5C18 /* DataSource.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DataSource.hpp; sourceTree = "<group>"; };
 		3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EmbeddedPatternGenerator.cpp; sourceTree = "<group>"; };
@@ -191,6 +233,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3D94C1C31B67EFB300FEE1EF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3D94C1D71B67F18F00FEE1EF /* libfles_ipc.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -232,6 +282,7 @@
 				3D9BCC3D1B591D54007C5C18 /* logging */,
 				3D5656F81B42D0870052C86D /* tsclient */,
 				3D5D3F311B60E2E500497342 /* test */,
+				3D94C1C71B67EFB300FEE1EF /* mstool */,
 				3D462B881B42CC790017047A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -242,6 +293,7 @@
 				3D462B871B42CC790017047A /* tsclient */,
 				3D5D3F191B60E1CE00497342 /* test_RingBuffer.cpp */,
 				3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver.cpp */,
+				3D94C1C61B67EFB300FEE1EF /* mstool */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -275,6 +327,18 @@
 				3D5D3F2D1B60E2CC00497342 /* test_MicrosliceReceiver.cpp */,
 			);
 			name = test;
+			sourceTree = "<group>";
+		};
+		3D94C1C71B67EFB300FEE1EF /* mstool */ = {
+			isa = PBXGroup;
+			children = (
+				3D94C1CD1B67F15600FEE1EF /* Application.cpp */,
+				3D94C1CE1B67F15600FEE1EF /* Application.hpp */,
+				3D94C1CF1B67F15600FEE1EF /* main.cpp */,
+				3D94C1D01B67F15600FEE1EF /* Parameters.cpp */,
+				3D94C1D11B67F15600FEE1EF /* Parameters.hpp */,
+			);
+			path = mstool;
 			sourceTree = "<group>";
 		};
 		3D9BCC241B591D10007C5C18 /* fles_core */ = {
@@ -385,6 +449,24 @@
 			productReference = 3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver.cpp */;
 			productType = "com.apple.product-type.tool";
 		};
+		3D94C1C51B67EFB300FEE1EF /* mstool */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3D94C1CA1B67EFB300FEE1EF /* Build configuration list for PBXNativeTarget "mstool" */;
+			buildPhases = (
+				3D94C1C21B67EFB300FEE1EF /* Sources */,
+				3D94C1C31B67EFB300FEE1EF /* Frameworks */,
+				3D94C1C41B67EFB300FEE1EF /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3D94C1D61B67F18300FEE1EF /* PBXTargetDependency */,
+			);
+			name = mstool;
+			productName = mstool;
+			productReference = 3D94C1C61B67EFB300FEE1EF /* mstool */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -401,6 +483,9 @@
 						CreatedOnToolsVersion = 6.4;
 					};
 					3D5D3F251B60E1E800497342 = {
+						CreatedOnToolsVersion = 6.4;
+					};
+					3D94C1C51B67EFB300FEE1EF = {
 						CreatedOnToolsVersion = 6.4;
 					};
 				};
@@ -424,6 +509,7 @@
 			projectRoot = "";
 			targets = (
 				3D462B861B42CC790017047A /* tsclient */,
+				3D94C1C51B67EFB300FEE1EF /* mstool */,
 				3D5D3F181B60E1CE00497342 /* test_RingBuffer.cpp */,
 				3D5D3F251B60E1E800497342 /* test_MicrosliceReceiver.cpp */,
 			);
@@ -502,6 +588,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3D94C1C21B67EFB300FEE1EF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3D94C1E01B67F20200FEE1EF /* EmbeddedPatternGenerator.cpp in Sources */,
+				3D94C1E11B67F20200FEE1EF /* FlibPatternGenerator.cpp in Sources */,
+				3D94C1E21B67F20200FEE1EF /* FlibShmChannel.cpp in Sources */,
+				3D94C1E31B67F20200FEE1EF /* MicrosliceReceiver.cpp in Sources */,
+				3D94C1E41B67F20200FEE1EF /* ThreadContainer.cpp in Sources */,
+				3D94C1E51B67F20200FEE1EF /* TimesliceAnalyzer.cpp in Sources */,
+				3D94C1E61B67F20200FEE1EF /* TimesliceDebugger.cpp in Sources */,
+				3D94C1E71B67F20200FEE1EF /* Benchmark.cpp in Sources */,
+				3D94C1DF1B67F1E700FEE1EF /* log.cpp in Sources */,
+				3D94C1D81B67F1C500FEE1EF /* crc32c_sse4.cc in Sources */,
+				3D94C1D91B67F1C500FEE1EF /* interface.cc in Sources */,
+				3D94C1DA1B67F1C500FEE1EF /* multiword_128_64_gcc_amd64_sse2.cc in Sources */,
+				3D94C1DB1B67F1C500FEE1EF /* multiword_64_64_cl_i386_mmx.cc in Sources */,
+				3D94C1DC1B67F1C500FEE1EF /* multiword_64_64_gcc_amd64_asm.cc in Sources */,
+				3D94C1DD1B67F1C500FEE1EF /* multiword_64_64_gcc_i386_mmx.cc in Sources */,
+				3D94C1DE1B67F1C500FEE1EF /* multiword_64_64_intrinsic_i386_mmx.cc in Sources */,
+				3D94C1D41B67F15600FEE1EF /* Parameters.cpp in Sources */,
+				3D94C1D31B67F15600FEE1EF /* main.cpp in Sources */,
+				3D94C1D21B67F15600FEE1EF /* Application.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -514,6 +626,11 @@
 			isa = PBXTargetDependency;
 			name = fles_ipc;
 			targetProxy = 3D5D3F351B60F23F00497342 /* PBXContainerItemProxy */;
+		};
+		3D94C1D61B67F18300FEE1EF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = fles_ipc;
+			targetProxy = 3D94C1D51B67F18300FEE1EF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -741,6 +858,31 @@
 			};
 			name = Release;
 		};
+		3D94C1CB1B67EFB300FEE1EF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		3D94C1CC1B67EFB300FEE1EF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -779,6 +921,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		3D94C1CA1B67EFB300FEE1EF /* Build configuration list for PBXNativeTarget "mstool" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3D94C1CB1B67EFB300FEE1EF /* Debug */,
+				3D94C1CC1B67EFB300FEE1EF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
