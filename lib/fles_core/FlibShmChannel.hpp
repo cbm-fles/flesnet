@@ -22,13 +22,13 @@ public:
 
     virtual RingBufferView<volatile uint8_t>& data_buffer() override
     {
-        return *_data_buffer_view;
+        return *data_buffer_view_;
     }
 
     virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
     desc_buffer() override
     {
-        return *_desc_buffer_view;
+        return *desc_buffer_view_;
     }
 
     virtual uint64_t written_desc() override;
@@ -38,9 +38,9 @@ public:
                                      uint64_t new_acked_desc) override;
 
 private:
-    shm_channel_client* _channel;
+    shm_channel_client* channel_;
 
-    std::unique_ptr<RingBufferView<volatile uint8_t>> _data_buffer_view;
+    std::unique_ptr<RingBufferView<volatile uint8_t>> data_buffer_view_;
     std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>
-        _desc_buffer_view;
+        desc_buffer_view_;
 };

@@ -6,68 +6,68 @@
 #include "TimesliceSubscriber.hpp"
 #include <iostream>
 
-Application::Application(Parameters const& par) : _par(par)
+Application::Application(Parameters const& par) : par_(par)
 {
-    if (!_par.shm_identifier().empty())
-        _source.reset(new fles::TimesliceReceiver(_par.shm_identifier()));
-    else if (!_par.input_archive().empty())
-        _source.reset(new fles::TimesliceInputArchive(_par.input_archive()));
-    else if (!_par.subscribe_address().empty())
-        _source.reset(new fles::TimesliceSubscriber(_par.subscribe_address()));
+    if (!par_.shm_identifier().empty())
+        source_.reset(new fles::TimesliceReceiver(par_.shm_identifier()));
+    else if (!par_.input_archive().empty())
+        source_.reset(new fles::TimesliceInputArchive(par_.input_archive()));
+    else if (!par_.subscribe_address().empty())
+        source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address()));
 
-    if (_par.analyze())
-        _analyzer.reset(new TimesliceAnalyzer());
+    if (par_.analyze())
+        analyzer_.reset(new TimesliceAnalyzer());
 
-    if (_par.verbosity() > 0)
-        _debug.reset(new TimesliceDebugger());
+    if (par_.verbosity() > 0)
+        debug_.reset(new TimesliceDebugger());
 
-    if (!_par.output_archive().empty())
-        _output.reset(new fles::TimesliceOutputArchive(_par.output_archive()));
+    if (!par_.output_archive().empty())
+        output_.reset(new fles::TimesliceOutputArchive(par_.output_archive()));
 
-    if (!_par.publish_address().empty())
-        _publisher.reset(new fles::TimeslicePublisher(_par.publish_address()));
+    if (!par_.publish_address().empty())
+        publisher_.reset(new fles::TimeslicePublisher(par_.publish_address()));
 
-    if (_par.benchmark())
-        _benchmark.reset(new Benchmark());
+    if (par_.benchmark())
+        benchmark_.reset(new Benchmark());
 
-    if (_par.client_index() != -1) {
-        std::cout << "tsclient " << _par.client_index() << ": "
+    if (par_.client_index() != -1) {
+        std::cout << "tsclient " << par_.client_index() << ": "
                   << par.shm_identifier() << std::endl;
     }
 }
 
 Application::~Application()
 {
-    if (_par.client_index() != -1) {
-        std::cout << "tsclient " << _par.client_index() << ": ";
+    if (par_.client_index() != -1) {
+        std::cout << "tsclient " << par_.client_index() << ": ";
     }
-    std::cout << "total timeslices processed: " << _count << std::endl;
+    std::cout << "total timeslices processed: " << count_ << std::endl;
 }
 
 void Application::run()
 {
-    if (_benchmark) {
-        _benchmark->run();
+    if (benchmark_) {
+        benchmark_->run();
         return;
     }
 
-    while (auto timeslice = _source->get()) {
-        if (_analyzer) {
-            _analyzer->check_timeslice(*timeslice);
-            if ((_analyzer->count() % 10000) == 0) {
-                std::cout << _par.client_index() << ": "
-                          << _analyzer->statistics() << std::endl;
-                _analyzer->reset();
+    while (auto timeslice = source_->get()) {
+        if (analyzer_) {
+            analyzer_->check_timeslice(*timeslice);
+            if ((analyzer_->count() % 10000) == 0) {
+                std::cout << par_.client_index() << ": "
+                          << analyzer_->statistics() << std::endl;
+                analyzer_->reset();
             }
         }
-        if (_debug) {
-            std::cout << _debug->dump_timeslice(*timeslice, _par.verbosity())
+        if (debug_) {
+            std::cout << debug_->dump_timeslice(*timeslice, par_.verbosity())
                       << std::endl;
         }
-        if (_output)
-            _output->write(*timeslice);
-        if (_publisher)
-            _publisher->publish(*timeslice);
-        ++_count;
+        if (output_)
+            output_->write(*timeslice);
+        if (publisher_)
+            publisher_->publish(*timeslice);
+        ++count_;
     }
 }

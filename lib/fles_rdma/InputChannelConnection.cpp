@@ -14,42 +14,42 @@ InputChannelConnection::InputChannelConnection(
     uint_fast16_t remote_connection_index, unsigned int max_send_wr,
     unsigned int max_pending_write_requests, struct rdma_cm_id* id)
     : IBConnection(ec, connection_index, remote_connection_index, id),
-      _max_pending_write_requests(max_pending_write_requests)
+      max_pending_write_requests_(max_pending_write_requests)
 {
-    assert(_max_pending_write_requests > 0);
+    assert(max_pending_write_requests_ > 0);
 
-    _qp_cap.max_send_wr = max_send_wr; // typical hca maximum: 16k
-    _qp_cap.max_send_sge = 4; // max. two chunks each for descriptors and data
+    qp_cap_.max_send_wr = max_send_wr; // typical hca maximum: 16k
+    qp_cap_.max_send_sge = 4; // max. two chunks each for descriptors and data
 
-    _qp_cap.max_recv_wr =
+    qp_cap_.max_recv_wr =
         1; // receive only single ComputeNodeStatusMessage struct
-    _qp_cap.max_recv_sge = 1;
+    qp_cap_.max_recv_sge = 1;
 
-    _qp_cap.max_inline_data = sizeof(fles::TimesliceComponentDescriptor);
+    qp_cap_.max_inline_data = sizeof(fles::TimesliceComponentDescriptor);
 }
 
 bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
                                                     uint64_t desc_size)
 {
     if (false) {
-        L_(trace) << "[" << _index << "] "
+        L_(trace) << "[" << index_ << "] "
                   << "SENDER data space (bytes) required=" << data_size
                   << ", avail="
-                  << _cn_ack.data +
-                         (UINT64_C(1) << _remote_info.data_buffer_size_exp) -
-                         _cn_wp.data;
-        L_(trace) << "[" << _index << "] "
+                  << cn_ack_.data +
+                         (UINT64_C(1) << remote_info_.data_buffer_size_exp) -
+                         cn_wp_.data;
+        L_(trace) << "[" << index_ << "] "
                   << "SENDER desc space (entries) required=" << desc_size
                   << ", avail="
-                  << _cn_ack.desc +
-                         (UINT64_C(1) << _remote_info.desc_buffer_size_exp) -
-                         _cn_wp.desc;
+                  << cn_ack_.desc +
+                         (UINT64_C(1) << remote_info_.desc_buffer_size_exp) -
+                         cn_wp_.desc;
     }
-    if (_cn_ack.data - _cn_wp.data +
-                (UINT64_C(1) << _remote_info.data_buffer_size_exp) <
+    if (cn_ack_.data - cn_wp_.data +
+                (UINT64_C(1) << remote_info_.data_buffer_size_exp) <
             data_size ||
-        _cn_ack.desc - _cn_wp.desc +
-                (UINT64_C(1) << _remote_info.desc_buffer_size_exp) <
+        cn_ack_.desc - cn_wp_.desc +
+                (UINT64_C(1) << remote_info_.desc_buffer_size_exp) <
             desc_size) { // TODO: extend condition!
         return false;
     } else {
@@ -64,15 +64,15 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
     int num_sge2 = 0;
     struct ibv_sge sge2[4];
 
-    uint64_t cn_wp_data = _cn_wp.data;
+    uint64_t cn_wp_data = cn_wp_.data;
     cn_wp_data += skip;
 
     uint64_t cn_data_buffer_mask =
-        (UINT64_C(1) << _remote_info.data_buffer_size_exp) - 1;
+        (UINT64_C(1) << remote_info_.data_buffer_size_exp) - 1;
     uint64_t cn_desc_buffer_mask =
-        (UINT64_C(1) << _remote_info.desc_buffer_size_exp) - 1;
+        (UINT64_C(1) << remote_info_.desc_buffer_size_exp) - 1;
     uint64_t target_bytes_left =
-        (UINT64_C(1) << _remote_info.data_buffer_size_exp) -
+        (UINT64_C(1) << remote_info_.data_buffer_size_exp) -
         (cn_wp_data & cn_data_buffer_mask);
 
     // split sge list if necessary
@@ -104,9 +104,9 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
     send_wr_ts.opcode = IBV_WR_RDMA_WRITE;
     send_wr_ts.sg_list = sge;
     send_wr_ts.num_sge = num_sge;
-    send_wr_ts.wr.rdma.rkey = _remote_info.data.rkey;
+    send_wr_ts.wr.rdma.rkey = remote_info_.data.rkey;
     send_wr_ts.wr.rdma.remote_addr = static_cast<uintptr_t>(
-        _remote_info.data.addr + (cn_wp_data & cn_data_buffer_mask));
+        remote_info_.data.addr + (cn_wp_data & cn_data_buffer_mask));
 
     if (num_sge2) {
         memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
@@ -114,9 +114,9 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
         send_wr_tswrap.opcode = IBV_WR_RDMA_WRITE;
         send_wr_tswrap.sg_list = sge2;
         send_wr_tswrap.num_sge = num_sge2;
-        send_wr_tswrap.wr.rdma.rkey = _remote_info.data.rkey;
+        send_wr_tswrap.wr.rdma.rkey = remote_info_.data.rkey;
         send_wr_tswrap.wr.rdma.remote_addr =
-            static_cast<uintptr_t>(_remote_info.data.addr);
+            static_cast<uintptr_t>(remote_info_.data.addr);
         send_wr_ts.next = &send_wr_tswrap;
         send_wr_tswrap.next = &send_wr_tscdesc;
     } else {
@@ -135,47 +135,47 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
     sge3.lkey = 0;
 
     memset(&send_wr_tscdesc, 0, sizeof(send_wr_tscdesc));
-    send_wr_tscdesc.wr_id = ID_WRITE_DESC | (timeslice << 24) | (_index << 8);
+    send_wr_tscdesc.wr_id = ID_WRITE_DESC | (timeslice << 24) | (index_ << 8);
     send_wr_tscdesc.opcode = IBV_WR_RDMA_WRITE;
     send_wr_tscdesc.send_flags =
         IBV_SEND_INLINE | IBV_SEND_FENCE | IBV_SEND_SIGNALED;
     send_wr_tscdesc.sg_list = &sge3;
     send_wr_tscdesc.num_sge = 1;
-    send_wr_tscdesc.wr.rdma.rkey = _remote_info.desc.rkey;
+    send_wr_tscdesc.wr.rdma.rkey = remote_info_.desc.rkey;
     send_wr_tscdesc.wr.rdma.remote_addr =
-        static_cast<uintptr_t>(_remote_info.desc.addr +
-                               (_cn_wp.desc & cn_desc_buffer_mask) *
+        static_cast<uintptr_t>(remote_info_.desc.addr +
+                               (cn_wp_.desc & cn_desc_buffer_mask) *
                                    sizeof(fles::TimesliceComponentDescriptor));
 
     if (false) {
-        L_(trace) << "[i" << _remote_index << "] "
-                  << "[" << _index << "] "
+        L_(trace) << "[i" << remote_index_ << "] "
+                  << "[" << index_ << "] "
                   << "POST SEND data (timeslice " << timeslice << ")";
     }
 
     // send everything
-    assert(_pending_write_requests < _max_pending_write_requests);
-    ++_pending_write_requests;
+    assert(pending_write_requests_ < max_pending_write_requests_);
+    ++pending_write_requests_;
     post_send(&send_wr_ts);
 }
 
 bool InputChannelConnection::write_request_available()
 {
-    return (_pending_write_requests < _max_pending_write_requests);
+    return (pending_write_requests_ < max_pending_write_requests_);
 }
 
 void InputChannelConnection::inc_write_pointers(uint64_t data_size,
                                                 uint64_t desc_size)
 {
-    _cn_wp.data += data_size;
-    _cn_wp.desc += desc_size;
+    cn_wp_.data += data_size;
+    cn_wp_.desc += desc_size;
 }
 
 bool InputChannelConnection::try_sync_buffer_positions()
 {
-    if (_our_turn) {
-        _our_turn = false;
-        _send_status_message.wp = _cn_wp;
+    if (our_turn_) {
+        our_turn_ = false;
+        send_status_message_.wp = cn_wp_;
         post_send_status_message();
         return true;
     } else {
@@ -185,8 +185,8 @@ bool InputChannelConnection::try_sync_buffer_positions()
 
 uint64_t InputChannelConnection::skip_required(uint64_t data_size)
 {
-    uint64_t databuf_size = UINT64_C(1) << _remote_info.data_buffer_size_exp;
-    uint64_t databuf_wp = _cn_wp.data & (databuf_size - 1);
+    uint64_t databuf_size = UINT64_C(1) << remote_info_.data_buffer_size_exp;
+    uint64_t databuf_wp = cn_wp_.data & (databuf_size - 1);
     if (databuf_wp + data_size <= databuf_size)
         return 0;
     else
@@ -195,76 +195,76 @@ uint64_t InputChannelConnection::skip_required(uint64_t data_size)
 
 void InputChannelConnection::finalize(bool abort)
 {
-    _finalize = true;
-    _abort = abort;
-    if (_our_turn) {
-        _our_turn = false;
-        if (_cn_wp == _cn_ack || _abort) {
-            _send_status_message.final = true;
-            _send_status_message.abort = _abort;
+    finalize_ = true;
+    abort_ = abort;
+    if (our_turn_) {
+        our_turn_ = false;
+        if (cn_wp_ == cn_ack_ || abort_) {
+            send_status_message_.final = true;
+            send_status_message_.abort = abort_;
         } else {
-            _send_status_message.wp = _cn_wp;
+            send_status_message_.wp = cn_wp_;
         }
         post_send_status_message();
     }
 }
 
-void InputChannelConnection::on_complete_write() { _pending_write_requests--; }
+void InputChannelConnection::on_complete_write() { pending_write_requests_--; }
 
 void InputChannelConnection::on_complete_recv()
 {
-    if (_recv_status_message.final) {
-        _done = true;
+    if (recv_status_message_.final) {
+        done_ = true;
         return;
     }
     if (false) {
-        L_(trace) << "[i" << _remote_index << "] "
-                  << "[" << _index << "] "
-                  << "receive completion, new _cn_ack.data="
-                  << _recv_status_message.ack.data;
+        L_(trace) << "[i" << remote_index_ << "] "
+                  << "[" << index_ << "] "
+                  << "receive completion, new cn_ack_.data="
+                  << recv_status_message_.ack.data;
     }
-    _cn_ack = _recv_status_message.ack;
+    cn_ack_ = recv_status_message_.ack;
     post_recv_status_message();
 
-    if (_cn_wp == _send_status_message.wp && _finalize) {
-        if (_cn_wp == _cn_ack || _abort) {
-            _send_status_message.final = true;
-            _send_status_message.abort = _abort;
+    if (cn_wp_ == send_status_message_.wp && finalize_) {
+        if (cn_wp_ == cn_ack_ || abort_) {
+            send_status_message_.final = true;
+            send_status_message_.abort = abort_;
         }
         post_send_status_message();
     } else {
-        _our_turn = true;
+        our_turn_ = true;
     }
 }
 
 void InputChannelConnection::setup(struct ibv_pd* pd)
 {
     // register memory regions
-    _mr_recv =
-        ibv_reg_mr(pd, &_recv_status_message, sizeof(ComputeNodeStatusMessage),
+    mr_recv_ =
+        ibv_reg_mr(pd, &recv_status_message_, sizeof(ComputeNodeStatusMessage),
                    IBV_ACCESS_LOCAL_WRITE);
-    if (!_mr_recv)
+    if (!mr_recv_)
         throw InfinibandException("registration of memory region failed");
 
-    _mr_send = ibv_reg_mr(pd, &_send_status_message,
+    mr_send_ = ibv_reg_mr(pd, &send_status_message_,
                           sizeof(InputChannelStatusMessage), 0);
-    if (!_mr_send)
+    if (!mr_send_)
         throw InfinibandException("registration of memory region failed");
 
     // setup send and receive buffers
-    recv_sge.addr = reinterpret_cast<uintptr_t>(&_recv_status_message);
+    recv_sge.addr = reinterpret_cast<uintptr_t>(&recv_status_message_);
     recv_sge.length = sizeof(ComputeNodeStatusMessage);
-    recv_sge.lkey = _mr_recv->lkey;
+    recv_sge.lkey = mr_recv_->lkey;
 
-    recv_wr.wr_id = ID_RECEIVE_STATUS | (_index << 8);
+    recv_wr.wr_id = ID_RECEIVE_STATUS | (index_ << 8);
     recv_wr.sg_list = &recv_sge;
     recv_wr.num_sge = 1;
 
-    send_sge.addr = reinterpret_cast<uintptr_t>(&_send_status_message);
+    send_sge.addr = reinterpret_cast<uintptr_t>(&send_status_message_);
     send_sge.length = sizeof(InputChannelStatusMessage);
-    send_sge.lkey = _mr_send->lkey;
+    send_sge.lkey = mr_send_->lkey;
 
-    send_wr.wr_id = ID_SEND_STATUS | (_index << 8);
+    send_wr.wr_id = ID_SEND_STATUS | (index_ << 8);
     send_wr.opcode = IBV_WR_SEND;
     send_wr.send_flags = IBV_SEND_SIGNALED;
     send_wr.sg_list = &send_sge;
@@ -281,7 +281,7 @@ void InputChannelConnection::setup(struct ibv_pd* pd)
 void InputChannelConnection::on_established(struct rdma_cm_event* event)
 {
     assert(event->param.conn.private_data_len >= sizeof(ComputeNodeInfo));
-    memcpy(&_remote_info, event->param.conn.private_data,
+    memcpy(&remote_info_, event->param.conn.private_data,
            sizeof(ComputeNodeInfo));
 
     IBConnection::on_established(event);
@@ -289,14 +289,14 @@ void InputChannelConnection::on_established(struct rdma_cm_event* event)
 
 void InputChannelConnection::dereg_mr()
 {
-    if (_mr_recv) {
-        ibv_dereg_mr(_mr_recv);
-        _mr_recv = nullptr;
+    if (mr_recv_) {
+        ibv_dereg_mr(mr_recv_);
+        mr_recv_ = nullptr;
     }
 
-    if (_mr_send) {
-        ibv_dereg_mr(_mr_send);
-        _mr_send = nullptr;
+    if (mr_send_) {
+        ibv_dereg_mr(mr_send_);
+        mr_send_ = nullptr;
     }
 }
 
@@ -319,7 +319,7 @@ std::unique_ptr<std::vector<uint8_t>> InputChannelConnection::get_private_data()
 
     InputNodeInfo* in_info =
         reinterpret_cast<InputNodeInfo*>(private_data->data());
-    in_info->index = _remote_index;
+    in_info->index = remote_index_;
 
     return private_data;
 }
@@ -327,8 +327,8 @@ std::unique_ptr<std::vector<uint8_t>> InputChannelConnection::get_private_data()
 void InputChannelConnection::post_recv_status_message()
 {
     if (false) {
-        L_(trace) << "[i" << _remote_index << "] "
-                  << "[" << _index << "] "
+        L_(trace) << "[i" << remote_index_ << "] "
+                  << "[" << index_ << "] "
                   << "POST RECEIVE status message";
     }
     post_recv(&recv_wr);
@@ -337,11 +337,11 @@ void InputChannelConnection::post_recv_status_message()
 void InputChannelConnection::post_send_status_message()
 {
     if (false) {
-        L_(trace) << "[i" << _remote_index << "] "
-                  << "[" << _index << "] "
+        L_(trace) << "[i" << remote_index_ << "] "
+                  << "[" << index_ << "] "
                   << "POST SEND status message (wp.data="
-                  << _send_status_message.wp.data
-                  << " wp.desc=" << _send_status_message.wp.desc << ")";
+                  << send_status_message_.wp.data
+                  << " wp.desc=" << send_status_message_.wp.desc << ")";
     }
     post_send(&send_wr);
 }

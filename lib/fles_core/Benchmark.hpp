@@ -23,9 +23,9 @@ public:
     uint32_t compute_crc32(Algorithm algorithm);
     void run_single(Algorithm algorithm);
 
-    const size_t _size = 1048576;
-    const size_t _cycles = 500;
+    const size_t size_ = 1048576;
+    const size_t cycles_ = 500;
 
 private:
-    std::vector<uint8_t> _random_data;
+    std::vector<uint8_t> random_data_;
 };

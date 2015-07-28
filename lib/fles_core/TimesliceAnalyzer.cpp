@@ -18,24 +18,24 @@
 TimesliceAnalyzer::TimesliceAnalyzer()
 {
     // create CRC-32C engine (Castagnoli polynomial)
-    _crc32_engine = crcutil_interface::CRC::Create(
+    crc32_engine_ = crcutil_interface::CRC::Create(
         0x82f63b78, 0, 32, true, 0, 0, 0,
         crcutil_interface::CRC::IsSSE42Available(), NULL);
 }
 
 TimesliceAnalyzer::~TimesliceAnalyzer()
 {
-    if (_crc32_engine) {
-        _crc32_engine->Delete();
+    if (crc32_engine_) {
+        crc32_engine_->Delete();
     }
 }
 
 uint32_t TimesliceAnalyzer::compute_crc(const fles::MicrosliceView m) const
 {
-    assert(_crc32_engine);
+    assert(crc32_engine_);
 
     crcutil_interface::UINT64 crc64 = 0;
-    _crc32_engine->Compute(m.content(), m.desc().size, &crc64);
+    crc32_engine_->Compute(m.content(), m.desc().size, &crc64);
 
     return static_cast<uint32_t>(crc64);
 }
@@ -83,19 +83,19 @@ bool TimesliceAnalyzer::check_content_pgen(const uint16_t* content, size_t size)
     }
 
     uint16_t pgen_sequence_number = content[size - 1];
-    uint16_t expected_pgen_sequence_number = _pgen_sequence_number + 1;
+    uint16_t expected_pgen_sequence_number = pgen_sequence_number_ + 1;
     // uncomment to check only for increasing sequence numbers
-    //    if (_pgen_sequence_number != 0 && pgen_sequence_number != 0 &&
+    //    if (pgen_sequence_number_ != 0 && pgen_sequence_number != 0 &&
     //        pgen_sequence_number < expected_pgen_sequence_number) {
-    if (_pgen_sequence_number != 0 &&
+    if (pgen_sequence_number_ != 0 &&
         pgen_sequence_number != expected_pgen_sequence_number) {
         std::cerr << "unexpected pgen sequence number in frame "
-                  << static_cast<unsigned>(_frame_number) << ":  expected "
+                  << static_cast<unsigned>(frame_number_) << ":  expected "
                   << expected_pgen_sequence_number << "  found "
                   << pgen_sequence_number << std::endl;
         return false;
     }
-    _pgen_sequence_number = pgen_sequence_number;
+    pgen_sequence_number_ = pgen_sequence_number;
 
     return true;
 }
@@ -112,8 +112,8 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
         uint8_t padding_count = (4 - ((word_count + 1) & 0x3)) & 0x3;
         ++i;
 
-        uint8_t expected_frame_number = _frame_number + 1;
-        if (_frame_number != 0 && frame_number != expected_frame_number) {
+        uint8_t expected_frame_number = frame_number_ + 1;
+        if (frame_number_ != 0 && frame_number != expected_frame_number) {
             std::cerr << "unexpected cbmnet frame number:"
                       << "  expected: "
                       << static_cast<uint32_t>(expected_frame_number)
@@ -121,7 +121,7 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
                       << std::endl;
             return false;
         }
-        _frame_number = frame_number;
+        frame_number_ = frame_number;
 
         if (word_count < 4 || word_count > 64 ||
             i + word_count + padding_count > size) {
@@ -160,8 +160,8 @@ bool TimesliceAnalyzer::check_flib_pattern(const fles::MicrosliceView m)
     uint8_t last_word_size = 0;
 
     // increment packte number if initialized
-    if (_flib_pgen_packet_number != 0) {
-        ++_flib_pgen_packet_number;
+    if (flib_pgen_packet_number_ != 0) {
+        ++flib_pgen_packet_number_;
     }
 
     if (m.desc().size >= 1) {
@@ -184,14 +184,14 @@ bool TimesliceAnalyzer::check_flib_pattern(const fles::MicrosliceView m)
         uint32_t flib_pgen_packet_number =
             reinterpret_cast<const uint32_t*>(m.content())[1];
         // check if initalized
-        if (_flib_pgen_packet_number != 0 &&
-            _flib_pgen_packet_number != flib_pgen_packet_number) {
+        if (flib_pgen_packet_number_ != 0 &&
+            flib_pgen_packet_number_ != flib_pgen_packet_number) {
             std::cerr << "Flib pgen: error in packet number" << std::endl;
             return false;
         }
         // initialize if uninitialized
-        if (_flib_pgen_packet_number == 0) {
-            _flib_pgen_packet_number = flib_pgen_packet_number;
+        if (flib_pgen_packet_number_ == 0) {
+            flib_pgen_packet_number_ = flib_pgen_packet_number;
         }
     }
 
@@ -242,8 +242,8 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
         return false;
     }
 
-    ++_microslice_count;
-    _content_bytes += m.desc().size;
+    ++microslice_count_;
+    content_bytes_ += m.desc().size;
 
     if (m.desc().flags &
             static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
@@ -278,16 +278,16 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
         return false;
     }
 
-    ++_timeslice_count;
+    ++timeslice_count_;
     for (size_t c = 0; c < ts.num_components(); ++c) {
         if (ts.num_microslices(c) == 0) {
             std::cerr << "no microslices in TS " << ts.index() << ", component "
                       << c << std::endl;
             return false;
         }
-        _frame_number = 0; // reset frame number for next component
-        _pgen_sequence_number = 0;
-        _flib_pgen_packet_number = 0;
+        frame_number_ = 0; // reset frame number for next component
+        pgen_sequence_number_ = 0;
+        flib_pgen_packet_number_ = 0;
         for (size_t m = 0; m < ts.num_microslices(c); ++m) {
             bool success =
                 check_microslice(ts.get_microslice(c, m), c,
@@ -305,8 +305,8 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
 std::string TimesliceAnalyzer::statistics() const
 {
     std::stringstream s;
-    s << "timeslices checked: " << _timeslice_count << " (" << _content_bytes
-      << " bytes in " << _microslice_count << " microslices, avg: "
-      << static_cast<double>(_content_bytes) / _microslice_count << ")";
+    s << "timeslices checked: " << timeslice_count_ << " (" << content_bytes_
+      << " bytes in " << microslice_count_ << " microslices, avg: "
+      << static_cast<double>(content_bytes_) / microslice_count_ << ")";
     return s.str();
 }

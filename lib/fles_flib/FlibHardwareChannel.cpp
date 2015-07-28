@@ -5,74 +5,74 @@
 FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                                          std::size_t desc_buffer_size_exp,
                                          flib::flib_link* flib_link)
-    : _data_send_buffer(data_buffer_size_exp),
-      _desc_send_buffer(desc_buffer_size_exp),
-      _data_send_buffer_view(_data_send_buffer.ptr(), data_buffer_size_exp),
-      _desc_send_buffer_view(_desc_send_buffer.ptr(), desc_buffer_size_exp),
-      _flib_link(flib_link)
+    : data_send_buffer_(data_buffer_size_exp),
+      desc_send_buffer_(desc_buffer_size_exp),
+      data_send_buffer_view_(data_send_buffer_.ptr(), data_buffer_size_exp),
+      desc_send_buffer_view_(desc_send_buffer_.ptr(), desc_buffer_size_exp),
+      flib_link_(flib_link)
 {
     constexpr std::size_t microslice_descriptor_size_exp = 5;
     std::size_t desc_buffer_bytes_exp =
         desc_buffer_size_exp + microslice_descriptor_size_exp;
 
 #ifndef NO_DOUBLE_BUFFERING
-    _flib_link->init_dma(data_buffer_size_exp, desc_buffer_bytes_exp);
+    flib_link_->init_dma(data_buffer_size_exp, desc_buffer_bytes_exp);
 
     uint8_t* data_buffer =
-        reinterpret_cast<uint8_t*>(_flib_link->channel()->data_buffer());
+        reinterpret_cast<uint8_t*>(flib_link_->channel()->data_buffer());
     fles::MicrosliceDescriptor* desc_buffer =
         reinterpret_cast<fles::MicrosliceDescriptor*>(
-            _flib_link->channel()->desc_buffer());
+            flib_link_->channel()->desc_buffer());
 
-    _data_buffer_view = std::unique_ptr<RingBufferView<volatile uint8_t>>(
+    data_buffer_view_ = std::unique_ptr<RingBufferView<volatile uint8_t>>(
         new RingBufferView<volatile uint8_t>(data_buffer,
                                              data_buffer_size_exp));
-    _desc_buffer_view =
+    desc_buffer_view_ =
         std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>(
             new RingBufferView<volatile fles::MicrosliceDescriptor>(
                 desc_buffer, desc_buffer_size_exp));
 #else
-    _flib_link->init_dma(
-        const_cast<void*>(static_cast<volatile void*>(_data_send_buffer.ptr())),
+    flib_link_->init_dma(
+        const_cast<void*>(static_cast<volatile void*>(data_send_buffer_.ptr())),
         data_buffer_size_exp,
-        const_cast<void*>(static_cast<volatile void*>(_desc_send_buffer.ptr())),
+        const_cast<void*>(static_cast<volatile void*>(desc_send_buffer_.ptr())),
         desc_buffer_bytes_exp);
 
-    _data_buffer_view = std::unique_ptr<RingBufferView<volatile uint8_t>>(
-        new RingBufferView<volatile uint8_t>(_data_send_buffer.ptr(),
+    data_buffer_view_ = std::unique_ptr<RingBufferView<volatile uint8_t>>(
+        new RingBufferView<volatile uint8_t>(data_send_buffer_.ptr(),
                                              data_buffer_size_exp));
-    _desc_buffer_view =
+    desc_buffer_view_ =
         std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>(
             new RingBufferView<volatile fles::MicrosliceDescriptor>(
-                _desc_send_buffer.ptr(), desc_buffer_size_exp));
+                desc_send_buffer_.ptr(), desc_buffer_size_exp));
 #endif
 
-    _flib_link->set_start_idx(0);
+    flib_link_->set_start_idx(0);
 
-    _flib_link->enable_readout(true);
+    flib_link_->enable_readout(true);
 
-    // assert(_flib_link->mc_index() == 0);
-    // assert(_flib_link->pending_mc() == 0);
+    // assert(flib_link_->mc_index() == 0);
+    // assert(flib_link_->pending_mc() == 0);
 }
 
 FlibHardwareChannel::~FlibHardwareChannel()
 {
-    _flib_link->rst_pending_mc();
-    _flib_link->deinit_dma();
+    flib_link_->rst_pending_mc();
+    flib_link_->deinit_dma();
 }
 
-uint64_t FlibHardwareChannel::written_desc() { return _flib_link->mc_index(); }
+uint64_t FlibHardwareChannel::written_desc() { return flib_link_->mc_index(); }
 
 uint64_t FlibHardwareChannel::written_data()
 {
-    return _flib_link->channel()->get_data_offset();
+    return flib_link_->channel()->get_data_offset();
 }
 
 void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
                                               uint64_t new_acked_desc)
 {
-    _flib_link->channel()->set_sw_read_pointers(
-        new_acked_data & _data_buffer_view->size_mask(),
-        (new_acked_desc & _desc_buffer_view->size_mask()) *
+    flib_link_->channel()->set_sw_read_pointers(
+        new_acked_data & data_buffer_view_->size_mask(),
+        (new_acked_desc & desc_buffer_view_->size_mask()) *
             sizeof(fles::MicrosliceDescriptor));
 }

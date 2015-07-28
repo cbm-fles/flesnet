@@ -20,14 +20,14 @@ public:
     FlibPatternGenerator(std::size_t data_buffer_size_exp,
                          std::size_t desc_buffer_size_exp, uint64_t input_index,
                          uint32_t typical_content_size)
-        : _data_buffer(data_buffer_size_exp),
-          _desc_buffer(desc_buffer_size_exp),
-          _data_buffer_view(_data_buffer.ptr(), data_buffer_size_exp),
-          _desc_buffer_view(_desc_buffer.ptr(), desc_buffer_size_exp),
-          _input_index(input_index), _generate_pattern(false),
-          _typical_content_size(typical_content_size), _randomize_sizes(false)
+        : data_buffer_(data_buffer_size_exp),
+          desc_buffer_(desc_buffer_size_exp),
+          data_buffer_view_(data_buffer_.ptr(), data_buffer_size_exp),
+          desc_buffer_view_(desc_buffer_.ptr(), desc_buffer_size_exp),
+          input_index_(input_index), generate_pattern_(false),
+          typical_content_size_(typical_content_size), randomize_sizes_(false)
     {
-        _producer_thread =
+        producer_thread_ =
             new std::thread(&FlibPatternGenerator::produce_data, this);
     }
 
@@ -37,9 +37,9 @@ public:
     virtual ~FlibPatternGenerator()
     {
         try {
-            _is_stopped = true;
-            _producer_thread->join();
-            delete _producer_thread;
+            is_stopped_ = true;
+            producer_thread_->join();
+            delete producer_thread_;
         } catch (std::exception& e) {
             L_(error) << "exception in destructor ~FlibPatternGenerator(): "
                       << e.what();
@@ -48,58 +48,58 @@ public:
 
     virtual RingBufferView<volatile uint8_t>& data_buffer() override
     {
-        return _data_buffer_view;
+        return data_buffer_view_;
     }
 
     virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
     desc_buffer() override
     {
-        return _desc_buffer_view;
+        return desc_buffer_view_;
     }
 
     /// Generate FLIB input data.
     void produce_data();
 
-    virtual uint64_t written_desc() override { return _written_desc; }
-    virtual uint64_t written_data() override { return _written_data; }
+    virtual uint64_t written_desc() override { return written_desc_; }
+    virtual uint64_t written_data() override { return written_data_; }
 
     virtual void update_ack_pointers(uint64_t new_acked_data,
                                      uint64_t new_acked_desc) override
     {
-        _acked_data = new_acked_data;
-        _acked_desc = new_acked_desc;
+        acked_data_ = new_acked_data;
+        acked_desc_ = new_acked_desc;
     }
 
 private:
     /// Input data buffer.
-    RingBuffer<volatile uint8_t> _data_buffer;
+    RingBuffer<volatile uint8_t> data_buffer_;
 
     /// Input descriptor buffer.
-    RingBuffer<volatile fles::MicrosliceDescriptor> _desc_buffer;
+    RingBuffer<volatile fles::MicrosliceDescriptor> desc_buffer_;
 
-    RingBufferView<volatile uint8_t> _data_buffer_view;
-    RingBufferView<volatile fles::MicrosliceDescriptor> _desc_buffer_view;
+    RingBufferView<volatile uint8_t> data_buffer_view_;
+    RingBufferView<volatile fles::MicrosliceDescriptor> desc_buffer_view_;
 
     /// This node's index in the list of input nodes
-    uint64_t _input_index;
+    uint64_t input_index_;
 
-    bool _generate_pattern;
-    uint32_t _typical_content_size;
-    bool _randomize_sizes;
+    bool generate_pattern_;
+    uint32_t typical_content_size_;
+    bool randomize_sizes_;
 
-    std::atomic<bool> _is_stopped{false};
+    std::atomic<bool> is_stopped_{false};
 
-    std::thread* _producer_thread;
+    std::thread* producer_thread_;
 
     /// Number of acknowledged data bytes. Updated by input node.
-    std::atomic<uint64_t> _acked_data{0};
+    std::atomic<uint64_t> acked_data_{0};
 
     /// Number of acknowledged MCs. Updated by input node.
-    std::atomic<uint64_t> _acked_desc{0};
+    std::atomic<uint64_t> acked_desc_{0};
 
     /// FLIB-internal number of written data bytes.
-    uint64_t _written_data{0};
+    uint64_t written_data_{0};
 
     /// FLIB-internal number of written MCs.
-    std::atomic<uint64_t> _written_desc{0};
+    std::atomic<uint64_t> written_desc_{0};
 };

@@ -32,19 +32,19 @@ public:
 
 private:
     /// The run parameters object.
-    Parameters const& _par;
-    volatile sig_atomic_t* _signal_status;
+    Parameters const& par_;
+    volatile sig_atomic_t* signal_status_;
 
     // Input node application
-    std::unique_ptr<flib::flib_device> _flib;
-    std::vector<flib::flib_link*> _flib_links;
+    std::unique_ptr<flib::flib_device> flib_;
+    std::vector<flib::flib_link*> flib_links_;
 
-    std::unique_ptr<shm_device_client> _shm_device;
-    std::size_t _shm_num_channels = 0;
+    std::unique_ptr<shm_device_client> shm_device_;
+    std::size_t shm_num_channels_ = 0;
 
-    std::vector<std::unique_ptr<DataSource>> _data_sources;
+    std::vector<std::unique_ptr<DataSource>> data_sources_;
 
     /// The application's connection group / buffer objects
-    std::vector<std::unique_ptr<ComputeBuffer>> _compute_buffers;
-    std::vector<std::unique_ptr<InputChannelSender>> _input_channel_senders;
+    std::vector<std::unique_ptr<ComputeBuffer>> compute_buffers_;
+    std::vector<std::unique_ptr<InputChannelSender>> input_channel_senders_;
 };

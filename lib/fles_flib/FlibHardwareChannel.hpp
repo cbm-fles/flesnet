@@ -27,41 +27,41 @@ public:
 
     virtual RingBufferView<volatile uint8_t>& data_buffer() override
     {
-        return *_data_buffer_view;
+        return *data_buffer_view_;
     }
 
     virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
     desc_buffer() override
     {
-        return *_desc_buffer_view;
+        return *desc_buffer_view_;
     }
 
     virtual RingBufferView<volatile uint8_t>& data_send_buffer() override
     {
-        return _data_send_buffer_view;
+        return data_send_buffer_view_;
     }
 
     virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
     desc_send_buffer() override
     {
-        return _desc_send_buffer_view;
+        return desc_send_buffer_view_;
     }
 
 #ifndef NO_DOUBLE_BUFFERING
     virtual void copy_to_data_send_buffer(std::size_t start,
                                           std::size_t count) override
     {
-        std::copy_n(const_cast<uint8_t*>(&_data_buffer_view->at(start)), count,
-                    const_cast<uint8_t*>(&_data_send_buffer_view.at(start)));
+        std::copy_n(const_cast<uint8_t*>(&data_buffer_view_->at(start)), count,
+                    const_cast<uint8_t*>(&data_send_buffer_view_.at(start)));
     }
 
     virtual void copy_to_desc_send_buffer(std::size_t start,
                                           std::size_t count) override
     {
         std::copy_n(const_cast<fles::MicrosliceDescriptor*>(
-                        &_desc_buffer_view->at(start)),
+                        &desc_buffer_view_->at(start)),
                     count, const_cast<fles::MicrosliceDescriptor*>(
-                               &_desc_send_buffer_view.at(start)));
+                               &desc_send_buffer_view_.at(start)));
     }
 #endif
 
@@ -72,17 +72,17 @@ public:
                                      uint64_t new_acked_desc) override;
 
 private:
-    std::unique_ptr<RingBufferView<volatile uint8_t>> _data_buffer_view;
+    std::unique_ptr<RingBufferView<volatile uint8_t>> data_buffer_view_;
     std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>
-        _desc_buffer_view;
+        desc_buffer_view_;
 
-    RingBuffer<volatile uint8_t, true, true> _data_send_buffer;
+    RingBuffer<volatile uint8_t, true, true> data_send_buffer_;
     RingBuffer<volatile fles::MicrosliceDescriptor, true, true>
-        _desc_send_buffer;
+        desc_send_buffer_;
 
-    RingBufferView<volatile uint8_t> _data_send_buffer_view;
-    RingBufferView<volatile fles::MicrosliceDescriptor> _desc_send_buffer_view;
+    RingBufferView<volatile uint8_t> data_send_buffer_view_;
+    RingBufferView<volatile fles::MicrosliceDescriptor> desc_send_buffer_view_;
 
     /// Associated FLIB link class.
-    flib::flib_link* _flib_link;
+    flib::flib_link* flib_link_;
 };

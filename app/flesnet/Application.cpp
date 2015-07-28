@@ -11,7 +11,7 @@
 
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
-    : _par(par), _signal_status(signal_status)
+    : par_(par), signal_status_(signal_status)
 {
     unsigned input_nodes_size = par.input_nodes().size();
     std::vector<unsigned> input_indexes = par.input_indexes();
@@ -20,15 +20,15 @@ Application::Application(Parameters const& par,
     if (par.use_flib()) {
         if (par.use_shared_memory()) {
             try {
-                _shm_device =
+                shm_device_ =
                     std::unique_ptr<shm_device_client>(new shm_device_client());
-                _shm_num_channels = _shm_device->num_channels();
+                shm_num_channels_ = shm_device_->num_channels();
                 L_(info) << "using shared memory";
 
                 // increase number of input nodes to match number of
                 // enabled FLIB links if in stand-alone mode
-                if (par.standalone() && _shm_num_channels > 1) {
-                    input_nodes_size = _shm_num_channels;
+                if (par.standalone() && shm_num_channels_ > 1) {
+                    input_nodes_size = shm_num_channels_;
                     for (unsigned i = 1; i < input_nodes_size; i++) {
                         input_indexes.push_back(i);
                     }
@@ -42,32 +42,32 @@ Application::Application(Parameters const& par,
             try {
                 if (par.flib_legacy_mode()) {
                     L_(info) << "initializing FLIB with legacy readout";
-                    _flib = std::unique_ptr<flib::flib_device>(
+                    flib_ = std::unique_ptr<flib::flib_device>(
                         new flib::flib_device_cnet(0));
                 } else {
                     L_(info) << "initializing FLIB with DPB readout";
-                    _flib = std::unique_ptr<flib::flib_device>(
+                    flib_ = std::unique_ptr<flib::flib_device>(
                         new flib::flib_device_flesin(0));
                 }
-                _flib_links = _flib->links();
+                flib_links_ = flib_->links();
 
                 // delete deactivated links from vector
-                _flib_links.erase(
-                    std::remove_if(std::begin(_flib_links),
-                                   std::end(_flib_links),
-                                   [](decltype(_flib_links[0]) link) {
+                flib_links_.erase(
+                    std::remove_if(std::begin(flib_links_),
+                                   std::end(flib_links_),
+                                   [](decltype(flib_links_[0]) link) {
                                        return link->data_sel() ==
                                               flib::flib_link::rx_disable;
                                    }),
-                    std::end(_flib_links));
+                    std::end(flib_links_));
 
                 L_(info) << "enabled flib links detected: "
-                         << _flib_links.size();
+                         << flib_links_.size();
 
                 // increase number of input nodes to match number of
                 // enabled FLIB links if in stand-alone mode
-                if (par.standalone() && _flib_links.size() > 1) {
-                    input_nodes_size = _flib_links.size();
+                if (par.standalone() && flib_links_.size() > 1) {
+                    input_nodes_size = flib_links_.size();
                     for (unsigned i = 1; i < input_nodes_size; i++) {
                         input_indexes.push_back(i);
                     }
@@ -87,14 +87,14 @@ Application::Application(Parameters const& par,
 
     // set_cpu(1);
 
-    for (unsigned i : _par.compute_indexes()) {
+    for (unsigned i : par_.compute_indexes()) {
         std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(
-            i, _par.cn_data_buffer_size_exp(), _par.cn_desc_buffer_size_exp(),
-            _par.base_port() + i, input_nodes_size, _par.timeslice_size(),
-            _par.processor_instances(), _par.processor_executable(),
-            _signal_status));
+            i, par_.cn_data_buffer_size_exp(), par_.cn_desc_buffer_size_exp(),
+            par_.base_port() + i, input_nodes_size, par_.timeslice_size(),
+            par_.processor_instances(), par_.processor_executable(),
+            signal_status_));
         buffer->start_processes();
-        _compute_buffers.push_back(std::move(buffer));
+        compute_buffers_.push_back(std::move(buffer));
     }
 
     set_node();
@@ -110,13 +110,13 @@ Application::Application(Parameters const& par,
         unsigned index = input_indexes.at(c);
         std::unique_ptr<DataSource> data_source;
 
-        if (c < _flib_links.size()) {
+        if (c < flib_links_.size()) {
             data_source = std::unique_ptr<DataSource>(new FlibHardwareChannel(
                 par.in_data_buffer_size_exp(), par.in_desc_buffer_size_exp(),
-                _flib_links.at(c)));
-        } else if (c < _shm_num_channels) {
+                flib_links_.at(c)));
+        } else if (c < shm_num_channels_) {
             data_source = std::unique_ptr<DataSource>(
-                new FlibShmChannel(_shm_device->channels().at(c)));
+                new FlibShmChannel(shm_device_->channels().at(c)));
         } else {
             if (false) {
                 data_source =
@@ -138,12 +138,12 @@ Application::Application(Parameters const& par,
             par.timeslice_size(), par.overlap_size(),
             par.max_timeslice_number()));
 
-        _data_sources.push_back(std::move(data_source));
-        _input_channel_senders.push_back(std::move(buffer));
+        data_sources_.push_back(std::move(data_source));
+        input_channel_senders_.push_back(std::move(buffer));
     }
 
-    if (_flib) {
-        _flib->enable_mc_cnt(true);
+    if (flib_) {
+        flib_->enable_mc_cnt(true);
     }
 }
 
@@ -151,8 +151,8 @@ Application::~Application()
 {
     // Input node application
     try {
-        if (_flib) {
-            _flib->enable_mc_cnt(false);
+        if (flib_) {
+            flib_->enable_mc_cnt(false);
         }
     } catch (std::exception& e) {
         L_(error) << "exception in destructor ~InputNodeApplication(): "
@@ -164,14 +164,14 @@ void Application::run()
 {
     // Do not spawn additional thread if only one is needed, simplifies
     // debugging
-    if (_compute_buffers.size() == 1 && _input_channel_senders.empty()) {
+    if (compute_buffers_.size() == 1 && input_channel_senders_.empty()) {
         L_(debug) << "using existing thread for single compute buffer";
-        (*_compute_buffers[0])();
+        (*compute_buffers_[0])();
         return;
     };
-    if (_input_channel_senders.size() == 1 && _compute_buffers.empty()) {
+    if (input_channel_senders_.size() == 1 && compute_buffers_.empty()) {
         L_(debug) << "using existing thread for single input buffer";
-        (*_input_channel_senders[0])();
+        (*input_channel_senders_[0])();
         return;
     };
 
@@ -180,13 +180,13 @@ void Application::run()
     std::vector<boost::unique_future<void>> futures;
     bool stop = false;
 
-    for (auto& buffer : _compute_buffers) {
+    for (auto& buffer : compute_buffers_) {
         boost::packaged_task<void> task(std::ref(*buffer));
         futures.push_back(task.get_future());
         threads.add_thread(new boost::thread(std::move(task)));
     }
 
-    for (auto& buffer : _input_channel_senders) {
+    for (auto& buffer : input_channel_senders_) {
         boost::packaged_task<void> task(std::ref(*buffer));
         futures.push_back(task.get_future());
         threads.add_thread(new boost::thread(std::move(task)));

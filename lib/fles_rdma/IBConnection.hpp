@@ -25,7 +25,7 @@ public:
     virtual ~IBConnection();
 
     /// Retrieve the InfiniBand queue pair associated with the connection.
-    struct ibv_qp* qp() const { return _cm_id->qp; }
+    struct ibv_qp* qp() const { return cm_id_->qp; }
 
     /// Initiate a connection request to target hostname and service.
     /**
@@ -67,21 +67,21 @@ public:
     virtual void on_route_resolved();
 
     /// Retrieve index of this connection in the local connection group.
-    uint_fast16_t index() const { return _index; }
+    uint_fast16_t index() const { return index_; }
 
     /// Retrieve index of this connection in the remote connection group.
-    uint_fast16_t remote_index() const { return _remote_index; }
+    uint_fast16_t remote_index() const { return remote_index_; }
 
-    bool done() const { return _done; }
+    bool done() const { return done_; }
 
     /// Retrieve the total number of bytes transmitted.
-    uint64_t total_bytes_sent() const { return _total_bytes_sent; }
+    uint64_t total_bytes_sent() const { return total_bytes_sent_; }
 
     /// Retrieve the total number of SEND work requests.
-    uint64_t total_send_requests() const { return _total_send_requests; }
+    uint64_t total_send_requests() const { return total_send_requests_; }
 
     /// Retrieve the total number of RECV work requests.
-    uint64_t total_recv_requests() const { return _total_recv_requests; }
+    uint64_t total_recv_requests() const { return total_recv_requests_; }
 
 protected:
     void dump_send_wr(struct ibv_send_wr* wr);
@@ -93,16 +93,16 @@ protected:
     void post_recv(struct ibv_recv_wr* wr);
 
     /// Index of this connection in the local group of connections.
-    uint_fast16_t _index;
+    uint_fast16_t index_;
 
     /// Index of this connection in the remote group of connections.
-    uint_fast16_t _remote_index;
+    uint_fast16_t remote_index_;
 
     /// Flag indicating connection finished state.
-    bool _done = false;
+    bool done_ = false;
 
     /// The queue pair capabilities.
-    struct ibv_qp_cap _qp_cap;
+    struct ibv_qp_cap qp_cap_;
 
 private:
     /// Low-level communication parameters.
@@ -111,14 +111,14 @@ private:
     };
 
     /// RDMA connection manager ID.
-    struct rdma_cm_id* _cm_id = nullptr;
+    struct rdma_cm_id* cm_id_ = nullptr;
 
     /// Total number of bytes transmitted.
-    uint64_t _total_bytes_sent = 0;
+    uint64_t total_bytes_sent_ = 0;
 
     /// Total number of SEND work requests.
-    uint64_t _total_send_requests = 0;
+    uint64_t total_send_requests_ = 0;
 
     /// Total number of RECV work requests.
-    uint64_t _total_recv_requests = 0;
+    uint64_t total_recv_requests_ = 0;
 };

@@ -41,81 +41,81 @@ public:
     uint32_t suggest_cn_desc_buffer_size_exp();
 
     /// Retrieve the global timeslice size in number of MCs.
-    uint32_t timeslice_size() const { return _timeslice_size; }
+    uint32_t timeslice_size() const { return timeslice_size_; }
 
     /// Retrieve the size of the overlap region in number of MCs.
-    uint32_t overlap_size() const { return _overlap_size; }
+    uint32_t overlap_size() const { return overlap_size_; }
 
     /// Retrieve the exp. size of the input node's data buffer in bytes.
     uint32_t in_data_buffer_size_exp() const
     {
-        return _in_data_buffer_size_exp;
+        return in_data_buffer_size_exp_;
     }
 
     /// Retrieve the exp. size of the input node's descriptor buffer
     /// (number of entries).
     uint32_t in_desc_buffer_size_exp() const
     {
-        return _in_desc_buffer_size_exp;
+        return in_desc_buffer_size_exp_;
     }
 
     /// Retrieve the exp. size of the compute node's data buffer in bytes.
     uint32_t cn_data_buffer_size_exp() const
     {
-        return _cn_data_buffer_size_exp;
+        return cn_data_buffer_size_exp_;
     }
 
     /// Retrieve the exp. size of the compute node's descriptor buffer
     /// (number of entries).
     uint32_t cn_desc_buffer_size_exp() const
     {
-        return _cn_desc_buffer_size_exp;
+        return cn_desc_buffer_size_exp_;
     }
 
     /// Retrieve the typical number of content bytes per MC.
-    uint32_t typical_content_size() const { return _typical_content_size; }
+    uint32_t typical_content_size() const { return typical_content_size_; }
 
     /// Retrieve the use flib flag.
-    bool use_flib() const { return _use_flib; }
+    bool use_flib() const { return use_flib_; }
 
     /// Retrieve the flib legacy mode flag
-    bool flib_legacy_mode() const { return _flib_legacy_mode; }
+    bool flib_legacy_mode() const { return flib_legacy_mode_; }
 
     /// Retrieve the use shared memory flag.
-    bool use_shared_memory() const { return _use_shared_memory; }
+    bool use_shared_memory() const { return use_shared_memory_; }
 
     /// Retrieve the standalone mode flag.
-    bool standalone() const { return _standalone; }
+    bool standalone() const { return standalone_; }
 
     /// Retrieve the global maximum timeslice number.
-    uint32_t max_timeslice_number() const { return _max_timeslice_number; }
+    uint32_t max_timeslice_number() const { return max_timeslice_number_; }
 
     /// Retrieve the name of the executable acting as timeslice processor.
-    std::string processor_executable() const { return _processor_executable; }
+    std::string processor_executable() const { return processor_executable_; }
 
     /// Retrieve the number of instances of the timeslice processor executable.
-    uint32_t processor_instances() const { return _processor_instances; }
+    uint32_t processor_instances() const { return processor_instances_; }
 
     /// Retrieve the global base port.
-    uint32_t base_port() const { return _base_port; }
+    uint32_t base_port() const { return base_port_; }
 
     /// Retrieve the number of completion queue entries.
-    uint32_t num_cqe() const { return _num_cqe; }
+    uint32_t num_cqe() const { return num_cqe_; }
 
     /// Retrieve the list of participating input nodes.
-    std::vector<std::string> const input_nodes() const { return _input_nodes; }
+    std::vector<std::string> const input_nodes() const { return input_nodes_; }
 
     /// Retrieve the list of participating compute nodes.
     std::vector<std::string> const compute_nodes() const
     {
-        return _compute_nodes;
+        return compute_nodes_;
     }
 
     /// Retrieve this applications's indexes in the list of input nodes.
-    std::vector<unsigned> input_indexes() const { return _input_indexes; }
+    std::vector<unsigned> input_indexes() const { return input_indexes_; }
 
     /// Retrieve this applications's indexes in the list of compute nodes.
-    std::vector<unsigned> compute_indexes() const { return _compute_indexes; }
+    std::vector<unsigned> compute_indexes() const { return compute_indexes_; }
 
 private:
     /// Parse command line options.
@@ -125,63 +125,63 @@ private:
     void print_buffer_info();
 
     /// The global timeslice size in number of MCs.
-    uint32_t _timeslice_size = 100;
+    uint32_t timeslice_size_ = 100;
 
     /// The size of the overlap region in number of MCs.
-    uint32_t _overlap_size = 2;
+    uint32_t overlap_size_ = 2;
 
     /// A typical number of content bytes per MC.
-    uint32_t _typical_content_size = 1024;
+    uint32_t typical_content_size_ = 1024;
 
     /// The exp. size of the input node's data buffer in bytes.
-    uint32_t _in_data_buffer_size_exp = 0;
+    uint32_t in_data_buffer_size_exp_ = 0;
 
     /// The exp. size of the input node's descriptor buffer (number of
     /// entries).
-    uint32_t _in_desc_buffer_size_exp = 0;
+    uint32_t in_desc_buffer_size_exp_ = 0;
 
     /// The exp. size of the compute node's data buffer in bytes.
-    uint32_t _cn_data_buffer_size_exp = 0;
+    uint32_t cn_data_buffer_size_exp_ = 0;
 
     /// The exp. size of the compute node's descriptor buffer (number of
     /// entries).
-    uint32_t _cn_desc_buffer_size_exp = 0;
+    uint32_t cn_desc_buffer_size_exp_ = 0;
 
     /// The use flib flag.
-    bool _use_flib = true;
+    bool use_flib_ = true;
 
     /// The flib legacy mode flag.
-    bool _flib_legacy_mode = true;
+    bool flib_legacy_mode_ = true;
 
     /// The use shared memory flag.
-    bool _use_shared_memory = false;
+    bool use_shared_memory_ = false;
 
     /// The standalone mode flag.
-    bool _standalone = true;
+    bool standalone_ = true;
 
     /// The global maximum timeslice number.
-    uint32_t _max_timeslice_number = UINT32_MAX;
+    uint32_t max_timeslice_number_ = UINT32_MAX;
 
     /// The name of the executable acting as timeslice processor.
-    std::string _processor_executable;
+    std::string processor_executable_;
 
     /// The number of instances of the timeslice processor executable.
-    uint32_t _processor_instances = 2;
+    uint32_t processor_instances_ = 2;
 
     /// The global base port.
-    uint32_t _base_port = 20079;
+    uint32_t base_port_ = 20079;
 
-    uint32_t _num_cqe = 1000000;
+    uint32_t num_cqe_ = 1000000;
 
     /// The list of participating input nodes.
-    std::vector<std::string> _input_nodes;
+    std::vector<std::string> input_nodes_;
 
     /// The list of participating compute nodes.
-    std::vector<std::string> _compute_nodes;
+    std::vector<std::string> compute_nodes_;
 
     /// This applications's indexes in the list of input nodes.
-    std::vector<unsigned> _input_indexes;
+    std::vector<unsigned> input_indexes_;
 
     /// This applications's indexes in the list of compute nodes.
-    std::vector<unsigned> _compute_indexes;
+    std::vector<unsigned> compute_indexes_;
 };

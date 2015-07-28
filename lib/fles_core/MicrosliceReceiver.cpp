@@ -6,23 +6,23 @@ namespace fles
 {
 
 MicrosliceReceiver::MicrosliceReceiver(DataSource& data_source)
-    : _data_source(data_source)
+    : data_source_(data_source)
 {
 }
 
 StorableMicroslice* MicrosliceReceiver::try_get()
 {
-    if (_data_source.desc_buffer().at(_microslice_index + 1).idx >
-        _previous_desc_idx) {
+    if (data_source_.desc_buffer().at(microslice_index_ + 1).idx >
+        previous_desc_idx_) {
 
         const volatile MicrosliceDescriptor& desc =
-            _data_source.desc_buffer().at(_microslice_index);
+            data_source_.desc_buffer().at(microslice_index_);
 
         const volatile uint8_t* data_begin =
-            &_data_source.data_buffer().at(desc.offset);
+            &data_source_.data_buffer().at(desc.offset);
 
         const volatile uint8_t* data_end =
-            &_data_source.data_buffer().at(desc.offset + desc.size);
+            &data_source_.data_buffer().at(desc.offset + desc.size);
 
         StorableMicroslice* sms;
 
@@ -32,10 +32,10 @@ StorableMicroslice* MicrosliceReceiver::try_get()
                 const_cast<const uint8_t*>(data_begin));
         } else {
             const volatile uint8_t* buffer_begin =
-                _data_source.data_buffer().ptr();
+                data_source_.data_buffer().ptr();
 
             const volatile uint8_t* buffer_end =
-                buffer_begin + _data_source.data_buffer().bytes();
+                buffer_begin + data_source_.data_buffer().bytes();
 
             // copy two segments to vector
             std::vector<uint8_t> data;
@@ -48,14 +48,14 @@ StorableMicroslice* MicrosliceReceiver::try_get()
                 const_cast<const fles::MicrosliceDescriptor&>(desc), data);
         }
 
-        ++_microslice_index;
+        ++microslice_index_;
 
-        _previous_desc_idx =
-            _data_source.desc_buffer().at(_microslice_index).idx;
+        previous_desc_idx_ =
+            data_source_.desc_buffer().at(microslice_index_).idx;
 
-        _data_source.update_ack_pointers(
-            _data_source.desc_buffer().at(_microslice_index).offset,
-            _microslice_index);
+        data_source_.update_ack_pointers(
+            data_source_.desc_buffer().at(microslice_index_).offset,
+            microslice_index_);
 
         return sms;
     }
@@ -64,13 +64,13 @@ StorableMicroslice* MicrosliceReceiver::try_get()
 
 StorableMicroslice* MicrosliceReceiver::do_get()
 {
-    if (_eof)
+    if (eof_)
         return nullptr;
 
     // wait until a microslice is available in the input buffer
     StorableMicroslice* sms = nullptr;
     while (!sms) {
-        _data_source.proceed();
+        data_source_.proceed();
         sms = try_get();
     }
 

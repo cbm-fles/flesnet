@@ -4,25 +4,25 @@
 
 void EmbeddedPatternGenerator::proceed()
 {
-    const uint64_t min_avail_desc = _desc_buffer.size() / 4;
-    const uint64_t min_avail_data = _data_buffer.bytes() / 4;
+    const uint64_t min_avail_desc = desc_buffer_.size() / 4;
+    const uint64_t min_avail_data = data_buffer_.bytes() / 4;
 
     // break unless significant space is available
-    if ((_written_data - _acked_data + min_avail_data > _data_buffer.bytes()) ||
-        (_written_desc - _acked_desc + min_avail_desc > _desc_buffer.size())) {
+    if ((written_data_ - acked_data_ + min_avail_data > data_buffer_.bytes()) ||
+        (written_desc_ - acked_desc_ + min_avail_desc > desc_buffer_.size())) {
         return;
     }
 
     while (true) {
-        unsigned int content_bytes = _typical_content_size;
-        if (_randomize_sizes)
-            content_bytes = _random_distribution(_random_generator);
+        unsigned int content_bytes = typical_content_size_;
+        if (randomize_sizes_)
+            content_bytes = random_distribution_(random_generator_);
         content_bytes &= ~0x7u; // round down to multiple of sizeof(uint64_t)
 
         // check for space in data and descriptor buffers
-        if ((_written_data - _acked_data + content_bytes >
-             _data_buffer.bytes()) ||
-            (_written_desc - _acked_desc + 1 > _desc_buffer.size()))
+        if ((written_data_ - acked_data_ + content_bytes >
+             data_buffer_.bytes()) ||
+            (written_desc_ - acked_desc_ + 1 > desc_buffer_.size()))
             return;
 
         const uint8_t hdr_id =
@@ -34,29 +34,29 @@ void EmbeddedPatternGenerator::proceed()
         const uint8_t sys_id =
             static_cast<uint8_t>(fles::SubsystemIdentifier::FLES);
         const uint8_t sys_ver = static_cast<uint8_t>(
-            _generate_pattern ? fles::SubsystemFormatFLES::BasicRampPattern
+            generate_pattern_ ? fles::SubsystemFormatFLES::BasicRampPattern
                               : fles::SubsystemFormatFLES::Uninitialized);
-        uint64_t idx = _written_desc;
+        uint64_t idx = written_desc_;
         uint32_t crc = 0x00000000;
         uint32_t size = content_bytes;
-        uint64_t offset = _written_data;
+        uint64_t offset = written_data_;
 
         // write to data buffer
-        if (_generate_pattern) {
+        if (generate_pattern_) {
             for (uint64_t i = 0; i < content_bytes; i += sizeof(uint64_t)) {
-                uint64_t data_word = (_input_index << 48L) | i;
+                uint64_t data_word = (input_index_ << 48L) | i;
                 reinterpret_cast<volatile uint64_t&>(
-                    _data_buffer.at(_written_data)) = data_word;
-                _written_data += sizeof(uint64_t);
+                    data_buffer_.at(written_data_)) = data_word;
+                written_data_ += sizeof(uint64_t);
                 crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);
             }
         } else {
-            _written_data += content_bytes;
+            written_data_ += content_bytes;
         }
 
         // write to descriptor buffer
         const_cast<fles::MicrosliceDescriptor&>(
-            _desc_buffer.at(_written_desc++)) =
+            desc_buffer_.at(written_desc_++)) =
             fles::MicrosliceDescriptor({hdr_id, hdr_ver, eq_id, flags, sys_id,
                                         sys_ver, idx, crc, size, offset});
     }

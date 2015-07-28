@@ -12,13 +12,13 @@
 
 Benchmark::Benchmark()
 {
-    _random_data.reserve(_size);
+    random_data_.reserve(size_);
 
     std::mt19937 engine;
     std::uniform_int_distribution<uint8_t> distribution;
     auto generator = std::bind(distribution, engine);
 
-    std::generate_n(std::back_inserter(_random_data), _size, generator);
+    std::generate_n(std::back_inserter(random_data_), size_, generator);
 }
 
 // IEEE is by far and away the most common CRC-32 polynomial.
@@ -46,8 +46,8 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
         boost::crc_optimal<32, 0x1EDC6F41, 0xFFFFFFFF, 0xFFFFFFFF, true, true>
             crc_32;
 
-        for (size_t i = 0; i < _cycles; ++i) {
-            crc_32.process_bytes(_random_data.data(), _random_data.size());
+        for (size_t i = 0; i < cycles_; ++i) {
+            crc_32.process_bytes(random_data_.data(), random_data_.size());
         }
         crc = crc_32();
         break;
@@ -57,8 +57,8 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
         // IEEE
         boost::crc_32_type crc_32;
 
-        for (size_t i = 0; i < _cycles; ++i) {
-            crc_32.process_bytes(_random_data.data(), _random_data.size());
+        for (size_t i = 0; i < cycles_; ++i) {
+            crc_32.process_bytes(random_data_.data(), random_data_.size());
         }
         crc = crc_32();
         break;
@@ -67,10 +67,10 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
     case Algorithm::Intrinsic32: {
         // Castagnoli
         crc ^= 0xFFFFFFFF;
-        for (size_t i = 0; i < _cycles; ++i) {
-            uint32_t* p = reinterpret_cast<uint32_t*>(_random_data.data());
+        for (size_t i = 0; i < cycles_; ++i) {
+            uint32_t* p = reinterpret_cast<uint32_t*>(random_data_.data());
             const uint32_t* const end =
-                p + _random_data.size() / sizeof(uint32_t);
+                p + random_data_.size() / sizeof(uint32_t);
             while (p < end) {
                 crc = _mm_crc32_u32(crc, *p++);
             }
@@ -82,10 +82,10 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
     case Algorithm::Intrinsic64: {
         // Castagnoli
         uint64_t crc64 = UINT64_C(0xFFFFFFFF);
-        for (size_t i = 0; i < _cycles; ++i) {
-            uint64_t* p = reinterpret_cast<uint64_t*>(_random_data.data());
+        for (size_t i = 0; i < cycles_; ++i) {
+            uint64_t* p = reinterpret_cast<uint64_t*>(random_data_.data());
             const uint64_t* const end =
-                p + _random_data.size() / sizeof(uint64_t);
+                p + random_data_.size() / sizeof(uint64_t);
             while (p < end) {
                 crc64 = _mm_crc32_u64(crc64, *p++);
             }
@@ -101,8 +101,8 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
             0x82f63b78, 0, 32, true, 0, 0, 0,
             crcutil_interface::CRC::IsSSE42Available(), NULL);
         crcutil_interface::UINT64 crc64 = 0;
-        for (size_t i = 0; i < _cycles; ++i) {
-            crc_32->Compute(_random_data.data(), _random_data.size(), &crc64);
+        for (size_t i = 0; i < cycles_; ++i) {
+            crc_32->Compute(random_data_.data(), random_data_.size(), &crc64);
         }
         crc = static_cast<uint32_t>(crc64);
         crc_32->Delete();
@@ -115,8 +115,8 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm)
             0xedb88320, 0, 32, true, 0, 0, 0,
             crcutil_interface::CRC::IsSSE42Available(), NULL);
         crcutil_interface::UINT64 crc64 = 0;
-        for (size_t i = 0; i < _cycles; ++i) {
-            crc_32->Compute(_random_data.data(), _random_data.size(), &crc64);
+        for (size_t i = 0; i < cycles_; ++i) {
+            crc_32->Compute(random_data_.data(), random_data_.size(), &crc64);
         }
         crc = static_cast<uint32_t>(crc64);
         crc_32->Delete();
@@ -145,14 +145,14 @@ void Benchmark::run()
 
 void Benchmark::run_single(Algorithm algorithm)
 {
-    const size_t _bytes = _size * _cycles;
+    const size_t bytes_ = size_ * cycles_;
 
     auto start = std::chrono::system_clock::now();
     uint32_t crc32 = compute_crc32(algorithm);
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::system_clock::now() - start);
     const float rate =
-        static_cast<float>(_bytes) / static_cast<float>(duration.count());
+        static_cast<float>(bytes_) / static_cast<float>(duration.count());
     std::cout << "crc32=" << std::hex << crc32 << "  " << rate << " MiB/s"
               << std::endl;
 }

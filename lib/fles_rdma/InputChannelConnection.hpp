@@ -44,7 +44,7 @@ public:
 
     void finalize(bool abort);
 
-    bool request_abort_flag() { return _recv_status_message.request_abort; }
+    bool request_abort_flag() { return recv_status_message_.request_abort; }
 
     void on_complete_write();
 
@@ -75,34 +75,34 @@ private:
     void post_send_status_message();
 
     /// Flag, true if it is the input nodes's turn to send a pointer update.
-    bool _our_turn = true;
+    bool our_turn_ = true;
 
-    bool _finalize = false;
-    bool _abort = false;
+    bool finalize_ = false;
+    bool abort_ = false;
 
     /// Access information for memory regions on remote end.
-    ComputeNodeInfo _remote_info = ComputeNodeInfo();
+    ComputeNodeInfo remote_info_ = ComputeNodeInfo();
 
     /// Local copy of acknowledged-by-CN pointers
-    ComputeNodeBufferPosition _cn_ack = ComputeNodeBufferPosition();
+    ComputeNodeBufferPosition cn_ack_ = ComputeNodeBufferPosition();
 
     /// Receive buffer for CN status (including acknowledged-by-CN pointers)
-    ComputeNodeStatusMessage _recv_status_message = ComputeNodeStatusMessage();
+    ComputeNodeStatusMessage recv_status_message_ = ComputeNodeStatusMessage();
 
     /// Infiniband memory region descriptor for CN status (including
     /// acknowledged-by-CN pointers)
-    ibv_mr* _mr_recv = nullptr;
+    ibv_mr* mr_recv_ = nullptr;
 
     /// Local version of CN write pointers
-    ComputeNodeBufferPosition _cn_wp = ComputeNodeBufferPosition();
+    ComputeNodeBufferPosition cn_wp_ = ComputeNodeBufferPosition();
 
     /// Send buffer for input channel status (including CN write pointers)
-    InputChannelStatusMessage _send_status_message =
+    InputChannelStatusMessage send_status_message_ =
         InputChannelStatusMessage();
 
     /// Infiniband memory region descriptor for input channel status (including
     /// CN write pointers)
-    ibv_mr* _mr_send = nullptr;
+    ibv_mr* mr_send_ = nullptr;
 
     /// InfiniBand receive work request
     ibv_recv_wr recv_wr = ibv_recv_wr();
@@ -116,7 +116,7 @@ private:
     /// Scatter/gather list entry for send work request
     ibv_sge send_sge = ibv_sge();
 
-    unsigned int _pending_write_requests{0};
+    unsigned int pending_write_requests_{0};
 
-    unsigned int _max_pending_write_requests{0};
+    unsigned int max_pending_write_requests_{0};
 };

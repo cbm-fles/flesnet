@@ -11,23 +11,23 @@ void Parameters::parse_options(int argc, char* argv[])
     po::options_description desc("Allowed options");
     desc.add_options()("version,V", "print version string")(
         "help,h", "produce help message")(
-        "client-index,c", po::value<int32_t>(&_client_index),
+        "client-index,c", po::value<int32_t>(&client_index_),
         "index of this executable in the list of processor tasks")(
-        "analyze-pattern,a", po::value<bool>(&_analyze)->implicit_value(true),
+        "analyze-pattern,a", po::value<bool>(&analyze_)->implicit_value(true),
         "enable/disable pattern check")(
-        "benchmark,b", po::value<bool>(&_benchmark)->implicit_value(true),
-        "run benchmark test only")("verbose,v", po::value<size_t>(&_verbosity),
+        "benchmark,b", po::value<bool>(&benchmark_)->implicit_value(true),
+        "run benchmark test only")("verbose,v", po::value<size_t>(&verbosity_),
                                    "set output verbosity")(
-        "shm-identifier,s", po::value<std::string>(&_shm_identifier),
+        "shm-identifier,s", po::value<std::string>(&shm_identifier_),
         "shared memory identifier used for receiving timeslices")(
-        "input-archive,i", po::value<std::string>(&_input_archive),
+        "input-archive,i", po::value<std::string>(&input_archive_),
         "name of an input file archive to read")(
-        "output-archive,o", po::value<std::string>(&_output_archive),
+        "output-archive,o", po::value<std::string>(&output_archive_),
         "name of an output file archive to write")(
-        "publish,P", po::value<std::string>(&_publish_address)
+        "publish,P", po::value<std::string>(&publish_address_)
                          ->implicit_value("tcp://*:5556"),
         "enable timeslice publisher on given address")(
-        "subscribe,S", po::value<std::string>(&_subscribe_address)
+        "subscribe,S", po::value<std::string>(&subscribe_address_)
                            ->implicit_value("tcp://localhost:5556"),
         "subscribe to timeslice publisher on given address");
 
@@ -47,7 +47,7 @@ void Parameters::parse_options(int argc, char* argv[])
 
     size_t input_sources = vm.count("shm-identifier") +
                            vm.count("input-archive") + vm.count("subscribe");
-    if (input_sources == 0 && !_benchmark)
+    if (input_sources == 0 && !benchmark_)
         throw ParametersException("no input source specified");
     if (input_sources > 1)
         throw ParametersException("more than one input source specified");

@@ -24,14 +24,14 @@ public:
     void run();
 
 private:
-    Parameters const& _par;
+    Parameters const& par_;
 
-    std::unique_ptr<fles::TimesliceSource> _source;
-    std::unique_ptr<TimesliceAnalyzer> _analyzer;
-    std::unique_ptr<TimesliceDebugger> _debug;
-    std::unique_ptr<fles::TimesliceOutputArchive> _output;
-    std::unique_ptr<fles::TimeslicePublisher> _publisher;
-    std::unique_ptr<Benchmark> _benchmark;
+    std::unique_ptr<fles::TimesliceSource> source_;
+    std::unique_ptr<TimesliceAnalyzer> analyzer_;
+    std::unique_ptr<TimesliceDebugger> debug_;
+    std::unique_ptr<fles::TimesliceOutputArchive> output_;
+    std::unique_ptr<fles::TimeslicePublisher> publisher_;
+    std::unique_ptr<Benchmark> benchmark_;
 
-    uint64_t _count = 0;
+    uint64_t count_ = 0;
 };

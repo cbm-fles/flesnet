@@ -16,7 +16,7 @@ template <typename T, bool CLEARED = false, bool PAGE_ALIGNED = false>
 class RingBuffer
 {
 public:
-    void _array_delete(T* ptr, size_t size) const
+    void array_delete_(T* ptr, size_t size) const
     {
         while (size) {
             ptr[--size].~T();
@@ -54,23 +54,23 @@ public:
     /// Create and initialize buffer with given size exponent.
     void alloc_with_size_exponent(size_t new_size_exponent)
     {
-        _size_exponent = new_size_exponent;
-        _size = UINT64_C(1) << _size_exponent;
-        _size_mask = _size - 1;
+        size_exponent_ = new_size_exponent;
+        size_ = UINT64_C(1) << size_exponent_;
+        size_mask_ = size_ - 1;
         if (PAGE_ALIGNED) {
             void* buf;
             const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
-            int ret = posix_memalign(&buf, page_size, sizeof(T) * _size);
+            int ret = posix_memalign(&buf, page_size, sizeof(T) * size_);
             if (ret != 0) {
                 throw std::runtime_error(std::string("posix_memalign: ") +
                                          strerror(ret));
             }
             if (CLEARED) {
                 // TODO: hack for gcc < 4.8
-                //_buf = buf_t(new(buf) T[_size](), [&](T* ptr){
-                //_array_delete(ptr, _size); });
-                _buf = buf_t(new (buf) T[_size](), [&](T* ptr) {
-                    size_t size = _size;
+                // buf_ = buf_t(new(buf) T[size_](), [&](T* ptr){
+                // array_delete_(ptr, size_); });
+                buf_ = buf_t(new (buf) T[size_](), [&](T* ptr) {
+                    size_t size = size_;
                     while (size) {
                         ptr[--size].~T();
                     }
@@ -78,54 +78,54 @@ public:
                         ptr));
                 });
             } else {
-                _buf = buf_t(new (buf) T[_size],
-                             [&](T* ptr) { _array_delete(ptr, _size); });
+                buf_ = buf_t(new (buf) T[size_],
+                             [&](T* ptr) { array_delete_(ptr, size_); });
             }
         } else {
             if (CLEARED) {
-                _buf = buf_t(new T[_size](), [&](T* ptr) { delete[] ptr; });
+                buf_ = buf_t(new T[size_](), [&](T* ptr) { delete[] ptr; });
             } else {
-                _buf = buf_t(new T[_size], [&](T* ptr) { delete[] ptr; });
+                buf_ = buf_t(new T[size_], [&](T* ptr) { delete[] ptr; });
             }
         }
     }
 
     /// The element accessor operator.
-    T& at(size_t n) { return _buf[n & _size_mask]; }
+    T& at(size_t n) { return buf_[n & size_mask_]; }
 
     /// The const element accessor operator.
-    const T& at(size_t n) const { return _buf[n & _size_mask]; }
+    const T& at(size_t n) const { return buf_[n & size_mask_]; }
 
     /// Retrieve pointer to memory buffer.
-    T* ptr() { return _buf.get(); }
+    T* ptr() { return buf_.get(); }
 
     /// Retrieve const pointer to memory buffer.
-    const T* ptr() const { return _buf.get(); }
+    const T* ptr() const { return buf_.get(); }
 
     /// Retrieve buffer size in maximum number of entries.
-    size_t size() const { return _size; }
+    size_t size() const { return size_; }
 
     /// Retrieve buffer size in maximum number of entries as two's exponent.
-    size_t size_exponent() const { return _size_exponent; }
+    size_t size_exponent() const { return size_exponent_; }
 
     /// Retrieve buffer size bit mask.
-    size_t size_mask() const { return _size_mask; }
+    size_t size_mask() const { return size_mask_; }
 
     /// Retrieve buffer size in bytes.
-    size_t bytes() const { return _size * sizeof(T); }
+    size_t bytes() const { return size_ * sizeof(T); }
 
-    void clear() { std::fill_n(_buf, _size, T()); }
+    void clear() { std::fill_n(buf_, size_, T()); }
 
 private:
     /// Buffer size (maximum number of entries).
-    size_t _size = 0;
+    size_t size_ = 0;
 
     /// Buffer size given as two's exponent.
-    size_t _size_exponent = 0;
+    size_t size_exponent_ = 0;
 
     /// Buffer addressing bit mask.
-    size_t _size_mask = 0;
+    size_t size_mask_ = 0;
 
     /// The data buffer.
-    buf_t _buf;
+    buf_t buf_;
 };

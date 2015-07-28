@@ -35,9 +35,9 @@ public:
 
     void post_send_final_status_message();
 
-    void request_abort() { _send_status_message.request_abort = true; }
+    void request_abort() { send_status_message_.request_abort = true; }
 
-    bool abort_flag() { return _recv_status_message.abort; }
+    bool abort_flag() { return recv_status_message_.abort; }
 
     virtual void setup(struct ibv_pd* pd) override;
 
@@ -57,7 +57,7 @@ public:
 
     void on_complete_send_finalize();
 
-    const ComputeNodeBufferPosition& cn_wp() const { return _cn_wp; }
+    const ComputeNodeBufferPosition& cn_wp() const { return cn_wp_; }
 
     virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
@@ -104,40 +104,40 @@ public:
     BufferStatus buffer_status_data() const
     {
         return BufferStatus{std::chrono::system_clock::now(),
-                            (UINT64_C(1) << _data_buffer_size_exp),
-                            _send_status_message.ack.data, _cn_ack.data,
-                            _cn_wp.data};
+                            (UINT64_C(1) << data_buffer_size_exp_),
+                            send_status_message_.ack.data, cn_ack_.data,
+                            cn_wp_.data};
     }
 
     BufferStatus buffer_status_desc() const
     {
         return BufferStatus{std::chrono::system_clock::now(),
-                            (UINT64_C(1) << _desc_buffer_size_exp),
-                            _send_status_message.ack.desc, _cn_ack.desc,
-                            _cn_wp.desc};
+                            (UINT64_C(1) << desc_buffer_size_exp_),
+                            send_status_message_.ack.desc, cn_ack_.desc,
+                            cn_wp_.desc};
     }
 
 private:
-    ComputeNodeStatusMessage _send_status_message = ComputeNodeStatusMessage();
-    ComputeNodeBufferPosition _cn_ack = ComputeNodeBufferPosition();
+    ComputeNodeStatusMessage send_status_message_ = ComputeNodeStatusMessage();
+    ComputeNodeBufferPosition cn_ack_ = ComputeNodeBufferPosition();
 
-    InputChannelStatusMessage _recv_status_message =
+    InputChannelStatusMessage recv_status_message_ =
         InputChannelStatusMessage();
-    ComputeNodeBufferPosition _cn_wp = ComputeNodeBufferPosition();
+    ComputeNodeBufferPosition cn_wp_ = ComputeNodeBufferPosition();
 
-    struct ibv_mr* _mr_data = nullptr;
-    struct ibv_mr* _mr_desc = nullptr;
-    struct ibv_mr* _mr_send = nullptr;
-    struct ibv_mr* _mr_recv = nullptr;
+    struct ibv_mr* mr_data_ = nullptr;
+    struct ibv_mr* mr_desc_ = nullptr;
+    struct ibv_mr* mr_send_ = nullptr;
+    struct ibv_mr* mr_recv_ = nullptr;
 
     /// Information on remote end.
-    InputNodeInfo _remote_info{0};
+    InputNodeInfo remote_info_{0};
 
-    uint8_t* _data_ptr = nullptr;
-    std::size_t _data_buffer_size_exp = 0;
+    uint8_t* data_ptr_ = nullptr;
+    std::size_t data_buffer_size_exp_ = 0;
 
-    fles::TimesliceComponentDescriptor* _desc_ptr = nullptr;
-    std::size_t _desc_buffer_size_exp = 0;
+    fles::TimesliceComponentDescriptor* desc_ptr_ = nullptr;
+    std::size_t desc_buffer_size_exp_ = 0;
 
     /// InfiniBand receive work request
     ibv_recv_wr recv_wr = ibv_recv_wr();
@@ -151,5 +151,5 @@ private:
     /// Scatter/gather list entry for send work request
     ibv_sge send_sge = ibv_sge();
 
-    uint32_t _pending_send_requests{0};
+    uint32_t pending_send_requests_{0};
 };

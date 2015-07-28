@@ -48,9 +48,9 @@ private:
     StorableMicroslice* try_get();
 
     /// Data source (e.g., FLIB).
-    DataSource& _data_source;
+    DataSource& data_source_;
 
-    uint64_t _microslice_index = 0;
-    uint64_t _previous_desc_idx = 0;
+    uint64_t microslice_index_ = 0;
+    uint64_t previous_desc_idx_ = 0;
 };
 }

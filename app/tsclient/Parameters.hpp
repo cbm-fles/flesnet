@@ -24,34 +24,34 @@ public:
     Parameters(const Parameters&) = delete;
     void operator=(const Parameters&) = delete;
 
-    int32_t client_index() const { return _client_index; }
+    int32_t client_index() const { return client_index_; }
 
-    std::string shm_identifier() const { return _shm_identifier; }
+    std::string shm_identifier() const { return shm_identifier_; }
 
-    std::string input_archive() const { return _input_archive; }
+    std::string input_archive() const { return input_archive_; }
 
-    std::string output_archive() const { return _output_archive; }
+    std::string output_archive() const { return output_archive_; }
 
-    bool analyze() const { return _analyze; }
+    bool analyze() const { return analyze_; }
 
-    bool benchmark() const { return _benchmark; }
+    bool benchmark() const { return benchmark_; }
 
-    size_t verbosity() const { return _verbosity; }
+    size_t verbosity() const { return verbosity_; }
 
-    std::string publish_address() const { return _publish_address; }
+    std::string publish_address() const { return publish_address_; }
 
-    std::string subscribe_address() const { return _subscribe_address; }
+    std::string subscribe_address() const { return subscribe_address_; }
 
 private:
     void parse_options(int argc, char* argv[]);
 
-    int32_t _client_index = -1;
-    std::string _shm_identifier;
-    std::string _input_archive;
-    std::string _output_archive;
-    bool _analyze = false;
-    bool _benchmark = false;
-    size_t _verbosity = 0;
-    std::string _publish_address;
-    std::string _subscribe_address;
+    int32_t client_index_ = -1;
+    std::string shm_identifier_;
+    std::string input_archive_;
+    std::string output_archive_;
+    bool analyze_ = false;
+    bool benchmark_ = false;
+    size_t verbosity_ = 0;
+    std::string publish_address_;
+    std::string subscribe_address_;
 };

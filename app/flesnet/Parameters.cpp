@@ -15,17 +15,17 @@ std::string const Parameters::desc() const
 {
     std::stringstream st;
 
-    st << "input nodes (" << _input_nodes.size() << "): " << _input_nodes
+    st << "input nodes (" << input_nodes_.size() << "): " << input_nodes_
        << std::endl;
-    st << "compute nodes (" << _compute_nodes.size() << "): " << _compute_nodes
+    st << "compute nodes (" << compute_nodes_.size() << "): " << compute_nodes_
        << std::endl;
-    for (auto input_index : _input_indexes) {
+    for (auto input_index : input_indexes_) {
         st << "this is input node " << input_index << " (of "
-           << _input_nodes.size() << ")" << std::endl;
+           << input_nodes_.size() << ")" << std::endl;
     }
-    for (auto compute_index : _compute_indexes) {
+    for (auto compute_index : compute_indexes_) {
         st << "this is compute node " << compute_index << " (of "
-           << _compute_nodes.size() << ")" << std::endl;
+           << compute_nodes_.size() << ")" << std::endl;
     }
 
     return st.str();
@@ -41,7 +41,7 @@ uint32_t Parameters::suggest_in_data_buffer_size_exp()
 
     float total_ram = sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
     float suggest_in_data_buffer_size =
-        buffer_ram_usage_ratio * total_ram / _input_indexes.size();
+        buffer_ram_usage_ratio * total_ram / input_indexes_.size();
 
     uint32_t suggest_in_data_buffer_size_exp =
         ceilf(log2f(suggest_in_data_buffer_size));
@@ -65,7 +65,7 @@ uint32_t Parameters::suggest_cn_data_buffer_size_exp()
     float total_ram = sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
     float suggest_cn_data_buffer_size =
         buffer_ram_usage_ratio * total_ram /
-        (_compute_indexes.size() * _input_nodes.size());
+        (compute_indexes_.size() * input_nodes_.size());
 
     uint32_t suggest_cn_data_buffer_size_exp =
         ceilf(log2f(suggest_cn_data_buffer_size));
@@ -91,9 +91,9 @@ uint32_t Parameters::suggest_in_desc_buffer_size_exp()
     static_assert(min_desc_data_ratio <= max_desc_data_ratio,
                   "invalid range for desc_data_ratio");
 
-    float in_data_buffer_size = UINT64_C(1) << _in_data_buffer_size_exp;
+    float in_data_buffer_size = UINT64_C(1) << in_data_buffer_size_exp_;
     float suggest_in_desc_buffer_size = in_data_buffer_size /
-                                        _typical_content_size *
+                                        typical_content_size_ *
                                         in_desc_buffer_oversize_factor;
     uint32_t suggest_in_desc_buffer_size_exp =
         ceilf(log2f(suggest_in_desc_buffer_size));
@@ -126,10 +126,10 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
     static_assert(min_desc_data_ratio <= max_desc_data_ratio,
                   "invalid range for desc_data_ratio");
 
-    float cn_data_buffer_size = UINT64_C(1) << _cn_data_buffer_size_exp;
+    float cn_data_buffer_size = UINT64_C(1) << cn_data_buffer_size_exp_;
     float suggest_cn_desc_buffer_size =
         cn_data_buffer_size /
-        (_typical_content_size * (_timeslice_size + _overlap_size)) *
+        (typical_content_size_ * (timeslice_size_ + overlap_size_)) *
         cn_desc_buffer_oversize_factor;
 
     uint32_t suggest_cn_desc_buffer_size_exp =
@@ -174,39 +174,39 @@ void Parameters::parse_options(int argc, char* argv[])
         "add host to the list of input nodes")(
         "compute-nodes,C", po::value<std::vector<std::string>>()->multitoken(),
         "add host to the list of compute nodes")(
-        "timeslice-size", po::value<uint32_t>(&_timeslice_size),
+        "timeslice-size", po::value<uint32_t>(&timeslice_size_),
         "global timeslice size in number of MCs")(
-        "overlap-size", po::value<uint32_t>(&_overlap_size),
+        "overlap-size", po::value<uint32_t>(&overlap_size_),
         "size of the overlap region in number of MCs")(
         "in-data-buffer-size-exp",
-        po::value<uint32_t>(&_in_data_buffer_size_exp),
+        po::value<uint32_t>(&in_data_buffer_size_exp_),
         "exp. size of the input node's data buffer in bytes")(
         "in-desc-buffer-size-exp",
-        po::value<uint32_t>(&_in_desc_buffer_size_exp),
+        po::value<uint32_t>(&in_desc_buffer_size_exp_),
         "exp. size of the input node's descriptor buffer"
         " (number of entries)")(
         "cn-data-buffer-size-exp",
-        po::value<uint32_t>(&_cn_data_buffer_size_exp),
+        po::value<uint32_t>(&cn_data_buffer_size_exp_),
         "exp. size of the compute node's data buffer in bytes")(
         "cn-desc-buffer-size-exp",
-        po::value<uint32_t>(&_cn_desc_buffer_size_exp),
+        po::value<uint32_t>(&cn_desc_buffer_size_exp_),
         "exp. size of the compute node's descriptor buffer"
         " (number of entries)")("typical-content-size",
-                                po::value<uint32_t>(&_typical_content_size),
+                                po::value<uint32_t>(&typical_content_size_),
                                 "typical number of content bytes per MC")(
-        "use-flib", po::value<bool>(&_use_flib), "use flib flag")(
-        "flib-legacy-mode", po::value<bool>(&_flib_legacy_mode),
-        "use cbmnet flib")("use-shm", po::value<bool>(&_use_shared_memory),
+        "use-flib", po::value<bool>(&use_flib_), "use flib flag")(
+        "flib-legacy-mode", po::value<bool>(&flib_legacy_mode_),
+        "use cbmnet flib")("use-shm", po::value<bool>(&use_shared_memory_),
                            "use shared_meory flag")(
-        "standalone", po::value<bool>(&_standalone), "standalone mode flag")(
-        "max-timeslice-number,n", po::value<uint32_t>(&_max_timeslice_number),
+        "standalone", po::value<bool>(&standalone_), "standalone mode flag")(
+        "max-timeslice-number,n", po::value<uint32_t>(&max_timeslice_number_),
         "global maximum timeslice number")(
         "processor-executable,e",
-        po::value<std::string>(&_processor_executable),
+        po::value<std::string>(&processor_executable_),
         "name of the executable acting as timeslice processor")(
-        "processor-instances", po::value<uint32_t>(&_processor_instances),
+        "processor-instances", po::value<uint32_t>(&processor_instances_),
         "number of instances of the timeslice processor executable")(
-        "base-port", po::value<uint32_t>(&_base_port),
+        "base-port", po::value<uint32_t>(&base_port_),
         "base IP port to use for listening");
 
     po::options_description cmdline_options("Allowed options");
@@ -238,15 +238,15 @@ void Parameters::parse_options(int argc, char* argv[])
 
     logging::add_console(static_cast<severity_level>(log_level));
 
-    if (_timeslice_size < 1) {
+    if (timeslice_size_ < 1) {
         throw ParametersException("timeslice size cannot be zero");
     }
 
-    if (_standalone) {
-        _input_nodes = std::vector<std::string>{"127.0.0.1"};
-        _input_indexes = std::vector<unsigned>{0};
-        _compute_nodes = std::vector<std::string>{"127.0.0.1"};
-        _compute_indexes = std::vector<unsigned>{0};
+    if (standalone_) {
+        input_nodes_ = std::vector<std::string>{"127.0.0.1"};
+        input_indexes_ = std::vector<unsigned>{0};
+        compute_nodes_ = std::vector<std::string>{"127.0.0.1"};
+        compute_indexes_ = std::vector<unsigned>{0};
     } else {
         if (!vm.count("input-nodes"))
             throw ParametersException("list of input nodes is empty");
@@ -254,80 +254,80 @@ void Parameters::parse_options(int argc, char* argv[])
         if (!vm.count("compute-nodes"))
             throw ParametersException("list of compute nodes is empty");
 
-        _input_nodes = vm["input-nodes"].as<std::vector<std::string>>();
-        _compute_nodes = vm["compute-nodes"].as<std::vector<std::string>>();
+        input_nodes_ = vm["input-nodes"].as<std::vector<std::string>>();
+        compute_nodes_ = vm["compute-nodes"].as<std::vector<std::string>>();
 
         if (vm.count("input-index"))
-            _input_indexes = vm["input-index"].as<std::vector<unsigned>>();
+            input_indexes_ = vm["input-index"].as<std::vector<unsigned>>();
         if (vm.count("compute-index"))
-            _compute_indexes = vm["compute-index"].as<std::vector<unsigned>>();
+            compute_indexes_ = vm["compute-index"].as<std::vector<unsigned>>();
 
-        if (_input_nodes.empty() && _compute_nodes.empty()) {
+        if (input_nodes_.empty() && compute_nodes_.empty()) {
             throw ParametersException("no node type specified");
         }
 
-        for (auto input_index : _input_indexes) {
-            if (input_index >= _input_nodes.size()) {
+        for (auto input_index : input_indexes_) {
+            if (input_index >= input_nodes_.size()) {
                 std::ostringstream oss;
                 oss << "input node index (" << input_index
-                    << ") out of range (0.." << _input_nodes.size() - 1 << ")";
+                    << ") out of range (0.." << input_nodes_.size() - 1 << ")";
                 throw ParametersException(oss.str());
             }
         }
 
-        for (auto compute_index : _compute_indexes) {
-            if (compute_index >= _compute_nodes.size()) {
+        for (auto compute_index : compute_indexes_) {
+            if (compute_index >= compute_nodes_.size()) {
                 std::ostringstream oss;
                 oss << "compute node index (" << compute_index
-                    << ") out of range (0.." << _compute_nodes.size() - 1
+                    << ") out of range (0.." << compute_nodes_.size() - 1
                     << ")";
                 throw ParametersException(oss.str());
             }
         }
     }
 
-    if (!_compute_nodes.empty() && _processor_executable.empty())
+    if (!compute_nodes_.empty() && processor_executable_.empty())
         throw ParametersException("processor executable not specified");
 
-    if (_in_data_buffer_size_exp == 0 && !_use_shared_memory) {
-        _in_data_buffer_size_exp = suggest_in_data_buffer_size_exp();
+    if (in_data_buffer_size_exp_ == 0 && !use_shared_memory_) {
+        in_data_buffer_size_exp_ = suggest_in_data_buffer_size_exp();
     }
-    if (_in_data_buffer_size_exp != 0 && _use_shared_memory) {
+    if (in_data_buffer_size_exp_ != 0 && use_shared_memory_) {
         L_(warning) << "using shared memory buffers, in_data_buffer_size_exp "
                        "will be ignored";
-        _in_data_buffer_size_exp = 0;
+        in_data_buffer_size_exp_ = 0;
     }
 
-    if (_cn_data_buffer_size_exp == 0)
-        _cn_data_buffer_size_exp = suggest_cn_data_buffer_size_exp();
+    if (cn_data_buffer_size_exp_ == 0)
+        cn_data_buffer_size_exp_ = suggest_cn_data_buffer_size_exp();
 
-    if (_in_desc_buffer_size_exp == 0 && !_use_shared_memory) {
-        _in_desc_buffer_size_exp = suggest_in_desc_buffer_size_exp();
+    if (in_desc_buffer_size_exp_ == 0 && !use_shared_memory_) {
+        in_desc_buffer_size_exp_ = suggest_in_desc_buffer_size_exp();
     }
-    if (_in_desc_buffer_size_exp != 0 && _use_shared_memory) {
+    if (in_desc_buffer_size_exp_ != 0 && use_shared_memory_) {
         L_(warning) << "using shared memory buffers, in_desc_buffer_size_exp "
                        "will be ignored";
-        _in_desc_buffer_size_exp = 0;
+        in_desc_buffer_size_exp_ = 0;
     }
 
-    if (_cn_desc_buffer_size_exp == 0)
-        _cn_desc_buffer_size_exp = suggest_cn_desc_buffer_size_exp();
+    if (cn_desc_buffer_size_exp_ == 0)
+        cn_desc_buffer_size_exp_ = suggest_cn_desc_buffer_size_exp();
 
-    if (!_standalone) {
-        L_(debug) << "input nodes (" << _input_nodes.size()
-                  << "): " << boost::algorithm::join(_input_nodes, " ");
-        L_(debug) << "compute nodes (" << _compute_nodes.size()
-                  << "): " << boost::algorithm::join(_compute_nodes, " ");
-        for (auto input_index : _input_indexes) {
+    if (!standalone_) {
+        L_(debug) << "input nodes (" << input_nodes_.size()
+                  << "): " << boost::algorithm::join(input_nodes_, " ");
+        L_(debug) << "compute nodes (" << compute_nodes_.size()
+                  << "): " << boost::algorithm::join(compute_nodes_, " ");
+        for (auto input_index : input_indexes_) {
             L_(info) << "this is input node " << input_index << " (of "
-                     << _input_nodes.size() << ")";
+                     << input_nodes_.size() << ")";
         }
-        for (auto compute_index : _compute_indexes) {
+        for (auto compute_index : compute_indexes_) {
             L_(info) << "this is compute node " << compute_index << " (of "
-                     << _compute_nodes.size() << ")";
+                     << compute_nodes_.size() << ")";
         }
 
-        for (auto input_index : _input_indexes) {
+        for (auto input_index : input_indexes_) {
             if (input_index == 0) {
                 print_buffer_info();
             }
@@ -339,24 +339,24 @@ void Parameters::parse_options(int argc, char* argv[])
 
 void Parameters::print_buffer_info()
 {
-    if (!_use_flib) {
+    if (!use_flib_) {
         L_(info) << "microslice size: "
-                 << human_readable_count(_typical_content_size);
+                 << human_readable_count(typical_content_size_);
     }
-    L_(info) << "timeslice size: (" << _timeslice_size << " + " << _overlap_size
+    L_(info) << "timeslice size: (" << timeslice_size_ << " + " << overlap_size_
              << ") microslices";
-    L_(info) << "number of timeslices: " << _max_timeslice_number;
-    if (!_use_shared_memory) {
+    L_(info) << "number of timeslices: " << max_timeslice_number_;
+    if (!use_shared_memory_) {
         L_(info) << "input node buffer size: "
                  << human_readable_count(UINT64_C(1)
-                                         << _in_data_buffer_size_exp) << " + "
+                                         << in_data_buffer_size_exp_) << " + "
                  << human_readable_count(
-                        (UINT64_C(1) << _in_desc_buffer_size_exp) *
+                        (UINT64_C(1) << in_desc_buffer_size_exp_) *
                         sizeof(fles::MicrosliceDescriptor));
     }
     L_(info) << "compute node buffer size: "
-             << human_readable_count(UINT64_C(1) << _cn_data_buffer_size_exp)
+             << human_readable_count(UINT64_C(1) << cn_data_buffer_size_exp_)
              << " + " << human_readable_count(
-                             (UINT64_C(1) << _cn_desc_buffer_size_exp) *
+                             (UINT64_C(1) << cn_desc_buffer_size_exp_) *
                              sizeof(fles::TimesliceComponentDescriptor));
 }

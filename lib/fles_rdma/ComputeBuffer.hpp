@@ -60,35 +60,35 @@ public:
     void poll_ts_completion();
 
 private:
-    uint64_t _compute_index;
+    uint64_t compute_index_;
 
-    uint32_t _data_buffer_size_exp;
-    uint32_t _desc_buffer_size_exp;
+    uint32_t data_buffer_size_exp_;
+    uint32_t desc_buffer_size_exp_;
 
-    unsigned short _service;
-    uint32_t _num_input_nodes;
+    unsigned short service_;
+    uint32_t num_input_nodes_;
 
-    uint32_t _timeslice_size;
+    uint32_t timeslice_size_;
 
-    uint32_t _processor_instances;
-    const std::string _processor_executable;
-    std::string _shared_memory_identifier;
+    uint32_t processor_instances_;
+    const std::string processor_executable_;
+    std::string shared_memory_identifier_;
 
-    size_t _red_lantern = 0;
-    uint64_t _completely_written = 0;
-    uint64_t _acked = 0;
+    size_t red_lantern_ = 0;
+    uint64_t completely_written_ = 0;
+    uint64_t acked_ = 0;
 
     /// Buffer to store acknowledged status of timeslices.
-    RingBuffer<uint64_t, true> _ack;
+    RingBuffer<uint64_t, true> ack_;
 
-    std::unique_ptr<boost::interprocess::shared_memory_object> _data_shm;
-    std::unique_ptr<boost::interprocess::shared_memory_object> _desc_shm;
+    std::unique_ptr<boost::interprocess::shared_memory_object> data_shm_;
+    std::unique_ptr<boost::interprocess::shared_memory_object> desc_shm_;
 
-    std::unique_ptr<boost::interprocess::mapped_region> _data_region;
-    std::unique_ptr<boost::interprocess::mapped_region> _desc_region;
+    std::unique_ptr<boost::interprocess::mapped_region> data_region_;
+    std::unique_ptr<boost::interprocess::mapped_region> desc_region_;
 
-    std::unique_ptr<boost::interprocess::message_queue> _work_items_mq;
-    std::unique_ptr<boost::interprocess::message_queue> _completions_mq;
+    std::unique_ptr<boost::interprocess::message_queue> work_items_mq_;
+    std::unique_ptr<boost::interprocess::message_queue> completions_mq_;
 
-    volatile sig_atomic_t* _signal_status;
+    volatile sig_atomic_t* signal_status_;
 };

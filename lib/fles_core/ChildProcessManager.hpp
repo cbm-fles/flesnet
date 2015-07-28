@@ -50,13 +50,13 @@ public:
             execvp(child_process.path.c_str(),
                    const_cast<char* const*>(&c_arg[0]));
             L_(error) << "execvp() failed: " << strerror(errno);
-            _exit(0);
+            exit_(0);
         } else {
             // parent
             if (pid > 0) {
                 child_process.pid = pid;
                 child_process.status = Running;
-                _child_processes.push_back(child_process);
+                child_processes_.push_back(child_process);
                 L_(debug) << "child process started";
                 return true;
             } else {
@@ -68,8 +68,8 @@ public:
 
     bool stop_process(std::vector<ChildProcess>::iterator child_process)
     {
-        if (child_process >= _child_processes.begin() &&
-            child_process < _child_processes.end()) {
+        if (child_process >= child_processes_.begin() &&
+            child_process < child_processes_.end()) {
             child_process->status = Terminating;
             kill(child_process->pid, SIGTERM);
             return true;
@@ -80,7 +80,7 @@ public:
 
     void stop_processes(void* owner)
     {
-        for (auto it = _child_processes.begin(); it < _child_processes.end();
+        for (auto it = child_processes_.begin(); it < child_processes_.end();
              ++it) {
             if (it->owner == owner)
                 stop_process(it);
@@ -89,8 +89,8 @@ public:
 
     bool allow_stop_process(std::vector<ChildProcess>::iterator child_process)
     {
-        if (child_process >= _child_processes.begin() &&
-            child_process < _child_processes.end()) {
+        if (child_process >= child_processes_.begin() &&
+            child_process < child_processes_.end()) {
             child_process->status = Terminating;
             return true;
         } else {
@@ -100,7 +100,7 @@ public:
 
     void allow_stop_processes(void* owner)
     {
-        for (auto it = _child_processes.begin(); it < _child_processes.end();
+        for (auto it = child_processes_.begin(); it < child_processes_.end();
              ++it) {
             if (it->owner == owner)
                 allow_stop_process(it);
@@ -109,7 +109,7 @@ public:
 
     void stop_all_processes()
     {
-        for (auto it = _child_processes.begin(); it < _child_processes.end();
+        for (auto it = child_processes_.begin(); it < child_processes_.end();
              ++it) {
             stop_process(it);
         }
@@ -126,7 +126,7 @@ private:
         stop_all_processes();
     }
 
-    void uninstall_sigchld_handler() { sigaction(SIGCHLD, &_oldact, nullptr); }
+    void uninstall_sigchld_handler() { sigaction(SIGCHLD, &oldact_, nullptr); }
 
     void install_sigchld_handler()
     {
@@ -134,7 +134,7 @@ private:
         sigemptyset(&sa.sa_mask);
         sa.sa_flags = 0;
         sa.sa_handler = sigchld_handler;
-        sigaction(SIGCHLD, &sa, &_oldact);
+        sigaction(SIGCHLD, &sa, &oldact_);
     }
 
     static void sigchld_handler(int sig)
@@ -170,9 +170,9 @@ private:
         }
     }
 
-    std::vector<ChildProcess>& child_processes() { return _child_processes; }
+    std::vector<ChildProcess>& child_processes() { return child_processes_; }
 
-    std::vector<ChildProcess> _child_processes;
+    std::vector<ChildProcess> child_processes_;
 
-    sigaction_struct _oldact = sigaction_struct();
+    sigaction_struct oldact_ = sigaction_struct();
 };

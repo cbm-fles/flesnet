@@ -65,48 +65,48 @@ private:
     /// Completion notification event dispatcher. Called by the event loop.
     virtual void on_completion(const struct ibv_wc& wc) override;
 
-    uint64_t _input_index;
+    uint64_t input_index_;
 
     /// InfiniBand memory region descriptor for input data buffer.
-    struct ibv_mr* _mr_data = nullptr;
+    struct ibv_mr* mr_data_ = nullptr;
 
     /// InfiniBand memory region descriptor for input descriptor buffer.
-    struct ibv_mr* _mr_desc = nullptr;
+    struct ibv_mr* mr_desc_ = nullptr;
 
     /// Buffer to store acknowledged status of timeslices.
-    RingBuffer<uint64_t, true> _ack;
+    RingBuffer<uint64_t, true> ack_;
 
     /// Number of acknowledged MCs. Written to FLIB.
-    uint64_t _acked_desc = 0;
+    uint64_t acked_desc_ = 0;
 
     /// Number of acknowledged data bytes. Written to FLIB.
-    uint64_t _acked_data = 0;
+    uint64_t acked_data_ = 0;
 
     /// Data source (e.g., FLIB).
-    DataSource& _data_source;
+    DataSource& data_source_;
 
     /// Number of sent MCs, for statistics.
-    uint64_t _sent_desc = 0;
+    uint64_t sent_desc_ = 0;
 
     /// Number of sent data bytes, for statistics.
-    uint64_t _sent_data = 0;
+    uint64_t sent_data_ = 0;
 
-    const std::vector<std::string> _compute_hostnames;
-    const std::vector<std::string> _compute_services;
+    const std::vector<std::string> compute_hostnames_;
+    const std::vector<std::string> compute_services_;
 
-    const uint32_t _timeslice_size;
-    const uint32_t _overlap_size;
-    const uint32_t _max_timeslice_number;
+    const uint32_t timeslice_size_;
+    const uint32_t overlap_size_;
+    const uint32_t max_timeslice_number_;
 
-    const uint64_t _min_acked_desc;
-    const uint64_t _min_acked_data;
+    const uint64_t min_acked_desc_;
+    const uint64_t min_acked_data_;
 
-    uint64_t _cached_acked_data = 0;
-    uint64_t _cached_acked_desc = 0;
+    uint64_t cached_acked_data_ = 0;
+    uint64_t cached_acked_desc_ = 0;
 
-    uint64_t _previous_desc_idx = 0;
+    uint64_t previous_desc_idx_ = 0;
 
-    bool _abort = false;
+    bool abort_ = false;
 
     struct SendBufferStatus {
         std::chrono::system_clock::time_point time;
@@ -154,6 +154,6 @@ private:
         }
     };
 
-    SendBufferStatus _previous_send_buffer_status_desc = SendBufferStatus();
-    SendBufferStatus _previous_send_buffer_status_data = SendBufferStatus();
+    SendBufferStatus previous_send_buffer_status_desc_ = SendBufferStatus();
+    SendBufferStatus previous_send_buffer_status_data_ = SendBufferStatus();
 };
