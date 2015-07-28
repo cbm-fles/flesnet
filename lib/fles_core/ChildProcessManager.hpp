@@ -50,7 +50,7 @@ public:
             execvp(child_process.path.c_str(),
                    const_cast<char* const*>(&c_arg[0]));
             L_(error) << "execvp() failed: " << strerror(errno);
-            exit_(0);
+            _exit(0);
         } else {
             // parent
             if (pid > 0) {
