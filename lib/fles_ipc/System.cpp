@@ -21,7 +21,7 @@ std::string stringerror(int errnum)
 {
     std::vector<char> buf(256);
 
-#ifndef GNU_SOURCE_
+#ifndef _GNU_SOURCE
 
     // XSI-compliant
     int err = strerror_r(errnum, buf.data(), buf.size());
