@@ -1,12 +1,10 @@
-// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013-2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceDebugger.hpp"
-#include <sstream>
 #include <algorithm>
 #include <boost/format.hpp>
 
-std::string TimesliceDebugger::dump_timeslice(const fles::Timeslice& ts,
-                                              size_t verbosity) const
+std::ostream& TimesliceDump::write_to_stream(std::ostream& s) const
 {
     uint64_t min_num_microslices = UINT64_MAX;
     uint64_t max_num_microslices = 0;
@@ -14,7 +12,6 @@ std::string TimesliceDebugger::dump_timeslice(const fles::Timeslice& ts,
     uint64_t min_microslice_size = UINT64_MAX;
     uint64_t max_microslice_size = 0;
     uint64_t total_microslice_size = 0;
-    std::stringstream s_mc;
 
     for (uint64_t c = 0; c < ts.num_components(); ++c) {
         uint64_t num_microslices = ts.num_microslices(c);
@@ -26,19 +23,12 @@ std::string TimesliceDebugger::dump_timeslice(const fles::Timeslice& ts,
             total_microslice_size += size;
             min_microslice_size = std::min(min_microslice_size, size);
             max_microslice_size = std::max(max_microslice_size, size);
-            if (verbosity > 1) {
-                s_mc << "timeslice " << ts.index() << " microslice " << m
-                     << " component " << c << "\n"
-                     << dump_microslice(ts.descriptor(c, m), ts.content(c, m))
-                     << std::endl;
-            }
         }
     }
 
     uint64_t min_overlap = min_num_microslices - ts.num_core_microslices();
     uint64_t max_overlap = max_num_microslices - ts.num_core_microslices();
 
-    std::stringstream s;
     s << "timeslice " << ts.index() << " size: " << ts.num_components() << " x "
       << ts.num_core_microslices() << " microslices";
     if (ts.num_components() != 0) {
@@ -50,18 +40,25 @@ std::string TimesliceDebugger::dump_timeslice(const fles::Timeslice& ts,
         s << " overlap) = " << total_num_microslices << "\n";
         s << "\tmicroslice size min/avg/max: " << min_microslice_size << "/"
           << (static_cast<double>(total_microslice_size) /
-              total_num_microslices) << "/" << max_microslice_size << "\n"
-          << s_mc.str();
+              total_num_microslices) << "/" << max_microslice_size << "\n";
     }
 
-    return s.str();
+    if (verbosity > 1) {
+        for (uint64_t c = 0; c < ts.num_components(); ++c) {
+            uint64_t num_microslices = ts.num_microslices(c);
+            for (uint64_t m = 0; m < num_microslices; ++m) {
+                s << "timeslice " << ts.index() << " microslice " << m
+                  << " component " << c << "\n" << ts.get_microslice(c, m)
+                  << std::endl;
+            }
+        }
+    }
+
+    return s;
 }
 
-std::string TimesliceDebugger::dump_microslice_descriptor(
-    const fles::MicrosliceDescriptor& md) const
+std::ostream& MicrosliceDescriptorDump::write_to_stream(std::ostream& s) const
 {
-    std::stringstream s;
-
     s << "hi hv eqid flag si sv idx              crc      size     offset\n";
     s << boost::format(
              "%02x %02x %04x %04x %02x %02x %016lx %08x %08x %016lx\n") %
@@ -71,13 +68,11 @@ std::string TimesliceDebugger::dump_microslice_descriptor(
              static_cast<unsigned int>(md.sys_ver) % md.idx % md.crc % md.size %
              md.offset;
 
-    return s.str();
+    return s;
 }
 
-std::string TimesliceDebugger::dump_buffer(const void* buf, uint64_t size) const
+std::ostream& BufferDump::write_to_stream(std::ostream& s) const
 {
-    std::stringstream s;
-
     constexpr int bytes_per_block = 8;
     constexpr int bytes_per_line = 4 * bytes_per_block;
 
@@ -95,17 +90,5 @@ std::string TimesliceDebugger::dump_buffer(const void* buf, uint64_t size) const
         s << boost::format(":%04x\n") % i;
     }
 
-    return s.str();
-}
-
-std::string
-TimesliceDebugger::dump_microslice(const fles::MicrosliceDescriptor& md,
-                                   const void* buf) const
-{
-    std::stringstream s;
-
-    s << dump_microslice_descriptor(md) << "\n";
-    s << dump_buffer(buf, md.size);
-
-    return s.str();
+    return s;
 }

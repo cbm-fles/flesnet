@@ -28,7 +28,6 @@ private:
 
     std::unique_ptr<fles::TimesliceSource> source_;
     std::unique_ptr<TimesliceAnalyzer> analyzer_;
-    std::unique_ptr<TimesliceDebugger> debug_;
     std::unique_ptr<fles::TimesliceOutputArchive> output_;
     std::unique_ptr<fles::TimeslicePublisher> publisher_;
     std::unique_ptr<Benchmark> benchmark_;
