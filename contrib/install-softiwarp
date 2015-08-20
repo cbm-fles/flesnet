@@ -3,7 +3,7 @@
 
 set -ex
 
-DIR=/tmp/src/softiwarp
+DIR=/tmp/src
 
 echo "=== Installing dependencies"
 sudo aptitude install gcc autoconf automake libtool librdmacm-dev ibverbs-utils rdmacm-utils linux-headers-`uname -r`
@@ -11,13 +11,11 @@ sudo aptitude install gcc autoconf automake libtool librdmacm-dev ibverbs-utils 
 echo "=== Downloading sources"
 mkdir -p "$DIR"
 cd "$DIR"
-rm -rf kernel userlib
-git clone http://git.gitorious.org/softiwarp/kernel.git
-git clone http://git.gitorious.org/softiwarp/userlib.git
+rm -rf softiwarp
+git clone https://github.com/zrlio/softiwarp.git
 
 echo "=== Building userspace library"
-cd "$DIR"/userlib/libsiw-*
-./autogen.sh || true
+cd "$DIR"/softiwarp/userlib
 ./autogen.sh
 ./configure
 make
@@ -29,11 +27,11 @@ sudo mkdir -p /etc/libibverbs.d
 sudo ln -sf /usr/local/etc/libibverbs.d/siw.driver /etc/libibverbs.d/
 
 echo "=== Building kernel module"
-cd "$DIR/kernel/softiwarp"
+cd "$DIR/softiwarp/kernel"
 patch siw_debug.h <<EOF
-diff a/softiwarp/siw_debug.h b/softiwarp/siw_debug.h
---- a/softiwarp/siw_debug.h
-+++ b/softiwarp/siw_debug.h
+diff a/siw_debug.h b/siw_debug.h
+--- a/siw_debug.h
++++ b/siw_debug.h
 @@ -101,4 +101,4 @@
   */
 -#define DPRINT_MASK	0
