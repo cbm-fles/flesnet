@@ -3,12 +3,16 @@
 
 #include "Timeslice.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "Sink.hpp"
 #include "interface.h" // crcutil_interface
+#include <ostream>
+#include <string>
 
-class TimesliceAnalyzer
+class TimesliceAnalyzer : public fles::TimesliceSink
 {
 public:
-    TimesliceAnalyzer();
+    TimesliceAnalyzer(uint64_t arg_output_interval, std::ostream& arg_out,
+                      std::string arg_output_prefix);
     ~TimesliceAnalyzer();
 
     bool check_timeslice(const fles::Timeslice& ts);
@@ -21,6 +25,8 @@ public:
     }
 
     size_t count() const { return timeslice_count_; }
+
+    virtual void put(const fles::Timeslice& timeslice) override;
 
 private:
     uint32_t compute_crc(const fles::MicrosliceView m) const;
@@ -43,6 +49,10 @@ private:
                           size_t microslice);
 
     crcutil_interface::CRC* crc32_engine_ = nullptr;
+
+    uint64_t output_interval_ = UINT64_MAX;
+    std::ostream& out_;
+    std::string output_prefix_;
 
     size_t timeslice_count_ = 0;
     size_t microslice_count_ = 0;

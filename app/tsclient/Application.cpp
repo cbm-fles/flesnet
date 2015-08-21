@@ -7,6 +7,7 @@
 #include "TimeslicePublisher.hpp"
 #include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 
 Application::Application(Parameters const& par) : par_(par)
@@ -18,8 +19,12 @@ Application::Application(Parameters const& par) : par_(par)
     else if (!par_.subscribe_address().empty())
         source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address()));
 
-    if (par_.analyze())
-        analyzer_.reset(new TimesliceAnalyzer());
+    if (par_.analyze()) {
+        std::string output_prefix =
+            boost::lexical_cast<std::string>(par_.client_index()) + ": ";
+        sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+            new TimesliceAnalyzer(10000, std::cout, output_prefix)));
+    }
 
     if (par_.verbosity() > 0)
         sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
@@ -60,14 +65,6 @@ void Application::run()
     uint64_t limit = par_.maximum_number();
 
     while (auto timeslice = source_->get()) {
-        if (analyzer_) {
-            analyzer_->check_timeslice(*timeslice);
-            if ((analyzer_->count() % 10000) == 0) {
-                std::cout << par_.client_index() << ": "
-                          << analyzer_->statistics() << std::endl;
-                analyzer_->reset();
-            }
-        }
         for (auto& sink : sinks_) {
             sink->put(*timeslice);
         }

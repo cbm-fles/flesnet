@@ -15,7 +15,11 @@
 #include <sstream>
 #include <cassert>
 
-TimesliceAnalyzer::TimesliceAnalyzer()
+TimesliceAnalyzer::TimesliceAnalyzer(uint64_t arg_output_interval,
+                                     std::ostream& arg_out,
+                                     std::string arg_output_prefix)
+    : output_interval_(arg_output_interval), out_(arg_out),
+      output_prefix_(arg_output_prefix)
 {
     // create CRC-32C engine (Castagnoli polynomial)
     crc32_engine_ = crcutil_interface::CRC::Create(
@@ -309,4 +313,13 @@ std::string TimesliceAnalyzer::statistics() const
       << " bytes in " << microslice_count_ << " microslices, avg: "
       << static_cast<double>(content_bytes_) / microslice_count_ << ")";
     return s.str();
+}
+
+void TimesliceAnalyzer::put(const fles::Timeslice& timeslice)
+{
+    check_timeslice(timeslice);
+    if ((count() % 10000) == 0) {
+        out_ << output_prefix_ << statistics() << std::endl;
+        reset();
+    }
 }

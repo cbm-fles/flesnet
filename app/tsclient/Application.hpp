@@ -26,7 +26,6 @@ private:
     Parameters const& par_;
 
     std::unique_ptr<fles::TimesliceSource> source_;
-    std::unique_ptr<TimesliceAnalyzer> analyzer_;
     std::vector<std::unique_ptr<fles::TimesliceSink>> sinks_;
     std::unique_ptr<Benchmark> benchmark_;
 
