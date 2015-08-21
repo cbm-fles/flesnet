@@ -21,6 +21,10 @@ Application::Application(Parameters const& par) : par_(par)
     if (par_.analyze())
         analyzer_.reset(new TimesliceAnalyzer());
 
+    if (par_.verbosity() > 0)
+        sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+            new TimesliceDumper(std::cout, par_.verbosity())));
+
     if (!par_.output_archive().empty())
         sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
             new fles::TimesliceOutputArchive(par_.output_archive())));
@@ -61,10 +65,6 @@ void Application::run()
                           << analyzer_->statistics() << std::endl;
                 analyzer_->reset();
             }
-        }
-        if (par_.verbosity() > 0) {
-            std::cout << TimesliceDump(*timeslice, par_.verbosity())
-                      << std::endl;
         }
         for (auto& sink : sinks_) {
             sink->put(*timeslice);

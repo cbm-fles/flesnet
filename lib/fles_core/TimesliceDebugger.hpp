@@ -3,6 +3,7 @@
 
 #include "Timeslice.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "Sink.hpp"
 #include <ostream>
 
 class BufferDump
@@ -24,6 +25,8 @@ inline std::ostream& operator<<(std::ostream& s, const BufferDump& dump)
 {
     return dump.write_to_stream(s);
 }
+
+// ----------
 
 class MicrosliceDescriptorDump
 {
@@ -52,6 +55,8 @@ inline std::ostream& operator<<(std::ostream& s, const fles::MicrosliceView m)
              << BufferDump(m.content(), m.desc().size);
 }
 
+// ----------
+
 class TimesliceDump
 {
 public:
@@ -71,3 +76,21 @@ inline std::ostream& operator<<(std::ostream& s, const TimesliceDump& dump)
 {
     return dump.write_to_stream(s);
 }
+
+// ----------
+
+class TimesliceDumper : public fles::TimesliceSink
+{
+public:
+    TimesliceDumper(std::ostream& arg_out, std::size_t arg_verbosity)
+        : out(arg_out), verbosity(arg_verbosity){};
+
+    virtual void put(const fles::Timeslice& timeslice) override
+    {
+        out << TimesliceDump(timeslice, verbosity) << std::endl;
+    }
+
+private:
+    std::ostream& out;
+    std::size_t verbosity;
+};
