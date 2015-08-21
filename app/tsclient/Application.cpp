@@ -1,8 +1,11 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
-#include "TimesliceReceiver.hpp"
+#include "TimesliceDebugger.hpp"
 #include "TimesliceInputArchive.hpp"
+#include "TimesliceOutputArchive.hpp"
+#include "TimeslicePublisher.hpp"
+#include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
 #include <iostream>
 
@@ -19,10 +22,12 @@ Application::Application(Parameters const& par) : par_(par)
         analyzer_.reset(new TimesliceAnalyzer());
 
     if (!par_.output_archive().empty())
-        output_.reset(new fles::TimesliceOutputArchive(par_.output_archive()));
+        sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+            new fles::TimesliceOutputArchive(par_.output_archive())));
 
     if (!par_.publish_address().empty())
-        publisher_.reset(new fles::TimeslicePublisher(par_.publish_address()));
+        sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+            new fles::TimeslicePublisher(par_.publish_address())));
 
     if (par_.benchmark())
         benchmark_.reset(new Benchmark());
@@ -61,10 +66,9 @@ void Application::run()
             std::cout << TimesliceDump(*timeslice, par_.verbosity())
                       << std::endl;
         }
-        if (output_)
-            output_->write(*timeslice);
-        if (publisher_)
-            publisher_->publish(*timeslice);
+        for (auto& sink : sinks_) {
+            sink->put(*timeslice);
+        }
         ++count_;
     }
 }

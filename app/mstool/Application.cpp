@@ -1,10 +1,11 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
-#include "FlibPatternGenerator.hpp"
 #include "EmbeddedPatternGenerator.hpp"
-#include "MicrosliceReceiver.hpp"
+#include "FlibPatternGenerator.hpp"
 #include "MicrosliceInputArchive.hpp"
+#include "MicrosliceOutputArchive.hpp"
+#include "MicrosliceReceiver.hpp"
 #include <iostream>
 
 Application::Application(Parameters const& par) : par_(par)
@@ -37,7 +38,8 @@ Application::Application(Parameters const& par) : par_(par)
     }
 
     if (!par_.output_archive().empty()) {
-        output_.reset(new fles::MicrosliceOutputArchive(par_.output_archive()));
+        sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
+            new fles::MicrosliceOutputArchive(par_.output_archive())));
     }
 }
 
@@ -51,8 +53,8 @@ void Application::run()
     uint64_t limit = par_.maximum_number();
 
     while (auto microslice = source_->get()) {
-        if (output_) {
-            output_->write(*microslice);
+        for (auto& sink : sinks_) {
+            sink->put(*microslice);
         }
         ++count_;
         if (count_ == limit) {
