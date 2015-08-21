@@ -15,6 +15,9 @@ public:
                       std::string arg_output_prefix);
     ~TimesliceAnalyzer();
 
+    virtual void put(const fles::Timeslice& timeslice) override;
+
+private:
     bool check_timeslice(const fles::Timeslice& ts);
 
     std::string statistics() const;
@@ -24,11 +27,6 @@ public:
         content_bytes_ = 0;
     }
 
-    size_t count() const { return timeslice_count_; }
-
-    virtual void put(const fles::Timeslice& timeslice) override;
-
-private:
     uint32_t compute_crc(const fles::MicrosliceView m) const;
 
     bool check_crc(const fles::MicrosliceView m) const;

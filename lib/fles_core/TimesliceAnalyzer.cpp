@@ -318,7 +318,7 @@ std::string TimesliceAnalyzer::statistics() const
 void TimesliceAnalyzer::put(const fles::Timeslice& timeslice)
 {
     check_timeslice(timeslice);
-    if ((count() % 10000) == 0) {
+    if ((timeslice_count_ % output_interval_) == 0) {
         out_ << output_prefix_ << statistics() << std::endl;
         reset();
     }
