@@ -57,6 +57,8 @@ void Application::run()
         return;
     }
 
+    uint64_t limit = par_.maximum_number();
+
     while (auto timeslice = source_->get()) {
         if (analyzer_) {
             analyzer_->check_timeslice(*timeslice);
@@ -70,5 +72,8 @@ void Application::run()
             sink->put(*timeslice);
         }
         ++count_;
+        if (count_ == limit) {
+            break;
+        }
     }
 }

@@ -42,6 +42,8 @@ public:
 
     std::string subscribe_address() const { return subscribe_address_; }
 
+    uint64_t maximum_number() const { return maximum_number_; }
+
 private:
     void parse_options(int argc, char* argv[]);
 
@@ -54,4 +56,5 @@ private:
     size_t verbosity_ = 0;
     std::string publish_address_;
     std::string subscribe_address_;
+    uint64_t maximum_number_ = UINT64_MAX;
 };

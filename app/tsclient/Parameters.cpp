@@ -29,7 +29,10 @@ void Parameters::parse_options(int argc, char* argv[])
         "enable timeslice publisher on given address")(
         "subscribe,S", po::value<std::string>(&subscribe_address_)
                            ->implicit_value("tcp://localhost:5556"),
-        "subscribe to timeslice publisher on given address");
+        "subscribe to timeslice publisher on given address")(
+        "maximum-number,n", po::value<uint64_t>(&maximum_number_),
+        "set the maximum number of microslices to process (default: "
+        "unlimited)");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
