@@ -4,6 +4,7 @@
 #pragma once
 
 #include "StorableTimeslice.hpp"
+#include "Sink.hpp"
 #include <zmq.hpp>
 #include <string>
 
@@ -14,7 +15,7 @@ namespace fles
  * \brief The TimeslicePublisher class publishes serialized timeslice data sets
  * to a zeromq socket.
  */
-class TimeslicePublisher
+class TimeslicePublisher : public TimesliceSink
 {
 public:
     /// Construct timeslice publisher sending at given ZMQ address.
@@ -26,12 +27,20 @@ public:
     void operator=(const TimeslicePublisher&) = delete;
 
     /// Send a timeslice to all connected subscribers.
-    void publish(const fles::StorableTimeslice& timeslice);
+    virtual void put(const fles::Timeslice& timeslice) override
+    {
+        do_put(timeslice);
+    };
+
+    /// Deprecated alternative to put().
+    void publish(const fles::Timeslice& timeslice) { put(timeslice); };
 
 private:
     zmq::context_t context_{1};
     zmq::socket_t publisher_{context_, ZMQ_PUB};
     std::string serial_str_;
+
+    void do_put(const fles::StorableTimeslice& timeslice);
 };
 
 } // namespace fles {

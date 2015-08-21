@@ -43,7 +43,7 @@ public:
     };
 
 private:
-    virtual StorableTimeslice* do_get();
+    virtual StorableTimeslice* do_get() override;
 
     zmq::context_t context_{1};
     zmq::socket_t subscriber_{context_, ZMQ_SUB};

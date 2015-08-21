@@ -14,6 +14,6 @@ namespace fles
  * an output file.
  */
 using TimesliceOutputArchive =
-    OutputArchive<StorableTimeslice, ArchiveType::TimesliceArchive>;
+    OutputArchive<Timeslice, StorableTimeslice, ArchiveType::TimesliceArchive>;
 
 } // namespace fles {

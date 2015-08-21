@@ -44,7 +44,7 @@ public:
     };
 
 private:
-    virtual TimesliceView* do_get();
+    virtual TimesliceView* do_get() override;
 
     const std::string shared_memory_identifier_;
 

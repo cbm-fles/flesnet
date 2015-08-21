@@ -13,7 +13,7 @@ namespace fles
  * \brief The MicrosliceOutputArchive class serializes microslice data sets to
  * an output file.
  */
-using MicrosliceOutputArchive =
-    OutputArchive<StorableMicroslice, ArchiveType::MicrosliceArchive>;
+using MicrosliceOutputArchive = OutputArchive<Microslice, StorableMicroslice,
+                                              ArchiveType::MicrosliceArchive>;
 
 } // namespace fles {

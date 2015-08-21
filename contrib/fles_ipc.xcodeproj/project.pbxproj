@@ -62,6 +62,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3D114F1C1B876B320058D132 /* Sink.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Sink.hpp; sourceTree = "<group>"; };
 		3D448B8D1B05EBD700DD8E5D /* Microslice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Microslice.cpp; sourceTree = "<group>"; };
 		3D448B8E1B05EBD700DD8E5D /* Microslice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = Microslice.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3D448B911B05EBD700DD8E5D /* MicrosliceInputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = MicrosliceInputArchive.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
@@ -196,6 +197,7 @@
 				3DA3FE621B0207FF008710E2 /* TimesliceSubscriber.cpp */,
 				3DA3FE531B0207FF008710E2 /* System.hpp */,
 				3DA3FE521B0207FF008710E2 /* System.cpp */,
+				3D114F1C1B876B320058D132 /* Sink.hpp */,
 				3DE2EF0A1B0BABE400BBE823 /* Source.hpp */,
 				3DA3FE561B0207FF008710E2 /* ArchiveDescriptor.hpp */,
 				3DE2EF0B1B0BB02000BBE823 /* InputArchive.hpp */,

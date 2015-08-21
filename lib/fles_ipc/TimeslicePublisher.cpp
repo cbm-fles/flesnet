@@ -14,7 +14,7 @@ TimeslicePublisher::TimeslicePublisher(const std::string& address)
     publisher_.bind(address.c_str());
 }
 
-void TimeslicePublisher::publish(const StorableTimeslice& timeslice)
+void TimeslicePublisher::do_put(const StorableTimeslice& timeslice)
 {
     // serialize timeslice to string
     serial_str_.clear();

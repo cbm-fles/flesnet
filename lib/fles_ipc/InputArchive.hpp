@@ -64,7 +64,7 @@ public:
     const ArchiveDescriptor& descriptor() const { return descriptor_; };
 
 private:
-    virtual Derived* do_get()
+    virtual Derived* do_get() override
     {
         Derived* sts = nullptr;
         try {

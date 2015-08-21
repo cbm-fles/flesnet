@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ArchiveDescriptor.hpp"
+#include "Sink.hpp"
 #include <string>
 #include <fstream>
 #include <boost/archive/binary_oarchive.hpp>
@@ -14,7 +15,8 @@ namespace fles
 /**
  * \brief The OutputArchive class serializes data sets to an output file.
  */
-template <class T, ArchiveType archive_type> class OutputArchive
+template <class Base, class Derived, ArchiveType archive_type>
+class OutputArchive : public Sink<Base>
 {
 public:
     /**
@@ -34,13 +36,20 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const OutputArchive&) = delete;
 
+    virtual ~OutputArchive(){};
+
     /// Store an item.
-    void write(const T& item) { oarchive_ << item; }
+    virtual void put(const Base& item) override { do_put(item); }
+
+    /// Deprecated alternative to put().
+    void write(const Base& item) { put(item); }
 
 private:
     std::ofstream ofstream_;
     boost::archive::binary_oarchive oarchive_;
     ArchiveDescriptor descriptor_{archive_type};
+
+    void do_put(const Derived& item) { oarchive_ << item; }
 };
 
 } // namespace fles {
