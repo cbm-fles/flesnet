@@ -83,14 +83,14 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
     ++timeslice_count_;
 
     if (ts.num_components() == 0) {
-        out_ << "no component in TS " << ts.index() << std::endl;
+        out_ << "no component in timeslice " << ts.index() << std::endl;
         return false;
     }
 
     for (size_t c = 0; c < ts.num_components(); ++c) {
         if (ts.num_microslices(c) == 0) {
-            out_ << "no microslices in TS " << ts.index() << ", component " << c
-                 << std::endl;
+            out_ << "no microslices in timeslice " << ts.index()
+                 << ", component " << c << std::endl;
             return false;
         }
         pattern_checkers_.at(c)->reset();
@@ -99,8 +99,9 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
                 check_microslice(ts.get_microslice(c, m), c,
                                  ts.index() * ts.num_core_microslices() + m);
             if (!success) {
-                out_ << "pattern error in TS " << ts.index() << ", MC " << m
-                     << ", component " << c << std::endl;
+                out_ << "pattern error in timeslice " << ts.index()
+                     << ", microslice " << m << ", component " << c
+                     << std::endl;
                 return false;
             }
         }

@@ -168,7 +168,7 @@ void InputChannelSender::operator()()
 
 bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
 {
-    // wait until a complete TS is available in the input buffer
+    // wait until a complete timeslice is available in the input buffer
     uint64_t mc_offset = timeslice * timeslice_size_;
     uint64_t mc_length = timeslice_size_ + overlap_size_;
 
@@ -186,10 +186,10 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
             data_length + mc_length * sizeof(fles::MicrosliceDescriptor);
 
         if (false) {
-            L_(trace) << "SENDER working on TS " << timeslice << ", MCs "
-                      << mc_offset << ".." << (mc_offset + mc_length - 1)
-                      << ", data bytes " << data_offset << ".."
-                      << (data_offset + data_length - 1);
+            L_(trace) << "SENDER working on timeslice " << timeslice
+                      << ", microslices " << mc_offset << ".."
+                      << (mc_offset + mc_length - 1) << ", data bytes "
+                      << data_offset << ".." << (data_offset + data_length - 1);
             L_(trace) << get_state_string();
         }
 

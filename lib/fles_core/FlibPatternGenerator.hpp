@@ -94,12 +94,12 @@ private:
     /// Number of acknowledged data bytes. Updated by input node.
     std::atomic<uint64_t> acked_data_{0};
 
-    /// Number of acknowledged MCs. Updated by input node.
+    /// Number of acknowledged microslices. Updated by input node.
     std::atomic<uint64_t> acked_desc_{0};
 
     /// FLIB-internal number of written data bytes.
     uint64_t written_data_{0};
 
-    /// FLIB-internal number of written MCs.
+    /// FLIB-internal number of written microslices.
     std::atomic<uint64_t> written_desc_{0};
 };

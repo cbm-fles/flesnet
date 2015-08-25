@@ -40,10 +40,10 @@ public:
     uint32_t suggest_in_desc_buffer_size_exp();
     uint32_t suggest_cn_desc_buffer_size_exp();
 
-    /// Retrieve the global timeslice size in number of MCs.
+    /// Retrieve the global timeslice size in number of microslices.
     uint32_t timeslice_size() const { return timeslice_size_; }
 
-    /// Retrieve the size of the overlap region in number of MCs.
+    /// Retrieve the size of the overlap region in number of microslices.
     uint32_t overlap_size() const { return overlap_size_; }
 
     /// Retrieve the exp. size of the input node's data buffer in bytes.
@@ -72,7 +72,7 @@ public:
         return cn_desc_buffer_size_exp_;
     }
 
-    /// Retrieve the typical number of content bytes per MC.
+    /// Retrieve the typical number of content bytes per microslice.
     uint32_t typical_content_size() const { return typical_content_size_; }
 
     /// Retrieve the use flib flag.
@@ -124,13 +124,13 @@ private:
     /// Print buffer information
     void print_buffer_info();
 
-    /// The global timeslice size in number of MCs.
+    /// The global timeslice size in number of microslices.
     uint32_t timeslice_size_ = 100;
 
-    /// The size of the overlap region in number of MCs.
+    /// The size of the overlap region in number of microslices.
     uint32_t overlap_size_ = 2;
 
-    /// A typical number of content bytes per MC.
+    /// A typical number of content bytes per microslice.
     uint32_t typical_content_size_ = 1024;
 
     /// The exp. size of the input node's data buffer in bytes.

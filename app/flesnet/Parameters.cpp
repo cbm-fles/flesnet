@@ -175,9 +175,9 @@ void Parameters::parse_options(int argc, char* argv[])
         "compute-nodes,C", po::value<std::vector<std::string>>()->multitoken(),
         "add host to the list of compute nodes")(
         "timeslice-size", po::value<uint32_t>(&timeslice_size_),
-        "global timeslice size in number of MCs")(
+        "global timeslice size in number of microslices")(
         "overlap-size", po::value<uint32_t>(&overlap_size_),
-        "size of the overlap region in number of MCs")(
+        "size of the overlap region in number of microslices")(
         "in-data-buffer-size-exp",
         po::value<uint32_t>(&in_data_buffer_size_exp_),
         "exp. size of the input node's data buffer in bytes")(
@@ -191,9 +191,9 @@ void Parameters::parse_options(int argc, char* argv[])
         "cn-desc-buffer-size-exp",
         po::value<uint32_t>(&cn_desc_buffer_size_exp_),
         "exp. size of the compute node's descriptor buffer"
-        " (number of entries)")("typical-content-size",
-                                po::value<uint32_t>(&typical_content_size_),
-                                "typical number of content bytes per MC")(
+        " (number of entries)")(
+        "typical-content-size", po::value<uint32_t>(&typical_content_size_),
+        "typical number of content bytes per microslice")(
         "use-flib", po::value<bool>(&use_flib_), "use flib flag")(
         "flib-legacy-mode", po::value<bool>(&flib_legacy_mode_),
         "use cbmnet flib")("use-shm", po::value<bool>(&use_shared_memory_),

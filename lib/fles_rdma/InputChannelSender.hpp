@@ -76,7 +76,7 @@ private:
     /// Buffer to store acknowledged status of timeslices.
     RingBuffer<uint64_t, true> ack_;
 
-    /// Number of acknowledged MCs. Written to FLIB.
+    /// Number of acknowledged microslices. Written to FLIB.
     uint64_t acked_desc_ = 0;
 
     /// Number of acknowledged data bytes. Written to FLIB.
@@ -85,7 +85,7 @@ private:
     /// Data source (e.g., FLIB).
     DataSource& data_source_;
 
-    /// Number of sent MCs, for statistics.
+    /// Number of sent microslices, for statistics.
     uint64_t sent_desc_ = 0;
 
     /// Number of sent data bytes, for statistics.

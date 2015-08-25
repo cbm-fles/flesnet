@@ -1,4 +1,4 @@
-// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+timeslice // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "ComputeBuffer.hpp"
 #include "ChildProcessManager.hpp"
@@ -11,14 +11,12 @@
 #include <boost/algorithm/string.hpp>
 #include <random>
 
-ComputeBuffer::ComputeBuffer(uint64_t compute_index,
-                             uint32_t data_buffer_size_exp,
-                             uint32_t desc_buffer_size_exp,
-                             unsigned short service, uint32_t num_input_nodes,
-                             uint32_t timeslice_size,
-                             uint32_t processor_instances,
-                             const std::string processor_executable,
-                             volatile sig_atomic_t* signal_status)
+    ComputeBuffer::ComputeBuffer(
+        uint64_t compute_index, uint32_t data_buffer_size_exp,
+        uint32_t desc_buffer_size_exp, unsigned short service,
+        uint32_t num_input_nodes, uint32_t timeslice_size,
+        uint32_t processor_instances, const std::string processor_executable,
+        volatile sig_atomic_t* signal_status)
     : compute_index_(compute_index),
       data_buffer_size_exp_(data_buffer_size_exp),
       desc_buffer_size_exp_(desc_buffer_size_exp), service_(service),
@@ -148,7 +146,8 @@ void ComputeBuffer::report_status()
         auto status_data = c->buffer_status_data();
         L_(debug) << "[c" << compute_index_ << "] desc "
                   << status_desc.percentages() << " (used..free) | "
-                  << human_readable_count(status_desc.acked, true, "") << " TS";
+                  << human_readable_count(status_desc.acked, true, "")
+                  << " timeslices";
         L_(debug) << "[c" << compute_index_ << "] data "
                   << status_data.percentages() << " (used..free) | "
                   << human_readable_count(status_data.acked, true);
