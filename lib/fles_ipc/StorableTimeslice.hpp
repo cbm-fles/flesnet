@@ -108,10 +108,9 @@ public:
 
     /// Append a single microslice object.
     uint64_t append_microslice(uint32_t component, uint64_t microslice,
-                               StorableMicroslice& mc)
+                               StorableMicroslice& m)
     {
-        return append_microslice(component, microslice, mc.desc(),
-                                 mc.content());
+        return append_microslice(component, microslice, m.desc(), m.content());
     }
 
 private:

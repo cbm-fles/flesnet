@@ -69,12 +69,12 @@ public:
 
     /// Retrieve the descriptor and pointer to the data of a given microslice
     const MicrosliceView get_microslice(uint64_t component,
-                                        uint64_t mc_index) const
+                                        uint64_t microslice_index) const
     {
         uint8_t* component_data_ptr = data_ptr_[component];
 
         MicrosliceDescriptor& dd = reinterpret_cast<MicrosliceDescriptor*>(
-            component_data_ptr)[mc_index];
+            component_data_ptr)[microslice_index];
 
         MicrosliceDescriptor& dd0 =
             reinterpret_cast<MicrosliceDescriptor*>(component_data_ptr)[0];
