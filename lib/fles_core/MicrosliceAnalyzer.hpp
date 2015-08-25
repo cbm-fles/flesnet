@@ -5,6 +5,7 @@
 #include "MicrosliceDescriptor.hpp"
 #include "Sink.hpp"
 #include "interface.h" // crcutil_interface
+#include <memory>
 #include <ostream>
 #include <string>
 
