@@ -55,6 +55,14 @@
 		3D9BCC391B591D10007C5C18 /* FlibShmChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2E1B591D10007C5C18 /* FlibShmChannel.cpp */; };
 		3D9BCC3A1B591D10007C5C18 /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
 		3D9BCC421B591D54007C5C18 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC3F1B591D54007C5C18 /* log.cpp */; };
+		3DB4704A1B8CBC7F0098318E /* FlesnetPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */; };
+		3DB4704B1B8CBC7F0098318E /* FlesnetPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */; };
+		3DB4704C1B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470441B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp */; };
+		3DB4704D1B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470441B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp */; };
+		3DB4704E1B8CBC7F0098318E /* FlibPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470461B8CBC7F0098318E /* FlibPatternChecker.cpp */; };
+		3DB4704F1B8CBC7F0098318E /* FlibPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470461B8CBC7F0098318E /* FlibPatternChecker.cpp */; };
+		3DB470501B8CBC7F0098318E /* PatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470481B8CBC7F0098318E /* PatternChecker.cpp */; };
+		3DB470511B8CBC7F0098318E /* PatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470481B8CBC7F0098318E /* PatternChecker.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -207,6 +215,14 @@
 		3D9BCC471B592087007C5C18 /* shm_channel_client.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_channel_client.hpp; sourceTree = "<group>"; };
 		3D9BCC481B592087007C5C18 /* shm_device.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_device.hpp; sourceTree = "<group>"; };
 		3D9BCC491B592087007C5C18 /* shm_device_client.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_device_client.hpp; sourceTree = "<group>"; };
+		3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlesnetPatternChecker.cpp; sourceTree = "<group>"; };
+		3DB470431B8CBC7F0098318E /* FlesnetPatternChecker.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FlesnetPatternChecker.hpp; sourceTree = "<group>"; };
+		3DB470441B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlibLegacyPatternChecker.cpp; sourceTree = "<group>"; };
+		3DB470451B8CBC7F0098318E /* FlibLegacyPatternChecker.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FlibLegacyPatternChecker.hpp; sourceTree = "<group>"; };
+		3DB470461B8CBC7F0098318E /* FlibPatternChecker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlibPatternChecker.cpp; sourceTree = "<group>"; };
+		3DB470471B8CBC7F0098318E /* FlibPatternChecker.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FlibPatternChecker.hpp; sourceTree = "<group>"; };
+		3DB470481B8CBC7F0098318E /* PatternChecker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PatternChecker.cpp; sourceTree = "<group>"; };
+		3DB470491B8CBC7F0098318E /* PatternChecker.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PatternChecker.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -363,10 +379,18 @@
 				3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */,
 				3D9BCC341B591D10007C5C18 /* ThreadContainer.hpp */,
 				3D9BCC351B591D10007C5C18 /* Utility.hpp */,
-				3D5656EF1B42D0770052C86D /* TimesliceAnalyzer.cpp */,
 				3D5656F01B42D0770052C86D /* TimesliceAnalyzer.hpp */,
-				3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */,
+				3D5656EF1B42D0770052C86D /* TimesliceAnalyzer.cpp */,
+				3DB470491B8CBC7F0098318E /* PatternChecker.hpp */,
+				3DB470481B8CBC7F0098318E /* PatternChecker.cpp */,
+				3DB470431B8CBC7F0098318E /* FlesnetPatternChecker.hpp */,
+				3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */,
+				3DB470451B8CBC7F0098318E /* FlibLegacyPatternChecker.hpp */,
+				3DB470441B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp */,
+				3DB470471B8CBC7F0098318E /* FlibPatternChecker.hpp */,
+				3DB470461B8CBC7F0098318E /* FlibPatternChecker.cpp */,
 				3D5656F21B42D0770052C86D /* TimesliceDebugger.hpp */,
+				3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */,
 				3D06A82C1B56381B0039F5CD /* Benchmark.cpp */,
 				3D06A82D1B56381B0039F5CD /* Benchmark.hpp */,
 			);
@@ -550,6 +574,7 @@
 			files = (
 				3D5656F51B42D0770052C86D /* Parameters.cpp in Sources */,
 				3D06A84F1B56BC2D0039F5CD /* multiword_64_64_intrinsic_i386_mmx.cc in Sources */,
+				3DB4704A1B8CBC7F0098318E /* FlesnetPatternChecker.cpp in Sources */,
 				3D06A84A1B56BC2D0039F5CD /* interface.cc in Sources */,
 				3D06A84E1B56BC2D0039F5CD /* multiword_64_64_gcc_i386_mmx.cc in Sources */,
 				3D06A82E1B56381B0039F5CD /* Benchmark.cpp in Sources */,
@@ -559,12 +584,15 @@
 				3D06A84C1B56BC2D0039F5CD /* multiword_64_64_cl_i386_mmx.cc in Sources */,
 				3D9BCC391B591D10007C5C18 /* FlibShmChannel.cpp in Sources */,
 				3D9BCC361B591D10007C5C18 /* EmbeddedPatternGenerator.cpp in Sources */,
+				3DB470501B8CBC7F0098318E /* PatternChecker.cpp in Sources */,
 				3D06A84B1B56BC2D0039F5CD /* multiword_128_64_gcc_amd64_sse2.cc in Sources */,
+				3DB4704C1B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp in Sources */,
 				3D5656F31B42D0770052C86D /* Application.cpp in Sources */,
 				3D9BCC381B591D10007C5C18 /* FlibPatternGenerator.cpp in Sources */,
 				3D0248B61B5FE75500AA4811 /* MicrosliceReceiver.cpp in Sources */,
 				3D5656F71B42D0770052C86D /* TimesliceDebugger.cpp in Sources */,
 				3D5656F61B42D0770052C86D /* TimesliceAnalyzer.cpp in Sources */,
+				3DB4704E1B8CBC7F0098318E /* FlibPatternChecker.cpp in Sources */,
 				3D06A84D1B56BC2D0039F5CD /* multiword_64_64_gcc_amd64_asm.cc in Sources */,
 				3D9BCC421B591D54007C5C18 /* log.cpp in Sources */,
 			);
@@ -597,6 +625,7 @@
 			files = (
 				3D94C1E01B67F20200FEE1EF /* EmbeddedPatternGenerator.cpp in Sources */,
 				3D94C1E11B67F20200FEE1EF /* FlibPatternGenerator.cpp in Sources */,
+				3DB4704B1B8CBC7F0098318E /* FlesnetPatternChecker.cpp in Sources */,
 				3D94C1E21B67F20200FEE1EF /* FlibShmChannel.cpp in Sources */,
 				3D94C1E31B67F20200FEE1EF /* MicrosliceReceiver.cpp in Sources */,
 				3D94C1E41B67F20200FEE1EF /* ThreadContainer.cpp in Sources */,
@@ -606,12 +635,15 @@
 				3D94C1DF1B67F1E700FEE1EF /* log.cpp in Sources */,
 				3D94C1D81B67F1C500FEE1EF /* crc32c_sse4.cc in Sources */,
 				3D94C1D91B67F1C500FEE1EF /* interface.cc in Sources */,
+				3DB470511B8CBC7F0098318E /* PatternChecker.cpp in Sources */,
 				3D94C1DA1B67F1C500FEE1EF /* multiword_128_64_gcc_amd64_sse2.cc in Sources */,
+				3DB4704D1B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp in Sources */,
 				3D94C1DB1B67F1C500FEE1EF /* multiword_64_64_cl_i386_mmx.cc in Sources */,
 				3D94C1DC1B67F1C500FEE1EF /* multiword_64_64_gcc_amd64_asm.cc in Sources */,
 				3D94C1DD1B67F1C500FEE1EF /* multiword_64_64_gcc_i386_mmx.cc in Sources */,
 				3D94C1DE1B67F1C500FEE1EF /* multiword_64_64_intrinsic_i386_mmx.cc in Sources */,
 				3D94C1D41B67F15600FEE1EF /* Parameters.cpp in Sources */,
+				3DB4704F1B8CBC7F0098318E /* FlibPatternChecker.cpp in Sources */,
 				3D94C1D31B67F15600FEE1EF /* main.cpp in Sources */,
 				3D94C1D21B67F15600FEE1EF /* Application.cpp in Sources */,
 			);

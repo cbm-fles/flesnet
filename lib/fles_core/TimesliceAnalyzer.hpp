@@ -1,9 +1,9 @@
-// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013, 2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "Timeslice.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "Sink.hpp"
+#include "Timeslice.hpp"
 #include "interface.h" // crcutil_interface
 #include <ostream>
 #include <string>
@@ -50,66 +50,4 @@ private:
     size_t timeslice_count_ = 0;
     size_t microslice_count_ = 0;
     size_t content_bytes_ = 0;
-};
-
-class PatternChecker
-{
-public:
-    virtual ~PatternChecker(){};
-
-    virtual bool check(const fles::MicrosliceView m) = 0;
-    virtual void reset(){};
-
-    static std::unique_ptr<PatternChecker>
-    create(uint8_t arg_sys_id, uint8_t arg_sys_ver, size_t component);
-};
-
-class FlesnetPatternChecker : public PatternChecker
-{
-public:
-    FlesnetPatternChecker(std::size_t arg_component)
-        : component(arg_component){};
-
-    virtual bool check(const fles::MicrosliceView m) override;
-
-private:
-    std::size_t component = 0;
-};
-
-class FlibLegacyPatternChecker : public PatternChecker
-{
-public:
-    virtual bool check(const fles::MicrosliceView m) override;
-    virtual void reset() override
-    {
-        frame_number_ = 0;
-        pgen_sequence_number_ = 0;
-    };
-
-private:
-    bool check_cbmnet_frames(const uint16_t* content, size_t size,
-                             uint8_t sys_id, uint8_t sys_ver);
-    bool check_content_pgen(const uint16_t* content, size_t size);
-
-    uint8_t frame_number_ = 0;
-    uint16_t pgen_sequence_number_ = 0;
-};
-
-class FlibPatternChecker : public PatternChecker
-{
-public:
-    virtual bool check(const fles::MicrosliceView m) override;
-    virtual void reset() override { flib_pgen_packet_number_ = 0; };
-
-private:
-    uint32_t flib_pgen_packet_number_ = 0;
-};
-
-class GenericPatternChecker : public PatternChecker
-{
-public:
-    virtual bool check(const fles::MicrosliceView /* m */) override
-    {
-        return true;
-    };
 };
