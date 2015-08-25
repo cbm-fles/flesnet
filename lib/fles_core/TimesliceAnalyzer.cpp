@@ -49,8 +49,7 @@ bool TimesliceAnalyzer::check_crc(const fles::MicrosliceView m) const
     return compute_crc(m) == m.desc().crc;
 }
 
-bool TimesliceAnalyzer::check_flesnet_pattern(const fles::MicrosliceView m,
-                                              size_t component)
+bool FlesnetPatternChecker::check(const fles::MicrosliceView m)
 {
     const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
     uint32_t crc = 0x00000000;
@@ -67,7 +66,8 @@ bool TimesliceAnalyzer::check_flesnet_pattern(const fles::MicrosliceView m,
     return true;
 }
 
-bool TimesliceAnalyzer::check_content_pgen(const uint16_t* content, size_t size)
+bool FlibLegacyPatternChecker::check_content_pgen(const uint16_t* content,
+                                                  size_t size)
 {
     constexpr uint16_t source_address = 0;
 
@@ -104,9 +104,9 @@ bool TimesliceAnalyzer::check_content_pgen(const uint16_t* content, size_t size)
     return true;
 }
 
-bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
-                                            size_t size, uint8_t sys_id,
-                                            uint8_t sys_ver)
+bool FlibLegacyPatternChecker::check_cbmnet_frames(const uint16_t* content,
+                                                   size_t size, uint8_t sys_id,
+                                                   uint8_t sys_ver)
 {
     size_t i = 0;
     while (i < size) {
@@ -146,8 +146,7 @@ bool TimesliceAnalyzer::check_cbmnet_frames(const uint16_t* content,
     return true;
 }
 
-bool TimesliceAnalyzer::check_flib_legacy_pattern(const fles::MicrosliceView m,
-                                                  size_t /* component */)
+bool FlibLegacyPatternChecker::check(const fles::MicrosliceView m)
 {
     const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
     if (content[0] != reinterpret_cast<const uint64_t*>(&m.desc())[0] ||
@@ -159,7 +158,7 @@ bool TimesliceAnalyzer::check_flib_legacy_pattern(const fles::MicrosliceView m,
                                m.desc().sys_id, m.desc().sys_ver);
 }
 
-bool TimesliceAnalyzer::check_flib_pattern(const fles::MicrosliceView m)
+bool FlibPatternChecker::check(const fles::MicrosliceView m)
 {
     uint8_t last_word_size = 0;
 
@@ -256,42 +255,76 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
         return false;
     }
 
-    if (static_cast<fles::SubsystemIdentifier>(m.desc().sys_id) !=
-        fles::SubsystemIdentifier::FLES) {
-        return true;
+    return pattern_checkers_.at(component)->check(m);
+}
+
+std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
+                                                       uint8_t arg_sys_ver,
+                                                       size_t component)
+{
+    auto sys_id = static_cast<fles::SubsystemIdentifier>(arg_sys_id);
+    auto sys_ver = static_cast<fles::SubsystemFormatFLES>(arg_sys_ver);
+
+    using sid = fles::SubsystemIdentifier;
+    using sfmtfles = fles::SubsystemFormatFLES;
+
+    PatternChecker* pc = nullptr;
+
+    if (sys_id != sid::FLES) {
+        pc = new GenericPatternChecker();
+    } else {
+        switch (sys_ver) {
+        case sfmtfles::BasicRampPattern:
+            pc = new FlesnetPatternChecker(component);
+            break;
+        case sfmtfles::CbmNetPattern:
+        case sfmtfles::CbmNetFrontendEmulation:
+            pc = new FlibLegacyPatternChecker();
+            break;
+        case sfmtfles::FlibPattern:
+            pc = new FlibPatternChecker();
+            break;
+        default:
+            pc = new GenericPatternChecker();
+        }
     }
 
-    switch (static_cast<fles::SubsystemFormatFLES>(m.desc().sys_ver)) {
-    case fles::SubsystemFormatFLES::BasicRampPattern:
-        return check_flesnet_pattern(m, component);
-    case fles::SubsystemFormatFLES::CbmNetPattern:
-    case fles::SubsystemFormatFLES::CbmNetFrontendEmulation:
-        return check_flib_legacy_pattern(m, component);
-    case fles::SubsystemFormatFLES::FlibPattern:
-        return check_flib_pattern(m);
-    default:
-        return true;
+    return std::unique_ptr<PatternChecker>(pc);
+}
+
+void TimesliceAnalyzer::initialize(const fles::Timeslice& ts)
+{
+    reference_descriptors_.clear();
+    pattern_checkers_.clear();
+    for (size_t c = 0; c < ts.num_components(); ++c) {
+        assert(ts.num_microslices(c) > 0);
+        fles::MicrosliceDescriptor desc = ts.get_microslice(c, 0).desc();
+        reference_descriptors_.push_back(desc);
+        pattern_checkers_.push_back(
+            PatternChecker::create(desc.sys_id, desc.sys_ver, c));
     }
-    return true;
 }
 
 bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
 {
+    if (timeslice_count_ == 0) {
+        initialize(ts);
+    }
+
+    ++timeslice_count_;
+
     if (ts.num_components() == 0) {
         std::cerr << "no component in TS " << ts.index() << std::endl;
         return false;
     }
 
-    ++timeslice_count_;
     for (size_t c = 0; c < ts.num_components(); ++c) {
         if (ts.num_microslices(c) == 0) {
             std::cerr << "no microslices in TS " << ts.index() << ", component "
                       << c << std::endl;
             return false;
         }
-        frame_number_ = 0; // reset frame number for next component
-        pgen_sequence_number_ = 0;
-        flib_pgen_packet_number_ = 0;
+        pattern_checkers_.at(c)->reset();
         for (size_t m = 0; m < ts.num_microslices(c); ++m) {
             bool success =
                 check_microslice(ts.get_microslice(c, m), c,
