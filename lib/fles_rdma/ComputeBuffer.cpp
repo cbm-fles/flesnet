@@ -1,4 +1,4 @@
-timeslice // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "ComputeBuffer.hpp"
 #include "ChildProcessManager.hpp"
