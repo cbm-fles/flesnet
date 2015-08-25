@@ -30,7 +30,7 @@ public:
 
     /// Send data and descriptors to compute node.
     void send_data(struct ibv_sge* sge, int num_sge, uint64_t timeslice,
-                   uint64_t mc_length, uint64_t data_length, uint64_t skip);
+                   uint64_t desc_length, uint64_t data_length, uint64_t skip);
 
     bool write_request_available();
 

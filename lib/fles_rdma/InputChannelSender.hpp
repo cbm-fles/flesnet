@@ -58,8 +58,8 @@ private:
     std::string get_state_string();
 
     /// Create gather list for transmission of timeslice
-    void post_send_data(uint64_t timeslice, int cn, uint64_t mc_offset,
-                        uint64_t mc_length, uint64_t data_offset,
+    void post_send_data(uint64_t timeslice, int cn, uint64_t desc_offset,
+                        uint64_t desc_length, uint64_t data_offset,
                         uint64_t data_length, uint64_t skip);
 
     /// Completion notification event dispatcher. Called by the event loop.

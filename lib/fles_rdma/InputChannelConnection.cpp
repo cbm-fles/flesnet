@@ -58,7 +58,7 @@ bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
 }
 
 void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
-                                       uint64_t timeslice, uint64_t mc_length,
+                                       uint64_t timeslice, uint64_t desc_length,
                                        uint64_t data_length, uint64_t skip)
 {
     int num_sge2 = 0;
@@ -77,7 +77,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
 
     // split sge list if necessary
     int num_sge_cut = 0;
-    if (data_length + mc_length * sizeof(fles::MicrosliceDescriptor) >
+    if (data_length + desc_length * sizeof(fles::MicrosliceDescriptor) >
         target_bytes_left) {
         for (int i = 0; i < num_sge; ++i) {
             if (sge[i].length <= target_bytes_left) {
@@ -127,8 +127,9 @@ void InputChannelConnection::send_data(struct ibv_sge* sge, int num_sge,
     fles::TimesliceComponentDescriptor tscdesc;
     tscdesc.ts_num = timeslice;
     tscdesc.offset = cn_wp_data;
-    tscdesc.size = data_length + mc_length * sizeof(fles::MicrosliceDescriptor);
-    tscdesc.num_microslices = mc_length;
+    tscdesc.size =
+        data_length + desc_length * sizeof(fles::MicrosliceDescriptor);
+    tscdesc.num_microslices = desc_length;
     struct ibv_sge sge3;
     sge3.addr = reinterpret_cast<uintptr_t>(&tscdesc);
     sge3.length = sizeof(tscdesc);
