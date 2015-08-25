@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include "FlibPatternGenerator.hpp"
+#include "MicrosliceAnalyzer.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
 #include "MicrosliceReceiver.hpp"
@@ -35,6 +36,11 @@ Application::Application(Parameters const& par) : par_(par)
         source_.reset(new fles::MicrosliceReceiver(*data_source_));
     } else if (!par_.input_archive().empty()) {
         source_.reset(new fles::MicrosliceInputArchive(par_.input_archive()));
+    }
+
+    if (par_.analyze()) {
+        sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
+            new MicrosliceAnalyzer(10000, std::cout, "")));
     }
 
     if (!par_.output_archive().empty()) {

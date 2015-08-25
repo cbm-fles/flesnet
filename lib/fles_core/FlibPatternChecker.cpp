@@ -13,7 +13,7 @@
 #include "FlibPatternChecker.hpp"
 #include <iostream>
 
-bool FlibPatternChecker::check(const fles::MicrosliceView m)
+bool FlibPatternChecker::check(const fles::Microslice& m)
 {
     uint8_t last_word_size = 0;
 

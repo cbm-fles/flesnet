@@ -6,7 +6,7 @@
 class FlibPatternChecker : public PatternChecker
 {
 public:
-    virtual bool check(const fles::MicrosliceView m) override;
+    virtual bool check(const fles::Microslice& m) override;
     virtual void reset() override { flib_pgen_packet_number_ = 0; };
 
 private:

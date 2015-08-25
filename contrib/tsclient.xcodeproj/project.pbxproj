@@ -63,6 +63,8 @@
 		3DB4704F1B8CBC7F0098318E /* FlibPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470461B8CBC7F0098318E /* FlibPatternChecker.cpp */; };
 		3DB470501B8CBC7F0098318E /* PatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470481B8CBC7F0098318E /* PatternChecker.cpp */; };
 		3DB470511B8CBC7F0098318E /* PatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470481B8CBC7F0098318E /* PatternChecker.cpp */; };
+		3DB470561B8CC9420098318E /* MicrosliceAnalyzer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470541B8CC9420098318E /* MicrosliceAnalyzer.cpp */; };
+		3DB470571B8CC9420098318E /* MicrosliceAnalyzer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470541B8CC9420098318E /* MicrosliceAnalyzer.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -223,6 +225,8 @@
 		3DB470471B8CBC7F0098318E /* FlibPatternChecker.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FlibPatternChecker.hpp; sourceTree = "<group>"; };
 		3DB470481B8CBC7F0098318E /* PatternChecker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PatternChecker.cpp; sourceTree = "<group>"; };
 		3DB470491B8CBC7F0098318E /* PatternChecker.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PatternChecker.hpp; sourceTree = "<group>"; };
+		3DB470541B8CC9420098318E /* MicrosliceAnalyzer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceAnalyzer.cpp; sourceTree = "<group>"; };
+		3DB470551B8CC9420098318E /* MicrosliceAnalyzer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceAnalyzer.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -317,11 +321,11 @@
 		3D5656F81B42D0870052C86D /* tsclient */ = {
 			isa = PBXGroup;
 			children = (
-				3D5656EA1B42D0770052C86D /* Application.cpp */,
 				3D5656EB1B42D0770052C86D /* Application.hpp */,
+				3D5656EA1B42D0770052C86D /* Application.cpp */,
 				3D5656EC1B42D0770052C86D /* main.cpp */,
-				3D5656ED1B42D0770052C86D /* Parameters.cpp */,
 				3D5656EE1B42D0770052C86D /* Parameters.hpp */,
+				3D5656ED1B42D0770052C86D /* Parameters.cpp */,
 			);
 			name = tsclient;
 			path = ../app/tsclient;
@@ -350,11 +354,11 @@
 		3D94C1C71B67EFB300FEE1EF /* mstool */ = {
 			isa = PBXGroup;
 			children = (
-				3D94C1CD1B67F15600FEE1EF /* Application.cpp */,
 				3D94C1CE1B67F15600FEE1EF /* Application.hpp */,
+				3D94C1CD1B67F15600FEE1EF /* Application.cpp */,
 				3D94C1CF1B67F15600FEE1EF /* main.cpp */,
-				3D94C1D01B67F15600FEE1EF /* Parameters.cpp */,
 				3D94C1D11B67F15600FEE1EF /* Parameters.hpp */,
+				3D94C1D01B67F15600FEE1EF /* Parameters.cpp */,
 			);
 			name = mstool;
 			path = ../app/mstool;
@@ -379,6 +383,8 @@
 				3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */,
 				3D9BCC341B591D10007C5C18 /* ThreadContainer.hpp */,
 				3D9BCC351B591D10007C5C18 /* Utility.hpp */,
+				3DB470551B8CC9420098318E /* MicrosliceAnalyzer.hpp */,
+				3DB470541B8CC9420098318E /* MicrosliceAnalyzer.cpp */,
 				3D5656F01B42D0770052C86D /* TimesliceAnalyzer.hpp */,
 				3D5656EF1B42D0770052C86D /* TimesliceAnalyzer.cpp */,
 				3DB470491B8CBC7F0098318E /* PatternChecker.hpp */,
@@ -587,6 +593,7 @@
 				3DB470501B8CBC7F0098318E /* PatternChecker.cpp in Sources */,
 				3D06A84B1B56BC2D0039F5CD /* multiword_128_64_gcc_amd64_sse2.cc in Sources */,
 				3DB4704C1B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp in Sources */,
+				3DB470561B8CC9420098318E /* MicrosliceAnalyzer.cpp in Sources */,
 				3D5656F31B42D0770052C86D /* Application.cpp in Sources */,
 				3D9BCC381B591D10007C5C18 /* FlibPatternGenerator.cpp in Sources */,
 				3D0248B61B5FE75500AA4811 /* MicrosliceReceiver.cpp in Sources */,
@@ -638,6 +645,7 @@
 				3DB470511B8CBC7F0098318E /* PatternChecker.cpp in Sources */,
 				3D94C1DA1B67F1C500FEE1EF /* multiword_128_64_gcc_amd64_sse2.cc in Sources */,
 				3DB4704D1B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp in Sources */,
+				3DB470571B8CC9420098318E /* MicrosliceAnalyzer.cpp in Sources */,
 				3D94C1DB1B67F1C500FEE1EF /* multiword_64_64_cl_i386_mmx.cc in Sources */,
 				3D94C1DC1B67F1C500FEE1EF /* multiword_64_64_gcc_amd64_asm.cc in Sources */,
 				3D94C1DD1B67F1C500FEE1EF /* multiword_64_64_gcc_i386_mmx.cc in Sources */,

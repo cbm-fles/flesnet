@@ -1,7 +1,7 @@
 // Copyright 2013, 2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "MicrosliceView.hpp"
+#include "Microslice.hpp"
 #include <memory>
 
 class PatternChecker
@@ -9,7 +9,7 @@ class PatternChecker
 public:
     virtual ~PatternChecker(){};
 
-    virtual bool check(const fles::MicrosliceView m) = 0;
+    virtual bool check(const fles::Microslice& m) = 0;
     virtual void reset(){};
 
     static std::unique_ptr<PatternChecker>
@@ -19,7 +19,7 @@ public:
 class GenericPatternChecker : public PatternChecker
 {
 public:
-    virtual bool check(const fles::MicrosliceView /* m */) override
+    virtual bool check(const fles::Microslice& /* m */) override
     {
         return true;
     };

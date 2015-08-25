@@ -1,6 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
+#include "TimesliceAnalyzer.hpp"
 #include "TimesliceDebugger.hpp"
 #include "TimesliceInputArchive.hpp"
 #include "TimesliceOutputArchive.hpp"

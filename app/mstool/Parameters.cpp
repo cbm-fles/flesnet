@@ -16,6 +16,8 @@ void Parameters::parse_options(int argc, char* argv[])
         "help,h",
         "produce help message")("log-level,l", po::value<unsigned>(&log_level),
                                 "set the log level (default:2, all:0)")(
+        "analyze-pattern,a", po::value<bool>(&analyze_)->implicit_value(true),
+        "enable/disable pattern check")(
         "pattern-generator,p", po::value<uint32_t>(&pattern_generator_),
         "use pattern generator to produce timeslices")(
         "input-archive,i", po::value<std::string>(&input_archive_),

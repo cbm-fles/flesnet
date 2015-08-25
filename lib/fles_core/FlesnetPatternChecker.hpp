@@ -9,7 +9,7 @@ public:
     FlesnetPatternChecker(std::size_t arg_component)
         : component(arg_component){};
 
-    virtual bool check(const fles::MicrosliceView m) override;
+    virtual bool check(const fles::Microslice& m) override;
 
 private:
     std::size_t component = 0;

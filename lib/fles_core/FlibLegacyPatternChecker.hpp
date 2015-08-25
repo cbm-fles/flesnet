@@ -6,7 +6,7 @@
 class FlibLegacyPatternChecker : public PatternChecker
 {
 public:
-    virtual bool check(const fles::MicrosliceView m) override;
+    virtual bool check(const fles::Microslice& m) override;
     virtual void reset() override
     {
         frame_number_ = 0;

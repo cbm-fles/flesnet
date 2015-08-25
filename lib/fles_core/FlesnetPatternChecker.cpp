@@ -2,7 +2,7 @@
 
 #include "FlesnetPatternChecker.hpp"
 
-bool FlesnetPatternChecker::check(const fles::MicrosliceView m)
+bool FlesnetPatternChecker::check(const fles::Microslice& m)
 {
     const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
     uint32_t crc = 0x00000000;

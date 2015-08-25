@@ -93,7 +93,7 @@ bool FlibLegacyPatternChecker::check_cbmnet_frames(const uint16_t* content,
     return true;
 }
 
-bool FlibLegacyPatternChecker::check(const fles::MicrosliceView m)
+bool FlibLegacyPatternChecker::check(const fles::Microslice& m)
 {
     const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
     if (content[0] != reinterpret_cast<const uint64_t*>(&m.desc())[0] ||

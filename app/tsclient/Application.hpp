@@ -4,7 +4,6 @@
 #include "Benchmark.hpp"
 #include "Parameters.hpp"
 #include "Sink.hpp"
-#include "TimesliceAnalyzer.hpp"
 #include "TimesliceSource.hpp"
 #include <memory>
 #include <vector>

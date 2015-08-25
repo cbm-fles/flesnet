@@ -30,6 +30,8 @@ public:
 
     std::string output_archive() const { return output_archive_; }
 
+    bool analyze() const { return analyze_; }
+
     uint64_t maximum_number() const { return maximum_number_; }
 
 private:
@@ -38,5 +40,6 @@ private:
     uint32_t pattern_generator_ = 0;
     std::string input_archive_;
     std::string output_archive_;
+    bool analyze_ = false;
     uint64_t maximum_number_ = UINT64_MAX;
 };
