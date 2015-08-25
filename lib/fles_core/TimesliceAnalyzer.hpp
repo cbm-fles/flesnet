@@ -5,6 +5,7 @@
 #include "Sink.hpp"
 #include "Timeslice.hpp"
 #include "interface.h" // crcutil_interface
+#include <memory>
 #include <ostream>
 #include <string>
 
