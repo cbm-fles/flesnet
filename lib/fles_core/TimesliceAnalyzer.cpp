@@ -2,6 +2,7 @@
 
 #include "TimesliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
+#include "Utility.hpp"
 #include <sstream>
 #include <cassert>
 
@@ -112,8 +113,9 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
 std::string TimesliceAnalyzer::statistics() const
 {
     std::stringstream s;
-    s << "timeslices checked: " << timeslice_count_ << " (" << content_bytes_
-      << " bytes in " << microslice_count_ << " microslices, avg: "
+    s << "timeslices checked: " << timeslice_count_ << " ("
+      << human_readable_count(content_bytes_) << " in " << microslice_count_
+      << " microslices, avg: "
       << static_cast<double>(content_bytes_) / microslice_count_ << ")";
     return s.str();
 }

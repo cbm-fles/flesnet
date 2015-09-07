@@ -2,6 +2,7 @@
 
 #include "MicrosliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
+#include "Utility.hpp"
 #include <sstream>
 #include <cassert>
 
@@ -75,8 +76,8 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
 std::string MicrosliceAnalyzer::statistics() const
 {
     std::stringstream s;
-    s << "microslices checked: " << microslice_count_ << " (" << content_bytes_
-      << " bytes)";
+    s << "microslices checked: " << microslice_count_ << " ("
+      << human_readable_count(content_bytes_) << ")";
     return s.str();
 }
 

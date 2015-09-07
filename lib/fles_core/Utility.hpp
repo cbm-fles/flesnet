@@ -5,6 +5,7 @@
 #include <sstream>
 #include <cmath>
 #include <iterator>
+#include <vector>
 #include <boost/lexical_cast.hpp>
 
 /// Overloaded output operator for STL vectors.
