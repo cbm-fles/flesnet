@@ -7,6 +7,9 @@
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/utility/setup.hpp>
 
+#include <stdio.h>
+#include <unistd.h>
+
 #define __ansi(code_m) "\033[" code_m "m"
 
 #define __ansi_color_black "0"
@@ -110,19 +113,35 @@ BOOST_LOG_GLOBAL_LOGGER_INIT(
 BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
 #pragma GCC diagnostic pop
 
+namespace
+{
+bool cout_is_a_tty() { return isatty(fileno(stdout)); }
+}
+
 namespace logging
 {
-
 void add_console(severity_level minimum_severity)
 {
-    boost::log::formatter console_formatter =
-        boost::log::expressions::stream
-        << __ansi(__ansi_color_fg_normal(__ansi_color_green)) "["
-        << boost::log::expressions::format_date_time<boost::posix_time::ptime>(
-               "TimeStamp", "%H:%M:%S") << "]" __ansi(__ansi_normal) " "
-        << boost::log::expressions::attr<severity_level,
-                                         severity_with_color_tag>("Severity")
-        << " " << boost::log::expressions::message;
+    boost::log::formatter console_formatter;
+
+    if (cout_is_a_tty()) {
+        console_formatter =
+            boost::log::expressions::stream
+            << __ansi(__ansi_color_fg_normal(__ansi_color_green)) "["
+            << boost::log::expressions::format_date_time<
+                   boost::posix_time::ptime>("TimeStamp", "%H:%M:%S")
+            << "]" __ansi(__ansi_normal) " "
+            << boost::log::expressions::attr<severity_level,
+                                             severity_with_color_tag>(
+                   "Severity") << " " << boost::log::expressions::message;
+    } else {
+        console_formatter =
+            boost::log::expressions::stream
+            << "[" << boost::log::expressions::format_date_time<
+                          boost::posix_time::ptime>("TimeStamp", "%H:%M:%S")
+            << "] " << boost::log::expressions::attr<severity_level>("Severity")
+            << ": " << boost::log::expressions::message;
+    }
 
     auto console_sink = boost::log::add_console_log();
     console_sink->set_formatter(console_formatter);
