@@ -8,6 +8,7 @@
 #include <boost/log/utility/setup.hpp>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #define __ansi(code_m) "\033[" code_m "m"
@@ -115,7 +116,7 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
 
 namespace
 {
-bool cout_is_a_tty() { return isatty(fileno(stdout)); }
+bool cout_is_a_tty() { return isatty(fileno(stdout)) && getenv("TERM"); }
 }
 
 namespace logging
