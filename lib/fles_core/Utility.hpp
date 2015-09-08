@@ -24,7 +24,7 @@ inline std::string human_readable_count(uint64_t bytes, bool use_si = false,
     if (bytes < unit)
         return boost::lexical_cast<std::string>(bytes) + " " + unit_string;
 
-    uint32_t exponent = static_cast<uint64_t>(std::log(bytes) / std::log(unit));
+    uint32_t exponent = static_cast<uint32_t>(std::log(bytes) / std::log(unit));
 
     std::string prefix =
         std::string(use_si ? "kMGTPE" : "KMGTPE").substr(exponent - 1, 1);
