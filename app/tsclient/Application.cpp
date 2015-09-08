@@ -8,6 +8,7 @@
 #include "TimeslicePublisher.hpp"
 #include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
+#include "log.hpp"
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 
@@ -43,17 +44,17 @@ Application::Application(Parameters const& par) : par_(par)
         benchmark_.reset(new Benchmark());
 
     if (par_.client_index() != -1) {
-        std::cout << "tsclient " << par_.client_index() << ": "
-                  << par.shm_identifier() << std::endl;
+        L_(info) << "tsclient " << par_.client_index() << ": "
+                 << par.shm_identifier();
     }
 }
 
 Application::~Application()
 {
     if (par_.client_index() != -1) {
-        std::cout << "tsclient " << par_.client_index() << ": ";
+        L_(info) << "tsclient " << par_.client_index() << ": ";
     }
-    std::cout << "total timeslices processed: " << count_ << std::endl;
+    L_(info) << "total timeslices processed: " << count_;
 }
 
 void Application::run()

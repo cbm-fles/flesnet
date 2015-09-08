@@ -7,6 +7,7 @@
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
 #include "MicrosliceReceiver.hpp"
+#include "log.hpp"
 #include <iostream>
 
 Application::Application(Parameters const& par) : par_(par)
@@ -51,7 +52,7 @@ Application::Application(Parameters const& par) : par_(par)
 
 Application::~Application()
 {
-    std::cout << "total microslices processed: " << count_ << std::endl;
+    L_(info) << "total microslices processed: " << count_;
 }
 
 void Application::run()

@@ -1,8 +1,8 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Parameters.hpp"
 #include "Application.hpp"
-#include <iostream>
+#include "log.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
         Application app(par);
         app.run();
     } catch (std::exception const& e) {
-        std::cerr << "FATAL: " << e.what() << std::endl;
+        L_(fatal) << e.what();
         return EXIT_FAILURE;
     }
 

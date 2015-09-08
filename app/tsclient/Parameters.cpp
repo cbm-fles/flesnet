@@ -1,6 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Parameters.hpp"
+#include "log.hpp"
 #include <iostream>
 #include <boost/program_options.hpp>
 
@@ -8,9 +9,13 @@ namespace po = boost::program_options;
 
 void Parameters::parse_options(int argc, char* argv[])
 {
+    unsigned log_level = 2;
+
     po::options_description desc("Allowed options");
     desc.add_options()("version,V", "print version string")(
-        "help,h", "produce help message")(
+        "help,h",
+        "produce help message")("log-level,l", po::value<unsigned>(&log_level),
+                                "set the log level (default:2, all:0)")(
         "client-index,c", po::value<int32_t>(&client_index_),
         "index of this executable in the list of processor tasks")(
         "analyze-pattern,a", po::value<bool>(&analyze_)->implicit_value(true),
@@ -47,6 +52,8 @@ void Parameters::parse_options(int argc, char* argv[])
         std::cout << "tsclient, version 0.0" << std::endl;
         exit(EXIT_SUCCESS);
     }
+
+    logging::add_console(static_cast<severity_level>(log_level));
 
     size_t input_sources = vm.count("shm-identifier") +
                            vm.count("input-archive") + vm.count("subscribe");
