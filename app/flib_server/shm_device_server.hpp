@@ -71,6 +71,7 @@ public:
     if (!m_run) { // don't start twice
       m_run = true;
       m_flib->enable_mc_cnt(true);
+      L_(info) << "flib server started and running";
       while (m_run) {
         // claim lock at start-up
         scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
