@@ -22,8 +22,14 @@ int main(int argc, char* argv[]) {
 
     parameters par(argc, argv);
 
-    std::unique_ptr<flib_device> flib =
-        std::unique_ptr<flib_device>(new flib_device_cnet(0));
+    std::unique_ptr<flib_device> flib;
+    if (par.flib_legacy_mode()) {
+      L_(info) << "initializing FLIB with legacy readout";
+      flib = std::unique_ptr<flib_device>(new flib_device_cnet(0));
+    } else {
+      L_(info) << "initializing FLIB with DPB readout";
+      flib = std::unique_ptr<flib_device>(new flib_device_flesin(0));
+    }
 
     // convert sizes from 'entries' to 'bytes'
     size_t data_buffer_size_bytes_exp = par.data_buffer_size_exp();

@@ -36,6 +36,8 @@ public:
     return ss.str();
   }
 
+  bool flib_legacy_mode() const { return _flib_legacy_mode; }
+
 private:
   void parse_options(int argc, char* argv[]) {
 
@@ -58,6 +60,9 @@ private:
             "desc-buffer-size-exp",
             po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
             "exp. size of the descriptor buffer (number of entries)")(
+            "flib-legacy-mode",
+            po::value<bool>(&_flib_legacy_mode),
+            "use cbmnet flib")(
             "log-level,l",
             po::value<unsigned>(&log_level)->default_value(2),
             "set the log level (all:0)");
@@ -96,4 +101,6 @@ private:
 
   size_t _data_buffer_size_exp;
   size_t _desc_buffer_size_exp;
+
+  bool _flib_legacy_mode = true;
 };
