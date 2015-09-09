@@ -197,7 +197,7 @@ void Parameters::parse_options(int argc, char* argv[])
         "use-flib", po::value<bool>(&use_flib_), "use flib flag")(
         "flib-legacy-mode", po::value<bool>(&flib_legacy_mode_),
         "use cbmnet flib")("use-shm", po::value<bool>(&use_shared_memory_),
-                           "use shared_meory flag")(
+                           "use shared memory flag")(
         "standalone", po::value<bool>(&standalone_), "standalone mode flag")(
         "max-timeslice-number,n", po::value<uint32_t>(&max_timeslice_number_),
         "global maximum timeslice number")(
