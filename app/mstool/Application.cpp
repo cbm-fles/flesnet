@@ -12,12 +12,12 @@
 
 Application::Application(Parameters const& par) : par_(par)
 {
-    if (par_.pattern_generator()) {
+    if (par_.use_pattern_generator()) {
         constexpr uint32_t typical_content_size = 10000;
         constexpr std::size_t desc_buffer_size_exp = 7;  // 128 entries
         constexpr std::size_t data_buffer_size_exp = 20; // 1 MiB
 
-        switch (par_.pattern_generator()) {
+        switch (par_.pattern_generator_type()) {
         case 1:
             data_source_.reset(new FlibPatternGenerator(data_buffer_size_exp,
                                                         desc_buffer_size_exp, 0,

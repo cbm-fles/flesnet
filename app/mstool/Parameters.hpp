@@ -24,7 +24,9 @@ public:
     Parameters(const Parameters&) = delete;
     void operator=(const Parameters&) = delete;
 
-    uint32_t pattern_generator() const { return pattern_generator_; }
+    bool use_pattern_generator() const { return use_pattern_generator_; }
+
+    uint32_t pattern_generator_type() const { return pattern_generator_type_; }
 
     std::string input_archive() const { return input_archive_; }
 
@@ -37,7 +39,8 @@ public:
 private:
     void parse_options(int argc, char* argv[]);
 
-    uint32_t pattern_generator_ = 0;
+    bool use_pattern_generator_ = false;
+    uint32_t pattern_generator_type_ = 0;
     std::string input_archive_;
     std::string output_archive_;
     bool analyze_ = false;
