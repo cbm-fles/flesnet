@@ -59,7 +59,7 @@ private:
     RingBuffer<volatile uint8_t> data_buffer_;
 
     /// Input descriptor buffer.
-    RingBuffer<volatile fles::MicrosliceDescriptor> desc_buffer_;
+    RingBuffer<volatile fles::MicrosliceDescriptor, true> desc_buffer_;
 
     RingBufferView<volatile uint8_t> data_buffer_view_;
     RingBufferView<volatile fles::MicrosliceDescriptor> desc_buffer_view_;
