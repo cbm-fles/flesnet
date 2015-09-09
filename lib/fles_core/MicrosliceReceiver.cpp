@@ -26,7 +26,7 @@ StorableMicroslice* MicrosliceReceiver::try_get()
 
         StorableMicroslice* sms;
 
-        if (data_begin < data_end) {
+        if (data_begin <= data_end) {
             sms = new StorableMicroslice(
                 const_cast<const fles::MicrosliceDescriptor&>(desc),
                 const_cast<const uint8_t*>(data_begin));
