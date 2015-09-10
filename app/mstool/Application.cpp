@@ -25,7 +25,7 @@ Application::Application(Parameters const& par) : par_(par)
             throw std::runtime_error("shared memory channel not available");
         }
     } else if (par_.use_pattern_generator()) {
-        L_(info) << "unsing pattern generator as data source";
+        L_(info) << "using pattern generator as data source";
 
         constexpr uint32_t typical_content_size = 10000;
         constexpr std::size_t desc_buffer_size_exp = 7;  // 128 entries
