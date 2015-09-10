@@ -3,6 +3,8 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
+#include <vector>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
 #include "shm_device.hpp"
