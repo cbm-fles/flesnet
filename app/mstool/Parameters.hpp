@@ -36,6 +36,10 @@ public:
 
     uint64_t maximum_number() const { return maximum_number_; }
 
+    bool use_shared_memory() const { return use_shared_memory_; }
+
+    size_t shared_memory_channel() const { return shared_memory_channel_; }
+
 private:
     void parse_options(int argc, char* argv[]);
 
@@ -45,4 +49,6 @@ private:
     std::string output_archive_;
     bool analyze_ = false;
     uint64_t maximum_number_ = UINT64_MAX;
+    bool use_shared_memory_ = false;
+    size_t shared_memory_channel_ = 0;
 };

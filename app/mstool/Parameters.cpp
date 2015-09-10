@@ -20,6 +20,8 @@ void Parameters::parse_options(int argc, char* argv[])
         "enable/disable pattern check")(
         "pattern-generator,p", po::value<uint32_t>(&pattern_generator_type_),
         "use pattern generator to produce timeslices")(
+        "shm-channel,c", po::value<size_t>(&shared_memory_channel_),
+        "use given shared memory channel as data source")(
         "input-archive,i", po::value<std::string>(&input_archive_),
         "name of an input file archive to read")(
         "output-archive,o", po::value<std::string>(&output_archive_),
@@ -48,8 +50,12 @@ void Parameters::parse_options(int argc, char* argv[])
         use_pattern_generator_ = true;
     }
 
-    size_t input_sources =
-        vm.count("pattern-generator") + vm.count("input-archive");
+    if (vm.count("shm-channel")) {
+        use_shared_memory_ = true;
+    }
+
+    size_t input_sources = vm.count("pattern-generator") +
+                           vm.count("input-archive") + vm.count("shm-channel");
     if (input_sources == 0)
         throw ParametersException("no input source specified");
     if (input_sources > 1)

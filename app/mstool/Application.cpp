@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include "FlibPatternGenerator.hpp"
+#include "FlibShmChannel.hpp"
 #include "MicrosliceAnalyzer.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
@@ -12,7 +13,20 @@
 
 Application::Application(Parameters const& par) : par_(par)
 {
-    if (par_.use_pattern_generator()) {
+    if (par_.use_shared_memory()) {
+        L_(info) << "using shared memory as data source";
+
+        shm_device_.reset(new shm_device_client());
+
+        if (par_.shared_memory_channel() < shm_device_->num_channels()) {
+            data_source_.reset(new FlibShmChannel(
+                shm_device_->channels().at(par_.shared_memory_channel())));
+        } else {
+            throw std::runtime_error("shared memory channel not available");
+        }
+    } else if (par_.use_pattern_generator()) {
+        L_(info) << "unsing pattern generator as data source";
+
         constexpr uint32_t typical_content_size = 10000;
         constexpr std::size_t desc_buffer_size_exp = 7;  // 128 entries
         constexpr std::size_t data_buffer_size_exp = 20; // 1 MiB
