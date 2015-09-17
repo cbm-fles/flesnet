@@ -1,7 +1,7 @@
 // Copyright 2012-2014 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "DataSource.hpp"
+#include "RingBufferReadInterface.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
 #include "MicrosliceDescriptor.hpp"

@@ -5,7 +5,7 @@
 
 #include "MicrosliceSource.hpp"
 #include "StorableMicroslice.hpp"
-#include "DataSource.hpp"
+#include "RingBufferReadInterface.hpp"
 #include "RingBuffer.hpp"
 #include <string>
 #include <memory>

@@ -3,7 +3,7 @@
 
 #include "IBConnectionGroup.hpp"
 #include "InputChannelConnection.hpp"
-#include "DataSource.hpp"
+#include "RingBufferReadInterface.hpp"
 #include "RingBuffer.hpp"
 #include <boost/format.hpp>
 
