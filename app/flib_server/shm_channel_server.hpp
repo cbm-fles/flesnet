@@ -35,16 +35,11 @@ public:
     std::string channel_name =
         "shm_channel_" + boost::lexical_cast<std::string>(m_index);
     m_shm_ch = m_shm->construct<shm_channel>(channel_name.c_str())(
-        m_shm,
-        m_data_buffer,
-        m_data_buffer_size_exp,
-        m_desc_buffer,
+        m_shm, m_data_buffer, m_data_buffer_size_exp, m_desc_buffer,
         m_desc_buffer_size_exp);
 
     // initialize flib DMA engine
-    m_flib_link->init_dma(m_data_buffer,
-                          m_data_buffer_size_exp,
-                          m_desc_buffer,
+    m_flib_link->init_dma(m_data_buffer, m_data_buffer_size_exp, m_desc_buffer,
                           m_desc_buffer_size_exp);
 
     m_flib_link->set_start_idx(0);
@@ -57,12 +52,12 @@ public:
   }
 
   bool check_pending_req(scoped_lock<interprocess_mutex>& lock) {
-    assert(lock); // ensure mutex is realy owned
+    assert(lock); // ensure mutex is really owned
     return m_shm_ch->req_ptr(lock) || m_shm_ch->req_offset(lock);
   }
 
   void try_handle_req(scoped_lock<interprocess_mutex>& lock) {
-    assert(lock); // ensure mutex is realy owned
+    assert(lock); // ensure mutex is really owned
 
     if (m_shm_ch->req_ptr(lock)) {
       ack_ptrs_t ack_ptrs = m_shm_ch->ack_ptrs(lock);
