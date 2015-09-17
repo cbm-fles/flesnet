@@ -5,10 +5,10 @@
 #include "MicrosliceDescriptor.hpp"
 
 /// Abstract FLES data source class.
-class DataSource
+class RingBufferReadInterface
 {
 public:
-    virtual ~DataSource() {}
+    virtual ~RingBufferReadInterface() {}
 
     virtual void proceed() {}
 
