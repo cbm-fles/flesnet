@@ -42,7 +42,7 @@ public:
         return desc_buffer_view_;
     }
 
-    void proceed();
+    void proceed() override;
 
     virtual uint64_t written_desc() override { return written_desc_; }
     virtual uint64_t written_data() override { return written_data_; }
