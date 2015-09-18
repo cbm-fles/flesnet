@@ -10,7 +10,7 @@
 #include <algorithm>
 
 /// Simple embedded software pattern generator.
-class EmbeddedPatternGenerator : public RingBufferReadInterface
+class EmbeddedPatternGenerator : public DualRingBufferReadInterface
 {
 public:
     /// The EmbeddedPatternGenerator constructor.

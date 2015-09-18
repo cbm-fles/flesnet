@@ -42,7 +42,7 @@ private:
     std::unique_ptr<shm_device_client> shm_device_;
     std::size_t shm_num_channels_ = 0;
 
-    std::vector<std::unique_ptr<RingBufferReadInterface>> data_sources_;
+    std::vector<std::unique_ptr<DualRingBufferReadInterface>> data_sources_;
 
     /// The application's connection group / buffer objects
     std::vector<std::unique_ptr<ComputeBuffer>> compute_buffers_;
