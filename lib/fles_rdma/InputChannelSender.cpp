@@ -51,11 +51,11 @@ void InputChannelSender::report_status()
 
     // if data_source.written pointers are lagging behind due to lazy updates,
     // use sent value instead
-    uint64_t written_desc = data_source_.written_desc();
+    uint64_t written_desc = data_source_.get_write_index().desc;
     if (written_desc < sent_desc_) {
         written_desc = sent_desc_;
     }
-    uint64_t written_data = data_source_.written_data();
+    uint64_t written_data = data_source_.get_write_index().data;
     if (written_data < sent_data_) {
         written_data = sent_data_;
     }
@@ -436,8 +436,8 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
             acked_desc_ >= cached_acked_desc_ + min_acked_desc_) {
             cached_acked_data_ = acked_data_;
             cached_acked_desc_ = acked_desc_;
-            data_source_.update_ack_pointers(cached_acked_data_,
-                                             cached_acked_desc_);
+            data_source_.set_read_index(
+                {cached_acked_desc_, cached_acked_data_});
         }
         if (false) {
             L_(trace) << "[i" << input_index_ << "] "

@@ -53,9 +53,9 @@ StorableMicroslice* MicrosliceReceiver::try_get()
         previous_desc_idx_ =
             data_source_.desc_buffer().at(microslice_index_).idx;
 
-        data_source_.update_ack_pointers(
-            data_source_.desc_buffer().at(microslice_index_).offset,
-            microslice_index_);
+        data_source_.set_read_index(
+            {microslice_index_,
+             data_source_.desc_buffer().at(microslice_index_).offset});
 
         return sms;
     }

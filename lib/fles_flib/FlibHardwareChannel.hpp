@@ -65,11 +65,9 @@ public:
     }
 #endif
 
-    virtual uint64_t written_desc() override;
-    virtual uint64_t written_data() override;
+    virtual DualRingBufferIndex get_write_index() override;
 
-    virtual void update_ack_pointers(uint64_t new_acked_data,
-                                     uint64_t new_acked_desc) override;
+    virtual void set_read_index(DualRingBufferIndex new_read_index) override;
 
 private:
     std::unique_ptr<RingBufferView<volatile uint8_t>> data_buffer_view_;

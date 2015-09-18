@@ -25,26 +25,20 @@ FlibShmChannel::FlibShmChannel(shm_channel_client* channel) : channel_(channel)
 
 FlibShmChannel::~FlibShmChannel() {}
 
-uint64_t FlibShmChannel::written_desc()
+DualRingBufferIndex FlibShmChannel::get_write_index()
 {
-    return channel_->get_offsets_newer_than(
-                       boost::posix_time::milliseconds(100))
-        .first.desc_offset;
+    auto temp =
+        channel_->get_offsets_newer_than(boost::posix_time::milliseconds(100))
+            .first;
+
+    return {temp.desc_offset, temp.data_offset};
 }
 
-uint64_t FlibShmChannel::written_data()
-{
-    return channel_->get_offsets_newer_than(
-                       boost::posix_time::milliseconds(100))
-        .first.data_offset;
-}
-
-void FlibShmChannel::update_ack_pointers(uint64_t new_acked_data,
-                                         uint64_t new_acked_desc)
+void FlibShmChannel::set_read_index(DualRingBufferIndex new_read_index)
 {
     ack_ptrs_t ptrs;
-    ptrs.data_ptr = new_acked_data & data_buffer_view_->size_mask();
-    ptrs.desc_ptr = (new_acked_desc & desc_buffer_view_->size_mask()) *
+    ptrs.data_ptr = new_read_index.data & data_buffer_view_->size_mask();
+    ptrs.desc_ptr = (new_read_index.desc & desc_buffer_view_->size_mask()) *
                     sizeof(fles::MicrosliceDescriptor);
     channel_->set_ack_ptrs(ptrs);
 }

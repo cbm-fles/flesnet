@@ -4,6 +4,11 @@
 #include "RingBufferView.hpp"
 #include "MicrosliceDescriptor.hpp"
 
+struct DualRingBufferIndex {
+    uint64_t desc;
+    uint64_t data;
+};
+
 /// Abstract FLES data source class.
 class DualRingBufferReadInterface
 {
@@ -12,11 +17,9 @@ public:
 
     virtual void proceed() {}
 
-    virtual uint64_t written_desc() = 0;
-    virtual uint64_t written_data() = 0;
+    virtual DualRingBufferIndex get_write_index() = 0;
 
-    virtual void update_ack_pointers(uint64_t new_acked_data,
-                                     uint64_t new_acked_desc) = 0;
+    virtual void set_read_index(DualRingBufferIndex new_read_index) = 0;
 
     virtual RingBufferView<volatile uint8_t>& data_buffer() = 0;
 

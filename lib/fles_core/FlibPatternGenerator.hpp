@@ -61,14 +61,15 @@ public:
     /// Generate FLIB input data.
     void produce_data();
 
-    virtual uint64_t written_desc() override { return written_desc_; }
-    virtual uint64_t written_data() override { return written_data_; }
-
-    virtual void update_ack_pointers(uint64_t new_acked_data,
-                                     uint64_t new_acked_desc) override
+    virtual DualRingBufferIndex get_write_index() override
     {
-        acked_data_ = new_acked_data;
-        acked_desc_ = new_acked_desc;
+        return {written_desc_, written_data_};
+    }
+
+    virtual void set_read_index(DualRingBufferIndex new_read_index) override
+    {
+        acked_data_ = new_read_index.data;
+        acked_desc_ = new_read_index.desc;
     }
 
 private:
