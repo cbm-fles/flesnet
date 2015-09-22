@@ -60,7 +60,7 @@ public:
     assert(lock); // ensure mutex is really owned
 
     if (m_shm_ch->req_ptr(lock)) {
-      ack_ptrs_t ack_ptrs = m_shm_ch->ack_ptrs(lock);
+      DualIndex ack_ptrs = m_shm_ch->ack_ptrs(lock);
       // reset req before releasing lock ensures not to miss last req
       m_shm_ch->set_req_ptr(lock, false);
       lock.unlock();
@@ -75,7 +75,7 @@ public:
     if (m_shm_ch->req_offset(lock)) {
       m_shm_ch->set_req_offset(lock, false);
       lock.unlock();
-      offsets_t offsets;
+      TimedDualIndex offsets;
       offsets.data_offset = m_flib_link->channel()->get_data_offset();
       offsets.desc_offset = m_flib_link->mc_index();
       offsets.updated = boost::posix_time::microsec_clock::universal_time();
