@@ -65,50 +65,50 @@ public:
   size_t data_buffer_size_exp() { return m_data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
 
-  void set_ack_ptrs(ack_ptrs_t ptrs) {
+  void set_read_index(DualIndex read_index) {
     scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
-    m_shm_ch->set_ack_ptrs(lock, ptrs);
-    m_shm_ch->set_req_ptr(lock, true);
+    m_shm_ch->set_read_index(lock, read_index);
+    m_shm_ch->set_req_read_index(lock, true);
     m_shm_dev->m_cond_req.notify_one();
   }
 
-  void update_offsets() {
+  void update_write_index() {
     scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
-    m_shm_ch->set_req_offset(lock, true);
+    m_shm_ch->set_req_write_index(lock, true);
     m_shm_dev->m_cond_req.notify_one();
   }
 
-  // get cached offsets
-  offsets_t get_offsets() {
+  // get cached write_index
+  TimedDualIndex get_write_index() {
     // TODO could be a shared lock
     scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
-    return m_shm_ch->offsets(lock);
+    return m_shm_ch->write_index(lock);
   }
 
-  // get latest offsets (blocking)
-  std::pair<offsets_t, bool>
-  get_offsets_latest(const boost::posix_time::ptime& abs_timeout) {
+  // get latest write_index (blocking)
+  std::pair<TimedDualIndex, bool>
+  get_write_index_latest(const boost::posix_time::ptime& abs_timeout) {
     scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
-    m_shm_ch->set_req_offset(lock, true);
+    m_shm_ch->set_req_write_index(lock, true);
     m_shm_dev->m_cond_req.notify_one();
-    bool ret = m_shm_ch->m_cond_offsets.timed_wait(lock, abs_timeout);
-    offsets_t offsets = m_shm_ch->offsets(lock);
-    return std::make_pair(offsets, ret);
+    bool ret = m_shm_ch->m_cond_write_index.timed_wait(lock, abs_timeout);
+    TimedDualIndex write_index = m_shm_ch->write_index(lock);
+    return std::make_pair(write_index, ret);
   }
 
-  // get offsets newer than given relative timepoint (blocking)
-  std::pair<offsets_t, bool>
-  get_offsets_newer_than(const boost::posix_time::time_duration& rel_time,
-                         const boost::posix_time::time_duration& rel_timeout =
-                             boost::posix_time::milliseconds(100)) {
+  // get write_index newer than given relative timepoint (blocking)
+  std::pair<TimedDualIndex, bool> get_write_index_newer_than(
+      const boost::posix_time::time_duration& rel_time,
+      const boost::posix_time::time_duration& rel_timeout =
+          boost::posix_time::milliseconds(100)) {
     assert(!rel_time.is_negative());
     auto const now = boost::posix_time::microsec_clock::universal_time();
     boost::posix_time::ptime const abs_time = now - rel_time;
     boost::posix_time::ptime const abs_timeout = now + rel_timeout;
 
-    std::pair<offsets_t, bool> ret(get_offsets(), true);
+    std::pair<TimedDualIndex, bool> ret(get_write_index(), true);
     if (ret.first.updated < abs_time) {
-      ret = get_offsets_latest(abs_timeout);
+      ret = get_write_index_latest(abs_timeout);
     }
     assert(!(ret.second && (ret.first.updated < abs_time)));
     return ret;

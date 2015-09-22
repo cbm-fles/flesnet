@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DataSource.hpp"
+#include "RingBufferReadInterface.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
 #include "MicrosliceDescriptor.hpp"
@@ -9,7 +9,7 @@
 #include "shm_channel_client.hpp"
 
 /// Wrapper around FLIB shared memory channel.
-class FlibShmChannel : public DataSource
+class FlibShmChannel : public InputBufferReadInterface
 {
 public:
     /// The FlibShmChannel constructor.
@@ -31,11 +31,9 @@ public:
         return *desc_buffer_view_;
     }
 
-    virtual uint64_t written_desc() override;
-    virtual uint64_t written_data() override;
+    virtual DualRingBufferIndex get_write_index() override;
 
-    virtual void update_ack_pointers(uint64_t new_acked_data,
-                                     uint64_t new_acked_desc) override;
+    virtual void set_read_index(DualRingBufferIndex new_read_index) override;
 
 private:
     shm_channel_client* channel_;

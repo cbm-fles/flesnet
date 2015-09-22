@@ -1,7 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "DataSource.hpp"
+#include "RingBufferReadInterface.hpp"
 #include "MicrosliceSource.hpp"
 #include "Parameters.hpp"
 #include "Sink.hpp"
@@ -25,7 +25,7 @@ public:
 private:
     Parameters const& par_;
 
-    std::unique_ptr<DataSource> data_source_;
+    std::unique_ptr<InputBufferReadInterface> data_source_;
     std::unique_ptr<fles::MicrosliceSource> source_;
     std::vector<std::unique_ptr<fles::MicrosliceSink>> sinks_;
 

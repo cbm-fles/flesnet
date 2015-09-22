@@ -12,6 +12,9 @@ target_link_libraries(test_MicrosliceReceiver fles_core fles_ipc logging ${Boost
 if(LIBNUMA AND USE_LIBNUMA)
   target_link_libraries(test_MicrosliceReceiver numa)
 endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(test_MicrosliceReceiver atomic)
+endif()
 
 add_test(NAME test_RingBuffer COMMAND test_RingBuffer)
 add_test(NAME test_MicrosliceReceiver COMMAND test_MicrosliceReceiver)

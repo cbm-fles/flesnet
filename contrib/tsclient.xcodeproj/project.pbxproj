@@ -198,7 +198,7 @@
 		3D94C1D01B67F15600FEE1EF /* Parameters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Parameters.cpp; sourceTree = "<group>"; };
 		3D94C1D11B67F15600FEE1EF /* Parameters.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Parameters.hpp; sourceTree = "<group>"; };
 		3D9BCC251B591D10007C5C18 /* ChildProcessManager.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ChildProcessManager.hpp; sourceTree = "<group>"; };
-		3D9BCC271B591D10007C5C18 /* DataSource.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DataSource.hpp; sourceTree = "<group>"; };
+		3D9BCC271B591D10007C5C18 /* RingBufferReadInterface.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RingBufferReadInterface.hpp; sourceTree = "<group>"; };
 		3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EmbeddedPatternGenerator.cpp; sourceTree = "<group>"; };
 		3D9BCC291B591D10007C5C18 /* EmbeddedPatternGenerator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = EmbeddedPatternGenerator.hpp; sourceTree = "<group>"; };
 		3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlibPatternGenerator.cpp; sourceTree = "<group>"; };
@@ -368,7 +368,7 @@
 			isa = PBXGroup;
 			children = (
 				3D9BCC251B591D10007C5C18 /* ChildProcessManager.hpp */,
-				3D9BCC271B591D10007C5C18 /* DataSource.hpp */,
+				3D9BCC271B591D10007C5C18 /* RingBufferReadInterface.hpp */,
 				3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */,
 				3D9BCC291B591D10007C5C18 /* EmbeddedPatternGenerator.hpp */,
 				3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */,
@@ -506,7 +506,7 @@
 		3D462B7F1B42CC790017047A /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0630;
+				LastUpgradeCheck = 0700;
 				ORGANIZATIONNAME = "Jan de Cuveland";
 				TargetAttributes = {
 					3D462B861B42CC790017047A = {
@@ -708,6 +708,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;

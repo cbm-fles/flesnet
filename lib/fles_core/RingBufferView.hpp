@@ -5,7 +5,7 @@
 #include <cstdint>
 
 /// Simple generic ring buffer view class.
-template <typename T = uint8_t> class RingBufferView
+template <typename T> class RingBufferView
 {
 public:
     /// The RingBufferView constructor.

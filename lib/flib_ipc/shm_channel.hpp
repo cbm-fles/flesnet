@@ -1,4 +1,5 @@
 // Copyright 2015 Dirk Hutter
+// Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 
 #pragma once
 
@@ -11,16 +12,15 @@
 
 using namespace boost::interprocess;
 
-typedef struct {
-  uint64_t data_offset;
-  uint64_t desc_offset;
-  boost::posix_time::ptime updated;
-} offsets_t;
+struct DualIndex {
+  uint64_t desc;
+  uint64_t data;
+};
 
-typedef struct {
-  uint64_t data_ptr;
-  uint64_t desc_ptr;
-} ack_ptrs_t;
+struct TimedDualIndex {
+  DualIndex index;
+  boost::posix_time::ptime updated;
+};
 
 class shm_channel {
 
@@ -31,8 +31,7 @@ public:
               void* desc_buffer,
               size_t desc_buffer_size_exp)
       : m_data_buffer_size_exp(data_buffer_size_exp),
-        m_desc_buffer_size_exp(desc_buffer_size_exp),
-        m_offsets_updated(boost::posix_time::neg_infin) {
+        m_desc_buffer_size_exp(desc_buffer_size_exp) {
     set_buffer_handles(shm, data_buffer, desc_buffer);
   }
 
@@ -50,59 +49,50 @@ public:
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
 
   // getter / setter
-  bool req_ptr(scoped_lock<interprocess_mutex>& lock) {
+  bool req_read_index(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    return m_req_ptr;
+    return m_req_read_index;
   }
 
-  bool req_offset(scoped_lock<interprocess_mutex>& lock) {
+  bool req_write_index(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    return m_req_offset;
+    return m_req_write_index;
   }
 
-  void set_req_ptr(scoped_lock<interprocess_mutex>& lock, bool req) {
+  void set_req_read_index(scoped_lock<interprocess_mutex>& lock, bool req) {
     assert(lock);
-    m_req_ptr = req;
+    m_req_read_index = req;
   }
 
-  void set_req_offset(scoped_lock<interprocess_mutex>& lock, bool req) {
+  void set_req_write_index(scoped_lock<interprocess_mutex>& lock, bool req) {
     assert(lock);
-    m_req_offset = req;
+    m_req_write_index = req;
   }
 
-  offsets_t offsets(scoped_lock<interprocess_mutex>& lock) {
+  TimedDualIndex write_index(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    offsets_t offsets;
-    offsets.data_offset = m_data_offset;
-    offsets.desc_offset = m_desc_offset;
-    offsets.updated = m_offsets_updated;
-    return offsets;
+    TimedDualIndex write_index = m_write_index;
+    return write_index;
   }
 
-  void set_offsets(scoped_lock<interprocess_mutex>& lock,
-                   const offsets_t offsets) {
+  void set_write_index(scoped_lock<interprocess_mutex>& lock,
+                       const TimedDualIndex write_index) {
     assert(lock);
-    m_data_offset = offsets.data_offset;
-    m_desc_offset = offsets.desc_offset;
-    m_offsets_updated = offsets.updated;
-    m_cond_offsets.notify_all();
+    m_write_index = write_index;
+    m_cond_write_index.notify_all();
     return;
   }
 
-  ack_ptrs_t ack_ptrs(scoped_lock<interprocess_mutex>& lock) {
+  DualIndex read_index(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    ack_ptrs_t ptrs;
-    ptrs.data_ptr = m_data_read_ptr;
-    ptrs.desc_ptr = m_desc_read_ptr;
-    return ptrs;
+    DualIndex read_index = m_read_index;
+    return read_index;
   }
 
-  void set_ack_ptrs(scoped_lock<interprocess_mutex>& lock,
-                    const ack_ptrs_t ack_ptrs) {
+  void set_read_index(scoped_lock<interprocess_mutex>& lock,
+                      const DualIndex read_index) {
     assert(lock);
-    m_data_read_ptr = ack_ptrs.data_ptr;
-    m_desc_read_ptr = ack_ptrs.desc_ptr;
-    return;
+    m_read_index = read_index;
   }
 
   bool connect(scoped_lock<interprocess_mutex>& lock) {
@@ -120,7 +110,7 @@ public:
     m_clients = 0;
   }
 
-  interprocess_condition m_cond_offsets;
+  interprocess_condition m_cond_write_index;
 
 private:
   void set_buffer_handles(managed_shared_memory* shm,
@@ -135,14 +125,11 @@ private:
   size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
 
-  bool m_req_ptr = false;
-  bool m_req_offset = false;
+  bool m_req_read_index = false;
+  bool m_req_write_index = false;
 
-  uint64_t m_data_read_ptr = 0; // INFO not actual hw value
-  uint64_t m_desc_read_ptr = 0;
-  uint64_t m_data_offset = 0;
-  uint64_t m_desc_offset = 0;
-  boost::posix_time::ptime m_offsets_updated;
+  DualIndex m_read_index{0, 0}; // INFO not actual hw value
+  TimedDualIndex m_write_index{{0, 0}, boost::posix_time::neg_infin};
 
   size_t m_clients = 0;
 };

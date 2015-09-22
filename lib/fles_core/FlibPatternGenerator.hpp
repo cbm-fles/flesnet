@@ -1,7 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "DataSource.hpp"
+#include "RingBufferReadInterface.hpp"
 #include "ThreadContainer.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
@@ -13,7 +13,8 @@
 #include <algorithm>
 
 /// Simple software pattern generator used as FLIB replacement.
-class FlibPatternGenerator : public DataSource, public ThreadContainer
+class FlibPatternGenerator : public InputBufferReadInterface,
+                             public ThreadContainer
 {
 public:
     /// The FlibPatternGenerator constructor.
@@ -60,14 +61,14 @@ public:
     /// Generate FLIB input data.
     void produce_data();
 
-    virtual uint64_t written_desc() override { return written_desc_; }
-    virtual uint64_t written_data() override { return written_data_; }
-
-    virtual void update_ack_pointers(uint64_t new_acked_data,
-                                     uint64_t new_acked_desc) override
+    virtual DualRingBufferIndex get_write_index() override
     {
-        acked_data_ = new_acked_data;
-        acked_desc_ = new_acked_desc;
+        return write_index_.load();
+    }
+
+    virtual void set_read_index(DualRingBufferIndex new_read_index) override
+    {
+        read_index_.store(new_read_index);
     }
 
 private:
@@ -91,15 +92,10 @@ private:
 
     std::thread* producer_thread_;
 
-    /// Number of acknowledged data bytes. Updated by input node.
-    std::atomic<uint64_t> acked_data_{0};
+    /// Number of acknowledged data bytes and microslices. Updated by input
+    /// node.
+    std::atomic<DualRingBufferIndex> read_index_{{0, 0}};
 
-    /// Number of acknowledged microslices. Updated by input node.
-    std::atomic<uint64_t> acked_desc_{0};
-
-    /// FLIB-internal number of written data bytes.
-    uint64_t written_data_{0};
-
-    /// FLIB-internal number of written microslices.
-    std::atomic<uint64_t> written_desc_{0};
+    /// FLIB-internal number of written microslices and data bytes.
+    std::atomic<DualRingBufferIndex> write_index_{{0, 0}};
 };

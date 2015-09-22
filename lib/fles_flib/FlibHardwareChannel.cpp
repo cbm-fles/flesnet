@@ -61,18 +61,15 @@ FlibHardwareChannel::~FlibHardwareChannel()
     flib_link_->deinit_dma();
 }
 
-uint64_t FlibHardwareChannel::written_desc() { return flib_link_->mc_index(); }
-
-uint64_t FlibHardwareChannel::written_data()
+DualRingBufferIndex FlibHardwareChannel::get_write_index()
 {
-    return flib_link_->channel()->get_data_offset();
+    return {flib_link_->mc_index(), flib_link_->channel()->get_data_offset()};
 }
 
-void FlibHardwareChannel::update_ack_pointers(uint64_t new_acked_data,
-                                              uint64_t new_acked_desc)
+void FlibHardwareChannel::set_read_index(DualRingBufferIndex new_read_index)
 {
     flib_link_->channel()->set_sw_read_pointers(
-        new_acked_data & data_buffer_view_->size_mask(),
-        (new_acked_desc & desc_buffer_view_->size_mask()) *
+        new_read_index.data & data_buffer_view_->size_mask(),
+        (new_read_index.desc & desc_buffer_view_->size_mask()) *
             sizeof(fles::MicrosliceDescriptor));
 }

@@ -1,7 +1,7 @@
 // Copyright 2012-2014 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "DataSource.hpp"
+#include "RingBufferReadInterface.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
 #include "MicrosliceDescriptor.hpp"
@@ -10,7 +10,7 @@
 #include <algorithm>
 
 /// Simple embedded software pattern generator.
-class EmbeddedPatternGenerator : public DataSource
+class EmbeddedPatternGenerator : public InputBufferReadInterface
 {
 public:
     /// The EmbeddedPatternGenerator constructor.
@@ -42,16 +42,16 @@ public:
         return desc_buffer_view_;
     }
 
-    void proceed();
+    void proceed() override;
 
-    virtual uint64_t written_desc() override { return written_desc_; }
-    virtual uint64_t written_data() override { return written_data_; }
-
-    virtual void update_ack_pointers(uint64_t new_acked_data,
-                                     uint64_t new_acked_desc) override
+    virtual DualRingBufferIndex get_write_index() override
     {
-        acked_data_ = new_acked_data;
-        acked_desc_ = new_acked_desc;
+        return write_index_;
+    }
+
+    virtual void set_read_index(DualRingBufferIndex new_read_index) override
+    {
+        read_index_ = new_read_index;
     }
 
 private:
@@ -77,15 +77,10 @@ private:
     /// Distribution to use in determining data content sizes.
     std::poisson_distribution<unsigned int> random_distribution_;
 
-    /// Number of acknowledged data bytes. Updated by input node.
-    uint64_t acked_data_{0};
+    /// Number of acknowledged data bytes and microslices. Updated by input
+    /// node.
+    DualRingBufferIndex read_index_{0, 0};
 
-    /// Number of acknowledged microslices. Updated by input node.
-    uint64_t acked_desc_{0};
-
-    /// FLIB-internal number of written data bytes.
-    uint64_t written_data_{0};
-
-    /// FLIB-internal number of written microslices.
-    uint64_t written_desc_{0};
+    /// FLIB-internal number of written microslices and data bytes.
+    DualRingBufferIndex write_index_{0, 0};
 };

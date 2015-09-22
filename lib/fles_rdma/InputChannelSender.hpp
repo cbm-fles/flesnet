@@ -3,7 +3,7 @@
 
 #include "IBConnectionGroup.hpp"
 #include "InputChannelConnection.hpp"
-#include "DataSource.hpp"
+#include "RingBufferReadInterface.hpp"
 #include "RingBuffer.hpp"
 #include <boost/format.hpp>
 
@@ -16,7 +16,8 @@ class InputChannelSender : public IBConnectionGroup<InputChannelConnection>
 {
 public:
     /// The InputChannelSender default constructor.
-    InputChannelSender(uint64_t input_index, DataSource& data_source,
+    InputChannelSender(uint64_t input_index,
+                       InputBufferReadInterface& data_source,
                        const std::vector<std::string> compute_hostnames,
                        const std::vector<std::string> compute_services,
                        uint32_t timeslice_size, uint32_t overlap_size,
@@ -83,7 +84,7 @@ private:
     uint64_t acked_data_ = 0;
 
     /// Data source (e.g., FLIB).
-    DataSource& data_source_;
+    InputBufferReadInterface& data_source_;
 
     /// Number of sent microslices, for statistics.
     uint64_t sent_desc_ = 0;
