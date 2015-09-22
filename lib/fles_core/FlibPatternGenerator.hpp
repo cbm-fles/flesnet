@@ -63,13 +63,12 @@ public:
 
     virtual DualRingBufferIndex get_write_index() override
     {
-        return {written_desc_, written_data_};
+        return write_index_.load();
     }
 
     virtual void set_read_index(DualRingBufferIndex new_read_index) override
     {
-        acked_data_ = new_read_index.data;
-        acked_desc_ = new_read_index.desc;
+        read_index_.store(new_read_index);
     }
 
 private:
@@ -93,15 +92,10 @@ private:
 
     std::thread* producer_thread_;
 
-    /// Number of acknowledged data bytes. Updated by input node.
-    std::atomic<uint64_t> acked_data_{0};
+    /// Number of acknowledged data bytes and microslices. Updated by input
+    /// node.
+    std::atomic<DualRingBufferIndex> read_index_{{0, 0}};
 
-    /// Number of acknowledged microslices. Updated by input node.
-    std::atomic<uint64_t> acked_desc_{0};
-
-    /// FLIB-internal number of written data bytes.
-    uint64_t written_data_{0};
-
-    /// FLIB-internal number of written microslices.
-    std::atomic<uint64_t> written_desc_{0};
+    /// FLIB-internal number of written microslices and data bytes.
+    std::atomic<DualRingBufferIndex> write_index_{{0, 0}};
 };
