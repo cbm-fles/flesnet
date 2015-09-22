@@ -49,50 +49,50 @@ public:
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
 
   // getter / setter
-  bool req_ptr(scoped_lock<interprocess_mutex>& lock) {
+  bool req_read_index(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    return m_req_ptr;
+    return m_req_read_index;
   }
 
-  bool req_offset(scoped_lock<interprocess_mutex>& lock) {
+  bool req_write_index(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    return m_req_offset;
+    return m_req_write_index;
   }
 
-  void set_req_ptr(scoped_lock<interprocess_mutex>& lock, bool req) {
+  void set_req_read_index(scoped_lock<interprocess_mutex>& lock, bool req) {
     assert(lock);
-    m_req_ptr = req;
+    m_req_read_index = req;
   }
 
-  void set_req_offset(scoped_lock<interprocess_mutex>& lock, bool req) {
+  void set_req_write_index(scoped_lock<interprocess_mutex>& lock, bool req) {
     assert(lock);
-    m_req_offset = req;
+    m_req_write_index = req;
   }
 
-  TimedDualIndex offsets(scoped_lock<interprocess_mutex>& lock) {
+  TimedDualIndex write_index(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    TimedDualIndex offsets = m_offset;
-    return offsets;
+    TimedDualIndex write_index = m_write_index;
+    return write_index;
   }
 
-  void set_offsets(scoped_lock<interprocess_mutex>& lock,
-                   const TimedDualIndex offsets) {
+  void set_write_index(scoped_lock<interprocess_mutex>& lock,
+                       const TimedDualIndex write_index) {
     assert(lock);
-    m_offset = offsets;
-    m_cond_offsets.notify_all();
+    m_write_index = write_index;
+    m_cond_write_index.notify_all();
     return;
   }
 
-  DualIndex ack_ptrs(scoped_lock<interprocess_mutex>& lock) {
+  DualIndex read_index(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    DualIndex ptrs = m_read_ptr;
-    return ptrs;
+    DualIndex read_index = m_read_index;
+    return read_index;
   }
 
-  void set_ack_ptrs(scoped_lock<interprocess_mutex>& lock,
-                    const DualIndex ack_ptrs) {
+  void set_read_index(scoped_lock<interprocess_mutex>& lock,
+                      const DualIndex read_index) {
     assert(lock);
-    m_read_ptr = ack_ptrs;
+    m_read_index = read_index;
   }
 
   bool connect(scoped_lock<interprocess_mutex>& lock) {
@@ -110,7 +110,7 @@ public:
     m_clients = 0;
   }
 
-  interprocess_condition m_cond_offsets;
+  interprocess_condition m_cond_write_index;
 
 private:
   void set_buffer_handles(managed_shared_memory* shm,
@@ -125,11 +125,11 @@ private:
   size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
 
-  bool m_req_ptr = false;
-  bool m_req_offset = false;
+  bool m_req_read_index = false;
+  bool m_req_write_index = false;
 
-  DualIndex m_read_ptr{0, 0}; // INFO not actual hw value
-  TimedDualIndex m_offset{{0, 0}, boost::posix_time::neg_infin};
+  DualIndex m_read_index{0, 0}; // INFO not actual hw value
+  TimedDualIndex m_write_index{{0, 0}, boost::posix_time::neg_infin};
 
   size_t m_clients = 0;
 };

@@ -27,18 +27,18 @@ FlibShmChannel::~FlibShmChannel() {}
 
 DualRingBufferIndex FlibShmChannel::get_write_index()
 {
-    auto temp =
-        channel_->get_offsets_newer_than(boost::posix_time::milliseconds(100))
-            .first;
+    auto temp = channel_->get_write_index_newer_than(
+                            boost::posix_time::milliseconds(100))
+                    .first.index;
 
-    return {temp.desc_offset, temp.data_offset};
+    return {temp.desc, temp.data};
 }
 
 void FlibShmChannel::set_read_index(DualRingBufferIndex new_read_index)
 {
-    ack_ptrs_t ptrs;
-    ptrs.data_ptr = new_read_index.data & data_buffer_view_->size_mask();
-    ptrs.desc_ptr = (new_read_index.desc & desc_buffer_view_->size_mask()) *
-                    sizeof(fles::MicrosliceDescriptor);
-    channel_->set_ack_ptrs(ptrs);
+    DualIndex read_index;
+    read_index.data = new_read_index.data & data_buffer_view_->size_mask();
+    read_index.desc = (new_read_index.desc & desc_buffer_view_->size_mask()) *
+                      sizeof(fles::MicrosliceDescriptor);
+    channel_->set_read_index(read_index);
 }

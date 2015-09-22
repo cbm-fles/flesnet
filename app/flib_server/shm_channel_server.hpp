@@ -53,37 +53,37 @@ public:
 
   bool check_pending_req(scoped_lock<interprocess_mutex>& lock) {
     assert(lock); // ensure mutex is really owned
-    return m_shm_ch->req_ptr(lock) || m_shm_ch->req_offset(lock);
+    return m_shm_ch->req_read_index(lock) || m_shm_ch->req_write_index(lock);
   }
 
   void try_handle_req(scoped_lock<interprocess_mutex>& lock) {
     assert(lock); // ensure mutex is really owned
 
-    if (m_shm_ch->req_ptr(lock)) {
-      DualIndex ack_ptrs = m_shm_ch->ack_ptrs(lock);
+    if (m_shm_ch->req_read_index(lock)) {
+      DualIndex read_index = m_shm_ch->read_index(lock);
       // reset req before releasing lock ensures not to miss last req
-      m_shm_ch->set_req_ptr(lock, false);
+      m_shm_ch->set_req_read_index(lock, false);
       lock.unlock();
-      L_(trace) << "updating ptrs: data " << ack_ptrs.data_ptr << " desc "
-                << ack_ptrs.desc_ptr;
+      L_(trace) << "updating read_index: data " << read_index.data << " desc "
+                << read_index.desc;
 
-      m_flib_link->channel()->set_sw_read_pointers(ack_ptrs.data_ptr,
-                                                   ack_ptrs.desc_ptr);
+      m_flib_link->channel()->set_sw_read_pointers(read_index.data,
+                                                   read_index.desc);
       lock.lock();
     }
 
-    if (m_shm_ch->req_offset(lock)) {
-      m_shm_ch->set_req_offset(lock, false);
+    if (m_shm_ch->req_write_index(lock)) {
+      m_shm_ch->set_req_write_index(lock, false);
       lock.unlock();
-      TimedDualIndex offsets;
-      offsets.data_offset = m_flib_link->channel()->get_data_offset();
-      offsets.desc_offset = m_flib_link->mc_index();
-      offsets.updated = boost::posix_time::microsec_clock::universal_time();
-      L_(trace) << "fetching offsets: data " << offsets.data_offset << " desc "
-                << offsets.desc_offset;
+      TimedDualIndex write_index;
+      write_index.index.data = m_flib_link->channel()->get_data_offset();
+      write_index.index.desc = m_flib_link->mc_index();
+      write_index.updated = boost::posix_time::microsec_clock::universal_time();
+      L_(trace) << "fetching write_index: data " << write_index.index.data
+                << " desc " << write_index.index.desc;
 
       lock.lock();
-      m_shm_ch->set_offsets(lock, offsets);
+      m_shm_ch->set_write_index(lock, write_index);
     }
   }
 
