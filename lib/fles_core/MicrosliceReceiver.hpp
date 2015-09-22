@@ -15,13 +15,13 @@ namespace fles
 
 /**
  * \brief The MicrosliceReceiver class implements a mechanism to receive
- * Microslices from a DualRingBufferReadInterface object.
+ * Microslices from a InputBufferReadInterface object.
  */
 class MicrosliceReceiver : public MicrosliceSource
 {
 public:
     /// Construct Microslice receiver connected to a given data source.
-    MicrosliceReceiver(DualRingBufferReadInterface& data_source);
+    MicrosliceReceiver(InputBufferReadInterface& data_source);
 
     /// Delete copy constructor (non-copyable).
     MicrosliceReceiver(const MicrosliceReceiver&) = delete;
@@ -48,7 +48,7 @@ private:
     StorableMicroslice* try_get();
 
     /// Data source (e.g., FLIB).
-    DualRingBufferReadInterface& data_source_;
+    InputBufferReadInterface& data_source_;
 
     uint64_t microslice_index_ = 0;
     uint64_t previous_desc_idx_ = 0;

@@ -10,7 +10,7 @@ struct DualRingBufferIndex {
 };
 
 /// Abstract FLES data source class.
-class DualRingBufferReadInterface
+template <typename T_DESC, typename T_DATA> class DualRingBufferReadInterface
 {
 public:
     virtual ~DualRingBufferReadInterface() {}
@@ -21,21 +21,13 @@ public:
 
     virtual void set_read_index(DualRingBufferIndex new_read_index) = 0;
 
-    virtual RingBufferView<volatile uint8_t>& data_buffer() = 0;
+    virtual RingBufferView<T_DATA>& data_buffer() = 0;
 
-    virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
-    desc_buffer() = 0;
+    virtual RingBufferView<T_DESC>& desc_buffer() = 0;
 
-    virtual RingBufferView<volatile uint8_t>& data_send_buffer()
-    {
-        return data_buffer();
-    }
+    virtual RingBufferView<T_DATA>& data_send_buffer() { return data_buffer(); }
 
-    virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
-    desc_send_buffer()
-    {
-        return desc_buffer();
-    }
+    virtual RingBufferView<T_DESC>& desc_send_buffer() { return desc_buffer(); }
 
     virtual void copy_to_data_send_buffer(std::size_t /* start */,
                                           std::size_t /* count */)
@@ -47,3 +39,7 @@ public:
     {
     }
 };
+
+using InputBufferReadInterface =
+    DualRingBufferReadInterface<volatile fles::MicrosliceDescriptor,
+                                volatile uint8_t>;

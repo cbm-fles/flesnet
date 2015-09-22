@@ -25,7 +25,7 @@ public:
 private:
     Parameters const& par_;
 
-    std::unique_ptr<DualRingBufferReadInterface> data_source_;
+    std::unique_ptr<InputBufferReadInterface> data_source_;
     std::unique_ptr<fles::MicrosliceSource> source_;
     std::vector<std::unique_ptr<fles::MicrosliceSink>> sinks_;
 

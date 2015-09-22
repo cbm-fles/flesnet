@@ -108,25 +108,25 @@ Application::Application(Parameters const& par,
 
     for (size_t c = 0; c < input_indexes.size(); ++c) {
         unsigned index = input_indexes.at(c);
-        std::unique_ptr<DualRingBufferReadInterface> data_source;
+        std::unique_ptr<InputBufferReadInterface> data_source;
 
         if (c < flib_links_.size()) {
-            data_source = std::unique_ptr<DualRingBufferReadInterface>(
+            data_source = std::unique_ptr<InputBufferReadInterface>(
                 new FlibHardwareChannel(par.in_data_buffer_size_exp(),
                                         par.in_desc_buffer_size_exp(),
                                         flib_links_.at(c)));
         } else if (c < shm_num_channels_) {
-            data_source = std::unique_ptr<DualRingBufferReadInterface>(
+            data_source = std::unique_ptr<InputBufferReadInterface>(
                 new FlibShmChannel(shm_device_->channels().at(c)));
         } else {
             if (false) {
-                data_source = std::unique_ptr<DualRingBufferReadInterface>(
+                data_source = std::unique_ptr<InputBufferReadInterface>(
                     new FlibPatternGenerator(par.in_data_buffer_size_exp(),
                                              par.in_desc_buffer_size_exp(),
                                              index,
                                              par.typical_content_size()));
             } else {
-                data_source = std::unique_ptr<DualRingBufferReadInterface>(
+                data_source = std::unique_ptr<InputBufferReadInterface>(
                     new EmbeddedPatternGenerator(par.in_data_buffer_size_exp(),
                                                  par.in_desc_buffer_size_exp(),
                                                  index,

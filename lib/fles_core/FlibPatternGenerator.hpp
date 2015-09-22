@@ -13,7 +13,7 @@
 #include <algorithm>
 
 /// Simple software pattern generator used as FLIB replacement.
-class FlibPatternGenerator : public DualRingBufferReadInterface,
+class FlibPatternGenerator : public InputBufferReadInterface,
                              public ThreadContainer
 {
 public:

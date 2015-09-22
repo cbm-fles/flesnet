@@ -12,7 +12,7 @@
 #define NO_DOUBLE_BUFFERING
 
 /// Wrapper around FLIB hardware channel.
-class FlibHardwareChannel : public DualRingBufferReadInterface
+class FlibHardwareChannel : public InputBufferReadInterface
 {
 public:
     /// The FlibHardwareChannel constructor.

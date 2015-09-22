@@ -9,7 +9,7 @@
 #include "shm_channel_client.hpp"
 
 /// Wrapper around FLIB shared memory channel.
-class FlibShmChannel : public DualRingBufferReadInterface
+class FlibShmChannel : public InputBufferReadInterface
 {
 public:
     /// The FlibShmChannel constructor.

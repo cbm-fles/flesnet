@@ -5,7 +5,7 @@
 namespace fles
 {
 
-MicrosliceReceiver::MicrosliceReceiver(DualRingBufferReadInterface& data_source)
+MicrosliceReceiver::MicrosliceReceiver(InputBufferReadInterface& data_source)
     : data_source_(data_source)
 {
 }
