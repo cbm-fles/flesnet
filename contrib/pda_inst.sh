@@ -41,8 +41,7 @@ patchudev()
 
 patchmodulelist()
 {
-  ADD_NEEDED=`cat /etc/modules | grep uio_pci_dma`
-  if [ -z "$ADD_NEEDED" ]
+  if [ -z "`cat /etc/modules | grep uio_pci_dma`" ]
   then
     echo "uio_pci_dma" >> /etc/modules
     echo "Module added"
