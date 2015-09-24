@@ -53,3 +53,8 @@ if(CNETCNTLSERVER)
     set_property(   TARGET      flib_ctrl
                     PROPERTY    COMPILE_DEFINITIONS CNETCNTLSERVER)
 endif(CNETCNTLSERVER)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(flib_ctrl pthread gssapi_krb5)
+endif()
+

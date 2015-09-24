@@ -27,3 +27,9 @@ add_executable(simple_consumer simple_consumer.cpp ${CLIENT_LIB})
 
 target_link_libraries(flib_server flib logging ${Boost_LIBRARIES} rt)
 target_link_libraries(simple_consumer logging ${Boost_LIBRARIES} rt)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(flib_server pthread)
+    target_link_libraries(simple_consumer pthread)
+endif()
+
