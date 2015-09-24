@@ -4,6 +4,8 @@
 
 #include "shm_device_client.hpp"
 
+#include <iostream>
+
 using namespace std;
 
 namespace {

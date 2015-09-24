@@ -13,7 +13,7 @@ if(LIBNUMA AND USE_LIBNUMA)
   target_link_libraries(test_MicrosliceReceiver numa)
 endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(test_MicrosliceReceiver atomic)
+    target_link_libraries(test_MicrosliceReceiver atomic pthread)
 endif()
 
 add_test(NAME test_RingBuffer COMMAND test_RingBuffer)

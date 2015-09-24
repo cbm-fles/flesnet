@@ -14,7 +14,15 @@ if(DEFINED ENV{SIMPATH})
   find_package(ZMQ REQUIRED)
 else()
   find_library(ZMQ_LIBRARIES zmq)
+  set(CPPZMQ )
 endif()
+
+if(DEFINED ENV{VMCWORKDIR})
+  message(WARNING "VMCWORKDIR set, try to make sure the zmq.hpp provided by CBMROOT is found, allow compilation with FAIRSOFT > mar15.")
+  set(CPPZMQ $ENV{VMCWORKDIR}/fles/cppzmq)
+  message(INFO ${CPPZMQ})
+endif()
+
 
 #set(CMAKE_C_COMPILER clang)
 #set(CMAKE_CXX_COMPILER clang++)
@@ -33,7 +41,7 @@ endif()
 find_package(Boost 1.54.0 REQUIRED COMPONENTS log serialization thread program_options system unit_test_framework)
 find_package(Threads)
 
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${CPPZMQ})
 
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
