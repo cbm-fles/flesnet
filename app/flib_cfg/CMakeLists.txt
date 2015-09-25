@@ -14,6 +14,6 @@ add_executable(flib_cfg flib_cfg.cpp parameters.hpp)
 target_link_libraries(flib_cfg flib logging ${ZMQ_LIBRARIES} ${Boost_LIBRARIES} rt)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(flib_cfg pthread gssapi_krb5)
+    target_link_libraries(flib_cfg pthread)
 endif()
 
