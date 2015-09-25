@@ -71,7 +71,7 @@ public:
     zpi.revents = 0;
     _poll_items.push_back(zpi);
 
-    zpi.socket = static_cast<void*> (_driver_req);
+    zpi.socket = static_cast<void*>(_driver_req);
     zpi.fd = 0;
     _poll_items.push_back(zpi);
 
@@ -131,7 +131,7 @@ public:
           if (rc != -1 && ret == 1) {
             _driver_state = DriverStateStopped;
           }
-        } else if (_poll_items[i].socket == static_cast<void*> (_driver_req) ) {
+        } else if (_poll_items[i].socket == static_cast<void*>(_driver_req)) {
           // process message
           ProcEvent();
         }
