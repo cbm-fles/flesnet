@@ -55,6 +55,6 @@ if(CNETCNTLSERVER)
 endif(CNETCNTLSERVER)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(flib_ctrl pthread gssapi_krb5)
+    target_link_libraries(flib_ctrl pthread)
 endif()
 

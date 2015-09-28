@@ -35,7 +35,7 @@ Build Dependencies
 
     sudo aptitude install gcc make cmake valgrind \
       doxygen libnuma-dev librdmacm-dev libibverbs-dev git \
-      libzmq3-dev libboost1.55-all-dev
+      libzmq3-dev libkrb5-dev libboost1.55-all-dev
 
 ### Optional: Fairroot external packages
 
