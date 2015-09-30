@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+t=$(tempfile) || exit
+trap "rm -f -- '$t'" EXIT
+
+# start a flib_server and wait until shm is initialized
+./flib_server -l 2 &> $t  &
+
+tail -f $t | tee /dev/tty | while read LOGLINE
+do
+   [[ "${LOGLINE}" == *"flib server started and running"* ]] && pkill -P $$ tail
+done
+
+./mstool -a -c 0
+
+wait
+rm -f -- "$t"
+trap - EXIT

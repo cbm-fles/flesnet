@@ -19,6 +19,17 @@ add_custom_command(
           ${CMAKE_CURRENT_SOURCE_DIR}/boost.supp ${CMAKE_BINARY_DIR}/boost.supp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/boost.supp)
 
+add_custom_command(
+  OUTPUT shm_mstool
+  COMMAND ${CMAKE_COMMAND} -E create_symlink
+          ${CMAKE_CURRENT_SOURCE_DIR}/shm_mstool ${CMAKE_BINARY_DIR}/shm_mstool
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shm_mstool)
+
+add_custom_command(
+  OUTPUT shm_flesnet
+  COMMAND ${CMAKE_COMMAND} -E create_symlink
+          ${CMAKE_CURRENT_SOURCE_DIR}/shm_flesnet ${CMAKE_BINARY_DIR}/shm_flesnet
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shm_flesnet)
 
 add_custom_target (
 	cfg-files ALL
@@ -44,4 +55,4 @@ add_custom_target (
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 )
 
-add_custom_target(links ALL DEPENDS run verbs.supp boost.supp)
+add_custom_target(links ALL DEPENDS run verbs.supp boost.supp shm_mstool shm_flesnet)
