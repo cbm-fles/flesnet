@@ -36,10 +36,14 @@ void flib_link_flesin::set_pgen_rate(float val) {
 
 //////*** FLIM Configuration and Status***//////
 
+void flib_link_flesin::reset_flim() {
+  m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 2, true);
+}
+
 void flib_link_flesin::set_flim_ready_for_data(bool enable) {
   m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 0, enable);
 }
-void flib_link_flesin::set_film_data_source(flim_data_source_t sel) {
+void flib_link_flesin::set_flim_data_source(flim_data_source_t sel) {
   m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 1, sel);
 }
 
@@ -58,9 +62,9 @@ bool flib_link_flesin::get_flim_pgen_present() {
   return m_rfflim->get_bit(RORC_REG_LINK_FLIM_STS, 0);
 }
 
-flim_sts_t flib_link_flesin::get_flim_sts() {
+flib_link_flesin::flim_sts_t flib_link_flesin::get_flim_sts() {
   uint32_t reg = m_rfflim->get_reg(RORC_REG_LINK_FLIM_STS);
-  flim_sts_t sts;
+  flib_link_flesin::flim_sts_t sts;
   sts.hard_err = (reg & (1 << 1));
   sts.soft_err = (reg & (1 << 2));
   return sts;
@@ -79,9 +83,9 @@ void flib_link_flesin::set_flim_pgen_rate(float val) {
   assert(val <= 1);
   uint16_t reg_val =
       static_cast<uint16_t>(static_cast<float>(UINT16_MAX) * (1.0 - val));
-  m_rfgtx->set_reg(RORC_REG_LINK_MC_PGEN_CFG,
-                   static_cast<uint32_t>(reg_val) << 16,
-                   0xFFFF0000);
+  m_rfflim->set_reg(RORC_REG_LINK_MC_PGEN_CFG,
+                    static_cast<uint32_t>(reg_val) << 16,
+                    0xFFFF0000);
 }
 
 void flib_link_flesin::set_flim_pgen_enable(bool enable) {
@@ -149,8 +153,8 @@ std::string flib_link_flesin::flim_build_user() {
   return std::string(reinterpret_cast<const char*>(user));
 }
 
-struct flim_build_info_t flib_link_flesin::flim_build_info() {
-  flim_build_info_t info;
+flib_link_flesin::flim_build_info_t flib_link_flesin::flim_build_info() {
+  flib_link_flesin::flim_build_info_t info;
 
   info.date = flim_build_date();
   info.host = flim_build_host();
@@ -167,7 +171,7 @@ struct flim_build_info_t flib_link_flesin::flim_build_info() {
 }
 
 std::string flib_link_flesin::print_flim_build_info() {
-  flim_build_info_t build = flim_build_info();
+  flib_link_flesin::flim_build_info_t build = flim_build_info();
   std::stringstream ss;
   ss << "Build Date:     " << build.date << " UTC" << std::endl
      << "Build Source:   " << build.user << "@" << build.host << std::endl;

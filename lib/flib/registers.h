@@ -77,18 +77,18 @@
 #define RORC_REG_GTX_MC_GEN_CFG_IDX_H 10
 #define RORC_REG_GTX_MC_INDEX_L 11
 #define RORC_REG_GTX_MC_INDEX_H 12
-#define RORC_MEM_BASE_CTRL_TX 16           // cnet only
-#define RORC_MEM_SIZE_CTRL_TX 16           // cnet only
-#define RORC_MEM_BASE_CTRL_RX 32           // cnet only
-#define RORC_MEM_SIZE_CTRL_RX 16           // cnet only
-#define RORC_REG_GTX_DIAG_PCS_STARTUP 48   // cnet only
-#define RORC_REG_GTX_DIAG_EBTB_CODE_ERR 49 // cnet only
-#define RORC_REG_GTX_DIAG_EBTB_DISP_ERR 50 // cnet only
-#define RORC_REG_GTX_DIAG_CRC_ERROR 51     // cnet only
-#define RORC_REG_GTX_DIAG_PACKET 52        // cnet only
-#define RORC_REG_GTX_DIAG_PACKET_ERR 53    // cnet only
-#define RORC_REG_GTX_DIAG_FLAGS 54         // cnet only
-#define RORC_REG_GTX_DIAG_CLEAR 55         // cnet only
+#define RORC_MEM_BASE_CTRL_TX 16             // cnet only
+#define RORC_MEM_SIZE_CTRL_TX 16             // cnet only
+#define RORC_MEM_BASE_CTRL_RX 32             // cnet only
+#define RORC_MEM_SIZE_CTRL_RX 16             // cnet only
+#define RORC_REG_GTX_DIAG_PCS_STARTUP 48     // cnet only
+#define RORC_REG_GTX_DIAG_EBTB_CODE_ERR 49   // cnet only
+#define RORC_REG_GTX_DIAG_EBTB_DISP_ERR 50   // cnet only
+#define RORC_REG_GTX_DIAG_CRC_ERROR 51       // cnet only
+#define RORC_REG_GTX_DIAG_PACKET 52          // cnet only
+#define RORC_REG_GTX_DIAG_PACKET_ERR 53      // cnet only
+#define RORC_REG_GTX_DIAG_FLAGS 54           // cnet only
+#define RORC_REG_GTX_DIAG_CLEAR 55           // cnet only
 #define RORC_REG_LINK_FLIM_HW_INFO 0         // flesin only
 #define RORC_REG_FLIM_BUILD_FLAGS 1          // flesin only
 #define RORC_REG_FLIM_BUILD_DATE_L 2         // flesin only
