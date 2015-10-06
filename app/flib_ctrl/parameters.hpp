@@ -49,7 +49,7 @@ private:
     po::options_description generic("Generic options");
     generic.add_options()("help,h", "produce help message")(
         "config-file,c",
-        po::value<std::string>(&config_file)->default_value("flib.cfg"),
+        po::value<std::string>(&config_file)->default_value("flib_legacy.cfg"),
         "name of a configuration file")(
         "log-level,l",
         po::value<unsigned>(&log_level)->default_value(2),

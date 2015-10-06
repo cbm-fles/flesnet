@@ -29,7 +29,7 @@ FLIB Control
     cd build
     ./flib_ctrl --help
 
-Modify `flib.cfg`:
+Modify `flib_legacy.cfg`:
 
   - Set the data source for each FLIB link.
     For reading from the optical link use 'link'.
@@ -38,8 +38,8 @@ Modify `flib.cfg`:
   - If reading from a optical link you need to provide
     sys\_id and sys\_ver of the connected source.
 
-The provided example `flib.cfg` will read 4 FLIB links with
-patten generator and a microslice size of 10 µs.
+The provided example `flib_legacy.cfg` will read 8 FLIB links with
+patten generator and a microslice size of 100 µs.
 
 #### Usage:
     ./flib_ctrl
