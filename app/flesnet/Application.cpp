@@ -2,7 +2,7 @@
 
 #include "Application.hpp"
 #include "FlibHardwareChannel.hpp"
-#include "FlibShmChannel.hpp"
+#include "shm_channel_client.hpp"
 #include "FlibPatternGenerator.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include <log.hpp>
@@ -108,30 +108,34 @@ Application::Application(Parameters const& par,
 
     for (size_t c = 0; c < input_indexes.size(); ++c) {
         unsigned index = input_indexes.at(c);
-        std::unique_ptr<InputBufferReadInterface> data_source;
+        InputBufferReadInterface* data_source;
 
         if (c < flib_links_.size()) {
-            data_source = std::unique_ptr<InputBufferReadInterface>(
+            auto own_data_source = std::unique_ptr<InputBufferReadInterface>(
                 new FlibHardwareChannel(par.in_data_buffer_size_exp(),
                                         par.in_desc_buffer_size_exp(),
                                         flib_links_.at(c)));
+            data_source = own_data_source.get();
+            own_data_sources_.push_back(std::move(own_data_source));
         } else if (c < shm_num_channels_) {
-            data_source = std::unique_ptr<InputBufferReadInterface>(
-                new FlibShmChannel(shm_device_->channels().at(c)));
+            data_source = shm_device_->channels().at(c);
         } else {
+            std::unique_ptr<InputBufferReadInterface> own_data_source;
             if (false) {
-                data_source = std::unique_ptr<InputBufferReadInterface>(
+                own_data_source = std::unique_ptr<InputBufferReadInterface>(
                     new FlibPatternGenerator(par.in_data_buffer_size_exp(),
                                              par.in_desc_buffer_size_exp(),
                                              index,
                                              par.typical_content_size()));
             } else {
-                data_source = std::unique_ptr<InputBufferReadInterface>(
+                own_data_source = std::unique_ptr<InputBufferReadInterface>(
                     new EmbeddedPatternGenerator(par.in_data_buffer_size_exp(),
                                                  par.in_desc_buffer_size_exp(),
                                                  index,
                                                  par.typical_content_size()));
             }
+            data_source = own_data_source.get();
+            own_data_sources_.push_back(std::move(own_data_source));
         }
 
         std::unique_ptr<InputChannelSender> buffer(new InputChannelSender(
@@ -139,7 +143,6 @@ Application::Application(Parameters const& par,
             par.timeslice_size(), par.overlap_size(),
             par.max_timeslice_number()));
 
-        data_sources_.push_back(std::move(data_source));
         input_channel_senders_.push_back(std::move(buffer));
     }
 

@@ -1,23 +1,27 @@
 // Copyright 2015 Dirk Hutter
+// Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 
 #pragma once
 
-#include <cstdint>
-#include <cassert>
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/sync/interprocess_mutex.hpp>
-#include <boost/interprocess/sync/interprocess_condition.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-
-#include "log.hpp"
-
-#include "shm_device.hpp"
+#include "MicrosliceDescriptor.hpp"
+#include "RingBuffer.hpp"
+#include "RingBufferReadInterface.hpp"
+#include "RingBufferView.hpp"
 #include "shm_channel.hpp"
+#include "shm_device.hpp"
+#include "log.hpp"
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/lexical_cast.hpp>
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
 
 using namespace boost::interprocess;
 
-class shm_channel_client {
+class shm_channel_client : public InputBufferReadInterface {
 
 public:
   shm_channel_client(managed_shared_memory* shm, size_t index) : m_shm(shm) {
@@ -49,9 +53,29 @@ public:
     m_desc_buffer = m_shm_ch->desc_buffer_ptr(m_shm);
     m_data_buffer_size_exp = m_shm_ch->data_buffer_size_exp();
     m_desc_buffer_size_exp = m_shm_ch->desc_buffer_size_exp();
+
+    // convert sizes from 'bytes' to 'entries'
+    constexpr std::size_t microslice_descriptor_size_bytes_exp = 5;
+    size_t desc_buffer_size_exp =
+        m_desc_buffer_size_exp - microslice_descriptor_size_bytes_exp;
+
+    uint8_t* data_buffer = reinterpret_cast<uint8_t*>(m_data_buffer);
+    fles::MicrosliceDescriptor* desc_buffer =
+        reinterpret_cast<fles::MicrosliceDescriptor*>(m_desc_buffer);
+
+    data_buffer_view_ = std::unique_ptr<RingBufferView<volatile uint8_t>>(
+        new RingBufferView<volatile uint8_t>(data_buffer,
+                                             m_data_buffer_size_exp));
+    desc_buffer_view_ =
+        std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>(
+            new RingBufferView<volatile fles::MicrosliceDescriptor>(
+                desc_buffer, desc_buffer_size_exp));
   }
 
-  ~shm_channel_client() {
+  shm_channel_client(const shm_channel_client&) = delete;
+  void operator=(const shm_channel_client&) = delete;
+
+  virtual ~shm_channel_client() {
     try {
       scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
       m_shm_ch->disconnect(lock);
@@ -60,12 +84,10 @@ public:
     }
   }
 
-  void* data_buffer() { return m_data_buffer; }
-  void* desc_buffer() { return m_desc_buffer; }
   size_t data_buffer_size_exp() { return m_data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
 
-  void set_read_index(DualIndex read_index) {
+  void i_set_read_index(DualIndex read_index) {
     scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
     m_shm_ch->set_read_index(lock, read_index);
     m_shm_ch->set_req_read_index(lock, true);
@@ -79,7 +101,7 @@ public:
   }
 
   // get cached write_index
-  TimedDualIndex get_write_index() {
+  TimedDualIndex get_write_index_cached() {
     // TODO could be a shared lock
     scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
     return m_shm_ch->write_index(lock);
@@ -106,13 +128,39 @@ public:
     boost::posix_time::ptime const abs_time = now - rel_time;
     boost::posix_time::ptime const abs_timeout = now + rel_timeout;
 
-    std::pair<TimedDualIndex, bool> ret(get_write_index(), true);
+    std::pair<TimedDualIndex, bool> ret(get_write_index_cached(), true);
     if (ret.first.updated < abs_time) {
       ret = get_write_index_latest(abs_timeout);
     }
     assert(!(ret.second && (ret.first.updated < abs_time)));
     return ret;
   }
+
+  // InputBufferReadInterface methods
+
+  virtual RingBufferView<volatile uint8_t>& data_buffer() override {
+    return *data_buffer_view_;
+  }
+
+  virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
+  desc_buffer() override {
+    return *desc_buffer_view_;
+  }
+
+  virtual DualRingBufferIndex get_write_index() override {
+    auto temp = get_write_index_newer_than(boost::posix_time::milliseconds(100))
+                    .first.index;
+
+    return {temp.desc, temp.data};
+  }
+
+  virtual void set_read_index(DualRingBufferIndex new_read_index) override {
+    DualIndex read_index;
+    read_index.data = new_read_index.data & data_buffer_view_->size_mask();
+    read_index.desc = (new_read_index.desc & desc_buffer_view_->size_mask()) *
+                      sizeof(fles::MicrosliceDescriptor);
+    i_set_read_index(read_index);
+  };
 
 private:
   managed_shared_memory* m_shm;
@@ -123,4 +171,8 @@ private:
   void* m_desc_buffer;
   size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
+
+  std::unique_ptr<RingBufferView<volatile uint8_t>> data_buffer_view_;
+  std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>
+      desc_buffer_view_;
 };

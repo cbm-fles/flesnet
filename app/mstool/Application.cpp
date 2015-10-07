@@ -3,7 +3,7 @@
 #include "Application.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include "FlibPatternGenerator.hpp"
-#include "FlibShmChannel.hpp"
+#include "shm_channel_client.hpp"
 #include "MicrosliceAnalyzer.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
@@ -19,8 +19,8 @@ Application::Application(Parameters const& par) : par_(par)
         shm_device_.reset(new shm_device_client());
 
         if (par_.shared_memory_channel() < shm_device_->num_channels()) {
-            data_source_.reset(new FlibShmChannel(
-                shm_device_->channels().at(par_.shared_memory_channel())));
+            data_source_ =
+                shm_device_->channels().at(par_.shared_memory_channel());
         } else {
             throw std::runtime_error("shared memory channel not available");
         }
@@ -33,18 +33,20 @@ Application::Application(Parameters const& par) : par_(par)
 
         switch (par_.pattern_generator_type()) {
         case 1:
-            data_source_.reset(new FlibPatternGenerator(data_buffer_size_exp,
-                                                        desc_buffer_size_exp, 0,
-                                                        typical_content_size));
+            pattern_generator_.reset(new FlibPatternGenerator(
+                data_buffer_size_exp, desc_buffer_size_exp, 0,
+                typical_content_size));
             break;
         case 2:
-            data_source_.reset(new EmbeddedPatternGenerator(
+            pattern_generator_.reset(new EmbeddedPatternGenerator(
                 data_buffer_size_exp, desc_buffer_size_exp, 1,
                 typical_content_size));
             break;
         default:
             throw std::runtime_error("pattern generator type not available");
         }
+
+        data_source_ = pattern_generator_.get();
     }
 
     if (data_source_) {
