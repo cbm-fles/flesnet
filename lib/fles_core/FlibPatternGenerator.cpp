@@ -15,15 +15,15 @@ void FlibPatternGenerator::produce_data()
         std::poisson_distribution<unsigned int> random_distribution(
             typical_content_size_);
 
-        DualRingBufferIndex write_index = {0, 0};
-        DualRingBufferIndex last_write_index = {0, 0};
-        DualRingBufferIndex read_index = {0, 0};
+        DualIndex write_index = {0, 0};
+        DualIndex last_write_index = {0, 0};
+        DualIndex read_index = {0, 0};
 
-        const DualRingBufferIndex min_avail = {desc_buffer_.size() / 4,
-                                               data_buffer_.size() / 4};
+        const DualIndex min_avail = {desc_buffer_.size() / 4,
+                                     data_buffer_.size() / 4};
 
-        const DualRingBufferIndex min_written = {desc_buffer_.size() / 4,
-                                                 data_buffer_.size() / 4};
+        const DualIndex min_written = {desc_buffer_.size() / 4,
+                                       data_buffer_.size() / 4};
 
         while (true) {
             // wait until significant space is available

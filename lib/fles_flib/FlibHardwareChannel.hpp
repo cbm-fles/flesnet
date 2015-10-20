@@ -65,9 +65,9 @@ public:
     }
 #endif
 
-    virtual DualRingBufferIndex get_write_index() override;
+    virtual DualIndex get_write_index() override;
 
-    virtual void set_read_index(DualRingBufferIndex new_read_index) override;
+    virtual void set_read_index(DualIndex new_read_index) override;
 
 private:
     std::unique_ptr<RingBufferView<volatile uint8_t>> data_buffer_view_;

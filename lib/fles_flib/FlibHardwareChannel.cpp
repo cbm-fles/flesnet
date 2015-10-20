@@ -61,12 +61,12 @@ FlibHardwareChannel::~FlibHardwareChannel()
     flib_link_->deinit_dma();
 }
 
-DualRingBufferIndex FlibHardwareChannel::get_write_index()
+DualIndex FlibHardwareChannel::get_write_index()
 {
     return {flib_link_->mc_index(), flib_link_->channel()->get_data_offset()};
 }
 
-void FlibHardwareChannel::set_read_index(DualRingBufferIndex new_read_index)
+void FlibHardwareChannel::set_read_index(DualIndex new_read_index)
 {
     flib_link_->channel()->set_sw_read_pointers(
         new_read_index.data & data_buffer_view_->size_mask(),

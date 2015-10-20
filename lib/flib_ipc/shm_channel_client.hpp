@@ -149,14 +149,12 @@ public:
     return *desc_buffer_view_;
   }
 
-  virtual DualRingBufferIndex get_write_index() override {
-    auto temp = get_write_index_newer_than(boost::posix_time::milliseconds(100))
-                    .first.index;
-
-    return {temp.desc, temp.data};
+  virtual DualIndex get_write_index() override {
+    return get_write_index_newer_than(boost::posix_time::milliseconds(100))
+        .first.index;
   }
 
-  virtual void set_read_index(DualRingBufferIndex new_read_index) override {
+  virtual void set_read_index(DualIndex new_read_index) override {
     DualIndex read_index;
     read_index.data = new_read_index.data & data_buffer_view_->size_mask();
     read_index.desc = (new_read_index.desc & desc_buffer_view_->size_mask()) *

@@ -4,8 +4,8 @@
 
 void EmbeddedPatternGenerator::proceed()
 {
-    const DualRingBufferIndex min_avail = {desc_buffer_.size() / 4,
-                                           data_buffer_.size() / 4};
+    const DualIndex min_avail = {desc_buffer_.size() / 4,
+                                 data_buffer_.size() / 4};
 
     // break unless significant space is available
     if ((write_index_.data - read_index_.data + min_avail.data >

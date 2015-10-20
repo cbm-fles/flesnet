@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "RingBufferReadInterface.hpp"
+
 #include <cstdint>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
@@ -11,11 +13,6 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
 using namespace boost::interprocess;
-
-struct DualIndex {
-  uint64_t desc;
-  uint64_t data;
-};
 
 struct TimedDualIndex {
   DualIndex index;

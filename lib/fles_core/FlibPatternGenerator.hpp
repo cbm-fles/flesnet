@@ -61,12 +61,9 @@ public:
     /// Generate FLIB input data.
     void produce_data();
 
-    virtual DualRingBufferIndex get_write_index() override
-    {
-        return write_index_.load();
-    }
+    virtual DualIndex get_write_index() override { return write_index_.load(); }
 
-    virtual void set_read_index(DualRingBufferIndex new_read_index) override
+    virtual void set_read_index(DualIndex new_read_index) override
     {
         read_index_.store(new_read_index);
     }
@@ -94,8 +91,8 @@ private:
 
     /// Number of acknowledged data bytes and microslices. Updated by input
     /// node.
-    std::atomic<DualRingBufferIndex> read_index_{{0, 0}};
+    std::atomic<DualIndex> read_index_{{0, 0}};
 
     /// FLIB-internal number of written microslices and data bytes.
-    std::atomic<DualRingBufferIndex> write_index_{{0, 0}};
+    std::atomic<DualIndex> write_index_{{0, 0}};
 };

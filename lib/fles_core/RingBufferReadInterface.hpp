@@ -4,7 +4,7 @@
 #include "RingBufferView.hpp"
 #include "MicrosliceDescriptor.hpp"
 
-struct DualRingBufferIndex {
+struct DualIndex {
     uint64_t desc;
     uint64_t data;
 };
@@ -17,9 +17,9 @@ public:
 
     virtual void proceed() {}
 
-    virtual DualRingBufferIndex get_write_index() = 0;
+    virtual DualIndex get_write_index() = 0;
 
-    virtual void set_read_index(DualRingBufferIndex new_read_index) = 0;
+    virtual void set_read_index(DualIndex new_read_index) = 0;
 
     virtual RingBufferView<T_DATA>& data_buffer() = 0;
 
