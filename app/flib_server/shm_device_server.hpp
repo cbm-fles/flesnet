@@ -33,12 +33,12 @@ public:
     std::vector<flib_link*> flib_links = m_flib->links();
 
     // delete deactivated links from vector
-    flib_links.erase(std::remove_if(std::begin(flib_links),
-                                    std::end(flib_links),
-                                    [](decltype(flib_links[0]) link) {
-                       return link->data_sel() == flib::flib_link::rx_disable;
-                     }),
-                     std::end(flib_links));
+    flib_links.erase(
+        std::remove_if(std::begin(flib_links), std::end(flib_links),
+                       [](decltype(flib_links[0]) link) {
+                         return link->data_sel() == flib::flib_link::rx_disable;
+                       }),
+        std::end(flib_links));
     L_(info) << "enabled flib links detected: " << flib_links.size();
 
     // create a big enough shared memory segment
@@ -57,9 +57,9 @@ public:
     // create channels for active flib links
     size_t idx = 0;
     for (flib_link* link : flib_links) {
-      m_shm_ch_vec.push_back(std::unique_ptr<
-          shm_channel_server>(new shm_channel_server(
-          m_shm.get(), idx, link, data_buffer_size_exp, desc_buffer_size_exp)));
+      m_shm_ch_vec.push_back(std::unique_ptr<shm_channel_server>(
+          new shm_channel_server(m_shm.get(), idx, link, data_buffer_size_exp,
+                                 desc_buffer_size_exp)));
       ++idx;
       m_shm_dev->inc_num_channels();
     }
@@ -110,12 +110,14 @@ public:
 private:
   std::string print_shm_info() {
     std::stringstream ss;
-    ss << "SHM INFO" << std::endl << "sanity " << m_shm->check_sanity()
-       << std::endl << "size " << m_shm->get_size() << std::endl << "free_mem "
-       << m_shm->get_free_memory() << std::endl << "num named obj "
-       << m_shm->get_num_named_objects() << std::endl << "num unique obj "
-       << m_shm->get_num_unique_objects() << std::endl << "name dev obj"
-       << managed_shared_memory::get_instance_name(m_shm_dev) << std::endl;
+    ss << "SHM INFO" << std::endl
+       << "sanity " << m_shm->check_sanity() << std::endl
+       << "size " << m_shm->get_size() << std::endl
+       << "free_mem " << m_shm->get_free_memory() << std::endl
+       << "num named obj " << m_shm->get_num_named_objects() << std::endl
+       << "num unique obj " << m_shm->get_num_unique_objects() << std::endl
+       << "name dev obj" << managed_shared_memory::get_instance_name(m_shm_dev)
+       << std::endl;
     return ss.str();
   }
 

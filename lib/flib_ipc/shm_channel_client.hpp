@@ -21,7 +21,8 @@
 
 using namespace boost::interprocess;
 
-class shm_channel_client : public InputBufferReadInterface {
+template <typename T_DESC, typename T_DATA>
+class shm_channel_client : public DualRingBufferReadInterface<T_DESC, T_DATA> {
 
 public:
   shm_channel_client(managed_shared_memory* shm, size_t index) : m_shm(shm) {
@@ -48,6 +49,11 @@ public:
       }
     }
 
+    if (m_shm_ch->desc_item_size() != sizeof(T_DESC) ||
+        m_shm_ch->data_item_size() != sizeof(T_DATA)) {
+      throw std::runtime_error("Channel " + channel_name + " is of wrong type");
+    }
+
     // initialize buffer info
     m_data_buffer = m_shm_ch->data_buffer_ptr(m_shm);
     m_desc_buffer = m_shm_ch->desc_buffer_ptr(m_shm);
@@ -63,13 +69,10 @@ public:
     fles::MicrosliceDescriptor* desc_buffer =
         reinterpret_cast<fles::MicrosliceDescriptor*>(m_desc_buffer);
 
-    data_buffer_view_ = std::unique_ptr<RingBufferView<volatile uint8_t>>(
-        new RingBufferView<volatile uint8_t>(data_buffer,
-                                             m_data_buffer_size_exp));
-    desc_buffer_view_ =
-        std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>(
-            new RingBufferView<volatile fles::MicrosliceDescriptor>(
-                desc_buffer, desc_buffer_size_exp));
+    data_buffer_view_ = std::unique_ptr<RingBufferView<T_DATA>>(
+        new RingBufferView<T_DATA>(data_buffer, m_data_buffer_size_exp));
+    desc_buffer_view_ = std::unique_ptr<RingBufferView<T_DESC>>(
+        new RingBufferView<T_DESC>(desc_buffer, desc_buffer_size_exp));
   }
 
   shm_channel_client(const shm_channel_client&) = delete;
@@ -138,12 +141,11 @@ public:
 
   // InputBufferReadInterface methods
 
-  virtual RingBufferView<volatile uint8_t>& data_buffer() override {
+  virtual RingBufferView<T_DATA>& data_buffer() override {
     return *data_buffer_view_;
   }
 
-  virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
-  desc_buffer() override {
+  virtual RingBufferView<T_DESC>& desc_buffer() override {
     return *desc_buffer_view_;
   }
 
@@ -172,7 +174,6 @@ private:
   size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
 
-  std::unique_ptr<RingBufferView<volatile uint8_t>> data_buffer_view_;
-  std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>
-      desc_buffer_view_;
+  std::unique_ptr<RingBufferView<T_DATA>> data_buffer_view_;
+  std::unique_ptr<RingBufferView<T_DESC>> desc_buffer_view_;
 };

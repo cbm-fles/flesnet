@@ -31,12 +31,15 @@ public:
     m_data_buffer = alloc_buffer(m_data_buffer_size_exp);
     m_desc_buffer = alloc_buffer(m_desc_buffer_size_exp);
 
-    // constuct channel exchange object in sharde memory
+    size_t data_item_size = sizeof(uint8_t);
+    size_t desc_item_size = sizeof(fles::MicrosliceDescriptor);
+
+    // constuct channel exchange object in shared memory
     std::string channel_name =
         "shm_channel_" + boost::lexical_cast<std::string>(m_index);
     m_shm_ch = m_shm->construct<shm_channel>(channel_name.c_str())(
-        m_shm, m_data_buffer, m_data_buffer_size_exp, m_desc_buffer,
-        m_desc_buffer_size_exp);
+        m_shm, m_data_buffer, m_data_buffer_size_exp, data_item_size,
+        m_desc_buffer, m_desc_buffer_size_exp, desc_item_size);
 
     // initialize flib DMA engine
     m_flib_link->init_dma(m_data_buffer, m_data_buffer_size_exp, m_desc_buffer,

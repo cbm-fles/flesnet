@@ -20,9 +20,9 @@ int main() {
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
-  shm_device_client dev;
+  flib_shm_device_client dev;
 
-  std::vector<shm_channel_client*> ch = dev.channels();
+  auto ch = dev.channels();
 
   cout << dev.num_channels() << endl;
   cout << ch.size() << endl;

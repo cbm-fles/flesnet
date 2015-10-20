@@ -20,8 +20,8 @@ Application::Application(Parameters const& par,
     if (par.use_flib()) {
         if (par.use_shared_memory()) {
             try {
-                shm_device_ =
-                    std::unique_ptr<shm_device_client>(new shm_device_client());
+                shm_device_ = std::unique_ptr<flib_shm_device_client>(
+                    new flib_shm_device_client());
                 shm_num_channels_ = shm_device_->num_channels();
                 L_(info) << "using shared memory";
 

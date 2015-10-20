@@ -12,9 +12,11 @@
 
 using namespace boost::interprocess;
 
-class shm_device_client {
+template <typename T_DESC, typename T_DATA> class shm_device_client {
 
 public:
+  using shm_channel_client_type = shm_channel_client<T_DESC, T_DATA>;
+
   shm_device_client() {
 
     m_shm = std::unique_ptr<managed_shared_memory>(
@@ -36,8 +38,8 @@ public:
 
     size_t num_channels = m_shm_dev->num_channels();
     for (size_t i = 0; i < num_channels; ++i) {
-      m_shm_ch_vec.push_back(std::unique_ptr<shm_channel_client>(
-          new shm_channel_client(m_shm.get(), i)));
+      m_shm_ch_vec.push_back(std::unique_ptr<shm_channel_client_type>(
+          new shm_channel_client_type(m_shm.get(), i)));
     }
   }
 
@@ -45,8 +47,8 @@ public:
     // never disconnect to ensure server is only used once
   }
 
-  std::vector<shm_channel_client*> channels() {
-    std::vector<shm_channel_client*> channels;
+  std::vector<shm_channel_client_type*> channels() {
+    std::vector<shm_channel_client_type*> channels;
     for (auto& l : m_shm_ch_vec) {
       channels.push_back(l.get());
     }
@@ -58,5 +60,8 @@ public:
 private:
   std::unique_ptr<managed_shared_memory> m_shm;
   shm_device* m_shm_dev = NULL;
-  std::vector<std::unique_ptr<shm_channel_client>> m_shm_ch_vec;
+  std::vector<std::unique_ptr<shm_channel_client_type>> m_shm_ch_vec;
 };
+
+using flib_shm_device_client =
+    shm_device_client<volatile fles::MicrosliceDescriptor, volatile uint8_t>;

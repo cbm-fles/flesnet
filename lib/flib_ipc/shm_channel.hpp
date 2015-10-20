@@ -28,10 +28,13 @@ public:
   shm_channel(managed_shared_memory* shm,
               void* data_buffer,
               size_t data_buffer_size_exp,
+              size_t data_item_size,
               void* desc_buffer,
-              size_t desc_buffer_size_exp)
+              size_t desc_buffer_size_exp,
+              size_t desc_item_size)
       : m_data_buffer_size_exp(data_buffer_size_exp),
-        m_desc_buffer_size_exp(desc_buffer_size_exp) {
+        m_desc_buffer_size_exp(desc_buffer_size_exp),
+        m_data_item_size(data_item_size), m_desc_item_size(desc_item_size) {
     set_buffer_handles(shm, data_buffer, desc_buffer);
   }
 
@@ -47,6 +50,9 @@ public:
 
   size_t data_buffer_size_exp() { return m_data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
+
+  size_t data_item_size() { return m_data_item_size; }
+  size_t desc_item_size() { return m_desc_item_size; }
 
   // getter / setter
   bool req_read_index(scoped_lock<interprocess_mutex>& lock) {
@@ -124,6 +130,8 @@ private:
   managed_shared_memory::handle_t m_desc_buffer_handle;
   size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
+  size_t m_data_item_size;
+  size_t m_desc_item_size;
 
   bool m_req_read_index = false;
   bool m_req_write_index = false;
