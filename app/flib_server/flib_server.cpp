@@ -38,10 +38,8 @@ int main(int argc, char* argv[]) {
         par.desc_buffer_size_exp() + microslice_descriptor_size_bytes_exp;
 
     // create server
-    shm_device_server server(flib.get(),
-                             data_buffer_size_bytes_exp,
-                             desc_buffer_size_bytes_exp,
-                             &signal_status);
+    flib_shm_device_server server(flib.get(), data_buffer_size_bytes_exp,
+                                  desc_buffer_size_bytes_exp, &signal_status);
     server.run();
 
   } catch (std::exception const& e) {

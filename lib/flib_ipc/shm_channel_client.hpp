@@ -60,19 +60,13 @@ public:
     m_data_buffer_size_exp = m_shm_ch->data_buffer_size_exp();
     m_desc_buffer_size_exp = m_shm_ch->desc_buffer_size_exp();
 
-    // convert sizes from 'bytes' to 'entries'
-    constexpr std::size_t microslice_descriptor_size_bytes_exp = 5;
-    size_t desc_buffer_size_exp =
-        m_desc_buffer_size_exp - microslice_descriptor_size_bytes_exp;
-
-    uint8_t* data_buffer = reinterpret_cast<uint8_t*>(m_data_buffer);
-    fles::MicrosliceDescriptor* desc_buffer =
-        reinterpret_cast<fles::MicrosliceDescriptor*>(m_desc_buffer);
+    T_DATA* data_buffer = reinterpret_cast<T_DATA*>(m_data_buffer);
+    T_DESC* desc_buffer = reinterpret_cast<T_DESC*>(m_desc_buffer);
 
     data_buffer_view_ = std::unique_ptr<RingBufferView<T_DATA>>(
         new RingBufferView<T_DATA>(data_buffer, m_data_buffer_size_exp));
     desc_buffer_view_ = std::unique_ptr<RingBufferView<T_DESC>>(
-        new RingBufferView<T_DESC>(desc_buffer, desc_buffer_size_exp));
+        new RingBufferView<T_DESC>(desc_buffer, m_desc_buffer_size_exp));
   }
 
   shm_channel_client(const shm_channel_client&) = delete;

@@ -16,7 +16,7 @@
 using namespace boost::interprocess;
 using namespace flib;
 
-class shm_channel_server {
+template <typename T_DESC, typename T_DATA> class shm_channel_server {
 
 public:
   shm_channel_server(managed_shared_memory* shm,
@@ -27,12 +27,13 @@ public:
       : m_shm(shm), m_index(index), m_flib_link(flib_link),
         m_data_buffer_size_exp(data_buffer_size_exp),
         m_desc_buffer_size_exp(desc_buffer_size_exp) {
-    // allocate buffers
-    m_data_buffer = alloc_buffer(m_data_buffer_size_exp);
-    m_desc_buffer = alloc_buffer(m_desc_buffer_size_exp);
 
-    size_t data_item_size = sizeof(uint8_t);
-    size_t desc_item_size = sizeof(fles::MicrosliceDescriptor);
+    size_t data_item_size = sizeof(T_DATA);
+    size_t desc_item_size = sizeof(T_DESC);
+
+    // allocate buffers
+    m_data_buffer = alloc_buffer(m_data_buffer_size_exp, data_item_size);
+    m_desc_buffer = alloc_buffer(m_desc_buffer_size_exp, desc_item_size);
 
     // constuct channel exchange object in shared memory
     std::string channel_name =
@@ -42,8 +43,11 @@ public:
         m_desc_buffer, m_desc_buffer_size_exp, desc_item_size);
 
     // initialize flib DMA engine
-    m_flib_link->init_dma(m_data_buffer, m_data_buffer_size_exp, m_desc_buffer,
-                          m_desc_buffer_size_exp);
+    assert(sizeof(T_DESC) == (UINT64_C(1) << 5));
+    assert(sizeof(T_DATA) == (UINT64_C(1) << 0));
+
+    m_flib_link->init_dma(m_data_buffer, m_data_buffer_size_exp - 0,
+                          m_desc_buffer, m_desc_buffer_size_exp - 5);
 
     m_flib_link->set_start_idx(0);
     m_flib_link->enable_readout(true);
@@ -91,11 +95,10 @@ public:
   }
 
 private:
-  void* alloc_buffer(size_t size_exp) {
-    L_(trace) << "allocating shm buffer of " << (UINT64_C(1) << size_exp)
-              << " bytes";
-    return m_shm->allocate_aligned(UINT64_C(1) << size_exp,
-                                   sysconf(_SC_PAGESIZE));
+  void* alloc_buffer(size_t size_exp, size_t item_size) {
+    size_t bytes = (UINT64_C(1) << size_exp) * item_size;
+    L_(trace) << "allocating shm buffer of " << bytes << " bytes";
+    return m_shm->allocate_aligned(bytes, sysconf(_SC_PAGESIZE));
   }
 
   managed_shared_memory* m_shm;
