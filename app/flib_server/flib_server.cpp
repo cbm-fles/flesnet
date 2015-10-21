@@ -31,15 +31,9 @@ int main(int argc, char* argv[]) {
       flib = std::unique_ptr<flib_device>(new flib_device_flesin(0));
     }
 
-    // convert sizes from 'entries' to 'bytes'
-    size_t data_buffer_size_bytes_exp = par.data_buffer_size_exp();
-    constexpr std::size_t microslice_descriptor_size_bytes_exp = 5;
-    size_t desc_buffer_size_bytes_exp =
-        par.desc_buffer_size_exp() + microslice_descriptor_size_bytes_exp;
-
     // create server
-    flib_shm_device_server server(flib.get(), data_buffer_size_bytes_exp,
-                                  desc_buffer_size_bytes_exp, &signal_status);
+    flib_shm_device_server server(flib.get(), par.data_buffer_size_exp(),
+                                  par.desc_buffer_size_exp(), &signal_status);
     server.run();
 
   } catch (std::exception const& e) {
