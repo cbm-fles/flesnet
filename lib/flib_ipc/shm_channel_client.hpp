@@ -84,7 +84,7 @@ public:
   size_t data_buffer_size_exp() { return m_data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
 
-  void i_set_read_index(DualIndex read_index) {
+  virtual void set_read_index(DualIndex read_index) override {
     scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
     m_shm_ch->set_read_index(lock, read_index);
     m_shm_ch->set_req_read_index(lock, true);
@@ -133,7 +133,10 @@ public:
     return ret;
   }
 
-  // InputBufferReadInterface methods
+  virtual DualIndex get_write_index() override {
+    return get_write_index_newer_than(boost::posix_time::milliseconds(100))
+        .first.index;
+  }
 
   virtual RingBufferView<T_DATA>& data_buffer() override {
     return *data_buffer_view_;
@@ -142,19 +145,6 @@ public:
   virtual RingBufferView<T_DESC>& desc_buffer() override {
     return *desc_buffer_view_;
   }
-
-  virtual DualIndex get_write_index() override {
-    return get_write_index_newer_than(boost::posix_time::milliseconds(100))
-        .first.index;
-  }
-
-  virtual void set_read_index(DualIndex new_read_index) override {
-    DualIndex read_index;
-    read_index.data = new_read_index.data & data_buffer_view_->size_mask();
-    read_index.desc = (new_read_index.desc & desc_buffer_view_->size_mask()) *
-                      sizeof(fles::MicrosliceDescriptor);
-    i_set_read_index(read_index);
-  };
 
 private:
   managed_shared_memory* m_shm;

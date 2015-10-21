@@ -28,9 +28,6 @@ public:
         m_data_buffer_size_exp(data_buffer_size_exp),
         m_desc_buffer_size_exp(desc_buffer_size_exp) {
 
-    size_t data_item_size = sizeof(T_DATA);
-    size_t desc_item_size = sizeof(T_DESC);
-
     // allocate buffers
     m_data_buffer = alloc_buffer(m_data_buffer_size_exp, data_item_size);
     m_desc_buffer = alloc_buffer(m_desc_buffer_size_exp, desc_item_size);
@@ -39,12 +36,14 @@ public:
     std::string channel_name =
         "shm_channel_" + boost::lexical_cast<std::string>(m_index);
     m_shm_ch = m_shm->construct<shm_channel>(channel_name.c_str())(
-        m_shm, m_data_buffer, m_data_buffer_size_exp, data_item_size,
-        m_desc_buffer, m_desc_buffer_size_exp, desc_item_size);
+        m_shm, m_data_buffer, m_data_buffer_size_exp, sizeof(T_DATA),
+        m_desc_buffer, m_desc_buffer_size_exp, sizeof(T_DESC));
 
     // initialize flib DMA engine
-    assert(sizeof(T_DESC) == (UINT64_C(1) << 5));
-    assert(sizeof(T_DATA) == (UINT64_C(1) << 0));
+    static_assert(desc_item_size == (UINT64_C(1) << 5),
+                  "incompatible desc_item_size in shm_channel_server");
+    static_assert(data_item_size == (UINT64_C(1) << 0),
+                  "incompatible data_item_size in shm_channel_server");
 
     m_flib_link->init_dma(m_data_buffer, m_data_buffer_size_exp - 0,
                           m_desc_buffer, m_desc_buffer_size_exp - 5);
@@ -74,8 +73,9 @@ public:
       L_(trace) << "updating read_index: data " << read_index.data << " desc "
                 << read_index.desc;
 
-      m_flib_link->channel()->set_sw_read_pointers(read_index.data,
-                                                   read_index.desc);
+      m_flib_link->channel()->set_sw_read_pointers(
+          hw_pointer(read_index.data, m_data_buffer_size_exp, data_item_size),
+          hw_pointer(read_index.desc, m_desc_buffer_size_exp, desc_item_size));
       lock.lock();
     }
 
@@ -95,6 +95,13 @@ public:
   }
 
 private:
+  // Convert index into byte pointer for hardware
+  size_t hw_pointer(size_t index, size_t size_exponent, size_t item_size) {
+    size_t buffer_size = UINT64_C(1) << size_exponent;
+    size_t masked_index = index & (buffer_size - 1);
+    return masked_index * item_size;
+  }
+
   void* alloc_buffer(size_t size_exp, size_t item_size) {
     size_t bytes = (UINT64_C(1) << size_exp) * item_size;
     L_(trace) << "allocating shm buffer of " << bytes << " bytes";
@@ -110,4 +117,6 @@ private:
   void* m_desc_buffer;
   size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
+  constexpr static size_t data_item_size = sizeof(T_DATA);
+  constexpr static size_t desc_item_size = sizeof(T_DESC);
 };
