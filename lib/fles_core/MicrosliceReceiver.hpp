@@ -15,7 +15,7 @@ namespace fles
 
 /**
  * \brief The MicrosliceReceiver class implements a mechanism to receive
- * Microslices from a InputBufferReadInterface object.
+ * Microslices from an InputBufferReadInterface object.
  */
 class MicrosliceReceiver : public MicrosliceSource
 {
