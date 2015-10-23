@@ -1,4 +1,4 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
 #include "RingBufferReadInterface.hpp"
@@ -6,6 +6,7 @@
 #include "Parameters.hpp"
 #include "Sink.hpp"
 #include "shm_device_client.hpp"
+#include "shm_device_provider.hpp"
 #include <memory>
 #include <vector>
 
@@ -27,6 +28,7 @@ private:
 
     std::unique_ptr<InputBufferReadInterface> pattern_generator_;
     std::unique_ptr<flib_shm_device_client> shm_device_;
+    std::unique_ptr<flib_shm_device_provider> output_shm_device_;
     InputBufferReadInterface* data_source_;
 
     std::unique_ptr<fles::MicrosliceSource> source_;

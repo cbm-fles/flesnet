@@ -1,4 +1,4 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
 #include "RingBufferView.hpp"
@@ -7,7 +7,49 @@
 struct DualIndex {
     uint64_t desc;
     uint64_t data;
+
+    DualIndex& operator+=(const DualIndex& other)
+    {
+        desc += other.desc;
+        data += other.data;
+
+        return *this;
+    };
+
+    DualIndex& operator-=(const DualIndex& other)
+    {
+        desc -= other.desc;
+        data -= other.data;
+
+        return *this;
+    };
 };
+
+DualIndex operator+(DualIndex, const DualIndex&);
+DualIndex operator-(DualIndex, const DualIndex&);
+
+bool operator<(const DualIndex&, const DualIndex&);
+bool operator>(const DualIndex&, const DualIndex&);
+
+inline DualIndex operator+(DualIndex lhs, const DualIndex& rhs)
+{
+    return lhs += rhs;
+}
+
+inline DualIndex operator-(DualIndex lhs, const DualIndex& rhs)
+{
+    return lhs -= rhs;
+}
+
+inline bool operator<(const DualIndex& lhs, const DualIndex& rhs)
+{
+    return lhs.desc < rhs.desc && lhs.data < rhs.data;
+}
+
+inline bool operator>(const DualIndex& lhs, const DualIndex& rhs)
+{
+    return lhs.desc > rhs.desc && lhs.data > rhs.data;
+}
 
 /// Abstract FLES data source class.
 template <typename T_DESC, typename T_DATA> class DualRingBufferReadInterface

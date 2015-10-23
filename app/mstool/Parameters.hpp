@@ -1,4 +1,4 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
 #include <stdexcept>
@@ -40,6 +40,8 @@ public:
 
     size_t shared_memory_channel() const { return shared_memory_channel_; }
 
+    std::string output_shm_identifier() const { return output_shm_identifier_; }
+
 private:
     void parse_options(int argc, char* argv[]);
 
@@ -51,4 +53,5 @@ private:
     uint64_t maximum_number_ = UINT64_MAX;
     bool use_shared_memory_ = false;
     size_t shared_memory_channel_ = 0;
+    std::string output_shm_identifier_;
 };

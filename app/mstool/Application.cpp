@@ -1,4 +1,4 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
 #include "EmbeddedPatternGenerator.hpp"
@@ -8,6 +8,7 @@
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
 #include "MicrosliceReceiver.hpp"
+#include "MicrosliceTransmitter.hpp"
 #include "log.hpp"
 #include <iostream>
 
@@ -63,6 +64,22 @@ Application::Application(Parameters const& par) : par_(par)
     if (!par_.output_archive().empty()) {
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
             new fles::MicrosliceOutputArchive(par_.output_archive())));
+    }
+
+    if (!par_.output_shm_identifier().empty()) {
+        L_(info) << "providing output in shared memory: "
+                 << par_.output_shm_identifier();
+
+        constexpr std::size_t desc_buffer_size_exp = 7;  // 128 entries
+        constexpr std::size_t data_buffer_size_exp = 20; // 1 MiB
+
+        output_shm_device_.reset(new flib_shm_device_provider(
+            par_.output_shm_identifier(), 1, data_buffer_size_exp,
+            desc_buffer_size_exp));
+        InputBufferWriteInterface* data_sink =
+            output_shm_device_->channels().at(0);
+        sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
+            new fles::MicrosliceTransmitter(*data_sink)));
     }
 }
 
