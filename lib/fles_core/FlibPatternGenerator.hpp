@@ -47,13 +47,12 @@ public:
         }
     }
 
-    virtual RingBufferView<volatile uint8_t>& data_buffer() override
+    virtual RingBufferView<uint8_t>& data_buffer() override
     {
         return data_buffer_view_;
     }
 
-    virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
-    desc_buffer() override
+    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
     {
         return desc_buffer_view_;
     }
@@ -70,13 +69,13 @@ public:
 
 private:
     /// Input data buffer.
-    RingBuffer<volatile uint8_t> data_buffer_;
+    RingBuffer<uint8_t> data_buffer_;
 
     /// Input descriptor buffer.
-    RingBuffer<volatile fles::MicrosliceDescriptor, true> desc_buffer_;
+    RingBuffer<fles::MicrosliceDescriptor, true> desc_buffer_;
 
-    RingBufferView<volatile uint8_t> data_buffer_view_;
-    RingBufferView<volatile fles::MicrosliceDescriptor> desc_buffer_view_;
+    RingBufferView<uint8_t> data_buffer_view_;
+    RingBufferView<fles::MicrosliceDescriptor> desc_buffer_view_;
 
     /// This node's index in the list of input nodes
     uint64_t input_index_;

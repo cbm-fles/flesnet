@@ -25,23 +25,22 @@ public:
 
     virtual ~FlibHardwareChannel();
 
-    virtual RingBufferView<volatile uint8_t>& data_buffer() override
+    virtual RingBufferView<uint8_t>& data_buffer() override
     {
         return *data_buffer_view_;
     }
 
-    virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
-    desc_buffer() override
+    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
     {
         return *desc_buffer_view_;
     }
 
-    virtual RingBufferView<volatile uint8_t>& data_send_buffer() override
+    virtual RingBufferView<uint8_t>& data_send_buffer() override
     {
         return data_send_buffer_view_;
     }
 
-    virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
+    virtual RingBufferView<fles::MicrosliceDescriptor>&
     desc_send_buffer() override
     {
         return desc_send_buffer_view_;
@@ -70,16 +69,15 @@ public:
     virtual void set_read_index(DualIndex new_read_index) override;
 
 private:
-    std::unique_ptr<RingBufferView<volatile uint8_t>> data_buffer_view_;
-    std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>
+    std::unique_ptr<RingBufferView<uint8_t>> data_buffer_view_;
+    std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor>>
         desc_buffer_view_;
 
-    RingBuffer<volatile uint8_t, true, true> data_send_buffer_;
-    RingBuffer<volatile fles::MicrosliceDescriptor, true, true>
-        desc_send_buffer_;
+    RingBuffer<uint8_t, true, true> data_send_buffer_;
+    RingBuffer<fles::MicrosliceDescriptor, true, true> desc_send_buffer_;
 
-    RingBufferView<volatile uint8_t> data_send_buffer_view_;
-    RingBufferView<volatile fles::MicrosliceDescriptor> desc_send_buffer_view_;
+    RingBufferView<uint8_t> data_send_buffer_view_;
+    RingBufferView<fles::MicrosliceDescriptor> desc_send_buffer_view_;
 
     /// Associated FLIB link class.
     flib::flib_link* flib_link_;

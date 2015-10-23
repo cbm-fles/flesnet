@@ -64,4 +64,4 @@ private:
 };
 
 using flib_shm_device_client =
-    shm_device_client<volatile fles::MicrosliceDescriptor, volatile uint8_t>;
+    shm_device_client<fles::MicrosliceDescriptor, uint8_t>;

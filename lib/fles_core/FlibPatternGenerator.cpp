@@ -75,7 +75,7 @@ void FlibPatternGenerator::produce_data()
                     for (uint64_t i = 0; i < content_bytes;
                          i += sizeof(uint64_t)) {
                         uint64_t data_word = (input_index_ << 48L) | i;
-                        reinterpret_cast<volatile uint64_t&>(
+                        reinterpret_cast<uint64_t&>(
                             data_buffer_.at(write_index.data)) = data_word;
                         write_index.data += sizeof(uint64_t);
                         crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);

@@ -24,26 +24,25 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
         reinterpret_cast<fles::MicrosliceDescriptor*>(
             flib_link_->channel()->desc_buffer());
 
-    data_buffer_view_ = std::unique_ptr<RingBufferView<volatile uint8_t>>(
-        new RingBufferView<volatile uint8_t>(data_buffer,
-                                             data_buffer_size_exp));
+    data_buffer_view_ = std::unique_ptr<RingBufferView<uint8_t>>(
+        new RingBufferView<uint8_t>(data_buffer, data_buffer_size_exp));
     desc_buffer_view_ =
-        std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>(
-            new RingBufferView<volatile fles::MicrosliceDescriptor>(
+        std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor>>(
+            new RingBufferView<fles::MicrosliceDescriptor>(
                 desc_buffer, desc_buffer_size_exp));
 #else
     flib_link_->init_dma(
-        const_cast<void*>(static_cast<volatile void*>(data_send_buffer_.ptr())),
+        const_cast<void*>(static_cast<void*>(data_send_buffer_.ptr())),
         data_buffer_size_exp,
-        const_cast<void*>(static_cast<volatile void*>(desc_send_buffer_.ptr())),
+        const_cast<void*>(static_cast<void*>(desc_send_buffer_.ptr())),
         desc_buffer_bytes_exp);
 
-    data_buffer_view_ = std::unique_ptr<RingBufferView<volatile uint8_t>>(
-        new RingBufferView<volatile uint8_t>(data_send_buffer_.ptr(),
-                                             data_buffer_size_exp));
+    data_buffer_view_ =
+        std::unique_ptr<RingBufferView<uint8_t>>(new RingBufferView<uint8_t>(
+            data_send_buffer_.ptr(), data_buffer_size_exp));
     desc_buffer_view_ =
-        std::unique_ptr<RingBufferView<volatile fles::MicrosliceDescriptor>>(
-            new RingBufferView<volatile fles::MicrosliceDescriptor>(
+        std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor>>(
+            new RingBufferView<fles::MicrosliceDescriptor>(
                 desc_send_buffer_.ptr(), desc_buffer_size_exp));
 #endif
 

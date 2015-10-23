@@ -15,13 +15,12 @@ StorableMicroslice* MicrosliceReceiver::try_get()
     if (data_source_.desc_buffer().at(microslice_index_ + 1).idx >
         previous_desc_idx_) {
 
-        const volatile MicrosliceDescriptor& desc =
+        const MicrosliceDescriptor& desc =
             data_source_.desc_buffer().at(microslice_index_);
 
-        const volatile uint8_t* data_begin =
-            &data_source_.data_buffer().at(desc.offset);
+        const uint8_t* data_begin = &data_source_.data_buffer().at(desc.offset);
 
-        const volatile uint8_t* data_end =
+        const uint8_t* data_end =
             &data_source_.data_buffer().at(desc.offset + desc.size);
 
         StorableMicroslice* sms;
@@ -31,10 +30,9 @@ StorableMicroslice* MicrosliceReceiver::try_get()
                 const_cast<const fles::MicrosliceDescriptor&>(desc),
                 const_cast<const uint8_t*>(data_begin));
         } else {
-            const volatile uint8_t* buffer_begin =
-                data_source_.data_buffer().ptr();
+            const uint8_t* buffer_begin = data_source_.data_buffer().ptr();
 
-            const volatile uint8_t* buffer_end =
+            const uint8_t* buffer_end =
                 buffer_begin + data_source_.data_buffer().bytes();
 
             // copy two segments to vector

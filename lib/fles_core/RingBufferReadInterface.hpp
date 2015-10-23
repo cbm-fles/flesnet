@@ -52,9 +52,7 @@ public:
 };
 
 using InputBufferReadInterface =
-    DualRingBufferReadInterface<volatile fles::MicrosliceDescriptor,
-                                volatile uint8_t>;
+    DualRingBufferReadInterface<fles::MicrosliceDescriptor, uint8_t>;
 
 using InputBufferWriteInterface =
-    DualRingBufferWriteInterface<volatile fles::MicrosliceDescriptor,
-                                 volatile uint8_t>;
+    DualRingBufferWriteInterface<fles::MicrosliceDescriptor, uint8_t>;
