@@ -355,8 +355,6 @@
 		3D94C1C71B67EFB300FEE1EF /* mstool */ = {
 			isa = PBXGroup;
 			children = (
-				3D99DE851BD7964200856451 /* shm_channel_provider.hpp */,
-				3D99DE861BD7964200856451 /* shm_device_provider.hpp */,
 				3D94C1CE1B67F15600FEE1EF /* Application.hpp */,
 				3D94C1CD1B67F15600FEE1EF /* Application.cpp */,
 				3D94C1CF1B67F15600FEE1EF /* main.cpp */,
@@ -424,6 +422,8 @@
 				3D9BCC471B592087007C5C18 /* shm_channel_client.hpp */,
 				3D9BCC481B592087007C5C18 /* shm_device.hpp */,
 				3D9BCC491B592087007C5C18 /* shm_device_client.hpp */,
+				3D99DE851BD7964200856451 /* shm_channel_provider.hpp */,
+				3D99DE861BD7964200856451 /* shm_device_provider.hpp */,
 			);
 			name = flib_ipc;
 			path = ../lib/flib_ipc;
