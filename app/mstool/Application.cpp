@@ -17,7 +17,7 @@ Application::Application(Parameters const& par) : par_(par)
     if (par_.use_shared_memory()) {
         L_(info) << "using shared memory as data source";
 
-        shm_device_.reset(new flib_shm_device_client());
+        shm_device_.reset(new flib_shm_device_client("flib_shared_memory"));
 
         if (par_.shared_memory_channel() < shm_device_->num_channels()) {
             data_source_ =

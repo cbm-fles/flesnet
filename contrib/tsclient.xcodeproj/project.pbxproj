@@ -419,8 +419,8 @@
 			isa = PBXGroup;
 			children = (
 				3D9BCC461B592087007C5C18 /* shm_channel.hpp */,
-				3D9BCC471B592087007C5C18 /* shm_channel_client.hpp */,
 				3D9BCC481B592087007C5C18 /* shm_device.hpp */,
+				3D9BCC471B592087007C5C18 /* shm_channel_client.hpp */,
 				3D9BCC491B592087007C5C18 /* shm_device_client.hpp */,
 				3D99DE851BD7964200856451 /* shm_channel_provider.hpp */,
 				3D99DE861BD7964200856451 /* shm_device_provider.hpp */,

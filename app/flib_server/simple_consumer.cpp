@@ -20,7 +20,7 @@ int main() {
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
-  flib_shm_device_client dev;
+  flib_shm_device_client dev("flib_shared_memory");
 
   auto ch = dev.channels();
 

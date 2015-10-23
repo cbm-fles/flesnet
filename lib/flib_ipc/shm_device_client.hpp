@@ -17,10 +17,10 @@ template <typename T_DESC, typename T_DATA> class shm_device_client {
 public:
   using shm_channel_client_type = shm_channel_client<T_DESC, T_DATA>;
 
-  shm_device_client() {
+  shm_device_client(std::string shm_identifier) {
 
     m_shm = std::unique_ptr<managed_shared_memory>(
-        new managed_shared_memory(open_only, "flib_shared_memory"));
+        new managed_shared_memory(open_only, shm_identifier.c_str()));
 
     // connect to global exchange object
     std::string device_name = "shm_device";
