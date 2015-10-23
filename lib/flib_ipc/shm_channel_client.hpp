@@ -5,7 +5,7 @@
 
 #include "MicrosliceDescriptor.hpp"
 #include "RingBuffer.hpp"
-#include "RingBufferReadInterface.hpp"
+#include "DualRingBuffer.hpp"
 #include "RingBufferView.hpp"
 #include "shm_channel.hpp"
 #include "shm_device.hpp"

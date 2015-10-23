@@ -4,7 +4,7 @@
 #pragma once
 
 #include "shm_channel.hpp"
-#include "RingBufferReadInterface.hpp"
+#include "DualRingBuffer.hpp"
 #include "log.hpp"
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "RingBufferReadInterface.hpp"
+#include "DualRingBuffer.hpp"
 
 #include <cstdint>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>

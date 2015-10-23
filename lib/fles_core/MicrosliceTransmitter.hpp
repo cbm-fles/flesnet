@@ -5,7 +5,7 @@
 
 #include "Sink.hpp"
 #include "Microslice.hpp"
-#include "RingBufferReadInterface.hpp"
+#include "DualRingBuffer.hpp"
 
 namespace fles
 {

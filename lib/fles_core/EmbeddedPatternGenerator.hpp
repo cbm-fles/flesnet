@@ -1,7 +1,7 @@
 // Copyright 2012-2014 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "RingBufferReadInterface.hpp"
+#include "DualRingBuffer.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
 #include "MicrosliceDescriptor.hpp"

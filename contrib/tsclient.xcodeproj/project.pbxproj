@@ -63,7 +63,7 @@
 		3DB470511B8CBC7F0098318E /* PatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470481B8CBC7F0098318E /* PatternChecker.cpp */; };
 		3DB470561B8CC9420098318E /* MicrosliceAnalyzer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470541B8CC9420098318E /* MicrosliceAnalyzer.cpp */; };
 		3DB470571B8CC9420098318E /* MicrosliceAnalyzer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470541B8CC9420098318E /* MicrosliceAnalyzer.cpp */; };
-		3DBE613A1BD7D4FC00AD6A8A /* MicrosliceTransmitter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DBE61371BD7CDF200AD6A8A /* MicrosliceTransmitter.cpp */; settings = {ASSET_TAGS = (); }; };
+		3DBE613A1BD7D4FC00AD6A8A /* MicrosliceTransmitter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DBE61371BD7CDF200AD6A8A /* MicrosliceTransmitter.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -152,7 +152,7 @@
 
 /* Begin PBXFileReference section */
 		3D0248B41B5FE75500AA4811 /* MicrosliceReceiver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceReceiver.cpp; sourceTree = "<group>"; };
-		3D0248B51B5FE75500AA4811 /* MicrosliceReceiver.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceReceiver.hpp; sourceTree = "<group>"; };
+		3D0248B51B5FE75500AA4811 /* MicrosliceReceiver.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = MicrosliceReceiver.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3D06A82C1B56381B0039F5CD /* Benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Benchmark.cpp; sourceTree = "<group>"; };
 		3D06A82D1B56381B0039F5CD /* Benchmark.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Benchmark.hpp; sourceTree = "<group>"; };
 		3D06A8321B56BC2D0039F5CD /* aligned_alloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = aligned_alloc.h; sourceTree = "<group>"; };
@@ -192,18 +192,18 @@
 		3D5D3F2F1B60E2DE00497342 /* test_RingBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_RingBuffer.cpp; sourceTree = "<group>"; };
 		3D94C1C61B67EFB300FEE1EF /* mstool */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mstool; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D94C1CD1B67F15600FEE1EF /* Application.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Application.cpp; sourceTree = "<group>"; };
-		3D94C1CE1B67F15600FEE1EF /* Application.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Application.hpp; sourceTree = "<group>"; };
+		3D94C1CE1B67F15600FEE1EF /* Application.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = Application.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3D94C1CF1B67F15600FEE1EF /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		3D94C1D01B67F15600FEE1EF /* Parameters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Parameters.cpp; sourceTree = "<group>"; };
 		3D94C1D11B67F15600FEE1EF /* Parameters.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Parameters.hpp; sourceTree = "<group>"; };
-		3D99DE851BD7964200856451 /* shm_channel_provider.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_channel_provider.hpp; sourceTree = "<group>"; };
+		3D99DE851BD7964200856451 /* shm_channel_provider.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = shm_channel_provider.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3D99DE861BD7964200856451 /* shm_device_provider.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_device_provider.hpp; sourceTree = "<group>"; };
 		3D9BCC251B591D10007C5C18 /* ChildProcessManager.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ChildProcessManager.hpp; sourceTree = "<group>"; };
-		3D9BCC271B591D10007C5C18 /* RingBufferReadInterface.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RingBufferReadInterface.hpp; sourceTree = "<group>"; };
+		3D9BCC271B591D10007C5C18 /* DualRingBuffer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DualRingBuffer.hpp; sourceTree = "<group>"; };
 		3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EmbeddedPatternGenerator.cpp; sourceTree = "<group>"; };
-		3D9BCC291B591D10007C5C18 /* EmbeddedPatternGenerator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = EmbeddedPatternGenerator.hpp; sourceTree = "<group>"; };
+		3D9BCC291B591D10007C5C18 /* EmbeddedPatternGenerator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = EmbeddedPatternGenerator.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlibPatternGenerator.cpp; sourceTree = "<group>"; };
-		3D9BCC2D1B591D10007C5C18 /* FlibPatternGenerator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FlibPatternGenerator.hpp; sourceTree = "<group>"; };
+		3D9BCC2D1B591D10007C5C18 /* FlibPatternGenerator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = FlibPatternGenerator.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3D9BCC301B591D10007C5C18 /* RingBuffer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RingBuffer.hpp; sourceTree = "<group>"; };
 		3D9BCC311B591D10007C5C18 /* RingBufferView.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RingBufferView.hpp; sourceTree = "<group>"; };
 		3D9BCC321B591D10007C5C18 /* Scheduler.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Scheduler.hpp; sourceTree = "<group>"; };
@@ -212,8 +212,8 @@
 		3D9BCC351B591D10007C5C18 /* Utility.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Utility.hpp; sourceTree = "<group>"; };
 		3D9BCC3F1B591D54007C5C18 /* log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = log.cpp; sourceTree = "<group>"; };
 		3D9BCC401B591D54007C5C18 /* log.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = log.hpp; sourceTree = "<group>"; };
-		3D9BCC461B592087007C5C18 /* shm_channel.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_channel.hpp; sourceTree = "<group>"; };
-		3D9BCC471B592087007C5C18 /* shm_channel_client.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_channel_client.hpp; sourceTree = "<group>"; };
+		3D9BCC461B592087007C5C18 /* shm_channel.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = shm_channel.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		3D9BCC471B592087007C5C18 /* shm_channel_client.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = shm_channel_client.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3D9BCC481B592087007C5C18 /* shm_device.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_device.hpp; sourceTree = "<group>"; };
 		3D9BCC491B592087007C5C18 /* shm_device_client.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_device_client.hpp; sourceTree = "<group>"; };
 		3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlesnetPatternChecker.cpp; sourceTree = "<group>"; };
@@ -227,7 +227,7 @@
 		3DB470541B8CC9420098318E /* MicrosliceAnalyzer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceAnalyzer.cpp; sourceTree = "<group>"; };
 		3DB470551B8CC9420098318E /* MicrosliceAnalyzer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceAnalyzer.hpp; sourceTree = "<group>"; };
 		3DBE61371BD7CDF200AD6A8A /* MicrosliceTransmitter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceTransmitter.cpp; sourceTree = "<group>"; };
-		3DBE61381BD7CDF200AD6A8A /* MicrosliceTransmitter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceTransmitter.hpp; sourceTree = "<group>"; };
+		3DBE61381BD7CDF200AD6A8A /* MicrosliceTransmitter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = MicrosliceTransmitter.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -371,7 +371,6 @@
 			isa = PBXGroup;
 			children = (
 				3D9BCC251B591D10007C5C18 /* ChildProcessManager.hpp */,
-				3D9BCC271B591D10007C5C18 /* RingBufferReadInterface.hpp */,
 				3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */,
 				3D9BCC291B591D10007C5C18 /* EmbeddedPatternGenerator.hpp */,
 				3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */,
@@ -382,6 +381,7 @@
 				3DBE61371BD7CDF200AD6A8A /* MicrosliceTransmitter.cpp */,
 				3D9BCC301B591D10007C5C18 /* RingBuffer.hpp */,
 				3D9BCC311B591D10007C5C18 /* RingBufferView.hpp */,
+				3D9BCC271B591D10007C5C18 /* DualRingBuffer.hpp */,
 				3D9BCC321B591D10007C5C18 /* Scheduler.hpp */,
 				3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */,
 				3D9BCC341B591D10007C5C18 /* ThreadContainer.hpp */,
