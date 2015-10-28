@@ -45,6 +45,7 @@ public:
     shm_ch_ = shm->construct<shm_channel>(channel_name.c_str())(
         shm, data_buffer_raw, data_buffer_size_exp, sizeof(T_DATA),
         desc_buffer_raw, desc_buffer_size_exp, sizeof(T_DESC));
+    set_write_index({0, 0});
 
     // initialize buffer info
     T_DATA* data_buffer = reinterpret_cast<T_DATA*>(data_buffer_raw);
