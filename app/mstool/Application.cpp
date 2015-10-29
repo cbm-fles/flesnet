@@ -9,6 +9,7 @@
 #include "MicrosliceOutputArchive.hpp"
 #include "MicrosliceReceiver.hpp"
 #include "MicrosliceTransmitter.hpp"
+#include "TimesliceDebugger.hpp"
 #include "log.hpp"
 #include <iostream>
 
@@ -61,6 +62,10 @@ Application::Application(Parameters const& par) : par_(par)
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
             new MicrosliceAnalyzer(10000, std::cout, "")));
     }
+
+    if (par_.dump_verbosity > 0)
+        sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
+            new MicrosliceDumper(std::cout, par_.dump_verbosity)));
 
     if (!par_.output_archive.empty()) {
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(

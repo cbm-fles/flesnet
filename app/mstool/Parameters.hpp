@@ -32,6 +32,7 @@ struct Parameters {
 
     // sink selection
     bool analyze = false;
+    size_t dump_verbosity = 0;
     std::string output_shm;
     std::string output_archive;
 };

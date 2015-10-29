@@ -11,35 +11,40 @@ void Parameters::parse_options(int argc, char* argv[])
 {
     unsigned log_level = 2;
 
-    po::options_description desc("Allowed options");
-    auto desc_add = desc.add_options();
+    po::options_description general("General options");
+    auto general_add = general.add_options();
+    general_add("version,V", "print version string");
+    general_add("help,h", "produce help message");
+    general_add("log-level,l", po::value<unsigned>(&log_level),
+                "set the log level (default:2, all:0)");
+    general_add("maximum-number,n", po::value<uint64_t>(&maximum_number),
+                "set the maximum number of microslices to process (default: "
+                "unlimited)");
 
-    // general options
-    desc_add("version,V", "print version string");
-    desc_add("help,h", "produce help message");
-    desc_add("log-level,l", po::value<unsigned>(&log_level),
-             "set the log level (default:2, all:0)");
-    desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number),
-             "set the maximum number of microslices to process (default: "
-             "unlimited)");
+    po::options_description source("Source options");
+    auto source_add = source.add_options();
+    source_add("pattern-generator,p", po::value<uint32_t>(&pattern_generator),
+               "use pattern generator to produce timeslices");
+    source_add("shm-channel,c", po::value<size_t>(&shm_channel),
+               "use given shared memory channel as data source");
+    source_add("input-shm,I", po::value<std::string>(&input_shm),
+               "name of a shared memory to use as data source");
+    source_add("input-archive,i", po::value<std::string>(&input_archive),
+               "name of an input file archive to read");
 
-    // source selection
-    desc_add("pattern-generator,p", po::value<uint32_t>(&pattern_generator),
-             "use pattern generator to produce timeslices");
-    desc_add("shm-channel,c", po::value<size_t>(&shm_channel),
-             "use given shared memory channel as data source");
-    desc_add("input-shm", po::value<std::string>(&input_shm),
-             "name of a shared memory to use as data source");
-    desc_add("input-archive,i", po::value<std::string>(&input_archive),
-             "name of an input file archive to read");
-
-    // sink selection
-    desc_add("analyze,a", po::value<bool>(&analyze)->implicit_value(true),
+    po::options_description sink("Sink options");
+    auto sink_add = sink.add_options();
+    sink_add("analyze,a", po::value<bool>(&analyze)->implicit_value(true),
              "enable/disable pattern check");
-    desc_add("output-shm", po::value<std::string>(&output_shm),
+    sink_add("dump_verbosity,v", po::value<size_t>(&dump_verbosity),
+             "set output debug dump verbosity");
+    sink_add("output-shm,O", po::value<std::string>(&output_shm),
              "name of a shared memory to write to");
-    desc_add("output-archive,o", po::value<std::string>(&output_archive),
+    sink_add("output-archive,o", po::value<std::string>(&output_archive),
              "name of an output file archive to write");
+
+    po::options_description desc;
+    desc.add(general).add(source).add(sink);
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
