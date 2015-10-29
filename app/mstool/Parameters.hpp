@@ -24,14 +24,14 @@ struct Parameters {
     uint64_t maximum_number = UINT64_MAX;
 
     // source selection
-    uint32_t pattern_generator_type = 0;
+    uint32_t pattern_generator = 0;
     bool use_pattern_generator = false;
-    size_t shared_memory_channel = 0;
-    bool use_shared_memory = false;
+    size_t shm_channel = 0;
+    std::string input_shm;
     std::string input_archive;
 
     // sink selection
     bool analyze = false;
+    std::string output_shm;
     std::string output_archive;
-    std::string output_shm_identifier;
 };
