@@ -19,24 +19,24 @@ void Parameters::parse_options(int argc, char* argv[])
     desc_add("help,h", "produce help message");
     desc_add("log-level,l", po::value<unsigned>(&log_level),
              "set the log level (default:2, all:0)");
-    desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number_),
+    desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number),
              "set the maximum number of microslices to process (default: "
              "unlimited)");
 
     // source selection
     desc_add("pattern-generator,p",
-             po::value<uint32_t>(&pattern_generator_type_),
+             po::value<uint32_t>(&pattern_generator_type),
              "use pattern generator to produce timeslices");
-    desc_add("shm-channel,c", po::value<size_t>(&shared_memory_channel_),
+    desc_add("shm-channel,c", po::value<size_t>(&shared_memory_channel),
              "use given shared memory channel as data source");
-    desc_add("input-archive,i", po::value<std::string>(&input_archive_),
+    desc_add("input-archive,i", po::value<std::string>(&input_archive),
              "name of an input file archive to read");
 
     // sink selection
     desc_add("analyze-pattern,a",
-             po::value<bool>(&analyze_)->implicit_value(true),
+             po::value<bool>(&analyze)->implicit_value(true),
              "enable/disable pattern check");
-    desc_add("output-archive,o", po::value<std::string>(&output_archive_),
+    desc_add("output-archive,o", po::value<std::string>(&output_archive),
              "name of an output file archive to write");
 
     po::variables_map vm;
@@ -55,13 +55,8 @@ void Parameters::parse_options(int argc, char* argv[])
 
     logging::add_console(static_cast<severity_level>(log_level));
 
-    if (vm.count("pattern-generator")) {
-        use_pattern_generator_ = true;
-    }
-
-    if (vm.count("shm-channel")) {
-        use_shared_memory_ = true;
-    }
+    use_pattern_generator = vm.count("pattern-generator") != 0;
+    use_shared_memory = vm.count("shm-channel") != 0;
 
     size_t input_sources = vm.count("pattern-generator") +
                            vm.count("input-archive") + vm.count("shm-channel");
