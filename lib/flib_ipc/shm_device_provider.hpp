@@ -39,13 +39,12 @@ public:
 
     // create device exchange object in shared memory
     std::string device_name = "shm_device";
-    shm_dev_ = std::unique_ptr<shm_device>(
-        shm_->construct<shm_device>(device_name.c_str())());
+    shm_dev_ = shm_->construct<shm_device>(device_name.c_str())();
 
     // create channels
     for (size_t i = 0; i < num_channels; ++i) {
       shm_ch_vec_.push_back(std::unique_ptr<shm_channel_provider_type>(
-          new shm_channel_provider_type(shm_.get(), shm_dev_.get(), i,
+          new shm_channel_provider_type(shm_.get(), shm_dev_, i,
                                         data_buffer_size_exp,
                                         desc_buffer_size_exp)));
       shm_dev_->inc_num_channels();
@@ -69,7 +68,7 @@ public:
 private:
   std::string shm_identifier_;
   std::unique_ptr<managed_shared_memory> shm_;
-  std::unique_ptr<shm_device> shm_dev_;
+  shm_device* shm_dev_;
   std::vector<std::unique_ptr<shm_channel_provider_type>> shm_ch_vec_;
 };
 
