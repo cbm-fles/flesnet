@@ -20,13 +20,16 @@ public:
     /// The FlibPatternGenerator constructor.
     FlibPatternGenerator(std::size_t data_buffer_size_exp,
                          std::size_t desc_buffer_size_exp, uint64_t input_index,
-                         uint32_t typical_content_size)
+                         uint32_t typical_content_size,
+                         bool generate_pattern = false,
+                         bool randomize_sizes = false)
         : data_buffer_(data_buffer_size_exp),
           desc_buffer_(desc_buffer_size_exp),
           data_buffer_view_(data_buffer_.ptr(), data_buffer_size_exp),
           desc_buffer_view_(desc_buffer_.ptr(), desc_buffer_size_exp),
-          input_index_(input_index), generate_pattern_(false),
-          typical_content_size_(typical_content_size), randomize_sizes_(false)
+          input_index_(input_index), generate_pattern_(generate_pattern),
+          typical_content_size_(typical_content_size),
+          randomize_sizes_(randomize_sizes)
     {
         producer_thread_ =
             new std::thread(&FlibPatternGenerator::produce_data, this);

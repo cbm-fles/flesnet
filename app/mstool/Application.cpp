@@ -37,12 +37,12 @@ Application::Application(Parameters const& par) : par_(par)
         case 1:
             pattern_generator_.reset(new FlibPatternGenerator(
                 data_buffer_size_exp, desc_buffer_size_exp, 0,
-                typical_content_size));
+                typical_content_size, true, true));
             break;
         case 2:
             pattern_generator_.reset(new EmbeddedPatternGenerator(
                 data_buffer_size_exp, desc_buffer_size_exp, 1,
-                typical_content_size));
+                typical_content_size, true, true));
             break;
         default:
             throw std::runtime_error("pattern generator type not available");
