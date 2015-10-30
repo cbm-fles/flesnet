@@ -2,6 +2,7 @@
 
 #include "Parameters.hpp"
 #include "log.hpp"
+#include "GitRevision.hpp"
 #include <iostream>
 #include <boost/program_options.hpp>
 
@@ -51,12 +52,13 @@ void Parameters::parse_options(int argc, char* argv[])
     po::notify(vm);
 
     if (vm.count("help")) {
+        std::cout << "mstool, git revision " << g_GIT_REVISION << std::endl;
         std::cout << desc << std::endl;
         exit(EXIT_SUCCESS);
     }
 
     if (vm.count("version")) {
-        std::cout << "mstool, version 0.0" << std::endl;
+        std::cout << "mstool, git revision " << g_GIT_REVISION << std::endl;
         exit(EXIT_SUCCESS);
     }
 

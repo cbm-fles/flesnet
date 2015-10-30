@@ -4,7 +4,11 @@ cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
 project(fles)
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+include(GetGitRevisionDescription)
+git_describe(GIT_REVISION "--all" "--tags" "--long" "--always")
+configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
+               "${CMAKE_BINARY_DIR}/config/GitRevision.cpp" @ONLY)
 
 if(DEFINED ENV{SIMPATH})
   message(WARNING "SIMPATH set, using Fairroot external packages in build.")
@@ -27,7 +31,7 @@ if(LIBNUMA AND USE_LIBNUMA)
   add_definitions(-DHAVE_LIBNUMA)
 endif()
 if(USE_LIBNUMA AND NOT LIBNUMA)
-  message(WARNING "libnuma was not found. Building without.")
+  message(STATUS "Library not found: libnuma. Building without.")
 endif()
 
 find_package(Boost 1.54.0 REQUIRED COMPONENTS log serialization thread program_options system unit_test_framework)

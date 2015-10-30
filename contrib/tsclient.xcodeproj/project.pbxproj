@@ -53,6 +53,7 @@
 		3D9BCC381B591D10007C5C18 /* FlibPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */; };
 		3D9BCC3A1B591D10007C5C18 /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
 		3D9BCC421B591D54007C5C18 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC3F1B591D54007C5C18 /* log.cpp */; };
+		3DA36F671BE3775B00B2A25E /* GitRevisionStatic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA36F621BE376E300B2A25E /* GitRevisionStatic.cpp */; };
 		3DB4704A1B8CBC7F0098318E /* FlesnetPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */; };
 		3DB4704B1B8CBC7F0098318E /* FlesnetPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */; };
 		3DB4704C1B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470441B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp */; };
@@ -216,6 +217,8 @@
 		3D9BCC471B592087007C5C18 /* shm_channel_client.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = shm_channel_client.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3D9BCC481B592087007C5C18 /* shm_device.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_device.hpp; sourceTree = "<group>"; };
 		3D9BCC491B592087007C5C18 /* shm_device_client.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_device_client.hpp; sourceTree = "<group>"; };
+		3DA36F611BE376E300B2A25E /* GitRevision.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = GitRevision.hpp; sourceTree = "<group>"; };
+		3DA36F621BE376E300B2A25E /* GitRevisionStatic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GitRevisionStatic.cpp; sourceTree = "<group>"; };
 		3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlesnetPatternChecker.cpp; sourceTree = "<group>"; };
 		3DB470431B8CBC7F0098318E /* FlesnetPatternChecker.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FlesnetPatternChecker.hpp; sourceTree = "<group>"; };
 		3DB470441B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlibLegacyPatternChecker.cpp; sourceTree = "<group>"; };
@@ -304,6 +307,7 @@
 				3D5656F81B42D0870052C86D /* tsclient */,
 				3D5D3F311B60E2E500497342 /* test */,
 				3D94C1C71B67EFB300FEE1EF /* mstool */,
+				3DA36F661BE376FA00B2A25E /* config */,
 				3D462B881B42CC790017047A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -427,6 +431,16 @@
 			);
 			name = flib_ipc;
 			path = ../lib/flib_ipc;
+			sourceTree = "<group>";
+		};
+		3DA36F661BE376FA00B2A25E /* config */ = {
+			isa = PBXGroup;
+			children = (
+				3DA36F611BE376E300B2A25E /* GitRevision.hpp */,
+				3DA36F621BE376E300B2A25E /* GitRevisionStatic.cpp */,
+			);
+			name = config;
+			path = ../config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -656,6 +670,7 @@
 				3DB4704F1B8CBC7F0098318E /* FlibPatternChecker.cpp in Sources */,
 				3D94C1D31B67F15600FEE1EF /* main.cpp in Sources */,
 				3D94C1D21B67F15600FEE1EF /* Application.cpp in Sources */,
+				3DA36F671BE3775B00B2A25E /* GitRevisionStatic.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
