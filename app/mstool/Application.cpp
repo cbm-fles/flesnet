@@ -43,7 +43,7 @@ Application::Application(Parameters const& par) : par_(par)
             break;
         case 2:
             pattern_generator_.reset(new EmbeddedPatternGenerator(
-                data_buffer_size_exp, desc_buffer_size_exp, 1,
+                data_buffer_size_exp, desc_buffer_size_exp, 0,
                 typical_content_size, true, true));
             break;
         default:
