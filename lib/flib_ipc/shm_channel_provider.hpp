@@ -79,6 +79,15 @@ public:
     return *desc_buffer_view_;
   }
 
+  DualIndex get_occupied_size() {
+    scoped_lock<interprocess_mutex> lock(shm_dev_->m_mutex);
+    DualIndex read_index = shm_ch_->read_index(lock);
+    DualIndex write_index = shm_ch_->write_index(lock).index;
+    return write_index - read_index;
+  }
+
+  bool empty() { return get_occupied_size() == DualIndex({0, 0}); }
+
 private:
   shm_device* shm_dev_;
   shm_channel* shm_ch_;

@@ -67,7 +67,7 @@ void Parameters::parse_options(int argc, char* argv[])
     use_pattern_generator = vm.count("pattern-generator") != 0;
 
     size_t input_sources = vm.count("pattern-generator") +
-                           vm.count("input-archive") + vm.count("shm-channel");
+                           vm.count("input-archive") + vm.count("input-shm");
     if (input_sources == 0)
         throw ParametersException("no input source specified");
     if (input_sources > 1)

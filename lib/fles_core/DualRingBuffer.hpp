@@ -51,6 +51,11 @@ inline bool operator>(const DualIndex& lhs, const DualIndex& rhs)
     return lhs.desc > rhs.desc && lhs.data > rhs.data;
 }
 
+inline bool operator==(const DualIndex& lhs, const DualIndex& rhs)
+{
+    return lhs.desc == rhs.desc && lhs.data == rhs.data;
+}
+
 /// Abstract FLES data source class.
 template <typename T_DESC, typename T_DATA> class DualRingBufferReadInterface
 {

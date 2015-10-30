@@ -12,6 +12,8 @@
 #include "TimesliceDebugger.hpp"
 #include "log.hpp"
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 Application::Application(Parameters const& par) : par_(par)
 {
@@ -103,6 +105,12 @@ void Application::run()
         ++count_;
         if (count_ == limit) {
             break;
+        }
+    }
+    if (output_shm_device_) {
+        L_(info) << "waiting until output shared memory is empty";
+        while (!output_shm_device_->channels().at(0)->empty()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 }
