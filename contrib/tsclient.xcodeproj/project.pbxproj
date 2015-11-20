@@ -54,6 +54,8 @@
 		3D9BCC3A1B591D10007C5C18 /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
 		3D9BCC421B591D54007C5C18 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC3F1B591D54007C5C18 /* log.cpp */; };
 		3DA36F671BE3775B00B2A25E /* GitRevisionStatic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA36F621BE376E300B2A25E /* GitRevisionStatic.cpp */; };
+		3DAB45A81BFF10100035925B /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D5657181B42D3E90052C86D /* libfles_ipc.a */; };
+		3DAB45AE1BFF106C0035925B /* test_Filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DAB45981BFF0F560035925B /* test_Filter.cpp */; };
 		3DB4704A1B8CBC7F0098318E /* FlesnetPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */; };
 		3DB4704B1B8CBC7F0098318E /* FlesnetPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */; };
 		3DB4704C1B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB470441B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp */; };
@@ -110,6 +112,13 @@
 			remoteGlobalIDString = 3DA3FE3E1B0206CB008710E2;
 			remoteInfo = fles_ipc;
 		};
+		3DAB459F1BFF10100035925B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3DA3FE3E1B0206CB008710E2;
+			remoteInfo = fles_ipc;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -141,6 +150,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		3D94C1C41B67EFB300FEE1EF /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		3DAB45A91BFF10100035925B /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -219,6 +237,9 @@
 		3D9BCC491B592087007C5C18 /* shm_device_client.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_device_client.hpp; sourceTree = "<group>"; };
 		3DA36F611BE376E300B2A25E /* GitRevision.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = GitRevision.hpp; sourceTree = "<group>"; };
 		3DA36F621BE376E300B2A25E /* GitRevisionStatic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GitRevisionStatic.cpp; sourceTree = "<group>"; };
+		3DAB45981BFF0F560035925B /* test_Filter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_Filter.cpp; sourceTree = "<group>"; };
+		3DAB459C1BFF0F750035925B /* Filter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Filter.hpp; sourceTree = "<group>"; };
+		3DAB45AD1BFF10100035925B /* test_Filter */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_Filter; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DB470421B8CBC7F0098318E /* FlesnetPatternChecker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlesnetPatternChecker.cpp; sourceTree = "<group>"; };
 		3DB470431B8CBC7F0098318E /* FlesnetPatternChecker.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FlesnetPatternChecker.hpp; sourceTree = "<group>"; };
 		3DB470441B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlibLegacyPatternChecker.cpp; sourceTree = "<group>"; };
@@ -262,6 +283,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D94C1D71B67F18F00FEE1EF /* libfles_ipc.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3DAB45A71BFF10100035925B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DAB45A81BFF10100035925B /* libfles_ipc.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -319,6 +348,7 @@
 				3D5D3F191B60E1CE00497342 /* test_RingBuffer */,
 				3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver */,
 				3D94C1C61B67EFB300FEE1EF /* mstool */,
+				3DAB45AD1BFF10100035925B /* test_Filter */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -351,6 +381,7 @@
 			children = (
 				3D5D3F2F1B60E2DE00497342 /* test_RingBuffer.cpp */,
 				3D5D3F2D1B60E2CC00497342 /* test_MicrosliceReceiver.cpp */,
+				3DAB45981BFF0F560035925B /* test_Filter.cpp */,
 			);
 			name = test;
 			path = ../test;
@@ -381,6 +412,7 @@
 				3D0248B41B5FE75500AA4811 /* MicrosliceReceiver.cpp */,
 				3DBE61381BD7CDF200AD6A8A /* MicrosliceTransmitter.hpp */,
 				3DBE61371BD7CDF200AD6A8A /* MicrosliceTransmitter.cpp */,
+				3DAB459C1BFF0F750035925B /* Filter.hpp */,
 				3D9BCC301B591D10007C5C18 /* RingBuffer.hpp */,
 				3D9BCC311B591D10007C5C18 /* RingBufferView.hpp */,
 				3D9BCC271B591D10007C5C18 /* DualRingBuffer.hpp */,
@@ -517,6 +549,24 @@
 			productReference = 3D94C1C61B67EFB300FEE1EF /* mstool */;
 			productType = "com.apple.product-type.tool";
 		};
+		3DAB459D1BFF10100035925B /* test_Filter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3DAB45AA1BFF10100035925B /* Build configuration list for PBXNativeTarget "test_Filter" */;
+			buildPhases = (
+				3DAB45A01BFF10100035925B /* Sources */,
+				3DAB45A71BFF10100035925B /* Frameworks */,
+				3DAB45A91BFF10100035925B /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3DAB459E1BFF10100035925B /* PBXTargetDependency */,
+			);
+			name = test_Filter;
+			productName = test_MicrosliceReceiver.cpp;
+			productReference = 3DAB45AD1BFF10100035925B /* test_Filter */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -562,6 +612,7 @@
 				3D94C1C51B67EFB300FEE1EF /* mstool */,
 				3D5D3F181B60E1CE00497342 /* test_RingBuffer */,
 				3D5D3F251B60E1E800497342 /* test_MicrosliceReceiver */,
+				3DAB459D1BFF10100035925B /* test_Filter */,
 			);
 		};
 /* End PBXProject section */
@@ -674,6 +725,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3DAB45A01BFF10100035925B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DAB45AE1BFF106C0035925B /* test_Filter.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -691,6 +750,11 @@
 			isa = PBXTargetDependency;
 			name = fles_ipc;
 			targetProxy = 3D94C1D51B67F18300FEE1EF /* PBXContainerItemProxy */;
+		};
+		3DAB459E1BFF10100035925B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = fles_ipc;
+			targetProxy = 3DAB459F1BFF10100035925B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -941,6 +1005,30 @@
 			};
 			name = Release;
 		};
+		3DAB45AB1BFF10100035925B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		3DAB45AC1BFF10100035925B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -985,6 +1073,15 @@
 			buildConfigurations = (
 				3D94C1CB1B67EFB300FEE1EF /* Debug */,
 				3D94C1CC1B67EFB300FEE1EF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3DAB45AA1BFF10100035925B /* Build configuration list for PBXNativeTarget "test_Filter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3DAB45AB1BFF10100035925B /* Debug */,
+				3DAB45AC1BFF10100035925B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
