@@ -51,9 +51,11 @@ int main(int argc, char* argv[]) {
       links.at(i)->set_data_sel(flib::flib_link::rx_pgen);
     } else if (par.link(i).source == flim || par.link(i).source == pgen_far) {
       links.at(i)->set_data_sel(flib::flib_link::rx_link);
-      if (links.at(i)->flim_hardware_id() != 0x4844 &&
-          links.at(i)->flim_hardware_id() != 1) {
-        L_(error) << "FLIM not reachable";
+      if (links.at(i)->flim_hardware_id() != 0x4844 ||
+          links.at(i)->flim_hardware_ver() != 2) {
+        L_(error) << "FLIM not reachable or unsupported version";
+        L_(debug) << "FLIM ID  " << std::hex << links.at(i)->flim_hardware_id();
+        L_(debug) << "FLIM VER " << links.at(i)->flim_hardware_ver();
         exit(EXIT_FAILURE);
       }
       links.at(i)->reset_flim();

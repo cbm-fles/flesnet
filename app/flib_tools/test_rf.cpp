@@ -49,8 +49,8 @@ int main() {
   //  uint32_t reg = 0;
   //  uint32_t reg_wr = 0x12340000;
 
-  if (MyFlib->link(link)->flim_hardware_id() != 0x4844 &&
-      MyFlib->link(link)->flim_hardware_id() != 1) {
+  if (MyFlib->link(link)->flim_hardware_id() != 0x4844 ||
+      MyFlib->link(link)->flim_hardware_id() != 2) {
     std::cerr << "FLIM not reachable" << std::endl;
   }
 
