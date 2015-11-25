@@ -11,10 +11,7 @@ namespace flib {
 
 flib_device_flesin::flib_device_flesin(int device_nr) : flib_device(device_nr) {
 
-  if (!check_hw_ver(hw_ver_table_flesin)) {
-    throw FlibException("Hardware - libflib version missmatch!");
-  }
-
+  check_hw_ver(hw_ver_table_flesin);
   // create link objects
   uint8_t num_links = number_of_hw_links();
   for (size_t i = 0; i < num_links; i++) {

@@ -56,7 +56,8 @@ int main() {
 
   std::cout << MyFlim->print_build_info() << std::endl;
   std::cout << "mc index: " << MyFlim->get_mc_idx() << std::endl;
-  std::cout << "mc pending " << MyFlim->get_pgen_mc_pending() << std::endl;
+  std::cout << "mc pending (pgen) " << MyFlim->get_pgen_mc_pending()
+            << std::endl;
 
   // MyFlib->link(link)->reset_datapath();
 
@@ -90,7 +91,8 @@ int main() {
   //  }
 
   std::cout << "mc index: " << MyFlim->get_mc_idx() << std::endl;
-  std::cout << "mc pending " << MyFlim->get_pgen_mc_pending() << std::endl;
+  std::cout << "mc pending (pgen) " << MyFlim->get_pgen_mc_pending()
+            << std::endl;
   MyFlim->set_pgen_enable(false);
   MyFlim->set_ready_for_data(false);
   MyFlim->reset_pgen_mc_pending();
