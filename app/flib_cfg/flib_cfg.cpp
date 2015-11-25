@@ -33,6 +33,7 @@ int main(int argc, char* argv[]) {
   // create FLIB
   flib::flib_device_flesin flib(0);
   std::vector<flib::flib_link_flesin*> links = flib.links();
+  std::vector<std::unique_ptr<flib::flim>> flims;
 
   // FLIB global configuration
   // set even if unused
@@ -51,26 +52,27 @@ int main(int argc, char* argv[]) {
       links.at(i)->set_data_sel(flib::flib_link::rx_pgen);
     } else if (par.link(i).source == flim || par.link(i).source == pgen_far) {
       links.at(i)->set_data_sel(flib::flib_link::rx_link);
-      if (links.at(i)->flim_hardware_id() != 0x4844 ||
-          links.at(i)->flim_hardware_ver() != 2) {
-        L_(error) << "FLIM not reachable or unsupported version";
-        L_(debug) << "FLIM ID  " << std::hex << links.at(i)->flim_hardware_id();
-        L_(debug) << "FLIM VER " << links.at(i)->flim_hardware_ver();
+      // create FLIM
+      try {
+        flims.push_back(
+            std::unique_ptr<flib::flim>(new flib::flim(links.at(i))));
+      } catch (const std::exception& e) {
+        L_(error) << e.what();
         exit(EXIT_FAILURE);
       }
-      links.at(i)->reset_flim();
-      links.at(i)->set_flim_start_idx(0);
+      flims.at(i)->reset();
+      flims.at(i)->set_start_idx(0);
       if (par.link(i).source == flim) {
-        links.at(i)->set_flim_data_source(flib::flib_link_flesin::user);
+        flims.at(i)->set_data_source(flib::flim::user);
       } else { // pgen_far
-        if (!links.at(i)->get_flim_pgen_present()) {
+        if (!flims.at(i)->get_pgen_present()) {
           L_(error) << "FLIM build does not support pgen";
           exit(EXIT_FAILURE);
         }
-        links.at(i)->set_flim_pgen_mc_size(par.mc_size());
-        links.at(i)->set_flim_pgen_rate(par.pgen_rate());
-        links.at(i)->set_flim_pgen_ids(par.link(i).eq_id);
-        links.at(i)->set_flim_data_source(flib::flib_link_flesin::pgen);
+        flims.at(i)->set_pgen_mc_size(par.mc_size());
+        flims.at(i)->set_pgen_rate(par.pgen_rate());
+        flims.at(i)->set_pgen_ids(par.link(i).eq_id);
+        flims.at(i)->set_data_source(flib::flim::pgen);
       }
     }
   }

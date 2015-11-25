@@ -68,7 +68,9 @@ public:
 
   /*** Getter ***/
   size_t link_index() { return m_link_index; };
+  sys_bus_addr base_addr() { return m_base_addr; };
   pda::device* parent_device() { return m_parent_device; };
+  pda::pci_bar* bar() { return m_bar; };
 
   dma_channel* channel() const;
   register_file* register_file_packetizer() const { return m_rfpkt.get(); }
@@ -84,5 +86,6 @@ protected:
 
   sys_bus_addr m_base_addr;
   pda::device* m_parent_device;
+  pda::pci_bar* m_bar;
 };
 }
