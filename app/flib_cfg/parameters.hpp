@@ -98,10 +98,10 @@ private:
         "set the log level (all:0)");
 
     po::options_description config("Configuration (flib.cfg or cmd line)");
-    config.add_options()(
-        "mc-size,t",
-        po::value<uint32_t>(),
-        "global size of microslices in units of 8 ns (31 bit wide)")(
+    config.add_options()("mc-size,t",
+                         po::value<uint32_t>(),
+                         "size of pattern generator microslices in units of "
+                         "1024 ns (31 bit wide)")(
         "pgen-rate,r",
         po::value<float>(),
         "MS fill level of pattern generator in [0,1]")
@@ -187,10 +187,11 @@ private:
         std::cerr << "Microslice size out of range" << std::endl;
         exit(EXIT_FAILURE);
       } else {
-        std::cout << "Microslice size set to " << _mc_size << " * 8 ns.\n";
+        std::cout << "Pgen microslice size set to " << _mc_size * 1024
+                  << " ns.\n";
       }
     } else {
-      std::cout << "Microslice size set to default.\n";
+      std::cout << "Pgen microslice size set to default.\n";
     }
 
     if (vm.count("pgen-rate")) {

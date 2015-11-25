@@ -16,7 +16,7 @@
 
 namespace flib {
 flib_link::flib_link(size_t link_index, pda::device* dev, pda::pci_bar* bar)
-    : m_link_index(link_index), m_parent_device(dev) {
+    : m_link_index(link_index), m_parent_device(dev), m_bar(bar) {
   m_base_addr = (m_link_index + 1) * RORC_CHANNEL_OFFSET;
   // register file access
   m_rfpkt =

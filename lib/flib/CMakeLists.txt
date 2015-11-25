@@ -17,6 +17,7 @@ set(LIB_SRC
   flib_link.cpp
   flib_link_cnet.cpp
   flib_link_flesin.cpp
+  flim.cpp
 )
 set(LIB_HDR
   flib.h
@@ -28,6 +29,7 @@ set(LIB_HDR
   flib_link.hpp
   flib_link_cnet.hpp
   flib_link_flesin.hpp
+  flim.hpp
   register_file.hpp
   register_file_bar.hpp
 )

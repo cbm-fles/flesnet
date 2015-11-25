@@ -24,11 +24,8 @@ flib_device::flib_device(int device_nr) {
   m_register_file =
       std::unique_ptr<register_file_bar>(new register_file_bar(m_bar.get(), 0));
 
-  // enforce correct magic numebr and hw version
-  if (!check_magic_number()) {
-    throw FlibException(
-        "Cannot read magic number! \n Try to reinitialize FLIB.");
-  }
+  // enforce correct magic number
+  check_magic_number();
 }
 
 flib_device::~flib_device() {}
@@ -36,7 +33,6 @@ flib_device::~flib_device() {}
 bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
   uint16_t hw_ver =
       m_register_file->get_reg(0) >> 16; // RORC_REG_HARDWARE_INFO;
-  std::cout << "HW Version: " << hw_ver << std::endl;
   bool match = false;
 
   // check if version of hardware is part of suported versions
@@ -47,12 +43,21 @@ bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
       match = true;
     }
   }
+  if (!match) {
+    std::stringstream msg;
+    msg << "Hardware - libflib version missmatch! HW ver: " << hw_ver;
+    throw FlibException(msg.str());
+  }
 
   // INFO: disabled check to allow 'mixed' hw headers
   // check if version of hardware matches exactly version of header
   // if (hw_ver != RORC_C_HARDWARE_VERSION) {
-  //  std::cout << "header file version missmatch" << std::endl;
   //  match = false;
+  //}
+  // if (!match) {
+  //  std::stringstream msg;
+  //  msg << "Header file version missmatch! HW ver: " << hw_ver;
+  //  throw FlibException(msg.str());
   //}
   return match;
 }
@@ -175,7 +180,12 @@ flib_link* flib_device::link(size_t n) { return m_link.at(n).get(); }
 register_file_bar* flib_device::rf() const { return m_register_file.get(); }
 
 bool flib_device::check_magic_number() {
-  return ((m_register_file->get_reg(0) & 0xFFFF) ==
-          0x4844); // RORC_REG_HARDWARE_INFO
+  // RORC_REG_HARDWARE_INFO
+  if ((m_register_file->get_reg(0) & 0xFFFF) != 0x4844) {
+    std::stringstream msg;
+    msg << "Cannot read magic number! \n Try to reinitialize FLIB";
+    throw FlibException(msg.str());
+  }
+  return true;
 }
 }
