@@ -45,8 +45,10 @@ public:
     static_assert(data_item_size == (UINT64_C(1) << 0),
                   "incompatible data_item_size in shm_channel_server");
 
-    m_flib_link->init_dma(m_data_buffer, m_data_buffer_size_exp - 0,
-                          m_desc_buffer, m_desc_buffer_size_exp - 5);
+    m_flib_link->init_dma(m_data_buffer,
+                          m_data_buffer_size_exp + 0,
+                          m_desc_buffer,
+                          m_desc_buffer_size_exp + 5);
 
     m_flib_link->set_start_idx(0);
     m_flib_link->enable_readout(true);
