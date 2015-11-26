@@ -181,26 +181,28 @@ private:
 
     logging::add_console(static_cast<severity_level>(log_level));
 
+    std::cout << "Global config:" << std::endl;
     if (vm.count("mc-size")) {
       _mc_size = vm["mc-size"].as<uint32_t>();
       if (_mc_size > 2147483647) { // 31 bit check
-        std::cerr << "Microslice size out of range" << std::endl;
+        std::cerr << " Pgen microslice size out of range" << std::endl;
         exit(EXIT_FAILURE);
       } else {
-        std::cout << "Pgen microslice size set to " << _mc_size * 1024
-                  << " ns.\n";
+        std::cout << " Pgen microslice size: "
+                  << human_readable_mc_size(_mc_size) << std::endl;
       }
     } else {
-      std::cout << "Pgen microslice size set to default.\n";
+      std::cout << " Pgen microslice size: " << human_readable_mc_size(_mc_size)
+                << " (default)" << std::endl;
     }
 
     if (vm.count("pgen-rate")) {
       _pgen_rate = vm["pgen-rate"].as<float>();
       if (_pgen_rate < 0 || _pgen_rate > 1) { // range check
-        std::cerr << "Pgen rate out of range" << std::endl;
+        std::cerr << " Pgen rate out of range" << std::endl;
         exit(EXIT_FAILURE);
       } else {
-        std::cout << "Pgen rate set to " << _pgen_rate << "\n";
+        std::cout << " Pgen rate: " << _pgen_rate << "\n";
       }
     }
 
@@ -210,7 +212,18 @@ private:
     } // end loop over links
   }
 
-  uint32_t _mc_size = 125; // 1 us
+  std::string human_readable_mc_size(uint32_t mc_size) {
+    size_t mc_size_ns = mc_size * 1024; // 1024 = hw base unit
+    size_t mc_size_us_int = mc_size_ns / 1000;
+    size_t mc_size_us_frec = mc_size_ns % 1000;
+    double mc_freq_khz = 1.e6 / mc_size_ns;
+    std::stringstream ss;
+    ss << mc_size_us_int << "." << mc_size_us_frec << " us (" << mc_freq_khz
+       << " kHz)";
+    return ss.str();
+  }
+
+  uint32_t _mc_size = 10; // 10,24 us
   float _pgen_rate = 1;
   std::array<struct link_config, _num_flib_links> _links = {};
 };
