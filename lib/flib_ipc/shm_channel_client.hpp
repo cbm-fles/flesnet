@@ -159,3 +159,6 @@ private:
   std::unique_ptr<RingBufferView<T_DATA>> data_buffer_view_;
   std::unique_ptr<RingBufferView<T_DESC>> desc_buffer_view_;
 };
+
+using flib_shm_channel_client =
+    shm_channel_client<fles::MicrosliceDescriptor, uint8_t>;

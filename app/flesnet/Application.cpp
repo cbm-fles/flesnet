@@ -118,7 +118,10 @@ Application::Application(Parameters const& par,
             data_source = own_data_source.get();
             own_data_sources_.push_back(std::move(own_data_source));
         } else if (c < shm_num_channels_) {
-            data_source = shm_device_->channels().at(c);
+            auto own_data_source = std::unique_ptr<InputBufferReadInterface>(
+                new flib_shm_channel_client(shm_device_->shm(), c));
+            data_source = own_data_source.get();
+            own_data_sources_.push_back(std::move(own_data_source));
         } else {
             std::unique_ptr<InputBufferReadInterface> own_data_source;
             if (false) {

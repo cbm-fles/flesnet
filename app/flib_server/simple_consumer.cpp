@@ -3,6 +3,7 @@
 #include <csignal>
 
 #include "shm_device_client.hpp"
+#include "shm_channel_client.hpp"
 
 #include <iostream>
 
@@ -22,7 +23,12 @@ int main() {
 
   flib_shm_device_client dev("flib_shared_memory");
 
-  auto ch = dev.channels();
+  size_t num_channels = dev.num_channels();
+  std::vector<std::unique_ptr<flib_shm_channel_client>> ch;
+  for (size_t i = 0; i < num_channels; ++i) {
+    ch.push_back(std::unique_ptr<flib_shm_channel_client>(
+        new flib_shm_channel_client(dev.shm(), i)));
+  }
 
   cout << dev.num_channels() << endl;
   cout << ch.size() << endl;

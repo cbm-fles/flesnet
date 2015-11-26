@@ -26,10 +26,9 @@ public:
 private:
     Parameters const& par_;
 
-    std::unique_ptr<InputBufferReadInterface> pattern_generator_;
     std::unique_ptr<flib_shm_device_client> shm_device_;
     std::unique_ptr<flib_shm_device_provider> output_shm_device_;
-    InputBufferReadInterface* data_source_;
+    std::unique_ptr<InputBufferReadInterface> data_source_;
 
     std::unique_ptr<fles::MicrosliceSource> source_;
     std::vector<std::unique_ptr<fles::MicrosliceSink>> sinks_;

@@ -17,6 +17,7 @@
 
 Application::Application(Parameters const& par) : par_(par)
 {
+
     // Source setup
     if (!par_.input_shm.empty()) {
         L_(info) << "using shared memory as data source: " << par_.input_shm;
@@ -24,7 +25,9 @@ Application::Application(Parameters const& par) : par_(par)
         shm_device_.reset(new flib_shm_device_client(par_.input_shm));
 
         if (par_.shm_channel < shm_device_->num_channels()) {
-            data_source_ = shm_device_->channels().at(par.shm_channel);
+            data_source_.reset(new flib_shm_channel_client(shm_device_->shm(),
+                                                           par_.shm_channel));
+
         } else {
             throw std::runtime_error("shared memory channel not available");
         }
@@ -37,20 +40,18 @@ Application::Application(Parameters const& par) : par_(par)
 
         switch (par_.pattern_generator) {
         case 1:
-            pattern_generator_.reset(new FlibPatternGenerator(
+            data_source_.reset(new FlibPatternGenerator(
                 data_buffer_size_exp, desc_buffer_size_exp, 0,
                 typical_content_size, true, true));
             break;
         case 2:
-            pattern_generator_.reset(new EmbeddedPatternGenerator(
+            data_source_.reset(new EmbeddedPatternGenerator(
                 data_buffer_size_exp, desc_buffer_size_exp, 0,
                 typical_content_size, true, true));
             break;
         default:
             throw std::runtime_error("pattern generator type not available");
         }
-
-        data_source_ = pattern_generator_.get();
     }
 
     if (data_source_) {
