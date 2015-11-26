@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(archive_exception_test)
 {
     std::string filename("does_not_exist.tsa");
     BOOST_CHECK_THROW(fles::TimesliceInputArchive source(filename),
-                      std::ios_base::failure)
+                      std::ios_base::failure);
 }
 
 BOOST_FIXTURE_TEST_CASE(microslice_access_test, F)
