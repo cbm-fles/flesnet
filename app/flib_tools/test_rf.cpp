@@ -21,6 +21,7 @@
 using namespace flib;
 
 flib_device_flesin* MyFlib = NULL;
+flim* MyFlim = NULL;
 
 int s_interrupted = 0;
 static void s_signal_handler(int signal_value) {
@@ -46,35 +47,28 @@ int main() {
   size_t link = 0;
   int ret = 0;
 
-  //  uint32_t reg = 0;
-  //  uint32_t reg_wr = 0x12340000;
-
-  if (MyFlib->link(link)->flim_hardware_id() != 0x4844 &&
-      MyFlib->link(link)->flim_hardware_id() != 1) {
-    std::cerr << "FLIM not reachable" << std::endl;
-  }
+  MyFlim = new flim(MyFlib->link(link));
 
   // reset at startup
-  MyFlib->link(link)->set_flim_pgen_enable(false);
-  MyFlib->link(link)->set_flim_ready_for_data(false);
-  MyFlib->link(link)->reset_flim_pgen_mc_pending();
+  MyFlim->set_pgen_enable(false);
+  MyFlim->set_ready_for_data(false);
+  MyFlim->reset_pgen_mc_pending();
 
-  std::cout << MyFlib->link(link)->print_flim_build_info() << std::endl;
-  std::cout << "mc index: " << MyFlib->link(link)->get_flim_mc_idx()
-            << std::endl;
-  std::cout << "mc pending " << MyFlib->link(link)->get_flim_pgen_mc_pending()
+  std::cout << MyFlim->print_build_info() << std::endl;
+  std::cout << "mc index: " << MyFlim->get_mc_idx() << std::endl;
+  std::cout << "mc pending (pgen) " << MyFlim->get_pgen_mc_pending()
             << std::endl;
 
   // MyFlib->link(link)->reset_datapath();
 
-  // reg = MyFlib->link(link)->get_testreg();
+  // reg = MyFlim->get_testreg();
   // std::cout << "read  0x" << std::hex << reg << std::endl;
 
   //  while (ret == 0) {
-  //    MyFlib->link(link)->set_testreg(reg_wr);
+  //    MyFlim->set_testreg(reg_wr);
   //    std::cout << "write 0x" << std::hex << reg_wr << std::endl;
   //
-  //    reg = MyFlib->link(link)->get_testreg();
+  //    reg = MyFlim->get_testreg();
   //    std::cout << "read  0x" << std::hex << reg << std::endl;
   //
   //    if (reg_wr != reg) {
@@ -83,26 +77,28 @@ int main() {
   //    ++reg_wr;
   //  }
 
-  MyFlib->link(link)->set_flim_ready_for_data(true);
-  MyFlib->link(link)->set_flim_pgen_enable(true);
+  MyFlim->set_ready_for_data(true);
+  MyFlim->set_pgen_enable(true);
 
   while (s_interrupted == 0) {
-    MyFlib->link(link)->set_flim_debug_out(false);
+    MyFlim->set_debug_out(false);
     ::sleep(1);
-    MyFlib->link(link)->set_flim_debug_out(true);
+    MyFlim->set_debug_out(true);
     ::sleep(1);
   }
   //  while (s_interrupted == 0) {
   //    ::sleep(1);
   //  }
 
-  std::cout << "mc index: " << MyFlib->link(link)->get_flim_mc_idx()
+  std::cout << "mc index: " << MyFlim->get_mc_idx() << std::endl;
+  std::cout << "mc pending (pgen) " << MyFlim->get_pgen_mc_pending()
             << std::endl;
-  std::cout << "mc pending " << MyFlib->link(link)->get_flim_pgen_mc_pending()
-            << std::endl;
-  MyFlib->link(link)->set_flim_pgen_enable(false);
-  MyFlib->link(link)->set_flim_ready_for_data(false);
-  MyFlib->link(link)->reset_flim_pgen_mc_pending();
+  MyFlim->set_pgen_enable(false);
+  MyFlim->set_ready_for_data(false);
+  MyFlim->reset_pgen_mc_pending();
+
+  if (MyFlim)
+    delete MyFlim;
 
   if (MyFlib)
     delete MyFlib;

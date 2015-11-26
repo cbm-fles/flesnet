@@ -14,6 +14,7 @@
 #include <flib_link.hpp>
 #include <flib_link_cnet.hpp>
 #include <flib_link_flesin.hpp>
+#include <flim.hpp>
 #include <register_file.hpp>
 #include <register_file_bar.hpp>
 #include <dma_channel.hpp>

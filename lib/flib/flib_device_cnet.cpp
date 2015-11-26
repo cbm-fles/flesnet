@@ -11,10 +11,7 @@ namespace flib {
 
 flib_device_cnet::flib_device_cnet(int device_nr) : flib_device(device_nr) {
 
-  if (!check_hw_ver(hw_ver_table_cnet)) {
-    throw FlibException("Hardware - libflib version missmatch!");
-  }
-
+  check_hw_ver(hw_ver_table_cnet);
   // create link objects
   uint8_t num_links = number_of_hw_links();
   for (size_t i = 0; i < num_links; i++) {
