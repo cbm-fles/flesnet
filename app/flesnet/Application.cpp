@@ -108,42 +108,36 @@ Application::Application(Parameters const& par,
 
     for (size_t c = 0; c < input_indexes.size(); ++c) {
         unsigned index = input_indexes.at(c);
-        InputBufferReadInterface* data_source;
 
         if (c < flib_links_.size()) {
-            auto own_data_source = std::unique_ptr<InputBufferReadInterface>(
+            data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
                 new FlibHardwareChannel(par.in_data_buffer_size_exp(),
                                         par.in_desc_buffer_size_exp(),
-                                        flib_links_.at(c)));
-            data_source = own_data_source.get();
-            own_data_sources_.push_back(std::move(own_data_source));
+                                        flib_links_.at(c))));
         } else if (c < shm_num_channels_) {
-            auto own_data_source = std::unique_ptr<InputBufferReadInterface>(
-                new flib_shm_channel_client(shm_device_->shm(), c));
-            data_source = own_data_source.get();
-            own_data_sources_.push_back(std::move(own_data_source));
+            data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
+                new flib_shm_channel_client(shm_device_->shm(), c)));
         } else {
-            std::unique_ptr<InputBufferReadInterface> own_data_source;
             if (false) {
-                own_data_source = std::unique_ptr<InputBufferReadInterface>(
-                    new FlibPatternGenerator(par.in_data_buffer_size_exp(),
-                                             par.in_desc_buffer_size_exp(),
-                                             index,
-                                             par.typical_content_size()));
-            } else {
-                own_data_source = std::unique_ptr<InputBufferReadInterface>(
-                    new EmbeddedPatternGenerator(par.in_data_buffer_size_exp(),
+                data_sources_.push_back(
+                    std::unique_ptr<InputBufferReadInterface>(
+                        new FlibPatternGenerator(par.in_data_buffer_size_exp(),
                                                  par.in_desc_buffer_size_exp(),
                                                  index,
-                                                 par.typical_content_size()));
+                                                 par.typical_content_size())));
+            } else {
+                data_sources_.push_back(
+                    std::unique_ptr<InputBufferReadInterface>(
+                        new EmbeddedPatternGenerator(
+                            par.in_data_buffer_size_exp(),
+                            par.in_desc_buffer_size_exp(), index,
+                            par.typical_content_size())));
             }
-            data_source = own_data_source.get();
-            own_data_sources_.push_back(std::move(own_data_source));
         }
 
         std::unique_ptr<InputChannelSender> buffer(new InputChannelSender(
-            index, *data_source, par.compute_nodes(), compute_services,
-            par.timeslice_size(), par.overlap_size(),
+            index, *(data_sources_.at(c).get()), par.compute_nodes(),
+            compute_services, par.timeslice_size(), par.overlap_size(),
             par.max_timeslice_number()));
 
         input_channel_senders_.push_back(std::move(buffer));

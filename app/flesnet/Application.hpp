@@ -42,7 +42,7 @@ private:
     std::unique_ptr<flib_shm_device_client> shm_device_;
     std::size_t shm_num_channels_ = 0;
 
-    std::vector<std::unique_ptr<InputBufferReadInterface>> own_data_sources_;
+    std::vector<std::unique_ptr<InputBufferReadInterface>> data_sources_;
 
     /// The application's connection group / buffer objects
     std::vector<std::unique_ptr<ComputeBuffer>> compute_buffers_;
