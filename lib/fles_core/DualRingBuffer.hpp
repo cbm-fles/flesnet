@@ -31,6 +31,11 @@ DualIndex operator-(DualIndex, const DualIndex&);
 bool operator<(const DualIndex&, const DualIndex&);
 bool operator>(const DualIndex&, const DualIndex&);
 
+bool operator<=(const DualIndex&, const DualIndex&);
+bool operator>=(const DualIndex&, const DualIndex&);
+
+bool operator==(const DualIndex&, const DualIndex&);
+
 inline DualIndex operator+(DualIndex lhs, const DualIndex& rhs)
 {
     return lhs += rhs;
@@ -49,6 +54,16 @@ inline bool operator<(const DualIndex& lhs, const DualIndex& rhs)
 inline bool operator>(const DualIndex& lhs, const DualIndex& rhs)
 {
     return lhs.desc > rhs.desc && lhs.data > rhs.data;
+}
+
+inline bool operator<=(const DualIndex& lhs, const DualIndex& rhs)
+{
+    return lhs.desc <= rhs.desc && lhs.data <= rhs.data;
+}
+
+inline bool operator>=(const DualIndex& lhs, const DualIndex& rhs)
+{
+    return lhs.desc >= rhs.desc && lhs.data >= rhs.data;
 }
 
 inline bool operator==(const DualIndex& lhs, const DualIndex& rhs)
