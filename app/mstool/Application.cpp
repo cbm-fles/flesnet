@@ -35,8 +35,8 @@ Application::Application(Parameters const& par) : par_(par)
         L_(info) << "using pattern generator as data source";
 
         constexpr uint32_t typical_content_size = 10000;
-        constexpr std::size_t desc_buffer_size_exp = 7;  // 128 entries
-        constexpr std::size_t data_buffer_size_exp = 20; // 1 MiB
+        constexpr std::size_t desc_buffer_size_exp = 19; // 512 ki entries
+        constexpr std::size_t data_buffer_size_exp = 27; // 128 MiB
 
         switch (par_.pattern_generator) {
         case 1:
@@ -78,8 +78,8 @@ Application::Application(Parameters const& par) : par_(par)
     if (!par_.output_shm.empty()) {
         L_(info) << "providing output in shared memory: " << par_.output_shm;
 
-        constexpr std::size_t desc_buffer_size_exp = 7;  // 128 entries
-        constexpr std::size_t data_buffer_size_exp = 20; // 1 MiB
+        constexpr std::size_t desc_buffer_size_exp = 19; // 512 ki entries
+        constexpr std::size_t data_buffer_size_exp = 27; // 128 MiB
 
         output_shm_device_.reset(new flib_shm_device_provider(
             par_.output_shm, 1, data_buffer_size_exp, desc_buffer_size_exp));
