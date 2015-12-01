@@ -196,8 +196,8 @@ void Parameters::parse_options(int argc, char* argv[])
         "typical number of content bytes per microslice")(
         "use-flib", po::value<bool>(&use_flib_), "use flib flag")(
         "flib-legacy-mode", po::value<bool>(&flib_legacy_mode_),
-        "use cbmnet flib")("use-shm", po::value<bool>(&use_shared_memory_),
-                           "use shared memory flag")(
+        "use cbmnet flib")("input-shm", po::value<std::string>(&input_shm_),
+                           "name of a shared memory to use as data source")(
         "standalone", po::value<bool>(&standalone_), "standalone mode flag")(
         "max-timeslice-number,n", po::value<uint32_t>(&max_timeslice_number_),
         "global maximum timeslice number")(
@@ -289,10 +289,10 @@ void Parameters::parse_options(int argc, char* argv[])
     if (!compute_nodes_.empty() && processor_executable_.empty())
         throw ParametersException("processor executable not specified");
 
-    if (in_data_buffer_size_exp_ == 0 && !use_shared_memory_) {
+    if (in_data_buffer_size_exp_ == 0 && input_shm().empty()) {
         in_data_buffer_size_exp_ = suggest_in_data_buffer_size_exp();
     }
-    if (in_data_buffer_size_exp_ != 0 && use_shared_memory_) {
+    if (in_data_buffer_size_exp_ != 0 && !input_shm().empty()) {
         L_(warning) << "using shared memory buffers, in_data_buffer_size_exp "
                        "will be ignored";
         in_data_buffer_size_exp_ = 0;
@@ -301,10 +301,10 @@ void Parameters::parse_options(int argc, char* argv[])
     if (cn_data_buffer_size_exp_ == 0)
         cn_data_buffer_size_exp_ = suggest_cn_data_buffer_size_exp();
 
-    if (in_desc_buffer_size_exp_ == 0 && !use_shared_memory_) {
+    if (in_desc_buffer_size_exp_ == 0 && input_shm().empty()) {
         in_desc_buffer_size_exp_ = suggest_in_desc_buffer_size_exp();
     }
-    if (in_desc_buffer_size_exp_ != 0 && use_shared_memory_) {
+    if (in_desc_buffer_size_exp_ != 0 && !input_shm().empty()) {
         L_(warning) << "using shared memory buffers, in_desc_buffer_size_exp "
                        "will be ignored";
         in_desc_buffer_size_exp_ = 0;
@@ -346,7 +346,7 @@ void Parameters::print_buffer_info()
     L_(info) << "timeslice size: (" << timeslice_size_ << " + " << overlap_size_
              << ") microslices";
     L_(info) << "number of timeslices: " << max_timeslice_number_;
-    if (!use_shared_memory_) {
+    if (input_shm().empty()) {
         L_(info) << "input node buffer size: "
                  << human_readable_count(UINT64_C(1)
                                          << in_data_buffer_size_exp_) << " + "

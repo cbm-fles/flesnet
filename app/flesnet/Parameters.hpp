@@ -81,8 +81,8 @@ public:
     /// Retrieve the flib legacy mode flag
     bool flib_legacy_mode() const { return flib_legacy_mode_; }
 
-    /// Retrieve the use shared memory flag.
-    bool use_shared_memory() const { return use_shared_memory_; }
+    /// Retrieve the shared memory identifier.
+    std::string input_shm() const { return input_shm_; }
 
     /// Retrieve the standalone mode flag.
     bool standalone() const { return standalone_; }
@@ -153,8 +153,8 @@ private:
     /// The flib legacy mode flag.
     bool flib_legacy_mode_ = true;
 
-    /// The use shared memory flag.
-    bool use_shared_memory_ = false;
+    // The input shared memory identifier
+    std::string input_shm_;
 
     /// The standalone mode flag.
     bool standalone_ = true;

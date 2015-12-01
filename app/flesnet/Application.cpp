@@ -17,11 +17,10 @@ Application::Application(Parameters const& par,
     std::vector<unsigned> input_indexes = par.input_indexes();
 
     // FIXME: some of this is a terrible mess
-    if (par.use_flib()) {
-        if (par.use_shared_memory()) {
+    if (!par.input_shm().empty()) {
             try {
                 shm_device_ = std::unique_ptr<flib_shm_device_client>(
-                    new flib_shm_device_client("flib_shared_memory"));
+                    new flib_shm_device_client(par.input_shm()));
                 shm_num_channels_ = shm_device_->num_channels();
                 L_(info) << "using shared memory";
 
@@ -35,9 +34,10 @@ Application::Application(Parameters const& par,
                 }
 
             } catch (std::exception const& e) {
-                L_(error) << "exception while creating flib: " << e.what();
+                L_(error) << "exception while connecting to shared memory: "
+                          << e.what();
             }
-        } else {
+    } else if (par.use_flib()) {
             // TODO: presence detection #524
             try {
                 if (par.flib_legacy_mode()) {
@@ -76,7 +76,6 @@ Application::Application(Parameters const& par,
                 L_(error) << "exception while creating flib: " << e.what();
             }
         }
-    }
     // end FIXME
 
     if (par.standalone()) {
