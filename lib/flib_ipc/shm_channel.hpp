@@ -110,7 +110,8 @@ public:
 
   void disconnect(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    m_clients = 0;
+    // TODO: disconnect is disabled to ensure channels are used only once
+    // m_clients = 0;
   }
 
   interprocess_condition m_cond_write_index;
