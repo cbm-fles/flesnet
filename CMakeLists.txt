@@ -2,6 +2,9 @@
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
+#set(CMAKE_C_COMPILER clang)
+#set(CMAKE_CXX_COMPILER clang++)
+
 project(fles)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -19,9 +22,6 @@ if(DEFINED ENV{SIMPATH})
 else()
   find_library(ZMQ_LIBRARIES zmq)
 endif()
-
-#set(CMAKE_C_COMPILER clang)
-#set(CMAKE_CXX_COMPILER clang++)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -msse4.2 -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
 
