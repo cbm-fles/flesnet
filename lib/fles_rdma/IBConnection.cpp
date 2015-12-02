@@ -6,6 +6,8 @@
 #include <netdb.h>
 #include <cstring>
 #include <cassert>
+#include <chrono>
+#include <thread>
 
 IBConnection::IBConnection(struct rdma_event_channel* ec,
                            uint_fast16_t connection_index,
@@ -179,9 +181,11 @@ void IBConnection::on_route_resolved()
     conn_param.retry_count = 7;
     conn_param.private_data = private_data->data();
     conn_param.private_data_len = static_cast<uint8_t>(private_data->size());
+    // TODO: Hack to prevent connection issues when using softiwarp.
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     int err = rdma_connect(cm_id_, &conn_param);
     if (err) {
-        L_(fatal) << "rdma_connect failed: " << strerror(err);
+        L_(fatal) << "rdma_connect failed: " << strerror(errno);
         throw InfinibandException("rdma_connect failed");
     }
 }
