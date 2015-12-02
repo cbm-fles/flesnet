@@ -19,8 +19,8 @@ Application::Application(Parameters const& par,
     // FIXME: some of this is a terrible mess
     if (!par.input_shm().empty()) {
             try {
-                shm_device_ = std::unique_ptr<flib_shm_device_client>(
-                    new flib_shm_device_client(par.input_shm()));
+                shm_device_ =
+                    std::make_shared<flib_shm_device_client>(par.input_shm());
                 shm_num_channels_ = shm_device_->num_channels();
                 L_(info) << "using shared memory";
 
@@ -115,7 +115,7 @@ Application::Application(Parameters const& par,
                                         flib_links_.at(c))));
         } else if (c < shm_num_channels_) {
             data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
-                new flib_shm_channel_client(shm_device_->shm(), c)));
+                new flib_shm_channel_client(shm_device_, c)));
         } else {
             if (false) {
                 data_sources_.push_back(

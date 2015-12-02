@@ -21,16 +21,16 @@ int main() {
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
-  flib_shm_device_client dev("flib_shared_memory");
+  auto dev = make_shared<flib_shm_device_client>("flib_shared_memory");
 
-  size_t num_channels = dev.num_channels();
+  size_t num_channels = dev->num_channels();
   std::vector<std::unique_ptr<flib_shm_channel_client>> ch;
   for (size_t i = 0; i < num_channels; ++i) {
     ch.push_back(std::unique_ptr<flib_shm_channel_client>(
-        new flib_shm_channel_client(dev.shm(), i)));
+        new flib_shm_channel_client(dev, i)));
   }
 
-  cout << dev.num_channels() << endl;
+  cout << dev->num_channels() << endl;
   cout << ch.size() << endl;
 
   //  uint8_t* data_buffer = static_cast<uint8_t*>(ch.at(0)->data_buffer());

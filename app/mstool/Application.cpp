@@ -22,11 +22,11 @@ Application::Application(Parameters const& par) : par_(par)
     if (!par_.input_shm.empty()) {
         L_(info) << "using shared memory as data source: " << par_.input_shm;
 
-        shm_device_.reset(new flib_shm_device_client(par_.input_shm));
+        shm_device_ = std::make_shared<flib_shm_device_client>(par_.input_shm);
 
         if (par_.shm_channel < shm_device_->num_channels()) {
-            data_source_.reset(new flib_shm_channel_client(shm_device_->shm(),
-                                                           par_.shm_channel));
+            data_source_.reset(
+                new flib_shm_channel_client(shm_device_, par_.shm_channel));
 
         } else {
             throw std::runtime_error("shared memory channel not available");

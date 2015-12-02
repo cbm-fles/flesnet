@@ -9,6 +9,7 @@
 #include "RingBufferView.hpp"
 #include "shm_channel.hpp"
 #include "shm_device.hpp"
+#include "shm_device_client.hpp"
 #include "log.hpp"
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -25,7 +26,8 @@ template <typename T_DESC, typename T_DATA>
 class shm_channel_client : public DualRingBufferReadInterface<T_DESC, T_DATA> {
 
 public:
-  shm_channel_client(managed_shared_memory* shm, size_t index) : m_shm(shm) {
+  shm_channel_client(std::shared_ptr<flib_shm_device_client> dev, size_t index)
+      : m_dev(dev), m_shm(dev->shm()) {
 
     // connect to global exchange object
     std::string device_name = "shm_device";
@@ -147,6 +149,7 @@ public:
   }
 
 private:
+  std::shared_ptr<flib_shm_device_client> m_dev;
   managed_shared_memory* m_shm;
   shm_device* m_shm_dev;
 

@@ -39,7 +39,7 @@ private:
     std::unique_ptr<flib::flib_device> flib_;
     std::vector<flib::flib_link*> flib_links_;
 
-    std::unique_ptr<flib_shm_device_client> shm_device_;
+    std::shared_ptr<flib_shm_device_client> shm_device_;
     std::size_t shm_num_channels_ = 0;
 
     std::vector<std::unique_ptr<InputBufferReadInterface>> data_sources_;
