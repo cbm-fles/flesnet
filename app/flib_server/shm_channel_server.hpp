@@ -29,15 +29,29 @@ public:
         m_desc_buffer_size_exp(desc_buffer_size_exp) {
 
     // allocate buffers
-    m_data_buffer = alloc_buffer(m_data_buffer_size_exp, data_item_size);
-    m_desc_buffer = alloc_buffer(m_desc_buffer_size_exp, desc_item_size);
+    void* data_buffer_raw = alloc_buffer(data_buffer_size_exp, data_item_size);
+    void* desc_buffer_raw = alloc_buffer(desc_buffer_size_exp, desc_item_size);
 
     // constuct channel exchange object in shared memory
     std::string channel_name =
         "shm_channel_" + boost::lexical_cast<std::string>(m_index);
     m_shm_ch = m_shm->construct<shm_channel>(channel_name.c_str())(
-        m_shm, m_data_buffer, m_data_buffer_size_exp, sizeof(T_DATA),
-        m_desc_buffer, m_desc_buffer_size_exp, sizeof(T_DESC));
+        m_shm,
+        data_buffer_raw,
+        data_buffer_size_exp,
+        sizeof(T_DATA),
+        desc_buffer_raw,
+        desc_buffer_size_exp,
+        sizeof(T_DESC));
+
+    // initialize buffer info
+    T_DATA* data_buffer = reinterpret_cast<T_DATA*>(data_buffer_raw);
+    T_DESC* desc_buffer = reinterpret_cast<T_DESC*>(desc_buffer_raw);
+
+    m_data_buffer_view = std::unique_ptr<RingBufferView<T_DATA>>(
+        new RingBufferView<T_DATA>(data_buffer, data_buffer_size_exp));
+    m_desc_buffer_view = std::unique_ptr<RingBufferView<T_DESC>>(
+        new RingBufferView<T_DESC>(desc_buffer, desc_buffer_size_exp));
 
     // initialize flib DMA engine
     static_assert(desc_item_size == (UINT64_C(1) << 5),
@@ -45,10 +59,10 @@ public:
     static_assert(data_item_size == (UINT64_C(1) << 0),
                   "incompatible data_item_size in shm_channel_server");
 
-    m_flib_link->init_dma(m_data_buffer,
-                          m_data_buffer_size_exp + 0,
-                          m_desc_buffer,
-                          m_desc_buffer_size_exp + 5);
+    m_flib_link->init_dma(data_buffer_raw,
+                          data_buffer_size_exp + 0,
+                          desc_buffer_raw,
+                          desc_buffer_size_exp + 5);
 
     m_flib_link->set_start_idx(0);
     m_flib_link->enable_readout(true);
@@ -115,8 +129,8 @@ private:
   flib_link* m_flib_link;
 
   shm_channel* m_shm_ch;
-  void* m_data_buffer;
-  void* m_desc_buffer;
+  std::unique_ptr<RingBufferView<T_DATA>> m_data_buffer_view;
+  std::unique_ptr<RingBufferView<T_DESC>> m_desc_buffer_view;
   size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
   constexpr static size_t data_item_size = sizeof(T_DATA);
