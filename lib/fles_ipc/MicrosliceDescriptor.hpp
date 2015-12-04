@@ -71,7 +71,11 @@ enum class HeaderFormatVersion : uint8_t { Standard = 0x01 };
  * This enum defines the bits in the
  * fles::MicrosliceDescriptor::flags word.
  */
-enum class MicrosliceFlags : uint16_t { CrcValid = 0x0001 };
+enum class MicrosliceFlags : uint16_t {
+    CrcValid = 0x0001,     // information in CRC field is valid
+    OverflowFlim = 0x0002, // truncated by FLIM
+    OverflowUser = 0x0004  // truncated by user logic
+};
 
 #pragma pack(1)
 
