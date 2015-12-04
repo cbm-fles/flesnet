@@ -22,7 +22,11 @@ bool FlibPatternChecker::check(const fles::Microslice& m)
         ++flib_pgen_packet_number_;
     }
 
-    if (m.desc().size >= 1) {
+    // Do not check last word size and last word if ms was truncated
+    // Last word check will be skipped because last_word_size = 0
+    if (m.desc().size >= 1 &&
+        !(m.desc().flags &
+          static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim))) {
         last_word_size = m.content()[0];
         if ((m.desc().size & 0x7) != (last_word_size & 0x7)) {
             std::cerr << "Flib pgen: error in last word size" << std::endl;

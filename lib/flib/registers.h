@@ -8,7 +8,7 @@
 #define RORC_C_BUILD_STATUS_CLEAN 1
 #define RORC_C_BUILD_HOST 65646100000000000000000000000000
 #define RORC_C_BUILD_USER 68757474657200000000000000000000
-#define RORC_C_HARDWARE_VERSION 8
+#define RORC_C_HARDWARE_VERSION 21
 #define RORC_CHANNEL_OFFSET 0x00008000
 #define RORC_DMA_CMP_SEL 13
 #define RORC_REG_HARDWARE_INFO 0
@@ -77,6 +77,7 @@
 #define RORC_REG_GTX_MC_GEN_CFG_IDX_H 10
 #define RORC_REG_GTX_MC_INDEX_L 11
 #define RORC_REG_GTX_MC_INDEX_H 12
+#define RORC_REG_GTX_MC_GEN_MAX_MC_WORDS 13  // flesin only
 #define RORC_MEM_BASE_CTRL_TX 16             // cnet only
 #define RORC_MEM_SIZE_CTRL_TX 16             // cnet only
 #define RORC_MEM_BASE_CTRL_RX 32             // cnet only
@@ -116,4 +117,5 @@
 #define RORC_REG_LINK_MC_PGEN_MC_SIZE 24     // flesin only
 #define RORC_REG_LINK_MC_PGEN_IDS 25         // flesin only
 #define RORC_REG_LINK_MC_PGEN_MC_PENDING 26  // flesin only
+#define RORC_REG_LINK_MAX_MC_WORDS 27        // flesin only
 #define RORC_REG_LINK_TEST 31                // flesin only

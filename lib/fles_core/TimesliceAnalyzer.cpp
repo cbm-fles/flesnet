@@ -59,6 +59,12 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
         return false;
     }
 
+    if (m.desc().flags &
+        static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) {
+        out_ << output_prefix_ << " microslice " << m.desc().idx
+             << " tuncated by FLIM" << std::endl;
+    }
+
     return pattern_checkers_.at(component)->check(m);
 }
 

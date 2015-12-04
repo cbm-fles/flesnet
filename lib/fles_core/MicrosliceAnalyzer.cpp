@@ -64,6 +64,12 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
         return false;
     }
 
+    if (ms.desc().flags &
+        static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) {
+        out_ << output_prefix_ << " microslice " << ms.desc().idx
+             << " tuncated by FLIM" << std::endl;
+    }
+
     if (!pattern_checker_->check(ms)) {
         out_ << output_prefix_ << "pattern error in microslice "
              << ms.desc().idx << std::endl;
