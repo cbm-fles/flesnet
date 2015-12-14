@@ -39,6 +39,8 @@ int main(int argc, char* argv[]) {
   // set even if unused
   flib.set_mc_time(par.mc_size());
 
+  L_(debug) << "Tatal FLIB links: " << flib.number_of_links();
+
   // FLIB per link configuration
   for (size_t i = 0; i < flib.number_of_links(); ++i) {
     L_(debug) << "Initializing link " << i;

@@ -6,6 +6,8 @@
  */
 
 #include <arpa/inet.h> // ntohl
+#include <iomanip>
+#include <ctime>
 
 #include <flib_device.hpp>
 #include <flib_link.hpp>
@@ -82,13 +84,12 @@ uint16_t flib_device::hardware_version() {
   // RORC_REG_HARDWARE_INFO
 }
 
-boost::posix_time::ptime flib_device::build_date() {
-  time_t time =
-      (static_cast<time_t>(m_register_file->get_reg(RORC_REG_BUILD_DATE_L)) |
-       (static_cast<uint64_t>(m_register_file->get_reg(RORC_REG_BUILD_DATE_H))
-        << 32));
-  boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
-  return t;
+time_t flib_device::build_date() {
+  time_t time = (static_cast<time_t>(
+      m_register_file->get_reg(RORC_REG_BUILD_DATE_L) |
+      (static_cast<uint64_t>(m_register_file->get_reg(RORC_REG_BUILD_DATE_H))
+       << 32)));
+  return time;
 }
 
 std::string flib_device::build_host() {
@@ -128,8 +129,14 @@ struct build_info_t flib_device::build_info() {
 
 std::string flib_device::print_build_info() {
   build_info_t build = build_info();
+
+  // TODO: hack to overcome gcc limitation, for c++11 use:
+  // std::put_time(std::localtime(&build.date), "%c %Z")
+  char mbstr[100];
+  std::strftime(mbstr, sizeof(mbstr), "%c %Z UTC%z", std::localtime(&build.date));
+
   std::stringstream ss;
-  ss << "Build Date:     " << build.date << " UTC" << std::endl
+  ss << "Build Date:     " << mbstr << std::endl
      << "Build Source:   " << build.user << "@" << build.host << std::endl;
   switch (build.repo) {
   case 1:

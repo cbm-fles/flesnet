@@ -7,7 +7,11 @@
 
 #pragma once
 
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <string>
+#include <array>
+#include <vector>
+#include <memory>
+#include <ctime>
 
 #include <pda/device.hpp>
 #include <pda/pci_bar.hpp>
@@ -19,7 +23,7 @@ class flib_link;
 class register_file_bar;
 
 struct build_info_t {
-  boost::posix_time::ptime date;
+  std::time_t date;
   uint32_t rev[5];
   std::string host;
   std::string user;
@@ -40,7 +44,7 @@ public:
   uint8_t number_of_hw_links();
 
   uint16_t hardware_version();
-  boost::posix_time::ptime build_date();
+  time_t build_date();
   std::string build_host();
   std::string build_user();
   struct build_info_t build_info();
