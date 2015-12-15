@@ -138,6 +138,13 @@ uint64_t dma_channel::get_data_offset() {
   return offset;
 }
 
+// get descriptor count from HW
+uint64_t dma_channel::get_desc_index() {
+  uint64_t index = 0;
+  m_rfpkt->get_mem(RORC_REG_DESC_CNT_L, &index, 2);
+  return index;
+}
+
 /*** MC access funtions ***/
 std::pair<dma_channel::mc_desc_t, bool> dma_channel::mc() {
   dma_channel::mc_desc_t mc;
