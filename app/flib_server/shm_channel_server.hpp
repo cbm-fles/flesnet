@@ -99,8 +99,13 @@ public:
       m_shm_ch->set_req_write_index(lock, false);
       lock.unlock();
       TimedDualIndex write_index;
-      write_index.index.data = m_flib_link->channel()->get_data_offset();
-      write_index.index.desc = m_flib_link->mc_index();
+      write_index.index.desc = m_flib_link->channel()->get_desc_index();
+      write_index.index.data =
+          m_desc_buffer_view->at(write_index.index.desc).offset +
+          m_desc_buffer_view->at(write_index.index.desc).size;
+      // TODO remove when time is used.
+      assert(m_desc_buffer_view->at(write_index.index.desc).idx =
+                 write_index.index.desc);
       write_index.updated = boost::posix_time::microsec_clock::universal_time();
       L_(trace) << "fetching write_index: data " << write_index.index.data
                 << " desc " << write_index.index.desc;
