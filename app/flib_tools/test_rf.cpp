@@ -53,12 +53,15 @@ int main() {
   MyFlim->set_pgen_enable(false);
   MyFlim->set_ready_for_data(false);
   MyFlim->reset_pgen_mc_pending();
+  MyFlim->set_start_idx(0);
 
   std::cout << MyFlim->print_build_info() << std::endl;
-  std::cout << "mc index: " << MyFlim->get_mc_idx() << std::endl;
-  std::cout << "mc pending (pgen) " << MyFlim->get_pgen_mc_pending()
-            << std::endl;
-
+  if (uint32_t mc_idx = MyFlim->get_mc_idx() != 0) {
+    std::cout << "ERROR: mc index (packer) " << mc_idx << std::endl;
+  }
+  if (uint32_t mc_pend = MyFlim->get_pgen_mc_pending() != 0) {
+    std::cout << "ERROR: mc pending (pgen) " << mc_pend << std::endl;
+  }
   // MyFlib->link(link)->reset_datapath();
 
   // reg = MyFlim->get_testreg();
@@ -77,9 +80,11 @@ int main() {
   //    ++reg_wr;
   //  }
 
+  std::cout << "enabling ..." << std::endl;
   MyFlim->set_ready_for_data(true);
   MyFlim->set_pgen_enable(true);
 
+  std::cout << "running ..." << std::endl;
   while (s_interrupted == 0) {
     MyFlim->set_debug_out(false);
     ::sleep(1);
@@ -90,12 +95,20 @@ int main() {
   //    ::sleep(1);
   //  }
 
-  std::cout << "mc index: " << MyFlim->get_mc_idx() << std::endl;
+  std::cout << "mc index (packer) " << MyFlim->get_mc_idx() << std::endl;
   std::cout << "mc pending (pgen) " << MyFlim->get_pgen_mc_pending()
             << std::endl;
+  std::cout << "disabling ..." << std::endl;
   MyFlim->set_pgen_enable(false);
   MyFlim->set_ready_for_data(false);
   MyFlim->reset_pgen_mc_pending();
+  MyFlim->set_start_idx(0);
+  if (uint32_t mc_idx = MyFlim->get_mc_idx() != 0) {
+    std::cout << "ERROR: mc index (packer) " << mc_idx << std::endl;
+  }
+  if (uint32_t mc_pend = MyFlim->get_pgen_mc_pending() != 0) {
+    std::cout << "ERROR: mc pending (pgen) " << mc_pend << std::endl;
+  }
 
   if (MyFlim)
     delete MyFlim;

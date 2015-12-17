@@ -5,6 +5,7 @@
  */
 
 #include <sys/mman.h>
+#include <iostream>
 
 #include <pda/data_structures.hpp>
 #include <register_file_bar.hpp>
@@ -41,6 +42,10 @@ __attribute__((__target__("no-sse"))) int register_file_bar::set_mem(
     // See Intel Software Developer’s Manual Vol. 3A 11-8
     for (size_t i = 0; i < dwords; i++) {
       m_bar[sys_addr + i] = *(static_cast<const uint32_t*>(source) + i);
+      if (false) {
+        std::cout << "BAR write addr " << sys_addr + i << " data "
+                  << static_cast<const uint32_t*>(source)[i] << std::endl;
+      }
     }
     return msync(
         (reinterpret_cast<uint8_t*>(m_bar) + ((sys_addr << 2) & PAGE_MASK)),

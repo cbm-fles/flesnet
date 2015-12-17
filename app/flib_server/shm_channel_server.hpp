@@ -98,19 +98,24 @@ public:
     if (m_shm_ch->req_write_index(lock)) {
       m_shm_ch->set_req_write_index(lock, false);
       lock.unlock();
+      // fill write indices
       TimedDualIndex write_index;
       write_index.index.desc = m_flib_link->channel()->get_desc_index();
       write_index.index.data =
-          m_desc_buffer_view->at(write_index.index.desc).offset +
-          m_desc_buffer_view->at(write_index.index.desc).size;
-      // TODO remove when time is used.
-      assert(m_desc_buffer_view->at(write_index.index.desc).idx =
-                 write_index.index.desc);
+          m_desc_buffer_view->at(write_index.index.desc - 1).offset +
+          m_desc_buffer_view->at(write_index.index.desc - 1).size;
       write_index.updated = boost::posix_time::microsec_clock::universal_time();
       L_(trace) << "fetching write_index: data " << write_index.index.data
                 << " desc " << write_index.index.desc;
-
       lock.lock();
+      // TODO remove when mc_time instead of mc_index is used in desc.
+      if (true) {
+        DualIndex read_index = m_shm_ch->read_index(lock);
+        if (read_index.desc < write_index.index.desc) {
+          assert(m_desc_buffer_view->at(write_index.index.desc - 1).idx ==
+                 write_index.index.desc - 1);
+        }
+      }
       m_shm_ch->set_write_index(lock, write_index);
     }
   }
