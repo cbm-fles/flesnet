@@ -3,6 +3,7 @@ set -e
 
 t=$(tempfile) || exit
 trap "rm -f -- '$t'" EXIT
+echo "flib_server output will be written to $t"
 
 # start a flib_server and wait until shm is initialized
 ./flib_server -l 2 &> $t  &
