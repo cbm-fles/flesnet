@@ -12,7 +12,7 @@
 
 namespace flib {
 
-constexpr std::array<uint16_t, 1> hw_ver_table_cnet = {{8}};
+constexpr std::array<uint16_t, 1> hw_ver_table_cnet = {{9}};
 
 class flib_device_cnet : public flib_device {
 
