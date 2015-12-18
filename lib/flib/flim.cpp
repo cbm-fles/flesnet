@@ -7,6 +7,7 @@
 #include <cassert>
 #include <memory>
 #include <arpa/inet.h> // ntohl
+#include <iomanip>
 
 #include <flim.hpp>
 
@@ -118,13 +119,12 @@ uint16_t flim::hardware_id() {
   // RORC_REG_LINK_FLIM_HW_INFO
 }
 
-boost::posix_time::ptime flim::build_date() {
-  time_t time =
-      (static_cast<time_t>(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_DATE_L)) |
-       (static_cast<uint64_t>(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_DATE_H))
-        << 32));
-  boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
-  return t;
+time_t flim::build_date() {
+  time_t time = (static_cast<time_t>(
+      m_rfflim->get_reg(RORC_REG_FLIM_BUILD_DATE_L) |
+      (static_cast<uint64_t>(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_DATE_H))
+       << 32)));
+  return time;
 }
 
 std::string flim::build_host() {
@@ -164,8 +164,15 @@ flim::build_info_t flim::build_info() {
 
 std::string flim::print_build_info() {
   flim::build_info_t build = build_info();
+
+  // TODO: hack to overcome gcc limitation, for c++11 use:
+  // std::put_time(std::localtime(&build.date), "%c %Z")
+  char mbstr[100];
+  std::strftime(
+      mbstr, sizeof(mbstr), "%c %Z UTC%z", std::localtime(&build.date));
+
   std::stringstream ss;
-  ss << "Build Date:     " << build.date << " UTC" << std::endl
+  ss << "FLIM Info:" << std::endl << "Build Date:     " << mbstr << std::endl
      << "Build Source:   " << build.user << "@" << build.host << std::endl;
   switch (build.repo) {
   case 1:

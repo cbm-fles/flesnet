@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <ctime>
 
 #include <flib_link_flesin.hpp>
 
@@ -45,7 +45,7 @@ public:
   void set_debug_out(bool enable);
 
   struct build_info_t {
-    boost::posix_time::ptime date;
+    time_t date;
     uint32_t rev[5];
     std::string host;
     std::string user;
@@ -56,7 +56,7 @@ public:
 
   uint16_t hardware_ver();
   uint16_t hardware_id();
-  boost::posix_time::ptime build_date();
+  time_t build_date();
   std::string build_host();
   std::string build_user();
   struct build_info_t build_info();
