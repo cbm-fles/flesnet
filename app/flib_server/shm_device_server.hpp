@@ -60,7 +60,10 @@ public:
     size_t idx = 0;
     for (flib_link* link : flib_links) {
       m_shm_ch_vec.push_back(std::unique_ptr<shm_channel_server_type>(
-          new shm_channel_server_type(m_shm.get(), idx, link,
+          new shm_channel_server_type(m_shm.get(),
+                                      m_shm_dev,
+                                      idx,
+                                      link,
                                       data_buffer_size_exp,
                                       desc_buffer_size_exp)));
       ++idx;

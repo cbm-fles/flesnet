@@ -11,6 +11,7 @@
 #include "log.hpp"
 #include "flib_link.hpp"
 
+#include "shm_device.hpp"
 #include "shm_channel.hpp"
 
 using namespace boost::interprocess;
@@ -20,11 +21,12 @@ template <typename T_DESC, typename T_DATA> class shm_channel_server {
 
 public:
   shm_channel_server(managed_shared_memory* shm,
+                     shm_device* shm_dev,
                      size_t index,
                      flib_link* flib_link,
                      size_t data_buffer_size_exp,
                      size_t desc_buffer_size_exp)
-      : m_shm(shm), m_index(index), m_flib_link(flib_link),
+      : m_shm(shm), m_shm_dev(shm_dev), m_index(index), m_flib_link(flib_link),
         m_data_buffer_size_exp(data_buffer_size_exp),
         m_desc_buffer_size_exp(desc_buffer_size_exp) {
 
@@ -69,6 +71,13 @@ public:
   }
 
   ~shm_channel_server() {
+    try {
+      scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+      update_write_index(lock);
+      m_shm_ch->set_eof(lock, true);
+    } catch (interprocess_exception const& e) {
+      L_(error) << "Failed to disconnect device: " << e.what();
+    }
     m_flib_link->deinit_dma();
     // TODO destroy channel object and deallocate buffers if it is worth to do
   }
@@ -96,6 +105,12 @@ public:
     }
 
     if (m_shm_ch->req_write_index(lock)) {
+      update_write_index(lock);
+    }
+  }
+
+private:
+  void update_write_index(scoped_lock<interprocess_mutex>& lock) {
       m_shm_ch->set_req_write_index(lock, false);
       lock.unlock();
       // fill write indices
@@ -117,10 +132,8 @@ public:
         }
       }
       m_shm_ch->set_write_index(lock, write_index);
-    }
   }
 
-private:
   // Convert index into byte pointer for hardware
   size_t hw_pointer(size_t index, size_t size_exponent, size_t item_size) {
     size_t buffer_size = UINT64_C(1) << size_exponent;
@@ -135,6 +148,7 @@ private:
   }
 
   managed_shared_memory* m_shm;
+  shm_device* m_shm_dev;
   size_t m_index;
   flib_link* m_flib_link;
 
