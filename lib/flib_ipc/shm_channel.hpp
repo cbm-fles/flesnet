@@ -98,6 +98,16 @@ public:
     m_read_index = read_index;
   }
 
+  bool eof(scoped_lock<interprocess_mutex>& lock) {
+    assert(lock);
+    return m_eof;
+  }
+
+  void set_eof(scoped_lock<interprocess_mutex>& lock, bool eof) {
+    assert(lock);
+    m_eof = eof;
+  }
+
   bool connect(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
     if (m_clients != 0) {
@@ -136,6 +146,8 @@ private:
 
   DualIndex m_read_index{0, 0}; // INFO not actual hw value
   TimedDualIndex m_write_index{{0, 0}, boost::posix_time::neg_infin};
+
+  bool m_eof = false;
 
   size_t m_clients = 0;
 };
