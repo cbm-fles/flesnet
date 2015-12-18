@@ -76,7 +76,7 @@ public:
       update_write_index(lock);
       m_shm_ch->set_eof(lock, true);
     } catch (interprocess_exception const& e) {
-      L_(error) << "Failed to disconnect device: " << e.what();
+      L_(error) << "Failed to shut down channel: " << e.what();
     }
     m_flib_link->deinit_dma();
     // TODO destroy channel object and deallocate buffers if it is worth to do
