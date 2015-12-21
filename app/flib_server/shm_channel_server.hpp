@@ -65,6 +65,7 @@ public:
                           data_buffer_size_exp + 0,
                           desc_buffer_raw,
                           desc_buffer_size_exp + 5);
+    m_dma_transfer_size = m_flib_link->channel()->dma_transfer_size();
 
     m_flib_link->set_start_idx(0);
     m_flib_link->enable_readout(true);
@@ -99,7 +100,10 @@ public:
                 << read_index.desc;
 
       m_flib_link->channel()->set_sw_read_pointers(
-          hw_pointer(read_index.data, m_data_buffer_size_exp, data_item_size),
+          hw_pointer(read_index.data,
+                     m_data_buffer_size_exp,
+                     data_item_size,
+                     m_dma_transfer_size),
           hw_pointer(read_index.desc, m_desc_buffer_size_exp, desc_item_size));
       lock.lock();
     }
@@ -141,6 +145,16 @@ private:
     return masked_index * item_size;
   }
 
+  // Convert index into byte pointer and round to dma_size
+  size_t hw_pointer(size_t index,
+                    size_t size_exponent,
+                    size_t item_size,
+                    size_t dma_size) {
+    size_t byte_index = hw_pointer(index, size_exponent, item_size);
+    // will hang one transfer size behind
+    return byte_index & ~(dma_size - 1);
+  }
+
   void* alloc_buffer(size_t size_exp, size_t item_size) {
     size_t bytes = (UINT64_C(1) << size_exp) * item_size;
     L_(trace) << "allocating shm buffer of " << bytes << " bytes";
@@ -151,6 +165,7 @@ private:
   shm_device* m_shm_dev;
   size_t m_index;
   flib_link* m_flib_link;
+  size_t m_dma_transfer_size;
 
   shm_channel* m_shm_ch;
   std::unique_ptr<RingBufferView<T_DATA>> m_data_buffer_view;

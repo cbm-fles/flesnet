@@ -76,6 +76,8 @@ public:
 
   void reset_fifo(bool enable);
 
+  size_t dma_transfer_size() { return m_dma_transfer_size; }
+
 private:
   enum sg_bram_t { data_sg_bram = 0, desc_sg_bram = 1 };
 
