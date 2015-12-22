@@ -173,9 +173,10 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
     uint64_t desc_offset = timeslice * timeslice_size_;
     uint64_t desc_length = timeslice_size_ + overlap_size_;
 
-    // check if last microslice has really been written to memory
-    if (data_source_.desc_buffer().at(desc_offset + desc_length).idx >
-        previous_desc_idx_) {
+    if (write_index_desc_ <= desc_offset + desc_length) {
+        write_index_desc_ = data_source_.get_write_index().desc;
+    }
+    if (write_index_desc_ > desc_offset + desc_length) {
 
         uint64_t data_offset =
             data_source_.desc_buffer().at(desc_offset).offset;
@@ -205,9 +206,6 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
         total_length += skip;
 
         if (conn_[cn]->check_for_buffer_space(total_length, 1)) {
-
-            previous_desc_idx_ =
-                data_source_.desc_buffer().at(desc_offset + desc_length).idx;
 
             post_send_data(timeslice, cn, desc_offset, desc_length, data_offset,
                            data_length, skip);

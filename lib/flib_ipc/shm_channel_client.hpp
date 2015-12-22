@@ -136,7 +136,7 @@ public:
   }
 
   virtual DualIndex get_write_index() override {
-    return get_write_index_newer_than(boost::posix_time::milliseconds(100))
+    return get_write_index_newer_than(boost::posix_time::milliseconds(10))
         .first.index;
   }
 

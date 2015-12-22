@@ -50,7 +50,7 @@ private:
     /// Data source (e.g., FLIB).
     InputBufferReadInterface& data_source_;
 
-    uint64_t microslice_index_ = 0;
-    uint64_t previous_desc_idx_ = 0;
+    uint64_t write_index_desc_ = 0;
+    uint64_t read_index_desc_ = 0;
 };
 }
