@@ -25,7 +25,7 @@ device::device(int32_t device_index) {
       NULL         /* Delimiter*/
   };
 
-  if ((m_dop = DeviceOperator_new(pci_ids)) == NULL) {
+  if ((m_dop = DeviceOperator_new(pci_ids, PDA_ENUMERATE_DEVICES)) == NULL) {
     throw PdaException("Device operator instantiation failed.");
   }
 
