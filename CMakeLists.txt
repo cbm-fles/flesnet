@@ -50,7 +50,7 @@ unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 add_subdirectory(doc)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  find_package(PDA 10.2.6 REQUIRED)
+  find_package(PDA 11.0.7 REQUIRED)
 
   add_subdirectory(lib/fles_rdma)
   add_subdirectory(lib/fles_flib)
