@@ -3,7 +3,7 @@
 set -e
 set -u
 
-PDA_VERSION="10.2.6"
+PDA_VERSION="11.0.7"
 USER_NAME=`id -u -n`
 
 getdeps()
@@ -16,9 +16,9 @@ install()
   rm -rf /tmp/pda-$1*
 
   cd /tmp
-  wget http://compeng.uni-frankfurt.de/fileadmin/Images/pda/pda-$1.tar.gz
-  tar -xf pda-$1.tar.gz
-  rm -f pda-$1.tar.gz
+  wget https://github.com/cbm-fles/pda/archive/$1.tar.gz
+  tar -xf $1.tar.gz
+  rm -f $1.tar.gz
 
   cd /tmp/pda-$1
   mkdir -p /opt/pda/
