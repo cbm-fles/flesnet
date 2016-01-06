@@ -173,10 +173,10 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
     uint64_t desc_offset = timeslice * timeslice_size_;
     uint64_t desc_length = timeslice_size_ + overlap_size_;
 
-    if (write_index_desc_ <= desc_offset + desc_length) {
+    if (write_index_desc_ < desc_offset + desc_length) {
         write_index_desc_ = data_source_.get_write_index().desc;
     }
-    if (write_index_desc_ > desc_offset + desc_length) {
+    if (write_index_desc_ >= desc_offset + desc_length) {
 
         uint64_t data_offset =
             data_source_.desc_buffer().at(desc_offset).offset;
