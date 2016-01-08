@@ -12,11 +12,14 @@ MicrosliceReceiver::MicrosliceReceiver(InputBufferReadInterface& data_source)
 
 StorableMicroslice* MicrosliceReceiver::try_get()
 {
-    if (data_source_.desc_buffer().at(microslice_index_ + 1).idx >
-        previous_desc_idx_) {
+    // update write_index if needed
+    if (write_index_desc_ <= read_index_desc_) {
+        write_index_desc_ = data_source_.get_write_index().desc;
+    }
+    if (write_index_desc_ > read_index_desc_) {
 
         const MicrosliceDescriptor& desc =
-            data_source_.desc_buffer().at(microslice_index_);
+            data_source_.desc_buffer().at(read_index_desc_);
 
         const uint8_t* data_begin = &data_source_.data_buffer().at(desc.offset);
 
@@ -46,14 +49,11 @@ StorableMicroslice* MicrosliceReceiver::try_get()
                 const_cast<const fles::MicrosliceDescriptor&>(desc), data);
         }
 
-        ++microslice_index_;
-
-        previous_desc_idx_ =
-            data_source_.desc_buffer().at(microslice_index_).idx;
+        ++read_index_desc_;
 
         data_source_.set_read_index(
-            {microslice_index_,
-             data_source_.desc_buffer().at(microslice_index_).offset});
+            {read_index_desc_,
+             data_source_.desc_buffer().at(read_index_desc_).offset});
 
         return sms;
     }
