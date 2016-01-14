@@ -62,19 +62,19 @@ int main(int argc, char* argv[]) {
         L_(error) << e.what();
         exit(EXIT_FAILURE);
       }
-      flims.at(i)->reset();
-      flims.at(i)->set_start_idx(0);
+      flims.back()->reset();
+      flims.back()->set_start_idx(0);
       if (par.link(i).source == flim) {
-        flims.at(i)->set_data_source(flib::flim::user);
+        flims.back()->set_data_source(flib::flim::user);
       } else { // pgen_far
-        if (!flims.at(i)->get_pgen_present()) {
+        if (!flims.back()->get_pgen_present()) {
           L_(error) << "FLIM build does not support pgen";
           exit(EXIT_FAILURE);
         }
-        flims.at(i)->set_pgen_mc_size(par.mc_size());
-        flims.at(i)->set_pgen_rate(par.pgen_rate());
-        flims.at(i)->set_pgen_ids(par.link(i).eq_id);
-        flims.at(i)->set_data_source(flib::flim::pgen);
+        flims.back()->set_pgen_mc_size(par.mc_size());
+        flims.back()->set_pgen_rate(par.pgen_rate());
+        flims.back()->set_pgen_ids(par.link(i).eq_id);
+        flims.back()->set_data_source(flib::flim::pgen);
       }
     }
   }
