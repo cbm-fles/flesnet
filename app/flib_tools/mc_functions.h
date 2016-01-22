@@ -25,7 +25,7 @@ void dump_report(volatile struct fles::MicrosliceDescriptor* rb) {
          " flags   %04x\n"
          " sys id  %02x\n"
          " sys ver %02x\n"
-         " idx     %016lx\n"
+         " start   %016lx\n"
          " crc     %08x\n"
          " size    %08x\n"
          " offset  %016lx\n",
@@ -36,7 +36,7 @@ void dump_report(volatile struct fles::MicrosliceDescriptor* rb) {
          rb->flags,
          rb->sys_id,
          rb->sys_ver,
-         rb->idx,
+         rb->start,
          rb->crc,
          rb->size,
          rb->offset);
@@ -102,7 +102,7 @@ int process_mc(dma_channel::mc_desc_t* mc) {
     uint16_t flags;  // "Status and error flags"
     uint8_t sys_id;  // "Subsystem identifier"
     uint8_t sys_ver; // "Subsystem format version"
-    uint64_t idx;    // "Microslice index"
+    uint64_t start;  // "Microslice start time"
   };
 
   uint32_t mc_size = mc->size; // bytes

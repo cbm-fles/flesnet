@@ -59,13 +59,13 @@ std::ostream& TimesliceDump::write_to_stream(std::ostream& s) const
 
 std::ostream& MicrosliceDescriptorDump::write_to_stream(std::ostream& s) const
 {
-    s << "hi hv eqid flag si sv idx              crc      size     offset\n";
+    s << "hi hv eqid flag si sv start            crc      size     offset\n";
     s << boost::format(
              "%02x %02x %04x %04x %02x %02x %016lx %08x %08x %016lx\n") %
              static_cast<unsigned int>(md.hdr_id) %
              static_cast<unsigned int>(md.hdr_ver) % md.eq_id % md.flags %
              static_cast<unsigned int>(md.sys_id) %
-             static_cast<unsigned int>(md.sys_ver) % md.idx % md.crc % md.size %
+             static_cast<unsigned int>(md.sys_ver) % md.start % md.crc % md.size %
              md.offset;
 
     return s;
