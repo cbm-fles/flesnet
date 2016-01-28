@@ -49,34 +49,54 @@ void MicrosliceAnalyzer::initialize(const fles::Microslice& ms)
 
 bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
 {
+    bool result = true;
+
     if (microslice_count_ == 0) {
         initialize(ms);
+        out_ << output_prefix_ << " start=" << ms.desc().start << std::endl;
+    } else if (microslice_count_ == 1) {
+        reference_delta_t_ = ms.desc().start - previous_start_;
+        out_ << output_prefix_ << " delta_t=" << reference_delta_t_
+             << std::endl;
+    } else {
+        uint64_t delta_t = ms.desc().start - previous_start_;
+        if (delta_t != reference_delta_t_) {
+            out_ << output_prefix_ << " delta_t=" << delta_t
+                 << " in microslice " << microslice_count_ << std::endl;
+            result = false;
+        }
     }
-
-    ++microslice_count_;
-    content_bytes_ += ms.desc().size;
 
     if (ms.desc().flags &
         static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) {
-        out_ << output_prefix_ << " microslice at " << ms.desc().start
-             << " truncated by FLIM" << std::endl;
+        out_ << output_prefix_ << " data truncated by FLIM in microslice "
+             << microslice_count_ << std::endl;
+        ++microslice_truncated_count_;
     }
 
     if (!pattern_checker_->check(ms)) {
-        out_ << output_prefix_ << "pattern error in microslice at "
-             << ms.desc().start << std::endl;
-        return false;
+        out_ << output_prefix_ << "pattern error in microslice "
+             << microslice_count_ << std::endl;
+        result = false;
     }
 
     if (ms.desc().flags &
             static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
         check_crc(ms) == false) {
-        out_ << output_prefix_ << "crc failure in microslice at "
-             << ms.desc().start << std::endl;
-        return false;
+        out_ << output_prefix_ << "crc failure in microslice "
+             << microslice_count_ << std::endl;
+        result = false;
     }
 
-    return true;
+    if (!result) {
+        ++microslice_error_count_;
+    }
+
+    ++microslice_count_;
+    content_bytes_ += ms.desc().size;
+    previous_start_ = ms.desc().start;
+
+    return result;
 }
 
 std::string MicrosliceAnalyzer::statistics() const
@@ -84,6 +104,9 @@ std::string MicrosliceAnalyzer::statistics() const
     std::stringstream s;
     s << "microslices checked: " << microslice_count_ << " ("
       << human_readable_count(content_bytes_) << ")";
+    if (microslice_error_count_ > 0) {
+        s << " [" << microslice_error_count_ << " errors]";
+    }
     return s.str();
 }
 
