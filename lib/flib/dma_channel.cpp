@@ -145,6 +145,8 @@ uint64_t dma_channel::get_desc_index() {
   return index;
 }
 
+// disabled, not applicable when using start time instead of microslice index
+#if 0
 /*** MC access funtions ***/
 std::pair<dma_channel::mc_desc_t, bool> dma_channel::mc() {
   dma_channel::mc_desc_t mc;
@@ -171,6 +173,7 @@ std::pair<dma_channel::mc_desc_t, bool> dma_channel::mc() {
 
   return std::make_pair(mc, false);
 }
+#endif
 
 int dma_channel::ack_mc() {
 
