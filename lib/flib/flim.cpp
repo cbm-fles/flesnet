@@ -33,7 +33,10 @@ flim::~flim() {}
 
 //////*** FLIM Configuration and Status***//////
 
-void flim::reset() { m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 2, true); }
+void flim::reset_datapath() {
+  m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 2, true);
+  m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 2, false);
+}
 
 void flim::set_ready_for_data(bool enable) {
   m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 0, enable);

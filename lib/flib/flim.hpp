@@ -26,7 +26,7 @@ public:
     bool soft_err;
   };
 
-  void reset();
+  void reset_datapath();
   void set_ready_for_data(bool enable);
   void set_data_source(data_source_t sel);
   void set_start_idx(uint64_t idx);
