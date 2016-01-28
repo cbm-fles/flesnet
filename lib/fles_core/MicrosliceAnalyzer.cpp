@@ -57,14 +57,6 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
     content_bytes_ += ms.desc().size;
 
     if (ms.desc().flags &
-            static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
-        check_crc(ms) == false) {
-        out_ << output_prefix_ << "crc failure in microslice at " << ms.desc().start
-             << std::endl;
-        return false;
-    }
-
-    if (ms.desc().flags &
         static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) {
         out_ << output_prefix_ << " microslice at " << ms.desc().start
              << " truncated by FLIM" << std::endl;
@@ -72,6 +64,14 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
 
     if (!pattern_checker_->check(ms)) {
         out_ << output_prefix_ << "pattern error in microslice at "
+             << ms.desc().start << std::endl;
+        return false;
+    }
+
+    if (ms.desc().flags &
+            static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
+        check_crc(ms) == false) {
+        out_ << output_prefix_ << "crc failure in microslice at "
              << ms.desc().start << std::endl;
         return false;
     }

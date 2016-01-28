@@ -43,7 +43,7 @@ bool TimesliceAnalyzer::check_crc(const fles::MicrosliceView m) const
 bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
                                          size_t component, size_t microslice)
 {
-    // disabled, not applicable when using start time instead of index
+// disabled, not applicable when using start time instead of index
 #if 0
     if (m.desc().idx != microslice) {
         out_ << "microslice index " << m.desc().idx << " found in m.desc() "
@@ -56,19 +56,23 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
     content_bytes_ += m.desc().size;
 
     if (m.desc().flags &
+        static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) {
+        out_ << output_prefix_ << " microslice " << microslice
+             << " truncated by FLIM" << std::endl;
+    }
+
+    if (!pattern_checkers_.at(component)->check(m)) {
+        return false;
+    }
+
+    if (m.desc().flags &
             static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
         check_crc(m) == false) {
         out_ << "crc failure in microslice " << microslice << std::endl;
         return false;
     }
 
-    if (m.desc().flags &
-        static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) {
-        out_ << output_prefix_ << " microslice " << microslice
-             << " tuncated by FLIM" << std::endl;
-    }
-
-    return pattern_checkers_.at(component)->check(m);
+    return true;
 }
 
 void TimesliceAnalyzer::initialize(const fles::Timeslice& ts)
