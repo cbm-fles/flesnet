@@ -176,12 +176,16 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
     if (write_index_desc_ < desc_offset + desc_length) {
         write_index_desc_ = data_source_.get_write_index().desc;
     }
+    // check if microslice no. (desc_offset + desc_length - 1) is avail
     if (write_index_desc_ >= desc_offset + desc_length) {
 
         uint64_t data_offset =
             data_source_.desc_buffer().at(desc_offset).offset;
         uint64_t data_end =
-            data_source_.desc_buffer().at(desc_offset + desc_length).offset;
+            data_source_.desc_buffer()
+                .at(desc_offset + desc_length - 1)
+                .offset +
+            data_source_.desc_buffer().at(desc_offset + desc_length - 1).size;
         assert(data_end >= data_offset);
 
         uint64_t data_length = data_end - data_offset;
