@@ -30,6 +30,9 @@ bool FlibPatternChecker::check(const fles::Microslice& m)
         last_word_size = m.content()[0];
         if ((m.desc().size & 0x7) != (last_word_size & 0x7)) {
             std::cerr << "Flib pgen: error in last word size" << std::endl;
+            std::cerr << "desc.size " << m.desc().size << std::endl;
+            std::cerr << "last word " << static_cast<uint32_t>(last_word_size)
+                      << std::endl;
             return false;
         }
     }

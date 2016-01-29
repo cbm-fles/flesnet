@@ -93,8 +93,8 @@ void InputChannelSender::report_status()
               << human_readable_count(rate_data, true, "B/s") << ")";
 
     L_(info) << "[i" << input_index_ << "]   |"
-             << bar_graph(status_data.vector(), "#x_.", 20) << "|"
-             << bar_graph(status_desc.vector(), "#x_.", 10) << "| "
+             << bar_graph(status_data.vector(), "#x._", 20) << "|"
+             << bar_graph(status_desc.vector(), "#x._", 10) << "| "
              << human_readable_count(rate_data, true, "B/s") << " ("
              << human_readable_count(rate_desc, true, "Hz") << ")";
 
