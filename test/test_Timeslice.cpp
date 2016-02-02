@@ -29,17 +29,17 @@ struct F {
 
         desc_a = desc;
         desc_a.eq_id = 10;
-        desc_a.start = 1;
+        desc_a.idx = 1;
         desc_a.size = static_cast<uint32_t>(data_a.size());
 
         desc_b = desc;
         desc_b.eq_id = 10;
-        desc_b.start = 2;
+        desc_b.idx = 2;
         desc_b.size = static_cast<uint32_t>(data_b.size());
 
         desc_c = desc;
         desc_c.eq_id = 11;
-        desc_c.start = 1;
+        desc_c.idx = 1;
         desc_c.size = static_cast<uint32_t>(data_c.size());
 
         // first component: 2 microslices (a, b)

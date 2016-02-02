@@ -21,7 +21,7 @@ struct F {
         desc0.sys_ver =
             static_cast<uint8_t>(fles::SubsystemFormatFLES::Uninitialized);
         desc0.eq_id = 10;
-        desc0.start = 1;
+        desc0.idx = 1;
         desc0.size = static_cast<uint32_t>(data0.size());
     }
 
