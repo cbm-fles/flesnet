@@ -53,13 +53,13 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
 
     if (microslice_count_ == 0) {
         initialize(ms);
-        out_ << output_prefix_ << " start=" << ms.desc().start << std::endl;
+        out_ << output_prefix_ << " start=" << ms.desc().idx << std::endl;
     } else if (microslice_count_ == 1) {
-        reference_delta_t_ = ms.desc().start - previous_start_;
+        reference_delta_t_ = ms.desc().idx - previous_start_;
         out_ << output_prefix_ << " delta_t=" << reference_delta_t_
              << std::endl;
     } else {
-        uint64_t delta_t = ms.desc().start - previous_start_;
+        uint64_t delta_t = ms.desc().idx - previous_start_;
         if (delta_t != reference_delta_t_) {
             out_ << output_prefix_ << " delta_t=" << delta_t
                  << " in microslice " << microslice_count_ << std::endl;
@@ -94,7 +94,7 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
 
     ++microslice_count_;
     content_bytes_ += ms.desc().size;
-    previous_start_ = ms.desc().start;
+    previous_start_ = ms.desc().idx;
 
     return result;
 }
