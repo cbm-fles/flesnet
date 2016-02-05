@@ -60,9 +60,6 @@ int main(int argc, char* argv[]) {
   MyFlim->reset_datapath();
 
   std::cout << MyFlim->print_build_info() << std::endl;
-  if (uint32_t mc_idx = MyFlim->get_mc_idx() != 0) {
-    std::cout << "ERROR: mc index (packer) " << mc_idx << std::endl;
-  }
   if (uint32_t mc_pend = MyFlim->get_pgen_mc_pending() != 0) {
     std::cout << "ERROR: mc pending (pgen) " << mc_pend << std::endl;
   }
