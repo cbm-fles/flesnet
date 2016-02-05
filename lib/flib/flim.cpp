@@ -15,7 +15,7 @@ namespace flib {
 
 flim::flim(flib_link_flesin* link) : m_parrent_link(link) {
   m_rfflim = std::unique_ptr<register_file>(new register_file_bar(
-      link->bar(), (link->base_addr() + (1 << RORC_DMA_CMP_SEL) + (1 << 5))));
+      link->bar(), (link->base_addr() + (1 << RORC_DMA_CMP_SEL) + (1 << RORC_C_LINK_SEL))));
   if (hardware_id() != 0x4844) {
     std::stringstream msg;
     msg << "FLIM not reachable; found ID: " << std::hex << hardware_id();
