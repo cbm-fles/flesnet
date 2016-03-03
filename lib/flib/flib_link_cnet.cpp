@@ -17,6 +17,20 @@ flib_link_cnet::flib_link_cnet(size_t link_index,
     : flib_link(link_index, dev, bar) {}
 
 //////*** Readout ***//////
+void flib_link_cnet::set_start_idx(uint64_t index) {
+  // set reset value
+  // TODO replace with _rfgtx->set_mem()
+  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_L,
+                   static_cast<uint32_t>(index & 0xffffffff));
+  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_H,
+                   static_cast<uint32_t>(index >> 32));
+  // reste mc counter
+  // TODO implenet edge detection and 'pulse only' in HW
+  uint32_t mc_gen_cfg = m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
+  // TODO replace with _rfgtx->set_bit()
+  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
+  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
+}
 
 void flib_link_cnet::enable_cbmnet_packer(bool enable) {
   m_rfgtx->set_bit(RORC_REG_GTX_MC_GEN_CFG, 2, enable);
@@ -27,6 +41,7 @@ void flib_link_cnet::enable_cbmnet_packer_debug_mode(bool enable) {
 }
 
 void flib_link_cnet::enable_readout(bool enable) {
+  set_start_idx(0);
   enable_cbmnet_packer(enable);
 }
 

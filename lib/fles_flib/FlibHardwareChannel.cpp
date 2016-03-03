@@ -46,8 +46,6 @@ FlibHardwareChannel::FlibHardwareChannel(std::size_t data_buffer_size_exp,
                 desc_send_buffer_.ptr(), desc_buffer_size_exp));
 #endif
 
-    flib_link_->set_start_idx(0);
-
     flib_link_->enable_readout(true);
 
     // assert(flib_link_->mc_index() == 0);

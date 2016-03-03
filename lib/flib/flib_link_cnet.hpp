@@ -16,6 +16,7 @@ public:
   flib_link_cnet(size_t link_index, pda::device* dev, pda::pci_bar* bar);
 
   /*** Readout ***/
+  void set_start_idx(uint64_t index);
   void enable_cbmnet_packer(bool enable);
   void enable_cbmnet_packer_debug_mode(bool enable);
 

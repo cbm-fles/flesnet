@@ -61,8 +61,6 @@ dma_channel* flib_link::channel() const {
 
 //////*** DPB Emualtion ***//////
 
-void flib_link::init_datapath() { set_start_idx(1); }
-
 void flib_link::reset_datapath() {
   // disable readout if still enabled
   enable_readout(false);
@@ -80,21 +78,6 @@ void flib_link::reset_link() {
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, true);
   usleep(1000);
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, false);
-}
-
-void flib_link::set_start_idx(uint64_t index) {
-  // set reset value
-  // TODO replace with _rfgtx->set_mem()
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_L,
-                   static_cast<uint32_t>(index & 0xffffffff));
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_H,
-                   static_cast<uint32_t>(index >> 32));
-  // reste mc counter
-  // TODO implenet edge detection and 'pulse only' in HW
-  uint32_t mc_gen_cfg = m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
-  // TODO replace with _rfgtx->set_bit()
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
 }
 
 void flib_link::rst_pending_mc() {

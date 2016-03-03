@@ -67,7 +67,6 @@ public:
                           desc_buffer_size_exp + 5);
     m_dma_transfer_size = m_flib_link->channel()->dma_transfer_size();
 
-    m_flib_link->set_start_idx(0);
     m_flib_link->enable_readout(true);
   }
 
