@@ -114,8 +114,8 @@
 #define RORC_REG_LINK_FLIM_STS 18            // flesin only
 #define RORC_REG_LINK_MC_INDEX_L 19          // flesin only
 #define RORC_REG_LINK_MC_INDEX_H 20          // flesin only
-#define RORC_REG_LINK_MC_PACKER_CFG_IDX_L 21 // flesin only
-#define RORC_REG_LINK_MC_PACKER_CFG_IDX_H 22 // flesin only
+#define RORC_REG_LINK_MC_TIME_L 21           // flesin only
+#define RORC_REG_LINK_MC_TIME_H 22           // flesin only
 #define RORC_REG_LINK_MC_PGEN_CFG 23         // flesin only
 #define RORC_REG_LINK_MC_PGEN_MC_SIZE 24     // flesin only
 #define RORC_REG_LINK_MC_PGEN_IDS 25         // flesin only

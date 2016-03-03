@@ -29,13 +29,14 @@ public:
   void reset_datapath();
   void set_ready_for_data(bool enable);
   void set_data_source(data_source_t sel);
-  void set_start_idx(uint64_t idx);
   uint64_t get_mc_idx();
+  uint64_t get_mc_time();
   bool get_pgen_present();
   sts_t get_sts();
   void set_pgen_mc_size(uint32_t size);
   void set_pgen_ids(uint16_t eq_id);
   void set_pgen_rate(float val);
+  void set_pgen_start_time(uint32_t time);
   void set_pgen_enable(bool enable);
   void reset_pgen_mc_pending();
   uint32_t get_pgen_mc_pending();

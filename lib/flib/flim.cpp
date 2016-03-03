@@ -21,7 +21,7 @@ flim::flim(flib_link_flesin* link) : m_parrent_link(link) {
     msg << "FLIM not reachable; found ID: " << std::hex << hardware_id();
     throw FlibException(msg.str());
   }
-  if (hardware_ver() != 2) {
+  if (hardware_ver() != 3) {
     std::stringstream msg;
     msg << "FLIM hardware version not supported; found ver: " << hardware_ver();
     throw FlibException(msg.str());
@@ -45,15 +45,16 @@ void flim::set_data_source(flim::data_source_t sel) {
   m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 1, sel);
 }
 
-void flim::set_start_idx(uint64_t idx) {
-  m_rfflim->set_mem(RORC_REG_LINK_MC_PACKER_CFG_IDX_L, &idx, 2);
-  m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 31, true); // pulse bit
-}
-
 uint64_t flim::get_mc_idx() {
   uint64_t idx;
   m_rfflim->get_mem(RORC_REG_LINK_MC_INDEX_L, &idx, 2);
   return idx;
+}
+
+uint64_t flim::get_mc_time() {
+  uint64_t time;
+  m_rfflim->get_mem(RORC_REG_LINK_MC_TIME_L, &time, 2);
+  return time;
 }
 
 bool flim::get_pgen_present() {
@@ -84,6 +85,11 @@ void flim::set_pgen_rate(float val) {
   m_rfflim->set_reg(RORC_REG_LINK_MC_PGEN_CFG,
                     static_cast<uint32_t>(reg_val) << 16,
                     0xFFFF0000);
+}
+
+void flim::set_pgen_start_time(uint32_t time) {
+//  m_rfflim->set_reg(RORC_REG_LINK_, time);
+//  m_rfflim->set_bit(RORC_REG_LINK_, 31???, true); // pulse bit
 }
 
 void flim::set_pgen_enable(bool enable) {

@@ -73,7 +73,7 @@ int main() {
   std::cout << "enabling ..." << std::endl;
 
   for (auto&& flim : flims) {
-    flim->set_start_idx(100);
+    flim->set_pgen_start_time(100);
     flim->set_ready_for_data(true);
   }
 
@@ -94,6 +94,7 @@ int main() {
   flims.at(0)->set_pgen_enable(false);
   for (auto&& flim : flims) {
     std::cout << "mc index (packer) " << flim->get_mc_idx() << std::endl;
+    std::cout << "mc time (packer)  " << flim->get_mc_time() << std::endl;
     std::cout << "mc pending (pgen) " << flim->get_pgen_mc_pending()
               << std::endl;
   }
@@ -101,6 +102,7 @@ int main() {
   for (auto&& flim : flims) {
     flim->set_ready_for_data(false);
     flim->reset_datapath();
+    std::cout << "mc time (packer)  " << flim->get_mc_time() << std::endl;
 
     if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
       std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
