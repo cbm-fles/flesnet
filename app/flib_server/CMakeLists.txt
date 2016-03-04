@@ -25,6 +25,10 @@ set(CLIENT_LIB
 add_executable(flib_server flib_server.cpp ${SERVER_LIB})
 add_executable(simple_consumer simple_consumer.cpp ${CLIENT_LIB})
 
+target_compile_definitions(flib_server
+        PRIVATE -DBOOST_INTERPROCESS_ENABLE_TIMEOUT_WHEN_LOCKING
+                -DBOOST_INTERPROCESS_TIMEOUT_WHEN_LOCKING_DURATION_MS=5000)
+
 target_link_libraries(flib_server flib logging ${Boost_LIBRARIES} rt)
 target_link_libraries(simple_consumer logging ${Boost_LIBRARIES} rt)
 

@@ -63,7 +63,6 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
       }
       flims.back()->reset_datapath();
-      flims.back()->set_start_idx(0);
       if (par.link(i).source == flim) {
         flims.back()->set_data_source(flib::flim::user);
       } else { // pgen_far
