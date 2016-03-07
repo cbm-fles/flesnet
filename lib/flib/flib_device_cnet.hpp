@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <registers_cnet.h>
 #include <data_structures.hpp>
 #include <flib_device.hpp>
 #include <flib_link_cnet.hpp>

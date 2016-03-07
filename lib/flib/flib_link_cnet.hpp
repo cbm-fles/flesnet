@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <registers_cnet.h>
 #include <flib_link.hpp>
 
 namespace flib {
@@ -17,10 +18,23 @@ public:
 
   /*** Readout ***/
   void set_start_idx(uint64_t index);
+  void rst_pending_mc();
+
+  typedef struct __attribute__((__packed__)) {
+    uint16_t eq_id;  // "Equipment identifier"
+    uint8_t sys_id;  // "Subsystem identifier"
+    uint8_t sys_ver; // "Subsystem format version"
+  } hdr_config_t;
+
+  void set_hdr_config(const hdr_config_t* config);
+  uint64_t pending_mc();
+  uint64_t mc_index();
+
   void enable_cbmnet_packer(bool enable);
   void enable_cbmnet_packer_debug_mode(bool enable);
 
-  void enable_readout(bool enable) override;
+  void enable_readout() override;
+  void disable_readout() override;
 
   /*** CBMnet control interface ***/
   typedef struct {

@@ -88,8 +88,9 @@ void flim::set_pgen_rate(float val) {
 }
 
 void flim::set_pgen_start_time(uint32_t time) {
-//  m_rfflim->set_reg(RORC_REG_LINK_, time);
-//  m_rfflim->set_bit(RORC_REG_LINK_, 31???, true); // pulse bit
+  (void)time;
+  //  m_rfflim->set_reg(RORC_REG_LINK_, time);
+  //  m_rfflim->set_bit(RORC_REG_LINK_, 31???, true); // pulse bit
 }
 
 void flim::set_pgen_enable(bool enable) {
