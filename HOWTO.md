@@ -27,6 +27,14 @@ NOTE: In case *flesnet* crashed, exited with an exception, was stopped,
 or is just not working, you might need to clean up some things.
 See the FAQs for the cleanup procedure.
 
+The flesnet status output shows the fill level of the used
+buffers. The interpretation of the symbols is:
+
+         # used    (written - sent)
+         x sending (sent - acked)
+         . freeing (acked - cached_acked)
+         _ unsused (cached_acked + size - written)
+
 FLIB Config
 ------------
 
@@ -50,6 +58,7 @@ Enable readout
 
 After the FLIB is configured and shm_flesnet is started you need to
 enable the readout via
+
        ./en_readout
 
 
