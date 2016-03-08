@@ -3,6 +3,9 @@
 #include <boost/test/unit_test.hpp>
 
 #include "Filter.hpp"
+#include "FilterExamples.hpp"
+#include "MicrosliceInputArchive.hpp"
+#include "MicrosliceOutputArchive.hpp"
 #include "Source.hpp"
 #include <iostream>
 #include <type_traits>
@@ -102,4 +105,58 @@ BOOST_AUTO_TEST_CASE(int_filter_test)
     }
 
     BOOST_CHECK_EQUAL(count, 6);
+}
+
+BOOST_AUTO_TEST_CASE(filter_example1_test)
+{
+    fles::DescriptorOverrideFilter filter(
+        static_cast<uint8_t>(fles::SubsystemIdentifier::FLES),
+        static_cast<uint8_t>(fles::SubsystemFormatFLES::Uninitialized));
+
+    fles::MicrosliceInputArchive source("example1.msa");
+
+    fles::FilteredMicrosliceSource filtered(source, filter);
+
+    fles::MicrosliceOutputArchive sink("test1.msa");
+
+    std::size_t count = 0;
+    while (auto item = filtered.get()) {
+        std::cout << count << ": " << item->desc().size << "\n";
+        BOOST_CHECK_EQUAL(
+            item->desc().sys_id,
+            static_cast<uint8_t>(fles::SubsystemIdentifier::FLES));
+        BOOST_CHECK_EQUAL(
+            item->desc().sys_ver,
+            static_cast<uint8_t>(fles::SubsystemFormatFLES::Uninitialized));
+        sink.put(*item);
+        ++count;
+        if (count == 1000) {
+            break;
+        }
+    }
+
+    BOOST_CHECK_EQUAL(count, 4);
+}
+
+BOOST_AUTO_TEST_CASE(filter_example2_test)
+{
+    fles::CombineContentsFilter filter;
+
+    fles::MicrosliceInputArchive source("example1.msa");
+
+    fles::FilteredMicrosliceSource filtered(source, filter);
+
+    fles::MicrosliceOutputArchive sink("test2.msa");
+
+    std::size_t count = 0;
+    while (auto item = filtered.get()) {
+        std::cout << count << ": " << item->desc().size << "\n";
+        sink.put(*item);
+        ++count;
+        if (count == 1000) {
+            break;
+        }
+    }
+
+    BOOST_CHECK_EQUAL(count, 2);
 }

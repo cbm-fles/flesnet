@@ -25,7 +25,7 @@ public:
     virtual ~Filter(){};
 };
 
-template <class T> class BufferingFilter : public Filter<T>
+template <class T, class Derived = T> class BufferingFilter : public Filter<T>
 {
 public:
     virtual std::pair<std::unique_ptr<T>, bool>
@@ -42,21 +42,21 @@ public:
         if (output.empty()) {
             return std::make_pair(std::unique_ptr<T>(nullptr), false);
         } else {
-            T i = output.front();
+            Derived i = output.front();
             output.pop();
             bool more = !output.empty();
-            return std::make_pair(std::unique_ptr<T>(new T(i)), more);
+            return std::make_pair(std::unique_ptr<T>(new Derived(i)), more);
         }
     }
 
 protected:
-    std::deque<T> input;
-    std::queue<T> output;
+    std::deque<Derived> input;
+    std::queue<Derived> output;
 
     virtual void process() = 0;
 };
 
-template <class T> class FilteredSource : public Source<T>
+template <class T, class Derived = T> class FilteredSource : public Source<T>
 {
 public:
     using source_t = Source<T>;
@@ -94,7 +94,7 @@ private:
             } while (!filter_output.first);
         }
         more = filter_output.second;
-        return new T(*filter_output.first);
+        return new Derived(*filter_output.first);
     }
 };
 
@@ -131,8 +131,9 @@ private:
 };
 
 class Microslice;
+class StorableMicroslice;
 using MicrosliceFilter = Filter<Microslice>;
-using FilteredMicrosliceSource = FilteredSource<Microslice>;
+using FilteredMicrosliceSource = FilteredSource<Microslice, StorableMicroslice>;
 using FilteringMicrosliceSink = FilteringSink<Microslice>;
 
 } // namespace fles {

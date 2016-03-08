@@ -18,6 +18,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(test_MicrosliceReceiver atomic pthread)
 endif()
 
+add_custom_command(TARGET test_Filter POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy
+                                   ${PROJECT_SOURCE_DIR}/test/reference/example1.msa
+                                   $<TARGET_FILE_DIR:test_Filter>)
+
 add_test(NAME test_RingBuffer COMMAND test_RingBuffer)
 add_test(NAME test_Filter COMMAND test_Filter)
 add_test(NAME test_MicrosliceReceiver COMMAND test_MicrosliceReceiver)
