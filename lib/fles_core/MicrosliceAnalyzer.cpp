@@ -53,15 +53,24 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
 
     if (microslice_count_ == 0) {
         initialize(ms);
-        out_ << output_prefix_ << " start=" << ms.desc().idx << std::endl;
+        out_ << output_prefix_ << "eq_id=" << std::hex << std::showbase
+             << ms.desc().eq_id << std::endl;
+        out_ << output_prefix_
+             << "sys_id=" << static_cast<uint32_t>(ms.desc().sys_id)
+             << std::endl;
+        out_ << output_prefix_
+             << "sys_ver=" << static_cast<uint32_t>(ms.desc().sys_ver)
+             << std::dec << std::endl;
+        out_ << output_prefix_ << "start=" << ms.desc().idx << "ns"
+             << std::endl;
     } else if (microslice_count_ == 1) {
         reference_delta_t_ = ms.desc().idx - previous_start_;
-        out_ << output_prefix_ << " delta_t=" << reference_delta_t_
+        out_ << output_prefix_ << "delta_t=" << reference_delta_t_ << "ns"
              << std::endl;
     } else {
         uint64_t delta_t = ms.desc().idx - previous_start_;
         if (delta_t != reference_delta_t_) {
-            out_ << output_prefix_ << " delta_t=" << delta_t
+            out_ << output_prefix_ << "delta_t=" << delta_t << "ns"
                  << " in microslice " << microslice_count_ << std::endl;
             result = false;
         }
@@ -69,7 +78,7 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
 
     if (ms.desc().flags &
         static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) {
-        out_ << output_prefix_ << " data truncated by FLIM in microslice "
+        out_ << output_prefix_ << "data truncated by FLIM in microslice "
              << microslice_count_ << std::endl;
         ++microslice_truncated_count_;
     }
