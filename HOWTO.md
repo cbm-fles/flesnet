@@ -33,7 +33,7 @@ buffers. The interpretation of the symbols is:
     # used    (written - sent)
     x sending (sent - acked)
     . freeing (acked - cached_acked)
-    _ unsused (cached_acked + size - written)
+    _ unused  (cached_acked + size - written)
 
 FLIB Config
 ------------
