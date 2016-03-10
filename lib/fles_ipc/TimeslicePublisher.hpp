@@ -27,13 +27,10 @@ public:
     void operator=(const TimeslicePublisher&) = delete;
 
     /// Send a timeslice to all connected subscribers.
-    virtual void put(const fles::Timeslice& timeslice) override
+    virtual void put(std::shared_ptr<const fles::Timeslice> timeslice) override
     {
-        do_put(timeslice);
+        do_put(*timeslice);
     };
-
-    /// Deprecated alternative to put().
-    void publish(const fles::Timeslice& timeslice) { put(timeslice); };
 
 private:
     zmq::context_t context_{1};

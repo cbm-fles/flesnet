@@ -1,6 +1,7 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 /// \file
 /// \brief Defines utility functions in the fles::system namespace.
+#pragma once
 
 #include <string>
 

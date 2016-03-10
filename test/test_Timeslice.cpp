@@ -109,11 +109,13 @@ BOOST_FIXTURE_TEST_CASE(serialization_test, F)
 
 BOOST_FIXTURE_TEST_CASE(archive_test, F)
 {
+    auto ts0_ptr = std::make_shared<const fles::StorableTimeslice>(ts0);
+
     std::string filename("test1.tsa");
     {
         fles::TimesliceOutputArchive output(filename);
-        output.write(ts0);
-        output.write(ts0);
+        output.put(ts0_ptr);
+        output.put(ts0_ptr);
     }
     uint64_t count = 0;
     fles::TimesliceInputArchive source(filename);

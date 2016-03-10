@@ -3,6 +3,8 @@
 /// \brief Defines the fles::Sink template class and related class types.
 #pragma once
 
+#include <memory>
+
 namespace fles
 {
 
@@ -16,7 +18,7 @@ template <class T> class Sink
 {
 public:
     /// Receive an item to sink.
-    virtual void put(const T& item) = 0;
+    virtual void put(std::shared_ptr<const T> item) = 0;
 
     virtual ~Sink(){};
 };

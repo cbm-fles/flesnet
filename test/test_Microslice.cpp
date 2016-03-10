@@ -93,11 +93,14 @@ BOOST_FIXTURE_TEST_CASE(archive_test, F)
     fles::StorableMicroslice m1(desc0, data0.data());
     fles::MicrosliceView m2(desc0, data0.data());
 
+    auto m1_ptr = std::make_shared<fles::StorableMicroslice>(m1);
+    auto m2_ptr = std::make_shared<fles::MicrosliceView>(m2);
+
     std::string filename("test1.msa");
     {
         fles::MicrosliceOutputArchive output(filename);
-        output.write(m1);
-        output.write(m2);
+        output.put(m1_ptr);
+        output.put(m2_ptr);
     }
     uint64_t count = 0;
     fles::MicrosliceInputArchive source(filename);

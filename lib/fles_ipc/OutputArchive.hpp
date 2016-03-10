@@ -39,10 +39,10 @@ public:
     virtual ~OutputArchive(){};
 
     /// Store an item.
-    virtual void put(const Base& item) override { do_put(item); }
-
-    /// Deprecated alternative to put().
-    void write(const Base& item) { put(item); }
+    virtual void put(std::shared_ptr<const Base> item) override
+    {
+        do_put(*item);
+    }
 
 private:
     std::ofstream ofstream_;
@@ -50,6 +50,7 @@ private:
     ArchiveDescriptor descriptor_{archive_type};
 
     void do_put(const Derived& item) { oarchive_ << item; }
+    // TODO: Solve this without the additional alloc/copy operation
 };
 
 } // namespace fles {
