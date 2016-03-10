@@ -11,7 +11,7 @@ namespace fles
 {
 
 // Example filter 1: Override system ID in descriptor
-class DescriptorOverrideFilter : public Filter<Microslice>
+class DescriptorOverrideFilter : public Filter<Microslice, StorableMicroslice>
 {
 public:
     uint8_t sys_id_;
@@ -22,11 +22,12 @@ public:
     {
     }
 
-    virtual std::pair<std::unique_ptr<Microslice>, bool>
+    virtual std::pair<std::unique_ptr<StorableMicroslice>, bool>
     exchange_item(std::shared_ptr<const Microslice> item) override
     {
         if (!item) {
-            return std::make_pair(std::unique_ptr<Microslice>(nullptr), false);
+            return std::make_pair(std::unique_ptr<StorableMicroslice>(nullptr),
+                                  false);
         }
         StorableMicroslice* m = new StorableMicroslice(*item);
 
@@ -34,7 +35,7 @@ public:
         m->desc().sys_id = sys_id_;
         m->desc().sys_ver = sys_ver_;
 
-        return std::make_pair(std::unique_ptr<Microslice>(m), false);
+        return std::make_pair(std::unique_ptr<StorableMicroslice>(m), false);
     }
 };
 

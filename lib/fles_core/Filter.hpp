@@ -14,23 +14,24 @@
 namespace fles
 {
 
-template <class T> class Filter
+template <class Input, class Output = Input> class Filter
 {
 public:
-    using filter_output_t = std::pair<std::unique_ptr<T>, bool>;
+    using filter_output_t = std::pair<std::unique_ptr<Output>, bool>;
 
     /// Exchange an item with the filter.
     virtual filter_output_t
-    exchange_item(std::shared_ptr<const T> item = nullptr) = 0;
+    exchange_item(std::shared_ptr<const Input> item = nullptr) = 0;
 
     virtual ~Filter(){};
 };
 
-template <class T, class Derived = T> class BufferingFilter : public Filter<T>
+template <class Input, class Output = Input>
+class BufferingFilter : public Filter<Input, Output>
 {
 public:
-    virtual std::pair<std::unique_ptr<T>, bool>
-    exchange_item(std::shared_ptr<const T> item) override
+    virtual std::pair<std::unique_ptr<Output>, bool>
+    exchange_item(std::shared_ptr<const Input> item) override
     {
         if (item) {
             input.push_back(item);
@@ -41,7 +42,7 @@ public:
         }
 
         if (output.empty()) {
-            return std::make_pair(std::unique_ptr<T>(nullptr), false);
+            return std::make_pair(std::unique_ptr<Output>(nullptr), false);
         } else {
             auto i = std::move(output.front());
             output.pop();
@@ -51,17 +52,18 @@ public:
     }
 
 protected:
-    std::deque<std::shared_ptr<const T>> input;
-    std::queue<std::unique_ptr<Derived>> output;
+    std::deque<std::shared_ptr<const Input>> input;
+    std::queue<std::unique_ptr<Output>> output;
 
     virtual void process() = 0;
 };
 
-template <class T, class Derived = T> class FilteredSource : public Source<T>
+template <class Input, class Output = Input>
+class FilteredSource : public Source<Output>
 {
 public:
-    using source_t = Source<T>;
-    using filter_t = Filter<T>;
+    using source_t = Source<Input>;
+    using filter_t = Filter<Input, Output>;
 
     /// Construct FilteredSource using a given source and filter
     FilteredSource(source_t& arg_source, filter_t& arg_filter)
@@ -74,9 +76,9 @@ private:
     filter_t& filter;
     bool more = false;
 
-    using filter_output_t = typename Filter<T>::filter_output_t;
+    using filter_output_t = typename Filter<Input, Output>::filter_output_t;
 
-    virtual T* do_get() override
+    virtual Output* do_get() override
     {
         if (this->eof_)
             return nullptr;
@@ -95,16 +97,17 @@ private:
             } while (!filter_output.first);
         }
         more = filter_output.second;
-        return new Derived(*filter_output.first);
+        return new Output(*filter_output.first);
         // TODO: Solve this without the additional alloc/copy operation
     }
 };
 
-template <class T> class FilteringSink : public Sink<T>
+template <class Input, class Output = Input>
+class FilteringSink : public Sink<Input>
 {
 public:
-    using sink_t = Sink<T>;
-    using filter_t = Filter<T>;
+    using sink_t = Sink<Output>;
+    using filter_t = Filter<Input, Output>;
 
     /// Construct FilteringSink using a given sink and filter
     FilteringSink(sink_t& arg_sink, filter_t& arg_filter)
@@ -112,9 +115,9 @@ public:
     {
     }
 
-    virtual void put(std::shared_ptr<const T> item) override
+    virtual void put(std::shared_ptr<const Input> item) override
     {
-        typename Filter<T>::filter_output_t filter_output;
+        typename Filter<Input, Output>::filter_output_t filter_output;
         filter_output = filter.exchange_item(item);
         if (filter_output.first) {
             sink.put(std::move(filter_output.first));
@@ -134,8 +137,8 @@ private:
 
 class Microslice;
 class StorableMicroslice;
-using MicrosliceFilter = Filter<Microslice>;
+using MicrosliceFilter = Filter<Microslice, StorableMicroslice>;
 using FilteredMicrosliceSource = FilteredSource<Microslice, StorableMicroslice>;
-using FilteringMicrosliceSink = FilteringSink<Microslice>;
+using FilteringMicrosliceSink = FilteringSink<Microslice, StorableMicroslice>;
 
 } // namespace fles {
