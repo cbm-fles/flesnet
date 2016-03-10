@@ -76,7 +76,8 @@ public:
   void run() {
     if (!m_run) { // don't start twice
       m_run = true;
-      m_flib->enable_mc_cnt(true);
+      // TODO needed in case of cbmnet readout
+      // m_flib->enable_mc_cnt(true);
       L_(info) << "flib server started and running";
       while (m_run) {
         // claim lock at start-up
@@ -112,7 +113,8 @@ public:
 
   void stop() {
     m_run = false;
-    m_flib->enable_mc_cnt(false);
+    // TODO needed in case of cbmnet readout
+    // m_flib->enable_mc_cnt(false);
   }
 
 private:

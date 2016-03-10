@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
     //    // extra receive
     //    for (size_t j = 0; j < r_msg.words/2 + 1; ++j) {
     //      ((uint32_t*)extra_msg.data)[j] =
-    //      MyFlib->link(0)->get_rfgtx()->get_reg(RORC_MEM_BASE_CTRL_RX+j);
+    //      MyFlib->link(0)->get_rfgtx()->get_reg(CNET_MEM_BASE_CTRL_RX+j);
     //    }
     //    extra_msg.words = words;
     //

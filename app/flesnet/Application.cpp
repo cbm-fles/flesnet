@@ -142,22 +142,24 @@ Application::Application(Parameters const& par,
         input_channel_senders_.push_back(std::move(buffer));
     }
 
-    if (flib_) {
-        flib_->enable_mc_cnt(true);
-    }
+    // TODO needed in case of cbmnet readout
+    // if (flib_) {
+    //     flib_->enable_mc_cnt(true);
+    // }
 }
 
 Application::~Application()
 {
     // Input node application
-    try {
-        if (flib_) {
-            flib_->enable_mc_cnt(false);
-        }
-    } catch (std::exception& e) {
-        L_(error) << "exception in destructor ~InputNodeApplication(): "
-                  << e.what();
-    }
+    // TODO needed in case of cbmnet readout
+    // try {
+    //     if (flib_) {
+    //         flib_->enable_mc_cnt(false);
+    //     }
+    // } catch (std::exception& e) {
+    //     L_(error) << "exception in destructor ~InputNodeApplication(): "
+    //               << e.what();
+    // }
 }
 
 void Application::run()

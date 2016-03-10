@@ -14,15 +14,13 @@ OS / external packages combination. But tests are only performed for the
 official environment. If there are reasons to go to another version please
 let me know.
 
-Note: If you would like to configure your front-end using the FLIB, you need
-to link against the Controls API library, i.e., `cbmnetcntlserver`, which can
-be found in cbmroot. The cbmroot/fairroot version is not fixed.
-
 Earlier versions:
 
     Debian 7.6 / fairroot external packages jul14p3
     Debian 7.6 / fairroot external packages jul14p2
 
+Note: For information regarding the legacy CBMnet readout please refer to the
+end of this document.
 
 Getting the Repository
 ----------------------
@@ -37,14 +35,6 @@ Build Dependencies
       doxygen libnuma-dev librdmacm-dev libibverbs-dev git \
       libzmq3-dev libkrb5-dev libboost1.55-all-dev
 
-### Optional: Fairroot external packages
-
-ZMQ and Boost can alternatively be used from a Fairsoft external packages
-installation. See these [installation instructions][fairsoft-ext].
-After installing, set `SIMPATH` to point to this installation.
-
-[fairsoft-ext]: http://fairroot.gsi.de/?q=node/8
-
 ### InfiniBand
 
 If your machine doesn't feature InfiniBand, you need to install SoftiWARP.
@@ -53,11 +43,13 @@ An install script can be found in the flesnet repository:
     cd contrib
     ./install-softiwarp
 
-### Optional: Controls API
+### Optional: Fairroot external packages
 
-If you would like to have controls access to CBMnet via the controls API,
-you will need the `cbmnetcntlserver` library found in the CBMroot repository.
-(Note: the corresponding make target is `cbmnetcntlserver`.)
+ZMQ and Boost can alternatively be used from a Fairsoft external packages
+installation. See these [installation instructions][fairsoft-ext].
+After installing, set `SIMPATH` to point to this installation.
+
+[fairsoft-ext]: http://fairroot.gsi.de/?q=node/8
 
 
 Installing the FLIB device driver (PDA)
@@ -82,12 +74,6 @@ compilation errors.
 
 Building flesnet
 ----------------
-
-For compiling flesnet with Controls API support, set the environment variable
-`CNETCNTLSERVER_PATH` to the cbmnetcntlserver library and include location
-found in the cbmroot repository, e.g.:
-
-    export CNETCNTLSERVER_PATH=/opt/cbmroot/build/lib:/opt/cbmroot/fles/ctrl
 
 For every new clone of the repository run the following two commands a single
 time from the repositories' root directory:
@@ -186,8 +172,12 @@ Modify `/etc/default/grub`, e.g.:
     reboot
 
 
-Installing Xilinx Software for using a FLIB
-===========================================
+Installing JTAG Software for programming the FLIB
+=================================================
+
+The FLIB FPGA can be programmed using any JTAG programmer and matching
+software. If using a Xilinx USB II cable with Xilinx software
+programming scripts are provided (see [HOWTO.md](HOWTO.md)).
 
 Xilinx Tools
 ------------
@@ -217,3 +207,39 @@ If cable drivers are working correctly and a cable is plugged in,
     ...
 
 Note the `03fd:0008`.
+
+
+Legacy CBMnet readout with FLESnet
+==================================
+
+Flesnet Version
+---------------
+
+The legacy readout isn't supported in newer versions of flesnet
+anymore. Versions still supporting the legacy readout are tagged in
+the repository. The naming schema for these tags is legacy-ro-vX.X. If
+serious issues are fixed a new tag will be created.
+
+You can switch to tags via
+    git checkout -b legacy-ro-vX.X legacy-ro-vX.X
+
+
+Build Dependencies
+------------------
+
+### Optional: Controls API
+
+If you would like to configure your front-end using the FLIB, you need
+to install the Controls API library, i.e., `cbmnetcntlserver`, which
+can be found in cbmroot. (Note: the corresponding cbmroot make target
+is `cbmnetcntlserver`.)
+
+
+Building flesnet
+----------------
+
+For compiling flesnet with Controls API support, set the environment variable
+`CNETCNTLSERVER_PATH` to the cbmnetcntlserver library and include location
+found in the cbmroot repository, e.g.:
+
+    export CNETCNTLSERVER_PATH=/opt/cbmroot/build/lib:/opt/cbmroot/fles/ctrl
