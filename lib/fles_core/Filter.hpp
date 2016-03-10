@@ -20,7 +20,8 @@ public:
     using filter_output_t = std::pair<std::unique_ptr<T>, bool>;
 
     /// Exchange an item with the filter.
-    virtual filter_output_t exchange_item(const T* item = nullptr) = 0;
+    virtual filter_output_t
+    exchange_item(std::shared_ptr<const T> item = nullptr) = 0;
 
     virtual ~Filter(){};
 };
@@ -29,10 +30,10 @@ template <class T, class Derived = T> class BufferingFilter : public Filter<T>
 {
 public:
     virtual std::pair<std::unique_ptr<T>, bool>
-    exchange_item(const T* item) override
+    exchange_item(std::shared_ptr<const T> item) override
     {
         if (item) {
-            input.push_back(*item);
+            input.push_back(item);
         }
 
         if (output.empty()) {
@@ -42,16 +43,16 @@ public:
         if (output.empty()) {
             return std::make_pair(std::unique_ptr<T>(nullptr), false);
         } else {
-            Derived i = output.front();
+            auto i = std::move(output.front());
             output.pop();
             bool more = !output.empty();
-            return std::make_pair(std::unique_ptr<T>(new Derived(i)), more);
+            return std::make_pair(std::move(i), more);
         }
     }
 
 protected:
-    std::deque<Derived> input;
-    std::queue<Derived> output;
+    std::deque<std::shared_ptr<const T>> input;
+    std::queue<std::unique_ptr<Derived>> output;
 
     virtual void process() = 0;
 };
@@ -90,11 +91,12 @@ private:
                     this->eof_ = true;
                     return nullptr;
                 }
-                filter_output = filter.exchange_item(item.get());
+                filter_output = filter.exchange_item(std::move(item));
             } while (!filter_output.first);
         }
         more = filter_output.second;
         return new Derived(*filter_output.first);
+        // TODO: Solve this without the additional alloc/copy operation
     }
 };
 
@@ -110,17 +112,17 @@ public:
     {
     }
 
-    virtual void put(const T& item) override
+    virtual void put(std::shared_ptr<const T> item) override
     {
         typename Filter<T>::filter_output_t filter_output;
-        filter_output = filter.exchange_item(&item);
+        filter_output = filter.exchange_item(item);
         if (filter_output.first) {
-            sink.put(*filter_output.first);
+            sink.put(std::move(filter_output.first));
         }
         while (filter_output.second) {
             filter_output = filter.exchange_item();
             if (filter_output.first) {
-                sink.put(*filter_output.first);
+                sink.put(std::move(filter_output.first));
             }
         }
     }

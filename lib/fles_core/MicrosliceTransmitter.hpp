@@ -32,10 +32,10 @@ public:
      *
      * This function blocks if there is not enough space available.
      */
-    virtual void put(const Microslice& item) override;
+    virtual void put(std::shared_ptr<const Microslice> item) override;
 
 private:
-    bool try_put(const Microslice& item);
+    bool try_put(std::shared_ptr<const Microslice> item);
 
     /// Data sink (e.g., shared memory buffer).
     InputBufferWriteInterface& data_sink_;

@@ -23,7 +23,7 @@ public:
     }
 
     virtual std::pair<std::unique_ptr<Microslice>, bool>
-    exchange_item(const Microslice* item) override
+    exchange_item(std::shared_ptr<const Microslice> item) override
     {
         if (!item) {
             return std::make_pair(std::unique_ptr<Microslice>(nullptr), false);
@@ -47,20 +47,21 @@ private:
     {
         // combine the contents of two consecutive microslices
         while (this->input.size() >= 2) {
-            StorableMicroslice item1 = this->input.front();
+            auto item1 = input.front();
             this->input.pop_front();
-            StorableMicroslice item2 = this->input.front();
+            auto item2 = input.front();
             this->input.pop_front();
 
-            MicrosliceDescriptor desc = item1.desc();
-            desc.size += item2.desc().size;
+            MicrosliceDescriptor desc = item1->desc();
+            desc.size += item2->desc().size;
             std::vector<uint8_t> content;
-            content.assign(item1.content(),
-                           item1.content() + item1.desc().size);
-            content.insert(content.end(), item2.content(),
-                           item2.content() + item2.desc().size);
-            StorableMicroslice combined(desc, content);
-            this->output.push(combined);
+            content.assign(item1->content(),
+                           item1->content() + item1->desc().size);
+            content.insert(content.end(), item2->content(),
+                           item2->content() + item2->desc().size);
+            std::unique_ptr<StorableMicroslice> combined(
+                new StorableMicroslice(desc, content));
+            output.push(std::move(combined));
         }
     }
 };

@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(usage_test)
     std::size_t count = 0;
     while (auto microslice = ms1->get()) {
         // std::cout << count << ": " << microslice->desc().size << std::endl;
-        output->write(*microslice);
+        output->put(std::move(microslice));
         ++count;
         if (count == 1000) {
             break;

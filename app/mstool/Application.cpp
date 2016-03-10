@@ -100,8 +100,9 @@ void Application::run()
     uint64_t limit = par_.maximum_number;
 
     while (auto microslice = source_->get()) {
+        std::shared_ptr<const fles::Microslice> ms(std::move(microslice));
         for (auto& sink : sinks_) {
-            sink->put(*microslice);
+            sink->put(ms);
         }
         ++count_;
         if (count_ == limit) {

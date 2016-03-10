@@ -18,7 +18,7 @@ public:
                        std::string arg_output_prefix);
     ~MicrosliceAnalyzer();
 
-    virtual void put(const fles::Microslice& Microslice) override;
+    virtual void put(std::shared_ptr<const fles::Microslice> ms) override;
 
 private:
     bool check_microslice(const fles::Microslice& ms);

@@ -43,14 +43,17 @@ private:
 template <typename T> class Dumper : public fles::Sink<T>
 {
 public:
-    virtual void put(const T& item) override { std::cout << item << "\n"; }
+    virtual void put(std::shared_ptr<const T> item) override
+    {
+        std::cout << *item << "\n";
+    }
 };
 
 // example filter 1: integer doubler
 template <typename T> class Doubler : public fles::Filter<T>
 {
     virtual std::pair<std::unique_ptr<T>, bool>
-    exchange_item(const T* item) override
+    exchange_item(std::shared_ptr<const T> item) override
     {
         if (!item) {
             return std::make_pair(std::unique_ptr<T>(nullptr), false);
@@ -68,12 +71,12 @@ private:
     {
         // aggregate two consecutive input items into single sum item
         while (this->input.size() >= 2) {
-            T item1 = this->input.front();
+            std::shared_ptr<const T> item1 = this->input.front();
             this->input.pop_front();
-            T item2 = this->input.front();
+            std::shared_ptr<const T> item2 = this->input.front();
             this->input.pop_front();
-            T sum = item1 + item2;
-            this->output.push(sum);
+            std::unique_ptr<T> sum(new T(*item1 + *item2));
+            this->output.push(std::move(sum));
         }
     }
 };
@@ -97,7 +100,7 @@ BOOST_AUTO_TEST_CASE(int_filter_test)
     std::size_t count = 0;
     while (auto item = source2.get()) {
         std::cout << count << ": ";
-        sink1.put(*item);
+        sink1.put(std::move(item));
         ++count;
         if (count == 10) {
             break;
@@ -128,7 +131,7 @@ BOOST_AUTO_TEST_CASE(filter_example1_test)
         BOOST_CHECK_EQUAL(
             item->desc().sys_ver,
             static_cast<uint8_t>(fles::SubsystemFormatFLES::Uninitialized));
-        sink.put(*item);
+        sink.put(std::move(item));
         ++count;
         if (count == 1000) {
             break;
@@ -149,9 +152,10 @@ BOOST_AUTO_TEST_CASE(filter_example2_test)
     fles::MicrosliceOutputArchive sink("test2.msa");
 
     std::size_t count = 0;
+
     while (auto item = filtered.get()) {
         std::cout << count << ": " << item->desc().size << "\n";
-        sink.put(*item);
+        sink.put(std::move(item));
         ++count;
         if (count == 1000) {
             break;

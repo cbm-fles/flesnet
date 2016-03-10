@@ -14,9 +14,9 @@ MicrosliceTransmitter::MicrosliceTransmitter(
 {
 }
 
-bool MicrosliceTransmitter::try_put(const Microslice& item)
+bool MicrosliceTransmitter::try_put(std::shared_ptr<const Microslice> item)
 {
-    const DualIndex item_size = {1, item.desc().size};
+    const DualIndex item_size = {1, item->desc().size};
     const DualIndex buffer_size = {data_sink_.desc_buffer().size(),
                                    data_sink_.data_buffer().size()};
     DualIndex available = buffer_size - write_index_ + read_index_cached_;
@@ -37,19 +37,19 @@ bool MicrosliceTransmitter::try_put(const Microslice& item)
         &data_sink_.data_buffer().at(write_index_.data + item_size.data);
 
     if (data_begin <= data_end) {
-        std::copy_n(item.content(), item_size.data, data_begin);
+        std::copy_n(item->content(), item_size.data, data_begin);
     } else {
         size_t part1_size =
             buffer_size.data -
             (write_index_.data & data_sink_.data_buffer().size_mask());
 
         // copy data into two segments
-        std::copy_n(item.content(), part1_size, data_begin);
-        std::copy_n(item.content() + part1_size, item_size.data - part1_size,
+        std::copy_n(item->content(), part1_size, data_begin);
+        std::copy_n(item->content() + part1_size, item_size.data - part1_size,
                     data_sink_.data_buffer().ptr());
     }
 
-    data_sink_.desc_buffer().at(write_index_.desc) = item.desc();
+    data_sink_.desc_buffer().at(write_index_.desc) = item->desc();
     data_sink_.desc_buffer().at(write_index_.desc).offset = write_index_.data;
 
     write_index_ += item_size;
@@ -58,7 +58,7 @@ bool MicrosliceTransmitter::try_put(const Microslice& item)
     return true;
 }
 
-void MicrosliceTransmitter::put(const Microslice& item)
+void MicrosliceTransmitter::put(std::shared_ptr<const Microslice> item)
 {
     while (!try_put(item)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));

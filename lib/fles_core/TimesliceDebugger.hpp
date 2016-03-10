@@ -63,11 +63,11 @@ public:
     MicrosliceDumper(std::ostream& arg_out, std::size_t arg_verbosity)
         : out(arg_out), verbosity(arg_verbosity){};
 
-    virtual void put(const fles::Microslice& m) override
+    virtual void put(std::shared_ptr<const fles::Microslice> m) override
     {
-        out << MicrosliceDescriptorDump(m.desc()) << "\n";
+        out << MicrosliceDescriptorDump(m->desc()) << "\n";
         if (verbosity > 1) {
-            out << BufferDump(m.content(), m.desc().size);
+            out << BufferDump(m->content(), m->desc().size);
         }
     }
 
@@ -106,9 +106,9 @@ public:
     TimesliceDumper(std::ostream& arg_out, std::size_t arg_verbosity)
         : out(arg_out), verbosity(arg_verbosity){};
 
-    virtual void put(const fles::Timeslice& timeslice) override
+    virtual void put(std::shared_ptr<const fles::Timeslice> timeslice) override
     {
-        out << TimesliceDump(timeslice, verbosity) << "\n";
+        out << TimesliceDump(*timeslice, verbosity) << "\n";
     }
 
 private:

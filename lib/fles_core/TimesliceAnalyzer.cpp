@@ -133,9 +133,9 @@ std::string TimesliceAnalyzer::statistics() const
     return s.str();
 }
 
-void TimesliceAnalyzer::put(const fles::Timeslice& timeslice)
+void TimesliceAnalyzer::put(std::shared_ptr<const fles::Timeslice> timeslice)
 {
-    check_timeslice(timeslice);
+    check_timeslice(*timeslice);
     if ((timeslice_count_ % output_interval_) == 0) {
         out_ << output_prefix_ << statistics() << std::endl;
         reset();

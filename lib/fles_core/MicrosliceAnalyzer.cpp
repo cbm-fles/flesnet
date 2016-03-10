@@ -110,9 +110,9 @@ std::string MicrosliceAnalyzer::statistics() const
     return s.str();
 }
 
-void MicrosliceAnalyzer::put(const fles::Microslice& ms)
+void MicrosliceAnalyzer::put(std::shared_ptr<const fles::Microslice> ms)
 {
-    if (!check_microslice(ms)) {
+    if (!check_microslice(*ms)) {
         pattern_checker_->reset();
     }
     if ((microslice_count_ % output_interval_) == 0) {
