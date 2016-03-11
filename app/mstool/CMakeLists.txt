@@ -6,7 +6,7 @@ file(GLOB APP_HEADERS *.h)
 list(APPEND APP_SOURCES "${CMAKE_BINARY_DIR}/config/GitRevision.cpp")
 list(APPEND APP_HEADERS "${PROJECT_SOURCE_DIR}/config/GitRevision.hpp")
 
-include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc/src"
+include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/fles_core"
                     "${PROJECT_SOURCE_DIR}/lib/flib_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/logging"

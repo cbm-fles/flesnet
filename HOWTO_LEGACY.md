@@ -52,7 +52,7 @@ configured automatically. This information can be used to
 determine which analysis code is called later on.
 
 For all defined subsystem identifiers, check
-`lib/fles_ipc/src/MicrosliceDescriptor.hpp`.
+`lib/fles_ipc/MicrosliceDescriptor.hpp`.
 
 Control Client
 --------------

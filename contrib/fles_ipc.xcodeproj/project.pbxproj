@@ -204,7 +204,7 @@
 				3DA3FE5C1B0207FF008710E2 /* OutputArchive.hpp */,
 			);
 			name = src;
-			path = ../src;
+			path = .;
 			sourceTree = "<group>";
 		};
 		3DDAD81E1B023A9200926C83 /* test */ = {

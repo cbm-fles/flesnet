@@ -206,7 +206,7 @@
 		3D5656F01B42D0770052C86D /* TimesliceAnalyzer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceAnalyzer.hpp; sourceTree = "<group>"; };
 		3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimesliceDebugger.cpp; sourceTree = "<group>"; };
 		3D5656F21B42D0770052C86D /* TimesliceDebugger.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceDebugger.hpp; sourceTree = "<group>"; };
-		3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = fles_ipc.xcodeproj; path = ../lib/fles_ipc/contrib/fles_ipc.xcodeproj; sourceTree = "<group>"; };
+		3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = fles_ipc.xcodeproj; path = fles_ipc.xcodeproj; sourceTree = "<group>"; };
 		3D571D851C58FD62005DAECF /* FilterExamples.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FilterExamples.hpp; sourceTree = "<group>"; };
 		3D5D3F191B60E1CE00497342 /* test_RingBuffer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_RingBuffer; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_MicrosliceReceiver; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -850,7 +850,7 @@
 				);
 				SDKROOT = macosx;
 				SIMPATH = /usr/local;
-				USER_HEADER_SEARCH_PATHS = ../lib/fles_ipc/src;
+				USER_HEADER_SEARCH_PATHS = ../lib/fles_ipc;
 			};
 			name = Debug;
 		};
@@ -929,7 +929,7 @@
 				);
 				SDKROOT = macosx;
 				SIMPATH = /usr/local;
-				USER_HEADER_SEARCH_PATHS = ../lib/fles_ipc/src;
+				USER_HEADER_SEARCH_PATHS = ../lib/fles_ipc;
 			};
 			name = Release;
 		};

@@ -116,11 +116,11 @@ BOOST_AUTO_TEST_CASE(filter_example1_test)
         static_cast<uint8_t>(fles::SubsystemIdentifier::FLES),
         static_cast<uint8_t>(fles::SubsystemFormatFLES::Uninitialized));
 
-    fles::MicrosliceInputArchive source("example1.msa");
+    fles::MicrosliceInputArchive source("example2.msa");
 
     fles::FilteredMicrosliceSource filtered(source, filter);
 
-    fles::MicrosliceOutputArchive sink("test1.msa");
+    fles::MicrosliceOutputArchive sink("filtertest1.msa");
 
     std::size_t count = 0;
     while (auto item = filtered.get()) {
@@ -145,11 +145,11 @@ BOOST_AUTO_TEST_CASE(filter_example2_test)
 {
     fles::CombineContentsFilter filter;
 
-    fles::MicrosliceInputArchive source("example1.msa");
+    fles::MicrosliceInputArchive source("example2.msa");
 
     fles::FilteredMicrosliceSource filtered(source, filter);
 
-    fles::MicrosliceOutputArchive sink("test2.msa");
+    fles::MicrosliceOutputArchive sink("filtertest2.msa");
 
     std::size_t count = 0;
 

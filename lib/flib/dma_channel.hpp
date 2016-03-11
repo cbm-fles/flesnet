@@ -11,7 +11,7 @@
 
 #include <pda/dma_buffer.hpp>
 #include <pda/data_structures.hpp>
-#include <fles_ipc/src/MicrosliceDescriptor.hpp>
+#include <fles_ipc/MicrosliceDescriptor.hpp>
 #include <flib_link.hpp>
 #include <register_file.hpp>
 

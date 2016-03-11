@@ -5,7 +5,7 @@ file(GLOB APP_HEADERS *.hpp)
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/logging"
                     "${PROJECT_SOURCE_DIR}/lib/fles_core"
-                    "${PROJECT_SOURCE_DIR}/lib/fles_ipc/src"
+                    "${PROJECT_SOURCE_DIR}/lib/fles_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/flib"
                     "${PROJECT_SOURCE_DIR}/lib/flib_ipc"
                     "${PROJECT_SOURCE_DIR}/lib")

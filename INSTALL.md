@@ -75,12 +75,6 @@ compilation errors.
 Building flesnet
 ----------------
 
-For every new clone of the repository run the following two commands a single
-time from the repositories' root directory:
-
-    git submodule init
-    git submodule update
-
 Building flesnet:
 
     mkdir build
