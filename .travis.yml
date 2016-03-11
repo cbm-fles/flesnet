@@ -1,8 +1,9 @@
 addons:
   apt:
     sources:
-    - boost-latest/ppa
+    - boost-latest
     packages:
+    - doxygen
     - libboost-filesystem1.55-dev
     - libboost-log1.55-dev
     - libboost-program-options1.55-dev
@@ -15,6 +16,14 @@ addons:
 
 before_install:
   - sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O /usr/local/include/zmq.hpp
+  - git clone https://github.com/cbm-fles/pda.git
+  - cd pda
+  - ./configure
+  - ./make
+  - cd ..
+  - bash -c "echo 'include_directories(../pda/build_linux_x86_uio/include)' > cmake/FindPDA.cmake"
+  - bash -c "echo 'find_library(PDA pda PATHS ../pda/build_linux_x86_uio)' >> cmake/FindPDA.cmake"
+  - bash -c "echo 'set(EXTRA_LIBS ${EXTRA_LIBS} ${PDA})' >> cmake/FindPDA.cmake"
 
 before_script:
   - mkdir build
