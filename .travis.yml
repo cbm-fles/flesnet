@@ -19,7 +19,7 @@ addons:
 
 before_install:
   - wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O zmq.hpp
-  - bash -c "echo 'include_directories(.)' >> CMakeLists.txt"
+  - bash -c "echo 'include_directories(\"\${PROJECT_SOURCE_DIR}\")' >> CMakeLists.txt"
   - git clone https://github.com/cbm-fles/pda.git
   - cd pda
   - ./configure
@@ -27,7 +27,7 @@ before_install:
   - cd ..
   - bash -c "echo 'include_directories(../pda/build_linux_x86_uio/include)' > cmake/FindPDA.cmake"
   - bash -c "echo 'find_library(PDA pda PATHS ../pda/build_linux_x86_uio)' >> cmake/FindPDA.cmake"
-  - bash -c "echo 'set(EXTRA_LIBS ${EXTRA_LIBS} ${PDA})' >> cmake/FindPDA.cmake"
+  - bash -c "echo 'set(EXTRA_LIBS \${EXTRA_LIBS} \${PDA})' >> cmake/FindPDA.cmake"
 
 before_script:
   - mkdir build
