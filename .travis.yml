@@ -2,7 +2,9 @@ addons:
   apt:
     sources:
     - boost-latest
+    - kalakris-cmake
     packages:
+    - cmake
     - doxygen
     - libboost-filesystem1.55-dev
     - libboost-log1.55-dev
