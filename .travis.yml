@@ -14,20 +14,13 @@ addons:
     - libboost-test1.55-dev
     - libboost-thread1.55-dev
     - libboost1.55-dev
+    - libibverbs-dev
     - libpci-dev
+    - librdmacm-dev
     - libzmq3-dev
 
 before_install:
-  - wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O zmq.hpp
-  - bash -c "echo 'include_directories(\"\${PROJECT_SOURCE_DIR}\")' >> CMakeLists.txt"
-  - git clone https://github.com/cbm-fles/pda.git
-  - cd pda
-  - ./configure
-  - make
-  - cd ..
-  - bash -c "echo 'include_directories(../pda/build_linux_x86_uio/include)' > cmake/FindPDA.cmake"
-  - bash -c "echo 'find_library(PDA pda PATHS ../pda/build_linux_x86_uio)' >> cmake/FindPDA.cmake"
-  - bash -c "echo 'set(EXTRA_LIBS \${EXTRA_LIBS} \${PDA})' >> cmake/FindPDA.cmake"
+  - contrib/merge-dependencies
 
 before_script:
   - mkdir build
