@@ -1,8 +1,11 @@
 language: cpp
 
-compiler:
-  - clang
-  - gcc
+matrix:
+  include:
+    - compiler: clang
+      env: CC=clang-3.6 CXX=clang++-3.6
+    - compiler: gcc
+      env: CC=gcc-4.8 CXX=g++-4.8
 
 addons:
   apt:
