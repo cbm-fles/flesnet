@@ -1,11 +1,22 @@
+language: cpp
+
+compiler:
+  - clang
+  - gcc
+
 addons:
   apt:
     sources:
     - boost-latest
     - kalakris-cmake
+    - llvm-toolchain-precise-3.6
+    - ubuntu-toolchain-r-test
     packages:
+    - clang-3.6
     - cmake
     - doxygen
+    - gcc-4.8
+    - g++-4.8
     - libboost-filesystem1.55-dev
     - libboost-log1.55-dev
     - libboost-program-options1.55-dev
@@ -19,19 +30,12 @@ addons:
     - librdmacm-dev
     - libzmq3-dev
 
-before_install:
-  - contrib/merge-dependencies
-
 before_script:
-  - mkdir build
-  - cd build
-  - cmake ..
+  - contrib/merge-dependencies
+  - mkdir build && cd build
   
-compiler: clang
-
-language: cpp
-
 script:
+  - cmake ..
   - make
   - make test
 
