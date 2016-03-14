@@ -206,9 +206,9 @@ private:
                     nullptr,
                     0));
             std::cout << std::hex << " sys_id:      0x"
-                      << (uint32_t)_link_config.at(i).hdr_config.sys_id << "\n"
+                      << static_cast<uint32_t>(_link_config.at(i).hdr_config.sys_id) << "\n"
                       << " sys_ver:     0x"
-                      << (uint32_t)_link_config.at(i).hdr_config.sys_ver
+                      << static_cast<uint32_t>(_link_config.at(i).hdr_config.sys_ver)
                       << std::endl;
           } else {
             std::cout << " If reading from 'link' please provide sys_id and "

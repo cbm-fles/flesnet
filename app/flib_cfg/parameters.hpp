@@ -225,5 +225,5 @@ private:
 
   uint32_t _mc_size = 10; // 10,24 us
   float _pgen_rate = 1;
-  std::array<struct link_config, _num_flib_links> _links = {};
+  std::array<struct link_config, _num_flib_links> _links = {{}};
 };

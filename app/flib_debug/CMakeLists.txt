@@ -1,6 +1,6 @@
 # Copyright 2014 Dirk Hutter, Jan de Cuveland
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-old-style-cast -Wno-unused-parameter")
 
 include_directories(
         "${PROJECT_SOURCE_DIR}/lib/flib"

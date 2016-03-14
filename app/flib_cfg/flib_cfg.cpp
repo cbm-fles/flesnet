@@ -12,7 +12,7 @@
 #include "parameters.hpp"
 
 int s_interrupted = 0;
-static void s_signal_handler(int signal_value) { s_interrupted = 1; }
+static void s_signal_handler(int /* signal_value */) { s_interrupted = 1; }
 
 static void s_catch_signals(void) {
   struct sigaction action;

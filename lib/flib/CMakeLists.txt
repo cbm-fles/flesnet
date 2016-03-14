@@ -6,7 +6,7 @@ include_directories( ${LIBFLIB_SOURCE_DIR}/
 
 set(VERSION "0.0.0")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-tree-vectorize -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-tree-vectorize")
 
 set(LIB_SRC
   dma_channel.cpp
@@ -38,5 +38,5 @@ add_library(flib SHARED ${LIB_HDR} ${LIB_SRC})
 add_library(flib-static STATIC ${LIB_HDR} ${LIB_SRC})
 set_target_properties(flib-static PROPERTIES OUTPUT_NAME flib)
 
-target_link_libraries( flib pda)
-target_link_libraries( flib-static pda)
+target_link_libraries(flib pda)
+target_link_libraries(flib-static pda)

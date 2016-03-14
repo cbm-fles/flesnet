@@ -3,8 +3,6 @@
 file(GLOB SOURCES *.cpp)
 file(GLOB HEADERS *.hpp)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3")
-
 include_directories("${PROJECT_SOURCE_DIR}/lib/logging"
                     "${PROJECT_SOURCE_DIR}/lib/flib"
                     "${PROJECT_SOURCE_DIR}/lib")

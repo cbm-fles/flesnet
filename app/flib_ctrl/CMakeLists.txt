@@ -3,8 +3,6 @@
 file(GLOB SOURCES *.cpp)
 file(GLOB HEADERS *.hpp)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-variadic-macros -pedantic -O3")
-
 # Search for external library
 
 # force search if cmake is called
