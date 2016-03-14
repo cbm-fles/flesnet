@@ -1,13 +1,10 @@
 # Copyright 2013-2015 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-
-#set(CMAKE_C_COMPILER clang)
-#set(CMAKE_CXX_COMPILER clang++)
-
 project(fles)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
 include(GetGitRevisionDescription)
 git_describe(GIT_REVISION "--all" "--tags" "--long" "--always")
 configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
@@ -23,7 +20,7 @@ else()
   find_library(ZMQ_LIBRARIES zmq)
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -msse4.2 -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
 
 find_library(LIBNUMA numa)
 set(USE_LIBNUMA TRUE CACHE BOOL "Use libnuma to schedule on specific NUMA nodes.")
