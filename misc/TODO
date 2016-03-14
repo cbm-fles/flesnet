@@ -8,10 +8,10 @@ DONE   - check for code using microslice index - should be display only
 DONE - reduce number of COPY operations for StorableMicroslice
 DONE - maybe rename Base,Derived to Input,Output in Filter code
 DONE - integrate fles_ipc
+DONE - set up travis ci
 
-- integrate xcode project
 - merge to master
-- set up travis ci
+- integrate xcode project
 
 - check for missing code for soft_dpb
 - example soft_dpb
