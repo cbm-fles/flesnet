@@ -1,7 +1,10 @@
-# Copyright 2013-2015 Jan de Cuveland <cmail@cuveland.de>
+# Copyright 2013-2016 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(fles)
+
+option(COVERALLS "Turn on coveralls support" OFF)
+option(COVERALLS_UPLOAD "Upload the generated coveralls json" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
@@ -38,6 +41,11 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS})
 
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
+if (COVERALLS)
+  include(Coveralls)
+  coveralls_turn_on_coverage()
+endif()
+
 add_subdirectory(lib/logging)
 add_subdirectory(lib/crcutil)
 add_subdirectory(lib/fles_ipc)
@@ -68,6 +76,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
   add_subdirectory(contrib)
+endif()
+
+if (COVERALLS)
+  file(GLOB_RECURSE LIB_SRC lib/*.[ch]pp)
+  coveralls_setup("${LIB_SRC}" ${COVERALLS_UPLOAD})
 endif()
 
 enable_testing()
