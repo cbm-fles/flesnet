@@ -1,7 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "RingBufferReadInterface.hpp"
+#include "DualRingBuffer.hpp"
 #include "ThreadContainer.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
@@ -20,13 +20,16 @@ public:
     /// The FlibPatternGenerator constructor.
     FlibPatternGenerator(std::size_t data_buffer_size_exp,
                          std::size_t desc_buffer_size_exp, uint64_t input_index,
-                         uint32_t typical_content_size)
+                         uint32_t typical_content_size,
+                         bool generate_pattern = false,
+                         bool randomize_sizes = false)
         : data_buffer_(data_buffer_size_exp),
           desc_buffer_(desc_buffer_size_exp),
           data_buffer_view_(data_buffer_.ptr(), data_buffer_size_exp),
           desc_buffer_view_(desc_buffer_.ptr(), desc_buffer_size_exp),
-          input_index_(input_index), generate_pattern_(false),
-          typical_content_size_(typical_content_size), randomize_sizes_(false)
+          input_index_(input_index), generate_pattern_(generate_pattern),
+          typical_content_size_(typical_content_size),
+          randomize_sizes_(randomize_sizes)
     {
         producer_thread_ =
             new std::thread(&FlibPatternGenerator::produce_data, this);
@@ -47,13 +50,12 @@ public:
         }
     }
 
-    virtual RingBufferView<volatile uint8_t>& data_buffer() override
+    virtual RingBufferView<uint8_t>& data_buffer() override
     {
         return data_buffer_view_;
     }
 
-    virtual RingBufferView<volatile fles::MicrosliceDescriptor>&
-    desc_buffer() override
+    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
     {
         return desc_buffer_view_;
     }
@@ -61,25 +63,22 @@ public:
     /// Generate FLIB input data.
     void produce_data();
 
-    virtual DualRingBufferIndex get_write_index() override
-    {
-        return write_index_.load();
-    }
+    virtual DualIndex get_write_index() override { return write_index_.load(); }
 
-    virtual void set_read_index(DualRingBufferIndex new_read_index) override
+    virtual void set_read_index(DualIndex new_read_index) override
     {
         read_index_.store(new_read_index);
     }
 
 private:
     /// Input data buffer.
-    RingBuffer<volatile uint8_t> data_buffer_;
+    RingBuffer<uint8_t> data_buffer_;
 
     /// Input descriptor buffer.
-    RingBuffer<volatile fles::MicrosliceDescriptor, true> desc_buffer_;
+    RingBuffer<fles::MicrosliceDescriptor, true> desc_buffer_;
 
-    RingBufferView<volatile uint8_t> data_buffer_view_;
-    RingBufferView<volatile fles::MicrosliceDescriptor> desc_buffer_view_;
+    RingBufferView<uint8_t> data_buffer_view_;
+    RingBufferView<fles::MicrosliceDescriptor> desc_buffer_view_;
 
     /// This node's index in the list of input nodes
     uint64_t input_index_;
@@ -94,8 +93,17 @@ private:
 
     /// Number of acknowledged data bytes and microslices. Updated by input
     /// node.
-    std::atomic<DualRingBufferIndex> read_index_{{0, 0}};
+    std::atomic<DualIndex> read_index_{{0, 0}};
 
     /// FLIB-internal number of written microslices and data bytes.
-    std::atomic<DualRingBufferIndex> write_index_{{0, 0}};
+    std::atomic<DualIndex> write_index_{{0, 0}};
+
+    // NOTE: std::atomic<DualIndex> triggers a bug in gcc versions < 5.1
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65147
+#if defined(__GNUC__) && !defined(__clang__) && (__GNUC__ * 100 + __GNUC_MINOR__) < 501
+    static_assert(alignof(decltype(read_index_)) == 16,
+                  "invalid std::atomic alignment");
+    static_assert(alignof(decltype(write_index_)) == 16,
+                  "invalid std::atomic alignment");
+#endif
 };

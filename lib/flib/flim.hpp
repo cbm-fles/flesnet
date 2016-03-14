@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <ctime>
 
 #include <flib_link_flesin.hpp>
 
@@ -26,16 +26,17 @@ public:
     bool soft_err;
   };
 
-  void reset();
+  void reset_datapath();
   void set_ready_for_data(bool enable);
   void set_data_source(data_source_t sel);
-  void set_start_idx(uint64_t idx);
   uint64_t get_mc_idx();
+  uint64_t get_mc_time();
   bool get_pgen_present();
   sts_t get_sts();
   void set_pgen_mc_size(uint32_t size);
   void set_pgen_ids(uint16_t eq_id);
   void set_pgen_rate(float val);
+  void set_pgen_start_time(uint32_t time);
   void set_pgen_enable(bool enable);
   void reset_pgen_mc_pending();
   uint32_t get_pgen_mc_pending();
@@ -45,7 +46,7 @@ public:
   void set_debug_out(bool enable);
 
   struct build_info_t {
-    boost::posix_time::ptime date;
+    time_t date;
     uint32_t rev[5];
     std::string host;
     std::string user;
@@ -56,7 +57,7 @@ public:
 
   uint16_t hardware_ver();
   uint16_t hardware_id();
-  boost::posix_time::ptime build_date();
+  time_t build_date();
   std::string build_host();
   std::string build_user();
   struct build_info_t build_info();

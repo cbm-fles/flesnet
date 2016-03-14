@@ -3,11 +3,15 @@
 file(GLOB APP_SOURCES *.cpp)
 file(GLOB APP_HEADERS *.h)
 
-include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc/src"
+list(APPEND APP_SOURCES "${CMAKE_BINARY_DIR}/config/GitRevision.cpp")
+list(APPEND APP_HEADERS "${PROJECT_SOURCE_DIR}/config/GitRevision.hpp")
+
+include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/fles_core"
                     "${PROJECT_SOURCE_DIR}/lib/flib_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/logging"
-                    "${PROJECT_SOURCE_DIR}/lib/crcutil")
+                    "${PROJECT_SOURCE_DIR}/lib/crcutil"
+                    "${PROJECT_SOURCE_DIR}/config")
 
 add_executable(mstool ${APP_SOURCES} ${APP_HEADERS})
 

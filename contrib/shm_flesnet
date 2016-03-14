@@ -3,6 +3,7 @@ set -e
 
 t=$(tempfile) || exit
 trap "rm -f -- '$t'" EXIT
+echo "flib_server output will be written to $t"
 
 # start a flib_server and wait until shm is initialized
 ./flib_server -l 2 &> $t  &
@@ -13,7 +14,7 @@ do
 done
 
 # start flesnet for readout
-./flesnet  --use-flib true --use-shm true
+./flesnet  --use-flib true --input-shm flib_shared_memory
 
 wait
 rm -f -- "$t"

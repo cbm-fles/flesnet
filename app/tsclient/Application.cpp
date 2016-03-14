@@ -67,8 +67,9 @@ void Application::run()
     uint64_t limit = par_.maximum_number();
 
     while (auto timeslice = source_->get()) {
+        std::shared_ptr<const fles::Timeslice> ts(std::move(timeslice));
         for (auto& sink : sinks_) {
-            sink->put(*timeslice);
+            sink->put(ts);
         }
         ++count_;
         if (count_ == limit) {

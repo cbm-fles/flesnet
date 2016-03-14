@@ -2,9 +2,16 @@
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
+#set(CMAKE_C_COMPILER clang)
+#set(CMAKE_CXX_COMPILER clang++)
+
 project(fles)
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+include(GetGitRevisionDescription)
+git_describe(GIT_REVISION "--all" "--tags" "--long" "--always")
+configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
+               "${CMAKE_BINARY_DIR}/config/GitRevision.cpp" @ONLY)
 
 if(DEFINED ENV{SIMPATH})
   message(WARNING "SIMPATH set, using Fairroot external packages in build.")
@@ -16,9 +23,6 @@ else()
   find_library(ZMQ_LIBRARIES zmq)
 endif()
 
-#set(CMAKE_C_COMPILER clang)
-#set(CMAKE_CXX_COMPILER clang++)
-
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -msse4.2 -Wall -pedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
 
 find_library(LIBNUMA numa)
@@ -27,10 +31,10 @@ if(LIBNUMA AND USE_LIBNUMA)
   add_definitions(-DHAVE_LIBNUMA)
 endif()
 if(USE_LIBNUMA AND NOT LIBNUMA)
-  message(WARNING "libnuma was not found. Building without.")
+  message(STATUS "Library not found: libnuma. Building without.")
 endif()
 
-find_package(Boost 1.54.0 REQUIRED COMPONENTS log serialization thread program_options system unit_test_framework)
+find_package(Boost 1.54.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework)
 find_package(Threads)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS})

@@ -21,6 +21,8 @@ int main(int argc, char* argv[]) {
 
   std::cout << MyFlib->print_build_info() << std::endl;
   std::cout << MyFlib->print_devinfo() << std::endl;
+  std::cout << "Hardware links: "
+            << static_cast<unsigned>(MyFlib->number_of_hw_links()) << std::endl;
 
   if (MyFlib)
     delete MyFlib;

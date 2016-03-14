@@ -39,63 +39,57 @@ static void s_catch_signals(void) {
   sigaction(SIGINT, &action, NULL);
 }
 
-// int main(int argc, char* argv[]) {
-int main() {
+int main(int argc, char* argv[]) {
   s_catch_signals();
 
+  size_t link = 0;    
+  if ( argc == 2 ) {
+    link = atoi(argv[1]);
+    std::cout << "using link "<< link << std::endl;
+  }  else {
+    std::cout << "usage: " << argv[0] << " link" << std::endl;
+    return -1;
+  }
+  
   MyFlib = new flib_device_flesin(0);
-  size_t link = 0;
   int ret = 0;
 
   MyFlim = new flim(MyFlib->link(link));
 
   // reset at startup
-  MyFlim->set_pgen_enable(false);
-  MyFlim->set_ready_for_data(false);
-  MyFlim->reset_pgen_mc_pending();
+  MyFlim->reset_datapath();
 
   std::cout << MyFlim->print_build_info() << std::endl;
-  std::cout << "mc index: " << MyFlim->get_mc_idx() << std::endl;
-  std::cout << "mc pending (pgen) " << MyFlim->get_pgen_mc_pending()
-            << std::endl;
-
-  // MyFlib->link(link)->reset_datapath();
-
-  // reg = MyFlim->get_testreg();
-  // std::cout << "read  0x" << std::hex << reg << std::endl;
-
-  //  while (ret == 0) {
-  //    MyFlim->set_testreg(reg_wr);
-  //    std::cout << "write 0x" << std::hex << reg_wr << std::endl;
-  //
-  //    reg = MyFlim->get_testreg();
-  //    std::cout << "read  0x" << std::hex << reg << std::endl;
-  //
-  //    if (reg_wr != reg) {
-  //      ret = -1;
-  //    }
-  //    ++reg_wr;
-  //  }
-
-  MyFlim->set_ready_for_data(true);
-  MyFlim->set_pgen_enable(true);
-
-  while (s_interrupted == 0) {
-    MyFlim->set_debug_out(false);
-    ::sleep(1);
-    MyFlim->set_debug_out(true);
-    ::sleep(1);
+  if (uint32_t mc_pend = MyFlim->get_pgen_mc_pending() != 0) {
+    std::cout << "ERROR: mc pending (pgen) " << mc_pend << std::endl;
   }
-  //  while (s_interrupted == 0) {
-  //    ::sleep(1);
-  //  }
 
-  std::cout << "mc index: " << MyFlim->get_mc_idx() << std::endl;
-  std::cout << "mc pending (pgen) " << MyFlim->get_pgen_mc_pending()
-            << std::endl;
-  MyFlim->set_pgen_enable(false);
-  MyFlim->set_ready_for_data(false);
-  MyFlim->reset_pgen_mc_pending();
+  uint32_t reg = 0;
+  uint32_t reg_wr = 0;
+  
+  reg = MyFlim->get_testreg();
+  std::cout << "read  0x" << std::hex << reg << std::endl;
+  
+  while (ret == 0 && s_interrupted == 0 ) {
+    MyFlim->set_testreg(reg_wr);
+    //std::cout << "write 0x" << std::hex << reg_wr << std::endl;
+    
+    reg = MyFlim->get_testreg();
+    //std::cout << "read  0x" << std::hex << reg << std::endl;
+
+    if (reg_wr % 500000 == 0) {
+      std::cout << "written: " << reg_wr << std::endl;
+    }
+    
+    if (reg_wr != reg) {
+      std::cout << "write 0x" << std::hex << reg_wr << std::endl;
+      std::cout << "read  0x" << std::hex << reg << std::endl;
+      reg = MyFlim->get_testreg();
+      std::cout << "read  0x" << std::hex << reg << std::endl;
+      ret = -1;
+    }
+    ++reg_wr;
+  }
 
   if (MyFlim)
     delete MyFlim;

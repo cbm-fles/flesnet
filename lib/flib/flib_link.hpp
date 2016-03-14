@@ -37,12 +37,8 @@ public:
   void deinit_dma();
 
   /*** DPB Emualtion ***/
-  void init_datapath();
   void reset_datapath();
   void reset_link();
-
-  void set_start_idx(uint64_t index);
-  void rst_pending_mc();
 
   typedef enum {
     rx_disable = 0x0,
@@ -54,17 +50,8 @@ public:
   void set_data_sel(data_sel_t rx_sel);
   data_sel_t data_sel();
 
-  typedef struct __attribute__((__packed__)) {
-    uint16_t eq_id;  // "Equipment identifier"
-    uint8_t sys_id;  // "Subsystem identifier"
-    uint8_t sys_ver; // "Subsystem format version"
-  } hdr_config_t;
-
-  void set_hdr_config(const hdr_config_t* config);
-  uint64_t pending_mc();
-  uint64_t mc_index();
-
-  virtual void enable_readout(bool enable) = 0;
+  virtual void enable_readout() = 0;
+  virtual void disable_readout() = 0;
 
   /*** Getter ***/
   size_t link_index() { return m_link_index; };
@@ -78,7 +65,6 @@ public:
 
 protected:
   std::unique_ptr<dma_channel> m_dma_channel;
-  std::unique_ptr<register_file> m_rfglobal; // TODO remove this later
   std::unique_ptr<register_file> m_rfpkt;
   std::unique_ptr<register_file> m_rfgtx;
 

@@ -12,16 +12,18 @@ MicrosliceReceiver::MicrosliceReceiver(InputBufferReadInterface& data_source)
 
 StorableMicroslice* MicrosliceReceiver::try_get()
 {
-    if (data_source_.desc_buffer().at(microslice_index_ + 1).idx >
-        previous_desc_idx_) {
+    // update write_index if needed
+    if (write_index_desc_ <= read_index_desc_) {
+        write_index_desc_ = data_source_.get_write_index().desc;
+    }
+    if (write_index_desc_ > read_index_desc_) {
 
-        const volatile MicrosliceDescriptor& desc =
-            data_source_.desc_buffer().at(microslice_index_);
+        const MicrosliceDescriptor& desc =
+            data_source_.desc_buffer().at(read_index_desc_);
 
-        const volatile uint8_t* data_begin =
-            &data_source_.data_buffer().at(desc.offset);
+        const uint8_t* data_begin = &data_source_.data_buffer().at(desc.offset);
 
-        const volatile uint8_t* data_end =
+        const uint8_t* data_end =
             &data_source_.data_buffer().at(desc.offset + desc.size);
 
         StorableMicroslice* sms;
@@ -31,10 +33,9 @@ StorableMicroslice* MicrosliceReceiver::try_get()
                 const_cast<const fles::MicrosliceDescriptor&>(desc),
                 const_cast<const uint8_t*>(data_begin));
         } else {
-            const volatile uint8_t* buffer_begin =
-                data_source_.data_buffer().ptr();
+            const uint8_t* buffer_begin = data_source_.data_buffer().ptr();
 
-            const volatile uint8_t* buffer_end =
+            const uint8_t* buffer_end =
                 buffer_begin + data_source_.data_buffer().bytes();
 
             // copy two segments to vector
@@ -48,14 +49,11 @@ StorableMicroslice* MicrosliceReceiver::try_get()
                 const_cast<const fles::MicrosliceDescriptor&>(desc), data);
         }
 
-        ++microslice_index_;
-
-        previous_desc_idx_ =
-            data_source_.desc_buffer().at(microslice_index_).idx;
+        ++read_index_desc_;
 
         data_source_.set_read_index(
-            {microslice_index_,
-             data_source_.desc_buffer().at(microslice_index_).offset});
+            {read_index_desc_,
+             data_source_.desc_buffer().at(read_index_desc_).offset});
 
         return sms;
     }

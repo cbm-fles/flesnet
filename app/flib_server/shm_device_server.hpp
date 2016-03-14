@@ -22,9 +22,11 @@
 using namespace boost::interprocess;
 using namespace flib;
 
-class shm_device_server {
+template <typename T_DESC, typename T_DATA> class shm_device_server {
 
 public:
+  using shm_channel_server_type = shm_channel_server<T_DESC, T_DATA>;
+
   shm_device_server(flib_device* flib,
                     size_t data_buffer_size_exp,
                     size_t desc_buffer_size_exp,
@@ -33,17 +35,17 @@ public:
     std::vector<flib_link*> flib_links = m_flib->links();
 
     // delete deactivated links from vector
-    flib_links.erase(std::remove_if(std::begin(flib_links),
-                                    std::end(flib_links),
-                                    [](decltype(flib_links[0]) link) {
-                       return link->data_sel() == flib::flib_link::rx_disable;
-                     }),
-                     std::end(flib_links));
+    flib_links.erase(
+        std::remove_if(std::begin(flib_links), std::end(flib_links),
+                       [](decltype(flib_links[0]) link) {
+                         return link->data_sel() == flib::flib_link::rx_disable;
+                       }),
+        std::end(flib_links));
     L_(info) << "enabled flib links detected: " << flib_links.size();
 
     // create a big enough shared memory segment
-    size_t shm_size = ((UINT64_C(1) << data_buffer_size_exp) +
-                       (UINT64_C(1) << desc_buffer_size_exp) +
+    size_t shm_size = ((UINT64_C(1) << data_buffer_size_exp) * sizeof(T_DATA) +
+                       (UINT64_C(1) << desc_buffer_size_exp) * sizeof(T_DESC) +
                        2 * sysconf(_SC_PAGESIZE) + sizeof(shm_channel)) *
                           flib_links.size() +
                       sizeof(shm_device) + 1000;
@@ -57,9 +59,13 @@ public:
     // create channels for active flib links
     size_t idx = 0;
     for (flib_link* link : flib_links) {
-      m_shm_ch_vec.push_back(std::unique_ptr<
-          shm_channel_server>(new shm_channel_server(
-          m_shm.get(), idx, link, data_buffer_size_exp, desc_buffer_size_exp)));
+      m_shm_ch_vec.push_back(std::unique_ptr<shm_channel_server_type>(
+          new shm_channel_server_type(m_shm.get(),
+                                      m_shm_dev,
+                                      idx,
+                                      link,
+                                      data_buffer_size_exp,
+                                      desc_buffer_size_exp)));
       ++idx;
       m_shm_dev->inc_num_channels();
     }
@@ -70,7 +76,8 @@ public:
   void run() {
     if (!m_run) { // don't start twice
       m_run = true;
-      m_flib->enable_mc_cnt(true);
+      // TODO needed in case of cbmnet readout
+      // m_flib->enable_mc_cnt(true);
       L_(info) << "flib server started and running";
       while (m_run) {
         // claim lock at start-up
@@ -80,7 +87,8 @@ public:
         // INFO: need to loop over all individual requests,
         // alternative would be global request cue.
         bool pending_req = false;
-        for (const std::unique_ptr<shm_channel_server>& shm_ch : m_shm_ch_vec) {
+        for (const std::unique_ptr<shm_channel_server_type>& shm_ch :
+             m_shm_ch_vec) {
           pending_req |= shm_ch->check_pending_req(lock);
         }
         if (!pending_req) {
@@ -95,7 +103,8 @@ public:
         }
 
         // try to handle requests
-        for (const std::unique_ptr<shm_channel_server>& shm_ch : m_shm_ch_vec) {
+        for (const std::unique_ptr<shm_channel_server_type>& shm_ch :
+             m_shm_ch_vec) {
           shm_ch->try_handle_req(lock);
         }
       }
@@ -104,18 +113,21 @@ public:
 
   void stop() {
     m_run = false;
-    m_flib->enable_mc_cnt(false);
+    // TODO needed in case of cbmnet readout
+    // m_flib->enable_mc_cnt(false);
   }
 
 private:
   std::string print_shm_info() {
     std::stringstream ss;
-    ss << "SHM INFO" << std::endl << "sanity " << m_shm->check_sanity()
-       << std::endl << "size " << m_shm->get_size() << std::endl << "free_mem "
-       << m_shm->get_free_memory() << std::endl << "num named obj "
-       << m_shm->get_num_named_objects() << std::endl << "num unique obj "
-       << m_shm->get_num_unique_objects() << std::endl << "name dev obj"
-       << managed_shared_memory::get_instance_name(m_shm_dev) << std::endl;
+    ss << "SHM INFO" << std::endl
+       << "sanity " << m_shm->check_sanity() << std::endl
+       << "size " << m_shm->get_size() << std::endl
+       << "free_mem " << m_shm->get_free_memory() << std::endl
+       << "num named obj " << m_shm->get_num_named_objects() << std::endl
+       << "num unique obj " << m_shm->get_num_unique_objects() << std::endl
+       << "name dev obj" << managed_shared_memory::get_instance_name(m_shm_dev)
+       << std::endl;
     return ss.str();
   }
 
@@ -131,7 +143,10 @@ private:
   volatile std::sig_atomic_t* m_signal_status;
   std::unique_ptr<managed_shared_memory> m_shm;
   shm_device* m_shm_dev = NULL;
-  std::vector<std::unique_ptr<shm_channel_server>> m_shm_ch_vec;
+  std::vector<std::unique_ptr<shm_channel_server_type>> m_shm_ch_vec;
 
   bool m_run = false;
 };
+
+using flib_shm_device_server =
+    shm_device_server<fles::MicrosliceDescriptor, uint8_t>;

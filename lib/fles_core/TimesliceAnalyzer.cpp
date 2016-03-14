@@ -43,23 +43,36 @@ bool TimesliceAnalyzer::check_crc(const fles::MicrosliceView m) const
 bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
                                          size_t component, size_t microslice)
 {
+// disabled, not applicable when using start time instead of index
+#if 0
     if (m.desc().idx != microslice) {
         out_ << "microslice index " << m.desc().idx << " found in m.desc() "
              << microslice << std::endl;
         return false;
     }
+#endif
 
     ++microslice_count_;
     content_bytes_ += m.desc().size;
 
     if (m.desc().flags &
-            static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
-        check_crc(m) == false) {
-        out_ << "crc failure in microslice " << m.desc().idx << std::endl;
+        static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) {
+        out_ << output_prefix_ << " microslice " << microslice
+             << " truncated by FLIM" << std::endl;
+    }
+
+    if (!pattern_checkers_.at(component)->check(m)) {
         return false;
     }
 
-    return pattern_checkers_.at(component)->check(m);
+    if (m.desc().flags &
+            static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
+        check_crc(m) == false) {
+        out_ << "crc failure in microslice " << microslice << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
 void TimesliceAnalyzer::initialize(const fles::Timeslice& ts)
@@ -120,9 +133,9 @@ std::string TimesliceAnalyzer::statistics() const
     return s.str();
 }
 
-void TimesliceAnalyzer::put(const fles::Timeslice& timeslice)
+void TimesliceAnalyzer::put(std::shared_ptr<const fles::Timeslice> timeslice)
 {
-    check_timeslice(timeslice);
+    check_timeslice(*timeslice);
     if ((timeslice_count_ % output_interval_) == 0) {
         out_ << output_prefix_ << statistics() << std::endl;
         reset();

@@ -23,7 +23,6 @@ flib_link::flib_link(size_t link_index, pda::device* dev, pda::pci_bar* bar)
       std::unique_ptr<register_file>(new register_file_bar(bar, m_base_addr));
   m_rfgtx = std::unique_ptr<register_file>(
       new register_file_bar(bar, (m_base_addr + (1 << RORC_DMA_CMP_SEL))));
-  m_rfglobal = std::unique_ptr<register_file>(new register_file_bar(bar, 0));
 }
 
 flib_link::~flib_link() { deinit_dma(); }
@@ -61,11 +60,9 @@ dma_channel* flib_link::channel() const {
 
 //////*** DPB Emualtion ***//////
 
-void flib_link::init_datapath() { set_start_idx(1); }
-
 void flib_link::reset_datapath() {
   // disable readout if still enabled
-  enable_readout(false);
+  disable_readout();
   // datapath reset, will also cause hw defaults for
   // - pending mc  = 0
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 2, true);
@@ -80,30 +77,6 @@ void flib_link::reset_link() {
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, true);
   usleep(1000);
   m_rfgtx->set_bit(RORC_REG_GTX_DATAPATH_CFG, 3, false);
-}
-
-void flib_link::set_start_idx(uint64_t index) {
-  // set reset value
-  // TODO replace with _rfgtx->set_mem()
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_L,
-                   static_cast<uint32_t>(index & 0xffffffff));
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG_IDX_H,
-                   static_cast<uint32_t>(index >> 32));
-  // reste mc counter
-  // TODO implenet edge detection and 'pulse only' in HW
-  uint32_t mc_gen_cfg = m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
-  // TODO replace with _rfgtx->set_bit()
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | 1));
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1)));
-}
-
-void flib_link::rst_pending_mc() {
-  // Is also resetted with datapath reset
-  // TODO implenet edge detection and 'pulse only' in HW
-  uint32_t mc_gen_cfg = m_rfgtx->get_reg(RORC_REG_GTX_MC_GEN_CFG);
-  // TODO replace with _rfgtx->set_bit()
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg | (1 << 1)));
-  m_rfgtx->set_reg(RORC_REG_GTX_MC_GEN_CFG, (mc_gen_cfg & ~(1 << 1)));
 }
 
 void flib_link::set_data_sel(data_sel_t rx_sel) {
@@ -127,30 +100,6 @@ void flib_link::set_data_sel(data_sel_t rx_sel) {
 flib_link::data_sel_t flib_link::data_sel() {
   uint32_t dp_cfg = m_rfgtx->get_reg(RORC_REG_GTX_DATAPATH_CFG);
   return static_cast<data_sel_t>(dp_cfg & 0x3);
-}
-
-void flib_link::set_hdr_config(const hdr_config_t* config) {
-  m_rfgtx->set_mem(RORC_REG_GTX_MC_GEN_CFG_HDR,
-                   static_cast<const void*>(config),
-                   sizeof(hdr_config_t) >> 2);
-}
-
-uint64_t flib_link::pending_mc() {
-  // TODO replace with _rfgtx->get_mem()
-  uint64_t pend_mc = m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_L);
-  pend_mc = pend_mc |
-            (static_cast<uint64_t>(m_rfgtx->get_reg(RORC_REG_GTX_PENDING_MC_H))
-             << 32);
-  return pend_mc;
-}
-
-// TODO this has to become desc_offset() in libflib2
-uint64_t flib_link::mc_index() {
-  uint64_t mc_index = m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_L);
-  mc_index =
-      mc_index |
-      (static_cast<uint64_t>(m_rfgtx->get_reg(RORC_REG_GTX_MC_INDEX_H)) << 32);
-  return mc_index;
 }
 
 } // namespace

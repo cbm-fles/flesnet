@@ -138,6 +138,15 @@ uint64_t dma_channel::get_data_offset() {
   return offset;
 }
 
+// get descriptor count from HW
+uint64_t dma_channel::get_desc_index() {
+  uint64_t index = 0;
+  m_rfpkt->get_mem(RORC_REG_DESC_CNT_L, &index, 2);
+  return index;
+}
+
+// disabled, not applicable when using start time instead of microslice index
+#if 0
 /*** MC access funtions ***/
 std::pair<dma_channel::mc_desc_t, bool> dma_channel::mc() {
   dma_channel::mc_desc_t mc;
@@ -164,6 +173,7 @@ std::pair<dma_channel::mc_desc_t, bool> dma_channel::mc() {
 
   return std::make_pair(mc, false);
 }
+#endif
 
 int dma_channel::ack_mc() {
 

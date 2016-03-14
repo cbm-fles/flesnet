@@ -7,6 +7,7 @@
 #pragma once
 
 #include <registers.h>
+#include <registers_cnet.h>
 
 #include <flib_device.hpp>
 #include <flib_device_cnet.hpp>

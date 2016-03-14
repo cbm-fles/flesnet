@@ -152,8 +152,8 @@ void ComputeBuffer::report_status()
                   << status_data.percentages() << " (used..free) | "
                   << human_readable_count(status_data.acked, true);
         L_(info) << "[c" << compute_index_ << "_" << c->index() << "] |"
-                 << bar_graph(status_data.vector(), "#x_.", 20) << "|"
-                 << bar_graph(status_desc.vector(), "#x_.", 10) << "| ";
+                 << bar_graph(status_data.vector(), "#._", 20) << "|"
+                 << bar_graph(status_desc.vector(), "#._", 10) << "| ";
     }
 
     scheduler_.add(std::bind(&ComputeBuffer::report_status, this),

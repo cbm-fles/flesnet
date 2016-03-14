@@ -11,7 +11,7 @@
 
 #include <pda/dma_buffer.hpp>
 #include <pda/data_structures.hpp>
-#include <fles_ipc/src/MicrosliceDescriptor.hpp>
+#include <fles_ipc/MicrosliceDescriptor.hpp>
 #include <flib_link.hpp>
 #include <register_file.hpp>
 
@@ -50,6 +50,7 @@ public:
   void set_sw_read_pointers(uint64_t data_offest, uint64_t desc_offset);
 
   uint64_t get_data_offset();
+  uint64_t get_desc_index();
 
   typedef struct {
     uint64_t nr;
@@ -74,6 +75,8 @@ public:
   }
 
   void reset_fifo(bool enable);
+
+  size_t dma_transfer_size() { return m_dma_transfer_size; }
 
 private:
   enum sg_bram_t { data_sg_bram = 0, desc_sg_bram = 1 };

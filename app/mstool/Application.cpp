@@ -1,46 +1,53 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include "FlibPatternGenerator.hpp"
-#include "FlibShmChannel.hpp"
+#include "shm_channel_client.hpp"
 #include "MicrosliceAnalyzer.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
 #include "MicrosliceReceiver.hpp"
+#include "MicrosliceTransmitter.hpp"
+#include "TimesliceDebugger.hpp"
 #include "log.hpp"
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 Application::Application(Parameters const& par) : par_(par)
 {
-    if (par_.use_shared_memory()) {
-        L_(info) << "using shared memory as data source";
 
-        shm_device_.reset(new shm_device_client());
+    // Source setup
+    if (!par_.input_shm.empty()) {
+        L_(info) << "using shared memory as data source: " << par_.input_shm;
 
-        if (par_.shared_memory_channel() < shm_device_->num_channels()) {
-            data_source_.reset(new FlibShmChannel(
-                shm_device_->channels().at(par_.shared_memory_channel())));
+        shm_device_ = std::make_shared<flib_shm_device_client>(par_.input_shm);
+
+        if (par_.shm_channel < shm_device_->num_channels()) {
+            data_source_.reset(
+                new flib_shm_channel_client(shm_device_, par_.shm_channel));
+
         } else {
             throw std::runtime_error("shared memory channel not available");
         }
-    } else if (par_.use_pattern_generator()) {
+    } else if (par_.use_pattern_generator) {
         L_(info) << "using pattern generator as data source";
 
         constexpr uint32_t typical_content_size = 10000;
-        constexpr std::size_t desc_buffer_size_exp = 7;  // 128 entries
-        constexpr std::size_t data_buffer_size_exp = 20; // 1 MiB
+        constexpr std::size_t desc_buffer_size_exp = 19; // 512 ki entries
+        constexpr std::size_t data_buffer_size_exp = 27; // 128 MiB
 
-        switch (par_.pattern_generator_type()) {
+        switch (par_.pattern_generator) {
         case 1:
-            data_source_.reset(new FlibPatternGenerator(data_buffer_size_exp,
-                                                        desc_buffer_size_exp, 0,
-                                                        typical_content_size));
+            data_source_.reset(new FlibPatternGenerator(
+                data_buffer_size_exp, desc_buffer_size_exp, 0,
+                typical_content_size, true, true));
             break;
         case 2:
             data_source_.reset(new EmbeddedPatternGenerator(
-                data_buffer_size_exp, desc_buffer_size_exp, 1,
-                typical_content_size));
+                data_buffer_size_exp, desc_buffer_size_exp, 0,
+                typical_content_size, true, true));
             break;
         default:
             throw std::runtime_error("pattern generator type not available");
@@ -49,18 +56,37 @@ Application::Application(Parameters const& par) : par_(par)
 
     if (data_source_) {
         source_.reset(new fles::MicrosliceReceiver(*data_source_));
-    } else if (!par_.input_archive().empty()) {
-        source_.reset(new fles::MicrosliceInputArchive(par_.input_archive()));
+    } else if (!par_.input_archive.empty()) {
+        source_.reset(new fles::MicrosliceInputArchive(par_.input_archive));
     }
 
-    if (par_.analyze()) {
+    // Sink setup
+    if (par_.analyze) {
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
             new MicrosliceAnalyzer(10000, std::cout, "")));
     }
 
-    if (!par_.output_archive().empty()) {
+    if (par_.dump_verbosity > 0)
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
-            new fles::MicrosliceOutputArchive(par_.output_archive())));
+            new MicrosliceDumper(std::cout, par_.dump_verbosity)));
+
+    if (!par_.output_archive.empty()) {
+        sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
+            new fles::MicrosliceOutputArchive(par_.output_archive)));
+    }
+
+    if (!par_.output_shm.empty()) {
+        L_(info) << "providing output in shared memory: " << par_.output_shm;
+
+        constexpr std::size_t desc_buffer_size_exp = 19; // 512 ki entries
+        constexpr std::size_t data_buffer_size_exp = 27; // 128 MiB
+
+        output_shm_device_.reset(new flib_shm_device_provider(
+            par_.output_shm, 1, data_buffer_size_exp, desc_buffer_size_exp));
+        InputBufferWriteInterface* data_sink =
+            output_shm_device_->channels().at(0);
+        sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
+            new fles::MicrosliceTransmitter(*data_sink)));
     }
 }
 
@@ -71,15 +97,22 @@ Application::~Application()
 
 void Application::run()
 {
-    uint64_t limit = par_.maximum_number();
+    uint64_t limit = par_.maximum_number;
 
     while (auto microslice = source_->get()) {
+        std::shared_ptr<const fles::Microslice> ms(std::move(microslice));
         for (auto& sink : sinks_) {
-            sink->put(*microslice);
+            sink->put(ms);
         }
         ++count_;
         if (count_ == limit) {
             break;
+        }
+    }
+    if (output_shm_device_) {
+        L_(info) << "waiting until output shared memory is empty";
+        while (!output_shm_device_->channels().at(0)->empty()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 }

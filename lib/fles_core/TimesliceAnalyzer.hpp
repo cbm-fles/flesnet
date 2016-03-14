@@ -18,7 +18,7 @@ public:
                       std::string arg_output_prefix);
     ~TimesliceAnalyzer();
 
-    virtual void put(const fles::Timeslice& timeslice) override;
+    virtual void put(std::shared_ptr<const fles::Timeslice> timeslice) override;
 
 private:
     bool check_timeslice(const fles::Timeslice& ts);

@@ -18,7 +18,7 @@ public:
                        std::string arg_output_prefix);
     ~MicrosliceAnalyzer();
 
-    virtual void put(const fles::Microslice& Microslice) override;
+    virtual void put(std::shared_ptr<const fles::Microslice> ms) override;
 
 private:
     bool check_microslice(const fles::Microslice& ms);
@@ -40,6 +40,11 @@ private:
     std::ostream& out_;
     std::string output_prefix_;
 
+    uint64_t reference_delta_t_ = 0;
+    uint64_t previous_start_ = 0;
+
     size_t microslice_count_ = 0;
+    size_t microslice_error_count_ = 0;
+    size_t microslice_truncated_count_ = 0;
     size_t content_bytes_ = 0;
 };

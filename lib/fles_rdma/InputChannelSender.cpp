@@ -93,8 +93,8 @@ void InputChannelSender::report_status()
               << human_readable_count(rate_data, true, "B/s") << ")";
 
     L_(info) << "[i" << input_index_ << "]   |"
-             << bar_graph(status_data.vector(), "#x_.", 20) << "|"
-             << bar_graph(status_desc.vector(), "#x_.", 10) << "| "
+             << bar_graph(status_data.vector(), "#x._", 20) << "|"
+             << bar_graph(status_desc.vector(), "#x._", 10) << "| "
              << human_readable_count(rate_data, true, "B/s") << " ("
              << human_readable_count(rate_desc, true, "Hz") << ")";
 
@@ -173,14 +173,19 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
     uint64_t desc_offset = timeslice * timeslice_size_;
     uint64_t desc_length = timeslice_size_ + overlap_size_;
 
-    // check if last microslice has really been written to memory
-    if (data_source_.desc_buffer().at(desc_offset + desc_length).idx >
-        previous_desc_idx_) {
+    if (write_index_desc_ < desc_offset + desc_length) {
+        write_index_desc_ = data_source_.get_write_index().desc;
+    }
+    // check if microslice no. (desc_offset + desc_length - 1) is avail
+    if (write_index_desc_ >= desc_offset + desc_length) {
 
         uint64_t data_offset =
             data_source_.desc_buffer().at(desc_offset).offset;
         uint64_t data_end =
-            data_source_.desc_buffer().at(desc_offset + desc_length).offset;
+            data_source_.desc_buffer()
+                .at(desc_offset + desc_length - 1)
+                .offset +
+            data_source_.desc_buffer().at(desc_offset + desc_length - 1).size;
         assert(data_end >= data_offset);
 
         uint64_t data_length = data_end - data_offset;
@@ -205,9 +210,6 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
         total_length += skip;
 
         if (conn_[cn]->check_for_buffer_space(total_length, 1)) {
-
-            previous_desc_idx_ =
-                data_source_.desc_buffer().at(desc_offset + desc_length).idx;
 
             post_send_data(timeslice, cn, desc_offset, desc_length, data_offset,
                            data_length, skip);

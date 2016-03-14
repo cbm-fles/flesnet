@@ -1,3 +1,81 @@
+# 2016-03-11 - jc flesnet repository
+
+DONE - cleanup local git working copy
+DONE - accept dirks modified pull request
+DONE - tag master as cbmnet_1.0 (ask dirk)
+DONE - support time instead of microslice index
+DONE   - check for code using microslice index - should be display only
+DONE - reduce number of COPY operations for StorableMicroslice
+DONE - maybe rename Base,Derived to Input,Output in Filter code
+DONE - integrate fles_ipc
+DONE - set up travis ci
+
+- merge to master
+- integrate xcode project
+
+- check for missing code for soft_dpb
+- example soft_dpb
+- support eof in shm buffers
+- mstool should handle ctrl-c (do not terminate!)
+- mstool should not poll excessively
+
+- drop legacy code
+
+- new dev branch for next big things
+- maybe refactor: DualRingbuffer -> IndexedBuffer
+- next big thing: support arbitrary start index
+  - new parameter: start_index
+- next big thing: peek shm, synchronize start
+- next big thing: controls online interface
+
+------
+
+MicrosliceDescriptor.hpp:
+
+struct DataDescriptor {
+    virtual uint32_t get_size() = 0;
+    virtual uint64_t get_offset() = 0;
+};
+// -> use policy classes / static polymorphism!
+
+struct MicrosliceDescriptor : DataDescriptor {
+    virtual uint32_t get_size() override { return size; }
+    virtual uint64_t get_offset() override { return offset; }
+
+------
+
+template <typename Metadata>
+class DataDescriptor : public Metadata {
+public:
+    uint32_t get_size() {
+		  return Metadata::size;
+		}
+    uint64_t get_offset() {
+		  return Metadata::offset;
+		}
+};
+
+typedef DataDescriptor<MicrosliceDescriptor> Descriptor;
+
+# 2015-09-09 - jc fles_ipc repository
+
+towards soft-dpb!
+- microslice filter
+
+extensive tests
+
+tsclient:
+- count ts with errors
+
+rework datasource interface
+
+use logging
+
+app/tsclient/main.cpp
+
+
+# Previously...
+
 flesnet:
 
 - exception safety, error handling

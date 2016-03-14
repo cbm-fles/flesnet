@@ -49,28 +49,63 @@ void MicrosliceAnalyzer::initialize(const fles::Microslice& ms)
 
 bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
 {
+    bool result = true;
+
     if (microslice_count_ == 0) {
         initialize(ms);
+        out_ << output_prefix_ << "eq_id=" << std::hex << std::showbase
+             << ms.desc().eq_id << std::endl;
+        out_ << output_prefix_
+             << "sys_id=" << static_cast<uint32_t>(ms.desc().sys_id)
+             << std::endl;
+        out_ << output_prefix_
+             << "sys_ver=" << static_cast<uint32_t>(ms.desc().sys_ver)
+             << std::dec << std::endl;
+        out_ << output_prefix_ << "start=" << ms.desc().idx << "ns"
+             << std::endl;
+    } else if (microslice_count_ == 1) {
+        reference_delta_t_ = ms.desc().idx - previous_start_;
+        out_ << output_prefix_ << "delta_t=" << reference_delta_t_ << "ns"
+             << std::endl;
+    } else {
+        uint64_t delta_t = ms.desc().idx - previous_start_;
+        if (delta_t != reference_delta_t_) {
+            out_ << output_prefix_ << "delta_t=" << delta_t << "ns"
+                 << " in microslice " << microslice_count_ << std::endl;
+            result = false;
+        }
     }
 
-    ++microslice_count_;
-    content_bytes_ += ms.desc().size;
-
     if (ms.desc().flags &
-            static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
-        check_crc(ms) == false) {
-        out_ << output_prefix_ << "crc failure in microslice " << ms.desc().idx
-             << std::endl;
-        return false;
+        static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) {
+        out_ << output_prefix_ << "data truncated by FLIM in microslice "
+             << microslice_count_ << std::endl;
+        ++microslice_truncated_count_;
     }
 
     if (!pattern_checker_->check(ms)) {
         out_ << output_prefix_ << "pattern error in microslice "
-             << ms.desc().idx << std::endl;
-        return false;
+             << microslice_count_ << std::endl;
+        result = false;
     }
 
-    return true;
+    if (ms.desc().flags &
+            static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
+        check_crc(ms) == false) {
+        out_ << output_prefix_ << "crc failure in microslice "
+             << microslice_count_ << std::endl;
+        result = false;
+    }
+
+    if (!result) {
+        ++microslice_error_count_;
+    }
+
+    ++microslice_count_;
+    content_bytes_ += ms.desc().size;
+    previous_start_ = ms.desc().idx;
+
+    return result;
 }
 
 std::string MicrosliceAnalyzer::statistics() const
@@ -78,12 +113,15 @@ std::string MicrosliceAnalyzer::statistics() const
     std::stringstream s;
     s << "microslices checked: " << microslice_count_ << " ("
       << human_readable_count(content_bytes_) << ")";
+    if (microslice_error_count_ > 0) {
+        s << " [" << microslice_error_count_ << " errors]";
+    }
     return s.str();
 }
 
-void MicrosliceAnalyzer::put(const fles::Microslice& ms)
+void MicrosliceAnalyzer::put(std::shared_ptr<const fles::Microslice> ms)
 {
-    if (!check_microslice(ms)) {
+    if (!check_microslice(*ms)) {
         pattern_checker_->reset();
     }
     if ((microslice_count_ % output_interval_) == 0) {

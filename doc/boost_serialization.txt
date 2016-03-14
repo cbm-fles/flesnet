@@ -1,0 +1,15 @@
+Boost serialization
+-------------------
+
+Boost version | BOOST_ARCHIVE_VERSION
+
+1.54 | 10   [Ubuntu Trusty 14.04 LTS default]
+1.55 | 10   [Debian Jessie 15.04] [Ubuntu Trusty 14.04 LTS universe]
+1.56 | 11
+1.57 | 11
+1.58 | 12   [Debian Stretch?] [Ubuntu Xenial 16.04 LTS?]
+1.59 | 13
+1.60 | 14
+
+- List of BOOST_ARCHIVE_VERSION changes:
+https://github.com/boostorg/serialization/blob/develop/src/basic_archive.cpp

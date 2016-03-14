@@ -4,8 +4,8 @@
 
 void EmbeddedPatternGenerator::proceed()
 {
-    const DualRingBufferIndex min_avail = {desc_buffer_.size() / 4,
-                                           data_buffer_.size() / 4};
+    const DualIndex min_avail = {desc_buffer_.size() / 4,
+                                 data_buffer_.size() / 4};
 
     // break unless significant space is available
     if ((write_index_.data - read_index_.data + min_avail.data >
@@ -47,7 +47,7 @@ void EmbeddedPatternGenerator::proceed()
         if (generate_pattern_) {
             for (uint64_t i = 0; i < content_bytes; i += sizeof(uint64_t)) {
                 uint64_t data_word = (input_index_ << 48L) | i;
-                reinterpret_cast<volatile uint64_t&>(
+                reinterpret_cast<uint64_t&>(
                     data_buffer_.at(write_index_.data)) = data_word;
                 write_index_.data += sizeof(uint64_t);
                 crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);

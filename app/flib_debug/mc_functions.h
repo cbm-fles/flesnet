@@ -98,7 +98,7 @@ int process_mc(dma_channel::mc_desc_t* mc) {
     uint16_t flags;  // "Status and error flags"
     uint8_t sys_id;  // "Subsystem identifier"
     uint8_t sys_ver; // "Subsystem format version"
-    uint64_t idx;    // "Microslice index"
+    uint64_t idx;    // "Microslice index / start time"
   };
 
   uint32_t mc_size = mc->size; // bytes

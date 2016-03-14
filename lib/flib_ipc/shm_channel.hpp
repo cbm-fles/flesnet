@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "DualRingBuffer.hpp"
+
 #include <cstdint>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
@@ -11,11 +13,6 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
 using namespace boost::interprocess;
-
-struct DualIndex {
-  uint64_t desc;
-  uint64_t data;
-};
 
 struct TimedDualIndex {
   DualIndex index;
@@ -28,10 +25,13 @@ public:
   shm_channel(managed_shared_memory* shm,
               void* data_buffer,
               size_t data_buffer_size_exp,
+              size_t data_item_size,
               void* desc_buffer,
-              size_t desc_buffer_size_exp)
+              size_t desc_buffer_size_exp,
+              size_t desc_item_size)
       : m_data_buffer_size_exp(data_buffer_size_exp),
-        m_desc_buffer_size_exp(desc_buffer_size_exp) {
+        m_desc_buffer_size_exp(desc_buffer_size_exp),
+        m_data_item_size(data_item_size), m_desc_item_size(desc_item_size) {
     set_buffer_handles(shm, data_buffer, desc_buffer);
   }
 
@@ -47,6 +47,9 @@ public:
 
   size_t data_buffer_size_exp() { return m_data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
+
+  size_t data_item_size() { return m_data_item_size; }
+  size_t desc_item_size() { return m_desc_item_size; }
 
   // getter / setter
   bool req_read_index(scoped_lock<interprocess_mutex>& lock) {
@@ -95,6 +98,16 @@ public:
     m_read_index = read_index;
   }
 
+  bool eof(scoped_lock<interprocess_mutex>& lock) {
+    assert(lock);
+    return m_eof;
+  }
+
+  void set_eof(scoped_lock<interprocess_mutex>& lock, bool eof) {
+    assert(lock);
+    m_eof = eof;
+  }
+
   bool connect(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
     if (m_clients != 0) {
@@ -107,7 +120,8 @@ public:
 
   void disconnect(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    m_clients = 0;
+    // TODO: disconnect is disabled to ensure channels are used only once
+    // m_clients = 0;
   }
 
   interprocess_condition m_cond_write_index;
@@ -124,12 +138,16 @@ private:
   managed_shared_memory::handle_t m_desc_buffer_handle;
   size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
+  size_t m_data_item_size;
+  size_t m_desc_item_size;
 
   bool m_req_read_index = false;
   bool m_req_write_index = false;
 
   DualIndex m_read_index{0, 0}; // INFO not actual hw value
   TimedDualIndex m_write_index{{0, 0}, boost::posix_time::neg_infin};
+
+  bool m_eof = false;
 
   size_t m_clients = 0;
 };

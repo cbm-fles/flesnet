@@ -7,6 +7,7 @@
 #include <cassert>
 #include <memory>
 #include <arpa/inet.h> // ntohl
+#include <iomanip>
 
 #include <flim.hpp>
 
@@ -14,13 +15,13 @@ namespace flib {
 
 flim::flim(flib_link_flesin* link) : m_parrent_link(link) {
   m_rfflim = std::unique_ptr<register_file>(new register_file_bar(
-      link->bar(), (link->base_addr() + (1 << RORC_DMA_CMP_SEL) + (1 << 5))));
+      link->bar(), (link->base_addr() + (1 << RORC_DMA_CMP_SEL) + (1 << RORC_C_LINK_SEL))));
   if (hardware_id() != 0x4844) {
     std::stringstream msg;
     msg << "FLIM not reachable; found ID: " << std::hex << hardware_id();
     throw FlibException(msg.str());
   }
-  if (hardware_ver() != 2) {
+  if (hardware_ver() != 3) {
     std::stringstream msg;
     msg << "FLIM hardware version not supported; found ver: " << hardware_ver();
     throw FlibException(msg.str());
@@ -32,7 +33,10 @@ flim::~flim() {}
 
 //////*** FLIM Configuration and Status***//////
 
-void flim::reset() { m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 2, true); }
+void flim::reset_datapath() {
+  m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 2, true);
+  m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 2, false);
+}
 
 void flim::set_ready_for_data(bool enable) {
   m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 0, enable);
@@ -41,15 +45,16 @@ void flim::set_data_source(flim::data_source_t sel) {
   m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 1, sel);
 }
 
-void flim::set_start_idx(uint64_t idx) {
-  m_rfflim->set_mem(RORC_REG_LINK_MC_PACKER_CFG_IDX_L, &idx, 2);
-  m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 31, true); // pulse bit
-}
-
 uint64_t flim::get_mc_idx() {
   uint64_t idx;
   m_rfflim->get_mem(RORC_REG_LINK_MC_INDEX_L, &idx, 2);
   return idx;
+}
+
+uint64_t flim::get_mc_time() {
+  uint64_t time;
+  m_rfflim->get_mem(RORC_REG_LINK_MC_TIME_L, &time, 2);
+  return time;
 }
 
 bool flim::get_pgen_present() {
@@ -80,6 +85,12 @@ void flim::set_pgen_rate(float val) {
   m_rfflim->set_reg(RORC_REG_LINK_MC_PGEN_CFG,
                     static_cast<uint32_t>(reg_val) << 16,
                     0xFFFF0000);
+}
+
+void flim::set_pgen_start_time(uint32_t time) {
+  (void)time;
+  //  m_rfflim->set_reg(RORC_REG_LINK_, time);
+  //  m_rfflim->set_bit(RORC_REG_LINK_, 31???, true); // pulse bit
 }
 
 void flim::set_pgen_enable(bool enable) {
@@ -118,13 +129,12 @@ uint16_t flim::hardware_id() {
   // RORC_REG_LINK_FLIM_HW_INFO
 }
 
-boost::posix_time::ptime flim::build_date() {
-  time_t time =
-      (static_cast<time_t>(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_DATE_L)) |
-       (static_cast<uint64_t>(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_DATE_H))
-        << 32));
-  boost::posix_time::ptime t = boost::posix_time::from_time_t(time);
-  return t;
+time_t flim::build_date() {
+  time_t time = (static_cast<time_t>(
+      m_rfflim->get_reg(RORC_REG_FLIM_BUILD_DATE_L) |
+      (static_cast<uint64_t>(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_DATE_H))
+       << 32)));
+  return time;
 }
 
 std::string flim::build_host() {
@@ -164,8 +174,15 @@ flim::build_info_t flim::build_info() {
 
 std::string flim::print_build_info() {
   flim::build_info_t build = build_info();
+
+  // TODO: hack to overcome gcc limitation, for c++11 use:
+  // std::put_time(std::localtime(&build.date), "%c %Z")
+  char mbstr[100];
+  std::strftime(
+      mbstr, sizeof(mbstr), "%c %Z UTC%z", std::localtime(&build.date));
+
   std::stringstream ss;
-  ss << "Build Date:     " << build.date << " UTC" << std::endl
+  ss << "FLIM Info:" << std::endl << "Build Date:     " << mbstr << std::endl
      << "Build Source:   " << build.user << "@" << build.host << std::endl;
   switch (build.repo) {
   case 1:

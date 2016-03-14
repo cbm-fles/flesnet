@@ -2,7 +2,7 @@
 
 #include "Application.hpp"
 #include "FlibHardwareChannel.hpp"
-#include "FlibShmChannel.hpp"
+#include "shm_channel_client.hpp"
 #include "FlibPatternGenerator.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include <log.hpp>
@@ -17,11 +17,10 @@ Application::Application(Parameters const& par,
     std::vector<unsigned> input_indexes = par.input_indexes();
 
     // FIXME: some of this is a terrible mess
-    if (par.use_flib()) {
-        if (par.use_shared_memory()) {
+    if (!par.input_shm().empty()) {
             try {
                 shm_device_ =
-                    std::unique_ptr<shm_device_client>(new shm_device_client());
+                    std::make_shared<flib_shm_device_client>(par.input_shm());
                 shm_num_channels_ = shm_device_->num_channels();
                 L_(info) << "using shared memory";
 
@@ -35,9 +34,10 @@ Application::Application(Parameters const& par,
                 }
 
             } catch (std::exception const& e) {
-                L_(error) << "exception while creating flib: " << e.what();
+                L_(error) << "exception while connecting to shared memory: "
+                          << e.what();
             }
-        } else {
+    } else if (par.use_flib()) {
             // TODO: presence detection #524
             try {
                 if (par.flib_legacy_mode()) {
@@ -76,7 +76,6 @@ Application::Application(Parameters const& par,
                 L_(error) << "exception while creating flib: " << e.what();
             }
         }
-    }
     // end FIXME
 
     if (par.standalone()) {
@@ -108,57 +107,59 @@ Application::Application(Parameters const& par,
 
     for (size_t c = 0; c < input_indexes.size(); ++c) {
         unsigned index = input_indexes.at(c);
-        std::unique_ptr<InputBufferReadInterface> data_source;
 
         if (c < flib_links_.size()) {
-            data_source = std::unique_ptr<InputBufferReadInterface>(
+            data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
                 new FlibHardwareChannel(par.in_data_buffer_size_exp(),
                                         par.in_desc_buffer_size_exp(),
-                                        flib_links_.at(c)));
+                                        flib_links_.at(c))));
         } else if (c < shm_num_channels_) {
-            data_source = std::unique_ptr<InputBufferReadInterface>(
-                new FlibShmChannel(shm_device_->channels().at(c)));
+            data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
+                new flib_shm_channel_client(shm_device_, c)));
         } else {
             if (false) {
-                data_source = std::unique_ptr<InputBufferReadInterface>(
-                    new FlibPatternGenerator(par.in_data_buffer_size_exp(),
-                                             par.in_desc_buffer_size_exp(),
-                                             index,
-                                             par.typical_content_size()));
-            } else {
-                data_source = std::unique_ptr<InputBufferReadInterface>(
-                    new EmbeddedPatternGenerator(par.in_data_buffer_size_exp(),
+                data_sources_.push_back(
+                    std::unique_ptr<InputBufferReadInterface>(
+                        new FlibPatternGenerator(par.in_data_buffer_size_exp(),
                                                  par.in_desc_buffer_size_exp(),
                                                  index,
-                                                 par.typical_content_size()));
+                                                 par.typical_content_size())));
+            } else {
+                data_sources_.push_back(
+                    std::unique_ptr<InputBufferReadInterface>(
+                        new EmbeddedPatternGenerator(
+                            par.in_data_buffer_size_exp(),
+                            par.in_desc_buffer_size_exp(), index,
+                            par.typical_content_size())));
             }
         }
 
         std::unique_ptr<InputChannelSender> buffer(new InputChannelSender(
-            index, *data_source, par.compute_nodes(), compute_services,
-            par.timeslice_size(), par.overlap_size(),
+            index, *(data_sources_.at(c).get()), par.compute_nodes(),
+            compute_services, par.timeslice_size(), par.overlap_size(),
             par.max_timeslice_number()));
 
-        data_sources_.push_back(std::move(data_source));
         input_channel_senders_.push_back(std::move(buffer));
     }
 
-    if (flib_) {
-        flib_->enable_mc_cnt(true);
-    }
+    // TODO needed in case of cbmnet readout
+    // if (flib_) {
+    //     flib_->enable_mc_cnt(true);
+    // }
 }
 
 Application::~Application()
 {
     // Input node application
-    try {
-        if (flib_) {
-            flib_->enable_mc_cnt(false);
-        }
-    } catch (std::exception& e) {
-        L_(error) << "exception in destructor ~InputNodeApplication(): "
-                  << e.what();
-    }
+    // TODO needed in case of cbmnet readout
+    // try {
+    //     if (flib_) {
+    //         flib_->enable_mc_cnt(false);
+    //     }
+    // } catch (std::exception& e) {
+    //     L_(error) << "exception in destructor ~InputNodeApplication(): "
+    //               << e.what();
+    // }
 }
 
 void Application::run()
