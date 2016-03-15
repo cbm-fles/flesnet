@@ -68,8 +68,8 @@
 		3D448B911B05EBD700DD8E5D /* MicrosliceInputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = MicrosliceInputArchive.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3D448B921B05EBD700DD8E5D /* MicrosliceOutputArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MicrosliceOutputArchive.hpp; sourceTree = "<group>"; };
 		3D448B931B05EBD700DD8E5D /* MicrosliceSource.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = MicrosliceSource.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
-		3D76518B1B06705900BECF69 /* example1.tsa */ = {isa = PBXFileReference; lastKnownFileType = file; name = example1.tsa; path = ../test/reference/example1.tsa; sourceTree = "<group>"; };
-		3D76518C1B06706C00BECF69 /* example1.msa */ = {isa = PBXFileReference; lastKnownFileType = file; name = example1.msa; path = ../test/reference/example1.msa; sourceTree = "<group>"; };
+		3D76518B1B06705900BECF69 /* example1.tsa */ = {isa = PBXFileReference; lastKnownFileType = file; path = example1.tsa; sourceTree = "<group>"; };
+		3D76518C1B06706C00BECF69 /* example1.msa */ = {isa = PBXFileReference; lastKnownFileType = file; path = example1.msa; sourceTree = "<group>"; };
 		3DA3FE3F1B0206CB008710E2 /* libfles_ipc.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libfles_ipc.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DA3FE4B1B0207FF008710E2 /* MicrosliceDescriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = MicrosliceDescriptor.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3DA3FE4C1B0207FF008710E2 /* MicrosliceView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceView.cpp; sourceTree = "<group>"; };
@@ -140,8 +140,7 @@
 				3D76518C1B06706C00BECF69 /* example1.msa */,
 				3D76518B1B06705900BECF69 /* example1.tsa */,
 			);
-			name = reference;
-			path = ../contrib;
+			path = reference;
 			sourceTree = "<group>";
 		};
 		3DA3FE361B0206CB008710E2 = {
@@ -204,7 +203,7 @@
 				3DA3FE5C1B0207FF008710E2 /* OutputArchive.hpp */,
 			);
 			name = src;
-			path = .;
+			path = ../lib/fles_ipc;
 			sourceTree = "<group>";
 		};
 		3DDAD81E1B023A9200926C83 /* test */ = {
