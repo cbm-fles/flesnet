@@ -98,9 +98,10 @@ private:
     /// FLIB-internal number of written microslices and data bytes.
     std::atomic<DualIndex> write_index_{{0, 0}};
 
-    // NOTE: std::atomic<DualIndex> triggers a bug in gcc versions < 5.1
-    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65147
-#if defined(__GNUC__) && !defined(__clang__) && (__GNUC__ * 100 + __GNUC_MINOR__) < 501
+// NOTE: std::atomic<DualIndex> triggers a bug in gcc versions < 5.1
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65147
+#if defined(__GNUC__) && !defined(__clang__) &&                                \
+    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
     static_assert(alignof(decltype(read_index_)) == 16,
                   "invalid std::atomic alignment");
     static_assert(alignof(decltype(write_index_)) == 16,

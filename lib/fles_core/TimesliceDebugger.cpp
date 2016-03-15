@@ -40,7 +40,8 @@ std::ostream& TimesliceDump::write_to_stream(std::ostream& s) const
         s << " overlap) = " << total_num_microslices << "\n";
         s << "\tmicroslice size min/avg/max: " << min_microslice_size << "/"
           << (static_cast<double>(total_microslice_size) /
-              total_num_microslices) << "/" << max_microslice_size << "\n";
+              total_num_microslices)
+          << "/" << max_microslice_size << "\n";
     }
 
     if (verbosity > 1) {
@@ -48,8 +49,8 @@ std::ostream& TimesliceDump::write_to_stream(std::ostream& s) const
             uint64_t num_microslices = ts.num_microslices(c);
             for (uint64_t m = 0; m < num_microslices; ++m) {
                 s << "timeslice " << ts.index() << " microslice " << m
-                  << " component " << c << "\n" << ts.get_microslice(c, m)
-                  << std::endl;
+                  << " component " << c << "\n"
+                  << ts.get_microslice(c, m) << std::endl;
             }
         }
     }

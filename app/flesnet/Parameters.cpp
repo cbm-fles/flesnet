@@ -349,10 +349,10 @@ void Parameters::print_buffer_info()
     if (input_shm().empty()) {
         L_(info) << "input node buffer size: "
                  << human_readable_count(UINT64_C(1)
-                                         << in_data_buffer_size_exp_) << " + "
-                 << human_readable_count(
-                        (UINT64_C(1) << in_desc_buffer_size_exp_) *
-                        sizeof(fles::MicrosliceDescriptor));
+                                         << in_data_buffer_size_exp_)
+                 << " + " << human_readable_count(
+                                 (UINT64_C(1) << in_desc_buffer_size_exp_) *
+                                 sizeof(fles::MicrosliceDescriptor));
     }
     L_(info) << "compute node buffer size: "
              << human_readable_count(UINT64_C(1) << cn_data_buffer_size_exp_)
