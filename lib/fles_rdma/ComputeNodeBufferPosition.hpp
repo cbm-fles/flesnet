@@ -1,6 +1,8 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include <cstdint>
+
 #pragma pack(1)
 
 /// Structure representing a set of compute node buffer positions.
