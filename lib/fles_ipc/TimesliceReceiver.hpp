@@ -5,11 +5,11 @@
 
 #include "TimesliceSource.hpp"
 #include "TimesliceView.hpp"
-#include <string>
-#include <memory>
-#include <boost/interprocess/shared_memory_object.hpp>
-#include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <memory>
+#include <string>
 
 namespace fles
 {

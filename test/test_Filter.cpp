@@ -7,10 +7,10 @@
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
 #include "Source.hpp"
-#include <iostream>
-#include <type_traits>
 #include <cstdint>
+#include <iostream>
 #include <limits>
+#include <type_traits>
 
 // example source: integer counter
 template <typename T> class Counter : public fles::Source<T>

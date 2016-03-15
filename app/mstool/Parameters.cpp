@@ -1,10 +1,10 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Parameters.hpp"
-#include "log.hpp"
 #include "GitRevision.hpp"
-#include <iostream>
+#include "log.hpp"
 #include <boost/program_options.hpp>
+#include <iostream>
 
 namespace po = boost::program_options;
 

@@ -2,13 +2,13 @@
 
 #include "ComputeBuffer.hpp"
 #include "ChildProcessManager.hpp"
-#include "TimesliceWorkItem.hpp"
-#include "TimesliceCompletion.hpp"
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
-#include <log.hpp>
-#include <boost/lexical_cast.hpp>
+#include "TimesliceCompletion.hpp"
+#include "TimesliceWorkItem.hpp"
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+#include <log.hpp>
 #include <random>
 
 ComputeBuffer::ComputeBuffer(uint64_t compute_index,

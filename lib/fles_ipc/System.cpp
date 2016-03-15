@@ -1,16 +1,16 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "System.hpp"
-#include <stdexcept>
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <cstring>
-#include <vector>
 #include <boost/lexical_cast.hpp>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <cstring>
 #include <netdb.h>
+#include <pwd.h>
+#include <stdexcept>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <vector>
 
 namespace fles
 {

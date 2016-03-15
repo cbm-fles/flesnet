@@ -1,14 +1,14 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "IBConnectionGroup.hpp"
 #include "ComputeNodeConnection.hpp"
+#include "IBConnectionGroup.hpp"
 #include "RingBuffer.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 
-#include <boost/interprocess/shared_memory_object.hpp>
-#include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
 
 #include <csignal>
 

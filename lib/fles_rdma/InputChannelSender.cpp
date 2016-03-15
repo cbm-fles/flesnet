@@ -4,8 +4,8 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RequestIdentifier.hpp"
 #include "Utility.hpp"
-#include <log.hpp>
 #include <cassert>
+#include <log.hpp>
 
 InputChannelSender::InputChannelSender(
     uint64_t input_index, InputBufferReadInterface& data_source,

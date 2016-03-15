@@ -3,7 +3,6 @@
 #include "Application.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include "FlibPatternGenerator.hpp"
-#include "shm_channel_client.hpp"
 #include "MicrosliceAnalyzer.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
@@ -11,8 +10,9 @@
 #include "MicrosliceTransmitter.hpp"
 #include "TimesliceDebugger.hpp"
 #include "log.hpp"
-#include <iostream>
+#include "shm_channel_client.hpp"
 #include <chrono>
+#include <iostream>
 #include <thread>
 
 Application::Application(Parameters const& par) : par_(par)

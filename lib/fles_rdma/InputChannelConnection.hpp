@@ -1,10 +1,10 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "ComputeNodeInfo.hpp"
+#include "ComputeNodeStatusMessage.hpp"
 #include "IBConnection.hpp"
 #include "InputChannelStatusMessage.hpp"
-#include "ComputeNodeStatusMessage.hpp"
-#include "ComputeNodeInfo.hpp"
 
 /// Input node connection class.
 /** An InputChannelConnection object represents the endpoint of a single

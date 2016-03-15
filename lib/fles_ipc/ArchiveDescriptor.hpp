@@ -4,10 +4,10 @@
 #pragma once
 
 #include "System.hpp"
-#include <chrono>
-#include <string>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/version.hpp>
+#include <chrono>
+#include <string>
 
 namespace fles
 {

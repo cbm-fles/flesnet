@@ -2,11 +2,11 @@
 
 #include "IBConnection.hpp"
 #include "RequestIdentifier.hpp"
-#include <log.hpp>
-#include <netdb.h>
-#include <cstring>
 #include <cassert>
 #include <chrono>
+#include <cstring>
+#include <log.hpp>
+#include <netdb.h>
 #include <thread>
 
 IBConnection::IBConnection(struct rdma_event_channel* ec,

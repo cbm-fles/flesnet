@@ -1,13 +1,13 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
-#include "FlibHardwareChannel.hpp"
-#include "shm_channel_client.hpp"
-#include "FlibPatternGenerator.hpp"
 #include "EmbeddedPatternGenerator.hpp"
-#include <log.hpp>
-#include <boost/thread/thread.hpp>
+#include "FlibHardwareChannel.hpp"
+#include "FlibPatternGenerator.hpp"
+#include "shm_channel_client.hpp"
 #include <boost/thread/future.hpp>
+#include <boost/thread/thread.hpp>
+#include <log.hpp>
 
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)

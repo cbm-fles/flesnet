@@ -2,16 +2,16 @@
 #define BOOST_TEST_MODULE test_Timeslice
 #include <boost/test/unit_test.hpp>
 
+#include "MicrosliceView.hpp"
 #include "StorableTimeslice.hpp"
+#include "System.hpp"
 #include "TimesliceInputArchive.hpp"
 #include "TimesliceOutputArchive.hpp"
-#include "MicrosliceView.hpp"
-#include "System.hpp"
 #include <array>
-#include <string>
-#include <fstream>
-#include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <fstream>
+#include <string>
 
 struct F {
     F()

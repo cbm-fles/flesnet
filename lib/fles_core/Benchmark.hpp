@@ -1,9 +1,9 @@
 // Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include <vector>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
+#include <vector>
 
 /// %Benchmark class.
 class Benchmark

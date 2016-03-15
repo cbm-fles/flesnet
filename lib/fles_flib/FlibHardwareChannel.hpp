@@ -2,12 +2,12 @@
 #pragma once
 
 #include "DualRingBuffer.hpp"
+#include "MicrosliceDescriptor.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
-#include "MicrosliceDescriptor.hpp"
-#include <unistd.h> // <- TODO: required due to bug in flib.h
-#include <flib.h>
 #include <algorithm>
+#include <flib.h>
+#include <unistd.h> // <- TODO: required due to bug in flib.h
 
 #define NO_DOUBLE_BUFFERING
 

@@ -3,8 +3,8 @@
 #include "MicrosliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
 #include "Utility.hpp"
-#include <sstream>
 #include <cassert>
+#include <sstream>
 
 MicrosliceAnalyzer::MicrosliceAnalyzer(uint64_t arg_output_interval,
                                        std::ostream& arg_out,

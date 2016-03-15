@@ -1,9 +1,9 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include <chrono>
 #include <functional>
 #include <queue>
-#include <chrono>
 #include <sys/time.h> // for `time_t` and `struct timeval`
 
 class Scheduler

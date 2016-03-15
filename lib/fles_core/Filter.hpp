@@ -4,12 +4,12 @@
 /// and Sink stream filters.
 #pragma once
 
-#include "Source.hpp"
 #include "Sink.hpp"
-#include <memory>
-#include <utility>
+#include "Source.hpp"
 #include <deque>
+#include <memory>
 #include <queue>
+#include <utility>
 
 namespace fles
 {

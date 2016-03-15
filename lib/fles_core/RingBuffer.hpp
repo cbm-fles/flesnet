@@ -1,15 +1,15 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include <memory>
-#include <cstring>
-#include <unistd.h>
-#include <type_traits>
-#include <stdexcept>
-#include <functional>
 #include <algorithm>
-#include <string>
 #include <cstdlib>
+#include <cstring>
+#include <functional>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <unistd.h>
 
 /// Simple generic ring buffer class.
 template <typename T, bool CLEARED = false, bool PAGE_ALIGNED = false>

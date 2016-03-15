@@ -1,15 +1,15 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "ThreadContainer.hpp"
-#include "Parameters.hpp"
 #include "ComputeBuffer.hpp"
 #include "InputChannelSender.hpp"
-#include <flib.h>
-#include <boost/lexical_cast.hpp>
-#include <memory>
-#include <csignal>
+#include "Parameters.hpp"
+#include "ThreadContainer.hpp"
 #include "shm_device_client.hpp"
+#include <boost/lexical_cast.hpp>
+#include <csignal>
+#include <flib.h>
+#include <memory>
 
 /// %Application base class.
 /** The Application object represents an instance of the running

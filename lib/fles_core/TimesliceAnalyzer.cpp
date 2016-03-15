@@ -3,8 +3,8 @@
 #include "TimesliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
 #include "Utility.hpp"
-#include <sstream>
 #include <cassert>
+#include <sstream>
 
 TimesliceAnalyzer::TimesliceAnalyzer(uint64_t arg_output_interval,
                                      std::ostream& arg_out,

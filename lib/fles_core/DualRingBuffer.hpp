@@ -1,8 +1,8 @@
 // Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "RingBufferView.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "RingBufferView.hpp"
 
 #if defined(__GNUC__) && !defined(__clang__) &&                                \
     (__GNUC__ * 100 + __GNUC_MINOR__) < 501

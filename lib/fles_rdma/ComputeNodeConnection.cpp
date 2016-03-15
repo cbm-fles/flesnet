@@ -3,8 +3,8 @@
 #include "ComputeNodeConnection.hpp"
 #include "ComputeNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
-#include <log.hpp>
 #include <cassert>
+#include <log.hpp>
 
 ComputeNodeConnection::ComputeNodeConnection(
     struct rdma_event_channel* ec, uint_fast16_t connection_index,

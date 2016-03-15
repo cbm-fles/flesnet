@@ -3,9 +3,9 @@
 /// \brief Defines the fles::MicrosliceTransmitter class.
 #pragma once
 
-#include "Sink.hpp"
-#include "Microslice.hpp"
 #include "DualRingBuffer.hpp"
+#include "Microslice.hpp"
+#include "Sink.hpp"
 
 namespace fles
 {

@@ -3,8 +3,8 @@
 /// \brief Defines the fles::MicrosliceView class.
 #pragma once
 
-#include "MicrosliceDescriptor.hpp"
 #include "Microslice.hpp"
+#include "MicrosliceDescriptor.hpp"
 
 namespace fles
 {
