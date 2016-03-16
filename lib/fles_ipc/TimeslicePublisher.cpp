@@ -1,10 +1,10 @@
 // Copyright 2014 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimeslicePublisher.hpp"
+#include <algorithm>
+#include <boost/archive/binary_oarchive.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <algorithm>
 
 namespace fles
 {

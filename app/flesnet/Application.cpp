@@ -1,13 +1,13 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
-#include "FlibHardwareChannel.hpp"
-#include "shm_channel_client.hpp"
-#include "FlibPatternGenerator.hpp"
 #include "EmbeddedPatternGenerator.hpp"
-#include <log.hpp>
-#include <boost/thread/thread.hpp>
+#include "FlibHardwareChannel.hpp"
+#include "FlibPatternGenerator.hpp"
+#include "shm_channel_client.hpp"
 #include <boost/thread/future.hpp>
+#include <boost/thread/thread.hpp>
+#include <log.hpp>
 
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
@@ -18,64 +18,62 @@ Application::Application(Parameters const& par,
 
     // FIXME: some of this is a terrible mess
     if (!par.input_shm().empty()) {
-            try {
-                shm_device_ =
-                    std::make_shared<flib_shm_device_client>(par.input_shm());
-                shm_num_channels_ = shm_device_->num_channels();
-                L_(info) << "using shared memory";
+        try {
+            shm_device_ =
+                std::make_shared<flib_shm_device_client>(par.input_shm());
+            shm_num_channels_ = shm_device_->num_channels();
+            L_(info) << "using shared memory";
 
-                // increase number of input nodes to match number of
-                // enabled FLIB links if in stand-alone mode
-                if (par.standalone() && shm_num_channels_ > 1) {
-                    input_nodes_size = shm_num_channels_;
-                    for (unsigned i = 1; i < input_nodes_size; i++) {
-                        input_indexes.push_back(i);
-                    }
+            // increase number of input nodes to match number of
+            // enabled FLIB links if in stand-alone mode
+            if (par.standalone() && shm_num_channels_ > 1) {
+                input_nodes_size = shm_num_channels_;
+                for (unsigned i = 1; i < input_nodes_size; i++) {
+                    input_indexes.push_back(i);
                 }
-
-            } catch (std::exception const& e) {
-                L_(error) << "exception while connecting to shared memory: "
-                          << e.what();
             }
-    } else if (par.use_flib()) {
-            // TODO: presence detection #524
-            try {
-                if (par.flib_legacy_mode()) {
-                    L_(info) << "initializing FLIB with legacy readout";
-                    flib_ = std::unique_ptr<flib::flib_device>(
-                        new flib::flib_device_cnet(0));
-                } else {
-                    L_(info) << "initializing FLIB with DPB readout";
-                    flib_ = std::unique_ptr<flib::flib_device>(
-                        new flib::flib_device_flesin(0));
-                }
-                flib_links_ = flib_->links();
 
-                // delete deactivated links from vector
-                flib_links_.erase(
-                    std::remove_if(std::begin(flib_links_),
-                                   std::end(flib_links_),
-                                   [](decltype(flib_links_[0]) link) {
-                                       return link->data_sel() ==
-                                              flib::flib_link::rx_disable;
-                                   }),
-                    std::end(flib_links_));
-
-                L_(info) << "enabled flib links detected: "
-                         << flib_links_.size();
-
-                // increase number of input nodes to match number of
-                // enabled FLIB links if in stand-alone mode
-                if (par.standalone() && flib_links_.size() > 1) {
-                    input_nodes_size = flib_links_.size();
-                    for (unsigned i = 1; i < input_nodes_size; i++) {
-                        input_indexes.push_back(i);
-                    }
-                }
-            } catch (std::exception const& e) {
-                L_(error) << "exception while creating flib: " << e.what();
-            }
+        } catch (std::exception const& e) {
+            L_(error) << "exception while connecting to shared memory: "
+                      << e.what();
         }
+    } else if (par.use_flib()) {
+        // TODO: presence detection #524
+        try {
+            if (par.flib_legacy_mode()) {
+                L_(info) << "initializing FLIB with legacy readout";
+                flib_ = std::unique_ptr<flib::flib_device>(
+                    new flib::flib_device_cnet(0));
+            } else {
+                L_(info) << "initializing FLIB with DPB readout";
+                flib_ = std::unique_ptr<flib::flib_device>(
+                    new flib::flib_device_flesin(0));
+            }
+            flib_links_ = flib_->links();
+
+            // delete deactivated links from vector
+            flib_links_.erase(
+                std::remove_if(std::begin(flib_links_), std::end(flib_links_),
+                               [](decltype(flib_links_[0]) link) {
+                                   return link->data_sel() ==
+                                          flib::flib_link::rx_disable;
+                               }),
+                std::end(flib_links_));
+
+            L_(info) << "enabled flib links detected: " << flib_links_.size();
+
+            // increase number of input nodes to match number of
+            // enabled FLIB links if in stand-alone mode
+            if (par.standalone() && flib_links_.size() > 1) {
+                input_nodes_size = flib_links_.size();
+                for (unsigned i = 1; i < input_nodes_size; i++) {
+                    input_indexes.push_back(i);
+                }
+            }
+        } catch (std::exception const& e) {
+            L_(error) << "exception while creating flib: " << e.what();
+        }
+    }
     // end FIXME
 
     if (par.standalone()) {

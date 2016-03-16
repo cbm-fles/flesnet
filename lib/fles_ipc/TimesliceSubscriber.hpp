@@ -3,13 +3,13 @@
 /// \brief Defines the fles::TimesliceSubscriber class.
 #pragma once
 
-#include "TimesliceSource.hpp"
 #include "StorableTimeslice.hpp"
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/device/array.hpp>
+#include "TimesliceSource.hpp"
 #include <boost/archive/binary_iarchive.hpp>
-#include <zmq.hpp>
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <string>
+#include <zmq.hpp>
 
 namespace fles
 {

@@ -1,11 +1,11 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "IBConnection.hpp"
-#include "TimesliceComponentDescriptor.hpp"
 #include "ComputeNodeStatusMessage.hpp"
+#include "IBConnection.hpp"
 #include "InputChannelStatusMessage.hpp"
 #include "InputNodeInfo.hpp"
+#include "TimesliceComponentDescriptor.hpp"
 #include <boost/format.hpp>
 #include <chrono>
 

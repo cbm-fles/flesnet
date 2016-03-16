@@ -2,8 +2,8 @@
 #pragma once
 
 #include "InfinibandException.hpp"
-#include <rdma/rdma_cma.h>
 #include <memory>
+#include <rdma/rdma_cma.h>
 #include <vector>
 
 /// InfiniBand connection base class.

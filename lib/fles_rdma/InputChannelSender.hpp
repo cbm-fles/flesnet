@@ -1,9 +1,9 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "DualRingBuffer.hpp"
 #include "IBConnectionGroup.hpp"
 #include "InputChannelConnection.hpp"
-#include "DualRingBuffer.hpp"
 #include "RingBuffer.hpp"
 #include <boost/format.hpp>
 

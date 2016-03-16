@@ -4,8 +4,8 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RequestIdentifier.hpp"
 #include "Utility.hpp"
-#include <log.hpp>
 #include <cassert>
+#include <log.hpp>
 
 InputChannelSender::InputChannelSender(
     uint64_t input_index, InputBufferReadInterface& data_source,
@@ -62,11 +62,17 @@ void InputChannelSender::report_status()
 
     std::chrono::system_clock::time_point now =
         std::chrono::system_clock::now();
-    SendBufferStatus status_desc{now, data_source_.desc_buffer().size(),
-                                 cached_acked_desc_, acked_desc_, sent_desc_,
+    SendBufferStatus status_desc{now,
+                                 data_source_.desc_buffer().size(),
+                                 cached_acked_desc_,
+                                 acked_desc_,
+                                 sent_desc_,
                                  written_desc};
-    SendBufferStatus status_data{now, data_source_.data_buffer().size(),
-                                 cached_acked_data_, acked_data_, sent_data_,
+    SendBufferStatus status_data{now,
+                                 data_source_.data_buffer().size(),
+                                 cached_acked_data_,
+                                 acked_data_,
+                                 sent_data_,
                                  written_data};
 
     double delta_t =

@@ -10,13 +10,13 @@ DONE - maybe rename Base,Derived to Input,Output in Filter code
 DONE - integrate fles_ipc
 DONE - set up travis ci
 DONE - merge to master
+DONE - adapt xcode project
+DONE - mstool should not poll excessively
 
-- integrate xcode project
 - check for missing code for soft_dpb
 - example soft_dpb
 - support eof in shm buffers
 - mstool should handle ctrl-c (do not terminate!)
-- mstool should not poll excessively
 
 - drop legacy code
 

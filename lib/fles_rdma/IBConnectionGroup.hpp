@@ -1,18 +1,18 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "ThreadContainer.hpp"
 #include "InfinibandException.hpp"
 #include "Scheduler.hpp"
+#include "ThreadContainer.hpp"
 #include "Utility.hpp"
-#include <log.hpp>
-#include <sstream>
 #include <chrono>
-#include <vector>
 #include <cstring>
-#include <rdma/rdma_cma.h>
-#include <valgrind/memcheck.h>
 #include <fcntl.h>
+#include <log.hpp>
+#include <rdma/rdma_cma.h>
+#include <sstream>
+#include <valgrind/memcheck.h>
+#include <vector>
 
 /// InfiniBand connection group base class.
 /** An IBConnectionGroup object represents a group of InfiniBand

@@ -3,12 +3,12 @@
 /// \brief Defines the fles::MicrosliceReceiver class.
 #pragma once
 
-#include "MicrosliceSource.hpp"
-#include "StorableMicroslice.hpp"
 #include "DualRingBuffer.hpp"
+#include "MicrosliceSource.hpp"
 #include "RingBuffer.hpp"
-#include <string>
+#include "StorableMicroslice.hpp"
 #include <memory>
+#include <string>
 
 namespace fles
 {

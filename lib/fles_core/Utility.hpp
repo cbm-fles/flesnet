@@ -1,12 +1,12 @@
 // Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include <iostream>
-#include <sstream>
-#include <cmath>
-#include <iterator>
-#include <vector>
 #include <boost/lexical_cast.hpp>
+#include <cmath>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <vector>
 
 /// Overloaded output operator for STL vectors.
 template <class T>

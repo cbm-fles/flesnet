@@ -3,8 +3,8 @@
 /// \brief Defines the fles::TimesliceSource class type.
 #pragma once
 
-#include "Timeslice.hpp"
 #include "Source.hpp"
+#include "Timeslice.hpp"
 
 namespace fles
 {

@@ -4,11 +4,11 @@
 #pragma once
 
 #include "Timeslice.hpp"
-#include "TimesliceWorkItem.hpp"
 #include "TimesliceCompletion.hpp"
+#include "TimesliceWorkItem.hpp"
+#include <boost/interprocess/ipc/message_queue.hpp>
 #include <cstdint>
 #include <memory>
-#include <boost/interprocess/ipc/message_queue.hpp>
 
 namespace fles
 {

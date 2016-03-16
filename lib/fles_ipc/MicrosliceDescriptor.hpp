@@ -4,8 +4,8 @@
 /// enums.
 #pragma once
 
-#include <cstdint>
 #include <boost/serialization/access.hpp>
+#include <cstdint>
 
 /// Main FLES namespace.
 namespace fles

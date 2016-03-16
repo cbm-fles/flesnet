@@ -1,9 +1,9 @@
 // Copyright 2013-2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "Timeslice.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "Sink.hpp"
+#include "Timeslice.hpp"
 #include <ostream>
 
 class BufferDump

@@ -2,10 +2,10 @@
 #define BOOST_TEST_MODULE test_Microslice
 #include <boost/test/unit_test.hpp>
 
-#include "StorableMicroslice.hpp"
-#include "MicrosliceView.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
+#include "MicrosliceView.hpp"
+#include "StorableMicroslice.hpp"
 #include <array>
 
 struct F {

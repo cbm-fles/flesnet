@@ -4,8 +4,8 @@
 #pragma once
 
 #include "TimesliceDescriptor.hpp"
-#include <cstdint>
 #include <boost/serialization/access.hpp>
+#include <cstdint>
 
 namespace fles
 {

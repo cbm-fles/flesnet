@@ -3,10 +3,10 @@
 /// \brief Defines the fles::TimeslicePublisher class.
 #pragma once
 
-#include "StorableTimeslice.hpp"
 #include "Sink.hpp"
-#include <zmq.hpp>
+#include "StorableTimeslice.hpp"
 #include <string>
+#include <zmq.hpp>
 
 namespace fles
 {

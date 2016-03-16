@@ -1,8 +1,8 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include <stdexcept>
 #include <cstdint>
+#include <stdexcept>
 #include <string>
 
 /// Run parameter exception class.

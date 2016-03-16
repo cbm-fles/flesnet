@@ -134,7 +134,8 @@ void add_console(severity_level minimum_severity)
             << "]" __ansi(__ansi_normal) " "
             << boost::log::expressions::attr<severity_level,
                                              severity_with_color_tag>(
-                   "Severity") << " " << boost::log::expressions::message;
+                   "Severity")
+            << " " << boost::log::expressions::message;
     } else {
         console_formatter =
             boost::log::expressions::stream
@@ -155,9 +156,9 @@ void add_file(std::string filename, severity_level minimum_severity)
         boost::log::expressions::stream
         << "["
         << boost::log::expressions::format_date_time<boost::posix_time::ptime>(
-               "TimeStamp", "%Y-%m-%d %H:%M:%S") << "] "
-        << boost::log::expressions::attr<severity_level>("Severity") << ": "
-        << boost::log::expressions::message;
+               "TimeStamp", "%Y-%m-%d %H:%M:%S")
+        << "] " << boost::log::expressions::attr<severity_level>("Severity")
+        << ": " << boost::log::expressions::message;
 
     auto file_sink = boost::log::add_file_log(filename);
     file_sink->set_formatter(file_formatter);

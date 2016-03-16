@@ -5,10 +5,10 @@
 
 #include "ArchiveDescriptor.hpp"
 #include "Source.hpp"
-#include <string>
+#include <boost/archive/binary_iarchive.hpp>
 #include <fstream>
 #include <memory>
-#include <boost/archive/binary_iarchive.hpp>
+#include <string>
 
 namespace fles
 {

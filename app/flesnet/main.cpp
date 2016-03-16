@@ -12,10 +12,10 @@
  * cluster over an Infiniband network.
  */
 
-#include "Parameters.hpp"
 #include "Application.hpp"
-#include <log.hpp>
+#include "Parameters.hpp"
 #include <csignal>
+#include <log.hpp>
 
 namespace
 {

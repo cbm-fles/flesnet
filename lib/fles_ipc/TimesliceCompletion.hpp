@@ -3,8 +3,8 @@
 /// \brief Defines the fles::TimesliceCompletion serializable struct.
 #pragma once
 
-#include <cstdint>
 #include <boost/serialization/access.hpp>
+#include <cstdint>
 
 namespace fles
 {

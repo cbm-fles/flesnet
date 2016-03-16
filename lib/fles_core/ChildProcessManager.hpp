@@ -2,9 +2,9 @@
 #pragma once
 
 #include "log.hpp"
+#include <csignal>
 #include <sys/wait.h>
 #include <vector>
-#include <csignal>
 
 enum ProcessStatus { None, Running, Terminating };
 

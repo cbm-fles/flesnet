@@ -2,10 +2,10 @@
 #define BOOST_TEST_MODULE test_MicrosliceReceiver
 #include <boost/test/unit_test.hpp>
 
-#include "FlibPatternGenerator.hpp"
 #include "EmbeddedPatternGenerator.hpp"
-#include "MicrosliceReceiver.hpp"
+#include "FlibPatternGenerator.hpp"
 #include "MicrosliceOutputArchive.hpp"
+#include "MicrosliceReceiver.hpp"
 #include <iostream>
 
 BOOST_AUTO_TEST_CASE(usage_test)

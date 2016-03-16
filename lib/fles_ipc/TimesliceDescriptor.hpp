@@ -3,9 +3,9 @@
 /// \brief Defines the fles::TimesliceDescriptor serializable struct.
 #pragma once
 
-#include <cstdint>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/version.hpp>
+#include <cstdint>
 
 namespace fles
 {

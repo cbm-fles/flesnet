@@ -2,21 +2,23 @@
 
 #include "ComputeBuffer.hpp"
 #include "ChildProcessManager.hpp"
-#include "TimesliceWorkItem.hpp"
-#include "TimesliceCompletion.hpp"
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
-#include <log.hpp>
-#include <boost/lexical_cast.hpp>
+#include "TimesliceCompletion.hpp"
+#include "TimesliceWorkItem.hpp"
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+#include <log.hpp>
 #include <random>
 
-    ComputeBuffer::ComputeBuffer(
-        uint64_t compute_index, uint32_t data_buffer_size_exp,
-        uint32_t desc_buffer_size_exp, unsigned short service,
-        uint32_t num_input_nodes, uint32_t timeslice_size,
-        uint32_t processor_instances, const std::string processor_executable,
-        volatile sig_atomic_t* signal_status)
+ComputeBuffer::ComputeBuffer(uint64_t compute_index,
+                             uint32_t data_buffer_size_exp,
+                             uint32_t desc_buffer_size_exp,
+                             unsigned short service, uint32_t num_input_nodes,
+                             uint32_t timeslice_size,
+                             uint32_t processor_instances,
+                             const std::string processor_executable,
+                             volatile sig_atomic_t* signal_status)
     : compute_index_(compute_index),
       data_buffer_size_exp_(data_buffer_size_exp),
       desc_buffer_size_exp_(desc_buffer_size_exp), service_(service),

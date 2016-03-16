@@ -2,12 +2,12 @@
 #pragma once
 
 #include "DualRingBuffer.hpp"
+#include "MicrosliceDescriptor.hpp"
 #include "RingBuffer.hpp"
 #include "RingBufferView.hpp"
-#include "MicrosliceDescriptor.hpp"
 #include "log.hpp"
-#include <random>
 #include <algorithm>
+#include <random>
 
 /// Simple embedded software pattern generator.
 class EmbeddedPatternGenerator : public InputBufferReadInterface

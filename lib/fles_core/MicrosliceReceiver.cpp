@@ -1,6 +1,8 @@
 // Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "MicrosliceReceiver.hpp"
+#include <chrono>
+#include <thread>
 
 namespace fles
 {
@@ -70,6 +72,9 @@ StorableMicroslice* MicrosliceReceiver::do_get()
     while (!sms) {
         data_source_.proceed();
         sms = try_get();
+        if (!sms) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
     }
 
     return sms;
