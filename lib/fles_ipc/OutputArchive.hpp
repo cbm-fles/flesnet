@@ -36,7 +36,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const OutputArchive&) = delete;
 
-    virtual ~OutputArchive(){};
+    virtual ~OutputArchive() = default;
 
     /// Store an item.
     virtual void put(std::shared_ptr<const Base> item) override

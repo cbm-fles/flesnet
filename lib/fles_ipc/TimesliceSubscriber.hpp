@@ -28,7 +28,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const TimesliceSubscriber&) = delete;
 
-    virtual ~TimesliceSubscriber(){};
+    virtual ~TimesliceSubscriber() = default;
 
     /**
      * \brief Retrieve the next item.

@@ -20,7 +20,7 @@ public:
     /// Receive an item to sink.
     virtual void put(std::shared_ptr<const T> item) = 0;
 
-    virtual ~Sink(){};
+    virtual ~Sink() = default;
 };
 
 class Microslice;

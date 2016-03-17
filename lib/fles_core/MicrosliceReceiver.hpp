@@ -28,7 +28,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const MicrosliceReceiver&) = delete;
 
-    virtual ~MicrosliceReceiver(){};
+    virtual ~MicrosliceReceiver() = default;
 
     /**
      * \brief Retrieve the next item.

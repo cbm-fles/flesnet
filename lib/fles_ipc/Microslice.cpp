@@ -7,7 +7,7 @@
 namespace fles
 {
 
-Microslice::~Microslice() {}
+Microslice::~Microslice() = default;
 
 /// This function points to a scalar reference implementation of the CRC-32C
 /// algorithm that yields the correct value. It is optimized for portability,

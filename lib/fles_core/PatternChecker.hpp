@@ -7,7 +7,7 @@
 class PatternChecker
 {
 public:
-    virtual ~PatternChecker(){};
+    virtual ~PatternChecker() = default;
 
     virtual bool check(const fles::Microslice& m) = 0;
     virtual void reset(){};

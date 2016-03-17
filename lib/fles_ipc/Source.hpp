@@ -26,7 +26,7 @@ public:
      */
     std::unique_ptr<T> get() { return std::unique_ptr<T>(do_get()); };
 
-    virtual ~Source(){};
+    virtual ~Source() = default;
 
 protected:
     /// The end-of-file flag.

@@ -35,7 +35,7 @@ public:
     set_buffer_handles(shm, data_buffer, desc_buffer);
   }
 
-  ~shm_channel() {}
+  ~shm_channel() = default;
 
   void* data_buffer_ptr(managed_shared_memory* shm) const {
     return shm->get_address_from_handle(m_data_buffer_handle);

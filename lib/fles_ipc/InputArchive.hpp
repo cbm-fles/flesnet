@@ -52,7 +52,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const InputArchive&) = delete;
 
-    virtual ~InputArchive(){};
+    virtual ~InputArchive() = default;
 
     /// Read the next data set.
     std::unique_ptr<Derived> get()

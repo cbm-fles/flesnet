@@ -82,7 +82,7 @@ inline bool operator==(const DualIndex& lhs, const DualIndex& rhs)
 template <typename T_DESC, typename T_DATA> class DualRingBufferReadInterface
 {
 public:
-    virtual ~DualRingBufferReadInterface() {}
+    virtual ~DualRingBufferReadInterface() = default;
 
     virtual void proceed() {}
 
@@ -110,7 +110,7 @@ public:
 template <typename T_DESC, typename T_DATA> class DualRingBufferWriteInterface
 {
 public:
-    virtual ~DualRingBufferWriteInterface() {}
+    virtual ~DualRingBufferWriteInterface() = default;
 
     virtual DualIndex get_read_index() = 0;
 

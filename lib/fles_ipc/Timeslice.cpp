@@ -5,6 +5,6 @@
 namespace fles
 {
 
-Timeslice::~Timeslice() {}
+Timeslice::~Timeslice() = default;
 
 } // namespace fles

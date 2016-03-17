@@ -29,7 +29,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const TimesliceReceiver&) = delete;
 
-    virtual ~TimesliceReceiver(){};
+    virtual ~TimesliceReceiver() = default;
 
     /**
      * \brief Retrieve the next item.

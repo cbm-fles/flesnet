@@ -13,7 +13,7 @@ class shm_device {
 public:
   shm_device() {}
 
-  ~shm_device() {}
+  ~shm_device() = default;
 
   void inc_num_channels() { ++m_num_channels; }
 

@@ -37,7 +37,7 @@ public:
     bool check_crc() const;
 
 protected:
-    Microslice(){};
+    Microslice() = default;
 
     /// Construct microslice with given content.
     Microslice(MicrosliceDescriptor* desc_ptr, uint8_t* content_ptr)

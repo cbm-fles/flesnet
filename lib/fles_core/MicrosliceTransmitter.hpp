@@ -25,7 +25,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const MicrosliceTransmitter&) = delete;
 
-    virtual ~MicrosliceTransmitter(){};
+    virtual ~MicrosliceTransmitter() = default;
 
     /**
      * \brief Transmit the next item.

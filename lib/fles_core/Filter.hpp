@@ -23,7 +23,7 @@ public:
     virtual filter_output_t
     exchange_item(std::shared_ptr<const Input> item = nullptr) = 0;
 
-    virtual ~Filter(){};
+    virtual ~Filter() = default;
 };
 
 template <class Input, class Output = Input>

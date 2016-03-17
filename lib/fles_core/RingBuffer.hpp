@@ -27,7 +27,7 @@ public:
     using buf_t = std::unique_ptr<T[], std::function<void(T*)>>;
 
     /// The RingBuffer default constructor.
-    RingBuffer() {}
+    RingBuffer() = default;
 
     /// The RingBuffer initializing constructor.
     explicit RingBuffer(size_t new_size_exponent)
