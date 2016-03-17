@@ -11,8 +11,9 @@ StorableTimeslice::StorableTimeslice(const StorableTimeslice& ts)
     init_pointers();
 }
 
-StorableTimeslice::StorableTimeslice(StorableTimeslice&& ts)
-    : Timeslice(std::move(ts)), data_(std::move(ts.data_)),
+StorableTimeslice::StorableTimeslice(StorableTimeslice&& ts) noexcept
+    : Timeslice(std::move(ts)),
+      data_(std::move(ts.data_)),
       desc_(std::move(ts.desc_))
 {
     init_pointers();

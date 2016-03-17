@@ -33,7 +33,7 @@ public:
     /// Delete assignment operator (not implemented).
     void operator=(const StorableMicroslice&) = delete;
     /// Move constructor.
-    StorableMicroslice(StorableMicroslice&& ms);
+    StorableMicroslice(StorableMicroslice&& ms) noexcept;
 
     /// Construct by copying from given Microslice object.
     StorableMicroslice(const Microslice& ms);

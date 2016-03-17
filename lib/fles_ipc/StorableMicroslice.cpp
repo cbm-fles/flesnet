@@ -12,8 +12,9 @@ StorableMicroslice::StorableMicroslice(const StorableMicroslice& ms)
     init_pointers();
 }
 
-StorableMicroslice::StorableMicroslice(StorableMicroslice&& ms)
-    : desc_(std::move(ms.desc_)), content_(std::move(ms.content_))
+StorableMicroslice::StorableMicroslice(StorableMicroslice&& ms) noexcept
+    : desc_(std::move(ms.desc_)),
+      content_(std::move(ms.content_))
 {
     init_pointers();
 }

@@ -32,7 +32,7 @@ public:
     /// Delete assignment operator (not implemented).
     void operator=(const StorableTimeslice&) = delete;
     /// Move constructor.
-    StorableTimeslice(StorableTimeslice&& ts);
+    StorableTimeslice(StorableTimeslice&& ts) noexcept;
 
     /// Construct by copying from given Timeslice object.
     StorableTimeslice(const Timeslice& ts);
