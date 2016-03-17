@@ -51,7 +51,7 @@ public:
 
 private:
   std::unique_ptr<managed_shared_memory> m_shm;
-  shm_device* m_shm_dev = NULL;
+  shm_device* m_shm_dev = nullptr;
 };
 
 using flib_shm_device_client =
