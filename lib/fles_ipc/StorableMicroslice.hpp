@@ -45,7 +45,7 @@ public:
      * StorableMicroslice. The `size` field of the descriptor must already
      * be valid and will not be modified.
      */
-    StorableMicroslice(MicrosliceDescriptor d, const uint8_t* content);
+    StorableMicroslice(MicrosliceDescriptor d, const uint8_t* content_p);
 
     /**
      * \brief Construct by copying from given data vector.
@@ -61,7 +61,7 @@ public:
      *     StorableMicroslice {..., {1, 2, 3, 4, 5}}
      *     StorableMicroslice {..., create_some_vector()}
      */
-    StorableMicroslice(MicrosliceDescriptor d, std::vector<uint8_t> content);
+    StorableMicroslice(MicrosliceDescriptor d, std::vector<uint8_t> content_v);
 
     /// Retrieve non-const microslice descriptor reference
     MicrosliceDescriptor& desc() { return *desc_ptr_; }
