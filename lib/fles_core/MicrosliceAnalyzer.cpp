@@ -10,7 +10,7 @@ MicrosliceAnalyzer::MicrosliceAnalyzer(uint64_t arg_output_interval,
                                        std::ostream& arg_out,
                                        std::string arg_output_prefix)
     : output_interval_(arg_output_interval), out_(arg_out),
-      output_prefix_(arg_output_prefix)
+      output_prefix_(std::move(arg_output_prefix))
 {
     // create CRC-32C engine (Castagnoli polynomial)
     crc32_engine_ = crcutil_interface::CRC::Create(

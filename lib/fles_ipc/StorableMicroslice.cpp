@@ -33,7 +33,7 @@ StorableMicroslice::StorableMicroslice(MicrosliceDescriptor d,
 
 StorableMicroslice::StorableMicroslice(MicrosliceDescriptor d,
                                        std::vector<uint8_t> content_v)
-    : desc_(d), content_{std::move(content_v)}
+    : desc_(std::move(d)), content_{std::move(content_v)}
 {
     desc_.size = static_cast<uint32_t>(content_.size());
     init_pointers();
