@@ -70,7 +70,7 @@ private:
         try {
             sts = new Derived();
             *iarchive_ >> *sts;
-        } catch (boost::archive::archive_exception e) {
+        } catch (boost::archive::archive_exception& e) {
             if (e.code ==
                 boost::archive::archive_exception::input_stream_error) {
                 delete sts;

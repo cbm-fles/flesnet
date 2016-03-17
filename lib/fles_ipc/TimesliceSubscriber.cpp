@@ -26,7 +26,7 @@ fles::StorableTimeslice* TimesliceSubscriber::do_get()
     try {
         sts = new fles::StorableTimeslice();
         ia >> *sts;
-    } catch (boost::archive::archive_exception e) {
+    } catch (boost::archive::archive_exception& e) {
         delete sts;
         return nullptr;
     }
