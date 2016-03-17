@@ -10,4 +10,4 @@ MicrosliceView::MicrosliceView(MicrosliceDescriptor& d, uint8_t* content)
 {
 }
 
-} // namespace fles {
+} // namespace fles

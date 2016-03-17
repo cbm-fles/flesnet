@@ -31,4 +31,4 @@ void TimeslicePublisher::do_put(const StorableTimeslice& timeslice)
     publisher_.send(message);
 }
 
-} // namespace fles {
+} // namespace fles

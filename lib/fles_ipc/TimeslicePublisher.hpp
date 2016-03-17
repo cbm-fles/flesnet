@@ -40,4 +40,4 @@ private:
     void do_put(const fles::StorableTimeslice& timeslice);
 };
 
-} // namespace fles {
+} // namespace fles

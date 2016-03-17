@@ -10,7 +10,7 @@ namespace logging
 {
 // Attribute value tag type
 struct severity_with_color_tag;
-}
+} // namespace logging
 
 std::ostream& operator<<(std::ostream& strm, severity_level level);
 
@@ -26,6 +26,6 @@ namespace logging
 {
 void add_console(severity_level minimum_severity);
 void add_file(std::string filename, severity_level minimum_severity);
-}
+} // namespace logging
 
 #define L_(severity) BOOST_LOG_SEV(g_logger::get(), severity)

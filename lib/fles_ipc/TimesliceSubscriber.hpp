@@ -49,4 +49,4 @@ private:
     zmq::socket_t subscriber_{context_, ZMQ_SUB};
 };
 
-} // namespace fles {
+} // namespace fles

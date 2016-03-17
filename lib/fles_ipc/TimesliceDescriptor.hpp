@@ -41,7 +41,7 @@ struct TimesliceDescriptor {
 
 #pragma pack()
 
-} // namespace fles {
+} // namespace fles
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"

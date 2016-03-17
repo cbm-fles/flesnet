@@ -48,4 +48,4 @@ TimesliceView::~TimesliceView()
     }
 }
 
-} // namespace fles {
+} // namespace fles

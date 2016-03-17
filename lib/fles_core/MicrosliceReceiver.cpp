@@ -79,4 +79,4 @@ StorableMicroslice* MicrosliceReceiver::do_get()
 
     return sms;
 }
-}
+} // namespace fles

@@ -36,4 +36,4 @@ StorableTimeslice::StorableTimeslice(const Timeslice& ts)
 
 StorableTimeslice::StorableTimeslice() {}
 
-} // namespace fles {
+} // namespace fles

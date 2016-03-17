@@ -145,4 +145,4 @@ private:
     std::vector<TimesliceComponentDescriptor> desc_;
 };
 
-} // namespace fles {
+} // namespace fles

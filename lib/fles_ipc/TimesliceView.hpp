@@ -41,4 +41,4 @@ private:
     std::shared_ptr<boost::interprocess::message_queue> completions_mq_;
 };
 
-} // namespace fles {
+} // namespace fles

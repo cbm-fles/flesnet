@@ -43,4 +43,4 @@ private:
     DualIndex write_index_ = {0, 0};
     DualIndex read_index_cached_ = {0, 0};
 };
-}
+} // namespace fles

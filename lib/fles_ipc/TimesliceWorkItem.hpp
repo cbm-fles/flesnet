@@ -36,4 +36,4 @@ struct TimesliceWorkItem {
 
 #pragma pack()
 
-} // namespace fles {
+} // namespace fles

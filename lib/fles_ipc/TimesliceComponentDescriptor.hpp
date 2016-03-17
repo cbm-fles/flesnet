@@ -34,4 +34,4 @@ struct TimesliceComponentDescriptor {
 
 #pragma pack()
 
-} // namespace fles {
+} // namespace fles

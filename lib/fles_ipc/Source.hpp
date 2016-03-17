@@ -36,4 +36,4 @@ private:
     virtual T* do_get() = 0;
 };
 
-} // namespace fles {
+} // namespace fles

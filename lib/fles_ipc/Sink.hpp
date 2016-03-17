@@ -38,4 +38,4 @@ using MicrosliceSink = Sink<Microslice>;
 */
 using TimesliceSink = Sink<Timeslice>;
 
-} // namespace fles {
+} // namespace fles

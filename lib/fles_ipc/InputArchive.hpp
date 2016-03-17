@@ -86,4 +86,4 @@ private:
     ArchiveDescriptor descriptor_;
 };
 
-} // namespace fles {
+} // namespace fles

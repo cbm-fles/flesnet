@@ -117,7 +117,7 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
 namespace
 {
 bool cout_is_a_tty() { return isatty(fileno(stdout)) && getenv("TERM"); }
-}
+} // namespace
 
 namespace logging
 {
@@ -164,4 +164,4 @@ void add_file(std::string filename, severity_level minimum_severity)
     file_sink->set_formatter(file_formatter);
     file_sink->set_filter(severity >= minimum_severity);
 }
-}
+} // namespace logging

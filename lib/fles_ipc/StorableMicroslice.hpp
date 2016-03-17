@@ -97,4 +97,4 @@ private:
     std::vector<uint8_t> content_;
 };
 
-} // namespace fles {
+} // namespace fles

@@ -51,5 +51,5 @@ std::string current_hostname();
  */
 std::string current_domainname();
 
-} // namespace system {
-} // namespace fles {
+} // namespace system
+} // namespace fles

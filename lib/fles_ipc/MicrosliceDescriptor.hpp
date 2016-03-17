@@ -116,4 +116,4 @@ struct MicrosliceDescriptor {
 
 #pragma pack()
 
-} // namespace fles {
+} // namespace fles

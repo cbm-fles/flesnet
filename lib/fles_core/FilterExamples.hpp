@@ -66,4 +66,4 @@ private:
         }
     }
 };
-}
+} // namespace fles

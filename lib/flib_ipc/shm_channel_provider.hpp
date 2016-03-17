@@ -20,7 +20,7 @@ shm_alloc(managed_shared_memory* shm, size_t size_exp, size_t item_size) {
   L_(trace) << "allocating aligned shm buffer of " << bytes << " bytes";
   return shm->allocate_aligned(bytes, page_size);
 }
-}
+} // namespace
 
 template <typename T_DESC, typename T_DATA>
 class shm_channel_provider

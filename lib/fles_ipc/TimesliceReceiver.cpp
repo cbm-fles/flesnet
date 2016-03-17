@@ -100,4 +100,4 @@ TimesliceView* TimesliceReceiver::do_get()
         completions_mq_);
 }
 
-} // namespace fles {
+} // namespace fles

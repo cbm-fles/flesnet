@@ -15,4 +15,4 @@ namespace fles
  */
 using TimesliceSource = Source<Timeslice>;
 
-} // namespace fles {
+} // namespace fles

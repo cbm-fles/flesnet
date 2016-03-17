@@ -53,4 +53,4 @@ private:
     // TODO: Solve this without the additional alloc/copy operation
 };
 
-} // namespace fles {
+} // namespace fles

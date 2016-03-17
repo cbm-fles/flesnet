@@ -52,4 +52,4 @@ protected:
     uint8_t* content_ptr_;
 };
 
-} // namespace fles {
+} // namespace fles

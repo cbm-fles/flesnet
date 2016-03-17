@@ -19,4 +19,4 @@ class StorableMicroslice;
 using MicrosliceInputArchive = InputArchive<Microslice, StorableMicroslice,
                                             ArchiveType::MicrosliceArchive>;
 
-} // namespace fles {
+} // namespace fles

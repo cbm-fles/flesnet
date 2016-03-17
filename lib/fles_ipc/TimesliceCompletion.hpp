@@ -28,4 +28,4 @@ struct TimesliceCompletion {
 
 #pragma pack()
 
-} // namespace fles {
+} // namespace fles

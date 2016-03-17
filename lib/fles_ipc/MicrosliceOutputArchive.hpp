@@ -16,4 +16,4 @@ namespace fles
 using MicrosliceOutputArchive = OutputArchive<Microslice, StorableMicroslice,
                                               ArchiveType::MicrosliceArchive>;
 
-} // namespace fles {
+} // namespace fles

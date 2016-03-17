@@ -7,4 +7,4 @@ namespace fles
 
 Timeslice::~Timeslice() {}
 
-} // namespace fles {
+} // namespace fles

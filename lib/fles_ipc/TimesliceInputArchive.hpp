@@ -19,4 +19,4 @@ class StorableTimeslice;
 using TimesliceInputArchive =
     InputArchive<Timeslice, StorableTimeslice, ArchiveType::TimesliceArchive>;
 
-} // namespace fles {
+} // namespace fles

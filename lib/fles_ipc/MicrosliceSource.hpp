@@ -15,4 +15,4 @@ namespace fles
  */
 using MicrosliceSource = Source<Microslice>;
 
-} // namespace fles {
+} // namespace fles

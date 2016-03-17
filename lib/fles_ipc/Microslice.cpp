@@ -25,4 +25,4 @@ uint32_t Microslice::compute_crc() const
 
 bool Microslice::check_crc() const { return compute_crc() == desc_ptr_->crc; }
 
-} // namespace fles {
+} // namespace fles

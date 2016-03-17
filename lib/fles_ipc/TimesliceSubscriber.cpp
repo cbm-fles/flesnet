@@ -33,4 +33,4 @@ fles::StorableTimeslice* TimesliceSubscriber::do_get()
     return sts;
 }
 
-} // namespace fles {
+} // namespace fles

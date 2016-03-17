@@ -103,4 +103,4 @@ protected:
     std::vector<TimesliceComponentDescriptor*> desc_ptr_;
 };
 
-} // namespace fles {
+} // namespace fles

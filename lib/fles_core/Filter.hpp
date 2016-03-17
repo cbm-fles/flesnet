@@ -141,4 +141,4 @@ using MicrosliceFilter = Filter<Microslice, StorableMicroslice>;
 using FilteredMicrosliceSource = FilteredSource<Microslice, StorableMicroslice>;
 using FilteringMicrosliceSink = FilteringSink<Microslice, StorableMicroslice>;
 
-} // namespace fles {
+} // namespace fles

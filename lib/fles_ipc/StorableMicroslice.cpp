@@ -43,4 +43,4 @@ StorableMicroslice::StorableMicroslice() {}
 
 void StorableMicroslice::initialize_crc() { desc_.crc = compute_crc(); }
 
-} // namespace fles {
+} // namespace fles

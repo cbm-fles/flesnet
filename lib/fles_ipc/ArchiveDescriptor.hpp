@@ -79,7 +79,7 @@ private:
     std::string username_;
 };
 
-} // namespace fles {
+} // namespace fles
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
