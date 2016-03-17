@@ -25,7 +25,7 @@ std::string stringerror(int errnum)
 
     // XSI-compliant
     int err = strerror_r(errnum, buf.data(), buf.size());
-    if (err) {
+    if (err != 0) {
         return std::string("Unknown error ") +
                boost::lexical_cast<std::string>(err);
     }
@@ -57,11 +57,11 @@ std::string current_username()
 
     int err = getpwuid_r(uid, &pwd, buf.data(), buf.size(), &result);
 
-    if (err) {
+    if (err != 0) {
         throw std::runtime_error(stringerror(err));
     }
 
-    if (result) {
+    if (result != nullptr) {
         return std::string(pwd.pw_name);
     }
     return std::string("unknown");
@@ -77,7 +77,7 @@ std::string current_hostname()
     std::vector<char> buf(static_cast<size_t>(bufsize));
 
     int err = gethostname(buf.data(), buf.size());
-    if (err) {
+    if (err != 0) {
         throw std::runtime_error(stringerror(errno));
     }
 
@@ -91,7 +91,7 @@ std::string current_domainname()
     std::vector<char> buf(static_cast<size_t>(bufsize));
 
     int err = getdomainname(buf.data(), static_cast<int>(buf.size()));
-    if (err) {
+    if (err != 0) {
         throw std::runtime_error(stringerror(errno));
     }
 

@@ -20,7 +20,7 @@ TimesliceAnalyzer::TimesliceAnalyzer(uint64_t arg_output_interval,
 
 TimesliceAnalyzer::~TimesliceAnalyzer()
 {
-    if (crc32_engine_) {
+    if (crc32_engine_ != nullptr) {
         crc32_engine_->Delete();
     }
 }
@@ -55,8 +55,8 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
     ++microslice_count_;
     content_bytes_ += m.desc().size;
 
-    if (m.desc().flags &
-        static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) {
+    if ((m.desc().flags &
+         static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) != 0) {
         out_ << output_prefix_ << " microslice " << microslice
              << " truncated by FLIM" << std::endl;
     }
@@ -65,8 +65,8 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
         return false;
     }
 
-    if (m.desc().flags &
-            static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid) &&
+    if (((m.desc().flags &
+          static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) != 0) &&
         check_crc(m) == false) {
         out_ << "crc failure in microslice " << microslice << std::endl;
         return false;

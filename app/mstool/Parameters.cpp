@@ -51,13 +51,13 @@ void Parameters::parse_options(int argc, char* argv[])
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    if (vm.count("help")) {
+    if (vm.count("help") != 0u) {
         std::cout << "mstool, git revision " << g_GIT_REVISION << std::endl;
         std::cout << desc << std::endl;
         exit(EXIT_SUCCESS);
     }
 
-    if (vm.count("version")) {
+    if (vm.count("version") != 0u) {
         std::cout << "mstool, git revision " << g_GIT_REVISION << std::endl;
         exit(EXIT_SUCCESS);
     }

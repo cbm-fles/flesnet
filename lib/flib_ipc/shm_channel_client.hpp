@@ -32,7 +32,7 @@ public:
     // connect to global exchange object
     std::string device_name = "shm_device";
     m_shm_dev = m_shm->find<shm_device>(device_name.c_str()).first;
-    if (!m_shm_dev) {
+    if (m_shm_dev == nullptr) {
       throw std::runtime_error("Unable to find object" + device_name);
     }
 
@@ -40,7 +40,7 @@ public:
     std::string channel_name =
         "shm_channel_" + boost::lexical_cast<std::string>(index);
     m_shm_ch = m_shm->find<shm_channel>(channel_name.c_str()).first;
-    if (!m_shm_ch) {
+    if (m_shm_ch == nullptr) {
       throw std::runtime_error("Unable to find object" + channel_name);
     }
 

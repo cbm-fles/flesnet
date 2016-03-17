@@ -25,7 +25,7 @@ public:
     // connect to global exchange object
     std::string device_name = "shm_device";
     m_shm_dev = m_shm->find<shm_device>(device_name.c_str()).first;
-    if (!m_shm_dev) {
+    if (m_shm_dev == nullptr) {
       throw std::runtime_error("Unable to find object" + device_name);
     }
 

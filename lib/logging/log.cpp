@@ -117,7 +117,10 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
 
 namespace
 {
-bool cout_is_a_tty() { return isatty(fileno(stdout)) && getenv("TERM"); }
+bool cout_is_a_tty()
+{
+    return (isatty(fileno(stdout)) != 0) && (getenv("TERM") != nullptr);
+}
 } // namespace
 
 namespace logging

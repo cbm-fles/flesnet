@@ -70,10 +70,10 @@ StorableMicroslice* MicrosliceReceiver::do_get()
 
     // wait until a microslice is available in the input buffer
     StorableMicroslice* sms = nullptr;
-    while (!sms) {
+    while (sms == nullptr) {
         data_source_.proceed();
         sms = try_get();
-        if (!sms) {
+        if (sms == nullptr) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }

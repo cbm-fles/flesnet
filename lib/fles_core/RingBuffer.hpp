@@ -18,7 +18,7 @@ class RingBuffer
 public:
     void array_delete_(T* ptr, size_t size) const
     {
-        while (size) {
+        while (size != 0u) {
             ptr[--size].~T();
         }
         free(const_cast<typename std::remove_volatile<T>::type*>(ptr));
@@ -45,7 +45,7 @@ public:
         if (minimum_size > 1) {
             minimum_size--;
             ++new_size_exponent;
-            while (minimum_size >>= 1) {
+            while ((minimum_size >>= 1) != 0u) {
                 ++new_size_exponent;
             }
         }
@@ -72,7 +72,7 @@ public:
                 // array_delete_(ptr, size_); });
                 buf_ = buf_t(new (buf) T[size_](), [&](T* ptr) {
                     size_t size = size_;
-                    while (size) {
+                    while (size != 0u) {
                         ptr[--size].~T();
                     }
                     free(const_cast<typename std::remove_volatile<T>::type*>(
