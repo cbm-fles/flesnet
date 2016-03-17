@@ -32,7 +32,8 @@ public:
      *
      * \param archive_type The type of archive (e.g., timeslice, microslice).
      */
-    ArchiveDescriptor(ArchiveType archive_type) : archive_type_(archive_type)
+    explicit ArchiveDescriptor(ArchiveType archive_type)
+        : archive_type_(archive_type)
     {
         time_created_ = std::chrono::system_clock::to_time_t(
             std::chrono::system_clock::now());

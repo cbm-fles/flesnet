@@ -21,7 +21,7 @@ class MicrosliceReceiver : public MicrosliceSource
 {
 public:
     /// Construct Microslice receiver connected to a given data source.
-    MicrosliceReceiver(InputBufferReadInterface& data_source);
+    explicit MicrosliceReceiver(InputBufferReadInterface& data_source);
 
     /// Delete copy constructor (non-copyable).
     MicrosliceReceiver(const MicrosliceReceiver&) = delete;

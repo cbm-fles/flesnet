@@ -16,8 +16,7 @@ using namespace boost::interprocess;
 template <typename T_DESC, typename T_DATA> class shm_device_client {
 
 public:
-
-  shm_device_client(std::string shm_identifier) {
+  explicit shm_device_client(std::string shm_identifier) {
 
     m_shm = std::unique_ptr<managed_shared_memory>(
         new managed_shared_memory(open_only, shm_identifier.c_str()));

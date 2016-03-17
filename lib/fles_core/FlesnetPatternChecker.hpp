@@ -6,7 +6,7 @@
 class FlesnetPatternChecker : public PatternChecker
 {
 public:
-    FlesnetPatternChecker(std::size_t arg_component)
+    explicit FlesnetPatternChecker(std::size_t arg_component)
         : component(arg_component){};
 
     bool check(const fles::Microslice& m) override;

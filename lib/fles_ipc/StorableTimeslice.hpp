@@ -39,8 +39,9 @@ public:
     StorableTimeslice(const Timeslice& ts);
 
     /// Construct and initialize empty timeslice to fill using append_component.
-    StorableTimeslice(uint32_t num_core_microslices,
-                      uint64_t index = UINT64_MAX, uint64_t ts_pos = UINT64_MAX)
+    explicit StorableTimeslice(uint32_t num_core_microslices,
+                               uint64_t index = UINT64_MAX,
+                               uint64_t ts_pos = UINT64_MAX)
     {
         timeslice_descriptor_.index = index;
         timeslice_descriptor_.ts_pos = ts_pos;

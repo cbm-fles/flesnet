@@ -31,7 +31,7 @@ inline std::ostream& operator<<(std::ostream& s, const BufferDump& dump)
 class MicrosliceDescriptorDump
 {
 public:
-    MicrosliceDescriptorDump(const fles::MicrosliceDescriptor& arg_md)
+    explicit MicrosliceDescriptorDump(const fles::MicrosliceDescriptor& arg_md)
         : md(arg_md)
     {
     }

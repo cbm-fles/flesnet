@@ -18,7 +18,7 @@ class MicrosliceTransmitter : public MicrosliceSink
 {
 public:
     /// Construct Microslice Transmitter connected to a given data sink.
-    MicrosliceTransmitter(InputBufferWriteInterface& data_sink);
+    explicit MicrosliceTransmitter(InputBufferWriteInterface& data_sink);
 
     /// Delete copy constructor (non-copyable).
     MicrosliceTransmitter(const MicrosliceTransmitter&) = delete;

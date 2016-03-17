@@ -21,7 +21,7 @@ class TimesliceSubscriber : public TimesliceSource
 {
 public:
     /// Construct timeslice subscriber receiving from given ZMQ address.
-    TimesliceSubscriber(const std::string& address);
+    explicit TimesliceSubscriber(const std::string& address);
 
     /// Delete copy constructor (non-copyable).
     TimesliceSubscriber(const TimesliceSubscriber&) = delete;

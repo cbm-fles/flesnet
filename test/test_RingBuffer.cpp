@@ -6,7 +6,7 @@
 class Simple
 {
 public:
-    Simple(int n = 5) : i(n) { std::cout << "Simple()\n"; }
+    explicit Simple(int n = 5) : i(n) { std::cout << "Simple()\n"; }
     ~Simple() { std::cout << "~Simple()\n"; }
     int i;
 };
