@@ -8,6 +8,7 @@
 #include "MicrosliceDescriptor.hpp"
 #include <vector>
 #include <fstream>
+
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
 // Note: <fstream> has to precede boost/serialization includes for non-obvious
