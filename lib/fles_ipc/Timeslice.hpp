@@ -3,12 +3,12 @@
 /// \brief Defines the fles::Timeslice abstract base class.
 #pragma once
 
-#include "MicrosliceView.hpp"
 #include "MicrosliceDescriptor.hpp"
-#include "TimesliceDescriptor.hpp"
+#include "MicrosliceView.hpp"
 #include "TimesliceComponentDescriptor.hpp"
-#include <vector>
+#include "TimesliceDescriptor.hpp"
 #include <fstream>
+#include <vector>
 
 #include <boost/serialization/access.hpp>
 // Note: <fstream> has to precede boost/serialization includes for non-obvious

@@ -7,8 +7,8 @@
 #include "StorableMicroslice.hpp"
 #include "Timeslice.hpp"
 #include <cstdint>
-#include <vector>
 #include <fstream>
+#include <vector>
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
