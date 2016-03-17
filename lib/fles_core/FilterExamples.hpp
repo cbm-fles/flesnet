@@ -29,7 +29,7 @@ public:
             return std::make_pair(std::unique_ptr<StorableMicroslice>(nullptr),
                                   false);
         }
-        StorableMicroslice* m = new StorableMicroslice(*item);
+        auto m = new StorableMicroslice(*item);
 
         // Modify microslice descriptor
         m->desc().sys_id = sys_id_;
