@@ -14,12 +14,13 @@
 
 Application::Application(Parameters const& par) : par_(par)
 {
-    if (!par_.shm_identifier().empty())
+    if (!par_.shm_identifier().empty()) {
         source_.reset(new fles::TimesliceReceiver(par_.shm_identifier()));
-    else if (!par_.input_archive().empty())
+    } else if (!par_.input_archive().empty()) {
         source_.reset(new fles::TimesliceInputArchive(par_.input_archive()));
-    else if (!par_.subscribe_address().empty())
+    } else if (!par_.subscribe_address().empty()) {
         source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address()));
+    }
 
     if (par_.analyze()) {
         std::string output_prefix =
@@ -28,20 +29,24 @@ Application::Application(Parameters const& par) : par_(par)
             new TimesliceAnalyzer(10000, std::cout, output_prefix)));
     }
 
-    if (par_.verbosity() > 0)
+    if (par_.verbosity() > 0) {
         sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
             new TimesliceDumper(std::cout, par_.verbosity())));
+    }
 
-    if (!par_.output_archive().empty())
+    if (!par_.output_archive().empty()) {
         sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
             new fles::TimesliceOutputArchive(par_.output_archive())));
+    }
 
-    if (!par_.publish_address().empty())
+    if (!par_.publish_address().empty()) {
         sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
             new fles::TimeslicePublisher(par_.publish_address())));
+    }
 
-    if (par_.benchmark())
+    if (par_.benchmark()) {
         benchmark_.reset(new Benchmark());
+    }
 
     if (par_.client_index() != -1) {
         L_(info) << "tsclient " << par_.client_index() << ": "

@@ -45,8 +45,9 @@ public:
         if (minimum_size > 1) {
             minimum_size--;
             ++new_size_exponent;
-            while (minimum_size >>= 1)
+            while (minimum_size >>= 1) {
                 ++new_size_exponent;
+            }
         }
         alloc_with_size_exponent(new_size_exponent);
     }

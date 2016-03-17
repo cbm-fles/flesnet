@@ -27,8 +27,9 @@ private:
 
     T* do_get() override
     {
-        if (this->eof_)
+        if (this->eof_) {
             return nullptr;
+        }
 
         T item = count;
         ++count;

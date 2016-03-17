@@ -80,8 +80,9 @@ private:
 
     Output* do_get() override
     {
-        if (this->eof_)
+        if (this->eof_) {
             return nullptr;
+        }
 
         filter_output_t filter_output;
         if (more) {

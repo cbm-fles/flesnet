@@ -61,10 +61,11 @@ std::ostream& operator<<(std::ostream& strm, severity_level level)
     static const char* strings[] = {"TRACE",   "DEBUG", "INFO",
                                     "WARNING", "ERROR", "FATAL"};
 
-    if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings))
+    if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings)) {
         strm << strings[level];
-    else
+    } else {
         strm << static_cast<int>(level);
+    }
 
     return strm;
 }
@@ -86,11 +87,11 @@ boost::log::formatting_ostream& operator<<(
 
     severity_level level = manip.get();
 
-    if (static_cast<std::size_t>(level) < sizeof(colors) / sizeof(*colors))
+    if (static_cast<std::size_t>(level) < sizeof(colors) / sizeof(*colors)) {
         strm << colors[level] << level << ":" << __ansi(__ansi_normal);
-    else
+    } else {
         strm << level << ":";
-
+    }
     return strm;
 }
 

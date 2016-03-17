@@ -11,10 +11,12 @@ bool FlesnetPatternChecker::check(const fles::Microslice& m)
         crc ^= (data_word & 0xffffffff) ^ (data_word >> 32);
         uint64_t expected =
             (static_cast<uint64_t>(component) << 48) | (pos * sizeof(uint64_t));
-        if (data_word != expected)
+        if (data_word != expected) {
             return false;
+        }
     }
-    if (crc != m.desc().crc)
+    if (crc != m.desc().crc) {
         return false;
+    }
     return true;
 }

@@ -68,8 +68,10 @@ void Parameters::parse_options(int argc, char* argv[])
 
     size_t input_sources = vm.count("pattern-generator") +
                            vm.count("input-archive") + vm.count("input-shm");
-    if (input_sources == 0)
+    if (input_sources == 0) {
         throw ParametersException("no input source specified");
-    if (input_sources > 1)
+    }
+    if (input_sources > 1) {
         throw ParametersException("more than one input source specified");
+    }
 }

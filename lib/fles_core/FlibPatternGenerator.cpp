@@ -31,8 +31,9 @@ void FlibPatternGenerator::produce_data()
             write_index_.store(write_index);
 
             do {
-                if (is_stopped_)
+                if (is_stopped_) {
                     return;
+                }
                 read_index = read_index_.load();
             } while ((write_index.data - read_index.data + min_avail.data >
                       data_buffer_.size()) ||
@@ -41,8 +42,9 @@ void FlibPatternGenerator::produce_data()
 
             while (true) {
                 unsigned int content_bytes = typical_content_size_;
-                if (randomize_sizes_)
+                if (randomize_sizes_) {
                     content_bytes = random_distribution(random_generator);
+                }
                 content_bytes &=
                     ~0x7u; // round down to multiple of sizeof(uint64_t)
 
@@ -50,8 +52,9 @@ void FlibPatternGenerator::produce_data()
                 if ((write_index.data - read_index.data + content_bytes >
                      data_buffer_.bytes()) ||
                     (write_index.desc - read_index.desc + 1 >
-                     desc_buffer_.size()))
+                     desc_buffer_.size())) {
                     break;
+                }
 
                 const uint8_t hdr_id = static_cast<uint8_t>(
                     fles::HeaderFormatIdentifier::Standard);

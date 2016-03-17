@@ -21,16 +21,17 @@ inline std::string human_readable_count(uint64_t bytes, bool use_si = false,
 {
     uint64_t unit = use_si ? 1000 : 1024;
 
-    if (bytes < unit)
+    if (bytes < unit) {
         return boost::lexical_cast<std::string>(bytes) + " " + unit_string;
+    }
 
     uint32_t exponent = static_cast<uint32_t>(std::log(bytes) / std::log(unit));
 
     std::string prefix =
         std::string(use_si ? "kMGTPE" : "KMGTPE").substr(exponent - 1, 1);
-    if (!use_si)
+    if (!use_si) {
         prefix += "i";
-
+    }
     std::stringstream st;
     st.precision(4);
     st << (bytes / std::pow(unit, exponent)) << " " << prefix << unit_string;

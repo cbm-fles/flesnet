@@ -64,8 +64,9 @@ StorableMicroslice* MicrosliceReceiver::try_get()
 
 StorableMicroslice* MicrosliceReceiver::do_get()
 {
-    if (eof_)
+    if (eof_) {
         return nullptr;
+    }
 
     // wait until a microslice is available in the input buffer
     StorableMicroslice* sms = nullptr;

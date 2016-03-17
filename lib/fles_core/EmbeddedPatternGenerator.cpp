@@ -17,15 +17,17 @@ void EmbeddedPatternGenerator::proceed()
 
     while (true) {
         unsigned int content_bytes = typical_content_size_;
-        if (randomize_sizes_)
+        if (randomize_sizes_) {
             content_bytes = random_distribution_(random_generator_);
+        }
         content_bytes &= ~0x7u; // round down to multiple of sizeof(uint64_t)
 
         // check for space in data and descriptor buffers
         if ((write_index_.data - read_index_.data + content_bytes >
              data_buffer_.bytes()) ||
-            (write_index_.desc - read_index_.desc + 1 > desc_buffer_.size()))
+            (write_index_.desc - read_index_.desc + 1 > desc_buffer_.size())) {
             return;
+        }
 
         const uint8_t hdr_id =
             static_cast<uint8_t>(fles::HeaderFormatIdentifier::Standard);

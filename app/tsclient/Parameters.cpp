@@ -57,8 +57,10 @@ void Parameters::parse_options(int argc, char* argv[])
 
     size_t input_sources = vm.count("shm-identifier") +
                            vm.count("input-archive") + vm.count("subscribe");
-    if (input_sources == 0 && !benchmark_)
+    if (input_sources == 0 && !benchmark_) {
         throw ParametersException("no input source specified");
-    if (input_sources > 1)
+    }
+    if (input_sources > 1) {
         throw ParametersException("more than one input source specified");
+    }
 }

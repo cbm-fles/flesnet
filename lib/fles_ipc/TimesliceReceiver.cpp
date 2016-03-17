@@ -74,8 +74,9 @@ void mq_receive_workaround(boost::interprocess::message_queue& mq, void* buffer,
 
 TimesliceView* TimesliceReceiver::do_get()
 {
-    if (eof_)
+    if (eof_) {
         return nullptr;
+    }
 
     TimesliceWorkItem wi;
     std::size_t recvd_size;

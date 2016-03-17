@@ -33,10 +33,11 @@ std::ostream& TimesliceDump::write_to_stream(std::ostream& s) const
       << ts.num_core_microslices() << " microslices";
     if (ts.num_components() != 0) {
         s << " (+";
-        if (min_overlap != max_overlap)
+        if (min_overlap != max_overlap) {
             s << min_overlap << ".." << max_overlap;
-        else
+        } else {
             s << min_overlap;
+        }
         s << " overlap) = " << total_num_microslices << "\n";
         s << "\tmicroslice size min/avg/max: " << min_microslice_size << "/"
           << (static_cast<double>(total_microslice_size) /
@@ -79,14 +80,16 @@ std::ostream& BufferDump::write_to_stream(std::ostream& s) const
 
     for (int i = 0; i < static_cast<int>(size); i += bytes_per_line) {
         for (int j = bytes_per_line - 1; j >= 0; --j) {
-            if (i + j >= static_cast<int>(size))
+            if (i + j >= static_cast<int>(size)) {
                 s << "  ";
-            else
+            } else {
                 s << boost::format("%02x") %
                          static_cast<int>(
                              static_cast<const uint8_t*>(buf)[i + j]);
-            if ((j % bytes_per_block) == 0)
+            }
+            if ((j % bytes_per_block) == 0) {
                 s << "  ";
+            }
         }
         s << boost::format(":%04x\n") % i;
     }
