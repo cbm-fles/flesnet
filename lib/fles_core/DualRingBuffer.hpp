@@ -32,16 +32,16 @@ struct DualIndex {
     };
 };
 
-DualIndex operator+(DualIndex, const DualIndex&);
-DualIndex operator-(DualIndex, const DualIndex&);
+DualIndex operator+(DualIndex /*lhs*/, const DualIndex& /*rhs*/);
+DualIndex operator-(DualIndex /*lhs*/, const DualIndex& /*rhs*/);
 
-bool operator<(const DualIndex&, const DualIndex&);
-bool operator>(const DualIndex&, const DualIndex&);
+bool operator<(const DualIndex& /*lhs*/, const DualIndex& /*rhs*/);
+bool operator>(const DualIndex& /*lhs*/, const DualIndex& /*rhs*/);
 
-bool operator<=(const DualIndex&, const DualIndex&);
-bool operator>=(const DualIndex&, const DualIndex&);
+bool operator<=(const DualIndex& /*lhs*/, const DualIndex& /*rhs*/);
+bool operator>=(const DualIndex& /*lhs*/, const DualIndex& /*rhs*/);
 
-bool operator==(const DualIndex&, const DualIndex&);
+bool operator==(const DualIndex& /*lhs*/, const DualIndex& /*rhs*/);
 
 inline DualIndex operator+(DualIndex lhs, const DualIndex& rhs)
 {
