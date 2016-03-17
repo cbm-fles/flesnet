@@ -84,7 +84,7 @@ bool FlibLegacyPatternChecker::check_cbmnet_frames(const uint16_t* content,
         if (sys_id == static_cast<uint8_t>(fles::SubsystemIdentifier::FLES) &&
             sys_ver == static_cast<uint8_t>(
                            fles::SubsystemFormatFLES::CbmNetPattern)) {
-            if (check_content_pgen(&content[i], word_count) == false) {
+            if (!check_content_pgen(&content[i], word_count)) {
                 return false;
             }
         }

@@ -91,7 +91,7 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
 
     if (((ms.desc().flags &
           static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) != 0) &&
-        check_crc(ms) == false) {
+        !check_crc(ms)) {
         out_ << output_prefix_ << "crc failure in microslice "
              << microslice_count_ << std::endl;
         result = false;

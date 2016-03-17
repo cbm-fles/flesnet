@@ -15,8 +15,5 @@ bool FlesnetPatternChecker::check(const fles::Microslice& m)
             return false;
         }
     }
-    if (crc != m.desc().crc) {
-        return false;
-    }
-    return true;
+    return crc == m.desc().crc;
 }
