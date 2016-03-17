@@ -63,9 +63,8 @@ std::string current_username()
 
     if (result) {
         return std::string(pwd.pw_name);
-    } else {
-        return std::string("unknown");
     }
+    return std::string("unknown");
 }
 
 std::string current_hostname()

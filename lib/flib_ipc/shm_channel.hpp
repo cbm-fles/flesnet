@@ -112,10 +112,9 @@ public:
     assert(lock);
     if (m_clients != 0) {
       return false;
-    } else {
-      m_clients = 1;
-      return true;
     }
+    m_clients = 1;
+    return true;
   }
 
   void disconnect(scoped_lock<interprocess_mutex>& lock) {

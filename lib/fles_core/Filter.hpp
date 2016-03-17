@@ -43,12 +43,11 @@ public:
 
         if (output.empty()) {
             return std::make_pair(std::unique_ptr<Output>(nullptr), false);
-        } else {
-            auto i = std::move(output.front());
-            output.pop();
-            bool more = !output.empty();
-            return std::make_pair(std::move(i), more);
         }
+        auto i = std::move(output.front());
+        output.pop();
+        bool more = !output.empty();
+        return std::make_pair(std::move(i), more);
     }
 
 protected:
