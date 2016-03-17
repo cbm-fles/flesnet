@@ -29,7 +29,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const TimesliceReceiver&) = delete;
 
-    virtual ~TimesliceReceiver() = default;
+    ~TimesliceReceiver() override = default;
 
     /**
      * \brief Retrieve the next item.
@@ -44,7 +44,7 @@ public:
     };
 
 private:
-    virtual TimesliceView* do_get() override;
+    TimesliceView* do_get() override;
 
     const std::string shared_memory_identifier_;
 

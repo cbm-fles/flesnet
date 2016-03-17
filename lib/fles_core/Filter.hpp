@@ -30,7 +30,7 @@ template <class Input, class Output = Input>
 class BufferingFilter : public Filter<Input, Output>
 {
 public:
-    virtual std::pair<std::unique_ptr<Output>, bool>
+    std::pair<std::unique_ptr<Output>, bool>
     exchange_item(std::shared_ptr<const Input> item) override
     {
         if (item) {
@@ -78,7 +78,7 @@ private:
 
     using filter_output_t = typename Filter<Input, Output>::filter_output_t;
 
-    virtual Output* do_get() override
+    Output* do_get() override
     {
         if (this->eof_)
             return nullptr;
@@ -115,7 +115,7 @@ public:
     {
     }
 
-    virtual void put(std::shared_ptr<const Input> item) override
+    void put(std::shared_ptr<const Input> item) override
     {
         typename Filter<Input, Output>::filter_output_t filter_output;
         filter_output = filter.exchange_item(item);

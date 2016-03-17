@@ -16,9 +16,9 @@ class TimesliceAnalyzer : public fles::TimesliceSink
 public:
     TimesliceAnalyzer(uint64_t arg_output_interval, std::ostream& arg_out,
                       std::string arg_output_prefix);
-    ~TimesliceAnalyzer();
+    ~TimesliceAnalyzer() override;
 
-    virtual void put(std::shared_ptr<const fles::Timeslice> timeslice) override;
+    void put(std::shared_ptr<const fles::Timeslice> timeslice) override;
 
 private:
     bool check_timeslice(const fles::Timeslice& ts);

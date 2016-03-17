@@ -38,7 +38,7 @@ public:
     FlibPatternGenerator(const FlibPatternGenerator&) = delete;
     void operator=(const FlibPatternGenerator&) = delete;
 
-    virtual ~FlibPatternGenerator()
+    ~FlibPatternGenerator() override
     {
         try {
             is_stopped_ = true;
@@ -50,12 +50,12 @@ public:
         }
     }
 
-    virtual RingBufferView<uint8_t>& data_buffer() override
+    RingBufferView<uint8_t>& data_buffer() override
     {
         return data_buffer_view_;
     }
 
-    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
+    RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
     {
         return desc_buffer_view_;
     }
@@ -63,9 +63,9 @@ public:
     /// Generate FLIB input data.
     void produce_data();
 
-    virtual DualIndex get_write_index() override { return write_index_.load(); }
+    DualIndex get_write_index() override { return write_index_.load(); }
 
-    virtual void set_read_index(DualIndex new_read_index) override
+    void set_read_index(DualIndex new_read_index) override
     {
         read_index_.store(new_read_index);
     }

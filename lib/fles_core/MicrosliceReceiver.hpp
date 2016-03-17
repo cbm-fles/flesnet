@@ -28,7 +28,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const MicrosliceReceiver&) = delete;
 
-    virtual ~MicrosliceReceiver() = default;
+    ~MicrosliceReceiver() override = default;
 
     /**
      * \brief Retrieve the next item.
@@ -43,7 +43,7 @@ public:
     };
 
 private:
-    virtual StorableMicroslice* do_get() override;
+    StorableMicroslice* do_get() override;
 
     StorableMicroslice* try_get();
 

@@ -57,13 +57,13 @@ public:
         new RingBufferView<T_DESC>(desc_buffer, desc_buffer_size_exp));
   }
 
-  virtual DualIndex get_read_index() override {
+  DualIndex get_read_index() override {
     scoped_lock<interprocess_mutex> lock(shm_dev_->m_mutex);
     shm_ch_->set_req_read_index(lock, false);
     return shm_ch_->read_index(lock);
   };
 
-  virtual void set_write_index(DualIndex new_write_index) override {
+  void set_write_index(DualIndex new_write_index) override {
     TimedDualIndex write_index = {new_write_index,
                                   boost::posix_time::pos_infin};
     scoped_lock<interprocess_mutex> lock(shm_dev_->m_mutex);
@@ -71,13 +71,9 @@ public:
     shm_ch_->set_write_index(lock, write_index);
   };
 
-  virtual RingBufferView<T_DATA>& data_buffer() override {
-    return *data_buffer_view_;
-  }
+  RingBufferView<T_DATA>& data_buffer() override { return *data_buffer_view_; }
 
-  virtual RingBufferView<T_DESC>& desc_buffer() override {
-    return *desc_buffer_view_;
-  }
+  RingBufferView<T_DESC>& desc_buffer() override { return *desc_buffer_view_; }
 
   DualIndex get_occupied_size() {
     scoped_lock<interprocess_mutex> lock(shm_dev_->m_mutex);

@@ -36,13 +36,10 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const OutputArchive&) = delete;
 
-    virtual ~OutputArchive() = default;
+    ~OutputArchive() override = default;
 
     /// Store an item.
-    virtual void put(std::shared_ptr<const Base> item) override
-    {
-        do_put(*item);
-    }
+    void put(std::shared_ptr<const Base> item) override { do_put(*item); }
 
 private:
     std::ofstream ofstream_;

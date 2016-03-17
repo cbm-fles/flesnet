@@ -27,7 +27,7 @@ public:
     void operator=(const TimeslicePublisher&) = delete;
 
     /// Send a timeslice to all connected subscribers.
-    virtual void put(std::shared_ptr<const fles::Timeslice> timeslice) override
+    void put(std::shared_ptr<const fles::Timeslice> timeslice) override
     {
         do_put(*timeslice);
     };

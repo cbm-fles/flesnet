@@ -28,7 +28,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const TimesliceSubscriber&) = delete;
 
-    virtual ~TimesliceSubscriber() = default;
+    ~TimesliceSubscriber() override = default;
 
     /**
      * \brief Retrieve the next item.
@@ -43,7 +43,7 @@ public:
     };
 
 private:
-    virtual StorableTimeslice* do_get() override;
+    StorableTimeslice* do_get() override;
 
     zmq::context_t context_{1};
     zmq::socket_t subscriber_{context_, ZMQ_SUB};

@@ -52,7 +52,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const InputArchive&) = delete;
 
-    virtual ~InputArchive() = default;
+    ~InputArchive() override = default;
 
     /// Read the next data set.
     std::unique_ptr<Derived> get()
@@ -64,7 +64,7 @@ public:
     const ArchiveDescriptor& descriptor() const { return descriptor_; };
 
 private:
-    virtual Derived* do_get() override
+    Derived* do_get() override
     {
         Derived* sts = nullptr;
         try {

@@ -25,7 +25,7 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const TimesliceView&) = delete;
 
-    virtual ~TimesliceView();
+    ~TimesliceView() override;
 
 private:
     friend class TimesliceReceiver;

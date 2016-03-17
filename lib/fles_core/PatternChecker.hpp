@@ -19,8 +19,5 @@ public:
 class GenericPatternChecker : public PatternChecker
 {
 public:
-    virtual bool check(const fles::Microslice& /* m */) override
-    {
-        return true;
-    };
+    bool check(const fles::Microslice& /* m */) override { return true; };
 };

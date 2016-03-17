@@ -25,14 +25,14 @@ public:
     /// Delete assignment operator (non-copyable).
     void operator=(const MicrosliceTransmitter&) = delete;
 
-    virtual ~MicrosliceTransmitter() = default;
+    ~MicrosliceTransmitter() override = default;
 
     /**
      * \brief Transmit the next item.
      *
      * This function blocks if there is not enough space available.
      */
-    virtual void put(std::shared_ptr<const Microslice> item) override;
+    void put(std::shared_ptr<const Microslice> item) override;
 
 private:
     bool try_put(std::shared_ptr<const Microslice> item);

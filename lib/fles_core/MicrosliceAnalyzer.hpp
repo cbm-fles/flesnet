@@ -16,9 +16,9 @@ class MicrosliceAnalyzer : public fles::MicrosliceSink
 public:
     MicrosliceAnalyzer(uint64_t arg_output_interval, std::ostream& arg_out,
                        std::string arg_output_prefix);
-    ~MicrosliceAnalyzer();
+    ~MicrosliceAnalyzer() override;
 
-    virtual void put(std::shared_ptr<const fles::Microslice> ms) override;
+    void put(std::shared_ptr<const fles::Microslice> ms) override;
 
 private:
     bool check_microslice(const fles::Microslice& ms);

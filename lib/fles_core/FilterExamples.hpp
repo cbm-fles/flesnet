@@ -22,7 +22,7 @@ public:
     {
     }
 
-    virtual std::pair<std::unique_ptr<StorableMicroslice>, bool>
+    std::pair<std::unique_ptr<StorableMicroslice>, bool>
     exchange_item(std::shared_ptr<const Microslice> item) override
     {
         if (!item) {

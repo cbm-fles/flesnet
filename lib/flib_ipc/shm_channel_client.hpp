@@ -74,7 +74,7 @@ public:
   shm_channel_client(const shm_channel_client&) = delete;
   void operator=(const shm_channel_client&) = delete;
 
-  virtual ~shm_channel_client() {
+  ~shm_channel_client() override {
     try {
       scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
       m_shm_ch->disconnect(lock);
@@ -86,7 +86,7 @@ public:
   size_t data_buffer_size_exp() { return m_data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
 
-  virtual void set_read_index(DualIndex read_index) override {
+  void set_read_index(DualIndex read_index) override {
     scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
     m_shm_ch->set_read_index(lock, read_index);
     m_shm_ch->set_req_read_index(lock, true);
@@ -135,18 +135,14 @@ public:
     return ret;
   }
 
-  virtual DualIndex get_write_index() override {
+  DualIndex get_write_index() override {
     return get_write_index_newer_than(boost::posix_time::milliseconds(10))
         .first.index;
   }
 
-  virtual RingBufferView<T_DATA>& data_buffer() override {
-    return *data_buffer_view_;
-  }
+  RingBufferView<T_DATA>& data_buffer() override { return *data_buffer_view_; }
 
-  virtual RingBufferView<T_DESC>& desc_buffer() override {
-    return *desc_buffer_view_;
-  }
+  RingBufferView<T_DESC>& desc_buffer() override { return *desc_buffer_view_; }
 
 private:
   std::shared_ptr<flib_shm_device_client> m_dev;

@@ -25,7 +25,7 @@ private:
     T count = 0;
     T limit;
 
-    virtual T* do_get() override
+    T* do_get() override
     {
         if (this->eof_)
             return nullptr;
@@ -43,7 +43,7 @@ private:
 template <typename T> class Dumper : public fles::Sink<T>
 {
 public:
-    virtual void put(std::shared_ptr<const T> item) override
+    void put(std::shared_ptr<const T> item) override
     {
         std::cout << *item << "\n";
     }
@@ -52,7 +52,7 @@ public:
 // example filter 1: integer doubler
 template <typename T> class Doubler : public fles::Filter<T>
 {
-    virtual std::pair<std::unique_ptr<T>, bool>
+    std::pair<std::unique_ptr<T>, bool>
     exchange_item(std::shared_ptr<const T> item) override
     {
         if (!item) {

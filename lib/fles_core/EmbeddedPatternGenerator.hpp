@@ -34,21 +34,21 @@ public:
     EmbeddedPatternGenerator(const EmbeddedPatternGenerator&) = delete;
     void operator=(const EmbeddedPatternGenerator&) = delete;
 
-    virtual RingBufferView<uint8_t>& data_buffer() override
+    RingBufferView<uint8_t>& data_buffer() override
     {
         return data_buffer_view_;
     }
 
-    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
+    RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
     {
         return desc_buffer_view_;
     }
 
     void proceed() override;
 
-    virtual DualIndex get_write_index() override { return write_index_; }
+    DualIndex get_write_index() override { return write_index_; }
 
-    virtual void set_read_index(DualIndex new_read_index) override
+    void set_read_index(DualIndex new_read_index) override
     {
         read_index_ = new_read_index;
     }
