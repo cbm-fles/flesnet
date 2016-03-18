@@ -47,7 +47,7 @@ private:
     ArchiveDescriptor descriptor_{archive_type};
 
     void do_put(const Derived& item) { oarchive_ << item; }
-    // TODO: Solve this without the additional alloc/copy operation
+    // TODO(Jan): Solve this without the additional alloc/copy operation
 };
 
 } // namespace fles

@@ -98,7 +98,7 @@ private:
         }
         more = filter_output.second;
         return new Output(*filter_output.first);
-        // TODO: Solve this without the additional alloc/copy operation
+        // TODO(Jan): Solve this without the additional alloc/copy operation
     }
 };
 

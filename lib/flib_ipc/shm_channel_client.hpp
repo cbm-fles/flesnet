@@ -101,7 +101,7 @@ public:
 
   // get cached write_index
   TimedDualIndex get_write_index_cached() {
-    // TODO could be a shared lock
+    // TODO(Dirk): could be a shared lock
     scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
     return m_shm_ch->write_index(lock);
   }

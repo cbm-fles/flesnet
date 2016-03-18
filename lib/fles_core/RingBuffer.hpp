@@ -67,7 +67,7 @@ public:
                                          strerror(ret));
             }
             if (CLEARED) {
-                // TODO: hack for gcc < 4.8
+                // TODO(Jan): Remove this hack for gcc < 4.8
                 // buf_ = buf_t(new(buf) T[size_](), [&](T* ptr){
                 // array_delete_(ptr, size_); });
                 buf_ = buf_t(new (buf) T[size_](), [&](T* ptr) {

@@ -119,7 +119,7 @@ public:
 
   void disconnect(scoped_lock<interprocess_mutex>& lock) {
     assert(lock);
-    // TODO: disconnect is disabled to ensure channels are used only once
+    // TODO(Dirk): disconnect is disabled to ensure channels are used only once
     // m_clients = 0;
   }
 

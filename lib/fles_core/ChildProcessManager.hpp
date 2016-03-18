@@ -163,7 +163,8 @@ private:
                 case Running:
                 case None:
                     L_(error) << "child process died unexpectedly";
-                    L_(error) << "TODO: restart not yet implemented"; // TODO!
+                    L_(error) << "TODO: restart not yet implemented";
+                    // TODO(Jan): Implement child process restarting
                     break;
                 }
             }
