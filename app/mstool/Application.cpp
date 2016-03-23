@@ -110,6 +110,9 @@ void Application::run()
             break;
         }
     }
+    for (auto& sink : sinks_) {
+        sink->end_stream();
+    }
     if (output_shm_device_) {
         L_(info) << "waiting until output shared memory is empty";
         while (!output_shm_device_->channels().at(0)->empty()) {
