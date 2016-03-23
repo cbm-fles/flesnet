@@ -25,7 +25,7 @@ end of this document.
 Getting the Repository
 ----------------------
 
-    git clone https://github.com/cbm-fles/flesnet.git flesnet
+    git clone https://github.com/cbm-fles/flesnet.git
 
 
 Build Dependencies
