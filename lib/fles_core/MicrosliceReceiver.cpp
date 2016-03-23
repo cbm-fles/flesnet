@@ -63,7 +63,7 @@ StorableMicroslice* MicrosliceReceiver::try_get()
 
 StorableMicroslice* MicrosliceReceiver::do_get()
 {
-    if (eof_) {
+    if (eos_) {
         return nullptr;
     }
 
@@ -73,6 +73,11 @@ StorableMicroslice* MicrosliceReceiver::do_get()
         data_source_.proceed();
         sms = try_get();
         if (sms == nullptr) {
+            if (data_source_.get_eof() &&
+                read_index_desc_ == data_source_.get_write_index().desc) {
+                eos_ = true;
+                return nullptr;
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }

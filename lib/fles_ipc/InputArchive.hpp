@@ -63,9 +63,15 @@ public:
     /// Retrieve the archive descriptor.
     const ArchiveDescriptor& descriptor() const { return descriptor_; };
 
+    bool eos() const override { return eos_; }
+
 private:
     Derived* do_get() override
     {
+        if (eos_) {
+            return nullptr;
+        }
+
         Derived* sts = nullptr;
         try {
             sts = new Derived();
@@ -74,6 +80,7 @@ private:
             if (e.code ==
                 boost::archive::archive_exception::input_stream_error) {
                 delete sts;
+                eos_ = true;
                 return nullptr;
             }
             throw;
@@ -84,6 +91,8 @@ private:
     std::unique_ptr<std::ifstream> ifstream_;
     std::unique_ptr<boost::archive::binary_iarchive> iarchive_;
     ArchiveDescriptor descriptor_;
+
+    bool eos_ = false;
 };
 
 } // namespace fles

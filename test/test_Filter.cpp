@@ -21,20 +21,23 @@ public:
         static_assert(std::is_integral<T>::value, "Integer required.");
     };
 
+    bool eos() const override { return eos_flag; }
+
 private:
     T count = 0;
     T limit;
+    bool eos_flag = false;
 
     T* do_get() override
     {
-        if (this->eof_) {
+        if (eos_flag) {
             return nullptr;
         }
 
         T item = count;
         ++count;
         if (count >= limit) {
-            this->eof_ = true;
+            eos_flag = true;
         }
         return new T(item);
     }

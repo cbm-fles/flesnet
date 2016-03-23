@@ -70,16 +70,19 @@ public:
     {
     }
 
+    bool eos() const override { return eos_flag; }
+
 private:
     source_t& source;
     filter_t& filter;
     bool more = false;
+    bool eos_flag = false;
 
     using filter_output_t = typename Filter<Input, Output>::filter_output_t;
 
     Output* do_get() override
     {
-        if (this->eof_) {
+        if (eos_flag) {
             return nullptr;
         }
 
@@ -90,7 +93,7 @@ private:
             do {
                 auto item = source.get();
                 if (!item) {
-                    this->eof_ = true;
+                    eos_flag = true;
                     return nullptr;
                 }
                 filter_output = filter.exchange_item(std::move(item));

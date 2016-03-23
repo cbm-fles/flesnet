@@ -74,7 +74,7 @@ void mq_receive_workaround(boost::interprocess::message_queue& mq, void* buffer,
 
 TimesliceView* TimesliceReceiver::do_get()
 {
-    if (eof_) {
+    if (eos_) {
         return nullptr;
     }
 
@@ -89,7 +89,7 @@ TimesliceView* TimesliceReceiver::do_get()
                           priority);
 #endif
     if (recvd_size == 0) {
-        eof_ = true;
+        eos_ = true;
         return nullptr;
     }
     assert(recvd_size == sizeof(wi));
