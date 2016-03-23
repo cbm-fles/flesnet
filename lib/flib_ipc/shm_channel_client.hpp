@@ -140,6 +140,11 @@ public:
         .first.index;
   }
 
+  bool get_eof() override {
+    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+    return m_shm_ch->eof(lock);
+  };
+
   RingBufferView<T_DATA>& data_buffer() override { return *data_buffer_view_; }
 
   RingBufferView<T_DESC>& desc_buffer() override { return *desc_buffer_view_; }

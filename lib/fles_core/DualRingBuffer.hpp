@@ -88,6 +88,8 @@ public:
 
     virtual DualIndex get_write_index() = 0;
 
+    virtual bool get_eof() = 0;
+
     virtual void set_read_index(DualIndex new_read_index) = 0;
 
     virtual RingBufferView<T_DATA>& data_buffer() = 0;

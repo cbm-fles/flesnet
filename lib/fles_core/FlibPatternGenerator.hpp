@@ -65,6 +65,8 @@ public:
 
     DualIndex get_write_index() override { return write_index_.load(); }
 
+    bool get_eof() override { return false; }
+
     void set_read_index(DualIndex new_read_index) override
     {
         read_index_.store(new_read_index);
