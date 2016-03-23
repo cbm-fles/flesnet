@@ -42,3 +42,10 @@ add_test(NAME test_Microslice COMMAND test_Microslice)
 add_test(NAME test_RingBuffer COMMAND test_RingBuffer)
 add_test(NAME test_Filter COMMAND test_Filter)
 add_test(NAME test_MicrosliceReceiver COMMAND test_MicrosliceReceiver)
+
+find_program(BASH_PROGRAM bash)
+if(BASH_PROGRAM)
+  add_test(NAME test_mstool
+           COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_mstool.sh
+           WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+endif()
