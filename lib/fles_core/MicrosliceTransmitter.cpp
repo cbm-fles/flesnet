@@ -2,6 +2,7 @@
 
 #include "MicrosliceTransmitter.hpp"
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <thread>
 
@@ -16,6 +17,7 @@ MicrosliceTransmitter::MicrosliceTransmitter(
 
 bool MicrosliceTransmitter::try_put(std::shared_ptr<const Microslice> item)
 {
+    assert(item != nullptr);
     const DualIndex item_size = {1, item->desc().size};
     const DualIndex buffer_size = {data_sink_.desc_buffer().size(),
                                    data_sink_.data_buffer().size()};

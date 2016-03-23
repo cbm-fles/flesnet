@@ -25,37 +25,34 @@ public:
 
     virtual ~FlibHardwareChannel();
 
-    virtual RingBufferView<uint8_t>& data_buffer() override
+    RingBufferView<uint8_t>& data_buffer() override
     {
         return *data_buffer_view_;
     }
 
-    virtual RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
+    RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override
     {
         return *desc_buffer_view_;
     }
 
-    virtual RingBufferView<uint8_t>& data_send_buffer() override
+    RingBufferView<uint8_t>& data_send_buffer() override
     {
         return data_send_buffer_view_;
     }
 
-    virtual RingBufferView<fles::MicrosliceDescriptor>&
-    desc_send_buffer() override
+    RingBufferView<fles::MicrosliceDescriptor>& desc_send_buffer() override
     {
         return desc_send_buffer_view_;
     }
 
 #ifndef NO_DOUBLE_BUFFERING
-    virtual void copy_to_data_send_buffer(std::size_t start,
-                                          std::size_t count) override
+    void copy_to_data_send_buffer(std::size_t start, std::size_t count) override
     {
         std::copy_n(const_cast<uint8_t*>(&data_buffer_view_->at(start)), count,
                     const_cast<uint8_t*>(&data_send_buffer_view_.at(start)));
     }
 
-    virtual void copy_to_desc_send_buffer(std::size_t start,
-                                          std::size_t count) override
+    void copy_to_desc_send_buffer(std::size_t start, std::size_t count) override
     {
         std::copy_n(const_cast<fles::MicrosliceDescriptor*>(
                         &desc_buffer_view_->at(start)),
@@ -64,9 +61,11 @@ public:
     }
 #endif
 
-    virtual DualIndex get_write_index() override;
+    DualIndex get_write_index() override;
 
-    virtual void set_read_index(DualIndex new_read_index) override;
+    bool get_eof() override { return false; }
+
+    void set_read_index(DualIndex new_read_index) override;
 
 private:
     std::unique_ptr<RingBufferView<uint8_t>> data_buffer_view_;

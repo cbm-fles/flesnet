@@ -43,6 +43,8 @@ public:
         return std::unique_ptr<TimesliceView>(do_get());
     };
 
+    bool eos() const override { return eos_; }
+
 private:
     TimesliceView* do_get() override;
 
@@ -56,6 +58,9 @@ private:
 
     std::unique_ptr<boost::interprocess::message_queue> work_items_mq_;
     std::shared_ptr<boost::interprocess::message_queue> completions_mq_;
+
+    /// The end-of-stream flag.
+    bool eos_ = false;
 };
 
 } // namespace fles

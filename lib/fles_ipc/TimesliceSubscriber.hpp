@@ -42,11 +42,15 @@ public:
         return std::unique_ptr<StorableTimeslice>(do_get());
     };
 
+    bool eos() const override { return eos_flag; }
+
 private:
     StorableTimeslice* do_get() override;
 
     zmq::context_t context_{1};
     zmq::socket_t subscriber_{context_, ZMQ_SUB};
+
+    bool eos_flag = false;
 };
 
 } // namespace fles

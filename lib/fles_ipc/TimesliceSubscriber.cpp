@@ -13,6 +13,10 @@ TimesliceSubscriber::TimesliceSubscriber(const std::string& address)
 
 fles::StorableTimeslice* TimesliceSubscriber::do_get()
 {
+    if (eos_flag) {
+        return nullptr;
+    }
+
     zmq::message_t message;
     subscriber_.recv(&message);
 
@@ -28,6 +32,7 @@ fles::StorableTimeslice* TimesliceSubscriber::do_get()
         ia >> *sts;
     } catch (boost::archive::archive_exception& e) {
         delete sts;
+        eos_flag = true;
         return nullptr;
     }
     return sts;

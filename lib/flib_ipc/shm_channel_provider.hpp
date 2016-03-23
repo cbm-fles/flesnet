@@ -71,6 +71,11 @@ public:
     shm_ch_->set_write_index(lock, write_index);
   };
 
+  void set_eof(bool eof) override {
+    scoped_lock<interprocess_mutex> lock(shm_dev_->m_mutex);
+    shm_ch_->set_eof(lock, eof);
+  };
+
   RingBufferView<T_DATA>& data_buffer() override { return *data_buffer_view_; }
 
   RingBufferView<T_DESC>& desc_buffer() override { return *desc_buffer_view_; }

@@ -41,6 +41,8 @@ public:
     /// Store an item.
     void put(std::shared_ptr<const Base> item) override { do_put(*item); }
 
+    void end_stream() override { ofstream_.close(); }
+
 private:
     std::ofstream ofstream_;
     boost::archive::binary_oarchive oarchive_;

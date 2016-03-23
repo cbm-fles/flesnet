@@ -42,6 +42,8 @@ public:
         return std::unique_ptr<StorableMicroslice>(do_get());
     };
 
+    bool eos() const override { return eos_; }
+
 private:
     StorableMicroslice* do_get() override;
 
@@ -52,5 +54,7 @@ private:
 
     uint64_t write_index_desc_ = 0;
     uint64_t read_index_desc_ = 0;
+
+    bool eos_ = false;
 };
 } // namespace fles

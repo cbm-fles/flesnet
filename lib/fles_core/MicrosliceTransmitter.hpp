@@ -34,6 +34,8 @@ public:
      */
     void put(std::shared_ptr<const Microslice> item) override;
 
+    void end_stream() override { data_sink_.set_eof(true); }
+
 private:
     bool try_put(std::shared_ptr<const Microslice> item);
 

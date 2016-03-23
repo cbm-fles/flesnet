@@ -26,11 +26,9 @@ public:
      */
     std::unique_ptr<T> get() { return std::unique_ptr<T>(do_get()); };
 
-    virtual ~Source() = default;
+    virtual bool eos() const = 0;
 
-protected:
-    /// The end-of-file flag.
-    bool eof_ = false;
+    virtual ~Source() = default;
 
 private:
     virtual T* do_get() = 0;
