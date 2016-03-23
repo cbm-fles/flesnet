@@ -25,8 +25,9 @@ StorableMicroslice* MicrosliceReceiver::try_get()
 
         const uint8_t* data_begin = &data_source_.data_buffer().at(desc.offset);
 
-        const uint8_t* data_end =
-            &data_source_.data_buffer().at(desc.offset + desc.size);
+        const uint64_t offset_end = desc.offset + desc.size;
+
+        const uint8_t* data_end = &data_source_.data_buffer().at(offset_end);
 
         StorableMicroslice* sms;
 
@@ -53,9 +54,7 @@ StorableMicroslice* MicrosliceReceiver::try_get()
 
         ++read_index_desc_;
 
-        data_source_.set_read_index(
-            {read_index_desc_,
-             data_source_.desc_buffer().at(read_index_desc_).offset});
+        data_source_.set_read_index({read_index_desc_, offset_end});
 
         return sms;
     }
