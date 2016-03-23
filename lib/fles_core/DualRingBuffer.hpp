@@ -116,6 +116,8 @@ public:
 
     virtual void set_write_index(DualIndex new_write_index) = 0;
 
+    virtual void set_eof(bool eof) = 0;
+
     virtual RingBufferView<T_DATA>& data_buffer() = 0;
     virtual RingBufferView<T_DESC>& desc_buffer() = 0;
 };
