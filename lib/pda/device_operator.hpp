@@ -3,7 +3,6 @@
  * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
  *
  */
-
 #pragma once
 
 #include <cstdint>

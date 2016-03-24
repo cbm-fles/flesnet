@@ -4,12 +4,10 @@
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
  */
+#pragma once
 
-#ifndef LIBFLIB_BAR_H
-#define LIBFLIB_BAR_H
-
-#include <pthread.h>
 #include <cstdint>
+#include <pthread.h>
 
 typedef struct PciDevice_struct PciDevice;
 typedef struct Bar_struct Bar;
@@ -50,5 +48,3 @@ protected:
   void barMap(uint8_t number);
 };
 } /** namespace flib */
-
-#endif /* LIBFLIB_BAR_H */

@@ -3,16 +3,15 @@
  * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
  *
  */
-
-#include <iostream>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
+#include "device_operator.hpp"
+#include "data_structures.hpp"
 
 #include <pda.h>
 
-#include <device_operator.hpp>
-#include <data_structures.hpp>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 
 using namespace std;
 

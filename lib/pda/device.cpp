@@ -4,18 +4,15 @@
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
  */
-
-// TODO: Why is '0' returned everywere?
-
-#include <iostream>
-#include <cstdlib>
-#include <cstring>
+#include "device.hpp"
+#include "data_structures.hpp"
+#include "device_operator.hpp"
 
 #include <pda.h>
 
-#include <device.hpp>
-#include <device_operator.hpp>
-#include <data_structures.hpp>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 
 using namespace std;
 

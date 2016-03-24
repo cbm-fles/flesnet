@@ -4,9 +4,7 @@
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
  */
-
-#ifndef PCI_DEVICE_H
-#define PCI_DEVICE_H
+#pragma once
 
 #include <cstdint>
 #include <cstdio>
@@ -65,5 +63,3 @@ protected:
   PciDevice* m_device;
 };
 }
-
-#endif /** DEVICE_H */
