@@ -194,10 +194,8 @@ void Parameters::parse_options(int argc, char* argv[])
         " (number of entries)")(
         "typical-content-size", po::value<uint32_t>(&typical_content_size_),
         "typical number of content bytes per microslice")(
-        "use-flib", po::value<bool>(&use_flib_), "use flib flag")(
-        "flib-legacy-mode", po::value<bool>(&flib_legacy_mode_),
-        "use cbmnet flib")("input-shm", po::value<std::string>(&input_shm_),
-                           "name of a shared memory to use as data source")(
+        "input-shm", po::value<std::string>(&input_shm_),
+        "name of a shared memory to use as data source")(
         "standalone", po::value<bool>(&standalone_), "standalone mode flag")(
         "max-timeslice-number,n", po::value<uint32_t>(&max_timeslice_number_),
         "global maximum timeslice number")(
@@ -339,10 +337,8 @@ void Parameters::parse_options(int argc, char* argv[])
 
 void Parameters::print_buffer_info()
 {
-    if (!use_flib_) {
-        L_(info) << "microslice size: "
-                 << human_readable_count(typical_content_size_);
-    }
+    L_(info) << "microslice size: "
+             << human_readable_count(typical_content_size_);
     L_(info) << "timeslice size: (" << timeslice_size_ << " + " << overlap_size_
              << ") microslices";
     L_(info) << "number of timeslices: " << max_timeslice_number_;
