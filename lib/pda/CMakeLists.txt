@@ -9,11 +9,13 @@ set(LIB_SRC
   pci_bar.cpp
   dma_buffer.cpp
   device.cpp
+  device_operator.cpp
 )
 set(LIB_HDR
   pci_bar.hpp
   dma_buffer.hpp
   device.hpp
+  device_operator.hpp
 )
 
 add_library(pda ${LIB_HDR} ${LIB_SRC})

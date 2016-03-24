@@ -12,6 +12,7 @@
 #include <flib_device.hpp>
 #include <flib_link.hpp>
 #include <register_file_bar.hpp>
+#include <pda/device_operator.hpp>
 #include <pda/device.hpp>
 #include <pda/pci_bar.hpp>
 
@@ -19,7 +20,10 @@ namespace flib {
 
 flib_device::flib_device(int device_nr) {
   /** TODO: add exception handling here */
-  m_device = std::unique_ptr<pda::device>(new pda::device(device_nr));
+  m_device_op =
+      std::unique_ptr<pda::device_operator>(new pda::device_operator());
+  m_device = std::unique_ptr<pda::device>(
+      new pda::device(m_device_op.get(), device_nr));
   m_bar = std::unique_ptr<pda::pci_bar>(new pda::pci_bar(m_device.get(), 1));
 
   // register file access

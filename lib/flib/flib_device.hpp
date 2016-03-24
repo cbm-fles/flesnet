@@ -58,6 +58,7 @@ public:
 
 protected:
   /** Member variables */
+  std::unique_ptr<pda::device_operator> m_device_op;
   std::unique_ptr<pda::device> m_device;
   std::unique_ptr<pda::pci_bar> m_bar;
   std::unique_ptr<register_file_bar> m_register_file;
