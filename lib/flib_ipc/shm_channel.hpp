@@ -4,15 +4,14 @@
 #pragma once
 
 #include "DualRingBuffer.hpp"
-
-#include <cstdint>
-#include <boost/interprocess/sync/interprocess_mutex.hpp>
-#include <boost/interprocess/sync/interprocess_condition.hpp>
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <cstdint>
 
-using namespace boost::interprocess;
+namespace ip = boost::interprocess;
 
 struct TimedDualIndex {
   DualIndex index;
@@ -22,7 +21,7 @@ struct TimedDualIndex {
 class shm_channel {
 
 public:
-  shm_channel(managed_shared_memory* shm,
+  shm_channel(ip::managed_shared_memory* shm,
               void* data_buffer,
               size_t data_buffer_size_exp,
               size_t data_item_size,
@@ -37,11 +36,11 @@ public:
 
   ~shm_channel() = default;
 
-  void* data_buffer_ptr(managed_shared_memory* shm) const {
+  void* data_buffer_ptr(ip::managed_shared_memory* shm) const {
     return shm->get_address_from_handle(m_data_buffer_handle);
   }
 
-  void* desc_buffer_ptr(managed_shared_memory* shm) const {
+  void* desc_buffer_ptr(ip::managed_shared_memory* shm) const {
     return shm->get_address_from_handle(m_desc_buffer_handle);
   }
 
@@ -52,33 +51,35 @@ public:
   size_t desc_item_size() { return m_desc_item_size; }
 
   // getter / setter
-  bool req_read_index(scoped_lock<interprocess_mutex>& lock) {
+  bool req_read_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     return m_req_read_index;
   }
 
-  bool req_write_index(scoped_lock<interprocess_mutex>& lock) {
+  bool req_write_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     return m_req_write_index;
   }
 
-  void set_req_read_index(scoped_lock<interprocess_mutex>& lock, bool req) {
+  void set_req_read_index(ip::scoped_lock<ip::interprocess_mutex>& lock,
+                          bool req) {
     assert(lock);
     m_req_read_index = req;
   }
 
-  void set_req_write_index(scoped_lock<interprocess_mutex>& lock, bool req) {
+  void set_req_write_index(ip::scoped_lock<ip::interprocess_mutex>& lock,
+                           bool req) {
     assert(lock);
     m_req_write_index = req;
   }
 
-  TimedDualIndex write_index(scoped_lock<interprocess_mutex>& lock) {
+  TimedDualIndex write_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     TimedDualIndex write_index = m_write_index;
     return write_index;
   }
 
-  void set_write_index(scoped_lock<interprocess_mutex>& lock,
+  void set_write_index(ip::scoped_lock<ip::interprocess_mutex>& lock,
                        const TimedDualIndex write_index) {
     assert(lock);
     m_write_index = write_index;
@@ -86,29 +87,29 @@ public:
     return;
   }
 
-  DualIndex read_index(scoped_lock<interprocess_mutex>& lock) {
+  DualIndex read_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     DualIndex read_index = m_read_index;
     return read_index;
   }
 
-  void set_read_index(scoped_lock<interprocess_mutex>& lock,
+  void set_read_index(ip::scoped_lock<ip::interprocess_mutex>& lock,
                       const DualIndex read_index) {
     assert(lock);
     m_read_index = read_index;
   }
 
-  bool eof(scoped_lock<interprocess_mutex>& lock) {
+  bool eof(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     return m_eof;
   }
 
-  void set_eof(scoped_lock<interprocess_mutex>& lock, bool eof) {
+  void set_eof(ip::scoped_lock<ip::interprocess_mutex>& lock, bool eof) {
     assert(lock);
     m_eof = eof;
   }
 
-  bool connect(scoped_lock<interprocess_mutex>& lock) {
+  bool connect(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     if (m_clients != 0) {
       return false;
@@ -117,24 +118,24 @@ public:
     return true;
   }
 
-  void disconnect(scoped_lock<interprocess_mutex>& lock) {
+  void disconnect(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     // TODO(Dirk): disconnect is disabled to ensure channels are used only once
     // m_clients = 0;
   }
 
-  interprocess_condition m_cond_write_index;
+  ip::interprocess_condition m_cond_write_index;
 
 private:
-  void set_buffer_handles(managed_shared_memory* shm,
+  void set_buffer_handles(ip::managed_shared_memory* shm,
                           void* data_buffer,
                           void* desc_buffer) {
     m_data_buffer_handle = shm->get_handle_from_address(data_buffer);
     m_desc_buffer_handle = shm->get_handle_from_address(desc_buffer);
   }
 
-  managed_shared_memory::handle_t m_data_buffer_handle;
-  managed_shared_memory::handle_t m_desc_buffer_handle;
+  ip::managed_shared_memory::handle_t m_data_buffer_handle;
+  ip::managed_shared_memory::handle_t m_desc_buffer_handle;
   size_t m_data_buffer_size_exp;
   size_t m_desc_buffer_size_exp;
   size_t m_data_item_size;

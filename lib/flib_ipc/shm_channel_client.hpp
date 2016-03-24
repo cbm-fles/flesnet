@@ -3,24 +3,24 @@
 
 #pragma once
 
+#include "DualRingBuffer.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "RingBuffer.hpp"
-#include "DualRingBuffer.hpp"
 #include "RingBufferView.hpp"
+#include "log.hpp"
 #include "shm_channel.hpp"
 #include "shm_device.hpp"
 #include "shm_device_client.hpp"
-#include "log.hpp"
+#include <algorithm>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/lexical_cast.hpp>
-#include <algorithm>
 #include <cassert>
 #include <cstdint>
 
-using namespace boost::interprocess;
+namespace ip = boost::interprocess;
 
 template <typename T_DESC, typename T_DATA>
 class shm_channel_client : public DualRingBufferReadInterface<T_DESC, T_DATA> {
@@ -45,7 +45,7 @@ public:
     }
 
     {
-      scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+      ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
       if (!m_shm_ch->connect(lock)) {
         throw std::runtime_error("Channel " + channel_name + " already in use");
       }
@@ -76,9 +76,9 @@ public:
 
   ~shm_channel_client() override {
     try {
-      scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+      ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
       m_shm_ch->disconnect(lock);
-    } catch (interprocess_exception const& e) {
+    } catch (ip::interprocess_exception const& e) {
       L_(error) << "Failed to disconnect client: " << e.what();
     }
   }
@@ -87,14 +87,14 @@ public:
   size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
 
   void set_read_index(DualIndex read_index) override {
-    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+    ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
     m_shm_ch->set_read_index(lock, read_index);
     m_shm_ch->set_req_read_index(lock, true);
     m_shm_dev->m_cond_req.notify_one();
   }
 
   void update_write_index() {
-    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+    ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
     m_shm_ch->set_req_write_index(lock, true);
     m_shm_dev->m_cond_req.notify_one();
   }
@@ -102,14 +102,14 @@ public:
   // get cached write_index
   TimedDualIndex get_write_index_cached() {
     // TODO(Dirk): could be a shared lock
-    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+    ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
     return m_shm_ch->write_index(lock);
   }
 
   // get latest write_index (blocking)
   std::pair<TimedDualIndex, bool>
   get_write_index_latest(const boost::posix_time::ptime& abs_timeout) {
-    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+    ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
     m_shm_ch->set_req_write_index(lock, true);
     m_shm_dev->m_cond_req.notify_one();
     bool ret = m_shm_ch->m_cond_write_index.timed_wait(lock, abs_timeout);
@@ -141,7 +141,7 @@ public:
   }
 
   bool get_eof() override {
-    scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+    ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
     return m_shm_ch->eof(lock);
   };
 
@@ -151,7 +151,7 @@ public:
 
 private:
   std::shared_ptr<flib_shm_device_client> m_dev;
-  managed_shared_memory* m_shm;
+  ip::managed_shared_memory* m_shm;
   shm_device* m_shm_dev;
 
   shm_channel* m_shm_ch;

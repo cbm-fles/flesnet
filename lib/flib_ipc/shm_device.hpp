@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include <cstdint>
-#include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <cstdint>
 
-using namespace boost::interprocess;
+namespace ip = boost::interprocess;
 
 class shm_device {
 
@@ -21,13 +22,13 @@ public:
 
   size_t num_channels() { return m_num_channels; }
 
-  bool connect(scoped_lock<interprocess_mutex>& lock) {
+  bool connect(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     ++m_clients;
     return true;
   }
 
-  void disconnect(scoped_lock<interprocess_mutex>& lock) {
+  void disconnect(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     --m_clients;
   }
@@ -36,8 +37,8 @@ public:
 
   // interprocess_condition& cond_req() { return m_cond_req; }
 
-  interprocess_mutex m_mutex;
-  interprocess_condition m_cond_req;
+  ip::interprocess_mutex m_mutex;
+  ip::interprocess_condition m_cond_req;
 
 private:
   size_t m_num_channels = 0;

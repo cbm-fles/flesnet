@@ -3,9 +3,9 @@
 
 #pragma once
 
+#include "log.hpp"
 #include "shm_channel_provider.hpp"
 #include "shm_device.hpp"
-#include "log.hpp"
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
@@ -14,6 +14,8 @@
 #include <csignal>
 #include <memory>
 #include <string>
+
+namespace ip = boost::interprocess;
 
 template <typename T_DESC, typename T_DATA> class shm_device_provider {
 
@@ -25,7 +27,7 @@ public:
                       size_t data_buffer_size_exp,
                       size_t desc_buffer_size_exp)
       : shm_identifier_(shm_identifier) {
-    shared_memory_object::remove(shm_identifier_.c_str());
+    ip::shared_memory_object::remove(shm_identifier_.c_str());
 
     // create a big enough shared memory segment
     const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
@@ -34,8 +36,9 @@ public:
                        2 * page_size + sizeof(shm_channel)) *
                           num_channels +
                       sizeof(shm_device) + 1000;
-    shm_ = std::unique_ptr<managed_shared_memory>(new managed_shared_memory(
-        create_only, shm_identifier.c_str(), shm_size));
+    shm_ = std::unique_ptr<ip::managed_shared_memory>(
+        new ip::managed_shared_memory(ip::create_only, shm_identifier.c_str(),
+                                      shm_size));
 
     // create device exchange object in shared memory
     std::string device_name = "shm_device";
@@ -52,7 +55,7 @@ public:
   }
 
   ~shm_device_provider() {
-    shared_memory_object::remove(shm_identifier_.c_str());
+    ip::shared_memory_object::remove(shm_identifier_.c_str());
   }
 
   std::vector<shm_channel_provider_type*> channels() {
@@ -67,7 +70,7 @@ public:
 
 private:
   std::string shm_identifier_;
-  std::unique_ptr<managed_shared_memory> shm_;
+  std::unique_ptr<ip::managed_shared_memory> shm_;
   shm_device* shm_dev_;
   std::vector<std::unique_ptr<shm_channel_provider_type>> shm_ch_vec_;
 };
