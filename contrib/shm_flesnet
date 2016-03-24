@@ -14,7 +14,7 @@ do
 done
 
 # start flesnet for readout
-./flesnet  --use-flib true --input-shm flib_shared_memory
+./flesnet --input-shm flib_shared_memory
 
 wait
 rm -f -- "$t"
