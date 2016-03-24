@@ -1,11 +1,9 @@
 // Copyright 2015 Dirk Hutter
 
-#include <csignal>
-
 #include "log.hpp"
-
 #include "parameters.hpp"
 #include "shm_device_server.hpp"
+#include <csignal>
 
 namespace {
 volatile std::sig_atomic_t signal_status = 0;
@@ -22,13 +20,14 @@ int main(int argc, char* argv[]) {
 
     parameters par(argc, argv);
 
-    std::unique_ptr<flib_device> flib;
+    std::unique_ptr<flib::flib_device> flib;
     if (par.flib_legacy_mode()) {
       L_(info) << "initializing FLIB with legacy readout";
-      flib = std::unique_ptr<flib_device>(new flib_device_cnet(0));
+      flib = std::unique_ptr<flib::flib_device>(new flib::flib_device_cnet(0));
     } else {
       L_(info) << "initializing FLIB with DPB readout";
-      flib = std::unique_ptr<flib_device>(new flib_device_flesin(0));
+      flib =
+          std::unique_ptr<flib::flib_device>(new flib::flib_device_flesin(0));
     }
 
     // create server

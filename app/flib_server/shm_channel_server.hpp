@@ -2,28 +2,25 @@
 
 #pragma once
 
-#include <cstdint>
+#include "flib_link.hpp"
+#include "log.hpp"
+#include "shm_channel.hpp"
+#include "shm_device.hpp"
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <cstdint>
 
-#include "log.hpp"
-#include "flib_link.hpp"
-
-#include "shm_device.hpp"
-#include "shm_channel.hpp"
-
-using namespace boost::interprocess;
-using namespace flib;
+namespace ip = boost::interprocess;
 
 template <typename T_DESC, typename T_DATA> class shm_channel_server {
 
 public:
-  shm_channel_server(managed_shared_memory* shm,
+  shm_channel_server(ip::managed_shared_memory* shm,
                      shm_device* shm_dev,
                      size_t index,
-                     flib_link* flib_link,
+                     flib::flib_link* flib_link,
                      size_t data_buffer_size_exp,
                      size_t desc_buffer_size_exp)
       : m_shm(shm), m_shm_dev(shm_dev), m_index(index), m_flib_link(flib_link),
@@ -65,22 +62,22 @@ public:
 
   ~shm_channel_server() {
     try {
-      scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+      ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
       update_write_index(lock);
       m_shm_ch->set_eof(lock, true);
-    } catch (interprocess_exception const& e) {
+    } catch (ip::interprocess_exception const& e) {
       L_(error) << "Failed to shut down channel: " << e.what();
     }
     m_flib_link->deinit_dma();
     // TODO destroy channel object and deallocate buffers if it is worth to do
   }
 
-  bool check_pending_req(scoped_lock<interprocess_mutex>& lock) {
+  bool check_pending_req(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock); // ensure mutex is really owned
     return m_shm_ch->req_read_index(lock) || m_shm_ch->req_write_index(lock);
   }
 
-  void try_handle_req(scoped_lock<interprocess_mutex>& lock) {
+  void try_handle_req(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock); // ensure mutex is really owned
 
     if (m_shm_ch->req_read_index(lock)) {
@@ -104,7 +101,7 @@ public:
   }
 
 private:
-  void update_write_index(scoped_lock<interprocess_mutex>& lock) {
+  void update_write_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     m_shm_ch->set_req_write_index(lock, false);
     lock.unlock();
     // fill write indices
@@ -153,10 +150,10 @@ private:
     return m_shm->allocate_aligned(bytes, sysconf(_SC_PAGESIZE));
   }
 
-  managed_shared_memory* m_shm;
+  ip::managed_shared_memory* m_shm;
   shm_device* m_shm_dev;
   size_t m_index;
-  flib_link* m_flib_link;
+  flib::flib_link* m_flib_link;
   size_t m_dma_transfer_size;
 
   shm_channel* m_shm_ch;

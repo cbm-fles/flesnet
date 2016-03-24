@@ -1,13 +1,11 @@
 // Copyright 2015 Dirk Hutter
 
-#include <csignal>
-
-#include "shm_device_client.hpp"
-#include "shm_channel_client.hpp"
 #include "DualRingBuffer.hpp"
-
-#include <iostream>
+#include "shm_channel_client.hpp"
+#include "shm_device_client.hpp"
 #include <chrono>
+#include <csignal>
+#include <iostream>
 #include <thread>
 
 using namespace std;

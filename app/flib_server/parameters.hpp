@@ -2,17 +2,16 @@
 
 #pragma once
 
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <boost/program_options.hpp>
-#include <boost/numeric/conversion/cast.hpp>
-#include <fstream>
-
-#include "log.hpp"
-#include "Utility.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "Utility.hpp"
 #include "flib.h"
+#include "log.hpp"
+#include <boost/numeric/conversion/cast.hpp>
+#include <boost/program_options.hpp>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
 
 namespace po = boost::program_options;
 
