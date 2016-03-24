@@ -4,10 +4,9 @@
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
  */
-
-#include <pci_bar.hpp>
-#include <device.hpp>
-#include <data_structures.hpp>
+#include "pci_bar.hpp"
+#include "data_structures.hpp"
+#include "device.hpp"
 
 #include <pda.h>
 

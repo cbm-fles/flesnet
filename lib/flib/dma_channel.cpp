@@ -4,14 +4,12 @@
  * Derived from ALICE CRORC Project written by
  * Heiko Engel <hengel@cern.ch>
  */
+
+#include "dma_channel.hpp"
+#include "data_structures.hpp"
+#include "registers.h"
 #include <cassert>
 #include <cstring>
-#include <memory>
-
-#include <registers.h>
-#include <data_structures.hpp>
-
-#include <dma_channel.hpp>
 
 namespace flib {
 
@@ -33,14 +31,12 @@ dma_channel::dma_channel(flib_link* parent_link,
     throw FlibException("DMA Engine already enabled");
   }
   m_data_buffer = std::unique_ptr<pda::dma_buffer>(
-      new pda::dma_buffer(m_parent_link->parent_device(),
-                          data_buffer,
+      new pda::dma_buffer(m_parent_link->parent_device(), data_buffer,
                           (UINT64_C(1) << data_buffer_log_size),
                           (2 * m_parent_link->link_index() + 0)));
 
   m_desc_buffer = std::unique_ptr<pda::dma_buffer>(
-      new pda::dma_buffer(m_parent_link->parent_device(),
-                          desc_buffer,
+      new pda::dma_buffer(m_parent_link->parent_device(), desc_buffer,
                           (UINT64_C(1) << desc_buffer_log_size),
                           (2 * m_parent_link->link_index() + 1)));
   // clear eb for debugging
@@ -73,15 +69,13 @@ dma_channel::dma_channel(flib_link* parent_link,
   if (is_enabled()) {
     throw FlibException("DMA Engine already enabled");
   }
-  m_data_buffer = std::unique_ptr<pda::dma_buffer>(
-      new pda::dma_buffer(m_parent_link->parent_device(),
-                          (UINT64_C(1) << data_buffer_log_size),
-                          (2 * m_parent_link->link_index() + 0)));
+  m_data_buffer = std::unique_ptr<pda::dma_buffer>(new pda::dma_buffer(
+      m_parent_link->parent_device(), (UINT64_C(1) << data_buffer_log_size),
+      (2 * m_parent_link->link_index() + 0)));
 
-  m_desc_buffer = std::unique_ptr<pda::dma_buffer>(
-      new pda::dma_buffer(m_parent_link->parent_device(),
-                          (UINT64_C(1) << desc_buffer_log_size),
-                          (2 * m_parent_link->link_index() + 1)));
+  m_desc_buffer = std::unique_ptr<pda::dma_buffer>(new pda::dma_buffer(
+      m_parent_link->parent_device(), (UINT64_C(1) << desc_buffer_log_size),
+      (2 * m_parent_link->link_index() + 1)));
   // clear eb for debugging
   memset(m_data_buffer->mem(), 0, m_data_buffer->size());
   // clear rb for polling
@@ -119,8 +113,8 @@ void dma_channel::set_sw_read_pointers(uint64_t data_offset,
   // no need to chache sync pointers bit because it is pulse only
   offsets.dma_ctrl = m_reg_dmactrl_cached | (1 << BIT_DMACTRL_SYNC_SWRDPTRS);
 
-  m_rfpkt->set_mem(
-      RORC_REG_EBDM_SW_READ_POINTER_L, &offsets, sizeof(offsets) >> 2);
+  m_rfpkt->set_mem(RORC_REG_EBDM_SW_READ_POINTER_L, &offsets,
+                   sizeof(offsets) >> 2);
 }
 
 // TODO get_mem not applicable because _L _H regs are in wrong order
@@ -189,9 +183,7 @@ int dma_channel::ack_mc() {
 
 #ifdef DEBUG
   printf("index %d EB offset set: %ld\n", m_last_index, eb_offset);
-  printf("index %d RB offset set: %ld, wrap %d\n",
-         m_last_index,
-         rb_offset,
+  printf("index %d RB offset set: %ld, wrap %d\n", m_last_index, rb_offset,
          m_wrap);
 #endif
   set_sw_read_pointers(eb_offset, rb_offset);
@@ -267,9 +259,8 @@ dma_channel::convert_sg_list(const std::vector<pda::sg_entry_t> sg_list) {
   return sg_list_hw;
 }
 
-void
-dma_channel::write_sg_list_to_device(const std::vector<sg_entry_hw_t> sg_list,
-                                     const sg_bram_t buf_sel) {
+void dma_channel::write_sg_list_to_device(
+    const std::vector<sg_entry_hw_t> sg_list, const sg_bram_t buf_sel) {
   uint32_t buf_addr = 0;
   for (const auto& entry : sg_list) {
     write_sg_entry_to_device(entry, buf_sel, buf_addr);

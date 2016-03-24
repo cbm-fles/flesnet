@@ -3,18 +3,20 @@
 
 #pragma once
 
-#include "shm_channel.hpp"
 #include "DualRingBuffer.hpp"
 #include "log.hpp"
+#include "shm_channel.hpp"
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/lexical_cast.hpp>
 #include <string>
 
+namespace ip = boost::interprocess;
+
 namespace {
 inline void*
-shm_alloc(managed_shared_memory* shm, size_t size_exp, size_t item_size) {
+shm_alloc(ip::managed_shared_memory* shm, size_t size_exp, size_t item_size) {
   size_t bytes = (UINT64_C(1) << size_exp) * item_size;
   const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
   L_(trace) << "allocating aligned shm buffer of " << bytes << " bytes";
@@ -27,7 +29,7 @@ class shm_channel_provider
     : public DualRingBufferWriteInterface<T_DESC, T_DATA> {
 
 public:
-  shm_channel_provider(managed_shared_memory* shm,
+  shm_channel_provider(ip::managed_shared_memory* shm,
                        shm_device* shm_dev,
                        size_t index,
                        size_t data_buffer_size_exp,
@@ -58,7 +60,7 @@ public:
   }
 
   DualIndex get_read_index() override {
-    scoped_lock<interprocess_mutex> lock(shm_dev_->m_mutex);
+    ip::scoped_lock<ip::interprocess_mutex> lock(shm_dev_->m_mutex);
     shm_ch_->set_req_read_index(lock, false);
     return shm_ch_->read_index(lock);
   };
@@ -66,13 +68,13 @@ public:
   void set_write_index(DualIndex new_write_index) override {
     TimedDualIndex write_index = {new_write_index,
                                   boost::posix_time::pos_infin};
-    scoped_lock<interprocess_mutex> lock(shm_dev_->m_mutex);
+    ip::scoped_lock<ip::interprocess_mutex> lock(shm_dev_->m_mutex);
     shm_ch_->set_req_write_index(lock, false);
     shm_ch_->set_write_index(lock, write_index);
   };
 
   void set_eof(bool eof) override {
-    scoped_lock<interprocess_mutex> lock(shm_dev_->m_mutex);
+    ip::scoped_lock<ip::interprocess_mutex> lock(shm_dev_->m_mutex);
     shm_ch_->set_eof(lock, eof);
   };
 
@@ -81,7 +83,7 @@ public:
   RingBufferView<T_DESC>& desc_buffer() override { return *desc_buffer_view_; }
 
   DualIndex get_occupied_size() {
-    scoped_lock<interprocess_mutex> lock(shm_dev_->m_mutex);
+    ip::scoped_lock<ip::interprocess_mutex> lock(shm_dev_->m_mutex);
     DualIndex read_index = shm_ch_->read_index(lock);
     DualIndex write_index = shm_ch_->write_index(lock).index;
     return write_index - read_index;

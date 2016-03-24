@@ -6,8 +6,8 @@
  */
 #pragma once
 
-#include <unistd.h> // sysconf
 #include <stdexcept>
+#include <unistd.h> // sysconf
 
 #ifndef PAGE_MASK
 #define PAGE_MASK ~(sysconf(_SC_PAGESIZE) - 1)

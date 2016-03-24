@@ -4,10 +4,9 @@
  *
  */
 
+#include "flib_link_cnet.hpp"
 #include <cassert>
 #include <memory>
-
-#include <flib_link_cnet.hpp>
 
 namespace flib {
 
@@ -43,8 +42,7 @@ void flib_link_cnet::rst_pending_mc() {
 
 void flib_link_cnet::set_hdr_config(const hdr_config_t* config) {
   m_rfgtx->set_mem(CNET_REG_GTX_MC_GEN_CFG_HDR,
-                   static_cast<const void*>(config),
-                   sizeof(hdr_config_t) >> 2);
+                   static_cast<const void*>(config), sizeof(hdr_config_t) >> 2);
 }
 
 uint64_t flib_link_cnet::pending_mc() {
@@ -95,8 +93,8 @@ int flib_link_cnet::send_dcm(const ctrl_msg_t* msg) {
 
   // copy msg to board memory
   size_t bytes = msg->words * 2 + (msg->words * 2) % 4;
-  m_rfgtx->set_mem(
-      CNET_MEM_BASE_CTRL_TX, static_cast<const void*>(msg->data), bytes >> 2);
+  m_rfgtx->set_mem(CNET_MEM_BASE_CTRL_TX, static_cast<const void*>(msg->data),
+                   bytes >> 2);
 
   // start send FSM
   uint32_t ctrl_tx = 0;
@@ -125,8 +123,8 @@ int flib_link_cnet::recv_dcm(ctrl_msg_t* msg) {
 
   // read msg from board memory
   size_t bytes = msg->words * 2 + (msg->words * 2) % 4;
-  m_rfgtx->get_mem(
-      CNET_MEM_BASE_CTRL_RX, static_cast<void*>(msg->data), bytes >> 2);
+  m_rfgtx->get_mem(CNET_MEM_BASE_CTRL_RX, static_cast<void*>(msg->data),
+                   bytes >> 2);
 
   // acknowledge msg
   m_rfgtx->set_reg(CNET_REG_GTX_CTRL_RX, 0);

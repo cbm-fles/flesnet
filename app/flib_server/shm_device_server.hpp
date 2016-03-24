@@ -2,37 +2,35 @@
 
 #pragma once
 
-#include <cstdint>
-#include <memory>
-#include <string>
-#include <iostream>
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/interprocess/sync/interprocess_mutex.hpp>
-#include <boost/interprocess/sync/interprocess_condition.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-
-#include "log.hpp"
 #include "flib_device.hpp"
 #include "flib_link.hpp"
-
+#include "log.hpp"
 #include "shm_channel_server.hpp"
 #include "shm_device.hpp"
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <csignal>
+#include <cstdint>
+#include <iostream>
+#include <memory>
+#include <string>
 
-using namespace boost::interprocess;
-using namespace flib;
+namespace ip = boost::interprocess;
 
 template <typename T_DESC, typename T_DATA> class shm_device_server {
 
 public:
   using shm_channel_server_type = shm_channel_server<T_DESC, T_DATA>;
 
-  shm_device_server(flib_device* flib,
+  shm_device_server(flib::flib_device* flib,
                     size_t data_buffer_size_exp,
                     size_t desc_buffer_size_exp,
                     volatile std::sig_atomic_t* signal_status)
       : m_flib(flib), m_signal_status(signal_status) {
-    std::vector<flib_link*> flib_links = m_flib->links();
+    std::vector<flib::flib_link*> flib_links = m_flib->links();
 
     // delete deactivated links from vector
     flib_links.erase(
@@ -49,8 +47,9 @@ public:
                        2 * sysconf(_SC_PAGESIZE) + sizeof(shm_channel)) *
                           flib_links.size() +
                       sizeof(shm_device) + 1000;
-    m_shm = std::unique_ptr<managed_shared_memory>(
-        new managed_shared_memory(create_only, "flib_shared_memory", shm_size));
+    m_shm = std::unique_ptr<ip::managed_shared_memory>(
+        new ip::managed_shared_memory(ip::create_only, "flib_shared_memory",
+                                      shm_size));
 
     // constuct device exchange object in sharde memory
     std::string device_name = "shm_device";
@@ -58,12 +57,9 @@ public:
 
     // create channels for active flib links
     size_t idx = 0;
-    for (flib_link* link : flib_links) {
+    for (flib::flib_link* link : flib_links) {
       m_shm_ch_vec.push_back(std::unique_ptr<shm_channel_server_type>(
-          new shm_channel_server_type(m_shm.get(),
-                                      m_shm_dev,
-                                      idx,
-                                      link,
+          new shm_channel_server_type(m_shm.get(), m_shm_dev, idx, link,
                                       data_buffer_size_exp,
                                       desc_buffer_size_exp)));
       ++idx;
@@ -81,7 +77,7 @@ public:
       L_(info) << "flib server started and running";
       while (m_run) {
         // claim lock at start-up
-        scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+        ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
 
         // check nothing is pending everytime before sleeping
         // INFO: need to loop over all individual requests,
@@ -126,8 +122,8 @@ private:
        << "free_mem " << m_shm->get_free_memory() << std::endl
        << "num named obj " << m_shm->get_num_named_objects() << std::endl
        << "num unique obj " << m_shm->get_num_unique_objects() << std::endl
-       << "name dev obj" << managed_shared_memory::get_instance_name(m_shm_dev)
-       << std::endl;
+       << "name dev obj"
+       << ip::managed_shared_memory::get_instance_name(m_shm_dev) << std::endl;
     return ss.str();
   }
 
@@ -135,13 +131,13 @@ private:
 
   // Remove shared memory on construction and destruction of class
   struct shm_remove {
-    shm_remove() { shared_memory_object::remove("flib_shared_memory"); }
-    ~shm_remove() { shared_memory_object::remove("flib_shared_memory"); }
+    shm_remove() { ip::shared_memory_object::remove("flib_shared_memory"); }
+    ~shm_remove() { ip::shared_memory_object::remove("flib_shared_memory"); }
   } remover;
 
-  flib_device* m_flib;
+  flib::flib_device* m_flib;
   volatile std::sig_atomic_t* m_signal_status;
-  std::unique_ptr<managed_shared_memory> m_shm;
+  std::unique_ptr<ip::managed_shared_memory> m_shm;
   shm_device* m_shm_dev = NULL;
   std::vector<std::unique_ptr<shm_channel_server_type>> m_shm_ch_vec;
 

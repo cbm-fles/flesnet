@@ -4,18 +4,17 @@
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
  */
-
-#include <iostream>
-
-#include <stdio.h>
-#include <string.h>
-#include <malloc.h>
-#include <unistd.h>
+#include "dma_buffer.hpp"
+#include "data_structures.hpp"
+#include "device.hpp"
 
 #include <pda.h>
 
-#include <dma_buffer.hpp>
-#include <device.hpp>
+#include <iostream>
+#include <malloc.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 using namespace std;
 

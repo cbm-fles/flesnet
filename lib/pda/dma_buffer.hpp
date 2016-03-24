@@ -4,20 +4,17 @@
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
  */
-
-#ifndef PCI_DMA_BUFFER_H
-#define PCI_DMA_BUFFER_H
+#pragma once
 
 #include <cstdint>
 #include <sstream>
 #include <vector>
-#include <data_structures.hpp>
-
-namespace pda {
 
 typedef struct PciDevice_struct PciDevice;
 typedef struct DMABuffer_struct DMABuffer;
 typedef struct DMABuffer_SGNode_struct DMABuffer_SGNode;
+
+namespace pda {
 
 typedef struct {
   void* pointer;
@@ -94,4 +91,3 @@ private:
   std::vector<sg_entry_t> m_sglist;
 };
 }
-#endif

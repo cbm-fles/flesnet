@@ -2,28 +2,25 @@
 
 #pragma once
 
-#include <cstdint>
+#include "flib_link.hpp"
+#include "log.hpp"
+#include "shm_channel.hpp"
+#include "shm_device.hpp"
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <cstdint>
 
-#include "log.hpp"
-#include "flib_link.hpp"
-
-#include "shm_device.hpp"
-#include "shm_channel.hpp"
-
-using namespace boost::interprocess;
-using namespace flib;
+namespace ip = boost::interprocess;
 
 template <typename T_DESC, typename T_DATA> class shm_channel_server {
 
 public:
-  shm_channel_server(managed_shared_memory* shm,
+  shm_channel_server(ip::managed_shared_memory* shm,
                      shm_device* shm_dev,
                      size_t index,
-                     flib_link* flib_link,
+                     flib::flib_link* flib_link,
                      size_t data_buffer_size_exp,
                      size_t desc_buffer_size_exp)
       : m_shm(shm), m_shm_dev(shm_dev), m_index(index), m_flib_link(flib_link),
@@ -38,13 +35,8 @@ public:
     std::string channel_name =
         "shm_channel_" + boost::lexical_cast<std::string>(m_index);
     m_shm_ch = m_shm->construct<shm_channel>(channel_name.c_str())(
-        m_shm,
-        data_buffer_raw,
-        data_buffer_size_exp,
-        sizeof(T_DATA),
-        desc_buffer_raw,
-        desc_buffer_size_exp,
-        sizeof(T_DESC));
+        m_shm, data_buffer_raw, data_buffer_size_exp, sizeof(T_DATA),
+        desc_buffer_raw, desc_buffer_size_exp, sizeof(T_DESC));
 
     // initialize buffer info
     T_DATA* data_buffer = reinterpret_cast<T_DATA*>(data_buffer_raw);
@@ -61,10 +53,8 @@ public:
     static_assert(data_item_size == (UINT64_C(1) << 0),
                   "incompatible data_item_size in shm_channel_server");
 
-    m_flib_link->init_dma(data_buffer_raw,
-                          data_buffer_size_exp + 0,
-                          desc_buffer_raw,
-                          desc_buffer_size_exp + 5);
+    m_flib_link->init_dma(data_buffer_raw, data_buffer_size_exp + 0,
+                          desc_buffer_raw, desc_buffer_size_exp + 5);
     m_dma_transfer_size = m_flib_link->channel()->dma_transfer_size();
 
     m_flib_link->enable_readout();
@@ -72,22 +62,22 @@ public:
 
   ~shm_channel_server() {
     try {
-      scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+      ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
       update_write_index(lock);
       m_shm_ch->set_eof(lock, true);
-    } catch (interprocess_exception const& e) {
+    } catch (ip::interprocess_exception const& e) {
       L_(error) << "Failed to shut down channel: " << e.what();
     }
     m_flib_link->deinit_dma();
     // TODO destroy channel object and deallocate buffers if it is worth to do
   }
 
-  bool check_pending_req(scoped_lock<interprocess_mutex>& lock) {
+  bool check_pending_req(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock); // ensure mutex is really owned
     return m_shm_ch->req_read_index(lock) || m_shm_ch->req_write_index(lock);
   }
 
-  void try_handle_req(scoped_lock<interprocess_mutex>& lock) {
+  void try_handle_req(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock); // ensure mutex is really owned
 
     if (m_shm_ch->req_read_index(lock)) {
@@ -99,9 +89,7 @@ public:
                 << read_index.desc;
 
       m_flib_link->channel()->set_sw_read_pointers(
-          hw_pointer(read_index.data,
-                     m_data_buffer_size_exp,
-                     data_item_size,
+          hw_pointer(read_index.data, m_data_buffer_size_exp, data_item_size,
                      m_dma_transfer_size),
           hw_pointer(read_index.desc, m_desc_buffer_size_exp, desc_item_size));
       lock.lock();
@@ -113,19 +101,19 @@ public:
   }
 
 private:
-  void update_write_index(scoped_lock<interprocess_mutex>& lock) {
-      m_shm_ch->set_req_write_index(lock, false);
-      lock.unlock();
-      // fill write indices
-      TimedDualIndex write_index;
-      write_index.index.desc = m_flib_link->channel()->get_desc_index();
-      write_index.index.data =
-          m_desc_buffer_view->at(write_index.index.desc - 1).offset +
-          m_desc_buffer_view->at(write_index.index.desc - 1).size;
-      write_index.updated = boost::posix_time::microsec_clock::universal_time();
-      L_(trace) << "fetching write_index: data " << write_index.index.data
-                << " desc " << write_index.index.desc;
-      lock.lock();
+  void update_write_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {
+    m_shm_ch->set_req_write_index(lock, false);
+    lock.unlock();
+    // fill write indices
+    TimedDualIndex write_index;
+    write_index.index.desc = m_flib_link->channel()->get_desc_index();
+    write_index.index.data =
+        m_desc_buffer_view->at(write_index.index.desc - 1).offset +
+        m_desc_buffer_view->at(write_index.index.desc - 1).size;
+    write_index.updated = boost::posix_time::microsec_clock::universal_time();
+    L_(trace) << "fetching write_index: data " << write_index.index.data
+              << " desc " << write_index.index.desc;
+    lock.lock();
 #if 0
       // TODO remove when mc_time instead of mc_index is used in desc.
       if (true) {
@@ -136,7 +124,7 @@ private:
         }
       }
 #endif
-      m_shm_ch->set_write_index(lock, write_index);
+    m_shm_ch->set_write_index(lock, write_index);
   }
 
   // Convert index into byte pointer for hardware
@@ -162,10 +150,10 @@ private:
     return m_shm->allocate_aligned(bytes, sysconf(_SC_PAGESIZE));
   }
 
-  managed_shared_memory* m_shm;
+  ip::managed_shared_memory* m_shm;
   shm_device* m_shm_dev;
   size_t m_index;
-  flib_link* m_flib_link;
+  flib::flib_link* m_flib_link;
   size_t m_dma_transfer_size;
 
   shm_channel* m_shm_ch;

@@ -4,11 +4,10 @@
  *
  */
 
+#include "flib_link_flesin.hpp"
+#include <arpa/inet.h> // ntohl
 #include <cassert>
 #include <memory>
-#include <arpa/inet.h> // ntohl
-
-#include <flib_link_flesin.hpp>
 
 namespace flib {
 

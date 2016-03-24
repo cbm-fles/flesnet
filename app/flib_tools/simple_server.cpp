@@ -6,17 +6,14 @@
 
 // Simpel example application initializing a FLIB for date transfer
 
-#include <iostream>
-#include <csignal>
-#include <unistd.h>
-
-#include <flib.h>
-#include <log.hpp>
-
-#include <stdlib.h>
-#include <malloc.h>
-
+#include "flib.h"
+#include "log.hpp"
 #include "mc_functions.h"
+#include <csignal>
+#include <iostream>
+#include <malloc.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #ifndef PAGE_SIZE
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
@@ -84,8 +81,8 @@ int main(int argc, const char* argv[]) {
         return -1;
       }
 
-      links.at(i)->init_dma(
-          data_mem.at(i), data_mem_size_exp, desc_mem.at(i), desc_mem_size_exp);
+      links.at(i)->init_dma(data_mem.at(i), data_mem_size_exp, desc_mem.at(i),
+                            desc_mem_size_exp);
 #endif
 
       L_(info) << "Event Buffer: "

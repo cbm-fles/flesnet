@@ -4,19 +4,18 @@
  *
  */
 
-#include <iostream>
+#include "flib.h"
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <errno.h>
+#include <iostream>
 #include <limits.h>
+#include <stdint.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <stdint.h>
-#include <csignal>
-
-#include <flib.h>
 
 using namespace flib;
 
@@ -36,7 +35,7 @@ static void s_catch_signals(void) {
   sigaction(SIGINT, &action, NULL);
 }
 
-//int main(int argc, char* argv[]) {
+// int main(int argc, char* argv[]) {
 int main() {
   s_catch_signals();
 
@@ -49,13 +48,13 @@ int main() {
     auto rx_sel = links.at(i)->data_sel();
     if (rx_sel == flib::flib_link::rx_link ||
         rx_sel == flib::flib_link::rx_pgen) {
-     try {
+      try {
         flims.push_back(
             std::unique_ptr<flib::flim>(new flib::flim(links.at(i))));
       } catch (const std::exception& e) {
-       std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
         exit(EXIT_FAILURE);
-    }
+      }
     }
   }
 
@@ -96,7 +95,7 @@ int main() {
     flims.at(0)->set_debug_out(true);
     ::sleep(1);
   }
-  
+
   std::cout << "disabling ..." << std::endl;
 
   flims.at(0)->set_pgen_enable(false);

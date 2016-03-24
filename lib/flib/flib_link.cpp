@@ -7,10 +7,8 @@
  *
  */
 
+#include "flib_link.hpp"
 #include <cassert>
-#include <memory>
-
-#include <flib_link.hpp>
 
 #define DMA_TRANSFER_SIZE 128
 
@@ -32,13 +30,9 @@ void flib_link::init_dma(void* data_buffer,
                          void* desc_buffer,
                          size_t desc_buffer_log_size) {
 
-  m_dma_channel =
-      std::unique_ptr<dma_channel>(new dma_channel(this,
-                                                   data_buffer,
-                                                   data_buffer_log_size,
-                                                   desc_buffer,
-                                                   desc_buffer_log_size,
-                                                   DMA_TRANSFER_SIZE));
+  m_dma_channel = std::unique_ptr<dma_channel>(
+      new dma_channel(this, data_buffer, data_buffer_log_size, desc_buffer,
+                      desc_buffer_log_size, DMA_TRANSFER_SIZE));
 }
 
 void flib_link::init_dma(size_t data_buffer_log_size,

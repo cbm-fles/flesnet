@@ -4,12 +4,10 @@
  *
  */
 
-#include <csignal>
-
-#include <boost/lexical_cast.hpp>
-
-#include <log.hpp>
+#include "log.hpp"
 #include "parameters.hpp"
+#include <boost/lexical_cast.hpp>
+#include <csignal>
 
 int s_interrupted = 0;
 static void s_signal_handler(int /* signal_value */) { s_interrupted = 1; }

@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <registers_cnet.h>
-#include <flib_link.hpp>
+#include "flib_link.hpp"
+#include "registers_cnet.h"
 
 namespace flib {
 

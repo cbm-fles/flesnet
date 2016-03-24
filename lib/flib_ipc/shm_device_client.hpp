@@ -2,24 +2,23 @@
 
 #pragma once
 
+#include "MicrosliceDescriptor.hpp"
+#include "log.hpp"
+#include "shm_device.hpp"
+#include <boost/interprocess/managed_shared_memory.hpp>
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <boost/interprocess/managed_shared_memory.hpp>
 
-#include "MicrosliceDescriptor.hpp"
-#include "shm_device.hpp"
-#include "log.hpp"
-
-using namespace boost::interprocess;
+namespace ip = boost::interprocess;
 
 template <typename T_DESC, typename T_DATA> class shm_device_client {
 
 public:
   explicit shm_device_client(std::string shm_identifier) {
 
-    m_shm = std::unique_ptr<managed_shared_memory>(
-        new managed_shared_memory(open_only, shm_identifier.c_str()));
+    m_shm = std::unique_ptr<ip::managed_shared_memory>(
+        new ip::managed_shared_memory(ip::open_only, shm_identifier.c_str()));
 
     // connect to global exchange object
     std::string device_name = "shm_device";
@@ -29,7 +28,7 @@ public:
     }
 
     {
-      scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+      ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
       if (!m_shm_dev->connect(lock)) {
         throw std::runtime_error("Server already in use");
       }
@@ -38,18 +37,18 @@ public:
 
   ~shm_device_client() {
     try {
-      scoped_lock<interprocess_mutex> lock(m_shm_dev->m_mutex);
+      ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
       m_shm_dev->disconnect(lock);
-    } catch (interprocess_exception const& e) {
+    } catch (ip::interprocess_exception const& e) {
       L_(error) << "Failed to disconnect device: " << e.what();
     }
   }
 
   size_t num_channels() { return m_shm_dev->num_channels(); }
-  managed_shared_memory* shm() { return m_shm.get(); }
+  ip::managed_shared_memory* shm() { return m_shm.get(); }
 
 private:
-  std::unique_ptr<managed_shared_memory> m_shm;
+  std::unique_ptr<ip::managed_shared_memory> m_shm;
   shm_device* m_shm_dev = nullptr;
 };
 

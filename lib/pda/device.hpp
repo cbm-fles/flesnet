@@ -4,9 +4,7 @@
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
  */
-
-#ifndef PCI_DEVICE_H
-#define PCI_DEVICE_H
+#pragma once
 
 #include <cstdint>
 #include <cstdio>
@@ -15,6 +13,8 @@ typedef struct DeviceOperator_struct DeviceOperator;
 typedef struct PciDevice_struct PciDevice;
 
 namespace pda {
+class device_operator;
+
 /**
  * @class
  * @brief Represents a FLIB PCIe device
@@ -23,7 +23,7 @@ class device {
   friend class dma_buffer;
 
 public:
-  device(int32_t device_index);
+  device(device_operator* device_operator, int32_t device_index);
   ~device();
 
   uint16_t domain();
@@ -59,9 +59,7 @@ public:
   PciDevice* PDAPciDevice() { return (m_device); }
 
 protected:
-  DeviceOperator* m_dop;
+  device_operator* m_parent_dop;
   PciDevice* m_device;
 };
 }
-
-#endif /** DEVICE_H */

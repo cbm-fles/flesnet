@@ -4,41 +4,29 @@
  * @author Dominic Eschweiler<dominic.eschweiler@cern.ch>
  *
  */
-
-// TODO: Why is '0' returned everywere?
-
-#include <iostream>
-#include <cstdlib>
-#include <cstring>
+#include "device.hpp"
+#include "data_structures.hpp"
+#include "device_operator.hpp"
 
 #include <pda.h>
 
-#include <device.hpp>
-#include <data_structures.hpp>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 
 using namespace std;
 
 namespace pda {
-device::device(int32_t device_index) {
-  const char* pci_ids[] = {
-      "10dc beaf", /* CRORC as registered at CERN */
-      NULL         /* Delimiter*/
-  };
-
-  if ((m_dop = DeviceOperator_new(pci_ids, PDA_ENUMERATE_DEVICES)) == NULL) {
-    throw PdaException("Device operator instantiation failed.");
-  }
-
-  if (DeviceOperator_getPciDevice(m_dop, &m_device, device_index) !=
-      PDA_SUCCESS) {
+device::device(device_operator* device_operator, int32_t device_index)
+    : m_parent_dop(device_operator) {
+  if (DeviceOperator_getPciDevice(m_parent_dop->PDADeviceOperator(), &m_device,
+                                  device_index) != PDA_SUCCESS) {
     throw PdaException("Device object creation failed.");
   }
 }
 
 device::~device() {
-  if (DeviceOperator_delete(m_dop, PDA_DELETE_PERSISTANT) != PDA_SUCCESS) {
-    cout << "Deleting device operator failed!" << endl;
-  }
+  // device is deleted when device operator is deleted
 }
 
 uint16_t device::domain() {

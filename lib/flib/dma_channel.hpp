@@ -7,13 +7,13 @@
 
 #pragma once
 
+#include "fles_ipc/MicrosliceDescriptor.hpp"
+#include "flib_link.hpp"
+#include "pda/data_structures.hpp"
+#include "pda/dma_buffer.hpp"
+#include "register_file.hpp"
+#include <memory>
 #include <unistd.h> //sysconf
-
-#include <pda/dma_buffer.hpp>
-#include <pda/data_structures.hpp>
-#include <fles_ipc/MicrosliceDescriptor.hpp>
-#include <flib_link.hpp>
-#include <register_file.hpp>
 
 #define BIT_SGENTRY_CTRL_WRITE_EN 31
 #define BIT_SGENTRY_CTRL_TARGET 30

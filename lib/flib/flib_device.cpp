@@ -5,21 +5,24 @@
  *
  */
 
+#include "flib_device.hpp"
+#include "flib_link.hpp"
+#include "pda/device.hpp"
+#include "pda/device_operator.hpp"
+#include "pda/pci_bar.hpp"
+#include "register_file_bar.hpp"
 #include <arpa/inet.h> // ntohl
-#include <iomanip>
 #include <ctime>
-
-#include <flib_device.hpp>
-#include <flib_link.hpp>
-#include <register_file_bar.hpp>
-#include <pda/device.hpp>
-#include <pda/pci_bar.hpp>
+#include <iomanip>
 
 namespace flib {
 
 flib_device::flib_device(int device_nr) {
   /** TODO: add exception handling here */
-  m_device = std::unique_ptr<pda::device>(new pda::device(device_nr));
+  m_device_op =
+      std::unique_ptr<pda::device_operator>(new pda::device_operator());
+  m_device = std::unique_ptr<pda::device>(
+      new pda::device(m_device_op.get(), device_nr));
   m_bar = std::unique_ptr<pda::pci_bar>(new pda::pci_bar(m_device.get(), 1));
 
   // register file access
@@ -39,8 +42,7 @@ bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
 
   // check if version of hardware is part of suported versions
   for (auto it = hw_ver_table.begin();
-       it != hw_ver_table.end() && match == false;
-       ++it) {
+       it != hw_ver_table.end() && match == false; ++it) {
     if (hw_ver == *it) {
       match = true;
     }
@@ -133,11 +135,12 @@ std::string flib_device::print_build_info() {
   // TODO: hack to overcome gcc limitation, for c++11 use:
   // std::put_time(std::localtime(&build.date), "%c %Z")
   char mbstr[100];
-  std::strftime(
-      mbstr, sizeof(mbstr), "%c %Z UTC%z", std::localtime(&build.date));
+  std::strftime(mbstr, sizeof(mbstr), "%c %Z UTC%z",
+                std::localtime(&build.date));
 
   std::stringstream ss;
-  ss << "FLIB Info:" << std::endl << "Build Date:     " << mbstr << std::endl
+  ss << "FLIB Info:" << std::endl
+     << "Build Date:     " << mbstr << std::endl
      << "Build Source:   " << build.user << "@" << build.host << std::endl;
   switch (build.repo) {
   case 1:

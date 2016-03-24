@@ -9,13 +9,13 @@
 
 #pragma once
 
-#include <pda/device.hpp>
-#include <pda/pci_bar.hpp>
-
-#include <registers.h>
-#include <data_structures.hpp>
-#include <dma_channel.hpp>
-#include <register_file_bar.hpp>
+#include "data_structures.hpp"
+#include "dma_channel.hpp"
+#include "pda/device.hpp"
+#include "pda/pci_bar.hpp"
+#include "register_file_bar.hpp"
+#include "registers.h"
+#include <memory>
 
 namespace flib {
 

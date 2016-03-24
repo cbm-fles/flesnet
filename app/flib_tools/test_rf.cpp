@@ -4,19 +4,18 @@
  *
  */
 
-#include <iostream>
+#include "flib.h"
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <errno.h>
+#include <iostream>
 #include <limits.h>
+#include <stdint.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <stdint.h>
-#include <csignal>
-
-#include <flib.h>
 
 using namespace flib;
 
@@ -42,15 +41,15 @@ static void s_catch_signals(void) {
 int main(int argc, char* argv[]) {
   s_catch_signals();
 
-  size_t link = 0;    
-  if ( argc == 2 ) {
+  size_t link = 0;
+  if (argc == 2) {
     link = atoi(argv[1]);
-    std::cout << "using link "<< link << std::endl;
-  }  else {
+    std::cout << "using link " << link << std::endl;
+  } else {
     std::cout << "usage: " << argv[0] << " link" << std::endl;
     return -1;
   }
-  
+
   MyFlib = new flib_device_flesin(0);
   int ret = 0;
 
@@ -66,21 +65,21 @@ int main(int argc, char* argv[]) {
 
   uint32_t reg = 0;
   uint32_t reg_wr = 0;
-  
+
   reg = MyFlim->get_testreg();
   std::cout << "read  0x" << std::hex << reg << std::endl;
-  
-  while (ret == 0 && s_interrupted == 0 ) {
+
+  while (ret == 0 && s_interrupted == 0) {
     MyFlim->set_testreg(reg_wr);
-    //std::cout << "write 0x" << std::hex << reg_wr << std::endl;
-    
+    // std::cout << "write 0x" << std::hex << reg_wr << std::endl;
+
     reg = MyFlim->get_testreg();
-    //std::cout << "read  0x" << std::hex << reg << std::endl;
+    // std::cout << "read  0x" << std::hex << reg << std::endl;
 
     if (reg_wr % 500000 == 0) {
       std::cout << "written: " << reg_wr << std::endl;
     }
-    
+
     if (reg_wr != reg) {
       std::cout << "write 0x" << std::hex << reg_wr << std::endl;
       std::cout << "read  0x" << std::hex << reg << std::endl;
