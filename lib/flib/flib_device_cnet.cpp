@@ -4,8 +4,8 @@
  *
  */
 
-#include <flib_device_cnet.hpp>
-#include <flib_link_cnet.hpp>
+#include "flib_device_cnet.hpp"
+#include "flib_link_cnet.hpp"
 
 namespace flib {
 

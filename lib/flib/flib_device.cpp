@@ -5,16 +5,15 @@
  *
  */
 
+#include "flib_device.hpp"
+#include "flib_link.hpp"
+#include "pda/device.hpp"
+#include "pda/device_operator.hpp"
+#include "pda/pci_bar.hpp"
+#include "register_file_bar.hpp"
 #include <arpa/inet.h> // ntohl
-#include <iomanip>
 #include <ctime>
-
-#include <flib_device.hpp>
-#include <flib_link.hpp>
-#include <register_file_bar.hpp>
-#include <pda/device_operator.hpp>
-#include <pda/device.hpp>
-#include <pda/pci_bar.hpp>
+#include <iomanip>
 
 namespace flib {
 

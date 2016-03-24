@@ -4,10 +4,9 @@
  *
  */
 
+#include "flib_link_cnet.hpp"
 #include <cassert>
 #include <memory>
-
-#include <flib_link_cnet.hpp>
 
 namespace flib {
 

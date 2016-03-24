@@ -6,8 +6,8 @@
  */
 #pragma once
 
-#include <string>
 #include <stdexcept>
+#include <string>
 
 namespace flib {
 class FlibException : public std::runtime_error {

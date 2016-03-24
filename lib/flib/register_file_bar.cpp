@@ -4,11 +4,10 @@
  *
  */
 
-#include <sys/mman.h>
+#include "register_file_bar.hpp"
+#include "pda/data_structures.hpp"
 #include <iostream>
-
-#include <pda/data_structures.hpp>
-#include <register_file_bar.hpp>
+#include <sys/mman.h>
 
 namespace flib {
 register_file_bar::register_file_bar(pda::pci_bar* bar, sys_bus_addr base_addr)

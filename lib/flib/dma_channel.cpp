@@ -4,14 +4,12 @@
  * Derived from ALICE CRORC Project written by
  * Heiko Engel <hengel@cern.ch>
  */
+
+#include "dma_channel.hpp"
+#include "data_structures.hpp"
+#include "registers.h"
 #include <cassert>
 #include <cstring>
-#include <memory>
-
-#include <registers.h>
-#include <data_structures.hpp>
-
-#include <dma_channel.hpp>
 
 namespace flib {
 

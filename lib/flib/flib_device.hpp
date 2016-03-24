@@ -7,14 +7,13 @@
 
 #pragma once
 
-#include <string>
+#include "pda/device.hpp"
+#include "pda/pci_bar.hpp"
 #include <array>
-#include <vector>
-#include <memory>
 #include <ctime>
-
-#include <pda/device.hpp>
-#include <pda/pci_bar.hpp>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace flib {
 class flib_device;

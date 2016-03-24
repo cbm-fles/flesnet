@@ -4,12 +4,11 @@
  *
  */
 
-#include <cassert>
-#include <memory>
+#include "flim.hpp"
 #include <arpa/inet.h> // ntohl
+#include <cassert>
 #include <iomanip>
-
-#include <flim.hpp>
+#include <memory>
 
 namespace flib {
 

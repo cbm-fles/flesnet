@@ -6,9 +6,8 @@
 
 #pragma once
 
-#include "boost/date_time/posix_time/posix_time.hpp"
-
-#include <flib_link.hpp>
+#include "flib_link.hpp"
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace flib {
 

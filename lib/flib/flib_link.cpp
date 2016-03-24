@@ -7,10 +7,8 @@
  *
  */
 
+#include "flib_link.hpp"
 #include <cassert>
-#include <memory>
-
-#include <flib_link.hpp>
 
 #define DMA_TRANSFER_SIZE 128
 
