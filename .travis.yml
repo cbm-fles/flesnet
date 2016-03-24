@@ -43,4 +43,7 @@ script:
   - make
   - make CTEST_OUTPUT_ON_FAILURE=1 test
 
+after_success:
+  - if [ "$CXX" = "g++-4.8" ]; then cmake -DCOVERALLS=ON -DCMAKE_BUILD_TYPE=Debug .. && make -j4 && make coveralls; fi
+
 sudo: false

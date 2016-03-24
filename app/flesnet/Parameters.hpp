@@ -75,12 +75,6 @@ public:
     /// Retrieve the typical number of content bytes per microslice.
     uint32_t typical_content_size() const { return typical_content_size_; }
 
-    /// Retrieve the use flib flag.
-    bool use_flib() const { return use_flib_; }
-
-    /// Retrieve the flib legacy mode flag
-    bool flib_legacy_mode() const { return flib_legacy_mode_; }
-
     /// Retrieve the shared memory identifier.
     std::string input_shm() const { return input_shm_; }
 
@@ -146,12 +140,6 @@ private:
     /// The exp. size of the compute node's descriptor buffer (number of
     /// entries).
     uint32_t cn_desc_buffer_size_exp_ = 0;
-
-    /// The use flib flag.
-    bool use_flib_ = true;
-
-    /// The flib legacy mode flag.
-    bool flib_legacy_mode_ = true;
 
     // The input shared memory identifier
     std::string input_shm_;

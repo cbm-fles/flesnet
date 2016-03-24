@@ -5,10 +5,7 @@ LANG=C
 
 clang-format-3.5 -i lib/flib/*.[hc]*
 clang-format-3.5 -i lib/flib_ipc/*.[hc]*
-clang-format-3.5 -i lib/flib_ctrl_server/*.[hc]*
 clang-format-3.5 -i lib/pda/*.[hc]*
 clang-format-3.5 -i app/flib_server/*.[hc]*
 clang-format-3.5 -i app/flib_cfg/*.[hc]*
-clang-format-3.5 -i app/flib_ctrl/*.[hc]*
-clang-format-3.5 -i app/flib_debug/*.[hc]*
 clang-format-3.5 -i app/flib_tools/*.[hc]*

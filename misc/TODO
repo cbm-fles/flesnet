@@ -12,13 +12,13 @@ DONE - set up travis ci
 DONE - merge to master
 DONE - adapt xcode project
 DONE - mstool should not poll excessively
+DONE - support eof in shm buffers
+WONTFIX - mstool should handle ctrl-c (do not terminate!)
+
+- drop legacy code
 
 - check for missing code for soft_dpb
 - example soft_dpb
-- support eof in shm buffers
-- mstool should handle ctrl-c (do not terminate!)
-
-- drop legacy code
 
 - new dev branch for next big things
 - maybe refactor: DualRingbuffer -> IndexedBuffer
