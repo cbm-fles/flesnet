@@ -4,10 +4,9 @@
  *
  */
 
+#include "flib.h"
+#include "device_operator.hpp"
 #include <iostream>
-
-#include <flib.h>
-#include <device_operator.hpp>
 
 using namespace flib;
 
