@@ -62,7 +62,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   find_package(PDA 11.0.7 REQUIRED)
 
   add_subdirectory(lib/fles_rdma)
-  add_subdirectory(lib/fles_flib)
   add_subdirectory(lib/flib)
   add_subdirectory(lib/pda)
 

@@ -2,7 +2,6 @@
 
 #include "Application.hpp"
 #include "EmbeddedPatternGenerator.hpp"
-#include "FlibHardwareChannel.hpp"
 #include "FlibPatternGenerator.hpp"
 #include "shm_channel_client.hpp"
 #include <boost/thread/future.hpp>
@@ -37,42 +36,6 @@ Application::Application(Parameters const& par,
             L_(error) << "exception while connecting to shared memory: "
                       << e.what();
         }
-    } else if (par.use_flib()) {
-        // TODO: presence detection #524
-        try {
-            if (par.flib_legacy_mode()) {
-                L_(info) << "initializing FLIB with legacy readout";
-                flib_ = std::unique_ptr<flib::flib_device>(
-                    new flib::flib_device_cnet(0));
-            } else {
-                L_(info) << "initializing FLIB with DPB readout";
-                flib_ = std::unique_ptr<flib::flib_device>(
-                    new flib::flib_device_flesin(0));
-            }
-            flib_links_ = flib_->links();
-
-            // delete deactivated links from vector
-            flib_links_.erase(
-                std::remove_if(std::begin(flib_links_), std::end(flib_links_),
-                               [](decltype(flib_links_[0]) link) {
-                                   return link->data_sel() ==
-                                          flib::flib_link::rx_disable;
-                               }),
-                std::end(flib_links_));
-
-            L_(info) << "enabled flib links detected: " << flib_links_.size();
-
-            // increase number of input nodes to match number of
-            // enabled FLIB links if in stand-alone mode
-            if (par.standalone() && flib_links_.size() > 1) {
-                input_nodes_size = flib_links_.size();
-                for (unsigned i = 1; i < input_nodes_size; i++) {
-                    input_indexes.push_back(i);
-                }
-            }
-        } catch (std::exception const& e) {
-            L_(error) << "exception while creating flib: " << e.what();
-        }
     }
     // end FIXME
 
@@ -106,12 +69,7 @@ Application::Application(Parameters const& par,
     for (size_t c = 0; c < input_indexes.size(); ++c) {
         unsigned index = input_indexes.at(c);
 
-        if (c < flib_links_.size()) {
-            data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
-                new FlibHardwareChannel(par.in_data_buffer_size_exp(),
-                                        par.in_desc_buffer_size_exp(),
-                                        flib_links_.at(c))));
-        } else if (c < shm_num_channels_) {
+        if (c < shm_num_channels_) {
             data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
                 new flib_shm_channel_client(shm_device_, c)));
         } else {
@@ -139,26 +97,9 @@ Application::Application(Parameters const& par,
 
         input_channel_senders_.push_back(std::move(buffer));
     }
-
-    // TODO needed in case of cbmnet readout
-    // if (flib_) {
-    //     flib_->enable_mc_cnt(true);
-    // }
 }
 
-Application::~Application()
-{
-    // Input node application
-    // TODO needed in case of cbmnet readout
-    // try {
-    //     if (flib_) {
-    //         flib_->enable_mc_cnt(false);
-    //     }
-    // } catch (std::exception& e) {
-    //     L_(error) << "exception in destructor ~InputNodeApplication(): "
-    //               << e.what();
-    // }
-}
+Application::~Application() {}
 
 void Application::run()
 {

@@ -8,7 +8,6 @@
 #include "shm_device_client.hpp"
 #include <boost/lexical_cast.hpp>
 #include <csignal>
-#include <flib.h>
 #include <memory>
 
 /// %Application base class.
@@ -36,9 +35,6 @@ private:
     volatile sig_atomic_t* signal_status_;
 
     // Input node application
-    std::unique_ptr<flib::flib_device> flib_;
-    std::vector<flib::flib_link*> flib_links_;
-
     std::shared_ptr<flib_shm_device_client> shm_device_;
     std::size_t shm_num_channels_ = 0;
 
