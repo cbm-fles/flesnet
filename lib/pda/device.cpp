@@ -22,8 +22,7 @@ using namespace std;
 namespace pda {
 device::device(device_operator* device_operator, int32_t device_index)
     : m_parent_dop(device_operator) {
-  if (DeviceOperator_getPciDevice(m_parent_dop->PDADeviceOperator(),
-                                  &m_device,
+  if (DeviceOperator_getPciDevice(m_parent_dop->PDADeviceOperator(), &m_device,
                                   device_index) != PDA_SUCCESS) {
     throw PdaException("Device object creation failed.");
   }

@@ -47,8 +47,7 @@ private:
     if (vm.count("l" + std::to_string(i) + "_eq_id")) {
       _links.at(i).eq_id = boost::numeric_cast<uint16_t>(
           std::stoul(vm["l" + std::to_string(i) + "_eq_id"].as<std::string>(),
-                     nullptr,
-                     0));
+                     nullptr, 0));
     } else {
       std::cerr << " If reading from pgen please provide eq_id.\n";
       exit(EXIT_FAILURE);
@@ -93,66 +92,47 @@ private:
         "config-file,c",
         po::value<std::string>(&config_file)->default_value("flib.cfg"),
         "name of a configuration file")(
-        "log-level,l",
-        po::value<unsigned>(&log_level)->default_value(2),
+        "log-level,l", po::value<unsigned>(&log_level)->default_value(2),
         "set the log level (all:0)");
 
     po::options_description config("Configuration (flib.cfg or cmd line)");
-    config.add_options()("mc-size,t",
-                         po::value<uint32_t>(),
+    config.add_options()("mc-size,t", po::value<uint32_t>(),
                          "size of pattern generator microslices in units of "
                          "1024 ns (31 bit wide)")(
-        "pgen-rate,r",
-        po::value<float>(),
+        "pgen-rate,r", po::value<float>(),
         "MS fill level of pattern generator in [0,1]")
 
-        ("l0_source",
-         po::value<std::string>(),
+        ("l0_source", po::value<std::string>(),
          "Link 0 data source <disable|flim|pgen_far|pgen_near>")(
-            "l0_eq_id",
-            po::value<std::string>(),
+            "l0_eq_id", po::value<std::string>(),
             "Equipment identifier of link 0 pgen data source (16 Bit)")(
-            "l1_source",
-            po::value<std::string>(),
+            "l1_source", po::value<std::string>(),
             "Link 1 data source <disable|flim|pgen_far|pgen_near>")(
-            "l1_eq_id",
-            po::value<std::string>(),
+            "l1_eq_id", po::value<std::string>(),
             "Equipment identifier of link 1 pgen data source (16 Bit)")(
-            "l2_source",
-            po::value<std::string>(),
+            "l2_source", po::value<std::string>(),
             "Link 2 data source <disable|flim|pgen_far|pgen_near>")(
-            "l2_eq_id",
-            po::value<std::string>(),
+            "l2_eq_id", po::value<std::string>(),
             "Equipment identifier of link 2 pgen data source (16 Bit)")(
-            "l3_source",
-            po::value<std::string>(),
+            "l3_source", po::value<std::string>(),
             "Link 3 data source <disable|flim|pgen_far|pgen_near>")(
-            "l3_eq_id",
-            po::value<std::string>(),
+            "l3_eq_id", po::value<std::string>(),
             "Equipment identifier of link 3 pgen data source (16 Bit)")(
-            "l4_source",
-            po::value<std::string>(),
+            "l4_source", po::value<std::string>(),
             "Link 4 data source <disable|flim|pgen_far|pgen_near>")(
-            "l4_eq_id",
-            po::value<std::string>(),
+            "l4_eq_id", po::value<std::string>(),
             "Equipment identifier of link 4 pgen data source (16 Bit)")(
-            "l5_source",
-            po::value<std::string>(),
+            "l5_source", po::value<std::string>(),
             "Link 5 data source <disable|flim|pgen_far|pgen_near>")(
-            "l5_eq_id",
-            po::value<std::string>(),
+            "l5_eq_id", po::value<std::string>(),
             "Equipment identifier of link 5 pgen data source (16 Bit)")(
-            "l6_source",
-            po::value<std::string>(),
+            "l6_source", po::value<std::string>(),
             "Link 6 data source <disable|flim|pgen_far|pgen_near>")(
-            "l6_eq_id",
-            po::value<std::string>(),
+            "l6_eq_id", po::value<std::string>(),
             "Equipment identifier of link 6 pgen data source (16 Bit)")(
-            "l7_source",
-            po::value<std::string>(),
+            "l7_source", po::value<std::string>(),
             "Link 7 data source <disable|flim|pgen_far|pgen_near>")(
-            "l7_eq_id",
-            po::value<std::string>(),
+            "l7_eq_id", po::value<std::string>(),
             "Equipment identifier of link 7 pgen data source (16 Bit)");
 
     po::options_description cmdline_options("Allowed options");

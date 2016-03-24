@@ -84,8 +84,8 @@ int main(int argc, const char* argv[]) {
         return -1;
       }
 
-      links.at(i)->init_dma(
-          data_mem.at(i), data_mem_size_exp, desc_mem.at(i), desc_mem_size_exp);
+      links.at(i)->init_dma(data_mem.at(i), data_mem_size_exp, desc_mem.at(i),
+                            desc_mem_size_exp);
 #endif
 
       L_(info) << "Event Buffer: "

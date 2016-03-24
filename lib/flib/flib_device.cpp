@@ -43,8 +43,7 @@ bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
 
   // check if version of hardware is part of suported versions
   for (auto it = hw_ver_table.begin();
-       it != hw_ver_table.end() && match == false;
-       ++it) {
+       it != hw_ver_table.end() && match == false; ++it) {
     if (hw_ver == *it) {
       match = true;
     }
@@ -137,11 +136,12 @@ std::string flib_device::print_build_info() {
   // TODO: hack to overcome gcc limitation, for c++11 use:
   // std::put_time(std::localtime(&build.date), "%c %Z")
   char mbstr[100];
-  std::strftime(
-      mbstr, sizeof(mbstr), "%c %Z UTC%z", std::localtime(&build.date));
+  std::strftime(mbstr, sizeof(mbstr), "%c %Z UTC%z",
+                std::localtime(&build.date));
 
   std::stringstream ss;
-  ss << "FLIB Info:" << std::endl << "Build Date:     " << mbstr << std::endl
+  ss << "FLIB Info:" << std::endl
+     << "Build Date:     " << mbstr << std::endl
      << "Build Source:   " << build.user << "@" << build.host << std::endl;
   switch (build.repo) {
   case 1:

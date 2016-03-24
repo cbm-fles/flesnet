@@ -15,7 +15,8 @@ namespace flib {
 
 flim::flim(flib_link_flesin* link) {
   m_rfflim = std::unique_ptr<register_file>(new register_file_bar(
-      link->bar(), (link->base_addr() + (1 << RORC_DMA_CMP_SEL) + (1 << RORC_C_LINK_SEL))));
+      link->bar(),
+      (link->base_addr() + (1 << RORC_DMA_CMP_SEL) + (1 << RORC_C_LINK_SEL))));
   if (hardware_id() != 0x4844) {
     std::stringstream msg;
     msg << "FLIM not reachable; found ID: " << std::hex << hardware_id();
@@ -83,8 +84,7 @@ void flim::set_pgen_rate(float val) {
   uint16_t reg_val =
       static_cast<uint16_t>(static_cast<float>(UINT16_MAX) * (1.0 - val));
   m_rfflim->set_reg(RORC_REG_LINK_MC_PGEN_CFG,
-                    static_cast<uint32_t>(reg_val) << 16,
-                    0xFFFF0000);
+                    static_cast<uint32_t>(reg_val) << 16, 0xFFFF0000);
 }
 
 void flim::set_pgen_start_time(uint32_t time) {
@@ -178,11 +178,12 @@ std::string flim::print_build_info() {
   // TODO: hack to overcome gcc limitation, for c++11 use:
   // std::put_time(std::localtime(&build.date), "%c %Z")
   char mbstr[100];
-  std::strftime(
-      mbstr, sizeof(mbstr), "%c %Z UTC%z", std::localtime(&build.date));
+  std::strftime(mbstr, sizeof(mbstr), "%c %Z UTC%z",
+                std::localtime(&build.date));
 
   std::stringstream ss;
-  ss << "FLIM Info:" << std::endl << "Build Date:     " << mbstr << std::endl
+  ss << "FLIM Info:" << std::endl
+     << "Build Date:     " << mbstr << std::endl
      << "Build Source:   " << build.user << "@" << build.host << std::endl;
   switch (build.repo) {
   case 1:

@@ -38,13 +38,8 @@ public:
     std::string channel_name =
         "shm_channel_" + boost::lexical_cast<std::string>(m_index);
     m_shm_ch = m_shm->construct<shm_channel>(channel_name.c_str())(
-        m_shm,
-        data_buffer_raw,
-        data_buffer_size_exp,
-        sizeof(T_DATA),
-        desc_buffer_raw,
-        desc_buffer_size_exp,
-        sizeof(T_DESC));
+        m_shm, data_buffer_raw, data_buffer_size_exp, sizeof(T_DATA),
+        desc_buffer_raw, desc_buffer_size_exp, sizeof(T_DESC));
 
     // initialize buffer info
     T_DATA* data_buffer = reinterpret_cast<T_DATA*>(data_buffer_raw);
@@ -61,10 +56,8 @@ public:
     static_assert(data_item_size == (UINT64_C(1) << 0),
                   "incompatible data_item_size in shm_channel_server");
 
-    m_flib_link->init_dma(data_buffer_raw,
-                          data_buffer_size_exp + 0,
-                          desc_buffer_raw,
-                          desc_buffer_size_exp + 5);
+    m_flib_link->init_dma(data_buffer_raw, data_buffer_size_exp + 0,
+                          desc_buffer_raw, desc_buffer_size_exp + 5);
     m_dma_transfer_size = m_flib_link->channel()->dma_transfer_size();
 
     m_flib_link->enable_readout();
@@ -99,9 +92,7 @@ public:
                 << read_index.desc;
 
       m_flib_link->channel()->set_sw_read_pointers(
-          hw_pointer(read_index.data,
-                     m_data_buffer_size_exp,
-                     data_item_size,
+          hw_pointer(read_index.data, m_data_buffer_size_exp, data_item_size,
                      m_dma_transfer_size),
           hw_pointer(read_index.desc, m_desc_buffer_size_exp, desc_item_size));
       lock.lock();
@@ -114,18 +105,18 @@ public:
 
 private:
   void update_write_index(scoped_lock<interprocess_mutex>& lock) {
-      m_shm_ch->set_req_write_index(lock, false);
-      lock.unlock();
-      // fill write indices
-      TimedDualIndex write_index;
-      write_index.index.desc = m_flib_link->channel()->get_desc_index();
-      write_index.index.data =
-          m_desc_buffer_view->at(write_index.index.desc - 1).offset +
-          m_desc_buffer_view->at(write_index.index.desc - 1).size;
-      write_index.updated = boost::posix_time::microsec_clock::universal_time();
-      L_(trace) << "fetching write_index: data " << write_index.index.data
-                << " desc " << write_index.index.desc;
-      lock.lock();
+    m_shm_ch->set_req_write_index(lock, false);
+    lock.unlock();
+    // fill write indices
+    TimedDualIndex write_index;
+    write_index.index.desc = m_flib_link->channel()->get_desc_index();
+    write_index.index.data =
+        m_desc_buffer_view->at(write_index.index.desc - 1).offset +
+        m_desc_buffer_view->at(write_index.index.desc - 1).size;
+    write_index.updated = boost::posix_time::microsec_clock::universal_time();
+    L_(trace) << "fetching write_index: data " << write_index.index.data
+              << " desc " << write_index.index.desc;
+    lock.lock();
 #if 0
       // TODO remove when mc_time instead of mc_index is used in desc.
       if (true) {
@@ -136,7 +127,7 @@ private:
         }
       }
 #endif
-      m_shm_ch->set_write_index(lock, write_index);
+    m_shm_ch->set_write_index(lock, write_index);
   }
 
   // Convert index into byte pointer for hardware
