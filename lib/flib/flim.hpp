@@ -64,7 +64,6 @@ public:
   std::string print_build_info();
 
 private:
-  flib_link_flesin* m_parrent_link;
   std::unique_ptr<register_file> m_rfflim;
 };
 } // namespace
