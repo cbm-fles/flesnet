@@ -19,6 +19,17 @@ public:
   void enable_readout() override;
   void disable_readout() override;
 
+  typedef struct {
+    bool channel_up;
+    bool hard_err;
+    bool soft_err;
+    bool eoe_fifo_overflow;
+    bool d_fifo_overflow;
+    uint16_t d_fifo_max_words;
+  } link_status_t;
+
+  link_status_t link_status();
+
 private:
 };
 } // namespace

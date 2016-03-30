@@ -4,17 +4,17 @@
 // This file was automatically generated from:
 // src/packages/registers.vhd
 // Repository is: git repository
-// Repository Revision: 318698c032ed7c2de0ce94a7370c03f9a86d55da
-// Repository Status: clean
-// Build Timestamp: Fri Mar  4 15:52:48 CET 2016
+// Repository Revision: 620469c3dda599d3432411393345180eb348c25f
+// Repository Status: dirty
+// Build Timestamp: Wed Mar 30 17:14:18 CEST 2016
 // Build System: hutter@eda02
 #define RORC_C_BUILD_REPO 1
-#define RORC_C_BUILD_DATE 1457103168
-#define RORC_C_BUILD_REVISION 318698c032ed7c2de0ce94a7370c03f9a86d55da
-#define RORC_C_BUILD_STATUS_CLEAN 1
+#define RORC_C_BUILD_DATE 1459350858
+#define RORC_C_BUILD_REVISION 620469c3dda599d3432411393345180eb348c25f
+#define RORC_C_BUILD_STATUS_CLEAN 0
 #define RORC_C_BUILD_HOST 65646130320000000000000000000000
 #define RORC_C_BUILD_USER 68757474657200000000000000000000
-#define RORC_C_HARDWARE_VERSION 23
+#define RORC_C_HARDWARE_VERSION 24
 #define RORC_CHANNEL_OFFSET 0x00008000
 #define RORC_DMA_CMP_SEL 13
 #define RORC_C_LINK_SEL 5
@@ -73,7 +73,7 @@
 #define RORC_REG_DESC_CNT_L 25
 #define RORC_REG_DESC_CNT_H 26
 #define RORC_REG_GTX_DATAPATH_CFG 0
-#define RORC_REG_GTX_LINK_FIFOS 1
+#define RORC_REG_GTX_LINK_STS 1
 #define RORC_REG_LINK_FLIM_HW_INFO 0
 #define RORC_REG_FLIM_BUILD_FLAGS 1
 #define RORC_REG_FLIM_BUILD_DATE_L 2

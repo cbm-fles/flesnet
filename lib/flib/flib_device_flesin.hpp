@@ -12,7 +12,7 @@
 
 namespace flib {
 
-constexpr std::array<uint16_t, 1> hw_ver_table_flesin = {{23}};
+constexpr std::array<uint16_t, 1> hw_ver_table_flesin = {{24}};
 
 class flib_device_flesin : public flib_device {
 
