@@ -38,90 +38,95 @@ static void s_catch_signals(void) {
 int main(int argc, char* argv[]) {
   s_catch_signals();
 
-  size_t flib_index = 0;
-  if (argc == 2) {
-    flib_index = atoi(argv[1]);
-  }
-  std::cout << "using FLIB " << flib_index << std::endl;
+  try {
 
-  flib::flib_device_flesin flib(flib_index);
-  std::vector<flib::flib_link_flesin*> links = flib.links();
-  std::vector<std::unique_ptr<flib::flim>> flims;
+    size_t flib_index = 0;
+    if (argc == 2) {
+      flib_index = atoi(argv[1]);
+    }
+    std::cout << "using FLIB " << flib_index << std::endl;
 
-  // create flims for active links or internal pgen
-  for (size_t i = 0; i < flib.number_of_links(); ++i) {
-    auto rx_sel = links.at(i)->data_sel();
-    if (rx_sel == flib::flib_link::rx_link ||
-        rx_sel == flib::flib_link::rx_pgen) {
-      try {
-        flims.push_back(
-            std::unique_ptr<flib::flim>(new flib::flim(links.at(i))));
-      } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        exit(EXIT_FAILURE);
+    flib::flib_device_flesin flib(flib_index);
+    std::vector<flib::flib_link_flesin*> links = flib.links();
+    std::vector<std::unique_ptr<flib::flim>> flims;
+
+    // create flims for active links or internal pgen
+    for (size_t i = 0; i < flib.number_of_links(); ++i) {
+      auto rx_sel = links.at(i)->data_sel();
+      if (rx_sel == flib::flib_link::rx_link ||
+          rx_sel == flib::flib_link::rx_pgen) {
+        try {
+          flims.push_back(
+              std::unique_ptr<flib::flim>(new flib::flim(links.at(i))));
+        } catch (const std::exception& e) {
+          std::cerr << e.what() << std::endl;
+          exit(EXIT_FAILURE);
+        }
       }
     }
-  }
 
-  if (flims.empty()) {
-    std::cout << "No active links found" << std::endl;
-    exit(EXIT_SUCCESS);
-  }
-
-  // reset at startup
-  flib.enable_mc_cnt(false);
-  for (auto&& flim : flims) {
-    flim->set_pgen_enable(false);
-    flim->set_ready_for_data(false);
-    flim->reset_datapath();
-    std::cout << flim->print_build_info() << std::endl;
-    if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
-      std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
+    if (flims.empty()) {
+      std::cout << "No active links found" << std::endl;
+      exit(EXIT_SUCCESS);
     }
-  }
 
-  std::cout << "enabling ..." << std::endl;
-
-  for (auto&& flim : flims) {
-    flim->set_pgen_start_time(100);
-    flim->set_ready_for_data(true);
-  }
-
-  // enable pgen via master link 0
-  flims.at(0)->set_pgen_enable(true);
-  // enable flib internal pgen
-  flib.enable_mc_cnt(true);
-
-  std::cout << "running ..." << std::endl;
-
-  while (s_interrupted == 0) {
-    flims.at(0)->set_debug_out(false);
-    ::sleep(1);
-    flims.at(0)->set_debug_out(true);
-    ::sleep(1);
-  }
-
-  std::cout << "disabling ..." << std::endl;
-
-  flims.at(0)->set_pgen_enable(false);
-  flib.enable_mc_cnt(false);
-  for (auto&& flim : flims) {
-    std::cout << "mc index (packer) " << flim->get_mc_idx() << std::endl;
-    std::cout << "mc time (packer)  " << flim->get_mc_time() << std::endl;
-    std::cout << "mc pending (pgen) " << flim->get_pgen_mc_pending()
-              << std::endl;
-  }
-
-  for (auto&& flim : flims) {
-    flim->set_ready_for_data(false);
-    flim->reset_datapath();
-    std::cout << "mc time (packer)  " << flim->get_mc_time() << std::endl;
-
-    if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
-      std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
+    // reset at startup
+    flib.enable_mc_cnt(false);
+    for (auto&& flim : flims) {
+      flim->set_pgen_enable(false);
+      flim->set_ready_for_data(false);
+      flim->reset_datapath();
+      std::cout << flim->print_build_info() << std::endl;
+      if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
+        std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
+      }
     }
-  }
 
-  std::cout << "Exiting" << std::endl;
+    std::cout << "enabling ..." << std::endl;
+
+    for (auto&& flim : flims) {
+      flim->set_pgen_start_time(100);
+      flim->set_ready_for_data(true);
+    }
+
+    // enable pgen via master link 0
+    flims.at(0)->set_pgen_enable(true);
+    // enable flib internal pgen
+    flib.enable_mc_cnt(true);
+
+    std::cout << "running ..." << std::endl;
+
+    while (s_interrupted == 0) {
+      flims.at(0)->set_debug_out(false);
+      ::sleep(1);
+      flims.at(0)->set_debug_out(true);
+      ::sleep(1);
+    }
+
+    std::cout << "disabling ..." << std::endl;
+
+    flims.at(0)->set_pgen_enable(false);
+    flib.enable_mc_cnt(false);
+    for (auto&& flim : flims) {
+      std::cout << "mc index (packer) " << flim->get_mc_idx() << std::endl;
+      std::cout << "mc time (packer)  " << flim->get_mc_time() << std::endl;
+      std::cout << "mc pending (pgen) " << flim->get_pgen_mc_pending()
+                << std::endl;
+    }
+
+    for (auto&& flim : flims) {
+      flim->set_ready_for_data(false);
+      flim->reset_datapath();
+      std::cout << "mc time (packer)  " << flim->get_mc_time() << std::endl;
+
+      if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
+        std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
+      }
+    }
+
+    std::cout << "Exiting" << std::endl;
+  } catch (std::exception const& e) {
+    std::cout << "Exception: " << e.what() << std::endl;
+  }
   return 0;
 }
