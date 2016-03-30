@@ -23,6 +23,7 @@ public:
   parameters(const parameters&) = delete;
   void operator=(const parameters&) = delete;
 
+  size_t flib_index() { return _flib_index; }
   size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
 
@@ -51,9 +52,11 @@ private:
         "Configuration (flib_server.cfg or cmd line)");
     config.add_options()
 
-        ("data-buffer-size-exp",
-         po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
-         "exp. size of the data buffer in bytes")(
+        ("flib-index,i", po::value<size_t>(&_flib_index)->default_value(0),
+         "index of the target flib")(
+            "data-buffer-size-exp",
+            po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
+            "exp. size of the data buffer in bytes")(
             "desc-buffer-size-exp",
             po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
             "exp. size of the descriptor buffer (number of entries)")(
@@ -92,6 +95,7 @@ private:
     L_(info) << print_buffer_info();
   }
 
+  size_t _flib_index;
   size_t _data_buffer_size_exp;
   size_t _desc_buffer_size_exp;
 };

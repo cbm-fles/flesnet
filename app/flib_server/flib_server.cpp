@@ -21,8 +21,9 @@ int main(int argc, char* argv[]) {
     parameters par(argc, argv);
 
     std::unique_ptr<flib::flib_device> flib;
-    L_(info) << "initializing FLIB with DPB readout";
-    flib = std::unique_ptr<flib::flib_device>(new flib::flib_device_flesin(0));
+    L_(info) << "Initializing FLIB " << par.flib_index();
+    flib = std::unique_ptr<flib::flib_device>(
+        new flib::flib_device_flesin(par.flib_index()));
 
     // create server
     flib_shm_device_server server(flib.get(), par.data_buffer_size_exp(),
