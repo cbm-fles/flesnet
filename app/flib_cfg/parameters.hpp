@@ -34,6 +34,7 @@ public:
   parameters(const parameters&) = delete;
   void operator=(const parameters&) = delete;
 
+  size_t flib() const { return _flib; }
   uint32_t mc_size() const { return _mc_size; }
   float pgen_rate() const { return _pgen_rate; }
 
@@ -95,11 +96,12 @@ private:
         "set the log level (all:0)");
 
     po::options_description config("Configuration (flib.cfg or cmd line)");
-    config.add_options()("mc-size,t", po::value<uint32_t>(),
-                         "size of pattern generator microslices in units of "
-                         "1024 ns (31 bit wide)")(
-        "pgen-rate,r", po::value<float>(),
-        "MS fill level of pattern generator in [0,1]")
+    config.add_options()("flib,i", po::value<size_t>(&_flib)->default_value(0),
+                         "index of the target flib")(
+        "mc-size,t", po::value<uint32_t>(),
+        "size of pattern generator microslices in units of "
+        "1024 ns (31 bit wide)")("pgen-rate,r", po::value<float>(),
+                                 "MS fill level of pattern generator in [0,1]")
 
         ("l0_source", po::value<std::string>(),
          "Link 0 data source <disable|flim|pgen_far|pgen_near>")(
@@ -202,6 +204,7 @@ private:
     return ss.str();
   }
 
+  size_t _flib = 0;
   uint32_t _mc_size = 10; // 10,24 us
   float _pgen_rate = 1;
   std::array<struct link_config, _num_flib_links> _links = {{}};

@@ -29,9 +29,11 @@ int main(int argc, char* argv[]) {
   parameters par(argc, argv);
 
   // create FLIB
-  flib::flib_device_flesin flib(0);
+  flib::flib_device_flesin flib(par.flib());
   std::vector<flib::flib_link_flesin*> links = flib.links();
   std::vector<std::unique_ptr<flib::flim>> flims;
+
+  L_(info) << "Configuring FLIB " << par.flib() << ": " << flib.print_devinfo();
 
   // FLIB global configuration
   // set even if unused
