@@ -35,11 +35,16 @@ static void s_catch_signals(void) {
   sigaction(SIGINT, &action, NULL);
 }
 
-// int main(int argc, char* argv[]) {
-int main() {
+int main(int argc, char* argv[]) {
   s_catch_signals();
 
-  flib::flib_device_flesin flib(0);
+  size_t flib_index = 0;
+  if (argc == 2) {
+    flib_index = atoi(argv[1]);
+  }
+  std::cout << "using FLIB " << flib_index << std::endl;
+
+  flib::flib_device_flesin flib(flib_index);
   std::vector<flib::flib_link_flesin*> links = flib.links();
   std::vector<std::unique_ptr<flib::flim>> flims;
 

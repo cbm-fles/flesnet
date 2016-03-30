@@ -24,6 +24,7 @@ public:
   void operator=(const parameters&) = delete;
 
   size_t flib_index() { return _flib_index; }
+  std::string shm() { return _shm; }
   size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
 
@@ -54,6 +55,9 @@ private:
 
         ("flib-index,i", po::value<size_t>(&_flib_index)->default_value(0),
          "index of the target flib")(
+            "shm,o",
+            po::value<std::string>(&_shm)->default_value("flib_shared_memory"),
+            "name of the shared memory to be used")(
             "data-buffer-size-exp",
             po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
             "exp. size of the data buffer in bytes")(
@@ -96,6 +100,7 @@ private:
   }
 
   size_t _flib_index;
+  std::string _shm;
   size_t _data_buffer_size_exp;
   size_t _desc_buffer_size_exp;
 };

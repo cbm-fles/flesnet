@@ -26,10 +26,13 @@ public:
   using shm_channel_server_type = shm_channel_server<T_DESC, T_DATA>;
 
   shm_device_server(flib::flib_device* flib,
+                    std::string shm_identifier,
                     size_t data_buffer_size_exp,
                     size_t desc_buffer_size_exp,
                     volatile std::sig_atomic_t* signal_status)
-      : m_flib(flib), m_signal_status(signal_status) {
+      : m_flib(flib), m_shm_identifier(shm_identifier),
+        m_signal_status(signal_status) {
+    ip::shared_memory_object::remove(m_shm_identifier.c_str());
     std::vector<flib::flib_link*> flib_links = m_flib->links();
 
     // delete deactivated links from vector
@@ -48,7 +51,7 @@ public:
                           flib_links.size() +
                       sizeof(shm_device) + 1000;
     m_shm = std::unique_ptr<ip::managed_shared_memory>(
-        new ip::managed_shared_memory(ip::create_only, "flib_shared_memory",
+        new ip::managed_shared_memory(ip::create_only, m_shm_identifier.c_str(),
                                       shm_size));
 
     // constuct device exchange object in sharde memory
@@ -67,7 +70,9 @@ public:
     }
   }
 
-  ~shm_device_server() {}
+  ~shm_device_server() {
+    ip::shared_memory_object::remove(m_shm_identifier.c_str());
+  }
 
   void run() {
     if (!m_run) { // don't start twice
@@ -128,14 +133,8 @@ private:
   }
 
   // Members
-
-  // Remove shared memory on construction and destruction of class
-  struct shm_remove {
-    shm_remove() { ip::shared_memory_object::remove("flib_shared_memory"); }
-    ~shm_remove() { ip::shared_memory_object::remove("flib_shared_memory"); }
-  } remover;
-
   flib::flib_device* m_flib;
+  std::string m_shm_identifier;
   volatile std::sig_atomic_t* m_signal_status;
   std::unique_ptr<ip::managed_shared_memory> m_shm;
   shm_device* m_shm_dev = NULL;

@@ -26,7 +26,8 @@ int main(int argc, char* argv[]) {
         new flib::flib_device_flesin(par.flib_index()));
 
     // create server
-    flib_shm_device_server server(flib.get(), par.data_buffer_size_exp(),
+    flib_shm_device_server server(flib.get(), par.shm(),
+                                  par.data_buffer_size_exp(),
                                   par.desc_buffer_size_exp(), &signal_status);
     server.run();
 
