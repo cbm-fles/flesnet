@@ -32,7 +32,6 @@ public:
                     volatile std::sig_atomic_t* signal_status)
       : m_flib(flib), m_shm_identifier(shm_identifier),
         m_signal_status(signal_status) {
-    ip::shared_memory_object::remove(m_shm_identifier.c_str());
     std::vector<flib::flib_link*> flib_links = m_flib->links();
 
     // delete deactivated links from vector
