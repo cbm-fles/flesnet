@@ -24,11 +24,11 @@ int main() {
         std::unique_ptr<flib_device_flesin>(new flib_device_flesin(i)));
 
     std::cout << "*** FLIB " << i << " ***" << std::endl;
-    std::cout << flibs.back()->print_build_info() << std::endl;
     std::cout << flibs.back()->print_devinfo() << std::endl;
     std::cout << "Hardware links: "
               << static_cast<unsigned>(flibs.back()->number_of_hw_links())
               << std::endl;
+    std::cout << flibs.back()->print_build_info() << std::endl;
   }
 
   return 0;

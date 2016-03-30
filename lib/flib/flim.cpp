@@ -181,7 +181,7 @@ std::string flim::print_build_info() {
                 std::localtime(&build.date));
 
   std::stringstream ss;
-  ss << "FLIM Info:" << std::endl
+  ss << "FLIM Build Info:" << std::endl
      << "Build Date:     " << mbstr << std::endl
      << "Build Source:   " << build.user << "@" << build.host << std::endl;
   switch (build.repo) {

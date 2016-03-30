@@ -139,7 +139,7 @@ std::string flib_device::print_build_info() {
                 std::localtime(&build.date));
 
   std::stringstream ss;
-  ss << "FLIB Info:" << std::endl
+  ss << "FLIB Build Info:" << std::endl
      << "Build Date:     " << mbstr << std::endl
      << "Build Source:   " << build.user << "@" << build.host << std::endl;
   switch (build.repo) {
