@@ -15,6 +15,12 @@ ESN=
 IMPACT=impact
 VIVADO=vivado
 
+# FLIB PCI device
+# set to FLIB pci device identifyer, i.g. 01:00.0
+# in order to handle a spacific FLIB.
+# If empty all FLIBs will be reinitialized on PCI
+PCI_DEV=
+
 # CSE server
 # start with cse_server -port <cse_port> on given <cse_host>
 # leave empty if script runs locally
@@ -123,16 +129,22 @@ echo "Done"
 }
 
 function rescan_pci_base {
-echo "Searching for previous PCI device"
-NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
-if [ "$NODE" ]; then
-        echo "Found previous PCI device at $NODE"
-        if [ -f "/sys/bus/pci/devices/0000:$NODE/remove" ]; then
-                echo "Removing previous PCI device"
-                sudo sh -c "echo 1 > /sys/bus/pci/devices/0000:$NODE/remove"
-        fi
+if [ "$PCI_DEV" ]; then
+    echo "Searching for previous PCI device $PCI_DEV"
 else
-        echo "No previous PCI device found"
+    echo "Searching for any previous PCI device"
+    PCI_DEV=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
+fi
+if [ "$PCI_DEV" ]; then
+    for i in $PCI_DEV; do
+        echo "Found previous PCI decive at $i"
+        if [ -f "/sys/bus/pci/devices/0000:$i/remove" ]; then
+            echo "Removing previous PCI device"
+            sudo sh -c "echo 1 > /sys/bus/pci/devices/0000:$i/remove"
+        fi
+    done
+else
+    echo "No previous PCI decive found"
 fi
 sleep 1
 
@@ -146,7 +158,7 @@ function rescan_pci {
 if [ $FLIB_HOST ]; then
     echo "Rescanning PCI on $FLIB_HOST."
     echo "Provide password for $FLIB_HOST when prompted."
-    ssh -t $FLIB_HOST "$(declare -f rescan_pci_base); rescan_pci_base"
+    ssh -t $FLIB_HOST "$(declare -f rescan_pci_base); PCI_DEV=$PCI_DEV; rescan_pci_base"
 else
     rescan_pci_base
 fi
