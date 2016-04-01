@@ -173,35 +173,8 @@ The FLIB FPGA can be programmed using any JTAG programmer and matching
 software. If using a Xilinx USB II cable with Xilinx software
 programming scripts are provided (see [HOWTO.md](HOWTO.md)).
 
-Xilinx Tools
-------------
-
-Install at least the Xilinx Lab Tools (newest version).
-
-    ./xsetup
-
-Don't install cable drivers when asked!
-
-Xilinx Cable drivers
---------------------
-
-    sudo aptitude install libusb-dev fxload
-    # go to Xilinx install directory (e.g., /opt/xilinx/14.7/LabTools)
-    . settings64.sh
-    cd LabTools/bin/lin64/install_script/install_drivers/linux_drivers/pcusb
-    sudo ./setup_pcusb 1 (has to say “Using udev…“)
-    sudo sed -i -e 's/TEMPNODE/tempnode/' -e 's/SYSFS/ATTRS/g' -e 's/BUS/SUBSYSTEMS/' /etc/udev/rules.d/xusbdfwu.rules
-    sudo /etc/init.d/udev restart
-
-If cable drivers are working correctly and a cable is plugged in,
-`lsusb` should give you something like:
-
-    ...
-    Bus 001 Device 008: ID 03fd:0008 Xilinx, Inc.
-    ...
-
-Note the `03fd:0008`.
-
+To use these scripts install the Xilinx Vivado Lab Tools or any other
+Vivado edition.
 
 Legacy CBMnet readout with FLESnet
 ==================================

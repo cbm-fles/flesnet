@@ -3,8 +3,7 @@
 # 2013, Dirk Hutter <hutter@compeng.uni-frankfurt.de>
 
 set -e
-# TODO:
-# Vivado part only supports remote program with ESN
+# Vivado only supports remote program with ESN
 
 ### user configuration ###
 
@@ -26,7 +25,7 @@ PCI_DEV=
 # leave empty if script runs locally
 CSE_HOST=
 CSE_PORT=51001
-HWS_HOST=host:port
+HWS_HOST=localhost:3121
 
 # remote mashine the FLIB is installed to
 # leave empty if script runs locally
@@ -90,6 +89,44 @@ sleep 1
 echo "Done"
 }
 
+# Program Flash
+# use 'Erase -p 1 -o -bpionly' to erase Flash 
+function program_flash {
+"$IMPACT" -batch <<-EOF
+setMode -bscan
+setCable $CABLE $CSE_SERVER
+Identify -inferir 
+identifyMPM 
+attachflash -position 1 -bpi "28F512G18F"
+assignfiletoattachedflash -position 1 -file "$BITFILE"
+Program -p 1 -dataWidth 16 -rs1 NONE -rs0 NONE -bpionly -e -v -loadfpga 
+quit
+EOF
+rm _impactbatch.log
+sleep 1
+echo "Done"
+}
+
+# Reload FPGA configuration from flash
+function reload_fpga_vivado {
+t=$(tempfile) || exit
+trap "rm -f -- '$t'" EXIT
+cat > $t <<-EOF
+open_hw
+connect_hw_server -url $HWS_HOST
+current_hw_target [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
+set_property PARAM.FREQUENCY 6000000 [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
+open_hw_target
+current_hw_device [lindex [get_hw_devices] 0]
+boot_hw_device  [lindex [get_hw_devices] 0]
+close_hw
+EOF
+$VIVADO -mode batch -nojournal -nolog -source $t
+rm -f -- "$t"
+trap - EXIT
+rm webtalk.log webtalk.jou
+}
+
 # Program FPGA VIVADO
 function program_fpga_vivado {
 t=$(tempfile) || exit
@@ -110,22 +147,42 @@ trap - EXIT
 rm webtalk.log webtalk.jou
 }
 
-# Program Flash
-# use 'Erase -p 1 -o -bpionly' to erase Flash 
-function program_flash {
-"$IMPACT" -batch <<-EOF
-setMode -bscan
-setCable $CABLE $CSE_SERVER
-Identify -inferir 
-identifyMPM 
-attachflash -position 1 -bpi "28F512G18F"
-assignfiletoattachedflash -position 1 -file "$BITFILE"
-Program -p 1 -dataWidth 16 -rs1 NONE -rs0 NONE -bpionly -e -v -loadfpga 
-quit
+# Program PROM VIVADO
+function program_flash_vivado {
+t=$(tempfile) || exit
+trap "rm -f -- '$t'" EXIT
+cat > $t <<-EOF
+open_hw
+connect_hw_server -url $HWS_HOST
+current_hw_target [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
+set_property PARAM.FREQUENCY 6000000 [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
+open_hw_target
+current_hw_device [lindex [get_hw_devices] 0]
+create_hw_cfgmem -hw_device [lindex [get_hw_devices] 0] -mem_dev  [lindex [get_cfgmem_parts {mt28gu01gaax1e-bpi-x16}] 0]
+set_property PROGRAM.BLANK_CHECK  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+set_property PROGRAM.ERASE  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+set_property PROGRAM.CFG_PROGRAM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+set_property PROGRAM.VERIFY  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+refresh_hw_device [lindex [get_hw_devices] 0]
+set_property PROGRAM.ADDRESS_RANGE  {use_file} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+set_property PROGRAM.FILES [list "$BITFILE" ] [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0]]
+set_property PROGRAM.BPI_RS_PINS {none} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+set_property PROGRAM.UNUSED_PIN_TERMINATION {pull-none} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+set_property PROGRAM.BLANK_CHECK  0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+set_property PROGRAM.ERASE  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+set_property PROGRAM.CFG_PROGRAM  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+set_property PROGRAM.VERIFY  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+startgroup 
+if {![string equal [get_property PROGRAM.HW_CFGMEM_TYPE  [lindex [get_hw_devices] 0]] [get_property MEM_TYPE [get_property CFGMEM_PART [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]]]] }  { create_hw_bitstream -hw_device [lindex [get_hw_devices] 0] [get_property PROGRAM.HW_CFGMEM_BITFILE [ lindex [get_hw_devices] 0]]; program_hw_devices [lindex [get_hw_devices] 0]; }; 
+program_hw_cfgmem -hw_cfgmem [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+endgroup
+boot_hw_device  [lindex [get_hw_devices] 0]
+close_hw
 EOF
-rm _impactbatch.log
-sleep 1
-echo "Done"
+$VIVADO -mode batch -nojournal -nolog -source $t
+rm -f -- "$t"
+trap - EXIT
+rm webtalk.log webtalk.jou
 }
 
 function rescan_pci_base {
@@ -134,12 +191,12 @@ if [ "$PCI_DEV" ]; then
 else
     echo "Searching for any previous PCI device"
     PCI_DEV=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
+    echo "Decives found: $PCI_DEV"
 fi
 if [ "$PCI_DEV" ]; then
     for i in $PCI_DEV; do
-        echo "Found previous PCI decive at $i"
         if [ -f "/sys/bus/pci/devices/0000:$i/remove" ]; then
-            echo "Removing previous PCI device"
+            echo "Removing previous PCI device $i"
             sudo sh -c "echo 1 > /sys/bus/pci/devices/0000:$i/remove"
         fi
     done
@@ -169,7 +226,7 @@ fi
 case $1 in
     reload)
         echo -e "Reloading FPGA configuration from Flash and rescanning PCI Bus"
-        reload_fpga
+        reload_fpga_vivado
         rescan_pci
         exit
         ;;
@@ -179,7 +236,7 @@ case $1 in
             echo "Bitfile '$BITFILE' not found"
             exit
         fi
-        program_fpga
+        program_fpga_vivado
         rescan_pci
         exit
         ;;
@@ -189,7 +246,7 @@ case $1 in
             echo "Mcsfile '$BITFILE' not found"
             exit
         fi
-        program_flash
+        program_flash_vivado
         rescan_pci
         exit
         ;;

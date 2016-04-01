@@ -78,21 +78,30 @@ but result in an unusable file.)
 Programming the FPGA
 --------------------
 
+The FLIB FPGA can be programmed using any JTAG programmer and matching
+software. If you like to use the provided scripts with vivado use the
+following instructions:
+
 Copy `contrib/flib-jtag` to a location in your path and adopt settings.
 
-You can:
-
-  - Add the command to call impact
+You should:
+  - Add the correct command to call vivado
   - Fix the Xilinx Cable serial number
-  - Choose if you like to use a CSE server
+  - Choose if you like to use a remote hardware server
   - Choose if you like to run the script remotely
 
 Note: Do not source Xilinx `settings.sh` in the environment/shell you
 like to run/build flesnet! This will replace your glibc and cause
-problems. You might add the full path to impact to flib-jtag instead.
+problems. You might add the full path to vivado to flib-jtag instead.
 
 #### Usage:
-    flib-jtag prog path/to/bitfile.bit
+
+Start a vivado hardware server on the machine connected to the
+Xilinx USB II cable as a daemon and keep it running
+     hw_server -d
+
+To program the FPGA run
+     flib-jtag prog path/to/bitfile.bit
 
 If programming the FPGA the first time since powerup or
 your machine does not support PCIe hot-plugging, you need to reboot
