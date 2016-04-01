@@ -4,23 +4,15 @@ Installing FLESnet
 General remarks: OS and Software Environment
 --------------------------------------------
 
-At the moment, the official software environment for operating flesnet with
-a FLIB is:
-
-    Debian 8.0 / fairsoft mar15p1
-
+Flesnet with FLIB is designed to run on a Linux operating
+system. Although it is possible to use most distributions this guide
+and provided scripts focus on Debian. Especially if planing to use a
+FLIB it is strongly recommended to use a recent Debian installation.
 This doesn't imply that it is impossible to run a setup on any other
-OS / external packages combination. But tests are only performed for the
-official environment. If there are reasons to go to another version please
-let me know.
+OS but tests are only performed for this environment.
 
-Earlier versions:
-
-    Debian 7.6 / fairroot external packages jul14p3
-    Debian 7.6 / fairroot external packages jul14p2
-
-Note: For information regarding the legacy CBMnet readout please refer to the
-end of this document.
+Note: For information regarding the legacy CBMnet readout please refer
+to the end of this document.
 
 Getting the Repository
 ----------------------
