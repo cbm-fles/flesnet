@@ -10,7 +10,17 @@
 namespace flib {
 
 flib_device_flesin::flib_device_flesin(int device_nr) : flib_device(device_nr) {
+  init();
+}
 
+flib_device_flesin::flib_device_flesin(uint8_t bus,
+                                       uint8_t device,
+                                       uint8_t function)
+    : flib_device(bus, device, function) {
+  init();
+}
+
+void flib_device_flesin::init() {
   check_hw_ver(hw_ver_table_flesin);
   // create link objects
   uint8_t num_links = number_of_hw_links();

@@ -18,22 +18,30 @@
 namespace flib {
 
 flib_device::flib_device(int device_nr) {
-  /** TODO: add exception handling here */
   m_device_op =
       std::unique_ptr<pda::device_operator>(new pda::device_operator());
   m_device = std::unique_ptr<pda::device>(
       new pda::device(m_device_op.get(), device_nr));
-  m_bar = std::unique_ptr<pda::pci_bar>(new pda::pci_bar(m_device.get(), 1));
+  init();
+}
 
-  // register file access
-  m_register_file =
-      std::unique_ptr<register_file_bar>(new register_file_bar(m_bar.get(), 0));
-
-  // enforce correct magic number
-  check_magic_number();
+flib_device::flib_device(uint8_t bus, uint8_t device, uint8_t function) {
+  m_device_op = nullptr;
+  m_device =
+      std::unique_ptr<pda::device>(new pda::device(bus, device, function));
+  init();
 }
 
 flib_device::~flib_device() {}
+
+void flib_device::init() {
+  m_bar = std::unique_ptr<pda::pci_bar>(new pda::pci_bar(m_device.get(), 1));
+  // register file access
+  m_register_file =
+      std::unique_ptr<register_file_bar>(new register_file_bar(m_bar.get(), 0));
+  // enforce correct magic number
+  check_magic_number();
+}
 
 bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
   uint16_t hw_ver =

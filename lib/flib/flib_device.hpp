@@ -35,6 +35,7 @@ class flib_device {
 
 public:
   flib_device(int device_nr);
+  flib_device(uint8_t bus, uint8_t device, uint8_t function);
   virtual ~flib_device() = 0;
 
   bool check_hw_ver(std::array<uint16_t, 1> hw_ver_table);
@@ -63,6 +64,7 @@ protected:
   std::unique_ptr<register_file_bar> m_register_file;
   std::vector<std::unique_ptr<flib_link>> m_link;
 
+  void init();
   bool check_magic_number();
 };
 

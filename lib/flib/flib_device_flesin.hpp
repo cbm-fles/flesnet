@@ -18,9 +18,13 @@ class flib_device_flesin : public flib_device {
 
 public:
   flib_device_flesin(int device_nr);
+  flib_device_flesin(uint8_t bus, uint8_t device, uint8_t function);
 
   std::vector<flib_link_flesin*> links();
   flib_link_flesin* link(size_t n);
+
+private:
+  void init();
 };
 
 } /** namespace flib */
