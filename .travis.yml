@@ -20,6 +20,7 @@ addons:
     - libboost-filesystem1.55-dev
     - libboost-log1.55-dev
     - libboost-program-options1.55-dev
+    - libboost-regex1.55-dev
     - libboost-serialization1.55-dev
     - libboost-system1.55-dev
     - libboost-test1.55-dev
