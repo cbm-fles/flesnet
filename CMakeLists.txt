@@ -34,7 +34,7 @@ if(USE_LIBNUMA AND NOT LIBNUMA)
   message(STATUS "Library not found: libnuma. Building without.")
 endif()
 
-find_package(Boost 1.54.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework)
+find_package(Boost 1.54.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex)
 find_package(Threads)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS})

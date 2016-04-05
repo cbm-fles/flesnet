@@ -30,22 +30,29 @@ int main(int argc, char* argv[]) {
 
     parameters par(argc, argv);
 
+    std::unique_ptr<flib::flib_device_flesin> flib;
     // create FLIB
-    flib::flib_device_flesin flib(par.flib());
-    std::vector<flib::flib_link_flesin*> links = flib.links();
+    if (par.flib_autodetect()) {
+      flib = std::unique_ptr<flib::flib_device_flesin>(
+          new flib::flib_device_flesin(0));
+    } else {
+      flib = std::unique_ptr<flib::flib_device_flesin>(
+          new flib::flib_device_flesin(par.flib_addr().bus, par.flib_addr().dev,
+                                       par.flib_addr().func));
+    }
+    std::vector<flib::flib_link_flesin*> links = flib->links();
     std::vector<std::unique_ptr<flib::flim>> flims;
 
-    L_(info) << "Configuring FLIB " << par.flib() << ": "
-             << flib.print_devinfo();
+    L_(info) << "Configuring FLIB: " << flib->print_devinfo();
 
     // FLIB global configuration
     // set even if unused
-    flib.set_mc_time(par.mc_size());
+    flib->set_mc_time(par.mc_size());
 
-    L_(debug) << "Tatal FLIB links: " << flib.number_of_links();
+    L_(debug) << "Tatal FLIB links: " << flib->number_of_links();
 
     // FLIB per link configuration
-    for (size_t i = 0; i < flib.number_of_links(); ++i) {
+    for (size_t i = 0; i < flib->number_of_links(); ++i) {
       L_(debug) << "Initializing link " << i;
 
       if (par.link(i).source == disable) {

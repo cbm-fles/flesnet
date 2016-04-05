@@ -10,6 +10,7 @@
 #include "log.hpp"
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/program_options.hpp>
+#include <boost/regex.hpp>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -26,6 +27,40 @@ struct link_config {
   uint16_t eq_id;
 };
 
+struct pci_addr {
+public:
+  pci_addr(uint8_t bus = 0, uint8_t dev = 0, uint8_t func = 0)
+      : bus(bus), dev(dev), func(func) {}
+  uint8_t bus;
+  uint8_t dev;
+  uint8_t func;
+};
+
+// Overload validate for PCI BDF address
+void validate(boost::any& v,
+              const std::vector<std::string>& values,
+              pci_addr*,
+              int) {
+  // PCI BDF address is BB:DD.F
+  static boost::regex r("(\\d\\d):(\\d\\d).(\\d)");
+
+  // Make sure no previous assignment to 'a' was made.
+  po::validators::check_first_occurrence(v);
+  // Extract the first string from 'values'. If there is more than
+  // one string, it's an error, and exception will be thrown.
+  const std::string& s = po::validators::get_single_string(values);
+
+  // Do regex match and convert the interesting part.
+  boost::smatch match;
+  if (boost::regex_match(s, match, r)) {
+    v = boost::any(pci_addr(boost::lexical_cast<unsigned>(match[1]),
+                            boost::lexical_cast<unsigned>(match[2]),
+                            boost::lexical_cast<unsigned>(match[3])));
+  } else {
+    throw po::validation_error(po::validation_error::invalid_option_value);
+  }
+}
+
 class parameters {
 
 public:
@@ -34,7 +69,8 @@ public:
   parameters(const parameters&) = delete;
   void operator=(const parameters&) = delete;
 
-  size_t flib() const { return _flib; }
+  bool flib_autodetect() const { return _flib_autodetect; }
+  pci_addr flib_addr() const { return _flib_addr; }
   uint32_t mc_size() const { return _mc_size; }
   float pgen_rate() const { return _pgen_rate; }
 
@@ -96,8 +132,8 @@ private:
         "set the log level (all:0)");
 
     po::options_description config("Configuration (flib.cfg or cmd line)");
-    config.add_options()("flib,i", po::value<size_t>(&_flib)->default_value(0),
-                         "index of the target flib")(
+    config.add_options()("flib-addr,i", po::value<pci_addr>(),
+                         "PCI BDF address of target FLIB in BB:DD.F format")(
         "mc-size,t", po::value<uint32_t>(),
         "size of pattern generator microslices in units of "
         "1024 ns (31 bit wide)")("pgen-rate,r", po::value<float>(),
@@ -163,6 +199,19 @@ private:
     logging::add_console(static_cast<severity_level>(log_level));
 
     std::cout << "Global config:" << std::endl;
+
+    if (vm.count("flib-addr")) {
+      _flib_addr = vm["flib-addr"].as<pci_addr>();
+      _flib_autodetect = false;
+      std::cout << " FLIB address: " << std::setw(2) << std::setfill('0')
+                << static_cast<unsigned>(_flib_addr.bus) << ":" << std::setw(2)
+                << std::setfill('0') << static_cast<unsigned>(_flib_addr.dev)
+                << "." << static_cast<unsigned>(_flib_addr.func) << std::endl;
+    } else {
+      _flib_autodetect = true;
+      std::cout << " FLIB address: autodetect" << std::endl;
+    }
+
     if (vm.count("mc-size")) {
       _mc_size = vm["mc-size"].as<uint32_t>();
       if (_mc_size > 2147483647) { // 31 bit check
@@ -204,7 +253,8 @@ private:
     return ss.str();
   }
 
-  size_t _flib = 0;
+  bool _flib_autodetect = true;
+  pci_addr _flib_addr = {};
   uint32_t _mc_size = 10; // 10,24 us
   float _pgen_rate = 1;
   std::array<struct link_config, _num_flib_links> _links = {{}};
