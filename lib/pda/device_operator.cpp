@@ -23,7 +23,8 @@ const char* device_operator::m_pci_ids[] = {
 };
 
 device_operator::device_operator() {
-  if ((m_dop = DeviceOperator_new(m_pci_ids, PDA_ENUMERATE_DEVICES)) == NULL) {
+  if ((m_dop = DeviceOperator_new(m_pci_ids, PDA_DONT_ENUMERATE_DEVICES)) ==
+      NULL) {
     throw PdaException("Device operator instantiation failed.");
   }
 }

@@ -21,12 +21,25 @@ device::device(device_operator* device_operator, int32_t device_index)
     : m_parent_dop(device_operator) {
   if (DeviceOperator_getPciDevice(m_parent_dop->PDADeviceOperator(), &m_device,
                                   device_index) != PDA_SUCCESS) {
-    throw PdaException("Device object creation failed.");
+    throw PdaException("Device object creation from index failed.");
+  }
+}
+
+device::device(const uint8_t bus, const uint8_t device, const uint8_t function)
+    : m_parent_dop(nullptr) {
+  if ((m_device = PciDevice_new(0, bus, device, function)) == NULL) {
+    throw PdaException("Device object creation from BDF failed.");
   }
 }
 
 device::~device() {
-  // device is deleted when device operator is deleted
+  // do not delete PciDevice if it belongs to DeviceOperator
+  // DeviceOperator will do the cleanup on deletion
+  if (m_parent_dop == nullptr) {
+    if (PciDevice_delete(m_device, PDA_DELETE_PERSISTANT) != PDA_SUCCESS) {
+      cout << "Deleting device operator failed!" << endl;
+    }
+  }
 }
 
 uint16_t device::domain() {

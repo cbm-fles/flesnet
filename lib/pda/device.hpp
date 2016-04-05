@@ -24,6 +24,7 @@ class device {
 
 public:
   device(device_operator* device_operator, int32_t device_index);
+  device(const uint8_t bus, const uint8_t device, const uint8_t function);
   ~device();
 
   uint16_t domain();
