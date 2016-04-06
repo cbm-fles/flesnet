@@ -21,9 +21,15 @@ int main(int argc, char* argv[]) {
     parameters par(argc, argv);
 
     std::unique_ptr<flib::flib_device> flib;
-    L_(info) << "Initializing FLIB " << par.flib_index();
-    flib = std::unique_ptr<flib::flib_device>(
-        new flib::flib_device_flesin(par.flib_index()));
+    if (par.flib_autodetect()) {
+      flib = std::unique_ptr<flib::flib_device_flesin>(
+          new flib::flib_device_flesin(0));
+    } else {
+      flib = std::unique_ptr<flib::flib_device_flesin>(
+          new flib::flib_device_flesin(par.flib_addr().bus, par.flib_addr().dev,
+                                       par.flib_addr().func));
+    }
+    L_(info) << "using FLIB: " << flib->print_devinfo();
 
     // create server
     flib_shm_device_server server(flib.get(), par.shm(),
