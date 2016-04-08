@@ -71,6 +71,7 @@ public:
 
   bool flib_autodetect() const { return _flib_autodetect; }
   pci_addr flib_addr() const { return _flib_addr; }
+  bool identify() const { return _identify; }
   uint32_t mc_size() const { return _mc_size; }
   float pgen_rate() const { return _pgen_rate; }
 
@@ -134,6 +135,8 @@ private:
     po::options_description config("Configuration (flib.cfg or cmd line)");
     config.add_options()("flib-addr,i", po::value<pci_addr>(),
                          "PCI BDF address of target FLIB in BB:DD.F format")(
+        "identify", po::value<bool>(&_identify)->default_value(false),
+        "toggle FLIB ID led")(
         "mc-size,t", po::value<uint32_t>(),
         "size of pattern generator microslices in units of "
         "1024 ns (31 bit wide)")("pgen-rate,r", po::value<float>(),
@@ -255,6 +258,7 @@ private:
 
   bool _flib_autodetect = true;
   pci_addr _flib_addr = {};
+  bool _identify = false;
   uint32_t _mc_size = 10; // 10,24 us
   float _pgen_rate = 1;
   std::array<struct link_config, _num_flib_links> _links = {{}};

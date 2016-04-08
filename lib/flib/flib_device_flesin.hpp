@@ -23,6 +23,8 @@ public:
   std::vector<flib_link_flesin*> links();
   flib_link_flesin* link(size_t n);
 
+  void id_led(bool enable);
+
 private:
   void init();
 };

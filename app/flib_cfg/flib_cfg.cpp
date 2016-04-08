@@ -47,6 +47,7 @@ int main(int argc, char* argv[]) {
 
     // FLIB global configuration
     // set even if unused
+    flib->id_led(par.identify());
     flib->set_mc_time(par.mc_size());
 
     L_(debug) << "Tatal FLIB links: " << flib->number_of_links();

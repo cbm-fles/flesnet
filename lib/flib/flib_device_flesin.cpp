@@ -41,4 +41,8 @@ std::vector<flib_link_flesin*> flib_device_flesin::links() {
 flib_link_flesin* flib_device_flesin::link(size_t n) {
   return static_cast<flib_link_flesin*>(m_link.at(n).get());
 }
+
+void flib_device_flesin::id_led(bool enable) {
+  m_register_file->set_bit(RORC_REG_APP_CFG, 0, enable);
+}
 }
