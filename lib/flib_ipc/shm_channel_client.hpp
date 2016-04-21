@@ -136,7 +136,7 @@ public:
   }
 
   DualIndex get_write_index() override {
-    return get_write_index_newer_than(boost::posix_time::milliseconds(10))
+    return get_write_index_newer_than(boost::posix_time::microseconds(1))
         .first.index;
   }
 
