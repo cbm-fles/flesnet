@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Download the latest successfull build form gitlab.
+# needs curl and jq
+# adopted from https://gitlab.com/morph027/gitlab-ci-helpers/blob/master/get-last-successful-build-artifact.sh
+
+# get private token from:
+# https://cbmgsi.githost.io/profile/account
+# grab project id with:
+# curl -s -H "PRIVATE-TOKEN: $PRIVATE-TOKEN" "${BASEURL}/api/v3/projects" | jq .
+
+set -e
+
+PRIVATE_TOKEN=
+BASE_URL=https://cbmgsi.githost.io
+PROJECT=2
+BUILD_NAME=build_flib
+
+# check requirements
+REQS=( curl jq )
+
+for REQ in ${REQS[@]}
+do
+  which ${REQ} >/dev/null
+  if [ ! $? -eq 0 ]; then
+    echo "requirement ${REQ} is missing"
+    exit 1
+  fi
+done
+
+[ -z $PRIVATE_TOKEN ] && echo "Please add private token" && exit
+
+LAST_SUCCESSFUL_BUILD=$(curl -s -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds" | jq -c '.[] | select(.status=="success")  | select(.name=="'${BUILD_NAME}'") | {id}' | head -n1 | grep -oE '[0-9]+')
+
+download_latest() {
+  curl -s -o ${BUILD_NAME}_${LAST_SUCCESSFUL_BUILD}.zip -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds/${LAST_SUCCESSFUL_BUILD}/artifacts"
+}
+
+echo "Downloading $BUILD_NAME build number $LAST_SUCCESSFUL_BUILD"
+
+download_latest
