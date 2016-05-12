@@ -33,7 +33,7 @@ done
 LAST_SUCCESSFUL_BUILD=$(curl -s -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds" | jq -c '.[] | select(.status=="success")  | select(.name=="'${BUILD_NAME}'") | {id}' | head -n1 | grep -oE '[0-9]+')
 
 download_latest() {
-  curl -s -o ${BUILD_NAME}_${LAST_SUCCESSFUL_BUILD}.zip -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds/${LAST_SUCCESSFUL_BUILD}/artifacts"
+  curl -s -OJ -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds/${LAST_SUCCESSFUL_BUILD}/artifacts"
 }
 
 echo "Downloading $BUILD_NAME build number $LAST_SUCCESSFUL_BUILD"
