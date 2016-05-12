@@ -32,10 +32,20 @@ done
 
 LAST_SUCCESSFUL_BUILD=$(curl -s -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds" | jq -c '.[] | select(.status=="success")  | select(.name=="'${BUILD_NAME}'") | {id}' | head -n1 | grep -oE '[0-9]+')
 
-download_latest() {
-  curl -s -OJ -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds/${LAST_SUCCESSFUL_BUILD}/artifacts"
+download_all() {
+    curl -s -OJ -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds/${LAST_SUCCESSFUL_BUILD}/artifacts"
 }
 
-echo "Downloading $BUILD_NAME build number $LAST_SUCCESSFUL_BUILD"
+download_bit() {
+    curl -s -o htg_k7_flesin_b${LAST_SUCCESSFUL_BUILD}.bit -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/fles/flib/builds/${LAST_SUCCESSFUL_BUILD}/artifacts/file/designs/flib/htg_k7_flesin.bit"
+}
 
-download_latest
+download_mcs() {
+    curl -s -o htg_k7_flesin_b${LAST_SUCCESSFUL_BUILD}.mcs -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/fles/flib/builds/${LAST_SUCCESSFUL_BUILD}/artifacts/file/designs/flib/htg_k7_flesin.mcs"
+}
+
+echo "Downloading build $BUILD_NAME number $LAST_SUCCESSFUL_BUILD"
+
+#download_all
+download_bit
+#download_mcs
