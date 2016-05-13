@@ -14,7 +14,10 @@ set -e
 PRIVATE_TOKEN=
 BASE_URL=https://cbmgsi.githost.io
 PROJECT=2
-BUILD_NAME=build_flib
+BUILD_NAME=flib
+BUILD_FILE_BASE=htg_k7_flesin
+#BUILD_NAME=flim_exdes
+#BUILD_FILE_BASE=htg_k7_flib_dpb
 
 # check requirements
 REQS=( curl jq )
@@ -30,22 +33,33 @@ done
 
 [ -z $PRIVATE_TOKEN ] && echo "Please add private token" && exit
 
-LAST_SUCCESSFUL_BUILD=$(curl -s -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds" | jq -c '.[] | select(.status=="success")  | select(.name=="'${BUILD_NAME}'") | {id}' | head -n1 | grep -oE '[0-9]+')
+TMP_FILE=gitlab_build_info.tmp
+
+curl -s -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds" > ${TMP_FILE}
+
+LAST_SUCCESSFUL_BUILD=$(jq -c '.[] | select(.status=="success")  | select(.name=="'${BUILD_NAME}'") | {id}' ${TMP_FILE} | head -n1 | grep -oE '[0-9]+')
+
+BUILD_REF=$(jq -r '.[] | select(.id=='${LAST_SUCCESSFUL_BUILD}') | .commit.short_id' ${TMP_FILE})
+
+BUILD_FILE_NAME=${BUILD_FILE_BASE}_b${LAST_SUCCESSFUL_BUILD}_${BUILD_REF}
 
 download_all() {
-    curl -s -OJ -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds/${LAST_SUCCESSFUL_BUILD}/artifacts"
+    curl -sS -o ${BUILD_NAME}_b${LAST_SUCCESSFUL_BUILD}_${BUILD_REF}.zip -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/api/v3/projects/${PROJECT}/builds/${LAST_SUCCESSFUL_BUILD}/artifacts"
 }
 
 download_bit() {
-    curl -s -o htg_k7_flesin_b${LAST_SUCCESSFUL_BUILD}.bit -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/fles/flib/builds/${LAST_SUCCESSFUL_BUILD}/artifacts/file/designs/flib/htg_k7_flesin.bit"
+    curl -sS -O -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/fles/flib/builds/${LAST_SUCCESSFUL_BUILD}/artifacts/file/${BUILD_FILE_NAME}.bit"
 }
 
 download_mcs() {
-    curl -s -o htg_k7_flesin_b${LAST_SUCCESSFUL_BUILD}.mcs -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/fles/flib/builds/${LAST_SUCCESSFUL_BUILD}/artifacts/file/designs/flib/htg_k7_flesin.mcs"
+    curl -sS -O -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASE_URL}/fles/flib/builds/${LAST_SUCCESSFUL_BUILD}/artifacts/file/${BUILD_FILE_NAME}.mcs"
 }
 
-echo "Downloading build $BUILD_NAME number $LAST_SUCCESSFUL_BUILD"
+echo "Downloading build '$BUILD_NAME' number '$LAST_SUCCESSFUL_BUILD (${BUILD_REF})'"
+set +e
 
 #download_all
 download_bit
 #download_mcs
+
+rm ${TMP_FILE}
