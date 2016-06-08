@@ -56,7 +56,7 @@ void Connection::connect(const std::string &hostname,
     make_endpoint(Provider::getInst()->get_info(), hostname, service,
                   domain, cq);
     setup_mr(domain);
-    Provider::getInst()->connect(ep_, remote_index_,
+    Provider::getInst()->connect(ep_,
                                  max_send_wr_, max_send_sge_, max_recv_wr_,
                                  max_recv_sge_, max_inline_data_,
                                  private_data->data(), private_data->size());
