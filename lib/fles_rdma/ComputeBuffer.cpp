@@ -18,7 +18,7 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
                              uint32_t timeslice_size,
                              uint32_t processor_instances,
                              const std::string processor_executable,
-                             volatile sig_atomic_t* signal_status)
+                             volatile sig_atomic_t* signal_status, std::string input_node_name_)
     : compute_index_(compute_index),
       data_buffer_size_exp_(data_buffer_size_exp),
       desc_buffer_size_exp_(desc_buffer_size_exp), service_(service),

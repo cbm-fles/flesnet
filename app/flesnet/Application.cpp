@@ -52,7 +52,7 @@ Application::Application(Parameters const& par,
             i, par_.cn_data_buffer_size_exp(), par_.cn_desc_buffer_size_exp(),
             par_.base_port() + i, input_nodes_size, par_.timeslice_size(),
             par_.processor_instances(), par_.processor_executable(),
-            signal_status_));
+            signal_status_, par.compute_nodes()[i]));
         buffer->start_processes();
         compute_buffers_.push_back(std::move(buffer));
     }
