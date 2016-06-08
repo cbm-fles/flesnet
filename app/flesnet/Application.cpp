@@ -72,6 +72,14 @@ Application::Application(Parameters const& par,
 
         timeslice_buffers_.push_back(std::move(tsb));
         timeslice_receivers_.push_back(std::move(receiver));
+// This is newly added
+        std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(
+            i, par_.cn_data_buffer_size_exp(), par_.cn_desc_buffer_size_exp(),
+            par_.base_port() + i, input_nodes_size, par_.timeslice_size(),
+            par_.processor_instances(), par_.processor_executable(),
+            signal_status_, par.compute_nodes()[i]));
+        buffer->start_processes();
+        compute_buffers_.push_back(std::move(buffer));
     }
 
     set_node();
