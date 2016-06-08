@@ -37,7 +37,16 @@ endif()
 find_package(Boost 1.54.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex)
 find_package(Threads)
 
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS})
+find_path(LIBFABRIC_INCLUDE_DIR rdma/fabric.h)
+find_library(LIBFABRIC_LIBRARY NAMES fabric)
+
+set(LIBFABRIC_LIBRARIES ${LIBFABRIC_LIBRARY} )
+set(LIBFABRIC_INCLUDE_DIRS ${LIBFABRIC_INCLUDE_DIR} )
+
+MESSAGE(STATUS "libfabric           = ${LIBFABRIC_LIBRARIES}")
+MESSAGE(STATUS "libfabric           = ${LIBFABRIC_INCLUDE_DIRS}")
+
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS} ${LIBFABRIC_INCLUDE_DIRS})
 
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
