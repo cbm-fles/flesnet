@@ -1,5 +1,9 @@
 language: cpp
 
+compiler:
+  - clang
+  - gcc
+
 addons:
   apt:
     sources:
@@ -37,10 +41,6 @@ before_install:
   - mkdir $HOME/clang+llvm
   - tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1
   - export PATH=$HOME/clang+llvm/bin:$PATH
-
-compiler:
-  - clang
-  - gcc
 
 before_script:
   - if [ "$CXX" = "clang++" ]; then export CXX="clang++" CC="clang"; fi
