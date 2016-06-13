@@ -13,6 +13,8 @@ mkdir -p "$DIR"
 cd "$DIR"
 rm -rf softiwarp
 git clone https://github.com/zrlio/softiwarp.git
+cd "$DIR"/softiwarp
+git checkout 3a739c528d4df75ee5688cf8b3916a5f779a80e0
 
 echo "=== Building userspace library"
 cd "$DIR"/softiwarp/userlib
