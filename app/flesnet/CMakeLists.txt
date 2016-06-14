@@ -4,7 +4,7 @@ file(GLOB APP_SOURCES *.cpp)
 file(GLOB APP_HEADERS *.h)
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/fles_core"
-                    "${PROJECT_SOURCE_DIR}/lib/fles_rdma"
+                    ${RDMA_INCLUDE}
                     "${PROJECT_SOURCE_DIR}/lib/logging"
                     "${PROJECT_SOURCE_DIR}/lib/fles_ipc"
                     "${PROJECT_SOURCE_DIR}/lib"
@@ -12,7 +12,7 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/fles_core"
 
 add_executable(flesnet ${APP_SOURCES} ${APP_HEADERS})
 
-target_link_libraries(flesnet fles_core ${RDMA_LIBRARY} logging ibverbs rdmacm ${Boost_LIBRARIES} ${LIBFABRIC_LIBRARIES})
+target_link_libraries(flesnet fles_core ${RDMA_LIBRARY} logging ${Boost_LIBRARIES} ${LIBFABRIC_LIBRARIES})
 if(LIBNUMA AND USE_LIBNUMA)
     target_link_libraries(flesnet ${LIBNUMA})
 endif()
