@@ -32,7 +32,7 @@ public:
     {
       //std::cout << "ConnectionGroup constructor" << std::endl;
       struct fi_eq_attr eq_attr;
-      memset(&eq_attr, sizeof(eq_attr), 0);
+      memset(&eq_attr, 0, sizeof(eq_attr));
       eq_attr.size = 10;
       eq_attr.wait_obj = FI_WAIT_NONE;
       int res = fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_, nullptr);
@@ -208,7 +208,7 @@ protected:
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
     virtual void on_connect_request(struct fi_eq_cm_entry * /* event */,
-                                    size_t /* private_data_len */) = 0;
+                                    size_t /* private_data_len */) {};
 
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
     virtual void on_disconnected(struct fi_eq_cm_entry *event)
@@ -236,7 +236,7 @@ protected:
             throw LibfabricException("fi_domain failed");
 
         struct fi_cq_attr cq_attr;
-        memset(&cq_attr, sizeof(cq_attr), 0);
+        memset(&cq_attr, 0, sizeof(cq_attr));
         cq_attr.size = num_cqe_;
         cq_attr.flags = 0;
         cq_attr.format = FI_CQ_FORMAT_CONTEXT;
