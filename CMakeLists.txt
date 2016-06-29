@@ -50,6 +50,7 @@ add_subdirectory(lib/logging)
 add_subdirectory(lib/crcutil)
 add_subdirectory(lib/fles_ipc)
 add_subdirectory(lib/fles_core)
+add_subdirectory(lib/fles_tools)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 add_subdirectory(app/tsclient)
