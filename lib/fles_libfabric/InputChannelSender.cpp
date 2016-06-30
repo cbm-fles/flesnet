@@ -276,41 +276,36 @@ int InputChannelSender::target_cn_index(uint64_t timeslice)
 
 void InputChannelSender::on_connected(struct fid_domain* pd)
 {
-  int requested_key = 1;
-
     if (!mr_data_) {
-      // Register memory regions.
-      int err = fi_mr_reg(
-                      pd, const_cast<uint8_t*>(data_source_.data_send_buffer().ptr()),
-                      data_source_.data_send_buffer().bytes(), FI_WRITE, 0,
-                      requested_key++, 0, &mr_data_, nullptr);
-      if(err) {
-        std::cout << strerror(-err) << std::endl;
-        throw LibfabricException("fi_mr_reg failed");
-      }
+        // Register memory regions.
+        int err = fi_mr_reg(
+            pd, const_cast<uint8_t*>(data_source_.data_send_buffer().ptr()),
+            data_source_.data_send_buffer().bytes(), FI_WRITE, 0,
+            Provider::requested_key++, 0, &mr_data_, nullptr);
+        if (err) {
+            std::cout << strerror(-err) << std::endl;
+            throw LibfabricException("fi_mr_reg failed for data_send_buffer");
+        }
 
-      if (!mr_data_) {
-        L_(error) << "fi_mr_reg failed for mr_data: " << strerror(errno);
-        throw LibfabricException("registration of memory region failed");
-      }
+        if (!mr_data_) {
+            L_(error) << "fi_mr_reg failed for mr_data: " << strerror(errno);
+            throw LibfabricException("registration of memory region failed");
+        }
 
-      err = fi_mr_reg(pd, const_cast<fles::MicrosliceDescriptor*>(
-                      data_source_.desc_send_buffer().ptr()),
-                      data_source_.desc_send_buffer().bytes(),
-                      FI_WRITE, 0,
-                      requested_key++, 0, &mr_desc_, nullptr);
-      if(err) {
-        std::cout << strerror(-err) << std::endl;
-        throw LibfabricException("fi_mr_reg failed");
-      }
+        err = fi_mr_reg(pd, const_cast<fles::MicrosliceDescriptor*>(
+                                data_source_.desc_send_buffer().ptr()),
+                        data_source_.desc_send_buffer().bytes(), FI_WRITE, 0,
+                        Provider::requested_key++, 0, &mr_desc_, nullptr);
+        if (err) {
+            std::cout << fi_strerror(-err) << std::endl;
+            throw LibfabricException("fi_mr_reg failed for desc_send_buffer");
+        }
 
-      if (!mr_desc_) {
-        L_(error) << "fi_mr_reg failed for mr_desc: " << strerror(errno);
-        throw LibfabricException("registration of memory region failed");
-      }
-
+        if (!mr_desc_) {
+            L_(error) << "fi_mr_reg failed for mr_desc: " << strerror(errno);
+            throw LibfabricException("registration of memory region failed");
+        }
     }
-
 }
 
 void InputChannelSender::on_rejected(struct fi_eq_err_entry* event)

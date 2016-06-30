@@ -34,6 +34,8 @@ public:
         return prov;
     }
 
+    static uint64_t requested_key;
+
 private:
     static std::unique_ptr<Provider> get_provider();
 };

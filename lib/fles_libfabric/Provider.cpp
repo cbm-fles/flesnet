@@ -28,3 +28,5 @@ std::unique_ptr<Provider> Provider::get_provider()
 
     throw LibfabricException("no known Libfabric provider found");
 }
+
+uint64_t Provider::requested_key = 0;
