@@ -2,6 +2,7 @@
 
 #include "Provider.hpp"
 #include "VerbsProvider.hpp"
+#include "MsgSocketsProvider.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -16,10 +17,14 @@
 
 std::unique_ptr<Provider> Provider::get_provider()
 {
-  //std::cout << "Provider::get_provider()" << std::endl;
-  struct fi_info *info = VerbsProvider::exists();
-  if(info != nullptr)
-    return std::unique_ptr<Provider>(new VerbsProvider(info));
+    // std::cout << "Provider::get_provider()" << std::endl;
+    struct fi_info* info = VerbsProvider::exists();
+    if (info != nullptr)
+        return std::unique_ptr<Provider>(new VerbsProvider(info));
 
-  throw LibfabricException("no known Libfabric provider found");
+    info = MsgSocketsProvider::exists();
+    if (info != nullptr)
+        return std::unique_ptr<Provider>(new MsgSocketsProvider(info));
+
+    throw LibfabricException("no known Libfabric provider found");
 }
