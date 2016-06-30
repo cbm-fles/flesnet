@@ -141,10 +141,6 @@ protected:
     uint32_t max_inline_data_;
 
 private:
-  void make_endpoint(struct fi_info *info, const std::string &hostname,
-                     const std::string &service,
-                     struct fid_domain *domain,
-                         struct fid_cq *cq);
     //    /// Low-level communication parameters.
     //    enum {
     //        RESOLVE_TIMEOUT_MS = 5000 ///< Resolve timeout in milliseconds.

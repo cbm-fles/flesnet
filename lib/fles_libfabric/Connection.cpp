@@ -45,21 +45,60 @@ Connection::~Connection()
     }
 }
 
-void Connection::connect(const std::string &hostname,
-                         const std::string &service,
-                         struct fid_domain *domain,
-                         struct fid_cq *cq)
+void Connection::connect(const std::string& hostname,
+                         const std::string& service, struct fid_domain* domain,
+                         struct fid_cq* cq)
 {
     auto private_data = get_private_data();
     assert(private_data->size() <= 255);
 
-    make_endpoint(Provider::getInst()->get_info(), hostname, service,
-                  domain, cq);
+    std::cout << "connect: " << hostname << ":" << service << std::endl;
+    struct fi_info* info2 = nullptr;
+    struct fi_info* hints = fi_dupinfo(Provider::getInst()->get_info());
+
+    hints->rx_attr->size = max_recv_wr_;
+    hints->rx_attr->iov_limit = max_recv_sge_;
+    hints->tx_attr->size = max_send_wr_;
+    hints->tx_attr->iov_limit = max_send_sge_;
+    hints->tx_attr->inject_size = max_inline_data_;
+
+    hints->src_addr = nullptr;
+    hints->src_addrlen = 0;
+
+    int err = fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), service.c_str(), 0,
+                         hints, &info2);
+    if (err) {
+        std::cout << hostname << " " << service << std::endl;
+        std::cout << strerror(-err) << std::endl;
+        throw LibfabricException("fi_getinfo failed in make_endpoint");
+    }
+
+    fi_freeinfo(hints);
+
+    err = fi_endpoint(domain, info2, &ep_, this);
+    if (err)
+        throw LibfabricException("fi_endpoint failed");
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+    err = fi_ep_bind(ep_, (fid_t)eq_, 0);
+    if (err)
+        throw LibfabricException("fi_ep_bind failed");
+    err =
+        fi_ep_bind(ep_, (fid_t)cq, FI_SEND | FI_RECV | FI_SELECTIVE_COMPLETION);
+    if (err)
+        throw LibfabricException("fi_ep_bind failed");
+#pragma GCC diagnostic pop
+    err = fi_enable(ep_);
+    if (err) {
+        std::cout << strerror(-err) << std::endl;
+        throw LibfabricException("fi_enable failed");
+    }
     setup_mr(domain);
-    Provider::getInst()->connect(ep_,
-                                 max_send_wr_, max_send_sge_, max_recv_wr_,
+    Provider::getInst()->connect(ep_, max_send_wr_, max_send_sge_, max_recv_wr_,
                                  max_recv_sge_, max_inline_data_,
-                                 private_data->data(), private_data->size());
+                                 private_data->data(), private_data->size(),
+                                 info2->dest_addr);
     setup();
 }
 
