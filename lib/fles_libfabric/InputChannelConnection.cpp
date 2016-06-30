@@ -284,34 +284,33 @@ void InputChannelConnection::on_complete_recv()
     }
 }
 
-void InputChannelConnection::setup_mr(struct fid_domain *pd)
+void InputChannelConnection::setup_mr(struct fid_domain* pd)
 {
 
-    uint64_t requested_key = 0;
-
     // register memory regions
-    int err =
-        fi_mr_reg(pd, &recv_status_message_, sizeof(ComputeNodeStatusMessage),
-                  FI_WRITE, 0, requested_key++, 0, &mr_recv_, nullptr);
-    if(err) {
-      throw LibfabricException("fi_mr_reg failed");
-      std::cout << strerror(-err) << std::endl;
+    int err = fi_mr_reg(pd, &recv_status_message_,
+                        sizeof(ComputeNodeStatusMessage), FI_WRITE, 0,
+                        Provider::requested_key++, 0, &mr_recv_, nullptr);
+    if (err) {
+        throw LibfabricException("fi_mr_reg failed for recv msg");
+        std::cout << strerror(-err) << std::endl;
     }
 
-    requested_key++;
-
     if (!mr_recv_)
-        throw LibfabricException("registration of memory region failed in InputChannelConnection");
+        throw LibfabricException(
+            "registration of memory region failed in InputChannelConnection");
 
     err = fi_mr_reg(pd, &send_status_message_, sizeof(ComputeNodeStatusMessage),
-                    FI_WRITE, 0, requested_key++, 0, &mr_send_, nullptr);
-    if(err) {
-      std::cout << strerror(-err) << std::endl;
-      throw LibfabricException("fi_mr_reg failed");
+                    FI_WRITE, 0, Provider::requested_key++, 0, &mr_send_,
+                    nullptr);
+    if (err) {
+        std::cout << strerror(-err) << std::endl;
+        throw LibfabricException("fi_mr_reg failed for send msg");
     }
 
     if (!mr_send_)
-        throw LibfabricException("registration of memory region failed in InputChannelConnection2");
+        throw LibfabricException(
+            "registration of memory region failed in InputChannelConnection2");
 }
 
 void InputChannelConnection::setup()

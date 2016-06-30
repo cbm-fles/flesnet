@@ -4,6 +4,7 @@
 #include "ComputeNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
 #include "LibfabricException.hpp"
+#include "Provider.hpp"
 #include <cassert>
 #include <log.hpp>
 
@@ -56,42 +57,44 @@ void ComputeNodeConnection::post_send_final_status_message()
 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-    send_wr.context = (void *)(ID_SEND_FINALIZE | (index_ << 8));
+    send_wr.context = (void*)(ID_SEND_FINALIZE | (index_ << 8));
 #pragma GCC diagnostic pop
     post_send_status_message();
 }
 
-void ComputeNodeConnection::setup_mr(struct fid_domain *pd)
+void ComputeNodeConnection::setup_mr(struct fid_domain* pd)
 {
     assert(data_ptr_ && desc_ptr_ && data_buffer_size_exp_ &&
            desc_buffer_size_exp_);
 
-    uint64_t requested_key = 0;
     int res;
 
     // register memory regions
     std::size_t data_bytes = UINT64_C(1) << data_buffer_size_exp_;
     std::size_t desc_bytes = (UINT64_C(1) << desc_buffer_size_exp_) *
                              sizeof(fles::TimesliceComponentDescriptor);
-    res = fi_mr_reg(pd, data_ptr_, data_bytes, FI_WRITE | FI_REMOTE_WRITE,
-                    0, requested_key++, 0, &mr_data_, nullptr);
-    if(res)
-      throw LibfabricException("fi_mr_reg failed");
+    res = fi_mr_reg(pd, data_ptr_, data_bytes, FI_WRITE | FI_REMOTE_WRITE, 0,
+                    Provider::requested_key++, 0, &mr_data_, nullptr);
+    if (res)
+        throw LibfabricException("fi_mr_reg failed for data_ptr");
     res = fi_mr_reg(pd, desc_ptr_, desc_bytes, FI_WRITE | FI_REMOTE_WRITE, 0,
-                    requested_key++, 0, &mr_desc_, nullptr);
-    if(res)
-      throw LibfabricException("fi_mr_reg failed");
-    res = fi_mr_reg(pd, &send_status_message_, sizeof(ComputeNodeStatusMessage),
-                    FI_SEND, 0, requested_key++, 0, &mr_send_, nullptr);
-    if(res)
-      throw LibfabricException("fi_mr_reg failed");
-    res = fi_mr_reg(pd, &recv_status_message_, sizeof(InputChannelStatusMessage),
-                    FI_RECV, 0, requested_key++, 0, &mr_recv_, nullptr);
-    if(res)
-      throw LibfabricException("fi_mr_reg failed");
+                    Provider::requested_key++, 0, &mr_desc_, nullptr);
+    if (res)
+        throw LibfabricException("fi_mr_reg failed for desc_ptr");
+    res =
+        fi_mr_reg(pd, &send_status_message_, sizeof(ComputeNodeStatusMessage),
+                  FI_SEND, 0, Provider::requested_key++, 0, &mr_send_, nullptr);
+    if (res)
+        throw LibfabricException("fi_mr_reg failed for send");
+    res =
+        fi_mr_reg(pd, &recv_status_message_, sizeof(InputChannelStatusMessage),
+                  FI_RECV, 0, Provider::requested_key++, 0, &mr_recv_, nullptr);
+    if (res)
+        throw LibfabricException("fi_mr_reg failed for recv");
 
     if (!mr_data_ || !mr_desc_ || !mr_recv_ || !mr_send_)
-        throw LibfabricException("registration of memory region failed in ComputeNodeConnection");
+        throw LibfabricException(
+            "registration of memory region failed in ComputeNodeConnection");
 }
 
 void ComputeNodeConnection::setup()
