@@ -168,3 +168,27 @@ BOOST_AUTO_TEST_CASE(filter_example2_test)
 
     BOOST_CHECK_EQUAL(count, 2);
 }
+
+BOOST_AUTO_TEST_CASE(filter_example3_test)
+{
+    fles::CombineContentsFilter filter;
+
+    fles::MicrosliceInputArchive source("example2.msa");
+
+    fles::MicrosliceOutputArchive sink("filtertest3.msa");
+
+    fles::FilteringMicrosliceSink filtering(sink, filter);
+
+    std::size_t count = 0;
+
+    while (auto item = source.get()) {
+        std::cout << count << ": " << item->desc().size << "\n";
+        filtering.put(std::move(item));
+        ++count;
+        if (count == 1000) {
+            break;
+        }
+    }
+
+    BOOST_CHECK_EQUAL(count, 4);
+}
