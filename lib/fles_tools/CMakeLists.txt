@@ -1,6 +1,6 @@
 # Copyright 2013-2015 Jan de Cuveland <cmail@cuveland.de>
 
-file(GLOB LIB_SOURCES *.cpp)
+file(GLOB LIB_SOURCES *.cxx *.cpp)
 file(GLOB LIB_HEADERS *.h)
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/fles_core"

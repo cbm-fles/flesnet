@@ -39,7 +39,7 @@ uint64_t ngdpb::Message::getMsgFullTime(uint32_t epoch) const
 
 //----------------------------------------------------------------------------
 //! strict weak ordering operator, assumes same epoch for both messages
-bool ngdpb::Message::operator<(const Message& other) const
+bool ngdpb::Message::operator<(const ngdpb::Message& other) const
 {
    uint64_t uThisTs  = 0;
    uint64_t uOtherTs = 0;

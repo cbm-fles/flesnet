@@ -578,7 +578,7 @@ namespace ngdpb {
 
          static double CalcDistanceD(double start, double stop);
 
-         bool operator<(const Message& other) const;
+         bool operator<(const ngdpb::Message& other) const;
 
          // -------------------- methods for working with different formats
 

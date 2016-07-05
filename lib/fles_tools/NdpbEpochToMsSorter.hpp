@@ -18,6 +18,7 @@ namespace fles
    class NdpbEpochToMsSorter
        : public BufferingFilter<Microslice, StorableMicroslice>
    {
+      public:
           NdpbEpochToMsSorter( uint32_t uEpPerMs = 1 ) :
              BufferingFilter(),
              fuNbEpPerMs(uEpPerMs), fmsMsgBuffer(), fuNbEpInBuff(0),
