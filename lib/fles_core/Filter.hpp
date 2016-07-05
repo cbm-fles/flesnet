@@ -109,7 +109,7 @@ template <class Input, class Output = Input>
 class FilteringSink : public Sink<Input>
 {
 public:
-    using sink_t = Sink<Output>;
+    using sink_t = Sink<Input>;
     using filter_t = Filter<Input, Output>;
 
     /// Construct FilteringSink using a given sink and filter
