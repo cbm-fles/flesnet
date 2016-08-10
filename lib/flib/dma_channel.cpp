@@ -117,18 +117,9 @@ void dma_channel::set_sw_read_pointers(uint64_t data_offset,
                    sizeof(offsets) >> 2);
 }
 
-// TODO get_mem not applicable because _L _H regs are in wrong order
-// uint64_t dma_channel::get_data_offset() {
-//  uint64_t offset;
-//  m_rfpkt->mem(RORC_REG_EBDM_OFFSET_L, &offset, 2);
-//  return offset;
-//}
-
 uint64_t dma_channel::get_data_offset() {
-  uint64_t offset = m_rfpkt->get_reg(RORC_REG_EBDM_OFFSET_L);
-  offset =
-      offset |
-      (static_cast<uint64_t>(m_rfpkt->get_reg(RORC_REG_EBDM_OFFSET_H)) << 32);
+  uint64_t offset = 0;
+  m_rfpkt->get_mem(RORC_REG_EBDM_OFFSET_L, &offset, 2);
   return offset;
 }
 
