@@ -12,7 +12,8 @@
 
 namespace flib {
 
-constexpr std::array<uint16_t, 1> hw_ver_table_flesin = {{25}};
+constexpr std::array<uint16_t, 1> hw_ver_table_flesin = {{26}};
+constexpr uint32_t pci_clk = 250E6;
 
 class flib_device_flesin : public flib_device {
 
@@ -25,8 +26,13 @@ public:
 
   void id_led(bool enable);
 
+  void set_perf_interval(uint32_t interval);
+  float get_pci_stall();
+  float get_pci_trans();
+
 private:
   void init();
+  uint32_t m_reg_perf_interval_cached;
 };
 
 } /** namespace flib */

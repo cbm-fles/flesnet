@@ -37,6 +37,11 @@ int main(int argc, char* argv[]) {
       (void)argv;
       std::cout
           << "Displays status and performance counters for all FLIB links.\n"
+             "Per FLIB counters:\n"
+             "idle:     PCIe interface is idle (ratio)\n"
+             "stall:    back pressure on PCIe interface from host (ratio)\n"
+             "trans:    data is transmitted via PCIe interface (ratio)\n"
+             "Per link status/counters:\n"
              "link:     flib/link\n"
              "data_sel: choosen data source\n"
              "up:       flim channel_up\n"
@@ -44,7 +49,7 @@ int main(int argc, char* argv[]) {
              "se:       aurora soft_error\n"
              "eo:       eoe fifo overflow\n"
              "do:       data fifo overflow\n"
-             "d_max:    maximum number of words in d_fifo (pfull is )\n"
+             "d_max:    maximum number of words in d_fifo\n"
              "dma_s:    stall from dma mux (ratio)\n"
              "data_s:   stall from full data buffer (ratio)\n"
              "desc_s:   stall from full desc buffer (ratio)\n"
@@ -68,10 +73,13 @@ int main(int argc, char* argv[]) {
 
     size_t j = 0;
     for (auto& flib : flibs) {
-      if (j != 0) {
-        std::cout << ", ";
-      }
-      std::cout << "Flib " << j << ": " << flib->print_devinfo();
+      float pci_stall = flib->get_pci_stall();
+      float pci_trans = flib->get_pci_trans();
+      float pci_idle = 1 - pci_trans - pci_stall;
+      std::cout << "FLIB " << j << " (" << flib->print_devinfo() << ")";
+      std::cout << std::setprecision(4) << "  PCIe idle " << std::setw(9)
+                << pci_idle << "   stall " << std::setw(9) << pci_stall
+                << "   trans " << std::setw(9) << pci_trans << std::endl;
       ++j;
     }
     std::cout << std::endl;

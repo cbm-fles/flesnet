@@ -11,6 +11,7 @@ namespace flib {
 
 flib_device_flesin::flib_device_flesin(int device_nr) : flib_device(device_nr) {
   init();
+  m_reg_perf_interval_cached = m_register_file->get_reg(RORC_REG_SYS_PERF_INT);
 }
 
 flib_device_flesin::flib_device_flesin(uint8_t bus,
@@ -44,5 +45,30 @@ flib_link_flesin* flib_device_flesin::link(size_t n) {
 
 void flib_device_flesin::id_led(bool enable) {
   m_register_file->set_bit(RORC_REG_APP_CFG, 0, enable);
+}
+
+//////*** Performance Counters ***//////
+
+// set messurement avaraging interval in ms (max 17s)
+void flib_device_flesin::set_perf_interval(uint32_t interval) {
+  if (interval > 17000) {
+    interval = 17000;
+  }
+  m_reg_perf_interval_cached = interval * (pci_clk * 1E-3);
+  m_register_file->set_reg(RORC_REG_SYS_PERF_INT, m_reg_perf_interval_cached);
+}
+
+// back pressure from pcie core (ratio)
+float flib_device_flesin::get_pci_stall() {
+  float pci_nrdy =
+      static_cast<float>(m_register_file->get_reg(RORC_REG_PERF_PCI_NRDY));
+  return pci_nrdy / m_reg_perf_interval_cached;
+}
+
+// words accepted from pcie core (ratio)
+float flib_device_flesin::get_pci_trans() {
+  float pci_trans =
+      static_cast<float>(m_register_file->get_reg(RORC_REG_PERF_PCI_TRANS));
+  return pci_trans / m_reg_perf_interval_cached;
 }
 }
