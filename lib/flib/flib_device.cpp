@@ -57,20 +57,20 @@ bool flib_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
   }
   if (!match) {
     std::stringstream msg;
-    msg << "Hardware - libflib version missmatch! HW ver: " << hw_ver;
+    msg << "Hardware - libflib version missmatch! FLIB ver: " << hw_ver;
     throw FlibException(msg.str());
   }
 
   // INFO: disabled check to allow 'mixed' hw headers
   // check if version of hardware matches exactly version of header
-  // if (hw_ver != RORC_C_HARDWARE_VERSION) {
-  //  match = false;
-  //}
-  // if (!match) {
-  //  std::stringstream msg;
-  //  msg << "Header file version missmatch! HW ver: " << hw_ver;
-  //  throw FlibException(msg.str());
-  //}
+  if (hw_ver != RORC_C_HARDWARE_VERSION) {
+    match = false;
+  }
+  if (!match) {
+    std::stringstream msg;
+    msg << "Header file version missmatch! FLIB ver: " << hw_ver;
+    throw FlibException(msg.str());
+  }
   return match;
 }
 
