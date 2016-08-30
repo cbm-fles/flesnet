@@ -182,8 +182,15 @@ void add_syslog(syslog::facility facility, severity_level minimum_severity)
         boost::log::keywords::facility = facility,
         boost::log::keywords::use_impl = syslog::native);
 
-    syslog_sink->locked_backend()->set_severity_mapper(
-        syslog::direct_severity_mapping<int>("Severity"));
+    syslog::custom_severity_mapping<severity_level> mapping("Severity");
+    mapping[trace] = syslog::debug;
+    mapping[debug] = syslog::debug;
+    mapping[info] = syslog::info;
+    mapping[warning] = syslog::warning;
+    mapping[error] = syslog::error;
+    mapping[fatal] = syslog::critical;
+    syslog_sink->locked_backend()->set_severity_mapper(mapping);
+
     syslog_sink->set_formatter(syslog_formatter);
     syslog_sink->set_filter(severity >= minimum_severity);
 
