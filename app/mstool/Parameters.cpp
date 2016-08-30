@@ -63,6 +63,7 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
+    logging::add_syslog(logging::syslog::local0, severity_level::warning);
 
     use_pattern_generator = vm.count("pattern-generator") != 0;
 
