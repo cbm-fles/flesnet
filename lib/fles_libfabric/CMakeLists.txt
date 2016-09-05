@@ -1,7 +1,7 @@
 # Copyright 2016 Thorsten Schuett <schuett@zib.de>
 
 file(GLOB LIB_SOURCES *.cpp)
-file(GLOB LIB_HEADERS *.h)
+file(GLOB LIB_HEADERS *.hpp)
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/fles_core"
