@@ -62,6 +62,12 @@ public:
     //
     // virtual void accept_connect_request();
 
+    virtual void make_endpoint(struct fi_info *info,
+                                   const std::string &hostname,
+                                   const std::string &service,
+                                   struct fid_domain *pd,
+                                   struct fid_cq *cq);
+
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event for this connection.
   virtual void on_connect_request(struct fi_eq_cm_entry *event,
                                   struct fid_domain *pd, struct fid_cq *cq);
