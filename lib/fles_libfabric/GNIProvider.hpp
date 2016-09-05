@@ -9,23 +9,23 @@
 
 #include <cassert>
 
-class VerbsProvider : public Provider
+class GNIProvider : public Provider
 {
     struct fi_info* info_ = nullptr;
     struct fid_fabric* fabric_ = nullptr;
 
 public:
-    VerbsProvider(struct fi_info* info);
+    GNIProvider(struct fi_info* info);
 
-    VerbsProvider(const VerbsProvider&) = delete;
-    void operator=(const VerbsProvider&) = delete;
+    GNIProvider(const GNIProvider&) = delete;
+    void operator=(const GNIProvider&) = delete;
 
-    /// The VerbsProvider default destructor.
-    ~VerbsProvider();
+    /// The GNIProvider default destructor.
+    ~GNIProvider();
 
-    virtual bool has_av() const { return false; };
-    virtual bool has_eq_at_eps() const { return true; };
-    virtual bool is_connection_oriented() const { return true; };
+    virtual bool has_av() const { return true; };
+    virtual bool has_eq_at_eps() const { return false; };
+    virtual bool is_connection_oriented() const { return false; };
 
     struct fi_info* get_info() override
     {
@@ -34,12 +34,9 @@ public:
     }
 
     virtual void set_hostnames_and_services(
-        struct fid_av* /*av*/,
-        const std::vector<std::string>& /*compute_hostnames*/,
-        const std::vector<std::string>& /*compute_services*/,
-        std::vector<fi_addr_t>& /*fi_addrs*/) override
-    {
-    }
+        struct fid_av* av, const std::vector<std::string>& compute_hostnames,
+        const std::vector<std::string>& compute_services,
+        std::vector<fi_addr_t>& fi_addrs) override;
 
     struct fid_fabric* get_fabric() override { return fabric_; };
 
