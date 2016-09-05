@@ -12,6 +12,8 @@
 #include <log.hpp>
 //#include <rdma/rdma_cma.h>
 #include <rdma/fi_errno.h>
+#include <rdma/fabric.h>
+#include <rdma/fi_endpoint.h>
 //#include <sstream>
 #include <valgrind/memcheck.h>
 //#include <vector>
@@ -30,37 +32,38 @@ public:
     /// The ConnectionGroup default constructor.
     ConnectionGroup()
     {
-      //std::cout << "ConnectionGroup constructor" << std::endl;
-      struct fi_eq_attr eq_attr;
-      memset(&eq_attr, 0, sizeof(eq_attr));
-      eq_attr.size = 10;
-      eq_attr.wait_obj = FI_WAIT_NONE;
-      int res = fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_, nullptr);
-      if (res)
-        throw LibfabricException("fi_eq_open failed");
-
+        // std::cout << "ConnectionGroup constructor" << std::endl;
+        struct fi_eq_attr eq_attr;
+        memset(&eq_attr, 0, sizeof(eq_attr));
+        eq_attr.size = 10;
+        eq_attr.wait_obj = FI_WAIT_NONE;
+        int res = fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_,
+                             nullptr);
+        if (res)
+            throw LibfabricException("fi_eq_open failed");
     }
 
-    ConnectionGroup(const ConnectionGroup &) = delete;
-    ConnectionGroup &operator=(const ConnectionGroup &) = delete;
+    ConnectionGroup(const ConnectionGroup&) = delete;
+    ConnectionGroup& operator=(const ConnectionGroup&) = delete;
 
     /// The ConnectionGroup default destructor.
     virtual ~ConnectionGroup()
     {
-      for (auto& c : conn_)
-        c = nullptr;
+        for (auto& c : conn_)
+            c = nullptr;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-      fi_close((fid_t)eq_);
-      if(pep_ != nullptr)
-        fi_close((fid_t)pep_);
+        fi_close((fid_t)eq_);
+        if (pep_ != nullptr)
+            fi_close((fid_t)pep_);
 #pragma GCC diagnostic pop
 
-      pep_ = nullptr;
+        pep_ = nullptr;
     }
 
-  void accept(const std::string& hostname, unsigned short port, unsigned int count)
+    void accept(const std::string& hostname, unsigned short port,
+                unsigned int count)
     {
         conn_.resize(count);
         Provider::getInst()->accept(pep_, hostname, port, count, eq_);
@@ -71,7 +74,7 @@ public:
     /// Initiate disconnection.
     void disconnect()
     {
-        for (auto &c : conn_)
+        for (auto& c : conn_)
             c->disconnect();
     }
 
@@ -87,29 +90,35 @@ public:
         uint32_t event_kind;
 
         ssize_t count = fi_eq_read(eq_, &event_kind, buffer, event_size, 0);
-        if(count > 0) {
+        if (count > 0) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-          on_cm_event(event_kind, (struct fi_eq_cm_entry*)buffer, count);
+            on_cm_event(event_kind, (struct fi_eq_cm_entry*)buffer, count);
 #pragma GCC diagnostic pop
         } else if (count == -FI_EAGAIN) {
-          return;
-        } else if(count == -FI_EAVAIL) {
-          struct fi_eq_err_entry err_event;
+            return;
+        } else if (count == -FI_EAVAIL) {
+            struct fi_eq_err_entry err_event;
 
-          memset(&err_event, 0, sizeof(err_event));
+            memset(&err_event, 0, sizeof(err_event));
 
-          count = fi_eq_readerr(eq_, &err_event, 0);
-          if(count > 0) {
-            switch(err_event.err) {
-            case ECONNREFUSED: {
-              on_rejected(&err_event);
-              break;
+            count = fi_eq_readerr(eq_, &err_event, 0);
+            if (count > 0) {
+                switch (err_event.err) {
+                case ECONNREFUSED: {
+                    on_rejected(&err_event);
+                    break;
+                }
+                case ETIMEDOUT: {
+                    // on_rejected(&err_event);
+                    break;
+                }
+                default: {
+                    std::cout << err_event.err << std::endl;
+                    throw LibfabricException("unknown error in fi_eq_readerr");
+                }
+                }
             }
-            default:
-              throw LibfabricException("unknown error in fi_eq_readerr");
-            }
-          }
         } else {
             throw LibfabricException("fi_eq_read failed");
         }
@@ -125,18 +134,29 @@ public:
         int ne_total = 0;
 
         while ((ne = fi_cq_read(cq_, &wc, ne_max))) {
-          if ((ne < 0) && (ne != -FI_EAGAIN)) {
+            if (ne == -FI_EAVAIL) { // error available
+                struct fi_cq_err_entry err;
+                char buffer[256];
+                ne = fi_cq_readerr(cq_, &err, 0);
+                std::cout << fi_strerror(err.err) << std::endl;
+                std::cout << fi_cq_strerror(cq_, err.prov_errno, err.err_data,
+                                            buffer, 256) << std::endl;
+                throw LibfabricException("fi_cq_read failed (fi_cq_readerr)");
+            }
+            if ((ne < 0) && (ne != -FI_EAGAIN)) {
+                std::cout << fi_strerror(-ne) << std::endl;
                 throw LibfabricException("fi_cq_read failed");
-          }
+            }
 
-          if(ne == -FI_EAGAIN)
-            break;
+            if (ne == -FI_EAGAIN)
+                break;
 
             ne_total += ne;
             for (int i = 0; i < ne; ++i) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-              //L_(trace) << "on_completion(wr_id=" << (uintptr_t)wc[i].op_context << ")";
+                // L_(trace) << "on_completion(wr_id=" <<
+                // (uintptr_t)wc[i].op_context << ")";
                 on_completion((uintptr_t)wc[i].op_context);
 #pragma GCC diagnostic pop
             }
@@ -146,21 +166,12 @@ public:
     }
 
     /// Retrieve the InfiniBand completion queue.
-    struct fid_cq *completion_queue() const
-    {
-        return cq_;
-    }
+    struct fid_cq* completion_queue() const { return cq_; }
 
-    size_t size() const
-    {
-        return conn_.size();
-    }
+    size_t size() const { return conn_.size(); }
 
     /// Retrieve the total number of bytes transmitted.
-    uint64_t aggregate_bytes_sent() const
-    {
-        return aggregate_bytes_sent_;
-    }
+    uint64_t aggregate_bytes_sent() const { return aggregate_bytes_sent_; }
 
     /// Retrieve the total number of SEND work requests.
     uint64_t aggregate_send_requests() const
@@ -177,7 +188,7 @@ public:
     void summary() const
     {
         double runtime = std::chrono::duration_cast<std::chrono::microseconds>(
-            time_end_ - time_begin_).count();
+                             time_end_ - time_begin_).count();
         L_(info) << "summary: " << aggregate_send_requests_ << " SEND, "
                  << aggregate_recv_requests_ << " RECV requests";
         double rate = static_cast<double>(aggregate_bytes_sent_) / runtime;
@@ -190,16 +201,15 @@ public:
     virtual void operator()() = 0;
 
 protected:
-
     /// Handle RDMA_CM_REJECTED event.
     virtual void on_rejected(struct fi_eq_err_entry* /* event */) {}
 
-    virtual void on_connected(struct fid_domain* /*pd*/) { };
+    virtual void on_connected(struct fid_domain* /*pd*/){};
 
     /// Handle RDMA_CM_EVENT_ESTABLISHED event.
-    virtual void on_established(struct fi_eq_cm_entry *event)
+    virtual void on_established(struct fi_eq_cm_entry* event)
     {
-        CONNECTION *conn = static_cast<CONNECTION *>(event->fid->context);
+        CONNECTION* conn = static_cast<CONNECTION*>(event->fid->context);
 
         conn->on_established(event);
         ++connected_;
@@ -207,13 +217,13 @@ protected:
     }
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct fi_eq_cm_entry * /* event */,
-                                    size_t /* private_data_len */) {};
+    virtual void on_connect_request(struct fi_eq_cm_entry* /* event */,
+                                    size_t /* private_data_len */){};
 
     /// Handle RDMA_CM_EVENT_DISCONNECTED event.
-    virtual void on_disconnected(struct fi_eq_cm_entry *event)
+    virtual void on_disconnected(struct fi_eq_cm_entry* event)
     {
-        CONNECTION *conn = static_cast<CONNECTION *>(event->fid->context);
+        CONNECTION* conn = static_cast<CONNECTION*>(event->fid->context);
 
         aggregate_bytes_sent_ += conn->total_bytes_sent();
         aggregate_send_requests_ += conn->total_send_requests();
@@ -224,14 +234,14 @@ protected:
     }
 
     /// Initialize the Libfabric context.
-    void init_context(fi_info *info)
+    void init_context(fi_info* info,
+                      const std::vector<std::string>& compute_hostnames,
+                      const std::vector<std::string>& compute_services)
     {
-      static int vector = 0;
-
         L_(debug) << "create Libfabric objects";
 
-        int res = fi_domain(Provider::getInst()->get_fabric(),
-                            info, &pd_, nullptr);
+        int res =
+            fi_domain(Provider::getInst()->get_fabric(), info, &pd_, nullptr);
         if (!pd_)
             throw LibfabricException("fi_domain failed");
 
@@ -241,13 +251,28 @@ protected:
         cq_attr.flags = 0;
         cq_attr.format = FI_CQ_FORMAT_CONTEXT;
         cq_attr.wait_obj = FI_WAIT_NONE;
-        cq_attr.signaling_vector = vector++; // ??
+        cq_attr.signaling_vector = Provider::vector++; // ??
         cq_attr.wait_cond = FI_CQ_COND_NONE;
         cq_attr.wait_set = nullptr;
         res = fi_cq_open(pd_, &cq_attr, &cq_, nullptr);
         if (!cq_) {
-          std::cout << strerror(-res) << std::endl;
+            std::cout << strerror(-res) << std::endl;
             throw LibfabricException("fi_cq_open failed");
+        }
+        if (Provider::getInst()->has_av()) {
+            struct fi_av_attr av_attr;
+
+            memset(&av_attr, 0, sizeof(av_attr));
+            av_attr.type = FI_AV_TABLE;
+            av_attr.count = 1000;
+            assert(av_ == nullptr);
+            res = fi_av_open(pd_, &av_attr, &av_, NULL);
+            if (!av_) {
+                std::cout << strerror(-res) << std::endl;
+                throw LibfabricException("fi_av_open failed");
+            }
+            Provider::getInst()->set_hostnames_and_services(
+                av_, compute_hostnames, compute_services, fi_addrs);
         }
     }
 
@@ -257,10 +282,13 @@ protected:
     struct fid_domain* pd_ = nullptr;
 
     /// Libfabric completion queue
-    struct fid_cq *cq_ = nullptr;
+    struct fid_cq* cq_ = nullptr;
+
+    /// Libfabric address vector.
+    struct fid_av* av_ = nullptr;
 
     /// Vector of associated connection objects.
-    std::vector<std::unique_ptr<CONNECTION> > conn_;
+    std::vector<std::unique_ptr<CONNECTION>> conn_;
 
     /// Number of established connections
     unsigned int connected_ = 0;
@@ -272,7 +300,7 @@ protected:
     bool all_done_ = false;
 
     /// RDMA event channel
-    struct fid_eq *eq_ = nullptr;
+    struct fid_eq* eq_ = nullptr;
 
     std::chrono::high_resolution_clock::time_point time_begin_;
 
@@ -280,12 +308,18 @@ protected:
 
     Scheduler scheduler_;
 
+    /// RDMA endpoint (for connection-less fabrics).
+    struct fid_ep* ep_ = nullptr;
+
+    /// AV indices for compute buffer nodes
+    std::vector<fi_addr_t> fi_addrs = {};
+
 private:
     /// Connection manager event dispatcher. Called by the CM event loop.
-    void on_cm_event(uint32_t event_kind, struct fi_eq_cm_entry *event,
+    void on_cm_event(uint32_t event_kind, struct fi_eq_cm_entry* event,
                      ssize_t event_size)
     {
-      //L_(trace) << rdma_event_str(event_kind);
+        // L_(trace) << rdma_event_str(event_kind);
         switch (event_kind) {
         case FI_CONNECTED:
             on_established(event);
@@ -298,14 +332,14 @@ private:
             on_disconnected(event);
             break;
         default:
-          L_(warning) << "unknown eq event";
+            L_(warning) << "unknown eq event";
         }
     }
 
     /// Completion notification event dispatcher. Called by the event loop.
     virtual void on_completion(uint64_t wc) = 0;
 
-  /// Total number of bytes transmitted.
+    /// Total number of bytes transmitted.
     uint64_t aggregate_bytes_sent_ = 0;
 
     /// Total number of SEND work requests.
@@ -314,6 +348,6 @@ private:
     /// Total number of RECV work requests.
     uint64_t aggregate_recv_requests_ = 0;
 
-    /// RDMA connection manager ID.
-    struct fid_pep *pep_ = nullptr;
+    /// RDMA connection manager ID (for connection-oriented fabrics)
+    struct fid_pep* pep_ = nullptr;
 };
