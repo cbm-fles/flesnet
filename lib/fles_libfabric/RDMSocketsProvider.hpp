@@ -1,31 +1,25 @@
 // Copyright 2016 Thorsten Schuett <schuett@zib.de>
 #pragma once
 
-#include <memory>
-#include <unordered_map>
 #include <rdma/fabric.h>
 
 #include "Provider.hpp"
 
 #include <cassert>
 
-class VerbsProvider : public Provider
+class RDMSocketsProvider : public Provider
 {
-    struct fi_info* info_ = nullptr;
-    struct fid_fabric* fabric_ = nullptr;
-
 public:
-    VerbsProvider(struct fi_info* info);
+    RDMSocketsProvider(struct fi_info* info);
 
-    VerbsProvider(const VerbsProvider&) = delete;
-    void operator=(const VerbsProvider&) = delete;
+    RDMSocketsProvider(const RDMSocketsProvider&) = delete;
+    RDMSocketsProvider& operator=(const RDMSocketsProvider&) = delete;
 
-    /// The VerbsProvider default destructor.
-    ~VerbsProvider();
+    ~RDMSocketsProvider();
 
-    virtual bool has_av() const { return false; };
-    virtual bool has_eq_at_eps() const { return true; };
-    virtual bool is_connection_oriented() const { return true; };
+    virtual bool has_av() const { return true; };
+    virtual bool has_eq_at_eps() const { return false; };
+    virtual bool is_connection_oriented() const { return false; };
 
     struct fi_info* get_info() override
     {
@@ -34,12 +28,9 @@ public:
     }
 
     virtual void set_hostnames_and_services(
-        struct fid_av* /*av*/,
-        const std::vector<std::string>& /*compute_hostnames*/,
-        const std::vector<std::string>& /*compute_services*/,
-        std::vector<fi_addr_t>& /*fi_addrs*/) override
-    {
-    }
+        struct fid_av* av, const std::vector<std::string>& compute_hostnames,
+        const std::vector<std::string>& compute_services,
+        std::vector<fi_addr_t>& fi_addrs) override;
 
     struct fid_fabric* get_fabric() override { return fabric_; };
 
@@ -52,4 +43,8 @@ public:
                  uint32_t max_recv_wr, uint32_t max_recv_sge,
                  uint32_t max_inline_data, const void* param, size_t paramlen,
                  void* addr) override;
+
+private:
+    struct fi_info* info_ = nullptr;
+    struct fid_fabric* fabric_ = nullptr;
 };
