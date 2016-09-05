@@ -438,6 +438,7 @@ void InputChannelConnection::connect(const std::string& hostname,
             fi_getname((fid_t)ep_, &send_status_message_.my_address, &addr_len);
         assert(res == 0);
         std::cout << "fi_addr: " << fi_addr << std::endl;
+        // @todo is this save? does post_send_status_message create copy?
         send_wr.addr = fi_addr;
         post_send_status_message();
     }
