@@ -38,6 +38,7 @@ struct fi_info* MsgSocketsProvider::exists()
     hints->caps =
         FI_MSG | FI_RMA | FI_WRITE | FI_SEND | FI_RECV | FI_REMOTE_WRITE;
     hints->mode = FI_LOCAL_MR;
+    hints->ep_attr->type = FI_EP_MSG;
     hints->rx_attr->mode = FI_LOCAL_MR;
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->domain_attr->mr_mode = FI_MR_BASIC;
@@ -65,7 +66,7 @@ MsgSocketsProvider::MsgSocketsProvider(struct fi_info* info) : info_(info)
 
 void MsgSocketsProvider::accept(struct fid_pep* pep,
                                 const std::string& hostname,
-                                unsigned short port, unsigned int count,
+                                unsigned short port, unsigned int /*count*/,
                                 fid_eq* eq)
 {
     std::string port_s = std::to_string(port);

@@ -35,6 +35,12 @@ public:
                  uint32_t max_inline_data, const void* param, size_t paramlen,
                  void* addr) override;
 
+    virtual void set_hostnames_and_services(
+        struct fid_av* /*av*/,
+        const std::vector<std::string>& /*compute_hostnames*/,
+        const std::vector<std::string>& /*compute_services*/,
+        std::vector<fi_addr_t>& /*fi_addrs*/) override{};
+
 private:
     struct fi_info* info_ = nullptr;
     struct fid_fabric* fabric_ = nullptr;
