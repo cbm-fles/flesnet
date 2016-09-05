@@ -8,6 +8,8 @@
 #include <boost/program_options.hpp>
 #include <fstream>
 #include <log.hpp>
+//----------added H.Hartmann 05.09.16----------
+#include <etcdClient.h>
 
 namespace po = boost::program_options;
 
@@ -196,6 +198,9 @@ void Parameters::parse_options(int argc, char* argv[])
         "typical number of content bytes per microslice")(
         "input-shm", po::value<std::string>(&input_shm_),
         "name of a shared memory to use as data source")(
+        //----------added H.Hartmann 01.09.16----------
+        "kv-shm", po::value<bool>(&kv_shm_),
+        "name of a shared memory to use as data source set in the kv-store")(
         "standalone", po::value<bool>(&standalone_), "standalone mode flag")(
         "max-timeslice-number,n", po::value<uint32_t>(&max_timeslice_number_),
         "global maximum timeslice number")(
@@ -287,6 +292,13 @@ void Parameters::parse_options(int argc, char* argv[])
     if (!compute_nodes_.empty() && processor_executable_.empty())
         throw ParametersException("processor executable not specified");
 
+    //----------added H.Hartmann 05.09.16----------
+    EtcdClient etcd("http://10.0.100.10:2379/v2/keys/shm");
+    if(kv_shm_ == true){
+        input_shm_ = etcd.getvalue();
+        L_(info) << "using shm specified in kv-store: " << input_shm_;
+    }
+    
     if (in_data_buffer_size_exp_ == 0 && input_shm().empty()) {
         in_data_buffer_size_exp_ = suggest_in_data_buffer_size_exp();
     }

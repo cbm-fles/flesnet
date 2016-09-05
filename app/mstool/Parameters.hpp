@@ -28,6 +28,7 @@ struct Parameters {
     bool use_pattern_generator = false;
     size_t shm_channel = 0;
     std::string input_shm;
+    bool use_input_shm = false;
     std::string input_archive;
 
     // sink selection

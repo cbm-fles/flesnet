@@ -14,12 +14,21 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+//----------added H.Hartmann 01.09.16----------
+#include "etcdClient.h"
+#include <sstream>
 
 Application::Application(Parameters const& par) : par_(par)
 {
+    //----------added H.Hartmann 01.09.16----------
+    EtcdClient etcd("http://10.0.100.10:2379/v2/keys/shm");
+    stringstream post;
 
+    
+    
     // Source setup
-    if (!par_.input_shm.empty()) {
+    if (par_.use_input_shm) {
+        //get it from etcd
         L_(info) << "using shared memory as data source: " << par_.input_shm;
 
         shm_device_ = std::make_shared<flib_shm_device_client>(par_.input_shm);
@@ -88,6 +97,10 @@ Application::Application(Parameters const& par) : par_(par)
             output_shm_device_->channels().at(0);
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
             new fles::MicrosliceTransmitter(*data_sink)));
+        
+        //----------added H.Hartmann 01.09.16----------
+        post << "value=" << par_.output_shm << endl;
+        etcd.setvalue(post.str());
     }
 }
 

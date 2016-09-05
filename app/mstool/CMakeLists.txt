@@ -10,13 +10,15 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/fles_core"
                     "${PROJECT_SOURCE_DIR}/lib/flib_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/logging"
+		     "${PROJECT_SOURCE_DIR}/lib/etcdclient"
                     "${PROJECT_SOURCE_DIR}/lib/crcutil"
                     "${PROJECT_SOURCE_DIR}/config")
 
 add_executable(mstool ${APP_SOURCES} ${APP_HEADERS})
 
-target_link_libraries(mstool fles_ipc fles_core logging crcutil ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(mstool fles_ipc fles_core logging etcdClient crcutil ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(mstool ${ZMQ_LIBRARIES})
+
 if(LIBNUMA AND USE_LIBNUMA)
     target_link_libraries(mstool ${LIBNUMA})
 endif()
