@@ -293,9 +293,9 @@ void Parameters::parse_options(int argc, char* argv[])
         throw ParametersException("processor executable not specified");
 
     //----------added H.Hartmann 05.09.16----------
-    EtcdClient etcd("http://10.0.100.10:2379/v2/keys/shm");
+    EtcdClient etcd("http://10.0.100.10:2379/v2/keys");
     if(kv_shm_ == true){
-        input_shm_ = etcd.getvalue();
+        input_shm_ = etcd.waitvalue("/shm?wait=true");
         L_(info) << "using shm specified in kv-store: " << input_shm_;
     }
     

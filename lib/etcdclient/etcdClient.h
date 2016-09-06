@@ -22,7 +22,12 @@ public:
     
     EtcdClient();
     
+    string setadress(string key);
+    
     void setvalue(string value);
     
-    string getvalue();
+    string getvalue(string key);
+    
+    string waitvalue(string key);
+    
 };
