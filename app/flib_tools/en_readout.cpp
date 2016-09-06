@@ -13,7 +13,7 @@
 #include <ctime>
 #include <errno.h>
 #include <iostream>
-#include <limits.h>
+#include <limits>
 #include <stdint.h>
 #include <thread>
 #include <unistd.h>
@@ -123,10 +123,13 @@ int main(int argc, char* argv[]) {
 
       mc_idx.push_back(flim->get_mc_idx());
       mc_time.push_back(flim->get_mc_time());
-      float mc_size = static_cast<float>(mc_time.back()) / mc_idx.back();
+
+      // index is incremented when ms is finished
+      // time is captured with first word of ms
+      // for correct stop index is one count ahead
+      // ms size can be calculated (time - start_offset) / (index - 1)
       std::cout << "mc index (packer) " << mc_idx.back() << std::endl;
       std::cout << "mc time (packer)  " << mc_time.back() << std::endl;
-      std::cout << "mc size (calc.)  " << mc_size << std::endl;
 
       flim->reset_datapath();
       if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
