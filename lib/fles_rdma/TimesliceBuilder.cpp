@@ -1,13 +1,13 @@
 // Copyright 2013, 2016 Jan de Cuveland <cmail@cuveland.de>
 
-#include "TimesliceReceiver.hpp"
+#include "TimesliceBuilder.hpp"
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceWorkItem.hpp"
 #include <log.hpp>
 
-TimesliceReceiver::TimesliceReceiver(
+TimesliceBuilder::TimesliceBuilder(
     uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
     unsigned short service, uint32_t num_input_nodes, uint32_t timeslice_size,
     volatile sig_atomic_t* signal_status, bool drop)
@@ -20,9 +20,9 @@ TimesliceReceiver::TimesliceReceiver(
     assert(timeslice_buffer_.get_num_input_nodes() == num_input_nodes);
 }
 
-TimesliceReceiver::~TimesliceReceiver() {}
+TimesliceBuilder::~TimesliceBuilder() {}
 
-void TimesliceReceiver::report_status()
+void TimesliceBuilder::report_status()
 {
     constexpr auto interval = std::chrono::seconds(1);
 
@@ -47,11 +47,11 @@ void TimesliceReceiver::report_status()
                  << bar_graph(status_desc.vector(), "#._", 10) << "| ";
     }
 
-    scheduler_.add(std::bind(&TimesliceReceiver::report_status, this),
+    scheduler_.add(std::bind(&TimesliceBuilder::report_status, this),
                    now + interval);
 }
 
-void TimesliceReceiver::request_abort()
+void TimesliceBuilder::request_abort()
 {
     L_(info) << "[c" << compute_index_ << "] "
              << "request abort";
@@ -62,7 +62,7 @@ void TimesliceReceiver::request_abort()
 }
 
 /// The thread main function.
-void TimesliceReceiver::operator()()
+void TimesliceBuilder::operator()()
 {
     try {
         // set_cpu(0);
@@ -97,11 +97,11 @@ void TimesliceReceiver::operator()()
 
         summary();
     } catch (std::exception& e) {
-        L_(error) << "exception in TimesliceReceiver: " << e.what();
+        L_(error) << "exception in TimesliceBuilder: " << e.what();
     }
 }
 
-void TimesliceReceiver::on_connect_request(struct rdma_cm_event* event)
+void TimesliceBuilder::on_connect_request(struct rdma_cm_event* event)
 {
     if (!pd_)
         init_context(event->id->verbs);
@@ -125,7 +125,7 @@ void TimesliceReceiver::on_connect_request(struct rdma_cm_event* event)
 }
 
 /// Completion notification event dispatcher. Called by the event loop.
-void TimesliceReceiver::on_completion(const struct ibv_wc& wc)
+void TimesliceBuilder::on_completion(const struct ibv_wc& wc)
 {
     size_t in = wc.wr_id >> 8;
     assert(in < conn_.size());
@@ -193,7 +193,7 @@ void TimesliceReceiver::on_completion(const struct ibv_wc& wc)
     }
 }
 
-void TimesliceReceiver::poll_ts_completion()
+void TimesliceBuilder::poll_ts_completion()
 {
     fles::TimesliceCompletion c;
     if (!timeslice_buffer_.try_receive_completion(c))

@@ -62,7 +62,7 @@ Application::Application(Parameters const& par,
             shm_identifier, par_.cn_data_buffer_size_exp(),
             par_.cn_desc_buffer_size_exp(), input_nodes_size));
 
-        std::unique_ptr<TimesliceReceiver> receiver(new TimesliceReceiver(
+        std::unique_ptr<TimesliceBuilder> receiver(new TimesliceBuilder(
             i, *tsb, par_.base_port() + i, input_nodes_size,
             par_.timeslice_size(), signal_status_, false));
 

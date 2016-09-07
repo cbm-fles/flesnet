@@ -8,23 +8,23 @@
 #include <csignal>
 
 /// Timeslice receiver and input node connection container class.
-/** A TimesliceReceiver object represents a group of timeslice building
+/** A TimesliceBuilder object represents a group of timeslice building
  connections to input nodes and receives timeslices to a timeslice buffer. */
 
-class TimesliceReceiver : public IBConnectionGroup<ComputeNodeConnection>
+class TimesliceBuilder : public IBConnectionGroup<ComputeNodeConnection>
 {
 public:
-    /// The TimesliceReceiver constructor.
-    TimesliceReceiver(uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
-                      unsigned short service, uint32_t num_input_nodes,
-                      uint32_t timeslice_size,
-                      volatile sig_atomic_t* signal_status, bool drop);
+    /// The TimesliceBuilder constructor.
+    TimesliceBuilder(uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
+                     unsigned short service, uint32_t num_input_nodes,
+                     uint32_t timeslice_size,
+                     volatile sig_atomic_t* signal_status, bool drop);
 
-    TimesliceReceiver(const TimesliceReceiver&) = delete;
-    void operator=(const TimesliceReceiver&) = delete;
+    TimesliceBuilder(const TimesliceBuilder&) = delete;
+    void operator=(const TimesliceBuilder&) = delete;
 
-    /// The TimesliceReceiver destructor.
-    ~TimesliceReceiver();
+    /// The TimesliceBuilder destructor.
+    ~TimesliceBuilder();
 
     void report_status();
 
