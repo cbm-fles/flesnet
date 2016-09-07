@@ -35,15 +35,6 @@ public:
 
     virtual void operator()() override;
 
-    uint8_t* get_data_ptr(uint_fast16_t index);
-
-    fles::TimesliceComponentDescriptor* get_desc_ptr(uint_fast16_t index);
-
-    uint8_t& get_data(uint_fast16_t index, uint64_t offset);
-
-    fles::TimesliceComponentDescriptor& get_desc(uint_fast16_t index,
-                                                 uint64_t offset);
-
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
     virtual void on_connect_request(struct rdma_cm_event* event) override;
 
@@ -63,7 +54,6 @@ private:
 
     uint32_t processor_instances_;
     const std::string processor_executable_;
-    std::string shared_memory_identifier_;
 
     size_t red_lantern_ = 0;
     uint64_t completely_written_ = 0;
