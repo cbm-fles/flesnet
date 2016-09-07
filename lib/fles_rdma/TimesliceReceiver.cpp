@@ -169,7 +169,7 @@ void TimesliceReceiver::on_completion(const struct ibv_wc& wc)
 
             for (uint64_t tpos = completely_written_;
                  tpos < new_completely_written; ++tpos) {
-                if (drop_) {
+                if (!drop_) {
                     uint64_t ts_index = UINT64_MAX;
                     if (conn_.size() > 0) {
                         ts_index = timeslice_buffer_.get_desc(0, tpos).ts_num;

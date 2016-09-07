@@ -1,38 +1,32 @@
 // Copyright 2016 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceBuffer.hpp"
-#include <boost/lexical_cast.hpp>
-#include <random>
 
-TimesliceBuffer::TimesliceBuffer(uint32_t data_buffer_size_exp,
+TimesliceBuffer::TimesliceBuffer(std::string shm_identifier,
+                                 uint32_t data_buffer_size_exp,
                                  uint32_t desc_buffer_size_exp,
                                  uint32_t num_input_nodes)
-    : data_buffer_size_exp_(data_buffer_size_exp),
+    : shm_identifier_(shm_identifier),
+      data_buffer_size_exp_(data_buffer_size_exp),
       desc_buffer_size_exp_(desc_buffer_size_exp),
       num_input_nodes_(num_input_nodes)
 {
-    std::random_device random_device;
-    std::uniform_int_distribution<uint64_t> uint_distribution;
-    uint64_t random_number = uint_distribution(random_device);
-    shared_memory_identifier_ =
-        "flesnet_" + boost::lexical_cast<std::string>(random_number);
-
     boost::interprocess::shared_memory_object::remove(
-        (shared_memory_identifier_ + "data_").c_str());
+        (shm_identifier_ + "data_").c_str());
     boost::interprocess::shared_memory_object::remove(
-        (shared_memory_identifier_ + "desc_").c_str());
+        (shm_identifier_ + "desc_").c_str());
 
     std::unique_ptr<boost::interprocess::shared_memory_object> data_shm(
         new boost::interprocess::shared_memory_object(
             boost::interprocess::create_only,
-            (shared_memory_identifier_ + "data_").c_str(),
+            (shm_identifier_ + "data_").c_str(),
             boost::interprocess::read_write));
     data_shm_ = std::move(data_shm);
 
     std::unique_ptr<boost::interprocess::shared_memory_object> desc_shm(
         new boost::interprocess::shared_memory_object(
             boost::interprocess::create_only,
-            (shared_memory_identifier_ + "desc_").c_str(),
+            (shm_identifier_ + "desc_").c_str(),
             boost::interprocess::read_write));
     desc_shm_ = std::move(desc_shm);
 
@@ -70,35 +64,35 @@ TimesliceBuffer::TimesliceBuffer(uint32_t data_buffer_size_exp,
 #endif
 
     boost::interprocess::message_queue::remove(
-        (shared_memory_identifier_ + "work_items_").c_str());
+        (shm_identifier_ + "work_items_").c_str());
     boost::interprocess::message_queue::remove(
-        (shared_memory_identifier_ + "completions_").c_str());
+        (shm_identifier_ + "completions_").c_str());
 
     std::unique_ptr<boost::interprocess::message_queue> work_items_mq(
         new boost::interprocess::message_queue(
             boost::interprocess::create_only,
-            (shared_memory_identifier_ + "work_items_").c_str(),
-            desc_buffer_size, sizeof(fles::TimesliceWorkItem)));
+            (shm_identifier_ + "work_items_").c_str(), desc_buffer_size,
+            sizeof(fles::TimesliceWorkItem)));
     work_items_mq_ = std::move(work_items_mq);
 
     std::unique_ptr<boost::interprocess::message_queue> completions_mq(
         new boost::interprocess::message_queue(
             boost::interprocess::create_only,
-            (shared_memory_identifier_ + "completions_").c_str(),
-            desc_buffer_size, sizeof(fles::TimesliceCompletion)));
+            (shm_identifier_ + "completions_").c_str(), desc_buffer_size,
+            sizeof(fles::TimesliceCompletion)));
     completions_mq_ = std::move(completions_mq);
 }
 
 TimesliceBuffer::~TimesliceBuffer()
 {
     boost::interprocess::shared_memory_object::remove(
-        (shared_memory_identifier_ + "data_").c_str());
+        (shm_identifier_ + "data_").c_str());
     boost::interprocess::shared_memory_object::remove(
-        (shared_memory_identifier_ + "desc_").c_str());
+        (shm_identifier_ + "desc_").c_str());
     boost::interprocess::message_queue::remove(
-        (shared_memory_identifier_ + "work_items_").c_str());
+        (shm_identifier_ + "work_items_").c_str());
     boost::interprocess::message_queue::remove(
-        (shared_memory_identifier_ + "completions_").c_str());
+        (shm_identifier_ + "completions_").c_str());
 }
 
 uint8_t* TimesliceBuffer::get_data_ptr(uint_fast16_t index)

@@ -19,7 +19,7 @@ class TimesliceBuffer
 {
 public:
     /// The TimesliceBuffer constructor.
-    TimesliceBuffer(uint32_t data_buffer_size_exp,
+    TimesliceBuffer(std::string shm_identifier, uint32_t data_buffer_size_exp,
                     uint32_t desc_buffer_size_exp, uint32_t num_input_nodes);
 
     TimesliceBuffer(const TimesliceBuffer&) = delete;
@@ -37,11 +37,6 @@ public:
     uint8_t& get_data(uint_fast16_t index, uint64_t offset);
     fles::TimesliceComponentDescriptor& get_desc(uint_fast16_t index,
                                                  uint64_t offset);
-
-    const std::string get_shared_memory_identifier() const
-    {
-        return shared_memory_identifier_;
-    }
 
     uint32_t get_num_input_nodes() const { return num_input_nodes_; }
 
@@ -82,12 +77,12 @@ public:
     };
 
 private:
+    std::string shm_identifier_;
+
     uint32_t data_buffer_size_exp_;
     uint32_t desc_buffer_size_exp_;
 
     uint32_t num_input_nodes_;
-
-    std::string shared_memory_identifier_;
 
     std::unique_ptr<boost::interprocess::shared_memory_object> data_shm_;
     std::unique_ptr<boost::interprocess::shared_memory_object> desc_shm_;

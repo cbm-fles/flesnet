@@ -6,9 +6,11 @@
 #include "FlibPatternGenerator.hpp"
 #include "shm_channel_client.hpp"
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/thread/future.hpp>
 #include <boost/thread/thread.hpp>
 #include <log.hpp>
+#include <random>
 
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
@@ -50,16 +52,25 @@ Application::Application(Parameters const& par,
     // set_cpu(1);
 
     for (unsigned i : par_.compute_indexes()) {
+        std::random_device random_device;
+        std::uniform_int_distribution<uint64_t> uint_distribution;
+        uint64_t random_number = uint_distribution(random_device);
+        std::string shm_identifier =
+            "flesnet_" + boost::lexical_cast<std::string>(random_number);
+
         std::unique_ptr<TimesliceBuffer> tsb(new TimesliceBuffer(
-            par_.cn_data_buffer_size_exp(), par_.cn_desc_buffer_size_exp(),
-            input_nodes_size));
-        std::unique_ptr<TimesliceReceiver> buffer(new TimesliceReceiver(
+            shm_identifier, par_.cn_data_buffer_size_exp(),
+            par_.cn_desc_buffer_size_exp(), input_nodes_size));
+
+        std::unique_ptr<TimesliceReceiver> receiver(new TimesliceReceiver(
             i, *tsb, par_.base_port() + i, input_nodes_size,
             par_.timeslice_size(), signal_status_, false));
-        start_processes(tsb->get_shared_memory_identifier());
+
+        start_processes(shm_identifier);
         ChildProcessManager::get().allow_stop_processes(this);
+
         timeslice_buffers_.push_back(std::move(tsb));
-        timeslice_receivers_.push_back(std::move(buffer));
+        timeslice_receivers_.push_back(std::move(receiver));
     }
 
     set_node();
