@@ -1,9 +1,11 @@
 // Copyright 2012-2016 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
+#include "ChildProcessManager.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include "FlibPatternGenerator.hpp"
 #include "shm_channel_client.hpp"
+#include <boost/algorithm/string.hpp>
 #include <boost/thread/future.hpp>
 #include <boost/thread/thread.hpp>
 #include <log.hpp>
@@ -53,9 +55,9 @@ Application::Application(Parameters const& par,
             input_nodes_size));
         std::unique_ptr<TimesliceReceiver> buffer(new TimesliceReceiver(
             i, *tsb, par_.base_port() + i, input_nodes_size,
-            par_.timeslice_size(), par_.processor_instances(),
-            par_.processor_executable(), signal_status_));
-        buffer->start_processes();
+            par_.timeslice_size(), signal_status_, false));
+        start_processes(tsb->get_shared_memory_identifier());
+        ChildProcessManager::get().allow_stop_processes(this);
         timeslice_buffers_.push_back(std::move(tsb));
         timeslice_receivers_.push_back(std::move(buffer));
     }
@@ -152,4 +154,24 @@ void Application::run()
     }
 
     threads.join_all();
+}
+
+void Application::start_processes(const std::string shared_memory_identifier)
+{
+    const std::string processor_executable = par_.processor_executable();
+    assert(!processor_executable.empty());
+    for (uint_fast32_t i = 0; i < par_.processor_instances(); ++i) {
+        std::stringstream index;
+        index << i;
+        ChildProcess cp = ChildProcess();
+        cp.owner = this;
+        boost::split(cp.arg, processor_executable, boost::is_any_of(" \t"),
+                     boost::token_compress_on);
+        cp.path = cp.arg.at(0);
+        for (auto& arg : cp.arg) {
+            boost::replace_all(arg, "%s", shared_memory_identifier);
+            boost::replace_all(arg, "%i", index.str());
+        }
+        ChildProcessManager::get().start_process(cp);
+    }
 }

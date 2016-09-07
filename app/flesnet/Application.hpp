@@ -45,4 +45,6 @@ private:
     std::vector<std::unique_ptr<TimesliceBuffer>> timeslice_buffers_;
     std::vector<std::unique_ptr<TimesliceReceiver>> timeslice_receivers_;
     std::vector<std::unique_ptr<InputChannelSender>> input_channel_senders_;
+
+    void start_processes(const std::string shared_memory_identifier);
 };

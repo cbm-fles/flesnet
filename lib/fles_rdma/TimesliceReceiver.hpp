@@ -17,17 +17,14 @@ public:
     /// The TimesliceReceiver constructor.
     TimesliceReceiver(uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
                       unsigned short service, uint32_t num_input_nodes,
-                      uint32_t timeslice_size, uint32_t processor_instances,
-                      const std::string processor_executable,
-                      volatile sig_atomic_t* signal_status);
+                      uint32_t timeslice_size,
+                      volatile sig_atomic_t* signal_status, bool drop);
 
     TimesliceReceiver(const TimesliceReceiver&) = delete;
     void operator=(const TimesliceReceiver&) = delete;
 
     /// The TimesliceReceiver destructor.
     ~TimesliceReceiver();
-
-    void start_processes();
 
     void report_status();
 
@@ -52,9 +49,6 @@ private:
 
     uint32_t timeslice_size_;
 
-    uint32_t processor_instances_;
-    const std::string processor_executable_;
-
     size_t red_lantern_ = 0;
     uint64_t completely_written_ = 0;
     uint64_t acked_ = 0;
@@ -63,4 +57,5 @@ private:
     RingBuffer<uint64_t, true> ack_;
 
     volatile sig_atomic_t* signal_status_;
+    bool drop_;
 };

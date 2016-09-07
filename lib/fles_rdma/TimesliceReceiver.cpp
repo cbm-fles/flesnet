@@ -1,50 +1,26 @@
 // Copyright 2013, 2016 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceReceiver.hpp"
-#include "ChildProcessManager.hpp"
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceWorkItem.hpp"
-#include <boost/algorithm/string.hpp>
 #include <log.hpp>
 
 TimesliceReceiver::TimesliceReceiver(
     uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
     unsigned short service, uint32_t num_input_nodes, uint32_t timeslice_size,
-    uint32_t processor_instances, const std::string processor_executable,
-    volatile sig_atomic_t* signal_status)
+    volatile sig_atomic_t* signal_status, bool drop)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
       service_(service), num_input_nodes_(num_input_nodes),
       timeslice_size_(timeslice_size),
-      processor_instances_(processor_instances),
-      processor_executable_(processor_executable),
-      ack_(timeslice_buffer_.get_desc_size_exp()), signal_status_(signal_status)
+      ack_(timeslice_buffer_.get_desc_size_exp()),
+      signal_status_(signal_status), drop_(drop)
 {
     assert(timeslice_buffer_.get_num_input_nodes() == num_input_nodes);
 }
 
 TimesliceReceiver::~TimesliceReceiver() {}
-
-void TimesliceReceiver::start_processes()
-{
-    assert(!processor_executable_.empty());
-    for (uint_fast32_t i = 0; i < processor_instances_; ++i) {
-        std::stringstream index;
-        index << i;
-        ChildProcess cp = ChildProcess();
-        cp.owner = this;
-        boost::split(cp.arg, processor_executable_, boost::is_any_of(" \t"),
-                     boost::token_compress_on);
-        cp.path = cp.arg.at(0);
-        for (auto& arg : cp.arg) {
-            boost::replace_all(
-                arg, "%s", timeslice_buffer_.get_shared_memory_identifier());
-            boost::replace_all(arg, "%i", index.str());
-        }
-        ChildProcessManager::get().start_process(cp);
-    }
-}
 
 void TimesliceReceiver::report_status()
 {
@@ -116,11 +92,7 @@ void TimesliceReceiver::operator()()
 
         time_end_ = std::chrono::high_resolution_clock::now();
 
-        ChildProcessManager::get().allow_stop_processes(this);
-
-        for (uint_fast32_t i = 0; i < processor_instances_; ++i) {
-            timeslice_buffer_.send_end_work_item();
-        }
+        timeslice_buffer_.send_end_work_item();
         timeslice_buffer_.send_end_completion();
 
         summary();
@@ -197,7 +169,7 @@ void TimesliceReceiver::on_completion(const struct ibv_wc& wc)
 
             for (uint64_t tpos = completely_written_;
                  tpos < new_completely_written; ++tpos) {
-                if (processor_instances_ != 0) {
+                if (drop_) {
                     uint64_t ts_index = UINT64_MAX;
                     if (conn_.size() > 0) {
                         ts_index = timeslice_buffer_.get_desc(0, tpos).ts_num;
