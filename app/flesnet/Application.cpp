@@ -1,4 +1,4 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2016 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
 #include "EmbeddedPatternGenerator.hpp"
@@ -48,12 +48,15 @@ Application::Application(Parameters const& par,
     // set_cpu(1);
 
     for (unsigned i : par_.compute_indexes()) {
-        std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(
-            i, par_.cn_data_buffer_size_exp(), par_.cn_desc_buffer_size_exp(),
-            par_.base_port() + i, input_nodes_size, par_.timeslice_size(),
-            par_.processor_instances(), par_.processor_executable(),
-            signal_status_));
+        std::unique_ptr<TimesliceBuffer> tsb(new TimesliceBuffer(
+            par_.cn_data_buffer_size_exp(), par_.cn_desc_buffer_size_exp(),
+            input_nodes_size));
+        std::unique_ptr<ComputeBuffer> buffer(
+            new ComputeBuffer(i, *tsb, par_.base_port() + i, input_nodes_size,
+                              par_.timeslice_size(), par_.processor_instances(),
+                              par_.processor_executable(), signal_status_));
         buffer->start_processes();
+        timeslice_buffers_.push_back(std::move(tsb));
         compute_buffers_.push_back(std::move(buffer));
     }
 

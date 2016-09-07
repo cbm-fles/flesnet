@@ -1,30 +1,24 @@
-// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013, 2016 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
 #include "ComputeNodeConnection.hpp"
 #include "IBConnectionGroup.hpp"
 #include "RingBuffer.hpp"
-#include "TimesliceComponentDescriptor.hpp"
-
-#include <boost/interprocess/ipc/message_queue.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/shared_memory_object.hpp>
+#include "TimesliceBuffer.hpp"
 
 #include <csignal>
 
-/// Compute buffer and input node connection container class.
-/** A ComputeBuffer object represents a timeslice buffer (filled by
-    the input nodes) and a group of timeslice building connections to
-    input nodes. */
+/// Timeslice receiver and input node connection container class.
+/** A ComputeBuffer object represents a group of timeslice building connections
+ to input nodes and receives timeslices to a timeslice buffer. */
 
 class ComputeBuffer : public IBConnectionGroup<ComputeNodeConnection>
 {
 public:
     /// The ComputeBuffer constructor.
-    ComputeBuffer(uint64_t compute_index, uint32_t data_buffer_size_exp,
-                  uint32_t desc_buffer_size_exp, unsigned short service,
-                  uint32_t num_input_nodes, uint32_t timeslice_size,
-                  uint32_t processor_instances,
+    ComputeBuffer(uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
+                  unsigned short service, uint32_t num_input_nodes,
+                  uint32_t timeslice_size, uint32_t processor_instances,
                   const std::string processor_executable,
                   volatile sig_atomic_t* signal_status);
 
@@ -61,9 +55,7 @@ public:
 
 private:
     uint64_t compute_index_;
-
-    uint32_t data_buffer_size_exp_;
-    uint32_t desc_buffer_size_exp_;
+    TimesliceBuffer& timeslice_buffer_;
 
     unsigned short service_;
     uint32_t num_input_nodes_;
@@ -80,15 +72,6 @@ private:
 
     /// Buffer to store acknowledged status of timeslices.
     RingBuffer<uint64_t, true> ack_;
-
-    std::unique_ptr<boost::interprocess::shared_memory_object> data_shm_;
-    std::unique_ptr<boost::interprocess::shared_memory_object> desc_shm_;
-
-    std::unique_ptr<boost::interprocess::mapped_region> data_region_;
-    std::unique_ptr<boost::interprocess::mapped_region> desc_region_;
-
-    std::unique_ptr<boost::interprocess::message_queue> work_items_mq_;
-    std::unique_ptr<boost::interprocess::message_queue> completions_mq_;
 
     volatile sig_atomic_t* signal_status_;
 };

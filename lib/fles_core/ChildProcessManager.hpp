@@ -1,8 +1,10 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2013, 2016 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
 #include "log.hpp"
 #include <csignal>
+#include <cstring>
+#include <sstream>
 #include <sys/wait.h>
 #include <vector>
 
