@@ -1,10 +1,11 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2016 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "ComputeBuffer.hpp"
 #include "InputChannelSender.hpp"
 #include "Parameters.hpp"
 #include "ThreadContainer.hpp"
+#include "TimesliceBuffer.hpp"
+#include "TimesliceBuilder.hpp"
 #include "shm_device_client.hpp"
 #include <boost/lexical_cast.hpp>
 #include <csignal>
@@ -41,6 +42,9 @@ private:
     std::vector<std::unique_ptr<InputBufferReadInterface>> data_sources_;
 
     /// The application's connection group / buffer objects
-    std::vector<std::unique_ptr<ComputeBuffer>> compute_buffers_;
+    std::vector<std::unique_ptr<TimesliceBuffer>> timeslice_buffers_;
+    std::vector<std::unique_ptr<TimesliceBuilder>> timeslice_receivers_;
     std::vector<std::unique_ptr<InputChannelSender>> input_channel_senders_;
+
+    void start_processes(const std::string shared_memory_identifier);
 };
