@@ -1,6 +1,6 @@
 // Copyright 2013, 2016 Jan de Cuveland <cmail@cuveland.de>
 
-#include "ComputeBuffer.hpp"
+#include "TimesliceReceiver.hpp"
 #include "ChildProcessManager.hpp"
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
@@ -9,13 +9,11 @@
 #include <boost/algorithm/string.hpp>
 #include <log.hpp>
 
-ComputeBuffer::ComputeBuffer(uint64_t compute_index,
-                             TimesliceBuffer& timeslice_buffer,
-                             unsigned short service, uint32_t num_input_nodes,
-                             uint32_t timeslice_size,
-                             uint32_t processor_instances,
-                             const std::string processor_executable,
-                             volatile sig_atomic_t* signal_status)
+TimesliceReceiver::TimesliceReceiver(
+    uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
+    unsigned short service, uint32_t num_input_nodes, uint32_t timeslice_size,
+    uint32_t processor_instances, const std::string processor_executable,
+    volatile sig_atomic_t* signal_status)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
       service_(service), num_input_nodes_(num_input_nodes),
       timeslice_size_(timeslice_size),
@@ -26,9 +24,9 @@ ComputeBuffer::ComputeBuffer(uint64_t compute_index,
     assert(timeslice_buffer_.get_num_input_nodes() == num_input_nodes);
 }
 
-ComputeBuffer::~ComputeBuffer() {}
+TimesliceReceiver::~TimesliceReceiver() {}
 
-void ComputeBuffer::start_processes()
+void TimesliceReceiver::start_processes()
 {
     assert(!processor_executable_.empty());
     for (uint_fast32_t i = 0; i < processor_instances_; ++i) {
@@ -48,7 +46,7 @@ void ComputeBuffer::start_processes()
     }
 }
 
-void ComputeBuffer::report_status()
+void TimesliceReceiver::report_status()
 {
     constexpr auto interval = std::chrono::seconds(1);
 
@@ -73,11 +71,11 @@ void ComputeBuffer::report_status()
                  << bar_graph(status_desc.vector(), "#._", 10) << "| ";
     }
 
-    scheduler_.add(std::bind(&ComputeBuffer::report_status, this),
+    scheduler_.add(std::bind(&TimesliceReceiver::report_status, this),
                    now + interval);
 }
 
-void ComputeBuffer::request_abort()
+void TimesliceReceiver::request_abort()
 {
     L_(info) << "[c" << compute_index_ << "] "
              << "request abort";
@@ -88,7 +86,7 @@ void ComputeBuffer::request_abort()
 }
 
 /// The thread main function.
-void ComputeBuffer::operator()()
+void TimesliceReceiver::operator()()
 {
     try {
         // set_cpu(0);
@@ -127,11 +125,11 @@ void ComputeBuffer::operator()()
 
         summary();
     } catch (std::exception& e) {
-        L_(error) << "exception in ComputeBuffer: " << e.what();
+        L_(error) << "exception in TimesliceReceiver: " << e.what();
     }
 }
 
-void ComputeBuffer::on_connect_request(struct rdma_cm_event* event)
+void TimesliceReceiver::on_connect_request(struct rdma_cm_event* event)
 {
     if (!pd_)
         init_context(event->id->verbs);
@@ -155,7 +153,7 @@ void ComputeBuffer::on_connect_request(struct rdma_cm_event* event)
 }
 
 /// Completion notification event dispatcher. Called by the event loop.
-void ComputeBuffer::on_completion(const struct ibv_wc& wc)
+void TimesliceReceiver::on_completion(const struct ibv_wc& wc)
 {
     size_t in = wc.wr_id >> 8;
     assert(in < conn_.size());
@@ -223,7 +221,7 @@ void ComputeBuffer::on_completion(const struct ibv_wc& wc)
     }
 }
 
-void ComputeBuffer::poll_ts_completion()
+void TimesliceReceiver::poll_ts_completion()
 {
     fles::TimesliceCompletion c;
     if (!timeslice_buffer_.try_receive_completion(c))

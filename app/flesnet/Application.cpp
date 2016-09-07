@@ -51,13 +51,13 @@ Application::Application(Parameters const& par,
         std::unique_ptr<TimesliceBuffer> tsb(new TimesliceBuffer(
             par_.cn_data_buffer_size_exp(), par_.cn_desc_buffer_size_exp(),
             input_nodes_size));
-        std::unique_ptr<ComputeBuffer> buffer(
-            new ComputeBuffer(i, *tsb, par_.base_port() + i, input_nodes_size,
-                              par_.timeslice_size(), par_.processor_instances(),
-                              par_.processor_executable(), signal_status_));
+        std::unique_ptr<TimesliceReceiver> buffer(new TimesliceReceiver(
+            i, *tsb, par_.base_port() + i, input_nodes_size,
+            par_.timeslice_size(), par_.processor_instances(),
+            par_.processor_executable(), signal_status_));
         buffer->start_processes();
         timeslice_buffers_.push_back(std::move(tsb));
-        compute_buffers_.push_back(std::move(buffer));
+        timeslice_receivers_.push_back(std::move(buffer));
     }
 
     set_node();
@@ -108,13 +108,13 @@ void Application::run()
 {
     // Do not spawn additional thread if only one is needed, simplifies
     // debugging
-    if (compute_buffers_.size() == 1 && input_channel_senders_.empty()) {
-        L_(debug) << "using existing thread for single compute buffer";
-        (*compute_buffers_[0])();
+    if (timeslice_receivers_.size() == 1 && input_channel_senders_.empty()) {
+        L_(debug) << "using existing thread for single timeslice receiver";
+        (*timeslice_receivers_[0])();
         return;
     };
-    if (input_channel_senders_.size() == 1 && compute_buffers_.empty()) {
-        L_(debug) << "using existing thread for single input buffer";
+    if (input_channel_senders_.size() == 1 && timeslice_receivers_.empty()) {
+        L_(debug) << "using existing thread for single input channel sender";
         (*input_channel_senders_[0])();
         return;
     };
@@ -124,7 +124,7 @@ void Application::run()
     std::vector<boost::unique_future<void>> futures;
     bool stop = false;
 
-    for (auto& buffer : compute_buffers_) {
+    for (auto& buffer : timeslice_receivers_) {
         boost::packaged_task<void> task(std::ref(*buffer));
         futures.push_back(task.get_future());
         threads.add_thread(new boost::thread(std::move(task)));

@@ -1,11 +1,11 @@
 // Copyright 2012-2016 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "ComputeBuffer.hpp"
 #include "InputChannelSender.hpp"
 #include "Parameters.hpp"
 #include "ThreadContainer.hpp"
 #include "TimesliceBuffer.hpp"
+#include "TimesliceReceiver.hpp"
 #include "shm_device_client.hpp"
 #include <boost/lexical_cast.hpp>
 #include <csignal>
@@ -43,6 +43,6 @@ private:
 
     /// The application's connection group / buffer objects
     std::vector<std::unique_ptr<TimesliceBuffer>> timeslice_buffers_;
-    std::vector<std::unique_ptr<ComputeBuffer>> compute_buffers_;
+    std::vector<std::unique_ptr<TimesliceReceiver>> timeslice_receivers_;
     std::vector<std::unique_ptr<InputChannelSender>> input_channel_senders_;
 };
