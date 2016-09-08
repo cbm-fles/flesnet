@@ -16,18 +16,21 @@ private:
     CURL *hnd;
     CURLcode ret;
     string url;
-
+    string answer;
+    
 public:
     EtcdClient(string url);
     
     EtcdClient();
     
-    string setadress(string key);
+    string setadress(string prefix, string key);
     
-    void setvalue(string value);
+    void setvalue(string prefix, string key, string value);
     
-    string getvalue(string key);
+    int getvalue(string key, bool  uptodate);
     
-    string waitvalue(string key);
+    int waitvalue(string prefix);
+    
+    string getanswer() { return answer; }
     
 };

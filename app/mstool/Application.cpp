@@ -21,13 +21,13 @@
 Application::Application(Parameters const& par) : par_(par)
 {
     //----------added H.Hartmann 01.09.16----------
-    EtcdClient etcd("http://10.0.100.10:2379/v2/keys/shm");
     stringstream post;
-
+    string prefix = "/mstool0"; //get ID from command line
+    EtcdClient etcd(par_.kv_url);
     
     
     // Source setup
-    if (par_.use_input_shm) {
+    if (!par_.input_shm.empty()) {
         //get it from etcd
         L_(info) << "using shared memory as data source: " << par_.input_shm;
 
@@ -100,7 +100,10 @@ Application::Application(Parameters const& par) : par_(par)
         
         //----------added H.Hartmann 01.09.16----------
         post << "value=" << par_.output_shm << endl;
-        etcd.setvalue(post.str());
+        etcd.setvalue(prefix, "/shmname", post.str());
+        post.str("");//deletepost
+        post << "value=yes";
+        etcd.setvalue(prefix, "/uptodate", post.str());
     }
 }
 

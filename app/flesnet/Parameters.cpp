@@ -8,7 +8,9 @@
 #include <boost/program_options.hpp>
 #include <fstream>
 #include <log.hpp>
+
 //----------added H.Hartmann 05.09.16----------
+#include <cstdlib>
 #include <etcdClient.h>
 
 namespace po = boost::program_options;
@@ -201,6 +203,8 @@ void Parameters::parse_options(int argc, char* argv[])
         //----------added H.Hartmann 01.09.16----------
         "kv-shm", po::value<bool>(&kv_shm_),
         "name of a shared memory to use as data source set in the kv-store")(
+        "kv-url", po::value<std::string>(&kv_url_),
+        "url of kv-store")(
         "standalone", po::value<bool>(&standalone_), "standalone mode flag")(
         "max-timeslice-number,n", po::value<uint32_t>(&max_timeslice_number_),
         "global maximum timeslice number")(
@@ -293,9 +297,28 @@ void Parameters::parse_options(int argc, char* argv[])
         throw ParametersException("processor executable not specified");
 
     //----------added H.Hartmann 05.09.16----------
-    EtcdClient etcd("http://10.0.100.10:2379/v2/keys");
+    EtcdClient etcd(kv_url_);
+    stringstream prefix;
+    int ret;
+    
     if(kv_shm_ == true){
-        input_shm_ = etcd.waitvalue("/shm?wait=true");
+        prefix << "/mstool0";
+        ret = etcd.getvalue(prefix.str(), false);
+        if(ret == 0) input_shm_ = etcd.getanswer();
+        else{
+            cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
+        }
+        //if key is not set yet wait
+        if (ret != 0){
+            L_(warning) << "no shm set yet";
+            ret = etcd.waitvalue(prefix.str());
+            if(ret == 0) input_shm_ = etcd.getanswer();
+            else{
+                cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
+                L_(warning) << "no shm set";
+                exit (EXIT_FAILURE);
+            }
+        }
         L_(info) << "using shm specified in kv-store: " << input_shm_;
     }
     
