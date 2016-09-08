@@ -30,10 +30,35 @@ string EtcdClient::setadress(string prefix, string key){
     return adress.str();
 }
 
-int EtcdClient::getvalue(string prefix, bool uptodate){
+
+int EtcdClient::getvalue(string prefix, string key){
     Json::Value message;
+    int flag = 2;
+    ostringstream os;
     Json::Reader reader;
     Json::FastWriter fastwriter;
+
+    cout << setadress(prefix,key) << endl;
+    os << curlpp::options::Url(setadress(prefix,key));
+    
+    bool parsingSuccessful = reader.parse(os.str(), message);
+    if (!parsingSuccessful)cout << "Failed to parse" << endl;
+    // cout << "key is " << message << endl;
+    
+    value = fastwriter.write(message["node"]["value"]);
+    value.erase(value.end()-2,value.end());
+    value.erase(0,1);
+    
+    if(message.isMember("error")){
+        flag = 2;
+        cout << value << " " << fastwriter.write(message["error"]) << endl;
+    }
+    else flag = 0;
+    
+    return flag;
+}
+
+int EtcdClient::getuptodatevalue(string prefix, bool uptodate){
     ostringstream os;
     string key;
     int flag = 2;
@@ -42,38 +67,20 @@ int EtcdClient::getvalue(string prefix, bool uptodate){
     if(!uptodate)key = "/uptodate";
     else key = "/shmname";
     
-    cout << setadress(prefix,key) << endl;
-    os << curlpp::options::Url(setadress(prefix,key));
+    flag = getvalue(prefix,key);
+    
 
-    bool parsingSuccessful = reader.parse(os.str(), message);
-    if (!parsingSuccessful)cout << "Failed to parse" << endl;
-    cout << "key is " << message << endl;
-    
-    string value = fastwriter.write(message["node"]["value"]);
-    value.erase(value.end()-2,value.end());
-    value.erase(0,1);
-    
     string answer;
-    if(message.isMember("error")){
-      flag = 2;
-        cout << value << " " << fastwriter.write(message["error"]) << endl;
-    }
-    else{
-        cout << value << endl;
-        if(!uptodate){
-            flag = 1;
-            if(value == "yes"){
-                cout << value << endl;
-                flag = getvalue(prefix, true);
-                setvalue(prefix, key, "value=no");
-            }
-        }
-        else{
-            flag = 0;
-            answer = value;
+    cout << value << endl;
+    if(!uptodate){
+        flag = 1;
+        if(value == "yes"){
+            cout << value << endl;
+            flag = getuptodatevalue(prefix, true);
+            setvalue(prefix, key, "value=no");
         }
     }
-    
+    else answer = value;
 
     return flag;
 }
@@ -103,7 +110,7 @@ int EtcdClient::waitvalue(string prefix){
     else{
         //cut ?wait=true from key to get value without waiting
         key.erase(key.end()-10,key.end());
-        flag = getvalue(prefix, false);
+        flag = getuptodatevalue(prefix, false);
     }
     
     return flag;

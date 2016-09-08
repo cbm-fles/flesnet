@@ -303,7 +303,7 @@ void Parameters::parse_options(int argc, char* argv[])
     
     if(kv_shm_ == true){
         prefix << "/mstool0";
-        ret = etcd.getvalue(prefix.str(), false);
+        ret = etcd.getuptodatevalue(prefix.str(), false);
         if(ret == 0) input_shm_ = etcd.getanswer();
         else{
             cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;

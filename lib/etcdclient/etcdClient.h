@@ -17,6 +17,7 @@ private:
     CURLcode ret;
     string url;
     string answer;
+    string value;
     
 public:
     EtcdClient(string url);
@@ -27,7 +28,9 @@ public:
     
     void setvalue(string prefix, string key, string value);
     
-    int getvalue(string key, bool  uptodate);
+    int getvalue(string prefix, string key);
+    
+    int getuptodatevalue(string prefix, bool  uptodate);
     
     int waitvalue(string prefix);
     
