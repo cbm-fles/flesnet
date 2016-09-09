@@ -52,6 +52,7 @@ Application::Application(Parameters const& par,
     // set_cpu(1);
 
     for (unsigned i : par_.compute_indexes()) {
+        // generate random shared memory identifier for timeslice buffer
         std::random_device random_device;
         std::uniform_int_distribution<uint64_t> uint_distribution;
         uint64_t random_number = uint_distribution(random_device);
