@@ -74,7 +74,7 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
     int res = fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), port_s.c_str(),
                          FI_SOURCE, info_, &accept_info);
     if (res)
-        throw LibfabricException("lookup localhost in accept failed");
+        throw LibfabricException("lookup "+hostname.c_str()+" in accept failed");
 
     // inet_ntop(AF_INET, &(sa.sin_addr), str, INET_ADDRSTRLEN);
 

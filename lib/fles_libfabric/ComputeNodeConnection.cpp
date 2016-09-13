@@ -45,7 +45,7 @@ void ComputeNodeConnection::post_send_status_message()
                   << "POST SEND status_message"
                   << " (ack.desc=" << send_status_message_.ack.desc << ")";
     }
-    while (pending_send_requests_ >= 2 /*qp_cap_.max_send_wr*/) {
+    while (pending_send_requests_ >= 2000 /*qp_cap_.max_send_wr*/) {
         throw LibfabricException(
             "Max number of pending send requests exceeded");
     }
