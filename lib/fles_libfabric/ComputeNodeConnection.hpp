@@ -8,6 +8,7 @@
 #include "TimesliceComponentDescriptor.hpp"
 #include <boost/format.hpp>
 #include <chrono>
+#include <sys/uio.h>
 
 #include <sys/uio.h>
 

@@ -5,6 +5,7 @@
 #include "ComputeNodeStatusMessage.hpp"
 #include "Connection.hpp"
 #include "InputChannelStatusMessage.hpp"
+#include <sys/uio.h>
 
 #include <sys/uio.h>
 
