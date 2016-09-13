@@ -5,6 +5,7 @@
 #include "ComputeNodeStatusMessage.hpp"
 #include "Connection.hpp"
 #include "InputChannelStatusMessage.hpp"
+#include <sys/uio.h>
 
 /// Input node connection class.
 /** An InputChannelConnection object represents the endpoint of a single

@@ -71,7 +71,7 @@ void VerbsProvider::accept(struct fid_pep *pep, const std::string& hostname, uns
     int res =
       fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), port_s.c_str(), FI_SOURCE, info_, &accept_info);
     if (res)
-      throw LibfabricException("lookup "+hostname.c_str()+" in accept failed");
+      throw LibfabricException("lookup " + hostname + " in accept failed");
 
     res = fi_passive_ep(fabric_, accept_info, &pep, nullptr);
     if (res)

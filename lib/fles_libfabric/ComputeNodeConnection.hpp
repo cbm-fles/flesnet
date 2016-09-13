@@ -8,6 +8,7 @@
 #include "TimesliceComponentDescriptor.hpp"
 #include <boost/format.hpp>
 #include <chrono>
+#include <sys/uio.h>
 
 /// Compute node connection class.
 /** A ComputeNodeConnection object represents the endpoint of a single
