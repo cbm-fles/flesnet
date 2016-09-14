@@ -25,7 +25,8 @@ ComputeBuffer::ComputeBuffer(
       num_input_nodes_(num_input_nodes), timeslice_size_(timeslice_size),
       processor_instances_(processor_instances),
       processor_executable_(processor_executable), ack_(desc_buffer_size_exp),
-      signal_status_(signal_status), local_node_name_(local_node_name)
+      signal_status_(signal_status), local_node_name_(local_node_name),
+      ConnectionGroup(local_node_name)
 {
     std::random_device random_device;
     std::uniform_int_distribution<uint64_t> uint_distribution;

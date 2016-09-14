@@ -30,17 +30,18 @@ template <typename CONNECTION> class ConnectionGroup : public ThreadContainer
 {
 public:
     /// The ConnectionGroup default constructor.
-    ConnectionGroup()
+    ConnectionGroup(std::string local_node_name)
     {
-        // std::cout << "ConnectionGroup constructor" << std::endl;
-        struct fi_eq_attr eq_attr;
-        memset(&eq_attr, 0, sizeof(eq_attr));
-        eq_attr.size = 10;
-        eq_attr.wait_obj = FI_WAIT_NONE;
-        int res = fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_,
-                             nullptr);
-        if (res)
-            throw LibfabricException("fi_eq_open failed");
+      Provider::init(local_node_name);
+      //std::cout << "ConnectionGroup constructor" << std::endl;
+      struct fi_eq_attr eq_attr;
+      memset(&eq_attr, 0, sizeof(eq_attr));
+      eq_attr.size = 10;
+      eq_attr.wait_obj = FI_WAIT_NONE;
+      int res = fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_, nullptr);
+      if (res)
+        throw LibfabricException("fi_eq_open failed");
+
     }
 
     ConnectionGroup(const ConnectionGroup&) = delete;

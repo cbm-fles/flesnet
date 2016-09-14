@@ -17,20 +17,14 @@
 
 #include "LibfabricException.hpp"
 
-std::unique_ptr<Provider> Provider::get_provider()
+std::unique_ptr<Provider> Provider::get_provider(std::string local_host_name)
 {
     // std::cout << "Provider::get_provider()" << std::endl;
-    struct fi_info* info = VerbsProvider::exists();
+    struct fi_info* info = VerbsProvider::exists(local_host_name);
     if (info != nullptr)
         return std::unique_ptr<Provider>(new VerbsProvider(info));
 
-    info = RDMSocketsProvider::exists();
-    if (info != nullptr) {
-        std::cout << "found rdm" << std::endl;
-        return std::unique_ptr<Provider>(new RDMSocketsProvider(info));
-    }
-
-    info = MsgSocketsProvider::exists();
+    info = MsgSocketsProvider::exists(local_host_name);
     if (info != nullptr)
         return std::unique_ptr<Provider>(new MsgSocketsProvider(info));
 
@@ -43,4 +37,7 @@ std::unique_ptr<Provider> Provider::get_provider()
 
 uint64_t Provider::requested_key = 0;
 
+
 int Provider::vector = 0;
+
+std::unique_ptr<Provider> Provider::prov;

@@ -32,8 +32,7 @@ public:
                   uint32_t num_input_nodes, uint32_t timeslice_size,
                   uint32_t processor_instances,
                   const std::string processor_executable,
-                  volatile sig_atomic_t* signal_status,
-                  std::string local_node_name);
+                  volatile sig_atomic_t* signal_status, std::string input_node_name);
 
     ComputeBuffer(const ComputeBuffer&) = delete;
     void operator=(const ComputeBuffer&) = delete;
