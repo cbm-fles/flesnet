@@ -17,8 +17,8 @@ public:
     Provider(const Provider &) = delete;
     Provider &operator=(const Provider &) = delete;
 
-  virtual struct fi_info *get_info() = 0;
-  virtual struct fid_fabric *get_fabric() = 0;
+    virtual struct fi_info *get_info() = 0;
+    virtual struct fid_fabric *get_fabric() = 0;
     virtual void accept(struct fid_pep *pep, const std::string &hostname,unsigned short port,
                         unsigned int count, fid_eq *eq) = 0;
 
@@ -27,14 +27,19 @@ public:
                          uint32_t max_recv_sge, uint32_t max_inline_data,
                          const void* param, size_t paramlen, void* addr) = 0;
 
+    static void init(std::string local_host_name)
+    {
+      prov = get_provider(local_host_name);
+    }
+
     static std::unique_ptr<Provider> &getInst()
     {
-        static std::unique_ptr<Provider> prov = get_provider();
         return prov;
     }
 
     static uint64_t requested_key;
 
 private:
-    static std::unique_ptr<Provider> get_provider();
+    static std::unique_ptr<Provider> get_provider(std::string local_host_name);
+    static std::unique_ptr<Provider> prov;
 };

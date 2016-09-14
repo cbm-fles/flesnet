@@ -26,20 +26,20 @@ VerbsProvider::~VerbsProvider()
 #pragma GCC diagnostic pop
 }
 
-struct fi_info *VerbsProvider::exists() {
+struct fi_info *VerbsProvider::exists(std::string local_host_name) {
     struct fi_info *hints = fi_allocinfo();
     struct fi_info *info = nullptr;
 
-    // @todo copy fles_rdma lookup method to determine local ib ip
     hints->caps =
         FI_MSG | FI_RMA | FI_WRITE | FI_SEND | FI_RECV | FI_REMOTE_WRITE;
     hints->mode = FI_LOCAL_MR;
+    hints->ep_attr->type = FI_EP_MSG;
     hints->rx_attr->mode = FI_LOCAL_MR | FI_RX_CQ_DATA;
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->addr_format = FI_SOCKADDR_IN;
 
-    int res = fi_getinfo(FI_VERSION(1, 1), nullptr, nullptr,
-                         0, hints, &info);
+    int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr,
+                         FI_SOURCE, hints, &info);
 
     if(!res && (strcmp("verbs", info->fabric_attr->prov_name) == 0)) {
         fi_freeinfo(hints);
