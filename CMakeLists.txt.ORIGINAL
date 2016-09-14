@@ -8,8 +8,6 @@ option(COVERALLS_UPLOAD "Upload the generated coveralls json" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
-set(LIBFABRIC_PREFIX "" CACHE STRING "Help cmake to find libfabric library.")
-
 include(GetGitRevisionDescription)
 git_describe(GIT_REVISION "--all" "--tags" "--long" "--always")
 configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
@@ -22,7 +20,7 @@ if(DEFINED ENV{SIMPATH})
   set(SIMPATH $ENV{SIMPATH})
   find_package(ExternalZMQ REQUIRED)
 else()
-  find_library(ZMQ_LIBRARIES zmq HINTS /dassw/ubuntu/zeromq/4.1.5/lib)
+  find_library(ZMQ_LIBRARIES zmq)
 endif()
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
@@ -39,8 +37,8 @@ endif()
 find_package(Boost 1.54.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex)
 find_package(Threads)
 
-find_path(LIBFABRIC_INCLUDE_DIR rdma/fabric.h HINTS ${LIBFABRIC_PREFIX}/include)
-find_library(LIBFABRIC_LIBRARY NAMES fabric HINTS ${LIBFABRIC_PREFIX}/lib)
+find_path(LIBFABRIC_INCLUDE_DIR rdma/fabric.h)
+find_library(LIBFABRIC_LIBRARY NAMES fabric)
 
 set(LIBFABRIC_LIBRARIES ${LIBFABRIC_LIBRARY} )
 set(LIBFABRIC_INCLUDE_DIRS ${LIBFABRIC_INCLUDE_DIR} )
@@ -48,7 +46,7 @@ set(LIBFABRIC_INCLUDE_DIRS ${LIBFABRIC_INCLUDE_DIR} )
 MESSAGE(STATUS "libfabric           = ${LIBFABRIC_LIBRARIES}")
 MESSAGE(STATUS "libfabric           = ${LIBFABRIC_INCLUDE_DIRS}")
 
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS} /dassw/ubuntu/zeromq/4.1.5/include cppzmq ${LIBFABRIC_INCLUDE_DIRS})
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS} ${LIBFABRIC_INCLUDE_DIRS})
 
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
@@ -70,7 +68,7 @@ unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 add_subdirectory(doc)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  #find_package(PDA 11.1.7 REQUIRED)
+  find_package(PDA 11.1.7 REQUIRED)
 
   if(LIBFABRIC_LIBRARY)
     add_subdirectory(lib/fles_libfabric)
@@ -81,14 +79,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(RDMA_LIBRARY fles_rdma ibverbs rdmacm)
     set(RDMA_INCLUDE "${PROJECT_SOURCE_DIR}/lib/fles_rdma")
   endif()
-#  add_subdirectory(lib/flib)
-#  add_subdirectory(lib/pda)
+  add_subdirectory(lib/flib)
+  add_subdirectory(lib/pda)
 
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
   add_subdirectory(app/flesnet)
-#  add_subdirectory(app/flib_tools)
-#  add_subdirectory(app/flib_cfg)
-#  add_subdirectory(app/flib_server)
+  add_subdirectory(app/flib_tools)
+  add_subdirectory(app/flib_cfg)
+  add_subdirectory(app/flib_server)
   unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
   add_subdirectory(contrib)
