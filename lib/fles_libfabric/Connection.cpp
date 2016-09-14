@@ -57,7 +57,8 @@ void Connection::connect(const std::string& hostname,
 
     hints->rx_attr->size = max_recv_wr_;
     hints->rx_attr->iov_limit = max_recv_sge_;
-    hints->tx_attr->size = max_send_wr_;
+    // TODO this attribute causes a problem while running flesnet
+    //hints->tx_attr->size = max_send_wr_;
     hints->tx_attr->iov_limit = max_send_sge_;
     hints->tx_attr->inject_size = max_inline_data_;
 

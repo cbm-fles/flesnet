@@ -43,11 +43,14 @@ struct fi_info* MsgSocketsProvider::exists()
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->domain_attr->mr_mode = FI_MR_BASIC;
     hints->addr_format = FI_SOCKADDR_IN;
+    hints->ep_attr->type = FI_EP_MSG;
+    hints->domain_attr->name="eth0";
 
     int res = fi_getinfo(FI_VERSION(1, 1), nullptr, nullptr, 0, hints, &info);
 
     if (!res && (strcmp("sockets", info->fabric_attr->prov_name) == 0)) {
-        fi_freeinfo(hints);
+        // TODO this freeinfo method throws invalid pointer exception!!!
+    	//fi_freeinfo(hints);
         return info;
     }
 
@@ -74,6 +77,7 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
     struct fi_info* accept_info = nullptr;
     int res = fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), port_s.c_str(),
                          FI_SOURCE, info_, &accept_info);
+
     if (res)
         throw LibfabricException("lookup "+ hostname +" in accept failed");
 
