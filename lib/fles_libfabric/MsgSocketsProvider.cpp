@@ -30,7 +30,7 @@ MsgSocketsProvider::~MsgSocketsProvider()
 #pragma GCC diagnostic pop
 }
 
-struct fi_info* MsgSocketsProvider::exists()
+struct fi_info* MsgSocketsProvider::exists(std::string local_host_name)
 {
     struct fi_info* hints = fi_allocinfo();
     struct fi_info* info = nullptr;
@@ -38,6 +38,7 @@ struct fi_info* MsgSocketsProvider::exists()
     hints->caps =
         FI_MSG | FI_RMA | FI_WRITE | FI_SEND | FI_RECV | FI_REMOTE_WRITE;
     hints->mode = FI_LOCAL_MR;
+    hints->ep_attr->type = FI_EP_MSG;
     hints->rx_attr->mode = FI_LOCAL_MR;
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->domain_attr->mr_mode = FI_MR_BASIC;
@@ -45,7 +46,8 @@ struct fi_info* MsgSocketsProvider::exists()
     hints->ep_attr->type = FI_EP_MSG;
     hints->domain_attr->name="eth0";
 
-    int res = fi_getinfo(FI_VERSION(1, 1), nullptr, nullptr, 0, hints, &info);
+    int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr,
+                         FI_SOURCE, hints, &info);
 
     if (!res && (strcmp("sockets", info->fabric_attr->prov_name) == 0)) {
         // TODO this freeinfo method throws invalid pointer exception!!!

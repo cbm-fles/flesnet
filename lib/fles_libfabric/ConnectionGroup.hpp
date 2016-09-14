@@ -28,8 +28,9 @@ template <typename CONNECTION> class ConnectionGroup : public ThreadContainer
 {
 public:
     /// The ConnectionGroup default constructor.
-    ConnectionGroup()
+    ConnectionGroup(std::string local_node_name)
     {
+      Provider::init(local_node_name);
       //std::cout << "ConnectionGroup constructor" << std::endl;
       struct fi_eq_attr eq_attr;
       memset(&eq_attr, 0, sizeof(eq_attr));
