@@ -52,8 +52,8 @@ private:
     /// Data source (e.g., FLIB).
     InputBufferReadInterface& data_source_;
 
-    uint64_t write_index_desc_ = 0;
-    uint64_t read_index_desc_ = 0;
+    uint64_t write_index_desc_;
+    uint64_t read_index_desc_;
 
     bool eos_ = false;
 };
