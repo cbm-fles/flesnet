@@ -4,6 +4,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/log/attributes.hpp>
 #include <boost/log/expressions.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/utility/setup.hpp>
 
@@ -167,5 +168,32 @@ void add_file(std::string filename, severity_level minimum_severity)
     auto file_sink = boost::log::add_file_log(filename);
     file_sink->set_formatter(file_formatter);
     file_sink->set_filter(severity >= minimum_severity);
+}
+
+void add_syslog(syslog::facility facility, severity_level minimum_severity)
+{
+    boost::log::formatter syslog_formatter =
+        boost::log::expressions::stream
+        << boost::log::expressions::attr<severity_level>("Severity") << ": "
+        << boost::log::expressions::message;
+
+    auto syslog_sink = boost::make_shared<
+        boost::log::sinks::synchronous_sink<boost::log::sinks::syslog_backend>>(
+        boost::log::keywords::facility = facility,
+        boost::log::keywords::use_impl = syslog::native);
+
+    syslog::custom_severity_mapping<severity_level> mapping("Severity");
+    mapping[trace] = syslog::debug;
+    mapping[debug] = syslog::debug;
+    mapping[info] = syslog::info;
+    mapping[warning] = syslog::warning;
+    mapping[error] = syslog::error;
+    mapping[fatal] = syslog::critical;
+    syslog_sink->locked_backend()->set_severity_mapper(mapping);
+
+    syslog_sink->set_formatter(syslog_formatter);
+    syslog_sink->set_filter(severity >= minimum_severity);
+
+    boost::log::core::get()->add_sink(syslog_sink);
 }
 } // namespace logging

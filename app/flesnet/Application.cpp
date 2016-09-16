@@ -1,12 +1,16 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2016 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
+#include "ChildProcessManager.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include "FlibPatternGenerator.hpp"
 #include "shm_channel_client.hpp"
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/thread/future.hpp>
 #include <boost/thread/thread.hpp>
 #include <log.hpp>
+#include <random>
 
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
@@ -48,13 +52,26 @@ Application::Application(Parameters const& par,
     // set_cpu(1);
 
     for (unsigned i : par_.compute_indexes()) {
-        std::unique_ptr<ComputeBuffer> buffer(new ComputeBuffer(
-            i, par_.cn_data_buffer_size_exp(), par_.cn_desc_buffer_size_exp(),
-            par_.base_port() + i, input_nodes_size, par_.timeslice_size(),
-            par_.processor_instances(), par_.processor_executable(),
-            signal_status_));
-        buffer->start_processes();
-        compute_buffers_.push_back(std::move(buffer));
+        // generate random shared memory identifier for timeslice buffer
+        std::random_device random_device;
+        std::uniform_int_distribution<uint64_t> uint_distribution;
+        uint64_t random_number = uint_distribution(random_device);
+        std::string shm_identifier =
+            "flesnet_" + boost::lexical_cast<std::string>(random_number);
+
+        std::unique_ptr<TimesliceBuffer> tsb(new TimesliceBuffer(
+            shm_identifier, par_.cn_data_buffer_size_exp(),
+            par_.cn_desc_buffer_size_exp(), input_nodes_size));
+
+        std::unique_ptr<TimesliceBuilder> receiver(new TimesliceBuilder(
+            i, *tsb, par_.base_port() + i, input_nodes_size,
+            par_.timeslice_size(), signal_status_, false));
+
+        start_processes(shm_identifier);
+        ChildProcessManager::get().allow_stop_processes(this);
+
+        timeslice_buffers_.push_back(std::move(tsb));
+        timeslice_receivers_.push_back(std::move(receiver));
     }
 
     set_node();
@@ -105,13 +122,13 @@ void Application::run()
 {
     // Do not spawn additional thread if only one is needed, simplifies
     // debugging
-    if (compute_buffers_.size() == 1 && input_channel_senders_.empty()) {
-        L_(debug) << "using existing thread for single compute buffer";
-        (*compute_buffers_[0])();
+    if (timeslice_receivers_.size() == 1 && input_channel_senders_.empty()) {
+        L_(debug) << "using existing thread for single timeslice receiver";
+        (*timeslice_receivers_[0])();
         return;
     };
-    if (input_channel_senders_.size() == 1 && compute_buffers_.empty()) {
-        L_(debug) << "using existing thread for single input buffer";
+    if (input_channel_senders_.size() == 1 && timeslice_receivers_.empty()) {
+        L_(debug) << "using existing thread for single input channel sender";
         (*input_channel_senders_[0])();
         return;
     };
@@ -121,7 +138,7 @@ void Application::run()
     std::vector<boost::unique_future<void>> futures;
     bool stop = false;
 
-    for (auto& buffer : compute_buffers_) {
+    for (auto& buffer : timeslice_receivers_) {
         boost::packaged_task<void> task(std::ref(*buffer));
         futures.push_back(task.get_future());
         threads.add_thread(new boost::thread(std::move(task)));
@@ -149,4 +166,24 @@ void Application::run()
     }
 
     threads.join_all();
+}
+
+void Application::start_processes(const std::string shared_memory_identifier)
+{
+    const std::string processor_executable = par_.processor_executable();
+    assert(!processor_executable.empty());
+    for (uint_fast32_t i = 0; i < par_.processor_instances(); ++i) {
+        std::stringstream index;
+        index << i;
+        ChildProcess cp = ChildProcess();
+        cp.owner = this;
+        boost::split(cp.arg, processor_executable, boost::is_any_of(" \t"),
+                     boost::token_compress_on);
+        cp.path = cp.arg.at(0);
+        for (auto& arg : cp.arg) {
+            boost::replace_all(arg, "%s", shared_memory_identifier);
+            boost::replace_all(arg, "%i", index.str());
+        }
+        ChildProcessManager::get().start_process(cp);
+    }
 }

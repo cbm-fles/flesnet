@@ -157,6 +157,14 @@ Modify `/etc/default/grub`, e.g.:
     sudo update-grub
     reboot
 
+Configuring syslog
+------------------
+
+Flesnet sends certain information to syslog. For rsyslogd an example
+configuration file is provided. To install use:
+
+   cp ./contrib/30-flesnet.conf /etc/rsyslog.d/
+   service rsyslog restart
 
 Installing JTAG Software for programming the FLIB
 =================================================

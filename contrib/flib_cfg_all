@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Confugure all FLIBs from 0 including LAST
+# Provide config files flib_x.cfg for each FLIB.
+
+LAST=1
+
+for i in $(seq 0 $LAST); do
+  echo "*** Config FLIB $i ***";
+  ./flib_cfg -c flib_$i.cfg
+done
+
+# Examples
+
+# Start
+#./flib_server -i 01:00.0 -o flib_0
+#./flib_server -i 02:00.0 -o flib_1
+#./flesnet -c0   # compute node 0
+#./flesnet -i0 --input-shm flib_0   # input channel 0 from flib_0
+#./flesnet -i1 -i2 --input-shm flib_1   # input channel 0 from flib_0
+#./en_readout 0
+#./en_readout 1
+
+
+# Start readout at GSI
+# in flib_1.cfg try pgen_near, then pgen_far, then flim
+#./flib_cfg_all
+#./flib_server -i 02:00.0 -o flib_1
+#./flesnet -c0   # compute node 0
+#./flesnet -i --input-shm flib_1   # input 4 channels from flib_0
+#./flesnet -i0 -i1 -i2 -i3 --input-shm flib_1   # input 4 channels from flib_0
+#./mstool -I flib_1 -c 0   # read channel number 0 from flib_1
+#./mstool -I flib_1 -c 1   # read channel number 1 from flib_1
+#./mstool -I flib_1 -c 2   # read channel number 2 from flib_1
+#./mstool -I flib_1 -c 3   # read channel number 3 from flib_1
+#./en_readout 1

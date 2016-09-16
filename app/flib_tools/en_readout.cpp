@@ -5,6 +5,7 @@
  */
 
 #include "flib.h"
+#include <chrono>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -12,9 +13,9 @@
 #include <ctime>
 #include <errno.h>
 #include <iostream>
-#include <limits.h>
+#include <limits>
 #include <stdint.h>
-#include <sys/time.h>
+#include <thread>
 #include <unistd.h>
 
 using namespace flib;
@@ -98,30 +99,51 @@ int main(int argc, char* argv[]) {
 
     while (s_interrupted == 0) {
       flims.at(0)->set_debug_out(false);
-      ::sleep(1);
+      std::this_thread::sleep_for(std::chrono::seconds(1));
       flims.at(0)->set_debug_out(true);
-      ::sleep(1);
+      std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     std::cout << "disabling ..." << std::endl;
 
     flims.at(0)->set_pgen_enable(false);
     flib.enable_mc_cnt(false);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
     for (auto&& flim : flims) {
-      std::cout << "mc index (packer) " << flim->get_mc_idx() << std::endl;
-      std::cout << "mc time (packer)  " << flim->get_mc_time() << std::endl;
       std::cout << "mc pending (pgen) " << flim->get_pgen_mc_pending()
                 << std::endl;
     }
 
+    std::vector<uint64_t> mc_idx;
+    std::vector<uint64_t> mc_time;
+
     for (auto&& flim : flims) {
       flim->set_ready_for_data(false);
-      flim->reset_datapath();
-      std::cout << "mc time (packer)  " << flim->get_mc_time() << std::endl;
 
+      mc_idx.push_back(flim->get_mc_idx());
+      mc_time.push_back(flim->get_mc_time());
+
+      // index is incremented when ms is finished
+      // time is captured with first word of ms
+      // for correct stop index is one count ahead
+      // ms size can be calculated (time - start_offset) / (index - 1)
+      std::cout << "mc index (packer) " << mc_idx.back() << std::endl;
+      std::cout << "mc time (packer)  " << mc_time.back() << std::endl;
+
+      flim->reset_datapath();
       if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
         std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
       }
+    }
+
+    if (!(std::adjacent_find(mc_idx.begin(), mc_idx.end(),
+                             std::not_equal_to<uint64_t>()) == mc_idx.end())) {
+      std::cout << "*** WARNING *** mc index (packer) not equal" << std::endl;
+    }
+    if (!(std::adjacent_find(mc_time.begin(), mc_time.end(),
+                             std::not_equal_to<uint64_t>()) == mc_time.end())) {
+      std::cout << "*** WARNING *** mc time (packer) not equal" << std::endl;
     }
 
     std::cout << "Exiting" << std::endl;

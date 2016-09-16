@@ -34,6 +34,10 @@ add_custom_command(
 add_custom_target (
 	cfg-files ALL
 	COMMAND ${CMAKE_COMMAND}
+          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/flib_cfg_all
+          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/flib_cfg_all
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
+	COMMAND ${CMAKE_COMMAND}
           -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/flib.cfg
           -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/flib.cfg
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake

@@ -90,6 +90,8 @@ TimesliceView* TimesliceReceiver::do_get()
 #endif
     if (recvd_size == 0) {
         eos_ = true;
+        // put end work item back for other consumers
+        work_items_mq_->send(nullptr, 0, 0);
         return nullptr;
     }
     assert(recvd_size == sizeof(wi));
