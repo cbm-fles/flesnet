@@ -93,6 +93,11 @@ public:
     m_shm_dev->m_cond_req.notify_one();
   }
 
+  DualIndex get_read_index() override {
+    ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
+    return m_shm_ch->read_index(lock);
+  }
+
   void update_write_index() {
     ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
     m_shm_ch->set_req_write_index(lock, true);

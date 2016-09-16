@@ -72,6 +72,8 @@ public:
         read_index_.store(new_read_index);
     }
 
+    DualIndex get_read_index() override { return read_index_.load(); }
+
 private:
     /// Input data buffer.
     RingBuffer<uint8_t> data_buffer_;
