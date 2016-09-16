@@ -114,16 +114,6 @@ private:
     L_(trace) << "fetching write_index: data " << write_index.index.data
               << " desc " << write_index.index.desc;
     lock.lock();
-#if 0
-      // TODO remove when mc_time instead of mc_index is used in desc.
-      if (true) {
-        DualIndex read_index = m_shm_ch->read_index(lock);
-        if (read_index.desc < write_index.index.desc) {
-          assert(m_desc_buffer_view->at(write_index.index.desc - 1).idx ==
-                 write_index.index.desc - 1);
-        }
-      }
-#endif
     m_shm_ch->set_write_index(lock, write_index);
   }
 
