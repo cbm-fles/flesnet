@@ -93,9 +93,16 @@ public:
     m_shm_dev->m_cond_req.notify_one();
   }
 
-  DualIndex get_read_index() override {
+  DualIndex get_read_index_cached() {
     ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
     return m_shm_ch->read_index(lock);
+  }
+
+  DualIndex get_read_index() override {
+    // user wrapper function to avoid segfault in simple_consumer
+    // when lock is relesed
+    // TODO: why?
+    return get_read_index_cached();
   }
 
   void update_write_index() {
