@@ -1,16 +1,20 @@
 // Copyright 2013-2015 Jan de Cuveland <cmail@cuveland.de>
 
-#include "NdpbDebugger.hpp"
+#include "NgdpbDebugger.hpp"
 #include <algorithm>
 #include <boost/format.hpp>
 
 #include "rocMess_wGet4v1.h"
 
-std::ostream& NdpbDump::write_to_stream(std::ostream& s) const
+#include <iomanip>
+
+std::ostream& NgdpbDump::write_to_stream(std::ostream& s) const
 {
     constexpr int bytes_per_block = 8;
 //    constexpr int bytes_per_line = 4 * bytes_per_block;
     int iNbMessages = (size - (size%bytes_per_block) ) / bytes_per_block;
+    std::cout << "-----------------------------  "
+              << iNbMessages << std::endl;
 
     for (int i = 0; i < static_cast<int>(iNbMessages); i ++)
     {
@@ -18,8 +22,11 @@ std::ostream& NdpbDump::write_to_stream(std::ostream& s) const
 
         ngdpb::Message mess( ulData );
 
+        std::cout << std::hex << std::setw(8) << ulData << " "
+                  << std::dec;
+
         mess.printData( ngdpb::msg_print_File,
-                        ngdpb::msg_print_File | ngdpb::msg_print_Prefix | ngdpb::msg_print_Data, 
+                        ngdpb::msg_print_Hex | ngdpb::msg_print_Prefix | ngdpb::msg_print_Data,
                         0, s);
 /*
         // First dump the DPB identifier

@@ -2,7 +2,7 @@
 // Copyright 2016 Pierre-Alain Loizeau <p.-a.loizeau@gsi.de>
 
 #include "Application.hpp"
-#include "NdpbDebugger.hpp"
+#include "NgdpbDebugger.hpp"
 //#include "EmbeddedPatternGenerator.hpp"
 //#include "FlibPatternGenerator.hpp"
 //#include "MicrosliceAnalyzer.hpp"
@@ -44,7 +44,7 @@ Application::Application(Parameters const& par) : par_(par)
     // Sink setup
     if (par_.debugger) {
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
-            new NdpbMicrosliceDumper(std::cout, par_.dump_verbosity)));
+            new NgdpbMicrosliceDumper(std::cout, par_.dump_verbosity)));
     }
 
     if (!par_.output_archive.empty()) {

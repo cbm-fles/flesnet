@@ -478,8 +478,11 @@ namespace ngdpb {
          //! For SysMes data: Set system message data (32 bit field)
          inline void setSysMesData(uint32_t v) { setField(16, 32, v); }
 
+         // ---------- Get4 gDPB 24b/32b ALL access methods ------------------------
+         inline uint16_t getGdpbGenChipId()      const { return getField( 42,  6); }
+         
          // ---------- Get4 gDPB 24b/32b Hit access methods ------------------------
-         inline uint16_t getGdpbHitChipId()      const { return getField( 42,  6); }
+//         inline uint16_t getGdpbHitChipId()      const { return getField( 42,  6); }
          inline uint16_t getGdpbHitChanId()      const { return getField( 40,  2); }
          inline uint32_t getGdpbHitFullTs()      const { return getField( 21, 19); }
          inline uint16_t getGdpbHitCrc()         const { return getField(  4,  8); }
@@ -492,7 +495,7 @@ namespace ngdpb {
          inline uint16_t getGdpbHit32Tot()       const { return getField( 12,  8); }
 
          // ---------- Get4 gDPB 24b/32b Epoch access methods ----------------------
-         inline uint16_t getGdpbEpChipId()       const { return getField( 42,  6); }
+//         inline uint16_t getGdpbEpChipId()       const { return getField( 42,  6); }
          inline bool     getGdpbEpLinkId()       const { return getBit(   41    ); }
          inline uint32_t getGdpbEpEpochNb()      const { return getField( 10, 31); }
          inline uint16_t getGdpbEpStampTs()      const { return getField(  8,  2); }
@@ -502,12 +505,12 @@ namespace ngdpb {
          inline bool     getGdpbEpMissmatch()    const { return getBit(    4    ); }
 
          // ---------- Get4 gDPB 24b/32b Slow cont. access methods -----------------
-         inline uint16_t getGdpbSlcChipId()      const { return getField( 42,  6); }
+//         inline uint16_t getGdpbSlcChipId()      const { return getField( 42,  6); }
          inline uint32_t getGdpbSlcData()        const { return getField( 12, 29); }
          inline uint16_t getGdpbSlcCrc()         const { return getField(  4,  8); }
 
          // ---------- Get4 gDPB System Msg access methods -------------------------
-         inline uint16_t getGdpbSysChipId()      const { return getField( 42,  6); }
+//         inline uint16_t getGdpbSysChipId()      const { return getField( 42,  6); }
          inline bool     getGdpbSysLinkId()      const { return getBit(   41    ); }
          inline uint16_t getGdpbSysSubType()     const { return getField( 37,  4); }
          // ---------- Get4 gDPB 24b/32b Errors access methods ---------------------
@@ -537,10 +540,12 @@ namespace ngdpb {
          inline bool isGet4Msg() const { return getMessageType() == MSG_GET4; }
          //! Returns \a true is message type is #MSG_SYS (system message)
          inline bool isSysMsg() const { return getMessageType() == MSG_SYS; }
-         //! Returns \a true is message type is #MSG_GET4_SLC (system message)
+         //! Returns \a true is message type is #MSG_GET4_SLC (GET4 Slow Control)
          inline bool isGet4SlCtrMsg() const { return getMessageType() == MSG_GET4_SLC; }
-         //! Returns \a true is message type is #MSG_GET4_32B (system message)
+         //! Returns \a true is message type is #MSG_GET4_32B (GET4 32b hit data)
          inline bool isGet4Hit32Msg() const { return getMessageType() == MSG_GET4_32B; }
+         //! Returns \a true is message type is #MSG_GET4_SYS (GET4 system message)
+         inline bool isGet4SysMsg() const { return getMessageType() == MSG_GET4_SYS; }
          //! Returns \a true is message type is #MSG_SYS (system message) and subtype is 32bHack
          inline bool isGet4Hack32Msg() const { return
                ( (getMessageType() == MSG_SYS) &&
@@ -588,7 +593,7 @@ namespace ngdpb {
 
          bool copyto(void* tgt, int fmt = formatNormal);
    };
-/*
+
    class FullMessage : public Message {
       protected:
          uint64_t fuExtendedEpoch;   // Epoch of the message, extended with 32b epoch cycle counter
@@ -610,7 +615,7 @@ namespace ngdpb {
 
          inline uint64_t getExtendedEpoch() const {return fuExtendedEpoch; }
    };
-*/
+
 }
 
 

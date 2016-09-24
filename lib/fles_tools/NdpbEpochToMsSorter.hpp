@@ -21,17 +21,21 @@ namespace fles
       public:
           NdpbEpochToMsSorter( uint32_t uEpPerMs = 1 ) :
              BufferingFilter(),
-             fuNbEpPerMs(uEpPerMs), fmsMsgBuffer(), fuNbEpInBuff(0),
-             fbFirstEpFound(false), fulCurrentEpoch(0)
+             fuNbEpPerMs(uEpPerMs), 
+             fmsFullMsgBuffer(), fuNbEpInBuff(0),
+             fbFirstEpFound(false), 
+             fuCurrentEpoch(0), fuCurrentEpochCycle(0), fulCurrentLongEpoch(0)
              {};
 
       private:
           void process() override;
 
           uint32_t fuNbEpPerMs;
-          std::multiset<ngdpb::Message> fmsMsgBuffer;
+          std::multiset<ngdpb::FullMessage> fmsFullMsgBuffer;
           uint32_t fuNbEpInBuff;
           bool     fbFirstEpFound;
-          uint64_t fulCurrentEpoch;
+          uint32_t fuCurrentEpoch;
+          uint32_t fuCurrentEpochCycle;
+          uint64_t fulCurrentLongEpoch;
    };
 } // namespace fles

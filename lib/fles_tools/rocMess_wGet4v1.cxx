@@ -47,6 +47,8 @@ bool ngdpb::Message::operator<(const ngdpb::Message& other) const
    uint32_t uThisType  = this->getMessageType();
    uint32_t uOtherType = other.getMessageType();
 
+// TODO: Offset everything by 1 epoch to account for Last flag in nDPB setups!
+
    // if both GET4 hit messages, use the full timestamp info
    if( (MSG_GET4_32B == uThisType  || MSG_GET4 == uThisType )&&
        (MSG_GET4_32B == uOtherType || MSG_GET4 == uOtherType ) )
@@ -63,9 +65,16 @@ bool ngdpb::Message::operator<(const ngdpb::Message& other) const
    } // if Hit GET4 message (24 or 32b)
    else if( MSG_GET4_SLC == uThisType || MSG_GET4_SYS == uThisType )
    {
-      uThisTs = 0;
+      uThisTs = 0; // Keep this message first
    } // if SLC or SYS GET4 message
-      else uThisTs = this->getMsgFullTime( 0 );
+/*
+   else if( MSG_EPOCH == uThisType || MSG_EPOCH2 == uThisType )
+   {
+      // Do not change position of Epoch
+      uThisTs = 0; // Keep this message first
+   } // if EPOCH or EPOCH2 message
+*/
+      else uThisTs = this->getMsgFullTime( 1 ); // 1 Epoch offset to account for Last flag
 
    // Then find the timestamp of the current message
    if( MSG_GET4_32B == uOtherType  || MSG_GET4 == uOtherType )
@@ -76,7 +85,14 @@ bool ngdpb::Message::operator<(const ngdpb::Message& other) const
    {
       uOtherTs = 0;
    } // if SLC or SYS GET4 message
-      else uOtherTs = other.getMsgFullTime( 0 );
+/*
+   else if( MSG_EPOCH == uOtherType || MSG_EPOCH2 == uOtherType )
+   {
+      // Do not change position of Epoch
+      uOtherTs = 0xFFFFFFFFFFFFFFFFUL; // Keep this message second
+   } // if EPOCH or EPOCH2 message
+*/
+      else uOtherTs = other.getMsgFullTime( 1 ); // 1 Epoch offset to account for Last flag
 
    return uThisTs < uOtherTs;
 }
@@ -217,7 +233,8 @@ void ngdpb::Message::printData(unsigned outType, unsigned kind, uint32_t epoch, 
    char buf[256];
    if (kind & msg_print_Hex) {
 //      uint8_t* arr = static_cast<uint8_t*> ( &data );
-      uint8_t* arr = (uint8_t*) ( &data );
+//      uint8_t* arr = (uint8_t*) ( &data );
+      const uint8_t* arr = reinterpret_cast<const uint8_t*> ( &data );
       snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X ",
                arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]);
 //      os << buf;
@@ -370,7 +387,8 @@ void ngdpb::Message::printData(unsigned outType, unsigned kind, uint32_t epoch, 
 
    if (kind & msg_print_Data) {
 //      uint8_t* arr = static_cast<uint8_t*> ( &data );
-      uint8_t* arr = (uint8_t*) ( &data );
+//      uint8_t* arr = (uint8_t*) ( &data );
+      const uint8_t* arr = reinterpret_cast<const uint8_t*> ( &data );
       switch (getMessageType()) {
         case MSG_NOP:
            snprintf(buf, sizeof(buf), "NOP (raw %02X:%02X:%02X:%02X:%02X:%02X)",
@@ -403,7 +421,7 @@ void ngdpb::Message::printData(unsigned outType, unsigned kind, uint32_t epoch, 
             break;
          case MSG_GET4:
             snprintf(buf, sizeof(buf), "Get4:0x%02x Chn:%1x Edge:%1x Ts:0x%05x CRC8:0x%02x",
-                  getGdpbHitChipId(), getGdpbHitChanId(), getGdpbHit24Edge(), getGdpbHitFullTs(), getGdpbHitCrc() );
+                  getGdpbGenChipId(), getGdpbHitChanId(), getGdpbHit24Edge(), getGdpbHitFullTs(), getGdpbHitCrc() );
             break;
          case MSG_SYS: {
             char sysbuf[256];
@@ -492,7 +510,7 @@ void ngdpb::Message::printData(unsigned outType, unsigned kind, uint32_t epoch, 
             // GET4 slow control message, new "true" ROC support
             snprintf(buf, sizeof(buf),
                "Get4 Slow control, chip %02d => Chan:%01d Edge:%01d Type:%01x Data:0x%06x CRC:0x%02x",
-               getGdpbSlcChipId(), 0x0, 0x0, 0x0, getGdpbSlcData(), getGdpbSlcCrc() );
+               getGdpbGenChipId(), 0x0, 0x0, 0x0, getGdpbSlcData(), getGdpbSlcCrc() );
             break;
          } // case MSG_GET4_SLC:
          case MSG_GET4_32B:
@@ -500,7 +518,7 @@ void ngdpb::Message::printData(unsigned outType, unsigned kind, uint32_t epoch, 
             // 32b GET4 data event, new "true" ROC support
             snprintf(buf, sizeof(buf),
               "Get4 32 bits, Chip:0x%02x Dll %1d Channel %1d Ts:0x%03x Ft:0x%02x Tot:0x%02x",
-              getGdpbHitChipId(), getGdpbHit32DllLck(), getGdpbHitChanId(),
+              getGdpbGenChipId(), getGdpbHit32DllLck(), getGdpbHitChanId(),
               getGdpbHitCoarse(), getGdpbHitFineTs(), getGdpbHit32Tot() );
 
             break;
@@ -516,7 +534,7 @@ void ngdpb::Message::printData(unsigned outType, unsigned kind, uint32_t epoch, 
                {
                  snprintf(sysbuf, sizeof(sysbuf),
                    "Get4:0x%02x Ch:0x%01x Edge:%01x Unused:%06x ErrCode:0x%02x - GET4 V1 Error Event",
-                   getGdpbSysChipId(), getGdpbSysErrChanId(), getGdpbSysErrEdge(), getGdpbSysErrUnused(), getGdpbSysErrData());
+                   getGdpbGenChipId(), getGdpbSysErrChanId(), getGdpbSysErrEdge(), getGdpbSysErrUnused(), getGdpbSysErrData());
                   break;
                } //
                case SYSMSG_CLOSYSYNC_ERROR:
@@ -532,7 +550,8 @@ void ngdpb::Message::printData(unsigned outType, unsigned kind, uint32_t epoch, 
             break;
          } // case MSG_GET4_SYS:
          default:
-           snprintf(buf, sizeof(buf), "Error - unexpected MessageType: %1x", getMessageType());
+           snprintf(buf, sizeof(buf), "Error - unexpected MessageType: %1x, full data %08X::%08X",
+                                      getMessageType(), getField(32, 32), getField(0, 32) );
       }
    }
 
@@ -634,7 +653,7 @@ double ngdpb::Message::CalcGet4V10R32HitTimeDiff(
 
    return dTimeDiff;
 }
-
+*/
 //----------------------------------------------------------------------------
 //! strict weak ordering operator, including epoch for both messages
 bool ngdpb::FullMessage::operator<(const FullMessage& other) const
@@ -645,4 +664,4 @@ bool ngdpb::FullMessage::operator<(const FullMessage& other) const
       else return this->fuExtendedEpoch < other.fuExtendedEpoch;
 
 }
-*/
+
