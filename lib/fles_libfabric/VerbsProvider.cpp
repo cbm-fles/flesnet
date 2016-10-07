@@ -26,16 +26,9 @@ VerbsProvider::~VerbsProvider()
 #pragma GCC diagnostic pop
 }
 
-<<<<<<< HEAD
 struct fi_info *VerbsProvider::exists(std::string local_host_name) {
     struct fi_info *hints = fi_allocinfo();
     struct fi_info *info = nullptr;
-=======
-struct fi_info* VerbsProvider::exists()
-{
-    struct fi_info* hints = fi_allocinfo();
-    struct fi_info* info = nullptr;
->>>>>>> origin/cray
 
     hints->caps =
         FI_MSG | FI_RMA | FI_WRITE | FI_SEND | FI_RECV | FI_REMOTE_WRITE;
@@ -45,12 +38,9 @@ struct fi_info* VerbsProvider::exists()
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->addr_format = FI_SOCKADDR_IN;
 
-<<<<<<< HEAD
+
     int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr,
                          FI_SOURCE, hints, &info);
-=======
-    int res = fi_getinfo(FI_VERSION(1, 1), nullptr, nullptr, 0, hints, &info);
->>>>>>> origin/cray
 
     if (!res && (strcmp("verbs", info->fabric_attr->prov_name) == 0)) {
         fi_freeinfo(hints);
@@ -82,11 +72,7 @@ void VerbsProvider::accept(struct fid_pep* pep, const std::string& hostname,
     int res = fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), port_s.c_str(),
                          FI_SOURCE, info_, &accept_info);
     if (res)
-<<<<<<< HEAD
       throw LibfabricException("lookup " + hostname + " in accept failed");
-=======
-        throw LibfabricException("lookup localhost in accept failed");
->>>>>>> origin/cray
 
     res = fi_passive_ep(fabric_, accept_info, &pep, nullptr);
     if (res)
