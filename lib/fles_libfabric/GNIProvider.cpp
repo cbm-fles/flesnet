@@ -26,7 +26,7 @@ GNIProvider::~GNIProvider()
 #pragma GCC diagnostic pop
 }
 
-struct fi_info* GNIProvider::exists()
+struct fi_info* GNIProvider::exists(std::string local_host_name)
 {
     struct fi_info* hints = fi_allocinfo();
     struct fi_info* info = nullptr;
@@ -37,7 +37,7 @@ struct fi_info* GNIProvider::exists()
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->domain_attr->mr_mode = FI_MR_BASIC;
 
-    int res = fi_getinfo(FI_VERSION(1, 1), nullptr, nullptr, 0, hints, &info);
+    int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr, 0, hints, &info);
 
     if (!res && (strcmp("gni", info->fabric_attr->prov_name) == 0)) {
         std::cout << info->src_addrlen << std::endl;
