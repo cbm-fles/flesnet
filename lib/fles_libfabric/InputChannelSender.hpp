@@ -10,6 +10,7 @@
 #include <string>
 #include <rdma/fi_domain.h>
 #include <vector>
+#include <set>
 
 /// Input buffer and compute node connection container class.
 /** An InputChannelSender object represents an input buffer (filled by a
@@ -21,15 +22,15 @@ class InputChannelSender : public ConnectionGroup<InputChannelConnection>
 public:
     /// The InputChannelSender default constructor.
     InputChannelSender(uint64_t input_index,
-                       InputBufferReadInterface &data_source,
+                       InputBufferReadInterface& data_source,
                        const std::vector<std::string> compute_hostnames,
                        const std::vector<std::string> compute_services,
                        uint32_t timeslice_size, uint32_t overlap_size,
                        uint32_t max_timeslice_number,
                        std::string input_node_name);
 
-    InputChannelSender(const InputChannelSender &) = delete;
-    void operator=(const InputChannelSender &) = delete;
+    InputChannelSender(const InputChannelSender&) = delete;
+    void operator=(const InputChannelSender&) = delete;
 
     /// The InputChannelSender default destructor.
     virtual ~InputChannelSender();
@@ -49,7 +50,7 @@ public:
     /// Initiate connection requests to list of target hostnames.
     void connect();
 
-  virtual void on_connected(struct fid_domain* pd) override;
+    virtual void on_connected(struct fid_domain* pd) override;
 
 private:
     /// Return target computation node for given timeslice.
@@ -68,6 +69,12 @@ private:
 
     /// Completion notification event dispatcher. Called by the event loop.
     virtual void on_completion(uint64_t wc_id) override;
+
+    /// setup connections between nodes
+    void bootstrap_with_connections();
+
+    /// setup connections between nodes
+    void bootstrap_wo_connections();
 
     uint64_t input_index_;
 
@@ -93,7 +100,7 @@ private:
     uint64_t sent_data_ = 0;
 
     /// Data source (e.g., FLIB).
-    InputBufferReadInterface &data_source_;
+    InputBufferReadInterface& data_source_;
 
     const std::vector<std::string> compute_hostnames_;
     const std::vector<std::string> compute_services_;
@@ -110,10 +117,11 @@ private:
 
     uint64_t write_index_desc_ = 0;
 
+    std::set<uint_fast16_t> connected_buffers_;
+
     bool abort_ = false;
 
-    struct SendBufferStatus
-    {
+    struct SendBufferStatus {
         std::chrono::system_clock::time_point time;
         uint64_t size;
 
@@ -122,22 +130,10 @@ private:
         uint64_t sent;
         uint64_t written;
 
-        int64_t used() const
-        {
-            return written - sent;
-        }
-        int64_t sending() const
-        {
-            return sent - acked;
-        }
-        int64_t freeing() const
-        {
-            return acked - cached_acked;
-        }
-        int64_t unused() const
-        {
-            return cached_acked + size - written;
-        }
+        int64_t used() const { return written - sent; }
+        int64_t sending() const { return sent - acked; }
+        int64_t freeing() const { return acked - cached_acked; }
+        int64_t unused() const { return cached_acked + size - written; }
 
         float percentage(int64_t value) const
         {
@@ -167,9 +163,7 @@ private:
 
         std::vector<int64_t> vector() const
         {
-            return std::vector<int64_t>{
-                used(), sending(), freeing(), unused()
-            };
+            return std::vector<int64_t>{used(), sending(), freeing(), unused()};
         }
     };
 

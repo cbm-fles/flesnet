@@ -12,6 +12,7 @@
 
 #include <csignal>
 #include <cstdint>
+#include <set>
 #include <string>
 
 #include "ComputeNodeConnection.hpp"
@@ -31,11 +32,11 @@ public:
                   uint32_t num_input_nodes, uint32_t timeslice_size,
                   uint32_t processor_instances,
                   const std::string processor_executable,
-                  volatile sig_atomic_t *signal_status,
+                  volatile sig_atomic_t* signal_status,
                   std::string local_node_name);
 
-    ComputeBuffer(const ComputeBuffer &) = delete;
-    void operator=(const ComputeBuffer &) = delete;
+    ComputeBuffer(const ComputeBuffer&) = delete;
+    void operator=(const ComputeBuffer&) = delete;
 
     /// The ComputeBuffer destructor.
     ~ComputeBuffer();
@@ -48,17 +49,17 @@ public:
 
     virtual void operator()() override;
 
-    uint8_t *get_data_ptr(uint_fast16_t index);
+    uint8_t* get_data_ptr(uint_fast16_t index);
 
-    fles::TimesliceComponentDescriptor *get_desc_ptr(uint_fast16_t index);
+    fles::TimesliceComponentDescriptor* get_desc_ptr(uint_fast16_t index);
 
     uint8_t& get_data(uint_fast16_t index, uint64_t offset);
 
-    fles::TimesliceComponentDescriptor &get_desc(uint_fast16_t index,
+    fles::TimesliceComponentDescriptor& get_desc(uint_fast16_t index,
                                                  uint64_t offset);
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct fi_eq_cm_entry *event,
+    virtual void on_connect_request(struct fi_eq_cm_entry* event,
                                     size_t private_data_len) override;
 
     /// Completion notification event dispatcher. Called by the event loop.
@@ -67,13 +68,32 @@ public:
     void poll_ts_completion();
 
 private:
+    /// setup connections between nodes
+    void bootstrap_with_connections();
+
+    /// setup connections between nodes
+    void bootstrap_wo_connections();
+
+    void make_endpoint_named(struct fi_info* info, const std::string& hostname,
+                             const std::string& service, struct fid_ep** ep);
+
+    fid_cq* listening_cq_;
     uint64_t compute_index_;
+
+    // used in connection-less mode
+    InputChannelStatusMessage recv_connect_message_ =
+        InputChannelStatusMessage();
+
+    struct fid_mr* mr_send_ = nullptr;
+    struct fid_mr* mr_recv_ = nullptr;
 
     uint32_t data_buffer_size_exp_;
     uint32_t desc_buffer_size_exp_;
 
     unsigned short service_;
     uint32_t num_input_nodes_;
+
+    std::set<uint_fast16_t> connected_senders_;
 
     uint32_t timeslice_size_;
 
@@ -97,7 +117,7 @@ private:
     std::unique_ptr<boost::interprocess::mapped_region> data_region_;
     std::unique_ptr<boost::interprocess::mapped_region> desc_region_;
 
-    volatile sig_atomic_t *signal_status_;
+    volatile sig_atomic_t* signal_status_;
 
-  std::string local_node_name_;
+    std::string local_node_name_;
 };

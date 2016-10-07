@@ -13,7 +13,7 @@
 #include <chrono>
 
 InputChannelSender::InputChannelSender(
-    uint64_t input_index, InputBufferReadInterface &data_source,
+    uint64_t input_index, InputBufferReadInterface& data_source,
     const std::vector<std::string> compute_hostnames,
     const std::vector<std::string> compute_services, uint32_t timeslice_size,
     uint32_t overlap_size, uint32_t max_timeslice_number, std::string input_node_name)
@@ -42,27 +42,57 @@ InputChannelSender::~InputChannelSender()
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
     if (mr_desc_) {
-        fi_close((struct fid *)mr_desc_);
+        fi_close((struct fid*)mr_desc_);
         mr_desc_ = nullptr;
     }
 
     if (mr_data_) {
-        fi_close((struct fid *)(mr_data_));
+        fi_close((struct fid*)(mr_data_));
         mr_data_ = nullptr;
     }
 #pragma GCC diagnostic pop
 }
 
+void InputChannelSender::bootstrap_with_connections()
+{
+    connect();
+    while (connected_ != compute_hostnames_.size()) {
+        poll_cm_events();
+    }
+}
+
+void InputChannelSender::bootstrap_wo_connections()
+{
+    // domain, cq, av
+    init_context(Provider::getInst()->get_info(), compute_hostnames_,
+                 compute_services_);
+
+    // setup connections objects
+    for (unsigned int i = 0; i < compute_hostnames_.size(); ++i) {
+        std::unique_ptr<InputChannelConnection> connection =
+            create_input_node_connection(i);
+        // creates endpoint
+        connection->connect(compute_hostnames_[i], compute_services_[i], pd_,
+                            cq_, av_, fi_addrs[i]);
+        conn_.push_back(std::move(connection));
+    }
+
+    //???  @todo connect();
+    while (connected_buffers_.size() != compute_hostnames_.size()) {
+        poll_completion();
+    }
+}
+
 /// The thread main function.
 void InputChannelSender::operator()()
 {
-    try
-    {
+    try {
         set_cpu(2);
 
-        connect();
-        while (connected_ != compute_hostnames_.size()) {
-            poll_cm_events();
+        if (Provider::getInst()->is_connection_oriented()) {
+            bootstrap_with_connections();
+        } else {
+            bootstrap_wo_connections();
         }
 
         data_source_.proceed();
@@ -80,7 +110,7 @@ void InputChannelSender::operator()()
             scheduler_.timer();
         }
 
-        for (auto &c : conn_) {
+        for (auto& c : conn_) {
             c->finalize(abort_);
         }
 
@@ -100,9 +130,7 @@ void InputChannelSender::operator()()
         }
 
         summary();
-    }
-    catch (std::exception &e)
-    {
+    } catch (std::exception& e) {
         L_(error) << "exception in InputChannelSender: " << e.what();
     }
 }
@@ -124,14 +152,12 @@ void InputChannelSender::report_status()
 
     std::chrono::system_clock::time_point now =
         std::chrono::system_clock::now();
-    SendBufferStatus status_desc{
-        now,         data_source_.desc_buffer().size(), cached_acked_desc_,
-        acked_desc_, sent_desc_,                        written_desc
-    };
-    SendBufferStatus status_data{
-        now,         data_source_.data_buffer().size(), cached_acked_data_,
-        acked_data_, sent_data_,                        written_data
-    };
+    SendBufferStatus status_desc{now, data_source_.desc_buffer().size(),
+                                 cached_acked_desc_, acked_desc_, sent_desc_,
+                                 written_desc};
+    SendBufferStatus status_data{now, data_source_.data_buffer().size(),
+                                 cached_acked_data_, acked_data_, sent_data_,
+                                 written_data};
 
     double delta_t =
         std::chrono::duration<double, std::chrono::seconds::period>(
@@ -170,7 +196,7 @@ void InputChannelSender::report_status()
 
 void InputChannelSender::sync_buffer_positions()
 {
-    for (auto &c : conn_) {
+    for (auto& c : conn_) {
         c->try_sync_buffer_positions();
     }
 
@@ -241,8 +267,10 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
 std::unique_ptr<InputChannelConnection>
 InputChannelSender::create_input_node_connection(uint_fast16_t index)
 {
-  //unsigned int max_send_wr = 8000; ???
-  unsigned int max_send_wr = 495; // ???
+    // @todo
+    // unsigned int max_send_wr = 8000; ???  IB hca
+    // unsigned int max_send_wr = 495; // ??? libfabric for verbs
+    unsigned int max_send_wr = 256; // ??? libfabric for sockets
 
     // limit pending write requests so that send queue and completion queue
     // do not overflow
@@ -251,20 +279,22 @@ InputChannelSender::create_input_node_connection(uint_fast16_t index)
         static_cast<unsigned int>((num_cqe_ - 1) / compute_hostnames_.size()));
 
     std::unique_ptr<InputChannelConnection> connection(
-              new InputChannelConnection(eq_, index, input_index_, max_send_wr,
-                                         max_pending_write_requests));
+        new InputChannelConnection(eq_, index, input_index_, max_send_wr,
+                                   max_pending_write_requests));
     return connection;
 }
 
 void InputChannelSender::connect()
 {
-  if (!pd_)
-    init_context(Provider::getInst()->get_info());
+    if (!pd_) // pd, cq2, av
+        init_context(Provider::getInst()->get_info(), compute_hostnames_,
+                     compute_services_);
 
-  for (unsigned int i = 0; i < compute_hostnames_.size(); ++i) {
+    for (unsigned int i = 0; i < compute_hostnames_.size(); ++i) {
         std::unique_ptr<InputChannelConnection> connection =
             create_input_node_connection(i);
-        connection->connect(compute_hostnames_[i], compute_services_[i], pd_, cq_);
+        connection->connect(compute_hostnames_[i], compute_services_[i], pd_,
+                            cq_, av_, FI_ADDR_UNSPEC);
         conn_.push_back(std::move(connection));
     }
 }
@@ -313,7 +343,7 @@ void InputChannelSender::on_rejected(struct fi_eq_err_entry* event)
     std::cout << "InputChannelSender:on_rejected" << std::endl;
 
     InputChannelConnection* conn =
-    static_cast<InputChannelConnection*>(event->fid->context);
+        static_cast<InputChannelConnection*>(event->fid->context);
 
     conn->on_rejected(event);
     uint_fast16_t i = conn->index();
@@ -323,7 +353,8 @@ void InputChannelSender::on_rejected(struct fi_eq_err_entry* event)
     // immediately initiate retry
     std::unique_ptr<InputChannelConnection> connection =
         create_input_node_connection(i);
-    connection->connect(compute_hostnames_[i], compute_services_[i], pd_, cq_);
+    connection->connect(compute_hostnames_[i], compute_services_[i], pd_, cq_,
+                        av_, FI_ADDR_UNSPEC);
     conn_.at(i) = std::move(connection);
 }
 
@@ -357,7 +388,7 @@ void InputChannelSender::post_send_data(uint64_t timeslice, int cn,
 {
     int num_sge = 0;
     struct iovec sge[4];
-    void *descs[4];
+    void* descs[4];
     // descriptors
     if ((desc_offset & data_source_.desc_send_buffer().size_mask()) <=
         ((desc_offset + desc_length - 1) &
@@ -415,13 +446,12 @@ void InputChannelSender::post_send_data(uint64_t timeslice, int cn,
     for (int i = 0; i < num_sge; ++i) {
         if (i < num_desc_sge) {
             data_source_.copy_to_desc_send_buffer(
-                reinterpret_cast<fles::MicrosliceDescriptor *>(
-                    sge[i].iov_base) -
+                reinterpret_cast<fles::MicrosliceDescriptor*>(sge[i].iov_base) -
                     data_source_.desc_send_buffer().ptr(),
                 sge[i].iov_len / sizeof(fles::MicrosliceDescriptor));
         } else {
             data_source_.copy_to_data_send_buffer(
-                reinterpret_cast<uint8_t *>(sge[i].iov_base) -
+                reinterpret_cast<uint8_t*>(sge[i].iov_base) -
                     data_source_.data_send_buffer().ptr(),
                 sge[i].iov_len);
         }
@@ -455,7 +485,7 @@ void InputChannelSender::on_completion(uint64_t wr_id)
             cached_acked_data_ = acked_data_;
             cached_acked_desc_ = acked_desc_;
             data_source_.set_read_index(
-                { cached_acked_desc_, cached_acked_data_ });
+                {cached_acked_desc_, cached_acked_data_});
         }
         if (false) {
             L_(trace) << "[i" << input_index_ << "] "

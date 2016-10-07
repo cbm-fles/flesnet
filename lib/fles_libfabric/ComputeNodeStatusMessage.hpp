@@ -2,16 +2,19 @@
 #pragma once
 
 #include "ComputeNodeBufferPosition.hpp"
+#include "ComputeNodeInfo.hpp"
 
 #pragma pack(1)
 
 /// Structure representing a status update message sent from compute buffer to
 /// input channel.
-struct ComputeNodeStatusMessage
-{
+struct ComputeNodeStatusMessage {
     ComputeNodeBufferPosition ack;
     bool request_abort;
     bool final;
+    //
+    bool connect;
+    ComputeNodeInfo info;
 };
 
 #pragma pack()

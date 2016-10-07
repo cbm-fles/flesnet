@@ -13,15 +13,12 @@
 
 #include <valgrind/memcheck.h>
 
-ComputeBuffer::ComputeBuffer(uint64_t compute_index,
-                             uint32_t data_buffer_size_exp,
-                             uint32_t desc_buffer_size_exp,
-                             unsigned short service, uint32_t num_input_nodes,
-                             uint32_t timeslice_size,
-                             uint32_t processor_instances,
-                             const std::string processor_executable,
-                             volatile sig_atomic_t *signal_status,
-                             std::string local_node_name)
+ComputeBuffer::ComputeBuffer(
+    uint64_t compute_index, uint32_t data_buffer_size_exp,
+    uint32_t desc_buffer_size_exp, unsigned short service,
+    uint32_t num_input_nodes, uint32_t timeslice_size,
+    uint32_t processor_instances, const std::string processor_executable,
+    volatile sig_atomic_t* signal_status, std::string local_node_name)
     : compute_index_(compute_index),
       data_buffer_size_exp_(data_buffer_size_exp),
       desc_buffer_size_exp_(desc_buffer_size_exp), service_(service),
@@ -129,7 +126,7 @@ void ComputeBuffer::start_processes()
         boost::split(cp.arg, processor_executable_, boost::is_any_of(" \t"),
                      boost::token_compress_on);
         cp.path = cp.arg.at(0);
-        for (auto &arg : cp.arg) {
+        for (auto& arg : cp.arg) {
             boost::replace_all(arg, "%s", shared_memory_identifier_);
             boost::replace_all(arg, "%i", index.str());
         }
@@ -147,7 +144,7 @@ void ComputeBuffer::report_status()
     L_(debug) << "[c" << compute_index_ << "] " << completely_written_
               << " completely written, " << acked_ << " acked";
 
-    for (auto &c : conn_) {
+    for (auto& c : conn_) {
         auto status_desc = c->buffer_status_desc();
         auto status_data = c->buffer_status_data();
         L_(debug) << "[c" << compute_index_ << "] desc "
@@ -171,21 +168,213 @@ void ComputeBuffer::request_abort()
     L_(info) << "[c" << compute_index_ << "] "
              << "request abort";
 
-    for (auto &connection : conn_) {
+    for (auto& connection : conn_) {
         connection->request_abort();
+    }
+}
+
+void ComputeBuffer::bootstrap_with_connections()
+{
+    accept(local_node_name_, service_, num_input_nodes_);
+    while (connected_ != num_input_nodes_) {
+        poll_cm_events();
+    }
+}
+
+// @todo duplicate code
+void ComputeBuffer::make_endpoint_named(struct fi_info* info,
+                                        const std::string& hostname,
+                                        const std::string& service,
+                                        struct fid_ep** ep)
+{
+
+    uint64_t requested_key = 0;
+    int res;
+
+    struct fi_info* info2 = nullptr;
+    struct fi_info* hints = fi_dupinfo(info);
+
+    // @todo
+    /*
+    hints->rx_attr->size = max_recv_wr_;
+    hints->rx_attr->iov_limit = max_recv_sge_;
+    hints->tx_attr->size = max_send_wr_;
+    hints->tx_attr->iov_limit = max_send_sge_;
+    hints->tx_attr->inject_size = max_inline_data_;
+    */
+
+    hints->src_addr = nullptr;
+    hints->src_addrlen = 0;
+
+    int err = fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), service.c_str(),
+                         FI_SOURCE, hints, &info2);
+    if (err) {
+        throw LibfabricException("fi_getinfo failed in make_endpoint");
+    }
+
+    fi_freeinfo(hints);
+
+    // private cq for listening ep
+    struct fi_cq_attr cq_attr;
+    memset(&cq_attr, 0, sizeof(cq_attr));
+    cq_attr.size = num_cqe_;
+    cq_attr.flags = 0;
+    cq_attr.format = FI_CQ_FORMAT_CONTEXT;
+    cq_attr.wait_obj = FI_WAIT_NONE;
+    cq_attr.signaling_vector = Provider::vector++; // ??
+    cq_attr.wait_cond = FI_CQ_COND_NONE;
+    cq_attr.wait_set = nullptr;
+    res = fi_cq_open(pd_, &cq_attr, &listening_cq_, nullptr);
+    if (!listening_cq_) {
+        std::cout << strerror(-res) << std::endl;
+        throw LibfabricException("fi_cq_open failed");
+    }
+
+    err = fi_endpoint(pd_, info2, ep, this);
+    if (err)
+        throw LibfabricException("fi_endpoint failed");
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+    if (Provider::getInst()->has_eq_at_eps()) {
+        err = fi_ep_bind(*ep, (fid_t)eq_, 0);
+        if (err)
+            throw LibfabricException("fi_ep_bind failed (eq_)");
+    }
+    err = fi_ep_bind(*ep, (fid_t)listening_cq_, FI_SEND | FI_RECV);
+    if (err)
+        throw LibfabricException("fi_ep_bind failed (cq)");
+    if (Provider::getInst()->has_av()) {
+        err = fi_ep_bind(*ep, (fid_t)av_, 0);
+        if (err)
+            throw LibfabricException("fi_ep_bind failed (av)");
+    }
+#pragma GCC diagnostic pop
+    err = fi_enable(*ep);
+    if (err) {
+        std::cout << strerror(-err) << std::endl;
+        throw LibfabricException("fi_enable failed");
+    }
+
+    // register memory regions
+    res = fi_mr_reg(pd_, &recv_connect_message_,
+                    sizeof(InputChannelStatusMessage), FI_RECV, 0,
+                    requested_key++, 0, &mr_recv_, nullptr);
+
+    if (res)
+        throw LibfabricException("fi_mr_reg failed");
+
+    if (!mr_recv_)
+        throw LibfabricException(
+            "registration of memory region failed in ComputeBuffer");
+}
+
+void ComputeBuffer::bootstrap_wo_connections()
+{
+    InputChannelStatusMessage recv_connect_message;
+    struct fid_mr* mr_recv_connect = nullptr;
+    struct fi_msg recv_msg_wr;
+    struct iovec recv_sge = iovec();
+    void* recv_wr_descs[1] = {nullptr};
+
+    // domain, cq, av
+    init_context(Provider::getInst()->get_info(), {}, {});
+
+    // listening endpoint with private cq
+    make_endpoint_named(Provider::getInst()->get_info(), local_node_name_,
+                        std::to_string(service_), &ep_);
+
+    // setup connection objects
+    for (size_t index = 0; index < conn_.size(); index++) {
+        uint8_t* data_ptr = get_data_ptr(index);
+        fles::TimesliceComponentDescriptor* desc_ptr = get_desc_ptr(index);
+
+        std::unique_ptr<ComputeNodeConnection> conn(new ComputeNodeConnection(
+            eq_, pd_, cq_, av_, index, compute_index_, data_ptr,
+            data_buffer_size_exp_, desc_ptr, desc_buffer_size_exp_));
+        conn->setup_mr(pd_);
+        conn->setup();
+        conn_.at(index) = std::move(conn);
+    }
+
+    // register memory regions
+    int err = fi_mr_reg(
+        pd_, &recv_connect_message, sizeof(InputChannelStatusMessage), FI_WRITE,
+        0, Provider::requested_key++, 0, &mr_recv_connect, nullptr);
+    if (err) {
+        throw LibfabricException(
+            "fi_mr_reg failed for recv msg in compute-buffer");
+        std::cout << strerror(-err) << std::endl;
+    }
+
+    // prepare recv message
+    recv_sge.iov_base = &recv_connect_message;
+    recv_sge.iov_len = sizeof(InputChannelStatusMessage);
+
+    recv_wr_descs[0] = fi_mr_desc(mr_recv_);
+
+    recv_msg_wr.msg_iov = &recv_sge;
+    recv_msg_wr.desc = recv_wr_descs;
+    recv_msg_wr.iov_count = 1;
+    recv_msg_wr.addr = FI_ADDR_UNSPEC;
+    recv_msg_wr.context = 0;
+    recv_msg_wr.data = 0;
+
+    err = fi_recvmsg(ep_, &recv_msg_wr, FI_COMPLETION);
+    if (err) {
+        L_(fatal) << "fi_recvmsg failed: " << strerror(err);
+        throw LibfabricException("fi_recvmsg failed");
+    }
+
+    // wait for messages from InputChannelSenders
+    const int ne_max = 10;
+
+    struct fi_cq_entry wc[ne_max];
+    int ne;
+
+    while (connected_senders_.size() != num_input_nodes_) {
+
+        while ((ne = fi_cq_read(cq_, &wc, ne_max))) {
+            if ((ne < 0) && (ne != -FI_EAGAIN)) {
+                throw LibfabricException("fi_cq_read failed");
+            }
+
+            if (ne == -FI_EAGAIN)
+                break;
+
+            std::cout << "got " << ne << " events" << std::endl;
+            for (int i = 0; i < ne; ++i) {
+                fi_addr_t connection_addr;
+                // when connect message:
+                //            add address to av and set fi_addr_t from av on
+                //            conn-object
+                assert(recv_connect_message_.connect == true);
+                int res = fi_av_insert(av_, &recv_connect_message_.my_address,
+                                       1, &connection_addr, 0, NULL);
+                assert(res == 1);
+                conn_[recv_connect_message_.info.index]->set_partner_addr(
+                    connection_addr);
+                connected_senders_.insert(recv_connect_message_.info.index);
+            }
+        }
+        err = fi_recvmsg(ep_, &recv_msg_wr, FI_COMPLETION);
+        if (err) {
+            L_(fatal) << "fi_recvmsg failed: " << strerror(err);
+            throw LibfabricException("fi_recvmsg failed");
+        }
     }
 }
 
 /// The thread main function.
 void ComputeBuffer::operator()()
 {
-    try
-    {
+    try {
         // set_cpu(0);
 
-      accept(local_node_name_, service_, num_input_nodes_);
-        while (connected_ != num_input_nodes_) {
-            poll_cm_events();
+        if (Provider::getInst()->is_connection_oriented()) {
+            bootstrap_with_connections();
+        } else {
+            bootstrap_wo_connections();
         }
 
         time_begin_ = std::chrono::high_resolution_clock::now();
@@ -216,60 +405,58 @@ void ComputeBuffer::operator()()
         completions_mq_->send(nullptr, 0, 0);
 
         summary();
-    }
-    catch (std::exception &e)
-    {
+    } catch (std::exception& e) {
         L_(error) << "exception in ComputeBuffer: " << e.what();
     }
 }
 
-uint8_t *ComputeBuffer::get_data_ptr(uint_fast16_t index)
+uint8_t* ComputeBuffer::get_data_ptr(uint_fast16_t index)
 {
-    return static_cast<uint8_t *>(data_region_->get_address()) +
+    return static_cast<uint8_t*>(data_region_->get_address()) +
            index * (UINT64_C(1) << data_buffer_size_exp_);
 }
 
-fles::TimesliceComponentDescriptor *
+fles::TimesliceComponentDescriptor*
 ComputeBuffer::get_desc_ptr(uint_fast16_t index)
 {
-    return reinterpret_cast<fles::TimesliceComponentDescriptor *>(
+    return reinterpret_cast<fles::TimesliceComponentDescriptor*>(
                desc_region_->get_address()) +
            index * (UINT64_C(1) << desc_buffer_size_exp_);
 }
 
- uint8_t& ComputeBuffer::get_data(uint_fast16_t index, uint64_t offset)
+uint8_t& ComputeBuffer::get_data(uint_fast16_t index, uint64_t offset)
 {
     offset &= (UINT64_C(1) << data_buffer_size_exp_) - 1;
     return get_data_ptr(index)[offset];
 }
 
-fles::TimesliceComponentDescriptor &ComputeBuffer::get_desc(uint_fast16_t index,
+fles::TimesliceComponentDescriptor& ComputeBuffer::get_desc(uint_fast16_t index,
                                                             uint64_t offset)
 {
     offset &= (UINT64_C(1) << desc_buffer_size_exp_) - 1;
     return get_desc_ptr(index)[offset];
 }
 
-void ComputeBuffer::on_connect_request(struct fi_eq_cm_entry *event,
+void ComputeBuffer::on_connect_request(struct fi_eq_cm_entry* event,
                                        size_t private_data_len)
 {
 
-  if(!pd_)
-    init_context(event->info);
+    if (!pd_)
+        init_context(event->info, {}, {});
 
     assert(private_data_len >= sizeof(InputNodeInfo));
     InputNodeInfo remote_info =
-      *reinterpret_cast<const InputNodeInfo *>(event->data);
+        *reinterpret_cast<const InputNodeInfo*>(event->data);
 
     uint_fast16_t index = remote_info.index;
     assert(index < conn_.size() && conn_.at(index) == nullptr);
 
-    uint8_t *data_ptr = get_data_ptr(index);
-    fles::TimesliceComponentDescriptor *desc_ptr = get_desc_ptr(index);
+    uint8_t* data_ptr = get_data_ptr(index);
+    fles::TimesliceComponentDescriptor* desc_ptr = get_desc_ptr(index);
 
     std::unique_ptr<ComputeNodeConnection> conn(new ComputeNodeConnection(
-                                                                          eq_, index, compute_index_, remote_info, data_ptr, data_buffer_size_exp_,
-        desc_ptr, desc_buffer_size_exp_));
+        eq_, index, compute_index_, remote_info, data_ptr,
+        data_buffer_size_exp_, desc_ptr, desc_buffer_size_exp_));
     conn_.at(index) = std::move(conn);
 
     conn_.at(index)->on_connect_request(event, pd_, cq_);
@@ -283,6 +470,7 @@ void ComputeBuffer::on_completion(uint64_t wr_id)
     switch (wr_id & 0xFF) {
 
     case ID_SEND_STATUS:
+        // printf("ID_SEND_STATUS\n");
         if (false) {
             L_(trace) << "[c" << compute_index_ << "] "
                       << "[" << in << "] "
@@ -310,8 +498,8 @@ void ComputeBuffer::on_completion(uint64_t wr_id)
         if (connected_ == conn_.size() && in == red_lantern_) {
             auto new_red_lantern = std::min_element(
                 std::begin(conn_), std::end(conn_),
-                [](const std::unique_ptr<ComputeNodeConnection> &v1,
-                   const std::unique_ptr<ComputeNodeConnection> &v2) {
+                [](const std::unique_ptr<ComputeNodeConnection>& v1,
+                   const std::unique_ptr<ComputeNodeConnection>& v2) {
                     return v1->cn_wp().desc < v2->cn_wp().desc;
                 });
 
@@ -325,15 +513,14 @@ void ComputeBuffer::on_completion(uint64_t wr_id)
                     if (conn_.size() > 0) {
                         ts_index = get_desc(0, tpos).ts_num;
                     }
-                    fles::TimesliceWorkItem wi = { { ts_index, tpos,
-                                                     timeslice_size_,
-                                                     static_cast<uint32_t>(
-                                                         conn_.size()) },
-                                                   data_buffer_size_exp_,
-                                                   desc_buffer_size_exp_ };
+                    fles::TimesliceWorkItem wi = {
+                        {ts_index, tpos, timeslice_size_,
+                         static_cast<uint32_t>(conn_.size())},
+                        data_buffer_size_exp_,
+                        desc_buffer_size_exp_};
                     work_items_mq_->send(&wi, sizeof(wi), 0);
                 } else {
-                    fles::TimesliceCompletion c = { tpos };
+                    fles::TimesliceCompletion c = {tpos};
                     completions_mq_->send(&c, sizeof(c), 0);
                 }
             }
@@ -362,7 +549,7 @@ void ComputeBuffer::poll_ts_completion()
         do
             ++acked_;
         while (ack_.at(acked_) > c.ts_pos);
-        for (auto &connection : conn_)
+        for (auto& connection : conn_)
             connection->inc_ack_pointers(acked_);
     } else
         ack_.at(c.ts_pos) = c.ts_pos;

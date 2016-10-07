@@ -7,6 +7,8 @@
 #include "InputChannelStatusMessage.hpp"
 #include <sys/uio.h>
 
+#include <sys/uio.h>
+
 /// Input node connection class.
 /** An InputChannelConnection object represents the endpoint of a single
     timeslice building connection from an input node to a compute
@@ -16,20 +18,19 @@ class InputChannelConnection : public Connection
 {
 public:
     /// The InputChannelConnection constructor.
-  InputChannelConnection(struct fid_eq *eq,
-                         uint_fast16_t connection_index,
+    InputChannelConnection(struct fid_eq* eq, uint_fast16_t connection_index,
                            uint_fast16_t remote_connection_index,
                            unsigned int max_send_wr,
-                         unsigned int max_pending_write_requests);
+                           unsigned int max_pending_write_requests);
 
-    InputChannelConnection(const InputChannelConnection &) = delete;
-    void operator=(const InputChannelConnection &) = delete;
+    InputChannelConnection(const InputChannelConnection&) = delete;
+    void operator=(const InputChannelConnection&) = delete;
 
     /// Wait until enough space is available at target compute node.
     bool check_for_buffer_space(uint64_t data_size, uint64_t desc_size);
 
     /// Send data and descriptors to compute node.
-    void send_data(struct iovec *sge, void **desc, int num_sge,
+    void send_data(struct iovec* sge, void** desc, int num_sge,
                    uint64_t timeslice, uint64_t desc_length,
                    uint64_t data_length, uint64_t skip);
 
@@ -45,32 +46,33 @@ public:
 
     void finalize(bool abort);
 
-    bool request_abort_flag()
-    {
-        return recv_status_message_.request_abort;
-    }
+    bool request_abort_flag() { return recv_status_message_.request_abort; }
 
     void on_complete_write();
 
     /// Handle Libfabric receive completion notification.
     void on_complete_recv();
 
-    virtual void setup_mr(struct fid_domain *pd) override;
+    virtual void setup_mr(struct fid_domain* pd) override;
     virtual void setup() override;
 
     /// Connection handler function, called on successful connection.
     /**
        \param event RDMA connection manager event structure
     */
-    virtual void on_established(struct fi_eq_cm_entry *event) /*override*/;
+    virtual void on_established(struct fi_eq_cm_entry* event) /*override*/;
     //
     void dereg_mr();
 
-    virtual void on_rejected(struct fi_eq_err_entry *event) override;
+    virtual void on_rejected(struct fi_eq_err_entry* event) override;
 
-    virtual void on_disconnected(struct fi_eq_cm_entry *event) /*override*/;
+    virtual void on_disconnected(struct fi_eq_cm_entry* event) /*override*/;
 
-  virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
+    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
+
+    void connect(const std::string& hostname, const std::string& service,
+                 struct fid_domain* domain, struct fid_cq* cq,
+                 struct fid_av* av, fi_addr_t fi_addr);
 
 private:
     /// Post a receive work request (WR) to the receive queue
@@ -96,7 +98,7 @@ private:
 
     /// Libfabric memory region descriptor for CN status (including
     /// acknowledged-by-CN pointers)
-    fid_mr *mr_recv_ = nullptr;
+    fid_mr* mr_recv_ = nullptr;
 
     /// Local version of CN write pointers
     ComputeNodeBufferPosition cn_wp_ = ComputeNodeBufferPosition();
@@ -107,19 +109,21 @@ private:
 
     /// Libfabric memory region descriptor for input channel status (including
     /// CN write pointers)
-    struct fid_mr *mr_send_ = nullptr;
+    struct fid_mr* mr_send_ = nullptr;
 
     /// InfiniBand receive work request
     struct fi_msg recv_wr = fi_msg();
     struct iovec recv_wr_iovec = iovec();
-  void *recv_descs[1] = { nullptr };
+    void* recv_descs[1] = {nullptr};
 
     /// Infiniband send work request
     struct fi_msg send_wr = fi_msg();
     struct iovec send_wr_iovec = iovec();
-  void *send_descs[1] = { nullptr };
+    void* send_descs[1] = {nullptr};
 
-    unsigned int pending_write_requests_{ 0 };
+    unsigned int pending_write_requests_{0};
 
-    unsigned int max_pending_write_requests_{ 0 };
+    unsigned int max_pending_write_requests_{0};
+
+    uint_fast16_t remote_connection_index_;
 };

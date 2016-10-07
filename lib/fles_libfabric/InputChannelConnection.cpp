@@ -11,12 +11,13 @@
 #include <cstring>
 #include <log.hpp>
 #include <rdma/fi_rma.h>
+#include <rdma/fi_cm.h>
 
 InputChannelConnection::InputChannelConnection(
-                                               struct fid_eq *eq,
-    uint_fast16_t connection_index, uint_fast16_t remote_connection_index,
-                                               unsigned int max_send_wr, unsigned int max_pending_write_requests)
-  : Connection(eq, connection_index, remote_connection_index),
+    struct fid_eq* eq, uint_fast16_t connection_index,
+    uint_fast16_t remote_connection_index, unsigned int max_send_wr,
+    unsigned int max_pending_write_requests)
+    : Connection(eq, connection_index, remote_connection_index),
       max_pending_write_requests_(max_pending_write_requests)
 {
     assert(max_pending_write_requests_ > 0);
@@ -28,6 +29,8 @@ InputChannelConnection::InputChannelConnection(
     max_recv_sge_ = 1;
 
     max_inline_data_ = sizeof(fles::TimesliceComponentDescriptor);
+
+    send_status_message_.info.index = remote_index_;
 }
 
 bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
@@ -59,14 +62,14 @@ bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
     }
 }
 
-void InputChannelConnection::send_data(struct iovec *sge, void **desc,
+void InputChannelConnection::send_data(struct iovec* sge, void** desc,
                                        int num_sge, uint64_t timeslice,
                                        uint64_t desc_length,
                                        uint64_t data_length, uint64_t skip)
 {
     int num_sge2 = 0;
     struct iovec sge2[4];
-    void *desc2[4];
+    void* desc2[4];
 
     uint64_t cn_wp_data = cn_wp_.data;
     cn_wp_data += skip;
@@ -91,7 +94,7 @@ void InputChannelConnection::send_data(struct iovec *sge, void **desc,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
                     sge2[num_sge2].iov_base =
-                      (uint8_t*)sge[i].iov_base + target_bytes_left;
+                        (uint8_t*)sge[i].iov_base + target_bytes_left;
 #pragma GCC diagnostic pop
                     sge2[num_sge2].iov_len = sge[i].iov_len - target_bytes_left;
                     desc2[num_sge2++] = desc[i];
@@ -129,21 +132,20 @@ void InputChannelConnection::send_data(struct iovec *sge, void **desc,
         send_wr_ts.rma_iov_count = 1;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-        send_wr_ts.context = (void *)ID_WRITE_DATA;
+        send_wr_ts.context = (void*)ID_WRITE_DATA;
 #pragma GCC diagnostic pop
         post_send_rdma(&send_wr_ts, FI_MORE);
     }
 
     if (num_sge2) {
-      uint64_t remote_addr =
-        remote_info_.data.addr;
+        uint64_t remote_addr = remote_info_.data.addr;
         for (int i = 0; i < num_sge2; i++) {
 
             rma_iov[0].addr = remote_addr;
             rma_iov[0].len = sge2[i].iov_len;
             rma_iov[0].key = remote_info_.data.rkey;
 
-            remote_addr += + sge2[i].iov_len;
+            remote_addr += +sge2[i].iov_len;
 
             memset(&send_wr_tswrap, 0, sizeof(send_wr_tswrap));
             send_wr_tswrap.msg_iov = &sge2[i];
@@ -154,7 +156,7 @@ void InputChannelConnection::send_data(struct iovec *sge, void **desc,
             send_wr_tswrap.rma_iov_count = 1;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-            send_wr_tswrap.context = (void *)ID_WRITE_DATA_WRAP;
+            send_wr_tswrap.context = (void*)ID_WRITE_DATA_WRAP;
 #pragma GCC diagnostic pop
             post_send_rdma(&send_wr_tswrap, FI_MORE);
         }
@@ -172,9 +174,9 @@ void InputChannelConnection::send_data(struct iovec *sge, void **desc,
     sge3.iov_len = sizeof(tscdesc);
     // sge3.lkey = 0;
 
-    rma_iov[0].addr =
-        remote_info_.desc.addr + (cn_wp_.desc & cn_desc_buffer_mask) *
-                                     sizeof(fles::TimesliceComponentDescriptor);
+    rma_iov[0].addr = remote_info_.desc.addr +
+                      (cn_wp_.desc & cn_desc_buffer_mask) *
+                          sizeof(fles::TimesliceComponentDescriptor);
     rma_iov[0].len = sizeof(tscdesc);
     rma_iov[0].key = remote_info_.desc.rkey;
 
@@ -188,7 +190,7 @@ void InputChannelConnection::send_data(struct iovec *sge, void **desc,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
     send_wr_tscdesc.context =
-        (void *)(ID_WRITE_DESC | (timeslice << 24) | (index_ << 8));
+        (void*)(ID_WRITE_DESC | (timeslice << 24) | (index_ << 8));
 #pragma GCC diagnostic pop
 
     if (false) {
@@ -253,10 +255,7 @@ void InputChannelConnection::finalize(bool abort)
     }
 }
 
-void InputChannelConnection::on_complete_write()
-{
-    pending_write_requests_--;
-}
+void InputChannelConnection::on_complete_write() { pending_write_requests_--; }
 
 void InputChannelConnection::on_complete_recv()
 {
@@ -319,7 +318,6 @@ void InputChannelConnection::setup()
     recv_descs[0] = fi_mr_desc(mr_recv_);
     send_descs[0] = fi_mr_desc(mr_send_);
 
-
     // setup send and receive buffers
     memset(&recv_wr_iovec, 0, sizeof(struct iovec));
     recv_wr_iovec.iov_base = &recv_status_message_;
@@ -331,7 +329,7 @@ void InputChannelConnection::setup()
     recv_wr.iov_count = 1;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-    recv_wr.context = (void *)(ID_RECEIVE_STATUS | (index_ << 8));
+    recv_wr.context = (void*)(ID_RECEIVE_STATUS | (index_ << 8));
 #pragma GCC diagnostic pop
 
     memset(&send_wr_iovec, 0, sizeof(struct iovec));
@@ -344,7 +342,7 @@ void InputChannelConnection::setup()
     send_wr.iov_count = 1;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-    send_wr.context = (void *)(ID_SEND_STATUS | (index_ << 8));
+    send_wr.context = (void*)(ID_SEND_STATUS | (index_ << 8));
 #pragma GCC diagnostic pop
 
     // post initial receive request
@@ -355,7 +353,7 @@ void InputChannelConnection::setup()
 /**
    \param event RDMA connection manager event structure
 */
-void InputChannelConnection::on_established(struct fi_eq_cm_entry *event)
+void InputChannelConnection::on_established(struct fi_eq_cm_entry* event)
 {
     // assert(event->param.conn.private_data_len >= sizeof(ComputeNodeInfo));
     memcpy(&remote_info_, event->data, sizeof(ComputeNodeInfo));
@@ -368,32 +366,31 @@ void InputChannelConnection::dereg_mr()
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
     if (mr_recv_) {
-        fi_close((struct fid *)mr_recv_);
+        fi_close((struct fid*)mr_recv_);
         mr_recv_ = nullptr;
     }
 
     if (mr_send_) {
-        fi_close((struct fid *)mr_send_);
+        fi_close((struct fid*)mr_send_);
         mr_send_ = nullptr;
     }
 #pragma GCC diagnostic pop
 }
 
-void InputChannelConnection::on_rejected(struct fi_eq_err_entry *event)
+void InputChannelConnection::on_rejected(struct fi_eq_err_entry* event)
 {
-  std::cout << "InputChannelConnection:on_rejected" << std::endl;
+    std::cout << "InputChannelConnection:on_rejected" << std::endl;
     dereg_mr();
     Connection::on_rejected(event);
 }
 
-void InputChannelConnection::on_disconnected(struct fi_eq_cm_entry *event)
+void InputChannelConnection::on_disconnected(struct fi_eq_cm_entry* event)
 {
     dereg_mr();
     Connection::on_disconnected(event);
 }
 
- std::unique_ptr<std::vector<uint8_t>>
- InputChannelConnection::get_private_data()
+std::unique_ptr<std::vector<uint8_t>> InputChannelConnection::get_private_data()
 {
     std::unique_ptr<std::vector<uint8_t>> private_data(
         new std::vector<uint8_t>(sizeof(InputNodeInfo)));
@@ -425,4 +422,24 @@ void InputChannelConnection::post_send_status_message()
                   << " wp.desc=" << send_status_message_.wp.desc << ")";
     }
     post_send_msg(&send_wr);
+}
+
+void InputChannelConnection::connect(const std::string& hostname,
+                                     const std::string& service,
+                                     struct fid_domain* domain,
+                                     struct fid_cq* cq, struct fid_av* av,
+                                     fi_addr_t fi_addr)
+{
+    Connection::connect(hostname, service, domain, cq, av);
+    if (not Provider::getInst()->is_connection_oriented()) {
+        size_t addr_len = sizeof(send_status_message_.my_address);
+        send_status_message_.connect = true;
+        int res =
+            fi_getname((fid_t)ep_, &send_status_message_.my_address, &addr_len);
+        assert(res == 0);
+        std::cout << "fi_addr: " << fi_addr << std::endl;
+        // @todo is this save? does post_send_status_message create copy?
+        send_wr.addr = fi_addr;
+        post_send_status_message();
+    }
 }

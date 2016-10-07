@@ -70,7 +70,7 @@ MsgSocketsProvider::MsgSocketsProvider(struct fi_info* info) : info_(info)
 
 void MsgSocketsProvider::accept(struct fid_pep* pep,
                                 const std::string& hostname,
-                                unsigned short port, unsigned int count,
+                                unsigned short port, unsigned int /*count*/,
                                 fid_eq* eq)
 {
     std::string port_s = std::to_string(port);
