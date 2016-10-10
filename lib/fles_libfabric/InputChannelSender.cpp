@@ -100,40 +100,41 @@ void InputChannelSender::operator()() {
 		data_source_.proceed();
 		time_begin_ = std::chrono::high_resolution_clock::now();
 
-	uint64_t timeslice = 0;
-	sync_buffer_positions();
-	report_status();
-	while (timeslice < max_timeslice_number_ && !abort_) {
-		if (try_send_timeslice(timeslice)) {
-			timeslice++;
+		uint64_t timeslice = 0;
+		sync_buffer_positions();
+		report_status();
+		while (timeslice < max_timeslice_number_ && !abort_) {
+			if (try_send_timeslice(timeslice)) {
+				timeslice++;
+			}
+			poll_completion();
+			data_source_.proceed();
+			scheduler_.timer();
 		}
-		poll_completion();
-		data_source_.proceed();
-		scheduler_.timer();
+		L_(debug)<< "[i " << input_index_ << "] "
+		<< "Finalize Connections";
+		for (auto& c : conn_) {
+			c->finalize(abort_);
+		}
+
+		while (!all_done_) {
+			poll_completion();
+			scheduler_.timer();
+		}
+		time_end_ = std::chrono::high_resolution_clock::now();
+
+		if (connection_oriented_) {
+			disconnect();
+		}
+
+		while (connected_ != 0) {
+			poll_cm_events();
+		}
+
+		summary();
+	} catch (std::exception& e) {
+		L_(error)<< "exception in InputChannelSender: " << e.what();
 	}
-	L_(debug)<< "[i " << input_index_ << "] "
-	<< "Finalize Connections";
-	for (auto& c : conn_) {
-		c->finalize(abort_);
-	}
-
-	while (!all_done_) {
-		poll_completion();
-		scheduler_.timer();
-	}
-
-	time_end_ = std::chrono::high_resolution_clock::now();
-
-	//disconnect(); // do we need it ?! calling on_disconnected is enough
-
-	while (connected_ != 0) {
-		poll_cm_events();
-	}
-
-	summary();
-} catch (std::exception& e) {
-	L_(error)<< "exception in InputChannelSender: " << e.what();
-}
 }
 
 void InputChannelSender::report_status() {
