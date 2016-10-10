@@ -43,8 +43,7 @@ struct fi_info* MsgSocketsProvider::exists(std::string local_host_name)
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->domain_attr->mr_mode = FI_MR_BASIC;
     hints->addr_format = FI_SOCKADDR_IN;
-    hints->ep_attr->type = FI_EP_MSG;
-    hints->domain_attr->name="eth0";
+    //hints->domain_attr->name="eth0";
 
     int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr,
                          FI_SOURCE, hints, &info);
@@ -56,7 +55,7 @@ struct fi_info* MsgSocketsProvider::exists(std::string local_host_name)
     }
 
     fi_freeinfo(info);
-    fi_freeinfo(hints);
+    //fi_freeinfo(hints);
 
     return nullptr;
 }
@@ -70,7 +69,7 @@ MsgSocketsProvider::MsgSocketsProvider(struct fi_info* info) : info_(info)
 
 void MsgSocketsProvider::accept(struct fid_pep* pep,
                                 const std::string& hostname,
-                                unsigned short port, unsigned int /*count*/,
+                                unsigned short port, unsigned int count,
                                 fid_eq* eq)
 {
     std::string port_s = std::to_string(port);

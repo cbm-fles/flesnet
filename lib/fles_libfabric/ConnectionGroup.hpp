@@ -128,26 +128,26 @@ public:
     /// The Libfabric completion notification handler.
     int poll_completion()
     {
-        const int ne_max = 10;
+        const int ne_max = 1;
 
         struct fi_cq_entry wc[ne_max];
         int ne;
         int ne_total = 0;
 
-        while ((ne = fi_cq_read(cq_, &wc, ne_max))) {
-            if (ne == -FI_EAVAIL) { // error available
-                struct fi_cq_err_entry err;
-                char buffer[256];
-                ne = fi_cq_readerr(cq_, &err, 0);
-                std::cout << fi_strerror(err.err) << std::endl;
-                std::cout << fi_cq_strerror(cq_, err.prov_errno, err.err_data,
-                                            buffer, 256) << std::endl;
-                throw LibfabricException("fi_cq_read failed (fi_cq_readerr)");
-            }
-            if ((ne < 0) && (ne != -FI_EAGAIN)) {
-                std::cout << fi_strerror(-ne) << std::endl;
-                throw LibfabricException("fi_cq_read failed");
-            }
+		while ((ne = fi_cq_read(cq_, &wc, ne_max))) {
+			if (ne == -FI_EAVAIL) { // error available
+				struct fi_cq_err_entry err;
+				char buffer[256];
+				ne = fi_cq_readerr(cq_, &err, 0);
+				L_(error) << fi_strerror(err.err);
+				L_(error) << fi_cq_strerror(cq_, err.prov_errno, err.err_data,
+						buffer, 256);
+				throw LibfabricException("fi_cq_read failed (fi_cq_readerr)");
+			}
+			if ((ne < 0) && (ne != -FI_EAGAIN)) {
+				L_(error) << fi_strerror(-ne);
+				throw LibfabricException("fi_cq_read failed");
+			}
 
             if (ne == -FI_EAGAIN)
                 break;
@@ -202,153 +202,160 @@ public:
     virtual void operator()() = 0;
 
 protected:
-    /// Handle RDMA_CM_REJECTED event.
-    virtual void on_rejected(struct fi_eq_err_entry* /* event */) {}
+	/// Handle RDMA_CM_REJECTED event.
+	virtual void on_rejected(struct fi_eq_err_entry* /* event */) {}
 
-    virtual void on_connected(struct fid_domain* /*pd*/){};
+	virtual void on_connected(struct fid_domain* /*pd*/) {};
 
-    /// Handle RDMA_CM_EVENT_ESTABLISHED event.
-    virtual void on_established(struct fi_eq_cm_entry* event)
-    {
-        CONNECTION* conn = static_cast<CONNECTION*>(event->fid->context);
+	/// Handle RDMA_CM_EVENT_ESTABLISHED event.
+	virtual void on_established(struct fi_eq_cm_entry* event)
+	{
+		CONNECTION* conn = static_cast<CONNECTION*>(event->fid->context);
 
-        conn->on_established(event);
-        ++connected_;
-        on_connected(pd_);
-    }
+		conn->on_established(event);
+		++connected_;
+		on_connected(pd_);
+	}
 
-    /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct fi_eq_cm_entry* /* event */,
-                                    size_t /* private_data_len */){};
+	/// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
+	virtual void on_connect_request(struct fi_eq_cm_entry* /* event */,
+			size_t /* private_data_len */) {};
 
-    /// Handle RDMA_CM_EVENT_DISCONNECTED event.
-    virtual void on_disconnected(struct fi_eq_cm_entry* event)
-    {
-        CONNECTION* conn = static_cast<CONNECTION*>(event->fid->context);
+	/// Handle RDMA_CM_EVENT_DISCONNECTED event.
+	virtual void on_disconnected(struct fi_eq_cm_entry* event,int conn_indx = -1)
+	{
+		if (conn_indx == -1) {
+			CONNECTION* conn = static_cast<CONNECTION*>(event->fid->context);
+			aggregate_bytes_sent_ += conn->total_bytes_sent();
+			aggregate_send_requests_ += conn->total_send_requests();
+			aggregate_recv_requests_ += conn->total_recv_requests();
+			conn->on_disconnected(event);
+		} else {
+			aggregate_bytes_sent_ += conn_[conn_indx]->total_bytes_sent();
+			aggregate_send_requests_ += conn_[conn_indx]->total_send_requests();
+			aggregate_recv_requests_ += conn_[conn_indx]->total_recv_requests();
+			conn_[conn_indx]->on_disconnected(event);
+		}
+		--connected_;
+	}
 
-        aggregate_bytes_sent_ += conn->total_bytes_sent();
-        aggregate_send_requests_ += conn->total_send_requests();
-        aggregate_recv_requests_ += conn->total_recv_requests();
+	/// Initialize the Libfabric context.
+	void init_context(fi_info* info,
+			const std::vector<std::string>& compute_hostnames,
+			const std::vector<std::string>& compute_services)
+	{
+		L_(debug) << "create Libfabric objects";
 
-        conn->on_disconnected(event);
-        --connected_;
-    }
+		int res =
+		fi_domain(Provider::getInst()->get_fabric(), info, &pd_, nullptr);
+		if (!pd_)
+		throw LibfabricException("fi_domain failed");
 
-    /// Initialize the Libfabric context.
-    void init_context(fi_info* info,
-                      const std::vector<std::string>& compute_hostnames,
-                      const std::vector<std::string>& compute_services)
-    {
-        L_(debug) << "create Libfabric objects";
+		struct fi_cq_attr cq_attr;
+		memset(&cq_attr, 0, sizeof(cq_attr));
+		cq_attr.size = num_cqe_;
+		cq_attr.flags = 0;
+		cq_attr.format = FI_CQ_FORMAT_CONTEXT;
+		cq_attr.wait_obj = FI_WAIT_NONE;
+		cq_attr.signaling_vector = Provider::vector++; // ??
+		cq_attr.wait_cond = FI_CQ_COND_NONE;
+		cq_attr.wait_set = nullptr;
+		res = fi_cq_open(pd_, &cq_attr, &cq_, nullptr);
+		if (!cq_) {
+			std::cout << strerror(-res) << std::endl;
+			throw LibfabricException("fi_cq_open failed");
+		}
+		if (Provider::getInst()->has_av()) {
+			struct fi_av_attr av_attr;
 
-        int res =
-            fi_domain(Provider::getInst()->get_fabric(), info, &pd_, nullptr);
-        if (!pd_)
-            throw LibfabricException("fi_domain failed");
+			memset(&av_attr, 0, sizeof(av_attr));
+			av_attr.type = FI_AV_TABLE;
+			av_attr.count = 1000;
+			assert(av_ == nullptr);
+			res = fi_av_open(pd_, &av_attr, &av_, NULL);
+			if (!av_) {
+				std::cout << strerror(-res) << std::endl;
+				throw LibfabricException("fi_av_open failed");
+			}
+			Provider::getInst()->set_hostnames_and_services(
+					av_, compute_hostnames, compute_services, fi_addrs);
+		}
+	}
 
-        struct fi_cq_attr cq_attr;
-        memset(&cq_attr, 0, sizeof(cq_attr));
-        cq_attr.size = num_cqe_;
-        cq_attr.flags = 0;
-        cq_attr.format = FI_CQ_FORMAT_CONTEXT;
-        cq_attr.wait_obj = FI_WAIT_NONE;
-        cq_attr.signaling_vector = Provider::vector++; // ??
-        cq_attr.wait_cond = FI_CQ_COND_NONE;
-        cq_attr.wait_set = nullptr;
-        res = fi_cq_open(pd_, &cq_attr, &cq_, nullptr);
-        if (!cq_) {
-            std::cout << strerror(-res) << std::endl;
-            throw LibfabricException("fi_cq_open failed");
-        }
-        if (Provider::getInst()->has_av()) {
-            struct fi_av_attr av_attr;
+	const uint32_t num_cqe_ = 1000000;
 
-            memset(&av_attr, 0, sizeof(av_attr));
-            av_attr.type = FI_AV_TABLE;
-            av_attr.count = 1000;
-            assert(av_ == nullptr);
-            res = fi_av_open(pd_, &av_attr, &av_, NULL);
-            if (!av_) {
-                std::cout << strerror(-res) << std::endl;
-                throw LibfabricException("fi_av_open failed");
-            }
-            Provider::getInst()->set_hostnames_and_services(
-                av_, compute_hostnames, compute_services, fi_addrs);
-        }
-    }
+	/// Libfabric protection domain.
+	struct fid_domain* pd_ = nullptr;
 
-    const uint32_t num_cqe_ = 1000000;
+	/// Libfabric completion queue
+	struct fid_cq* cq_ = nullptr;
 
-    /// Libfabric protection domain.
-    struct fid_domain* pd_ = nullptr;
+	/// Libfabric address vector.
+	struct fid_av* av_ = nullptr;
 
-    /// Libfabric completion queue
-    struct fid_cq* cq_ = nullptr;
+	/// Vector of associated connection objects.
+	std::vector<std::unique_ptr<CONNECTION>> conn_;
 
-    /// Libfabric address vector.
-    struct fid_av* av_ = nullptr;
+	/// Number of established connections
+	unsigned int connected_ = 0;
 
-    /// Vector of associated connection objects.
-    std::vector<std::unique_ptr<CONNECTION>> conn_;
+	/// Number of connections in the done state.
+	unsigned int connections_done_ = 0;
 
-    /// Number of established connections
-    unsigned int connected_ = 0;
+	/// Flag causing termination of completion handler.
+	bool all_done_ = false;
 
-    /// Number of connections in the done state.
-    unsigned int connections_done_ = 0;
+	/// RDMA event channel
+	struct fid_eq* eq_ = nullptr;
 
-    /// Flag causing termination of completion handler.
-    bool all_done_ = false;
+	std::chrono::high_resolution_clock::time_point time_begin_;
 
-    /// RDMA event channel
-    struct fid_eq* eq_ = nullptr;
+	std::chrono::high_resolution_clock::time_point time_end_;
 
-    std::chrono::high_resolution_clock::time_point time_begin_;
+	Scheduler scheduler_;
 
-    std::chrono::high_resolution_clock::time_point time_end_;
+	/// RDMA endpoint (for connection-less fabrics).
+	struct fid_ep* ep_ = nullptr;
 
-    Scheduler scheduler_;
+	/// AV indices for compute buffer nodes
+	std::vector<fi_addr_t> fi_addrs = {};
 
-    /// RDMA endpoint (for connection-less fabrics).
-    struct fid_ep* ep_ = nullptr;
-
-    /// AV indices for compute buffer nodes
-    std::vector<fi_addr_t> fi_addrs = {};
+	bool connection_oriented_ = false;
 
 private:
-    /// Connection manager event dispatcher. Called by the CM event loop.
-    void on_cm_event(uint32_t event_kind, struct fi_eq_cm_entry* event,
-                     ssize_t event_size)
-    {
-        // L_(trace) << rdma_event_str(event_kind);
-        switch (event_kind) {
-        case FI_CONNECTED:
-            on_established(event);
-            break;
-        case FI_CONNREQ:
-            on_connect_request(event,
-                               event_size - sizeof(struct fi_eq_cm_entry));
-            break;
-        case FI_SHUTDOWN:
-            on_disconnected(event);
-            break;
-        default:
-            L_(warning) << "unknown eq event";
-        }
-    }
+	/// Connection manager event dispatcher. Called by the CM event loop.
+	void on_cm_event(uint32_t event_kind, struct fi_eq_cm_entry* event,
+			ssize_t event_size)
+	{
+		// L_(trace) << rdma_event_str(event_kind);
+		switch (event_kind) {
+			case FI_CONNECTED:
+			on_established(event);
+			break;
+			case FI_CONNREQ:
+			on_connect_request(event,
+					event_size - sizeof(struct fi_eq_cm_entry));
+			break;
+			case FI_SHUTDOWN:
+			on_disconnected(event);
+			break;
+			default:
+			L_(warning) << "unknown eq event";
+		}
+	}
 
-    /// Completion notification event dispatcher. Called by the event loop.
-    virtual void on_completion(uint64_t wc) = 0;
+	/// Completion notification event dispatcher. Called by the event loop.
+	virtual void on_completion(uint64_t wc) = 0;
 
-    /// Total number of bytes transmitted.
-    uint64_t aggregate_bytes_sent_ = 0;
+	/// Total number of bytes transmitted.
+	uint64_t aggregate_bytes_sent_ = 0;
 
-    /// Total number of SEND work requests.
-    uint64_t aggregate_send_requests_ = 0;
+	/// Total number of SEND work requests.
+	uint64_t aggregate_send_requests_ = 0;
 
-    /// Total number of RECV work requests.
-    uint64_t aggregate_recv_requests_ = 0;
+	/// Total number of RECV work requests.
+	uint64_t aggregate_recv_requests_ = 0;
 
-    /// RDMA connection manager ID (for connection-oriented fabrics)
-    struct fid_pep* pep_ = nullptr;
+	/// RDMA connection manager ID (for connection-oriented fabrics)
+	struct fid_pep* pep_ = nullptr;
 };
