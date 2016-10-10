@@ -29,6 +29,12 @@ InputChannelSender::InputChannelSender(uint64_t input_index,
 			/ timeslice_size_ + 1;
 	ack_.alloc_with_size(min_ack_buffer_size);
 
+	if (Provider::getInst()->is_connection_oriented()) {
+		connection_oriented_ = true;
+	} else {
+		connection_oriented_ = false;
+	}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 	VALGRIND_MAKE_MEM_DEFINED(data_source_.data_buffer().ptr(),
@@ -94,41 +100,40 @@ void InputChannelSender::operator()() {
 		data_source_.proceed();
 		time_begin_ = std::chrono::high_resolution_clock::now();
 
-		uint64_t timeslice = 0;
-		sync_buffer_positions();
-		report_status();
-		while (timeslice < max_timeslice_number_ && !abort_) {
-			if (try_send_timeslice(timeslice)) {
-				timeslice++;
-			}
-			poll_completion();
-			data_source_.proceed();
-			scheduler_.timer();
+	uint64_t timeslice = 0;
+	sync_buffer_positions();
+	report_status();
+	while (timeslice < max_timeslice_number_ && !abort_) {
+		if (try_send_timeslice(timeslice)) {
+			timeslice++;
 		}
-		L_(debug)<< "[i " << input_index_ << "] "
-		<< "Finalize Connections";
-		for (auto& c : conn_) {
-			c->finalize(abort_);
-		}
-
-		L_(debug)<< "[i" << input_index_ << "] " << "SENDER loop done";
-
-		while (!all_done_) {
-			poll_completion();
-			scheduler_.timer();
-		}
-
-		time_end_ = std::chrono::high_resolution_clock::now();
-
-		disconnect();
-		/*while (connected_ != 0) {
-		 poll_cm_events();
-		 }*/
-
-		summary();
-	} catch (std::exception& e) {
-		L_(error)<< "exception in InputChannelSender: " << e.what();
+		poll_completion();
+		data_source_.proceed();
+		scheduler_.timer();
 	}
+	L_(debug)<< "[i " << input_index_ << "] "
+	<< "Finalize Connections";
+	for (auto& c : conn_) {
+		c->finalize(abort_);
+	}
+
+	while (!all_done_) {
+		poll_completion();
+		scheduler_.timer();
+	}
+
+	time_end_ = std::chrono::high_resolution_clock::now();
+
+	//disconnect(); // do we need it ?! calling on_disconnected is enough
+
+	while (connected_ != 0) {
+		poll_cm_events();
+	}
+
+	summary();
+} catch (std::exception& e) {
+	L_(error)<< "exception in InputChannelSender: " << e.what();
+}
 }
 
 void InputChannelSender::report_status() {
@@ -474,23 +479,24 @@ void InputChannelSender::on_completion(uint64_t wr_id) {
 	case ID_RECEIVE_STATUS: {
 		int cn = wr_id >> 8;
 		conn_[cn]->on_complete_recv();
-		if (!conn_[cn]->get_partner_addr()) {
+		if (!connection_oriented_ && !conn_[cn]->get_partner_addr()) {
 			conn_[cn]->set_partner_addr(av_);
 			conn_[cn]->set_remote_info();
 			on_connected(pd_);
 			++connected_;
-		} //else {
-		  //}
+		}
 		if (conn_[cn]->request_abort_flag()) {
 			abort_ = true;
 		}
 		if (conn_[cn]->done()) {
 			++connections_done_;
-			--connected_;
 			all_done_ = (connections_done_ == conn_.size());
-			//L_(info) << "[i" << input_index_ << "] "
-			//<< "ID_RECEIVE_STATUS final for id " << cn
-			//<< " all_done=" << all_done_;
+			if (!connection_oriented_) {
+				on_disconnected(nullptr, cn);
+			}
+			L_(debug) << "[i" << input_index_ << "] "
+			<< "ID_RECEIVE_STATUS final for id " << cn
+			<< " all_done=" << all_done_;
 		}
 	}break;
 
