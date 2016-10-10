@@ -14,18 +14,32 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
-//----------added H.Hartmann 01.09.16----------
-#include "etcdClient.h"
-#include <sstream>
 
-Application::Application(Parameters const& par) : par_(par)
+
+Application::Application(Parameters const& par) : par_(par), etcd(par_.kv_url)
 {
     //----------added H.Hartmann 01.09.16----------
     stringstream post;
-    string prefix = "/mstool0"; //get ID from command line
-    EtcdClient etcd(par_.kv_url);
     
-    
+    if(par_.kv_shm == true){
+        etcd.checkonprocess(par_.input_shm);
+        /*prefix_in << "/" << par_.input_shm;
+        ret = etcd.getvalue(prefix_in.str(), "/uptodate");
+        if(ret != 0){
+            cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
+            L_(warning) << "no shm set yet";
+            ret = etcd.waitvalue(prefix_in.str());
+            if(ret != 0){
+                cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
+                L_(warning) << "no shm set";
+                exit (EXIT_FAILURE);
+            }
+        }
+        cout << "setting " << par_.input_shm << " value to off" << endl;
+        etcd.setvalue(prefix_in.str(), "/uptodate", "value=off");
+        L_(info) << "flag for shm was set in kv-store";*/
+    }
+
     // Source setup
     if (!par_.input_shm.empty()) {
         //get it from etcd
@@ -99,16 +113,15 @@ Application::Application(Parameters const& par) : par_(par)
             new fles::MicrosliceTransmitter(*data_sink)));
         
         //----------added H.Hartmann 01.09.16----------
-        post << "value=" << par_.output_shm << endl;
-        etcd.setvalue(prefix, "/shmname", post.str());
-        post.str("");//deletepost
-        post << "value=yes";
-        etcd.setvalue(prefix, "/uptodate", post.str());
+        string post = "value=on";
+        prefix_out << "/" << par_.output_shm;
+        etcd.setvalue(prefix_out.str(), "/uptodate", post);
     }
 }
 
 Application::~Application()
 {
+    etcd.setvalue(prefix_out.str(), "/uptodate", "value=off");
     L_(info) << "total microslices processed: " << count_;
 }
 

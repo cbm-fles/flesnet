@@ -29,6 +29,7 @@ struct Parameters {
     size_t shm_channel = 0;
     std::string input_shm;
     std::string kv_url;
+    bool kv_shm = false;
     std::string input_archive;
 
     // sink selection

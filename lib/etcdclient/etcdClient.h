@@ -1,6 +1,6 @@
-#include <curl/curl.h>
-#include <curlpp/cURLpp.hpp>
-#include <curlpp/Options.hpp>
+//#include <curl/curl.h>
+//#include <curlpp/cURLpp.hpp>
+//#include <curlpp/Options.hpp>
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/reader.h>
 #include <jsoncpp/json/value.h>
@@ -8,21 +8,25 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
+#include "log.hpp"
+#include "httpClient.hpp"
 
 using namespace std;
 
 class EtcdClient{
 private:
-    CURL *hnd;
-    CURLcode ret;
     string url;
+    HttpClient http;
+    //CURL *hnd;
+    //CURLcode ret;
     string answer;
     string value;
+    int requiredtag=1;
     
 public:
     EtcdClient(string url);
     
-    EtcdClient();
+    int checkonprocess(string input_shm);
     
     string setadress(string prefix, string key);
     
@@ -30,7 +34,7 @@ public:
     
     int getvalue(string prefix, string key);
     
-    int getuptodatevalue(string prefix, bool  uptodate);
+    int checkvalue(Json::Value message);
     
     int waitvalue(string prefix);
     

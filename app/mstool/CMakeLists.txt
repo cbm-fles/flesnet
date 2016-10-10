@@ -11,6 +11,7 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/flib_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/logging"
 		     "${PROJECT_SOURCE_DIR}/lib/etcdclient"
+		     "${PROJECT_SOURCE_DIR}/lib/httpClient"
                     "${PROJECT_SOURCE_DIR}/lib/crcutil"
                     "${PROJECT_SOURCE_DIR}/config")
 

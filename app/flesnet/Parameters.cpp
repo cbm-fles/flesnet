@@ -202,7 +202,7 @@ void Parameters::parse_options(int argc, char* argv[])
         "name of a shared memory to use as data source")(
         //----------added H.Hartmann 01.09.16----------
         "kv-shm", po::value<bool>(&kv_shm_),
-        "name of a shared memory to use as data source set in the kv-store")(
+        "shared memory to use as data source set in the kv-store, bool")(
         "kv-url", po::value<std::string>(&kv_url_),
         "url of kv-store")(
         "standalone", po::value<bool>(&standalone_), "standalone mode flag")(
@@ -298,28 +298,25 @@ void Parameters::parse_options(int argc, char* argv[])
 
     //----------added H.Hartmann 05.09.16----------
     EtcdClient etcd(kv_url_);
-    stringstream prefix;
-    int ret;
+    //stringstream prefix;
+    //int ret;
     
     if(kv_shm_ == true){
-        prefix << "/mstool0";
-        ret = etcd.getuptodatevalue(prefix.str(), false);
-        if(ret == 0) input_shm_ = etcd.getanswer();
-        else{
+        etcd.checkonprocess(input_shm());
+        /*prefix << "/" << input_shm();
+        ret = etcd.getvalue(prefix.str(), "/uptodate");
+        if(ret != 0) {
             cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
-        }
-        //if key is not set yet wait
-        if (ret != 0){
             L_(warning) << "no shm set yet";
             ret = etcd.waitvalue(prefix.str());
-            if(ret == 0) input_shm_ = etcd.getanswer();
-            else{
+            if(ret != 0){
                 cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
                 L_(warning) << "no shm set";
                 exit (EXIT_FAILURE);
             }
         }
-        L_(info) << "using shm specified in kv-store: " << input_shm_;
+        etcd.setvalue(prefix.str(),"uptodate", "value=off");
+        L_(info) << "flag for shm was set in kv-store";*/
     }
     
     if (in_data_buffer_size_exp_ == 0 && input_shm().empty()) {

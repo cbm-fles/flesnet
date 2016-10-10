@@ -17,6 +17,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
+//---------- added H.Hartmann 08.09.16
+#include "etcdClient.h"
 
 namespace ip = boost::interprocess;
 
@@ -27,13 +29,18 @@ public:
 
   shm_device_server(flib::flib_device* flib,
                     std::string shm_identifier,
+                    std::string kv_url,
                     size_t data_buffer_size_exp,
                     size_t desc_buffer_size_exp,
                     volatile std::sig_atomic_t* signal_status)
-      : m_flib(flib), m_shm_identifier(shm_identifier),
-        m_signal_status(signal_status) {
+      : m_flib(flib), m_shm_identifier(shm_identifier), m_kv_url(kv_url),
+        m_signal_status(signal_status),etcd(m_kv_url)
+    {
+            
+    
     std::vector<flib::flib_link*> flib_links = m_flib->links();
 
+    
     // delete deactivated links from vector
     flib_links.erase(
         std::remove_if(std::begin(flib_links), std::end(flib_links),
@@ -41,7 +48,10 @@ public:
                          return link->data_sel() == flib::flib_link::rx_disable;
                        }),
         std::end(flib_links));
-    L_(info) << "enabled flib links detected: " << flib_links.size();
+            
+    m_num_channels = flib_links.size();
+
+    L_(info) << "enabled flib links detected: " << m_num_channels;
 
     // create a big enough shared memory segment
     size_t shm_size = ((UINT64_C(1) << data_buffer_size_exp) * sizeof(T_DATA) +
@@ -70,6 +80,9 @@ public:
   }
 
   ~shm_device_server() {
+      prefix_ss.str("");
+      prefix_ss << "/" << m_shm_identifier;
+    etcd.setvalue(prefix_ss.str(),"/uptodate", "value=off");
     ip::shared_memory_object::remove(m_shm_identifier.c_str());
   }
 
@@ -78,7 +91,24 @@ public:
       m_run = true;
       // TODO needed in case of cbmnet readout
       // m_flib->enable_mc_cnt(true);
+        
+      //---------- added H.Hartmann 08.09.16
+      prefix_ss << "/" << m_shm_identifier;
+      string prefix = prefix_ss.str();
+      string post = "value=on";
+      etcd.setvalue(prefix, "/uptodate", post);
+        
+        
+      prefix_ss << "/channel";
+  
+      for(size_t i = 0; i < m_num_channels;i++){
+        etcd.setvalue(prefix_ss.str(), to_string(i), post);
+      }
+
+
       L_(info) << "flib server started and running";
+        
+        
       while (m_run) {
         // claim lock at start-up
         ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
@@ -118,6 +148,7 @@ public:
   }
 
 private:
+    
   std::string print_shm_info() {
     std::stringstream ss;
     ss << "SHM INFO" << std::endl
@@ -134,11 +165,16 @@ private:
   // Members
   flib::flib_device* m_flib;
   std::string m_shm_identifier;
+  std::string m_kv_url;
   volatile std::sig_atomic_t* m_signal_status;
   std::unique_ptr<ip::managed_shared_memory> m_shm;
   shm_device* m_shm_dev = NULL;
   std::vector<std::unique_ptr<shm_channel_server_type>> m_shm_ch_vec;
-
+  size_t m_num_channels = 0;
+    
+  EtcdClient etcd;
+  stringstream prefix_ss;
+    
   bool m_run = false;
 };
 

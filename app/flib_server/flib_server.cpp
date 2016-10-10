@@ -32,9 +32,10 @@ int main(int argc, char* argv[]) {
     L_(info) << "using FLIB: " << flib->print_devinfo();
 
     // create server
-    flib_shm_device_server server(flib.get(), par.shm(),
+    flib_shm_device_server server(flib.get(), par.shm(), par.kv_url(),
                                   par.data_buffer_size_exp(),
                                   par.desc_buffer_size_exp(), &signal_status);
+      
     server.run();
 
   } catch (std::exception const& e) {

@@ -10,6 +10,10 @@
 #include <memory>
 #include <vector>
 
+//----------added H.Hartmann 01.09.16----------
+#include "etcdClient.h"
+#include <sstream>
+
 /// %Application base class.
 class Application
 {
@@ -25,7 +29,7 @@ public:
 
 private:
     Parameters const& par_;
-
+    EtcdClient etcd;
     std::shared_ptr<flib_shm_device_client> shm_device_;
     std::unique_ptr<flib_shm_device_provider> output_shm_device_;
     std::unique_ptr<InputBufferReadInterface> data_source_;
@@ -34,4 +38,6 @@ private:
     std::vector<std::unique_ptr<fles::MicrosliceSink>> sinks_;
 
     uint64_t count_ = 0;
+    
+    stringstream prefix_out;
 };
