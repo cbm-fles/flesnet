@@ -15,6 +15,8 @@ struct ComputeNodeStatusMessage {
     //
     bool connect;
     ComputeNodeInfo info;
+    // address must be not null if connect = true
+    unsigned char my_address[64];
 };
 
 #pragma pack()

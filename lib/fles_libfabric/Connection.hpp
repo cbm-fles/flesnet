@@ -128,6 +128,8 @@ protected:
 
     struct fid_ep* ep_ = nullptr;
 
+    bool connection_oriented_ = false;
+
 private:
     //    /// Low-level communication parameters.
     //    enum {
