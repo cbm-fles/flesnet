@@ -13,6 +13,7 @@
 #include "shm_device_provider.hpp"
 #include <memory>
 #include <vector>
+#include <chrono>
 
 /// %Application base class.
 class Application
@@ -43,4 +44,5 @@ private:
     std::vector<std::unique_ptr<fles::MicrosliceSink>> sinks_;
 
     uint64_t count_ = 0;
+    std::chrono::steady_clock::time_point tStart;
 };

@@ -79,11 +79,17 @@ Application::Application(Parameters const& par) : par_(par)
                 new fles::MicrosliceTransmitter(*data_sink)));
         }
     }
+    tStart = std::chrono::steady_clock::now();
 }
 
 Application::~Application()
 {
+    std::chrono::steady_clock::time_point tStop = std::chrono::steady_clock::now();
+    std::chrono::duration<double> time_span = std::chrono::duration_cast<
+                                                     std::chrono::duration<double> >(tStop - tStart);
+
     L_(info) << "total microslices processed: " << count_;
+    L_(info) << "processing time: " << time_span.count() << " seconds";
 
     // cleanup memory
     if( NULL != filtered_output_archive_ )

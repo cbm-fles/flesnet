@@ -68,9 +68,14 @@ void fles::NdpbEpochToMsSorter::process()
                   desc.idx  = fulCurrentLongEpoch - fuNbEpPerMs; // * kiEpochLengthNs
                   // Update Ms size
                   desc.size = fmsFullMsgBuffer.size();
-                  // Update the Format tag
-                  // Update the Format version
-//                  if( true == fbMsgSorting )
+                  // Update the Format and version version
+                  // 0xE. for Experimental
+                  // 0x.0 for Raw data
+                  // 0x.1 for (Epoch-)aligned Microslices
+                  // 0x.2 for Time-sorted data
+                  if( true == fbMsgSorting )
+                     desc.sys_ver = 0xE2;
+                     else desc.sys_ver = 0xE1;
 
                   // Convert the multiset of messages to a vector of bytes
                   std::vector<uint8_t> content;
