@@ -50,7 +50,7 @@ Application::Application(Parameters const& par) : par_(par)
     if (!par_.output_archive.empty()) {
         if ( par_.sorter ) {
             filtered_output_archive_ = new fles::MicrosliceOutputArchive(par_.output_archive);
-            ngdpb_sorter_arch_       = new fles::NdpbEpochToMsSorter( par_.epoch_per_ms );
+            ngdpb_sorter_arch_       = new fles::NdpbEpochToMsSorter( par_.epoch_per_ms, par_.sortmesg );
             sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
                     new fles::FilteringMicrosliceSink(*filtered_output_archive_, *ngdpb_sorter_arch_)));
         } else {
@@ -71,9 +71,9 @@ Application::Application(Parameters const& par) : par_(par)
             output_shm_device_->channels().at(0);
         if ( par_.sorter ) {
             filtered_output_mstrans_ = new fles::MicrosliceTransmitter(*data_sink);
-            ngdpb_sorter_shm_        = new fles::NdpbEpochToMsSorter( par_.epoch_per_ms );
-//            sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
-//                    new fles::FilteringMicrosliceSink(*filtered_output_mstrans_, *ngdpb_sorter_shm_)));
+            ngdpb_sorter_shm_        = new fles::NdpbEpochToMsSorter( par_.epoch_per_ms, par_.sortmesg );
+            sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
+                    new fles::FilteringMicrosliceSink(*filtered_output_mstrans_, *ngdpb_sorter_shm_)));
         } else {
             sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
                 new fles::MicrosliceTransmitter(*data_sink)));

@@ -37,9 +37,11 @@ void Parameters::parse_options(int argc, char* argv[])
     opmode_add("debugger,d", po::value<bool>(&debugger)->implicit_value(true),
              "enable/disable debugger (raw message unpacking and printout)");
     opmode_add("sorter,s", po::value<bool>(&sorter)->implicit_value(true),
-             "enable/disable message sorter and epoch buffer for sink(s) (build output ms from epochs)");
+             "enable/disable sorting by epoch in epoch buffer for sink(s) (build output ms from epochs)");
     opmode_add("ep_in_ms,N", po::value<uint32_t>(&epoch_per_ms),
              "Number of epochs stored in each output MS in case sorter is used (default:1)");
+    opmode_add("sortmesg", po::value<bool>(&sortmesg)->implicit_value(true),
+             "enable/disable message sorting inside epoch buffer before creation of new ms");
 
     po::options_description sink("Sink options");
     auto sink_add = sink.add_options();
@@ -58,13 +60,13 @@ void Parameters::parse_options(int argc, char* argv[])
     po::notify(vm);
 
     if (vm.count("help") != 0u) {
-        std::cout << "mstool, git revision " << g_GIT_REVISION << std::endl;
+        std::cout << "ngdpbtool, git revision " << g_GIT_REVISION << std::endl;
         std::cout << desc << std::endl;
         exit(EXIT_SUCCESS);
     }
 
     if (vm.count("version") != 0u) {
-        std::cout << "mstool, git revision " << g_GIT_REVISION << std::endl;
+        std::cout << "ngdpbtool, git revision " << g_GIT_REVISION << std::endl;
         exit(EXIT_SUCCESS);
     }
 

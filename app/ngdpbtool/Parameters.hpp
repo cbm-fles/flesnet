@@ -33,6 +33,7 @@ struct Parameters {
     bool debugger = false;
     bool sorter   = false;
     uint32_t epoch_per_ms = 1;
+    bool sortmesg = false;
 
     // sink selection
     size_t dump_verbosity = 0;

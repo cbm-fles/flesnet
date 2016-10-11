@@ -68,10 +68,14 @@ void fles::NdpbEpochToMsSorter::process()
                   desc.idx  = fulCurrentLongEpoch - fuNbEpPerMs; // * kiEpochLengthNs
                   // Update Ms size
                   desc.size = fmsFullMsgBuffer.size();
+                  // Update the Format tag
+                  // Update the Format version
+//                  if( true == fbMsgSorting )
 
                   // Convert the multiset of messages to a vector of bytes
                   std::vector<uint8_t> content;
-                  for( auto itMess = fmsFullMsgBuffer.begin(); itMess != fmsFullMsgBuffer.end(); itMess++)
+                  if( true == fbMsgSorting )
+                     for( auto itMess = fmsFullMsgBuffer.begin(); itMess != fmsFullMsgBuffer.end(); itMess++)
                   {
 /* Wrong Endianness?!?
                      content.push_back( static_cast<uint8_t>( ((*itMess).getData() & 0xFF00000000000000UL) >> 56) );
@@ -107,13 +111,25 @@ void fles::NdpbEpochToMsSorter::process()
                      std::cout << std::hex << std::setw(8) << (*itMess).getData() << " "
                                << std::dec << std::endl;
                   } // for( auto itMess = fmsFullMsgBuffer.begin(); itMess < fmsFullMsgBuffer.end(); itMess++)
-
+                     else for( auto itMess = fvMsgBuffer.begin(); itMess != fvMsgBuffer.end(); itMess++)
+                     {
+                        content.push_back( static_cast<uint8_t>( ((*itMess).getData() & 0x00000000000000FFUL)      ) );
+                        content.push_back( static_cast<uint8_t>( ((*itMess).getData() & 0x000000000000FF00UL) >>  8) );
+                        content.push_back( static_cast<uint8_t>( ((*itMess).getData() & 0x0000000000FF0000UL) >> 16) );
+                        content.push_back( static_cast<uint8_t>( ((*itMess).getData() & 0x00000000FF000000UL) >> 24) );
+                        content.push_back( static_cast<uint8_t>( ((*itMess).getData() & 0x000000FF00000000UL) >> 32) );
+                        content.push_back( static_cast<uint8_t>( ((*itMess).getData() & 0x0000FF0000000000UL) >> 40) );
+                        content.push_back( static_cast<uint8_t>( ((*itMess).getData() & 0x00FF000000000000UL) >> 48) );
+                        content.push_back( static_cast<uint8_t>( ((*itMess).getData() & 0xFF00000000000000UL) >> 56) );
+                     } // else for( auto itMess = fvMsgBuffer.begin(); itMess != fvMsgBuffer.end(); itMess++)
                   std::unique_ptr<StorableMicroslice> sortedMs(
                          new StorableMicroslice(desc, content));
                   output.push(std::move(sortedMs));
 
                   // Re-initialize the sorting buffer
-                  fmsFullMsgBuffer.clear();
+                  if( true == fbMsgSorting )
+                     fmsFullMsgBuffer.clear();
+                     else fvMsgBuffer.clear();
                   fuNbEpInBuff = 0;
                } // if( fuNbEpPerMs == fuNbEpInBuff )
             } // if( true == fbFirstEpFound )
@@ -123,8 +139,15 @@ void fles::NdpbEpochToMsSorter::process()
          // If the first epoch was found, start saving messages in the sorting buffer
          if( true == fbFirstEpFound )
          {
-            ngdpb::FullMessage fullmess( mess, fulCurrentLongEpoch );
-            fmsFullMsgBuffer.insert( fullmess );
+            // If messages sorting enabled, do it with multiset and FullMessage "<" OP
+            if( true == fbMsgSorting )
+            {
+               ngdpb::FullMessage fullmess( mess, fulCurrentLongEpoch );
+               fmsFullMsgBuffer.insert( fullmess );
+            } // if( true == fbMsgSorting )
+               // Otherwise the simpler "sorting by epoch" is done just by epoch definition!
+               // => vector is enough
+               else fvMsgBuffer.push_back( mess );
          } // if( true == fbFirstEpFound )
       } // for (uint32_t uIdx = 0; uIdx < uNbMessages; uIdx ++)
    } // while (0 < this->input.size() )

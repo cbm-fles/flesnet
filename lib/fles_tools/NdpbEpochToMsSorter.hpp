@@ -11,6 +11,7 @@
 #include "rocMess_wGet4v1.h"
 
 #include <set>
+#include <vector>
 
 namespace fles
 {
@@ -19,11 +20,12 @@ namespace fles
        : public BufferingFilter<Microslice, StorableMicroslice>
    {
       public:
-          NdpbEpochToMsSorter( uint32_t uEpPerMs = 1 ) :
+          NdpbEpochToMsSorter( uint32_t uEpPerMs = 1, bool bSortMsgs = false ) :
              BufferingFilter(),
-             fuNbEpPerMs(uEpPerMs), 
+             fuNbEpPerMs(uEpPerMs),
+             fbMsgSorting(bSortMsgs),
              fmsFullMsgBuffer(), fuNbEpInBuff(0),
-             fbFirstEpFound(false), 
+             fbFirstEpFound(false),
              fuCurrentEpoch(0), fuCurrentEpochCycle(0), fulCurrentLongEpoch(0)
              {};
 
@@ -31,7 +33,9 @@ namespace fles
           void process() override;
 
           uint32_t fuNbEpPerMs;
+          bool     fbMsgSorting;
           std::multiset<ngdpb::FullMessage> fmsFullMsgBuffer;
+          std::vector<ngdpb::Message>       fvMsgBuffer;
           uint32_t fuNbEpInBuff;
           bool     fbFirstEpFound;
           uint32_t fuCurrentEpoch;
