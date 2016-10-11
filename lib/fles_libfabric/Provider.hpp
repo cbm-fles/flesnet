@@ -29,16 +29,16 @@ public:
                          uint32_t max_recv_sge, uint32_t max_inline_data,
                          const void* param, size_t paramlen, void* addr) = 0;
 
+    static void init(std::string local_host_name)
+    {
+      prov = get_provider(local_host_name);
+    }
+
     virtual void set_hostnames_and_services(
         struct fid_av* /*av*/,
         const std::vector<std::string>& /*compute_hostnames*/,
         const std::vector<std::string>& /*compute_services*/,
         std::vector<fi_addr_t>& /*fi_addrs*/) = 0;
-
-    static void init(std::string local_host_name)
-    {
-      prov = get_provider(local_host_name);
-    }
 
     static std::unique_ptr<Provider> &getInst()
     {

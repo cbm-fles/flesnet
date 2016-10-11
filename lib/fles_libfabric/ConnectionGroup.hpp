@@ -41,7 +41,6 @@ public:
       int res = fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_, nullptr);
       if (res)
         throw LibfabricException("fi_eq_open failed");
-
     }
 
     ConnectionGroup(const ConnectionGroup&) = delete;
