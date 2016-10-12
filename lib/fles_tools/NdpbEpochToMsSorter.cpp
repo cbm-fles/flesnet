@@ -28,8 +28,8 @@ void fles::NdpbEpochToMsSorter::process()
          uint64_t ulData = static_cast<uint64_t>( pInBuff[uIdx] );
          ngdpb::Message mess( ulData );
 
-         std::cout << " IN " << std::hex << std::setw(8) << ulData << " "
-                   << std::dec << std::endl;
+//         std::cout << " IN " << std::hex << std::setw(8) << ulData << " "
+//                   << std::dec << std::endl;
 
          if( true == mess.isEpoch2Msg()    || true == mess.isGet4Msg()      ||
              true == mess.isGet4SlCtrMsg() || true == mess.isGet4Hit32Msg() ||
@@ -113,8 +113,8 @@ void fles::NdpbEpochToMsSorter::process()
                                << std::hex << static_cast< uint16_t>( content[ content.size() -1 ] ) << " "
                                << std::dec << std::endl;
 */
-                     std::cout << std::hex << std::setw(8) << (*itMess).getData() << " "
-                               << std::dec << std::endl;
+//                     std::cout << std::hex << std::setw(8) << (*itMess).getData() << " "
+//                               << std::dec << std::endl;
                   } // for( auto itMess = fmsFullMsgBuffer.begin(); itMess < fmsFullMsgBuffer.end(); itMess++)
                      else for( auto itMess = fvMsgBuffer.begin(); itMess != fvMsgBuffer.end(); itMess++)
                      {
