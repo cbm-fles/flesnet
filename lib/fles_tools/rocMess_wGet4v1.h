@@ -616,6 +616,29 @@ namespace ngdpb {
          inline uint64_t getExtendedEpoch() const {return fuExtendedEpoch; }
    };
 
+   class ExtMessage : public Message {
+      protected:
+         bool fbEpochLSb;   // lower bit of the Epoch of the message
+//         uint8_t fcEpochLSb;   // lower bits of the Epoch of the message
+
+      public:
+         ExtMessage() : Message(), fbEpochLSb(0) {}
+
+         ExtMessage(const Message& src, bool bEpLsb) : Message(src), fbEpochLSb(bEpLsb) {}
+
+         ExtMessage(const ExtMessage& src) : Message(src), fbEpochLSb(src.fbEpochLSb) {}
+
+         void assign(const ExtMessage& src) { Message::assign(src); fbEpochLSb = src.fbEpochLSb; }
+
+         ExtMessage& operator=(const ExtMessage& src) { assign(src); return *this; }
+
+         bool operator<(const ExtMessage& other) const;
+
+         inline void reset() {  Message::reset(); fbEpochLSb = 0; }
+
+         inline bool getEpochLsb() const {return fbEpochLSb; }
+   };
+
 }
 
 
