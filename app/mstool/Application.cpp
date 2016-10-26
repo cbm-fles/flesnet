@@ -18,7 +18,6 @@
 
 Application::Application(Parameters const& par) : par_(par), etcd(par_.kv_url)
 {
-    //----------added H.Hartmann 01.09.16----------
     stringstream post;
     
     if(par_.kv_shm == true){
@@ -97,7 +96,6 @@ Application::Application(Parameters const& par) : par_(par), etcd(par_.kv_url)
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
             new fles::MicrosliceTransmitter(*data_sink)));
         
-        //----------added H.Hartmann 01.09.16----------
         string post = "value=on";
         prefix_out << "/" << par_.output_shm;
         etcd.setvalue(prefix_out.str(), "/uptodate", post);

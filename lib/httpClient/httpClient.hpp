@@ -22,6 +22,6 @@ public:
     string setadress(string prefix, string key);
     int putreq(string prefix, string key, string value, string method);
     int deletereq(string prefix, string key);
-    int waitreq(string prefix, string key);
+    string waitreq(string prefix, string key);
     string getreq(string prefix, string key);
 };

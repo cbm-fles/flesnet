@@ -35,7 +35,9 @@ public:
     void deletevalue(string prefix, string key){ http.deletereq(prefix, key); }
     
     int getvalue(string prefix, string key);
-    
+
+    int parsevalue(string data);
+
     int checkvalue(Json::Value message);
     
     int waitvalue(string prefix);

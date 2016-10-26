@@ -15,21 +15,13 @@ int EtcdClient::checkonprocess(string input_shm){
     prefix << "/" << input_shm;
     ret = getvalue(prefix.str(), "/uptodate");
     if(ret != 0) {
-        cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
-        //L_(warning) << "no shm set yet";
-        cout << "no shm set yet" << endl;
+        L_(warning) << "no shm set in key-value store...waiting";
         ret = waitvalue(prefix.str());
         if(ret != 0){
-            cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
-            //L_(warning) << "no shm set";
-            cout << "no shm set" << endl;
+            L_(error) << "return flag was " << ret << ". Exiting";
             exit (EXIT_FAILURE);
         }
     }
-    //setvalue(prefix.str(),"uptodate", "value=off");
-    http.putreq(prefix.str(),"/uptodate","value=off", "PUT");
-    //L_(info) << "flag for shm was set in kv-store";
-    cout << "flag for shm was set in kv-store" << endl;
     
     return ret;
 }
@@ -41,26 +33,32 @@ string EtcdClient::setadress(string prefix, string key){
     return adress.str();
 }
 
-
 int EtcdClient::getvalue(string prefix, string key){
+    int flag = parsevalue(http.getreq(prefix, key));
+    return flag;
+}
+
+int EtcdClient::parsevalue(string data) {
     Json::Value message;
     Json::Reader reader;
     Json::FastWriter fastwriter;
-
     int flag = 2;
-    
 
-    
-    cout << setadress(prefix,key) << endl;
-    string os = http.getreq(prefix, key);
-    
-    
-    bool parsingSuccessful = reader.parse(os, message);
-    if (!parsingSuccessful)cout << "EtcdClient: Failed to parse" << endl;
-    
+    bool parsingSuccessful = reader.parse(data, message);
+    if (!parsingSuccessful) {
+        L_(warning) << "EtcdClient: Failed to parse";
+        if (message.size() == 0) {
+            L_(warning) << "EtcdClient: returned value from key-value store "
+                           "was empty, waiting for updates";
+            return flag = 3;
+        }
+    }
+
+    // cout << data << " retrieved message is " << message.size() << endl;
+
     if(message.isMember("error")){
         flag = 2;
-        cout << value << " " << fastwriter.write(message["error"]) << endl;
+        L_(error) << value << " " << fastwriter.write(message["error"]) << endl;
     }
     else flag = checkvalue(message);
     
@@ -76,10 +74,9 @@ int EtcdClient::checkvalue(Json::Value message){
     string tag = fastwriter.write(message["node"]["modifiedIndex"]);
     value.erase(value.end()-2,value.end());
     value.erase(0,1);
-    cout << "uptodate is " << value << " with tag " << tag << endl;
-    
+    // cout << "uptodate is " << value << " with tag " << tag << endl;
+
     if (value == "on"){
-        cout << value << endl;
         flag = 0;
     }
     else{
@@ -94,33 +91,16 @@ int EtcdClient::checkvalue(Json::Value message){
 int EtcdClient::waitvalue(string prefix){
     string answer;
     ostringstream adress;
-    int flag = 2;
-    int taglength = strlen(to_string(requiredtag).c_str());
-
+    int flag = 3;
+    string data;
     ostringstream key_ss;
     key_ss << "/uptodate?wait=true&waitIndex=" << requiredtag;
     string key = key_ss.str();
-    
-    //key ends with ?wait=true
-    /*curl_easy_setopt(hnd, CURLOPT_URL, setadress(prefix,key).c_str());
-    curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
-    curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, 5000L);
-    curl_easy_setopt(hnd, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(hnd, CURLOPT_USERAGENT, "curl/7.35.0");
-    curl_easy_setopt(hnd, CURLOPT_MAXREDIRS, 50L);
-    curl_easy_setopt(hnd, CURLOPT_TCP_KEEPALIVE, 1L);
-    
-    cout << setadress(prefix,key) << endl;
-    ret = curl_easy_perform(hnd);*/
-    int ret = http.waitreq(prefix,key);
-    cout << "after wait return value is " << ret << endl;
-    
-    if( ret == 0){
-        //cut ?wait=true from key to get value without waiting
-        key.erase(key.end()-(21+taglength),key.end());
-        flag = getvalue(prefix, key);
-        cout << "after wait flag is " << flag << endl;
+
+    while (flag == 3) {
+        data = http.waitreq(prefix, key);
+        flag = parsevalue(data);
     }
-    
+    L_(info) << "retrieved: " << data << " and flag " << flag;
     return flag;
 }
