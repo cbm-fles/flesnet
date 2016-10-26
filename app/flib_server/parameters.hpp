@@ -95,8 +95,8 @@ private:
             "shm,o",
             po::value<std::string>(&_shm)->default_value("flib_shared_memory"),
             "name of the shared memory to be used")(
-            "kv-url",
-            po::value<std::string>(&_kv_url)->default_value("http://10.0.101.1:2379/v2/keys"),
+            "kv-url", po::value<std::string>(&_kv_url)->default_value(
+                          "http://localhost:2379/v2/keys/flesnet"),
             "url to reach the kv-store")(
             "data-buffer-size-exp",
             po::value<size_t>(&_data_buffer_size_exp)->default_value(27),

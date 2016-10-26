@@ -17,7 +17,6 @@
 #include <iostream>
 #include <memory>
 #include <string>
-//---------- added H.Hartmann 08.09.16
 #include "etcdClient.h"
 
 namespace ip = boost::interprocess;
@@ -36,8 +35,8 @@ public:
       : m_flib(flib), m_shm_identifier(shm_identifier), m_kv_url(kv_url),
         m_signal_status(signal_status),etcd(m_kv_url)
     {
-            
-    
+
+    L_(info) << m_kv_url;
     std::vector<flib::flib_link*> flib_links = m_flib->links();
 
     
@@ -97,7 +96,6 @@ public:
       // TODO needed in case of cbmnet readout
       // m_flib->enable_mc_cnt(true);
         
-      //---------- added H.Hartmann 08.09.16
       prefix_ss << "/" << m_shm_identifier;
       string prefix = prefix_ss.str();
       string post = "value=on";

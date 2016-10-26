@@ -8,8 +8,6 @@
 #include <boost/program_options.hpp>
 #include <fstream>
 #include <log.hpp>
-
-//----------added H.Hartmann 05.09.16----------
 #include <cstdlib>
 #include <etcdClient.h>
 
@@ -200,7 +198,6 @@ void Parameters::parse_options(int argc, char* argv[])
         "typical number of content bytes per microslice")(
         "input-shm", po::value<std::string>(&input_shm_),
         "name of a shared memory to use as data source")(
-        //----------added H.Hartmann 01.09.16----------
         "kv-shm", po::value<bool>(&kv_shm_),
         "shared memory to use as data source set in the kv-store, bool")(
         "kv-url", po::value<std::string>(&kv_url_),
@@ -296,27 +293,11 @@ void Parameters::parse_options(int argc, char* argv[])
     if (!compute_nodes_.empty() && processor_executable_.empty())
         throw ParametersException("processor executable not specified");
 
-    //----------added H.Hartmann 05.09.16----------
     EtcdClient etcd(kv_url_);
-    //stringstream prefix;
-    //int ret;
-    
+    L_(info) << kv_url_;
+
     if(kv_shm_ == true){
         etcd.checkonprocess(input_shm());
-        /*prefix << "/" << input_shm();
-        ret = etcd.getvalue(prefix.str(), "/uptodate");
-        if(ret != 0) {
-            cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
-            L_(warning) << "no shm set yet";
-            ret = etcd.waitvalue(prefix.str());
-            if(ret != 0){
-                cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
-                L_(warning) << "no shm set";
-                exit (EXIT_FAILURE);
-            }
-        }
-        etcd.setvalue(prefix.str(),"uptodate", "value=off");
-        L_(info) << "flag for shm was set in kv-store";*/
     }
     
     if (in_data_buffer_size_exp_ == 0 && input_shm().empty()) {

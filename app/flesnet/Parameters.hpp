@@ -151,8 +151,8 @@ private:
     //----------added H.Hartmann 05.09.16----------
     // The input shared memory identifier set in kv-store
     bool kv_shm_ = false;
-    std::string kv_url_;
-    
+    std::string kv_url_ = "http://localhost:2379/v2/keys/flesnet";
+
     /// The standalone mode flag.
     bool standalone_ = true;
 

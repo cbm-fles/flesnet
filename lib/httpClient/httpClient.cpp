@@ -1,3 +1,5 @@
+// Copyright 2016 Helvi Hartmann
+
 #include "httpClient.hpp"
 #include <sstream>
 #include <cstring>

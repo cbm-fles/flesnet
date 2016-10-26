@@ -1,3 +1,5 @@
+// Copyright 2016 Helvi Hartmann
+
 #include <iostream>
 #include <string>
 #include <curl/curl.h>

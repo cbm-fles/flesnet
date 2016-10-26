@@ -1,3 +1,5 @@
+// Copyright 2016 Helvi Hartmann
+
 #include "etcdClient.h"
 
 EtcdClient::EtcdClient(string url_):
