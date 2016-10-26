@@ -23,21 +23,6 @@ Application::Application(Parameters const& par) : par_(par), etcd(par_.kv_url)
     
     if(par_.kv_shm == true){
         etcd.checkonprocess(par_.input_shm);
-        /*prefix_in << "/" << par_.input_shm;
-        ret = etcd.getvalue(prefix_in.str(), "/uptodate");
-        if(ret != 0){
-            cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
-            L_(warning) << "no shm set yet";
-            ret = etcd.waitvalue(prefix_in.str());
-            if(ret != 0){
-                cout << "ret was " << ret << " (1 shm not uptodate, 2 an error occured)" << endl;
-                L_(warning) << "no shm set";
-                exit (EXIT_FAILURE);
-            }
-        }
-        cout << "setting " << par_.input_shm << " value to off" << endl;
-        etcd.setvalue(prefix_in.str(), "/uptodate", "value=off");
-        L_(info) << "flag for shm was set in kv-store";*/
     }
 
     // Source setup

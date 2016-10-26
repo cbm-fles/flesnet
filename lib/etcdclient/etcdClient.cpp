@@ -27,33 +27,12 @@ int EtcdClient::checkonprocess(string input_shm){
         }
     }
     //setvalue(prefix.str(),"uptodate", "value=off");
-    http.putreq(prefix.str(),"uptodate","value=off", "PUT");
+    http.putreq(prefix.str(),"/uptodate","value=off", "PUT");
     //L_(info) << "flag for shm was set in kv-store";
     cout << "flag for shm was set in kv-store" << endl;
     
     return ret;
 }
-
-
-void EtcdClient::setvalue(string prefix, string key, string value){
-    http.putreq(prefix,key,value, "PUT");
-    /*cout << "posting " << value <<  " (" << strlen(value.c_str()) << ") to " << setadress(prefix, key) << endl;
-    curl_easy_setopt(hnd, CURLOPT_URL, setadress(prefix, key).c_str());
-    curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, value.c_str());
-    curl_easy_setopt(hnd, CURLOPT_POSTFIELDSIZE_LARGE, strlen(value.c_str()));
-    curl_easy_setopt(hnd, CURLOPT_USERAGENT, "curl/7.35.0");
-    curl_easy_setopt(hnd, CURLOPT_MAXREDIRS, 50L);
-    curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, "PUT");
-    curl_easy_setopt(hnd, CURLOPT_TCP_KEEPALIVE, 1L);
-
-    ret = curl_easy_perform(hnd);
-    if( ret != 0){
-        cout << curl_easy_strerror(ret) << endl;
-    }*/
-    
-}
-
-
 
 string EtcdClient::setadress(string prefix, string key){
     ostringstream adress;
@@ -134,10 +113,13 @@ int EtcdClient::waitvalue(string prefix){
     cout << setadress(prefix,key) << endl;
     ret = curl_easy_perform(hnd);*/
     int ret = http.waitreq(prefix,key);
+    cout << "after wait return value is " << ret << endl;
+    
     if( ret == 0){
         //cut ?wait=true from key to get value without waiting
         key.erase(key.end()-(21+taglength),key.end());
         flag = getvalue(prefix, key);
+        cout << "after wait flag is " << flag << endl;
     }
     
     return flag;

@@ -82,7 +82,12 @@ public:
   ~shm_device_server() {
       prefix_ss.str("");
       prefix_ss << "/" << m_shm_identifier;
-    etcd.setvalue(prefix_ss.str(),"/uptodate", "value=off");
+     etcd.setvalue(prefix_ss.str(),"/uptodate", "value=off");
+      prefix_ss << "/channel";
+      for(size_t i = 0; i < m_num_channels;i++){
+          etcd.deletevalue(prefix_ss.str(), to_string(i));
+      }
+  
     ip::shared_memory_object::remove(m_shm_identifier.c_str());
   }
 

@@ -30,7 +30,9 @@ public:
     
     string setadress(string prefix, string key);
     
-    void setvalue(string prefix, string key, string value);
+    void setvalue(string prefix, string key, string value){ http.putreq(prefix,key,value, "PUT"); }
+    
+    void deletevalue(string prefix, string key){ http.deletereq(prefix, key); }
     
     int getvalue(string prefix, string key);
     
