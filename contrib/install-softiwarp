@@ -12,9 +12,8 @@ echo "=== Downloading sources"
 mkdir -p "$DIR"
 cd "$DIR"
 rm -rf softiwarp
-git clone https://github.com/zrlio/softiwarp.git
+git clone https://github.com/cbm-fles/softiwarp.git
 cd "$DIR"/softiwarp
-git checkout 3a739c528d4df75ee5688cf8b3916a5f779a80e0
 
 echo "=== Building userspace library"
 cd "$DIR"/softiwarp/userlib
@@ -30,17 +29,6 @@ sudo ln -sf /usr/local/etc/libibverbs.d/siw.driver /etc/libibverbs.d/
 
 echo "=== Building kernel module"
 cd "$DIR/softiwarp/kernel"
-patch siw_debug.h <<EOF
-diff a/siw_debug.h b/siw_debug.h
---- a/siw_debug.h
-+++ b/siw_debug.h
-@@ -101,4 +101,4 @@
-  */
--#define DPRINT_MASK	0
-+#define DPRINT_MASK	(DBG_WR & 0)
-
- extern void siw_debug_init(void);
-EOF
 make
 
 echo "=== Installing kernel module"
