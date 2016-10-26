@@ -8,17 +8,13 @@
 #include <boost/thread/thread.hpp>
 #include <log.hpp>
 
-
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status)
 {
-    
-    
     unsigned input_nodes_size = par.input_nodes().size();
     std::vector<unsigned> input_indexes = par.input_indexes();
 
-    
     // FIXME: some of this is a terrible mess
     if (!par.input_shm().empty()) {
         try {

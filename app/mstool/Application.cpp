@@ -15,18 +15,14 @@
 #include <iostream>
 #include <thread>
 
-
-Application::Application(Parameters const& par) : par_(par), etcd(par_.kv_url)
+Application::Application(Parameters const& par) : par_(par), etcd_(par_.kv_url)
 {
-    stringstream post;
-    
-    if(par_.kv_shm == true){
-        etcd.checkonprocess(par_.input_shm);
+    if (par_.kv_shm == true) {
+        etcd_.checkonprocess(par_.input_shm);
     }
 
     // Source setup
     if (!par_.input_shm.empty()) {
-        //get it from etcd
         L_(info) << "using shared memory as data source: " << par_.input_shm;
 
         shm_device_ = std::make_shared<flib_shm_device_client>(par_.input_shm);
@@ -95,16 +91,16 @@ Application::Application(Parameters const& par) : par_(par), etcd(par_.kv_url)
             output_shm_device_->channels().at(0);
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
             new fles::MicrosliceTransmitter(*data_sink)));
-        
+
         string post = "value=on";
-        prefix_out << "/" << par_.output_shm;
-        etcd.setvalue(prefix_out.str(), "/uptodate", post);
+        prefix_out_ << "/" << par_.output_shm;
+        etcd_.setvalue(prefix_out_.str(), "/uptodate", post);
     }
 }
 
 Application::~Application()
 {
-    etcd.setvalue(prefix_out.str(), "/uptodate", "value=off");
+    etcd_.setvalue(prefix_out_.str(), "/uptodate", "value=off");
     L_(info) << "total microslices processed: " << count_;
 }
 

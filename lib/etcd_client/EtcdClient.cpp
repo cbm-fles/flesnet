@@ -13,7 +13,7 @@ int EtcdClient::checkonprocess(string input_shm) {
     prefix << "/" << input_shm;
     ret = getvalue(prefix.str(), "/uptodate");
     if (ret != 0) {
-        L_(warning) << "no shm set in key-value store...waiting";
+        L_(info) << "no shm set in key-value store...waiting";
         ret = waitvalue(prefix.str());
         if (ret != 0) {
             L_(error) << "return flag was " << ret << ". Exiting";
@@ -96,6 +96,5 @@ int EtcdClient::waitvalue(string prefix) {
         data = http.waitreq(prefix, key);
         flag = parsevalue(data);
     }
-    L_(info) << "retrieved: " << data << " and flag " << flag;
     return flag;
 }

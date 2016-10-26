@@ -18,7 +18,6 @@ add_executable(mstool ${APP_SOURCES} ${APP_HEADERS})
 
 target_link_libraries(mstool fles_ipc fles_core logging etcdclient crcutil ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(mstool ${ZMQ_LIBRARIES})
-
 if(LIBNUMA AND USE_LIBNUMA)
     target_link_libraries(mstool ${LIBNUMA})
 endif()
