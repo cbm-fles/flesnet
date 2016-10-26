@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "EtcdClient.h"
 #include "flib_device.hpp"
 #include "flib_link.hpp"
 #include "log.hpp"
@@ -17,7 +18,6 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include "etcdClient.h"
 
 namespace ip = boost::interprocess;
 

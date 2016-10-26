@@ -1,41 +1,37 @@
 // Copyright 2016 Helvi Hartmann
 
-#include "etcdClient.h"
+#include "EtcdClient.h"
 
-EtcdClient::EtcdClient(string url_):
-    url(url_),
-    http(url)
-{
+EtcdClient::EtcdClient(string url_) : url(url_), http(url) {
 
-  //hnd = curl_easy_init();
+    // hnd = curl_easy_init();
 }
 
-
-int EtcdClient::checkonprocess(string input_shm){
+int EtcdClient::checkonprocess(string input_shm) {
     stringstream prefix;
     int ret;
     prefix << "/" << input_shm;
     ret = getvalue(prefix.str(), "/uptodate");
-    if(ret != 0) {
+    if (ret != 0) {
         L_(warning) << "no shm set in key-value store...waiting";
         ret = waitvalue(prefix.str());
-        if(ret != 0){
+        if (ret != 0) {
             L_(error) << "return flag was " << ret << ". Exiting";
-            exit (EXIT_FAILURE);
+            exit(EXIT_FAILURE);
         }
     }
-    
+
     return ret;
 }
 
-string EtcdClient::setadress(string prefix, string key){
+string EtcdClient::setadress(string prefix, string key) {
     ostringstream adress;
     adress << url << prefix << key;
-    
+
     return adress.str();
 }
 
-int EtcdClient::getvalue(string prefix, string key){
+int EtcdClient::getvalue(string prefix, string key) {
     int flag = parsevalue(http.getreq(prefix, key));
     return flag;
 }
@@ -58,39 +54,36 @@ int EtcdClient::parsevalue(string data) {
 
     // cout << data << " retrieved message is " << message.size() << endl;
 
-    if(message.isMember("error")){
+    if (message.isMember("error")) {
         flag = 2;
         L_(error) << value << " " << fastwriter.write(message["error"]) << endl;
-    }
-    else flag = checkvalue(message);
-    
-    
+    } else
+        flag = checkvalue(message);
+
     return flag;
 }
 
-int EtcdClient::checkvalue(Json::Value message){
+int EtcdClient::checkvalue(Json::Value message) {
     Json::FastWriter fastwriter;
     int flag = 1;
-    
+
     value = fastwriter.write(message["node"]["value"]);
     string tag = fastwriter.write(message["node"]["modifiedIndex"]);
-    value.erase(value.end()-2,value.end());
-    value.erase(0,1);
+    value.erase(value.end() - 2, value.end());
+    value.erase(0, 1);
     // cout << "uptodate is " << value << " with tag " << tag << endl;
 
-    if (value == "on"){
+    if (value == "on") {
         flag = 0;
-    }
-    else{
+    } else {
         requiredtag = stoi(tag) + 1;
         flag = 1;
     }
-    
+
     return flag;
 }
 
-
-int EtcdClient::waitvalue(string prefix){
+int EtcdClient::waitvalue(string prefix) {
     string answer;
     ostringstream adress;
     int flag = 3;

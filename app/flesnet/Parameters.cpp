@@ -4,12 +4,12 @@
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "Utility.hpp"
+#include <EtcdClient.h>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
+#include <cstdlib>
 #include <fstream>
 #include <log.hpp>
-#include <cstdlib>
-#include <etcdClient.h>
 
 namespace po = boost::program_options;
 

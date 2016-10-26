@@ -8,8 +8,7 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/logging"
                     "${PROJECT_SOURCE_DIR}/lib/fles_ipc"
                     "${PROJECT_SOURCE_DIR}/lib/flib"
                     "${PROJECT_SOURCE_DIR}/lib/flib_ipc"
-		     "${PROJECT_SOURCE_DIR}/lib/etcdclient"
-		     "${PROJECT_SOURCE_DIR}/lib/httpClient"
+		     "${PROJECT_SOURCE_DIR}/lib/etcd_client"
                     "${PROJECT_SOURCE_DIR}/lib")
 
 set(SERVER_LIB
@@ -31,7 +30,7 @@ target_compile_definitions(flib_server
         PRIVATE -DBOOST_INTERPROCESS_ENABLE_TIMEOUT_WHEN_LOCKING
                 -DBOOST_INTERPROCESS_TIMEOUT_WHEN_LOCKING_DURATION_MS=5000)
 
-target_link_libraries(flib_server flib logging ${Boost_LIBRARIES} rt etcdClient)
+target_link_libraries(flib_server flib logging ${Boost_LIBRARIES} rt etcdclient)
 target_link_libraries(simple_consumer logging ${Boost_LIBRARIES} rt)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")

@@ -1,26 +1,24 @@
 // Copyright 2016 Helvi Hartmann
 
+#include "log.hpp"
+#include <curl/curl.h>
+#include <curlpp/Options.hpp>
+#include <curlpp/cURLpp.hpp>
 #include <iostream>
 #include <string>
-#include <curl/curl.h>
-#include <curlpp/cURLpp.hpp>
-#include <curlpp/Options.hpp>
-#include "log.hpp"
 
 using namespace std;
 
-class HttpClient{
+class HttpClient {
 private:
     string url;
-    CURL *hnd;
-
+    CURL* hnd;
 
 public:
-    
     HttpClient(string url_);
-    
+
     ~HttpClient();
-    
+
     string setadress(string prefix, string key);
     int putreq(string prefix, string key, string value, string method);
     int deletereq(string prefix, string key);

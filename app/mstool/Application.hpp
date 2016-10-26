@@ -2,17 +2,15 @@
 #pragma once
 
 #include "DualRingBuffer.hpp"
+#include "EtcdClient.h"
 #include "MicrosliceSource.hpp"
 #include "Parameters.hpp"
 #include "Sink.hpp"
 #include "shm_device_client.hpp"
 #include "shm_device_provider.hpp"
 #include <memory>
-#include <vector>
-
-//----------added H.Hartmann 01.09.16----------
-#include "etcdClient.h"
 #include <sstream>
+#include <vector>
 
 /// %Application base class.
 class Application
