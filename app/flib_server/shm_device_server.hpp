@@ -103,10 +103,7 @@ public:
         m_etcd.setvalue(prefix_ss.str(), to_string(i), post);
       }
 
-
       L_(info) << "flib server started and running";
-        
-        
       while (m_run) {
         // claim lock at start-up
         ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
