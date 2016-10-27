@@ -148,6 +148,13 @@ void InputChannelSender::operator()()
             scheduler_.timer();
         }
 
+        // wait for pending send completions
+        while (acked_desc_ < timeslice_size_ * timeslice) {
+            poll_completion();
+            scheduler_.timer();
+        }
+        data_source_.set_read_index({acked_desc_, acked_data_});
+
         for (auto& c : conn_) {
             c->finalize(abort_);
         }
@@ -438,9 +445,9 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
             while (ack_.at(acked_ts) > ts);
         else
             ack_.at(ts) = ts;
-        acked_data_ =
-            data_source_.desc_buffer().at(acked_ts * timeslice_size_).offset;
         acked_desc_ = acked_ts * timeslice_size_;
+        acked_data_ = data_source_.desc_buffer().at(acked_desc_ - 1).offset +
+                      data_source_.desc_buffer().at(acked_desc_ - 1).size;
         if (acked_data_ >= cached_acked_data_ + min_acked_data_ ||
             acked_desc_ >= cached_acked_desc_ + min_acked_desc_) {
             cached_acked_data_ = acked_data_;
