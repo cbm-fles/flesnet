@@ -8,7 +8,7 @@
 #include <log.hpp>
 #include <rdma/fi_domain.h>
 
-#include <valgrind/memcheck.h>
+//#include <valgrind/memcheck.h>
 
 #include <chrono>
 
@@ -34,7 +34,7 @@ InputChannelSender::InputChannelSender(uint64_t input_index,
 	} else {
 		connection_oriented_ = false;
 	}
-
+/*
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 	VALGRIND_MAKE_MEM_DEFINED(data_source_.data_buffer().ptr(),
@@ -42,6 +42,7 @@ InputChannelSender::InputChannelSender(uint64_t input_index,
 	VALGRIND_MAKE_MEM_DEFINED(data_source_.desc_buffer().ptr(),
 			data_source_.desc_buffer().bytes());
 #pragma GCC diagnostic pop
+*/
 }
 
 InputChannelSender::~InputChannelSender() {

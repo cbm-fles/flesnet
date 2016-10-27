@@ -11,7 +11,7 @@
 //#include <log.hpp>
 //#include <random>
 
-#include <valgrind/memcheck.h>
+//#include <valgrind/memcheck.h>
 
 TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
 		TimesliceBuffer& timeslice_buffer, unsigned short service,
@@ -89,13 +89,14 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
 	int res;
 
 	struct fi_info* info2 = nullptr;
-	struct fi_info* hints = fi_allocinfo();
+	struct fi_info* hints = fi_dupinfo(info);
 
-	hints->caps = info->caps;
-	hints->ep_attr->type = info->ep_attr->type;
-	hints->domain_attr->data_progress = info->domain_attr->data_progress;
-	hints->domain_attr->threading = info->domain_attr->threading;
-	hints->domain_attr->mr_mode = info->domain_attr->mr_mode;
+	/*hints->caps = info->caps;
+	 hints->ep_attr = info->ep_attr;
+	 hints->domain_attr->data_progress = info->domain_attr;
+	 hints->domain_attr->threading = info->domain_attr->threading;
+	 hints->domain_attr->mr_mode = info->domain_attr->mr_mode;
+	 hints->fabric_attr = info->fabric_attr;*/
 	/* todo
 	 hints->rx_attr->size = max_recv_wr_;
 	 hints->rx_attr->iov_limit = max_recv_sge_;
@@ -106,6 +107,8 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
 
 	hints->src_addr = nullptr;
 	hints->src_addrlen = 0;
+	hints->dest_addr = nullptr;
+	hints->dest_addrlen = 0;
 
 	int err = fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), service.c_str(),
 	FI_SOURCE, hints, &info2);
@@ -202,7 +205,7 @@ void TimesliceBuilder::bootstrap_wo_connections() {
 
 // register memory regions
 	int err = fi_mr_reg(pd_, &recv_connect_message,
-			sizeof(recv_connect_message), FI_WRITE, 0,
+			sizeof(recv_connect_message), FI_RECV, 0,
 			Provider::requested_key++, 0, &mr_recv_connect, nullptr);
 	if (err) {
 		throw LibfabricException(

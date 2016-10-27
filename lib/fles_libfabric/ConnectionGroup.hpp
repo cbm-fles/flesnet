@@ -15,7 +15,7 @@
 #include <rdma/fabric.h>
 #include <rdma/fi_endpoint.h>
 //#include <sstream>
-#include <valgrind/memcheck.h>
+//#include <valgrind/memcheck.h>
 //#include <vector>
 
 #include <rdma/fi_domain.h>

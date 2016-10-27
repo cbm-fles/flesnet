@@ -82,18 +82,20 @@ void Connection::connect(const std::string& hostname,
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-    err = fi_ep_bind(ep_, (fid_t)eq_, 0);
-    if (err)
-        throw LibfabricException("fi_ep_bind failed");
+    if (Provider::getInst()->has_eq_at_eps()) {
+    	err = fi_ep_bind(ep_, (fid_t)eq_, 0);
+    	if (err)
+    		throw LibfabricException("fi_ep_bind failed");
+    }
     err =
         fi_ep_bind(ep_, (fid_t)cq, FI_SEND | FI_RECV | FI_SELECTIVE_COMPLETION);
+    if (err)
+        throw LibfabricException("fi_ep_bind failed (cq)");
     if (Provider::getInst()->has_av()) {
         err = fi_ep_bind(ep_, (fid_t)av, 0);
         if (err)
             throw LibfabricException("fi_ep_bind failed (av)");
     }
-    if (err)
-        throw LibfabricException("fi_ep_bind failed");
 #pragma GCC diagnostic pop
     err = fi_enable(ep_);
     if (err) {
