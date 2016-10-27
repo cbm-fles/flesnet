@@ -32,6 +32,7 @@ public:
     void report_status();
 
     void sync_buffer_positions();
+    void sync_data_source(bool schedule);
 
     virtual void operator()() override;
 
