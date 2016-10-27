@@ -122,6 +122,22 @@ void InputChannelSender::sync_buffer_positions()
                    now + std::chrono::milliseconds(0));
 }
 
+void InputChannelSender::sync_data_source(bool schedule)
+{
+    if (acked_data_ > cached_acked_data_ || acked_desc_ > cached_acked_desc_) {
+        cached_acked_data_ = acked_data_;
+        cached_acked_desc_ = acked_desc_;
+        data_source_.set_read_index({cached_acked_desc_, cached_acked_data_});
+    }
+
+    if (schedule) {
+        auto now = std::chrono::system_clock::now();
+        scheduler_.add(
+            std::bind(&InputChannelSender::sync_data_source, this, true),
+            now + std::chrono::milliseconds(100));
+    }
+}
+
 /// The thread main function.
 void InputChannelSender::operator()()
 {
@@ -138,6 +154,7 @@ void InputChannelSender::operator()()
 
         uint64_t timeslice = 0;
         sync_buffer_positions();
+        sync_data_source(true);
         report_status();
         while (timeslice < max_timeslice_number_ && !abort_) {
             if (try_send_timeslice(timeslice)) {
@@ -153,7 +170,7 @@ void InputChannelSender::operator()()
             poll_completion();
             scheduler_.timer();
         }
-        data_source_.set_read_index({acked_desc_, acked_data_});
+        sync_data_source(false);
 
         for (auto& c : conn_) {
             c->finalize(abort_);
