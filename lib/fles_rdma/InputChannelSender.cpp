@@ -122,6 +122,22 @@ void InputChannelSender::sync_buffer_positions()
                    now + std::chrono::milliseconds(0));
 }
 
+void InputChannelSender::sync_data_source(bool schedule)
+{
+    if (acked_data_ > cached_acked_data_ || acked_desc_ > cached_acked_desc_) {
+        cached_acked_data_ = acked_data_;
+        cached_acked_desc_ = acked_desc_;
+        data_source_.set_read_index({cached_acked_desc_, cached_acked_data_});
+    }
+
+    if (schedule) {
+        auto now = std::chrono::system_clock::now();
+        scheduler_.add(
+            std::bind(&InputChannelSender::sync_data_source, this, true),
+            now + std::chrono::milliseconds(100));
+    }
+}
+
 /// The thread main function.
 void InputChannelSender::operator()()
 {
@@ -138,6 +154,7 @@ void InputChannelSender::operator()()
 
         uint64_t timeslice = 0;
         sync_buffer_positions();
+        sync_data_source(true);
         report_status();
         while (timeslice < max_timeslice_number_ && !abort_) {
             if (try_send_timeslice(timeslice)) {
@@ -147,6 +164,13 @@ void InputChannelSender::operator()()
             data_source_.proceed();
             scheduler_.timer();
         }
+
+        // wait for pending send completions
+        while (acked_desc_ < timeslice_size_ * timeslice) {
+            poll_completion();
+            scheduler_.timer();
+        }
+        sync_data_source(false);
 
         for (auto& c : conn_) {
             c->finalize(abort_);
@@ -438,9 +462,9 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
             while (ack_.at(acked_ts) > ts);
         else
             ack_.at(ts) = ts;
-        acked_data_ =
-            data_source_.desc_buffer().at(acked_ts * timeslice_size_).offset;
         acked_desc_ = acked_ts * timeslice_size_;
+        acked_data_ = data_source_.desc_buffer().at(acked_desc_ - 1).offset +
+                      data_source_.desc_buffer().at(acked_desc_ - 1).size;
         if (acked_data_ >= cached_acked_data_ + min_acked_data_ ||
             acked_desc_ >= cached_acked_desc_ + min_acked_desc_) {
             cached_acked_data_ = acked_data_;
