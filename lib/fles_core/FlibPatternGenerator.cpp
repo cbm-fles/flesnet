@@ -28,13 +28,26 @@ void FlibPatternGenerator::produce_data()
         while (true) {
             // wait until significant space is available
             last_write_index = write_index;
+// NOTE: std::atomic<DualIndex> triggers a bug in gcc versions < 5.1
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65147
+#if defined(__GNUC__) && !defined(__clang__) &&                                \
+    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
+            write_index_desc_ = write_index.desc;
+            write_index_data_ = write_index.data;
+#else
             write_index_.store(write_index);
+#endif
 
             do {
                 if (is_stopped_) {
                     return;
                 }
+#if defined(__GNUC__) && !defined(__clang__) &&                                \
+    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
+                read_index = DualIndex{read_index_desc_, read_index_data_};
+#else
                 read_index = read_index_.load();
+#endif
             } while ((write_index.data - read_index.data + min_avail.data >
                       data_buffer_.size()) ||
                      (write_index.desc - read_index.desc + min_avail.desc >
@@ -99,7 +112,13 @@ void FlibPatternGenerator::produce_data()
                     write_index.data >=
                         last_write_index.data + min_written.data) {
                     last_write_index = write_index;
+#if defined(__GNUC__) && !defined(__clang__) &&                                \
+    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
+                    write_index_desc_ = write_index.desc;
+                    write_index_data_ = write_index.data;
+#else
                     write_index_.store(write_index);
+#endif
                 }
             }
         }
