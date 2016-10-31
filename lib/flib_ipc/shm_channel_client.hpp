@@ -28,8 +28,6 @@ public:
 
   void set_read_index(DualIndex read_index) override;
 
-  DualIndex get_read_index_cached();
-
   DualIndex get_read_index() override;
 
   void update_write_index();

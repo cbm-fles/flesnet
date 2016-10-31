@@ -73,17 +73,9 @@ void shm_channel_client<T_DESC, T_DATA>::set_read_index(DualIndex read_index) {
 }
 
 template <typename T_DESC, typename T_DATA>
-DualIndex shm_channel_client<T_DESC, T_DATA>::get_read_index_cached() {
+DualIndex shm_channel_client<T_DESC, T_DATA>::get_read_index() {
   ip::scoped_lock<ip::interprocess_mutex> lock(m_shm_dev->m_mutex);
   return m_shm_ch->read_index(lock);
-}
-
-template <typename T_DESC, typename T_DATA>
-DualIndex shm_channel_client<T_DESC, T_DATA>::get_read_index() {
-  // user wrapper function to avoid segfault in simple_consumer
-  // when lock is relesed
-  // TODO: why?
-  return get_read_index_cached();
 }
 
 template <typename T_DESC, typename T_DATA>
