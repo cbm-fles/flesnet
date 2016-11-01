@@ -122,6 +122,7 @@ void InputChannelConnection::send_data(struct iovec* sge, void** desc,
 			+ (cn_wp_data & cn_data_buffer_mask);
 	for (int i = 0; i < num_sge; i++) {
 
+		memset(rma_iov, 0, sizeof(rma_iov));
 		rma_iov[0].addr = remote_addr;
 		rma_iov[0].len = sge[i].iov_len;
 		rma_iov[0].key = remote_info_.data.rkey;

@@ -81,11 +81,12 @@ void GNIProvider::set_hostnames_and_services(struct fid_av* av,
 //    std::cout << compute_hostnames.size() << std::endl;
 	for (size_t i = 0; i < compute_hostnames.size(); i++) {
 		fi_addr_t fi_addr;
-		info = fi_allocinfo();
+		info = nullptr;
 		hints = fi_allocinfo();
 		struct fi_info* info = nullptr;
 		struct fi_info* hints = fi_allocinfo();
 
+		hints->caps = FI_RMA | FI_MSG | FI_REMOTE_WRITE;
 		hints->ep_attr->type = FI_EP_RDM;
 		hints->domain_attr->data_progress = FI_PROGRESS_AUTO;
 		hints->domain_attr->threading = FI_THREAD_SAFE;
@@ -103,6 +104,6 @@ void GNIProvider::set_hostnames_and_services(struct fid_av* av,
 		assert(res == 1);
 		assert(fi_addr >= 0);
 		fi_addrs.push_back(fi_addr);
-		fi_freeinfo(hints);
+		//fi_freeinfo(hints);
 	}
 }
