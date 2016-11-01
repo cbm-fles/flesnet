@@ -3,8 +3,6 @@
 #include "log.hpp"
 #include <cstring>
 #include <curl/curl.h>
-#include <curlpp/Options.hpp>
-#include <curlpp/cURLpp.hpp>
 #include <iostream>
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/reader.h>
