@@ -32,7 +32,6 @@ public:
                     volatile std::sig_atomic_t* signal_status)
       : m_flib(flib), m_shm_identifier(shm_identifier),
         m_signal_status(signal_status) {
-
     std::vector<flib::flib_link*> flib_links = m_flib->links();
 
     // delete deactivated links from vector
@@ -42,8 +41,7 @@ public:
                          return link->data_sel() == flib::flib_link::rx_disable;
                        }),
         std::end(flib_links));
-    m_num_channels = flib_links.size();
-    L_(info) << "enabled flib links detected: " << m_num_channels;
+    L_(info) << "enabled flib links detected: " << flib_links.size();
 
     // create a big enough shared memory segment
     size_t shm_size = ((UINT64_C(1) << data_buffer_size_exp) * sizeof(T_DATA) +
@@ -136,12 +134,10 @@ private:
   // Members
   flib::flib_device* m_flib;
   std::string m_shm_identifier;
-  bool m_kv_sync = false;
   volatile std::sig_atomic_t* m_signal_status;
   std::unique_ptr<ip::managed_shared_memory> m_shm;
   shm_device* m_shm_dev = NULL;
   std::vector<std::unique_ptr<shm_channel_server_type>> m_shm_ch_vec;
-  size_t m_num_channels = 0;
   bool m_run = false;
 };
 
