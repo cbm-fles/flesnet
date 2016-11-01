@@ -1,8 +1,10 @@
 // Copyright 2016 Helvi Hartmann
 
-#include "HttpClient.hpp"
 #include "log.hpp"
 #include <cstring>
+#include <curl/curl.h>
+#include <curlpp/Options.hpp>
+#include <curlpp/cURLpp.hpp>
 #include <iostream>
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/reader.h>
@@ -10,38 +12,31 @@
 #include <sstream>
 #include <string>
 
-using namespace std;
-
 class EtcdClient {
 private:
-    string url;
-    HttpClient http;
-    // CURL *hnd;
-    // CURLcode ret;
-    string answer;
-    string value;
-    int requiredtag = 1;
+    std::string m_url;
+    CURL* m_hnd;
+    int m_requiredtag = 1;
+    std::string m_data;
 
 public:
-    EtcdClient(string url);
+    EtcdClient(std::string url);
 
-    int checkonprocess(string input_shm);
+    std::string wait_req(std::string prefix, std::string key);
 
-    string setadress(string prefix, string key);
+    int check_value(Json::Value message);
 
-    void setvalue(string prefix, string key, string value) {
-        http.putreq(prefix, key, value, "PUT");
-    }
+    int get_req(std::string prefix, std::string key);
 
-    void deletevalue(string prefix, string key) { http.deletereq(prefix, key); }
+    int check_process(std::string input_shm);
 
-    int getvalue(string prefix, string key);
+    std::string make_address(std::string prefix, std::string key);
 
-    int parsevalue(string data);
+    void set_value(std::string prefix, std::string key, std::string value);
 
-    int checkvalue(Json::Value message);
+    int parse_value(std::string data);
 
-    int waitvalue(string prefix);
+    int wait_value(std::string prefix);
 
-    string getanswer() { return answer; }
+    void delete_value(std::string prefix, std::string key);
 };

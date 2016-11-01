@@ -18,7 +18,8 @@
 Application::Application(Parameters const& par) : par_(par), etcd_(par_.kv_url)
 {
     if (par_.kv_shm == true) {
-        etcd_.checkonprocess(par_.input_shm);
+        std::cout << "checkpoint 1 " << std::endl;
+        etcd_.check_process(par_.input_shm);
     }
 
     // Source setup
@@ -92,15 +93,15 @@ Application::Application(Parameters const& par) : par_(par), etcd_(par_.kv_url)
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
             new fles::MicrosliceTransmitter(*data_sink)));
 
-        string post = "value=on";
+        std::string post = "value=on";
         prefix_out_ << "/" << par_.output_shm;
-        etcd_.setvalue(prefix_out_.str(), "/uptodate", post);
+        etcd_.set_value(prefix_out_.str(), "/uptodate", post);
     }
 }
 
 Application::~Application()
 {
-    etcd_.setvalue(prefix_out_.str(), "/uptodate", "value=off");
+    etcd_.set_value(prefix_out_.str(), "/uptodate", "value=off");
     L_(info) << "total microslices processed: " << count_;
 }
 

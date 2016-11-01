@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "EtcdClient.h"
 #include "flib_device.hpp"
 #include "flib_link.hpp"
 #include "log.hpp"
@@ -28,14 +27,12 @@ public:
 
   shm_device_server(flib::flib_device* flib,
                     std::string shm_identifier,
-                    std::string kv_url,
                     size_t data_buffer_size_exp,
                     size_t desc_buffer_size_exp,
                     volatile std::sig_atomic_t* signal_status)
       : m_flib(flib), m_shm_identifier(shm_identifier),
-        m_signal_status(signal_status), m_etcd(kv_url) {
+        m_signal_status(signal_status) {
 
-    L_(info) << kv_url;
     std::vector<flib::flib_link*> flib_links = m_flib->links();
 
     // delete deactivated links from vector
@@ -75,14 +72,6 @@ public:
   }
 
   ~shm_device_server() {
-    stringstream prefix_ss;
-    prefix_ss << "/" << m_shm_identifier;
-    m_etcd.setvalue(prefix_ss.str(), "/uptodate", "value=off");
-    prefix_ss << "/channel";
-    for (size_t i = 0; i < m_num_channels; i++) {
-      m_etcd.deletevalue(prefix_ss.str(), to_string(i));
-      }
-  
     ip::shared_memory_object::remove(m_shm_identifier.c_str());
   }
 
@@ -91,18 +80,6 @@ public:
       m_run = true;
       // TODO needed in case of cbmnet readout
       // m_flib->enable_mc_cnt(true);
-
-      stringstream prefix_ss;
-      prefix_ss << "/" << m_shm_identifier;
-      string post = "value=on";
-      m_etcd.setvalue(prefix_ss.str(), "/uptodate", post);
-
-      prefix_ss << "/channel";
-  
-      for(size_t i = 0; i < m_num_channels;i++){
-        m_etcd.setvalue(prefix_ss.str(), to_string(i), post);
-      }
-
       L_(info) << "flib server started and running";
       while (m_run) {
         // claim lock at start-up
@@ -159,13 +136,12 @@ private:
   // Members
   flib::flib_device* m_flib;
   std::string m_shm_identifier;
+  bool m_kv_sync = false;
   volatile std::sig_atomic_t* m_signal_status;
   std::unique_ptr<ip::managed_shared_memory> m_shm;
   shm_device* m_shm_dev = NULL;
   std::vector<std::unique_ptr<shm_channel_server_type>> m_shm_ch_vec;
   size_t m_num_channels = 0;
-  EtcdClient m_etcd;
-
   bool m_run = false;
 };
 

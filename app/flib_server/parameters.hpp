@@ -61,7 +61,8 @@ public:
   bool flib_autodetect() const { return _flib_autodetect; }
   pci_addr flib_addr() const { return _flib_addr; }
   std::string shm() { return _shm; }
-  std::string kv_url() { return _kv_url; }
+  std::string base_url() { return _base_url; }
+  bool kv_sync() { return _kv_sync; }
   size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
 
@@ -95,9 +96,12 @@ private:
             "shm,o",
             po::value<std::string>(&_shm)->default_value("flib_shared_memory"),
             "name of the shared memory to be used")(
-            "kv-url", po::value<std::string>(&_kv_url)->default_value(
-                          "http://localhost:2379/v2/keys/flesnet"),
-            "url to reach the kv-store")(
+            "kv-sync", po::value<bool>(&_kv_sync),
+            "use key-value store to synchronize with data source, bool")(
+            "base-url",
+            po::value<std::string>(&_base_url)
+                ->default_value("http://localhost:2379/v2/keys/flesnet"),
+            "url of key-value store")(
             "data-buffer-size-exp",
             po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
             "exp. size of the data buffer in bytes")(
@@ -155,7 +159,8 @@ private:
   bool _flib_autodetect = true;
   pci_addr _flib_addr = {};
   std::string _shm;
-  std::string _kv_url;
+  std::string _base_url;
+  bool _kv_sync;
   size_t _data_buffer_size_exp;
   size_t _desc_buffer_size_exp;
 };

@@ -1,5 +1,6 @@
 // Copyright 2015 Dirk Hutter
 
+#include "EtcdClient.h"
 #include "log.hpp"
 #include "parameters.hpp"
 #include "shm_device_server.hpp"
@@ -32,10 +33,20 @@ int main(int argc, char* argv[]) {
     L_(info) << "using FLIB: " << flib->print_devinfo();
 
     // create server
-    flib_shm_device_server server(flib.get(), par.shm(), par.kv_url(),
+    flib_shm_device_server server(flib.get(), par.shm(),
                                   par.data_buffer_size_exp(),
                                   par.desc_buffer_size_exp(), &signal_status);
+
+    EtcdClient etcd(par.base_url());
+    L_(info) << par.base_url();
+
+    if (par.kv_sync())
+      etcd.set_value("/" + par.shm(), "/uptodate", "value=on");
+
     server.run();
+
+    if (par.kv_sync())
+      etcd.set_value("/" + par.shm(), "/uptodate", "value=off");
 
   } catch (std::exception const& e) {
     L_(fatal) << "exception: " << e.what();

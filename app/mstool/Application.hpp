@@ -36,5 +36,5 @@ private:
     std::vector<std::unique_ptr<fles::MicrosliceSink>> sinks_;
 
     uint64_t count_ = 0;
-    stringstream prefix_out_;
+    std::stringstream prefix_out_;
 };

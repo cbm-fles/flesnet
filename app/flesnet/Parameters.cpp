@@ -4,7 +4,6 @@
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "Utility.hpp"
-#include <EtcdClient.h>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
 #include <fstream>
@@ -197,10 +196,11 @@ void Parameters::parse_options(int argc, char* argv[])
         "typical number of content bytes per microslice")(
         "input-shm", po::value<std::string>(&input_shm_),
         "name of a shared memory to use as data source")(
-        "kv-shm", po::value<bool>(&kv_shm_),
-        "shared memory to use as data source set in the kv-store, bool")(
-        "kv-url", po::value<std::string>(&kv_url_), "url of kv-store")(
-        "standalone", po::value<bool>(&standalone_), "standalone mode flag")(
+        "kv-sync", po::value<bool>(&kv_sync_),
+        "use key-value store to synchronize with data source, bool")(
+        "base-url", po::value<std::string>(&base_url_),
+        "url of key-value store")("standalone", po::value<bool>(&standalone_),
+                                  "standalone mode flag")(
         "max-timeslice-number,n", po::value<uint32_t>(&max_timeslice_number_),
         "global maximum timeslice number")(
         "processor-executable,e",
@@ -291,12 +291,7 @@ void Parameters::parse_options(int argc, char* argv[])
     if (!compute_nodes_.empty() && processor_executable_.empty())
         throw ParametersException("processor executable not specified");
 
-    EtcdClient etcd(kv_url_);
-    L_(info) << kv_url_;
 
-    if (kv_shm_ == true) {
-        etcd.checkonprocess(input_shm());
-    }
 
     if (in_data_buffer_size_exp_ == 0 && input_shm().empty()) {
         in_data_buffer_size_exp_ = suggest_in_data_buffer_size_exp();

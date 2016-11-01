@@ -2,6 +2,7 @@
 
 #include "Application.hpp"
 #include "EmbeddedPatternGenerator.hpp"
+#include "EtcdClient.h"
 #include "FlibPatternGenerator.hpp"
 #include "shm_channel_client.hpp"
 #include <boost/thread/future.hpp>
@@ -18,6 +19,13 @@ Application::Application(Parameters const& par,
     // FIXME: some of this is a terrible mess
     if (!par.input_shm().empty()) {
         try {
+            EtcdClient etcd(par.base_url());
+            L_(info) << par.base_url();
+
+            if (par.kv_sync() == true) {
+                etcd.check_process(par.input_shm());
+            }
+
             shm_device_ =
                 std::make_shared<flib_shm_device_client>(par.input_shm());
             shm_num_channels_ = shm_device_->num_channels();

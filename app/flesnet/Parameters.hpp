@@ -78,8 +78,11 @@ public:
     /// Retrieve the shared memory identifier.
     std::string input_shm() const { return input_shm_; }
 
-    // Retrieve the in kv-store url
-    std::string kv_url() const { return kv_url_; }
+    // Retrieve url of key-value
+    std::string base_url() const { return base_url_; }
+
+    // synchronization with key-value store
+    bool kv_sync() const { return kv_sync_; }
 
     /// Retrieve the standalone mode flag.
     bool standalone() const { return standalone_; }
@@ -147,9 +150,11 @@ private:
     // The input shared memory identifier
     std::string input_shm_;
 
-    // The input shared memory identifier set in kv-store
-    bool kv_shm_ = false;
-    std::string kv_url_ = "http://localhost:2379/v2/keys/flesnet";
+    // key-value store used for data source synchronization
+    bool kv_sync_ = false;
+
+    // The input shared memory identifier set in key-value store
+    std::string base_url_ = "http://localhost:2379/v2/keys/flesnet";
 
     /// The standalone mode flag.
     bool standalone_ = true;

@@ -30,7 +30,7 @@ target_compile_definitions(flib_server
         PRIVATE -DBOOST_INTERPROCESS_ENABLE_TIMEOUT_WHEN_LOCKING
                 -DBOOST_INTERPROCESS_TIMEOUT_WHEN_LOCKING_DURATION_MS=5000)
 
-target_link_libraries(flib_server flib logging ${Boost_LIBRARIES} rt etcdclient)
+target_link_libraries(flib_server etcd_client flib logging ${Boost_LIBRARIES} rt)
 target_link_libraries(simple_consumer logging ${Boost_LIBRARIES} rt)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
