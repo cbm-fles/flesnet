@@ -23,10 +23,7 @@ std::string EtcdClient::wait_req(std::string prefix, std::string key) {
     std::string data;
     L_(info) << "waiting for " << make_address(prefix, key);
     curl_easy_setopt(m_hnd, CURLOPT_URL, make_address(prefix, key).c_str());
-    curl_easy_setopt(m_hnd, CURLOPT_NOPROGRESS, 1L);
     curl_easy_setopt(m_hnd, CURLOPT_TIMEOUT_MS, 8000L);
-    curl_easy_setopt(m_hnd, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(m_hnd, CURLOPT_TCP_KEEPALIVE, 1L);
     curl_easy_setopt(m_hnd, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&data));
     curl_easy_setopt(m_hnd, CURLOPT_WRITEFUNCTION, &write_callback);
 
@@ -35,37 +32,37 @@ std::string EtcdClient::wait_req(std::string prefix, std::string key) {
     return data;
 }
 
-int EtcdClient::check_value(Json::Value message) {
+enum Flags EtcdClient::check_value(Json::Value message) {
     Json::FastWriter fastwriter;
-    int check_flag = 1;
+    Flags check_flag = errorneous;
 
     std::string value = fastwriter.write(message["node"]["value"]);
     std::string tag = fastwriter.write(message["node"]["modifiedIndex"]);
+    // erase " from value
     value.erase(value.end() - 2, value.end());
     value.erase(0, 1);
 
     if (value == "on") {
-        check_flag = 0;
+        check_flag = ok;
     } else {
         m_requiredtag = stoi(tag) + 1;
-        check_flag = 1;
+        check_flag = notupdated;
     }
 
     return check_flag;
 }
 
-int EtcdClient::get_req(std::string prefix, std::string key) {
+enum Flags EtcdClient::get_req(std::string prefix, std::string key) {
     std::string data;
     curl_easy_setopt(m_hnd, CURLOPT_URL, make_address(prefix, key).c_str());
     curl_easy_setopt(m_hnd, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&data));
     curl_easy_setopt(m_hnd, CURLOPT_WRITEFUNCTION, &write_callback);
 
     CURLcode ret = curl_easy_perform(m_hnd);
-    if (ret != CURLE_OK) L_(error) << curl_easy_strerror(ret) << std::endl;
-
-    std::cout << data << std::endl;
-    int get_flag = parse_value(data);
-    std::cout << "checkpoint 3 " << std::endl;
+    if (ret != CURLE_OK)
+        L_(error) << "Get Request from key-value store error: "
+                  << curl_easy_strerror(ret) << std::endl;
+    Flags get_flag = parse_value(data);
 
     return get_flag;
 }
@@ -93,7 +90,6 @@ void EtcdClient::set_value(std::string prefix, std::string key,
     curl_easy_setopt(m_hnd, CURLOPT_URL, make_address(prefix, key).c_str());
     curl_easy_setopt(m_hnd, CURLOPT_POSTFIELDS, value.c_str());
     curl_easy_setopt(m_hnd, CURLOPT_POSTFIELDSIZE_LARGE, strlen(value.c_str()));
-    curl_easy_setopt(m_hnd, CURLOPT_MAXREDIRS, 50L);
     curl_easy_setopt(m_hnd, CURLOPT_CUSTOMREQUEST, "PUT");
     curl_easy_setopt(m_hnd, CURLOPT_WRITEFUNCTION, &write_callback);
 
@@ -108,11 +104,11 @@ std::string EtcdClient::make_address(std::string prefix, std::string key) {
     return address.str();
 }
 
-int EtcdClient::parse_value(std::string data) {
+enum Flags EtcdClient::parse_value(std::string data) {
     Json::Value message;
     Json::Reader reader;
     Json::FastWriter fastwriter;
-    int parse_flag = 2;
+    Flags parse_flag = errorneous;
 
     bool parsingSuccessful = reader.parse(data, message);
     if (!parsingSuccessful) {
@@ -120,11 +116,11 @@ int EtcdClient::parse_value(std::string data) {
         if (message.size() == 0) {
             L_(warning) << "EtcdClient: returned value from key-value store "
                            "was empty, waiting for updates";
-            return parse_flag = 3;
+            return parse_flag = empty;
         }
     }
     if (message.isMember("error")) {
-        parse_flag = 2;
+        parse_flag = errorneous;
         L_(error) << fastwriter.write(message["error"]) << std::endl;
     } else
         parse_flag = check_value(message);
@@ -133,13 +129,13 @@ int EtcdClient::parse_value(std::string data) {
 }
 
 int EtcdClient::wait_value(std::string prefix) {
-    int wait_flag = 3;
+    Flags wait_flag = empty;
     std::string data;
     std::ostringstream key_ss;
     key_ss << "/uptodate?wait=true&waitIndex=" << m_requiredtag;
     std::string key = key_ss.str();
 
-    while (wait_flag == 3) {
+    while (wait_flag == empty) {
         data = wait_req(prefix, key);
         wait_flag = parse_value(data);
     }

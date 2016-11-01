@@ -30,9 +30,9 @@ void Parameters::parse_options(int argc, char* argv[])
                "use given shared memory channel as data source");
     source_add("input-shm,I", po::value<std::string>(&input_shm),
                "name of a shared memory to use as data source");
-    source_add("base-url", po::value<std::string>(&kv_url),
+    source_add("base-url", po::value<std::string>(&base_url),
                "url of key-value store");
-    source_add("kv-sync", po::value<bool>(&kv_shm),
+    source_add("kv-sync", po::value<bool>(&kv_sync),
                "use key-value store to synchronize with data source");
     source_add("input-archive,i", po::value<std::string>(&input_archive),
                "name of an input file archive to read");

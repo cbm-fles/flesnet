@@ -38,9 +38,10 @@ int main(int argc, char* argv[]) {
                                   par.desc_buffer_size_exp(), &signal_status);
 
     EtcdClient etcd(par.base_url());
-    L_(info) << par.base_url();
 
     if (par.kv_sync())
+      L_(info) << "Now using key-value store for synchronization at "
+               << par.base_url();
       etcd.set_value("/" + par.shm(), "/uptodate", "value=on");
 
     server.run();

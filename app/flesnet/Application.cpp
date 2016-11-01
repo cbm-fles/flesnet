@@ -20,9 +20,10 @@ Application::Application(Parameters const& par,
     if (!par.input_shm().empty()) {
         try {
             EtcdClient etcd(par.base_url());
-            L_(info) << par.base_url();
 
             if (par.kv_sync() == true) {
+                L_(info) << "Now using key-value store for synchronization at "
+                         << par.base_url();
                 etcd.check_process(par.input_shm());
             }
 

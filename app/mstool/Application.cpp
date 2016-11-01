@@ -15,10 +15,10 @@
 #include <iostream>
 #include <thread>
 
-Application::Application(Parameters const& par) : par_(par), etcd_(par_.kv_url)
+Application::Application(Parameters const& par)
+    : par_(par), etcd_(par_.base_url)
 {
-    if (par_.kv_shm == true) {
-        std::cout << "checkpoint 1 " << std::endl;
+    if (par_.kv_sync == true) {
         etcd_.check_process(par_.input_shm);
     }
 
@@ -93,9 +93,7 @@ Application::Application(Parameters const& par) : par_(par), etcd_(par_.kv_url)
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
             new fles::MicrosliceTransmitter(*data_sink)));
 
-        std::string post = "value=on";
-        prefix_out_ << "/" << par_.output_shm;
-        etcd_.set_value(prefix_out_.str(), "/uptodate", post);
+        etcd_.set_value("/" + par_.output_shm, "/uptodate", "value=on");
     }
 }
 
