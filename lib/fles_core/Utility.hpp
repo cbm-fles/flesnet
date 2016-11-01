@@ -2,6 +2,7 @@
 #pragma once
 
 #include <boost/lexical_cast.hpp>
+#include <cassert>
 #include <cmath>
 #include <iostream>
 #include <iterator>
@@ -43,11 +44,14 @@ template <typename T>
 inline std::string bar_graph(std::vector<T> values, std::string symbols,
                              uint32_t length)
 {
+    assert(!symbols.empty());
+
     std::string s;
     s.reserve(length);
 
     T sum = 0;
     for (T n : values) {
+        assert(n >= 0);
         sum += n;
     }
 
