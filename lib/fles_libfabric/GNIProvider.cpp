@@ -31,22 +31,23 @@ struct fi_info* GNIProvider::exists(std::string local_host_name)
     struct fi_info* hints = fi_allocinfo();
     struct fi_info* info = nullptr;
 
-    hints->caps = FI_RMA | FI_MSG | FI_REMOTE_WRITE;
+    hints->caps = FI_MSG | FI_RMA | FI_WRITE | FI_SEND | FI_RECV | FI_REMOTE_WRITE;
     hints->ep_attr->type = FI_EP_RDM;
     hints->domain_attr->data_progress = FI_PROGRESS_AUTO;
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->domain_attr->mr_mode = FI_MR_BASIC;
+    hints->fabric_attr->prov_name = "gni";
 
     int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr, 0, hints, &info);
 
-    if (!res && (strcmp("gni", info->fabric_attr->prov_name) == 0)) {
-        std::cout << info->src_addrlen << std::endl;
-        fi_freeinfo(hints);
+    if (!res) {
+       //std::cout << info->src_addrlen << std::endl;
+        //fi_freeinfo(hints);
         return info;
     }
 
     fi_freeinfo(info);
-    fi_freeinfo(hints);
+    //fi_freeinfo(hints);
 
     return nullptr;
 }
@@ -79,18 +80,19 @@ void GNIProvider::set_hostnames_and_services(
     const std::vector<std::string>& compute_services,
     std::vector<fi_addr_t>& fi_addrs)
 {
-    struct fi_info* info = fi_allocinfo();
-    struct fi_info* hints = fi_allocinfo();
+    struct fi_info* info, *hints;
 
-    std::cout << compute_hostnames.size() << std::endl;
+//    std::cout << compute_hostnames.size() << std::endl;
     for (size_t i = 0; i < compute_hostnames.size(); i++) {
         fi_addr_t fi_addr;
-
+		info = fi_allocinfo();
+    	hints = fi_allocinfo();
         hints->caps = FI_RMA | FI_MSG | FI_REMOTE_WRITE;
         hints->ep_attr->type = FI_EP_RDM;
         hints->domain_attr->data_progress = FI_PROGRESS_AUTO;
         hints->domain_attr->threading = FI_THREAD_SAFE;
         hints->domain_attr->mr_mode = FI_MR_BASIC;
+        hints->fabric_attr->prov_name = "gni";
 
         std::cout << compute_hostnames[i].c_str() << " "
                   << compute_services[i].c_str() << std::endl;
@@ -98,18 +100,10 @@ void GNIProvider::set_hostnames_and_services(
                              compute_services[i].c_str(), 0, hints, &info);
         assert(res == 0);
         assert(info != NULL);
-
-        std::cout << info->dest_addrlen << std::endl;
-        while (info != NULL) {
-            std::cout << info->fabric_attr->prov_name << std::endl;
-            if (strcmp("gni", info->fabric_attr->prov_name) == 0)
-                break;
-            info = info->next;
-        }
-        assert(info != NULL);
         assert(info->dest_addr != NULL);
         res = fi_av_insert(av, info->dest_addr, 1, &fi_addr, 0, NULL);
         assert(res == 1);
+        assert(fi_addr >= 0);
         fi_addrs.push_back(fi_addr);
     }
 }

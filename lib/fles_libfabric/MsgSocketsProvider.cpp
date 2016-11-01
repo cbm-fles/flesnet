@@ -43,12 +43,13 @@ struct fi_info* MsgSocketsProvider::exists(std::string local_host_name)
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->domain_attr->mr_mode = FI_MR_BASIC;
     hints->addr_format = FI_SOCKADDR_IN;
+    hints->fabric_attr->prov_name = "sockets";
     //hints->domain_attr->name="eth0";
 
     int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr,
                          FI_SOURCE, hints, &info);
 
-    if (!res && (strcmp("sockets", info->fabric_attr->prov_name) == 0)) {
+    if (!res) {
         // TODO this freeinfo method throws invalid pointer exception!!!
     	//fi_freeinfo(hints);
         return info;

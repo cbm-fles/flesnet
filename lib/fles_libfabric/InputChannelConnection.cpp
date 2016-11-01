@@ -341,7 +341,7 @@ void InputChannelConnection::setup() {
 
 	memset(&send_wr_iovec, 0, sizeof(struct iovec));
 	send_wr_iovec.iov_base = &send_status_message_;
-	send_wr_iovec.iov_len = sizeof(InputChannelStatusMessage);
+	send_wr_iovec.iov_len = sizeof(send_status_message_);
 
 	memset(&send_wr, 0, sizeof(struct fi_msg));
 	send_wr.msg_iov = &send_wr_iovec;

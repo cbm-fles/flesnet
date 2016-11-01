@@ -37,17 +37,18 @@ struct fi_info *VerbsProvider::exists(std::string local_host_name) {
     hints->rx_attr->mode = FI_LOCAL_MR | FI_RX_CQ_DATA;
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->addr_format = FI_SOCKADDR_IN;
+    hints->fabric_attr->prov_name = "verbs";
 
     int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr,
                          FI_SOURCE, hints, &info);
 
-    if (!res && (strcmp("verbs", info->fabric_attr->prov_name) == 0)) {
-        fi_freeinfo(hints);
+    if (!res) {
+        //fi_freeinfo(hints);
         return info;
     }
 
     fi_freeinfo(info);
-    fi_freeinfo(hints);
+    //fi_freeinfo(hints);
 
     return nullptr;
 }

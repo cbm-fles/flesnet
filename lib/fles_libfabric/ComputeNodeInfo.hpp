@@ -9,7 +9,7 @@
 struct BufferInfo
 {
     uint64_t addr; ///< Target memory address
-    uint32_t rkey; ///< Target remote access key
+    uint64_t rkey; ///< Target remote access key
 };
 
 struct ComputeNodeInfo

@@ -15,7 +15,7 @@
 #include <rdma/fabric.h>
 #include <rdma/fi_endpoint.h>
 //#include <sstream>
-#include <valgrind/memcheck.h>
+//#include <valgrind/memcheck.h>
 //#include <vector>
 
 #include <rdma/fi_domain.h>
@@ -41,7 +41,6 @@ public:
       int res = fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_, nullptr);
       if (res)
         throw LibfabricException("fi_eq_open failed");
-
     }
 
     ConnectionGroup(const ConnectionGroup&) = delete;

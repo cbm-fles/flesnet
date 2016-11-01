@@ -43,16 +43,17 @@ struct fi_info* RDMSocketsProvider::exists(std::string local_host_name)
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->domain_attr->mr_mode = FI_MR_BASIC;
     hints->addr_format = FI_SOCKADDR_IN;
+    hints->fabric_attr->prov_name = "sockets";
 
     int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr, 0, hints, &info);
 
-    if (!res && (strcmp("sockets", info->fabric_attr->prov_name) == 0)) {
-        fi_freeinfo(hints);
+    if (!res) {
+        //fi_freeinfo(hints);
         return info;
     }
 
     fi_freeinfo(info);
-    fi_freeinfo(hints);
+    //fi_freeinfo(hints);
 
     return nullptr;
 }
@@ -86,30 +87,23 @@ void RDMSocketsProvider::set_hostnames_and_services(
     const std::vector<std::string>& compute_services,
     std::vector<fi_addr_t>& fi_addrs)
 {
-    struct fi_info* info = nullptr;
-    struct fi_info* hints = fi_allocinfo();
+    struct fi_info* info, *hints;
 
-    std::cout << compute_hostnames.size() << std::endl;
     for (size_t i = 0; i < compute_hostnames.size(); i++) {
         fi_addr_t fi_addr;
 
+		info = nullptr;
+    	hints = fi_allocinfo();
         hints->caps = FI_RMA | FI_MSG | FI_REMOTE_WRITE;
         hints->ep_attr->type = FI_EP_RDM;
         hints->domain_attr->data_progress = FI_PROGRESS_AUTO;
         hints->domain_attr->threading = FI_THREAD_SAFE;
         hints->domain_attr->mr_mode = FI_MR_BASIC;
+        hints->fabric_attr->prov_name = "sockets";
 
         int res = fi_getinfo(FI_VERSION(1, 1), compute_hostnames[i].c_str(),
                              compute_services[i].c_str(), 0, hints, &info);
         assert(res == 0);
-        assert(info != NULL);
-
-        while (info != NULL) {
-            std::cout << info->fabric_attr->prov_name << std::endl;
-            if (strcmp("sockets", info->fabric_attr->prov_name) == 0)
-                break;
-            info = info->next;
-        }
         assert(info != NULL);
         assert(info->dest_addr != NULL);
         res = fi_av_insert(av, info->dest_addr, 1, &fi_addr, 0, NULL);
