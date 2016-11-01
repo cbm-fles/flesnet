@@ -272,6 +272,7 @@ protected:
 			av_attr.count = 1000;
 			assert(av_ == nullptr);
 			res = fi_av_open(pd_, &av_attr, &av_, NULL);
+			assert (res == 0);
 			if (!av_) {
 				std::cout << strerror(-res) << std::endl;
 				throw LibfabricException("fi_av_open failed");
