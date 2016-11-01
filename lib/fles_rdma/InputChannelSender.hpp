@@ -80,19 +80,19 @@ private:
     RingBuffer<uint64_t, true> ack_;
 
     /// Number of acknowledged microslices. Written to FLIB.
-    uint64_t acked_desc_ = 0;
+    uint64_t acked_desc_;
 
     /// Number of acknowledged data bytes. Written to FLIB.
-    uint64_t acked_data_ = 0;
+    uint64_t acked_data_;
 
     /// Data source (e.g., FLIB).
     InputBufferReadInterface& data_source_;
 
     /// Number of sent microslices, for statistics.
-    uint64_t sent_desc_ = 0;
+    uint64_t sent_desc_;
 
     /// Number of sent data bytes, for statistics.
-    uint64_t sent_data_ = 0;
+    uint64_t sent_data_;
 
     const std::vector<std::string> compute_hostnames_;
     const std::vector<std::string> compute_services_;
@@ -104,8 +104,11 @@ private:
     const uint64_t min_acked_desc_;
     const uint64_t min_acked_data_;
 
-    uint64_t cached_acked_data_ = 0;
-    uint64_t cached_acked_desc_ = 0;
+    uint64_t cached_acked_desc_;
+    uint64_t cached_acked_data_;
+
+    uint64_t start_index_desc_;
+    uint64_t start_index_data_;
 
     uint64_t write_index_desc_ = 0;
 
