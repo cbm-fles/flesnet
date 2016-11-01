@@ -8,6 +8,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace ip = boost::interprocess;
 
