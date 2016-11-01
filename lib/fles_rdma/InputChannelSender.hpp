@@ -6,6 +6,7 @@
 #include "InputChannelConnection.hpp"
 #include "RingBuffer.hpp"
 #include <boost/format.hpp>
+#include <cassert>
 
 /// Input buffer and compute node connection container class.
 /** An InputChannelSender object represents an input buffer (filled by a
@@ -119,10 +120,26 @@ private:
         uint64_t sent;
         uint64_t written;
 
-        int64_t used() const { return written - sent; }
-        int64_t sending() const { return sent - acked; }
-        int64_t freeing() const { return acked - cached_acked; }
-        int64_t unused() const { return cached_acked + size - written; }
+        int64_t used() const
+        {
+            assert(sent <= written);
+            return written - sent;
+        }
+        int64_t sending() const
+        {
+            assert(acked <= sent);
+            return sent - acked;
+        }
+        int64_t freeing() const
+        {
+            assert(cached_acked <= acked);
+            return acked - cached_acked;
+        }
+        int64_t unused() const
+        {
+            assert(written <= cached_acked + size);
+            return cached_acked + size - written;
+        }
 
         float percentage(int64_t value) const
         {
