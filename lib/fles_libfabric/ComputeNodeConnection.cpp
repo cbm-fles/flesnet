@@ -80,7 +80,7 @@ void ComputeNodeConnection::post_send_status_message() {
 	}
 	while (pending_send_requests_ >= 2000 /*qp_cap_.max_send_wr*/) {
 		throw LibfabricException(
-		 "Max number of pending send requests exceeded");
+				"Max number of pending send requests exceeded");
 	}
 	++pending_send_requests_;
 	post_send_msg(&send_wr);
@@ -184,7 +184,9 @@ void ComputeNodeConnection::on_established(struct fi_eq_cm_entry* event) {
 }
 
 void ComputeNodeConnection::on_disconnected(struct fi_eq_cm_entry* event) {
-	disconnect();
+	if (connection_oriented_) {
+		disconnect();
+	}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -229,7 +231,7 @@ void ComputeNodeConnection::on_complete_recv() {
 		return;
 	}
 	if (false) {
-		L_(trace) << "[c" << remote_index_ << "] "
+		L_(trace)<< "[c" << remote_index_ << "] "
 		<< "[" << index_ << "] "
 		<< "COMPLETE RECEIVE status message"
 		<< " (wp.desc=" << recv_status_message_.wp.desc << ")";
