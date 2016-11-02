@@ -26,8 +26,8 @@ void Parameters::parse_options(int argc, char* argv[])
     auto source_add = source.add_options();
     source_add("pattern-generator,p", po::value<uint32_t>(&pattern_generator),
                "use pattern generator to produce timeslices");
-    source_add("shm-channel,c", po::value<size_t>(&shm_channel),
-               "use given shared memory channel as data source");
+    source_add("channel,c", po::value<size_t>(&channel_idx),
+               "use given channel/component index for source/sink");
     source_add("input-shm,I", po::value<std::string>(&input_shm),
                "name of a shared memory to use as data source");
     source_add("input-archive,i", po::value<std::string>(&input_archive),

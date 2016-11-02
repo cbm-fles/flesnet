@@ -26,7 +26,7 @@ struct Parameters {
     // source selection
     uint32_t pattern_generator = 0;
     bool use_pattern_generator = false;
-    size_t shm_channel = 0;
+    size_t channel_idx = 0;
     std::string input_shm;
     std::string input_archive;
 
