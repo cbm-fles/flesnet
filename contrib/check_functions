@@ -15,9 +15,9 @@ function check_mem {
     fi
 }
 
-
 function check_is_not_running {
-    ps caux | grep -v $$ | grep $1 > /dev/null
+#    ps caux | grep -v $$ | grep $1 > /dev/null
+    ps caux | grep $1 > /dev/null
     if [ $? -eq 0 ]; then
 	echo "ERROR: an instance of $1 is already running."
 	exit 1
@@ -26,9 +26,9 @@ function check_is_not_running {
     fi
 }
 
-
 function check_is_running {
-    ps caux | grep -v $$ | grep $1 > /dev/null
+#    ps caux | grep -v $$ | grep $1 > /dev/null
+    ps caux | grep $1 > /dev/null
     if [ $? -eq 0 ]; then
 	echo -e "INFO: $1 is running."
     else
@@ -37,37 +37,43 @@ function check_is_running {
     fi
 }
 
-
-function check_no_params_flib_ctrl {
-    FLIB_CTRL_CHECK_OPT=`ps aux | grep flib_ctrl | grep -v grep | grep "ctrl -"`
-    if [ $? -eq 0 ]; then
-	echo "ERROR: flib_ctrl is running with command line options."
-	echo exiting ...
-	exit 1
-    fi
-}
-
 function check_shm {
-    ls /dev/shm/flesnet* > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-	echo -e "ERROR: shared memory left. Run flesnet-cleanup."
-	exit 1
-    else
-	echo "INFO: no shard memory left."
-    fi
+    ls /dev/shm/$1 > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+	    echo -e "ERROR: shared memory $1 left."
+	    exit 1
+	fi
+    echo "INFO: no shard memory left."
 }
 
+# use: check_dma_buffers $(list_dma_buffers $(find_devices))
 function check_dma_buffers {
-NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
-if [ "$NODE" ]; then
-        for i in {0..15} ; do
-            ls /sys/bus/pci/drivers/uio_pci_dma/0000:$NODE/dma/$i > /dev/null 2>&1
-            if [ $? -eq 0 ]; then
-	        echo -e "ERROR: dma buffers left."
-	        exit 1
-            fi
-        done
-fi
+    if [ $# -ne 0 ]; then
+	echo -e "ERROR: dma buffers left."
+	exit 1
+    fi
 echo "INFO: no dma buffers left."
+}
 
+# returns list of BDF address for flib devices
+function find_devices {
+    lspci -d 10dc:beaf -m | cut -d' ' -f1
+}
+
+# returns list of dma buffers for given flib devices
+function list_dma_buffers {
+    for BDF in $*; do
+        ls /sys/bus/pci/drivers/uio_pci_dma/0000:$BDF/dma/ | grep -v -e free -e max_payload_size -e max_read_request_size -e request
+    done
+}
+
+# frees all dma buffers for given flib device
+function free_dma_buffers {
+for BDF in $*; do
+    echo "Freeing DMA buffer for PCI device $BDF"
+    for i in $(list_dma_buffers $BDF); do
+        echo "Freeing buffer $i"
+        sudo sh -c "echo $i > /sys/bus/pci/drivers/uio_pci_dma/0000:$BDF/dma/free";
+    done
+done
 }
