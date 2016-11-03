@@ -63,7 +63,7 @@ Application::Application(Parameters const& par) : par_(par)
     // Sink setup
     if (par_.analyze) {
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
-            new MicrosliceAnalyzer(10000, std::cout, "", par_.channel_idx)));
+            new MicrosliceAnalyzer(1000000, std::cout, "", par_.channel_idx)));
     }
 
     if (par_.dump_verbosity > 0) {

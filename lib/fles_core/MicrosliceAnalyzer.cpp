@@ -2,6 +2,7 @@
 
 #include "MicrosliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
+#include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
 #include <cassert>
 #include <sstream>
@@ -100,6 +101,11 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
     }
 
     if (!result) {
+        if (microslice_error_count_ == 0) { // full dump for first error
+            out_ << "microslice content:\n"
+                 << MicrosliceDescriptorDump(ms.desc())
+                 << BufferDump(ms.content(), ms.desc().size);
+        }
         ++microslice_error_count_;
     }
 
