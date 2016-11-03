@@ -98,6 +98,7 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
 
     if (ts.num_components() == 0) {
         out_ << "no component in timeslice " << ts.index() << std::endl;
+        ++timeslice_error_count_;
         return false;
     }
 
@@ -105,6 +106,7 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
         if (ts.num_microslices(c) == 0) {
             out_ << "no microslices in timeslice " << ts.index()
                  << ", component " << c << std::endl;
+            ++timeslice_error_count_;
             return false;
         }
         pattern_checkers_.at(c)->reset();
@@ -116,6 +118,7 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
                 out_ << "pattern error in timeslice " << ts.index()
                      << ", microslice " << m << ", component " << c
                      << std::endl;
+                ++timeslice_error_count_;
                 return false;
             }
         }
@@ -130,6 +133,9 @@ std::string TimesliceAnalyzer::statistics() const
       << human_readable_count(content_bytes_) << " in " << microslice_count_
       << " microslices, avg: "
       << static_cast<double>(content_bytes_) / microslice_count_ << ")";
+    if (timeslice_error_count_ > 0) {
+        s << " [" << timeslice_error_count_ << " errors]";
+    }
     return s.str();
 }
 
