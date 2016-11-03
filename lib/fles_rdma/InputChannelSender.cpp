@@ -461,21 +461,25 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
         conn_[cn]->on_complete_write();
 
         uint64_t acked_ts = (acked_desc_ - start_index_desc_) / timeslice_size_;
-        if (ts == acked_ts)
-            do
-                ++acked_ts;
-            while (ack_.at(acked_ts) > ts);
-        else
+        if (ts != acked_ts) {
+            // transmission has been reordered, store completion information
             ack_.at(ts) = ts;
-        acked_desc_ = acked_ts * timeslice_size_ + start_index_desc_;
-        acked_data_ = data_source_.desc_buffer().at(acked_desc_ - 1).offset +
-                      data_source_.desc_buffer().at(acked_desc_ - 1).size;
-        if (acked_data_ >= cached_acked_data_ + min_acked_data_ ||
-            acked_desc_ >= cached_acked_desc_ + min_acked_desc_) {
-            cached_acked_data_ = acked_data_;
-            cached_acked_desc_ = acked_desc_;
-            data_source_.set_read_index(
-                {cached_acked_desc_, cached_acked_data_});
+        } else {
+            // completion is for earliest pending timeslice, update indices
+            do {
+                ++acked_ts;
+            } while (ack_.at(acked_ts) > ts);
+            acked_desc_ = acked_ts * timeslice_size_ + start_index_desc_;
+            acked_data_ =
+                data_source_.desc_buffer().at(acked_desc_ - 1).offset +
+                data_source_.desc_buffer().at(acked_desc_ - 1).size;
+            if (acked_data_ >= cached_acked_data_ + min_acked_data_ ||
+                acked_desc_ >= cached_acked_desc_ + min_acked_desc_) {
+                cached_acked_data_ = acked_data_;
+                cached_acked_desc_ = acked_desc_;
+                data_source_.set_read_index(
+                    {cached_acked_desc_, cached_acked_data_});
+            }
         }
         if (false) {
             L_(trace) << "[i" << input_index_ << "] "
