@@ -133,7 +133,7 @@ std::string TimesliceAnalyzer::statistics() const
       << human_readable_count(content_bytes_) << " in " << microslice_count_
       << " microslices, avg: "
       << static_cast<double>(content_bytes_) / microslice_count_ << ")";
-    if (timslice_error_count_ > 0) {
+    if (timeslice_error_count_ > 0) {
         s << " [" << timeslice_error_count_ << " errors]";
     }
     return s.str();
