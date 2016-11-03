@@ -2,6 +2,7 @@
 
 #include "TimesliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
+#include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
 #include <cassert>
 #include <sstream>
@@ -118,6 +119,13 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
                 out_ << "pattern error in timeslice " << ts.index()
                      << ", microslice " << m << ", component " << c
                      << std::endl;
+                if (timeslice_error_count_ == 0) { // full dump for first error
+                    out_ << "microslice content:\n"
+                         << MicrosliceDescriptorDump(
+                                ts.get_microslice(c, m).desc())
+                         << BufferDump(ts.get_microslice(c, m).content(),
+                                       ts.get_microslice(c, m).desc().size);
+                }
                 ++timeslice_error_count_;
                 return false;
             }
