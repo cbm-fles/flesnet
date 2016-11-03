@@ -2,12 +2,8 @@
 
 #include "EtcdClient.h"
 
-EtcdClient::EtcdClient(std::string url_) : m_url(url_) {
+EtcdClient::EtcdClient(std::string url_) : m_url(url_) {}
 
-    m_hnd = curl_easy_init();
-}
-
-std::string data; // how to do it differently?
 size_t write_callback(char* buf, size_t size, size_t nmemb, void* userdata) {
     // callback must have this declaration
     // buf is a pointer to the data that curl has for us
@@ -22,56 +18,102 @@ size_t write_callback(char* buf, size_t size, size_t nmemb, void* userdata) {
 std::string EtcdClient::wait_req(std::string prefix, std::string key) {
     std::string data;
     L_(info) << "waiting for " << make_address(prefix, key);
-    curl_easy_setopt(m_hnd, CURLOPT_URL, make_address(prefix, key).c_str());
-    curl_easy_setopt(m_hnd, CURLOPT_TIMEOUT_MS, 8000L);
-    curl_easy_setopt(m_hnd, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&data));
-    curl_easy_setopt(m_hnd, CURLOPT_WRITEFUNCTION, &write_callback);
+    CURL *hnd = curl_easy_init();
+    curl_easy_setopt(hnd, CURLOPT_URL, make_address(prefix, key).c_str());
+    curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, 8000L);
+    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&data));
+    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write_callback);
 
-    CURLcode ret = curl_easy_perform(m_hnd);
+    CURLcode ret = curl_easy_perform(hnd);
     if (ret != CURLE_OK) L_(error) << curl_easy_strerror(ret) << std::endl;
+    curl_easy_cleanup(hnd);
     return data;
 }
 
-enum Flags EtcdClient::check_value(Json::Value message) {
-    Json::FastWriter fastwriter;
-    Flags check_flag = errorneous;
+void EtcdClient::set_value(std::string prefix, std::string key,
+                           std::string value) {
+    L_(info) << "Publishing " << value << " to " << make_address("", "")
+    << prefix;
+    CURL *hnd = curl_easy_init();
+    curl_easy_setopt(hnd, CURLOPT_URL, make_address(prefix, key).c_str());
+    curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, value.c_str());
+    curl_easy_setopt(hnd, CURLOPT_POSTFIELDSIZE_LARGE, strlen(value.c_str()));
+    curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, "PUT");
+    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write_callback);
+    
+    CURLcode ret = curl_easy_perform(hnd);
+    if (ret != CURLE_OK) L_(error) << curl_easy_strerror(ret) << std::endl;
+    curl_easy_cleanup(hnd);
+}
 
-    std::string value = fastwriter.write(message["node"]["value"]);
-    std::string tag = fastwriter.write(message["node"]["modifiedIndex"]);
-    // erase " from value
-    value.erase(value.end() - 2, value.end());
-    value.erase(0, 1);
+std::pair <enum Flags, int> EtcdClient::get_req(std::string prefix, std::string key) {
+    std::string data;
+    CURL *hnd = curl_easy_init();
+    curl_easy_setopt(hnd, CURLOPT_URL, make_address(prefix, key).c_str());
+    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&data));
+    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write_callback);
+    
+    CURLcode ret = curl_easy_perform(hnd);
+
+    if (ret != CURLE_OK){
+        L_(error) << "Get Request from key-value store error: ";
+        L_(error) << curl_easy_strerror(ret) << std::endl;
+    }
+
+    std::pair <enum Flags, int> returnvalue = parse_value(data);
+    curl_easy_cleanup(hnd);
+
+    return returnvalue;
+}
+
+std::pair <enum Flags, int> EtcdClient::parse_value(std::string data) {
+    Json::Value message;
+    Json::Reader reader;
+    std::pair <enum Flags, int> returnvalue;
+    returnvalue = std::make_pair(errorneous, 1);
+    
+
+    bool parsingSuccessful = reader.parse(data, message);
+    if (!parsingSuccessful)
+        L_(warning) << "EtcdClient: Failed to parse";
+    if (message.size() == 0) {
+            L_(warning) << "EtcdClient: returned value from key-value store "
+            "was empty, waiting for updates";
+            returnvalue.first = ok;
+            return returnvalue;
+    }
+
+    if (message.isMember("errorCode")){
+        L_(error) << message["message"].asString() << std::endl;
+    }
+    else
+         returnvalue = check_value(message);
+    
+    return returnvalue;
+}
+
+std::pair <enum Flags, int> EtcdClient::check_value(Json::Value message) {
+    Flags check_flag = errorneous;
+    std::pair <enum Flags, int> returnvalue;
+    int requiredtag = 1;
+    std::string value = message["node"]["value"].asString();
+    std::string tag = message["node"]["modifiedIndex"].asString();
 
     if (value == "on") {
         check_flag = ok;
     } else {
-        m_requiredtag = stoi(tag) + 1;
+        requiredtag = stoi(tag) + 1;
         check_flag = notupdated;
     }
 
-    return check_flag;
-}
-
-enum Flags EtcdClient::get_req(std::string prefix, std::string key) {
-    std::string data;
-    curl_easy_setopt(m_hnd, CURLOPT_URL, make_address(prefix, key).c_str());
-    curl_easy_setopt(m_hnd, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&data));
-    curl_easy_setopt(m_hnd, CURLOPT_WRITEFUNCTION, &write_callback);
-
-    CURLcode ret = curl_easy_perform(m_hnd);
-    if (ret != CURLE_OK)
-        L_(error) << "Get Request from key-value store error: "
-                  << curl_easy_strerror(ret) << std::endl;
-    Flags get_flag = parse_value(data);
-
-    return get_flag;
+    return returnvalue = std::make_pair(check_flag, requiredtag);
 }
 
 int EtcdClient::check_process(std::string input_shm) {
     std::stringstream prefix;
     int ret;
     prefix << "/" << input_shm;
-    ret = get_req(prefix.str(), "/uptodate");
+    ret = get_req(prefix.str(), "/uptodate").first;
     if (ret != 0) {
         L_(info) << "no shm set in key-value store...waiting";
         ret = wait_value(prefix.str());
@@ -83,20 +125,6 @@ int EtcdClient::check_process(std::string input_shm) {
     return ret;
 }
 
-void EtcdClient::set_value(std::string prefix, std::string key,
-                           std::string value) {
-    L_(info) << "Publishing " << value << " to " << make_address("", "")
-             << prefix;
-    curl_easy_setopt(m_hnd, CURLOPT_URL, make_address(prefix, key).c_str());
-    curl_easy_setopt(m_hnd, CURLOPT_POSTFIELDS, value.c_str());
-    curl_easy_setopt(m_hnd, CURLOPT_POSTFIELDSIZE_LARGE, strlen(value.c_str()));
-    curl_easy_setopt(m_hnd, CURLOPT_CUSTOMREQUEST, "PUT");
-    curl_easy_setopt(m_hnd, CURLOPT_WRITEFUNCTION, &write_callback);
-
-    CURLcode ret = curl_easy_perform(m_hnd);
-    if (ret != CURLE_OK) L_(error) << curl_easy_strerror(ret) << std::endl;
-}
-
 std::string EtcdClient::make_address(std::string prefix, std::string key) {
     std::ostringstream address;
     address << m_url << prefix << key;
@@ -104,49 +132,15 @@ std::string EtcdClient::make_address(std::string prefix, std::string key) {
     return address.str();
 }
 
-enum Flags EtcdClient::parse_value(std::string data) {
-    Json::Value message;
-    Json::Reader reader;
-    Json::FastWriter fastwriter;
-    Flags parse_flag = errorneous;
-
-    bool parsingSuccessful = reader.parse(data, message);
-    if (!parsingSuccessful) {
-        L_(warning) << "EtcdClient: Failed to parse";
-        if (message.size() == 0) {
-            L_(warning) << "EtcdClient: returned value from key-value store "
-                           "was empty, waiting for updates";
-            return parse_flag = empty;
-        }
-    }
-    if (message.isMember("error")) {
-        parse_flag = errorneous;
-        L_(error) << fastwriter.write(message["error"]) << std::endl;
-    } else
-        parse_flag = check_value(message);
-
-    return parse_flag;
-}
-
 int EtcdClient::wait_value(std::string prefix) {
     Flags wait_flag = empty;
-    std::string data;
-    std::ostringstream key_ss;
-    key_ss << "/uptodate?wait=true&waitIndex=" << m_requiredtag;
-    std::string key = key_ss.str();
-
-    while (wait_flag == empty) {
-        data = wait_req(prefix, key);
-        wait_flag = parse_value(data);
+    int requiredtag = 1;
+    
+    while ((wait_flag == empty) || (wait_flag == notupdated)) {
+        std::string data = wait_req(prefix, "/uptodate?wait=true&waitIndex=" + std::to_string(requiredtag));
+        std::pair<enum Flags, int> returnvalue = parse_value(data);
+        wait_flag = returnvalue.first;
+        requiredtag = returnvalue.second;
     }
     return wait_flag;
-}
-
-void EtcdClient::delete_value(std::string prefix, std::string key) {
-    curl_easy_setopt(m_hnd, CURLOPT_URL, make_address(prefix, key).c_str());
-    curl_easy_setopt(m_hnd, CURLOPT_NOPROGRESS, 1L);
-    curl_easy_setopt(m_hnd, CURLOPT_CUSTOMREQUEST, "DELETE");
-
-    CURLcode ret = curl_easy_perform(m_hnd);
-    if (ret != CURLE_OK) L_(error) << curl_easy_strerror(ret) << std::endl;
 }
