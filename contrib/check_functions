@@ -16,8 +16,7 @@ function check_mem {
 }
 
 function check_is_not_running {
-#    ps caux | grep -v $$ | grep $1 > /dev/null
-    ps caux | grep $1 > /dev/null
+    ps caux | grep -v $$ | grep $1 > /dev/null
     if [ $? -eq 0 ]; then
 	echo "ERROR: an instance of $1 is already running."
 	exit 1
@@ -27,8 +26,7 @@ function check_is_not_running {
 }
 
 function check_is_running {
-#    ps caux | grep -v $$ | grep $1 > /dev/null
-    ps caux | grep $1 > /dev/null
+    ps caux | grep -v $$ | grep $1 > /dev/null
     if [ $? -eq 0 ]; then
 	echo -e "INFO: $1 is running."
     else

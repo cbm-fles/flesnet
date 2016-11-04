@@ -1,0 +1,23 @@
+#!/bin/bash
+# 2014, Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/check_functions
+
+DEVICES=$(find_devices)
+echo "FLIBs found in system:" $DEVICES
+
+check_is_not_running flesnet
+check_is_not_running tsclient
+check_is_not_running mstool
+check_is_not_running flib_server
+check_is_not_running en_readout
+
+#list_dma_buffers $DEVICES
+check_dma_buffers $(list_dma_buffers $DEVICES)
+
+check_shm "flesnet*"
+check_shm "flib*"
+check_shm "shm*"
+
+# check if etcd is in proper state here
