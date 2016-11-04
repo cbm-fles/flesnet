@@ -93,17 +93,17 @@ Application::Application(Parameters const& par,
             if (false) {
                 data_sources_.push_back(
                     std::unique_ptr<InputBufferReadInterface>(
-                        new FlibPatternGenerator(par.in_data_buffer_size_exp(),
-                                                 par.in_desc_buffer_size_exp(),
-                                                 index,
-                                                 par.typical_content_size())));
+                        new FlibPatternGenerator(
+                            par.in_data_buffer_size_exp(),
+                            par.in_desc_buffer_size_exp(), index,
+                            par.typical_content_size(), true, true)));
             } else {
                 data_sources_.push_back(
                     std::unique_ptr<InputBufferReadInterface>(
                         new EmbeddedPatternGenerator(
                             par.in_data_buffer_size_exp(),
                             par.in_desc_buffer_size_exp(), index,
-                            par.typical_content_size())));
+                            par.typical_content_size(), true, true)));
             }
         }
 
