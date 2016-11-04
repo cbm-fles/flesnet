@@ -38,6 +38,9 @@ echo "=== Installing kernel module"
 sudo make install
 sudo depmod
 
+echo "=== Setting kernel module options"
+sudo bash -c 'echo -e "options siw zcopy_tx=0" > /etc/modprobe.d/siw.conf'
+
 echo "=== Loading kernel modules"
 for m in rdma_cm ib_uverbs rdma_ucm siw; do
 	grep -q "^$m$" /etc/modules || sudo bash -c "echo '$m' >> /etc/modules"
