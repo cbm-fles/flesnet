@@ -1,6 +1,6 @@
 # Copyright 2013-2016 Jan de Cuveland <cmail@cuveland.de>
 
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
 project(fles)
 
 option(COVERALLS "Turn on coveralls support" OFF)
