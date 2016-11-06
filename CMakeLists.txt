@@ -28,8 +28,14 @@ set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -msse4.2 -Wall -Wpedantic -Wextra -Win
 find_package(Boost 1.54.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex)
 find_package(Threads REQUIRED)
 
+find_package(RDMA)
 find_package(NUMA)
 find_package(Doxygen)
+
+set(USE_RDMA TRUE CACHE BOOL "Use RDMA libraries and build RDMA transport.")
+if(USE_RDMA AND NOT RDMA_FOUND)
+  message(STATUS "Libraries not found: rdma. Building without RDMA transport.")
+endif()
 
 set(USE_NUMA TRUE CACHE BOOL "Use libnuma to schedule on specific NUMA nodes.")
 if(USE_NUMA AND NOT NUMA_FOUND)

@@ -13,7 +13,7 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/fles_core"
 
 add_executable(flesnet ${APP_SOURCES} ${APP_HEADERS})
 
-target_link_libraries(flesnet fles_core fles_rdma fles_zeromq flib_ipc logging ibverbs rdmacm ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(flesnet fles_core fles_rdma fles_zeromq flib_ipc logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(flesnet rt atomic)
 endif()
