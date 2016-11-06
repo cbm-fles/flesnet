@@ -29,7 +29,7 @@ ComponentSenderZeromq::ComponentSenderZeromq(
 ComponentSenderZeromq::~ComponentSenderZeromq()
 {
     if (zmq_context_) {
-        zmq_ctx_term(zmq_context_);
+        zmq_ctx_destroy(zmq_context_);
     }
 }
 
