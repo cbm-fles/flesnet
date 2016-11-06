@@ -93,6 +93,9 @@ public:
     /// Retrieve the global base port.
     uint32_t base_port() const { return base_port_; }
 
+    /// Retrieve the zeromq transport usage flag
+    bool zeromq() const { return zeromq_; }
+
     /// Retrieve the number of completion queue entries.
     uint32_t num_cqe() const { return num_cqe_; }
 
@@ -158,6 +161,9 @@ private:
 
     /// The global base port.
     uint32_t base_port_ = 20079;
+
+    /// Retrieve the zeromq transport usage flag
+    bool zeromq_ = false;
 
     uint32_t num_cqe_ = 1000000;
 

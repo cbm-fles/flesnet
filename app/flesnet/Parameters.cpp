@@ -205,7 +205,8 @@ void Parameters::parse_options(int argc, char* argv[])
         "processor-instances", po::value<uint32_t>(&processor_instances_),
         "number of instances of the timeslice processor executable")(
         "base-port", po::value<uint32_t>(&base_port_),
-        "base IP port to use for listening");
+        "base IP port to use for listening")(
+        "zeromq,z", po::value<bool>(&zeromq_), "use zeromq transport");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
