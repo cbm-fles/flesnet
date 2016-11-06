@@ -9,22 +9,25 @@
 #include <zmq.h>
 
 /// Timeslice builder class.
-/** A TimesliceBuilder object initiates connections to input nodes and receives
+/** A TimesliceBuilderZeromq object initiates connections to input nodes
+ * and
+ * receives
  * timeslices to a timeslice buffer. */
 
-class TimesliceBuilder
+class TimesliceBuilderZeromq
 {
 public:
-    /// The TimesliceBuilder constructor.
-    TimesliceBuilder(uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
-                     const std::vector<std::string> input_server_addresses,
-                     uint32_t timeslice_size);
+    /// The TimesliceBuilderZeromq constructor.
+    TimesliceBuilderZeromq(
+        uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
+        const std::vector<std::string> input_server_addresses,
+        uint32_t timeslice_size);
 
-    TimesliceBuilder(const TimesliceBuilder&) = delete;
-    void operator=(const TimesliceBuilder&) = delete;
+    TimesliceBuilderZeromq(const TimesliceBuilderZeromq&) = delete;
+    void operator=(const TimesliceBuilderZeromq&) = delete;
 
-    /// The TimesliceBuilder destructor.
-    ~TimesliceBuilder();
+    /// The TimesliceBuilderZeromq destructor.
+    ~TimesliceBuilderZeromq();
 
     /// The thread main function.
     void operator()();

@@ -1,6 +1,6 @@
 // Copyright 2013, 2016 Jan de Cuveland <cmail@cuveland.de>
 
-#include "TimesliceBuilder.hpp"
+#include "TimesliceBuilderZeromq.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceWorkItem.hpp"
@@ -8,7 +8,7 @@
 #include <chrono>
 #include <thread>
 
-TimesliceBuilder::TimesliceBuilder(
+TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
     const std::vector<std::string> input_server_addresses,
     uint32_t timeslice_size)
@@ -33,13 +33,13 @@ TimesliceBuilder::TimesliceBuilder(
     }
 }
 
-TimesliceBuilder::~TimesliceBuilder() {}
+TimesliceBuilderZeromq::~TimesliceBuilderZeromq() {}
 
 // TODO: make endable
 // TODO: add signal handling
 // TODO: consider max_timeslice
 
-void TimesliceBuilder::operator()()
+void TimesliceBuilderZeromq::operator()()
 {
     assert(connections_.size() > 0);
 
@@ -103,7 +103,7 @@ void TimesliceBuilder::operator()()
     }
 }
 
-void TimesliceBuilder::handle_timeslice_completions()
+void TimesliceBuilderZeromq::handle_timeslice_completions()
 {
     fles::TimesliceCompletion c;
     while (timeslice_buffer_.try_receive_completion(c)) {

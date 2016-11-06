@@ -6,23 +6,23 @@
 #include <zmq.h>
 
 /// Input buffer and compute node connection container class.
-/** An InputChannelServer object represents an input buffer (filled by a
+/** An ComponentSenderZeromq object represents an input buffer (filled by a
     FLIB) and a group of timeslice building connections to compute
     nodes. */
 
-class InputChannelServer
+class ComponentSenderZeromq
 {
 public:
-    /// The InputChannelServer default constructor.
-    InputChannelServer(InputBufferReadInterface& data_source,
-                       uint32_t timeslice_size, uint32_t overlap_size,
-                       std::string listen_address);
+    /// The ComponentSenderZeromq default constructor.
+    ComponentSenderZeromq(InputBufferReadInterface& data_source,
+                          uint32_t timeslice_size, uint32_t overlap_size,
+                          std::string listen_address);
 
-    InputChannelServer(const InputChannelServer&) = delete;
-    void operator=(const InputChannelServer&) = delete;
+    ComponentSenderZeromq(const ComponentSenderZeromq&) = delete;
+    void operator=(const ComponentSenderZeromq&) = delete;
 
-    /// The InputChannelServer default destructor.
-    ~InputChannelServer();
+    /// The ComponentSenderZeromq default destructor.
+    ~ComponentSenderZeromq();
 
     /// The thread main function.
     void operator()();

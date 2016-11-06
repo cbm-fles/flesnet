@@ -1,15 +1,14 @@
 // Copyright 2012-2013, 2016 Jan de Cuveland <cmail@cuveland.de>
 
-#include "InputChannelServer.hpp"
+#include "ComponentSenderZeromq.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "log.hpp"
 #include <algorithm>
 #include <cassert>
 
-InputChannelServer::InputChannelServer(InputBufferReadInterface& data_source,
-                                       uint32_t timeslice_size,
-                                       uint32_t overlap_size,
-                                       std::string listen_address)
+ComponentSenderZeromq::ComponentSenderZeromq(
+    InputBufferReadInterface& data_source, uint32_t timeslice_size,
+    uint32_t overlap_size, std::string listen_address)
     : data_source_(data_source), timeslice_size_(timeslice_size),
       overlap_size_(overlap_size),
       min_acked_({data_source.desc_buffer().size() / 4,
@@ -27,14 +26,14 @@ InputChannelServer::InputChannelServer(InputBufferReadInterface& data_source,
     assert(rc == 0);
 }
 
-InputChannelServer::~InputChannelServer()
+ComponentSenderZeromq::~ComponentSenderZeromq()
 {
     if (zmq_context_) {
         zmq_ctx_term(zmq_context_);
     }
 }
 
-void InputChannelServer::operator()()
+void ComponentSenderZeromq::operator()()
 {
     while (true) {
         zmq_msg_t request;
@@ -54,7 +53,7 @@ void InputChannelServer::operator()()
 }
 
 struct Acknowledgment {
-    InputChannelServer* server;
+    ComponentSenderZeromq* server;
     uint64_t timeslice;
     bool is_data;
 };
@@ -67,7 +66,7 @@ void free_ts(void* /* data */, void* hint)
     delete ack;
 }
 
-bool InputChannelServer::try_send_timeslice(uint64_t ts)
+bool ComponentSenderZeromq::try_send_timeslice(uint64_t ts)
 {
     assert(ts >= acked_ts_);
 
@@ -107,9 +106,10 @@ bool InputChannelServer::try_send_timeslice(uint64_t ts)
 }
 
 template <typename T_>
-zmq_msg_t InputChannelServer::create_message(RingBufferView<T_>& buf,
-                                             uint64_t offset, uint64_t length,
-                                             uint64_t ts, bool is_data)
+zmq_msg_t ComponentSenderZeromq::create_message(RingBufferView<T_>& buf,
+                                                uint64_t offset,
+                                                uint64_t length, uint64_t ts,
+                                                bool is_data)
 {
     zmq_msg_t msg;
 
@@ -140,7 +140,7 @@ zmq_msg_t InputChannelServer::create_message(RingBufferView<T_>& buf,
     return msg;
 }
 
-void InputChannelServer::ack_timeslice(uint64_t ts, bool is_data)
+void ComponentSenderZeromq::ack_timeslice(uint64_t ts, bool is_data)
 {
     assert(ts >= acked_ts_);
     if (ts != acked_ts_) {
@@ -166,7 +166,7 @@ void InputChannelServer::ack_timeslice(uint64_t ts, bool is_data)
     }
 }
 
-void InputChannelServer::sync_data_source()
+void ComponentSenderZeromq::sync_data_source()
 {
     if (acked_.data > cached_acked_.data || acked_.desc > cached_acked_.desc) {
         cached_acked_ = acked_;
