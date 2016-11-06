@@ -16,9 +16,9 @@ target_link_libraries(test_Timeslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_Microslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_RingBuffer fles_core ${Boost_LIBRARIES})
 target_link_libraries(test_Filter fles_core ${Boost_LIBRARIES})
-target_link_libraries(test_MicrosliceReceiver fles_core fles_ipc logging ${Boost_LIBRARIES})
+target_link_libraries(test_MicrosliceReceiver fles_core fles_ipc logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(test_MicrosliceReceiver atomic pthread)
+    target_link_libraries(test_MicrosliceReceiver atomic)
 endif()
 
 add_custom_command(TARGET test_Timeslice POST_BUILD
