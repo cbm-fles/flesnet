@@ -25,17 +25,15 @@ endif()
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
 
-find_library(LIBNUMA numa)
-set(USE_LIBNUMA TRUE CACHE BOOL "Use libnuma to schedule on specific NUMA nodes.")
-if(LIBNUMA AND USE_LIBNUMA)
-  add_definitions(-DHAVE_LIBNUMA)
-endif()
-if(USE_LIBNUMA AND NOT LIBNUMA)
-  message(STATUS "Library not found: libnuma. Building without.")
-endif()
-
 find_package(Boost 1.54.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex)
 find_package(Threads)
+
+find_package(NUMA)
+
+set(USE_NUMA TRUE CACHE BOOL "Use libnuma to schedule on specific NUMA nodes.")
+if(USE_NUMA AND NOT NUMA_FOUND)
+  message(STATUS "Library not found: libnuma. Building without.")
+endif()
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS})
 

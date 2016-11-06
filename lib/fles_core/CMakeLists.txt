@@ -11,3 +11,7 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc"
 add_library(fles_core ${LIB_SOURCES} ${LIB_HEADERS})
 
 target_link_libraries(fles_core fles_ipc)
+if(USE_NUMA AND NUMA_FOUND)
+  add_definitions(-DHAVE_NUMA)
+  target_link_libraries(fles_core ${NUMA_LIBRARY})
+endif()
