@@ -2,6 +2,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 /// Run parameter exception class.
