@@ -6,11 +6,11 @@
 #include "FlibPatternGenerator.hpp"
 #include "shm_channel_client.hpp"
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/thread/future.hpp>
 #include <boost/thread/thread.hpp>
 #include <log.hpp>
 #include <random>
+#include <string>
 
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
@@ -56,8 +56,7 @@ Application::Application(Parameters const& par,
         std::random_device random_device;
         std::uniform_int_distribution<uint64_t> uint_distribution;
         uint64_t random_number = uint_distribution(random_device);
-        std::string shm_identifier =
-            "flesnet_" + boost::lexical_cast<std::string>(random_number);
+        std::string shm_identifier = "flesnet_" + std::to_string(random_number);
 
         std::unique_ptr<TimesliceBuffer> tsb(new TimesliceBuffer(
             shm_identifier, par_.cn_data_buffer_size_exp(),
@@ -80,8 +79,7 @@ Application::Application(Parameters const& par,
 
     std::vector<std::string> compute_services;
     for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
-        compute_services.push_back(
-            boost::lexical_cast<std::string>(par.base_port() + i));
+        compute_services.push_back(std::to_string(par.base_port() + i));
 
     for (size_t c = 0; c < input_indexes.size(); ++c) {
         unsigned index = input_indexes.at(c);
