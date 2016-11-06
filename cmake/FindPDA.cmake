@@ -1,32 +1,12 @@
-set(REQUIRED_PDA_VERSION ${PDA_FIND_VERSION})
+# Copyright 2016 Jan de Cuveland <cmail@cuveland.de>
 
-EXECUTE_PROCESS(
-  COMMAND /opt/pda/${REQUIRED_PDA_VERSION}/bin/pda-config --include
-  RESULT_VARIABLE PDA_RETURN
-  OUTPUT_VARIABLE PDA_INCLUDE_DIR
-  )
-IF( PDA_RETURN )
-  MESSAGE( STATUS "Failed to find pda-config because in path. ")
-  MESSAGE( STATUS "Maybe you need to re-install the PDA library ")
-  MESSAGE( FATAL_ERROR "ABORT!!!")
-ENDIF()
-MESSAGE(STATUS "pda include         = ${PDA_INCLUDE_DIR}")
-include_directories ( ${PDA_INCLUDE_DIR}  )
+find_path(
+	PDA_INCLUDE_DIR pda.h
+  PATHS /opt/pda/${PDA_FIND_VERSION}/include pda/build_linux_x86_uio/include NO_DEFAULT_PATH)
 
-EXECUTE_PROCESS(
-  COMMAND /opt/pda/${REQUIRED_PDA_VERSION}/bin/pda-config --version
-  RESULT_VARIABLE ret
-  OUTPUT_VARIABLE PDA_VERSION
-  )
-MESSAGE(STATUS "pda found VERSION   = ${PDA_VERSION}")
-MESSAGE(STATUS "pda needed VERSION  = ${REQUIRED_PDA_VERSION}")
+find_library(
+	PDA_LIBRARY pda
+  PATHS /opt/pda/${PDA_FIND_VERSION}/lib pda/build_linux_x86_uio NO_DEFAULT_PATH)
 
-EXECUTE_PROCESS(
-  COMMAND /opt/pda/${REQUIRED_PDA_VERSION}/bin/pda-config --ldlibrarypath
-  RESULT_VARIABLE ret
-  OUTPUT_VARIABLE PDA_LD_LIBRARY_PATH
-  )
-MESSAGE(STATUS "pda LD_LIBRARY_PATH = ${PDA_LD_LIBRARY_PATH}")
-
-find_library(PDA pda PATHS ${PDA_LD_LIBRARY_PATH})
-set(EXTRA_LIBS ${EXTRA_LIBS} ${PDA})
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(PDA REQUIRED_VARS PDA_LIBRARY PDA_INCLUDE_DIR)
