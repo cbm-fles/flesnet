@@ -29,10 +29,16 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS filesystem log program_options ser
 find_package(Threads)
 
 find_package(NUMA)
+find_package(Doxygen)
 
 set(USE_NUMA TRUE CACHE BOOL "Use libnuma to schedule on specific NUMA nodes.")
 if(USE_NUMA AND NOT NUMA_FOUND)
   message(STATUS "Library not found: libnuma. Building without.")
+endif()
+
+set(USE_DOXYGEN TRUE CACHE BOOL "Generate documentation using doxygen.")
+if(USE_DOXYGEN AND NOT DOXYGEN_FOUND)
+	message(STATUS "Binary not found: Doxygen. Not building documentation.")
 endif()
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS})
@@ -58,8 +64,6 @@ add_subdirectory(app/mstool)
 add_subdirectory(app/ngdpbtool)
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
-add_subdirectory(doc)
-
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   find_package(PDA 11.1.7 REQUIRED)
 
@@ -75,6 +79,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
   add_subdirectory(contrib)
+endif()
+
+if (USE_DOXYGEN AND DOXYGEN_FOUND)
+  add_subdirectory(doc)
 endif()
 
 if (COVERALLS)
