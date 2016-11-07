@@ -44,17 +44,23 @@ int main(int argc, char* argv[]) {
 
     std::unique_ptr<InputBufferReadInterface> data_source;
     std::shared_ptr<flib_shm_device_client> shm_device;
-    DualIndex read_index = {0, 0};
-    DualIndex read_index_cached = {0, 0};
-    DualIndex write_index = {0, 0};
 
     shm_device = std::make_shared<flib_shm_device_client>(input_shm);
 
+    // add data source
     if (channel_index < shm_device->num_channels()) {
       data_source.reset(new flib_shm_channel_client(shm_device, channel_index));
     } else {
       throw std::runtime_error("shared memory channel not available");
     }
+
+    // initialize indices
+    DualIndex write_index = data_source->get_write_index();
+    DualIndex read_index = data_source->get_read_index();
+    DualIndex read_index_cached = read_index;
+    DualIndex start_index = read_index;
+    std::cout << "Starting with microslice index: " << start_index.desc
+              << std::endl;
 
     time_point<high_resolution_clock> start, end;
     time_point<high_resolution_clock> tp, now;
@@ -91,16 +97,17 @@ int main(int argc, char* argv[]) {
     end = high_resolution_clock::now();
 
     delta = end - start;
+    auto index_delta = read_index - start_index;
 
-    throughput = read_index.data / delta.count();
-    freq = read_index.desc / delta.count();
+    throughput = index_delta.data / delta.count();
+    freq = index_delta.desc / delta.count();
 
     //  std::cout << "Runtime: " << duration_cast<seconds>(delta).count() <<
     //  "s"<<
     //  std::endl;
     std::cout << "Total runtime: " << delta.count() << "s" << std::endl;
-    std::cout << "Microslices processed: " << read_index.desc << std::endl;
-    std::cout << "Bytes processed: " << read_index.data << std::endl;
+    std::cout << "Microslices processed: " << index_delta.desc << std::endl;
+    std::cout << "Bytes processed: " << index_delta.data << std::endl;
     std::cout << "Throughput: " << throughput / 1000000. << " MB/s"
               << std::endl;
     std::cout << "Freq: " << freq / 1000. << " kHz" << std::endl;

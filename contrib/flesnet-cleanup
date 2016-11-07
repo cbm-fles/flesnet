@@ -1,33 +1,18 @@
 #!/bin/bash
 # 2014, Dirk Hutter <hutter@compeng.uni-frankfurt.de>
-# 2014, Dominic Eschweiler <eschweiler@fias.uni-frankfurt.de>
 
 # cleanup script for flib readout
 
-# TODO: will grap first FLIB found
-function check_dma_buffers {
-NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
-if [ "$NODE" ]; then
-        echo "Existing DMA buffers for PCI device at $NODE"
-        ls -l /sys/bus/pci/drivers/uio_pci_dma/0000:$NODE/dma/ | grep -v -e free -e max_payload_size -e max_read_request_size -e request
-fi
-}
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/check_functions
 
-function free_dma_buffers {
-NODE=`lspci -d 10dc:beaf -m | cut -d' ' -f1`
-if [ "$NODE" ]; then
-        echo "Freeing DMA buffer for PCI device at $NODE"
-        for i in {0..15} ; do
-            sudo sh -c "echo $i > /sys/bus/pci/drivers/uio_pci_dma/0000:$NODE/dma/free";
-        done
-fi
-}
+list_dma_buffers $(find_devices)
+free_dma_buffers $(find_devices)
 
-check_dma_buffers
-free_dma_buffers
-
+killall -9 mstool
+killall -9 flesnet
 killall -9 tsclient
 
-sudo rm /dev/shm/flesnet*
+rm /dev/shm/flesnet*
 
 #echo "Please reconfigure FPGA"

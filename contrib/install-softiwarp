@@ -14,6 +14,7 @@ cd "$DIR"
 rm -rf softiwarp
 git clone https://github.com/cbm-fles/softiwarp.git
 cd "$DIR"/softiwarp
+git checkout b453df6dbc395de5133058ce440d5a679b2e2101
 
 echo "=== Building userspace library"
 cd "$DIR"/softiwarp/userlib
@@ -27,8 +28,22 @@ sudo ldconfig
 sudo mkdir -p /etc/libibverbs.d
 sudo ln -sf /usr/local/etc/libibverbs.d/siw.driver /etc/libibverbs.d/
 
+echo "=== Unloading previous kernel module, if any"
+sudo modprobe -rv siw
+
 echo "=== Building kernel module"
 cd "$DIR/softiwarp/kernel"
+patch siw_debug.h <<EOF
+diff a/siw_debug.h b/siw_debug.h
+--- a/siw_debug.h
++++ b/siw_debug.h
+@@ -101,4 +101,4 @@
+  */
+-#define DPRINT_MASK	0
++#define DPRINT_MASK	(DBG_WR & 0)
+
+ extern void siw_debug_init(void);
+EOF
 make
 
 echo "=== Installing kernel module"

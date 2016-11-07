@@ -19,6 +19,11 @@ InputChannelSender::InputChannelSender(
       min_acked_desc_(data_source.desc_buffer().size() / 4),
       min_acked_data_(data_source.data_buffer().size() / 4)
 {
+    start_index_desc_ = sent_desc_ = acked_desc_ = cached_acked_desc_ =
+        data_source.get_read_index().desc;
+    start_index_data_ = sent_data_ = acked_data_ = cached_acked_data_ =
+        data_source.get_read_index().data;
+
     size_t min_ack_buffer_size =
         data_source_.desc_buffer().size() / timeslice_size_ + 1;
     ack_.alloc_with_size(min_ack_buffer_size);
@@ -142,7 +147,6 @@ void InputChannelSender::sync_data_source(bool schedule)
 void InputChannelSender::operator()()
 {
     try {
-        set_cpu(2);
 
         connect();
         while (connected_ != compute_hostnames_.size()) {
@@ -166,7 +170,7 @@ void InputChannelSender::operator()()
         }
 
         // wait for pending send completions
-        while (acked_desc_ < timeslice_size_ * timeslice) {
+        while (acked_desc_ < timeslice_size_ * timeslice + start_index_desc_) {
             poll_completion();
             scheduler_.timer();
         }
@@ -200,7 +204,7 @@ void InputChannelSender::operator()()
 bool InputChannelSender::try_send_timeslice(uint64_t timeslice)
 {
     // wait until a complete timeslice is available in the input buffer
-    uint64_t desc_offset = timeslice * timeslice_size_;
+    uint64_t desc_offset = timeslice * timeslice_size_ + start_index_desc_;
     uint64_t desc_length = timeslice_size_ + overlap_size_;
 
     if (write_index_desc_ < desc_offset + desc_length) {
@@ -455,22 +459,26 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc)
         int cn = (wc.wr_id >> 8) & 0xFFFF;
         conn_[cn]->on_complete_write();
 
-        uint64_t acked_ts = acked_desc_ / timeslice_size_;
-        if (ts == acked_ts)
-            do
-                ++acked_ts;
-            while (ack_.at(acked_ts) > ts);
-        else
+        uint64_t acked_ts = (acked_desc_ - start_index_desc_) / timeslice_size_;
+        if (ts != acked_ts) {
+            // transmission has been reordered, store completion information
             ack_.at(ts) = ts;
-        acked_desc_ = acked_ts * timeslice_size_;
-        acked_data_ = data_source_.desc_buffer().at(acked_desc_ - 1).offset +
-                      data_source_.desc_buffer().at(acked_desc_ - 1).size;
-        if (acked_data_ >= cached_acked_data_ + min_acked_data_ ||
-            acked_desc_ >= cached_acked_desc_ + min_acked_desc_) {
-            cached_acked_data_ = acked_data_;
-            cached_acked_desc_ = acked_desc_;
-            data_source_.set_read_index(
-                {cached_acked_desc_, cached_acked_data_});
+        } else {
+            // completion is for earliest pending timeslice, update indices
+            do {
+                ++acked_ts;
+            } while (ack_.at(acked_ts) > ts);
+            acked_desc_ = acked_ts * timeslice_size_ + start_index_desc_;
+            acked_data_ =
+                data_source_.desc_buffer().at(acked_desc_ - 1).offset +
+                data_source_.desc_buffer().at(acked_desc_ - 1).size;
+            if (acked_data_ >= cached_acked_data_ + min_acked_data_ ||
+                acked_desc_ >= cached_acked_desc_ + min_acked_desc_) {
+                cached_acked_data_ = acked_data_;
+                cached_acked_desc_ = acked_desc_;
+                data_source_.set_read_index(
+                    {cached_acked_desc_, cached_acked_data_});
+            }
         }
         if (false) {
             L_(trace) << "[i" << input_index_ << "] "

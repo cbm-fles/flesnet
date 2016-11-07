@@ -120,8 +120,7 @@ public:
 
   void disconnect(ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
-    // TODO(Dirk): disconnect is disabled to ensure channels are used only once
-    // m_clients = 0;
+    m_clients = 0;
   }
 
   ip::interprocess_condition m_cond_write_index;

@@ -88,6 +88,18 @@ public:
 #endif
     }
 
+    DualIndex get_read_index() override
+    {
+// NOTE: std::atomic<DualIndex> triggers a bug in gcc versions < 5.1
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65147
+#if defined(__GNUC__) && !defined(__clang__) &&                                \
+    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
+        return DualIndex{read_index_desc_, read_index_data_};
+#else
+        return read_index_.load();
+#endif
+    }
+
 private:
     /// Input data buffer.
     RingBuffer<uint8_t> data_buffer_;

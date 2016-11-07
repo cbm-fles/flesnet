@@ -8,7 +8,9 @@ namespace fles
 {
 
 MicrosliceReceiver::MicrosliceReceiver(InputBufferReadInterface& data_source)
-    : data_source_(data_source)
+    : data_source_(data_source),
+      write_index_desc_(data_source_.get_write_index().desc),
+      read_index_desc_(data_source_.get_read_index().desc)
 {
 }
 

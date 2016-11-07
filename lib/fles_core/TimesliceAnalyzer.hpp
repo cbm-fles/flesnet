@@ -49,6 +49,7 @@ private:
     std::string output_prefix_;
 
     size_t timeslice_count_ = 0;
+    size_t timeslice_error_count_ = 0;
     size_t microslice_count_ = 0;
     size_t content_bytes_ = 0;
 };

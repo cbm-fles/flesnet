@@ -24,9 +24,9 @@ Application::Application(Parameters const& par) : par_(par)
 
         shm_device_ = std::make_shared<flib_shm_device_client>(par_.input_shm);
 
-        if (par_.shm_channel < shm_device_->num_channels()) {
+        if (par_.channel_idx < shm_device_->num_channels()) {
             data_source_.reset(
-                new flib_shm_channel_client(shm_device_, par_.shm_channel));
+                new flib_shm_channel_client(shm_device_, par_.channel_idx));
 
         } else {
             throw std::runtime_error("shared memory channel not available");
@@ -41,12 +41,12 @@ Application::Application(Parameters const& par) : par_(par)
         switch (par_.pattern_generator) {
         case 1:
             data_source_.reset(new FlibPatternGenerator(
-                data_buffer_size_exp, desc_buffer_size_exp, 0,
+                data_buffer_size_exp, desc_buffer_size_exp, par_.channel_idx,
                 typical_content_size, true, true));
             break;
         case 2:
             data_source_.reset(new EmbeddedPatternGenerator(
-                data_buffer_size_exp, desc_buffer_size_exp, 0,
+                data_buffer_size_exp, desc_buffer_size_exp, par_.channel_idx,
                 typical_content_size, true, true));
             break;
         default:
@@ -63,7 +63,7 @@ Application::Application(Parameters const& par) : par_(par)
     // Sink setup
     if (par_.analyze) {
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
-            new MicrosliceAnalyzer(10000, std::cout, "")));
+            new MicrosliceAnalyzer(1000000, std::cout, "", par_.channel_idx)));
     }
 
     if (par_.dump_verbosity > 0) {
