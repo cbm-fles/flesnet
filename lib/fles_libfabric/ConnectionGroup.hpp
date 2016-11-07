@@ -24,114 +24,111 @@
 
 /// Libfabric connection group base class.
 /** An ConnectionGroup object represents a group of Libfabric
-    connections that use the same completion queue. */
+ connections that use the same completion queue. */
 
-template <typename CONNECTION> class ConnectionGroup : public ThreadContainer
-{
+template<typename CONNECTION> class ConnectionGroup: public ThreadContainer {
 public:
-    /// The ConnectionGroup default constructor.
-    ConnectionGroup(std::string local_node_name)
-    {
-      Provider::init(local_node_name);
-      //std::cout << "ConnectionGroup constructor" << std::endl;
-      struct fi_eq_attr eq_attr;
-      memset(&eq_attr, 0, sizeof(eq_attr));
-      eq_attr.size = 10;
-      eq_attr.wait_obj = FI_WAIT_NONE;
-      int res = fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_, nullptr);
-      if (res)
-        throw LibfabricException("fi_eq_open failed");
-    }
+	/// The ConnectionGroup default constructor.
+	ConnectionGroup(std::string local_node_name) {
+		Provider::init(local_node_name);
+		//std::cout << "ConnectionGroup constructor" << std::endl;
+		struct fi_eq_attr eq_attr;
+		memset(&eq_attr, 0, sizeof(eq_attr));
+		eq_attr.size = 10;
+		eq_attr.wait_obj = FI_WAIT_NONE;
+		int res = fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_,
+				nullptr);
+		if (res)
+			throw LibfabricException("fi_eq_open failed");
+	}
 
-    ConnectionGroup(const ConnectionGroup&) = delete;
-    ConnectionGroup& operator=(const ConnectionGroup&) = delete;
+	ConnectionGroup(const ConnectionGroup&) = delete;
+	ConnectionGroup& operator=(const ConnectionGroup&) = delete;
 
-    /// The ConnectionGroup default destructor.
-    virtual ~ConnectionGroup()
-    {
-        for (auto& c : conn_)
-            c = nullptr;
+	/// The ConnectionGroup default destructor.
+	virtual ~ConnectionGroup() {
+		for (auto& c : conn_)
+			c = nullptr;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-        fi_close((fid_t)eq_);
-        if (pep_ != nullptr)
-            fi_close((fid_t)pep_);
+		fi_close((fid_t) eq_);
+		if (pep_ != nullptr)
+			fi_close((fid_t) pep_);
 #pragma GCC diagnostic pop
 
-        pep_ = nullptr;
-    }
+		pep_ = nullptr;
+	}
 
-    void accept(const std::string& hostname, unsigned short port,
-                unsigned int count)
-    {
-        conn_.resize(count);
-        Provider::getInst()->accept(pep_, hostname, port, count, eq_);
+	void accept(const std::string& hostname, unsigned short port,
+			unsigned int count) {
+		conn_.resize(count);
+		Provider::getInst()->accept(pep_, hostname, port, count, eq_);
 
-        L_(debug) << "waiting for " << count << " connections";
-    }
+		L_(debug)<< "waiting for " << count << " connections";
+	}
 
-    /// Initiate disconnection.
-    void disconnect()
-    {
-        for (auto& c : conn_)
-            c->disconnect();
-    }
+	/// Initiate disconnection.
+	void disconnect()
+	{
+		for (auto& c : conn_)
+		c->disconnect();
+	}
 
-    /// The connection manager event handler.
-    void poll_cm_events()
-    {
-        const size_t max_private_data_size =
-            256; // verbs: 56, usnic and socket 256
-        const size_t event_size =
-            sizeof(struct fi_eq_cm_entry) + max_private_data_size;
-        char buffer[event_size];
+	/// The connection manager event handler.
+	void poll_cm_events()
+	{
+		const size_t max_private_data_size =
+		256; // verbs: 56, usnic and socket 256
+		const size_t event_size =
+		sizeof(struct fi_eq_cm_entry) + max_private_data_size;
+		char buffer[event_size];
 
-        uint32_t event_kind;
+		uint32_t event_kind;
 
-        ssize_t count = fi_eq_read(eq_, &event_kind, buffer, event_size, 0);
-        if (count > 0) {
+		ssize_t count = fi_eq_read(eq_, &event_kind, buffer, event_size, 0);
+		if (count > 0) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-            on_cm_event(event_kind, (struct fi_eq_cm_entry*)buffer, count);
+			on_cm_event(event_kind, (struct fi_eq_cm_entry*)buffer, count);
 #pragma GCC diagnostic pop
-        } else if (count == -FI_EAGAIN) {
-            return;
-        } else if (count == -FI_EAVAIL) {
-            struct fi_eq_err_entry err_event;
+		} else if (count == -FI_EAGAIN) {
+			return;
+		} else if (count == -FI_EAVAIL) {
+			struct fi_eq_err_entry err_event;
 
-            memset(&err_event, 0, sizeof(err_event));
+			memset(&err_event, 0, sizeof(err_event));
 
-            count = fi_eq_readerr(eq_, &err_event, 0);
-            if (count > 0) {
-                switch (err_event.err) {
-                case ECONNREFUSED: {
-                    on_rejected(&err_event);
-                    break;
-                }
-                case ETIMEDOUT: {
-                    // on_rejected(&err_event);
-                    break;
-                }
-                default: {
-                    std::cout << err_event.err << std::endl;
-                    throw LibfabricException("unknown error in fi_eq_readerr");
-                }
-                }
-            }
-        } else {
-            throw LibfabricException("fi_eq_read failed");
-        }
-    }
+			count = fi_eq_readerr(eq_, &err_event, 0);
+			if (count > 0) {
+				switch (err_event.err) {
+					case ECONNREFUSED: {
+						on_rejected(&err_event);
+						break;
+					}
+					case ETIMEDOUT: {
+						// on_rejected(&err_event);
+						break;
+					}
+					default: {
+						std::cout << err_event.err << std::endl;
+						throw LibfabricException("unknown error in fi_eq_readerr");
+					}
+				}
+			}
+		} else {
+			throw LibfabricException("fi_eq_read failed");
+		}
+	}
 
-    /// The Libfabric completion notification handler.
-    int poll_completion()
-    {
-        const int ne_max = 10;
+	/// The Libfabric completion notification handler.
+	int poll_completion()
+	{
+		const int ne_max = 10;
 
-        struct fi_cq_entry wc[ne_max];
-        int ne;
-        int ne_total = 0;
+		struct fi_cq_entry wc[ne_max];
+		int ne;
+		int ne_total = 0;
 
 		while ((ne = fi_cq_read(cq_, &wc, ne_max))) {
 			if (ne == -FI_EAVAIL) { // error available
@@ -148,57 +145,57 @@ public:
 				throw LibfabricException("fi_cq_read failed");
 			}
 
-            if (ne == -FI_EAGAIN)
-                break;
+			if (ne == -FI_EAGAIN)
+			break;
 
-            ne_total += ne;
-            for (int i = 0; i < ne; ++i) {
+			ne_total += ne;
+			for (int i = 0; i < ne; ++i) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-                // L_(trace) << "on_completion(wr_id=" <<
-                // (uintptr_t)wc[i].op_context << ")";
-                on_completion((uintptr_t)wc[i].op_context);
+				// L_(trace) << "on_completion(wr_id=" <<
+				// (uintptr_t)wc[i].op_context << ")";
+				on_completion((uintptr_t)wc[i].op_context);
 #pragma GCC diagnostic pop
-            }
-        }
+			}
+		}
 
-        return ne_total;
-    }
+		return ne_total;
+	}
 
-    /// Retrieve the InfiniBand completion queue.
-    struct fid_cq* completion_queue() const { return cq_; }
+	/// Retrieve the InfiniBand completion queue.
+	struct fid_cq* completion_queue() const {return cq_;}
 
-    size_t size() const { return conn_.size(); }
+	size_t size() const {return conn_.size();}
 
-    /// Retrieve the total number of bytes transmitted.
-    uint64_t aggregate_bytes_sent() const { return aggregate_bytes_sent_; }
+	/// Retrieve the total number of bytes transmitted.
+	uint64_t aggregate_bytes_sent() const {return aggregate_bytes_sent_;}
 
-    /// Retrieve the total number of SEND work requests.
-    uint64_t aggregate_send_requests() const
-    {
-        return aggregate_send_requests_;
-    }
+	/// Retrieve the total number of SEND work requests.
+	uint64_t aggregate_send_requests() const
+	{
+		return aggregate_send_requests_;
+	}
 
-    /// Retrieve the total number of RECV work requests.
-    uint64_t aggregate_recv_requests() const
-    {
-        return aggregate_recv_requests_;
-    }
+	/// Retrieve the total number of RECV work requests.
+	uint64_t aggregate_recv_requests() const
+	{
+		return aggregate_recv_requests_;
+	}
 
-    void summary() const
-    {
-        double runtime = std::chrono::duration_cast<std::chrono::microseconds>(
-                             time_end_ - time_begin_).count();
-        L_(info) << "summary: " << aggregate_send_requests_ << " SEND, "
-                 << aggregate_recv_requests_ << " RECV requests";
-        double rate = static_cast<double>(aggregate_bytes_sent_) / runtime;
-        L_(info) << "summary: " << human_readable_count(aggregate_bytes_sent_)
-                 << " sent in " << runtime / 1000000. << " s (" << rate
-                 << " MB/s)";
-    }
+	void summary() const
+	{
+		double runtime = std::chrono::duration_cast<std::chrono::microseconds>(
+				time_end_ - time_begin_).count();
+		L_(info) << "summary: " << aggregate_send_requests_ << " SEND, "
+		<< aggregate_recv_requests_ << " RECV requests";
+		double rate = static_cast<double>(aggregate_bytes_sent_) / runtime;
+		L_(info) << "summary: " << human_readable_count(aggregate_bytes_sent_)
+		<< " sent in " << runtime / 1000000. << " s (" << rate
+		<< " MB/s)";
+	}
 
-    /// The "main" function of an ConnectionGroup decendant.
-    virtual void operator()() = 0;
+	/// The "main" function of an ConnectionGroup decendant.
+	virtual void operator()() = 0;
 
 protected:
 	/// Handle RDMA_CM_REJECTED event.
@@ -298,6 +295,7 @@ protected:
 
 	/// Number of established connections
 	unsigned int connected_ = 0;
+	std::set<int> connected_indexes_;
 
 	/// Number of connections in the done state.
 	unsigned int connections_done_ = 0;

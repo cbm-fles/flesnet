@@ -34,15 +34,15 @@ InputChannelSender::InputChannelSender(uint64_t input_index,
 	} else {
 		connection_oriented_ = false;
 	}
-/*
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-	VALGRIND_MAKE_MEM_DEFINED(data_source_.data_buffer().ptr(),
-			data_source_.data_buffer().bytes());
-	VALGRIND_MAKE_MEM_DEFINED(data_source_.desc_buffer().ptr(),
-			data_source_.desc_buffer().bytes());
-#pragma GCC diagnostic pop
-*/
+	/*
+	 #pragma GCC diagnostic push
+	 #pragma GCC diagnostic ignored "-Wold-style-cast"
+	 VALGRIND_MAKE_MEM_DEFINED(data_source_.data_buffer().ptr(),
+	 data_source_.data_buffer().bytes());
+	 VALGRIND_MAKE_MEM_DEFINED(data_source_.desc_buffer().ptr(),
+	 data_source_.desc_buffer().bytes());
+	 #pragma GCC diagnostic pop
+	 */
 }
 
 InputChannelSender::~InputChannelSender() {
@@ -81,9 +81,21 @@ void InputChannelSender::bootstrap_wo_connections() {
 				cq_, av_, fi_addrs[i]);
 		conn_.push_back(std::move(connection));
 	}
-
+	int i = 0;
 	while (connected_ != compute_hostnames_.size()) {
 		poll_completion();
+		i++;
+		if (i == 1000000) {
+			i = 0;
+			// reconnecting
+			for (unsigned int i = 0; i < compute_hostnames_.size(); ++i) {
+				if (connected_indexes_.find(i) == std::set::end) {
+					L_(info) << "retrying to connect to " << compute_hostnames_[i] << ":"<<compute_services_[i];
+					conn_.at(i)->connect(compute_hostnames_[i],
+							compute_services_[i], pd_, cq_, av_, fi_addrs[i]);
+				}
+			}
+		}
 	}
 }
 
@@ -486,6 +498,7 @@ void InputChannelSender::on_completion(uint64_t wr_id) {
 			conn_[cn]->set_remote_info();
 			on_connected(pd_);
 			++connected_;
+			connected_indexes_.insert(cn);
 		}
 		if (conn_[cn]->request_abort_flag()) {
 			abort_ = true;

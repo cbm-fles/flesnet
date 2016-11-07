@@ -447,6 +447,7 @@ void InputChannelConnection::set_partner_addr(struct fid_av* av) {
 	int res = fi_av_insert(av, &this->recv_status_message_.my_address, 1,
 			&this->partner_addr_, 0, NULL);
 	send_wr.addr = this->partner_addr_;
+	send_status_message_.connect = false;
 	assert(res == 1);
 }
 

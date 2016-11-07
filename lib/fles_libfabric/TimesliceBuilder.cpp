@@ -258,7 +258,10 @@ void TimesliceBuilder::bootstrap_wo_connections() {
 				//            add address to av and set fi_addr_t from av on
 				//            conn-object
 				assert(recv_connect_message.connect == true);
-
+				if (connected_senders_.find(recv_connect_message.info.index) != std::set::end){
+					conn_.at(recv_connect_message.info.index)->send_ep_addr();
+					continue;
+				}
 				int res = fi_av_insert(av_, &recv_connect_message.my_address, 1,
 						&connection_addr, 0, NULL);
 				assert(res == 1);
