@@ -147,7 +147,6 @@ void InputChannelSender::sync_data_source(bool schedule)
 void InputChannelSender::operator()()
 {
     try {
-        set_cpu(2);
 
         connect();
         while (connected_ != compute_hostnames_.size()) {
