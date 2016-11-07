@@ -12,6 +12,8 @@
 
 #include <set>
 
+#pragma clang diagnostic ignored "-Wunused-private-field"
+
 namespace fles
 {
 

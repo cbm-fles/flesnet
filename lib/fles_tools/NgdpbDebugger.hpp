@@ -6,6 +6,8 @@
 #include "Timeslice.hpp"
 #include <ostream>
 
+#pragma clang diagnostic ignored "-Wunused-private-field"
+
 class NgdpbDump
 {
 public:
