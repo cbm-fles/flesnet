@@ -17,22 +17,18 @@ private:
 
     std::string wait_req(std::string prefix, std::string key);
 
-    std::pair <enum Flags, int> check_value(Json::Value message);
-    
-    std::pair <enum Flags, int> parse_value(std::string data);
+    std::pair<enum Flags, int> check_value(Json::Value message);
 
+    std::pair<enum Flags, int> parse_value(std::string data);
 
-    std::pair <enum Flags, int> get_req(std::string prefix, std::string key);
+    std::pair<enum Flags, int> get_req(std::string prefix, std::string key);
 
-    std::string make_address(std::string prefix, std::string key);
-
-
-    int wait_value(std::string prefix);
+    enum Flags wait_value(std::string prefix);
 
 public:
     EtcdClient(std::string url);
 
     int check_process(std::string input_shm);
 
-    void set_value(std::string prefix, std::string key, std::string value);
+    int set_value(std::string prefix, std::string key, std::string value);
 };
