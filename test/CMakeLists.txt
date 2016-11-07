@@ -1,16 +1,22 @@
 # Copyright 2015, 2016 Jan de Cuveland <cmail@cuveland.de>
 
-include_directories(${PROJECT_SOURCE_DIR}/lib/fles_ipc
-                    ${PROJECT_SOURCE_DIR}/lib/fles_core
-                    ${PROJECT_SOURCE_DIR}/lib/logging)
-
-add_definitions(-DBOOST_TEST_DYN_LINK)
-
 add_executable(test_Timeslice test_Timeslice.cpp)
 add_executable(test_Microslice test_Microslice.cpp)
 add_executable(test_RingBuffer test_RingBuffer.cpp)
 add_executable(test_Filter test_Filter.cpp)
 add_executable(test_MicrosliceReceiver test_MicrosliceReceiver.cpp)
+
+target_compile_definitions(test_Timeslice PUBLIC BOOST_TEST_DYN_LINK)
+target_compile_definitions(test_Microslice PUBLIC BOOST_TEST_DYN_LINK)
+target_compile_definitions(test_RingBuffer PUBLIC BOOST_TEST_DYN_LINK)
+target_compile_definitions(test_Filter PUBLIC BOOST_TEST_DYN_LINK)
+target_compile_definitions(test_MicrosliceReceiver PUBLIC BOOST_TEST_DYN_LINK)
+
+target_include_directories(test_Timeslice SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(test_Microslice SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(test_RingBuffer SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(test_Filter SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(test_MicrosliceReceiver SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(test_Timeslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_Microslice fles_ipc ${Boost_LIBRARIES})

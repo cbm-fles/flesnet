@@ -1,9 +1,4 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(LIBPDA)
-
-include_directories(${LIBPDA_SOURCE_DIR} ${PDA_INCLUDE_DIR})
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-tree-vectorize")
+# Copyright 2016 Jan de Cuveland <cmail@cuveland.de>
 
 set(LIB_SRC
   pci_bar.cpp
@@ -19,6 +14,16 @@ set(LIB_HDR
 )
 
 add_library(pda ${LIB_HDR} ${LIB_SRC})
+
 set_target_properties(pda PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(pda ${PDA_LIBRARY})
+target_compile_options(pda PRIVATE -fno-tree-vectorize)
+
+target_include_directories(pda
+  PUBLIC .
+  PUBLIC ${PDA_INCLUDE_DIR}
+)
+
+target_link_libraries(pda
+  PUBLIC ${PDA_LIBRARY}
+)

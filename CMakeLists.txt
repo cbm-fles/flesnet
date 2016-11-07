@@ -51,10 +51,7 @@ if(USE_DOXYGEN AND NOT DOXYGEN_FOUND)
 	message(STATUS "Binary not found: Doxygen. Not building documentation.")
 endif()
 
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS})
-
-set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer")
-add_definitions(-DBOOST_ALL_DYN_LINK)
+add_compile_options(-std=c++11 -O3 -ggdb -msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
 
 if (COVERALLS)
   include(Coveralls)

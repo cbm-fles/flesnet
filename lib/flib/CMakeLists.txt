@@ -1,12 +1,4 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(LIBFLIB)
-
-include_directories( ${LIBFLIB_SOURCE_DIR}/
-                     ${LIBFLIB_SOURCE_DIR}/../)
-
-set(VERSION "0.0.0")
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-tree-vectorize")
+# Copyright 2016 Jan de Cuveland <cmail@cuveland.de>
 
 set(LIB_SRC
   dma_channel.cpp
@@ -36,7 +28,16 @@ set(LIB_HDR
 
 add_library(flib SHARED ${LIB_HDR} ${LIB_SRC})
 add_library(flib-static STATIC ${LIB_HDR} ${LIB_SRC})
+
 set_target_properties(flib-static PROPERTIES OUTPUT_NAME flib)
 
-target_link_libraries(flib pda)
-target_link_libraries(flib-static pda)
+target_compile_options(flib PUBLIC -fno-tree-vectorize)
+target_compile_options(flib-static PUBLIC -fno-tree-vectorize)
+
+target_include_directories(flib PUBLIC . PUBLIC ..)
+target_include_directories(flib SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(flib-static PUBLIC . PUBLIC ..)
+target_include_directories(flib-static SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+
+target_link_libraries(flib PUBLIC pda)
+target_link_libraries(flib-static PUBLIC pda)
