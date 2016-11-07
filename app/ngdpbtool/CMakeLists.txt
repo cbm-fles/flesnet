@@ -17,7 +17,7 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc"
 
 add_executable(ngdpbtool ${APP_SOURCES} ${APP_HEADERS})
 
-target_link_libraries(ngdpbtool fles_ipc fles_core logging crcutil fles_tools ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(ngdpbtool fles_ipc fles_core flib_ipc logging crcutil fles_tools ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(ngdpbtool ${ZMQ_LIBRARIES})
 if(LIBNUMA AND USE_LIBNUMA)
     target_link_libraries(ngdpbtool ${LIBNUMA})
