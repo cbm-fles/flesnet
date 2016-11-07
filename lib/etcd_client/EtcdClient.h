@@ -9,21 +9,22 @@
 #include <sstream>
 #include <string>
 
-enum Flags { ok, notupdated, errorneous, empty };
+enum Flags { ok, errorneous, empty };
+typedef struct {
+    std::string value;
+    int tag;
+} value_t;
 
 class EtcdClient {
 private:
     std::string m_url;
 
-    std::string wait_req(std::string prefix, std::string key);
+    std::pair<enum Flags, value_t> get_req(std::string prefix, std::string key,
+                                           bool timeout = false);
 
-    std::pair<enum Flags, int> check_value(Json::Value message);
+    std::pair<enum Flags, value_t> parse_value(std::string data);
 
-    std::pair<enum Flags, int> parse_value(std::string data);
-
-    std::pair<enum Flags, int> get_req(std::string prefix, std::string key);
-
-    enum Flags wait_value(std::string prefix);
+    enum Flags wait_value(std::string prefix, int requiredtag);
 
 public:
     EtcdClient(std::string url);
