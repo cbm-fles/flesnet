@@ -73,6 +73,8 @@ public:
 			struct fid_domain* domain, struct fid_cq* cq, struct fid_av* av,
 			fi_addr_t fi_addr);
 
+	void reconnect();
+
 	void set_partner_addr(struct fid_av* av_);
 
 	fi_addr_t get_partner_addr();

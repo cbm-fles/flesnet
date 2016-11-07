@@ -442,6 +442,12 @@ void InputChannelConnection::connect(const std::string& hostname,
 	}
 }
 
+void InputChannelConnection::reconnect() {
+	if (not Provider::getInst()->is_connection_oriented()) {
+		post_send_status_message();
+	}
+}
+
 void InputChannelConnection::set_partner_addr(struct fid_av* av) {
 
 	int res = fi_av_insert(av, &this->recv_status_message_.my_address, 1,

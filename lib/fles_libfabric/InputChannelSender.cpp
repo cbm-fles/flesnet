@@ -91,8 +91,7 @@ void InputChannelSender::bootstrap_wo_connections() {
 			for (unsigned int i = 0; i < compute_hostnames_.size(); ++i) {
 				if (connected_indexes_.find(i) == connected_indexes_.end()) {
 					L_(info) << "retrying to connect to " << compute_hostnames_[i] << ":"<<compute_services_[i];
-					conn_.at(i)->connect(compute_hostnames_[i],
-							compute_services_[i], pd_, cq_, av_, fi_addrs[i]);
+					conn_.at(i)->reconnect();
 				}
 			}
 		}
