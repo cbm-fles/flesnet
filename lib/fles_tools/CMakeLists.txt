@@ -12,3 +12,5 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/fles_core"
 add_library(fles_tools ${LIB_SOURCES} ${LIB_HEADERS})
 
 target_link_libraries(fles_tools fles_core fles_ipc)
+
+target_compile_options(fles_tools PUBLIC -Wno-unknown-pragmas)
