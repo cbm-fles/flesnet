@@ -301,7 +301,7 @@ void InputChannelConnection::setup_mr(struct fid_domain* pd) {
 			FI_WRITE, 0, Provider::requested_key++, 0, &mr_recv_, nullptr);
 	if (err) {
 		throw LibfabricException("fi_mr_reg failed for recv msg");
-		std::cout << strerror(-err) << std::endl;
+		L_(error) << strerror(-err);
 	}
 
 	if (!mr_recv_)
@@ -312,7 +312,7 @@ void InputChannelConnection::setup_mr(struct fid_domain* pd) {
 			sizeof(send_status_message_),
 			FI_WRITE, 0, Provider::requested_key++, 0, &mr_send_, nullptr);
 	if (err) {
-		std::cout << strerror(-err) << std::endl;
+		L_(error) << strerror(-err);
 		throw LibfabricException("fi_mr_reg failed for send msg");
 	}
 
@@ -384,7 +384,7 @@ void InputChannelConnection::dereg_mr() {
 }
 
 void InputChannelConnection::on_rejected(struct fi_eq_err_entry* event) {
-	std::cout << "InputChannelConnection:on_rejected" << std::endl;
+	L_(debug) << "InputChannelConnection:on_rejected";
 	dereg_mr();
 	Connection::on_rejected(event);
 }
@@ -435,7 +435,7 @@ void InputChannelConnection::connect(const std::string& hostname,
 		int res = fi_getname((fid_t) ep_, &send_status_message_.my_address,
 				&addr_len);
 		assert(res == 0);
-		std::cout << "fi_addr: " << fi_addr << std::endl;
+		L_(debug) << "fi_addr: " << fi_addr;
 		// @todo is this save? does post_send_status_message create copy?
 		send_wr.addr = fi_addr;
 		post_send_status_message();

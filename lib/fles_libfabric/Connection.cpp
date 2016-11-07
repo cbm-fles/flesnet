@@ -51,7 +51,7 @@ void Connection::connect(const std::string& hostname,
     auto private_data = get_private_data();
     assert(private_data->size() <= 255);
 
-    std::cout << "connect: " << hostname << ":" << service << std::endl;
+    L_(debug) << "connect: " << hostname << ":" << service;
     struct fi_info* info2 = nullptr;
     struct fi_info* hints = fi_dupinfo(Provider::getInst()->get_info());
 
@@ -69,8 +69,8 @@ void Connection::connect(const std::string& hostname,
         FI_VERSION(1, 1), hostname == "" ? nullptr : hostname.c_str(),
         service == "" ? nullptr : service.c_str(), 0, hints, &info2);
     if (err) {
-        std::cout << hostname << " " << service << std::endl;
-        std::cout << strerror(-err) << std::endl;
+        L_(error) << hostname << " " << service;
+        L_(error) << strerror(-err);
         throw LibfabricException("fi_getinfo failed in make_endpoint");
     }
 
@@ -99,7 +99,7 @@ void Connection::connect(const std::string& hostname,
 #pragma GCC diagnostic pop
     err = fi_enable(ep_);
     if (err) {
-        std::cout << strerror(-err) << std::endl;
+    	L_(error) << strerror(-err);
         throw LibfabricException("fi_enable failed");
     }
     setup_mr(domain);
@@ -177,7 +177,7 @@ void Connection::on_connect_request(struct fi_eq_cm_entry* event,
 
     err = fi_enable(ep_);
     if (err) {
-        std::cout << strerror(-err) << std::endl;
+    	L_(error) << strerror(-err);
         throw LibfabricException("fi_enable failed");
     }
     // accept_connect_request();
@@ -240,7 +240,7 @@ void Connection::make_endpoint(struct fi_info* info,
 #pragma GCC diagnostic pop
     err = fi_enable(ep_);
     if(err) {
-      std::cout << strerror(-err) << std::endl;
+      L_(error) << strerror(-err);
       throw LibfabricException("fi_enable failed");
     }
 }

@@ -258,7 +258,7 @@ protected:
 		cq_attr.wait_set = nullptr;
 		res = fi_cq_open(pd_, &cq_attr, &cq_, nullptr);
 		if (!cq_) {
-			std::cout << strerror(-res) << std::endl;
+			L_(error) << strerror(-res);
 			throw LibfabricException("fi_cq_open failed");
 		}
 		if (Provider::getInst()->has_av()) {
@@ -271,7 +271,7 @@ protected:
 			res = fi_av_open(pd_, &av_attr, &av_, NULL);
 			assert (res == 0);
 			if (!av_) {
-				std::cout << strerror(-res) << std::endl;
+				L_(error) << strerror(-res);
 				throw LibfabricException("fi_av_open failed");
 			}
 			Provider::getInst()->set_hostnames_and_services(

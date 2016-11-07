@@ -130,7 +130,7 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
 	cq_attr.wait_set = nullptr;
 	res = fi_cq_open(pd_, &cq_attr, &listening_cq_, nullptr);
 	if (!listening_cq_) {
-		std::cout << strerror(-res) << std::endl;
+		L_(error) << strerror(-res);
 		throw LibfabricException("fi_cq_open failed");
 	}
 
@@ -156,7 +156,7 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
 #pragma GCC diagnostic pop
 	err = fi_enable(*ep);
 	if (err) {
-		std::cout << strerror(-err) << std::endl;
+		L_(error) << strerror(-err);
 		throw LibfabricException("fi_enable failed");
 	}
 
@@ -210,7 +210,7 @@ void TimesliceBuilder::bootstrap_wo_connections() {
 	if (err) {
 		throw LibfabricException(
 				"fi_mr_reg failed for recv msg in compute-buffer");
-		std::cout << strerror(-err) << std::endl;
+		L_(error) << strerror(-err);
 	}
 
 // prepare recv message
@@ -251,7 +251,7 @@ void TimesliceBuilder::bootstrap_wo_connections() {
 			if (ne == -FI_EAGAIN)
 				break;
 
-			std::cout << "got " << ne << " events" << std::endl;
+			L_(debug) << "got " << ne << " events";
 			for (int i = 0; i < ne; ++i) {
 				fi_addr_t connection_addr;
 				// when connect message:

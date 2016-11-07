@@ -93,8 +93,8 @@ void GNIProvider::set_hostnames_and_services(struct fid_av* av,
 		hints->domain_attr->mr_mode = FI_MR_BASIC;
 		hints->fabric_attr->prov_name = "gni";
 
-		std::cout << compute_hostnames[i].c_str() << " "
-				<< compute_services[i].c_str() << std::endl;
+		/*std::cout << compute_hostnames[i].c_str() << " "
+				<< compute_services[i].c_str() << std::endl;*/
 		int res = fi_getinfo(FI_VERSION(1, 1), compute_hostnames[i].c_str(),
 				compute_services[i].c_str(), 0, hints, &info);
 		assert(res == 0);

@@ -313,12 +313,12 @@ void InputChannelSender::on_connected(struct fid_domain* pd) {
 				data_source_.data_send_buffer().bytes(), FI_WRITE, 0,
 				Provider::requested_key++, 0, &mr_data_, nullptr);
 		if (err) {
-			std::cout << strerror(-err) << std::endl;
+			L_(error) << strerror(-err);
 			throw LibfabricException("fi_mr_reg failed for data_send_buffer");
 		}
 
 		if (!mr_data_) {
-			L_(error)<< "fi_mr_reg failed for mr_data: " << strerror(errno);
+			L_(error) << "fi_mr_reg failed for mr_data: " << strerror(errno);
 			throw LibfabricException("registration of memory region failed");
 		}
 
@@ -328,7 +328,7 @@ void InputChannelSender::on_connected(struct fid_domain* pd) {
 						data_source_.desc_send_buffer().bytes(), FI_WRITE, 0,
 						Provider::requested_key++, 0, &mr_desc_, nullptr);
 		if (err) {
-			std::cout << fi_strerror(-err) << std::endl;
+			L_(error) << fi_strerror(-err);
 			throw LibfabricException("fi_mr_reg failed for desc_send_buffer");
 		}
 
@@ -340,7 +340,7 @@ void InputChannelSender::on_connected(struct fid_domain* pd) {
 }
 
 void InputChannelSender::on_rejected(struct fi_eq_err_entry* event) {
-	std::cout << "InputChannelSender:on_rejected" << std::endl;
+	L_(debug) << "InputChannelSender:on_rejected";
 
 	InputChannelConnection* conn =
 			static_cast<InputChannelConnection*>(event->fid->context);
@@ -349,7 +349,7 @@ void InputChannelSender::on_rejected(struct fi_eq_err_entry* event) {
 	uint_fast16_t i = conn->index();
 	conn_.at(i) = nullptr;
 
-	std::cout << "retrying: " << i << std::endl;
+	L_(debug) << "retrying: " << i;
 	// immediately initiate retry
 	std::unique_ptr<InputChannelConnection> connection =
 			create_input_node_connection(i);

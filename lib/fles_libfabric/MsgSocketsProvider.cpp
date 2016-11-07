@@ -86,13 +86,11 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
 
     assert(accept_info->addr_format == FI_SOCKADDR_IN);
 
-    std::cout << accept_info->fabric_attr->prov_name << std::endl;
     // SOCKADDR_IN
     // info->src_addr
     struct sockaddr_in* src = (struct sockaddr_in*)accept_info->src_addr;
-    std::cout << "calling passive_ep:" << hostname << ": " << port_s
-              << std::endl;
-    std::cout << ntohs(src->sin_port) << std::endl;
+    L_(debug) << "calling passive_ep:" << hostname << ": " << port_s;
+    L_(debug) << ntohs(src->sin_port);
     res = fi_passive_ep(fabric_, accept_info, &pep, nullptr);
     if (res)
         throw LibfabricException("fi_passive_ep in accept failed");
