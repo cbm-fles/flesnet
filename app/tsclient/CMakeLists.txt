@@ -11,7 +11,7 @@ target_include_directories(tsclient SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(tsclient
   fles_ipc fles_core logging crcutil
-  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZMQ_LIBRARIES}
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")

@@ -16,7 +16,7 @@ target_include_directories(mstool SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(mstool
   fles_ipc fles_core flib_ipc logging crcutil
-  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZMQ_LIBRARIES}
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
