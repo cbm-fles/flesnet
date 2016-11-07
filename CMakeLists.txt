@@ -1,6 +1,6 @@
 # Copyright 2013-2016 Jan de Cuveland <cmail@cuveland.de>
 
-cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
 project(fles)
 
 option(COVERALLS "Turn on coveralls support" OFF)
@@ -23,7 +23,7 @@ else()
   find_library(ZMQ_LIBRARIES zmq)
 endif()
 
-find_package(Boost 1.54.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex)
+find_package(Boost 1.55.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex)
 find_package(Threads REQUIRED)
 
 find_package(RDMA)
