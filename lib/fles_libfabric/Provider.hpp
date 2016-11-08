@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <rdma/fabric.h>
+#include <log.hpp>
 
 class Provider
 {

@@ -113,6 +113,7 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
 	int err = fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), service.c_str(),
 	FI_SOURCE, hints, &info2);
 	if (err) {
+		L_(fatal) << "fi_getinfo failed in make_endpoint: " << err << "=" << fi_strerror(-err);
 		throw LibfabricException("fi_getinfo failed in make_endpoint");
 	}
 
@@ -130,33 +131,41 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
 	cq_attr.wait_set = nullptr;
 	res = fi_cq_open(pd_, &cq_attr, &listening_cq_, nullptr);
 	if (!listening_cq_) {
-		L_(error) << strerror(-res);
+		L_(fatal) << "fi_cq_open failed: " << res << "=" << fi_strerror(-res);
 		throw LibfabricException("fi_cq_open failed");
 	}
 
 	err = fi_endpoint(pd_, info2, ep, this);
-	if (err)
+	if (err){
+		L_(fatal) << "fi_cq_open failed: " << err << "=" << fi_strerror(-err);
 		throw LibfabricException("fi_endpoint failed");
+	}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 	if (Provider::getInst()->has_eq_at_eps()) {
 		err = fi_ep_bind(*ep, (fid_t) eq_, 0);
-		if (err)
+		if (err){
+			L_(fatal) << "fi_ep_bind failed (eq_): " << err << "=" << fi_strerror(-err);
 			throw LibfabricException("fi_ep_bind failed (eq_)");
+		}
 	}
 	err = fi_ep_bind(*ep, (fid_t) listening_cq_, FI_SEND | FI_RECV);
-	if (err)
+	if (err){
+		L_(fatal) << "fi_ep_bind failed (cq): " << err << "=" << fi_strerror(-err);
 		throw LibfabricException("fi_ep_bind failed (cq)");
+	}
 	if (Provider::getInst()->has_av()) {
 		err = fi_ep_bind(*ep, (fid_t) av_, 0);
-		if (err)
+		if (err){
+			L_(fatal) << "fi_ep_bind failed (av): " << err << "=" << fi_strerror(-err);
 			throw LibfabricException("fi_ep_bind failed (av)");
+		}
 	}
 #pragma GCC diagnostic pop
 	err = fi_enable(*ep);
 	if (err) {
-		L_(error) << strerror(-err);
+		L_(fatal) << "fi_enable failed: " << err << "=" << fi_strerror(-err);
 		throw LibfabricException("fi_enable failed");
 	}
 
@@ -165,8 +174,10 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
 			sizeof(InputChannelStatusMessage), FI_RECV, 0, requested_key++, 0,
 			&mr_recv_, nullptr);
 
-	if (res)
+	if (res){
+		L_(fatal) << "fi_mr_reg failed: " << res << "=" << fi_strerror(-res);
 		throw LibfabricException("fi_mr_reg failed");
+	}
 
 	if (!mr_recv_)
 		throw LibfabricException(
@@ -208,9 +219,9 @@ void TimesliceBuilder::bootstrap_wo_connections() {
 			sizeof(recv_connect_message), FI_RECV, 0,
 			Provider::requested_key++, 0, &mr_recv_connect, nullptr);
 	if (err) {
+		L_(fatal) << "fi_mr_reg failed for recv msg in compute-buffer: " << err << "=" << fi_strerror(-err);
 		throw LibfabricException(
 				"fi_mr_reg failed for recv msg in compute-buffer");
-		L_(error) << strerror(-err);
 	}
 
 // prepare recv message
@@ -242,6 +253,7 @@ void TimesliceBuilder::bootstrap_wo_connections() {
 
 		while ((ne = fi_cq_read(listening_cq_, &wc, ne_max))) {
 			if ((ne < 0) && (ne != -FI_EAGAIN)) {
+				L_(fatal) << "fi_cq_read failed: " << ne << "=" << fi_strerror(-ne);
 				throw LibfabricException("fi_cq_read failed");
 			}
 			if (ne == FI_SEND) {

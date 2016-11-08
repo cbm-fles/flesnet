@@ -63,8 +63,10 @@ struct fi_info* MsgSocketsProvider::exists(std::string local_host_name)
 MsgSocketsProvider::MsgSocketsProvider(struct fi_info* info) : info_(info)
 {
     int res = fi_fabric(info_->fabric_attr, &fabric_, nullptr);
-    if (res)
+    if (res){
+    	L_(fatal) << "fi_fabric failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("fi_fabric failed");
+    }
 }
 
 void MsgSocketsProvider::accept(struct fid_pep* pep,
@@ -78,16 +80,20 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
     int res = fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), port_s.c_str(),
                          FI_SOURCE, info_, &accept_info);
 
-    if (res)
+    if (res){
+    	L_(fatal) << "lookup " << hostname << " in accept failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("lookup "+ hostname +" in accept failed");
+    }
 
     // inet_ntop(AF_INET, &(sa.sin_addr), str, INET_ADDRSTRLEN);
 
     assert(accept_info->addr_format == FI_SOCKADDR_IN);
 
     res = fi_passive_ep(fabric_, accept_info, &pep, nullptr);
-    if (res)
+    if (res){
+    	L_(fatal) << "fi_passive_ep in accept failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("fi_passive_ep in accept failed");
+    }
     /* not supported
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -98,11 +104,15 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
     */
     assert(eq != nullptr);
     res = fi_pep_bind(pep, &eq->fid, 0);
-    if (res)
+    if (res){
+    	L_(fatal) << "fi_pep_bind in accept failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("fi_pep_bind in accept failed");
+    }
     res = fi_listen(pep);
-    if (res)
+    if (res){
+    	L_(fatal) << "fi_listen in accept failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("fi_listen in accept failed");
+    }
 }
 
 void MsgSocketsProvider::connect(fid_ep* ep,
@@ -115,7 +125,7 @@ void MsgSocketsProvider::connect(fid_ep* ep,
 {
     int res = fi_connect(ep, addr, param, param_len);
     if (res) {
-        printf("res = %d %s\n", res, fi_strerror(-res));
+    	L_(fatal) << "fi_connect failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("fi_connect failed");
     }
 }

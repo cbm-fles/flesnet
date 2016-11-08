@@ -55,8 +55,10 @@ struct fi_info* GNIProvider::exists(std::string local_host_name) {
 GNIProvider::GNIProvider(struct fi_info* info) :
 		info_(info) {
 	int res = fi_fabric(info_->fabric_attr, &fabric_, nullptr);
-	if (res)
+	if (res){
+		L_(fatal) << "fi_fabric failed: " << res << "=" << fi_strerror(-res);
 		throw LibfabricException("fi_fabric failed");
+	}
 }
 
 void GNIProvider::accept(struct fid_pep* /*pep*/,

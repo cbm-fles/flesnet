@@ -8,6 +8,7 @@
 
 #include <rdma/fi_endpoint.h>
 #include <rdma/fi_domain.h>
+#include <rdma/fi_errno.h>
 
 #include <cstdint>
 #include <string>

@@ -300,8 +300,8 @@ void InputChannelConnection::setup_mr(struct fid_domain* pd) {
 			sizeof(ComputeNodeStatusMessage),
 			FI_WRITE, 0, Provider::requested_key++, 0, &mr_recv_, nullptr);
 	if (err) {
+		L_(fatal) << "fi_mr_reg failed for recv msg: " << err << "=" << fi_strerror(-err);
 		throw LibfabricException("fi_mr_reg failed for recv msg");
-		L_(error) << strerror(-err);
 	}
 
 	if (!mr_recv_)
@@ -312,7 +312,7 @@ void InputChannelConnection::setup_mr(struct fid_domain* pd) {
 			sizeof(send_status_message_),
 			FI_WRITE, 0, Provider::requested_key++, 0, &mr_send_, nullptr);
 	if (err) {
-		L_(error) << strerror(-err);
+		L_(fatal) << "fi_mr_reg failed for send msg: " << err << "=" << fi_strerror(-err);
 		throw LibfabricException("fi_mr_reg failed for send msg");
 	}
 

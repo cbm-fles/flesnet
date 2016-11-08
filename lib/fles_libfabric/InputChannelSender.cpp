@@ -145,7 +145,7 @@ void InputChannelSender::operator()() {
 
 		summary();
 	} catch (std::exception& e) {
-		L_(error)<< "exception in InputChannelSender: " << e.what();
+		L_(fatal)<< "exception in InputChannelSender: " << e.what();
 	}
 }
 
@@ -313,12 +313,12 @@ void InputChannelSender::on_connected(struct fid_domain* pd) {
 				data_source_.data_send_buffer().bytes(), FI_WRITE, 0,
 				Provider::requested_key++, 0, &mr_data_, nullptr);
 		if (err) {
-			L_(error) << strerror(-err);
+			L_(fatal) << "fi_mr_reg failed for data_send_buffer: " << err << "=" << fi_strerror(-err);
 			throw LibfabricException("fi_mr_reg failed for data_send_buffer");
 		}
 
 		if (!mr_data_) {
-			L_(error) << "fi_mr_reg failed for mr_data: " << strerror(errno);
+			L_(fatal) << "fi_mr_reg failed for mr_data: " << strerror(errno);
 			throw LibfabricException("registration of memory region failed");
 		}
 
@@ -328,12 +328,12 @@ void InputChannelSender::on_connected(struct fid_domain* pd) {
 						data_source_.desc_send_buffer().bytes(), FI_WRITE, 0,
 						Provider::requested_key++, 0, &mr_desc_, nullptr);
 		if (err) {
-			L_(error) << fi_strerror(-err);
+			L_(fatal) << "fi_mr_reg failed for desc_send_buffer: " << err << "=" << fi_strerror(-err);
 			throw LibfabricException("fi_mr_reg failed for desc_send_buffer");
 		}
 
 		if (!mr_desc_) {
-			L_(error)<< "fi_mr_reg failed for mr_desc: " << strerror(errno);
+			L_(fatal)<< "fi_mr_reg failed for mr_desc: " << strerror(errno);
 			throw LibfabricException("registration of memory region failed");
 		}
 	}
@@ -518,7 +518,7 @@ void InputChannelSender::on_completion(uint64_t wr_id) {
 	}break;
 
 	default:
-	L_(error) << "[i" << input_index_ << "] "
+	L_(fatal) << "[i" << input_index_ << "] "
 	<< "wc for unknown wr_id=" << (wr_id & 0xFF);
 	throw LibfabricException("wc for unknown wr_id");
 }

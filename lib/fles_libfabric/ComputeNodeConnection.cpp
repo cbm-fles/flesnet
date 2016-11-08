@@ -107,26 +107,29 @@ void ComputeNodeConnection::setup_mr(struct fid_domain* pd) {
 			* sizeof(fles::TimesliceComponentDescriptor);
 	res = fi_mr_reg(pd, data_ptr_, data_bytes, FI_WRITE | FI_REMOTE_WRITE, 0,
 			Provider::requested_key++, 0, &mr_data_, nullptr);
-	if (res)
+	if (res){
+		L_(fatal) << "fi_mr_reg failed for data_ptr: " << res << "=" << fi_strerror(-res);
 		throw LibfabricException("fi_mr_reg failed for data_ptr");
+	}
 	res = fi_mr_reg(pd, desc_ptr_, desc_bytes, FI_WRITE | FI_REMOTE_WRITE, 0,
 			Provider::requested_key++, 0, &mr_desc_, nullptr);
-	if (res)
+	if (res){
+		L_(fatal) << "fi_mr_reg failed for desc_ptr: " << res << "=" << fi_strerror(-res);
 		throw LibfabricException("fi_mr_reg failed for desc_ptr");
+	}
 	res = fi_mr_reg(pd, &send_status_message_, sizeof(ComputeNodeStatusMessage),
 	FI_SEND, 0, Provider::requested_key++, 0, &mr_send_, nullptr);
-	if (res)
+	if (res){
+		L_(fatal) << "fi_mr_reg failed for send: " << res << "=" << fi_strerror(-res);
 		throw LibfabricException("fi_mr_reg failed for send");
+	}
 	res = fi_mr_reg(pd, &recv_status_message_,
 			sizeof(InputChannelStatusMessage),
 			FI_RECV, 0, Provider::requested_key++, 0, &mr_recv_, nullptr);
-	if (res)
+	if (res){
+		L_(fatal) << "fi_mr_reg failed for recv: " << res << "=" << fi_strerror(-res);
 		throw LibfabricException("fi_mr_reg failed for recv");
-
-	res = fi_mr_reg(pd, &send_status_message_, sizeof(ComputeNodeStatusMessage),
-	FI_SEND, 0, Provider::requested_key++, 0, &mr_send_, nullptr);
-	if (res)
-		throw LibfabricException("fi_mr_reg failed for send");
+	}
 
 	if (!mr_data_ || !mr_desc_ || !mr_recv_ || !mr_send_)
 		throw LibfabricException(

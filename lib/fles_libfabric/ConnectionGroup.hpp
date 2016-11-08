@@ -38,8 +38,10 @@ public:
 		eq_attr.wait_obj = FI_WAIT_NONE;
 		int res = fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_,
 				nullptr);
-		if (res)
+		if (res) {
+			L_(fatal)<< "fi_eq_open failed: " << res <<"=" << fi_strerror(-res);
 			throw LibfabricException("fi_eq_open failed");
+		}
 	}
 
 	ConnectionGroup(const ConnectionGroup&) = delete;
@@ -48,13 +50,13 @@ public:
 	/// The ConnectionGroup default destructor.
 	virtual ~ConnectionGroup() {
 		for (auto& c : conn_)
-			c = nullptr;
+		c = nullptr;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 		fi_close((fid_t) eq_);
 		if (pep_ != nullptr)
-			fi_close((fid_t) pep_);
+		fi_close((fid_t) pep_);
 #pragma GCC diagnostic pop
 
 		pep_ = nullptr;
@@ -111,7 +113,7 @@ public:
 						break;
 					}
 					default: {
-						std::cout << err_event.err << std::endl;
+						L_(fatal) << "unknown error in fi_eq_readerr: " << err_event.err << fi_strerror(err_event.err);
 						throw LibfabricException("unknown error in fi_eq_readerr");
 					}
 				}
@@ -135,13 +137,13 @@ public:
 				struct fi_cq_err_entry err;
 				char buffer[256];
 				ne = fi_cq_readerr(cq_, &err, 0);
-				L_(error) << fi_strerror(err.err);
-				L_(error) << fi_cq_strerror(cq_, err.prov_errno, err.err_data,
+				L_(fatal) << fi_strerror(err.err);
+				L_(fatal) << fi_cq_strerror(cq_, err.prov_errno, err.err_data,
 						buffer, 256);
 				throw LibfabricException("fi_cq_read failed (fi_cq_readerr)");
 			}
 			if ((ne < 0) && (ne != -FI_EAGAIN)) {
-				L_(error) << fi_strerror(-ne);
+				L_(fatal) << "fi_cq_read failed: " << ne << "=" << fi_strerror(-ne);
 				throw LibfabricException("fi_cq_read failed");
 			}
 
@@ -242,10 +244,11 @@ protected:
 	{
 		L_(debug) << "create Libfabric objects";
 
-		int res =
-		fi_domain(Provider::getInst()->get_fabric(), info, &pd_, nullptr);
-		if (!pd_)
-		throw LibfabricException("fi_domain failed");
+		int res = fi_domain(Provider::getInst()->get_fabric(), info, &pd_, nullptr);
+		if (!pd_) {
+			L_(fatal) << "fi_domain failed: " << -res << "=" << fi_strerror(-res);
+			throw LibfabricException("fi_domain failed");
+		}
 
 		struct fi_cq_attr cq_attr;
 		memset(&cq_attr, 0, sizeof(cq_attr));
@@ -258,9 +261,10 @@ protected:
 		cq_attr.wait_set = nullptr;
 		res = fi_cq_open(pd_, &cq_attr, &cq_, nullptr);
 		if (!cq_) {
-			L_(error) << strerror(-res);
+			L_(fatal) << "fi_cq_open failed: " << -res << "=" << fi_strerror(-res);
 			throw LibfabricException("fi_cq_open failed");
 		}
+
 		if (Provider::getInst()->has_av()) {
 			struct fi_av_attr av_attr;
 
@@ -271,9 +275,10 @@ protected:
 			res = fi_av_open(pd_, &av_attr, &av_, NULL);
 			assert (res == 0);
 			if (!av_) {
-				L_(error) << strerror(-res);
+				L_(fatal) << "fi_av_open failed: " << res << "=" << fi_strerror(-res);
 				throw LibfabricException("fi_av_open failed");
 			}
+
 			Provider::getInst()->set_hostnames_and_services(
 					av_, compute_hostnames, compute_services, fi_addrs);
 		}
