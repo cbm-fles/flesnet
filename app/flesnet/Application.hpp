@@ -2,13 +2,15 @@
 #pragma once
 
 #include "ComponentSenderZeromq.hpp"
-#include "InputChannelSender.hpp"
 #include "Parameters.hpp"
 #include "ThreadContainer.hpp"
 #include "TimesliceBuffer.hpp"
-#include "TimesliceBuilder.hpp"
 #include "TimesliceBuilderZeromq.hpp"
 #include "shm_device_client.hpp"
+#ifdef RDMA
+#include "InputChannelSender.hpp"
+#include "TimesliceBuilder.hpp"
+#endif
 #include <boost/lexical_cast.hpp>
 #include <csignal>
 #include <memory>
@@ -45,9 +47,11 @@ private:
     std::vector<std::unique_ptr<InputBufferReadInterface>> data_sources_;
     std::vector<std::unique_ptr<TimesliceBuffer>> timeslice_buffers_;
 
+#ifdef RDMA
     /// The application's RDMA transport objects
     std::vector<std::unique_ptr<TimesliceBuilder>> timeslice_builders_;
     std::vector<std::unique_ptr<InputChannelSender>> input_channel_senders_;
+#endif
 
     /// The application's ZeroMQ transport objects
     std::vector<std::unique_ptr<TimesliceBuilderZeromq>>

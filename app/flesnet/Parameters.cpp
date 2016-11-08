@@ -246,6 +246,10 @@ void Parameters::parse_options(int argc, char* argv[])
         input_indexes_ = std::vector<unsigned>{0};
         compute_nodes_ = std::vector<std::string>{"127.0.0.1"};
         compute_indexes_ = std::vector<unsigned>{0};
+        if (zeromq_) {
+            throw ParametersException(
+                "no zeromq transport in stand-alone mode");
+        }
     } else {
         if (!vm.count("input-nodes"))
             throw ParametersException("list of input nodes is empty");

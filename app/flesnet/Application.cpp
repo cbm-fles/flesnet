@@ -77,10 +77,14 @@ Application::Application(Parameters const& par,
                                            par_.timeslice_size()));
             timeslice_builders_zeromq_.push_back(std::move(builder));
         } else {
+#ifdef RDMA
             std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
                 i, *tsb, par_.base_port() + i, input_nodes_size,
                 par_.timeslice_size(), signal_status_, false));
             timeslice_builders_.push_back(std::move(builder));
+#else
+            L_(fatal) << "flesnet built without RDMA support";
+#endif
         }
 
         timeslice_buffers_.push_back(std::move(tsb));
@@ -127,11 +131,15 @@ Application::Application(Parameters const& par,
                                           par.overlap_size(), listen_address));
             component_senders_zeromq_.push_back(std::move(sender));
         } else {
+#ifdef RDMA
             std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
                 index, *(data_sources_.at(c).get()), par.compute_nodes(),
                 compute_services, par.timeslice_size(), par.overlap_size(),
                 par.max_timeslice_number()));
             input_channel_senders_.push_back(std::move(sender));
+#else
+            L_(fatal) << "flesnet built without RDMA support";
+#endif
         }
     }
 }
@@ -140,8 +148,9 @@ Application::~Application() {}
 
 void Application::run()
 {
-    // Do not spawn additional thread if only one is needed, simplifies
-    // debugging
+// Do not spawn additional thread if only one is needed, simplifies
+// debugging
+#ifdef RDMA
     if (timeslice_builders_.size() == 1 && input_channel_senders_.empty()) {
         L_(debug) << "using existing thread for single timeslice builder";
         (*timeslice_builders_[0])();
@@ -152,12 +161,14 @@ void Application::run()
         (*input_channel_senders_[0])();
         return;
     };
+#endif
 
     // FIXME: temporary code, need to implement interrupt
     boost::thread_group threads;
     std::vector<boost::unique_future<void>> futures;
     bool stop = false;
 
+#ifdef RDMA
     for (auto& buffer : timeslice_builders_) {
         boost::packaged_task<void> task(std::ref(*buffer));
         futures.push_back(task.get_future());
@@ -169,6 +180,7 @@ void Application::run()
         futures.push_back(task.get_future());
         threads.add_thread(new boost::thread(std::move(task)));
     }
+#endif
 
     for (auto& buffer : timeslice_builders_zeromq_) {
         boost::packaged_task<void> task(std::ref(*buffer));

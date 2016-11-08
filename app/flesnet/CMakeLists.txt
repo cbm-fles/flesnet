@@ -10,9 +10,14 @@ target_compile_definitions(flesnet PUBLIC BOOST_ALL_DYN_LINK)
 target_include_directories(flesnet SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(flesnet
-  flib_ipc fles_core fles_ipc fles_rdma fles_zeromq logging
+  flib_ipc fles_core fles_ipc fles_zeromq logging
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
 )
+
+if (USE_RDMA AND RDMA_FOUND)
+  target_compile_definitions(flesnet PUBLIC RDMA)
+  target_link_libraries(flesnet fles_rdma)
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_libraries(flesnet rt atomic)
