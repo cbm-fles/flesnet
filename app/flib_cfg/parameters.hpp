@@ -125,55 +125,59 @@ private:
     unsigned log_level;
 
     po::options_description generic("Generic options");
-    generic.add_options()("help,h", "produce help message")(
-        "config-file,c",
-        po::value<std::string>(&config_file)->default_value("flib.cfg"),
-        "name of a configuration file")(
-        "log-level,l", po::value<unsigned>(&log_level)->default_value(2),
-        "set the log level (all:0)");
+    auto generic_add = generic.add_options();
+    generic_add("help,h", "produce help message");
+    generic_add("config-file,c",
+                po::value<std::string>(&config_file)->default_value("flib.cfg"),
+                "name of a configuration file");
+    generic_add("log-level,l",
+                po::value<unsigned>(&log_level)->default_value(2),
+                "set the log level (all:0)");
 
     po::options_description config("Configuration (flib.cfg or cmd line)");
-    config.add_options()("flib-addr,i", po::value<pci_addr>(),
-                         "PCI BDF address of target FLIB in BB:DD.F format")(
-        "identify", po::value<bool>(&_identify)->default_value(false),
-        "toggle FLIB ID led")(
-        "mc-size,t", po::value<uint32_t>(),
-        "size of pattern generator microslices in units of "
-        "1024 ns (31 bit wide)")("pgen-rate,r", po::value<float>(),
-                                 "MS fill level of pattern generator in [0,1]")
+    auto config_add = config.add_options();
+    config_add("flib-addr,i", po::value<pci_addr>(),
+               "PCI BDF address of target FLIB in BB:DD.F format");
+    config_add("identify", po::value<bool>(&_identify)->default_value(false),
+               "toggle FLIB ID led");
+    config_add("mc-size,t", po::value<uint32_t>(),
+               "size of pattern generator microslices in units of "
+               "1024 ns (31 bit wide)");
+    config_add("pgen-rate,r", po::value<float>(),
+               "MS fill level of pattern generator in [0,1]");
 
-        ("l0_source", po::value<std::string>(),
-         "Link 0 data source <disable|flim|pgen_far|pgen_near>")(
-            "l0_eq_id", po::value<std::string>(),
-            "Equipment identifier of link 0 pgen data source (16 Bit)")(
-            "l1_source", po::value<std::string>(),
-            "Link 1 data source <disable|flim|pgen_far|pgen_near>")(
-            "l1_eq_id", po::value<std::string>(),
-            "Equipment identifier of link 1 pgen data source (16 Bit)")(
-            "l2_source", po::value<std::string>(),
-            "Link 2 data source <disable|flim|pgen_far|pgen_near>")(
-            "l2_eq_id", po::value<std::string>(),
-            "Equipment identifier of link 2 pgen data source (16 Bit)")(
-            "l3_source", po::value<std::string>(),
-            "Link 3 data source <disable|flim|pgen_far|pgen_near>")(
-            "l3_eq_id", po::value<std::string>(),
-            "Equipment identifier of link 3 pgen data source (16 Bit)")(
-            "l4_source", po::value<std::string>(),
-            "Link 4 data source <disable|flim|pgen_far|pgen_near>")(
-            "l4_eq_id", po::value<std::string>(),
-            "Equipment identifier of link 4 pgen data source (16 Bit)")(
-            "l5_source", po::value<std::string>(),
-            "Link 5 data source <disable|flim|pgen_far|pgen_near>")(
-            "l5_eq_id", po::value<std::string>(),
-            "Equipment identifier of link 5 pgen data source (16 Bit)")(
-            "l6_source", po::value<std::string>(),
-            "Link 6 data source <disable|flim|pgen_far|pgen_near>")(
-            "l6_eq_id", po::value<std::string>(),
-            "Equipment identifier of link 6 pgen data source (16 Bit)")(
-            "l7_source", po::value<std::string>(),
-            "Link 7 data source <disable|flim|pgen_far|pgen_near>")(
-            "l7_eq_id", po::value<std::string>(),
-            "Equipment identifier of link 7 pgen data source (16 Bit)");
+    config_add("l0_source", po::value<std::string>(),
+               "Link 0 data source <disable|flim|pgen_far|pgen_near>");
+    config_add("l0_eq_id", po::value<std::string>(),
+               "Equipment identifier of link 0 pgen data source (16 Bit)");
+    config_add("l1_source", po::value<std::string>(),
+               "Link 1 data source <disable|flim|pgen_far|pgen_near>");
+    config_add("l1_eq_id", po::value<std::string>(),
+               "Equipment identifier of link 1 pgen data source (16 Bit)");
+    config_add("l2_source", po::value<std::string>(),
+               "Link 2 data source <disable|flim|pgen_far|pgen_near>");
+    config_add("l2_eq_id", po::value<std::string>(),
+               "Equipment identifier of link 2 pgen data source (16 Bit)");
+    config_add("l3_source", po::value<std::string>(),
+               "Link 3 data source <disable|flim|pgen_far|pgen_near>");
+    config_add("l3_eq_id", po::value<std::string>(),
+               "Equipment identifier of link 3 pgen data source (16 Bit)");
+    config_add("l4_source", po::value<std::string>(),
+               "Link 4 data source <disable|flim|pgen_far|pgen_near>");
+    config_add("l4_eq_id", po::value<std::string>(),
+               "Equipment identifier of link 4 pgen data source (16 Bit)");
+    config_add("l5_source", po::value<std::string>(),
+               "Link 5 data source <disable|flim|pgen_far|pgen_near>");
+    config_add("l5_eq_id", po::value<std::string>(),
+               "Equipment identifier of link 5 pgen data source (16 Bit)");
+    config_add("l6_source", po::value<std::string>(),
+               "Link 6 data source <disable|flim|pgen_far|pgen_near>");
+    config_add("l6_eq_id", po::value<std::string>(),
+               "Equipment identifier of link 6 pgen data source (16 Bit)");
+    config_add("l7_source", po::value<std::string>(),
+               "Link 7 data source <disable|flim|pgen_far|pgen_near>");
+    config_add("l7_eq_id", po::value<std::string>(),
+               "Equipment identifier of link 7 pgen data source (16 Bit)");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
