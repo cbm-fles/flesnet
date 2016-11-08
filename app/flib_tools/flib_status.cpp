@@ -6,12 +6,12 @@
 
 #include "flib.h"
 #include "device_operator.hpp"
-#include <iostream>
-#include <thread>
 #include <chrono>
 #include <csignal>
+#include <iostream>
+#include <thread>
 
-// measurement interval (equals output interval) 
+// measurement interval (equals output interval)
 constexpr uint32_t interval_ms = 1000;
 constexpr bool clear_screen = true;
 
@@ -53,7 +53,7 @@ static void s_catch_signals(void) {
 
 int main(int argc, char* argv[]) {
   s_catch_signals();
-  
+
   try {
 
     // display help if any parameter given
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
       }
     }
     std::cout << "Starting measurements" << std::endl;
-    
+
     // main output loop
     size_t loop_cnt = 0;
     while (s_interrupted == 0) {
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
         ++j;
       }
       std::cout << std::endl;
-   
+
       std::cout
           << "link  data_sel  up  he  se  "
              "eo  do  d_max     dma_s    data_s    desc_s        bp     rate\n";
@@ -132,13 +132,13 @@ int main(int argc, char* argv[]) {
       for (auto& flib : flibs) {
         size_t num_links = flib->number_of_hw_links();
         std::vector<flib::flib_link_flesin*> links = flib->links();
-   
+
         std::stringstream ss;
         for (size_t i = 0; i < num_links; ++i) {
           flib::flib_link_flesin::link_status_t status =
               links.at(i)->link_status();
           flib::flib_link_flesin::link_perf_t perf = links.at(i)->link_perf();
-   
+
           ss << std::setw(2) << j << "/" << i << "  ";
           ss << std::setw(8) << links.at(i)->data_sel() << "  ";
           // status
