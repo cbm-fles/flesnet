@@ -73,8 +73,9 @@ Application::Application(Parameters const& par,
 
         if (par_.zeromq()) {
             std::unique_ptr<TimesliceBuilderZeromq> builder(
-                new TimesliceBuilderZeromq(i, *tsb, input_server_addresses,
-                                           par_.timeslice_size()));
+                new TimesliceBuilderZeromq(
+                    i, *tsb, input_server_addresses, par_.timeslice_size(),
+                    par_.max_timeslice_number(), signal_status_));
             timeslice_builders_zeromq_.push_back(std::move(builder));
         } else {
 #ifdef RDMA
@@ -126,9 +127,10 @@ Application::Application(Parameters const& par,
             std::string listen_address =
                 "tcp://*:" + std::to_string(par_.base_port() + index);
             std::unique_ptr<ComponentSenderZeromq> sender(
-                new ComponentSenderZeromq(*(data_sources_.at(c).get()),
-                                          par.timeslice_size(),
-                                          par.overlap_size(), listen_address));
+                new ComponentSenderZeromq(
+                    index, *(data_sources_.at(c).get()), listen_address,
+                    par.timeslice_size(), par.overlap_size(),
+                    par.max_timeslice_number(), signal_status_));
             component_senders_zeromq_.push_back(std::move(sender));
         } else {
 #ifdef RDMA

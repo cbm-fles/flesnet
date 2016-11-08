@@ -11,10 +11,13 @@
 TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
     const std::vector<std::string> input_server_addresses,
-    uint32_t timeslice_size)
+    uint32_t timeslice_size, uint32_t max_timeslice_number,
+    volatile sig_atomic_t* signal_status)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
       input_server_addresses_(input_server_addresses),
-      timeslice_size_(timeslice_size), ts_index_(compute_index_),
+      timeslice_size_(timeslice_size),
+      max_timeslice_number_(max_timeslice_number),
+      signal_status_(signal_status), ts_index_(compute_index_),
       ack_(timeslice_buffer_.get_desc_size_exp())
 {
     zmq_context_ = zmq_ctx_new();
@@ -35,15 +38,11 @@ TimesliceBuilderZeromq::TimesliceBuilderZeromq(
 
 TimesliceBuilderZeromq::~TimesliceBuilderZeromq() {}
 
-// TODO: make endable
-// TODO: add signal handling
-// TODO: consider max_timeslice
-
 void TimesliceBuilderZeromq::operator()()
 {
     assert(connections_.size() > 0);
 
-    while (true) {
+    while (ts_index_ < max_timeslice_number_ && *signal_status_ == 0) {
         for (auto& c : connections_) {
 
             do {

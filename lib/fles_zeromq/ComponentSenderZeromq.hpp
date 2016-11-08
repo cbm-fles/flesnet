@@ -14,9 +14,11 @@ class ComponentSenderZeromq
 {
 public:
     /// The ComponentSenderZeromq default constructor.
-    ComponentSenderZeromq(InputBufferReadInterface& data_source,
-                          uint32_t timeslice_size, uint32_t overlap_size,
-                          std::string listen_address);
+    ComponentSenderZeromq(uint64_t input_index,
+                          InputBufferReadInterface& data_source,
+                          std::string listen_address, uint32_t timeslice_size,
+                          uint32_t overlap_size, uint32_t max_timeslice_number,
+                          volatile sig_atomic_t* signal_status);
 
     ComponentSenderZeromq(const ComponentSenderZeromq&) = delete;
     void operator=(const ComponentSenderZeromq&) = delete;
@@ -30,6 +32,9 @@ public:
     friend void free_ts(void* data, void* hint);
 
 private:
+    /// This component's index in the list of input components
+    uint64_t input_index_;
+
     /// Data source (e.g., FLIB via shared memory).
     InputBufferReadInterface& data_source_;
 
@@ -38,6 +43,12 @@ private:
 
     /// Constant overlap size (in microslices) of a timeslice component.
     const uint32_t overlap_size_;
+
+    /// Number of timeslices after which this run shall end
+    const uint32_t max_timeslice_number_;
+
+    /// Pointer to global signal status variable
+    volatile sig_atomic_t* signal_status_;
 
     /// ZeroMQ context.
     void* zmq_context_;

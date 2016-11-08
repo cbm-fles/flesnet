@@ -7,10 +7,13 @@
 #include <cassert>
 
 ComponentSenderZeromq::ComponentSenderZeromq(
-    InputBufferReadInterface& data_source, uint32_t timeslice_size,
-    uint32_t overlap_size, std::string listen_address)
-    : data_source_(data_source), timeslice_size_(timeslice_size),
-      overlap_size_(overlap_size),
+    uint64_t input_index, InputBufferReadInterface& data_source,
+    std::string listen_address, uint32_t timeslice_size, uint32_t overlap_size,
+    uint32_t max_timeslice_number, volatile sig_atomic_t* signal_status)
+    : input_index_(input_index), data_source_(data_source),
+      timeslice_size_(timeslice_size), overlap_size_(overlap_size),
+      max_timeslice_number_(max_timeslice_number),
+      signal_status_(signal_status),
       min_acked_({data_source.desc_buffer().size() / 4,
                   data_source.data_buffer().size() / 4})
 {
@@ -35,7 +38,7 @@ ComponentSenderZeromq::~ComponentSenderZeromq()
 
 void ComponentSenderZeromq::operator()()
 {
-    while (true) {
+    while (acked_ts_ < max_timeslice_number_ && *signal_status_ == 0) {
         zmq_msg_t request;
         int rc = zmq_msg_init(&request);
         assert(rc == 0);

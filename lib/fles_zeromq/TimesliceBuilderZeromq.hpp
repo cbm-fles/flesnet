@@ -21,7 +21,8 @@ public:
     TimesliceBuilderZeromq(
         uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
         const std::vector<std::string> input_server_addresses,
-        uint32_t timeslice_size);
+        uint32_t timeslice_size, uint32_t max_timeslice_number,
+        volatile sig_atomic_t* signal_status);
 
     TimesliceBuilderZeromq(const TimesliceBuilderZeromq&) = delete;
     void operator=(const TimesliceBuilderZeromq&) = delete;
@@ -44,6 +45,12 @@ private:
 
     /// Constant size (in microslices) of a timeslice component.
     const uint32_t timeslice_size_;
+
+    /// Number of timeslices after which this run shall end
+    const uint32_t max_timeslice_number_;
+
+    /// Pointer to global signal status variable
+    volatile sig_atomic_t* signal_status_;
 
     /// ZeroMQ context.
     void* zmq_context_;
