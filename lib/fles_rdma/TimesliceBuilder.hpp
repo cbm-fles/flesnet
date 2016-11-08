@@ -18,7 +18,8 @@ public:
     TimesliceBuilder(uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
                      unsigned short service, uint32_t num_input_nodes,
                      uint32_t timeslice_size,
-                     volatile sig_atomic_t* signal_status, bool drop);
+                     volatile sig_atomic_t* signal_status, bool drop,
+                     std::string local_node_name);
 
     TimesliceBuilder(const TimesliceBuilder&) = delete;
     void operator=(const TimesliceBuilder&) = delete;
