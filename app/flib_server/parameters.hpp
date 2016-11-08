@@ -78,6 +78,7 @@ private:
 
     std::string config_file;
     unsigned log_level;
+    std::string log_file;
 
     po::options_description generic("Generic options");
     auto generic_add = generic.add_options();
@@ -103,6 +104,8 @@ private:
                "exp. size of the descriptor buffer (number of entries)");
     config_add("log-level,l", po::value<unsigned>(&log_level)->default_value(2),
                "set the log level (all:0)");
+    config_add("log-file,L", po::value<std::string>(&log_file),
+               "name of target log file");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -132,6 +135,10 @@ private:
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
+    if (vm.count("log-file")) {
+      logging::add_file(log_file, static_cast<severity_level>(log_level));
+      L_(info) << "Logging output to " << log_file;
+    }
 
     if (vm.count("flib-addr")) {
       _flib_addr = vm["flib-addr"].as<pci_addr>();
