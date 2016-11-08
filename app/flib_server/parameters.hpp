@@ -80,28 +80,29 @@ private:
     unsigned log_level;
 
     po::options_description generic("Generic options");
-    generic.add_options()("help,h", "produce help message")(
+    auto generic_add = generic.add_options();
+    generic_add("help,h", "produce help message");
+    generic_add(
         "config-file,c",
         po::value<std::string>(&config_file)->default_value("flib_server.cfg"),
         "name of a configuration file");
 
     po::options_description config(
         "Configuration (flib_server.cfg or cmd line)");
-    config.add_options()
-
-        ("flib-addr,i", po::value<pci_addr>(),
-         "PCI BDF address of target FLIB in BB:DD.F format")(
-            "shm,o",
-            po::value<std::string>(&_shm)->default_value("flib_shared_memory"),
-            "name of the shared memory to be used")(
-            "data-buffer-size-exp",
-            po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
-            "exp. size of the data buffer in bytes")(
-            "desc-buffer-size-exp",
-            po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
-            "exp. size of the descriptor buffer (number of entries)")(
-            "log-level,l", po::value<unsigned>(&log_level)->default_value(2),
-            "set the log level (all:0)");
+    auto config_add = config.add_options();
+    config_add("flib-addr,i", po::value<pci_addr>(),
+               "PCI BDF address of target FLIB in BB:DD.F format");
+    config_add("shm,o", po::value<std::string>(&_shm)->default_value(
+                            "flib_shared_memory"),
+               "name of the shared memory to be used");
+    config_add("data-buffer-size-exp",
+               po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
+               "exp. size of the data buffer in bytes");
+    config_add("desc-buffer-size-exp",
+               po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
+               "exp. size of the descriptor buffer (number of entries)");
+    config_add("log-level,l", po::value<unsigned>(&log_level)->default_value(2),
+               "set the log level (all:0)");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
