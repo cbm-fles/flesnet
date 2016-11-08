@@ -43,7 +43,7 @@ struct fi_info* RDMSocketsProvider::exists(std::string local_host_name)
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->domain_attr->mr_mode = FI_MR_BASIC;
     hints->addr_format = FI_SOCKADDR_IN;
-    hints->fabric_attr->prov_name = "sockets";
+    hints->fabric_attr->prov_name = strdup("sockets");
 
     int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr, 0, hints, &info);
 
@@ -65,19 +65,24 @@ RDMSocketsProvider::RDMSocketsProvider(struct fi_info* info) : info_(info)
         throw LibfabricException("fi_fabric failed");
 }
 
-void RDMSocketsProvider::accept(struct fid_pep* pep,
-                                const std::string& hostname,
-                                unsigned short port, unsigned int count,
-                                fid_eq* eq)
+void RDMSocketsProvider::accept(struct fid_pep* pep __attribute__((unused)),
+                                const std::string& hostname __attribute__((unused)),
+                                unsigned short port __attribute__((unused)),
+                                unsigned int count __attribute__((unused)),
+                                fid_eq* eq __attribute__((unused)))
 {
     // there is no accept for RDM
 }
 
-void RDMSocketsProvider::connect(fid_ep* ep, uint32_t max_send_wr,
-                                 uint32_t max_send_sge, uint32_t max_recv_wr,
-                                 uint32_t max_recv_sge,
-                                 uint32_t max_inline_data, const void* param,
-                                 size_t param_len, void* addr)
+void RDMSocketsProvider::connect(fid_ep* ep __attribute__((unused)),
+                                 uint32_t max_send_wr __attribute__((unused)),
+                                 uint32_t max_send_sge __attribute__((unused)),
+                                 uint32_t max_recv_wr __attribute__((unused)),
+                                 uint32_t max_recv_sge __attribute__((unused)),
+                                 uint32_t max_inline_data __attribute__((unused)),
+                                 const void* param __attribute__((unused)),
+                                 size_t param_len __attribute__((unused)),
+                                 void* addr __attribute__((unused)))
 {
     // @todo send mr message?
 }
@@ -99,7 +104,7 @@ void RDMSocketsProvider::set_hostnames_and_services(
         hints->domain_attr->data_progress = FI_PROGRESS_AUTO;
         hints->domain_attr->threading = FI_THREAD_SAFE;
         hints->domain_attr->mr_mode = FI_MR_BASIC;
-        hints->fabric_attr->prov_name = "sockets";
+        hints->fabric_attr->prov_name = strdup("sockets");
 
         int res = fi_getinfo(FI_VERSION(1, 1), compute_hostnames[i].c_str(),
                              compute_services[i].c_str(), 0, hints, &info);

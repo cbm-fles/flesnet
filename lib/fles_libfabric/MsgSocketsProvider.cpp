@@ -43,8 +43,7 @@ struct fi_info* MsgSocketsProvider::exists(std::string local_host_name)
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->domain_attr->mr_mode = FI_MR_BASIC;
     hints->addr_format = FI_SOCKADDR_IN;
-    hints->fabric_attr->prov_name = "sockets";
-    //hints->domain_attr->name="eth0";
+    hints->fabric_attr->prov_name = strdup("sockets");
 
     int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr,
                          FI_SOURCE, hints, &info);
@@ -70,7 +69,7 @@ MsgSocketsProvider::MsgSocketsProvider(struct fi_info* info) : info_(info)
 
 void MsgSocketsProvider::accept(struct fid_pep* pep,
                                 const std::string& hostname,
-                                unsigned short port, unsigned int count,
+                                unsigned short port, unsigned int /*count*/,
                                 fid_eq* eq)
 {
     std::string port_s = std::to_string(port);
@@ -86,11 +85,6 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
 
     assert(accept_info->addr_format == FI_SOCKADDR_IN);
 
-    // SOCKADDR_IN
-    // info->src_addr
-    struct sockaddr_in* src = (struct sockaddr_in*)accept_info->src_addr;
-    /*L_() << "calling passive_ep:" << hostname << ": " << port_s;
-    L_(debug) << ntohs(src->sin_port);*/
     res = fi_passive_ep(fabric_, accept_info, &pep, nullptr);
     if (res)
         throw LibfabricException("fi_passive_ep in accept failed");
@@ -100,9 +94,10 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
     res = fi_control((fid_t)pep, FI_BACKLOG, &count_);
     if (res)
         throw LibfabricException("fi_control in accept failed");
+#pragma GCC diagnostic pop
     */
     assert(eq != nullptr);
-    res = fi_pep_bind(pep, (fid_t)eq, 0);
+    res = fi_pep_bind(pep, &eq->fid, 0);
     if (res)
         throw LibfabricException("fi_pep_bind in accept failed");
     res = fi_listen(pep);
@@ -110,11 +105,13 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
         throw LibfabricException("fi_listen in accept failed");
 }
 
-void MsgSocketsProvider::connect(fid_ep* ep, uint32_t max_send_wr,
-                                 uint32_t max_send_sge, uint32_t max_recv_wr,
-                                 uint32_t max_recv_sge,
-                                 uint32_t max_inline_data, const void* param,
-                                 size_t param_len, void* addr)
+void MsgSocketsProvider::connect(fid_ep* ep,
+                                 uint32_t /*max_send_wr*/,
+                                 uint32_t /*max_send_sge*/,
+                                 uint32_t /*max_recv_wr*/,
+                                 uint32_t /*max_recv_sge*/,
+                                 uint32_t /*max_inline_data*/,
+                                 const void* param, size_t param_len, void* addr)
 {
     int res = fi_connect(ep, addr, param, param_len);
     if (res) {

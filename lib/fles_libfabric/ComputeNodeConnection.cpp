@@ -282,7 +282,7 @@ void ComputeNodeConnection::send_ep_addr() {
 
 	size_t addr_len = sizeof(send_status_message_.my_address);
 	send_status_message_.connect = true;
-	int res = fi_getname((fid_t) ep_, &send_status_message_.my_address,
+	int res = fi_getname(&ep_->fid, &send_status_message_.my_address,
 			&addr_len);
 	assert(res == 0);
 	send_wr.addr = partner_addr_;

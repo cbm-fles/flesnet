@@ -35,7 +35,7 @@ struct fi_info* GNIProvider::exists(std::string local_host_name) {
 	hints->domain_attr->data_progress = FI_PROGRESS_AUTO;
 	hints->domain_attr->threading = FI_THREAD_SAFE;
 	hints->domain_attr->mr_mode = FI_MR_BASIC;
-	hints->fabric_attr->prov_name = "gni";
+	hints->fabric_attr->prov_name = strdup("gni");
 
 	int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr, 0,
 			hints, &info);
@@ -60,29 +60,25 @@ GNIProvider::GNIProvider(struct fi_info* info) :
 }
 
 void GNIProvider::accept(struct fid_pep* /*pep*/,
-		const std::string& /*hostname*/, unsigned short /*port*/,
-		unsigned int /*count*/, fid_eq* /*eq*/) {
-	// there is no accept for GNI
+                         const std::string& /*hostname*/,
+                         unsigned short /*port*/,
+                         unsigned int /*count*/, fid_eq* /*eq*/) {
+  // there is no accept for GNI
 }
 
-void GNIProvider::connect(fid_ep* ep, uint32_t max_send_wr,
-		uint32_t max_send_sge, uint32_t max_recv_wr, uint32_t max_recv_sge,
-		uint32_t max_inline_data, const void* param, size_t param_len,
-		void* /*addr*/) {
-	// @todo send mr message?
+void GNIProvider::connect(fid_ep* /*ep*/, uint32_t /*max_send_wr*/,
+                          uint32_t /*max_send_sge*/, uint32_t /*max_recv_wr*/,
+                          uint32_t /*max_recv_sge*/,
+                          uint32_t /*max_inline_data*/, const void* /*param*/,
+                          size_t /*param_len*/, void* /*addr*/) {
 }
 
 void GNIProvider::set_hostnames_and_services(struct fid_av* av,
 		const std::vector<std::string>& compute_hostnames,
 		const std::vector<std::string>& compute_services,
 		std::vector<fi_addr_t>& fi_addrs) {
-	struct fi_info* info, *hints;
-
-//    std::cout << compute_hostnames.size() << std::endl;
 	for (size_t i = 0; i < compute_hostnames.size(); i++) {
 		fi_addr_t fi_addr;
-		info = nullptr;
-		hints = fi_allocinfo();
 		struct fi_info* info = nullptr;
 		struct fi_info* hints = fi_allocinfo();
 
@@ -91,10 +87,8 @@ void GNIProvider::set_hostnames_and_services(struct fid_av* av,
 		hints->domain_attr->data_progress = FI_PROGRESS_AUTO;
 		hints->domain_attr->threading = FI_THREAD_SAFE;
 		hints->domain_attr->mr_mode = FI_MR_BASIC;
-		hints->fabric_attr->prov_name = "gni";
+		hints->fabric_attr->prov_name = strdup("gni");
 
-		/*std::cout << compute_hostnames[i].c_str() << " "
-				<< compute_services[i].c_str() << std::endl;*/
 		int res = fi_getinfo(FI_VERSION(1, 1), compute_hostnames[i].c_str(),
 				compute_services[i].c_str(), 0, hints, &info);
 		assert(res == 0);
@@ -102,7 +96,6 @@ void GNIProvider::set_hostnames_and_services(struct fid_av* av,
 		assert(info->dest_addr != NULL);
 		res = fi_av_insert(av, info->dest_addr, 1, &fi_addr, 0, NULL);
 		assert(res == 1);
-		assert(fi_addr >= 0);
 		fi_addrs.push_back(fi_addr);
 		//fi_freeinfo(hints);
 	}

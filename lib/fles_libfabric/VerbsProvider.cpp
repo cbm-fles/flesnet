@@ -37,7 +37,7 @@ struct fi_info *VerbsProvider::exists(std::string local_host_name) {
     hints->rx_attr->mode = FI_LOCAL_MR | FI_RX_CQ_DATA;
     hints->domain_attr->threading = FI_THREAD_SAFE;
     hints->addr_format = FI_SOCKADDR_IN;
-    hints->fabric_attr->prov_name = "verbs";
+    hints->fabric_attr->prov_name = strdup("verbs");
 
     int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr,
                          FI_SOURCE, hints, &info);
@@ -83,7 +83,7 @@ void VerbsProvider::accept(struct fid_pep* pep, const std::string& hostname,
     if (res)
         throw LibfabricException("fi_control in accept failed");
     assert(eq != nullptr);
-    res = fi_pep_bind(pep, (fid_t)eq, 0);
+    res = fi_pep_bind(pep, &eq->fid, 0);
     if (res)
         throw LibfabricException("fi_pep_bind in accept failed");
 #pragma GCC diagnostic pop
@@ -92,9 +92,9 @@ void VerbsProvider::accept(struct fid_pep* pep, const std::string& hostname,
         throw LibfabricException("fi_listen in accept failed");
 }
 
-void VerbsProvider::connect(fid_ep* ep, uint32_t max_send_wr,
-                            uint32_t max_send_sge, uint32_t max_recv_wr,
-                            uint32_t max_recv_sge, uint32_t max_inline_data,
+void VerbsProvider::connect(fid_ep* ep, uint32_t /*max_send_wr*/,
+                            uint32_t /*max_send_sge*/, uint32_t /*max_recv_wr*/,
+                            uint32_t /*max_recv_sge*/, uint32_t /*max_inline_data*/,
                             const void* param, size_t param_len, void* /*addr*/)
 {
     int res = fi_connect(ep, nullptr, param, param_len);

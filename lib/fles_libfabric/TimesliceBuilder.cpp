@@ -18,11 +18,11 @@ TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
 		uint32_t num_input_nodes, uint32_t timeslice_size,
 		volatile sig_atomic_t* signal_status, bool drop,
 		std::string local_node_name) :
-		compute_index_(compute_index), timeslice_buffer_(timeslice_buffer), service_(
-				service), num_input_nodes_(num_input_nodes), timeslice_size_(
-				timeslice_size), ack_(timeslice_buffer_.get_desc_size_exp()), signal_status_(
-				signal_status), drop_(drop), local_node_name_(local_node_name), ConnectionGroup(
-				local_node_name) {
+  ConnectionGroup(local_node_name), compute_index_(compute_index),
+  timeslice_buffer_(timeslice_buffer),
+  service_(service), num_input_nodes_(num_input_nodes),
+  timeslice_size_(timeslice_size), ack_(timeslice_buffer_.get_desc_size_exp()),
+  signal_status_(signal_status), local_node_name_(local_node_name), drop_(drop) {
 	assert(timeslice_buffer_.get_num_input_nodes() == num_input_nodes);
 	assert(not local_node_name_.empty());
 	if (Provider::getInst()->is_connection_oriented()) {
@@ -331,8 +331,9 @@ void TimesliceBuilder::on_connect_request(struct fi_eq_cm_entry* event,
 		init_context(event->info, { }, { });
 
 	assert(private_data_len >= sizeof(InputNodeInfo));
-	InputNodeInfo remote_info =
-			*reinterpret_cast<const InputNodeInfo*>(event->data);
+	InputNodeInfo remote_info;
+        /* pacify strict-aliasing rules */
+        memcpy(&remote_info, event->data, sizeof(remote_info));
 
 	uint_fast16_t index = remote_info.index;
 	assert(index < conn_.size() && conn_.at(index) == nullptr);
@@ -350,74 +351,72 @@ void TimesliceBuilder::on_connect_request(struct fi_eq_cm_entry* event,
 
 /// Completion notification event dispatcher. Called by the event loop.
 void TimesliceBuilder::on_completion(uint64_t wr_id) {
-	size_t in = wr_id >> 8;
-	assert(in < conn_.size());
-	switch (wr_id & 0xFF) {
+  size_t in = wr_id >> 8;
+  assert(in < conn_.size());
+  switch (wr_id & 0xFF) {
+  case ID_SEND_STATUS:
+    if (false) {
+      L_(trace)<< "[c" << compute_index_ << "] "
+               << "[" << in << "] "
+               << "COMPLETE SEND status message";
+    }
+    conn_[in]->on_complete_send();
+    break;
 
-	case ID_SEND_STATUS:
-		if (false) {
-			L_(trace)<< "[c" << compute_index_ << "] "
-			<< "[" << in << "] "
-			<< "COMPLETE SEND status message";
-		}
-		conn_[in]->on_complete_send();
-		break;
+  case ID_SEND_FINALIZE:
+    if (!conn_[in]->abort_flag()) {
+      assert(timeslice_buffer_.get_num_work_items() == 0);
+      assert(timeslice_buffer_.get_num_completions() == 0);
+    }
+    conn_[in]->on_complete_send();
+    conn_[in]->on_complete_send_finalize();
+    ++connections_done_;
+    all_done_ = (connections_done_ == conn_.size());
+    if (!connection_oriented_) {
+      on_disconnected(nullptr, in);
+    }
+    L_(debug) << "[c" << compute_index_ << "] "
+              << "SEND FINALIZE complete for id " << in
+              << " all_done=" << all_done_;
+    break;
 
-		case ID_SEND_FINALIZE: {
-			if (!conn_[in]->abort_flag()) {
-				assert(timeslice_buffer_.get_num_work_items() == 0);
-				assert(timeslice_buffer_.get_num_completions() == 0);
-			}
-			conn_[in]->on_complete_send();
-			conn_[in]->on_complete_send_finalize();
-			++connections_done_;
-			all_done_ = (connections_done_ == conn_.size());
-			if (!connection_oriented_) {
-				on_disconnected(nullptr, in);
-			}
-			L_(debug) << "[c" << compute_index_ << "] "
-			<< "SEND FINALIZE complete for id " << in
-			<< " all_done=" << all_done_;
-		}break;
+  case ID_RECEIVE_STATUS:
+    conn_[in]->on_complete_recv();
+    if (connected_ == conn_.size() && in == red_lantern_) {
+      auto new_red_lantern = std::min_element(
+                                              std::begin(conn_), std::end(conn_),
+                                              [](const std::unique_ptr<ComputeNodeConnection>& v1,
+                                                 const std::unique_ptr<ComputeNodeConnection>& v2) {
+                                                return v1->cn_wp().desc < v2->cn_wp().desc;
+                                              });
 
-		case ID_RECEIVE_STATUS: {
-			conn_[in]->on_complete_recv();
-			if (connected_ == conn_.size() && in == red_lantern_) {
-				auto new_red_lantern = std::min_element(
-						std::begin(conn_), std::end(conn_),
-						[](const std::unique_ptr<ComputeNodeConnection>& v1,
-								const std::unique_ptr<ComputeNodeConnection>& v2) {
-							return v1->cn_wp().desc < v2->cn_wp().desc;
-						});
+      uint64_t new_completely_written = (*new_red_lantern)->cn_wp().desc;
+      red_lantern_ = std::distance(std::begin(conn_), new_red_lantern);
 
-				uint64_t new_completely_written = (*new_red_lantern)->cn_wp().desc;
-				red_lantern_ = std::distance(std::begin(conn_), new_red_lantern);
+      for (uint64_t tpos = completely_written_;
+           tpos < new_completely_written; ++tpos) {
+        if (!drop_) {
+          uint64_t ts_index = UINT64_MAX;
+          if (conn_.size() > 0) {
+            ts_index = timeslice_buffer_.get_desc(0, tpos).ts_num;
+          }
+          timeslice_buffer_.send_work_item(
+                                           {	{	ts_index, tpos, timeslice_size_,
+                                                 static_cast<uint32_t>(conn_.size())},
+                                               timeslice_buffer_.get_data_size_exp(),
+                                                 timeslice_buffer_.get_desc_size_exp()});
+        } else {
+          timeslice_buffer_.send_completion( {tpos});
+        }
+      }
 
-				for (uint64_t tpos = completely_written_;
-						tpos < new_completely_written; ++tpos) {
-					if (!drop_) {
-						uint64_t ts_index = UINT64_MAX;
-						if (conn_.size() > 0) {
-							ts_index = timeslice_buffer_.get_desc(0, tpos).ts_num;
-						}
-						timeslice_buffer_.send_work_item(
-								{	{	ts_index, tpos, timeslice_size_,
-										static_cast<uint32_t>(conn_.size())},
-									timeslice_buffer_.get_data_size_exp(),
-									timeslice_buffer_.get_desc_size_exp()});
-					} else {
-						timeslice_buffer_.send_completion( {tpos});
-					}
-				}
+      completely_written_ = new_completely_written;
+    }
+    break;
 
-				completely_written_ = new_completely_written;
-			}
-		}break;
-
-		default: {
-			throw LibfabricException("wc for unknown wr_id");
-		}
-	}
+  default:
+    throw LibfabricException("wc for unknown wr_id");
+  }
 }
 
 void TimesliceBuilder::poll_ts_completion() {
