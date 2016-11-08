@@ -12,32 +12,35 @@ void Parameters::parse_options(int argc, char* argv[])
     unsigned log_level = 2;
 
     po::options_description desc("Allowed options");
-    desc.add_options()("version,V", "print version string")(
-        "help,h",
-        "produce help message")("log-level,l", po::value<unsigned>(&log_level),
-                                "set the log level (default:2, all:0)")(
-        "client-index,c", po::value<int32_t>(&client_index_),
-        "index of this executable in the list of processor tasks")(
-        "analyze-pattern,a", po::value<bool>(&analyze_)->implicit_value(true),
-        "enable/disable pattern check")(
-        "benchmark,b", po::value<bool>(&benchmark_)->implicit_value(true),
-        "run benchmark test only")("verbose,v", po::value<size_t>(&verbosity_),
-                                   "set output verbosity")(
-        "shm-identifier,s", po::value<std::string>(&shm_identifier_),
-        "shared memory identifier used for receiving timeslices")(
-        "input-archive,i", po::value<std::string>(&input_archive_),
-        "name of an input file archive to read")(
-        "output-archive,o", po::value<std::string>(&output_archive_),
-        "name of an output file archive to write")(
-        "publish,P", po::value<std::string>(&publish_address_)
-                         ->implicit_value("tcp://*:5556"),
-        "enable timeslice publisher on given address")(
-        "subscribe,S", po::value<std::string>(&subscribe_address_)
-                           ->implicit_value("tcp://localhost:5556"),
-        "subscribe to timeslice publisher on given address")(
-        "maximum-number,n", po::value<uint64_t>(&maximum_number_),
-        "set the maximum number of microslices to process (default: "
-        "unlimited)");
+    auto desc_add = desc.add_options();
+    desc_add("version,V", "print version string");
+    desc_add("help,h", "produce help message");
+    desc_add("log-level,l", po::value<unsigned>(&log_level),
+             "set the log level (default:2, all:0)");
+    desc_add("client-index,c", po::value<int32_t>(&client_index_),
+             "index of this executable in the list of processor tasks");
+    desc_add("analyze-pattern,a",
+             po::value<bool>(&analyze_)->implicit_value(true),
+             "enable/disable pattern check");
+    desc_add("benchmark,b", po::value<bool>(&benchmark_)->implicit_value(true),
+             "run benchmark test only");
+    desc_add("verbose,v", po::value<size_t>(&verbosity_),
+             "set output verbosity");
+    desc_add("shm-identifier,s", po::value<std::string>(&shm_identifier_),
+             "shared memory identifier used for receiving timeslices");
+    desc_add("input-archive,i", po::value<std::string>(&input_archive_),
+             "name of an input file archive to read");
+    desc_add("output-archive,o", po::value<std::string>(&output_archive_),
+             "name of an output file archive to write");
+    desc_add("publish,P", po::value<std::string>(&publish_address_)
+                              ->implicit_value("tcp://*:5556"),
+             "enable timeslice publisher on given address");
+    desc_add("subscribe,S", po::value<std::string>(&subscribe_address_)
+                                ->implicit_value("tcp://localhost:5556"),
+             "subscribe to timeslice publisher on given address");
+    desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number_),
+             "set the maximum number of microslices to process (default: "
+             "unlimited)");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
