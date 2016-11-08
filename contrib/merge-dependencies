@@ -7,19 +7,9 @@ LANG=C
 DIR="$(git rev-parse --show-toplevel)"
 cd "$DIR"
 
-# ZeroMQ C++ interface
-mkdir cppzmq
-wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O cppzmq/zmq.hpp
-
 # PDA library
 curl -L https://github.com/cbm-fles/pda/archive/11.1.7.tar.gz | tar xz --transform 's/^pda-[^\/]*/pda/'
 cd pda
 ./configure
 make
 cd ..
-
-# Patch top-level CMakeLists.txt
-perl -pi \
-  -e 's/\${ZMQ_INCLUDE_DIRS}/\${ZMQ_INCLUDE_DIRS} cppzmq/;' \
-  -e 's/find_package.*PDA.*/find_library(PDA pda pda\/build_linux_x86_uio)\ninclude_directories(pda\/build_linux_x86_uio\/include)\nset(EXTRA_LIBS \${EXTRA_LIBS} \${PDA})/' \
-  CMakeLists.txt

@@ -1,12 +1,16 @@
 // Copyright 2012-2016 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "InputChannelSender.hpp"
+#include "ComponentSenderZeromq.hpp"
 #include "Parameters.hpp"
 #include "ThreadContainer.hpp"
 #include "TimesliceBuffer.hpp"
-#include "TimesliceBuilder.hpp"
+#include "TimesliceBuilderZeromq.hpp"
 #include "shm_device_client.hpp"
+#ifdef RDMA
+#include "InputChannelSender.hpp"
+#include "TimesliceBuilder.hpp"
+#endif
 #include <boost/lexical_cast.hpp>
 #include <csignal>
 #include <memory>
@@ -39,12 +43,21 @@ private:
     std::shared_ptr<flib_shm_device_client> shm_device_;
     std::size_t shm_num_channels_ = 0;
 
+    /// The application's input and output buffer objects
     std::vector<std::unique_ptr<InputBufferReadInterface>> data_sources_;
-
-    /// The application's connection group / buffer objects
     std::vector<std::unique_ptr<TimesliceBuffer>> timeslice_buffers_;
-    std::vector<std::unique_ptr<TimesliceBuilder>> timeslice_receivers_;
+
+#ifdef RDMA
+    /// The application's RDMA transport objects
+    std::vector<std::unique_ptr<TimesliceBuilder>> timeslice_builders_;
     std::vector<std::unique_ptr<InputChannelSender>> input_channel_senders_;
+#endif
+
+    /// The application's ZeroMQ transport objects
+    std::vector<std::unique_ptr<TimesliceBuilderZeromq>>
+        timeslice_builders_zeromq_;
+    std::vector<std::unique_ptr<ComponentSenderZeromq>>
+        component_senders_zeromq_;
 
     void start_processes(const std::string shared_memory_identifier);
 };

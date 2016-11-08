@@ -205,7 +205,8 @@ void Parameters::parse_options(int argc, char* argv[])
         "processor-instances", po::value<uint32_t>(&processor_instances_),
         "number of instances of the timeslice processor executable")(
         "base-port", po::value<uint32_t>(&base_port_),
-        "base IP port to use for listening");
+        "base IP port to use for listening")(
+        "zeromq,z", po::value<bool>(&zeromq_), "use zeromq transport");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -240,11 +241,21 @@ void Parameters::parse_options(int argc, char* argv[])
         throw ParametersException("timeslice size cannot be zero");
     }
 
+#ifndef RDMA
+    if (!zeromq_) {
+        throw ParametersException("flesnet built without RDMA support");
+    }
+#endif
+
     if (standalone_) {
         input_nodes_ = std::vector<std::string>{"127.0.0.1"};
         input_indexes_ = std::vector<unsigned>{0};
         compute_nodes_ = std::vector<std::string>{"127.0.0.1"};
         compute_indexes_ = std::vector<unsigned>{0};
+        if (zeromq_) {
+            throw ParametersException(
+                "no zeromq transport in stand-alone mode");
+        }
     } else {
         if (!vm.count("input-nodes"))
             throw ParametersException("list of input nodes is empty");

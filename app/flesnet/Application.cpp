@@ -6,11 +6,11 @@
 #include "FlibPatternGenerator.hpp"
 #include "shm_channel_client.hpp"
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/thread/future.hpp>
 #include <boost/thread/thread.hpp>
 #include <log.hpp>
 #include <random>
+#include <string>
 
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
@@ -51,27 +51,43 @@ Application::Application(Parameters const& par,
 
     // set_cpu(1);
 
+    std::vector<std::string> input_server_addresses;
+    for (unsigned int i = 0; i < par.input_nodes().size(); ++i)
+        input_server_addresses.push_back("tcp://" + par.input_nodes().at(i) +
+                                         ":" +
+                                         std::to_string(par.base_port() + i));
+
     for (unsigned i : par_.compute_indexes()) {
         // generate random shared memory identifier for timeslice buffer
         std::random_device random_device;
         std::uniform_int_distribution<uint64_t> uint_distribution;
         uint64_t random_number = uint_distribution(random_device);
-        std::string shm_identifier =
-            "flesnet_" + boost::lexical_cast<std::string>(random_number);
+        std::string shm_identifier = "flesnet_" + std::to_string(random_number);
 
         std::unique_ptr<TimesliceBuffer> tsb(new TimesliceBuffer(
             shm_identifier, par_.cn_data_buffer_size_exp(),
             par_.cn_desc_buffer_size_exp(), input_nodes_size));
 
-        std::unique_ptr<TimesliceBuilder> receiver(new TimesliceBuilder(
-            i, *tsb, par_.base_port() + i, input_nodes_size,
-            par_.timeslice_size(), signal_status_, false));
-
         start_processes(shm_identifier);
         ChildProcessManager::get().allow_stop_processes(this);
 
+        if (par_.zeromq()) {
+            std::unique_ptr<TimesliceBuilderZeromq> builder(
+                new TimesliceBuilderZeromq(i, *tsb, input_server_addresses,
+                                           par_.timeslice_size()));
+            timeslice_builders_zeromq_.push_back(std::move(builder));
+        } else {
+#ifdef RDMA
+            std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
+                i, *tsb, par_.base_port() + i, input_nodes_size,
+                par_.timeslice_size(), signal_status_, false));
+            timeslice_builders_.push_back(std::move(builder));
+#else
+            L_(fatal) << "flesnet built without RDMA support";
+#endif
+        }
+
         timeslice_buffers_.push_back(std::move(tsb));
-        timeslice_receivers_.push_back(std::move(receiver));
     }
 
     set_node();
@@ -80,8 +96,7 @@ Application::Application(Parameters const& par,
 
     std::vector<std::string> compute_services;
     for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
-        compute_services.push_back(
-            boost::lexical_cast<std::string>(par.base_port() + i));
+        compute_services.push_back(std::to_string(par.base_port() + i));
 
     for (size_t c = 0; c < input_indexes.size(); ++c) {
         unsigned index = input_indexes.at(c);
@@ -107,12 +122,25 @@ Application::Application(Parameters const& par,
             }
         }
 
-        std::unique_ptr<InputChannelSender> buffer(new InputChannelSender(
-            index, *(data_sources_.at(c).get()), par.compute_nodes(),
-            compute_services, par.timeslice_size(), par.overlap_size(),
-            par.max_timeslice_number()));
-
-        input_channel_senders_.push_back(std::move(buffer));
+        if (par_.zeromq()) {
+            std::string listen_address =
+                "tcp://*:" + std::to_string(par_.base_port() + index);
+            std::unique_ptr<ComponentSenderZeromq> sender(
+                new ComponentSenderZeromq(*(data_sources_.at(c).get()),
+                                          par.timeslice_size(),
+                                          par.overlap_size(), listen_address));
+            component_senders_zeromq_.push_back(std::move(sender));
+        } else {
+#ifdef RDMA
+            std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
+                index, *(data_sources_.at(c).get()), par.compute_nodes(),
+                compute_services, par.timeslice_size(), par.overlap_size(),
+                par.max_timeslice_number()));
+            input_channel_senders_.push_back(std::move(sender));
+#else
+            L_(fatal) << "flesnet built without RDMA support";
+#endif
+        }
     }
 }
 
@@ -120,31 +148,47 @@ Application::~Application() {}
 
 void Application::run()
 {
-    // Do not spawn additional thread if only one is needed, simplifies
-    // debugging
-    if (timeslice_receivers_.size() == 1 && input_channel_senders_.empty()) {
-        L_(debug) << "using existing thread for single timeslice receiver";
-        (*timeslice_receivers_[0])();
+// Do not spawn additional thread if only one is needed, simplifies
+// debugging
+#ifdef RDMA
+    if (timeslice_builders_.size() == 1 && input_channel_senders_.empty()) {
+        L_(debug) << "using existing thread for single timeslice builder";
+        (*timeslice_builders_[0])();
         return;
     };
-    if (input_channel_senders_.size() == 1 && timeslice_receivers_.empty()) {
+    if (input_channel_senders_.size() == 1 && timeslice_builders_.empty()) {
         L_(debug) << "using existing thread for single input channel sender";
         (*input_channel_senders_[0])();
         return;
     };
+#endif
 
     // FIXME: temporary code, need to implement interrupt
     boost::thread_group threads;
     std::vector<boost::unique_future<void>> futures;
     bool stop = false;
 
-    for (auto& buffer : timeslice_receivers_) {
+#ifdef RDMA
+    for (auto& buffer : timeslice_builders_) {
         boost::packaged_task<void> task(std::ref(*buffer));
         futures.push_back(task.get_future());
         threads.add_thread(new boost::thread(std::move(task)));
     }
 
     for (auto& buffer : input_channel_senders_) {
+        boost::packaged_task<void> task(std::ref(*buffer));
+        futures.push_back(task.get_future());
+        threads.add_thread(new boost::thread(std::move(task)));
+    }
+#endif
+
+    for (auto& buffer : timeslice_builders_zeromq_) {
+        boost::packaged_task<void> task(std::ref(*buffer));
+        futures.push_back(task.get_future());
+        threads.add_thread(new boost::thread(std::move(task)));
+    }
+
+    for (auto& buffer : component_senders_zeromq_) {
         boost::packaged_task<void> task(std::ref(*buffer));
         futures.push_back(task.get_future());
         threads.add_thread(new boost::thread(std::move(task)));

@@ -1,10 +1,6 @@
 # Copyright 2013, 2015, 2016 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
 # Copyright 2014 Dirk Hutter <hutter@compeng.uni-frankfurt.de>
 
-include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc"
-                    "${PROJECT_SOURCE_DIR}/lib/fles_core"
-                    "${PROJECT_SOURCE_DIR}/lib/logging")
-
 set(LIB_SOURCES
     shm_channel_client.cpp
     shm_device_client.cpp
@@ -22,3 +18,13 @@ set(LIB_HEADERS
 )
 
 add_library(flib_ipc ${LIB_SOURCES} ${LIB_HEADERS})
+
+target_include_directories(flib_ipc PUBLIC .)
+
+target_include_directories(flib_ipc SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+
+target_link_libraries(flib_ipc
+  PUBLIC fles_ipc
+  PUBLIC fles_core
+  PUBLIC logging
+)

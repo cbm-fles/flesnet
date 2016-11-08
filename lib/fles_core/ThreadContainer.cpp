@@ -2,13 +2,13 @@
 
 #include "ThreadContainer.hpp"
 #include "log.hpp"
-#ifdef HAVE_LIBNUMA
+#ifdef HAVE_NUMA
 #include <numa.h>
 #endif
 
 void ThreadContainer::set_node()
 {
-#ifdef HAVE_LIBNUMA
+#ifdef HAVE_NUMA
     if (numa_available() == -1) {
         L_(error) << "numa_available() failed";
         return;
@@ -30,7 +30,7 @@ void ThreadContainer::set_node()
 
 void ThreadContainer::set_cpu(int n)
 {
-#ifdef HAVE_LIBNUMA
+#ifdef HAVE_NUMA
     int nprocs = sysconf(_SC_NPROCESSORS_ONLN);
     if (n >= nprocs) {
         L_(debug) << "set_cpu: CPU " << n << " is not in range 0.."
