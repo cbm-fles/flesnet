@@ -241,6 +241,12 @@ void Parameters::parse_options(int argc, char* argv[])
         throw ParametersException("timeslice size cannot be zero");
     }
 
+#ifndef RDMA
+    if (!zeromq_) {
+        throw ParametersException("flesnet built without RDMA support");
+    }
+#endif
+
     if (standalone_) {
         input_nodes_ = std::vector<std::string>{"127.0.0.1"};
         input_indexes_ = std::vector<unsigned>{0};
