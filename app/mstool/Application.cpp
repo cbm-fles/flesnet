@@ -19,7 +19,14 @@ Application::Application(Parameters const& par)
     : par_(par), etcd_(par_.base_url)
 {
     if (par_.kv_sync == true) {
-        etcd_.check_process(par_.input_shm);
+        enum Flags ret = etcd_.check_process(par_.input_shm);
+        if (ret != ok) {
+            if (ret == errorneous)
+                L_(error) << "errorneous";
+            if (ret == timeout)
+                L_(error) << "timeout";
+            throw std::runtime_error("kv sync failed");
+        }
     }
 
     // Source setup
@@ -93,7 +100,10 @@ Application::Application(Parameters const& par)
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
             new fles::MicrosliceTransmitter(*data_sink)));
 
-        etcd_.set_value("/" + par_.output_shm, "/uptodate", "value=on");
+        int ret =
+            etcd_.set_value("/" + par_.output_shm, "/uptodate", "value=on");
+        if (ret != 0)
+            throw std::runtime_error("Error setting value in key-value store");
     }
 }
 

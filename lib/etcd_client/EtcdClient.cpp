@@ -11,12 +11,12 @@ size_t write_callback(char* buf, size_t size, size_t nmemb, void* userdata) {
     return size * nmemb;
 }
 
-std::pair<enum Flags, value_t>
-EtcdClient::get_req(std::string prefix, std::string key, bool timeout) {
+std::pair<enum Flags, value_t> EtcdClient::get_req(std::string prefix,
+                                                   std::string key, bool wait) {
     std::string data;
     CURL* hnd = curl_easy_init();
     curl_easy_setopt(hnd, CURLOPT_URL, (m_url + prefix + key).c_str());
-    if (timeout) {
+    if (wait) {
         L_(info) << "waiting for " << m_url << prefix << key;
         curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, 8000L);
     }
@@ -27,8 +27,10 @@ EtcdClient::get_req(std::string prefix, std::string key, bool timeout) {
     std::pair<enum Flags, value_t> returnvalue(errorneous, {"", 1});
     if (ret == CURLE_OK)
         returnvalue = parse_value(data);
-    else
+    else {
         L_(error) << curl_easy_strerror(ret) << std::endl;
+        if (ret == 28) returnvalue.first = timeout;
+    }
 
     curl_easy_cleanup(hnd);
 
@@ -58,10 +60,11 @@ int EtcdClient::set_value(std::string prefix, std::string key,
 enum Flags EtcdClient::wait_value(std::string prefix, int requiredtag) {
     Flags wait_flag = empty;
 
-    while (wait_flag != ok) {
+    while (wait_flag == empty) {
         std::pair<enum Flags, value_t> returnvalue = get_req(
             prefix, "?wait=true&waitIndex=" + std::to_string(requiredtag),
             true);
+        wait_flag = returnvalue.first;
         if (returnvalue.second.value == "on") wait_flag = ok;
     }
     return wait_flag;
@@ -71,7 +74,9 @@ std::pair<enum Flags, value_t> EtcdClient::parse_value(std::string data) {
     Json::Value message;
     Json::Reader reader;
     reader.parse(data, message);
-    std::pair<enum Flags, value_t> returnvalue(errorneous, {"", 1});
+    // if parse_value is called curl request returned ok.
+    // message contains error if key did not exist
+    std::pair<enum Flags, value_t> returnvalue(ok, {"", 1});
 
     if (message.empty()) {
         L_(warning) << "EtcdClient: returned value from key-value store "
@@ -82,8 +87,8 @@ std::pair<enum Flags, value_t> EtcdClient::parse_value(std::string data) {
 
     if (message.isMember("errorCode")) {
         L_(error) << message["message"].asString() << std::endl;
+        returnvalue.first = notexist;
     } else {
-        returnvalue.first = ok;
         returnvalue.second.value = message["node"]["value"].asString();
         returnvalue.second.tag = message["node"]["modifiedIndex"].asInt();
     }
@@ -91,9 +96,12 @@ std::pair<enum Flags, value_t> EtcdClient::parse_value(std::string data) {
     return returnvalue;
 }
 
-int EtcdClient::check_process(std::string input_shm) {
-    std::pair<enum Flags, value_t> returnvalue =
-        get_req("/" + input_shm, "/uptodate", false);
+enum Flags EtcdClient::check_process(std::string input_shm) {
+    std::pair<enum Flags, value_t> returnvalue(notexist, {"", 1});
+    while (returnvalue.first == notexist) {
+        // I can not issue a wait on a key that does not exist
+        returnvalue = get_req("/" + input_shm, "/uptodate", false);
+    }
     if (returnvalue.first != errorneous) {
         if (returnvalue.second.value == "on")
             return ok;

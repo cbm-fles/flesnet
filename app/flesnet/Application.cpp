@@ -24,7 +24,14 @@ Application::Application(Parameters const& par,
             if (par.kv_sync() == true) {
                 L_(info) << "Now using key-value store for synchronization at "
                          << par.base_url();
-                etcd.check_process(par.input_shm());
+                enum Flags ret = etcd.check_process(par.input_shm());
+                if (ret != ok) {
+                    if (ret == errorneous)
+                        L_(error) << "errorneous";
+                    if (ret == timeout)
+                        L_(error) << "timeout";
+                    throw std::runtime_error("kv sync failed");
+                }
             }
 
             shm_device_ =

@@ -9,7 +9,7 @@
 #include <sstream>
 #include <string>
 
-enum Flags { ok, errorneous, empty };
+enum Flags { ok, errorneous, empty, timeout, notexist };
 typedef struct {
     std::string value;
     int tag;
@@ -20,7 +20,7 @@ private:
     std::string m_url;
 
     std::pair<enum Flags, value_t> get_req(std::string prefix, std::string key,
-                                           bool timeout = false);
+                                           bool wait = false);
 
     std::pair<enum Flags, value_t> parse_value(std::string data);
 
@@ -29,7 +29,7 @@ private:
 public:
     EtcdClient(std::string url);
 
-    int check_process(std::string input_shm);
+    enum Flags check_process(std::string input_shm);
 
     int set_value(std::string prefix, std::string key, std::string value);
 };
