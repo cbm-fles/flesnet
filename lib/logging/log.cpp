@@ -165,7 +165,10 @@ void add_file(std::string filename, severity_level minimum_severity)
         << "] " << boost::log::expressions::attr<severity_level>("Severity")
         << ": " << boost::log::expressions::message;
 
-    auto file_sink = boost::log::add_file_log(filename);
+    auto file_sink =
+        boost::log::add_file_log(boost::log::keywords::file_name = filename,
+                                 boost::log::keywords::auto_flush = true);
+    // default open_mode is (std::ios_base::trunc | std::ios_base::out)
     file_sink->set_formatter(file_formatter);
     file_sink->set_filter(severity >= minimum_severity);
 }
