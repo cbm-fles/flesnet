@@ -12,6 +12,7 @@ namespace po = boost::program_options;
 void Parameters::parse_options(int argc, char* argv[])
 {
     unsigned log_level = 2;
+    std::string log_file;
 
     po::options_description general("General options");
     auto general_add = general.add_options();
@@ -19,6 +20,8 @@ void Parameters::parse_options(int argc, char* argv[])
     general_add("help,h", "produce help message");
     general_add("log-level,l", po::value<unsigned>(&log_level),
                 "set the log level (default:2, all:0)");
+    general_add("log-file,L", po::value<std::string>(&log_file),
+                "name of target log file");
     general_add("maximum-number,n", po::value<uint64_t>(&maximum_number),
                 "set the maximum number of microslices to process (default: "
                 "unlimited)");
@@ -71,6 +74,10 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
+    if (vm.count("log-file")) {
+        logging::add_file(log_file, static_cast<severity_level>(log_level));
+        L_(info) << "Logging output to " << log_file;
+    }
 
     size_t input_sources = vm.count("input-archive") + vm.count("input-shm");
     if (input_sources == 0) {
