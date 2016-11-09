@@ -45,6 +45,7 @@ void TimesliceBuilderZeromq::operator()()
     while (ts_index_ < max_timeslice_number_ && *signal_status_ == 0) {
         for (auto& c : connections_) {
 
+            std::size_t msg_size;
             do {
                 // send request for timeslice data
                 zmq_send(c->socket, &ts_index_, sizeof(ts_index_), 0);
@@ -54,10 +55,11 @@ void TimesliceBuilderZeromq::operator()()
                 assert(rc == 0);
                 rc = zmq_msg_recv(&c->desc_msg, c->socket, 0);
                 assert(rc != -1);
-                if (zmq_msg_size(&c->desc_msg) == 0) {
+                msg_size = zmq_msg_size(&c->desc_msg);
+                if (msg_size == 0) {
                     zmq_msg_close(&c->desc_msg);
                 }
-            } while (zmq_msg_size(&c->desc_msg) == 0);
+            } while (msg_size == 0);
 
             // receive data answer (part 2), do not release
             assert(zmq_msg_more(&c->data_msg));
