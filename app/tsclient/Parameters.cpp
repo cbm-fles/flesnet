@@ -10,6 +10,7 @@ namespace po = boost::program_options;
 void Parameters::parse_options(int argc, char* argv[])
 {
     unsigned log_level = 2;
+    std::string log_file;
 
     po::options_description desc("Allowed options");
     auto desc_add = desc.add_options();
@@ -17,6 +18,8 @@ void Parameters::parse_options(int argc, char* argv[])
     desc_add("help,h", "produce help message");
     desc_add("log-level,l", po::value<unsigned>(&log_level),
              "set the log level (default:2, all:0)");
+    desc_add("log-file,L", po::value<std::string>(&log_file),
+             "name of target log file");
     desc_add("client-index,c", po::value<int32_t>(&client_index_),
              "index of this executable in the list of processor tasks");
     desc_add("analyze-pattern,a",
@@ -57,6 +60,10 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
+    if (vm.count("log-file")) {
+        logging::add_file(log_file, static_cast<severity_level>(log_level));
+        L_(info) << "Logging output to " << log_file;
+    }
 
     size_t input_sources = vm.count("shm-identifier") +
                            vm.count("input-archive") + vm.count("subscribe");
