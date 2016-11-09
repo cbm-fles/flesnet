@@ -123,6 +123,7 @@ private:
 
     std::string config_file;
     unsigned log_level;
+    std::string log_file;
 
     po::options_description generic("Generic options");
     auto generic_add = generic.add_options();
@@ -133,6 +134,8 @@ private:
     generic_add("log-level,l",
                 po::value<unsigned>(&log_level)->default_value(2),
                 "set the log level (all:0)");
+    generic_add("log-file,L", po::value<std::string>(&log_file),
+                "name of target log file");
 
     po::options_description config("Configuration (flib.cfg or cmd line)");
     auto config_add = config.add_options();
@@ -204,6 +207,10 @@ private:
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
+    if (vm.count("log-file")) {
+      logging::add_file(log_file, static_cast<severity_level>(log_level));
+      L_(info) << "Logging output to " << log_file;
+    }
 
     std::cout << "Global config:" << std::endl;
 
