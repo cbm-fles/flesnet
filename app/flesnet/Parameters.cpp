@@ -153,6 +153,7 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
 void Parameters::parse_options(int argc, char* argv[])
 {
     unsigned log_level = 2;
+    std::string log_file;
     std::string config_file;
 
     po::options_description generic("Generic options");
@@ -161,6 +162,8 @@ void Parameters::parse_options(int argc, char* argv[])
     generic_add("help,h", "produce help message");
     generic_add("log-level,l", po::value<unsigned>(&log_level),
                 "set the log level (default:2, all:0)");
+    generic_add("log-file,L", po::value<std::string>(&log_file),
+                "name of target log file");
     generic_add(
         "config-file,f",
         po::value<std::string>(&config_file)->default_value("flesnet.cfg"),
@@ -246,6 +249,10 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
+    if (vm.count("log-file")) {
+        logging::add_file(log_file, static_cast<severity_level>(log_level));
+        L_(info) << "Logging output to " << log_file;
+    }
 
     if (timeslice_size_ < 1) {
         throw ParametersException("timeslice size cannot be zero");
