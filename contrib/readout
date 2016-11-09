@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# start everything for a flesnet readout
+# script is highly specialized to fit the needs of SPS 2016 beam test
+# the script is not fool prove, think before you change something.
+
+set -e
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+BINDIR=.
+F0=(disable disable disable disable disable disable disable disable)
+
+##### confiuration below this line ########
+
+F0_ADDR=01:00.0
+
+F0[0]=pgen_near
+F0[1]=pgen_near
+F0[2]=pgen_near
+F0[3]=pgen_near
+F0[4]=pgen_near
+F0[5]=pgen_near
+F0[6]=pgen_near
+F0[7]=pgen_near
+
+F0_BASE_EQID=0xF00
+
+##### confiuration above this line ########
+
+echo "Starting readout ..."
+
+# ensure everything is fine
+$ROOT_DIR/contrib/flesnet-check
+
+echo "# empty config file to enforce cmd line params only" > empty.cfg
+
+## configrue FLIB
+F0_LINKS=0
+F0_IN_LIST=
+for i in ${F0[*]}; do
+    if [ $i != disable ]; then
+        F0_IN_LIST+=" -I 127.0.0.1 -i $F0_LINKS"
+        ((F0_LINKS += 1))
+    fi
+done
+
+echo "Configuring FLIB 0: $F0_LINKS active links (${F0[*]})"
+$BINDIR/flib_cfg -c empty.cfg -l 2 -L f0_cfg.log -i $F0_ADDR -t 100 \
+                 --l0_source ${F0[0]} --l0_eq_id ${F0_BASE_EQID}0 \
+                 --l1_source ${F0[1]} --l1_eq_id ${F0_BASE_EQID}1 \
+                 --l2_source ${F0[2]} --l2_eq_id ${F0_BASE_EQID}2 \
+                 --l3_source ${F0[3]} --l3_eq_id ${F0_BASE_EQID}3 \
+                 --l4_source ${F0[4]} --l4_eq_id ${F0_BASE_EQID}4 \
+                 --l5_source ${F0[5]} --l5_eq_id ${F0_BASE_EQID}5 \
+                 --l6_source ${F0[6]} --l6_eq_id ${F0_BASE_EQID}6 \
+                 --l7_source ${F0[7]} --l7_eq_id ${F0_BASE_EQID}7
+ 
+echo "Starting flib_server ..."
+$BINDIR/flib_server -c empty.cfg -L f0_server.log -i $F0_ADDR \
+                    -o shm_server_f0 &
+ 
+ 
+# block till server is ready (remove if etcd is ready)
+sleep 1
+tail -f $BINDIR/f0_server.log | while read LOGLINE
+do
+   [[ "${LOGLINE}" == *"flib server started and running"* ]] && pkill -P $$ tail
+done
+
+
+# flesnet configuration
+FLESNET_CFG="-f empty.cfg -L flesnet.log --timeslice-size 100 --overlap-size 0 
+--standalone false --in-data-buffer-size-exp 27 --cn-data-buffer-size-exp 27 
+--processor-instances 1 --input-shm shm_server_f0"
+F0_CN_LIST=" -C 127.0.0.1 -c 0"
+
+FLESNET_CFG+=$F0_CN_LIST
+FLESNET_CFG+=$F0_IN_LIST
+#echo "$FLESNET_CFG"
+
+echo "Starting flesnet ..."
+$BINDIR/flesnet $FLESNET_CFG  -e './tsclient -c%i -s%s -a' &
+
+
+# enable readout
+sleep 1
+$BINDIR/en_readout 0
+
+
+wait
+echo "*** END ***"
