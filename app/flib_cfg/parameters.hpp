@@ -14,6 +14,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 namespace po = boost::program_options;
@@ -21,6 +22,13 @@ namespace po = boost::program_options;
 static const size_t _num_flib_links = 8;
 
 typedef enum { flim, pgen_far, pgen_near, disable } data_source;
+
+/// Run parameters exception class.
+class ParametersException : public std::runtime_error {
+public:
+  explicit ParametersException(const std::string& what_arg = "")
+      : std::runtime_error(what_arg) {}
+};
 
 struct link_config {
   data_source source;
@@ -86,8 +94,7 @@ private:
           std::stoul(vm["l" + std::to_string(i) + "_eq_id"].as<std::string>(),
                      nullptr, 0));
     } else {
-      std::cerr << " If reading from pgen please provide eq_id.\n";
-      exit(EXIT_FAILURE);
+      throw ParametersException("If reading from pgen eq_id is required.");
     }
   }
 
@@ -97,25 +104,24 @@ private:
           vm["l" + std::to_string(i) + "_source"].as<std::string>();
       if (source == "flim") {
         _links.at(i).source = flim;
-        std::cout << " data source: flim" << std::endl;
+        L_(info) << " data source: flim";
       } else if (source == "pgen_far") {
         _links.at(i).source = pgen_far;
-        std::cout << " data source: far-end pgen" << std::endl;
+        L_(info) << " data source: far-end pgen";
         parse_eq_id(vm, i);
       } else if (source == "pgen_near") {
         _links.at(i).source = pgen_near;
-        std::cout << " data source: near-end pgen" << std::endl;
+        L_(info) << " data source: near-end pgen";
         parse_eq_id(vm, i);
       } else if (source == "disable") {
         _links.at(i).source = disable;
-        std::cout << " data source: disable" << std::endl;
+        L_(info) << " data source: disable";
       } else {
-        std::cerr << " No valid arg for data source." << std::endl;
-        exit(EXIT_FAILURE);
+        throw ParametersException("No valid arg for data source.");
       }
     } else { // set default parameters
       _links.at(i).source = disable;
-      std::cout << " data source: disable (default)" << std::endl;
+      L_(info) << " data source: disable (default)";
     }
   }
 
@@ -194,8 +200,7 @@ private:
 
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
-      std::cerr << "can not open config file: " << config_file << "\n";
-      exit(EXIT_FAILURE);
+      throw ParametersException("can not open config file: " + config_file);
     } else {
       po::store(po::parse_config_file(ifs, config_file_options), vm);
       notify(vm);
@@ -212,46 +217,44 @@ private:
       L_(info) << "Logging output to " << log_file;
     }
 
-    std::cout << "Global config:" << std::endl;
+    L_(info) << "Device config:";
 
     if (vm.count("flib-addr")) {
       _flib_addr = vm["flib-addr"].as<pci_addr>();
       _flib_autodetect = false;
-      std::cout << " FLIB address: " << std::setw(2) << std::setfill('0')
-                << static_cast<unsigned>(_flib_addr.bus) << ":" << std::setw(2)
-                << std::setfill('0') << static_cast<unsigned>(_flib_addr.dev)
-                << "." << static_cast<unsigned>(_flib_addr.func) << std::endl;
+      L_(info) << " FLIB address: " << std::setw(2) << std::setfill('0')
+               << static_cast<unsigned>(_flib_addr.bus) << ":" << std::setw(2)
+               << std::setfill('0') << static_cast<unsigned>(_flib_addr.dev)
+               << "." << static_cast<unsigned>(_flib_addr.func);
     } else {
       _flib_autodetect = true;
-      std::cout << " FLIB address: autodetect" << std::endl;
+      L_(info) << " FLIB address: autodetect";
     }
 
     if (vm.count("mc-size")) {
       _mc_size = vm["mc-size"].as<uint32_t>();
       if (_mc_size > 2147483647) { // 31 bit check
-        std::cerr << " Pgen microslice size out of range" << std::endl;
-        exit(EXIT_FAILURE);
+        throw ParametersException("Pgen microslice size out of range");
       } else {
-        std::cout << " Pgen microslice size: "
-                  << human_readable_mc_size(_mc_size) << std::endl;
+        L_(info) << " Pgen microslice size: "
+                 << human_readable_mc_size(_mc_size);
       }
     } else {
-      std::cout << " Pgen microslice size: " << human_readable_mc_size(_mc_size)
-                << " (default)" << std::endl;
+      L_(info) << " Pgen microslice size: " << human_readable_mc_size(_mc_size)
+               << " (default)";
     }
 
     if (vm.count("pgen-rate")) {
       _pgen_rate = vm["pgen-rate"].as<float>();
       if (_pgen_rate < 0 || _pgen_rate > 1) { // range check
-        std::cerr << " Pgen rate out of range" << std::endl;
-        exit(EXIT_FAILURE);
+        throw ParametersException("Pgen rate out of range");
       } else {
-        std::cout << " Pgen rate: " << _pgen_rate << "\n";
+        L_(info) << " Pgen rate: " << _pgen_rate;
       }
     }
 
     for (size_t i = 0; i < _num_flib_links; ++i) {
-      std::cout << "Link " << i << " config:" << std::endl;
+      L_(info) << "Link " << i << " config:";
       parse_data_source(vm, i);
     } // end loop over links
   }
