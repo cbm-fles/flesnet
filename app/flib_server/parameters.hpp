@@ -16,6 +16,13 @@
 
 namespace po = boost::program_options;
 
+/// Run parameters exception class.
+class ParametersException : public std::runtime_error {
+public:
+  explicit ParametersException(const std::string& what_arg = "")
+      : std::runtime_error(what_arg) {}
+};
+
 struct pci_addr {
 public:
   pci_addr(uint8_t bus = 0, uint8_t dev = 0, uint8_t func = 0)
@@ -120,8 +127,7 @@ private:
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
       if (config_file != "flib_server.cfg") {
-        std::cout << "Can not open config file: " << config_file << "\n";
-        exit(EXIT_SUCCESS);
+        throw ParametersException("Can not open config file: " + config_file);
       }
     } else {
       std::cout << "Using config file: " << config_file << "\n";
