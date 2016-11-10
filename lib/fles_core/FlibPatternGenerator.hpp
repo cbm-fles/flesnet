@@ -63,13 +63,41 @@ public:
     /// Generate FLIB input data.
     void produce_data();
 
-    DualIndex get_write_index() override { return write_index_.load(); }
+    DualIndex get_write_index() override
+    {
+// NOTE: std::atomic<DualIndex> triggers a bug in gcc versions < 5.1
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65147
+#if defined(__GNUC__) && !defined(__clang__) &&                                \
+    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
+        return DualIndex{write_index_desc_, write_index_data_};
+#else
+        return write_index_.load();
+#endif
+    }
 
     bool get_eof() override { return false; }
 
     void set_read_index(DualIndex new_read_index) override
     {
+#if defined(__GNUC__) && !defined(__clang__) &&                                \
+    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
+        read_index_desc_ = new_read_index.desc;
+        read_index_data_ = new_read_index.data;
+#else
         read_index_.store(new_read_index);
+#endif
+    }
+
+    DualIndex get_read_index() override
+    {
+// NOTE: std::atomic<DualIndex> triggers a bug in gcc versions < 5.1
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65147
+#if defined(__GNUC__) && !defined(__clang__) &&                                \
+    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
+        return DualIndex{read_index_desc_, read_index_data_};
+#else
+        return read_index_.load();
+#endif
     }
 
 private:
@@ -93,20 +121,18 @@ private:
 
     std::thread* producer_thread_;
 
+#if defined(__GNUC__) && !defined(__clang__) &&                                \
+    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
+    std::atomic<uint64_t> read_index_desc_{0};
+    std::atomic<uint64_t> read_index_data_{0};
+    std::atomic<uint64_t> write_index_desc_{0};
+    std::atomic<uint64_t> write_index_data_{0};
+#else
     /// Number of acknowledged data bytes and microslices. Updated by input
     /// node.
     std::atomic<DualIndex> read_index_{{0, 0}};
 
     /// FLIB-internal number of written microslices and data bytes.
     std::atomic<DualIndex> write_index_{{0, 0}};
-
-// NOTE: std::atomic<DualIndex> triggers a bug in gcc versions < 5.1
-// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65147
-#if defined(__GNUC__) && !defined(__clang__) &&                                \
-    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
-    static_assert(alignof(decltype(read_index_)) == 16,
-                  "invalid std::atomic alignment");
-    static_assert(alignof(decltype(write_index_)) == 16,
-                  "invalid std::atomic alignment");
 #endif
 };

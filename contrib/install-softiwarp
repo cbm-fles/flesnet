@@ -12,9 +12,9 @@ echo "=== Downloading sources"
 mkdir -p "$DIR"
 cd "$DIR"
 rm -rf softiwarp
-git clone https://github.com/zrlio/softiwarp.git
+git clone https://github.com/cbm-fles/softiwarp.git
 cd "$DIR"/softiwarp
-git checkout 3a739c528d4df75ee5688cf8b3916a5f779a80e0
+git checkout b453df6dbc395de5133058ce440d5a679b2e2101
 
 echo "=== Building userspace library"
 cd "$DIR"/softiwarp/userlib
@@ -27,6 +27,9 @@ sudo make install
 sudo ldconfig
 sudo mkdir -p /etc/libibverbs.d
 sudo ln -sf /usr/local/etc/libibverbs.d/siw.driver /etc/libibverbs.d/
+
+echo "=== Unloading previous kernel module, if any"
+sudo modprobe -rv siw
 
 echo "=== Building kernel module"
 cd "$DIR/softiwarp/kernel"

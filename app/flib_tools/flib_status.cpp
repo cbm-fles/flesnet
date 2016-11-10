@@ -6,7 +6,14 @@
 
 #include "flib.h"
 #include "device_operator.hpp"
+#include <chrono>
+#include <csignal>
 #include <iostream>
+#include <thread>
+
+// measurement interval (equals output interval)
+constexpr uint32_t interval_ms = 1000;
+constexpr bool clear_screen = true;
 
 std::ostream& operator<<(std::ostream& os, flib::flib_link::data_sel_t sel) {
   switch (sel) {
@@ -28,7 +35,24 @@ std::ostream& operator<<(std::ostream& os, flib::flib_link::data_sel_t sel) {
   return os;
 }
 
+int s_interrupted = 0;
+static void s_signal_handler(int signal_value) {
+  (void)signal_value;
+  s_interrupted = 1;
+}
+
+static void s_catch_signals(void) {
+  struct sigaction action;
+  action.sa_handler = s_signal_handler;
+  action.sa_flags = 0;
+  sigemptyset(&action.sa_mask);
+  sigaction(SIGABRT, &action, NULL);
+  sigaction(SIGTERM, &action, NULL);
+  sigaction(SIGINT, &action, NULL);
+}
+
 int main(int argc, char* argv[]) {
+  s_catch_signals();
 
   try {
 
@@ -60,6 +84,7 @@ int main(int argc, char* argv[]) {
              "  This may not be true in case of PCIe spread-spectrum "
              "clocking.\n";
       std::cout << std::endl;
+      return EXIT_SUCCESS;
     }
 
     std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
@@ -71,56 +96,74 @@ int main(int argc, char* argv[]) {
           new flib::flib_device_flesin(i)));
     }
 
-    size_t j = 0;
+    // set measurement interval for device and all links
     for (auto& flib : flibs) {
-      float pci_stall = flib->get_pci_stall();
-      float pci_trans = flib->get_pci_trans();
-      float pci_idle = 1 - pci_trans - pci_stall;
-      std::cout << "FLIB " << j << " (" << flib->print_devinfo() << ")";
-      std::cout << std::setprecision(4) << "  PCIe idle " << std::setw(9)
-                << pci_idle << "   stall " << std::setw(9) << pci_stall
-                << "   trans " << std::setw(9) << pci_trans << std::endl;
-      ++j;
+      flib->set_perf_interval(interval_ms);
+      for (auto& link : flib->links()) {
+        link->set_perf_interval(interval_ms);
+      }
     }
-    std::cout << std::endl;
+    std::cout << "Starting measurements" << std::endl;
 
-    std::cout
-        << "link  data_sel  up  he  se  "
-           "eo  do  d_max     dma_s    data_s    desc_s        bp     rate\n";
-    j = 0;
-    for (auto& flib : flibs) {
-      size_t num_links = flib->number_of_hw_links();
-      std::vector<flib::flib_link_flesin*> links = flib->links();
-
-      if (j != 0) {
-        std::cout << "\n";
+    // main output loop
+    size_t loop_cnt = 0;
+    while (s_interrupted == 0) {
+      if (clear_screen) {
+        std::cout << "\033\143";
       }
-      std::stringstream ss;
-      for (size_t i = 0; i < num_links; ++i) {
-        flib::flib_link_flesin::link_status_t status =
-            links.at(i)->link_status();
-        flib::flib_link_flesin::link_perf_t perf = links.at(i)->link_perf();
-
-        ss << std::setw(2) << j << "/" << i << "  ";
-        ss << std::setw(8) << links.at(i)->data_sel() << "  ";
-        // status
-        ss << std::setw(2) << status.channel_up << "  ";
-        ss << std::setw(2) << status.hard_err << "  ";
-        ss << std::setw(2) << status.soft_err << "  ";
-        ss << std::setw(2) << status.eoe_fifo_overflow << "  ";
-        ss << std::setw(2) << status.d_fifo_overflow << "  ";
-        ss << std::setw(5) << status.d_fifo_max_words << "  ";
-        // perf counters
-        ss << std::setprecision(3); // percision + 5 = width
-        ss << std::setw(8) << perf.dma_stall << "  ";
-        ss << std::setw(8) << perf.data_buf_stall << "  ";
-        ss << std::setw(8) << perf.desc_buf_stall << "  ";
-        ss << std::setw(8) << perf.din_full << "  ";
-        ss << std::setprecision(7) << std::setw(7) << perf.event_rate << "  ";
-        ss << std::endl;
+      std::cout << "Measurement " << loop_cnt << ":" << std::endl;
+      size_t j = 0;
+      for (auto& flib : flibs) {
+        float pci_stall = flib->get_pci_stall();
+        float pci_trans = flib->get_pci_trans();
+        float pci_idle = 1 - pci_trans - pci_stall;
+        std::cout << "FLIB " << j << " (" << flib->print_devinfo() << ")";
+        std::cout << std::setprecision(4) << "  PCIe idle " << std::setw(9)
+                  << pci_idle << "   stall " << std::setw(9) << pci_stall
+                  << "   trans " << std::setw(9) << pci_trans << std::endl;
+        ++j;
       }
-      std::cout << ss.str();
-      ++j;
+      std::cout << std::endl;
+
+      std::cout
+          << "link  data_sel  up  he  se  "
+             "eo  do  d_max     dma_s    data_s    desc_s        bp     rate\n";
+      j = 0;
+      for (auto& flib : flibs) {
+        size_t num_links = flib->number_of_hw_links();
+        std::vector<flib::flib_link_flesin*> links = flib->links();
+
+        std::stringstream ss;
+        for (size_t i = 0; i < num_links; ++i) {
+          flib::flib_link_flesin::link_status_t status =
+              links.at(i)->link_status();
+          flib::flib_link_flesin::link_perf_t perf = links.at(i)->link_perf();
+
+          ss << std::setw(2) << j << "/" << i << "  ";
+          ss << std::setw(8) << links.at(i)->data_sel() << "  ";
+          // status
+          ss << std::setw(2) << status.channel_up << "  ";
+          ss << std::setw(2) << status.hard_err << "  ";
+          ss << std::setw(2) << status.soft_err << "  ";
+          ss << std::setw(2) << status.eoe_fifo_overflow << "  ";
+          ss << std::setw(2) << status.d_fifo_overflow << "  ";
+          ss << std::setw(5) << status.d_fifo_max_words << "  ";
+          // perf counters
+          ss << std::setprecision(3); // percision + 5 = width
+          ss << std::setw(8) << perf.dma_stall << "  ";
+          ss << std::setw(8) << perf.data_buf_stall << "  ";
+          ss << std::setw(8) << perf.desc_buf_stall << "  ";
+          ss << std::setw(8) << perf.din_full << "  ";
+          ss << std::setprecision(7) << std::setw(7) << perf.event_rate << "  ";
+          ss << "\n";
+        }
+        std::cout << ss.str() << std::endl;
+        ++j;
+      }
+      // sleep will be canceled by signals (which is handy in our case)
+      // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66803
+      std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
+      ++loop_cnt;
     }
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;

@@ -4,14 +4,7 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RingBufferView.hpp"
 
-#if defined(__GNUC__) && !defined(__clang__) &&                                \
-    (__GNUC__ * 100 + __GNUC_MINOR__) < 501
-// NOTE: Workaround for std::atomic bug in gcc versions < 5.1
-// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65147
-struct alignas(16) DualIndex {
-#else
 struct DualIndex {
-#endif
     uint64_t desc;
     uint64_t data;
 
@@ -91,6 +84,7 @@ public:
     virtual bool get_eof() = 0;
 
     virtual void set_read_index(DualIndex new_read_index) = 0;
+    virtual DualIndex get_read_index() = 0;
 
     virtual RingBufferView<T_DATA>& data_buffer() = 0;
     virtual RingBufferView<T_DESC>& desc_buffer() = 0;

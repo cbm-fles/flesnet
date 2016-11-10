@@ -2,6 +2,7 @@
 
 #include "TimesliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
+#include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
 #include <cassert>
 #include <sstream>
@@ -98,15 +99,34 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
 
     if (ts.num_components() == 0) {
         out_ << "no component in timeslice " << ts.index() << std::endl;
+        ++timeslice_error_count_;
         return false;
     }
 
+    uint64_t first_component_start_time = 0;
+    if (ts.num_microslices(0) != 0) {
+        first_component_start_time = ts.get_microslice(0, 0).desc().idx;
+    }
     for (size_t c = 0; c < ts.num_components(); ++c) {
         if (ts.num_microslices(c) == 0) {
             out_ << "no microslices in timeslice " << ts.index()
                  << ", component " << c << std::endl;
+            ++timeslice_error_count_;
             return false;
         }
+        // ensure all components start with same time
+        uint64_t component_start_time = ts.get_microslice(c, 0).desc().idx;
+        if (component_start_time != first_component_start_time) {
+            out_ << "start time missmatch in timeslice " << ts.index()
+                 << ", component " << c << ", start time "
+                 << component_start_time << ", offset to c0 "
+                 << static_cast<int64_t>(first_component_start_time -
+                                         component_start_time)
+                 << std::endl;
+            ++timeslice_error_count_;
+            return false;
+        }
+        // checke all microslices of component
         pattern_checkers_.at(c)->reset();
         for (size_t m = 0; m < ts.num_microslices(c); ++m) {
             bool success =
@@ -116,6 +136,14 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts)
                 out_ << "pattern error in timeslice " << ts.index()
                      << ", microslice " << m << ", component " << c
                      << std::endl;
+                if (timeslice_error_count_ == 0) { // full dump for first error
+                    out_ << "microslice content:\n"
+                         << MicrosliceDescriptorDump(
+                                ts.get_microslice(c, m).desc())
+                         << BufferDump(ts.get_microslice(c, m).content(),
+                                       ts.get_microslice(c, m).desc().size);
+                }
+                ++timeslice_error_count_;
                 return false;
             }
         }
@@ -130,6 +158,9 @@ std::string TimesliceAnalyzer::statistics() const
       << human_readable_count(content_bytes_) << " in " << microslice_count_
       << " microslices, avg: "
       << static_cast<double>(content_bytes_) / microslice_count_ << ")";
+    if (timeslice_error_count_ > 0) {
+        s << " [" << timeslice_error_count_ << " errors]";
+    }
     return s.str();
 }
 

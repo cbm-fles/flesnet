@@ -6,6 +6,7 @@
 #include "InputChannelConnection.hpp"
 #include "RingBuffer.hpp"
 #include <boost/format.hpp>
+#include <cassert>
 
 /// Input buffer and compute node connection container class.
 /** An InputChannelSender object represents an input buffer (filled by a
@@ -33,6 +34,7 @@ public:
     void report_status();
 
     void sync_buffer_positions();
+    void sync_data_source(bool schedule);
 
     virtual void operator()() override;
 
@@ -79,19 +81,19 @@ private:
     RingBuffer<uint64_t, true> ack_;
 
     /// Number of acknowledged microslices. Written to FLIB.
-    uint64_t acked_desc_ = 0;
+    uint64_t acked_desc_;
 
     /// Number of acknowledged data bytes. Written to FLIB.
-    uint64_t acked_data_ = 0;
+    uint64_t acked_data_;
 
     /// Data source (e.g., FLIB).
     InputBufferReadInterface& data_source_;
 
     /// Number of sent microslices, for statistics.
-    uint64_t sent_desc_ = 0;
+    uint64_t sent_desc_;
 
     /// Number of sent data bytes, for statistics.
-    uint64_t sent_data_ = 0;
+    uint64_t sent_data_;
 
     const std::vector<std::string> compute_hostnames_;
     const std::vector<std::string> compute_services_;
@@ -103,8 +105,11 @@ private:
     const uint64_t min_acked_desc_;
     const uint64_t min_acked_data_;
 
-    uint64_t cached_acked_data_ = 0;
-    uint64_t cached_acked_desc_ = 0;
+    uint64_t cached_acked_desc_;
+    uint64_t cached_acked_data_;
+
+    uint64_t start_index_desc_;
+    uint64_t start_index_data_;
 
     uint64_t write_index_desc_ = 0;
 
@@ -119,10 +124,26 @@ private:
         uint64_t sent;
         uint64_t written;
 
-        int64_t used() const { return written - sent; }
-        int64_t sending() const { return sent - acked; }
-        int64_t freeing() const { return acked - cached_acked; }
-        int64_t unused() const { return cached_acked + size - written; }
+        int64_t used() const
+        {
+            assert(sent <= written);
+            return written - sent;
+        }
+        int64_t sending() const
+        {
+            assert(acked <= sent);
+            return sent - acked;
+        }
+        int64_t freeing() const
+        {
+            assert(cached_acked <= acked);
+            return acked - cached_acked;
+        }
+        int64_t unused() const
+        {
+            assert(written <= cached_acked + size);
+            return cached_acked + size - written;
+        }
 
         float percentage(int64_t value) const
         {

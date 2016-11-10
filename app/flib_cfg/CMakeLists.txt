@@ -1,12 +1,12 @@
-# Copyright 2014 Dirk Hutter, Jan de Cuveland
+# Copyright 2014, 2016 Dirk Hutter, Jan de Cuveland
 
-file(GLOB SOURCES *.cpp)
-file(GLOB HEADERS *.hpp)
+add_executable(flib_cfg flib_cfg.cpp)
 
-include_directories("${PROJECT_SOURCE_DIR}/lib/logging"
-                    "${PROJECT_SOURCE_DIR}/lib/flib"
-                    "${PROJECT_SOURCE_DIR}/lib")
+target_compile_definitions(flib_cfg PUBLIC BOOST_ALL_DYN_LINK)
 
-add_executable(flib_cfg flib_cfg.cpp parameters.hpp)
+target_include_directories(flib_cfg SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
-target_link_libraries(flib_cfg flib logging ${Boost_LIBRARIES} pthread rt)
+target_link_libraries(flib_cfg
+  flib logging
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt
+)

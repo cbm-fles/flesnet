@@ -1,4 +1,4 @@
-# Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
+# Copyright 2015-2016 Jan de Cuveland <cmail@cuveland.de>
 
 file(GLOB LIB_SOURCES *.cc)
 file(GLOB LIB_HEADERS *.h)
@@ -10,3 +10,5 @@ if(APPLE)
 endif()
 
 add_library(crcutil ${LIB_SOURCES} ${LIB_HEADERS})
+
+target_include_directories(crcutil PUBLIC .)

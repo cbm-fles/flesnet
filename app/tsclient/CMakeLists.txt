@@ -1,17 +1,19 @@
-# Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+# Copyright 2013, 2016 Jan de Cuveland <cmail@cuveland.de>
 
 file(GLOB APP_SOURCES *.cpp)
-file(GLOB APP_HEADERS *.h)
-
-include_directories("${PROJECT_SOURCE_DIR}/lib/fles_ipc"
-                    "${PROJECT_SOURCE_DIR}/lib/fles_core"
-                    "${PROJECT_SOURCE_DIR}/lib/logging"
-                    "${PROJECT_SOURCE_DIR}/lib/crcutil")
+file(GLOB APP_HEADERS *.hpp)
 
 add_executable(tsclient ${APP_SOURCES} ${APP_HEADERS})
 
-target_link_libraries(tsclient fles_ipc fles_core logging crcutil ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(tsclient ${ZMQ_LIBRARIES})
+target_compile_definitions(tsclient PUBLIC BOOST_ALL_DYN_LINK)
+
+target_include_directories(tsclient SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+
+target_link_libraries(tsclient
+  fles_ipc fles_core logging crcutil
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(tsclient rt)
 endif()

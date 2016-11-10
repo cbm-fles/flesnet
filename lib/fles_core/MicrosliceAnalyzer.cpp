@@ -2,15 +2,17 @@
 
 #include "MicrosliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
+#include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
 #include <cassert>
 #include <sstream>
 
 MicrosliceAnalyzer::MicrosliceAnalyzer(uint64_t arg_output_interval,
                                        std::ostream& arg_out,
-                                       std::string arg_output_prefix)
+                                       std::string arg_output_prefix,
+                                       size_t component)
     : output_interval_(arg_output_interval), out_(arg_out),
-      output_prefix_(std::move(arg_output_prefix))
+      output_prefix_(std::move(arg_output_prefix)), component_(component)
 {
     // create CRC-32C engine (Castagnoli polynomial)
     crc32_engine_ = crcutil_interface::CRC::Create(
@@ -44,7 +46,8 @@ void MicrosliceAnalyzer::initialize(const fles::Microslice& ms)
 {
     fles::MicrosliceDescriptor desc = ms.desc();
     reference_descriptor_ = desc;
-    pattern_checker_ = PatternChecker::create(desc.sys_id, desc.sys_ver, 0);
+    pattern_checker_ =
+        PatternChecker::create(desc.sys_id, desc.sys_ver, component_);
 }
 
 bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
@@ -98,6 +101,11 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms)
     }
 
     if (!result) {
+        if (microslice_error_count_ == 0) { // full dump for first error
+            out_ << "microslice content:\n"
+                 << MicrosliceDescriptorDump(ms.desc())
+                 << BufferDump(ms.content(), ms.desc().size);
+        }
         ++microslice_error_count_;
     }
 

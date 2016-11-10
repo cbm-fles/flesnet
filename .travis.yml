@@ -10,8 +10,10 @@ addons:
     - boost-latest
     - kalakris-cmake
     - ubuntu-toolchain-r-test
+    - george-edison55-precise-backports
     packages:
     - cmake
+    - cmake-data
     - doxygen
     - gcc-4.8
     - g++-4.8
