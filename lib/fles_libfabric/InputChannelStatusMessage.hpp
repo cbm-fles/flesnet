@@ -1,4 +1,6 @@
 // Copyright 2014 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
+
 #pragma once
 
 #include "ComputeNodeBufferPosition.hpp"

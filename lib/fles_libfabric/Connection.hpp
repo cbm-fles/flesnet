@@ -1,4 +1,6 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
+
 #pragma once
 
 //#include "InfinibandException.hpp"
@@ -6,8 +8,8 @@
 //#include <rdma/rdma_cma.h>
 #include <vector>
 
-#include <rdma/fi_endpoint.h>
 #include <rdma/fi_domain.h>
+#include <rdma/fi_endpoint.h>
 #include <rdma/fi_errno.h>
 
 #include <cstdint>

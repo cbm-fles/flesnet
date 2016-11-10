@@ -1,4 +1,5 @@
-// Copyright 2016 Thorsten Schuett <schuett@zib.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
+
 #pragma once
 
 #include <rdma/fabric.h>

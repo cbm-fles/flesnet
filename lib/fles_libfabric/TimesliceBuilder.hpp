@@ -1,4 +1,5 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
 #pragma once
 
 #include "ComputeNodeConnection.hpp"
@@ -24,74 +25,76 @@
  the input nodes) and a group of timeslice building connections to
  input nodes. */
 
-class TimesliceBuilder: public ConnectionGroup<ComputeNodeConnection> {
+class TimesliceBuilder : public ConnectionGroup<ComputeNodeConnection>
+{
 public:
-	/// The ComputeBuffer constructor.
-	TimesliceBuilder(uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
-			unsigned short service, uint32_t num_input_nodes,
-			uint32_t timeslice_size, volatile sig_atomic_t* signal_status,
-			bool drop, std::string local_node_name);
+    /// The ComputeBuffer constructor.
+    TimesliceBuilder(uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
+                     unsigned short service, uint32_t num_input_nodes,
+                     uint32_t timeslice_size,
+                     volatile sig_atomic_t* signal_status, bool drop,
+                     std::string local_node_name);
 
-	TimesliceBuilder(const TimesliceBuilder&) = delete;
-	void operator=(const TimesliceBuilder&) = delete;
+    TimesliceBuilder(const TimesliceBuilder&) = delete;
+    void operator=(const TimesliceBuilder&) = delete;
 
-	/// The ComputeBuffer destructor.
-	~TimesliceBuilder();
+    /// The ComputeBuffer destructor.
+    ~TimesliceBuilder();
 
-	void report_status();
+    void report_status();
 
-	void request_abort();
+    void request_abort();
 
-	virtual void operator()() override;
+    virtual void operator()() override;
 
-	/// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-	virtual void on_connect_request(struct fi_eq_cm_entry* event,
-			size_t private_data_len) override;
+    /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
+    virtual void on_connect_request(struct fi_eq_cm_entry* event,
+                                    size_t private_data_len) override;
 
-	/// Completion notification event dispatcher. Called by the event loop.
-	virtual void on_completion(uint64_t wc_id) override;
+    /// Completion notification event dispatcher. Called by the event loop.
+    virtual void on_completion(uint64_t wc_id) override;
 
-	void poll_ts_completion();
+    void poll_ts_completion();
 
 private:
-	/// setup connections between nodes
-	void bootstrap_with_connections();
+    /// setup connections between nodes
+    void bootstrap_with_connections();
 
-	/// setup connections between nodes
-	void bootstrap_wo_connections();
+    /// setup connections between nodes
+    void bootstrap_wo_connections();
 
-	void make_endpoint_named(struct fi_info* info, const std::string& hostname,
-			const std::string& service, struct fid_ep** ep);
+    void make_endpoint_named(struct fi_info* info, const std::string& hostname,
+                             const std::string& service, struct fid_ep** ep);
 
-	fid_cq* listening_cq_;
-	uint64_t compute_index_;
+    fid_cq* listening_cq_;
+    uint64_t compute_index_;
 
-	// used in connection-less mode
-	InputChannelStatusMessage recv_connect_message_ =
-			InputChannelStatusMessage();
+    // used in connection-less mode
+    InputChannelStatusMessage recv_connect_message_ =
+        InputChannelStatusMessage();
 
-	struct fid_mr* mr_send_ = nullptr;
-	struct fid_mr* mr_recv_ = nullptr;
+    struct fid_mr* mr_send_ = nullptr;
+    struct fid_mr* mr_recv_ = nullptr;
 
-	TimesliceBuffer& timeslice_buffer_;
+    TimesliceBuffer& timeslice_buffer_;
 
-	unsigned short service_;
-	uint32_t num_input_nodes_;
+    unsigned short service_;
+    uint32_t num_input_nodes_;
 
-	std::set<uint_fast16_t> connected_senders_;
+    std::set<uint_fast16_t> connected_senders_;
 
-	uint32_t timeslice_size_;
+    uint32_t timeslice_size_;
 
-	size_t red_lantern_ = 0;
-	uint64_t completely_written_ = 0;
-	uint64_t acked_ = 0;
+    size_t red_lantern_ = 0;
+    uint64_t completely_written_ = 0;
+    uint64_t acked_ = 0;
 
-	/// Buffer to store acknowledged status of timeslices.
-	RingBuffer<uint64_t, true> ack_;
+    /// Buffer to store acknowledged status of timeslices.
+    RingBuffer<uint64_t, true> ack_;
 
-	volatile sig_atomic_t* signal_status_;
+    volatile sig_atomic_t* signal_status_;
 
-	std::string local_node_name_;
+    std::string local_node_name_;
 
-	bool drop_;
+    bool drop_;
 };

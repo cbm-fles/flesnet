@@ -1,4 +1,6 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
+
 #pragma once
 
 #include <cstdint>
@@ -6,14 +8,12 @@
 #pragma pack(1)
 
 /// Access information for a remote memory region.
-struct BufferInfo
-{
+struct BufferInfo {
     uint64_t addr; ///< Target memory address
     uint64_t rkey; ///< Target remote access key
 };
 
-struct ComputeNodeInfo
-{
+struct ComputeNodeInfo {
     BufferInfo data;
     BufferInfo desc;
     uint32_t index;

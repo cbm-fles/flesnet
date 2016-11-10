@@ -241,7 +241,7 @@ void Parameters::parse_options(int argc, char* argv[])
         throw ParametersException("timeslice size cannot be zero");
     }
 
-#if  !defined(RDMA) && !defined(LIBFABRIC)
+#if !defined(RDMA) && !defined(LIBFABRIC)
     if (!zeromq_) {
         throw ParametersException("flesnet built without RDMA support");
     }

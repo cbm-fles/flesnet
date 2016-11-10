@@ -1,4 +1,6 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
+
 #pragma once
 
 #include "ComputeNodeInfo.hpp"
@@ -13,127 +15,126 @@
  timeslice building connection from an input node to a compute
  node. */
 
-class InputChannelConnection: public Connection {
+class InputChannelConnection : public Connection
+{
 public:
-	/// The InputChannelConnection constructor.
-	InputChannelConnection(struct fid_eq* eq, uint_fast16_t connection_index,
-			uint_fast16_t remote_connection_index, unsigned int max_send_wr,
-			unsigned int max_pending_write_requests);
+    /// The InputChannelConnection constructor.
+    InputChannelConnection(struct fid_eq* eq, uint_fast16_t connection_index,
+                           uint_fast16_t remote_connection_index,
+                           unsigned int max_send_wr,
+                           unsigned int max_pending_write_requests);
 
-	InputChannelConnection(const InputChannelConnection&) = delete;
-	void operator=(const InputChannelConnection&) = delete;
+    InputChannelConnection(const InputChannelConnection&) = delete;
+    void operator=(const InputChannelConnection&) = delete;
 
-	/// Wait until enough space is available at target compute node.
-	bool check_for_buffer_space(uint64_t data_size, uint64_t desc_size);
+    /// Wait until enough space is available at target compute node.
+    bool check_for_buffer_space(uint64_t data_size, uint64_t desc_size);
 
-	/// Send data and descriptors to compute node.
-	void send_data(struct iovec* sge, void** desc, int num_sge,
-			uint64_t timeslice, uint64_t desc_length, uint64_t data_length,
-			uint64_t skip);
+    /// Send data and descriptors to compute node.
+    void send_data(struct iovec* sge, void** desc, int num_sge,
+                   uint64_t timeslice, uint64_t desc_length,
+                   uint64_t data_length, uint64_t skip);
 
-	bool write_request_available();
+    bool write_request_available();
 
-	/// Increment target write pointers after data has been sent.
-	void inc_write_pointers(uint64_t data_size, uint64_t desc_size);
+    /// Increment target write pointers after data has been sent.
+    void inc_write_pointers(uint64_t data_size, uint64_t desc_size);
 
-	// Get number of bytes to skip in advance (to avoid buffer wrap)
-	uint64_t skip_required(uint64_t data_size);
+    // Get number of bytes to skip in advance (to avoid buffer wrap)
+    uint64_t skip_required(uint64_t data_size);
 
-	bool try_sync_buffer_positions();
+    bool try_sync_buffer_positions();
 
-	void finalize(bool abort);
+    void finalize(bool abort);
 
-	bool request_abort_flag() {
-		return recv_status_message_.request_abort;
-	}
+    bool request_abort_flag() { return recv_status_message_.request_abort; }
 
-	void on_complete_write();
+    void on_complete_write();
 
-	/// Handle Libfabric receive completion notification.
-	void on_complete_recv();
+    /// Handle Libfabric receive completion notification.
+    void on_complete_recv();
 
-	virtual void setup_mr(struct fid_domain* pd) override;
-	virtual void setup() override;
+    virtual void setup_mr(struct fid_domain* pd) override;
+    virtual void setup() override;
 
-	/// Connection handler function, called on successful connection.
-	/**
-	 \param event RDMA connection manager event structure
-	 */
-	virtual void on_established(struct fi_eq_cm_entry* event) /*override*/;
-	//
-	void dereg_mr();
+    /// Connection handler function, called on successful connection.
+    /**
+     \param event RDMA connection manager event structure
+     */
+    virtual void on_established(struct fi_eq_cm_entry* event) /*override*/;
+    //
+    void dereg_mr();
 
-	virtual void on_rejected(struct fi_eq_err_entry* event) override;
+    virtual void on_rejected(struct fi_eq_err_entry* event) override;
 
-	virtual void on_disconnected(struct fi_eq_cm_entry* event) /*override*/;
+    virtual void on_disconnected(struct fi_eq_cm_entry* event) /*override*/;
 
-	virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
+    virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
-	void connect(const std::string& hostname, const std::string& service,
-			struct fid_domain* domain, struct fid_cq* cq, struct fid_av* av,
-			fi_addr_t fi_addr);
+    void connect(const std::string& hostname, const std::string& service,
+                 struct fid_domain* domain, struct fid_cq* cq,
+                 struct fid_av* av, fi_addr_t fi_addr);
 
-	void reconnect();
+    void reconnect();
 
-	void set_partner_addr(struct fid_av* av_);
+    void set_partner_addr(struct fid_av* av_);
 
-	fi_addr_t get_partner_addr();
+    fi_addr_t get_partner_addr();
 
-	void set_remote_info();
+    void set_remote_info();
 
 private:
-	/// Post a receive work request (WR) to the receive queue
-	void post_recv_status_message();
+    /// Post a receive work request (WR) to the receive queue
+    void post_recv_status_message();
 
-	/// Post a send work request (WR) to the send queue
-	void post_send_status_message();
+    /// Post a send work request (WR) to the send queue
+    void post_send_status_message();
 
-	/// Flag, true if it is the input nodes's turn to send a pointer update.
-	bool our_turn_ = true;
+    /// Flag, true if it is the input nodes's turn to send a pointer update.
+    bool our_turn_ = true;
 
-	bool finalize_ = false;
-	bool abort_ = false;
+    bool finalize_ = false;
+    bool abort_ = false;
 
-	/// Access information for memory regions on remote end.
-	ComputeNodeInfo remote_info_ = ComputeNodeInfo();
+    /// Access information for memory regions on remote end.
+    ComputeNodeInfo remote_info_ = ComputeNodeInfo();
 
-	/// Local copy of acknowledged-by-CN pointers
-	ComputeNodeBufferPosition cn_ack_ = ComputeNodeBufferPosition();
+    /// Local copy of acknowledged-by-CN pointers
+    ComputeNodeBufferPosition cn_ack_ = ComputeNodeBufferPosition();
 
-	/// Receive buffer for CN status (including acknowledged-by-CN pointers)
-	ComputeNodeStatusMessage recv_status_message_ = ComputeNodeStatusMessage();
+    /// Receive buffer for CN status (including acknowledged-by-CN pointers)
+    ComputeNodeStatusMessage recv_status_message_ = ComputeNodeStatusMessage();
 
-	/// Libfabric memory region descriptor for CN status (including
-	/// acknowledged-by-CN pointers)
-	fid_mr* mr_recv_ = nullptr;
+    /// Libfabric memory region descriptor for CN status (including
+    /// acknowledged-by-CN pointers)
+    fid_mr* mr_recv_ = nullptr;
 
-	/// Local version of CN write pointers
-	ComputeNodeBufferPosition cn_wp_ = ComputeNodeBufferPosition();
+    /// Local version of CN write pointers
+    ComputeNodeBufferPosition cn_wp_ = ComputeNodeBufferPosition();
 
-	/// Send buffer for input channel status (including CN write pointers)
-	InputChannelStatusMessage send_status_message_ =
-			InputChannelStatusMessage();
+    /// Send buffer for input channel status (including CN write pointers)
+    InputChannelStatusMessage send_status_message_ =
+        InputChannelStatusMessage();
 
-	/// Libfabric memory region descriptor for input channel status (including
-	/// CN write pointers)
-	struct fid_mr* mr_send_ = nullptr;
+    /// Libfabric memory region descriptor for input channel status (including
+    /// CN write pointers)
+    struct fid_mr* mr_send_ = nullptr;
 
-	/// InfiniBand receive work request
-	struct fi_msg recv_wr = fi_msg();
-	struct iovec recv_wr_iovec = iovec();
-	void* recv_descs[1] = { nullptr };
+    /// InfiniBand receive work request
+    struct fi_msg recv_wr = fi_msg();
+    struct iovec recv_wr_iovec = iovec();
+    void* recv_descs[1] = {nullptr};
 
-	/// Infiniband send work request
-	struct fi_msg send_wr = fi_msg();
-	struct iovec send_wr_iovec = iovec();
-	void* send_descs[1] = { nullptr };
+    /// Infiniband send work request
+    struct fi_msg send_wr = fi_msg();
+    struct iovec send_wr_iovec = iovec();
+    void* send_descs[1] = {nullptr};
 
-	unsigned int pending_write_requests_ { 0 };
+    unsigned int pending_write_requests_{0};
 
-	unsigned int max_pending_write_requests_ { 0 };
+    unsigned int max_pending_write_requests_{0};
 
-	uint_fast16_t remote_connection_index_;
+    uint_fast16_t remote_connection_index_;
 
-	fi_addr_t partner_addr_ = 0;
-
+    fi_addr_t partner_addr_ = 0;
 };

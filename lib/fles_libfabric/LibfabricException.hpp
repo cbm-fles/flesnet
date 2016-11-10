@@ -1,4 +1,6 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
+
 #pragma once
 
 #include <stdexcept>
@@ -11,7 +13,7 @@ class LibfabricException : public std::runtime_error
 {
 public:
     /// The LibfabricException default constructor.
-    explicit LibfabricException(const std::string &what_arg = "")
+    explicit LibfabricException(const std::string& what_arg = "")
         : std::runtime_error(what_arg)
     {
     }

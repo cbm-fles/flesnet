@@ -1,9 +1,10 @@
-// Copyright 2016 Thorsten Schuett <schuett@zib.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
+
 #pragma once
 
 #include <memory>
-#include <unordered_map>
 #include <rdma/fabric.h>
+#include <unordered_map>
 
 #include "Provider.hpp"
 

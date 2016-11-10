@@ -10,7 +10,7 @@
 TimesliceBuilder::TimesliceBuilder(
     uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
     unsigned short service, uint32_t num_input_nodes, uint32_t timeslice_size,
-    volatile sig_atomic_t* signal_status, bool drop, std::string /*local_node_name*/)
+    volatile sig_atomic_t* signal_status, bool drop)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
       service_(service), num_input_nodes_(num_input_nodes),
       timeslice_size_(timeslice_size),

@@ -1,4 +1,4 @@
-// Copyright 2016 Thorsten Schuett <schuett@zib.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
 
 #include "RDMSocketsProvider.hpp"
 
@@ -6,20 +6,20 @@
 
 #include <cassert>
 #include <cstring>
+#include <iostream>
 #include <memory>
 #include <string>
-#include <iostream>
 
-#include <rdma/fi_domain.h>
 #include <rdma/fi_cm.h>
-#include <rdma/fi_errno.h>
+#include <rdma/fi_domain.h>
 #include <rdma/fi_endpoint.h>
+#include <rdma/fi_errno.h>
 
 #include "LibfabricException.hpp"
 
-#include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <sys/socket.h>
 
 RDMSocketsProvider::~RDMSocketsProvider()
 {
@@ -45,15 +45,16 @@ struct fi_info* RDMSocketsProvider::exists(std::string local_host_name)
     hints->addr_format = FI_SOCKADDR_IN;
     hints->fabric_attr->prov_name = strdup("sockets");
 
-    int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr, 0, hints, &info);
+    int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr, 0,
+                         hints, &info);
 
     if (!res) {
-        //fi_freeinfo(hints);
+        // fi_freeinfo(hints);
         return info;
     }
 
     fi_freeinfo(info);
-    //fi_freeinfo(hints);
+    // fi_freeinfo(hints);
 
     return nullptr;
 }
@@ -61,14 +62,15 @@ struct fi_info* RDMSocketsProvider::exists(std::string local_host_name)
 RDMSocketsProvider::RDMSocketsProvider(struct fi_info* info) : info_(info)
 {
     int res = fi_fabric(info_->fabric_attr, &fabric_, nullptr);
-    if (res){
-    	L_(fatal) << "fi_fabric failed: " << res << "=" << fi_strerror(-res);
+    if (res) {
+        L_(fatal) << "fi_fabric failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("fi_fabric failed");
     }
 }
 
 void RDMSocketsProvider::accept(struct fid_pep* pep __attribute__((unused)),
-                                const std::string& hostname __attribute__((unused)),
+                                const std::string& hostname
+                                __attribute__((unused)),
                                 unsigned short port __attribute__((unused)),
                                 unsigned int count __attribute__((unused)),
                                 fid_eq* eq __attribute__((unused)))
@@ -81,7 +83,8 @@ void RDMSocketsProvider::connect(fid_ep* ep __attribute__((unused)),
                                  uint32_t max_send_sge __attribute__((unused)),
                                  uint32_t max_recv_wr __attribute__((unused)),
                                  uint32_t max_recv_sge __attribute__((unused)),
-                                 uint32_t max_inline_data __attribute__((unused)),
+                                 uint32_t max_inline_data
+                                 __attribute__((unused)),
                                  const void* param __attribute__((unused)),
                                  size_t param_len __attribute__((unused)),
                                  void* addr __attribute__((unused)))
@@ -94,13 +97,13 @@ void RDMSocketsProvider::set_hostnames_and_services(
     const std::vector<std::string>& compute_services,
     std::vector<fi_addr_t>& fi_addrs)
 {
-    struct fi_info* info, *hints;
+    struct fi_info *info, *hints;
 
     for (size_t i = 0; i < compute_hostnames.size(); i++) {
         fi_addr_t fi_addr;
 
-		info = nullptr;
-    	hints = fi_allocinfo();
+        info = nullptr;
+        hints = fi_allocinfo();
         hints->caps = FI_RMA | FI_MSG | FI_REMOTE_WRITE;
         hints->ep_attr->type = FI_EP_RDM;
         hints->domain_attr->data_progress = FI_PROGRESS_AUTO;

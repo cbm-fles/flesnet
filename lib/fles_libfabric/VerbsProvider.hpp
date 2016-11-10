@@ -1,9 +1,9 @@
-// Copyright 2016 Thorsten Schuett <schuett@zib.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
 #pragma once
 
 #include <memory>
-#include <unordered_map>
 #include <rdma/fabric.h>
+#include <unordered_map>
 
 #include "Provider.hpp"
 
@@ -43,7 +43,7 @@ public:
 
     struct fid_fabric* get_fabric() override { return fabric_; };
 
-    static struct fi_info  *exists(std::string local_host_name);
+    static struct fi_info* exists(std::string local_host_name);
 
     void accept(struct fid_pep* pep, const std::string& hostname,
                 unsigned short port, unsigned int count, fid_eq* eq) override;

@@ -1,4 +1,6 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
+
 #pragma once
 
 #include <iostream>
@@ -18,7 +20,7 @@ enum RequestIdentifier {
 #pragma pack()
 
 /// Overloaded output operator for RequestIdentifier values.
-inline std::ostream &operator<<(std::ostream &s, RequestIdentifier v)
+inline std::ostream& operator<<(std::ostream& s, RequestIdentifier v)
 {
     switch (v) {
     case ID_WRITE_DATA:

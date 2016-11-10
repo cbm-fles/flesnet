@@ -85,8 +85,9 @@ Application::Application(Parameters const& par,
             timeslice_builders_.push_back(std::move(builder));
 #elif LIBFABRIC
             std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
-                        i, *tsb, par_.base_port() + i, input_nodes_size,
-            par_.timeslice_size(), signal_status_, false, par_.compute_nodes()[i]));
+                i, *tsb, par_.base_port() + i, input_nodes_size,
+                par_.timeslice_size(), signal_status_, false,
+                par_.compute_nodes()[i]));
             timeslice_builders_.push_back(std::move(builder));
 #else
             L_(fatal) << "flesnet built without RDMA support";
@@ -145,9 +146,9 @@ Application::Application(Parameters const& par,
             input_channel_senders_.push_back(std::move(sender));
 #elif LIBFABRIC
             std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
-                        index, *(data_sources_.at(c).get()), par.compute_nodes(),
-                        compute_services, par.timeslice_size(), par.overlap_size(),
-            par.max_timeslice_number(), par.input_nodes().at(c)));
+                index, *(data_sources_.at(c).get()), par.compute_nodes(),
+                compute_services, par.timeslice_size(), par.overlap_size(),
+                par.max_timeslice_number(), par.input_nodes().at(c)));
             input_channel_senders_.push_back(std::move(sender));
 #else
             L_(fatal) << "flesnet built without RDMA support";
