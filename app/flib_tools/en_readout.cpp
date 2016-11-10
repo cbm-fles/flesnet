@@ -61,14 +61,14 @@ int main(int argc, char* argv[]) {
               std::unique_ptr<flib::flim>(new flib::flim(links.at(i))));
         } catch (const std::exception& e) {
           std::cerr << e.what() << std::endl;
-          exit(EXIT_FAILURE);
+          return EXIT_FAILURE;
         }
       }
     }
 
     if (flims.empty()) {
       std::cout << "No active links found" << std::endl;
-      exit(EXIT_SUCCESS);
+      return EXIT_SUCCESS;
     }
 
     // reset at startup
@@ -149,6 +149,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Exiting" << std::endl;
   } catch (std::exception const& e) {
     std::cout << "Exception: " << e.what() << std::endl;
+    return EXIT_FAILURE;
   }
-  return 0;
+  return EXIT_SUCCESS;
 }
