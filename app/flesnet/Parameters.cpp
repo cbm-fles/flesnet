@@ -230,8 +230,7 @@ void Parameters::parse_options(int argc, char* argv[])
 
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
-        std::cout << "can not open config file: " << config_file << "\n";
-        exit(EXIT_SUCCESS);
+        throw ParametersException("can not open config file: " + config_file);
     } else {
         po::store(po::parse_config_file(ifs, config), vm);
         notify(vm);
