@@ -5,6 +5,12 @@
 # the script is not fool prove, think before you change something.
 
 set -e
+set -m  # run all processes in a separate process group
+
+# debug
+#set -v
+#set -x
+
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 BINDIR=.
 F0=(disable disable disable disable disable disable disable disable)
@@ -26,25 +32,35 @@ F0_BASE_EQID=0xF00
 
 ##### confiuration above this line ########
 
+# the shutdown proceduce
+end_readout () {
+    echo "*** SHUTTING DOWN ***"
+    kill -s SIGINT $EN_PID
+    sleep 2
+    kill -s SIGINT $FLESNET_PID
+    sleep 1
+    kill -s SIGINT $SERVER_PID
+}
+trap end_readout SIGINT SIGTERM SIGHUP
+
+
 echo "Starting readout ..."
 
 # ensure everything is fine
 $ROOT_DIR/contrib/flesnet-check
 
-echo "# empty config file to enforce cmd line params only" > empty.cfg
-
 ## configrue FLIB
 F0_LINKS=0
-F0_IN_LIST=
+declare -a F0_IN_LIST
 for i in ${F0[*]}; do
     if [ $i != disable ]; then
-        F0_IN_LIST+=" -I 127.0.0.1 -i $F0_LINKS"
+        F0_IN_LIST+=(-I 127.0.0.1 -i $F0_LINKS)
         ((F0_LINKS += 1))
     fi
 done
 
 echo "Configuring FLIB 0: $F0_LINKS active links (${F0[*]})"
-$BINDIR/flib_cfg -c empty.cfg -l 2 -L f0_cfg.log -i $F0_ADDR -t 100 \
+$BINDIR/flib_cfg -c /dev/null -l 2 -L f0_cfg.log -i $F0_ADDR -t 100 \
                  --l0_source ${F0[0]} --l0_eq_id ${F0_BASE_EQID}0 \
                  --l1_source ${F0[1]} --l1_eq_id ${F0_BASE_EQID}1 \
                  --l2_source ${F0[2]} --l2_eq_id ${F0_BASE_EQID}2 \
@@ -55,9 +71,9 @@ $BINDIR/flib_cfg -c empty.cfg -l 2 -L f0_cfg.log -i $F0_ADDR -t 100 \
                  --l7_source ${F0[7]} --l7_eq_id ${F0_BASE_EQID}7
  
 echo "Starting flib_server ..."
-$BINDIR/flib_server -c empty.cfg -L f0_server.log -i $F0_ADDR \
+$BINDIR/flib_server -c /dev/null -L f0_server.log -i $F0_ADDR \
                     -o shm_server_f0 &
- 
+SERVER_PID=$!
  
 # block till server is ready (remove if etcd is ready)
 sleep 1
@@ -68,23 +84,20 @@ done
 
 
 # flesnet configuration
-FLESNET_CFG="-f empty.cfg -L flesnet.log --timeslice-size 100 --overlap-size 0 
+FLESNET_CFG=(-f /dev/null -L flesnet.log --timeslice-size 100 --overlap-size 0 
 --standalone false --in-data-buffer-size-exp 27 --cn-data-buffer-size-exp 27 
---processor-instances 1 --input-shm shm_server_f0"
-F0_CN_LIST=" -C 127.0.0.1 -c 0"
-
-FLESNET_CFG+=$F0_CN_LIST
-FLESNET_CFG+=$F0_IN_LIST
-#echo "$FLESNET_CFG"
+--processor-instances 1 --input-shm shm_server_f0)
+F0_CN_LIST=(-C 127.0.0.1 -c 0)
+TS_CFG=(-e './tsclient -c%i -s%s -a')
 
 echo "Starting flesnet ..."
-$BINDIR/flesnet $FLESNET_CFG  -e './tsclient -c%i -s%s -a' &
-
+$BINDIR/flesnet "${FLESNET_CFG[@]}" "${TS_CFG[@]}" "${F0_IN_LIST[@]}" "${F0_CN_LIST[@]}" &
+FLESNET_PID=$!
 
 # enable readout
 sleep 1
-$BINDIR/en_readout 0
-
+$BINDIR/en_readout &
+EN_PID=$!
 
 wait
 echo "*** END ***"
