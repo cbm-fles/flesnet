@@ -127,7 +127,7 @@ private:
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
       if (config_file != "flib_server.cfg") {
-        throw ParametersException("Can not open config file: " + config_file);
+        throw ParametersException("Cannot open config file: " + config_file);
       }
     } else {
       std::cout << "Using config file: " << config_file << "\n";
