@@ -1,6 +1,6 @@
 CBM FLES Timeslice Building
 ===========================
-[![Build Status](https://travis-ci.org/cbm-fles/flesnet.svg?branch=master)](https://travis-ci.org/cbm-fles/flesnet)
+[![Build Status](https://travis-ci.org/tschuett/flesnet.svg?branch=fles_libfabric)](https://travis-ci.org/tschuett/flesnet)
 [![Coverage Status](https://coveralls.io/repos/github/cbm-fles/flesnet/badge.svg?branch=master)](https://coveralls.io/github/cbm-fles/flesnet?branch=master)
 
 The First-Level Event Selector (FLES) system of the CBM experiment employs a
