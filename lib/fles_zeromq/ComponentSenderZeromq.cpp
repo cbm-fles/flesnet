@@ -20,30 +20,43 @@ ComponentSenderZeromq::ComponentSenderZeromq(
     start_index_ = acked_ = cached_acked_ = data_source.get_read_index();
 
     size_t min_ack_buffer_size =
-        data_source_.desc_buffer().size() / timeslice_size_ + 1;
+        (data_source_.desc_buffer().size() / timeslice_size_ + 1) * 2;
     ack_.alloc_with_size(min_ack_buffer_size);
 
     zmq_context_ = zmq_ctx_new();
     socket_ = zmq_socket(zmq_context_, ZMQ_REP);
     int rc = zmq_bind(socket_, listen_address.c_str());
     assert(rc == 0);
+    int timeout_ms = 500;
+    rc = zmq_setsockopt(socket_, ZMQ_RCVTIMEO, &timeout_ms, sizeof timeout_ms);
+    assert(rc == 0);
 }
 
 ComponentSenderZeromq::~ComponentSenderZeromq()
 {
+    if (socket_) {
+        int rc = zmq_close(socket_);
+        assert(rc == 0);
+    }
     if (zmq_context_) {
-        zmq_ctx_destroy(zmq_context_);
+        int rc = zmq_ctx_destroy(zmq_context_);
+        assert(rc == 0);
     }
 }
 
 void ComponentSenderZeromq::operator()()
 {
-    while (acked_ts_ < max_timeslice_number_ && *signal_status_ == 0) {
+    data_source_.proceed();
+
+    while (acked_ts2_ / 2 < max_timeslice_number_ && *signal_status_ == 0) {
         zmq_msg_t request;
         int rc = zmq_msg_init(&request);
         assert(rc == 0);
 
-        int len = zmq_recvmsg(socket_, &request, 0);
+        int len = zmq_msg_recv(&request, socket_, 0);
+        if (len == -1 && errno == EAGAIN) {
+            continue;
+        }
         assert(len != -1);
 
         assert(len == sizeof(uint64_t));
@@ -51,6 +64,7 @@ void ComponentSenderZeromq::operator()()
         zmq_msg_close(&request);
 
         try_send_timeslice(timeslice);
+        data_source_.proceed();
     }
     sync_data_source();
 }
@@ -71,13 +85,14 @@ void free_ts(void* /* data */, void* hint)
 
 bool ComponentSenderZeromq::try_send_timeslice(uint64_t ts)
 {
-    assert(ts >= acked_ts_);
+    assert(ts >= acked_ts2_ / 2);
 
     uint64_t desc_offset = ts * timeslice_size_ + start_index_.desc;
     uint64_t desc_length = timeslice_size_ + overlap_size_;
 
     // check if complete timeslice is available in the input buffer
     if (write_index_desc_ < desc_offset + desc_length) {
+        data_source_.proceed();
         write_index_desc_ = data_source_.get_write_index().desc;
         if (write_index_desc_ < desc_offset + desc_length) {
             // send empty message
@@ -145,20 +160,18 @@ zmq_msg_t ComponentSenderZeromq::create_message(RingBufferView<T_>& buf,
 
 void ComponentSenderZeromq::ack_timeslice(uint64_t ts, bool is_data)
 {
-    assert(ts >= acked_ts_);
-    if (ts != acked_ts_) {
+    // use ts2 and acked_ts2_ to handle desc and data sequentially
+    uint64_t ts2 = ts * 2 + (is_data ? 1 : 0);
+    assert(ts2 >= acked_ts2_);
+    if (ts2 != acked_ts2_) {
         // transmission has been reordered, store completion information
-        if (is_data) {
-            ack_.at(ts).data = ts;
-        } else {
-            ack_.at(ts).desc = ts;
-        }
+        ack_.at(ts2) = ts2;
     } else {
         // completion is for earliest pending timeslice, update indices
         do {
-            ++acked_ts_;
-        } while (ack_.at(acked_ts_).desc > ts && ack_.at(acked_ts_).data > ts);
-        acked_.desc = acked_ts_ * timeslice_size_ + start_index_.desc;
+            ++acked_ts2_;
+        } while (ack_.at(acked_ts2_) > ts2);
+        acked_.desc = acked_ts2_ / 2 * timeslice_size_ + start_index_.desc;
         acked_.data = data_source_.desc_buffer().at(acked_.desc - 1).offset +
                       data_source_.desc_buffer().at(acked_.desc - 1).size;
         if (acked_.data >= cached_acked_.data + min_acked_.data ||

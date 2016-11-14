@@ -3,6 +3,7 @@
 
 #include "DualRingBuffer.hpp"
 #include "RingBuffer.hpp"
+#include <csignal>
 #include <zmq.h>
 
 /// Input buffer and compute node connection container class.
@@ -57,10 +58,10 @@ private:
     void* socket_;
 
     /// Buffer to store acknowledged status of timeslices.
-    RingBuffer<DualIndex, true> ack_;
+    RingBuffer<uint64_t, true> ack_;
 
-    /// Number of acknowledged timeslices.
-    uint64_t acked_ts_ = 0;
+    /// Number of acknowledged timeslices (times two - desc and data).
+    uint64_t acked_ts2_ = 0;
 
     /// Indexes of acknowledged microslices (i.e., read indexes).
     DualIndex acked_;

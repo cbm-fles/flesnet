@@ -74,8 +74,9 @@ Application::Application(Parameters const& par,
         if (par_.zeromq()) {
             std::unique_ptr<TimesliceBuilderZeromq> builder(
                 new TimesliceBuilderZeromq(
-                    i, *tsb, input_server_addresses, par_.timeslice_size(),
-                    par_.max_timeslice_number(), signal_status_));
+                    i, *tsb, input_server_addresses, par.compute_nodes().size(),
+                    par_.timeslice_size(), par_.max_timeslice_number(),
+                    signal_status_));
             timeslice_builders_zeromq_.push_back(std::move(builder));
         } else {
 #ifdef RDMA

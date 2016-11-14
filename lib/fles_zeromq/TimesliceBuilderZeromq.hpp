@@ -5,6 +5,7 @@
 #include "RingBuffer.hpp"
 #include "TimesliceBuffer.hpp"
 #include <cassert>
+#include <csignal>
 #include <vector>
 #include <zmq.h>
 
@@ -21,8 +22,8 @@ public:
     TimesliceBuilderZeromq(
         uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
         const std::vector<std::string> input_server_addresses,
-        uint32_t timeslice_size, uint32_t max_timeslice_number,
-        volatile sig_atomic_t* signal_status);
+        uint32_t num_compute_nodes, uint32_t timeslice_size,
+        uint32_t max_timeslice_number, volatile sig_atomic_t* signal_status);
 
     TimesliceBuilderZeromq(const TimesliceBuilderZeromq&) = delete;
     void operator=(const TimesliceBuilderZeromq&) = delete;
@@ -43,6 +44,9 @@ private:
     /// Vector of all input server addresses to connect to.
     const std::vector<std::string> input_server_addresses_;
 
+    /// Number of compute nodes.
+    const uint32_t num_compute_nodes_;
+
     /// Constant size (in microslices) of a timeslice component.
     const uint32_t timeslice_size_;
 
@@ -62,7 +66,7 @@ private:
     uint64_t ts_index_;
 
     /// The local buffer position of the timeslice currently being received.
-    uint64_t tpos = 0;
+    uint64_t tpos_ = 0;
 
     /// Buffer to store acknowledged status of timeslices.
     RingBuffer<uint64_t, true> ack_;

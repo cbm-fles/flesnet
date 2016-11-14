@@ -11,11 +11,11 @@
 TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
     const std::vector<std::string> input_server_addresses,
-    uint32_t timeslice_size, uint32_t max_timeslice_number,
-    volatile sig_atomic_t* signal_status)
+    uint32_t num_compute_nodes, uint32_t timeslice_size,
+    uint32_t max_timeslice_number, volatile sig_atomic_t* signal_status)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
       input_server_addresses_(input_server_addresses),
-      timeslice_size_(timeslice_size),
+      num_compute_nodes_(num_compute_nodes), timeslice_size_(timeslice_size),
       max_timeslice_number_(max_timeslice_number),
       signal_status_(signal_status), ts_index_(compute_index_),
       ack_(timeslice_buffer_.get_desc_size_exp())
@@ -62,7 +62,7 @@ void TimesliceBuilderZeromq::operator()()
             } while (msg_size == 0);
 
             // receive data answer (part 2), do not release
-            assert(zmq_msg_more(&c->data_msg));
+            assert(zmq_msg_more(&c->desc_msg));
             int rc = zmq_msg_init(&c->data_msg);
             assert(rc == 0);
             rc = zmq_msg_recv(&c->data_msg, c->socket, 0);
@@ -71,14 +71,17 @@ void TimesliceBuilderZeromq::operator()()
             uint64_t size_required =
                 zmq_msg_size(&c->desc_msg) + zmq_msg_size(&c->data_msg);
 
-            while (c->data.size_available() < size_required ||
+            while (c->data.size_available_contiguous() < size_required ||
                    c->desc.size_available() < 1) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 handle_timeslice_completions();
             }
 
+            // skip remaining bytes in data buffer to avoid fractured entry
+            c->data.skip_buffer_wrap(size_required);
+
             // generate timeslice component descriptor
-            assert(tpos == c->desc.write_index());
+            assert(tpos_ == c->desc.write_index());
             c->desc.append({ts_index_, c->data.write_index(), size_required,
                             zmq_msg_size(&c->desc_msg) /
                                 sizeof(fles::MicrosliceDescriptor)});
@@ -94,14 +97,24 @@ void TimesliceBuilderZeromq::operator()()
         handle_timeslice_completions();
 
         timeslice_buffer_.send_work_item(
-            {{ts_index_, tpos, timeslice_size_,
+            {{ts_index_, tpos_, timeslice_size_,
               static_cast<uint32_t>(connections_.size())},
              timeslice_buffer_.get_data_size_exp(),
              timeslice_buffer_.get_desc_size_exp()});
-        ++tpos;
+        ++tpos_;
         // next timeslice: round robin
-        ts_index_ += compute_index_;
+        ts_index_ += num_compute_nodes_;
     }
+
+    // wait until all pending timeslices have been acknowledged
+    while (acked_ < tpos_) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        handle_timeslice_completions();
+    }
+    assert(timeslice_buffer_.get_num_work_items() == 0);
+    assert(timeslice_buffer_.get_num_completions() == 0);
+    timeslice_buffer_.send_end_work_item();
+    timeslice_buffer_.send_end_completion();
 }
 
 void TimesliceBuilderZeromq::handle_timeslice_completions()
