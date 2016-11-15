@@ -153,60 +153,73 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
 void Parameters::parse_options(int argc, char* argv[])
 {
     unsigned log_level = 2;
+    std::string log_file;
     std::string config_file;
 
     po::options_description generic("Generic options");
-    generic.add_options()("version,V", "print version string")(
-        "help,h",
-        "produce help message")("log-level,l", po::value<unsigned>(&log_level),
-                                "set the log level (default:2, all:0)")(
+    auto generic_add = generic.add_options();
+    generic_add("version,V", "print version string");
+    generic_add("help,h", "produce help message");
+    generic_add("log-level,l", po::value<unsigned>(&log_level),
+                "set the log level (default:2, all:0)");
+    generic_add("log-file,L", po::value<std::string>(&log_file),
+                "name of target log file");
+    generic_add(
         "config-file,f",
         po::value<std::string>(&config_file)->default_value("flesnet.cfg"),
         "name of a configuration file.");
 
     po::options_description config("Configuration");
-    config.add_options()("input-index,i",
-                         po::value<std::vector<unsigned>>()->multitoken(),
-                         "this application's index in the list of input nodes")(
-        "compute-index,c", po::value<std::vector<unsigned>>()->multitoken(),
-        "this application's index in the list of compute nodes")(
-        "input-nodes,I", po::value<std::vector<std::string>>()->multitoken(),
-        "add host to the list of input nodes")(
-        "compute-nodes,C", po::value<std::vector<std::string>>()->multitoken(),
-        "add host to the list of compute nodes")(
-        "timeslice-size", po::value<uint32_t>(&timeslice_size_),
-        "global timeslice size in number of microslices")(
-        "overlap-size", po::value<uint32_t>(&overlap_size_),
-        "size of the overlap region in number of microslices")(
-        "in-data-buffer-size-exp",
-        po::value<uint32_t>(&in_data_buffer_size_exp_),
-        "exp. size of the input node's data buffer in bytes")(
-        "in-desc-buffer-size-exp",
-        po::value<uint32_t>(&in_desc_buffer_size_exp_),
-        "exp. size of the input node's descriptor buffer"
-        " (number of entries)")(
-        "cn-data-buffer-size-exp",
-        po::value<uint32_t>(&cn_data_buffer_size_exp_),
-        "exp. size of the compute node's data buffer in bytes")(
-        "cn-desc-buffer-size-exp",
-        po::value<uint32_t>(&cn_desc_buffer_size_exp_),
-        "exp. size of the compute node's descriptor buffer"
-        " (number of entries)")(
-        "typical-content-size", po::value<uint32_t>(&typical_content_size_),
-        "typical number of content bytes per microslice")(
-        "input-shm", po::value<std::string>(&input_shm_),
-        "name of a shared memory to use as data source")(
-        "standalone", po::value<bool>(&standalone_), "standalone mode flag")(
-        "max-timeslice-number,n", po::value<uint32_t>(&max_timeslice_number_),
-        "global maximum timeslice number")(
-        "processor-executable,e",
-        po::value<std::string>(&processor_executable_),
-        "name of the executable acting as timeslice processor")(
-        "processor-instances", po::value<uint32_t>(&processor_instances_),
-        "number of instances of the timeslice processor executable")(
-        "base-port", po::value<uint32_t>(&base_port_),
-        "base IP port to use for listening")(
-        "zeromq,z", po::value<bool>(&zeromq_), "use zeromq transport");
+    auto config_add = config.add_options();
+    config_add("input-index,i",
+               po::value<std::vector<unsigned>>()->multitoken(),
+               "this application's index in the list of input nodes");
+    config_add("compute-index,c",
+               po::value<std::vector<unsigned>>()->multitoken(),
+               "this application's index in the list of compute nodes");
+    config_add("input-nodes,I",
+               po::value<std::vector<std::string>>()->multitoken(),
+               "add host to the list of input nodes");
+    config_add("compute-nodes,C",
+               po::value<std::vector<std::string>>()->multitoken(),
+               "add host to the list of compute nodes");
+    config_add("timeslice-size", po::value<uint32_t>(&timeslice_size_),
+               "global timeslice size in number of microslices");
+    config_add("overlap-size", po::value<uint32_t>(&overlap_size_),
+               "size of the overlap region in number of microslices");
+    config_add("in-data-buffer-size-exp",
+               po::value<uint32_t>(&in_data_buffer_size_exp_),
+               "exp. size of the input node's data buffer in bytes");
+    config_add("in-desc-buffer-size-exp",
+               po::value<uint32_t>(&in_desc_buffer_size_exp_),
+               "exp. size of the input node's descriptor buffer"
+               " (number of entries)");
+    config_add("cn-data-buffer-size-exp",
+               po::value<uint32_t>(&cn_data_buffer_size_exp_),
+               "exp. size of the compute node's data buffer in bytes");
+    config_add("cn-desc-buffer-size-exp",
+               po::value<uint32_t>(&cn_desc_buffer_size_exp_),
+               "exp. size of the compute node's descriptor buffer"
+               " (number of entries)");
+    config_add("typical-content-size",
+               po::value<uint32_t>(&typical_content_size_),
+               "typical number of content bytes per microslice");
+    config_add("input-shm", po::value<std::string>(&input_shm_),
+               "name of a shared memory to use as data source");
+    config_add("standalone", po::value<bool>(&standalone_),
+               "standalone mode flag");
+    config_add("max-timeslice-number,n",
+               po::value<uint32_t>(&max_timeslice_number_),
+               "global maximum timeslice number");
+    config_add("processor-executable,e",
+               po::value<std::string>(&processor_executable_),
+               "name of the executable acting as timeslice processor");
+    config_add("processor-instances",
+               po::value<uint32_t>(&processor_instances_),
+               "number of instances of the timeslice processor executable");
+    config_add("base-port", po::value<uint32_t>(&base_port_),
+               "base IP port to use for listening");
+    config_add("zeromq,z", po::value<bool>(&zeromq_), "use zeromq transport");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -217,8 +230,7 @@ void Parameters::parse_options(int argc, char* argv[])
 
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
-        std::cout << "can not open config file: " << config_file << "\n";
-        exit(EXIT_SUCCESS);
+        throw ParametersException("cannot open config file: " + config_file);
     } else {
         po::store(po::parse_config_file(ifs, config), vm);
         notify(vm);
@@ -236,6 +248,10 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
+    if (vm.count("log-file")) {
+        L_(info) << "Logging output to " << log_file;
+        logging::add_file(log_file, static_cast<severity_level>(log_level));
+    }
 
     if (timeslice_size_ < 1) {
         throw ParametersException("timeslice size cannot be zero");

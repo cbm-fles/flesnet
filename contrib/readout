@@ -1,0 +1,183 @@
+#!/bin/bash
+
+# start everything for a flesnet readout
+# script is highly specialized to fit the needs of SPS 2016 beam test
+# the script is not fool prove, think before you change something.
+
+set -e
+set -m  # run all processes in a separate process group
+
+# debug
+#set -v
+#set -x
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+BINDIR=.
+LINK=(disable disable disable disable disable disable disable disable disable disable disable disable disable disable disable disable)
+
+##### confiuration below this line ########
+
+ADDR[0]=01:00.0
+ADDR[1]=02:00.0
+
+# FLIB 2
+LINK[0]=pgen_near
+LINK[1]=pgen_near
+LINK[2]=pgen_near
+LINK[3]=pgen_near
+LINK[4]=pgen_near
+LINK[5]=pgen_near
+LINK[6]=pgen_near
+LINK[7]=pgen_near
+
+# FLIB 1
+#LINK[8]=pgen_near
+#LINK[9]=pgen_near
+#LINK[10]=pgen_near
+#LINK[11]=pgen_near
+#LINK[12]=pgen_near
+#LINK[13]=pgen_near
+#LINK[14]=pgen_near
+#LINK[15]=pgen_near
+
+BASE_EQID[0]=0xF00
+BASE_EQID[1]=0xF01
+
+FLESNET_CFG=(--timeslice-size 100 --overlap-size 1 
+--in-data-buffer-size-exp 27 --cn-data-buffer-size-exp 27 
+--processor-instances 1 -e './tsclient -c%i -s%s -a')
+
+##### confiuration above this line ########
+
+# building the config
+TOTAL_LINKS=0
+declare -a IN_INDEX_0
+declare -a IN_INDEX_1
+for i in $(seq 0 7); do
+    if [ ${LINK[$i]} != disable ]; then
+        IN_INDEX_0+=(-i $TOTAL_LINKS)
+        ((TOTAL_LINKS += 1))
+    fi
+done
+for i in $(seq 8 15); do
+    if [ ${LINK[$i]} != disable ]; then
+        IN_INDEX_1+=(-i $TOTAL_LINKS)
+        ((TOTAL_LINKS += 1))
+    fi
+done
+
+declare -a NODES
+for ((i=0; i < TOTAL_LINKS ; i++)); do
+        NODES+=(-I 127.0.0.1)
+done
+
+cleanup () {
+    echo "cleaning up ..."
+    kill -9 $FLESNET_CN_PID
+    # kill all tsclients in this session
+    pkill -9 -s $SID tsclient
+    rm /dev/shm/flesnet*
+}
+
+# the shutdown proceduce
+end_readout () {
+    set +e
+    echo "*** SHUTTING DOWN ***"
+    kill -s SIGINT $EN_0_PID 2>/dev/null
+    kill -s SIGINT $EN_1_PID 2>/dev/null
+    sleep 2
+    kill -s SIGINT $FLESNET_CN_PID
+    sleep 1
+    kill -s SIGINT $SERVER_0_PID 2>/dev/null
+    kill -s SIGINT $SERVER_1_PID 2>/dev/null
+    # check if flesnet is left
+    kill -0 $FLESNET_CN_PID 2>/dev/null
+    if [ $? -eq 0 ]; then
+        cleanup
+    fi
+}
+trap end_readout SIGINT SIGTERM SIGHUP
+
+
+echo "Starting readout ..."
+# ensure everything is fine
+$ROOT_DIR/contrib/flesnet-check
+
+
+echo "Configuring FLIBs ..."
+for i in 0 1; do
+$BINDIR/flib_cfg -c /dev/null -l 2 -L f${i}_cfg.log -i ${ADDR[$i]} -t 100 \
+                 --l0_source ${LINK[0+$i*8]} --l0_eq_id ${BASE_EQID[$i]}0 \
+                 --l1_source ${LINK[1+$i*8]} --l1_eq_id ${BASE_EQID[$i]}1 \
+                 --l2_source ${LINK[2+$i*8]} --l2_eq_id ${BASE_EQID[$i]}2 \
+                 --l3_source ${LINK[3+$i*8]} --l3_eq_id ${BASE_EQID[$i]}3 \
+                 --l4_source ${LINK[4+$i*8]} --l4_eq_id ${BASE_EQID[$i]}4 \
+                 --l5_source ${LINK[5+$i*8]} --l5_eq_id ${BASE_EQID[$i]}5 \
+                 --l6_source ${LINK[6+$i*8]} --l6_eq_id ${BASE_EQID[$i]}6 \
+                 --l7_source ${LINK[7+$i*8]} --l7_eq_id ${BASE_EQID[$i]}7
+done
+
+
+echo "Starting flib_server ..."
+if [ ${#IN_INDEX_0[@]} -ne 0 ]; then
+    $BINDIR/flib_server -c /dev/null -L f0_server.log -i ${ADDR[0]} \
+                    -o shm_server_f0 &
+    SERVER_0_PID=$!
+fi
+if [ ${#IN_INDEX_1[@]} -ne 0 ]; then
+    $BINDIR/flib_server -c /dev/null -L f1_server.log -i ${ADDR[1]} \
+                    -o shm_server_f1 &
+    SERVER_1_PID=$!
+fi
+ 
+# block till server is ready (remove if etcd is ready)
+sleep 1
+tail -f $BINDIR/f0_server.log | while read LOGLINE
+do
+   [[ "${LOGLINE}" == *"flib server started and running"* ]] && pkill -P $$ tail
+done
+tail -f $BINDIR/f1_server.log | while read LOGLINE
+do
+   [[ "${LOGLINE}" == *"flib server started and running"* ]] && pkill -P $$ tail
+done
+
+
+# flesnet configuration
+FLESNET_PRIV_CFG=(-f /dev/null --standalone false)
+FLESNET_PRIV_CFG+=("${FLESNET_CFG[@]}")
+
+CN_INDEX=(-c 0)
+NODES+=(-C 127.0.0.1)
+
+IN_0_CFG=(-L flesnet_in0.log --input-shm shm_server_f0)
+IN_1_CFG=(-L flesnet_in1.log --input-shm shm_server_f1)
+
+echo "Starting flesnet ..."
+
+# the comoute node
+$BINDIR/flesnet -L flesnet_cn.log "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${CN_INDEX[@]}" &
+FLESNET_CN_PID=$!
+
+# get flesnets group ID
+SID=$(ps o sid -p $FLESNET_CN_PID | tail -n1)
+
+# the input nodes
+if [ ${#IN_INDEX_0[@]} -ne 0 ]; then
+    $BINDIR/flesnet "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${IN_INDEX_0[@]}" "${IN_0_CFG[@]}" &
+fi
+if [ ${#IN_INDEX_1[@]} -ne 0 ]; then
+    $BINDIR/flesnet "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${IN_INDEX_1[@]}" "${IN_1_CFG[@]}" &
+fi
+
+# enable readout
+sleep 1
+if [ ${#IN_INDEX_1[@]} -ne 0 ]; then
+    $BINDIR/en_readout 1 &
+    EN_1_PID=$!
+fi
+if [ ${#IN_INDEX_0[@]} -ne 0 ]; then
+    $BINDIR/en_readout 0 &
+    EN_0_PID=$!
+fi
+wait
+echo "*** END ***"

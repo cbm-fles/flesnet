@@ -7,25 +7,8 @@
 #include "log.hpp"
 #include "parameters.hpp"
 #include <boost/lexical_cast.hpp>
-#include <csignal>
-
-int s_interrupted = 0;
-static void s_signal_handler(int /* signal_value */) { s_interrupted = 1; }
-
-static void s_catch_signals(void) {
-  struct sigaction action;
-  action.sa_handler = s_signal_handler;
-  action.sa_flags = 0;
-  sigemptyset(&action.sa_mask);
-  sigaction(SIGABRT, &action, NULL);
-  sigaction(SIGTERM, &action, NULL);
-  sigaction(SIGINT, &action, NULL);
-}
 
 int main(int argc, char* argv[]) {
-  s_catch_signals();
-  int ret = 0;
-
   try {
 
     parameters par(argc, argv);
@@ -43,7 +26,7 @@ int main(int argc, char* argv[]) {
     std::vector<flib::flib_link_flesin*> links = flib->links();
     std::vector<std::unique_ptr<flib::flim>> flims;
 
-    L_(info) << "Configuring FLIB: " << flib->print_devinfo();
+    L_(debug) << "Configuring FLIB " << flib->print_devinfo();
 
     // FLIB global configuration
     // set even if unused
@@ -65,13 +48,14 @@ int main(int argc, char* argv[]) {
           flims.push_back(
               std::unique_ptr<flib::flim>(new flib::flim(links.at(i))));
         } catch (const std::exception& e) {
-          L_(error) << e.what();
-          exit(EXIT_FAILURE);
+          L_(fatal) << "Link " << i << ": " << e.what();
+          return EXIT_FAILURE;
         }
         flims.back()->reset_datapath();
         if (!flims.back()->get_pgen_present()) {
-          L_(error) << "FLIM build does not support pgen";
-          exit(EXIT_FAILURE);
+          L_(fatal) << "Link " << i << ": "
+                    << "FLIM build does not support pgen";
+          return EXIT_FAILURE;
         }
         flims.back()->set_pgen_mc_size(par.mc_size());
         flims.back()->set_pgen_rate(par.pgen_rate());
@@ -84,16 +68,17 @@ int main(int argc, char* argv[]) {
           flims.push_back(
               std::unique_ptr<flib::flim>(new flib::flim(links.at(i))));
         } catch (const std::exception& e) {
-          L_(error) << e.what();
-          exit(EXIT_FAILURE);
+          L_(fatal) << "Link " << i << ": " << e.what();
+          return EXIT_FAILURE;
         }
         flims.back()->reset_datapath();
         if (par.link(i).source == flim) {
           flims.back()->set_data_source(flib::flim::user);
         } else { // pgen_far
           if (!flims.back()->get_pgen_present()) {
-            L_(error) << "FLIM build does not support pgen";
-            exit(EXIT_FAILURE);
+            L_(fatal) << "Link " << i << ": "
+                      << "FLIM build does not support pgen";
+            return EXIT_FAILURE;
           }
           flims.back()->set_pgen_mc_size(par.mc_size());
           flims.back()->set_pgen_rate(par.pgen_rate());
@@ -103,11 +88,12 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    L_(debug) << "Exiting";
+    L_(info) << "FLIB " << flib->print_devinfo() << " configured";
 
   } catch (std::exception const& e) {
     L_(fatal) << "exception: " << e.what();
+    return EXIT_FAILURE;
   }
 
-  return ret;
+  return EXIT_SUCCESS;
 }
