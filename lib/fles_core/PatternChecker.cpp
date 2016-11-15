@@ -4,7 +4,7 @@
 #include "FlesnetPatternChecker.hpp"
 #include "FlibLegacyPatternChecker.hpp"
 #include "FlibPatternChecker.hpp"
-#include "pGenDPBPatternChecker.hpp"
+#include "PgenDpbPatternChecker.hpp"
 
 std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
                                                        uint8_t arg_sys_ver,
@@ -18,6 +18,7 @@ std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
 
     PatternChecker* pc = nullptr;
 
+  /*
     if (sys_id == sid::PgenDPB) {
         pc = new pGenDPBPatternChecker();
     } 
@@ -38,6 +39,30 @@ std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
         default:
             pc = new GenericPatternChecker();
         }
+    }
+  */
+    switch (sys_id) {
+    case sid::FLES:
+        switch (sys_ver) {
+        case sfmtfles::BasicRampPattern:
+            pc = new FlesnetPatternChecker(component);
+            break;
+        case sfmtfles::CbmNetPattern:
+        case sfmtfles::CbmNetFrontendEmulation:
+            pc = new FlibLegacyPatternChecker();
+            break;
+        case sfmtfles::FlibPattern:
+            pc = new FlibPatternChecker();
+            break;
+        default:
+            pc = new GenericPatternChecker();
+        }
+        break;
+    case sid::PgenDPB:
+        pc = new PgenDpbPatternChecker();
+        break;
+    default:
+        pc = new GenericPatternChecker();
     }
 
     return std::unique_ptr<PatternChecker>(pc);

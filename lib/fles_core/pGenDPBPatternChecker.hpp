@@ -2,16 +2,16 @@
 #pragma once
 
 #include "PatternChecker.hpp"
-#define MAX_FIFO_NUM_PER_LINK		48
-#define DEFAULT_SYS_ID				0x7F
+#define MAX_FIFO_NUM_PER_LINK		48    //for each flim link, there may be max. 48 fifo to inject data
+#define MAX_FLIM_ID            16    // there are max. 16 flim links for one AFCK
+#define DEFAULT_DATA_HEAD			0x7F  // default data header
 
-class pGenDPBPatternChecker : public PatternChecker
+class PgenDpbPatternChecker : public PatternChecker
 {
 public:
     bool check(const fles::Microslice& m) override;
     void reset() override;
 
 private:
-    uint8_t pgen_dpb_channel_mask_[MAX_FIFO_NUM_PER_LINK];
     uint64_t pgen_dpb_flim_id_;
 };
