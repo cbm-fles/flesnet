@@ -213,8 +213,8 @@ private:
 
     logging::add_console(static_cast<severity_level>(log_level));
     if (vm.count("log-file")) {
-      logging::add_file(log_file, static_cast<severity_level>(log_level));
       L_(info) << "Logging output to " << log_file;
+      logging::add_file(log_file, static_cast<severity_level>(log_level));
     }
 
     L_(info) << "Device config:";
