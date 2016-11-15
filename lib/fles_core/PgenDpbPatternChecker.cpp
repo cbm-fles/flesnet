@@ -20,7 +20,7 @@ void PgenDpbPatternChecker::reset()
 
 bool PgenDpbPatternChecker::check(const fles::Microslice& m)
 {
-    array<uint64_t,MAX_FIFO_NUM_PER_LINK> pgen_dpb_channel_data;    
+    std::array<uint64_t,MAX_FIFO_NUM_PER_LINK> pgen_dpb_channel_data;    
     uint64_t data_head, flim_id;
 
     if (m.desc().size %sizeof(uint64_t) !=0) {
