@@ -4,6 +4,7 @@
 #include "FlesnetPatternChecker.hpp"
 #include "FlibLegacyPatternChecker.hpp"
 #include "FlibPatternChecker.hpp"
+#include "pGenDPBPatternChecker.hpp"
 
 std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
                                                        uint8_t arg_sys_ver,
@@ -17,7 +18,10 @@ std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
 
     PatternChecker* pc = nullptr;
 
-    if (sys_id != sid::FLES) {
+    if (sys_id == sid::PgenDPB) {
+        pc = new pGenDPBPatternChecker();
+    } 
+    else if (sys_id != sid::FLES) {
         pc = new GenericPatternChecker();
     } else {
         switch (sys_ver) {

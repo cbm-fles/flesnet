@@ -33,6 +33,7 @@ enum class SubsystemIdentifier : uint8_t {
     Hodoscope = 0xE1, ///< Fiber Hodoscope
     Cherenkov = 0xE2, ///< Cherenkov
     LeadGlass = 0xE3, ///< Lead Glas Calorimeter
+    PgenDPB   = 0xE4, ///< Pattern Generator DPB
 
     // FLES (pattern generators)
     FLES = 0xF0 ///< First-level Event Selector (FLES)
