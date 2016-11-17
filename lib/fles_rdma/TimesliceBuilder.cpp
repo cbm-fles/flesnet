@@ -71,6 +71,8 @@ void TimesliceBuilder::operator()()
         while (connected_ != num_input_nodes_) {
             poll_cm_events();
         }
+        L_(info) << "[c" << compute_index_ << "] "
+                 << "connection to input nodes established";
 
         time_begin_ = std::chrono::high_resolution_clock::now();
 

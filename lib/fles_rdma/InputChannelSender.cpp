@@ -152,6 +152,8 @@ void InputChannelSender::operator()()
         while (connected_ != compute_hostnames_.size()) {
             poll_cm_events();
         }
+        L_(info) << "[i" << input_index_ << "] "
+                 << "connection to compute nodes established";
 
         data_source_.proceed();
         time_begin_ = std::chrono::high_resolution_clock::now();
