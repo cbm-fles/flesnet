@@ -165,6 +165,10 @@ void InputChannelSender::operator()()
         while (timeslice < max_timeslice_number_ && !abort_) {
             if (try_send_timeslice(timeslice)) {
                 timeslice++;
+                if (timeslice == 1) {
+                    L_(info) << "[i" << input_index_ << "] "
+                             << "first timeslice processed";
+                }
             }
             poll_completion();
             data_source_.proceed();
