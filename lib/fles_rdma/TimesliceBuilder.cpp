@@ -42,9 +42,9 @@ void TimesliceBuilder::report_status()
         L_(debug) << "[c" << compute_index_ << "] data "
                   << status_data.percentages() << " (used..free) | "
                   << human_readable_count(status_data.acked, true);
-        L_(info) << "[c" << compute_index_ << "_" << c->index() << "] |"
-                 << bar_graph(status_data.vector(), "#._", 20) << "|"
-                 << bar_graph(status_desc.vector(), "#._", 10) << "| ";
+        L_(status) << "[c" << compute_index_ << "_" << c->index() << "] |"
+                   << bar_graph(status_data.vector(), "#._", 20) << "|"
+                   << bar_graph(status_desc.vector(), "#._", 10) << "| ";
     }
 
     scheduler_.add(std::bind(&TimesliceBuilder::report_status, this),

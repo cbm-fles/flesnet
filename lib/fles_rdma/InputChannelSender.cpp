@@ -103,11 +103,11 @@ void InputChannelSender::report_status()
               << human_readable_count(status_data.acked, true) << " ("
               << human_readable_count(rate_data, true, "B/s") << ")";
 
-    L_(info) << "[i" << input_index_ << "]   |"
-             << bar_graph(status_data.vector(), "#x._", 20) << "|"
-             << bar_graph(status_desc.vector(), "#x._", 10) << "| "
-             << human_readable_count(rate_data, true, "B/s") << " ("
-             << human_readable_count(rate_desc, true, "Hz") << ")";
+    L_(status) << "[i" << input_index_ << "]   |"
+               << bar_graph(status_data.vector(), "#x._", 20) << "|"
+               << bar_graph(status_desc.vector(), "#x._", 10) << "| "
+               << human_readable_count(rate_data, true, "B/s") << " ("
+               << human_readable_count(rate_desc, true, "Hz") << ")";
 
     previous_send_buffer_status_desc_ = status_desc;
     previous_send_buffer_status_data_ = status_data;
