@@ -5,18 +5,21 @@ add_executable(test_Microslice test_Microslice.cpp)
 add_executable(test_RingBuffer test_RingBuffer.cpp)
 add_executable(test_Filter test_Filter.cpp)
 add_executable(test_MicrosliceReceiver test_MicrosliceReceiver.cpp)
+add_executable(test_logging test_logging.cpp)
 
 target_compile_definitions(test_Timeslice PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_Microslice PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_RingBuffer PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_Filter PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_MicrosliceReceiver PUBLIC BOOST_TEST_DYN_LINK)
+target_compile_definitions(test_logging PUBLIC BOOST_TEST_DYN_LINK)
 
 target_include_directories(test_Timeslice SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_Microslice SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_RingBuffer SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_Filter SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_MicrosliceReceiver SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(test_logging SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(test_Timeslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_Microslice fles_ipc ${Boost_LIBRARIES})
@@ -26,6 +29,7 @@ target_link_libraries(test_MicrosliceReceiver fles_core fles_ipc logging ${Boost
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(test_MicrosliceReceiver atomic)
 endif()
+target_link_libraries(test_logging logging ${Boost_LIBRARIES})
 
 add_custom_command(TARGET test_Timeslice POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy
@@ -45,6 +49,7 @@ add_test(NAME test_Microslice COMMAND test_Microslice)
 add_test(NAME test_RingBuffer COMMAND test_RingBuffer)
 add_test(NAME test_Filter COMMAND test_Filter)
 add_test(NAME test_MicrosliceReceiver COMMAND test_MicrosliceReceiver)
+add_test(NAME test_logging COMMAND test_logging)
 
 find_program(BASH_PROGRAM bash)
 if(BASH_PROGRAM)

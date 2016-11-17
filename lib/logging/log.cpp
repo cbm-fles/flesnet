@@ -45,7 +45,7 @@ std::string fancy_icon(severity_level level)
     static const char* icons[] = {
         u8"\U0001F463", // alternative: 2767
         u8"\U0001F41B", // alternative: 2761
-        u8"\u2139",     u8"\u26a0", u8"\u2718",
+        u8"\u231B", u8"\u2139", u8"\u26a0", u8"\u2718",
         u8"\U0001F480" // alternative: 26A1, 2762
     };
 
@@ -59,7 +59,7 @@ std::string fancy_icon(severity_level level)
 
 std::ostream& operator<<(std::ostream& strm, severity_level level)
 {
-    static const char* strings[] = {"TRACE",   "DEBUG", "INFO",
+    static const char* strings[] = {"TRACE",   "DEBUG", "STATUS", "INFO",
                                     "WARNING", "ERROR", "FATAL"};
 
     if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings)) {
@@ -79,6 +79,7 @@ boost::log::formatting_ostream& operator<<(
     static const char* colors[] = {
         __ansi(__ansi_faint),
         __ansi(__ansi_color_fg_normal(__ansi_color_green) ";" __ansi_faint),
+        __ansi(__ansi_color_fg_normal(__ansi_color_green)),
         __ansi(__ansi_color_fg_normal(__ansi_color_blue)),
         __ansi(__ansi_color_fg_normal(__ansi_color_yellow)),
         __ansi(__ansi_color_fg_normal(__ansi_color_red)),
@@ -188,6 +189,7 @@ void add_syslog(syslog::facility facility, severity_level minimum_severity)
     syslog::custom_severity_mapping<severity_level> mapping("Severity");
     mapping[trace] = syslog::debug;
     mapping[debug] = syslog::debug;
+    mapping[status] = syslog::debug;
     mapping[info] = syslog::info;
     mapping[warning] = syslog::warning;
     mapping[error] = syslog::error;
