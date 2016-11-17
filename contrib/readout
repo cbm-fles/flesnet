@@ -43,6 +43,8 @@ LINK[7]=pgen_near
 BASE_EQID[0]=0xF00
 BASE_EQID[1]=0xF01
 
+PGEN_RATE=1
+
 FLESNET_CFG=(--timeslice-size 100 --overlap-size 1 
 --in-data-buffer-size-exp 27 --cn-data-buffer-size-exp 27 
 --processor-instances 1 -e './tsclient -c%i -s%s -a')
@@ -106,7 +108,7 @@ $ROOT_DIR/contrib/flesnet-check
 
 echo "Configuring FLIBs ..."
 for i in 0 1; do
-$BINDIR/flib_cfg -c /dev/null -l 2 -L f${i}_cfg.log -i ${ADDR[$i]} -t 100 \
+$BINDIR/flib_cfg -c /dev/null -l 2 -L f${i}_cfg.log -i ${ADDR[$i]} -t 100 -r $PGEN_RATE \
                  --l0_source ${LINK[0+$i*8]} --l0_eq_id ${BASE_EQID[$i]}0 \
                  --l1_source ${LINK[1+$i*8]} --l1_eq_id ${BASE_EQID[$i]}1 \
                  --l2_source ${LINK[2+$i*8]} --l2_eq_id ${BASE_EQID[$i]}2 \
