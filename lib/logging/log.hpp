@@ -5,7 +5,7 @@
 #include <boost/log/sinks/syslog_backend.hpp>
 #include <boost/log/utility/manipulators/to_log.hpp>
 
-enum severity_level { trace, debug, info, warning, error, fatal };
+enum severity_level { trace, debug, status, info, warning, error, fatal };
 
 namespace logging
 {

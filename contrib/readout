@@ -45,7 +45,7 @@ BASE_EQID[1]=0xF01
 
 PGEN_RATE=1
 
-FLESNET_CFG=(--timeslice-size 100 --overlap-size 1 
+FLESNET_CFG=(-l 2 --timeslice-size 100 --overlap-size 1 
 --in-data-buffer-size-exp 27 --cn-data-buffer-size-exp 27 
 --processor-instances 1 -e './tsclient -c%i -s%s -a')
 
