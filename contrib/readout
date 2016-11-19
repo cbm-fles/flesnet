@@ -2,7 +2,7 @@
 
 # start everything for a flesnet readout
 # script is highly specialized to fit the needs of SPS 2016 beam test
-# the script is not fool proof, think before you change something.
+# the script is not foolproof, think before you change something.
 
 set -e
 set -m  # run all processes in a separate process group
