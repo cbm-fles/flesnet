@@ -2,7 +2,7 @@
 
 # start everything for a flesnet readout
 # script is highly specialized to fit the needs of SPS 2016 beam test
-# the script is not fool prove, think before you change something.
+# the script is not foolproof, think before you change something.
 
 set -e
 set -m  # run all processes in a separate process group
@@ -15,12 +15,12 @@ ROOT_DIR="$(git rev-parse --show-toplevel)"
 BINDIR=.
 LINK=(disable disable disable disable disable disable disable disable disable disable disable disable disable disable disable disable)
 
-##### confiuration below this line ########
+##### configuration below this line ########
 
 ADDR[0]=01:00.0
 ADDR[1]=02:00.0
 
-# FLIB 2
+# FLIB 0
 LINK[0]=pgen_near
 LINK[1]=pgen_near
 LINK[2]=pgen_near
@@ -31,25 +31,25 @@ LINK[6]=pgen_near
 LINK[7]=pgen_near
 
 # FLIB 1
-#LINK[8]=pgen_near
-#LINK[9]=pgen_near
-#LINK[10]=pgen_near
-#LINK[11]=pgen_near
-#LINK[12]=pgen_near
-#LINK[13]=pgen_near
-#LINK[14]=pgen_near
-#LINK[15]=pgen_near
+LINK[8]=pgen_near
+LINK[9]=pgen_near
+LINK[10]=pgen_near
+LINK[11]=pgen_near
+LINK[12]=pgen_near
+LINK[13]=pgen_near
+LINK[14]=pgen_near
+LINK[15]=pgen_near
 
 BASE_EQID[0]=0xF00
 BASE_EQID[1]=0xF01
 
-PGEN_RATE=1
+PGEN_RATE=0.14
 
 FLESNET_CFG=(-l 2 --timeslice-size 100 --overlap-size 1 
 --in-data-buffer-size-exp 27 --cn-data-buffer-size-exp 27 
 --processor-instances 1 -e './tsclient -c%i -s%s -a')
 
-##### confiuration above this line ########
+##### configuration above this line ########
 
 # building the config
 TOTAL_LINKS=0
@@ -81,7 +81,7 @@ cleanup () {
     rm /dev/shm/flesnet*
 }
 
-# the shutdown proceduce
+# the shutdown procedure
 end_readout () {
     set +e
     echo "*** SHUTTING DOWN ***"
@@ -156,11 +156,11 @@ IN_1_CFG=(-L flesnet_in1.log --input-shm shm_server_f1)
 
 echo "Starting flesnet ..."
 
-# the comoute node
+# the compute node
 $BINDIR/flesnet -L flesnet_cn.log "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${CN_INDEX[@]}" &
 FLESNET_CN_PID=$!
 
-# get flesnets group ID
+# get flesnet group ID
 SID=$(ps o sid -p $FLESNET_CN_PID | tail -n1)
 
 # the input nodes
