@@ -10,9 +10,9 @@
 #include "TimesliceSubscriber.hpp"
 #include "log.hpp"
 #include <boost/lexical_cast.hpp>
-#include <iostream>
 
-Application::Application(Parameters const& par) : par_(par)
+Application::Application(Parameters const& par)
+    : par_(par), log_buf_(LogBuffer()), logstream_(&log_buf_)
 {
     if (!par_.shm_identifier().empty()) {
         source_.reset(new fles::TimesliceReceiver(par_.shm_identifier()));
@@ -26,7 +26,7 @@ Application::Application(Parameters const& par) : par_(par)
         std::string output_prefix =
             boost::lexical_cast<std::string>(par_.client_index()) + ": ";
         sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-            new TimesliceAnalyzer(10000, std::cout, output_prefix)));
+            new TimesliceAnalyzer(10000, logstream_, output_prefix)));
     }
 
     if (par_.verbosity() > 0) {
