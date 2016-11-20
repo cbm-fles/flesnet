@@ -2,9 +2,9 @@
 
 #include "ComponentSenderZeromq.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "Utility.hpp"
 #include "log.hpp"
 #include <algorithm>
-#include <cassert>
 
 ComponentSenderZeromq::ComponentSenderZeromq(
     uint64_t input_index, InputBufferReadInterface& data_source,
@@ -17,7 +17,8 @@ ComponentSenderZeromq::ComponentSenderZeromq(
       min_acked_({data_source.desc_buffer().size() / 4,
                   data_source.data_buffer().size() / 4})
 {
-    start_index_ = acked_ = cached_acked_ = data_source.get_read_index();
+    start_index_ = sent_ = acked_ = cached_acked_ =
+        data_source.get_read_index();
 
     size_t min_ack_buffer_size =
         (data_source_.desc_buffer().size() / timeslice_size_ + 1) * 2;
@@ -47,7 +48,9 @@ ComponentSenderZeromq::~ComponentSenderZeromq()
 void ComponentSenderZeromq::operator()()
 {
     data_source_.proceed();
+    time_begin_ = std::chrono::high_resolution_clock::now();
 
+    report_status();
     while (acked_ts2_ / 2 < max_timeslice_number_ && *signal_status_ == 0) {
         zmq_msg_t request;
         int rc = zmq_msg_init(&request);
@@ -65,8 +68,10 @@ void ComponentSenderZeromq::operator()()
 
         try_send_timeslice(timeslice);
         data_source_.proceed();
+        scheduler_.timer();
     }
     sync_data_source();
+    time_end_ = std::chrono::high_resolution_clock::now();
 }
 
 struct Acknowledgment {
@@ -106,6 +111,7 @@ bool ComponentSenderZeromq::try_send_timeslice(uint64_t ts)
     // part 1: descriptors
     auto desc_msg = create_message(data_source_.desc_buffer(), desc_offset,
                                    desc_length, ts, false);
+    sent_.desc += desc_length;
     zmq_msg_send(&desc_msg, socket_, ZMQ_SNDMORE);
 
     // part 2: data
@@ -118,6 +124,7 @@ bool ComponentSenderZeromq::try_send_timeslice(uint64_t ts)
 
     auto data_msg = create_message(data_source_.data_buffer(), data_offset,
                                    data_length, ts, true);
+    sent_.data += data_length;
     zmq_msg_send(&data_msg, socket_, 0);
 
     return true;
@@ -188,4 +195,68 @@ void ComponentSenderZeromq::sync_data_source()
         cached_acked_ = acked_;
         data_source_.set_read_index(cached_acked_);
     }
+}
+
+void ComponentSenderZeromq::report_status()
+{
+    constexpr auto interval = std::chrono::seconds(1);
+
+    std::chrono::system_clock::time_point now =
+        std::chrono::system_clock::now();
+
+    // TODO: Is this still required?
+    // if data_source.written pointers are lagging behind due to lazy updates,
+    // use sent value instead
+    DualIndex written = data_source_.get_write_index();
+    if (written.desc < sent_.desc || written.data < sent_.data) {
+        written = sent_;
+    }
+
+    SendBufferStatus status_desc{now,
+                                 data_source_.desc_buffer().size(),
+                                 cached_acked_.desc,
+                                 acked_.desc,
+                                 sent_.desc,
+                                 written.desc};
+    SendBufferStatus status_data{now,
+                                 data_source_.data_buffer().size(),
+                                 cached_acked_.data,
+                                 acked_.data,
+                                 sent_.data,
+                                 written.data};
+
+    double delta_t =
+        std::chrono::duration<double, std::chrono::seconds::period>(
+            status_desc.time - previous_send_buffer_status_desc_.time)
+            .count();
+    double rate_desc =
+        static_cast<double>(status_desc.acked -
+                            previous_send_buffer_status_desc_.acked) /
+        delta_t;
+    double rate_data =
+        static_cast<double>(status_data.acked -
+                            previous_send_buffer_status_data_.acked) /
+        delta_t;
+
+    L_(debug) << "[i" << input_index_ << "] desc " << status_desc.percentages()
+              << " (used..free) | "
+              << human_readable_count(status_desc.acked, true, "") << " ("
+              << human_readable_count(rate_desc, true, "Hz") << ")";
+
+    L_(debug) << "[i" << input_index_ << "] data " << status_data.percentages()
+              << " (used..free) | "
+              << human_readable_count(status_data.acked, true) << " ("
+              << human_readable_count(rate_data, true, "B/s") << ")";
+
+    L_(info) << "[i" << input_index_ << "]   |"
+             << bar_graph(status_data.vector(), "#x._", 20) << "|"
+             << bar_graph(status_desc.vector(), "#x._", 10) << "| "
+             << human_readable_count(rate_data, true, "B/s") << " ("
+             << human_readable_count(rate_desc, true, "Hz") << ")";
+
+    previous_send_buffer_status_desc_ = status_desc;
+    previous_send_buffer_status_data_ = status_data;
+
+    scheduler_.add(std::bind(&ComponentSenderZeromq::report_status, this),
+                   now + interval);
 }

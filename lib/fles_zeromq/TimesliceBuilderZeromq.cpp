@@ -4,6 +4,7 @@
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceWorkItem.hpp"
+#include "Utility.hpp"
 #include "log.hpp"
 #include <chrono>
 #include <thread>
@@ -41,6 +42,8 @@ TimesliceBuilderZeromq::~TimesliceBuilderZeromq() {}
 void TimesliceBuilderZeromq::operator()()
 {
     assert(connections_.size() > 0);
+
+    time_begin_ = std::chrono::high_resolution_clock::now();
 
     while (ts_index_ < max_timeslice_number_ && *signal_status_ == 0) {
         for (auto& c : connections_) {
@@ -106,6 +109,8 @@ void TimesliceBuilderZeromq::operator()()
         ts_index_ += num_compute_nodes_;
     }
 
+    time_end_ = std::chrono::high_resolution_clock::now();
+
     // wait until all pending timeslices have been acknowledged
     while (acked_ < tpos_) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -133,4 +138,47 @@ void TimesliceBuilderZeromq::handle_timeslice_completions()
         } else
             ack_.at(c.ts_pos) = c.ts_pos;
     }
+}
+
+void TimesliceBuilderZeromq::report_status()
+{
+    constexpr auto interval = std::chrono::seconds(1);
+
+    std::chrono::system_clock::time_point now =
+        std::chrono::system_clock::now();
+
+    // FIXME: dummy code here...
+    auto& c = connections_.at(0);
+    BufferStatus status_desc{now, c->desc.size(), acked_, acked_, tpos_};
+    BufferStatus status_data{now, c->desc.size(), acked_, acked_, tpos_};
+
+    double delta_t =
+        std::chrono::duration<double, std::chrono::seconds::period>(
+            status_desc.time - previous_buffer_status_desc_.time)
+            .count();
+    double rate_desc = static_cast<double>(status_desc.acked -
+                                           previous_buffer_status_desc_.acked) /
+                       delta_t;
+    double rate_data = static_cast<double>(status_data.acked -
+                                           previous_buffer_status_data_.acked) /
+                       delta_t;
+
+    L_(debug) << "[c" << compute_index_ << "] desc "
+              << status_desc.percentages() << " (used..free) | "
+              << human_readable_count(status_desc.acked, true, "")
+              << " timeslices";
+
+    L_(debug) << "[c" << compute_index_ << "] data "
+              << status_data.percentages() << " (used..free) | "
+              << human_readable_count(status_data.acked, true);
+
+    L_(info) << "[c" << compute_index_ << "] |"
+             << bar_graph(status_data.vector(), "#._", 20) << "|"
+             << bar_graph(status_desc.vector(), "#._", 10) << "| ";
+
+    previous_buffer_status_desc_ = status_desc;
+    previous_buffer_status_data_ = status_data;
+
+    scheduler_.add(std::bind(&TimesliceBuilderZeromq::report_status, this),
+                   now + interval);
 }

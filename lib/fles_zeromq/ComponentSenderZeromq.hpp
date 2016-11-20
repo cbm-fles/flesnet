@@ -3,6 +3,9 @@
 
 #include "DualRingBuffer.hpp"
 #include "RingBuffer.hpp"
+#include "Scheduler.hpp"
+#include <boost/format.hpp>
+#include <cassert>
 #include <csignal>
 #include <zmq.h>
 
@@ -33,7 +36,7 @@ public:
     friend void free_ts(void* data, void* hint);
 
 private:
-    /// This component's index in the list of input components
+    /// This component's index in the list of input components.
     uint64_t input_index_;
 
     /// Data source (e.g., FLIB via shared memory).
@@ -45,10 +48,10 @@ private:
     /// Constant overlap size (in microslices) of a timeslice component.
     const uint32_t overlap_size_;
 
-    /// Number of timeslices after which this run shall end
+    /// Number of timeslices after which this run shall end.
     const uint32_t max_timeslice_number_;
 
-    /// Pointer to global signal status variable
+    /// Pointer to global signal status variable.
     volatile sig_atomic_t* signal_status_;
 
     /// ZeroMQ context.
@@ -78,10 +81,87 @@ private:
     /// Write index received from data source.
     uint64_t write_index_desc_ = 0;
 
+    /// Begin of operation (for performance statistics).
+    std::chrono::high_resolution_clock::time_point time_begin_;
+
+    /// End of operation (for performance statistics).
+    std::chrono::high_resolution_clock::time_point time_end_;
+
+    /// Amount of data sent (for performance statistics).
+    DualIndex sent_;
+
+    struct SendBufferStatus {
+        std::chrono::system_clock::time_point time;
+        uint64_t size;
+
+        uint64_t cached_acked;
+        uint64_t acked;
+        uint64_t sent;
+        uint64_t written;
+
+        int64_t used() const
+        {
+            assert(sent <= written);
+            return written - sent;
+        }
+        int64_t sending() const
+        {
+            assert(acked <= sent);
+            return sent - acked;
+        }
+        int64_t freeing() const
+        {
+            assert(cached_acked <= acked);
+            return acked - cached_acked;
+        }
+        int64_t unused() const
+        {
+            assert(written <= cached_acked + size);
+            return cached_acked + size - written;
+        }
+
+        float percentage(int64_t value) const
+        {
+            return static_cast<float>(value) / static_cast<float>(size);
+        }
+
+        std::string caption() const
+        {
+            return std::string("used/sending/freeing/free");
+        }
+
+        std::string percentage_str(int64_t value) const
+        {
+            boost::format percent_fmt("%4.1f%%");
+            percent_fmt % (percentage(value) * 100);
+            std::string s = percent_fmt.str();
+            s.resize(4);
+            return s;
+        }
+
+        std::string percentages() const
+        {
+            return percentage_str(used()) + " " + percentage_str(sending()) +
+                   " " + percentage_str(freeing()) + " " +
+                   percentage_str(unused());
+        }
+
+        std::vector<int64_t> vector() const
+        {
+            return std::vector<int64_t>{used(), sending(), freeing(), unused()};
+        }
+    };
+
+    SendBufferStatus previous_send_buffer_status_desc_ = SendBufferStatus();
+    SendBufferStatus previous_send_buffer_status_data_ = SendBufferStatus();
+
+    /// Scheduler for periodic events.
+    Scheduler scheduler_;
+
     /// The central function for distributing timeslice data.
     bool try_send_timeslice(uint64_t timeslice);
 
-    /// Create zeromq message part with requested data
+    /// Create zeromq message part with requested data.
     template <typename T_>
     zmq_msg_t create_message(RingBufferView<T_>& buf, uint64_t offset,
                              uint64_t length, uint64_t ts, bool is_data);
@@ -91,4 +171,7 @@ private:
 
     /// Force writing read indexes to data source.
     void sync_data_source();
+
+    /// Print a (periodic) buffer status report.
+    void report_status();
 };

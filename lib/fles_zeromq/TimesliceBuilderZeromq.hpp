@@ -3,7 +3,9 @@
 
 #include "ManagedRingBuffer.hpp"
 #include "RingBuffer.hpp"
+#include "Scheduler.hpp"
 #include "TimesliceBuffer.hpp"
+#include <boost/format.hpp>
 #include <cassert>
 #include <csignal>
 #include <vector>
@@ -50,10 +52,10 @@ private:
     /// Constant size (in microslices) of a timeslice component.
     const uint32_t timeslice_size_;
 
-    /// Number of timeslices after which this run shall end
+    /// Number of timeslices after which this run shall end.
     const uint32_t max_timeslice_number_;
 
-    /// Pointer to global signal status variable
+    /// Pointer to global signal status variable.
     volatile sig_atomic_t* signal_status_;
 
     /// ZeroMQ context.
@@ -71,7 +73,7 @@ private:
     /// Buffer to store acknowledged status of timeslices.
     RingBuffer<uint64_t, true> ack_;
 
-    /// Connection struct, which handles data for one input server.
+    /// Connection struct, handles data for one input server.
     struct Connection {
         Connection(TimesliceBuffer& timeslice_buffer, size_t i)
             : desc(timeslice_buffer.get_desc_ptr(i),
@@ -92,6 +94,61 @@ private:
     /// The vector of connections, one per input server.
     std::vector<std::unique_ptr<Connection>> connections_;
 
+    /// Begin of operation (for performance statistics).
+    std::chrono::high_resolution_clock::time_point time_begin_;
+
+    /// End of operation (for performance statistics).
+    std::chrono::high_resolution_clock::time_point time_end_;
+
+    struct BufferStatus {
+        std::chrono::system_clock::time_point time;
+        uint64_t size;
+
+        uint64_t cached_acked;
+        uint64_t acked;
+        uint64_t received;
+
+        int64_t used() const { return received - acked; }
+        int64_t freeing() const { return acked - cached_acked; }
+        int64_t unused() const { return cached_acked + size - received; }
+
+        float percentage(int64_t value) const
+        {
+            return static_cast<float>(value) / static_cast<float>(size);
+        }
+
+        std::string caption() const { return std::string("used/freeing/free"); }
+
+        std::string percentage_str(int64_t value) const
+        {
+            boost::format percent_fmt("%4.1f%%");
+            percent_fmt % (percentage(value) * 100);
+            std::string s = percent_fmt.str();
+            s.resize(4);
+            return s;
+        }
+
+        std::string percentages() const
+        {
+            return percentage_str(used()) + " " + percentage_str(freeing()) +
+                   " " + percentage_str(unused());
+        }
+
+        std::vector<int64_t> vector() const
+        {
+            return std::vector<int64_t>{used(), freeing(), unused()};
+        }
+    };
+
+    BufferStatus previous_buffer_status_desc_ = BufferStatus();
+    BufferStatus previous_buffer_status_data_ = BufferStatus();
+
+    /// Scheduler for periodic events.
+    Scheduler scheduler_;
+
     /// Handle pending timeslice completions and advance read indexes.
     void handle_timeslice_completions();
+
+    /// Print a (periodic) buffer status report.
+    void report_status();
 };
