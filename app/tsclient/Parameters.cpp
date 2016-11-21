@@ -35,6 +35,10 @@ void Parameters::parse_options(int argc, char* argv[])
              "name of an input file archive to read");
     desc_add("output-archive,o", po::value<std::string>(&output_archive_),
              "name of an output file archive to write");
+    desc_add("output-archive-size", po::value<size_t>(&output_archive_size_),
+             "limit number of timeslices per file to given number, create "
+             "sequence of output archive files (use placeholder %n in "
+             "output-archive parameter)");
     desc_add("publish,P", po::value<std::string>(&publish_address_)
                               ->implicit_value("tcp://*:5556"),
              "enable timeslice publisher on given address");

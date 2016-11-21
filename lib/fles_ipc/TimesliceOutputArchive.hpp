@@ -4,6 +4,7 @@
 #pragma once
 
 #include "OutputArchive.hpp"
+#include "OutputArchiveSequence.hpp"
 #include "StorableTimeslice.hpp"
 
 namespace fles
@@ -15,5 +16,9 @@ namespace fles
  */
 using TimesliceOutputArchive =
     OutputArchive<Timeslice, StorableTimeslice, ArchiveType::TimesliceArchive>;
+
+using TimesliceOutputArchiveSequence =
+    OutputArchiveSequence<Timeslice, StorableTimeslice,
+                          ArchiveType::TimesliceArchive>;
 
 } // namespace fles
