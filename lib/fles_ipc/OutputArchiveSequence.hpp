@@ -35,11 +35,16 @@ public:
      * \param items_per_file    Number of items to store in each file
      */
     OutputArchiveSequence(const std::string& filename_template,
-                          std::size_t items_per_file = SIZE_MAX)
-        : filename_template_(filename_template), items_per_file_(items_per_file)
+                          std::size_t items_per_file = SIZE_MAX,
+                          std::size_t bytes_per_file = SIZE_MAX)
+        : filename_template_(filename_template),
+          items_per_file_(items_per_file), bytes_per_file_(bytes_per_file)
     {
         if (items_per_file_ == 0) {
             items_per_file_ = SIZE_MAX;
+        }
+        if (bytes_per_file_ == 0) {
+            bytes_per_file_ = SIZE_MAX;
         }
 
         // append sequence number to file name if missing in template
@@ -74,13 +79,14 @@ private:
 
     std::string filename_template_;
     std::size_t items_per_file_;
+    std::size_t bytes_per_file_;
     std::size_t file_count_ = 0;
     std::size_t file_item_count_ = 0;
 
     // TODO(Jan): Solve this without the additional alloc/copy operation
     void do_put(const Derived& item)
     {
-        if (file_item_count_ == items_per_file_) {
+        if (file_limit_reached()) {
             next_file();
         }
         *oarchive_ << item;
@@ -92,6 +98,22 @@ private:
         std::ostringstream number;
         number << std::setw(4) << std::setfill('0') << n;
         return boost::replace_all_copy(filename_template_, "%n", number.str());
+    }
+
+    bool file_limit_reached()
+    {
+        // check item limit
+        if (file_item_count_ == items_per_file_) {
+            return true;
+        }
+        // check byte limit if set
+        if (bytes_per_file_ < SIZE_MAX) {
+            auto pos = ofstream_->tellp();
+            if (pos > 0 && static_cast<std::size_t>(pos) >= bytes_per_file_) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void next_file()
