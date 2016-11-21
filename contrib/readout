@@ -62,7 +62,7 @@ PGEN_RATE=0.14
 if [ -z ${OUTFILE+x} ]; then
     TS_PROCESSOR="./tsclient -c%i -s%s -a"
 else
-    TS_PROCESSOR="./tsclient -c%i -s%s -a -o $OUTFILE"
+    TS_PROCESSOR="./tsclient -c%i -s%s -a --output-archive-bytes 2000000000 -o ${OUTFILE}_%n.tsa"
 fi
 
 FLESNET_CFG=(-l 2 --timeslice-size 100 --overlap-size 1 

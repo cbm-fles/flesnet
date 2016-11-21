@@ -81,7 +81,7 @@ chmod -x ${DATAPATH}/${RUNNR}_readout
 bzip2 ${DATAPATH}/${RUNNR}_readout
 
 # start readout
-./readout rec ${DATAPATH}/${RUNNR}.tsa
+./readout rec ${DATAPATH}/${RUNNR}
 
 # ---------------------------------------------------------
 
