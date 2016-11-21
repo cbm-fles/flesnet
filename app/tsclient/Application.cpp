@@ -35,8 +35,14 @@ Application::Application(Parameters const& par) : par_(par)
     }
 
     if (!par_.output_archive().empty()) {
-        sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-            new fles::TimesliceOutputArchive(par_.output_archive())));
+        if (par_.output_archive_size() == SIZE_MAX) {
+            sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+                new fles::TimesliceOutputArchive(par_.output_archive())));
+        } else {
+            sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+                new fles::TimesliceOutputArchiveSequence(
+                    par_.output_archive(), par_.output_archive_size())));
+        }
     }
 
     if (!par_.publish_address().empty()) {

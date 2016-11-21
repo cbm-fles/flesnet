@@ -32,6 +32,8 @@ public:
 
     std::string output_archive() const { return output_archive_; }
 
+    size_t output_archive_size() const { return output_archive_size_; }
+
     bool analyze() const { return analyze_; }
 
     bool benchmark() const { return benchmark_; }
@@ -51,6 +53,7 @@ private:
     std::string shm_identifier_;
     std::string input_archive_;
     std::string output_archive_;
+    size_t output_archive_size_ = SIZE_MAX;
     bool analyze_ = false;
     bool benchmark_ = false;
     size_t verbosity_ = 0;
