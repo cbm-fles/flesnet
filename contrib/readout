@@ -45,9 +45,10 @@ BASE_EQID[1]=0xF01
 
 PGEN_RATE=0.14
 
+TS_PROCESSOR="./tsclient -c%i -s%s -a"
 FLESNET_CFG=(-l 2 --timeslice-size 100 --overlap-size 1 
 --in-data-buffer-size-exp 27 --cn-data-buffer-size-exp 27 
---processor-instances 1 -e './tsclient -c%i -s%s -a')
+--processor-instances 1)
 
 ##### configuration above this line ########
 
@@ -145,7 +146,7 @@ done
 
 
 # flesnet configuration
-FLESNET_PRIV_CFG=(-f /dev/null --standalone false)
+FLESNET_PRIV_CFG=(-f /dev/null --standalone false -e "$TS_PROCESSOR")
 FLESNET_PRIV_CFG+=("${FLESNET_CFG[@]}")
 
 CN_INDEX=(-c 0)
