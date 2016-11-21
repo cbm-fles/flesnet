@@ -76,7 +76,9 @@ fi
 # ---------------------------------------------------------
 
 # copy settings
-cp ./readout ${DATAPATH}/
+cp ./readout ${DATAPATH}/${RUNNR}_readout
+chmod -x ${DATAPATH}/${RUNNR}_readout
+bzip2 ${DATAPATH}/${RUNNR}_readout
 
 # start readout
 ./readout rec ${DATAPATH}/${RUNNR}.tsa

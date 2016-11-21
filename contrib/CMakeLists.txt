@@ -53,6 +53,10 @@ add_custom_target (
           -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/readout
           -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/readout
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
+	COMMAND ${CMAKE_COMMAND}
+          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/record_data.in
+          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/record_data
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 )
 
 add_custom_target(links ALL DEPENDS run verbs.supp boost.supp shm_mstool shm_flesnet)
