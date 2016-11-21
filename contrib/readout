@@ -15,6 +15,20 @@ ROOT_DIR="$(git rev-parse --show-toplevel)"
 BINDIR=.
 LINK=(disable disable disable disable disable disable disable disable disable disable disable disable disable disable disable disable)
 
+case $1 in
+    rec)
+        if [ -z ${2+x} ]; then
+            echo "please provide filename";
+            exit
+	else
+	    OUTFILE=$2
+        fi
+        ;;
+    *)
+        echo -e "To write data use $0 rec <filename>"
+        ;;
+esac
+
 ##### configuration below this line ########
 
 ADDR[0]=01:00.0
@@ -45,7 +59,12 @@ BASE_EQID[1]=0xF01
 
 PGEN_RATE=0.14
 
-TS_PROCESSOR="./tsclient -c%i -s%s -a"
+if [ -z ${OUTFILE+x} ]; then
+    TS_PROCESSOR="./tsclient -c%i -s%s -a"
+else
+    TS_PROCESSOR="./tsclient -c%i -s%s -a -o $OUTFILE"
+fi
+
 FLESNET_CFG=(-l 2 --timeslice-size 100 --overlap-size 1 
 --in-data-buffer-size-exp 27 --cn-data-buffer-size-exp 27 
 --processor-instances 1)

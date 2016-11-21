@@ -2,56 +2,41 @@
 
 # This sript was created during the CERN 2014 beamtime
 # and originally called plesnet.
-
-#
-##   plesnet calls flesnet and stores output to file with unique serial number
-#
-
 # 20.11.2014 by DE
 # 24.11.2014 by DH
-
-# config files
-FLIBCFG=flib.cfg
-FLESNETCFG=flesnet.cfg
+# Modified for CERN SPS16
+# 21.11.2016 by DH
 
 # variable definition
-DATAPATH=
-DATANAME=
-
-# min free memory in kB
-MINMEM=14000000
-
-# plesnet variables above ---------------------------------
+OUTDIR=.
 
 # General checks
-
-if [ ! -e $DATAPATH/RUNNUMBER ]; then
+if [ ! -e $OUTDIR/RUN_STATUS ]; then
   echo
   echo please specify a valid output directory 
-  echo containing a valid RUNNUMBER file,
-  echo not: \"$DATAPATH\"
+  echo containing a valid RUN_STATUS file,
+  echo not: \"$OUTDIR\"
+  echo to create a RUN_STATUS file try:
+  echo "echo \"RUNNR_VAR=0\" > ${OUTDIR}/RUN_STATUS"
   echo
   exit 1
 fi
+source $OUTDIR/RUN_STATUS
 
-# generate a unique run number
-# cat /data1/cbm/RUNNUMBER
-RUNNR=`cat $DATAPATH/RUNNUMBER`
-echo `expr ${RUNNR} + 1` > $DATAPATH/RUNNUMBER
+# ensure everything is fine
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+$ROOT_DIR/contrib/flesnet-check
+
+# generate a new run number from status file
+((RUNNR_VAR+=1))
+echo "RUNNR_VAR=$RUNNR_VAR" > $OUTDIR/RUN_STATUS
+printf -v RUNNR "%04d" $RUNNR_VAR
+
+DATAPATH=${OUTDIR}/${RUNNR}
+mkdir ${DATAPATH}
+
 RUNINFO=runinfo.txt
 RUNENDINFO=runinfo_end.txt
-
-source ../contrib/check_functions
-
-#check_mem $MINMEM
-check_is_not_running tsclient
-check_is_not_running flesnet
-check_is_running flib_ctrl
-check_no_params_flib_ctrl
-check_shm
-check_dma_buffers
-
-#----------------------------------------------------------
 
 PLEDITOR=${PLEDITOR:-nano}
 echo
@@ -88,13 +73,15 @@ if [ $MLINES = $NLINES ]; then
   exit
 fi
 
-# plesnet part below --------------------------------------
+# ---------------------------------------------------------
 
-cp $FLIBCFG $DATAPATH/${RUNNR}_$FLIBCFG
-cp $FLESNETCFG $DATAPATH/${RUNNR}_$FLESNETCFG
-./flesnet -e "./tsclient -c%i -s%s -a -P -o $DATAPATH/${RUNNR}_$DATANAME"
+# copy settings
+cp ./readout ${DATAPATH}/
 
-#---------------------------------------------------------
+# start readout
+./readout rec ${DATAPATH}/${RUNNR}.tsa
+
+# ---------------------------------------------------------
 
 echo
 touch $DATAPATH/${RUNNR}_$RUNENDINFO
@@ -123,5 +110,5 @@ if [ $MLINES = $NLINES ]; then
   exit
 fi
 
-echo stored as run ${RUNNR}_$DATANAME in $DATAPATH
+echo stored as run ${RUNNR} in $DATAPATH
 echo goodbye ...
