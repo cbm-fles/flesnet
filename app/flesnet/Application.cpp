@@ -118,14 +118,14 @@ Application::Application(Parameters const& par,
                         new FlibPatternGenerator(
                             par.in_data_buffer_size_exp(),
                             par.in_desc_buffer_size_exp(), index,
-                            par.typical_content_size(), true, true)));
+                            par.typical_content_size(), par.generate_ts_patterns(), par.random_ts_sizes())));
             } else {
                 data_sources_.push_back(
                     std::unique_ptr<InputBufferReadInterface>(
                         new EmbeddedPatternGenerator(
                             par.in_data_buffer_size_exp(),
                             par.in_desc_buffer_size_exp(), index,
-                            par.typical_content_size(), true, true)));
+                            par.typical_content_size(), par.generate_ts_patterns(), par.random_ts_sizes())));
             }
         }
 

@@ -206,7 +206,7 @@ void Parameters::parse_options(int argc, char* argv[])
         "number of instances of the timeslice processor executable")(
         "base-port", po::value<uint32_t>(&base_port_),
         "base IP port to use for listening")(
-        "zeromq,z", po::value<bool>(&zeromq_), "use zeromq transport");
+        "zeromq,z", po::value<bool>(&zeromq_), "use zeromq transport")("generate-ts-patterns", po::value<bool>(&generate_ts_patterns_), "generate pattern for ts")("random-ts-sizes", po::value<bool>(&random_ts_sizes_), "generate ts with random sizes");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
