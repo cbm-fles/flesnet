@@ -30,6 +30,8 @@ public:
 
     std::string input_archive() const { return input_archive_; }
 
+    uint64_t input_archive_cycles() const { return input_archive_cycles_; }
+
     std::string output_archive() const { return output_archive_; }
 
     size_t output_archive_items() const { return output_archive_items_; }
@@ -54,6 +56,7 @@ private:
     int32_t client_index_ = -1;
     std::string shm_identifier_;
     std::string input_archive_;
+    uint64_t input_archive_cycles_ = 1;
     std::string output_archive_;
     size_t output_archive_items_ = SIZE_MAX;
     size_t output_archive_bytes_ = SIZE_MAX;

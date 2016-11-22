@@ -33,6 +33,9 @@ void Parameters::parse_options(int argc, char* argv[])
              "shared memory identifier used for receiving timeslices");
     desc_add("input-archive,i", po::value<std::string>(&input_archive_),
              "name of an input file archive to read");
+    desc_add(
+        "input-archive-cycles", po::value<uint64_t>(&input_archive_cycles_),
+        "repeat reading input archive in a loop (for performance testing)");
     desc_add("output-archive,o", po::value<std::string>(&output_archive_),
              "name of an output file archive to write");
     desc_add("output-archive-items", po::value<size_t>(&output_archive_items_),

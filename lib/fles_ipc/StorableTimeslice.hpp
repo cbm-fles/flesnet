@@ -21,6 +21,8 @@ namespace fles
 
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
+template <class Base, class Derived, ArchiveType archive_type>
+class InputArchiveLoop;
 
 /**
  * \brief The StorableTimeslice class contains the data of a single timeslice.
@@ -119,6 +121,8 @@ private:
     friend class boost::serialization::access;
     friend class InputArchive<Timeslice, StorableTimeslice,
                               ArchiveType::TimesliceArchive>;
+    friend class InputArchiveLoop<Timeslice, StorableTimeslice,
+                                  ArchiveType::TimesliceArchive>;
     friend class TimesliceSubscriber;
 
     StorableTimeslice();
