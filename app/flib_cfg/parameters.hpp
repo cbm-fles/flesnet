@@ -82,6 +82,7 @@ public:
   bool identify() const { return _identify; }
   uint32_t mc_size() const { return _mc_size; }
   float pgen_rate() const { return _pgen_rate; }
+  uint32_t mc_size_limit() const { return _mc_size_limit; }
 
   struct link_config link(size_t i) const {
     return _links.at(i);
@@ -154,6 +155,8 @@ private:
                "1024 ns (31 bit wide)");
     config_add("pgen-rate,r", po::value<float>(),
                "MS fill level of pattern generator in [0,1]");
+    config_add("mc-size-limit", po::value<uint32_t>(&_mc_size_limit),
+               "Threshold of micsolice size limiter in bytes.");
 
     config_add("l0_source", po::value<std::string>(),
                "Link 0 data source <disable|flim|pgen_far|pgen_near>");
@@ -275,5 +278,6 @@ private:
   bool _identify = false;
   uint32_t _mc_size = 10; // 10,24 us
   float _pgen_rate = 1;
+  uint32_t _mc_size_limit = 2 ^ 20; // 1MB
   std::array<struct link_config, _num_flib_links> _links = {{}};
 };

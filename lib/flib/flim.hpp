@@ -39,6 +39,7 @@ public:
   void set_pgen_enable(bool enable);
   void reset_pgen_mc_pending();
   uint32_t get_pgen_mc_pending();
+  void set_mc_size_limit(uint32_t bytes);
 
   void set_testreg(uint32_t data);
   uint32_t get_testreg();

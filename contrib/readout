@@ -60,6 +60,7 @@ BASE_EQID[0]=0xF00
 BASE_EQID[1]=0xF01
 
 PGEN_RATE=0.14
+MC_SIZE_LIMIT=2097152
 
 if [ "$RECORD" = true ]; then
     TS_PROCESSOR="./tsclient -c%i -s%s -a --output-archive-bytes 2000000000 -o ${OUTFILE}%n.tsa"
@@ -68,7 +69,7 @@ else
 fi
 
 FLESNET_CFG=(-l 2 --timeslice-size 100 --overlap-size 1 
---in-data-buffer-size-exp 27 --cn-data-buffer-size-exp 27 
+--cn-data-buffer-size-exp 28 
 --processor-instances 1)
 
 ##### configuration above this line ########
@@ -131,7 +132,7 @@ $ROOT_DIR/contrib/flesnet-check
 echo "Configuring FLIBs ..."
 for i in 0 1; do
 $BINDIR/flib_cfg -c /dev/null -l 2 -L ${OUTFILE}f${i}_cfg.log -i ${ADDR[$i]} \
-                 -t 100 -r $PGEN_RATE \
+                 -t 100 -r $PGEN_RATE --mc-size-limit $MC_SIZE_LIMIT \
                  --l0_source ${LINK[0+$i*8]} --l0_eq_id ${BASE_EQID[$i]}0 \
                  --l1_source ${LINK[1+$i*8]} --l1_eq_id ${BASE_EQID[$i]}1 \
                  --l2_source ${LINK[2+$i*8]} --l2_eq_id ${BASE_EQID[$i]}2 \
@@ -146,12 +147,12 @@ done
 echo "Starting flib_server ..."
 if [ ${#IN_INDEX_0[@]} -ne 0 ]; then
     $BINDIR/flib_server -c /dev/null -L ${OUTFILE}f0_server.log -i ${ADDR[0]} \
-                    -o shm_server_f0 &
+                    --data-buffer-size-exp 28 -o shm_server_f0 &
     SERVER_0_PID=$!
 fi
 if [ ${#IN_INDEX_1[@]} -ne 0 ]; then
     $BINDIR/flib_server -c /dev/null -L ${OUTFILE}f1_server.log -i ${ADDR[1]} \
-                    -o shm_server_f1 &
+                    --data-buffer-size-exp 28 -o shm_server_f1 &
     SERVER_1_PID=$!
 fi
  
