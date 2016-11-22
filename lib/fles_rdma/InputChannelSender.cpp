@@ -4,8 +4,10 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RequestIdentifier.hpp"
 #include "Utility.hpp"
+#include "log.hpp"
 #include <cassert>
-#include <log.hpp>
+#include <chrono>
+#include <thread>
 
 InputChannelSender::InputChannelSender(
     uint64_t input_index, InputBufferReadInterface& data_source,
@@ -195,6 +197,9 @@ void InputChannelSender::operator()()
         }
 
         time_end_ = std::chrono::high_resolution_clock::now();
+
+        // this should not be neccessary
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         disconnect();
         while (connected_ != 0) {
