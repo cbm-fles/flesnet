@@ -202,7 +202,7 @@ void InputChannelSender::operator()()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         disconnect();
-        while (connected_ != 0) {
+        while (connected_ != 0 || timewait_ != 0) {
             poll_cm_events();
         }
 

@@ -77,12 +77,12 @@ void TimesliceBuilder::operator()()
         time_begin_ = std::chrono::high_resolution_clock::now();
 
         report_status();
-        while (!all_done_ || connected_ != 0) {
+        while (!all_done_ || connected_ != 0 || timewait_ != 0) {
             if (!all_done_) {
                 poll_completion();
                 poll_ts_completion();
             }
-            if (connected_ != 0) {
+            if (connected_ != 0 || timewait_ != 0) {
                 poll_cm_events();
             }
             scheduler_.timer();
