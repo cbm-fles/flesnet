@@ -27,12 +27,15 @@ source $OUTDIR/RUN_STATUS
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 $ROOT_DIR/contrib/flesnet-check
 
+DATE=`date -u "+%Y%m%d_%H%M"`
+
 # generate a new run number from status file
 ((RUNNR_VAR+=1))
 echo "RUNNR_VAR=$RUNNR_VAR" > $OUTDIR/RUN_STATUS
 printf -v RUNNR "%04d" $RUNNR_VAR
 
-DATAPATH=${OUTDIR}/${RUNNR}
+FILE_PREFIX=r${RUNNR}_${DATE}
+DATAPATH=${OUTDIR}/r${RUNNR}_${DATE}
 mkdir ${DATAPATH}
 
 RUNINFO=runinfo.txt
@@ -42,26 +45,26 @@ PLEDITOR=${PLEDITOR:-nano}
 echo
 echo log message editor is \"$PLEDITOR\"
 
-touch $DATAPATH/${RUNNR}_$RUNINFO
-echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
-echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
-echo put your start-of-run log message above ^^^ >> $DATAPATH/${RUNNR}_$RUNINFO
-echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
-echo You can add additional comments during the run by edditing: >> $DATAPATH/${RUNNR}_$RUNINFO
-echo $DATAPATH/${RUNNR}_$RUNINFO    >> $DATAPATH/${RUNNR}_$RUNINFO
-echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
-echo -n '# '                        >> $DATAPATH/${RUNNR}_$RUNINFO
-date                                >> $DATAPATH/${RUNNR}_$RUNINFO
-echo                                >> $DATAPATH/${RUNNR}_$RUNINFO
-echo '#'                            >> $DATAPATH/${RUNNR}_$RUNINFO
-echo '##  ' Run ${RUNNR} logbook    >> $DATAPATH/${RUNNR}_$RUNINFO
-echo '#'                            >> $DATAPATH/${RUNNR}_$RUNINFO
+touch $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo                                >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo                                >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo put your start-of-run log message above ^^^ >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo                                >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo You can add additional comments during the run by edditing: >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo $DATAPATH/${FILE_PREFIX}_$RUNINFO    >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo                                >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo -n '# '                        >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+date                                >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo                                >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo '#'                            >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo '##  ' Run ${RUNNR} logbook    >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
+echo '#'                            >> $DATAPATH/${FILE_PREFIX}_$RUNINFO
 
-NLINES=`wc -c $DATAPATH/${RUNNR}_$RUNINFO | cut --delimiter=' ' -f 1`
+NLINES=`wc -c $DATAPATH/${FILE_PREFIX}_$RUNINFO | cut --delimiter=' ' -f 1`
 
-$PLEDITOR $DATAPATH/${RUNNR}_$RUNINFO
+$PLEDITOR $DATAPATH/${FILE_PREFIX}_$RUNINFO
 
-MLINES=`wc -c $DATAPATH/${RUNNR}_$RUNINFO | cut --delimiter=' ' -f 1`
+MLINES=`wc -c $DATAPATH/${FILE_PREFIX}_$RUNINFO | cut --delimiter=' ' -f 1`
 
 if [ $MLINES = $NLINES ]; then
   echo
@@ -76,33 +79,35 @@ fi
 # ---------------------------------------------------------
 
 # copy settings
-cp ./readout ${DATAPATH}/${RUNNR}_readout
-chmod -x ${DATAPATH}/${RUNNR}_readout
-bzip2 ${DATAPATH}/${RUNNR}_readout
+cp ./readout ${DATAPATH}/${FILE_PREFIX}_readout
+chmod -x ${DATAPATH}/${FILE_PREFIX}_readout
+bzip2 ${DATAPATH}/${FILE_PREFIX}_readout
 
 # start readout
-./readout rec ${DATAPATH}/${RUNNR}
+./readout rec ${DATAPATH}/${FILE_PREFIX}_
 
+tar -zcf ${DATAPATH}/${FILE_PREFIX}_logs.tar.gz ${DATAPATH}/${FILE_PREFIX}_*.log \
+    && rm -f ${DATAPATH}/${FILE_PREFIX}_*.log
 # ---------------------------------------------------------
 
 echo
-touch $DATAPATH/${RUNNR}_$RUNENDINFO
-echo                                >> $DATAPATH/${RUNNR}_$RUNENDINFO
-echo                                >> $DATAPATH/${RUNNR}_$RUNENDINFO
-echo put your end-of-run log message above ^^^ >> $DATAPATH/${RUNNR}_$RUNENDINFO
-echo                                >> $DATAPATH/${RUNNR}_$RUNENDINFO
-echo -n '# '                        >> $DATAPATH/${RUNNR}_$RUNENDINFO
-date                                >> $DATAPATH/${RUNNR}_$RUNENDINFO
-echo                                >> $DATAPATH/${RUNNR}_$RUNENDINFO
-echo '#'                            >> $DATAPATH/${RUNNR}_$RUNENDINFO
-echo '##  ' Run ${RUNNR} logbook    >> $DATAPATH/${RUNNR}_$RUNENDINFO
-echo '#'                            >> $DATAPATH/${RUNNR}_$RUNENDINFO
+touch $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
+echo                                >> $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
+echo                                >> $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
+echo put your end-of-run log message above ^^^ >> $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
+echo                                >> $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
+echo -n '# '                        >> $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
+date                                >> $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
+echo                                >> $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
+echo '#'                            >> $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
+echo '##  ' Run ${RUNNR} logbook    >> $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
+echo '#'                            >> $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
 
-NLINES=`wc -c $DATAPATH/${RUNNR}_$RUNENDINFO | cut --delimiter=' ' -f 1`
+NLINES=`wc -c $DATAPATH/${FILE_PREFIX}_$RUNENDINFO | cut --delimiter=' ' -f 1`
 
-$PLEDITOR $DATAPATH/${RUNNR}_$RUNENDINFO
+$PLEDITOR $DATAPATH/${FILE_PREFIX}_$RUNENDINFO
 
-MLINES=`wc -c $DATAPATH/${RUNNR}_$RUNENDINFO | cut --delimiter=' ' -f 1`
+MLINES=`wc -c $DATAPATH/${FILE_PREFIX}_$RUNENDINFO | cut --delimiter=' ' -f 1`
 
 if [ $MLINES = $NLINES ]; then
   echo

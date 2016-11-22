@@ -14,14 +14,16 @@ set -m  # run all processes in a separate process group
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 BINDIR=.
 LINK=(disable disable disable disable disable disable disable disable disable disable disable disable disable disable disable disable)
+OUTFILE=./
 
 case $1 in
     rec)
-        if [ -z ${2+x} ]; then
+        if [ -z "$2" ]; then
             echo "please provide filename";
             exit
 	else
-	    OUTFILE=$2
+            RECORD=true
+            OUTFILE=$2
         fi
         ;;
     *)
@@ -59,10 +61,10 @@ BASE_EQID[1]=0xF01
 
 PGEN_RATE=0.14
 
-if [ -z ${OUTFILE+x} ]; then
-    TS_PROCESSOR="./tsclient -c%i -s%s -a"
+if [ "$RECORD" = true ]; then
+    TS_PROCESSOR="./tsclient -c%i -s%s -a --output-archive-bytes 2000000000 -o ${OUTFILE}%n.tsa"
 else
-    TS_PROCESSOR="./tsclient -c%i -s%s -a --output-archive-bytes 2000000000 -o ${OUTFILE}_%n.tsa"
+    TS_PROCESSOR="./tsclient -c%i -s%s -a"
 fi
 
 FLESNET_CFG=(-l 2 --timeslice-size 100 --overlap-size 1 
@@ -128,7 +130,8 @@ $ROOT_DIR/contrib/flesnet-check
 
 echo "Configuring FLIBs ..."
 for i in 0 1; do
-$BINDIR/flib_cfg -c /dev/null -l 2 -L f${i}_cfg.log -i ${ADDR[$i]} -t 100 -r $PGEN_RATE \
+$BINDIR/flib_cfg -c /dev/null -l 2 -L ${OUTFILE}f${i}_cfg.log -i ${ADDR[$i]} \
+                 -t 100 -r $PGEN_RATE \
                  --l0_source ${LINK[0+$i*8]} --l0_eq_id ${BASE_EQID[$i]}0 \
                  --l1_source ${LINK[1+$i*8]} --l1_eq_id ${BASE_EQID[$i]}1 \
                  --l2_source ${LINK[2+$i*8]} --l2_eq_id ${BASE_EQID[$i]}2 \
@@ -142,23 +145,23 @@ done
 
 echo "Starting flib_server ..."
 if [ ${#IN_INDEX_0[@]} -ne 0 ]; then
-    $BINDIR/flib_server -c /dev/null -L f0_server.log -i ${ADDR[0]} \
+    $BINDIR/flib_server -c /dev/null -L ${OUTFILE}f0_server.log -i ${ADDR[0]} \
                     -o shm_server_f0 &
     SERVER_0_PID=$!
 fi
 if [ ${#IN_INDEX_1[@]} -ne 0 ]; then
-    $BINDIR/flib_server -c /dev/null -L f1_server.log -i ${ADDR[1]} \
+    $BINDIR/flib_server -c /dev/null -L ${OUTFILE}f1_server.log -i ${ADDR[1]} \
                     -o shm_server_f1 &
     SERVER_1_PID=$!
 fi
  
 # block till server is ready (remove if etcd is ready)
 sleep 1
-tail -f $BINDIR/f0_server.log | while read LOGLINE
+tail -f ${OUTFILE}f0_server.log | while read LOGLINE
 do
    [[ "${LOGLINE}" == *"flib server started and running"* ]] && pkill -P $$ tail
 done
-tail -f $BINDIR/f1_server.log | while read LOGLINE
+tail -f ${OUTFILE}f1_server.log | while read LOGLINE
 do
    [[ "${LOGLINE}" == *"flib server started and running"* ]] && pkill -P $$ tail
 done
@@ -171,13 +174,13 @@ FLESNET_PRIV_CFG+=("${FLESNET_CFG[@]}")
 CN_INDEX=(-c 0)
 NODES+=(-C 127.0.0.1)
 
-IN_0_CFG=(-L flesnet_in0.log --input-shm shm_server_f0)
-IN_1_CFG=(-L flesnet_in1.log --input-shm shm_server_f1)
+IN_0_CFG=(-L ${OUTFILE}flesnet_in0.log --input-shm shm_server_f0)
+IN_1_CFG=(-L ${OUTFILE}flesnet_in1.log --input-shm shm_server_f1)
 
 echo "Starting flesnet ..."
 
 # the compute node
-$BINDIR/flesnet -L flesnet_cn.log "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${CN_INDEX[@]}" &
+$BINDIR/flesnet -L ${OUTFILE}flesnet_cn.log "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${CN_INDEX[@]}" &
 FLESNET_CN_PID=$!
 
 # get flesnet group ID
