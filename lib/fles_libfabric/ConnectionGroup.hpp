@@ -141,7 +141,7 @@ public:
         int ne;
         int ne_total = 0;
 
-        while (ne_total < 1000 && (ne = fi_cq_read(cq_, &wc, ne_max))) {
+        while (ne_total < conn_.size() && (ne = fi_cq_read(cq_, &wc, ne_max))) {
             if (ne == -FI_EAVAIL) { // error available
                 struct fi_cq_err_entry err;
                 char buffer[256];
