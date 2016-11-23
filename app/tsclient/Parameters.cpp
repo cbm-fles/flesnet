@@ -55,6 +55,8 @@ void Parameters::parse_options(int argc, char* argv[])
     desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number_),
              "set the maximum number of microslices to process (default: "
              "unlimited)");
+    desc_add("rate-limit", po::value<double>(&rate_limit_),
+             "limit the item rate to given frequency (in Hz)");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

@@ -8,9 +8,11 @@
 #include "TimeslicePublisher.hpp"
 #include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
+#include "Utility.hpp"
 #include "log.hpp"
 #include <boost/lexical_cast.hpp>
 #include <iostream>
+#include <thread>
 
 Application::Application(Parameters const& par) : par_(par)
 {
@@ -66,6 +68,11 @@ Application::Application(Parameters const& par) : par_(par)
         L_(info) << "tsclient " << par_.client_index() << ": "
                  << par.shm_identifier();
     }
+
+    if (par_.rate_limit() != 0.0) {
+        L_(info) << "rate limit active: "
+                 << human_readable_count(par_.rate_limit(), true, "Hz");
+    }
 }
 
 Application::~Application()
@@ -76,8 +83,21 @@ Application::~Application()
     L_(info) << "total timeslices processed: " << count_;
 }
 
+void Application::rate_limit_delay() const
+{
+    auto delta_is = std::chrono::high_resolution_clock::now() - time_begin_;
+    auto delta_want = std::chrono::microseconds(
+        static_cast<uint64_t>(count_ * 1.0e6 / par_.rate_limit()));
+
+    if (delta_want > delta_is) {
+        std::this_thread::sleep_for(delta_want - delta_is);
+    }
+}
+
 void Application::run()
 {
+    time_begin_ = std::chrono::high_resolution_clock::now();
+
     if (benchmark_) {
         benchmark_->run();
         return;
@@ -87,6 +107,9 @@ void Application::run()
 
     while (auto timeslice = source_->get()) {
         std::shared_ptr<const fles::Timeslice> ts(std::move(timeslice));
+        if (par_.rate_limit() != 0.0) {
+            rate_limit_delay();
+        }
         for (auto& sink : sinks_) {
             sink->put(ts);
         }

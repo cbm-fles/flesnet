@@ -50,6 +50,8 @@ public:
 
     uint64_t maximum_number() const { return maximum_number_; }
 
+    double rate_limit() const { return rate_limit_; }
+
 private:
     void parse_options(int argc, char* argv[]);
 
@@ -66,4 +68,5 @@ private:
     std::string publish_address_;
     std::string subscribe_address_;
     uint64_t maximum_number_ = UINT64_MAX;
+    double rate_limit_ = 0.0;
 };
