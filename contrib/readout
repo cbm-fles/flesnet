@@ -33,6 +33,8 @@ esac
 
 ##### configuration below this line ########
 
+# FLIB input setting
+
 ADDR[0]=01:00.0
 ADDR[1]=02:00.0
 
@@ -60,20 +62,49 @@ BASE_EQID[0]=0xF00
 BASE_EQID[1]=0xF01
 
 PGEN_RATE=0.14
-MC_SIZE_LIMIT=2097152
-BUF_SIZE_EXP=29
+
+# general setting
+
+# Microslice size in µs and link max. thoughput in MB/s.
+# These numbers are used to detremine buffer sizes and should represent
+# DPB settings. In case of FLIB pgen they are also used to confugure the pgen.
+MC_SIZE_US=1638
+MAX_THROUGHPUT_MB_S=1250
+
+TIMESLICE_SIZE=100
+OVERLAP_SIZE=1
+OUTPUT_ARCHIVE_BYTES=2000000000
+
+# Buffer calculations (absolute minimums):
+# buffer_size_bytes = timeslice_size_bytes *2
+# timeslice_size_bytes = mc_size_limit_bytes * (timeslice_size + overlap_size)
+# min_mc_size_limit_bytes >= mc_size_time * max_throughput
+
+MIN_MC_SIZE_LIMIT_BYTES=`echo "scale=0; ${MC_SIZE_US}*${MAX_THROUGHPUT_MB_S}" | bc -l`
+MC_SIZE_LIMIT_BYTES=$(($MIN_MC_SIZE_LIMIT_BYTES + 1000))
+echo mc size limit = $MC_SIZE_LIMIT_BYTES bytes
+
+MIN_BUF_SIZE=`echo "2 * $MC_SIZE_LIMIT_BYTES * ($TIMESLICE_SIZE + $OVERLAP_SIZE)" | bc`
+# calculate next base2 exponent for given arg1
+MIN_BUF_SIZE_EXP=`echo "exp=l($MIN_BUF_SIZE-1)/l(2); scale=0; exp/1+1" | bc -l`
+BUF_SIZE_EXP=$MIN_BUF_SIZE_EXP
+echo "buffer size per link = 2^$BUF_SIZE_EXP bytes"
+
+##### configuration above this line ########
 
 if [ "$RECORD" = true ]; then
-    TS_PROCESSOR="./tsclient -c%i -s%s -a -P --output-archive-bytes 2000000000 -o ${OUTFILE}%n.tsa"
+    TS_PROCESSOR="./tsclient -c%i -s%s -a -P --output-archive-bytes $OUTPUT_ARCHIVE_BYTES -o ${OUTFILE}%n.tsa"
 else
     TS_PROCESSOR="./tsclient -c%i -s%s -a -P"
 fi
 
-FLESNET_CFG=(-l 2 --timeslice-size 100 --overlap-size 1 
---cn-data-buffer-size-exp $BUF_SIZE_EXP
---processor-instances 1)
+FLESNET_CFG=(-l 2
+             --timeslice-size $TIMESLICE_SIZE
+             --overlap-size $OVERLAP_SIZE
+             --cn-data-buffer-size-exp $BUF_SIZE_EXP
+             --processor-instances 1)
 
-##### configuration above this line ########
+############################################
 
 # building the config
 TOTAL_LINKS=0
@@ -132,9 +163,11 @@ $ROOT_DIR/contrib/flesnet-check
 $BINDIR/flib_info > ${OUTFILE}flib_info.log
 
 echo "Configuring FLIBs ..."
+PGEN_MC_SIZE=`echo "scale=0; ${MC_SIZE_US}*1000/1024+1" | bc -l`
 for i in 0 1; do
 $BINDIR/flib_cfg -c /dev/null -l 2 -L ${OUTFILE}f${i}_cfg.log -i ${ADDR[$i]} \
-                 -t 1600 -r $PGEN_RATE --mc-size-limit $MC_SIZE_LIMIT \
+                 -t $PGEN_MC_SIZE -r $PGEN_RATE \
+                 --mc-size-limit $MC_SIZE_LIMIT_BYTES \
                  --l0_source ${LINK[0+$i*8]} --l0_eq_id ${BASE_EQID[$i]}0 \
                  --l1_source ${LINK[1+$i*8]} --l1_eq_id ${BASE_EQID[$i]}1 \
                  --l2_source ${LINK[2+$i*8]} --l2_eq_id ${BASE_EQID[$i]}2 \
