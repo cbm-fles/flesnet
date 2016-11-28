@@ -11,6 +11,7 @@ namespace fles
 
 TimeslicePublisher::TimeslicePublisher(const std::string& address)
 {
+    publisher_.setsockopt(ZMQ_SNDHWM, 1);
     publisher_.bind(address.c_str());
 }
 
