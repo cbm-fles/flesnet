@@ -268,6 +268,16 @@ protected:
 
         conn->on_disconnected(event);
         --connected_;
+        ++timewait_;
+    }
+
+    /// Handle RDMA_CM_EVENT_TIMEWAIT_EXIT event.
+    virtual void on_timewait_exit(struct rdma_cm_event* event)
+    {
+        CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
+
+        conn->on_timewait_exit(event);
+        --timewait_;
     }
 
     /// Initialize the InfiniBand verbs context.
@@ -302,6 +312,9 @@ protected:
 
     /// Number of established connections
     unsigned int connected_ = 0;
+
+    /// Number of connections in the timewait state.
+    unsigned int timewait_ = 0;
 
     /// Number of connections in the done state.
     unsigned int connections_done_ = 0;
@@ -349,6 +362,9 @@ private:
             return;
         case RDMA_CM_EVENT_DISCONNECTED:
             on_disconnected(event);
+            return;
+        case RDMA_CM_EVENT_TIMEWAIT_EXIT:
+            on_timewait_exit(event);
             return;
         default:
             L_(warning) << rdma_event_str(event->event);

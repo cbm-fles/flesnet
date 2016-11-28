@@ -48,6 +48,9 @@ public:
     /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
     virtual void on_disconnected(struct rdma_cm_event* event);
 
+    /// Handle RDMA_CM_EVENT_TIMEWAIT_EXIT event for this connection.
+    virtual void on_timewait_exit(struct rdma_cm_event* event);
+
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
     virtual void on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq);
 
