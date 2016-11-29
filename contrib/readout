@@ -65,37 +65,40 @@ PGEN_RATE=0.14
 
 # general setting
 
-# Microslice size in µs and link max. thoughput in MB/s.
-# These numbers are used to detremine buffer sizes and should represent
-# DPB settings. In case of FLIB pgen they are also used to confugure the pgen.
-MC_SIZE_US=1638
-MAX_THROUGHPUT_MB_S=1250
-
 TIMESLICE_SIZE=100
 OVERLAP_SIZE=1
 OUTPUT_ARCHIVE_BYTES=2000000000
+
+# Microslice size in ns and link max. thoughput in MB/s.
+# These numbers are used to determine buffer sizes and should represent
+# DPB settings. In case of FLIB pgen they are also used to configure the pgen.
+MC_SIZE_NS=102400
+MAX_THROUGHPUT_MB_S=1300
 
 # Buffer calculations (absolute minimums):
 # buffer_size_bytes = timeslice_size_bytes *2
 # timeslice_size_bytes = mc_size_limit_bytes * (timeslice_size + overlap_size)
 # min_mc_size_limit_bytes >= mc_size_time * max_throughput
 
-MIN_MC_SIZE_LIMIT_BYTES=`echo "scale=0; ${MC_SIZE_US}*${MAX_THROUGHPUT_MB_S}" | bc -l`
-MC_SIZE_LIMIT_BYTES=$(($MIN_MC_SIZE_LIMIT_BYTES + 1000))
-echo mc size limit = $MC_SIZE_LIMIT_BYTES bytes
+MIN_MC_SIZE_LIMIT_BYTES=`echo "scale=0; ${MC_SIZE_NS}*${MAX_THROUGHPUT_MB_S}/1000" | bc -l`
+echo "*** INFO *** min. mc size limit = $MIN_MC_SIZE_LIMIT_BYTES bytes"
+#MC_SIZE_LIMIT_BYTES=$(($MIN_MC_SIZE_LIMIT_BYTES + 1000))
+MC_SIZE_LIMIT_BYTES=524288
+echo "*** INFO *** mc size limit set = $MC_SIZE_LIMIT_BYTES bytes"
 
 MIN_BUF_SIZE=`echo "2 * $MC_SIZE_LIMIT_BYTES * ($TIMESLICE_SIZE + $OVERLAP_SIZE)" | bc`
 # calculate next base2 exponent for given arg1
 MIN_BUF_SIZE_EXP=`echo "exp=l($MIN_BUF_SIZE-1)/l(2); scale=0; exp/1+1" | bc -l`
-BUF_SIZE_EXP=$MIN_BUF_SIZE_EXP
-echo "buffer size per link = 2^$BUF_SIZE_EXP bytes"
-
+echo "*** INFO *** abs. min. buffer size per link = 2^$MIN_BUF_SIZE_EXP bytes"
+#BUF_SIZE_EXP=$MIN_BUF_SIZE_EXP
+BUF_SIZE_EXP=27
+echo "*** INFO *** buffer size per link set = 2^$BUF_SIZE_EXP bytes"
 ##### configuration above this line ########
 
 if [ "$RECORD" = true ]; then
-    TS_PROCESSOR="./tsclient -c%i -s%s -a -P --output-archive-bytes $OUTPUT_ARCHIVE_BYTES -o ${OUTFILE}%n.tsa"
+    TS_PROCESSOR="./tsclient -c%i -s%s -a --output-archive-bytes $OUTPUT_ARCHIVE_BYTES -o ${OUTFILE}%n.tsa"
 else
-    TS_PROCESSOR="./tsclient -c%i -s%s -a -P"
+    TS_PROCESSOR="./tsclient -c%i -s%s -a"
 fi
 
 FLESNET_CFG=(-l 2
@@ -163,7 +166,10 @@ $ROOT_DIR/contrib/flesnet-check
 $BINDIR/flib_info > ${OUTFILE}flib_info.log
 
 echo "Configuring FLIBs ..."
-PGEN_MC_SIZE=`echo "scale=0; ${MC_SIZE_US}*1000/1024+1" | bc -l`
+# round up to next possible size (given mc_size is min. size)
+#PGEN_MC_SIZE=`echo "scale=0; (${MC_SIZE_NS}+1024-1)/1024" | bc -l`
+# round down to next possible size (given mc_size is max. size)
+PGEN_MC_SIZE=`echo "scale=0; ${MC_SIZE_NS}/1024" | bc -l`
 for i in 0 1; do
 $BINDIR/flib_cfg -c /dev/null -l 2 -L ${OUTFILE}f${i}_cfg.log -i ${ADDR[$i]} \
                  -t $PGEN_MC_SIZE -r $PGEN_RATE \
