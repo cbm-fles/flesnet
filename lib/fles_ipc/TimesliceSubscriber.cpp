@@ -7,6 +7,7 @@ namespace fles
 
 TimesliceSubscriber::TimesliceSubscriber(const std::string& address)
 {
+    subscriber_.setsockopt(ZMQ_RCVHWM, 1);
     subscriber_.connect(address.c_str());
     subscriber_.setsockopt(ZMQ_SUBSCRIBE, nullptr, 0);
 }

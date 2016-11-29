@@ -30,6 +30,8 @@ public:
 
     std::string input_archive() const { return input_archive_; }
 
+    uint64_t input_archive_cycles() const { return input_archive_cycles_; }
+
     std::string output_archive() const { return output_archive_; }
 
     size_t output_archive_items() const { return output_archive_items_; }
@@ -48,12 +50,15 @@ public:
 
     uint64_t maximum_number() const { return maximum_number_; }
 
+    double rate_limit() const { return rate_limit_; }
+
 private:
     void parse_options(int argc, char* argv[]);
 
     int32_t client_index_ = -1;
     std::string shm_identifier_;
     std::string input_archive_;
+    uint64_t input_archive_cycles_ = 1;
     std::string output_archive_;
     size_t output_archive_items_ = SIZE_MAX;
     size_t output_archive_bytes_ = SIZE_MAX;
@@ -63,4 +68,5 @@ private:
     std::string publish_address_;
     std::string subscribe_address_;
     uint64_t maximum_number_ = UINT64_MAX;
+    double rate_limit_ = 0.0;
 };

@@ -58,6 +58,8 @@ private:
     /// Provide boost serialization access.
     template <class Base, class Derived, ArchiveType archive_type>
     friend class InputArchive;
+    template <class Base, class Derived, ArchiveType archive_type>
+    friend class InputArchiveLoop;
 
     ArchiveDescriptor(){};
 
