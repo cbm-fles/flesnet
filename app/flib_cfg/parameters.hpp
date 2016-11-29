@@ -156,7 +156,7 @@ private:
     config_add("pgen-rate,r", po::value<float>(),
                "MS fill level of pattern generator in [0,1]");
     config_add("mc-size-limit", po::value<uint32_t>(&_mc_size_limit),
-               "Threshold of micsolice size limiter in bytes.");
+               "Threshold of microslice size limiter in bytes.");
 
     config_add("l0_source", po::value<std::string>(),
                "Link 0 data source <disable|flim|pgen_far|pgen_near>");

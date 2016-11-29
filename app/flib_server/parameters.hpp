@@ -158,7 +158,7 @@ private:
       L_(debug) << "FLIB address: autodetect";
     }
 
-    L_(info) << "Shared menory file: " << _shm;
+    L_(info) << "Shared memory file: " << _shm;
     L_(info) << print_buffer_info();
   }
 
