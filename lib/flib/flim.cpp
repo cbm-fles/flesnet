@@ -104,6 +104,11 @@ uint32_t flim::get_pgen_mc_pending() {
   return m_rfflim->get_reg(RORC_REG_LINK_MC_PGEN_MC_PENDING);
 }
 
+void flim::set_mc_size_limit(uint32_t bytes) {
+  uint32_t words = bytes / 8; // sizeof(word) == 64Bit
+  m_rfflim->set_reg(RORC_REG_LINK_MAX_MC_WORDS, words);
+}
+
 //////*** FLIM Test and Debug ***//////
 
 void flim::set_testreg(uint32_t data) {

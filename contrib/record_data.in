@@ -83,6 +83,12 @@ cp ./readout ${DATAPATH}/${FILE_PREFIX}_readout
 chmod -x ${DATAPATH}/${FILE_PREFIX}_readout
 bzip2 ${DATAPATH}/${FILE_PREFIX}_readout
 
+echo "# Run status information" >> ${DATAPATH}/${FILE_PREFIX}_info
+echo "RUN=$RUNNR" >> ${DATAPATH}/${FILE_PREFIX}_info
+echo "DATE=$DATE" >> ${DATAPATH}/${FILE_PREFIX}_info
+echo "DATAPATH=$DATAPATH" >> ${DATAPATH}/${FILE_PREFIX}_info
+echo "FILE_PREFIX=$FILE_PREFIX" >> ${DATAPATH}/${FILE_PREFIX}_info
+
 # start readout
 ./readout rec ${DATAPATH}/${FILE_PREFIX}_
 

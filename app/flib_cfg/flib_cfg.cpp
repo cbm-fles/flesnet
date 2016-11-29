@@ -52,6 +52,7 @@ int main(int argc, char* argv[]) {
           return EXIT_FAILURE;
         }
         flims.back()->reset_datapath();
+        flims.back()->set_mc_size_limit(par.mc_size_limit());
         if (!flims.back()->get_pgen_present()) {
           L_(fatal) << "Link " << i << ": "
                     << "FLIM build does not support pgen";
@@ -72,6 +73,7 @@ int main(int argc, char* argv[]) {
           return EXIT_FAILURE;
         }
         flims.back()->reset_datapath();
+        flims.back()->set_mc_size_limit(par.mc_size_limit());
         if (par.link(i).source == flim) {
           flims.back()->set_data_source(flib::flim::user);
         } else { // pgen_far
