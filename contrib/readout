@@ -72,8 +72,9 @@ OUTPUT_ARCHIVE_BYTES=2000000000
 # Microslice size in ns and link max. thoughput in MB/s.
 # These numbers are used to determine buffer sizes and should represent
 # DPB settings. In case of FLIB pgen they are also used to configure the pgen.
-MC_SIZE_NS=102400
-MAX_THROUGHPUT_MB_S=1300
+#MC_SIZE_NS=102400
+MC_SIZE_NS=1638400
+MAX_THROUGHPUT_MB_S=1250
 
 # Buffer calculations (absolute minimums):
 # buffer_size_bytes = timeslice_size_bytes *2
@@ -83,7 +84,8 @@ MAX_THROUGHPUT_MB_S=1300
 MIN_MC_SIZE_LIMIT_BYTES=`echo "scale=0; ${MC_SIZE_NS}*${MAX_THROUGHPUT_MB_S}/1000" | bc -l`
 echo "*** INFO *** min. mc size limit = $MIN_MC_SIZE_LIMIT_BYTES bytes"
 #MC_SIZE_LIMIT_BYTES=$(($MIN_MC_SIZE_LIMIT_BYTES + 1000))
-MC_SIZE_LIMIT_BYTES=524288
+#MC_SIZE_LIMIT_BYTES=524288
+MC_SIZE_LIMIT_BYTES=2097152
 echo "*** INFO *** mc size limit set = $MC_SIZE_LIMIT_BYTES bytes"
 
 MIN_BUF_SIZE=`echo "2 * $MC_SIZE_LIMIT_BYTES * ($TIMESLICE_SIZE + $OVERLAP_SIZE)" | bc`
@@ -91,7 +93,8 @@ MIN_BUF_SIZE=`echo "2 * $MC_SIZE_LIMIT_BYTES * ($TIMESLICE_SIZE + $OVERLAP_SIZE)
 MIN_BUF_SIZE_EXP=`echo "exp=l($MIN_BUF_SIZE-1)/l(2); scale=0; exp/1+1" | bc -l`
 echo "*** INFO *** abs. min. buffer size per link = 2^$MIN_BUF_SIZE_EXP bytes"
 #BUF_SIZE_EXP=$MIN_BUF_SIZE_EXP
-BUF_SIZE_EXP=27
+#BUF_SIZE_EXP=27
+BUF_SIZE_EXP=29
 echo "*** INFO *** buffer size per link set = 2^$BUF_SIZE_EXP bytes"
 ##### configuration above this line ########
 
