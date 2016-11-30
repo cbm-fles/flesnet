@@ -109,9 +109,11 @@ bool ComponentSenderZeromq::try_send_timeslice(uint64_t ts)
     }
 
     // part 1: descriptors
+    if (desc_offset + desc_length > sent_.desc) {
+        sent_.desc = desc_offset + desc_length;
+    }
     auto desc_msg = create_message(data_source_.desc_buffer(), desc_offset,
                                    desc_length, ts, false);
-    sent_.desc += desc_length;
     zmq_msg_send(&desc_msg, socket_, ZMQ_SNDMORE);
 
     // part 2: data
@@ -122,9 +124,11 @@ bool ComponentSenderZeromq::try_send_timeslice(uint64_t ts)
     assert(data_end >= data_offset);
     uint64_t data_length = data_end - data_offset;
 
+    if (data_offset + data_length > sent_.data) {
+        sent_.data = data_offset + data_length;
+    }
     auto data_msg = create_message(data_source_.data_buffer(), data_offset,
                                    data_length, ts, true);
-    sent_.data += data_length;
     zmq_msg_send(&data_msg, socket_, 0);
 
     return true;
@@ -204,13 +208,7 @@ void ComponentSenderZeromq::report_status()
     std::chrono::system_clock::time_point now =
         std::chrono::system_clock::now();
 
-    // TODO: Is this still required?
-    // if data_source.written pointers are lagging behind due to lazy updates,
-    // use sent value instead
     DualIndex written = data_source_.get_write_index();
-    if (written.desc < sent_.desc || written.data < sent_.data) {
-        written = sent_;
-    }
 
     SendBufferStatus status_desc{now,
                                  data_source_.desc_buffer().size(),
