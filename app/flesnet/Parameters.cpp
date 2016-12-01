@@ -4,10 +4,10 @@
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "Utility.hpp"
+#include "log.hpp"
 #include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
 #include <fstream>
-#include <log.hpp>
 
 namespace po = boost::program_options;
 

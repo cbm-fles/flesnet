@@ -2,10 +2,10 @@
 
 #include "IBConnection.hpp"
 #include "RequestIdentifier.hpp"
+#include "log.hpp"
 #include <cassert>
 #include <chrono>
 #include <cstring>
-#include <log.hpp>
 #include <netdb.h>
 #include <thread>
 

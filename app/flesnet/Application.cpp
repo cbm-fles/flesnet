@@ -4,11 +4,11 @@
 #include "ChildProcessManager.hpp"
 #include "EmbeddedPatternGenerator.hpp"
 #include "FlibPatternGenerator.hpp"
+#include "log.hpp"
 #include "shm_channel_client.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/future.hpp>
 #include <boost/thread/thread.hpp>
-#include <log.hpp>
 #include <random>
 #include <string>
 

@@ -5,7 +5,7 @@
 #include "RequestIdentifier.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceWorkItem.hpp"
-#include <log.hpp>
+#include "log.hpp"
 
 TimesliceBuilder::TimesliceBuilder(
     uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
