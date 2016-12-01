@@ -107,7 +107,7 @@ Application::Application(Parameters const& par,
             data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
                 new flib_shm_channel_client(shm_device_, c)));
         } else {
-            if (false) {
+            if (/* DISABLES CODE */ (false)) {
                 data_sources_.push_back(
                     std::unique_ptr<InputBufferReadInterface>(
                         new FlibPatternGenerator(
