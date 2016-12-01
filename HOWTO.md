@@ -205,7 +205,7 @@ See the *Check* Section in *Preparing the FLIB*.
   - Set the Linux boot parameters: 'pcie_aspm=off 'acpi=ht noapic'
 
 
-### Flesnet can not allocate enough memory.
+### Flesnet cannot allocate enough memory.
 
   - The softiwarp install script installs a configuration to /etc/security/limits.d/.
     You need to re-login after installing for these changes to take affect.

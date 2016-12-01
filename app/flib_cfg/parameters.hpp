@@ -187,7 +187,7 @@ private:
 
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
-      std::cerr << "can not open config file: " << config_file << "\n";
+      std::cerr << "cannot open config file: " << config_file << "\n";
       exit(EXIT_FAILURE);
     } else {
       po::store(po::parse_config_file(ifs, config_file_options), vm);
