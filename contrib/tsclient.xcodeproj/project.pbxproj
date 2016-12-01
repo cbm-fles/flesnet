@@ -71,6 +71,19 @@
 		3DB8F06F1DF043770079A053 /* shm_channel_provider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0671DF043630079A053 /* shm_channel_provider.cpp */; };
 		3DB8F0701DF0437A0079A053 /* shm_device_client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0681DF043630079A053 /* shm_device_client.cpp */; };
 		3DB8F0711DF0437F0079A053 /* shm_device_provider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0691DF043630079A053 /* shm_device_provider.cpp */; };
+		3DB8F0931DF04C3F0079A053 /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
+		3DB8F0941DF04C3F0079A053 /* Parameters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0821DF04BC40079A053 /* Parameters.cpp */; };
+		3DB8F0961DF04C3F0079A053 /* EmbeddedPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */; };
+		3DB8F0971DF04C3F0079A053 /* Application.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F07E1DF04BC40079A053 /* Application.cpp */; };
+		3DB8F09C1DF04C3F0079A053 /* TimesliceBuilderZeromq.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0771DF04B570079A053 /* TimesliceBuilderZeromq.cpp */; };
+		3DB8F09D1DF04C3F0079A053 /* ComponentSenderZeromq.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0751DF04B570079A053 /* ComponentSenderZeromq.cpp */; };
+		3DB8F09E1DF04C3F0079A053 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0811DF04BC40079A053 /* main.cpp */; };
+		3DB8F0A01DF04C3F0079A053 /* FlibPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC2C1B591D10007C5C18 /* FlibPatternGenerator.cpp */; };
+		3DB8F0A51DF04C3F0079A053 /* TimesliceBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0631DF042CC0079A053 /* TimesliceBuffer.cpp */; };
+		3DB8F0A71DF04C3F0079A053 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC3F1B591D54007C5C18 /* log.cpp */; };
+		3DB8F0A91DF04C3F0079A053 /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D5657181B42D3E90052C86D /* libfles_ipc.a */; };
+		3DB8F0AF1DF04CC20079A053 /* shm_channel_client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0661DF043630079A053 /* shm_channel_client.cpp */; };
+		3DB8F0B11DF04CC80079A053 /* shm_device_client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0681DF043630079A053 /* shm_device_client.cpp */; };
 		3DBE613A1BD7D4FC00AD6A8A /* MicrosliceTransmitter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DBE61371BD7CDF200AD6A8A /* MicrosliceTransmitter.cpp */; };
 		3DD6E14C1C896DDB00000897 /* example2.msa in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3DD6E14B1C896DDB00000897 /* example2.msa */; };
 /* End PBXBuildFile section */
@@ -125,6 +138,13 @@
 			remoteGlobalIDString = 3DA3FE3E1B0206CB008710E2;
 			remoteInfo = fles_ipc;
 		};
+		3DB8F0891DF04C3F0079A053 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3DA3FE3E1B0206CB008710E2;
+			remoteInfo = fles_ipc;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -173,6 +193,15 @@
 				3DD6E14C1C896DDB00000897 /* example2.msa in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3DB8F0AA1DF04C3F0079A053 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -265,6 +294,16 @@
 		3DB8F0671DF043630079A053 /* shm_channel_provider.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = shm_channel_provider.cpp; sourceTree = "<group>"; };
 		3DB8F0681DF043630079A053 /* shm_device_client.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = shm_device_client.cpp; sourceTree = "<group>"; };
 		3DB8F0691DF043630079A053 /* shm_device_provider.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = shm_device_provider.cpp; sourceTree = "<group>"; };
+		3DB8F0751DF04B570079A053 /* ComponentSenderZeromq.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ComponentSenderZeromq.cpp; sourceTree = "<group>"; };
+		3DB8F0761DF04B570079A053 /* ComponentSenderZeromq.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ComponentSenderZeromq.hpp; sourceTree = "<group>"; };
+		3DB8F0771DF04B570079A053 /* TimesliceBuilderZeromq.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimesliceBuilderZeromq.cpp; sourceTree = "<group>"; };
+		3DB8F0781DF04B570079A053 /* TimesliceBuilderZeromq.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimesliceBuilderZeromq.hpp; sourceTree = "<group>"; };
+		3DB8F07E1DF04BC40079A053 /* Application.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Application.cpp; sourceTree = "<group>"; };
+		3DB8F07F1DF04BC40079A053 /* Application.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Application.hpp; sourceTree = "<group>"; };
+		3DB8F0811DF04BC40079A053 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		3DB8F0821DF04BC40079A053 /* Parameters.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Parameters.cpp; sourceTree = "<group>"; };
+		3DB8F0831DF04BC40079A053 /* Parameters.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Parameters.hpp; sourceTree = "<group>"; };
+		3DB8F0AE1DF04C3F0079A053 /* flesnet */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = flesnet; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DBE61371BD7CDF200AD6A8A /* MicrosliceTransmitter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MicrosliceTransmitter.cpp; sourceTree = "<group>"; };
 		3DBE61381BD7CDF200AD6A8A /* MicrosliceTransmitter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = MicrosliceTransmitter.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3DD6E14B1C896DDB00000897 /* example2.msa */ = {isa = PBXFileReference; lastKnownFileType = file; path = example2.msa; sourceTree = "<group>"; };
@@ -310,6 +349,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3DB8F0A81DF04C3F0079A053 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DB8F0A91DF04C3F0079A053 /* libfles_ipc.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -347,8 +394,10 @@
 				3D5657111B42D3E90052C86D /* fles_ipc.xcodeproj */,
 				3D06A8311B56BC2D0039F5CD /* crcutil */,
 				3D9BCC241B591D10007C5C18 /* fles_core */,
+				3DB8F0731DF04B570079A053 /* fles_zeromq */,
 				3D9BCC441B592087007C5C18 /* flib_ipc */,
 				3D9BCC3D1B591D54007C5C18 /* logging */,
+				3DB8F07D1DF04BC40079A053 /* flesnet */,
 				3D5656F81B42D0870052C86D /* tsclient */,
 				3D5D3F311B60E2E500497342 /* test */,
 				3D94C1C71B67EFB300FEE1EF /* mstool */,
@@ -365,6 +414,7 @@
 				3D5D3F261B60E1E800497342 /* test_MicrosliceReceiver */,
 				3D94C1C61B67EFB300FEE1EF /* mstool */,
 				3DAB45AD1BFF10100035925B /* test_Filter */,
+				3DB8F0AE1DF04C3F0079A053 /* flesnet */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -500,6 +550,31 @@
 			path = ../config;
 			sourceTree = "<group>";
 		};
+		3DB8F0731DF04B570079A053 /* fles_zeromq */ = {
+			isa = PBXGroup;
+			children = (
+				3DB8F0751DF04B570079A053 /* ComponentSenderZeromq.cpp */,
+				3DB8F0761DF04B570079A053 /* ComponentSenderZeromq.hpp */,
+				3DB8F0771DF04B570079A053 /* TimesliceBuilderZeromq.cpp */,
+				3DB8F0781DF04B570079A053 /* TimesliceBuilderZeromq.hpp */,
+			);
+			name = fles_zeromq;
+			path = ../lib/fles_zeromq;
+			sourceTree = "<group>";
+		};
+		3DB8F07D1DF04BC40079A053 /* flesnet */ = {
+			isa = PBXGroup;
+			children = (
+				3DB8F07E1DF04BC40079A053 /* Application.cpp */,
+				3DB8F07F1DF04BC40079A053 /* Application.hpp */,
+				3DB8F0811DF04BC40079A053 /* main.cpp */,
+				3DB8F0821DF04BC40079A053 /* Parameters.cpp */,
+				3DB8F0831DF04BC40079A053 /* Parameters.hpp */,
+			);
+			name = flesnet;
+			path = ../app/flesnet;
+			sourceTree = "<group>";
+		};
 		3DD6E14F1C896DED00000897 /* reference */ = {
 			isa = PBXGroup;
 			children = (
@@ -600,6 +675,24 @@
 			productReference = 3DAB45AD1BFF10100035925B /* test_Filter */;
 			productType = "com.apple.product-type.tool";
 		};
+		3DB8F0871DF04C3F0079A053 /* flesnet */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3DB8F0AB1DF04C3F0079A053 /* Build configuration list for PBXNativeTarget "flesnet" */;
+			buildPhases = (
+				3DB8F08A1DF04C3F0079A053 /* Sources */,
+				3DB8F0A81DF04C3F0079A053 /* Frameworks */,
+				3DB8F0AA1DF04C3F0079A053 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3DB8F0881DF04C3F0079A053 /* PBXTargetDependency */,
+			);
+			name = flesnet;
+			productName = tsclient;
+			productReference = 3DB8F0AE1DF04C3F0079A053 /* flesnet */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -641,6 +734,7 @@
 			);
 			projectRoot = "";
 			targets = (
+				3DB8F0871DF04C3F0079A053 /* flesnet */,
 				3D462B861B42CC790017047A /* tsclient */,
 				3D94C1C51B67EFB300FEE1EF /* mstool */,
 				3D5D3F181B60E1CE00497342 /* test_RingBuffer */,
@@ -771,6 +865,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3DB8F08A1DF04C3F0079A053 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DB8F0931DF04C3F0079A053 /* ThreadContainer.cpp in Sources */,
+				3DB8F0AF1DF04CC20079A053 /* shm_channel_client.cpp in Sources */,
+				3DB8F0941DF04C3F0079A053 /* Parameters.cpp in Sources */,
+				3DB8F0961DF04C3F0079A053 /* EmbeddedPatternGenerator.cpp in Sources */,
+				3DB8F0971DF04C3F0079A053 /* Application.cpp in Sources */,
+				3DB8F09C1DF04C3F0079A053 /* TimesliceBuilderZeromq.cpp in Sources */,
+				3DB8F09D1DF04C3F0079A053 /* ComponentSenderZeromq.cpp in Sources */,
+				3DB8F09E1DF04C3F0079A053 /* main.cpp in Sources */,
+				3DB8F0A01DF04C3F0079A053 /* FlibPatternGenerator.cpp in Sources */,
+				3DB8F0B11DF04CC80079A053 /* shm_device_client.cpp in Sources */,
+				3DB8F0A51DF04C3F0079A053 /* TimesliceBuffer.cpp in Sources */,
+				3DB8F0A71DF04C3F0079A053 /* log.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -793,6 +906,11 @@
 			isa = PBXTargetDependency;
 			name = fles_ipc;
 			targetProxy = 3DAB459F1BFF10100035925B /* PBXContainerItemProxy */;
+		};
+		3DB8F0881DF04C3F0079A053 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = fles_ipc;
+			targetProxy = 3DB8F0891DF04C3F0079A053 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1079,6 +1197,20 @@
 			};
 			name = Release;
 		};
+		3DB8F0AC1DF04C3F0079A053 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		3DB8F0AD1DF04C3F0079A053 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1132,6 +1264,15 @@
 			buildConfigurations = (
 				3DAB45AB1BFF10100035925B /* Debug */,
 				3DAB45AC1BFF10100035925B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3DB8F0AB1DF04C3F0079A053 /* Build configuration list for PBXNativeTarget "flesnet" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3DB8F0AC1DF04C3F0079A053 /* Debug */,
+				3DB8F0AD1DF04C3F0079A053 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
