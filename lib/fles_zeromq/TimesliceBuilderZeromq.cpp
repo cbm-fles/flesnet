@@ -30,14 +30,34 @@ TimesliceBuilderZeromq::TimesliceBuilderZeromq(
 
         c->socket = zmq_socket(zmq_context_, ZMQ_REQ);
         assert(c->socket);
-        int rc = zmq_connect(c->socket, input_server_address.c_str());
+        int timeout_ms = 500;
+        int rc = zmq_setsockopt(c->socket, ZMQ_RCVTIMEO, &timeout_ms,
+                                sizeof timeout_ms);
+        assert(rc == 0);
+        rc = zmq_setsockopt(c->socket, ZMQ_SNDTIMEO, &timeout_ms,
+                            sizeof timeout_ms);
+        assert(rc == 0);
+
+        rc = zmq_connect(c->socket, input_server_address.c_str());
         assert(rc == 0);
 
         connections_.push_back(std::move(c));
     }
 }
 
-TimesliceBuilderZeromq::~TimesliceBuilderZeromq() {}
+TimesliceBuilderZeromq::~TimesliceBuilderZeromq()
+{
+    for (auto& c : connections_) {
+        if (c->socket) {
+            int rc = zmq_close(c->socket);
+            assert(rc == 0);
+        }
+    }
+    if (zmq_context_) {
+        int rc = zmq_ctx_destroy(zmq_context_);
+        assert(rc == 0);
+    }
+}
 
 void TimesliceBuilderZeromq::operator()()
 {
@@ -51,24 +71,44 @@ void TimesliceBuilderZeromq::operator()()
             std::size_t msg_size;
             do {
                 // send request for timeslice data
-                zmq_send(c->socket, &ts_index_, sizeof(ts_index_), 0);
+                int rc;
+                do {
+                    rc = zmq_send(c->socket, &ts_index_, sizeof(ts_index_), 0);
+                } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
+                if (*signal_status_ != 0) {
+                    break;
+                }
 
                 // receive desc answer (part 1), do not release
-                int rc = zmq_msg_init(&c->desc_msg);
+                rc = zmq_msg_init(&c->desc_msg);
                 assert(rc == 0);
-                rc = zmq_msg_recv(&c->desc_msg, c->socket, 0);
+                do {
+                    rc = zmq_msg_recv(&c->desc_msg, c->socket, 0);
+                } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
+                if (*signal_status_ != 0) {
+                    break;
+                }
                 assert(rc != -1);
                 msg_size = zmq_msg_size(&c->desc_msg);
                 if (msg_size == 0) {
                     zmq_msg_close(&c->desc_msg);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 }
             } while (msg_size == 0);
+            if (*signal_status_ != 0) {
+                break;
+            }
 
             // receive data answer (part 2), do not release
             assert(zmq_msg_more(&c->desc_msg));
             int rc = zmq_msg_init(&c->data_msg);
             assert(rc == 0);
-            rc = zmq_msg_recv(&c->data_msg, c->socket, 0);
+            do {
+                rc = zmq_msg_recv(&c->data_msg, c->socket, 0);
+            } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
+            if (*signal_status_ != 0) {
+                break;
+            }
             assert(rc != -1);
 
             uint64_t size_required =

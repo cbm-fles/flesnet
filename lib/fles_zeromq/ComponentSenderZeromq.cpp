@@ -25,11 +25,17 @@ ComponentSenderZeromq::ComponentSenderZeromq(
     ack_.alloc_with_size(min_ack_buffer_size);
 
     zmq_context_ = zmq_ctx_new();
+
     socket_ = zmq_socket(zmq_context_, ZMQ_REP);
-    int rc = zmq_bind(socket_, listen_address.c_str());
-    assert(rc == 0);
+    assert(socket_);
     int timeout_ms = 500;
-    rc = zmq_setsockopt(socket_, ZMQ_RCVTIMEO, &timeout_ms, sizeof timeout_ms);
+    int rc =
+        zmq_setsockopt(socket_, ZMQ_RCVTIMEO, &timeout_ms, sizeof timeout_ms);
+    assert(rc == 0);
+    rc = zmq_setsockopt(socket_, ZMQ_SNDTIMEO, &timeout_ms, sizeof timeout_ms);
+    assert(rc == 0);
+
+    rc = zmq_bind(socket_, listen_address.c_str());
     assert(rc == 0);
 }
 
@@ -103,7 +109,10 @@ bool ComponentSenderZeromq::try_send_timeslice(uint64_t ts)
             // send empty message
             zmq_msg_t msg;
             zmq_msg_init_size(&msg, 0);
-            zmq_msg_send(&msg, socket_, 0);
+            int rc;
+            do {
+                rc = zmq_msg_send(&msg, socket_, 0);
+            } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
             return false;
         }
     }
@@ -114,7 +123,10 @@ bool ComponentSenderZeromq::try_send_timeslice(uint64_t ts)
     }
     auto desc_msg = create_message(data_source_.desc_buffer(), desc_offset,
                                    desc_length, ts, false);
-    zmq_msg_send(&desc_msg, socket_, ZMQ_SNDMORE);
+    int rc;
+    do {
+        rc = zmq_msg_send(&desc_msg, socket_, ZMQ_SNDMORE);
+    } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
 
     // part 2: data
     uint64_t data_offset = data_source_.desc_buffer().at(desc_offset).offset;
@@ -129,7 +141,9 @@ bool ComponentSenderZeromq::try_send_timeslice(uint64_t ts)
     }
     auto data_msg = create_message(data_source_.data_buffer(), data_offset,
                                    data_length, ts, true);
-    zmq_msg_send(&data_msg, socket_, 0);
+    do {
+        rc = zmq_msg_send(&data_msg, socket_, 0);
+    } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
 
     return true;
 }
