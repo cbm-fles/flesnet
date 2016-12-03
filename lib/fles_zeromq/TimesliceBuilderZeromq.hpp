@@ -70,6 +70,9 @@ private:
     /// The local buffer position of the timeslice currently being received.
     uint64_t tpos_ = 0;
 
+    /// The index of the connection to receive from next.
+    uint64_t conn_ = 0;
+
     /// Buffer to store acknowledged status of timeslices.
     RingBuffer<uint64_t, true> ack_;
 
@@ -145,6 +148,15 @@ private:
 
     /// Scheduler for periodic events.
     Scheduler scheduler_;
+
+    /// Setup at begin of run.
+    void run_begin();
+
+    /// A single cycle in the main run loop.
+    bool run_cycle();
+
+    /// Cleanup at end of run.
+    void run_end();
 
     /// Handle pending timeslice completions and advance read indexes.
     void handle_timeslice_completions();

@@ -53,29 +53,46 @@ ComponentSenderZeromq::~ComponentSenderZeromq()
 
 void ComponentSenderZeromq::operator()()
 {
-    data_source_.proceed();
-    time_begin_ = std::chrono::high_resolution_clock::now();
-
-    report_status();
+    run_begin();
     while (acked_ts2_ / 2 < max_timeslice_number_ && *signal_status_ == 0) {
-        zmq_msg_t request;
-        int rc = zmq_msg_init(&request);
-        assert(rc == 0);
-
-        int len = zmq_msg_recv(&request, socket_, 0);
-        if (len == -1 && errno == EAGAIN) {
-            continue;
-        }
-        assert(len != -1);
-
-        assert(len == sizeof(uint64_t));
-        uint64_t timeslice = *static_cast<uint64_t*>(zmq_msg_data(&request));
-        zmq_msg_close(&request);
-
-        try_send_timeslice(timeslice);
-        data_source_.proceed();
+        run_cycle();
         scheduler_.timer();
     }
+    run_end();
+}
+
+void ComponentSenderZeromq::run_begin()
+{
+    data_source_.proceed();
+    time_begin_ = std::chrono::high_resolution_clock::now();
+    report_status();
+}
+
+bool ComponentSenderZeromq::run_cycle()
+{
+    zmq_msg_t request;
+    int rc = zmq_msg_init(&request);
+    assert(rc == 0);
+
+    int len = zmq_msg_recv(&request, socket_, 0);
+    if (len == -1 && errno == EAGAIN) {
+        // timeout reached
+        return true;
+    }
+    assert(len != -1);
+
+    assert(len == sizeof(uint64_t));
+    uint64_t timeslice = *static_cast<uint64_t*>(zmq_msg_data(&request));
+    zmq_msg_close(&request);
+
+    try_send_timeslice(timeslice);
+    data_source_.proceed();
+
+    return true;
+}
+
+void ComponentSenderZeromq::run_end()
+{
     sync_data_source();
     time_end_ = std::chrono::high_resolution_clock::now();
 }
@@ -260,7 +277,7 @@ void ComponentSenderZeromq::report_status()
               << human_readable_count(status_data.acked, true) << " ("
               << human_readable_count(rate_data, true, "B/s") << ")";
 
-    L_(info) << "[i" << input_index_ << "]   |"
+    L_(info) << "[i" << input_index_ << "] |"
              << bar_graph(status_data.vector(), "#x._", 20) << "|"
              << bar_graph(status_desc.vector(), "#x._", 10) << "| "
              << human_readable_count(rate_data, true, "B/s") << " ("

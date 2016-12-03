@@ -61,82 +61,98 @@ TimesliceBuilderZeromq::~TimesliceBuilderZeromq()
 
 void TimesliceBuilderZeromq::operator()()
 {
-    assert(connections_.size() > 0);
-
-    time_begin_ = std::chrono::high_resolution_clock::now();
-
+    run_begin();
     while (ts_index_ < max_timeslice_number_ && *signal_status_ == 0) {
-        for (auto& c : connections_) {
+        run_cycle();
+        scheduler_.timer();
+    }
+    run_end();
+}
 
-            std::size_t msg_size;
-            do {
-                // send request for timeslice data
-                int rc;
-                do {
-                    rc = zmq_send(c->socket, &ts_index_, sizeof(ts_index_), 0);
-                } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
-                if (*signal_status_ != 0) {
-                    break;
-                }
+void TimesliceBuilderZeromq::run_begin()
+{
+    assert(connections_.size() > 0);
+    time_begin_ = std::chrono::high_resolution_clock::now();
+    report_status();
+}
 
-                // receive desc answer (part 1), do not release
-                rc = zmq_msg_init(&c->desc_msg);
-                assert(rc == 0);
-                do {
-                    rc = zmq_msg_recv(&c->desc_msg, c->socket, 0);
-                } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
-                if (*signal_status_ != 0) {
-                    break;
-                }
-                assert(rc != -1);
-                msg_size = zmq_msg_size(&c->desc_msg);
-                if (msg_size == 0) {
-                    zmq_msg_close(&c->desc_msg);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                }
-            } while (msg_size == 0);
-            if (*signal_status_ != 0) {
-                break;
-            }
+bool TimesliceBuilderZeromq::run_cycle()
+{
+    auto& c = connections_.at(conn_);
 
-            // receive data answer (part 2), do not release
-            assert(zmq_msg_more(&c->desc_msg));
-            int rc = zmq_msg_init(&c->data_msg);
-            assert(rc == 0);
-            do {
-                rc = zmq_msg_recv(&c->data_msg, c->socket, 0);
-            } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
-            if (*signal_status_ != 0) {
-                break;
-            }
-            assert(rc != -1);
+    std::size_t msg_size;
 
-            uint64_t size_required =
-                zmq_msg_size(&c->desc_msg) + zmq_msg_size(&c->data_msg);
+    // send request for timeslice data
+    int rc;
+    do {
+        rc = zmq_send(c->socket, &ts_index_, sizeof(ts_index_), 0);
+    } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
+    if (*signal_status_ != 0) {
+        return true;
+    }
 
-            while (c->data.size_available_contiguous() < size_required ||
-                   c->desc.size_available() < 1) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                handle_timeslice_completions();
-            }
+    // receive desc answer (part 1), do not release
+    rc = zmq_msg_init(&c->desc_msg);
+    assert(rc == 0);
+    do {
+        rc = zmq_msg_recv(&c->desc_msg, c->socket, 0);
+    } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
+    if (*signal_status_ != 0) {
+        return true;
+    }
+    assert(rc != -1);
+    msg_size = zmq_msg_size(&c->desc_msg);
+    if (msg_size == 0) {
+        zmq_msg_close(&c->desc_msg);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
-            // skip remaining bytes in data buffer to avoid fractured entry
-            c->data.skip_buffer_wrap(size_required);
+    if (msg_size == 0 || *signal_status_ != 0) {
+        return true;
+    }
 
-            // generate timeslice component descriptor
-            assert(tpos_ == c->desc.write_index());
-            c->desc.append({ts_index_, c->data.write_index(), size_required,
-                            zmq_msg_size(&c->desc_msg) /
-                                sizeof(fles::MicrosliceDescriptor)});
+    // receive data answer (part 2), do not release
+    assert(zmq_msg_more(&c->desc_msg));
+    rc = zmq_msg_init(&c->data_msg);
+    assert(rc == 0);
+    do {
+        rc = zmq_msg_recv(&c->data_msg, c->socket, 0);
+    } while (rc == -1 && errno == EAGAIN && *signal_status_ == 0);
+    if (*signal_status_ != 0) {
+        return true;
+    }
+    assert(rc != -1);
 
-            // copy into shared memory and release messages
-            c->data.append(static_cast<uint8_t*>(zmq_msg_data(&c->desc_msg)),
-                           zmq_msg_size(&c->desc_msg));
-            c->data.append(static_cast<uint8_t*>(zmq_msg_data(&c->data_msg)),
-                           zmq_msg_size(&c->data_msg));
-            zmq_msg_close(&c->desc_msg);
-            zmq_msg_close(&c->data_msg);
-        }
+    uint64_t size_required =
+        zmq_msg_size(&c->desc_msg) + zmq_msg_size(&c->data_msg);
+
+    while (c->data.size_available_contiguous() < size_required ||
+           c->desc.size_available() < 1) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        handle_timeslice_completions();
+    }
+
+    // skip remaining bytes in data buffer to avoid fractured entry
+    c->data.skip_buffer_wrap(size_required);
+
+    // generate timeslice component descriptor
+    assert(tpos_ == c->desc.write_index());
+    c->desc.append(
+        {ts_index_, c->data.write_index(), size_required,
+         zmq_msg_size(&c->desc_msg) / sizeof(fles::MicrosliceDescriptor)});
+
+    // copy into shared memory and release messages
+    c->data.append(static_cast<uint8_t*>(zmq_msg_data(&c->desc_msg)),
+                   zmq_msg_size(&c->desc_msg));
+    c->data.append(static_cast<uint8_t*>(zmq_msg_data(&c->data_msg)),
+                   zmq_msg_size(&c->data_msg));
+    zmq_msg_close(&c->desc_msg);
+    zmq_msg_close(&c->data_msg);
+
+    ++conn_;
+    if (conn_ == connections_.size()) {
+        conn_ = 0;
+
         handle_timeslice_completions();
 
         timeslice_buffer_.send_work_item(
@@ -149,6 +165,11 @@ void TimesliceBuilderZeromq::operator()()
         ts_index_ += num_compute_nodes_;
     }
 
+    return true;
+}
+
+void TimesliceBuilderZeromq::run_end()
+{
     time_end_ = std::chrono::high_resolution_clock::now();
 
     // wait until all pending timeslices have been acknowledged

@@ -158,6 +158,15 @@ private:
     /// Scheduler for periodic events.
     Scheduler scheduler_;
 
+    /// Setup at begin of run.
+    void run_begin();
+
+    /// A single cycle in the main run loop.
+    bool run_cycle();
+
+    /// Cleanup at end of run.
+    void run_end();
+
     /// The central function for distributing timeslice data.
     bool try_send_timeslice(uint64_t timeslice);
 
