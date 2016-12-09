@@ -161,7 +161,7 @@ public:
         int ne;
         int ne_total = 0;
 
-        while ((ne = ibv_poll_cq(cq_, ne_max, wc))) {
+        while (ne_total < 1000 && (ne = ibv_poll_cq(cq_, ne_max, wc))) {
             if (ne < 0)
                 throw InfinibandException("ibv_poll_cq failed");
 
