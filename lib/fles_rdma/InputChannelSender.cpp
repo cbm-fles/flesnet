@@ -4,8 +4,10 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RequestIdentifier.hpp"
 #include "Utility.hpp"
+#include "log.hpp"
 #include <cassert>
-#include <log.hpp>
+#include <chrono>
+#include <thread>
 
 InputChannelSender::InputChannelSender(
     uint64_t input_index, InputBufferReadInterface& data_source,
@@ -103,11 +105,11 @@ void InputChannelSender::report_status()
               << human_readable_count(status_data.acked, true) << " ("
               << human_readable_count(rate_data, true, "B/s") << ")";
 
-    L_(info) << "[i" << input_index_ << "]   |"
-             << bar_graph(status_data.vector(), "#x._", 20) << "|"
-             << bar_graph(status_desc.vector(), "#x._", 10) << "| "
-             << human_readable_count(rate_data, true, "B/s") << " ("
-             << human_readable_count(rate_desc, true, "Hz") << ")";
+    L_(status) << "[i" << input_index_ << "]   |"
+               << bar_graph(status_data.vector(), "#x._", 20) << "|"
+               << bar_graph(status_desc.vector(), "#x._", 10) << "| "
+               << human_readable_count(rate_data, true, "B/s") << " ("
+               << human_readable_count(rate_desc, true, "Hz") << ")";
 
     previous_send_buffer_status_desc_ = status_desc;
     previous_send_buffer_status_data_ = status_data;
@@ -152,6 +154,8 @@ void InputChannelSender::operator()()
         while (connected_ != compute_hostnames_.size()) {
             poll_cm_events();
         }
+        L_(info) << "[i" << input_index_ << "] "
+                 << "connection to compute nodes established";
 
         data_source_.proceed();
         time_begin_ = std::chrono::high_resolution_clock::now();
@@ -163,6 +167,10 @@ void InputChannelSender::operator()()
         while (timeslice < max_timeslice_number_ && !abort_) {
             if (try_send_timeslice(timeslice)) {
                 timeslice++;
+                if (timeslice == 1) {
+                    L_(info) << "[i" << input_index_ << "] "
+                             << "first timeslice processed";
+                }
             }
             poll_completion();
             data_source_.proceed();
@@ -190,8 +198,11 @@ void InputChannelSender::operator()()
 
         time_end_ = std::chrono::high_resolution_clock::now();
 
+        // this should not be neccessary
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
         disconnect();
-        while (connected_ != 0) {
+        while (connected_ != 0 || timewait_ != 0) {
             poll_cm_events();
         }
 

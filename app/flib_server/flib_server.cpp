@@ -39,7 +39,8 @@ int main(int argc, char* argv[]) {
 
   } catch (std::exception const& e) {
     L_(fatal) << "exception: " << e.what();
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

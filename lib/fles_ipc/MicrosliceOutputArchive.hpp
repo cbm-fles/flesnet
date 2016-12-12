@@ -4,6 +4,7 @@
 #pragma once
 
 #include "OutputArchive.hpp"
+#include "OutputArchiveSequence.hpp"
 #include "StorableMicroslice.hpp"
 
 namespace fles
@@ -15,5 +16,9 @@ namespace fles
  */
 using MicrosliceOutputArchive = OutputArchive<Microslice, StorableMicroslice,
                                               ArchiveType::MicrosliceArchive>;
+
+using MicrosliceOutputArchiveSequence =
+    OutputArchiveSequence<Microslice, StorableMicroslice,
+                          ArchiveType::MicrosliceArchive>;
 
 } // namespace fles
