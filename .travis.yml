@@ -32,6 +32,7 @@ addons:
     - librdmacm-dev
     - libzmq3-dev
     - valgrind
+    - libfabric1
 
 env:
   global:
@@ -44,11 +45,6 @@ before_install:
   - mkdir $HOME/clang+llvm
   - tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1
   - export PATH=$HOME/clang+llvm/bin:$PATH
-  - wget https://github.com/ofiwg/libfabric/releases/download/v1.4.0/libfabric-1.4.0.tar.gz -O $LIBFABRIC_ARCHIVE_PATH
-  - mkdir $HOME/libfabric
-  - tar xzf $LIBFABRIC_ARCHIVE_PATH -C $HOME/libfabric --strip-components 1
-  - PWD_ADDR=$(pwd) && cd $HOME/libfabric && ./configure  && make && cd $PWD_ADDR
-  - export PATH=$PATH:$HOME/libfabric/include:$HOME/libfabric/src/.libs
 
 before_script:
   - if [ "$CXX" = "clang++" ]; then export CXX="clang++" CC="clang"; fi
