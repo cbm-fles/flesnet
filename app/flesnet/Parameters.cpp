@@ -153,6 +153,7 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
 void Parameters::parse_options(int argc, char* argv[])
 {
     unsigned log_level = 2;
+    std::string log_file;
     std::string config_file;
 
     po::options_description generic("Generic options");
@@ -161,6 +162,8 @@ void Parameters::parse_options(int argc, char* argv[])
     generic_add("help,h", "produce help message");
     generic_add("log-level,l", po::value<unsigned>(&log_level),
                 "set the log level (default:2, all:0)");
+    generic_add("log-file,L", po::value<std::string>(&log_file),
+                "name of target log file");
     generic_add(
         "config-file,f",
         po::value<std::string>(&config_file)->default_value("flesnet.cfg"),
@@ -221,7 +224,7 @@ void Parameters::parse_options(int argc, char* argv[])
                "generate pattern for ts");
     config_add("random-ts-sizes", po::value<bool>(&random_ts_sizes_),
                "generate ts with random sizes");
-
+    
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
 
@@ -231,8 +234,7 @@ void Parameters::parse_options(int argc, char* argv[])
 
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
-        std::cout << "can not open config file: " << config_file << "\n";
-        exit(EXIT_SUCCESS);
+        throw ParametersException("cannot open config file: " + config_file);
     } else {
         po::store(po::parse_config_file(ifs, config), vm);
         notify(vm);
@@ -250,6 +252,14 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
+    if (vm.count("log-file")) {
+        L_(info) << "logging output to " << log_file;
+        if (log_level < 3) {
+            log_level = 3;
+            L_(info) << "increased file log level to " << log_level;
+        }
+        logging::add_file(log_file, static_cast<severity_level>(log_level));
+    }
 
     if (timeslice_size_ < 1) {
         throw ParametersException("timeslice size cannot be zero");
