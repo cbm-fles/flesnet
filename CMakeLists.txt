@@ -32,7 +32,7 @@ find_package(PDA 11.1.7 EXACT)
 find_package(NUMA)
 find_package(Doxygen)
 
-#set(USE_RDMA TRUE CACHE BOOL "Use RDMA libraries and build RDMA transport.")
+set(USE_RDMA TRUE CACHE BOOL "Use RDMA libraries and build RDMA transport.")
 if(USE_RDMA AND NOT RDMA_FOUND)
   message(STATUS "Libraries not found: rdma. Building without RDMA transport.")
 endif()
