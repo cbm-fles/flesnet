@@ -224,7 +224,12 @@ void Parameters::parse_options(int argc, char* argv[])
                "generate pattern for ts");
     config_add("random-ts-sizes", po::value<bool>(&random_ts_sizes_),
                "generate ts with random sizes");
-    
+    config_add("use-libfabric",
+               po::value<bool>(&use_libfabric_)->default_value(false),
+               "flag to check whether libfabric implementation will be used");
+    config_add("use-rdma", po::value<bool>(&use_rdma_)->default_value(false),
+               "flag to check whether rdma implementation will be used");
+
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
 

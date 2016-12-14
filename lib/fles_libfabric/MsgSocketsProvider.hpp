@@ -8,6 +8,9 @@
 
 #include <cassert>
 
+namespace tl_libfabric
+{
+
 class MsgSocketsProvider : public Provider
 {
 public:
@@ -46,3 +49,4 @@ private:
     struct fi_info* info_ = nullptr;
     struct fid_fabric* fabric_ = nullptr;
 };
+}

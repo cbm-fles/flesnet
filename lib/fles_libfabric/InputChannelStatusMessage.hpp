@@ -8,6 +8,8 @@
 
 #pragma pack(1)
 
+namespace tl_libfabric
+{
 /// Structure representing a status update message sent from input channel to
 /// compute buffer.
 struct InputChannelStatusMessage {
@@ -19,5 +21,6 @@ struct InputChannelStatusMessage {
     InputNodeInfo info;
     unsigned char my_address[64]; // gni: 50?};
 };
+}
 
 #pragma pack()

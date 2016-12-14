@@ -5,6 +5,8 @@
 
 #include <stdexcept>
 
+namespace tl_libfabric
+{
 /// Libfabric exception class.
 /** An LibfabricException object signals an error that occured in the
     Libfabric communication functions. */
@@ -18,3 +20,4 @@ public:
     {
     }
 };
+}

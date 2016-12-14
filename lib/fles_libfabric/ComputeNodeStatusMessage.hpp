@@ -8,6 +8,8 @@
 
 #pragma pack(1)
 
+namespace tl_libfabric
+{
 /// Structure representing a status update message sent from compute buffer to
 /// input channel.
 struct ComputeNodeStatusMessage {
@@ -20,5 +22,6 @@ struct ComputeNodeStatusMessage {
     // address must be not null if connect = true
     unsigned char my_address[64];
 };
+}
 
 #pragma pack()

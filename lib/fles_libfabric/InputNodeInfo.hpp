@@ -5,8 +5,10 @@
 
 #pragma pack(1)
 
+namespace tl_libfabric
+{
 struct InputNodeInfo {
     uint32_t index;
 };
-
+}
 #pragma pack()

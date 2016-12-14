@@ -17,6 +17,9 @@
 
 #include "LibfabricException.hpp"
 
+namespace tl_libfabric
+{
+
 GNIProvider::~GNIProvider()
 {
 #pragma GCC diagnostic push
@@ -106,4 +109,5 @@ void GNIProvider::set_hostnames_and_services(
         fi_addrs.push_back(fi_addr);
         // fi_freeinfo(hints);
     }
+}
 }

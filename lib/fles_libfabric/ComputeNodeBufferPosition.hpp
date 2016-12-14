@@ -7,6 +7,8 @@
 
 #pragma pack(1)
 
+namespace tl_libfabric
+{
 /// Structure representing a set of compute node buffer positions.
 struct ComputeNodeBufferPosition {
     uint64_t data; ///< The position in the data buffer.
@@ -28,5 +30,5 @@ struct ComputeNodeBufferPosition {
         return desc != rhs.desc || data != rhs.data;
     }
 };
-
+}
 #pragma pack()

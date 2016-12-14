@@ -7,6 +7,8 @@
 
 #pragma pack(1)
 
+namespace tl_libfabric
+{
 /// InfiniBand request IDs.
 enum RequestIdentifier {
     ID_WRITE_DATA = 1,
@@ -16,9 +18,11 @@ enum RequestIdentifier {
     ID_RECEIVE_STATUS,
     ID_SEND_FINALIZE
 };
-
+}
 #pragma pack()
 
+namespace tl_libfabric
+{
 /// Overloaded output operator for RequestIdentifier values.
 inline std::ostream& operator<<(std::ostream& s, RequestIdentifier v)
 {
@@ -38,4 +42,5 @@ inline std::ostream& operator<<(std::ostream& s, RequestIdentifier v)
     default:
         return s << static_cast<int>(v);
     }
+}
 }

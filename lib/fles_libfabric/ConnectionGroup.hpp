@@ -3,15 +3,12 @@
 
 #pragma once
 
+#include "ConnectionGroupWorker.hpp"
 #include "LibfabricException.hpp"
 #include "Provider.hpp"
-#include "Scheduler.hpp"
-#include "ThreadContainer.hpp"
-#include "Utility.hpp"
 //#include <chrono>
 //#include <cstring>
 //#include <fcntl.h>
-#include <log.hpp>
 //#include <rdma/rdma_cma.h>
 #include <rdma/fabric.h>
 #include <rdma/fi_endpoint.h>
@@ -24,11 +21,14 @@
 
 #include <chrono>
 
+namespace tl_libfabric
+{
 /// Libfabric connection group base class.
 /** An ConnectionGroup object represents a group of Libfabric
  connections that use the same completion queue. */
 
-template <typename CONNECTION> class ConnectionGroup : public ThreadContainer
+template <typename CONNECTION>
+class ConnectionGroup : public ConnectionGroupWorker
 {
 public:
     /// The ConnectionGroup default constructor.
@@ -378,3 +378,4 @@ private:
     /// RDMA connection manager ID (for connection-oriented fabrics)
     struct fid_pep* pep_ = nullptr;
 };
+}

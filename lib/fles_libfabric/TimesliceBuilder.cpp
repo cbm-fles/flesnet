@@ -14,12 +14,15 @@
 
 //#include <valgrind/memcheck.h>
 
+namespace tl_libfabric
+{
+
 TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
-                                   TimesliceBuffer& timeslice_buffer,
+                                   ::TimesliceBuffer& timeslice_buffer,
                                    unsigned short service,
                                    uint32_t num_input_nodes,
                                    uint32_t timeslice_size,
-                                   volatile sig_atomic_t* signal_status,
+                                   volatile ::sig_atomic_t* signal_status,
                                    bool drop, std::string local_node_name)
     : ConnectionGroup(local_node_name), compute_index_(compute_index),
       timeslice_buffer_(timeslice_buffer), service_(service),
@@ -88,17 +91,17 @@ void TimesliceBuilder::bootstrap_with_connections()
 }
 
 // @todo duplicate code
-void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
+void TimesliceBuilder::make_endpoint_named(struct ::fi_info* info,
                                            const std::string& hostname,
                                            const std::string& service,
-                                           struct fid_ep** ep)
+                                           struct ::fid_ep** ep)
 {
 
     uint64_t requested_key = 0;
     int res;
 
-    struct fi_info* info2 = nullptr;
-    struct fi_info* hints = fi_dupinfo(info);
+    struct ::fi_info* info2 = nullptr;
+    struct ::fi_info* hints = fi_dupinfo(info);
 
     /*hints->caps = info->caps;
      hints->ep_attr = info->ep_attr;
@@ -119,18 +122,18 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
     hints->dest_addr = nullptr;
     hints->dest_addrlen = 0;
 
-    int err = fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), service.c_str(),
-                         FI_SOURCE, hints, &info2);
+    int err = ::fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), service.c_str(),
+                           FI_SOURCE, hints, &info2);
     if (err) {
         L_(fatal) << "fi_getinfo failed in make_endpoint: " << err << "="
-                  << fi_strerror(-err);
+                  << ::fi_strerror(-err);
         throw LibfabricException("fi_getinfo failed in make_endpoint");
     }
 
-    fi_freeinfo(hints);
+    ::fi_freeinfo(hints);
 
     // private cq for listening ep
-    struct fi_cq_attr cq_attr;
+    struct ::fi_cq_attr cq_attr;
     memset(&cq_attr, 0, sizeof(cq_attr));
     cq_attr.size = num_cqe_;
     cq_attr.flags = 0;
@@ -139,13 +142,13 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
     cq_attr.signaling_vector = Provider::vector++; // ??
     cq_attr.wait_cond = FI_CQ_COND_NONE;
     cq_attr.wait_set = nullptr;
-    res = fi_cq_open(pd_, &cq_attr, &listening_cq_, nullptr);
+    res = ::fi_cq_open(pd_, &cq_attr, &listening_cq_, nullptr);
     if (!listening_cq_) {
         L_(fatal) << "fi_cq_open failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("fi_cq_open failed");
     }
 
-    err = fi_endpoint(pd_, info2, ep, this);
+    err = ::fi_endpoint(pd_, info2, ep, this);
     if (err) {
         L_(fatal) << "fi_cq_open failed: " << err << "=" << fi_strerror(-err);
         throw LibfabricException("fi_endpoint failed");
@@ -154,41 +157,41 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
     if (Provider::getInst()->has_eq_at_eps()) {
-        err = fi_ep_bind(*ep, (fid_t)eq_, 0);
+        err = ::fi_ep_bind(*ep, (::fid_t)eq_, 0);
         if (err) {
             L_(fatal) << "fi_ep_bind failed (eq_): " << err << "="
-                      << fi_strerror(-err);
+                      << ::fi_strerror(-err);
             throw LibfabricException("fi_ep_bind failed (eq_)");
         }
     }
-    err = fi_ep_bind(*ep, (fid_t)listening_cq_, FI_SEND | FI_RECV);
+    err = ::fi_ep_bind(*ep, (::fid_t)listening_cq_, FI_SEND | FI_RECV);
     if (err) {
         L_(fatal) << "fi_ep_bind failed (cq): " << err << "="
                   << fi_strerror(-err);
         throw LibfabricException("fi_ep_bind failed (cq)");
     }
     if (Provider::getInst()->has_av()) {
-        err = fi_ep_bind(*ep, (fid_t)av_, 0);
+        err = ::fi_ep_bind(*ep, (fid_t)av_, 0);
         if (err) {
             L_(fatal) << "fi_ep_bind failed (av): " << err << "="
-                      << fi_strerror(-err);
+                      << ::fi_strerror(-err);
             throw LibfabricException("fi_ep_bind failed (av)");
         }
     }
 #pragma GCC diagnostic pop
-    err = fi_enable(*ep);
+    err = ::fi_enable(*ep);
     if (err) {
-        L_(fatal) << "fi_enable failed: " << err << "=" << fi_strerror(-err);
+        L_(fatal) << "fi_enable failed: " << err << "=" << ::fi_strerror(-err);
         throw LibfabricException("fi_enable failed");
     }
 
     // register memory regions
-    res = fi_mr_reg(pd_, &recv_connect_message_,
-                    sizeof(InputChannelStatusMessage), FI_RECV, 0,
-                    requested_key++, 0, &mr_recv_, nullptr);
+    res = ::fi_mr_reg(pd_, &recv_connect_message_,
+                      sizeof(InputChannelStatusMessage), FI_RECV, 0,
+                      requested_key++, 0, &mr_recv_, nullptr);
 
     if (res) {
-        L_(fatal) << "fi_mr_reg failed: " << res << "=" << fi_strerror(-res);
+        L_(fatal) << "fi_mr_reg failed: " << res << "=" << ::fi_strerror(-res);
         throw LibfabricException("fi_mr_reg failed");
     }
 
@@ -200,9 +203,9 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
 void TimesliceBuilder::bootstrap_wo_connections()
 {
     InputChannelStatusMessage recv_connect_message;
-    struct fid_mr* mr_recv_connect = nullptr;
-    struct fi_msg recv_msg_wr;
-    struct iovec recv_sge = iovec();
+    struct ::fid_mr* mr_recv_connect = nullptr;
+    struct ::fi_msg recv_msg_wr;
+    struct ::iovec recv_sge = ::iovec();
     void* recv_wr_descs[1] = {nullptr};
 
     // domain, cq, av
@@ -228,12 +231,12 @@ void TimesliceBuilder::bootstrap_wo_connections()
     }
 
     // register memory regions
-    int err = fi_mr_reg(
+    int err = ::fi_mr_reg(
         pd_, &recv_connect_message, sizeof(recv_connect_message), FI_RECV, 0,
         Provider::requested_key++, 0, &mr_recv_connect, nullptr);
     if (err) {
         L_(fatal) << "fi_mr_reg failed for recv msg in compute-buffer: " << err
-                  << "=" << fi_strerror(-err);
+                  << "=" << ::fi_strerror(-err);
         throw LibfabricException(
             "fi_mr_reg failed for recv msg in compute-buffer");
     }
@@ -251,9 +254,9 @@ void TimesliceBuilder::bootstrap_wo_connections()
     recv_msg_wr.context = 0;
     recv_msg_wr.data = 0;
 
-    err = fi_recvmsg(ep_, &recv_msg_wr, FI_COMPLETION);
+    err = ::fi_recvmsg(ep_, &recv_msg_wr, FI_COMPLETION);
     if (err) {
-        L_(fatal) << "fi_recvmsg failed: " << strerror(err);
+        L_(fatal) << "fi_recvmsg failed: " << ::strerror(err);
         throw LibfabricException("fi_recvmsg failed");
     }
 
@@ -261,15 +264,15 @@ void TimesliceBuilder::bootstrap_wo_connections()
     const int ne_max = 1; // the ne_max must be always 1 because there is ONLY
                           // ONE mr registered variable for receiving messages
 
-    struct fi_cq_entry wc[ne_max];
+    struct ::fi_cq_entry wc[ne_max];
     int ne;
 
     while (connected_senders_.size() != num_input_nodes_) {
 
-        while ((ne = fi_cq_read(listening_cq_, &wc, ne_max))) {
+        while ((ne = ::fi_cq_read(listening_cq_, &wc, ne_max))) {
             if ((ne < 0) && (ne != -FI_EAGAIN)) {
                 L_(fatal) << "fi_cq_read failed: " << ne << "="
-                          << fi_strerror(-ne);
+                          << ::fi_strerror(-ne);
                 throw LibfabricException("fi_cq_read failed");
             }
             if (ne == FI_SEND) {
@@ -281,7 +284,7 @@ void TimesliceBuilder::bootstrap_wo_connections()
 
             L_(debug) << "got " << ne << " events";
             for (int i = 0; i < ne; ++i) {
-                fi_addr_t connection_addr;
+                ::fi_addr_t connection_addr;
                 // when connect message:
                 //            add address to av and set fi_addr_t from av on
                 //            conn-object
@@ -291,8 +294,8 @@ void TimesliceBuilder::bootstrap_wo_connections()
                     conn_.at(recv_connect_message.info.index)->send_ep_addr();
                     continue;
                 }
-                int res = fi_av_insert(av_, &recv_connect_message.my_address, 1,
-                                       &connection_addr, 0, NULL);
+                int res = ::fi_av_insert(av_, &recv_connect_message.my_address,
+                                         1, &connection_addr, 0, NULL);
                 assert(res == 1);
                 // conn_.at(recv_connect_message.info.index)->on_complete_recv();
                 conn_.at(recv_connect_message.info.index)
@@ -302,11 +305,11 @@ void TimesliceBuilder::bootstrap_wo_connections()
                 conn_.at(recv_connect_message.info.index)->send_ep_addr();
                 connected_senders_.insert(recv_connect_message.info.index);
                 ++connected_;
-                err = fi_recvmsg(ep_, &recv_msg_wr, FI_COMPLETION);
+                err = ::fi_recvmsg(ep_, &recv_msg_wr, FI_COMPLETION);
             }
         }
         if (err) {
-            L_(fatal) << "fi_recvmsg failed: " << strerror(err);
+            L_(fatal) << "fi_recvmsg failed: " << ::strerror(err);
             throw LibfabricException("fi_recvmsg failed");
         }
     }
@@ -354,7 +357,7 @@ void TimesliceBuilder::operator()()
     }
 }
 
-void TimesliceBuilder::on_connect_request(struct fi_eq_cm_entry* event,
+void TimesliceBuilder::on_connect_request(struct ::fi_eq_cm_entry* event,
                                           size_t private_data_len)
 {
 
@@ -464,4 +467,5 @@ void TimesliceBuilder::poll_ts_completion()
             connection->inc_ack_pointers(acked_);
     } else
         ack_.at(c.ts_pos) = c.ts_pos;
+}
 }

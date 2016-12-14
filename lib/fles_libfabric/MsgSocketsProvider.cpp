@@ -21,6 +21,9 @@
 #include <netinet/ip.h>
 #include <sys/socket.h>
 
+namespace tl_libfabric
+{
+
 MsgSocketsProvider::~MsgSocketsProvider()
 {
 #pragma GCC diagnostic push
@@ -132,4 +135,5 @@ void MsgSocketsProvider::connect(fid_ep* ep, uint32_t /*max_send_wr*/,
         L_(fatal) << "fi_connect failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("fi_connect failed");
     }
+}
 }

@@ -14,8 +14,11 @@
 #include <rdma/fi_cm.h>
 #include <rdma/fi_rma.h>
 
+namespace tl_libfabric
+{
+
 InputChannelConnection::InputChannelConnection(
-    struct fid_eq* eq, uint_fast16_t connection_index,
+    struct ::fid_eq* eq, uint_fast16_t connection_index,
     uint_fast16_t remote_connection_index, unsigned int max_send_wr,
     unsigned int max_pending_write_requests)
     : Connection(eq, connection_index, remote_connection_index),
@@ -70,13 +73,13 @@ bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
     }
 }
 
-void InputChannelConnection::send_data(struct iovec* sge, void** desc,
+void InputChannelConnection::send_data(struct ::iovec* sge, void** desc,
                                        int num_sge, uint64_t timeslice,
                                        uint64_t desc_length,
                                        uint64_t data_length, uint64_t skip)
 {
     int num_sge2 = 0;
-    struct iovec sge2[4];
+    struct ::iovec sge2[4];
     void* desc2[4];
 
     uint64_t cn_wp_data = cn_wp_.data;
@@ -118,8 +121,10 @@ void InputChannelConnection::send_data(struct iovec* sge, void** desc,
     }
     num_sge -= num_sge_cut;
 
-    struct fi_msg_rma send_wr_ts, send_wr_tswrap, send_wr_tscdesc;
-    struct fi_rma_iov rma_iov[1];
+    struct ::fi_msg_rma send_wr_ts;
+    struct ::fi_msg_rma send_wr_tswrap;
+    struct ::fi_msg_rma send_wr_tscdesc;
+    struct ::fi_rma_iov rma_iov[1];
 
     uint64_t remote_addr =
         remote_info_.data.addr + (cn_wp_data & cn_data_buffer_mask);
@@ -304,16 +309,16 @@ void InputChannelConnection::on_complete_recv()
     }
 }
 
-void InputChannelConnection::setup_mr(struct fid_domain* pd)
+void InputChannelConnection::setup_mr(struct ::fid_domain* pd)
 {
 
     // register memory regions
-    int err = fi_mr_reg(pd, &recv_status_message_,
-                        sizeof(ComputeNodeStatusMessage), FI_WRITE, 0,
-                        Provider::requested_key++, 0, &mr_recv_, nullptr);
+    int err = ::fi_mr_reg(pd, &recv_status_message_,
+                          sizeof(ComputeNodeStatusMessage), FI_WRITE, 0,
+                          Provider::requested_key++, 0, &mr_recv_, nullptr);
     if (err) {
         L_(fatal) << "fi_mr_reg failed for recv msg: " << err << "="
-                  << fi_strerror(-err);
+                  << ::fi_strerror(-err);
         throw LibfabricException("fi_mr_reg failed for recv msg");
     }
 
@@ -321,12 +326,12 @@ void InputChannelConnection::setup_mr(struct fid_domain* pd)
         throw LibfabricException(
             "registration of memory region failed in InputChannelConnection");
 
-    err = fi_mr_reg(pd, &send_status_message_, sizeof(send_status_message_),
-                    FI_WRITE, 0, Provider::requested_key++, 0, &mr_send_,
-                    nullptr);
+    err = ::fi_mr_reg(pd, &send_status_message_, sizeof(send_status_message_),
+                      FI_WRITE, 0, Provider::requested_key++, 0, &mr_send_,
+                      nullptr);
     if (err) {
         L_(fatal) << "fi_mr_reg failed for send msg: " << err << "="
-                  << fi_strerror(-err);
+                  << ::fi_strerror(-err);
         throw LibfabricException("fi_mr_reg failed for send msg");
     }
 
@@ -338,15 +343,15 @@ void InputChannelConnection::setup_mr(struct fid_domain* pd)
 void InputChannelConnection::setup()
 {
 
-    recv_descs[0] = fi_mr_desc(mr_recv_);
-    send_descs[0] = fi_mr_desc(mr_send_);
+    recv_descs[0] = ::fi_mr_desc(mr_recv_);
+    send_descs[0] = ::fi_mr_desc(mr_send_);
 
     // setup send and receive buffers
-    memset(&recv_wr_iovec, 0, sizeof(struct iovec));
+    memset(&recv_wr_iovec, 0, sizeof(struct ::iovec));
     recv_wr_iovec.iov_base = &recv_status_message_;
     recv_wr_iovec.iov_len = sizeof(ComputeNodeStatusMessage);
 
-    memset(&recv_wr, 0, sizeof(struct fi_msg));
+    memset(&recv_wr, 0, sizeof(struct ::fi_msg));
     recv_wr.msg_iov = &recv_wr_iovec;
     recv_wr.desc = recv_descs;
     recv_wr.iov_count = 1;
@@ -355,11 +360,11 @@ void InputChannelConnection::setup()
     recv_wr.context = (void*)(ID_RECEIVE_STATUS | (index_ << 8));
 #pragma GCC diagnostic pop
 
-    memset(&send_wr_iovec, 0, sizeof(struct iovec));
+    memset(&send_wr_iovec, 0, sizeof(struct ::iovec));
     send_wr_iovec.iov_base = &send_status_message_;
     send_wr_iovec.iov_len = sizeof(send_status_message_);
 
-    memset(&send_wr, 0, sizeof(struct fi_msg));
+    memset(&send_wr, 0, sizeof(struct ::fi_msg));
     send_wr.msg_iov = &send_wr_iovec;
     send_wr.desc = send_descs;
     send_wr.iov_count = 1;
@@ -376,7 +381,7 @@ void InputChannelConnection::setup()
 /**
  \param event RDMA connection manager event structure
  */
-void InputChannelConnection::on_established(struct fi_eq_cm_entry* event)
+void InputChannelConnection::on_established(struct ::fi_eq_cm_entry* event)
 {
     // assert(event->param.conn.private_data_len >= sizeof(ComputeNodeInfo));
     memcpy(&remote_info_, event->data, sizeof(ComputeNodeInfo));
@@ -389,25 +394,25 @@ void InputChannelConnection::dereg_mr()
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
     if (mr_recv_) {
-        fi_close((struct fid*)mr_recv_);
+        fi_close((struct ::fid*)mr_recv_);
         mr_recv_ = nullptr;
     }
 
     if (mr_send_) {
-        fi_close((struct fid*)mr_send_);
+        fi_close((struct ::fid*)mr_send_);
         mr_send_ = nullptr;
     }
 #pragma GCC diagnostic pop
 }
 
-void InputChannelConnection::on_rejected(struct fi_eq_err_entry* event)
+void InputChannelConnection::on_rejected(struct ::fi_eq_err_entry* event)
 {
     L_(debug) << "InputChannelConnection:on_rejected";
     dereg_mr();
     Connection::on_rejected(event);
 }
 
-void InputChannelConnection::on_disconnected(struct fi_eq_cm_entry* event)
+void InputChannelConnection::on_disconnected(struct ::fi_eq_cm_entry* event)
 {
     dereg_mr();
     Connection::on_disconnected(event);
@@ -449,16 +454,16 @@ void InputChannelConnection::post_send_status_message()
 
 void InputChannelConnection::connect(const std::string& hostname,
                                      const std::string& service,
-                                     struct fid_domain* domain,
-                                     struct fid_cq* cq, struct fid_av* av,
-                                     fi_addr_t fi_addr)
+                                     struct ::fid_domain* domain,
+                                     struct ::fid_cq* cq, struct ::fid_av* av,
+                                     ::fi_addr_t fi_addr)
 {
     Connection::connect(hostname, service, domain, cq, av);
     if (not Provider::getInst()->is_connection_oriented()) {
         size_t addr_len = sizeof(send_status_message_.my_address);
         send_status_message_.connect = true;
-        int res =
-            fi_getname(&ep_->fid, &send_status_message_.my_address, &addr_len);
+        int res = ::fi_getname(&ep_->fid, &send_status_message_.my_address,
+                               &addr_len);
         assert(res == 0);
         L_(debug) << "fi_addr: " << fi_addr;
         // @todo is this save? does post_send_status_message create copy?
@@ -474,11 +479,11 @@ void InputChannelConnection::reconnect()
     }
 }
 
-void InputChannelConnection::set_partner_addr(struct fid_av* av)
+void InputChannelConnection::set_partner_addr(struct ::fid_av* av)
 {
 
-    int res = fi_av_insert(av, &this->recv_status_message_.my_address, 1,
-                           &this->partner_addr_, 0, NULL);
+    int res = ::fi_av_insert(av, &this->recv_status_message_.my_address, 1,
+                             &this->partner_addr_, 0, NULL);
     send_wr.addr = this->partner_addr_;
     send_status_message_.connect = false;
     assert(res == 1);
@@ -504,4 +509,5 @@ void InputChannelConnection::set_remote_info()
         this->recv_status_message_.info.desc_buffer_size_exp;
 
     this->remote_info_.index = this->recv_status_message_.info.index;
+}
 }

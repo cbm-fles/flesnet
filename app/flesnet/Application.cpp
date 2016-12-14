@@ -77,20 +77,28 @@ Application::Application(Parameters const& par,
                                            par_.timeslice_size()));
             timeslice_builders_zeromq_.push_back(std::move(builder));
         } else {
+            if (par_.use_rdma()) {
 #ifdef RDMA
+                std::unique_ptr<::TimesliceBuilder> builder(
+                    new ::TimesliceBuilder(
+                        i, *tsb, par_.base_port() + i, input_nodes_size,
+                        par_.timeslice_size(), signal_status_, false));
+                timeslice_builders_.push_back(std::move(builder));
+#endif
+            }
 
-            std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
-                i, *tsb, par_.base_port() + i, input_nodes_size,
-                par_.timeslice_size(), signal_status_, false));
-            timeslice_builders_.push_back(std::move(builder));
-#elif LIBFABRIC
-            std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
-                i, *tsb, par_.base_port() + i, input_nodes_size,
-                par_.timeslice_size(), signal_status_, false,
-                par_.compute_nodes()[i]));
-            timeslice_builders_.push_back(std::move(builder));
-#else
-            L_(fatal) << "flesnet built without RDMA support";
+            if (par_.use_libfabric()) {
+#ifdef LIBFABRIC
+                std::unique_ptr<tl_libfabric::TimesliceBuilder> builder(
+                    new tl_libfabric::TimesliceBuilder(
+                        i, *tsb, par_.base_port() + i, input_nodes_size,
+                        par_.timeslice_size(), signal_status_, false,
+                        par_.compute_nodes()[i]));
+                timeslice_builders_.push_back(std::move(builder));
+#endif
+            }
+#if !defined(LIBFABRIC) && !defined(RDMA)
+            L_(fatal) << "flesnet built without RDMA or LIBFABRIC support";
 #endif
         }
 
@@ -115,17 +123,21 @@ Application::Application(Parameters const& par,
             if (false) {
                 data_sources_.push_back(
                     std::unique_ptr<InputBufferReadInterface>(
-                        new FlibPatternGenerator(
-                            par.in_data_buffer_size_exp(),
-                            par.in_desc_buffer_size_exp(), index,
-                            par.typical_content_size(), par.generate_ts_patterns(), par.random_ts_sizes())));
+                        new FlibPatternGenerator(par.in_data_buffer_size_exp(),
+                                                 par.in_desc_buffer_size_exp(),
+                                                 index,
+                                                 par.typical_content_size(),
+                                                 par.generate_ts_patterns(),
+                                                 par.random_ts_sizes())));
             } else {
                 data_sources_.push_back(
                     std::unique_ptr<InputBufferReadInterface>(
                         new EmbeddedPatternGenerator(
                             par.in_data_buffer_size_exp(),
                             par.in_desc_buffer_size_exp(), index,
-                            par.typical_content_size(), par.generate_ts_patterns(), par.random_ts_sizes())));
+                            par.typical_content_size(),
+                            par.generate_ts_patterns(),
+                            par.random_ts_sizes())));
             }
         }
 
@@ -138,20 +150,30 @@ Application::Application(Parameters const& par,
                                           par.overlap_size(), listen_address));
             component_senders_zeromq_.push_back(std::move(sender));
         } else {
+            if (par_.use_rdma()) {
 #ifdef RDMA
-            std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
-                index, *(data_sources_.at(c).get()), par.compute_nodes(),
-                compute_services, par.timeslice_size(), par.overlap_size(),
-                par.max_timeslice_number()));
-            input_channel_senders_.push_back(std::move(sender));
-#elif LIBFABRIC
-            std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
-                index, *(data_sources_.at(c).get()), par.compute_nodes(),
-                compute_services, par.timeslice_size(), par.overlap_size(),
-                par.max_timeslice_number(), par.input_nodes().at(c)));
-            input_channel_senders_.push_back(std::move(sender));
-#else
-            L_(fatal) << "flesnet built without RDMA support";
+                std::unique_ptr<::InputChannelSender> sender(
+                    new ::InputChannelSender(
+                        index, *(data_sources_.at(c).get()),
+                        par.compute_nodes(), compute_services,
+                        par.timeslice_size(), par.overlap_size(),
+                        par.max_timeslice_number()));
+                input_channel_senders_.push_back(std::move(sender));
+#endif
+            }
+            if (par_.use_libfabric()) {
+#ifdef LIBFABRIC
+                std::unique_ptr<tl_libfabric::InputChannelSender> sender(
+                    new tl_libfabric::InputChannelSender(
+                        index, *(data_sources_.at(c).get()),
+                        par.compute_nodes(), compute_services,
+                        par.timeslice_size(), par.overlap_size(),
+                        par.max_timeslice_number(), par.input_nodes().at(c)));
+                input_channel_senders_.push_back(std::move(sender));
+#endif
+            }
+#if !defined(LIBFABRIC) && !defined(RDMA)
+            L_(fatal) << "flesnet built without RDMA or LIBFABRIC support";
 #endif
         }
     }

@@ -7,6 +7,8 @@
 
 #pragma pack(1)
 
+namespace tl_libfabric
+{
 /// Access information for a remote memory region.
 struct BufferInfo {
     uint64_t addr; ///< Target memory address
@@ -20,5 +22,5 @@ struct ComputeNodeInfo {
     uint32_t data_buffer_size_exp;
     uint32_t desc_buffer_size_exp;
 };
-
+}
 #pragma pack()

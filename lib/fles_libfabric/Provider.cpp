@@ -17,6 +17,9 @@
 
 #include "LibfabricException.hpp"
 
+namespace tl_libfabric
+{
+
 std::unique_ptr<Provider> Provider::get_provider(std::string local_host_name)
 {
     // std::cout << "Provider::get_provider()" << std::endl;
@@ -52,3 +55,4 @@ uint64_t Provider::requested_key = 0;
 std::unique_ptr<Provider> Provider::prov;
 
 int Provider::vector = 0;
+}

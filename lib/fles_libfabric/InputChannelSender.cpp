@@ -10,6 +10,8 @@
 #include <log.hpp>
 #include <rdma/fi_domain.h>
 
+namespace tl_libfabric
+{
 InputChannelSender::InputChannelSender(
     uint64_t input_index, InputBufferReadInterface& data_source,
     const std::vector<std::string> compute_hostnames,
@@ -583,4 +585,5 @@ void InputChannelSender::on_completion(uint64_t wr_id)
                   << "wc for unknown wr_id=" << (wr_id & 0xFF);
         throw LibfabricException("wc for unknown wr_id");
     }
+}
 }

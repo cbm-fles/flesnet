@@ -13,6 +13,9 @@
 
 #include <sys/uio.h>
 
+namespace tl_libfabric
+{
+
 /// Compute node connection class.
 /** A ComputeNodeConnection object represents the endpoint of a single
  timeslice building connection from a compute node to an input
@@ -179,3 +182,4 @@ private:
 
     fi_addr_t partner_addr_;
 };
+}

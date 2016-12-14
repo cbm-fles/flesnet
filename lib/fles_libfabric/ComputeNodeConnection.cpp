@@ -10,8 +10,11 @@
 #include <log.hpp>
 #include <rdma/fi_cm.h>
 
+namespace tl_libfabric
+{
+
 ComputeNodeConnection::ComputeNodeConnection(
-    struct fid_eq* eq, uint_fast16_t connection_index,
+    struct ::fid_eq* eq, uint_fast16_t connection_index,
     uint_fast16_t remote_connection_index, InputNodeInfo remote_info,
     uint8_t* data_ptr, uint32_t data_buffer_size_exp,
     fles::TimesliceComponentDescriptor* desc_ptr, uint32_t desc_buffer_size_exp)
@@ -35,8 +38,8 @@ ComputeNodeConnection::ComputeNodeConnection(
 }
 
 ComputeNodeConnection::ComputeNodeConnection(
-    struct fid_eq* eq, struct fid_domain* pd, struct fid_cq* cq,
-    struct fid_av* av, uint_fast16_t connection_index,
+    struct ::fid_eq* eq, struct ::fid_domain* pd, struct ::fid_cq* cq,
+    struct ::fid_av* av, uint_fast16_t connection_index,
     uint_fast16_t remote_connection_index,
     /*InputNodeInfo remote_info, */ uint8_t* data_ptr,
     uint32_t data_buffer_size_exp, fles::TimesliceComponentDescriptor* desc_ptr,
@@ -99,7 +102,7 @@ void ComputeNodeConnection::post_send_final_status_message()
     post_send_status_message();
 }
 
-void ComputeNodeConnection::setup_mr(struct fid_domain* pd)
+void ComputeNodeConnection::setup_mr(struct ::fid_domain* pd)
 {
     assert(data_ptr_ && desc_ptr_ && data_buffer_size_exp_ &&
            desc_buffer_size_exp_);
@@ -108,34 +111,34 @@ void ComputeNodeConnection::setup_mr(struct fid_domain* pd)
     std::size_t data_bytes = UINT64_C(1) << data_buffer_size_exp_;
     std::size_t desc_bytes = (UINT64_C(1) << desc_buffer_size_exp_) *
                              sizeof(fles::TimesliceComponentDescriptor);
-    int res = fi_mr_reg(pd, data_ptr_, data_bytes, FI_WRITE | FI_REMOTE_WRITE,
-                        0, Provider::requested_key++, 0, &mr_data_, nullptr);
+    int res = ::fi_mr_reg(pd, data_ptr_, data_bytes, FI_WRITE | FI_REMOTE_WRITE,
+                          0, Provider::requested_key++, 0, &mr_data_, nullptr);
     if (res) {
         L_(fatal) << "fi_mr_reg failed for data_ptr: " << res << "="
-                  << fi_strerror(-res);
+                  << ::fi_strerror(-res);
         throw LibfabricException("fi_mr_reg failed for data_ptr");
     }
-    res = fi_mr_reg(pd, desc_ptr_, desc_bytes, FI_WRITE | FI_REMOTE_WRITE, 0,
-                    Provider::requested_key++, 0, &mr_desc_, nullptr);
+    res = ::fi_mr_reg(pd, desc_ptr_, desc_bytes, FI_WRITE | FI_REMOTE_WRITE, 0,
+                      Provider::requested_key++, 0, &mr_desc_, nullptr);
     if (res) {
         L_(fatal) << "fi_mr_reg failed for desc_ptr: " << res << "="
-                  << fi_strerror(-res);
+                  << ::fi_strerror(-res);
         throw LibfabricException("fi_mr_reg failed for desc_ptr");
     }
-    res =
-        fi_mr_reg(pd, &send_status_message_, sizeof(ComputeNodeStatusMessage),
-                  FI_SEND, 0, Provider::requested_key++, 0, &mr_send_, nullptr);
+    res = ::fi_mr_reg(pd, &send_status_message_,
+                      sizeof(ComputeNodeStatusMessage), FI_SEND, 0,
+                      Provider::requested_key++, 0, &mr_send_, nullptr);
     if (res) {
         L_(fatal) << "fi_mr_reg failed for send: " << res << "="
-                  << fi_strerror(-res);
+                  << ::fi_strerror(-res);
         throw LibfabricException("fi_mr_reg failed for send");
     }
-    res =
-        fi_mr_reg(pd, &recv_status_message_, sizeof(InputChannelStatusMessage),
-                  FI_RECV, 0, Provider::requested_key++, 0, &mr_recv_, nullptr);
+    res = ::fi_mr_reg(pd, &recv_status_message_,
+                      sizeof(InputChannelStatusMessage), FI_RECV, 0,
+                      Provider::requested_key++, 0, &mr_recv_, nullptr);
     if (res) {
         L_(fatal) << "fi_mr_reg failed for recv: " << res << "="
-                  << fi_strerror(-res);
+                  << ::fi_strerror(-res);
         throw LibfabricException("fi_mr_reg failed for recv");
     }
 
@@ -145,10 +148,10 @@ void ComputeNodeConnection::setup_mr(struct fid_domain* pd)
 
     send_status_message_.info.data.addr =
         reinterpret_cast<uintptr_t>(data_ptr_);
-    send_status_message_.info.data.rkey = fi_mr_key(mr_data_);
+    send_status_message_.info.data.rkey = ::fi_mr_key(mr_data_);
     send_status_message_.info.desc.addr =
         reinterpret_cast<uintptr_t>(desc_ptr_);
-    send_status_message_.info.desc.rkey = fi_mr_key(mr_desc_);
+    send_status_message_.info.desc.rkey = ::fi_mr_key(mr_desc_);
     send_status_message_.info.index = remote_index_;
     send_status_message_.info.data_buffer_size_exp = data_buffer_size_exp_;
     send_status_message_.info.desc_buffer_size_exp = desc_buffer_size_exp_;
@@ -161,7 +164,7 @@ void ComputeNodeConnection::setup()
     recv_sge.iov_base = &recv_status_message_;
     recv_sge.iov_len = sizeof(InputChannelStatusMessage);
 
-    recv_wr_descs[0] = fi_mr_desc(mr_recv_);
+    recv_wr_descs[0] = ::fi_mr_desc(mr_recv_);
 
     recv_wr.msg_iov = &recv_sge;
     recv_wr.desc = recv_wr_descs;
@@ -174,7 +177,7 @@ void ComputeNodeConnection::setup()
     send_sge.iov_base = &send_status_message_;
     send_sge.iov_len = sizeof(ComputeNodeStatusMessage);
 
-    send_wr_descs[0] = fi_mr_desc(mr_send_);
+    send_wr_descs[0] = ::fi_mr_desc(mr_send_);
 
     send_wr.msg_iov = &send_sge;
     send_wr.desc = send_wr_descs;
@@ -188,7 +191,7 @@ void ComputeNodeConnection::setup()
     post_recv_status_message();
 }
 
-void ComputeNodeConnection::on_established(struct fi_eq_cm_entry* event)
+void ComputeNodeConnection::on_established(struct ::fi_eq_cm_entry* event)
 {
     Connection::on_established(event);
 
@@ -196,7 +199,7 @@ void ComputeNodeConnection::on_established(struct fi_eq_cm_entry* event)
               << "remote index: " << remote_info_.index;
 }
 
-void ComputeNodeConnection::on_disconnected(struct fi_eq_cm_entry* event)
+void ComputeNodeConnection::on_disconnected(struct ::fi_eq_cm_entry* event)
 {
     if (connection_oriented_) {
         disconnect();
@@ -205,22 +208,22 @@ void ComputeNodeConnection::on_disconnected(struct fi_eq_cm_entry* event)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
     if (mr_recv_) {
-        fi_close((struct fid*)mr_recv_);
+        ::fi_close((struct ::fid*)mr_recv_);
         mr_recv_ = nullptr;
     }
 
     if (mr_send_) {
-        fi_close((struct fid*)mr_send_);
+        ::fi_close((struct ::fid*)mr_send_);
         mr_send_ = nullptr;
     }
 
     if (mr_desc_) {
-        fi_close((struct fid*)mr_desc_);
+        ::fi_close((struct ::fid*)mr_desc_);
         mr_desc_ = nullptr;
     }
 
     if (mr_data_) {
-        fi_close((struct fid*)mr_data_);
+        ::fi_close((struct ::fid*)mr_data_);
         mr_data_ = nullptr;
     }
 #pragma GCC diagnostic pop
@@ -272,9 +275,9 @@ std::unique_ptr<std::vector<uint8_t>> ComputeNodeConnection::get_private_data()
     ComputeNodeInfo* cn_info =
         reinterpret_cast<ComputeNodeInfo*>(private_data->data());
     cn_info->data.addr = reinterpret_cast<uintptr_t>(data_ptr_);
-    cn_info->data.rkey = fi_mr_key(mr_data_);
+    cn_info->data.rkey = ::fi_mr_key(mr_data_);
     cn_info->desc.addr = reinterpret_cast<uintptr_t>(desc_ptr_);
-    cn_info->desc.rkey = fi_mr_key(mr_desc_);
+    cn_info->desc.rkey = ::fi_mr_key(mr_desc_);
     cn_info->index = remote_index_;
     cn_info->data_buffer_size_exp = data_buffer_size_exp_;
     cn_info->desc_buffer_size_exp = desc_buffer_size_exp_;
@@ -282,7 +285,7 @@ std::unique_ptr<std::vector<uint8_t>> ComputeNodeConnection::get_private_data()
     return private_data;
 }
 
-void ComputeNodeConnection::set_partner_addr(fi_addr_t addr)
+void ComputeNodeConnection::set_partner_addr(::fi_addr_t addr)
 {
     partner_addr_ = addr;
 }
@@ -298,7 +301,7 @@ void ComputeNodeConnection::send_ep_addr()
     size_t addr_len = sizeof(send_status_message_.my_address);
     send_status_message_.connect = true;
     int res =
-        fi_getname(&ep_->fid, &send_status_message_.my_address, &addr_len);
+        ::fi_getname(&ep_->fid, &send_status_message_.my_address, &addr_len);
     assert(res == 0);
     send_wr.addr = partner_addr_;
     ++pending_send_requests_;
@@ -308,4 +311,5 @@ void ComputeNodeConnection::send_ep_addr()
 bool ComputeNodeConnection::is_connection_finalized()
 {
     return send_status_message_.final;
+}
 }

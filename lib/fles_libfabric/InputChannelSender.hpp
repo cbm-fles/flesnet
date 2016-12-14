@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+namespace tl_libfabric
+{
 /// Input buffer and compute node connection container class.
 /** An InputChannelSender object represents an input buffer (filled by a
     FLIB) and a group of timeslice building connections to compute
@@ -193,3 +195,4 @@ private:
     SendBufferStatus previous_send_buffer_status_desc_ = SendBufferStatus();
     SendBufferStatus previous_send_buffer_status_data_ = SendBufferStatus();
 };
+}
