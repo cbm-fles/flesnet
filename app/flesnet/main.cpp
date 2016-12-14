@@ -31,12 +31,8 @@ int main(int argc, char* argv[])
 
     try {
         Parameters par(argc, argv);
-        if (par.use_libfabric() ==
-            par.use_rdma()) { // (!par.use_libfabric() && !par.use_rdma()) ||
-                              // (par.use_libfabric() && par.use_rdma())
-            L_(fatal) << "use-libfabric = " << par.use_libfabric()
-                      << ", use-rdma = " << par.use_rdma()
-                      << ". Only one of the following flags must be true in "
+        if (!par.use_libfabric() && !par.use_rdma()) {
+            L_(fatal) << "one of the following flags must be true in "
                          "the configuration file: {use-libfabric, use-rdma}";
             return EXIT_FAILURE;
         }
