@@ -7,7 +7,7 @@ add_library(fles_libfabric ${LIB_SOURCES} ${LIB_HEADERS})
 
 target_include_directories(fles_libfabric PUBLIC .)
 
-target_include_directories(fles_libfabric SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(fles_libfabric SYSTEM PUBLIC ${LIBFABRIC_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(fles_libfabric
   PUBLIC fles_ipc
