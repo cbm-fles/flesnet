@@ -32,11 +32,10 @@ class TimesliceBuilder : public ConnectionGroup<ComputeNodeConnection>
 {
 public:
     /// The ComputeBuffer constructor.
-    TimesliceBuilder(uint64_t compute_index,
-                     ::TimesliceBuffer& timeslice_buffer,
+    TimesliceBuilder(uint64_t compute_index, TimesliceBuffer& timeslice_buffer,
                      unsigned short service, uint32_t num_input_nodes,
                      uint32_t timeslice_size,
-                     volatile ::sig_atomic_t* signal_status, bool drop,
+                     volatile sig_atomic_t* signal_status, bool drop,
                      std::string local_node_name);
 
     TimesliceBuilder(const TimesliceBuilder&) = delete;
@@ -52,7 +51,7 @@ public:
     virtual void operator()() override;
 
     /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-    virtual void on_connect_request(struct ::fi_eq_cm_entry* event,
+    virtual void on_connect_request(struct fi_eq_cm_entry* event,
                                     size_t private_data_len) override;
 
     /// Completion notification event dispatcher. Called by the event loop.
@@ -67,21 +66,20 @@ private:
     /// setup connections between nodes
     void bootstrap_wo_connections();
 
-    void make_endpoint_named(struct ::fi_info* info,
-                             const std::string& hostname,
-                             const std::string& service, struct ::fid_ep** ep);
+    void make_endpoint_named(struct fi_info* info, const std::string& hostname,
+                             const std::string& service, struct fid_ep** ep);
 
-    ::fid_cq* listening_cq_;
+    fid_cq* listening_cq_;
     uint64_t compute_index_;
 
     // used in connection-less mode
     InputChannelStatusMessage recv_connect_message_ =
         InputChannelStatusMessage();
 
-    struct ::fid_mr* mr_send_ = nullptr;
-    struct ::fid_mr* mr_recv_ = nullptr;
+    struct fid_mr* mr_send_ = nullptr;
+    struct fid_mr* mr_recv_ = nullptr;
 
-    ::TimesliceBuffer& timeslice_buffer_;
+    TimesliceBuffer& timeslice_buffer_;
 
     unsigned short service_;
     uint32_t num_input_nodes_;
@@ -95,9 +93,9 @@ private:
     uint64_t acked_ = 0;
 
     /// Buffer to store acknowledged status of timeslices.
-    ::RingBuffer<uint64_t, true> ack_;
+    RingBuffer<uint64_t, true> ack_;
 
-    volatile ::sig_atomic_t* signal_status_;
+    volatile sig_atomic_t* signal_status_;
 
     std::string local_node_name_;
 

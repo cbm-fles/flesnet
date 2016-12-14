@@ -79,10 +79,9 @@ Application::Application(Parameters const& par,
         } else {
             if (par_.use_rdma()) {
 #ifdef RDMA
-                std::unique_ptr<::TimesliceBuilder> builder(
-                    new ::TimesliceBuilder(
-                        i, *tsb, par_.base_port() + i, input_nodes_size,
-                        par_.timeslice_size(), signal_status_, false));
+                std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
+                    i, *tsb, par_.base_port() + i, input_nodes_size,
+                    par_.timeslice_size(), signal_status_, false));
                 timeslice_builders_.push_back(std::move(builder));
 #endif
             }
@@ -152,8 +151,8 @@ Application::Application(Parameters const& par,
         } else {
             if (par_.use_rdma()) {
 #ifdef RDMA
-                std::unique_ptr<::InputChannelSender> sender(
-                    new ::InputChannelSender(
+                std::unique_ptr<InputChannelSender> sender(
+                    new InputChannelSender(
                         index, *(data_sources_.at(c).get()),
                         par.compute_nodes(), compute_services,
                         par.timeslice_size(), par.overlap_size(),
