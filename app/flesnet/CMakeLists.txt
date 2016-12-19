@@ -7,7 +7,7 @@ add_executable(flesnet ${SOURCES} ${HEADERS})
 
 target_compile_definitions(flesnet PUBLIC BOOST_ALL_DYN_LINK)
 
-target_include_directories(flesnet SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(flesnet SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/lib)
 
 target_link_libraries(flesnet
   flib_ipc fles_core fles_ipc fles_zeromq logging

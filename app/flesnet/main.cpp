@@ -31,11 +31,6 @@ int main(int argc, char* argv[])
 
     try {
         Parameters par(argc, argv);
-        if (!par.use_libfabric() && !par.use_rdma()) {
-            L_(fatal) << "one of the following flags must be true in "
-                         "the configuration file: {use-libfabric, use-rdma}";
-            return EXIT_FAILURE;
-        }
         Application app(par, &signal_status);
         app.run();
     } catch (std::exception const& e) {

@@ -57,7 +57,7 @@ if(USE_DOXYGEN AND NOT DOXYGEN_FOUND)
 	message(STATUS "Binary not found: Doxygen. Not building documentation.")
 endif()
 
-add_compile_options(-std=c++11 -O3 -ggdb -msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer -I${PROJECT_SOURCE_DIR}/lib)
+add_compile_options(-std=c++11 -O3 -ggdb -msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
 
 if (COVERALLS)
   include(Coveralls)

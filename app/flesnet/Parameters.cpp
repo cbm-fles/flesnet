@@ -227,7 +227,7 @@ void Parameters::parse_options(int argc, char* argv[])
     config_add("use-libfabric",
                po::value<bool>(&use_libfabric_)->default_value(false),
                "flag to check whether libfabric implementation will be used");
-    config_add("use-rdma", po::value<bool>(&use_rdma_)->default_value(false),
+    config_add("use-rdma", po::value<bool>(&use_rdma_)->default_value(true),
                "flag to check whether rdma implementation will be used");
 
     po::options_description cmdline_options("Allowed options");
@@ -270,9 +270,14 @@ void Parameters::parse_options(int argc, char* argv[])
         throw ParametersException("timeslice size cannot be zero");
     }
 
-#if !defined(RDMA) && !defined(LIBFABRIC)
-    if (!zeromq_) {
+#ifndef RDMA
+    if (!zeromq_ && use_rdma_) {
         throw ParametersException("flesnet built without RDMA support");
+    }
+#endif
+#ifndef LIBFABRIC
+    if (!zeromq_ && use_libfabric_) {
+        throw ParametersException("flesnet built without LIBFABRIC support");
     }
 #endif
 
