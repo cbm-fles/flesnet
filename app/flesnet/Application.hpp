@@ -52,9 +52,11 @@ private:
     std::vector<std::unique_ptr<InputBufferReadInterface>> data_sources_;
     std::vector<std::unique_ptr<TimesliceBuffer>> timeslice_buffers_;
 
+#if defined(RDMA) || defined(LIBFABRIC)
     /// The application's RDMA or libfabric transport objects
     std::vector<std::unique_ptr<ConnectionGroupWorker>> timeslice_builders_;
     std::vector<std::unique_ptr<ConnectionGroupWorker>> input_channel_senders_;
+#endif
 
     /// The application's ZeroMQ transport objects
     std::vector<std::unique_ptr<TimesliceBuilderZeromq>>
