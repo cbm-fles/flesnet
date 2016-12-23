@@ -76,33 +76,26 @@ Application::Application(Parameters const& par,
                 new TimesliceBuilderZeromq(i, *tsb, input_server_addresses,
                                            par_.timeslice_size()));
             timeslice_builders_zeromq_.push_back(std::move(builder));
-        } else {
-
-            if (par_.use_rdma()) {
-#ifdef RDMA
-                std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
-                    i, *tsb, par_.base_port() + i, input_nodes_size,
-                    par_.timeslice_size(), signal_status_, false));
-                timeslice_builders_.push_back(std::move(builder));
-#else
-                L_(fatal) << "flesnet is not built with RDMA and 'use-rdma' "
-                             "flag is set to true!";
-#endif
-            }
-
-            if (par_.use_libfabric()) {
+        } else if (par_.use_libfabric()) {
 #ifdef LIBFABRIC
-                std::unique_ptr<tl_libfabric::TimesliceBuilder> builder(
-                    new tl_libfabric::TimesliceBuilder(
-                        i, *tsb, par_.base_port() + i, input_nodes_size,
-                        par_.timeslice_size(), signal_status_, false,
-                        par_.compute_nodes()[i]));
-                timeslice_builders_.push_back(std::move(builder));
+            std::unique_ptr<tl_libfabric::TimesliceBuilder> builder(
+                new tl_libfabric::TimesliceBuilder(
+                    i, *tsb, par_.base_port() + i, input_nodes_size,
+                    par_.timeslice_size(), signal_status_, false,
+                    par_.compute_nodes()[i]));
+            timeslice_builders_.push_back(std::move(builder));
 #else
-                L_(fatal) << "flesnet is not built with LIBFABRIC and "
-                             "'use-libfaric' flag is set to true!";
+            L_(fatal) << "flesnet built without LIBFABRIC support";
 #endif
-            }
+        } else {
+#ifdef RDMA
+            std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
+                i, *tsb, par_.base_port() + i, input_nodes_size,
+                par_.timeslice_size(), signal_status_, false));
+            timeslice_builders_.push_back(std::move(builder));
+#else
+            L_(fatal) << "flesnet built without RDMA support";
+#endif
         }
 
         timeslice_buffers_.push_back(std::move(tsb));
@@ -152,35 +145,27 @@ Application::Application(Parameters const& par,
                                           par.timeslice_size(),
                                           par.overlap_size(), listen_address));
             component_senders_zeromq_.push_back(std::move(sender));
-        } else {
-            if (par_.use_rdma()) {
-#ifdef RDMA
-                std::unique_ptr<InputChannelSender> sender(
-                    new InputChannelSender(
-                        index, *(data_sources_.at(c).get()),
-                        par.compute_nodes(), compute_services,
-                        par.timeslice_size(), par.overlap_size(),
-                        par.max_timeslice_number()));
-                input_channel_senders_.push_back(std::move(sender));
-#else
-                L_(fatal) << "flesnet is not built with RDMA and 'use-rdma' "
-                             "flag is set to true!";
-#endif
-            }
-            if (par_.use_libfabric()) {
+        } else if (par_.use_libfabric()) {
 #ifdef LIBFABRIC
-                std::unique_ptr<tl_libfabric::InputChannelSender> sender(
-                    new tl_libfabric::InputChannelSender(
-                        index, *(data_sources_.at(c).get()),
-                        par.compute_nodes(), compute_services,
-                        par.timeslice_size(), par.overlap_size(),
-                        par.max_timeslice_number(), par.input_nodes().at(c)));
-                input_channel_senders_.push_back(std::move(sender));
+            std::unique_ptr<tl_libfabric::InputChannelSender> sender(
+                new tl_libfabric::InputChannelSender(
+                    index, *(data_sources_.at(c).get()), par.compute_nodes(),
+                    compute_services, par.timeslice_size(), par.overlap_size(),
+                    par.max_timeslice_number(), par.input_nodes().at(c)));
+            input_channel_senders_.push_back(std::move(sender));
 #else
-                L_(fatal) << "flesnet is not built with LIBFABRIC and "
-                             "'use-libfabric' flag is set to true!";
+            L_(fatal) << "flesnet built without LIBFABRIC support";
 #endif
-            }
+        } else {
+#ifdef RDMA
+            std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
+                index, *(data_sources_.at(c).get()), par.compute_nodes(),
+                compute_services, par.timeslice_size(), par.overlap_size(),
+                par.max_timeslice_number()));
+            input_channel_senders_.push_back(std::move(sender));
+#else
+            L_(fatal) << "flesnet built without RDMA support";
+#endif
         }
     }
 }
