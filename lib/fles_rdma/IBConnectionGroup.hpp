@@ -1,14 +1,11 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "ConnectionGroupWorker.hpp"
 #include "InfinibandException.hpp"
-#include "Scheduler.hpp"
-#include "ThreadContainer.hpp"
-#include "Utility.hpp"
 #include <chrono>
 #include <cstring>
 #include <fcntl.h>
-#include <log.hpp>
 #include <rdma/rdma_cma.h>
 #include <sstream>
 #include <valgrind/memcheck.h>
@@ -18,7 +15,8 @@
 /** An IBConnectionGroup object represents a group of InfiniBand
     connections that use the same completion queue. */
 
-template <typename CONNECTION> class IBConnectionGroup : public ThreadContainer
+template <typename CONNECTION>
+class IBConnectionGroup : public ConnectionGroupWorker
 {
 public:
     /// The IBConnectionGroup default constructor.
@@ -218,9 +216,6 @@ public:
                  << " sent in " << runtime / 1000000. << " s (" << rate
                  << " MB/s)";
     }
-
-    /// The "main" function of an IBConnectionGroup decendant.
-    virtual void operator()() = 0;
 
 protected:
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.

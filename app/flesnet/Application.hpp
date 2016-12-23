@@ -2,14 +2,19 @@
 #pragma once
 
 #include "ComponentSenderZeromq.hpp"
+#include "ConnectionGroupWorker.hpp"
 #include "Parameters.hpp"
 #include "ThreadContainer.hpp"
 #include "TimesliceBuffer.hpp"
 #include "TimesliceBuilderZeromq.hpp"
 #include "shm_device_client.hpp"
-#ifdef RDMA
-#include "InputChannelSender.hpp"
-#include "TimesliceBuilder.hpp"
+#if defined(RDMA)
+#include "fles_rdma/InputChannelSender.hpp"
+#include "fles_rdma/TimesliceBuilder.hpp"
+#endif
+#if defined(LIBFABRIC)
+#include "fles_libfabric/InputChannelSender.hpp"
+#include "fles_libfabric/TimesliceBuilder.hpp"
 #endif
 #include <boost/lexical_cast.hpp>
 #include <csignal>
@@ -47,10 +52,10 @@ private:
     std::vector<std::unique_ptr<InputBufferReadInterface>> data_sources_;
     std::vector<std::unique_ptr<TimesliceBuffer>> timeslice_buffers_;
 
-#ifdef RDMA
-    /// The application's RDMA transport objects
-    std::vector<std::unique_ptr<TimesliceBuilder>> timeslice_builders_;
-    std::vector<std::unique_ptr<InputChannelSender>> input_channel_senders_;
+#if defined(RDMA) || defined(LIBFABRIC)
+    /// The application's RDMA or libfabric transport objects
+    std::vector<std::unique_ptr<ConnectionGroupWorker>> timeslice_builders_;
+    std::vector<std::unique_ptr<ConnectionGroupWorker>> input_channel_senders_;
 #endif
 
     /// The application's ZeroMQ transport objects

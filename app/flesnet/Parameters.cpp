@@ -220,6 +220,13 @@ void Parameters::parse_options(int argc, char* argv[])
     config_add("base-port", po::value<uint32_t>(&base_port_),
                "base IP port to use for listening");
     config_add("zeromq,z", po::value<bool>(&zeromq_), "use zeromq transport");
+    config_add("generate-ts-patterns", po::value<bool>(&generate_ts_patterns_),
+               "generate pattern for ts");
+    config_add("random-ts-sizes", po::value<bool>(&random_ts_sizes_),
+               "generate ts with random sizes");
+    config_add("use-libfabric",
+               po::value<bool>(&use_libfabric_)->default_value(false),
+               "use libfabric transport implementation");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -262,8 +269,13 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
 #ifndef RDMA
-    if (!zeromq_) {
+    if (!zeromq_ && !use_libfabric_) {
         throw ParametersException("flesnet built without RDMA support");
+    }
+#endif
+#ifndef LIBFABRIC
+    if (!zeromq_ && use_libfabric_) {
+        throw ParametersException("flesnet built without LIBFABRIC support");
     }
 #endif
 
