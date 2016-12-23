@@ -226,9 +226,7 @@ void Parameters::parse_options(int argc, char* argv[])
                "generate ts with random sizes");
     config_add("use-libfabric",
                po::value<bool>(&use_libfabric_)->default_value(false),
-               "flag to check whether libfabric implementation will be used");
-    config_add("use-rdma", po::value<bool>(&use_rdma_)->default_value(true),
-               "flag to check whether rdma implementation will be used");
+               "use libfabric transport implementation");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -271,7 +269,7 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
 #ifndef RDMA
-    if (!zeromq_ && use_rdma_) {
+    if (!zeromq_ && !use_libfabric_) {
         throw ParametersException("flesnet built without RDMA support");
     }
 #endif
