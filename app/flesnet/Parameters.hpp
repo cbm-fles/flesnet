@@ -97,6 +97,15 @@ public:
     /// Retrieve the zeromq transport usage flag
     bool zeromq() const { return zeromq_; }
 
+    /// Generate patterns while generating embedded timeslices
+    bool generate_ts_patterns() const { return generate_ts_patterns_; }
+
+    /// Generate timeslices with random sizes
+    bool random_ts_sizes() const { return random_ts_sizes_; }
+
+    /// flag to check whether libfabric implementation will be used
+    bool use_libfabric() const { return use_libfabric_; }
+
     /// Retrieve the number of completion queue entries.
     uint32_t num_cqe() const { return num_cqe_; }
 
@@ -165,6 +174,15 @@ private:
 
     /// Retrieve the zeromq transport usage flag
     bool zeromq_ = false;
+
+    /// Generate patterns while generating embedded timeslices
+    bool generate_ts_patterns_ = false;
+
+    /// Generate timeslices with random sizes
+    bool random_ts_sizes_ = false;
+
+    /// flag to check whether libfabric implementation will be used
+    bool use_libfabric_ = false;
 
     uint32_t num_cqe_ = 1000000;
 

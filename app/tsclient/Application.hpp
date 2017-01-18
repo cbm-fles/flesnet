@@ -5,6 +5,7 @@
 #include "Parameters.hpp"
 #include "Sink.hpp"
 #include "TimesliceSource.hpp"
+#include <chrono>
 #include <memory>
 #include <vector>
 
@@ -29,4 +30,7 @@ private:
     std::unique_ptr<Benchmark> benchmark_;
 
     uint64_t count_ = 0;
+    std::chrono::high_resolution_clock::time_point time_begin_;
+
+    void rate_limit_delay() const;
 };

@@ -31,8 +31,9 @@ int main() {
       std::cout << flibs.back()->print_build_info() << std::endl;
     } catch (std::exception& e) {
       std::cout << e.what() << std::endl;
+      return EXIT_FAILURE;
     }
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

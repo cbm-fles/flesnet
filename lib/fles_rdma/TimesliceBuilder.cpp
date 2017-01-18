@@ -42,9 +42,9 @@ void TimesliceBuilder::report_status()
         L_(debug) << "[c" << compute_index_ << "] data "
                   << status_data.percentages() << " (used..free) | "
                   << human_readable_count(status_data.acked, true);
-        L_(info) << "[c" << compute_index_ << "_" << c->index() << "] |"
-                 << bar_graph(status_data.vector(), "#._", 20) << "|"
-                 << bar_graph(status_desc.vector(), "#._", 10) << "| ";
+        L_(status) << "[c" << compute_index_ << "_" << c->index() << "] |"
+                   << bar_graph(status_data.vector(), "#._", 20) << "|"
+                   << bar_graph(status_desc.vector(), "#._", 10) << "| ";
     }
 
     scheduler_.add(std::bind(&TimesliceBuilder::report_status, this),
@@ -71,16 +71,18 @@ void TimesliceBuilder::operator()()
         while (connected_ != num_input_nodes_) {
             poll_cm_events();
         }
+        L_(info) << "[c" << compute_index_ << "] "
+                 << "connection to input nodes established";
 
         time_begin_ = std::chrono::high_resolution_clock::now();
 
         report_status();
-        while (!all_done_ || connected_ != 0) {
+        while (!all_done_ || connected_ != 0 || timewait_ != 0) {
             if (!all_done_) {
                 poll_completion();
                 poll_ts_completion();
             }
-            if (connected_ != 0) {
+            if (connected_ != 0 || timewait_ != 0) {
                 poll_cm_events();
             }
             scheduler_.timer();

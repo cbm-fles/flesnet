@@ -1,11 +1,8 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "ConnectionGroupWorker.hpp"
 #include "InfinibandException.hpp"
-#include "Scheduler.hpp"
-#include "ThreadContainer.hpp"
-#include "Utility.hpp"
-#include "log.hpp"
 #include <chrono>
 #include <cstring>
 #include <fcntl.h>
@@ -18,7 +15,8 @@
 /** An IBConnectionGroup object represents a group of InfiniBand
     connections that use the same completion queue. */
 
-template <typename CONNECTION> class IBConnectionGroup : public ThreadContainer
+template <typename CONNECTION>
+class IBConnectionGroup : public ConnectionGroupWorker
 {
 public:
     /// The IBConnectionGroup default constructor.
@@ -161,7 +159,7 @@ public:
         int ne;
         int ne_total = 0;
 
-        while ((ne = ibv_poll_cq(cq_, ne_max, wc))) {
+        while (ne_total < 1000 && (ne = ibv_poll_cq(cq_, ne_max, wc))) {
             if (ne < 0)
                 throw InfinibandException("ibv_poll_cq failed");
 
@@ -219,9 +217,6 @@ public:
                  << " MB/s)";
     }
 
-    /// The "main" function of an IBConnectionGroup decendant.
-    virtual void operator()() = 0;
-
 protected:
     /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
     virtual void on_addr_resolved(struct rdma_cm_id* id)
@@ -268,6 +263,16 @@ protected:
 
         conn->on_disconnected(event);
         --connected_;
+        ++timewait_;
+    }
+
+    /// Handle RDMA_CM_EVENT_TIMEWAIT_EXIT event.
+    virtual void on_timewait_exit(struct rdma_cm_event* event)
+    {
+        CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
+
+        conn->on_timewait_exit(event);
+        --timewait_;
     }
 
     /// Initialize the InfiniBand verbs context.
@@ -302,6 +307,9 @@ protected:
 
     /// Number of established connections
     unsigned int connected_ = 0;
+
+    /// Number of connections in the timewait state.
+    unsigned int timewait_ = 0;
 
     /// Number of connections in the done state.
     unsigned int connections_done_ = 0;
@@ -349,6 +357,9 @@ private:
             return;
         case RDMA_CM_EVENT_DISCONNECTED:
             on_disconnected(event);
+            return;
+        case RDMA_CM_EVENT_TIMEWAIT_EXIT:
+            on_timewait_exit(event);
             return;
         default:
             L_(warning) << rdma_event_str(event->event);

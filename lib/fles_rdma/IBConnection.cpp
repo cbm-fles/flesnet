@@ -97,6 +97,12 @@ void IBConnection::on_disconnected(struct rdma_cm_event* /* event */)
 {
     L_(debug) << "[" << index_ << "] "
               << "connection disconnected";
+}
+
+void IBConnection::on_timewait_exit(struct rdma_cm_event* /* event */)
+{
+    L_(debug) << "[" << index_ << "] "
+              << "connection reached timewait_exit";
 
     rdma_destroy_qp(cm_id_);
 }
