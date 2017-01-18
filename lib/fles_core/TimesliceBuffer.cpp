@@ -33,14 +33,14 @@ TimesliceBuffer::TimesliceBuffer(std::string shm_identifier,
     std::size_t data_size =
         (UINT64_C(1) << data_buffer_size_exp_) * num_input_nodes_;
     assert(data_size != 0);
-    data_shm_->truncate(data_size);
+    data_shm_->truncate(static_cast<boost::interprocess::offset_t>(data_size));
 
     std::size_t desc_buffer_size = (UINT64_C(1) << desc_buffer_size_exp_);
 
     std::size_t desc_size = desc_buffer_size * num_input_nodes_ *
                             sizeof(fles::TimesliceComponentDescriptor);
     assert(desc_size != 0);
-    desc_shm_->truncate(desc_size);
+    desc_shm_->truncate(static_cast<boost::interprocess::offset_t>(desc_size));
 
     std::unique_ptr<boost::interprocess::mapped_region> data_region(
         new boost::interprocess::mapped_region(

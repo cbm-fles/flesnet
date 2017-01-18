@@ -4,10 +4,10 @@
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "Utility.hpp"
+#include "log.hpp"
 #include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
 #include <fstream>
-#include <log.hpp>
 
 namespace po = boost::program_options;
 
@@ -33,7 +33,7 @@ std::string const Parameters::desc() const
 
 uint32_t Parameters::suggest_in_data_buffer_size_exp()
 {
-    constexpr float buffer_ram_usage_ratio = 0.05;
+    constexpr float buffer_ram_usage_ratio = 0.05f;
 
     // ensure value in sensible range
     constexpr uint32_t max_in_data_buffer_size_exp = 30; // 30: 1 GByte
@@ -44,7 +44,7 @@ uint32_t Parameters::suggest_in_data_buffer_size_exp()
         buffer_ram_usage_ratio * total_ram / input_indexes_.size();
 
     uint32_t suggest_in_data_buffer_size_exp =
-        ceilf(log2f(suggest_in_data_buffer_size));
+        static_cast<uint32_t>(ceilf(log2f(suggest_in_data_buffer_size)));
 
     if (suggest_in_data_buffer_size_exp > max_in_data_buffer_size_exp)
         suggest_in_data_buffer_size_exp = max_in_data_buffer_size_exp;
@@ -56,7 +56,7 @@ uint32_t Parameters::suggest_in_data_buffer_size_exp()
 
 uint32_t Parameters::suggest_cn_data_buffer_size_exp()
 {
-    constexpr float buffer_ram_usage_ratio = 0.05;
+    constexpr float buffer_ram_usage_ratio = 0.05f;
 
     // ensure value in sensible range
     constexpr uint32_t max_cn_data_buffer_size_exp = 30; // 30: 1 GByte
@@ -68,7 +68,7 @@ uint32_t Parameters::suggest_cn_data_buffer_size_exp()
         (compute_indexes_.size() * input_nodes_.size());
 
     uint32_t suggest_cn_data_buffer_size_exp =
-        ceilf(log2f(suggest_cn_data_buffer_size));
+        static_cast<uint32_t>(ceilf(log2f(suggest_cn_data_buffer_size)));
 
     if (suggest_cn_data_buffer_size_exp > max_cn_data_buffer_size_exp)
         suggest_cn_data_buffer_size_exp = max_cn_data_buffer_size_exp;
@@ -85,8 +85,8 @@ uint32_t Parameters::suggest_in_desc_buffer_size_exp()
     constexpr float in_desc_buffer_oversize_factor = 4.0;
 
     // ensure value in sensible range
-    constexpr float max_desc_data_ratio = 1.0;
-    constexpr float min_desc_data_ratio = 0.1;
+    constexpr float max_desc_data_ratio = 1.0f;
+    constexpr float min_desc_data_ratio = 0.1f;
 
     static_assert(min_desc_data_ratio <= max_desc_data_ratio,
                   "invalid range for desc_data_ratio");
@@ -96,14 +96,14 @@ uint32_t Parameters::suggest_in_desc_buffer_size_exp()
                                         typical_content_size_ *
                                         in_desc_buffer_oversize_factor;
     uint32_t suggest_in_desc_buffer_size_exp =
-        ceilf(log2f(suggest_in_desc_buffer_size));
+        static_cast<uint32_t>(ceilf(log2f(suggest_in_desc_buffer_size)));
 
     float relative_size =
         in_data_buffer_size / sizeof(fles::MicrosliceDescriptor);
-    uint32_t max_in_desc_buffer_size_exp =
-        floorf(log2f(relative_size * max_desc_data_ratio));
-    uint32_t min_in_desc_buffer_size_exp =
-        ceilf(log2f(relative_size * min_desc_data_ratio));
+    uint32_t max_in_desc_buffer_size_exp = static_cast<uint32_t>(
+        floorf(log2f(relative_size * max_desc_data_ratio)));
+    uint32_t min_in_desc_buffer_size_exp = static_cast<uint32_t>(
+        ceilf(log2f(relative_size * min_desc_data_ratio)));
 
     if (suggest_in_desc_buffer_size_exp > max_in_desc_buffer_size_exp)
         suggest_in_desc_buffer_size_exp = max_in_desc_buffer_size_exp;
@@ -120,8 +120,8 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
     constexpr float cn_desc_buffer_oversize_factor = 8.0;
 
     // ensure value in sensible range
-    constexpr float min_desc_data_ratio = 0.1;
-    constexpr float max_desc_data_ratio = 1.0;
+    constexpr float min_desc_data_ratio = 0.1f;
+    constexpr float max_desc_data_ratio = 1.0f;
 
     static_assert(min_desc_data_ratio <= max_desc_data_ratio,
                   "invalid range for desc_data_ratio");
@@ -133,14 +133,14 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
         cn_desc_buffer_oversize_factor;
 
     uint32_t suggest_cn_desc_buffer_size_exp =
-        ceilf(log2f(suggest_cn_desc_buffer_size));
+        static_cast<uint32_t>(ceilf(log2f(suggest_cn_desc_buffer_size)));
 
     float relative_size =
         cn_data_buffer_size / sizeof(fles::TimesliceComponentDescriptor);
-    uint32_t min_cn_desc_buffer_size_exp =
-        ceilf(log2f(relative_size * min_desc_data_ratio));
-    uint32_t max_cn_desc_buffer_size_exp =
-        floorf(log2f(relative_size * max_desc_data_ratio));
+    uint32_t min_cn_desc_buffer_size_exp = static_cast<uint32_t>(
+        ceilf(log2f(relative_size * min_desc_data_ratio)));
+    uint32_t max_cn_desc_buffer_size_exp = static_cast<uint32_t>(
+        floorf(log2f(relative_size * max_desc_data_ratio)));
 
     if (suggest_cn_desc_buffer_size_exp < min_cn_desc_buffer_size_exp)
         suggest_cn_desc_buffer_size_exp = min_cn_desc_buffer_size_exp;

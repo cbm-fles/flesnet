@@ -33,6 +33,18 @@ public:
         return this->size() - size_used();
     }
 
+    std::size_t size_available_contiguous() const
+    {
+        std::size_t offset = write_index_ & (this->size() - 1);
+        std::size_t size_to_border = this->size() - offset;
+
+        if (size_available() > size_to_border) {
+            return std::max(size_to_border, size_available() - size_to_border);
+        } else {
+            return size_available();
+        }
+    }
+
     void append(const T& item)
     {
         assert(size_available() >= 1);
@@ -40,7 +52,7 @@ public:
         ++write_index_;
     }
 
-    void append(T* buf, std::size_t n)
+    void append(const T* buf, std::size_t n)
     {
         if (&this->at(write_index_) + n <= this->ptr() + this->size()) {
             // one chunk
@@ -52,6 +64,18 @@ public:
             std::copy(buf + a, buf + n, &this->at(write_index_ + a));
         }
         write_index_ += n;
+    }
+
+    // skip remaining entries in ring buffer so that n entries can be stored
+    // without fragmentation
+    void skip_buffer_wrap(std::size_t n)
+    {
+        assert(size_available() >= n);
+        std::size_t offset = write_index_ & (this->size() - 1);
+
+        if (offset + n > this->size()) {
+            write_index_ += this->size() - offset;
+        }
     }
 
 private:
