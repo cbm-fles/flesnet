@@ -3,11 +3,17 @@
 file(GLOB SOURCES *.cpp)
 file(GLOB HEADERS *.hpp)
 
+list(APPEND SOURCES "${CMAKE_BINARY_DIR}/config/GitRevision.cpp")
+list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/config/GitRevision.hpp")
+
 add_executable(flesnet ${SOURCES} ${HEADERS})
 
 target_compile_definitions(flesnet PUBLIC BOOST_ALL_DYN_LINK)
 
-target_include_directories(flesnet PUBLIC ${PROJECT_SOURCE_DIR}/lib)
+target_include_directories(flesnet
+  PUBLIC ${PROJECT_SOURCE_DIR}/lib
+  PRIVATE "${PROJECT_SOURCE_DIR}/config"
+)
 
 target_include_directories(flesnet SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 

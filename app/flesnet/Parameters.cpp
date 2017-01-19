@@ -1,6 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Parameters.hpp"
+#include "GitRevision.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "Utility.hpp"
@@ -244,13 +245,13 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
     if (vm.count("help")) {
-        std::cout << cmdline_options << "\n";
+        std::cout << "flesnet, git revision " << g_GIT_REVISION << std::endl;
+        std::cout << cmdline_options << std::endl;
         exit(EXIT_SUCCESS);
     }
 
     if (vm.count("version")) {
-        std::cout << "flesnet, version 0.0"
-                  << "\n";
+        std::cout << "flesnet, git revision " << g_GIT_REVISION << std::endl;
         exit(EXIT_SUCCESS);
     }
 
