@@ -8,7 +8,7 @@ DIR="$(git rev-parse --show-toplevel)"
 cd "$DIR"
 
 # PDA library
-curl -L https://github.com/cbm-fles/pda/archive/11.1.7.tar.gz | tar xz --transform 's/^pda-[^\/]*/pda/'
+curl -L https://github.com/cbm-fles/pda/archive/11.2.7.tar.gz | tar xz --transform 's/^pda-[^\/]*/pda/'
 cd pda
 ./configure
 make
