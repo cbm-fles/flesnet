@@ -28,7 +28,7 @@ find_package(Threads REQUIRED)
 
 find_package(LIBFABRIC)
 find_package(RDMA)
-find_package(PDA 11.1.7 EXACT)
+find_package(PDA 11.2.7 EXACT)
 find_package(NUMA)
 find_package(Doxygen)
 
