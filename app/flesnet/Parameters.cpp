@@ -342,12 +342,12 @@ void Parameters::parse_options(int argc, char* argv[])
         throw ParametersException("timeslice size cannot be zero");
     }
 
-#ifndef RDMA
+#ifndef HAVE_RDMA
     if (transport_ == Transport::RDMA) {
         throw ParametersException("flesnet built without RDMA support");
     }
 #endif
-#ifndef LIBFABRIC
+#ifndef HAVE_LIBFABRIC
     if (transport_ == Transport::LibFabric) {
         throw ParametersException("flesnet built without LIBFABRIC support");
     }

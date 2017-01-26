@@ -23,12 +23,12 @@ target_link_libraries(flesnet
 )
 
 if (USE_RDMA AND RDMA_FOUND)
-  target_compile_definitions(flesnet PUBLIC RDMA)
+  target_compile_definitions(flesnet PUBLIC HAVE_RDMA)
   target_link_libraries(flesnet fles_rdma)
 endif()
 
 if (USE_LIBFABRIC AND LIBFABRIC_FOUND)
-  target_compile_definitions(flesnet PUBLIC LIBFABRIC)
+  target_compile_definitions(flesnet PUBLIC HAVE_LIBFABRIC)
   target_link_libraries(flesnet fles_libfabric)
 endif()
 
