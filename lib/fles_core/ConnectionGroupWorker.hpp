@@ -5,7 +5,7 @@
 #include "Scheduler.hpp"
 #include "ThreadContainer.hpp"
 #include "Utility.hpp"
-#include <log.hpp>
+#include "log.hpp"
 
 class ConnectionGroupWorker : public ThreadContainer
 {
