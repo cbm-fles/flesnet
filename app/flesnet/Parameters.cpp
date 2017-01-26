@@ -195,76 +195,112 @@ void Parameters::parse_options(int argc, char* argv[])
 
     po::options_description generic("Generic options");
     auto generic_add = generic.add_options();
-    generic_add("version,V", "print version string");
-    generic_add("help,h", "produce help message");
-    generic_add("log-level,l", po::value<unsigned>(&log_level),
-                "set the log level (default:2, all:0)");
-    generic_add("log-file,L", po::value<std::string>(&log_file),
-                "name of target log file");
-    generic_add(
-        "config-file,f",
-        po::value<std::string>(&config_file)->default_value("flesnet.cfg"),
-        "name of a configuration file.");
+    generic_add("config-file,f", po::value<std::string>(&config_file)
+                                     ->default_value("flesnet.cfg")
+                                     ->value_name("<filename>"),
+                "read configuration from file");
+    generic_add("log-level,l", po::value<unsigned>(&log_level)
+                                   ->default_value(log_level)
+                                   ->value_name("<n>"),
+                "set the global log level (all: 0)");
+    generic_add("log-file,L",
+                po::value<std::string>(&log_file)->value_name("<filename>"),
+                "write log output to file");
+    generic_add("help,h", "display this help and exit");
+    generic_add("version,V", "output version information and exit");
 
     po::options_description config("Configuration");
     auto config_add = config.add_options();
-    config_add("input-index,i",
-               po::value<std::vector<unsigned>>()->multitoken(),
-               "this application's index in the list of input nodes");
-    config_add("compute-index,c",
-               po::value<std::vector<unsigned>>()->multitoken(),
-               "this application's index in the list of compute nodes");
-    config_add("input-nodes,I",
-               po::value<std::vector<std::string>>()->multitoken(),
-               "add host to the list of input nodes");
-    config_add("compute-nodes,C",
-               po::value<std::vector<std::string>>()->multitoken(),
-               "add host to the list of compute nodes");
-    config_add("timeslice-size", po::value<uint32_t>(&timeslice_size_),
-               "global timeslice size in number of microslices");
-    config_add("overlap-size", po::value<uint32_t>(&overlap_size_),
-               "size of the overlap region in number of microslices");
-    config_add("in-data-buffer-size-exp",
-               po::value<uint32_t>(&in_data_buffer_size_exp_),
-               "exp. size of the input node's data buffer in bytes");
-    config_add("in-desc-buffer-size-exp",
-               po::value<uint32_t>(&in_desc_buffer_size_exp_),
-               "exp. size of the input node's descriptor buffer"
-               " (number of entries)");
-    config_add("cn-data-buffer-size-exp",
-               po::value<uint32_t>(&cn_data_buffer_size_exp_),
-               "exp. size of the compute node's data buffer in bytes");
-    config_add("cn-desc-buffer-size-exp",
-               po::value<uint32_t>(&cn_desc_buffer_size_exp_),
-               "exp. size of the compute node's descriptor buffer"
-               " (number of entries)");
-    config_add("typical-content-size",
-               po::value<uint32_t>(&typical_content_size_),
-               "typical number of content bytes per microslice");
-    config_add("input-shm", po::value<std::string>(&input_shm_),
-               "name of a shared memory to use as data source");
-    config_add("standalone", po::value<bool>(&standalone_),
-               "standalone mode flag");
-    config_add("max-timeslice-number,n",
-               po::value<uint32_t>(&max_timeslice_number_),
-               "global maximum timeslice number");
-    config_add("processor-executable,e",
-               po::value<std::string>(&processor_executable_),
-               "name of the executable acting as timeslice processor");
-    config_add("processor-instances",
-               po::value<uint32_t>(&processor_instances_),
-               "number of instances of the timeslice processor executable");
-    config_add("base-port", po::value<uint32_t>(&base_port_),
-               "base IP port to use for listening");
-    config_add("generate-ts-patterns", po::value<bool>(&generate_ts_patterns_),
-               "generate pattern for ts");
-    config_add("random-ts-sizes", po::value<bool>(&random_ts_sizes_),
-               "generate ts with random sizes");
     config_add(
-        "transport,t",
-        po::value<Transport>(&transport_)->default_value(Transport::RDMA),
-        "Select transport implementation.\n"
-        "Possible values (case-insensitive): RDMA, LibFabric, ZeroMQ");
+        "input-index,i",
+        po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
+        "set this application's index(es) in the list of input nodes");
+    config_add(
+        "compute-index,c",
+        po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
+        "set this application's index(es) in the list of compute nodes");
+    config_add("input-nodes,I",
+               po::value<std::vector<std::string>>()->multitoken()->value_name(
+                   "<hostname> ..."),
+               "add a host to the list of input nodes");
+    config_add("compute-nodes,C",
+               po::value<std::vector<std::string>>()->multitoken()->value_name(
+                   "<hostname> ..."),
+               "add a host to the list of compute nodes");
+    config_add("timeslice-size", po::value<uint32_t>(&timeslice_size_)
+                                     ->default_value(timeslice_size_)
+                                     ->value_name("<n>"),
+               "set the global timeslice size in number of microslices");
+    config_add(
+        "overlap-size", po::value<uint32_t>(&overlap_size_)
+                            ->default_value(overlap_size_)
+                            ->value_name("<n>"),
+        "set the global size of the overlap region in number of microslices");
+    config_add(
+        "in-data-buffer-size-exp",
+        po::value<uint32_t>(&in_data_buffer_size_exp_)->value_name("<n>"),
+        "data buffer size used per input in the input node (log of number of "
+        "bytes)");
+    config_add(
+        "in-desc-buffer-size-exp",
+        po::value<uint32_t>(&in_desc_buffer_size_exp_)->value_name("<n>"),
+        "descriptor buffer size used per input in the input node (log of "
+        "number of entries)");
+    config_add(
+        "cn-data-buffer-size-exp",
+        po::value<uint32_t>(&cn_data_buffer_size_exp_)->value_name("<n>"),
+        "data buffer size used per input in the compute node (log of number of "
+        "bytes)");
+    config_add(
+        "cn-desc-buffer-size-exp",
+        po::value<uint32_t>(&cn_desc_buffer_size_exp_)->value_name("<n>"),
+        "descriptor buffer size used per input in the compute node (log of "
+        "number of entries)");
+    config_add("typical-content-size",
+               po::value<uint32_t>(&typical_content_size_)
+                   ->default_value(typical_content_size_)
+                   ->value_name("<n>"),
+               "typical number of content bytes per microslice");
+    config_add("input-shm",
+               po::value<std::string>(&input_shm_)->value_name("<id>"),
+               "name of a shared memory to use as data source");
+    config_add("standalone", po::value<bool>(&standalone_)
+                                 ->default_value(standalone_)
+                                 ->implicit_value(true)
+                                 ->value_name("<bool>"),
+               "enable special standalone mode");
+    config_add("max-timeslice-number,n",
+               po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
+               "quit after processing given number of timeslices");
+    config_add(
+        "processor-executable,e",
+        po::value<std::string>(&processor_executable_)->value_name("<string>"),
+        "name of the executable acting as timeslice processor");
+    config_add("processor-instances", po::value<uint32_t>(&processor_instances_)
+                                          ->default_value(processor_instances_)
+                                          ->value_name("<n>"),
+               "number of instances of the timeslice processor executable");
+    config_add("base-port", po::value<uint32_t>(&base_port_)
+                                ->default_value(base_port_)
+                                ->value_name("<n>"),
+               "base IP port to use for listening");
+    config_add(
+        "generate-ts-patterns", po::value<bool>(&generate_ts_patterns_)
+                                    ->default_value(generate_ts_patterns_)
+                                    ->implicit_value(true)
+                                    ->value_name("<bool>"),
+        "generate data pattern when using the microslice pattern generator");
+    config_add("random-ts-sizes", po::value<bool>(&random_ts_sizes_)
+                                      ->default_value(random_ts_sizes_)
+                                      ->implicit_value(true)
+                                      ->value_name("<bool>"),
+               "randomize microslice data sizes when using the microslice "
+               "pattern generator");
+    config_add("transport,t", po::value<Transport>(&transport_)
+                                  ->default_value(transport_)
+                                  ->value_name("<id>"),
+               "select transport implementation; possible values "
+               "(case-insensitive) are: RDMA, LibFabric, ZeroMQ");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);

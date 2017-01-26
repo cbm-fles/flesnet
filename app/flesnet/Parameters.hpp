@@ -176,7 +176,7 @@ private:
     uint32_t base_port_ = 20079;
 
     /// The selected transport implementation.
-    Transport transport_;
+    Transport transport_ = Transport::RDMA;
 
     /// Generate patterns while generating embedded timeslices
     bool generate_ts_patterns_ = false;
