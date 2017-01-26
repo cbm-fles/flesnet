@@ -71,14 +71,14 @@ Application::Application(Parameters const& par,
         start_processes(shm_identifier);
         ChildProcessManager::get().allow_stop_processes(this);
 
-        if (par_.zeromq()) {
+        if (par_.transport() == Transport::ZeroMQ) {
             std::unique_ptr<TimesliceBuilderZeromq> builder(
                 new TimesliceBuilderZeromq(
                     i, *tsb, input_server_addresses, par.compute_nodes().size(),
                     par_.timeslice_size(), par_.max_timeslice_number(),
                     signal_status_));
             timeslice_builders_zeromq_.push_back(std::move(builder));
-        } else if (par_.use_libfabric()) {
+        } else if (par_.transport() == Transport::LibFabric) {
 #ifdef LIBFABRIC
             std::unique_ptr<tl_libfabric::TimesliceBuilder> builder(
                 new tl_libfabric::TimesliceBuilder(
@@ -139,7 +139,7 @@ Application::Application(Parameters const& par,
             }
         }
 
-        if (par_.zeromq()) {
+        if (par_.transport() == Transport::ZeroMQ) {
             std::string listen_address =
                 "tcp://*:" + std::to_string(par_.base_port() + index);
             std::unique_ptr<ComponentSenderZeromq> sender(
@@ -148,7 +148,7 @@ Application::Application(Parameters const& par,
                     par.timeslice_size(), par.overlap_size(),
                     par.max_timeslice_number(), signal_status_));
             component_senders_zeromq_.push_back(std::move(sender));
-        } else if (par_.use_libfabric()) {
+        } else if (par_.transport() == Transport::LibFabric) {
 #ifdef LIBFABRIC
             std::unique_ptr<tl_libfabric::InputChannelSender> sender(
                 new tl_libfabric::InputChannelSender(

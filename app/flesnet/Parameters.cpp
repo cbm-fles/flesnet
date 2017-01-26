@@ -6,11 +6,47 @@
 #include "TimesliceComponentDescriptor.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
+#include <algorithm>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
 #include <fstream>
+#include <iterator>
 
 namespace po = boost::program_options;
+
+std::istream& operator>>(std::istream& in, Transport& transport)
+{
+    std::string token;
+    in >> token;
+    std::transform(std::begin(token), std::end(token), std::begin(token),
+                   [](const unsigned char i) { return tolower(i); });
+
+    if (token == "rdma" || token == "r")
+        transport = Transport::RDMA;
+    else if (token == "libfabric" || token == "f")
+        transport = Transport::LibFabric;
+    else if (token == "zeromq" || token == "z")
+        transport = Transport::ZeroMQ;
+    else
+        throw po::invalid_option_value(token);
+    return in;
+}
+
+std::ostream& operator<<(std::ostream& out, const Transport& transport)
+{
+    switch (transport) {
+    case Transport::RDMA:
+        out << "RDMA";
+        break;
+    case Transport::LibFabric:
+        out << "LibFabric";
+        break;
+    case Transport::ZeroMQ:
+        out << "ZeroMQ";
+        break;
+    }
+    return out;
+}
 
 std::string const Parameters::desc() const
 {
@@ -220,14 +256,15 @@ void Parameters::parse_options(int argc, char* argv[])
                "number of instances of the timeslice processor executable");
     config_add("base-port", po::value<uint32_t>(&base_port_),
                "base IP port to use for listening");
-    config_add("zeromq,z", po::value<bool>(&zeromq_), "use zeromq transport");
     config_add("generate-ts-patterns", po::value<bool>(&generate_ts_patterns_),
                "generate pattern for ts");
     config_add("random-ts-sizes", po::value<bool>(&random_ts_sizes_),
                "generate ts with random sizes");
-    config_add("use-libfabric",
-               po::value<bool>(&use_libfabric_)->default_value(false),
-               "use libfabric transport implementation");
+    config_add(
+        "transport,t",
+        po::value<Transport>(&transport_)->default_value(Transport::RDMA),
+        "Select transport implementation.\n"
+        "Possible values (case-insensitive): RDMA, LibFabric, ZeroMQ");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -270,12 +307,12 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
 #ifndef RDMA
-    if (!zeromq_ && !use_libfabric_) {
+    if (transport_ == Transport::RDMA) {
         throw ParametersException("flesnet built without RDMA support");
     }
 #endif
 #ifndef LIBFABRIC
-    if (!zeromq_ && use_libfabric_) {
+    if (transport_ == Transport::LibFabric) {
         throw ParametersException("flesnet built without LIBFABRIC support");
     }
 #endif
@@ -285,7 +322,7 @@ void Parameters::parse_options(int argc, char* argv[])
         input_indexes_ = std::vector<unsigned>{0};
         compute_nodes_ = std::vector<std::string>{"127.0.0.1"};
         compute_indexes_ = std::vector<unsigned>{0};
-        if (zeromq_) {
+        if (transport_ == Transport::ZeroMQ) {
             throw ParametersException(
                 "no zeromq transport in stand-alone mode");
         }
