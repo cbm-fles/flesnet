@@ -16,6 +16,7 @@
 		3D06A84D1B56BC2D0039F5CD /* multiword_64_64_gcc_amd64_asm.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8411B56BC2D0039F5CD /* multiword_64_64_gcc_amd64_asm.cc */; };
 		3D06A84E1B56BC2D0039F5CD /* multiword_64_64_gcc_i386_mmx.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8421B56BC2D0039F5CD /* multiword_64_64_gcc_i386_mmx.cc */; };
 		3D06A84F1B56BC2D0039F5CD /* multiword_64_64_intrinsic_i386_mmx.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8431B56BC2D0039F5CD /* multiword_64_64_intrinsic_i386_mmx.cc */; };
+		3D44383C1E3899DD00B0A202 /* GitRevisionStatic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA36F621BE376E300B2A25E /* GitRevisionStatic.cpp */; };
 		3D5656F31B42D0770052C86D /* Application.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656EA1B42D0770052C86D /* Application.cpp */; };
 		3D5656F41B42D0770052C86D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656EC1B42D0770052C86D /* main.cpp */; };
 		3D5656F51B42D0770052C86D /* Parameters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656ED1B42D0770052C86D /* Parameters.cpp */; };
@@ -230,6 +231,7 @@
 		3D06A8461B56BC2D0039F5CD /* rolling_crc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rolling_crc.h; sourceTree = "<group>"; };
 		3D06A8471B56BC2D0039F5CD /* std_headers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = std_headers.h; sourceTree = "<group>"; };
 		3D06A8481B56BC2D0039F5CD /* uint128_sse2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uint128_sse2.h; sourceTree = "<group>"; };
+		3D44383B1E38999A00B0A202 /* ConnectionGroupWorker.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ConnectionGroupWorker.hpp; sourceTree = "<group>"; };
 		3D462B871B42CC790017047A /* tsclient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tsclient; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D5656EA1B42D0770052C86D /* Application.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Application.cpp; sourceTree = "<group>"; };
 		3D5656EB1B42D0770052C86D /* Application.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Application.hpp; sourceTree = "<group>"; };
@@ -404,7 +406,9 @@
 				3DA36F661BE376FA00B2A25E /* config */,
 				3D462B881B42CC790017047A /* Products */,
 			);
+			indentWidth = 4;
 			sourceTree = "<group>";
+			tabWidth = 4;
 		};
 		3D462B881B42CC790017047A /* Products */ = {
 			isa = PBXGroup;
@@ -470,6 +474,7 @@
 		3D9BCC241B591D10007C5C18 /* fles_core */ = {
 			isa = PBXGroup;
 			children = (
+				3D44383B1E38999A00B0A202 /* ConnectionGroupWorker.hpp */,
 				3DB8F0621DF042CC0079A053 /* ManagedRingBuffer.hpp */,
 				3DB8F0631DF042CC0079A053 /* TimesliceBuffer.cpp */,
 				3DB8F0641DF042CC0079A053 /* TimesliceBuffer.hpp */,
@@ -875,6 +880,7 @@
 				3DB8F0961DF04C3F0079A053 /* EmbeddedPatternGenerator.cpp in Sources */,
 				3DB8F0971DF04C3F0079A053 /* Application.cpp in Sources */,
 				3DB8F09C1DF04C3F0079A053 /* TimesliceBuilderZeromq.cpp in Sources */,
+				3D44383C1E3899DD00B0A202 /* GitRevisionStatic.cpp in Sources */,
 				3DB8F09D1DF04C3F0079A053 /* ComponentSenderZeromq.cpp in Sources */,
 				3DB8F09E1DF04C3F0079A053 /* main.cpp in Sources */,
 				3DB8F0A01DF04C3F0079A053 /* FlibPatternGenerator.cpp in Sources */,
@@ -978,6 +984,7 @@
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_PARAMETER = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = ../external/cppzmq;
 				LIBRARY_SEARCH_PATHS = "$(SIMPATH)/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = "";
@@ -1064,6 +1071,7 @@
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_PARAMETER = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = ../external/cppzmq;
 				LIBRARY_SEARCH_PATHS = "$(SIMPATH)/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = "";
