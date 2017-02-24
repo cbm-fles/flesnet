@@ -8,11 +8,11 @@
 #include "TimesliceBuffer.hpp"
 #include "TimesliceBuilderZeromq.hpp"
 #include "shm_device_client.hpp"
-#if defined(RDMA)
+#if defined(HAVE_RDMA)
 #include "fles_rdma/InputChannelSender.hpp"
 #include "fles_rdma/TimesliceBuilder.hpp"
 #endif
-#if defined(LIBFABRIC)
+#if defined(HAVE_LIBFABRIC)
 #include "fles_libfabric/InputChannelSender.hpp"
 #include "fles_libfabric/TimesliceBuilder.hpp"
 #endif
@@ -52,7 +52,7 @@ private:
     std::vector<std::unique_ptr<InputBufferReadInterface>> data_sources_;
     std::vector<std::unique_ptr<TimesliceBuffer>> timeslice_buffers_;
 
-#if defined(RDMA) || defined(LIBFABRIC)
+#if defined(HAVE_RDMA) || defined(HAVE_LIBFABRIC)
     /// The application's RDMA or libfabric transport objects
     std::vector<std::unique_ptr<ConnectionGroupWorker>> timeslice_builders_;
     std::vector<std::unique_ptr<ConnectionGroupWorker>> input_channel_senders_;

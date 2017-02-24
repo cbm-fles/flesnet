@@ -19,6 +19,12 @@ public:
     }
 };
 
+/// Transport implementation enum.
+enum class Transport { RDMA, LibFabric, ZeroMQ };
+
+std::istream& operator>>(std::istream& in, Transport& transport);
+std::ostream& operator<<(std::ostream& out, const Transport& transport);
+
 /// Global run parameter class.
 /** A Parameters object stores the information given on the command
     line or in a configuration file. */
@@ -94,17 +100,14 @@ public:
     /// Retrieve the global base port.
     uint32_t base_port() const { return base_port_; }
 
-    /// Retrieve the zeromq transport usage flag
-    bool zeromq() const { return zeromq_; }
+    /// Retrieve the selected transport implementation.
+    Transport transport() const { return transport_; }
 
     /// Generate patterns while generating embedded timeslices
     bool generate_ts_patterns() const { return generate_ts_patterns_; }
 
     /// Generate timeslices with random sizes
     bool random_ts_sizes() const { return random_ts_sizes_; }
-
-    /// flag to check whether libfabric implementation will be used
-    bool use_libfabric() const { return use_libfabric_; }
 
     /// Retrieve the number of completion queue entries.
     uint32_t num_cqe() const { return num_cqe_; }
@@ -172,17 +175,14 @@ private:
     /// The global base port.
     uint32_t base_port_ = 20079;
 
-    /// Retrieve the zeromq transport usage flag
-    bool zeromq_ = false;
+    /// The selected transport implementation.
+    Transport transport_ = Transport::RDMA;
 
     /// Generate patterns while generating embedded timeslices
     bool generate_ts_patterns_ = false;
 
     /// Generate timeslices with random sizes
     bool random_ts_sizes_ = false;
-
-    /// flag to check whether libfabric implementation will be used
-    bool use_libfabric_ = false;
 
     uint32_t num_cqe_ = 1000000;
 
