@@ -43,25 +43,26 @@ LINK[0]=pgen_near
 LINK[1]=pgen_near
 LINK[2]=pgen_near
 LINK[3]=pgen_near
-LINK[4]=pgen_near
-LINK[5]=pgen_near
-LINK[6]=pgen_near
-LINK[7]=pgen_near
+#LINK[4]=pgen_near
+#LINK[5]=pgen_near
+#LINK[6]=pgen_near
+#LINK[7]=pgen_near
 
 # FLIB 1
 LINK[8]=pgen_near
 LINK[9]=pgen_near
 LINK[10]=pgen_near
 LINK[11]=pgen_near
-LINK[12]=pgen_near
-LINK[13]=pgen_near
-LINK[14]=pgen_near
-LINK[15]=pgen_near
+#LINK[12]=pgen_near
+#LINK[13]=pgen_near
+#LINK[14]=pgen_near
+#LINK[15]=pgen_near
 
 BASE_EQID[0]=0xF00
 BASE_EQID[1]=0xF01
 
-PGEN_RATE=0.14
+PGEN_RATE=1
+#PGEN_RATE=0.14
 
 # general setting
 
@@ -69,11 +70,14 @@ TIMESLICE_SIZE=100
 OVERLAP_SIZE=1
 OUTPUT_ARCHIVE_BYTES=2000000000
 
+TRANSPORT=RDMA
+#TRANSPORT=ZeroMQ
+
 # Microslice size in ns and link max. thoughput in MB/s.
 # These numbers are used to determine buffer sizes and should represent
 # DPB settings. In case of FLIB pgen they are also used to configure the pgen.
-#MC_SIZE_NS=102400
-MC_SIZE_NS=1638400
+MC_SIZE_NS=102400
+#MC_SIZE_NS=1638400
 MAX_THROUGHPUT_MB_S=1250
 
 # Buffer calculations (absolute minimums):
@@ -94,7 +98,7 @@ MIN_BUF_SIZE_EXP=`echo "exp=l($MIN_BUF_SIZE-1)/l(2); scale=0; exp/1+1" | bc -l`
 echo "*** INFO *** abs. min. buffer size per link = 2^$MIN_BUF_SIZE_EXP bytes"
 #BUF_SIZE_EXP=$MIN_BUF_SIZE_EXP
 #BUF_SIZE_EXP=27
-BUF_SIZE_EXP=29
+BUF_SIZE_EXP=28
 echo "*** INFO *** buffer size per link set = 2^$BUF_SIZE_EXP bytes"
 ##### configuration above this line ########
 
@@ -105,6 +109,7 @@ else
 fi
 
 FLESNET_CFG=(-l 2
+             -t $TRANSPORT
              --timeslice-size $TIMESLICE_SIZE
              --overlap-size $OVERLAP_SIZE
              --cn-data-buffer-size-exp $BUF_SIZE_EXP
@@ -136,10 +141,13 @@ done
 
 cleanup () {
     echo "cleaning up ..."
-    kill -9 $FLESNET_CN_PID
-    # kill all tsclients in this session
+    # kill all procecces in this session
+    pkill -9 -s $SID flesnet
     pkill -9 -s $SID tsclient
+    pkill -9 -s $SID en_readout
+    pkill -9 -s $SID flib_server
     rm /dev/shm/flesnet*
+    exit -1
 }
 
 # the shutdown procedure
@@ -150,14 +158,22 @@ end_readout () {
     kill -s SIGINT $EN_1_PID 2>/dev/null
     sleep 2
     kill -s SIGINT $FLESNET_CN_PID
+    ## end IN in case of zmq
+    if [ $TRANSPORT == ZeroMQ ]; then
+        kill -s SIGINT $FLESNET_IN_0_PID 2>/dev/null
+        kill -s SIGINT $FLESNET_IN_1_PID 2>/dev/null
+    fi
     sleep 1
     kill -s SIGINT $SERVER_0_PID 2>/dev/null
     kill -s SIGINT $SERVER_1_PID 2>/dev/null
-    # check if flesnet is left
-    kill -0 $FLESNET_CN_PID 2>/dev/null
-    if [ $? -eq 0 ]; then
+    sleep 1
+    # check if any process is left in this session
+    # header, bash, readout, ps, wc, and `` make offset of 6
+    NUMP=`ps -s $SID | wc -l`
+    if [ "$NUMP" -ne "6" ]; then
         cleanup
     fi
+    exit 0
 }
 trap end_readout SIGINT SIGTERM SIGHUP
 
@@ -234,9 +250,11 @@ SID=$(ps o sid -p $FLESNET_CN_PID | tail -n1)
 # the input nodes
 if [ ${#IN_INDEX_0[@]} -ne 0 ]; then
     $BINDIR/flesnet "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${IN_INDEX_0[@]}" "${IN_0_CFG[@]}" &
+    FLESNET_IN_0_PID=$!
 fi
 if [ ${#IN_INDEX_1[@]} -ne 0 ]; then
     $BINDIR/flesnet "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${IN_INDEX_1[@]}" "${IN_1_CFG[@]}" &
+    FLESNET_IN_1_PID=$!
 fi
 
 # enable readout
