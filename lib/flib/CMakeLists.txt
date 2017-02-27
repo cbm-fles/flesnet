@@ -34,6 +34,12 @@ set_target_properties(flib-static PROPERTIES OUTPUT_NAME flib)
 target_compile_options(flib PUBLIC -fno-tree-vectorize)
 target_compile_options(flib-static PUBLIC -fno-tree-vectorize)
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   set_source_files_properties(register_file_bar.cpp
+        PROPERTIES
+        COMPILE_FLAGS "-Wno-unknown-attributes -mno-sse")
+endif()
+
 target_include_directories(flib PUBLIC . PUBLIC ..)
 target_include_directories(flib SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(flib-static PUBLIC . PUBLIC ..)
