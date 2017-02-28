@@ -267,6 +267,10 @@ void Parameters::parse_options(int argc, char* argv[])
     config_add("max-timeslice-number,n",
                po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
                "quit after processing given number of timeslices");
+    config_add("kv-sync", po::value<bool>(&kv_sync_),
+               "use key-value store to synchronize with data source, bool");
+    config_add("base-url", po::value<std::string>(&base_url_),
+               "url of key-value store");
     config_add(
         "processor-executable,e",
         po::value<std::string>(&processor_executable_)->value_name("<string>"),

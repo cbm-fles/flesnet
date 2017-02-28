@@ -1,5 +1,6 @@
 // Copyright 2015 Dirk Hutter
 
+#include "EtcdClient.h"
 #include "log.hpp"
 #include "parameters.hpp"
 #include "shm_device_server.hpp"
@@ -35,7 +36,20 @@ int main(int argc, char* argv[]) {
     flib_shm_device_server server(flib.get(), par.shm(),
                                   par.data_buffer_size_exp(),
                                   par.desc_buffer_size_exp(), &signal_status);
+
+    EtcdClient etcd(par.base_url());
+
+    if (par.kv_sync())
+      L_(info) << "Now using key-value store for synchronization at "
+               << par.base_url();
+    int ret = etcd.set_value("/" + par.shm(), "/uptodate", "value=on");
+    if (ret != 0)
+      throw std::runtime_error("Error setting value in key-value store");
+
     server.run();
+
+    if (par.kv_sync())
+      etcd.set_value("/" + par.shm(), "/uptodate", "value=off");
 
   } catch (std::exception const& e) {
     L_(fatal) << "exception: " << e.what();

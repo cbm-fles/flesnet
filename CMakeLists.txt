@@ -65,6 +65,7 @@ if (COVERALLS)
 endif()
 
 add_subdirectory(lib/logging)
+add_subdirectory(lib/etcd_client)
 add_subdirectory(lib/crcutil)
 add_subdirectory(lib/fles_ipc)
 add_subdirectory(lib/fles_core)

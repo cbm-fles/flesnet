@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "ChildProcessManager.hpp"
 #include "EmbeddedPatternGenerator.hpp"
+#include "EtcdClient.h"
 #include "FlibPatternGenerator.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
@@ -21,6 +22,21 @@ Application::Application(Parameters const& par,
 
     if (!par.input_shm().empty()) {
         try {
+            EtcdClient etcd(par.base_url());
+
+            if (par.kv_sync() == true) {
+                L_(info) << "Now using key-value store for synchronization at "
+                         << par.base_url();
+                enum Flags ret = etcd.check_process(par.input_shm());
+                if (ret != ok) {
+                    if (ret == errorneous)
+                        L_(error) << "errorneous";
+                    if (ret == timeout)
+                        L_(error) << "timeout";
+                    throw std::runtime_error("kv sync failed");
+                }
+            }
+
             shm_device_ =
                 std::make_shared<flib_shm_device_client>(par.input_shm());
             shm_num_channels_ = shm_device_->num_channels();

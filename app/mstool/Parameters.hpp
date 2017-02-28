@@ -28,6 +28,8 @@ struct Parameters {
     bool use_pattern_generator = false;
     size_t channel_idx = 0;
     std::string input_shm;
+    std::string base_url = "http://localhost:2379/v2/keys/flesnet";
+    bool kv_sync = false;
     std::string input_archive;
 
     // sink selection

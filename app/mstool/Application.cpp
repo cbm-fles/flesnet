@@ -15,8 +15,19 @@
 #include <iostream>
 #include <thread>
 
-Application::Application(Parameters const& par) : par_(par)
+Application::Application(Parameters const& par)
+    : par_(par), etcd_(par_.base_url)
 {
+    if (par_.kv_sync == true) {
+        enum Flags ret = etcd_.check_process(par_.input_shm);
+        if (ret != ok) {
+            if (ret == errorneous)
+                L_(error) << "errorneous";
+            if (ret == timeout)
+                L_(error) << "timeout";
+            throw std::runtime_error("kv sync failed");
+        }
+    }
 
     // Source setup
     if (!par_.input_shm.empty()) {
@@ -88,11 +99,17 @@ Application::Application(Parameters const& par) : par_(par)
             output_shm_device_->channels().at(0);
         sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
             new fles::MicrosliceTransmitter(*data_sink)));
+
+        int ret =
+            etcd_.set_value("/" + par_.output_shm, "/uptodate", "value=on");
+        if (ret != 0)
+            throw std::runtime_error("Error setting value in key-value store");
     }
 }
 
 Application::~Application()
 {
+    etcd_.set_value(prefix_out_.str(), "/uptodate", "value=off");
     L_(info) << "total microslices processed: " << count_;
 }
 
