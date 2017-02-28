@@ -5,12 +5,15 @@
 
 EtcdClient::EtcdClient(std::string url_) : m_url(url_) {}
 
+namespace
+{
+// This callback enables libcurl to store received data to a std::string.
 size_t write_callback(char* buf, size_t size, size_t nmemb, void* userdata)
 {
-    // callback must have this declaration
     std::string* data = reinterpret_cast<std::string*>(userdata);
     data->append(buf, size * nmemb);
     return size * nmemb;
+}
 }
 
 std::pair<enum Flags, value_t> EtcdClient::get_req(std::string key, bool wait)
@@ -43,16 +46,15 @@ std::pair<enum Flags, value_t> EtcdClient::get_req(std::string key, bool wait)
 int EtcdClient::set_value(std::string key, std::string value)
 {
     L_(info) << "Publishing " << value << " to " << m_url << key;
-    CURL* hnd = curl_easy_init();
     std::string data;
+    CURL* hnd = curl_easy_init();
     curl_easy_setopt(hnd, CURLOPT_URL, (m_url + key).c_str());
     curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, value.c_str());
-    curl_easy_setopt(hnd, CURLOPT_POSTFIELDSIZE_LARGE, strlen(value.c_str()));
     curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, "PUT");
     curl_easy_setopt(hnd, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&data));
     curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write_callback);
 
-    CURLcode ret = curl_easy_perform(hnd);
+    CURLcode res = curl_easy_perform(hnd);
     if (ret != CURLE_OK)
         L_(error) << curl_easy_strerror(ret) << std::endl;
     curl_easy_cleanup(hnd);

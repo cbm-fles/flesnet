@@ -11,6 +11,7 @@
 #include <string>
 
 enum Flags { ok, errorneous, empty, timeout, notexist };
+
 typedef struct {
     std::string value;
     int tag;
@@ -18,19 +19,16 @@ typedef struct {
 
 class EtcdClient
 {
-private:
-    std::string m_url;
-
-    std::pair<enum Flags, value_t> get_req(std::string key, bool wait = false);
-
-    std::pair<enum Flags, value_t> parse_value(std::string data);
-
-    enum Flags wait_value(std::string key, int requiredtag);
-
 public:
     EtcdClient(std::string url);
 
     enum Flags check_process(std::string input_shm);
-
     int set_value(std::string key, std::string value);
+
+private:
+    std::string m_url;
+
+    std::pair<enum Flags, value_t> get_req(std::string key, bool wait = false);
+    std::pair<enum Flags, value_t> parse_value(std::string data);
+    enum Flags wait_value(std::string key, int requiredtag);
 };
