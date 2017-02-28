@@ -25,7 +25,8 @@ Build Dependencies
 
     sudo aptitude install gcc make cmake valgrind \
       doxygen libnuma-dev librdmacm-dev libibverbs-dev git \
-      libzmq3-dev libkrb5-dev libboost1.55-all-dev
+      libzmq3-dev libkrb5-dev libboost1.55-all-dev \
+      libjsoncpp-dev libjson0-dev libcurl4-openssl-dev
 
 ### InfiniBand
 

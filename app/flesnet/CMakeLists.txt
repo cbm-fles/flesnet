@@ -18,7 +18,7 @@ target_include_directories(flesnet
 target_include_directories(flesnet SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(flesnet
-  flib_ipc fles_core fles_ipc fles_zeromq logging
+  flib_ipc fles_core fles_ipc fles_zeromq etcd_client logging
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
 )
 

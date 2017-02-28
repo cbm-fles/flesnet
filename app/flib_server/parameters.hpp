@@ -68,6 +68,8 @@ public:
   bool flib_autodetect() const { return _flib_autodetect; }
   pci_addr flib_addr() const { return _flib_addr; }
   std::string shm() { return _shm; }
+  std::string base_url() { return _base_url; }
+  bool kv_sync() { return _kv_sync; }
   size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
 
@@ -113,6 +115,12 @@ private:
                "set the log level (all:0)");
     config_add("log-file,L", po::value<std::string>(&log_file),
                "name of target log file");
+    config_add("kv-sync", po::value<bool>(&_kv_sync),
+               "use key-value store to synchronize with data source, bool");
+    config_add("base-url",
+               po::value<std::string>(&_base_url)
+                   ->default_value("http://localhost:2379/v2/keys/flesnet"),
+               "url of key-value store");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -165,6 +173,8 @@ private:
   bool _flib_autodetect = true;
   pci_addr _flib_addr = {};
   std::string _shm;
+  std::string _base_url;
+  bool _kv_sync;
   size_t _data_buffer_size_exp;
   size_t _desc_buffer_size_exp;
 };

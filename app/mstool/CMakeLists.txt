@@ -15,7 +15,7 @@ target_include_directories(mstool PRIVATE "${PROJECT_SOURCE_DIR}/config")
 target_include_directories(mstool SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(mstool
-  fles_ipc fles_core flib_ipc logging crcutil
+  fles_ipc fles_core flib_ipc etcd_client logging crcutil
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
 )
 

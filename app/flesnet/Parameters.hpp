@@ -85,6 +85,12 @@ public:
     /// Retrieve the shared memory identifier.
     std::string input_shm() const { return input_shm_; }
 
+    // Retrieve url of key-value
+    std::string base_url() const { return base_url_; }
+
+    // synchronization with key-value store
+    bool kv_sync() const { return kv_sync_; }
+
     /// Retrieve the global maximum timeslice number.
     uint32_t max_timeslice_number() const { return max_timeslice_number_; }
 
@@ -156,6 +162,12 @@ private:
 
     // The input shared memory identifier
     std::string input_shm_;
+
+    // key-value store used for data source synchronization
+    bool kv_sync_ = false;
+
+    // The input shared memory identifier set in key-value store
+    std::string base_url_ = "http://localhost:2379/v2/keys/flesnet";
 
     /// The global maximum timeslice number.
     uint32_t max_timeslice_number_ = UINT32_MAX;
