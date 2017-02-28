@@ -1208,6 +1208,7 @@
 		3DB8F0AC1DF04C3F0079A053 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN__EXIT_TIME_DESTRUCTORS = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1215,6 +1216,7 @@
 		3DB8F0AD1DF04C3F0079A053 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN__EXIT_TIME_DESTRUCTORS = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

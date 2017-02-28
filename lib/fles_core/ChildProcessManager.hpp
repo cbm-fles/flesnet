@@ -151,11 +151,15 @@ private:
 
         while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
             // process with given pid has exited
-            int idx = -1;
+            bool pid_found = false;
+            std::size_t idx = 0;
             for (std::size_t i = 0; i != child_processes.size(); ++i)
-                if (child_processes[i].pid == pid)
+                if (child_processes[i].pid == pid) {
+                    pid_found = true;
                     idx = i;
-            if (idx < 0) {
+                    break;
+                }
+            if (!pid_found) {
                 L_(error) << "unknown child process died";
             } else {
                 switch (child_processes.at(idx).status) {
