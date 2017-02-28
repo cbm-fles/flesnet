@@ -43,24 +43,37 @@ std::pair<enum Flags, value_t> EtcdClient::get_req(std::string key, bool wait)
     return returnvalue;
 }
 
-int EtcdClient::set_value(std::string key, std::string value)
+bool EtcdClient::set_value(std::string key, std::string value)
 {
-    L_(info) << "Publishing " << value << " to " << m_url << key;
-    std::string data;
-    CURL* hnd = curl_easy_init();
-    curl_easy_setopt(hnd, CURLOPT_URL, (m_url + key).c_str());
-    curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, value.c_str());
-    curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, "PUT");
-    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&data));
-    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write_callback);
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        return false;
+    }
 
-    CURLcode res = curl_easy_perform(hnd);
-    if (ret != CURLE_OK)
-        L_(error) << curl_easy_strerror(ret) << std::endl;
-    curl_easy_cleanup(hnd);
+    std::string reply;
+    char errbuf[CURL_ERROR_SIZE];
+    errbuf[0] = '\0';
 
-    // if 0 ok, else error
-    return ret;
+    curl_easy_setopt(curl, CURLOPT_URL, (m_url + key).c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, value.c_str());
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&reply));
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_callback);
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+
+    CURLcode res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+
+    if (res != CURLE_OK) {
+        std::string msg(errbuf);
+        if (msg.length() > 0)
+            L_(error) << "curl: (" << res << ") " << msg;
+        else
+            L_(error) << "curl: (" << res << ") " << curl_easy_strerror(res);
+        return false;
+    }
+
+    return true;
 }
 
 enum Flags EtcdClient::wait_value(std::string key, int requiredtag)

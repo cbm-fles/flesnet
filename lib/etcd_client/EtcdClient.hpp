@@ -23,7 +23,7 @@ public:
     EtcdClient(std::string url);
 
     enum Flags check_process(std::string input_shm);
-    int set_value(std::string key, std::string value);
+    bool set_value(std::string key, std::string value);
 
 private:
     std::string m_url;
