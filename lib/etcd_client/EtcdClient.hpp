@@ -24,6 +24,7 @@ public:
 
     bool set_value(const std::string key, const std::string value) const;
     bool get_value(const std::string key, std::string& value) const;
+    bool delete_key(const std::string key) const;
 
     enum Flags check_process(std::string input_shm);
 

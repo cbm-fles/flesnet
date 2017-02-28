@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     if (par.kv_sync()) {
       L_(info) << "Now using key-value store for synchronization at "
                << par.base_url();
-      bool success = etcd.set_value("/" + par.shm() + "/uptodate", "value=on");
+      bool success = etcd.set_value("/" + par.shm() + "/uptodate", "on");
       if (!success)
         throw std::runtime_error("Error setting value in key-value store");
     }
@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
     server.run();
 
     if (par.kv_sync())
-      etcd.set_value("/" + par.shm() + "/uptodate", "value=off");
+      etcd.set_value("/" + par.shm() + "/uptodate", "off");
 
   } catch (std::exception const& e) {
     L_(fatal) << "exception: " << e.what();
