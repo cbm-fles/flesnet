@@ -85,9 +85,6 @@ public:
     /// Retrieve the shared memory identifier.
     std::string input_shm() const { return input_shm_; }
 
-    /// Retrieve the standalone mode flag.
-    bool standalone() const { return standalone_; }
-
     /// Retrieve the global maximum timeslice number.
     uint32_t max_timeslice_number() const { return max_timeslice_number_; }
 
@@ -159,9 +156,6 @@ private:
 
     // The input shared memory identifier
     std::string input_shm_;
-
-    /// The standalone mode flag.
-    bool standalone_ = true;
 
     /// The global maximum timeslice number.
     uint32_t max_timeslice_number_ = UINT32_MAX;

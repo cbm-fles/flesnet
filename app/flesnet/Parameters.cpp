@@ -264,11 +264,6 @@ void Parameters::parse_options(int argc, char* argv[])
     config_add("input-shm",
                po::value<std::string>(&input_shm_)->value_name("<id>"),
                "name of a shared memory to use as data source");
-    config_add("standalone", po::value<bool>(&standalone_)
-                                 ->default_value(standalone_)
-                                 ->implicit_value(true)
-                                 ->value_name("<bool>"),
-               "enable special standalone mode");
     config_add("max-timeslice-number,n",
                po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
                "quit after processing given number of timeslices");
@@ -353,51 +348,39 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 #endif
 
-    if (standalone_) {
-        input_nodes_ = std::vector<std::string>{"127.0.0.1"};
-        input_indexes_ = std::vector<unsigned>{0};
-        compute_nodes_ = std::vector<std::string>{"127.0.0.1"};
-        compute_indexes_ = std::vector<unsigned>{0};
-        if (transport_ == Transport::ZeroMQ) {
-            throw ParametersException(
-                "no zeromq transport in stand-alone mode");
+    if (!vm.count("input-nodes"))
+        throw ParametersException("list of input nodes is empty");
+
+    if (!vm.count("compute-nodes"))
+        throw ParametersException("list of compute nodes is empty");
+
+    input_nodes_ = vm["input-nodes"].as<std::vector<std::string>>();
+    compute_nodes_ = vm["compute-nodes"].as<std::vector<std::string>>();
+
+    if (vm.count("input-index"))
+        input_indexes_ = vm["input-index"].as<std::vector<unsigned>>();
+    if (vm.count("compute-index"))
+        compute_indexes_ = vm["compute-index"].as<std::vector<unsigned>>();
+
+    if (input_nodes_.empty() && compute_nodes_.empty()) {
+        throw ParametersException("no node type specified");
+    }
+
+    for (auto input_index : input_indexes_) {
+        if (input_index >= input_nodes_.size()) {
+            std::ostringstream oss;
+            oss << "input node index (" << input_index << ") out of range (0.."
+                << input_nodes_.size() - 1 << ")";
+            throw ParametersException(oss.str());
         }
-    } else {
-        if (!vm.count("input-nodes"))
-            throw ParametersException("list of input nodes is empty");
+    }
 
-        if (!vm.count("compute-nodes"))
-            throw ParametersException("list of compute nodes is empty");
-
-        input_nodes_ = vm["input-nodes"].as<std::vector<std::string>>();
-        compute_nodes_ = vm["compute-nodes"].as<std::vector<std::string>>();
-
-        if (vm.count("input-index"))
-            input_indexes_ = vm["input-index"].as<std::vector<unsigned>>();
-        if (vm.count("compute-index"))
-            compute_indexes_ = vm["compute-index"].as<std::vector<unsigned>>();
-
-        if (input_nodes_.empty() && compute_nodes_.empty()) {
-            throw ParametersException("no node type specified");
-        }
-
-        for (auto input_index : input_indexes_) {
-            if (input_index >= input_nodes_.size()) {
-                std::ostringstream oss;
-                oss << "input node index (" << input_index
-                    << ") out of range (0.." << input_nodes_.size() - 1 << ")";
-                throw ParametersException(oss.str());
-            }
-        }
-
-        for (auto compute_index : compute_indexes_) {
-            if (compute_index >= compute_nodes_.size()) {
-                std::ostringstream oss;
-                oss << "compute node index (" << compute_index
-                    << ") out of range (0.." << compute_nodes_.size() - 1
-                    << ")";
-                throw ParametersException(oss.str());
-            }
+    for (auto compute_index : compute_indexes_) {
+        if (compute_index >= compute_nodes_.size()) {
+            std::ostringstream oss;
+            oss << "compute node index (" << compute_index
+                << ") out of range (0.." << compute_nodes_.size() - 1 << ")";
+            throw ParametersException(oss.str());
         }
     }
 
@@ -428,27 +411,23 @@ void Parameters::parse_options(int argc, char* argv[])
     if (cn_desc_buffer_size_exp_ == 0)
         cn_desc_buffer_size_exp_ = suggest_cn_desc_buffer_size_exp();
 
-    if (!standalone_) {
-        L_(debug) << "input nodes (" << input_nodes_.size()
-                  << "): " << boost::algorithm::join(input_nodes_, " ");
-        L_(debug) << "compute nodes (" << compute_nodes_.size()
-                  << "): " << boost::algorithm::join(compute_nodes_, " ");
-        for (auto input_index : input_indexes_) {
-            L_(info) << "this is input node " << input_index << " (of "
-                     << input_nodes_.size() << ")";
-        }
-        for (auto compute_index : compute_indexes_) {
-            L_(info) << "this is compute node " << compute_index << " (of "
-                     << compute_nodes_.size() << ")";
-        }
+    L_(debug) << "input nodes (" << input_nodes_.size()
+              << "): " << boost::algorithm::join(input_nodes_, " ");
+    L_(debug) << "compute nodes (" << compute_nodes_.size()
+              << "): " << boost::algorithm::join(compute_nodes_, " ");
+    for (auto input_index : input_indexes_) {
+        L_(info) << "this is input node " << input_index << " (of "
+                 << input_nodes_.size() << ")";
+    }
+    for (auto compute_index : compute_indexes_) {
+        L_(info) << "this is compute node " << compute_index << " (of "
+                 << compute_nodes_.size() << ")";
+    }
 
-        for (auto input_index : input_indexes_) {
-            if (input_index == 0) {
-                print_buffer_info();
-            }
+    for (auto input_index : input_indexes_) {
+        if (input_index == 0) {
+            print_buffer_info();
         }
-    } else {
-        print_buffer_info();
     }
 }
 
