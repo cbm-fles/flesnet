@@ -31,6 +31,8 @@ addons:
     - libpci-dev
     - librdmacm-dev
     - libzmq3-dev
+    - libjsoncpp-dev
+    - libcurl4-openssl-dev
     - valgrind
 
 env:
