@@ -22,8 +22,10 @@ class EtcdClient
 public:
     EtcdClient(std::string url);
 
+    bool set_value(const std::string key, const std::string value) const;
+    bool get_value(const std::string key, std::string& value) const;
+
     enum Flags check_process(std::string input_shm);
-    bool set_value(std::string key, std::string value);
 
 private:
     std::string m_url;

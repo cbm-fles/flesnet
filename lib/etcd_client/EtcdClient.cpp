@@ -43,21 +43,54 @@ std::pair<enum Flags, value_t> EtcdClient::get_req(std::string key, bool wait)
     return returnvalue;
 }
 
-bool EtcdClient::set_value(std::string key, std::string value)
+bool EtcdClient::set_value(const std::string key, const std::string value) const
 {
     CURL* curl = curl_easy_init();
     if (!curl) {
         return false;
     }
 
-    std::string reply;
+    std::string reply_json;
     char errbuf[CURL_ERROR_SIZE];
     errbuf[0] = '\0';
 
     curl_easy_setopt(curl, CURLOPT_URL, (m_url + key).c_str());
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, value.c_str());
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&reply));
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA,
+                     reinterpret_cast<void*>(&reply_json));
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_callback);
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+
+    CURLcode res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+
+    if (res != CURLE_OK) {
+        const std::string msg(errbuf);
+        if (msg.length() > 0)
+            L_(error) << "curl: (" << res << ") " << msg;
+        else
+            L_(error) << "curl: (" << res << ") " << curl_easy_strerror(res);
+        return false;
+    }
+
+    return true;
+}
+
+bool EtcdClient::get_value(const std::string key, std::string& value) const
+{
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        return false;
+    }
+
+    std::string reply_json;
+    char errbuf[CURL_ERROR_SIZE];
+    errbuf[0] = '\0';
+
+    curl_easy_setopt(curl, CURLOPT_URL, (m_url + key).c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA,
+                     reinterpret_cast<void*>(&reply_json));
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_callback);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
 
@@ -72,6 +105,22 @@ bool EtcdClient::set_value(std::string key, std::string value)
             L_(error) << "curl: (" << res << ") " << curl_easy_strerror(res);
         return false;
     }
+
+    Json::Reader reader;
+    Json::Value reply;
+    reader.parse(reply_json, reply);
+
+    if (reply.empty()) {
+        L_(error) << "EtcdClient::get_value(): received empty reply";
+        return false;
+    }
+
+    if (reply.isMember("errorCode")) {
+        L_(error) << "EtcdClient::get_value(): " << reply["message"].asString();
+        return false;
+    }
+
+    value = reply["node"]["value"].asString();
 
     return true;
 }
