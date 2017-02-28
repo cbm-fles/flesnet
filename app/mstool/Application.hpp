@@ -2,7 +2,7 @@
 #pragma once
 
 #include "DualRingBuffer.hpp"
-#include "EtcdClient.h"
+#include "EtcdClient.hpp"
 #include "MicrosliceSource.hpp"
 #include "Parameters.hpp"
 #include "Sink.hpp"
@@ -28,6 +28,7 @@ public:
 private:
     Parameters const& par_;
     EtcdClient etcd_;
+
     std::shared_ptr<flib_shm_device_client> shm_device_;
     std::unique_ptr<flib_shm_device_provider> output_shm_device_;
     std::unique_ptr<InputBufferReadInterface> data_source_;

@@ -3,7 +3,7 @@
 #include "Application.hpp"
 #include "ChildProcessManager.hpp"
 #include "EmbeddedPatternGenerator.hpp"
-#include "EtcdClient.h"
+#include "EtcdClient.hpp"
 #include "FlibPatternGenerator.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"

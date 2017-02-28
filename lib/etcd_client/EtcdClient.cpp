@@ -1,6 +1,7 @@
 // Copyright 2016 Helvi Hartmann
+// Copyright 2017 Jan de Cuveland <cmail@cuveland.de>
 
-#include "EtcdClient.h"
+#include "EtcdClient.hpp"
 
 EtcdClient::EtcdClient(std::string url_) : m_url(url_) {}
 

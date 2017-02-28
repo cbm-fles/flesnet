@@ -1,11 +1,12 @@
 // Copyright 2016 Helvi Hartmann
+// Copyright 2017 Jan de Cuveland <cmail@cuveland.de>
 
 #include "log.hpp"
 #include <cstring>
 #include <curl/curl.h>
 #include <iostream>
-#include <jsoncpp/json/json.h>
-#include <jsoncpp/json/reader.h>
+#include <json/json.h>
+#include <json/reader.h>
 #include <sstream>
 #include <string>
 
