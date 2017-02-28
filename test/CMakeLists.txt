@@ -56,4 +56,7 @@ if(BASH_PROGRAM)
   add_test(NAME test_mstool
            COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_mstool.sh
            WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  add_test(NAME test_with_pda
+           COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_with_pda.sh
+           WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
