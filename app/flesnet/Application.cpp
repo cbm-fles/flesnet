@@ -19,32 +19,16 @@ Application::Application(Parameters const& par,
     unsigned input_nodes_size = par.input_nodes().size();
     std::vector<unsigned> input_indexes = par.input_indexes();
 
-    // FIXME: some of this is a terrible mess
     if (!par.input_shm().empty()) {
         try {
             shm_device_ =
                 std::make_shared<flib_shm_device_client>(par.input_shm());
             shm_num_channels_ = shm_device_->num_channels();
             L_(info) << "using shared memory";
-
-            // increase number of input nodes to match number of
-            // enabled FLIB links if in stand-alone mode
-            if (par.standalone() && shm_num_channels_ > 1) {
-                input_nodes_size = shm_num_channels_;
-                for (unsigned i = 1; i < input_nodes_size; i++) {
-                    input_indexes.push_back(i);
-                }
-            }
-
         } catch (std::exception const& e) {
             L_(error) << "exception while connecting to shared memory: "
                       << e.what();
         }
-    }
-    // end FIXME
-
-    if (par.standalone()) {
-        L_(info) << "flesnet in stand-alone mode, inputs: " << input_nodes_size;
     }
 
     // Compute node application
