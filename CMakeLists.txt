@@ -31,7 +31,7 @@ find_package(RDMA)
 find_package(PDA 11.3.7 EXACT)
 find_package(NUMA)
 find_package(CURL REQUIRED)
-find_package(jsoncpp REQUIRED)
+find_package(JsonCpp REQUIRED)
 find_package(Doxygen)
 
 set(USE_RDMA TRUE CACHE BOOL "Use RDMA libraries and build RDMA transport.")
