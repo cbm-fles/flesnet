@@ -16,7 +16,8 @@ typedef struct {
     int tag;
 } value_t;
 
-class EtcdClient {
+class EtcdClient
+{
 private:
     std::string m_url;
 
