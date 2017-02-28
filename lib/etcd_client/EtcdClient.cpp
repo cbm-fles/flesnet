@@ -13,14 +13,13 @@ size_t write_callback(char* buf, size_t size, size_t nmemb, void* userdata)
     return size * nmemb;
 }
 
-std::pair<enum Flags, value_t> EtcdClient::get_req(std::string prefix,
-                                                   std::string key, bool wait)
+std::pair<enum Flags, value_t> EtcdClient::get_req(std::string key, bool wait)
 {
     std::string data;
     CURL* hnd = curl_easy_init();
-    curl_easy_setopt(hnd, CURLOPT_URL, (m_url + prefix + key).c_str());
+    curl_easy_setopt(hnd, CURLOPT_URL, (m_url + key).c_str());
     if (wait) {
-        L_(info) << "waiting for " << m_url << prefix << key;
+        L_(info) << "waiting for " << m_url << key;
         curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, 8000L);
     }
     curl_easy_setopt(hnd, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&data));
@@ -41,13 +40,12 @@ std::pair<enum Flags, value_t> EtcdClient::get_req(std::string prefix,
     return returnvalue;
 }
 
-int EtcdClient::set_value(std::string prefix, std::string key,
-                          std::string value)
+int EtcdClient::set_value(std::string key, std::string value)
 {
-    L_(info) << "Publishing " << value << " to " << m_url << prefix;
+    L_(info) << "Publishing " << value << " to " << m_url << key;
     CURL* hnd = curl_easy_init();
     std::string data;
-    curl_easy_setopt(hnd, CURLOPT_URL, (m_url + prefix + key).c_str());
+    curl_easy_setopt(hnd, CURLOPT_URL, (m_url + key).c_str());
     curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, value.c_str());
     curl_easy_setopt(hnd, CURLOPT_POSTFIELDSIZE_LARGE, strlen(value.c_str()));
     curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, "PUT");
@@ -63,14 +61,13 @@ int EtcdClient::set_value(std::string prefix, std::string key,
     return ret;
 }
 
-enum Flags EtcdClient::wait_value(std::string prefix, int requiredtag)
+enum Flags EtcdClient::wait_value(std::string key, int requiredtag)
 {
     Flags wait_flag = empty;
 
     while (wait_flag == empty) {
         std::pair<enum Flags, value_t> returnvalue = get_req(
-            prefix, "?wait=true&waitIndex=" + std::to_string(requiredtag),
-            true);
+            key + "?wait=true&waitIndex=" + std::to_string(requiredtag), true);
         wait_flag = returnvalue.first;
         if (returnvalue.second.value == "on")
             wait_flag = ok;
@@ -110,7 +107,7 @@ enum Flags EtcdClient::check_process(std::string input_shm)
     std::pair<enum Flags, value_t> returnvalue(notexist, {"", 1});
     while (returnvalue.first == notexist) {
         // I can not issue a wait on a key that does not exist
-        returnvalue = get_req("/" + input_shm, "/uptodate", false);
+        returnvalue = get_req("/" + input_shm + "/uptodate", false);
     }
     if (returnvalue.first != errorneous) {
         if (returnvalue.second.value == "on")

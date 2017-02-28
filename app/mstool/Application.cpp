@@ -101,7 +101,7 @@ Application::Application(Parameters const& par)
             new fles::MicrosliceTransmitter(*data_sink)));
 
         int ret =
-            etcd_.set_value("/" + par_.output_shm, "/uptodate", "value=on");
+            etcd_.set_value("/" + par_.output_shm + "/uptodate", "value=on");
         if (ret != 0)
             throw std::runtime_error("Error setting value in key-value store");
     }
@@ -109,7 +109,7 @@ Application::Application(Parameters const& par)
 
 Application::~Application()
 {
-    etcd_.set_value(prefix_out_.str(), "/uptodate", "value=off");
+    etcd_.set_value(prefix_out_.str() + "/uptodate", "value=off");
     L_(info) << "total microslices processed: " << count_;
 }
 
