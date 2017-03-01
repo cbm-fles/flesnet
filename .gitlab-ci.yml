@@ -1,0 +1,22 @@
+stages:
+  - build
+  - test
+
+before_script:
+  - mkdir build && cd build
+
+flesnet_build:
+  stage: build
+  tags:
+    - texlive
+  script:
+    - cmake ..
+    - make
+    - make test
+
+flesnet_test:
+  stage: test
+  tags:
+    - texlive
+  script:
+    - ../test/test_flib.sh 
