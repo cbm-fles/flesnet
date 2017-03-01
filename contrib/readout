@@ -33,8 +33,10 @@ esac
 
 ##### configuration below this line ########
 
-# FLIB input setting
+# Number of FLIBs (1 or 2)
+NUM_FLIBS=2
 
+# FLIB settings
 ADDR[0]=01:00.0
 ADDR[1]=02:00.0
 
@@ -127,12 +129,14 @@ for i in $(seq 0 7); do
         ((TOTAL_LINKS += 1))
     fi
 done
+if [ $NUM_FLIBS -ge 2 ]; then
 for i in $(seq 8 15); do
     if [ ${LINK[$i]} != disable ]; then
         IN_INDEX_1+=(-i $TOTAL_LINKS)
         ((TOTAL_LINKS += 1))
     fi
 done
+fi
 
 declare -a NODES
 for ((i=0; i < TOTAL_LINKS ; i++)); do
@@ -189,7 +193,8 @@ echo "Configuring FLIBs ..."
 #PGEN_MC_SIZE=`echo "scale=0; (${MC_SIZE_NS}+1024-1)/1024" | bc -l`
 # round down to next possible size (given mc_size is max. size)
 PGEN_MC_SIZE=`echo "scale=0; ${MC_SIZE_NS}/1024" | bc -l`
-for i in 0 1; do
+i=0
+while [ $i -lt $NUM_FLIBS ] ; do
 $BINDIR/flib_cfg -c /dev/null -l 2 -L ${OUTFILE}f${i}_cfg.log -i ${ADDR[$i]} \
                  -t $PGEN_MC_SIZE -r $PGEN_RATE \
                  --mc-size-limit $MC_SIZE_LIMIT_BYTES \
@@ -201,6 +206,7 @@ $BINDIR/flib_cfg -c /dev/null -l 2 -L ${OUTFILE}f${i}_cfg.log -i ${ADDR[$i]} \
                  --l5_source ${LINK[5+$i*8]} --l5_eq_id ${BASE_EQID[$i]}5 \
                  --l6_source ${LINK[6+$i*8]} --l6_eq_id ${BASE_EQID[$i]}6 \
                  --l7_source ${LINK[7+$i*8]} --l7_eq_id ${BASE_EQID[$i]}7
+let i+=1
 done
 
 
