@@ -26,10 +26,24 @@ case $1 in
             OUTFILE=$2
         fi
         ;;
+    config)
+        if [ -z "$2" ]; then
+            echo "please provide config file";
+            exit
+	else
+            EXT_CONF=true
+            CONFFILE=$2
+        fi
+        ;;
     *)
         echo -e "To write data use $0 rec <filename>"
+        echo -e "For extrenal config file use $0 config <filename>"
         ;;
 esac
+
+if [ "$EXT_CONF" = true ]; then
+    source $CONFFILE
+else
 
 ##### configuration below this line ########
 
@@ -71,6 +85,8 @@ PGEN_RATE=1
 TIMESLICE_SIZE=100
 OVERLAP_SIZE=1
 OUTPUT_ARCHIVE_BYTES=2000000000
+# leave empty for infinit running
+MAX_TIMESLICES=
 
 TRANSPORT=RDMA
 #TRANSPORT=ZeroMQ
@@ -103,11 +119,13 @@ echo "*** INFO *** abs. min. buffer size per link = 2^$MIN_BUF_SIZE_EXP bytes"
 BUF_SIZE_EXP=28
 echo "*** INFO *** buffer size per link set = 2^$BUF_SIZE_EXP bytes"
 ##### configuration above this line ########
+fi # EXT_CONF
+
 
 if [ "$RECORD" = true ]; then
-    TS_PROCESSOR="./tsclient -c%i -s%s -a --output-archive-bytes $OUTPUT_ARCHIVE_BYTES -o ${OUTFILE}%n.tsa"
+    TS_PROCESSOR="./tsclient -c%i -s%s -L tsclient.log -a --output-archive-bytes $OUTPUT_ARCHIVE_BYTES -o ${OUTFILE}%n.tsa"
 else
-    TS_PROCESSOR="./tsclient -c%i -s%s -a"
+    TS_PROCESSOR="./tsclient -c%i -s%s -L tsclient.log -a"
 fi
 
 FLESNET_CFG=(-l 2
@@ -116,6 +134,9 @@ FLESNET_CFG=(-l 2
              --overlap-size $OVERLAP_SIZE
              --cn-data-buffer-size-exp $BUF_SIZE_EXP
              --processor-instances 1)
+if [ ! -z "$MAX_TIMESLICES" ]; then
+    FLESNET_CFG+=(--max-timeslice-number $MAX_TIMESLICES)
+fi
 
 ############################################
 
@@ -161,7 +182,9 @@ end_readout () {
     kill -s SIGINT $EN_0_PID 2>/dev/null
     kill -s SIGINT $EN_1_PID 2>/dev/null
     sleep 2
-    kill -s SIGINT $FLESNET_CN_PID
+    if [ -z "$MAX_TIMESLICES" ]; then
+        kill -s SIGINT $FLESNET_CN_PID
+    fi
     ## end IN in case of zmq
     if [ $TRANSPORT == ZeroMQ ]; then
         kill -s SIGINT $FLESNET_IN_0_PID 2>/dev/null
@@ -273,5 +296,11 @@ if [ ${#IN_INDEX_0[@]} -ne 0 ]; then
     $BINDIR/en_readout 0 > ${OUTFILE}flib0_info.log &
     EN_0_PID=$!
 fi
-wait
+
+if [ ! -z "$MAX_TIMESLICES" ]; then
+    wait $FLESNET_CN_PID
+    end_readout
+else
+    wait
+fi
 echo "*** END ***"
