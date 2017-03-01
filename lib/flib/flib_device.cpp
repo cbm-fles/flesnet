@@ -178,7 +178,7 @@ std::string flib_device::print_build_info() {
 
 std::string flib_device::print_devinfo() {
   std::stringstream ss;
-  ss << std::setw(2) << std::setfill('0')
+  ss << std::hex << std::setw(2) << std::setfill('0')
      << static_cast<unsigned>(m_device->bus()) << ":" << std::setw(2)
      << std::setfill('0') << static_cast<unsigned>(m_device->slot()) << "."
      << static_cast<unsigned>(m_device->func());
