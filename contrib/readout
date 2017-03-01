@@ -194,10 +194,14 @@ end_readout () {
     kill -s SIGINT $SERVER_0_PID 2>/dev/null
     kill -s SIGINT $SERVER_1_PID 2>/dev/null
     sleep 1
-    # check if any process is left in this session
-    # header, bash, readout, ps, wc, and `` make offset of 6
-    NUMP=`ps -s $SID | wc -l`
-    if [ "$NUMP" -ne "6" ]; then
+    # check if any process is left
+    if kill -0 $EN_0_PID > /dev/null 2>&1 ||
+       kill -0 $EN_1_PID > /dev/null 2>&1 ||
+       kill -0 $SERVER_0_PID > /dev/null 2>&1 ||
+       kill -0 $SERVER_1_PID > /dev/null 2>&1 ||
+       kill -0 $FLESNET_IN_0_PID > /dev/null 2>&1 ||
+       kill -0 $FLESNET_IN_1_PID > /dev/null 2>&1 ||
+       kill -0 $FLESNET_CN_PID > /dev/null 2>&1 ; then
         cleanup
     fi
     exit 0
