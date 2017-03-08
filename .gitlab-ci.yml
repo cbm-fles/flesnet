@@ -1,0 +1,12 @@
+
+before_script:
+  - mkdir build && cd build
+
+flesnet:
+  tags:
+    - eda02
+  script:
+    - cmake ..
+    - make
+    - make test
+    - ../test/test_flib.sh
