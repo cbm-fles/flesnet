@@ -5,6 +5,7 @@
 #include "shm_device_client.hpp"
 #include <chrono>
 #include <csignal>
+#include <iomanip>
 #include <iostream>
 #include <thread>
 
@@ -67,32 +68,77 @@ int main(int argc, char* argv[]) {
     duration<double> delta;
     double throughput = 0;
     double freq = 0;
+    uint64_t acc_payload = 0;
+    uint64_t acc_payload_cached = 0;
 
+    auto integration_time = seconds(3);
+    bool analyze = true;
+    bool human_readable = true;
+
+    if (!human_readable) {
+      std::cout << "total (MB/s) data (MB/s) payload (MB/s) desc (MB/s) "
+                   "freq_desc (kHz) avg_size_ms (kB)"
+                << std::endl;
+    }
     start = high_resolution_clock::now();
     tp = high_resolution_clock::now();
     while (signal_status == 0) {
       write_index = data_source->get_write_index();
       if (write_index.desc > read_index.desc) {
-        // discard microslices
+        if (analyze) {
+          while (write_index.desc > read_index.desc) {
+            acc_payload += data_source->desc_buffer().at(read_index.desc).size;
+            read_index.desc += 1;
+          }
+        }
         read_index = write_index;
         data_source->set_read_index(read_index);
       }
       now = high_resolution_clock::now();
-      if (now > (tp + seconds(1))) {
+      if (now > (tp + integration_time)) {
         delta = (now - tp);
         auto index_delta = read_index - read_index_cached;
-        std::cout << "Throughput: "
-                  << index_delta.data / delta.count() / 1000000. << " MB/s "
-                  << "Freq: " << index_delta.desc / delta.count() / 1000.
-                  << " kHz "
-                  << "Avg: "
-                  << static_cast<double>(index_delta.data) / index_delta.desc /
-                         1000.
-                  << " kB" << std::endl;
+        auto payload_delta = acc_payload - acc_payload_cached;
+        if (human_readable) {
+          std::cout << "Throughput total: "
+                    << (index_delta.data +
+                        index_delta.desc * sizeof(fles::MicrosliceDescriptor)) /
+                           delta.count() / 1000000.
+                    << " MB/s";
+          std::cout << ", data: " << index_delta.data / delta.count() / 1000000.
+                    << " MB/s";
+          std::cout << ", payload: " << payload_delta / delta.count() / 1000000.
+                    << " MB/s";
+          std::cout << ", desc: "
+                    << index_delta.desc * sizeof(fles::MicrosliceDescriptor) /
+                           delta.count() / 1000000.
+                    << " MB/s";
+          std::cout << " Freq. desc: "
+                    << index_delta.desc / delta.count() / 1000. << " kHz";
+          std::cout << " Avg. ms size: "
+                    << static_cast<double>(index_delta.data) /
+                           index_delta.desc / 1000.
+                    << " kB" << std::endl;
+        } else {
+          std::cout << (index_delta.data +
+                        index_delta.desc * sizeof(fles::MicrosliceDescriptor)) /
+                           delta.count() / 1000000.
+                    << " ";
+          std::cout << index_delta.data / delta.count() / 1000000. << " ";
+          std::cout << payload_delta / delta.count() / 1000000. << " ";
+          std::cout << index_delta.desc * sizeof(fles::MicrosliceDescriptor) /
+                           delta.count() / 1000000.
+                    << " ";
+          std::cout << index_delta.desc / delta.count() / 1000. << " ";
+          std::cout << static_cast<double>(index_delta.data) /
+                           index_delta.desc / 1000.
+                    << std::endl;
+        }
         read_index_cached = read_index;
+        acc_payload_cached = acc_payload;
         tp = now;
       }
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     end = high_resolution_clock::now();
 
