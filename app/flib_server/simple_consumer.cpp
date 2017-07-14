@@ -63,6 +63,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting with microslice index: " << start_index.desc
               << std::endl;
 
+    bool running = true;
     time_point<high_resolution_clock> start, end;
     time_point<high_resolution_clock> tp, now;
     duration<double> delta;
@@ -71,7 +72,9 @@ int main(int argc, char* argv[]) {
     uint64_t acc_payload = 0;
     uint64_t acc_payload_cached = 0;
 
-    auto integration_time = seconds(3);
+    auto integration_time = seconds(1);
+    auto run_time = seconds(10);
+    bool run_infinit = true;
     bool analyze = true;
     bool human_readable = true;
 
@@ -82,7 +85,7 @@ int main(int argc, char* argv[]) {
     }
     start = high_resolution_clock::now();
     tp = high_resolution_clock::now();
-    while (signal_status == 0) {
+    while (signal_status == 0 && running) {
       write_index = data_source->get_write_index();
       if (write_index.desc > read_index.desc) {
         if (analyze) {
@@ -137,6 +140,9 @@ int main(int argc, char* argv[]) {
         read_index_cached = read_index;
         acc_payload_cached = acc_payload;
         tp = now;
+      }
+      if (!run_infinit && now > (start + run_time)) {
+        running = false;
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
