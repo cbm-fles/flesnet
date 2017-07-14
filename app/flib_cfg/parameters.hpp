@@ -258,6 +258,8 @@ private:
       }
     }
 
+    L_(info) << " FLIB microslice size limit: " << _mc_size_limit << " bytes";
+
     for (size_t i = 0; i < _num_flib_links; ++i) {
       L_(info) << "Link " << i << " config:";
       parse_data_source(vm, i);
@@ -280,6 +282,6 @@ private:
   bool _identify = false;
   uint32_t _mc_size = 10; // 10,24 us
   float _pgen_rate = 1;
-  uint32_t _mc_size_limit = 2 ^ 20; // 1MB
+  uint32_t _mc_size_limit = 1 << 20; // 1MB
   std::array<struct link_config, _num_flib_links> _links = {{}};
 };
