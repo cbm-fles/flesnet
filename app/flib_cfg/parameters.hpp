@@ -230,7 +230,7 @@ private:
                << std::setfill('0') << static_cast<unsigned>(_flib_addr.bus)
                << ":" << std::setw(2) << std::setfill('0')
                << static_cast<unsigned>(_flib_addr.dev) << "."
-               << static_cast<unsigned>(_flib_addr.func);
+               << static_cast<unsigned>(_flib_addr.func) << std::dec;
     } else {
       _flib_autodetect = true;
       L_(info) << " FLIB address: autodetect";
