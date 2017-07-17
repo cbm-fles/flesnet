@@ -88,8 +88,8 @@ OUTPUT_ARCHIVE_BYTES=2000000000
 # leave empty for infinit running
 MAX_TIMESLICES=
 
-TRANSPORT=RDMA
-#TRANSPORT=ZeroMQ
+#TRANSPORT=RDMA
+TRANSPORT=ZeroMQ
 
 # Microslice size in ns and link max. thoughput in MB/s.
 # These numbers are used to determine buffer sizes and should represent
@@ -262,7 +262,7 @@ done
 
 
 # flesnet configuration
-FLESNET_PRIV_CFG=(-f /dev/null --standalone false -e "$TS_PROCESSOR")
+FLESNET_PRIV_CFG=(-f /dev/null --standalone=false -e "$TS_PROCESSOR")
 FLESNET_PRIV_CFG+=("${FLESNET_CFG[@]}")
 
 CN_INDEX=(-c 0)
