@@ -45,12 +45,16 @@ int main(int argc, char* argv[]) {
 
     if (argc == 2) {
       num_channels = atoi(argv[1]);
-      cout << "Using " << num_channels << " channel(s)" << endl;
+      if (human_readable) {
+        cout << "Using " << num_channels << " channel(s)" << endl;
+      }
     } else if (argc == 3) {
       if (std::string(argv[1]) == "ch") {
         mult_channels = false;
         channel_index = atoi(argv[2]);
-        cout << "Using channel " << channel_index << endl;
+        if (human_readable) {
+          cout << "Using channel " << channel_index << endl;
+        }
       } else {
         cerr << help.str() << endl;
         return EXIT_FAILURE;
@@ -103,9 +107,11 @@ int main(int argc, char* argv[]) {
       read_indexs.push_back(data_source->get_read_index());
       read_indexs_cached.push_back(read_indexs.back());
       start_indexs.push_back(read_indexs.back());
-      std::cout << "Channel " << start_indexs.size() - 1
-                << " is starting with microslice index: "
-                << start_indexs.back().desc << std::endl;
+      if (human_readable) {
+        std::cout << "Channel " << start_indexs.size() - 1
+                  << " is starting with microslice index: "
+                  << start_indexs.back().desc << std::endl;
+      }
     }
 
     bool running = true;
@@ -118,12 +124,7 @@ int main(int argc, char* argv[]) {
     std::vector<double> f_desc(data_sources.size(), 0);
     std::vector<double> s_ms(data_sources.size(), 0);
 
-    if (!human_readable) {
-      std::cout << "ch total (MB/s) data (MB/s) payload (MB/s) desc (MB/s) "
-                   "freq_desc (kHz) avg_size_ms (kB)"
-                << std::endl;
-    }
-
+    size_t measurement = 1;
     start = high_resolution_clock::now();
     time_point<high_resolution_clock> tp(start);
 
@@ -179,20 +180,25 @@ int main(int argc, char* argv[]) {
             ss << " Freq. desc: " << f_desc.at(i) << " kHz";
             ss << " Avg. ms size: " << s_ms.at(i) << " kB" << std::endl;
           } else {
-            ss << i << " ";
-            ss << t_total.at(i) << " ";
-            ss << t_data.at(i) << " ";
-            ss << t_payload.at(i) << " ";
-            ss << t_desc.at(i) << " ";
-            ss << f_desc.at(i) << " ";
-            ss << s_ms.at(i) << std::endl;
+            if (i == 0) {
+              ss << "{\"Measurement\": " << measurement << ", \"Values\": {";
+            } else {
+              ss << ", ";
+            }
+            ss << "\"" << i << "\": {";
+            ss << "\"total\": " << t_total.at(i) << ", ";
+            ss << "\"data\": " << t_data.at(i) << ", ";
+            ss << "\"payload\": " << t_payload.at(i) << ", ";
+            ss << "\"desc\": " << t_desc.at(i) << ", ";
+            ss << "\"freq_desc\": " << f_desc.at(i) << ", ";
+            ss << "\"avg_size\": " << s_ms.at(i) << "}";
           }
           std::cout << ss.str();
           read_indexs_cached.at(i) = read_indexs.at(i);
           acc_payloads_cached.at(i) = acc_payloads.at(i);
         } // channel report loop
 
-        if (mult_channels) {
+        if (mult_channels || !human_readable) {
           // report channel summery
           double sum_t_total =
               std::accumulate(t_total.begin(), t_total.end(), 0.0);
@@ -207,10 +213,10 @@ int main(int argc, char* argv[]) {
               f_desc.size();
           double avg_s_ms =
               std::accumulate(s_ms.begin(), s_ms.end(), 0.0) / s_ms.size();
-          std::stringstream ss;
 
+          std::stringstream ss;
           if (human_readable) {
-            ss << "Sum:      ";
+            ss << "Summery:  ";
             ss << " Throughput total: " << sum_t_total << " MB/s";
             ss << ", data: " << sum_t_data << " MB/s";
             ss << ", payload: " << sum_t_payload << " MB/s";
@@ -218,17 +224,18 @@ int main(int argc, char* argv[]) {
             ss << " Freq. desc: " << avg_f_desc << " kHz";
             ss << " Avg. ms size: " << avg_s_ms << " kB" << std::endl;
           } else {
-            ss << "S ";
-            ss << sum_t_total << " ";
-            ss << sum_t_data << " ";
-            ss << sum_t_payload << " ";
-            ss << sum_t_desc << " ";
-            ss << avg_f_desc << " ";
-            ss << avg_s_ms << std::endl;
+            ss << ", \"Sum\": { ";
+            ss << "\"total\": " << sum_t_total << ", ";
+            ss << "\"data\": " << sum_t_data << ", ";
+            ss << "\"payload\": " << sum_t_payload << ", ";
+            ss << "\"desc\": " << sum_t_desc << ", ";
+            ss << "\"freq_desc\": " << avg_f_desc << ", ";
+            ss << "\"avg_size\": " << avg_s_ms << "}}}" << std::endl;
           }
           std::cout << ss.str();
       }
       tp = now;
+      ++measurement;
       } // report
 
       if (!run_infinit && now > (start + run_time)) {
@@ -240,20 +247,22 @@ int main(int argc, char* argv[]) {
     end = high_resolution_clock::now();
 
     // run summery
-    duration<double> delta = end - start;
-    DualIndex index_delta = {0, 0};
-    for (size_t i = 0; i < data_sources.size(); ++i) {
-      index_delta += read_indexs.at(i) - start_indexs.at(i);
+    if (human_readable) {
+      duration<double> delta = end - start;
+      DualIndex index_delta = {0, 0};
+      for (size_t i = 0; i < data_sources.size(); ++i) {
+        index_delta += read_indexs.at(i) - start_indexs.at(i);
+      }
+      std::cout << "Run Summery: ";
+      std::cout << "Total runtime: " << delta.count() << " s";
+      std::cout << " MS processed: " << index_delta.desc;
+      std::cout << " Bytes processed: " << index_delta.data;
+      std::cout << " Avg total througput: "
+                << (index_delta.data +
+                    index_delta.desc * sizeof(fles::MicrosliceDescriptor)) /
+                       delta.count() / 1000000.
+                << " MB/s" << std::endl;
     }
-    std::cout << "Run Summery: ";
-    std::cout << "Total runtime: " << delta.count() << " s";
-    std::cout << " MS processed: " << index_delta.desc;
-    std::cout << " Bytes processed: " << index_delta.data;
-    std::cout << " Avg total througput: "
-              << (index_delta.data +
-                  index_delta.desc * sizeof(fles::MicrosliceDescriptor)) /
-                     delta.count() / 1000000.
-              << " MB/s" << std::endl;
 
   } catch (std::exception& e) {
     cerr << e.what() << endl;
