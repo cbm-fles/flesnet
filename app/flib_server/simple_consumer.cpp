@@ -27,11 +27,11 @@ int main(int argc, char* argv[]) {
     // some const config variables
     std::string input_shm = "flib_shared_memory";
     // number of measurements, set to 0 for infinit run
-    constexpr size_t num_measurements = 0;
+    constexpr size_t num_measurements = 2;
     constexpr auto integration_time = seconds(1);
-    constexpr auto sleep_time = milliseconds(10);
+    constexpr auto sleep_time = milliseconds(1);
     constexpr bool analyze = true;
-    constexpr bool human_readable = true;
+    constexpr bool human_readable = false;
 
     std::stringstream help;
     help << "Usage:\n"
@@ -114,6 +114,10 @@ int main(int argc, char* argv[]) {
       }
     }
 
+    if (!human_readable) {
+      std::cout << "[";
+    }
+
     bool running = true;
     time_point<high_resolution_clock> start, end, now;
 
@@ -181,11 +185,11 @@ int main(int argc, char* argv[]) {
             ss << " Avg. ms size: " << s_ms.at(i) << " kB" << std::endl;
           } else {
             if (i == 0) {
-              ss << "{\"Measurement\": " << measurement << ", \"Values\": {";
+              ss << "{\"Measurement\": " << measurement << ", \"Links\": [";
             } else {
               ss << ", ";
             }
-            ss << "\"" << i << "\": {";
+            ss << "{";
             ss << "\"total\": " << t_total.at(i) << ", ";
             ss << "\"data\": " << t_data.at(i) << ", ";
             ss << "\"payload\": " << t_payload.at(i) << ", ";
@@ -224,19 +228,21 @@ int main(int argc, char* argv[]) {
             ss << " Freq. desc: " << avg_f_desc << " kHz";
             ss << " Avg. ms size: " << avg_s_ms << " kB" << std::endl;
           } else {
-            ss << ", \"Sum\": { ";
+            ss << "], \"Sum\": { ";
             ss << "\"total\": " << sum_t_total << ", ";
             ss << "\"data\": " << sum_t_data << ", ";
             ss << "\"payload\": " << sum_t_payload << ", ";
             ss << "\"desc\": " << sum_t_desc << ", ";
             ss << "\"freq_desc\": " << avg_f_desc << ", ";
-            ss << "\"avg_size\": " << avg_s_ms << "}}}" << std::endl;
+            ss << "\"avg_size\": " << avg_s_ms << "}}";
           }
           std::cout << ss.str();
         }
         tp = now;
         if (measurement == num_measurements) {
           running = false;
+        } else if (!human_readable) {
+          std::cout << "," << std::endl;
         }
         ++measurement;
       } // report
@@ -262,6 +268,8 @@ int main(int argc, char* argv[]) {
                     index_delta.desc * sizeof(fles::MicrosliceDescriptor)) /
                        delta.count() / 1000000.
                 << " MB/s" << std::endl;
+    } else {
+      std::cout << "]" << std::endl;
     }
 
   } catch (std::exception& e) {

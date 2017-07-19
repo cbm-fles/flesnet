@@ -1,0 +1,96 @@
+#!/bin/bash
+
+#set -e
+set -m
+
+#debug
+#set -x
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+BINDIR=$ROOT_DIR/build
+OUTFILE=result.log
+
+FLIB_ADDR=01:00.0
+PGEN_RATE=1
+# size in steps of 1024ns
+PGEN_MC_SIZE=100
+FLIB_MC_LIMIT=1048576
+BASE_EQID=0xF00
+BUF_SIZE_EXP=28
+
+LINK=(disable disable disable disable disable disable disable disable)
+
+meassure () {
+# configure FLIB
+$BINDIR/flib_cfg -c /dev/null -l 2 -L ${OUTFILE}flib_cfg.log -i ${FLIB_ADDR} \
+                 -t $PGEN_MC_SIZE -r $PGEN_RATE \
+                 --mc-size-limit $FLIB_MC_LIMIT \
+                 --l0_source ${LINK[0]} --l0_eq_id ${BASE_EQID}0 \
+                 --l1_source ${LINK[1]} --l1_eq_id ${BASE_EQID}1 \
+                 --l2_source ${LINK[2]} --l2_eq_id ${BASE_EQID}2 \
+                 --l3_source ${LINK[3]} --l3_eq_id ${BASE_EQID}3 \
+                 --l4_source ${LINK[4]} --l4_eq_id ${BASE_EQID}4 \
+                 --l5_source ${LINK[5]} --l5_eq_id ${BASE_EQID}5 \
+                 --l6_source ${LINK[6]} --l6_eq_id ${BASE_EQID}6 \
+                 --l7_source ${LINK[7]} --l7_eq_id ${BASE_EQID}7
+
+# start FLIB Server
+$BINDIR/flib_server -c /dev/null -L flib_server.log -i ${FLIB_ADDR} \
+                    --data-buffer-size-exp $BUF_SIZE_EXP &
+SERVER_PID=$!
+
+# block till server is ready (remove if etcd is ready)
+sleep 1
+tail -f flib_server.log | while read LOGLINE
+do
+   [[ "${LOGLINE}" == *"flib server started and running"* ]] && pkill -P $$ tail
+done
+
+echo "*** starting consumer ***"
+
+$BINDIR/simple_consumer 0 2>&1 | tee -a $OUTFILE &
+CONSUMER_PID=$!
+
+echo "*** enabling readout ***"
+$BINDIR/en_readout 0 > flib_info.log &
+EN_0_PID=$!
+
+wait $CONSUMER_PID
+
+#kill -s SIGINT $EN_0_PID 2>/dev/null
+#kill -s SIGINT $SERVER_PID 2>/dev/null
+kill -s SIGINT $EN_0_PID
+kill -s SIGINT $SERVER_PID
+
+wait
+}
+
+rm $OUTFILE
+
+echo -n "[" > $OUTFILE
+
+MEAS=0
+for NUM_LINKS in 1 2; do
+    echo "Messuring $NUM_LINKS links"
+
+i=0
+LINK=(disable disable disable disable disable disable disable disable)
+while [ $i -lt $NUM_LINKS ]; do
+    LINK[$i]=pgen_near
+    let i=i+1
+done    
+
+for PGEN_MC_SIZE in 10 80; do
+    echo "Messuring size $PGEN_MC_SIZE"
+    if [ $MEAS -ne 0 ]; then echo -n ", " >> $OUTFILE; fi
+    echo -n "{\"mc_size\": $PGEN_MC_SIZE, \"num_links\": $NUM_LINKS, \"Results\": " | tee -a $OUTFILE
+    meassure
+    echo -n "}" >> $OUTFILE
+    let MEAS=MEAS+1
+done
+done
+echo "]" >> $OUTFILE
+
+wait
+
+exit 0
