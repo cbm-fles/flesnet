@@ -26,8 +26,8 @@ int main(int argc, char* argv[]) {
 
     // some const config variables
     std::string input_shm = "flib_shared_memory";
-    constexpr bool run_infinit = true;
-    constexpr auto run_time = seconds(10);
+    // number of measurements, set to 0 for infinit run
+    constexpr size_t num_measurements = 0;
     constexpr auto integration_time = seconds(1);
     constexpr auto sleep_time = milliseconds(10);
     constexpr bool analyze = true;
@@ -233,14 +233,14 @@ int main(int argc, char* argv[]) {
             ss << "\"avg_size\": " << avg_s_ms << "}}}" << std::endl;
           }
           std::cout << ss.str();
-      }
-      tp = now;
-      ++measurement;
+        }
+        tp = now;
+        if (measurement == num_measurements) {
+          running = false;
+        }
+        ++measurement;
       } // report
 
-      if (!run_infinit && now > (start + run_time)) {
-        running = false;
-      }
       std::this_thread::sleep_for(sleep_time);
     } // main loop
 
