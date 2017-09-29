@@ -22,7 +22,7 @@ LINK=(disable disable disable disable disable disable disable disable)
 
 meassure () {
 # configure FLIB
-$BINDIR/flib_cfg -c /dev/null -l 2 -L ${OUTFILE}flib_cfg.log -i ${FLIB_ADDR} \
+$BINDIR/flib_cfg -c /dev/null -l 2 -L flib_cfg.log -i ${FLIB_ADDR} \
                  -t $PGEN_MC_SIZE -r $PGEN_RATE \
                  --mc-size-limit $FLIB_MC_LIMIT \
                  --l0_source ${LINK[0]} --l0_eq_id ${BASE_EQID}0 \
