@@ -5,27 +5,11 @@
 #include "Parameters.hpp"
 #include "Sink.hpp"
 #include "TimesliceSource.hpp"
+#include "log.hpp"
+#include <boost/iostreams/stream.hpp>
+#include <iostream>
 #include <memory>
 #include <vector>
-
-#include <boost/iostreams/categories.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <iosfwd>
-#include <iostream>
-#include <log.hpp>
-
-class LogBuffer
-{
-public:
-    typedef char char_type;
-    typedef boost::iostreams::sink_tag category;
-
-    std::streamsize write(char_type const* s, std::streamsize n)
-    {
-        L_(status) << std::string(s, n);
-        return n;
-    }
-};
 
 /// %Application base class.
 class Application
@@ -49,6 +33,6 @@ private:
 
     uint64_t count_ = 0;
 
-    boost::iostreams::stream_buffer<LogBuffer> log_buf_;
+    boost::iostreams::stream_buffer<logging::StatusSink> log_sink_;
     std::ostream logstream_;
 };

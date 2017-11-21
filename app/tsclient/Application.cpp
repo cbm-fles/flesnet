@@ -8,11 +8,10 @@
 #include "TimeslicePublisher.hpp"
 #include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
-#include "log.hpp"
 #include <boost/lexical_cast.hpp>
 
 Application::Application(Parameters const& par)
-    : par_(par), log_buf_(LogBuffer()), logstream_(&log_buf_)
+    : par_(par), log_sink_(logging::StatusSink()), logstream_(&log_sink_)
 {
     if (!par_.shm_identifier().empty()) {
         source_.reset(new fles::TimesliceReceiver(par_.shm_identifier()));

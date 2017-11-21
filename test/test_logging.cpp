@@ -1,6 +1,8 @@
 // Copyright 2016 Dirk Hutter <hutter@compeng.uni-frankfurt.de>
 
 #include "log.hpp"
+#include <boost/iostreams/stream.hpp>
+#include <iostream>
 #include <string>
 
 int main()
@@ -18,6 +20,12 @@ int main()
     L_(warning) << "This is warning message.";
     L_(error) << "This is an error message.";
     L_(fatal) << "This is a fatal error message.";
+
+    boost::iostreams::stream_buffer<logging::StatusSink> status_sink(
+        (logging::StatusSink()));
+    std::ostream status_stream(&status_sink);
+
+    status_stream << "This is a status_stream message.";
 
     return 0;
 }
