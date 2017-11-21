@@ -202,9 +202,21 @@ void add_syslog(syslog::facility facility, severity_level minimum_severity)
     boost::log::core::get()->add_sink(syslog_sink);
 }
 
-std::streamsize StatusSink::write(char_type const* s, std::streamsize n)
+LogBuffer::LogBuffer(severity_level level) : level_(level) {}
+
+std::streamsize LogBuffer::write(char_type const* s, std::streamsize n)
 {
-    L_(status) << std::string(s, n);
+    // don't send tailing new lines as they are added by boost
+    std::streamsize m = n;
+    if (s[n - 1] == '\n') {
+        m = n - 1;
+    }
+    L_(level_) << std::string(s, m);
     return n;
 }
+
+OstreamLog::OstreamLog(severity_level level) : buffer_(level), stream(&buffer_)
+{
+}
+
 } // namespace logging

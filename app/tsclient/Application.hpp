@@ -6,9 +6,7 @@
 #include "Sink.hpp"
 #include "TimesliceSource.hpp"
 #include "log.hpp"
-#include <boost/iostreams/stream.hpp>
 #include <chrono>
-#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -34,8 +32,8 @@ private:
 
     uint64_t count_ = 0;
 
-    boost::iostreams::stream_buffer<logging::StatusSink> log_sink_;
-    std::ostream logstream_;
+    logging::OstreamLog status_log_{status};
+    logging::OstreamLog debug_log_{debug};
 
     std::chrono::high_resolution_clock::time_point time_begin_;
 
