@@ -53,7 +53,12 @@ library. The installation procedure is scripted, just run:
     cd contrib
     ./pda_inst.sh
 
-Note: Users can only access the FLIB if they are member of the group "sudo".
+Note: Users can only access the FLIB if they are member of the group "pda".
+The install script will create a pda system group. Users can be added by
+running something like
+
+    usermod -a -G pda <user>
+.
 Also, the PDA udev rules might not be active after installing. The sure way to
 make it active is to reboot the computer. Other procedures as ...
 

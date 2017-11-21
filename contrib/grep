@@ -15,13 +15,13 @@ fi
 if [ -z "$2" ]; then
     perl -ne "/^[^#].*\W$1\W/ && print" \
     app/*/*.[ch]pp \
-    lib/{flib_ipc,flib_ctrl_server,flib,fles_rdma,fles_flib,fles_core}/*.[ch]pp \
+    lib/{flib_ipc,flib_ctrl_server,flib,fles_rdma,fles_libfabric,fles_flib,fles_core}/*.[ch]pp \
     lib/fles_ipc/{test,src}/*.[ch]pp \
     test/*.[ch]pp | grep --color=always "$1"
 else
     perl -pi -e "/^[^#].*\W$1\W/ && s/(\W)$1(\W)/\1$2\2/g" \
     app/*/*.[ch]pp \
-    lib/{flib_ipc,flib_ctrl_server,flib,fles_rdma,fles_flib,fles_core}/*.[ch]pp \
+    lib/{flib_ipc,flib_ctrl_server,flib,fles_rdma,fles_libfabric,fles_flib,fles_core}/*.[ch]pp \
     lib/fles_ipc/{test,src}/*.[ch]pp \
     test/*.[ch]pp
 fi

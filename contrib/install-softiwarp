@@ -29,7 +29,9 @@ sudo mkdir -p /etc/libibverbs.d
 sudo ln -sf /usr/local/etc/libibverbs.d/siw.driver /etc/libibverbs.d/
 
 echo "=== Unloading previous kernel module, if any"
+set +e
 sudo modprobe -rv siw
+set -e
 
 echo "=== Building kernel module"
 cd "$DIR/softiwarp/kernel"

@@ -29,7 +29,7 @@ target_link_libraries(test_MicrosliceReceiver fles_core fles_ipc logging ${Boost
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(test_MicrosliceReceiver atomic)
 endif()
-target_link_libraries(test_logging logging ${Boost_LIBRARIES})
+target_link_libraries(test_logging logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 add_custom_command(TARGET test_Timeslice POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy
@@ -55,5 +55,8 @@ find_program(BASH_PROGRAM bash)
 if(BASH_PROGRAM)
   add_test(NAME test_mstool
            COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_mstool.sh
+           WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  add_test(NAME test_with_pda
+           COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_with_pda.sh
            WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()

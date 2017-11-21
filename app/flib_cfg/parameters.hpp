@@ -50,7 +50,8 @@ void validate(boost::any& v,
               pci_addr*,
               int) {
   // PCI BDF address is BB:DD.F
-  static boost::regex r("(\\d\\d):(\\d\\d).(\\d)");
+  static boost::regex r(
+      "([[:xdigit:]][[:xdigit:]]):([[:xdigit:]][[:xdigit:]]).([[:xdigit:]])");
 
   // Make sure no previous assignment to 'a' was made.
   po::validators::check_first_occurrence(v);
@@ -61,9 +62,9 @@ void validate(boost::any& v,
   // Do regex match and convert the interesting part.
   boost::smatch match;
   if (boost::regex_match(s, match, r)) {
-    v = boost::any(pci_addr(boost::lexical_cast<unsigned>(match[1]),
-                            boost::lexical_cast<unsigned>(match[2]),
-                            boost::lexical_cast<unsigned>(match[3])));
+    v = boost::any(pci_addr(std::stoul(match[1], nullptr, 16),
+                            std::stoul(match[2], nullptr, 16),
+                            std::stoul(match[3], nullptr, 16)));
   } else {
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
@@ -82,6 +83,7 @@ public:
   bool identify() const { return _identify; }
   uint32_t mc_size() const { return _mc_size; }
   float pgen_rate() const { return _pgen_rate; }
+  uint32_t mc_size_limit() const { return _mc_size_limit; }
 
   struct link_config link(size_t i) const {
     return _links.at(i);
@@ -154,6 +156,8 @@ private:
                "1024 ns (31 bit wide)");
     config_add("pgen-rate,r", po::value<float>(),
                "MS fill level of pattern generator in [0,1]");
+    config_add("mc-size-limit", po::value<uint32_t>(&_mc_size_limit),
+               "Threshold of microslice size limiter in bytes.");
 
     config_add("l0_source", po::value<std::string>(),
                "Link 0 data source <disable|flim|pgen_far|pgen_near>");
@@ -222,10 +226,11 @@ private:
     if (vm.count("flib-addr")) {
       _flib_addr = vm["flib-addr"].as<pci_addr>();
       _flib_autodetect = false;
-      L_(info) << " FLIB address: " << std::setw(2) << std::setfill('0')
-               << static_cast<unsigned>(_flib_addr.bus) << ":" << std::setw(2)
-               << std::setfill('0') << static_cast<unsigned>(_flib_addr.dev)
-               << "." << static_cast<unsigned>(_flib_addr.func);
+      L_(info) << " FLIB address: " << std::hex << std::setw(2)
+               << std::setfill('0') << static_cast<unsigned>(_flib_addr.bus)
+               << ":" << std::setw(2) << std::setfill('0')
+               << static_cast<unsigned>(_flib_addr.dev) << "."
+               << static_cast<unsigned>(_flib_addr.func) << std::dec;
     } else {
       _flib_autodetect = true;
       L_(info) << " FLIB address: autodetect";
@@ -253,6 +258,8 @@ private:
       }
     }
 
+    L_(info) << " FLIB microslice size limit: " << _mc_size_limit << " bytes";
+
     for (size_t i = 0; i < _num_flib_links; ++i) {
       L_(info) << "Link " << i << " config:";
       parse_data_source(vm, i);
@@ -275,5 +282,6 @@ private:
   bool _identify = false;
   uint32_t _mc_size = 10; // 10,24 us
   float _pgen_rate = 1;
+  uint32_t _mc_size_limit = 1 << 20; // 1MB
   std::array<struct link_config, _num_flib_links> _links = {{}};
 };

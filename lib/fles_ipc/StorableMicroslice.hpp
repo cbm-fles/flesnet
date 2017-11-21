@@ -20,6 +20,8 @@ namespace fles
 
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
+template <class Base, class Derived, ArchiveType archive_type>
+class InputArchiveLoop;
 
 /**
  * \brief The StorableMicroslice class contains the data of a single microslice.
@@ -76,6 +78,8 @@ private:
     friend class boost::serialization::access;
     friend class InputArchive<Microslice, StorableMicroslice,
                               ArchiveType::MicrosliceArchive>;
+    friend class InputArchiveLoop<Microslice, StorableMicroslice,
+                                  ArchiveType::MicrosliceArchive>;
 
     StorableMicroslice();
 

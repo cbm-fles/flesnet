@@ -38,7 +38,8 @@ void validate(boost::any& v,
               pci_addr*,
               int) {
   // PCI BDF address is BB:DD.F
-  static boost::regex r("(\\d\\d):(\\d\\d).(\\d)");
+  static boost::regex r(
+      "([[:xdigit:]][[:xdigit:]]):([[:xdigit:]][[:xdigit:]]).([[:xdigit:]])");
 
   // Make sure no previous assignment to 'a' was made.
   po::validators::check_first_occurrence(v);
@@ -49,9 +50,9 @@ void validate(boost::any& v,
   // Do regex match and convert the interesting part.
   boost::smatch match;
   if (boost::regex_match(s, match, r)) {
-    v = boost::any(pci_addr(boost::lexical_cast<unsigned>(match[1]),
-                            boost::lexical_cast<unsigned>(match[2]),
-                            boost::lexical_cast<unsigned>(match[3])));
+    v = boost::any(pci_addr(std::stoul(match[1], nullptr, 16),
+                            std::stoul(match[2], nullptr, 16),
+                            std::stoul(match[3], nullptr, 16)));
   } else {
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
@@ -149,16 +150,17 @@ private:
     if (vm.count("flib-addr")) {
       _flib_addr = vm["flib-addr"].as<pci_addr>();
       _flib_autodetect = false;
-      L_(debug) << "FLIB address: " << std::setw(2) << std::setfill('0')
-                << static_cast<unsigned>(_flib_addr.bus) << ":" << std::setw(2)
-                << std::setfill('0') << static_cast<unsigned>(_flib_addr.dev)
-                << "." << static_cast<unsigned>(_flib_addr.func);
+      L_(debug) << "FLIB address: " << std::hex << std::setw(2)
+                << std::setfill('0') << static_cast<unsigned>(_flib_addr.bus)
+                << ":" << std::setw(2) << std::setfill('0')
+                << static_cast<unsigned>(_flib_addr.dev) << "."
+                << static_cast<unsigned>(_flib_addr.func);
     } else {
       _flib_autodetect = true;
       L_(debug) << "FLIB address: autodetect";
     }
 
-    L_(info) << "Shared menory file: " << _shm;
+    L_(info) << "Shared memory file: " << _shm;
     L_(info) << print_buffer_info();
   }
 

@@ -3,7 +3,7 @@
 set -e
 set -u
 
-PDA_VERSION="11.1.7"
+PDA_VERSION="11.4.7"
 USER_NAME=`id -u -n`
 
 getdeps()
@@ -32,24 +32,33 @@ install()
   rm -rf /tmp/pda-$1
 }
 
-patchudev()
-{
-  cat /etc/pda_sysfs.sh | sed 's|UIO_GROUP="pda"|UIO_GROUP="sudo"|' > /etc/pda_sysfs.tmp
-  mv /etc/pda_sysfs.tmp /etc/pda_sysfs.sh
-  chmod a+x /etc/pda_sysfs.sh
-}
-
 patchmodulelist()
 {
   if [ -z "`cat /etc/modules | grep uio_pci_dma`" ]
   then
+    echo "# Added by pda install script" >> /etc/modules
     echo "uio_pci_dma" >> /etc/modules
     echo "Module added"
   fi
   modprobe uio_pci_dma
 }
 
+add_systemgroup()
+{
+    if ! grep -q -E "^pda" /etc/group; then
+        echo "Creating system group 'pda'"
+        addgroup --system pda
+    fi
+}
 
+clean_old_install()
+{
+    if [ -f /etc/pda_sysfs.sh ]
+    then
+        echo "Removing old files"
+        rm /etc/pda_sysfs.sh
+    fi
+}
 
 CTRL="\e[1m\e[32m"
 
@@ -58,13 +67,13 @@ then
     echo "Now running as $USER_NAME"
 
     getdeps
+    clean_old_install
+    add_systemgroup
     install $PDA_VERSION
-    patchudev
     patchmodulelist
 
-    echo -en '\e[5m'
     echo -e "$CTRL YOU MUST RESTART UDEV NOW. A REBOOT WILL DO THE JOB IF IT'S UNCERTAIN WHAT TO DO!"
-    echo -en '\e[25m'
+    echo -e "$CTRL Please add all flib users to group 'pda', e.g., 'usermod -a -G pda <user>'"
 else
     echo "Running as user!"
     sudo $0

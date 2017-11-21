@@ -5,6 +5,7 @@
 
 #include "ArchiveDescriptor.hpp"
 #include "InputArchive.hpp"
+#include "InputArchiveLoop.hpp"
 
 namespace fles
 {
@@ -18,5 +19,9 @@ class StorableMicroslice;
  */
 using MicrosliceInputArchive = InputArchive<Microslice, StorableMicroslice,
                                             ArchiveType::MicrosliceArchive>;
+
+using MicrosliceInputArchiveLoop =
+    InputArchiveLoop<Microslice, StorableMicroslice,
+                     ArchiveType::MicrosliceArchive>;
 
 } // namespace fles

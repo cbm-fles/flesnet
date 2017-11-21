@@ -33,8 +33,19 @@ void Parameters::parse_options(int argc, char* argv[])
              "shared memory identifier used for receiving timeslices");
     desc_add("input-archive,i", po::value<std::string>(&input_archive_),
              "name of an input file archive to read");
+    desc_add(
+        "input-archive-cycles", po::value<uint64_t>(&input_archive_cycles_),
+        "repeat reading input archive in a loop (for performance testing)");
     desc_add("output-archive,o", po::value<std::string>(&output_archive_),
              "name of an output file archive to write");
+    desc_add("output-archive-items", po::value<size_t>(&output_archive_items_),
+             "limit number of timeslices per file to given number, create "
+             "sequence of output archive files (use placeholder %n in "
+             "output-archive parameter)");
+    desc_add("output-archive-bytes", po::value<size_t>(&output_archive_bytes_),
+             "limit number of bytes per file to given number, create "
+             "sequence of output archive files (use placeholder %n in "
+             "output-archive parameter)");
     desc_add("publish,P", po::value<std::string>(&publish_address_)
                               ->implicit_value("tcp://*:5556"),
              "enable timeslice publisher on given address");
@@ -44,6 +55,8 @@ void Parameters::parse_options(int argc, char* argv[])
     desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number_),
              "set the maximum number of microslices to process (default: "
              "unlimited)");
+    desc_add("rate-limit", po::value<double>(&rate_limit_),
+             "limit the item rate to given frequency (in Hz)");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

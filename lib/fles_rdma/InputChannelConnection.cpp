@@ -5,9 +5,9 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RequestIdentifier.hpp"
 #include "TimesliceComponentDescriptor.hpp"
+#include "log.hpp"
 #include <cassert>
 #include <cstring>
-#include <log.hpp>
 
 InputChannelConnection::InputChannelConnection(
     struct rdma_event_channel* ec, uint_fast16_t connection_index,

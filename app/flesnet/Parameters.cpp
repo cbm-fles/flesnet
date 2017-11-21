@@ -1,15 +1,52 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Parameters.hpp"
+#include "GitRevision.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "Utility.hpp"
+#include "log.hpp"
+#include <algorithm>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
 #include <fstream>
-#include <log.hpp>
+#include <iterator>
 
 namespace po = boost::program_options;
+
+std::istream& operator>>(std::istream& in, Transport& transport)
+{
+    std::string token;
+    in >> token;
+    std::transform(std::begin(token), std::end(token), std::begin(token),
+                   [](const unsigned char i) { return tolower(i); });
+
+    if (token == "rdma" || token == "r")
+        transport = Transport::RDMA;
+    else if (token == "libfabric" || token == "f")
+        transport = Transport::LibFabric;
+    else if (token == "zeromq" || token == "z")
+        transport = Transport::ZeroMQ;
+    else
+        throw po::invalid_option_value(token);
+    return in;
+}
+
+std::ostream& operator<<(std::ostream& out, const Transport& transport)
+{
+    switch (transport) {
+    case Transport::RDMA:
+        out << "RDMA";
+        break;
+    case Transport::LibFabric:
+        out << "LibFabric";
+        break;
+    case Transport::ZeroMQ:
+        out << "ZeroMQ";
+        break;
+    }
+    return out;
+}
 
 std::string const Parameters::desc() const
 {
@@ -33,7 +70,7 @@ std::string const Parameters::desc() const
 
 uint32_t Parameters::suggest_in_data_buffer_size_exp()
 {
-    constexpr float buffer_ram_usage_ratio = 0.05;
+    constexpr float buffer_ram_usage_ratio = 0.05f;
 
     // ensure value in sensible range
     constexpr uint32_t max_in_data_buffer_size_exp = 30; // 30: 1 GByte
@@ -44,7 +81,7 @@ uint32_t Parameters::suggest_in_data_buffer_size_exp()
         buffer_ram_usage_ratio * total_ram / input_indexes_.size();
 
     uint32_t suggest_in_data_buffer_size_exp =
-        ceilf(log2f(suggest_in_data_buffer_size));
+        static_cast<uint32_t>(ceilf(log2f(suggest_in_data_buffer_size)));
 
     if (suggest_in_data_buffer_size_exp > max_in_data_buffer_size_exp)
         suggest_in_data_buffer_size_exp = max_in_data_buffer_size_exp;
@@ -56,7 +93,7 @@ uint32_t Parameters::suggest_in_data_buffer_size_exp()
 
 uint32_t Parameters::suggest_cn_data_buffer_size_exp()
 {
-    constexpr float buffer_ram_usage_ratio = 0.05;
+    constexpr float buffer_ram_usage_ratio = 0.05f;
 
     // ensure value in sensible range
     constexpr uint32_t max_cn_data_buffer_size_exp = 30; // 30: 1 GByte
@@ -68,7 +105,7 @@ uint32_t Parameters::suggest_cn_data_buffer_size_exp()
         (compute_indexes_.size() * input_nodes_.size());
 
     uint32_t suggest_cn_data_buffer_size_exp =
-        ceilf(log2f(suggest_cn_data_buffer_size));
+        static_cast<uint32_t>(ceilf(log2f(suggest_cn_data_buffer_size)));
 
     if (suggest_cn_data_buffer_size_exp > max_cn_data_buffer_size_exp)
         suggest_cn_data_buffer_size_exp = max_cn_data_buffer_size_exp;
@@ -85,8 +122,8 @@ uint32_t Parameters::suggest_in_desc_buffer_size_exp()
     constexpr float in_desc_buffer_oversize_factor = 4.0;
 
     // ensure value in sensible range
-    constexpr float max_desc_data_ratio = 1.0;
-    constexpr float min_desc_data_ratio = 0.1;
+    constexpr float max_desc_data_ratio = 1.0f;
+    constexpr float min_desc_data_ratio = 0.1f;
 
     static_assert(min_desc_data_ratio <= max_desc_data_ratio,
                   "invalid range for desc_data_ratio");
@@ -96,14 +133,14 @@ uint32_t Parameters::suggest_in_desc_buffer_size_exp()
                                         typical_content_size_ *
                                         in_desc_buffer_oversize_factor;
     uint32_t suggest_in_desc_buffer_size_exp =
-        ceilf(log2f(suggest_in_desc_buffer_size));
+        static_cast<uint32_t>(ceilf(log2f(suggest_in_desc_buffer_size)));
 
     float relative_size =
         in_data_buffer_size / sizeof(fles::MicrosliceDescriptor);
-    uint32_t max_in_desc_buffer_size_exp =
-        floorf(log2f(relative_size * max_desc_data_ratio));
-    uint32_t min_in_desc_buffer_size_exp =
-        ceilf(log2f(relative_size * min_desc_data_ratio));
+    uint32_t max_in_desc_buffer_size_exp = static_cast<uint32_t>(
+        floorf(log2f(relative_size * max_desc_data_ratio)));
+    uint32_t min_in_desc_buffer_size_exp = static_cast<uint32_t>(
+        ceilf(log2f(relative_size * min_desc_data_ratio)));
 
     if (suggest_in_desc_buffer_size_exp > max_in_desc_buffer_size_exp)
         suggest_in_desc_buffer_size_exp = max_in_desc_buffer_size_exp;
@@ -120,8 +157,8 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
     constexpr float cn_desc_buffer_oversize_factor = 8.0;
 
     // ensure value in sensible range
-    constexpr float min_desc_data_ratio = 0.1;
-    constexpr float max_desc_data_ratio = 1.0;
+    constexpr float min_desc_data_ratio = 0.1f;
+    constexpr float max_desc_data_ratio = 1.0f;
 
     static_assert(min_desc_data_ratio <= max_desc_data_ratio,
                   "invalid range for desc_data_ratio");
@@ -133,14 +170,14 @@ uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
         cn_desc_buffer_oversize_factor;
 
     uint32_t suggest_cn_desc_buffer_size_exp =
-        ceilf(log2f(suggest_cn_desc_buffer_size));
+        static_cast<uint32_t>(ceilf(log2f(suggest_cn_desc_buffer_size)));
 
     float relative_size =
         cn_data_buffer_size / sizeof(fles::TimesliceComponentDescriptor);
-    uint32_t min_cn_desc_buffer_size_exp =
-        ceilf(log2f(relative_size * min_desc_data_ratio));
-    uint32_t max_cn_desc_buffer_size_exp =
-        floorf(log2f(relative_size * max_desc_data_ratio));
+    uint32_t min_cn_desc_buffer_size_exp = static_cast<uint32_t>(
+        ceilf(log2f(relative_size * min_desc_data_ratio)));
+    uint32_t max_cn_desc_buffer_size_exp = static_cast<uint32_t>(
+        floorf(log2f(relative_size * max_desc_data_ratio)));
 
     if (suggest_cn_desc_buffer_size_exp < min_cn_desc_buffer_size_exp)
         suggest_cn_desc_buffer_size_exp = min_cn_desc_buffer_size_exp;
@@ -158,68 +195,112 @@ void Parameters::parse_options(int argc, char* argv[])
 
     po::options_description generic("Generic options");
     auto generic_add = generic.add_options();
-    generic_add("version,V", "print version string");
-    generic_add("help,h", "produce help message");
-    generic_add("log-level,l", po::value<unsigned>(&log_level),
-                "set the log level (default:2, all:0)");
-    generic_add("log-file,L", po::value<std::string>(&log_file),
-                "name of target log file");
-    generic_add(
-        "config-file,f",
-        po::value<std::string>(&config_file)->default_value("flesnet.cfg"),
-        "name of a configuration file.");
+    generic_add("config-file,f", po::value<std::string>(&config_file)
+                                     ->default_value("flesnet.cfg")
+                                     ->value_name("<filename>"),
+                "read configuration from file");
+    generic_add("log-level,l", po::value<unsigned>(&log_level)
+                                   ->default_value(log_level)
+                                   ->value_name("<n>"),
+                "set the global log level (all: 0)");
+    generic_add("log-file,L",
+                po::value<std::string>(&log_file)->value_name("<filename>"),
+                "write log output to file");
+    generic_add("help,h", "display this help and exit");
+    generic_add("version,V", "output version information and exit");
 
     po::options_description config("Configuration");
     auto config_add = config.add_options();
-    config_add("input-index,i",
-               po::value<std::vector<unsigned>>()->multitoken(),
-               "this application's index in the list of input nodes");
-    config_add("compute-index,c",
-               po::value<std::vector<unsigned>>()->multitoken(),
-               "this application's index in the list of compute nodes");
+    config_add(
+        "input-index,i",
+        po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
+        "set this application's index(es) in the list of input nodes");
+    config_add(
+        "compute-index,c",
+        po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
+        "set this application's index(es) in the list of compute nodes");
     config_add("input-nodes,I",
-               po::value<std::vector<std::string>>()->multitoken(),
-               "add host to the list of input nodes");
+               po::value<std::vector<std::string>>()->multitoken()->value_name(
+                   "<hostname> ..."),
+               "add a host to the list of input nodes");
     config_add("compute-nodes,C",
-               po::value<std::vector<std::string>>()->multitoken(),
-               "add host to the list of compute nodes");
-    config_add("timeslice-size", po::value<uint32_t>(&timeslice_size_),
-               "global timeslice size in number of microslices");
-    config_add("overlap-size", po::value<uint32_t>(&overlap_size_),
-               "size of the overlap region in number of microslices");
-    config_add("in-data-buffer-size-exp",
-               po::value<uint32_t>(&in_data_buffer_size_exp_),
-               "exp. size of the input node's data buffer in bytes");
-    config_add("in-desc-buffer-size-exp",
-               po::value<uint32_t>(&in_desc_buffer_size_exp_),
-               "exp. size of the input node's descriptor buffer"
-               " (number of entries)");
-    config_add("cn-data-buffer-size-exp",
-               po::value<uint32_t>(&cn_data_buffer_size_exp_),
-               "exp. size of the compute node's data buffer in bytes");
-    config_add("cn-desc-buffer-size-exp",
-               po::value<uint32_t>(&cn_desc_buffer_size_exp_),
-               "exp. size of the compute node's descriptor buffer"
-               " (number of entries)");
+               po::value<std::vector<std::string>>()->multitoken()->value_name(
+                   "<hostname> ..."),
+               "add a host to the list of compute nodes");
+    config_add("timeslice-size", po::value<uint32_t>(&timeslice_size_)
+                                     ->default_value(timeslice_size_)
+                                     ->value_name("<n>"),
+               "set the global timeslice size in number of microslices");
+    config_add(
+        "overlap-size", po::value<uint32_t>(&overlap_size_)
+                            ->default_value(overlap_size_)
+                            ->value_name("<n>"),
+        "set the global size of the overlap region in number of microslices");
+    config_add(
+        "in-data-buffer-size-exp",
+        po::value<uint32_t>(&in_data_buffer_size_exp_)->value_name("<n>"),
+        "data buffer size used per input in the input node (log of number of "
+        "bytes)");
+    config_add(
+        "in-desc-buffer-size-exp",
+        po::value<uint32_t>(&in_desc_buffer_size_exp_)->value_name("<n>"),
+        "descriptor buffer size used per input in the input node (log of "
+        "number of entries)");
+    config_add(
+        "cn-data-buffer-size-exp",
+        po::value<uint32_t>(&cn_data_buffer_size_exp_)->value_name("<n>"),
+        "data buffer size used per input in the compute node (log of number of "
+        "bytes)");
+    config_add(
+        "cn-desc-buffer-size-exp",
+        po::value<uint32_t>(&cn_desc_buffer_size_exp_)->value_name("<n>"),
+        "descriptor buffer size used per input in the compute node (log of "
+        "number of entries)");
     config_add("typical-content-size",
-               po::value<uint32_t>(&typical_content_size_),
+               po::value<uint32_t>(&typical_content_size_)
+                   ->default_value(typical_content_size_)
+                   ->value_name("<n>"),
                "typical number of content bytes per microslice");
-    config_add("input-shm", po::value<std::string>(&input_shm_),
+    config_add("input-shm",
+               po::value<std::string>(&input_shm_)->value_name("<id>"),
                "name of a shared memory to use as data source");
-    config_add("standalone", po::value<bool>(&standalone_),
-               "standalone mode flag");
+    config_add("standalone", po::value<bool>(&standalone_)
+                                 ->default_value(standalone_)
+                                 ->implicit_value(true)
+                                 ->value_name("<bool>"),
+               "enable special standalone mode");
     config_add("max-timeslice-number,n",
-               po::value<uint32_t>(&max_timeslice_number_),
-               "global maximum timeslice number");
-    config_add("processor-executable,e",
-               po::value<std::string>(&processor_executable_),
-               "name of the executable acting as timeslice processor");
-    config_add("processor-instances",
-               po::value<uint32_t>(&processor_instances_),
+               po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
+               "quit after processing given number of timeslices");
+    config_add(
+        "processor-executable,e",
+        po::value<std::string>(&processor_executable_)->value_name("<string>"),
+        "name of the executable acting as timeslice processor");
+    config_add("processor-instances", po::value<uint32_t>(&processor_instances_)
+                                          ->default_value(processor_instances_)
+                                          ->value_name("<n>"),
                "number of instances of the timeslice processor executable");
-    config_add("base-port", po::value<uint32_t>(&base_port_),
+    config_add("base-port", po::value<uint32_t>(&base_port_)
+                                ->default_value(base_port_)
+                                ->value_name("<n>"),
                "base IP port to use for listening");
-    config_add("zeromq,z", po::value<bool>(&zeromq_), "use zeromq transport");
+    config_add(
+        "generate-ts-patterns", po::value<bool>(&generate_ts_patterns_)
+                                    ->default_value(generate_ts_patterns_)
+                                    ->implicit_value(true)
+                                    ->value_name("<bool>"),
+        "generate data pattern when using the microslice pattern generator");
+    config_add("random-ts-sizes", po::value<bool>(&random_ts_sizes_)
+                                      ->default_value(random_ts_sizes_)
+                                      ->implicit_value(true)
+                                      ->value_name("<bool>"),
+               "randomize microslice data sizes when using the microslice "
+               "pattern generator");
+    config_add("transport,t", po::value<Transport>(&transport_)
+                                  ->default_value(transport_)
+                                  ->value_name("<id>"),
+               "select transport implementation; possible values "
+               "(case-insensitive) are: RDMA, LibFabric, ZeroMQ");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -237,13 +318,13 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
     if (vm.count("help")) {
-        std::cout << cmdline_options << "\n";
+        std::cout << "flesnet, git revision " << g_GIT_REVISION << std::endl;
+        std::cout << cmdline_options << std::endl;
         exit(EXIT_SUCCESS);
     }
 
     if (vm.count("version")) {
-        std::cout << "flesnet, version 0.0"
-                  << "\n";
+        std::cout << "flesnet, git revision " << g_GIT_REVISION << std::endl;
         exit(EXIT_SUCCESS);
     }
 
@@ -261,9 +342,14 @@ void Parameters::parse_options(int argc, char* argv[])
         throw ParametersException("timeslice size cannot be zero");
     }
 
-#ifndef RDMA
-    if (!zeromq_) {
+#ifndef HAVE_RDMA
+    if (transport_ == Transport::RDMA) {
         throw ParametersException("flesnet built without RDMA support");
+    }
+#endif
+#ifndef HAVE_LIBFABRIC
+    if (transport_ == Transport::LibFabric) {
+        throw ParametersException("flesnet built without LIBFABRIC support");
     }
 #endif
 
@@ -272,7 +358,7 @@ void Parameters::parse_options(int argc, char* argv[])
         input_indexes_ = std::vector<unsigned>{0};
         compute_nodes_ = std::vector<std::string>{"127.0.0.1"};
         compute_indexes_ = std::vector<unsigned>{0};
-        if (zeromq_) {
+        if (transport_ == Transport::ZeroMQ) {
             throw ParametersException(
                 "no zeromq transport in stand-alone mode");
         }
