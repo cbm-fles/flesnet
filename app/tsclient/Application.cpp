@@ -9,9 +9,7 @@
 #include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
 #include "Utility.hpp"
-#include "log.hpp"
 #include <boost/lexical_cast.hpp>
-#include <iostream>
 #include <thread>
 
 Application::Application(Parameters const& par) : par_(par)
@@ -34,12 +32,12 @@ Application::Application(Parameters const& par) : par_(par)
         std::string output_prefix =
             boost::lexical_cast<std::string>(par_.client_index()) + ": ";
         sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-            new TimesliceAnalyzer(10000, std::cout, output_prefix)));
+            new TimesliceAnalyzer(10000, status_log_.stream, output_prefix)));
     }
 
     if (par_.verbosity() > 0) {
         sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-            new TimesliceDumper(std::cout, par_.verbosity())));
+            new TimesliceDumper(debug_log_.stream, par_.verbosity())));
     }
 
     if (!par_.output_archive().empty()) {

@@ -19,5 +19,15 @@ int main()
     L_(error) << "This is an error message.";
     L_(fatal) << "This is a fatal error message.";
 
+    logging::OstreamLog status_log(status);
+    std::ostream& status_stream = status_log.stream;
+
+    status_stream << "This is a status_stream message w/o endline.";
+    status_stream << "This is a status_stream message" << std::endl;
+    status_stream << "This is the first ...\n";
+    status_stream << "... and the second line of a status_stream message."
+                  << std::endl;
+    status_stream << "This is a status_stream message" << std::endl;
+
     return 0;
 }

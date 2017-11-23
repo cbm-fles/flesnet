@@ -25,6 +25,7 @@ addons:
     - libboost-system1.55-dev
     - libboost-test1.55-dev
     - libboost-thread1.55-dev
+    - libboost-iostreams1.55-dev
     - libboost1.55-dev
     - libibverbs-dev
     - libnuma-dev

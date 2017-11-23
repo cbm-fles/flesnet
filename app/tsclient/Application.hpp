@@ -5,6 +5,7 @@
 #include "Parameters.hpp"
 #include "Sink.hpp"
 #include "TimesliceSource.hpp"
+#include "log.hpp"
 #include <chrono>
 #include <memory>
 #include <vector>
@@ -30,6 +31,10 @@ private:
     std::unique_ptr<Benchmark> benchmark_;
 
     uint64_t count_ = 0;
+
+    logging::OstreamLog status_log_{status};
+    logging::OstreamLog debug_log_{debug};
+
     std::chrono::high_resolution_clock::time_point time_begin_;
 
     void rate_limit_delay() const;
