@@ -213,6 +213,7 @@ void TimesliceBuilderZeromq::report_status()
     BufferStatus status_desc{now, c->desc.size(), acked_, acked_, tpos_};
     BufferStatus status_data{now, c->desc.size(), acked_, acked_, tpos_};
 
+    /*
     double delta_t =
         std::chrono::duration<double, std::chrono::seconds::period>(
             status_desc.time - previous_buffer_status_desc_.time)
@@ -223,6 +224,7 @@ void TimesliceBuilderZeromq::report_status()
     double rate_data = static_cast<double>(status_data.acked -
                                            previous_buffer_status_data_.acked) /
                        delta_t;
+    */
 
     L_(debug) << "[c" << compute_index_ << "] desc "
               << status_desc.percentages() << " (used..free) | "
