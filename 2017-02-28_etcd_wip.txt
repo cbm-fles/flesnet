@@ -1,0 +1,60 @@
+// app/flib_server/flib_server.cpp
+
+int ret = etcd.set_value("/" + par.shm(), "/uptodate", "value=on");
+if (ret != 0)
+  throw std::runtime_error("Error setting value in key-value store");
+
+// server.run();
+
+if (par.kv_sync())
+  etcd.set_value("/" + par.shm(), "/uptodate", "value=off");
+
+### set_value
+
+
+
+
+// app/flesnet/Application.cpp
+
+enum Flags ret = etcd.check_process(par.input_shm());
+
+if (ret != ok) {
+    if (ret == errorneous)
+        L_(error) << "errorneous";
+    if (ret == timeout)
+        L_(error) << "timeout";
+    throw std::runtime_error("kv sync failed");
+}
+
+### check_process
+
+
+
+
+// app/mstool/Application.cpp
+
+enum Flags ret = etcd_.check_process(par_.input_shm);
+
+if (ret != ok) {
+    if (ret == errorneous)
+        L_(error) << "errorneous";
+    if (ret == timeout)
+        L_(error) << "timeout";
+    throw std::runtime_error("kv sync failed");
+}
+ 
+// Source setup
+int ret =
+    etcd_.set_value("/" + par_.output_shm, "/uptodate", "value=on");
+if (ret != 0)
+    throw std::runtime_error("Error setting value in key-value store");
+ 
+// Application::~Application()
+etcd_.set_value(prefix_out_.str(), "/uptodate", "value=off");
+
+
+
+
+set_value
+check_process
+
