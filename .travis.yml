@@ -26,6 +26,8 @@ addons:
     - libboost-test1.55-dev
     - libboost-thread1.55-dev
     - libboost-iostreams1.55-dev
+    - libboost-locale1.55-dev
+    - libboost-random1.55-dev
     - libboost1.55-dev
     - libibverbs-dev
     - libnuma-dev
