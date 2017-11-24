@@ -1,5 +1,9 @@
 language: cpp
 
+branches:
+  except:
+  - dev_etcd
+
 compiler:
   - clang
   - gcc
