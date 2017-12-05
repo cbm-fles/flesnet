@@ -11,7 +11,6 @@ target_compile_definitions(flib_server
 target_compile_definitions(simple_consumer PUBLIC BOOST_ALL_DYN_LINK)
 
 target_include_directories(flib_server SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
-target_include_directories(flib_cfg SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(flib_server
   flib flib_ipc fles_ipc fles_core logging
