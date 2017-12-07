@@ -30,7 +30,7 @@ Build Dependencies
 
     sudo aptitude install gcc make cmake valgrind \
       doxygen libnuma-dev librdmacm-dev libibverbs-dev git \
-      libzmq3-dev libkrb5-dev libboost-all-dev
+      libzmq3-dev libkrb5-dev libboost-all-dev libcpprest-dev catch
 
 Note: The minimum required Boost version is 1.55. If you have the
 choice between different Boost versions and plan to record data it is
