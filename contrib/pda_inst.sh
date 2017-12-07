@@ -60,7 +60,10 @@ clean_old_install()
     fi
 }
 
-CTRL="\e[1m\e[32m"
+reload_udev()
+{
+    udevadm control --reload-rules && udevadm trigger
+}
 
 if [ "root" = "$USER_NAME" ]
 then
@@ -71,9 +74,9 @@ then
     add_systemgroup
     install $PDA_VERSION
     patchmodulelist
+    reload_udev
 
-    echo -e "$CTRL YOU MUST RESTART UDEV NOW. A REBOOT WILL DO THE JOB IF IT'S UNCERTAIN WHAT TO DO!"
-    echo -e "$CTRL Please add all flib users to group 'pda', e.g., 'usermod -a -G pda <user>'"
+    echo -e "Please add all intended flib users to group 'pda', e.g., 'usermod -a -G pda <user>'"
 else
     echo "Running as user!"
     sudo $0
