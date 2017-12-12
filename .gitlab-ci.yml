@@ -1,3 +1,5 @@
+image: ottr/fles
+
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
@@ -6,9 +8,8 @@ before_script:
 
 flesnet:
   tags:
-    - eda02
+    - docker
   script:
     - cmake ..
     - make
     - make test
-    - ../test/test_flib.sh
