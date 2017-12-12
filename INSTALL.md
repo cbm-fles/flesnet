@@ -28,7 +28,7 @@ branch:
 Build Dependencies
 ------------------
 
-    sudo aptitude install gcc make cmake valgrind \
+    sudo aptitude install gcc g++ make cmake valgrind \
       doxygen libnuma-dev librdmacm-dev libibverbs-dev git \
       libzmq3-dev libkrb5-dev libboost-all-dev libcpprest-dev catch
 
