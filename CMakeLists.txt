@@ -108,3 +108,5 @@ endif()
 
 enable_testing()
 add_subdirectory(test)
+
+configure_file(cmake/CTestCustom.cmake ${CMAKE_BINARY_DIR})

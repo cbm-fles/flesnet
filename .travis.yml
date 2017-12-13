@@ -58,11 +58,12 @@ before_install:
   - export PATH=$PATH:$HOME/libfabric/include:$HOME/libfabric/src/.libs
   - mkdir $HOME/cpprestsdk
   - git clone https://github.com/Microsoft/cpprestsdk.git $HOME/cpprestsdk/casablanca
-  - cd $HOME/cpprestsdk/casablanca/Release
+  - pushd $HOME/cpprestsdk/casablanca/Release
   - mkdir build && cd build
-  - cmake ..
+  - CC=gcc-4.8 CXX=g++-4.8 cmake ..
   - make
   - make DESTDIR=$HOME/cpprestsdk install
+  - popd
   - export PATH=$PATH:$HOME/cpprestsdk/usr/local/include:$HOME/cpprestsdk/usr/local/lib
 
 before_script:
