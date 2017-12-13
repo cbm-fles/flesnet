@@ -1,9 +1,5 @@
 language: cpp
 
-branches:
-  except:
-  - dev_etcd
-
 compiler:
   - clang
   - gcc
@@ -21,6 +17,7 @@ addons:
     - doxygen
     - gcc-4.8
     - g++-4.8
+    - git
     - libboost-filesystem1.55-dev
     - libboost-log1.55-dev
     - libboost-program-options1.55-dev
@@ -33,12 +30,15 @@ addons:
     - libboost-locale1.55-dev
     - libboost-random1.55-dev
     - libboost1.55-dev
+    - libboost1.55-all-dev
     - libibverbs-dev
     - libnuma-dev
     - libpci-dev
     - librdmacm-dev
+    - libssl-dev
     - libzmq3-dev
     - valgrind
+    - zlib1g-dev
 
 env:
   global:
@@ -56,6 +56,14 @@ before_install:
   - tar xzf $LIBFABRIC_ARCHIVE_PATH -C $HOME/libfabric --strip-components 1
   - PWD_ADDR=$(pwd) && cd $HOME/libfabric && ./configure  && make && cd $PWD_ADDR
   - export PATH=$PATH:$HOME/libfabric/include:$HOME/libfabric/src/.libs
+  - mkdir $HOME/cpprestsdk
+  - git clone https://github.com/Microsoft/cpprestsdk.git $HOME/cpprestsdk/casablanca
+  - cd $HOME/cpprestsdk/casablanca/Release
+  - mkdir build && cd build
+  - cmake ..
+  - make
+  - make DESTDIR=$HOME/cpprestsdk install
+  - export PATH=$PATH:$HOME/cpprestsdk/usr/local/include:$HOME/cpprestsdk/usr/local/lib
 
 before_script:
   - if [ "$CXX" = "clang++" ]; then export CXX="clang++" CC="clang"; fi
