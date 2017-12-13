@@ -47,6 +47,7 @@ env:
     - LIBFABRIC_ARCHIVE_PATH=$HOME/libfabric-1.4.0.tar.gz
 
 before_install:
+  - WORK_DIR=$(pwd)
   - wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH
   - mkdir $HOME/clang+llvm
   - tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1
@@ -54,17 +55,14 @@ before_install:
   - wget https://github.com/ofiwg/libfabric/releases/download/v1.4.0/libfabric-1.4.0.tar.gz -O $LIBFABRIC_ARCHIVE_PATH
   - mkdir $HOME/libfabric
   - tar xzf $LIBFABRIC_ARCHIVE_PATH -C $HOME/libfabric --strip-components 1
-  - PWD_ADDR=$(pwd) && cd $HOME/libfabric && ./configure  && make && cd $PWD_ADDR
-  - export PATH=$PATH:$HOME/libfabric/include:$HOME/libfabric/src/.libs
+  - cd $HOME/libfabric && ./configure && make && cd $WORK_DIR
+  - export CMAKE_FRAMEWORK_PATH=$CMAKE_FRAMEWORK_PATH:$HOME/libfabric/include:$HOME/libfabric/src/.libs
   - mkdir $HOME/cpprestsdk
-  - git clone https://github.com/Microsoft/cpprestsdk.git $HOME/cpprestsdk/casablanca
-  - pushd $HOME/cpprestsdk/casablanca/Release
-  - mkdir build && cd build
-  - CC=gcc-4.8 CXX=g++-4.8 cmake ..
-  - make
+  - git clone https://github.com/Microsoft/cpprestsdk.git $HOME/cpprestsdk/src
+  - cd $HOME/cpprestsdk/src/Release && mkdir build && cd build && CC=gcc-4.8 CXX=g++-4.8 cmake ..
   - make DESTDIR=$HOME/cpprestsdk install
-  - popd
-  - export PATH=$PATH:$HOME/cpprestsdk/usr/local/include:$HOME/cpprestsdk/usr/local/lib
+  - export CMAKE_FRAMEWORK_PATH=$CMAKE_FRAMEWORK_PATH:$HOME/cpprestsdk/usr/local/include:$HOME/cpprestsdk/usr/local/lib
+  - cd $WORK_DIR
 
 before_script:
   - if [ "$CXX" = "clang++" ]; then export CXX="clang++" CC="clang"; fi
