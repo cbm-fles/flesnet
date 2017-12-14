@@ -46,21 +46,26 @@ env:
     - LLVM_ARCHIVE_PATH=$HOME/clang+llvm.tar.xz
     - LIBFABRIC_ARCHIVE_PATH=$HOME/libfabric-1.4.0.tar.gz
 
+cache:
+  directories:
+  - $HOME/libfabric
+  - $HOME/cpprestsdk
+
 before_install:
   - WORK_DIR=$(pwd)
   - wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH
   - mkdir $HOME/clang+llvm
   - tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1
   - export PATH=$HOME/clang+llvm/bin:$PATH
-  - wget https://github.com/ofiwg/libfabric/releases/download/v1.4.0/libfabric-1.4.0.tar.gz -O $LIBFABRIC_ARCHIVE_PATH
-  - mkdir $HOME/libfabric
-  - tar xzf $LIBFABRIC_ARCHIVE_PATH -C $HOME/libfabric --strip-components 1
-  - cd $HOME/libfabric && ./configure && make && cd $WORK_DIR
+  - if ! [ -d $HOME/libfabric ]; then wget https://github.com/ofiwg/libfabric/releases/download/v1.4.0/libfabric-1.4.0.tar.gz -O $LIBFABRIC_ARCHIVE_PATH; fi
+  - if ! [ -d $HOME/libfabric ]; then mkdir $HOME/libfabric; fi
+  - if ! [ -d $HOME/libfabric ]; then tar xzf $LIBFABRIC_ARCHIVE_PATH -C $HOME/libfabric --strip-components 1; fi
+  - if ! [ -d $HOME/libfabric ]; then cd $HOME/libfabric && ./configure && make && cd $WORK_DIR; fi
   - export CMAKE_FRAMEWORK_PATH=$CMAKE_FRAMEWORK_PATH:$HOME/libfabric/include:$HOME/libfabric/src/.libs
-  - mkdir $HOME/cpprestsdk
-  - git clone https://github.com/Microsoft/cpprestsdk.git $HOME/cpprestsdk/src
-  - cd $HOME/cpprestsdk/src/Release && mkdir build && cd build && CC=gcc-4.8 CXX=g++-4.8 cmake ..
-  - make DESTDIR=$HOME/cpprestsdk install
+  - if ! [ -d $HOME/cpprestsdk ]; then mkdir $HOME/cpprestsdk; fi
+  - if ! [ -d $HOME/cpprestsdk ]; then git clone https://github.com/Microsoft/cpprestsdk.git $HOME/cpprestsdk/src; fi
+  - if ! [ -d $HOME/cpprestsdk ]; then cd $HOME/cpprestsdk/src/Release && mkdir build && cd build && CC=gcc-4.8 CXX=g++-4.8 cmake ..; fi
+  - if ! [ -d $HOME/cpprestsdk ]; then make DESTDIR=$HOME/cpprestsdk install; fi
   - export CMAKE_FRAMEWORK_PATH=$CMAKE_FRAMEWORK_PATH:$HOME/cpprestsdk/usr/local/include:$HOME/cpprestsdk/usr/local/lib
   - cd $WORK_DIR
 
