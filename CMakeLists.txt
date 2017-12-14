@@ -64,6 +64,8 @@ if (COVERALLS)
   coveralls_turn_on_coverage()
 endif()
 
+add_subdirectory(external/etcd-cpp-api)
+
 add_subdirectory(lib/logging)
 add_subdirectory(lib/crcutil)
 add_subdirectory(lib/fles_ipc)
@@ -106,3 +108,5 @@ endif()
 
 enable_testing()
 add_subdirectory(test)
+
+configure_file(cmake/CTestCustom.cmake ${CMAKE_BINARY_DIR})

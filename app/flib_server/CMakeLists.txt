@@ -15,6 +15,7 @@ target_include_directories(flib_server SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(flib_server
   flib flib_ipc fles_ipc fles_core logging
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt
+  etcd-cpp-api
 )
 target_link_libraries(simple_consumer
   flib_ipc logging
