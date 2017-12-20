@@ -196,7 +196,6 @@ void Parameters::parse_options(int argc, char* argv[])
     po::options_description generic("Generic options");
     auto generic_add = generic.add_options();
     generic_add("config-file,f", po::value<std::string>(&config_file)
-                                     ->default_value("flesnet.cfg")
                                      ->value_name("<filename>"),
                 "read configuration from file");
     generic_add("log-level,l", po::value<unsigned>(&log_level)
@@ -304,12 +303,15 @@ void Parameters::parse_options(int argc, char* argv[])
     po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
     po::notify(vm);
 
-    std::ifstream ifs(config_file.c_str());
-    if (!ifs) {
-        throw ParametersException("cannot open config file: " + config_file);
-    } else {
-        po::store(po::parse_config_file(ifs, config), vm);
-        notify(vm);
+    if (!config_file.empty()) {
+        std::ifstream ifs(config_file.c_str());
+        if (!ifs) {
+            throw ParametersException("cannot open config file: " +
+                                      config_file);
+        } else {
+            po::store(po::parse_config_file(ifs, config), vm);
+            notify(vm);
+        }
     }
 
     if (vm.count("help")) {

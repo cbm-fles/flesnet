@@ -262,7 +262,7 @@ done
 
 
 # flesnet configuration
-FLESNET_PRIV_CFG=(-f /dev/null -e "$TS_PROCESSOR")
+FLESNET_PRIV_CFG=(-e "$TS_PROCESSOR")
 FLESNET_PRIV_CFG+=("${FLESNET_CFG[@]}")
 
 CN_INDEX=(-c 0)
