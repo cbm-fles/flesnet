@@ -131,8 +131,6 @@ fi
 FLESNET_CFG=(-l 2
              -t $TRANSPORT
              --timeslice-size $TIMESLICE_SIZE
-             --overlap-size $OVERLAP_SIZE
-             --cn-data-buffer-size-exp $BUF_SIZE_EXP
              --processor-instances 1)
 if [ ! -z "$MAX_TIMESLICES" ]; then
     FLESNET_CFG+=(--max-timeslice-number $MAX_TIMESLICES)
@@ -161,7 +159,7 @@ fi
 
 declare -a NODES
 for ((i=0; i < TOTAL_LINKS ; i++)); do
-        NODES+=(-I 127.0.0.1)
+        NODES+=(-I shm://127.0.0.1?overlap=$OVERLAP_SIZE)
 done
 
 cleanup () {
@@ -266,7 +264,7 @@ FLESNET_PRIV_CFG=(-e "$TS_PROCESSOR")
 FLESNET_PRIV_CFG+=("${FLESNET_CFG[@]}")
 
 CN_INDEX=(-c 0)
-NODES+=(-C 127.0.0.1)
+NODES+=(-C shm://127.0.0.1?datasize=$BUF_SIZE_EXP)
 
 IN_0_CFG=(-L ${OUTFILE}flesnet_in0.log --input-shm shm_server_f0)
 IN_1_CFG=(-L ${OUTFILE}flesnet_in1.log --input-shm shm_server_f1)
