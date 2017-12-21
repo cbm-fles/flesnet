@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
+#include <cpprest/base_uri.h>
 #include <fstream>
 #include <iterator>
 
@@ -366,6 +367,18 @@ void Parameters::parse_options(int argc, char* argv[])
 
     input_nodes_ = vm["input-nodes"].as<std::vector<std::string>>();
     compute_nodes_ = vm["compute-nodes"].as<std::vector<std::string>>();
+
+    for (auto input_node : input_nodes_) {
+        if (!web::uri::validate(input_node))
+            throw ParametersException("invalid input node specification: " +
+                                      input_node);
+    }
+
+    for (auto compute_node : compute_nodes_) {
+        if (!web::uri::validate(compute_node))
+            throw ParametersException("invalid compute node specification: " +
+                                      compute_node);
+    }
 
     if (vm.count("input-index"))
         input_indexes_ = vm["input-index"].as<std::vector<unsigned>>();
