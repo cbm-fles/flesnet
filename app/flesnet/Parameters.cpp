@@ -247,13 +247,15 @@ void Parameters::parse_options(int argc, char* argv[])
     if (!outputs_.empty() && processor_executable_.empty())
         throw ParametersException("processor executable not specified");
 
-    L_(debug) << "inputs (" << inputs_.size()
-              << "): " << boost::algorithm::join(input_uris(), " ");
-    L_(debug) << "outputs (" << outputs_.size()
-              << "): " << boost::algorithm::join(output_uris(), " ");
+    L_(debug) << "inputs (" << inputs_.size() << "):";
+    for (auto input : inputs_)
+        L_(debug) << "  " << input.full_uri;
+    L_(debug) << "outputs (" << outputs_.size() << "):";
+    for (auto output : outputs_)
+        L_(debug) << "  " << output.full_uri;
     for (auto input_index : input_indexes_) {
-        L_(info) << "this is input node " << input_index << " (of "
-                 << inputs_.size() << ")";
+        L_(info) << "this is input " << input_index << " (of " << inputs_.size()
+                 << ")";
     }
     for (auto output_index : output_indexes_) {
         L_(info) << "this is output " << output_index << " (of "

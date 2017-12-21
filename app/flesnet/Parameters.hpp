@@ -74,50 +74,6 @@ public:
         return outputs_;
     }
 
-    /// Return a list of input hosts.
-    std::vector<std::string> const input_hosts() const
-    {
-        std::vector<std::string> hosts;
-        hosts.reserve(inputs_.size());
-        std::transform(
-            inputs_.begin(), inputs_.end(), back_inserter(hosts),
-            [](InterfaceSpecification input) { return input.host; });
-        return hosts;
-    }
-
-    /// Return a list of input URIs.
-    std::vector<std::string> const input_uris() const
-    {
-        std::vector<std::string> uris;
-        uris.reserve(inputs_.size());
-        std::transform(
-            inputs_.begin(), inputs_.end(), back_inserter(uris),
-            [](InterfaceSpecification input) { return input.full_uri; });
-        return uris;
-    }
-
-    /// Return a list of compute node output hosts.
-    std::vector<std::string> const output_hosts() const
-    {
-        std::vector<std::string> hosts;
-        hosts.reserve(outputs_.size());
-        std::transform(
-            outputs_.begin(), outputs_.end(), back_inserter(hosts),
-            [](InterfaceSpecification output) { return output.host; });
-        return hosts;
-    }
-
-    /// Return a list of compute node output URIs.
-    std::vector<std::string> const output_uris() const
-    {
-        std::vector<std::string> uris;
-        uris.reserve(outputs_.size());
-        std::transform(
-            outputs_.begin(), outputs_.end(), back_inserter(uris),
-            [](InterfaceSpecification output) { return output.full_uri; });
-        return uris;
-    }
-
     /// Retrieve this applications's indexes in the list of inputs.
     std::vector<unsigned> input_indexes() const { return input_indexes_; }
 

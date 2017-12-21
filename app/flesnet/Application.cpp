@@ -88,6 +88,10 @@ Application::Application(Parameters const& par,
 
     // Input node application
 
+    std::vector<std::string> output_hosts;
+    for (unsigned int i = 0; i < par.outputs().size(); ++i)
+        output_hosts.push_back(par.outputs().at(i).host);
+
     std::vector<std::string> output_services;
     for (unsigned int i = 0; i < par.outputs().size(); ++i)
         output_services.push_back(std::to_string(par.base_port() + i));
@@ -169,7 +173,7 @@ Application::Application(Parameters const& par,
 #ifdef HAVE_LIBFABRIC
             std::unique_ptr<tl_libfabric::InputChannelSender> sender(
                 new tl_libfabric::InputChannelSender(
-                    index, *(data_sources_.at(c).get()), par.output_hosts(),
+                    index, *(data_sources_.at(c).get()), output_hosts,
                     output_services, par.timeslice_size(), overlap_size,
                     par.max_timeslice_number(), par.inputs().at(c).host));
             input_channel_senders_.push_back(std::move(sender));
@@ -179,7 +183,7 @@ Application::Application(Parameters const& par,
         } else {
 #ifdef HAVE_RDMA
             std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
-                index, *(data_sources_.at(c).get()), par.output_hosts(),
+                index, *(data_sources_.at(c).get()), output_hosts,
                 output_services, par.timeslice_size(), overlap_size,
                 par.max_timeslice_number()));
             input_channel_senders_.push_back(std::move(sender));
