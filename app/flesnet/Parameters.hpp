@@ -47,9 +47,6 @@ public:
     Parameters(const Parameters&) = delete;
     void operator=(const Parameters&) = delete;
 
-    /// Return a description of active nodes, suitable for debug output.
-    std::string const desc() const;
-
     uint32_t suggest_in_data_buffer_size_exp();
     uint32_t suggest_cn_data_buffer_size_exp();
 
@@ -118,13 +115,35 @@ public:
     /// Retrieve the number of completion queue entries.
     uint32_t num_cqe() const { return num_cqe_; }
 
-    /// Retrieve the list of participating input nodes.
-    std::vector<std::string> const input_nodes() const { return input_nodes_; }
+    /// Retrieve the list of participating inputs.
+    std::vector<InterfaceSpecification> const inputs() const { return inputs_; }
 
     /// Retrieve the list of compute node outputs.
     std::vector<InterfaceSpecification> const outputs() const
     {
         return outputs_;
+    }
+
+    /// Return a list of input hosts.
+    std::vector<std::string> const input_hosts() const
+    {
+        std::vector<std::string> hosts;
+        hosts.reserve(inputs_.size());
+        std::transform(
+            inputs_.begin(), inputs_.end(), back_inserter(hosts),
+            [](InterfaceSpecification input) { return input.host; });
+        return hosts;
+    }
+
+    /// Return a list of input URIs.
+    std::vector<std::string> const input_uris() const
+    {
+        std::vector<std::string> uris;
+        uris.reserve(inputs_.size());
+        std::transform(
+            inputs_.begin(), inputs_.end(), back_inserter(uris),
+            [](InterfaceSpecification input) { return input.full_uri; });
+        return uris;
     }
 
     /// Return a list of compute node output hosts.
@@ -149,11 +168,10 @@ public:
         return uris;
     }
 
-    /// Retrieve this applications's indexes in the list of input nodes.
+    /// Retrieve this applications's indexes in the list of inputs.
     std::vector<unsigned> input_indexes() const { return input_indexes_; }
 
-    /// Retrieve this applications's indexes in the list of compute node
-    /// outputs.
+    /// Retrieve this applications's indexes in the list of outputs.
     std::vector<unsigned> output_indexes() const { return output_indexes_; }
 
 private:
@@ -212,15 +230,15 @@ private:
 
     uint32_t num_cqe_ = 1000000;
 
-    /// The list of participating input nodes.
-    std::vector<std::string> input_nodes_;
+    /// The list of participating inputs.
+    std::vector<InterfaceSpecification> inputs_;
 
     /// The list of compute node outputs.
     std::vector<InterfaceSpecification> outputs_;
 
-    /// This applications's indexes in the list of input nodes.
+    /// This applications's indexes in the list of inputs.
     std::vector<unsigned> input_indexes_;
 
-    /// This applications's indexes in the list of compute nodes.
+    /// This applications's indexes in the list of outputs.
     std::vector<unsigned> output_indexes_;
 };

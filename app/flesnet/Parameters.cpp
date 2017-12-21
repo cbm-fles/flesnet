@@ -105,7 +105,7 @@ uint32_t Parameters::suggest_cn_data_buffer_size_exp()
     float total_ram = sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
     float suggest_cn_data_buffer_size =
         buffer_ram_usage_ratio * total_ram /
-        (output_indexes_.size() * input_nodes_.size());
+        (output_indexes_.size() * inputs_.size());
 
     uint32_t suggest_cn_data_buffer_size_exp =
         static_cast<uint32_t>(ceilf(log2f(suggest_cn_data_buffer_size)));
@@ -217,15 +217,16 @@ void Parameters::parse_options(int argc, char* argv[])
     config_add(
         "input-index,i",
         po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
-        "set this application's index(es) in the list of input nodes");
+        "set this application's index(es) in the list of inputs");
     config_add(
         "output-index,o",
         po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
-        "set this application's index(es) in the list of compute node outputs");
-    config_add("input-nodes,I",
-               po::value<std::vector<std::string>>()->multitoken()->value_name(
-                   "<hostname> ..."),
-               "add a host to the list of input nodes");
+        "set this application's index(es) in the list of outputs");
+    config_add("input,I",
+               po::value<std::vector<InterfaceSpecification>>()
+                   ->multitoken()
+                   ->value_name("scheme://host/path?param=value ..."),
+               "add an input to the list of participating inputs");
     config_add("output,O",
                po::value<std::vector<InterfaceSpecification>>()
                    ->multitoken()
@@ -362,22 +363,22 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 #endif
 
-    if (!vm.count("input-nodes"))
-        throw ParametersException("list of input nodes is empty");
+    if (!vm.count("input"))
+        throw ParametersException("list of inputs is empty");
 
     if (!vm.count("output"))
         throw ParametersException("list of outputs is empty");
 
-    input_nodes_ = vm["input-nodes"].as<std::vector<std::string>>();
+    inputs_ = vm["input"].as<std::vector<InterfaceSpecification>>();
     outputs_ = vm["output"].as<std::vector<InterfaceSpecification>>();
 
-    for (auto input_node : input_nodes_) {
-        if (!web::uri::validate(input_node))
-            throw ParametersException("invalid input node specification: " +
-                                      input_node);
+    for (auto& input : inputs_) {
+        if (!web::uri::validate(input.full_uri))
+            throw ParametersException("invalid input specification: " +
+                                      input.full_uri);
     }
 
-    for (auto output : outputs_) {
+    for (auto& output : outputs_) {
         if (!web::uri::validate(output.full_uri))
             throw ParametersException("invalid output specification: " +
                                       output.full_uri);
@@ -388,15 +389,15 @@ void Parameters::parse_options(int argc, char* argv[])
     if (vm.count("output-index"))
         output_indexes_ = vm["output-index"].as<std::vector<unsigned>>();
 
-    if (input_nodes_.empty() && outputs_.empty()) {
+    if (inputs_.empty() && outputs_.empty()) {
         throw ParametersException("no node type specified");
     }
 
     for (auto input_index : input_indexes_) {
-        if (input_index >= input_nodes_.size()) {
+        if (input_index >= inputs_.size()) {
             std::ostringstream oss;
-            oss << "input node index (" << input_index << ") out of range (0.."
-                << input_nodes_.size() - 1 << ")";
+            oss << "input index (" << input_index << ") out of range (0.."
+                << inputs_.size() - 1 << ")";
             throw ParametersException(oss.str());
         }
     }
@@ -404,8 +405,8 @@ void Parameters::parse_options(int argc, char* argv[])
     for (auto output_index : output_indexes_) {
         if (output_index >= outputs_.size()) {
             std::ostringstream oss;
-            oss << "output index (" << output_index
-                << ") out of range (0.." << outputs_.size() - 1 << ")";
+            oss << "output index (" << output_index << ") out of range (0.."
+                << outputs_.size() - 1 << ")";
             throw ParametersException(oss.str());
         }
     }
@@ -437,13 +438,13 @@ void Parameters::parse_options(int argc, char* argv[])
     if (cn_desc_buffer_size_exp_ == 0)
         cn_desc_buffer_size_exp_ = suggest_cn_desc_buffer_size_exp();
 
-    L_(debug) << "input nodes (" << input_nodes_.size()
-              << "): " << boost::algorithm::join(input_nodes_, " ");
+    L_(debug) << "inputs (" << inputs_.size()
+              << "): " << boost::algorithm::join(input_uris(), " ");
     L_(debug) << "outputs (" << outputs_.size()
               << "): " << boost::algorithm::join(output_uris(), " ");
     for (auto input_index : input_indexes_) {
         L_(info) << "this is input node " << input_index << " (of "
-                 << input_nodes_.size() << ")";
+                 << inputs_.size() << ")";
     }
     for (auto output_index : output_indexes_) {
         L_(info) << "this is output " << output_index << " (of "

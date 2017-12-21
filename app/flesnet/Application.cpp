@@ -16,7 +16,7 @@ Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status)
 {
-    unsigned input_nodes_size = par.input_nodes().size();
+    unsigned input_size = par.inputs().size();
     std::vector<unsigned> input_indexes = par.input_indexes();
 
     if (!par.input_shm().empty()) {
@@ -36,8 +36,8 @@ Application::Application(Parameters const& par,
     // set_cpu(1);
 
     std::vector<std::string> input_server_addresses;
-    for (unsigned int i = 0; i < par.input_nodes().size(); ++i)
-        input_server_addresses.push_back("tcp://" + par.input_nodes().at(i) +
+    for (unsigned int i = 0; i < input_size; ++i)
+        input_server_addresses.push_back("tcp://" + par.inputs().at(i).host +
                                          ":" +
                                          std::to_string(par.base_port() + i));
 
@@ -46,7 +46,7 @@ Application::Application(Parameters const& par,
 
         std::unique_ptr<TimesliceBuffer> tsb(new TimesliceBuffer(
             shm_identifier, par_.cn_data_buffer_size_exp(),
-            par_.cn_desc_buffer_size_exp(), input_nodes_size));
+            par_.cn_desc_buffer_size_exp(), input_size));
 
         start_processes(shm_identifier);
         ChildProcessManager::get().allow_stop_processes(this);
@@ -62,7 +62,7 @@ Application::Application(Parameters const& par,
 #ifdef HAVE_LIBFABRIC
             std::unique_ptr<tl_libfabric::TimesliceBuilder> builder(
                 new tl_libfabric::TimesliceBuilder(
-                    i, *tsb, par_.base_port() + i, input_nodes_size,
+                    i, *tsb, par_.base_port() + i, input_size,
                     par_.timeslice_size(), signal_status_, false,
                     par_.outputs().at(i).host));
             timeslice_builders_.push_back(std::move(builder));
@@ -72,7 +72,7 @@ Application::Application(Parameters const& par,
         } else {
 #ifdef HAVE_RDMA
             std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
-                i, *tsb, par_.base_port() + i, input_nodes_size,
+                i, *tsb, par_.base_port() + i, input_size,
                 par_.timeslice_size(), signal_status_, false));
             timeslice_builders_.push_back(std::move(builder));
 #else
@@ -91,8 +91,8 @@ Application::Application(Parameters const& par,
     for (unsigned int i = 0; i < par.outputs().size(); ++i)
         output_services.push_back(std::to_string(par.base_port() + i));
 
-    for (size_t c = 0; c < input_indexes.size(); ++c) {
-        unsigned index = input_indexes.at(c);
+    for (size_t c = 0; c < par.input_indexes().size(); ++c) {
+        unsigned index = par.input_indexes().at(c);
 
         if (c < shm_num_channels_) {
             data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
@@ -134,7 +134,7 @@ Application::Application(Parameters const& par,
                 new tl_libfabric::InputChannelSender(
                     index, *(data_sources_.at(c).get()), par.output_hosts(),
                     output_services, par.timeslice_size(), par.overlap_size(),
-                    par.max_timeslice_number(), par.input_nodes().at(c)));
+                    par.max_timeslice_number(), par.inputs().at(c).host));
             input_channel_senders_.push_back(std::move(sender));
 #else
             L_(fatal) << "flesnet built without LIBFABRIC support";
