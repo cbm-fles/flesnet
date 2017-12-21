@@ -68,7 +68,7 @@ Application::Application(Parameters const& par,
                 new tl_libfabric::TimesliceBuilder(
                     i, *tsb, par_.base_port() + i, input_nodes_size,
                     par_.timeslice_size(), signal_status_, false,
-                    par_.outputs()[i].host));
+                    par_.outputs().at(i).host));
             timeslice_builders_.push_back(std::move(builder));
 #else
             L_(fatal) << "flesnet built without LIBFABRIC support";
