@@ -42,11 +42,7 @@ Application::Application(Parameters const& par,
                                          std::to_string(par.base_port() + i));
 
     for (unsigned i : par_.output_indexes()) {
-        // generate random shared memory identifier for timeslice buffer
-        std::random_device random_device;
-        std::uniform_int_distribution<uint64_t> uint_distribution;
-        uint64_t random_number = uint_distribution(random_device);
-        std::string shm_identifier = "flesnet_" + std::to_string(random_number);
+        std::string shm_identifier = par_.outputs().at(i).path.at(0);
 
         std::unique_ptr<TimesliceBuffer> tsb(new TimesliceBuffer(
             shm_identifier, par_.cn_data_buffer_size_exp(),
