@@ -152,8 +152,9 @@ public:
     /// Retrieve this applications's indexes in the list of input nodes.
     std::vector<unsigned> input_indexes() const { return input_indexes_; }
 
-    /// Retrieve this applications's indexes in the list of compute nodes.
-    std::vector<unsigned> compute_indexes() const { return compute_indexes_; }
+    /// Retrieve this applications's indexes in the list of compute node
+    /// outputs.
+    std::vector<unsigned> output_indexes() const { return output_indexes_; }
 
 private:
     /// Parse command line options.
@@ -221,5 +222,5 @@ private:
     std::vector<unsigned> input_indexes_;
 
     /// This applications's indexes in the list of compute nodes.
-    std::vector<unsigned> compute_indexes_;
+    std::vector<unsigned> output_indexes_;
 };

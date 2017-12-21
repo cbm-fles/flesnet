@@ -41,7 +41,7 @@ Application::Application(Parameters const& par,
                                          ":" +
                                          std::to_string(par.base_port() + i));
 
-    for (unsigned i : par_.compute_indexes()) {
+    for (unsigned i : par_.output_indexes()) {
         // generate random shared memory identifier for timeslice buffer
         std::random_device random_device;
         std::uniform_int_distribution<uint64_t> uint_distribution;
@@ -91,9 +91,9 @@ Application::Application(Parameters const& par,
 
     // Input node application
 
-    std::vector<std::string> compute_services;
+    std::vector<std::string> output_services;
     for (unsigned int i = 0; i < par.outputs().size(); ++i)
-        compute_services.push_back(std::to_string(par.base_port() + i));
+        output_services.push_back(std::to_string(par.base_port() + i));
 
     for (size_t c = 0; c < input_indexes.size(); ++c) {
         unsigned index = input_indexes.at(c);
@@ -137,7 +137,7 @@ Application::Application(Parameters const& par,
             std::unique_ptr<tl_libfabric::InputChannelSender> sender(
                 new tl_libfabric::InputChannelSender(
                     index, *(data_sources_.at(c).get()), par.output_hosts(),
-                    compute_services, par.timeslice_size(), par.overlap_size(),
+                    output_services, par.timeslice_size(), par.overlap_size(),
                     par.max_timeslice_number(), par.input_nodes().at(c)));
             input_channel_senders_.push_back(std::move(sender));
 #else
@@ -147,7 +147,7 @@ Application::Application(Parameters const& par,
 #ifdef HAVE_RDMA
             std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
                 index, *(data_sources_.at(c).get()), par.output_hosts(),
-                compute_services, par.timeslice_size(), par.overlap_size(),
+                output_services, par.timeslice_size(), par.overlap_size(),
                 par.max_timeslice_number()));
             input_channel_senders_.push_back(std::move(sender));
 #else

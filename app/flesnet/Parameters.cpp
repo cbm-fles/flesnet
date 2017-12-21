@@ -71,26 +71,6 @@ std::ostream& operator<<(std::ostream& out,
     return out;
 }
 
-std::string const Parameters::desc() const
-{
-    std::stringstream st;
-
-    st << "input nodes (" << input_nodes_.size() << "): " << input_nodes_
-       << std::endl;
-    st << "compute nodes (" << outputs_.size() << "): " << output_uris()
-       << std::endl;
-    for (auto input_index : input_indexes_) {
-        st << "this is input node " << input_index << " (of "
-           << input_nodes_.size() << ")" << std::endl;
-    }
-    for (auto compute_index : compute_indexes_) {
-        st << "this is compute node " << compute_index << " (of "
-           << outputs_.size() << ")" << std::endl;
-    }
-
-    return st.str();
-}
-
 uint32_t Parameters::suggest_in_data_buffer_size_exp()
 {
     constexpr float buffer_ram_usage_ratio = 0.05f;
@@ -125,7 +105,7 @@ uint32_t Parameters::suggest_cn_data_buffer_size_exp()
     float total_ram = sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
     float suggest_cn_data_buffer_size =
         buffer_ram_usage_ratio * total_ram /
-        (compute_indexes_.size() * input_nodes_.size());
+        (output_indexes_.size() * input_nodes_.size());
 
     uint32_t suggest_cn_data_buffer_size_exp =
         static_cast<uint32_t>(ceilf(log2f(suggest_cn_data_buffer_size)));
@@ -239,14 +219,14 @@ void Parameters::parse_options(int argc, char* argv[])
         po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
         "set this application's index(es) in the list of input nodes");
     config_add(
-        "compute-index,c",
+        "output-index,o",
         po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
-        "set this application's index(es) in the list of compute nodes");
+        "set this application's index(es) in the list of compute node outputs");
     config_add("input-nodes,I",
                po::value<std::vector<std::string>>()->multitoken()->value_name(
                    "<hostname> ..."),
                "add a host to the list of input nodes");
-    config_add("compute-nodes,C",
+    config_add("output,O",
                po::value<std::vector<InterfaceSpecification>>()
                    ->multitoken()
                    ->value_name("scheme://host/path?param=value ..."),
@@ -385,11 +365,11 @@ void Parameters::parse_options(int argc, char* argv[])
     if (!vm.count("input-nodes"))
         throw ParametersException("list of input nodes is empty");
 
-    if (!vm.count("compute-nodes"))
-        throw ParametersException("list of compute nodes is empty");
+    if (!vm.count("output"))
+        throw ParametersException("list of outputs is empty");
 
     input_nodes_ = vm["input-nodes"].as<std::vector<std::string>>();
-    outputs_ = vm["compute-nodes"].as<std::vector<InterfaceSpecification>>();
+    outputs_ = vm["output"].as<std::vector<InterfaceSpecification>>();
 
     for (auto input_node : input_nodes_) {
         if (!web::uri::validate(input_node))
@@ -405,8 +385,8 @@ void Parameters::parse_options(int argc, char* argv[])
 
     if (vm.count("input-index"))
         input_indexes_ = vm["input-index"].as<std::vector<unsigned>>();
-    if (vm.count("compute-index"))
-        compute_indexes_ = vm["compute-index"].as<std::vector<unsigned>>();
+    if (vm.count("output-index"))
+        output_indexes_ = vm["output-index"].as<std::vector<unsigned>>();
 
     if (input_nodes_.empty() && outputs_.empty()) {
         throw ParametersException("no node type specified");
@@ -421,10 +401,10 @@ void Parameters::parse_options(int argc, char* argv[])
         }
     }
 
-    for (auto compute_index : compute_indexes_) {
-        if (compute_index >= outputs_.size()) {
+    for (auto output_index : output_indexes_) {
+        if (output_index >= outputs_.size()) {
             std::ostringstream oss;
-            oss << "compute node index (" << compute_index
+            oss << "output index (" << output_index
                 << ") out of range (0.." << outputs_.size() - 1 << ")";
             throw ParametersException(oss.str());
         }
@@ -459,14 +439,14 @@ void Parameters::parse_options(int argc, char* argv[])
 
     L_(debug) << "input nodes (" << input_nodes_.size()
               << "): " << boost::algorithm::join(input_nodes_, " ");
-    L_(debug) << "compute nodes (" << outputs_.size()
+    L_(debug) << "outputs (" << outputs_.size()
               << "): " << boost::algorithm::join(output_uris(), " ");
     for (auto input_index : input_indexes_) {
         L_(info) << "this is input node " << input_index << " (of "
                  << input_nodes_.size() << ")";
     }
-    for (auto compute_index : compute_indexes_) {
-        L_(info) << "this is compute node " << compute_index << " (of "
+    for (auto output_index : output_indexes_) {
+        L_(info) << "this is output " << output_index << " (of "
                  << outputs_.size() << ")";
     }
 
