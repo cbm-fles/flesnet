@@ -162,9 +162,6 @@ private:
     /// Parse command line options.
     void parse_options(int argc, char* argv[]);
 
-    /// Print buffer information
-    void print_buffer_info();
-
     /// The global timeslice size in number of microslices.
     uint32_t timeslice_size_ = 100;
 

@@ -376,25 +376,11 @@ void Parameters::parse_options(int argc, char* argv[])
 
     for (auto input_index : input_indexes_) {
         if (input_index == 0) {
-            print_buffer_info();
+            L_(info) << "microslice size: "
+                     << human_readable_count(typical_content_size_);
+            L_(info) << "timeslice size: (" << timeslice_size_ << " + "
+                     << overlap_size_ << ") microslices";
+            L_(info) << "number of timeslices: " << max_timeslice_number_;
         }
-    }
-}
-
-void Parameters::print_buffer_info()
-{
-    L_(info) << "microslice size: "
-             << human_readable_count(typical_content_size_);
-    L_(info) << "timeslice size: (" << timeslice_size_ << " + " << overlap_size_
-             << ") microslices";
-    L_(info) << "number of timeslices: " << max_timeslice_number_;
-    if (input_shm().empty()) {
-        L_(info) << "input node buffer size: "
-                 << human_readable_count(UINT64_C(1)
-                                         << in_data_buffer_size_exp_)
-                 << " + "
-                 << human_readable_count(
-                        (UINT64_C(1) << in_desc_buffer_size_exp_) *
-                        sizeof(fles::MicrosliceDescriptor));
     }
 }

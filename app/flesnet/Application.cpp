@@ -18,18 +18,6 @@ Application::Application(Parameters const& par,
     unsigned input_size = par.inputs().size();
     std::vector<unsigned> input_indexes = par.input_indexes();
 
-    if (!par.input_shm().empty()) {
-        try {
-            shm_device_ =
-                std::make_shared<flib_shm_device_client>(par.input_shm());
-            shm_num_channels_ = shm_device_->num_channels();
-            L_(info) << "using shared memory";
-        } catch (std::exception const& e) {
-            L_(error) << "exception while connecting to shared memory: "
-                      << e.what();
-        }
-    }
-
     // Compute node application
 
     // set_cpu(1);
@@ -41,7 +29,7 @@ Application::Application(Parameters const& par,
                                          std::to_string(par.base_port() + i));
 
     for (unsigned i : par_.output_indexes()) {
-        std::string shm_identifier = par_.outputs().at(i).path.at(0);
+        auto shm_identifier = par_.outputs().at(i).path.at(0);
         auto param = par_.outputs().at(i).param;
 
         uint32_t datasize = 27; // 128 MiB
@@ -107,16 +95,50 @@ Application::Application(Parameters const& par,
     for (size_t c = 0; c < par.input_indexes().size(); ++c) {
         unsigned index = par.input_indexes().at(c);
 
-        if (c < shm_num_channels_) {
+        auto scheme = par_.inputs().at(index).scheme;
+        if (scheme == "shm") {
+            auto shm_identifier = par_.inputs().at(index).path.at(0);
+            int channel = std::stoi(par_.inputs().at(index).path.at(1));
+
+            if (!shm_devices_.count(shm_identifier)) {
+                try {
+                    shm_devices_.insert(
+                        std::make_pair(par.input_shm(),
+                                       std::make_shared<flib_shm_device_client>(
+                                           par.input_shm())));
+                    L_(info)
+                        << "using shared memory (" << shm_identifier << ")";
+                } catch (std::exception const& e) {
+                    L_(error) << "exception while connecting to shared memory: "
+                              << e.what();
+                }
+            }
+
             data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
-                new flib_shm_channel_client(shm_device_, c)));
+                new flib_shm_channel_client(shm_devices_.at(shm_identifier),
+                                            channel)));
+        } else if (scheme == "pgen") {
+            auto param = par_.inputs().at(index).param;
+
+            uint32_t datasize = 27; // 128 MiB
+            if (param.count("datasize"))
+                datasize = std::stoi(param.at("datasize"));
+            uint32_t descsize = 19; // 16 MiB
+            if (param.count("descsize"))
+                descsize = std::stoi(param.at("descsize"));
+
+            L_(info) << "input buffer " << index << " size: "
+                     << human_readable_count(UINT64_C(1) << datasize) << " + "
+                     << human_readable_count(
+                            (UINT64_C(1) << descsize) *
+                            sizeof(fles::MicrosliceDescriptor));
+
+            data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
+                new EmbeddedPatternGenerator(
+                    datasize, descsize, index, par.typical_content_size(),
+                    par.generate_ts_patterns(), par.random_ts_sizes())));
         } else {
-            data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
-                new EmbeddedPatternGenerator(par.in_data_buffer_size_exp(),
-                                             par.in_desc_buffer_size_exp(),
-                                             index, par.typical_content_size(),
-                                             par.generate_ts_patterns(),
-                                             par.random_ts_sizes())));
+            L_(fatal) << "unknown input scheme: " << scheme;
         }
 
         if (par_.transport() == Transport::ZeroMQ) {
