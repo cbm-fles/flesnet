@@ -50,9 +50,6 @@ public:
     /// Retrieve the global timeslice size in number of microslices.
     uint32_t timeslice_size() const { return timeslice_size_; }
 
-    /// Retrieve the size of the overlap region in number of microslices.
-    uint32_t overlap_size() const { return overlap_size_; }
-
     /// Retrieve the global maximum timeslice number.
     uint32_t max_timeslice_number() const { return max_timeslice_number_; }
 
@@ -70,9 +67,6 @@ public:
 
     /// Generate patterns while generating embedded timeslices
     bool generate_ts_patterns() const { return generate_ts_patterns_; }
-
-    /// Retrieve the number of completion queue entries.
-    uint32_t num_cqe() const { return num_cqe_; }
 
     /// Retrieve the list of participating inputs.
     std::vector<InterfaceSpecification> const inputs() const { return inputs_; }
@@ -140,9 +134,6 @@ private:
     /// The global timeslice size in number of microslices.
     uint32_t timeslice_size_ = 100;
 
-    /// The size of the overlap region in number of microslices.
-    uint32_t overlap_size_ = 2;
-
     /// The global maximum timeslice number.
     uint32_t max_timeslice_number_ = UINT32_MAX;
 
@@ -160,8 +151,6 @@ private:
 
     /// Generate patterns while generating embedded timeslices
     bool generate_ts_patterns_ = false;
-
-    uint32_t num_cqe_ = 1000000;
 
     /// The list of participating inputs.
     std::vector<InterfaceSpecification> inputs_;

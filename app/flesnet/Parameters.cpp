@@ -118,12 +118,6 @@ void Parameters::parse_options(int argc, char* argv[])
                    ->default_value(timeslice_size_)
                    ->value_name("<n>"),
                "set the global timeslice size in number of microslices");
-    config_add(
-        "overlap-size",
-        po::value<uint32_t>(&overlap_size_)
-            ->default_value(overlap_size_)
-            ->value_name("<n>"),
-        "set the global size of the overlap region in number of microslices");
     config_add("max-timeslice-number,n",
                po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
                "quit after processing given number of timeslices");
@@ -275,8 +269,7 @@ void Parameters::parse_options(int argc, char* argv[])
 
     for (auto input_index : input_indexes_) {
         if (input_index == 0) {
-            L_(info) << "timeslice size: (" << timeslice_size_ << " + "
-                     << overlap_size_ << ") microslices";
+            L_(info) << "timeslice size: " << timeslice_size_ << " microslices";
             L_(info) << "number of timeslices: " << max_timeslice_number_;
         }
     }

@@ -96,6 +96,8 @@ Application::Application(Parameters const& par,
         unsigned index = par.input_indexes().at(c);
 
         auto scheme = par_.inputs().at(index).scheme;
+        auto param = par_.inputs().at(index).param;
+
         if (scheme == "shm") {
             auto shm_identifier = par_.inputs().at(index).path.at(0);
             int channel = std::stoi(par_.inputs().at(index).path.at(1));
@@ -118,8 +120,6 @@ Application::Application(Parameters const& par,
                 new flib_shm_channel_client(shm_devices_.at(shm_identifier),
                                             channel)));
         } else if (scheme == "pgen") {
-            auto param = par_.inputs().at(index).param;
-
             uint32_t datasize = 27; // 128 MiB
             if (param.count("datasize"))
                 datasize = std::stoi(param.at("datasize"));
@@ -149,13 +149,17 @@ Application::Application(Parameters const& par,
             L_(fatal) << "unknown input scheme: " << scheme;
         }
 
+        uint32_t overlap_size = 1;
+        if (param.count("overlap"))
+            overlap_size = std::stoi(param.at("overlap"));
+
         if (par_.transport() == Transport::ZeroMQ) {
             std::string listen_address =
                 "tcp://*:" + std::to_string(par_.base_port() + index);
             std::unique_ptr<ComponentSenderZeromq> sender(
                 new ComponentSenderZeromq(
                     index, *(data_sources_.at(c).get()), listen_address,
-                    par.timeslice_size(), par.overlap_size(),
+                    par.timeslice_size(), overlap_size,
                     par.max_timeslice_number(), signal_status_));
             component_senders_zeromq_.push_back(std::move(sender));
         } else if (par_.transport() == Transport::LibFabric) {
@@ -163,7 +167,7 @@ Application::Application(Parameters const& par,
             std::unique_ptr<tl_libfabric::InputChannelSender> sender(
                 new tl_libfabric::InputChannelSender(
                     index, *(data_sources_.at(c).get()), par.output_hosts(),
-                    output_services, par.timeslice_size(), par.overlap_size(),
+                    output_services, par.timeslice_size(), overlap_size,
                     par.max_timeslice_number(), par.inputs().at(c).host));
             input_channel_senders_.push_back(std::move(sender));
 #else
@@ -173,7 +177,7 @@ Application::Application(Parameters const& par,
 #ifdef HAVE_RDMA
             std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
                 index, *(data_sources_.at(c).get()), par.output_hosts(),
-                output_services, par.timeslice_size(), par.overlap_size(),
+                output_services, par.timeslice_size(), overlap_size,
                 par.max_timeslice_number()));
             input_channel_senders_.push_back(std::move(sender));
 #else
