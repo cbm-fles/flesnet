@@ -71,64 +71,6 @@ std::ostream& operator<<(std::ostream& out,
     return out;
 }
 
-uint32_t Parameters::suggest_in_data_buffer_size_exp()
-{
-    constexpr float buffer_ram_usage_ratio = 0.05f;
-
-    // ensure value in sensible range
-    constexpr uint32_t max_in_data_buffer_size_exp = 30; // 30: 1 GByte
-    constexpr uint32_t min_in_data_buffer_size_exp = 20; // 20: 1 MByte
-
-    float total_ram = sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
-    float suggest_in_data_buffer_size =
-        buffer_ram_usage_ratio * total_ram / input_indexes_.size();
-
-    uint32_t suggest_in_data_buffer_size_exp =
-        static_cast<uint32_t>(ceilf(log2f(suggest_in_data_buffer_size)));
-
-    if (suggest_in_data_buffer_size_exp > max_in_data_buffer_size_exp)
-        suggest_in_data_buffer_size_exp = max_in_data_buffer_size_exp;
-    if (suggest_in_data_buffer_size_exp < min_in_data_buffer_size_exp)
-        suggest_in_data_buffer_size_exp = min_in_data_buffer_size_exp;
-
-    return suggest_in_data_buffer_size_exp;
-}
-
-uint32_t Parameters::suggest_in_desc_buffer_size_exp()
-{
-    // make desc buffer larger by this factor to account for data size
-    // fluctuations
-    constexpr float in_desc_buffer_oversize_factor = 4.0;
-
-    // ensure value in sensible range
-    constexpr float max_desc_data_ratio = 1.0f;
-    constexpr float min_desc_data_ratio = 0.1f;
-
-    static_assert(min_desc_data_ratio <= max_desc_data_ratio,
-                  "invalid range for desc_data_ratio");
-
-    float in_data_buffer_size = UINT64_C(1) << in_data_buffer_size_exp_;
-    float suggest_in_desc_buffer_size = in_data_buffer_size /
-                                        typical_content_size_ *
-                                        in_desc_buffer_oversize_factor;
-    uint32_t suggest_in_desc_buffer_size_exp =
-        static_cast<uint32_t>(ceilf(log2f(suggest_in_desc_buffer_size)));
-
-    float relative_size =
-        in_data_buffer_size / sizeof(fles::MicrosliceDescriptor);
-    uint32_t max_in_desc_buffer_size_exp = static_cast<uint32_t>(
-        floorf(log2f(relative_size * max_desc_data_ratio)));
-    uint32_t min_in_desc_buffer_size_exp = static_cast<uint32_t>(
-        ceilf(log2f(relative_size * min_desc_data_ratio)));
-
-    if (suggest_in_desc_buffer_size_exp > max_in_desc_buffer_size_exp)
-        suggest_in_desc_buffer_size_exp = max_in_desc_buffer_size_exp;
-    if (suggest_in_desc_buffer_size_exp < min_in_desc_buffer_size_exp)
-        suggest_in_desc_buffer_size_exp = min_in_desc_buffer_size_exp;
-
-    return suggest_in_desc_buffer_size_exp;
-}
-
 void Parameters::parse_options(int argc, char* argv[])
 {
     unsigned log_level = 2;
@@ -182,24 +124,11 @@ void Parameters::parse_options(int argc, char* argv[])
             ->default_value(overlap_size_)
             ->value_name("<n>"),
         "set the global size of the overlap region in number of microslices");
-    config_add(
-        "in-data-buffer-size-exp",
-        po::value<uint32_t>(&in_data_buffer_size_exp_)->value_name("<n>"),
-        "data buffer size used per input in the input node (log of number of "
-        "bytes)");
-    config_add(
-        "in-desc-buffer-size-exp",
-        po::value<uint32_t>(&in_desc_buffer_size_exp_)->value_name("<n>"),
-        "descriptor buffer size used per input in the input node (log of "
-        "number of entries)");
     config_add("typical-content-size",
                po::value<uint32_t>(&typical_content_size_)
                    ->default_value(typical_content_size_)
                    ->value_name("<n>"),
                "typical number of content bytes per microslice");
-    config_add("input-shm",
-               po::value<std::string>(&input_shm_)->value_name("<id>"),
-               "name of a shared memory to use as data source");
     config_add("max-timeslice-number,n",
                po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
                "quit after processing given number of timeslices");
@@ -342,24 +271,6 @@ void Parameters::parse_options(int argc, char* argv[])
 
     if (!outputs_.empty() && processor_executable_.empty())
         throw ParametersException("processor executable not specified");
-
-    if (in_data_buffer_size_exp_ == 0 && input_shm().empty()) {
-        in_data_buffer_size_exp_ = suggest_in_data_buffer_size_exp();
-    }
-    if (in_data_buffer_size_exp_ != 0 && !input_shm().empty()) {
-        L_(warning) << "using shared memory buffers, in_data_buffer_size_exp "
-                       "will be ignored";
-        in_data_buffer_size_exp_ = 0;
-    }
-
-    if (in_desc_buffer_size_exp_ == 0 && input_shm().empty()) {
-        in_desc_buffer_size_exp_ = suggest_in_desc_buffer_size_exp();
-    }
-    if (in_desc_buffer_size_exp_ != 0 && !input_shm().empty()) {
-        L_(warning) << "using shared memory buffers, in_desc_buffer_size_exp "
-                       "will be ignored";
-        in_desc_buffer_size_exp_ = 0;
-    }
 
     L_(debug) << "inputs (" << inputs_.size()
               << "): " << boost::algorithm::join(input_uris(), " ");

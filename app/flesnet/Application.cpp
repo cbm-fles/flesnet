@@ -103,9 +103,9 @@ Application::Application(Parameters const& par,
             if (!shm_devices_.count(shm_identifier)) {
                 try {
                     shm_devices_.insert(
-                        std::make_pair(par.input_shm(),
+                        std::make_pair(shm_identifier,
                                        std::make_shared<flib_shm_device_client>(
-                                           par.input_shm())));
+                                           shm_identifier)));
                     L_(info)
                         << "using shared memory (" << shm_identifier << ")";
                 } catch (std::exception const& e) {

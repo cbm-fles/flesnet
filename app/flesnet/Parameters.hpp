@@ -47,33 +47,14 @@ public:
     Parameters(const Parameters&) = delete;
     void operator=(const Parameters&) = delete;
 
-    uint32_t suggest_in_data_buffer_size_exp();
-    uint32_t suggest_in_desc_buffer_size_exp();
-
     /// Retrieve the global timeslice size in number of microslices.
     uint32_t timeslice_size() const { return timeslice_size_; }
 
     /// Retrieve the size of the overlap region in number of microslices.
     uint32_t overlap_size() const { return overlap_size_; }
 
-    /// Retrieve the exp. size of the input node's data buffer in bytes.
-    uint32_t in_data_buffer_size_exp() const
-    {
-        return in_data_buffer_size_exp_;
-    }
-
-    /// Retrieve the exp. size of the input node's descriptor buffer
-    /// (number of entries).
-    uint32_t in_desc_buffer_size_exp() const
-    {
-        return in_desc_buffer_size_exp_;
-    }
-
     /// Retrieve the typical number of content bytes per microslice.
     uint32_t typical_content_size() const { return typical_content_size_; }
-
-    /// Retrieve the shared memory identifier.
-    std::string input_shm() const { return input_shm_; }
 
     /// Retrieve the global maximum timeslice number.
     uint32_t max_timeslice_number() const { return max_timeslice_number_; }
@@ -170,16 +151,6 @@ private:
 
     /// A typical number of content bytes per microslice.
     uint32_t typical_content_size_ = 1024;
-
-    /// The exp. size of the input node's data buffer in bytes.
-    uint32_t in_data_buffer_size_exp_ = 0;
-
-    /// The exp. size of the input node's descriptor buffer (number of
-    /// entries).
-    uint32_t in_desc_buffer_size_exp_ = 0;
-
-    // The input shared memory identifier
-    std::string input_shm_;
 
     /// The global maximum timeslice number.
     uint32_t max_timeslice_number_ = UINT32_MAX;
