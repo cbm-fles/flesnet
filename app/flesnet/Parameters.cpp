@@ -195,12 +195,13 @@ void Parameters::parse_options(int argc, char* argv[])
 
     po::options_description generic("Generic options");
     auto generic_add = generic.add_options();
-    generic_add("config-file,f", po::value<std::string>(&config_file)
-                                     ->value_name("<filename>"),
+    generic_add("config-file,f",
+                po::value<std::string>(&config_file)->value_name("<filename>"),
                 "read configuration from file");
-    generic_add("log-level,l", po::value<unsigned>(&log_level)
-                                   ->default_value(log_level)
-                                   ->value_name("<n>"),
+    generic_add("log-level,l",
+                po::value<unsigned>(&log_level)
+                    ->default_value(log_level)
+                    ->value_name("<n>"),
                 "set the global log level (all: 0)");
     generic_add("log-file,L",
                 po::value<std::string>(&log_file)->value_name("<filename>"),
@@ -226,14 +227,16 @@ void Parameters::parse_options(int argc, char* argv[])
                po::value<std::vector<std::string>>()->multitoken()->value_name(
                    "<hostname> ..."),
                "add a host to the list of compute nodes");
-    config_add("timeslice-size", po::value<uint32_t>(&timeslice_size_)
-                                     ->default_value(timeslice_size_)
-                                     ->value_name("<n>"),
+    config_add("timeslice-size",
+               po::value<uint32_t>(&timeslice_size_)
+                   ->default_value(timeslice_size_)
+                   ->value_name("<n>"),
                "set the global timeslice size in number of microslices");
     config_add(
-        "overlap-size", po::value<uint32_t>(&overlap_size_)
-                            ->default_value(overlap_size_)
-                            ->value_name("<n>"),
+        "overlap-size",
+        po::value<uint32_t>(&overlap_size_)
+            ->default_value(overlap_size_)
+            ->value_name("<n>"),
         "set the global size of the overlap region in number of microslices");
     config_add(
         "in-data-buffer-size-exp",
@@ -270,29 +273,34 @@ void Parameters::parse_options(int argc, char* argv[])
         "processor-executable,e",
         po::value<std::string>(&processor_executable_)->value_name("<string>"),
         "name of the executable acting as timeslice processor");
-    config_add("processor-instances", po::value<uint32_t>(&processor_instances_)
-                                          ->default_value(processor_instances_)
-                                          ->value_name("<n>"),
+    config_add("processor-instances",
+               po::value<uint32_t>(&processor_instances_)
+                   ->default_value(processor_instances_)
+                   ->value_name("<n>"),
                "number of instances of the timeslice processor executable");
-    config_add("base-port", po::value<uint32_t>(&base_port_)
-                                ->default_value(base_port_)
-                                ->value_name("<n>"),
+    config_add("base-port",
+               po::value<uint32_t>(&base_port_)
+                   ->default_value(base_port_)
+                   ->value_name("<n>"),
                "base IP port to use for listening");
     config_add(
-        "generate-ts-patterns", po::value<bool>(&generate_ts_patterns_)
-                                    ->default_value(generate_ts_patterns_)
-                                    ->implicit_value(true)
-                                    ->value_name("<bool>"),
+        "generate-ts-patterns",
+        po::value<bool>(&generate_ts_patterns_)
+            ->default_value(generate_ts_patterns_)
+            ->implicit_value(true)
+            ->value_name("<bool>"),
         "generate data pattern when using the microslice pattern generator");
-    config_add("random-ts-sizes", po::value<bool>(&random_ts_sizes_)
-                                      ->default_value(random_ts_sizes_)
-                                      ->implicit_value(true)
-                                      ->value_name("<bool>"),
+    config_add("random-ts-sizes",
+               po::value<bool>(&random_ts_sizes_)
+                   ->default_value(random_ts_sizes_)
+                   ->implicit_value(true)
+                   ->value_name("<bool>"),
                "randomize microslice data sizes when using the microslice "
                "pattern generator");
-    config_add("transport,t", po::value<Transport>(&transport_)
-                                  ->default_value(transport_)
-                                  ->value_name("<id>"),
+    config_add("transport,t",
+               po::value<Transport>(&transport_)
+                   ->default_value(transport_)
+                   ->value_name("<id>"),
                "select transport implementation; possible values "
                "(case-insensitive) are: RDMA, LibFabric, ZeroMQ");
 
@@ -444,13 +452,15 @@ void Parameters::print_buffer_info()
         L_(info) << "input node buffer size: "
                  << human_readable_count(UINT64_C(1)
                                          << in_data_buffer_size_exp_)
-                 << " + " << human_readable_count(
-                                 (UINT64_C(1) << in_desc_buffer_size_exp_) *
-                                 sizeof(fles::MicrosliceDescriptor));
+                 << " + "
+                 << human_readable_count(
+                        (UINT64_C(1) << in_desc_buffer_size_exp_) *
+                        sizeof(fles::MicrosliceDescriptor));
     }
     L_(info) << "compute node buffer size: "
              << human_readable_count(UINT64_C(1) << cn_data_buffer_size_exp_)
-             << " + " << human_readable_count(
-                             (UINT64_C(1) << cn_desc_buffer_size_exp_) *
-                             sizeof(fles::TimesliceComponentDescriptor));
+             << " + "
+             << human_readable_count(
+                    (UINT64_C(1) << cn_desc_buffer_size_exp_) *
+                    sizeof(fles::TimesliceComponentDescriptor));
 }
