@@ -65,9 +65,6 @@ public:
     /// Retrieve the selected transport implementation.
     Transport transport() const { return transport_; }
 
-    /// Generate patterns while generating embedded timeslices
-    bool generate_ts_patterns() const { return generate_ts_patterns_; }
-
     /// Retrieve the list of participating inputs.
     std::vector<InterfaceSpecification> const inputs() const { return inputs_; }
 
@@ -148,9 +145,6 @@ private:
 
     /// The selected transport implementation.
     Transport transport_ = Transport::RDMA;
-
-    /// Generate patterns while generating embedded timeslices
-    bool generate_ts_patterns_ = false;
 
     /// The list of participating inputs.
     std::vector<InterfaceSpecification> inputs_;

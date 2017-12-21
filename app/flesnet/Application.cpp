@@ -132,6 +132,9 @@ Application::Application(Parameters const& par,
             uint32_t size_var = 0;
             if (param.count("var"))
                 size_var = std::stoi(param.at("var"));
+            uint32_t pattern = 0;
+            if (param.count("pattern"))
+                pattern = std::stoi(param.at("pattern"));
 
             L_(info) << "input buffer " << index << " size: "
                      << human_readable_count(UINT64_C(1) << datasize) << " + "
@@ -142,9 +145,9 @@ Application::Application(Parameters const& par,
                      << " +/- " << human_readable_count(size_var);
 
             data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
-                new EmbeddedPatternGenerator(
-                    datasize, descsize, index, size_mean,
-                    par.generate_ts_patterns(), (size_var != 0))));
+                new EmbeddedPatternGenerator(datasize, descsize, index,
+                                             size_mean, (pattern != 0),
+                                             (size_var != 0))));
         } else {
             L_(fatal) << "unknown input scheme: " << scheme;
         }

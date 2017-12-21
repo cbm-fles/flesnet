@@ -135,13 +135,6 @@ void Parameters::parse_options(int argc, char* argv[])
                    ->default_value(base_port_)
                    ->value_name("<n>"),
                "base IP port to use for listening");
-    config_add(
-        "generate-ts-patterns",
-        po::value<bool>(&generate_ts_patterns_)
-            ->default_value(generate_ts_patterns_)
-            ->implicit_value(true)
-            ->value_name("<bool>"),
-        "generate data pattern when using the microslice pattern generator");
     config_add("transport,t",
                po::value<Transport>(&transport_)
                    ->default_value(transport_)
