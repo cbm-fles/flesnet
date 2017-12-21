@@ -3,7 +3,6 @@
 #include "Application.hpp"
 #include "ChildProcessManager.hpp"
 #include "EmbeddedPatternGenerator.hpp"
-#include "FlibPatternGenerator.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
 #include <boost/algorithm/string.hpp>
@@ -112,25 +111,12 @@ Application::Application(Parameters const& par,
             data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
                 new flib_shm_channel_client(shm_device_, c)));
         } else {
-            if (/* DISABLES CODE */ (false)) {
-                data_sources_.push_back(
-                    std::unique_ptr<InputBufferReadInterface>(
-                        new FlibPatternGenerator(par.in_data_buffer_size_exp(),
-                                                 par.in_desc_buffer_size_exp(),
-                                                 index,
-                                                 par.typical_content_size(),
-                                                 par.generate_ts_patterns(),
-                                                 par.random_ts_sizes())));
-            } else {
-                data_sources_.push_back(
-                    std::unique_ptr<InputBufferReadInterface>(
-                        new EmbeddedPatternGenerator(
-                            par.in_data_buffer_size_exp(),
-                            par.in_desc_buffer_size_exp(), index,
-                            par.typical_content_size(),
-                            par.generate_ts_patterns(),
-                            par.random_ts_sizes())));
-            }
+            data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
+                new EmbeddedPatternGenerator(par.in_data_buffer_size_exp(),
+                                             par.in_desc_buffer_size_exp(),
+                                             index, par.typical_content_size(),
+                                             par.generate_ts_patterns(),
+                                             par.random_ts_sizes())));
         }
 
         if (par_.transport() == Transport::ZeroMQ) {
