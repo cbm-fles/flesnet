@@ -1,6 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -17,6 +18,14 @@ public:
         : std::runtime_error(what_arg)
     {
     }
+};
+
+struct InterfaceSpecification {
+    std::string full_uri;
+    std::string scheme;
+    std::string host;
+    std::vector<std::string> path;
+    std::map<std::string, std::string> param;
 };
 
 /// Transport implementation enum.
@@ -112,10 +121,32 @@ public:
     /// Retrieve the list of participating input nodes.
     std::vector<std::string> const input_nodes() const { return input_nodes_; }
 
-    /// Retrieve the list of participating compute nodes.
-    std::vector<std::string> const compute_nodes() const
+    /// Retrieve the list of compute node outputs.
+    std::vector<InterfaceSpecification> const outputs() const
     {
-        return compute_nodes_;
+        return outputs_;
+    }
+
+    /// Return a list of compute node output hosts.
+    std::vector<std::string> const output_hosts() const
+    {
+        std::vector<std::string> hosts;
+        hosts.reserve(outputs_.size());
+        std::transform(
+            outputs_.begin(), outputs_.end(), back_inserter(hosts),
+            [](InterfaceSpecification output) { return output.host; });
+        return hosts;
+    }
+
+    /// Return a list of compute node output URIs.
+    std::vector<std::string> const output_uris() const
+    {
+        std::vector<std::string> uris;
+        uris.reserve(outputs_.size());
+        std::transform(
+            outputs_.begin(), outputs_.end(), back_inserter(uris),
+            [](InterfaceSpecification output) { return output.full_uri; });
+        return uris;
     }
 
     /// Retrieve this applications's indexes in the list of input nodes.
@@ -183,8 +214,8 @@ private:
     /// The list of participating input nodes.
     std::vector<std::string> input_nodes_;
 
-    /// The list of participating compute nodes.
-    std::vector<std::string> compute_nodes_;
+    /// The list of compute node outputs.
+    std::vector<InterfaceSpecification> outputs_;
 
     /// This applications's indexes in the list of input nodes.
     std::vector<unsigned> input_indexes_;

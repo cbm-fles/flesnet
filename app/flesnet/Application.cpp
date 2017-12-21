@@ -58,7 +58,7 @@ Application::Application(Parameters const& par,
         if (par_.transport() == Transport::ZeroMQ) {
             std::unique_ptr<TimesliceBuilderZeromq> builder(
                 new TimesliceBuilderZeromq(
-                    i, *tsb, input_server_addresses, par.compute_nodes().size(),
+                    i, *tsb, input_server_addresses, par.outputs().size(),
                     par_.timeslice_size(), par_.max_timeslice_number(),
                     signal_status_));
             timeslice_builders_zeromq_.push_back(std::move(builder));
@@ -68,7 +68,7 @@ Application::Application(Parameters const& par,
                 new tl_libfabric::TimesliceBuilder(
                     i, *tsb, par_.base_port() + i, input_nodes_size,
                     par_.timeslice_size(), signal_status_, false,
-                    par_.compute_nodes()[i]));
+                    par_.outputs()[i].host));
             timeslice_builders_.push_back(std::move(builder));
 #else
             L_(fatal) << "flesnet built without LIBFABRIC support";
@@ -92,7 +92,7 @@ Application::Application(Parameters const& par,
     // Input node application
 
     std::vector<std::string> compute_services;
-    for (unsigned int i = 0; i < par.compute_nodes().size(); ++i)
+    for (unsigned int i = 0; i < par.outputs().size(); ++i)
         compute_services.push_back(std::to_string(par.base_port() + i));
 
     for (size_t c = 0; c < input_indexes.size(); ++c) {
@@ -136,7 +136,7 @@ Application::Application(Parameters const& par,
 #ifdef HAVE_LIBFABRIC
             std::unique_ptr<tl_libfabric::InputChannelSender> sender(
                 new tl_libfabric::InputChannelSender(
-                    index, *(data_sources_.at(c).get()), par.compute_nodes(),
+                    index, *(data_sources_.at(c).get()), par.output_hosts(),
                     compute_services, par.timeslice_size(), par.overlap_size(),
                     par.max_timeslice_number(), par.input_nodes().at(c)));
             input_channel_senders_.push_back(std::move(sender));
@@ -146,7 +146,7 @@ Application::Application(Parameters const& par,
         } else {
 #ifdef HAVE_RDMA
             std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
-                index, *(data_sources_.at(c).get()), par.compute_nodes(),
+                index, *(data_sources_.at(c).get()), par.output_hosts(),
                 compute_services, par.timeslice_size(), par.overlap_size(),
                 par.max_timeslice_number()));
             input_channel_senders_.push_back(std::move(sender));

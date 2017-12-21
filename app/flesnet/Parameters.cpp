@@ -49,13 +49,35 @@ std::ostream& operator<<(std::ostream& out, const Transport& transport)
     return out;
 }
 
+std::istream& operator>>(std::istream& in, InterfaceSpecification& ifspec)
+{
+    in >> ifspec.full_uri;
+    try {
+        web::uri uri(ifspec.full_uri);
+        ifspec.scheme = uri.scheme();
+        ifspec.host = uri.host();
+        ifspec.path = web::uri::split_path(uri.path());
+        ifspec.param = web::uri::split_query(uri.query());
+    } catch (const web::uri_exception& e) {
+        throw po::invalid_option_value(ifspec.full_uri);
+    }
+    return in;
+}
+
+std::ostream& operator<<(std::ostream& out,
+                         const InterfaceSpecification& ifspec)
+{
+    out << ifspec.full_uri;
+    return out;
+}
+
 std::string const Parameters::desc() const
 {
     std::stringstream st;
 
     st << "input nodes (" << input_nodes_.size() << "): " << input_nodes_
        << std::endl;
-    st << "compute nodes (" << compute_nodes_.size() << "): " << compute_nodes_
+    st << "compute nodes (" << outputs_.size() << "): " << output_uris()
        << std::endl;
     for (auto input_index : input_indexes_) {
         st << "this is input node " << input_index << " (of "
@@ -63,7 +85,7 @@ std::string const Parameters::desc() const
     }
     for (auto compute_index : compute_indexes_) {
         st << "this is compute node " << compute_index << " (of "
-           << compute_nodes_.size() << ")" << std::endl;
+           << outputs_.size() << ")" << std::endl;
     }
 
     return st.str();
@@ -225,9 +247,10 @@ void Parameters::parse_options(int argc, char* argv[])
                    "<hostname> ..."),
                "add a host to the list of input nodes");
     config_add("compute-nodes,C",
-               po::value<std::vector<std::string>>()->multitoken()->value_name(
-                   "<hostname> ..."),
-               "add a host to the list of compute nodes");
+               po::value<std::vector<InterfaceSpecification>>()
+                   ->multitoken()
+                   ->value_name("scheme://host/path?param=value ..."),
+               "add an output to the list of compute node outputs");
     config_add("timeslice-size",
                po::value<uint32_t>(&timeslice_size_)
                    ->default_value(timeslice_size_)
@@ -366,7 +389,7 @@ void Parameters::parse_options(int argc, char* argv[])
         throw ParametersException("list of compute nodes is empty");
 
     input_nodes_ = vm["input-nodes"].as<std::vector<std::string>>();
-    compute_nodes_ = vm["compute-nodes"].as<std::vector<std::string>>();
+    outputs_ = vm["compute-nodes"].as<std::vector<InterfaceSpecification>>();
 
     for (auto input_node : input_nodes_) {
         if (!web::uri::validate(input_node))
@@ -374,10 +397,10 @@ void Parameters::parse_options(int argc, char* argv[])
                                       input_node);
     }
 
-    for (auto compute_node : compute_nodes_) {
-        if (!web::uri::validate(compute_node))
-            throw ParametersException("invalid compute node specification: " +
-                                      compute_node);
+    for (auto output : outputs_) {
+        if (!web::uri::validate(output.full_uri))
+            throw ParametersException("invalid output specification: " +
+                                      output.full_uri);
     }
 
     if (vm.count("input-index"))
@@ -385,7 +408,7 @@ void Parameters::parse_options(int argc, char* argv[])
     if (vm.count("compute-index"))
         compute_indexes_ = vm["compute-index"].as<std::vector<unsigned>>();
 
-    if (input_nodes_.empty() && compute_nodes_.empty()) {
+    if (input_nodes_.empty() && outputs_.empty()) {
         throw ParametersException("no node type specified");
     }
 
@@ -399,15 +422,15 @@ void Parameters::parse_options(int argc, char* argv[])
     }
 
     for (auto compute_index : compute_indexes_) {
-        if (compute_index >= compute_nodes_.size()) {
+        if (compute_index >= outputs_.size()) {
             std::ostringstream oss;
             oss << "compute node index (" << compute_index
-                << ") out of range (0.." << compute_nodes_.size() - 1 << ")";
+                << ") out of range (0.." << outputs_.size() - 1 << ")";
             throw ParametersException(oss.str());
         }
     }
 
-    if (!compute_nodes_.empty() && processor_executable_.empty())
+    if (!outputs_.empty() && processor_executable_.empty())
         throw ParametersException("processor executable not specified");
 
     if (in_data_buffer_size_exp_ == 0 && input_shm().empty()) {
@@ -436,15 +459,15 @@ void Parameters::parse_options(int argc, char* argv[])
 
     L_(debug) << "input nodes (" << input_nodes_.size()
               << "): " << boost::algorithm::join(input_nodes_, " ");
-    L_(debug) << "compute nodes (" << compute_nodes_.size()
-              << "): " << boost::algorithm::join(compute_nodes_, " ");
+    L_(debug) << "compute nodes (" << outputs_.size()
+              << "): " << boost::algorithm::join(output_uris(), " ");
     for (auto input_index : input_indexes_) {
         L_(info) << "this is input node " << input_index << " (of "
                  << input_nodes_.size() << ")";
     }
     for (auto compute_index : compute_indexes_) {
         L_(info) << "this is compute node " << compute_index << " (of "
-                 << compute_nodes_.size() << ")";
+                 << outputs_.size() << ")";
     }
 
     for (auto input_index : input_indexes_) {
