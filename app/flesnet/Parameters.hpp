@@ -48,10 +48,7 @@ public:
     void operator=(const Parameters&) = delete;
 
     uint32_t suggest_in_data_buffer_size_exp();
-    uint32_t suggest_cn_data_buffer_size_exp();
-
     uint32_t suggest_in_desc_buffer_size_exp();
-    uint32_t suggest_cn_desc_buffer_size_exp();
 
     /// Retrieve the global timeslice size in number of microslices.
     uint32_t timeslice_size() const { return timeslice_size_; }
@@ -70,19 +67,6 @@ public:
     uint32_t in_desc_buffer_size_exp() const
     {
         return in_desc_buffer_size_exp_;
-    }
-
-    /// Retrieve the exp. size of the compute node's data buffer in bytes.
-    uint32_t cn_data_buffer_size_exp() const
-    {
-        return cn_data_buffer_size_exp_;
-    }
-
-    /// Retrieve the exp. size of the compute node's descriptor buffer
-    /// (number of entries).
-    uint32_t cn_desc_buffer_size_exp() const
-    {
-        return cn_desc_buffer_size_exp_;
     }
 
     /// Retrieve the typical number of content bytes per microslice.
@@ -196,13 +180,6 @@ private:
     /// The exp. size of the input node's descriptor buffer (number of
     /// entries).
     uint32_t in_desc_buffer_size_exp_ = 0;
-
-    /// The exp. size of the compute node's data buffer in bytes.
-    uint32_t cn_data_buffer_size_exp_ = 0;
-
-    /// The exp. size of the compute node's descriptor buffer (number of
-    /// entries).
-    uint32_t cn_desc_buffer_size_exp_ = 0;
 
     // The input shared memory identifier
     std::string input_shm_;

@@ -94,30 +94,6 @@ uint32_t Parameters::suggest_in_data_buffer_size_exp()
     return suggest_in_data_buffer_size_exp;
 }
 
-uint32_t Parameters::suggest_cn_data_buffer_size_exp()
-{
-    constexpr float buffer_ram_usage_ratio = 0.05f;
-
-    // ensure value in sensible range
-    constexpr uint32_t max_cn_data_buffer_size_exp = 30; // 30: 1 GByte
-    constexpr uint32_t min_cn_data_buffer_size_exp = 20; // 20: 1 MByte
-
-    float total_ram = sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
-    float suggest_cn_data_buffer_size =
-        buffer_ram_usage_ratio * total_ram /
-        (output_indexes_.size() * inputs_.size());
-
-    uint32_t suggest_cn_data_buffer_size_exp =
-        static_cast<uint32_t>(ceilf(log2f(suggest_cn_data_buffer_size)));
-
-    if (suggest_cn_data_buffer_size_exp > max_cn_data_buffer_size_exp)
-        suggest_cn_data_buffer_size_exp = max_cn_data_buffer_size_exp;
-    if (suggest_cn_data_buffer_size_exp < min_cn_data_buffer_size_exp)
-        suggest_cn_data_buffer_size_exp = min_cn_data_buffer_size_exp;
-
-    return suggest_cn_data_buffer_size_exp;
-}
-
 uint32_t Parameters::suggest_in_desc_buffer_size_exp()
 {
     // make desc buffer larger by this factor to account for data size
@@ -151,43 +127,6 @@ uint32_t Parameters::suggest_in_desc_buffer_size_exp()
         suggest_in_desc_buffer_size_exp = min_in_desc_buffer_size_exp;
 
     return suggest_in_desc_buffer_size_exp;
-}
-
-uint32_t Parameters::suggest_cn_desc_buffer_size_exp()
-{
-    // make desc buffer larger by this factor to account for data size
-    // fluctuations
-    constexpr float cn_desc_buffer_oversize_factor = 8.0;
-
-    // ensure value in sensible range
-    constexpr float min_desc_data_ratio = 0.1f;
-    constexpr float max_desc_data_ratio = 1.0f;
-
-    static_assert(min_desc_data_ratio <= max_desc_data_ratio,
-                  "invalid range for desc_data_ratio");
-
-    float cn_data_buffer_size = UINT64_C(1) << cn_data_buffer_size_exp_;
-    float suggest_cn_desc_buffer_size =
-        cn_data_buffer_size /
-        (typical_content_size_ * (timeslice_size_ + overlap_size_)) *
-        cn_desc_buffer_oversize_factor;
-
-    uint32_t suggest_cn_desc_buffer_size_exp =
-        static_cast<uint32_t>(ceilf(log2f(suggest_cn_desc_buffer_size)));
-
-    float relative_size =
-        cn_data_buffer_size / sizeof(fles::TimesliceComponentDescriptor);
-    uint32_t min_cn_desc_buffer_size_exp = static_cast<uint32_t>(
-        ceilf(log2f(relative_size * min_desc_data_ratio)));
-    uint32_t max_cn_desc_buffer_size_exp = static_cast<uint32_t>(
-        floorf(log2f(relative_size * max_desc_data_ratio)));
-
-    if (suggest_cn_desc_buffer_size_exp < min_cn_desc_buffer_size_exp)
-        suggest_cn_desc_buffer_size_exp = min_cn_desc_buffer_size_exp;
-    if (suggest_cn_desc_buffer_size_exp > max_cn_desc_buffer_size_exp)
-        suggest_cn_desc_buffer_size_exp = max_cn_desc_buffer_size_exp;
-
-    return suggest_cn_desc_buffer_size_exp;
 }
 
 void Parameters::parse_options(int argc, char* argv[])
@@ -252,16 +191,6 @@ void Parameters::parse_options(int argc, char* argv[])
         "in-desc-buffer-size-exp",
         po::value<uint32_t>(&in_desc_buffer_size_exp_)->value_name("<n>"),
         "descriptor buffer size used per input in the input node (log of "
-        "number of entries)");
-    config_add(
-        "cn-data-buffer-size-exp",
-        po::value<uint32_t>(&cn_data_buffer_size_exp_)->value_name("<n>"),
-        "data buffer size used per input in the compute node (log of number of "
-        "bytes)");
-    config_add(
-        "cn-desc-buffer-size-exp",
-        po::value<uint32_t>(&cn_desc_buffer_size_exp_)->value_name("<n>"),
-        "descriptor buffer size used per input in the compute node (log of "
         "number of entries)");
     config_add("typical-content-size",
                po::value<uint32_t>(&typical_content_size_)
@@ -423,9 +352,6 @@ void Parameters::parse_options(int argc, char* argv[])
         in_data_buffer_size_exp_ = 0;
     }
 
-    if (cn_data_buffer_size_exp_ == 0)
-        cn_data_buffer_size_exp_ = suggest_cn_data_buffer_size_exp();
-
     if (in_desc_buffer_size_exp_ == 0 && input_shm().empty()) {
         in_desc_buffer_size_exp_ = suggest_in_desc_buffer_size_exp();
     }
@@ -434,9 +360,6 @@ void Parameters::parse_options(int argc, char* argv[])
                        "will be ignored";
         in_desc_buffer_size_exp_ = 0;
     }
-
-    if (cn_desc_buffer_size_exp_ == 0)
-        cn_desc_buffer_size_exp_ = suggest_cn_desc_buffer_size_exp();
 
     L_(debug) << "inputs (" << inputs_.size()
               << "): " << boost::algorithm::join(input_uris(), " ");
@@ -474,10 +397,4 @@ void Parameters::print_buffer_info()
                         (UINT64_C(1) << in_desc_buffer_size_exp_) *
                         sizeof(fles::MicrosliceDescriptor));
     }
-    L_(info) << "compute node buffer size: "
-             << human_readable_count(UINT64_C(1) << cn_data_buffer_size_exp_)
-             << " + "
-             << human_readable_count(
-                    (UINT64_C(1) << cn_desc_buffer_size_exp_) *
-                    sizeof(fles::TimesliceComponentDescriptor));
 }

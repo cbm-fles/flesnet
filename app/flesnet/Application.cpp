@@ -43,10 +43,24 @@ Application::Application(Parameters const& par,
 
     for (unsigned i : par_.output_indexes()) {
         std::string shm_identifier = par_.outputs().at(i).path.at(0);
+        auto param = par_.outputs().at(i).param;
+
+        uint32_t datasize = 27; // 128 MiB
+        if (param.count("datasize"))
+            datasize = std::stoi(param.at("datasize"));
+        uint32_t descsize = 19; // 16 MiB
+        if (param.count("descsize"))
+            descsize = std::stoi(param.at("descsize"));
+
+        L_(info) << "timeslice buffer " << i
+                 << " size: " << human_readable_count(UINT64_C(1) << datasize)
+                 << " + "
+                 << human_readable_count(
+                        (UINT64_C(1) << descsize) *
+                        sizeof(fles::TimesliceComponentDescriptor));
 
         std::unique_ptr<TimesliceBuffer> tsb(new TimesliceBuffer(
-            shm_identifier, par_.cn_data_buffer_size_exp(),
-            par_.cn_desc_buffer_size_exp(), input_size));
+            shm_identifier, datasize, descsize, input_size));
 
         start_processes(shm_identifier);
         ChildProcessManager::get().allow_stop_processes(this);
