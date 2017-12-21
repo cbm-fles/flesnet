@@ -124,11 +124,6 @@ void Parameters::parse_options(int argc, char* argv[])
             ->default_value(overlap_size_)
             ->value_name("<n>"),
         "set the global size of the overlap region in number of microslices");
-    config_add("typical-content-size",
-               po::value<uint32_t>(&typical_content_size_)
-                   ->default_value(typical_content_size_)
-                   ->value_name("<n>"),
-               "typical number of content bytes per microslice");
     config_add("max-timeslice-number,n",
                po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
                "quit after processing given number of timeslices");
@@ -153,13 +148,6 @@ void Parameters::parse_options(int argc, char* argv[])
             ->implicit_value(true)
             ->value_name("<bool>"),
         "generate data pattern when using the microslice pattern generator");
-    config_add("random-ts-sizes",
-               po::value<bool>(&random_ts_sizes_)
-                   ->default_value(random_ts_sizes_)
-                   ->implicit_value(true)
-                   ->value_name("<bool>"),
-               "randomize microslice data sizes when using the microslice "
-               "pattern generator");
     config_add("transport,t",
                po::value<Transport>(&transport_)
                    ->default_value(transport_)
@@ -287,8 +275,6 @@ void Parameters::parse_options(int argc, char* argv[])
 
     for (auto input_index : input_indexes_) {
         if (input_index == 0) {
-            L_(info) << "microslice size: "
-                     << human_readable_count(typical_content_size_);
             L_(info) << "timeslice size: (" << timeslice_size_ << " + "
                      << overlap_size_ << ") microslices";
             L_(info) << "number of timeslices: " << max_timeslice_number_;

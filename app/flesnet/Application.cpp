@@ -126,17 +126,25 @@ Application::Application(Parameters const& par,
             uint32_t descsize = 19; // 16 MiB
             if (param.count("descsize"))
                 descsize = std::stoi(param.at("descsize"));
+            uint32_t size_mean = 1024; // 1 kiB
+            if (param.count("mean"))
+                size_mean = std::stoi(param.at("mean"));
+            uint32_t size_var = 0;
+            if (param.count("var"))
+                size_var = std::stoi(param.at("var"));
 
             L_(info) << "input buffer " << index << " size: "
                      << human_readable_count(UINT64_C(1) << datasize) << " + "
                      << human_readable_count(
                             (UINT64_C(1) << descsize) *
                             sizeof(fles::MicrosliceDescriptor));
+            L_(info) << "microslice size: " << human_readable_count(size_mean)
+                     << " +/- " << human_readable_count(size_var);
 
             data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
                 new EmbeddedPatternGenerator(
-                    datasize, descsize, index, par.typical_content_size(),
-                    par.generate_ts_patterns(), par.random_ts_sizes())));
+                    datasize, descsize, index, size_mean,
+                    par.generate_ts_patterns(), (size_var != 0))));
         } else {
             L_(fatal) << "unknown input scheme: " << scheme;
         }

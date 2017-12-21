@@ -53,9 +53,6 @@ public:
     /// Retrieve the size of the overlap region in number of microslices.
     uint32_t overlap_size() const { return overlap_size_; }
 
-    /// Retrieve the typical number of content bytes per microslice.
-    uint32_t typical_content_size() const { return typical_content_size_; }
-
     /// Retrieve the global maximum timeslice number.
     uint32_t max_timeslice_number() const { return max_timeslice_number_; }
 
@@ -73,9 +70,6 @@ public:
 
     /// Generate patterns while generating embedded timeslices
     bool generate_ts_patterns() const { return generate_ts_patterns_; }
-
-    /// Generate timeslices with random sizes
-    bool random_ts_sizes() const { return random_ts_sizes_; }
 
     /// Retrieve the number of completion queue entries.
     uint32_t num_cqe() const { return num_cqe_; }
@@ -149,9 +143,6 @@ private:
     /// The size of the overlap region in number of microslices.
     uint32_t overlap_size_ = 2;
 
-    /// A typical number of content bytes per microslice.
-    uint32_t typical_content_size_ = 1024;
-
     /// The global maximum timeslice number.
     uint32_t max_timeslice_number_ = UINT32_MAX;
 
@@ -169,9 +160,6 @@ private:
 
     /// Generate patterns while generating embedded timeslices
     bool generate_ts_patterns_ = false;
-
-    /// Generate timeslices with random sizes
-    bool random_ts_sizes_ = false;
 
     uint32_t num_cqe_ = 1000000;
 
