@@ -47,12 +47,9 @@ else
 
 ##### configuration below this line ########
 
-# Number of FLIBs (1 or 2)
-NUM_FLIBS=2
-
 # FLIB settings
 ADDR[0]=01:00.0
-ADDR[1]=02:00.0
+#ADDR[1]=02:00.0
 
 # FLIB 0
 LINK[0]=pgen_near
@@ -138,28 +135,22 @@ fi
 
 ############################################
 
+declare -a SERVER_PID
+declare -a EN_PID
+
 # building the config
 TOTAL_LINKS=0
-declare -a IN_INDEX_0
-declare -a IN_INDEX_1
-for i in $(seq 0 7); do
-    if [ ${LINK[$i]} != disable ]; then
-        IN_INDEX_0+=(-i $TOTAL_LINKS)
-        ((TOTAL_LINKS += 1))
-    fi
-done
-if [ $NUM_FLIBS -ge 2 ]; then
-for i in $(seq 8 15); do
-    if [ ${LINK[$i]} != disable ]; then
-        IN_INDEX_1+=(-i $TOTAL_LINKS)
-        ((TOTAL_LINKS += 1))
-    fi
-done
-fi
-
+declare -a IN_INDEX
 declare -a NODES
-for ((i=0; i < TOTAL_LINKS ; i++)); do
-        NODES+=(-I shm://127.0.0.1?overlap=$OVERLAP_SIZE)
+for flib in ${!ADDR[*]}; do
+    for ((channel=0; channel<8; channel++)); do
+        i=$((flib*8+channel))
+        if [ ${LINK[$i]} != disable ]; then
+            NODES+=(-I shm://127.0.0.1/shm_server_f$flib/$channel?overlap=$OVERLAP_SIZE)
+            IN_INDEX+=(-i $TOTAL_LINKS)
+            ((TOTAL_LINKS += 1))
+        fi
+    done
 done
 
 cleanup () {
@@ -177,31 +168,33 @@ cleanup () {
 end_readout () {
     set +e
     echo "*** SHUTTING DOWN ***"
-    kill -s SIGINT $EN_0_PID 2>/dev/null
-    kill -s SIGINT $EN_1_PID 2>/dev/null
+    for flib in ${!ADDR[*]}; do
+        kill -s SIGINT ${EN_PID[$flib]} 2>/dev/null
+    done
     sleep 2
     if [ -z "$MAX_TIMESLICES" ]; then
         kill -s SIGINT $FLESNET_CN_PID
     fi
     ## end IN in case of zmq
     if [ $TRANSPORT == ZeroMQ ]; then
-        kill -s SIGINT $FLESNET_IN_0_PID 2>/dev/null
-        kill -s SIGINT $FLESNET_IN_1_PID 2>/dev/null
+        kill -s SIGINT $FLESNET_IN_PID 2>/dev/null
     fi
     sleep 1
-    kill -s SIGINT $SERVER_0_PID 2>/dev/null
-    kill -s SIGINT $SERVER_1_PID 2>/dev/null
+    for flib in ${!ADDR[*]}; do
+        kill -s SIGINT ${SERVER_PID[$flib]} 2>/dev/null
+    done
     sleep 1
     # check if any process is left
-    if kill -0 $EN_0_PID > /dev/null 2>&1 ||
-       kill -0 $EN_1_PID > /dev/null 2>&1 ||
-       kill -0 $SERVER_0_PID > /dev/null 2>&1 ||
-       kill -0 $SERVER_1_PID > /dev/null 2>&1 ||
-       kill -0 $FLESNET_IN_0_PID > /dev/null 2>&1 ||
-       kill -0 $FLESNET_IN_1_PID > /dev/null 2>&1 ||
+    if kill -0 $FLESNET_IN_PID > /dev/null 2>&1 ||
        kill -0 $FLESNET_CN_PID > /dev/null 2>&1 ; then
         cleanup
     fi
+    for flib in ${!ADDR[*]}; do
+        if kill -0 ${EN_PID[$flib]} > /dev/null 2>&1 ||
+           kill -0 ${SERVER_PID[$flib]} > /dev/null 2>&1 ; then
+            cleanup
+        fi
+    done
     exit 0
 }
 trap end_readout SIGINT SIGTERM SIGHUP
@@ -218,44 +211,35 @@ echo "Configuring FLIBs ..."
 #PGEN_MC_SIZE=`echo "scale=0; (${MC_SIZE_NS}+1024-1)/1024" | bc -l`
 # round down to next possible size (given mc_size is max. size)
 PGEN_MC_SIZE=`echo "scale=0; ${MC_SIZE_NS}/1024" | bc -l`
-i=0
-while [ $i -lt $NUM_FLIBS ] ; do
-$BINDIR/flib_cfg -c /dev/null -l 2 -L ${OUTFILE}f${i}_cfg.log -i ${ADDR[$i]} \
-                 -t $PGEN_MC_SIZE -r $PGEN_RATE \
-                 --mc-size-limit $MC_SIZE_LIMIT_BYTES \
-                 --l0_source ${LINK[0+$i*8]} --l0_eq_id ${BASE_EQID[$i]}0 \
-                 --l1_source ${LINK[1+$i*8]} --l1_eq_id ${BASE_EQID[$i]}1 \
-                 --l2_source ${LINK[2+$i*8]} --l2_eq_id ${BASE_EQID[$i]}2 \
-                 --l3_source ${LINK[3+$i*8]} --l3_eq_id ${BASE_EQID[$i]}3 \
-                 --l4_source ${LINK[4+$i*8]} --l4_eq_id ${BASE_EQID[$i]}4 \
-                 --l5_source ${LINK[5+$i*8]} --l5_eq_id ${BASE_EQID[$i]}5 \
-                 --l6_source ${LINK[6+$i*8]} --l6_eq_id ${BASE_EQID[$i]}6 \
-                 --l7_source ${LINK[7+$i*8]} --l7_eq_id ${BASE_EQID[$i]}7
-let i+=1
+for i in ${!ADDR[*]}; do
+    $BINDIR/flib_cfg -c /dev/null -l 2 -L ${OUTFILE}f${i}_cfg.log -i ${ADDR[$i]} \
+                     -t $PGEN_MC_SIZE -r $PGEN_RATE \
+                     --mc-size-limit $MC_SIZE_LIMIT_BYTES \
+                     --l0_source ${LINK[0+$i*8]} --l0_eq_id ${BASE_EQID[$i]}0 \
+                     --l1_source ${LINK[1+$i*8]} --l1_eq_id ${BASE_EQID[$i]}1 \
+                     --l2_source ${LINK[2+$i*8]} --l2_eq_id ${BASE_EQID[$i]}2 \
+                     --l3_source ${LINK[3+$i*8]} --l3_eq_id ${BASE_EQID[$i]}3 \
+                     --l4_source ${LINK[4+$i*8]} --l4_eq_id ${BASE_EQID[$i]}4 \
+                     --l5_source ${LINK[5+$i*8]} --l5_eq_id ${BASE_EQID[$i]}5 \
+                     --l6_source ${LINK[6+$i*8]} --l6_eq_id ${BASE_EQID[$i]}6 \
+                     --l7_source ${LINK[7+$i*8]} --l7_eq_id ${BASE_EQID[$i]}7
 done
 
 
 echo "Starting flib_server ..."
-if [ ${#IN_INDEX_0[@]} -ne 0 ]; then
-    $BINDIR/flib_server -c /dev/null -L ${OUTFILE}f0_server.log -i ${ADDR[0]} \
-                    --data-buffer-size-exp $BUF_SIZE_EXP -o shm_server_f0 &
-    SERVER_0_PID=$!
-fi
-if [ ${#IN_INDEX_1[@]} -ne 0 ]; then
-    $BINDIR/flib_server -c /dev/null -L ${OUTFILE}f1_server.log -i ${ADDR[1]} \
-                    --data-buffer-size-exp $BUF_SIZE_EXP -o shm_server_f1 &
-    SERVER_1_PID=$!
-fi
+for flib in ${!ADDR[*]}; do
+    $BINDIR/flib_server -c /dev/null -L ${OUTFILE}f${flib}_server.log -i ${ADDR[$flib]} \
+                        --data-buffer-size-exp $BUF_SIZE_EXP -o shm_server_f$flib &
+    SERVER_PID+=$!
+done
  
 # block till server is ready (remove if etcd is ready)
 sleep 1
-tail -f ${OUTFILE}f0_server.log | while read LOGLINE
-do
-   [[ "${LOGLINE}" == *"flib server started and running"* ]] && pkill -P $$ tail
-done
-tail -f ${OUTFILE}f1_server.log | while read LOGLINE
-do
-   [[ "${LOGLINE}" == *"flib server started and running"* ]] && pkill -P $$ tail
+for flib in ${!ADDR[*]}; do
+    tail -f ${OUTFILE}f${flib}_server.log | while read LOGLINE
+    do
+        [[ "${LOGLINE}" == *"flib server started and running"* ]] && pkill -P $$ tail
+    done
 done
 
 
@@ -264,10 +248,9 @@ FLESNET_PRIV_CFG=(-e "$TS_PROCESSOR")
 FLESNET_PRIV_CFG+=("${FLESNET_CFG[@]}")
 
 CN_INDEX=(-o 0)
-NODES+=(-O shm://127.0.0.1?datasize=$BUF_SIZE_EXP)
+NODES+=(-O shm://127.0.0.1/shm_flesnet_?datasize=$BUF_SIZE_EXP)
 
-IN_0_CFG=(-L ${OUTFILE}flesnet_in0.log --input-shm shm_server_f0)
-IN_1_CFG=(-L ${OUTFILE}flesnet_in1.log --input-shm shm_server_f1)
+IN_CFG=(-L ${OUTFILE}flesnet_in.log)
 
 echo "Starting flesnet ..."
 
@@ -279,25 +262,15 @@ FLESNET_CN_PID=$!
 SID=$(ps o sid -p $FLESNET_CN_PID | tail -n1)
 
 # the input nodes
-if [ ${#IN_INDEX_0[@]} -ne 0 ]; then
-    $BINDIR/flesnet "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${IN_INDEX_0[@]}" "${IN_0_CFG[@]}" &
-    FLESNET_IN_0_PID=$!
-fi
-if [ ${#IN_INDEX_1[@]} -ne 0 ]; then
-    $BINDIR/flesnet "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${IN_INDEX_1[@]}" "${IN_1_CFG[@]}" &
-    FLESNET_IN_1_PID=$!
-fi
+$BINDIR/flesnet "${FLESNET_PRIV_CFG[@]}" "${NODES[@]}" "${IN_INDEX[@]}" "${IN_CFG[@]}" &
+FLESNET_IN_PID=$!
 
 # enable readout
 sleep 1
-if [ ${#IN_INDEX_1[@]} -ne 0 ]; then
-    $BINDIR/en_readout 1 > ${OUTFILE}flib1_info.log &
-    EN_1_PID=$!
-fi
-if [ ${#IN_INDEX_0[@]} -ne 0 ]; then
-    $BINDIR/en_readout 0 > ${OUTFILE}flib0_info.log &
-    EN_0_PID=$!
-fi
+for flib in ${!ADDR[*]}; do
+    $BINDIR/en_readout $flib > ${OUTFILE}flib${flib}_info.log &
+    EN_PID+=$!
+done
 
 if [ ! -z "$MAX_TIMESLICES" ]; then
     wait $FLESNET_CN_PID
