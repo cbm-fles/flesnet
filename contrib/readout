@@ -263,8 +263,8 @@ done
 FLESNET_PRIV_CFG=(-e "$TS_PROCESSOR")
 FLESNET_PRIV_CFG+=("${FLESNET_CFG[@]}")
 
-CN_INDEX=(-c 0)
-NODES+=(-C shm://127.0.0.1?datasize=$BUF_SIZE_EXP)
+CN_INDEX=(-o 0)
+NODES+=(-O shm://127.0.0.1?datasize=$BUF_SIZE_EXP)
 
 IN_0_CFG=(-L ${OUTFILE}flesnet_in0.log --input-shm shm_server_f0)
 IN_1_CFG=(-L ${OUTFILE}flesnet_in1.log --input-shm shm_server_f1)
