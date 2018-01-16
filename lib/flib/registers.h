@@ -4,13 +4,13 @@
 // This file was automatically generated from:
 // src/packages/registers.vhd
 // Repository is: git repository
-// Repository Revision: 63af0d743ee53d5fd0a7dab104f5dfa404202e44
+// Repository Revision: 1fc8ea9929828cc0949e885eb6a712355737e2b1
 // Repository Status: clean
-// Build Timestamp: Thu Aug 11 16:54:54 CEST 2016
+// Build Timestamp: Tue Jan 16 16:14:13 CET 2018
 // Build System: hutter@eda02
 #define RORC_C_BUILD_REPO 1
-#define RORC_C_BUILD_DATE 1470927294
-#define RORC_C_BUILD_REVISION 63af0d743ee53d5fd0a7dab104f5dfa404202e44
+#define RORC_C_BUILD_DATE 1516115653
+#define RORC_C_BUILD_REVISION 1fc8ea9929828cc0949e885eb6a712355737e2b1
 #define RORC_C_BUILD_STATUS_CLEAN 1
 #define RORC_C_BUILD_HOST 65646130320000000000000000000000
 #define RORC_C_BUILD_USER 68757474657200000000000000000000
@@ -47,6 +47,7 @@
 #define RORC_REG_BUILD_USER_3 27
 #define RORC_REG_PERF_PCI_NRDY 28
 #define RORC_REG_PERF_PCI_TRANS 29
+#define RORC_REG_PERF_PCI_MAX_NRDY 30
 #define RORC_REG_EBDM_N_SG_CONFIG 0
 #define RORC_REG_EBDM_BUFFER_SIZE_L 1
 #define RORC_REG_EBDM_BUFFER_SIZE_H 2

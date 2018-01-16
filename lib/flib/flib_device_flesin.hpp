@@ -29,6 +29,7 @@ public:
   void set_perf_interval(uint32_t interval);
   float get_pci_stall();
   float get_pci_trans();
+  float get_pci_max_stall();
 
 private:
   void init();

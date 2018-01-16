@@ -71,4 +71,11 @@ float flib_device_flesin::get_pci_trans() {
       static_cast<float>(m_register_file->get_reg(RORC_REG_PERF_PCI_TRANS));
   return pci_trans / m_reg_perf_interval_cached;
 }
+
+// max. duration of continious back pressure from pcie core (us)
+float flib_device_flesin::get_pci_max_stall() {
+  float pci_max_stall =
+      static_cast<float>(m_register_file->get_reg(RORC_REG_PERF_PCI_MAX_NRDY));
+  return pci_max_stall * (1.0 / pci_clk) * 1E6;
+}
 }

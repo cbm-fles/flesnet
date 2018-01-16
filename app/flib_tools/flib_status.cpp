@@ -115,11 +115,13 @@ int main(int argc, char* argv[]) {
       size_t j = 0;
       for (auto& flib : flibs) {
         float pci_stall = flib->get_pci_stall();
+        float pci_max_stall = flib->get_pci_max_stall();
         float pci_trans = flib->get_pci_trans();
         float pci_idle = 1 - pci_trans - pci_stall;
         std::cout << "FLIB " << j << " (" << flib->print_devinfo() << ")";
         std::cout << std::setprecision(4) << "  PCIe idle " << std::setw(9)
                   << pci_idle << "   stall " << std::setw(9) << pci_stall
+                  << " (max. " << pci_max_stall << " us)"
                   << "   trans " << std::setw(9) << pci_trans << std::endl;
         ++j;
       }
