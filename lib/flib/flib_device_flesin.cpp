@@ -78,4 +78,27 @@ float flib_device_flesin::get_pci_max_stall() {
       static_cast<float>(m_register_file->get_reg(RORC_REG_PERF_PCI_MAX_NRDY));
   return pci_max_stall * (1.0 / pci_clk) * 1E6;
 }
+
+dma_perf_data_t flib_device_flesin::get_dma_perf() {
+  std::array<uint32_t, 9> raw_data;
+  m_register_file->set_reg(RORC_REG_UNI_CFG, 3); // capture and reset
+  m_register_file->get_mem(RORC_REG_PERF_CYCLE_CNT, raw_data.data(), 9);
+
+  dma_perf_data_t data{};
+  if (raw_data[0] == 0xFFFFFFFF) {
+    data.overflow = 1;
+  } else {
+    data.overflow = 0;
+    data.cycle_cnt = raw_data[0];
+    data.fifo_fill[0] = raw_data[1];
+    data.fifo_fill[1] = raw_data[2];
+    data.fifo_fill[2] = raw_data[3];
+    data.fifo_fill[3] = raw_data[4];
+    data.fifo_fill[4] = raw_data[5];
+    data.fifo_fill[5] = raw_data[6];
+    data.fifo_fill[6] = raw_data[7];
+    data.fifo_fill[7] = raw_data[8];
+  }
+  return data;
+}
 }

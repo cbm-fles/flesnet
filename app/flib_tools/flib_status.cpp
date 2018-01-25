@@ -14,6 +14,7 @@
 // measurement interval (equals output interval)
 constexpr uint32_t interval_ms = 1000;
 constexpr bool clear_screen = true;
+constexpr bool detailed_stats = true;
 
 std::ostream& operator<<(std::ostream& os, flib::flib_link::data_sel_t sel) {
   switch (sel) {
@@ -90,6 +91,7 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
     std::vector<std::unique_ptr<flib::flib_device_flesin>> flibs;
     uint64_t num_dev = dev_op->device_count();
+    std::vector<flib::dma_perf_data_t> dma_perf_acc(num_dev);
 
     for (size_t i = 0; i < num_dev; ++i) {
       flibs.push_back(std::unique_ptr<flib::flib_device_flesin>(
@@ -99,17 +101,19 @@ int main(int argc, char* argv[]) {
     // set measurement interval for device and all links
     for (auto& flib : flibs) {
       flib->set_perf_interval(interval_ms);
+      flib->get_dma_perf(); // dummy read to reset counters
       for (auto& link : flib->links()) {
         link->set_perf_interval(interval_ms);
       }
     }
+
     std::cout << "Starting measurements" << std::endl;
 
     // main output loop
     size_t loop_cnt = 0;
     while (s_interrupted == 0) {
       if (clear_screen) {
-        std::cout << "\033\143";
+        std::cout << "\033\143" << std::flush;
       }
       std::cout << "Measurement " << loop_cnt << ":" << std::endl;
       size_t j = 0;
@@ -123,6 +127,40 @@ int main(int argc, char* argv[]) {
                   << pci_idle << "   stall " << std::setw(9) << pci_stall
                   << " (max. " << pci_max_stall << " us)"
                   << "   trans " << std::setw(9) << pci_trans << std::endl;
+
+        if (detailed_stats) {
+          flib::dma_perf_data_t dma_perf = flib->get_dma_perf();
+          dma_perf_acc.at(j).overflow += dma_perf.overflow;
+          dma_perf_acc.at(j).cycle_cnt += dma_perf.cycle_cnt;
+          dma_perf_acc.at(j).fifo_fill[0] += dma_perf.fifo_fill[0];
+          dma_perf_acc.at(j).fifo_fill[1] += dma_perf.fifo_fill[1];
+          dma_perf_acc.at(j).fifo_fill[2] += dma_perf.fifo_fill[2];
+          dma_perf_acc.at(j).fifo_fill[3] += dma_perf.fifo_fill[3];
+          dma_perf_acc.at(j).fifo_fill[4] += dma_perf.fifo_fill[4];
+          dma_perf_acc.at(j).fifo_fill[5] += dma_perf.fifo_fill[5];
+          dma_perf_acc.at(j).fifo_fill[6] += dma_perf.fifo_fill[6];
+          dma_perf_acc.at(j).fifo_fill[7] += dma_perf.fifo_fill[7];
+
+          std::stringstream ss;
+          ss << "fill     1/8     2/8     3/8     4/8     5/8     6/8     7/8  "
+                "   8/8    merr"
+             << std::endl;
+          ss << "    ";
+          for (size_t i = 0; i <= 7; ++i) {
+            ss << " " << std::setw(7) << std::fixed << std::setprecision(3)
+               << dma_perf.fifo_fill[i] / float(dma_perf.cycle_cnt) * 100.0;
+          }
+          ss << " " << std::setw(7) << dma_perf.overflow << std::endl;
+          ss << "avg.";
+          for (size_t i = 0; i <= 7; ++i) {
+            ss << " " << std::setw(7) << std::fixed << std::setprecision(3)
+               << dma_perf_acc.at(j).fifo_fill[i] /
+                      float(dma_perf_acc.at(j).cycle_cnt) * 100.0;
+          }
+          ss << " " << std::setw(7) << dma_perf_acc.at(j).overflow << std::endl;
+          std::cout << ss.str();
+        }
+
         ++j;
       }
       std::cout << std::endl;

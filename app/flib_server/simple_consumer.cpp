@@ -27,11 +27,11 @@ int main(int argc, char* argv[]) {
     // some const config variables
     std::string input_shm = "flib_shared_memory";
     // number of measurements, set to 0 for infinit run
-    constexpr size_t num_measurements = 2;
+    constexpr size_t num_measurements = 0;
     constexpr auto integration_time = seconds(1);
     constexpr auto sleep_time = milliseconds(1);
     constexpr bool analyze = true;
-    constexpr bool human_readable = false;
+    constexpr bool human_readable = true;
 
     std::stringstream help;
     help << "Usage:\n"
