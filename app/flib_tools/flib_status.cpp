@@ -36,6 +36,12 @@ std::ostream& operator<<(std::ostream& os, flib::flib_link::data_sel_t sel) {
   return os;
 }
 
+struct pci_perf_data_t {
+  uint64_t cycle_cnt;
+  uint64_t pci_stall;
+  uint64_t pci_trans;
+};
+
 int s_interrupted = 0;
 static void s_signal_handler(int signal_value) {
   (void)signal_value;
@@ -92,10 +98,14 @@ int main(int argc, char* argv[]) {
     std::vector<std::unique_ptr<flib::flib_device_flesin>> flibs;
     uint64_t num_dev = dev_op->device_count();
     std::vector<flib::dma_perf_data_t> dma_perf_acc(num_dev);
+    std::vector<pci_perf_data_t> pci_perf_acc(num_dev);
+    std::vector<std::vector<flib::flib_link_flesin::link_perf_t>> link_perf_acc(
+        num_dev);
 
     for (size_t i = 0; i < num_dev; ++i) {
       flibs.push_back(std::unique_ptr<flib::flib_device_flesin>(
           new flib::flib_device_flesin(i)));
+      link_perf_acc.at(i).resize(flibs.at(i)->number_of_hw_links());
     }
 
     // set measurement interval for device and all links
@@ -106,6 +116,7 @@ int main(int argc, char* argv[]) {
         link->set_perf_interval(interval_ms);
       }
     }
+    uint32_t pci_cycle_cnt = flibs.at(0)->get_perf_interval_cycles();
 
     std::cout << "Starting measurements" << std::endl;
 
@@ -118,15 +129,33 @@ int main(int argc, char* argv[]) {
       std::cout << "Measurement " << loop_cnt << ":" << std::endl;
       size_t j = 0;
       for (auto& flib : flibs) {
-        float pci_stall = flib->get_pci_stall();
+        uint32_t pci_stall_cyl = flib->get_pci_stall();
+        uint32_t pci_trans_cyl = flib->get_pci_trans();
+        pci_perf_acc.at(j).cycle_cnt += pci_cycle_cnt;
+        pci_perf_acc.at(j).pci_stall += pci_stall_cyl;
+        pci_perf_acc.at(j).pci_trans += pci_trans_cyl;
+
         float pci_max_stall = flib->get_pci_max_stall();
-        float pci_trans = flib->get_pci_trans();
+        float pci_stall = pci_stall_cyl / static_cast<float>(pci_cycle_cnt);
+        float pci_trans = pci_trans_cyl / static_cast<float>(pci_cycle_cnt);
         float pci_idle = 1 - pci_trans - pci_stall;
-        std::cout << "FLIB " << j << " (" << flib->print_devinfo() << ")";
-        std::cout << std::setprecision(4) << "  PCIe idle " << std::setw(9)
+
+        float pci_stall_acc = pci_perf_acc.at(j).pci_stall /
+                              static_cast<float>(pci_perf_acc.at(j).cycle_cnt);
+        float pci_trans_acc = pci_perf_acc.at(j).pci_trans /
+                              static_cast<float>(pci_perf_acc.at(j).cycle_cnt);
+        float pci_idle_acc = 1 - pci_trans_acc - pci_stall_acc;
+
+        std::cout << "FLIB " << j << " (" << flib->print_devinfo() << ")"
+                  << std::endl;
+        std::cout << std::setprecision(4) << "PCIe idle " << std::setw(9)
                   << pci_idle << "   stall " << std::setw(9) << pci_stall
-                  << " (max. " << pci_max_stall << " us)"
+                  << " (max. " << std::setw(5) << pci_max_stall << " us)"
                   << "   trans " << std::setw(9) << pci_trans << std::endl;
+        std::cout << std::setprecision(4) << "avg.      " << std::setw(9)
+                  << pci_idle_acc << "         " << std::setw(9)
+                  << pci_stall_acc << "                "
+                  << "         " << std::setw(9) << pci_trans_acc << std::endl;
 
         if (detailed_stats) {
           flib::dma_perf_data_t dma_perf = flib->get_dma_perf();
@@ -165,9 +194,10 @@ int main(int argc, char* argv[]) {
       }
       std::cout << std::endl;
 
-      std::cout
-          << "link  data_sel  up  he  se  "
-             "eo  do  d_max     dma_s    data_s    desc_s        bp     rate\n";
+      std::cout << "link  data_sel  up  d_max        bp         ∅     "
+                   "dma_s         ∅    data_s    "
+                   "     ∅    desc_s         ∅     rate"
+                   "         ∅  he  se  eo  do\n";
       j = 0;
       for (auto& flib : flibs) {
         size_t num_links = flib->number_of_hw_links();
@@ -179,22 +209,70 @@ int main(int argc, char* argv[]) {
               links.at(i)->link_status();
           flib::flib_link_flesin::link_perf_t perf = links.at(i)->link_perf();
 
+          link_perf_acc.at(j).at(i).pkt_cycle_cnt += perf.pkt_cycle_cnt;
+          link_perf_acc.at(j).at(i).dma_stall += perf.dma_stall;
+          link_perf_acc.at(j).at(i).data_buf_stall += perf.data_buf_stall;
+          link_perf_acc.at(j).at(i).desc_buf_stall += perf.desc_buf_stall;
+          link_perf_acc.at(j).at(i).events += perf.events;
+          link_perf_acc.at(j).at(i).gtx_cycle_cnt += perf.gtx_cycle_cnt;
+          link_perf_acc.at(j).at(i).din_full_gtx += perf.din_full_gtx;
+
+          float dma_stall =
+              perf.dma_stall / static_cast<float>(perf.pkt_cycle_cnt) * 100.0;
+          float data_buf_stall = perf.data_buf_stall /
+                                 static_cast<float>(perf.pkt_cycle_cnt) * 100.0;
+          float desc_buf_stall = perf.desc_buf_stall /
+                                 static_cast<float>(perf.pkt_cycle_cnt) * 100.0;
+          float din_full = perf.din_full_gtx /
+                           static_cast<float>(perf.gtx_cycle_cnt) * 100.0;
+          float event_rate =
+              perf.events /
+              (static_cast<float>(perf.pkt_cycle_cnt) / flib::pkt_clk);
+
+          float dma_stall_acc =
+              link_perf_acc.at(j).at(i).dma_stall /
+              static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) *
+              100.0;
+          float data_buf_stall_acc =
+              link_perf_acc.at(j).at(i).data_buf_stall /
+              static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) *
+              100.0;
+          float desc_buf_stall_acc =
+              link_perf_acc.at(j).at(i).desc_buf_stall /
+              static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) *
+              100.0;
+          float din_full_acc =
+              link_perf_acc.at(j).at(i).din_full_gtx /
+              static_cast<float>(link_perf_acc.at(j).at(i).gtx_cycle_cnt) *
+              100.0;
+          float event_rate_acc =
+              link_perf_acc.at(j).at(i).events /
+              (static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) /
+               flib::pkt_clk);
+
           ss << std::setw(2) << j << "/" << i << "  ";
           ss << std::setw(8) << links.at(i)->data_sel() << "  ";
           // status
           ss << std::setw(2) << status.channel_up << "  ";
+          ss << std::setw(5) << status.d_fifo_max_words << "  ";
+          // perf counters
+          ss << std::setprecision(3); // percision + 5 = width
+          ss << std::setw(8) << din_full << "  " << std::setw(8) << din_full_acc
+             << "  ";
+          ss << std::setw(8) << dma_stall << "  " << std::setw(8)
+             << dma_stall_acc << "  ";
+          ss << std::setw(8) << data_buf_stall << "  " << std::setw(8)
+             << data_buf_stall_acc << "  ";
+          ss << std::setw(8) << desc_buf_stall << "  " << std::setw(8)
+             << desc_buf_stall_acc << "  ";
+          ss << std::setprecision(7) << std::setw(7) << event_rate << "  "
+             << std::setw(8) << event_rate_acc << "  ";
+          // error
           ss << std::setw(2) << status.hard_err << "  ";
           ss << std::setw(2) << status.soft_err << "  ";
           ss << std::setw(2) << status.eoe_fifo_overflow << "  ";
           ss << std::setw(2) << status.d_fifo_overflow << "  ";
-          ss << std::setw(5) << status.d_fifo_max_words << "  ";
-          // perf counters
-          ss << std::setprecision(3); // percision + 5 = width
-          ss << std::setw(8) << perf.dma_stall << "  ";
-          ss << std::setw(8) << perf.data_buf_stall << "  ";
-          ss << std::setw(8) << perf.desc_buf_stall << "  ";
-          ss << std::setw(8) << perf.din_full << "  ";
-          ss << std::setprecision(7) << std::setw(7) << perf.event_rate << "  ";
+
           ss << "\n";
         }
         std::cout << ss.str() << std::endl;

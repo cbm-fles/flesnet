@@ -52,25 +52,32 @@ void flib_link_flesin::set_perf_interval(uint32_t interval) {
   m_rfgtx->set_reg(RORC_REG_GTX_PERF_INTERVAL, m_reg_gtx_perf_interval_cached);
 }
 
-// packetizer could not send data (ratio)
-float flib_link_flesin::get_dma_stall() {
-  float dma_stall =
-      static_cast<float>(m_rfpkt->get_reg(RORC_REG_PERF_DMA_STALL));
-  return dma_stall / m_reg_perf_interval_cached;
+uint32_t flib_link_flesin::get_perf_interval_cycles_pkt() {
+  return m_reg_perf_interval_cached;
 }
 
-// packatizer stall from data buffer pointer match (ratio)
-float flib_link_flesin::get_data_buf_stall() {
-  float data_buf_stall =
-      static_cast<float>(m_rfpkt->get_reg(RORC_REG_PERF_EBUF_STALL));
-  return data_buf_stall / m_reg_perf_interval_cached;
+uint32_t flib_link_flesin::get_perf_interval_cycles_gtx() {
+  return m_reg_gtx_perf_interval_cached;
 }
 
-// packatizer stall from descriptor buffer pointer match (ratio)
-float flib_link_flesin::get_desc_buf_stall() {
-  float desc_buf_stall =
-      static_cast<float>(m_rfpkt->get_reg(RORC_REG_PERF_RBUF_STALL));
-  return desc_buf_stall / m_reg_perf_interval_cached;
+// packetizer could not send data (pkt cycles)
+uint32_t flib_link_flesin::get_dma_stall() {
+  return m_rfpkt->get_reg(RORC_REG_PERF_DMA_STALL);
+}
+
+// packatizer stall from data buffer pointer match (pkt cycles)
+uint32_t flib_link_flesin::get_data_buf_stall() {
+  return m_rfpkt->get_reg(RORC_REG_PERF_EBUF_STALL);
+}
+
+// packatizer stall from descriptor buffer pointer match (pkt cycles)
+uint32_t flib_link_flesin::get_desc_buf_stall() {
+  return m_rfpkt->get_reg(RORC_REG_PERF_RBUF_STALL);
+}
+
+// number of events (ref. pkt)
+uint32_t flib_link_flesin::get_event_cnt() {
+  return m_rfpkt->get_reg(RORC_REG_PERF_N_EVENTS);
 }
 
 // event rate in Hz
@@ -79,20 +86,20 @@ float flib_link_flesin::get_event_rate() {
   return n_events / (static_cast<float>(m_reg_perf_interval_cached) / pkt_clk);
 }
 
-// backpressure from packetizer input fifo (ratio)
-float flib_link_flesin::get_din_full() {
-  float din_full =
-      static_cast<float>(m_rfgtx->get_reg(RORC_REG_GTX_PERF_PKT_AFULL));
-  return din_full / m_reg_gtx_perf_interval_cached;
+// backpressure from packetizer input fifo (gtx cycles)
+uint32_t flib_link_flesin::get_din_full_gtx() {
+  return m_rfgtx->get_reg(RORC_REG_GTX_PERF_PKT_AFULL);
 }
 
 flib_link_flesin::link_perf_t flib_link_flesin::link_perf() {
   link_perf_t perf;
+  perf.pkt_cycle_cnt = m_reg_perf_interval_cached;
   perf.dma_stall = get_dma_stall();
   perf.data_buf_stall = get_data_buf_stall();
   perf.desc_buf_stall = get_desc_buf_stall();
-  perf.event_rate = get_event_rate();
-  perf.din_full = get_din_full();
+  perf.events = get_event_cnt();
+  perf.gtx_cycle_cnt = m_reg_gtx_perf_interval_cached;
+  perf.din_full_gtx = get_din_full_gtx();
   return perf;
 }
 

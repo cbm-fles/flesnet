@@ -33,8 +33,9 @@ public:
   void id_led(bool enable);
 
   void set_perf_interval(uint32_t interval);
-  float get_pci_stall();
-  float get_pci_trans();
+  uint32_t get_perf_interval_cycles();
+  uint32_t get_pci_stall();
+  uint32_t get_pci_trans();
   float get_pci_max_stall();
   dma_perf_data_t get_dma_perf();
 

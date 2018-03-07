@@ -58,18 +58,19 @@ void flib_device_flesin::set_perf_interval(uint32_t interval) {
   m_register_file->set_reg(RORC_REG_SYS_PERF_INT, m_reg_perf_interval_cached);
 }
 
-// back pressure from pcie core (ratio)
-float flib_device_flesin::get_pci_stall() {
-  float pci_nrdy =
-      static_cast<float>(m_register_file->get_reg(RORC_REG_PERF_PCI_NRDY));
-  return pci_nrdy / m_reg_perf_interval_cached;
+// get configured perf interval in clock cycles
+uint32_t flib_device_flesin::get_perf_interval_cycles() {
+  return m_reg_perf_interval_cached;
 }
 
-// words accepted from pcie core (ratio)
-float flib_device_flesin::get_pci_trans() {
-  float pci_trans =
-      static_cast<float>(m_register_file->get_reg(RORC_REG_PERF_PCI_TRANS));
-  return pci_trans / m_reg_perf_interval_cached;
+// back pressure from pcie core (cycles)
+uint32_t flib_device_flesin::get_pci_stall() {
+  return m_register_file->get_reg(RORC_REG_PERF_PCI_NRDY);
+}
+
+// words accepted from pcie core (cycles)
+uint32_t flib_device_flesin::get_pci_trans() {
+  return m_register_file->get_reg(RORC_REG_PERF_PCI_TRANS);
 }
 
 // max. duration of continious back pressure from pcie core (us)
