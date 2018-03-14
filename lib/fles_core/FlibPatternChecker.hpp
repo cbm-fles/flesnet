@@ -3,12 +3,11 @@
 
 #include "PatternChecker.hpp"
 
-class FlibPatternChecker : public PatternChecker
-{
+class FlibPatternChecker : public PatternChecker {
 public:
-    bool check(const fles::Microslice& m) override;
-    void reset() override { flib_pgen_packet_number_ = 0; };
+  bool check(const fles::Microslice& m) override;
+  void reset() override { flib_pgen_packet_number_ = 0; };
 
 private:
-    uint32_t flib_pgen_packet_number_ = 0;
+  uint32_t flib_pgen_packet_number_ = 0;
 };

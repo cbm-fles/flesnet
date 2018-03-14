@@ -2,8 +2,7 @@
 
 #include "Timeslice.hpp"
 
-namespace fles
-{
+namespace fles {
 
 Timeslice::~Timeslice() = default;
 

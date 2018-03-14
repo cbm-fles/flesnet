@@ -2,12 +2,9 @@
 
 #include "MicrosliceView.hpp"
 
-namespace fles
-{
+namespace fles {
 
 MicrosliceView::MicrosliceView(MicrosliceDescriptor& d, uint8_t* content)
-    : Microslice(&d, content)
-{
-}
+    : Microslice(&d, content) {}
 
 } // namespace fles

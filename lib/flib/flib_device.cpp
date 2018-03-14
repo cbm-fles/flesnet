@@ -208,4 +208,4 @@ bool flib_device::check_magic_number() {
   }
   return true;
 }
-}
+} // namespace flib

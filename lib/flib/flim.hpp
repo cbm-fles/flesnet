@@ -66,4 +66,4 @@ public:
 private:
   std::unique_ptr<register_file> m_rfflim;
 };
-} // namespace
+} // namespace flib

@@ -6,8 +6,7 @@
 #include "Source.hpp"
 #include "Timeslice.hpp"
 
-namespace fles
-{
+namespace fles {
 
 /**
  * \brief The TimesliceSource base class implements the generic timeslice-based

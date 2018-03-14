@@ -11,31 +11,30 @@
 #include <vector>
 
 /// %Application base class.
-class Application
-{
+class Application {
 public:
-    explicit Application(Parameters const& par);
+  explicit Application(Parameters const& par);
 
-    Application(const Application&) = delete;
-    void operator=(const Application&) = delete;
+  Application(const Application&) = delete;
+  void operator=(const Application&) = delete;
 
-    ~Application();
+  ~Application();
 
-    void run();
+  void run();
 
 private:
-    Parameters const& par_;
+  Parameters const& par_;
 
-    std::unique_ptr<fles::TimesliceSource> source_;
-    std::vector<std::unique_ptr<fles::TimesliceSink>> sinks_;
-    std::unique_ptr<Benchmark> benchmark_;
+  std::unique_ptr<fles::TimesliceSource> source_;
+  std::vector<std::unique_ptr<fles::TimesliceSink>> sinks_;
+  std::unique_ptr<Benchmark> benchmark_;
 
-    uint64_t count_ = 0;
+  uint64_t count_ = 0;
 
-    logging::OstreamLog status_log_{status};
-    logging::OstreamLog debug_log_{debug};
+  logging::OstreamLog status_log_{status};
+  logging::OstreamLog debug_log_{debug};
 
-    std::chrono::high_resolution_clock::time_point time_begin_;
+  std::chrono::high_resolution_clock::time_point time_begin_;
 
-    void rate_limit_delay() const;
+  void rate_limit_delay() const;
 };

@@ -17,26 +17,24 @@
 #include "log.hpp"
 #include <csignal>
 
-namespace
-{
+namespace {
 volatile sig_atomic_t signal_status = 0;
 }
 
 static void signal_handler(int sig) { signal_status = sig; }
 
-int main(int argc, char* argv[])
-{
-    std::signal(SIGINT, signal_handler);
-    std::signal(SIGTERM, signal_handler);
+int main(int argc, char* argv[]) {
+  std::signal(SIGINT, signal_handler);
+  std::signal(SIGTERM, signal_handler);
 
-    try {
-        Parameters par(argc, argv);
-        Application app(par, &signal_status);
-        app.run();
-    } catch (std::exception const& e) {
-        L_(fatal) << e.what();
-        return EXIT_FAILURE;
-    }
+  try {
+    Parameters par(argc, argv);
+    Application app(par, &signal_status);
+    app.run();
+  } catch (std::exception const& e) {
+    L_(fatal) << e.what();
+    return EXIT_FAILURE;
+  }
 
-    return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }

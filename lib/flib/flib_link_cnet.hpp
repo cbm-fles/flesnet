@@ -83,4 +83,4 @@ public:
 
   link_status_t link_status();
 };
-}
+} // namespace flib

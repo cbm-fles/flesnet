@@ -44,4 +44,4 @@ private:
   uint32_t m_reg_perf_interval_cached;
 };
 
-} /** namespace flib */
+} // namespace flib

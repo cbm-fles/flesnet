@@ -54,4 +54,4 @@ __attribute__((__target__("no-sse"))) int register_file_bar::set_mem(
   }
 }
 
-} // namespace
+} // namespace flib
