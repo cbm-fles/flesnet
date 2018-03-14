@@ -8,6 +8,6 @@ DIR="$(git rev-parse --show-toplevel)"
 cd "$DIR"
 
 clang-format -style=file -fallback-style=none -i \
-  lib/{fles_core,fles_ipc,fles_rdma,fles_libfabric,logging}/*.[hc]pp \
-  app/{flesnet,mstool,tsclient}/*.[hc]pp \
+  lib/{fles_core,fles_ipc,fles_libfabric,fles_rdma,fles_tools,fles_zeromq,flib,flib_ipc,logging,pda}/*.[hc]pp \
+  app/*/*.[hc]pp \
   test/*.[hc]pp
