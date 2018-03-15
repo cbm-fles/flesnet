@@ -65,7 +65,8 @@ void fles::GdpbEpochToMsSorter::process() {
                                             MicrosliceDescriptor desc = msInput->desc();
                                             // Update Ms index/start time from epoch value
                              (later need the epoch duration)                 desc.idx  =
-                             fulCurrentLongEpoch -                 fuNbEpPerMs; // * kiEpochLengthNs
+                             fulCurrentLongEpoch -                 fuNbEpPerMs; // *
+                             kiEpochLengthNs
                                             // Update Ms size
                                             desc.size = fmsFullMsgBuffer.size();
                 
