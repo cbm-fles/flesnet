@@ -6,8 +6,7 @@
 #include "Microslice.hpp"
 #include "Source.hpp"
 
-namespace fles
-{
+namespace fles {
 
 /**
  * \brief The MicrosliceSource base class implements the generic

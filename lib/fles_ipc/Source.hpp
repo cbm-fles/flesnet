@@ -5,8 +5,7 @@
 
 #include <memory>
 
-namespace fles
-{
+namespace fles {
 
 /**
  * \brief The Source class implements the generic item-based input interface.
@@ -14,24 +13,23 @@ namespace fles
  * This class is an abstract base class for several classes using an item-based
  * input interface.
  */
-template <class T> class Source
-{
+template <class T> class Source {
 public:
-    /**
-     * \brief Retrieve the next item.
-     *
-     * This function blocks if the next item is not yet available.
-     *
-     * \return pointer to the item, or nullptr if end-of-file
-     */
-    std::unique_ptr<T> get() { return std::unique_ptr<T>(do_get()); };
+  /**
+   * \brief Retrieve the next item.
+   *
+   * This function blocks if the next item is not yet available.
+   *
+   * \return pointer to the item, or nullptr if end-of-file
+   */
+  std::unique_ptr<T> get() { return std::unique_ptr<T>(do_get()); };
 
-    virtual bool eos() const = 0;
+  virtual bool eos() const = 0;
 
-    virtual ~Source() = default;
+  virtual ~Source() = default;
 
 private:
-    virtual T* do_get() = 0;
+  virtual T* do_get() = 0;
 };
 
 } // namespace fles

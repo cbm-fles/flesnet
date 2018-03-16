@@ -7,8 +7,7 @@
 #include "InputArchive.hpp"
 #include "InputArchiveLoop.hpp"
 
-namespace fles
-{
+namespace fles {
 
 class Timeslice;
 class StorableTimeslice;
@@ -21,7 +20,8 @@ using TimesliceInputArchive =
     InputArchive<Timeslice, StorableTimeslice, ArchiveType::TimesliceArchive>;
 
 using TimesliceInputArchiveLoop =
-    InputArchiveLoop<Timeslice, StorableTimeslice,
+    InputArchiveLoop<Timeslice,
+                     StorableTimeslice,
                      ArchiveType::TimesliceArchive>;
 
 } // namespace fles

@@ -25,7 +25,7 @@ public:
   /**
    * @param dev parent rorcfs_device
    * @param n number of BAR to be mapped [0-6]
-  **/
+   **/
   pci_bar(device* dev, uint8_t number);
   ~pci_bar(){};
 
@@ -47,4 +47,4 @@ protected:
 
   void barMap(uint8_t number);
 };
-} /** namespace flib */
+} // namespace pda

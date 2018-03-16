@@ -8,9 +8,9 @@
 /// Structure representing a status update message sent from input channel to
 /// compute buffer.
 struct InputChannelStatusMessage {
-    ComputeNodeBufferPosition wp;
-    bool abort;
-    bool final;
+  ComputeNodeBufferPosition wp;
+  bool abort;
+  bool final;
 };
 
 #pragma pack()

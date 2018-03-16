@@ -43,4 +43,4 @@ uint64_t device_operator::device_count() {
   return count;
 }
 
-} // namespace
+} // namespace pda

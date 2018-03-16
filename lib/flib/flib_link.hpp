@@ -74,4 +74,4 @@ protected:
   pda::device* m_parent_device;
   pda::pci_bar* m_bar;
 };
-}
+} // namespace flib

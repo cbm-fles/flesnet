@@ -102,4 +102,4 @@ dma_perf_data_t flib_device_flesin::get_dma_perf() {
   }
   return data;
 }
-}
+} // namespace flib

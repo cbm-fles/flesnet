@@ -26,4 +26,4 @@ private:
   static const char* m_pci_ids[];
   DeviceOperator* m_dop;
 };
-}
+} // namespace pda

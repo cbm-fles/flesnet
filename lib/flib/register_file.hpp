@@ -52,4 +52,4 @@ public:
     }
   }
 };
-} // namespace
+} // namespace flib

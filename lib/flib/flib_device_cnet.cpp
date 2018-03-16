@@ -35,4 +35,4 @@ flib_link_cnet* flib_device_cnet::link(size_t n) {
 void flib_device_cnet::send_dlm() {
   m_register_file->set_reg(CNET_REG_DLM_CFG, 1);
 }
-}
+} // namespace flib

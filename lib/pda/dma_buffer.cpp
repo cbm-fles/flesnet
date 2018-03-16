@@ -103,4 +103,4 @@ void dma_buffer::connect() {
 }
 
 void dma_buffer::deallocate() { PciDevice_deleteDMABuffer(m_device, m_buffer); }
-}
+} // namespace pda

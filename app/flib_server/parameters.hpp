@@ -108,9 +108,10 @@ private:
     auto config_add = config.add_options();
     config_add("flib-addr,i", po::value<pci_addr>(),
                "PCI BDF address of target FLIB in BB:DD.F format");
-    config_add("shm,o", po::value<std::string>(&_shm)->default_value(
-                            "flib_shared_memory"),
-               "name of the shared memory to be used");
+    config_add(
+        "shm,o",
+        po::value<std::string>(&_shm)->default_value("flib_shared_memory"),
+        "name of the shared memory to be used");
     config_add("data-buffer-size-exp",
                po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
                "exp. size of the data buffer in bytes");
@@ -121,8 +122,9 @@ private:
                "set the log level (all:0)");
     config_add("log-file,L", po::value<std::string>(&log_file),
                "name of target log file");
-    config_add("etcd-authority", po::value<std::string>(&_etcd.authority)
-                                     ->default_value("127.0.0.1:2379"),
+    config_add("etcd-authority",
+               po::value<std::string>(&_etcd.authority)
+                   ->default_value("127.0.0.1:2379"),
                "where to find the etcd server");
     config_add("etcd-path", po::value<std::string>(&_etcd.path),
                "base path for this instance, leave empty to not use etcd");

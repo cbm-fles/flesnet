@@ -4,8 +4,8 @@
  *
  */
 
-#include "flib.h"
 #include "device_operator.hpp"
+#include "flib.h"
 #include <chrono>
 #include <csignal>
 #include <iostream>

@@ -96,4 +96,4 @@ flib_link::data_sel_t flib_link::data_sel() {
   return static_cast<data_sel_t>(dp_cfg & 0x3);
 }
 
-} // namespace
+} // namespace flib

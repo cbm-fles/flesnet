@@ -4,20 +4,18 @@
 #include "Microslice.hpp"
 #include <memory>
 
-class PatternChecker
-{
+class PatternChecker {
 public:
-    virtual ~PatternChecker() = default;
+  virtual ~PatternChecker() = default;
 
-    virtual bool check(const fles::Microslice& m) = 0;
-    virtual void reset(){};
+  virtual bool check(const fles::Microslice& m) = 0;
+  virtual void reset(){};
 
-    static std::unique_ptr<PatternChecker>
-    create(uint8_t arg_sys_id, uint8_t arg_sys_ver, size_t component);
+  static std::unique_ptr<PatternChecker>
+  create(uint8_t arg_sys_id, uint8_t arg_sys_ver, size_t component);
 };
 
-class GenericPatternChecker : public PatternChecker
-{
+class GenericPatternChecker : public PatternChecker {
 public:
-    bool check(const fles::Microslice& /* m */) override { return true; };
+  bool check(const fles::Microslice& /* m */) override { return true; };
 };

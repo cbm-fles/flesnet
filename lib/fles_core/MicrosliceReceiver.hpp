@@ -10,51 +10,48 @@
 #include <memory>
 #include <string>
 
-namespace fles
-{
+namespace fles {
 
 /**
  * \brief The MicrosliceReceiver class implements a mechanism to receive
  * Microslices from an InputBufferReadInterface object.
  */
-class MicrosliceReceiver : public MicrosliceSource
-{
+class MicrosliceReceiver : public MicrosliceSource {
 public:
-    /// Construct Microslice receiver connected to a given data source.
-    explicit MicrosliceReceiver(InputBufferReadInterface& data_source);
+  /// Construct Microslice receiver connected to a given data source.
+  explicit MicrosliceReceiver(InputBufferReadInterface& data_source);
 
-    /// Delete copy constructor (non-copyable).
-    MicrosliceReceiver(const MicrosliceReceiver&) = delete;
-    /// Delete assignment operator (non-copyable).
-    void operator=(const MicrosliceReceiver&) = delete;
+  /// Delete copy constructor (non-copyable).
+  MicrosliceReceiver(const MicrosliceReceiver&) = delete;
+  /// Delete assignment operator (non-copyable).
+  void operator=(const MicrosliceReceiver&) = delete;
 
-    ~MicrosliceReceiver() override = default;
+  ~MicrosliceReceiver() override = default;
 
-    /**
-     * \brief Retrieve the next item.
-     *
-     * This function blocks if the next item is not yet available.
-     *
-     * \return pointer to the item, or nullptr if end-of-file
-     */
-    std::unique_ptr<StorableMicroslice> get()
-    {
-        return std::unique_ptr<StorableMicroslice>(do_get());
-    };
+  /**
+   * \brief Retrieve the next item.
+   *
+   * This function blocks if the next item is not yet available.
+   *
+   * \return pointer to the item, or nullptr if end-of-file
+   */
+  std::unique_ptr<StorableMicroslice> get() {
+    return std::unique_ptr<StorableMicroslice>(do_get());
+  };
 
-    bool eos() const override { return eos_; }
+  bool eos() const override { return eos_; }
 
 private:
-    StorableMicroslice* do_get() override;
+  StorableMicroslice* do_get() override;
 
-    StorableMicroslice* try_get();
+  StorableMicroslice* try_get();
 
-    /// Data source (e.g., FLIB).
-    InputBufferReadInterface& data_source_;
+  /// Data source (e.g., FLIB).
+  InputBufferReadInterface& data_source_;
 
-    uint64_t write_index_desc_;
-    uint64_t read_index_desc_;
+  uint64_t write_index_desc_;
+  uint64_t read_index_desc_;
 
-    bool eos_ = false;
+  bool eos_ = false;
 };
 } // namespace fles

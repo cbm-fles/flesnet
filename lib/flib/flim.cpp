@@ -215,4 +215,4 @@ std::string flim::print_build_info() {
   return ss.str();
 }
 
-} // namespace
+} // namespace flib

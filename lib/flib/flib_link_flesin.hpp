@@ -60,4 +60,4 @@ private:
   uint32_t m_reg_perf_interval_cached;
   uint32_t m_reg_gtx_perf_interval_cached;
 };
-} // namespace
+} // namespace flib

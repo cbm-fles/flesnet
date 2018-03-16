@@ -7,8 +7,7 @@
 #include <boost/serialization/access.hpp>
 #include <cstdint>
 
-namespace fles
-{
+namespace fles {
 
 #pragma pack(1)
 
@@ -16,22 +15,21 @@ namespace fles
  * \brief %Timeslice work item struct.
  */
 struct TimesliceWorkItem {
-    /// The timeslice descriptor
-    TimesliceDescriptor ts_desc;
-    /// Size exponential (in bytes) of each data buffer
-    uint32_t data_buffer_size_exp;
-    /// Size exponential (in bytes) of each descriptor buffer
-    uint32_t desc_buffer_size_exp;
+  /// The timeslice descriptor
+  TimesliceDescriptor ts_desc;
+  /// Size exponential (in bytes) of each data buffer
+  uint32_t data_buffer_size_exp;
+  /// Size exponential (in bytes) of each descriptor buffer
+  uint32_t desc_buffer_size_exp;
 
-    friend class boost::serialization::access;
-    /// Provide boost serialization access.
-    template <class Archive>
-    void serialize(Archive& ar, const unsigned int /* version */)
-    {
-        ar& ts_desc;
-        ar& data_buffer_size_exp;
-        ar& desc_buffer_size_exp;
-    }
+  friend class boost::serialization::access;
+  /// Provide boost serialization access.
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int /* version */) {
+    ar& ts_desc;
+    ar& data_buffer_size_exp;
+    ar& desc_buffer_size_exp;
+  }
 };
 
 #pragma pack()
