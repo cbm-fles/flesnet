@@ -304,19 +304,19 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id) {
 
   if (!mr_data_) {
     // Register memory regions.
-    mr_data_ = ibv_reg_mr(
-        pd_, const_cast<uint8_t*>(data_source_.data_send_buffer().ptr()),
-        data_source_.data_send_buffer().bytes(), IBV_ACCESS_LOCAL_WRITE);
+    mr_data_ =
+        ibv_reg_mr(pd_, const_cast<uint8_t*>(data_source_.data_buffer().ptr()),
+                   data_source_.data_buffer().bytes(), IBV_ACCESS_LOCAL_WRITE);
     if (!mr_data_) {
       L_(error) << "ibv_reg_mr failed for mr_data: " << strerror(errno);
       throw InfinibandException("registration of memory region failed");
     }
 
-    mr_desc_ = ibv_reg_mr(pd_,
-                          const_cast<fles::MicrosliceDescriptor*>(
-                              data_source_.desc_send_buffer().ptr()),
-                          data_source_.desc_send_buffer().bytes(),
-                          IBV_ACCESS_LOCAL_WRITE);
+    mr_desc_ =
+        ibv_reg_mr(pd_,
+                   const_cast<fles::MicrosliceDescriptor*>(
+                       data_source_.desc_buffer().ptr()),
+                   data_source_.desc_buffer().bytes(), IBV_ACCESS_LOCAL_WRITE);
     if (!mr_desc_) {
       L_(error) << "ibv_reg_mr failed for mr_desc: " << strerror(errno);
       throw InfinibandException("registration of memory region failed");
@@ -375,71 +375,57 @@ void InputChannelSender::post_send_data(uint64_t timeslice,
   int num_sge = 0;
   struct ibv_sge sge[4];
   // descriptors
-  if ((desc_offset & data_source_.desc_send_buffer().size_mask()) <=
+  if ((desc_offset & data_source_.desc_buffer().size_mask()) <=
       ((desc_offset + desc_length - 1) &
-       data_source_.desc_send_buffer().size_mask())) {
+       data_source_.desc_buffer().size_mask())) {
     // one chunk
     sge[num_sge].addr = reinterpret_cast<uintptr_t>(
-        &data_source_.desc_send_buffer().at(desc_offset));
+        &data_source_.desc_buffer().at(desc_offset));
     sge[num_sge].length = sizeof(fles::MicrosliceDescriptor) * desc_length;
     sge[num_sge++].lkey = mr_desc_->lkey;
   } else {
     // two chunks
     sge[num_sge].addr = reinterpret_cast<uintptr_t>(
-        &data_source_.desc_send_buffer().at(desc_offset));
+        &data_source_.desc_buffer().at(desc_offset));
     sge[num_sge].length =
         sizeof(fles::MicrosliceDescriptor) *
-        (data_source_.desc_send_buffer().size() -
-         (desc_offset & data_source_.desc_send_buffer().size_mask()));
+        (data_source_.desc_buffer().size() -
+         (desc_offset & data_source_.desc_buffer().size_mask()));
     sge[num_sge++].lkey = mr_desc_->lkey;
     sge[num_sge].addr =
-        reinterpret_cast<uintptr_t>(data_source_.desc_send_buffer().ptr());
+        reinterpret_cast<uintptr_t>(data_source_.desc_buffer().ptr());
     sge[num_sge].length =
         sizeof(fles::MicrosliceDescriptor) *
-        (desc_length - data_source_.desc_send_buffer().size() +
-         (desc_offset & data_source_.desc_send_buffer().size_mask()));
+        (desc_length - data_source_.desc_buffer().size() +
+         (desc_offset & data_source_.desc_buffer().size_mask()));
     sge[num_sge++].lkey = mr_desc_->lkey;
   }
   int num_desc_sge = num_sge;
   // data
   if (data_length == 0) {
     // zero chunks
-  } else if ((data_offset & data_source_.data_send_buffer().size_mask()) <=
+  } else if ((data_offset & data_source_.data_buffer().size_mask()) <=
              ((data_offset + data_length - 1) &
-              data_source_.data_send_buffer().size_mask())) {
+              data_source_.data_buffer().size_mask())) {
     // one chunk
     sge[num_sge].addr = reinterpret_cast<uintptr_t>(
-        &data_source_.data_send_buffer().at(data_offset));
+        &data_source_.data_buffer().at(data_offset));
     sge[num_sge].length = data_length;
     sge[num_sge++].lkey = mr_data_->lkey;
   } else {
     // two chunks
     sge[num_sge].addr = reinterpret_cast<uintptr_t>(
-        &data_source_.data_send_buffer().at(data_offset));
+        &data_source_.data_buffer().at(data_offset));
     sge[num_sge].length =
-        data_source_.data_send_buffer().size() -
-        (data_offset & data_source_.data_send_buffer().size_mask());
+        data_source_.data_buffer().size() -
+        (data_offset & data_source_.data_buffer().size_mask());
     sge[num_sge++].lkey = mr_data_->lkey;
     sge[num_sge].addr =
-        reinterpret_cast<uintptr_t>(data_source_.data_send_buffer().ptr());
+        reinterpret_cast<uintptr_t>(data_source_.data_buffer().ptr());
     sge[num_sge].length =
-        data_length - data_source_.data_send_buffer().size() +
-        (data_offset & data_source_.data_send_buffer().size_mask());
+        data_length - data_source_.data_buffer().size() +
+        (data_offset & data_source_.data_buffer().size_mask());
     sge[num_sge++].lkey = mr_data_->lkey;
-  }
-  // copy between buffers
-  for (int i = 0; i < num_sge; ++i) {
-    if (i < num_desc_sge) {
-      data_source_.copy_to_desc_send_buffer(
-          reinterpret_cast<fles::MicrosliceDescriptor*>(sge[i].addr) -
-              data_source_.desc_send_buffer().ptr(),
-          sge[i].length / sizeof(fles::MicrosliceDescriptor));
-    } else {
-      data_source_.copy_to_data_send_buffer(
-          reinterpret_cast<uint8_t*>(sge[i].addr) -
-              data_source_.data_send_buffer().ptr(),
-          sge[i].length);
-    }
   }
 
   conn_[cn]->send_data(sge, num_sge, timeslice, desc_length, data_length, skip);

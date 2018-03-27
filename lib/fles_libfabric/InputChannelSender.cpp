@@ -340,10 +340,10 @@ int InputChannelSender::target_cn_index(uint64_t timeslice) {
 void InputChannelSender::on_connected(struct fid_domain* pd) {
   if (!mr_data_) {
     // Register memory regions.
-    int err = fi_mr_reg(
-        pd, const_cast<uint8_t*>(data_source_.data_send_buffer().ptr()),
-        data_source_.data_send_buffer().bytes(), FI_WRITE, 0,
-        Provider::requested_key++, 0, &mr_data_, nullptr);
+    int err =
+        fi_mr_reg(pd, const_cast<uint8_t*>(data_source_.data_buffer().ptr()),
+                  data_source_.data_buffer().bytes(), FI_WRITE, 0,
+                  Provider::requested_key++, 0, &mr_data_, nullptr);
     if (err) {
       L_(fatal) << "fi_mr_reg failed for data_send_buffer: " << err << "="
                 << fi_strerror(-err);
@@ -357,8 +357,8 @@ void InputChannelSender::on_connected(struct fid_domain* pd) {
 
     err = fi_mr_reg(pd,
                     const_cast<fles::MicrosliceDescriptor*>(
-                        data_source_.desc_send_buffer().ptr()),
-                    data_source_.desc_send_buffer().bytes(), FI_WRITE, 0,
+                        data_source_.desc_buffer().ptr()),
+                    data_source_.desc_buffer().bytes(), FI_WRITE, 0,
                     Provider::requested_key++, 0, &mr_desc_, nullptr);
     if (err) {
       L_(fatal) << "fi_mr_reg failed for desc_send_buffer: " << err << "="
@@ -424,67 +424,53 @@ void InputChannelSender::post_send_data(uint64_t timeslice,
   struct iovec sge[4];
   void* descs[4];
   // descriptors
-  if ((desc_offset & data_source_.desc_send_buffer().size_mask()) <=
+  if ((desc_offset & data_source_.desc_buffer().size_mask()) <=
       ((desc_offset + desc_length - 1) &
-       data_source_.desc_send_buffer().size_mask())) {
+       data_source_.desc_buffer().size_mask())) {
     // one chunk
-    sge[num_sge].iov_base = &data_source_.desc_send_buffer().at(desc_offset);
+    sge[num_sge].iov_base = &data_source_.desc_buffer().at(desc_offset);
     sge[num_sge].iov_len = sizeof(fles::MicrosliceDescriptor) * desc_length;
     assert(mr_desc_ != nullptr);
     descs[num_sge++] = fi_mr_desc(mr_desc_);
     // sge[num_sge++].lkey = mr_desc_->lkey;
   } else {
     // two chunks
-    sge[num_sge].iov_base = &data_source_.desc_send_buffer().at(desc_offset);
+    sge[num_sge].iov_base = &data_source_.desc_buffer().at(desc_offset);
     sge[num_sge].iov_len =
         sizeof(fles::MicrosliceDescriptor) *
-        (data_source_.desc_send_buffer().size() -
-         (desc_offset & data_source_.desc_send_buffer().size_mask()));
+        (data_source_.desc_buffer().size() -
+         (desc_offset & data_source_.desc_buffer().size_mask()));
     descs[num_sge++] = fi_mr_desc(mr_desc_);
-    sge[num_sge].iov_base = data_source_.desc_send_buffer().ptr();
+    sge[num_sge].iov_base = data_source_.desc_buffer().ptr();
     sge[num_sge].iov_len =
         sizeof(fles::MicrosliceDescriptor) *
-        (desc_length - data_source_.desc_send_buffer().size() +
-         (desc_offset & data_source_.desc_send_buffer().size_mask()));
+        (desc_length - data_source_.desc_buffer().size() +
+         (desc_offset & data_source_.desc_buffer().size_mask()));
     descs[num_sge++] = fi_mr_desc(mr_desc_);
   }
   int num_desc_sge = num_sge;
   // data
   if (data_length == 0) {
     // zero chunks
-  } else if ((data_offset & data_source_.data_send_buffer().size_mask()) <=
+  } else if ((data_offset & data_source_.data_buffer().size_mask()) <=
              ((data_offset + data_length - 1) &
-              data_source_.data_send_buffer().size_mask())) {
+              data_source_.data_buffer().size_mask())) {
     // one chunk
-    sge[num_sge].iov_base = &data_source_.data_send_buffer().at(data_offset);
+    sge[num_sge].iov_base = &data_source_.data_buffer().at(data_offset);
     sge[num_sge].iov_len = data_length;
     descs[num_sge++] = fi_mr_desc(mr_data_);
   } else {
     // two chunks
-    sge[num_sge].iov_base = &data_source_.data_send_buffer().at(data_offset);
+    sge[num_sge].iov_base = &data_source_.data_buffer().at(data_offset);
     sge[num_sge].iov_len =
-        data_source_.data_send_buffer().size() -
-        (data_offset & data_source_.data_send_buffer().size_mask());
+        data_source_.data_buffer().size() -
+        (data_offset & data_source_.data_buffer().size_mask());
     descs[num_sge++] = fi_mr_desc(mr_data_);
-    sge[num_sge].iov_base = data_source_.data_send_buffer().ptr();
+    sge[num_sge].iov_base = data_source_.data_buffer().ptr();
     sge[num_sge].iov_len =
-        data_length - data_source_.data_send_buffer().size() +
-        (data_offset & data_source_.data_send_buffer().size_mask());
+        data_length - data_source_.data_buffer().size() +
+        (data_offset & data_source_.data_buffer().size_mask());
     descs[num_sge++] = fi_mr_desc(mr_data_);
-  }
-  // copy between buffers
-  for (int i = 0; i < num_sge; ++i) {
-    if (i < num_desc_sge) {
-      data_source_.copy_to_desc_send_buffer(
-          reinterpret_cast<fles::MicrosliceDescriptor*>(sge[i].iov_base) -
-              data_source_.desc_send_buffer().ptr(),
-          sge[i].iov_len / sizeof(fles::MicrosliceDescriptor));
-    } else {
-      data_source_.copy_to_data_send_buffer(
-          reinterpret_cast<uint8_t*>(sge[i].iov_base) -
-              data_source_.data_send_buffer().ptr(),
-          sge[i].iov_len);
-    }
   }
 
   conn_[cn]->send_data(sge, descs, num_sge, timeslice, desc_length, data_length,

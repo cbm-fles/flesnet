@@ -78,15 +78,6 @@ public:
 
   virtual RingBufferView<T_DATA>& data_buffer() = 0;
   virtual RingBufferView<T_DESC>& desc_buffer() = 0;
-
-  virtual RingBufferView<T_DATA>& data_send_buffer() { return data_buffer(); }
-  virtual RingBufferView<T_DESC>& desc_send_buffer() { return desc_buffer(); }
-
-  virtual void copy_to_data_send_buffer(std::size_t /* start */,
-                                        std::size_t /* count */) {}
-
-  virtual void copy_to_desc_send_buffer(std::size_t /* start */,
-                                        std::size_t /* count */) {}
 };
 
 template <typename T_DESC, typename T_DATA> class DualRingBufferWriteInterface {
