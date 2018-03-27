@@ -1,8 +1,8 @@
 // Copyright 2012-2014 Jan de Cuveland <cmail@cuveland.de>
 
-#include "EmbeddedPatternGenerator.hpp"
+#include "FlesnetPatternGenerator.hpp"
 
-void EmbeddedPatternGenerator::proceed() {
+void FlesnetPatternGenerator::proceed() {
   const DualIndex min_avail = {desc_buffer_.size() / 4,
                                data_buffer_.size() / 4};
 

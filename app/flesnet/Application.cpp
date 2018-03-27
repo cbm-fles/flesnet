@@ -2,7 +2,7 @@
 
 #include "Application.hpp"
 #include "ChildProcessManager.hpp"
-#include "EmbeddedPatternGenerator.hpp"
+#include "FlesnetPatternGenerator.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
@@ -153,8 +153,8 @@ void Application::create_input_channel_senders() {
                << " +/- " << human_readable_count(size_var);
 
       data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
-          new EmbeddedPatternGenerator(datasize, descsize, index, size_mean,
-                                       (pattern != 0), (size_var != 0))));
+          new FlesnetPatternGenerator(datasize, descsize, index, size_mean,
+                                      (pattern != 0), (size_var != 0))));
     } else {
       L_(fatal) << "unknown input scheme: " << scheme;
     }

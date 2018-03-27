@@ -26,7 +26,7 @@
 		3D5D3F2E1B60E2CC00497342 /* test_MicrosliceReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5D3F2D1B60E2CC00497342 /* test_MicrosliceReceiver.cpp */; };
 		3D5D3F301B60E2DE00497342 /* test_RingBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5D3F2F1B60E2DE00497342 /* test_RingBuffer.cpp */; };
 		3D5D3F371B60F24600497342 /* libfles_ipc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D5657181B42D3E90052C86D /* libfles_ipc.a */; };
-		3D5D3F381B60F28E00497342 /* EmbeddedPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */; };
+		3D5D3F381B60F28E00497342 /* FlesnetPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* FlesnetPatternGenerator.cpp */; };
 		3D5D3F3A1B60F28E00497342 /* MicrosliceReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D0248B41B5FE75500AA4811 /* MicrosliceReceiver.cpp */; };
 		3D5D3F3B1B60F28E00497342 /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
 		3D5D3F3C1B60F28E00497342 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC3F1B591D54007C5C18 /* log.cpp */; };
@@ -42,13 +42,13 @@
 		3D94C1DD1B67F1C500FEE1EF /* multiword_64_64_gcc_i386_mmx.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8421B56BC2D0039F5CD /* multiword_64_64_gcc_i386_mmx.cc */; };
 		3D94C1DE1B67F1C500FEE1EF /* multiword_64_64_intrinsic_i386_mmx.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A8431B56BC2D0039F5CD /* multiword_64_64_intrinsic_i386_mmx.cc */; };
 		3D94C1DF1B67F1E700FEE1EF /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC3F1B591D54007C5C18 /* log.cpp */; };
-		3D94C1E01B67F20200FEE1EF /* EmbeddedPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */; };
+		3D94C1E01B67F20200FEE1EF /* FlesnetPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* FlesnetPatternGenerator.cpp */; };
 		3D94C1E31B67F20200FEE1EF /* MicrosliceReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D0248B41B5FE75500AA4811 /* MicrosliceReceiver.cpp */; };
 		3D94C1E41B67F20200FEE1EF /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
 		3D94C1E51B67F20200FEE1EF /* TimesliceAnalyzer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656EF1B42D0770052C86D /* TimesliceAnalyzer.cpp */; };
 		3D94C1E61B67F20200FEE1EF /* TimesliceDebugger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D5656F11B42D0770052C86D /* TimesliceDebugger.cpp */; };
 		3D94C1E71B67F20200FEE1EF /* Benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D06A82C1B56381B0039F5CD /* Benchmark.cpp */; };
-		3D9BCC361B591D10007C5C18 /* EmbeddedPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */; };
+		3D9BCC361B591D10007C5C18 /* FlesnetPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* FlesnetPatternGenerator.cpp */; };
 		3D9BCC3A1B591D10007C5C18 /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
 		3D9BCC421B591D54007C5C18 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC3F1B591D54007C5C18 /* log.cpp */; };
 		3DA36F671BE3775B00B2A25E /* GitRevisionStatic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DA36F621BE376E300B2A25E /* GitRevisionStatic.cpp */; };
@@ -71,7 +71,7 @@
 		3DB8F0711DF0437F0079A053 /* shm_device_provider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0691DF043630079A053 /* shm_device_provider.cpp */; };
 		3DB8F0931DF04C3F0079A053 /* ThreadContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC331B591D10007C5C18 /* ThreadContainer.cpp */; };
 		3DB8F0941DF04C3F0079A053 /* Parameters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0821DF04BC40079A053 /* Parameters.cpp */; };
-		3DB8F0961DF04C3F0079A053 /* EmbeddedPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */; };
+		3DB8F0961DF04C3F0079A053 /* FlesnetPatternGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D9BCC281B591D10007C5C18 /* FlesnetPatternGenerator.cpp */; };
 		3DB8F0971DF04C3F0079A053 /* Application.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F07E1DF04BC40079A053 /* Application.cpp */; };
 		3DB8F09C1DF04C3F0079A053 /* TimesliceBuilderZeromq.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0771DF04B570079A053 /* TimesliceBuilderZeromq.cpp */; };
 		3DB8F09D1DF04C3F0079A053 /* ComponentSenderZeromq.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DB8F0751DF04B570079A053 /* ComponentSenderZeromq.cpp */; };
@@ -254,8 +254,8 @@
 		3D99DE861BD7964200856451 /* shm_device_provider.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = shm_device_provider.hpp; sourceTree = "<group>"; };
 		3D9BCC251B591D10007C5C18 /* ChildProcessManager.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ChildProcessManager.hpp; sourceTree = "<group>"; };
 		3D9BCC271B591D10007C5C18 /* DualRingBuffer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DualRingBuffer.hpp; sourceTree = "<group>"; };
-		3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EmbeddedPatternGenerator.cpp; sourceTree = "<group>"; };
-		3D9BCC291B591D10007C5C18 /* EmbeddedPatternGenerator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = EmbeddedPatternGenerator.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		3D9BCC281B591D10007C5C18 /* FlesnetPatternGenerator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FlesnetPatternGenerator.cpp; sourceTree = "<group>"; };
+		3D9BCC291B591D10007C5C18 /* FlesnetPatternGenerator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = FlesnetPatternGenerator.hpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		3D9BCC301B591D10007C5C18 /* RingBuffer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RingBuffer.hpp; sourceTree = "<group>"; };
 		3D9BCC311B591D10007C5C18 /* RingBufferView.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RingBufferView.hpp; sourceTree = "<group>"; };
 		3D9BCC321B591D10007C5C18 /* Scheduler.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Scheduler.hpp; sourceTree = "<group>"; };
@@ -473,8 +473,8 @@
 				3DB8F0631DF042CC0079A053 /* TimesliceBuffer.cpp */,
 				3DB8F0641DF042CC0079A053 /* TimesliceBuffer.hpp */,
 				3D9BCC251B591D10007C5C18 /* ChildProcessManager.hpp */,
-				3D9BCC281B591D10007C5C18 /* EmbeddedPatternGenerator.cpp */,
-				3D9BCC291B591D10007C5C18 /* EmbeddedPatternGenerator.hpp */,
+				3D9BCC281B591D10007C5C18 /* FlesnetPatternGenerator.cpp */,
+				3D9BCC291B591D10007C5C18 /* FlesnetPatternGenerator.hpp */,
 				3D0248B51B5FE75500AA4811 /* MicrosliceReceiver.hpp */,
 				3D0248B41B5FE75500AA4811 /* MicrosliceReceiver.cpp */,
 				3DBE61381BD7CDF200AD6A8A /* MicrosliceTransmitter.hpp */,
@@ -780,7 +780,7 @@
 				3D06A8491B56BC2D0039F5CD /* crc32c_sse4.cc in Sources */,
 				3D9BCC3A1B591D10007C5C18 /* ThreadContainer.cpp in Sources */,
 				3D06A84C1B56BC2D0039F5CD /* multiword_64_64_cl_i386_mmx.cc in Sources */,
-				3D9BCC361B591D10007C5C18 /* EmbeddedPatternGenerator.cpp in Sources */,
+				3D9BCC361B591D10007C5C18 /* FlesnetPatternGenerator.cpp in Sources */,
 				3DB470501B8CBC7F0098318E /* PatternChecker.cpp in Sources */,
 				3D06A84B1B56BC2D0039F5CD /* multiword_128_64_gcc_amd64_sse2.cc in Sources */,
 				3DB4704C1B8CBC7F0098318E /* FlibLegacyPatternChecker.cpp in Sources */,
@@ -808,7 +808,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3D5D3F381B60F28E00497342 /* EmbeddedPatternGenerator.cpp in Sources */,
+				3D5D3F381B60F28E00497342 /* FlesnetPatternGenerator.cpp in Sources */,
 				3D5D3F3A1B60F28E00497342 /* MicrosliceReceiver.cpp in Sources */,
 				3D5D3F3B1B60F28E00497342 /* ThreadContainer.cpp in Sources */,
 				3D5D3F3C1B60F28E00497342 /* log.cpp in Sources */,
@@ -820,7 +820,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3D94C1E01B67F20200FEE1EF /* EmbeddedPatternGenerator.cpp in Sources */,
+				3D94C1E01B67F20200FEE1EF /* FlesnetPatternGenerator.cpp in Sources */,
 				3DB4704B1B8CBC7F0098318E /* FlesnetPatternChecker.cpp in Sources */,
 				3DB8F0711DF0437F0079A053 /* shm_device_provider.cpp in Sources */,
 				3DB8F0701DF0437A0079A053 /* shm_device_client.cpp in Sources */,
@@ -866,7 +866,7 @@
 				3DB8F0931DF04C3F0079A053 /* ThreadContainer.cpp in Sources */,
 				3DB8F0AF1DF04CC20079A053 /* shm_channel_client.cpp in Sources */,
 				3DB8F0941DF04C3F0079A053 /* Parameters.cpp in Sources */,
-				3DB8F0961DF04C3F0079A053 /* EmbeddedPatternGenerator.cpp in Sources */,
+				3DB8F0961DF04C3F0079A053 /* FlesnetPatternGenerator.cpp in Sources */,
 				3DB8F0971DF04C3F0079A053 /* Application.cpp in Sources */,
 				3DB8F09C1DF04C3F0079A053 /* TimesliceBuilderZeromq.cpp in Sources */,
 				3D44383C1E3899DD00B0A202 /* GitRevisionStatic.cpp in Sources */,

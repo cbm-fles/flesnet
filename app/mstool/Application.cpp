@@ -1,7 +1,7 @@
 // Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
-#include "EmbeddedPatternGenerator.hpp"
+#include "FlesnetPatternGenerator.hpp"
 #include "MicrosliceAnalyzer.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
@@ -36,7 +36,7 @@ Application::Application(Parameters const& par) : par_(par) {
     constexpr std::size_t desc_buffer_size_exp = 19; // 512 ki entries
     constexpr std::size_t data_buffer_size_exp = 27; // 128 MiB
 
-    data_source_.reset(new EmbeddedPatternGenerator(
+    data_source_.reset(new FlesnetPatternGenerator(
         data_buffer_size_exp, desc_buffer_size_exp, par_.channel_idx,
         typical_content_size, true, true));
   }
