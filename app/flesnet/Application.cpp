@@ -15,9 +15,9 @@
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
+  create_input_channel_senders();
   create_timeslice_buffers();
   set_node();
-  create_input_channel_senders();
 }
 
 Application::~Application() {}
