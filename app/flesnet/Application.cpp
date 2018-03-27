@@ -14,17 +14,14 @@
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
-  unsigned input_size = par.inputs().size();
-  std::vector<unsigned> input_indexes = par.input_indexes();
 
   // Compute node application
 
-  // set_cpu(1);
-
+  unsigned input_size = par_.inputs().size();
   std::vector<std::string> input_server_addresses;
   for (unsigned int i = 0; i < input_size; ++i)
-    input_server_addresses.push_back("tcp://" + par.inputs().at(i).host + ":" +
-                                     std::to_string(par.base_port() + i));
+    input_server_addresses.push_back("tcp://" + par_.inputs().at(i).host + ":" +
+                                     std::to_string(par_.base_port() + i));
 
   for (unsigned i : par_.output_indexes()) {
     auto shm_identifier = par_.outputs().at(i).path.at(0);
@@ -53,7 +50,7 @@ Application::Application(Parameters const& par,
     if (par_.transport() == Transport::ZeroMQ) {
       std::unique_ptr<TimesliceBuilderZeromq> builder(
           new TimesliceBuilderZeromq(
-              i, *tsb, input_server_addresses, par.outputs().size(),
+              i, *tsb, input_server_addresses, par_.outputs().size(),
               par_.timeslice_size(), par_.max_timeslice_number(),
               signal_status_));
       timeslice_builders_zeromq_.push_back(std::move(builder));
@@ -86,15 +83,15 @@ Application::Application(Parameters const& par,
   // Input node application
 
   std::vector<std::string> output_hosts;
-  for (unsigned int i = 0; i < par.outputs().size(); ++i)
-    output_hosts.push_back(par.outputs().at(i).host);
+  for (unsigned int i = 0; i < par_.outputs().size(); ++i)
+    output_hosts.push_back(par_.outputs().at(i).host);
 
   std::vector<std::string> output_services;
-  for (unsigned int i = 0; i < par.outputs().size(); ++i)
-    output_services.push_back(std::to_string(par.base_port() + i));
+  for (unsigned int i = 0; i < par_.outputs().size(); ++i)
+    output_services.push_back(std::to_string(par_.base_port() + i));
 
-  for (size_t c = 0; c < par.input_indexes().size(); ++c) {
-    unsigned index = par.input_indexes().at(c);
+  for (size_t c = 0; c < par_.input_indexes().size(); ++c) {
+    unsigned index = par_.input_indexes().at(c);
 
     auto scheme = par_.inputs().at(index).scheme;
     auto param = par_.inputs().at(index).param;
@@ -159,7 +156,7 @@ Application::Application(Parameters const& par,
           "tcp://*:" + std::to_string(par_.base_port() + index);
       std::unique_ptr<ComponentSenderZeromq> sender(new ComponentSenderZeromq(
           index, *(data_sources_.at(c).get()), listen_address,
-          par.timeslice_size(), overlap_size, par.max_timeslice_number(),
+          par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
           signal_status_));
       component_senders_zeromq_.push_back(std::move(sender));
     } else if (par_.transport() == Transport::LibFabric) {
@@ -167,8 +164,8 @@ Application::Application(Parameters const& par,
       std::unique_ptr<tl_libfabric::InputChannelSender> sender(
           new tl_libfabric::InputChannelSender(
               index, *(data_sources_.at(c).get()), output_hosts,
-              output_services, par.timeslice_size(), overlap_size,
-              par.max_timeslice_number(), par.inputs().at(c).host));
+              output_services, par_.timeslice_size(), overlap_size,
+              par_.max_timeslice_number(), par_.inputs().at(c).host));
       input_channel_senders_.push_back(std::move(sender));
 #else
       L_(fatal) << "flesnet built without LIBFABRIC support";
@@ -177,7 +174,7 @@ Application::Application(Parameters const& par,
 #ifdef HAVE_RDMA
       std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
           index, *(data_sources_.at(c).get()), output_hosts, output_services,
-          par.timeslice_size(), overlap_size, par.max_timeslice_number()));
+          par_.timeslice_size(), overlap_size, par_.max_timeslice_number()));
       input_channel_senders_.push_back(std::move(sender));
 #else
       L_(fatal) << "flesnet built without RDMA support";
