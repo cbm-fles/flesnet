@@ -15,6 +15,17 @@ void FlesnetPatternGenerator::proceed() {
   }
 
   while (true) {
+    // check for current time (rate limiting)
+    if (delay_ns_ != UINT64_C(0)) {
+      auto delta = std::chrono::high_resolution_clock::now() - begin_;
+      auto delta_ns =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count();
+      auto required_ns = static_cast<int64_t>(delay_ns_ * write_index_.desc);
+      if (delta_ns < required_ns) {
+        return;
+      }
+    }
+
     unsigned int content_bytes = typical_content_size_;
     if (randomize_sizes_) {
       content_bytes = random_distribution_(random_generator_);
