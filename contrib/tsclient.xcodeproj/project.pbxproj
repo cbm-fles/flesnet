@@ -400,9 +400,9 @@
 				3DA36F661BE376FA00B2A25E /* config */,
 				3D462B881B42CC790017047A /* Products */,
 			);
-			indentWidth = 4;
+			indentWidth = 2;
 			sourceTree = "<group>";
-			tabWidth = 4;
+			tabWidth = 2;
 		};
 		3D462B881B42CC790017047A /* Products */ = {
 			isa = PBXGroup;
