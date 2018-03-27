@@ -40,6 +40,9 @@ public:
   void operator=(const Application&) = delete;
 
 private:
+  void create_timeslice_buffers();
+  void create_input_channel_senders();
+
   /// The run parameters object.
   Parameters const& par_;
   volatile sig_atomic_t* signal_status_;

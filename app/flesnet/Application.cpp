@@ -14,9 +14,14 @@
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
+  create_timeslice_buffers();
+  set_node();
+  create_input_channel_senders();
+}
 
-  // Compute node application
+Application::~Application() {}
 
+void Application::create_timeslice_buffers() {
   unsigned input_size = par_.inputs().size();
   std::vector<std::string> input_server_addresses;
   for (unsigned int i = 0; i < input_size; ++i)
@@ -77,11 +82,9 @@ Application::Application(Parameters const& par,
 
     timeslice_buffers_.push_back(std::move(tsb));
   }
+}
 
-  set_node();
-
-  // Input node application
-
+void Application::create_input_channel_senders() {
   std::vector<std::string> output_hosts;
   for (unsigned int i = 0; i < par_.outputs().size(); ++i)
     output_hosts.push_back(par_.outputs().at(i).host);
@@ -182,8 +185,6 @@ Application::Application(Parameters const& par,
     }
   }
 }
-
-Application::~Application() {}
 
 void Application::run() {
 // Do not spawn additional thread if only one is needed, simplifies
