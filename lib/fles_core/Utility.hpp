@@ -63,3 +63,12 @@ bar_graph(std::vector<T> values, std::string symbols, uint32_t length) {
 
   return s;
 }
+
+/// Missing library function
+inline unsigned stou(std::string const& str, size_t* idx = 0, int base = 10) {
+  unsigned long result = std::stoul(str, idx, base);
+  if (result > std::numeric_limits<unsigned>::max()) {
+    throw std::out_of_range("stou");
+  }
+  return static_cast<unsigned>(result);
+}

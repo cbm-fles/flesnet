@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "ChildProcessManager.hpp"
 #include "EmbeddedPatternGenerator.hpp"
+#include "Utility.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
 #include <boost/algorithm/string.hpp>
@@ -22,9 +23,11 @@ Application::Application(Parameters const& par,
 Application::~Application() {}
 
 void Application::create_timeslice_buffers() {
-  unsigned input_size = par_.inputs().size();
+  unsigned input_size = static_cast<unsigned>(par_.inputs().size());
+  unsigned output_size = static_cast<unsigned>(par_.outputs().size());
+
   std::vector<std::string> input_server_addresses;
-  for (unsigned int i = 0; i < input_size; ++i)
+  for (unsigned i = 0; i < input_size; ++i)
     input_server_addresses.push_back("tcp://" + par_.inputs().at(i).host + ":" +
                                      std::to_string(par_.base_port() + i));
 
@@ -34,10 +37,10 @@ void Application::create_timeslice_buffers() {
 
     uint32_t datasize = 27; // 128 MiB
     if (param.count("datasize"))
-      datasize = std::stoi(param.at("datasize"));
+      datasize = stou(param.at("datasize"));
     uint32_t descsize = 19; // 16 MiB
     if (param.count("descsize"))
-      descsize = std::stoi(param.at("descsize"));
+      descsize = stou(param.at("descsize"));
 
     L_(info) << "timeslice buffer " << i
              << " size: " << human_readable_count(UINT64_C(1) << datasize)
@@ -55,7 +58,7 @@ void Application::create_timeslice_buffers() {
     if (par_.transport() == Transport::ZeroMQ) {
       std::unique_ptr<TimesliceBuilderZeromq> builder(
           new TimesliceBuilderZeromq(
-              i, *tsb, input_server_addresses, par_.outputs().size(),
+              i, *tsb, input_server_addresses, output_size,
               par_.timeslice_size(), par_.max_timeslice_number(),
               signal_status_));
       timeslice_builders_zeromq_.push_back(std::move(builder));
@@ -101,7 +104,7 @@ void Application::create_input_channel_senders() {
 
     if (scheme == "shm") {
       auto shm_identifier = par_.inputs().at(index).path.at(0);
-      int channel = std::stoi(par_.inputs().at(index).path.at(1));
+      auto channel = std::stoul(par_.inputs().at(index).path.at(1));
 
       if (!shm_devices_.count(shm_identifier)) {
         try {
@@ -121,19 +124,19 @@ void Application::create_input_channel_senders() {
     } else if (scheme == "pgen") {
       uint32_t datasize = 27; // 128 MiB
       if (param.count("datasize"))
-        datasize = std::stoi(param.at("datasize"));
+        datasize = stou(param.at("datasize"));
       uint32_t descsize = 19; // 16 MiB
       if (param.count("descsize"))
-        descsize = std::stoi(param.at("descsize"));
+        descsize = stou(param.at("descsize"));
       uint32_t size_mean = 1024; // 1 kiB
       if (param.count("mean"))
-        size_mean = std::stoi(param.at("mean"));
+        size_mean = stou(param.at("mean"));
       uint32_t size_var = 0;
       if (param.count("var"))
-        size_var = std::stoi(param.at("var"));
+        size_var = stou(param.at("var"));
       uint32_t pattern = 0;
       if (param.count("pattern"))
-        pattern = std::stoi(param.at("pattern"));
+        pattern = stou(param.at("pattern"));
 
       L_(info) << "input buffer " << index
                << " size: " << human_readable_count(UINT64_C(1) << datasize)
@@ -152,7 +155,7 @@ void Application::create_input_channel_senders() {
 
     uint32_t overlap_size = 1;
     if (param.count("overlap"))
-      overlap_size = std::stoi(param.at("overlap"));
+      overlap_size = stou(param.at("overlap"));
 
     if (par_.transport() == Transport::ZeroMQ) {
       std::string listen_address =
