@@ -73,6 +73,11 @@ public:
   /// Retrieve this applications's indexes in the list of outputs.
   std::vector<unsigned> output_indexes() const { return output_indexes_; }
 
+  bool local_only() const {
+    return input_indexes_.size() == inputs_.size() &&
+           output_indexes_.size() == outputs_.size();
+  }
+
 private:
   /// Parse command line options.
   void parse_options(int argc, char* argv[]);

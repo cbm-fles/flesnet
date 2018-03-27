@@ -30,8 +30,12 @@ void Application::create_timeslice_buffers() {
 
   std::vector<std::string> input_server_addresses;
   for (unsigned i = 0; i < input_size; ++i)
-    input_server_addresses.push_back("tcp://" + par_.inputs().at(i).host + ":" +
-                                     std::to_string(par_.base_port() + i));
+    if (par_.local_only())
+      input_server_addresses.push_back("inproc://input" + std::to_string(i));
+    else
+      input_server_addresses.push_back("tcp://" + par_.inputs().at(i).host +
+                                       ":" +
+                                       std::to_string(par_.base_port() + i));
 
   for (unsigned i : par_.output_indexes()) {
     auto shm_identifier = par_.outputs().at(i).path.at(0);
@@ -162,6 +166,8 @@ void Application::create_input_channel_senders() {
     if (par_.transport() == Transport::ZeroMQ) {
       std::string listen_address =
           "tcp://*:" + std::to_string(par_.base_port() + index);
+      if (par_.local_only())
+        listen_address = "inproc://input" + std::to_string(index);
       std::unique_ptr<ComponentSenderZeromq> sender(new ComponentSenderZeromq(
           index, *(data_sources_.at(c).get()), listen_address,
           par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
