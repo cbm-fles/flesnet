@@ -15,6 +15,8 @@
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
+  zmq_context_ = std::unique_ptr<void, std::function<int(void*)>>(
+      zmq_ctx_new(), zmq_ctx_destroy);
   create_input_channel_senders();
   create_timeslice_buffers();
   set_node();
@@ -57,10 +59,10 @@ void Application::create_timeslice_buffers() {
 
     if (par_.transport() == Transport::ZeroMQ) {
       std::unique_ptr<TimesliceBuilderZeromq> builder(
-          new TimesliceBuilderZeromq(
-              i, *tsb, input_server_addresses, output_size,
-              par_.timeslice_size(), par_.max_timeslice_number(),
-              signal_status_));
+          new TimesliceBuilderZeromq(i, *tsb, input_server_addresses,
+                                     output_size, par_.timeslice_size(),
+                                     par_.max_timeslice_number(),
+                                     signal_status_, zmq_context_.get()));
       timeslice_builders_zeromq_.push_back(std::move(builder));
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC
@@ -163,7 +165,7 @@ void Application::create_input_channel_senders() {
       std::unique_ptr<ComponentSenderZeromq> sender(new ComponentSenderZeromq(
           index, *(data_sources_.at(c).get()), listen_address,
           par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
-          signal_status_));
+          signal_status_, zmq_context_.get()));
       component_senders_zeromq_.push_back(std::move(sender));
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC

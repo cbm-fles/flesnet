@@ -26,7 +26,8 @@ public:
                          uint32_t num_compute_nodes,
                          uint32_t timeslice_size,
                          uint32_t max_timeslice_number,
-                         volatile sig_atomic_t* signal_status);
+                         volatile sig_atomic_t* signal_status,
+                         void* zmq_context);
 
   TimesliceBuilderZeromq(const TimesliceBuilderZeromq&) = delete;
   void operator=(const TimesliceBuilderZeromq&) = delete;
@@ -58,9 +59,6 @@ private:
 
   /// Pointer to global signal status variable.
   volatile sig_atomic_t* signal_status_;
-
-  /// ZeroMQ context.
-  void* zmq_context_;
 
   /// Index of acknowledged timeslices (local index).
   uint64_t acked_ = 0;

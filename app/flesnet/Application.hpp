@@ -60,6 +60,9 @@ private:
   std::vector<std::unique_ptr<ConnectionGroupWorker>> input_channel_senders_;
 #endif
 
+  /// The application's ZeroMQ context
+  std::unique_ptr<void, std::function<int(void*)>> zmq_context_;
+
   /// The application's ZeroMQ transport objects
   std::vector<std::unique_ptr<TimesliceBuilderZeromq>>
       timeslice_builders_zeromq_;
