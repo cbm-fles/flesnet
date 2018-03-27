@@ -87,7 +87,7 @@ private:
   std::string processor_executable_;
 
   /// The number of instances of the timeslice processor executable.
-  uint32_t processor_instances_ = 2;
+  uint32_t processor_instances_ = 1;
 
   /// The global base port.
   uint32_t base_port_ = 20079;
