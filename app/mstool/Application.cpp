@@ -2,7 +2,6 @@
 
 #include "Application.hpp"
 #include "EmbeddedPatternGenerator.hpp"
-#include "FlibPatternGenerator.hpp"
 #include "MicrosliceAnalyzer.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
@@ -37,20 +36,9 @@ Application::Application(Parameters const& par) : par_(par) {
     constexpr std::size_t desc_buffer_size_exp = 19; // 512 ki entries
     constexpr std::size_t data_buffer_size_exp = 27; // 128 MiB
 
-    switch (par_.pattern_generator) {
-    case 1:
-      data_source_.reset(new FlibPatternGenerator(
-          data_buffer_size_exp, desc_buffer_size_exp, par_.channel_idx,
-          typical_content_size, true, true));
-      break;
-    case 2:
-      data_source_.reset(new EmbeddedPatternGenerator(
-          data_buffer_size_exp, desc_buffer_size_exp, par_.channel_idx,
-          typical_content_size, true, true));
-      break;
-    default:
-      throw std::runtime_error("pattern generator type not available");
-    }
+    data_source_.reset(new EmbeddedPatternGenerator(
+        data_buffer_size_exp, desc_buffer_size_exp, par_.channel_idx,
+        typical_content_size, true, true));
   }
 
   if (data_source_) {
