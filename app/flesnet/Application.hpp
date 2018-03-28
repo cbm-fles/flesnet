@@ -40,6 +40,9 @@ public:
   void operator=(const Application&) = delete;
 
 private:
+  void create_timeslice_buffers();
+  void create_input_channel_senders();
+
   /// The run parameters object.
   Parameters const& par_;
   volatile sig_atomic_t* signal_status_;
@@ -56,6 +59,9 @@ private:
   std::vector<std::unique_ptr<ConnectionGroupWorker>> timeslice_builders_;
   std::vector<std::unique_ptr<ConnectionGroupWorker>> input_channel_senders_;
 #endif
+
+  /// The application's ZeroMQ context
+  std::unique_ptr<void, std::function<int(void*)>> zmq_context_;
 
   /// The application's ZeroMQ transport objects
   std::vector<std::unique_ptr<TimesliceBuilderZeromq>>

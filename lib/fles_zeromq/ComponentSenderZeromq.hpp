@@ -23,7 +23,8 @@ public:
                         uint32_t timeslice_size,
                         uint32_t overlap_size,
                         uint32_t max_timeslice_number,
-                        volatile sig_atomic_t* signal_status);
+                        volatile sig_atomic_t* signal_status,
+                        void* zmq_context);
 
   ComponentSenderZeromq(const ComponentSenderZeromq&) = delete;
   void operator=(const ComponentSenderZeromq&) = delete;
@@ -54,9 +55,6 @@ private:
 
   /// Pointer to global signal status variable.
   volatile sig_atomic_t* signal_status_;
-
-  /// ZeroMQ context.
-  void* zmq_context_;
 
   /// ZeroMQ socket.
   void* socket_;

@@ -16,21 +16,20 @@ TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     uint32_t num_compute_nodes,
     uint32_t timeslice_size,
     uint32_t max_timeslice_number,
-    volatile sig_atomic_t* signal_status)
+    volatile sig_atomic_t* signal_status,
+    void* zmq_context)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
       input_server_addresses_(input_server_addresses),
       num_compute_nodes_(num_compute_nodes), timeslice_size_(timeslice_size),
       max_timeslice_number_(max_timeslice_number),
       signal_status_(signal_status), ts_index_(compute_index_),
       ack_(timeslice_buffer_.get_desc_size_exp()) {
-  zmq_context_ = zmq_ctx_new();
-
   for (size_t i = 0; i < input_server_addresses_.size(); ++i) {
     auto input_server_address = input_server_addresses_.at(i);
 
     std::unique_ptr<Connection> c(new Connection{timeslice_buffer_, i});
 
-    c->socket = zmq_socket(zmq_context_, ZMQ_REQ);
+    c->socket = zmq_socket(zmq_context, ZMQ_REQ);
     assert(c->socket);
     int timeout_ms = 500;
     int rc =
@@ -53,10 +52,6 @@ TimesliceBuilderZeromq::~TimesliceBuilderZeromq() {
       int rc = zmq_close(c->socket);
       assert(rc == 0);
     }
-  }
-  if (zmq_context_) {
-    int rc = zmq_ctx_destroy(zmq_context_);
-    assert(rc == 0);
   }
 }
 

@@ -73,6 +73,11 @@ public:
   /// Retrieve this applications's indexes in the list of outputs.
   std::vector<unsigned> output_indexes() const { return output_indexes_; }
 
+  bool local_only() const {
+    return input_indexes_.size() == inputs_.size() &&
+           output_indexes_.size() == outputs_.size();
+  }
+
 private:
   /// Parse command line options.
   void parse_options(int argc, char* argv[]);
@@ -87,7 +92,7 @@ private:
   std::string processor_executable_;
 
   /// The number of instances of the timeslice processor executable.
-  uint32_t processor_instances_ = 2;
+  uint32_t processor_instances_ = 1;
 
   /// The global base port.
   uint32_t base_port_ = 20079;

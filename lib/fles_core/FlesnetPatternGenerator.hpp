@@ -7,28 +7,32 @@
 #include "RingBufferView.hpp"
 #include "log.hpp"
 #include <algorithm>
+#include <chrono>
 #include <random>
 
 /// Simple embedded software pattern generator.
-class EmbeddedPatternGenerator : public InputBufferReadInterface {
+class FlesnetPatternGenerator : public InputBufferReadInterface {
 public:
-  /// The EmbeddedPatternGenerator constructor.
-  EmbeddedPatternGenerator(std::size_t data_buffer_size_exp,
-                           std::size_t desc_buffer_size_exp,
-                           uint64_t input_index,
-                           uint32_t typical_content_size,
-                           bool generate_pattern = false,
-                           bool randomize_sizes = false)
+  /// The FlesnetPatternGenerator constructor.
+  FlesnetPatternGenerator(std::size_t data_buffer_size_exp,
+                          std::size_t desc_buffer_size_exp,
+                          uint64_t input_index,
+                          uint32_t typical_content_size,
+                          bool generate_pattern = false,
+                          bool randomize_sizes = false,
+                          uint64_t delay_ns = 0)
       : data_buffer_(data_buffer_size_exp), desc_buffer_(desc_buffer_size_exp),
         data_buffer_view_(data_buffer_.ptr(), data_buffer_size_exp),
         desc_buffer_view_(desc_buffer_.ptr(), desc_buffer_size_exp),
         input_index_(input_index), generate_pattern_(generate_pattern),
         typical_content_size_(typical_content_size),
         randomize_sizes_(randomize_sizes),
-        random_distribution_(typical_content_size) {}
+        random_distribution_(typical_content_size), delay_ns_(delay_ns) {
+    begin_ = std::chrono::high_resolution_clock::now();
+  }
 
-  EmbeddedPatternGenerator(const EmbeddedPatternGenerator&) = delete;
-  void operator=(const EmbeddedPatternGenerator&) = delete;
+  FlesnetPatternGenerator(const FlesnetPatternGenerator&) = delete;
+  void operator=(const FlesnetPatternGenerator&) = delete;
 
   RingBufferView<uint8_t>& data_buffer() override { return data_buffer_view_; }
 
@@ -70,6 +74,9 @@ private:
 
   /// Distribution to use in determining data content sizes.
   std::poisson_distribution<unsigned int> random_distribution_;
+
+  uint64_t delay_ns_;
+  std::chrono::high_resolution_clock::time_point begin_;
 
   /// Number of acknowledged data bytes and microslices. Updated by input
   /// node.

@@ -2,7 +2,8 @@
 
 #include "Application.hpp"
 #include "ChildProcessManager.hpp"
-#include "EmbeddedPatternGenerator.hpp"
+#include "FlesnetPatternGenerator.hpp"
+#include "Utility.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
 #include <boost/algorithm/string.hpp>
@@ -14,17 +15,27 @@
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
-  unsigned input_size = par.inputs().size();
-  std::vector<unsigned> input_indexes = par.input_indexes();
+  zmq_context_ = std::unique_ptr<void, std::function<int(void*)>>(
+      zmq_ctx_new(), zmq_ctx_destroy);
+  create_input_channel_senders();
+  create_timeslice_buffers();
+  set_node();
+}
 
-  // Compute node application
+Application::~Application() {}
 
-  // set_cpu(1);
+void Application::create_timeslice_buffers() {
+  unsigned input_size = static_cast<unsigned>(par_.inputs().size());
+  unsigned output_size = static_cast<unsigned>(par_.outputs().size());
 
   std::vector<std::string> input_server_addresses;
-  for (unsigned int i = 0; i < input_size; ++i)
-    input_server_addresses.push_back("tcp://" + par.inputs().at(i).host + ":" +
-                                     std::to_string(par.base_port() + i));
+  for (unsigned i = 0; i < input_size; ++i)
+    if (par_.local_only())
+      input_server_addresses.push_back("inproc://input" + std::to_string(i));
+    else
+      input_server_addresses.push_back("tcp://" + par_.inputs().at(i).host +
+                                       ":" +
+                                       std::to_string(par_.base_port() + i));
 
   for (unsigned i : par_.output_indexes()) {
     auto shm_identifier = par_.outputs().at(i).path.at(0);
@@ -32,10 +43,10 @@ Application::Application(Parameters const& par,
 
     uint32_t datasize = 27; // 128 MiB
     if (param.count("datasize"))
-      datasize = std::stoi(param.at("datasize"));
+      datasize = stou(param.at("datasize"));
     uint32_t descsize = 19; // 16 MiB
     if (param.count("descsize"))
-      descsize = std::stoi(param.at("descsize"));
+      descsize = stou(param.at("descsize"));
 
     L_(info) << "timeslice buffer " << i
              << " size: " << human_readable_count(UINT64_C(1) << datasize)
@@ -52,10 +63,10 @@ Application::Application(Parameters const& par,
 
     if (par_.transport() == Transport::ZeroMQ) {
       std::unique_ptr<TimesliceBuilderZeromq> builder(
-          new TimesliceBuilderZeromq(
-              i, *tsb, input_server_addresses, par.outputs().size(),
-              par_.timeslice_size(), par_.max_timeslice_number(),
-              signal_status_));
+          new TimesliceBuilderZeromq(i, *tsb, input_server_addresses,
+                                     output_size, par_.timeslice_size(),
+                                     par_.max_timeslice_number(),
+                                     signal_status_, zmq_context_.get()));
       timeslice_builders_zeromq_.push_back(std::move(builder));
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC
@@ -80,28 +91,26 @@ Application::Application(Parameters const& par,
 
     timeslice_buffers_.push_back(std::move(tsb));
   }
+}
 
-  set_node();
-
-  // Input node application
-
+void Application::create_input_channel_senders() {
   std::vector<std::string> output_hosts;
-  for (unsigned int i = 0; i < par.outputs().size(); ++i)
-    output_hosts.push_back(par.outputs().at(i).host);
+  for (unsigned int i = 0; i < par_.outputs().size(); ++i)
+    output_hosts.push_back(par_.outputs().at(i).host);
 
   std::vector<std::string> output_services;
-  for (unsigned int i = 0; i < par.outputs().size(); ++i)
-    output_services.push_back(std::to_string(par.base_port() + i));
+  for (unsigned int i = 0; i < par_.outputs().size(); ++i)
+    output_services.push_back(std::to_string(par_.base_port() + i));
 
-  for (size_t c = 0; c < par.input_indexes().size(); ++c) {
-    unsigned index = par.input_indexes().at(c);
+  for (size_t c = 0; c < par_.input_indexes().size(); ++c) {
+    unsigned index = par_.input_indexes().at(c);
 
     auto scheme = par_.inputs().at(index).scheme;
     auto param = par_.inputs().at(index).param;
 
     if (scheme == "shm") {
       auto shm_identifier = par_.inputs().at(index).path.at(0);
-      int channel = std::stoi(par_.inputs().at(index).path.at(1));
+      auto channel = std::stoul(par_.inputs().at(index).path.at(1));
 
       if (!shm_devices_.count(shm_identifier)) {
         try {
@@ -121,19 +130,22 @@ Application::Application(Parameters const& par,
     } else if (scheme == "pgen") {
       uint32_t datasize = 27; // 128 MiB
       if (param.count("datasize"))
-        datasize = std::stoi(param.at("datasize"));
+        datasize = stou(param.at("datasize"));
       uint32_t descsize = 19; // 16 MiB
       if (param.count("descsize"))
-        descsize = std::stoi(param.at("descsize"));
+        descsize = stou(param.at("descsize"));
       uint32_t size_mean = 1024; // 1 kiB
       if (param.count("mean"))
-        size_mean = std::stoi(param.at("mean"));
+        size_mean = stou(param.at("mean"));
       uint32_t size_var = 0;
       if (param.count("var"))
-        size_var = std::stoi(param.at("var"));
+        size_var = stou(param.at("var"));
       uint32_t pattern = 0;
       if (param.count("pattern"))
-        pattern = std::stoi(param.at("pattern"));
+        pattern = stou(param.at("pattern"));
+      uint64_t delay_ns = 0;
+      if (param.count("delay"))
+        delay_ns = stoul(param.at("delay"));
 
       L_(info) << "input buffer " << index
                << " size: " << human_readable_count(UINT64_C(1) << datasize)
@@ -144,31 +156,34 @@ Application::Application(Parameters const& par,
                << " +/- " << human_readable_count(size_var);
 
       data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
-          new EmbeddedPatternGenerator(datasize, descsize, index, size_mean,
-                                       (pattern != 0), (size_var != 0))));
+          new FlesnetPatternGenerator(datasize, descsize, index, size_mean,
+                                      (pattern != 0), (size_var != 0),
+                                      delay_ns)));
     } else {
       L_(fatal) << "unknown input scheme: " << scheme;
     }
 
     uint32_t overlap_size = 1;
     if (param.count("overlap"))
-      overlap_size = std::stoi(param.at("overlap"));
+      overlap_size = stou(param.at("overlap"));
 
     if (par_.transport() == Transport::ZeroMQ) {
       std::string listen_address =
           "tcp://*:" + std::to_string(par_.base_port() + index);
+      if (par_.local_only())
+        listen_address = "inproc://input" + std::to_string(index);
       std::unique_ptr<ComponentSenderZeromq> sender(new ComponentSenderZeromq(
           index, *(data_sources_.at(c).get()), listen_address,
-          par.timeslice_size(), overlap_size, par.max_timeslice_number(),
-          signal_status_));
+          par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
+          signal_status_, zmq_context_.get()));
       component_senders_zeromq_.push_back(std::move(sender));
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC
       std::unique_ptr<tl_libfabric::InputChannelSender> sender(
           new tl_libfabric::InputChannelSender(
               index, *(data_sources_.at(c).get()), output_hosts,
-              output_services, par.timeslice_size(), overlap_size,
-              par.max_timeslice_number(), par.inputs().at(c).host));
+              output_services, par_.timeslice_size(), overlap_size,
+              par_.max_timeslice_number(), par_.inputs().at(c).host));
       input_channel_senders_.push_back(std::move(sender));
 #else
       L_(fatal) << "flesnet built without LIBFABRIC support";
@@ -177,7 +192,7 @@ Application::Application(Parameters const& par,
 #ifdef HAVE_RDMA
       std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
           index, *(data_sources_.at(c).get()), output_hosts, output_services,
-          par.timeslice_size(), overlap_size, par.max_timeslice_number()));
+          par_.timeslice_size(), overlap_size, par_.max_timeslice_number()));
       input_channel_senders_.push_back(std::move(sender));
 #else
       L_(fatal) << "flesnet built without RDMA support";
@@ -185,8 +200,6 @@ Application::Application(Parameters const& par,
     }
   }
 }
-
-Application::~Application() {}
 
 void Application::run() {
 // Do not spawn additional thread if only one is needed, simplifies

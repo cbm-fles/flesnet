@@ -13,7 +13,8 @@ ComponentSenderZeromq::ComponentSenderZeromq(
     uint32_t timeslice_size,
     uint32_t overlap_size,
     uint32_t max_timeslice_number,
-    volatile sig_atomic_t* signal_status)
+    volatile sig_atomic_t* signal_status,
+    void* zmq_context)
     : input_index_(input_index), data_source_(data_source),
       timeslice_size_(timeslice_size), overlap_size_(overlap_size),
       max_timeslice_number_(max_timeslice_number),
@@ -26,9 +27,7 @@ ComponentSenderZeromq::ComponentSenderZeromq(
       (data_source_.desc_buffer().size() / timeslice_size_ + 1) * 2;
   ack_.alloc_with_size(min_ack_buffer_size);
 
-  zmq_context_ = zmq_ctx_new();
-
-  socket_ = zmq_socket(zmq_context_, ZMQ_REP);
+  socket_ = zmq_socket(zmq_context, ZMQ_REP);
   assert(socket_);
   int timeout_ms = 500;
   int rc =
@@ -44,10 +43,6 @@ ComponentSenderZeromq::ComponentSenderZeromq(
 ComponentSenderZeromq::~ComponentSenderZeromq() {
   if (socket_) {
     int rc = zmq_close(socket_);
-    assert(rc == 0);
-  }
-  if (zmq_context_) {
-    int rc = zmq_ctx_destroy(zmq_context_);
     assert(rc == 0);
   }
 }

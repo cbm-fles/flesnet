@@ -2,15 +2,11 @@ DataSource:
 
 virtual RingBufferView buffer() = 0
 virtual RingBufferView send_buffer() { return buffer(); }
-virtual void copy_to_send_buffer() { };
 
 FlibHardwareChannel:
 
 virtual RingBufferView buffer() override { return _buffer_view; }
 virtual RingBufferView send_buffer() override { return _send_buffer_view; }
-
-with double buffering:
-  virtual void copy_to_send_buffer() override { copy _buffer_view -> _send_buffer_view };
 
 RingBufferView _buffer_view
 RingBuffer _send_buffer
