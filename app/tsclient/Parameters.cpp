@@ -52,7 +52,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
                ->implicit_value("tcp://localhost:5556"),
            "subscribe to timeslice publisher on given address");
   desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number_),
-           "set the maximum number of microslices to process (default: "
+           "set the maximum number of timeslices to process (default: "
            "unlimited)");
   desc_add("rate-limit", po::value<double>(&rate_limit_),
            "limit the item rate to given frequency (in Hz)");
