@@ -12,6 +12,7 @@
 #include <cpprest/base_uri.h>
 #include <fstream>
 #include <iterator>
+#include <sstream>
 
 namespace po = boost::program_options;
 
@@ -77,10 +78,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
   generic_add("config-file,f",
               po::value<std::string>(&config_file)->value_name("<filename>"),
               "read configuration from file");
-  generic_add("log-level,l",
-              po::value<unsigned>(&log_level)
-                  ->default_value(log_level)
-                  ->value_name("<n>"),
+  generic_add("log-level,l", po::value<unsigned>(&log_level)
+                                 ->default_value(log_level)
+                                 ->value_name("<n>"),
               "set the global log level (all: 0)");
   generic_add("log-file,L",
               po::value<std::string>(&log_file)->value_name("<filename>"),
@@ -98,20 +98,17 @@ void Parameters::parse_options(int argc, char* argv[]) {
       "output-index,o",
       po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
       "set this application's index(es) in the list of outputs");
-  config_add("input,I",
-             po::value<std::vector<InterfaceSpecification>>()
-                 ->multitoken()
-                 ->value_name("scheme://host/path?param=value ..."),
+  config_add("input,I", po::value<std::vector<InterfaceSpecification>>()
+                            ->multitoken()
+                            ->value_name("scheme://host/path?param=value ..."),
              "add an input to the list of participating inputs");
-  config_add("output,O",
-             po::value<std::vector<InterfaceSpecification>>()
-                 ->multitoken()
-                 ->value_name("scheme://host/path?param=value ..."),
+  config_add("output,O", po::value<std::vector<InterfaceSpecification>>()
+                             ->multitoken()
+                             ->value_name("scheme://host/path?param=value ..."),
              "add an output to the list of compute node outputs");
-  config_add("timeslice-size",
-             po::value<uint32_t>(&timeslice_size_)
-                 ->default_value(timeslice_size_)
-                 ->value_name("<n>"),
+  config_add("timeslice-size", po::value<uint32_t>(&timeslice_size_)
+                                   ->default_value(timeslice_size_)
+                                   ->value_name("<n>"),
              "set the global timeslice size in number of microslices");
   config_add("max-timeslice-number,n",
              po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
@@ -120,22 +117,26 @@ void Parameters::parse_options(int argc, char* argv[]) {
       "processor-executable,e",
       po::value<std::string>(&processor_executable_)->value_name("<string>"),
       "name of the executable acting as timeslice processor");
-  config_add("processor-instances",
-             po::value<uint32_t>(&processor_instances_)
-                 ->default_value(processor_instances_)
-                 ->value_name("<n>"),
+  config_add("processor-instances", po::value<uint32_t>(&processor_instances_)
+                                        ->default_value(processor_instances_)
+                                        ->value_name("<n>"),
              "number of instances of the timeslice processor executable");
-  config_add("base-port",
-             po::value<uint32_t>(&base_port_)
-                 ->default_value(base_port_)
-                 ->value_name("<n>"),
+  config_add("base-port", po::value<uint32_t>(&base_port_)
+                              ->default_value(base_port_)
+                              ->value_name("<n>"),
              "base IP port to use for listening");
-  config_add("transport,t",
-             po::value<Transport>(&transport_)
-                 ->default_value(transport_)
-                 ->value_name("<id>"),
+  config_add("transport,t", po::value<Transport>(&transport_)
+                                ->default_value(transport_)
+                                ->value_name("<id>"),
              "select transport implementation; possible values "
              "(case-insensitive) are: RDMA, LibFabric, ZeroMQ");
+  config_add("monitoring-address",
+             po::value<std::string>(&monitoringdb.datastring_)
+                 ->default_value(monitoringdb.datastring_)
+                 ->value_name("<string>"),
+             "monitoringdb server access "
+             "NameOrIp:Port:DataBaseName:Username:Password "
+             "use $ for a default value if not all should be changed");
 
   po::options_description cmdline_options("Allowed options");
   cmdline_options.add(generic).add(config);
@@ -261,5 +262,40 @@ void Parameters::parse_options(int argc, char* argv[]) {
       L_(info) << "timeslice size: " << timeslice_size_ << " microslices";
       L_(info) << "number of timeslices: " << max_timeslice_number_;
     }
+  }
+  monitoring_split(monitoringdb.datastring_, ':');
+}
+
+void Parameters::monitoring_split(const std::string& s, const char& delimiter) {
+
+  L_(info) << "Database: " << s;
+  std::stringstream ss(s);
+  std::string item;
+  int count_item = 1;
+
+  while (std::getline(ss, item, delimiter)) {
+    switch (count_item) {
+    case 1:
+      if (item != "$")
+        monitoringdb.name_ = item;
+      break;
+    case 2:
+      if (item != "$")
+        monitoringdb.port_ = std::stoi(item);
+      break;
+    case 3:
+      if (item != "$")
+        monitoringdb.database_name_ = item;
+      break;
+    case 4:
+      if (item != "$")
+        monitoringdb.username_ = item;
+      break;
+    case 5:
+      if (item != "$")
+        monitoringdb.password_ = item;
+      break;
+    }
+    count_item++;
   }
 }
