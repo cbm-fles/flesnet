@@ -62,11 +62,17 @@ before_install:
   - if ! [ -f $HOME/libfabric/.cached ]; then cd $HOME/libfabric && ./configure && make && cd $WORK_DIR; fi
   - if ! [ -f $HOME/libfabric/.cached ]; then touch $HOME/libfabric/.cached; fi
   - export CMAKE_FRAMEWORK_PATH=$CMAKE_FRAMEWORK_PATH:$HOME/libfabric/include:$HOME/libfabric/src/.libs
-  - if ! [ -f $HOME/cpprestsdk/.cached ]; then git clone https://github.com/Microsoft/cpprestsdk.git $HOME/cpprestsdk/src; fi
-  - if ! [ -f $HOME/cpprestsdk/.cached ]; then cd $HOME/cpprestsdk/src/Release && mkdir build && cd build && CC=gcc-4.8 CXX=g++-4.8 cmake ..; fi
+  - if ! [ -f $HOME/cpprestsdk/.cached ]; then git clone https://github.com/Microsoft/cpprestsdk.git $HOME/cpprestsdk; fi
+  - if ! [ -f $HOME/cpprestsdk/.cached ]; then cd $HOME/cpprestsdk/Release && mkdir build && cd build && CC=gcc-4.8 CXX=g++-4.8 cmake .. ; fi
   - if ! [ -f $HOME/cpprestsdk/.cached ]; then make DESTDIR=$HOME/cpprestsdk install; fi
   - if ! [ -f $HOME/cpprestsdk/.cached ]; then touch $HOME/cpprestsdk/.cached; fi
+
+#  - git clone https://github.com/Microsoft/cpprestsdk.git $HOME/cpprestsdk;
+#  - cd $HOME/cpprestsdk/Release && mkdir build && cd build && CC=gcc-4.8 CXX=g++-4.8 cmake ..;
+#  - make DESTDIR=$HOME/cpprestsdk install;
+
   - export CMAKE_FRAMEWORK_PATH=$CMAKE_FRAMEWORK_PATH:$HOME/cpprestsdk/usr/local/include:$HOME/cpprestsdk/usr/local/lib
+  - cd $HOME/cpprestsdk/Release/build/Binaries && ldd test_runner 
   - cd $WORK_DIR
 
 before_script:

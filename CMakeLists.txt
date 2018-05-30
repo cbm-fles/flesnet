@@ -32,6 +32,7 @@ find_package(PDA 11.4.7 EXACT)
 find_package(CPPREST)
 find_package(NUMA)
 find_package(Doxygen)
+find_package(OpenSSL 1.0.0 REQUIRED)
 
 set(USE_RDMA TRUE CACHE BOOL "Use RDMA libraries and build RDMA transport.")
 if(USE_RDMA AND NOT RDMA_FOUND)
@@ -67,6 +68,7 @@ endif()
 
 add_subdirectory(external/etcd-cpp-api)
 
+add_subdirectory(lib/influx_db)
 add_subdirectory(lib/logging)
 add_subdirectory(lib/crcutil)
 add_subdirectory(lib/fles_ipc)

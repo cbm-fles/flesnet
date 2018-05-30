@@ -16,13 +16,14 @@ InputChannelSender::InputChannelSender(
     const std::vector<std::string> compute_services,
     uint32_t timeslice_size,
     uint32_t overlap_size,
-    uint32_t max_timeslice_number)
+    uint32_t max_timeslice_number,
+    influxdb::db& db)
     : input_index_(input_index), data_source_(data_source),
       compute_hostnames_(compute_hostnames),
       compute_services_(compute_services), timeslice_size_(timeslice_size),
       overlap_size_(overlap_size), max_timeslice_number_(max_timeslice_number),
       min_acked_desc_(data_source.desc_buffer().size() / 4),
-      min_acked_data_(data_source.data_buffer().size() / 4) {
+      min_acked_data_(data_source.data_buffer().size() / 4), db_(db) {
   start_index_desc_ = sent_desc_ = acked_desc_ = cached_acked_desc_ =
       data_source.get_read_index().desc;
   start_index_data_ = sent_data_ = acked_data_ = cached_acked_data_ =
@@ -115,6 +116,17 @@ void InputChannelSender::report_status() {
 
   scheduler_.add(std::bind(&InputChannelSender::report_status, this),
                  now + interval);
+
+  influxdb::measurement m;
+  m.addTag("input_index", input_index_);
+  m.addField("rate_data", rate_data);
+  m.addField("rate_desc", rate_desc);
+  m.addField("used", status_data.used());
+  m.addField("sending", status_data.sending());
+  m.addField("freeing", status_data.freeing());
+  m.addField("unused", status_data.unused());
+
+  db_.sendSync(m, "cbm01_readout", db_.defaultTimestamp());
 }
 
 void InputChannelSender::sync_buffer_positions() {
@@ -313,9 +325,8 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id) {
     }
 
     mr_desc_ =
-        ibv_reg_mr(pd_,
-                   const_cast<fles::MicrosliceDescriptor*>(
-                       data_source_.desc_buffer().ptr()),
+        ibv_reg_mr(pd_, const_cast<fles::MicrosliceDescriptor*>(
+                            data_source_.desc_buffer().ptr()),
                    data_source_.desc_buffer().bytes(), IBV_ACCESS_LOCAL_WRITE);
     if (!mr_desc_) {
       L_(error) << "ibv_reg_mr failed for mr_desc: " << strerror(errno);
