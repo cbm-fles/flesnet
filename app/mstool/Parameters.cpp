@@ -23,6 +23,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
   general_add("maximum-number,n", po::value<uint64_t>(&maximum_number),
               "set the maximum number of microslices to process (default: "
               "unlimited)");
+  general_add("exec,e", po::value<std::string>(&exec)->value_name("<string>"),
+              "name of an executable to run after startup");
 
   po::options_description source("Source options");
   auto source_add = source.add_options();
