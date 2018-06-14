@@ -19,6 +19,7 @@ struct Parameters {
 
   // general options
   uint64_t maximum_number = UINT64_MAX;
+  std::string exec;
 
   // source selection
   uint32_t pattern_generator = 0;
