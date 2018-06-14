@@ -78,6 +78,7 @@ public:
   size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
   etcd_config_t etcd() const { return _etcd; }
+  std::string exec() const { return _exec; }
 
   std::string print_buffer_info() {
     std::stringstream ss;
@@ -128,6 +129,8 @@ private:
                "where to find the etcd server");
     config_add("etcd-path", po::value<std::string>(&_etcd.path),
                "base path for this instance, leave empty to not use etcd");
+    config_add("exec,e", po::value<std::string>(&_exec)->value_name("<string>"),
+               "name of an executable to run after startup");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -188,4 +191,5 @@ private:
   size_t _data_buffer_size_exp;
   size_t _desc_buffer_size_exp;
   etcd_config_t _etcd;
+  std::string _exec;
 };
