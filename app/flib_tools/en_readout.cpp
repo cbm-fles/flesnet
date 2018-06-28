@@ -76,6 +76,7 @@ int main(int argc, char* argv[]) {
     for (auto&& flim : flims) {
       flim->set_pgen_enable(false);
       flim->set_ready_for_data(false);
+      flim->set_pgen_sync_ext(false);
       flim->reset_datapath();
       std::cout << flim->print_build_info() << std::endl;
       if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
@@ -87,6 +88,7 @@ int main(int argc, char* argv[]) {
 
     for (auto&& flim : flims) {
       flim->set_pgen_start_time(100);
+      flim->set_pgen_sync_ext(true);
       flim->set_ready_for_data(true);
     }
 
