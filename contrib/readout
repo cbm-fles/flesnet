@@ -230,7 +230,7 @@ echo "Starting flib_server ..."
 for flib in ${!ADDR[*]}; do
     $BINDIR/flib_server -c /dev/null -L ${OUTFILE}f${flib}_server.log -i ${ADDR[$flib]} \
                         --data-buffer-size-exp $BUF_SIZE_EXP -o shm_server_f$flib &
-    SERVER_PID+=$!
+    SERVER_PID+=($!)
 done
  
 # block till server is ready (remove if etcd is ready)
@@ -269,7 +269,7 @@ FLESNET_IN_PID=$!
 sleep 1
 for flib in ${!ADDR[*]}; do
     $BINDIR/en_readout $flib > ${OUTFILE}flib${flib}_info.log &
-    EN_PID+=$!
+    EN_PID+=($!)
 done
 
 if [ ! -z "$MAX_TIMESLICES" ]; then
