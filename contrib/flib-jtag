@@ -10,7 +10,11 @@ set -e
 # Add Xilinx cable serial number if more than one Xilinx-Cable is connected
 ESN=
 
-# Add full path to impact if Xilinx directory is not in PATH
+# Choose type of cable in case of vivado
+# valid options (case sensitive): Xilinx, Digilent
+CABLE_TYPE=Digilent
+
+# Add full path to impact/vivado if Xilinx directory is not in PATH
 IMPACT=impact
 VIVADO=vivado
 
@@ -33,6 +37,16 @@ HWS_HOST=localhost:3121
 # and the user@host notation
 FLIB_HOST=
 
+# TODO
+# implement using digilent jtag tools only
+#sudo dpkg -i digilent.adept.runtime_2.16.5-amd64.deb
+#sudo dpkg -i digilent.adept.utilities_2.2.1-amd64.deb
+#sudo mv /etc/udev/rules.d/52-xilinx-digilent-usb.rules /etc/udev/rules.d/53-xilinx-digilent-usb.rules
+#djtgcfg emum
+#djtgcfg init -d JtagHs3
+#djtgcfg prog -d JtagHs3 -i 0 -f htg.bit
+
+
 ### do not change thing below this line ###
 
 # second parameter is bitfile
@@ -45,9 +59,22 @@ else
 fi
 
 if [ $ESN ]; then
-	CABLE="-p usb210 -esn $ESN"
+	ISE_CABLE="-p usb210 -esn $ESN"
 else
-	CABLE="-p auto"
+	ISE_CABLE="-p auto"
+fi
+
+if [ $CABLE_TYPE == "Xilinx" ]; then
+    # ESN needs to be lower case
+    CABLE=${CABLE_TYPE}/${ESN,,}
+    FREQUENCY=6000000
+elif [ $CABLE_TYPE == "Digilent" ]; then
+    # ESN needs to be upper case
+    CABLE=${CABLE_TYPE}/${ESN^^}
+    FREQUENCY=15000000
+else
+    echo "*** Cable type '$CABLE_TYPE' not supportet ***"
+    exit -1
 fi
 
 # Ask for lacal password at start if needed
@@ -61,7 +88,7 @@ function reload_fpga {
 JPROGRAM=001011
 "$IMPACT" -batch <<-EOF
 setMode -bscan
-setCable $CABLE $CSE_SERVER
+setCable $ISE_CABLE $CSE_SERVER
 Identify -inferir 
 identifyMPM 
 bsdebug -start 
@@ -78,7 +105,7 @@ echo "Done"
 function program_fpga {
 "$IMPACT" -batch <<-EOF
 setMode -bscan
-setCable $CABLE $CSE_SERVER
+setCable $ISE_CABLE $CSE_SERVER
 identify
 assignfile -p 1 -file "$BITFILE"
 program -p 1
@@ -94,7 +121,7 @@ echo "Done"
 function program_flash {
 "$IMPACT" -batch <<-EOF
 setMode -bscan
-setCable $CABLE $CSE_SERVER
+setCable $ISE_CABLE $CSE_SERVER
 Identify -inferir 
 identifyMPM 
 attachflash -position 1 -bpi "28F512G18F"
@@ -114,8 +141,8 @@ trap "rm -f -- '$t'" EXIT
 cat > $t <<-EOF
 open_hw
 connect_hw_server -url $HWS_HOST
-current_hw_target [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
-set_property PARAM.FREQUENCY 6000000 [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
+current_hw_target [get_hw_targets */xilinx_tcf/${CABLE}]
+set_property PARAM.FREQUENCY $FREQUENCY [get_hw_targets */xilinx_tcf/${CABLE}]
 open_hw_target
 current_hw_device [lindex [get_hw_devices] 0]
 boot_hw_device  [lindex [get_hw_devices] 0]
@@ -134,8 +161,8 @@ trap "rm -f -- '$t'" EXIT
 cat > $t <<-EOF
 open_hw
 connect_hw_server -url $HWS_HOST
-current_hw_target [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
-set_property PARAM.FREQUENCY 6000000 [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
+current_hw_target [get_hw_targets */xilinx_tcf/${CABLE}]
+set_property PARAM.FREQUENCY $FREQUENCY [get_hw_targets */xilinx_tcf/${CABLE}]
 open_hw_target
 set_property PROGRAM.FILE {$BITFILE} [lindex [get_hw_devices] 0]
 program_hw_devices [lindex [get_hw_devices] 0]
@@ -154,8 +181,8 @@ trap "rm -f -- '$t'" EXIT
 cat > $t <<-EOF
 open_hw
 connect_hw_server -url $HWS_HOST
-current_hw_target [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
-set_property PARAM.FREQUENCY 6000000 [get_hw_targets */xilinx_tcf/Xilinx/${ESN,,}]
+current_hw_target [get_hw_targets */xilinx_tcf/${CABLE}]
+set_property PARAM.FREQUENCY $FREQUENCY [get_hw_targets */xilinx_tcf/${CABLE}]
 open_hw_target
 current_hw_device [lindex [get_hw_devices] 0]
 create_hw_cfgmem -hw_device [lindex [get_hw_devices] 0] -mem_dev  [lindex [get_cfgmem_parts {mt28gu01gaax1e-bpi-x16}] 0]
