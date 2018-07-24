@@ -36,6 +36,8 @@ static void s_catch_signals(void) {
   sigaction(SIGINT, &action, NULL);
 }
 
+constexpr bool ext_pgen_sync = false;
+
 int main(int argc, char* argv[]) {
   s_catch_signals();
 
@@ -88,13 +90,18 @@ int main(int argc, char* argv[]) {
 
     for (auto&& flim : flims) {
       flim->set_pgen_start_time(100);
-      flim->set_pgen_sync_ext(true);
+      if (ext_pgen_sync) {
+        flim->set_pgen_sync_ext(true);
+      }
       flim->set_ready_for_data(true);
     }
 
-    // enable pgen via master link 0
-    flims.at(0)->set_pgen_enable(true);
-    // enable flib internal pgen
+    // enable pgens for all FLIMs
+    // multi channel FLIMs will use channel 0 as master internally
+    for (auto&& flim : flims) {
+      flim->set_pgen_enable(true);
+    }
+    // enable flib internal pgen (global command for all channels)
     flib.enable_mc_cnt(true);
 
     std::cout << "running ..." << std::endl;
