@@ -13,5 +13,6 @@ target_link_libraries(fles_rdma
   PUBLIC fles_ipc
   PUBLIC fles_core
   PUBLIC logging
+  PUBLIC influxdb
   PUBLIC ${RDMA_LIBRARIES}
 )

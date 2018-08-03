@@ -12,6 +12,7 @@
 #include <cpprest/base_uri.h>
 #include <fstream>
 #include <iterator>
+#include <sstream>
 
 namespace po = boost::program_options;
 
@@ -136,6 +137,13 @@ void Parameters::parse_options(int argc, char* argv[]) {
                  ->value_name("<id>"),
              "select transport implementation; possible values "
              "(case-insensitive) are: RDMA, LibFabric, ZeroMQ");
+  config_add("monitoring-address",
+             po::value<std::string>(&monitoringdb.datastring_)
+                 ->default_value(monitoringdb.datastring_)
+                 ->value_name("<string>"),
+             "monitoringdb server access "
+             "NameOrIp:Port:DataBaseName:Username:Password "
+             "use $ for a default value if not all should be changed");
 
   po::options_description cmdline_options("Allowed options");
   cmdline_options.add(generic).add(config);
@@ -261,5 +269,40 @@ void Parameters::parse_options(int argc, char* argv[]) {
       L_(info) << "timeslice size: " << timeslice_size_ << " microslices";
       L_(info) << "number of timeslices: " << max_timeslice_number_;
     }
+  }
+  monitoring_split(monitoringdb.datastring_, ':');
+}
+
+void Parameters::monitoring_split(const std::string& s, const char& delimiter) {
+
+  L_(info) << "Database: " << s;
+  std::stringstream ss(s);
+  std::string item;
+  int count_item = 1;
+
+  while (std::getline(ss, item, delimiter)) {
+    switch (count_item) {
+    case 1:
+      if (item != "$")
+        monitoringdb.name_ = item;
+      break;
+    case 2:
+      if (item != "$")
+        monitoringdb.port_ = std::stoi(item);
+      break;
+    case 3:
+      if (item != "$")
+        monitoringdb.database_name_ = item;
+      break;
+    case 4:
+      if (item != "$")
+        monitoringdb.username_ = item;
+      break;
+    case 5:
+      if (item != "$")
+        monitoringdb.password_ = item;
+      break;
+    }
+    count_item++;
   }
 }

@@ -47,6 +47,9 @@ private:
   Parameters const& par_;
   volatile sig_atomic_t* signal_status_;
 
+  // Set Monitoring
+  struct Parameters::database monitoring_db;
+
   // Input node application
   std::map<std::string, std::shared_ptr<flib_shm_device_client>> shm_devices_;
 
