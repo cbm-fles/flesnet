@@ -12,7 +12,7 @@
 
 namespace flib {
 
-constexpr std::array<uint16_t, 1> hw_ver_table_flesin = {{26}};
+constexpr std::array<uint16_t, 1> hw_ver_table_flesin = {{27}};
 constexpr uint32_t pci_clk = 250E6;
 
 struct dma_perf_data_t {
