@@ -4,17 +4,17 @@
 // This file was automatically generated from:
 // src/packages/registers.vhd
 // Repository is: git repository
-// Repository Revision: c6186af2f12eaf10597fe6e526fa81b2719a9527
+// Repository Revision: a145aeeb149f433ecb5930df9eee43afd1e8d2b7
 // Repository Status: clean
-// Build Timestamp: Thu Jan 25 17:07:42 CET 2018
+// Build Timestamp: Mon Aug  6 16:44:15 CEST 2018
 // Build System: hutter@eda02
 #define RORC_C_BUILD_REPO 1
-#define RORC_C_BUILD_DATE 1516896462
-#define RORC_C_BUILD_REVISION c6186af2f12eaf10597fe6e526fa81b2719a9527
+#define RORC_C_BUILD_DATE 1533566655
+#define RORC_C_BUILD_REVISION a145aeeb149f433ecb5930df9eee43afd1e8d2b7
 #define RORC_C_BUILD_STATUS_CLEAN 1
 #define RORC_C_BUILD_HOST 65646130320000000000000000000000
 #define RORC_C_BUILD_USER 68757474657200000000000000000000
-#define RORC_C_HARDWARE_VERSION 26
+#define RORC_C_HARDWARE_VERSION 27
 #define RORC_CHANNEL_OFFSET 0x00008000
 #define RORC_DMA_CMP_SEL 13
 #define RORC_C_LINK_SEL 5

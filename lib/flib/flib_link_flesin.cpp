@@ -33,7 +33,7 @@ flib_link_flesin::link_status_t flib_link_flesin::link_status() {
   link_status.soft_err = (sts & (1 << 27));
   link_status.eoe_fifo_overflow = (sts & (1 << 31));
   link_status.d_fifo_overflow = (sts & (1 << 30));
-  link_status.d_fifo_max_words = (sts & 0x3FF);
+  link_status.d_fifo_max_words = (sts & 0x7FF);
   return link_status;
 }
 
