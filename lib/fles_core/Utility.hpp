@@ -64,6 +64,18 @@ bar_graph(std::vector<T> values, std::string symbols, uint32_t length) {
   return s;
 }
 
+inline double calculate_ber(size_t n_bytes, size_t n_errors) {
+  // calculates upper limit BER with 95% confidence level
+  // for up to 6 error
+  static constexpr std::array<float, 7> coeff{
+      {2.996, 4.744, 6.296, 7.754, 9.154, 10.51, 11.84}};
+  double ber = 0;
+  if (n_errors <= 6) {
+    ber = coeff.at(n_errors) / (n_bytes * 8.0);
+  }
+  return ber;
+}
+
 /// Missing library function
 inline unsigned stou(std::string const& str, size_t* idx = 0, int base = 10) {
   unsigned long result = std::stoul(str, idx, base);

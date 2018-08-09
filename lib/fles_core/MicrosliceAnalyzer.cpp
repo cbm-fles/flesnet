@@ -111,7 +111,10 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms) {
 std::string MicrosliceAnalyzer::statistics() const {
   std::stringstream s;
   s << "microslices checked: " << microslice_count_ << " ("
-    << human_readable_count(content_bytes_) << ")";
+    << human_readable_count(content_bytes_, true);
+  s.precision(1);
+  s << ", BER < " << std::scientific
+    << calculate_ber(content_bytes_, microslice_error_count_) << ")";
   if (microslice_error_count_ > 0) {
     s << " [" << microslice_error_count_ << " errors]";
   }
