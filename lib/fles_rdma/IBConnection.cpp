@@ -60,8 +60,10 @@ void IBConnection::connect(const std::string& hostname,
     if (!err)
       break;
   }
-  if (err)
+  if (err) {
+    L_(fatal) << "rdma_resolve_addr failed: " << strerror(errno);
     throw InfinibandException("rdma_resolve_addr failed");
+  }
 
   freeaddrinfo(res);
 }

@@ -315,15 +315,19 @@ private:
       on_addr_resolved(event->id);
       return;
     case RDMA_CM_EVENT_ADDR_ERROR:
+      L_(fatal) << rdma_event_str(event->event);
       throw InfinibandException("rdma_resolve_addr failed");
     case RDMA_CM_EVENT_ROUTE_RESOLVED:
       on_route_resolved(event->id);
       return;
     case RDMA_CM_EVENT_ROUTE_ERROR:
+      L_(fatal) << rdma_event_str(event->event);
       throw InfinibandException("rdma_resolve_route failed");
     case RDMA_CM_EVENT_CONNECT_ERROR:
+      L_(fatal) << rdma_event_str(event->event);
       throw InfinibandException("could not establish connection");
     case RDMA_CM_EVENT_UNREACHABLE:
+      L_(fatal) << rdma_event_str(event->event);
       throw InfinibandException("remote server is not reachable");
     case RDMA_CM_EVENT_REJECTED:
       on_rejected(event);
