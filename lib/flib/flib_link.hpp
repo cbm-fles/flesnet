@@ -15,6 +15,7 @@
 #include "pda/pci_bar.hpp"
 #include "register_file_bar.hpp"
 #include "registers.h"
+#include <iostream>
 #include <memory>
 
 namespace flib {
@@ -73,5 +74,8 @@ protected:
   sys_bus_addr m_base_addr;
   pda::device* m_parent_device;
   pda::pci_bar* m_bar;
+
+  friend std::ostream& operator<<(std::ostream& os,
+                                  flib::flib_link::data_sel_t sel);
 };
 } // namespace flib

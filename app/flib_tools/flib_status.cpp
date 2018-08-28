@@ -16,26 +16,6 @@ constexpr uint32_t interval_ms = 1000;
 constexpr bool clear_screen = true;
 constexpr bool detailed_stats = true;
 
-std::ostream& operator<<(std::ostream& os, flib::flib_link::data_sel_t sel) {
-  switch (sel) {
-  case flib::flib_link::rx_disable:
-    os << "disable";
-    break;
-  case flib::flib_link::rx_emu:
-    os << "    emu";
-    break;
-  case flib::flib_link::rx_link:
-    os << "   link";
-    break;
-  case flib::flib_link::rx_pgen:
-    os << "   pgen";
-    break;
-  default:
-    os.setstate(std::ios_base::failbit);
-  }
-  return os;
-}
-
 struct pci_perf_data_t {
   uint64_t cycle_cnt;
   uint64_t pci_stall;

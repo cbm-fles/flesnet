@@ -96,4 +96,24 @@ flib_link::data_sel_t flib_link::data_sel() {
   return static_cast<data_sel_t>(dp_cfg & 0x3);
 }
 
+std::ostream& operator<<(std::ostream& os, flib::flib_link::data_sel_t sel) {
+  switch (sel) {
+  case flib::flib_link::rx_disable:
+    os << "disable";
+    break;
+  case flib::flib_link::rx_emu:
+    os << "    emu";
+    break;
+  case flib::flib_link::rx_link:
+    os << "   link";
+    break;
+  case flib::flib_link::rx_pgen:
+    os << "   pgen";
+    break;
+  default:
+    os.setstate(std::ios_base::failbit);
+  }
+  return os;
+}
+
 } // namespace flib
