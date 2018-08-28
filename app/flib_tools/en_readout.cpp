@@ -44,10 +44,16 @@ int main(int argc, char* argv[]) {
   try {
 
     size_t flib_index = 0;
-    if (argc == 2) {
+    if (argc >= 2) {
       flib_index = atoi(argv[1]);
     }
     std::cout << "using FLIB " << flib_index << std::endl;
+
+    bool force_autobuild = false;
+    if (argc == 3 && std::string(argv[2]) == "--archivable-data") {
+      force_autobuild = true;
+      std::cout << "Enforcing archivable data." << std::endl;
+    }
 
     flib::flib_device_flesin flib(flib_index);
     std::vector<flib::flib_link_flesin*> links = flib.links();
@@ -61,6 +67,11 @@ int main(int argc, char* argv[]) {
         try {
           flims.push_back(
               std::unique_ptr<flib::flim>(new flib::flim(links.at(i))));
+          if (force_autobuild &&
+              flims.back()->build_user() != "gitlab-runner") {
+            throw std::runtime_error(
+                "Unofficial FLIM build not suitable for archivable data.");
+          }
         } catch (const std::exception& e) {
           std::cerr << e.what() << std::endl;
           return EXIT_FAILURE;
