@@ -59,6 +59,12 @@ int main(int argc, char* argv[]) {
     std::vector<flib::flib_link_flesin*> links = flib.links();
     std::vector<std::unique_ptr<flib::flim>> flims;
 
+    std::cout << flib.print_build_info() << std::endl;
+    if (force_autobuild && flib.build_user() != "gitlab-runner") {
+      throw std::runtime_error(
+          "Unofficial FLIB build not suitable for archivable data.");
+    }
+
     // create flims for active links or internal pgen
     for (size_t i = 0; i < flib.number_of_links(); ++i) {
       auto rx_sel = links.at(i)->data_sel();
@@ -67,6 +73,7 @@ int main(int argc, char* argv[]) {
         try {
           flims.push_back(
               std::unique_ptr<flib::flim>(new flib::flim(links.at(i))));
+          std::cout << flims.back()->print_build_info() << std::endl;
           if (force_autobuild &&
               flims.back()->build_user() != "gitlab-runner") {
             throw std::runtime_error(
@@ -91,7 +98,6 @@ int main(int argc, char* argv[]) {
       flim->set_ready_for_data(false);
       flim->set_pgen_sync_ext(false);
       flim->reset_datapath();
-      std::cout << flim->print_build_info() << std::endl;
       if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
         std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
       }
