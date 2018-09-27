@@ -143,11 +143,13 @@ TOTAL_LINKS=0
 declare -a IN_INDEX
 declare -a NODES
 for flib in ${!ADDR[*]}; do
+    shm_channel=0
     for ((channel=0; channel<8; channel++)); do
         i=$((flib*8+channel))
         if [ ${LINK[$i]} != disable ]; then
-            NODES+=(-I shm://127.0.0.1/shm_server_f$flib/$channel?overlap=$OVERLAP_SIZE)
+            NODES+=(-I shm://127.0.0.1/shm_server_f$flib/$shm_channel?overlap=$OVERLAP_SIZE)
             IN_INDEX+=(-i $TOTAL_LINKS)
+            ((shm_channel += 1))
             ((TOTAL_LINKS += 1))
         fi
     done
