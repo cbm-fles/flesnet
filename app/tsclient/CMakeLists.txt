@@ -17,3 +17,5 @@ target_link_libraries(tsclient
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(tsclient rt)
 endif()
+
+install(TARGETS tsclient DESTINATION bin)

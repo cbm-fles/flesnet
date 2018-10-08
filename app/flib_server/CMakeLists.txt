@@ -21,3 +21,5 @@ target_link_libraries(simple_consumer
   flib_ipc logging
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt
 )
+
+install(TARGETS flib_server simple_consumer DESTINATION bin)

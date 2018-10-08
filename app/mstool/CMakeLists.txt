@@ -22,3 +22,5 @@ target_link_libraries(mstool
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(mstool rt atomic)
 endif()
+
+install(TARGETS mstool DESTINATION bin)
