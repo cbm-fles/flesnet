@@ -99,12 +99,15 @@ int main(int argc, char* argv[]) {
     uint32_t pci_cycle_cnt = flibs.at(0)->get_perf_interval_cycles();
 
     std::cout << "Starting measurements" << std::endl;
+    if (clear_screen) {
+      std::cout << "\x1B[2J" << std::flush;
+    }
 
     // main output loop
     size_t loop_cnt = 0;
     while (s_interrupted == 0) {
       if (clear_screen) {
-        std::cout << "\033\143" << std::flush;
+        std::cout << "\x1B[H" << std::flush;
       }
       std::cout << "Measurement " << loop_cnt << ":" << std::endl;
       size_t j = 0;
