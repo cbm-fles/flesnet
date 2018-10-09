@@ -32,6 +32,12 @@ public:
   uint8_t func;
 };
 
+struct etcd_config_t {
+  bool use_etcd = false;
+  std::string authority;
+  std::string path;
+};
+
 // Overload validate for PCI BDF address
 void validate(boost::any& v,
               const std::vector<std::string>& values,
@@ -71,6 +77,8 @@ public:
   std::string shm() { return _shm; }
   size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
+  etcd_config_t etcd() const { return _etcd; }
+  std::string exec() const { return _exec; }
 
   std::string print_buffer_info() {
     std::stringstream ss;
@@ -101,9 +109,10 @@ private:
     auto config_add = config.add_options();
     config_add("flib-addr,i", po::value<pci_addr>(),
                "PCI BDF address of target FLIB in BB:DD.F format");
-    config_add("shm,o", po::value<std::string>(&_shm)->default_value(
-                            "flib_shared_memory"),
-               "name of the shared memory to be used");
+    config_add(
+        "shm,o",
+        po::value<std::string>(&_shm)->default_value("flib_shared_memory"),
+        "name of the shared memory to be used");
     config_add("data-buffer-size-exp",
                po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
                "exp. size of the data buffer in bytes");
@@ -114,6 +123,14 @@ private:
                "set the log level (all:0)");
     config_add("log-file,L", po::value<std::string>(&log_file),
                "name of target log file");
+    config_add("etcd-authority",
+               po::value<std::string>(&_etcd.authority)
+                   ->default_value("127.0.0.1:2379"),
+               "where to find the etcd server");
+    config_add("etcd-path", po::value<std::string>(&_etcd.path),
+               "base path for this instance, leave empty to not use etcd");
+    config_add("exec,e", po::value<std::string>(&_exec)->value_name("<string>"),
+               "name of an executable to run after startup");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -160,6 +177,10 @@ private:
       L_(debug) << "FLIB address: autodetect";
     }
 
+    if (vm.count("etcd-path")) {
+      _etcd.use_etcd = true;
+    }
+
     L_(info) << "Shared memory file: " << _shm;
     L_(info) << print_buffer_info();
   }
@@ -169,4 +190,6 @@ private:
   std::string _shm;
   size_t _data_buffer_size_exp;
   size_t _desc_buffer_size_exp;
+  etcd_config_t _etcd;
+  std::string _exec;
 };

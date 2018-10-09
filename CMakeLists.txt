@@ -8,6 +8,8 @@ option(COVERALLS_UPLOAD "Upload the generated coveralls json" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
+include(GitSubmodule)
+
 include(GetGitRevisionDescription)
 git_describe(GIT_REVISION "--all" "--tags" "--long" "--always")
 configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
@@ -29,6 +31,7 @@ find_package(Threads REQUIRED)
 find_package(LIBFABRIC)
 find_package(RDMA)
 find_package(PDA 11.4.7 EXACT)
+find_package(CPPREST)
 find_package(NUMA)
 find_package(Doxygen)
 
@@ -64,6 +67,11 @@ if (COVERALLS)
   coveralls_turn_on_coverage()
 endif()
 
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/external/etcd-cpp-api/CMakeLists.txt")
+    message(FATAL_ERROR "Submodule 'etcd-cpp-api' not available! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
+add_subdirectory(external/etcd-cpp-api)
+
 add_subdirectory(lib/logging)
 add_subdirectory(lib/crcutil)
 add_subdirectory(lib/fles_ipc)
@@ -81,6 +89,20 @@ if (USE_PDA AND PDA_FOUND)
   add_subdirectory(lib/flib)
   add_subdirectory(lib/pda)
 endif()
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "/opt/${PROJECT_NAME}" CACHE PATH "..." FORCE)
+endif()
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+# the RPATH to be used when installing, but only if it's not a system directory
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+IF("${isSystemDir}" STREQUAL "-1")
+   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+ENDIF("${isSystemDir}" STREQUAL "-1")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 add_subdirectory(app/tsclient)
@@ -106,3 +128,5 @@ endif()
 
 enable_testing()
 add_subdirectory(test)
+
+configure_file(cmake/CTestCustom.cmake ${CMAKE_BINARY_DIR})

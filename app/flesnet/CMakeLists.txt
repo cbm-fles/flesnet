@@ -15,11 +15,14 @@ target_include_directories(flesnet
   PRIVATE "${PROJECT_SOURCE_DIR}/config"
 )
 
-target_include_directories(flesnet SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(flesnet SYSTEM PUBLIC
+  ${Boost_INCLUDE_DIRS}
+  ${CPPREST_INCLUDE_DIR}
+)
 
 target_link_libraries(flesnet
   flib_ipc fles_core fles_ipc fles_zeromq logging
-  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CPPREST_LIBRARY}
 )
 
 if (USE_RDMA AND RDMA_FOUND)
@@ -35,3 +38,5 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_libraries(flesnet rt atomic)
 endif()
+
+install(TARGETS flesnet DESTINATION bin)

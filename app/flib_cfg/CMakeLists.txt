@@ -10,3 +10,5 @@ target_link_libraries(flib_cfg
   flib logging
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt
 )
+
+install(TARGETS flib_cfg DESTINATION bin)

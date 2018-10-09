@@ -3,27 +3,23 @@ FLESnet usage for FLIB stand alone readout
 
 Note the **FAQ** section at the end of the document!
 
-For information regarding the legacy CBMnet readout please also refer
-to [HOWTO_LEGACY.md](HOWTO_LEGACY.md).
 
+Starting a FLIB readout
+-----------------------
 
-FLESnet
--------
+The procedure for starting and stopping a readout on a single node is
+scripted in
 
-    cd build
-    ./flesnet --help
+    ./build/readout
 
-Modify `flesnet.cfg`:
+You should adopt the settings in the script to reflect your setup.
+Please check the script itself for more details.
 
-  - Choose `processor-executable`, e.g., to store data.
+If your setup features Infiniband network you can configure
+flesnet to make use of it by setting the transport to 'RDMA'.
+Otherwise please use the 'ZeroMQ' transport.
 
-#### Usage:
-Start `flib_cfg` to configure FLIB before starting *flesnet*.
-Flesnet will automatically read all activated FLIB links.
-
-    ./shm_flesnet
-
-NOTE: In case *flesnet* crashed, exited with an exception, was stopped,
+In case *flesnet* crashed, exited with an exception, was stopped,
 or is just not working, you might need to clean up some things.
 See the FAQs for the cleanup procedure.
 
@@ -35,45 +31,23 @@ buffers. The interpretation of the symbols is:
     . freeing (acked - cached_acked)
     _ unused  (cached_acked + size - written)
 
-FLIB Config
-------------
-
-    cd build
-    ./flib_cfg --help
-
-Modify `flib.cfg`:
-
-  - Set the data source for each FLIB link.
-    For reading from a FLIM use 'flim'.
-    Note: link 0 is the link closest to the PCIe connector.
-  - Set links you do not intend to use to 'disable'.
-
-#### Usage:
-    ./flib_cfg
-
-Do not start/stop while flesnet is running!
-
-Enable readout
---------------
-
-After the FLIB is configured and shm_flesnet is started you need to
-enable the readout via
-
-    ./en_readout
-
 
 Preparing the FLIB
 ==================
 
 Download a bit file from the build server
-----------------------------------------
+-----------------------------------------
 
-run, e.g.:
+The official FLIB repository and continuous integration can be found
+under
 
-    curl -O -u <GSI web login user> https://cbm-firmware.gsi.de/result/XXXX/flib_flesin/XXX/htg_k7_flesin.bit
+    https://cbmgsi.githost.io/fles/flib/
 
-(NOTE: Failing to provide a valid user/password won't give an error
-but result in an unusable file.)
+To download the latest build you can adopt
+
+    contrib/flib-get-latest-build
+
+See the script itself for needed adoptions.
 
 Programming the FPGA
 --------------------

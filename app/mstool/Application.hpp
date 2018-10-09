@@ -11,27 +11,26 @@
 #include <vector>
 
 /// %Application base class.
-class Application
-{
+class Application {
 public:
-    explicit Application(Parameters const& par);
+  explicit Application(Parameters const& par);
 
-    Application(const Application&) = delete;
-    void operator=(const Application&) = delete;
+  Application(const Application&) = delete;
+  void operator=(const Application&) = delete;
 
-    ~Application();
+  ~Application();
 
-    void run();
+  void run();
 
 private:
-    Parameters const& par_;
+  Parameters const& par_;
 
-    std::shared_ptr<flib_shm_device_client> shm_device_;
-    std::unique_ptr<flib_shm_device_provider> output_shm_device_;
-    std::unique_ptr<InputBufferReadInterface> data_source_;
+  std::shared_ptr<flib_shm_device_client> shm_device_;
+  std::unique_ptr<flib_shm_device_provider> output_shm_device_;
+  std::unique_ptr<InputBufferReadInterface> data_source_;
 
-    std::unique_ptr<fles::MicrosliceSource> source_;
-    std::vector<std::unique_ptr<fles::MicrosliceSink>> sinks_;
+  std::unique_ptr<fles::MicrosliceSource> source_;
+  std::vector<std::unique_ptr<fles::MicrosliceSink>> sinks_;
 
-    uint64_t count_ = 0;
+  uint64_t count_ = 0;
 };

@@ -11,8 +11,7 @@
 // reasons to avoid segfault similar to
 // http://lists.debian.org/debian-hppa/2009/11/msg00069.html
 
-namespace fles
-{
+namespace fles {
 
 /**
  * \brief The Microslice class provides read access to the data of a microslice.
@@ -20,37 +19,36 @@ namespace fles
  * This class is an abstract base class for all classes providing access to the
  * descriptor and data contents of a single microslice.
  */
-class Microslice
-{
+class Microslice {
 public:
-    virtual ~Microslice() = 0;
+  virtual ~Microslice() = 0;
 
-    /// Retrieve microslice descriptor reference
-    const MicrosliceDescriptor& desc() const { return *desc_ptr_; }
+  /// Retrieve microslice descriptor reference
+  const MicrosliceDescriptor& desc() const { return *desc_ptr_; }
 
-    /// Retrieve a pointer to the microslice data
-    const uint8_t* content() const { return content_ptr_; }
+  /// Retrieve a pointer to the microslice data
+  const uint8_t* content() const { return content_ptr_; }
 
-    /// Compute CRC-32 checksum of microslice data content
-    uint32_t compute_crc() const;
+  /// Compute CRC-32 checksum of microslice data content
+  uint32_t compute_crc() const;
 
-    /// Compare computed CRC-32 checksum to value in header
-    bool check_crc() const;
+  /// Compare computed CRC-32 checksum to value in header
+  bool check_crc() const;
 
 protected:
-    Microslice() = default;
+  Microslice() = default;
 
-    /// Construct microslice with given content.
-    Microslice(MicrosliceDescriptor* desc_ptr, uint8_t* content_ptr)
-        : desc_ptr_(desc_ptr), content_ptr_(content_ptr){};
+  /// Construct microslice with given content.
+  Microslice(MicrosliceDescriptor* desc_ptr, uint8_t* content_ptr)
+      : desc_ptr_(desc_ptr), content_ptr_(content_ptr){};
 
-    friend class StorableMicroslice;
+  friend class StorableMicroslice;
 
-    /// Pointer to the microslice descriptor
-    MicrosliceDescriptor* desc_ptr_;
+  /// Pointer to the microslice descriptor
+  MicrosliceDescriptor* desc_ptr_;
 
-    /// Pointer to the microslice data content
-    uint8_t* content_ptr_;
+  /// Pointer to the microslice data content
+  uint8_t* content_ptr_;
 };
 
 } // namespace fles

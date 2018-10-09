@@ -41,8 +41,13 @@ void flim::reset_datapath() {
 void flim::set_ready_for_data(bool enable) {
   m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 0, enable);
 }
+
 void flim::set_data_source(flim::data_source_t sel) {
   m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 1, sel);
+}
+
+void flim::set_pgen_sync_ext(bool enable) {
+  m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 3, enable);
 }
 
 uint64_t flim::get_mc_idx() {
@@ -215,4 +220,4 @@ std::string flim::print_build_info() {
   return ss.str();
 }
 
-} // namespace
+} // namespace flib

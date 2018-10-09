@@ -2,41 +2,38 @@
 
 #include "TimesliceSubscriber.hpp"
 
-namespace fles
-{
+namespace fles {
 
-TimesliceSubscriber::TimesliceSubscriber(const std::string& address)
-{
-    subscriber_.setsockopt(ZMQ_RCVHWM, 1);
-    subscriber_.connect(address.c_str());
-    subscriber_.setsockopt(ZMQ_SUBSCRIBE, nullptr, 0);
+TimesliceSubscriber::TimesliceSubscriber(const std::string& address) {
+  subscriber_.setsockopt(ZMQ_RCVHWM, 1);
+  subscriber_.connect(address.c_str());
+  subscriber_.setsockopt(ZMQ_SUBSCRIBE, nullptr, 0);
 }
 
-fles::StorableTimeslice* TimesliceSubscriber::do_get()
-{
-    if (eos_flag) {
-        return nullptr;
-    }
+fles::StorableTimeslice* TimesliceSubscriber::do_get() {
+  if (eos_flag) {
+    return nullptr;
+  }
 
-    zmq::message_t message;
-    subscriber_.recv(&message);
+  zmq::message_t message;
+  subscriber_.recv(&message);
 
-    boost::iostreams::basic_array_source<char> device(
-        static_cast<char*>(message.data()), message.size());
-    boost::iostreams::stream<boost::iostreams::basic_array_source<char>> s(
-        device);
-    boost::archive::binary_iarchive ia(s);
+  boost::iostreams::basic_array_source<char> device(
+      static_cast<char*>(message.data()), message.size());
+  boost::iostreams::stream<boost::iostreams::basic_array_source<char>> s(
+      device);
+  boost::archive::binary_iarchive ia(s);
 
-    fles::StorableTimeslice* sts = nullptr;
-    try {
-        sts = new fles::StorableTimeslice();
-        ia >> *sts;
-    } catch (boost::archive::archive_exception& e) {
-        delete sts;
-        eos_flag = true;
-        return nullptr;
-    }
-    return sts;
+  fles::StorableTimeslice* sts = nullptr;
+  try {
+    sts = new fles::StorableTimeslice();
+    ia >> *sts;
+  } catch (boost::archive::archive_exception& e) {
+    delete sts;
+    eos_flag = true;
+    return nullptr;
+  }
+  return sts;
 }
 
 } // namespace fles

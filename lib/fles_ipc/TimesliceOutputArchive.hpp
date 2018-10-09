@@ -7,8 +7,7 @@
 #include "OutputArchiveSequence.hpp"
 #include "StorableTimeslice.hpp"
 
-namespace fles
-{
+namespace fles {
 
 /**
  * \brief The TimesliceOutputArchive class serializes timeslice data sets to
@@ -18,7 +17,8 @@ using TimesliceOutputArchive =
     OutputArchive<Timeslice, StorableTimeslice, ArchiveType::TimesliceArchive>;
 
 using TimesliceOutputArchiveSequence =
-    OutputArchiveSequence<Timeslice, StorableTimeslice,
+    OutputArchiveSequence<Timeslice,
+                          StorableTimeslice,
                           ArchiveType::TimesliceArchive>;
 
 } // namespace fles

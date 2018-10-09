@@ -9,3 +9,5 @@ clang-format-3.8 -i lib/pda/*.[hc]*
 clang-format-3.8 -i app/flib_server/*.[hc]*
 clang-format-3.8 -i app/flib_cfg/*.[hc]*
 clang-format-3.8 -i app/flib_tools/*.[hc]*
+
+clang-format-3.8 -style="{BasedOnStyle: LLVM, PointerAlignment: Left, BinPackParameters: false}" -i external/etcd-cpp-api/etcd/Watcher.hpp external/etcd-cpp-api/src/Watcher.cpp

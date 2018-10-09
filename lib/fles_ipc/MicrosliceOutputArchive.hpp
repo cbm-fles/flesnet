@@ -7,18 +7,19 @@
 #include "OutputArchiveSequence.hpp"
 #include "StorableMicroslice.hpp"
 
-namespace fles
-{
+namespace fles {
 
 /**
  * \brief The MicrosliceOutputArchive class serializes microslice data sets to
  * an output file.
  */
-using MicrosliceOutputArchive = OutputArchive<Microslice, StorableMicroslice,
+using MicrosliceOutputArchive = OutputArchive<Microslice,
+                                              StorableMicroslice,
                                               ArchiveType::MicrosliceArchive>;
 
 using MicrosliceOutputArchiveSequence =
-    OutputArchiveSequence<Microslice, StorableMicroslice,
+    OutputArchiveSequence<Microslice,
+                          StorableMicroslice,
                           ArchiveType::MicrosliceArchive>;
 
 } // namespace fles

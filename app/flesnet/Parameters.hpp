@@ -1,6 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -9,14 +10,19 @@
 /** A ParametersException object signals an error in a given parameter
     on the command line or in a configuration file. */
 
-class ParametersException : public std::runtime_error
-{
+class ParametersException : public std::runtime_error {
 public:
-    /// The ParametersException constructor.
-    explicit ParametersException(const std::string& what_arg = "")
-        : std::runtime_error(what_arg)
-    {
-    }
+  /// The ParametersException constructor.
+  explicit ParametersException(const std::string& what_arg = "")
+      : std::runtime_error(what_arg) {}
+};
+
+struct InterfaceSpecification {
+  std::string full_uri;
+  std::string scheme;
+  std::string host;
+  std::vector<std::string> path;
+  std::map<std::string, std::string> param;
 };
 
 /// Transport implementation enum.
@@ -29,172 +35,80 @@ std::ostream& operator<<(std::ostream& out, const Transport& transport);
 /** A Parameters object stores the information given on the command
     line or in a configuration file. */
 
-class Parameters
-{
+class Parameters {
 public:
-    /// The Parameters command-line parsing constructor.
-    Parameters(int argc, char* argv[]) { parse_options(argc, argv); }
+  /// The Parameters command-line parsing constructor.
+  Parameters(int argc, char* argv[]) { parse_options(argc, argv); }
 
-    Parameters(const Parameters&) = delete;
-    void operator=(const Parameters&) = delete;
+  Parameters(const Parameters&) = delete;
+  void operator=(const Parameters&) = delete;
 
-    /// Return a description of active nodes, suitable for debug output.
-    std::string const desc() const;
+  /// Retrieve the global timeslice size in number of microslices.
+  uint32_t timeslice_size() const { return timeslice_size_; }
 
-    uint32_t suggest_in_data_buffer_size_exp();
-    uint32_t suggest_cn_data_buffer_size_exp();
+  /// Retrieve the global maximum timeslice number.
+  uint32_t max_timeslice_number() const { return max_timeslice_number_; }
 
-    uint32_t suggest_in_desc_buffer_size_exp();
-    uint32_t suggest_cn_desc_buffer_size_exp();
+  /// Retrieve the name of the executable acting as timeslice processor.
+  std::string processor_executable() const { return processor_executable_; }
 
-    /// Retrieve the global timeslice size in number of microslices.
-    uint32_t timeslice_size() const { return timeslice_size_; }
+  /// Retrieve the number of instances of the timeslice processor executable.
+  uint32_t processor_instances() const { return processor_instances_; }
 
-    /// Retrieve the size of the overlap region in number of microslices.
-    uint32_t overlap_size() const { return overlap_size_; }
+  /// Retrieve the global base port.
+  uint32_t base_port() const { return base_port_; }
 
-    /// Retrieve the exp. size of the input node's data buffer in bytes.
-    uint32_t in_data_buffer_size_exp() const
-    {
-        return in_data_buffer_size_exp_;
-    }
+  /// Retrieve the selected transport implementation.
+  Transport transport() const { return transport_; }
 
-    /// Retrieve the exp. size of the input node's descriptor buffer
-    /// (number of entries).
-    uint32_t in_desc_buffer_size_exp() const
-    {
-        return in_desc_buffer_size_exp_;
-    }
+  /// Retrieve the list of participating inputs.
+  std::vector<InterfaceSpecification> const inputs() const { return inputs_; }
 
-    /// Retrieve the exp. size of the compute node's data buffer in bytes.
-    uint32_t cn_data_buffer_size_exp() const
-    {
-        return cn_data_buffer_size_exp_;
-    }
+  /// Retrieve the list of compute node outputs.
+  std::vector<InterfaceSpecification> const outputs() const { return outputs_; }
 
-    /// Retrieve the exp. size of the compute node's descriptor buffer
-    /// (number of entries).
-    uint32_t cn_desc_buffer_size_exp() const
-    {
-        return cn_desc_buffer_size_exp_;
-    }
+  /// Retrieve this applications's indexes in the list of inputs.
+  std::vector<unsigned> input_indexes() const { return input_indexes_; }
 
-    /// Retrieve the typical number of content bytes per microslice.
-    uint32_t typical_content_size() const { return typical_content_size_; }
+  /// Retrieve this applications's indexes in the list of outputs.
+  std::vector<unsigned> output_indexes() const { return output_indexes_; }
 
-    /// Retrieve the shared memory identifier.
-    std::string input_shm() const { return input_shm_; }
-
-    /// Retrieve the standalone mode flag.
-    bool standalone() const { return standalone_; }
-
-    /// Retrieve the global maximum timeslice number.
-    uint32_t max_timeslice_number() const { return max_timeslice_number_; }
-
-    /// Retrieve the name of the executable acting as timeslice processor.
-    std::string processor_executable() const { return processor_executable_; }
-
-    /// Retrieve the number of instances of the timeslice processor executable.
-    uint32_t processor_instances() const { return processor_instances_; }
-
-    /// Retrieve the global base port.
-    uint32_t base_port() const { return base_port_; }
-
-    /// Retrieve the selected transport implementation.
-    Transport transport() const { return transport_; }
-
-    /// Generate patterns while generating embedded timeslices
-    bool generate_ts_patterns() const { return generate_ts_patterns_; }
-
-    /// Generate timeslices with random sizes
-    bool random_ts_sizes() const { return random_ts_sizes_; }
-
-    /// Retrieve the number of completion queue entries.
-    uint32_t num_cqe() const { return num_cqe_; }
-
-    /// Retrieve the list of participating input nodes.
-    std::vector<std::string> const input_nodes() const { return input_nodes_; }
-
-    /// Retrieve the list of participating compute nodes.
-    std::vector<std::string> const compute_nodes() const
-    {
-        return compute_nodes_;
-    }
-
-    /// Retrieve this applications's indexes in the list of input nodes.
-    std::vector<unsigned> input_indexes() const { return input_indexes_; }
-
-    /// Retrieve this applications's indexes in the list of compute nodes.
-    std::vector<unsigned> compute_indexes() const { return compute_indexes_; }
+  bool local_only() const {
+    return input_indexes_.size() == inputs_.size() &&
+           output_indexes_.size() == outputs_.size();
+  }
 
 private:
-    /// Parse command line options.
-    void parse_options(int argc, char* argv[]);
+  /// Parse command line options.
+  void parse_options(int argc, char* argv[]);
 
-    /// Print buffer information
-    void print_buffer_info();
+  /// The global timeslice size in number of microslices.
+  uint32_t timeslice_size_ = 100;
 
-    /// The global timeslice size in number of microslices.
-    uint32_t timeslice_size_ = 100;
+  /// The global maximum timeslice number.
+  uint32_t max_timeslice_number_ = UINT32_MAX;
 
-    /// The size of the overlap region in number of microslices.
-    uint32_t overlap_size_ = 2;
+  /// The name of the executable acting as timeslice processor.
+  std::string processor_executable_;
 
-    /// A typical number of content bytes per microslice.
-    uint32_t typical_content_size_ = 1024;
+  /// The number of instances of the timeslice processor executable.
+  uint32_t processor_instances_ = 1;
 
-    /// The exp. size of the input node's data buffer in bytes.
-    uint32_t in_data_buffer_size_exp_ = 0;
+  /// The global base port.
+  uint32_t base_port_ = 20079;
 
-    /// The exp. size of the input node's descriptor buffer (number of
-    /// entries).
-    uint32_t in_desc_buffer_size_exp_ = 0;
+  /// The selected transport implementation.
+  Transport transport_ = Transport::RDMA;
 
-    /// The exp. size of the compute node's data buffer in bytes.
-    uint32_t cn_data_buffer_size_exp_ = 0;
+  /// The list of participating inputs.
+  std::vector<InterfaceSpecification> inputs_;
 
-    /// The exp. size of the compute node's descriptor buffer (number of
-    /// entries).
-    uint32_t cn_desc_buffer_size_exp_ = 0;
+  /// The list of compute node outputs.
+  std::vector<InterfaceSpecification> outputs_;
 
-    // The input shared memory identifier
-    std::string input_shm_;
+  /// This applications's indexes in the list of inputs.
+  std::vector<unsigned> input_indexes_;
 
-    /// The standalone mode flag.
-    bool standalone_ = true;
-
-    /// The global maximum timeslice number.
-    uint32_t max_timeslice_number_ = UINT32_MAX;
-
-    /// The name of the executable acting as timeslice processor.
-    std::string processor_executable_;
-
-    /// The number of instances of the timeslice processor executable.
-    uint32_t processor_instances_ = 2;
-
-    /// The global base port.
-    uint32_t base_port_ = 20079;
-
-    /// The selected transport implementation.
-    Transport transport_ = Transport::RDMA;
-
-    /// Generate patterns while generating embedded timeslices
-    bool generate_ts_patterns_ = false;
-
-    /// Generate timeslices with random sizes
-    bool random_ts_sizes_ = false;
-
-    uint32_t num_cqe_ = 1000000;
-
-    /// The list of participating input nodes.
-    std::vector<std::string> input_nodes_;
-
-    /// The list of participating compute nodes.
-    std::vector<std::string> compute_nodes_;
-
-    /// This applications's indexes in the list of input nodes.
-    std::vector<unsigned> input_indexes_;
-
-    /// This applications's indexes in the list of compute nodes.
-    std::vector<unsigned> compute_indexes_;
+  /// This applications's indexes in the list of outputs.
+  std::vector<unsigned> output_indexes_;
 };

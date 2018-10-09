@@ -5,8 +5,7 @@
 
 #include <memory>
 
-namespace fles
-{
+namespace fles {
 
 /**
  * \brief The Sink class implements the generic item-based output interface.
@@ -14,15 +13,14 @@ namespace fles
  * This class is an abstract base class for several classes using an item-based
  * output interface.
  */
-template <class T> class Sink
-{
+template <class T> class Sink {
 public:
-    /// Receive an item to sink.
-    virtual void put(std::shared_ptr<const T> item) = 0;
+  /// Receive an item to sink.
+  virtual void put(std::shared_ptr<const T> item) = 0;
 
-    virtual void end_stream(){};
+  virtual void end_stream(){};
 
-    virtual ~Sink() = default;
+  virtual ~Sink() = default;
 };
 
 class Microslice;
@@ -35,9 +33,9 @@ class Timeslice;
 using MicrosliceSink = Sink<Microslice>;
 
 /**
-* \brief The TimesliceSink base class implements the generic
-* timeslice-based output interface.
-*/
+ * \brief The TimesliceSink base class implements the generic
+ * timeslice-based output interface.
+ */
 using TimesliceSink = Sink<Timeslice>;
 
 } // namespace fles

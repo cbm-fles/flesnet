@@ -34,25 +34,30 @@ public:
   link_status_t link_status();
 
   typedef struct {
-    float dma_stall;
-    float data_buf_stall;
-    float desc_buf_stall;
-    float event_rate;
-    float din_full;
+    uint64_t pkt_cycle_cnt;
+    uint64_t dma_stall;
+    uint64_t data_buf_stall;
+    uint64_t desc_buf_stall;
+    uint64_t events;
+    uint64_t gtx_cycle_cnt;
+    uint64_t din_full_gtx;
   } link_perf_t;
 
   link_perf_t link_perf();
 
   void set_perf_interval(uint32_t interval);
-  float get_dma_stall();
-  float get_data_buf_stall();
-  float get_desc_buf_stall();
+  uint32_t get_perf_interval_cycles_pkt();
+  uint32_t get_perf_interval_cycles_gtx();
+  uint32_t get_dma_stall();
+  uint32_t get_data_buf_stall();
+  uint32_t get_desc_buf_stall();
+  uint32_t get_event_cnt();
   float get_event_rate();
-  float get_din_full();
+  uint32_t get_din_full_gtx();
   std::string print_perf_raw();
 
 private:
   uint32_t m_reg_perf_interval_cached;
   uint32_t m_reg_gtx_perf_interval_cached;
 };
-} // namespace
+} // namespace flib

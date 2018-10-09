@@ -35,4 +35,4 @@ void pci_bar::barMap(uint8_t number) {
     throw PdaException("Bar mapping failed!");
   }
 }
-}
+} // namespace pda

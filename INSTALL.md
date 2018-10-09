@@ -11,29 +11,33 @@ FLIB it is strongly recommended to use a recent Debian installation.
 This doesn't imply that it is impossible to run a setup on any other
 OS but tests are only performed for this environment.
 
-Note: For information regarding the legacy CBMnet readout please refer
-to the end of this document.
-
 Getting the Repository
 ----------------------
 
+To get the repository run:
+
     git clone https://github.com/cbm-fles/flesnet.git
 
+Development follows a rolling release model. The 'master' branch gets
+newest developments. If you prefer a slower update cycle (and less
+frequent adaptations of your setup) you should use the 'release'
+branch:
+
+    git checkout -b release origin/release
 
 Build Dependencies
 ------------------
 
-    sudo aptitude install gcc make cmake valgrind \
+    sudo aptitude install gcc g++ make cmake valgrind \
       doxygen libnuma-dev librdmacm-dev libibverbs-dev git \
-      libzmq3-dev libkrb5-dev libboost1.55-all-dev
+      libzmq3-dev libkrb5-dev libboost-all-dev libcpprest-dev catch
 
-### InfiniBand
+Note: The minimum required Boost version is 1.55. If you have the
+choice between different Boost versions and plan to record data it is
+beneficial to use the lowest compatible version. To unpack timeslice
+archives the reader's Boost version mustn't be smaller than the Boost
+version used for recording.
 
-If your machine doesn't feature InfiniBand, you need to install SoftiWARP.
-An install script can be found in the flesnet repository:
-
-    cd contrib
-    ./install-softiwarp
 
 ### Optional: Fairroot external packages
 
@@ -44,29 +48,20 @@ After installing, set `SIMPATH` to point to this installation.
 [fairsoft-ext]: http://fairroot.gsi.de/?q=node/8
 
 
-Installing the FLIB device driver (PDA)
----------------------------------------
+### Optional: FLIB device driver (PDA)
 
-The PDA is the external library which is used to implement the FLIB driver
-library. The installation procedure is scripted, just run:
+If you like to use the FLIB you need to install the PDA device driver.
+The installation procedure is scripted, just run:
 
-    cd contrib
-    ./pda_inst.sh
+    ./contrib/pda_inst.sh
 
-Note: Users can only access the FLIB if they are member of the group "pda".
-The install script will create a pda system group. Users can be added by
-running something like
+Users can only access the FLIB if they are member of the group "pda".
+The install script will create a pda system group for you. You should
+add all intended users by running something like
 
     usermod -a -G pda <user>
-.
-Also, the PDA udev rules might not be active after installing. The sure way to
-make it active is to reboot the computer. Other procedures as ...
 
-    udevadm control --reload-rules
-
-... might also work, but this is system dependent. The script always installs
-the currently needed version. Please re-run the script if you encounter
-compilation errors.
+Note that users need to re-login to refresh their group membership.
 
 
 Building flesnet
@@ -74,16 +69,23 @@ Building flesnet
 
 Building flesnet:
 
-    mkdir build
-    cd build && cmake ..
+    mkdir build && cd build && cmake ..
     make
 
 
 Preparing the system and OS
 ---------------------------
 
-IOMMU
------
+### User limits
+
+You need to increase the 'max locked memory' limit in order to
+register enough memory for DMA transfers. To do so for all users you can run
+
+    sudo bash -c 'echo -e "* soft memlock unlimited\n* hard memlock unlimited" > /etc/security/limits.d/10-infiniband.conf'
+
+Note that users need to re-login for new memlock limit to take effect.
+
+### IOMMU
 
 Your need to enable your systems IOMMU if not already enabled.
 For an enabled IOMMU, following three statements have to be true:
@@ -141,8 +143,7 @@ For an enabled IOMMU, following three statements have to be true:
      VT-d (Intel), AMD-Vi (AMD), IOMMU or virtualization support and activate
 	 them.
 
-Power Management
-----------------
+### Power Management
 
 On some systems and depending on your BIOS settings, you may encounter
 problems with ASPM and ACPI. See also [HOWTO.md](HOWTO.md) Section *FAQ*:
@@ -153,8 +154,7 @@ To be on the safe side, please set the kernel boot options
 
     pcie_aspm=off acpi=ht noapic
 
-Setting boot options for Debian
--------------------------------
+### Setting boot options for Debian
 
 Modify `/etc/default/grub`, e.g.:
 
@@ -162,8 +162,7 @@ Modify `/etc/default/grub`, e.g.:
     sudo update-grub
     reboot
 
-Configuring syslog
-------------------
+### Configuring syslog
 
 Flesnet sends certain information to syslog. For rsyslogd an example
 configuration file is provided. To install use:
@@ -172,7 +171,7 @@ configuration file is provided. To install use:
    service rsyslog restart
 
 Installing JTAG Software for programming the FLIB
-=================================================
+-------------------------------------------------
 
 The FLIB FPGA can be programmed using any JTAG programmer and matching
 software. If using a Xilinx USB II cable with Xilinx software

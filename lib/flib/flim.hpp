@@ -37,6 +37,7 @@ public:
   void set_pgen_rate(float val);
   void set_pgen_start_time(uint32_t time);
   void set_pgen_enable(bool enable);
+  void set_pgen_sync_ext(bool enable);
   void reset_pgen_mc_pending();
   uint32_t get_pgen_mc_pending();
   void set_mc_size_limit(uint32_t bytes);
@@ -66,4 +67,4 @@ public:
 private:
   std::unique_ptr<register_file> m_rfflim;
 };
-} // namespace
+} // namespace flib

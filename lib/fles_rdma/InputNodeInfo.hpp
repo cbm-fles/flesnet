@@ -4,7 +4,7 @@
 #pragma pack(1)
 
 struct InputNodeInfo {
-    uint32_t index;
+  uint32_t index;
 };
 
 #pragma pack()

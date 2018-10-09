@@ -7,34 +7,33 @@
 
 std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
                                                        uint8_t arg_sys_ver,
-                                                       size_t component)
-{
-    auto sys_id = static_cast<fles::SubsystemIdentifier>(arg_sys_id);
-    auto sys_ver = static_cast<fles::SubsystemFormatFLES>(arg_sys_ver);
+                                                       size_t component) {
+  auto sys_id = static_cast<fles::SubsystemIdentifier>(arg_sys_id);
+  auto sys_ver = static_cast<fles::SubsystemFormatFLES>(arg_sys_ver);
 
-    using sid = fles::SubsystemIdentifier;
-    using sfmtfles = fles::SubsystemFormatFLES;
+  using sid = fles::SubsystemIdentifier;
+  using sfmtfles = fles::SubsystemFormatFLES;
 
-    PatternChecker* pc = nullptr;
+  PatternChecker* pc = nullptr;
 
-    if (sys_id != sid::FLES) {
-        pc = new GenericPatternChecker();
-    } else {
-        switch (sys_ver) {
-        case sfmtfles::BasicRampPattern:
-            pc = new FlesnetPatternChecker(component);
-            break;
-        case sfmtfles::CbmNetPattern:
-        case sfmtfles::CbmNetFrontendEmulation:
-            pc = new FlibLegacyPatternChecker();
-            break;
-        case sfmtfles::FlibPattern:
-            pc = new FlibPatternChecker();
-            break;
-        default:
-            pc = new GenericPatternChecker();
-        }
+  if (sys_id != sid::FLES) {
+    pc = new GenericPatternChecker();
+  } else {
+    switch (sys_ver) {
+    case sfmtfles::BasicRampPattern:
+      pc = new FlesnetPatternChecker(component);
+      break;
+    case sfmtfles::CbmNetPattern:
+    case sfmtfles::CbmNetFrontendEmulation:
+      pc = new FlibLegacyPatternChecker();
+      break;
+    case sfmtfles::FlibPattern:
+      pc = new FlibPatternChecker();
+      break;
+    default:
+      pc = new GenericPatternChecker();
     }
+  }
 
-    return std::unique_ptr<PatternChecker>(pc);
+  return std::unique_ptr<PatternChecker>(pc);
 }

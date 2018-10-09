@@ -36,20 +36,34 @@ static void s_catch_signals(void) {
   sigaction(SIGINT, &action, NULL);
 }
 
+constexpr bool ext_pgen_sync = false;
+
 int main(int argc, char* argv[]) {
   s_catch_signals();
 
   try {
 
     size_t flib_index = 0;
-    if (argc == 2) {
+    if (argc >= 2) {
       flib_index = atoi(argv[1]);
     }
     std::cout << "using FLIB " << flib_index << std::endl;
 
+    bool force_autobuild = false;
+    if (argc == 3 && std::string(argv[2]) == "--archivable-data") {
+      force_autobuild = true;
+      std::cout << "Enforcing archivable data." << std::endl;
+    }
+
     flib::flib_device_flesin flib(flib_index);
     std::vector<flib::flib_link_flesin*> links = flib.links();
     std::vector<std::unique_ptr<flib::flim>> flims;
+
+    std::cout << flib.print_build_info() << std::endl;
+    if (force_autobuild && flib.build_user() != "gitlab-runner") {
+      throw std::runtime_error(
+          "Unofficial FLIB build not suitable for archivable data.");
+    }
 
     // create flims for active links or internal pgen
     for (size_t i = 0; i < flib.number_of_links(); ++i) {
@@ -59,6 +73,12 @@ int main(int argc, char* argv[]) {
         try {
           flims.push_back(
               std::unique_ptr<flib::flim>(new flib::flim(links.at(i))));
+          std::cout << flims.back()->print_build_info() << std::endl;
+          if (force_autobuild &&
+              flims.back()->build_user() != "gitlab-runner") {
+            throw std::runtime_error(
+                "Unofficial FLIM build not suitable for archivable data.");
+          }
         } catch (const std::exception& e) {
           std::cerr << e.what() << std::endl;
           return EXIT_FAILURE;
@@ -76,8 +96,8 @@ int main(int argc, char* argv[]) {
     for (auto&& flim : flims) {
       flim->set_pgen_enable(false);
       flim->set_ready_for_data(false);
+      flim->set_pgen_sync_ext(false);
       flim->reset_datapath();
-      std::cout << flim->print_build_info() << std::endl;
       if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
         std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
       }
@@ -87,12 +107,18 @@ int main(int argc, char* argv[]) {
 
     for (auto&& flim : flims) {
       flim->set_pgen_start_time(100);
+      if (ext_pgen_sync) {
+        flim->set_pgen_sync_ext(true);
+      }
       flim->set_ready_for_data(true);
     }
 
-    // enable pgen via master link 0
-    flims.at(0)->set_pgen_enable(true);
-    // enable flib internal pgen
+    // enable pgens for all FLIMs
+    // multi channel FLIMs will use channel 0 as master internally
+    for (auto&& flim : flims) {
+      flim->set_pgen_enable(true);
+    }
+    // enable flib internal pgen (global command for all channels)
     flib.enable_mc_cnt(true);
 
     std::cout << "running ..." << std::endl;
