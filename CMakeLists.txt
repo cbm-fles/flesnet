@@ -8,6 +8,8 @@ option(COVERALLS_UPLOAD "Upload the generated coveralls json" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
+include(GitSubmodule)
+
 include(GetGitRevisionDescription)
 git_describe(GIT_REVISION "--all" "--tags" "--long" "--always")
 configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
@@ -65,6 +67,9 @@ if (COVERALLS)
   coveralls_turn_on_coverage()
 endif()
 
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/external/etcd-cpp-api/CMakeLists.txt")
+    message(FATAL_ERROR "Submodule 'etcd-cpp-api' not available! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
 add_subdirectory(external/etcd-cpp-api)
 
 add_subdirectory(lib/logging)
