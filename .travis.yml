@@ -63,8 +63,8 @@ before_install:
   - if ! [ -f $HOME/libfabric/.cached ]; then cd $HOME/libfabric && ./configure && make && cd $WORK_DIR; fi
   - if ! [ -f $HOME/libfabric/.cached ]; then touch $HOME/libfabric/.cached; fi
   - export CMAKE_FRAMEWORK_PATH=$CMAKE_FRAMEWORK_PATH:$HOME/libfabric/include:$HOME/libfabric/src/.libs
-  - if ! [ -f $HOME/libfabric/.cached ]; then wget https://github.com/Microsoft/cpprestsdk/archive/v2.10.8.tar.gz -O $CPPRESTSDK_ARCHIVE_PATH; fi
-  - if ! [ -f $HOME/libfabric/.cached ]; then tar xzf $CPPRESTSDK_ARCHIVE_PATH -C $HOME/cpprestsdk/src --strip-components 1; fi
+  - if ! [ -f $HOME/cpprestsdk/.cached ]; then wget https://github.com/Microsoft/cpprestsdk/archive/v2.10.8.tar.gz -O $CPPRESTSDK_ARCHIVE_PATH; fi
+  - if ! [ -f $HOME/cpprestsdk/.cached ]; then tar xzf $CPPRESTSDK_ARCHIVE_PATH -C $HOME/cpprestsdk/src --strip-components 1; fi
   - if ! [ -f $HOME/cpprestsdk/.cached ]; then cd $HOME/cpprestsdk/src/Release && mkdir build && cd build && CC=gcc-4.8 CXX=g++-4.8 cmake ..; fi
   - if ! [ -f $HOME/cpprestsdk/.cached ]; then make DESTDIR=$HOME/cpprestsdk install; fi
   - if ! [ -f $HOME/cpprestsdk/.cached ]; then touch $HOME/cpprestsdk/.cached; fi
