@@ -1,0 +1,117 @@
+#!/bin/bash
+
+set -e  # stop on error
+set -m  # run all processes in a separate process group
+set -u  # ensure variables are defined
+
+# debug flags
+#set -v
+#set -x
+
+# global parameters, may be overwritten by environment
+: ${FLESNETDIR:=/opt/fles/bin/}
+: ${SPMDIR:=/opt/spm/}
+: ${LOGDIR:=log/}
+: ${SHM_PREFIX:=flib_server_}
+
+###############################################################
+# command line parameters
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <config> <hostname>"
+  exit 1
+fi
+
+source "$1"
+hostconfig "$2"
+
+###############################################################
+# start procecces
+declare -a SERVER_PID
+declare -a EN_PID
+
+cleanup () {
+    echo "Cleaning up ..."
+    # kill all procecces in this session
+    pkill -9 -s $SID en_readout
+    pkill -9 -s $SID flib_server
+    rm /dev/shm/${SHM_PREFIX}*
+    exit -1
+}
+
+# the shutdown procedure
+end_readout () {
+    set +e
+    echo "Shutting down ..."
+    for i in ${!EN_PID[*]}; do
+        kill -s SIGINT ${EN_PID[$i]} 2>/dev/null
+    done
+    sleep 1
+    for i in ${!SERVER_PID[*]}; do
+        kill -s SIGINT ${SERVER_PID[$i]} 2>/dev/null
+    done
+    sleep 1
+    # check if any process is left
+    for i in ${!EN_PID[*]}; do
+        if kill -0 ${EN_PID[$i]} > /dev/null 2>&1 ;then
+            cleanup
+        fi
+    done
+    for i in ${!SERVER_PID[*]}; do
+        if kill -0 ${SERVER_PID[$i]} > /dev/null 2>&1 ; then
+            cleanup
+        fi
+    done
+    exit 0
+}
+trap end_readout SIGINT SIGTERM SIGHUP
+
+
+echo "Starting readout ..."
+
+${FLESNETDIR}flib_info > ${LOGDIR}flib_info.log
+
+echo "Configuring FLIBs ..."
+# round up to next possible size (given mc_size is min. size)
+#PGEN_MC_SIZE=`echo "scale=0; (${MC_SIZE_NS}+1024-1)/1024" | bc -l`
+# round down to next possible size (given mc_size is max. size)
+PGEN_MC_SIZE=`echo "scale=0; ${MC_SIZE_NS}/1024" | bc -l`
+for i in ${!ADDR[*]}; do
+    ${FLESNETDIR}flib_cfg -c /dev/null -l 2 -L ${LOGDIR}f${i}_cfg.log -i ${ADDR[$i]} \
+                     -t $PGEN_MC_SIZE -r $PGEN_RATE \
+                     --mc-size-limit $MC_SIZE_LIMIT_BYTES \
+                     --l0_source ${LINK[0+$i*8]} --l0_eq_id ${BASE_EQID[$i]}0 \
+                     --l1_source ${LINK[1+$i*8]} --l1_eq_id ${BASE_EQID[$i]}1 \
+                     --l2_source ${LINK[2+$i*8]} --l2_eq_id ${BASE_EQID[$i]}2 \
+                     --l3_source ${LINK[3+$i*8]} --l3_eq_id ${BASE_EQID[$i]}3 \
+                     --l4_source ${LINK[4+$i*8]} --l4_eq_id ${BASE_EQID[$i]}4 \
+                     --l5_source ${LINK[5+$i*8]} --l5_eq_id ${BASE_EQID[$i]}5 \
+                     --l6_source ${LINK[6+$i*8]} --l6_eq_id ${BASE_EQID[$i]}6 \
+                     --l7_source ${LINK[7+$i*8]} --l7_eq_id ${BASE_EQID[$i]}7
+done
+
+echo "Starting flib_server ..."
+for flib in ${!ADDR[*]}; do
+    ${FLESNETDIR}flib_server -c /dev/null -L ${LOGDIR}f${flib}_server.log -i ${ADDR[$flib]} \
+                        --data-buffer-size-exp $BUF_SIZE_EXP -o $SHM_PREFIX$flib -e "${SPMDIR}spm-provide flib_server_sem" &
+    SERVER_PID+=($!)
+done
+
+# get group ID for cleanup
+SID=$(ps o sid -p ${SERVER_PID[0]} | tail -n1)
+
+# block till server is ready
+echo "Waiting for ${#SERVER_PID[@]} flib_server instance(s) ..."
+${SPMDIR}spm-require -n${#SERVER_PID[@]} flib_server_sem
+
+sleep 1
+echo "Enabling readout ..."
+for flib in ${!ADDR[*]}; do
+    ${FLESNETDIR}en_readout $flib > ${LOGDIR}flib${flib}_info.log &
+    EN_PID+=($!)
+done
+
+${SPMDIR}spm-provide fles_input_sem
+echo "Running ..."
+wait
+
+echo "*** YOU SOULD NEVER SEE THIS ***"
