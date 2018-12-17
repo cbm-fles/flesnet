@@ -196,12 +196,12 @@ def status():
 
 def monitor():
 #  subprocess.call(["/usr/bin/multitail", "-f", "-Q", "1", "/home/flesctl/run/*/log/*"])
-  subprocess.call(["/usr/bin/multitail", "-f", "-Iw", "/home/flesctl/run/*/log/*", "1"])
-#  run_id = current_run_id()
-#  if run_id is None:
-#    print("error: no run job active")
-#    sys.exit(1)
-#  subprocess.call(["/usr/bin/tail", "-f", "/home/flesctl/run/{}/slurm.out".format(run_id)])
+#  subprocess.call(["/usr/bin/multitail", "-f", "-Iw", "/home/flesctl/run/*/log/*", "1"])
+  run_id = current_run_id()
+  if run_id is None:
+    print("error: no active run found")
+    sys.exit(1)
+  subprocess.call(["/usr/bin/tail", "-f", "/home/flesctl/run/{}/slurm.out".format(run_id)])
 
 
 def edit_logbook():
