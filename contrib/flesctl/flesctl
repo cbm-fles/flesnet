@@ -10,12 +10,13 @@ flesctl
 Usage:
   flesctl list
   flesctl add <config_file> <tag>
-  flesctl info <tag>
+  flesctl show <tag>
   flesctl start <tag>
   flesctl stop
   flesctl monitor | mon
   flesctl status
   flesctl logbook
+  flesctl info <run>
   flesctl -h | --help
   flesctl --version
 """
@@ -88,9 +89,15 @@ def add(tag, filename):
   os.makedirs(os.path.dirname(destpath), exist_ok=True)
   shutil.copy(filename, destpath)
 
-def print_info(tag):
-  # TODO: print an info sting about the tag
-  print("tbd, would print info for tag", tag)
+def print_config(tag):
+  # check if tag exists
+  if tag not in tags():
+    print("error: tag unknown")
+    sys.exit(1)
+  print("# Tag:", tag)
+  with open(os.path.join(confdir, tag + ".conf"), 'r') as cfile:
+    print(cfile.read())
+
 
 def start(tag):
   # check if readaut is active
@@ -188,8 +195,13 @@ def status():
 
 
 def monitor():
-  # TODO: attach to monitoring
-  print("tdb")
+#  subprocess.call(["/usr/bin/multitail", "-f", "-Q", "1", "/home/flesctl/run/*/log/*"])
+#  subprocess.call(["/usr/bin/multitail", "-f", "-Iw", "/home/flesctl/run/*/log/*", "1"])
+  run_id = current_run_id()
+  if run_id is None:
+    print("error: no active run found")
+    sys.exit(1)
+  subprocess.call(["/usr/bin/tail", "-f", "/home/flesctl/run/{}/slurm.out".format(run_id)])
 
 
 def edit_logbook():
@@ -198,6 +210,17 @@ def edit_logbook():
   filename = os.path.join(rundir, "logbook.txt")
   # open file and jump to last line
   subprocess.call(["nano +$(wc -l \"{}\")".format(filename)], shell=True)
+
+
+def run_info(par_run_id):
+  config_file = os.path.join(rundir_base, par_run_id, "run.conf")
+  if not os.path.isfile(config_file):
+    print("error: no such run found")
+    sys.exit(1)
+
+  runconf = configparser.ConfigParser()
+  runconf.read(config_file)
+  print(runconf.defaults())
 
 
 if __name__ == "__main__":
@@ -209,8 +232,8 @@ if __name__ == "__main__":
   if arg['add']:
     add(arg['<tag>'], arg['<config_file>'])
 
-  if arg['info']:
-    print_info(arg['<tag>'])
+  if arg['show']:
+    print_config(arg['<tag>'])
 
   if arg['start']:
     start(arg['<tag>'])
@@ -226,3 +249,6 @@ if __name__ == "__main__":
 
   if arg['logbook']:
     edit_logbook()
+
+  if arg['info']:
+    run_info(arg['<run>'])
