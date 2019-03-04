@@ -1,0 +1,254 @@
+#!/usr/bin/env python3
+
+# Control configuration and data taking on mFLES
+#
+# 2018-11-06 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
+# 2018-11-06 Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+
+"""
+flesctl
+Usage:
+  flesctl list
+  flesctl add <config_file> <tag>
+  flesctl show <tag>
+  flesctl start <tag>
+  flesctl stop
+  flesctl monitor | mon
+  flesctl status
+  flesctl logbook
+  flesctl info <run>
+  flesctl -h | --help
+  flesctl --version
+"""
+
+import os
+import pwd
+import sys
+import docopt
+import glob
+import subprocess
+import shutil
+import configparser
+import time
+
+import inspect
+import pprint
+
+scriptdir = os.path.dirname(os.path.realpath(__file__))
+confdir = os.path.normpath("/home/flesctl/config")
+rundir_base = "/home/flesctl/run"
+flesctl_conf = "/home/flesctl/private/flesctl.conf"
+log_template = "/home/flesctl/private/logbook.template"
+
+# check if run as correct user
+run_user = "flesctl"
+username = pwd.getpwuid(os.getuid()).pw_name
+sudo_user = os.environ.get("SUDO_USER")
+if sudo_user == None or username != run_user:
+  print("start using sudo as user", run_user)
+  sys.exit()
+
+# read global configuration
+config = configparser.ConfigParser()
+config.read(flesctl_conf)
+run_id = config["DEFAULT"].getint("NextRunID")
+if not run_id:
+  print("error: no configuration at", flesctl_conf)
+  sys.exit(1)
+
+
+def tags():
+  for filename in glob.iglob(confdir + '/**/*.conf', recursive=True):
+    if not filename.startswith(confdir + '/'):
+      throw
+    tag, _ = os.path.splitext(filename[len(confdir + '/'):])
+    yield tag
+
+
+def list_tags():
+  for tag in tags():
+    print(tag)
+
+
+def add(tag, filename):
+  # check if tag is new
+  if tag in tags():
+    print("error: tag already exists")
+    sys.exit(1)
+
+  # TODO: check if config is duplicate, warn
+
+  # check syntax of new config file by running bash on it
+  if subprocess.call(["/bin/bash", filename]) != 0:
+    print("error: cannot parse", filename)
+    sys.exit(1)
+  print("adding new tag", tag)
+
+  # cp filename /opt/flesctl/config/tag
+  destpath = os.path.join(confdir, tag + ".conf")
+  os.makedirs(os.path.dirname(destpath), exist_ok=True)
+  shutil.copy(filename, destpath)
+
+def print_config(tag):
+  # check if tag exists
+  if tag not in tags():
+    print("error: tag unknown")
+    sys.exit(1)
+  print("# Tag:", tag)
+  with open(os.path.join(confdir, tag + ".conf"), 'r') as cfile:
+    print(cfile.read())
+
+
+def start(tag):
+  # check if readaut is active
+  output = subprocess.check_output(["/usr/bin/squeue", "-h", "-u", run_user],
+                                   universal_newlines=True)
+  if len(output) > 0:
+    print("error: job is already active")
+    print(output, end='')
+    sys.exit(1)
+
+  # check if tag exists
+  if tag not in tags():
+    print("error: tag unknown")
+    sys.exit(1)
+
+  # create run directory
+  rundir = os.path.join(rundir_base, str(run_id))
+  try:
+    os.mkdir(rundir)
+  except FileExistsError:
+    print("error: run directory", rundir, "exists")
+    sys.exit(1)
+  os.chdir(rundir)
+  os.mkdir("log")
+
+  # increment next run id
+  config["DEFAULT"]["NextRunID"] = str(run_id + 1)
+  with open(flesctl_conf, 'w') as configfile:
+    config.write(configfile)
+  print("starting run with id", run_id)
+
+  # TODO: check prerequisites, e.g. leftovers from previous runs
+
+  # create run-local copy of tag config
+  shutil.copy(os.path.join(confdir, tag + ".conf"), "readout.conf")
+
+  # create run configuration file
+  runconf = configparser.ConfigParser()
+  runconf['DEFAULT'] = {'Tag': tag, 'RunId': str(run_id),
+                        'StartTime': str(int(time.time()))}
+  with open("run.conf", "w") as runconffile:
+    runconf.write(runconffile)
+
+  # create spm and flesnet configuration from tag
+  subprocess.call([os.path.join(scriptdir, "init_run"), "readout.conf", str(run_id)])
+
+  # initialize logbook
+  shutil.copy(log_template, "logbook.txt")
+
+  # start run using spm
+  subprocess.call(["/opt/spm/spm-run", "--batch",
+                   "--logfile", "slurm.out",
+                   "--jobname", "run_{}".format(run_id), "readout.spm"])
+
+
+def current_run_id():
+  output = subprocess.check_output(["/usr/bin/squeue", "-h", "-o", "%j", "-u", run_user],
+                                   universal_newlines=True)
+  if output.startswith("run_"):
+    return int(output[len("run_"):])
+  else:
+    return None
+
+
+def stop():
+  run_id = current_run_id()
+  if run_id is None:
+    print("error: no run job active")
+    sys.exit(1)
+
+  # change to run directory
+  rundir = os.path.join(rundir_base, str(run_id))
+  os.chdir(rundir)
+
+  print("stoppig run with id", run_id)
+  subprocess.call(["/usr/bin/scancel", "--jobname", "run_{}".format(run_id)])
+
+  # update run configuration file
+  runconf = configparser.ConfigParser()
+  runconf.read("run.conf")
+  runconf['DEFAULT']['StopTime'] = str(int(time.time()))
+  with open("run.conf", "w") as runconffile:
+    runconf.write(runconffile)
+
+  # TODO: cleanup, remove leftovers
+
+
+def status():
+  output = subprocess.check_output(["/usr/bin/squeue", "-h", "--user",
+                                    run_user], universal_newlines=True)
+  if len(output) == 0:
+    print("info: no active run found")
+  else:
+    print(output, end='')
+
+
+def monitor():
+#  subprocess.call(["/usr/bin/multitail", "-f", "-Q", "1", "/home/flesctl/run/*/log/*"])
+#  subprocess.call(["/usr/bin/multitail", "-f", "-Iw", "/home/flesctl/run/*/log/*", "1"])
+  run_id = current_run_id()
+  if run_id is None:
+    print("error: no active run found")
+    sys.exit(1)
+  subprocess.call(["/usr/bin/tail", "-f", "/home/flesctl/run/{}/slurm.out".format(run_id)])
+
+
+def edit_logbook():
+  # TODO: add line with modifiy info like: new entry on "date"
+  rundir = os.path.join(rundir_base, str(run_id-1))
+  filename = os.path.join(rundir, "logbook.txt")
+  # open file and jump to last line
+  subprocess.call(["nano +$(wc -l \"{}\")".format(filename)], shell=True)
+
+
+def run_info(par_run_id):
+  config_file = os.path.join(rundir_base, par_run_id, "run.conf")
+  if not os.path.isfile(config_file):
+    print("error: no such run found")
+    sys.exit(1)
+
+  runconf = configparser.ConfigParser()
+  runconf.read(config_file)
+  print(runconf.defaults())
+
+
+if __name__ == "__main__":
+  arg = docopt.docopt(__doc__, version='0.1')
+
+  if arg['list']:
+    list_tags()
+
+  if arg['add']:
+    add(arg['<tag>'], arg['<config_file>'])
+
+  if arg['show']:
+    print_config(arg['<tag>'])
+
+  if arg['start']:
+    start(arg['<tag>'])
+
+  if arg['stop']:
+    stop()
+
+  if arg['status']:
+    status()
+
+  if arg['monitor'] or arg['mon']:
+    monitor()
+
+  if arg['logbook']:
+    edit_logbook()
+
+  if arg['info']:
+    run_info(arg['<run>'])
