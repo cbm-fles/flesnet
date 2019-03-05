@@ -1,12 +1,4 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(LIBFLIB)
-
-include_directories( ${LIBFLIB_SOURCE_DIR}/
-                     ${LIBFLIB_SOURCE_DIR}/../)
-
-set(VERSION "0.0.0")
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-tree-vectorize")
+# Copyright 2016 Jan de Cuveland <cmail@cuveland.de>
 
 set(LIB_SRC
   dma_channel.cpp
@@ -34,9 +26,19 @@ set(LIB_HDR
   register_file_bar.hpp
 )
 
-add_library(flib SHARED ${LIB_HDR} ${LIB_SRC})
-add_library(flib-static STATIC ${LIB_HDR} ${LIB_SRC})
-set_target_properties(flib-static PROPERTIES OUTPUT_NAME flib)
+add_library(flib STATIC ${LIB_HDR} ${LIB_SRC})
 
-target_link_libraries(flib pda)
-target_link_libraries(flib-static pda)
+set_target_properties(flib PROPERTIES OUTPUT_NAME flib)
+
+target_compile_options(flib PUBLIC -fno-tree-vectorize)
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   set_source_files_properties(register_file_bar.cpp
+        PROPERTIES
+        COMPILE_FLAGS "-Wno-unknown-attributes -mno-sse")
+endif()
+
+target_include_directories(flib PUBLIC . PUBLIC ..)
+target_include_directories(flib SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+
+target_link_libraries(flib PUBLIC pda)

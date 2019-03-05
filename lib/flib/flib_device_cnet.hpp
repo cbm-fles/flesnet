@@ -27,4 +27,4 @@ public:
   void send_dlm();
 };
 
-} /** namespace flib */
+} // namespace flib

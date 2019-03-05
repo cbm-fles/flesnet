@@ -6,8 +6,7 @@
 #include "Microslice.hpp"
 #include "MicrosliceDescriptor.hpp"
 
-namespace fles
-{
+namespace fles {
 
 /**
  * \brief The MicrosliceView class provides read access to a microslice stored
@@ -16,11 +15,10 @@ namespace fles
  * The data of the microslice (metadata and content) is not stored in the class,
  * but elsewhere (e.g., in an already existing Timeslice object).
  */
-class MicrosliceView : public Microslice
-{
+class MicrosliceView : public Microslice {
 public:
-    /// Construct microslice with given content.
-    MicrosliceView(MicrosliceDescriptor& d, uint8_t* content);
+  /// Construct microslice with given content.
+  MicrosliceView(MicrosliceDescriptor& d, uint8_t* content);
 };
 
 } // namespace fles

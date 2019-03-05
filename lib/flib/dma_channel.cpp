@@ -394,4 +394,4 @@ inline uint32_t dma_channel::get_lo_32(uint64_t val) { return val; }
 
 inline uint32_t dma_channel::get_hi_32(uint64_t val) { return (val >> 32); }
 
-} // namespace
+} // namespace flib

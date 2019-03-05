@@ -32,35 +32,35 @@ public:
   /**
    * PCIe Bus-ID
    * @return uint8 Bus-ID
-  **/
+   **/
   uint8_t bus();
 
   /**
    * PCIe Slot-ID
    * @return uint8 Slot-ID
-  **/
+   **/
   uint8_t slot();
 
   /**
    * PCIe Function-ID
    * @return uint8 Function-ID
-  **/
+   **/
   uint8_t func();
 
   /**
    * PCIe max_payload_size
    * @return size_t max_payload_size
-  **/
+   **/
   size_t max_payload_size();
 
   /**
    * PCI-Device
    * @return PCI-Device-Pointer
-  **/
+   **/
   PciDevice* PDAPciDevice() { return (m_device); }
 
 protected:
   device_operator* m_parent_dop;
   PciDevice* m_device;
 };
-}
+} // namespace pda

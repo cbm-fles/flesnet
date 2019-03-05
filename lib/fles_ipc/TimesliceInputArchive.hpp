@@ -5,9 +5,9 @@
 
 #include "ArchiveDescriptor.hpp"
 #include "InputArchive.hpp"
+#include "InputArchiveLoop.hpp"
 
-namespace fles
-{
+namespace fles {
 
 class Timeslice;
 class StorableTimeslice;
@@ -18,5 +18,10 @@ class StorableTimeslice;
  */
 using TimesliceInputArchive =
     InputArchive<Timeslice, StorableTimeslice, ArchiveType::TimesliceArchive>;
+
+using TimesliceInputArchiveLoop =
+    InputArchiveLoop<Timeslice,
+                     StorableTimeslice,
+                     ArchiveType::TimesliceArchive>;
 
 } // namespace fles

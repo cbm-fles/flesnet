@@ -227,4 +227,4 @@ flib_link_cnet::link_status_t flib_link_cnet::link_status() {
   return link_status;
 }
 
-} // namespace
+} // namespace flib

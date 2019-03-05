@@ -6,8 +6,7 @@
 #include <boost/serialization/access.hpp>
 #include <cstdint>
 
-namespace fles
-{
+namespace fles {
 
 #pragma pack(1)
 
@@ -15,15 +14,14 @@ namespace fles
  * \brief %Timeslice completion struct.
  */
 struct TimesliceCompletion {
-    uint64_t ts_pos; ///< Start offset (in items) of this timeslice
+  uint64_t ts_pos; ///< Start offset (in items) of this timeslice
 
-    friend class boost::serialization::access;
-    /// Provide boost serialization access.
-    template <class Archive>
-    void serialize(Archive& ar, const unsigned int /* version */)
-    {
-        ar& ts_pos;
-    }
+  friend class boost::serialization::access;
+  /// Provide boost serialization access.
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int /* version */) {
+    ar& ts_pos;
+  }
 };
 
 #pragma pack()

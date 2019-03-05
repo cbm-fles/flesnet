@@ -7,9 +7,12 @@ Boost version | BOOST_ARCHIVE_VERSION
 1.55 | 10   [Debian Jessie 15.04] [Ubuntu Trusty 14.04 LTS universe]
 1.56 | 11
 1.57 | 11
-1.58 | 12   [Debian Stretch?] [Ubuntu Xenial 16.04 LTS?]
+1.58 | 12   [Ubuntu Xenial 16.04 LTS]
 1.59 | 13
 1.60 | 14
+1.61 | 14
+1.62 | 14
+dev  | 15
 
 - List of BOOST_ARCHIVE_VERSION changes:
 https://github.com/boostorg/serialization/blob/develop/src/basic_archive.cpp

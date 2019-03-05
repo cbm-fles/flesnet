@@ -46,16 +46,16 @@ add_custom_target (
           -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/flib_server.cfg
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 	COMMAND ${CMAKE_COMMAND}
-          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/flesnet_flib_example.cfg
+          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/flesnet_simple_example.cfg
           -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/flesnet.cfg
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
+	COMMAND ${CMAKE_COMMAND}
+          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/readout
+          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/readout
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 	COMMAND ${CMAKE_COMMAND}
           -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/record_data.in
           -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/record_data
-          -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
-	COMMAND ${CMAKE_COMMAND}
-          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/publish_data.in
-          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/publish_data
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 )
 

@@ -11,46 +11,43 @@
 #include <string>
 #include <zmq.hpp>
 
-namespace fles
-{
+namespace fles {
 /**
  * \brief The TimesliceSubscriber class receives serialized timeslice data sets
  * from a zeromq socket.
  */
-class TimesliceSubscriber : public TimesliceSource
-{
+class TimesliceSubscriber : public TimesliceSource {
 public:
-    /// Construct timeslice subscriber receiving from given ZMQ address.
-    explicit TimesliceSubscriber(const std::string& address);
+  /// Construct timeslice subscriber receiving from given ZMQ address.
+  explicit TimesliceSubscriber(const std::string& address);
 
-    /// Delete copy constructor (non-copyable).
-    TimesliceSubscriber(const TimesliceSubscriber&) = delete;
-    /// Delete assignment operator (non-copyable).
-    void operator=(const TimesliceSubscriber&) = delete;
+  /// Delete copy constructor (non-copyable).
+  TimesliceSubscriber(const TimesliceSubscriber&) = delete;
+  /// Delete assignment operator (non-copyable).
+  void operator=(const TimesliceSubscriber&) = delete;
 
-    ~TimesliceSubscriber() override = default;
+  ~TimesliceSubscriber() override = default;
 
-    /**
-     * \brief Retrieve the next item.
-     *
-     * This function blocks if the next item is not yet available.
-     *
-     * \return pointer to the item, or nullptr if end-of-file
-     */
-    std::unique_ptr<StorableTimeslice> get()
-    {
-        return std::unique_ptr<StorableTimeslice>(do_get());
-    };
+  /**
+   * \brief Retrieve the next item.
+   *
+   * This function blocks if the next item is not yet available.
+   *
+   * \return pointer to the item, or nullptr if end-of-file
+   */
+  std::unique_ptr<StorableTimeslice> get() {
+    return std::unique_ptr<StorableTimeslice>(do_get());
+  };
 
-    bool eos() const override { return eos_flag; }
+  bool eos() const override { return eos_flag; }
 
 private:
-    StorableTimeslice* do_get() override;
+  StorableTimeslice* do_get() override;
 
-    zmq::context_t context_{1};
-    zmq::socket_t subscriber_{context_, ZMQ_SUB};
+  zmq::context_t context_{1};
+  zmq::socket_t subscriber_{context_, ZMQ_SUB};
 
-    bool eos_flag = false;
+  bool eos_flag = false;
 };
 
 } // namespace fles

@@ -13,33 +13,27 @@
 #include <set>
 #include <vector>
 
-namespace fles
-{
+namespace fles {
 
-   class NdpbEpochToMsSorter
-       : public BufferingFilter<Microslice, StorableMicroslice>
-   {
-      public:
-          NdpbEpochToMsSorter( uint32_t uEpPerMs = 1, bool bSortMsgs = false ) :
-             BufferingFilter(),
-             fuNbEpPerMs(uEpPerMs),
-             fbMsgSorting(bSortMsgs),
-             fmsFullMsgBuffer(), fuNbEpInBuff(0),
-             fbFirstEpFound(false),
-             fuCurrentEpoch(0), fuCurrentEpochCycle(0), fulCurrentLongEpoch(0)
-             {};
+class NdpbEpochToMsSorter
+    : public BufferingFilter<Microslice, StorableMicroslice> {
+public:
+  NdpbEpochToMsSorter(uint32_t uEpPerMs = 1, bool bSortMsgs = false)
+      : BufferingFilter(), fuNbEpPerMs(uEpPerMs), fbMsgSorting(bSortMsgs),
+        fmsFullMsgBuffer(), fuNbEpInBuff(0), fbFirstEpFound(false),
+        fuCurrentEpoch(0), fuCurrentEpochCycle(0), fulCurrentLongEpoch(0){};
 
-      private:
-          void process() override;
+private:
+  void process() override;
 
-          uint32_t fuNbEpPerMs;
-          bool     fbMsgSorting;
-          std::multiset<ngdpb::FullMessage> fmsFullMsgBuffer;
-          std::vector<ngdpb::Message>       fvMsgBuffer;
-          uint32_t fuNbEpInBuff;
-          bool     fbFirstEpFound;
-          uint32_t fuCurrentEpoch;
-          uint32_t fuCurrentEpochCycle;
-          uint64_t fulCurrentLongEpoch;
-   };
+  uint32_t fuNbEpPerMs;
+  bool fbMsgSorting;
+  std::multiset<ngdpb::FullMessage> fmsFullMsgBuffer;
+  std::vector<ngdpb::Message> fvMsgBuffer;
+  uint32_t fuNbEpInBuff;
+  bool fbFirstEpFound;
+  uint32_t fuCurrentEpoch;
+  uint32_t fuCurrentEpochCycle;
+  uint64_t fulCurrentLongEpoch;
+};
 } // namespace fles

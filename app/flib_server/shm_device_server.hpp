@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "etcd/Client.hpp"
+#include "etcd/Watcher.hpp"
 #include "flib_device.hpp"
 #include "flib_link.hpp"
 #include "log.hpp"
@@ -29,9 +31,27 @@ public:
                     std::string shm_identifier,
                     size_t data_buffer_size_exp,
                     size_t desc_buffer_size_exp,
+                    etcd_config_t etcd_config,
                     volatile std::sig_atomic_t* signal_status)
       : m_flib(flib), m_shm_identifier(shm_identifier),
-        m_signal_status(signal_status) {
+        m_etcd_config(etcd_config), m_signal_status(signal_status) {
+
+    if (m_etcd_config.use_etcd) {
+      L_(info) << "Etcd URI: http://" << m_etcd_config.authority
+               << m_etcd_config.path;
+      m_etcd.reset(new etcd::Client("http://" + m_etcd_config.authority));
+      m_signal_watcher = std::make_shared<etcd::Watcher>(
+          "http://" + m_etcd_config.authority, m_etcd_config.path + "/running",
+          [this](etcd::Response resp) {
+            if (resp.is_ok() && resp.action() == "set" &&
+                resp.value().as_string() == "0") {
+              *m_signal_status = 1;
+            } else {
+              m_signal_watcher->renew_watch();
+            }
+          });
+    }
+
     std::vector<flib::flib_link*> flib_links = m_flib->links();
 
     // delete deactivated links from vector
@@ -76,8 +96,9 @@ public:
   void run() {
     if (!m_run) { // don't start twice
       m_run = true;
-      // TODO needed in case of cbmnet readout
-      // m_flib->enable_mc_cnt(true);
+      if (m_etcd) {
+        m_etcd->set(m_etcd_config.path + "/running", "1").wait();
+      }
       L_(info) << "flib server started and running";
       while (m_run) {
         // claim lock at start-up
@@ -112,9 +133,16 @@ public:
   }
 
   void stop() {
+    if (m_etcd) {
+      try {
+        m_etcd->rm(m_etcd_config.path + "/running").wait();
+      } catch (std::exception const& e) {
+        L_(error) << "Exception: " << e.what();
+      } catch (...) {
+        L_(error) << "Exception: failed to remove etcd key.";
+      }
+    }
     m_run = false;
-    // TODO needed in case of cbmnet readout
-    // m_flib->enable_mc_cnt(false);
   }
 
 private:
@@ -134,10 +162,13 @@ private:
   // Members
   flib::flib_device* m_flib;
   std::string m_shm_identifier;
+  etcd_config_t m_etcd_config;
   volatile std::sig_atomic_t* m_signal_status;
   std::unique_ptr<ip::managed_shared_memory> m_shm;
   shm_device* m_shm_dev = NULL;
   std::vector<std::unique_ptr<shm_channel_server_type>> m_shm_ch_vec;
+  std::unique_ptr<etcd::Client> m_etcd;
+  std::shared_ptr<etcd::Watcher> m_signal_watcher;
 
   bool m_run = false;
 };

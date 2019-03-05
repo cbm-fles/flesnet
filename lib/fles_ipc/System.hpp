@@ -5,11 +5,9 @@
 
 #include <string>
 
-namespace fles
-{
+namespace fles {
 /// Namespace for system-related utilty functions.
-namespace system
-{
+namespace system {
 /**
  * \brief Textual description of system error messages.
  *

@@ -155,4 +155,4 @@ private:
   uint64_t m_dbentries = 0;
 };
 
-} // namespace
+} // namespace flib

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [[ "$#" -ne 1 ]]; then
+    echo "Please provide FLIB BDF address."
+    exit
+fi
+
+BDF=$1
+
+DEV=$(cat /sys/bus/pci/devices/0000:$BDF/device 2>/dev/null)
+VEN=$(cat /sys/bus/pci/devices/0000:$BDF/vendor 2>/dev/null)
+
+if [[ $VEN != 0x10dc || $DEV != 0xbeaf ]]; then
+    echo "$BDF is not a FLIB device. PCI ID found: $VEN:$DEV"
+    exit 
+fi
+
+echo "Resetting FLIB $BDF"
+sudo sh -c "echo 1 >  /sys/bus/pci/devices/0000:$BDF/reset"
+sudo sh -c "echo 1 >  /sys/bus/pci/devices/0000:$BDF/remove"
+sleep 1
+sudo sh -c "echo 1 >  /sys/bus/pci/rescan"

@@ -68,4 +68,4 @@ protected:
   bool check_magic_number();
 };
 
-} // namespace
+} // namespace flib

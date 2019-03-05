@@ -3,22 +3,20 @@
 #include "RingBuffer.hpp"
 #include <iostream>
 
-class Simple
-{
+class Simple {
 public:
-    explicit Simple(int n = 5) : i(n) { std::cout << "Simple()\n"; }
-    ~Simple() { std::cout << "~Simple()\n"; }
-    int i;
+  explicit Simple(int n = 5) : i(n) { std::cout << "Simple()\n"; }
+  ~Simple() { std::cout << "~Simple()\n"; }
+  int i;
 };
 
-int main()
-{
+int main() {
 
-    RingBuffer<Simple, false, true> s;
+  RingBuffer<Simple, false, true> s;
 
-    s.alloc_with_size(4);
+  s.alloc_with_size(4);
 
-    std::printf("ptr: %p\n", static_cast<void*>(s.ptr()));
+  std::printf("ptr: %p\n", static_cast<void*>(s.ptr()));
 
-    return 0;
+  return 0;
 }

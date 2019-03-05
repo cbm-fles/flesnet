@@ -16,6 +16,13 @@
 
 namespace po = boost::program_options;
 
+/// Run parameters exception class.
+class ParametersException : public std::runtime_error {
+public:
+  explicit ParametersException(const std::string& what_arg = "")
+      : std::runtime_error(what_arg) {}
+};
+
 struct pci_addr {
 public:
   pci_addr(uint8_t bus = 0, uint8_t dev = 0, uint8_t func = 0)
@@ -25,13 +32,20 @@ public:
   uint8_t func;
 };
 
+struct etcd_config_t {
+  bool use_etcd = false;
+  std::string authority;
+  std::string path;
+};
+
 // Overload validate for PCI BDF address
 void validate(boost::any& v,
               const std::vector<std::string>& values,
               pci_addr*,
               int) {
   // PCI BDF address is BB:DD.F
-  static boost::regex r("(\\d\\d):(\\d\\d).(\\d)");
+  static boost::regex r(
+      "([[:xdigit:]][[:xdigit:]]):([[:xdigit:]][[:xdigit:]]).([[:xdigit:]])");
 
   // Make sure no previous assignment to 'a' was made.
   po::validators::check_first_occurrence(v);
@@ -42,9 +56,9 @@ void validate(boost::any& v,
   // Do regex match and convert the interesting part.
   boost::smatch match;
   if (boost::regex_match(s, match, r)) {
-    v = boost::any(pci_addr(boost::lexical_cast<unsigned>(match[1]),
-                            boost::lexical_cast<unsigned>(match[2]),
-                            boost::lexical_cast<unsigned>(match[3])));
+    v = boost::any(pci_addr(std::stoul(match[1], nullptr, 16),
+                            std::stoul(match[2], nullptr, 16),
+                            std::stoul(match[3], nullptr, 16)));
   } else {
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
@@ -63,6 +77,8 @@ public:
   std::string shm() { return _shm; }
   size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
+  etcd_config_t etcd() const { return _etcd; }
+  std::string exec() const { return _exec; }
 
   std::string print_buffer_info() {
     std::stringstream ss;
@@ -78,30 +94,43 @@ private:
 
     std::string config_file;
     unsigned log_level;
+    std::string log_file;
 
     po::options_description generic("Generic options");
-    generic.add_options()("help,h", "produce help message")(
+    auto generic_add = generic.add_options();
+    generic_add("help,h", "produce help message");
+    generic_add(
         "config-file,c",
         po::value<std::string>(&config_file)->default_value("flib_server.cfg"),
         "name of a configuration file");
 
     po::options_description config(
         "Configuration (flib_server.cfg or cmd line)");
-    config.add_options()
-
-        ("flib-addr,i", po::value<pci_addr>(),
-         "PCI BDF address of target FLIB in BB:DD.F format")(
-            "shm,o",
-            po::value<std::string>(&_shm)->default_value("flib_shared_memory"),
-            "name of the shared memory to be used")(
-            "data-buffer-size-exp",
-            po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
-            "exp. size of the data buffer in bytes")(
-            "desc-buffer-size-exp",
-            po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
-            "exp. size of the descriptor buffer (number of entries)")(
-            "log-level,l", po::value<unsigned>(&log_level)->default_value(2),
-            "set the log level (all:0)");
+    auto config_add = config.add_options();
+    config_add("flib-addr,i", po::value<pci_addr>(),
+               "PCI BDF address of target FLIB in BB:DD.F format");
+    config_add(
+        "shm,o",
+        po::value<std::string>(&_shm)->default_value("flib_shared_memory"),
+        "name of the shared memory to be used");
+    config_add("data-buffer-size-exp",
+               po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
+               "exp. size of the data buffer in bytes");
+    config_add("desc-buffer-size-exp",
+               po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
+               "exp. size of the descriptor buffer (number of entries)");
+    config_add("log-level,l", po::value<unsigned>(&log_level)->default_value(2),
+               "set the log level (all:0)");
+    config_add("log-file,L", po::value<std::string>(&log_file),
+               "name of target log file");
+    config_add("etcd-authority",
+               po::value<std::string>(&_etcd.authority)
+                   ->default_value("127.0.0.1:2379"),
+               "where to find the etcd server");
+    config_add("etcd-path", po::value<std::string>(&_etcd.path),
+               "base path for this instance, leave empty to not use etcd");
+    config_add("exec,e", po::value<std::string>(&_exec)->value_name("<string>"),
+               "name of an executable to run after startup");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -116,8 +145,7 @@ private:
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
       if (config_file != "flib_server.cfg") {
-        std::cout << "Can not open config file: " << config_file << "\n";
-        exit(EXIT_SUCCESS);
+        throw ParametersException("Cannot open config file: " + config_file);
       }
     } else {
       std::cout << "Using config file: " << config_file << "\n";
@@ -131,20 +159,29 @@ private:
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
+    if (vm.count("log-file")) {
+      L_(info) << "Logging output to " << log_file;
+      logging::add_file(log_file, static_cast<severity_level>(log_level));
+    }
 
     if (vm.count("flib-addr")) {
       _flib_addr = vm["flib-addr"].as<pci_addr>();
       _flib_autodetect = false;
-      L_(debug) << "FLIB address: " << std::setw(2) << std::setfill('0')
-                << static_cast<unsigned>(_flib_addr.bus) << ":" << std::setw(2)
-                << std::setfill('0') << static_cast<unsigned>(_flib_addr.dev)
-                << "." << static_cast<unsigned>(_flib_addr.func);
+      L_(debug) << "FLIB address: " << std::hex << std::setw(2)
+                << std::setfill('0') << static_cast<unsigned>(_flib_addr.bus)
+                << ":" << std::setw(2) << std::setfill('0')
+                << static_cast<unsigned>(_flib_addr.dev) << "."
+                << static_cast<unsigned>(_flib_addr.func);
     } else {
       _flib_autodetect = true;
       L_(debug) << "FLIB address: autodetect";
     }
 
-    L_(info) << "Shared menory file: " << _shm;
+    if (vm.count("etcd-path")) {
+      _etcd.use_etcd = true;
+    }
+
+    L_(info) << "Shared memory file: " << _shm;
     L_(info) << print_buffer_info();
   }
 
@@ -153,4 +190,6 @@ private:
   std::string _shm;
   size_t _data_buffer_size_exp;
   size_t _desc_buffer_size_exp;
+  etcd_config_t _etcd;
+  std::string _exec;
 };

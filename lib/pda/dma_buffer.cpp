@@ -62,8 +62,15 @@ std::string dma_buffer::print_buffer_info() {
   ss << "start address = " << m_mem << ", "
      << "physical size = " << (m_size >> 20) << " MByte, " << std::endl
      << "  end address = "
-     << static_cast<void*>(static_cast<uint8_t*>(m_mem) + m_size) << ", "
-     << "num SG entries = " << m_sglist.size();
+     << static_cast<void*>(static_cast<uint8_t*>(m_mem) + m_size - 1) << ", "
+     << "num SG entries = " << m_sglist.size() << std::endl
+     << "SG entries (max. 5):" << std::endl;
+  for (size_t i = 0; i < 5 && i < m_sglist.size(); ++i) {
+    ss << "entry " << i << " start: " << m_sglist.at(i).pointer << " end: "
+       << static_cast<void*>(static_cast<uint8_t*>(m_sglist.at(i).pointer) +
+                             m_sglist.at(i).length - 1)
+       << " length: " << m_sglist.at(i).length;
+  }
   return ss.str();
 }
 
@@ -96,4 +103,4 @@ void dma_buffer::connect() {
 }
 
 void dma_buffer::deallocate() { PciDevice_deleteDMABuffer(m_device, m_buffer); }
-}
+} // namespace pda

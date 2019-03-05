@@ -3,21 +3,21 @@
 
 #include "PatternChecker.hpp"
 
-class FlibLegacyPatternChecker : public PatternChecker
-{
+class FlibLegacyPatternChecker : public PatternChecker {
 public:
-    bool check(const fles::Microslice& m) override;
-    void reset() override
-    {
-        frame_number_ = 0;
-        pgen_sequence_number_ = 0;
-    };
+  bool check(const fles::Microslice& m) override;
+  void reset() override {
+    frame_number_ = 0;
+    pgen_sequence_number_ = 0;
+  };
 
 private:
-    bool check_cbmnet_frames(const uint16_t* content, size_t size,
-                             uint8_t sys_id, uint8_t sys_ver);
-    bool check_content_pgen(const uint16_t* content, size_t size);
+  bool check_cbmnet_frames(const uint16_t* content,
+                           size_t size,
+                           uint8_t sys_id,
+                           uint8_t sys_ver);
+  bool check_content_pgen(const uint16_t* content, size_t size);
 
-    uint8_t frame_number_ = 0;
-    uint16_t pgen_sequence_number_ = 0;
+  uint8_t frame_number_ = 0;
+  uint16_t pgen_sequence_number_ = 0;
 };

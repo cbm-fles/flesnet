@@ -3,14 +3,13 @@
 
 #include "PatternChecker.hpp"
 
-class FlesnetPatternChecker : public PatternChecker
-{
+class FlesnetPatternChecker : public PatternChecker {
 public:
-    explicit FlesnetPatternChecker(std::size_t arg_component)
-        : component(arg_component){};
+  explicit FlesnetPatternChecker(std::size_t arg_component)
+      : component(arg_component){};
 
-    bool check(const fles::Microslice& m) override;
+  bool check(const fles::Microslice& m) override;
 
 private:
-    std::size_t component = 0;
+  std::size_t component = 0;
 };

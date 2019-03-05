@@ -1,39 +1,25 @@
-# Copyright 2014 Dirk Hutter, Jan de Cuveland
+# Copyright 2014, 2016 Dirk Hutter, Jan de Cuveland
 
-file(GLOB APP_SOURCES *.cpp)
-file(GLOB APP_HEADERS *.hpp)
-
-include_directories("${PROJECT_SOURCE_DIR}/lib/logging"
-                    "${PROJECT_SOURCE_DIR}/lib/fles_core"
-                    "${PROJECT_SOURCE_DIR}/lib/fles_ipc"
-                    "${PROJECT_SOURCE_DIR}/lib/flib"
-                    "${PROJECT_SOURCE_DIR}/lib/flib_ipc"
-                    "${PROJECT_SOURCE_DIR}/lib")
-
-set(SERVER_LIB
-        shm_device_server.hpp
-        shm_channel_server.hpp
-        ${PROJECT_SOURCE_DIR}/lib/flib_ipc/shm_device.hpp
-        ${PROJECT_SOURCE_DIR}/lib/flib_ipc/shm_channel.hpp)
-
-set(CLIENT_LIB
-        ${PROJECT_SOURCE_DIR}/lib/flib_ipc/shm_device_client.hpp
-        ${PROJECT_SOURCE_DIR}/lib/flib_ipc/shm_channel_client.hpp
-        ${PROJECT_SOURCE_DIR}/lib/flib_ipc/shm_device.hpp
-        ${PROJECT_SOURCE_DIR}/lib/flib_ipc/shm_channel.hpp)
-
-add_executable(flib_server flib_server.cpp ${SERVER_LIB})
-add_executable(simple_consumer simple_consumer.cpp ${CLIENT_LIB})
+add_executable(flib_server flib_server.cpp)
+add_executable(simple_consumer simple_consumer.cpp)
 
 target_compile_definitions(flib_server
-        PRIVATE -DBOOST_INTERPROCESS_ENABLE_TIMEOUT_WHEN_LOCKING
-                -DBOOST_INTERPROCESS_TIMEOUT_WHEN_LOCKING_DURATION_MS=5000)
+  PRIVATE BOOST_INTERPROCESS_ENABLE_TIMEOUT_WHEN_LOCKING
+  PRIVATE BOOST_INTERPROCESS_TIMEOUT_WHEN_LOCKING_DURATION_MS=5000
+  PUBLIC BOOST_ALL_DYN_LINK
+)
+target_compile_definitions(simple_consumer PUBLIC BOOST_ALL_DYN_LINK)
 
-target_link_libraries(flib_server flib logging ${Boost_LIBRARIES} rt)
-target_link_libraries(simple_consumer logging ${Boost_LIBRARIES} rt)
+target_include_directories(flib_server SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(flib_server pthread)
-    target_link_libraries(simple_consumer pthread)
-endif()
+target_link_libraries(flib_server
+  flib flib_ipc fles_ipc fles_core logging
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt
+  etcd-cpp-api
+)
+target_link_libraries(simple_consumer
+  flib_ipc logging
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt
+)
 
+install(TARGETS flib_server simple_consumer DESTINATION bin)

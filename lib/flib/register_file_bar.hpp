@@ -23,4 +23,4 @@ protected:
   size_t m_bar_size;
   sys_bus_addr m_base_addr;
 };
-} // namespace
+} // namespace flib
