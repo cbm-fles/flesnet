@@ -42,7 +42,11 @@ public:
 
   std::string publish_address() const { return publish_address_; }
 
+  uint32_t publish_hwmark() const { return publish_hwmark_; }
+
   std::string subscribe_address() const { return subscribe_address_; }
+
+  uint32_t subscribe_hwmark() const { return subscribe_hwmark_; }
 
   uint64_t maximum_number() const { return maximum_number_; }
 
@@ -62,7 +66,9 @@ private:
   bool benchmark_ = false;
   size_t verbosity_ = 0;
   std::string publish_address_;
+  uint32_t publish_hwmark_ = 1;
   std::string subscribe_address_;
+  uint32_t subscribe_hwmark_ = 1;
   uint64_t maximum_number_ = UINT64_MAX;
   double rate_limit_ = 0.0;
 };

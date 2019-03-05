@@ -23,7 +23,7 @@ Application::Application(Parameters const& par) : par_(par) {
           par_.input_archive(), par_.input_archive_cycles()));
     }
   } else if (!par_.subscribe_address().empty()) {
-    source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address()));
+    source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address(), par_.subscribe_hwmark()));
   }
 
   if (par_.analyze()) {
@@ -53,7 +53,7 @@ Application::Application(Parameters const& par) : par_(par) {
 
   if (!par_.publish_address().empty()) {
     sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-        new fles::TimeslicePublisher(par_.publish_address())));
+        new fles::TimeslicePublisher(par_.publish_address(), par_.publish_hwmark())));
   }
 
   if (par_.benchmark()) {
