@@ -54,10 +54,16 @@ void Parameters::parse_options(int argc, char* argv[]) {
       "publish,P",
       po::value<std::string>(&publish_address_)->implicit_value("tcp://*:5556"),
       "enable timeslice publisher on given address");
+  desc_add("publish-hwm", po::value<uint32_t>(&publish_hwm_),
+           "High-water mark for the publisher, in TS, TS drop happens if more "
+           "buffered (default: 1)");
   desc_add("subscribe,S",
            po::value<std::string>(&subscribe_address_)
                ->implicit_value("tcp://localhost:5556"),
            "subscribe to timeslice publisher on given address");
+  desc_add("subscribe-hwm", po::value<uint32_t>(&subscribe_hwm_),
+           "High-water mark for the subscriber, in TS, TS drop happens if more "
+           "buffered (default: 1)");
   desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number_),
            "set the maximum number of timeslices to process (default: "
            "unlimited)");
