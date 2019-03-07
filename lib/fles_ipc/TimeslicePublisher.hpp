@@ -17,7 +17,7 @@ namespace fles {
 class TimeslicePublisher : public TimesliceSink {
 public:
   /// Construct timeslice publisher sending at given ZMQ address.
-  TimeslicePublisher(const std::string& address, uint32_t tsHwMark = 1);
+  TimeslicePublisher(const std::string& address, uint32_t hwm = 1);
 
   /// Delete copy constructor (non-copyable).
   TimeslicePublisher(const TimeslicePublisher&) = delete;
