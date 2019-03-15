@@ -161,7 +161,5 @@ private:
 
   /// Total number of RECV work requests.
   uint64_t total_recv_requests_ = 0;
-
-  const uint32_t num_cqe_ = 1000000;
 };
 } // namespace tl_libfabric

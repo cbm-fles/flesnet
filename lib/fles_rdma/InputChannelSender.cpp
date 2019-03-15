@@ -400,7 +400,6 @@ void InputChannelSender::post_send_data(uint64_t timeslice,
          (desc_offset & data_source_.desc_buffer().size_mask()));
     sge[num_sge++].lkey = mr_desc_->lkey;
   }
-  int num_desc_sge = num_sge;
   // data
   if (data_length == 0) {
     // zero chunks
