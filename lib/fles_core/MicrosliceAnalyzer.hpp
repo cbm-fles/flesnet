@@ -14,6 +14,7 @@ class PatternChecker;
 class MicrosliceAnalyzer : public fles::MicrosliceSink {
 public:
   MicrosliceAnalyzer(uint64_t arg_output_interval,
+                     size_t arg_out_verbosity,
                      std::ostream& arg_out,
                      std::string arg_output_prefix,
                      size_t component = 0);
@@ -38,6 +39,7 @@ private:
   std::unique_ptr<PatternChecker> pattern_checker_;
 
   uint64_t output_interval_ = UINT64_MAX;
+  size_t out_verbosity_;
   std::ostream& out_;
   std::string output_prefix_;
   size_t component_;

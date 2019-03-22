@@ -8,8 +8,9 @@
 
 namespace fles {
 
-TimeslicePublisher::TimeslicePublisher(const std::string& address) {
-  publisher_.setsockopt(ZMQ_SNDHWM, 1);
+TimeslicePublisher::TimeslicePublisher(const std::string& address,
+                                       uint32_t hwm) {
+  publisher_.setsockopt(ZMQ_SNDHWM, hwm);
   publisher_.bind(address.c_str());
 }
 

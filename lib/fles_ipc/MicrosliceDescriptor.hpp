@@ -73,7 +73,8 @@ enum class HeaderFormatVersion : uint8_t { Standard = 0x01 };
 enum class MicrosliceFlags : uint16_t {
   CrcValid = 0x0001,     // information in CRC field is valid
   OverflowFlim = 0x0002, // truncated by FLIM
-  OverflowUser = 0x0004  // truncated by user logic
+  OverflowUser = 0x0004, // truncated by user logic
+  DataError = 0x0008     // data error flag set by user logic
 };
 
 #pragma pack(1)

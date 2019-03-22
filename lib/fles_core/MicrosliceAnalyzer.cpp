@@ -8,11 +8,13 @@
 #include <sstream>
 
 MicrosliceAnalyzer::MicrosliceAnalyzer(uint64_t arg_output_interval,
+                                       size_t arg_out_verbosity,
                                        std::ostream& arg_out,
                                        std::string arg_output_prefix,
                                        size_t component)
-    : output_interval_(arg_output_interval), out_(arg_out),
-      output_prefix_(std::move(arg_output_prefix)), component_(component) {
+    : output_interval_(arg_output_interval), out_verbosity_(arg_out_verbosity),
+      out_(arg_out), output_prefix_(std::move(arg_output_prefix)),
+      component_(component) {
   // create CRC-32C engine (Castagnoli polynomial)
   crc32_engine_ = crcutil_interface::CRC::Create(
       0x82f63b78, 0, 32, true, 0, 0, 0,
@@ -50,53 +52,66 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms) {
 
   if (microslice_count_ == 0) {
     initialize(ms);
-    out_ << output_prefix_ << "eq_id=" << std::hex << std::showbase
-         << ms.desc().eq_id << std::endl;
-    out_ << output_prefix_
-         << "sys_id=" << static_cast<uint32_t>(ms.desc().sys_id) << std::endl;
-    out_ << output_prefix_
-         << "sys_ver=" << static_cast<uint32_t>(ms.desc().sys_ver) << std::dec
-         << std::endl;
-    out_ << output_prefix_ << "start=" << ms.desc().idx << "ns" << std::endl;
+    if (out_verbosity_ >= 2) {
+      out_ << output_prefix_ << "eq_id=" << std::hex << std::showbase
+           << ms.desc().eq_id << std::endl;
+      out_ << output_prefix_
+           << "sys_id=" << static_cast<uint32_t>(ms.desc().sys_id) << std::endl;
+      out_ << output_prefix_
+           << "sys_ver=" << static_cast<uint32_t>(ms.desc().sys_ver) << std::dec
+           << std::endl;
+      out_ << output_prefix_ << "start=" << ms.desc().idx << "ns" << std::endl;
+    }
   } else if (microslice_count_ == 1) {
     reference_delta_t_ = ms.desc().idx - previous_start_;
-    out_ << output_prefix_ << "delta_t=" << reference_delta_t_ << "ns"
-         << std::endl;
+    if (out_verbosity_ >= 2) {
+      out_ << output_prefix_ << "delta_t=" << reference_delta_t_ << "ns"
+           << std::endl;
+    }
   } else {
     uint64_t delta_t = ms.desc().idx - previous_start_;
     if (delta_t != reference_delta_t_) {
-      out_ << output_prefix_ << "delta_t=" << delta_t << "ns"
-           << " in microslice " << microslice_count_ << std::endl;
+      if (out_verbosity_ >= 3) {
+        out_ << output_prefix_ << "delta_t=" << delta_t << "ns"
+             << " in microslice " << microslice_count_ << std::endl;
+      }
       result = false;
     }
   }
 
   if ((ms.desc().flags &
        static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) != 0) {
-    out_ << output_prefix_ << "data truncated by FLIM in microslice "
-         << microslice_count_ << std::endl;
+    if (out_verbosity_ >= 3) {
+      out_ << output_prefix_ << "data truncated by FLIM in microslice "
+           << microslice_count_ << std::endl;
+    }
     ++microslice_truncated_count_;
   }
 
   if (!pattern_checker_->check(ms)) {
-    out_ << output_prefix_ << "pattern error in microslice "
-         << microslice_count_ << std::endl;
+    if (out_verbosity_ >= 3) {
+      out_ << output_prefix_ << "pattern error in microslice "
+           << microslice_count_ << std::endl;
+    }
     result = false;
   }
 
   if (((ms.desc().flags &
         static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) != 0) &&
       !check_crc(ms)) {
-    out_ << output_prefix_ << "crc failure in microslice " << microslice_count_
-         << std::endl;
+    if (out_verbosity_ >= 3) {
+      out_ << output_prefix_ << "crc failure in microslice "
+           << microslice_count_ << std::endl;
+    }
     result = false;
   }
 
   if (!result) {
-    if (microslice_error_count_ == 0) { // full dump for first error
+    if (microslice_error_count_ == 0 &&
+        out_verbosity_ >= 3) { // full dump for first error
       out_ << "microslice content:\n"
            << MicrosliceDescriptorDump(ms.desc())
-           << BufferDump(ms.content(), ms.desc().size);
+           << BufferDump(ms.content(), ms.desc().size) << std::flush;
     }
     ++microslice_error_count_;
   }
