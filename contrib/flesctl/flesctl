@@ -30,6 +30,7 @@ import subprocess
 import shutil
 import configparser
 import time
+import datetime
 import elog
 
 import inspect
@@ -263,7 +264,17 @@ def run_info(par_run_id):
 
   runconf = configparser.ConfigParser()
   runconf.read(config_file)
-  print(runconf.defaults())
+  tag = runconf["DEFAULT"].get("tag", None)
+  starttime = runconf["DEFAULT"].getint("starttime", None)
+  stoptime = runconf["DEFAULT"].getint("stoptime", None)
+  start_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(starttime))
+  stop_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stoptime))
+  duration = str(datetime.timedelta(seconds=(stoptime - starttime)))
+  print("Run number:       ", par_run_id)
+  print("Configuration tag:", tag)
+  print("Started at:       ", start_str)
+  print("Stopped at:       ", stop_str)
+  print("Duration:         ", duration)
 
 
 if __name__ == "__main__":
