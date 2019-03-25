@@ -111,11 +111,6 @@ if [ "$FLIB_SPM" ]; then
   echo "#SPM-RUN --licenses=$FLIB_SPM" >> $SPM_CFG
 fi
 
-echo -e "\n# FLIBs" >> $SPM_CFG
-for i in ${!EN_SPM[*]}; do
-   echo ${EN_SPM[$i]} >> $SPM_CFG
-done
-
 echo -e "\n# Entry nodes" >> $SPM_CFG
 for i in ${!EN_SPM[*]}; do
    echo ${EN_SPM[$i]} >> $SPM_CFG
