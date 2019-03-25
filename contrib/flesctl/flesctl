@@ -30,6 +30,7 @@ import subprocess
 import shutil
 import configparser
 import time
+import elog
 
 import inspect
 import pprint
@@ -57,6 +58,9 @@ if not run_id:
   sys.exit(1)
 reservation = config["DEFAULT"].get("Reservation", None)
 
+# elog configuration
+log_host = 'http://mcbmgw01:8080/mCBM/'
+log_attr_static = {'author': 'flesctl', 'type': 'Routine', 'category': 'mFLES'}
 
 def tags():
   for filename in glob.iglob(confdir + '/**/*.conf', recursive=True):
@@ -136,9 +140,10 @@ def start(tag):
   shutil.copy(os.path.join(confdir, tag + ".conf"), "readout.conf")
 
   # create run configuration file
+  start_time = time.time()
   runconf = configparser.ConfigParser()
   runconf['DEFAULT'] = {'Tag': tag, 'RunId': str(run_id),
-                        'StartTime': str(int(time.time()))}
+                        'StartTime': str(int(start_time))}
   with open("run.conf", "w") as runconffile:
     runconf.write(runconffile)
 
@@ -154,6 +159,21 @@ def start(tag):
   if reservation:
     cmd += ["--reservation", reservation]
   subprocess.call(cmd + ["readout.spm"]);
+
+  # create elog entry
+  log_msg = "Run started at {}".format(time.asctime(time.localtime(start_time)))
+  log_msg += " using configuration tag {}".format(tag)
+  try:
+    logbook = elog.open(log_host)
+    log_id_start = logbook.post(log_msg, attributes=log_attr_static,
+                                RunNumber=run_id, subject='run start')
+  except:
+    print("Error: electronic logbook not reachable")
+    log_id_start = -1
+
+  runconf['DEFAULT']['elog_id_start'] = str(log_id_start)
+  with open("run.conf", "w") as runconffile:
+    runconf.write(runconffile)
 
 
 def current_run_id():
@@ -177,11 +197,31 @@ def stop():
 
   print("stoppig run with id", run_id)
   subprocess.call(["/usr/bin/scancel", "--jobname", "run_{}".format(run_id)])
+  stop_time = time.time()
 
-  # update run configuration file
+  # read run configuration file
   runconf = configparser.ConfigParser()
   runconf.read("run.conf")
-  runconf['DEFAULT']['StopTime'] = str(int(time.time()))
+  log_id_start = int(runconf['DEFAULT']['elog_id_start'])
+
+  # create elog entry
+  log_msg = "Run stopped at {}".format(time.asctime(time.localtime(stop_time)))
+  try:
+    logbook = elog.open(log_host)
+    # do not reply if elog failed during start
+    if log_id_start == -1:
+      log_id_stop = logbook.post(log_msg,
+                                 attributes=log_attr_static, RunNumber=run_id, subject='run stop')
+    else:
+      log_id_stop = logbook.post(log_msg, msg_id=log_id_start, reply=True,
+                                 attributes=log_attr_static, RunNumber=run_id, subject='run stop')
+  except:
+    print("Error: electronic logbook not reachable")
+    log_id_stop = -1
+
+  # update run configuration file
+  runconf['DEFAULT']['StopTime'] = str(int(stop_time))
+  runconf['DEFAULT']['elog_id_stop'] = str(log_id_stop)
   with open("run.conf", "w") as runconffile:
     runconf.write(runconffile)
 
