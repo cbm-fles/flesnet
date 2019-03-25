@@ -162,12 +162,13 @@ def start(tag):
   subprocess.call(cmd + ["readout.spm"]);
 
   # create elog entry
-  log_msg = "Run started at {}".format(time.asctime(time.localtime(start_time)))
-  log_msg += " using configuration tag {}".format(tag)
+  log_msg = "Run started at {}".format(
+    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)))
+  log_msg += " using configuration tag {}.".format(tag)
   try:
     logbook = elog.open(log_host)
     log_id_start = logbook.post(log_msg, attributes=log_attr_static,
-                                RunNumber=run_id, subject='run start')
+                                RunNumber=run_id, subject='Run start')
   except:
     print("Error: electronic logbook not reachable")
     log_id_start = -1
@@ -203,19 +204,22 @@ def stop():
   # read run configuration file
   runconf = configparser.ConfigParser()
   runconf.read("run.conf")
+  start_time = int(runconf['DEFAULT']['StartTime'])
   log_id_start = int(runconf['DEFAULT']['elog_id_start'])
 
   # create elog entry
-  log_msg = "Run stopped at {}".format(time.asctime(time.localtime(stop_time)))
+  log_msg = "Run stopped at {}".format(
+    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stop_time)))
+  log_msg += " (duration: {}).".format(str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
   try:
     logbook = elog.open(log_host)
     # do not reply if elog failed during start
     if log_id_start == -1:
       log_id_stop = logbook.post(log_msg,
-                                 attributes=log_attr_static, RunNumber=run_id, subject='run stop')
+                                 attributes=log_attr_static, RunNumber=run_id, subject='Run stop')
     else:
       log_id_stop = logbook.post(log_msg, msg_id=log_id_start, reply=True,
-                                 attributes=log_attr_static, RunNumber=run_id, subject='run stop')
+                                 attributes=log_attr_static, RunNumber=run_id, subject='Run stop')
   except:
     print("Error: electronic logbook not reachable")
     log_id_stop = -1
