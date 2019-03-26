@@ -164,9 +164,9 @@ def start(tag):
   subprocess.call(cmd + ["readout.spm"]);
 
   # create elog entry
-  log_msg = "Run started at {}".format(
+  log_msg = "Run started at {}\n".format(
     time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)))
-  log_msg += " using configuration tag {}.".format(tag)
+  log_msg += " Tag: {}".format(tag)
   try:
     logbook = elog.open(log_host)
     log_id_start = logbook.post(log_msg, attributes=log_attr_static,
@@ -210,9 +210,9 @@ def stop():
   log_id_start = int(runconf['DEFAULT']['elog_id_start'])
 
   # create elog entry
-  log_msg = "Run stopped at {}".format(
+  log_msg = "Run stopped at {}\n".format(
     time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stop_time)))
-  log_msg += " (duration: {}).".format(str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
+  log_msg += " Duration: {}".format(str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
   try:
     logbook = elog.open(log_host)
     # do not reply if elog failed during start
