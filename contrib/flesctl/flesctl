@@ -32,6 +32,7 @@ import configparser
 import time
 import datetime
 import elog
+import signal
 
 import inspect
 import pprint
@@ -41,6 +42,7 @@ confdir = os.path.normpath("/home/flesctl/config")
 rundir_base = "/home/flesctl/run"
 flesctl_conf = "/home/flesctl/private/flesctl.conf"
 log_template = "/home/flesctl/private/logbook.template"
+flesctl_syslog = "/var/log/flesctl.log"
 
 # check if run as correct user
 run_user = "flesctl"
@@ -243,13 +245,18 @@ def status():
 
 
 def monitor():
-#  subprocess.call(["/usr/bin/multitail", "-f", "-Q", "1", "/home/flesctl/run/*/log/*"])
-#  subprocess.call(["/usr/bin/multitail", "-f", "-Iw", "/home/flesctl/run/*/log/*", "1"])
-  run_id = current_run_id()
-  if run_id is None:
-    print("error: no active run found")
-    sys.exit(1)
-  subprocess.call(["/usr/bin/tail", "-f", "/home/flesctl/run/{}/slurm.out".format(run_id)])
+  syslog_mon = True
+  if syslog_mon :
+    # syslog based monitoring
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    subprocess.call(["/usr/bin/less", "-n",  "+G", "+F", flesctl_syslog])
+  else:
+    # slurm log based monitoring
+    run_id = current_run_id()
+    if run_id is None:
+      print("error: no active run found")
+      sys.exit(1)
+    subprocess.call(["/usr/bin/tail", "-f", "/home/flesctl/run/{}/slurm.out".format(run_id)])
 
 
 def edit_logbook():
