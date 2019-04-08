@@ -93,7 +93,8 @@ private:
   void parse_options(int argc, char* argv[]) {
 
     std::string config_file;
-    unsigned log_level;
+    unsigned log_level = 2;
+    unsigned log_syslog = 2;
     std::string log_file;
 
     po::options_description generic("Generic options");
@@ -119,10 +120,16 @@ private:
     config_add("desc-buffer-size-exp",
                po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
                "exp. size of the descriptor buffer (number of entries)");
-    config_add("log-level,l", po::value<unsigned>(&log_level)->default_value(2),
-               "set the log level (all:0)");
+    config_add("log-level,l", po::value<unsigned>(&log_level)
+                                  ->default_value(log_level)
+                                  ->value_name("<n>"),
+               "set the file log level (all:0)");
     config_add("log-file,L", po::value<std::string>(&log_file),
                "name of target log file");
+    config_add("log-syslog,S", po::value<unsigned>(&log_syslog)
+                                   ->default_value(log_syslog)
+                                   ->value_name("<n>"),
+               "enable logging to syslog at given log level");
     config_add("etcd-authority",
                po::value<std::string>(&_etcd.authority)
                    ->default_value("127.0.0.1:2379"),
@@ -162,6 +169,11 @@ private:
     if (vm.count("log-file")) {
       L_(info) << "Logging output to " << log_file;
       logging::add_file(log_file, static_cast<severity_level>(log_level));
+    }
+
+    if (vm.count("log-syslog")) {
+      logging::add_syslog(logging::syslog::local0,
+                          static_cast<severity_level>(log_syslog));
     }
 
     if (vm.count("flib-addr")) {
