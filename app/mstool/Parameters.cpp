@@ -20,7 +20,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
   general_add("log-level,l", po::value<unsigned>(&log_level)
                                  ->default_value(log_level)
                                  ->value_name("<n>"),
-              "set the log level (default:2, all:0)");
+              "set the file log level (all:0)");
   general_add("log-file,L", po::value<std::string>(&log_file),
               "name of target log file");
   general_add("log-syslog,S", po::value<unsigned>(&log_syslog)

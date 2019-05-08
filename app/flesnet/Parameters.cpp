@@ -78,11 +78,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   generic_add("config-file,f",
               po::value<std::string>(&config_file)->value_name("<filename>"),
               "read configuration from file");
-  generic_add("log-level,l",
-              po::value<unsigned>(&log_level)
-                  ->default_value(log_level)
-                  ->value_name("<n>"),
-              "set the global log level (all: 0)");
+  generic_add("log-level,l", po::value<unsigned>(&log_level)
+                                 ->default_value(log_level)
+                                 ->value_name("<n>"),
+              "set the file log level (all:0)");
   generic_add("log-file,L",
               po::value<std::string>(&log_file)->value_name("<filename>"),
               "write log output to file");
