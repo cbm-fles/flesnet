@@ -19,9 +19,9 @@ public:
 
   ~RDMSocketsProvider();
 
-  virtual bool has_av() const { return true; };
-  virtual bool has_eq_at_eps() const { return false; };
-  virtual bool is_connection_oriented() const { return false; };
+  virtual bool has_av() const override { return true; };
+  virtual bool has_eq_at_eps() const override { return false; };
+  virtual bool is_connection_oriented() const override { return false; };
 
   struct fi_info* get_info() override {
     assert(info_ != nullptr);

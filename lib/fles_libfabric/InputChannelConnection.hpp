@@ -66,13 +66,13 @@ public:
   /**
    \param event RDMA connection manager event structure
    */
-  virtual void on_established(struct fi_eq_cm_entry* event) /*override*/;
+  virtual void on_established(struct fi_eq_cm_entry* event) override;
   //
   void dereg_mr();
 
   virtual void on_rejected(struct fi_eq_err_entry* event) override;
 
-  virtual void on_disconnected(struct fi_eq_cm_entry* event) /*override*/;
+  virtual void on_disconnected(struct fi_eq_cm_entry* event) override;
 
   virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
@@ -140,8 +140,6 @@ private:
   unsigned int pending_write_requests_{0};
 
   unsigned int max_pending_write_requests_{0};
-
-  uint_fast16_t remote_connection_index_;
 
   fi_addr_t partner_addr_ = 0;
 };

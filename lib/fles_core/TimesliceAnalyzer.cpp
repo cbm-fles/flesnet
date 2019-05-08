@@ -133,7 +133,8 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
           out_ << "microslice content:\n"
                << MicrosliceDescriptorDump(ts.get_microslice(c, m).desc())
                << BufferDump(ts.get_microslice(c, m).content(),
-                             ts.get_microslice(c, m).desc().size);
+                             ts.get_microslice(c, m).desc().size)
+               << std::flush;
         }
         ++timeslice_error_count_;
         return false;

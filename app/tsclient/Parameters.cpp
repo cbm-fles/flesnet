@@ -9,16 +9,23 @@ namespace po = boost::program_options;
 
 void Parameters::parse_options(int argc, char* argv[]) {
   unsigned log_level = 2;
+  unsigned log_syslog = 2;
   std::string log_file;
 
   po::options_description desc("Allowed options");
   auto desc_add = desc.add_options();
   desc_add("version,V", "print version string");
   desc_add("help,h", "produce help message");
-  desc_add("log-level,l", po::value<unsigned>(&log_level),
-           "set the log level (default:2, all:0)");
+  desc_add("log-level,l", po::value<unsigned>(&log_level)
+                              ->default_value(log_level)
+                              ->value_name("<n>"),
+           "set the file log level (all:0)");
   desc_add("log-file,L", po::value<std::string>(&log_file),
            "name of target log file");
+  desc_add("log-syslog,S", po::value<unsigned>(&log_syslog)
+                               ->default_value(log_syslog)
+                               ->value_name("<n>"),
+           "enable logging to syslog at given log level");
   desc_add("client-index,c", po::value<int32_t>(&client_index_),
            "index of this executable in the list of processor tasks");
   desc_add("analyze-pattern,a",
@@ -47,10 +54,16 @@ void Parameters::parse_options(int argc, char* argv[]) {
       "publish,P",
       po::value<std::string>(&publish_address_)->implicit_value("tcp://*:5556"),
       "enable timeslice publisher on given address");
+  desc_add("publish-hwm", po::value<uint32_t>(&publish_hwm_),
+           "High-water mark for the publisher, in TS, TS drop happens if more "
+           "buffered (default: 1)");
   desc_add("subscribe,S",
            po::value<std::string>(&subscribe_address_)
                ->implicit_value("tcp://localhost:5556"),
            "subscribe to timeslice publisher on given address");
+  desc_add("subscribe-hwm", po::value<uint32_t>(&subscribe_hwm_),
+           "High-water mark for the subscriber, in TS, TS drop happens if more "
+           "buffered (default: 1)");
   desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number_),
            "set the maximum number of timeslices to process (default: "
            "unlimited)");
@@ -75,6 +88,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   if (vm.count("log-file")) {
     L_(info) << "Logging output to " << log_file;
     logging::add_file(log_file, static_cast<severity_level>(log_level));
+  }
+  if (vm.count("log-syslog")) {
+    logging::add_syslog(logging::syslog::local0,
+                        static_cast<severity_level>(log_syslog));
   }
 
   size_t input_sources = vm.count("shm-identifier") +

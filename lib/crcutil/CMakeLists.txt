@@ -9,6 +9,8 @@ if(APPLE)
   set(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols <TARGET>")
 endif()
 
+add_compile_options(-Wno-expansion-to-defined)
+
 add_library(crcutil ${LIB_SOURCES} ${LIB_HEADERS})
 
 target_include_directories(crcutil PUBLIC .)

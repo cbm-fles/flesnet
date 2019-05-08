@@ -24,9 +24,9 @@ public:
   /// The VerbsProvider default destructor.
   ~VerbsProvider();
 
-  virtual bool has_av() const { return false; };
-  virtual bool has_eq_at_eps() const { return true; };
-  virtual bool is_connection_oriented() const { return true; };
+  virtual bool has_av() const override { return false; };
+  virtual bool has_eq_at_eps() const override { return true; };
+  virtual bool is_connection_oriented() const override { return true; };
 
   struct fi_info* get_info() override {
     assert(info_ != nullptr);

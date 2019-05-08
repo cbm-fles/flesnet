@@ -78,7 +78,6 @@ private:
   // used in connection-less mode
   InputChannelStatusMessage recv_connect_message_ = InputChannelStatusMessage();
 
-  struct fid_mr* mr_send_ = nullptr;
   struct fid_mr* mr_recv_ = nullptr;
 
   TimesliceBuffer& timeslice_buffer_;

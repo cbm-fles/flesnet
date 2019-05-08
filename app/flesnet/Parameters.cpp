@@ -69,6 +69,7 @@ std::ostream& operator<<(std::ostream& out,
 
 void Parameters::parse_options(int argc, char* argv[]) {
   unsigned log_level = 2;
+  unsigned log_syslog = 2;
   std::string log_file;
   std::string config_file;
 
@@ -77,14 +78,17 @@ void Parameters::parse_options(int argc, char* argv[]) {
   generic_add("config-file,f",
               po::value<std::string>(&config_file)->value_name("<filename>"),
               "read configuration from file");
-  generic_add("log-level,l",
-              po::value<unsigned>(&log_level)
-                  ->default_value(log_level)
-                  ->value_name("<n>"),
-              "set the global log level (all: 0)");
+  generic_add("log-level,l", po::value<unsigned>(&log_level)
+                                 ->default_value(log_level)
+                                 ->value_name("<n>"),
+              "set the file log level (all:0)");
   generic_add("log-file,L",
               po::value<std::string>(&log_file)->value_name("<filename>"),
               "write log output to file");
+  generic_add("log-syslog,S", po::value<unsigned>(&log_syslog)
+                                  ->default_value(log_syslog)
+                                  ->value_name("<n>"),
+              "enable logging to syslog at given log level");
   generic_add("help,h", "display this help and exit");
   generic_add("version,V", "output version information and exit");
 
@@ -173,6 +177,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
       L_(info) << "increased file log level to " << log_level;
     }
     logging::add_file(log_file, static_cast<severity_level>(log_level));
+  }
+  if (vm.count("log-syslog")) {
+    logging::add_syslog(logging::syslog::local0,
+                        static_cast<severity_level>(log_syslog));
   }
 
   if (timeslice_size_ < 1) {

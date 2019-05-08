@@ -23,14 +23,15 @@ Application::Application(Parameters const& par) : par_(par) {
           par_.input_archive(), par_.input_archive_cycles()));
     }
   } else if (!par_.subscribe_address().empty()) {
-    source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address()));
+    source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address(),
+                                                par_.subscribe_hwm()));
   }
 
   if (par_.analyze()) {
     std::string output_prefix =
         boost::lexical_cast<std::string>(par_.client_index()) + ": ";
     sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-        new TimesliceAnalyzer(10000, status_log_.stream, output_prefix)));
+        new TimesliceAnalyzer(1000, status_log_.stream, output_prefix)));
   }
 
   if (par_.verbosity() > 0) {
@@ -52,8 +53,9 @@ Application::Application(Parameters const& par) : par_(par) {
   }
 
   if (!par_.publish_address().empty()) {
-    sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-        new fles::TimeslicePublisher(par_.publish_address())));
+    sinks_.push_back(
+        std::unique_ptr<fles::TimesliceSink>(new fles::TimeslicePublisher(
+            par_.publish_address(), par_.publish_hwm())));
   }
 
   if (par_.benchmark()) {

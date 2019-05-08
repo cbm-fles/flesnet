@@ -4,8 +4,9 @@
 
 namespace fles {
 
-TimesliceSubscriber::TimesliceSubscriber(const std::string& address) {
-  subscriber_.setsockopt(ZMQ_RCVHWM, 1);
+TimesliceSubscriber::TimesliceSubscriber(const std::string& address,
+                                         uint32_t hwm) {
+  subscriber_.setsockopt(ZMQ_RCVHWM, hwm);
   subscriber_.connect(address.c_str());
   subscriber_.setsockopt(ZMQ_SUBSCRIBE, nullptr, 0);
 }
