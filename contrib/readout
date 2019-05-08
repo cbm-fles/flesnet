@@ -162,7 +162,8 @@ cleanup () {
     pkill -9 -s $SID tsclient
     pkill -9 -s $SID en_readout
     pkill -9 -s $SID flib_server
-    rm /dev/shm/flesnet*
+    rm /dev/shm/shm_server*
+    rm /dev/shm/shm_flesnet*
     exit -1
 }
 

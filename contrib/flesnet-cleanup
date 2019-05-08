@@ -13,6 +13,12 @@ killall -9 mstool
 killall -9 flesnet
 killall -9 tsclient
 
-rm /dev/shm/flesnet*
+# from readout
+rm /dev/shm/shm_flesnet*
+rm /dev/shm/shm_server*
+
+# from flesctl
+#rm /dev/shm/flesnet*
+#rm /dev/shm/flib_server*
 
 #echo "Please reconfigure FPGA"
