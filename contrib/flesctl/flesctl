@@ -30,6 +30,9 @@ import subprocess
 import shutil
 import configparser
 import time
+import datetime
+import elog
+import signal
 
 import inspect
 import pprint
@@ -39,6 +42,7 @@ confdir = os.path.normpath("/home/flesctl/config")
 rundir_base = "/home/flesctl/run"
 flesctl_conf = "/home/flesctl/private/flesctl.conf"
 log_template = "/home/flesctl/private/logbook.template"
+flesctl_syslog = "/var/log/flesctl.log"
 
 # check if run as correct user
 run_user = "flesctl"
@@ -57,6 +61,9 @@ if not run_id:
   sys.exit(1)
 reservation = config["DEFAULT"].get("Reservation", None)
 
+# elog configuration
+log_host = 'http://mcbmgw01:8080/mCBM/'
+log_attr_static = {'author': 'flesctl', 'type': 'Routine', 'category': 'mFLES'}
 
 def tags():
   for filename in glob.iglob(confdir + '/**/*.conf', recursive=True):
@@ -136,9 +143,10 @@ def start(tag):
   shutil.copy(os.path.join(confdir, tag + ".conf"), "readout.conf")
 
   # create run configuration file
+  start_time = time.time()
   runconf = configparser.ConfigParser()
   runconf['DEFAULT'] = {'Tag': tag, 'RunId': str(run_id),
-                        'StartTime': str(int(time.time()))}
+                        'StartTime': str(int(start_time))}
   with open("run.conf", "w") as runconffile:
     runconf.write(runconffile)
 
@@ -154,6 +162,22 @@ def start(tag):
   if reservation:
     cmd += ["--reservation", reservation]
   subprocess.call(cmd + ["readout.spm"]);
+
+  # create elog entry
+  log_msg = "Run started at {}\n".format(
+    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)))
+  log_msg += " Tag: {}".format(tag)
+  try:
+    logbook = elog.open(log_host)
+    log_id_start = logbook.post(log_msg, attributes=log_attr_static,
+                                RunNumber=run_id, subject='Run start')
+  except:
+    print("Error: electronic logbook not reachable")
+    log_id_start = -1
+
+  runconf['DEFAULT']['elog_id_start'] = str(log_id_start)
+  with open("run.conf", "w") as runconffile:
+    runconf.write(runconffile)
 
 
 def current_run_id():
@@ -177,11 +201,34 @@ def stop():
 
   print("stoppig run with id", run_id)
   subprocess.call(["/usr/bin/scancel", "--jobname", "run_{}".format(run_id)])
+  stop_time = time.time()
 
-  # update run configuration file
+  # read run configuration file
   runconf = configparser.ConfigParser()
   runconf.read("run.conf")
-  runconf['DEFAULT']['StopTime'] = str(int(time.time()))
+  start_time = int(runconf['DEFAULT']['StartTime'])
+  log_id_start = int(runconf['DEFAULT']['elog_id_start'])
+
+  # create elog entry
+  log_msg = "Run stopped at {}\n".format(
+    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stop_time)))
+  log_msg += " Duration: {}".format(str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
+  try:
+    logbook = elog.open(log_host)
+    # do not reply if elog failed during start
+    if log_id_start == -1:
+      log_id_stop = logbook.post(log_msg,
+                                 attributes=log_attr_static, RunNumber=run_id, subject='Run stop')
+    else:
+      log_id_stop = logbook.post(log_msg, msg_id=log_id_start, reply=True,
+                                 attributes=log_attr_static, RunNumber=run_id, subject='Run stop')
+  except:
+    print("Error: electronic logbook not reachable")
+    log_id_stop = -1
+
+  # update run configuration file
+  runconf['DEFAULT']['StopTime'] = str(int(stop_time))
+  runconf['DEFAULT']['elog_id_stop'] = str(log_id_stop)
   with open("run.conf", "w") as runconffile:
     runconf.write(runconffile)
 
@@ -198,13 +245,18 @@ def status():
 
 
 def monitor():
-#  subprocess.call(["/usr/bin/multitail", "-f", "-Q", "1", "/home/flesctl/run/*/log/*"])
-#  subprocess.call(["/usr/bin/multitail", "-f", "-Iw", "/home/flesctl/run/*/log/*", "1"])
-  run_id = current_run_id()
-  if run_id is None:
-    print("error: no active run found")
-    sys.exit(1)
-  subprocess.call(["/usr/bin/tail", "-f", "/home/flesctl/run/{}/slurm.out".format(run_id)])
+  syslog_mon = True
+  if syslog_mon :
+    # syslog based monitoring
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    subprocess.call(["/usr/bin/less", "-n",  "+G", "+F", flesctl_syslog])
+  else:
+    # slurm log based monitoring
+    run_id = current_run_id()
+    if run_id is None:
+      print("error: no active run found")
+      sys.exit(1)
+    subprocess.call(["/usr/bin/tail", "-f", "/home/flesctl/run/{}/slurm.out".format(run_id)])
 
 
 def edit_logbook():
@@ -223,7 +275,17 @@ def run_info(par_run_id):
 
   runconf = configparser.ConfigParser()
   runconf.read(config_file)
-  print(runconf.defaults())
+  tag = runconf["DEFAULT"].get("tag", None)
+  starttime = runconf["DEFAULT"].getint("starttime", None)
+  stoptime = runconf["DEFAULT"].getint("stoptime", None)
+  start_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(starttime))
+  stop_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stoptime))
+  duration = str(datetime.timedelta(seconds=(stoptime - starttime)))
+  print("Run number:       ", par_run_id)
+  print("Configuration tag:", tag)
+  print("Started at:       ", start_str)
+  print("Stopped at:       ", stop_str)
+  print("Duration:         ", duration)
 
 
 if __name__ == "__main__":

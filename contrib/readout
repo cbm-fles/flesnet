@@ -162,7 +162,8 @@ cleanup () {
     pkill -9 -s $SID tsclient
     pkill -9 -s $SID en_readout
     pkill -9 -s $SID flib_server
-    rm /dev/shm/flesnet*
+    rm /dev/shm/shm_server*
+    rm /dev/shm/shm_flesnet*
     exit -1
 }
 
@@ -250,7 +251,7 @@ FLESNET_PRIV_CFG=(-e "$TS_PROCESSOR")
 FLESNET_PRIV_CFG+=("${FLESNET_CFG[@]}")
 
 CN_INDEX=(-o 0)
-NODES+=(-O shm://127.0.0.1/shm_flesnet_?datasize=$BUF_SIZE_EXP)
+NODES+=(-O shm://127.0.0.1/shm_flesnet_0?datasize=$BUF_SIZE_EXP)
 
 IN_CFG=(-L ${OUTFILE}flesnet_in.log)
 

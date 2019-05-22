@@ -111,7 +111,7 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms) {
         out_verbosity_ >= 3) { // full dump for first error
       out_ << "microslice content:\n"
            << MicrosliceDescriptorDump(ms.desc())
-           << BufferDump(ms.content(), ms.desc().size);
+           << BufferDump(ms.content(), ms.desc().size) << std::flush;
     }
     ++microslice_error_count_;
   }

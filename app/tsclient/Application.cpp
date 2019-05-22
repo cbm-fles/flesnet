@@ -31,7 +31,7 @@ Application::Application(Parameters const& par) : par_(par) {
     std::string output_prefix =
         boost::lexical_cast<std::string>(par_.client_index()) + ": ";
     sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(
-        10000, status_log_.stream, output_prefix, nullptr)));
+        1000, status_log_.stream, output_prefix, nullptr)));
   }
 
   if (par_.verbosity() > 0) {

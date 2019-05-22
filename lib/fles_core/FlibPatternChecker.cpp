@@ -21,18 +21,33 @@ bool FlibPatternChecker::check(const fles::Microslice& m) {
     ++flib_pgen_packet_number_;
   }
 
-  // Do not check last word size and last word if ms was truncated
-  // Last word check will be skipped because last_word_size = 0
-  if (m.desc().size >= 1 &&
-      ((m.desc().flags &
-        static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) == 0)) {
+  if (m.desc().size >= 1) {
     last_word_size = m.content()[0];
-    if ((m.desc().size & 0x7) != (last_word_size & 0x7)) {
-      std::cerr << "Flib pgen: error in last word size" << std::endl;
-      std::cerr << "desc.size " << m.desc().size << std::endl;
+    // Assert last word size is in valid range form 0 to 8 bytes
+    if (last_word_size > 8) {
+      std::cerr << "Flib pgen: error in last word size: out of bounds"
+                << std::endl;
       std::cerr << "last word " << static_cast<uint32_t>(last_word_size)
                 << std::endl;
+      last_word_size = 0;
       return false;
+    }
+    // Do not check last word size consistency and last word content if ms was
+    // truncated
+    if ((m.desc().flags &
+         static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) == 0) {
+      if ((m.desc().size & 0x7) != (last_word_size & 0x7)) {
+        std::cerr
+            << "Flib pgen: error in last word size: inconsistent with desc.size"
+            << std::endl;
+        std::cerr << "desc.size " << m.desc().size << std::endl;
+        std::cerr << "last word " << static_cast<uint32_t>(last_word_size)
+                  << std::endl;
+        return false;
+      }
+    } else {
+      // if truncated set to 0 to skip last word content check at the end
+      last_word_size = 0;
     }
   }
 
