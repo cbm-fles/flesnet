@@ -10,7 +10,7 @@
 TimesliceAnalyzer::TimesliceAnalyzer(uint64_t arg_output_interval,
                                      std::ostream& arg_out,
                                      std::string arg_output_prefix,
-                                     std::ostream& arg_hist)
+                                     std::ostream* arg_hist)
     : output_interval_(arg_output_interval), out_(arg_out),
       output_prefix_(std::move(arg_output_prefix)), hist_(arg_hist) {
   // create CRC-32C engine (Castagnoli polynomial)
@@ -74,11 +74,13 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
   bool error = truncated || pattern_error || crc_error;
 
   // output ms stats
-  hist_ << component << " " << microslice << " " << m.desc().eq_id << " "
-        << m.desc().flags << " " << uint16_t(m.desc().sys_id) << " "
-        << uint16_t(m.desc().sys_ver) << " " << m.desc().idx << " "
-        << m.desc().size << " " << truncated << " " << pattern_error << " "
-        << crc_error << "\n";
+  if (hist_) {
+    *hist_ << component << " " << microslice << " " << m.desc().eq_id << " "
+           << m.desc().flags << " " << uint16_t(m.desc().sys_id) << " "
+           << uint16_t(m.desc().sys_ver) << " " << m.desc().idx << " "
+           << m.desc().size << " " << truncated << " " << pattern_error << " "
+           << crc_error << "\n";
+  }
 
   return !error;
 }

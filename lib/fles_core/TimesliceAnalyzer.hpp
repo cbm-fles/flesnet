@@ -16,7 +16,7 @@ public:
   TimesliceAnalyzer(uint64_t arg_output_interval,
                     std::ostream& arg_out,
                     std::string arg_output_prefix,
-                    std::ostream& arg_hist);
+                    std::ostream* arg_hist);
   ~TimesliceAnalyzer() override;
 
   void put(std::shared_ptr<const fles::Timeslice> timeslice) override;
@@ -48,7 +48,7 @@ private:
   uint64_t output_interval_ = UINT64_MAX;
   std::ostream& out_;
   std::string output_prefix_;
-  std::ostream& hist_;
+  std::ostream* hist_;
 
   size_t timeslice_count_ = 0;
   size_t timeslice_error_count_ = 0;
