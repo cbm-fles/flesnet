@@ -9,9 +9,10 @@
 
 TimesliceAnalyzer::TimesliceAnalyzer(uint64_t arg_output_interval,
                                      std::ostream& arg_out,
-                                     std::string arg_output_prefix)
+                                     std::string arg_output_prefix,
+                                     std::ostream& arg_hist)
     : output_interval_(arg_output_interval), out_(arg_out),
-      output_prefix_(std::move(arg_output_prefix)) {
+      output_prefix_(std::move(arg_output_prefix)), hist_(arg_hist) {
   // create CRC-32C engine (Castagnoli polynomial)
   crc32_engine_ = crcutil_interface::CRC::Create(
       0x82f63b78, 0, 32, true, 0, 0, 0,
@@ -52,24 +53,34 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
   ++microslice_count_;
   content_bytes_ += m.desc().size;
 
-  if ((m.desc().flags &
-       static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) != 0) {
+  bool truncated =
+      (m.desc().flags &
+       static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) != 0;
+  if (truncated) {
     out_ << output_prefix_ << " microslice " << microslice
          << " truncated by FLIM" << std::endl;
   }
 
-  if (!pattern_checkers_.at(component)->check(m)) {
-    return false;
-  }
+  bool pattern_error = !pattern_checkers_.at(component)->check(m);
 
-  if (((m.desc().flags &
+  bool crc_error =
+      ((m.desc().flags &
         static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) != 0) &&
-      !check_crc(m)) {
+      !check_crc(m);
+  if (crc_error) {
     out_ << "crc failure in microslice " << microslice << std::endl;
-    return false;
   }
 
-  return true;
+  bool error = truncated || pattern_error || crc_error;
+
+  // output ms stats
+  hist_ << component << " " << microslice << " " << m.desc().eq_id << " "
+        << m.desc().flags << " " << uint16_t(m.desc().sys_id) << " "
+        << uint16_t(m.desc().sys_ver) << " " << m.desc().idx << " "
+        << m.desc().size << " " << truncated << " " << pattern_error << " "
+        << crc_error << "\n";
+
+  return !error;
 }
 
 void TimesliceAnalyzer::initialize(const fles::Timeslice& ts) {
@@ -133,7 +144,8 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
           out_ << "microslice content:\n"
                << MicrosliceDescriptorDump(ts.get_microslice(c, m).desc())
                << BufferDump(ts.get_microslice(c, m).content(),
-                             ts.get_microslice(c, m).desc().size);
+                             ts.get_microslice(c, m).desc().size)
+               << std::flush;
         }
         ++timeslice_error_count_;
         return false;
