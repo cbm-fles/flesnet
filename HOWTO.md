@@ -41,7 +41,7 @@ Download a bit file from the build server
 The official FLIB repository and continuous integration can be found
 under
 
-    https://cbmgsi.githost.io/fles/flib/
+    https://git.cbm.gsi.de/fles/flib/
 
 To download the latest build you can adopt
 
