@@ -19,6 +19,7 @@
 constexpr uint32_t interval_ms = 1000;
 constexpr bool clear_screen = true;
 constexpr bool detailed_stats = true;
+std::vector <std::string> error_vector;
 
 struct pci_perf_data_t {
   uint64_t cycle_cnt;
@@ -42,35 +43,22 @@ static void s_catch_signals(void) {
   sigaction(SIGINT, &action, NULL);
 }
 
-void wrong_input() {
-
-  std::cout << std::endl;
-    std::cout << "Wrong parameter(s).";
-    std::cout << std::endl;
-    std::cout << "Correct parameters are 'help' or 'Terminal' or 'Grafana'";
-    std::cout << std::endl;
-    std::cout << "Type parameter 'help' only to get an overview of ";
-    std::cout << "the shown of the Terminal view." << std::endl;
-    std::cout << std::endl;
-
-}
-
+int baching_count = 1;
 int went_wrong_counter = 0;
 
-void something_went_wrong(web::http::http_response http_response, int task) {
+void something_went_wrong(web::http::http_response http_response) {
 
-  if (task == 0) { std::cout << "At task 'check_db_exists'."; }
-  if (task == 1) { std::cout << "At task 'create_database'."; }
-  if (task == 2) { std::cout << "At task 'http_post'."; }
-
-  std::cout << "Something went wrong. Server returned status code: " << http_response.status_code() << std::endl;
-  std::cout << "For further information on status codes please visit ";
-  std::cout << "'https://docs.influxdata.com/influxdb/v1.7/tools/api/'";
-  std::cout << std::endl;
+  //std::cout << "Something went wrong. Server returned status code: " << http_response.status_code() << std::endl;
+  //std::cout << "For further information on status codes please visit ";
+  //std::cout << "'https://docs.influxdata.com/influxdb/v1.7/tools/api/'";
+  //std::cout << std::endl;
 
   pplx::task<void> jsonTask = http_response.extract_json().then([&] (web::json::value json_value) {
+    std::stringstream ss;
+    ss << json_value;
+    error_vector.push_back(ss.str());
 
-    std::cout << json_value << std::endl;
+    //std::cout << json_value << std::endl;
 
   }); 
 
@@ -83,122 +71,19 @@ void something_went_wrong(web::http::http_response http_response, int task) {
 
     std::cout << "web::http::http_exception: " << e.what() << std::endl;
 
-    throw;
+    ++went_wrong_counter;
 
   }
-
-  throw std::exception();
-}
-
-pplx::task<bool> check_db_exists (std::string db_name_, web::http::client::http_client http_client) {
-
-  std::string db_name = db_name_;
-  web::uri_builder uri_builder(U("/query"));
-  uri_builder.append_query(U("q=SHOW+DATABASES"));
-
-  std::string db_name_new = "[\"";
-  db_name_new.append(db_name);
-  db_name_new.append("\"]");
-
-  return http_client.request(web::http::methods::GET, uri_builder.to_string())
-
-  .then([=] (web::http::http_response http_response) {
-
-    if (http_response.status_code() != 200) {
-
-      something_went_wrong(http_response, 0);
-
-    }
-
-    return http_response.extract_json();
-
-  })
-
-  .then([=] (web::json::value json_value) {
-
-    std::string json_string = json_value.serialize();
-    size_t found_begin = json_string.find("\"values\":[") + 10;
-    size_t found_end = json_string.find("]}],\"statement_id\"");
-    //values as string [“db0"],["db1"],["db2"],....
-    std::string values_string = json_string.substr(found_begin,found_end);
-    //parsing the string containing all databases
-    size_t pos = 0;
-    std::string delimiter = ",";
-    std::string db_string;
-
-    while ((pos = values_string.find("statement_id")) != std::string::npos) {
-
-        values_string = values_string.substr(0, pos);
-
-    }
-
-    while ((pos = values_string.find(delimiter)) != std::string::npos) { 
-
-      db_string = values_string.substr(0, pos);
-
-      values_string.erase(0, pos + delimiter.length());
-      if (db_string.compare(db_name_new) == 0) {
-
-        //*db_p = true;
-        std::cout << "Databse does exists." << std::endl;
-        return true;
-        
-      }
-    }
-
-    pos = values_string.find("]");
-    db_string = values_string.substr(0, (pos + 1));
-
-    if (db_string.compare(db_name_new) == 0) {
-
-      //*db_p = true;
-      std::cout << "Databse does exists." << std::endl;
-      return true;
-      
-    }
-    else {
-
-      return false;
-
-    }
-  });
-}
-
-pplx::task<void> create_database (std::string db_name_, web::http::client::http_client http_client) {
-
-  std::string db_name = db_name_;
-  web::http::http_response http_response;
-
-  std::string build = "q=CREATE+DATABASE+";
-  build.append(db_name_);
-      
-  web::uri_builder uri_builder(U("/query"));
-  uri_builder.append_query(U(build));
-
-  return http_client.request(web::http::methods::POST, uri_builder.to_string())
-
-  .then([&] (web::http::http_response http_response) {
-
-    if (http_response.status_code() != 200) {
-
-      something_went_wrong(http_response, 1);
-
-    }
-    else {
-
-      std::cout << "Database created successfully." << std::endl;
-
-    }
-
-
-  });
+  ++went_wrong_counter;
+  if (error_vector.size() > 5) {
+    throw std::exception();
+  }
 }
 
 pplx::task<void> http_post (std::string db, std::string db_input_string, web::http::client::http_client http_client) {
 
   web::uri_builder uri_builder(U("/write"));
   uri_builder.append_query(U("db"), U(db));
-  //actual http request
   web::http::http_request http_request; 
   http_request.set_body(db_input_string);
 
@@ -208,10 +93,9 @@ pplx::task<void> http_post (std::string db, std::string db_input_string, web::ht
 
     if (http_response.status_code() != 204) {
 
-      something_went_wrong(http_response, 2);
+      something_went_wrong(http_response);
 
     }
-    //else { std::cout << "Success!" << std::endl; }
   });
 }
 
@@ -219,26 +103,30 @@ int main(int argc, char* argv[]) {
   s_catch_signals();
 
   bool terminal = false;
-  bool grafana = false;
   std::vector <std::string> db_input_vector;
   std::vector <std::string> influx_base_tag_vector;
   std::vector <std::string> influx_base_field_vector;
-  std::string help_str = "help";
-  std::string terminal_str = "Terminal";
-  std::string grafana_str = "Grafana";
-  std::string url = "http://localhost:8086/"; //fast testing
+  //std::string help_str = "help";
+  std::string url = "http://10.83.255.28:8086/"; //fast testing
   std::string db = "flib_data";
   std::string user = "admin";
   std::string password = "admin";
-  std::vector<web::http::client::http_client> http_client_vector;
+  //std::vector<web::http::client::http_client> http_client_vector;
   auto host_name = boost::asio::ip::host_name();
+
+  web::http::client::http_client_config http_client_config;
+  web::credentials credentials(U(user), U(password));
+  http_client_config.set_credentials(credentials);
+  //http client 
+  web::http::client::http_client http_client(url, http_client_config);
+  //http_client_vector.push_back(http_client);
 
   try {
     // display help if any parameter other the required is given
-    if (argc == 2) {
+    //if (argc == 2) {
 
     	//if (argv[1] == "help") {
-      if (help_str.compare(argv[1]) == 0) {
+      if (argc != 1) {
 
         (void)argv;
 
@@ -270,8 +158,9 @@ int main(int argc, char* argv[]) {
 
         return EXIT_SUCCESS;
       }
+
       	//else if (argv[1] == "Terminal") {
-      else if (terminal_str.compare(argv[1]) == 0) {
+    /*  else if (terminal_str.compare(argv[1]) == 0) {
 
       	terminal = true;
 
@@ -280,7 +169,7 @@ int main(int argc, char* argv[]) {
       else if (grafana_str.compare(argv[1]) == 0) {
 
       	grafana = true;
-/*schnelleres testen ohne usereingabe
+        schnelleres testen ohne usereingabe
         std::cout << "DB Location: " << std::endl;
         std::getline(std::cin, url);
         std::cout << "DB to use: " << std::endl;
@@ -293,7 +182,7 @@ int main(int argc, char* argv[]) {
         std::getline(std::cin, user);
         std::cout << "db_user_password: " << std::endl;
         std::getline(std::cin, password);
-        */
+        
 
         //set credentials for http client
         web::http::client::http_client_config http_client_config;
@@ -324,7 +213,7 @@ int main(int argc, char* argv[]) {
 
       return EXIT_SUCCESS;
 
-    }
+    }*/
 
     std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
     std::vector<std::unique_ptr<flib::flib_device_flesin>> flibs;
@@ -359,6 +248,7 @@ int main(int argc, char* argv[]) {
 
     }
 
+    int counter_i = 0;
     // main output loop
     size_t loop_cnt = 0;
     while (s_interrupted == 0) {
@@ -377,9 +267,9 @@ int main(int argc, char* argv[]) {
 
         if (terminal) {
 
-          pci_perf_acc.at(j).cycle_cnt += pci_cycle_cnt;  //?
-          pci_perf_acc.at(j).pci_stall += pci_stall_cyl;  //?
-          pci_perf_acc.at(j).pci_trans += pci_trans_cyl;  //?
+          pci_perf_acc.at(j).cycle_cnt += pci_cycle_cnt;
+          pci_perf_acc.at(j).pci_stall += pci_stall_cyl;
+          pci_perf_acc.at(j).pci_trans += pci_trans_cyl;
 
         }
         
@@ -396,7 +286,6 @@ int main(int argc, char* argv[]) {
                                 static_cast<float>(pci_perf_acc.at(j).cycle_cnt);
           float pci_idle_acc = 1 - pci_trans_acc - pci_stall_acc;
 
-          //status fenster oberste paar zeilen
           std::cout << "FLIB " << j << " (" << flib->print_devinfo() << ")"
                     << std::endl;
           std::cout << std::setprecision(4) << "PCIe idle " << std::setw(9)
@@ -411,23 +300,17 @@ int main(int argc, char* argv[]) {
 
         std::stringstream input;
 
-        if (grafana) {
-
-          //flib_data,flib=01:00:00,link=0 pci_idle=x1,...,dma_s=y1,...
-          //flib_data,flib=01:00:00,link=1 pci_idle=x1,...,dma_s=y2,...
-          std::string dev_info = flib->print_devinfo();
-          //clear input
-          input.str("");
-          input << "flib_data," << "host=" << host_name << ",flib=" << dev_info;
-          influx_base_tag_vector.push_back(input.str());
-          //std::cout << "base tag-back: " << influx_base_tag_vector.back() << std::endl;
-          //clear input
-          input.str("");
-          input << " pci_idle=" << pci_idle;
-          input << ",pci_stall=" << pci_stall;
-          input << ",pci_trans=" << pci_trans;
-
-        }
+        //flib_data,flib=01:00:00,link=0 pci_idle=x1,...,dma_s=y1,...
+        std::string dev_info = flib->print_devinfo();
+        //clear input
+        input.str("");
+        input << "flib_data," << "host=" << host_name << ",flib=" << dev_info;
+        influx_base_tag_vector.push_back(input.str());
+        //clear input
+        input.str("");
+        input << " pci_idle=" << pci_idle;
+        input << ",pci_stall=" << pci_stall;
+        input << ",pci_trans=" << pci_trans;
 
         if (detailed_stats) {
           flib::dma_perf_data_t dma_perf = flib->get_dma_perf();
@@ -465,19 +348,13 @@ int main(int argc, char* argv[]) {
             std::cout << ss.str();
 
           }
-          if (grafana) {
 
-        	  for (size_t i = 0; i <= 7; ++i) {
-              /*input << ",fill" << i << "=" << std::setw(7) << std::setprecision(3)
-                 << (dma_perf.fifo_fill[i] / float(dma_perf.cycle_cnt) * 100.0);*/
-              //auto value = (dma_perf.fifo_fill[i] / float(dma_perf.cycle_cnt) * 100.0);
-              input << ",fill" << i << "=" << dma_perf.fifo_fill[i];
-            }
-
-            influx_base_field_vector.push_back(input.str());
-            //std::cout << "base field-back: " << influx_base_field_vector.back() << std::endl;
-
+      	  for (size_t i = 0; i <= 7; ++i) {
+            input << ",fill" << i << "=" << dma_perf.fifo_fill[i];
           }
+
+          influx_base_field_vector.push_back(input.str());
+
         }
 
         ++j;
@@ -496,6 +373,8 @@ int main(int argc, char* argv[]) {
   
       j = 0;
       for (auto& flib : flibs) {
+        auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        int active_links = 0;
         size_t num_links = flib->number_of_hw_links();
         std::vector<flib::flib_link_flesin*> links = flib->links();
 
@@ -525,9 +404,8 @@ int main(int argc, char* argv[]) {
                                  static_cast<float>(perf.pkt_cycle_cnt) * 100.0;
           float desc_buf_stall = perf.desc_buf_stall /
                                  static_cast<float>(perf.pkt_cycle_cnt) * 100.0;
-          //float din_full = perf.din_full_gtx /
-          //                 static_cast<float>(perf.gtx_cycle_cnt) * 100.0;
-          float din_full = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/100));
+          float din_full = perf.din_full_gtx /
+                           static_cast<float>(perf.gtx_cycle_cnt) * 100.0;
           float event_rate =
               perf.events /
               (static_cast<float>(perf.pkt_cycle_cnt) / flib::pkt_clk);
@@ -581,99 +459,107 @@ int main(int argc, char* argv[]) {
             ss << "\n";
 
           }
-          if (grafana) {
 
-            std::stringstream data_sel_stream;
-            data_sel_stream << links.at(i)->data_sel();
-            std::string data_sel_string = data_sel_stream.str();
-            if (data_sel_string.compare("disable") != 0) {
+          std::stringstream data_sel_stream;
+          data_sel_stream << links.at(i)->data_sel();
+          std::string data_sel_string = data_sel_stream.str();
 
-              data_sel_string = data_sel_string.substr(3, data_sel_string.length());
+          if (data_sel_string.compare("disable") != 0) {
+            ++active_links;
 
-            }
+            data_sel_string = data_sel_string.substr(3, data_sel_string.length());
 
-            std::stringstream input;
-            //clear input
-            input.str("");
-            //std::cout << "input: " << input.str() << std::endl;
-            input << ",link=" << i;
-            input << ",data_sel=" << data_sel_string;
-            //flib_data,flib=01:00:00,link=0 pci,stall,trans,fill
-            //std::cout << "j: " << j << std::endl;
-            std::string temp = influx_base_tag_vector.at(j);
-            //std::cout << "temp: " << temp << std::endl;
-            influx_tag_vector.push_back(temp.append(input.str()));
-            //std::cout << "590: " << i << " " << influx_tag_vector.back() << std::endl;
-            //clear input
-            input.str("");
-            input << ",up=" << status.channel_up;
-            input << ",d_max=" << status.d_fifo_max_words;
-            input << ",dma_s=" << dma_stall;
-            input << ",desc_s=" << desc_buf_stall;
-            input << ",din_full=" << din_full;
-            input << ",event_rate=" << event_rate;
-            input << ",he=" << status.hard_err;
-            input << ",se=" << status.soft_err;
-            input << ",eo=" << status.eoe_fifo_overflow;
-            input << ",do=" << status.d_fifo_overflow;
-
-            //flib_data,flib=01:00:00,link=0 pci,stall,tans,fill,up,d_max,dma_s,desc_s,din_full,event_rate,he,se,eo,do
-            std::string temp2 = influx_base_field_vector.at(j);
-            std::string fields = temp2.append(input.str());
-            std::string temp3 = influx_tag_vector.at(i);
-            db_input_vector.push_back(temp3.append(fields)); 
-            //std::cout << "fields: " << fields << std::endl;
-
-            //std::cout << "input back: " << db_input_vector.back() << std::endl;
-            //std::cout << "----------------------------------------------------------------------------------------------------------------" << std::endl;
           }
+
+          std::stringstream input;
+          //clear input
+          input.str("");
+          input << ",link=" << i;
+          input << ",data_sel=" << data_sel_string;
+          //flib_data,flib=01:00:00,link=0 pci,stall,trans,fill
+          std::string temp = influx_base_tag_vector.at(j);
+          influx_tag_vector.push_back(temp.append(input.str()));
+          //clear input
+          input.str("");
+          //fields
+          input << ",up=" << status.channel_up;
+          input << ",d_max=" << status.d_fifo_max_words;
+          input << ",dma_s=" << dma_stall;
+          input << ",desc_s=" << desc_buf_stall;
+          input << ",data_s=" << data_buf_stall;
+          input << ",din_full=" << din_full;
+          input << ",event_rate=" << event_rate;
+          input << ",he=" << status.hard_err;
+          input << ",se=" << status.soft_err;
+          input << ",eo=" << status.eoe_fifo_overflow;
+          input << ",do=" << status.d_fifo_overflow;
+          input << ",active_links=" << active_links;
+          //timestamp
+          input << " " << ns;
+
+          //flib_data,flib=01:00:00,link=0 pci,stall,tans,fill,up,d_max,dma_s,desc_s,din_full,event_rate,he,se,eo,do
+          std::string temp2 = influx_base_field_vector.at(j);
+          std::string fields = temp2.append(input.str());
+          std::string temp3 = influx_tag_vector.at(i);
+          db_input_vector.push_back(temp3.append(fields)); 
+
         }
         if (terminal) {
 
-          std::cout << ss.str() << std::endl;
+          std::cout << ss.str() << "\n" << "Error:" << "\n" << std::endl;
+          for (unsigned int i = 0; i < error_vector.size(); ++i) {
+            std::cout << error_vector.at(i) << std::endl;;
+          }
 
         }
 
         ++j;
 
       }
+      influx_base_field_vector.clear();
 
-      if (grafana) {
+      //building string to post via the http request
+      std::stringstream db_input;
 
-        //building string to post via the http request
-        std::stringstream db_input;
+      for (unsigned int i = 0; i < db_input_vector.size(); ++i) {
 
-        for (unsigned int i = 0; i < db_input_vector.size(); ++i) {
+        db_input << db_input_vector.at(i) << "\n";
 
-          db_input << db_input_vector.at(i) << "\n";
-          //std::cout << db_input_vector.at(i) << std::endl;
+      }
 
-        }
+      std::string db_input_string = db_input.str();
+      db_input_vector.clear();
 
-        std::string db_input_string = db_input.str();
+      try {
 
-        //std::cout << "input string: " << std::endl;
-        //std::cout << db_input_string << std::endl;
+        if (counter_i == baching_count) {
 
-        db_input_vector.clear();
-
-        try {
-
-          http_post(db, db_input_string, http_client_vector.at(0));
+          http_post(db, db_input_string, http_client);
+          counter_i = 0;
 
         }
-        catch (const std::exception& e) {
 
-          std::cout << e.what() << std::endl;
-          return EXIT_SUCCESS;
+      }
+      catch (const std::exception& e) {
 
+        std::cout << e.what() << std::endl;
+        return EXIT_SUCCESS;
+
+      }
+
+      std::cout << "\x1B[2J" << std::flush;
+      std::cout << "\x1B[H" << std::flush;
+      std::cout << "running..." << std::endl;
+      for (unsigned int i = 0; i < error_vector.size(); ++i) {
+          std::cout << error_vector.at(i) << std::endl;;
         }
+
+      ++counter_i;
 
       // sleep will be canceled by signals (which is handy in our case)
       // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66803
       std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
       ++loop_cnt;
-      }
     }
   }
   catch (const std::exception& e) {
