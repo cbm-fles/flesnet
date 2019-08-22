@@ -16,7 +16,8 @@
 #include <boost/asio/ip/host_name.hpp>
 
 // measurement interval (equals output interval)
-constexpr uint32_t interval_ms = 10000;
+constexpr uint32_t interval_ms = 1000;
+constexpr uint32_t interval_ms3 = 3000;
 constexpr bool clear_screen = true;
 constexpr bool detailed_stats = true;
 
@@ -43,7 +44,7 @@ static void s_catch_signals(void) {
 }
 
 long int time_last = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-int baching_count = 1;
+int baching_count = 8;
 
 struct error_msg {
   std::string message;
@@ -85,10 +86,10 @@ void something_went_wrong(web::http::http_response http_response, bool throw_tru
   }
   catch (const std::exception& e) {
 
-  	error_msg error_message;
+    error_msg error_message;
 
-  	error_message.message = e.what();
-  	error_message.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    error_message.message = e.what();
+    error_message.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     //std::cout << "web::http::http_exception: " << e.what() << std::endl;
     error_vector.push_back(error_message);
@@ -165,50 +166,50 @@ int main(int argc, char* argv[]) {
     // display help if any parameter other the required is given
     //if (argc == 2) {
 
-    	//if (argv[1] == "help") {
+      //if (argv[1] == "help") {
       if (argc != 1) {
 
         (void)argv;
 
-		    std::cout
-		    << "Displays status and performance counters for all FLIB links.\n"
-		       "Per FLIB counters:\n"
-		       "idle:     PCIe interface is idle (ratio)\n"
-		       "stall:    back pressure on PCIe interface from host (ratio)\n"
-		       "trans:    data is transmitted via PCIe interface (ratio)\n"
-		       "Per link status/counters:\n"
-		       "link:     flib/link\n"
-		       "data_sel: choosen data source\n"
-		       "up:       flim channel_up\n"
-		       "he:       aurora hard_error\n"
-		       "se:       aurora soft_error\n"
-		       "eo:       eoe fifo overflow\n"
-		       "do:       data fifo overflow\n"
-		       "d_max:    maximum number of words in d_fifo\n"
-		       "dma_s:    stall from dma mux (ratio)\n"
-		       "data_s:   stall from full data buffer (ratio)\n"
-		       "desc_s:   stall from full desc buffer (ratio)\n"
-		       "bp:       back pressure to link (ratio)\n"
-		       "rate:     ms processing rate (Hz*)\n"
-		       "* Based on the assumption that the PCIe clock is exactly 100 "
-		       "MHz.\n"
-		       "  This may not be true in case of PCIe spread-spectrum "
-		       "clocking.\n";
-		    std::cout << std::endl;
+        std::cout
+        << "Displays status and performance counters for all FLIB links.\n"
+           "Per FLIB counters:\n"
+           "idle:     PCIe interface is idle (ratio)\n"
+           "stall:    back pressure on PCIe interface from host (ratio)\n"
+           "trans:    data is transmitted via PCIe interface (ratio)\n"
+           "Per link status/counters:\n"
+           "link:     flib/link\n"
+           "data_sel: choosen data source\n"
+           "up:       flim channel_up\n"
+           "he:       aurora hard_error\n"
+           "se:       aurora soft_error\n"
+           "eo:       eoe fifo overflow\n"
+           "do:       data fifo overflow\n"
+           "d_max:    maximum number of words in d_fifo\n"
+           "dma_s:    stall from dma mux (ratio)\n"
+           "data_s:   stall from full data buffer (ratio)\n"
+           "desc_s:   stall from full desc buffer (ratio)\n"
+           "bp:       back pressure to link (ratio)\n"
+           "rate:     ms processing rate (Hz*)\n"
+           "* Based on the assumption that the PCIe clock is exactly 100 "
+           "MHz.\n"
+           "  This may not be true in case of PCIe spread-spectrum "
+           "clocking.\n";
+        std::cout << std::endl;
 
         return EXIT_SUCCESS;
       }
 
-      	//else if (argv[1] == "Terminal") {
+        //else if (argv[1] == "Terminal") {
     /*  else if (terminal_str.compare(argv[1]) == 0) {
 
-      	terminal = true;
+        terminal = true;
 
       }
       //else if (argv[1] == "Grafana") {
       else if (grafana_str.compare(argv[1]) == 0) {
 
-      	grafana = true;
+        grafana = true;
         schnelleres testen ohne usereingabe
         std::cout << "DB Location: " << std::endl;
         std::getline(std::cin, url);
@@ -241,9 +242,9 @@ int main(int argc, char* argv[]) {
       }
       else {
 
-      	wrong_input();
+        wrong_input();
 
-      	return EXIT_SUCCESS;
+        return EXIT_SUCCESS;
 
       }
     }
@@ -389,7 +390,7 @@ int main(int argc, char* argv[]) {
 
           }
 
-      	  for (size_t i = 0; i <= 7; ++i) {
+          for (size_t i = 0; i <= 7; ++i) {
             input << ",fill" << i << "=" << dma_perf.fifo_fill[i];
           }
 
@@ -507,7 +508,7 @@ int main(int argc, char* argv[]) {
           if (data_sel_string.compare("disable") != 0) {
             ++active_links;
 
-//            data_sel_string = data_sel_string.substr(3, data_sel_string.length());
+            data_sel_string = data_sel_string.substr(3, data_sel_string.length());
 
           }
 
@@ -524,12 +525,12 @@ int main(int argc, char* argv[]) {
           //fields
           if (status.channel_up) {
 
-          	input << ",up=" << "TRUE";
+            input << ",up=" << "TRUE";
 
           }
           else {
 
-          	input << ",up=" << "FALSE";
+            input << ",up=" << "FALSE";
 
           }
           //input << ",up=" << status.channel_up;
@@ -541,47 +542,45 @@ int main(int argc, char* argv[]) {
           input << ",event_rate=" << event_rate;
           if (status.soft_err) {
 
-          	input << ",se=" << "TRUE";
+            input << ",se=" << "TRUE";
 
           }
           else {
 
-          	input << ",se=" << "FALSE";
+            input << ",se=" << "FALSE";
 
           }
           if (status.hard_err) {
 
-          	input << ",he=" << "TRUE";
+            input << ",he=" << "TRUE";
 
           }
           else {
 
-          	input << ",he=" << "FALSE";
+            input << ",he=" << "FALSE";
 
           }
           if (status.eoe_fifo_overflow) {
-          	input << ",eo=" << "TRUE";
+
+            input << ",eo=" << "TRUE";
 
           }
           else {
 
-          	input << ",eo=" << "FALSE";
+            input << ",eo=" << "FALSE";
 
           }
           if (status.d_fifo_overflow) {
 
-          	input << ",do=" << "TRUE";
+            input << ",do=" << "TRUE";
 
           }
           else {
 
-          	input << ",do=" << "FALSE";
+            input << ",do=" << "FALSE";
 
           }
-          //input << ",he=" << status.hard_err;
-          //input << ",se=" << status.soft_err;
-          //input << ",eo=" << status.eoe_fifo_overflow;
-          //input << ",do=" << status.d_fifo_overflow;
+          
           input << ",active_links=" << active_links << "i";
           //timestamp
           input << " " << ns;
@@ -638,20 +637,24 @@ int main(int argc, char* argv[]) {
 
       }
 
-      //std::cout << "\x1B[2J" << std::flush;
-      //std::cout << "\x1B[H" << std::flush;
-      //std::cout << "running..." << std::endl;
-      //std::cout << error_vector.size();
+//      std::cout << "\x1B[2J" << std::flush;
+//      std::cout << "\x1B[H" << std::flush;
+//      std::cout << "running..." << std::endl;
+      std::cout << error_vector.size();
       for (unsigned int i = 0; i < error_vector.size(); ++i) {
-          std::cout << error_vector.at(i).message << std::endl;;
-        }
+        std::cout << error_vector.at(i).message << std::endl;;
+      }
 
       ++counter_i;
-      std::cout << "Running" << std::endl;
 
       // sleep will be canceled by signals (which is handy in our case)
       // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66803
+      if(counter_i != 8) {
       std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
+      }
+      else{
+        std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms3));
+      }
       ++loop_cnt;
     }
   }
