@@ -1,4 +1,4 @@
-/**
+/*
  * @file
  * @author Dirk Hutter <hutter@compeng.uni-frankfurt.de>
  * @author Maximilian Kordt <maximilian.kordt@web.de>
@@ -44,7 +44,7 @@ static void s_catch_signals(void) {
 }
 
 long int time_last = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-int baching_count = 8;
+int baching_count = 1;
 
 struct error_msg {
   std::string message;
@@ -100,7 +100,33 @@ void something_went_wrong(web::http::http_response http_response, bool throw_tru
   if (error_vector.size() > 5) { throw std::exception(); }
 }
 
-pplx::task<void> http_post (std::string db, std::string db_input_string, web::http::client::http_client http_client) {
+pplx::task <void> ping_test (web::http::client::http_client http_client) {
+
+  web::uri_builder uri_builder(U("/ping"));
+  web::http::http_request http_request;
+
+  return http_client.request(web::http::methods::GET, uri_builder.to_string())
+
+  .then([&] (web::http::http_response http_response) {
+
+    if (http_response.status_code() != 204) {
+
+      bool boolean = true;
+      something_went_wrong(http_response, boolean);
+
+    }
+  });
+}
+
+pplx::task<void> http_post (std::string user, std::string password, std::string db, std::string url,  std::string db_input_string/*, web::http::client::http_client http_client*/) {
+
+
+  web::http::client::http_client_config http_client_config;
+  web::credentials credentials(U(user), U(password));
+  http_client_config.set_credentials(credentials);
+  //http client 
+  web::http::client::http_client http_client(url, http_client_config);
+//  ping_test(http_client);
 
   web::uri_builder uri_builder(U("/write"));
   uri_builder.append_query(U("db"), U(db));
@@ -120,7 +146,7 @@ pplx::task<void> http_post (std::string db, std::string db_input_string, web::ht
     }
   });
 }
-
+/*
 pplx::task <void> ping_test (web::http::client::http_client http_client) {
 
   web::uri_builder uri_builder(U("/ping"));
@@ -138,7 +164,7 @@ pplx::task <void> ping_test (web::http::client::http_client http_client) {
     }
   });
 }
-
+*/
 int main(int argc, char* argv[]) {
   s_catch_signals();
 
@@ -154,13 +180,13 @@ int main(int argc, char* argv[]) {
   //std::vector<web::http::client::http_client> http_client_vector;
   auto host_name = boost::asio::ip::host_name();
 
-  web::http::client::http_client_config http_client_config;
-  web::credentials credentials(U(user), U(password));
-  http_client_config.set_credentials(credentials);
-  //http client 
-  web::http::client::http_client http_client(url, http_client_config);
-  ping_test(http_client);
-  //http_client_vector.push_back(http_client);
+//  web::http::client::http_client_config http_client_config;
+//  web::credentials credentials(U(user), U(password));
+//  http_client_config.set_credentials(credentials);
+//  //http client 
+//  web::http::client::http_client http_client(url, http_client_config);
+//  ping_test(http_client);
+//  //http_client_vector.push_back(http_client);
 
   try {
     // display help if any parameter other the required is given
@@ -621,9 +647,12 @@ int main(int argc, char* argv[]) {
       try {
 
         if (counter_i == baching_count) {
-
-          http_post(db, db_input_string, http_client);
+int i = 0;
+          while (i < 20){
+          http_post(user, password, db, url, db_input_string);
           counter_i = 0;
+++i;
+          }
           //long int time_now = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
           //if (time_now - time_last > 15000000000) { error_msg error_message; error_vector.push_back(error_message); time_last = time_now; }
 
@@ -640,7 +669,7 @@ int main(int argc, char* argv[]) {
 //      std::cout << "\x1B[2J" << std::flush;
 //      std::cout << "\x1B[H" << std::flush;
 //      std::cout << "running..." << std::endl;
-      std::cout << error_vector.size();
+//      std::cout << error_vector.size();
       for (unsigned int i = 0; i < error_vector.size(); ++i) {
         std::cout << error_vector.at(i).message << std::endl;;
       }
@@ -649,12 +678,13 @@ int main(int argc, char* argv[]) {
 
       // sleep will be canceled by signals (which is handy in our case)
       // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66803
-      if(counter_i != 8) {
+//      if(counter_i != 8) {
+//      std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
+//      }
+//      else{
+//        std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms3));
+//    }
       std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
-      }
-      else{
-        std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms3));
-      }
       ++loop_cnt;
     }
   }
