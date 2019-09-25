@@ -16,7 +16,7 @@
 #include <boost/asio/ip/host_name.hpp>
 
 // measurement interval (equals output interval)
-constexpr uint32_t interval_ms = 10000;
+constexpr uint32_t interval_ms = 1000;
 constexpr bool clear_screen = true;
 constexpr bool detailed_stats = true;
 
@@ -507,7 +507,7 @@ int main(int argc, char* argv[]) {
           if (data_sel_string.compare("disable") != 0) {
             ++active_links;
 
-//            data_sel_string = data_sel_string.substr(3, data_sel_string.length());
+            data_sel_string = data_sel_string.substr(3, data_sel_string.length());
 
           }
 
