@@ -1,4 +1,58 @@
 {
+  "__inputs": [
+    {
+      "name": "DS_FLIB_STATUS_TEST",
+      "label": "FLIB_Status_test",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "influxdb",
+      "pluginName": "InfluxDB"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "panel",
+      "id": "dashlist",
+      "name": "Dashboard list",
+      "version": "5.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "6.0.2"
+    },
+    {
+      "type": "panel",
+      "id": "graph",
+      "name": "Graph",
+      "version": "5.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "influxdb",
+      "name": "InfluxDB",
+      "version": "5.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "singlestat",
+      "name": "Singlestat",
+      "version": "5.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": "5.0.0"
+    }
+  ],
   "annotations": {
     "list": [
       {
@@ -15,8 +69,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 10,
-  "iteration": 1569856800026,
+  "id": null,
+  "iteration": 1569859479527,
   "links": [],
   "panels": [
     {
@@ -38,7 +92,7 @@
       "tags": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Dasgboard List",
+      "title": "Dashboard List",
       "type": "dashlist"
     },
     {
@@ -63,7 +117,7 @@
         "#F2495C",
         "#F2495C"
       ],
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "format": "dateTimeAsIso",
       "gauge": {
         "maxValue": 100,
@@ -183,7 +237,7 @@
         "#F2495C",
         "#F2495C"
       ],
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "format": "dateTimeAsIso",
       "gauge": {
         "maxValue": 100,
@@ -303,7 +357,7 @@
         "#F2495C",
         "#F2495C"
       ],
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "format": "dateTimeAsIso",
       "gauge": {
         "maxValue": 100,
@@ -423,7 +477,7 @@
         "#F2495C",
         "#F2495C"
       ],
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "format": "dateTimeAsIso",
       "gauge": {
         "maxValue": 100,
@@ -536,7 +590,7 @@
     },
     {
       "columns": [],
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Table of links with data select as \"link\" and link up as \"down\", given as an error condition.\nShows table on occurance",
       "fontSize": "100%",
       "gridPos": {
@@ -700,7 +754,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "idle: \nPCIe interface is idle (ratio)\nstall: \nback pressure on PCIe interface from host (ratio)\ntrans:\ndata is transmitted via PCIe interface (ratio)\n",
       "fill": 1,
       "gridPos": {
@@ -829,7 +883,7 @@
       }
     },
     {
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "gridPos": {
         "h": 9,
         "w": 4,
@@ -916,7 +970,7 @@
       "type": "gauge"
     },
     {
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "gridPos": {
         "h": 9,
         "w": 4,
@@ -1003,7 +1057,7 @@
       "type": "gauge"
     },
     {
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "gridPos": {
         "h": 9,
         "w": 4,
@@ -1095,7 +1149,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "idle: \nPCIe interface is idle (ratio)\nstall: \nback pressure on PCIe interface from host (ratio)\ntrans:\ndata is transmitted via PCIe interface (ratio)\n",
       "fill": 1,
       "gridPos": {
@@ -1229,7 +1283,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "idle: \nPCIe interface is idle (ratio)\nstall: \nback pressure on PCIe interface from host (ratio)\ntrans:\ndata is transmitted via PCIe interface (ratio)\n",
       "fill": 1,
       "gridPos": {
@@ -1376,7 +1430,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "decimals": 4,
       "description": "",
       "fill": 1,
@@ -1413,13 +1467,6 @@
       "renderer": "flot",
       "repeat": "get_flibs",
       "repeatDirection": "h",
-      "scopedVars": {
-        "get_flibs": {
-          "selected": false,
-          "text": "01:00.0",
-          "value": "01:00.0"
-        }
-      },
       "seriesOverrides": [],
       "stack": false,
       "steppedLine": false,
@@ -1816,7 +1863,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 52
       },
       "id": 57,
       "panels": [],
@@ -1825,13 +1872,13 @@
     },
     {
       "columns": [],
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "fontSize": "100%",
       "gridPos": {
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 44
+        "y": 53
       },
       "id": 46,
       "links": [],
@@ -2075,7 +2122,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 53
+        "y": 62
       },
       "id": 30,
       "panels": [],
@@ -2087,14 +2134,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average dma_s value on the Flibs",
       "fill": 1,
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 54
+        "y": 63
       },
       "id": 35,
       "legend": {
@@ -2211,14 +2258,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average data_stall value on the Flibs",
       "fill": 1,
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 54
+        "y": 63
       },
       "id": 33,
       "legend": {
@@ -2335,14 +2382,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average desc_stall value on the Flibs",
       "fill": 1,
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 54
+        "y": 63
       },
       "id": 34,
       "legend": {
@@ -2459,14 +2506,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average din_full value on the Flibs",
       "fill": 1,
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 63
+        "y": 72
       },
       "id": 36,
       "legend": {
@@ -2583,14 +2630,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average d_max value on the Flibs",
       "fill": 1,
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 63
+        "y": 72
       },
       "id": 32,
       "legend": {
@@ -2707,14 +2754,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average event rate value on the Flibs",
       "fill": 1,
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 63
+        "y": 72
       },
       "id": 37,
       "legend": {
@@ -2832,7 +2879,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 72
+        "y": 81
       },
       "id": 26,
       "panels": [],
@@ -2847,14 +2894,14 @@
           "value": "avg"
         }
       ],
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Number of currently active Links on the Flib",
       "fontSize": "100%",
       "gridPos": {
         "h": 6,
         "w": 5,
         "x": 0,
-        "y": 73
+        "y": 82
       },
       "id": 28,
       "interval": "",
@@ -2983,11 +3030,8 @@
     "list": [
       {
         "allValue": null,
-        "current": {
-          "text": "cbm01",
-          "value": "cbm01"
-        },
-        "datasource": "FLIB_Status_test",
+        "current": {},
+        "datasource": "${DS_FLIB_STATUS_TEST}",
         "definition": "SHOW TAG VALUES WITH KEY=\"host\"",
         "hide": 0,
         "includeAll": false,
@@ -3008,13 +3052,8 @@
       },
       {
         "allValue": null,
-        "current": {
-          "text": "All",
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": "FLIB_Status_test",
+        "current": {},
+        "datasource": "${DS_FLIB_STATUS_TEST}",
         "definition": "SHOW TAG VALUES WITH KEY=\"flib\" WHERE host =~ /$get_hosts/",
         "hide": 0,
         "includeAll": true,
@@ -3067,5 +3106,5 @@
   "timezone": "",
   "title": "02_Host_Status",
   "uid": "b7v-4YZZz",
-  "version": 93
+  "version": 94
 }

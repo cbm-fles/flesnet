@@ -1,4 +1,52 @@
 {
+  "__inputs": [
+    {
+      "name": "DS_FLIB_STATUS_TEST",
+      "label": "FLIB_Status_test",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "influxdb",
+      "pluginName": "InfluxDB"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "panel",
+      "id": "dashlist",
+      "name": "Dashboard list",
+      "version": "5.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "6.0.2"
+    },
+    {
+      "type": "panel",
+      "id": "graph",
+      "name": "Graph",
+      "version": "5.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "influxdb",
+      "name": "InfluxDB",
+      "version": "5.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": "5.0.0"
+    }
+  ],
   "annotations": {
     "list": [
       {
@@ -16,8 +64,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 15,
-  "iteration": 1569856208894,
+  "id": null,
   "links": [],
   "panels": [
     {
@@ -58,7 +105,7 @@
     {
       "cacheTimeout": null,
       "columns": [],
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Shows table with detailed information on occurance of an error or overflow\n\"No data to show\" indicates everything is healthy.",
       "fontSize": "100%",
       "gridPos": {
@@ -283,7 +330,7 @@
     },
     {
       "columns": [],
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Shows table with detailed information on occurance of an Data Select as \"link\" but Link Up is \"Down\".\n\"No data to show\" indicates everything is healthy.",
       "fontSize": "100%",
       "gridPos": {
@@ -425,7 +472,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "trans:\ndata is transmitted via PCIe interface (ratio)\n",
       "fill": 1,
       "gridPos": {
@@ -542,7 +589,7 @@
       }
     },
     {
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "gridPos": {
         "h": 9,
         "w": 4,
@@ -617,7 +664,7 @@
       "type": "gauge"
     },
     {
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "gridPos": {
         "h": 9,
         "w": 4,
@@ -692,7 +739,7 @@
       "type": "gauge"
     },
     {
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "gridPos": {
         "h": 9,
         "w": 4,
@@ -772,7 +819,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "total PCIe idle mean\n\n",
       "fill": 1,
       "gridPos": {
@@ -894,7 +941,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "stall: \nback pressure on PCIe interface from host (ratio)\n\n",
       "fill": 1,
       "gridPos": {
@@ -1030,7 +1077,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "",
       "fill": 1,
       "gridPos": {
@@ -1378,7 +1425,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average dma_s value on the Flibs",
       "fill": 1,
       "gridPos": {
@@ -1496,7 +1543,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average data_stall value on the Flibs",
       "fill": 1,
       "gridPos": {
@@ -1614,7 +1661,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average desc_stall value on the Flibs",
       "fill": 1,
       "gridPos": {
@@ -1732,7 +1779,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average din_full value on the Flibs",
       "fill": 1,
       "gridPos": {
@@ -1850,7 +1897,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average d_max value on the Flibs",
       "fill": 1,
       "gridPos": {
@@ -1968,7 +2015,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "FLIB_Status_test",
+      "datasource": "${DS_FLIB_STATUS_TEST}",
       "description": "Average event rate value on the Flibs",
       "fill": 1,
       "gridPos": {
@@ -2119,7 +2166,7 @@
     ]
   },
   "timezone": "",
-  "title": "01_Global_Status",
+  "title": "01_Global_Status_asda",
   "uid": "oODgYYSZk",
-  "version": 48
+  "version": 50
 }
