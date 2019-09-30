@@ -16,7 +16,7 @@
 #include <boost/asio/ip/host_name.hpp>
 
 // measurement interval (equals output interval)
-constexpr uint32_t interval_ms = 1000;
+constexpr uint32_t interval_ms = 3;
 constexpr uint32_t interval_ms3 = 3000;
 constexpr bool clear_screen = true;
 constexpr bool detailed_stats = true;
@@ -44,7 +44,7 @@ static void s_catch_signals(void) {
 }
 
 long int time_last = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-int baching_count = 1;
+int baching_count = 333;
 
 struct error_msg {
   std::string message;
@@ -647,12 +647,12 @@ int main(int argc, char* argv[]) {
       try {
 
         if (counter_i == baching_count) {
-int i = 0;
-          while (i < 20){
+//int i = 0;
+//          while (i < 20){
           http_post(user, password, db, url, db_input_string);
           counter_i = 0;
-++i;
-          }
+//++i;
+//          }
           //long int time_now = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
           //if (time_now - time_last > 15000000000) { error_msg error_message; error_vector.push_back(error_message); time_last = time_now; }
 
