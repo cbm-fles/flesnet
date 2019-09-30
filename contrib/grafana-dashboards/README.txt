@@ -22,7 +22,6 @@ https://grafana.com/docs/administration/provisioning/#dashboards
 
 entnommen werden. 
 
-
 -------------------------------------------------------------------------------
 
 Die panel arbeiten mit 'group_by(interval)'. interval sollte nicht kleiner
