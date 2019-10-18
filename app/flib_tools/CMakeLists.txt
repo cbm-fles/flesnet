@@ -1,11 +1,15 @@
 # Copyright 2014, 2016 Dirk Hutter, Jan de Cuveland
 
+find_package(OpenSSL REQUIRED)
+
 add_executable(flib_status flib_status.cpp)
+add_executable(flib_status_db flib_status_db.cpp)
 add_executable(flib_info flib_info.cpp)
 add_executable(test_rf test_rf.cpp)
 add_executable(en_readout en_readout.cpp)
 
 target_link_libraries(flib_status flib pda)
+target_link_libraries(flib_status_db flib pda ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CPPREST_LIBRARY})
 target_link_libraries(flib_info flib pda)
 target_link_libraries(test_rf flib)
 target_link_libraries(en_readout flib)
