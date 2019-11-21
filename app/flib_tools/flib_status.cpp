@@ -6,6 +6,7 @@
 
 #include "device_operator.hpp"
 #include "flib.h"
+#include <boost/program_options.hpp>
 #include <chrono>
 #include <csignal>
 #include <iostream>
@@ -38,42 +39,57 @@ static void s_catch_signals(void) {
   sigaction(SIGINT, &action, NULL);
 }
 
+namespace po = boost::program_options;
+
 int main(int argc, char* argv[]) {
+  std::string monitor_uri;
+  po::options_description desc("Allowed options");
+  auto desc_add = desc.add_options();
+  desc_add("help,h", "produce help message");
+  desc_add("desc", "show output description");
+  desc_add("monitor,m", po::value<std::string>(&monitor_uri)
+                            ->implicit_value("http://login:8086/"),
+           "publish FLIB status to InfluxDB");
+
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);
+  if (vm.count("help") != 0u) {
+    std::cout << desc << std::endl;
+    exit(EXIT_SUCCESS);
+  }
+  if (vm.count("desc") != 0u) {
+    std::cout
+        << "Displays status and performance counters for all FLIB links.\n"
+           "Per FLIB counters:\n"
+           "idle:     PCIe interface is idle (ratio)\n"
+           "stall:    back pressure on PCIe interface from host (ratio)\n"
+           "trans:    data is transmitted via PCIe interface (ratio)\n"
+           "Per link status/counters:\n"
+           "link:     flib/link\n"
+           "data_sel: choosen data source\n"
+           "up:       flim channel_up\n"
+           "he:       aurora hard_error\n"
+           "se:       aurora soft_error\n"
+           "eo:       eoe fifo overflow\n"
+           "do:       data fifo overflow\n"
+           "d_max:    maximum number of words in d_fifo\n"
+           "dma_s:    stall from dma mux (ratio)\n"
+           "data_s:   stall from full data buffer (ratio)\n"
+           "desc_s:   stall from full desc buffer (ratio)\n"
+           "bp:       back pressure to link (ratio)\n"
+           "rate:     ms processing rate (Hz*)\n"
+           "* Based on the assumption that the PCIe clock is exactly 100 "
+           "MHz.\n"
+           "  This may not be true in case of PCIe spread-spectrum "
+           "clocking.\n";
+    std::cout << std::endl;
+    return EXIT_SUCCESS;
+  }
+
   s_catch_signals();
 
   try {
-
-    // display help if any parameter given
-    if (argc != 1) {
-      (void)argv;
-      std::cout
-          << "Displays status and performance counters for all FLIB links.\n"
-             "Per FLIB counters:\n"
-             "idle:     PCIe interface is idle (ratio)\n"
-             "stall:    back pressure on PCIe interface from host (ratio)\n"
-             "trans:    data is transmitted via PCIe interface (ratio)\n"
-             "Per link status/counters:\n"
-             "link:     flib/link\n"
-             "data_sel: choosen data source\n"
-             "up:       flim channel_up\n"
-             "he:       aurora hard_error\n"
-             "se:       aurora soft_error\n"
-             "eo:       eoe fifo overflow\n"
-             "do:       data fifo overflow\n"
-             "d_max:    maximum number of words in d_fifo\n"
-             "dma_s:    stall from dma mux (ratio)\n"
-             "data_s:   stall from full data buffer (ratio)\n"
-             "desc_s:   stall from full desc buffer (ratio)\n"
-             "bp:       back pressure to link (ratio)\n"
-             "rate:     ms processing rate (Hz*)\n"
-             "* Based on the assumption that the PCIe clock is exactly 100 "
-             "MHz.\n"
-             "  This may not be true in case of PCIe spread-spectrum "
-             "clocking.\n";
-      std::cout << std::endl;
-      return EXIT_SUCCESS;
-    }
-
     std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
     std::vector<std::unique_ptr<flib::flib_device_flesin>> flibs;
     uint64_t num_dev = dev_op->device_count();
