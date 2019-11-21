@@ -94,8 +94,13 @@ int main(int argc, char* argv[]) {
 
   std::unique_ptr<web::http::client::http_client> client;
   if (!monitor_uri.empty()) {
-    client = std::unique_ptr<web::http::client::http_client>(
-        new web::http::client::http_client(monitor_uri));
+    try {
+      client = std::unique_ptr<web::http::client::http_client>(
+          new web::http::client::http_client(monitor_uri));
+    } catch (std::exception& e) {
+      std::cerr << e.what() << std::endl;
+      return EXIT_FAILURE;
+    }
   }
   auto hostname = fles::system::current_hostname();
 
@@ -327,7 +332,7 @@ int main(int argc, char* argv[]) {
           start + loop_cnt * std::chrono::milliseconds(interval_ms));
     }
   } catch (std::exception& e) {
-    std::cout << e.what() << std::endl;
+    std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;
   }
 
