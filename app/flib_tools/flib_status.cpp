@@ -105,6 +105,7 @@ int main(int argc, char* argv[]) {
 
     // main output loop
     size_t loop_cnt = 0;
+    auto start = std::chrono::steady_clock::now();
     while (s_interrupted == 0) {
       if (clear_screen) {
         std::cout << "\x1B[H" << std::flush;
@@ -263,8 +264,9 @@ int main(int argc, char* argv[]) {
       }
       // sleep will be canceled by signals (which is handy in our case)
       // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66803
-      std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
       ++loop_cnt;
+      std::this_thread::sleep_until(
+          start + loop_cnt * std::chrono::milliseconds(interval_ms));
     }
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
