@@ -5,17 +5,19 @@
  */
 
 #include "device_operator.hpp"
+#include "fles_ipc/System.hpp"
 #include "flib.h"
 #include <boost/program_options.hpp>
 #include <chrono>
+#include <cpprest/http_client.h>
 #include <csignal>
 #include <iostream>
+#include <memory>
 #include <thread>
 
 // measurement interval (equals output interval)
 constexpr uint32_t interval_ms = 1000;
 constexpr bool clear_screen = true;
-constexpr bool detailed_stats = true;
 
 struct pci_perf_data_t {
   uint64_t cycle_cnt;
@@ -43,10 +45,13 @@ namespace po = boost::program_options;
 
 int main(int argc, char* argv[]) {
   std::string monitor_uri;
+  bool detailed_stats = false;
   po::options_description desc("Allowed options");
   auto desc_add = desc.add_options();
   desc_add("help,h", "produce help message");
   desc_add("desc", "show output description");
+  desc_add("verbose,v", po::value<bool>(&detailed_stats)->implicit_value(true),
+           "show detailed statistics");
   desc_add("monitor,m", po::value<std::string>(&monitor_uri)
                             ->implicit_value("http://login:8086/"),
            "publish FLIB status to InfluxDB");
@@ -87,8 +92,14 @@ int main(int argc, char* argv[]) {
     return EXIT_SUCCESS;
   }
 
-  s_catch_signals();
+  std::unique_ptr<web::http::client::http_client> client;
+  if (!monitor_uri.empty()) {
+    client = std::unique_ptr<web::http::client::http_client>(
+        new web::http::client::http_client(monitor_uri));
+  }
+  auto hostname = fles::system::current_hostname();
 
+  s_catch_signals();
   try {
     std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
     std::vector<std::unique_ptr<flib::flib_device_flesin>> flibs;
@@ -127,6 +138,7 @@ int main(int argc, char* argv[]) {
         std::cout << "\x1B[H" << std::flush;
       }
       std::cout << "Measurement " << loop_cnt << ":" << std::endl;
+      std::string measurement;
       size_t j = 0;
       for (auto& flib : flibs) {
         uint32_t pci_stall_cyl = flib->get_pci_stall();
@@ -156,6 +168,12 @@ int main(int argc, char* argv[]) {
                   << pci_idle_acc << "         " << std::setw(9)
                   << pci_stall_acc << "                "
                   << "         " << std::setw(9) << pci_trans_acc << std::endl;
+        if (client) {
+          measurement += "flib_status,host=" + hostname + ",flib=" +
+                         flib->print_devinfo() + " stall=" +
+                         std::to_string(pci_stall) + ",trans=" +
+                         std::to_string(pci_trans) + "\n";
+        }
 
         if (detailed_stats) {
           flib::dma_perf_data_t dma_perf = flib->get_dma_perf();
@@ -228,7 +246,6 @@ int main(int argc, char* argv[]) {
           float event_rate =
               perf.events /
               (static_cast<float>(perf.pkt_cycle_cnt) / flib::pkt_clk);
-
           float dma_stall_acc =
               link_perf_acc.at(j).at(i).dma_stall /
               static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) *
@@ -274,8 +291,33 @@ int main(int argc, char* argv[]) {
           ss << std::setw(2) << status.d_fifo_overflow << "  ";
 
           ss << "\n";
+
+          if (client) {
+            measurement +=
+                "link_status,host=" + hostname + ",flib=" +
+                flib->print_devinfo() + ",link=" + std::to_string(i) +
+                " data_sel=" +
+                std::to_string(static_cast<int>(links.at(i)->data_sel())) +
+                "i,up=" + (status.channel_up ? "true" : "false") + ",rate=" +
+                std::to_string(event_rate) + "\n";
+          }
         }
         std::cout << ss.str() << std::endl;
+
+        if (client) {
+          client
+              ->request(web::http::methods::POST,
+                        "/write?db=flib_status&precision=s", measurement)
+              .then([](web::http::http_response response) {
+                if (response.status_code() != 204) {
+                  std::cout << "Received response status code: "
+                            << response.status_code() << "\n"
+                            << response.extract_string().get() << std::endl;
+                }
+              })
+              .wait();
+        }
+
         ++j;
       }
       // sleep will be canceled by signals (which is handy in our case)
