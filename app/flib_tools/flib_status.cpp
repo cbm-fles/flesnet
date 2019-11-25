@@ -304,7 +304,11 @@ int main(int argc, char* argv[]) {
                 " data_sel=" +
                 std::to_string(static_cast<int>(links.at(i)->data_sel())) +
                 "i,up=" + (status.channel_up ? "true" : "false") + ",rate=" +
-                std::to_string(event_rate) + "\n";
+                std::to_string(event_rate) + ",din_full=" +
+                std::to_string(din_full / 100.0) + ",dma_stall=" +
+                std::to_string(dma_stall / 100.0) + ",data_buf_stall=" +
+                std::to_string(data_buf_stall / 100.0) + ",desc_buf_stall=" +
+                std::to_string(desc_buf_stall / 100.0) + "\n";
           }
         }
         std::cout << ss.str() << std::endl;
