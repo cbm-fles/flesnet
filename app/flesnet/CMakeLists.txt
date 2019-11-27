@@ -21,7 +21,7 @@ target_include_directories(flesnet SYSTEM PUBLIC
 )
 
 target_link_libraries(flesnet
-  flib_ipc fles_core fles_ipc fles_zeromq logging
+  flib_ipc fles_core fles_ipc fles_zeromq logging influxdb
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CPPREST_LIBRARY}
 )
 

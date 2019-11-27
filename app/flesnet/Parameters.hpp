@@ -78,6 +78,18 @@ public:
            output_indexes_.size() == outputs_.size();
   }
 
+  /// Monitoring into a database
+  struct database {
+    std::string name_ = "localhost";
+    uint32_t port_ = 8086;
+    std::string database_name_ = "cbm01_data";
+    std::string username_ = "admin";
+    std::string password_ = "admin";
+    std::string datastring_ = "localhost:8086:cbm01_data:admin:admin";
+  };
+
+  database monitoringdb_data() const { return monitoringdb; }
+
 private:
   /// Parse command line options.
   void parse_options(int argc, char* argv[]);
@@ -111,4 +123,8 @@ private:
 
   /// This applications's indexes in the list of outputs.
   std::vector<unsigned> output_indexes_;
+
+  /// Database
+  database monitoringdb;
+  void monitoring_split(const std::string& s, const char& delimiter);
 };

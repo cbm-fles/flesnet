@@ -1,5 +1,3 @@
-# Copyright 2013-2014, 2016 Jan de Cuveland <cmail@cuveland.de>
-
 add_library(logging log.cpp log.hpp)
 
 target_compile_definitions(logging
@@ -10,3 +8,8 @@ target_compile_definitions(logging
 target_include_directories(logging PUBLIC .)
 
 target_include_directories(logging SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+
+target_link_libraries(logging
+  PUBLIC ${Boost_LIBRARIES}
+  PUBLIC ${CMAKE_THREAD_LIBS_INIT}
+)

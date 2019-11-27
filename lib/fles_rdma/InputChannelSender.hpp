@@ -5,6 +5,7 @@
 #include "IBConnectionGroup.hpp"
 #include "InputChannelConnection.hpp"
 #include "RingBuffer.hpp"
+#include "influxdb.hpp"
 #include <boost/format.hpp>
 #include <cassert>
 
@@ -22,7 +23,8 @@ public:
                      const std::vector<std::string> compute_services,
                      uint32_t timeslice_size,
                      uint32_t overlap_size,
-                     uint32_t max_timeslice_number);
+                     uint32_t max_timeslice_number,
+                     influxdb::db& db);
 
   InputChannelSender(const InputChannelSender&) = delete;
   void operator=(const InputChannelSender&) = delete;
@@ -107,6 +109,9 @@ private:
 
   const uint64_t min_acked_desc_;
   const uint64_t min_acked_data_;
+
+  /// Monitoring DataBase.
+  influxdb::db db_;
 
   uint64_t cached_acked_desc_;
   uint64_t cached_acked_data_;
