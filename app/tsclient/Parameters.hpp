@@ -40,6 +40,8 @@ public:
 
   size_t verbosity() const { return verbosity_; }
 
+  bool histograms() const { return histograms_; }
+
   std::string publish_address() const { return publish_address_; }
 
   uint32_t publish_hwm() const { return publish_hwm_; }
@@ -65,6 +67,7 @@ private:
   bool analyze_ = false;
   bool benchmark_ = false;
   size_t verbosity_ = 0;
+  bool histograms_ = false;
   std::string publish_address_;
   uint32_t publish_hwm_ = 1;
   std::string subscribe_address_;
