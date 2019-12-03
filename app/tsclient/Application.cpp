@@ -30,8 +30,15 @@ Application::Application(Parameters const& par) : par_(par) {
   if (par_.analyze()) {
     std::string output_prefix =
         boost::lexical_cast<std::string>(par_.client_index()) + ": ";
-    sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(
-        1000, status_log_.stream, output_prefix, nullptr)));
+    if (par_.histograms()) {
+      sinks_.push_back(
+          std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(
+              1000, status_log_.stream, output_prefix, &std::cout)));
+    } else {
+      sinks_.push_back(
+          std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(
+              1000, status_log_.stream, output_prefix, nullptr)));
+    }
   }
 
   if (par_.verbosity() > 0) {
