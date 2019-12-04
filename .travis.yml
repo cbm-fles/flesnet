@@ -76,6 +76,9 @@ compiler:
 before_script:
 #  - if [ "$CXX" = "clang++" ]; then export CXX="clang++" CC="clang"; fi
 #  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8" GCOV="gcov-4.8"; fi
+  - which make||true
+  - which cmake||true
+  - which git||true
   - contrib/merge-dependencies
   - mkdir build && cd build
   
