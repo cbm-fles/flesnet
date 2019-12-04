@@ -15,25 +15,13 @@ addons:
 #    - george-edison55-precise-backports
     packages:
 #    - doxygen
-#    - libboost-filesystem1.55-dev
-#    - libboost-log1.55-dev
-#    - libboost-program-options1.55-dev
-#    - libboost-regex1.55-dev
-#    - libboost-serialization1.55-dev
-#    - libboost-system1.55-dev
-#    - libboost-test1.55-dev
-#    - libboost-thread1.55-dev
-#    - libboost-iostreams1.55-dev
-#    - libboost-locale1.55-dev
-#    - libboost-random1.55-dev
-#    - libboost1.55-dev
-#    - libboost1.55-all-dev
+    - libboost-all-dev
     - libibverbs-dev
+    - libkmod-dev
     - libnuma-dev
     - libpci-dev
     - librdmacm-dev
     - libtool-bin
-    - libkmod-dev
 #    - libssl-dev
 #    - libzmq3-dev
 #    - valgrind
@@ -73,7 +61,6 @@ addons:
 before_script:
 #  - if [ "$CXX" = "clang++" ]; then export CXX="clang++" CC="clang"; fi
 #  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8" GCOV="gcov-4.8"; fi
-  - which git||true
   - contrib/merge-dependencies
   - mkdir build && cd build
   
@@ -84,5 +71,3 @@ script:
 
 #after_success:
 #  - if [ "$CXX" = "g++-4.8" ]; then cmake -DCOVERALLS=ON -DCMAKE_BUILD_TYPE=Debug .. && make -j4 && make coveralls; fi
-
-#sudo: false
