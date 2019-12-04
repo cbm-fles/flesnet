@@ -14,12 +14,7 @@ addons:
 #    - ubuntu-toolchain-r-test
 #    - george-edison55-precise-backports
     packages:
-#    - cmake
-#    - cmake-data
 #    - doxygen
-#    - gcc-4.8
-#    - g++-4.8
-#    - git
 #    - libboost-filesystem1.55-dev
 #    - libboost-log1.55-dev
 #    - libboost-program-options1.55-dev
@@ -37,6 +32,8 @@ addons:
     - libnuma-dev
     - libpci-dev
     - librdmacm-dev
+    - libtool-bin
+    - libkmod-dev
 #    - libssl-dev
 #    - libzmq3-dev
 #    - valgrind
@@ -76,8 +73,6 @@ addons:
 before_script:
 #  - if [ "$CXX" = "clang++" ]; then export CXX="clang++" CC="clang"; fi
 #  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8" GCOV="gcov-4.8"; fi
-  - which make||true
-  - which cmake||true
   - which git||true
   - contrib/merge-dependencies
   - mkdir build && cd build
