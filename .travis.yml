@@ -27,7 +27,7 @@ addons:
     - libtool-bin
     - libzmq3-dev
 #    - libssl-dev
-#    - valgrind
+    - valgrind
 #    - zlib1g-dev
 
 #env:
