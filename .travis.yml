@@ -6,14 +6,14 @@ compiler:
   - clang
 #  - gcc
 
-#addons:
-#  apt:
+addons:
+  apt:
 #    sources:
 #    - boost-latest
 #    - kalakris-cmake
 #    - ubuntu-toolchain-r-test
 #    - george-edison55-precise-backports
-#    packages:
+    packages:
 #    - cmake
 #    - cmake-data
 #    - doxygen
@@ -33,10 +33,10 @@ compiler:
 #    - libboost-random1.55-dev
 #    - libboost1.55-dev
 #    - libboost1.55-all-dev
-#    - libibverbs-dev
-#    - libnuma-dev
-#    - libpci-dev
-#    - librdmacm-dev
+    - libibverbs-dev
+    - libnuma-dev
+    - libpci-dev
+    - librdmacm-dev
 #    - libssl-dev
 #    - libzmq3-dev
 #    - valgrind
