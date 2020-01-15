@@ -5,3 +5,4 @@
 /lib/logging/Makefile
 project.xcworkspace/
 xcuserdata/
+.vscode/
