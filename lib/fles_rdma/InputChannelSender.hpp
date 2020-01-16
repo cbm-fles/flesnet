@@ -22,7 +22,8 @@ public:
                      const std::vector<std::string> compute_services,
                      uint32_t timeslice_size,
                      uint32_t overlap_size,
-                     uint32_t max_timeslice_number);
+                     uint32_t max_timeslice_number,
+                     const std::string monitor_uri);
 
   InputChannelSender(const InputChannelSender&) = delete;
   void operator=(const InputChannelSender&) = delete;
@@ -117,6 +118,8 @@ private:
   uint64_t write_index_desc_ = 0;
 
   bool abort_ = false;
+
+  const std::string monitor_uri_;
 
   struct SendBufferStatus {
     std::chrono::system_clock::time_point time;

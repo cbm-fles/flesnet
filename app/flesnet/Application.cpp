@@ -50,10 +50,9 @@ void Application::create_timeslice_buffers() {
 
     L_(info) << "timeslice buffer " << i
              << " size: " << human_readable_count(UINT64_C(1) << datasize)
-             << " + "
-             << human_readable_count(
-                    (UINT64_C(1) << descsize) *
-                    sizeof(fles::TimesliceComponentDescriptor));
+             << " + " << human_readable_count(
+                             (UINT64_C(1) << descsize) *
+                             sizeof(fles::TimesliceComponentDescriptor));
 
     std::unique_ptr<TimesliceBuffer> tsb(
         new TimesliceBuffer(shm_identifier, datasize, descsize, input_size));
@@ -192,7 +191,8 @@ void Application::create_input_channel_senders() {
 #ifdef HAVE_RDMA
       std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
           index, *(data_sources_.at(c).get()), output_hosts, output_services,
-          par_.timeslice_size(), overlap_size, par_.max_timeslice_number()));
+          par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
+          par_.monitor_uri()));
       input_channel_senders_.push_back(std::move(sender));
 #else
       L_(fatal) << "flesnet built without RDMA support";

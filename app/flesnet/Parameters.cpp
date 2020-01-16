@@ -89,6 +89,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
                                   ->default_value(log_syslog)
                                   ->value_name("<n>"),
               "enable logging to syslog at given log level");
+  generic_add("monitor,m", po::value<std::string>(&monitor_uri_)
+                               ->implicit_value("http://login:8086/"),
+              "publish flesnet status to InfluxDB");
   generic_add("help,h", "display this help and exit");
   generic_add("version,V", "output version information and exit");
 
@@ -102,20 +105,17 @@ void Parameters::parse_options(int argc, char* argv[]) {
       "output-index,o",
       po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
       "set this application's index(es) in the list of outputs");
-  config_add("input,I",
-             po::value<std::vector<InterfaceSpecification>>()
-                 ->multitoken()
-                 ->value_name("scheme://host/path?param=value ..."),
+  config_add("input,I", po::value<std::vector<InterfaceSpecification>>()
+                            ->multitoken()
+                            ->value_name("scheme://host/path?param=value ..."),
              "add an input to the list of participating inputs");
-  config_add("output,O",
-             po::value<std::vector<InterfaceSpecification>>()
-                 ->multitoken()
-                 ->value_name("scheme://host/path?param=value ..."),
+  config_add("output,O", po::value<std::vector<InterfaceSpecification>>()
+                             ->multitoken()
+                             ->value_name("scheme://host/path?param=value ..."),
              "add an output to the list of compute node outputs");
-  config_add("timeslice-size",
-             po::value<uint32_t>(&timeslice_size_)
-                 ->default_value(timeslice_size_)
-                 ->value_name("<n>"),
+  config_add("timeslice-size", po::value<uint32_t>(&timeslice_size_)
+                                   ->default_value(timeslice_size_)
+                                   ->value_name("<n>"),
              "set the global timeslice size in number of microslices");
   config_add("max-timeslice-number,n",
              po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
@@ -124,20 +124,17 @@ void Parameters::parse_options(int argc, char* argv[]) {
       "processor-executable,e",
       po::value<std::string>(&processor_executable_)->value_name("<string>"),
       "name of the executable acting as timeslice processor");
-  config_add("processor-instances",
-             po::value<uint32_t>(&processor_instances_)
-                 ->default_value(processor_instances_)
-                 ->value_name("<n>"),
+  config_add("processor-instances", po::value<uint32_t>(&processor_instances_)
+                                        ->default_value(processor_instances_)
+                                        ->value_name("<n>"),
              "number of instances of the timeslice processor executable");
-  config_add("base-port",
-             po::value<uint32_t>(&base_port_)
-                 ->default_value(base_port_)
-                 ->value_name("<n>"),
+  config_add("base-port", po::value<uint32_t>(&base_port_)
+                              ->default_value(base_port_)
+                              ->value_name("<n>"),
              "base IP port to use for listening");
-  config_add("transport,t",
-             po::value<Transport>(&transport_)
-                 ->default_value(transport_)
-                 ->value_name("<id>"),
+  config_add("transport,t", po::value<Transport>(&transport_)
+                                ->default_value(transport_)
+                                ->value_name("<id>"),
              "select transport implementation; possible values "
              "(case-insensitive) are: RDMA, LibFabric, ZeroMQ");
 
