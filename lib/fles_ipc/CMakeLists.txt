@@ -16,4 +16,4 @@ target_include_directories(fles_ipc SYSTEM
   PUBLIC ${PROJECT_SOURCE_DIR}/external/cppzmq
 )
 
-target_link_libraries(fles_ipc PUBLIC ${ZMQ_LIBRARIES})
+target_link_libraries(fles_ipc PUBLIC ${ZMQ_LIBRARIES} PUBLIC logging )
