@@ -45,6 +45,11 @@ public:
     return timeslice_descriptor_.num_components;
   }
 
+  /// Retrieve the size of a given component.
+  uint64_t size_component(uint64_t component) const {
+    return desc_ptr_[component]->size;
+  }
+
   /// Retrieve a pointer to the data content of a given microslice
   const uint8_t* content(uint64_t component, uint64_t microslice) const {
     return data_ptr_[component] +
