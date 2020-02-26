@@ -24,6 +24,8 @@ public:
 
   std::string shm_identifier() const { return shm_identifier_; }
 
+  bool multi_input() const { return multi_input_; }
+
   std::string input_archive() const { return input_archive_; }
 
   uint64_t input_archive_cycles() const { return input_archive_cycles_; }
@@ -59,6 +61,7 @@ private:
 
   int32_t client_index_ = -1;
   std::string shm_identifier_;
+  bool multi_input_ = false;
   std::string input_archive_;
   uint64_t input_archive_cycles_ = 1;
   std::string output_archive_;
