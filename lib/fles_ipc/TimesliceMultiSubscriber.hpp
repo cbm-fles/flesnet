@@ -20,7 +20,8 @@ namespace fles {
 class TimesliceMultiSubscriber : public TimesliceSource {
 public:
   /// Construct timeslice subscriber receiving from given ZMQ address.
-  explicit TimesliceMultiSubscriber(const std::string&, uint32_t hwm = 1);
+  explicit TimesliceMultiSubscriber(const std::string& /*inputString*/,
+                                    uint32_t hwm = 1);
 
   /// Delete copy constructor (non-copyable).
   TimesliceMultiSubscriber(const TimesliceMultiSubscriber&) = delete;
@@ -39,13 +40,13 @@ public:
    */
   std::unique_ptr<Timeslice> get() { return (GetNextTimeslice()); };
 
-  bool eos() const override { return sortedSource_.size() == 0; }
+  bool eos() const override { return sortedSource_.empty(); }
 
 private:
   Timeslice* do_get() override;
 
   void InitTimesliceSubscriber();
-  void CreateHostPortFileList(std::string);
+  void CreateHostPortFileList(std::string /*inputString*/);
   std::unique_ptr<Timeslice> GetNextTimeslice();
 
   std::vector<std::unique_ptr<TimesliceSource>> source_;

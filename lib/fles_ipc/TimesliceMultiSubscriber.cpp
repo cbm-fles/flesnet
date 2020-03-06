@@ -10,8 +10,6 @@
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 
-namespace filesys = boost::filesystem;
-
 namespace fles {
 
 TimesliceMultiSubscriber::TimesliceMultiSubscriber(
@@ -43,8 +41,9 @@ void TimesliceMultiSubscriber::CreateHostPortFileList(std::string inputString) {
   // cannot contain the wildcard "*"
   for (auto& string : inputStreams) {
 
-    if (0 == string.size())
+    if (string.empty()) {
       L_(error) << " Empty hostname string, ignoring it";
+    }
 
     std::vector<std::string> stringsHostnamePort;
     boost::split(stringsHostnamePort, string, [](char c) { return c == ':'; });
@@ -95,7 +94,7 @@ Timeslice* TimesliceMultiSubscriber::do_get() {
 
 std::unique_ptr<Timeslice> TimesliceMultiSubscriber::GetNextTimeslice() {
 
-  if (sortedSource_.size() > 0) {
+  if (!sortedSource_.empty()) {
     // take the first element from the set which is the one with the smallest
     // ts number
     // (*(sortedSource_.begin())) dereference the std::set iterator to get

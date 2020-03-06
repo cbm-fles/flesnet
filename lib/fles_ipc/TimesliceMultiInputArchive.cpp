@@ -16,7 +16,7 @@ namespace fles {
 TimesliceMultiInputArchive::TimesliceMultiInputArchive(
     const std::string& inputString, const std::string& inputDirectory) {
 
-  std::string newInputString{""};
+  std::string newInputString;
   if (!inputDirectory.empty()) {
     // split the input string at the character ";" which divides the string
     // into different files/filelists for the different streams
@@ -78,16 +78,18 @@ void TimesliceMultiInputArchive::CreateInputFileList(std::string inputString) {
     // loop over all files in input directory
     for (auto&& x : filesys::directory_iterator(p.parent_path())) {
       // Skip if not a file
-      if (!boost::filesystem::is_regular_file(x))
+      if (!boost::filesystem::is_regular_file(x)) {
         continue;
+      }
       // Skip if no match
       // x.path().leaf().string() means get from directory iterator the
       // current entry as filesys::path, from this extract the leaf
       // filename or directory name and convert it to a string to be
       // used in the regex:match
       boost::smatch what;
-      if (!boost::regex_match(x.path().leaf().string(), what, my_filter))
+      if (!boost::regex_match(x.path().leaf().string(), what, my_filter)) {
         continue;
+      }
 
       v.push_back(x.path().string());
     }
@@ -132,7 +134,7 @@ Timeslice* TimesliceMultiInputArchive::do_get() {
 
 std::unique_ptr<Timeslice> TimesliceMultiInputArchive::GetNextTimeslice() {
 
-  if (sortedSource_.size() > 0) {
+  if (!sortedSource_.empty()) {
     // take the first element from the set which is the one with the smallest
     // ts number
     // (*(sortedSource_.begin())) dereference the std::set iterator to get
@@ -171,7 +173,7 @@ bool TimesliceMultiInputArchive::OpenNextFile(int element) {
     delete source_.at(element).release();
   }
 
-  if (InputFileList.at(element).size() > 0) {
+  if (!InputFileList.at(element).empty()) {
     std::string file = InputFileList.at(element).at(0);
     InputFileList.at(element).erase(InputFileList.at(element).begin());
     source_.at(element) =

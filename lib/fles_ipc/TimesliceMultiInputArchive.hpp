@@ -24,8 +24,9 @@ public:
   // string open the archive files for reading, and read the archive descriptors
   // If a directory is passed as second parameter build first a list of
   // filenames which contains the full path
-  explicit TimesliceMultiInputArchive(const std::string&,
-                                      const std::string& = "");
+  explicit TimesliceMultiInputArchive(
+      const std::string& /*inputString*/,
+      const std::string& /*inputDirectory*/ = "");
 
   /// Delete copy constructor (non-copyable).
   TimesliceMultiInputArchive(const TimesliceMultiInputArchive&) = delete;
@@ -42,14 +43,14 @@ public:
    */
   std::unique_ptr<Timeslice> get() { return (GetNextTimeslice()); };
 
-  bool eos() const override { return sortedSource_.size() == 0; }
+  bool eos() const override { return sortedSource_.empty(); }
 
 private:
   Timeslice* do_get() override;
 
   void InitTimesliceArchive();
-  void CreateInputFileList(std::string);
-  bool OpenNextFile(int);
+  void CreateInputFileList(std::string /*inputString*/);
+  bool OpenNextFile(int /*element*/);
   std::unique_ptr<Timeslice> GetNextTimeslice();
 
   std::vector<std::unique_ptr<TimesliceSource>> source_;
