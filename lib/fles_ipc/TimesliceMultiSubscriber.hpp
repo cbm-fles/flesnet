@@ -3,23 +3,21 @@
 /// \brief Defines the fles::TimesliceMultiSubscriber class.
 #pragma once
 
-
-#include "TimesliceSource.hpp"
 #include "StorableTimeslice.hpp"
+#include "TimesliceSource.hpp"
 #include "log.hpp"
 #include <chrono>
 #include <memory>
-#include <vector>
-#include <string>
 #include <set>
+#include <string>
+#include <vector>
 
 namespace fles {
 /**
- * \brief The TimesliceMultiSubscriber class receives serialized timeslice data from
- * several zeromq socket and returns the timeslice with the
- * smallest index.
+ * \brief The TimesliceMultiSubscriber class receives serialized timeslice data
+ * from several zeromq socket and returns the timeslice with the smallest index.
  */
-  class TimesliceMultiSubscriber : public TimesliceSource {
+class TimesliceMultiSubscriber : public TimesliceSource {
 public:
   /// Construct timeslice subscriber receiving from given ZMQ address.
   explicit TimesliceMultiSubscriber(const std::string&, uint32_t hwm = 1);
@@ -39,9 +37,7 @@ public:
    * \return pointer to the item, or nullptr if no more
    * timeslices available in the input archives
    */
-  std::unique_ptr<Timeslice> get() {
-    return (GetNextTimeslice());
-  };
+  std::unique_ptr<Timeslice> get() { return (GetNextTimeslice()); };
 
   bool eos() const override { return sortedSource_.size() == 0; }
 
@@ -59,11 +55,10 @@ private:
 
   std::vector<std::unique_ptr<Timeslice>> timesliceCont;
 
-  std::set<std::pair<uint64_t,int>> sortedSource_;
+  std::set<std::pair<uint64_t, int>> sortedSource_;
 
   logging::OstreamLog status_log_{status};
   logging::OstreamLog debug_log_{debug};
-
 };
 
 } // namespace fles
