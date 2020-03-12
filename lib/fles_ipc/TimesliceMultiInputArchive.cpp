@@ -9,6 +9,19 @@
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 
+/*
+  Unexpected behaviour (from tests):
+
+  - Throws boost::filesystem::filesystem_error if given filename does not contain
+    a directory (incompatible with plain TimesliceInputArchive)
+  - Throws std::out_of_range if given file does not exist because of the "stream.at(0)"
+    statement in the constructor
+  - Multiple files separated by ";" are merged (sorted by time), while multiple
+    files selected by wildcard are visited in sequence
+  - Non-standard wildcard matching: Only "*", no "?". No way to protect literal "*".
+  - Calls "exit()" on errors instead of throwing an exception
+*/
+
 namespace filesys = boost::filesystem;
 
 namespace fles {
@@ -90,7 +103,6 @@ void TimesliceMultiInputArchive::CreateInputFileList(std::string inputString) {
       if (!boost::regex_match(x.path().leaf().string(), what, my_filter)) {
         continue;
       }
-
       v.push_back(x.path().string());
     }
 
