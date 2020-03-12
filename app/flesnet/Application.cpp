@@ -282,7 +282,7 @@ void Application::run() {
   threads.join_all();
 }
 
-void Application::start_processes(const std::string shared_memory_identifier) {
+void Application::start_processes(const std::string& shared_memory_identifier) {
   const std::string processor_executable = par_.processor_executable();
   assert(!processor_executable.empty());
   for (uint_fast32_t i = 0; i < par_.processor_instances(); ++i) {

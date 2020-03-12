@@ -26,8 +26,8 @@ public:
   /// The InputChannelSender default constructor.
   InputChannelSender(uint64_t input_index,
                      InputBufferReadInterface& data_source,
-                     const std::vector<std::string> compute_hostnames,
-                     const std::vector<std::string> compute_services,
+                     const std::vector<std::string>& compute_hostnames,
+                     const std::vector<std::string>& compute_services,
                      uint32_t timeslice_size,
                      uint32_t overlap_size,
                      uint32_t max_timeslice_number,

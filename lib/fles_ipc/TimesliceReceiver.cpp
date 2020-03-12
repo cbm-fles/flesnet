@@ -5,7 +5,8 @@
 
 namespace fles {
 
-TimesliceReceiver::TimesliceReceiver(const std::string shared_memory_identifier)
+TimesliceReceiver::TimesliceReceiver(
+    const std::string& shared_memory_identifier)
     : shared_memory_identifier_(shared_memory_identifier) {
   data_shm_ = std::unique_ptr<boost::interprocess::shared_memory_object>(
       new boost::interprocess::shared_memory_object(

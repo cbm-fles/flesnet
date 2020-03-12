@@ -68,5 +68,5 @@ private:
       timeslice_builders_zeromq_;
   std::vector<std::unique_ptr<ComponentSenderZeromq>> component_senders_zeromq_;
 
-  void start_processes(const std::string shared_memory_identifier);
+  void start_processes(const std::string& shared_memory_identifier);
 };

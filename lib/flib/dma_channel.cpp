@@ -202,7 +202,7 @@ void dma_channel::configure() {
   set_sw_read_pointers(data_buffer_offset, desc_buffer_offset);
 }
 
-void dma_channel::configure_sg_manager(const sg_bram_t buf_sel) {
+void dma_channel::configure_sg_manager(sg_bram_t buf_sel) {
   pda::dma_buffer* buffer = buf_sel ? m_desc_buffer.get() : m_data_buffer.get();
   // convert list
   std::vector<sg_entry_hw_t> sg_list_hw = convert_sg_list(buffer->sg_list());
@@ -218,7 +218,7 @@ void dma_channel::configure_sg_manager(const sg_bram_t buf_sel) {
 
 // TODO make vector a reference
 std::vector<dma_channel::sg_entry_hw_t>
-dma_channel::convert_sg_list(const std::vector<pda::sg_entry_t> sg_list) {
+dma_channel::convert_sg_list(const std::vector<pda::sg_entry_t>& sg_list) {
 
   // convert pda scatter gather list into FLIB usable list
   std::vector<sg_entry_hw_t> sg_list_hw;
@@ -251,7 +251,7 @@ dma_channel::convert_sg_list(const std::vector<pda::sg_entry_t> sg_list) {
 }
 
 void dma_channel::write_sg_list_to_device(
-    const std::vector<sg_entry_hw_t> sg_list, const sg_bram_t buf_sel) {
+    const std::vector<sg_entry_hw_t>& sg_list, sg_bram_t buf_sel) {
   uint32_t buf_addr = 0;
   for (const auto& entry : sg_list) {
     write_sg_entry_to_device(entry, buf_sel, buf_addr);
@@ -267,9 +267,9 @@ void dma_channel::write_sg_list_to_device(
   set_configured_sg_entries(buf_sel, sg_list.size());
 }
 
-void dma_channel::write_sg_entry_to_device(const sg_entry_hw_t entry,
-                                           const sg_bram_t buf_sel,
-                                           const uint32_t buf_addr) {
+void dma_channel::write_sg_entry_to_device(sg_entry_hw_t entry,
+                                           sg_bram_t buf_sel,
+                                           uint32_t buf_addr) {
 
   uint32_t sg_ctrl = (1 << BIT_SGENTRY_CTRL_WRITE_EN) | buf_addr;
   sg_ctrl |= (buf_sel << BIT_SGENTRY_CTRL_TARGET);
@@ -280,7 +280,7 @@ void dma_channel::write_sg_entry_to_device(const sg_entry_hw_t entry,
   m_rfpkt->set_reg(RORC_REG_SGENTRY_CTRL, sg_ctrl);
 }
 
-size_t dma_channel::get_max_sg_entries(const sg_bram_t buf_sel) {
+size_t dma_channel::get_max_sg_entries(sg_bram_t buf_sel) {
 
   sys_bus_addr addr =
       (buf_sel) ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
@@ -290,7 +290,7 @@ size_t dma_channel::get_max_sg_entries(const sg_bram_t buf_sel) {
   return (m_rfpkt->get_reg(addr) >> 16);
 }
 
-size_t dma_channel::get_configured_sg_entries(const sg_bram_t buf_sel) {
+size_t dma_channel::get_configured_sg_entries(sg_bram_t buf_sel) {
 
   sys_bus_addr addr =
       (buf_sel) ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
@@ -300,8 +300,8 @@ size_t dma_channel::get_configured_sg_entries(const sg_bram_t buf_sel) {
   return (m_rfpkt->get_reg(addr) & 0x0000ffff);
 }
 
-void dma_channel::set_configured_sg_entries(const sg_bram_t buf_sel,
-                                            const uint16_t num_entries) {
+void dma_channel::set_configured_sg_entries(sg_bram_t buf_sel,
+                                            uint16_t num_entries) {
 
   sys_bus_addr addr =
       (buf_sel) ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
@@ -311,7 +311,7 @@ void dma_channel::set_configured_sg_entries(const sg_bram_t buf_sel,
   m_rfpkt->set_reg(addr, num_entries);
 }
 
-void dma_channel::set_configured_buffer_size(const sg_bram_t buf_sel) {
+void dma_channel::set_configured_buffer_size(sg_bram_t buf_sel) {
   // this HW register does not influence the dma engine
   // they are for debug purpose only
   pda::dma_buffer* buffer =

@@ -12,7 +12,7 @@
 TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     uint64_t compute_index,
     TimesliceBuffer& timeslice_buffer,
-    const std::vector<std::string> input_server_addresses,
+    const std::vector<std::string>& input_server_addresses,
     uint32_t num_compute_nodes,
     uint32_t timeslice_size,
     uint32_t max_timeslice_number,

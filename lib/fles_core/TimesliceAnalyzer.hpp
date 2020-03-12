@@ -30,11 +30,11 @@ private:
     content_bytes_ = 0;
   }
 
-  uint32_t compute_crc(const fles::MicrosliceView m) const;
+  uint32_t compute_crc(const fles::MicrosliceView& m) const;
 
-  bool check_crc(const fles::MicrosliceView m) const;
+  bool check_crc(const fles::MicrosliceView& m) const;
 
-  bool check_microslice(const fles::MicrosliceView m,
+  bool check_microslice(const fles::MicrosliceView& m,
                         size_t component,
                         size_t microslice);
 
