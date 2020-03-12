@@ -1,5 +1,6 @@
 # Copyright 2015, 2016 Jan de Cuveland <cmail@cuveland.de>
 
+add_executable(test_System test_System.cpp)
 add_executable(test_Timeslice test_Timeslice.cpp)
 add_executable(test_TimesliceMultiInputArchive test_TimesliceMultiInputArchive.cpp)
 add_executable(test_Microslice test_Microslice.cpp)
@@ -8,6 +9,7 @@ add_executable(test_Filter test_Filter.cpp)
 add_executable(test_MicrosliceReceiver test_MicrosliceReceiver.cpp)
 add_executable(test_logging test_logging.cpp)
 
+target_compile_definitions(test_System PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_Timeslice PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_TimesliceMultiInputArchive PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_Microslice PUBLIC BOOST_TEST_DYN_LINK)
@@ -16,6 +18,7 @@ target_compile_definitions(test_Filter PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_MicrosliceReceiver PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_logging PUBLIC BOOST_TEST_DYN_LINK)
 
+target_include_directories(test_System SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_Timeslice SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_TimesliceMultiInputArchive SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_Microslice SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
@@ -24,6 +27,7 @@ target_include_directories(test_Filter SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_MicrosliceReceiver SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_logging SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
+target_link_libraries(test_System fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_Timeslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_TimesliceMultiInputArchive fles_ipc logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(test_Microslice fles_ipc ${Boost_LIBRARIES})
@@ -48,6 +52,7 @@ add_custom_command(TARGET test_Filter POST_BUILD
                    ${PROJECT_SOURCE_DIR}/test/reference/example2.msa
                    $<TARGET_FILE_DIR:test_Filter>)
 
+add_test(NAME test_System COMMAND test_System)
 add_test(NAME test_Timeslice COMMAND test_Timeslice)
 add_test(NAME test_TimesliceMultiInputArchive COMMAND test_TimesliceMultiInputArchive)
 add_test(NAME test_Microslice COMMAND test_Microslice)

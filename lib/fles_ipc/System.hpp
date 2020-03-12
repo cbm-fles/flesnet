@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace fles {
 /// Namespace for system-related utilty functions.
@@ -48,6 +49,17 @@ std::string current_hostname();
  * @return current domain name
  */
 std::string current_domainname();
+
+/**
+ * \brief Find pathnames matching a pattern.
+ *
+ * This is a C++ wrapper around glob(), which searches for all the
+ * pathnames matching pattern according to the rules used by the shell.
+ *
+ * @param pattern pattern for pathnames
+ * @return vector of pathnames
+ */
+std::vector<std::string> glob(const std::string& pattern);
 
 } // namespace system
 } // namespace fles
