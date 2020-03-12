@@ -31,7 +31,7 @@ namespace syslog = boost::log::sinks::syslog;
 
 void add_console(severity_level minimum_severity);
 void add_file(std::string filename, severity_level minimum_severity);
-void add_syslog(syslog::facility, severity_level minimum_severity);
+void add_syslog(syslog::facility /*facility*/, severity_level minimum_severity);
 
 class LogBuffer {
 public:

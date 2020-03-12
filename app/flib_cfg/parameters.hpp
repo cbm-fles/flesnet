@@ -47,8 +47,8 @@ public:
 // Overload validate for PCI BDF address
 void validate(boost::any& v,
               const std::vector<std::string>& values,
-              pci_addr*,
-              int) {
+              pci_addr* /*unused*/,
+              int /*unused*/) {
   // PCI BDF address is BB:DD.F
   static boost::regex r(
       "([[:xdigit:]][[:xdigit:]]):([[:xdigit:]][[:xdigit:]]).([[:xdigit:]])");

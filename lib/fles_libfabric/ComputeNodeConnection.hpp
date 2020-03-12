@@ -130,7 +130,7 @@ public:
                         cn_wp_.desc};
   }
 
-  void set_partner_addr(fi_addr_t);
+  void set_partner_addr(fi_addr_t /*addr*/);
 
   void send_ep_addr();
 
