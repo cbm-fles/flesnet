@@ -140,9 +140,10 @@ void ComputeNodeConnection::setup_mr(struct fid_domain* pd) {
     throw LibfabricException("fi_mr_reg failed for recv");
   }
 
-  if (!mr_data_ || !mr_desc_ || !mr_recv_ || !mr_send_)
+  if (!mr_data_ || !mr_desc_ || !mr_recv_ || !mr_send_) {
     throw LibfabricException(
         "registration of memory region failed in ComputeNodeConnection");
+  }
 
   send_status_message_.info.data.addr = reinterpret_cast<uintptr_t>(data_ptr_);
   send_status_message_.info.data.rkey = fi_mr_key(mr_data_);

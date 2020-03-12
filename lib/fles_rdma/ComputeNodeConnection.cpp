@@ -75,8 +75,9 @@ void ComputeNodeConnection::setup(struct ibv_pd* pd) {
       ibv_reg_mr(pd, &recv_status_message_, sizeof(InputChannelStatusMessage),
                  IBV_ACCESS_LOCAL_WRITE);
 
-  if (!mr_data_ || !mr_desc_ || !mr_recv_ || !mr_send_)
+  if (!mr_data_ || !mr_desc_ || !mr_recv_ || !mr_send_) {
     throw InfinibandException("registration of memory region failed");
+  }
 
   // setup send and receive buffers
   recv_sge.addr = reinterpret_cast<uintptr_t>(&recv_status_message_);

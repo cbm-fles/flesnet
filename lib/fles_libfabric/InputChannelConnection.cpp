@@ -246,10 +246,11 @@ bool InputChannelConnection::try_sync_buffer_positions() {
 uint64_t InputChannelConnection::skip_required(uint64_t data_size) {
   uint64_t databuf_size = UINT64_C(1) << remote_info_.data_buffer_size_exp;
   uint64_t databuf_wp = cn_wp_.data & (databuf_size - 1);
-  if (databuf_wp + data_size <= databuf_size)
+  if (databuf_wp + data_size <= databuf_size) {
     return 0;
-  else
+  } else {
     return databuf_size - databuf_wp;
+  }
 }
 
 void InputChannelConnection::finalize(bool abort) {
@@ -315,9 +316,10 @@ void InputChannelConnection::setup_mr(struct fid_domain* pd) {
     throw LibfabricException("fi_mr_reg failed for recv msg");
   }
 
-  if (!mr_recv_)
+  if (!mr_recv_) {
     throw LibfabricException(
         "registration of memory region failed in InputChannelConnection");
+  }
 
   err =
       fi_mr_reg(pd, &send_status_message_, sizeof(send_status_message_),
@@ -328,9 +330,10 @@ void InputChannelConnection::setup_mr(struct fid_domain* pd) {
     throw LibfabricException("fi_mr_reg failed for send msg");
   }
 
-  if (!mr_send_)
+  if (!mr_send_) {
     throw LibfabricException(
         "registration of memory region failed in InputChannelConnection2");
+  }
 }
 
 void InputChannelConnection::setup() {

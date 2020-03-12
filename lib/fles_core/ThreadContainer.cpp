@@ -15,8 +15,9 @@ void ThreadContainer::set_node() {
 
   struct bitmask* nodemask = numa_allocate_nodemask();
   numa_bitmask_setbit(nodemask, 0);
-  if (numa_max_node() > 0)
+  if (numa_max_node() > 0) {
     numa_bitmask_setbit(nodemask, 1);
+  }
   numa_bind(nodemask);
   numa_free_nodemask(nodemask);
 #else

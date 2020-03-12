@@ -78,8 +78,9 @@ public:
   void stop_processes(void* owner) {
     for (auto it = child_processes_.begin(); it < child_processes_.end();
          ++it) {
-      if (it->owner == owner)
+      if (it->owner == owner) {
         stop_process(it);
+      }
     }
   }
 
@@ -96,8 +97,9 @@ public:
   void allow_stop_processes(void* owner) {
     for (auto it = child_processes_.begin(); it < child_processes_.end();
          ++it) {
-      if (it->owner == owner)
+      if (it->owner == owner) {
         allow_stop_process(it);
+      }
     }
   }
 
@@ -141,12 +143,13 @@ private:
       // process with given pid has exited
       bool pid_found = false;
       std::size_t idx = 0;
-      for (std::size_t i = 0; i != child_processes.size(); ++i)
+      for (std::size_t i = 0; i != child_processes.size(); ++i) {
         if (child_processes[i].pid == pid) {
           pid_found = true;
           idx = i;
           break;
         }
+      }
       if (!pid_found) {
         L_(error) << "unknown child process died";
       } else {

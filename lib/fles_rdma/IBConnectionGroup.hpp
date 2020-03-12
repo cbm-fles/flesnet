@@ -21,8 +21,9 @@ public:
   /// The IBConnectionGroup default constructor.
   IBConnectionGroup() {
     ec_ = rdma_create_event_channel();
-    if (!ec_)
+    if (!ec_) {
       throw InfinibandException("rdma_create_event_channel failed");
+    }
     fcntl(ec_->fd, F_SETFL, O_NONBLOCK);
   }
 
@@ -31,8 +32,9 @@ public:
 
   /// The IBConnectionGroup default destructor.
   virtual ~IBConnectionGroup() {
-    for (auto& c : conn_)
+    for (auto& c : conn_) {
       c = nullptr;
+    }
 
     if (listen_id_) {
       int err = rdma_destroy_id(listen_id_);
@@ -101,8 +103,9 @@ public:
 
   /// Initiate disconnection.
   void disconnect() {
-    for (auto& c : conn_)
+    for (auto& c : conn_) {
       c->disconnect();
+    }
   }
 
   /// The connection manager event handler.
@@ -121,8 +124,9 @@ public:
         VALGRIND_MAKE_MEM_DEFINED(event_copy.param.conn.private_data,
                                   event_copy.param.conn.private_data_len);
         private_data_copy = malloc(event_copy.param.conn.private_data_len);
-        if (!private_data_copy)
+        if (!private_data_copy) {
           throw InfinibandException("malloc failed");
+        }
         memcpy(private_data_copy, event_copy.param.conn.private_data,
                event_copy.param.conn.private_data_len);
         event_copy.param.conn.private_data = private_data_copy;
@@ -135,10 +139,12 @@ public:
         private_data_copy = nullptr;
       }
     }
-    if (err == -1 && errno == EAGAIN)
+    if (err == -1 && errno == EAGAIN) {
       return;
-    if (err)
+    }
+    if (err) {
       throw InfinibandException("rdma_get_cm_event failed");
+    }
   }
 
   /// The InfiniBand completion notification handler.
@@ -150,8 +156,9 @@ public:
     int ne_total = 0;
 
     while (ne_total < 1000 && (ne = ibv_poll_cq(cq_, ne_max, wc))) {
-      if (ne < 0)
+      if (ne < 0) {
         throw InfinibandException("ibv_poll_cq failed");
+      }
 
       ne_total += ne;
       for (int i = 0; i < ne; ++i) {
@@ -206,8 +213,9 @@ public:
 protected:
   /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event.
   virtual void on_addr_resolved(struct rdma_cm_id* id) {
-    if (!pd_)
+    if (!pd_) {
       init_context(id->verbs);
+    }
 
     CONNECTION* conn = static_cast<CONNECTION*>(id->context);
 
@@ -263,15 +271,18 @@ protected:
     L_(debug) << "create verbs objects";
 
     pd_ = ibv_alloc_pd(context);
-    if (!pd_)
+    if (!pd_) {
       throw InfinibandException("ibv_alloc_pd failed");
+    }
 
     cq_ = ibv_create_cq(context, num_cqe_, nullptr, nullptr, 0);
-    if (!cq_)
+    if (!cq_) {
       throw InfinibandException("ibv_create_cq failed");
+    }
 
-    if (ibv_req_notify_cq(cq_, 0))
+    if (ibv_req_notify_cq(cq_, 0)) {
       throw InfinibandException("ibv_req_notify_cq failed");
+    }
   }
 
   const uint32_t num_cqe_ = 1000000;

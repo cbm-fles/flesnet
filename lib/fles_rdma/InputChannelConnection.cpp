@@ -185,10 +185,11 @@ bool InputChannelConnection::try_sync_buffer_positions() {
 uint64_t InputChannelConnection::skip_required(uint64_t data_size) {
   uint64_t databuf_size = UINT64_C(1) << remote_info_.data_buffer_size_exp;
   uint64_t databuf_wp = cn_wp_.data & (databuf_size - 1);
-  if (databuf_wp + data_size <= databuf_size)
+  if (databuf_wp + data_size <= databuf_size) {
     return 0;
-  else
+  } else {
     return databuf_size - databuf_wp;
+  }
 }
 
 void InputChannelConnection::finalize(bool abort) {
@@ -238,13 +239,15 @@ void InputChannelConnection::setup(struct ibv_pd* pd) {
   mr_recv_ =
       ibv_reg_mr(pd, &recv_status_message_, sizeof(ComputeNodeStatusMessage),
                  IBV_ACCESS_LOCAL_WRITE);
-  if (!mr_recv_)
+  if (!mr_recv_) {
     throw InfinibandException("registration of memory region failed");
+  }
 
   mr_send_ = ibv_reg_mr(pd, &send_status_message_,
                         sizeof(InputChannelStatusMessage), 0);
-  if (!mr_send_)
+  if (!mr_send_) {
     throw InfinibandException("registration of memory region failed");
+  }
 
   // setup send and receive buffers
   recv_sge.addr = reinterpret_cast<uintptr_t>(&recv_status_message_);

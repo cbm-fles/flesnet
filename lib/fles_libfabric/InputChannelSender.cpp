@@ -277,8 +277,9 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice) {
 
     int cn = target_cn_index(timeslice);
 
-    if (!conn_[cn]->write_request_available())
+    if (!conn_[cn]->write_request_available()) {
       return false;
+    }
 
     // number of bytes to skip in advance (to avoid buffer wrap)
     uint64_t skip = conn_[cn]->skip_required(total_length);
@@ -320,9 +321,10 @@ InputChannelSender::create_input_node_connection(uint_fast16_t index) {
 }
 
 void InputChannelSender::connect() {
-  if (!pd_) // pd, cq2, av
+  if (!pd_) { // pd, cq2, av
     init_context(Provider::getInst()->get_info(), compute_hostnames_,
                  compute_services_);
+  }
 
   for (unsigned int i = 0; i < compute_hostnames_.size(); ++i) {
     std::unique_ptr<InputChannelConnection> connection =
@@ -397,15 +399,17 @@ std::string InputChannelSender::get_state_string() {
 
   s << "/--- desc buf ---" << std::endl;
   s << "|";
-  for (unsigned int i = 0; i < data_source_.desc_buffer().size(); ++i)
+  for (unsigned int i = 0; i < data_source_.desc_buffer().size(); ++i) {
     s << " (" << i << ")" << data_source_.desc_buffer().at(i).offset;
+  }
   s << std::endl;
   s << "| acked_desc_ = " << acked_desc_ << std::endl;
   s << "/--- data buf ---" << std::endl;
   s << "|";
-  for (unsigned int i = 0; i < data_source_.data_buffer().size(); ++i)
+  for (unsigned int i = 0; i < data_source_.data_buffer().size(); ++i) {
     s << " (" << i << ")" << std::hex << data_source_.data_buffer().at(i)
       << std::dec;
+  }
   s << std::endl;
   s << "| acked_data_ = " << acked_data_ << std::endl;
   s << "\\---------";

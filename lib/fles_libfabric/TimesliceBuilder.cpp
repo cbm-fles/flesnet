@@ -188,9 +188,10 @@ void TimesliceBuilder::make_endpoint_named(struct fi_info* info,
     throw LibfabricException("fi_mr_reg failed");
   }
 
-  if (!mr_recv_)
+  if (!mr_recv_) {
     throw LibfabricException(
         "registration of memory region failed in TimesliceBuilder");
+  }
 }
 
 void TimesliceBuilder::bootstrap_wo_connections() {
@@ -269,8 +270,9 @@ void TimesliceBuilder::bootstrap_wo_connections() {
         continue;
       }
 
-      if (ne == -FI_EAGAIN)
+      if (ne == -FI_EAGAIN) {
         break;
+      }
 
       L_(debug) << "got " << ne << " events";
       for (int i = 0; i < ne; ++i) {
@@ -349,8 +351,9 @@ void TimesliceBuilder::operator()() {
 void TimesliceBuilder::on_connect_request(struct fi_eq_cm_entry* event,
                                           size_t private_data_len) {
 
-  if (!pd_)
+  if (!pd_) {
     init_context(event->info, {}, {});
+  }
 
   assert(private_data_len >= sizeof(InputNodeInfo));
   InputNodeInfo remote_info;
@@ -443,15 +446,18 @@ void TimesliceBuilder::on_completion(uint64_t wr_id) {
 
 void TimesliceBuilder::poll_ts_completion() {
   fles::TimesliceCompletion c;
-  if (!timeslice_buffer_.try_receive_completion(c))
+  if (!timeslice_buffer_.try_receive_completion(c)) {
     return;
+  }
   if (c.ts_pos == acked_) {
-    do
+    do {
       ++acked_;
-    while (ack_.at(acked_) > c.ts_pos);
-    for (auto& connection : conn_)
+    } while (ack_.at(acked_) > c.ts_pos);
+    for (auto& connection : conn_) {
       connection->inc_ack_pointers(acked_);
-  } else
+    }
+  } else {
     ack_.at(c.ts_pos) = c.ts_pos;
+  }
 }
 } // namespace tl_libfabric

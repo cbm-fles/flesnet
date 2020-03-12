@@ -21,14 +21,15 @@ std::istream& operator>>(std::istream& in, Transport& transport) {
   std::transform(std::begin(token), std::end(token), std::begin(token),
                  [](const unsigned char i) { return tolower(i); });
 
-  if (token == "rdma" || token == "r")
+  if (token == "rdma" || token == "r") {
     transport = Transport::RDMA;
-  else if (token == "libfabric" || token == "f")
+  } else if (token == "libfabric" || token == "f") {
     transport = Transport::LibFabric;
-  else if (token == "zeromq" || token == "z")
+  } else if (token == "zeromq" || token == "z") {
     transport = Transport::ZeroMQ;
-  else
+  } else {
     throw po::invalid_option_value(token);
+  }
   return in;
 }
 
@@ -204,31 +205,37 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 #endif
 
-  if (!vm.count("input"))
+  if (!vm.count("input")) {
     throw ParametersException("list of inputs is empty");
+  }
 
-  if (!vm.count("output"))
+  if (!vm.count("output")) {
     throw ParametersException("list of outputs is empty");
+  }
 
   inputs_ = vm["input"].as<std::vector<InterfaceSpecification>>();
   outputs_ = vm["output"].as<std::vector<InterfaceSpecification>>();
 
   for (auto& input : inputs_) {
-    if (!web::uri::validate(input.full_uri))
+    if (!web::uri::validate(input.full_uri)) {
       throw ParametersException("invalid input specification: " +
                                 input.full_uri);
+    }
   }
 
   for (auto& output : outputs_) {
-    if (!web::uri::validate(output.full_uri))
+    if (!web::uri::validate(output.full_uri)) {
       throw ParametersException("invalid output specification: " +
                                 output.full_uri);
+    }
   }
 
-  if (vm.count("input-index"))
+  if (vm.count("input-index")) {
     input_indexes_ = vm["input-index"].as<std::vector<unsigned>>();
-  if (vm.count("output-index"))
+  }
+  if (vm.count("output-index")) {
     output_indexes_ = vm["output-index"].as<std::vector<unsigned>>();
+  }
 
   if (inputs_.empty() && outputs_.empty()) {
     throw ParametersException("no node type specified");
@@ -252,15 +259,18 @@ void Parameters::parse_options(int argc, char* argv[]) {
     }
   }
 
-  if (!outputs_.empty() && processor_executable_.empty())
+  if (!outputs_.empty() && processor_executable_.empty()) {
     throw ParametersException("processor executable not specified");
+  }
 
   L_(debug) << "inputs (" << inputs_.size() << "):";
-  for (auto input : inputs_)
+  for (auto input : inputs_) {
     L_(debug) << "  " << input.full_uri;
+  }
   L_(debug) << "outputs (" << outputs_.size() << "):";
-  for (auto output : outputs_)
+  for (auto output : outputs_) {
     L_(debug) << "  " << output.full_uri;
+  }
   for (auto input_index : input_indexes_) {
     L_(info) << "this is input " << input_index << " (of " << inputs_.size()
              << ")";

@@ -179,16 +179,17 @@ void TimesliceBuilderZeromq::handle_timeslice_completions() {
   fles::TimesliceCompletion c;
   while (timeslice_buffer_.try_receive_completion(c)) {
     if (c.ts_pos == acked_) {
-      do
+      do {
         ++acked_;
-      while (ack_.at(acked_) > c.ts_pos);
+      } while (ack_.at(acked_) > c.ts_pos);
       for (auto& conn : connections_) {
         conn->desc.set_read_index(acked_);
         conn->data.set_read_index(conn->desc.at(acked_ - 1).offset +
                                   conn->desc.at(acked_ - 1).size);
       }
-    } else
+    } else {
       ack_.at(c.ts_pos) = c.ts_pos;
+    }
   }
 }
 

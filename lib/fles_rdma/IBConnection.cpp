@@ -17,8 +17,9 @@ IBConnection::IBConnection(struct rdma_event_channel* ec,
       cm_id_(id) {
   if (!cm_id_) {
     int err = rdma_create_id(ec, &cm_id_, this, RDMA_PS_TCP);
-    if (err)
+    if (err) {
       throw InfinibandException("rdma_create_id failed");
+    }
   } else {
     cm_id_->context = this;
   }
@@ -49,16 +50,18 @@ void IBConnection::connect(const std::string& hostname,
   struct addrinfo* res;
 
   int err = getaddrinfo(hostname.c_str(), service.c_str(), &hints, &res);
-  if (err)
+  if (err) {
     throw InfinibandException("getaddrinfo failed");
+  }
 
   L_(debug) << "[" << index_ << "] "
             << "resolution of server address and route";
 
   for (struct addrinfo* t = res; t; t = t->ai_next) {
     err = rdma_resolve_addr(cm_id_, nullptr, t->ai_addr, RESOLVE_TIMEOUT_MS);
-    if (!err)
+    if (!err) {
       break;
+    }
   }
   if (err) {
     L_(fatal) << "rdma_resolve_addr failed: " << strerror(errno);
@@ -72,8 +75,9 @@ void IBConnection::disconnect() {
   L_(debug) << "[" << index_ << "] "
             << "disconnect";
   int err = rdma_disconnect(cm_id_);
-  if (err)
+  if (err) {
     throw InfinibandException("rdma_disconnect failed");
+  }
 }
 
 void IBConnection::on_rejected(struct rdma_cm_event* /* event */) {
@@ -110,12 +114,14 @@ void IBConnection::on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq) {
   qp_attr.recv_cq = cq;
   qp_attr.qp_type = IBV_QPT_RC;
   int err = rdma_create_qp(cm_id_, pd, &qp_attr);
-  if (err)
+  if (err) {
     throw InfinibandException("creation of QP failed");
+  }
 
   err = rdma_resolve_route(cm_id_, RESOLVE_TIMEOUT_MS);
-  if (err)
+  if (err) {
     throw InfinibandException("rdma_resolve_route failed");
+  }
 
   setup(pd);
 }
@@ -128,8 +134,9 @@ void IBConnection::create_qp(struct ibv_pd* pd, struct ibv_cq* cq) {
   qp_attr.recv_cq = cq;
   qp_attr.qp_type = IBV_QPT_RC;
   int err = rdma_create_qp(cm_id_, pd, &qp_attr);
-  if (err)
+  if (err) {
     throw InfinibandException("creation of QP failed");
+  }
 }
 
 void IBConnection::accept_connect_request() {
@@ -144,8 +151,9 @@ void IBConnection::accept_connect_request() {
   conn_param.private_data = private_data->data();
   conn_param.private_data_len = static_cast<uint8_t>(private_data->size());
   int err = rdma_accept(cm_id_, &conn_param);
-  if (err)
+  if (err) {
     throw InfinibandException("RDMA accept failed");
+  }
 }
 
 void IBConnection::on_connect_request(struct rdma_cm_event* /* event */,
@@ -217,8 +225,9 @@ void IBConnection::post_send(struct ibv_send_wr* wr) {
   ++total_send_requests_;
 
   while (wr) {
-    for (int i = 0; i < wr->num_sge; ++i)
+    for (int i = 0; i < wr->num_sge; ++i) {
       total_bytes_sent_ += wr->sg_list[i].length;
+    }
     wr = wr->next;
   }
 }

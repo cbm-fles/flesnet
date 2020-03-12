@@ -11,11 +11,12 @@ void fles::NdpbEpochToMsSorter::process() {
     this->input.pop_front();
 
     // If not integer number of message in input buffer, print warning/error
-    if (0 != (msInput->desc().size % kuBytesPerMessage))
+    if (0 != (msInput->desc().size % kuBytesPerMessage)) {
       std::cerr << "fles::NdpbEpochToMsSorter::process => Warning, "
                 << "the input microslice buffer does NOT contain only complete "
                    "nDPB messages!"
                 << std::endl;
+    }
 
     // Compute the number of complete messages in the input microslice buffer
     uint32_t uNbMessages =
@@ -46,15 +47,17 @@ void fles::NdpbEpochToMsSorter::process() {
 
       // Ignore the SYNC messages as they are used only to get all EPOCH
       // messages in nDPB
-      if (true == mess.isSyncMsg())
+      if (true == mess.isSyncMsg()) {
         continue;
+      }
 
       if (true == mess.isEpochMsg()) {
         // Expand epoch to 64 bits with a cycle counter in higher bits for
         // longer time sorting
         if ((mess.getEpochNumber() < fuCurrentEpoch) &&
-            (0xEFFFFFFF < fuCurrentEpoch - mess.getEpochNumber()))
+            (0xEFFFFFFF < fuCurrentEpoch - mess.getEpochNumber())) {
           fuCurrentEpochCycle++;
+        }
 
         fuCurrentEpoch = mess.getEpochNumber();
 
@@ -78,14 +81,15 @@ void fles::NdpbEpochToMsSorter::process() {
             // 0x.0 for Raw data
             // 0x.1 for (Epoch-)aligned Microslices
             // 0x.2 for Time-sorted data
-            if (true == fbMsgSorting)
+            if (true == fbMsgSorting) {
               desc.sys_ver = 0xE2;
-            else
+            } else {
               desc.sys_ver = 0xE1;
+            }
 
             // Convert the multiset of messages to a vector of bytes
             std::vector<uint8_t> content;
-            if (true == fbMsgSorting)
+            if (true == fbMsgSorting) {
               for (auto itMess = fmsFullMsgBuffer.begin();
                    itMess != fmsFullMsgBuffer.end(); itMess++) {
                 /* Wrong Endianness?!?
@@ -149,7 +153,7 @@ void fles::NdpbEpochToMsSorter::process() {
                 //                               << std::dec << std::endl;
               } // for( auto itMess = fmsFullMsgBuffer.begin(); itMess <
                 // fmsFullMsgBuffer.end(); itMess++)
-            else
+            } else {
               for (auto itMess = fvMsgBuffer.begin();
                    itMess != fvMsgBuffer.end(); itMess++) {
                 content.push_back(static_cast<uint8_t>(
@@ -169,21 +173,24 @@ void fles::NdpbEpochToMsSorter::process() {
                 content.push_back(static_cast<uint8_t>(
                     ((*itMess).getData() & 0xFF00000000000000UL) >> 56));
               } // else for( auto itMess = fvMsgBuffer.begin(); itMess !=
-                // fvMsgBuffer.end(); itMess++)
+            }
+            // fvMsgBuffer.end(); itMess++)
             std::unique_ptr<StorableMicroslice> sortedMs(
                 new StorableMicroslice(desc, content));
             output.push(std::move(sortedMs));
 
             // Re-initialize the sorting buffer
-            if (true == fbMsgSorting)
+            if (true == fbMsgSorting) {
               fmsFullMsgBuffer.clear();
-            else
+            } else {
               fvMsgBuffer.clear();
+            }
             fuNbEpInBuff = 0;
           } // if( fuNbEpPerMs == fuNbEpInBuff )
         }   // if( true == fbFirstEpFound )
-        else
+        else {
           fbFirstEpFound = true;
+        }
       } // if( true == mess.isEpochMsg() )
 
       // If the first epoch was found, start saving messages in the sorting
@@ -198,8 +205,9 @@ void fles::NdpbEpochToMsSorter::process() {
           // Otherwise the simpler "sorting by epoch" is done just by epoch
           // definition!
           // => vector is enough
-        else
+        else {
           fvMsgBuffer.push_back(mess);
+        }
       } // if( true == fbFirstEpFound )
     }   // for (uint32_t uIdx = 0; uIdx < uNbMessages; uIdx ++)
   }     // while (0 < this->input.size() )

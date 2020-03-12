@@ -64,10 +64,12 @@ public:
   bool try_receive_completion(fles::TimesliceCompletion& c) {
     std::size_t recvd_size;
     unsigned int priority;
-    if (!completions_mq_->try_receive(&c, sizeof(c), recvd_size, priority))
+    if (!completions_mq_->try_receive(&c, sizeof(c), recvd_size, priority)) {
       return false;
-    if (recvd_size == 0)
+    }
+    if (recvd_size == 0) {
       return false;
+    }
     assert(recvd_size == sizeof(c));
     return true;
   };

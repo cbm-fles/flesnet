@@ -50,14 +50,16 @@ public:
 
   /// The ConnectionGroup default destructor.
   virtual ~ConnectionGroup() {
-    for (auto& c : conn_)
+    for (auto& c : conn_) {
       c = nullptr;
+    }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
     fi_close((fid_t)eq_);
-    if (pep_ != nullptr)
+    if (pep_ != nullptr) {
       fi_close((fid_t)pep_);
+    }
 #pragma GCC diagnostic pop
 
     pep_ = nullptr;
@@ -73,8 +75,9 @@ public:
 
   /// Initiate disconnection.
   void disconnect() {
-    for (auto& c : conn_)
+    for (auto& c : conn_) {
       c->disconnect();
+    }
   }
 
   /// The connection manager event handler.
@@ -146,8 +149,9 @@ public:
         throw LibfabricException("fi_cq_read failed");
       }
 
-      if (ne == -FI_EAGAIN)
+      if (ne == -FI_EAGAIN) {
         break;
+      }
 
       ne_total += ne;
       for (int i = 0; i < ne; ++i) {

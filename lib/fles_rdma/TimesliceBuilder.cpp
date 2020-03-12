@@ -102,8 +102,9 @@ void TimesliceBuilder::operator()() {
 }
 
 void TimesliceBuilder::on_connect_request(struct rdma_cm_event* event) {
-  if (!pd_)
+  if (!pd_) {
     init_context(event->id->verbs);
+  }
 
   assert(event->param.conn.private_data_len >= sizeof(InputNodeInfo));
   InputNodeInfo remote_info =
@@ -193,14 +194,17 @@ void TimesliceBuilder::on_completion(const struct ibv_wc& wc) {
 
 void TimesliceBuilder::poll_ts_completion() {
   fles::TimesliceCompletion c;
-  if (!timeslice_buffer_.try_receive_completion(c))
+  if (!timeslice_buffer_.try_receive_completion(c)) {
     return;
+  }
   if (c.ts_pos == acked_) {
-    do
+    do {
       ++acked_;
-    while (ack_.at(acked_) > c.ts_pos);
-    for (auto& connection : conn_)
+    } while (ack_.at(acked_) > c.ts_pos);
+    for (auto& connection : conn_) {
       connection->inc_ack_pointers(acked_);
-  } else
+    }
+  } else {
     ack_.at(c.ts_pos) = c.ts_pos;
+  }
 }
