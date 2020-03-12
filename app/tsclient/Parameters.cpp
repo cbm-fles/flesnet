@@ -16,15 +16,17 @@ void Parameters::parse_options(int argc, char* argv[]) {
   auto desc_add = desc.add_options();
   desc_add("version,V", "print version string");
   desc_add("help,h", "produce help message");
-  desc_add("log-level,l", po::value<unsigned>(&log_level)
-                              ->default_value(log_level)
-                              ->value_name("<n>"),
+  desc_add("log-level,l",
+           po::value<unsigned>(&log_level)
+               ->default_value(log_level)
+               ->value_name("<n>"),
            "set the file log level (all:0)");
   desc_add("log-file,L", po::value<std::string>(&log_file),
            "name of target log file");
-  desc_add("log-syslog,S", po::value<unsigned>(&log_syslog)
-                               ->default_value(log_syslog)
-                               ->value_name("<n>"),
+  desc_add("log-syslog,S",
+           po::value<unsigned>(&log_syslog)
+               ->default_value(log_syslog)
+               ->value_name("<n>"),
            "enable logging to syslog at given log level");
   desc_add("client-index,c", po::value<int32_t>(&client_index_),
            "index of this executable in the list of processor tasks");
@@ -63,8 +65,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
            "High-water mark for the publisher, in TS, TS drop happens if more "
            "buffered (default: 1)");
   L_(info) << "Load option HwPublish " << publish_hwm_;
-  desc_add("subscribe,S", po::value<std::string>(&subscribe_address_)
-                              ->implicit_value("tcp://localhost:5556"),
+  desc_add("subscribe,S",
+           po::value<std::string>(&subscribe_address_)
+               ->implicit_value("tcp://localhost:5556"),
            "subscribe to timeslice publisher on given address");
   desc_add("subscribe-hwm", po::value<uint32_t>(&subscribe_hwm_),
            "High-water mark for the subscriber, in TS, TS drop happens if more "

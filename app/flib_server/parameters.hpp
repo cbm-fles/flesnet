@@ -120,15 +120,17 @@ private:
     config_add("desc-buffer-size-exp",
                po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
                "exp. size of the descriptor buffer (number of entries)");
-    config_add("log-level,l", po::value<unsigned>(&log_level)
-                                  ->default_value(log_level)
-                                  ->value_name("<n>"),
+    config_add("log-level,l",
+               po::value<unsigned>(&log_level)
+                   ->default_value(log_level)
+                   ->value_name("<n>"),
                "set the file log level (all:0)");
     config_add("log-file,L", po::value<std::string>(&log_file),
                "name of target log file");
-    config_add("log-syslog,S", po::value<unsigned>(&log_syslog)
-                                   ->default_value(log_syslog)
-                                   ->value_name("<n>"),
+    config_add("log-syslog,S",
+               po::value<unsigned>(&log_syslog)
+                   ->default_value(log_syslog)
+                   ->value_name("<n>"),
                "enable logging to syslog at given log level");
     config_add("etcd-authority",
                po::value<std::string>(&_etcd.authority)

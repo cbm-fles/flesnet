@@ -1,7 +1,7 @@
 // Copyright 2020 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
 #define BOOST_TEST_MODULE test_TimesliceMultiInputArchive
-#include <boost/test/unit_test.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include "TimesliceMultiInputArchive.hpp"
 

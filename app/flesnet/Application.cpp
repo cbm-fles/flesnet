@@ -50,9 +50,10 @@ void Application::create_timeslice_buffers() {
 
     L_(info) << "timeslice buffer " << i
              << " size: " << human_readable_count(UINT64_C(1) << datasize)
-             << " + " << human_readable_count(
-                             (UINT64_C(1) << descsize) *
-                             sizeof(fles::TimesliceComponentDescriptor));
+             << " + "
+             << human_readable_count(
+                    (UINT64_C(1) << descsize) *
+                    sizeof(fles::TimesliceComponentDescriptor));
 
     std::unique_ptr<TimesliceBuffer> tsb(
         new TimesliceBuffer(shm_identifier, datasize, descsize, input_size));
