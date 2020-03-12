@@ -22,6 +22,8 @@ template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchiveLoop;
+template <class Base, class Derived, ArchiveType archive_type>
+class InputArchiveSequence;
 
 /**
  * \brief The StorableTimeslice class contains the data of a single timeslice.
@@ -119,6 +121,9 @@ private:
   friend class InputArchiveLoop<Timeslice,
                                 StorableTimeslice,
                                 ArchiveType::TimesliceArchive>;
+  friend class InputArchiveSequence<Timeslice,
+                                    StorableTimeslice,
+                                    ArchiveType::TimesliceArchive>;
   friend class TimesliceSubscriber;
 
   StorableTimeslice();

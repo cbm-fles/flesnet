@@ -23,7 +23,12 @@ Application::Application(Parameters const& par) : par_(par) {
         source_.reset(
             new fles::TimesliceMultiInputArchive(par_.input_archive()));
       } else {
-        source_.reset(new fles::TimesliceInputArchive(par_.input_archive()));
+        if (par_.input_archive().find("%n") != std::string::npos) {
+          source_.reset(
+              new fles::TimesliceInputArchiveSequence(par_.input_archive()));
+        } else {
+          source_.reset(new fles::TimesliceInputArchive(par_.input_archive()));
+        }
       }
     } else {
       source_.reset(new fles::TimesliceInputArchiveLoop(

@@ -1,4 +1,4 @@
-// Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2015, 2020 Jan de Cuveland <cmail@cuveland.de>
 /// \file
 /// \brief Defines the fles::MicrosliceInputArchive class type.
 #pragma once
@@ -6,6 +6,7 @@
 #include "ArchiveDescriptor.hpp"
 #include "InputArchive.hpp"
 #include "InputArchiveLoop.hpp"
+#include "InputArchiveSequence.hpp"
 
 namespace fles {
 
@@ -24,5 +25,10 @@ using MicrosliceInputArchiveLoop =
     InputArchiveLoop<Microslice,
                      StorableMicroslice,
                      ArchiveType::MicrosliceArchive>;
+
+using MicrosliceInputArchiveSequence =
+    InputArchiveSequence<Microslice,
+                         StorableMicroslice,
+                         ArchiveType::MicrosliceArchive>;
 
 } // namespace fles

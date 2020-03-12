@@ -57,6 +57,8 @@ private:
   friend class InputArchive;
   template <class Base, class Derived, ArchiveType archive_type>
   friend class InputArchiveLoop;
+  template <class Base, class Derived, ArchiveType archive_type>
+  friend class InputArchiveSequence;
 
   ArchiveDescriptor(){};
 
