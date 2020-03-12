@@ -25,7 +25,7 @@ target_include_directories(test_MicrosliceReceiver SYSTEM PUBLIC ${Boost_INCLUDE
 target_include_directories(test_logging SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(test_Timeslice fles_ipc ${Boost_LIBRARIES})
-target_link_libraries(test_TimesliceMultiInputArchive fles_ipc ${Boost_LIBRARIES})
+target_link_libraries(test_TimesliceMultiInputArchive fles_ipc logging ${Boost_LIBRARIES})
 target_link_libraries(test_Microslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_RingBuffer fles_core ${Boost_LIBRARIES})
 target_link_libraries(test_Filter fles_core ${Boost_LIBRARIES})
