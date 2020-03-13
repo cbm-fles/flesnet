@@ -41,7 +41,7 @@ public:
                        size_t paramlen,
                        void* addr) = 0;
 
-  static void init(std::string local_host_name) {
+  static void init(const std::string& local_host_name) {
     prov = get_provider(std::move(local_host_name));
   }
 
