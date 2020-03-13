@@ -17,7 +17,7 @@ ComputeNodeConnection::ComputeNodeConnection(
     fles::TimesliceComponentDescriptor* desc_ptr,
     uint32_t desc_buffer_size_exp)
     : IBConnection(ec, connection_index, remote_connection_index, id),
-      remote_info_(std::move(remote_info)), data_ptr_(data_ptr),
+      remote_info_(remote_info), data_ptr_(data_ptr),
       data_buffer_size_exp_(data_buffer_size_exp), desc_ptr_(desc_ptr),
       desc_buffer_size_exp_(desc_buffer_size_exp) {
   // send and receive only single StatusMessage struct

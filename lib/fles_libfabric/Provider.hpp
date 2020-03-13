@@ -42,7 +42,7 @@ public:
                        void* addr) = 0;
 
   static void init(const std::string& local_host_name) {
-    prov = get_provider(std::move(local_host_name));
+    prov = get_provider(local_host_name);
   }
 
   virtual void set_hostnames_and_services(
