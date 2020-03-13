@@ -31,7 +31,7 @@ static void s_signal_handler(int signal_value) {
   s_interrupted = 1;
 }
 
-static void s_catch_signals(void) {
+static void s_catch_signals() {
   struct sigaction action;
   action.sa_handler = s_signal_handler;
   action.sa_flags = 0;
