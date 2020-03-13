@@ -64,10 +64,10 @@ public:
   Transport transport() const { return transport_; }
 
   /// Retrieve the list of participating inputs.
-  std::vector<InterfaceSpecification> const inputs() const { return inputs_; }
+  std::vector<InterfaceSpecification> inputs() const { return inputs_; }
 
   /// Retrieve the list of compute node outputs.
-  std::vector<InterfaceSpecification> const outputs() const { return outputs_; }
+  std::vector<InterfaceSpecification> outputs() const { return outputs_; }
 
   /// Retrieve this applications's indexes in the list of inputs.
   std::vector<unsigned> input_indexes() const { return input_indexes_; }
