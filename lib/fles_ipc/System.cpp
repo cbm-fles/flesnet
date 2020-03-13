@@ -104,7 +104,7 @@ std::vector<std::string> glob(const std::string& pattern) {
 
   std::vector<std::string> filenames;
   for (size_t i = 0; i < glob_result.gl_pathc; ++i) {
-    filenames.push_back(std::string(glob_result.gl_pathv[i]));
+    filenames.emplace_back(glob_result.gl_pathv[i]);
   }
 
   globfree(&glob_result);
