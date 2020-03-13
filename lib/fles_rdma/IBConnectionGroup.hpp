@@ -81,7 +81,7 @@ public:
     sin.sin_family = AF_INET;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-    sin.sin_port = htons(port);
+    sin.sin_port = htons(port); // NOLINT
     sin.sin_addr.s_addr = INADDR_ANY;
 #pragma GCC diagnostic pop
     err = rdma_bind_addr(listen_id_, reinterpret_cast<struct sockaddr*>(&sin));

@@ -94,7 +94,8 @@ void RDMSocketsProvider::set_hostnames_and_services(
     const std::vector<std::string>& compute_hostnames,
     const std::vector<std::string>& compute_services,
     std::vector<::fi_addr_t>& fi_addrs) {
-  struct fi_info *info, *hints;
+  struct fi_info* info;
+  struct fi_info* hints;
 
   for (size_t i = 0; i < compute_hostnames.size(); i++) {
     fi_addr_t fi_addr;

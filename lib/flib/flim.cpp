@@ -148,19 +148,19 @@ time_t flim::build_date() {
 
 std::string flim::build_host() {
   uint32_t host[4];
-  host[0] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_HOST_3));
-  host[1] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_HOST_2));
-  host[2] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_HOST_1));
-  host[3] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_HOST_0));
+  host[0] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_HOST_3)); // NOLINT
+  host[1] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_HOST_2)); // NOLINT
+  host[2] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_HOST_1)); // NOLINT
+  host[3] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_HOST_0)); // NOLINT
   return std::string(reinterpret_cast<const char*>(host));
 }
 
 std::string flim::build_user() {
   uint32_t user[4];
-  user[0] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_USER_3));
-  user[1] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_USER_2));
-  user[2] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_USER_1));
-  user[3] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_USER_0));
+  user[0] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_USER_3)); // NOLINT
+  user[1] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_USER_2)); // NOLINT
+  user[2] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_USER_1)); // NOLINT
+  user[3] = ntohl(m_rfflim->get_reg(RORC_REG_FLIM_BUILD_USER_0)); // NOLINT
   return std::string(reinterpret_cast<const char*>(user));
 }
 

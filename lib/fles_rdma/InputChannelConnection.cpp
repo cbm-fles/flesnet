@@ -100,7 +100,9 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
   }
   num_sge -= num_sge_cut;
 
-  struct ibv_send_wr send_wr_ts, send_wr_tswrap, send_wr_tscdesc;
+  struct ibv_send_wr send_wr_ts;
+  struct ibv_send_wr send_wr_tswrap;
+  struct ibv_send_wr send_wr_tscdesc;
   memset(&send_wr_ts, 0, sizeof(send_wr_ts));
   send_wr_ts.wr_id = ID_WRITE_DATA;
   send_wr_ts.opcode = IBV_WR_RDMA_WRITE;

@@ -119,7 +119,9 @@ int main(int argc, char* argv[]) {
     }
 
     bool running = true;
-    time_point<high_resolution_clock> start, end, now;
+    time_point<high_resolution_clock> start;
+    time_point<high_resolution_clock> end;
+    time_point<high_resolution_clock> now;
 
     std::vector<double> t_total(data_sources.size(), 0);
     std::vector<double> t_data(data_sources.size(), 0);
