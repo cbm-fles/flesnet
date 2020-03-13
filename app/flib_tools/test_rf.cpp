@@ -90,13 +90,8 @@ int main(int argc, char* argv[]) {
     ++reg_wr;
   }
 
-  if (MyFlim) {
-    delete MyFlim;
-  }
-
-  if (MyFlib) {
-    delete MyFlib;
-  }
+  delete MyFlim;
+  delete MyFlib;
 
   std::cout << "Exiting" << std::endl;
   return ret;
