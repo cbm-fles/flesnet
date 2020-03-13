@@ -31,7 +31,7 @@ template <typename CONNECTION>
 class ConnectionGroup : public ConnectionGroupWorker {
 public:
   /// The ConnectionGroup default constructor.
-  ConnectionGroup(std::string local_node_name) {
+  ConnectionGroup(const std::string& local_node_name) {
     Provider::init(local_node_name);
     // std::cout << "ConnectionGroup constructor" << std::endl;
     struct fi_eq_attr eq_attr;
