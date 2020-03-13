@@ -57,7 +57,7 @@ bar_graph(std::vector<T> values, std::string symbols, uint32_t length) {
   for (size_t i = 0; i < values.size(); ++i) {
     filled += static_cast<float>(values[i]) / static_cast<float>(sum);
     uint32_t chars =
-        static_cast<uint32_t>(round(filled * static_cast<float>(length)));
+        static_cast<uint32_t>(std::round(filled * static_cast<float>(length)));
     s.append(std::string(chars - s.size(), symbols[i % symbols.size()]));
   }
 
