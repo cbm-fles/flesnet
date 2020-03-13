@@ -37,9 +37,10 @@ TimesliceMultiInputArchive::TimesliceMultiInputArchive(
     std::vector<std::string> inputStreams;
     boost::split(inputStreams, inputString, [](char c) { return c == ';'; });
     for (auto& string : inputStreams) {
-      std::string fullFile = inputDirectory + "/" + string;
-      newInputString += fullFile;
-      newInputString += ";";
+      newInputString.append(inputDirectory)
+          .append("/")
+          .append(string)
+          .append(";");
     }
     newInputString.pop_back(); // Remove the last ;
   } else {
