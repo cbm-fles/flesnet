@@ -77,7 +77,7 @@ private:
                       uint64_t skip);
 
   /// Completion notification event dispatcher. Called by the event loop.
-  void on_completion(uint64_t wc_id) override;
+  void on_completion(uint64_t wr_id) override;
 
   /// setup connections between nodes
   void bootstrap_with_connections();

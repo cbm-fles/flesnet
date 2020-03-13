@@ -56,7 +56,7 @@ public:
                           size_t private_data_len) override;
 
   /// Completion notification event dispatcher. Called by the event loop.
-  void on_completion(uint64_t wc_id) override;
+  void on_completion(uint64_t wr_id) override;
 
   void poll_ts_completion();
 

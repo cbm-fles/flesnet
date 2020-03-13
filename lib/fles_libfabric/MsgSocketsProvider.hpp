@@ -43,7 +43,7 @@ public:
                uint32_t max_recv_sge,
                uint32_t max_inline_data,
                const void* param,
-               size_t paramlen,
+               size_t param_len,
                void* addr) override;
 
   void set_hostnames_and_services(

@@ -157,7 +157,7 @@ private:
   void run_end();
 
   /// The central function for distributing timeslice data.
-  bool try_send_timeslice(uint64_t timeslice);
+  bool try_send_timeslice(uint64_t ts);
 
   /// Create zeromq message part with requested data.
   template <typename T_>

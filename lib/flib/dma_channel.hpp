@@ -47,7 +47,7 @@ public:
 
   ~dma_channel();
 
-  void set_sw_read_pointers(uint64_t data_offest, uint64_t desc_offset);
+  void set_sw_read_pointers(uint64_t data_offset, uint64_t desc_offset);
 
   uint64_t get_data_offset();
   uint64_t get_desc_index();
