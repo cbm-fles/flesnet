@@ -9,8 +9,8 @@
 #include <cstdint>
 #include <pthread.h>
 
-typedef struct PciDevice_struct PciDevice;
-typedef struct Bar_struct Bar;
+using PciDevice = struct PciDevice_struct;
+using Bar = struct Bar_struct;
 
 namespace pda {
 class device;

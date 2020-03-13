@@ -9,8 +9,8 @@
 #include <cstdint>
 #include <cstdio>
 
-typedef struct DeviceOperator_struct DeviceOperator;
-typedef struct PciDevice_struct PciDevice;
+using DeviceOperator = struct DeviceOperator_struct;
+using PciDevice = struct PciDevice_struct;
 
 namespace pda {
 class device_operator;

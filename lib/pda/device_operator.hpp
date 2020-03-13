@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <cstdio>
 
-typedef struct DeviceOperator_struct DeviceOperator;
+using DeviceOperator = struct DeviceOperator_struct;
 
 namespace pda {
 

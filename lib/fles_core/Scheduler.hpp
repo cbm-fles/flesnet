@@ -9,8 +9,8 @@
 class Scheduler {
 public:
   struct event {
-    typedef std::function<void()> callback_type;
-    typedef std::chrono::time_point<std::chrono::system_clock> time_type;
+    using callback_type = std::function<void()>;
+    using time_type = std::chrono::time_point<std::chrono::system_clock>;
 
     event(const callback_type& cb, const time_type& when)
         : callback_(cb), when_(when) {}

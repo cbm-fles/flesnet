@@ -8,7 +8,7 @@
 
 namespace flib {
 
-typedef uint64_t sys_bus_addr;
+using sys_bus_addr = uint64_t;
 
 class register_file {
 public:

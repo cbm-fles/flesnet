@@ -10,9 +10,9 @@
 #include <sstream>
 #include <vector>
 
-typedef struct PciDevice_struct PciDevice;
-typedef struct DMABuffer_struct DMABuffer;
-typedef struct DMABuffer_SGNode_struct DMABuffer_SGNode;
+using PciDevice = struct PciDevice_struct;
+using DMABuffer = struct DMABuffer_struct;
+using DMABuffer_SGNode = struct DMABuffer_SGNode_struct;
 
 namespace pda {
 

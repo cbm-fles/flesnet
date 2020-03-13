@@ -108,7 +108,7 @@ public:
   }
 
 private:
-  typedef struct sigaction sigaction_struct;
+  using sigaction_struct = struct sigaction;
 
   ChildProcessManager() { install_sigchld_handler(); }
 
