@@ -84,7 +84,6 @@ public:
     assert(lock);
     m_write_index = write_index;
     m_cond_write_index.notify_all();
-    return;
   }
 
   DualIndex read_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {

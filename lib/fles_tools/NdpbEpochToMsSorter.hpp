@@ -19,9 +19,9 @@ class NdpbEpochToMsSorter
     : public BufferingFilter<Microslice, StorableMicroslice> {
 public:
   NdpbEpochToMsSorter(uint32_t uEpPerMs = 1, bool bSortMsgs = false)
-      : BufferingFilter(), fuNbEpPerMs(uEpPerMs), fbMsgSorting(bSortMsgs),
-        fmsFullMsgBuffer(), fuNbEpInBuff(0), fbFirstEpFound(false),
-        fuCurrentEpoch(0), fuCurrentEpochCycle(0), fulCurrentLongEpoch(0){};
+      : fuNbEpPerMs(uEpPerMs), fbMsgSorting(bSortMsgs), fuNbEpInBuff(0),
+        fbFirstEpFound(false), fuCurrentEpoch(0), fuCurrentEpochCycle(0),
+        fulCurrentLongEpoch(0){};
 
 private:
   void process() override;

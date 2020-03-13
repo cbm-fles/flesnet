@@ -21,10 +21,9 @@ class GdpbEpochToMsSorter
     : public BufferingFilter<Microslice, StorableMicroslice> {
 public:
   GdpbEpochToMsSorter(uint32_t uEpPerMs = 1, uint64_t ulMaskGet4 = 0x0)
-      : BufferingFilter(), fuNbEpPerMs(uEpPerMs), fmsFullMsgBuffer(),
-        fuNbEpInBuff(0), fbFirstEpFound(false), fuCurrentEpoch(0),
-        fuCurrentEpochCycle(0), fulCurrentLongEpoch(0), fbFirstEp2Found(),
-        fuCurrentEpoch2(), // All values initialized at 0!
+      : fuNbEpPerMs(uEpPerMs), fuNbEpInBuff(0), fbFirstEpFound(false),
+        fuCurrentEpoch(0), fuCurrentEpochCycle(0), fulCurrentLongEpoch(0),
+        fbFirstEp2Found(), fuCurrentEpoch2(), // All values initialized at 0!
         fuCurrentEpochCycle2(),
         fulCurrentLongEpoch2(), // All values initialized at 0!
         fbAllFirstEp2Found(false), fbAllCurrentEp2Found(false),
