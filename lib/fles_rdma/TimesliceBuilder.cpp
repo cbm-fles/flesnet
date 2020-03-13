@@ -170,7 +170,7 @@ void TimesliceBuilder::on_completion(const struct ibv_wc& wc) {
            ++tpos) {
         if (!drop_) {
           uint64_t ts_index = UINT64_MAX;
-          if (conn_.size() > 0) {
+          if (!conn_.empty()) {
             ts_index = timeslice_buffer_.get_desc(0, tpos).ts_num;
           }
           timeslice_buffer_.send_work_item(

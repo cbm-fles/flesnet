@@ -69,9 +69,9 @@ void Connection::connect(const std::string& hostname,
   hints->src_addr = nullptr;
   hints->src_addrlen = 0;
 
-  int err =
-      fi_getinfo(FI_VERSION(1, 1), hostname == "" ? nullptr : hostname.c_str(),
-                 service == "" ? nullptr : service.c_str(), 0, hints, &info2);
+  int err = fi_getinfo(
+      FI_VERSION(1, 1), hostname.empty() ? nullptr : hostname.c_str(),
+      service.empty() ? nullptr : service.c_str(), 0, hints, &info2);
   if (err) {
     L_(fatal) << "fi_getinfo failed in make_endpoint: " << hostname << " "
               << service << "[" << err << "=" << fi_strerror(-err) << "]";
@@ -227,9 +227,9 @@ void Connection::make_endpoint(struct fi_info* info,
   hints->src_addr = nullptr;
   hints->src_addrlen = 0;
 
-  int err =
-      fi_getinfo(FI_VERSION(1, 1), hostname == "" ? nullptr : hostname.c_str(),
-                 service == "" ? nullptr : service.c_str(), 0, hints, &info2);
+  int err = fi_getinfo(
+      FI_VERSION(1, 1), hostname.empty() ? nullptr : hostname.c_str(),
+      service.empty() ? nullptr : service.c_str(), 0, hints, &info2);
   if (err) {
     L_(fatal) << "fi_getinfo failed in make_endpoint: " << err << "="
               << fi_strerror(-err);

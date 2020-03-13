@@ -65,7 +65,7 @@ void TimesliceBuilderZeromq::operator()() {
 }
 
 void TimesliceBuilderZeromq::run_begin() {
-  assert(connections_.size() > 0);
+  assert(!connections_.empty());
   time_begin_ = std::chrono::high_resolution_clock::now();
   report_status();
 }

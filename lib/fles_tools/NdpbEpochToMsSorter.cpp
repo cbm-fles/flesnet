@@ -6,7 +6,7 @@ void fles::NdpbEpochToMsSorter::process() {
   constexpr uint32_t kuBytesPerMessage = 8;
 
   // combine the contents of two consecutive microslices
-  while (0 < this->input.size()) {
+  while (!this->input.empty()) {
     auto msInput = input.front();
     this->input.pop_front();
 
