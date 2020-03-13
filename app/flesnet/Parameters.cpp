@@ -164,19 +164,19 @@ void Parameters::parse_options(int argc, char* argv[]) {
     notify(vm);
   }
 
-  if (vm.count("help")) {
+  if (vm.count("help") != 0u) {
     std::cout << "flesnet, git revision " << g_GIT_REVISION << std::endl;
     std::cout << cmdline_options << std::endl;
     exit(EXIT_SUCCESS);
   }
 
-  if (vm.count("version")) {
+  if (vm.count("version") != 0u) {
     std::cout << "flesnet, git revision " << g_GIT_REVISION << std::endl;
     exit(EXIT_SUCCESS);
   }
 
   logging::add_console(static_cast<severity_level>(log_level));
-  if (vm.count("log-file")) {
+  if (vm.count("log-file") != 0u) {
     L_(info) << "logging output to " << log_file;
     if (log_level < 3) {
       log_level = 3;
@@ -184,7 +184,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
     }
     logging::add_file(log_file, static_cast<severity_level>(log_level));
   }
-  if (vm.count("log-syslog")) {
+  if (vm.count("log-syslog") != 0u) {
     logging::add_syslog(logging::syslog::local0,
                         static_cast<severity_level>(log_syslog));
   }
@@ -204,11 +204,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 #endif
 
-  if (!vm.count("input")) {
+  if (vm.count("input") == 0u) {
     throw ParametersException("list of inputs is empty");
   }
 
-  if (!vm.count("output")) {
+  if (vm.count("output") == 0u) {
     throw ParametersException("list of outputs is empty");
   }
 
@@ -229,10 +229,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
     }
   }
 
-  if (vm.count("input-index")) {
+  if (vm.count("input-index") != 0u) {
     input_indexes_ = vm["input-index"].as<std::vector<unsigned>>();
   }
-  if (vm.count("output-index")) {
+  if (vm.count("output-index") != 0u) {
     output_indexes_ = vm["output-index"].as<std::vector<unsigned>>();
   }
 

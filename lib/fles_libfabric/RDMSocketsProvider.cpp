@@ -48,7 +48,7 @@ struct fi_info* RDMSocketsProvider::exists(const std::string& local_host_name) {
   int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr, 0,
                        hints, &info);
 
-  if (!res) {
+  if (res == 0) {
     // fi_freeinfo(hints);
     return info;
   }
@@ -61,7 +61,7 @@ struct fi_info* RDMSocketsProvider::exists(const std::string& local_host_name) {
 
 RDMSocketsProvider::RDMSocketsProvider(struct fi_info* info) : info_(info) {
   int res = fi_fabric(info_->fabric_attr, &fabric_, nullptr);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_fabric failed: " << res << "=" << fi_strerror(-res);
     throw LibfabricException("fi_fabric failed");
   }

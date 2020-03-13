@@ -75,7 +75,8 @@ void ComputeNodeConnection::setup(struct ibv_pd* pd) {
       ibv_reg_mr(pd, &recv_status_message_, sizeof(InputChannelStatusMessage),
                  IBV_ACCESS_LOCAL_WRITE);
 
-  if (!mr_data_ || !mr_desc_ || !mr_recv_ || !mr_send_) {
+  if ((mr_data_ == nullptr) || (mr_desc_ == nullptr) || (mr_recv_ == nullptr) ||
+      (mr_send_ == nullptr)) {
     throw InfinibandException("registration of memory region failed");
   }
 
@@ -112,22 +113,22 @@ void ComputeNodeConnection::on_established(struct rdma_cm_event* event) {
 void ComputeNodeConnection::on_disconnected(struct rdma_cm_event* event) {
   disconnect();
 
-  if (mr_recv_) {
+  if (mr_recv_ != nullptr) {
     ibv_dereg_mr(mr_recv_);
     mr_recv_ = nullptr;
   }
 
-  if (mr_send_) {
+  if (mr_send_ != nullptr) {
     ibv_dereg_mr(mr_send_);
     mr_send_ = nullptr;
   }
 
-  if (mr_desc_) {
+  if (mr_desc_ != nullptr) {
     ibv_dereg_mr(mr_desc_);
     mr_desc_ = nullptr;
   }
 
-  if (mr_data_) {
+  if (mr_data_ != nullptr) {
     ibv_dereg_mr(mr_data_);
     mr_data_ = nullptr;
   }

@@ -48,12 +48,12 @@ InputChannelSender::InputChannelSender(
 InputChannelSender::~InputChannelSender() {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-  if (mr_desc_) {
+  if (mr_desc_ != nullptr) {
     fi_close((struct fid*)mr_desc_);
     mr_desc_ = nullptr;
   }
 
-  if (mr_data_) {
+  if (mr_data_ != nullptr) {
     fi_close((struct fid*)(mr_data_));
     mr_data_ = nullptr;
   }
@@ -323,7 +323,7 @@ InputChannelSender::create_input_node_connection(uint_fast16_t index) {
 }
 
 void InputChannelSender::connect() {
-  if (!pd_) { // pd, cq2, av
+  if (pd_ == nullptr) { // pd, cq2, av
     init_context(Provider::getInst()->get_info(), compute_hostnames_,
                  compute_services_);
   }
@@ -342,19 +342,19 @@ int InputChannelSender::target_cn_index(uint64_t timeslice) {
 }
 
 void InputChannelSender::on_connected(struct fid_domain* pd) {
-  if (!mr_data_) {
+  if (mr_data_ == nullptr) {
     // Register memory regions.
     int err =
         fi_mr_reg(pd, const_cast<uint8_t*>(data_source_.data_buffer().ptr()),
                   data_source_.data_buffer().bytes(), FI_WRITE, 0,
                   Provider::requested_key++, 0, &mr_data_, nullptr);
-    if (err) {
+    if (err != 0) {
       L_(fatal) << "fi_mr_reg failed for data_send_buffer: " << err << "="
                 << fi_strerror(-err);
       throw LibfabricException("fi_mr_reg failed for data_send_buffer");
     }
 
-    if (!mr_data_) {
+    if (mr_data_ == nullptr) {
       L_(fatal) << "fi_mr_reg failed for mr_data: " << strerror(errno);
       throw LibfabricException("registration of memory region failed");
     }
@@ -364,13 +364,13 @@ void InputChannelSender::on_connected(struct fid_domain* pd) {
                         data_source_.desc_buffer().ptr()),
                     data_source_.desc_buffer().bytes(), FI_WRITE, 0,
                     Provider::requested_key++, 0, &mr_desc_, nullptr);
-    if (err) {
+    if (err != 0) {
       L_(fatal) << "fi_mr_reg failed for desc_send_buffer: " << err << "="
                 << fi_strerror(-err);
       throw LibfabricException("fi_mr_reg failed for desc_send_buffer");
     }
 
-    if (!mr_desc_) {
+    if (mr_desc_ == nullptr) {
       L_(fatal) << "fi_mr_reg failed for mr_desc: " << strerror(errno);
       throw LibfabricException("registration of memory region failed");
     }
@@ -521,7 +521,7 @@ void InputChannelSender::on_completion(uint64_t wr_id) {
   case ID_RECEIVE_STATUS: {
     int cn = wr_id >> 8;
     conn_[cn]->on_complete_recv();
-    if (!connection_oriented_ && !conn_[cn]->get_partner_addr()) {
+    if (!connection_oriented_ && (conn_[cn]->get_partner_addr() == 0u)) {
       conn_[cn]->set_partner_addr(av_);
       conn_[cn]->set_remote_info();
       on_connected(pd_);

@@ -44,12 +44,12 @@ InputChannelSender::InputChannelSender(
 }
 
 InputChannelSender::~InputChannelSender() {
-  if (mr_desc_) {
+  if (mr_desc_ != nullptr) {
     ibv_dereg_mr(mr_desc_);
     mr_desc_ = nullptr;
   }
 
-  if (mr_data_) {
+  if (mr_data_ != nullptr) {
     ibv_dereg_mr(mr_data_);
     mr_data_ = nullptr;
   }
@@ -305,12 +305,12 @@ void InputChannelSender::dump_mr(struct ibv_mr* mr) {
 void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id) {
   IBConnectionGroup<InputChannelConnection>::on_addr_resolved(id);
 
-  if (!mr_data_) {
+  if (mr_data_ == nullptr) {
     // Register memory regions.
     mr_data_ =
         ibv_reg_mr(pd_, const_cast<uint8_t*>(data_source_.data_buffer().ptr()),
                    data_source_.data_buffer().bytes(), IBV_ACCESS_LOCAL_WRITE);
-    if (!mr_data_) {
+    if (mr_data_ == nullptr) {
       L_(error) << "ibv_reg_mr failed for mr_data: " << strerror(errno);
       throw InfinibandException("registration of memory region failed");
     }
@@ -320,7 +320,7 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id) {
                    const_cast<fles::MicrosliceDescriptor*>(
                        data_source_.desc_buffer().ptr()),
                    data_source_.desc_buffer().bytes(), IBV_ACCESS_LOCAL_WRITE);
-    if (!mr_desc_) {
+    if (mr_desc_ == nullptr) {
       L_(error) << "ibv_reg_mr failed for mr_desc: " << strerror(errno);
       throw InfinibandException("registration of memory region failed");
     }

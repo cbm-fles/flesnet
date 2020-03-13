@@ -74,7 +74,7 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView& m,
   bool error = truncated || pattern_error || crc_error;
 
   // output ms stats
-  if (hist_) {
+  if (hist_ != nullptr) {
     *hist_ << component << " " << microslice << " " << m.desc().eq_id << " "
            << m.desc().flags << " " << uint16_t(m.desc().sys_id) << " "
            << uint16_t(m.desc().sys_ver) << " " << m.desc().idx << " "

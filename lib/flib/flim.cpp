@@ -43,7 +43,7 @@ void flim::set_ready_for_data(bool enable) {
 }
 
 void flim::set_data_source(flim::data_source_t sel) {
-  m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 1, sel);
+  m_rfflim->set_bit(RORC_REG_LINK_FLIM_CFG, 1, sel != 0u);
 }
 
 void flim::set_pgen_sync_ext(bool enable) {
@@ -69,8 +69,8 @@ bool flim::get_pgen_present() {
 flim::sts_t flim::get_sts() {
   uint32_t reg = m_rfflim->get_reg(RORC_REG_LINK_FLIM_STS);
   flim::sts_t sts;
-  sts.hard_err = (reg & (1 << 1));
-  sts.soft_err = (reg & (1 << 2));
+  sts.hard_err = ((reg & (1 << 1)) != 0u);
+  sts.soft_err = ((reg & (1 << 2)) != 0u);
   return sts;
 }
 
@@ -176,7 +176,7 @@ flim::build_info_t flim::build_info() {
   info.rev[3] = m_rfflim->get_reg(RORC_REG_FLIM_BUILD_REV_3);
   info.rev[4] = m_rfflim->get_reg(RORC_REG_FLIM_BUILD_REV_4);
   info.hw_ver = hardware_ver();
-  info.clean = (m_rfflim->get_reg(RORC_REG_FLIM_BUILD_FLAGS) & 0x1);
+  info.clean = ((m_rfflim->get_reg(RORC_REG_FLIM_BUILD_FLAGS) & 0x1) != 0u);
   info.repo = (m_rfflim->get_reg(RORC_REG_FLIM_BUILD_FLAGS) & 0x6) >> 1;
   return info;
 }

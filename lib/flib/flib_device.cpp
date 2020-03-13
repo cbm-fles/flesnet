@@ -132,7 +132,7 @@ struct build_info_t flib_device::build_info() {
   info.rev[3] = m_register_file->get_reg(RORC_REG_BUILD_REV_3);
   info.rev[4] = m_register_file->get_reg(RORC_REG_BUILD_REV_4);
   info.hw_ver = hardware_version();
-  info.clean = (m_register_file->get_reg(RORC_REG_BUILD_FLAGS) & 0x1);
+  info.clean = ((m_register_file->get_reg(RORC_REG_BUILD_FLAGS) & 0x1) != 0u);
   info.repo = (m_register_file->get_reg(RORC_REG_BUILD_FLAGS) & 0x6) >> 1;
   return info;
 }

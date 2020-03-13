@@ -85,7 +85,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
       if (sge[i].length <= target_bytes_left) {
         target_bytes_left -= sge[i].length;
       } else {
-        if (target_bytes_left) {
+        if (target_bytes_left != 0u) {
           sge2[num_sge2].addr = sge[i].addr + target_bytes_left;
           sge2[num_sge2].length = sge[i].length - target_bytes_left;
           sge2[num_sge2++].lkey = sge[i].lkey;
@@ -110,7 +110,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
   send_wr_ts.wr.rdma.remote_addr = static_cast<uintptr_t>(
       remote_info_.data.addr + (cn_wp_data & cn_data_buffer_mask));
 
-  if (num_sge2) {
+  if (num_sge2 != 0) {
     memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
     send_wr_tswrap.wr_id = ID_WRITE_DATA_WRAP;
     send_wr_tswrap.opcode = IBV_WR_RDMA_WRITE;
@@ -236,13 +236,13 @@ void InputChannelConnection::setup(struct ibv_pd* pd) {
   mr_recv_ =
       ibv_reg_mr(pd, &recv_status_message_, sizeof(ComputeNodeStatusMessage),
                  IBV_ACCESS_LOCAL_WRITE);
-  if (!mr_recv_) {
+  if (mr_recv_ == nullptr) {
     throw InfinibandException("registration of memory region failed");
   }
 
   mr_send_ = ibv_reg_mr(pd, &send_status_message_,
                         sizeof(InputChannelStatusMessage), 0);
-  if (!mr_send_) {
+  if (mr_send_ == nullptr) {
     throw InfinibandException("registration of memory region failed");
   }
 
@@ -282,12 +282,12 @@ void InputChannelConnection::on_established(struct rdma_cm_event* event) {
 }
 
 void InputChannelConnection::dereg_mr() {
-  if (mr_recv_) {
+  if (mr_recv_ != nullptr) {
     ibv_dereg_mr(mr_recv_);
     mr_recv_ = nullptr;
   }
 
-  if (mr_send_) {
+  if (mr_send_ != nullptr) {
     ibv_dereg_mr(mr_send_);
     mr_send_ = nullptr;
   }

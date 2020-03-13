@@ -98,7 +98,8 @@ int main(int argc, char* argv[]) {
       flim->set_ready_for_data(false);
       flim->set_pgen_sync_ext(false);
       flim->reset_datapath();
-      if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
+      uint32_t mc_pend = flim->get_pgen_mc_pending();
+      if (mc_pend != 0) {
         std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
       }
     }
@@ -158,7 +159,8 @@ int main(int argc, char* argv[]) {
       std::cout << "mc time (packer)  " << mc_time.back() << std::endl;
 
       flim->reset_datapath();
-      if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
+      uint32_t mc_pend = flim->get_pgen_mc_pending();
+      if (mc_pend != 0) {
         std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
       }
     }

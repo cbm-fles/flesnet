@@ -162,23 +162,23 @@ private:
       notify(vm);
     }
 
-    if (vm.count("help")) {
+    if (vm.count("help") != 0u) {
       std::cout << cmdline_options << "\n";
       exit(EXIT_SUCCESS);
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
-    if (vm.count("log-file")) {
+    if (vm.count("log-file") != 0u) {
       L_(info) << "Logging output to " << log_file;
       logging::add_file(log_file, static_cast<severity_level>(log_level));
     }
 
-    if (vm.count("log-syslog")) {
+    if (vm.count("log-syslog") != 0u) {
       logging::add_syslog(logging::syslog::local0,
                           static_cast<severity_level>(log_syslog));
     }
 
-    if (vm.count("flib-addr")) {
+    if (vm.count("flib-addr") != 0u) {
       _flib_addr = vm["flib-addr"].as<pci_addr>();
       _flib_autodetect = false;
       L_(debug) << "FLIB address: " << std::hex << std::setw(2)
@@ -191,7 +191,7 @@ private:
       L_(debug) << "FLIB address: autodetect";
     }
 
-    if (vm.count("etcd-path")) {
+    if (vm.count("etcd-path") != 0u) {
       _etcd.use_etcd = true;
     }
 

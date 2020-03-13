@@ -40,7 +40,7 @@ public:
 
   virtual bool get_bit(sys_bus_addr addr, int pos) {
     uint32_t reg = get_reg(addr);
-    return (reg & (1 << pos));
+    return (reg & (1 << pos)) != 0u;
   }
 
   virtual void set_bit(sys_bus_addr addr, int pos, bool enable) {

@@ -44,11 +44,11 @@ void Application::create_timeslice_buffers() {
     auto param = par_.outputs().at(i).param;
 
     uint32_t datasize = 27; // 128 MiB
-    if (param.count("datasize")) {
+    if (param.count("datasize") != 0u) {
       datasize = stou(param.at("datasize"));
     }
     uint32_t descsize = 19; // 16 MiB
-    if (param.count("descsize")) {
+    if (param.count("descsize") != 0u) {
       descsize = stou(param.at("descsize"));
     }
 
@@ -118,7 +118,7 @@ void Application::create_input_channel_senders() {
       auto shm_identifier = par_.inputs().at(index).path.at(0);
       auto channel = std::stoul(par_.inputs().at(index).path.at(1));
 
-      if (!shm_devices_.count(shm_identifier)) {
+      if (shm_devices_.count(shm_identifier) == 0u) {
         try {
           shm_devices_.insert(std::make_pair(
               shm_identifier,
@@ -135,27 +135,27 @@ void Application::create_input_channel_senders() {
               shm_devices_.at(shm_identifier), channel)));
     } else if (scheme == "pgen") {
       uint32_t datasize = 27; // 128 MiB
-      if (param.count("datasize")) {
+      if (param.count("datasize") != 0u) {
         datasize = stou(param.at("datasize"));
       }
       uint32_t descsize = 19; // 16 MiB
-      if (param.count("descsize")) {
+      if (param.count("descsize") != 0u) {
         descsize = stou(param.at("descsize"));
       }
       uint32_t size_mean = 1024; // 1 kiB
-      if (param.count("mean")) {
+      if (param.count("mean") != 0u) {
         size_mean = stou(param.at("mean"));
       }
       uint32_t size_var = 0;
-      if (param.count("var")) {
+      if (param.count("var") != 0u) {
         size_var = stou(param.at("var"));
       }
       uint32_t pattern = 0;
-      if (param.count("pattern")) {
+      if (param.count("pattern") != 0u) {
         pattern = stou(param.at("pattern"));
       }
       uint64_t delay_ns = 0;
-      if (param.count("delay")) {
+      if (param.count("delay") != 0u) {
         delay_ns = stoul(param.at("delay"));
       }
 
@@ -176,7 +176,7 @@ void Application::create_input_channel_senders() {
     }
 
     uint32_t overlap_size = 1;
-    if (param.count("overlap")) {
+    if (param.count("overlap") != 0u) {
       overlap_size = stou(param.at("overlap"));
     }
 

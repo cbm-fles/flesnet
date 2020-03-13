@@ -41,7 +41,7 @@ ComponentSenderZeromq::ComponentSenderZeromq(
 }
 
 ComponentSenderZeromq::~ComponentSenderZeromq() {
-  if (socket_) {
+  if (socket_ != nullptr) {
     int rc = zmq_close(socket_);
     assert(rc == 0);
   }

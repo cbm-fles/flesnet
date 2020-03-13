@@ -48,7 +48,7 @@ TimesliceBuilderZeromq::TimesliceBuilderZeromq(
 
 TimesliceBuilderZeromq::~TimesliceBuilderZeromq() {
   for (auto& c : connections_) {
-    if (c->socket) {
+    if (c->socket != nullptr) {
       int rc = zmq_close(c->socket);
       assert(rc == 0);
     }

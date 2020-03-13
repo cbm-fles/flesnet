@@ -40,7 +40,7 @@ public:
     eq_attr.wait_obj = FI_WAIT_NONE;
     int res =
         fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_, nullptr);
-    if (res) {
+    if (res != 0) {
       L_(fatal) << "fi_eq_open failed: " << res << "=" << fi_strerror(-res);
       throw LibfabricException("fi_eq_open failed");
     }
@@ -242,7 +242,7 @@ protected:
     L_(debug) << "create Libfabric objects";
 
     int res = fi_domain(Provider::getInst()->get_fabric(), info, &pd_, nullptr);
-    if (!pd_) {
+    if (pd_ == nullptr) {
       L_(fatal) << "fi_domain failed: " << -res << "=" << fi_strerror(-res);
       throw LibfabricException("fi_domain failed");
     }
@@ -257,7 +257,7 @@ protected:
     cq_attr.wait_cond = FI_CQ_COND_NONE;
     cq_attr.wait_set = nullptr;
     res = fi_cq_open(pd_, &cq_attr, &cq_, nullptr);
-    if (!cq_) {
+    if (cq_ == nullptr) {
       L_(fatal) << "fi_cq_open failed: " << -res << "=" << fi_strerror(-res);
       throw LibfabricException("fi_cq_open failed");
     }
@@ -271,7 +271,7 @@ protected:
       assert(av_ == nullptr);
       res = fi_av_open(pd_, &av_attr, &av_, NULL);
       assert(res == 0);
-      if (!av_) {
+      if (av_ == nullptr) {
         L_(fatal) << "fi_av_open failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("fi_av_open failed");
       }

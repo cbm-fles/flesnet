@@ -203,7 +203,8 @@ void dma_channel::configure() {
 }
 
 void dma_channel::configure_sg_manager(sg_bram_t buf_sel) {
-  pda::dma_buffer* buffer = buf_sel ? m_desc_buffer.get() : m_data_buffer.get();
+  pda::dma_buffer* buffer =
+      buf_sel != 0u ? m_desc_buffer.get() : m_data_buffer.get();
   // convert list
   std::vector<sg_entry_hw_t> sg_list_hw = convert_sg_list(buffer->sg_list());
 
@@ -283,7 +284,7 @@ void dma_channel::write_sg_entry_to_device(sg_entry_hw_t entry,
 size_t dma_channel::get_max_sg_entries(sg_bram_t buf_sel) {
 
   sys_bus_addr addr =
-      (buf_sel) ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
+      (buf_sel) != 0u ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
   // N_SG_CONFIG:
   // [15:0] : actual number of sg entries in RAM
   // [31:16]: maximum number of entries (read only)
@@ -293,7 +294,7 @@ size_t dma_channel::get_max_sg_entries(sg_bram_t buf_sel) {
 size_t dma_channel::get_configured_sg_entries(sg_bram_t buf_sel) {
 
   sys_bus_addr addr =
-      (buf_sel) ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
+      (buf_sel) != 0u ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
   // N_SG_CONFIG:
   // [15:0] : actual number of sg entries in RAM
   // [31:16]: maximum number of entries (read only)
@@ -304,7 +305,7 @@ void dma_channel::set_configured_sg_entries(sg_bram_t buf_sel,
                                             uint16_t num_entries) {
 
   sys_bus_addr addr =
-      (buf_sel) ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
+      (buf_sel) != 0u ? RORC_REG_RBDM_N_SG_CONFIG : RORC_REG_EBDM_N_SG_CONFIG;
   // N_SG_CONFIG:
   // [15:0] : actual number of sg entries in RAM
   // [31:16]: maximum number of entries (read only)
@@ -315,9 +316,9 @@ void dma_channel::set_configured_buffer_size(sg_bram_t buf_sel) {
   // this HW register does not influence the dma engine
   // they are for debug purpose only
   pda::dma_buffer* buffer =
-      (buf_sel) ? m_desc_buffer.get() : m_data_buffer.get();
-  sys_bus_addr addr =
-      (buf_sel) ? RORC_REG_RBDM_BUFFER_SIZE_L : RORC_REG_EBDM_BUFFER_SIZE_L;
+      (buf_sel) != 0u ? m_desc_buffer.get() : m_data_buffer.get();
+  sys_bus_addr addr = (buf_sel) != 0u ? RORC_REG_RBDM_BUFFER_SIZE_L
+                                      : RORC_REG_EBDM_BUFFER_SIZE_L;
   uint64_t size = buffer->size();
   m_rfpkt->set_mem(addr, &size, sizeof(size) >> 2);
 }
@@ -358,13 +359,14 @@ void dma_channel::disable(size_t timeout) {
 }
 
 void dma_channel::reset_fifo(bool enable) {
-  set_dmactrl((enable << BIT_DMACTRL_FIFO_RST), (1 << BIT_DMACTRL_FIFO_RST));
+  set_dmactrl((static_cast<int>(enable) << BIT_DMACTRL_FIFO_RST),
+              (1 << BIT_DMACTRL_FIFO_RST));
 }
 
 inline bool dma_channel::is_enabled() {
   uint32_t mask = 1 << BIT_DMACTRL_EBDM_EN | 1 << BIT_DMACTRL_RBDM_EN |
                   1 << BIT_DMACTRL_DMA_EN;
-  return (m_reg_dmactrl_cached & mask);
+  return (m_reg_dmactrl_cached & mask) != 0u;
 }
 
 inline bool dma_channel::is_busy() {

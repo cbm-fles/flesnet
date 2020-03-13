@@ -102,7 +102,7 @@ void TimesliceBuilder::operator()() {
 }
 
 void TimesliceBuilder::on_connect_request(struct rdma_cm_event* event) {
-  if (!pd_) {
+  if (pd_ == nullptr) {
     init_context(event->id->verbs);
   }
 
