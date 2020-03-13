@@ -22,7 +22,7 @@ InputChannelSender::InputChannelSender(
     uint32_t overlap_size,
     uint32_t max_timeslice_number,
     std::string input_node_name)
-    : ConnectionGroup(std::move(input_node_name)), input_index_(input_index),
+    : ConnectionGroup(input_node_name), input_index_(input_index),
       data_source_(data_source), compute_hostnames_(compute_hostnames),
       compute_services_(compute_services), timeslice_size_(timeslice_size),
       overlap_size_(overlap_size), max_timeslice_number_(max_timeslice_number),
