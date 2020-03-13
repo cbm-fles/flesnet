@@ -23,7 +23,7 @@ TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
                                    uint32_t timeslice_size,
                                    volatile sig_atomic_t* signal_status,
                                    bool drop,
-                                   std::string local_node_name)
+                                   const std::string& local_node_name)
     : ConnectionGroup(local_node_name), compute_index_(compute_index),
       timeslice_buffer_(timeslice_buffer), service_(service),
       num_input_nodes_(num_input_nodes), timeslice_size_(timeslice_size),

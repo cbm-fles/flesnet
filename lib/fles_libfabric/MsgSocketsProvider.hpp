@@ -28,7 +28,7 @@ public:
     return fabric_;
   };
 
-  static struct fi_info* exists(std::string local_host_name);
+  static struct fi_info* exists(const std::string& local_host_name);
 
   void accept(struct fid_pep* pep,
               const std::string& hostname,

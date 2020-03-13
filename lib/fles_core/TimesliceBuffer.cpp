@@ -2,11 +2,13 @@
 
 #include "TimesliceBuffer.hpp"
 
+#include <utility>
+
 TimesliceBuffer::TimesliceBuffer(std::string shm_identifier,
                                  uint32_t data_buffer_size_exp,
                                  uint32_t desc_buffer_size_exp,
                                  uint32_t num_input_nodes)
-    : shm_identifier_(shm_identifier),
+    : shm_identifier_(std::move(shm_identifier)),
       data_buffer_size_exp_(data_buffer_size_exp),
       desc_buffer_size_exp_(desc_buffer_size_exp),
       num_input_nodes_(num_input_nodes) {

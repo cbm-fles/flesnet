@@ -19,7 +19,8 @@
 
 namespace tl_libfabric {
 
-std::unique_ptr<Provider> Provider::get_provider(std::string local_host_name) {
+std::unique_ptr<Provider>
+Provider::get_provider(const std::string& local_host_name) {
   // std::cout << "Provider::get_provider()" << std::endl;
   struct fi_info* info = VerbsProvider::exists(local_host_name);
   if (info != nullptr) {

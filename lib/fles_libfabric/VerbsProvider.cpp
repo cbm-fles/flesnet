@@ -27,7 +27,7 @@ VerbsProvider::~VerbsProvider() {
 #pragma GCC diagnostic pop
 }
 
-struct fi_info* VerbsProvider::exists(std::string local_host_name) {
+struct fi_info* VerbsProvider::exists(const std::string& local_host_name) {
   struct fi_info* hints = fi_allocinfo();
   struct fi_info* info = nullptr;
 

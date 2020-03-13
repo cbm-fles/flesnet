@@ -41,7 +41,8 @@ inline std::ostream& operator<<(std::ostream& s,
   return dump.write_to_stream(s);
 }
 
-inline std::ostream& operator<<(std::ostream& s, const fles::MicrosliceView m) {
+inline std::ostream& operator<<(std::ostream& s,
+                                const fles::MicrosliceView& m) {
   return s << MicrosliceDescriptorDump(m.desc()) << "\n"
            << BufferDump(m.content(), m.desc().size);
 }

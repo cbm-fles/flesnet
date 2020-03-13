@@ -17,7 +17,7 @@ template <typename T_DESC, typename T_DATA> class shm_device_provider {
 public:
   using shm_channel_provider_type = shm_channel_provider<T_DESC, T_DATA>;
 
-  shm_device_provider(std::string shm_identifier,
+  shm_device_provider(const std::string& shm_identifier,
                       size_t num_channels,
                       size_t data_buffer_size_exp,
                       size_t desc_buffer_size_exp);

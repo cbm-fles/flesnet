@@ -8,7 +8,7 @@
 
 template <typename T_DESC, typename T_DATA>
 shm_channel_client<T_DESC, T_DATA>::shm_channel_client(
-    std::shared_ptr<flib_shm_device_client> dev, size_t index)
+    const std::shared_ptr<flib_shm_device_client>& dev, size_t index)
     : m_dev(dev), m_shm(dev->shm()) {
 
   // connect to global exchange object

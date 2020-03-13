@@ -37,7 +37,7 @@ public:
                    uint32_t timeslice_size,
                    volatile sig_atomic_t* signal_status,
                    bool drop,
-                   std::string local_node_name);
+                   const std::string& local_node_name);
 
   TimesliceBuilder(const TimesliceBuilder&) = delete;
   void operator=(const TimesliceBuilder&) = delete;

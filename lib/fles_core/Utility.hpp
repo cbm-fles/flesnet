@@ -18,7 +18,7 @@ inline std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
 
 inline std::string human_readable_count(uint64_t bytes,
                                         bool use_si = false,
-                                        std::string unit_string = "B") {
+                                        const std::string& unit_string = "B") {
   uint64_t unit = use_si ? 1000 : 1024;
 
   if (bytes < unit) {

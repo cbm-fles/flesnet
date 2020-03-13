@@ -5,6 +5,8 @@
 #include <log.hpp>
 #include <memory>
 #include <rdma/fabric.h>
+#include <utility>
+
 #include <vector>
 
 namespace tl_libfabric {
@@ -40,7 +42,7 @@ public:
                        void* addr) = 0;
 
   static void init(std::string local_host_name) {
-    prov = get_provider(local_host_name);
+    prov = get_provider(std::move(local_host_name));
   }
 
   virtual void set_hostnames_and_services(
@@ -56,7 +58,8 @@ public:
   static int vector;
 
 private:
-  static std::unique_ptr<Provider> get_provider(std::string local_host_name);
+  static std::unique_ptr<Provider>
+  get_provider(const std::string& local_host_name);
   static std::unique_ptr<Provider> prov;
 };
 } // namespace tl_libfabric

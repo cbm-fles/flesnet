@@ -35,7 +35,7 @@ public:
   void end_stream() override { data_sink_.set_eof(true); }
 
 private:
-  bool try_put(std::shared_ptr<const Microslice> item);
+  bool try_put(const std::shared_ptr<const Microslice>& item);
 
   /// Data sink (e.g., shared memory buffer).
   InputBufferWriteInterface& data_sink_;

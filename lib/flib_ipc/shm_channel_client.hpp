@@ -20,7 +20,8 @@ template <typename T_DESC, typename T_DATA>
 class shm_channel_client : public DualRingBufferReadInterface<T_DESC, T_DATA> {
 
 public:
-  shm_channel_client(std::shared_ptr<flib_shm_device_client> dev, size_t index);
+  shm_channel_client(const std::shared_ptr<flib_shm_device_client>& dev,
+                     size_t index);
   shm_channel_client(const shm_channel_client&) = delete;
   void operator=(const shm_channel_client&) = delete;
 

@@ -12,7 +12,8 @@ MicrosliceTransmitter::MicrosliceTransmitter(
     InputBufferWriteInterface& data_sink)
     : data_sink_(data_sink) {}
 
-bool MicrosliceTransmitter::try_put(std::shared_ptr<const Microslice> item) {
+bool MicrosliceTransmitter::try_put(
+    const std::shared_ptr<const Microslice>& item) {
   assert(item != nullptr);
   const DualIndex item_size = {1, item->desc().size};
   const DualIndex buffer_size = {data_sink_.desc_buffer().size(),

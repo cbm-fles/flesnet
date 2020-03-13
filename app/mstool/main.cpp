@@ -6,8 +6,8 @@
 #include "log.hpp"
 #include <boost/algorithm/string.hpp>
 
-void start_exec(const std::string executable,
-                const std::string shared_memory_identifier) {
+void start_exec(const std::string& executable,
+                const std::string& shared_memory_identifier) {
   assert(!executable.empty());
   ChildProcess cp = ChildProcess();
   boost::split(cp.arg, executable, boost::is_any_of(" \t"),

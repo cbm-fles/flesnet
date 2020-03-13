@@ -319,7 +319,7 @@ int main(int argc, char* argv[]) {
           client
               ->request(web::http::methods::POST,
                         "/write?db=flib_status&precision=s", measurement)
-              .then([](web::http::http_response response) {
+              .then([](const web::http::http_response& response) {
                 if (response.status_code() != 204) {
                   std::cout << "Received response status code: "
                             << response.status_code() << "\n"

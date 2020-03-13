@@ -90,7 +90,7 @@ public:
   }
 
 private:
-  void parse_eq_id(po::variables_map vm, size_t i) {
+  void parse_eq_id(const po::variables_map& vm, size_t i) {
     if (vm.count("l" + std::to_string(i) + "_eq_id")) {
       _links.at(i).eq_id = boost::numeric_cast<uint16_t>(
           std::stoul(vm["l" + std::to_string(i) + "_eq_id"].as<std::string>(),
@@ -100,7 +100,7 @@ private:
     }
   }
 
-  void parse_data_source(po::variables_map vm, size_t i) {
+  void parse_data_source(const po::variables_map& vm, size_t i) {
     if (vm.count("l" + std::to_string(i) + "_source")) { // set given parameters
       std::string source =
           vm["l" + std::to_string(i) + "_source"].as<std::string>();

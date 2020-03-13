@@ -9,7 +9,7 @@
 ComponentSenderZeromq::ComponentSenderZeromq(
     uint64_t input_index,
     InputBufferReadInterface& data_source,
-    std::string listen_address,
+    const std::string& listen_address,
     uint32_t timeslice_size,
     uint32_t overlap_size,
     uint32_t max_timeslice_number,

@@ -20,6 +20,7 @@
 #include <set>
 
 #include <chrono>
+#include <utility>
 
 namespace tl_libfabric {
 /// Libfabric connection group base class.
@@ -31,7 +32,7 @@ class ConnectionGroup : public ConnectionGroupWorker {
 public:
   /// The ConnectionGroup default constructor.
   ConnectionGroup(std::string local_node_name) {
-    Provider::init(local_node_name);
+    Provider::init(std::move(local_node_name));
     // std::cout << "ConnectionGroup constructor" << std::endl;
     struct fi_eq_attr eq_attr;
     memset(&eq_attr, 0, sizeof(eq_attr));

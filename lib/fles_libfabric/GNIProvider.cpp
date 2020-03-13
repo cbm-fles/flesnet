@@ -27,7 +27,7 @@ GNIProvider::~GNIProvider() {
 #pragma GCC diagnostic pop
 }
 
-struct fi_info* GNIProvider::exists(std::string local_host_name) {
+struct fi_info* GNIProvider::exists(const std::string& local_host_name) {
   struct fi_info* hints = fi_allocinfo();
   struct fi_info* info = nullptr;
 
