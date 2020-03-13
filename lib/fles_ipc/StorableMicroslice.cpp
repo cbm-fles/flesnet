@@ -6,7 +6,7 @@
 namespace fles {
 
 StorableMicroslice::StorableMicroslice(const StorableMicroslice& ms)
-    : desc_(ms.desc_), content_(ms.content_) {
+    : Microslice(), desc_(ms.desc_), content_(ms.content_) {
   init_pointers();
 }
 
