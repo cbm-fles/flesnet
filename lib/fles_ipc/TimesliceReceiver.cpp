@@ -2,6 +2,7 @@
 
 #include "TimesliceReceiver.hpp"
 #include <boost/version.hpp>
+#include <memory>
 
 namespace fles {
 
@@ -33,10 +34,9 @@ TimesliceReceiver::TimesliceReceiver(
           boost::interprocess::open_only,
           (shared_memory_identifier + "work_items_").c_str()));
 
-  completions_mq_ = std::shared_ptr<boost::interprocess::message_queue>(
-      new boost::interprocess::message_queue(
-          boost::interprocess::open_only,
-          (shared_memory_identifier + "completions_").c_str()));
+  completions_mq_ = std::make_shared<boost::interprocess::message_queue>(
+      boost::interprocess::open_only,
+      (shared_memory_identifier + "completions_").c_str());
 }
 
 #if BOOST_VERSION < 105600
