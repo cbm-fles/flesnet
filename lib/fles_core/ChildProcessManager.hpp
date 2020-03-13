@@ -57,10 +57,9 @@ public:
         child_processes_.push_back(child_process);
         L_(debug) << "child process started";
         return true;
-      } else {
-        L_(error) << "vfork() failed: " << strerror(errno);
-        return false;
       }
+      L_(error) << "vfork() failed: " << strerror(errno);
+      return false;
     }
   }
 
@@ -70,9 +69,8 @@ public:
       child_process->status = Terminating;
       kill(child_process->pid, SIGTERM);
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   void stop_processes(void* owner) {
@@ -89,9 +87,8 @@ public:
         child_process < child_processes_.end()) {
       child_process->status = Terminating;
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   void allow_stop_processes(void* owner) {

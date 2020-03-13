@@ -67,9 +67,8 @@ bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
               (UINT64_C(1) << remote_info_.desc_buffer_size_exp) <
           desc_size) { // TODO: extend condition!
     return false;
-  } else {
-    return true;
   }
+  return true;
 }
 
 void InputChannelConnection::send_data(struct iovec* sge,
@@ -238,9 +237,8 @@ bool InputChannelConnection::try_sync_buffer_positions() {
     send_status_message_.wp = cn_wp_;
     post_send_status_message();
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 uint64_t InputChannelConnection::skip_required(uint64_t data_size) {
@@ -248,9 +246,8 @@ uint64_t InputChannelConnection::skip_required(uint64_t data_size) {
   uint64_t databuf_wp = cn_wp_.data & (databuf_size - 1);
   if (databuf_wp + data_size <= databuf_size) {
     return 0;
-  } else {
-    return databuf_size - databuf_wp;
   }
+  return databuf_size - databuf_wp;
 }
 
 void InputChannelConnection::finalize(bool abort) {

@@ -81,11 +81,10 @@ private:
       if (file_count_ == 0) {
         // Not finding the first file is an error
         throw std::ios_base::failure("error opening file \"" + filename + "\"");
-      } else {
-        // Not finding a later file is just the end-of-stream condition
-        eos_ = true;
-        return;
       }
+      // Not finding a later file is just the end-of-stream condition
+      eos_ = true;
+      return;
     }
 
     iarchive_ = std::unique_ptr<boost::archive::binary_iarchive>(
@@ -116,9 +115,8 @@ private:
         next_file();
         if (!eos_) {
           return do_get();
-        } else {
-          return nullptr;
         }
+        return nullptr;
       }
       throw;
     }

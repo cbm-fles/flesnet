@@ -47,9 +47,8 @@ void flib_link::deinit_dma() { m_dma_channel = nullptr; }
 dma_channel* flib_link::channel() const {
   if (m_dma_channel) {
     return m_dma_channel.get();
-  } else {
-    throw FlibException("DMA channel not initialized");
   }
+  throw FlibException("DMA channel not initialized");
 }
 
 //////*** DPB Emualtion ***//////

@@ -34,9 +34,8 @@ public:
 
     if (size_available() > size_to_border) {
       return std::max(size_to_border, size_available() - size_to_border);
-    } else {
-      return size_available();
     }
+    return size_available();
   }
 
   void append(const T& item) {

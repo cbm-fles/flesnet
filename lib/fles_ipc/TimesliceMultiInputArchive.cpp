@@ -176,9 +176,8 @@ std::unique_ptr<Timeslice> TimesliceMultiInputArchive::GetNextTimeslice() {
     }
 
     return retTimeslice;
-  } else {
-    return std::unique_ptr<Timeslice>(nullptr);
   }
+  return std::unique_ptr<Timeslice>(nullptr);
 }
 
 bool TimesliceMultiInputArchive::OpenNextFile(int element) {

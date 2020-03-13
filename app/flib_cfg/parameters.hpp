@@ -205,10 +205,9 @@ private:
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
       throw ParametersException("cannot open config file: " + config_file);
-    } else {
-      po::store(po::parse_config_file(ifs, config_file_options), vm);
-      notify(vm);
     }
+    po::store(po::parse_config_file(ifs, config_file_options), vm);
+    notify(vm);
 
     if (vm.count("help")) {
       std::cout << cmdline_options << "\n";
@@ -240,10 +239,9 @@ private:
       _mc_size = vm["mc-size"].as<uint32_t>();
       if (_mc_size > 2147483647) { // 31 bit check
         throw ParametersException("Pgen microslice size out of range");
-      } else {
-        L_(info) << " Pgen microslice size: "
-                 << human_readable_mc_size(_mc_size);
       }
+      L_(info) << " Pgen microslice size: " << human_readable_mc_size(_mc_size);
+
     } else {
       L_(info) << " Pgen microslice size: " << human_readable_mc_size(_mc_size)
                << " (default)";
@@ -253,9 +251,8 @@ private:
       _pgen_rate = vm["pgen-rate"].as<float>();
       if (_pgen_rate < 0 || _pgen_rate > 1) { // range check
         throw ParametersException("Pgen rate out of range");
-      } else {
-        L_(info) << " Pgen rate: " << _pgen_rate;
       }
+      L_(info) << " Pgen rate: " << _pgen_rate;
     }
 
     L_(info) << " FLIB microslice size limit: " << _mc_size_limit << " bytes";
