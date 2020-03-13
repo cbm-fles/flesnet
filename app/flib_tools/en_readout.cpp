@@ -5,16 +5,16 @@
  */
 
 #include "flib.h"
+#include <cerrno>
 #include <chrono>
 #include <csignal>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <errno.h>
 #include <iostream>
 #include <limits>
-#include <stdint.h>
 #include <thread>
 #include <unistd.h>
 

@@ -7,8 +7,8 @@
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/utility/setup.hpp>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 
 #define __ansi(code_m) "\033[" code_m "m"

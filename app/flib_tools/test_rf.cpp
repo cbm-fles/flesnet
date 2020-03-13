@@ -5,15 +5,15 @@
  */
 
 #include "flib.h"
+#include <cerrno>
+#include <climits>
 #include <csignal>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <errno.h>
 #include <iostream>
-#include <limits.h>
-#include <stdint.h>
 #include <sys/time.h>
 #include <unistd.h>
 

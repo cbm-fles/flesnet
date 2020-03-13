@@ -10,10 +10,10 @@
 
 #include <pda.h>
 
+#include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <malloc.h>
-#include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 
 using namespace std;
