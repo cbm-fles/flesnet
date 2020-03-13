@@ -31,7 +31,7 @@ public:
                      uint32_t timeslice_size,
                      uint32_t overlap_size,
                      uint32_t max_timeslice_number,
-                     std::string input_node_name);
+                     const std::string& input_node_name);
 
   InputChannelSender(const InputChannelSender&) = delete;
   void operator=(const InputChannelSender&) = delete;
