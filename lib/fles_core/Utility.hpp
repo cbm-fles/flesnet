@@ -1,11 +1,11 @@
 // Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include <boost/lexical_cast.hpp>
 #include <cassert>
 #include <cmath>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <sstream>
 #include <vector>
 
@@ -22,7 +22,7 @@ inline std::string human_readable_count(uint64_t bytes,
   uint64_t unit = use_si ? 1000 : 1024;
 
   if (bytes < unit) {
-    return boost::lexical_cast<std::string>(bytes) + " " + unit_string;
+    return std::to_string(bytes) + " " + unit_string;
   }
 
   uint32_t exponent = static_cast<uint32_t>(std::log(bytes) / std::log(unit));

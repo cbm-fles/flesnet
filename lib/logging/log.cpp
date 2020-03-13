@@ -1,7 +1,6 @@
 // Copyright 2014 Jan de Cuveland <cmail@cuveland.de>
 #include "log.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include <boost/log/attributes.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
@@ -52,7 +51,7 @@ std::string fancy_icon(severity_level level)
     if (static_cast<std::size_t>(level) < sizeof(icons) / sizeof(*icons))
         return icons[level];
     else
-        return boost::lexical_cast<std::string>(static_cast<int>(level));
+        return std::to_string(static_cast<int>(level));
 }
 }
 #endif

@@ -11,7 +11,6 @@
 #include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
 #include "Utility.hpp"
-#include <boost/lexical_cast.hpp>
 #include <thread>
 
 Application::Application(Parameters const& par) : par_(par) {
@@ -45,8 +44,7 @@ Application::Application(Parameters const& par) : par_(par) {
   }
 
   if (par_.analyze()) {
-    std::string output_prefix =
-        boost::lexical_cast<std::string>(par_.client_index()) + ": ";
+    std::string output_prefix = std::to_string(par_.client_index()) + ": ";
     if (par_.histograms()) {
       sinks_.push_back(
           std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(

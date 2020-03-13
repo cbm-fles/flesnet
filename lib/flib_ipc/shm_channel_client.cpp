@@ -4,7 +4,6 @@
 #include "shm_channel_client.hpp"
 #include "log.hpp"
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
-#include <boost/lexical_cast.hpp>
 #include <cassert>
 
 template <typename T_DESC, typename T_DATA>
@@ -20,8 +19,7 @@ shm_channel_client<T_DESC, T_DATA>::shm_channel_client(
   }
 
   // connect to channel exchange object
-  std::string channel_name =
-      "shm_channel_" + boost::lexical_cast<std::string>(index);
+  std::string channel_name = "shm_channel_" + std::to_string(index);
   m_shm_ch = m_shm->find<shm_channel>(channel_name.c_str()).first;
   if (m_shm_ch == nullptr) {
     throw std::runtime_error("Unable to find object" + channel_name);

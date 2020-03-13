@@ -9,8 +9,8 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/lexical_cast.hpp>
 #include <cstdint>
+#include <string>
 
 namespace ip = boost::interprocess;
 
@@ -32,8 +32,7 @@ public:
     void* desc_buffer_raw = alloc_buffer(desc_buffer_size_exp, desc_item_size);
 
     // constuct channel exchange object in shared memory
-    std::string channel_name =
-        "shm_channel_" + boost::lexical_cast<std::string>(m_index);
+    std::string channel_name = "shm_channel_" + std::to_string(m_index);
     m_shm_ch = m_shm->construct<shm_channel>(channel_name.c_str())(
         m_shm, data_buffer_raw, data_buffer_size_exp, sizeof(T_DATA),
         desc_buffer_raw, desc_buffer_size_exp, sizeof(T_DESC));

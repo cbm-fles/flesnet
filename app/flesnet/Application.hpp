@@ -16,7 +16,6 @@
 #include "fles_libfabric/InputChannelSender.hpp"
 #include "fles_libfabric/TimesliceBuilder.hpp"
 #endif
-#include <boost/lexical_cast.hpp>
 #include <csignal>
 #include <map>
 #include <memory>
