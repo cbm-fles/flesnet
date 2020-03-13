@@ -99,7 +99,7 @@ private:
 
   void configure_sg_manager(sg_bram_t buf_sel);
 
-  std::vector<sg_entry_hw_t>
+  static std::vector<sg_entry_hw_t>
   convert_sg_list(const std::vector<pda::sg_entry_t>& sg_list);
 
   void write_sg_list_to_device(const std::vector<sg_entry_hw_t>& sg_list,
@@ -129,11 +129,12 @@ private:
 
   void set_dmactrl(uint32_t reg, uint32_t mask);
 
-  inline uint32_t set_bits(uint32_t old_val, uint32_t new_val, uint32_t mask);
+  static inline uint32_t
+  set_bits(uint32_t old_val, uint32_t new_val, uint32_t mask);
 
-  inline uint32_t get_lo_32(uint64_t val);
+  static inline uint32_t get_lo_32(uint64_t val);
 
-  inline uint32_t get_hi_32(uint64_t val);
+  static inline uint32_t get_hi_32(uint64_t val);
 
   flib_link* m_parent_link;
   register_file* m_rfpkt;

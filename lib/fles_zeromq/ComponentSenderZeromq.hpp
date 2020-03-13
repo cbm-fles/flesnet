@@ -119,7 +119,7 @@ private:
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
-    std::string caption() const {
+    static std::string caption() {
       return std::string("used/sending/freeing/free");
     }
 

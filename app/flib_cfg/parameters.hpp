@@ -266,7 +266,7 @@ private:
     } // end loop over links
   }
 
-  std::string human_readable_mc_size(uint32_t mc_size) {
+  static std::string human_readable_mc_size(uint32_t mc_size) {
     size_t mc_size_ns = mc_size * 1024; // 1024 = hw base unit
     size_t mc_size_us_int = mc_size_ns / 1000;
     size_t mc_size_us_frec = mc_size_ns % 1000;

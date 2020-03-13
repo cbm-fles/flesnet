@@ -35,7 +35,7 @@ public:
   void set_pgen_mc_size(uint32_t size);
   void set_pgen_ids(uint16_t eq_id);
   void set_pgen_rate(float val);
-  void set_pgen_start_time(uint32_t time);
+  static void set_pgen_start_time(uint32_t time);
   void set_pgen_enable(bool enable);
   void set_pgen_sync_ext(bool enable);
   void reset_pgen_mc_pending();

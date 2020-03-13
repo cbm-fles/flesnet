@@ -3,6 +3,6 @@
 
 class ThreadContainer {
 protected:
-  void set_node();
-  void set_cpu(int n);
+  static void set_node();
+  static void set_cpu(int n);
 };
