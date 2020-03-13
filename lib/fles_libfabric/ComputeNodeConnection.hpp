@@ -56,17 +56,17 @@ public:
 
   bool abort_flag() { return recv_status_message_.abort; }
 
-  virtual void setup() override;
+  void setup() override;
 
-  virtual void setup_mr(struct fid_domain* pd) override;
+  void setup_mr(struct fid_domain* pd) override;
 
   /// Connection handler function, called on successful connection.
   /**
    \param event RDMA connection manager event structure
    */
-  virtual void on_established(struct fi_eq_cm_entry* event) override;
+  void on_established(struct fi_eq_cm_entry* event) override;
 
-  virtual void on_disconnected(struct fi_eq_cm_entry* event) override;
+  void on_disconnected(struct fi_eq_cm_entry* event) override;
 
   void inc_ack_pointers(uint64_t ack_pos);
 
@@ -78,7 +78,7 @@ public:
 
   const ComputeNodeBufferPosition& cn_wp() const { return cn_wp_; }
 
-  virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
+  std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
   struct BufferStatus {
     std::chrono::system_clock::time_point time;

@@ -29,14 +29,14 @@ public:
   void operator=(const InputChannelSender&) = delete;
 
   /// The InputChannelSender default destructor.
-  virtual ~InputChannelSender();
+  ~InputChannelSender() override;
 
   void report_status();
 
   void sync_buffer_positions();
   void sync_data_source(bool schedule);
 
-  virtual void operator()() override;
+  void operator()() override;
 
   /// The central function for distributing timeslice data.
   bool try_send_timeslice(uint64_t timeslice);
@@ -53,10 +53,10 @@ private:
 
   void dump_mr(struct ibv_mr* mr);
 
-  virtual void on_addr_resolved(struct rdma_cm_id* id) override;
+  void on_addr_resolved(struct rdma_cm_id* id) override;
 
   /// Handle RDMA_CM_REJECTED event.
-  virtual void on_rejected(struct rdma_cm_event* event) override;
+  void on_rejected(struct rdma_cm_event* event) override;
 
   /// Return string describing buffer contents, suitable for debug output.
   std::string get_state_string();
@@ -71,7 +71,7 @@ private:
                       uint64_t skip);
 
   /// Completion notification event dispatcher. Called by the event loop.
-  virtual void on_completion(const struct ibv_wc& wc) override;
+  void on_completion(const struct ibv_wc& wc) override;
 
   uint64_t input_index_;
 

@@ -31,7 +31,7 @@ public:
   IBConnectionGroup& operator=(const IBConnectionGroup&) = delete;
 
   /// The IBConnectionGroup default destructor.
-  virtual ~IBConnectionGroup() {
+  ~IBConnectionGroup() override {
     for (auto& c : conn_) {
       c = nullptr;
     }

@@ -43,20 +43,20 @@ public:
   void operator=(const TimesliceBuilder&) = delete;
 
   /// The ComputeBuffer destructor.
-  ~TimesliceBuilder();
+  ~TimesliceBuilder() override;
 
   void report_status();
 
   void request_abort();
 
-  virtual void operator()() override;
+  void operator()() override;
 
   /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-  virtual void on_connect_request(struct fi_eq_cm_entry* event,
-                                  size_t private_data_len) override;
+  void on_connect_request(struct fi_eq_cm_entry* event,
+                          size_t private_data_len) override;
 
   /// Completion notification event dispatcher. Called by the event loop.
-  virtual void on_completion(uint64_t wc_id) override;
+  void on_completion(uint64_t wc_id) override;
 
   void poll_ts_completion();
 

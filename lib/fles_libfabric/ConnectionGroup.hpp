@@ -49,7 +49,7 @@ public:
   ConnectionGroup& operator=(const ConnectionGroup&) = delete;
 
   /// The ConnectionGroup default destructor.
-  virtual ~ConnectionGroup() {
+  ~ConnectionGroup() override {
     for (auto& c : conn_) {
       c = nullptr;
     }
@@ -195,7 +195,7 @@ public:
   }
 
   /// The "main" function of an ConnectionGroup decendant.
-  virtual void operator()() = 0;
+  void operator()() override = 0;
 
 protected:
   /// Handle RDMA_CM_REJECTED event.

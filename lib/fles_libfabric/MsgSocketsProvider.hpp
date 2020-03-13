@@ -17,7 +17,7 @@ public:
   MsgSocketsProvider(const MsgSocketsProvider&) = delete;
   MsgSocketsProvider& operator=(const MsgSocketsProvider&) = delete;
 
-  ~MsgSocketsProvider();
+  ~MsgSocketsProvider() override;
 
   struct fi_info* get_info() override {
     assert(info_ != nullptr);
@@ -46,7 +46,7 @@ public:
                size_t paramlen,
                void* addr) override;
 
-  virtual void set_hostnames_and_services(
+  void set_hostnames_and_services(
       struct fid_av* /*av*/,
       const std::vector<std::string>& /*compute_hostnames*/,
       const std::vector<std::string>& /*compute_services*/,

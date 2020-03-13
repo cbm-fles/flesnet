@@ -54,21 +54,21 @@ public:
   /// Handle Infiniband receive completion notification.
   void on_complete_recv();
 
-  virtual void setup(struct ibv_pd* pd) override;
+  void setup(struct ibv_pd* pd) override;
 
   /// Connection handler function, called on successful connection.
   /**
      \param event RDMA connection manager event structure
   */
-  virtual void on_established(struct rdma_cm_event* event) override;
+  void on_established(struct rdma_cm_event* event) override;
 
   void dereg_mr();
 
-  virtual void on_rejected(struct rdma_cm_event* event) override;
+  void on_rejected(struct rdma_cm_event* event) override;
 
-  virtual void on_disconnected(struct rdma_cm_event* event) override;
+  void on_disconnected(struct rdma_cm_event* event) override;
 
-  virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
+  std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
 private:
   /// Post a receive work request (WR) to the receive queue

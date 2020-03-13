@@ -37,14 +37,14 @@ public:
   void operator=(const InputChannelSender&) = delete;
 
   /// The InputChannelSender default destructor.
-  virtual ~InputChannelSender();
+  ~InputChannelSender() override;
 
   void report_status();
 
   void sync_buffer_positions();
   void sync_data_source(bool schedule);
 
-  virtual void operator()() override;
+  void operator()() override;
 
   /// The central function for distributing timeslice data.
   bool try_send_timeslice(uint64_t timeslice);
@@ -55,14 +55,14 @@ public:
   /// Initiate connection requests to list of target hostnames.
   void connect();
 
-  virtual void on_connected(struct fid_domain* pd) override;
+  void on_connected(struct fid_domain* pd) override;
 
 private:
   /// Return target computation node for given timeslice.
   int target_cn_index(uint64_t timeslice);
 
   /// Handle RDMA_CM_REJECTED event.
-  virtual void on_rejected(struct fi_eq_err_entry* event) override;
+  void on_rejected(struct fi_eq_err_entry* event) override;
 
   /// Return string describing buffer contents, suitable for debug output.
   std::string get_state_string();
@@ -77,7 +77,7 @@ private:
                       uint64_t skip);
 
   /// Completion notification event dispatcher. Called by the event loop.
-  virtual void on_completion(uint64_t wc_id) override;
+  void on_completion(uint64_t wc_id) override;
 
   /// setup connections between nodes
   void bootstrap_with_connections();

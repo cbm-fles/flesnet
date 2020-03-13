@@ -26,19 +26,19 @@ public:
   void operator=(const TimesliceBuilder&) = delete;
 
   /// The TimesliceBuilder destructor.
-  ~TimesliceBuilder();
+  ~TimesliceBuilder() override;
 
   void report_status();
 
   void request_abort();
 
-  virtual void operator()() override;
+  void operator()() override;
 
   /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-  virtual void on_connect_request(struct rdma_cm_event* event) override;
+  void on_connect_request(struct rdma_cm_event* event) override;
 
   /// Completion notification event dispatcher. Called by the event loop.
-  virtual void on_completion(const struct ibv_wc& wc) override;
+  void on_completion(const struct ibv_wc& wc) override;
 
   void poll_ts_completion();
 
