@@ -28,7 +28,7 @@ flim::flim(flib_link_flesin* link) {
   }
 }
 
-flim::~flim() {}
+flim::~flim() = default;
 // Do not reset on destruction to prevnet loss of hw state after config.
 
 //////*** FLIM Configuration and Status***//////

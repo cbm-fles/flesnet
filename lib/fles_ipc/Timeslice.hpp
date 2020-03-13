@@ -86,7 +86,7 @@ public:
   }
 
 protected:
-  Timeslice(){};
+  Timeslice() = default;
 
   friend class StorableTimeslice;
 

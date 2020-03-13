@@ -32,7 +32,7 @@ flib_device::flib_device(uint8_t bus, uint8_t device, uint8_t function) {
   init();
 }
 
-flib_device::~flib_device() {}
+flib_device::~flib_device() = default;
 
 void flib_device::init() {
   m_bar = std::unique_ptr<pda::pci_bar>(new pda::pci_bar(m_device.get(), 1));

@@ -12,9 +12,9 @@
 namespace tl_libfabric {
 class Provider {
 public:
-  Provider() {}
+  Provider() = default;
 
-  virtual ~Provider(){};
+  virtual ~Provider() = default;
 
   Provider(const Provider&) = delete;
   Provider& operator=(const Provider&) = delete;

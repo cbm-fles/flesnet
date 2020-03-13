@@ -39,7 +39,7 @@ TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
   }
 }
 
-TimesliceBuilder::~TimesliceBuilder() {}
+TimesliceBuilder::~TimesliceBuilder() = default;
 
 void TimesliceBuilder::report_status() {
   constexpr auto interval = std::chrono::seconds(1);

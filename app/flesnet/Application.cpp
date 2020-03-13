@@ -22,7 +22,7 @@ Application::Application(Parameters const& par,
   set_node();
 }
 
-Application::~Application() {}
+Application::~Application() = default;
 
 void Application::create_timeslice_buffers() {
   unsigned input_size = static_cast<unsigned>(par_.inputs().size());

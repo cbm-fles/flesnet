@@ -12,7 +12,7 @@ typedef uint64_t sys_bus_addr;
 
 class register_file {
 public:
-  virtual ~register_file(){};
+  virtual ~register_file() = default;
 
   virtual int get_mem(sys_bus_addr addr, void* dest, size_t dwords) = 0;
 

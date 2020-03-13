@@ -12,5 +12,5 @@ class ConnectionGroupWorker : public ThreadContainer {
 public:
   /// The "main" function of an IBConnectionGroup & ConnectionGroup decendant.
   virtual void operator()() = 0;
-  virtual ~ConnectionGroupWorker() {}
+  virtual ~ConnectionGroupWorker() = default;
 };

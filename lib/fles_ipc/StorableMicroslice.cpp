@@ -32,7 +32,7 @@ StorableMicroslice::StorableMicroslice(MicrosliceDescriptor d,
   init_pointers();
 }
 
-StorableMicroslice::StorableMicroslice() {}
+StorableMicroslice::StorableMicroslice() = default;
 
 void StorableMicroslice::initialize_crc() { desc_.crc = compute_crc(); }
 

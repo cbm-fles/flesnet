@@ -22,7 +22,7 @@ TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
   assert(timeslice_buffer_.get_num_input_nodes() == num_input_nodes);
 }
 
-TimesliceBuilder::~TimesliceBuilder() {}
+TimesliceBuilder::~TimesliceBuilder() = default;
 
 void TimesliceBuilder::report_status() {
   constexpr auto interval = std::chrono::seconds(1);

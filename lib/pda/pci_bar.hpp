@@ -27,7 +27,7 @@ public:
    * @param n number of BAR to be mapped [0-6]
    **/
   pci_bar(device* dev, uint8_t number);
-  ~pci_bar(){};
+  ~pci_bar() = default;
 
   void* mem_ptr() { return static_cast<void*>(m_bar); };
 
