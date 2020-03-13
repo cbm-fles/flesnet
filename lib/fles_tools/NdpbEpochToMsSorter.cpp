@@ -90,8 +90,7 @@ void fles::NdpbEpochToMsSorter::process() {
             // Convert the multiset of messages to a vector of bytes
             std::vector<uint8_t> content;
             if (true == fbMsgSorting) {
-              for (auto itMess = fmsFullMsgBuffer.begin();
-                   itMess != fmsFullMsgBuffer.end(); itMess++) {
+              for (const auto& itMess : fmsFullMsgBuffer) {
                 /* Wrong Endianness?!?
                                      content.push_back( static_cast<uint8_t>(
                    ((*itMess).getData() & 0xFF00000000000000UL) >> 56) );
@@ -111,21 +110,21 @@ void fles::NdpbEpochToMsSorter::process() {
                    ((*itMess).getData() & 0x00000000000000FFUL)      ) );
                 */
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00000000000000FFUL)));
+                    (itMess.getData() & 0x00000000000000FFUL)));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x000000000000FF00UL) >> 8));
+                    (itMess.getData() & 0x000000000000FF00UL) >> 8));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x0000000000FF0000UL) >> 16));
+                    (itMess.getData() & 0x0000000000FF0000UL) >> 16));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00000000FF000000UL) >> 24));
+                    (itMess.getData() & 0x00000000FF000000UL) >> 24));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x000000FF00000000UL) >> 32));
+                    (itMess.getData() & 0x000000FF00000000UL) >> 32));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x0000FF0000000000UL) >> 40));
+                    (itMess.getData() & 0x0000FF0000000000UL) >> 40));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00FF000000000000UL) >> 48));
+                    (itMess.getData() & 0x00FF000000000000UL) >> 48));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0xFF00000000000000UL) >> 56));
+                    (itMess.getData() & 0xFF00000000000000UL) >> 56));
 
                 /*
                                      std::cout << std::hex <<
@@ -154,24 +153,23 @@ void fles::NdpbEpochToMsSorter::process() {
               } // for( auto itMess = fmsFullMsgBuffer.begin(); itMess <
                 // fmsFullMsgBuffer.end(); itMess++)
             } else {
-              for (auto itMess = fvMsgBuffer.begin();
-                   itMess != fvMsgBuffer.end(); itMess++) {
+              for (auto& itMess : fvMsgBuffer) {
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00000000000000FFUL)));
+                    (itMess.getData() & 0x00000000000000FFUL)));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x000000000000FF00UL) >> 8));
+                    (itMess.getData() & 0x000000000000FF00UL) >> 8));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x0000000000FF0000UL) >> 16));
+                    (itMess.getData() & 0x0000000000FF0000UL) >> 16));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00000000FF000000UL) >> 24));
+                    (itMess.getData() & 0x00000000FF000000UL) >> 24));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x000000FF00000000UL) >> 32));
+                    (itMess.getData() & 0x000000FF00000000UL) >> 32));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x0000FF0000000000UL) >> 40));
+                    (itMess.getData() & 0x0000FF0000000000UL) >> 40));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00FF000000000000UL) >> 48));
+                    (itMess.getData() & 0x00FF000000000000UL) >> 48));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0xFF00000000000000UL) >> 56));
+                    (itMess.getData() & 0xFF00000000000000UL) >> 56));
               } // else for( auto itMess = fvMsgBuffer.begin(); itMess !=
             }
             // fvMsgBuffer.end(); itMess++)
