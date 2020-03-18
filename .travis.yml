@@ -1,79 +1,29 @@
 language: cpp
 
+dist: bionic
+
 compiler:
   - clang
   - gcc
 
 addons:
   apt:
-    sources:
-    - boost-latest
-    - kalakris-cmake
-    - ubuntu-toolchain-r-test
-    - george-edison55-precise-backports
     packages:
-    - cmake
-    - cmake-data
+    - catch
     - doxygen
-    - gcc-4.8
-    - g++-4.8
-    - git
-    - libboost-filesystem1.55-dev
-    - libboost-log1.55-dev
-    - libboost-program-options1.55-dev
-    - libboost-regex1.55-dev
-    - libboost-serialization1.55-dev
-    - libboost-system1.55-dev
-    - libboost-test1.55-dev
-    - libboost-thread1.55-dev
-    - libboost-iostreams1.55-dev
-    - libboost-locale1.55-dev
-    - libboost-random1.55-dev
-    - libboost1.55-dev
-    - libboost1.55-all-dev
+    - libboost-all-dev
+    - libcpprest-dev
+    - libfabric-dev
     - libibverbs-dev
+    - libkmod-dev
     - libnuma-dev
     - libpci-dev
     - librdmacm-dev
-    - libssl-dev
+    - libtool-bin
     - libzmq3-dev
     - valgrind
-    - zlib1g-dev
-
-env:
-  global:
-    - LLVM_VERSION=3.6.2
-    - LLVM_ARCHIVE_PATH=$HOME/clang+llvm.tar.xz
-    - LIBFABRIC_ARCHIVE_PATH=$HOME/libfabric-1.4.0.tar.gz
-    - CPPRESTSDK_ARCHIVE_PATH=$HOME/v2.10.2.tar.gz
-
-cache:
-  directories:
-  - $HOME/libfabric
-  - $HOME/cpprestsdk
-
-before_install:
-  - WORK_DIR=$(pwd)
-  - wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH
-  - mkdir $HOME/clang+llvm
-  - tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1
-  - export PATH=$HOME/clang+llvm/bin:$PATH
-  - if ! [ -f $HOME/libfabric/.cached ]; then wget https://github.com/ofiwg/libfabric/releases/download/v1.4.0/libfabric-1.4.0.tar.gz -O $LIBFABRIC_ARCHIVE_PATH; fi
-  - if ! [ -f $HOME/libfabric/.cached ]; then tar xzf $LIBFABRIC_ARCHIVE_PATH -C $HOME/libfabric --strip-components 1; fi
-  - if ! [ -f $HOME/libfabric/.cached ]; then cd $HOME/libfabric && ./configure && make && cd $WORK_DIR; fi
-  - if ! [ -f $HOME/libfabric/.cached ]; then touch $HOME/libfabric/.cached; fi
-  - export CMAKE_FRAMEWORK_PATH=$CMAKE_FRAMEWORK_PATH:$HOME/libfabric/include:$HOME/libfabric/src/.libs
-  - if ! [ -f $HOME/cpprestsdk/.cached ]; then wget https://github.com/Microsoft/cpprestsdk/archive/v2.10.2.tar.gz -O $CPPRESTSDK_ARCHIVE_PATH; fi
-  - if ! [ -f $HOME/cpprestsdk/.cached ]; then mkdir $HOME/cpprestsdk/src && tar xzf $CPPRESTSDK_ARCHIVE_PATH -C $HOME/cpprestsdk/src --strip-components 1; fi
-  - if ! [ -f $HOME/cpprestsdk/.cached ]; then cd $HOME/cpprestsdk/src/Release && mkdir build && cd build && CC=gcc-4.8 CXX=g++-4.8 cmake ..; fi
-  - if ! [ -f $HOME/cpprestsdk/.cached ]; then make DESTDIR=$HOME/cpprestsdk install; fi
-  - if ! [ -f $HOME/cpprestsdk/.cached ]; then touch $HOME/cpprestsdk/.cached; fi
-  - export CMAKE_FRAMEWORK_PATH=$CMAKE_FRAMEWORK_PATH:$HOME/cpprestsdk/usr/local/include:$HOME/cpprestsdk/usr/local/lib
-  - cd $WORK_DIR
 
 before_script:
-  - if [ "$CXX" = "clang++" ]; then export CXX="clang++" CC="clang"; fi
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8" GCOV="gcov-4.8"; fi
   - contrib/merge-dependencies
   - mkdir build && cd build
   
@@ -83,6 +33,4 @@ script:
   - make CTEST_OUTPUT_ON_FAILURE=1 test
 
 after_success:
-  - if [ "$CXX" = "g++-4.8" ]; then cmake -DCOVERALLS=ON -DCMAKE_BUILD_TYPE=Debug .. && make -j4 && make coveralls; fi
-
-sudo: false
+  - if [ "$CXX" = "g++" ]; then cmake -DCOVERALLS=ON -DCMAKE_BUILD_TYPE=Debug .. && make -j && make coveralls; fi

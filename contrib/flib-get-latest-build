@@ -5,14 +5,14 @@
 # adopted from https://gitlab.com/morph027/gitlab-ci-helpers/blob/master/get-last-successful-build-artifact.sh
 
 # get private token from:
-# https://cbmgsi.githost.io/profile/account
+# https://git.cbm.gsi.de/profile/account
 # grab project id with:
 # curl -s -H "PRIVATE-TOKEN: $PRIVATE-TOKEN" "${BASEURL}/api/v3/projects" | jq .
 
 set -e
 
 PRIVATE_TOKEN=
-BASE_URL=https://cbmgsi.githost.io
+BASE_URL=https://git.cbm.gsi.de
 PROJECT=2
 BUILD_NAME=flib
 BUILD_FILE_BASE=htg_k7_flesin
