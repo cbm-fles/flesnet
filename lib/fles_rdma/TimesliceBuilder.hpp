@@ -5,7 +5,9 @@
 #include "IBConnectionGroup.hpp"
 #include "RingBuffer.hpp"
 #include "TimesliceBuffer.hpp"
+#include <cpprest/http_client.h>
 #include <csignal>
+#include <memory>
 
 /// Timeslice receiver and input node connection container class.
 /** A TimesliceBuilder object represents a group of timeslice building
@@ -20,7 +22,8 @@ public:
                    uint32_t num_input_nodes,
                    uint32_t timeslice_size,
                    volatile sig_atomic_t* signal_status,
-                   bool drop);
+                   bool drop,
+                   const std::string& monitor_uri);
 
   TimesliceBuilder(const TimesliceBuilder&) = delete;
   void operator=(const TimesliceBuilder&) = delete;
@@ -60,4 +63,8 @@ private:
 
   volatile sig_atomic_t* signal_status_;
   bool drop_;
+
+  std::unique_ptr<web::http::client::http_client> monitor_client_;
+  std::unique_ptr<pplx::task<void>> monitor_task_;
+  std::string hostname_;
 };

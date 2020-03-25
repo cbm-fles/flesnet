@@ -84,9 +84,9 @@ void Application::create_timeslice_buffers() {
 #endif
     } else {
 #ifdef HAVE_RDMA
-      std::unique_ptr<TimesliceBuilder> builder(
-          new TimesliceBuilder(i, *tsb, par_.base_port() + i, input_size,
-                               par_.timeslice_size(), signal_status_, false));
+      std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
+          i, *tsb, par_.base_port() + i, input_size, par_.timeslice_size(),
+          signal_status_, false, par_.monitor_uri()));
       timeslice_builders_.push_back(std::move(builder));
 #else
       L_(fatal) << "flesnet built without RDMA support";

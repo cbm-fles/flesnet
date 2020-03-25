@@ -3,6 +3,7 @@
 #include "TimesliceBuilder.hpp"
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
+#include "System.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceWorkItem.hpp"
 #include "log.hpp"
@@ -13,13 +14,25 @@ TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
                                    uint32_t num_input_nodes,
                                    uint32_t timeslice_size,
                                    volatile sig_atomic_t* signal_status,
-                                   bool drop)
+                                   bool drop,
+                                   const std::string& monitor_uri)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
       service_(service), num_input_nodes_(num_input_nodes),
       timeslice_size_(timeslice_size),
       ack_(timeslice_buffer_.get_desc_size_exp()),
       signal_status_(signal_status), drop_(drop) {
   assert(timeslice_buffer_.get_num_input_nodes() == num_input_nodes);
+
+  if (!monitor_uri.empty()) {
+    try {
+      monitor_client_ = std::unique_ptr<web::http::client::http_client>(
+          new web::http::client::http_client(monitor_uri));
+    } catch (std::exception& e) {
+      L_(error) << "cannot connect to monitoring at " << monitor_uri << ": "
+                << e.what();
+    }
+  }
+  hostname_ = fles::system::current_hostname();
 }
 
 TimesliceBuilder::~TimesliceBuilder() = default;
@@ -31,6 +44,8 @@ void TimesliceBuilder::report_status() {
 
   L_(debug) << "[c" << compute_index_ << "] " << completely_written_
             << " completely written, " << acked_ << " acked";
+
+  std::string measurement;
 
   for (auto& c : conn_) {
     auto status_desc = c->buffer_status_desc();
@@ -45,6 +60,53 @@ void TimesliceBuilder::report_status() {
     L_(status) << "[c" << compute_index_ << "_" << c->index() << "] |"
                << bar_graph(status_data.vector(), "#._", 20) << "|"
                << bar_graph(status_desc.vector(), "#._", 10) << "| ";
+
+    if (monitor_client_) {
+      measurement += "recv_buffer_status,host=" + hostname_ +
+                     ",output_index=" + std::to_string(compute_index_) +
+                     ",input_index=" + std::to_string(c->index()) +
+                     " data_used=" + std::to_string(status_data.used()) +
+                     "i,data_freeing=" + std::to_string(status_data.freeing()) +
+                     "i,data_free=" + std::to_string(status_data.unused()) +
+                     "i,desc_used=" + std::to_string(status_desc.used()) +
+                     "i,desc_freeing=" + std::to_string(status_desc.freeing()) +
+                     "i,desc_free=" + std::to_string(status_desc.unused()) +
+                     "i\n";
+    }
+  }
+
+  if (monitor_client_) {
+    // if task is pending and done, clean it up
+    if (monitor_task_) {
+      if (monitor_task_->is_done()) {
+        try {
+          monitor_task_->get();
+        } catch (std::exception& e) {
+          L_(error) << "monitor task failed: " << e.what();
+        }
+        monitor_task_ = nullptr;
+      } else {
+        L_(warning) << "monitor task is taking longer than expected";
+      }
+    }
+
+    if (!monitor_task_) {
+      auto task =
+          monitor_client_
+              ->request(web::http::methods::POST,
+                        "/write?db=flesnet_status&precision=s", measurement)
+              .then([](const web::http::http_response& response) {
+                if (response.status_code() != 204) {
+                  L_(error)
+                      << "Monitoring client received response status code "
+                      << response.status_code() << ": "
+                      << response.extract_string().get();
+                }
+              });
+
+      monitor_task_ =
+          std::unique_ptr<pplx::task<void>>(new pplx::task<void>(task));
+    }
   }
 
   scheduler_.add(std::bind(&TimesliceBuilder::report_status, this),
