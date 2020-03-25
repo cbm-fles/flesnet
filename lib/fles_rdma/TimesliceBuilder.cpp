@@ -33,6 +33,9 @@ TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
     }
   }
   hostname_ = fles::system::current_hostname();
+
+  previous_recv_buffer_status_data_.resize(num_input_nodes);
+  previous_recv_buffer_status_desc_.resize(num_input_nodes);
 }
 
 TimesliceBuilder::~TimesliceBuilder() = default;
@@ -50,6 +53,23 @@ void TimesliceBuilder::report_status() {
   for (auto& c : conn_) {
     auto status_desc = c->buffer_status_desc();
     auto status_data = c->buffer_status_data();
+
+    double delta_t =
+        std::chrono::duration<double, std::chrono::seconds::period>(
+            status_desc.time -
+            previous_recv_buffer_status_desc_.at(c->index()).time)
+            .count();
+    double rate_desc =
+        static_cast<double>(
+            status_desc.acked -
+            previous_recv_buffer_status_desc_.at(c->index()).received) /
+        delta_t;
+    double rate_data =
+        static_cast<double>(
+            status_data.acked -
+            previous_recv_buffer_status_data_.at(c->index()).received) /
+        delta_t;
+
     L_(debug) << "[c" << compute_index_ << "] desc "
               << status_desc.percentages() << " (used..free) | "
               << human_readable_count(status_desc.acked, true, "")
@@ -59,7 +79,9 @@ void TimesliceBuilder::report_status() {
               << human_readable_count(status_data.acked, true);
     L_(status) << "[c" << compute_index_ << "_" << c->index() << "] |"
                << bar_graph(status_data.vector(), "#._", 20) << "|"
-               << bar_graph(status_desc.vector(), "#._", 10) << "| ";
+               << bar_graph(status_desc.vector(), "#._", 10) << "| "
+               << human_readable_count(rate_data, true, "B/s") << " ("
+               << human_readable_count(rate_desc, true, "Hz") << ")";
 
     if (monitor_client_) {
       measurement += "recv_buffer_status,host=" + hostname_ +
@@ -68,12 +90,22 @@ void TimesliceBuilder::report_status() {
                      " data_used=" + std::to_string(status_data.used()) +
                      "i,data_freeing=" + std::to_string(status_data.freeing()) +
                      "i,data_free=" + std::to_string(status_data.unused()) +
-                     "i,desc_used=" + std::to_string(status_desc.used()) +
+                     "i,data_rate=" + std::to_string(rate_data) +
+                     ",desc_used=" + std::to_string(status_desc.used()) +
                      "i,desc_freeing=" + std::to_string(status_desc.freeing()) +
                      "i,desc_free=" + std::to_string(status_desc.unused()) +
-                     "i\n";
+                     "i,desc_rate=" + std::to_string(rate_desc) + "\n";
     }
+
+    previous_recv_buffer_status_data_.at(c->index()) = status_data;
+    previous_recv_buffer_status_desc_.at(c->index()) = status_desc;
   }
+
+  measurement +=
+      "timeslice_buffer_status,host=" + hostname_ +
+      ",output_index=" + std::to_string(compute_index_) +
+      " work_items=" + std::to_string(timeslice_buffer_.get_num_work_items()) +
+      "i\n";
 
   if (monitor_client_) {
     // if task is pending and done, clean it up

@@ -8,6 +8,7 @@
 #include <cpprest/http_client.h>
 #include <csignal>
 #include <memory>
+#include <vector>
 
 /// Timeslice receiver and input node connection container class.
 /** A TimesliceBuilder object represents a group of timeslice building
@@ -63,6 +64,11 @@ private:
 
   volatile sig_atomic_t* signal_status_;
   bool drop_;
+
+  std::vector<ComputeNodeConnection::BufferStatus>
+      previous_recv_buffer_status_desc_;
+  std::vector<ComputeNodeConnection::BufferStatus>
+      previous_recv_buffer_status_data_;
 
   std::unique_ptr<web::http::client::http_client> monitor_client_;
   std::unique_ptr<pplx::task<void>> monitor_task_;
