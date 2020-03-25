@@ -108,11 +108,11 @@ void TimesliceBuilder::report_status() {
     L_(debug) << "[c" << compute_index_ << "] data "
               << status_data.percentages() << " (used..free) | "
               << human_readable_count(status_data.acked, true);
-    L_(status) << "[c" << compute_index_ << "_" << c->index() << "] |"
-               << bar_graph(status_data.vector(), "#._", 20) << "|"
-               << bar_graph(status_desc.vector(), "#._", 10) << "| "
-               << human_readable_count(rate_data, true, "B/s") << " ("
-               << human_readable_count(rate_desc, true, "Hz") << ")";
+    L_(debug) << "[c" << compute_index_ << "_" << c->index() << "] |"
+              << bar_graph(status_data.vector(), "#._", 20) << "|"
+              << bar_graph(status_desc.vector(), "#._", 10) << "| "
+              << human_readable_count(rate_data, true, "B/s") << " ("
+              << human_readable_count(rate_desc, true, "Hz") << ")";
 
     if (monitor_client_) {
       measurement += "recv_buffer_status,host=" + hostname_ +
