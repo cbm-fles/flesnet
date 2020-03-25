@@ -22,7 +22,7 @@ target_include_directories(flesnet SYSTEM PUBLIC
 
 target_link_libraries(flesnet
   flib_ipc fles_core fles_ipc fles_zeromq logging
-  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CPPREST_LIBRARY}
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CPPREST_LIBRARY} crypto
 )
 
 if (USE_RDMA AND RDMA_FOUND)

@@ -7,6 +7,7 @@
 #include "RingBuffer.hpp"
 #include <boost/format.hpp>
 #include <cassert>
+#include <cpprest/http_client.h>
 
 /// Input buffer and compute node connection container class.
 /** An InputChannelSender object represents an input buffer (filled by a
@@ -119,7 +120,9 @@ private:
 
   bool abort_ = false;
 
-  const std::string monitor_uri_;
+  std::unique_ptr<web::http::client::http_client> monitor_client_;
+  std::unique_ptr<pplx::task<void>> monitor_task_;
+  std::string hostname_;
 
   struct SendBufferStatus {
     std::chrono::system_clock::time_point time;
