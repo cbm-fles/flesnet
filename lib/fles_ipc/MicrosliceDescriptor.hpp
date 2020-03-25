@@ -6,6 +6,8 @@
 
 #include <boost/serialization/access.hpp>
 #include <cstdint>
+#include <map>
+#include <string>
 
 /// Main FLES namespace.
 namespace fles {
@@ -28,6 +30,7 @@ enum class SubsystemIdentifier : uint8_t {
   PSD = 0x80,  ///< Projectile Spectator Detector (PSD)
 
   // Other detectors (experimental)
+  T0 = 0x90,        ///< mCBM T0 Detector
   TRB3 = 0xE0,      ///< TRB3 Stream
   Hodoscope = 0xE1, ///< Fiber Hodoscope
   Cherenkov = 0xE2, ///< Cherenkov
@@ -36,6 +39,35 @@ enum class SubsystemIdentifier : uint8_t {
   // FLES (pattern generators)
   FLES = 0xF0 ///< First-level Event Selector (FLES)
 };
+
+inline const std::string& to_string(SubsystemIdentifier sys_id) {
+  static const std::string undefined = "Undefined";
+  static const std::map<SubsystemIdentifier, const std::string>
+      SubsystemIdentifierStrings{
+
+          // CBM detectors
+          {SubsystemIdentifier::STS, "STS"},
+          {SubsystemIdentifier::MVD, "MVD"},
+          {SubsystemIdentifier::RICH, "RICH"},
+          {SubsystemIdentifier::TRD, "TRD"},
+          {SubsystemIdentifier::MUCH, "MUCH"},
+          {SubsystemIdentifier::RPC, "RPC"},
+          {SubsystemIdentifier::ECAL, "ECAL"},
+          {SubsystemIdentifier::PSD, "PSD"},
+
+          // Other detectors (experimental)
+          {SubsystemIdentifier::T0, "T0"},
+          {SubsystemIdentifier::TRB3, "TRB3"},
+          {SubsystemIdentifier::Hodoscope, "Hodoscope"},
+          {SubsystemIdentifier::Cherenkov, "Cherenkov"},
+          {SubsystemIdentifier::LeadGlass, "LeadGlass"},
+
+          // FLES (pattern generators)
+          {SubsystemIdentifier::FLES, "FLES"}};
+
+  auto it = SubsystemIdentifierStrings.find(sys_id);
+  return it == SubsystemIdentifierStrings.end() ? undefined : it->second;
+}
 
 enum class SubsystemFormatFLES : uint8_t {
   // FLIB hardware pattern generators

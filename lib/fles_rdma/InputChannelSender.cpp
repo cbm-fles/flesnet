@@ -107,6 +107,13 @@ void InputChannelSender::report_status() {
                           previous_send_buffer_status_data_.acked) /
       delta_t;
 
+  // retrieve SubsystemIdentifier from most current MicrosliceDescriptor
+  fles::SubsystemIdentifier sys_id = static_cast<fles::SubsystemIdentifier>(0);
+  if (written_desc > 0) {
+    sys_id = static_cast<fles::SubsystemIdentifier>(
+        data_source_.desc_buffer().at(written_desc - 1).sys_id);
+  }
+
   L_(debug) << "[i" << input_index_ << "] desc " << status_desc.percentages()
             << " (used..free) | "
             << human_readable_count(status_desc.acked, true, "") << " ("
@@ -121,7 +128,8 @@ void InputChannelSender::report_status() {
              << bar_graph(status_data.vector(), "#x._", 20) << "|"
              << bar_graph(status_desc.vector(), "#x._", 10) << "| "
              << human_readable_count(rate_data, true, "B/s") << " ("
-             << human_readable_count(rate_desc, true, "Hz") << ")";
+             << human_readable_count(rate_desc, true, "Hz") << ") "
+             << fles::to_string(sys_id);
 
   if (monitor_client_) {
     // if task is pending and done, clean it up
@@ -142,6 +150,7 @@ void InputChannelSender::report_status() {
       std::string measurement =
           "send_buffer_status,host=" + hostname_ +
           ",input_index=" + std::to_string(input_index_) +
+          ",sys_id=" + fles::to_string(sys_id) +
           " data_used=" + std::to_string(status_data.used()) +
           "i,data_sending=" + std::to_string(status_data.sending()) +
           "i,data_freeing=" + std::to_string(status_data.freeing()) +
