@@ -7,6 +7,8 @@
 #include "TimesliceCompletion.hpp"
 #include "TimesliceWorkItem.hpp"
 #include "log.hpp"
+#include <algorithm>
+#include <limits>
 
 TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
                                    TimesliceBuffer& timeslice_buffer,
@@ -50,9 +52,36 @@ void TimesliceBuilder::report_status() {
 
   std::string measurement;
 
+  double total_rate_desc = 0.;
+  double total_rate_data = 0.;
+
+  float min_used_desc = std::numeric_limits<float>::max();
+  float min_used_data = std::numeric_limits<float>::max();
+  float min_free_desc = std::numeric_limits<float>::max();
+  float min_free_data = std::numeric_limits<float>::max();
+  float min_freeing_plus_free_desc = std::numeric_limits<float>::max();
+  float min_freeing_plus_free_data = std::numeric_limits<float>::max();
+
   for (auto& c : conn_) {
     auto status_desc = c->buffer_status_desc();
     auto status_data = c->buffer_status_data();
+
+    min_used_desc =
+        std::min(min_used_desc, status_desc.percentage(status_desc.used()));
+    min_used_data =
+        std::min(min_used_data, status_data.percentage(status_data.used()));
+    min_free_desc =
+        std::min(min_free_desc, status_desc.percentage(status_desc.unused()));
+    min_free_data =
+        std::min(min_free_data, status_data.percentage(status_data.unused()));
+    min_freeing_plus_free_desc =
+        std::min(min_freeing_plus_free_desc,
+                 status_desc.percentage(status_desc.freeing()) +
+                     status_desc.percentage(status_desc.unused()));
+    min_freeing_plus_free_data =
+        std::min(min_freeing_plus_free_data,
+                 status_data.percentage(status_data.freeing()) +
+                     status_data.percentage(status_data.unused()));
 
     double delta_t =
         std::chrono::duration<double, std::chrono::seconds::period>(
@@ -69,6 +98,8 @@ void TimesliceBuilder::report_status() {
             status_data.acked -
             previous_recv_buffer_status_data_.at(c->index()).received) /
         delta_t;
+    total_rate_desc += rate_desc;
+    total_rate_data += rate_data;
 
     L_(debug) << "[c" << compute_index_ << "] desc "
               << status_desc.percentages() << " (used..free) | "
@@ -101,10 +132,36 @@ void TimesliceBuilder::report_status() {
     previous_recv_buffer_status_desc_.at(c->index()) = status_desc;
   }
 
+  double min_freeing_desc = min_freeing_plus_free_desc - min_free_desc;
+  double min_freeing_data = min_freeing_plus_free_data - min_free_data;
+  double mixed_desc = 1. - min_used_desc - min_free_desc - min_freeing_desc;
+  double mixed_data = 1. - min_used_data - min_free_data - min_freeing_data;
+
+  auto total_status_data = std::vector<double>{min_used_data, mixed_data,
+                                               min_freeing_data, min_free_data};
+  auto total_status_desc = std::vector<double>{min_used_desc, mixed_desc,
+                                               min_freeing_desc, min_free_desc};
+
+  L_(status) << "[c" << compute_index_ << "]   |"
+             << bar_graph(total_status_data, "#=._", 20) << "|"
+             << bar_graph(total_status_desc, "#=._", 10) << "| "
+             << human_readable_count(total_rate_data, true, "B/s") << " ("
+             << human_readable_count(total_rate_desc, true, "Hz") << ")";
+
   measurement +=
       "timeslice_buffer_status,host=" + hostname_ +
       ",output_index=" + std::to_string(compute_index_) +
-      " work_items=" + std::to_string(timeslice_buffer_.get_num_work_items()) +
+      " data_used=" + std::to_string(min_used_data) +
+      ",data_mixed=" + std::to_string(mixed_data) +
+      ",data_freeing=" + std::to_string(min_freeing_data) +
+      ",data_free=" + std::to_string(min_free_data) +
+      ",data_rate=" + std::to_string(total_rate_data) +
+      ",desc_used=" + std::to_string(min_used_desc) +
+      ",desc_mixed=" + std::to_string(mixed_desc) +
+      ",desc_freeing=" + std::to_string(min_freeing_desc) +
+      ",desc_free=" + std::to_string(min_free_desc) +
+      ",desc_rate=" + std::to_string(total_rate_desc) +
+      ",work_items=" + std::to_string(timeslice_buffer_.get_num_work_items()) +
       "i\n";
 
   if (monitor_client_) {
