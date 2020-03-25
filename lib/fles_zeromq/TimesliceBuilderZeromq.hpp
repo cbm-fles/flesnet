@@ -22,7 +22,7 @@ public:
   /// The TimesliceBuilderZeromq constructor.
   TimesliceBuilderZeromq(uint64_t compute_index,
                          TimesliceBuffer& timeslice_buffer,
-                         const std::vector<std::string> input_server_addresses,
+                         const std::vector<std::string>& input_server_addresses,
                          uint32_t num_compute_nodes,
                          uint32_t timeslice_size,
                          uint32_t max_timeslice_number,
@@ -116,7 +116,7 @@ private:
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
-    std::string caption() const { return std::string("used/freeing/free"); }
+    static std::string caption() { return std::string("used/freeing/free"); }
 
     std::string percentage_str(int64_t value) const {
       boost::format percent_fmt("%4.1f%%");

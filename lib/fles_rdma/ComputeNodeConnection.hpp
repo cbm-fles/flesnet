@@ -40,15 +40,15 @@ public:
 
   bool abort_flag() { return recv_status_message_.abort; }
 
-  virtual void setup(struct ibv_pd* pd) override;
+  void setup(struct ibv_pd* pd) override;
 
   /// Connection handler function, called on successful connection.
   /**
      \param event RDMA connection manager event structure
   */
-  virtual void on_established(struct rdma_cm_event* event) override;
+  void on_established(struct rdma_cm_event* event) override;
 
-  virtual void on_disconnected(struct rdma_cm_event* event) override;
+  void on_disconnected(struct rdma_cm_event* event) override;
 
   void inc_ack_pointers(uint64_t ack_pos);
 
@@ -60,7 +60,7 @@ public:
 
   const ComputeNodeBufferPosition& cn_wp() const { return cn_wp_; }
 
-  virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
+  std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
   struct BufferStatus {
     std::chrono::system_clock::time_point time;
@@ -78,7 +78,7 @@ public:
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
-    std::string caption() const { return std::string("used/freeing/free"); }
+    static std::string caption() { return std::string("used/freeing/free"); }
 
     std::string percentage_str(int64_t value) const {
       boost::format percent_fmt("%4.1f%%");

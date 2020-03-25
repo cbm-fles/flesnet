@@ -20,7 +20,7 @@ namespace fles {
 class TimesliceReceiver : public TimesliceSource {
 public:
   /// Construct timeslice receiver connected to a given shared memory.
-  explicit TimesliceReceiver(const std::string shared_memory_identifier);
+  explicit TimesliceReceiver(const std::string& shared_memory_identifier);
 
   /// Delete copy constructor (non-copyable).
   TimesliceReceiver(const TimesliceReceiver&) = delete;

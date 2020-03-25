@@ -103,13 +103,13 @@ protected:
   //    void dump_send_wr(struct ibv_send_wr* wr);
 
   /// Post an Libfabric rdma send work request
-  void post_send_rdma(struct fi_msg_rma* msg, uint64_t flags);
+  void post_send_rdma(struct fi_msg_rma* wr, uint64_t flags);
 
   /// Post an Libfabric message send work request
-  void post_send_msg(struct fi_msg* msg);
+  void post_send_msg(struct fi_msg* wr);
 
   /// Post an Libfabric message recveive request.
-  void post_recv_msg(const struct fi_msg* msg);
+  void post_recv_msg(const struct fi_msg* wr);
 
   void make_endpoint(struct fi_info* info,
                      const std::string& hostname,

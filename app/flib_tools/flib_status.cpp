@@ -31,7 +31,7 @@ static void s_signal_handler(int signal_value) {
   s_interrupted = 1;
 }
 
-static void s_catch_signals(void) {
+static void s_catch_signals() {
   struct sigaction action;
   action.sa_handler = s_signal_handler;
   action.sa_flags = 0;
@@ -52,8 +52,9 @@ int main(int argc, char* argv[]) {
   desc_add("desc", "show output description");
   desc_add("verbose,v", po::value<bool>(&detailed_stats)->implicit_value(true),
            "show detailed statistics");
-  desc_add("monitor,m", po::value<std::string>(&monitor_uri)
-                            ->implicit_value("http://login:8086/"),
+  desc_add("monitor,m",
+           po::value<std::string>(&monitor_uri)
+               ->implicit_value("http://login:8086/"),
            "publish FLIB status to InfluxDB");
 
   po::variables_map vm;
@@ -174,10 +175,10 @@ int main(int argc, char* argv[]) {
                   << pci_stall_acc << "                "
                   << "         " << std::setw(9) << pci_trans_acc << std::endl;
         if (client) {
-          measurement += "flib_status,host=" + hostname + ",flib=" +
-                         flib->print_devinfo() + " stall=" +
-                         std::to_string(pci_stall) + ",trans=" +
-                         std::to_string(pci_trans) + "\n";
+          measurement += "flib_status,host=" + hostname +
+                         ",flib=" + flib->print_devinfo() +
+                         " stall=" + std::to_string(pci_stall) +
+                         ",trans=" + std::to_string(pci_trans) + "\n";
         }
 
         if (detailed_stats) {
@@ -299,16 +300,17 @@ int main(int argc, char* argv[]) {
 
           if (client) {
             measurement +=
-                "link_status,host=" + hostname + ",flib=" +
-                flib->print_devinfo() + ",link=" + std::to_string(i) +
-                " data_sel=" +
+                "link_status,host=" + hostname +
+                ",flib=" + flib->print_devinfo() +
+                ",link=" + std::to_string(i) + " data_sel=" +
                 std::to_string(static_cast<int>(links.at(i)->data_sel())) +
-                "i,up=" + (status.channel_up ? "true" : "false") + ",rate=" +
-                std::to_string(event_rate) + ",din_full=" +
-                std::to_string(din_full / 100.0) + ",dma_stall=" +
-                std::to_string(dma_stall / 100.0) + ",data_buf_stall=" +
-                std::to_string(data_buf_stall / 100.0) + ",desc_buf_stall=" +
-                std::to_string(desc_buf_stall / 100.0) + "\n";
+                "i,up=" + (status.channel_up ? "true" : "false") +
+                ",rate=" + std::to_string(event_rate) +
+                ",din_full=" + std::to_string(din_full / 100.0) +
+                ",dma_stall=" + std::to_string(dma_stall / 100.0) +
+                ",data_buf_stall=" + std::to_string(data_buf_stall / 100.0) +
+                ",desc_buf_stall=" + std::to_string(desc_buf_stall / 100.0) +
+                "\n";
           }
         }
         std::cout << ss.str() << std::endl;
@@ -317,7 +319,7 @@ int main(int argc, char* argv[]) {
           client
               ->request(web::http::methods::POST,
                         "/write?db=flib_status&precision=s", measurement)
-              .then([](web::http::http_response response) {
+              .then([](const web::http::http_response& response) {
                 if (response.status_code() != 204) {
                   std::cout << "Received response status code: "
                             << response.status_code() << "\n"

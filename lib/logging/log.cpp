@@ -1,15 +1,14 @@
 // Copyright 2014 Jan de Cuveland <cmail@cuveland.de>
 #include "log.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include <boost/log/attributes.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/utility/setup.hpp>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 
 #define __ansi(code_m) "\033[" code_m "m"
@@ -52,7 +51,7 @@ std::string fancy_icon(severity_level level)
     if (static_cast<std::size_t>(level) < sizeof(icons) / sizeof(*icons))
         return icons[level];
     else
-        return boost::lexical_cast<std::string>(static_cast<int>(level));
+        return std::to_string(static_cast<int>(level));
 }
 }
 #endif

@@ -22,7 +22,7 @@ ComputeNodeConnection::ComputeNodeConnection(
     fles::TimesliceComponentDescriptor* desc_ptr,
     uint32_t desc_buffer_size_exp)
     : Connection(eq, connection_index, remote_connection_index),
-      remote_info_(std::move(remote_info)), data_ptr_(data_ptr),
+      remote_info_(remote_info), data_ptr_(data_ptr),
       data_buffer_size_exp_(data_buffer_size_exp), desc_ptr_(desc_ptr),
       desc_buffer_size_exp_(desc_buffer_size_exp) {
   // send and receive only single StatusMessage struct
@@ -113,36 +113,38 @@ void ComputeNodeConnection::setup_mr(struct fid_domain* pd) {
                            sizeof(fles::TimesliceComponentDescriptor);
   int res = fi_mr_reg(pd, data_ptr_, data_bytes, FI_WRITE | FI_REMOTE_WRITE, 0,
                       Provider::requested_key++, 0, &mr_data_, nullptr);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_mr_reg failed for data_ptr: " << res << "="
               << fi_strerror(-res);
     throw LibfabricException("fi_mr_reg failed for data_ptr");
   }
   res = fi_mr_reg(pd, desc_ptr_, desc_bytes, FI_WRITE | FI_REMOTE_WRITE, 0,
                   Provider::requested_key++, 0, &mr_desc_, nullptr);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_mr_reg failed for desc_ptr: " << res << "="
               << fi_strerror(-res);
     throw LibfabricException("fi_mr_reg failed for desc_ptr");
   }
   res = fi_mr_reg(pd, &send_status_message_, sizeof(ComputeNodeStatusMessage),
                   FI_SEND, 0, Provider::requested_key++, 0, &mr_send_, nullptr);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_mr_reg failed for send: " << res << "="
               << fi_strerror(-res);
     throw LibfabricException("fi_mr_reg failed for send");
   }
   res = fi_mr_reg(pd, &recv_status_message_, sizeof(InputChannelStatusMessage),
                   FI_RECV, 0, Provider::requested_key++, 0, &mr_recv_, nullptr);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_mr_reg failed for recv: " << res << "="
               << fi_strerror(-res);
     throw LibfabricException("fi_mr_reg failed for recv");
   }
 
-  if (!mr_data_ || !mr_desc_ || !mr_recv_ || !mr_send_)
+  if ((mr_data_ == nullptr) || (mr_desc_ == nullptr) || (mr_recv_ == nullptr) ||
+      (mr_send_ == nullptr)) {
     throw LibfabricException(
         "registration of memory region failed in ComputeNodeConnection");
+  }
 
   send_status_message_.info.data.addr = reinterpret_cast<uintptr_t>(data_ptr_);
   send_status_message_.info.data.rkey = fi_mr_key(mr_data_);
@@ -200,22 +202,22 @@ void ComputeNodeConnection::on_disconnected(struct fi_eq_cm_entry* event) {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-  if (mr_recv_) {
+  if (mr_recv_ != nullptr) {
     fi_close((struct fid*)mr_recv_);
     mr_recv_ = nullptr;
   }
 
-  if (mr_send_) {
+  if (mr_send_ != nullptr) {
     fi_close((struct fid*)mr_send_);
     mr_send_ = nullptr;
   }
 
-  if (mr_desc_) {
+  if (mr_desc_ != nullptr) {
     fi_close((struct fid*)mr_desc_);
     mr_desc_ = nullptr;
   }
 
-  if (mr_data_) {
+  if (mr_data_ != nullptr) {
     fi_close((struct fid*)mr_data_);
     mr_data_ = nullptr;
   }

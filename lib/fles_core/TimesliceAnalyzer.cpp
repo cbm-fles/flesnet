@@ -25,7 +25,7 @@ TimesliceAnalyzer::~TimesliceAnalyzer() {
   }
 }
 
-uint32_t TimesliceAnalyzer::compute_crc(const fles::MicrosliceView m) const {
+uint32_t TimesliceAnalyzer::compute_crc(const fles::MicrosliceView& m) const {
   assert(crc32_engine_);
 
   crcutil_interface::UINT64 crc64 = 0;
@@ -34,11 +34,11 @@ uint32_t TimesliceAnalyzer::compute_crc(const fles::MicrosliceView m) const {
   return static_cast<uint32_t>(crc64);
 }
 
-bool TimesliceAnalyzer::check_crc(const fles::MicrosliceView m) const {
+bool TimesliceAnalyzer::check_crc(const fles::MicrosliceView& m) const {
   return compute_crc(m) == m.desc().crc;
 }
 
-bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
+bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView& m,
                                          size_t component,
                                          size_t microslice) {
 // disabled, not applicable when using start time instead of index
@@ -74,7 +74,7 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView m,
   bool error = truncated || pattern_error || crc_error;
 
   // output ms stats
-  if (hist_) {
+  if (hist_ != nullptr) {
     *hist_ << component << " " << microslice << " " << m.desc().eq_id << " "
            << m.desc().flags << " " << uint16_t(m.desc().sys_id) << " "
            << uint16_t(m.desc().sys_ver) << " " << m.desc().idx << " "

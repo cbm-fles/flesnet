@@ -10,8 +10,7 @@ StorableTimeslice::StorableTimeslice(const StorableTimeslice& ts)
 }
 
 StorableTimeslice::StorableTimeslice(StorableTimeslice&& ts) noexcept
-    : Timeslice(std::move(ts)), data_(std::move(ts.data_)),
-      desc_(std::move(ts.desc_)) {
+    : Timeslice(ts), data_(std::move(ts.data_)), desc_(std::move(ts.desc_)) {
   init_pointers();
 }
 
@@ -30,6 +29,6 @@ StorableTimeslice::StorableTimeslice(const Timeslice& ts)
   init_pointers();
 }
 
-StorableTimeslice::StorableTimeslice() {}
+StorableTimeslice::StorableTimeslice() = default;
 
 } // namespace fles

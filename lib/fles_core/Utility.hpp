@@ -1,11 +1,11 @@
 // Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include <boost/lexical_cast.hpp>
 #include <cassert>
 #include <cmath>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <sstream>
 #include <vector>
 
@@ -18,11 +18,11 @@ inline std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
 
 inline std::string human_readable_count(uint64_t bytes,
                                         bool use_si = false,
-                                        std::string unit_string = "B") {
+                                        const std::string& unit_string = "B") {
   uint64_t unit = use_si ? 1000 : 1024;
 
   if (bytes < unit) {
-    return boost::lexical_cast<std::string>(bytes) + " " + unit_string;
+    return std::to_string(bytes) + " " + unit_string;
   }
 
   uint32_t exponent = static_cast<uint32_t>(std::log(bytes) / std::log(unit));
@@ -57,7 +57,7 @@ bar_graph(std::vector<T> values, std::string symbols, uint32_t length) {
   for (size_t i = 0; i < values.size(); ++i) {
     filled += static_cast<float>(values[i]) / static_cast<float>(sum);
     uint32_t chars =
-        static_cast<uint32_t>(round(filled * static_cast<float>(length)));
+        static_cast<uint32_t>(std::round(filled * static_cast<float>(length)));
     s.append(std::string(chars - s.size(), symbols[i % symbols.size()]));
   }
 

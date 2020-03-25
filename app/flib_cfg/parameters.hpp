@@ -47,8 +47,8 @@ public:
 // Overload validate for PCI BDF address
 void validate(boost::any& v,
               const std::vector<std::string>& values,
-              pci_addr*,
-              int) {
+              pci_addr* /*unused*/,
+              int /*unused*/) {
   // PCI BDF address is BB:DD.F
   static boost::regex r(
       "([[:xdigit:]][[:xdigit:]]):([[:xdigit:]][[:xdigit:]]).([[:xdigit:]])");
@@ -90,8 +90,8 @@ public:
   }
 
 private:
-  void parse_eq_id(po::variables_map vm, size_t i) {
-    if (vm.count("l" + std::to_string(i) + "_eq_id")) {
+  void parse_eq_id(const po::variables_map& vm, size_t i) {
+    if (vm.count("l" + std::to_string(i) + "_eq_id") != 0u) {
       _links.at(i).eq_id = boost::numeric_cast<uint16_t>(
           std::stoul(vm["l" + std::to_string(i) + "_eq_id"].as<std::string>(),
                      nullptr, 0));
@@ -100,8 +100,9 @@ private:
     }
   }
 
-  void parse_data_source(po::variables_map vm, size_t i) {
-    if (vm.count("l" + std::to_string(i) + "_source")) { // set given parameters
+  void parse_data_source(const po::variables_map& vm, size_t i) {
+    if (vm.count("l" + std::to_string(i) + "_source") !=
+        0u) { // set given parameters
       std::string source =
           vm["l" + std::to_string(i) + "_source"].as<std::string>();
       if (source == "flim") {
@@ -205,25 +206,24 @@ private:
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
       throw ParametersException("cannot open config file: " + config_file);
-    } else {
-      po::store(po::parse_config_file(ifs, config_file_options), vm);
-      notify(vm);
     }
+    po::store(po::parse_config_file(ifs, config_file_options), vm);
+    notify(vm);
 
-    if (vm.count("help")) {
+    if (vm.count("help") != 0u) {
       std::cout << cmdline_options << "\n";
       exit(EXIT_SUCCESS);
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
-    if (vm.count("log-file")) {
+    if (vm.count("log-file") != 0u) {
       L_(info) << "Logging output to " << log_file;
       logging::add_file(log_file, static_cast<severity_level>(log_level));
     }
 
     L_(info) << "Device config:";
 
-    if (vm.count("flib-addr")) {
+    if (vm.count("flib-addr") != 0u) {
       _flib_addr = vm["flib-addr"].as<pci_addr>();
       _flib_autodetect = false;
       L_(info) << " FLIB address: " << std::hex << std::setw(2)
@@ -236,26 +236,24 @@ private:
       L_(info) << " FLIB address: autodetect";
     }
 
-    if (vm.count("mc-size")) {
+    if (vm.count("mc-size") != 0u) {
       _mc_size = vm["mc-size"].as<uint32_t>();
       if (_mc_size > 2147483647) { // 31 bit check
         throw ParametersException("Pgen microslice size out of range");
-      } else {
-        L_(info) << " Pgen microslice size: "
-                 << human_readable_mc_size(_mc_size);
       }
+      L_(info) << " Pgen microslice size: " << human_readable_mc_size(_mc_size);
+
     } else {
       L_(info) << " Pgen microslice size: " << human_readable_mc_size(_mc_size)
                << " (default)";
     }
 
-    if (vm.count("pgen-rate")) {
+    if (vm.count("pgen-rate") != 0u) {
       _pgen_rate = vm["pgen-rate"].as<float>();
       if (_pgen_rate < 0 || _pgen_rate > 1) { // range check
         throw ParametersException("Pgen rate out of range");
-      } else {
-        L_(info) << " Pgen rate: " << _pgen_rate;
       }
+      L_(info) << " Pgen rate: " << _pgen_rate;
     }
 
     L_(info) << " FLIB microslice size limit: " << _mc_size_limit << " bytes";
@@ -266,7 +264,7 @@ private:
     } // end loop over links
   }
 
-  std::string human_readable_mc_size(uint32_t mc_size) {
+  static std::string human_readable_mc_size(uint32_t mc_size) {
     size_t mc_size_ns = mc_size * 1024; // 1024 = hw base unit
     size_t mc_size_us_int = mc_size_ns / 1000;
     size_t mc_size_us_frec = mc_size_ns % 1000;

@@ -23,18 +23,18 @@ public:
   void operator=(const GNIProvider&) = delete;
 
   /// The GNIProvider default destructor.
-  ~GNIProvider();
+  ~GNIProvider() override;
 
-  virtual bool has_av() const override { return true; };
-  virtual bool has_eq_at_eps() const override { return false; };
-  virtual bool is_connection_oriented() const override { return false; };
+  bool has_av() const override { return true; };
+  bool has_eq_at_eps() const override { return false; };
+  bool is_connection_oriented() const override { return false; };
 
   struct fi_info* get_info() override {
     assert(info_ != nullptr);
     return info_;
   }
 
-  virtual void
+  void
   set_hostnames_and_services(struct fid_av* av,
                              const std::vector<std::string>& compute_hostnames,
                              const std::vector<std::string>& compute_services,
@@ -44,7 +44,7 @@ public:
     return fabric_;
   };
 
-  static struct fi_info* exists(std::string local_host_name);
+  static struct fi_info* exists(const std::string& local_host_name);
 
   void accept(struct fid_pep* pep,
               const std::string& hostname,

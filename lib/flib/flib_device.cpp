@@ -32,7 +32,7 @@ flib_device::flib_device(uint8_t bus, uint8_t device, uint8_t function) {
   init();
 }
 
-flib_device::~flib_device() {}
+flib_device::~flib_device() = default;
 
 void flib_device::init() {
   m_bar = std::unique_ptr<pda::pci_bar>(new pda::pci_bar(m_device.get(), 1));
@@ -104,19 +104,19 @@ time_t flib_device::build_date() {
 
 std::string flib_device::build_host() {
   uint32_t host[4];
-  host[0] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_3));
-  host[1] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_2));
-  host[2] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_1));
-  host[3] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_0));
+  host[0] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_3)); // NOLINT
+  host[1] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_2)); // NOLINT
+  host[2] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_1)); // NOLINT
+  host[3] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_HOST_0)); // NOLINT
   return std::string(reinterpret_cast<const char*>(host));
 }
 
 std::string flib_device::build_user() {
   uint32_t user[4];
-  user[0] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_3));
-  user[1] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_2));
-  user[2] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_1));
-  user[3] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_0));
+  user[0] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_3)); // NOLINT
+  user[1] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_2)); // NOLINT
+  user[2] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_1)); // NOLINT
+  user[3] = ntohl(m_register_file->get_reg(RORC_REG_BUILD_USER_0)); // NOLINT
   return std::string(reinterpret_cast<const char*>(user));
 }
 
@@ -132,7 +132,7 @@ struct build_info_t flib_device::build_info() {
   info.rev[3] = m_register_file->get_reg(RORC_REG_BUILD_REV_3);
   info.rev[4] = m_register_file->get_reg(RORC_REG_BUILD_REV_4);
   info.hw_ver = hardware_version();
-  info.clean = (m_register_file->get_reg(RORC_REG_BUILD_FLAGS) & 0x1);
+  info.clean = ((m_register_file->get_reg(RORC_REG_BUILD_FLAGS) & 0x1) != 0u);
   info.repo = (m_register_file->get_reg(RORC_REG_BUILD_FLAGS) & 0x6) >> 1;
   return info;
 }

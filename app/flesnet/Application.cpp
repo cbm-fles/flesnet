@@ -22,31 +22,35 @@ Application::Application(Parameters const& par,
   set_node();
 }
 
-Application::~Application() {}
+Application::~Application() = default;
 
 void Application::create_timeslice_buffers() {
   unsigned input_size = static_cast<unsigned>(par_.inputs().size());
   unsigned output_size = static_cast<unsigned>(par_.outputs().size());
 
   std::vector<std::string> input_server_addresses;
-  for (unsigned i = 0; i < input_size; ++i)
-    if (par_.local_only())
+  for (unsigned i = 0; i < input_size; ++i) {
+    if (par_.local_only()) {
       input_server_addresses.push_back("inproc://input" + std::to_string(i));
-    else
+    } else {
       input_server_addresses.push_back("tcp://" + par_.inputs().at(i).host +
                                        ":" +
                                        std::to_string(par_.base_port() + i));
+    }
+  }
 
   for (unsigned i : par_.output_indexes()) {
     auto shm_identifier = par_.outputs().at(i).path.at(0);
     auto param = par_.outputs().at(i).param;
 
     uint32_t datasize = 27; // 128 MiB
-    if (param.count("datasize"))
+    if (param.count("datasize") != 0u) {
       datasize = stou(param.at("datasize"));
+    }
     uint32_t descsize = 19; // 16 MiB
-    if (param.count("descsize"))
+    if (param.count("descsize") != 0u) {
       descsize = stou(param.at("descsize"));
+    }
 
     L_(info) << "timeslice buffer " << i
              << " size: " << human_readable_count(UINT64_C(1) << datasize)
@@ -80,9 +84,9 @@ void Application::create_timeslice_buffers() {
 #endif
     } else {
 #ifdef HAVE_RDMA
-      std::unique_ptr<TimesliceBuilder> builder(
-          new TimesliceBuilder(i, *tsb, par_.base_port() + i, input_size,
-                               par_.timeslice_size(), signal_status_, false));
+      std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
+          i, *tsb, par_.base_port() + i, input_size, par_.timeslice_size(),
+          signal_status_, false, par_.monitor_uri()));
       timeslice_builders_.push_back(std::move(builder));
 #else
       L_(fatal) << "flesnet built without RDMA support";
@@ -95,12 +99,14 @@ void Application::create_timeslice_buffers() {
 
 void Application::create_input_channel_senders() {
   std::vector<std::string> output_hosts;
-  for (unsigned int i = 0; i < par_.outputs().size(); ++i)
+  for (unsigned int i = 0; i < par_.outputs().size(); ++i) {
     output_hosts.push_back(par_.outputs().at(i).host);
+  }
 
   std::vector<std::string> output_services;
-  for (unsigned int i = 0; i < par_.outputs().size(); ++i)
+  for (unsigned int i = 0; i < par_.outputs().size(); ++i) {
     output_services.push_back(std::to_string(par_.base_port() + i));
+  }
 
   for (size_t c = 0; c < par_.input_indexes().size(); ++c) {
     unsigned index = par_.input_indexes().at(c);
@@ -112,7 +118,7 @@ void Application::create_input_channel_senders() {
       auto shm_identifier = par_.inputs().at(index).path.at(0);
       auto channel = std::stoul(par_.inputs().at(index).path.at(1));
 
-      if (!shm_devices_.count(shm_identifier)) {
+      if (shm_devices_.count(shm_identifier) == 0u) {
         try {
           shm_devices_.insert(std::make_pair(
               shm_identifier,
@@ -129,23 +135,29 @@ void Application::create_input_channel_senders() {
               shm_devices_.at(shm_identifier), channel)));
     } else if (scheme == "pgen") {
       uint32_t datasize = 27; // 128 MiB
-      if (param.count("datasize"))
+      if (param.count("datasize") != 0u) {
         datasize = stou(param.at("datasize"));
+      }
       uint32_t descsize = 19; // 16 MiB
-      if (param.count("descsize"))
+      if (param.count("descsize") != 0u) {
         descsize = stou(param.at("descsize"));
+      }
       uint32_t size_mean = 1024; // 1 kiB
-      if (param.count("mean"))
+      if (param.count("mean") != 0u) {
         size_mean = stou(param.at("mean"));
+      }
       uint32_t size_var = 0;
-      if (param.count("var"))
+      if (param.count("var") != 0u) {
         size_var = stou(param.at("var"));
+      }
       uint32_t pattern = 0;
-      if (param.count("pattern"))
+      if (param.count("pattern") != 0u) {
         pattern = stou(param.at("pattern"));
+      }
       uint64_t delay_ns = 0;
-      if (param.count("delay"))
+      if (param.count("delay") != 0u) {
         delay_ns = stoul(param.at("delay"));
+      }
 
       L_(info) << "input buffer " << index
                << " size: " << human_readable_count(UINT64_C(1) << datasize)
@@ -164,14 +176,16 @@ void Application::create_input_channel_senders() {
     }
 
     uint32_t overlap_size = 1;
-    if (param.count("overlap"))
+    if (param.count("overlap") != 0u) {
       overlap_size = stou(param.at("overlap"));
+    }
 
     if (par_.transport() == Transport::ZeroMQ) {
       std::string listen_address =
           "tcp://*:" + std::to_string(par_.base_port() + index);
-      if (par_.local_only())
+      if (par_.local_only()) {
         listen_address = "inproc://input" + std::to_string(index);
+      }
       std::unique_ptr<ComponentSenderZeromq> sender(new ComponentSenderZeromq(
           index, *(data_sources_.at(c).get()), listen_address,
           par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
@@ -192,7 +206,8 @@ void Application::create_input_channel_senders() {
 #ifdef HAVE_RDMA
       std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
           index, *(data_sources_.at(c).get()), output_hosts, output_services,
-          par_.timeslice_size(), overlap_size, par_.max_timeslice_number()));
+          par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
+          par_.monitor_uri()));
       input_channel_senders_.push_back(std::move(sender));
 #else
       L_(fatal) << "flesnet built without RDMA support";
@@ -259,14 +274,15 @@ void Application::run() {
       stop = true;
     }
     futures.erase(it);
-    if (stop)
+    if (stop) {
       threads.interrupt_all();
+    }
   }
 
   threads.join_all();
 }
 
-void Application::start_processes(const std::string shared_memory_identifier) {
+void Application::start_processes(const std::string& shared_memory_identifier) {
   const std::string processor_executable = par_.processor_executable();
   assert(!processor_executable.empty());
   for (uint_fast32_t i = 0; i < par_.processor_instances(); ++i) {

@@ -35,12 +35,12 @@ Connection::Connection(struct fid_eq* eq,
 }
 
 Connection::~Connection() {
-  if (ep_) {
+  if (ep_ != nullptr) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
     int err = fi_close((struct fid*)ep_);
 #pragma GCC diagnostic pop
-    if (err) {
+    if (err != 0) {
       L_(error) << "fi_close() failed";
     }
     ep_ = nullptr;
@@ -69,10 +69,10 @@ void Connection::connect(const std::string& hostname,
   hints->src_addr = nullptr;
   hints->src_addrlen = 0;
 
-  int err =
-      fi_getinfo(FI_VERSION(1, 1), hostname == "" ? nullptr : hostname.c_str(),
-                 service == "" ? nullptr : service.c_str(), 0, hints, &info2);
-  if (err) {
+  int err = fi_getinfo(
+      FI_VERSION(1, 1), hostname.empty() ? nullptr : hostname.c_str(),
+      service.empty() ? nullptr : service.c_str(), 0, hints, &info2);
+  if (err != 0) {
     L_(fatal) << "fi_getinfo failed in make_endpoint: " << hostname << " "
               << service << "[" << err << "=" << fi_strerror(-err) << "]";
     throw LibfabricException("fi_getinfo failed in make_endpoint");
@@ -81,7 +81,7 @@ void Connection::connect(const std::string& hostname,
   fi_freeinfo(hints);
 
   err = fi_endpoint(domain, info2, &ep_, this);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_endpoint failed: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_endpoint failed");
   }
@@ -90,20 +90,20 @@ void Connection::connect(const std::string& hostname,
 #pragma GCC diagnostic ignored "-Wold-style-cast"
   if (Provider::getInst()->has_eq_at_eps()) {
     err = fi_ep_bind(ep_, (::fid_t)eq_, 0);
-    if (err) {
+    if (err != 0) {
       L_(fatal) << "fi_ep_bind failed: " << err << "=" << fi_strerror(-err);
       throw LibfabricException("fi_ep_bind failed");
     }
   }
   err =
       fi_ep_bind(ep_, (::fid_t)cq, FI_SEND | FI_RECV | FI_SELECTIVE_COMPLETION);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_ep_bind failed (cq): " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_ep_bind failed (cq)");
   }
   if (Provider::getInst()->has_av()) {
     err = fi_ep_bind(ep_, (::fid_t)av, 0);
-    if (err) {
+    if (err != 0) {
       L_(fatal) << "fi_ep_bind failed (av): " << err << "="
                 << fi_strerror(-err);
       throw LibfabricException("fi_ep_bind failed (av)");
@@ -111,7 +111,7 @@ void Connection::connect(const std::string& hostname,
   }
 #pragma GCC diagnostic pop
   err = fi_enable(ep_);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_enable failed: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_enable failed");
   }
@@ -128,7 +128,7 @@ void Connection::disconnect() {
   L_(debug) << "[" << index_ << "] "
             << "disconnect";
   int err = fi_shutdown(ep_, 0);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_shutdown failed: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_shutdown failed");
   }
@@ -167,7 +167,7 @@ void Connection::on_connect_request(struct fi_eq_cm_entry* event,
                                     struct fid_domain* pd,
                                     struct fid_cq* cq) {
   int err = fi_endpoint(pd, event->info, &ep_, this);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_endpoint failed: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_endpoint failed");
   }
@@ -175,12 +175,12 @@ void Connection::on_connect_request(struct fi_eq_cm_entry* event,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
   err = fi_ep_bind(ep_, (::fid_t)eq_, 0);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_ep_bind failed to eq: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_ep_bind failed to eq");
   }
   err = fi_ep_bind(ep_, (fid_t)cq, FI_SEND | FI_RECV | FI_SELECTIVE_COMPLETION);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_ep_bind failed to cq: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_ep_bind failed to cq");
   }
@@ -193,13 +193,13 @@ void Connection::on_connect_request(struct fi_eq_cm_entry* event,
   assert(private_data->size() <= 255);
 
   err = fi_enable(ep_);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_enable failed: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_enable failed");
   }
   // accept_connect_request();
   err = fi_accept(ep_, private_data->data(), private_data->size());
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_accept failed: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_accept failed");
   }
@@ -227,10 +227,10 @@ void Connection::make_endpoint(struct fi_info* info,
   hints->src_addr = nullptr;
   hints->src_addrlen = 0;
 
-  int err =
-      fi_getinfo(FI_VERSION(1, 1), hostname == "" ? nullptr : hostname.c_str(),
-                 service == "" ? nullptr : service.c_str(), 0, hints, &info2);
-  if (err) {
+  int err = fi_getinfo(
+      FI_VERSION(1, 1), hostname.empty() ? nullptr : hostname.c_str(),
+      service.empty() ? nullptr : service.c_str(), 0, hints, &info2);
+  if (err != 0) {
     L_(fatal) << "fi_getinfo failed in make_endpoint: " << err << "="
               << fi_strerror(-err);
     throw LibfabricException("fi_getinfo failed in make_endpoint");
@@ -239,7 +239,7 @@ void Connection::make_endpoint(struct fi_info* info,
   fi_freeinfo(hints);
 
   err = fi_endpoint(pd, info2, &ep_, this);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_endpoint failed: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_endpoint failed");
   }
@@ -248,7 +248,7 @@ void Connection::make_endpoint(struct fi_info* info,
 #pragma GCC diagnostic ignored "-Wold-style-cast"
   if (Provider::getInst()->has_eq_at_eps()) {
     err = fi_ep_bind(ep_, (::fid_t)eq_, 0);
-    if (err) {
+    if (err != 0) {
       L_(fatal) << "fi_ep_bind failed (eq_): " << err << "="
                 << fi_strerror(-err);
       throw LibfabricException("fi_ep_bind failed (eq_)");
@@ -256,13 +256,13 @@ void Connection::make_endpoint(struct fi_info* info,
   }
   err =
       fi_ep_bind(ep_, (::fid_t)cq, FI_SEND | FI_RECV | FI_SELECTIVE_COMPLETION);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_ep_bind failed (cq): " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_ep_bind failed (cq)");
   }
   if (Provider::getInst()->has_av()) {
     err = fi_ep_bind(ep_, (::fid_t)av, 0);
-    if (err) {
+    if (err != 0) {
       L_(fatal) << "fi_ep_bind failed (av): " << err << "="
                 << fi_strerror(-err);
       throw LibfabricException("fi_ep_bind failed (av)");
@@ -270,7 +270,7 @@ void Connection::make_endpoint(struct fi_info* info,
   }
 #pragma GCC diagnostic pop
   err = fi_enable(ep_);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_enable failed: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_enable failed");
   }
@@ -286,7 +286,7 @@ std::unique_ptr<std::vector<uint8_t>> Connection::get_private_data() {
 void Connection::post_send_msg(struct fi_msg* wr) {
 
   int err = fi_sendmsg(ep_, wr, FI_COMPLETION);
-  if (err) {
+  if (err != 0) {
     // dump_send_wr(wr);
     L_(fatal) << "previous send requests: " << total_send_requests_;
     L_(fatal) << "previous recv requests: " << total_recv_requests_;
@@ -296,14 +296,15 @@ void Connection::post_send_msg(struct fi_msg* wr) {
 
   ++total_send_requests_;
 
-  for (size_t i = 0; i < wr->iov_count; ++i)
+  for (size_t i = 0; i < wr->iov_count; ++i) {
     total_bytes_sent_ += wr->msg_iov[i].iov_len;
+  }
 }
 
 /// Post an Libfabric rdma send work request
 void Connection::post_send_rdma(struct fi_msg_rma* wr, uint64_t flags) {
   int err = fi_writemsg(ep_, wr, flags);
-  if (err) {
+  if (err != 0) {
     // dump_send_wr(wr);
     L_(fatal) << "previous send requests: " << total_send_requests_;
     L_(fatal) << "previous recv requests: " << total_recv_requests_;
@@ -312,13 +313,14 @@ void Connection::post_send_rdma(struct fi_msg_rma* wr, uint64_t flags) {
   }
   ++total_send_requests_;
 
-  for (size_t i = 0; i < wr->iov_count; ++i)
+  for (size_t i = 0; i < wr->iov_count; ++i) {
     total_bytes_sent_ += wr->msg_iov[i].iov_len;
+  }
 }
 
 void Connection::post_recv_msg(const struct fi_msg* wr) {
   int err = fi_recvmsg(ep_, wr, FI_COMPLETION);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_recvmsg failed: " << err << "=" << fi_strerror(-err);
     throw LibfabricException("fi_recvmsg failed");
   }

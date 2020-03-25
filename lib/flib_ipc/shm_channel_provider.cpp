@@ -4,7 +4,6 @@
 #include "shm_channel_provider.hpp"
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/lexical_cast.hpp>
 #include <string>
 
 template <typename T_DESC, typename T_DATA>
@@ -20,8 +19,7 @@ shm_channel_provider<T_DESC, T_DATA>::shm_channel_provider(
   void* desc_buffer_raw = shm_alloc(shm, desc_buffer_size_exp, sizeof(T_DESC));
 
   // constuct channel exchange object in shared memory
-  std::string channel_name =
-      "shm_channel_" + boost::lexical_cast<std::string>(index);
+  std::string channel_name = "shm_channel_" + std::to_string(index);
   shm_ch_ = shm->construct<shm_channel>(channel_name.c_str())(
       shm, data_buffer_raw, data_buffer_size_exp, sizeof(T_DATA),
       desc_buffer_raw, desc_buffer_size_exp, sizeof(T_DESC));

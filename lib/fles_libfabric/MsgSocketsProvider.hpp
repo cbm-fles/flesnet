@@ -17,7 +17,7 @@ public:
   MsgSocketsProvider(const MsgSocketsProvider&) = delete;
   MsgSocketsProvider& operator=(const MsgSocketsProvider&) = delete;
 
-  ~MsgSocketsProvider();
+  ~MsgSocketsProvider() override;
 
   struct fi_info* get_info() override {
     assert(info_ != nullptr);
@@ -28,7 +28,7 @@ public:
     return fabric_;
   };
 
-  static struct fi_info* exists(std::string local_host_name);
+  static struct fi_info* exists(const std::string& local_host_name);
 
   void accept(struct fid_pep* pep,
               const std::string& hostname,
@@ -43,10 +43,10 @@ public:
                uint32_t max_recv_sge,
                uint32_t max_inline_data,
                const void* param,
-               size_t paramlen,
+               size_t param_len,
                void* addr) override;
 
-  virtual void set_hostnames_and_services(
+  void set_hostnames_and_services(
       struct fid_av* /*av*/,
       const std::vector<std::string>& /*compute_hostnames*/,
       const std::vector<std::string>& /*compute_services*/,

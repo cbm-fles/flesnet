@@ -12,7 +12,7 @@
 TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     uint64_t compute_index,
     TimesliceBuffer& timeslice_buffer,
-    const std::vector<std::string> input_server_addresses,
+    const std::vector<std::string>& input_server_addresses,
     uint32_t num_compute_nodes,
     uint32_t timeslice_size,
     uint32_t max_timeslice_number,
@@ -48,7 +48,7 @@ TimesliceBuilderZeromq::TimesliceBuilderZeromq(
 
 TimesliceBuilderZeromq::~TimesliceBuilderZeromq() {
   for (auto& c : connections_) {
-    if (c->socket) {
+    if (c->socket != nullptr) {
       int rc = zmq_close(c->socket);
       assert(rc == 0);
     }
@@ -65,7 +65,7 @@ void TimesliceBuilderZeromq::operator()() {
 }
 
 void TimesliceBuilderZeromq::run_begin() {
-  assert(connections_.size() > 0);
+  assert(!connections_.empty());
   time_begin_ = std::chrono::high_resolution_clock::now();
   report_status();
 }
@@ -179,16 +179,17 @@ void TimesliceBuilderZeromq::handle_timeslice_completions() {
   fles::TimesliceCompletion c;
   while (timeslice_buffer_.try_receive_completion(c)) {
     if (c.ts_pos == acked_) {
-      do
+      do {
         ++acked_;
-      while (ack_.at(acked_) > c.ts_pos);
+      } while (ack_.at(acked_) > c.ts_pos);
       for (auto& conn : connections_) {
         conn->desc.set_read_index(acked_);
         conn->data.set_read_index(conn->desc.at(acked_ - 1).offset +
                                   conn->desc.at(acked_ - 1).size);
       }
-    } else
+    } else {
       ack_.at(c.ts_pos) = c.ts_pos;
+    }
   }
 }
 

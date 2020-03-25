@@ -17,7 +17,7 @@ ComputeNodeConnection::ComputeNodeConnection(
     fles::TimesliceComponentDescriptor* desc_ptr,
     uint32_t desc_buffer_size_exp)
     : IBConnection(ec, connection_index, remote_connection_index, id),
-      remote_info_(std::move(remote_info)), data_ptr_(data_ptr),
+      remote_info_(remote_info), data_ptr_(data_ptr),
       data_buffer_size_exp_(data_buffer_size_exp), desc_ptr_(desc_ptr),
       desc_buffer_size_exp_(desc_buffer_size_exp) {
   // send and receive only single StatusMessage struct
@@ -75,8 +75,10 @@ void ComputeNodeConnection::setup(struct ibv_pd* pd) {
       ibv_reg_mr(pd, &recv_status_message_, sizeof(InputChannelStatusMessage),
                  IBV_ACCESS_LOCAL_WRITE);
 
-  if (!mr_data_ || !mr_desc_ || !mr_recv_ || !mr_send_)
+  if ((mr_data_ == nullptr) || (mr_desc_ == nullptr) || (mr_recv_ == nullptr) ||
+      (mr_send_ == nullptr)) {
     throw InfinibandException("registration of memory region failed");
+  }
 
   // setup send and receive buffers
   recv_sge.addr = reinterpret_cast<uintptr_t>(&recv_status_message_);
@@ -111,22 +113,22 @@ void ComputeNodeConnection::on_established(struct rdma_cm_event* event) {
 void ComputeNodeConnection::on_disconnected(struct rdma_cm_event* event) {
   disconnect();
 
-  if (mr_recv_) {
+  if (mr_recv_ != nullptr) {
     ibv_dereg_mr(mr_recv_);
     mr_recv_ = nullptr;
   }
 
-  if (mr_send_) {
+  if (mr_send_ != nullptr) {
     ibv_dereg_mr(mr_send_);
     mr_send_ = nullptr;
   }
 
-  if (mr_desc_) {
+  if (mr_desc_ != nullptr) {
     ibv_dereg_mr(mr_desc_);
     mr_desc_ = nullptr;
   }
 
-  if (mr_data_) {
+  if (mr_data_ != nullptr) {
     ibv_dereg_mr(mr_data_);
     mr_data_ = nullptr;
   }

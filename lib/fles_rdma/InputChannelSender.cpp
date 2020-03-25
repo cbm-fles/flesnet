@@ -3,6 +3,7 @@
 #include "InputChannelSender.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "RequestIdentifier.hpp"
+#include "System.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include <cassert>
@@ -12,11 +13,12 @@
 InputChannelSender::InputChannelSender(
     uint64_t input_index,
     InputBufferReadInterface& data_source,
-    const std::vector<std::string> compute_hostnames,
-    const std::vector<std::string> compute_services,
+    const std::vector<std::string>& compute_hostnames,
+    const std::vector<std::string>& compute_services,
     uint32_t timeslice_size,
     uint32_t overlap_size,
-    uint32_t max_timeslice_number)
+    uint32_t max_timeslice_number,
+    const std::string& monitor_uri)
     : input_index_(input_index), data_source_(data_source),
       compute_hostnames_(compute_hostnames),
       compute_services_(compute_services), timeslice_size_(timeslice_size),
@@ -39,15 +41,26 @@ InputChannelSender::InputChannelSender(
   VALGRIND_MAKE_MEM_DEFINED(data_source_.desc_buffer().ptr(),
                             data_source_.desc_buffer().bytes());
 #pragma GCC diagnostic pop
+
+  if (!monitor_uri.empty()) {
+    try {
+      monitor_client_ = std::unique_ptr<web::http::client::http_client>(
+          new web::http::client::http_client(monitor_uri));
+    } catch (std::exception& e) {
+      L_(error) << "cannot connect to monitoring at " << monitor_uri << ": "
+                << e.what();
+    }
+  }
+  hostname_ = fles::system::current_hostname();
 }
 
 InputChannelSender::~InputChannelSender() {
-  if (mr_desc_) {
+  if (mr_desc_ != nullptr) {
     ibv_dereg_mr(mr_desc_);
     mr_desc_ = nullptr;
   }
 
-  if (mr_data_) {
+  if (mr_data_ != nullptr) {
     ibv_dereg_mr(mr_data_);
     mr_data_ = nullptr;
   }
@@ -94,6 +107,13 @@ void InputChannelSender::report_status() {
                           previous_send_buffer_status_data_.acked) /
       delta_t;
 
+  // retrieve SubsystemIdentifier from most current MicrosliceDescriptor
+  fles::SubsystemIdentifier sys_id = static_cast<fles::SubsystemIdentifier>(0);
+  if (written_desc > 0) {
+    sys_id = static_cast<fles::SubsystemIdentifier>(
+        data_source_.desc_buffer().at(written_desc - 1).sys_id);
+  }
+
   L_(debug) << "[i" << input_index_ << "] desc " << status_desc.percentages()
             << " (used..free) | "
             << human_readable_count(status_desc.acked, true, "") << " ("
@@ -108,7 +128,57 @@ void InputChannelSender::report_status() {
              << bar_graph(status_data.vector(), "#x._", 20) << "|"
              << bar_graph(status_desc.vector(), "#x._", 10) << "| "
              << human_readable_count(rate_data, true, "B/s") << " ("
-             << human_readable_count(rate_desc, true, "Hz") << ")";
+             << human_readable_count(rate_desc, true, "Hz") << ") "
+             << fles::to_string(sys_id);
+
+  if (monitor_client_) {
+    // if task is pending and done, clean it up
+    if (monitor_task_) {
+      if (monitor_task_->is_done()) {
+        try {
+          monitor_task_->get();
+        } catch (std::exception& e) {
+          L_(error) << "monitor task failed: " << e.what();
+        }
+        monitor_task_ = nullptr;
+      } else {
+        L_(warning) << "monitor task is taking longer than expected";
+      }
+    }
+
+    if (!monitor_task_) {
+      std::string measurement =
+          "send_buffer_status,host=" + hostname_ +
+          ",input_index=" + std::to_string(input_index_) +
+          ",sys_id=" + fles::to_string(sys_id) +
+          " data_used=" + std::to_string(status_data.used()) +
+          "i,data_sending=" + std::to_string(status_data.sending()) +
+          "i,data_freeing=" + std::to_string(status_data.freeing()) +
+          "i,data_free=" + std::to_string(status_data.unused()) +
+          "i,data_rate=" + std::to_string(rate_data) +
+          ",desc_used=" + std::to_string(status_desc.used()) +
+          "i,desc_sending=" + std::to_string(status_desc.sending()) +
+          "i,desc_freeing=" + std::to_string(status_desc.freeing()) +
+          "i,desc_free=" + std::to_string(status_desc.unused()) +
+          "i,desc_rate=" + std::to_string(rate_desc) + "\n";
+
+      auto task =
+          monitor_client_
+              ->request(web::http::methods::POST,
+                        "/write?db=flesnet_status&precision=s", measurement)
+              .then([](const web::http::http_response& response) {
+                if (response.status_code() != 204) {
+                  L_(error)
+                      << "Monitoring client received response status code "
+                      << response.status_code() << ": "
+                      << response.extract_string().get();
+                }
+              });
+
+      monitor_task_ =
+          std::unique_ptr<pplx::task<void>>(new pplx::task<void>(task));
+    }
+  }
 
   previous_send_buffer_status_desc_ = status_desc;
   previous_send_buffer_status_data_ = status_data;
@@ -238,8 +308,9 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice) {
 
     int cn = target_cn_index(timeslice);
 
-    if (!conn_[cn]->write_request_available())
+    if (!conn_[cn]->write_request_available()) {
       return false;
+    }
 
     // number of bytes to skip in advance (to avoid buffer wrap)
     uint64_t skip = conn_[cn]->skip_required(total_length);
@@ -302,12 +373,12 @@ void InputChannelSender::dump_mr(struct ibv_mr* mr) {
 void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id) {
   IBConnectionGroup<InputChannelConnection>::on_addr_resolved(id);
 
-  if (!mr_data_) {
+  if (mr_data_ == nullptr) {
     // Register memory regions.
     mr_data_ =
         ibv_reg_mr(pd_, const_cast<uint8_t*>(data_source_.data_buffer().ptr()),
                    data_source_.data_buffer().bytes(), IBV_ACCESS_LOCAL_WRITE);
-    if (!mr_data_) {
+    if (mr_data_ == nullptr) {
       L_(error) << "ibv_reg_mr failed for mr_data: " << strerror(errno);
       throw InfinibandException("registration of memory region failed");
     }
@@ -317,7 +388,7 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id) {
                    const_cast<fles::MicrosliceDescriptor*>(
                        data_source_.desc_buffer().ptr()),
                    data_source_.desc_buffer().bytes(), IBV_ACCESS_LOCAL_WRITE);
-    if (!mr_desc_) {
+    if (mr_desc_ == nullptr) {
       L_(error) << "ibv_reg_mr failed for mr_desc: " << strerror(errno);
       throw InfinibandException("registration of memory region failed");
     }
@@ -349,15 +420,17 @@ std::string InputChannelSender::get_state_string() {
 
   s << "/--- desc buf ---" << std::endl;
   s << "|";
-  for (unsigned int i = 0; i < data_source_.desc_buffer().size(); ++i)
+  for (unsigned int i = 0; i < data_source_.desc_buffer().size(); ++i) {
     s << " (" << i << ")" << data_source_.desc_buffer().at(i).offset;
+  }
   s << std::endl;
   s << "| acked_desc_ = " << acked_desc_ << std::endl;
   s << "/--- data buf ---" << std::endl;
   s << "|";
-  for (unsigned int i = 0; i < data_source_.data_buffer().size(); ++i)
+  for (unsigned int i = 0; i < data_source_.data_buffer().size(); ++i) {
     s << " (" << i << ")" << std::hex << data_source_.data_buffer().at(i)
       << std::dec;
+  }
   s << std::endl;
   s << "| acked_data_ = " << acked_data_ << std::endl;
   s << "\\---------";

@@ -25,9 +25,8 @@ register_file_bar::get_mem(sys_bus_addr addr, void* dest, size_t dwords) {
       *(static_cast<uint32_t*>(dest) + i) = m_bar[sys_addr + i];
     }
     return 0;
-  } else {
-    return -1;
   }
+  return -1;
 }
 
 __attribute__((__target__("no-sse"))) int register_file_bar::set_mem(
@@ -49,9 +48,8 @@ __attribute__((__target__("no-sse"))) int register_file_bar::set_mem(
     return msync(
         (reinterpret_cast<uint8_t*>(m_bar) + ((sys_addr << 2) & PAGE_MASK)),
         PAGE_SIZE, MS_SYNC);
-  } else {
-    return -1;
   }
+  return -1;
 }
 
 } // namespace flib

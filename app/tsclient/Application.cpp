@@ -4,12 +4,13 @@
 #include "TimesliceAnalyzer.hpp"
 #include "TimesliceDebugger.hpp"
 #include "TimesliceInputArchive.hpp"
+#include "TimesliceMultiInputArchive.hpp"
+#include "TimesliceMultiSubscriber.hpp"
 #include "TimesliceOutputArchive.hpp"
 #include "TimeslicePublisher.hpp"
 #include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
 #include "Utility.hpp"
-#include <boost/lexical_cast.hpp>
 #include <thread>
 
 Application::Application(Parameters const& par) : par_(par) {
@@ -17,19 +18,33 @@ Application::Application(Parameters const& par) : par_(par) {
     source_.reset(new fles::TimesliceReceiver(par_.shm_identifier()));
   } else if (!par_.input_archive().empty()) {
     if (par_.input_archive_cycles() <= 1) {
-      source_.reset(new fles::TimesliceInputArchive(par_.input_archive()));
+      if (par_.multi_input()) {
+        source_.reset(
+            new fles::TimesliceMultiInputArchive(par_.input_archive()));
+      } else {
+        if (par_.input_archive().find("%n") != std::string::npos) {
+          source_.reset(
+              new fles::TimesliceInputArchiveSequence(par_.input_archive()));
+        } else {
+          source_.reset(new fles::TimesliceInputArchive(par_.input_archive()));
+        }
+      }
     } else {
       source_.reset(new fles::TimesliceInputArchiveLoop(
           par_.input_archive(), par_.input_archive_cycles()));
     }
   } else if (!par_.subscribe_address().empty()) {
-    source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address(),
-                                                par_.subscribe_hwm()));
+    if (par_.multi_input()) {
+      source_.reset(new fles::TimesliceMultiSubscriber(par_.subscribe_address(),
+                                                       par_.subscribe_hwm()));
+    } else {
+      source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address(),
+                                                  par_.subscribe_hwm()));
+    }
   }
 
   if (par_.analyze()) {
-    std::string output_prefix =
-        boost::lexical_cast<std::string>(par_.client_index()) + ": ";
+    std::string output_prefix = std::to_string(par_.client_index()) + ": ";
     if (par_.histograms()) {
       sinks_.push_back(
           std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(

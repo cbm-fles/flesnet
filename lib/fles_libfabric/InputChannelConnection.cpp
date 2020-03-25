@@ -67,9 +67,8 @@ bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
               (UINT64_C(1) << remote_info_.desc_buffer_size_exp) <
           desc_size) { // TODO: extend condition!
     return false;
-  } else {
-    return true;
   }
+  return true;
 }
 
 void InputChannelConnection::send_data(struct iovec* sge,
@@ -102,7 +101,7 @@ void InputChannelConnection::send_data(struct iovec* sge,
       if (sge[i].iov_len <= target_bytes_left) {
         target_bytes_left -= sge[i].iov_len;
       } else {
-        if (target_bytes_left) {
+        if (target_bytes_left != 0u) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
           sge2[num_sge2].iov_base =
@@ -153,7 +152,7 @@ void InputChannelConnection::send_data(struct iovec* sge,
     post_send_rdma(&send_wr_ts, FI_MORE);
   }
 
-  if (num_sge2) {
+  if (num_sge2 != 0) {
     uint64_t remote_addr = remote_info_.data.addr;
     for (int i = 0; i < num_sge2; i++) {
 
@@ -238,18 +237,17 @@ bool InputChannelConnection::try_sync_buffer_positions() {
     send_status_message_.wp = cn_wp_;
     post_send_status_message();
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 uint64_t InputChannelConnection::skip_required(uint64_t data_size) {
   uint64_t databuf_size = UINT64_C(1) << remote_info_.data_buffer_size_exp;
   uint64_t databuf_wp = cn_wp_.data & (databuf_size - 1);
-  if (databuf_wp + data_size <= databuf_size)
+  if (databuf_wp + data_size <= databuf_size) {
     return 0;
-  else
-    return databuf_size - databuf_wp;
+  }
+  return databuf_size - databuf_wp;
 }
 
 void InputChannelConnection::finalize(bool abort) {
@@ -284,7 +282,7 @@ void InputChannelConnection::on_complete_recv() {
   cn_ack_ = recv_status_message_.ack;
   post_recv_status_message();
 
-  if (get_partner_addr() || connection_oriented_) {
+  if ((get_partner_addr() != 0u) || connection_oriented_) {
     // L_(info)<< "recv message with abort_ = "<<abort_ << " and cn_wp_ ==
     // send_status_message_.wp = "<< (cn_wp_ == send_status_message_.wp) <<
     // " and cn_wp_ == cn_ack_ = "<<(cn_wp_ == cn_ack_) << " and the
@@ -309,28 +307,30 @@ void InputChannelConnection::setup_mr(struct fid_domain* pd) {
   int err =
       fi_mr_reg(pd, &recv_status_message_, sizeof(ComputeNodeStatusMessage),
                 FI_WRITE, 0, Provider::requested_key++, 0, &mr_recv_, nullptr);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_mr_reg failed for recv msg: " << err << "="
               << fi_strerror(-err);
     throw LibfabricException("fi_mr_reg failed for recv msg");
   }
 
-  if (!mr_recv_)
+  if (mr_recv_ == nullptr) {
     throw LibfabricException(
         "registration of memory region failed in InputChannelConnection");
+  }
 
   err =
       fi_mr_reg(pd, &send_status_message_, sizeof(send_status_message_),
                 FI_WRITE, 0, Provider::requested_key++, 0, &mr_send_, nullptr);
-  if (err) {
+  if (err != 0) {
     L_(fatal) << "fi_mr_reg failed for send msg: " << err << "="
               << fi_strerror(-err);
     throw LibfabricException("fi_mr_reg failed for send msg");
   }
 
-  if (!mr_send_)
+  if (mr_send_ == nullptr) {
     throw LibfabricException(
         "registration of memory region failed in InputChannelConnection2");
+  }
 }
 
 void InputChannelConnection::setup() {
@@ -383,12 +383,12 @@ void InputChannelConnection::on_established(struct fi_eq_cm_entry* event) {
 void InputChannelConnection::dereg_mr() {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-  if (mr_recv_) {
+  if (mr_recv_ != nullptr) {
     fi_close((struct fid*)mr_recv_);
     mr_recv_ = nullptr;
   }
 
-  if (mr_send_) {
+  if (mr_send_ != nullptr) {
     fi_close((struct fid*)mr_send_);
     mr_send_ = nullptr;
   }

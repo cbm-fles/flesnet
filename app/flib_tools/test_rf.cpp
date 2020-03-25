@@ -5,15 +5,15 @@
  */
 
 #include "flib.h"
+#include <cerrno>
+#include <climits>
 #include <csignal>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <errno.h>
 #include <iostream>
-#include <limits.h>
-#include <stdint.h>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -28,7 +28,7 @@ static void s_signal_handler(int signal_value) {
   s_interrupted = 1;
 }
 
-static void s_catch_signals(void) {
+static void s_catch_signals() {
   struct sigaction action;
   action.sa_handler = s_signal_handler;
   action.sa_flags = 0;
@@ -59,7 +59,8 @@ int main(int argc, char* argv[]) {
   MyFlim->reset_datapath();
 
   std::cout << MyFlim->print_build_info() << std::endl;
-  if (uint32_t mc_pend = MyFlim->get_pgen_mc_pending() != 0) {
+  uint32_t mc_pend = MyFlim->get_pgen_mc_pending();
+  if (mc_pend != 0) {
     std::cout << "ERROR: mc pending (pgen) " << mc_pend << std::endl;
   }
 
@@ -90,11 +91,8 @@ int main(int argc, char* argv[]) {
     ++reg_wr;
   }
 
-  if (MyFlim)
-    delete MyFlim;
-
-  if (MyFlib)
-    delete MyFlib;
+  delete MyFlim;
+  delete MyFlib;
 
   std::cout << "Exiting" << std::endl;
   return ret;

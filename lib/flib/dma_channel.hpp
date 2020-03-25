@@ -47,7 +47,7 @@ public:
 
   ~dma_channel();
 
-  void set_sw_read_pointers(uint64_t data_offest, uint64_t desc_offset);
+  void set_sw_read_pointers(uint64_t data_offset, uint64_t desc_offset);
 
   uint64_t get_data_offset();
   uint64_t get_desc_index();
@@ -97,26 +97,25 @@ private:
 
   void configure();
 
-  void configure_sg_manager(const sg_bram_t buf_sel);
+  void configure_sg_manager(sg_bram_t buf_sel);
 
-  std::vector<sg_entry_hw_t>
-  convert_sg_list(const std::vector<pda::sg_entry_t> sg_list);
+  static std::vector<sg_entry_hw_t>
+  convert_sg_list(const std::vector<pda::sg_entry_t>& sg_list);
 
-  void write_sg_list_to_device(const std::vector<sg_entry_hw_t> sg_list,
-                               const sg_bram_t buf_sel);
+  void write_sg_list_to_device(const std::vector<sg_entry_hw_t>& sg_list,
+                               sg_bram_t buf_sel);
 
-  void write_sg_entry_to_device(const sg_entry_hw_t entry,
-                                const sg_bram_t buf_sel,
-                                const uint32_t buf_addr);
+  void write_sg_entry_to_device(sg_entry_hw_t entry,
+                                sg_bram_t buf_sel,
+                                uint32_t buf_addr);
 
-  size_t get_max_sg_entries(const sg_bram_t buf_sel);
+  size_t get_max_sg_entries(sg_bram_t buf_sel);
 
-  size_t get_configured_sg_entries(const sg_bram_t buf_sel);
+  size_t get_configured_sg_entries(sg_bram_t buf_sel);
 
-  void set_configured_sg_entries(const sg_bram_t buf_sel,
-                                 const uint16_t num_entries);
+  void set_configured_sg_entries(sg_bram_t buf_sel, uint16_t num_entries);
 
-  void set_configured_buffer_size(const sg_bram_t buf_sel);
+  void set_configured_buffer_size(sg_bram_t buf_sel);
 
   void set_dma_transfer_size();
 
@@ -130,11 +129,12 @@ private:
 
   void set_dmactrl(uint32_t reg, uint32_t mask);
 
-  inline uint32_t set_bits(uint32_t old_val, uint32_t new_val, uint32_t mask);
+  static inline uint32_t
+  set_bits(uint32_t old_val, uint32_t new_val, uint32_t mask);
 
-  inline uint32_t get_lo_32(uint64_t val);
+  static inline uint32_t get_lo_32(uint64_t val);
 
-  inline uint32_t get_hi_32(uint64_t val);
+  static inline uint32_t get_hi_32(uint64_t val);
 
   flib_link* m_parent_link;
   register_file* m_rfpkt;

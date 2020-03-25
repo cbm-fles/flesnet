@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace ip = boost::interprocess;
 
@@ -33,8 +34,8 @@ public:
                     size_t desc_buffer_size_exp,
                     etcd_config_t etcd_config,
                     volatile std::sig_atomic_t* signal_status)
-      : m_flib(flib), m_shm_identifier(shm_identifier),
-        m_etcd_config(etcd_config), m_signal_status(signal_status) {
+      : m_flib(flib), m_shm_identifier(std::move(shm_identifier)),
+        m_etcd_config(std::move(etcd_config)), m_signal_status(signal_status) {
 
     if (m_etcd_config.use_etcd) {
       L_(info) << "Etcd URI: http://" << m_etcd_config.authority
@@ -42,7 +43,7 @@ public:
       m_etcd.reset(new etcd::Client("http://" + m_etcd_config.authority));
       m_signal_watcher = std::make_shared<etcd::Watcher>(
           "http://" + m_etcd_config.authority, m_etcd_config.path + "/running",
-          [this](etcd::Response resp) {
+          [this](const etcd::Response& resp) {
             if (resp.is_ok() && resp.action() == "set" &&
                 resp.value().as_string() == "0") {
               *m_signal_status = 1;

@@ -3,9 +3,12 @@
 #include "TimesliceBuilder.hpp"
 #include "InputNodeInfo.hpp"
 #include "RequestIdentifier.hpp"
+#include "System.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceWorkItem.hpp"
 #include "log.hpp"
+#include <algorithm>
+#include <limits>
 
 TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
                                    TimesliceBuffer& timeslice_buffer,
@@ -13,16 +16,31 @@ TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
                                    uint32_t num_input_nodes,
                                    uint32_t timeslice_size,
                                    volatile sig_atomic_t* signal_status,
-                                   bool drop)
+                                   bool drop,
+                                   const std::string& monitor_uri)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
       service_(service), num_input_nodes_(num_input_nodes),
       timeslice_size_(timeslice_size),
       ack_(timeslice_buffer_.get_desc_size_exp()),
       signal_status_(signal_status), drop_(drop) {
   assert(timeslice_buffer_.get_num_input_nodes() == num_input_nodes);
+
+  if (!monitor_uri.empty()) {
+    try {
+      monitor_client_ = std::unique_ptr<web::http::client::http_client>(
+          new web::http::client::http_client(monitor_uri));
+    } catch (std::exception& e) {
+      L_(error) << "cannot connect to monitoring at " << monitor_uri << ": "
+                << e.what();
+    }
+  }
+  hostname_ = fles::system::current_hostname();
+
+  previous_recv_buffer_status_data_.resize(num_input_nodes);
+  previous_recv_buffer_status_desc_.resize(num_input_nodes);
 }
 
-TimesliceBuilder::~TimesliceBuilder() {}
+TimesliceBuilder::~TimesliceBuilder() = default;
 
 void TimesliceBuilder::report_status() {
   constexpr auto interval = std::chrono::seconds(1);
@@ -32,9 +50,57 @@ void TimesliceBuilder::report_status() {
   L_(debug) << "[c" << compute_index_ << "] " << completely_written_
             << " completely written, " << acked_ << " acked";
 
+  std::string measurement;
+
+  double total_rate_desc = 0.;
+  double total_rate_data = 0.;
+
+  float min_used_desc = std::numeric_limits<float>::max();
+  float min_used_data = std::numeric_limits<float>::max();
+  float min_free_desc = std::numeric_limits<float>::max();
+  float min_free_data = std::numeric_limits<float>::max();
+  float min_freeing_plus_free_desc = std::numeric_limits<float>::max();
+  float min_freeing_plus_free_data = std::numeric_limits<float>::max();
+
   for (auto& c : conn_) {
     auto status_desc = c->buffer_status_desc();
     auto status_data = c->buffer_status_data();
+
+    min_used_desc =
+        std::min(min_used_desc, status_desc.percentage(status_desc.used()));
+    min_used_data =
+        std::min(min_used_data, status_data.percentage(status_data.used()));
+    min_free_desc =
+        std::min(min_free_desc, status_desc.percentage(status_desc.unused()));
+    min_free_data =
+        std::min(min_free_data, status_data.percentage(status_data.unused()));
+    min_freeing_plus_free_desc =
+        std::min(min_freeing_plus_free_desc,
+                 status_desc.percentage(status_desc.freeing()) +
+                     status_desc.percentage(status_desc.unused()));
+    min_freeing_plus_free_data =
+        std::min(min_freeing_plus_free_data,
+                 status_data.percentage(status_data.freeing()) +
+                     status_data.percentage(status_data.unused()));
+
+    double delta_t =
+        std::chrono::duration<double, std::chrono::seconds::period>(
+            status_desc.time -
+            previous_recv_buffer_status_desc_.at(c->index()).time)
+            .count();
+    double rate_desc =
+        static_cast<double>(
+            status_desc.acked -
+            previous_recv_buffer_status_desc_.at(c->index()).received) /
+        delta_t;
+    double rate_data =
+        static_cast<double>(
+            status_data.acked -
+            previous_recv_buffer_status_data_.at(c->index()).received) /
+        delta_t;
+    total_rate_desc += rate_desc;
+    total_rate_data += rate_data;
+
     L_(debug) << "[c" << compute_index_ << "] desc "
               << status_desc.percentages() << " (used..free) | "
               << human_readable_count(status_desc.acked, true, "")
@@ -42,9 +108,94 @@ void TimesliceBuilder::report_status() {
     L_(debug) << "[c" << compute_index_ << "] data "
               << status_data.percentages() << " (used..free) | "
               << human_readable_count(status_data.acked, true);
-    L_(status) << "[c" << compute_index_ << "_" << c->index() << "] |"
-               << bar_graph(status_data.vector(), "#._", 20) << "|"
-               << bar_graph(status_desc.vector(), "#._", 10) << "| ";
+    L_(debug) << "[c" << compute_index_ << "_" << c->index() << "] |"
+              << bar_graph(status_data.vector(), "#._", 20) << "|"
+              << bar_graph(status_desc.vector(), "#._", 10) << "| "
+              << human_readable_count(rate_data, true, "B/s") << " ("
+              << human_readable_count(rate_desc, true, "Hz") << ")";
+
+    if (monitor_client_) {
+      measurement += "recv_buffer_status,host=" + hostname_ +
+                     ",output_index=" + std::to_string(compute_index_) +
+                     ",input_index=" + std::to_string(c->index()) +
+                     " data_used=" + std::to_string(status_data.used()) +
+                     "i,data_freeing=" + std::to_string(status_data.freeing()) +
+                     "i,data_free=" + std::to_string(status_data.unused()) +
+                     "i,data_rate=" + std::to_string(rate_data) +
+                     ",desc_used=" + std::to_string(status_desc.used()) +
+                     "i,desc_freeing=" + std::to_string(status_desc.freeing()) +
+                     "i,desc_free=" + std::to_string(status_desc.unused()) +
+                     "i,desc_rate=" + std::to_string(rate_desc) + "\n";
+    }
+
+    previous_recv_buffer_status_data_.at(c->index()) = status_data;
+    previous_recv_buffer_status_desc_.at(c->index()) = status_desc;
+  }
+
+  double min_freeing_desc = min_freeing_plus_free_desc - min_free_desc;
+  double min_freeing_data = min_freeing_plus_free_data - min_free_data;
+  double mixed_desc = 1. - min_used_desc - min_free_desc - min_freeing_desc;
+  double mixed_data = 1. - min_used_data - min_free_data - min_freeing_data;
+
+  auto total_status_data = std::vector<double>{min_used_data, mixed_data,
+                                               min_freeing_data, min_free_data};
+  auto total_status_desc = std::vector<double>{min_used_desc, mixed_desc,
+                                               min_freeing_desc, min_free_desc};
+
+  L_(status) << "[c" << compute_index_ << "]   |"
+             << bar_graph(total_status_data, "#=._", 20) << "|"
+             << bar_graph(total_status_desc, "#=._", 10) << "| "
+             << human_readable_count(total_rate_data, true, "B/s") << " ("
+             << human_readable_count(total_rate_desc, true, "Hz") << ")";
+
+  measurement +=
+      "timeslice_buffer_status,host=" + hostname_ +
+      ",output_index=" + std::to_string(compute_index_) +
+      " data_used=" + std::to_string(min_used_data) +
+      ",data_mixed=" + std::to_string(mixed_data) +
+      ",data_freeing=" + std::to_string(min_freeing_data) +
+      ",data_free=" + std::to_string(min_free_data) +
+      ",data_rate=" + std::to_string(total_rate_data) +
+      ",desc_used=" + std::to_string(min_used_desc) +
+      ",desc_mixed=" + std::to_string(mixed_desc) +
+      ",desc_freeing=" + std::to_string(min_freeing_desc) +
+      ",desc_free=" + std::to_string(min_free_desc) +
+      ",desc_rate=" + std::to_string(total_rate_desc) +
+      ",work_items=" + std::to_string(timeslice_buffer_.get_num_work_items()) +
+      "i\n";
+
+  if (monitor_client_) {
+    // if task is pending and done, clean it up
+    if (monitor_task_) {
+      if (monitor_task_->is_done()) {
+        try {
+          monitor_task_->get();
+        } catch (std::exception& e) {
+          L_(error) << "monitor task failed: " << e.what();
+        }
+        monitor_task_ = nullptr;
+      } else {
+        L_(warning) << "monitor task is taking longer than expected";
+      }
+    }
+
+    if (!monitor_task_) {
+      auto task =
+          monitor_client_
+              ->request(web::http::methods::POST,
+                        "/write?db=flesnet_status&precision=s", measurement)
+              .then([](const web::http::http_response& response) {
+                if (response.status_code() != 204) {
+                  L_(error)
+                      << "Monitoring client received response status code "
+                      << response.status_code() << ": "
+                      << response.extract_string().get();
+                }
+              });
+
+      monitor_task_ =
+          std::unique_ptr<pplx::task<void>>(new pplx::task<void>(task));
+    }
   }
 
   scheduler_.add(std::bind(&TimesliceBuilder::report_status, this),
@@ -102,8 +253,9 @@ void TimesliceBuilder::operator()() {
 }
 
 void TimesliceBuilder::on_connect_request(struct rdma_cm_event* event) {
-  if (!pd_)
+  if (pd_ == nullptr) {
     init_context(event->id->verbs);
+  }
 
   assert(event->param.conn.private_data_len >= sizeof(InputNodeInfo));
   InputNodeInfo remote_info =
@@ -169,7 +321,7 @@ void TimesliceBuilder::on_completion(const struct ibv_wc& wc) {
            ++tpos) {
         if (!drop_) {
           uint64_t ts_index = UINT64_MAX;
-          if (conn_.size() > 0) {
+          if (!conn_.empty()) {
             ts_index = timeslice_buffer_.get_desc(0, tpos).ts_num;
           }
           timeslice_buffer_.send_work_item(
@@ -193,14 +345,17 @@ void TimesliceBuilder::on_completion(const struct ibv_wc& wc) {
 
 void TimesliceBuilder::poll_ts_completion() {
   fles::TimesliceCompletion c;
-  if (!timeslice_buffer_.try_receive_completion(c))
+  if (!timeslice_buffer_.try_receive_completion(c)) {
     return;
+  }
   if (c.ts_pos == acked_) {
-    do
+    do {
       ++acked_;
-    while (ack_.at(acked_) > c.ts_pos);
-    for (auto& connection : conn_)
+    } while (ack_.at(acked_) > c.ts_pos);
+    for (auto& connection : conn_) {
       connection->inc_ack_pointers(acked_);
-  } else
+    }
+  } else {
     ack_.at(c.ts_pos) = c.ts_pos;
+  }
 }

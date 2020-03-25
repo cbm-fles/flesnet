@@ -8,11 +8,11 @@
 
 namespace flib {
 
-typedef uint64_t sys_bus_addr;
+using sys_bus_addr = uint64_t;
 
 class register_file {
 public:
-  virtual ~register_file(){};
+  virtual ~register_file() = default;
 
   virtual int get_mem(sys_bus_addr addr, void* dest, size_t dwords) = 0;
 
@@ -40,7 +40,7 @@ public:
 
   virtual bool get_bit(sys_bus_addr addr, int pos) {
     uint32_t reg = get_reg(addr);
-    return (reg & (1 << pos));
+    return (reg & (1 << pos)) != 0u;
   }
 
   virtual void set_bit(sys_bus_addr addr, int pos, bool enable) {

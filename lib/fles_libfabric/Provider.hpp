@@ -5,14 +5,16 @@
 #include <log.hpp>
 #include <memory>
 #include <rdma/fabric.h>
+#include <utility>
+
 #include <vector>
 
 namespace tl_libfabric {
 class Provider {
 public:
-  Provider() {}
+  Provider() = default;
 
-  virtual ~Provider(){};
+  virtual ~Provider() = default;
 
   Provider(const Provider&) = delete;
   Provider& operator=(const Provider&) = delete;
@@ -39,7 +41,7 @@ public:
                        size_t paramlen,
                        void* addr) = 0;
 
-  static void init(std::string local_host_name) {
+  static void init(const std::string& local_host_name) {
     prov = get_provider(local_host_name);
   }
 
@@ -56,7 +58,8 @@ public:
   static int vector;
 
 private:
-  static std::unique_ptr<Provider> get_provider(std::string local_host_name);
+  static std::unique_ptr<Provider>
+  get_provider(const std::string& local_host_name);
   static std::unique_ptr<Provider> prov;
 };
 } // namespace tl_libfabric

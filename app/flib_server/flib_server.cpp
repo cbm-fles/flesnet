@@ -13,8 +13,8 @@ volatile std::sig_atomic_t signal_status = 0;
 
 static void signal_handler(int sig) { signal_status = sig; }
 
-void start_exec(const std::string executable,
-                const std::string shared_memory_identifier) {
+void start_exec(const std::string& executable,
+                const std::string& shared_memory_identifier) {
   assert(!executable.empty());
   ChildProcess cp = ChildProcess();
   boost::split(cp.arg, executable, boost::is_any_of(" \t"),

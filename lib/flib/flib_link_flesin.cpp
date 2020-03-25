@@ -28,11 +28,11 @@ flib_link_flesin::link_status_t flib_link_flesin::link_status() {
   uint32_t sts = m_rfgtx->get_reg(RORC_REG_GTX_LINK_STS);
 
   link_status_t link_status;
-  link_status.channel_up = (sts & (1 << 29));
-  link_status.hard_err = (sts & (1 << 28));
-  link_status.soft_err = (sts & (1 << 27));
-  link_status.eoe_fifo_overflow = (sts & (1 << 31));
-  link_status.d_fifo_overflow = (sts & (1 << 30));
+  link_status.channel_up = ((sts & (1 << 29)) != 0u);
+  link_status.hard_err = ((sts & (1 << 28)) != 0u);
+  link_status.soft_err = ((sts & (1 << 27)) != 0u);
+  link_status.eoe_fifo_overflow = ((sts & (1 << 31)) != 0u);
+  link_status.d_fifo_overflow = ((sts & (1 << 30)) != 0u);
   link_status.d_fifo_max_words = (sts & 0x7FF);
   return link_status;
 }

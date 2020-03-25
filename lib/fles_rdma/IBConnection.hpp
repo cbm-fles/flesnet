@@ -90,7 +90,7 @@ public:
   uint64_t total_recv_requests() const { return total_recv_requests_; }
 
 protected:
-  void dump_send_wr(struct ibv_send_wr* wr);
+  static void dump_send_wr(struct ibv_send_wr* wr);
 
   /// Post an InfiniBand SEND work request (WR) to the send queue
   void post_send(struct ibv_send_wr* wr);

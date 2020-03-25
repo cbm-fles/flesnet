@@ -93,14 +93,10 @@ Application::~Application() {
   L_(info) << "processing time: " << time_span.count() << " seconds";
 
   // cleanup memory
-  if (NULL != filtered_output_archive_)
-    delete filtered_output_archive_;
-  if (NULL != ngdpb_sorter_arch_)
-    delete ngdpb_sorter_arch_;
-  if (NULL != filtered_output_mstrans_)
-    delete filtered_output_mstrans_;
-  if (NULL != ngdpb_sorter_shm_)
-    delete ngdpb_sorter_shm_;
+  delete filtered_output_archive_;
+  delete ngdpb_sorter_arch_;
+  delete filtered_output_mstrans_;
+  delete ngdpb_sorter_shm_;
 }
 
 void Application::run() {

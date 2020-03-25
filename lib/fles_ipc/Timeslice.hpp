@@ -45,6 +45,11 @@ public:
     return timeslice_descriptor_.num_components;
   }
 
+  /// Retrieve the size of a given component.
+  uint64_t size_component(uint64_t component) const {
+    return desc_ptr_[component]->size;
+  }
+
   /// Retrieve a pointer to the data content of a given microslice
   const uint8_t* content(uint64_t component, uint64_t microslice) const {
     return data_ptr_[component] +
@@ -62,8 +67,8 @@ public:
   }
 
   /// Retrieve the descriptor and pointer to the data of a given microslice
-  const MicrosliceView get_microslice(uint64_t component,
-                                      uint64_t microslice_index) const {
+  MicrosliceView get_microslice(uint64_t component,
+                                uint64_t microslice_index) const {
     uint8_t* component_data_ptr = data_ptr_[component];
 
     MicrosliceDescriptor& dd = reinterpret_cast<MicrosliceDescriptor*>(
@@ -81,7 +86,7 @@ public:
   }
 
 protected:
-  Timeslice(){};
+  Timeslice() = default;
 
   friend class StorableTimeslice;
 

@@ -13,7 +13,7 @@ namespace ip = boost::interprocess;
 template <typename T_DESC, typename T_DATA> class shm_device_client {
 
 public:
-  explicit shm_device_client(std::string shm_identifier);
+  explicit shm_device_client(const std::string& shm_identifier);
 
   ~shm_device_client();
 

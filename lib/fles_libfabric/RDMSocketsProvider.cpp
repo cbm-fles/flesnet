@@ -31,7 +31,7 @@ RDMSocketsProvider::~RDMSocketsProvider() {
 #pragma GCC diagnostic pop
 }
 
-struct fi_info* RDMSocketsProvider::exists(std::string local_host_name) {
+struct fi_info* RDMSocketsProvider::exists(const std::string& local_host_name) {
   struct fi_info* hints = fi_allocinfo();
   struct fi_info* info = nullptr;
 
@@ -48,7 +48,7 @@ struct fi_info* RDMSocketsProvider::exists(std::string local_host_name) {
   int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr, 0,
                        hints, &info);
 
-  if (!res) {
+  if (res == 0) {
     // fi_freeinfo(hints);
     return info;
   }
@@ -61,7 +61,7 @@ struct fi_info* RDMSocketsProvider::exists(std::string local_host_name) {
 
 RDMSocketsProvider::RDMSocketsProvider(struct fi_info* info) : info_(info) {
   int res = fi_fabric(info_->fabric_attr, &fabric_, nullptr);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_fabric failed: " << res << "=" << fi_strerror(-res);
     throw LibfabricException("fi_fabric failed");
   }
@@ -94,7 +94,8 @@ void RDMSocketsProvider::set_hostnames_and_services(
     const std::vector<std::string>& compute_hostnames,
     const std::vector<std::string>& compute_services,
     std::vector<::fi_addr_t>& fi_addrs) {
-  struct fi_info *info, *hints;
+  struct fi_info* info;
+  struct fi_info* hints;
 
   for (size_t i = 0; i < compute_hostnames.size(); i++) {
     fi_addr_t fi_addr;

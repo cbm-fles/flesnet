@@ -59,22 +59,22 @@ public:
   /// Handle Libfabric receive completion notification.
   void on_complete_recv();
 
-  virtual void setup_mr(struct fid_domain* pd) override;
-  virtual void setup() override;
+  void setup_mr(struct fid_domain* pd) override;
+  void setup() override;
 
   /// Connection handler function, called on successful connection.
   /**
    \param event RDMA connection manager event structure
    */
-  virtual void on_established(struct fi_eq_cm_entry* event) override;
+  void on_established(struct fi_eq_cm_entry* event) override;
   //
   void dereg_mr();
 
-  virtual void on_rejected(struct fi_eq_err_entry* event) override;
+  void on_rejected(struct fi_eq_err_entry* event) override;
 
-  virtual void on_disconnected(struct fi_eq_cm_entry* event) override;
+  void on_disconnected(struct fi_eq_cm_entry* event) override;
 
-  virtual std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
+  std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
   void connect(const std::string& hostname,
                const std::string& service,

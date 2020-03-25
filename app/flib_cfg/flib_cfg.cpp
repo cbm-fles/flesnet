@@ -6,7 +6,6 @@
 
 #include "log.hpp"
 #include "parameters.hpp"
-#include <boost/lexical_cast.hpp>
 
 int main(int argc, char* argv[]) {
   try {

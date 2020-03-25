@@ -7,6 +7,7 @@
 #include "RingBuffer.hpp"
 #include <boost/format.hpp>
 #include <cassert>
+#include <cpprest/http_client.h>
 
 /// Input buffer and compute node connection container class.
 /** An InputChannelSender object represents an input buffer (filled by a
@@ -18,24 +19,25 @@ public:
   /// The InputChannelSender default constructor.
   InputChannelSender(uint64_t input_index,
                      InputBufferReadInterface& data_source,
-                     const std::vector<std::string> compute_hostnames,
-                     const std::vector<std::string> compute_services,
+                     const std::vector<std::string>& compute_hostnames,
+                     const std::vector<std::string>& compute_services,
                      uint32_t timeslice_size,
                      uint32_t overlap_size,
-                     uint32_t max_timeslice_number);
+                     uint32_t max_timeslice_number,
+                     const std::string& monitor_uri);
 
   InputChannelSender(const InputChannelSender&) = delete;
   void operator=(const InputChannelSender&) = delete;
 
   /// The InputChannelSender default destructor.
-  virtual ~InputChannelSender();
+  ~InputChannelSender() override;
 
   void report_status();
 
   void sync_buffer_positions();
   void sync_data_source(bool schedule);
 
-  virtual void operator()() override;
+  void operator()() override;
 
   /// The central function for distributing timeslice data.
   bool try_send_timeslice(uint64_t timeslice);
@@ -52,10 +54,10 @@ private:
 
   void dump_mr(struct ibv_mr* mr);
 
-  virtual void on_addr_resolved(struct rdma_cm_id* id) override;
+  void on_addr_resolved(struct rdma_cm_id* id) override;
 
   /// Handle RDMA_CM_REJECTED event.
-  virtual void on_rejected(struct rdma_cm_event* event) override;
+  void on_rejected(struct rdma_cm_event* event) override;
 
   /// Return string describing buffer contents, suitable for debug output.
   std::string get_state_string();
@@ -70,7 +72,7 @@ private:
                       uint64_t skip);
 
   /// Completion notification event dispatcher. Called by the event loop.
-  virtual void on_completion(const struct ibv_wc& wc) override;
+  void on_completion(const struct ibv_wc& wc) override;
 
   uint64_t input_index_;
 
@@ -118,6 +120,10 @@ private:
 
   bool abort_ = false;
 
+  std::unique_ptr<web::http::client::http_client> monitor_client_;
+  std::unique_ptr<pplx::task<void>> monitor_task_;
+  std::string hostname_;
+
   struct SendBufferStatus {
     std::chrono::system_clock::time_point time;
     uint64_t size;
@@ -148,7 +154,7 @@ private:
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
-    std::string caption() const {
+    static std::string caption() {
       return std::string("used/sending/freeing/free");
     }
 

@@ -43,6 +43,8 @@ public:
   Parameters(const Parameters&) = delete;
   void operator=(const Parameters&) = delete;
 
+  std::string monitor_uri() const { return monitor_uri_; }
+
   /// Retrieve the global timeslice size in number of microslices.
   uint32_t timeslice_size() const { return timeslice_size_; }
 
@@ -62,10 +64,10 @@ public:
   Transport transport() const { return transport_; }
 
   /// Retrieve the list of participating inputs.
-  std::vector<InterfaceSpecification> const inputs() const { return inputs_; }
+  std::vector<InterfaceSpecification> inputs() const { return inputs_; }
 
   /// Retrieve the list of compute node outputs.
-  std::vector<InterfaceSpecification> const outputs() const { return outputs_; }
+  std::vector<InterfaceSpecification> outputs() const { return outputs_; }
 
   /// Retrieve this applications's indexes in the list of inputs.
   std::vector<unsigned> input_indexes() const { return input_indexes_; }
@@ -81,6 +83,8 @@ public:
 private:
   /// Parse command line options.
   void parse_options(int argc, char* argv[]);
+
+  std::string monitor_uri_;
 
   /// The global timeslice size in number of microslices.
   uint32_t timeslice_size_ = 100;

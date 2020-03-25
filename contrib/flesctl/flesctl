@@ -62,7 +62,7 @@ if not run_id:
 reservation = config["DEFAULT"].get("Reservation", None)
 
 # elog configuration
-log_host = 'http://mcbmgw01:8080/mCBM/'
+log_host = 'http://mcbmelog:8080/mCBM/'
 log_attr_static = {'author': 'flesctl', 'type': 'Routine', 'category': 'mFLES'}
 
 def tags():

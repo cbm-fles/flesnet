@@ -1,4 +1,4 @@
-// Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2015, 2020 Jan de Cuveland <cmail@cuveland.de>
 /// \file
 /// \brief Defines the fles::TimesliceInputArchive class type.
 #pragma once
@@ -6,6 +6,7 @@
 #include "ArchiveDescriptor.hpp"
 #include "InputArchive.hpp"
 #include "InputArchiveLoop.hpp"
+#include "InputArchiveSequence.hpp"
 
 namespace fles {
 
@@ -23,5 +24,10 @@ using TimesliceInputArchiveLoop =
     InputArchiveLoop<Timeslice,
                      StorableTimeslice,
                      ArchiveType::TimesliceArchive>;
+
+using TimesliceInputArchiveSequence =
+    InputArchiveSequence<Timeslice,
+                         StorableTimeslice,
+                         ArchiveType::TimesliceArchive>;
 
 } // namespace fles

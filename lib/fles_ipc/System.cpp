@@ -1,15 +1,15 @@
-// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013-2020 Jan de Cuveland <cmail@cuveland.de>
 
 #include "System.hpp"
-#include <boost/lexical_cast.hpp>
 #include <cstring>
+#include <glob.h>
 #include <netdb.h>
 #include <pwd.h>
 #include <stdexcept>
+#include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <vector>
 
 namespace fles {
 namespace system {
@@ -22,8 +22,7 @@ std::string stringerror(int errnum) {
   // XSI-compliant
   int err = strerror_r(errnum, buf.data(), buf.size());
   if (err != 0) {
-    return std::string("Unknown error ") +
-           boost::lexical_cast<std::string>(err);
+    return std::string("Unknown error ") + std::to_string(err);
   }
 
   return std::string(buf.data());
@@ -89,6 +88,28 @@ std::string current_domainname() {
   }
 
   return std::string(buf.data());
+}
+
+std::vector<std::string> glob(const std::string& pattern) {
+  glob_t glob_result;
+  memset(&glob_result, 0, sizeof(glob_result));
+
+  int return_value =
+      glob(pattern.c_str(), GLOB_BRACE | GLOB_TILDE, NULL, &glob_result);
+  if (return_value != 0) {
+    globfree(&glob_result);
+    throw std::runtime_error("glob() failed with return value " +
+                             std::to_string(return_value));
+  }
+
+  std::vector<std::string> filenames;
+  for (size_t i = 0; i < glob_result.gl_pathc; ++i) {
+    filenames.emplace_back(glob_result.gl_pathv[i]);
+  }
+
+  globfree(&glob_result);
+
+  return filenames;
 }
 
 } // namespace system

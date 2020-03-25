@@ -57,10 +57,9 @@ public:
         child_processes_.push_back(child_process);
         L_(debug) << "child process started";
         return true;
-      } else {
-        L_(error) << "vfork() failed: " << strerror(errno);
-        return false;
       }
+      L_(error) << "vfork() failed: " << strerror(errno);
+      return false;
     }
   }
 
@@ -70,16 +69,16 @@ public:
       child_process->status = Terminating;
       kill(child_process->pid, SIGTERM);
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   void stop_processes(void* owner) {
     for (auto it = child_processes_.begin(); it < child_processes_.end();
          ++it) {
-      if (it->owner == owner)
+      if (it->owner == owner) {
         stop_process(it);
+      }
     }
   }
 
@@ -88,16 +87,16 @@ public:
         child_process < child_processes_.end()) {
       child_process->status = Terminating;
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   void allow_stop_processes(void* owner) {
     for (auto it = child_processes_.begin(); it < child_processes_.end();
          ++it) {
-      if (it->owner == owner)
+      if (it->owner == owner) {
         allow_stop_process(it);
+      }
     }
   }
 
@@ -109,7 +108,7 @@ public:
   }
 
 private:
-  typedef struct sigaction sigaction_struct;
+  using sigaction_struct = struct sigaction;
 
   ChildProcessManager() { install_sigchld_handler(); }
 
@@ -141,12 +140,13 @@ private:
       // process with given pid has exited
       bool pid_found = false;
       std::size_t idx = 0;
-      for (std::size_t i = 0; i != child_processes.size(); ++i)
+      for (std::size_t i = 0; i != child_processes.size(); ++i) {
         if (child_processes[i].pid == pid) {
           pid_found = true;
           idx = i;
           break;
         }
+      }
       if (!pid_found) {
         L_(error) << "unknown child process died";
       } else {

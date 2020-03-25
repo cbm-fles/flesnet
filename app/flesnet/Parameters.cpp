@@ -21,14 +21,15 @@ std::istream& operator>>(std::istream& in, Transport& transport) {
   std::transform(std::begin(token), std::end(token), std::begin(token),
                  [](const unsigned char i) { return tolower(i); });
 
-  if (token == "rdma" || token == "r")
+  if (token == "rdma" || token == "r") {
     transport = Transport::RDMA;
-  else if (token == "libfabric" || token == "f")
+  } else if (token == "libfabric" || token == "f") {
     transport = Transport::LibFabric;
-  else if (token == "zeromq" || token == "z")
+  } else if (token == "zeromq" || token == "z") {
     transport = Transport::ZeroMQ;
-  else
+  } else {
     throw po::invalid_option_value(token);
+  }
   return in;
 }
 
@@ -78,17 +79,23 @@ void Parameters::parse_options(int argc, char* argv[]) {
   generic_add("config-file,f",
               po::value<std::string>(&config_file)->value_name("<filename>"),
               "read configuration from file");
-  generic_add("log-level,l", po::value<unsigned>(&log_level)
-                                 ->default_value(log_level)
-                                 ->value_name("<n>"),
+  generic_add("log-level,l",
+              po::value<unsigned>(&log_level)
+                  ->default_value(log_level)
+                  ->value_name("<n>"),
               "set the file log level (all:0)");
   generic_add("log-file,L",
               po::value<std::string>(&log_file)->value_name("<filename>"),
               "write log output to file");
-  generic_add("log-syslog,S", po::value<unsigned>(&log_syslog)
-                                  ->default_value(log_syslog)
-                                  ->value_name("<n>"),
+  generic_add("log-syslog,S",
+              po::value<unsigned>(&log_syslog)
+                  ->default_value(log_syslog)
+                  ->value_name("<n>"),
               "enable logging to syslog at given log level");
+  generic_add("monitor,m",
+              po::value<std::string>(&monitor_uri_)
+                  ->implicit_value("http://login:8086/"),
+              "publish flesnet status to InfluxDB");
   generic_add("help,h", "display this help and exit");
   generic_add("version,V", "output version information and exit");
 
@@ -152,25 +159,24 @@ void Parameters::parse_options(int argc, char* argv[]) {
     std::ifstream ifs(config_file.c_str());
     if (!ifs) {
       throw ParametersException("cannot open config file: " + config_file);
-    } else {
-      po::store(po::parse_config_file(ifs, config), vm);
-      notify(vm);
     }
+    po::store(po::parse_config_file(ifs, config), vm);
+    notify(vm);
   }
 
-  if (vm.count("help")) {
+  if (vm.count("help") != 0u) {
     std::cout << "flesnet, git revision " << g_GIT_REVISION << std::endl;
     std::cout << cmdline_options << std::endl;
     exit(EXIT_SUCCESS);
   }
 
-  if (vm.count("version")) {
+  if (vm.count("version") != 0u) {
     std::cout << "flesnet, git revision " << g_GIT_REVISION << std::endl;
     exit(EXIT_SUCCESS);
   }
 
   logging::add_console(static_cast<severity_level>(log_level));
-  if (vm.count("log-file")) {
+  if (vm.count("log-file") != 0u) {
     L_(info) << "logging output to " << log_file;
     if (log_level < 3) {
       log_level = 3;
@@ -178,7 +184,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
     }
     logging::add_file(log_file, static_cast<severity_level>(log_level));
   }
-  if (vm.count("log-syslog")) {
+  if (vm.count("log-syslog") != 0u) {
     logging::add_syslog(logging::syslog::local0,
                         static_cast<severity_level>(log_syslog));
   }
@@ -198,31 +204,37 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 #endif
 
-  if (!vm.count("input"))
+  if (vm.count("input") == 0u) {
     throw ParametersException("list of inputs is empty");
+  }
 
-  if (!vm.count("output"))
+  if (vm.count("output") == 0u) {
     throw ParametersException("list of outputs is empty");
+  }
 
   inputs_ = vm["input"].as<std::vector<InterfaceSpecification>>();
   outputs_ = vm["output"].as<std::vector<InterfaceSpecification>>();
 
   for (auto& input : inputs_) {
-    if (!web::uri::validate(input.full_uri))
+    if (!web::uri::validate(input.full_uri)) {
       throw ParametersException("invalid input specification: " +
                                 input.full_uri);
+    }
   }
 
   for (auto& output : outputs_) {
-    if (!web::uri::validate(output.full_uri))
+    if (!web::uri::validate(output.full_uri)) {
       throw ParametersException("invalid output specification: " +
                                 output.full_uri);
+    }
   }
 
-  if (vm.count("input-index"))
+  if (vm.count("input-index") != 0u) {
     input_indexes_ = vm["input-index"].as<std::vector<unsigned>>();
-  if (vm.count("output-index"))
+  }
+  if (vm.count("output-index") != 0u) {
     output_indexes_ = vm["output-index"].as<std::vector<unsigned>>();
+  }
 
   if (inputs_.empty() && outputs_.empty()) {
     throw ParametersException("no node type specified");
@@ -246,15 +258,18 @@ void Parameters::parse_options(int argc, char* argv[]) {
     }
   }
 
-  if (!outputs_.empty() && processor_executable_.empty())
+  if (!outputs_.empty() && processor_executable_.empty()) {
     throw ParametersException("processor executable not specified");
+  }
 
   L_(debug) << "inputs (" << inputs_.size() << "):";
-  for (auto input : inputs_)
+  for (auto input : inputs_) {
     L_(debug) << "  " << input.full_uri;
+  }
   L_(debug) << "outputs (" << outputs_.size() << "):";
-  for (auto output : outputs_)
+  for (auto output : outputs_) {
     L_(debug) << "  " << output.full_uri;
+  }
   for (auto input_index : input_indexes_) {
     L_(info) << "this is input " << input_index << " (of " << inputs_.size()
              << ")";

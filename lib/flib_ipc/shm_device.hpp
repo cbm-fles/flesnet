@@ -12,7 +12,7 @@ namespace ip = boost::interprocess;
 class shm_device {
 
 public:
-  shm_device() {}
+  shm_device() = default;
 
   ~shm_device() = default;
 

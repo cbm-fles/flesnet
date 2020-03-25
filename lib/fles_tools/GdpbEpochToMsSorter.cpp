@@ -6,16 +6,17 @@ void fles::GdpbEpochToMsSorter::process() {
   constexpr uint32_t kuBytesPerMessage = 8;
 
   // combine the contents of two consecutive microslices
-  while (0 < this->input.size()) {
+  while (!this->input.empty()) {
     auto msInput = input.front();
     this->input.pop_front();
 
     // If not integer number of message in input buffer, print warning/error
-    if (0 != (msInput->desc().size % kuBytesPerMessage))
+    if (0 != (msInput->desc().size % kuBytesPerMessage)) {
       std::cerr << "fles::GdpbEpochToMsSorter::process => Warning, "
                 << "the input microslice buffer does NOT contain only complete "
                    "nDPB messages!"
                 << std::endl;
+    }
 
     // Compute the number of complete messages in the input microslice buffer
     uint32_t uNbMessages =
@@ -47,8 +48,9 @@ void fles::GdpbEpochToMsSorter::process() {
         // Expand epoch to 64 bits with a cycle counter in higher bits for
         // longer time sorting
         if ((mess.getEpochNumber() < fuCurrentEpoch) &&
-            (0xEFFFFFFF < fuCurrentEpoch - mess.getEpochNumber()))
+            (0xEFFFFFFF < fuCurrentEpoch - mess.getEpochNumber())) {
           fuCurrentEpochCycle++;
+        }
 
         fuCurrentEpoch = mess.getEpochNumber();
 
@@ -108,8 +110,9 @@ void fles::GdpbEpochToMsSorter::process() {
                                          } // if( fuNbEpPerMs == fuNbEpInBuff )
                           */
         }                 // if( true == fbFirstEpFound )
-        else
+        else {
           fbFirstEpFound = true;
+        }
       } // if( true == mess.isEpochMsg() )
       else if (true == mess.isEpoch2Msg()) {
         uint16_t usChipIdx = mess.getGdpbGenChipId();
@@ -136,8 +139,10 @@ void fles::GdpbEpochToMsSorter::process() {
         // Expand epoch to 64 bits with a cycle counter in higher bits for
         // longer time sorting
         if ((mess.getEpochNumber() < fuCurrentEpoch2[usChipIdx]) &&
-            (0xEFFFFFFF < fuCurrentEpoch2[usChipIdx] - mess.getGdpbEpEpochNb()))
+            (0xEFFFFFFF <
+             fuCurrentEpoch2[usChipIdx] - mess.getGdpbEpEpochNb())) {
           fuCurrentEpochCycle2[usChipIdx]++;
+        }
 
         fuCurrentEpoch2[usChipIdx] = mess.getGdpbEpEpochNb();
 

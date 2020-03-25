@@ -41,8 +41,8 @@ struct etcd_config_t {
 // Overload validate for PCI BDF address
 void validate(boost::any& v,
               const std::vector<std::string>& values,
-              pci_addr*,
-              int) {
+              pci_addr* /*unused*/,
+              int /*unused*/) {
   // PCI BDF address is BB:DD.F
   static boost::regex r(
       "([[:xdigit:]][[:xdigit:]]):([[:xdigit:]][[:xdigit:]]).([[:xdigit:]])");
@@ -120,15 +120,17 @@ private:
     config_add("desc-buffer-size-exp",
                po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
                "exp. size of the descriptor buffer (number of entries)");
-    config_add("log-level,l", po::value<unsigned>(&log_level)
-                                  ->default_value(log_level)
-                                  ->value_name("<n>"),
+    config_add("log-level,l",
+               po::value<unsigned>(&log_level)
+                   ->default_value(log_level)
+                   ->value_name("<n>"),
                "set the file log level (all:0)");
     config_add("log-file,L", po::value<std::string>(&log_file),
                "name of target log file");
-    config_add("log-syslog,S", po::value<unsigned>(&log_syslog)
-                                   ->default_value(log_syslog)
-                                   ->value_name("<n>"),
+    config_add("log-syslog,S",
+               po::value<unsigned>(&log_syslog)
+                   ->default_value(log_syslog)
+                   ->value_name("<n>"),
                "enable logging to syslog at given log level");
     config_add("etcd-authority",
                po::value<std::string>(&_etcd.authority)
@@ -160,23 +162,23 @@ private:
       notify(vm);
     }
 
-    if (vm.count("help")) {
+    if (vm.count("help") != 0u) {
       std::cout << cmdline_options << "\n";
       exit(EXIT_SUCCESS);
     }
 
     logging::add_console(static_cast<severity_level>(log_level));
-    if (vm.count("log-file")) {
+    if (vm.count("log-file") != 0u) {
       L_(info) << "Logging output to " << log_file;
       logging::add_file(log_file, static_cast<severity_level>(log_level));
     }
 
-    if (vm.count("log-syslog")) {
+    if (vm.count("log-syslog") != 0u) {
       logging::add_syslog(logging::syslog::local0,
                           static_cast<severity_level>(log_syslog));
     }
 
-    if (vm.count("flib-addr")) {
+    if (vm.count("flib-addr") != 0u) {
       _flib_addr = vm["flib-addr"].as<pci_addr>();
       _flib_autodetect = false;
       L_(debug) << "FLIB address: " << std::hex << std::setw(2)
@@ -189,7 +191,7 @@ private:
       L_(debug) << "FLIB address: autodetect";
     }
 
-    if (vm.count("etcd-path")) {
+    if (vm.count("etcd-path") != 0u) {
       _etcd.use_etcd = true;
     }
 

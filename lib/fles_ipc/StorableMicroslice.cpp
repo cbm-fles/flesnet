@@ -11,7 +11,7 @@ StorableMicroslice::StorableMicroslice(const StorableMicroslice& ms)
 }
 
 StorableMicroslice::StorableMicroslice(StorableMicroslice&& ms) noexcept
-    : desc_(std::move(ms.desc_)), content_(std::move(ms.content_)) {
+    : desc_(ms.desc_), content_(std::move(ms.content_)) {
   init_pointers();
 }
 
@@ -27,12 +27,12 @@ StorableMicroslice::StorableMicroslice(MicrosliceDescriptor d,
 
 StorableMicroslice::StorableMicroslice(MicrosliceDescriptor d,
                                        std::vector<uint8_t> content_v)
-    : desc_(std::move(d)), content_{std::move(content_v)} {
+    : desc_(d), content_{std::move(content_v)} {
   desc_.size = static_cast<uint32_t>(content_.size());
   init_pointers();
 }
 
-StorableMicroslice::StorableMicroslice() {}
+StorableMicroslice::StorableMicroslice() = default;
 
 void StorableMicroslice::initialize_crc() { desc_.crc = compute_crc(); }
 

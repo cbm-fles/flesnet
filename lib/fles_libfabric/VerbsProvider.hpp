@@ -22,18 +22,18 @@ public:
   void operator=(const VerbsProvider&) = delete;
 
   /// The VerbsProvider default destructor.
-  ~VerbsProvider();
+  ~VerbsProvider() override;
 
-  virtual bool has_av() const override { return false; };
-  virtual bool has_eq_at_eps() const override { return true; };
-  virtual bool is_connection_oriented() const override { return true; };
+  bool has_av() const override { return false; };
+  bool has_eq_at_eps() const override { return true; };
+  bool is_connection_oriented() const override { return true; };
 
   struct fi_info* get_info() override {
     assert(info_ != nullptr);
     return info_;
   }
 
-  virtual void set_hostnames_and_services(
+  void set_hostnames_and_services(
       struct fid_av* /*av*/,
       const std::vector<std::string>& /*compute_hostnames*/,
       const std::vector<std::string>& /*compute_services*/,
@@ -43,7 +43,7 @@ public:
     return fabric_;
   };
 
-  static struct fi_info* exists(std::string local_host_name);
+  static struct fi_info* exists(const std::string& local_host_name);
 
   void accept(struct fid_pep* pep,
               const std::string& hostname,
@@ -58,7 +58,7 @@ public:
                uint32_t max_recv_sge,
                uint32_t max_inline_data,
                const void* param,
-               size_t paramlen,
+               size_t param_len,
                void* addr) override;
 };
 } // namespace tl_libfabric

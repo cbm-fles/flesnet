@@ -17,15 +17,17 @@ void Parameters::parse_options(int argc, char* argv[]) {
   auto general_add = general.add_options();
   general_add("version,V", "print version string");
   general_add("help,h", "produce help message");
-  general_add("log-level,l", po::value<unsigned>(&log_level)
-                                 ->default_value(log_level)
-                                 ->value_name("<n>"),
+  general_add("log-level,l",
+              po::value<unsigned>(&log_level)
+                  ->default_value(log_level)
+                  ->value_name("<n>"),
               "set the file log level (all:0)");
   general_add("log-file,L", po::value<std::string>(&log_file),
               "name of target log file");
-  general_add("log-syslog,S", po::value<unsigned>(&log_syslog)
-                                  ->default_value(log_syslog)
-                                  ->value_name("<n>"),
+  general_add("log-syslog,S",
+              po::value<unsigned>(&log_syslog)
+                  ->default_value(log_syslog)
+                  ->value_name("<n>"),
               "enable logging to syslog at given log level");
   general_add("maximum-number,n", po::value<uint64_t>(&maximum_number),
               "set the maximum number of microslices to process (default: "
@@ -74,11 +76,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 
   logging::add_console(static_cast<severity_level>(log_level));
-  if (vm.count("log-file")) {
+  if (vm.count("log-file") != 0u) {
     L_(info) << "Logging output to " << log_file;
     logging::add_file(log_file, static_cast<severity_level>(log_level));
   }
-  if (vm.count("log-syslog")) {
+  if (vm.count("log-syslog") != 0u) {
     logging::add_syslog(logging::syslog::local0,
                         static_cast<severity_level>(log_syslog));
   }

@@ -6,16 +6,17 @@ void fles::NdpbEpochToMsSorter::process() {
   constexpr uint32_t kuBytesPerMessage = 8;
 
   // combine the contents of two consecutive microslices
-  while (0 < this->input.size()) {
+  while (!this->input.empty()) {
     auto msInput = input.front();
     this->input.pop_front();
 
     // If not integer number of message in input buffer, print warning/error
-    if (0 != (msInput->desc().size % kuBytesPerMessage))
+    if (0 != (msInput->desc().size % kuBytesPerMessage)) {
       std::cerr << "fles::NdpbEpochToMsSorter::process => Warning, "
                 << "the input microslice buffer does NOT contain only complete "
                    "nDPB messages!"
                 << std::endl;
+    }
 
     // Compute the number of complete messages in the input microslice buffer
     uint32_t uNbMessages =
@@ -46,15 +47,17 @@ void fles::NdpbEpochToMsSorter::process() {
 
       // Ignore the SYNC messages as they are used only to get all EPOCH
       // messages in nDPB
-      if (true == mess.isSyncMsg())
+      if (true == mess.isSyncMsg()) {
         continue;
+      }
 
       if (true == mess.isEpochMsg()) {
         // Expand epoch to 64 bits with a cycle counter in higher bits for
         // longer time sorting
         if ((mess.getEpochNumber() < fuCurrentEpoch) &&
-            (0xEFFFFFFF < fuCurrentEpoch - mess.getEpochNumber()))
+            (0xEFFFFFFF < fuCurrentEpoch - mess.getEpochNumber())) {
           fuCurrentEpochCycle++;
+        }
 
         fuCurrentEpoch = mess.getEpochNumber();
 
@@ -78,16 +81,16 @@ void fles::NdpbEpochToMsSorter::process() {
             // 0x.0 for Raw data
             // 0x.1 for (Epoch-)aligned Microslices
             // 0x.2 for Time-sorted data
-            if (true == fbMsgSorting)
+            if (true == fbMsgSorting) {
               desc.sys_ver = 0xE2;
-            else
+            } else {
               desc.sys_ver = 0xE1;
+            }
 
             // Convert the multiset of messages to a vector of bytes
             std::vector<uint8_t> content;
-            if (true == fbMsgSorting)
-              for (auto itMess = fmsFullMsgBuffer.begin();
-                   itMess != fmsFullMsgBuffer.end(); itMess++) {
+            if (true == fbMsgSorting) {
+              for (const auto& itMess : fmsFullMsgBuffer) {
                 /* Wrong Endianness?!?
                                      content.push_back( static_cast<uint8_t>(
                    ((*itMess).getData() & 0xFF00000000000000UL) >> 56) );
@@ -107,21 +110,21 @@ void fles::NdpbEpochToMsSorter::process() {
                    ((*itMess).getData() & 0x00000000000000FFUL)      ) );
                 */
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00000000000000FFUL)));
+                    (itMess.getData() & 0x00000000000000FFUL)));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x000000000000FF00UL) >> 8));
+                    (itMess.getData() & 0x000000000000FF00UL) >> 8));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x0000000000FF0000UL) >> 16));
+                    (itMess.getData() & 0x0000000000FF0000UL) >> 16));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00000000FF000000UL) >> 24));
+                    (itMess.getData() & 0x00000000FF000000UL) >> 24));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x000000FF00000000UL) >> 32));
+                    (itMess.getData() & 0x000000FF00000000UL) >> 32));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x0000FF0000000000UL) >> 40));
+                    (itMess.getData() & 0x0000FF0000000000UL) >> 40));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00FF000000000000UL) >> 48));
+                    (itMess.getData() & 0x00FF000000000000UL) >> 48));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0xFF00000000000000UL) >> 56));
+                    (itMess.getData() & 0xFF00000000000000UL) >> 56));
 
                 /*
                                      std::cout << std::hex <<
@@ -149,41 +152,43 @@ void fles::NdpbEpochToMsSorter::process() {
                 //                               << std::dec << std::endl;
               } // for( auto itMess = fmsFullMsgBuffer.begin(); itMess <
                 // fmsFullMsgBuffer.end(); itMess++)
-            else
-              for (auto itMess = fvMsgBuffer.begin();
-                   itMess != fvMsgBuffer.end(); itMess++) {
+            } else {
+              for (auto& itMess : fvMsgBuffer) {
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00000000000000FFUL)));
+                    (itMess.getData() & 0x00000000000000FFUL)));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x000000000000FF00UL) >> 8));
+                    (itMess.getData() & 0x000000000000FF00UL) >> 8));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x0000000000FF0000UL) >> 16));
+                    (itMess.getData() & 0x0000000000FF0000UL) >> 16));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00000000FF000000UL) >> 24));
+                    (itMess.getData() & 0x00000000FF000000UL) >> 24));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x000000FF00000000UL) >> 32));
+                    (itMess.getData() & 0x000000FF00000000UL) >> 32));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x0000FF0000000000UL) >> 40));
+                    (itMess.getData() & 0x0000FF0000000000UL) >> 40));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0x00FF000000000000UL) >> 48));
+                    (itMess.getData() & 0x00FF000000000000UL) >> 48));
                 content.push_back(static_cast<uint8_t>(
-                    ((*itMess).getData() & 0xFF00000000000000UL) >> 56));
+                    (itMess.getData() & 0xFF00000000000000UL) >> 56));
               } // else for( auto itMess = fvMsgBuffer.begin(); itMess !=
-                // fvMsgBuffer.end(); itMess++)
+            }
+            // fvMsgBuffer.end(); itMess++)
             std::unique_ptr<StorableMicroslice> sortedMs(
                 new StorableMicroslice(desc, content));
             output.push(std::move(sortedMs));
 
             // Re-initialize the sorting buffer
-            if (true == fbMsgSorting)
+            if (true == fbMsgSorting) {
               fmsFullMsgBuffer.clear();
-            else
+            } else {
               fvMsgBuffer.clear();
+            }
             fuNbEpInBuff = 0;
           } // if( fuNbEpPerMs == fuNbEpInBuff )
         }   // if( true == fbFirstEpFound )
-        else
+        else {
           fbFirstEpFound = true;
+        }
       } // if( true == mess.isEpochMsg() )
 
       // If the first epoch was found, start saving messages in the sorting
@@ -198,8 +203,9 @@ void fles::NdpbEpochToMsSorter::process() {
           // Otherwise the simpler "sorting by epoch" is done just by epoch
           // definition!
           // => vector is enough
-        else
+        else {
           fvMsgBuffer.push_back(mess);
+        }
       } // if( true == fbFirstEpFound )
     }   // for (uint32_t uIdx = 0; uIdx < uNbMessages; uIdx ++)
   }     // while (0 < this->input.size() )

@@ -1,0 +1,12 @@
+[Unit]
+Description=FLIB status monitoring
+After=network.target
+ConditionHost=en*
+
+[Service]
+ExecStart=/opt/fles/bin/flib_status -m
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

@@ -5,7 +5,10 @@
 #include "IBConnectionGroup.hpp"
 #include "RingBuffer.hpp"
 #include "TimesliceBuffer.hpp"
+#include <cpprest/http_client.h>
 #include <csignal>
+#include <memory>
+#include <vector>
 
 /// Timeslice receiver and input node connection container class.
 /** A TimesliceBuilder object represents a group of timeslice building
@@ -20,25 +23,26 @@ public:
                    uint32_t num_input_nodes,
                    uint32_t timeslice_size,
                    volatile sig_atomic_t* signal_status,
-                   bool drop);
+                   bool drop,
+                   const std::string& monitor_uri);
 
   TimesliceBuilder(const TimesliceBuilder&) = delete;
   void operator=(const TimesliceBuilder&) = delete;
 
   /// The TimesliceBuilder destructor.
-  ~TimesliceBuilder();
+  ~TimesliceBuilder() override;
 
   void report_status();
 
   void request_abort();
 
-  virtual void operator()() override;
+  void operator()() override;
 
   /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
-  virtual void on_connect_request(struct rdma_cm_event* event) override;
+  void on_connect_request(struct rdma_cm_event* event) override;
 
   /// Completion notification event dispatcher. Called by the event loop.
-  virtual void on_completion(const struct ibv_wc& wc) override;
+  void on_completion(const struct ibv_wc& wc) override;
 
   void poll_ts_completion();
 
@@ -60,4 +64,13 @@ private:
 
   volatile sig_atomic_t* signal_status_;
   bool drop_;
+
+  std::vector<ComputeNodeConnection::BufferStatus>
+      previous_recv_buffer_status_desc_;
+  std::vector<ComputeNodeConnection::BufferStatus>
+      previous_recv_buffer_status_data_;
+
+  std::unique_ptr<web::http::client::http_client> monitor_client_;
+  std::unique_ptr<pplx::task<void>> monitor_task_;
+  std::string hostname_;
 };

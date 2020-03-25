@@ -5,16 +5,16 @@
  */
 
 #include "flib.h"
+#include <cerrno>
 #include <chrono>
 #include <csignal>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <errno.h>
 #include <iostream>
 #include <limits>
-#include <stdint.h>
 #include <thread>
 #include <unistd.h>
 
@@ -26,7 +26,7 @@ static void s_signal_handler(int signal_value) {
   s_interrupted = 1;
 }
 
-static void s_catch_signals(void) {
+static void s_catch_signals() {
   struct sigaction action;
   action.sa_handler = s_signal_handler;
   action.sa_flags = 0;
@@ -98,7 +98,8 @@ int main(int argc, char* argv[]) {
       flim->set_ready_for_data(false);
       flim->set_pgen_sync_ext(false);
       flim->reset_datapath();
-      if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
+      uint32_t mc_pend = flim->get_pgen_mc_pending();
+      if (mc_pend != 0) {
         std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
       }
     }
@@ -158,7 +159,8 @@ int main(int argc, char* argv[]) {
       std::cout << "mc time (packer)  " << mc_time.back() << std::endl;
 
       flim->reset_datapath();
-      if (uint32_t mc_pend = flim->get_pgen_mc_pending() != 0) {
+      uint32_t mc_pend = flim->get_pgen_mc_pending();
+      if (mc_pend != 0) {
         std::cout << "*** ERROR *** mc pending (pgen) " << mc_pend << std::endl;
       }
     }

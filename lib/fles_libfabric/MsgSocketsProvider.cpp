@@ -31,7 +31,7 @@ MsgSocketsProvider::~MsgSocketsProvider() {
 #pragma GCC diagnostic pop
 }
 
-struct fi_info* MsgSocketsProvider::exists(std::string local_host_name) {
+struct fi_info* MsgSocketsProvider::exists(const std::string& local_host_name) {
   struct fi_info* hints = fi_allocinfo();
   struct fi_info* info = nullptr;
 
@@ -48,7 +48,7 @@ struct fi_info* MsgSocketsProvider::exists(std::string local_host_name) {
   int res = fi_getinfo(FI_VERSION(1, 1), local_host_name.c_str(), nullptr,
                        FI_SOURCE, hints, &info);
 
-  if (!res) {
+  if (res == 0) {
     // TODO this freeinfo method throws invalid pointer exception!!!
     // fi_freeinfo(hints);
     return info;
@@ -62,7 +62,7 @@ struct fi_info* MsgSocketsProvider::exists(std::string local_host_name) {
 
 MsgSocketsProvider::MsgSocketsProvider(struct fi_info* info) : info_(info) {
   int res = fi_fabric(info_->fabric_attr, &fabric_, nullptr);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_fabric failed: " << res << "=" << fi_strerror(-res);
     throw LibfabricException("fi_fabric failed");
   }
@@ -79,7 +79,7 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
   int res = fi_getinfo(FI_VERSION(1, 1), hostname.c_str(), port_s.c_str(),
                        FI_SOURCE, info_, &accept_info);
 
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "lookup " << hostname << " in accept failed: " << res << "="
               << fi_strerror(-res);
     throw LibfabricException("lookup " + hostname + " in accept failed");
@@ -90,7 +90,7 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
   assert(accept_info->addr_format == FI_SOCKADDR_IN);
 
   res = fi_passive_ep(fabric_, accept_info, &pep, nullptr);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_passive_ep in accept failed: " << res << "="
               << fi_strerror(-res);
     throw LibfabricException("fi_passive_ep in accept failed");
@@ -105,13 +105,13 @@ void MsgSocketsProvider::accept(struct fid_pep* pep,
   */
   assert(eq != nullptr);
   res = fi_pep_bind(pep, &eq->fid, 0);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_pep_bind in accept failed: " << res << "="
               << fi_strerror(-res);
     throw LibfabricException("fi_pep_bind in accept failed");
   }
   res = fi_listen(pep);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_listen in accept failed: " << res << "="
               << fi_strerror(-res);
     throw LibfabricException("fi_listen in accept failed");
@@ -128,7 +128,7 @@ void MsgSocketsProvider::connect(fid_ep* ep,
                                  size_t param_len,
                                  void* addr) {
   int res = fi_connect(ep, addr, param, param_len);
-  if (res) {
+  if (res != 0) {
     L_(fatal) << "fi_connect failed: " << res << "=" << fi_strerror(-res);
     throw LibfabricException("fi_connect failed");
   }

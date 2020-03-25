@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+shopt -u nocaseglob
+LANG=C
+
+DIR="$(git rev-parse --show-toplevel)"
+cd "$DIR"
+
+# create clang build directory if it does not yet exist
+if [ ! -f build-clang/compile_commands.json ]; then
+  echo NO
+  mkdir -p build-clang
+  (cd build-clang; CC=clang-9 CXX=clang++-9 cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..)
+fi
+
+run-clang-tidy-9 \
+  -p build-clang \
+  -checks='*' \
+  -format -style file \
+  -header-filter '(lib/(fles_core|fles_ipc|fles_libfabric|fles_rdma|fles_tools|fles_zeromq|flib|flib_ipc|logging|pda)/.*\.hpp)|(app/[^/]+/[^/]+.hpp)' \
+  lib/{fles_core,fles_ipc,fles_libfabric,fles_rdma,fles_tools,fles_zeromq,flib,flib_ipc,logging,pda}/*.cpp app/*/*.cpp test/*.cpp
+
+#  -fix \

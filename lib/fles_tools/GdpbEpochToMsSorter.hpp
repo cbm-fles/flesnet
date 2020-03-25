@@ -21,14 +21,7 @@ class GdpbEpochToMsSorter
     : public BufferingFilter<Microslice, StorableMicroslice> {
 public:
   GdpbEpochToMsSorter(uint32_t uEpPerMs = 1, uint64_t ulMaskGet4 = 0x0)
-      : BufferingFilter(), fuNbEpPerMs(uEpPerMs), fmsFullMsgBuffer(),
-        fuNbEpInBuff(0), fbFirstEpFound(false), fuCurrentEpoch(0),
-        fuCurrentEpochCycle(0), fulCurrentLongEpoch(0), fbFirstEp2Found(),
-        fuCurrentEpoch2(), // All values initialized at 0!
-        fuCurrentEpochCycle2(),
-        fulCurrentLongEpoch2(), // All values initialized at 0!
-        fbAllFirstEp2Found(false), fbAllCurrentEp2Found(false),
-        fulMaskGet4(ulMaskGet4){};
+      : fuNbEpPerMs(uEpPerMs), fulMaskGet4(ulMaskGet4){};
 
 private:
   void process() override;
@@ -37,19 +30,19 @@ private:
 
   uint32_t fuNbEpPerMs;
   std::multiset<ngdpb::FullMessage> fmsFullMsgBuffer;
-  uint32_t fuNbEpInBuff;
+  uint32_t fuNbEpInBuff{0};
 
-  bool fbFirstEpFound;
-  uint32_t fuCurrentEpoch;
-  uint32_t fuCurrentEpochCycle;
-  uint64_t fulCurrentLongEpoch;
+  bool fbFirstEpFound{false};
+  uint32_t fuCurrentEpoch{0};
+  uint32_t fuCurrentEpochCycle{0};
+  uint64_t fulCurrentLongEpoch{0};
 
-  bool fbFirstEp2Found[kusMaxNbGet4];
-  uint32_t fuCurrentEpoch2[kusMaxNbGet4];
-  uint32_t fuCurrentEpochCycle2[kusMaxNbGet4];
-  uint64_t fulCurrentLongEpoch2[kusMaxNbGet4];
-  bool fbAllFirstEp2Found;
-  bool fbAllCurrentEp2Found;
+  bool fbFirstEp2Found[kusMaxNbGet4]{};
+  uint32_t fuCurrentEpoch2[kusMaxNbGet4]{};
+  uint32_t fuCurrentEpochCycle2[kusMaxNbGet4]{};
+  uint64_t fulCurrentLongEpoch2[kusMaxNbGet4]{};
+  bool fbAllFirstEp2Found{false};
+  bool fbAllCurrentEp2Found{false};
 
   uint64_t fulMaskGet4;
 };

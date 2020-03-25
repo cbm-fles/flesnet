@@ -20,6 +20,7 @@
 #include <set>
 
 #include <chrono>
+#include <utility>
 
 namespace tl_libfabric {
 /// Libfabric connection group base class.
@@ -30,7 +31,7 @@ template <typename CONNECTION>
 class ConnectionGroup : public ConnectionGroupWorker {
 public:
   /// The ConnectionGroup default constructor.
-  ConnectionGroup(std::string local_node_name) {
+  ConnectionGroup(const std::string& local_node_name) {
     Provider::init(local_node_name);
     // std::cout << "ConnectionGroup constructor" << std::endl;
     struct fi_eq_attr eq_attr;
@@ -39,7 +40,7 @@ public:
     eq_attr.wait_obj = FI_WAIT_NONE;
     int res =
         fi_eq_open(Provider::getInst()->get_fabric(), &eq_attr, &eq_, nullptr);
-    if (res) {
+    if (res != 0) {
       L_(fatal) << "fi_eq_open failed: " << res << "=" << fi_strerror(-res);
       throw LibfabricException("fi_eq_open failed");
     }
@@ -49,15 +50,17 @@ public:
   ConnectionGroup& operator=(const ConnectionGroup&) = delete;
 
   /// The ConnectionGroup default destructor.
-  virtual ~ConnectionGroup() {
-    for (auto& c : conn_)
+  ~ConnectionGroup() override {
+    for (auto& c : conn_) {
       c = nullptr;
+    }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
     fi_close((fid_t)eq_);
-    if (pep_ != nullptr)
+    if (pep_ != nullptr) {
       fi_close((fid_t)pep_);
+    }
 #pragma GCC diagnostic pop
 
     pep_ = nullptr;
@@ -73,8 +76,9 @@ public:
 
   /// Initiate disconnection.
   void disconnect() {
-    for (auto& c : conn_)
+    for (auto& c : conn_) {
       c->disconnect();
+    }
   }
 
   /// The connection manager event handler.
@@ -146,8 +150,9 @@ public:
         throw LibfabricException("fi_cq_read failed");
       }
 
-      if (ne == -FI_EAGAIN)
+      if (ne == -FI_EAGAIN) {
         break;
+      }
 
       ne_total += ne;
       for (int i = 0; i < ne; ++i) {
@@ -191,7 +196,7 @@ public:
   }
 
   /// The "main" function of an ConnectionGroup decendant.
-  virtual void operator()() = 0;
+  void operator()() override = 0;
 
 protected:
   /// Handle RDMA_CM_REJECTED event.
@@ -237,7 +242,7 @@ protected:
     L_(debug) << "create Libfabric objects";
 
     int res = fi_domain(Provider::getInst()->get_fabric(), info, &pd_, nullptr);
-    if (!pd_) {
+    if (pd_ == nullptr) {
       L_(fatal) << "fi_domain failed: " << -res << "=" << fi_strerror(-res);
       throw LibfabricException("fi_domain failed");
     }
@@ -252,7 +257,7 @@ protected:
     cq_attr.wait_cond = FI_CQ_COND_NONE;
     cq_attr.wait_set = nullptr;
     res = fi_cq_open(pd_, &cq_attr, &cq_, nullptr);
-    if (!cq_) {
+    if (cq_ == nullptr) {
       L_(fatal) << "fi_cq_open failed: " << -res << "=" << fi_strerror(-res);
       throw LibfabricException("fi_cq_open failed");
     }
@@ -266,7 +271,7 @@ protected:
       assert(av_ == nullptr);
       res = fi_av_open(pd_, &av_attr, &av_, NULL);
       assert(res == 0);
-      if (!av_) {
+      if (av_ == nullptr) {
         L_(fatal) << "fi_av_open failed: " << res << "=" << fi_strerror(-res);
         throw LibfabricException("fi_av_open failed");
       }

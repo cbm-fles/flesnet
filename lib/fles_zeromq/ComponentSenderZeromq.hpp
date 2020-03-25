@@ -19,7 +19,7 @@ public:
   /// The ComponentSenderZeromq default constructor.
   ComponentSenderZeromq(uint64_t input_index,
                         InputBufferReadInterface& data_source,
-                        std::string listen_address,
+                        const std::string& listen_address,
                         uint32_t timeslice_size,
                         uint32_t overlap_size,
                         uint32_t max_timeslice_number,
@@ -119,7 +119,7 @@ private:
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
-    std::string caption() const {
+    static std::string caption() {
       return std::string("used/sending/freeing/free");
     }
 
@@ -157,7 +157,7 @@ private:
   void run_end();
 
   /// The central function for distributing timeslice data.
-  bool try_send_timeslice(uint64_t timeslice);
+  bool try_send_timeslice(uint64_t ts);
 
   /// Create zeromq message part with requested data.
   template <typename T_>

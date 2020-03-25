@@ -9,8 +9,8 @@
 #include <cstdint>
 #include <cstdio>
 
-typedef struct DeviceOperator_struct DeviceOperator;
-typedef struct PciDevice_struct PciDevice;
+using DeviceOperator = struct DeviceOperator_struct;
+using PciDevice = struct PciDevice_struct;
 
 namespace pda {
 class device_operator;
@@ -24,7 +24,7 @@ class device {
 
 public:
   device(device_operator* device_operator, int32_t device_index);
-  device(const uint8_t bus, const uint8_t device, const uint8_t function);
+  device(uint8_t bus, uint8_t device, uint8_t function);
   ~device();
 
   uint16_t domain();
