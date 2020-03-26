@@ -90,12 +90,12 @@ void TimesliceBuilder::report_status() {
             .count();
     double rate_desc =
         static_cast<double>(
-            status_desc.acked -
+            status_desc.received -
             previous_recv_buffer_status_desc_.at(c->index()).received) /
         delta_t;
     double rate_data =
         static_cast<double>(
-            status_data.acked -
+            status_data.received -
             previous_recv_buffer_status_data_.at(c->index()).received) /
         delta_t;
     total_rate_desc += rate_desc;
