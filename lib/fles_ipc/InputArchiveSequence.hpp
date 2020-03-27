@@ -40,6 +40,17 @@ public:
     next_file();
   }
 
+  /**
+   * \brief Construct an input archive object, open the first archive file for
+   * reading, and read the archive descriptor.
+   *
+   * \param filenames File names of the archive files
+   */
+  InputArchiveSequence(const std::vector<std::string>& filenames)
+      : filenames_(filenames) {
+    next_file();
+  }
+
   /// Delete copy constructor (non-copyable).
   InputArchiveSequence(const InputArchiveSequence&) = delete;
   /// Delete assignment operator (non-copyable).
@@ -61,6 +72,7 @@ private:
   ArchiveDescriptor descriptor_;
 
   std::string filename_template_;
+  const std::vector<std::string> filenames_;
   std::size_t file_count_ = 0;
 
   bool eos_ = false;
@@ -74,12 +86,25 @@ private:
   void next_file() {
     iarchive_ = nullptr;
     ifstream_ = nullptr;
-    auto filename = filename_with_number(file_count_);
+
+    std::string filename;
+    if (!filenames_.empty()) {
+      // We have a predefined vector
+      if (file_count_ >= filenames_.size()) {
+        eos_ = true;
+        return;
+      }
+      filename = filenames_.at(file_count_);
+    } else {
+      // We count ourselves
+      filename = filename_with_number(file_count_);
+    }
+
     ifstream_ = std::unique_ptr<std::ifstream>(
         new std::ifstream(filename, std::ios::binary));
     if (!*ifstream_) {
-      if (file_count_ == 0) {
-        // Not finding the first file is an error
+      if (file_count_ == 0 || !filenames_.empty()) {
+        // Not finding the first file or one given explicitely is an error
         throw std::ios_base::failure("error opening file \"" + filename + "\"");
       }
       // Not finding a later file is just the end-of-stream condition
