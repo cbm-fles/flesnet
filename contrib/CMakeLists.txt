@@ -60,3 +60,5 @@ add_custom_target (
 )
 
 add_custom_target(links ALL DEPENDS run verbs.supp boost.supp shm_mstool shm_flesnet)
+
+install(PROGRAMS preclean DESTINATION bin)
