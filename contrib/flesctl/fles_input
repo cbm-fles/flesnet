@@ -63,7 +63,13 @@ end_readout () {
     done
     exit 0
 }
-trap end_readout SIGINT SIGTERM SIGHUP
+
+END_REQUESTED=false
+request_end () {
+    END_REQUESTED=true
+}
+# set end request on signal
+trap request_end SIGINT SIGTERM SIGHUP
 
 
 echo "Starting readout ..."
@@ -102,6 +108,12 @@ SID=$(ps o sid -p ${SERVER_PID[0]} | tail -n1)
 # block till server is ready
 echo "Waiting for ${#SERVER_PID[@]} flib_server instance(s) ..."
 ${SPMDIR}spm-require -n${#SERVER_PID[@]} flib_server_sem
+echo "... all flib_server(s) started"
+
+# first oppertunity to safely shutdown
+if ${END_REQUESTED} ; then
+    end_readout
+fi
 
 sleep 1
 echo "Enabling readout ..."
@@ -109,6 +121,13 @@ for flib in ${!ADDR[*]}; do
     ${FLESNETDIR}en_readout $flib > ${LOGDIR}flib${flib}_info.log &
     EN_PID+=($!)
 done
+
+# from this point it is safe to shut down any time
+trap end_readout SIGINT SIGTERM SIGHUP
+# check for race conditions
+if ${END_REQUESTED} ; then
+    end_readout
+fi
 
 ${SPMDIR}spm-provide fles_input_sem
 echo "Running ..."
