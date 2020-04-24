@@ -185,7 +185,7 @@ def start(tag):
     runconf.write(runconffile)
 
   # create mattermost message
-  mattermost_msg = "Run {} started with tag '{}'".format(run_id, tag)
+  mattermost_msg = ":white_check_mark:  Run {} started with tag '{}'".format(run_id, tag)
   mattermost_data = mattermost_static.copy()
   mattermost_data["text"] = mattermost_msg
   try:
@@ -247,7 +247,7 @@ def stop():
     runconf.write(runconffile)
 
   # create mattermost message
-  mattermost_msg = "Run {} stopped after {}".format(
+  mattermost_msg = ":stop_sign:  Run {} stopped after {}".format(
     run_id, str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
   mattermost_data = mattermost_static.copy()
   mattermost_data["text"] = mattermost_msg
