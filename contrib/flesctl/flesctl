@@ -185,10 +185,9 @@ def start(tag):
     runconf.write(runconffile)
 
   # create mattermost message
-  mattermost_msg = "Run {} started".format(run_id)
-  mattermost_msg += ",  Tag: {}".format(tag)
-  mattermost_data = mattermost_static
-  mattermost_data.update({"text": mattermost_msg})
+  mattermost_msg = "Run {} started with tag '{}'".format(run_id, tag)
+  mattermost_data = mattermost_static.copy()
+  mattermost_data["text"] = mattermost_msg
   try:
     requests.post(url = mattermost_host, json = mattermost_data)
   except requests.exceptions.RequestException as e:
@@ -248,10 +247,10 @@ def stop():
     runconf.write(runconffile)
 
   # create mattermost message
-  mattermost_msg = "Run {} stopped".format(run_id)
-  mattermost_msg += ",  Duration: {}".format(str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
-  mattermost_data = mattermost_static
-  mattermost_data.update({"text": mattermost_msg})
+  mattermost_msg = "Run {} stopped after {}".format(
+    run_id, str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
+  mattermost_data = mattermost_static.copy()
+  mattermost_data["text"] = mattermost_msg
   try:
     requests.post(url = mattermost_host, json = mattermost_data)
   except requests.exceptions.RequestException as e:
