@@ -26,7 +26,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
               "name of target log file");
   general_add("log-syslog,S",
               po::value<unsigned>(&log_syslog)
-                  ->default_value(log_syslog)
+                  ->implicit_value(log_syslog)
                   ->value_name("<n>"),
               "enable logging to syslog at given log level");
   general_add("maximum-number,n", po::value<uint64_t>(&maximum_number),

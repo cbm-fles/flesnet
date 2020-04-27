@@ -23,9 +23,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
            "set the file log level (all:0)");
   desc_add("log-file,L", po::value<std::string>(&log_file),
            "name of target log file");
-  desc_add("log-syslog,S",
+  desc_add("log-syslog",
            po::value<unsigned>(&log_syslog)
-               ->default_value(log_syslog)
+               ->implicit_value(log_syslog)
                ->value_name("<n>"),
            "enable logging to syslog at given log level");
   desc_add("client-index,c", po::value<int32_t>(&client_index_),
