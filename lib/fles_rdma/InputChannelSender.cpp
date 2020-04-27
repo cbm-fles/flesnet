@@ -118,8 +118,7 @@ void InputChannelSender::report_status() {
     sys_id = static_cast<fles::SubsystemIdentifier>(
         data_source_.desc_buffer().at(written_desc - 1).sys_id);
     std::stringstream eq_id_ss;
-    eq_id_ss << "0x" << std::hex << std::uppercase << std::setfill('0')
-             << std::setw(4)
+    eq_id_ss << std::hex << std::uppercase << std::setfill('0') << std::setw(4)
              << data_source_.desc_buffer().at(written_desc - 1).eq_id;
     eq_id = eq_id_ss.str();
   }
