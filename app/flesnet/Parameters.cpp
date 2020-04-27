@@ -89,7 +89,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
               "write log output to file");
   generic_add("log-syslog,S",
               po::value<unsigned>(&log_syslog)
-                  ->default_value(log_syslog)
+                  ->implicit_value(log_syslog)
                   ->value_name("<n>"),
               "enable logging to syslog at given log level");
   generic_add("monitor,m",

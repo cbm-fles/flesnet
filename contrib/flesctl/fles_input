@@ -99,7 +99,7 @@ done
 
 echo "Starting flib_server ..."
 for flib in ${!ADDR[*]}; do
-    ${FLESNETDIR}flib_server -c /dev/null -L ${LOGDIR}f${flib}_server.log -i ${ADDR[$flib]} \
+    ${FLESNETDIR}flib_server -c /dev/null -L ${LOGDIR}f${flib}_server.log --log-syslog -i ${ADDR[$flib]} \
                         --data-buffer-size-exp $BUF_SIZE_EXP -o $SHM_PREFIX$flib -e "${SPMDIR}spm-provide flib_server_sem" &
     SERVER_PID+=($!)
 done
