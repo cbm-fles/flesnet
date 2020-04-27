@@ -49,7 +49,9 @@ bar_graph(std::vector<T> values, std::string symbols, uint32_t length) {
 
   T sum = 0;
   for (T n : values) {
-    assert(n >= 0);
+    if (!(n >= 0)) {
+      return std::string("bar_graph(): Assertion `n >= 0' failed.");
+    }
     sum += n;
   }
 
