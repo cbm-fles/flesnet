@@ -9,6 +9,8 @@
 #include <cassert>
 #include <chrono>
 #include <iomanip>
+#include <iostream>
+#include <string>
 #include <thread>
 
 InputChannelSender::InputChannelSender(
@@ -111,11 +113,15 @@ void InputChannelSender::report_status() {
   // retrieve SubsystemIdentifier and EquipmentIdentifier
   // from most current MicrosliceDescriptor
   fles::SubsystemIdentifier sys_id = static_cast<fles::SubsystemIdentifier>(0);
-  uint16_t eq_id = 0;
+  std::string eq_id("Undefined");
   if (written_desc > 0) {
     sys_id = static_cast<fles::SubsystemIdentifier>(
         data_source_.desc_buffer().at(written_desc - 1).sys_id);
-    eq_id = data_source_.desc_buffer().at(written_desc - 1).eq_id;
+    std::stringstream eq_id_ss;
+    eq_id_ss << "0x" << std::hex << std::uppercase << std::setfill('0')
+             << std::setw(4)
+             << data_source_.desc_buffer().at(written_desc - 1).eq_id;
+    eq_id = eq_id_ss.str();
   }
 
   L_(debug) << "[i" << input_index_ << "] desc " << status_desc.percentages()
@@ -133,8 +139,7 @@ void InputChannelSender::report_status() {
              << bar_graph(status_desc.vector(), "#x._", 10) << "| "
              << human_readable_count(rate_data, true, "B/s") << " ("
              << human_readable_count(rate_desc, true, "Hz") << ") "
-             << fles::to_string(sys_id) << " 0x" << std::hex
-             << std::setfill('0') << std::setw(4) << eq_id << std::dec;
+             << fles::to_string(sys_id) << " " << eq_id;
 
   if (monitor_client_) {
     // if task is pending and done, clean it up
@@ -152,13 +157,10 @@ void InputChannelSender::report_status() {
     }
 
     if (!monitor_task_) {
-      std::stringstream eq_id_ss;
-      eq_id_ss << "0x" << std::hex << std::setfill('0') << std::setw(4)
-               << eq_id;
       std::string measurement =
           "send_buffer_status,host=" + hostname_ +
           ",input_index=" + std::to_string(input_index_) +
-          ",sys_id=" + fles::to_string(sys_id) + ",eq_id=" + eq_id_ss.str() +
+          ",sys_id=" + fles::to_string(sys_id) + ",eq_id=" + eq_id +
           " data_used=" + std::to_string(status_data.used()) +
           "i,data_sending=" + std::to_string(status_data.sending()) +
           "i,data_freeing=" + std::to_string(status_data.freeing()) +
