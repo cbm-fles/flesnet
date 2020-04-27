@@ -93,8 +93,10 @@ int main(int argc, char* argv[]) {
     return EXIT_SUCCESS;
   }
 
+  bool console = true;
   std::unique_ptr<web::http::client::http_client> client;
   if (!monitor_uri.empty()) {
+    console = false;
     try {
       client = std::unique_ptr<web::http::client::http_client>(
           new web::http::client::http_client(monitor_uri));
@@ -132,7 +134,7 @@ int main(int argc, char* argv[]) {
     uint32_t pci_cycle_cnt = flibs.at(0)->get_perf_interval_cycles();
 
     std::cout << "Starting measurements" << std::endl;
-    if (clear_screen) {
+    if (console && clear_screen) {
       std::cout << "\x1B[2J" << std::flush;
     }
 
@@ -140,10 +142,12 @@ int main(int argc, char* argv[]) {
     size_t loop_cnt = 0;
     auto start = std::chrono::steady_clock::now();
     while (s_interrupted == 0) {
-      if (clear_screen) {
-        std::cout << "\x1B[H" << std::flush;
+      if (console) {
+        if (clear_screen) {
+          std::cout << "\x1B[H" << std::flush;
+        }
+        std::cout << "Measurement " << loop_cnt << ":" << std::endl;
       }
-      std::cout << "Measurement " << loop_cnt << ":" << std::endl;
       std::string measurement;
       size_t j = 0;
       for (auto& flib : flibs) {
@@ -164,16 +168,18 @@ int main(int argc, char* argv[]) {
                               static_cast<float>(pci_perf_acc.at(j).cycle_cnt);
         float pci_idle_acc = 1 - pci_trans_acc - pci_stall_acc;
 
-        std::cout << "FLIB " << j << " (" << flib->print_devinfo() << ")"
-                  << std::endl;
-        std::cout << std::setprecision(4) << "PCIe idle " << std::setw(9)
-                  << pci_idle << "   stall " << std::setw(9) << pci_stall
-                  << " (max. " << std::setw(5) << pci_max_stall << " us)"
-                  << "   trans " << std::setw(9) << pci_trans << std::endl;
-        std::cout << std::setprecision(4) << "avg.      " << std::setw(9)
-                  << pci_idle_acc << "         " << std::setw(9)
-                  << pci_stall_acc << "                "
-                  << "         " << std::setw(9) << pci_trans_acc << std::endl;
+        if (console) {
+          std::cout << "FLIB " << j << " (" << flib->print_devinfo() << ")"
+                    << std::endl;
+          std::cout << std::setprecision(4) << "PCIe idle " << std::setw(9)
+                    << pci_idle << "   stall " << std::setw(9) << pci_stall
+                    << " (max. " << std::setw(5) << pci_max_stall << " us)"
+                    << "   trans " << std::setw(9) << pci_trans << std::endl;
+          std::cout << std::setprecision(4) << "avg.      " << std::setw(9)
+                    << pci_idle_acc << "         " << std::setw(9)
+                    << pci_stall_acc << "                "
+                    << "         " << std::setw(9) << pci_trans_acc << std::endl;
+        }
         if (client) {
           measurement += "flib_status,host=" + hostname +
                          ",flib=" + flib->print_devinfo() +
@@ -181,7 +187,7 @@ int main(int argc, char* argv[]) {
                          ",trans=" + std::to_string(pci_trans) + "\n";
         }
 
-        if (detailed_stats) {
+        if (console && detailed_stats) {
           flib::dma_perf_data_t dma_perf = flib->get_dma_perf();
           dma_perf_acc.at(j).overflow += dma_perf.overflow;
           dma_perf_acc.at(j).cycle_cnt += dma_perf.cycle_cnt;
@@ -216,12 +222,14 @@ int main(int argc, char* argv[]) {
 
         ++j;
       }
-      std::cout << std::endl;
+      if (console) {
+        std::cout << std::endl;
 
-      std::cout << "link  data_sel  up  d_max        bp         ∅     "
-                   "dma_s         ∅    data_s    "
-                   "     ∅    desc_s         ∅     rate"
-                   "         ∅  he  se  eo  do\n";
+        std::cout << "link  data_sel  up  d_max        bp         ∅     "
+          "dma_s         ∅    data_s    "
+          "     ∅    desc_s         ∅     rate"
+          "         ∅  he  se  eo  do\n";
+      }
       j = 0;
       for (auto& flib : flibs) {
         size_t num_links = flib->number_of_hw_links();
@@ -273,30 +281,32 @@ int main(int argc, char* argv[]) {
               (static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) /
                flib::pkt_clk);
 
-          ss << std::setw(2) << j << "/" << i << "  ";
-          ss << std::setw(8) << links.at(i)->data_sel() << "  ";
-          // status
-          ss << std::setw(2) << status.channel_up << "  ";
-          ss << std::setw(5) << status.d_fifo_max_words << "  ";
-          // perf counters
-          ss << std::setprecision(3); // percision + 5 = width
-          ss << std::setw(8) << din_full << "  " << std::setw(8) << din_full_acc
-             << "  ";
-          ss << std::setw(8) << dma_stall << "  " << std::setw(8)
-             << dma_stall_acc << "  ";
-          ss << std::setw(8) << data_buf_stall << "  " << std::setw(8)
-             << data_buf_stall_acc << "  ";
-          ss << std::setw(8) << desc_buf_stall << "  " << std::setw(8)
-             << desc_buf_stall_acc << "  ";
-          ss << std::setprecision(7) << std::setw(7) << event_rate << "  "
-             << std::setw(8) << event_rate_acc << "  ";
-          // error
-          ss << std::setw(2) << status.hard_err << "  ";
-          ss << std::setw(2) << status.soft_err << "  ";
-          ss << std::setw(2) << status.eoe_fifo_overflow << "  ";
-          ss << std::setw(2) << status.d_fifo_overflow << "  ";
+          if (console) {
+            ss << std::setw(2) << j << "/" << i << "  ";
+            ss << std::setw(8) << links.at(i)->data_sel() << "  ";
+            // status
+            ss << std::setw(2) << status.channel_up << "  ";
+            ss << std::setw(5) << status.d_fifo_max_words << "  ";
+            // perf counters
+            ss << std::setprecision(3); // percision + 5 = width
+            ss << std::setw(8) << din_full << "  " << std::setw(8) << din_full_acc
+               << "  ";
+            ss << std::setw(8) << dma_stall << "  " << std::setw(8)
+               << dma_stall_acc << "  ";
+            ss << std::setw(8) << data_buf_stall << "  " << std::setw(8)
+               << data_buf_stall_acc << "  ";
+            ss << std::setw(8) << desc_buf_stall << "  " << std::setw(8)
+               << desc_buf_stall_acc << "  ";
+            ss << std::setprecision(7) << std::setw(7) << event_rate << "  "
+               << std::setw(8) << event_rate_acc << "  ";
+            // error
+            ss << std::setw(2) << status.hard_err << "  ";
+            ss << std::setw(2) << status.soft_err << "  ";
+            ss << std::setw(2) << status.eoe_fifo_overflow << "  ";
+            ss << std::setw(2) << status.d_fifo_overflow << "  ";
 
-          ss << "\n";
+            ss << "\n";
+          }
 
           if (client) {
             measurement +=
@@ -313,7 +323,9 @@ int main(int argc, char* argv[]) {
                 "\n";
           }
         }
-        std::cout << ss.str() << std::endl;
+        if (console) {
+          std::cout << ss.str() << std::endl;
+        }
 
         if (client) {
           client
