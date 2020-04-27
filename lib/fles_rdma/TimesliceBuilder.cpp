@@ -132,15 +132,19 @@ void TimesliceBuilder::report_status() {
     previous_recv_buffer_status_desc_.at(c->index()) = status_desc;
   }
 
-  double min_freeing_desc = min_freeing_plus_free_desc - min_free_desc;
-  double min_freeing_data = min_freeing_plus_free_data - min_free_data;
-  double mixed_desc = 1. - min_used_desc - min_free_desc - min_freeing_desc;
-  double mixed_data = 1. - min_used_data - min_free_data - min_freeing_data;
+  float min_freeing_desc =
+      std::max(min_freeing_plus_free_desc - min_free_desc, 0.f);
+  float min_freeing_data =
+      std::max(min_freeing_plus_free_data - min_free_data, 0.f);
+  float mixed_desc =
+      std::max(1.f - min_used_desc - min_free_desc - min_freeing_desc, 0.f);
+  float mixed_data =
+      std::max(1.f - min_used_data - min_free_data - min_freeing_data, 0.f);
 
-  auto total_status_data = std::vector<double>{min_used_data, mixed_data,
-                                               min_freeing_data, min_free_data};
-  auto total_status_desc = std::vector<double>{min_used_desc, mixed_desc,
-                                               min_freeing_desc, min_free_desc};
+  auto total_status_data = std::vector<float>{min_used_data, mixed_data,
+                                              min_freeing_data, min_free_data};
+  auto total_status_desc = std::vector<float>{min_used_desc, mixed_desc,
+                                              min_freeing_desc, min_free_desc};
 
   L_(status) << "[c" << compute_index_ << "]   |"
              << bar_graph(total_status_data, "#=._", 20) << "|"
