@@ -33,6 +33,7 @@ import time
 import datetime
 import elog
 import signal
+import requests
 
 import inspect
 import pprint
@@ -64,6 +65,10 @@ reservation = config["DEFAULT"].get("Reservation", None)
 # elog configuration
 log_host = 'http://mcbmgw01:8080/mCBM/'
 log_attr_static = {'author': 'flesctl', 'type': 'Routine', 'category': 'mFLES'}
+
+# mattermost configuration
+mattermost_host = "https://mattermost.web.cern.ch/hooks/8i895g6rmjbqdjop3m6ee3t4qo"
+mattermost_static = {"channel": "mfles-status", "username": "flesctl"}
 
 def tags():
   for filename in glob.iglob(confdir + '/**/*.conf', recursive=True):
@@ -179,6 +184,15 @@ def start(tag):
   with open("run.conf", "w") as runconffile:
     runconf.write(runconffile)
 
+  # create mattermost message
+  mattermost_msg = ":white_check_mark:  Run {} started with tag '{}'".format(run_id, tag)
+  mattermost_data = mattermost_static.copy()
+  mattermost_data["text"] = mattermost_msg
+  try:
+    requests.post(url = mattermost_host, json = mattermost_data)
+  except requests.exceptions.RequestException as e:
+    print("Error: Mattermost exception: {}".format(e))
+
 
 def current_run_id():
   output = subprocess.check_output(["/usr/bin/squeue", "-h", "-o", "%j", "-u", run_user],
@@ -231,6 +245,16 @@ def stop():
   runconf['DEFAULT']['elog_id_stop'] = str(log_id_stop)
   with open("run.conf", "w") as runconffile:
     runconf.write(runconffile)
+
+  # create mattermost message
+  mattermost_msg = ":stop_sign:  Run {} stopped after {}".format(
+    run_id, str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
+  mattermost_data = mattermost_static.copy()
+  mattermost_data["text"] = mattermost_msg
+  try:
+    requests.post(url = mattermost_host, json = mattermost_data)
+  except requests.exceptions.RequestException as e:
+    print("Error: Mattermost exception: {}".format(e))
 
   # TODO: cleanup, remove leftovers
 
