@@ -36,7 +36,7 @@ static int get_monitor_event(void *monitor, int *value, char **address) {
   uint16_t event = *(uint16_t *)(data);
   if (value)
     *value = *(uint32_t *)(data + 2);
-  printf("value=%d\n", *(uint32_t *)(data + 2));
+  //printf("value=%d\n", *(uint32_t *)(data + 2));
 
   // Second frame in message contains event address
   zmq_msg_init(&msg);
@@ -51,7 +51,7 @@ static int get_monitor_event(void *monitor, int *value, char **address) {
     memcpy(*address, data, size);
     (*address)[size] = 0;
   }
-  printf("address=%s\n", data);
+  //printf("address=%s\n", data);
   return event;
 }
 
@@ -66,7 +66,7 @@ int main(void) {
   assert(server);
 
   // Monitor all events on client and server sockets
-  rc = zmq_socket_monitor(client, "inproc://monitor-client", ZMQ_EVENT_ALL);
+  int rc = zmq_socket_monitor(client, "inproc://monitor-client", ZMQ_EVENT_ALL);
   assert(rc == 0);
   rc = zmq_socket_monitor(server, "inproc://monitor-server", ZMQ_EVENT_ALL);
   assert(rc == 0);
