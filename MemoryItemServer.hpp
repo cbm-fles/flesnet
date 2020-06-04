@@ -83,12 +83,17 @@ public:
     zmq::message_t message;
 
     {
-      socket_.recv(&identifier);
+      auto result = socket_.recv(identifier);
+      assert(result.value_or(0ULL) > 0ULL);
       assert(identifier.more());
-      socket_.recv(&separator);
-      assert(separator.size() == 0);
+
+      result = socket_.recv(separator);
+      assert(result.has_value());
+      assert(separator.size() == 0LL);
       assert(separator.more());
-      socket_.recv(&message);
+
+      result = socket_.recv(message);
+      assert(result.has_value());
 
       std::string request =
           std::string(static_cast<char*>(message.data()), message.size());
@@ -111,9 +116,9 @@ public:
                   static_cast<char*>(message.data()));
 
       try {
-        socket_.send(identifier, ZMQ_SNDMORE);
-        socket_.send(separator, ZMQ_SNDMORE);
-        socket_.send(message);
+        socket_.send(identifier, zmq::send_flags::sndmore);
+        socket_.send(separator, zmq::send_flags::sndmore);
+        socket_.send(message, zmq::send_flags::none);
         std::cout << "server sent: " << item << std::endl;
       } catch (zmq::error_t& error) {
         std::cout << "ERROR: " << error.what() << std::endl;

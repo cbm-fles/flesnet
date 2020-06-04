@@ -21,12 +21,13 @@ public:
       zmq::message_t message(item.size());
       std::copy_n(static_cast<const char*>(item.data()), message.size(),
                   static_cast<char*>(message.data()));
-      socket_.send(message);
+      socket_.send(message, zmq::send_flags::none);
       std::cout << "client sent: " << item << std::endl;
     }
     {
       zmq::message_t message;
-      socket_.recv(&message);
+      auto result = socket_.recv(message);
+      assert(result.has_value());
       std::string reply =
           std::string(static_cast<char*>(message.data()), message.size());
       std::cout << "client received: " << reply << std::endl;
