@@ -57,9 +57,9 @@ class ConnectionMonitor : public zmq::monitor_t {
 class MemoryItemServer {
 public:
   MemoryItemServer(const std::string& address) {
-    socket_.setsockopt(ZMQ_ROUTER_MANDATORY, 1);
+    socket_.set(zmq::sockopt::router_mandatory, 1);
     socket_.bind(address);
-    //socket_.setsockopt(ZMQ_ROUTER_NOTIFY, 1);
+    // socket_.setsockopt(ZMQ_ROUTER_NOTIFY, 1);
 
     monitor_thread_ = std::unique_ptr<std::thread>(new std::thread([=]() {
       monitor_.monitor(socket_, "inproc://monitor-server", ZMQ_EVENT_ALL);
