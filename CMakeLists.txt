@@ -7,6 +7,7 @@ add_executable(zmq_demo ${APP_SOURCES} ${APP_HEADERS})
 
 target_compile_options(zmq_demo
   PRIVATE "-Wno-unused-parameter"
+  PUBLIC ${ZMQ_CFLAGS_OTHER}
 )
 
 target_include_directories(zmq_demo SYSTEM
