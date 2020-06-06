@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ZMQ_DEMO_ITEMPRODUCER_HPP
+#define ZMQ_DEMO_ITEMPRODUCER_HPP
 
 #include <zmq.hpp>
 
@@ -37,3 +38,5 @@ private:
   zmq::socket_t distributor_socket_{context_, ZMQ_REQ};
   size_t i_ = 0;
 };
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ZMQ_DEMO_ITEMWORKERPROTOCOL_HPP
+#define ZMQ_DEMO_ITEMWORKERPROTOCOL_HPP
 
 #include <iostream>
 #include <ostream>
@@ -23,3 +24,5 @@ inline std::string to_string(WorkerQueuePolicy val) {
   return std::to_string(
       static_cast<std::underlying_type_t<WorkerQueuePolicy>>(val));
 }
+
+#endif

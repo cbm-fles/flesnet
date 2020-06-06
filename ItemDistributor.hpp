@@ -1,8 +1,5 @@
 #ifndef _HOME_CUVELAND_SRC_IPC_DEMO_ZMQ_DEMO_ITEMDISTRIBUTOR_HPP
-
 #define _HOME_CUVELAND_SRC_IPC_DEMO_ZMQ_DEMO_ITEMDISTRIBUTOR_HPP
-
-#pragma once
 
 #include "ItemWorkerProtocol.hpp"
 #include <algorithm>
@@ -78,9 +75,9 @@ public:
       : completed_items_(completed_items), id_(id),
         payload_(std::move(payload)) {}
 
-  ItemID id() const { return id_; }
+  [[nodiscard]] ItemID id() const { return id_; }
 
-  const std::string& payload() const { return payload_; }
+  [[nodiscard]] const std::string& payload() const { return payload_; }
 
   ~Item() { completed_items_.emplace_back(id_); }
 
@@ -100,7 +97,7 @@ struct Worker {
   std::deque<std::shared_ptr<Item>> outstanding_items;
   std::chrono::system_clock::time_point next_heartbeat_time;
 
-  bool wants_item(ItemID id) const { return id % stride == offset; }
+  [[nodiscard]] bool wants_item(ItemID id) const { return id % stride == offset; }
 };
 
 class ItemDistributor {

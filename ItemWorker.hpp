@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ZMQ_DEMO_ITEMWORKER_HPP
+#define ZMQ_DEMO_ITEMWORKER_HPP
 
 #include "ItemWorkerProtocol.hpp"
 #include <chrono>
@@ -71,3 +72,5 @@ private:
   const WorkerQueuePolicy queue_policy_ = WorkerQueuePolicy::QueueAll;
   const std::string client_name_ = "example_client";
 };
+
+#endif
