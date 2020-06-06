@@ -1,23 +1,32 @@
-#include "MemoryItemClient.hpp"
-#include "MemoryItemServer.hpp"
-
-#include <iostream>
+#include "ItemDistributor.hpp"
+#include "ItemProducer.hpp"
+#include "ItemWorker.hpp"
 #include <chrono>
+#include <iostream>
+#include <string>
 #include <thread>
 
-int main(void)
-{
-  MemoryItemServer server("ipc:///tmp/TEST_DELME");
+int main(void) {
+  std::string producer_address = "inproc://TEST";
+  std::string worker_address = "ipc:///tmp/TEST_DELME";
 
-  std::thread server_thread(std::ref(server));
+  ItemDistributor distributor(producer_address, worker_address);
+  std::thread distributor_thread(std::ref(distributor));
 
-  {
-    MemoryItemClient client("ipc:///tmp/TEST_DELME");
-    client.run();
-  }
+  ItemProducer producer(producer_address);
+  std::thread producer_thread(std::ref(producer));
 
-  server.stop();
-  server_thread.join();
+  ItemWorker worker1(worker_address);
+  std::thread worker1_thread(std::ref(worker1));
+
+  ItemWorker worker2(worker_address);
+  std::thread worker2_thread(std::ref(worker2));
+
+  producer_thread.join();
+  distributor.stop();
+  distributor_thread.join();
+  worker1_thread.join();
+  worker2_thread.join();
 
   return 0;
 }
