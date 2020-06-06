@@ -1,3 +1,7 @@
+#ifndef _HOME_CUVELAND_SRC_IPC_DEMO_ZMQ_DEMO_ITEMDISTRIBUTOR_HPP
+
+#define _HOME_CUVELAND_SRC_IPC_DEMO_ZMQ_DEMO_ITEMDISTRIBUTOR_HPP
+
 #pragma once
 
 #include "ItemWorkerProtocol.hpp"
@@ -12,6 +16,8 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <utility>
+
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
@@ -68,10 +74,9 @@ on reception of a completion:
 
 class Item {
 public:
-  Item(std::vector<ItemID>& completed_items,
-       ItemID id,
-       const std::string& payload)
-      : completed_items_(completed_items), id_(id), payload_(payload) {}
+  Item(std::vector<ItemID>& completed_items, ItemID id, std::string payload)
+      : completed_items_(completed_items), id_(id),
+        payload_(std::move(payload)) {}
 
   ItemID id() const { return id_; }
 
@@ -86,8 +91,8 @@ private:
 };
 
 struct Worker {
-  size_t stride;
-  size_t offset;
+  size_t stride{};
+  size_t offset{};
   WorkerQueuePolicy queue_policy;
   std::string client_name;
 
@@ -113,9 +118,9 @@ public:
   void operator()() {
     zmq::active_poller_t poller;
     poller.add(generator_socket_, zmq::event_flags::pollin,
-               [&](zmq::event_flags e) { on_generator_pollin(); });
+               [&](zmq::event_flags /*e*/) { on_generator_pollin(); });
     poller.add(worker_socket_, zmq::event_flags::pollin,
-               [&](zmq::event_flags e) { on_worker_pollin(); });
+               [&](zmq::event_flags /*e*/) { on_worker_pollin(); });
 
     while (true) {
       poller.wait(std::chrono::milliseconds{1000});
@@ -126,7 +131,7 @@ public:
   void stop() {}
 
   ~ItemDistributor() {
-    // TODO: sensible clean-up
+    // TODO(cuveland): sensible clean-up
   }
 
 private:
@@ -134,7 +139,7 @@ private:
   void send_heartbeat() {
     for (auto& [identity, w] : workers_) {
       if (w->outstanding_items.empty()) {
-        // TODO: ... AND some timing things ...
+        // TODO(cuveland): ... AND some timing things ...
         send_heartbeat(identity);
       }
     }
@@ -198,8 +203,8 @@ private:
   void on_worker_pollin() {
     zmq::multipart_t message(worker_socket_);
     assert(message.size() >= 2);       // Multipart format ensured by ZMQ
-    assert(message.at(0).size() > 0);  // for ROUTER sockets
-    assert(message.at(1).size() == 0); //
+    assert(!message.at(0).empty());    // for ROUTER sockets
+    assert(message.at(1).empty());     //
 
     std::string identity = message.peekstr(1);
 
@@ -298,3 +303,5 @@ private:
   std::vector<ItemID> completed_items_;
   std::map<std::string, std::unique_ptr<Worker>> workers_;
 };
+
+#endif
