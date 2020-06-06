@@ -9,11 +9,11 @@
 
 class ItemWorker {
 public:
-  ItemWorker(const std::string& distributor_address) {
+  explicit ItemWorker(const std::string& distributor_address) {
     distributor_socket_.connect(distributor_address);
   };
 
-  void do_work(ItemID id, std::string payload) {
+  static void do_work(ItemID /*id*/, const std::string& /*payload*/) {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
 

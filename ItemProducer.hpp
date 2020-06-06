@@ -5,7 +5,7 @@
 
 class ItemProducer {
 public:
-  ItemProducer(const std::string& distributor_address) {
+  explicit ItemProducer(const std::string& distributor_address) {
     distributor_socket_.connect(distributor_address);
   };
 
