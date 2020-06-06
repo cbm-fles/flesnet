@@ -105,29 +105,23 @@ public:
   ItemDistributor(const std::string& producer_address,
                   const std::string& worker_address) {
     generator_socket_.bind(producer_address);
+    generator_socket_.set(zmq::sockopt::linger, 0);
     worker_socket_.set(zmq::sockopt::router_mandatory, 1);
     worker_socket_.set(zmq::sockopt::router_notify, ZMQ_NOTIFY_DISCONNECT);
     worker_socket_.bind(worker_address);
+    worker_socket_.set(zmq::sockopt::linger, 0);
   }
 
   std::shared_ptr<Item> receive_producer_item() {
-    ItemID id;
-    std::string payload;
-
-    zmq::message_t id_message;
-    zmq::message_t payload_message;
+    zmq::multipart_t message(generator_socket_);
 
     // Receive item ID
-    const auto id_result = generator_socket_.recv(id_message);
-    assert(id_result.has_value());
-    id = std::stoull(id_message.to_string());
+    ItemID id = std::stoull(message.popstr());
 
     // Receive optional item payload
-    if (id_message.more()) {
-      const auto payload_result = generator_socket_.recv(payload_message);
-      assert(payload_result.has_value());
-      payload = payload_message.to_string();
-      assert(!payload_message.more());
+    std::string payload;
+    if (!message.empty()) {
+      payload = message.popstr();
     }
 
     return std::make_shared<Item>(completed_items_, id, payload);
@@ -181,7 +175,7 @@ public:
 
           // Handle ZMQ disconnect notification
           std::cout << "Info: received disconnect notification" << std::endl;
-          if (workers_.erase(identity) != 0) {
+          if (workers_.erase(identity) == 0) {
             std::cerr << "Error: disconnect from unknown worker" << std::endl;
           }
 
@@ -239,29 +233,33 @@ public:
 
 private:
   void send_work_item(const std::string& identity, const Item& item) {
-    std::string message_str = "WORK_ITEM " + std::to_string(item.id());
-    auto message = zmq::buffer(message_str);
-    try {
-      worker_socket_.send(zmq::buffer(identity), zmq::send_flags::sndmore);
-      worker_socket_.send(zmq::message_t(), zmq::send_flags::sndmore);
-      if (item.payload().empty()) {
-        worker_socket_.send(message, zmq::send_flags::none);
-      } else {
-        worker_socket_.send(message, zmq::send_flags::sndmore);
-        worker_socket_.send(zmq::buffer(item.payload()), zmq::send_flags::none);
-      }
-    } catch (zmq::error_t& error) {
-      std::cout << "ERROR: " << error.what() << std::endl;
+    // Prepare first two message parts as required for a ROUTER socket
+    zmq::multipart_t message(identity);
+    message.add(zmq::message_t(0));
+
+    // Prepare message contents
+    message.addstr("WORK_ITEM " + std::to_string(item.id()));
+    if (!item.payload().empty()) {
+      message.addstr(item.payload());
+    }
+
+    // Send the message
+    if (!message.send(worker_socket_)) {
+      std::cerr << "Error: message send failed";
     }
   }
 
   void send_disconnect(const std::string& identity) {
-    try {
-      worker_socket_.send(zmq::buffer(identity), zmq::send_flags::sndmore);
-      worker_socket_.send(zmq::message_t(), zmq::send_flags::sndmore);
-      worker_socket_.send(zmq::buffer("DISCONNECT"));
-    } catch (zmq::error_t& error) {
-      std::cout << "ERROR: " << error.what() << std::endl;
+    // Prepare first two message parts as required for a ROUTER socket
+    zmq::multipart_t message(identity);
+    message.add(zmq::message_t(0));
+
+    // Prepare message contents
+    message.addstr("DISCONNECT");
+
+    // Send the message
+    if (!message.send(worker_socket_)) {
+      std::cerr << "Error: message send failed";
     }
   }
 
