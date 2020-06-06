@@ -38,6 +38,8 @@ public:
         std::stringstream s(message_string);
         s >> command >> id;
         assert(!s.fail());
+      } else if (message_string.rfind("HEARTBEAT", 0) == 0) {
+        std::cerr << "received heartbeat message" << std::endl;
       } else {
         std::cerr << "this should not happen" << std::endl;
       }

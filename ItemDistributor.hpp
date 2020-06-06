@@ -93,12 +93,10 @@ struct Worker {
 
   std::deque<std::shared_ptr<Item>> waiting_items;
   std::deque<std::shared_ptr<Item>> outstanding_items;
-  // std::chrono::system_clock::time_point next_heartbeat_time;
+  std::chrono::system_clock::time_point next_heartbeat_time;
 
   bool wants_item(ItemID id) const { return id % stride == offset; }
 };
-
-#define HEARTBEAT_INTERVAL 1000 // ms
 
 class ItemDistributor {
 public:
@@ -110,6 +108,47 @@ public:
     worker_socket_.set(zmq::sockopt::router_notify, ZMQ_NOTIFY_DISCONNECT);
     worker_socket_.bind(worker_address);
     worker_socket_.set(zmq::sockopt::linger, 0);
+  }
+
+  void operator()() {
+    zmq::active_poller_t poller;
+    poller.add(generator_socket_, zmq::event_flags::pollin,
+               [&](zmq::event_flags e) { on_generator_pollin(); });
+    poller.add(worker_socket_, zmq::event_flags::pollin,
+               [&](zmq::event_flags e) { on_worker_pollin(); });
+
+    while (true) {
+      poller.wait(std::chrono::milliseconds{1000});
+      send_heartbeat();
+    }
+  }
+
+  void stop() {}
+
+  ~ItemDistributor() {
+    // TODO: sensible clean-up
+  }
+
+private:
+  // Send heartbeat messages to workers that have been idle for a while
+  void send_heartbeat() {
+    for (auto& [identity, w] : workers_) {
+      if (w->outstanding_items.empty()) {
+        // TODO: ... AND some timing things ...
+        send_heartbeat(identity);
+      }
+    }
+  }
+
+  void send_pending_completions() {
+    try {
+      for (auto item : completed_items_) {
+        generator_socket_.send(zmq::buffer(std::to_string(item)));
+      }
+    } catch (zmq::error_t& error) {
+      std::cout << "ERROR: " << error.what() << std::endl;
+    }
+    completed_items_.clear();
   }
 
   std::shared_ptr<Item> receive_producer_item() {
@@ -127,111 +166,87 @@ public:
     return std::make_shared<Item>(completed_items_, id, payload);
   }
 
-  void operator()() {
-    while (true) {
-      zmq::pollitem_t items[] = {
-          {static_cast<void*>(generator_socket_), 0, ZMQ_POLLIN, 0},
-          {static_cast<void*>(worker_socket_), 0, ZMQ_POLLIN, 0}};
-      zmq::poll(items, 2, HEARTBEAT_INTERVAL);
+  // Handle incoming message (work item) from the generator
+  void on_generator_pollin() {
+    auto new_item = receive_producer_item();
 
-      // Handle producer activity
-      if (items[0].revents & ZMQ_POLLIN) {
-
-        // Receive a new work item from the producer
-        auto new_item = receive_producer_item();
-
-        // Distribute the new work item
-        for (auto& [identity, w] : workers_) {
-          if (w->wants_item(new_item->id())) {
-            if (w->queue_policy == WorkerQueuePolicy::PrebufferOne) {
-              w->waiting_items.clear();
-            }
-            if (w->outstanding_items.empty()) {
-              // The worker is idle, send the item immediately
-              w->outstanding_items.push_back(new_item);
-              send_work_item(identity, *new_item);
-            } else {
-              // The worker is busy, enqueue the item
-              if (w->queue_policy != WorkerQueuePolicy::Skip) {
-                w->waiting_items.push_back(new_item);
-              }
-            }
-          }
+    // Distribute the new work item
+    for (auto& [identity, w] : workers_) {
+      if (w->wants_item(new_item->id())) {
+        if (w->queue_policy == WorkerQueuePolicy::PrebufferOne) {
+          w->waiting_items.clear();
         }
-      }
-
-      // Handle worker activity
-      if (items[1].revents & ZMQ_POLLIN) {
-
-        // Receive worker message
-        zmq::multipart_t message(worker_socket_);
-        assert(message.size() >= 2);       // Multipart format ensured by ZMQ
-        assert(message.at(0).size() > 0);  // for ROUTER sockets
-        assert(message.at(1).size() == 0); //
-
-        std::string identity = message.peekstr(1);
-
-        if (message.size() == 2) {
-
-          // Handle ZMQ disconnect notification
-          std::cout << "Info: received disconnect notification" << std::endl;
-          if (workers_.erase(identity) == 0) {
-            std::cerr << "Error: disconnect from unknown worker" << std::endl;
-          }
-
+        if (w->outstanding_items.empty()) {
+          // The worker is idle, send the item immediately
+          w->outstanding_items.push_back(new_item);
+          send_work_item(identity, *new_item);
         } else {
-
-          std::string message_string = message.peekstr(3);
-          if (message_string.rfind("REGISTER ", 0) == 0) {
-            // Handle new worker registration
-            auto c = std::make_unique<Worker>();
-            std::string command;
-            std::stringstream s(message_string);
-            s >> command >> c->stride >> c->offset >> c->queue_policy >>
-                c->client_name;
-            assert(!s.fail());
-            workers_[identity] = std::move(c);
-          } else if (message_string.rfind("COMPLETE ", 0) == 0) {
-            // Handle worker completion message
-            auto& c = workers_.at(identity);
-            std::string command;
-            ItemID id;
-            std::stringstream s(message_string);
-            s >> command >> id;
-            assert(!s.fail());
-            // Find the corresponding outstanding item object and delete it
-            auto it = std::find_if(
-                std::begin(c->outstanding_items),
-                std::end(c->outstanding_items),
-                [id](const std::shared_ptr<Item>& i) { return i->id() == id; });
-            assert(it != std::end(c->outstanding_items));
-            c->outstanding_items.erase(it);
-            // Send next item if available
-            if (!c->waiting_items.empty()) {
-              auto item = c->waiting_items.front();
-              c->waiting_items.pop_front();
-              c->outstanding_items.push_back(item);
-              send_work_item(identity, *item);
-            }
+          // The worker is busy, enqueue the item
+          if (w->queue_policy != WorkerQueuePolicy::Skip) {
+            w->waiting_items.push_back(new_item);
           }
         }
       }
-
-      // send completions to generator
-      try {
-        for (auto item : completed_items_) {
-          generator_socket_.send(zmq::buffer(std::to_string(item)));
-        }
-      } catch (zmq::error_t& error) {
-        std::cout << "ERROR: " << error.what() << std::endl;
-      }
-      completed_items_.clear();
     }
+    new_item = nullptr;
+    // A pending completion could occur here if this item is not sent to any
+    // worker, so...
+    send_pending_completions();
   }
 
-  void stop() {}
+  // Handle incoming message from a worker
+  void on_worker_pollin() {
+    zmq::multipart_t message(worker_socket_);
+    assert(message.size() >= 2);       // Multipart format ensured by ZMQ
+    assert(message.at(0).size() > 0);  // for ROUTER sockets
+    assert(message.at(1).size() == 0); //
 
-private:
+    std::string identity = message.peekstr(1);
+
+    if (message.size() == 2) {
+      // Handle ZMQ worker disconnect notification
+      std::cout << "Info: received disconnect notification" << std::endl;
+      if (workers_.erase(identity) == 0) {
+        std::cerr << "Error: disconnect from unknown worker" << std::endl;
+      }
+    } else {
+      // Handle general message from a worker
+      std::string message_string = message.peekstr(3);
+      if (message_string.rfind("REGISTER ", 0) == 0) {
+        // Handle new worker registration
+        auto c = std::make_unique<Worker>();
+        std::string command;
+        std::stringstream s(message_string);
+        s >> command >> c->stride >> c->offset >> c->queue_policy >>
+            c->client_name;
+        assert(!s.fail());
+        workers_[identity] = std::move(c);
+      } else if (message_string.rfind("COMPLETE ", 0) == 0) {
+        // Handle worker completion message
+        auto& c = workers_.at(identity);
+        std::string command;
+        ItemID id;
+        std::stringstream s(message_string);
+        s >> command >> id;
+        assert(!s.fail());
+        // Find the corresponding outstanding item object and delete it
+        auto it = std::find_if(
+            std::begin(c->outstanding_items), std::end(c->outstanding_items),
+            [id](const std::shared_ptr<Item>& i) { return i->id() == id; });
+        assert(it != std::end(c->outstanding_items));
+        c->outstanding_items.erase(it);
+        // Send next item if available
+        if (!c->waiting_items.empty()) {
+          auto item = c->waiting_items.front();
+          c->waiting_items.pop_front();
+          c->outstanding_items.push_back(item);
+          send_work_item(identity, *item);
+        }
+      }
+    }
+    send_pending_completions();
+  }
+
   void send_work_item(const std::string& identity, const Item& item) {
     // Prepare first two message parts as required for a ROUTER socket
     zmq::multipart_t message(identity);
@@ -256,6 +271,20 @@ private:
 
     // Prepare message contents
     message.addstr("DISCONNECT");
+
+    // Send the message
+    if (!message.send(worker_socket_)) {
+      std::cerr << "Error: message send failed";
+    }
+  }
+
+  void send_heartbeat(const std::string& identity) {
+    // Prepare first two message parts as required for a ROUTER socket
+    zmq::multipart_t message(identity);
+    message.add(zmq::message_t(0));
+
+    // Prepare message contents
+    message.addstr("HEARTBEAT");
 
     // Send the message
     if (!message.send(worker_socket_)) {
