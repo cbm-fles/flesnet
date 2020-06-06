@@ -12,6 +12,7 @@ target_compile_options(zmq_demo
 
 target_include_directories(zmq_demo SYSTEM
   PUBLIC ${ZMQ_INCLUDE_DIRS}
+  PUBLIC ${PROJECT_SOURCE_DIR}/external/cppzmq
 )
 
 target_link_libraries(zmq_demo

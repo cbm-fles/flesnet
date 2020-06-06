@@ -13,6 +13,7 @@
 #include <string>
 #include <thread>
 #include <zmq.hpp>
+#include <zmq_addon.hpp>
 
 /*
 
@@ -169,29 +170,24 @@ public:
       if (items[1].revents & ZMQ_POLLIN) {
 
         // Receive worker message
-        zmq::message_t identity;
-        const auto result1 = worker_socket_.recv(identity);
-        assert(result1.value_or(0ULL) > 0ULL);
-        assert(identity.more());
+        zmq::multipart_t message(worker_socket_);
+        assert(message.size() >= 2);       // Multipart format ensured by ZMQ
+        assert(message.at(0).size() > 0);  // for ROUTER sockets
+        assert(message.at(1).size() == 0); //
 
-        zmq::message_t separator;
-        const auto result2 = worker_socket_.recv(separator);
-        assert(result2.has_value());
-        assert(separator.size() == 0ULL);
+        std::string identity = message.peekstr(1);
 
-        if (!separator.more()) {
+        if (message.size() == 2) {
 
           // Handle ZMQ disconnect notification
-          std::cout << "received disconnect notification" << std::endl;
-          auto num_erased = workers_.erase(identity.to_string());
-          assert(num_erased == 1);
+          std::cout << "Info: received disconnect notification" << std::endl;
+          if (workers_.erase(identity) != 0) {
+            std::cerr << "Error: disconnect from unknown worker" << std::endl;
+          }
 
         } else {
 
-          zmq::message_t message;
-          const auto result = worker_socket_.recv(message);
-          assert(result.has_value());
-          std::string message_string = message.to_string();
+          std::string message_string = message.peekstr(3);
           if (message_string.rfind("REGISTER ", 0) == 0) {
             // Handle new worker registration
             auto c = std::make_unique<Worker>();
@@ -200,10 +196,10 @@ public:
             s >> command >> c->stride >> c->offset >> c->queue_policy >>
                 c->client_name;
             assert(!s.fail());
-            workers_[identity.to_string()] = std::move(c);
+            workers_[identity] = std::move(c);
           } else if (message_string.rfind("COMPLETE ", 0) == 0) {
             // Handle worker completion message
-            auto& c = workers_.at(identity.to_string());
+            auto& c = workers_.at(identity);
             std::string command;
             ItemID id;
             std::stringstream s(message_string);
@@ -221,7 +217,7 @@ public:
               auto item = c->waiting_items.front();
               c->waiting_items.pop_front();
               c->outstanding_items.push_back(item);
-              send_work_item(identity.to_string(), *item);
+              send_work_item(identity, *item);
             }
           }
         }
@@ -242,7 +238,6 @@ public:
   void stop() {}
 
 private:
-
   void send_work_item(const std::string& identity, const Item& item) {
     std::string message_str = "WORK_ITEM " + std::to_string(item.id());
     auto message = zmq::buffer(message_str);
