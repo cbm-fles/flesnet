@@ -6,7 +6,7 @@
 #include <string>
 #include <thread>
 
-int main(void) {
+int main() {
   std::string producer_address = "inproc://TEST";
   std::string worker_address = "ipc:///tmp/TEST_DELME";
 
