@@ -139,7 +139,7 @@ public:
         std::begin(outstanding_items_), std::end(outstanding_items_),
         [id](const std::shared_ptr<Item>& i) { return i->id() == id; });
     if (it == std::end(outstanding_items_)) {
-      throw std::invalid_argument("Worker sent an invalid completion message");
+      throw std::invalid_argument("Invalid work completion");
     }
     outstanding_items_.erase(it);
   }
@@ -150,7 +150,7 @@ private:
     std::stringstream s(message);
     s >> command >> stride_ >> offset_ >> queue_policy_ >> client_name_;
     if (s.fail()) {
-      throw std::invalid_argument("Worker sent an invalid register message");
+      throw std::invalid_argument("Invalid register message");
     }
   }
 
