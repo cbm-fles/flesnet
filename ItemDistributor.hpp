@@ -71,39 +71,92 @@ on reception of a completion:
 
 class Item {
 public:
-  Item(std::vector<ItemID>& completed_items, ItemID id, std::string payload)
+  Item(std::vector<ItemID>* completed_items, ItemID id, std::string payload)
       : completed_items_(completed_items), id_(id),
         payload_(std::move(payload)) {}
+
+  // Item is non-copyable
+  Item(const Item& other) = delete;
+  Item& operator=(const Item& other) = delete;
+  Item(Item&& other) = delete;
+  Item& operator=(Item&& other) = delete;
 
   [[nodiscard]] ItemID id() const { return id_; }
 
   [[nodiscard]] const std::string& payload() const { return payload_; }
 
-  ~Item() { completed_items_.emplace_back(id_); }
+  ~Item() { completed_items_->emplace_back(id_); }
 
 private:
-  std::vector<ItemID>& completed_items_;
+  std::vector<ItemID>* completed_items_;
   const ItemID id_;
   const std::string payload_;
-
-  // Item is non-copyable
-  Item(const Item& other) = delete;
-  Item& operator=(const Item& other) = delete;
 };
 
-struct Worker {
-  size_t stride{};
-  size_t offset{};
-  WorkerQueuePolicy queue_policy;
-  std::string client_name;
+class Worker {
+public:
+  explicit Worker(std::string message) { initialize_from_string(message); }
 
-  std::deque<std::shared_ptr<Item>> waiting_items;
-  std::deque<std::shared_ptr<Item>> outstanding_items;
-  std::chrono::system_clock::time_point next_heartbeat_time;
+  // Worker is non-copyable
+  Worker(const Worker& other) = delete;
+  Worker& operator=(const Worker& other) = delete;
+  Worker(Worker&& other) = delete;
+  Worker& operator=(Worker&& other) = delete;
 
-  [[nodiscard]] bool wants_item(ItemID id) const {
-    return id % stride == offset;
+  [[nodiscard]] bool wants(ItemID id) const { return id % stride_ == offset_; }
+
+  [[nodiscard]] WorkerQueuePolicy queue_policy() const { return queue_policy_; }
+
+  [[nodiscard]] bool queue_empty() const { return waiting_items_.empty(); }
+
+  void clear_queue() { waiting_items_.clear(); }
+
+  void push_queue(std::shared_ptr<Item> item) { waiting_items_.push_back(item); }
+
+  std::shared_ptr<Item> pop_queue() {
+    if (queue_empty()) {
+      return nullptr;
+    }
+    std::shared_ptr<Item> item = waiting_items_.front();
+    waiting_items_.pop_front();
+    return item;
   }
+
+  [[nodiscard]] bool is_idle() const { return outstanding_items_.empty(); }
+
+  void add_outstanding(std::shared_ptr<Item> item) {
+    outstanding_items_.push_back(item);
+  }
+
+  // Find an outstanding item object and delete it
+  void delete_outstanding(ItemID id) {
+    auto it = std::find_if(
+        std::begin(outstanding_items_), std::end(outstanding_items_),
+        [id](const std::shared_ptr<Item>& i) { return i->id() == id; });
+    if (it == std::end(outstanding_items_)) {
+      throw std::invalid_argument("Worker sent an invalid completion message");
+    }
+    outstanding_items_.erase(it);
+  }
+
+private:
+  void initialize_from_string(std::string message) {
+    std::string command;
+    std::stringstream s(message);
+    s >> command >> stride_ >> offset_ >> queue_policy_ >> client_name_;
+    if (s.fail()) {
+      throw std::invalid_argument("Worker sent an invalid register message");
+    }
+  }
+
+  size_t stride_{};
+  size_t offset_{};
+  WorkerQueuePolicy queue_policy_{};
+  std::string client_name_;
+
+  std::deque<std::shared_ptr<Item>> waiting_items_;
+  std::deque<std::shared_ptr<Item>> outstanding_items_;
+  std::chrono::system_clock::time_point next_heartbeat_time_;
 };
 
 class ItemDistributor {
@@ -117,6 +170,12 @@ public:
     worker_socket_.bind(worker_address);
     worker_socket_.set(zmq::sockopt::linger, 0);
   }
+
+  // ItemDistributor is non-copyable
+  ItemDistributor(const ItemDistributor& other) = delete;
+  ItemDistributor& operator=(const ItemDistributor& other) = delete;
+  ItemDistributor(ItemDistributor&& other) = delete;
+  ItemDistributor& operator=(ItemDistributor&& other) = delete;
 
   void operator()() {
     zmq::active_poller_t poller;
@@ -133,15 +192,14 @@ public:
 
   void stop() {}
 
-  ~ItemDistributor() {
-    // TODO(cuveland): sensible clean-up
-  }
+  // TODO(cuveland): sensible clean-up
+  ~ItemDistributor() = default;
 
 private:
   // Send heartbeat messages to workers that have been idle for a while
   void send_heartbeat() {
-    for (auto& [identity, w] : workers_) {
-      if (w->outstanding_items.empty()) {
+    for (auto& [identity, worker] : workers_) {
+      if (worker->is_idle()) {
         // TODO(cuveland): ... AND some timing things ...
         send_heartbeat(identity);
       }
@@ -171,7 +229,7 @@ private:
       payload = message.popstr();
     }
 
-    return std::make_shared<Item>(completed_items_, id, payload);
+    return std::make_shared<Item>(&completed_items_, id, payload);
   }
 
   // Handle incoming message (work item) from the generator
@@ -179,19 +237,19 @@ private:
     auto new_item = receive_producer_item();
 
     // Distribute the new work item
-    for (auto& [identity, w] : workers_) {
-      if (w->wants_item(new_item->id())) {
-        if (w->queue_policy == WorkerQueuePolicy::PrebufferOne) {
-          w->waiting_items.clear();
+    for (auto& [identity, worker] : workers_) {
+      if (worker->wants(new_item->id())) {
+        if (worker->queue_policy() == WorkerQueuePolicy::PrebufferOne) {
+          worker->clear_queue();
         }
-        if (w->outstanding_items.empty()) {
+        if (worker->is_idle()) {
           // The worker is idle, send the item immediately
-          w->outstanding_items.push_back(new_item);
+          worker->add_outstanding(new_item);
           send_work_item(identity, *new_item);
         } else {
           // The worker is busy, enqueue the item
-          if (w->queue_policy != WorkerQueuePolicy::Skip) {
-            w->waiting_items.push_back(new_item);
+          if (worker->queue_policy() != WorkerQueuePolicy::Skip) {
+            worker->push_queue(new_item);
           }
         }
       }
@@ -222,32 +280,22 @@ private:
       std::string message_string = message.peekstr(3);
       if (message_string.rfind("REGISTER ", 0) == 0) {
         // Handle new worker registration
-        auto c = std::make_unique<Worker>();
-        std::string command;
-        std::stringstream s(message_string);
-        s >> command >> c->stride >> c->offset >> c->queue_policy >>
-            c->client_name;
-        assert(!s.fail());
-        workers_[identity] = std::move(c);
+        auto worker = std::make_unique<Worker>(message_string);
+        workers_[identity] = std::move(worker);
       } else if (message_string.rfind("COMPLETE ", 0) == 0) {
         // Handle worker completion message
-        auto& c = workers_.at(identity);
+        auto& worker = workers_.at(identity);
         std::string command;
         ItemID id;
         std::stringstream s(message_string);
         s >> command >> id;
         assert(!s.fail());
         // Find the corresponding outstanding item object and delete it
-        auto it = std::find_if(
-            std::begin(c->outstanding_items), std::end(c->outstanding_items),
-            [id](const std::shared_ptr<Item>& i) { return i->id() == id; });
-        assert(it != std::end(c->outstanding_items));
-        c->outstanding_items.erase(it);
+        worker->delete_outstanding(id);
         // Send next item if available
-        if (!c->waiting_items.empty()) {
-          auto item = c->waiting_items.front();
-          c->waiting_items.pop_front();
-          c->outstanding_items.push_back(item);
+        if (!worker->queue_empty()) {
+          auto item = worker->pop_queue();
+          worker->add_outstanding(item);
           send_work_item(identity, *item);
         }
       }
