@@ -274,7 +274,7 @@ private:
     assert(!message.at(0).empty()); // for ROUTER sockets
     assert(message.at(1).empty());  //
 
-    std::string identity = message.peekstr(1);
+    std::string identity = message.peekstr(0);
 
     if (message.size() == 2) {
       // Handle ZMQ worker disconnect notification
@@ -284,7 +284,7 @@ private:
       }
     } else {
       // Handle general message from a worker
-      std::string message_string = message.peekstr(3);
+      std::string message_string = message.peekstr(2);
       if (message_string.rfind("REGISTER ", 0) == 0) {
         // Handle new worker registration
         auto worker = std::make_unique<Worker>(message_string);
@@ -311,6 +311,7 @@ private:
   }
 
   void send_work_item(const std::string& identity, const Item& item) {
+    assert(!identity.empty());
     // Prepare first two message parts as required for a ROUTER socket
     zmq::multipart_t message(identity);
     message.add(zmq::message_t(0));
@@ -328,6 +329,7 @@ private:
   }
 
   void send_disconnect(const std::string& identity) {
+    assert(!identity.empty());
     // Prepare first two message parts as required for a ROUTER socket
     zmq::multipart_t message(identity);
     message.add(zmq::message_t(0));
@@ -342,6 +344,7 @@ private:
   }
 
   void send_heartbeat(const std::string& identity) {
+    assert(!identity.empty());
     // Prepare first two message parts as required for a ROUTER socket
     zmq::multipart_t message(identity);
     message.add(zmq::message_t(0));

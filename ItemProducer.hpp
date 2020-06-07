@@ -32,6 +32,7 @@ public:
       // send work item
       std::cout << "GENERATE " << i_ << std::endl;
       distributor_socket_.send(zmq::buffer(std::to_string(i_)));
+      ++i_;
     }
   }
 
