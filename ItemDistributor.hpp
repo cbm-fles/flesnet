@@ -356,8 +356,8 @@ private:
   }
 
   zmq::context_t context_{1};
-  zmq::socket_t generator_socket_{context_, ZMQ_PAIR};
-  zmq::socket_t worker_socket_{context_, ZMQ_ROUTER};
+  zmq::socket_t generator_socket_{context_, zmq::socket_type::pair};
+  zmq::socket_t worker_socket_{context_, zmq::socket_type::router};
   std::vector<ItemID> completed_items_;
   std::map<std::string, std::unique_ptr<Worker>> workers_;
 };

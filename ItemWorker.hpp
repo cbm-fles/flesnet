@@ -67,7 +67,7 @@ public:
 
 private:
   zmq::context_t context_{1};
-  zmq::socket_t distributor_socket_{context_, ZMQ_REQ};
+  zmq::socket_t distributor_socket_{context_, zmq::socket_type::req};
 
   const size_t stride_ = 1;
   const size_t offset_ = 0;

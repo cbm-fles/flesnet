@@ -37,7 +37,7 @@ public:
 
 private:
   zmq::context_t context_{1};
-  zmq::socket_t distributor_socket_{context_, ZMQ_REQ};
+  zmq::socket_t distributor_socket_{context_, zmq::socket_type::pair};
   size_t i_ = 0;
 };
 
