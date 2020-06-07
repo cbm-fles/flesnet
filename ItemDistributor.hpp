@@ -85,6 +85,10 @@ private:
   std::vector<ItemID>& completed_items_;
   const ItemID id_;
   const std::string payload_;
+
+  // Item is non-copyable
+  Item(const Item& other) = delete;
+  Item& operator=(const Item& other) = delete;
 };
 
 struct Worker {
@@ -97,7 +101,9 @@ struct Worker {
   std::deque<std::shared_ptr<Item>> outstanding_items;
   std::chrono::system_clock::time_point next_heartbeat_time;
 
-  [[nodiscard]] bool wants_item(ItemID id) const { return id % stride == offset; }
+  [[nodiscard]] bool wants_item(ItemID id) const {
+    return id % stride == offset;
+  }
 };
 
 class ItemDistributor {
@@ -199,9 +205,9 @@ private:
   // Handle incoming message from a worker
   void on_worker_pollin() {
     zmq::multipart_t message(worker_socket_);
-    assert(message.size() >= 2);       // Multipart format ensured by ZMQ
-    assert(!message.at(0).empty());    // for ROUTER sockets
-    assert(message.at(1).empty());     //
+    assert(message.size() >= 2);    // Multipart format ensured by ZMQ
+    assert(!message.at(0).empty()); // for ROUTER sockets
+    assert(message.at(1).empty());  //
 
     std::string identity = message.peekstr(1);
 

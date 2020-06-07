@@ -27,7 +27,7 @@ public:
     while (true) {
 
       // receive message
-      ItemID id;
+      ItemID id{};
       std::string payload;
       zmq::message_t message;
       const auto result = distributor_socket_.recv(message);
