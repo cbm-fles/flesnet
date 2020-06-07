@@ -4,6 +4,8 @@
 #include <zmq.hpp>
 
 class ItemProducer {
+  constexpr static auto wait_time_ = std::chrono::milliseconds{500};
+
 public:
   explicit ItemProducer(const std::string& distributor_address) {
     distributor_socket_.connect(distributor_address);
@@ -25,7 +27,7 @@ public:
       }
 
       // wait some time
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      std::this_thread::sleep_for(wait_time_);
 
       // send work item
       std::cout << "GENERATE " << i_ << std::endl;

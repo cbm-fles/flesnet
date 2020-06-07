@@ -95,13 +95,16 @@ private:
 
 class Worker {
 public:
-  explicit Worker(std::string message) { initialize_from_string(message); }
+  explicit Worker(const std::string& message) {
+    initialize_from_string(message);
+  }
 
   // Worker is non-copyable
   Worker(const Worker& other) = delete;
   Worker& operator=(const Worker& other) = delete;
   Worker(Worker&& other) = delete;
   Worker& operator=(Worker&& other) = delete;
+  ~Worker() = default;
 
   [[nodiscard]] bool wants(ItemID id) const { return id % stride_ == offset_; }
 
@@ -111,7 +114,9 @@ public:
 
   void clear_queue() { waiting_items_.clear(); }
 
-  void push_queue(std::shared_ptr<Item> item) { waiting_items_.push_back(item); }
+  void push_queue(const std::shared_ptr<Item>& item) {
+    waiting_items_.push_back(item);
+  }
 
   std::shared_ptr<Item> pop_queue() {
     if (queue_empty()) {
@@ -124,7 +129,7 @@ public:
 
   [[nodiscard]] bool is_idle() const { return outstanding_items_.empty(); }
 
-  void add_outstanding(std::shared_ptr<Item> item) {
+  void add_outstanding(const std::shared_ptr<Item>& item) {
     outstanding_items_.push_back(item);
   }
 
@@ -140,7 +145,7 @@ public:
   }
 
 private:
-  void initialize_from_string(std::string message) {
+  void initialize_from_string(const std::string& message) {
     std::string command;
     std::stringstream s(message);
     s >> command >> stride_ >> offset_ >> queue_policy_ >> client_name_;
@@ -161,6 +166,8 @@ private:
 
 class ItemDistributor {
 public:
+  constexpr static auto poll_timeout_ = std::chrono::milliseconds{1000};
+
   ItemDistributor(const std::string& producer_address,
                   const std::string& worker_address) {
     generator_socket_.bind(producer_address);
@@ -185,7 +192,7 @@ public:
                [&](zmq::event_flags /*e*/) { on_worker_pollin(); });
 
     while (true) {
-      poller.wait(std::chrono::milliseconds{1000});
+      poller.wait(poll_timeout_);
       send_heartbeat();
     }
   }

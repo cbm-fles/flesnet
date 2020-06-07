@@ -9,12 +9,14 @@
 
 class ItemWorker {
 public:
+  constexpr static auto wait_time_ = std::chrono::milliseconds{500};
+
   explicit ItemWorker(const std::string& distributor_address) {
     distributor_socket_.connect(distributor_address);
   };
 
   static void do_work(ItemID /*id*/, const std::string& /*payload*/) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(wait_time_);
   }
 
   void operator()() {
