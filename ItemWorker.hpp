@@ -2,9 +2,11 @@
 #define ZMQ_DEMO_ITEMWORKER_HPP
 
 #include "ItemWorkerProtocol.hpp"
+
 #include <chrono>
 #include <iostream>
 #include <thread>
+
 #include <zmq.hpp>
 
 class ItemWorker {

@@ -2,6 +2,7 @@
 #define _HOME_CUVELAND_SRC_IPC_DEMO_ZMQ_DEMO_ITEMDISTRIBUTOR_HPP
 
 #include "ItemWorkerProtocol.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <chrono>
@@ -168,8 +169,11 @@ class ItemDistributor {
 public:
   constexpr static auto poll_timeout_ = std::chrono::milliseconds{1000};
 
-  ItemDistributor(const std::string& producer_address,
-                  const std::string& worker_address) {
+  ItemDistributor(std::shared_ptr<zmq::context_t> context,
+                  const std::string& producer_address,
+                  const std::string& worker_address)
+      : context_(context), generator_socket_(*context_, zmq::socket_type::pair),
+        worker_socket_(*context_, zmq::socket_type::router) {
     generator_socket_.bind(producer_address);
     generator_socket_.set(zmq::sockopt::linger, 0);
     worker_socket_.set(zmq::sockopt::router_mandatory, 1);
@@ -358,9 +362,9 @@ private:
     }
   }
 
-  zmq::context_t context_{1};
-  zmq::socket_t generator_socket_{context_, zmq::socket_type::pair};
-  zmq::socket_t worker_socket_{context_, zmq::socket_type::router};
+  std::shared_ptr<zmq::context_t> context_;
+  zmq::socket_t generator_socket_;
+  zmq::socket_t worker_socket_;
   std::vector<ItemID> completed_items_;
   std::map<std::string, std::unique_ptr<Worker>> workers_;
 };

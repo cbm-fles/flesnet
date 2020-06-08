@@ -1,19 +1,24 @@
 #include "ItemDistributor.hpp"
 #include "ItemProducer.hpp"
 #include "ItemWorker.hpp"
+
 #include <chrono>
 #include <iostream>
 #include <string>
 #include <thread>
 
+#include <zmq.hpp>
+
 int main() {
+  auto zmq_context = std::make_shared<zmq::context_t>(1);
+
   std::string producer_address = "inproc://TEST";
   std::string worker_address = "ipc:///tmp/TEST_DELME";
 
-  ItemDistributor distributor(producer_address, worker_address);
+  ItemDistributor distributor(zmq_context, producer_address, worker_address);
   std::thread distributor_thread(std::ref(distributor));
 
-  ItemProducer producer(producer_address);
+  ItemProducer producer(zmq_context, producer_address);
   std::thread producer_thread(std::ref(producer));
 
   ItemWorker worker1(worker_address);

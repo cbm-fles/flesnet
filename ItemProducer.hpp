@@ -7,7 +7,10 @@ class ItemProducer {
   constexpr static auto wait_time_ = std::chrono::milliseconds{500};
 
 public:
-  explicit ItemProducer(const std::string& distributor_address) {
+  ItemProducer(std::shared_ptr<zmq::context_t> context,
+               const std::string& distributor_address)
+      : context_(context),
+        distributor_socket_(*context_, zmq::socket_type::pair) {
     distributor_socket_.connect(distributor_address);
   };
 
@@ -37,8 +40,8 @@ public:
   }
 
 private:
-  zmq::context_t context_{1};
-  zmq::socket_t distributor_socket_{context_, zmq::socket_type::pair};
+  std::shared_ptr<zmq::context_t> context_;
+  zmq::socket_t distributor_socket_;
   size_t i_ = 0;
 };
 
