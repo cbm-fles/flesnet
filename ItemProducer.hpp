@@ -1,6 +1,8 @@
 #ifndef ZMQ_DEMO_ITEMPRODUCER_HPP
 #define ZMQ_DEMO_ITEMPRODUCER_HPP
 
+#include <set>
+
 #include <zmq.hpp>
 
 class ItemProducer {
@@ -15,7 +17,7 @@ public:
   };
 
   void operator()() {
-    while (i_ < 5) {
+    while (i_ < 5 || !outstanding_.empty()) {
 
       // receive completion messages if available
       while (true) {
@@ -27,22 +29,30 @@ public:
         }
         size_t id = std::stoull(message.to_string());
         std::cout << "Producer RELEASE item " << id << std::endl;
+        if (outstanding_.erase(id) != 1) {
+          std::cerr << "Error: invalid item " << id << std::endl;
+        };
       }
 
       // wait some time
       std::this_thread::sleep_for(wait_time_);
 
-      // send work item
-      std::cout << "Producer GENERATE item " << i_ << std::endl;
-      distributor_socket_.send(zmq::buffer(std::to_string(i_)));
-      ++i_;
+      if (i_ < 5) {
+        // send work item
+        outstanding_.insert(i_);
+        std::cout << "Producer GENERATE item " << i_ << std::endl;
+        distributor_socket_.send(zmq::buffer(std::to_string(i_)));
+        ++i_;
+      }
     }
+    std::cout << "Producer DONE" << std::endl;
   }
 
 private:
   std::shared_ptr<zmq::context_t> context_;
   zmq::socket_t distributor_socket_;
   size_t i_ = 0;
+  std::set<size_t> outstanding_;
 };
 
 #endif

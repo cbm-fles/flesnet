@@ -27,7 +27,7 @@ public:
                               std::to_string(offset_) + " " +
                               to_string(queue_policy_) + " " + client_name_;
     distributor_socket_.send(zmq::buffer(register_str));
-    std::cout << "Worker send: " << register_str << std::endl;
+    std::cout << "Worker sent " << register_str << std::endl;
 
     while (true) {
 
@@ -45,19 +45,17 @@ public:
         s >> command >> id;
         assert(!s.fail());
       } else if (message_string.rfind("HEARTBEAT", 0) == 0) {
-        std::cout << "Worker received heartbeat message" << std::endl;
         // send HEARTBEAT ACKNOWLEDGE
         try {
           distributor_socket_.send(zmq::buffer("HEARTBEAT"));
-          std::cout << "Worker send: " << message_string << std::endl;
         } catch (zmq::error_t& error) {
           std::cerr << "ERROR: " << error.what() << std::endl;
         }
         continue;
       } else {
-        std::cerr << "this should not happen" << std::endl;
+        std::cerr << "Error: This should not happen" << std::endl;
       }
-      std::cout << "received work item " << id << std::endl;
+      std::cout << "Worker received work item " << id << std::endl;
       if (message.more()) {
         zmq::message_t payload_message;
         const auto result = distributor_socket_.recv(payload_message);
@@ -70,7 +68,7 @@ public:
       std::string complete_str = "COMPLETE " + std::to_string(id);
       try {
         distributor_socket_.send(zmq::buffer(complete_str));
-        std::cout << "Worker send: " << complete_str << std::endl;
+        std::cout << "Worker sent " << complete_str << std::endl;
       } catch (zmq::error_t& error) {
         std::cerr << "ERROR: " << error.what() << std::endl;
       }

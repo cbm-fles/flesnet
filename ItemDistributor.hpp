@@ -1,5 +1,5 @@
-#ifndef _HOME_CUVELAND_SRC_IPC_DEMO_ZMQ_DEMO_ITEMDISTRIBUTOR_HPP
-#define _HOME_CUVELAND_SRC_IPC_DEMO_ZMQ_DEMO_ITEMDISTRIBUTOR_HPP
+#ifndef ZMQ_DEMO_ITEMDISTRIBUTOR_HPP
+#define ZMQ_DEMO_ITEMDISTRIBUTOR_HPP
 
 #include "ItemWorkerProtocol.hpp"
 
@@ -72,7 +72,7 @@ on reception of a completion:
 
 class Item {
 public:
-  Item(std::vector<ItemID>* completed_items, ItemID id, std::string payload)
+  Item(std::queue<ItemID>* completed_items, ItemID id, std::string payload)
       : completed_items_(completed_items), id_(id),
         payload_(std::move(payload)) {}
 
@@ -86,10 +86,10 @@ public:
 
   [[nodiscard]] const std::string& payload() const { return payload_; }
 
-  ~Item() { completed_items_->emplace_back(id_); }
+  ~Item() { completed_items_->push(id_); }
 
 private:
-  std::vector<ItemID>* completed_items_;
+  std::queue<ItemID>* completed_items_;
   const ItemID id_;
   const std::string payload_;
 };
@@ -232,20 +232,16 @@ private:
   }
 
   void send_pending_completions() {
-    try {
-      for (auto item : completed_items_) {
-        generator_socket_.send(zmq::buffer(std::to_string(item)));
-      }
-    } catch (zmq::error_t& error) {
-      std::cout << "ERROR: " << error.what() << std::endl;
+    while (!completed_items_.empty()) {
+      auto item = completed_items_.front();
+      generator_socket_.send(zmq::buffer(std::to_string(item)));
+      completed_items_.pop();
     }
-    completed_items_.clear();
   }
 
   // Handle incoming message (work item) from the generator
   void on_generator_pollin() {
     zmq::multipart_t message(generator_socket_);
-    std::cout << "receive producer item: " << message.str() << std::endl;
 
     // Receive item ID
     ItemID id = std::stoull(message.popstr());
@@ -288,8 +284,6 @@ private:
     assert(message.size() >= 2);    // Multipart format ensured by ZMQ
     assert(!message.at(0).empty()); // for ROUTER sockets
     assert(message.at(1).empty());  //
-
-    std::cout << "receive worker item: " << message.str() << std::endl;
 
     std::string identity = message.peekstr(0);
 
@@ -362,7 +356,7 @@ private:
   std::shared_ptr<zmq::context_t> context_;
   zmq::socket_t generator_socket_;
   zmq::socket_t worker_socket_;
-  std::vector<ItemID> completed_items_;
+  std::queue<ItemID> completed_items_;
   std::map<std::string, std::unique_ptr<Worker>> workers_;
 };
 
