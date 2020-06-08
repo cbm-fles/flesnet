@@ -224,9 +224,14 @@ private:
     std::chrono::system_clock::time_point now =
         std::chrono::system_clock::now();
     for (auto& [identity, worker] : workers_) {
-      if (worker->wants_heartbeat(now)) {
-        worker->reset_heartbeat_time();
-        send_heartbeat(identity);
+      try {
+        if (worker->wants_heartbeat(now)) {
+          worker->reset_heartbeat_time();
+          send_worker_heartbeat(identity);
+        }
+      } catch (std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        workers_.erase(identity);
       }
     }
   }
@@ -256,20 +261,25 @@ private:
 
     // Distribute the new work item
     for (auto& [identity, worker] : workers_) {
-      if (worker->wants(new_item->id())) {
-        if (worker->queue_policy() == WorkerQueuePolicy::PrebufferOne) {
-          worker->clear_queue();
-        }
-        if (worker->is_idle()) {
-          // The worker is idle, send the item immediately
-          worker->add_outstanding(new_item);
-          send_work_item(identity, *new_item);
-        } else {
-          // The worker is busy, enqueue the item
-          if (worker->queue_policy() != WorkerQueuePolicy::Skip) {
-            worker->push_queue(new_item);
+      try {
+        if (worker->wants(new_item->id())) {
+          if (worker->queue_policy() == WorkerQueuePolicy::PrebufferOne) {
+            worker->clear_queue();
+          }
+          if (worker->is_idle()) {
+            // The worker is idle, send the item immediately
+            worker->add_outstanding(new_item);
+            send_worker_work_item(identity, *new_item);
+          } else {
+            // The worker is busy, enqueue the item
+            if (worker->queue_policy() != WorkerQueuePolicy::Skip) {
+              worker->push_queue(new_item);
+            }
           }
         }
+      } catch (std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        workers_.erase(identity);
       }
     }
     new_item = nullptr;
@@ -291,33 +301,52 @@ private:
       // Handle ZMQ worker disconnect notification
       std::cout << "Info: received disconnect notification" << std::endl;
       if (workers_.erase(identity) == 0) {
+        // This could happen if a misbehaving worker did not send a REGISTER
+        // message
         std::cerr << "Error: disconnect from unknown worker" << std::endl;
       }
     } else {
-      // Handle general message from a worker
-      std::string message_string = message.peekstr(2);
-      if (message_string.rfind("REGISTER ", 0) == 0) {
-        // Handle new worker registration
-        auto worker = std::make_unique<Worker>(message_string);
-        workers_[identity] = std::move(worker);
-      } else if (message_string.rfind("COMPLETE ", 0) == 0) {
-        // Handle worker completion message
-        auto& worker = workers_.at(identity);
-        std::string command;
-        ItemID id;
-        std::stringstream s(message_string);
-        s >> command >> id;
-        assert(!s.fail());
-        // Find the corresponding outstanding item object and delete it
-        worker->delete_outstanding(id);
-        // Send next item if available
-        if (!worker->queue_empty()) {
-          auto item = worker->pop_queue();
-          worker->add_outstanding(item);
-          send_work_item(identity, *item);
+      try {
+        // Handle general message from a worker
+        std::string message_string = message.peekstr(2);
+        if (message_string.rfind("REGISTER ", 0) == 0) {
+          // Handle new worker registration
+          auto worker = std::make_unique<Worker>(message_string);
+          workers_[identity] = std::move(worker);
+        } else if (message_string.rfind("COMPLETE ", 0) == 0) {
+          // Handle worker completion message
+          auto& worker = workers_.at(identity);
+          std::string command;
+          ItemID id;
+          std::stringstream s(message_string);
+          s >> command >> id;
+          if (s.fail()) {
+            throw std::invalid_argument("Invalid completion message");
+          }
+          // Find the corresponding outstanding item object and delete it
+          worker->delete_outstanding(id);
+          // Send next item if available
+          if (!worker->queue_empty()) {
+            auto item = worker->pop_queue();
+            worker->add_outstanding(item);
+            send_worker_work_item(identity, *item);
+          } else {
+            worker->reset_heartbeat_time();
+          }
+        } else if (message_string.rfind("HEARTBEAT", 0) == 0) {
+          // Ignore heartbeat reply
         } else {
-          worker->reset_heartbeat_time();
+          throw std::invalid_argument("Unknown message type: " +
+                                      message_string);
         }
+      } catch (std::exception& e) {
+        std::cerr << "Error: protocol violation, disconnecting worker"
+                  << std::endl;
+        try {
+          send_worker_disconnect(identity);
+        } catch (std::exception&) {
+        };
+        workers_.erase(identity);
       }
     }
     send_pending_completions();
@@ -335,7 +364,7 @@ private:
     }
   }
 
-  void send_work_item(const std::string& identity, const Item& item) {
+  void send_worker_work_item(const std::string& identity, const Item& item) {
     zmq::multipart_t message("WORK_ITEM " + std::to_string(item.id()));
     if (!item.payload().empty()) {
       message.addstr(item.payload());
@@ -343,13 +372,13 @@ private:
     send_worker(identity, std::move(message));
   }
 
-  void send_disconnect(const std::string& identity) {
-    zmq::multipart_t message("DISCONNECT");
+  void send_worker_heartbeat(const std::string& identity) {
+    zmq::multipart_t message("HEARTBEAT");
     send_worker(identity, std::move(message));
   }
 
-  void send_heartbeat(const std::string& identity) {
-    zmq::multipart_t message("HEARTBEAT");
+  void send_worker_disconnect(const std::string& identity) {
+    zmq::multipart_t message("DISCONNECT");
     send_worker(identity, std::move(message));
   }
 

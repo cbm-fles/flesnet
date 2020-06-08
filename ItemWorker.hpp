@@ -5,46 +5,49 @@
 
 #include <chrono>
 #include <iostream>
+#include <random>
 #include <thread>
 
 #include <zmq.hpp>
 
 class ItemWorker {
 public:
-  constexpr static auto wait_time_ = std::chrono::milliseconds{500};
+  constexpr static auto average_wait_time_ = std::chrono::milliseconds{500};
 
   explicit ItemWorker(const std::string& distributor_address) {
     distributor_socket_.connect(distributor_address);
   };
 
   static void do_work(ItemID /*id*/, const std::string& /*payload*/) {
-    std::this_thread::sleep_for(wait_time_);
+    static std::default_random_engine eng{std::random_device{}()};
+    static std::exponential_distribution<> dist(
+        std::chrono::duration<double>(average_wait_time_).count());
+
+    // Wait for a random time before completion
+    std::this_thread::sleep_for(std::chrono::duration<double>{dist(eng)});
   }
 
   void operator()() {
     // send REGISTER
-    std::string register_str = "REGISTER " + std::to_string(stride_) + " " +
-                              std::to_string(offset_) + " " +
-                              to_string(queue_policy_) + " " + client_name_;
-    distributor_socket_.send(zmq::buffer(register_str));
-    std::cout << "Worker sent " << register_str << std::endl;
+    auto str = register_str(parameters_);
+    distributor_socket_.send(zmq::buffer(str));
+    std::cout << "Worker sent " << str << std::endl;
 
     while (true) {
 
       // receive message
+      zmq::multipart_t message{distributor_socket_};
+      auto message_string = message.popstr();
       ItemID id{};
       std::string payload;
-      zmq::message_t message;
-      const auto result = distributor_socket_.recv(message);
-      assert(result.has_value());
-      std::string message_string = message.to_string();
-      if (message_string.rfind("WORK_ITEM ", 0) == 0) {
+
+      if (is_work_item(message_string)) {
         // Handle new work item
         std::string command;
         std::stringstream s(message_string);
         s >> command >> id;
         assert(!s.fail());
-      } else if (message_string.rfind("HEARTBEAT", 0) == 0) {
+      } else if (is_heartbeat(message_string)) {
         // send HEARTBEAT ACKNOWLEDGE
         try {
           distributor_socket_.send(zmq::buffer("HEARTBEAT"));
@@ -52,15 +55,14 @@ public:
           std::cerr << "ERROR: " << error.what() << std::endl;
         }
         continue;
+      } else if (is_disconnect(message_string)) {
+        // TODO: disconnect
       } else {
         std::cerr << "Error: This should not happen" << std::endl;
       }
       std::cout << "Worker received work item " << id << std::endl;
-      if (message.more()) {
-        zmq::message_t payload_message;
-        const auto result = distributor_socket_.recv(payload_message);
-        assert(result.has_value());
-        payload = payload_message.to_string();
+      if (!message.empty()) {
+        payload = message.popstr();
       }
       do_work(id, payload);
 
@@ -79,10 +81,8 @@ private:
   zmq::context_t context_{1};
   zmq::socket_t distributor_socket_{context_, zmq::socket_type::req};
 
-  const size_t stride_ = 1;
-  const size_t offset_ = 0;
-  const WorkerQueuePolicy queue_policy_ = WorkerQueuePolicy::QueueAll;
-  const std::string client_name_ = "example_client";
+  const WorkerParameters parameters_{1, 0, WorkerQueuePolicy::QueueAll,
+                                     "example_client"};
 };
 
 #endif
