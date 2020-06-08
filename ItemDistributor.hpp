@@ -193,7 +193,8 @@ public:
 
     while (true) {
       poller.wait(poll_timeout_);
-      send_heartbeat();
+      std::cout << "poller timed out, could send heartbeat" << std::endl;
+      // send_heartbeat();
     }
   }
 
@@ -224,8 +225,10 @@ private:
     completed_items_.clear();
   }
 
-  std::shared_ptr<Item> receive_producer_item() {
+  // Handle incoming message (work item) from the generator
+  void on_generator_pollin() {
     zmq::multipart_t message(generator_socket_);
+    std::cout << "receive producer item: " << message.str() << std::endl;
 
     // Receive item ID
     ItemID id = std::stoull(message.popstr());
@@ -236,12 +239,7 @@ private:
       payload = message.popstr();
     }
 
-    return std::make_shared<Item>(&completed_items_, id, payload);
-  }
-
-  // Handle incoming message (work item) from the generator
-  void on_generator_pollin() {
-    auto new_item = receive_producer_item();
+    auto new_item = std::make_shared<Item>(&completed_items_, id, payload);
 
     // Distribute the new work item
     for (auto& [identity, worker] : workers_) {
@@ -273,6 +271,8 @@ private:
     assert(message.size() >= 2);    // Multipart format ensured by ZMQ
     assert(!message.at(0).empty()); // for ROUTER sockets
     assert(message.at(1).empty());  //
+
+    std::cout << "receive worker item: " << message.str() << std::endl;
 
     std::string identity = message.peekstr(0);
 

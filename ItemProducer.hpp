@@ -12,7 +12,7 @@ public:
   };
 
   void operator()() {
-    while (true) {
+    while (i_ < 5) {
 
       // receive completion messages if available
       while (true) {
@@ -23,14 +23,14 @@ public:
           break;
         }
         size_t id = std::stoull(message.to_string());
-        std::cout << "RELEASE " << id << std::endl;
+        std::cout << "Producer RELEASE item " << id << std::endl;
       }
 
       // wait some time
       std::this_thread::sleep_for(wait_time_);
 
       // send work item
-      std::cout << "GENERATE " << i_ << std::endl;
+      std::cout << "Producer GENERATE item " << i_ << std::endl;
       distributor_socket_.send(zmq::buffer(std::to_string(i_)));
       ++i_;
     }
