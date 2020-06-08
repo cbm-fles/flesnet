@@ -96,6 +96,8 @@ private:
 
 class Worker {
 public:
+  constexpr static auto heartbeat_interval_ = std::chrono::milliseconds{500};
+
   explicit Worker(const std::string& message) {
     initialize_from_string(message);
   }
@@ -145,6 +147,15 @@ public:
     outstanding_items_.erase(it);
   }
 
+  void reset_heartbeat_time() {
+    last_heartbeat_time_ = std::chrono::system_clock::now();
+  }
+
+  [[nodiscard]] bool
+  wants_heartbeat(std::chrono::system_clock::time_point when) const {
+    return (is_idle() && last_heartbeat_time_ + heartbeat_interval_ < when);
+  }
+
 private:
   void initialize_from_string(const std::string& message) {
     std::string command;
@@ -162,12 +173,13 @@ private:
 
   std::deque<std::shared_ptr<Item>> waiting_items_;
   std::deque<std::shared_ptr<Item>> outstanding_items_;
-  std::chrono::system_clock::time_point next_heartbeat_time_;
+  std::chrono::system_clock::time_point last_heartbeat_time_ =
+      std::chrono::system_clock::now();
 };
 
 class ItemDistributor {
 public:
-  constexpr static auto poll_timeout_ = std::chrono::milliseconds{1000};
+  constexpr static auto poll_timeout_ = std::chrono::milliseconds{100};
 
   ItemDistributor(std::shared_ptr<zmq::context_t> context,
                   const std::string& producer_address,
@@ -197,8 +209,7 @@ public:
 
     while (true) {
       poller.wait(poll_timeout_);
-      std::cout << "poller timed out, could send heartbeat" << std::endl;
-      // send_heartbeat();
+      send_heartbeats();
     }
   }
 
@@ -209,10 +220,12 @@ public:
 
 private:
   // Send heartbeat messages to workers that have been idle for a while
-  void send_heartbeat() {
+  void send_heartbeats() {
+    std::chrono::system_clock::time_point now =
+        std::chrono::system_clock::now();
     for (auto& [identity, worker] : workers_) {
-      if (worker->is_idle()) {
-        // TODO(cuveland): ... AND some timing things ...
+      if (worker->wants_heartbeat(now)) {
+        worker->reset_heartbeat_time();
         send_heartbeat(identity);
       }
     }
@@ -308,58 +321,42 @@ private:
           auto item = worker->pop_queue();
           worker->add_outstanding(item);
           send_work_item(identity, *item);
+        } else {
+          worker->reset_heartbeat_time();
         }
       }
     }
     send_pending_completions();
   }
 
-  void send_work_item(const std::string& identity, const Item& item) {
+  void send_worker(const std::string& identity, zmq::multipart_t&& message) {
     assert(!identity.empty());
     // Prepare first two message parts as required for a ROUTER socket
-    zmq::multipart_t message(identity);
-    message.add(zmq::message_t(0));
+    message.push(zmq::message_t(0));
+    message.pushstr(identity);
 
-    // Prepare message contents
-    message.addstr("WORK_ITEM " + std::to_string(item.id()));
+    // Send the message
+    if (!message.send(worker_socket_)) {
+      std::cerr << "Error: message send failed";
+    }
+  }
+
+  void send_work_item(const std::string& identity, const Item& item) {
+    zmq::multipart_t message("WORK_ITEM " + std::to_string(item.id()));
     if (!item.payload().empty()) {
       message.addstr(item.payload());
     }
-
-    // Send the message
-    if (!message.send(worker_socket_)) {
-      std::cerr << "Error: message send failed";
-    }
+    send_worker(identity, std::move(message));
   }
 
   void send_disconnect(const std::string& identity) {
-    assert(!identity.empty());
-    // Prepare first two message parts as required for a ROUTER socket
-    zmq::multipart_t message(identity);
-    message.add(zmq::message_t(0));
-
-    // Prepare message contents
-    message.addstr("DISCONNECT");
-
-    // Send the message
-    if (!message.send(worker_socket_)) {
-      std::cerr << "Error: message send failed";
-    }
+    zmq::multipart_t message("DISCONNECT");
+    send_worker(identity, std::move(message));
   }
 
   void send_heartbeat(const std::string& identity) {
-    assert(!identity.empty());
-    // Prepare first two message parts as required for a ROUTER socket
-    zmq::multipart_t message(identity);
-    message.add(zmq::message_t(0));
-
-    // Prepare message contents
-    message.addstr("HEARTBEAT");
-
-    // Send the message
-    if (!message.send(worker_socket_)) {
-      std::cerr << "Error: message send failed";
-    }
+    zmq::multipart_t message("HEARTBEAT");
+    send_worker(identity, std::move(message));
   }
 
   std::shared_ptr<zmq::context_t> context_;
