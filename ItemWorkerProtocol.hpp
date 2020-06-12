@@ -1,12 +1,20 @@
 #ifndef ZMQ_DEMO_ITEMWORKERPROTOCOL_HPP
 #define ZMQ_DEMO_ITEMWORKERPROTOCOL_HPP
 
+#include <chrono>
 #include <iostream>
 #include <ostream>
 #include <queue>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+
+constexpr static auto distributor_heartbeat_interval =
+    std::chrono::milliseconds{500};
+constexpr static auto distributor_poll_timeout = std::chrono::milliseconds{100};
+constexpr static auto worker_poll_timeout = std::chrono::milliseconds{500};
+constexpr static auto worker_heartbeat_timeout =
+    4 * distributor_heartbeat_interval;
 
 class WorkerProtocolError : public std::runtime_error {
 public:

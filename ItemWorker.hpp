@@ -6,7 +6,6 @@
 #include <chrono>
 #include <iostream>
 #include <queue>
-#include <random>
 #include <set>
 #include <thread>
 #include <vector>
@@ -15,32 +14,10 @@
 
 class ItemWorker {
 public:
-  constexpr static auto average_wait_time_ = std::chrono::milliseconds{500};
-
   explicit ItemWorker(const std::string& distributor_address)
       : distributor_address_(distributor_address) {
     connect();
   };
-
-  static void do_work(std::shared_ptr<const Item> item) {
-    static std::default_random_engine eng{std::random_device{}()};
-    static std::exponential_distribution<> dist(
-        std::chrono::duration<double>(average_wait_time_).count());
-
-    // Wait for a random time before completion
-    std::this_thread::sleep_for(std::chrono::duration<double>{dist(eng)});
-  }
-
-  void operator()() {
-    while (auto item = get()) {
-      std::cout << "Worker received work item " << item->id() << std::endl;
-      do_work(item);
-      std::cout << "Worker finished work item " << item->id() << std::endl;
-    }
-  }
-
-  constexpr static auto poll_timeout_ = std::chrono::milliseconds{500};
-  constexpr static auto heartbeat_timeout_ = std::chrono::milliseconds{2000};
 
   std::shared_ptr<const Item> get() {
     while (true) {
@@ -54,7 +31,7 @@ public:
         zmq::poller_t poller;
         poller.add(*distributor_socket_, zmq::event_flags::pollin);
         std::vector<decltype(poller)::event_type> events(1);
-        size_t num_events = poller.wait_all(events, poll_timeout_);
+        size_t num_events = poller.wait_all(events, worker_poll_timeout);
 
         if (num_events > 0) {
           // receive message
@@ -159,7 +136,7 @@ private:
   }
 
   [[nodiscard]] bool heartbeat_is_expired() const {
-    return (last_heartbeat_time_ + heartbeat_timeout_ <
+    return (last_heartbeat_time_ + worker_heartbeat_timeout <
             std::chrono::system_clock::now());
   }
 

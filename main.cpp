@@ -1,6 +1,6 @@
 #include "ItemDistributor.hpp"
 #include "ItemProducer.hpp"
-#include "ItemWorker.hpp"
+#include "ExampleWorker.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -21,10 +21,10 @@ int main() {
   ItemProducer producer(zmq_context, producer_address);
   std::thread producer_thread(std::ref(producer));
 
-  ItemWorker worker1(worker_address);
+  ExampleWorker worker1(worker_address);
   std::thread worker1_thread(std::ref(worker1));
 
-  ItemWorker worker2(worker_address);
+  ExampleWorker worker2(worker_address);
   std::thread worker2_thread(std::ref(worker2));
 
   producer_thread.join();

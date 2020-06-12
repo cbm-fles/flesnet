@@ -72,8 +72,6 @@ on reception of a completion:
 
 class Worker {
 public:
-  constexpr static auto heartbeat_interval_ = std::chrono::milliseconds{500};
-
   explicit Worker(const std::string& message) {
     initialize_from_string(message);
   }
@@ -129,7 +127,7 @@ public:
 
   [[nodiscard]] bool
   wants_heartbeat(std::chrono::system_clock::time_point when) const {
-    return (is_idle() && last_heartbeat_time_ + heartbeat_interval_ < when);
+    return (is_idle() && last_heartbeat_time_ + distributor_heartbeat_interval < when);
   }
 
 private:
@@ -155,8 +153,6 @@ private:
 
 class ItemDistributor {
 public:
-  constexpr static auto poll_timeout_ = std::chrono::milliseconds{100};
-
   ItemDistributor(std::shared_ptr<zmq::context_t> context,
                   const std::string& producer_address,
                   const std::string& worker_address)
@@ -184,7 +180,7 @@ public:
                [&](zmq::event_flags /*e*/) { on_worker_pollin(); });
 
     while (true) {
-      poller.wait(poll_timeout_);
+      poller.wait(distributor_poll_timeout);
       send_heartbeats();
     }
   }
