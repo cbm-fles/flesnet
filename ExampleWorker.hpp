@@ -30,9 +30,11 @@ public:
 
   void operator()() {
     while (auto item = get()) {
-      std::cout << "Worker received work item " << item->id() << std::endl;
+      std::cout << "Worker " << parameters().client_name
+                << " received work item " << item->id() << std::endl;
       do_work(item);
-      std::cout << "Worker finished work item " << item->id() << std::endl;
+      std::cout << "Worker " << parameters().client_name
+                << " finished work item " << item->id() << std::endl;
     }
   }
 

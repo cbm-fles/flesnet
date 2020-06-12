@@ -16,7 +16,7 @@ class ItemWorker {
 public:
   explicit ItemWorker(const std::string& distributor_address,
                       WorkerParameters parameters)
-      : distributor_address_(distributor_address) {
+      : distributor_address_(distributor_address), parameters_(parameters) {
     connect();
   };
 
@@ -83,6 +83,8 @@ public:
       }
     }
   }
+
+  const WorkerParameters parameters() const { return parameters_; }
 
 private:
   void connect() {
