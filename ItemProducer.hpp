@@ -1,6 +1,7 @@
 #ifndef ZMQ_DEMO_ITEMPRODUCER_HPP
 #define ZMQ_DEMO_ITEMPRODUCER_HPP
 
+#include <memory>
 #include <set>
 
 #include <zmq.hpp>
