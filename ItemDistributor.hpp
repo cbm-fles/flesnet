@@ -70,30 +70,6 @@ on reception of a completion:
 // Request every item with sequence number n for which exists m in N:
 // n = m * stride + offset
 
-class Item {
-public:
-  Item(std::queue<ItemID>* completed_items, ItemID id, std::string payload)
-      : completed_items_(completed_items), id_(id),
-        payload_(std::move(payload)) {}
-
-  // Item is non-copyable
-  Item(const Item& other) = delete;
-  Item& operator=(const Item& other) = delete;
-  Item(Item&& other) = delete;
-  Item& operator=(Item&& other) = delete;
-
-  [[nodiscard]] ItemID id() const { return id_; }
-
-  [[nodiscard]] const std::string& payload() const { return payload_; }
-
-  ~Item() { completed_items_->push(id_); }
-
-private:
-  std::queue<ItemID>* completed_items_;
-  const ItemID id_;
-  const std::string payload_;
-};
-
 class Worker {
 public:
   constexpr static auto heartbeat_interval_ = std::chrono::milliseconds{500};

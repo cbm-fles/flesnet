@@ -5,8 +5,11 @@
 
 #include <chrono>
 #include <iostream>
+#include <queue>
 #include <random>
+#include <set>
 #include <thread>
+#include <vector>
 
 #include <zmq.hpp>
 
@@ -14,11 +17,12 @@ class ItemWorker {
 public:
   constexpr static auto average_wait_time_ = std::chrono::milliseconds{500};
 
-  explicit ItemWorker(const std::string& distributor_address) {
-    distributor_socket_.connect(distributor_address);
+  explicit ItemWorker(const std::string& distributor_address)
+      : distributor_address_(distributor_address) {
+    connect();
   };
 
-  static void do_work(ItemID /*id*/, const std::string& /*payload*/) {
+  static void do_work(std::shared_ptr<const Item> item) {
     static std::default_random_engine eng{std::random_device{}()};
     static std::exponential_distribution<> dist(
         std::chrono::duration<double>(average_wait_time_).count());
@@ -28,61 +32,151 @@ public:
   }
 
   void operator()() {
-    // send REGISTER
-    auto str = register_str(parameters_);
-    distributor_socket_.send(zmq::buffer(str));
-    std::cout << "Worker sent " << str << std::endl;
+    while (auto item = get()) {
+      std::cout << "Worker received work item " << item->id() << std::endl;
+      do_work(item);
+      std::cout << "Worker finished work item " << item->id() << std::endl;
+    }
+  }
 
+  constexpr static auto poll_timeout_ = std::chrono::milliseconds{500};
+  constexpr static auto heartbeat_timeout_ = std::chrono::milliseconds{2000};
+
+  std::shared_ptr<const Item> get() {
     while (true) {
-
-      // receive message
-      zmq::multipart_t message{distributor_socket_};
-      auto message_string = message.popstr();
-      ItemID id{};
-      std::string payload;
-
-      if (is_work_item(message_string)) {
-        // Handle new work item
-        std::string command;
-        std::stringstream s(message_string);
-        s >> command >> id;
-        assert(!s.fail());
-      } else if (is_heartbeat(message_string)) {
-        // send HEARTBEAT ACKNOWLEDGE
-        try {
-          distributor_socket_.send(zmq::buffer("HEARTBEAT"));
-        } catch (zmq::error_t& error) {
-          std::cerr << "ERROR: " << error.what() << std::endl;
-        }
-        continue;
-      } else if (is_disconnect(message_string)) {
-        // TODO: disconnect
-      } else {
-        std::cerr << "Error: This should not happen" << std::endl;
-      }
-      std::cout << "Worker received work item " << id << std::endl;
-      if (!message.empty()) {
-        payload = message.popstr();
-      }
-      do_work(id, payload);
-
-      // send COMPLETE
-      std::string complete_str = "COMPLETE " + std::to_string(id);
       try {
-        distributor_socket_.send(zmq::buffer(complete_str));
-        std::cout << "Worker sent " << complete_str << std::endl;
+        if (!distributor_socket_) {
+          connect();
+        } else {
+          send_pending_completions();
+        }
+
+        zmq::poller_t poller;
+        poller.add(*distributor_socket_, zmq::event_flags::pollin);
+        std::vector<decltype(poller)::event_type> events(1);
+        size_t num_events = poller.wait_all(events, poll_timeout_);
+
+        if (num_events > 0) {
+          // receive message
+          zmq::message_t message;
+          (void)distributor_socket_->recv(message);
+          auto message_string = message.to_string();
+          reset_heartbeat_time();
+
+          if (is_work_item(message_string)) {
+            // Handle new work item
+            ItemID id{};
+            std::string payload;
+            std::string command;
+            std::stringstream s(message_string);
+            s >> command >> id;
+            if (s.fail()) {
+              throw(WorkerProtocolError("invalid WORK_ITEM message"));
+            }
+            if (message.more()) {
+              (void)distributor_socket_->recv(message);
+              payload = message.to_string();
+            }
+            return std::make_shared<Item>(&completed_items_, id, payload);
+          }
+          if (message.more()) {
+            throw(WorkerProtocolError("unexpected multipart message"));
+          }
+          if (is_heartbeat(message_string)) {
+            send_heartbeat();
+          } else if (is_disconnect(message_string)) {
+            distributor_socket_ = nullptr;
+          } else {
+            throw(WorkerProtocolError("invalid message type"));
+          }
+        } else {
+          if (heartbeat_is_expired()) {
+            throw(WorkerProtocolError("connection heartbeat expired"));
+          }
+        }
+      } catch (WorkerProtocolError& error) {
+        std::cerr << "Protocol error: " << error.what() << std::endl;
+        distributor_socket_ = nullptr;
+        std::queue<ItemID>().swap(completed_items_);
       } catch (zmq::error_t& error) {
-        std::cerr << "ERROR: " << error.what() << std::endl;
+        std::cerr << "ZMQ error: " << error.what() << std::endl;
+        distributor_socket_ = nullptr;
+        std::queue<ItemID>().swap(completed_items_);
       }
     }
   }
 
 private:
+  void connect() {
+    distributor_socket_ =
+        std::make_unique<zmq::socket_t>(context_, zmq::socket_type::req);
+    distributor_socket_->connect(distributor_address_);
+    send_register();
+  }
+
+  void send_register() {
+    const std::string message_str =
+        "REGISTER " + std::to_string(parameters_.stride) + " " +
+        std::to_string(parameters_.offset) + " " +
+        to_string(parameters_.queue_policy) + " " + parameters_.client_name;
+    distributor_socket_->send(zmq::buffer(message_str));
+    reset_heartbeat_time();
+  }
+
+  void send_heartbeat() {
+    const std::string message_str = "HEARTBEAT";
+    distributor_socket_->send(zmq::buffer(message_str));
+    reset_heartbeat_time();
+  }
+
+  void send_completion(ItemID id) {
+    const std::string message_str = "COMPLETE " + std::to_string(id);
+    distributor_socket_->send(zmq::buffer(message_str));
+    reset_heartbeat_time();
+  }
+
+  void send_pending_completions() {
+    while (!completed_items_.empty()) {
+      auto id = completed_items_.front();
+      send_completion(id);
+      completed_items_.pop();
+      items_.erase(id);
+    }
+  }
+
+  // const std::string receive_message() {}
+
+  static bool is_work_item(const std::string& message) {
+    return (message.rfind("WORK_ITEM ", 0) == 0);
+  }
+
+  static bool is_heartbeat(const std::string& message) {
+    return (message.rfind("HEARTBEAT", 0) == 0);
+  }
+
+  static bool is_disconnect(const std::string& message) {
+    return (message.rfind("DISCONNECT", 0) == 0);
+  }
+
+  [[nodiscard]] bool heartbeat_is_expired() const {
+    return (last_heartbeat_time_ + heartbeat_timeout_ <
+            std::chrono::system_clock::now());
+  }
+
+  void reset_heartbeat_time() {
+    last_heartbeat_time_ = std::chrono::system_clock::now();
+  }
+
+  const std::string distributor_address_;
   zmq::context_t context_{1};
-  zmq::socket_t distributor_socket_{context_, zmq::socket_type::req};
+  std::unique_ptr<zmq::socket_t> distributor_socket_;
 
   const WorkerParameters parameters_{1, 0, WorkerQueuePolicy::QueueAll,
                                      "example_client"};
+  std::set<ItemID> items_;
+  std::queue<ItemID> completed_items_;
+  std::chrono::system_clock::time_point last_heartbeat_time_ =
+      std::chrono::system_clock::now();
 };
 
 #endif

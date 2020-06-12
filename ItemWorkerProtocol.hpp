@@ -3,10 +3,41 @@
 
 #include <iostream>
 #include <ostream>
+#include <queue>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 
+class WorkerProtocolError : public std::runtime_error {
+public:
+  WorkerProtocolError(const std::string& msg = "") : runtime_error(msg) {}
+};
+
 using ItemID = size_t;
+
+class Item {
+public:
+  Item(std::queue<ItemID>* completed_items, ItemID id, std::string payload)
+      : completed_items_(completed_items), id_(id),
+        payload_(std::move(payload)) {}
+
+  // Item is non-copyable
+  Item(const Item& other) = delete;
+  Item& operator=(const Item& other) = delete;
+  Item(Item&& other) = delete;
+  Item& operator=(Item&& other) = delete;
+
+  [[nodiscard]] ItemID id() const { return id_; }
+
+  [[nodiscard]] const std::string& payload() const { return payload_; }
+
+  ~Item() { completed_items_->push(id_); }
+
+private:
+  std::queue<ItemID>* completed_items_;
+  const ItemID id_;
+  const std::string payload_;
+};
 
 enum class WorkerQueuePolicy { QueueAll, PrebufferOne, Skip };
 
@@ -31,25 +62,5 @@ struct WorkerParameters {
   WorkerQueuePolicy queue_policy;
   std::string client_name;
 };
-
-enum class WorkerMessageType { Register, WorkItem, Heartbeat, Disconnect };
-
-inline std::string register_str(const WorkerParameters& parameters) {
-  return "REGISTER " + std::to_string(parameters.stride) + " " +
-         std::to_string(parameters.offset) + " " +
-         to_string(parameters.queue_policy) + " " + parameters.client_name;
-}
-
-inline bool is_work_item(const std::string& message) {
-  return (message.rfind("WORK_ITEM ", 0) == 0);
-}
-
-inline bool is_heartbeat(const std::string& message) {
-  return (message.rfind("HEARTBEAT", 0) == 0);
-}
-
-inline bool is_disconnect(const std::string& message) {
-  return (message.rfind("DISCONNECT", 0) == 0);
-}
 
 #endif
