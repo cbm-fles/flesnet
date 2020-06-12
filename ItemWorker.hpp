@@ -14,7 +14,8 @@
 
 class ItemWorker {
 public:
-  explicit ItemWorker(const std::string& distributor_address)
+  explicit ItemWorker(const std::string& distributor_address,
+                      WorkerParameters parameters)
       : distributor_address_(distributor_address) {
     connect();
   };

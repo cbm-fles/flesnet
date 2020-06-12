@@ -13,13 +13,13 @@
 
 class ExampleWorker : public ItemWorker {
 public:
-  constexpr static auto average_wait_time_ = std::chrono::milliseconds{500};
+  ExampleWorker(const std::string& distributor_address,
+                WorkerParameters parameters,
+                std::chrono::milliseconds average_wait_time)
+      : ItemWorker(distributor_address, parameters),
+        average_wait_time_(average_wait_time){};
 
-  explicit ExampleWorker(const std::string& distributor_address)
-      : ItemWorker(distributor_address) {
-  };
-
-  static void do_work(std::shared_ptr<const Item> item) {
+  void do_work(std::shared_ptr<const Item> item) {
     static std::default_random_engine eng{std::random_device{}()};
     static std::exponential_distribution<> dist(
         std::chrono::duration<double>(average_wait_time_).count());
@@ -35,6 +35,9 @@ public:
       std::cout << "Worker finished work item " << item->id() << std::endl;
     }
   }
+
+private:
+  const std::chrono::milliseconds average_wait_time_;
 };
 
 #endif

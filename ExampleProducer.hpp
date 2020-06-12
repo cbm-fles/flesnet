@@ -4,6 +4,7 @@
 #include "ItemProducer.hpp"
 
 #include <chrono>
+#include <iostream>
 #include <memory>
 #include <set>
 #include <thread>

@@ -1,6 +1,7 @@
-#include "ItemDistributor.hpp"
 #include "ExampleProducer.hpp"
 #include "ExampleWorker.hpp"
+#include "ItemDistributor.hpp"
+#include "ItemWorkerProtocol.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -21,10 +22,16 @@ int main() {
   ExampleProducer producer(zmq_context, producer_address);
   std::thread producer_thread(std::ref(producer));
 
-  ExampleWorker worker1(worker_address);
+  WorkerParameters param1{1, 0, WorkerQueuePolicy::QueueAll,
+                          "example_client_1"};
+  const auto delay1 = std::chrono::milliseconds{500};
+  ExampleWorker worker1(worker_address, param1, delay1);
   std::thread worker1_thread(std::ref(worker1));
 
-  ExampleWorker worker2(worker_address);
+  WorkerParameters param2{1, 0, WorkerQueuePolicy::QueueAll,
+                          "example_client_2"};
+  const auto delay2 = std::chrono::milliseconds{500};
+  ExampleWorker worker2(worker_address, param2, delay2);
   std::thread worker2_thread(std::ref(worker2));
 
   producer_thread.join();
