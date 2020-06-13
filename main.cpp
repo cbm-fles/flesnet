@@ -11,6 +11,7 @@
 #include <zmq.hpp>
 
 int main() {
+  using namespace std::literals;
   auto zmq_context = std::make_shared<zmq::context_t>(1);
 
   std::string producer_address = "inproc://TEST";
@@ -19,26 +20,45 @@ int main() {
   ItemDistributor distributor(zmq_context, producer_address, worker_address);
   std::thread distributor_thread(std::ref(distributor));
 
-  ExampleProducer producer(zmq_context, producer_address);
+  // The producer creates items at a constant primary rate of "d0".
+  const auto d0 = 500ms;
+  const size_t item_count = 10;
+  ExampleProducer producer(zmq_context, producer_address, d0, 0ms, item_count);
   std::thread producer_thread(std::ref(producer));
 
-  WorkerParameters param1{1, 0, WorkerQueuePolicy::QueueAll,
-                          "example_client_1"};
-  const auto delay1 = std::chrono::milliseconds{500};
-  ExampleWorker worker1(worker_address, param1, delay1);
+  // The "storage" worker is slightly faster than data generation. It never
+  // skips events but creates backpressure instead.
+  WorkerParameters param1{1, 0, WorkerQueuePolicy::QueueAll, "storage"};
+  ExampleWorker worker1(worker_address, param1, d0 / 2, d0 / 4);
   std::thread worker1_thread(std::ref(worker1));
 
-  WorkerParameters param2{1, 0, WorkerQueuePolicy::QueueAll,
-                          "example_client_2"};
-  const auto delay2 = std::chrono::milliseconds{500};
-  ExampleWorker worker2(worker_address, param2, delay2);
+  // The "fast_analysis" worker is about as fast as data generation, but
+  // includes a random time component. It may skip events sometimes.
+  WorkerParameters param2{1, 0, WorkerQueuePolicy::PrebufferOne,
+                          "fast_analysis"};
+  ExampleWorker worker2(worker_address, param2, d0 / 2, d0 / 2);
   std::thread worker2_thread(std::ref(worker2));
+
+  // The "slow_analysis" worker is much slower than data generation. It always
+  // waits for the newest dataset and skips all other items during processing.
+  WorkerParameters param3{1, 0, WorkerQueuePolicy::Skip, "slow_analysis"};
+  ExampleWorker worker3(worker_address, param3, d0 * 3, d0);
+  std::thread worker3_thread(std::ref(worker3));
+
+  // The "sampling_analysis" worker receives only 1/5 of the data. It should be
+  // fast enough, but it is not allowed to generate backpressure if not.
+  WorkerParameters param4{5, 0, WorkerQueuePolicy::PrebufferOne,
+                          "sampling_analysis"};
+  ExampleWorker worker4(worker_address, param4, d0 * 3, d0);
+  std::thread worker4_thread(std::ref(worker4));
 
   producer_thread.join();
   distributor.stop();
   distributor_thread.join();
   worker1_thread.join();
   worker2_thread.join();
+  worker3_thread.join();
+  worker4_thread.join();
 
   return 0;
 }

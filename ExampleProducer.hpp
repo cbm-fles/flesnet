@@ -6,21 +6,25 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <set>
 #include <thread>
 
 #include <zmq.hpp>
 
 class ExampleProducer : public ItemProducer {
-  constexpr static auto wait_time_ = std::chrono::milliseconds{500};
-
 public:
   ExampleProducer(std::shared_ptr<zmq::context_t> context,
-                  const std::string& distributor_address)
-      : ItemProducer(context, distributor_address){};
+                  const std::string& distributor_address,
+                  std::chrono::milliseconds constant_delay,
+                  std::chrono::milliseconds random_delay,
+                  std::size_t item_count)
+      : ItemProducer(context, distributor_address),
+        constant_delay_(constant_delay), random_delay_(random_delay),
+        item_count_limit_(item_count){};
 
   void operator()() {
-    while (i_ < 5 || !outstanding_.empty()) {
+    while (i_ < item_count_limit_ || !outstanding_.empty()) {
 
       // receive completion messages if available
       while (true) {
@@ -35,10 +39,9 @@ public:
         };
       }
 
-      // wait some time
-      std::this_thread::sleep_for(wait_time_);
+      wait();
 
-      if (i_ < 5) {
+      if (i_ < item_count_limit_) {
         // send work item
         outstanding_.insert(i_);
         std::cout << "Producer GENERATE item " << i_ << std::endl;
@@ -50,8 +53,26 @@ public:
   }
 
 private:
+  void wait() {
+    auto delay = constant_delay_;
+    if (random_delay_.count() != 0) {
+      static const auto random_delay =
+          std::chrono::duration<double>(random_delay_);
+      static std::default_random_engine eng{std::random_device{}()};
+      static std::exponential_distribution<> dist(random_delay_.count());
+      auto this_random_delay = std::chrono::duration<double>{dist(eng)};
+      delay += std::chrono::duration_cast<std::chrono::milliseconds>(
+          this_random_delay);
+    }
+    std::cout << "Producer waiting for " << delay.count() << " ms" << std::endl;
+    std::this_thread::sleep_for(delay);
+  }
+
   size_t i_ = 0;
   std::set<size_t> outstanding_;
+  const std::chrono::milliseconds constant_delay_;
+  const std::chrono::milliseconds random_delay_;
+  std::size_t item_count_limit_ = 5;
 };
 
 #endif
