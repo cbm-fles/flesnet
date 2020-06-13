@@ -19,7 +19,7 @@ public:
                   std::chrono::milliseconds constant_delay,
                   std::chrono::milliseconds random_delay,
                   std::size_t item_count)
-      : ItemProducer(context, distributor_address),
+      : ItemProducer(std::move(context), distributor_address),
         constant_delay_(constant_delay), random_delay_(random_delay),
         item_count_limit_(item_count){};
 
@@ -29,7 +29,7 @@ public:
       // receive completion messages if available
       while (true) {
         ItemID id;
-        bool result = try_receive_completion(id);
+        bool result = try_receive_completion(&id);
         if (!result) {
           break;
         }
@@ -56,8 +56,6 @@ private:
   void wait() {
     auto delay = constant_delay_;
     if (random_delay_.count() != 0) {
-      static const auto random_delay =
-          std::chrono::duration<double>(random_delay_);
       static std::default_random_engine eng{std::random_device{}()};
       static std::exponential_distribution<> dist(random_delay_.count());
       auto this_random_delay = std::chrono::duration<double>{dist(eng)};
@@ -72,7 +70,7 @@ private:
   std::set<size_t> outstanding_;
   const std::chrono::milliseconds constant_delay_;
   const std::chrono::milliseconds random_delay_;
-  std::size_t item_count_limit_ = 5;
+  const std::size_t item_count_limit_ = 5;
 };
 
 #endif

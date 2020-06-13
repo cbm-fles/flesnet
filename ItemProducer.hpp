@@ -12,7 +12,7 @@ class ItemProducer {
 public:
   ItemProducer(std::shared_ptr<zmq::context_t> context,
                const std::string& distributor_address)
-      : context_(context),
+      : context_(std::move(context)),
         distributor_socket_(*context_, zmq::socket_type::pair) {
     distributor_socket_.connect(distributor_address);
   };
@@ -28,14 +28,14 @@ public:
     }
   }
 
-  bool try_receive_completion(ItemID& id) {
+  bool try_receive_completion(ItemID* id) {
     zmq::message_t message;
     const auto result =
         distributor_socket_.recv(message, zmq::recv_flags::dontwait);
     if (!result.has_value()) {
       return false;
     }
-    id = std::stoull(message.to_string());
+    *id = std::stoull(message.to_string());
     return true;
   }
 

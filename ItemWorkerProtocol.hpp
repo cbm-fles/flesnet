@@ -18,7 +18,8 @@ constexpr static auto worker_heartbeat_timeout =
 
 class WorkerProtocolError : public std::runtime_error {
 public:
-  WorkerProtocolError(const std::string& msg = "") : runtime_error(msg) {}
+  explicit WorkerProtocolError(const std::string& msg = "")
+      : runtime_error(msg) {}
 };
 
 using ItemID = size_t;

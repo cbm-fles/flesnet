@@ -14,9 +14,9 @@
 
 class ItemWorker {
 public:
-  explicit ItemWorker(const std::string& distributor_address,
-                      WorkerParameters parameters)
-      : distributor_address_(distributor_address), parameters_(parameters) {
+  ItemWorker(std::string distributor_address, WorkerParameters parameters)
+      : distributor_address_(std::move(distributor_address)),
+        parameters_(std::move(parameters)) {
     connect();
   };
 
@@ -84,7 +84,7 @@ public:
     }
   }
 
-  const WorkerParameters parameters() const { return parameters_; }
+  [[nodiscard]] WorkerParameters parameters() const { return parameters_; }
 
 private:
   void connect() {

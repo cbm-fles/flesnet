@@ -156,7 +156,7 @@ public:
   ItemDistributor(std::shared_ptr<zmq::context_t> context,
                   const std::string& producer_address,
                   const std::string& worker_address)
-      : context_(context), generator_socket_(*context_, zmq::socket_type::pair),
+      : context_(std::move(context)), generator_socket_(*context_, zmq::socket_type::pair),
         worker_socket_(*context_, zmq::socket_type::router) {
     generator_socket_.bind(producer_address);
     generator_socket_.set(zmq::sockopt::linger, 0);

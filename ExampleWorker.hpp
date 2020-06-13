@@ -17,10 +17,10 @@ public:
                 WorkerParameters parameters,
                 std::chrono::milliseconds constant_delay,
                 std::chrono::milliseconds random_delay)
-      : ItemWorker(distributor_address, parameters),
+      : ItemWorker(distributor_address, std::move(parameters)),
         constant_delay_(constant_delay), random_delay_(random_delay){};
 
-  void do_work(std::shared_ptr<const Item> item) {
+  void do_work(std::shared_ptr<const Item> /*item*/) {
     // Wait for a random time before completion
     wait();
   }
@@ -39,8 +39,6 @@ private:
   void wait() {
     auto delay = constant_delay_;
     if (random_delay_.count() != 0) {
-      static const auto random_delay =
-          std::chrono::duration<double>(random_delay_);
       static std::default_random_engine eng{std::random_device{}()};
       static std::exponential_distribution<> dist(random_delay_.count());
       auto this_random_delay = std::chrono::duration<double>{dist(eng)};
