@@ -22,7 +22,7 @@
 /*
 
 Each worker ("ItemWorker") connects to the broker ("ItemDistributor").
-It starts the communication by sending a REGISTER message. After that, the
+The worker starts the communication by sending a REGISTER message. After that, the
 broker can send a WORK_ITEM message at any time, and the worker can send a
 COMPLETION message at any time. In addition, the broker sends HEARTBEAT messages
 regularly if there is no outstanding WORK_ITEM. This allows the worker to detect
