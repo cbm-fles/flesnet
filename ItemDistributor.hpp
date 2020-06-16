@@ -19,57 +19,6 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-/*
-
-Each worker ("ItemWorker") connects to the broker ("ItemDistributor").
-The worker starts the communication by sending a REGISTER message. After that, the
-broker can send a WORK_ITEM message at any time, and the worker can send a
-COMPLETION message at any time. In addition, the broker sends HEARTBEAT messages
-regularly if there is no outstanding WORK_ITEM. This allows the worker to detect
-that the broker has died, in which case the worker closes the socket and opens a
-new connection.
-
-The broker keeps track of all connected workers. It detects that a worker has
-died by the disconnect notification. When this happens, it releases all
-outstanding WORK_ITEMs for that worker and stops sending messages to it.
-
-The REGISTER message contains a specification of the type of items the worker
-wants to receive (stride, offset). It also specifies the queueing mode:
-- fully asynchronous, receive all, don't skip
-  All matching items are immediately sent as a WORK_ITEM to the send queue, or,
-if this fails, put on an internal waiting_items queue.
-- prebuffer one
-  The broker keeps the newest matching item in an internal 1-item queue if the
-worker is not idle. The item is sent once the broker receives the outstanding
-completion from the worker.
-- skip
-  The broker keeps no item queue for this worker. It only sends the item
-immediately if the worker is idle.
-
-Work items are received from an exclusive producer client through a ZMQ_PAIR
-socket.
-
-....
-on new item n:
-make new item object with shared_ptr and proper destructor (queue a message on
-destruction) and item id member
-
-  for all connections:
-
-    if item "fits" connection:
-
-      enqueue it
-
-      if client is idle, send it immediately
-
-on reception of a completion:
-  remove item from outstanding_items
-
-*/
-
-// Request every item with sequence number n for which exists m in N:
-// n = m * stride + offset
-
 class Worker {
 public:
   explicit Worker(const std::string& message) {
@@ -127,7 +76,8 @@ public:
 
   [[nodiscard]] bool
   wants_heartbeat(std::chrono::system_clock::time_point when) const {
-    return (is_idle() && last_heartbeat_time_ + distributor_heartbeat_interval < when);
+    return (is_idle() &&
+            last_heartbeat_time_ + distributor_heartbeat_interval < when);
   }
 
 private:
@@ -151,12 +101,17 @@ private:
       std::chrono::system_clock::now();
 };
 
+/**
+ * Work items are received from an exclusive producer client through a ZMQ_PAIR
+ * socket.
+ */
 class ItemDistributor {
 public:
   ItemDistributor(std::shared_ptr<zmq::context_t> context,
                   const std::string& producer_address,
                   const std::string& worker_address)
-      : context_(std::move(context)), generator_socket_(*context_, zmq::socket_type::pair),
+      : context_(std::move(context)),
+        generator_socket_(*context_, zmq::socket_type::pair),
         worker_socket_(*context_, zmq::socket_type::router) {
     generator_socket_.bind(producer_address);
     generator_socket_.set(zmq::sockopt::linger, 0);
