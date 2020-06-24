@@ -147,6 +147,34 @@ void Parameters::parse_options(int argc, char* argv[]) {
                  ->value_name("<id>"),
              "select transport implementation; possible values "
              "(case-insensitive) are: RDMA, LibFabric, ZeroMQ");
+  config_add("drop-process-ts",
+             po::value<bool>(&drop_process_ts_)->default_value(false),
+             "Drop timeslice processing");
+  config_add("scheduler-history-size",
+             po::value<uint32_t>(&scheduler_history_size_)->default_value(100),
+             "The scheduler history size");
+  config_add(
+      "scheduler-interval-length",
+      po::value<uint32_t>(&scheduler_interval_length_)->default_value(10000),
+      "The initial scheduler interval Timeslices");
+  config_add("scheduler-speedup-difference-percentage",
+             po::value<uint32_t>(&scheduler_speedup_difference_percentage_)
+                 ->default_value(0),
+             "The scheduler variance percentage to speed up");
+  config_add(
+      "scheduler-speedup-percentage",
+      po::value<uint32_t>(&scheduler_speedup_percentage_)->default_value(0),
+      "The scheduler speeding up percentage");
+  config_add(
+      "scheduler-speedup-interval-count",
+      po::value<uint32_t>(&scheduler_speedup_interval_count_)->default_value(0),
+      "The scheduler speeding up interval count");
+  config_add("log-directory,e",
+             po::value<std::string>(&log_directory_)->default_value(""),
+             "The directory to store the scheduler log files");
+  config_add("enable-logging",
+             po::value<bool>(&enable_logging_)->default_value(false),
+             "Enable generating logging files");
 
   po::options_description cmdline_options("Allowed options");
   cmdline_options.add(generic).add(config);

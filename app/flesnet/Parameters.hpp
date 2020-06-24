@@ -80,6 +80,41 @@ public:
            output_indexes_.size() == outputs_.size();
   }
 
+  /// flag to check whether to drop timeslice processing
+  bool drop_process_ts() const { return drop_process_ts_; }
+
+  /// Retrieve the history size of intervals that the scheduler would decide
+  /// based on
+  uint32_t scheduler_history_size() const { return scheduler_history_size_; }
+
+  /// Retrieve the initial timeslices of each interval
+  uint32_t scheduler_interval_length() const {
+    return scheduler_interval_length_;
+  }
+
+  /// Retrieve the maximum difference percentage between the proposed and the
+  /// actual duration to apply the scheduler_speedup_percentage_
+  uint32_t scheduler_speedup_difference_percentage() const {
+    return scheduler_speedup_difference_percentage_;
+  }
+
+  /// Retrieve the speeding up percentage of the scheduler to reduce the
+  /// duration
+  uint32_t scheduler_speedup_percentage() const {
+    return scheduler_speedup_percentage_;
+  }
+
+  /// Retrieve the speeding up interval count of the scheduler
+  uint32_t scheduler_speedup_interval_count() const {
+    return scheduler_speedup_interval_count_;
+  }
+
+  /// Retrieve the directory to store the log files
+  std::string log_directory() const { return log_directory_; }
+
+  /// Check whether to generate log files
+  bool enable_logging() const { return enable_logging_; }
+
 private:
   /// Parse command line options.
   void parse_options(int argc, char* argv[]);
@@ -115,4 +150,28 @@ private:
 
   /// This applications's indexes in the list of outputs.
   std::vector<unsigned> output_indexes_;
+
+  /// flag to check whether to drop timeslice processing
+  bool drop_process_ts_ = false;
+
+  /// This history size of intervals that the scheduler would decide based on
+  uint32_t scheduler_history_size_;
+
+  /// The intial TSs of each interval of the scheduler
+  uint32_t scheduler_interval_length_;
+
+  /// The maximum difference percentage between the proposed and the actual
+  /// duration to apply the scheduler_speedup_percentage_
+  uint32_t scheduler_speedup_difference_percentage_;
+
+  /// The speeding up percentage of the scheduler to reduce the duration
+  uint32_t scheduler_speedup_percentage_;
+
+  /// The speeding up interval count of the scheduler
+  uint32_t scheduler_speedup_interval_count_;
+
+  /// The directory to store the log files
+  std::string log_directory_;
+
+  bool enable_logging_ = false;
 };
