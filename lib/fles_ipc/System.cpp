@@ -71,7 +71,7 @@ std::string current_hostname() {
 
   int err = gethostname(buf.data(), buf.size());
   if (err != 0) {
-    throw std::runtime_error(stringerror(errno));
+    throw std::runtime_error(stringerror(err));
   }
 
   return std::string(buf.data());
@@ -84,7 +84,7 @@ std::string current_domainname() {
 
   int err = getdomainname(buf.data(), static_cast<int>(buf.size()));
   if (err != 0) {
-    throw std::runtime_error(stringerror(errno));
+    throw std::runtime_error(stringerror(err));
   }
 
   return std::string(buf.data());
