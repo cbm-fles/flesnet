@@ -29,6 +29,7 @@ find_package(Boost 1.55.0 REQUIRED COMPONENTS filesystem log program_options ser
 find_package(Threads REQUIRED)
 
 find_package(LIBFABRIC)
+find_package(MPI)
 find_package(RDMA)
 find_package(PDA 11.4.7 EXACT)
 find_package(CPPREST)
