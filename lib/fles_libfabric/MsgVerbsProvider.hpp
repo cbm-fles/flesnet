@@ -1,8 +1,9 @@
 // Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
-
 #pragma once
 
+#include <memory>
 #include <rdma/fabric.h>
+#include <unordered_map>
 
 #include "Provider.hpp"
 
@@ -10,29 +11,33 @@
 
 namespace tl_libfabric {
 
-class RDMSocketsProvider : public Provider {
+class MsgVerbsProvider : public Provider {
+  struct fi_info* info_ = nullptr;
+  struct fid_fabric* fabric_ = nullptr;
+
 public:
-  RDMSocketsProvider(struct fi_info* info);
+  MsgVerbsProvider(struct fi_info* info);
 
-  RDMSocketsProvider(const RDMSocketsProvider&) = delete;
-  RDMSocketsProvider& operator=(const RDMSocketsProvider&) = delete;
+  MsgVerbsProvider(const MsgVerbsProvider&) = delete;
+  void operator=(const MsgVerbsProvider&) = delete;
 
-  ~RDMSocketsProvider();
+  /// The MsgVerbsProvider default destructor.
+  ~MsgVerbsProvider();
 
-  bool has_av() const override { return true; };
-  bool has_eq_at_eps() const override { return false; };
-  bool is_connection_oriented() const override { return false; };
+  bool has_av() const override { return false; };
+  bool has_eq_at_eps() const override { return true; };
+  bool is_connection_oriented() const override { return true; };
 
   struct fi_info* get_info() override {
     assert(info_ != nullptr);
     return info_;
   }
 
-  virtual void
-  set_hostnames_and_services(struct fid_av* av,
-                             const std::vector<std::string>& compute_hostnames,
-                             const std::vector<std::string>& compute_services,
-                             std::vector<::fi_addr_t>& fi_addrs) override;
+  void set_hostnames_and_services(
+      struct fid_av* /*av*/,
+      const std::vector<std::string>& /*compute_hostnames*/,
+      const std::vector<std::string>& /*compute_services*/,
+      std::vector<fi_addr_t>& /*fi_addrs*/) override {}
 
   struct fid_fabric* get_fabric() override {
     return fabric_;
@@ -55,9 +60,5 @@ public:
                const void* param,
                size_t paramlen,
                void* addr) override;
-
-private:
-  struct fi_info* info_ = nullptr;
-  struct fid_fabric* fabric_ = nullptr;
 };
 } // namespace tl_libfabric

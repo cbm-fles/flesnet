@@ -5,9 +5,12 @@
 #include <log.hpp>
 #include <memory>
 #include <rdma/fabric.h>
-#include <utility>
-
+#include <string.h>
 #include <vector>
+
+#ifndef FIVERSION
+#define FIVERSION FI_VERSION(1, 5)
+#endif
 
 namespace tl_libfabric {
 class Provider {
@@ -41,7 +44,7 @@ public:
                        size_t paramlen,
                        void* addr) = 0;
 
-  static void init(const std::string& local_host_name) {
+  static void init(std::string local_host_name) {
     prov = get_provider(local_host_name);
   }
 
@@ -53,13 +56,16 @@ public:
 
   static std::unique_ptr<Provider>& getInst() { return prov; }
 
+  static struct fi_info* get_hints(enum fi_ep_type ep_type, std::string prov);
+
+  static void dump_fi_info(const struct fi_info* info);
+
   static uint64_t requested_key;
 
   static int vector;
 
 private:
-  static std::unique_ptr<Provider>
-  get_provider(const std::string& local_host_name);
+  static std::unique_ptr<Provider> get_provider(std::string local_host_name);
   static std::unique_ptr<Provider> prov;
 };
 } // namespace tl_libfabric

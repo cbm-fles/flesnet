@@ -6,3 +6,5 @@
 project.xcworkspace/
 xcuserdata/
 .vscode/
+/.cproject
+/.project

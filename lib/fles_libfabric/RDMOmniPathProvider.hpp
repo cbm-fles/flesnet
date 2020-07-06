@@ -1,4 +1,4 @@
-// Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
+// Copyright 2019 Farouk Salem <salem@zib.de>
 
 #pragma once
 
@@ -10,14 +10,14 @@
 
 namespace tl_libfabric {
 
-class RDMSocketsProvider : public Provider {
+class RDMOmniPathProvider : public Provider {
 public:
-  RDMSocketsProvider(struct fi_info* info);
+  RDMOmniPathProvider(struct fi_info* info);
 
-  RDMSocketsProvider(const RDMSocketsProvider&) = delete;
-  RDMSocketsProvider& operator=(const RDMSocketsProvider&) = delete;
+  RDMOmniPathProvider(const RDMOmniPathProvider&) = delete;
+  RDMOmniPathProvider& operator=(const RDMOmniPathProvider&) = delete;
 
-  ~RDMSocketsProvider();
+  ~RDMOmniPathProvider();
 
   bool has_av() const override { return true; };
   bool has_eq_at_eps() const override { return false; };

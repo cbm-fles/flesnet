@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include <memory>
 #include <rdma/fabric.h>
+#include <unordered_map>
 
 #include "Provider.hpp"
 
@@ -10,14 +12,18 @@
 
 namespace tl_libfabric {
 
-class RDMSocketsProvider : public Provider {
+class RDMGNIProvider : public Provider {
+  struct fi_info* info_ = nullptr;
+  struct fid_fabric* fabric_ = nullptr;
+
 public:
-  RDMSocketsProvider(struct fi_info* info);
+  RDMGNIProvider(struct fi_info* info);
 
-  RDMSocketsProvider(const RDMSocketsProvider&) = delete;
-  RDMSocketsProvider& operator=(const RDMSocketsProvider&) = delete;
+  RDMGNIProvider(const RDMGNIProvider&) = delete;
+  void operator=(const RDMGNIProvider&) = delete;
 
-  ~RDMSocketsProvider();
+  /// The GNIProvider default destructor.
+  ~RDMGNIProvider();
 
   bool has_av() const override { return true; };
   bool has_eq_at_eps() const override { return false; };
@@ -32,7 +38,7 @@ public:
   set_hostnames_and_services(struct fid_av* av,
                              const std::vector<std::string>& compute_hostnames,
                              const std::vector<std::string>& compute_services,
-                             std::vector<::fi_addr_t>& fi_addrs) override;
+                             std::vector<fi_addr_t>& fi_addrs) override;
 
   struct fid_fabric* get_fabric() override {
     return fabric_;
@@ -46,7 +52,7 @@ public:
               unsigned int count,
               fid_eq* eq) override;
 
-  void connect(::fid_ep* ep,
+  void connect(fid_ep* ep,
                uint32_t max_send_wr,
                uint32_t max_send_sge,
                uint32_t max_recv_wr,
@@ -55,9 +61,5 @@ public:
                const void* param,
                size_t paramlen,
                void* addr) override;
-
-private:
-  struct fi_info* info_ = nullptr;
-  struct fid_fabric* fabric_ = nullptr;
 };
 } // namespace tl_libfabric

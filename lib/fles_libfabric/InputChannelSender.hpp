@@ -6,13 +6,17 @@
 #include "ConnectionGroup.hpp"
 #include "DualRingBuffer.hpp"
 #include "InputChannelConnection.hpp"
+#include "InputIntervalInfo.hpp"
+#include "InputSchedulerOrchestrator.hpp"
 #include "RingBuffer.hpp"
+
 #include <boost/format.hpp>
 #include <cassert>
-
+#include <mutex>
 #include <rdma/fi_domain.h>
 #include <set>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace tl_libfabric {
@@ -26,12 +30,15 @@ public:
   /// The InputChannelSender default constructor.
   InputChannelSender(uint64_t input_index,
                      InputBufferReadInterface& data_source,
-                     const std::vector<std::string>& compute_hostnames,
-                     const std::vector<std::string>& compute_services,
+                     const std::vector<std::string> compute_hostnames,
+                     const std::vector<std::string> compute_services,
                      uint32_t timeslice_size,
                      uint32_t overlap_size,
                      uint32_t max_timeslice_number,
-                     const std::string& input_node_name);
+                     std::string input_node_name,
+                     uint32_t scheduler_interval_length,
+                     std::string log_directory,
+                     bool enable_logging);
 
   InputChannelSender(const InputChannelSender&) = delete;
   void operator=(const InputChannelSender&) = delete;
@@ -41,13 +48,17 @@ public:
 
   void report_status();
 
-  void sync_buffer_positions();
   void sync_data_source(bool schedule);
+
+  void sync_heartbeat() override;
 
   void operator()() override;
 
+  // A scheduling calls to send timeslices to each connection
+  void send_timeslices();
+
   /// The central function for distributing timeslice data.
-  bool try_send_timeslice(uint64_t timeslice);
+  bool try_send_timeslice(uint64_t timeslice, uint32_t cn);
 
   std::unique_ptr<InputChannelConnection>
   create_input_node_connection(uint_fast16_t index);
@@ -58,9 +69,6 @@ public:
   void on_connected(struct fid_domain* pd) override;
 
 private:
-  /// Return target computation node for given timeslice.
-  int target_cn_index(uint64_t timeslice);
-
   /// Handle RDMA_CM_REJECTED event.
   void on_rejected(struct fi_eq_err_entry* event) override;
 
@@ -68,7 +76,7 @@ private:
   std::string get_state_string();
 
   /// Create gather list for transmission of timeslice
-  void post_send_data(uint64_t timeslice,
+  bool post_send_data(uint64_t timeslice,
                       int cn,
                       uint64_t desc_offset,
                       uint64_t desc_length,
@@ -84,6 +92,17 @@ private:
 
   /// setup connections between nodes
   void bootstrap_wo_connections();
+
+  /// Update compute scheduler when an interval is completed
+  void update_compute_schedulers();
+
+  /// Update the data source after receiving the acknowledgement
+  void update_data_source(uint32_t compute_index,
+                          uint64_t old_desc,
+                          uint64_t new_desc);
+
+  /// Mark connection as completed in case of normal termination or failure
+  void mark_connection_completed(uint32_t conn_id);
 
   uint64_t input_index_;
 
@@ -116,7 +135,7 @@ private:
 
   const uint32_t timeslice_size_;
   const uint32_t overlap_size_;
-  const uint32_t max_timeslice_number_;
+  const uint64_t max_timeslice_number_;
 
   const uint64_t min_acked_desc_;
   const uint64_t min_acked_data_;
@@ -128,8 +147,6 @@ private:
   uint64_t start_index_data_;
 
   uint64_t write_index_desc_ = 0;
-
-  std::set<uint_fast16_t> connected_buffers_;
 
   bool abort_ = false;
 
@@ -155,15 +172,15 @@ private:
       return acked - cached_acked;
     }
     int64_t unused() const {
-      assert(written <= cached_acked + size);
-      return cached_acked + size - written;
+      assert(written <= sent + size);
+      return sent + size - written;
     }
 
     float percentage(int64_t value) const {
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
-    static std::string caption() {
+    std::string caption() const {
       return std::string("used/sending/freeing/free");
     }
 
