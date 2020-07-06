@@ -202,7 +202,7 @@ void Application::create_input_channel_senders() {
           new tl_libfabric::InputChannelSender(
               index, *(data_sources_.at(c).get()), output_hosts,
               output_services, par_.timeslice_size(), overlap_size,
-              par_.max_timeslice_number(), par_.inputs().at(c).host,
+              par_.max_timeslice_number(), par_.inputs().at(index).host,
               par_.scheduler_interval_length(), par_.log_directory(),
               par_.enable_logging()));
       input_channel_senders_.push_back(std::move(sender));
