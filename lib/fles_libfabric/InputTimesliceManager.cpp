@@ -76,6 +76,7 @@ void InputTimesliceManager::check_to_add_rescheduled_timeslices(
         future_conn_timeslices_.get(compute_index)->insert(*set_it);
         ++set_it;
       }
+      delete rescheduled_timeslices;
       it->second[compute_index] = rescheduled_timeslices = nullptr;
     }
     ++it;
@@ -120,10 +121,10 @@ InputTimesliceManager::undo_transmitted_timeslices_after_trigger(
       assert(last_timeslice_info->compute_desc == last_conn_desc_[conn]);
       assert(last_timeslice == last_conn_timeslice_[conn]);
       // remove conn_desc_timeslices
-      conn_desc_timeslice_info_.get(conn)->remove(
-          last_timeslice_info->compute_desc);
+      assert(conn_desc_timeslice_info_.get(conn)->remove(
+          last_timeslice_info->compute_desc));
       // remove conn_timeslice_info
-      timeslices_map->remove(last_timeslice);
+      assert(timeslices_map->remove(last_timeslice));
       undo_timeslices.push_back(last_timeslice);
       L_(debug) << "Removing " << last_timeslice << " from " << conn;
       // update the last_conn_desc
@@ -209,11 +210,10 @@ void InputTimesliceManager::log_timeslice_transmit_time(uint32_t compute_index,
       conn_timeslice_info_.get(compute_index)->add(timeslice, timeslice_info));
   assert(conn_desc_timeslice_info_.get(compute_index)
              ->add(descriptor_index, timeslice));
-  future_conn_timeslices_.get(compute_index)->erase(timeslice);
+  assert(future_conn_timeslices_.get(compute_index)->erase(timeslice) == 1);
   ++last_conn_desc_[compute_index];
   last_conn_timeslice_[compute_index] = timeslice;
   ++sent_timeslices_;
-  timeslice_info = nullptr;
 
   check_to_add_rescheduled_timeslices(compute_index);
 }
@@ -244,16 +244,19 @@ double InputTimesliceManager::acknowledge_timeslices_completion(
     uint32_t compute_index, uint64_t up_to_descriptor_id) {
   uint64_t sum_latency = 0;
   uint32_t count = 0;
-  SizedMap<uint64_t, uint64_t>::iterator transmitted_timeslice_iterator =
-      conn_desc_timeslice_info_.get(compute_index)->get_begin_iterator();
+  SizedMap<uint64_t, uint64_t>* desc_timeslice_list =
+      conn_desc_timeslice_info_.get(compute_index);
+  assert(desc_timeslice_list != nullptr);
 
+  SizedMap<uint64_t, uint64_t>::iterator transmitted_timeslice_iterator =
+      desc_timeslice_list->get_begin_iterator();
   TimesliceInfo* timeslice_info;
   while (transmitted_timeslice_iterator !=
-             conn_desc_timeslice_info_.get(compute_index)->get_end_iterator() &&
+             desc_timeslice_list->get_end_iterator() &&
          transmitted_timeslice_iterator->first <= up_to_descriptor_id) {
-
     timeslice_info = conn_timeslice_info_.get(compute_index)
                          ->get(transmitted_timeslice_iterator->second);
+    assert(timeslice_info != nullptr);
     timeslice_info->completion_acked_duration =
         std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() -
@@ -265,12 +268,13 @@ double InputTimesliceManager::acknowledge_timeslices_completion(
                    timeslice_info->rdma_acked_duration;
     ++count;
 
-    assert(conn_desc_timeslice_info_.get(compute_index)
-               ->remove(transmitted_timeslice_iterator->first));
+    assert(
+        desc_timeslice_list->contains(transmitted_timeslice_iterator->first));
+    // assert(desc_timeslice_list->remove(transmitted_timeslice_iterator->first));
+    assert(desc_timeslice_list->remove(transmitted_timeslice_iterator));
     transmitted_timeslice_iterator =
         conn_desc_timeslice_info_.get(compute_index)->get_begin_iterator();
   }
-  timeslice_info = nullptr;
   return count == 0 ? 0 : sum_latency / count;
 }
 
@@ -360,7 +364,6 @@ InputTimesliceManager::get_last_rdma_acked_timeslice(uint32_t compute_index) {
   SizedMap<uint64_t, uint64_t>* incompleted_desc_timeslices =
       conn_desc_timeslice_info_.get(compute_index);
   if (incompleted_desc_timeslices->empty()) {
-    incompleted_desc_timeslices = nullptr;
     return last_conn_timeslice_[compute_index];
   }
 
@@ -387,10 +390,6 @@ InputTimesliceManager::get_last_rdma_acked_timeslice(uint32_t compute_index) {
     timeslice =
         get_timeslice_by_descriptor(compute_index, incompleted_it->first - 1);
   }
-  incompleted_desc_timeslices = nullptr;
-  conn_timeslice_list = nullptr;
-  timeslice_info = nullptr;
-
   return timeslice;
 }
 
@@ -457,7 +456,6 @@ uint64_t InputTimesliceManager::count_unacked_timeslices_of_interval(
   SizedMap<uint64_t, uint64_t>* desc_timeslices =
       conn_desc_timeslice_info_.get(compute_index);
   if (desc_timeslices->empty()) {
-    desc_timeslices = nullptr;
     return 0;
   }
 
@@ -473,8 +471,6 @@ uint64_t InputTimesliceManager::count_unacked_timeslices_of_interval(
         desc_timeslice_it->second <= end_ts)
       ++count;
   } while (desc_timeslice_it != desc_timeslices->get_begin_iterator());
-
-  desc_timeslices = nullptr;
 
   return count;
 }
@@ -595,10 +591,9 @@ InputTimesliceManager::retrieve_failed_timeslices_on_failure(
         failed_conn_desc_timeslice_info->get_begin_iterator()->second);
     undo_timeslices.push_back(
         failed_conn_desc_timeslice_info->get_begin_iterator()->second);
-    failed_conn_desc_timeslice_info->remove(
-        failed_conn_desc_timeslice_info->get_begin_iterator()->first);
+    assert(failed_conn_desc_timeslice_info->remove(
+        failed_conn_desc_timeslice_info->get_begin_iterator()->first));
   }
-  failed_timeslice = nullptr;
   return undo_timeslices;
 }
 

@@ -19,6 +19,8 @@ public:
 
   bool remove(const KEY key);
 
+  bool remove(const typename std::map<KEY, VALUE>::iterator iterator);
+
   bool contains(const KEY key) const;
 
   bool empty() const;
@@ -82,6 +84,16 @@ template <typename KEY, typename VALUE>
 bool SizedMap<KEY, VALUE>::remove(const KEY key) {
   if (contains(key)) {
     map_.erase(key);
+    return true;
+  }
+  return false;
+}
+
+template <typename KEY, typename VALUE>
+bool SizedMap<KEY, VALUE>::remove(
+    const typename std::map<KEY, VALUE>::iterator iterator) {
+  if (iterator != map_.end()) {
+    map_.erase(iterator);
     return true;
   }
   return false;
