@@ -129,7 +129,7 @@ public:
     // TODO detect the number of messages that we are waiting for
     const int ne_max = conn_.size() * conn_.size() * 1000;
 
-    struct fi_cq_tagged_entry* wc = new fi_cq_tagged_entry[ne_max];
+    struct fi_cq_tagged_entry wc[ne_max];
     int ne;
     int ne_total = 0;
 
@@ -176,8 +176,9 @@ public:
         if (ne != -FI_EAGAIN) {
 
           ne_total += ne;
-          if (ne > 0)
+          if (ne > 0) {
             start = std::chrono::high_resolution_clock::now();
+          }
           for (int i = 0; i < ne; ++i) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -202,8 +203,6 @@ public:
         }
       }
     }
-
-    delete[] wc;
 
     return ne_total;
   }

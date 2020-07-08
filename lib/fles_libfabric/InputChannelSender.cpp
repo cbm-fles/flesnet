@@ -663,10 +663,12 @@ void InputChannelSender::on_completion(uint64_t wr_id) {
               ->get_recv_heartbeat_message()
               .failure_info.last_completed_desc);
 
-      for (auto& conn : conn_)
-        if (!InputSchedulerOrchestrator::is_connection_timed_out(conn->index()))
+      for (auto& conn : conn_) {
+        if (!InputSchedulerOrchestrator::is_connection_timed_out(conn->index())) {
           conn->update_cn_wp_after_failure_action(
               conn_[cn]->get_recv_heartbeat_message().failure_info.index);
+        }
+      }
       mark_connection_completed(
           conn_[cn]->get_recv_heartbeat_message().failure_info.index);
     }
