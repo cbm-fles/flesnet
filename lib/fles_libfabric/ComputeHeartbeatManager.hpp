@@ -27,6 +27,11 @@ public:
   // Initialize the instance and retrieve it
   static ComputeHeartbeatManager* get_instance(uint32_t index,
                                                uint32_t init_connection_count,
+                                               uint64_t init_heartbeat_timeout,
+                                               uint32_t timeout_history_size,
+                                               uint32_t timeout_factor,
+                                               uint32_t inactive_factor,
+                                               uint32_t inactive_retry_count,
                                                std::string log_directory,
                                                bool enable_logging);
 
@@ -86,6 +91,11 @@ private:
 
   ComputeHeartbeatManager(uint32_t index,
                           uint32_t init_connection_count,
+                          uint64_t init_heartbeat_timeout,
+                          uint32_t timeout_history_size,
+                          uint32_t timeout_factor,
+                          uint32_t inactive_factor,
+                          uint32_t inactive_retry_count,
                           std::string log_directory,
                           bool enable_logging);
 

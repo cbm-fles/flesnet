@@ -44,7 +44,11 @@ TimesliceBuilder::TimesliceBuilder(
     connection_oriented_ = false;
   }
   DDSchedulerOrchestrator::initialize(
-      compute_index, num_input_nodes, scheduler_history_size,
+      compute_index, num_input_nodes, ConstVariables::INIT_HEARTBEAT_TIMEOUT,
+      ConstVariables::HEARTBEAT_TIMEOUT_HISTORY_SIZE,
+      ConstVariables::HEARTBEAT_TIMEOUT_FACTOR,
+      ConstVariables::HEARTBEAT_INACTIVE_FACTOR,
+      ConstVariables::HEARTBEAT_INACTIVE_RETRY_COUNT, scheduler_history_size,
       scheduler_interval_length, scheduler_speedup_difference_percentage,
       scheduler_speedup_percentage, scheduler_speedup_interval_count,
       log_directory, enable_logging);
@@ -448,19 +452,9 @@ void TimesliceBuilder::on_completion(uint64_t wr_id) {
     conn_[in]->on_complete_send();
     break;
 
-  case ID_SEND_FINALIZE:
-    if (!conn_[in]->abort_flag()) {
-      assert(timeslice_buffer_.get_num_work_items() == 0);
-      assert(timeslice_buffer_.get_num_completions() == 0);
-    }
-    conn_[in]->on_complete_send();
-    if (!conn_[in]->done()) {
-      mark_connection_completed(in);
-    }
-    L_(debug) << "[c" << compute_index_ << "] "
-              << "SEND FINALIZE complete for id " << in
-              << " all_done=" << all_done_;
-    break;
+  case ID_SEND_FINALIZE: {
+    on_send_finalize_event(in);
+  } break;
 
   case ID_RECEIVE_STATUS: {
     conn_[in]->on_complete_recv();
@@ -468,33 +462,8 @@ void TimesliceBuilder::on_completion(uint64_t wr_id) {
 
   case ID_HEARTBEAT_RECEIVE_STATUS: {
     int cn = wr_id >> 8;
+    on_recv_heartbeat_event(cn);
 
-    const HeartbeatMessage recv_heartbeat_message =
-        conn_[cn]->recv_heartbeat_message();
-    bool before_failed_node_decision_taken = false,
-         after_failed_node_decision_taken = false;
-    if (recv_heartbeat_message.failure_info.index != ConstVariables::MINUS_ONE)
-      before_failed_node_decision_taken =
-          DDSchedulerOrchestrator::is_failed_node_decision_ready(
-              recv_heartbeat_message.failure_info.index);
-
-    conn_[cn]->on_complete_heartbeat_recv();
-
-    if (recv_heartbeat_message.failure_info.index != ConstVariables::MINUS_ONE)
-      after_failed_node_decision_taken =
-          DDSchedulerOrchestrator::is_failed_node_decision_ready(
-              recv_heartbeat_message.failure_info.index);
-
-    if (!before_failed_node_decision_taken &&
-        after_failed_node_decision_taken) {
-      HeartbeatFailedNodeInfo* failednode_info =
-          DDSchedulerOrchestrator::get_decision_of_failed_connection(
-              recv_heartbeat_message.failure_info.index);
-      assert(failednode_info != nullptr);
-      for (auto& connection : conn_) {
-        connection->prepare_heartbeat(failednode_info);
-      }
-    }
   } break;
 
   case ID_HEARTBEAT_SEND_STATUS: {
@@ -588,6 +557,15 @@ void TimesliceBuilder::process_completed_timeslices() {
 }
 
 void TimesliceBuilder::sync_heartbeat() {
+  check_missing_connections_failure_info();
+  check_long_waiting_finalized_connections();
+  check_inactive_connections();
+
+  scheduler_.add(std::bind(&TimesliceBuilder::sync_heartbeat, this),
+                 std::chrono::system_clock::now() + std::chrono::seconds(1));
+}
+
+void TimesliceBuilder::check_missing_connections_failure_info() {
   std::pair<uint32_t, std::set<uint32_t>> missing_info =
       DDSchedulerOrchestrator::retrieve_missing_info_from_connections();
   if (missing_info.first != ConstVariables::MINUS_ONE) {
@@ -602,18 +580,37 @@ void TimesliceBuilder::sync_heartbeat() {
     }
     delete decision;
   }
+}
 
-  // Check finalize long waiting connections
+void TimesliceBuilder::check_long_waiting_finalized_connections() {
   std::vector<uint32_t> long_waiting_finalize_conns =
       DDSchedulerOrchestrator::retrieve_long_waiting_finalized_connections();
   for (uint32_t i = 0; i < long_waiting_finalize_conns.size(); i++) {
     mark_connection_completed(long_waiting_finalize_conns[i]);
   }
-  scheduler_.add(std::bind(&TimesliceBuilder::sync_heartbeat, this),
-                 std::chrono::system_clock::now() + std::chrono::seconds(1));
+}
+
+void TimesliceBuilder::check_inactive_connections() {
+
+  int32_t failed_connection =
+      DDSchedulerOrchestrator::get_new_timeout_connection();
+  if (failed_connection == -1) { // Check inactive connections
+    send_heartbeat_to_inactive_connections();
+  } else { // mark connection as completed
+    DDSchedulerOrchestrator::mark_connection_timed_out(failed_connection);
+    if (DDSchedulerOrchestrator::get_timeout_connection_count() ==
+        conn_.size()) {
+      for (auto& conn : conn_) {
+        mark_connection_completed(conn->index());
+      }
+    }
+  }
 }
 
 void TimesliceBuilder::mark_connection_completed(uint32_t conn_id) {
+  if (conn_[conn_id]->done())
+    return;
+
   DDSchedulerOrchestrator::log_finalize_connection(conn_id, true);
   conn_[conn_id]->on_complete_send_finalize();
   ++connections_done_;
@@ -622,6 +619,48 @@ void TimesliceBuilder::mark_connection_completed(uint32_t conn_id) {
     on_disconnected(nullptr, conn_id);
   } else {
     conn_[conn_id]->disconnect();
+  }
+}
+
+void TimesliceBuilder::on_send_finalize_event(uint32_t conn_id) {
+  if (!conn_[conn_id]->abort_flag()) {
+    assert(timeslice_buffer_.get_num_work_items() == 0);
+    assert(timeslice_buffer_.get_num_completions() == 0);
+  }
+  conn_[conn_id]->on_complete_send();
+  if (!conn_[conn_id]->done()) {
+    mark_connection_completed(conn_id);
+  }
+  L_(debug) << "[c" << compute_index_ << "] "
+            << "SEND FINALIZE complete for id " << conn_id
+            << " all_done=" << all_done_;
+}
+
+void TimesliceBuilder::on_recv_heartbeat_event(uint32_t conn_id) {
+  const HeartbeatMessage recv_heartbeat_message =
+      conn_[conn_id]->recv_heartbeat_message();
+  bool before_failed_node_decision_taken = false,
+       after_failed_node_decision_taken = false;
+  if (recv_heartbeat_message.failure_info.index != ConstVariables::MINUS_ONE)
+    before_failed_node_decision_taken =
+        DDSchedulerOrchestrator::is_failed_node_decision_ready(
+            recv_heartbeat_message.failure_info.index);
+
+  conn_[conn_id]->on_complete_heartbeat_recv();
+
+  if (recv_heartbeat_message.failure_info.index != ConstVariables::MINUS_ONE)
+    after_failed_node_decision_taken =
+        DDSchedulerOrchestrator::is_failed_node_decision_ready(
+            recv_heartbeat_message.failure_info.index);
+
+  if (!before_failed_node_decision_taken && after_failed_node_decision_taken) {
+    HeartbeatFailedNodeInfo* failednode_info =
+        DDSchedulerOrchestrator::get_decision_of_failed_connection(
+            recv_heartbeat_message.failure_info.index);
+    assert(failednode_info != nullptr);
+    for (auto& connection : conn_) {
+      connection->prepare_heartbeat(failednode_info);
+    }
   }
 }
 

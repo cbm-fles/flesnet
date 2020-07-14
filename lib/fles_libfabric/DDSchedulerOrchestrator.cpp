@@ -7,6 +7,11 @@ namespace tl_libfabric {
 
 void DDSchedulerOrchestrator::initialize(uint32_t scheduler_index,
                                          uint32_t input_scheduler_count,
+                                         uint64_t init_heartbeat_timeout,
+                                         uint32_t timeout_history_size,
+                                         uint32_t timeout_factor,
+                                         uint32_t inactive_factor,
+                                         uint32_t inactive_retry_count,
                                          uint32_t history_size,
                                          uint32_t interval_length,
                                          uint32_t speedup_difference_percentage,
@@ -22,7 +27,9 @@ void DDSchedulerOrchestrator::initialize(uint32_t scheduler_index,
   timeslice_manager_ = ComputeTimesliceManager::get_instance(
       scheduler_index, input_scheduler_count, log_directory, enable_logging);
   heartbeat_manager_ = ComputeHeartbeatManager::get_instance(
-      scheduler_index, input_scheduler_count, log_directory, enable_logging);
+      scheduler_index, input_scheduler_count, init_heartbeat_timeout,
+      timeout_history_size, timeout_factor, inactive_factor,
+      inactive_retry_count, log_directory, enable_logging);
   SchedulerOrchestrator::initialize(heartbeat_manager_);
 }
 

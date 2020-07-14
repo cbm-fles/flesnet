@@ -17,9 +17,14 @@ public:
   //// Common Methods
   // Initialize
   static void initialize(uint32_t scheduler_index,
-                         uint32_t input_connection_count,
+                         uint32_t input_scheduler_count,
+                         uint64_t init_heartbeat_timeout,
+                         uint32_t timeout_history_size,
+                         uint32_t timeout_factor,
+                         uint32_t inactive_factor,
+                         uint32_t inactive_retry_count,
                          uint32_t history_size,
-                         uint32_t interval_duration,
+                         uint32_t interval_length,
                          uint32_t speedup_difference_percentage,
                          uint32_t speedup_percentage,
                          uint32_t speedup_interval_count,

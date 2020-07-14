@@ -24,6 +24,11 @@ public:
   // Initialize the instance scheduler
   static void initialize(std::uint32_t scheduler_index,
                          std::uint32_t compute_conn_count,
+                         uint64_t init_heartbeat_timeout,
+                         uint32_t timeout_history_size,
+                         uint32_t timeout_factor,
+                         uint32_t inactive_factor,
+                         uint32_t inactive_retry_count,
                          std::uint32_t interval_length,
                          uint64_t data_source_desc,
                          uint64_t desc_length,
@@ -135,35 +140,6 @@ public:
   static void log_timeslice_MR_blocked(std::uint32_t compute_index,
                                        std::uint64_t timeslice,
                                        bool sent_completed = false);
-
-  //// HeartbeatManager Methods
-
-  static void log_heartbeat(std::uint32_t connection_id);
-
-  // Retrieve the inactive connections to send heartbeat message
-  static std::vector<std::uint32_t> retrieve_new_inactive_connections();
-
-  // Retrieve a list of timeout connections
-  static const std::set<std::uint32_t> retrieve_timeout_connections();
-
-  // Get a new timed out connection to send heartbeat message (-1 is returned
-  // if there is no)
-  static int32_t get_new_timeout_connection();
-
-  // Check whether a connection is already timedout
-  static bool is_connection_timed_out(std::uint32_t connection_id);
-
-  // Mark connection as timedout
-  static HeartbeatFailedNodeInfo* mark_connection_timed_out(
-      std::uint32_t connection_id,
-      std::uint64_t last_desc = ConstVariables::MINUS_ONE,
-      std::uint64_t timeslice_trigger = ConstVariables::MINUS_ONE);
-
-  // Get the number of active connections
-  static std::uint32_t get_active_connection_count();
-
-  // Get the number of timeout connections
-  static std::uint32_t get_timeout_connection_count();
 
   //// Methods combine data from different objects
   static HeartbeatFailedNodeInfo*

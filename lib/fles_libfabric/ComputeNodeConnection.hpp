@@ -160,6 +160,11 @@ private:
   /// memory (to minimize RDMA Writes)
   void write_received_descriptors();
 
+  //
+  void sync_after_scheduler_decision_received();
+
+  void update_scheduler_interval_data();
+
   ComputeNodeStatusMessage send_status_message_ = ComputeNodeStatusMessage();
   ComputeNodeBufferPosition cn_ack_ = ComputeNodeBufferPosition();
 

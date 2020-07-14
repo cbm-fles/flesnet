@@ -88,6 +88,21 @@ private:
   /// Mark connection as completed in case of normal termination or failure
   void mark_connection_completed(uint32_t conn_id);
 
+  // Finalize a connection after getting the finalize completion event
+  void on_send_finalize_event(uint32_t conn_id);
+
+  // Check hearbeat message content
+  void on_recv_heartbeat_event(uint32_t conn_id);
+
+  // Check the missing failure info from input nodes
+  void check_missing_connections_failure_info();
+
+  // Check whether a finalize connection is sent and no response is received
+  void check_long_waiting_finalized_connections();
+
+  // Check and send heartbeats to inactive connections
+  void check_inactive_connections();
+
   void build_time_file();
 
   fid_cq* listening_cq_;

@@ -7,6 +7,11 @@ namespace tl_libfabric {
 //// Common Methods
 void InputSchedulerOrchestrator::initialize(uint32_t scheduler_index,
                                             uint32_t compute_conn_count,
+                                            uint64_t init_heartbeat_timeout,
+                                            uint32_t timeout_history_size,
+                                            uint32_t timeout_factor,
+                                            uint32_t inactive_factor,
+                                            uint32_t inactive_retry_count,
                                             uint32_t interval_length,
                                             uint64_t data_source_desc,
                                             uint64_t desc_length,
@@ -22,7 +27,9 @@ void InputSchedulerOrchestrator::initialize(uint32_t scheduler_index,
       desc_length, start_index_desc, timeslice_size, log_directory,
       enable_logging);
   heartbeat_manager_ = InputHeartbeatManager::get_instance(
-      scheduler_index, compute_conn_count, log_directory, enable_logging);
+      scheduler_index, compute_conn_count, init_heartbeat_timeout,
+      timeout_history_size, timeout_factor, inactive_factor,
+      inactive_retry_count, log_directory, enable_logging);
   SchedulerOrchestrator::initialize(heartbeat_manager_);
 }
 
@@ -226,46 +233,6 @@ void InputSchedulerOrchestrator::log_timeslice_MR_blocked(
   timeslice_manager_->log_timeslice_MR_blocked(timeslice, sent_completed);
 }
 
-//// InputHeartbeatManager Methods
-
-void InputSchedulerOrchestrator::log_heartbeat(uint32_t connection_id) {
-  heartbeat_manager_->log_heartbeat(connection_id);
-}
-
-std::vector<uint32_t>
-InputSchedulerOrchestrator::retrieve_new_inactive_connections() {
-  return heartbeat_manager_->retrieve_new_inactive_connections();
-}
-
-// Retrieve a list of timeout connections
-const std::set<uint32_t>
-InputSchedulerOrchestrator::retrieve_timeout_connections() {
-  return heartbeat_manager_->retrieve_timeout_connections();
-}
-
-int32_t InputSchedulerOrchestrator::get_new_timeout_connection() {
-  return heartbeat_manager_->get_new_timeout_connection();
-}
-
-bool InputSchedulerOrchestrator::is_connection_timed_out(
-    uint32_t connection_id) {
-  return heartbeat_manager_->is_connection_timed_out(connection_id);
-}
-
-HeartbeatFailedNodeInfo* InputSchedulerOrchestrator::mark_connection_timed_out(
-    uint32_t connection_id, uint64_t last_desc, uint64_t timeslice_trigger) {
-  clear_pending_messages(connection_id);
-  return heartbeat_manager_->mark_connection_timed_out(connection_id, last_desc,
-                                                       timeslice_trigger);
-}
-
-uint32_t InputSchedulerOrchestrator::get_active_connection_count() {
-  return heartbeat_manager_->get_active_connection_count();
-}
-
-uint32_t InputSchedulerOrchestrator::get_timeout_connection_count() {
-  return heartbeat_manager_->get_timeout_connection_count();
-}
 //// Methods combine data from different objects
 
 HeartbeatFailedNodeInfo*

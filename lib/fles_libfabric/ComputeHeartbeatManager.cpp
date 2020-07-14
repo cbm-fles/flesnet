@@ -4,12 +4,27 @@
 
 namespace tl_libfabric {
 
-ComputeHeartbeatManager::ComputeHeartbeatManager(uint32_t index,
-                                                 uint32_t init_connection_count,
-                                                 std::string log_directory,
-                                                 bool enable_logging)
-    : HeartbeatManager(
-          index, init_connection_count, log_directory, enable_logging) {}
+ComputeHeartbeatManager::ComputeHeartbeatManager(
+    uint32_t index,
+    uint32_t init_connection_count,
+    uint64_t init_heartbeat_timeout,
+    uint32_t timeout_history_size,
+    uint32_t timeout_factor,
+    uint32_t inactive_factor,
+    uint32_t inactive_retry_count,
+    std::string log_directory,
+    bool enable_logging)
+    : HeartbeatManager(index,
+                       init_connection_count,
+                       init_heartbeat_timeout,
+                       timeout_history_size,
+                       timeout_factor,
+                       inactive_factor,
+                       inactive_retry_count,
+                       log_directory,
+                       enable_logging) {
+  update_latency_log_ = false;
+}
 
 void ComputeHeartbeatManager::calculate_failure_decision(uint32_t failed_node) {
   std::vector<FailureRequestedInfo*> collected_info =
@@ -45,11 +60,18 @@ void ComputeHeartbeatManager::calculate_failure_decision(uint32_t failed_node) {
 ComputeHeartbeatManager*
 ComputeHeartbeatManager::get_instance(uint32_t index,
                                       uint32_t init_connection_count,
+                                      uint64_t init_heartbeat_timeout,
+                                      uint32_t timeout_history_size,
+                                      uint32_t timeout_factor,
+                                      uint32_t inactive_factor,
+                                      uint32_t inactive_retry_count,
                                       std::string log_directory,
                                       bool enable_logging) {
   if (instance_ == nullptr) {
-    instance_ = new ComputeHeartbeatManager(index, init_connection_count,
-                                            log_directory, enable_logging);
+    instance_ = new ComputeHeartbeatManager(
+        index, init_connection_count, init_heartbeat_timeout,
+        timeout_history_size, timeout_factor, inactive_factor,
+        inactive_retry_count, log_directory, enable_logging);
   }
   return instance_;
 }
@@ -186,6 +208,7 @@ void ComputeHeartbeatManager::log_finalize_connection(uint32_t connection_id,
     FinalizeConnectionInfo* conn_info = new FinalizeConnectionInfo();
     conn_info->sent_time = std::chrono::high_resolution_clock::now();
     finalize_connection_log_.add(connection_id, conn_info);
+    L_(debug) << "[log_finalize_connection] conn " << connection_id;
   }
 }
 
@@ -197,11 +220,16 @@ ComputeHeartbeatManager::retrieve_long_waiting_finalized_connections() {
   while (it != finalize_connection_log_.get_end_iterator()) {
     if (!it->second->ack_received) {
       double duration =
-          std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::duration_cast<std::chrono::microseconds>(
               std::chrono::high_resolution_clock::now() - it->second->sent_time)
               .count();
-      if (duration >= (ConstVariables::HEARTBEAT_TIMEOUT * 1000.0))
+      L_(debug) << "[retrieve_long_waiting_finalized_connections] dur "
+                << duration << "init_heartbeat_timeout_ "
+                << init_heartbeat_timeout_ << " ? "
+                << (init_heartbeat_timeout_);
+      if (duration >= init_heartbeat_timeout_ * inactive_factor_) {
         conns.push_back(it->first);
+      }
     }
     ++it;
   }

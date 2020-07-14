@@ -46,7 +46,12 @@ InputChannelSender::InputChannelSender(
   }
 
   InputSchedulerOrchestrator::initialize(
-      input_index, compute_hostnames.size(), scheduler_interval_length,
+      input_index, compute_hostnames.size(),
+      ConstVariables::INIT_HEARTBEAT_TIMEOUT,
+      ConstVariables::HEARTBEAT_TIMEOUT_HISTORY_SIZE,
+      ConstVariables::HEARTBEAT_TIMEOUT_FACTOR,
+      ConstVariables::HEARTBEAT_INACTIVE_FACTOR,
+      ConstVariables::HEARTBEAT_INACTIVE_RETRY_COUNT, scheduler_interval_length,
       data_source.get_write_index().desc, (timeslice_size + overlap_size),
       start_index_desc_, timeslice_size, log_directory, enable_logging);
   InputSchedulerOrchestrator::update_data_source_desc(
@@ -153,13 +158,7 @@ void InputChannelSender::sync_heartbeat() {
       InputSchedulerOrchestrator::get_timed_out_connection();
   if (failed_connection->index ==
       ConstVariables::MINUS_ONE) { // Check inactive connections
-    std::vector<uint32_t> inactive_conns =
-        InputSchedulerOrchestrator::retrieve_new_inactive_connections();
-    for (uint32_t inactive : inactive_conns) {
-      if (!conn_[inactive]->done()) {
-        conn_[inactive]->prepare_heartbeat();
-      }
-    }
+    send_heartbeat_to_inactive_connections();
   } else { // Send timeout message to all active connections
     for (auto& conn : conn_) {
       if (conn->request_finalize_flag() && !conn->done()) {
@@ -664,7 +663,8 @@ void InputChannelSender::on_completion(uint64_t wr_id) {
               .failure_info.last_completed_desc);
 
       for (auto& conn : conn_) {
-        if (!InputSchedulerOrchestrator::is_connection_timed_out(conn->index())) {
+        if (!InputSchedulerOrchestrator::is_connection_timed_out(
+                conn->index())) {
           conn->update_cn_wp_after_failure_action(
               conn_[cn]->get_recv_heartbeat_message().failure_info.index);
         }

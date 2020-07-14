@@ -8,6 +8,7 @@
 #include "LibfabricException.hpp"
 #include "Provider.hpp"
 #include "RequestIdentifier.hpp"
+#include "SchedulerOrchestrator.hpp"
 #include <rdma/fabric.h>
 #include <rdma/fi_domain.h>
 #include <rdma/fi_endpoint.h>
@@ -242,8 +243,6 @@ public:
   /// The "main" function of an ConnectionGroup decendant.
   virtual void operator()() override = 0;
 
-  virtual void sync_heartbeat() = 0;
-
 protected:
   /// Handle RDMA_CM_REJECTED event.
   virtual void on_rejected(struct fi_eq_err_entry* /* event */) {}
@@ -342,6 +341,19 @@ protected:
     auto now = std::chrono::system_clock::now();
     scheduler_.add(std::bind(&ConnectionGroup::sync_buffer_positions, this),
                    now + std::chrono::milliseconds(0));
+  }
+
+  virtual void sync_heartbeat() = 0;
+
+  //
+  void send_heartbeat_to_inactive_connections() {
+    std::vector<uint32_t> inactive_conns =
+        SchedulerOrchestrator::retrieve_new_inactive_connections();
+    for (uint32_t inactive : inactive_conns) {
+      if (!conn_[inactive]->done()) {
+        conn_[inactive]->prepare_heartbeat();
+      }
+    }
   }
 
   const uint32_t num_cqe_ = 1000000;

@@ -297,7 +297,6 @@ bool ComputeNodeConnection::try_sync_buffer_positions() {
   return false;
 }
 
-// TODO code smells
 void ComputeNodeConnection::on_complete_recv() {
   if (false) {
     L_(info) << "[c" << remote_index_ << "] "
@@ -322,9 +321,16 @@ void ComputeNodeConnection::on_complete_recv() {
     cn_wp_ = recv_status_message_.wp;
   }
 
+  sync_after_scheduler_decision_received();
+  write_received_descriptors();
+  update_scheduler_interval_data();
+
+  DDSchedulerOrchestrator::log_heartbeat(index_);
+  post_recv_status_message();
+}
+
+void ComputeNodeConnection::sync_after_scheduler_decision_received() {
   if (recv_status_message_.sync_after_scheduling_decision) {
-    // for (uint64_t desc = recv_status_message_.wp.desc ; desc <
-    // cn_wp_.desc ; ++desc){
     for (uint64_t desc = cn_wp_.desc - 1; desc >= recv_status_message_.wp.desc;
          --desc) {
       L_(info) << "[c" << remote_index_ << "] "
@@ -337,8 +343,9 @@ void ComputeNodeConnection::on_complete_recv() {
         index_, recv_status_message_.failed_index);
     cn_wp_ = recv_status_message_.wp;
   }
-  write_received_descriptors();
+}
 
+void ComputeNodeConnection::update_scheduler_interval_data() {
   if (!registered_input_MPI_time) {
     registered_input_MPI_time = true;
     DDSchedulerOrchestrator::update_clock_offset(
@@ -354,7 +361,6 @@ void ComputeNodeConnection::on_complete_recv() {
     DDSchedulerOrchestrator::add_actual_meta_data(
         index_, recv_status_message_.actual_interval_metadata);
   }
-  post_recv_status_message();
 }
 
 void ComputeNodeConnection::on_complete_send() {
@@ -451,6 +457,8 @@ void ComputeNodeConnection::on_complete_heartbeat_recv() {
              << recv_heartbeat_message_.failure_info.timeslice_trigger << ")";
   }
 
+  DDSchedulerOrchestrator::log_heartbeat(index_);
+
   HeartbeatFailedNodeInfo* failednode_info = nullptr;
   // either initial message of Node failure(ACK=false) or response of
   // requested info (ACK=true)
@@ -459,12 +467,13 @@ void ComputeNodeConnection::on_complete_heartbeat_recv() {
         index_, recv_heartbeat_message_.failure_info);
   }
 
-  if (!recv_heartbeat_message_.ack)
+  if (!recv_heartbeat_message_.ack) {
     prepare_heartbeat(failednode_info, recv_heartbeat_message_.message_id,
                       true);
-  else
+  } else {
     SchedulerOrchestrator::acknowledge_heartbeat_message(
         recv_heartbeat_message_.message_id);
+  }
   post_recv_heartbeat_message();
 }
 } // namespace tl_libfabric

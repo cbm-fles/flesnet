@@ -39,6 +39,33 @@ public:
   // Remove all pending messages of a connection when it times out
   static void clear_pending_messages(std::uint32_t connection_id);
 
+  static void log_heartbeat(std::uint32_t connection_id);
+
+  // Retrieve the inactive connections to send heartbeat message
+  static std::vector<std::uint32_t> retrieve_new_inactive_connections();
+
+  // Retrieve a list of timeout connections
+  static const std::set<std::uint32_t> retrieve_timeout_connections();
+
+  // Get a new timed out connection to send heartbeat message (-1 is returned
+  // if there is no)
+  static int32_t get_new_timeout_connection();
+
+  // Check whether a connection is already timedout
+  static bool is_connection_timed_out(std::uint32_t connection_id);
+
+  // Mark connection as timedout
+  static HeartbeatFailedNodeInfo* mark_connection_timed_out(
+      std::uint32_t connection_id,
+      std::uint64_t last_desc = ConstVariables::MINUS_ONE,
+      std::uint64_t timeslice_trigger = ConstVariables::MINUS_ONE);
+
+  // Get the number of active connections
+  static std::uint32_t get_active_connection_count();
+
+  // Get the number of timeout connections
+  static std::uint32_t get_timeout_connection_count();
+
   //// Variables
 private:
   static HeartbeatManager* heartbeat_manager_;
