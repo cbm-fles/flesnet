@@ -25,7 +25,7 @@ else()
   find_library(ZMQ_LIBRARIES zmq)
 endif()
 
-find_package(Boost 1.55.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex iostreams)
+find_package(Boost 1.55.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex iostreams timer random)
 find_package(Threads REQUIRED)
 
 find_package(LIBFABRIC)
