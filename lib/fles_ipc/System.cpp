@@ -2,6 +2,7 @@
 
 #include "System.hpp"
 #include <cstring>
+#include <errno.h>
 #include <glob.h>
 #include <netdb.h>
 #include <pwd.h>
@@ -71,7 +72,7 @@ std::string current_hostname() {
 
   int err = gethostname(buf.data(), buf.size());
   if (err != 0) {
-    throw std::runtime_error(stringerror(err));
+    throw std::runtime_error(stringerror(errno));
   }
 
   return std::string(buf.data());
@@ -84,7 +85,7 @@ std::string current_domainname() {
 
   int err = getdomainname(buf.data(), static_cast<int>(buf.size()));
   if (err != 0) {
-    throw std::runtime_error(stringerror(err));
+    throw std::runtime_error(stringerror(errno));
   }
 
   return std::string(buf.data());
