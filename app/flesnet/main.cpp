@@ -16,7 +16,6 @@
 #include "Parameters.hpp"
 #include "log.hpp"
 #include <csignal>
-#include <mpi.h>
 
 namespace {
 volatile sig_atomic_t signal_status = 0;
@@ -25,7 +24,6 @@ volatile sig_atomic_t signal_status = 0;
 static void signal_handler(int sig) { signal_status = sig; }
 
 int main(int argc, char* argv[]) {
-  MPI_Init(&argc, &argv);
 
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
@@ -38,8 +36,6 @@ int main(int argc, char* argv[]) {
     L_(fatal) << e.what();
     return EXIT_FAILURE;
   }
-
-  MPI_Finalize();
 
   return EXIT_SUCCESS;
 }

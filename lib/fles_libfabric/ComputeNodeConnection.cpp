@@ -2,14 +2,6 @@
 // Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
 
 #include "ComputeNodeConnection.hpp"
-#include "ComputeNodeInfo.hpp"
-#include "LibfabricException.hpp"
-#include "Provider.hpp"
-#include "RequestIdentifier.hpp"
-#include "log.hpp"
-#include <cassert>
-#include <cmath>
-#include <rdma/fi_cm.h>
 
 namespace tl_libfabric {
 
@@ -173,7 +165,12 @@ void ComputeNodeConnection::setup_mr(struct fid_domain* pd) {
 }
 
 void ComputeNodeConnection::setup() {
+  L_(info) << "Calling add_endpoint in setup";
+  LibfabricBarrier::get_instance()->add_endpoint(
+      index_, Provider::getInst()->get_info(), "", false);
+  L_(info) << "END OF Calling add_endpoint in setup";
   setup_heartbeat();
+
   // setup send and receive buffers
   recv_sge.iov_base = &recv_status_message_;
   recv_sge.iov_len = sizeof(InputChannelStatusMessage);

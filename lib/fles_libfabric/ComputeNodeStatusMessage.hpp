@@ -6,9 +6,8 @@
 #include "ComputeNodeBufferPosition.hpp"
 #include "ComputeNodeInfo.hpp"
 #include "ConstVariables.hpp"
+#include "dfs/IntervalMetaData.hpp"
 #include <chrono>
-
-#include "IntervalMetaData.hpp"
 
 #pragma pack(1)
 

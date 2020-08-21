@@ -182,8 +182,9 @@ void InputSchedulerOrchestrator::consider_reschedule_decision(
       timeslice_manager_->consider_reschedule_decision(
           failed_node_info, retrieve_timeout_connections());
   interval_scheduler_->undo_increament_sent_timeslices(undo_timeslices);
-  // TODO interval_scheduler_->update_compute_connection_count(
-      interval_scheduler_->get_compute_connection_count() - 1);
+  // TODO
+  // interval_scheduler_->update_compute_connection_count(interval_scheduler_->get_compute_connection_count()
+  // - 1);
   L_(debug) << "Undo " << undo_timeslices.size()
             << " .... new sent_timeslices = " << get_sent_timeslices();
 

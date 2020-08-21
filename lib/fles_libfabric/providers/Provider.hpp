@@ -3,8 +3,15 @@
 #pragma once
 
 #include <log.hpp>
-#include <memory>
 #include <rdma/fabric.h>
+#include <rdma/fi_cm.h>
+#include <rdma/fi_domain.h>
+#include <rdma/fi_endpoint.h>
+#include <rdma/fi_errno.h>
+
+#include "LibfabricException.hpp"
+
+#include <memory>
 #include <string.h>
 #include <vector>
 

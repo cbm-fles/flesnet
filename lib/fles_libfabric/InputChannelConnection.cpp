@@ -2,17 +2,6 @@
 // Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
 
 #include "InputChannelConnection.hpp"
-#include "InputNodeInfo.hpp"
-#include "LibfabricException.hpp"
-#include "MicrosliceDescriptor.hpp"
-#include "Provider.hpp"
-#include "RequestIdentifier.hpp"
-#include "TimesliceComponentDescriptor.hpp"
-#include <cassert>
-#include <cstring>
-#include <log.hpp>
-#include <rdma/fi_cm.h>
-#include <rdma/fi_rma.h>
 
 namespace tl_libfabric {
 
@@ -552,6 +541,10 @@ void InputChannelConnection::connect(const std::string& hostname,
     heartbeat_send_wr.addr = fi_addr;
     post_send_status_message();
   }
+  L_(debug) << "Calling add_endpoint in setup";
+  assert(LibfabricBarrier::get_instance() != nullptr);
+  LibfabricBarrier::get_instance()->add_endpoint(
+      index_, Provider::getInst()->get_info(), hostname, true);
 }
 
 void InputChannelConnection::reconnect() {

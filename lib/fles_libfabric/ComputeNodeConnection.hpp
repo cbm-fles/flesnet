@@ -3,13 +3,19 @@
 
 #pragma once
 
+#include "ComputeNodeInfo.hpp"
 #include "ComputeNodeStatusMessage.hpp"
 #include "Connection.hpp"
-#include "DDSchedulerOrchestrator.hpp"
 #include "InputChannelStatusMessage.hpp"
 #include "InputNodeInfo.hpp"
+#include "RequestIdentifier.hpp"
 #include "TimesliceComponentDescriptor.hpp"
+#include "dfs/DDSchedulerOrchestrator.hpp"
+
 #include <boost/format.hpp>
+#include <cmath>
+#include <rdma/fi_cm.h>
+
 ///-----
 #include <map>
 ///-----/

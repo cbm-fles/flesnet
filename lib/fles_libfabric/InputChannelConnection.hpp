@@ -7,9 +7,17 @@
 #include "ComputeNodeStatusMessage.hpp"
 #include "Connection.hpp"
 #include "InputChannelStatusMessage.hpp"
-#include "InputIntervalInfo.hpp"
-#include "InputSchedulerOrchestrator.hpp"
+#include "InputNodeInfo.hpp"
+#include "MicrosliceDescriptor.hpp"
+#include "RequestIdentifier.hpp"
 #include "TimesliceComponentDescriptor.hpp"
+#include "dfs/InputIntervalInfo.hpp"
+#include "dfs/InputSchedulerOrchestrator.hpp"
+
+#include <cassert>
+#include <cstring>
+#include <rdma/fi_cm.h>
+#include <rdma/fi_rma.h>
 
 namespace tl_libfabric {
 /// Input node connection class.

@@ -4,11 +4,14 @@
 #pragma once
 
 #include "ConnectionGroupWorker.hpp"
-#include "LibfabricContextPool.hpp"
-#include "LibfabricException.hpp"
-#include "Provider.hpp"
 #include "RequestIdentifier.hpp"
-#include "SchedulerOrchestrator.hpp"
+#include "dfs/SchedulerOrchestrator.hpp"
+#include "log.hpp"
+#include "providers/LibfabricBarrier.hpp"
+#include "providers/LibfabricContextPool.hpp"
+#include "providers/LibfabricException.hpp"
+#include "providers/Provider.hpp"
+
 #include <rdma/fabric.h>
 #include <rdma/fi_domain.h>
 #include <rdma/fi_endpoint.h>
@@ -17,7 +20,6 @@
 
 #include <chrono>
 #include <fstream>
-#include <mpi.h>
 
 #include <sys/uio.h>
 

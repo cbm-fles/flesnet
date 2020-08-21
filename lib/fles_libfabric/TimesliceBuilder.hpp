@@ -2,18 +2,25 @@
 // Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
 #pragma once
 
+#include "ChildProcessManager.hpp"
 #include "ComputeNodeConnection.hpp"
 #include "ConnectionGroup.hpp"
-#include "DDSchedulerOrchestrator.hpp"
+#include "RequestIdentifier.hpp"
 #include "RingBuffer.hpp"
 #include "TimesliceBuffer.hpp"
+#include "TimesliceCompletion.hpp"
 #include "TimesliceComponentDescriptor.hpp"
+#include "TimesliceWorkItem.hpp"
+#include "dfs/DDSchedulerOrchestrator.hpp"
+
+#include <boost/algorithm/string.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 
 #include <csignal>
 #include <cstdint>
+#include <iomanip>
 #include <map>
 #include <set>
 #include <string>

@@ -6,6 +6,11 @@ project(fles)
 option(COVERALLS "Turn on coveralls support" OFF)
 option(COVERALLS_UPLOAD "Upload the generated coveralls json" ON)
 
+#allow searching in {PACKAGE}_ROOT env variables for libs and paths
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12")
+     cmake_policy(SET CMP0074 NEW)
+ endif()
+
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 include(GitSubmodule)
@@ -29,7 +34,6 @@ find_package(Boost 1.55.0 REQUIRED COMPONENTS filesystem log program_options ser
 find_package(Threads REQUIRED)
 
 find_package(LIBFABRIC)
-find_package(MPI)
 find_package(RDMA)
 find_package(PDA 11.4.7 EXACT)
 find_package(CPPREST)

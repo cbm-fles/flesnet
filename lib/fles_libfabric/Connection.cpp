@@ -3,20 +3,6 @@
 
 #include "Connection.hpp"
 
-#include "LibfabricException.hpp"
-#include "Provider.hpp"
-
-#include <rdma/fi_cm.h>
-#include <rdma/fi_rma.h>
-
-#include <cassert>
-#include <chrono>
-#include <cstring>
-#include <iostream>
-#include <log.hpp>
-#include <netdb.h>
-#include <thread>
-
 namespace tl_libfabric {
 
 Connection::Connection(struct fid_eq* eq,
