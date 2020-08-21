@@ -109,11 +109,13 @@ public:
     return scheduler_speedup_interval_count_;
   }
 
-  /// Retrieve the directory to store the log files
-  std::string log_directory() const { return log_directory_; }
+  /// Retrieve the directory to store DFS log files
+  std::string scheduler_log_directory() const {
+    return scheduler_log_directory_;
+  }
 
-  /// Check whether to generate log files
-  bool enable_logging() const { return enable_logging_; }
+  /// Check whether to generate  DFS log files
+  bool scheduler_enable_logging() const { return scheduler_enable_logging_; }
 
 private:
   /// Parse command line options.
@@ -171,7 +173,7 @@ private:
   uint32_t scheduler_speedup_interval_count_;
 
   /// The directory to store the log files
-  std::string log_directory_;
+  std::string scheduler_log_directory_;
 
-  bool enable_logging_ = false;
+  bool scheduler_enable_logging_ = false;
 };
