@@ -6,11 +6,6 @@ project(fles)
 option(COVERALLS "Turn on coveralls support" OFF)
 option(COVERALLS_UPLOAD "Upload the generated coveralls json" ON)
 
-#allow searching in {PACKAGE}_ROOT env variables for libs and paths
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12")
-     cmake_policy(SET CMP0074 NEW)
- endif()
-
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 include(GitSubmodule)
