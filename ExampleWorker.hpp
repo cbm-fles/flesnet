@@ -33,6 +33,8 @@ public:
       std::cout << "Worker " << parameters().client_name
                 << " finished work item " << item->id() << std::endl;
     }
+    std::cout << "Worker " << parameters().client_name << " stopped"
+              << std::endl;
   }
 
 private:

@@ -134,13 +134,13 @@ public:
     poller.add(worker_socket_, zmq::event_flags::pollin,
                [&](zmq::event_flags /*e*/) { on_worker_pollin(); });
 
-    while (true) {
+    while (!stopped_) {
       poller.wait(distributor_poll_timeout);
       send_heartbeats();
     }
   }
 
-  void stop() {}
+  void stop() { stopped_ = true; }
 
   // TODO(cuveland): sensible clean-up
   ~ItemDistributor() = default;
@@ -314,6 +314,7 @@ private:
   zmq::socket_t worker_socket_;
   std::queue<ItemID> completed_items_;
   std::map<std::string, std::unique_ptr<Worker>> workers_;
+  bool stopped_ = false;
 };
 
 #endif

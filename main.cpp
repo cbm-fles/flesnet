@@ -55,9 +55,13 @@ int main() {
   producer_thread.join();
   distributor.stop();
   distributor_thread.join();
+  worker1.stop();
   worker1_thread.join();
+  worker2.stop();
   worker2_thread.join();
+  worker3.stop();
   worker3_thread.join();
+  worker4.stop();
   worker4_thread.join();
 
   return 0;

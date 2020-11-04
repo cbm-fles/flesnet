@@ -21,7 +21,7 @@ public:
   };
 
   std::shared_ptr<const Item> get() {
-    while (true) {
+    while (!stopped_) {
       try {
         if (!distributor_socket_) {
           connect();
@@ -82,9 +82,12 @@ public:
         std::queue<ItemID>().swap(completed_items_);
       }
     }
+    return nullptr;
   }
 
   [[nodiscard]] WorkerParameters parameters() const { return parameters_; }
+
+  void stop() { stopped_ = true; }
 
 private:
   void connect() {
@@ -157,6 +160,7 @@ private:
   std::queue<ItemID> completed_items_;
   std::chrono::system_clock::time_point last_heartbeat_time_ =
       std::chrono::system_clock::now();
+  bool stopped_ = false;
 };
 
 #endif
