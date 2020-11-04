@@ -17,14 +17,16 @@ int main() {
   std::string producer_address = "inproc://TEST";
   std::string worker_address = "ipc:///tmp/TEST_DELME";
 
-  ItemDistributor distributor(zmq_context, producer_address, worker_address);
-  std::thread distributor_thread(std::ref(distributor));
+  auto distributor = std::make_unique<ItemDistributor>(
+      zmq_context, producer_address, worker_address);
+  std::thread distributor_thread(std::ref(*distributor));
 
   // The producer creates items at a constant primary rate of "d0".
   const auto d0 = 500ms;
   const size_t item_count = 10;
-  ExampleProducer producer(zmq_context, producer_address, d0, 0ms, item_count);
-  std::thread producer_thread(std::ref(producer));
+  auto producer = std::make_unique<ExampleProducer>(
+      zmq_context, producer_address, d0, 0ms, item_count);
+  std::thread producer_thread(std::ref(*producer));
 
   // The "storage" worker is slightly faster than data generation. It never
   // skips events but creates backpressure instead.
@@ -59,19 +61,45 @@ int main() {
   ExampleWorker worker5(worker_address, param5, d0 * 4, d0 * 1);
   std::thread worker5_thread(std::ref(worker5));
 
+  // Wait until producer has finished
   producer_thread.join();
-  distributor.stop();
+  distributor->stop();
   distributor_thread.join();
+  producer = nullptr;
+  distributor = nullptr;
+
+  // Elasticity test: add a worker
+  const WorkerParameters param6{1, 0, WorkerQueuePolicy::PrebufferOne,
+                                "fast_analysis_2"};
+  ExampleWorker worker6(worker_address, param6, 50ms, 0ms);
+  std::thread worker6_thread(std::ref(worker6));
+
+  // Elasticity test: restart producer and distributor
+  distributor = std::make_unique<ItemDistributor>(zmq_context, producer_address,
+                                                  worker_address);
+  std::thread distributor2_thread(std::ref(*distributor));
+
+  producer = std::make_unique<ExampleProducer>(zmq_context, producer_address,
+                                               d0, 0ms, item_count);
+  std::thread producer2_thread(std::ref(*producer));
+
+  // Wait until producer2 has finished
+  producer2_thread.join();
+  distributor->stop();
+  distributor2_thread.join();
+
   worker1.stop();
   worker2.stop();
   worker3.stop();
   worker4.stop();
   worker5.stop();
+  worker6.stop();
   worker1_thread.join();
   worker2_thread.join();
   worker3_thread.join();
   worker4_thread.join();
   worker5_thread.join();
+  worker6_thread.join();
 
   return 0;
 }
