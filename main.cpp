@@ -42,7 +42,7 @@ int main() {
   // The "slow_analysis" worker is much slower than data generation. It always
   // waits for the newest dataset and skips all other items during processing.
   const WorkerParameters param3{1, 0, WorkerQueuePolicy::Skip, "slow_analysis"};
-  ExampleWorker worker3(worker_address, param3, d0 * 3, d0);
+  ExampleWorker worker3(worker_address, param3, d0 * 2, d0 * 2);
   std::thread worker3_thread(std::ref(worker3));
 
   // The "sampling_analysis" worker receives only 1/5 of the data. It should be
@@ -52,17 +52,26 @@ int main() {
   ExampleWorker worker4(worker_address, param4, d0 * 3, d0);
   std::thread worker4_thread(std::ref(worker4));
 
+  // The "offset_sampler" worker receives only 1/4 of the data. It is also
+  // not fast enough, and it is not allowed to generate backpressure.
+  const WorkerParameters param5{2, 1, WorkerQueuePolicy::PrebufferOne,
+                                "offset_sampler"};
+  ExampleWorker worker5(worker_address, param5, d0 * 4, d0 * 1);
+  std::thread worker5_thread(std::ref(worker5));
+
   producer_thread.join();
   distributor.stop();
   distributor_thread.join();
   worker1.stop();
-  worker1_thread.join();
   worker2.stop();
-  worker2_thread.join();
   worker3.stop();
-  worker3_thread.join();
   worker4.stop();
+  worker5.stop();
+  worker1_thread.join();
+  worker2_thread.join();
+  worker3_thread.join();
   worker4_thread.join();
+  worker5_thread.join();
 
   return 0;
 }

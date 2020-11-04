@@ -8,6 +8,7 @@
 #include <iostream>
 #include <random>
 #include <thread>
+#include <vector>
 
 #include <zmq.hpp>
 
@@ -20,7 +21,8 @@ public:
       : ItemWorker(distributor_address, std::move(parameters)),
         constant_delay_(constant_delay), random_delay_(random_delay){};
 
-  void do_work(std::shared_ptr<const Item> /*item*/) {
+  void do_work(std::shared_ptr<const Item> item) {
+    item_history_.push_back(item->id());
     // Wait for a random time before completion
     wait();
   }
@@ -33,8 +35,11 @@ public:
       std::cout << "Worker " << parameters().client_name
                 << " finished work item " << item->id() << std::endl;
     }
-    std::cout << "Worker " << parameters().client_name << " stopped"
-              << std::endl;
+    std::cout << "Worker " << parameters().client_name << " stopped, items:\n";
+    for (auto const& id : item_history_) {
+      std::cout << " " << id;
+    }
+    std::cout << std::endl;
   }
 
 private:
@@ -55,6 +60,8 @@ private:
 
   const std::chrono::milliseconds constant_delay_;
   const std::chrono::milliseconds random_delay_;
+
+  std::vector<ItemID> item_history_;
 };
 
 #endif
