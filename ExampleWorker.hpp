@@ -42,7 +42,8 @@ private:
     auto delay = constant_delay_;
     if (random_delay_.count() != 0) {
       static std::default_random_engine eng{std::random_device{}()};
-      static std::exponential_distribution<> dist(random_delay_.count());
+      static std::exponential_distribution<> dist(
+          1.0 / std::chrono::duration<double>(random_delay_).count());
       auto this_random_delay = std::chrono::duration<double>{dist(eng)};
       delay += std::chrono::duration_cast<std::chrono::milliseconds>(
           this_random_delay);
