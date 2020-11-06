@@ -1,4 +1,4 @@
-# Copyright 2013-2016 Jan de Cuveland <cmail@cuveland.de>
+# Copyright 2013-2020 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 3.10)
 project(fles)
@@ -29,7 +29,16 @@ else()
   find_library(ZMQ_LIBRARIES zmq)
 endif()
 
-find_package(Boost 1.55.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex iostreams)
+find_package(PkgConfig)
+pkg_check_modules(ZMQ REQUIRED libzmq)
+if(APPLE)
+  find_package(cppzmq REQUIRED)
+  set(ZMQ_INCLUDE_DIRS ${PC_LIBZMQ_INCLUDE_DIRS} /usr/local/include)
+  set(ZMQ_LIBRARIES ${ZeroMQ_LIBRARY})
+  set(Boost_USE_MULTITHREADED TRUE)
+endif()
+
+find_package(Boost 1.65.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex iostreams)
 find_package(Threads REQUIRED)
 
 find_package(LIBFABRIC)
@@ -95,6 +104,7 @@ if (USE_PDA AND PDA_FOUND)
   add_subdirectory(lib/flib)
   add_subdirectory(lib/pda)
 endif()
+add_subdirectory(lib/shm_ipc)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "/opt/${PROJECT_NAME}" CACHE PATH "..." FORCE)
