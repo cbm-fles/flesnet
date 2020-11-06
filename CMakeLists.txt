@@ -1,7 +1,11 @@
 # Copyright 2013-2016 Jan de Cuveland <cmail@cuveland.de>
 
-cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10)
 project(fles)
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
 option(COVERALLS "Turn on coveralls support" OFF)
 option(COVERALLS_UPLOAD "Upload the generated coveralls json" ON)
@@ -60,7 +64,9 @@ if(USE_DOXYGEN AND NOT DOXYGEN_FOUND)
 	message(STATUS "Binary not found: Doxygen. Not building documentation.")
 endif()
 
-add_compile_options(-std=c++11 -O3 -ggdb -msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
+set(CMAKE_CXX_STANDARD 17)
+
+add_compile_options(-msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
 
 if (COVERALLS)
   include(Coveralls)
