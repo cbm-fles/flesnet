@@ -6,9 +6,9 @@ namespace fles {
 
 TimesliceSubscriber::TimesliceSubscriber(const std::string& address,
                                          uint32_t hwm) {
-  subscriber_.setsockopt(ZMQ_RCVHWM, hwm);
+  subscriber_.set(zmq::sockopt::rcvhwm, int(hwm));
   subscriber_.connect(address.c_str());
-  subscriber_.setsockopt(ZMQ_SUBSCRIBE, nullptr, 0);
+  subscriber_.set(zmq::sockopt::subscribe, "");
 }
 
 fles::StorableTimeslice* TimesliceSubscriber::do_get() {
@@ -17,7 +17,7 @@ fles::StorableTimeslice* TimesliceSubscriber::do_get() {
   }
 
   zmq::message_t message;
-  subscriber_.recv(&message);
+  [[maybe_unused]] auto result = subscriber_.recv(message);
 
   boost::iostreams::basic_array_source<char> device(
       static_cast<char*>(message.data()), message.size());
