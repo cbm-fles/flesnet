@@ -51,64 +51,73 @@ public:
   size_t desc_item_size() { return m_desc_item_size; }
 
   // getter / setter
-  bool req_read_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  bool req_read_index([
+      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     return m_req_read_index;
   }
 
-  bool req_write_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  bool req_write_index([
+      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     return m_req_write_index;
   }
 
-  void set_req_read_index(ip::scoped_lock<ip::interprocess_mutex>& lock,
-                          bool req) {
+  void set_req_read_index(
+      [[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock,
+      bool req) {
     assert(lock);
     m_req_read_index = req;
   }
 
-  void set_req_write_index(ip::scoped_lock<ip::interprocess_mutex>& lock,
-                           bool req) {
+  void set_req_write_index(
+      [[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock,
+      bool req) {
     assert(lock);
     m_req_write_index = req;
   }
 
-  TimedDualIndex write_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  TimedDualIndex write_index([
+      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     TimedDualIndex write_index = m_write_index;
     return write_index;
   }
 
-  void set_write_index(ip::scoped_lock<ip::interprocess_mutex>& lock,
-                       const TimedDualIndex write_index) {
+  void set_write_index(
+      [[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock,
+      const TimedDualIndex write_index) {
     assert(lock);
     m_write_index = write_index;
     m_cond_write_index.notify_all();
   }
 
-  DualIndex read_index(ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  DualIndex read_index([
+      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     DualIndex read_index = m_read_index;
     return read_index;
   }
 
-  void set_read_index(ip::scoped_lock<ip::interprocess_mutex>& lock,
-                      const DualIndex read_index) {
+  void
+  set_read_index([[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock,
+                 const DualIndex read_index) {
     assert(lock);
     m_read_index = read_index;
   }
 
-  bool eof(ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  bool eof([[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     return m_eof;
   }
 
-  void set_eof(ip::scoped_lock<ip::interprocess_mutex>& lock, bool eof) {
+  void set_eof([[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock,
+               bool eof) {
     assert(lock);
     m_eof = eof;
   }
 
-  bool connect(ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  bool connect([[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     if (m_clients != 0) {
       return false;
@@ -117,7 +126,8 @@ public:
     return true;
   }
 
-  void disconnect(ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  void disconnect([
+      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     m_clients = 0;
   }
