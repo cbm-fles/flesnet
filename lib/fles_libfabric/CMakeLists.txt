@@ -5,6 +5,13 @@ file(GLOB LIB_HEADERS *.hpp)
 
 add_library(fles_libfabric ${LIB_SOURCES} ${LIB_HEADERS})
 
+target_compile_options(fles_libfabric
+  PRIVATE -Wno-unknown-warning-option
+  PRIVATE -Wno-unused-but-set-variable
+  PRIVATE -Wno-unused-parameter
+  PRIVATE -Wno-unused-variable
+)
+
 target_include_directories(fles_libfabric PUBLIC .)
 
 target_include_directories(fles_libfabric SYSTEM
