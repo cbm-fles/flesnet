@@ -27,6 +27,8 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo add-apt-repository -yn 'https://download.opensuse.org/repositories/network:/messaging:/zeromq:/release-draft/xUbuntu_18.04/ ./'
+        sudo bash -c "echo -e Package: libzmq3-dev\nPin: origin download.opensuse.org\nPin-Priority: 1000\n\nPackage: libzmq5\nPin: origin download.opensuse.org\nPin-Priority: 1000 >> /etc/apt/preferences"
         sudo apt-get update -y
         sudo apt-get install -yq catch doxygen libboost-all-dev libcpprest-dev libfabric-dev libibverbs-dev libkmod-dev libnuma-dev libpci-dev librdmacm-dev libtool-bin libzmq3-dev valgrind
 
