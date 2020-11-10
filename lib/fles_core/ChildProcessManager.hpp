@@ -127,7 +127,7 @@ private:
     sigaction(SIGCHLD, &sa, &oldact_);
   }
 
-  static void sigchld_handler(int sig) {
+  static void sigchld_handler([[maybe_unused]] int sig) {
     assert(sig == SIGCHLD);
 
     pid_t pid;

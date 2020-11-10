@@ -30,7 +30,7 @@ ComponentSenderZeromq::ComponentSenderZeromq(
   socket_ = zmq_socket(zmq_context, ZMQ_REP);
   assert(socket_);
   int timeout_ms = 500;
-  int rc =
+  [[maybe_unused]] int rc =
       zmq_setsockopt(socket_, ZMQ_RCVTIMEO, &timeout_ms, sizeof timeout_ms);
   assert(rc == 0);
   rc = zmq_setsockopt(socket_, ZMQ_SNDTIMEO, &timeout_ms, sizeof timeout_ms);
@@ -42,7 +42,7 @@ ComponentSenderZeromq::ComponentSenderZeromq(
 
 ComponentSenderZeromq::~ComponentSenderZeromq() {
   if (socket_ != nullptr) {
-    int rc = zmq_close(socket_);
+    [[maybe_unused]] int rc = zmq_close(socket_);
     assert(rc == 0);
   }
 }
@@ -64,7 +64,7 @@ void ComponentSenderZeromq::run_begin() {
 
 bool ComponentSenderZeromq::run_cycle() {
   zmq_msg_t request;
-  int rc = zmq_msg_init(&request);
+  [[maybe_unused]] int rc = zmq_msg_init(&request);
   assert(rc == 0);
 
   int len = zmq_msg_recv(&request, socket_, 0);

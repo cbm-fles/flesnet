@@ -4,12 +4,12 @@ Installing FLESnet
 General remarks: OS and Software Environment
 --------------------------------------------
 
-Flesnet with FLIB is designed to run on a Linux operating
-system. Although it is possible to use most distributions this guide
-and provided scripts focus on Debian. Especially if planing to use a
-FLIB it is strongly recommended to use a recent Debian installation.
-This doesn't imply that it is impossible to run a setup on any other
-OS but tests are only performed for this environment.
+Flesnet with FLIB is designed to run on a Linux operating system.
+Although it is possible to use most distributions this guide and
+provided scripts focus on Debian/Ubuntu. Especially if planing to use
+a FLIB it is strongly recommended to use a recent Debian/Ubuntu
+installation. This doesn't imply that it is impossible to run a setup
+on any other OS but tests are only performed for this environment.
 
 Getting the Repository
 ----------------------
@@ -28,14 +28,30 @@ branch:
 Build Dependencies
 ------------------
 
-    sudo aptitude install gcc g++ make cmake valgrind \
-      doxygen libnuma-dev librdmacm-dev libibverbs-dev git \
-      libzmq3-dev libkrb5-dev libboost-all-dev libcpprest-dev catch
+The following commands prepare a Ubuntu 18.04 system for flesnet
+compilation. For other distributions, please proceed accordingly.
 
-Note: The minimum required Boost version is 1.55. If you have the
+    sudo bash -c "echo 'deb https://download.opensuse.org/repositories/network:/messaging:/zeromq:/release-draft/xUbuntu_18.04/ ./' > /etc/apt/sources.list.d/zmq.list"
+
+    wget https://build.opensuse.org/projects/network:messaging:zeromq:release-draft/public_key -O- | sudo apt-key add
+
+    sudo bash -c "echo -e 'Package: libzmq3-dev\nPin: origin download.opensuse.org\nPin-Priority: 1000\n\nPackage: libzmq5\nPin: origin download.opensuse.org\nPin-Priority: 1000' >> /etc/apt/pre
+
+    sudo apt-get update -y
+
+    sudo apt-get install -yq catch doxygen libboost-all-dev \
+      libcpprest-dev libfabric-dev libibverbs-dev libkmod-dev \
+      libnuma-dev libpci-dev librdmacm-dev libtool-bin libzmq3-dev \
+      valgrind
+
+Note: Flesnet currently requires a version of the ZeroMQ library
+compiled with "draft" API. The easiest way to install this dependency
+is from the zmq build server as shown above.
+
+Note: The minimum required Boost version is 1.65. If you have the
 choice between different Boost versions and plan to record data it is
 beneficial to use the lowest compatible version. To unpack timeslice
-archives the reader's Boost version mustn't be smaller than the Boost
+archives the reader's Boost version must not be smaller than the Boost
 version used for recording.
 
 

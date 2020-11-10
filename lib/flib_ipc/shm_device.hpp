@@ -22,13 +22,14 @@ public:
 
   size_t num_channels() { return m_num_channels; }
 
-  bool connect(ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  bool connect([[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     ++m_clients;
     return true;
   }
 
-  void disconnect(ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  void disconnect([
+      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     --m_clients;
   }
