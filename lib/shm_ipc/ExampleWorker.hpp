@@ -1,5 +1,5 @@
-#ifndef ZMQ_DEMO_EXAMPLEWORKER_HPP
-#define ZMQ_DEMO_EXAMPLEWORKER_HPP
+#ifndef SHM_IPC_EXAMPLEWORKER_HPP
+#define SHM_IPC_EXAMPLEWORKER_HPP
 
 #include "ItemWorker.hpp"
 #include "ItemWorkerProtocol.hpp"
