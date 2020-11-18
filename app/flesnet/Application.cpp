@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "ChildProcessManager.hpp"
 #include "FlesnetPatternGenerator.hpp"
+#include "ItemDistributor.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
@@ -15,8 +16,6 @@
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
-  zmq_context_ = std::unique_ptr<void, std::function<int(void*)>>(
-      zmq_ctx_new(), zmq_ctx_destroy);
   create_input_channel_senders();
   create_timeslice_buffers();
   set_node();
@@ -59,18 +58,26 @@ void Application::create_timeslice_buffers() {
                     (UINT64_C(1) << descsize) *
                     sizeof(fles::TimesliceComponentDescriptor));
 
+    const std::string producer_address = "inproc://" + shm_identifier;
+    const std::string worker_address = "ipc://@" + shm_identifier;
+
+    auto item_distributor = std::make_unique<ItemDistributor>(
+        zmq_context_, producer_address, worker_address);
+    item_distributors_.push_back(std::move(item_distributor));
+
     std::unique_ptr<TimesliceBuffer> tsb(
-        new TimesliceBuffer(shm_identifier, datasize, descsize, input_size));
+        new TimesliceBuffer(zmq_context_, producer_address, shm_identifier,
+                            datasize, descsize, input_size));
 
     start_processes(shm_identifier);
     ChildProcessManager::get().allow_stop_processes(this);
 
     if (par_.transport() == Transport::ZeroMQ) {
       std::unique_ptr<TimesliceBuilderZeromq> builder(
-          new TimesliceBuilderZeromq(i, *tsb, input_server_addresses,
-                                     output_size, par_.timeslice_size(),
-                                     par_.max_timeslice_number(),
-                                     signal_status_, zmq_context_.get()));
+          new TimesliceBuilderZeromq(
+              i, *tsb, input_server_addresses, output_size,
+              par_.timeslice_size(), par_.max_timeslice_number(),
+              signal_status_, static_cast<void*>(zmq_context_)));
       timeslice_builders_zeromq_.push_back(std::move(builder));
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC
@@ -189,7 +196,7 @@ void Application::create_input_channel_senders() {
       std::unique_ptr<ComponentSenderZeromq> sender(new ComponentSenderZeromq(
           index, *(data_sources_.at(c).get()), listen_address,
           par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
-          signal_status_, zmq_context_.get()));
+          signal_status_, static_cast<void*>(zmq_context_)));
       component_senders_zeromq_.push_back(std::move(sender));
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC
@@ -217,13 +224,28 @@ void Application::create_input_channel_senders() {
 }
 
 void Application::run() {
+  std::vector<std::thread> distributor_threads;
+
+  for (auto& distributor : item_distributors_) {
+    distributor_threads.emplace_back(std::ref(*distributor));
+  }
+
+  auto cleanup_distributor_threads = [&]() {
+    for (auto& distributor : item_distributors_) {
+      distributor->stop();
+    }
+    for (auto& thread : distributor_threads) {
+      thread.join();
+    }
+  };
+
 // Do not spawn additional thread if only one is needed, simplifies
 // debugging
 #if defined(HAVE_RDMA) || defined(HAVE_LIBFABRIC)
   if (timeslice_builders_.size() == 1 && input_channel_senders_.empty()) {
     L_(debug) << "using existing thread for single timeslice builder";
     (*timeslice_builders_[0])();
-    return;
+    cleanup_distributor_threads();
   };
   if (input_channel_senders_.size() == 1 && timeslice_builders_.empty()) {
     L_(debug) << "using existing thread for single input channel sender";
@@ -280,6 +302,8 @@ void Application::run() {
   }
 
   threads.join_all();
+
+  cleanup_distributor_threads();
 }
 
 void Application::start_processes(const std::string& shared_memory_identifier) {

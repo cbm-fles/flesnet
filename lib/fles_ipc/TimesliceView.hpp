@@ -3,11 +3,12 @@
 /// \brief Defines the fles::TimesliceView class.
 #pragma once
 
+#include "ItemWorkerProtocol.hpp"
 #include "Timeslice.hpp"
 #include "TimesliceCompletion.hpp"
-#include "TimesliceWorkItem.hpp"
-#include <boost/interprocess/ipc/message_queue.hpp>
-#include <cstdint>
+#include "TimesliceShmWorkItem.hpp"
+
+#include <boost/interprocess/managed_shared_memory.hpp>
 #include <memory>
 
 namespace fles {
@@ -23,21 +24,19 @@ public:
   /// Delete assignment operator (non-copyable).
   void operator=(const TimesliceView&) = delete;
 
-  ~TimesliceView() override;
+  ~TimesliceView() = default;
 
 private:
   friend class TimesliceReceiver;
   friend class StorableTimeslice;
 
   TimesliceView(
-      TimesliceWorkItem work_item,
-      uint8_t* data,
-      TimesliceComponentDescriptor* desc,
-      std::shared_ptr<boost::interprocess::message_queue> completions_mq);
+      std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm,
+      std::shared_ptr<const Item> work_item);
 
-  TimesliceCompletion completion_ = TimesliceCompletion();
-
-  std::shared_ptr<boost::interprocess::message_queue> completions_mq_;
+  std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
+  std::shared_ptr<const Item> work_item_;
+  fles::TimesliceShmWorkItem timeslice_item_;
 };
 
 } // namespace fles

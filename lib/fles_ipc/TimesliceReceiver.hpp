@@ -1,13 +1,13 @@
-// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013-2020 Jan de Cuveland <cmail@cuveland.de>
 /// \file
 /// \brief Defines the fles::TimesliceReceiver class.
 #pragma once
 
+#include "ItemWorker.hpp"
+#include "ItemWorkerProtocol.hpp"
 #include "TimesliceSource.hpp"
 #include "TimesliceView.hpp"
-#include <boost/interprocess/ipc/message_queue.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
 #include <memory>
 #include <string>
 
@@ -20,7 +20,9 @@ namespace fles {
 class TimesliceReceiver : public TimesliceSource {
 public:
   /// Construct timeslice receiver connected to a given shared memory.
-  explicit TimesliceReceiver(const std::string& shared_memory_identifier);
+  explicit TimesliceReceiver(const std::string& shm_identifier,
+                             WorkerParameters parameters = {
+                                 1, 0, WorkerQueuePolicy::QueueAll, ""});
 
   /// Delete copy constructor (non-copyable).
   TimesliceReceiver(const TimesliceReceiver&) = delete;
@@ -45,19 +47,15 @@ public:
 private:
   TimesliceView* do_get() override;
 
-  const std::string shared_memory_identifier_;
+  const std::string shm_identifier_;
 
-  std::unique_ptr<boost::interprocess::shared_memory_object> data_shm_;
-  std::unique_ptr<boost::interprocess::shared_memory_object> desc_shm_;
-
-  std::unique_ptr<boost::interprocess::mapped_region> data_region_;
-  std::unique_ptr<boost::interprocess::mapped_region> desc_region_;
-
-  std::unique_ptr<boost::interprocess::message_queue> work_items_mq_;
-  std::shared_ptr<boost::interprocess::message_queue> completions_mq_;
+  std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
 
   /// The end-of-stream flag.
   bool eos_ = false;
+
+  // The respective item worker object
+  ItemWorker worker_;
 };
 
 } // namespace fles

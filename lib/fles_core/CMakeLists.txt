@@ -11,6 +11,7 @@ target_include_directories(fles_core SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(fles_core
   PUBLIC fles_ipc
+  PUBLIC shm_ipc
   PUBLIC logging
   PUBLIC crcutil
 )
