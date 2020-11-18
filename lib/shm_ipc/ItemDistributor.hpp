@@ -86,7 +86,7 @@ private:
     std::stringstream s(message);
     s >> command >> stride_ >> offset_ >> queue_policy_ >> client_name_;
     if (s.fail()) {
-      throw std::invalid_argument("Invalid register message");
+      throw std::invalid_argument("Invalid register message: " + message);
     }
   }
 
@@ -266,7 +266,8 @@ private:
                                       message_string);
         }
       } catch (std::exception& e) {
-        std::cerr << "Error: protocol violation, disconnecting worker"
+        std::cerr << e.what() << "\n"
+                  << "Error: protocol violation, disconnecting worker"
                   << std::endl;
         try {
           send_worker_disconnect(identity);
