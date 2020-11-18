@@ -5,7 +5,6 @@
 
 #include <chrono>
 #include <iostream>
-#include <memory>
 #include <random>
 #include <set>
 #include <thread>
@@ -14,12 +13,12 @@
 
 class ExampleProducer : public ItemProducer {
 public:
-  ExampleProducer(std::shared_ptr<zmq::context_t> context,
+  ExampleProducer(zmq::context_t& context,
                   const std::string& distributor_address,
                   std::chrono::milliseconds constant_delay,
                   std::chrono::milliseconds random_delay,
                   std::size_t item_count)
-      : ItemProducer(std::move(context), distributor_address),
+      : ItemProducer(context, distributor_address),
         constant_delay_(constant_delay), random_delay_(random_delay),
         item_count_limit_(item_count){};
 

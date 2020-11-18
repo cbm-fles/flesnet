@@ -107,12 +107,11 @@ private:
  */
 class ItemDistributor {
 public:
-  ItemDistributor(std::shared_ptr<zmq::context_t> context,
+  ItemDistributor(zmq::context_t& context,
                   const std::string& producer_address,
                   const std::string& worker_address)
-      : context_(std::move(context)),
-        generator_socket_(*context_, zmq::socket_type::pair),
-        worker_socket_(*context_, zmq::socket_type::router) {
+      : context_(context), generator_socket_(context, zmq::socket_type::pair),
+        worker_socket_(context, zmq::socket_type::router) {
     generator_socket_.bind(producer_address);
     generator_socket_.set(zmq::sockopt::linger, 0);
     worker_socket_.set(zmq::sockopt::router_mandatory, 1);
@@ -309,7 +308,7 @@ private:
     send_worker(identity, std::move(message));
   }
 
-  std::shared_ptr<zmq::context_t> context_;
+  zmq::context_t& context_;
   zmq::socket_t generator_socket_;
   zmq::socket_t worker_socket_;
   std::queue<ItemID> completed_items_;
