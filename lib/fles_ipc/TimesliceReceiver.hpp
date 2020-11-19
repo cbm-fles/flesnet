@@ -21,8 +21,9 @@ class TimesliceReceiver : public TimesliceSource {
 public:
   /// Construct timeslice receiver connected to a given shared memory.
   explicit TimesliceReceiver(const std::string& shm_identifier,
-                             WorkerParameters parameters = {
-                                 1, 0, WorkerQueuePolicy::QueueAll, ""});
+                             WorkerParameters parameters = WorkerParameters{
+                                 1, 0, WorkerQueuePolicy::QueueAll,
+                                 "TimesliceReceiver"});
 
   /// Delete copy constructor (non-copyable).
   TimesliceReceiver(const TimesliceReceiver&) = delete;

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <queue>
 #include <set>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -17,6 +18,10 @@ public:
   ItemWorker(std::string distributor_address, WorkerParameters parameters)
       : distributor_address_(std::move(distributor_address)),
         parameters_(std::move(parameters)) {
+    if (parameters_.client_name.empty()) {
+      throw std::invalid_argument(
+          "WorkerParameters.client_name cannot be empty");
+    }
     connect();
   };
 
