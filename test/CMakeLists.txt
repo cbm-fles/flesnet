@@ -1,4 +1,4 @@
-# Copyright 2015, 2016 Jan de Cuveland <cmail@cuveland.de>
+# Copyright 2015, 2016, 2020 Jan de Cuveland <cmail@cuveland.de>
 
 add_executable(test_System test_System.cpp)
 add_executable(test_Timeslice test_Timeslice.cpp)
@@ -75,3 +75,5 @@ if(BASH_PROGRAM)
            COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_with_pda.sh
            WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
+
+add_subdirectory(shm_ipc)
