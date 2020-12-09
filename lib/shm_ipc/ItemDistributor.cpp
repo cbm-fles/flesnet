@@ -1,5 +1,8 @@
 #include "ItemDistributor.hpp"
 
+#include <memory>
+#include <stdexcept>
+
 // Handle incoming message (work item) from the generator
 void ItemDistributor::on_generator_pollin() {
   zmq::multipart_t message(generator_socket_);
@@ -67,7 +70,7 @@ void ItemDistributor::on_worker_pollin() {
       std::string message_string = message.peekstr(2);
       if (message_string.rfind("REGISTER ", 0) == 0) {
         // Handle new worker registration
-        auto worker = std::make_unique<Worker>(message_string);
+        auto worker = std::make_unique<ItemDistributorWorker>(message_string);
         workers_[identity] = std::move(worker);
       } else if (message_string.rfind("COMPLETE ", 0) == 0) {
         // Handle worker completion message

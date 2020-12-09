@@ -6,6 +6,7 @@ set(LIB_SOURCES
 
 set(LIB_HEADERS
   ItemDistributor.hpp
+  ItemDistributorWorker.hpp
   ItemProducer.hpp
   ItemWorker.hpp
   ItemWorkerProtocol.hpp
