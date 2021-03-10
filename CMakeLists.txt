@@ -1,7 +1,7 @@
 # Copyright 2013-2020 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 3.10)
-project(fles)
+project(flesnet DESCRIPTION "CBM FLES Timeslice Building")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -147,3 +147,13 @@ enable_testing()
 add_subdirectory(test)
 
 configure_file(cmake/CTestCustom.cmake ${CMAKE_BINARY_DIR})
+
+if (UNIX)
+  set (CPACK_GENERATOR "DEB")
+  set (CPACK_PACKAGE_CONTACT "Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>")
+  set (CPACK_DEBIAN_PACKAGE_SECTION "misc")
+  set (CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/cbm-fles/flesnet")
+  set (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+  set (CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+  INCLUDE(CPack)
+endif()
