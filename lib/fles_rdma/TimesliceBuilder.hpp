@@ -5,6 +5,7 @@
 #include "IBConnectionGroup.hpp"
 #include "RingBuffer.hpp"
 #include "TimesliceBuffer.hpp"
+#define _TURN_OFF_PLATFORM_STRING
 #include <cpprest/http_client.h>
 #include <csignal>
 #include <memory>

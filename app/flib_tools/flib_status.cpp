@@ -9,6 +9,7 @@
 #include "flib.h"
 #include <boost/program_options.hpp>
 #include <chrono>
+#define _TURN_OFF_PLATFORM_STRING
 #include <cpprest/http_client.h>
 #include <csignal>
 #include <iostream>
