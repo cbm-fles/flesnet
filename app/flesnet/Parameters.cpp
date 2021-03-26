@@ -170,7 +170,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
       po::value<uint32_t>(&scheduler_speedup_interval_count_)->default_value(0),
       "The scheduler speeding up interval count (LibFabric only)");
   config_add(
-      "scheduler-log-directory,e",
+      "scheduler-log-directory",
       po::value<std::string>(&scheduler_log_directory_)->default_value("."),
       "The directory to store the scheduler log files (LibFabric only)");
   config_add("scheduler-enable-logging",
