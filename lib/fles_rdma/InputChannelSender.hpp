@@ -7,6 +7,7 @@
 #include "RingBuffer.hpp"
 #include <boost/format.hpp>
 #include <cassert>
+#define _TURN_OFF_PLATFORM_STRING
 #include <cpprest/http_client.h>
 
 /// Input buffer and compute node connection container class.

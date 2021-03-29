@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
+#define _TURN_OFF_PLATFORM_STRING
 #include <cpprest/base_uri.h>
 #include <fstream>
 #include <iterator>

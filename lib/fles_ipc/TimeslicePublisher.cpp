@@ -10,7 +10,7 @@ namespace fles {
 
 TimeslicePublisher::TimeslicePublisher(const std::string& address,
                                        uint32_t hwm) {
-  publisher_.setsockopt(ZMQ_SNDHWM, hwm);
+  publisher_.set(zmq::sockopt::sndhwm, int(hwm));
   publisher_.bind(address.c_str());
 }
 
@@ -27,7 +27,7 @@ void TimeslicePublisher::do_put(const StorableTimeslice& timeslice) {
   zmq::message_t message(serial_str_.size());
   std::copy_n(static_cast<const char*>(serial_str_.data()), message.size(),
               static_cast<char*>(message.data()));
-  publisher_.send(message);
+  publisher_.send(message, zmq::send_flags::none);
 }
 
 } // namespace fles

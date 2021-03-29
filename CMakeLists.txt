@@ -1,7 +1,11 @@
-# Copyright 2013-2016 Jan de Cuveland <cmail@cuveland.de>
+# Copyright 2013-2020 Jan de Cuveland <cmail@cuveland.de>
 
-cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10)
 project(fles)
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
 option(COVERALLS "Turn on coveralls support" OFF)
 option(COVERALLS_UPLOAD "Upload the generated coveralls json" ON)
@@ -25,7 +29,16 @@ else()
   find_library(ZMQ_LIBRARIES zmq)
 endif()
 
-find_package(Boost 1.55.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex iostreams)
+find_package(PkgConfig)
+pkg_check_modules(ZMQ REQUIRED libzmq)
+if(APPLE)
+  find_package(cppzmq REQUIRED)
+  set(ZMQ_INCLUDE_DIRS ${PC_LIBZMQ_INCLUDE_DIRS} /usr/local/include)
+  set(ZMQ_LIBRARIES ${ZeroMQ_LIBRARY})
+  set(Boost_USE_MULTITHREADED TRUE)
+endif()
+
+find_package(Boost 1.65.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex iostreams)
 find_package(Threads REQUIRED)
 
 find_package(LIBFABRIC)
@@ -60,7 +73,9 @@ if(USE_DOXYGEN AND NOT DOXYGEN_FOUND)
 	message(STATUS "Binary not found: Doxygen. Not building documentation.")
 endif()
 
-add_compile_options(-std=c++11 -O3 -ggdb -msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
+set(CMAKE_CXX_STANDARD 17)
+
+add_compile_options(-msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
 
 if (COVERALLS)
   include(Coveralls)
@@ -89,6 +104,7 @@ if (USE_PDA AND PDA_FOUND)
   add_subdirectory(lib/flib)
   add_subdirectory(lib/pda)
 endif()
+add_subdirectory(lib/shm_ipc)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "/opt/${PROJECT_NAME}" CACHE PATH "..." FORCE)

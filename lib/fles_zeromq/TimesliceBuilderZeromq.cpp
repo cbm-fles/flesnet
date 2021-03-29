@@ -32,7 +32,7 @@ TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     c->socket = zmq_socket(zmq_context, ZMQ_REQ);
     assert(c->socket);
     int timeout_ms = 500;
-    int rc =
+    [[maybe_unused]] int rc =
         zmq_setsockopt(c->socket, ZMQ_RCVTIMEO, &timeout_ms, sizeof timeout_ms);
     assert(rc == 0);
     rc =
@@ -49,7 +49,7 @@ TimesliceBuilderZeromq::TimesliceBuilderZeromq(
 TimesliceBuilderZeromq::~TimesliceBuilderZeromq() {
   for (auto& c : connections_) {
     if (c->socket != nullptr) {
-      int rc = zmq_close(c->socket);
+      [[maybe_unused]] int rc = zmq_close(c->socket);
       assert(rc == 0);
     }
   }

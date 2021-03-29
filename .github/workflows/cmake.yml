@@ -1,0 +1,52 @@
+name: CMake
+
+on: [push]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+
+    strategy:
+      matrix:
+        include:
+        - cc: gcc
+          cxx: g++
+        - cc: clang
+          cxx: clang++
+      fail-fast: false
+
+    env: 
+      CC: ${{matrix.cc}}
+      CXX: ${{matrix.cxx}}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo bash -c "echo 'deb https://download.opensuse.org/repositories/network:/messaging:/zeromq:/release-draft/xUbuntu_18.04/ ./' > /etc/apt/sources.list.d/zmq.list"
+        wget https://build.opensuse.org/projects/network:messaging:zeromq:release-draft/public_key -O- | sudo apt-key add
+        sudo bash -c "echo -e 'Package: libzmq3-dev\nPin: origin download.opensuse.org\nPin-Priority: 1000\n\nPackage: libzmq5\nPin: origin download.opensuse.org\nPin-Priority: 1000' >> /etc/apt/preferences"
+        sudo apt-get update -y
+        sudo apt-get install -yq catch doxygen libboost-all-dev libcpprest-dev libfabric-dev libibverbs-dev libkmod-dev libnuma-dev libpci-dev librdmacm-dev libtool-bin libzmq3-dev valgrind
+
+    - name: Install additional dependencies
+      run: contrib/merge-dependencies
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure CMake
+      working-directory: ${{runner.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      run: make -j
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      run: make CTEST_OUTPUT_ON_FAILURE=1 test
