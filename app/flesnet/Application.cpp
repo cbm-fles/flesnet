@@ -77,7 +77,12 @@ void Application::create_timeslice_buffers() {
       std::unique_ptr<tl_libfabric::TimesliceBuilder> builder(
           new tl_libfabric::TimesliceBuilder(
               i, *tsb, par_.base_port() + i, input_size, par_.timeslice_size(),
-              signal_status_, false, par_.outputs().at(i).host));
+              signal_status_, par_.drop_process_ts(), par_.outputs().at(i).host,
+              par_.scheduler_history_size(), par_.scheduler_interval_length(),
+              par_.scheduler_speedup_difference_percentage(),
+              par_.scheduler_speedup_percentage(),
+              par_.scheduler_speedup_interval_count(),
+              par_.scheduler_log_directory(), par_.scheduler_enable_logging()));
       timeslice_builders_.push_back(std::move(builder));
 #else
       L_(fatal) << "flesnet built without LIBFABRIC support";
@@ -197,7 +202,9 @@ void Application::create_input_channel_senders() {
           new tl_libfabric::InputChannelSender(
               index, *(data_sources_.at(c).get()), output_hosts,
               output_services, par_.timeslice_size(), overlap_size,
-              par_.max_timeslice_number(), par_.inputs().at(c).host));
+              par_.max_timeslice_number(), par_.inputs().at(index).host,
+              par_.scheduler_interval_length(), par_.scheduler_log_directory(),
+              par_.scheduler_enable_logging()));
       input_channel_senders_.push_back(std::move(sender));
 #else
       L_(fatal) << "flesnet built without LIBFABRIC support";

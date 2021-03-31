@@ -2,6 +2,7 @@
 
 #include "System.hpp"
 #include <cstring>
+#include <errno.h>
 #include <glob.h>
 #include <netdb.h>
 #include <pwd.h>

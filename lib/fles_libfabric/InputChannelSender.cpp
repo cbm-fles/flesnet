@@ -2,26 +2,20 @@
 // Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
 
 #include "InputChannelSender.hpp"
-#include "MicrosliceDescriptor.hpp"
-#include "RequestIdentifier.hpp"
-#include "Utility.hpp"
-#include <cassert>
-#include <chrono>
-#include <log.hpp>
-#include <utility>
-
-#include <rdma/fi_domain.h>
 
 namespace tl_libfabric {
 InputChannelSender::InputChannelSender(
     uint64_t input_index,
     InputBufferReadInterface& data_source,
-    const std::vector<std::string>& compute_hostnames,
-    const std::vector<std::string>& compute_services,
+    const std::vector<std::string> compute_hostnames,
+    const std::vector<std::string> compute_services,
     uint32_t timeslice_size,
     uint32_t overlap_size,
     uint32_t max_timeslice_number,
-    const std::string& input_node_name)
+    std::string input_node_name,
+    uint32_t scheduler_interval_length,
+    std::string log_directory,
+    bool enable_logging)
     : ConnectionGroup(input_node_name), input_index_(input_index),
       data_source_(data_source), compute_hostnames_(compute_hostnames),
       compute_services_(compute_services), timeslice_size_(timeslice_size),
@@ -43,6 +37,18 @@ InputChannelSender::InputChannelSender(
   } else {
     connection_oriented_ = false;
   }
+
+  InputSchedulerOrchestrator::initialize(
+      input_index, compute_hostnames.size(),
+      ConstVariables::INIT_HEARTBEAT_TIMEOUT,
+      ConstVariables::HEARTBEAT_TIMEOUT_HISTORY_SIZE,
+      ConstVariables::HEARTBEAT_TIMEOUT_FACTOR,
+      ConstVariables::HEARTBEAT_INACTIVE_FACTOR,
+      ConstVariables::HEARTBEAT_INACTIVE_RETRY_COUNT, scheduler_interval_length,
+      data_source.get_write_index().desc, (timeslice_size + overlap_size),
+      start_index_desc_, timeslice_size, log_directory, enable_logging);
+  InputSchedulerOrchestrator::update_data_source_desc(
+      data_source.get_write_index().desc);
 }
 
 InputChannelSender::~InputChannelSender() {
@@ -124,16 +130,6 @@ void InputChannelSender::report_status() {
                  now + interval);
 }
 
-void InputChannelSender::sync_buffer_positions() {
-  for (auto& c : conn_) {
-    c->try_sync_buffer_positions();
-  }
-
-  auto now = std::chrono::system_clock::now();
-  scheduler_.add(std::bind(&InputChannelSender::sync_buffer_positions, this),
-                 now + std::chrono::milliseconds(0));
-}
-
 void InputChannelSender::sync_data_source(bool schedule) {
   if (acked_data_ > cached_acked_data_ || acked_desc_ > cached_acked_desc_) {
     cached_acked_data_ = acked_data_;
@@ -148,6 +144,58 @@ void InputChannelSender::sync_data_source(bool schedule) {
   }
 }
 
+void InputChannelSender::sync_heartbeat() {
+  InputSchedulerOrchestrator::update_data_source_desc(
+      data_source_.get_write_index().desc);
+  HeartbeatFailedNodeInfo* failed_connection =
+      InputSchedulerOrchestrator::get_timed_out_connection();
+  if (failed_connection->index ==
+      ConstVariables::MINUS_ONE) { // Check inactive connections
+    send_heartbeat_to_inactive_connections();
+  } else { // Send timeout message to all active connections
+    for (auto& conn : conn_) {
+      if (conn->request_finalize_flag() && !conn->done()) {
+        mark_connection_completed(conn->index());
+      } else {
+        if (!InputSchedulerOrchestrator::is_connection_timed_out(
+                conn->index()) &&
+            !conn->done()) {
+          conn->prepare_heartbeat(failed_connection);
+        }
+      }
+    }
+  }
+  // TODO 1 second?
+  scheduler_.add(std::bind(&InputChannelSender::sync_heartbeat, this),
+                 std::chrono::system_clock::now() + std::chrono::seconds(1));
+}
+
+void InputChannelSender::send_timeslices() {
+
+  uint64_t up_to_timeslice =
+      InputSchedulerOrchestrator::get_last_timeslice_to_send();
+
+  uint32_t conn_index = input_index_ % conn_.size();
+  do {
+    uint64_t next_ts =
+        InputSchedulerOrchestrator::get_connection_next_timeslice(conn_index);
+
+    if (next_ts != ConstVariables::MINUS_ONE && next_ts <= up_to_timeslice &&
+        next_ts <= max_timeslice_number_ &&
+        try_send_timeslice(next_ts, conn_index)) {
+      conn_[conn_index]->set_last_sent_timeslice(next_ts);
+    }
+    conn_index = (conn_index + 1) % conn_.size();
+  } while (conn_index != (input_index_ % conn_.size()));
+
+  if (InputSchedulerOrchestrator::get_sent_timeslices() <=
+      max_timeslice_number_)
+    scheduler_.add(std::bind(&InputChannelSender::send_timeslices, this),
+                   std::chrono::system_clock::now() +
+                       std::chrono::microseconds(
+                           InputSchedulerOrchestrator::get_next_fire_time()));
+}
+
 void InputChannelSender::bootstrap_with_connections() {
   connect();
   while (connected_ != compute_hostnames_.size()) {
@@ -159,21 +207,23 @@ void InputChannelSender::bootstrap_wo_connections() {
   // domain, cq, av
   init_context(Provider::getInst()->get_info(), compute_hostnames_,
                compute_services_);
+  LibfabricBarrier::create_barrier_instance(input_index_, pd_, false);
 
+  conn_.resize(compute_hostnames_.size());
   // setup connections objects
   for (unsigned int i = 0; i < compute_hostnames_.size(); ++i) {
     std::unique_ptr<InputChannelConnection> connection =
         create_input_node_connection(i);
     // creates endpoint
-    connection->connect(compute_hostnames_[i], compute_services_[i], pd_, cq_,
-                        av_, fi_addrs[i]);
-    conn_.push_back(std::move(connection));
+    connection->connect(compute_hostnames_[i], compute_services_[i], pd_,
+                        completion_queue(i), av_, fi_addrs[i]);
+    conn_.at(i) = (std::move(connection));
   }
   int i = 0;
   while (connected_ != compute_hostnames_.size()) {
     poll_completion();
     i++;
-    if (i == 1000000) {
+    if (i == 1000000) { // TODO retry for connectionless
       i = 0;
       // reconnecting
       for (unsigned int i = 0; i < compute_hostnames_.size(); ++i) {
@@ -198,23 +248,38 @@ void InputChannelSender::operator()() {
     }
 
     data_source_.proceed();
-    time_begin_ = std::chrono::high_resolution_clock::now();
 
-    uint64_t timeslice = 0;
-    sync_buffer_positions();
-    sync_data_source(true);
-    report_status();
-    while (timeslice < max_timeslice_number_ && !abort_) {
-      if (try_send_timeslice(timeslice)) {
-        timeslice++;
-      }
-      poll_completion();
-      data_source_.proceed();
-      scheduler_.timer();
+    LibfabricBarrier::get_instance()->call_barrier();
+
+    time_begin_ = std::chrono::high_resolution_clock::now();
+    InputSchedulerOrchestrator::update_input_begin_time(time_begin_);
+
+    for (uint32_t indx = 0; indx < conn_.size(); indx++) {
+      conn_[indx]->set_time_MPI(time_begin_);
     }
 
+    sync_buffer_positions();
+    sync_data_source(true);
+    sync_heartbeat();
+    report_status();
+    send_timeslices();
+
+    while (InputSchedulerOrchestrator::get_sent_timeslices() <=
+               max_timeslice_number_ &&
+           !abort_) {
+      scheduler_.timer();
+      poll_completion();
+      update_compute_schedulers();
+      data_source_.proceed();
+    }
+
+    L_(info) << "[i" << input_index_ << "]"
+             << "All timeslices are sent.  wait for pending send completions!";
+
     // wait for pending send completions
-    while (acked_desc_ < timeslice_size_ * timeslice + start_index_desc_) {
+    while (acked_desc_ <
+           timeslice_size_ * InputSchedulerOrchestrator::get_sent_timeslices() +
+               start_index_desc_) {
       poll_completion();
       scheduler_.timer();
     }
@@ -242,13 +307,14 @@ void InputChannelSender::operator()() {
       poll_cm_events();
     }
 
+    InputSchedulerOrchestrator::generate_log_files();
     summary();
   } catch (std::exception& e) {
     L_(fatal) << "exception in InputChannelSender: " << e.what();
   }
 }
 
-bool InputChannelSender::try_send_timeslice(uint64_t timeslice) {
+bool InputChannelSender::try_send_timeslice(uint64_t timeslice, uint32_t cn) {
   // wait until a complete timeslice is available in the input buffer
   uint64_t desc_offset = timeslice * timeslice_size_ + start_index_desc_;
   uint64_t desc_length = timeslice_size_ + overlap_size_;
@@ -258,7 +324,7 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice) {
   }
   // check if microslice no. (desc_offset + desc_length - 1) is avail
   if (write_index_desc_ >= desc_offset + desc_length) {
-
+    InputSchedulerOrchestrator::log_timeslice_IB_blocked(cn, timeslice, true);
     uint64_t data_offset = data_source_.desc_buffer().at(desc_offset).offset;
     uint64_t data_end =
         data_source_.desc_buffer().at(desc_offset + desc_length - 1).offset +
@@ -270,35 +336,46 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice) {
         data_length + desc_length * sizeof(fles::MicrosliceDescriptor);
 
     if (false) {
-      L_(trace) << "SENDER working on timeslice " << timeslice
+      L_(debug) << "SENDER working on timeslice " << timeslice << " to " << cn
                 << ", microslices " << desc_offset << ".."
                 << (desc_offset + desc_length - 1) << ", data bytes "
                 << data_offset << ".." << (data_offset + data_length - 1);
-      L_(trace) << get_state_string();
     }
-
-    int cn = target_cn_index(timeslice);
 
     if (!conn_[cn]->write_request_available()) {
+      L_(debug) << "[" << input_index_ << "]"
+                << "max # of writes to " << cn;
+      InputSchedulerOrchestrator::log_timeslice_MR_blocked(cn, timeslice);
       return false;
     }
+    InputSchedulerOrchestrator::log_timeslice_MR_blocked(cn, timeslice, true);
 
     // number of bytes to skip in advance (to avoid buffer wrap)
     uint64_t skip = conn_[cn]->skip_required(total_length);
     total_length += skip;
 
     if (conn_[cn]->check_for_buffer_space(total_length, 1)) {
+      if (post_send_data(timeslice, cn, desc_offset, desc_length, data_offset,
+                         data_length, skip)) {
+        InputSchedulerOrchestrator::log_timeslice_CB_blocked(cn, timeslice,
+                                                             true);
 
-      post_send_data(timeslice, cn, desc_offset, desc_length, data_offset,
-                     data_length, skip);
-
-      conn_[cn]->inc_write_pointers(total_length, 1);
-
-      sent_desc_ = desc_offset + desc_length;
-      sent_data_ = data_end;
-
-      return true;
+        // conn_[cn]->inc_write_pointers(total_length, 1);
+        conn_[cn]->add_timeslice_data_address(total_length, 1);
+        InputSchedulerOrchestrator::mark_timeslice_transmitted(cn, timeslice,
+                                                               total_length);
+        if (data_end > sent_data_) { // This if condition is needed when the
+                                     // timeslice transmissions are out of order
+          sent_desc_ = desc_offset + desc_length;
+          sent_data_ = data_end;
+        }
+        return true;
+      }
+    } else {
+      InputSchedulerOrchestrator::log_timeslice_CB_blocked(cn, timeslice);
     }
+  } else {
+    InputSchedulerOrchestrator::log_timeslice_IB_blocked(cn, timeslice);
   }
 
   return false;
@@ -306,10 +383,10 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice) {
 
 std::unique_ptr<InputChannelConnection>
 InputChannelSender::create_input_node_connection(uint_fast16_t index) {
-  // @todo
-  // unsigned int max_send_wr = 8000; ???  IB hca
+  // TODO: What is the best value?
+  unsigned int max_send_wr = 8000; // ???  IB hca
   // unsigned int max_send_wr = 495; // ??? libfabric for verbs
-  unsigned int max_send_wr = 256; // ??? libfabric for sockets
+  // unsigned int max_send_wr = 256; // ??? libfabric for sockets
 
   // limit pending write requests so that send queue and completion queue
   // do not overflow
@@ -326,19 +403,22 @@ void InputChannelSender::connect() {
   if (pd_ == nullptr) { // pd, cq2, av
     init_context(Provider::getInst()->get_info(), compute_hostnames_,
                  compute_services_);
+    LibfabricBarrier::create_barrier_instance(input_index_, pd_, false);
   }
 
-  for (unsigned int i = 0; i < compute_hostnames_.size(); ++i) {
+  conn_.resize(compute_hostnames_.size());
+  uint32_t count = 0;
+  unsigned int i = input_index_ % compute_hostnames_.size();
+  while (count < compute_hostnames_.size()) {
     std::unique_ptr<InputChannelConnection> connection =
         create_input_node_connection(i);
-    connection->connect(compute_hostnames_[i], compute_services_[i], pd_, cq_,
-                        av_, FI_ADDR_UNSPEC);
-    conn_.push_back(std::move(connection));
+    connection->connect(compute_hostnames_[i], compute_services_[i], pd_,
+                        completion_queue(i), av_, FI_ADDR_UNSPEC);
+    // conn_.push_back(std::move(connection));
+    conn_.at(i) = (std::move(connection));
+    ++count;
+    i = (i + 1) % compute_hostnames_.size();
   }
-}
-
-int InputChannelSender::target_cn_index(uint64_t timeslice) {
-  return timeslice % conn_.size();
 }
 
 void InputChannelSender::on_connected(struct fid_domain* pd) {
@@ -391,8 +471,8 @@ void InputChannelSender::on_rejected(struct fi_eq_err_entry* event) {
   // immediately initiate retry
   std::unique_ptr<InputChannelConnection> connection =
       create_input_node_connection(i);
-  connection->connect(compute_hostnames_[i], compute_services_[i], pd_, cq_,
-                      av_, FI_ADDR_UNSPEC);
+  connection->connect(compute_hostnames_[i], compute_services_[i], pd_,
+                      completion_queue(i), av_, FI_ADDR_UNSPEC);
   conn_.at(i) = std::move(connection);
 }
 
@@ -401,17 +481,15 @@ std::string InputChannelSender::get_state_string() {
 
   s << "/--- desc buf ---" << std::endl;
   s << "|";
-  for (unsigned int i = 0; i < data_source_.desc_buffer().size(); ++i) {
+  for (unsigned int i = 0; i < data_source_.desc_buffer().size(); ++i)
     s << " (" << i << ")" << data_source_.desc_buffer().at(i).offset;
-  }
   s << std::endl;
   s << "| acked_desc_ = " << acked_desc_ << std::endl;
   s << "/--- data buf ---" << std::endl;
   s << "|";
-  for (unsigned int i = 0; i < data_source_.data_buffer().size(); ++i) {
+  for (unsigned int i = 0; i < data_source_.data_buffer().size(); ++i)
     s << " (" << i << ")" << std::hex << data_source_.data_buffer().at(i)
       << std::dec;
-  }
   s << std::endl;
   s << "| acked_data_ = " << acked_data_ << std::endl;
   s << "\\---------";
@@ -419,7 +497,7 @@ std::string InputChannelSender::get_state_string() {
   return s.str();
 }
 
-void InputChannelSender::post_send_data(uint64_t timeslice,
+bool InputChannelSender::post_send_data(uint64_t timeslice,
                                         int cn,
                                         uint64_t desc_offset,
                                         uint64_t desc_length,
@@ -446,14 +524,17 @@ void InputChannelSender::post_send_data(uint64_t timeslice,
         sizeof(fles::MicrosliceDescriptor) *
         (data_source_.desc_buffer().size() -
          (desc_offset & data_source_.desc_buffer().size_mask()));
+    // sge[num_sge++].lkey = mr_desc_->lkey;
     descs[num_sge++] = fi_mr_desc(mr_desc_);
     sge[num_sge].iov_base = data_source_.desc_buffer().ptr();
     sge[num_sge].iov_len =
         sizeof(fles::MicrosliceDescriptor) *
         (desc_length - data_source_.desc_buffer().size() +
          (desc_offset & data_source_.desc_buffer().size_mask()));
+    // sge[num_sge++].lkey = mr_desc_->lkey;
     descs[num_sge++] = fi_mr_desc(mr_desc_);
   }
+  // int num_desc_sge = num_sge;
   // data
   if (data_length == 0) {
     // zero chunks
@@ -478,19 +559,132 @@ void InputChannelSender::post_send_data(uint64_t timeslice,
     descs[num_sge++] = fi_mr_desc(mr_data_);
   }
 
-  conn_[cn]->send_data(sge, descs, num_sge, timeslice, desc_length, data_length,
-                       skip);
+  return conn_[cn]->send_data(sge, descs, num_sge, timeslice, desc_length,
+                              data_length, skip);
 }
 
 void InputChannelSender::on_completion(uint64_t wr_id) {
   switch (wr_id & 0xFF) {
-  case ID_WRITE_DESC: {
+  case ID_WRITE_DESC:
+  case ID_WRITE_DATA:
+  case ID_WRITE_DATA_WRAP: {
     uint64_t ts = wr_id >> 24;
 
     int cn = (wr_id >> 8) & 0xFFFF;
+    InputSchedulerOrchestrator::mark_timeslice_rdma_write_acked(cn, ts);
     conn_[cn]->on_complete_write();
 
+    if (false) {
+      L_(info) << "[i" << input_index_ << "] "
+               << "write timeslice " << ts << " to " << cn
+               << " complete, now: acked_data_=" << acked_data_
+               << " acked_desc_=" << acked_desc_;
+    }
+  } break;
+
+  case ID_RECEIVE_STATUS: {
+    int cn = wr_id >> 8;
+    uint64_t last_desc = conn_[cn]->cn_ack_desc();
+    bool was_done = conn_[cn]->done();
+    conn_[cn]->on_complete_recv();
+    uint64_t new_desc = conn_[cn]->cn_ack_desc();
+
+    update_data_source(cn, last_desc, new_desc);
+    InputSchedulerOrchestrator::mark_timeslices_acked(cn, new_desc);
+
+    if (!connection_oriented_ && !conn_[cn]->get_partner_addr()) {
+      conn_[cn]->set_partner_addr(av_);
+      conn_[cn]->set_remote_info();
+      on_connected(pd_);
+      ++connected_;
+      connected_indexes_.insert(cn);
+    }
+    if (conn_[cn]->request_abort_flag()) {
+      abort_ = true;
+    }
+    if (!was_done && conn_[cn]->done()) {
+      mark_connection_completed(cn);
+    }
+  } break;
+
+  case ID_SEND_STATUS: {
+    int cn = wr_id >> 8;
+    conn_[cn]->on_complete_send();
+  } break;
+
+  case ID_HEARTBEAT_RECEIVE_STATUS: {
+    int cn = wr_id >> 8;
+
+    // TODO to be written in a better way
+    InputSchedulerOrchestrator::update_data_source_desc(
+        data_source_.get_write_index().desc);
+    bool was_decision_considered = true, is_decision_considered = false;
+    // Updating data source before re-arranging timeslice
+    if (conn_[cn]->get_recv_heartbeat_message().failure_info.index !=
+        ConstVariables::MINUS_ONE) {
+      was_decision_considered =
+          InputSchedulerOrchestrator::is_decision_considered(
+              conn_[cn]->get_recv_heartbeat_message().failure_info.index);
+    }
+
+    conn_[cn]->on_complete_heartbeat_recv();
+
+    is_decision_considered = InputSchedulerOrchestrator::is_decision_considered(
+        conn_[cn]->get_recv_heartbeat_message().failure_info.index);
+    // update the cn_wp after performing timeslice re-arrangment
+    if (conn_[cn]->get_recv_heartbeat_message().failure_info.index !=
+            ConstVariables::MINUS_ONE &&
+        !was_decision_considered && is_decision_considered) {
+
+      LibfabricBarrier::get_instance()->deactive_endpoint(
+          conn_[cn]->get_recv_heartbeat_message().failure_info.index);
+      uint64_t last_desc =
+          conn_[conn_[cn]->get_recv_heartbeat_message().failure_info.index]
+              ->cn_ack_desc();
+      update_data_source(
+          conn_[cn]->get_recv_heartbeat_message().failure_info.index, last_desc,
+          conn_[cn]
+              ->get_recv_heartbeat_message()
+              .failure_info.last_completed_desc);
+
+      for (auto& conn : conn_) {
+        if (!InputSchedulerOrchestrator::is_connection_timed_out(
+                conn->index())) {
+          conn->update_cn_wp_after_failure_action(
+              conn_[cn]->get_recv_heartbeat_message().failure_info.index);
+        }
+      }
+      mark_connection_completed(
+          conn_[cn]->get_recv_heartbeat_message().failure_info.index);
+    }
+  } break;
+
+  case ID_HEARTBEAT_SEND_STATUS: {
+    int cn = wr_id >> 8;
+    conn_[cn]->on_complete_heartbeat_send();
+  } break;
+
+  default:
+    L_(fatal) << "[i" << input_index_ << "] "
+              << "wc for unknown wr_id=" << (wr_id & 0xFF);
+    throw LibfabricException("wc for unknown wr_id");
+  }
+}
+
+void InputChannelSender::update_compute_schedulers() {
+  for (auto& c : conn_) {
+    c->ack_complete_interval_info();
+  }
+}
+
+void InputChannelSender::update_data_source(uint32_t compute_index,
+                                            uint64_t old_desc,
+                                            uint64_t new_desc) {
+  for (uint64_t desc = old_desc + 1; desc <= new_desc; ++desc) {
+    uint64_t ts = InputSchedulerOrchestrator::get_timeslice_by_descriptor(
+        compute_index, desc);
     uint64_t acked_ts = (acked_desc_ - start_index_desc_) / timeslice_size_;
+    assert(ts != ConstVariables::MINUS_ONE);
     if (ts != acked_ts) {
       // transmission has been reordered, store completion information
       ack_.at(ts) = ts;
@@ -500,6 +694,7 @@ void InputChannelSender::on_completion(uint64_t wr_id) {
         ++acked_ts;
       } while (ack_.at(acked_ts) > ts);
 
+      // TODO Invalid when timeslices are not fixed in size
       acked_desc_ = acked_ts * timeslice_size_ + start_index_desc_;
       acked_data_ = data_source_.desc_buffer().at(acked_desc_ - 1).offset +
                     data_source_.desc_buffer().at(acked_desc_ - 1).size;
@@ -510,46 +705,18 @@ void InputChannelSender::on_completion(uint64_t wr_id) {
         data_source_.set_read_index({cached_acked_desc_, cached_acked_data_});
       }
     }
-    if (false) {
-      L_(trace) << "[i" << input_index_ << "] "
-                << "write timeslice " << ts
-                << " complete, now: acked_data_=" << acked_data_
-                << " acked_desc_=" << acked_desc_;
-    }
-  } break;
-
-  case ID_RECEIVE_STATUS: {
-    int cn = wr_id >> 8;
-    conn_[cn]->on_complete_recv();
-    if (!connection_oriented_ && (conn_[cn]->get_partner_addr() == 0u)) {
-      conn_[cn]->set_partner_addr(av_);
-      conn_[cn]->set_remote_info();
-      on_connected(pd_);
-      ++connected_;
-      connected_indexes_.insert(cn);
-    }
-    if (conn_[cn]->request_abort_flag()) {
-      abort_ = true;
-    }
-    if (conn_[cn]->done()) {
-      ++connections_done_;
-      all_done_ = (connections_done_ == conn_.size());
-      if (!connection_oriented_) {
-        on_disconnected(nullptr, cn);
-      }
-      L_(debug) << "[i" << input_index_ << "] "
-                << "ID_RECEIVE_STATUS final for id " << cn
-                << " all_done=" << all_done_;
-    }
-  } break;
-
-  case ID_SEND_STATUS: {
-  } break;
-
-  default:
-    L_(fatal) << "[i" << input_index_ << "] "
-              << "wc for unknown wr_id=" << (wr_id & 0xFF);
-    throw LibfabricException("wc for unknown wr_id");
   }
+}
+
+void InputChannelSender::mark_connection_completed(uint32_t cn) {
+  conn_[cn]->mark_done();
+  ++connections_done_;
+  all_done_ = (connections_done_ == conn_.size());
+  if (!connection_oriented_) {
+    on_disconnected(nullptr, cn);
+  }
+  L_(warning) << "[i" << input_index_ << "] "
+              << "ID_RECEIVE_STATUS final for id " << cn
+              << " all_done=" << all_done_ << " done " << connections_done_;
 }
 } // namespace tl_libfabric

@@ -8,6 +8,7 @@
 #include <limits>
 #include <sstream>
 #include <vector>
+#include <array>
 
 /// Overloaded output operator for STL vectors.
 template <class T>
