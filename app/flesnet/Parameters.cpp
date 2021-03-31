@@ -148,35 +148,35 @@ void Parameters::parse_options(int argc, char* argv[]) {
                  ->value_name("<id>"),
              "select transport implementation; possible values "
              "(case-insensitive) are: RDMA, LibFabric, ZeroMQ");
-  config_add("drop-process-ts",
+  config_add("discard-all-ts",
              po::value<bool>(&drop_process_ts_)->default_value(false),
-             "Drop timeslice processing");
+             "Discard all timeslices at receiver (debug only)");
   config_add("scheduler-history-size",
              po::value<uint32_t>(&scheduler_history_size_)->default_value(100),
-             "The scheduler history size (Libfabric-only)");
+             "The scheduler history size (LibFabric only)");
   config_add(
       "scheduler-interval-length",
       po::value<uint32_t>(&scheduler_interval_length_)->default_value(10000),
-      "The initial scheduler interval Timeslices  (Libfabric-only)");
+      "The initial scheduler interval Timeslices (LibFabric only)");
   config_add("scheduler-speedup-difference-percentage",
              po::value<uint32_t>(&scheduler_speedup_difference_percentage_)
                  ->default_value(0),
-             "The scheduler variance percentage to speed up  (Libfabric-only)");
+             "The scheduler variance percentage to speed up (LibFabric only)");
   config_add(
       "scheduler-speedup-percentage",
       po::value<uint32_t>(&scheduler_speedup_percentage_)->default_value(0),
-      "The scheduler speeding up percentage  (Libfabric-only)");
+      "The scheduler speeding up percentage (LibFabric only)");
   config_add(
       "scheduler-speedup-interval-count",
       po::value<uint32_t>(&scheduler_speedup_interval_count_)->default_value(0),
-      "The scheduler speeding up interval count  (Libfabric-only)");
+      "The scheduler speeding up interval count (LibFabric only)");
   config_add(
-      "scheduler-log-directory,e",
+      "scheduler-log-directory",
       po::value<std::string>(&scheduler_log_directory_)->default_value("."),
-      "The directory to store the scheduler log files (Libfabric-only)");
+      "The directory to store the scheduler log files (LibFabric only)");
   config_add("scheduler-enable-logging",
              po::value<bool>(&scheduler_enable_logging_)->default_value(false),
-             "Enable generating logging files (Libfabric-only)");
+             "Enable generating logging files (LibFabric only)");
 
   po::options_description cmdline_options("Allowed options");
   cmdline_options.add(generic).add(config);
