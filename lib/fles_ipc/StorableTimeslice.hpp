@@ -6,6 +6,7 @@
 #include "ArchiveDescriptor.hpp"
 #include "StorableMicroslice.hpp"
 #include "Timeslice.hpp"
+#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <vector>
