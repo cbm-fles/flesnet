@@ -197,6 +197,14 @@ std::string cri_device::print_devinfo() {
 //
 // cri_link* cri_device::link(size_t n) { return m_link.at(n).get(); }
 
+void cri_device::set_testreg(uint32_t data) {
+  m_register_file->set_reg(CRI_REG_TESTREG, data);
+}
+
+uint32_t cri_device::get_testreg() {
+  return m_register_file->get_reg(CRI_REG_TESTREG);
+}
+
 register_file_bar* cri_device::rf() const { return m_register_file.get(); }
 
 bool cri_device::check_magic_number() {

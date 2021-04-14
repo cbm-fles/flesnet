@@ -53,6 +53,9 @@ public:
   std::string print_build_info();
   std::string print_devinfo();
 
+  void set_testreg(uint32_t data);
+  uint32_t get_testreg();
+
   //  size_t number_of_links();
   //  std::vector<cri_link*> links();
   //  cri_link* link(size_t n);
