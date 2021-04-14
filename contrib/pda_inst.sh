@@ -23,6 +23,8 @@ install()
   cd /tmp/pda-$1
   mkdir -p /opt/pda/
   ./configure --debug=true --prefix=/opt/pda/$1/
+  # equivalent cmake flow:
+  # cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/opt/pda/$1/ ..
   make install
 
   cd /tmp/pda-$1/patches/linux_uio/
