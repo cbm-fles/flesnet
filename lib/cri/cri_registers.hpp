@@ -4,13 +4,13 @@
 // This file was automatically generated from:
 // src/packages/fles_registers.vhd
 // Repository is: git repository
-// Repository Revision: 076fb8e4470a7b470cc4f8ce38b2305ff9905827
+// Repository Revision: 01acf51924fa7901f9827c03777d2f9b49caa325
 // Repository Status: dirty
-// Build Timestamp: Tue Apr 13 15:18:47 CEST 2021
+// Build Timestamp: Wed Apr 14 17:19:44 CEST 2021
 // Build System: hutter@eda02
 #define CRI_C_BUILD_REPO 1
-#define CRI_C_BUILD_DATE 1618319927
-#define CRI_C_BUILD_REVISION 076fb8e4470a7b470cc4f8ce38b2305ff9905827
+#define CRI_C_BUILD_DATE 1618413584
+#define CRI_C_BUILD_REVISION 01acf51924fa7901f9827c03777d2f9b49caa325
 #define CRI_C_BUILD_STATUS_CLEAN 0
 #define CRI_C_BUILD_HOST 65646130320000000000000000000000
 #define CRI_C_BUILD_USER 68757474657200000000000000000000
@@ -61,6 +61,7 @@
 #define CRI_REG_PERF_FIFO_FILL_5 38
 #define CRI_REG_PERF_FIFO_FILL_6 39
 #define CRI_REG_PERF_FIFO_FILL_7 40
+#define CRI_REG_TEST_TIMEOUT 41
 #define CRI_REG_EBDM_N_SG_CONFIG 0
 #define CRI_REG_EBDM_BUFFER_SIZE_L 1
 #define CRI_REG_EBDM_BUFFER_SIZE_H 2
