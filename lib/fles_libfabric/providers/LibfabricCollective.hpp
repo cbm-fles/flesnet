@@ -14,7 +14,7 @@
 #include "log.hpp"
 
 #include <rdma/fabric.h>
-#include <rdma/fi_collective.h>
+//#include <rdma/fi_collective.h>
 #include <rdma/fi_domain.h>
 #include <rdma/fi_endpoint.h>
 #include <rdma/fi_errno.h>
@@ -45,7 +45,6 @@ protected:
   std::vector<struct LibfabricCollectiveEPInfo*> retrieve_endpoint_list();
 
 private:
-
   void initialize_cq(struct fid_cq** cq);
 
   void initialize_av();
