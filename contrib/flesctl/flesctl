@@ -43,7 +43,7 @@ confdir = os.path.normpath("/home/flesctl/config")
 rundir_base = "/home/flesctl/run"
 flesctl_conf = "/home/flesctl/private/flesctl.conf"
 log_template = "/home/flesctl/private/logbook.template"
-flesctl_syslog = "/var/log/flesctl.log"
+flesctl_syslog = "/var/log/remote_serv/flesctl.log"
 
 # check if run as correct user
 run_user = "flesctl"

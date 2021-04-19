@@ -57,7 +57,7 @@ for node in ${EN_LIST[@]}; do
             fi
         done
         EN_CFG+=("")
-        FLIB_SPM="${FLIB_SPM:+${FLIB_SPM},}flib_${node}_${flib:0:2}"
+        FLIB_SPM="${FLIB_SPM:+${FLIB_SPM},}flib_${node}_${ADDR[$flib]:0:2}"
     done
     EN_SPM+=("$node: bash -c \"LOGDIR=${LOGDIR}${node}_ ${FLESNETDIR}/fles_input $CONFIG_FILE $node\"")
     EN_SPM+=("$node: bash -c \"${SPMDIR}spm-require -n1 fles_input_sem; ${FLESNETDIR}flesnet -m -f $FLESNET_CFG -L ${LOGDIR}${node}_flesnet_en.log --log-syslog ${EN_INDEX[*]}\"")
