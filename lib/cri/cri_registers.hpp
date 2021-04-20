@@ -4,21 +4,20 @@
 // This file was automatically generated from:
 // src/flim/packages/fles_registers.vhd
 // Repository is: git repository
-// Repository Revision: 23983b03e82cc04114594e004b35ab6f24631368
+// Repository Revision: 204746695e922dcaf5f7d6c0b50e50ab01a728ac
 // Repository Status: clean
-// Build Timestamp: Tue Apr 20 12:05:44 CEST 2021
+// Build Timestamp: Tue Apr 20 14:38:53 CEST 2021
 // Build System: hutter@eda02
 #define CRI_C_BUILD_REPO 1
-#define CRI_C_BUILD_DATE 1618913144
-#define CRI_C_BUILD_REVISION 23983b03e82cc04114594e004b35ab6f24631368
+#define CRI_C_BUILD_DATE 1618922333
+#define CRI_C_BUILD_REVISION 204746695e922dcaf5f7d6c0b50e50ab01a728ac
 #define CRI_C_BUILD_STATUS_CLEAN 1
 #define CRI_C_BUILD_HOST 65646130320000000000000000000000
 #define CRI_C_BUILD_USER 68757474657200000000000000000000
 #define CRI_C_HARDWARE_ID 0x4844
-#define CRI_C_CHANNEL_OFFSET_OLD 0x00008000
 #define CRI_C_HARDWARE_VERSION 1
-#define CRI_C_CHANNEL_OFFSET 15
-#define CRI_C_DMA_ADDR_SEL 13
+#define CRI_C_CH_ADDR_SEL 15
+#define CRI_C_DMA_ADDR_SEL 14
 #define CRI_C_LINK_SEL 5
 #define CRI_REG_HARDWARE_INFO 0
 #define CRI_REG_BUILD_FLAGS 1

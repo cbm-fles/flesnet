@@ -17,7 +17,7 @@
 namespace cri {
 cri_link::cri_link(size_t link_index, pda::device* dev, pda::pci_bar* bar)
     : m_link_index(link_index), m_parent_device(dev), m_bar(bar) {
-  m_base_addr = (m_link_index + 1) * (1 << CRI_C_CHANNEL_OFFSET);
+  m_base_addr = (m_link_index + 1) * (1 << CRI_C_CH_ADDR_SEL);
   // register file access
   m_rfpkt =
       std::unique_ptr<register_file>(new register_file_bar(bar, m_base_addr));
