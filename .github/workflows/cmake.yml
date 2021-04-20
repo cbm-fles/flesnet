@@ -45,7 +45,7 @@ jobs:
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
-      run: make
+      run: make -j 32
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
