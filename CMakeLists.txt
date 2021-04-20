@@ -53,7 +53,7 @@ if(USE_RDMA AND NOT RDMA_FOUND)
   message(STATUS "Libraries not found: rdma. Building without RDMA transport.")
 endif()
 
-set(USE_LIBFABRIC FALSE CACHE BOOL "Use LIBFABRIC libraries and build LIBFABRIC transport.")
+set(USE_LIBFABRIC TRUE CACHE BOOL "Use LIBFABRIC libraries and build LIBFABRIC transport.")
 if(USE_LIBFABRIC AND NOT LIBFABRIC_FOUND)
 	message(STATUS "Library not found: libfabric. Building without.")
 endif()
