@@ -8,6 +8,7 @@
 #include <log.hpp>
 #include <rdma/fi_endpoint.h>
 #include <rdma/fi_tagged.h>
+#include <sys/uio.h>
 
 namespace tl_libfabric {
 
