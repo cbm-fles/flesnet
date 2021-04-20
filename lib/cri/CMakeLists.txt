@@ -2,16 +2,20 @@
 # Copyright 2021 Dirk Hutter <cmail@dirk-hutter.de>
 
 set(LIB_SRC
-  register_file_bar.cpp
   cri_device.cpp
+  cri_link.cpp
+  dma_channel.cpp
+  register_file_bar.cpp
 )
 set(LIB_HDR
-  cri.hpp
-  cri_registers.hpp
   cri_device.hpp
+  cri_link.hpp
+  dma_channel.hpp
   register_file.hpp
   register_file_bar.hpp
-  data_structures.hpp  
+  data_structures.hpp
+  cri.hpp
+  cri_registers.hpp
 )
 
 Add_library(cri STATIC ${LIB_HDR} ${LIB_SRC})
