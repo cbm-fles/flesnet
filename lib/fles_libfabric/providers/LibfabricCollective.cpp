@@ -237,7 +237,7 @@ bool LibfabricCollective::deactive_endpoint(uint32_t index) {
 }
 void LibfabricCollective::wait_for_cq(struct fid_cq* cq, const int32_t events) {
 
-  struct fi_cq_entry wc[MAX_CQ_ENTRIES];
+  struct fi_cq_entry* wc = new struct fi_cq_entry[MAX_CQ_ENTRIES];
   int ne, received = 0, expected = std::min(MAX_CQ_ENTRIES, events),
           remaining = events - MAX_CQ_ENTRIES;
 

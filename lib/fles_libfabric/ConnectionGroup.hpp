@@ -129,7 +129,8 @@ public:
 
   /// The Libfabric completion notification handler.
   int poll_completion() {
-    struct fi_cq_tagged_entry wc[MAX_CQ_ENTRIES];
+    struct fi_cq_tagged_entry* wc =
+        new struct fi_cq_tagged_entry[MAX_CQ_ENTRIES];
     int ne;
     int ne_total = 0;
 
