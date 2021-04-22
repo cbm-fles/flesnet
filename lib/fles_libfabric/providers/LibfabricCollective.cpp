@@ -237,11 +237,12 @@ bool LibfabricCollective::deactive_endpoint(uint32_t index) {
 }
 void LibfabricCollective::wait_for_cq(struct fid_cq* cq, const int32_t events) {
 
-  struct fi_cq_entry wc[events];
-  int ne, received = 0;
+  struct fi_cq_entry wc[MAX_CQ_ENTRIES];
+  int ne, received = 0, expected = std::min(MAX_CQ_ENTRIES, events),
+          remaining = events - MAX_CQ_ENTRIES;
 
-  while (received < events) {
-    ne = fi_cq_read(cq, &wc, (events - received));
+  while (received < expected) {
+    ne = fi_cq_read(cq, &wc, (expected - received));
     if ((ne < 0) && (ne != -FI_EAGAIN)) {
       L_(fatal) << "wait_for_cq failed: " << ne << "=" << fi_strerror(-ne);
       throw LibfabricException("wait_for_cq failed");
@@ -267,6 +268,9 @@ void LibfabricCollective::wait_for_cq(struct fid_cq* cq, const int32_t events) {
                 endpoint_list_[context->op_context]->fi_addr;
       }
     }
+  }
+  if (remaining > 0) {
+    wait_for_cq(cq, remaining);
   }
 }
 
