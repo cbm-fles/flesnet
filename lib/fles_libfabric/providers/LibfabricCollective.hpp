@@ -76,5 +76,6 @@ private:
   struct fid_cq* send_cq_ = nullptr;
   struct fid_av* av_ = nullptr;
   const uint32_t num_cqe_ = 1000000;
+  const int MAX_CQ_ENTRIES = 1000;
 };
 } // namespace tl_libfabric
