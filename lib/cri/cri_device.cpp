@@ -211,11 +211,11 @@ void cri_device::id_led(bool enable) {
 }
 
 void cri_device::set_testreg(uint32_t data) {
-  m_register_file->set_reg(CRI_REG_TESTREG, data);
+  m_register_file->set_reg(CRI_REG_TESTREG_DEVICE, data);
 }
 
 uint32_t cri_device::get_testreg() {
-  return m_register_file->get_reg(CRI_REG_TESTREG);
+  return m_register_file->get_reg(CRI_REG_TESTREG_DEVICE);
 }
 
 //////*** Performance Counters ***//////
