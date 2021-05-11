@@ -33,4 +33,4 @@ script:
   - make CTEST_OUTPUT_ON_FAILURE=1 test
 
 after_success:
-  - if [ "$CXX" = "g++" ]; then cmake -DCOVERALLS=ON -DCMAKE_BUILD_TYPE=Debug .. && make -j && make coveralls; fi
+  - if [ "$CXX" = "g++" ]; then cmake -DCOVERALLS=ON -DCMAKE_BUILD_TYPE=Debug .. && make -j 32 && make coveralls; fi

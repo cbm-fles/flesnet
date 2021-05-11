@@ -129,10 +129,8 @@ public:
 
   /// The Libfabric completion notification handler.
   int poll_completion() {
-    // TODO detect the number of messages that we are waiting for
-    const int ne_max = conn_.size() * conn_.size() * 1000;
-
-    struct fi_cq_tagged_entry wc[ne_max];
+    struct fi_cq_tagged_entry* wc =
+        new struct fi_cq_tagged_entry[MAX_CQ_ENTRIES];
     int ne;
     int ne_total = 0;
 
@@ -141,7 +139,7 @@ public:
 
     for (uint16_t i = 0; i < MAX_CQ_INSTANCE; i++) {
       start = std::chrono::high_resolution_clock::now();
-      ne = fi_cq_read(cqs_[i], wc, ne_max);
+      ne = fi_cq_read(cqs_[i], wc, MAX_CQ_ENTRIES);
       if (ne != 0) {
         /// LOGGING
         end = std::chrono::high_resolution_clock::now();
@@ -448,5 +446,8 @@ private:
   uint64_t agg_CQ_count_ = 0;
 
   uint64_t agg_CQ_COMP_time_ = 0;
+
+  // TODO detect the number of messages that we are waiting for
+  const int MAX_CQ_ENTRIES = 1000;
 };
 } // namespace tl_libfabric
