@@ -25,7 +25,8 @@ cri_link::cri_link(size_t link_index, pda::device* dev, pda::pci_bar* bar)
       new register_file_bar(bar, (m_base_addr + (1 << CRI_C_DMA_ADDR_SEL))));
   // initialize cached members
   m_reg_perf_interval_cached = m_rfpkt->get_reg(CRI_REG_PERF_INTERVAL);
-  m_reg_gtx_perf_interval_cached = m_rfgtx->get_reg(CRI_REG_GTX_PERF_INTERVAL);
+  //  m_reg_gtx_perf_interval_cached =
+  //  m_rfgtx->get_reg(CRI_REG_GTX_PERF_INTERVAL);
 }
 
 cri_link::~cri_link() { deinit_dma(); }
@@ -54,6 +55,22 @@ dma_channel* cri_link::channel() const {
     return m_dma_channel.get();
   }
   throw CriException("DMA channel not initialized");
+}
+
+void cri_link::set_testreg_dma(uint32_t data) {
+  m_rfpkt->set_reg(CRI_REG_TESTREG_DMA, data);
+}
+
+uint32_t cri_link::get_testreg_dma() {
+  return m_rfpkt->get_reg(CRI_REG_TESTREG_DMA);
+}
+
+void cri_link::set_testreg_data(uint32_t data) {
+  m_rfgtx->set_reg(CRI_REG_TESTREG_DATA, data);
+}
+
+uint32_t cri_link::get_testreg_data() {
+  return m_rfgtx->get_reg(CRI_REG_TESTREG_DATA);
 }
 
 //////*** DPB Emualtion ***//////
@@ -126,8 +143,8 @@ void cri_link::enable_readout() {}
 void cri_link::disable_readout() {}
 
 cri_link::link_status_t cri_link::link_status() {
-  uint32_t sts = m_rfgtx->get_reg(CRI_REG_GTX_LINK_STS);
-
+  //  uint32_t sts = m_rfgtx->get_reg(CRI_REG_GTX_LINK_STS);
+  uint32_t sts = 0; // TODO fake
   link_status_t link_status;
   link_status.channel_up = ((sts & (1 << 29)) != 0u);
   link_status.hard_err = ((sts & (1 << 28)) != 0u);
@@ -149,17 +166,18 @@ void cri_link::set_perf_interval(uint32_t interval) {
   m_reg_perf_interval_cached = interval * (pkt_clk * 1E-3);
   m_rfpkt->set_reg(CRI_REG_PERF_INTERVAL, m_reg_perf_interval_cached);
   // gtx domain
-  m_reg_gtx_perf_interval_cached = interval * (gtx_clk * 1E-3);
-  m_rfgtx->set_reg(CRI_REG_GTX_PERF_INTERVAL, m_reg_gtx_perf_interval_cached);
+  // m_reg_gtx_perf_interval_cached = interval * (gtx_clk * 1E-3);
+  // m_rfgtx->set_reg(CRI_REG_GTX_PERF_INTERVAL,
+  // m_reg_gtx_perf_interval_cached);
 }
 
 uint32_t cri_link::get_perf_interval_cycles_pkt() {
   return m_reg_perf_interval_cached;
 }
 
-uint32_t cri_link::get_perf_interval_cycles_gtx() {
-  return m_reg_gtx_perf_interval_cached;
-}
+// uint32_t cri_link::get_perf_interval_cycles_gtx() {
+//   return m_reg_gtx_perf_interval_cached;
+// }
 
 // packetizer could not send data (pkt cycles)
 uint32_t cri_link::get_dma_stall() {
@@ -189,7 +207,8 @@ float cri_link::get_event_rate() {
 
 // backpressure from packetizer input fifo (gtx cycles)
 uint32_t cri_link::get_din_full_gtx() {
-  return m_rfgtx->get_reg(CRI_REG_GTX_PERF_PKT_AFULL);
+  //  return m_rfgtx->get_reg(CRI_REG_GTX_PERF_PKT_AFULL);
+  return 0; // TODO fake
 }
 
 cri_link::link_perf_t cri_link::link_perf() {
@@ -206,13 +225,15 @@ cri_link::link_perf_t cri_link::link_perf() {
 
 std::string cri_link::print_perf_raw() {
   std::stringstream ss;
-  ss << "pkt_interval " << m_rfpkt->get_reg(CRI_REG_PERF_INTERVAL) << "\n"
-     << "gtx_interval " << m_rfgtx->get_reg(CRI_REG_GTX_PERF_INTERVAL) << "\n"
+  ss << "pkt_interval " << m_rfpkt->get_reg(CRI_REG_PERF_INTERVAL)
+     << "\n"
+     //     << "gtx_interval " << m_rfgtx->get_reg(CRI_REG_GTX_PERF_INTERVAL) <<
+     //     "\n"
      << "event rate " << m_rfpkt->get_reg(CRI_REG_PERF_N_EVENTS) << "\n"
      << "dma stall " << m_rfpkt->get_reg(CRI_REG_PERF_DMA_STALL) << "\n"
      << "data buf stall " << m_rfpkt->get_reg(CRI_REG_PERF_EBUF_STALL) << "\n"
-     << "desc buf stall " << m_rfpkt->get_reg(CRI_REG_PERF_RBUF_STALL) << "\n"
-     << "din full " << m_rfgtx->get_reg(CRI_REG_GTX_PERF_PKT_AFULL) << "\n";
+     << "desc buf stall " << m_rfpkt->get_reg(CRI_REG_PERF_RBUF_STALL) << "\n";
+  //     << "din full " << m_rfgtx->get_reg(CRI_REG_GTX_PERF_PKT_AFULL) << "\n";
   return ss.str();
 }
 

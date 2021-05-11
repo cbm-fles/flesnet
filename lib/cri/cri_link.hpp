@@ -42,6 +42,11 @@ public:
 
   void deinit_dma();
 
+  void set_testreg_dma(uint32_t data);
+  uint32_t get_testreg_dma();
+  void set_testreg_data(uint32_t data);
+  uint32_t get_testreg_data();
+
   /*** DPB Emualtion ***/
   void reset_datapath();
   void reset_link();
@@ -84,7 +89,7 @@ public:
 
   void set_perf_interval(uint32_t interval);
   uint32_t get_perf_interval_cycles_pkt();
-  uint32_t get_perf_interval_cycles_gtx();
+  //  uint32_t get_perf_interval_cycles_gtx();
   uint32_t get_dma_stall();
   uint32_t get_data_buf_stall();
   uint32_t get_desc_buf_stall();
