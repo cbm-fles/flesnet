@@ -23,6 +23,8 @@ class register_file_bar;
 constexpr std::array<uint16_t, 1> hw_ver_table = {{1}};
 constexpr uint32_t pci_clk = 250E6;
 
+constexpr size_t pgen_base_size_ns = 1000;
+
 struct build_info_t {
   std::time_t date;
   uint32_t rev[5];
@@ -47,8 +49,8 @@ public:
   ~cri_device();
 
   bool check_hw_ver(std::array<uint16_t, 1> hw_ver_table);
-  //  void enable_mc_cnt(bool enable);
-  //  void set_mc_time(uint32_t time);
+  void enable_mc_cnt(bool enable);
+  void set_pgen_mc_size(uint32_t mc_size);
   uint8_t number_of_hw_links();
 
   uint16_t hardware_version();
