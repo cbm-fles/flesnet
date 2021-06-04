@@ -239,31 +239,31 @@ void dma_channel::set_dma_transfer_size() {
 }
 
 inline void dma_channel::enable() {
-  set_dmactrl((0 << BIT_DMACTRL_FIFO_RST | 1 << BIT_DMACTRL_EBDM_EN |
+  set_dmactrl((0 << BIT_DMACTRL_DATAPATH_RST | 1 << BIT_DMACTRL_EBDM_EN |
                1 << BIT_DMACTRL_RBDM_EN | 1 << BIT_DMACTRL_DMA_EN),
-              (1 << BIT_DMACTRL_FIFO_RST | 1 << BIT_DMACTRL_EBDM_EN |
+              (1 << BIT_DMACTRL_DATAPATH_RST | 1 << BIT_DMACTRL_EBDM_EN |
                1 << BIT_DMACTRL_RBDM_EN | 1 << BIT_DMACTRL_DMA_EN));
 }
 
 void dma_channel::disable(size_t timeout) {
   // disable data buffer
-  set_dmactrl((0 << BIT_DMACTRL_EBDM_EN), (1 << BIT_DMACTRL_EBDM_EN));
+  set_dmactrl((0 << BIT_DMACTRL_DMA_EN), (1 << BIT_DMACTRL_DMA_EN));
   // wait till ongoing transfer is finished
   while (is_busy() && timeout != 0) {
     usleep(100);
     --timeout;
     // TODO: add timeout feedback
   }
-  // disable everything else put fifo to reset
-  set_dmactrl((0 << BIT_DMACTRL_RBDM_EN | 0 << BIT_DMACTRL_DMA_EN |
-               1 << BIT_DMACTRL_FIFO_RST),
-              (1 << BIT_DMACTRL_RBDM_EN | 1 << BIT_DMACTRL_DMA_EN |
-               1 << BIT_DMACTRL_FIFO_RST));
+  // disable everything else and put to reset
+  set_dmactrl((0 << BIT_DMACTRL_RBDM_EN | 0 << BIT_DMACTRL_EBDM_EN |
+               1 << BIT_DMACTRL_DATAPATH_RST),
+              (1 << BIT_DMACTRL_RBDM_EN | 1 << BIT_DMACTRL_EBDM_EN |
+               1 << BIT_DMACTRL_DATAPATH_RST));
 }
 
-void dma_channel::reset_fifo(bool enable) {
-  set_dmactrl((static_cast<int>(enable) << BIT_DMACTRL_FIFO_RST),
-              (1 << BIT_DMACTRL_FIFO_RST));
+void dma_channel::reset_datapath(bool enable) {
+  set_dmactrl((static_cast<int>(enable) << BIT_DMACTRL_DATAPATH_RST),
+              (1 << BIT_DMACTRL_DATAPATH_RST));
 }
 
 inline bool dma_channel::is_enabled() {
