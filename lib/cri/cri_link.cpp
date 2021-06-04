@@ -92,6 +92,10 @@ std::ostream& operator<<(std::ostream& os, cri::cri_link::data_source_t src) {
   return os;
 }
 
+void cri_link::set_ready_for_data(bool enable) {
+  m_rfgtx->set_bit(CRI_REG_GTX_DATAPATH_CFG, 2, enable);
+}
+
 //////*** Performance Counters ***//////
 
 // set messurement avaraging interval in ms (max 17s)
