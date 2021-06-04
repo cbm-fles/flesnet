@@ -45,14 +45,10 @@ public:
   void set_testreg_data(uint32_t data);
   uint32_t get_testreg_data();
 
-  typedef enum {
-    rx_disable = 0x0,
-    rx_user = 0x1,
-    rx_pgen = 0x2
-  } data_sel_t;
+  typedef enum { rx_disable = 0x0, rx_user = 0x1, rx_pgen = 0x2 } data_source_t;
 
-  void set_data_sel(data_sel_t rx_sel);
-  data_sel_t data_sel();
+  void set_data_source(data_source_t src);
+  data_source_t data_source();
 
   typedef struct {
     uint64_t pkt_cycle_cnt;
@@ -102,6 +98,6 @@ protected:
   pda::pci_bar* m_bar;
 
   friend std::ostream& operator<<(std::ostream& os,
-                                  cri::cri_link::data_sel_t sel);
+                                  cri::cri_link::data_source_t sel);
 };
 } // namespace cri

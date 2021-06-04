@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
                  "trans:    data is transmitted via PCIe interface (ratio)\n"
                  "Per link status/counters:\n"
                  "link:     cri/link\n"
-                 "data_sel: choosen data source\n"
+                 "data_src: choosen data source\n"
                  "up:       flim channel_up\n"
                  "he:       aurora hard_error\n"
                  "se:       aurora soft_error\n"
@@ -224,7 +224,7 @@ int main(int argc, char* argv[]) {
       if (console) {
         std::cout << std::endl;
 
-        std::cout << "link  data_sel        bp         ∅     "
+        std::cout << "link  data_src        bp         ∅     "
                      "dma_s         ∅    data_s    "
                      "     ∅    desc_s         ∅     rate"
                      "         ∅\n";
@@ -280,7 +280,7 @@ int main(int argc, char* argv[]) {
 
           if (console) {
             ss << std::setw(2) << j << "/" << i << "  ";
-            ss << std::setw(8) << links.at(i)->data_sel() << "  ";
+            ss << std::setw(8) << links.at(i)->data_source() << "  ";
             // perf counters
             ss << std::setprecision(3); // percision + 5 = width
             ss << std::setw(8) << din_full << "  " << std::setw(8)
@@ -301,8 +301,8 @@ int main(int argc, char* argv[]) {
             measurement +=
                 "link_status,host=" + hostname +
                 ",cri=" + cri->print_devinfo() + ",link=" + std::to_string(i) +
-                " data_sel=" +
-                std::to_string(static_cast<int>(links.at(i)->data_sel())) +
+                " data_src=" +
+                std::to_string(static_cast<int>(links.at(i)->data_source())) +
                 ",rate=" + std::to_string(event_rate) +
                 ",din_full=" + std::to_string(din_full / 100.0) +
                 ",dma_stall=" + std::to_string(dma_stall / 100.0) +
