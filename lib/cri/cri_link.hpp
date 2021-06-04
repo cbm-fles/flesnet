@@ -50,6 +50,8 @@ public:
   void set_data_source(data_source_t src);
   data_source_t data_source();
 
+  void set_ready_for_data(bool enable);
+
   typedef struct {
     uint64_t pkt_cycle_cnt;
     uint64_t dma_stall;
