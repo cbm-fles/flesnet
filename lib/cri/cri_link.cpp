@@ -73,7 +73,6 @@ uint32_t cri_link::get_testreg_data() {
   return m_rfgtx->get_reg(CRI_REG_TESTREG_DATA);
 }
 
-//////*** DPB Emualtion ***//////
 
 void cri_link::reset_datapath() {
   // disable readout if still enabled

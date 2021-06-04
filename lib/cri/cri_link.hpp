@@ -47,15 +47,13 @@ public:
   void set_testreg_data(uint32_t data);
   uint32_t get_testreg_data();
 
-  /*** DPB Emualtion ***/
   void reset_datapath();
   void reset_link();
 
   typedef enum {
     rx_disable = 0x0,
-    rx_emu = 0x1,
-    rx_link = 0x2,
-    rx_pgen = 0x3
+    rx_user = 0x1,
+    rx_pgen = 0x2
   } data_sel_t;
 
   void set_data_sel(data_sel_t rx_sel);
