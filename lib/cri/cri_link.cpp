@@ -66,18 +66,17 @@ uint32_t cri_link::get_testreg_data() {
   return m_rfgtx->get_reg(CRI_REG_TESTREG_DATA);
 }
 
-
-void cri_link::set_data_sel(data_sel_t rx_sel) {
-  m_rfgtx->set_reg(CRI_REG_GTX_DATAPATH_CFG, rx_sel, 0x3);
+void cri_link::set_data_source(data_source_t src) {
+  m_rfgtx->set_reg(CRI_REG_GTX_DATAPATH_CFG, src, 0x3);
 }
 
-cri_link::data_sel_t cri_link::data_sel() {
+cri_link::data_source_t cri_link::data_source() {
   uint32_t dp_cfg = m_rfgtx->get_reg(CRI_REG_GTX_DATAPATH_CFG);
-  return static_cast<data_sel_t>(dp_cfg & 0x3);
+  return static_cast<data_source_t>(dp_cfg & 0x3);
 }
 
-std::ostream& operator<<(std::ostream& os, cri::cri_link::data_sel_t sel) {
-  switch (sel) {
+std::ostream& operator<<(std::ostream& os, cri::cri_link::data_source_t src) {
+  switch (src) {
   case cri::cri_link::rx_disable:
     os << "disable";
     break;
