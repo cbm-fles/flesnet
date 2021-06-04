@@ -93,21 +93,6 @@ std::ostream& operator<<(std::ostream& os, cri::cri_link::data_sel_t sel) {
   return os;
 }
 
-//////*** Readout ***//////
-
-cri_link::link_status_t cri_link::link_status() {
-  //  uint32_t sts = m_rfgtx->get_reg(CRI_REG_GTX_LINK_STS);
-  uint32_t sts = 0; // TODO fake
-  link_status_t link_status;
-  link_status.channel_up = ((sts & (1 << 29)) != 0u);
-  link_status.hard_err = ((sts & (1 << 28)) != 0u);
-  link_status.soft_err = ((sts & (1 << 27)) != 0u);
-  link_status.eoe_fifo_overflow = ((sts & (1 << 31)) != 0u);
-  link_status.d_fifo_overflow = ((sts & (1 << 30)) != 0u);
-  link_status.d_fifo_max_words = (sts & 0x7FF);
-  return link_status;
-}
-
 //////*** Performance Counters ***//////
 
 // set messurement avaraging interval in ms (max 17s)

@@ -224,10 +224,10 @@ int main(int argc, char* argv[]) {
       if (console) {
         std::cout << std::endl;
 
-        std::cout << "link  data_sel  up  d_max        bp         ∅     "
+        std::cout << "link  data_sel        bp         ∅     "
                      "dma_s         ∅    data_s    "
                      "     ∅    desc_s         ∅     rate"
-                     "         ∅  he  se  eo  do\n";
+                     "         ∅\n";
       }
       j = 0;
       for (auto& cri : cris) {
@@ -236,7 +236,6 @@ int main(int argc, char* argv[]) {
 
         std::stringstream ss;
         for (size_t i = 0; i < num_links; ++i) {
-          cri::cri_link::link_status_t status = links.at(i)->link_status();
           cri::cri_link::link_perf_t perf = links.at(i)->link_perf();
 
           link_perf_acc.at(j).at(i).pkt_cycle_cnt += perf.pkt_cycle_cnt;
@@ -282,9 +281,6 @@ int main(int argc, char* argv[]) {
           if (console) {
             ss << std::setw(2) << j << "/" << i << "  ";
             ss << std::setw(8) << links.at(i)->data_sel() << "  ";
-            // status
-            ss << std::setw(2) << status.channel_up << "  ";
-            ss << std::setw(5) << status.d_fifo_max_words << "  ";
             // perf counters
             ss << std::setprecision(3); // percision + 5 = width
             ss << std::setw(8) << din_full << "  " << std::setw(8)
@@ -297,11 +293,6 @@ int main(int argc, char* argv[]) {
                << desc_buf_stall_acc << "  ";
             ss << std::setprecision(7) << std::setw(7) << event_rate << "  "
                << std::setw(8) << event_rate_acc << "  ";
-            // error
-            ss << std::setw(2) << status.hard_err << "  ";
-            ss << std::setw(2) << status.soft_err << "  ";
-            ss << std::setw(2) << status.eoe_fifo_overflow << "  ";
-            ss << std::setw(2) << status.d_fifo_overflow << "  ";
 
             ss << "\n";
           }
@@ -312,7 +303,6 @@ int main(int argc, char* argv[]) {
                 ",cri=" + cri->print_devinfo() + ",link=" + std::to_string(i) +
                 " data_sel=" +
                 std::to_string(static_cast<int>(links.at(i)->data_sel())) +
-                "i,up=" + (status.channel_up ? "true" : "false") +
                 ",rate=" + std::to_string(event_rate) +
                 ",din_full=" + std::to_string(din_full / 100.0) +
                 ",dma_stall=" + std::to_string(dma_stall / 100.0) +
