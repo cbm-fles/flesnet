@@ -83,7 +83,7 @@ public:
   pda::device* parent_device() { return m_parent_device; };
   pda::pci_bar* bar() { return m_bar; };
 
-  dma_channel* channel() const;
+  dma_channel* dma_ch() const;
   register_file* register_file_packetizer() const { return m_rfpkt.get(); }
   register_file* register_file_gtx() const { return m_rfgtx.get(); }
 
