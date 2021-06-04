@@ -55,17 +55,6 @@ public:
   data_sel_t data_sel();
 
   typedef struct {
-    bool channel_up;
-    bool hard_err;
-    bool soft_err;
-    bool eoe_fifo_overflow;
-    bool d_fifo_overflow;
-    uint16_t d_fifo_max_words;
-  } link_status_t;
-
-  link_status_t link_status();
-
-  typedef struct {
     uint64_t pkt_cycle_cnt;
     uint64_t dma_stall;
     uint64_t data_buf_stall;
