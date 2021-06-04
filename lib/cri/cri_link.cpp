@@ -74,41 +74,8 @@ uint32_t cri_link::get_testreg_data() {
 }
 
 
-void cri_link::reset_datapath() {
-  // disable readout if still enabled
-  disable_readout();
-  // datapath reset, will also cause hw defaults for
-  // - pending mc  = 0
-  m_rfgtx->set_bit(CRI_REG_GTX_DATAPATH_CFG, 2, true);
-  // TODO this may be needed in case of errors
-  // if (m_dma_channel) {
-  //  m_dma_channel->reset_fifo(true);
-  //}
-  m_rfgtx->set_bit(CRI_REG_GTX_DATAPATH_CFG, 2, false);
-}
-
-void cri_link::reset_link() {
-  m_rfgtx->set_bit(CRI_REG_GTX_DATAPATH_CFG, 3, true);
-  usleep(1000);
-  m_rfgtx->set_bit(CRI_REG_GTX_DATAPATH_CFG, 3, false);
-}
-
 void cri_link::set_data_sel(data_sel_t rx_sel) {
-  uint32_t dp_cfg = m_rfgtx->get_reg(CRI_REG_GTX_DATAPATH_CFG);
-  switch (rx_sel) {
-  case rx_disable:
-    m_rfgtx->set_reg(CRI_REG_GTX_DATAPATH_CFG, (dp_cfg & ~3));
-    break;
-  case rx_link:
-    m_rfgtx->set_reg(CRI_REG_GTX_DATAPATH_CFG, ((dp_cfg | (1 << 1)) & ~1));
-    break;
-  case rx_pgen:
-    m_rfgtx->set_reg(CRI_REG_GTX_DATAPATH_CFG, (dp_cfg | 3));
-    break;
-  case rx_emu:
-    m_rfgtx->set_reg(CRI_REG_GTX_DATAPATH_CFG, ((dp_cfg | 1)) & ~(1 << 1));
-    break;
-  }
+  m_rfgtx->set_reg(CRI_REG_GTX_DATAPATH_CFG, rx_sel, 0x3);
 }
 
 cri_link::data_sel_t cri_link::data_sel() {
@@ -121,11 +88,8 @@ std::ostream& operator<<(std::ostream& os, cri::cri_link::data_sel_t sel) {
   case cri::cri_link::rx_disable:
     os << "disable";
     break;
-  case cri::cri_link::rx_emu:
-    os << "    emu";
-    break;
-  case cri::cri_link::rx_link:
-    os << "   link";
+  case cri::cri_link::rx_user:
+    os << "   user";
     break;
   case cri::cri_link::rx_pgen:
     os << "   pgen";
@@ -137,9 +101,6 @@ std::ostream& operator<<(std::ostream& os, cri::cri_link::data_sel_t sel) {
 }
 
 //////*** Readout ***//////
-
-void cri_link::enable_readout() {}
-void cri_link::disable_readout() {}
 
 cri_link::link_status_t cri_link::link_status() {
   //  uint32_t sts = m_rfgtx->get_reg(CRI_REG_GTX_LINK_STS);

@@ -47,9 +47,6 @@ public:
   void set_testreg_data(uint32_t data);
   uint32_t get_testreg_data();
 
-  void reset_datapath();
-  void reset_link();
-
   typedef enum {
     rx_disable = 0x0,
     rx_user = 0x1,
@@ -58,9 +55,6 @@ public:
 
   void set_data_sel(data_sel_t rx_sel);
   data_sel_t data_sel();
-
-  void enable_readout();
-  void disable_readout();
 
   typedef struct {
     bool channel_up;
