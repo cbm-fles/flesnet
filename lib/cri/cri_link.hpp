@@ -38,8 +38,6 @@ public:
                 void* desc_buffer,
                 size_t desc_buffer_log_size);
 
-  void init_dma(size_t data_buffer_log_size, size_t desc_buffer_log_size);
-
   void deinit_dma();
 
   void set_testreg_dma(uint32_t data);

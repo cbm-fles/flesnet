@@ -40,28 +40,12 @@ public:
               size_t desc_buffer_log_size,
               size_t dma_transfer_size);
 
-  dma_channel(cri_link* link,
-              size_t data_buffer_log_size,
-              size_t desc_buffer_log_size,
-              size_t dma_transfer_size);
-
   ~dma_channel();
 
   void set_sw_read_pointers(uint64_t data_offset, uint64_t desc_offset);
 
   uint64_t get_data_offset();
   uint64_t get_desc_index();
-
-  typedef struct {
-    uint64_t nr;
-    volatile uint64_t* addr;
-    uint32_t size; // bytes
-    volatile uint64_t* rbaddr;
-  } mc_desc_t;
-
-  std::pair<mc_desc_t, bool> mc();
-
-  int ack_mc();
 
   std::string data_buffer_info();
   std::string desc_buffer_info();
@@ -144,15 +128,6 @@ private:
   size_t m_desc_buffer_log_size;
   size_t m_dma_transfer_size;
   uint32_t m_reg_dmactrl_cached;
-
-  volatile uint64_t* m_eb = nullptr;
-  volatile struct fles::MicrosliceDescriptor* m_db = nullptr;
-  uint64_t m_index = 0;
-  uint64_t m_last_index = 0;
-  uint64_t m_last_acked = 0;
-  uint64_t m_mc_nr = 0;
-  uint64_t m_wrap = 0;
-  uint64_t m_dbentries = 0;
 };
 
 } // namespace cri

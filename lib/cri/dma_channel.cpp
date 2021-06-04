@@ -44,48 +44,6 @@ dma_channel::dma_channel(cri_link* parent_link,
   // clear rb for polling
   memset(m_desc_buffer->mem(), 0, m_desc_buffer->size());
 
-  m_eb = reinterpret_cast<uint64_t*>(m_data_buffer->mem());
-  m_db = reinterpret_cast<struct fles::MicrosliceDescriptor*>(
-      m_desc_buffer->mem());
-  m_dbentries =
-      m_desc_buffer->size() / sizeof(struct fles::MicrosliceDescriptor);
-
-  configure();
-  enable();
-}
-
-// constructor for using kernel buffers
-dma_channel::dma_channel(cri_link* parent_link,
-                         size_t data_buffer_log_size,
-                         size_t desc_buffer_log_size,
-                         size_t dma_transfer_size)
-    : m_parent_link(parent_link), m_data_buffer_log_size(data_buffer_log_size),
-      m_desc_buffer_log_size(desc_buffer_log_size),
-      m_dma_transfer_size(dma_transfer_size) {
-  m_rfpkt = m_parent_link->register_file_packetizer();
-  m_reg_dmactrl_cached = m_rfpkt->get_reg(CRI_REG_DMA_CTRL);
-  // ensure HW is disabled
-  if (is_enabled()) {
-    throw CriException("DMA Engine already enabled");
-  }
-  m_data_buffer = std::unique_ptr<pda::dma_buffer>(new pda::dma_buffer(
-      m_parent_link->parent_device(), (UINT64_C(1) << data_buffer_log_size),
-      (2 * m_parent_link->link_index() + 0)));
-
-  m_desc_buffer = std::unique_ptr<pda::dma_buffer>(new pda::dma_buffer(
-      m_parent_link->parent_device(), (UINT64_C(1) << desc_buffer_log_size),
-      (2 * m_parent_link->link_index() + 1)));
-  // clear eb for debugging
-  memset(m_data_buffer->mem(), 0, m_data_buffer->size());
-  // clear rb for polling
-  memset(m_desc_buffer->mem(), 0, m_desc_buffer->size());
-
-  m_eb = reinterpret_cast<uint64_t*>(m_data_buffer->mem());
-  m_db = reinterpret_cast<struct fles::MicrosliceDescriptor*>(
-      m_desc_buffer->mem());
-  m_dbentries =
-      m_desc_buffer->size() / sizeof(struct fles::MicrosliceDescriptor);
-
   configure();
   enable();
 }
@@ -125,58 +83,6 @@ uint64_t dma_channel::get_desc_index() {
   uint64_t index = 0;
   m_rfpkt->get_mem(CRI_REG_DESC_CNT_L, &index, 2);
   return index;
-}
-
-// disabled, not applicable when using start time instead of microslice index
-#if 0
-/*** MC access funtions ***/
-std::pair<dma_channel::mc_desc_t, bool> dma_channel::mc() {
-  dma_channel::mc_desc_t mc;
-  if (m_db[m_index].idx > m_mc_nr) { // mc_nr counts from 1 in HW
-    m_mc_nr = m_db[m_index].idx;
-    mc.nr = m_mc_nr;
-    mc.addr =
-        m_eb +
-        (m_db[m_index].offset & ((UINT64_C(1) << m_data_buffer_log_size) - 1)) /
-            sizeof(uint64_t);
-    mc.size = m_db[m_index].size;
-    mc.rbaddr = reinterpret_cast<volatile uint64_t*>(&m_db[m_index]);
-
-    // calculate next rb index
-    m_last_index = m_index;
-    if (m_index < m_dbentries - 1) {
-      m_index++;
-    } else {
-      m_wrap++;
-      m_index = 0;
-    }
-    return std::make_pair(mc, true);
-  }
-
-  return std::make_pair(mc, false);
-}
-#endif
-
-int dma_channel::ack_mc() {
-
-  // TODO: EB pointers are set to begin of acknoledged entry, pointers are one
-  // entry delayed
-  // to calculate end wrapping logic is required
-  uint64_t eb_offset =
-      m_db[m_last_index].offset & ((UINT64_C(1) << m_data_buffer_log_size) - 1);
-  // each rbenty is 32 bytes, this is hard coded in HW
-  uint64_t rb_offset =
-      m_last_index * sizeof(struct fles::MicrosliceDescriptor) &
-      ((1 << m_desc_buffer_log_size) - 1);
-
-#ifdef DEBUG
-  printf("index %d EB offset set: %ld\n", m_last_index, eb_offset);
-  printf("index %d RB offset set: %ld, wrap %d\n", m_last_index, rb_offset,
-         m_wrap);
-#endif
-  set_sw_read_pointers(eb_offset, rb_offset);
-
-  return 0;
 }
 
 std::string dma_channel::data_buffer_info() {
