@@ -19,7 +19,7 @@
 #define BIT_SGENTRY_CTRL_TARGET 30
 
 #define BIT_DMACTRL_DMA_EN 0
-#define BIT_DMACTRL_FIFO_RST 1
+#define BIT_DMACTRL_DATAPATH_RST 1
 #define BIT_DMACTRL_EBDM_EN 2
 #define BIT_DMACTRL_RBDM_EN 3
 #define BIT_DMACTRL_BUSY 7
@@ -58,7 +58,7 @@ public:
     return reinterpret_cast<void*>(m_desc_buffer->mem());
   }
 
-  void reset_fifo(bool enable);
+  void reset_datapath(bool enable);
 
   size_t dma_transfer_size() { return m_dma_transfer_size; }
 
