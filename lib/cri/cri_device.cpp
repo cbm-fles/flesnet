@@ -83,16 +83,16 @@ bool cri_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
   return match;
 }
 
-// void cri_device::enable_mc_cnt(bool enable) {
-//   m_register_file->set_bit(CRI_REG_MC_CNT_CFG, 31, enable);
-// }
-//
-// void cri_device::set_mc_time(uint32_t time) {
-//   // time: 31 bit wide, in units of 8 ns
-//   uint32_t reg = m_register_file->get_reg(CRI_REG_MC_CNT_CFG);
-//   reg = (reg & ~0x7FFFFFFF) | (time & 0x7FFFFFFF);
-//   m_register_file->set_reg(CRI_REG_MC_CNT_CFG, reg);
-// }
+void cri_device::enable_mc_cnt(bool enable) {
+  m_register_file->set_bit(CRI_REG_MC_CNT_CFG_L, 31, enable);
+}
+
+void cri_device::set_pgen_mc_size(uint32_t mc_size_ticks) {
+  uint32_t mc_size_ns = mc_size_ticks * pgen_base_size_ns;
+  // time resters are 31 bit wide, we don't check input here
+  m_register_file->set_reg(CRI_REG_MC_CNT_CFG_L, mc_size_ticks, 0x7FFFFFFF);
+  m_register_file->set_reg(CRI_REG_MC_CNT_CFG_H, mc_size_ns, 0x7FFFFFFF);
+}
 
 uint8_t cri_device::number_of_hw_links() {
   return (m_register_file->get_reg(CRI_REG_N_CHANNELS) & 0xFF);
