@@ -43,7 +43,7 @@ void cri_link::init_dma(void* data_buffer,
 
 void cri_link::deinit_dma() { m_dma_channel = nullptr; }
 
-dma_channel* cri_link::channel() const {
+dma_channel* cri_link::dma_ch() const {
   if (m_dma_channel) {
     return m_dma_channel.get();
   }
