@@ -40,6 +40,9 @@ public:
 
   void deinit_dma();
 
+  void enable_readout();
+  void disable_readout();
+
   void set_testreg_dma(uint32_t data);
   uint32_t get_testreg_dma();
   void set_testreg_data(uint32_t data);
@@ -81,7 +84,7 @@ public:
   pda::device* parent_device() { return m_parent_device; };
   pda::pci_bar* bar() { return m_bar; };
 
-  dma_channel* dma_ch() const;
+  dma_channel* dma() const;
   register_file* register_file_packetizer() const { return m_rfpkt.get(); }
   register_file* register_file_gtx() const { return m_rfgtx.get(); }
 

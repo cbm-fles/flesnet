@@ -43,7 +43,11 @@ void cri_link::init_dma(void* data_buffer,
 
 void cri_link::deinit_dma() { m_dma_channel = nullptr; }
 
-dma_channel* cri_link::dma_ch() const {
+// TODO, these may set ready for data and similar
+void cri_link::enable_readout() {}
+void cri_link::disable_readout() {}
+
+dma_channel* cri_link::dma() const {
   if (m_dma_channel) {
     return m_dma_channel.get();
   }
