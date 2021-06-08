@@ -4,17 +4,17 @@
 // This file was automatically generated from:
 // ../flim/src/packages/fles_registers.vhd
 // Repository is: git repository
-// Repository Revision: 92c152ff20e5941749c5e6713adc31fb5c274f8b
-// Repository Status: dirty
-// Build Timestamp: Fri Jun  4 19:45:30 CEST 2021
+// Repository Revision: 01a2b0ee323d56eb3903cc89e8bccca7fb602ce4
+// Repository Status: clean
+// Build Timestamp: Tue Jun  8 19:24:06 CEST 2021
 // Build System: hutter@eda02
 #define CRI_C_BUILD_REPO 1
-#define CRI_C_BUILD_DATE 1622828730
-#define CRI_C_BUILD_REVISION 92c152ff20e5941749c5e6713adc31fb5c274f8b
-#define CRI_C_BUILD_STATUS_CLEAN 0
+#define CRI_C_BUILD_DATE 1623173046
+#define CRI_C_BUILD_REVISION 01a2b0ee323d56eb3903cc89e8bccca7fb602ce4
+#define CRI_C_BUILD_STATUS_CLEAN 1
 #define CRI_C_BUILD_HOST 65646130320000000000000000000000
 #define CRI_C_BUILD_USER 68757474657200000000000000000000
-#define CRI_C_HARDWARE_ID 0x4844
+#define CRI_C_HARDWARE_ID 0xf1e5
 #define CRI_C_TIMEOUT_PATTERN 0xa5a5a5a5
 #define CRI_C_ILL_ADDR_PATTERN 0xa6a6a6a6
 #define CRI_C_HARDWARE_VERSION 1
