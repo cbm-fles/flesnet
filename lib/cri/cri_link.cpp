@@ -44,13 +44,9 @@ void cri_link::init_dma(void* data_buffer,
 void cri_link::deinit_dma() { m_dma_channel = nullptr; }
 
 // TODO, these may set ready for data and similar
-void cri_link::enable_readout() {
-  set_ready_for_data(true);
-}
+void cri_link::enable_readout() { set_ready_for_data(true); }
 
-void cri_link::disable_readout() {
-  set_ready_for_data(false);
-}
+void cri_link::disable_readout() { set_ready_for_data(false); }
 
 dma_channel* cri_link::dma() const {
   if (m_dma_channel) {
