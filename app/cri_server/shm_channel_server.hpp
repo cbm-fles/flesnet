@@ -67,6 +67,7 @@ public:
     } catch (ip::interprocess_exception const& e) {
       L_(error) << "Failed to shut down channel: " << e.what();
     }
+    m_cri_link->disable_readout();
     m_cri_link->deinit_dma();
     // TODO destroy channel object and deallocate buffers if it is worth to do
   }
