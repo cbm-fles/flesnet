@@ -3,7 +3,7 @@
 set -e
 set -u
 
-PDA_VERSION="11.4.7"
+PDA_VERSION="11.5.7"
 USER_NAME=`id -u -n`
 
 getdeps()
@@ -22,13 +22,14 @@ install()
 
   cd /tmp/pda-$1
   mkdir -p /opt/pda/
-  ./configure --debug=true --prefix=/opt/pda/$1/
-  # equivalent cmake flow:
-  # cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/opt/pda/$1/ ..
+  # ./configure --debug=true --prefix=/opt/pda/$1/
+  mkdir build; cd build
+  cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/opt/pda/$1/ ..
   make install
 
   cd /tmp/pda-$1/patches/linux_uio/
   make install
+  make dkms
 
   cd /tmp
   rm -rf /tmp/pda-$1
