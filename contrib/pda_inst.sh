@@ -29,7 +29,6 @@ install()
 
   cd /tmp/pda-$1/patches/linux_uio/
   make install
-  make dkms
 
   cd /tmp
   rm -rf /tmp/pda-$1
