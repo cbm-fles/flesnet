@@ -90,24 +90,24 @@ int main() {
     }
 
     if (reg_wr != reg) {
-      std::cout << "write 0x" << std::hex << reg_wr << std::endl;
-      std::cout << "read  0x" << std::hex << reg << std::endl;
+      std::cout << "rf_dev write 0x" << std::hex << reg_wr << std::endl;
+      std::cout << "rf_dev read  0x" << std::hex << reg << std::endl;
       reg = Cri->get_testreg();
-      std::cout << "read  0x" << std::hex << reg << std::endl;
+      std::cout << "rf_dev read  0x" << std::hex << reg << std::endl;
       ret = -1;
     }
     if ((reg_wr << 1) != dma_reg) {
-      std::cout << "write 0x" << std::hex << (reg_wr << 1) << std::endl;
-      std::cout << "read  0x" << std::hex << dma_reg << std::endl;
+      std::cout << "rf_dma write 0x" << std::hex << (reg_wr << 1) << std::endl;
+      std::cout << "rf_dma read  0x" << std::hex << dma_reg << std::endl;
       dma_reg = Cri->link(0)->get_testreg_dma();
-      std::cout << "read  0x" << std::hex << dma_reg << std::endl;
+      std::cout << "rf_dma read  0x" << std::hex << dma_reg << std::endl;
       ret = -1;
     }
     if ((reg_wr << 2) != data_reg) {
-      std::cout << "write 0x" << std::hex << (reg_wr << 2) << std::endl;
-      std::cout << "read  0x" << std::hex << data_reg << std::endl;
+      std::cout << "rf_data write 0x" << std::hex << (reg_wr << 2) << std::endl;
+      std::cout << "rf_data read  0x" << std::hex << data_reg << std::endl;
       data_reg = Cri->link(0)->get_testreg_data();
-      std::cout << "read  0x" << std::hex << data_reg << std::endl;
+      std::cout << "rf_data read  0x" << std::hex << data_reg << std::endl;
       ret = -1;
     }
     reg_wr = uniform_dist(engine);
