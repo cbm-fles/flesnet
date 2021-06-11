@@ -7,7 +7,7 @@ add_executable(shm_ipc_demo ${APP_SOURCES} ${APP_HEADERS})
 
 target_compile_options(shm_ipc_demo
   PRIVATE "-Wno-unused-parameter"
-  PUBLIC ${ZMQ_CFLAGS_OTHER}
+  PUBLIC -DZMQ_BUILD_DRAFT_API=1
 )
 
 target_include_directories(shm_ipc_demo SYSTEM
