@@ -39,6 +39,7 @@ private:
                         size_t microslice);
 
   void initialize(const fles::Timeslice& ts);
+  void print_reference();
 
   crcutil_interface::CRC* crc32_engine_ = nullptr;
 
