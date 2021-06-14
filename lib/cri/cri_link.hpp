@@ -55,6 +55,11 @@ public:
 
   void set_ready_for_data(bool enable);
 
+  void set_pgen_id(uint16_t eq_id);
+  void set_pgen_rate(float val);
+  void reset_pgen_mc_pending();
+  uint32_t get_pgen_mc_pending();
+
   typedef struct {
     uint64_t pkt_cycle_cnt;
     uint64_t dma_stall;
