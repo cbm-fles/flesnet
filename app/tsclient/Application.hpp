@@ -33,6 +33,7 @@ private:
 
   logging::OstreamLog status_log_{status};
   logging::OstreamLog debug_log_{debug};
+  std::string output_prefix_;
 
   std::chrono::high_resolution_clock::time_point time_begin_;
 
