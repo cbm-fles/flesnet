@@ -45,10 +45,9 @@ int main(int argc, char* argv[]) {
       } else if (par.link(i).source == pgen) {
         links.at(i)->set_data_source(cri::cri_link::rx_pgen);
 
-        // TODO: configure pgen
-        // set_pgen_mc_size(par.mc_size());
-        // set_pgen_rate(par.pgen_rate());
-        // set_pgen_ids(par.link(i).eq_id);
+        // pgen configuration
+        links.at(i)->set_pgen_rate(par.pgen_rate());
+        links.at(i)->set_pgen_id(par.link(i).eq_id);
 
       } else if (par.link(i).source == flim) {
         links.at(i)->set_data_source(cri::cri_link::rx_user);

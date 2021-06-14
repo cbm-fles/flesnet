@@ -101,6 +101,34 @@ void cri_link::set_ready_for_data(bool enable) {
   m_rfgtx->set_bit(CRI_REG_GTX_DATAPATH_CFG, 2, enable);
 }
 
+// void cri_link::set_mc_size_limit(uint32_t bytes) {
+//   uint32_t words = bytes / 8; // sizeof(word) == 64Bit
+//   m_rf?->set_reg(RORC_REG_LINK_MAX_MC_WORDS, words);
+
+//////*** Pattern Generator Configuration ***//////
+
+// TODO: there could be an additional single call for MC_PGEN_CFG_L
+void cri_link::set_pgen_id(uint16_t eq_id) {
+  m_rfgtx->set_reg(CRI_REG_GTX_MC_PGEN_CFG_L, eq_id, 0xFFFF);
+}
+
+void cri_link::set_pgen_rate(float val) {
+  assert(val >= 0);
+  assert(val <= 1);
+  uint16_t reg_val =
+      static_cast<uint16_t>(static_cast<float>(UINT16_MAX) * (1.0 - val));
+  m_rfgtx->set_reg(CRI_REG_GTX_MC_PGEN_CFG_L,
+                   static_cast<uint32_t>(reg_val) << 16, 0xFFFF0000);
+}
+
+void cri_link::reset_pgen_mc_pending() {
+  m_rfgtx->set_bit(CRI_REG_GTX_MC_PGEN_CFG_H, 0, true); // pulse bit
+}
+
+uint32_t cri_link::get_pgen_mc_pending() {
+  return m_rfgtx->get_reg(CRI_REG_GTX_MC_PGEN_MC_PENDING);
+}
+
 //////*** Performance Counters ***//////
 
 // set messurement avaraging interval in ms (max 17s)
