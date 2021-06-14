@@ -1,9 +1,10 @@
-// Copyright 2013, 2015 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013, 2015, 2021 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
 #include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
+#include <boost/format.hpp>
 #include <cassert>
 #include <sstream>
 
@@ -68,7 +69,8 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView& m,
         static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) != 0) &&
       !check_crc(m);
   if (crc_error) {
-    out_ << "crc failure in microslice " << microslice << std::endl;
+    out_ << output_prefix_ << "crc failure in microslice " << microslice
+         << std::endl;
   }
 
   bool error = truncated || pattern_error || crc_error;
@@ -97,15 +99,33 @@ void TimesliceAnalyzer::initialize(const fles::Timeslice& ts) {
   }
 }
 
+void TimesliceAnalyzer::print_reference() {
+  out_ << output_prefix_ << "timeslice analyzer initialized with "
+       << reference_descriptors_.size() << " components" << std::endl;
+  for (size_t c = 0; c < reference_descriptors_.size(); ++c) {
+    const fles::MicrosliceDescriptor& md = reference_descriptors_.at(c);
+    out_ << output_prefix_ << "component " << c << ":"
+         << boost::format(" eq_id=%04x") % static_cast<unsigned int>(md.eq_id)
+         << boost::format(" sys=%02x-%02x") %
+                static_cast<unsigned int>(md.sys_id) %
+                static_cast<unsigned int>(md.sys_ver)
+         << " "
+         << fles::to_string(static_cast<fles::SubsystemIdentifier>(md.sys_id))
+         << std::endl;
+  }
+}
+
 bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
   if (timeslice_count_ == 0) {
     initialize(ts);
+    print_reference();
   }
 
   ++timeslice_count_;
 
   if (ts.num_components() == 0) {
-    out_ << "no component in timeslice " << ts.index() << std::endl;
+    out_ << output_prefix_ << "no component in timeslice " << ts.index()
+         << std::endl;
     ++timeslice_error_count_;
     return false;
   }
@@ -116,35 +136,37 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
   }
   for (size_t c = 0; c < ts.num_components(); ++c) {
     if (ts.num_microslices(c) == 0) {
-      out_ << "no microslices in timeslice " << ts.index() << ", component "
-           << c << std::endl;
+      out_ << output_prefix_ << "no microslices in timeslice " << ts.index()
+           << ", component " << c << std::endl;
       ++timeslice_error_count_;
       return false;
     }
     // ensure all components start with same time
     uint64_t component_start_time = ts.get_microslice(c, 0).desc().idx;
     if (component_start_time != first_component_start_time) {
-      out_ << "start time missmatch in timeslice " << ts.index()
-           << ", component " << c << ", start time " << component_start_time
-           << ", offset to c0 "
+      out_ << output_prefix_ << "start time missmatch in timeslice "
+           << ts.index() << ", component " << c << ", start time "
+           << component_start_time << ", offset to c0 "
            << static_cast<int64_t>(first_component_start_time -
                                    component_start_time)
            << std::endl;
       ++timeslice_error_count_;
       return false;
     }
-    // checke all microslices of component
+    // check all microslices of the component
     pattern_checkers_.at(c)->reset();
     for (size_t m = 0; m < ts.num_microslices(c); ++m) {
       bool success =
           check_microslice(ts.get_microslice(c, m), c,
                            ts.index() * ts.num_core_microslices() + m);
       if (!success) {
-        out_ << "pattern error in timeslice " << ts.index() << ", microslice "
-             << m << ", component " << c << std::endl;
+        out_ << output_prefix_ << "error in timeslice " << ts.index()
+             << ", component " << c << ", microslice " << m << std::endl;
         if (timeslice_error_count_ == 0) { // full dump for first error
-          out_ << "microslice content:\n"
+          out_ << output_prefix_ << "microslice descriptor:\n"
                << MicrosliceDescriptorDump(ts.get_microslice(c, m).desc())
+               << std::flush;
+          out_ << output_prefix_ << "microslice content:\n"
                << BufferDump(ts.get_microslice(c, m).content(),
                              ts.get_microslice(c, m).desc().size)
                << std::flush;
@@ -160,11 +182,10 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
 std::string TimesliceAnalyzer::statistics() const {
   std::stringstream s;
   s << "timeslices checked: " << timeslice_count_ << " ("
-    << human_readable_count(content_bytes_) << " in " << microslice_count_
-    << " microslices, avg: "
-    << static_cast<double>(content_bytes_) / microslice_count_ << ")";
+    << human_readable_count(content_bytes_, true) << " in " << microslice_count_
+    << " microslices)";
   if (timeslice_error_count_ > 0) {
-    s << " [" << timeslice_error_count_ << " errors]";
+    s << " [errors: " << timeslice_error_count_ << "]";
   }
   return s.str();
 }
@@ -173,6 +194,5 @@ void TimesliceAnalyzer::put(std::shared_ptr<const fles::Timeslice> timeslice) {
   check_timeslice(*timeslice);
   if ((timeslice_count_ % output_interval_) == 0) {
     out_ << output_prefix_ << statistics() << std::endl;
-    reset();
   }
 }
