@@ -168,6 +168,56 @@ bool TimesliceAnalyzer::check_timeslice_component(const fles::Timeslice& ts,
       }
       tsc_success = false;
     }
+
+    // check start time consistency of microslices
+    if (ts.num_microslices(component) >= 2) {
+      uint64_t first = ts.get_microslice(component, 0).desc().idx;
+      uint64_t second = ts.get_microslice(component, 1).desc().idx;
+      if (second <= first) {
+        if (output_active()) {
+          out_ << output_prefix_ << "error in timeslice " << ts.index()
+               << ", component " << component
+               << ": start time not increasing in first two microslices"
+               << std::endl;
+          out_ << output_prefix_ << "microslice 0 descriptor:\n"
+               << MicrosliceDescriptorDump(
+                      ts.get_microslice(component, 0).desc())
+               << std::flush;
+          out_ << output_prefix_ << "microslice 1 descriptor:\n"
+               << MicrosliceDescriptorDump(
+                      ts.get_microslice(component, 1).desc())
+               << std::flush;
+        }
+        tsc_success = false;
+      } else {
+        uint64_t reference_delta = second - first;
+        for (size_t m = 2; m < ts.num_microslices(component); ++m) {
+          uint64_t this_start_time = ts.get_microslice(component, m).desc().idx;
+          uint64_t expected_start_time = first + m * reference_delta;
+          if (this_start_time != expected_start_time) {
+            if (output_active()) {
+              out_ << output_prefix_ << "error in timeslice " << ts.index()
+                   << ", component " << component
+                   << ": unexpected start time in microslice " << m
+                   << std::endl;
+              out_ << output_prefix_ << "microslice 0 descriptor:\n"
+                   << MicrosliceDescriptorDump(
+                          ts.get_microslice(component, 0).desc())
+                   << std::flush;
+              out_ << output_prefix_ << "microslice 1 descriptor:\n"
+                   << MicrosliceDescriptorDump(
+                          ts.get_microslice(component, 1).desc())
+                   << std::flush;
+              out_ << output_prefix_ << "microslice " << m << " descriptor:\n"
+                   << MicrosliceDescriptorDump(
+                          ts.get_microslice(component, m).desc())
+                   << std::flush;
+            }
+            tsc_success = false;
+          }
+        }
+      }
+    }
   }
   return tsc_success;
 }
@@ -175,15 +225,6 @@ bool TimesliceAnalyzer::check_timeslice_component(const fles::Timeslice& ts,
 bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView& m,
                                          size_t component,
                                          size_t microslice) {
-// disabled, not applicable when using start time instead of index
-#if 0
-    if (m.desc().idx != microslice) {
-        out_ << "microslice index " << m.desc().idx << " found in m.desc() "
-             << microslice << std::endl;
-        return false;
-    }
-#endif
-
   ++microslice_count_;
   content_bytes_ += m.desc().size;
 
