@@ -1,6 +1,6 @@
 # Copyright 2013-2020 Jan de Cuveland <cmail@cuveland.de>
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 project(fles)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -19,6 +19,23 @@ git_describe(GIT_REVISION "--all" "--tags" "--long" "--always")
 configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
                "${CMAKE_BINARY_DIR}/config/GitRevision.cpp" @ONLY)
 
+set(FETCH_ZMQ FALSE CACHE BOOL "Fetch and build ZeroMQ library.")
+if(FETCH_ZMQ)
+  message(STATUS "Fetching and building ZeroMQ library.")
+  include(FetchContent)
+  FetchContent_Declare(
+    ZeroMQ
+    GIT_REPOSITORY "https://github.com/zeromq/libzmq.git"
+    GIT_TAG "4097855ddaaa65ed7b5e8cb86d143842a594eebd"
+  )
+  if(NOT DEFINED CMAKE_SUPPRESS_DEVELOPER_WARNINGS)
+    set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
+  endif()
+  set(ZMQ_BUILD_DRAFT_API 1)
+  set(ZMQ_LIBRARIES zmq)
+  FetchContent_MakeAvailable(ZeroMQ)
+endif()
+
 if(DEFINED ENV{SIMPATH})
   message(WARNING "SIMPATH set, using Fairroot external packages in build.")
   set(Boost_NO_SYSTEM_PATHS TRUE)
@@ -26,11 +43,15 @@ if(DEFINED ENV{SIMPATH})
   set(SIMPATH $ENV{SIMPATH})
   find_package(ExternalZMQ REQUIRED)
 else()
-  find_library(ZMQ_LIBRARIES zmq)
+  if(NOT FETCH_ZMQ)
+    find_library(ZMQ_LIBRARIES zmq)
+  endif()
 endif()
 
 find_package(PkgConfig)
-pkg_check_modules(ZMQ REQUIRED libzmq)
+if(NOT FETCH_ZMQ)
+  pkg_check_modules(ZMQ REQUIRED libzmq)
+endif()
 if(APPLE)
   find_package(cppzmq REQUIRED)
   set(ZMQ_INCLUDE_DIRS ${PC_LIBZMQ_INCLUDE_DIRS} /usr/local/include)
