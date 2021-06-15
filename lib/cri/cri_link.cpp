@@ -25,7 +25,7 @@ cri_link::cri_link(size_t link_index, pda::device* dev, pda::pci_bar* bar)
       new register_file_bar(bar, (m_base_addr + (1 << CRI_C_DMA_ADDR_SEL))));
   // initialize cached members
   m_reg_perf_interval_cached = m_rfpkt->get_reg(CRI_REG_PERF_INTERVAL);
-  //  m_reg_gtx_perf_interval_cached =
+  m_reg_gtx_perf_interval_cached = 1; // TODO
   //  m_rfgtx->get_reg(CRI_REG_GTX_PERF_INTERVAL);
 }
 
