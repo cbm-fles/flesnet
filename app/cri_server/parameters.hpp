@@ -66,8 +66,8 @@ public:
   parameters(const parameters&) = delete;
   void operator=(const parameters&) = delete;
 
-  bool cri_autodetect() const { return _cri_autodetect; }
-  pci_addr cri_addr() const { return _cri_addr; }
+  bool dev_autodetect() const { return _dev_autodetect; }
+  pci_addr dev_addr() const { return _pci_addr; }
   std::string shm() { return _shm; }
   size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
@@ -75,7 +75,7 @@ public:
 
   std::string print_buffer_info() {
     std::stringstream ss;
-    ss << "Buffer size per link: "
+    ss << "Buffer size per channel: "
        << human_readable_count(UINT64_C(1) << _data_buffer_size_exp) << " + "
        << human_readable_count((UINT64_C(1) << _desc_buffer_size_exp) *
                                sizeof(fles::MicrosliceDescriptor));
@@ -101,12 +101,10 @@ private:
     po::options_description config(
         "Configuration (cri_server.cfg or cmd line)");
     auto config_add = config.add_options();
-    config_add("cri-addr,i", po::value<pci_addr>(),
+    config_add("pci-addr,i", po::value<pci_addr>(),
                "PCI BDF address of target CRI in BB:DD.F format");
-    config_add(
-        "shm,o",
-        po::value<std::string>(&_shm)->default_value("cri_shared_memory"),
-        "name of the shared memory to be used");
+    config_add("shm,o", po::value<std::string>(&_shm)->default_value("cri_0"),
+               "name of the shared memory to be used");
     config_add("data-buffer-size-exp",
                po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
                "exp. size of the data buffer in bytes");
@@ -165,16 +163,16 @@ private:
                           static_cast<severity_level>(log_syslog));
     }
 
-    if (vm.count("cri-addr") != 0u) {
-      _cri_addr = vm["cri-addr"].as<pci_addr>();
-      _cri_autodetect = false;
+    if (vm.count("pci-addr") != 0u) {
+      _pci_addr = vm["pci-addr"].as<pci_addr>();
+      _dev_autodetect = false;
       L_(debug) << "CRI address: " << std::hex << std::setw(2)
-                << std::setfill('0') << static_cast<unsigned>(_cri_addr.bus)
+                << std::setfill('0') << static_cast<unsigned>(_pci_addr.bus)
                 << ":" << std::setw(2) << std::setfill('0')
-                << static_cast<unsigned>(_cri_addr.dev) << "."
-                << static_cast<unsigned>(_cri_addr.func);
+                << static_cast<unsigned>(_pci_addr.dev) << "."
+                << static_cast<unsigned>(_pci_addr.func);
     } else {
-      _cri_autodetect = true;
+      _dev_autodetect = true;
       L_(debug) << "CRI address: autodetect";
     }
 
@@ -182,8 +180,8 @@ private:
     L_(info) << print_buffer_info();
   }
 
-  bool _cri_autodetect = true;
-  pci_addr _cri_addr = {};
+  bool _dev_autodetect = true;
+  pci_addr _pci_addr = {};
   std::string _shm;
   size_t _data_buffer_size_exp;
   size_t _desc_buffer_size_exp;

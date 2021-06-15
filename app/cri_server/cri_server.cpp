@@ -36,11 +36,11 @@ int main(int argc, char* argv[]) {
     parameters par(argc, argv);
 
     std::unique_ptr<cri::cri_device> cri;
-    if (par.cri_autodetect()) {
+    if (par.dev_autodetect()) {
       cri = std::unique_ptr<cri::cri_device>(new cri::cri_device(0));
     } else {
       cri = std::unique_ptr<cri::cri_device>(new cri::cri_device(
-          par.cri_addr().bus, par.cri_addr().dev, par.cri_addr().func));
+          par.dev_addr().bus, par.dev_addr().dev, par.dev_addr().func));
     }
     L_(info) << "using CRI: " << cri->print_devinfo();
 
