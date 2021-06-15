@@ -51,6 +51,7 @@ public:
   bool check_hw_ver(std::array<uint16_t, 1> hw_ver_table);
   void enable_mc_cnt(bool enable);
   void set_pgen_mc_size(uint32_t mc_size);
+  size_t get_pgen_base_size_ns() { return pgen_base_size_ns; }
   uint8_t number_of_hw_links();
 
   uint16_t hardware_version();

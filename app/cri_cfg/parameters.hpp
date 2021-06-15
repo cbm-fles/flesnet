@@ -19,7 +19,7 @@
 
 namespace po = boost::program_options;
 
-static const size_t _num_cri_links = 8;
+static const size_t _num_max_channels = 8;
 
 typedef enum { flim, pgen, disable } data_source;
 
@@ -30,7 +30,7 @@ public:
       : std::runtime_error(what_arg) {}
 };
 
-struct link_config {
+struct channel_config {
   data_source source;
   uint16_t eq_id;
 };
@@ -78,22 +78,22 @@ public:
   parameters(const parameters&) = delete;
   void operator=(const parameters&) = delete;
 
-  bool cri_autodetect() const { return _cri_autodetect; }
-  pci_addr cri_addr() const { return _cri_addr; }
+  bool dev_autodetect() const { return _dev_autodetect; }
+  pci_addr dev_addr() const { return _pci_addr; }
   bool identify() const { return _identify; }
   uint32_t mc_size() const { return _mc_size; }
   float pgen_rate() const { return _pgen_rate; }
   uint32_t mc_size_limit() const { return _mc_size_limit; }
 
-  struct link_config link(size_t i) const {
-    return _links.at(i);
+  struct channel_config channel(size_t i) const {
+    return _channels.at(i);
   }
 
 private:
   void parse_eq_id(const po::variables_map& vm, size_t i) {
-    if (vm.count("l" + std::to_string(i) + "_eq_id") != 0u) {
-      _links.at(i).eq_id = boost::numeric_cast<uint16_t>(
-          std::stoul(vm["l" + std::to_string(i) + "_eq_id"].as<std::string>(),
+    if (vm.count("c" + std::to_string(i) + "_eq_id") != 0u) {
+      _channels.at(i).eq_id = boost::numeric_cast<uint16_t>(
+          std::stoul(vm["c" + std::to_string(i) + "_eq_id"].as<std::string>(),
                      nullptr, 0));
     } else {
       throw ParametersException("If reading from pgen eq_id is required.");
@@ -101,25 +101,26 @@ private:
   }
 
   void parse_data_source(const po::variables_map& vm, size_t i) {
-    if (vm.count("l" + std::to_string(i) + "_source") !=
+    if (vm.count("c" + std::to_string(i) + "_source") !=
         0u) { // set given parameters
       std::string source =
-          vm["l" + std::to_string(i) + "_source"].as<std::string>();
+          vm["c" + std::to_string(i) + "_source"].as<std::string>();
       if (source == "flim") {
-        _links.at(i).source = flim;
+        _channels.at(i).source = flim;
         L_(info) << " data source: flim";
       } else if (source == "pgen") {
-        _links.at(i).source = pgen;
-        L_(info) << " data source: pgen";
+        _channels.at(i).source = pgen;
         parse_eq_id(vm, i);
+        L_(info) << " data source: pgen (0x" << std::hex
+                 << _channels.at(i).eq_id << ")";
       } else if (source == "disable") {
-        _links.at(i).source = disable;
+        _channels.at(i).source = disable;
         L_(info) << " data source: disable";
       } else {
         throw ParametersException("No valid arg for data source.");
       }
     } else { // set default parameters
-      _links.at(i).source = disable;
+      _channels.at(i).source = disable;
       L_(info) << " data source: disable (default)";
     }
   }
@@ -144,50 +145,50 @@ private:
 
     po::options_description config("Configuration (cri.cfg or cmd line)");
     auto config_add = config.add_options();
-    config_add("cri-addr,i", po::value<pci_addr>(),
+    config_add("pci-addr,i", po::value<pci_addr>(),
                "PCI BDF address of target CRI in BB:DD.F format");
     config_add("identify", po::value<bool>(&_identify)->default_value(false),
                "toggle CRI ID led");
     config_add("mc-size,t", po::value<uint32_t>(),
                "size of pattern generator microslices in units of "
-               "1024 ns (31 bit wide)");
+               "1 us (31 bit wide)");
     config_add("pgen-rate,r", po::value<float>(),
                "MS fill level of pattern generator in [0,1]");
     config_add("mc-size-limit", po::value<uint32_t>(&_mc_size_limit),
                "Threshold of microslice size limiter in bytes.");
 
-    config_add("l0_source", po::value<std::string>(),
-               "Link 0 data source <disable|flim|pgen>");
-    config_add("l0_eq_id", po::value<std::string>(),
-               "Equipment identifier of link 0 pgen data source (16 Bit)");
-    config_add("l1_source", po::value<std::string>(),
-               "Link 1 data source <disable|flim|pgen>");
-    config_add("l1_eq_id", po::value<std::string>(),
-               "Equipment identifier of link 1 pgen data source (16 Bit)");
-    config_add("l2_source", po::value<std::string>(),
-               "Link 2 data source <disable|flim|pgen>");
-    config_add("l2_eq_id", po::value<std::string>(),
-               "Equipment identifier of link 2 pgen data source (16 Bit)");
-    config_add("l3_source", po::value<std::string>(),
-               "Link 3 data source <disable|flim|pgen>");
-    config_add("l3_eq_id", po::value<std::string>(),
-               "Equipment identifier of link 3 pgen data source (16 Bit)");
-    config_add("l4_source", po::value<std::string>(),
-               "Link 4 data source <disable|flim|pgen>");
-    config_add("l4_eq_id", po::value<std::string>(),
-               "Equipment identifier of link 4 pgen data source (16 Bit)");
-    config_add("l5_source", po::value<std::string>(),
-               "Link 5 data source <disable|flim|pgen>");
-    config_add("l5_eq_id", po::value<std::string>(),
-               "Equipment identifier of link 5 pgen data source (16 Bit)");
-    config_add("l6_source", po::value<std::string>(),
-               "Link 6 data source <disable|flim|pgen>");
-    config_add("l6_eq_id", po::value<std::string>(),
-               "Equipment identifier of link 6 pgen data source (16 Bit)");
-    config_add("l7_source", po::value<std::string>(),
-               "Link 7 data source <disable|flim|pgen>");
-    config_add("l7_eq_id", po::value<std::string>(),
-               "Equipment identifier of link 7 pgen data source (16 Bit)");
+    config_add("c0_source", po::value<std::string>(),
+               "Channel 0 data source <disable|flim|pgen>");
+    config_add("c0_eq_id", po::value<std::string>(),
+               "Equipment identifier of channel 0 pgen data source (16 Bit)");
+    config_add("c1_source", po::value<std::string>(),
+               "Channel 1 data source <disable|flim|pgen>");
+    config_add("c1_eq_id", po::value<std::string>(),
+               "Equipment identifier of channel 1 pgen data source (16 Bit)");
+    config_add("c2_source", po::value<std::string>(),
+               "Channel 2 data source <disable|flim|pgen>");
+    config_add("c2_eq_id", po::value<std::string>(),
+               "Equipment identifier of channel 2 pgen data source (16 Bit)");
+    config_add("c3_source", po::value<std::string>(),
+               "Channel 3 data source <disable|flim|pgen>");
+    config_add("c3_eq_id", po::value<std::string>(),
+               "Equipment identifier of channel 3 pgen data source (16 Bit)");
+    config_add("c4_source", po::value<std::string>(),
+               "Channel 4 data source <disable|flim|pgen>");
+    config_add("c4_eq_id", po::value<std::string>(),
+               "Equipment identifier of channel 4 pgen data source (16 Bit)");
+    config_add("c5_source", po::value<std::string>(),
+               "Channel 5 data source <disable|flim|pgen>");
+    config_add("c5_eq_id", po::value<std::string>(),
+               "Equipment identifier of channel 5 pgen data source (16 Bit)");
+    config_add("c6_source", po::value<std::string>(),
+               "Channel 6 data source <disable|flim|pgen>");
+    config_add("c6_eq_id", po::value<std::string>(),
+               "Equipment identifier of channel 6 pgen data source (16 Bit)");
+    config_add("c7_source", po::value<std::string>(),
+               "Channel 7 data source <disable|flim|pgen>");
+    config_add("c7_eq_id", po::value<std::string>(),
+               "Equipment identifier of channel 7 pgen data source (16 Bit)");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -223,22 +224,22 @@ private:
 
     L_(info) << "Device config:";
 
-    if (vm.count("cri-addr") != 0u) {
-      _cri_addr = vm["cri-addr"].as<pci_addr>();
-      _cri_autodetect = false;
+    if (vm.count("pci-addr") != 0u) {
+      _pci_addr = vm["pci-addr"].as<pci_addr>();
+      _dev_autodetect = false;
       L_(info) << " CRI address: " << std::hex << std::setw(2)
-               << std::setfill('0') << static_cast<unsigned>(_cri_addr.bus)
+               << std::setfill('0') << static_cast<unsigned>(_pci_addr.bus)
                << ":" << std::setw(2) << std::setfill('0')
-               << static_cast<unsigned>(_cri_addr.dev) << "."
-               << static_cast<unsigned>(_cri_addr.func) << std::dec;
+               << static_cast<unsigned>(_pci_addr.dev) << "."
+               << static_cast<unsigned>(_pci_addr.func) << std::dec;
     } else {
-      _cri_autodetect = true;
+      _dev_autodetect = true;
       L_(info) << " CRI address: autodetect";
     }
 
     if (vm.count("mc-size") != 0u) {
       _mc_size = vm["mc-size"].as<uint32_t>();
-      if (_mc_size > (2147483647 / 1000)) { // 31 bit check
+      if (_mc_size > (2147483647 / cri::pgen_base_size_ns)) { // 31 bit check
         throw ParametersException("Pgen microslice size out of range");
       }
       L_(info) << " Pgen microslice size: " << human_readable_mc_size(_mc_size);
@@ -256,16 +257,17 @@ private:
       L_(info) << " Pgen rate: " << _pgen_rate;
     }
 
-    L_(info) << " CRI microslice size limit: " << _mc_size_limit << " bytes";
+    //    L_(info) << " CRI microslice size limit: " << _mc_size_limit << "
+    //    bytes";
 
-    for (size_t i = 0; i < _num_cri_links; ++i) {
-      L_(info) << "Link " << i << " config:";
+    for (size_t i = 0; i < _num_max_channels; ++i) {
+      L_(info) << "Channel " << i << " config:";
       parse_data_source(vm, i);
-    } // end loop over links
+    } // end loop over channels
   }
 
   static std::string human_readable_mc_size(uint32_t mc_size) {
-    size_t mc_size_ns = mc_size * 1000; // 1000 = hw base unit
+    size_t mc_size_ns = mc_size * cri::pgen_base_size_ns;
     size_t mc_size_us_int = mc_size_ns / 1000;
     size_t mc_size_us_frec = mc_size_ns % 1000;
     double mc_freq_khz = 1.e6 / mc_size_ns;
@@ -275,11 +277,11 @@ private:
     return ss.str();
   }
 
-  bool _cri_autodetect = true;
-  pci_addr _cri_addr = {};
+  bool _dev_autodetect = true;
+  pci_addr _pci_addr = {};
   bool _identify = false;
   uint32_t _mc_size = 10; // 10,24 us
   float _pgen_rate = 1;
   uint32_t _mc_size_limit = 1 << 20; // 1MB
-  std::array<struct link_config, _num_cri_links> _links = {{}};
+  std::array<struct channel_config, _num_max_channels> _channels = {{}};
 };
