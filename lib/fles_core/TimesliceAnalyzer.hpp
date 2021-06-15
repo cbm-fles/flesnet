@@ -22,24 +22,26 @@ public:
   void put(std::shared_ptr<const fles::Timeslice> timeslice) override;
 
 private:
-  bool check_timeslice(const fles::Timeslice& ts);
-
-  std::string statistics() const;
+  [[nodiscard]] std::string statistics() const;
   void reset() {
     microslice_count_ = 0;
     content_bytes_ = 0;
   }
 
-  uint32_t compute_crc(const fles::MicrosliceView& m) const;
+  [[nodiscard]] uint32_t compute_crc(const fles::MicrosliceView& m) const;
+  [[nodiscard]] bool check_crc(const fles::MicrosliceView& m) const;
 
-  bool check_crc(const fles::MicrosliceView& m) const;
-
-  bool check_microslice(const fles::MicrosliceView& m,
-                        size_t component,
-                        size_t microslice);
+  [[nodiscard]] bool check_timeslice(const fles::Timeslice& ts);
+  [[nodiscard]] bool check_timeslice_component(const fles::Timeslice& ts,
+                                               size_t component);
+  [[nodiscard]] bool check_microslice(const fles::MicrosliceView& m,
+                                      size_t component,
+                                      size_t microslice);
 
   void initialize(const fles::Timeslice& ts);
   void print_reference();
+
+  [[nodiscard]] bool output_active() const;
 
   crcutil_interface::CRC* crc32_engine_ = nullptr;
 
@@ -53,6 +55,9 @@ private:
 
   size_t timeslice_count_ = 0;
   size_t timeslice_error_count_ = 0;
+  size_t timeslice_component_count_ = 0;
+  size_t timeslice_component_error_count_ = 0;
   size_t microslice_count_ = 0;
+  size_t microslice_error_count_ = 0;
   size_t content_bytes_ = 0;
 };
