@@ -278,7 +278,7 @@ int main(int argc, char* argv[]) {
               (static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) /
                cri::pkt_clk);
 
-          if (console) {
+          if (console && (links.at(i)->data_source() != cri::cri_link::rx_disable) ) {
             ss << std::setw(2) << j << "/" << i << "  ";
             ss << std::setw(8) << links.at(i)->data_source() << "  ";
             // perf counters
