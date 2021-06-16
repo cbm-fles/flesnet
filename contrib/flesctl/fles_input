@@ -12,7 +12,7 @@ set -u  # ensure variables are defined
 : ${FLESNETDIR:=/opt/fles/bin/}
 : ${SPMDIR:=/opt/spm/}
 : ${LOGDIR:=log/}
-: ${SHM_PREFIX:=flib_server_}
+: ${SHM_PREFIX:=cri_}
 
 ###############################################################
 # command line parameters
@@ -27,13 +27,11 @@ hostconfig "$2"
 ###############################################################
 # start procecces
 declare -a SERVER_PID
-declare -a EN_PID
 
 cleanup () {
     echo "Cleaning up ..."
     # kill all procecces in this session
-    pkill -9 -s $SID en_readout
-    pkill -9 -s $SID flib_server
+    pkill -9 -s $SID cri_server
     rm /dev/shm/${SHM_PREFIX}*
     exit -1
 }
@@ -42,24 +40,15 @@ cleanup () {
 end_readout () {
     set +e
     echo "Shutting down ..."
-    for i in ${!EN_PID[*]}; do
-        kill -s SIGINT ${EN_PID[$i]} 2>/dev/null
-    done
-    sleep 1
+    ${FLESNETDIR}cri_en_pgen 0 >> ${LOGDIR}en_pgen.log
     for i in ${!SERVER_PID[*]}; do
         kill -s SIGINT ${SERVER_PID[$i]} 2>/dev/null
     done
     sleep 3
     # check if any process is left
-    for i in ${!EN_PID[*]}; do
-        if kill -0 ${EN_PID[$i]} > /dev/null 2>&1 ;then
-            echo "Cleanup required, en_readout left."
-            cleanup
-        fi
-    done
     for i in ${!SERVER_PID[*]}; do
         if kill -0 ${SERVER_PID[$i]} > /dev/null 2>&1 ; then
-            echo "Cleanup required, flib_server left."
+            echo "Cleanup required, cri_server left."
             cleanup
         fi
     done
@@ -76,31 +65,31 @@ trap request_end SIGINT SIGTERM SIGHUP
 
 echo "Starting readout ..."
 
-${FLESNETDIR}flib_info > ${LOGDIR}flib_info.log
+${FLESNETDIR}cri_info > ${LOGDIR}cri_info.log
 
-echo "Configuring FLIBs ..."
+echo "Configuring CRIs ..."
 # round up to next possible size (given mc_size is min. size)
 #PGEN_MC_SIZE=`echo "scale=0; (${MC_SIZE_NS}+1024-1)/1024" | bc -l`
 # round down to next possible size (given mc_size is max. size)
-PGEN_MC_SIZE=`echo "scale=0; ${MC_SIZE_NS}/1024" | bc -l`
+PGEN_MC_SIZE=`echo "scale=0; ${MC_SIZE_NS}/1000" | bc -l`
 for i in ${!ADDR[*]}; do
-    ${FLESNETDIR}flib_cfg -c /dev/null -l 2 -L ${LOGDIR}f${i}_cfg.log -i ${ADDR[$i]} \
+    ${FLESNETDIR}cri_cfg -l 2 -L ${LOGDIR}cri${i}_cfg.log -i ${ADDR[$i]} \
                      -t $PGEN_MC_SIZE -r $PGEN_RATE \
                      --mc-size-limit $MC_SIZE_LIMIT_BYTES \
-                     --l0_source ${LINK[0+$i*8]} --l0_eq_id ${BASE_EQID[$i]}0 \
-                     --l1_source ${LINK[1+$i*8]} --l1_eq_id ${BASE_EQID[$i]}1 \
-                     --l2_source ${LINK[2+$i*8]} --l2_eq_id ${BASE_EQID[$i]}2 \
-                     --l3_source ${LINK[3+$i*8]} --l3_eq_id ${BASE_EQID[$i]}3 \
-                     --l4_source ${LINK[4+$i*8]} --l4_eq_id ${BASE_EQID[$i]}4 \
-                     --l5_source ${LINK[5+$i*8]} --l5_eq_id ${BASE_EQID[$i]}5 \
-                     --l6_source ${LINK[6+$i*8]} --l6_eq_id ${BASE_EQID[$i]}6 \
-                     --l7_source ${LINK[7+$i*8]} --l7_eq_id ${BASE_EQID[$i]}7
+                     --c0_source ${LINK[0+$i*8]} --c0_eq_id ${BASE_EQID[$i]}0 \
+                     --c1_source ${LINK[1+$i*8]} --c1_eq_id ${BASE_EQID[$i]}1 \
+                     --c2_source ${LINK[2+$i*8]} --c2_eq_id ${BASE_EQID[$i]}2 \
+                     --c3_source ${LINK[3+$i*8]} --c3_eq_id ${BASE_EQID[$i]}3 \
+                     --c4_source ${LINK[4+$i*8]} --c4_eq_id ${BASE_EQID[$i]}4 \
+                     --c5_source ${LINK[5+$i*8]} --c5_eq_id ${BASE_EQID[$i]}5 \
+                     --c6_source ${LINK[6+$i*8]} --c6_eq_id ${BASE_EQID[$i]}6 \
+                     --c7_source ${LINK[7+$i*8]} --c7_eq_id ${BASE_EQID[$i]}7
 done
 
-echo "Starting flib_server ..."
-for flib in ${!ADDR[*]}; do
-    ${FLESNETDIR}flib_server -c /dev/null -L ${LOGDIR}f${flib}_server.log --log-syslog -i ${ADDR[$flib]} \
-                        --data-buffer-size-exp $BUF_SIZE_EXP -o $SHM_PREFIX$flib -e "${SPMDIR}spm-provide flib_server_sem" &
+echo "Starting cri_server ..."
+for cri in ${!ADDR[*]}; do
+    ${FLESNETDIR}cri_server -c /dev/null -L ${LOGDIR}f${cri}_server.log --log-syslog -i ${ADDR[$cri]} \
+                        --data-buffer-size-exp $BUF_SIZE_EXP -o $SHM_PREFIX$cri -e "${SPMDIR}spm-provide cri_server_sem" &
     SERVER_PID+=($!)
 done
 
@@ -108,9 +97,9 @@ done
 SID=$(trap '' SIGINT SIGTERM SIGHUP && ps o sid -p ${SERVER_PID[0]} | tail -n1)
 
 # block till server is ready
-echo "Waiting for ${#SERVER_PID[@]} flib_server instance(s) ..."
-${SPMDIR}spm-require -n${#SERVER_PID[@]} flib_server_sem
-echo "... all flib_server(s) started"
+echo "Waiting for ${#SERVER_PID[@]} cri_server instance(s) ..."
+${SPMDIR}spm-require -n${#SERVER_PID[@]} cri_server_sem
+echo "... all cri_server(s) started"
 
 # first oppertunity to safely shutdown
 if ${END_REQUESTED} ; then
@@ -118,11 +107,9 @@ if ${END_REQUESTED} ; then
 fi
 
 sleep 1
-echo "Enabling readout ..."
-for flib in ${!ADDR[*]}; do
-    ${FLESNETDIR}en_readout $flib > ${LOGDIR}flib${flib}_info.log &
-    EN_PID+=($!)
-done
+echo "Enabling pattern generators ..."
+# TODO: for now we simple enable all, even if unused
+${FLESNETDIR}cri_en_pgen 1 >> ${LOGDIR}en_pgen.log
 
 # from this point it is safe to shut down any time
 trap end_readout SIGINT SIGTERM SIGHUP
