@@ -12,6 +12,8 @@ using namespace cri;
 
 int main() {
 
+  int ret = EXIT_SUCCESS;
+
   std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
   std::vector<std::unique_ptr<cri_device>> cris;
 
@@ -32,9 +34,9 @@ int main() {
 
     } catch (std::exception& e) {
       std::cout << e.what() << std::endl;
-      return EXIT_FAILURE;
+      ret = EXIT_FAILURE;
     }
   }
 
-  return EXIT_SUCCESS;
+  return ret;
 }
