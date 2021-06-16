@@ -4,6 +4,7 @@
 #include "PatternChecker.hpp"
 #include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
+#include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <cassert>
 #include <optional>
@@ -123,9 +124,9 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
 
   // check the individual timeslice components
   for (size_t c = 0; c < ts.num_components(); ++c) {
-    bool tsc_success = check_timeslice_component(ts, c);
-    if (!tsc_success) {
-      ++timeslice_component_error_count_;
+    bool component_success = check_component(ts, c);
+    if (!component_success) {
+      ++component_error_count_;
       ts_success = false;
     }
   }
@@ -133,26 +134,26 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
   return ts_success;
 }
 
-bool TimesliceAnalyzer::check_timeslice_component(const fles::Timeslice& ts,
-                                                  size_t component) {
-  ++timeslice_component_count_;
-  bool tsc_success = true;
+bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts,
+                                        size_t component) {
+  ++component_count_;
+  bool component_success = true;
 
   if (ts.num_microslices(component) == 0) {
     if (output_active()) {
       out_ << output_prefix_ << "no microslices in timeslice " << ts.index()
            << ", component " << component << std::endl;
     }
-    tsc_success = false;
+    component_success = false;
   }
 
   // check all microslices of the component
   pattern_checkers_.at(component)->reset();
   for (size_t m = 0; m < ts.num_microslices(component); ++m) {
-    bool ms_success =
+    bool microslice_success =
         check_microslice(ts.get_microslice(component, m), component,
                          ts.index() * ts.num_core_microslices() + m);
-    if (!ms_success) {
+    if (!microslice_success) {
       ++microslice_error_count_;
       if (output_active()) {
         out_ << output_prefix_ << "error in timeslice " << ts.index()
@@ -166,7 +167,7 @@ bool TimesliceAnalyzer::check_timeslice_component(const fles::Timeslice& ts,
                            ts.get_microslice(component, m).desc().size)
              << std::flush;
       }
-      tsc_success = false;
+      component_success = false;
     }
   }
 
@@ -180,14 +181,10 @@ bool TimesliceAnalyzer::check_timeslice_component(const fles::Timeslice& ts,
              << ", component " << component
              << ": start time not increasing in first two microslices"
              << std::endl;
-        out_ << output_prefix_ << "microslice 0 descriptor:\n"
-             << MicrosliceDescriptorDump(ts.get_microslice(component, 0).desc())
-             << std::flush;
-        out_ << output_prefix_ << "microslice 1 descriptor:\n"
-             << MicrosliceDescriptorDump(ts.get_microslice(component, 1).desc())
-             << std::flush;
+        print_descriptor(ts, component, 0);
+        print_descriptor(ts, component, 1);
       }
-      tsc_success = false;
+      component_success = false;
     } else {
       uint64_t reference_delta = second - first;
       for (size_t m = 2; m < ts.num_microslices(component); ++m) {
@@ -198,26 +195,39 @@ bool TimesliceAnalyzer::check_timeslice_component(const fles::Timeslice& ts,
             out_ << output_prefix_ << "error in timeslice " << ts.index()
                  << ", component " << component
                  << ": unexpected start time in microslice " << m << std::endl;
-            out_ << output_prefix_ << "microslice 0 descriptor:\n"
-                 << MicrosliceDescriptorDump(
-                        ts.get_microslice(component, 0).desc())
-                 << std::flush;
-            out_ << output_prefix_ << "microslice 1 descriptor:\n"
-                 << MicrosliceDescriptorDump(
-                        ts.get_microslice(component, 1).desc())
-                 << std::flush;
-            out_ << output_prefix_ << "microslice " << m << " descriptor:\n"
-                 << MicrosliceDescriptorDump(
-                        ts.get_microslice(component, m).desc())
-                 << std::flush;
+            print_descriptor(ts, component, 0);
+            print_descriptor(ts, component, 1);
+            print_descriptor(ts, component, m);
           }
-          tsc_success = false;
+          component_success = false;
         }
       }
     }
   }
 
-  return tsc_success;
+  return component_success;
+}
+
+void TimesliceAnalyzer::print_descriptor(const fles::Timeslice& ts,
+                                         size_t component,
+                                         size_t microslice) {
+  print(boost::str(boost::format("microslice descriptor of ts%d/c%d/m%d:") %
+                   ts.index() % component % microslice));
+  print(boost::str(boost::format("%s") %
+                   MicrosliceDescriptorDump(
+                       ts.get_microslice(component, microslice).desc())),
+        "  ");
+}
+
+void TimesliceAnalyzer::print(std::string text, std::string prefix) {
+  if (text.back() == '\n') {
+    text.erase(text.end() - 1);
+  }
+  std::vector<std::string> lines;
+  boost::split(lines, text, [](char c) { return c == '\n'; });
+  for (auto const& line : lines) {
+    out_ << output_prefix_ << prefix << line << std::endl;
+  }
 }
 
 bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView& m,
@@ -265,20 +275,18 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView& m,
 
 bool TimesliceAnalyzer::output_active() const {
   constexpr size_t limit = 20;
-  return timeslice_error_count_ < limit &&
-         timeslice_component_error_count_ < limit &&
+  return timeslice_error_count_ < limit && component_error_count_ < limit &&
          microslice_error_count_ < limit;
 }
 
 std::string TimesliceAnalyzer::statistics() const {
   std::stringstream s;
-  s << "* checked " << timeslice_count_ << " ts, " << timeslice_component_count_
-    << " tsc, " << microslice_count_ << " ms, "
+  s << "* checked " << timeslice_count_ << " ts, " << component_count_ << " c, "
+    << microslice_count_ << " m, "
     << human_readable_count(content_bytes_, true);
   if (timeslice_error_count_ > 0) {
-    s << " [with errors: " << timeslice_error_count_ << "/"
-      << timeslice_component_error_count_ << "/" << microslice_error_count_
-      << "]";
+    s << " [with errors: " << timeslice_error_count_ << "ts/"
+      << component_error_count_ << "c/" << microslice_error_count_ << "m]";
   }
   return s.str();
 }
