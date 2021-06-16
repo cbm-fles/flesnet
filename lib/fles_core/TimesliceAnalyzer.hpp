@@ -6,6 +6,7 @@
 #include "Timeslice.hpp"
 #include "interface.h" // crcutil_interface
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string>
 
@@ -41,9 +42,17 @@ private:
   void initialize(const fles::Timeslice& ts);
   void print_reference();
   void print(std::string text, std::string prefix = "");
-  void print_descriptor(const fles::Timeslice& ts,
-                        size_t component,
-                        size_t microslice);
+  void print_microslice_descriptor(const fles::Timeslice& ts,
+                                   size_t component,
+                                   size_t microslice);
+  void print_microslice_content(const fles::Timeslice& ts,
+                                size_t component,
+                                size_t microslice);
+
+  [[nodiscard]] std::string
+  location_string(size_t timeslice,
+                  std::optional<size_t> component = std::nullopt,
+                  std::optional<size_t> microslice = std::nullopt) const;
 
   [[nodiscard]] bool output_active() const;
 
