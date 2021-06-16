@@ -29,7 +29,7 @@ hostconfig "$2"
 declare -a SERVER_PID
 
 cleanup () {
-    echo "Cleaning up ..."
+    echo "Cleaning up ..." | tee -a ${LOGDIR}fles_input.log
     # kill all procecces in this session
     pkill -9 -s $SID cri_server
     rm /dev/shm/${SHM_PREFIX}*
@@ -39,8 +39,8 @@ cleanup () {
 # the shutdown procedure
 end_readout () {
     set +e
-    echo "Shutting down ..."
-    ${FLESNETDIR}cri_en_pgen 0 >> ${LOGDIR}en_pgen.log
+    echo "Shutting down ..." | tee -a ${LOGDIR}fles_input.log
+    ${FLESNETDIR}cri_en_pgen 0 >> ${LOGDIR}cri_en_pgen.log
     for i in ${!SERVER_PID[*]}; do
         kill -s SIGINT ${SERVER_PID[$i]} 2>/dev/null
     done
@@ -48,10 +48,11 @@ end_readout () {
     # check if any process is left
     for i in ${!SERVER_PID[*]}; do
         if kill -0 ${SERVER_PID[$i]} > /dev/null 2>&1 ; then
-            echo "Cleanup required, cri_server left."
+            echo "Cleanup required, cri_server left." | tee -a ${LOGDIR}fles_input.log
             cleanup
         fi
     done
+    echo "Exiting" | tee -a ${LOGDIR}fles_input.log
     exit 0
 }
 
@@ -63,11 +64,11 @@ request_end () {
 trap request_end SIGINT SIGTERM SIGHUP
 
 
-echo "Starting readout ..."
+echo "Starting readout ..." | tee -a ${LOGDIR}fles_input.log
 
 ${FLESNETDIR}cri_info > ${LOGDIR}cri_info.log
 
-echo "Configuring CRIs ..."
+echo "Configuring CRIs ..." | tee -a ${LOGDIR}fles_input.log
 # round up to next possible size (given mc_size is min. size)
 #PGEN_MC_SIZE=`echo "scale=0; (${MC_SIZE_NS}+1024-1)/1024" | bc -l`
 # round down to next possible size (given mc_size is max. size)
@@ -86,9 +87,9 @@ for i in ${!ADDR[*]}; do
                      --c7_source ${LINK[7+$i*8]} --c7_eq_id ${BASE_EQID[$i]}7
 done
 
-echo "Starting cri_server ..."
+echo "Starting cri_server ..." | tee -a ${LOGDIR}fles_input.log
 for cri in ${!ADDR[*]}; do
-    ${FLESNETDIR}cri_server -c /dev/null -L ${LOGDIR}f${cri}_server.log --log-syslog -i ${ADDR[$cri]} \
+    ${FLESNETDIR}cri_server -c /dev/null -L ${LOGDIR}cri${cri}_server.log --log-syslog -i ${ADDR[$cri]} \
                         --data-buffer-size-exp $BUF_SIZE_EXP -o $SHM_PREFIX$cri -e "${SPMDIR}spm-provide cri_server_sem" &
     SERVER_PID+=($!)
 done
@@ -97,9 +98,9 @@ done
 SID=$(trap '' SIGINT SIGTERM SIGHUP && ps o sid -p ${SERVER_PID[0]} | tail -n1)
 
 # block till server is ready
-echo "Waiting for ${#SERVER_PID[@]} cri_server instance(s) ..."
+echo "Waiting for ${#SERVER_PID[@]} cri_server instance(s) ..." | tee -a ${LOGDIR}fles_input.log
 ${SPMDIR}spm-require -n${#SERVER_PID[@]} cri_server_sem
-echo "... all cri_server(s) started"
+echo "... all cri_server(s) started" | tee -a ${LOGDIR}fles_input.log
 
 # first oppertunity to safely shutdown
 if ${END_REQUESTED} ; then
@@ -107,9 +108,9 @@ if ${END_REQUESTED} ; then
 fi
 
 sleep 1
-echo "Enabling pattern generators ..."
+echo "Enabling pattern generators ..." | tee -a ${LOGDIR}fles_input.log
 # TODO: for now we simple enable all, even if unused
-${FLESNETDIR}cri_en_pgen 1 >> ${LOGDIR}en_pgen.log
+${FLESNETDIR}cri_en_pgen 1 >> ${LOGDIR}cri_en_pgen.log
 
 # from this point it is safe to shut down any time
 trap end_readout SIGINT SIGTERM SIGHUP
@@ -119,7 +120,7 @@ if ${END_REQUESTED} ; then
 fi
 
 ${SPMDIR}spm-provide fles_input_sem
-echo "Running ..."
+echo "Running ..." | tee -a ${LOGDIR}fles_input.log
 wait
 
-echo "*** YOU SOULD NEVER SEE THIS ***"
+echo "*** YOU SOULD NEVER SEE THIS ***" | tee -a ${LOGDIR}fles_input.log
