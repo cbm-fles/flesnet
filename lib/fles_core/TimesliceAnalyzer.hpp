@@ -32,14 +32,18 @@ private:
   [[nodiscard]] bool check_crc(const fles::MicrosliceView& m) const;
 
   [[nodiscard]] bool check_timeslice(const fles::Timeslice& ts);
-  [[nodiscard]] bool check_timeslice_component(const fles::Timeslice& ts,
-                                               size_t component);
+  [[nodiscard]] bool check_component(const fles::Timeslice& ts,
+                                     size_t component);
   [[nodiscard]] bool check_microslice(const fles::MicrosliceView& m,
                                       size_t component,
                                       size_t microslice);
 
   void initialize(const fles::Timeslice& ts);
   void print_reference();
+  void print(std::string text, std::string prefix = "");
+  void print_descriptor(const fles::Timeslice& ts,
+                        size_t component,
+                        size_t microslice);
 
   [[nodiscard]] bool output_active() const;
 
@@ -55,8 +59,8 @@ private:
 
   size_t timeslice_count_ = 0;
   size_t timeslice_error_count_ = 0;
-  size_t timeslice_component_count_ = 0;
-  size_t timeslice_component_error_count_ = 0;
+  size_t component_count_ = 0;
+  size_t component_error_count_ = 0;
   size_t microslice_count_ = 0;
   size_t microslice_error_count_ = 0;
   size_t content_bytes_ = 0;
