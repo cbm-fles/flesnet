@@ -23,14 +23,11 @@ public:
   void put(std::shared_ptr<const fles::Timeslice> timeslice) override;
 
 private:
-  [[nodiscard]] std::string statistics() const;
+  void initialize(const fles::Timeslice& ts);
   void reset() {
     microslice_count_ = 0;
     content_bytes_ = 0;
   }
-
-  [[nodiscard]] uint32_t compute_crc(const fles::MicrosliceView& m) const;
-  [[nodiscard]] bool check_crc(const fles::MicrosliceView& m) const;
 
   [[nodiscard]] bool check_timeslice(const fles::Timeslice& ts);
   [[nodiscard]] bool check_component(const fles::Timeslice& ts,
@@ -39,15 +36,19 @@ private:
                                       size_t component,
                                       size_t microslice);
 
-  void initialize(const fles::Timeslice& ts);
-  void print_reference();
+  [[nodiscard]] uint32_t compute_crc(const fles::MicrosliceView& m) const;
+  [[nodiscard]] bool check_crc(const fles::MicrosliceView& m) const;
+
   void print(std::string text, std::string prefix = "");
+  void print_reference();
   void print_microslice_descriptor(const fles::Timeslice& ts,
                                    size_t component,
                                    size_t microslice);
   void print_microslice_content(const fles::Timeslice& ts,
                                 size_t component,
                                 size_t microslice);
+
+  [[nodiscard]] std::string statistics() const;
 
   [[nodiscard]] std::string
   location_string(size_t timeslice,

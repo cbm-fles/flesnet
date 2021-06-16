@@ -32,17 +32,14 @@ TimesliceAnalyzer::~TimesliceAnalyzer() {
   }
 }
 
-uint32_t TimesliceAnalyzer::compute_crc(const fles::MicrosliceView& m) const {
-  assert(crc32_engine_);
-
-  crcutil_interface::UINT64 crc64 = 0;
-  crc32_engine_->Compute(m.content(), m.desc().size, &crc64);
-
-  return static_cast<uint32_t>(crc64);
-}
-
-bool TimesliceAnalyzer::check_crc(const fles::MicrosliceView& m) const {
-  return compute_crc(m) == m.desc().crc;
+void TimesliceAnalyzer::put(std::shared_ptr<const fles::Timeslice> timeslice) {
+  bool success = check_timeslice(*timeslice);
+  if (!success) {
+    ++timeslice_error_count_;
+  }
+  if ((timeslice_count_ % output_interval_) == 0) {
+    print(statistics(), "* ");
+  }
 }
 
 void TimesliceAnalyzer::initialize(const fles::Timeslice& ts) {
@@ -54,22 +51,6 @@ void TimesliceAnalyzer::initialize(const fles::Timeslice& ts) {
     reference_descriptors_.push_back(desc);
     pattern_checkers_.push_back(
         PatternChecker::create(desc.sys_id, desc.sys_ver, c));
-  }
-}
-
-void TimesliceAnalyzer::print_reference() {
-  print("timeslice analyzer initialized with " +
-        std::to_string(reference_descriptors_.size()) + " components");
-  for (size_t c = 0; c < reference_descriptors_.size(); ++c) {
-    const fles::MicrosliceDescriptor& md = reference_descriptors_.at(c);
-    print("  component " + std::to_string(c) + ":" +
-          boost::str(boost::format(" eq_id=%04x") %
-                     static_cast<unsigned int>(md.eq_id)) +
-          boost::str(boost::format(" sys=%02x-%02x") %
-                     static_cast<unsigned int>(md.sys_id) %
-                     static_cast<unsigned int>(md.sys_ver)) +
-          " " +
-          fles::to_string(static_cast<fles::SubsystemIdentifier>(md.sys_id)));
   }
 }
 
@@ -199,56 +180,6 @@ bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts,
   return component_success;
 }
 
-std::string
-TimesliceAnalyzer::location_string(size_t timeslice,
-                                   std::optional<size_t> component,
-                                   std::optional<size_t> microslice) const {
-  if (component && microslice) {
-    return boost::str(boost::format("ts%d/c%d/m%d") % timeslice % *component %
-                      *microslice);
-
-  } else if (component) {
-    return boost::str(boost::format("ts%d/c%d") % timeslice % *component);
-
-  } else {
-    return boost::str(boost::format("ts%d") % timeslice);
-  }
-}
-
-void TimesliceAnalyzer::print_microslice_descriptor(const fles::Timeslice& ts,
-                                                    size_t component,
-                                                    size_t microslice) {
-  auto location = location_string(ts.index(), component, microslice);
-  print("microslice descriptor of " + location + ":");
-  print(boost::str(boost::format("%s") %
-                   MicrosliceDescriptorDump(
-                       ts.get_microslice(component, microslice).desc())),
-        "  ");
-}
-
-void TimesliceAnalyzer::print_microslice_content(const fles::Timeslice& ts,
-                                                 size_t component,
-                                                 size_t microslice) {
-  auto location = location_string(ts.index(), component, microslice);
-  print("microslice content of " + location + ":");
-  print(boost::str(
-            boost::format("%s") %
-            BufferDump(ts.get_microslice(component, microslice).content(),
-                       ts.get_microslice(component, microslice).desc().size)),
-        "  ");
-}
-
-void TimesliceAnalyzer::print(std::string text, std::string prefix) {
-  if (text.back() == '\n') {
-    text.erase(text.end() - 1);
-  }
-  std::vector<std::string> lines;
-  boost::split(lines, text, [](char c) { return c == '\n'; });
-  for (auto const& line : lines) {
-    out_ << output_prefix_ << prefix << line << std::endl;
-  }
-}
-
 bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView& m,
                                          size_t component,
                                          size_t microslice) {
@@ -292,10 +223,67 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView& m,
   return !error;
 }
 
-bool TimesliceAnalyzer::output_active() const {
-  constexpr size_t limit = 10;
-  return timeslice_error_count_ < limit && component_error_count_ < limit &&
-         microslice_error_count_ < limit;
+uint32_t TimesliceAnalyzer::compute_crc(const fles::MicrosliceView& m) const {
+  assert(crc32_engine_);
+
+  crcutil_interface::UINT64 crc64 = 0;
+  crc32_engine_->Compute(m.content(), m.desc().size, &crc64);
+
+  return static_cast<uint32_t>(crc64);
+}
+
+bool TimesliceAnalyzer::check_crc(const fles::MicrosliceView& m) const {
+  return compute_crc(m) == m.desc().crc;
+}
+
+void TimesliceAnalyzer::print(std::string text, std::string prefix) {
+  if (text.back() == '\n') {
+    text.erase(text.end() - 1);
+  }
+  std::vector<std::string> lines;
+  boost::split(lines, text, [](char c) { return c == '\n'; });
+  for (auto const& line : lines) {
+    out_ << output_prefix_ << prefix << line << std::endl;
+  }
+}
+
+void TimesliceAnalyzer::print_reference() {
+  print("timeslice analyzer initialized with " +
+        std::to_string(reference_descriptors_.size()) + " components");
+  for (size_t c = 0; c < reference_descriptors_.size(); ++c) {
+    const fles::MicrosliceDescriptor& md = reference_descriptors_.at(c);
+    print("  component " + std::to_string(c) + ":" +
+          boost::str(boost::format(" eq_id=%04x") %
+                     static_cast<unsigned int>(md.eq_id)) +
+          boost::str(boost::format(" sys=%02x-%02x") %
+                     static_cast<unsigned int>(md.sys_id) %
+                     static_cast<unsigned int>(md.sys_ver)) +
+          " " +
+          fles::to_string(static_cast<fles::SubsystemIdentifier>(md.sys_id)));
+  }
+}
+
+void TimesliceAnalyzer::print_microslice_descriptor(const fles::Timeslice& ts,
+                                                    size_t component,
+                                                    size_t microslice) {
+  auto location = location_string(ts.index(), component, microslice);
+  print("microslice descriptor of " + location + ":");
+  print(boost::str(boost::format("%s") %
+                   MicrosliceDescriptorDump(
+                       ts.get_microslice(component, microslice).desc())),
+        "  ");
+}
+
+void TimesliceAnalyzer::print_microslice_content(const fles::Timeslice& ts,
+                                                 size_t component,
+                                                 size_t microslice) {
+  auto location = location_string(ts.index(), component, microslice);
+  print("microslice content of " + location + ":");
+  print(boost::str(
+            boost::format("%s") %
+            BufferDump(ts.get_microslice(component, microslice).content(),
+                       ts.get_microslice(component, microslice).desc().size)),
+        "  ");
 }
 
 std::string TimesliceAnalyzer::statistics() const {
@@ -310,12 +298,24 @@ std::string TimesliceAnalyzer::statistics() const {
   return s.str();
 }
 
-void TimesliceAnalyzer::put(std::shared_ptr<const fles::Timeslice> timeslice) {
-  bool success = check_timeslice(*timeslice);
-  if (!success) {
-    ++timeslice_error_count_;
+std::string
+TimesliceAnalyzer::location_string(size_t timeslice,
+                                   std::optional<size_t> component,
+                                   std::optional<size_t> microslice) const {
+  if (component && microslice) {
+    return boost::str(boost::format("ts%d/c%d/m%d") % timeslice % *component %
+                      *microslice);
+
+  } else if (component) {
+    return boost::str(boost::format("ts%d/c%d") % timeslice % *component);
+
+  } else {
+    return boost::str(boost::format("ts%d") % timeslice);
   }
-  if ((timeslice_count_ % output_interval_) == 0) {
-    print(statistics(), "* ");
-  }
+}
+
+bool TimesliceAnalyzer::output_active() const {
+  constexpr size_t limit = 10;
+  return timeslice_error_count_ < limit && component_error_count_ < limit &&
+         microslice_error_count_ < limit;
 }
