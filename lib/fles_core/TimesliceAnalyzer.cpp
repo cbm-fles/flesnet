@@ -125,18 +125,12 @@ bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts, size_t c) {
     component_success = false;
   }
 
-  // check all microslices of the component
+  // check the individual microslices of the component
   pattern_checkers_.at(c)->reset();
   for (size_t m = 0; m < ts.num_microslices(c); ++m) {
     bool microslice_success = check_microslice(ts, c, m);
     if (!microslice_success) {
       ++microslice_error_count_;
-      if (output_active()) {
-        auto location = location_string(ts.index(), c, m);
-        print("error in " + location);
-        print_microslice_descriptor(ts, c, m);
-        print_microslice_content(ts, c, m);
-      }
       component_success = false;
     }
   }
@@ -216,12 +210,16 @@ bool TimesliceAnalyzer::check_microslice(const fles::Timeslice& ts,
   if (truncated && output_active()) {
     auto location = location_string(ts.index(), c, m);
     print("error in " + location + ": microslice truncated by FLIM");
+    print_microslice_descriptor(ts, c, m);
+    print_microslice_content(ts, c, m);
   }
 
   bool pattern_error = !pattern_checkers_.at(c)->check(mv);
   if (pattern_error && output_active()) {
     auto location = location_string(ts.index(), c, m);
     print("error in " + location + ": pattern error");
+    print_microslice_descriptor(ts, c, m);
+    print_microslice_content(ts, c, m);
   }
 
   bool crc_error =
@@ -231,6 +229,8 @@ bool TimesliceAnalyzer::check_microslice(const fles::Timeslice& ts,
   if (crc_error && output_active()) {
     auto location = location_string(ts.index(), c, m);
     print("error in " + location + ": crc failure");
+    print_microslice_descriptor(ts, c, m);
+    print_microslice_content(ts, c, m);
   }
 
   error |= truncated || pattern_error || crc_error;
