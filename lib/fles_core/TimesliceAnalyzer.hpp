@@ -32,7 +32,7 @@ private:
   [[nodiscard]] bool check_timeslice(const fles::Timeslice& ts);
   [[nodiscard]] bool check_component(const fles::Timeslice& ts,
                                      size_t component);
-  [[nodiscard]] bool check_microslice(const fles::MicrosliceView& m,
+  [[nodiscard]] bool check_microslice(const fles::Timeslice& ts,
                                       size_t component,
                                       size_t microslice);
 

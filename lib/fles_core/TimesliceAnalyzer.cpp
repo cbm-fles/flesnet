@@ -129,9 +129,7 @@ bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts,
   // check all microslices of the component
   pattern_checkers_.at(component)->reset();
   for (size_t m = 0; m < ts.num_microslices(component); ++m) {
-    bool microslice_success =
-        check_microslice(ts.get_microslice(component, m), component,
-                         ts.index() * ts.num_core_microslices() + m);
+    bool microslice_success = check_microslice(ts, component, m);
     if (!microslice_success) {
       ++microslice_error_count_;
       if (output_active()) {
@@ -180,24 +178,51 @@ bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts,
   return component_success;
 }
 
-bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView& m,
+bool TimesliceAnalyzer::check_microslice(const fles::Timeslice& ts,
                                          size_t component,
                                          size_t microslice) {
+  auto m = ts.get_microslice(component, microslice);
+
   ++microslice_count_;
   content_bytes_ += m.desc().size;
+  bool error = false;
+
+  // static descriptor checks
+  auto d = m.desc();
+  if (d.hdr_id != 0xdd || d.hdr_ver != 0x01) {
+    error = true;
+    if (output_active()) {
+      auto location = location_string(ts.index(), component, microslice);
+      print("error in " + location +
+            ": unknown header format in microslice descriptor");
+      print_microslice_descriptor(ts, component, microslice);
+    }
+  }
+
+  // check descriptor consistency
+  auto r = reference_descriptors_.at(component);
+  if (d.eq_id != r.eq_id || d.sys_id != r.sys_id || d.sys_ver != r.sys_ver) {
+    error = true;
+    if (output_active()) {
+      auto location = location_string(ts.index(), component, microslice);
+      print("error in " + location +
+            ": unexpected change in microslice descriptor");
+      print_microslice_descriptor(ts, component, microslice);
+    }
+  }
 
   bool truncated =
       (m.desc().flags &
        static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) != 0;
   if (truncated && output_active()) {
-    print("error in microslice " + std::to_string(microslice) +
-          ": microslice truncated by FLIM");
+    auto location = location_string(ts.index(), component, microslice);
+    print("error in " + location + ": microslice truncated by FLIM");
   }
 
   bool pattern_error = !pattern_checkers_.at(component)->check(m);
   if (pattern_error && output_active()) {
-    print("error in microslice " + std::to_string(microslice) +
-          ": pattern error");
+    auto location = location_string(ts.index(), component, microslice);
+    print("error in " + location + ": pattern error");
   }
 
   bool crc_error =
@@ -205,11 +230,11 @@ bool TimesliceAnalyzer::check_microslice(const fles::MicrosliceView& m,
         static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) != 0) &&
       !check_crc(m);
   if (crc_error && output_active()) {
-    print("error in microslice " + std::to_string(microslice) +
-          ": crc failure");
+    auto location = location_string(ts.index(), component, microslice);
+    print("error in " + location + ": crc failure");
   }
 
-  bool error = truncated || pattern_error || crc_error;
+  error |= truncated || pattern_error || crc_error;
 
   // output ms stats
   if (hist_ != nullptr) {
