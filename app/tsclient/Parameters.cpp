@@ -64,7 +64,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
   desc_add("publish-hwm", po::value<uint32_t>(&publish_hwm_),
            "High-water mark for the publisher, in TS, TS drop happens if more "
            "buffered (default: 1)");
-  L_(info) << "Load option HwPublish " << publish_hwm_;
   desc_add("subscribe,S",
            po::value<std::string>(&subscribe_address_)
                ->implicit_value("tcp://localhost:5556"),
@@ -72,7 +71,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
   desc_add("subscribe-hwm", po::value<uint32_t>(&subscribe_hwm_),
            "High-water mark for the subscriber, in TS, TS drop happens if more "
            "buffered (default: 1)");
-  L_(info) << "Load option HwSubscribe " << publish_hwm_;
   desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number_),
            "set the maximum number of timeslices to process (default: "
            "unlimited)");
