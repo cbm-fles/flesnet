@@ -30,30 +30,25 @@ private:
   }
 
   [[nodiscard]] bool check_timeslice(const fles::Timeslice& ts);
-  [[nodiscard]] bool check_component(const fles::Timeslice& ts,
-                                     size_t component);
-  [[nodiscard]] bool check_microslice(const fles::Timeslice& ts,
-                                      size_t component,
-                                      size_t microslice);
+  [[nodiscard]] bool check_component(const fles::Timeslice& ts, size_t c);
+  [[nodiscard]] bool
+  check_microslice(const fles::Timeslice& ts, size_t c, size_t m);
 
   [[nodiscard]] uint32_t compute_crc(const fles::MicrosliceView& m) const;
   [[nodiscard]] bool check_crc(const fles::MicrosliceView& m) const;
 
   void print(std::string text, std::string prefix = "");
   void print_reference();
-  void print_microslice_descriptor(const fles::Timeslice& ts,
-                                   size_t component,
-                                   size_t microslice);
-  void print_microslice_content(const fles::Timeslice& ts,
-                                size_t component,
-                                size_t microslice);
+  void
+  print_microslice_descriptor(const fles::Timeslice& ts, size_t c, size_t m);
+  void print_microslice_content(const fles::Timeslice& ts, size_t c, size_t m);
 
   [[nodiscard]] std::string statistics() const;
 
   [[nodiscard]] std::string
-  location_string(size_t timeslice,
-                  std::optional<size_t> component = std::nullopt,
-                  std::optional<size_t> microslice = std::nullopt) const;
+  location_string(size_t ts,
+                  std::optional<size_t> c = std::nullopt,
+                  std::optional<size_t> m = std::nullopt) const;
 
   [[nodiscard]] bool output_active() const;
 

@@ -79,8 +79,8 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
   for (size_t c = 0; c < ts.num_components(); ++c) {
     if (ts.num_microslices(c) > 0) {
       const uint64_t component_start_time = ts.get_microslice(c, 0).desc().idx;
-      if (reference_start_time.has_value()) {
-        if (reference_start_time.value() != component_start_time) {
+      if (reference_start_time) {
+        if (*reference_start_time != component_start_time) {
           start_time_mismatch = true;
         }
       } else {
@@ -113,61 +113,60 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
   return ts_success;
 }
 
-bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts,
-                                        size_t component) {
+bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts, size_t c) {
   ++component_count_;
   bool component_success = true;
 
-  if (ts.num_microslices(component) == 0) {
+  if (ts.num_microslices(c) == 0) {
     if (output_active()) {
-      auto location = location_string(ts.index(), component);
+      auto location = location_string(ts.index(), c);
       print("error in " + location + ": no microslices in component");
     }
     component_success = false;
   }
 
   // check all microslices of the component
-  pattern_checkers_.at(component)->reset();
-  for (size_t m = 0; m < ts.num_microslices(component); ++m) {
-    bool microslice_success = check_microslice(ts, component, m);
+  pattern_checkers_.at(c)->reset();
+  for (size_t m = 0; m < ts.num_microslices(c); ++m) {
+    bool microslice_success = check_microslice(ts, c, m);
     if (!microslice_success) {
       ++microslice_error_count_;
       if (output_active()) {
-        auto location = location_string(ts.index(), component, m);
+        auto location = location_string(ts.index(), c, m);
         print("error in " + location);
-        print_microslice_descriptor(ts, component, m);
-        print_microslice_content(ts, component, m);
+        print_microslice_descriptor(ts, c, m);
+        print_microslice_content(ts, c, m);
       }
       component_success = false;
     }
   }
 
   // check start time consistency of microslices
-  if (ts.num_microslices(component) >= 2) {
-    uint64_t first = ts.get_microslice(component, 0).desc().idx;
-    uint64_t second = ts.get_microslice(component, 1).desc().idx;
+  if (ts.num_microslices(c) >= 2) {
+    uint64_t first = ts.get_microslice(c, 0).desc().idx;
+    uint64_t second = ts.get_microslice(c, 1).desc().idx;
     if (second <= first) {
       if (output_active()) {
-        auto location = location_string(ts.index(), component);
+        auto location = location_string(ts.index(), c);
         print("error in " + location +
               ": start time not increasing in first two microslices");
-        print_microslice_descriptor(ts, component, 0);
-        print_microslice_descriptor(ts, component, 1);
+        print_microslice_descriptor(ts, c, 0);
+        print_microslice_descriptor(ts, c, 1);
       }
       component_success = false;
     } else {
       uint64_t reference_delta = second - first;
-      for (size_t m = 2; m < ts.num_microslices(component); ++m) {
-        uint64_t this_start_time = ts.get_microslice(component, m).desc().idx;
+      for (size_t m = 2; m < ts.num_microslices(c); ++m) {
+        uint64_t this_start_time = ts.get_microslice(c, m).desc().idx;
         uint64_t expected_start_time = first + m * reference_delta;
         if (this_start_time != expected_start_time) {
           if (output_active()) {
-            auto location = location_string(ts.index(), component, m);
+            auto location = location_string(ts.index(), c, m);
             print("error in " + location +
                   ": unexpected microslice start time");
-            print_microslice_descriptor(ts, component, 0);
-            print_microslice_descriptor(ts, component, 1);
-            print_microslice_descriptor(ts, component, m);
+            print_microslice_descriptor(ts, c, 0);
+            print_microslice_descriptor(ts, c, 1);
+            print_microslice_descriptor(ts, c, m);
           }
           component_success = false;
         }
@@ -179,58 +178,58 @@ bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts,
 }
 
 bool TimesliceAnalyzer::check_microslice(const fles::Timeslice& ts,
-                                         size_t component,
-                                         size_t microslice) {
-  auto m = ts.get_microslice(component, microslice);
+                                         size_t c,
+                                         size_t m) {
+  auto mv = ts.get_microslice(c, m);
+  auto& d = mv.desc();
 
   ++microslice_count_;
-  content_bytes_ += m.desc().size;
+  content_bytes_ += d.size;
   bool error = false;
 
   // static descriptor checks
-  auto d = m.desc();
   if (d.hdr_id != 0xdd || d.hdr_ver != 0x01) {
     error = true;
     if (output_active()) {
-      auto location = location_string(ts.index(), component, microslice);
+      auto location = location_string(ts.index(), c, m);
       print("error in " + location +
             ": unknown header format in microslice descriptor");
-      print_microslice_descriptor(ts, component, microslice);
+      print_microslice_descriptor(ts, c, m);
     }
   }
 
   // check descriptor consistency
-  auto r = reference_descriptors_.at(component);
+  auto r = reference_descriptors_.at(c);
   if (d.eq_id != r.eq_id || d.sys_id != r.sys_id || d.sys_ver != r.sys_ver) {
     error = true;
     if (output_active()) {
-      auto location = location_string(ts.index(), component, microslice);
+      auto location = location_string(ts.index(), c, m);
       print("error in " + location +
             ": unexpected change in microslice descriptor");
-      print_microslice_descriptor(ts, component, microslice);
+      print_microslice_descriptor(ts, c, m);
     }
   }
 
   bool truncated =
-      (m.desc().flags &
-       static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) != 0;
+      (d.flags & static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) !=
+      0;
   if (truncated && output_active()) {
-    auto location = location_string(ts.index(), component, microslice);
+    auto location = location_string(ts.index(), c, m);
     print("error in " + location + ": microslice truncated by FLIM");
   }
 
-  bool pattern_error = !pattern_checkers_.at(component)->check(m);
+  bool pattern_error = !pattern_checkers_.at(c)->check(mv);
   if (pattern_error && output_active()) {
-    auto location = location_string(ts.index(), component, microslice);
+    auto location = location_string(ts.index(), c, m);
     print("error in " + location + ": pattern error");
   }
 
   bool crc_error =
-      ((m.desc().flags &
-        static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) != 0) &&
-      !check_crc(m);
+      ((d.flags & static_cast<uint16_t>(fles::MicrosliceFlags::CrcValid)) !=
+       0) &&
+      !check_crc(mv);
   if (crc_error && output_active()) {
-    auto location = location_string(ts.index(), component, microslice);
+    auto location = location_string(ts.index(), c, m);
     print("error in " + location + ": crc failure");
   }
 
@@ -238,10 +237,9 @@ bool TimesliceAnalyzer::check_microslice(const fles::Timeslice& ts,
 
   // output ms stats
   if (hist_ != nullptr) {
-    *hist_ << component << " " << microslice << " " << m.desc().eq_id << " "
-           << m.desc().flags << " " << uint16_t(m.desc().sys_id) << " "
-           << uint16_t(m.desc().sys_ver) << " " << m.desc().idx << " "
-           << m.desc().size << " " << truncated << " " << pattern_error << " "
+    *hist_ << c << " " << m << " " << d.eq_id << " " << d.flags << " "
+           << uint16_t(d.sys_id) << " " << uint16_t(d.sys_ver) << " " << d.idx
+           << " " << d.size << " " << truncated << " " << pattern_error << " "
            << crc_error << "\n";
   }
 
@@ -289,25 +287,23 @@ void TimesliceAnalyzer::print_reference() {
 }
 
 void TimesliceAnalyzer::print_microslice_descriptor(const fles::Timeslice& ts,
-                                                    size_t component,
-                                                    size_t microslice) {
-  auto location = location_string(ts.index(), component, microslice);
+                                                    size_t c,
+                                                    size_t m) {
+  auto location = location_string(ts.index(), c, m);
   print("microslice descriptor of " + location + ":");
   print(boost::str(boost::format("%s") %
-                   MicrosliceDescriptorDump(
-                       ts.get_microslice(component, microslice).desc())),
+                   MicrosliceDescriptorDump(ts.get_microslice(c, m).desc())),
         "  ");
 }
 
 void TimesliceAnalyzer::print_microslice_content(const fles::Timeslice& ts,
-                                                 size_t component,
-                                                 size_t microslice) {
-  auto location = location_string(ts.index(), component, microslice);
+                                                 size_t c,
+                                                 size_t m) {
+  auto location = location_string(ts.index(), c, m);
   print("microslice content of " + location + ":");
-  print(boost::str(
-            boost::format("%s") %
-            BufferDump(ts.get_microslice(component, microslice).content(),
-                       ts.get_microslice(component, microslice).desc().size)),
+  print(boost::str(boost::format("%s") %
+                   BufferDump(ts.get_microslice(c, m).content(),
+                              ts.get_microslice(c, m).desc().size)),
         "  ");
 }
 
@@ -323,19 +319,17 @@ std::string TimesliceAnalyzer::statistics() const {
   return s.str();
 }
 
-std::string
-TimesliceAnalyzer::location_string(size_t timeslice,
-                                   std::optional<size_t> component,
-                                   std::optional<size_t> microslice) const {
-  if (component && microslice) {
-    return boost::str(boost::format("ts%d/c%d/m%d") % timeslice % *component %
-                      *microslice);
+std::string TimesliceAnalyzer::location_string(size_t ts,
+                                               std::optional<size_t> c,
+                                               std::optional<size_t> m) const {
+  if (c && m) {
+    return boost::str(boost::format("ts%d/c%d/m%d") % ts % *c % *m);
 
-  } else if (component) {
-    return boost::str(boost::format("ts%d/c%d") % timeslice % *component);
+  } else if (c) {
+    return boost::str(boost::format("ts%d/c%d") % ts % *c);
 
   } else {
-    return boost::str(boost::format("ts%d") % timeslice);
+    return boost::str(boost::format("ts%d") % ts);
   }
 }
 
