@@ -2,6 +2,8 @@
 
 #include "StorableTimeslice.hpp"
 
+#include <algorithm>
+
 namespace fles {
 
 StorableTimeslice::StorableTimeslice(const StorableTimeslice& ts)
