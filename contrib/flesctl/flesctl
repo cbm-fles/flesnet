@@ -313,7 +313,7 @@ def run_info(par_run_id):
 
 
 if __name__ == "__main__":
-  arg = docopt.docopt(__doc__, version='0.1')
+  arg = docopt.docopt(__doc__, version='0.2')
 
   if arg['list']:
     list_tags()
