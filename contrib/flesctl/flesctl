@@ -113,7 +113,7 @@ def print_config(tag):
 
 
 def start(tag):
-  # check if readaut is active
+  # check if readout is active
   output = subprocess.check_output(["/usr/bin/squeue", "-h", "-u", run_user],
                                    universal_newlines=True)
   if len(output) > 0:
@@ -203,6 +203,67 @@ def current_run_id():
     return None
 
 
+def start_virgo_arch():
+  nodes_nb =""
+#  nodes_nb ="2cn"
+#  nodes_nb ="7cn"
+
+  run_id = current_run_id()
+  if run_id is None:
+    print("error: no run job active")
+    sys.exit(1)
+
+  # Trigger archivers clients on Virgo from node[8-9] or node[3-9] to lustre
+  # This uses an ssh key with restricted command association:
+  # 1) the key on mFLES allows flesctl to trigger slurm jobs on Virgo under the ploizeau account on
+  #    lxbk0908 in the cbm_online partition.
+  # 2) Each Job connects a tsclient archiver to the corresponding mFLES node
+  try:
+    output = subprocess.check_output(["/usr/bin/ssh", "-o", "GSSAPIAuthentication=no",
+                                      "-o", "PasswordAuthentication=no",
+                                      "-i", "~/.ssh/id_rsa_flesctl_virgo", "ploizeau@virgo.hpc",
+                                      "start", "{}".format(run_id), "{}".format(nodes_nb)],
+                                     universal_newlines=True)
+  except subprocess.CalledProcessError as err:
+    if 1 == err.returncode:
+      print("Wrong parameters to the virgo archiver command, should never happen!")
+      sys.exit(1)
+    elif 2 == err.returncode:
+      print("Slurm Job starting for the archivers on Virgo failed!")
+      print(err.output)
+      sys.exit(1)
+
+  print(output)
+
+  # Managed to start the slurm jobs on Virgo
+  test_file_name = os.path.join(rundir_base, str(run_id), "virgo_arch.jobid")
+  test_file = open(test_file_name, "w")
+  test_file.write(output)
+  test_file.close()
+
+
+def stop_virgo_arch():
+  # Check if archiving was started on Virgo+Lustre => Maybe not needed?
+  run_id = current_run_id()
+  if run_id is None:
+    print("error: no run job active")
+    sys.exit(1)
+
+  test_file_virgo = os.path.join(rundir_base, str(run_id), "virgo_arch.jobid")
+  if not os.path.isfile(test_file_virgo):
+    print("error: archivers not running on Virgo, nothing to do")
+    sys.exit(1)
+
+  # Stops archivers clients on Virgo from node[8-9] or node[3-9] to lustre
+  # This uses an ssh key with restricted command association:
+  #    the key on mFLES allows flesctl to trigger the cancellation of slurm jobs on Virgo
+  #    under the ploizeau account based on some Job ID fiel created when they were started.
+  subprocess.call(["/usr/bin/ssh", "-o", "GSSAPIAuthentication=no",
+                   "-o", "PasswordAuthentication=no",
+                   "-i", "~/.ssh/id_rsa_flesctl_virgo", "ploizeau@virgo.hpc",
+                   "stop"])
+
+
 def stop():
   run_id = current_run_id()
   if run_id is None:
@@ -212,6 +273,12 @@ def stop():
   # change to run directory
   rundir = os.path.join(rundir_base, str(run_id))
   os.chdir(rundir)
+
+  # Check if archiving was started on Virgo+Lustre
+  test_file_virgo = os.path.join(rundir_base, str(run_id), "virgo_arch.jobid")
+  if os.path.isfile(test_file_virgo):
+    print("Archivers running on Virgo: stopping them")
+    stopvirgoarch()
 
   print("stopping run with id", run_id)
   subprocess.call(["/usr/bin/scancel", "--jobname", "run_{}".format(run_id)])
@@ -312,6 +379,172 @@ def run_info(par_run_id):
   print("Duration:         ", duration)
 
 
+def copy_lustre(par_run_id):
+  # check if readout is active
+  output = subprocess.check_output(["/usr/bin/squeue", "-h", "--user",
+                                    run_user], universal_newlines=True)
+  if len(output) > 0:
+    print("error: active run found: ")
+    print(output, end='')
+    sys.exit(1)
+
+  # Check if run is existing
+  config_file = os.path.join(rundir_base, par_run_id, "run.conf")
+  if not os.path.isfile(config_file):
+    print("error: no such run found")
+    sys.exit(1)
+  run_id = int(par_run_id)
+
+  # change to run directory
+  rundir = os.path.join(rundir_base, par_run_id)
+  os.chdir(rundir)
+
+  # Block flesctl runs during the copy process by starting empty jobs with spm-run
+  # This is needed because the copy command is not running through the mFLES Slurm!
+  subprocess.call([os.path.join(scriptdir, "init_copyblock"), "node[8-9]", str(run_id)])
+  cmd = ["/opt/spm/spm-run", "--batch", "--logfile", "slurm_copyblock.out",
+         "--jobname", "copy_{}".format(run_id)]
+  if reservation:
+    cmd += ["--reservation", reservation]
+  subprocess.call(cmd + ["copyblock.spm"]);
+
+  # Trigger copy on Virgo from node[8-9] or node[3-9] to lustre
+  # This uses two ssh keys with restricted command association:
+  # 1) the key on mFLES allows flesctl to trigger slurm jobs on Virgo under the ploizeau account on
+  #    lxbk0908 in the cbm_online partition. Each Job rsyncs through infiniband from an mFLES node
+  # 2) the key on Virgo allows the ploizeau account to passwordless rsync from /local/data through
+  #    Infiniband from lxbk0908 and under the mFLES user loizeau (could be changed to flesctl)
+  subprocess.call(["/usr/bin/ssh", "-o", "GSSAPIAuthentication=no",
+                   "-o", "PasswordAuthentication=no", "-i", "~/.ssh/id_rsa_mfles_copy",
+                   "ploizeau@virgo.hpc", "start", "{}".format(run_id)])
+
+  # Remove the empty processes once the copy is done, allows checksum to run
+  subprocess.call(["/usr/bin/scancel", "--jobname", "copy_{}".format(run_id)])
+
+  # start md5 checksum and store output in the run folder using spm
+  # useful for later cross-checks
+
+  # create spm
+  # TODO: list of node should be configurable if we get more nodes with archiving capability
+  subprocess.call([os.path.join(scriptdir, "init_checksum"), "node[8-9]", str(run_id)])
+
+  cmd = ["/opt/spm/spm-run", "--logfile", "slurm_checksum.out",
+         "--jobname", "md5_{}".format(run_id)]
+  if reservation:
+    cmd += ["--reservation", reservation]
+  subprocess.call(cmd + ["checksum.spm"]);
+
+  '''
+  # create elog entry
+  start_time = time.time()
+  log_msg = "Run copied to lustre at {}\n".format(
+    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)))
+  try:
+    logbook = elog.open(log_host)
+    log_id_copy = logbook.post(log_msg, attributes=log_attr_static,
+                                RunNumber=run_id, subject='Run copy')
+  except:
+    print("Error: electronic logbook not reachable")
+    log_id_copy = -1
+
+  # create mattermost message
+  mattermost_msg = ":arrow_right:  Run {} copied to lustre".format(run_id)
+  mattermost_data = mattermost_static.copy()
+  mattermost_data["text"] = mattermost_msg
+  try:
+    requests.post(url = mattermost_host, json = mattermost_data)
+  except requests.exceptions.RequestException as e:
+    print("Error: Mattermost exception: {}".format(e))
+  '''
+
+def disk_space(par_nodes):
+  # start script formatting df output on each requested node using spm
+  subprocess.call([os.path.join(scriptdir, "init_diskspace"), par_nodes])
+  cmd = ["/opt/spm/spm-run", "--logfile", "/scratch/diskspace_slurm.out",
+         "--jobname", "disk_space"]
+  if reservation:
+    cmd += ["--reservation", reservation]
+  subprocess.call(cmd + ["/scratch/diskspace.spm"]);
+  #subprocess.call(["/bin/grep", "Left", "/scratch/diskspace.out"])
+
+
+def delete_tsa(par_run_id):
+  # check if readout is active
+  output = subprocess.check_output(["/usr/bin/squeue", "-h", "--user",
+                                    run_user], universal_newlines=True)
+  if len(output) > 0:
+    print("error: active run found: ")
+    print(output, end='')
+    sys.exit(1)
+
+  # Check if run is existing
+  config_file = os.path.join(rundir_base, par_run_id, "run.conf")
+  if not os.path.isfile(config_file):
+    print("error: no such run found")
+    sys.exit(1)
+  run_id = int(par_run_id)
+
+  # change to run directory
+  rundir = os.path.join(rundir_base, par_run_id)
+  os.chdir(rundir)
+
+  # Checksum check against lustre copy
+  # Trigger dry-run copy with checksum on Virgo from node[8-9] or node[3-9] to lustre
+  # This uses two ssh keys with restricted command association:
+  # 1) the key on mFLES allows flesctl to trigger slurm jobs on Virgo under the ploizeau account on
+  #    lxbk0908 in the cbm_online partition. Each Job rsyncs through infiniband from an mFLES node
+  # 2) the key on Virgo allows the ploizeau account to passwordless rsync from /local/data through
+  #    Infiniband from lxbk0908 and under the mFLES user loizeau (could be changed to flesctl)
+  try:
+  checkout = subprocess.check_output(["/usr/bin/ssh", "-o", "GSSAPIAuthentication=no",
+                                      "-o", "PasswordAuthentication=no",
+                                      "-i", "~/.ssh/id_rsa_mfles_copy",
+                                        "ploizeau@virgo.hpc", "start", "{}".format(run_id)],
+                                       universal_newlines=True)
+  except subprocess.CalledProcessError as err:
+    if 1 == err.returncode:
+      print("Wrong parameters to the checksum command, should never happen!")
+    sys.exit(1)
+    elif 2 == err.returncode:
+    print("Files not found on mFLES, the run was probably already partially or fully removed!")
+      print( err.output )
+    sys.exit(1)
+    elif 3 == err.returncode:
+    print("Some of the files failed the cheksum, new copy is needed!")
+      print( err.output )
+    sys.exit(1)
+
+  # Checksum ok, delete corresponding TSA files on all nodes using spm
+  # TODO: list of node should be configurable if we get more nodes with archiving capability
+  subprocess.call([os.path.join(scriptdir, "init_delete_tsa"), "node[8-9]", str(run_id)])
+  cmd = ["/opt/spm/spm-run", "--logfile", "tsa_delete.out",
+         "--jobname", "tsadel_{}".format(run_id)]
+  if reservation:
+    cmd += ["--reservation", reservation]
+  subprocess.call(cmd + ["delete.spm"]);
+
+  '''
+  # create elog entry
+  log_msg = "Run tsa removed from local storage at {}\n".format(
+    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)))
+  try:
+    logbook = elog.open(log_host)
+    log_id_copy = logbook.post(log_msg, attributes=log_attr_static,
+                                RunNumber=run_id, subject='Run local tsa removed')
+  except:
+    print("Error: electronic logbook not reachable")
+    log_id_copy = -1
+
+  # create mattermost message
+  mattermost_msg = ":warning:  Run {} tsa removed from local storage".format(run_id)
+  mattermost_data = mattermost_static.copy()
+  mattermost_data["text"] = mattermost_msg
+  try:
+    requests.post(url = mattermost_host, json = mattermost_data)
+  except requests.exceptions.RequestException as e:
+    print("Error: Mattermost exception: {}".format(e))
+  '''
+
 if __name__ == "__main__":
   arg = docopt.docopt(__doc__, version='0.2')
 
@@ -327,6 +560,12 @@ if __name__ == "__main__":
   if arg['start']:
     start(arg['<tag>'])
 
+  if arg['startvirgoarch']:
+    start_virgo_arch()
+
+  if arg['stopvirgoarch']:
+    stop_virgo_arch()
+
   if arg['stop']:
     stop()
 
@@ -341,3 +580,12 @@ if __name__ == "__main__":
 
   if arg['info']:
     run_info(arg['<run>'])
+
+  if arg['copy']:
+    copy_lustre(arg['<run>'])
+
+  if arg['disk']:
+    disk_space(arg['<node(s)>'])
+
+  if arg['freetsa']:
+    delete_tsa(arg['<run>'])
