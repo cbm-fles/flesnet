@@ -49,8 +49,6 @@ void cri_device::init() {
     m_link.push_back(std::unique_ptr<cri_link>(
         new cri_link(i, m_device.get(), m_bar.get())));
   }
-  // init cached variable
-  m_reg_perf_interval_cached = m_register_file->get_reg(CRI_REG_SYS_PERF_INT);
 }
 
 bool cri_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
@@ -207,7 +205,7 @@ std::vector<cri_link*> cri_device::links() {
 cri_link* cri_device::link(size_t n) { return m_link.at(n).get(); }
 
 void cri_device::id_led(bool enable) {
-  m_register_file->set_bit(CRI_REG_APP_CFG, 0, enable);
+  m_register_file->set_bit(CRI_REG_FLIM_CFG, 0, enable);
 }
 
 void cri_device::set_testreg(uint32_t data) {
@@ -220,58 +218,51 @@ uint32_t cri_device::get_testreg() {
 
 //////*** Performance Counters ***//////
 
-// set messurement avaraging interval in ms (max 17s)
-void cri_device::set_perf_interval(uint32_t interval) {
-  if (interval > 17000) {
-    interval = 17000;
-  }
-  m_reg_perf_interval_cached = interval * (pci_clk * 1E-3);
-  m_register_file->set_reg(CRI_REG_SYS_PERF_INT, m_reg_perf_interval_cached);
+// synchonously capture and/or reset all perf counters
+void cri_device::set_perf_cnt(bool capture, bool reset) {
+  uint32_t reg = 0;
+  reg |= ((capture << 1) | reset);
+  m_register_file->set_reg(CRI_REG_PCI_PERF_CFG, reg, 0x3);
 }
 
-// get configured perf interval in clock cycles
-uint32_t cri_device::get_perf_interval_cycles() {
-  return m_reg_perf_interval_cached;
+// get perf interval in clock cycles
+uint32_t cri_device::get_perf_cycles() {
+  return m_register_file->get_reg(CRI_REG_PCI_PERF_CYCLE);
 }
 
-// back pressure from pcie core (cycles)
-uint32_t cri_device::get_pci_stall() {
-  return m_register_file->get_reg(CRI_REG_PERF_PCI_NRDY);
-}
-
-// words accepted from pcie core (cycles)
+// words accepted by the pcie core (cycles)
 uint32_t cri_device::get_pci_trans() {
-  return m_register_file->get_reg(CRI_REG_PERF_PCI_TRANS);
+  return m_register_file->get_reg(CRI_REG_PCI_PERF_DMA_TRANS);
+}
+
+// word not accepted due to back pressure from pcie core (cycles)
+uint32_t cri_device::get_pci_stall() {
+  return m_register_file->get_reg(CRI_REG_PCI_PERF_DMA_STALL);
+}
+
+// back pressure from pcie core which DMA idle (cycles)
+uint32_t cri_device::get_pci_busy() {
+  return m_register_file->get_reg(CRI_REG_PCI_PERF_DMA_BUSY);
 }
 
 // max. duration of continious back pressure from pcie core (us)
 float cri_device::get_pci_max_stall() {
-  float pci_max_stall =
-      static_cast<float>(m_register_file->get_reg(CRI_REG_PERF_PCI_MAX_NRDY));
+  float pci_max_stall = static_cast<float>(
+      m_register_file->get_reg(CRI_REG_PCI_PERF_DMA_MAX_NRDY));
   return pci_max_stall * (1.0 / pci_clk) * 1E6;
 }
 
-dma_perf_data_t cri_device::get_dma_perf() {
-  std::array<uint32_t, 9> raw_data;
-  m_register_file->set_reg(CRI_REG_UNI_CFG, 3); // capture and reset
-  m_register_file->get_mem(CRI_REG_PERF_CYCLE_CNT, raw_data.data(), 9);
-
-  dma_perf_data_t data{};
-  if (raw_data[0] == 0xFFFFFFFF) {
-    data.overflow = 1;
-  } else {
-    data.overflow = 0;
-    data.cycle_cnt = raw_data[0];
-    data.fifo_fill[0] = raw_data[1];
-    data.fifo_fill[1] = raw_data[2];
-    data.fifo_fill[2] = raw_data[3];
-    data.fifo_fill[3] = raw_data[4];
-    data.fifo_fill[4] = raw_data[5];
-    data.fifo_fill[5] = raw_data[6];
-    data.fifo_fill[6] = raw_data[7];
-    data.fifo_fill[7] = raw_data[8];
-  }
-  return data;
+cri_device::dev_perf_t cri_device::get_perf() {
+  dev_perf_t perf;
+  // capture and rest perf counters
+  set_perf_cnt(true, true);
+  // return shadowed counters
+  perf.cycles = get_perf_cycles();
+  perf.pci_trans = get_pci_trans();
+  perf.pci_stall = get_pci_stall();
+  perf.pci_busy = get_pci_busy();
+  perf.pci_max_stall = get_pci_max_stall();
+  return perf;
 }
 
 register_file_bar* cri_device::rf() const { return m_register_file.get(); }

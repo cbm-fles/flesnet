@@ -23,9 +23,8 @@ namespace cri {
 
 class dma_channel;
 
-// TODO: fix clocks
 constexpr uint32_t pkt_clk = 250E6;
-constexpr uint32_t gtx_clk = 161132813; // 6,4e-9*64/66
+constexpr uint32_t gtx_clk = 160E6;
 
 class cri_link {
 
@@ -61,26 +60,26 @@ public:
   uint32_t get_pgen_mc_pending();
 
   typedef struct {
-    uint64_t pkt_cycle_cnt;
+    uint64_t cycles;
+    uint64_t dma_trans;
     uint64_t dma_stall;
+    uint64_t dma_busy;
     uint64_t data_buf_stall;
     uint64_t desc_buf_stall;
-    uint64_t events;
-    uint64_t gtx_cycle_cnt;
-    uint64_t din_full_gtx;
-  } link_perf_t;
+    uint64_t microslice_cnt;
+  } ch_perf_t;
 
-  link_perf_t link_perf();
+  ch_perf_t get_perf();
 
-  void set_perf_interval(uint32_t interval);
-  uint32_t get_perf_interval_cycles_pkt();
-  //  uint32_t get_perf_interval_cycles_gtx();
+  void set_perf_cnt(bool capture, bool reset);
+  uint32_t get_perf_cycles();
+  uint32_t get_dma_trans();
   uint32_t get_dma_stall();
+  uint32_t get_dma_busy();
   uint32_t get_data_buf_stall();
   uint32_t get_desc_buf_stall();
-  uint32_t get_event_cnt();
-  float get_event_rate();
-  uint32_t get_din_full_gtx();
+  uint32_t get_microslice_cnt();
+  float get_microslice_rate();
   std::string print_perf_raw();
 
   /*** Getter ***/
@@ -99,9 +98,6 @@ protected:
   std::unique_ptr<register_file> m_rfgtx;
 
   size_t m_link_index = 0;
-
-  uint32_t m_reg_perf_interval_cached;
-  uint32_t m_reg_gtx_perf_interval_cached;
 
   sys_bus_addr m_base_addr;
   pda::device* m_parent_device;

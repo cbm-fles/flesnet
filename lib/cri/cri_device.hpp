@@ -20,7 +20,7 @@ namespace cri {
 class cri_link;
 class register_file_bar;
 
-constexpr std::array<uint16_t, 1> hw_ver_table = {{1}};
+constexpr std::array<uint16_t, 1> hw_ver_table = {{2}};
 constexpr uint32_t pci_clk = 250E6;
 
 constexpr size_t pgen_base_size_ns = 1000;
@@ -33,12 +33,6 @@ struct build_info_t {
   uint16_t hw_ver;
   bool clean;
   uint8_t repo;
-};
-
-struct dma_perf_data_t {
-  uint64_t overflow;
-  uint64_t cycle_cnt;
-  std::array<uint64_t, 8> fifo_fill;
 };
 
 class cri_device {
@@ -72,12 +66,22 @@ public:
 
   void id_led(bool enable);
 
-  void set_perf_interval(uint32_t interval);
-  uint32_t get_perf_interval_cycles();
-  uint32_t get_pci_stall();
+  typedef struct {
+    uint64_t cycles;
+    uint64_t pci_trans;
+    uint64_t pci_stall;
+    uint64_t pci_busy;
+    uint64_t pci_max_stall;
+  } dev_perf_t;
+
+  dev_perf_t get_perf();
+
+  void set_perf_cnt(bool capture, bool reset);
+  uint32_t get_perf_cycles();
   uint32_t get_pci_trans();
+  uint32_t get_pci_stall();
+  uint32_t get_pci_busy();
   float get_pci_max_stall();
-  dma_perf_data_t get_dma_perf();
 
 protected:
   /** Member variables */
@@ -89,7 +93,6 @@ protected:
 
   void init();
   bool check_magic_number();
-  uint32_t m_reg_perf_interval_cached;
 };
 
 } // namespace cri

@@ -72,18 +72,12 @@ int main(int argc, char* argv[]) {
                  "stall:    back pressure on PCIe interface from host (ratio)\n"
                  "trans:    data is transmitted via PCIe interface (ratio)\n"
                  "Per link status/counters:\n"
-                 "link:     cri/link\n"
-                 "data_src: choosen data source\n"
-                 "up:       flim channel_up\n"
-                 "he:       aurora hard_error\n"
-                 "se:       aurora soft_error\n"
-                 "eo:       eoe fifo overflow\n"
-                 "do:       data fifo overflow\n"
-                 "d_max:    maximum number of words in d_fifo\n"
+                 "ch:       cri/channle\n"
+                 "src:      choosen data source\n"
+                 "dma_t:    transmission to dma mux (ratio)\n"
                  "dma_s:    stall from dma mux (ratio)\n"
                  "data_s:   stall from full data buffer (ratio)\n"
                  "desc_s:   stall from full desc buffer (ratio)\n"
-                 "bp:       back pressure to link (ratio)\n"
                  "rate:     ms processing rate (Hz*)\n"
                  "* Based on the assumption that the PCIe clock is exactly 100 "
                  "MHz.\n"
@@ -112,24 +106,18 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
     std::vector<std::unique_ptr<cri::cri_device>> cris;
     uint64_t num_dev = dev_op->device_count();
-    std::vector<cri::dma_perf_data_t> dma_perf_acc(num_dev);
-    std::vector<pci_perf_data_t> pci_perf_acc(num_dev);
-    std::vector<std::vector<cri::cri_link::link_perf_t>> link_perf_acc(num_dev);
 
     for (size_t i = 0; i < num_dev; ++i) {
       cris.push_back(std::unique_ptr<cri::cri_device>(new cri::cri_device(i)));
-      link_perf_acc.at(i).resize(cris.at(i)->number_of_hw_links());
     }
 
     // set measurement interval for device and all links
     for (auto& cri : cris) {
-      cri->set_perf_interval(interval_ms);
-      cri->get_dma_perf(); // dummy read to reset counters
+      cri->set_perf_cnt(false, true); // reset counters
       for (auto& link : cri->links()) {
-        link->set_perf_interval(interval_ms);
+        link->set_perf_cnt(false, true); // reset counters
       }
     }
-    uint32_t pci_cycle_cnt = cris.at(0)->get_perf_interval_cycles();
 
     std::cout << "Starting measurements" << std::endl;
     if (console && clear_screen) {
@@ -149,22 +137,24 @@ int main(int argc, char* argv[]) {
       std::string measurement;
       size_t j = 0;
       for (auto& cri : cris) {
-        uint32_t pci_stall_cyl = cri->get_pci_stall();
-        uint32_t pci_trans_cyl = cri->get_pci_trans();
-        pci_perf_acc.at(j).cycle_cnt += pci_cycle_cnt;
-        pci_perf_acc.at(j).pci_stall += pci_stall_cyl;
-        pci_perf_acc.at(j).pci_trans += pci_trans_cyl;
+        cri::cri_device::dev_perf_t dev_perf = cri->get_perf();
 
-        float pci_max_stall = cri->get_pci_max_stall();
-        float pci_stall = pci_stall_cyl / static_cast<float>(pci_cycle_cnt);
-        float pci_trans = pci_trans_cyl / static_cast<float>(pci_cycle_cnt);
-        float pci_idle = 1 - pci_trans - pci_stall;
+        // check overflow
+        if (dev_perf.cycles == 0xFFFFFFFF) {
+          if (console) {
+            std::cout << "CRI " << j << " (" << cri->print_devinfo() << ")"
+                      << std::endl;
+            std::cout << "PCIe stats counter overflow" << std::endl;
+          }
+          continue;
+        }
 
-        float pci_stall_acc = pci_perf_acc.at(j).pci_stall /
-                              static_cast<float>(pci_perf_acc.at(j).cycle_cnt);
-        float pci_trans_acc = pci_perf_acc.at(j).pci_trans /
-                              static_cast<float>(pci_perf_acc.at(j).cycle_cnt);
-        float pci_idle_acc = 1 - pci_trans_acc - pci_stall_acc;
+        float cycles = static_cast<float>(dev_perf.cycles);
+        float pci_trans = dev_perf.pci_trans / cycles;
+        float pci_stall = dev_perf.pci_stall / cycles;
+        float pci_busy = dev_perf.pci_busy / cycles;
+        float pci_idle = 1 - pci_trans - pci_stall - pci_busy;
+        float pci_max_stall = dev_perf.pci_max_stall;
 
         if (console) {
           std::cout << "CRI " << j << " (" << cri->print_devinfo() << ")"
@@ -173,11 +163,6 @@ int main(int argc, char* argv[]) {
                     << pci_idle << "   stall " << std::setw(9) << pci_stall
                     << " (max. " << std::setw(5) << pci_max_stall << " us)"
                     << "   trans " << std::setw(9) << pci_trans << std::endl;
-          std::cout << std::setprecision(4) << "avg.      " << std::setw(9)
-                    << pci_idle_acc << "         " << std::setw(9)
-                    << pci_stall_acc << "                "
-                    << "         " << std::setw(9) << pci_trans_acc
-                    << std::endl;
         }
         if (client) {
           measurement += "cri_status,host=" + hostname +
@@ -186,48 +171,13 @@ int main(int argc, char* argv[]) {
                          ",trans=" + std::to_string(pci_trans) + "\n";
         }
 
-        if (console && detailed_stats) {
-          cri::dma_perf_data_t dma_perf = cri->get_dma_perf();
-          dma_perf_acc.at(j).overflow += dma_perf.overflow;
-          dma_perf_acc.at(j).cycle_cnt += dma_perf.cycle_cnt;
-          dma_perf_acc.at(j).fifo_fill[0] += dma_perf.fifo_fill[0];
-          dma_perf_acc.at(j).fifo_fill[1] += dma_perf.fifo_fill[1];
-          dma_perf_acc.at(j).fifo_fill[2] += dma_perf.fifo_fill[2];
-          dma_perf_acc.at(j).fifo_fill[3] += dma_perf.fifo_fill[3];
-          dma_perf_acc.at(j).fifo_fill[4] += dma_perf.fifo_fill[4];
-          dma_perf_acc.at(j).fifo_fill[5] += dma_perf.fifo_fill[5];
-          dma_perf_acc.at(j).fifo_fill[6] += dma_perf.fifo_fill[6];
-          dma_perf_acc.at(j).fifo_fill[7] += dma_perf.fifo_fill[7];
-
-          std::stringstream ss;
-          ss << "fill     1/8     2/8     3/8     4/8     5/8     6/8     7/8  "
-                "   8/8    merr"
-             << std::endl;
-          ss << "    ";
-          for (size_t i = 0; i <= 7; ++i) {
-            ss << " " << std::setw(7) << std::fixed << std::setprecision(3)
-               << dma_perf.fifo_fill[i] / float(dma_perf.cycle_cnt) * 100.0;
-          }
-          ss << " " << std::setw(7) << dma_perf.overflow << std::endl;
-          ss << "avg.";
-          for (size_t i = 0; i <= 7; ++i) {
-            ss << " " << std::setw(7) << std::fixed << std::setprecision(3)
-               << dma_perf_acc.at(j).fifo_fill[i] /
-                      float(dma_perf_acc.at(j).cycle_cnt) * 100.0;
-          }
-          ss << " " << std::setw(7) << dma_perf_acc.at(j).overflow << std::endl;
-          std::cout << ss.str();
-        }
-
         ++j;
       }
       if (console) {
         std::cout << std::endl;
 
-        std::cout << "link  data_src        bp         ∅     "
-                     "dma_s         ∅    data_s    "
-                     "     ∅    desc_s         ∅     rate"
-                     "         ∅\n";
+        std::cout << " ch       src     dma_t     dma_s    data_s    desc_s    "
+                     " rate\n";
       }
       j = 0;
       for (auto& cri : cris) {
@@ -236,79 +186,52 @@ int main(int argc, char* argv[]) {
 
         std::stringstream ss;
         for (size_t i = 0; i < num_links; ++i) {
-          cri::cri_link::link_perf_t perf = links.at(i)->link_perf();
+          cri::cri_link::ch_perf_t perf = links.at(i)->get_perf();
 
-          link_perf_acc.at(j).at(i).pkt_cycle_cnt += perf.pkt_cycle_cnt;
-          link_perf_acc.at(j).at(i).dma_stall += perf.dma_stall;
-          link_perf_acc.at(j).at(i).data_buf_stall += perf.data_buf_stall;
-          link_perf_acc.at(j).at(i).desc_buf_stall += perf.desc_buf_stall;
-          link_perf_acc.at(j).at(i).events += perf.events;
-          link_perf_acc.at(j).at(i).gtx_cycle_cnt += perf.gtx_cycle_cnt;
-          link_perf_acc.at(j).at(i).din_full_gtx += perf.din_full_gtx;
+          // check overflow
+          if (perf.cycles == 0xFFFFFFFF) {
+            if (console) {
+              ss << std::setw(2) << j << "/" << i << "  ";
+              ss << std::setw(8) << links.at(i)->data_source() << "  ";
+              ss << "stats counter overflow";
+              ss << "\n";
+            }
+            continue;
+          }
 
-          float dma_stall =
-              perf.dma_stall / static_cast<float>(perf.pkt_cycle_cnt) * 100.0;
-          float data_buf_stall = perf.data_buf_stall /
-                                 static_cast<float>(perf.pkt_cycle_cnt) * 100.0;
-          float desc_buf_stall = perf.desc_buf_stall /
-                                 static_cast<float>(perf.pkt_cycle_cnt) * 100.0;
-          float din_full = perf.din_full_gtx /
-                           static_cast<float>(perf.gtx_cycle_cnt) * 100.0;
-          float event_rate =
-              perf.events /
-              (static_cast<float>(perf.pkt_cycle_cnt) / cri::pkt_clk);
-          float dma_stall_acc =
-              link_perf_acc.at(j).at(i).dma_stall /
-              static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) *
-              100.0;
-          float data_buf_stall_acc =
-              link_perf_acc.at(j).at(i).data_buf_stall /
-              static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) *
-              100.0;
-          float desc_buf_stall_acc =
-              link_perf_acc.at(j).at(i).desc_buf_stall /
-              static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) *
-              100.0;
-          float din_full_acc =
-              link_perf_acc.at(j).at(i).din_full_gtx /
-              static_cast<float>(link_perf_acc.at(j).at(i).gtx_cycle_cnt) *
-              100.0;
-          float event_rate_acc =
-              link_perf_acc.at(j).at(i).events /
-              (static_cast<float>(link_perf_acc.at(j).at(i).pkt_cycle_cnt) /
-               cri::pkt_clk);
+          float cycles = static_cast<float>(perf.cycles);
+          float dma_trans = perf.dma_trans / cycles;
+          float dma_stall = perf.dma_stall / cycles;
+          //          float dma_busy = perf.dma_busy / cycles;
+          float data_buf_stall = perf.data_buf_stall / cycles;
+          float desc_buf_stall = perf.desc_buf_stall / cycles;
+          float microslice_rate = perf.microslice_cnt / (cycles / cri::pkt_clk);
 
-          if (console && (links.at(i)->data_source() != cri::cri_link::rx_disable) ) {
-            ss << std::setw(2) << j << "/" << i << "  ";
+          if (console) {
+            ss << std::setw(1) << j << "/" << i << "  ";
             ss << std::setw(8) << links.at(i)->data_source() << "  ";
             // perf counters
             ss << std::setprecision(3); // percision + 5 = width
-            ss << std::setw(8) << din_full << "  " << std::setw(8)
-               << din_full_acc << "  ";
-            ss << std::setw(8) << dma_stall << "  " << std::setw(8)
-               << dma_stall_acc << "  ";
-            ss << std::setw(8) << data_buf_stall << "  " << std::setw(8)
-               << data_buf_stall_acc << "  ";
-            ss << std::setw(8) << desc_buf_stall << "  " << std::setw(8)
-               << desc_buf_stall_acc << "  ";
-            ss << std::setprecision(7) << std::setw(7) << event_rate << "  "
-               << std::setw(8) << event_rate_acc << "  ";
-
+            ss << std::setw(8) << dma_trans * 100 << "  ";
+            ss << std::setw(8) << dma_stall * 100 << "  ";
+            ss << std::setw(8) << data_buf_stall * 100 << "  ";
+            ss << std::setw(8) << desc_buf_stall * 100 << "  ";
+            ss << std::setprecision(7) << std::setw(7) << microslice_rate
+               << "  ";
             ss << "\n";
           }
 
           if (client) {
+            // TODO rename link -> ch
             measurement +=
                 "link_status,host=" + hostname +
                 ",cri=" + cri->print_devinfo() + ",link=" + std::to_string(i) +
                 " data_src=" +
                 std::to_string(static_cast<int>(links.at(i)->data_source())) +
-                ",rate=" + std::to_string(event_rate) +
-                ",din_full=" + std::to_string(din_full / 100.0) +
-                ",dma_stall=" + std::to_string(dma_stall / 100.0) +
-                ",data_buf_stall=" + std::to_string(data_buf_stall / 100.0) +
-                ",desc_buf_stall=" + std::to_string(desc_buf_stall / 100.0) +
-                "\n";
+                ",rate=" + std::to_string(microslice_rate) +
+                ",dma_stall=" + std::to_string(dma_stall) +
+                ",data_buf_stall=" + std::to_string(data_buf_stall) +
+                ",desc_buf_stall=" + std::to_string(desc_buf_stall) + "\n";
           }
         }
         if (console) {
