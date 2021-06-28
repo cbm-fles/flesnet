@@ -80,7 +80,21 @@ public:
   uint32_t get_desc_buf_stall();
   uint32_t get_microslice_cnt();
   float get_microslice_rate();
-  std::string print_perf_raw();
+
+  typedef struct {
+    uint64_t cycles;
+    uint64_t mc_trans;
+    uint64_t mc_stall;
+    uint64_t mc_busy;
+  } ch_perf_gtx_t;
+
+  ch_perf_gtx_t get_perf_gtx();
+
+  void set_perf_gtx_cnt(bool capture, bool reset);
+  uint32_t get_perf_gtx_cycles();
+  uint32_t get_mc_trans();
+  uint32_t get_mc_stall();
+  uint32_t get_mc_busy();
 
   /*** Getter ***/
   size_t link_index() { return m_link_index; };

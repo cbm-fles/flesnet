@@ -140,17 +140,17 @@ uint32_t cri_link::get_perf_cycles() {
   return m_rfpkt->get_reg(CRI_REG_PKT_PERF_CYCLE);
 }
 
-// words accepted by the dma mux (cycles)
+// words accepted by the dma fifo (cycles)
 uint32_t cri_link::get_dma_trans() {
   return m_rfpkt->get_reg(CRI_REG_PKT_PERF_DMA_TRANS);
 }
 
-// word not accepted due to back pressure from dma mux (cycles)
+// word not accepted due to back pressure from dma fifo (cycles)
 uint32_t cri_link::get_dma_stall() {
   return m_rfpkt->get_reg(CRI_REG_PKT_PERF_DMA_STALL);
 }
 
-// back pressure from dma mux which DMA idle (cycles)
+// back pressure from dma fifo which DMA idle (cycles)
 uint32_t cri_link::get_dma_busy() {
   return m_rfpkt->get_reg(CRI_REG_PKT_PERF_DMA_BUSY);
 }
@@ -182,6 +182,47 @@ cri_link::ch_perf_t cri_link::get_perf() {
   perf.data_buf_stall = get_data_buf_stall();
   perf.desc_buf_stall = get_desc_buf_stall();
   perf.microslice_cnt = get_microslice_cnt();
+  return perf;
+}
+
+//////*** Performance Counters Data/GTX Domain ***//////
+
+// synchonously capture and/or reset all perf counters
+void cri_link::set_perf_gtx_cnt(bool capture, bool reset) {
+  uint32_t reg = 0;
+  reg |= ((capture << 1) | reset);
+  m_rfgtx->set_reg(CRI_REG_GTX_PERF_CFG, reg, 0x3);
+}
+
+// get perf interval in clock cycles
+uint32_t cri_link::get_perf_gtx_cycles() {
+  return m_rfgtx->get_reg(CRI_REG_GTX_PERF_CYCLE);
+}
+
+// words accepted by the mc interface (cycles)
+uint32_t cri_link::get_mc_trans() {
+  return m_rfgtx->get_reg(CRI_REG_GTX_PERF_MC_TRANS);
+}
+
+// word not accepted due to back pressure from mc interface (cycles)
+uint32_t cri_link::get_mc_stall() {
+  return m_rfgtx->get_reg(CRI_REG_GTX_PERF_MC_STALL);
+}
+
+// back pressure from mc interface which input idle (cycles)
+uint32_t cri_link::get_mc_busy() {
+  return m_rfgtx->get_reg(CRI_REG_GTX_PERF_MC_BUSY);
+}
+
+cri_link::ch_perf_gtx_t cri_link::get_perf_gtx() {
+  ch_perf_gtx_t perf;
+  // capture and rest perf counters
+  set_perf_gtx_cnt(true, true);
+  // return shadowed counters
+  perf.cycles = get_perf_gtx_cycles();
+  perf.mc_trans = get_mc_trans();
+  perf.mc_stall = get_mc_stall();
+  perf.mc_busy = get_mc_busy();
   return perf;
 }
 
