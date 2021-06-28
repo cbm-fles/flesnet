@@ -116,6 +116,7 @@ int main(int argc, char* argv[]) {
       cri->set_perf_cnt(false, true); // reset counters
       for (auto& link : cri->links()) {
         link->set_perf_cnt(false, true); // reset counters
+        link->set_perf_gtx_cnt(false, true); // reset counters
       }
     }
 
@@ -155,6 +156,7 @@ int main(int argc, char* argv[]) {
         float pci_busy = dev_perf.pci_busy / cycles;
         float pci_idle = 1 - pci_trans - pci_stall - pci_busy;
         float pci_max_stall = dev_perf.pci_max_stall;
+        float pci_throughput = pci_trans * cri::pci_clk * 32;
 
         if (console) {
           std::cout << "CRI " << j << " (" << cri->print_devinfo() << ")"
@@ -162,7 +164,8 @@ int main(int argc, char* argv[]) {
           std::cout << std::setprecision(4) << "PCIe idle " << std::setw(9)
                     << pci_idle << "   stall " << std::setw(9) << pci_stall
                     << " (max. " << std::setw(5) << pci_max_stall << " us)"
-                    << "   trans " << std::setw(9) << pci_trans << std::endl;
+                    << "   trans " << std::setw(9) << pci_trans
+                    << "   raw rate "  << std::setw(5) << pci_throughput / 1e6 << " MB/s    " << std::endl;
         }
         if (client) {
           measurement += "cri_status,host=" + hostname +
@@ -176,8 +179,7 @@ int main(int argc, char* argv[]) {
       if (console) {
         std::cout << std::endl;
 
-        std::cout << " ch       src     dma_t     dma_s    data_s    desc_s    "
-                     " rate\n";
+        std::cout << " ch       src      MB/s       kHz      mc_t      mc_s     dma_t     dma_s    data_s    desc_s\n";
       }
       j = 0;
       for (auto& cri : cris) {
@@ -187,9 +189,10 @@ int main(int argc, char* argv[]) {
         std::stringstream ss;
         for (size_t i = 0; i < num_links; ++i) {
           cri::cri_link::ch_perf_t perf = links.at(i)->get_perf();
+          cri::cri_link::ch_perf_gtx_t perf_gtx = links.at(i)->get_perf_gtx();
 
           // check overflow
-          if (perf.cycles == 0xFFFFFFFF) {
+          if (perf.cycles == 0xFFFFFFFF || perf_gtx.cycles == 0xFFFFFFFF) {
             if (console) {
               ss << std::setw(2) << j << "/" << i << "  ";
               ss << std::setw(8) << links.at(i)->data_source() << "  ";
@@ -207,17 +210,25 @@ int main(int argc, char* argv[]) {
           float desc_buf_stall = perf.desc_buf_stall / cycles;
           float microslice_rate = perf.microslice_cnt / (cycles / cri::pkt_clk);
 
+          float cycles_gtx = static_cast<float>(perf_gtx.cycles);
+          float mc_trans = perf_gtx.mc_trans / cycles_gtx;
+          float mc_stall = perf_gtx.mc_stall / cycles_gtx;
+          float mc_throughput = mc_trans * cri::gtx_clk * 8 ;
+
           if (console) {
             ss << std::setw(1) << j << "/" << i << "  ";
             ss << std::setw(8) << links.at(i)->data_source() << "  ";
             // perf counters
+            ss << std::setprecision(5);
+            ss << std::setw(8) << mc_throughput / 1e6 << "  ";
+            ss << std::setw(8) << microslice_rate / 1e3 << "  ";
             ss << std::setprecision(3); // percision + 5 = width
+            ss << std::setw(8) << mc_trans * 100 << "  ";
+            ss << std::setw(8) << mc_stall * 100 << "  ";
             ss << std::setw(8) << dma_trans * 100 << "  ";
             ss << std::setw(8) << dma_stall * 100 << "  ";
             ss << std::setw(8) << data_buf_stall * 100 << "  ";
             ss << std::setw(8) << desc_buf_stall * 100 << "  ";
-            ss << std::setprecision(7) << std::setw(7) << microslice_rate
-               << "  ";
             ss << "\n";
           }
 
@@ -228,7 +239,11 @@ int main(int argc, char* argv[]) {
                 ",cri=" + cri->print_devinfo() + ",link=" + std::to_string(i) +
                 " data_src=" +
                 std::to_string(static_cast<int>(links.at(i)->data_source())) +
+                ",throughput=" + std::to_string(mc_throughput) +
                 ",rate=" + std::to_string(microslice_rate) +
+                ",mc_trans=" + std::to_string(mc_trans) +
+                ",mc_stall=" + std::to_string(mc_stall) +
+                ",dma_trans=" + std::to_string(dma_trans) +
                 ",dma_stall=" + std::to_string(dma_stall) +
                 ",data_buf_stall=" + std::to_string(data_buf_stall) +
                 ",desc_buf_stall=" + std::to_string(desc_buf_stall) + "\n";

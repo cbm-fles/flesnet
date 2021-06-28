@@ -4,13 +4,13 @@
 // This file was automatically generated from:
 // ../flim/src/packages/fles_registers.vhd
 // Repository is: git repository
-// Repository Revision: 56135f8a835b51395dd243ef2f878ba82f3a1184
+// Repository Revision: 61bb6f5e23527a3626f81123261274986158384f
 // Repository Status: dirty
-// Build Timestamp: Mon Jun 21 20:33:31 CEST 2021
+// Build Timestamp: Mon Jun 28 15:39:37 CEST 2021
 // Build System: hutter@eda02
 #define CRI_C_BUILD_REPO 1
-#define CRI_C_BUILD_DATE 1624300411
-#define CRI_C_BUILD_REVISION 56135f8a835b51395dd243ef2f878ba82f3a1184
+#define CRI_C_BUILD_DATE 1624887577
+#define CRI_C_BUILD_REVISION 61bb6f5e23527a3626f81123261274986158384f
 #define CRI_C_BUILD_STATUS_CLEAN 0
 #define CRI_C_BUILD_HOST 65646130320000000000000000000000
 #define CRI_C_BUILD_USER 68757474657200000000000000000000
@@ -84,8 +84,15 @@
 #define CRI_REG_PKT_PERF_EBUF_STALL 31
 #define CRI_REG_PKT_PERF_RBUF_STALL 32
 #define CRI_REG_PKT_PERF_N_EVENTS 33
+#define CRI_REG_PKT_MC_TIME_L 34
+#define CRI_REG_PKT_MC_TIME_H 35
 #define CRI_REG_TESTREG_DATA 0
 #define CRI_REG_GTX_DATAPATH_CFG 1
 #define CRI_REG_GTX_MC_PGEN_CFG_L 2
 #define CRI_REG_GTX_MC_PGEN_CFG_H 3
 #define CRI_REG_GTX_MC_PGEN_MC_PENDING 4
+#define CRI_REG_GTX_PERF_CFG 5
+#define CRI_REG_GTX_PERF_CYCLE 6
+#define CRI_REG_GTX_PERF_MC_TRANS 7
+#define CRI_REG_GTX_PERF_MC_STALL 8
+#define CRI_REG_GTX_PERF_MC_BUSY 9
