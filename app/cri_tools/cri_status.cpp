@@ -170,7 +170,9 @@ int main(int argc, char* argv[]) {
         if (client) {
           measurement += "cri_status,host=" + hostname +
                          ",cri=" + cri->print_devinfo() +
-                         " stall=" + std::to_string(pci_stall) +
+                         " cycles=" + std::to_string(cycles) +
+                         ",busy=" + std::to_string(pci_busy) +
+                         ",stall=" + std::to_string(pci_stall) +
                          ",trans=" + std::to_string(pci_trans) + "\n";
         }
 
@@ -205,7 +207,7 @@ int main(int argc, char* argv[]) {
           float cycles = static_cast<float>(perf.cycles);
           float dma_trans = perf.dma_trans / cycles;
           float dma_stall = perf.dma_stall / cycles;
-          //          float dma_busy = perf.dma_busy / cycles;
+          float dma_busy = perf.dma_busy / cycles;
           float data_buf_stall = perf.data_buf_stall / cycles;
           float desc_buf_stall = perf.desc_buf_stall / cycles;
           float microslice_rate = perf.microslice_cnt / (cycles / cri::pkt_clk);
@@ -213,6 +215,7 @@ int main(int argc, char* argv[]) {
           float cycles_gtx = static_cast<float>(perf_gtx.cycles);
           float mc_trans = perf_gtx.mc_trans / cycles_gtx;
           float mc_stall = perf_gtx.mc_stall / cycles_gtx;
+          float mc_busy = perf_gtx.mc_busy / cycles_gtx;
           float mc_throughput = mc_trans * cri::gtx_clk * 8 ;
 
           if (console) {
@@ -243,10 +246,14 @@ int main(int argc, char* argv[]) {
                 ",rate=" + std::to_string(microslice_rate) +
                 ",mc_trans=" + std::to_string(mc_trans) +
                 ",mc_stall=" + std::to_string(mc_stall) +
+                ",mc_busy=" + std::to_string(mc_busy) +
                 ",dma_trans=" + std::to_string(dma_trans) +
                 ",dma_stall=" + std::to_string(dma_stall) +
+                ",dma_busy=" + std::to_string(dma_busy) +
                 ",data_buf_stall=" + std::to_string(data_buf_stall) +
-                ",desc_buf_stall=" + std::to_string(desc_buf_stall) + "\n";
+                ",desc_buf_stall=" + std::to_string(desc_buf_stall) +
+                ",cycles_dma=" + std::to_string(cycles) +
+                ",cycles_mc=" + std::to_string(cycles_gtx) + "\n";
           }
         }
         if (console) {

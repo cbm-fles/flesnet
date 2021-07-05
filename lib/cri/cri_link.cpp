@@ -82,7 +82,7 @@ std::ostream& operator<<(std::ostream& os, cri::cri_link::data_source_t src) {
     os << "disable";
     break;
   case cri::cri_link::rx_user:
-    os << "   user";
+    os << "   flim";
     break;
   case cri::cri_link::rx_pgen:
     os << "   pgen";
