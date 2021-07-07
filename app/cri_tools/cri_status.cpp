@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
       if (console) {
         std::cout << std::endl;
 
-        std::cout << " ch       src  en     MB/s       kHz      mc_t      mc_s     dma_t     dma_s    data_s    desc_s\n";
+        std::cout << " ch       src  en      MB/s       kHz      mc_t      mc_s     dma_t     dma_s    data_s    desc_s\n";
       }
       j = 0;
       for (auto& cri : cris) {
@@ -224,7 +224,7 @@ int main(int argc, char* argv[]) {
           if (console) {
             ss << std::setw(1) << j << "/" << i << "  ";
             ss << std::setw(8) << links.at(i)->data_source() << "  ";
-            ss << std::setw(3) << ready_for_data << "  ";
+            ss << std::setw(2) << ready_for_data << "  ";
             // perf counters
             ss << std::setprecision(5);
             ss << std::setw(8) << mc_throughput / 1e6 << "  ";
