@@ -66,14 +66,15 @@ int main(int argc, char* argv[]) {
     exit(EXIT_SUCCESS);
   }
   if (vm.count("desc") != 0u) {
-    std::cout << "Displays status and performance counters for all CRI links.\n"
-                 "Per CRI counters:\n"
+    std::cout << "Displays status and performance counters for all CRI channelss.\n"
+                 "Per device counters:\n"
                  "idle:     PCIe interface is idle (ratio)\n"
                  "stall:    back pressure on PCIe interface from host (ratio)\n"
                  "trans:    data is transmitted via PCIe interface (ratio)\n"
-                 "Per link status/counters:\n"
+                 "Per channel status/counters:\n"
                  "ch:       cri/channle\n"
                  "src:      choosen data source\n"
+                 "en:       readout enabled\n"
                  "dma_t:    transmission to dma mux (ratio)\n"
                  "dma_s:    stall from dma mux (ratio)\n"
                  "data_s:   stall from full data buffer (ratio)\n"
@@ -111,7 +112,7 @@ int main(int argc, char* argv[]) {
       cris.push_back(std::unique_ptr<cri::cri_device>(new cri::cri_device(i)));
     }
 
-    // set measurement interval for device and all links
+    // set measurement interval for device and all channels
     for (auto& cri : cris) {
       cri->set_perf_cnt(false, true); // reset counters
       for (auto& link : cri->links()) {
@@ -168,12 +169,13 @@ int main(int argc, char* argv[]) {
                     << "   raw rate "  << std::setw(5) << pci_throughput / 1e6 << " MB/s    " << std::endl;
         }
         if (client) {
-          measurement += "cri_status,host=" + hostname +
+          measurement += "dev_status,host=" + hostname +
                          ",cri=" + cri->print_devinfo() +
-                         " cycles=" + std::to_string(cycles) +
+                         " cycles=" + std::to_string(cycles) + "i" +
                          ",busy=" + std::to_string(pci_busy) +
                          ",stall=" + std::to_string(pci_stall) +
-                         ",trans=" + std::to_string(pci_trans) + "\n";
+                         ",trans=" + std::to_string(pci_trans) +
+                         "\n";
         }
 
         ++j;
@@ -181,7 +183,7 @@ int main(int argc, char* argv[]) {
       if (console) {
         std::cout << std::endl;
 
-        std::cout << " ch       src      MB/s       kHz      mc_t      mc_s     dma_t     dma_s    data_s    desc_s\n";
+        std::cout << " ch       src  en     MB/s       kHz      mc_t      mc_s     dma_t     dma_s    data_s    desc_s\n";
       }
       j = 0;
       for (auto& cri : cris) {
@@ -192,6 +194,7 @@ int main(int argc, char* argv[]) {
         for (size_t i = 0; i < num_links; ++i) {
           cri::cri_link::ch_perf_t perf = links.at(i)->get_perf();
           cri::cri_link::ch_perf_gtx_t perf_gtx = links.at(i)->get_perf_gtx();
+          bool ready_for_data = links.at(i)->get_ready_for_data();
 
           // check overflow
           if (perf.cycles == 0xFFFFFFFF || perf_gtx.cycles == 0xFFFFFFFF) {
@@ -221,6 +224,7 @@ int main(int argc, char* argv[]) {
           if (console) {
             ss << std::setw(1) << j << "/" << i << "  ";
             ss << std::setw(8) << links.at(i)->data_source() << "  ";
+            ss << std::setw(3) << ready_for_data << "  ";
             // perf counters
             ss << std::setprecision(5);
             ss << std::setw(8) << mc_throughput / 1e6 << "  ";
@@ -236,12 +240,12 @@ int main(int argc, char* argv[]) {
           }
 
           if (client) {
-            // TODO rename link -> ch
             measurement +=
-                "link_status,host=" + hostname +
-                ",cri=" + cri->print_devinfo() + ",link=" + std::to_string(i) +
+                "ch_status,host=" + hostname +
+                ",cri=" + cri->print_devinfo() + ",ch=" + std::to_string(i) +
                 " data_src=" +
-                std::to_string(static_cast<int>(links.at(i)->data_source())) +
+                std::to_string(static_cast<int>(links.at(i)->data_source())) + "i" +
+                ",enable=" + (ready_for_data ? "true" : "false") +
                 ",throughput=" + std::to_string(mc_throughput) +
                 ",rate=" + std::to_string(microslice_rate) +
                 ",mc_trans=" + std::to_string(mc_trans) +
@@ -252,8 +256,9 @@ int main(int argc, char* argv[]) {
                 ",dma_busy=" + std::to_string(dma_busy) +
                 ",data_buf_stall=" + std::to_string(data_buf_stall) +
                 ",desc_buf_stall=" + std::to_string(desc_buf_stall) +
-                ",cycles_dma=" + std::to_string(cycles) +
-                ",cycles_mc=" + std::to_string(cycles_gtx) + "\n";
+                ",cycles_dma=" + std::to_string(cycles) + "i" +
+                ",cycles_mc=" + std::to_string(cycles_gtx) + "i" +
+                "\n";
           }
         }
         if (console) {

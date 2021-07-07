@@ -53,6 +53,7 @@ public:
   data_source_t data_source();
 
   void set_ready_for_data(bool enable);
+  bool get_ready_for_data();
 
   void set_pgen_id(uint16_t eq_id);
   void set_pgen_rate(float val);
