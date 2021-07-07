@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
         if (client) {
           measurement += "dev_status,host=" + hostname +
                          ",cri=" + cri->print_devinfo() +
-                         " cycles=" + std::to_string(cycles) + "i" +
+                         " cycles=" + std::to_string(dev_perf.cycles) + "i" +
                          ",busy=" + std::to_string(pci_busy) +
                          ",stall=" + std::to_string(pci_stall) +
                          ",trans=" + std::to_string(pci_trans) +
@@ -256,8 +256,8 @@ int main(int argc, char* argv[]) {
                 ",dma_busy=" + std::to_string(dma_busy) +
                 ",data_buf_stall=" + std::to_string(data_buf_stall) +
                 ",desc_buf_stall=" + std::to_string(desc_buf_stall) +
-                ",cycles_dma=" + std::to_string(cycles) + "i" +
-                ",cycles_mc=" + std::to_string(cycles_gtx) + "i" +
+                ",cycles_dma=" + std::to_string(perf.cycles) + "i" +
+                ",cycles_mc=" + std::to_string(perf_gtx.cycles) + "i" +
                 "\n";
           }
         }
