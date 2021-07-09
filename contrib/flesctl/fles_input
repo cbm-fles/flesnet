@@ -44,7 +44,7 @@ end_readout () {
     for i in ${!SERVER_PID[*]}; do
         kill -s SIGINT ${SERVER_PID[$i]} 2>/dev/null
     done
-    sleep 3
+    sleep 10
     # check if any process is left
     for i in ${!SERVER_PID[*]}; do
         if kill -0 ${SERVER_PID[$i]} > /dev/null 2>&1 ; then
