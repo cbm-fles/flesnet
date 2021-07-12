@@ -43,7 +43,7 @@ void TimesliceAnalyzer::put(std::shared_ptr<const fles::Timeslice> timeslice) {
   // output_interval_) of timeslices is reached or a given time has passed
   auto now = std::chrono::system_clock::now();
   if ((timeslice_count_ % output_interval_) == 0 ||
-      previous_output_time_ + output_time_interval_ >= now) {
+      previous_output_time_ + output_time_interval_ <= now) {
     print(statistics(), "* ");
     previous_output_time_ = now;
   }
