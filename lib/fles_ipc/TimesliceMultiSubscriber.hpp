@@ -21,7 +21,8 @@ class TimesliceMultiSubscriber : public TimesliceSource {
 public:
   /// Construct timeslice subscriber receiving from given ZMQ address.
   explicit TimesliceMultiSubscriber(const std::string& /*inputString*/,
-                                    uint32_t hwm = 1);
+                                    uint32_t hwm = 1,
+                                    bool initflag = false);
 
   /// Delete copy constructor (non-copyable).
   TimesliceMultiSubscriber(const TimesliceMultiSubscriber&) = delete;
@@ -42,10 +43,11 @@ public:
 
   bool eos() const override { return sortedSource_.empty(); }
 
+  void InitTimesliceSubscriber();
+
 private:
   Timeslice* do_get() override;
 
-  void InitTimesliceSubscriber();
   void CreateHostPortFileList(std::string /*inputString*/);
   std::unique_ptr<Timeslice> GetNextTimeslice();
 

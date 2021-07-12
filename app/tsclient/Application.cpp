@@ -40,7 +40,8 @@ Application::Application(Parameters const& par) : par_(par) {
   } else if (!par_.subscribe_address().empty()) {
     if (par_.multi_input()) {
       source_.reset(new fles::TimesliceMultiSubscriber(par_.subscribe_address(),
-                                                       par_.subscribe_hwm()));
+                                                       par_.subscribe_hwm(),
+                                                       true));
     } else {
       source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address(),
                                                   par_.subscribe_hwm()));
