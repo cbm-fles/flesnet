@@ -19,7 +19,8 @@ TimesliceAnalyzer::TimesliceAnalyzer(uint64_t arg_output_interval,
                                      std::string arg_output_prefix,
                                      std::ostream* arg_hist)
     : output_interval_(arg_output_interval), out_(arg_out),
-      output_prefix_(std::move(arg_output_prefix)), hist_(arg_hist) {
+      output_prefix_(std::move(arg_output_prefix)), hist_(arg_hist),
+      previous_output_time_(std::chrono::system_clock::now()) {
   // create CRC-32C engine (Castagnoli polynomial)
   crc32_engine_ = crcutil_interface::CRC::Create(
       0x82f63b78, 0, 32, true, 0, 0, 0,
@@ -37,8 +38,14 @@ void TimesliceAnalyzer::put(std::shared_ptr<const fles::Timeslice> timeslice) {
   if (!success) {
     ++timeslice_error_count_;
   }
-  if ((timeslice_count_ % output_interval_) == 0) {
+
+  // print statistics if either the next round number (multiple of
+  // output_interval_) of timeslices is reached or a given time has passed
+  auto now = std::chrono::system_clock::now();
+  if ((timeslice_count_ % output_interval_) == 0 ||
+      previous_output_time_ + output_time_interval_ >= now) {
     print(statistics(), "* ");
+    previous_output_time_ = now;
   }
 }
 
