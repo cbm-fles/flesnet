@@ -78,6 +78,10 @@ BOOST_FIXTURE_TEST_CASE(content_access_test, F) {
   BOOST_CHECK_EQUAL(*ts0.content(1, 0), 3);
 }
 
+BOOST_FIXTURE_TEST_CASE(start_time_test, F) {
+  BOOST_CHECK_EQUAL(ts0.start_time(), 1);
+}
+
 BOOST_FIXTURE_TEST_CASE(offset_computation_test, F) {
   fles::StorableTimeslice ts{1};
   ts.append_component(2);
