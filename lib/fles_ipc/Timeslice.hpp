@@ -85,6 +85,14 @@ public:
     return MicrosliceView(dd, cc);
   }
 
+  /// Retrieve the offical start time of the timeslice
+  uint64_t start_time() const {
+    if (num_components() != 0 && num_microslices(0) != 0) {
+      return descriptor(0, 0).idx;
+    } else
+      return 0;
+  }
+
 protected:
   Timeslice() = default;
 
