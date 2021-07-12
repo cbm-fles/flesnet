@@ -5,6 +5,7 @@
 #include "Sink.hpp"
 #include "Timeslice.hpp"
 #include "interface.h" // crcutil_interface
+#include <chrono>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -61,6 +62,8 @@ private:
   std::ostream& out_;
   std::string output_prefix_;
   std::ostream* hist_;
+  std::chrono::system_clock::time_point previous_output_time_;
+  static constexpr std::chrono::seconds output_time_interval_{1};
 
   size_t timeslice_count_ = 0;
   size_t timeslice_error_count_ = 0;
