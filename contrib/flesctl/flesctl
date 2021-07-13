@@ -9,7 +9,9 @@
 flesctl
 Usage:
   flesctl list
+  flesctl list_unused
   flesctl add <config_file> <tag>
+  flesctl delete <tag>
   flesctl show <tag>
   flesctl start <tag>
   flesctl stop
@@ -77,9 +79,28 @@ def tags():
     tag, _ = os.path.splitext(filename[len(confdir + '/'):])
     yield tag
 
+def tags_mentioned() -> set:
+  tags = set()
+  run_config = configparser.ConfigParser()
+  for filename in glob.iglob(rundir_base + '/*/run.conf'):
+    run_config.read(filename)
+    run_tag = run_config["DEFAULT"].get("tag")
+    tags.add(run_tag)
+  return tags
+
+def tags_unused() -> list:
+  present = tags()
+  mentioned = tags_mentioned()
+  return [tag for tag in present if tag not in mentioned]
+
 
 def list_tags():
   for tag in tags():
+    print(tag)
+
+
+def list_unused_tags():
+  for tag in tags_unused():
     print(tag)
 
 
@@ -101,6 +122,20 @@ def add(tag, filename):
   destpath = os.path.join(confdir, tag + ".conf")
   os.makedirs(os.path.dirname(destpath), exist_ok=True)
   shutil.copy(filename, destpath)
+
+
+def delete(tag):
+  # check if tag exists and has never been used
+  if tag not in tags():
+    print("unknown tag:", tag)
+    return
+  if tag not in tags_unused():
+    print("cannot delete tag, it has already been used")
+    return
+
+  tag_file = os.path.join(confdir, tag + ".conf")
+  os.remove(tag_file)
+
 
 def print_config(tag):
   # check if tag exists
@@ -318,8 +353,14 @@ if __name__ == "__main__":
   if arg['list']:
     list_tags()
 
+  if arg['list_unused']:
+    list_unused_tags()
+
   if arg['add']:
     add(arg['<tag>'], arg['<config_file>'])
+
+  if arg['delete']:
+    delete(arg['<tag>'])
 
   if arg['show']:
     print_config(arg['<tag>'])
