@@ -18,7 +18,8 @@ using namespace std;
 namespace pda {
 
 const char* device_operator::m_pci_ids[] = {
-    "10dc beaf", /* CRORC as registered at CERN */
+    "10dc beaf", /* FLES FLIB */
+    "10ee f1e5", /* FLES CRI */
     NULL         /* Delimiter*/
 };
 

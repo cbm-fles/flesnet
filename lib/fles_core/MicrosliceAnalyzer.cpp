@@ -107,8 +107,8 @@ bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms) {
   }
 
   if (!result) {
-    if (microslice_error_count_ == 0 &&
-        out_verbosity_ >= 3) { // full dump for first error
+    if (microslice_error_count_ < 3 &&
+        out_verbosity_ >= 3) { // full dump for first 3 error
       out_ << "microslice content:\n"
            << MicrosliceDescriptorDump(ms.desc())
            << BufferDump(ms.content(), ms.desc().size) << std::flush;
@@ -138,7 +138,8 @@ std::string MicrosliceAnalyzer::statistics() const {
 
 void MicrosliceAnalyzer::put(std::shared_ptr<const fles::Microslice> ms) {
   if (!check_microslice(*ms)) {
-    pattern_checker_->reset();
+    // for now we do not reset the checker to follow ms count across errors
+    // pattern_checker_->reset();
   }
   if ((microslice_count_ % output_interval_) == 0) {
     out_ << output_prefix_ << statistics() << std::endl;

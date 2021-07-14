@@ -46,6 +46,10 @@ add_custom_target (
           -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/flib_server.cfg
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 	COMMAND ${CMAKE_COMMAND}
+          -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/cri.cfg
+          -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/cri.cfg
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
+	COMMAND ${CMAKE_COMMAND}
           -DCP_SRC:STRING=${CMAKE_CURRENT_SOURCE_DIR}/flesnet_simple_example.cfg
           -DCP_DEST:STRING=${CMAKE_BINARY_DIR}/flesnet.cfg
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
