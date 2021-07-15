@@ -7,6 +7,8 @@
 #include "TimesliceInputArchive.hpp"
 #include "TimesliceOutputArchive.hpp"
 
+#include "MergingSource.hpp"
+
 BOOST_AUTO_TEST_CASE(timeslice_output_archive_sequence_test) {
   fles::TimesliceInputArchiveLoop source("example1.tsa", 3);
   fles::TimesliceOutputArchiveSequence sink("test2_%n.tsa", 2);
@@ -50,7 +52,6 @@ BOOST_AUTO_TEST_CASE(timeslice_input_archive_sequence_vector_test2) {
       std::ios_base::failure);
 }
 
-/*
 BOOST_AUTO_TEST_CASE(timeslice_input_archive_sequence_vector_test2) {
   fles::TimesliceInputArchiveSequence source(
       {"test2_0000.tsa", "test2_0001.tsa", "test2_0002.tsa", "test2_0003.tsa"});
@@ -59,7 +60,6 @@ BOOST_AUTO_TEST_CASE(timeslice_input_archive_sequence_vector_test2) {
       while (auto timeslice = source.get()) { ++count; },
       std::ios_base::failure);
 }
-*/
 
 BOOST_AUTO_TEST_CASE(microslice_output_archive_sequence_test) {
   fles::MicrosliceInputArchiveLoop source("example2.msa", 2);
