@@ -50,6 +50,17 @@ BOOST_AUTO_TEST_CASE(timeslice_input_archive_sequence_vector_test2) {
       std::ios_base::failure);
 }
 
+/*
+BOOST_AUTO_TEST_CASE(timeslice_input_archive_sequence_vector_test2) {
+  fles::TimesliceInputArchiveSequence source(
+      {"test2_0000.tsa", "test2_0001.tsa", "test2_0002.tsa", "test2_0003.tsa"});
+  uint64_t count = 0;
+  BOOST_CHECK_THROW(
+      while (auto timeslice = source.get()) { ++count; },
+      std::ios_base::failure);
+}
+*/
+
 BOOST_AUTO_TEST_CASE(microslice_output_archive_sequence_test) {
   fles::MicrosliceInputArchiveLoop source("example2.msa", 2);
   fles::MicrosliceOutputArchiveSequence sink("test3_%n.msa", 5);
