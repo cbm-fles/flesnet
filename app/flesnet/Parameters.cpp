@@ -49,6 +49,29 @@ std::ostream& operator<<(std::ostream& out, const Transport& transport) {
   return out;
 }
 
+std::ostream& operator<<(std::ostream& out,
+                         const InputInterfaceScheme& scheme) {
+  switch (scheme) {
+  case InputInterfaceScheme::SharedMemory:
+    out << "shared memory";
+    break;
+  case InputInterfaceScheme::PatternGenerator:
+    out << "pattern generator";
+    break;
+  }
+  return out;
+}
+
+std::ostream& operator<<(std::ostream& out,
+                         const OutputInterfaceScheme& scheme) {
+  switch (scheme) {
+  case OutputInterfaceScheme::SharedMemory:
+    out << "shared memory";
+    break;
+  }
+  return out;
+}
+
 std::istream& operator>>(std::istream& in, InterfaceSpecification& ifspec) {
   in >> ifspec.full_uri;
   try {
@@ -63,10 +86,52 @@ std::istream& operator>>(std::istream& in, InterfaceSpecification& ifspec) {
   return in;
 }
 
+std::istream& operator>>(std::istream& in,
+                         InputInterfaceSpecification& ifspec) {
+  in >> static_cast<InterfaceSpecification&>(ifspec);
+  if (ifspec.scheme == "shm") {
+    ifspec.input_scheme = InputInterfaceScheme::SharedMemory;
+    ifspec.input_param =
+        std::unique_ptr<InputParameters>(new ShmInputParameters);
+  } else if (ifspec.scheme == "pgen") {
+    ifspec.input_scheme = InputInterfaceScheme::PatternGenerator;
+  } else {
+    throw po::invalid_option_value(ifspec.full_uri);
+  }
+  return in;
+}
+
+std::istream& operator>>(std::istream& in,
+                         OutputInterfaceSpecification& ifspec) {
+  in >> static_cast<InterfaceSpecification&>(ifspec);
+  if (ifspec.scheme == "shm") {
+    ifspec.output_scheme = OutputInterfaceScheme::SharedMemory;
+  } else {
+    throw po::invalid_option_value(ifspec.full_uri);
+  }
+  return in;
+}
+
 std::ostream& operator<<(std::ostream& out,
                          const InterfaceSpecification& ifspec) {
   out << ifspec.full_uri;
   return out;
+}
+
+void Parameters::help_schemes() {
+  std::cout << "Input/output specification:\n";
+  std::cout << "  scheme://host/pc0/pc0...?param0=value0&param1=value1...\n";
+  std::cout << "host        target host name or IP address";
+  std::cout << "Input schemes:\n"
+               "shm\n"
+               "path components:\n"
+               "parameters:\n";
+  ShmInputParameters sip;
+  sip.setup();
+  std::cout << sip.description;
+  ShmOutputParameters sop;
+  sop.setup();
+  std::cout << sop.description;
 }
 
 void Parameters::parse_options(int argc, char* argv[]) {
@@ -111,12 +176,12 @@ void Parameters::parse_options(int argc, char* argv[]) {
       po::value<std::vector<unsigned>>()->multitoken()->value_name("<n> ..."),
       "set this application's index(es) in the list of outputs");
   config_add("input,I",
-             po::value<std::vector<InterfaceSpecification>>()
+             po::value<std::vector<InputInterfaceSpecification>>()
                  ->multitoken()
                  ->value_name("scheme://host/path?param=value ..."),
              "add an input to the list of participating inputs");
   config_add("output,O",
-             po::value<std::vector<InterfaceSpecification>>()
+             po::value<std::vector<OutputInterfaceSpecification>>()
                  ->multitoken()
                  ->value_name("scheme://host/path?param=value ..."),
              "add an output to the list of compute node outputs");
@@ -197,6 +262,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
   if (vm.count("help") != 0u) {
     std::cout << "flesnet, git revision " << g_GIT_REVISION << std::endl;
     std::cout << cmdline_options << std::endl;
+    help_schemes();
     exit(EXIT_SUCCESS);
   }
 
@@ -242,8 +308,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
     throw ParametersException("list of outputs is empty");
   }
 
-  inputs_ = vm["input"].as<std::vector<InterfaceSpecification>>();
-  outputs_ = vm["output"].as<std::vector<InterfaceSpecification>>();
+  inputs_ = vm["input"].as<std::vector<InputInterfaceSpecification>>();
+  outputs_ = vm["output"].as<std::vector<OutputInterfaceSpecification>>();
 
   for (auto& input : inputs_) {
     if (!web::uri::validate(input.full_uri)) {
@@ -253,11 +319,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 
   for (auto& output : outputs_) {
-    if (!web::uri::validate(output.full_uri)) {
+    if (!web::uri::validate(output.full_uri))
       throw ParametersException("invalid output specification: " +
                                 output.full_uri);
-    }
   }
+}
 
   if (vm.count("input-index") != 0u) {
     input_indexes_ = vm["input-index"].as<std::vector<unsigned>>();
@@ -293,11 +359,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 
   L_(debug) << "inputs (" << inputs_.size() << "):";
-  for (auto input : inputs_) {
+  for (auto& input : inputs_)
     L_(debug) << "  " << input.full_uri;
   }
   L_(debug) << "outputs (" << outputs_.size() << "):";
-  for (auto output : outputs_) {
+  for (auto& output : outputs_)
     L_(debug) << "  " << output.full_uri;
   }
   for (auto input_index : input_indexes_) {
