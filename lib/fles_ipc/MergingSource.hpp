@@ -21,7 +21,11 @@ namespace fles {
 
 /**
  * \brief The MergingSource class merges data sets from a given set of input
- * sources.
+ * sources. Because of the way that data is provided by the source, one item
+ * from every source has to be kept in memory at all times.
+ *
+ * This class is meant to be used for detector debugging and similar special
+ * cases, not for regular online operation.
  */
 template <class Base> class MergingSource : public Source<Base> {
 public:
@@ -61,15 +65,25 @@ private:
       return nullptr;
     }
 
-    auto result = std::min_element(prefetched_items_.begin(),
-                                   prefetched_items_.end(), comparator);
-    if (*result = nullptr) {
+    auto item_it =
+        std::min_element(prefetched_items_.begin(), prefetched_items_.end(),
+                         [](const auto& a, const auto& b) {
+                           if (!a)
+                             return b;
+                           if (!b)
+                             return a;
+                           return a->index() < b->index();
+                         });
+    auto item_index = item_it - prefetched_items_.begin();
+
+    if (*item_it == nullptr) {
       eos_ = true;
       return nullptr;
     }
-    auto item = result;
-    result = source->get();
-    return item.release();
+
+    auto item = item_it->release();
+    prefetched_items_.at(item_index) = sources_.at(item_index)->get();
+    return item;
   };
 };
 
