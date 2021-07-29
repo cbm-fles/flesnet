@@ -15,6 +15,8 @@ namespace fles {
  */
 template <class T> class Source {
 public:
+  using item_type = T;
+
   /**
    * \brief Retrieve the next item.
    *
