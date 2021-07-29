@@ -13,8 +13,8 @@
 namespace fles {
 
 /**
- * \brief The InputArchiveLoop class deserializes microslice data sets from an
- * input file. For testing, it can loop over the file a given number of times.
+ * \brief The InputArchiveLoop class deserializes data sets from an input file.
+ * For testing, it can loop over the file a given number of times.
  */
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchiveLoop : public Source<Base> {
