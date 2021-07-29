@@ -3,19 +3,7 @@
 /// \brief Defines the fles::MergingSource template class.
 #pragma once
 
-/*
-#include "ArchiveDescriptor.hpp"
-#include "Source.hpp"
-#include <boost/algorithm/string.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <fstream>
-#include <iomanip>
-*/
 #include <memory>
-/*
-#include <sstream>
-#include <string>
-*/
 
 namespace fles {
 
@@ -27,16 +15,20 @@ namespace fles {
  * This class is meant to be used for detector debugging and similar special
  * cases, not for regular online operation.
  */
-template <class Base> class MergingSource : public Source<Base> {
+template <class SourceType> class MergingSource : public SourceType {
 public:
+  using item_type = typename SourceType::item_type;
+
   /**
    * \brief Construct a merging source object, initialize the list of input
    * sources, and start peeking into the item streams
    *
    * \param sources The input sources to read data from
    */
-  MergingSource(std::vector<std::unique_ptr<Source<Base>>> sources)
-      : sources_(sources) {}
+  MergingSource(std::vector<std::unique_ptr<SourceType>> sources)
+      : sources_(std::move(sources)) {
+    init_prefetch();
+  }
 
   /// Delete copy constructor (non-copyable).
   MergingSource(const MergingSource&) = delete;
@@ -48,19 +40,19 @@ public:
   bool eos() const override { return eos_; }
 
 private:
-  std::vector<std::unique_ptr<Source<Base>>> sources_;
-  std::vector<std::unique_ptr<Base>> prefetched_items_;
+  std::vector<std::unique_ptr<SourceType>> sources_;
+  std::vector<std::unique_ptr<item_type>> prefetched_items_;
 
   bool eos_ = false;
 
   void init_prefetch() {
     for (auto& source : sources_) {
       auto timeslice = source->get();
-      prefetched_items_.push_back(timeslice);
+      prefetched_items_.push_back(std::move(timeslice));
     }
   }
 
-  Base* do_get() override {
+  item_type* do_get() override {
     if (eos_) {
       return nullptr;
     }
@@ -69,9 +61,9 @@ private:
         std::min_element(prefetched_items_.begin(), prefetched_items_.end(),
                          [](const auto& a, const auto& b) {
                            if (!a)
-                             return b;
+                             return false;
                            if (!b)
-                             return a;
+                             return true;
                            return a->index() < b->index();
                          });
     auto item_index = item_it - prefetched_items_.begin();
