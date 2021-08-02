@@ -3,7 +3,6 @@
 #include "System.hpp"
 #include <cstring>
 #include <errno.h>
-#include <glob.h>
 #include <netdb.h>
 #include <pwd.h>
 #include <stdexcept>
@@ -91,12 +90,12 @@ std::string current_domainname() {
   return std::string(buf.data());
 }
 
-std::vector<std::string> glob(const std::string& pattern) {
+std::vector<std::string> glob(const std::string& pattern, glob_flags flags) {
   glob_t glob_result;
   memset(&glob_result, 0, sizeof(glob_result));
 
   int return_value =
-      glob(pattern.c_str(), GLOB_BRACE | GLOB_TILDE, NULL, &glob_result);
+      glob(pattern.c_str(), static_cast<int>(flags), NULL, &glob_result);
   if (return_value != 0) {
     globfree(&glob_result);
     throw std::runtime_error("glob() failed with return value " +
