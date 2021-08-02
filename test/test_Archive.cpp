@@ -1,5 +1,5 @@
 // Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
-#define BOOST_TEST_MODULE test_Timeslice
+#define BOOST_TEST_MODULE test_Archive
 #include <boost/test/unit_test.hpp>
 
 #include "MergingSource.hpp"
