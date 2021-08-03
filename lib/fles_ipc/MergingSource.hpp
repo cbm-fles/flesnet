@@ -3,6 +3,7 @@
 /// \brief Defines the fles::MergingSource template class.
 #pragma once
 
+#include <algorithm>
 #include <memory>
 
 namespace fles {
