@@ -28,7 +28,9 @@ public:
    */
   MergingSource(std::vector<std::unique_ptr<SourceType>> sources)
       : sources_(std::move(sources)) {
-    init_prefetch();
+    if (sources_.empty()) {
+      eos_ = true;
+    }
   }
 
   /// Delete copy constructor (non-copyable).
@@ -56,6 +58,10 @@ private:
   item_type* do_get() override {
     if (eos_) {
       return nullptr;
+    }
+
+    if (prefetched_items_.empty()) {
+      init_prefetch();
     }
 
     auto item_it =
