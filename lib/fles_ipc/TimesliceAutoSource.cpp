@@ -56,9 +56,13 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
           sources.emplace_back(std::move(source));
         }
       } else {
-        for (auto& path : paths) {
+        if (paths.size() == 1) {
           std::unique_ptr<fles::TimesliceSource> source =
-              std::make_unique<fles::TimesliceInputArchive>(path);
+              std::make_unique<fles::TimesliceInputArchive>(paths.front());
+          sources.emplace_back(std::move(source));
+        } else if (paths.size() > 1) {
+          std::unique_ptr<fles::TimesliceSource> source =
+              std::make_unique<fles::TimesliceInputArchiveSequence>(paths);
           sources.emplace_back(std::move(source));
         }
       }
