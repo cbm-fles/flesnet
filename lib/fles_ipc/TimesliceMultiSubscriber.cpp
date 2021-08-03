@@ -13,7 +13,7 @@
 namespace fles {
 
 TimesliceMultiSubscriber::TimesliceMultiSubscriber(
-    const std::string& inputString, uint32_t hwm) {
+    const std::string& inputString, uint32_t hwm, bool initflag) {
   if (!inputString.empty()) {
     CreateHostPortFileList(inputString);
     for (auto& stream : InputHostPortList) {
@@ -26,7 +26,9 @@ TimesliceMultiSubscriber::TimesliceMultiSubscriber(
     L_(fatal) << "No server defined";
     exit(1);
   }
-  InitTimesliceSubscriber();
+  if (initflag) {
+    InitTimesliceSubscriber();
+  }
 }
 
 void TimesliceMultiSubscriber::CreateHostPortFileList(std::string inputString) {
