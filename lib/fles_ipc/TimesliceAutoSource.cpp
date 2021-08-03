@@ -9,6 +9,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string_regex.hpp>
 
+#include <memory>
+
 namespace fles {
 
 TimesliceAutoSource::TimesliceAutoSource(const std::string& locator) {
@@ -25,8 +27,6 @@ TimesliceAutoSource::TimesliceAutoSource(
 
 void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
   std::vector<std::unique_ptr<fles::TimesliceSource>> sources;
-
-  std::vector<std::string> archive_pathnames;
 
   for (const auto& locator : locators) {
     // Check if locator has URI pattern
