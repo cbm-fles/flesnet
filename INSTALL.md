@@ -4,10 +4,10 @@ Installing FLESnet
 General remarks: OS and Software Environment
 --------------------------------------------
 
-Flesnet with FLIB is designed to run on a Linux operating system.
+Flesnet with CRI is designed to run on a Linux operating system.
 Although it is possible to use most distributions this guide and
 provided scripts focus on Debian/Ubuntu. Especially if planing to use
-a FLIB it is strongly recommended to use a recent Debian/Ubuntu
+a CRI it is strongly recommended to use a recent Debian/Ubuntu
 installation. This doesn't imply that it is impossible to run a setup
 on any other OS but tests are only performed for this environment.
 
@@ -35,7 +35,7 @@ compilation. For other distributions, please proceed accordingly.
 
     wget https://build.opensuse.org/projects/network:messaging:zeromq:release-draft/public_key -O- | sudo apt-key add
 
-    sudo bash -c "echo -e 'Package: libzmq3-dev\nPin: origin download.opensuse.org\nPin-Priority: 1000\n\nPackage: libzmq5\nPin: origin download.opensuse.org\nPin-Priority: 1000' >> /etc/apt/pre
+    sudo bash -c "echo -e 'Package: libzmq3-dev\nPin: origin download.opensuse.org\nPin-Priority: 1000\n\nPackage: libzmq5\nPin: origin download.opensuse.org\nPin-Priority: 1000' >> /etc/apt/preferences"
 
     sudo apt-get update -y
 
@@ -64,14 +64,14 @@ After installing, set `SIMPATH` to point to this installation.
 [fairsoft-ext]: http://fairroot.gsi.de/?q=node/8
 
 
-### Optional: FLIB device driver (PDA)
+### Optional: CRI device driver (PDA)
 
-If you like to use the FLIB you need to install the PDA device driver.
+If you like to use the CRI you need to install the PDA device driver.
 The installation procedure is scripted, just run:
 
     ./contrib/pda_inst.sh
 
-Users can only access the FLIB if they are member of the group "pda".
+Users can only access the CRI if they are member of the group "pda".
 The install script will create a pda system group for you. You should
 add all intended users by running something like
 
@@ -145,6 +145,11 @@ For an enabled IOMMU, following three statements have to be true:
         AMD-Vi: Initialized for Passthrough Mode
 
      The matching kernel parameter should be 'amd_iommu=on'.
+     To set it for Debian modify `/etc/default/grub`, e.g.:
+
+            GRUB_CMDLINE_LINUX_DEFAULT="intel_iommu=on"
+            sudo update-grub
+            reboot
 
      If setting the kernel parameter does not change anything, check 2. and 3.
 
@@ -159,44 +164,17 @@ For an enabled IOMMU, following three statements have to be true:
      VT-d (Intel), AMD-Vi (AMD), IOMMU or virtualization support and activate
 	 them.
 
-### Power Management
-
-On some systems and depending on your BIOS settings, you may encounter
-problems with ASPM and ACPI. See also [HOWTO.md](HOWTO.md) Section *FAQ*:
-*What to do if the FLIB/PC becomes unresponsive after programming or a few
-minutes of use?*
-
-To be on the safe side, please set the kernel boot options
-
-    pcie_aspm=off acpi=ht noapic
-
-### Setting boot options for Debian
-
-Modify `/etc/default/grub`, e.g.:
-
-    GRUB_CMDLINE_LINUX_DEFAULT="pcie_aspm=off acpi=ht noapic intel_iommu=on"
-    sudo update-grub
-    reboot
-
-### Configuring syslog
-
-Flesnet sends certain information to syslog. For rsyslogd an example
-configuration file is provided. To install use:
-
-   cp ./contrib/30-flesnet.conf /etc/rsyslog.d/
-   service rsyslog restart
-
-Installing JTAG Software for programming the FLIB
+Installing JTAG Software for programming the CRI
 -------------------------------------------------
 
-The FLIB FPGA can be programmed using any JTAG programmer and matching
+The CRI FPGA can be programmed using any JTAG programmer and matching
 software. If using a Xilinx USB II cable with Xilinx software
 programming scripts are provided (see [HOWTO.md](HOWTO.md)).
 
 To use these scripts install the Xilinx Vivado Lab Tools or any other
 Vivado edition.
 
-Legacy CBMnet readout with FLESnet
+Legacy FLIB readout with FLESnet
 ==================================
 
 Flesnet Version
@@ -210,23 +188,3 @@ serious issues are fixed a new tag will be created.
 You can switch to tags via
     git checkout -b legacy-ro-vX.X legacy-ro-vX.X
 
-
-Build Dependencies
-------------------
-
-### Optional: Controls API
-
-If you would like to configure your front-end using the FLIB, you need
-to install the Controls API library, i.e., `cbmnetcntlserver`, which
-can be found in cbmroot. (Note: the corresponding cbmroot make target
-is `cbmnetcntlserver`.)
-
-
-Building flesnet
-----------------
-
-For compiling flesnet with Controls API support, set the environment variable
-`CNETCNTLSERVER_PATH` to the cbmnetcntlserver library and include location
-found in the cbmroot repository, e.g.:
-
-    export CNETCNTLSERVER_PATH=/opt/cbmroot/build/lib:/opt/cbmroot/fles/ctrl

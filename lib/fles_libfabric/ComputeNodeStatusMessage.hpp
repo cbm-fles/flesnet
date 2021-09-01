@@ -5,6 +5,9 @@
 
 #include "ComputeNodeBufferPosition.hpp"
 #include "ComputeNodeInfo.hpp"
+#include "ConstVariables.hpp"
+#include "dfs/IntervalMetaData.hpp"
+#include <chrono>
 
 #pragma pack(1)
 
@@ -20,6 +23,8 @@ struct ComputeNodeStatusMessage {
   ComputeNodeInfo info;
   // address must be not null if connect = true
   unsigned char my_address[64];
+
+  IntervalMetaData proposed_interval_metadata;
 };
 } // namespace tl_libfabric
 

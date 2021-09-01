@@ -1,6 +1,8 @@
 FLESnet usage for FLIB stand alone readout
 ==========================================
 
+Note: this document has not been updated for CRI operation so far.
+
 Note the **FAQ** section at the end of the document!
 
 

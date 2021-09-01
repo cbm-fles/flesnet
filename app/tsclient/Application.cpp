@@ -14,6 +14,10 @@
 #include <thread>
 
 Application::Application(Parameters const& par) : par_(par) {
+  if (par_.client_index() != -1) {
+    output_prefix_ = std::to_string(par_.client_index()) + ": ";
+  }
+
   if (!par_.shm_identifier().empty()) {
     source_.reset(new fles::TimesliceReceiver(par_.shm_identifier()));
   } else if (!par_.input_archive().empty()) {
@@ -35,8 +39,8 @@ Application::Application(Parameters const& par) : par_(par) {
     }
   } else if (!par_.subscribe_address().empty()) {
     if (par_.multi_input()) {
-      source_.reset(new fles::TimesliceMultiSubscriber(par_.subscribe_address(),
-                                                       par_.subscribe_hwm()));
+      source_.reset(new fles::TimesliceMultiSubscriber(
+          par_.subscribe_address(), par_.subscribe_hwm(), true));
     } else {
       source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address(),
                                                   par_.subscribe_hwm()));
@@ -44,15 +48,14 @@ Application::Application(Parameters const& par) : par_(par) {
   }
 
   if (par_.analyze()) {
-    std::string output_prefix = std::to_string(par_.client_index()) + ": ";
     if (par_.histograms()) {
       sinks_.push_back(
           std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(
-              1000, status_log_.stream, output_prefix, &std::cout)));
+              1000, status_log_.stream, output_prefix_, &std::cout)));
     } else {
       sinks_.push_back(
           std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(
-              1000, status_log_.stream, output_prefix, nullptr)));
+              1000, status_log_.stream, output_prefix_, nullptr)));
     }
   }
 
@@ -84,22 +87,18 @@ Application::Application(Parameters const& par) : par_(par) {
     benchmark_.reset(new Benchmark());
   }
 
-  if (par_.client_index() != -1) {
-    L_(info) << "tsclient " << par_.client_index() << ": "
-             << par.shm_identifier();
+  if (!par_.shm_identifier().empty()) {
+    L_(info) << output_prefix_ << "shm_identifier: " << par.shm_identifier();
   }
 
   if (par_.rate_limit() != 0.0) {
-    L_(info) << "rate limit active: "
+    L_(info) << output_prefix_ << "rate limit active: "
              << human_readable_count(par_.rate_limit(), true, "Hz");
   }
 }
 
 Application::~Application() {
-  if (par_.client_index() != -1) {
-    L_(info) << "tsclient " << par_.client_index() << ": ";
-  }
-  L_(info) << "total timeslices processed: " << count_;
+  L_(info) << output_prefix_ << "total timeslices processed: " << count_;
 }
 
 void Application::rate_limit_delay() const {

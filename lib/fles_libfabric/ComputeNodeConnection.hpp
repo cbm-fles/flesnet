@@ -3,15 +3,22 @@
 
 #pragma once
 
+#include "ComputeNodeInfo.hpp"
 #include "ComputeNodeStatusMessage.hpp"
 #include "Connection.hpp"
 #include "InputChannelStatusMessage.hpp"
 #include "InputNodeInfo.hpp"
+#include "RequestIdentifier.hpp"
 #include "TimesliceComponentDescriptor.hpp"
-#include <boost/format.hpp>
-#include <chrono>
+#include "dfs/DDSchedulerOrchestrator.hpp"
 
-#include <sys/uio.h>
+#include <boost/format.hpp>
+#include <cmath>
+#include <rdma/fi_cm.h>
+
+///-----
+#include <map>
+///-----/
 
 namespace tl_libfabric {
 
@@ -60,6 +67,10 @@ public:
 
   void setup_mr(struct fid_domain* pd) override;
 
+  bool try_sync_buffer_positions() override;
+
+  void on_complete_heartbeat_recv() override;
+
   /// Connection handler function, called on successful connection.
   /**
    \param event RDMA connection manager event structure
@@ -70,13 +81,25 @@ public:
 
   void inc_ack_pointers(uint64_t ack_pos);
 
-  void on_complete_recv();
+  /// Handle Libfabric receive completion notification.
+  void on_complete_recv() override;
 
-  void on_complete_send();
+  /// Handle Libfabric send completion notification.
+  void on_complete_send() override;
 
   void on_complete_send_finalize();
 
   const ComputeNodeBufferPosition& cn_wp() const { return cn_wp_; }
+
+  const ComputeNodeBufferPosition& cn_ack() const { return cn_ack_; }
+
+  const InputChannelStatusMessage& recv_status_message() const {
+    return recv_status_message_;
+  }
+
+  const HeartbeatMessage& recv_heartbeat_message() const {
+    return recv_heartbeat_message_;
+  }
 
   std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
@@ -96,7 +119,7 @@ public:
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
-    static std::string caption() { return std::string("used/freeing/free"); }
+    std::string caption() const { return std::string("used/freeing/free"); }
 
     std::string percentage_str(int64_t value) const {
       boost::format percent_fmt("%4.1f%%");
@@ -130,7 +153,7 @@ public:
                         cn_wp_.desc};
   }
 
-  void set_partner_addr(fi_addr_t /*addr*/);
+  void set_partner_addr(fi_addr_t addr);
 
   void send_ep_addr();
 
@@ -139,6 +162,15 @@ public:
   bool is_connection_finalized();
 
 private:
+  /// Write the received timeslice descriptors from the sync messages in the
+  /// memory (to minimize RDMA Writes)
+  void write_received_descriptors();
+
+  //
+  void sync_after_scheduler_decision_received();
+
+  void update_scheduler_interval_data();
+
   ComputeNodeStatusMessage send_status_message_ = ComputeNodeStatusMessage();
   ComputeNodeBufferPosition cn_ack_ = ComputeNodeBufferPosition();
 
@@ -160,14 +192,14 @@ private:
   const std::size_t desc_buffer_size_exp_ = 0;
 
   /// Libfabric receive work request
-  struct fi_msg recv_wr = fi_msg();
+  struct fi_msg_tagged recv_wr = fi_msg_tagged();
 
   /// Scatter/gather list entry for receive work request
   struct iovec recv_sge = iovec();
   void* recv_wr_descs[1] = {nullptr};
 
   /// Libfabric send work request
-  struct fi_msg send_wr = fi_msg();
+  struct fi_msg_tagged send_wr = fi_msg_tagged();
 
   /// Scatter/gather list entry for send work request
   struct iovec send_sge = iovec();
@@ -175,6 +207,12 @@ private:
 
   uint32_t pending_send_requests_{0};
 
-  fi_addr_t partner_addr_;
+  fi_addr_t partner_addr_ = -1;
+
+  bool registered_input_MPI_time = false;
+
+  /// To prevent sending more messages (late messages) once the final message
+  /// is sent out
+  bool final_msg_sent_ = false;
 };
 } // namespace tl_libfabric

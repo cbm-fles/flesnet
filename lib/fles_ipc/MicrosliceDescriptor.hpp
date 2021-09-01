@@ -20,14 +20,15 @@ namespace fles {
  */
 enum class SubsystemIdentifier : uint8_t {
   // CBM detectors
-  STS = 0x10,  ///< Silicon Tracking System (STS)
-  MVD = 0x20,  ///< Micro-Vertex Detector (MVD)
-  RICH = 0x30, ///< Ring Imaging CHerenkov detector (RICH)
-  TRD = 0x40,  ///< Transition Radiation Detector (TRD)
-  MUCH = 0x50, ///< Muon Chamber system (MuCh)
-  RPC = 0x60,  ///< Resistive Plate Chambers (RPC)
-  ECAL = 0x70, ///< Electromagnetic CALorimeter (ECAL)
-  PSD = 0x80,  ///< Projectile Spectator Detector (PSD)
+  STS = 0x10,   ///< Silicon Tracking System (STS)
+  MVD = 0x20,   ///< Micro-Vertex Detector (MVD)
+  RICH = 0x30,  ///< Ring Imaging CHerenkov detector (RICH)
+  TRD = 0x40,   ///< Transition Radiation Detector (TRD)
+  TRD2D = 0x48, ///< 2-D Transition Radiation Detector (TRD2D)
+  MUCH = 0x50,  ///< Muon Chamber system (MuCh)
+  RPC = 0x60,   ///< Resistive Plate Chambers (RPC)
+  ECAL = 0x70,  ///< Electromagnetic CALorimeter (ECAL)
+  PSD = 0x80,   ///< Projectile Spectator Detector (PSD)
 
   // Other detectors (experimental)
   T0 = 0x90,        ///< mCBM T0 Detector
@@ -50,6 +51,7 @@ inline const std::string& to_string(SubsystemIdentifier sys_id) {
           {SubsystemIdentifier::MVD, "MVD"},
           {SubsystemIdentifier::RICH, "RICH"},
           {SubsystemIdentifier::TRD, "TRD"},
+          {SubsystemIdentifier::TRD2D, "TRD2D"},
           {SubsystemIdentifier::MUCH, "MUCH"},
           {SubsystemIdentifier::RPC, "RPC"},
           {SubsystemIdentifier::ECAL, "ECAL"},

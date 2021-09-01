@@ -5,7 +5,7 @@ file(GLOB LIB_HEADERS *.h *.hpp)
 
 add_library(fles_tools ${LIB_SOURCES} ${LIB_HEADERS})
 
-target_compile_options(fles_tools PUBLIC -Wno-unknown-pragmas)
+target_compile_options(fles_tools PUBLIC -Wno-unknown-pragmas -Wno-format-truncation)
 
 target_include_directories(fles_tools PUBLIC .)
 

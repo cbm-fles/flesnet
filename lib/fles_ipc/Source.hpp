@@ -15,12 +15,16 @@ namespace fles {
  */
 template <class T> class Source {
 public:
+  using item_type = T;
+
   /**
    * \brief Retrieve the next item.
    *
-   * This function blocks if the next item is not yet available.
+   * This function blocks if the next item is not yet available. If the
+   * end-of-stream condition is met, a nullptr is returned for any subsequent
+   * calls to this function.
    *
-   * \return pointer to the item, or nullptr if end-of-file
+   * \return pointer to the item, or nullptr if end-of-stream
    */
   std::unique_ptr<T> get() { return std::unique_ptr<T>(do_get()); };
 

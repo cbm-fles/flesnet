@@ -11,18 +11,18 @@
 
 namespace tl_libfabric {
 
-class VerbsProvider : public Provider {
+class MsgVerbsProvider : public Provider {
   struct fi_info* info_ = nullptr;
   struct fid_fabric* fabric_ = nullptr;
 
 public:
-  VerbsProvider(struct fi_info* info);
+  MsgVerbsProvider(struct fi_info* info);
 
-  VerbsProvider(const VerbsProvider&) = delete;
-  void operator=(const VerbsProvider&) = delete;
+  MsgVerbsProvider(const MsgVerbsProvider&) = delete;
+  void operator=(const MsgVerbsProvider&) = delete;
 
-  /// The VerbsProvider default destructor.
-  ~VerbsProvider() override;
+  /// The MsgVerbsProvider default destructor.
+  ~MsgVerbsProvider();
 
   bool has_av() const override { return false; };
   bool has_eq_at_eps() const override { return true; };
@@ -43,7 +43,7 @@ public:
     return fabric_;
   };
 
-  static struct fi_info* exists(const std::string& local_host_name);
+  static struct fi_info* exists(std::string local_host_name);
 
   void accept(struct fid_pep* pep,
               const std::string& hostname,
@@ -58,7 +58,7 @@ public:
                uint32_t max_recv_sge,
                uint32_t max_inline_data,
                const void* param,
-               size_t param_len,
+               size_t paramlen,
                void* addr) override;
 };
 } // namespace tl_libfabric

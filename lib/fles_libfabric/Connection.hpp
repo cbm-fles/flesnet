@@ -3,18 +3,35 @@
 
 #pragma once
 
-//#include "InfinibandException.hpp"
-#include <memory>
-//#include <rdma/rdma_cma.h>
-#include <vector>
+#include "ConstVariables.hpp"
+#include "RequestIdentifier.hpp"
+#include "SizedMap.hpp"
+#include "dfs/HeartbeatMessage.hpp"
+#include "dfs/SchedulerOrchestrator.hpp"
+#include "providers/LibfabricBarrier.hpp"
+#include "providers/LibfabricContextPool.hpp"
+#include "providers/LibfabricException.hpp"
+#include "providers/Provider.hpp"
 
+#include <rdma/fi_cm.h>
 #include <rdma/fi_domain.h>
 #include <rdma/fi_endpoint.h>
 #include <rdma/fi_errno.h>
 #include <rdma/fi_rma.h>
+#include <rdma/fi_tagged.h>
 
+#include <cassert>
+#include <chrono>
 #include <cstdint>
-#include <string>
+#include <cstring>
+#include <iostream>
+#include <log.hpp>
+#include <memory>
+#include <netdb.h>
+#include <thread>
+#include <vector>
+
+#include <sys/uio.h>
 
 namespace tl_libfabric {
 /// Libfabric connection base class.
@@ -34,9 +51,6 @@ public:
   /// The Connection destructor.
   virtual ~Connection();
 
-  //    /// Retrieve the InfiniBand queue pair associated with the connection.
-  //    struct fid_qp* qp() const { return cm_id_->qp; }
-  //
   /// Initiate a connection request to target hostname and service.
   /**
      \param hostname The target hostname
@@ -61,13 +75,6 @@ public:
 
   /// Handle RDMA_CM_EVENT_DISCONNECTED event for this connection.
   virtual void on_disconnected(struct fi_eq_cm_entry* event);
-  //
-  //    /// Handle RDMA_CM_EVENT_ADDR_RESOLVED event for this connection.
-  //    virtual void on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq);
-  //
-  //    virtual void create_qp(struct ibv_pd* pd, struct ibv_cq* cq);
-  //
-  // virtual void accept_connect_request();
 
   /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event for this connection.
   virtual void on_connect_request(struct fi_eq_cm_entry* event,
@@ -77,11 +84,29 @@ public:
   virtual std::unique_ptr<std::vector<uint8_t>> get_private_data();
 
   virtual void setup() = 0;
+
   virtual void setup_mr(struct fid_domain* pd) = 0;
-  //
-  //    /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event for this connection.
-  //    virtual void on_route_resolved();
-  //
+
+  virtual bool try_sync_buffer_positions() = 0;
+
+  /// Handle Libfabric receive completion notification.
+  virtual void on_complete_recv() = 0;
+
+  /// Handle Libfabric send completion notification.
+  virtual void on_complete_send() = 0;
+
+  /// Handle Libfabric receive hearbeat completion notification.
+  virtual void on_complete_heartbeat_recv() = 0;
+
+  /// Handle Libfabric send hearbeat completion notification.
+  void on_complete_heartbeat_send();
+
+  /// Post a receive work request (WR) to the receive queue
+  virtual void post_recv_heartbeat_message();
+
+  /// Post a send work request (WR) to the send queue
+  virtual void post_send_heartbeat_message();
+
   /// Retrieve index of this connection in the local connection group.
   uint_fast16_t index() const { return index_; }
 
@@ -90,26 +115,48 @@ public:
 
   bool done() const { return done_; }
 
+  void mark_done() { done_ = true; }
+
   /// Retrieve the total number of bytes transmitted.
   uint64_t total_bytes_sent() const { return total_bytes_sent_; }
+
+  /// Retrieve the total number of syn msgs bytes transmitted.
+  uint64_t total_sync_bytes_sent() const { return total_sync_bytes_sent_; }
 
   /// Retrieve the total number of SEND work requests.
   uint64_t total_send_requests() const { return total_send_requests_; }
 
   /// Retrieve the total number of RECV work requests.
   uint64_t total_recv_requests() const { return total_recv_requests_; }
-  //
-protected:
-  //    void dump_send_wr(struct ibv_send_wr* wr);
 
+  /// Prepare heartbeat message
+  void prepare_heartbeat(HeartbeatFailedNodeInfo* failure_info = nullptr,
+                         uint64_t message_id = ConstVariables::MINUS_ONE,
+                         bool ack = false);
+
+  void send_heartbeat(HeartbeatMessage* message);
+
+  /// Get the last state of the send_heartbeat_message
+  const HeartbeatMessage get_send_heartbeat_message() {
+    return send_heartbeat_message_;
+  }
+
+  /// Get the last state of the send_heartbeat_message
+  const HeartbeatMessage get_recv_heartbeat_message() {
+    return recv_heartbeat_message_;
+  }
+
+  std::chrono::high_resolution_clock::time_point time_begin_;
+
+protected:
   /// Post an Libfabric rdma send work request
-  void post_send_rdma(struct fi_msg_rma* wr, uint64_t flags);
+  bool post_send_rdma(struct fi_msg_rma* wr, uint64_t flags);
 
   /// Post an Libfabric message send work request
-  void post_send_msg(struct fi_msg* wr);
+  bool post_send_msg(const struct fi_msg_tagged* wr);
 
   /// Post an Libfabric message recveive request.
-  void post_recv_msg(const struct fi_msg* wr);
+  bool post_recv_msg(const struct fi_msg_tagged* wr);
 
   void make_endpoint(struct fi_info* info,
                      const std::string& hostname,
@@ -117,6 +164,12 @@ protected:
                      struct fid_domain* pd,
                      struct fid_cq* cq,
                      struct fid_av* av);
+
+  /// Message setup of heartbeat messages
+  virtual void setup_heartbeat();
+
+  /// Memory registers setup of heartbeat messages
+  virtual void setup_heartbeat_mr(struct fid_domain* pd);
 
   /// Index of this connection in the local group of connections.
   uint_fast16_t index_;
@@ -126,10 +179,7 @@ protected:
 
   /// Flag indicating connection finished state.
   bool done_ = false;
-  //
-  //    /// The queue pair capabilities.
-  //    struct ibv_qp_cap qp_cap_;
-  //
+
   /// connection configuration
   uint32_t max_send_wr_;
   uint32_t max_send_sge_;
@@ -141,20 +191,45 @@ protected:
 
   bool connection_oriented_ = false;
 
+  /// check if new data should be sent
+  bool data_changed_ = false;
+
+  /// check if new data is acked and should be sent
+  bool data_acked_ = false;
+
+  /// To prevent reusing the buffer while injecting sync messages
+  bool send_buffer_available_ = true;
+
+  /// To prevent reusing the buffer while injecting heartbeat messages
+  bool heartbeat_send_buffer_available_ = true;
+
+  /// Send Heartbeat message buffer
+  HeartbeatMessage send_heartbeat_message_ = HeartbeatMessage();
+
+  /// Receive Heartbeat message buffer
+  HeartbeatMessage recv_heartbeat_message_ = HeartbeatMessage();
+
+  /// heartbeat recv work request
+  struct fi_msg_tagged heartbeat_recv_wr = fi_msg_tagged();
+  struct iovec heartbeat_recv_wr_iovec = iovec();
+  void* heartbeat_recv_descs[1] = {nullptr};
+  fid_mr* mr_heartbeat_recv_ = nullptr;
+
+  /// heartbeat send work request
+  struct fi_msg_tagged heartbeat_send_wr = fi_msg_tagged();
+  struct iovec heartbeat_send_wr_iovec = iovec();
+  void* heartbeat_send_descs[1] = {nullptr};
+  fid_mr* mr_heartbeat_send_ = nullptr;
+
 private:
-  //    /// Low-level communication parameters.
-  //    enum {
-  //        RESOLVE_TIMEOUT_MS = 5000 ///< Resolve timeout in milliseconds.
-  //    };
-  //
-  //
-  /// RDMA connection manager ID.
-  //    struct rdma_cm_id* cm_id_ = nullptr;
+  /// event queue
   struct fid_eq* eq_ = nullptr;
-  // struct fid_pep *pep_ = nullptr;
 
   /// Total number of bytes transmitted.
   uint64_t total_bytes_sent_ = 0;
+
+  /// Total number of sync messages bytes transmitted.
+  uint64_t total_sync_bytes_sent_ = 0;
 
   /// Total number of SEND work requests.
   uint64_t total_send_requests_ = 0;

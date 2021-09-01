@@ -5,7 +5,9 @@
 #include "Sink.hpp"
 #include "Timeslice.hpp"
 #include "interface.h" // crcutil_interface
+#include <chrono>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string>
 
@@ -22,23 +24,34 @@ public:
   void put(std::shared_ptr<const fles::Timeslice> timeslice) override;
 
 private:
-  bool check_timeslice(const fles::Timeslice& ts);
-
-  std::string statistics() const;
+  void initialize(const fles::Timeslice& ts);
   void reset() {
     microslice_count_ = 0;
     content_bytes_ = 0;
   }
 
-  uint32_t compute_crc(const fles::MicrosliceView& m) const;
+  [[nodiscard]] bool check_timeslice(const fles::Timeslice& ts);
+  [[nodiscard]] bool check_component(const fles::Timeslice& ts, size_t c);
+  [[nodiscard]] bool
+  check_microslice(const fles::Timeslice& ts, size_t c, size_t m);
 
-  bool check_crc(const fles::MicrosliceView& m) const;
+  [[nodiscard]] uint32_t compute_crc(const fles::MicrosliceView& m) const;
+  [[nodiscard]] bool check_crc(const fles::MicrosliceView& m) const;
 
-  bool check_microslice(const fles::MicrosliceView& m,
-                        size_t component,
-                        size_t microslice);
+  void print(std::string text, std::string prefix = "");
+  void print_reference();
+  void
+  print_microslice_descriptor(const fles::Timeslice& ts, size_t c, size_t m);
+  void print_microslice_content(const fles::Timeslice& ts, size_t c, size_t m);
 
-  void initialize(const fles::Timeslice& ts);
+  [[nodiscard]] std::string statistics() const;
+
+  [[nodiscard]] std::string
+  location_string(size_t ts,
+                  std::optional<size_t> c = std::nullopt,
+                  std::optional<size_t> m = std::nullopt) const;
+
+  [[nodiscard]] bool output_active() const;
 
   crcutil_interface::CRC* crc32_engine_ = nullptr;
 
@@ -49,9 +62,14 @@ private:
   std::ostream& out_;
   std::string output_prefix_;
   std::ostream* hist_;
+  std::chrono::system_clock::time_point previous_output_time_;
+  static constexpr std::chrono::seconds output_time_interval_{1};
 
   size_t timeslice_count_ = 0;
   size_t timeslice_error_count_ = 0;
+  size_t component_count_ = 0;
+  size_t component_error_count_ = 0;
   size_t microslice_count_ = 0;
+  size_t microslice_error_count_ = 0;
   size_t content_bytes_ = 0;
 };

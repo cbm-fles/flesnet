@@ -1,6 +1,7 @@
 // Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <iostream>

@@ -3,6 +3,7 @@
 /// \brief Defines utility functions in the fles::system namespace.
 #pragma once
 
+#include <glob.h>
 #include <string>
 #include <vector>
 
@@ -50,6 +51,30 @@ std::string current_hostname();
  */
 std::string current_domainname();
 
+enum class glob_flags : int {
+  none = 0,
+  // Always available according to POSIX
+  err = GLOB_ERR,
+  mark = GLOB_MARK,
+  nosort = GLOB_NOSORT,
+  nocheck = GLOB_NOCHECK,
+  noescape = GLOB_NOESCAPE,
+  // Non-standard, but available on both GNU and Darwin
+  brace = GLOB_BRACE,
+  nomagic = GLOB_NOMAGIC,
+  tilde = GLOB_TILDE
+};
+
+inline glob_flags operator|(glob_flags a, glob_flags b) {
+  return static_cast<glob_flags>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+inline glob_flags operator&(glob_flags a, glob_flags b) {
+  return static_cast<glob_flags>(static_cast<int>(a) & static_cast<int>(b));
+}
+
+inline glob_flags& operator|=(glob_flags& a, glob_flags b) { return a = a | b; }
+
 /**
  * \brief Find pathnames matching a pattern.
  *
@@ -59,7 +84,9 @@ std::string current_domainname();
  * @param pattern pattern for pathnames
  * @return vector of pathnames
  */
-std::vector<std::string> glob(const std::string& pattern);
+std::vector<std::string> glob(const std::string& pattern,
+                              glob_flags flags = glob_flags::brace |
+                                                 glob_flags::tilde);
 
 } // namespace system
 } // namespace fles
