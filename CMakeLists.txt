@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.14)
 project(flesnet DESCRIPTION "CBM FLES Timeslice Building")
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
 option(COVERALLS "Turn on coveralls support" OFF)
