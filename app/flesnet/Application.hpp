@@ -49,6 +49,9 @@ private:
   Parameters const& par_;
   volatile sig_atomic_t* signal_status_;
 
+  /// The application's ZeroMQ context
+  zmq::context_t zmq_context_{1};
+
   // Input node application
   std::map<std::string, std::shared_ptr<flib_shm_device_client>> shm_devices_;
 
@@ -64,9 +67,6 @@ private:
   std::vector<std::unique_ptr<ConnectionGroupWorker>> timeslice_builders_;
   std::vector<std::unique_ptr<ConnectionGroupWorker>> input_channel_senders_;
 #endif
-
-  /// The application's ZeroMQ context
-  zmq::context_t zmq_context_{1};
 
   /// The application's ZeroMQ transport objects
   std::vector<std::unique_ptr<TimesliceBuilderZeromq>>
