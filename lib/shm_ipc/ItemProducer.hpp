@@ -19,7 +19,7 @@ public:
     if (payload.empty()) {
       distributor_socket_.send(zmq::buffer(std::to_string(id)));
     } else {
-      zmq::message_t message(id);
+      zmq::message_t message(std::to_string(id));
       zmq::message_t payload_message(payload);
       distributor_socket_.send(message, zmq::send_flags::sndmore);
       distributor_socket_.send(payload_message, zmq::send_flags::none);
