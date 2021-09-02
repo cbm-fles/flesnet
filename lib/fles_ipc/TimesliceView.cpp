@@ -12,7 +12,7 @@ TimesliceView::TimesliceView(
     std::shared_ptr<const Item> work_item)
     : managed_shm_(std::move(managed_shm)), work_item_(std::move(work_item)) {
 
-  std::istringstream istream(work_item->payload());
+  std::istringstream istream(work_item_->payload());
   {
     boost::archive::binary_iarchive iarchive(istream);
     iarchive >> timeslice_item_;
