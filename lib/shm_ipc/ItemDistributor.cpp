@@ -58,7 +58,10 @@ void ItemDistributor::on_worker_pollin() {
 
   if (message.size() == 2) {
     // Handle ZMQ worker disconnect notification
-    L_(info) << "received disconnect notification";
+    if (workers_.count(identity) != 0) {
+      L_(info) << "worker disconnected: "
+               << workers_.at(identity)->client_name();
+    }
     if (workers_.erase(identity) == 0) {
       // This could happen if a misbehaving worker did not send a REGISTER
       // message

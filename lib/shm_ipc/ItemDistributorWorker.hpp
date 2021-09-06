@@ -68,11 +68,16 @@ public:
             last_heartbeat_time_ + distributor_heartbeat_interval < when);
   }
 
+  [[nodiscard]] const std::string& client_name() const { return client_name_; }
+
 private:
   void initialize_from_string(const std::string& message) {
     std::string command;
     std::stringstream s(message);
+    // Read space-separated string into separate variables
     s >> command >> stride_ >> offset_ >> queue_policy_ >> client_name_;
+    // Read remainder of string and add contents to client_name_
+    client_name_ += std::string(std::istreambuf_iterator<char>(s), {});
     if (s.fail()) {
       throw std::invalid_argument("Invalid register message: " + message);
     }

@@ -51,6 +51,16 @@ std::string current_hostname();
  */
 std::string current_domainname();
 
+/**
+ * \brief Retrieve current process ID (PID).
+ *
+ * This is a thin C++ wrapper around getpid(), which returns the process ID of
+ * the calling process.
+ *
+ * @return current process ID
+ */
+int current_pid();
+
 enum class glob_flags : int {
   none = 0,
   // Always available according to POSIX

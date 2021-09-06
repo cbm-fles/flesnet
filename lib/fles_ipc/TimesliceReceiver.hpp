@@ -5,6 +5,7 @@
 
 #include "ItemWorker.hpp"
 #include "ItemWorkerProtocol.hpp"
+#include "System.hpp"
 #include "TimesliceSource.hpp"
 #include "TimesliceView.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -23,7 +24,8 @@ public:
   explicit TimesliceReceiver(const std::string& shm_identifier,
                              WorkerParameters parameters = WorkerParameters{
                                  1, 0, WorkerQueuePolicy::QueueAll,
-                                 "TimesliceReceiver"});
+                                 "TimesliceReceiver at PID " +
+                                     std::to_string(system::current_pid())});
 
   /// Delete copy constructor (non-copyable).
   TimesliceReceiver(const TimesliceReceiver&) = delete;
