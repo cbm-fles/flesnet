@@ -4,6 +4,7 @@
 #include "ItemWorkerProtocol.hpp"
 #include "log.hpp"
 
+#include <cassert>
 #include <chrono>
 #include <queue>
 #include <set>
@@ -96,6 +97,7 @@ public:
 
 private:
   void connect() {
+    assert(!distributor_socket_);
     distributor_socket_ =
         std::make_unique<zmq::socket_t>(context_, zmq::socket_type::req);
     distributor_socket_->connect(distributor_address_);

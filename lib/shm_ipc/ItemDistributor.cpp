@@ -60,7 +60,7 @@ void ItemDistributor::on_worker_pollin() {
     // Handle ZMQ worker disconnect notification
     if (workers_.count(identity) != 0) {
       L_(info) << "worker disconnected: "
-               << workers_.at(identity)->client_name();
+               << workers_.at(identity)->description();
     }
     if (workers_.erase(identity) == 0) {
       // This could happen if a misbehaving worker did not send a REGISTER
@@ -75,6 +75,8 @@ void ItemDistributor::on_worker_pollin() {
         // Handle new worker registration
         auto worker = std::make_unique<ItemDistributorWorker>(message_string);
         workers_[identity] = std::move(worker);
+        L_(info) << "worker connected: "
+                 << workers_.at(identity)->description();
       } else if (message_string.rfind("COMPLETE ", 0) == 0) {
         // Handle worker completion message
         auto& worker = workers_.at(identity);

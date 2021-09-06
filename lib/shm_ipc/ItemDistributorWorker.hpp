@@ -70,6 +70,11 @@ public:
 
   [[nodiscard]] const std::string& client_name() const { return client_name_; }
 
+  [[nodiscard]] std::string description() const {
+    return client_name_ + " (s" + std::to_string(stride_) + "/o" +
+           std::to_string(offset_) + "/p" + to_string(queue_policy_) + ")";
+  }
+
 private:
   void initialize_from_string(const std::string& message) {
     std::string command;
