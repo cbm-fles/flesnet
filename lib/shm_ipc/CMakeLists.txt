@@ -28,5 +28,6 @@ target_compile_options(shm_ipc
 )
 
 target_link_libraries(shm_ipc
+  PUBLIC logging
   PUBLIC ${ZMQ_LIBRARIES}
 )

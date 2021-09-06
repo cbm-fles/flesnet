@@ -2,9 +2,9 @@
 #define SHM_IPC_ITEMWORKER_HPP
 
 #include "ItemWorkerProtocol.hpp"
+#include "log.hpp"
 
 #include <chrono>
-#include <iostream>
 #include <queue>
 #include <set>
 #include <stdexcept>
@@ -77,12 +77,12 @@ public:
             throw(WorkerProtocolError("connection heartbeat expired"));
           }
         }
-      } catch (WorkerProtocolError& error) {
-        std::cerr << "Protocol error: " << error.what() << std::endl;
+      } catch (WorkerProtocolError& wp_error) {
+        L_(error) << "Worker protocol violation: " << wp_error.what();
         distributor_socket_ = nullptr;
         std::queue<ItemID>().swap(completed_items_);
-      } catch (zmq::error_t& error) {
-        std::cerr << "ZMQ error: " << error.what() << std::endl;
+      } catch (zmq::error_t& zmq_error) {
+        L_(error) << "ZMQ: " << zmq_error.what();
         distributor_socket_ = nullptr;
         std::queue<ItemID>().swap(completed_items_);
       }

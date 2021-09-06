@@ -10,3 +10,7 @@ target_compile_definitions(logging
 target_include_directories(logging PUBLIC .)
 
 target_include_directories(logging SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+
+target_link_libraries(logging
+  PUBLIC ${Boost_LOG_LIBRARY}
+)

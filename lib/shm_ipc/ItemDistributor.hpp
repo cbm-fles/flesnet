@@ -3,12 +3,12 @@
 
 #include "ItemDistributorWorker.hpp"
 #include "ItemWorkerProtocol.hpp"
+#include "log.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <exception>
-#include <iostream>
 #include <map>
 #include <memory>
 #include <queue>
@@ -72,7 +72,7 @@ private:
           send_worker_heartbeat(identity);
         }
       } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        L_(error) << e.what();
         workers_.erase(identity);
       }
     }
@@ -100,7 +100,7 @@ private:
 
     // Send the message
     if (!message.send(worker_socket_)) {
-      std::cerr << "Error: message send failed";
+      L_(error) << "message send failed";
     }
   }
 

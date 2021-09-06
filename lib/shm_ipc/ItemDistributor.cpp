@@ -37,7 +37,7 @@ void ItemDistributor::on_generator_pollin() {
         }
       }
     } catch (std::exception& e) {
-      std::cerr << "Error: " << e.what() << std::endl;
+      L_(error) << e.what();
       workers_.erase(identity);
     }
   }
@@ -58,11 +58,11 @@ void ItemDistributor::on_worker_pollin() {
 
   if (message.size() == 2) {
     // Handle ZMQ worker disconnect notification
-    std::cout << "Info: received disconnect notification" << std::endl;
+    L_(info) << "received disconnect notification";
     if (workers_.erase(identity) == 0) {
       // This could happen if a misbehaving worker did not send a REGISTER
       // message
-      std::cerr << "Error: disconnect from unknown worker" << std::endl;
+      L_(error) << "disconnect from unknown worker";
     }
   } else {
     try {
@@ -98,9 +98,8 @@ void ItemDistributor::on_worker_pollin() {
         throw std::invalid_argument("Unknown message type: " + message_string);
       }
     } catch (std::exception& e) {
-      std::cerr << e.what() << "\n"
-                << "Error: protocol violation, disconnecting worker"
-                << std::endl;
+      L_(error) << e.what();
+      L_(error) << "protocol violation, disconnecting worker";
       try {
         send_worker_disconnect(identity);
       } catch (std::exception&) {
