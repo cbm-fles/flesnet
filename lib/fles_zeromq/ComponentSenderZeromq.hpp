@@ -36,6 +36,16 @@ public:
   /// The thread main function.
   void operator()();
 
+  /**
+   * @brief Return a text description of the object (to be used as a thread
+   * name).
+   *
+   * @return A string describing the object (at most 15 characters long).
+   */
+  [[nodiscard]] std::string thread_name() const {
+    return "CS/ZMQ/i" + std::to_string(input_index_);
+  };
+
   friend void enqueue_ack(void* data, void* hint);
 
 private:
