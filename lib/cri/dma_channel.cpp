@@ -52,6 +52,23 @@ dma_channel::~dma_channel() {
   disable();
 }
 
+// The DMA engine uses the following read/write pointer logic:
+// - Pointers show the next element to be read or written
+//   or in other words the number of read/written elements.
+// - If pointers match the buffer is completly empty.
+// - Maximum fill of the buffer is size-1.
+// - no writes if: wr_ptr + 1 = rd_ptr
+// - no reads if:  wr_ptr = rd_ptr
+//
+// Pointers return number of bytes. However the DMA engine internally
+// handles only entries of size dma_transfer_size and MicrosliceDescriptor.
+// Therefore the updated pointes have to aligen to these elements.
+//
+// The DMA engine provides indices in addition to pointers
+// - Indices grow monotonously.
+// - The descrioptor index gives the number of written descript.
+// - The data index gives the number od written bytes in the data buffer.
+//
 void dma_channel::set_sw_read_pointers(uint64_t data_offset,
                                        uint64_t desc_offset) {
   assert(data_offset % m_dma_transfer_size == 0);
@@ -99,10 +116,7 @@ void dma_channel::configure() {
   configure_sg_manager(data_sg_bram);
   configure_sg_manager(desc_sg_bram);
   set_dma_transfer_size();
-  uint64_t data_buffer_offset = m_data_buffer->size() - m_dma_transfer_size;
-  uint64_t desc_buffer_offset =
-      m_desc_buffer->size() - sizeof(fles::MicrosliceDescriptor);
-  set_sw_read_pointers(data_buffer_offset, desc_buffer_offset);
+  set_sw_read_pointers(0, 0);
 }
 
 void dma_channel::configure_sg_manager(sg_bram_t buf_sel) {
