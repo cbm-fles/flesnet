@@ -253,12 +253,12 @@ void Application::run() {
     L_(debug) << "using existing thread for single timeslice builder";
     (*timeslice_builders_[0])();
     cleanup_distributor_threads();
-  };
+  }
   if (input_channel_senders_.size() == 1 && timeslice_builders_.empty()) {
     L_(debug) << "using existing thread for single input channel sender";
     (*input_channel_senders_[0])();
     return;
-  };
+  }
 #endif
 
   // FIXME: temporary code, need to implement interrupt
