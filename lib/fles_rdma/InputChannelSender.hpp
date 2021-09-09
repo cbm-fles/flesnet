@@ -40,6 +40,10 @@ public:
 
   void operator()() override;
 
+  [[nodiscard]] std::string thread_name() const override {
+    return "ICS/RDMA/i" + std::to_string(input_index_);
+  };
+
   /// The central function for distributing timeslice data.
   bool try_send_timeslice(uint64_t timeslice);
 

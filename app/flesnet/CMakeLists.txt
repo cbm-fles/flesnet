@@ -36,6 +36,7 @@ if (USE_LIBFABRIC AND LIBFABRIC_FOUND)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_compile_definitions(flesnet PUBLIC HAVE_PTHREAD_SETNAME_NP)
   target_link_libraries(flesnet rt atomic)
 endif()
 

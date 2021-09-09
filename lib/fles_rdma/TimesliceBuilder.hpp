@@ -39,6 +39,10 @@ public:
 
   void operator()() override;
 
+  [[nodiscard]] std::string thread_name() const override {
+    return "TSB/RDMA/o" + std::to_string(compute_index_);
+  };
+
   /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
   void on_connect_request(struct rdma_cm_event* event) override;
 

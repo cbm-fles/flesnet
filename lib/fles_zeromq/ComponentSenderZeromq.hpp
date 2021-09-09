@@ -7,6 +7,7 @@
 #include <boost/format.hpp>
 #include <cassert>
 #include <csignal>
+#include <mutex>
 #include <zmq.h>
 
 /// Input buffer and compute node connection container class.
@@ -35,7 +36,17 @@ public:
   /// The thread main function.
   void operator()();
 
-  friend void free_ts(void* data, void* hint);
+  /**
+   * @brief Return a text description of the object (to be used as a thread
+   * name).
+   *
+   * @return A string describing the object (at most 15 characters long).
+   */
+  [[nodiscard]] std::string thread_name() const {
+    return "CS/ZMQ/i" + std::to_string(input_index_);
+  };
+
+  friend void enqueue_ack(void* data, void* hint);
 
 private:
   /// This component's index in the list of input components.
@@ -58,6 +69,18 @@ private:
 
   /// ZeroMQ socket.
   void* socket_;
+
+  struct Acknowledgment {
+    ComponentSenderZeromq* server;
+    uint64_t timeslice;
+    bool is_data;
+  };
+
+  /// Queue to store pending acknowledgments.
+  std::queue<Acknowledgment*> pending_acks_;
+
+  /// Mutex to manage access to the pending_acks_ queue.
+  std::mutex pending_acks_mutex_;
 
   /// Buffer to store acknowledged status of timeslices.
   RingBuffer<uint64_t, true> ack_;
@@ -155,6 +178,9 @@ private:
 
   /// Cleanup at end of run.
   void run_end();
+
+  /// Process the pending acknowledgments received from a ZeroMQ thread.
+  void process_pending_acks();
 
   /// The central function for distributing timeslice data.
   bool try_send_timeslice(uint64_t ts);
