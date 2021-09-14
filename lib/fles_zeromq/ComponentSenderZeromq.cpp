@@ -63,6 +63,8 @@ void ComponentSenderZeromq::run_begin() {
 }
 
 bool ComponentSenderZeromq::run_cycle() {
+  process_pending_acks();
+
   zmq_msg_t request;
   [[maybe_unused]] int rc = zmq_msg_init(&request);
   assert(rc == 0);
@@ -89,17 +91,22 @@ void ComponentSenderZeromq::run_end() {
   time_end_ = std::chrono::high_resolution_clock::now();
 }
 
-struct Acknowledgment {
-  ComponentSenderZeromq* server;
-  uint64_t timeslice;
-  bool is_data;
-};
-
-void free_ts(void* /* data */, void* hint) {
+void enqueue_ack(void* /* data */, void* hint) {
   assert(hint);
-  auto* ack = static_cast<Acknowledgment*>(hint);
-  ack->server->ack_timeslice(ack->timeslice, ack->is_data);
-  delete ack;
+  auto* ack = static_cast<ComponentSenderZeromq::Acknowledgment*>(hint);
+  // enqueue achnowledgment for later processing by the classes own thread
+  std::lock_guard<std::mutex> lock(ack->server->pending_acks_mutex_);
+  ack->server->pending_acks_.emplace(ack);
+}
+
+void ComponentSenderZeromq::process_pending_acks() {
+  std::lock_guard<std::mutex> lock(pending_acks_mutex_);
+  while (!pending_acks_.empty()) {
+    auto* ack = pending_acks_.front();
+    ack_timeslice(ack->timeslice, ack->is_data);
+    delete ack;
+    pending_acks_.pop();
+  }
 }
 
 bool ComponentSenderZeromq::try_send_timeslice(uint64_t ts) {
@@ -173,7 +180,7 @@ zmq_msg_t ComponentSenderZeromq::create_message(RingBufferView<T_>& buf,
     auto* data = &buf.at(offset);
     size_t bytes = sizeof(T_) * length;
     auto* hint = new Acknowledgment{this, ts, is_data};
-    zmq_msg_init_data(&msg, data, bytes, free_ts, hint);
+    zmq_msg_init_data(&msg, data, bytes, enqueue_ack, hint);
   } else {
     // two chunks
     auto* data1 = &buf.at(offset);

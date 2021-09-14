@@ -8,7 +8,7 @@
 /// Structure representing a set of compute node buffer positions.
 struct ComputeNodeBufferPosition {
   uint64_t data; ///< The position in the data buffer.
-  uint64_t desc; ///< The position in the description buffer.
+  uint64_t desc; ///< The position in the descriptor buffer.
   bool operator<(const ComputeNodeBufferPosition& rhs) const {
     return desc < rhs.desc;
   }

@@ -8,14 +8,16 @@
 #include <boost/format.hpp>
 #include <cassert>
 #include <csignal>
+#include <string>
 #include <vector>
 #include <zmq.h>
 
-/// Timeslice builder class.
-/** A TimesliceBuilderZeromq object initiates connections to input nodes
- * and
- * receives
- * timeslices to a timeslice buffer. */
+/**
+ * @brief The TimesliceBuilderZeromq class
+ *
+ * A TimesliceBuilderZeromq object initiates connections to input nodes  and
+ * receives timeslices to a timeslice buffer.
+ */
 
 class TimesliceBuilderZeromq {
 public:
@@ -37,6 +39,16 @@ public:
 
   /// The thread main function.
   void operator()();
+
+  /**
+   * @brief Return a text description of the object (to be used as a thread
+   * name).
+   *
+   * @return A string describing the object (at most 15 characters long).
+   */
+  [[nodiscard]] std::string thread_name() const {
+    return "TSB/ZMQ/o" + std::to_string(compute_index_);
+  };
 
 private:
   /// This builder's index in the list of compute nodes.
