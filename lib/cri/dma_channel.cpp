@@ -239,14 +239,17 @@ void dma_channel::set_dma_transfer_size() {
 }
 
 inline void dma_channel::enable() {
-  set_dmactrl((0 << BIT_DMACTRL_DATAPATH_RST | 1 << BIT_DMACTRL_EBDM_EN |
-               1 << BIT_DMACTRL_RBDM_EN | 1 << BIT_DMACTRL_DMA_EN),
-              (1 << BIT_DMACTRL_DATAPATH_RST | 1 << BIT_DMACTRL_EBDM_EN |
-               1 << BIT_DMACTRL_RBDM_EN | 1 << BIT_DMACTRL_DMA_EN));
+  // split into two requests to allow logic to come out of reset
+  // for now we trust in sufficient delay between the requests
+  set_dmactrl(0 << BIT_DMACTRL_DATAPATH_RST, 1 << BIT_DMACTRL_DATAPATH_RST);
+  set_dmactrl((1 << BIT_DMACTRL_EBDM_EN | 1 << BIT_DMACTRL_RBDM_EN |
+               1 << BIT_DMACTRL_DMA_EN),
+              (1 << BIT_DMACTRL_EBDM_EN | 1 << BIT_DMACTRL_RBDM_EN |
+               1 << BIT_DMACTRL_DMA_EN));
 }
 
 void dma_channel::disable(size_t timeout) {
-  // disable data buffer
+  // disable the DMA engine
   set_dmactrl((0 << BIT_DMACTRL_DMA_EN), (1 << BIT_DMACTRL_DMA_EN));
   // wait till ongoing transfer is finished
   while (is_busy() && timeout != 0) {
@@ -255,10 +258,10 @@ void dma_channel::disable(size_t timeout) {
     // TODO: add timeout feedback
   }
   // disable everything else and put to reset
-  set_dmactrl((0 << BIT_DMACTRL_RBDM_EN | 0 << BIT_DMACTRL_EBDM_EN |
-               1 << BIT_DMACTRL_DATAPATH_RST),
-              (1 << BIT_DMACTRL_RBDM_EN | 1 << BIT_DMACTRL_EBDM_EN |
-               1 << BIT_DMACTRL_DATAPATH_RST));
+  set_dmactrl((0 << BIT_DMACTRL_RBDM_EN | 0 << BIT_DMACTRL_EBDM_EN),
+              (1 << BIT_DMACTRL_RBDM_EN | 1 << BIT_DMACTRL_EBDM_EN));
+  usleep(100);
+  set_dmactrl(1 << BIT_DMACTRL_DATAPATH_RST, 1 << BIT_DMACTRL_DATAPATH_RST);
 }
 
 void dma_channel::reset_datapath(bool enable) {
