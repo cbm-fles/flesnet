@@ -9,6 +9,7 @@
 #include "pda/device.hpp"
 #include "pda/pci_bar.hpp"
 #include <array>
+#include <chrono>
 #include <ctime>
 #include <memory>
 #include <string>
@@ -55,6 +56,7 @@ public:
   struct build_info_t build_info();
   std::string print_build_info();
   std::string print_devinfo();
+  std::chrono::seconds uptime();
 
   void set_testreg(uint32_t data);
   uint32_t get_testreg();

@@ -4,14 +4,14 @@
 // This file was automatically generated from:
 // ../flim/src/packages/fles_registers.vhd
 // Repository is: git repository
-// Repository Revision: 567e0eb5fbc15de24dbf4dd7cb895150b7656909
-// Repository Status: clean
-// Build Timestamp: Fri Jul  2 13:58:28 CEST 2021
+// Repository Revision: 752fb39ea691b9ef8ef20ab05501f028ec0f9542
+// Repository Status: dirty
+// Build Timestamp: Thu Sep 16 15:58:36 CEST 2021
 // Build System: hutter@eda02
 #define CRI_C_BUILD_REPO 1
-#define CRI_C_BUILD_DATE 1625227108
-#define CRI_C_BUILD_REVISION 567e0eb5fbc15de24dbf4dd7cb895150b7656909
-#define CRI_C_BUILD_STATUS_CLEAN 1
+#define CRI_C_BUILD_DATE 1631800716
+#define CRI_C_BUILD_REVISION 752fb39ea691b9ef8ef20ab05501f028ec0f9542
+#define CRI_C_BUILD_STATUS_CLEAN 0
 #define CRI_C_BUILD_HOST 65646130320000000000000000000000
 #define CRI_C_BUILD_USER 68757474657200000000000000000000
 #define CRI_C_HARDWARE_ID 0xf1e5
@@ -50,6 +50,7 @@
 #define CRI_REG_PCI_PERF_DMA_STALL 27
 #define CRI_REG_PCI_PERF_DMA_BUSY 28
 #define CRI_REG_PCI_PERF_DMA_MAX_NRDY 29
+#define CRI_REG_UPTIME 30
 #define CRI_REG_EBDM_N_SG_CONFIG 0
 #define CRI_REG_EBDM_BUFFER_SIZE_L 1
 #define CRI_REG_EBDM_BUFFER_SIZE_H 2

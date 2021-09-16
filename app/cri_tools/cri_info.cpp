@@ -30,6 +30,8 @@ int main() {
       std::cout << "Hardware links: "
                 << static_cast<unsigned>(cris.back()->number_of_hw_links())
                 << std::endl;
+      std::cout << "Uptime: " << cris.back()->uptime().count() << " s"
+                << std::endl;
       std::cout << cris.back()->print_build_info() << std::endl;
 
     } catch (std::exception& e) {

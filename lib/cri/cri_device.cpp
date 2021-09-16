@@ -192,6 +192,12 @@ std::string cri_device::print_devinfo() {
   return ss.str();
 }
 
+std::chrono::seconds cri_device::uptime() {
+  std::chrono::duration<double, std::ratio<1, pci_clk>> uptime(
+      static_cast<uint64_t>(m_register_file->get_reg(CRI_REG_UPTIME)) << 24);
+  return std::chrono::duration_cast<std::chrono::seconds>(uptime);
+}
+
 size_t cri_device::number_of_links() { return m_link.size(); }
 
 std::vector<cri_link*> cri_device::links() {
