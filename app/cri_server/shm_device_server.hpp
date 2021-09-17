@@ -34,22 +34,23 @@ public:
       : m_cri(cri), m_shm_identifier(std::move(shm_identifier)),
         m_signal_status(signal_status) {
 
-    std::vector<cri::cri_link*> cri_links = m_cri->links();
+    std::vector<cri::cri_channel*> cri_channels = m_cri->channels();
 
-    // delete deactivated links from vector
-    cri_links.erase(std::remove_if(std::begin(cri_links), std::end(cri_links),
-                                   [](decltype(cri_links[0]) link) {
-                                     return link->data_source() ==
-                                            cri::cri_link::rx_disable;
-                                   }),
-                    std::end(cri_links));
-    L_(info) << "enabled cri links detected: " << cri_links.size();
+    // delete deactivated channels from vector
+    cri_channels.erase(std::remove_if(std::begin(cri_channels),
+                                      std::end(cri_channels),
+                                      [](decltype(cri_channels[0]) channel) {
+                                        return channel->data_source() ==
+                                               cri::cri_channel::rx_disable;
+                                      }),
+                       std::end(cri_channels));
+    L_(info) << "enabled cri channels detected: " << cri_channels.size();
 
     // create a big enough shared memory segment
     size_t shm_size = ((UINT64_C(1) << data_buffer_size_exp) * sizeof(T_DATA) +
                        (UINT64_C(1) << desc_buffer_size_exp) * sizeof(T_DESC) +
                        2 * sysconf(_SC_PAGESIZE) + sizeof(shm_channel)) *
-                          cri_links.size() +
+                          cri_channels.size() +
                       sizeof(shm_device) + 1000;
     m_shm = std::unique_ptr<ip::managed_shared_memory>(
         new ip::managed_shared_memory(ip::create_only, m_shm_identifier.c_str(),
@@ -59,11 +60,11 @@ public:
     std::string device_name = "shm_device";
     m_shm_dev = m_shm->construct<shm_device>(device_name.c_str())();
 
-    // create channels for active cri links
+    // create channels for active cri channels
     size_t idx = 0;
-    for (cri::cri_link* link : cri_links) {
+    for (cri::cri_channel* channel : cri_channels) {
       m_shm_ch_vec.push_back(std::unique_ptr<shm_channel_server_type>(
-          new shm_channel_server_type(m_shm.get(), m_shm_dev, idx, link,
+          new shm_channel_server_type(m_shm.get(), m_shm_dev, idx, channel,
                                       data_buffer_size_exp,
                                       desc_buffer_size_exp)));
       ++idx;

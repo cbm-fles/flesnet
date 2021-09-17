@@ -14,16 +14,17 @@
 namespace cri {
 
 // constructor for using user buffers
-dma_channel::dma_channel(cri_link* parent_link,
+dma_channel::dma_channel(cri_channel* parent_channel,
                          void* data_buffer,
                          size_t data_buffer_log_size,
                          void* desc_buffer,
                          size_t desc_buffer_log_size,
                          size_t dma_transfer_size)
-    : m_parent_link(parent_link), m_data_buffer_log_size(data_buffer_log_size),
+    : m_parent_channel(parent_channel),
+      m_data_buffer_log_size(data_buffer_log_size),
       m_desc_buffer_log_size(desc_buffer_log_size),
       m_dma_transfer_size(dma_transfer_size) {
-  m_rfpkt = m_parent_link->register_file_packetizer();
+  m_rfpkt = m_parent_channel->register_file_packetizer();
   m_reg_dmactrl_cached = m_rfpkt->get_reg(CRI_REG_DMA_CTRL);
   // ensure HW is disabled
   // TODO: add global lock, otherwise this gives a race condition
@@ -31,14 +32,14 @@ dma_channel::dma_channel(cri_link* parent_link,
     throw CriException("DMA Engine already enabled");
   }
   m_data_buffer = std::unique_ptr<pda::dma_buffer>(
-      new pda::dma_buffer(m_parent_link->parent_device(), data_buffer,
+      new pda::dma_buffer(m_parent_channel->parent_device(), data_buffer,
                           (UINT64_C(1) << data_buffer_log_size),
-                          (2 * m_parent_link->link_index() + 0)));
+                          (2 * m_parent_channel->channel_index() + 0)));
 
   m_desc_buffer = std::unique_ptr<pda::dma_buffer>(
-      new pda::dma_buffer(m_parent_link->parent_device(), desc_buffer,
+      new pda::dma_buffer(m_parent_channel->parent_device(), desc_buffer,
                           (UINT64_C(1) << desc_buffer_log_size),
-                          (2 * m_parent_link->link_index() + 1)));
+                          (2 * m_parent_channel->channel_index() + 1)));
   // clear eb for debugging
   memset(m_data_buffer->mem(), 0, m_data_buffer->size());
   // clear rb for polling
@@ -244,7 +245,7 @@ void dma_channel::set_dma_transfer_size() {
   // dma_transfer_size must be a multiple of 4 byte
   assert((m_dma_transfer_size & 0x3) == 0);
   if (m_dma_transfer_size >
-      m_parent_link->parent_device()->max_payload_size()) {
+      m_parent_channel->parent_device()->max_payload_size()) {
     throw CriException("DMA transfer size exceeds PCI MaxPayload");
   }
   // set DMA_TRANSFER_SIZE size (has to be provided as #DWs)

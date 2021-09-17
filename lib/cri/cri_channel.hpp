@@ -26,11 +26,11 @@ class dma_channel;
 constexpr uint32_t pkt_clk = 250E6;
 constexpr uint32_t gtx_clk = 160E6;
 
-class cri_link {
+class cri_channel {
 
 public:
-  cri_link(size_t link_index, pda::device* dev, pda::pci_bar* bar);
-  ~cri_link();
+  cri_channel(size_t ch_index, pda::device* dev, pda::pci_bar* bar);
+  ~cri_channel();
 
   void init_dma(void* data_buffer,
                 size_t data_buffer_log_size,
@@ -100,7 +100,7 @@ public:
   uint32_t get_mc_busy();
 
   /*** Getter ***/
-  size_t link_index() { return m_link_index; };
+  size_t channel_index() { return m_ch_index; };
   sys_bus_addr base_addr() { return m_base_addr; };
   pda::device* parent_device() { return m_parent_device; };
   pda::pci_bar* bar() { return m_bar; };
@@ -114,13 +114,13 @@ protected:
   std::unique_ptr<register_file> m_rfpkt;
   std::unique_ptr<register_file> m_rfgtx;
 
-  size_t m_link_index = 0;
+  size_t m_ch_index = 0;
 
   sys_bus_addr m_base_addr;
   pda::device* m_parent_device;
   pda::pci_bar* m_bar;
 
   friend std::ostream& operator<<(std::ostream& os,
-                                  cri::cri_link::data_source_t sel);
+                                  cri::cri_channel::data_source_t sel);
 };
 } // namespace cri

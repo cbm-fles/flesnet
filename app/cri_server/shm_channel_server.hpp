@@ -20,10 +20,11 @@ public:
   shm_channel_server(ip::managed_shared_memory* shm,
                      shm_device* shm_dev,
                      size_t index,
-                     cri::cri_link* cri_link,
+                     cri::cri_channel* cri_channel,
                      size_t data_buffer_size_exp,
                      size_t desc_buffer_size_exp)
-      : m_shm(shm), m_shm_dev(shm_dev), m_index(index), m_cri_link(cri_link),
+      : m_shm(shm), m_shm_dev(shm_dev), m_index(index),
+        m_cri_channel(cri_channel),
         m_data_buffer_size_exp(data_buffer_size_exp),
         m_desc_buffer_size_exp(desc_buffer_size_exp) {
 
@@ -52,11 +53,11 @@ public:
     static_assert(data_item_size == (UINT64_C(1) << 0),
                   "incompatible data_item_size in shm_channel_server");
 
-    m_cri_link->init_dma(data_buffer_raw, data_buffer_size_exp + 0,
-                         desc_buffer_raw, desc_buffer_size_exp + 5);
-    m_dma_transfer_size = m_cri_link->dma()->dma_transfer_size();
+    m_cri_channel->init_dma(data_buffer_raw, data_buffer_size_exp + 0,
+                            desc_buffer_raw, desc_buffer_size_exp + 5);
+    m_dma_transfer_size = m_cri_channel->dma()->dma_transfer_size();
 
-    m_cri_link->enable_readout();
+    m_cri_channel->enable_readout();
   }
 
   ~shm_channel_server() {
@@ -67,8 +68,8 @@ public:
     } catch (ip::interprocess_exception const& e) {
       L_(error) << "Failed to shut down channel: " << e.what();
     }
-    m_cri_link->disable_readout();
-    m_cri_link->deinit_dma();
+    m_cri_channel->disable_readout();
+    m_cri_channel->deinit_dma();
     // TODO destroy channel object and deallocate buffers if it is worth to do
   }
 
@@ -88,7 +89,7 @@ public:
       L_(trace) << "updating read_index: data " << read_index.data << " desc "
                 << read_index.desc;
 
-      m_cri_link->dma()->set_sw_read_pointers(
+      m_cri_channel->dma()->set_sw_read_pointers(
           hw_pointer(read_index.data, m_data_buffer_size_exp, data_item_size,
                      m_dma_transfer_size),
           hw_pointer(read_index.desc, m_desc_buffer_size_exp, desc_item_size));
@@ -106,7 +107,7 @@ private:
     lock.unlock();
     // fill write indices
     TimedDualIndex write_index;
-    write_index.index.desc = m_cri_link->dma()->get_desc_index();
+    write_index.index.desc = m_cri_channel->dma()->get_desc_index();
     write_index.index.data =
         m_desc_buffer_view->at(write_index.index.desc - 1).offset +
         m_desc_buffer_view->at(write_index.index.desc - 1).size;
@@ -143,7 +144,7 @@ private:
   ip::managed_shared_memory* m_shm;
   shm_device* m_shm_dev;
   size_t m_index;
-  cri::cri_link* m_cri_link;
+  cri::cri_channel* m_cri_channel;
   size_t m_dma_transfer_size;
 
   shm_channel* m_shm_ch;

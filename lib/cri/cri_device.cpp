@@ -43,11 +43,11 @@ void cri_device::init() {
   // enforce correct magic number and hw version
   check_magic_number();
   check_hw_ver(hw_ver_table);
-  // create link objects
-  uint8_t num_links = number_of_hw_links();
-  for (size_t i = 0; i < num_links; i++) {
-    m_link.push_back(std::unique_ptr<cri_link>(
-        new cri_link(i, m_device.get(), m_bar.get())));
+  // create channel objects
+  uint8_t num_channels = number_of_hw_channels();
+  for (size_t i = 0; i < num_channels; i++) {
+    m_channel.push_back(std::unique_ptr<cri_channel>(
+        new cri_channel(i, m_device.get(), m_bar.get())));
   }
 }
 
@@ -92,7 +92,7 @@ void cri_device::set_pgen_mc_size(uint32_t mc_size_ticks) {
   m_register_file->set_reg(CRI_REG_MC_CNT_CFG_H, mc_size_ns, 0x7FFFFFFF);
 }
 
-uint8_t cri_device::number_of_hw_links() {
+uint8_t cri_device::number_of_hw_channels() {
   return (m_register_file->get_reg(CRI_REG_N_CHANNELS) & 0xFF);
 }
 
@@ -215,17 +215,17 @@ std::string cri_device::print_uptime() {
   return ss.str();
 }
 
-size_t cri_device::number_of_links() { return m_link.size(); }
+size_t cri_device::number_of_channels() { return m_channel.size(); }
 
-std::vector<cri_link*> cri_device::links() {
-  std::vector<cri_link*> links;
-  for (auto& l : m_link) {
-    links.push_back(l.get());
+std::vector<cri_channel*> cri_device::channels() {
+  std::vector<cri_channel*> channels;
+  for (auto& l : m_channel) {
+    channels.push_back(l.get());
   }
-  return links;
+  return channels;
 }
 
-cri_link* cri_device::link(size_t n) { return m_link.at(n).get(); }
+cri_channel* cri_device::channel(size_t n) { return m_channel.at(n).get(); }
 
 void cri_device::id_led(bool enable) {
   m_register_file->set_bit(CRI_REG_FLIM_CFG, 0, enable);

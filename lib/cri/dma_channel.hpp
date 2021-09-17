@@ -28,12 +28,12 @@
 
 namespace cri {
 
-class cri_link;
+class cri_channel;
 
 class dma_channel {
 
 public:
-  dma_channel(cri_link* link,
+  dma_channel(cri_channel* channel,
               void* data_buffer,
               size_t data_buffer_log_size,
               void* desc_buffer,
@@ -120,7 +120,7 @@ private:
 
   static inline uint32_t get_hi_32(uint64_t val);
 
-  cri_link* m_parent_link;
+  cri_channel* m_parent_channel;
   register_file* m_rfpkt;
   std::unique_ptr<pda::dma_buffer> m_data_buffer;
   std::unique_ptr<pda::dma_buffer> m_desc_buffer;

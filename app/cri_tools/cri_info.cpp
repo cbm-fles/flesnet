@@ -27,8 +27,8 @@ int main() {
       cris.push_back(
           std::unique_ptr<cri_device>(new cri_device(i)));
       std::cout << "Address: " << cris.back()->print_devinfo() << std::endl;
-      std::cout << "Hardware links: "
-                << static_cast<unsigned>(cris.back()->number_of_hw_links())
+      std::cout << "Hardware channels: "
+                << static_cast<unsigned>(cris.back()->number_of_hw_channels())
                 << std::endl;
       std::cout << "Uptime: " << cris.back()->print_uptime() << std::endl;
       std::cout << cris.back()->print_build_info() << std::endl;
