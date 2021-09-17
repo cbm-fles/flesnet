@@ -57,6 +57,7 @@ public:
   std::string print_build_info();
   std::string print_devinfo();
   std::chrono::seconds uptime();
+  std::string print_uptime();
 
   void set_testreg(uint32_t data);
   uint32_t get_testreg();

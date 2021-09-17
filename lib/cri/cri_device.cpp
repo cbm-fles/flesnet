@@ -198,6 +198,23 @@ std::chrono::seconds cri_device::uptime() {
   return std::chrono::duration_cast<std::chrono::seconds>(uptime);
 }
 
+std::string cri_device::print_uptime() {
+  using namespace std::chrono;
+  typedef duration<int, std::ratio<86400>> days; // INFO: only needed < C++20
+  auto s = uptime();
+  auto d = duration_cast<days>(s);
+  s -= d;
+  auto h = duration_cast<hours>(s);
+  s -= h;
+  auto m = duration_cast<minutes>(s);
+  s -= m;
+  std::stringstream ss;
+  ss.fill('0');
+  ss << d.count() << "d:" << std::setw(2) << h.count() << "h:" << std::setw(2)
+     << m.count() << "m:" << std::setw(2) << s.count() << 's';
+  return ss.str();
+}
+
 size_t cri_device::number_of_links() { return m_link.size(); }
 
 std::vector<cri_link*> cri_device::links() {
