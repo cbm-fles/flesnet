@@ -35,9 +35,7 @@ int main(int argc, char* argv[]) {
     for (size_t i = 0; i < cri->number_of_links(); ++i) {
       L_(debug) << "Initializing channel " << i;
 
-      // TODO: configure global datapath setting
-      // reset things
-      // set_mc_size_limit(par.mc_size_limit());
+      channels.at(i)->set_mc_size_limit(par.mc_size_limit());
 
       if (par.channel(i).source == disable) {
         channels.at(i)->set_data_source(cri::cri_link::rx_disable);

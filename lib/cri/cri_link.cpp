@@ -102,9 +102,10 @@ bool cri_link::get_ready_for_data() {
   return m_rfgtx->get_bit(CRI_REG_GTX_DATAPATH_CFG, 2);
 }
 
-// void cri_link::set_mc_size_limit(uint32_t bytes) {
-//   uint32_t words = bytes / 8; // sizeof(word) == 64Bit
-//   m_rf?->set_reg(RORC_REG_LINK_MAX_MC_WORDS, words);
+void cri_link::set_mc_size_limit(uint32_t bytes) {
+  uint32_t words = bytes / 8; // sizeof(word) == 64Bit
+  m_rfpkt->set_reg(CRI_REG_MAX_MC_WORDS, words);
+}
 
 //////*** Pattern Generator Configuration ***//////
 

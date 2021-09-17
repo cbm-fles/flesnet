@@ -55,6 +55,8 @@ public:
   void set_ready_for_data(bool enable);
   bool get_ready_for_data();
 
+  void set_mc_size_limit(uint32_t bytes);
+
   void set_pgen_id(uint16_t eq_id);
   void set_pgen_rate(float val);
   void reset_pgen_mc_pending();

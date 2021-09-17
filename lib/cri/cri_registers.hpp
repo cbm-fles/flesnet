@@ -4,20 +4,20 @@
 // This file was automatically generated from:
 // ../flim/src/packages/fles_registers.vhd
 // Repository is: git repository
-// Repository Revision: 752fb39ea691b9ef8ef20ab05501f028ec0f9542
+// Repository Revision: d0b672c88a00bf4154e2c58a6a88984723b9cb13
 // Repository Status: dirty
-// Build Timestamp: Thu Sep 16 15:58:36 CEST 2021
+// Build Timestamp: Fri Sep 17 14:35:56 CEST 2021
 // Build System: hutter@eda02
 #define CRI_C_BUILD_REPO 1
-#define CRI_C_BUILD_DATE 1631800716
-#define CRI_C_BUILD_REVISION 752fb39ea691b9ef8ef20ab05501f028ec0f9542
+#define CRI_C_BUILD_DATE 1631882156
+#define CRI_C_BUILD_REVISION d0b672c88a00bf4154e2c58a6a88984723b9cb13
 #define CRI_C_BUILD_STATUS_CLEAN 0
 #define CRI_C_BUILD_HOST 65646130320000000000000000000000
 #define CRI_C_BUILD_USER 68757474657200000000000000000000
 #define CRI_C_HARDWARE_ID 0xf1e5
 #define CRI_C_TIMEOUT_PATTERN 0xa5a5a5a5
 #define CRI_C_ILL_ADDR_PATTERN 0xa6a6a6a6
-#define CRI_C_HARDWARE_VERSION 2
+#define CRI_C_HARDWARE_VERSION 3
 #define CRI_C_CH_ADDR_SEL 15
 #define CRI_C_DMA_ADDR_SEL 14
 #define CRI_REG_HARDWARE_INFO 0
@@ -87,6 +87,7 @@
 #define CRI_REG_PKT_PERF_N_EVENTS 33
 #define CRI_REG_PKT_MC_TIME_L 34
 #define CRI_REG_PKT_MC_TIME_H 35
+#define CRI_REG_MAX_MC_WORDS 36
 #define CRI_REG_TESTREG_DATA 0
 #define CRI_REG_GTX_DATAPATH_CFG 1
 #define CRI_REG_GTX_MC_PGEN_CFG_L 2

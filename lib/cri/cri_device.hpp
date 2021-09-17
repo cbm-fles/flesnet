@@ -21,7 +21,7 @@ namespace cri {
 class cri_link;
 class register_file_bar;
 
-constexpr std::array<uint16_t, 1> hw_ver_table = {{2}};
+constexpr std::array<uint16_t, 1> hw_ver_table = {{3}};
 constexpr uint32_t pci_clk = 250E6;
 
 constexpr size_t pgen_base_size_ns = 1000;

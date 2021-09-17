@@ -257,8 +257,7 @@ private:
       L_(info) << " Pgen rate: " << _pgen_rate;
     }
 
-    //    L_(info) << " CRI microslice size limit: " << _mc_size_limit << "
-    //    bytes";
+    L_(info) << " microslice size limit: " << _mc_size_limit / 1000 << " kB";
 
     for (size_t i = 0; i < _num_max_channels; ++i) {
       L_(info) << "Channel " << i << " config:";
