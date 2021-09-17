@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "cri_link.hpp"
+#include "cri_channel.hpp"
 #include "log.hpp"
 #include "shm_channel.hpp"
 #include "shm_device.hpp"

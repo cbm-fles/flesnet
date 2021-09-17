@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "cri_link.hpp"
+#include "cri_channel.hpp"
 #include "fles_ipc/MicrosliceDescriptor.hpp"
 #include "pda/data_structures.hpp"
 #include "pda/dma_buffer.hpp"

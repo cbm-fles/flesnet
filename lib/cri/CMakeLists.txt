@@ -3,13 +3,13 @@
 
 set(LIB_SRC
   cri_device.cpp
-  cri_link.cpp
+  cri_channel.cpp
   dma_channel.cpp
   register_file_bar.cpp
 )
 set(LIB_HDR
   cri_device.hpp
-  cri_link.hpp
+  cri_channel.hpp
   dma_channel.hpp
   register_file.hpp
   register_file_bar.hpp

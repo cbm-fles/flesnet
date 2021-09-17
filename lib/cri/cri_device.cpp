@@ -5,7 +5,7 @@
  */
 
 #include "cri_device.hpp"
-#include "cri_link.hpp"
+#include "cri_channel.hpp"
 #include "cri_registers.hpp"
 #include "data_structures.hpp"
 #include "pda/device.hpp"

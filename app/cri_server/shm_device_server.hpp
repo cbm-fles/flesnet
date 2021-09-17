@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "cri_channel.hpp"
 #include "cri_device.hpp"
-#include "cri_link.hpp"
 #include "log.hpp"
 #include "shm_channel_server.hpp"
 #include "shm_device.hpp"

@@ -7,7 +7,7 @@
  *
  */
 
-#include "cri_link.hpp"
+#include "cri_channel.hpp"
 #include <arpa/inet.h> // ntohl
 #include <cassert>
 #include <memory>
