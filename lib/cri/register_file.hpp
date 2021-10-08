@@ -19,7 +19,7 @@ public:
   virtual int set_mem(sys_bus_addr addr, const void* source, size_t dwords) = 0;
 
   virtual uint32_t get_reg(sys_bus_addr addr) {
-    uint32_t val;
+    uint32_t val = 0;
     get_mem(addr, static_cast<void*>(&val), 1);
     return val;
   }
