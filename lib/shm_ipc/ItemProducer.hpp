@@ -10,8 +10,7 @@ using ItemID = size_t;
 class ItemProducer {
 public:
   ItemProducer(zmq::context_t& context, const std::string& distributor_address)
-      : context_(context),
-        distributor_socket_(context, zmq::socket_type::pair) {
+      : distributor_socket_(context, zmq::socket_type::pair) {
     distributor_socket_.connect(distributor_address);
   };
 
@@ -38,7 +37,6 @@ public:
   }
 
 private:
-  zmq::context_t& context_;
   zmq::socket_t distributor_socket_;
 };
 
