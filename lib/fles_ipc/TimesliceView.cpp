@@ -14,6 +14,8 @@ TimesliceView::TimesliceView(
     : managed_shm_(std::move(managed_shm)), work_item_(std::move(work_item)),
       timeslice_item_(timeslice_item) {
 
+  timeslice_descriptor_ = timeslice_item.ts_desc;
+
   // initialize access pointer vectors
   data_ptr_.resize(num_components());
   desc_ptr_.resize(num_components());
@@ -33,10 +35,6 @@ TimesliceView::TimesliceView(
                 << "]=" << desc_ptr_[c]->ts_num << std::endl;
     }
   }
-
-  // std::cerr << "A. received ts shm work item" << std::endl;
-  //_timeslice_item.ts_desc.index
-  // for (auto item : _timeslice_item.ts)
 }
 
 } // namespace fles
