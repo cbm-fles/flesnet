@@ -124,8 +124,6 @@ private:
   register_file* m_rfpkt;
   std::unique_ptr<pda::dma_buffer> m_data_buffer;
   std::unique_ptr<pda::dma_buffer> m_desc_buffer;
-  size_t m_data_buffer_log_size;
-  size_t m_desc_buffer_log_size;
   size_t m_dma_transfer_size;
   uint32_t m_reg_dmactrl_cached;
 };

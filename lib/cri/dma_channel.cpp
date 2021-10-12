@@ -20,10 +20,7 @@ dma_channel::dma_channel(cri_channel* parent_channel,
                          void* desc_buffer,
                          size_t desc_buffer_log_size,
                          size_t dma_transfer_size)
-    : m_parent_channel(parent_channel),
-      m_data_buffer_log_size(data_buffer_log_size),
-      m_desc_buffer_log_size(desc_buffer_log_size),
-      m_dma_transfer_size(dma_transfer_size) {
+    : m_parent_channel(parent_channel), m_dma_transfer_size(dma_transfer_size) {
   m_rfpkt = m_parent_channel->register_file_packetizer();
   m_reg_dmactrl_cached = m_rfpkt->get_reg(CRI_REG_DMA_CTRL);
   // ensure HW is disabled
