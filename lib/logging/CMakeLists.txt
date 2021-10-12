@@ -13,4 +13,5 @@ target_include_directories(logging SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(logging
   PUBLIC ${Boost_LOG_LIBRARY}
+  PUBLIC ${Boost_THREAD_LIBRARY}
 )
