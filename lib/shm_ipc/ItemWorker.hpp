@@ -16,6 +16,8 @@
 
 class ItemWorker {
 public:
+  using DisconnectCallback = std::function<void(void)>;
+
   ItemWorker(std::string distributor_address, WorkerParameters parameters)
       : distributor_address_(std::move(distributor_address)),
         parameters_(std::move(parameters)) {
@@ -25,6 +27,10 @@ public:
     }
     connect();
   };
+
+  void set_disconnect_callback(DisconnectCallback callback) {
+    disconnect_callback_ = callback;
+  }
 
   std::shared_ptr<const Item> get() {
     while (!stopped_) {
@@ -70,6 +76,7 @@ public:
             send_heartbeat();
           } else if (is_disconnect(message_string)) {
             distributor_socket_ = nullptr;
+            disconnect_callback_();
           } else {
             throw(WorkerProtocolError("invalid message type"));
           }
@@ -81,10 +88,12 @@ public:
       } catch (WorkerProtocolError& wp_error) {
         L_(error) << "Worker protocol violation: " << wp_error.what();
         distributor_socket_ = nullptr;
+        disconnect_callback_();
         std::queue<ItemID>().swap(completed_items_);
       } catch (zmq::error_t& zmq_error) {
         L_(error) << "ZMQ: " << zmq_error.what();
         distributor_socket_ = nullptr;
+        disconnect_callback_();
         std::queue<ItemID>().swap(completed_items_);
       }
     }
@@ -160,6 +169,7 @@ private:
   const std::string distributor_address_;
   zmq::context_t context_{1};
   std::unique_ptr<zmq::socket_t> distributor_socket_;
+  DisconnectCallback disconnect_callback_;
 
   const WorkerParameters parameters_{1, 0, WorkerQueuePolicy::QueueAll,
                                      "example_client"};

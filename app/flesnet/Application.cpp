@@ -51,13 +51,6 @@ void Application::create_timeslice_buffers() {
       descsize = stou(param.at("descsize"));
     }
 
-    L_(info) << "timeslice buffer " << i
-             << " size: " << human_readable_count(UINT64_C(1) << datasize)
-             << " + "
-             << human_readable_count(
-                    (UINT64_C(1) << descsize) *
-                    sizeof(fles::TimesliceComponentDescriptor));
-
     const std::string producer_address = "inproc://" + shm_identifier;
     const std::string worker_address = "ipc://@" + shm_identifier;
 
@@ -68,6 +61,8 @@ void Application::create_timeslice_buffers() {
     std::unique_ptr<TimesliceBuffer> tsb(
         new TimesliceBuffer(zmq_context_, producer_address, shm_identifier,
                             datasize, descsize, input_size));
+
+    L_(info) << "timeslice buffer " << i << ": " << tsb->description();
 
     start_processes(shm_identifier);
     ChildProcessManager::get().allow_stop_processes(this);

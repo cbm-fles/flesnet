@@ -9,6 +9,7 @@
 #include "TimesliceSource.hpp"
 #include "TimesliceView.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/uuid/uuid.hpp>
 #include <memory>
 #include <string>
 
@@ -21,7 +22,7 @@ namespace fles {
 class TimesliceReceiver : public TimesliceSource {
 public:
   /// Construct timeslice receiver connected to a given shared memory.
-  explicit TimesliceReceiver(const std::string& shm_identifier,
+  explicit TimesliceReceiver(const std::string& ipc_identifier,
                              WorkerParameters parameters = WorkerParameters{
                                  1, 0, WorkerQueuePolicy::QueueAll,
                                  "TimesliceReceiver at PID " +
@@ -50,9 +51,9 @@ public:
 private:
   TimesliceView* do_get() override;
 
-  const std::string shm_identifier_;
-
   std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
+
+  boost::uuids::uuid managed_shm_uuid() const;
 
   /// The end-of-stream flag.
   bool eos_ = false;

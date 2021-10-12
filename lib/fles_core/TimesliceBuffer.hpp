@@ -5,12 +5,14 @@
 #include "TimesliceCompletion.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
+#include <boost/uuid/uuid.hpp>
 #include <cstdint>
 #include <iostream>
 #include <memory>
 #include <set>
 #include <stdexcept>
 #include <string>
+
 namespace fles {
 struct TimesliceWorkItem;
 }
@@ -91,8 +93,11 @@ public:
 
   std::size_t get_num_completions() const { return 0; }
 
+  std::string description() const;
+
 private:
   std::string shm_identifier_;
+  boost::uuids::uuid shm_uuid_;
   uint32_t data_buffer_size_exp_;
   uint32_t desc_buffer_size_exp_;
   uint32_t num_input_nodes_;
