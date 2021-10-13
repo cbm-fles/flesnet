@@ -165,6 +165,10 @@ void Application::create_input_channel_senders() {
       if (param.count("delay") != 0u) {
         delay_ns = stoul(param.at("delay"));
       }
+      uint64_t initial_ns = 0;
+      if (param.count("initial") != 0u) {
+        initial_ns = stoul(param.at("initial"));
+      }
 
       L_(info) << "input buffer " << index
                << " size: " << human_readable_count(UINT64_C(1) << datasize)
@@ -176,8 +180,8 @@ void Application::create_input_channel_senders() {
 
       data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
           new FlesnetPatternGenerator(datasize, descsize, index, size_mean,
-                                      (pattern != 0), (size_var != 0),
-                                      delay_ns)));
+                                      (pattern != 0), (size_var != 0), delay_ns,
+                                      initial_ns)));
     } else {
       L_(fatal) << "unknown input scheme: " << scheme;
     }

@@ -20,7 +20,8 @@ void FlesnetPatternGenerator::proceed() {
       auto delta = std::chrono::high_resolution_clock::now() - begin_;
       auto delta_ns =
           std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count();
-      auto required_ns = static_cast<int64_t>(delay_ns_ * write_index_.desc);
+      auto required_ns =
+          static_cast<int64_t>(delay_ns_ * write_index_.desc + initial_ns_);
       if (delta_ns < required_ns) {
         return;
       }
