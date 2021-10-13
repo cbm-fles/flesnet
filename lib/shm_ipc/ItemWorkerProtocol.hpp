@@ -1,8 +1,9 @@
-#ifndef ZMQ_DEMO_ITEMWORKERPROTOCOL_HPP
-#define ZMQ_DEMO_ITEMWORKERPROTOCOL_HPP
+#ifndef SHM_IPC_ITEMWORKERPROTOCOL_HPP
+#define SHM_IPC_ITEMWORKERPROTOCOL_HPP
+
+#include "log.hpp"
 
 #include <chrono>
-#include <iostream>
 #include <ostream>
 #include <queue>
 #include <stdexcept>

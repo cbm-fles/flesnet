@@ -48,9 +48,7 @@ dma_channel::dma_channel(cri_link* parent_link,
   enable();
 }
 
-dma_channel::~dma_channel() {
-  disable();
-}
+dma_channel::~dma_channel() { disable(); }
 
 // The DMA engine uses the following read/write pointer logic:
 // - Pointers show the next element to be read or written

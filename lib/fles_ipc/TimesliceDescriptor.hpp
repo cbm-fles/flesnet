@@ -35,6 +35,15 @@ struct TimesliceDescriptor {
     ar& num_core_microslices;
     ar& num_components;
   }
+
+  /// Dump contents (for debugging).
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const TimesliceDescriptor& d) {
+    return os << "TimesliceDescriptor(index=" << d.index
+              << ", ts_pos=" << d.ts_pos
+              << ", num_core_microslices=" << d.num_core_microslices
+              << ", num_components=" << d.num_components << ")";
+  }
 };
 
 #pragma pack()

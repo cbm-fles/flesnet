@@ -40,12 +40,14 @@ public:
 
     pid_t pid = vfork();
     if (pid == 0) {
+#ifdef CHILD_IGNORE_SIGNALS
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
       // child
       std::signal(SIGINT, SIG_IGN);
       std::signal(SIGTERM, SIG_IGN);
 #pragma GCC diagnostic pop
+#endif
       execvp(child_process.path.c_str(), const_cast<char* const*>(&c_arg[0]));
       L_(error) << "execvp() failed: " << strerror(errno);
       _exit(0);

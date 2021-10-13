@@ -90,6 +90,8 @@ std::string current_domainname() {
   return std::string(buf.data());
 }
 
+int current_pid() { return getpid(); }
+
 std::vector<std::string> glob(const std::string& pattern, glob_flags flags) {
   glob_t glob_result;
   memset(&glob_result, 0, sizeof(glob_result));

@@ -12,10 +12,10 @@
 
 int main() {
   using namespace std::literals;
-  auto zmq_context = std::make_shared<zmq::context_t>(1);
+  zmq::context_t zmq_context{1};
 
-  std::string producer_address = "inproc://TEST";
-  std::string worker_address = "ipc:///tmp/TEST_DELME";
+  const std::string producer_address = "inproc://TEST";
+  const std::string worker_address = "ipc:///tmp/TEST_DELME";
 
   auto distributor = std::make_unique<ItemDistributor>(
       zmq_context, producer_address, worker_address);
