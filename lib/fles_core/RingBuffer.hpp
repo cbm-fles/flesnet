@@ -55,7 +55,7 @@ public:
     size_mask_ = size_ - 1;
     if (PAGE_ALIGNED) {
       void* buf;
-      const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
+      const auto page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
       int ret = posix_memalign(&buf, page_size, sizeof(T) * size_);
       if (ret != 0) {
         throw std::runtime_error(std::string("posix_memalign: ") +

@@ -66,7 +66,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
     // Castagnoli
     crc ^= 0xFFFFFFFF;
     for (size_t i = 0; i < cycles_; ++i) {
-      uint32_t* p = reinterpret_cast<uint32_t*>(random_data_.data());
+      auto* p = reinterpret_cast<uint32_t*>(random_data_.data());
       const uint32_t* const end = p + random_data_.size() / sizeof(uint32_t);
       while (p < end) {
         crc = _mm_crc32_u32(crc, *p++);
@@ -80,7 +80,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
     // Castagnoli
     uint64_t crc64 = UINT64_C(0xFFFFFFFF);
     for (size_t i = 0; i < cycles_; ++i) {
-      uint64_t* p = reinterpret_cast<uint64_t*>(random_data_.data());
+      auto* p = reinterpret_cast<uint64_t*>(random_data_.data());
       const uint64_t* const end = p + random_data_.size() / sizeof(uint64_t);
       while (p < end) {
         crc64 = _mm_crc32_u64(crc64, *p++);

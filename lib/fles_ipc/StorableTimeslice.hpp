@@ -62,7 +62,7 @@ public:
     std::vector<uint8_t> data;
     for (uint64_t m = 0; m < num_microslices; ++m) {
       MicrosliceDescriptor desc = MicrosliceDescriptor();
-      uint8_t* desc_bytes = reinterpret_cast<uint8_t*>(&desc);
+      auto* desc_bytes = reinterpret_cast<uint8_t*>(&desc);
       data.insert(data.end(), desc_bytes,
                   desc_bytes + sizeof(MicrosliceDescriptor));
     }
@@ -86,7 +86,7 @@ public:
     TimesliceComponentDescriptor& this_desc = desc_[component];
 
     assert(microslice < this_desc.num_microslices);
-    uint8_t* desc_bytes = reinterpret_cast<uint8_t*>(&descriptor);
+    auto* desc_bytes = reinterpret_cast<uint8_t*>(&descriptor);
 
     // set offset relative to first microslice
     if (microslice > 0) {

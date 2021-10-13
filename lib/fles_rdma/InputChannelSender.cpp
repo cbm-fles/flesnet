@@ -113,7 +113,7 @@ void InputChannelSender::report_status() {
 
   // retrieve SubsystemIdentifier and EquipmentIdentifier
   // from most current MicrosliceDescriptor
-  fles::SubsystemIdentifier sys_id = static_cast<fles::SubsystemIdentifier>(0);
+  auto sys_id = static_cast<fles::SubsystemIdentifier>(0);
   std::string eq_id("Undefined");
   if (written_desc > 0) {
     sys_id = static_cast<fles::SubsystemIdentifier>(
@@ -410,8 +410,7 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id) {
 }
 
 void InputChannelSender::on_rejected(struct rdma_cm_event* event) {
-  InputChannelConnection* conn =
-      static_cast<InputChannelConnection*>(event->id->context);
+  auto* conn = static_cast<InputChannelConnection*>(event->id->context);
 
   conn->on_rejected(event);
   uint_fast16_t i = conn->index();

@@ -219,14 +219,14 @@ protected:
       init_context(id->verbs);
     }
 
-    CONNECTION* conn = static_cast<CONNECTION*>(id->context);
+    auto* conn = static_cast<CONNECTION*>(id->context);
 
     conn->on_addr_resolved(pd_, cq_);
   }
 
   /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event.
   virtual void on_route_resolved(struct rdma_cm_id* id) {
-    CONNECTION* conn = static_cast<CONNECTION*>(id->context);
+    auto* conn = static_cast<CONNECTION*>(id->context);
 
     conn->on_route_resolved();
   }
@@ -236,7 +236,7 @@ protected:
 
   /// Handle RDMA_CM_EVENT_ESTABLISHED event.
   virtual void on_established(struct rdma_cm_event* event) {
-    CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
+    auto* conn = static_cast<CONNECTION*>(event->id->context);
 
     conn->on_established(event);
     ++connected_;
@@ -247,7 +247,7 @@ protected:
 
   /// Handle RDMA_CM_EVENT_DISCONNECTED event.
   virtual void on_disconnected(struct rdma_cm_event* event) {
-    CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
+    auto* conn = static_cast<CONNECTION*>(event->id->context);
 
     aggregate_bytes_sent_ += conn->total_bytes_sent();
     aggregate_send_requests_ += conn->total_send_requests();
@@ -260,7 +260,7 @@ protected:
 
   /// Handle RDMA_CM_EVENT_TIMEWAIT_EXIT event.
   virtual void on_timewait_exit(struct rdma_cm_event* event) {
-    CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
+    auto* conn = static_cast<CONNECTION*>(event->id->context);
 
     conn->on_timewait_exit(event);
     --timewait_;

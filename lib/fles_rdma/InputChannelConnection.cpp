@@ -310,8 +310,7 @@ InputChannelConnection::get_private_data() {
   std::unique_ptr<std::vector<uint8_t>> private_data(
       new std::vector<uint8_t>(sizeof(InputNodeInfo)));
 
-  InputNodeInfo* in_info =
-      reinterpret_cast<InputNodeInfo*>(private_data->data());
+  auto* in_info = reinterpret_cast<InputNodeInfo*>(private_data->data());
   in_info->index = remote_index_;
 
   return private_data;
