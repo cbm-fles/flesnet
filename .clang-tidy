@@ -1,0 +1,3 @@
+---
+Checks:          '-*,bugprone-*,boost-*,cppcoreguidelines-*,modernize-*,-cppcoreguidelines-non-private-member-variables-in-classes,-cppcoreguidelines-special-member-functions,-cppcoreguidelines-macro-usage,-modernize-use-trailing-return-type'
+HeaderFilterRegex: '(lib/(fles_[^/]+|logging|pda|shm_ipc)/.*\.hpp)|(app/[^/]+/[^/]+.hpp)'
