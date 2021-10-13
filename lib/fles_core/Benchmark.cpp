@@ -15,7 +15,7 @@ Benchmark::Benchmark() {
 
   std::mt19937 engine;
   std::uniform_int_distribution<uint8_t> distribution;
-  auto generator = [distribution, engine] { return distribution(engine); };
+  auto generator = [&] { return distribution(engine); };
 
   std::generate_n(std::back_inserter(random_data_), size_, generator);
 }
