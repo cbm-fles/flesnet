@@ -102,8 +102,7 @@ private:
       filename = filename_with_number(file_count_);
     }
 
-    ifstream_ = std::unique_ptr<std::ifstream>(
-        new std::ifstream(filename, std::ios::binary));
+    ifstream_ = std::make_unique<std::ifstream>(filename, std::ios::binary);
     if (!*ifstream_) {
       if (file_count_ == 0 || !filenames_.empty()) {
         // Not finding the first file or one given explicitely is an error

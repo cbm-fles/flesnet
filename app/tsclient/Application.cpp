@@ -11,6 +11,7 @@
 #include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
 #include "Utility.hpp"
+#include <memory>
 #include <thread>
 
 Application::Application(Parameters const& par) : par_(par) {
@@ -19,31 +20,32 @@ Application::Application(Parameters const& par) : par_(par) {
   }
 
   if (!par_.shm_identifier().empty()) {
-    source_.reset(new fles::TimesliceReceiver(par_.shm_identifier()));
+    source_ = std::make_unique<fles::TimesliceReceiver>(par_.shm_identifier());
   } else if (!par_.input_archive().empty()) {
     if (par_.input_archive_cycles() <= 1) {
       if (par_.multi_input()) {
-        source_.reset(
-            new fles::TimesliceMultiInputArchive(par_.input_archive()));
+        source_ = std::make_unique<fles::TimesliceMultiInputArchive>(
+            par_.input_archive());
       } else {
         if (par_.input_archive().find("%n") != std::string::npos) {
-          source_.reset(
-              new fles::TimesliceInputArchiveSequence(par_.input_archive()));
+          source_ = std::make_unique<fles::TimesliceInputArchiveSequence>(
+              par_.input_archive());
         } else {
-          source_.reset(new fles::TimesliceInputArchive(par_.input_archive()));
+          source_ = std::make_unique<fles::TimesliceInputArchive>(
+              par_.input_archive());
         }
       }
     } else {
-      source_.reset(new fles::TimesliceInputArchiveLoop(
-          par_.input_archive(), par_.input_archive_cycles()));
+      source_ = std::make_unique<fles::TimesliceInputArchiveLoop>(
+          par_.input_archive(), par_.input_archive_cycles());
     }
   } else if (!par_.subscribe_address().empty()) {
     if (par_.multi_input()) {
-      source_.reset(new fles::TimesliceMultiSubscriber(
-          par_.subscribe_address(), par_.subscribe_hwm(), true));
+      source_ = std::make_unique<fles::TimesliceMultiSubscriber>(
+          par_.subscribe_address(), par_.subscribe_hwm(), true);
     } else {
-      source_.reset(new fles::TimesliceSubscriber(par_.subscribe_address(),
-                                                  par_.subscribe_hwm()));
+      source_ = std::make_unique<fles::TimesliceSubscriber>(
+          par_.subscribe_address(), par_.subscribe_hwm());
     }
   }
 
@@ -84,7 +86,7 @@ Application::Application(Parameters const& par) : par_(par) {
   }
 
   if (par_.benchmark()) {
-    benchmark_.reset(new Benchmark());
+    benchmark_ = std::make_unique<Benchmark>();
   }
 
   if (!par_.shm_identifier().empty()) {

@@ -25,8 +25,8 @@ public:
    * \param filename File name of the archive file
    */
   InputArchive(const std::string& filename) {
-    ifstream_ = std::unique_ptr<std::ifstream>(
-        new std::ifstream(filename.c_str(), std::ios::binary));
+    ifstream_ =
+        std::make_unique<std::ifstream>(filename.c_str(), std::ios::binary);
     if (!*ifstream_) {
       throw std::ios_base::failure("error opening file \"" + filename + "\"");
     }

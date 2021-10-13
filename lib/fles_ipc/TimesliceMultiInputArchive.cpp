@@ -8,6 +8,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
+#include <memory>
 
 /*
   Unexpected behaviour (from tests):
@@ -52,8 +53,7 @@ TimesliceMultiInputArchive::TimesliceMultiInputArchive(
     for (auto& stream : InputFileList) {
       std::string file = stream.at(0);
       stream.erase(stream.begin());
-      source_.push_back(std::unique_ptr<TimesliceInputArchive>(
-          new TimesliceInputArchive(file)));
+      source_.push_back(std::make_unique<TimesliceInputArchive>(file));
       L_(info) << " Open file: " << file;
     }
   } else {
@@ -189,8 +189,7 @@ bool TimesliceMultiInputArchive::OpenNextFile(int element) {
   if (!InputFileList.at(element).empty()) {
     std::string file = InputFileList.at(element).at(0);
     InputFileList.at(element).erase(InputFileList.at(element).begin());
-    source_.at(element) =
-        std::unique_ptr<TimesliceInputArchive>(new TimesliceInputArchive(file));
+    source_.at(element) = std::make_unique<TimesliceInputArchive>(file);
     L_(info) << " Open file: " << file;
   } else {
     L_(info) << "End of files list reached.";

@@ -10,6 +10,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <thread>
 
@@ -47,8 +48,8 @@ InputChannelSender::InputChannelSender(
 
   if (!monitor_uri.empty()) {
     try {
-      monitor_client_ = std::unique_ptr<web::http::client::http_client>(
-          new web::http::client::http_client(monitor_uri));
+      monitor_client_ =
+          std::make_unique<web::http::client::http_client>(monitor_uri);
     } catch (std::exception& e) {
       L_(error) << "cannot connect to monitoring at " << monitor_uri << ": "
                 << e.what();
@@ -184,8 +185,7 @@ void InputChannelSender::report_status() {
                 }
               });
 
-      monitor_task_ =
-          std::unique_ptr<pplx::task<void>>(new pplx::task<void>(task));
+      monitor_task_ = std::make_unique<pplx::task<void>>(task);
     }
   }
 

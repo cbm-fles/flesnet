@@ -9,6 +9,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
+#include <memory>
 
 namespace fles {
 
@@ -18,8 +19,7 @@ TimesliceMultiSubscriber::TimesliceMultiSubscriber(
     CreateHostPortFileList(inputString);
     for (auto& stream : InputHostPortList) {
       std::string server = stream;
-      source_.push_back(std::unique_ptr<TimesliceSubscriber>(
-          new TimesliceSubscriber(server, hwm)));
+      source_.push_back(std::make_unique<TimesliceSubscriber>(server, hwm));
       L_(info) << " Open server: " << server << " with ZMQ HW mark " << hwm;
     }
   } else {
