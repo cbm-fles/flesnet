@@ -62,9 +62,11 @@ public:
   std::unique_ptr<Derived> get() { return std::unique_ptr<Derived>(do_get()); };
 
   /// Retrieve the archive descriptor.
-  const ArchiveDescriptor& descriptor() const { return descriptor_; };
+  [[nodiscard]] const ArchiveDescriptor& descriptor() const {
+    return descriptor_;
+  };
 
-  bool eos() const override { return eos_; }
+  [[nodiscard]] bool eos() const override { return eos_; }
 
 private:
   std::unique_ptr<std::ifstream> ifstream_;
@@ -77,7 +79,7 @@ private:
 
   bool eos_ = false;
 
-  std::string filename_with_number(std::size_t n) const {
+  [[nodiscard]] std::string filename_with_number(std::size_t n) const {
     std::ostringstream number;
     number << std::setw(4) << std::setfill('0') << n;
     return boost::replace_all_copy(filename_template_, "%n", number.str());

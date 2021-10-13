@@ -138,24 +138,24 @@ private:
     uint64_t sent;
     uint64_t written;
 
-    int64_t used() const {
+    [[nodiscard]] [[nodiscard]] int64_t used() const {
       assert(sent <= written);
       return written - sent;
     }
-    int64_t sending() const {
+    [[nodiscard]] [[nodiscard]] int64_t sending() const {
       assert(acked <= sent);
       return sent - acked;
     }
-    int64_t freeing() const {
+    [[nodiscard]] [[nodiscard]] int64_t freeing() const {
       assert(cached_acked <= acked);
       return acked - cached_acked;
     }
-    int64_t unused() const {
+    [[nodiscard]] [[nodiscard]] int64_t unused() const {
       assert(written <= cached_acked + size);
       return cached_acked + size - written;
     }
 
-    float percentage(int64_t value) const {
+    [[nodiscard]] [[nodiscard]] float percentage(int64_t value) const {
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
@@ -163,7 +163,8 @@ private:
       return std::string("used/sending/freeing/free");
     }
 
-    std::string percentage_str(int64_t value) const {
+    [[nodiscard]] [[nodiscard]] std::string
+    percentage_str(int64_t value) const {
       boost::format percent_fmt("%4.1f%%");
       percent_fmt % (percentage(value) * 100);
       std::string s = percent_fmt.str();
@@ -171,12 +172,12 @@ private:
       return s;
     }
 
-    std::string percentages() const {
+    [[nodiscard]] [[nodiscard]] std::string percentages() const {
       return percentage_str(used()) + " " + percentage_str(sending()) + " " +
              percentage_str(freeing()) + " " + percentage_str(unused());
     }
 
-    std::vector<int64_t> vector() const {
+    [[nodiscard]] [[nodiscard]] std::vector<int64_t> vector() const {
       return std::vector<int64_t>{used(), sending(), freeing(), unused()};
     }
   };

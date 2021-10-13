@@ -58,7 +58,9 @@ public:
 
   void on_complete_send_finalize();
 
-  const ComputeNodeBufferPosition& cn_wp() const { return cn_wp_; }
+  [[nodiscard]] const ComputeNodeBufferPosition& cn_wp() const {
+    return cn_wp_;
+  }
 
   std::unique_ptr<std::vector<uint8_t>> get_private_data() override;
 
@@ -70,17 +72,19 @@ public:
     uint64_t acked;
     uint64_t received;
 
-    int64_t used() const { return received - acked; }
-    int64_t freeing() const { return acked - cached_acked; }
-    int64_t unused() const { return cached_acked + size - received; }
+    [[nodiscard]] int64_t used() const { return received - acked; }
+    [[nodiscard]] int64_t freeing() const { return acked - cached_acked; }
+    [[nodiscard]] int64_t unused() const {
+      return cached_acked + size - received;
+    }
 
-    float percentage(int64_t value) const {
+    [[nodiscard]] float percentage(int64_t value) const {
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
     static std::string caption() { return std::string("used/freeing/free"); }
 
-    std::string percentage_str(int64_t value) const {
+    [[nodiscard]] std::string percentage_str(int64_t value) const {
       boost::format percent_fmt("%4.1f%%");
       percent_fmt % (percentage(value) * 100);
       std::string s = percent_fmt.str();
@@ -88,24 +92,24 @@ public:
       return s;
     }
 
-    std::string percentages() const {
+    [[nodiscard]] std::string percentages() const {
       return percentage_str(used()) + " " + percentage_str(freeing()) + " " +
              percentage_str(unused());
     }
 
-    std::vector<int64_t> vector() const {
+    [[nodiscard]] std::vector<int64_t> vector() const {
       return std::vector<int64_t>{used(), freeing(), unused()};
     }
   };
 
-  BufferStatus buffer_status_data() const {
+  [[nodiscard]] BufferStatus buffer_status_data() const {
     return BufferStatus{std::chrono::system_clock::now(),
                         (UINT64_C(1) << data_buffer_size_exp_),
                         send_status_message_.ack.data, cn_ack_.data,
                         cn_wp_.data};
   }
 
-  BufferStatus buffer_status_desc() const {
+  [[nodiscard]] BufferStatus buffer_status_desc() const {
     return BufferStatus{std::chrono::system_clock::now(),
                         (UINT64_C(1) << desc_buffer_size_exp_),
                         send_status_message_.ack.desc, cn_ack_.desc,

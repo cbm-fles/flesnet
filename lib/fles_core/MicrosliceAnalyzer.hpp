@@ -25,11 +25,11 @@ public:
 private:
   bool check_microslice(const fles::Microslice& ms);
 
-  std::string statistics() const;
+  [[nodiscard]] std::string statistics() const;
 
-  uint32_t compute_crc(const fles::Microslice& ms) const;
+  [[nodiscard]] uint32_t compute_crc(const fles::Microslice& ms) const;
 
-  bool check_crc(const fles::Microslice& ms) const;
+  [[nodiscard]] bool check_crc(const fles::Microslice& ms) const;
 
   void initialize(const fles::Microslice& ms);
 

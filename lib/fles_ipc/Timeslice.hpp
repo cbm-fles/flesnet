@@ -28,30 +28,31 @@ public:
   virtual ~Timeslice() = 0;
 
   /// Retrieve the timeslice index.
-  uint64_t index() const { return timeslice_descriptor_.index; }
+  [[nodiscard]] uint64_t index() const { return timeslice_descriptor_.index; }
 
   /// Retrieve the number of core microslices.
-  uint64_t num_core_microslices() const {
+  [[nodiscard]] uint64_t num_core_microslices() const {
     return timeslice_descriptor_.num_core_microslices;
   }
 
   /// Retrieve the total number of microslices.
-  uint64_t num_microslices(uint64_t component) const {
+  [[nodiscard]] uint64_t num_microslices(uint64_t component) const {
     return desc_ptr_[component]->num_microslices;
   }
 
   /// Retrieve the number of components (contributing input channels).
-  uint64_t num_components() const {
+  [[nodiscard]] uint64_t num_components() const {
     return timeslice_descriptor_.num_components;
   }
 
   /// Retrieve the size of a given component.
-  uint64_t size_component(uint64_t component) const {
+  [[nodiscard]] uint64_t size_component(uint64_t component) const {
     return desc_ptr_[component]->size;
   }
 
   /// Retrieve a pointer to the data content of a given microslice
-  const uint8_t* content(uint64_t component, uint64_t microslice) const {
+  [[nodiscard]] const uint8_t* content(uint64_t component,
+                                       uint64_t microslice) const {
     return data_ptr_[component] +
            desc_ptr_[component]->num_microslices *
                sizeof(MicrosliceDescriptor) +
@@ -60,15 +61,15 @@ public:
   }
 
   /// Retrieve the descriptor of a given microslice
-  const MicrosliceDescriptor& descriptor(uint64_t component,
-                                         uint64_t microslice) const {
+  [[nodiscard]] const MicrosliceDescriptor&
+  descriptor(uint64_t component, uint64_t microslice) const {
     return reinterpret_cast<const MicrosliceDescriptor*>(
         data_ptr_[component])[microslice];
   }
 
   /// Retrieve the descriptor and pointer to the data of a given microslice
-  MicrosliceView get_microslice(uint64_t component,
-                                uint64_t microslice_index) const {
+  [[nodiscard]] MicrosliceView get_microslice(uint64_t component,
+                                              uint64_t microslice_index) const {
     uint8_t* component_data_ptr = data_ptr_[component];
 
     MicrosliceDescriptor& dd = reinterpret_cast<MicrosliceDescriptor*>(
@@ -86,7 +87,7 @@ public:
   }
 
   /// Retrieve the offical start time of the timeslice
-  uint64_t start_time() const {
+  [[nodiscard]] uint64_t start_time() const {
     if (num_components() != 0 && num_microslices(0) != 0) {
       return descriptor(0, 0).idx;
     } else

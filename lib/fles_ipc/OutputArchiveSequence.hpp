@@ -88,7 +88,7 @@ private:
     ++file_item_count_;
   }
 
-  std::string filename(std::size_t n) const {
+  [[nodiscard]] std::string filename(std::size_t n) const {
     std::ostringstream number;
     number << std::setw(4) << std::setfill('0') << n;
     return boost::replace_all_copy(filename_template_, "%n", number.str());

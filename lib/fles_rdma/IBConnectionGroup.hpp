@@ -179,25 +179,27 @@ public:
   }
 
   /// Retrieve the InfiniBand protection domain.
-  struct ibv_pd* protection_domain() const {
-    return pd_;
-  }
+  [[nodiscard]] struct ibv_pd* protection_domain() const { return pd_; }
 
   /// Retrieve the InfiniBand completion queue.
-  struct ibv_cq* completion_queue() const {
-    return cq_;
-  }
+  [[nodiscard]] struct ibv_cq* completion_queue() const { return cq_; }
 
-  size_t size() const { return conn_.size(); }
+  [[nodiscard]] size_t size() const { return conn_.size(); }
 
   /// Retrieve the total number of bytes transmitted.
-  uint64_t aggregate_bytes_sent() const { return aggregate_bytes_sent_; }
+  [[nodiscard]] uint64_t aggregate_bytes_sent() const {
+    return aggregate_bytes_sent_;
+  }
 
   /// Retrieve the total number of SEND work requests.
-  uint64_t aggregate_send_requests() const { return aggregate_send_requests_; }
+  [[nodiscard]] uint64_t aggregate_send_requests() const {
+    return aggregate_send_requests_;
+  }
 
   /// Retrieve the total number of RECV work requests.
-  uint64_t aggregate_recv_requests() const { return aggregate_recv_requests_; }
+  [[nodiscard]] uint64_t aggregate_recv_requests() const {
+    return aggregate_recv_requests_;
+  }
 
   void summary() const {
     double runtime = std::chrono::duration_cast<std::chrono::microseconds>(

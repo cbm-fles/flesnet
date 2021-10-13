@@ -72,13 +72,13 @@ public:
   parameters(const parameters&) = delete;
   void operator=(const parameters&) = delete;
 
-  bool flib_autodetect() const { return _flib_autodetect; }
-  pci_addr flib_addr() const { return _flib_addr; }
+  [[nodiscard]] bool flib_autodetect() const { return _flib_autodetect; }
+  [[nodiscard]] pci_addr flib_addr() const { return _flib_addr; }
   std::string shm() { return _shm; }
   size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
-  etcd_config_t etcd() const { return _etcd; }
-  std::string exec() const { return _exec; }
+  [[nodiscard]] etcd_config_t etcd() const { return _etcd; }
+  [[nodiscard]] std::string exec() const { return _exec; }
 
   std::string print_buffer_info() {
     std::stringstream ss;

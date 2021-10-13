@@ -42,9 +42,11 @@ public:
   std::unique_ptr<Derived> get() { return std::unique_ptr<Derived>(do_get()); };
 
   /// Retrieve the archive descriptor.
-  const ArchiveDescriptor& descriptor() const { return descriptor_; };
+  [[nodiscard]] const ArchiveDescriptor& descriptor() const {
+    return descriptor_;
+  };
 
-  bool eos() const override { return eos_; }
+  [[nodiscard]] bool eos() const override { return eos_; }
 
 private:
   void init() {

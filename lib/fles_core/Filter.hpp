@@ -63,7 +63,7 @@ public:
   FilteredSource(source_t& arg_source, filter_t& arg_filter)
       : source(arg_source), filter(arg_filter) {}
 
-  bool eos() const override { return eos_flag; }
+  [[nodiscard]] bool eos() const override { return eos_flag; }
 
 private:
   source_t& source;

@@ -24,16 +24,16 @@ public:
   virtual ~Microslice() = 0;
 
   /// Retrieve microslice descriptor reference
-  const MicrosliceDescriptor& desc() const { return *desc_ptr_; }
+  [[nodiscard]] const MicrosliceDescriptor& desc() const { return *desc_ptr_; }
 
   /// Retrieve a pointer to the microslice data
-  const uint8_t* content() const { return content_ptr_; }
+  [[nodiscard]] const uint8_t* content() const { return content_ptr_; }
 
   /// Compute CRC-32 checksum of microslice data content
-  uint32_t compute_crc() const;
+  [[nodiscard]] uint32_t compute_crc() const;
 
   /// Compare computed CRC-32 checksum to value in header
-  bool check_crc() const;
+  [[nodiscard]] bool check_crc() const;
 
 protected:
   Microslice() = default;

@@ -39,7 +39,7 @@ public:
     return std::unique_ptr<StorableMicroslice>(do_get());
   };
 
-  bool eos() const override { return eos_; }
+  [[nodiscard]] bool eos() const override { return eos_; }
 
 private:
   StorableMicroslice* do_get() override;
