@@ -8,18 +8,19 @@
 #include "log.hpp"
 #include <chrono>
 #include <thread>
+#include <utility>
 
 TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     uint64_t compute_index,
     TimesliceBuffer& timeslice_buffer,
-    const std::vector<std::string>& input_server_addresses,
+    std::vector<std::string> input_server_addresses,
     uint32_t num_compute_nodes,
     uint32_t timeslice_size,
     uint32_t max_timeslice_number,
     volatile sig_atomic_t* signal_status,
     void* zmq_context)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
-      input_server_addresses_(input_server_addresses),
+      input_server_addresses_(std::move(input_server_addresses)),
       num_compute_nodes_(num_compute_nodes), timeslice_size_(timeslice_size),
       max_timeslice_number_(max_timeslice_number),
       signal_status_(signal_status), ts_index_(compute_index_),

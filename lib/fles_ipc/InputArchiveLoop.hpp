@@ -9,6 +9,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace fles {
 
@@ -26,8 +27,8 @@ public:
    * \param filename File name of the archive file
    * \param cycles   Number of times to loop over the archive file for
    */
-  InputArchiveLoop(const std::string& filename, uint64_t cycles = 1)
-      : filename_(filename), cycles_(cycles) {
+  InputArchiveLoop(std::string filename, uint64_t cycles = 1)
+      : filename_(std::move(filename)), cycles_(cycles) {
     init();
   }
 

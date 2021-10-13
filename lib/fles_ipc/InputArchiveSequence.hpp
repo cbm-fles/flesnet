@@ -12,6 +12,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
 
 namespace fles {
 
@@ -30,8 +31,8 @@ public:
    *
    * \param filename_template File name pattern of the archive files
    */
-  InputArchiveSequence(const std::string& filename_template)
-      : filename_template_(filename_template) {
+  InputArchiveSequence(std::string filename_template)
+      : filename_template_(std::move(filename_template)) {
     // append sequence number to file name if missing in template
     if (filename_template_.find("%n") == std::string::npos) {
       filename_template_ += ".%n";
@@ -46,8 +47,8 @@ public:
    *
    * \param filenames File names of the archive files
    */
-  InputArchiveSequence(const std::vector<std::string>& filenames)
-      : filenames_(filenames) {
+  InputArchiveSequence(std::vector<std::string> filenames)
+      : filenames_(std::move(filenames)) {
     next_file();
   }
 

@@ -13,6 +13,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
 
 namespace fles {
 
@@ -32,11 +33,11 @@ public:
    * \param filename_template File name pattern of the archive files
    * \param items_per_file    Number of items to store in each file
    */
-  OutputArchiveSequence(const std::string& filename_template,
+  OutputArchiveSequence(std::string filename_template,
                         std::size_t items_per_file = SIZE_MAX,
                         std::size_t bytes_per_file = SIZE_MAX)
-      : filename_template_(filename_template), items_per_file_(items_per_file),
-        bytes_per_file_(bytes_per_file) {
+      : filename_template_(std::move(filename_template)),
+        items_per_file_(items_per_file), bytes_per_file_(bytes_per_file) {
     if (items_per_file_ == 0) {
       items_per_file_ = SIZE_MAX;
     }

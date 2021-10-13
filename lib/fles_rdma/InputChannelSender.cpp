@@ -13,20 +13,22 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <utility>
 
 InputChannelSender::InputChannelSender(
     uint64_t input_index,
     InputBufferReadInterface& data_source,
-    const std::vector<std::string>& compute_hostnames,
-    const std::vector<std::string>& compute_services,
+    std::vector<std::string> compute_hostnames,
+    std::vector<std::string> compute_services,
     uint32_t timeslice_size,
     uint32_t overlap_size,
     uint32_t max_timeslice_number,
     const std::string& monitor_uri)
     : input_index_(input_index), data_source_(data_source),
-      compute_hostnames_(compute_hostnames),
-      compute_services_(compute_services), timeslice_size_(timeslice_size),
-      overlap_size_(overlap_size), max_timeslice_number_(max_timeslice_number),
+      compute_hostnames_(std::move(compute_hostnames)),
+      compute_services_(std::move(compute_services)),
+      timeslice_size_(timeslice_size), overlap_size_(overlap_size),
+      max_timeslice_number_(max_timeslice_number),
       min_acked_desc_(data_source.desc_buffer().size() / 4),
       min_acked_data_(data_source.data_buffer().size() / 4) {
   start_index_desc_ = sent_desc_ = acked_desc_ = cached_acked_desc_ =
