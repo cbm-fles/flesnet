@@ -202,8 +202,7 @@ void TimesliceBuilder::report_status() {
     }
   }
 
-  scheduler_.add(std::bind(&TimesliceBuilder::report_status, this),
-                 now + interval);
+  scheduler_.add([this] { report_status(); }, now + interval);
 }
 
 void TimesliceBuilder::request_abort() {

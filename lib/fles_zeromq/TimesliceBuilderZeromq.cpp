@@ -232,6 +232,5 @@ void TimesliceBuilderZeromq::report_status() {
   previous_buffer_status_desc_ = status_desc;
   previous_buffer_status_data_ = status_data;
 
-  scheduler_.add(std::bind(&TimesliceBuilderZeromq::report_status, this),
-                 now + interval);
+  scheduler_.add([this] { report_status(); }, now + interval);
 }

@@ -192,8 +192,7 @@ void InputChannelSender::report_status() {
   previous_send_buffer_status_desc_ = status_desc;
   previous_send_buffer_status_data_ = status_data;
 
-  scheduler_.add(std::bind(&InputChannelSender::report_status, this),
-                 now + interval);
+  scheduler_.add([this] { report_status(); }, now + interval);
 }
 
 void InputChannelSender::sync_buffer_positions() {
@@ -202,7 +201,7 @@ void InputChannelSender::sync_buffer_positions() {
   }
 
   auto now = std::chrono::system_clock::now();
-  scheduler_.add(std::bind(&InputChannelSender::sync_buffer_positions, this),
+  scheduler_.add([this] { sync_buffer_positions(); },
                  now + std::chrono::milliseconds(0));
 }
 
@@ -215,7 +214,7 @@ void InputChannelSender::sync_data_source(bool schedule) {
 
   if (schedule) {
     auto now = std::chrono::system_clock::now();
-    scheduler_.add(std::bind(&InputChannelSender::sync_data_source, this, true),
+    scheduler_.add([this] { sync_data_source(true); },
                    now + std::chrono::milliseconds(100));
   }
 }
