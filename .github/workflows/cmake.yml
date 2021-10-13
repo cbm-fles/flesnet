@@ -14,8 +14,12 @@ jobs:
         include:
         - cc: gcc
           cxx: g++
+        - cc: gcc-10
+          cxx: g++-10
         - cc: clang
           cxx: clang++
+        - cc: clang-12
+          cxx: clang++-12
       fail-fast: false
 
     env: 
