@@ -80,7 +80,8 @@ inline double calculate_ber(size_t n_bytes, size_t n_errors) {
 }
 
 /// Missing library function
-inline unsigned stou(std::string const& str, size_t* idx = 0, int base = 10) {
+inline unsigned
+stou(std::string const& str, size_t* idx = nullptr, int base = 10) {
   unsigned long result = std::stoul(str, idx, base);
   if (result > std::numeric_limits<unsigned>::max()) {
     throw std::out_of_range("stou");

@@ -95,7 +95,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
     // Castagnoli
     crcutil_interface::CRC* crc_32 = crcutil_interface::CRC::Create(
         0x82f63b78, 0, 32, true, 0, 0, 0,
-        crcutil_interface::CRC::IsSSE42Available(), NULL);
+        crcutil_interface::CRC::IsSSE42Available(), nullptr);
     crcutil_interface::UINT64 crc64 = 0;
     for (size_t i = 0; i < cycles_; ++i) {
       crc_32->Compute(random_data_.data(), random_data_.size(), &crc64);
@@ -109,7 +109,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
     // IEEE
     crcutil_interface::CRC* crc_32 = crcutil_interface::CRC::Create(
         0xedb88320, 0, 32, true, 0, 0, 0,
-        crcutil_interface::CRC::IsSSE42Available(), NULL);
+        crcutil_interface::CRC::IsSSE42Available(), nullptr);
     crcutil_interface::UINT64 crc64 = 0;
     for (size_t i = 0; i < cycles_; ++i) {
       crc_32->Compute(random_data_.data(), random_data_.size(), &crc64);

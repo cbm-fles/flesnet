@@ -18,7 +18,7 @@ MicrosliceAnalyzer::MicrosliceAnalyzer(uint64_t arg_output_interval,
   // create CRC-32C engine (Castagnoli polynomial)
   crc32_engine_ = crcutil_interface::CRC::Create(
       0x82f63b78, 0, 32, true, 0, 0, 0,
-      crcutil_interface::CRC::IsSSE42Available(), NULL);
+      crcutil_interface::CRC::IsSSE42Available(), nullptr);
 }
 
 MicrosliceAnalyzer::~MicrosliceAnalyzer() {
