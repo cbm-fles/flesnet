@@ -3,6 +3,7 @@
 
 #include "ConnectionGroupWorker.hpp"
 #include "InfinibandException.hpp"
+#include <array>
 #include <chrono>
 #include <cstring>
 #include <fcntl.h>
@@ -149,13 +150,13 @@ public:
 
   /// The InfiniBand completion notification handler.
   int poll_completion() {
-    const int ne_max = 10;
+    constexpr int ne_max = 10;
 
-    struct ibv_wc wc[ne_max];
+    std::array<ibv_wc, ne_max> wc;
     int ne;
     int ne_total = 0;
 
-    while (ne_total < 1000 && (ne = ibv_poll_cq(cq_, ne_max, wc))) {
+    while (ne_total < 1000 && (ne = ibv_poll_cq(cq_, ne_max, wc.data()))) {
       if (ne < 0) {
         throw InfinibandException("ibv_poll_cq failed");
       }

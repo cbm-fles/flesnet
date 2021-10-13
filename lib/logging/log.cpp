@@ -7,8 +7,11 @@
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/utility/setup.hpp>
 
+#include <array>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
+#include <string>
 #include <unistd.h>
 
 #define __ansi(code_m) "\033[" code_m "m"
@@ -57,10 +60,12 @@ std::string fancy_icon(severity_level level)
 #endif
 
 std::ostream& operator<<(std::ostream& strm, severity_level level) {
-  static const char* strings[] = {"TRACE",   "DEBUG", "STATUS", "INFO",
-                                  "WARNING", "ERROR", "FATAL"};
+  using namespace std::string_literals;
 
-  if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings)) {
+  static const std::array strings{"TRACE"s,   "DEBUG"s, "STATUS"s, "INFO"s,
+                                  "WARNING"s, "ERROR"s, "FATAL"s};
+
+  if (static_cast<std::size_t>(level) < strings.size()) {
     strm << strings[level];
   } else {
     strm << static_cast<int>(level);

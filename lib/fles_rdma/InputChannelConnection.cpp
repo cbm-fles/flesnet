@@ -6,6 +6,7 @@
 #include "RequestIdentifier.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "log.hpp"
+#include <array>
 #include <cassert>
 #include <cstring>
 
@@ -64,7 +65,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
                                        uint64_t data_length,
                                        uint64_t skip) {
   int num_sge2 = 0;
-  struct ibv_sge sge2[4];
+  std::array<ibv_sge, 4> sge2;
 
   uint64_t cn_wp_data = cn_wp_.data;
   cn_wp_data += skip;
@@ -116,7 +117,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
     memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
     send_wr_tswrap.wr_id = ID_WRITE_DATA_WRAP;
     send_wr_tswrap.opcode = IBV_WR_RDMA_WRITE;
-    send_wr_tswrap.sg_list = sge2;
+    send_wr_tswrap.sg_list = sge2.data();
     send_wr_tswrap.num_sge = num_sge2;
     send_wr_tswrap.wr.rdma.rkey = remote_info_.data.rkey;
     send_wr_tswrap.wr.rdma.remote_addr =
