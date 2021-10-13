@@ -1,8 +1,8 @@
 // Copyright 2013-2020 Jan de Cuveland <cmail@cuveland.de>
 
 #include "System.hpp"
+#include <cerrno>
 #include <cstring>
-#include <errno.h>
 #include <netdb.h>
 #include <pwd.h>
 #include <stdexcept>
