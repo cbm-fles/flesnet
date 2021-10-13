@@ -9,7 +9,6 @@
 #include <fcntl.h>
 #include <rdma/rdma_cma.h>
 #include <sstream>
-#include <valgrind/memcheck.h>
 #include <vector>
 
 /// InfiniBand connection group base class.
@@ -117,13 +116,8 @@ public:
     void* private_data_copy = nullptr;
 
     while ((err = rdma_get_cm_event(ec_, &event)) == 0) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-      VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
       memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
       if (event_copy.param.conn.private_data != nullptr) {
-        VALGRIND_MAKE_MEM_DEFINED(event_copy.param.conn.private_data,
-                                  event_copy.param.conn.private_data_len);
         private_data_copy = malloc(event_copy.param.conn.private_data_len);
         if (private_data_copy == nullptr) {
           throw InfinibandException("malloc failed");
@@ -132,7 +126,6 @@ public:
                event_copy.param.conn.private_data_len);
         event_copy.param.conn.private_data = private_data_copy;
       }
-#pragma GCC diagnostic pop
       rdma_ack_cm_event(event);
       on_cm_event(&event_copy);
       if (private_data_copy != nullptr) {

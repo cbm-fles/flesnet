@@ -40,14 +40,6 @@ InputChannelSender::InputChannelSender(
       data_source_.desc_buffer().size() / timeslice_size_ + 1;
   ack_.alloc_with_size(min_ack_buffer_size);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-  VALGRIND_MAKE_MEM_DEFINED(data_source_.data_buffer().ptr(),
-                            data_source_.data_buffer().bytes());
-  VALGRIND_MAKE_MEM_DEFINED(data_source_.desc_buffer().ptr(),
-                            data_source_.desc_buffer().bytes());
-#pragma GCC diagnostic pop
-
   if (!monitor_uri.empty()) {
     try {
       monitor_client_ =
