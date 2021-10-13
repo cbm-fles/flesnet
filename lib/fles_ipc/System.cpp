@@ -11,8 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-namespace fles {
-namespace system {
+namespace fles::system {
 
 std::string stringerror(int errnum) {
   std::vector<char> buf(256);
@@ -113,5 +112,4 @@ std::vector<std::string> glob(const std::string& pattern, glob_flags flags) {
   return filenames;
 }
 
-} // namespace system
-} // namespace fles
+} // namespace fles::system
