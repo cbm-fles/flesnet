@@ -110,7 +110,7 @@ protected:
   bool done_ = false;
 
   /// The queue pair capabilities.
-  struct ibv_qp_cap qp_cap_;
+  struct ibv_qp_cap qp_cap_ {};
 
 private:
   /// Low-level communication parameters.

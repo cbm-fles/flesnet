@@ -175,20 +175,20 @@ private:
   bool drop_process_ts_ = false;
 
   /// This history size of intervals that the scheduler would decide based on
-  uint32_t scheduler_history_size_;
+  uint32_t scheduler_history_size_{};
 
   /// The intial TSs of each interval of the scheduler
-  uint32_t scheduler_interval_length_;
+  uint32_t scheduler_interval_length_{};
 
   /// The maximum difference percentage between the proposed and the actual
   /// duration to apply the scheduler_speedup_percentage_
-  uint32_t scheduler_speedup_difference_percentage_;
+  uint32_t scheduler_speedup_difference_percentage_{};
 
   /// The speeding up percentage of the scheduler to reduce the duration
-  uint32_t scheduler_speedup_percentage_;
+  uint32_t scheduler_speedup_percentage_{};
 
   /// The speeding up interval count of the scheduler
-  uint32_t scheduler_speedup_interval_count_;
+  uint32_t scheduler_speedup_interval_count_{};
 
   /// The directory to store the log files
   std::string scheduler_log_directory_;

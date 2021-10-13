@@ -101,7 +101,7 @@ private:
     content_ptr_ = content_.data();
   }
 
-  MicrosliceDescriptor desc_;
+  MicrosliceDescriptor desc_{};
   std::vector<uint8_t> content_;
 };
 

@@ -11,11 +11,11 @@
 enum ProcessStatus { None, Running, Terminating };
 
 struct ChildProcess {
-  pid_t pid;
+  pid_t pid{};
   std::string path;
   std::vector<std::string> arg;
-  void* owner;
-  ProcessStatus status;
+  void* owner{};
+  ProcessStatus status{};
 };
 
 class ChildProcessManager {

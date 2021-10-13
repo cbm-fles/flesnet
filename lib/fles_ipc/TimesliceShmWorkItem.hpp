@@ -24,11 +24,11 @@ namespace fles {
  */
 struct TimesliceShmWorkItem {
   /// The UUID of the containing managed shared memory
-  boost::uuids::uuid shm_uuid;
+  boost::uuids::uuid shm_uuid{};
   /// The identifier string of the containing managed shared memory
   std::string shm_identifier;
   /// The timeslice descriptor
-  TimesliceDescriptor ts_desc;
+  TimesliceDescriptor ts_desc{};
   /// A vector of handles to the data blocks
   std::vector<std::ptrdiff_t> data;
   /// A vector of handles to the tsc descriptor blocks

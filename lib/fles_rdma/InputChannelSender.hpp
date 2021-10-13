@@ -131,12 +131,12 @@ private:
 
   struct SendBufferStatus {
     std::chrono::system_clock::time_point time;
-    uint64_t size;
+    uint64_t size = 0;
 
-    uint64_t cached_acked;
-    uint64_t acked;
-    uint64_t sent;
-    uint64_t written;
+    uint64_t cached_acked = 0;
+    uint64_t acked = 0;
+    uint64_t sent = 0;
+    uint64_t written = 0;
 
     [[nodiscard]] [[nodiscard]] int64_t used() const {
       assert(sent <= written);

@@ -347,7 +347,7 @@ void TimesliceBuilder::on_completion(const struct ibv_wc& wc) {
 }
 
 void TimesliceBuilder::poll_ts_completion() {
-  fles::TimesliceCompletion c;
+  fles::TimesliceCompletion c{};
   if (!timeslice_buffer_.try_receive_completion(c)) {
     return;
   }

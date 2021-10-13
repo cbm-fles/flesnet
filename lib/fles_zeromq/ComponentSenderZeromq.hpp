@@ -89,16 +89,16 @@ private:
   uint64_t acked_ts2_ = 0;
 
   /// Indexes of acknowledged microslices (i.e., read indexes).
-  DualIndex acked_;
+  DualIndex acked_{};
 
   /// Hysteresis for writing read indexes to data source.
   const DualIndex min_acked_;
 
   /// Read indexes last written to data source.
-  DualIndex cached_acked_;
+  DualIndex cached_acked_{};
 
   /// Read indexes at start of operation.
-  DualIndex start_index_;
+  DualIndex start_index_{};
 
   /// Write index received from data source.
   uint64_t write_index_desc_ = 0;
@@ -110,16 +110,16 @@ private:
   std::chrono::high_resolution_clock::time_point time_end_;
 
   /// Amount of data sent (for performance statistics).
-  DualIndex sent_;
+  DualIndex sent_{};
 
   struct SendBufferStatus {
     std::chrono::system_clock::time_point time;
-    uint64_t size;
+    uint64_t size = 0;
 
-    uint64_t cached_acked;
-    uint64_t acked;
-    uint64_t sent;
-    uint64_t written;
+    uint64_t cached_acked = 0;
+    uint64_t acked = 0;
+    uint64_t sent = 0;
+    uint64_t written = 0;
 
     [[nodiscard]] int64_t used() const {
       assert(sent <= written);

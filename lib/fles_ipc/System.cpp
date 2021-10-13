@@ -46,8 +46,8 @@ std::string current_username() {
 
   std::vector<char> buf(static_cast<size_t>(bufsize));
 
-  passwd pwd;
-  passwd* result;
+  passwd pwd{};
+  passwd* result = nullptr;
 
   int err = getpwuid_r(uid, &pwd, buf.data(), buf.size(), &result);
 
@@ -93,11 +93,10 @@ std::string current_domainname() {
 int current_pid() { return getpid(); }
 
 std::vector<std::string> glob(const std::string& pattern, glob_flags flags) {
-  glob_t glob_result;
-  memset(&glob_result, 0, sizeof(glob_result));
+  glob_t glob_result{};
 
   int return_value =
-      glob(pattern.c_str(), static_cast<int>(flags), NULL, &glob_result);
+      glob(pattern.c_str(), static_cast<int>(flags), nullptr, &glob_result);
   if (return_value != 0) {
     globfree(&glob_result);
     throw std::runtime_error("glob() failed with return value " +

@@ -177,7 +177,7 @@ void TimesliceBuilderZeromq::run_end() {
 }
 
 void TimesliceBuilderZeromq::handle_timeslice_completions() {
-  fles::TimesliceCompletion c;
+  fles::TimesliceCompletion c{};
   while (timeslice_buffer_.try_receive_completion(c)) {
     if (c.ts_pos == acked_) {
       do {

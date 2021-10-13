@@ -98,9 +98,9 @@ private:
     ManagedRingBuffer<fles::TimesliceComponentDescriptor> desc;
     ManagedRingBuffer<uint8_t> data;
 
-    void* socket;
-    zmq_msg_t desc_msg;
-    zmq_msg_t data_msg;
+    void* socket = nullptr;
+    zmq_msg_t desc_msg{};
+    zmq_msg_t data_msg{};
   };
 
   /// The vector of connections, one per input server.
@@ -114,11 +114,11 @@ private:
 
   struct BufferStatus {
     std::chrono::system_clock::time_point time;
-    uint64_t size;
+    uint64_t size = 0;
 
-    uint64_t cached_acked;
-    uint64_t acked;
-    uint64_t received;
+    uint64_t cached_acked = 0;
+    uint64_t acked = 0;
+    uint64_t received = 0;
 
     [[nodiscard]] int64_t used() const { return received - acked; }
     [[nodiscard]] int64_t freeing() const { return acked - cached_acked; }

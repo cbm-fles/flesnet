@@ -45,10 +45,10 @@ protected:
   friend class StorableMicroslice;
 
   /// Pointer to the microslice descriptor
-  MicrosliceDescriptor* desc_ptr_;
+  MicrosliceDescriptor* desc_ptr_ = nullptr;
 
   /// Pointer to the microslice data content
-  uint8_t* content_ptr_;
+  uint8_t* content_ptr_ = nullptr;
 };
 
 } // namespace fles

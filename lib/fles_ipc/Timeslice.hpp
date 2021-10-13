@@ -100,7 +100,7 @@ protected:
   friend class StorableTimeslice;
 
   /// The timeslice descriptor.
-  TimesliceDescriptor timeslice_descriptor_;
+  TimesliceDescriptor timeslice_descriptor_{};
 
   /// A vector of pointers to the data content, one per timeslice component.
   std::vector<uint8_t*> data_ptr_;

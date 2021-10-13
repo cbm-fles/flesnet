@@ -74,7 +74,7 @@ private:
     ar& username_;
   }
 
-  ArchiveType archive_type_;
+  ArchiveType archive_type_{};
   std::time_t time_created_ = std::time_t();
   std::string hostname_;
   std::string username_;

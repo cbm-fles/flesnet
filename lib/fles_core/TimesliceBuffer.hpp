@@ -105,7 +105,7 @@ public:
 
 private:
   std::string shm_identifier_;
-  boost::uuids::uuid shm_uuid_;
+  boost::uuids::uuid shm_uuid_{};
   uint32_t data_buffer_size_exp_;
   uint32_t desc_buffer_size_exp_;
   uint32_t num_input_nodes_;

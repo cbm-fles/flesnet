@@ -35,7 +35,7 @@ private:
 
   crcutil_interface::CRC* crc32_engine_ = nullptr;
 
-  fles::MicrosliceDescriptor reference_descriptor_;
+  fles::MicrosliceDescriptor reference_descriptor_{};
   std::unique_ptr<PatternChecker> pattern_checker_;
 
   uint64_t output_interval_ = UINT64_MAX;
