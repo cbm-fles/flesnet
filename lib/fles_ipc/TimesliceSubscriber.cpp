@@ -27,10 +27,10 @@ fles::StorableTimeslice* TimesliceSubscriber::do_get() {
 
   fles::StorableTimeslice* sts = nullptr;
   try {
-    sts = new fles::StorableTimeslice();
+    sts = new fles::StorableTimeslice(); // NOLINT
     ia >> *sts;
   } catch (boost::archive::archive_exception& e) {
-    delete sts;
+    delete sts; // NOLINT
     eos_flag = true;
     return nullptr;
   }

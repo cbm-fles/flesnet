@@ -114,8 +114,7 @@ private:
       return;
     }
 
-    iarchive_ = std::unique_ptr<boost::archive::binary_iarchive>(
-        new boost::archive::binary_iarchive(*ifstream_));
+    iarchive_ = std::make_unique<boost::archive::binary_iarchive>(*ifstream_);
 
     *iarchive_ >> descriptor_;
 
@@ -134,11 +133,11 @@ private:
 
     Derived* sts = nullptr;
     try {
-      sts = new Derived();
+      sts = new Derived(); // NOLINT
       *iarchive_ >> *sts;
     } catch (boost::archive::archive_exception& e) {
       if (e.code == boost::archive::archive_exception::input_stream_error) {
-        delete sts;
+        delete sts; // NOLINT
         next_file();
         if (!eos_) {
           return do_get();

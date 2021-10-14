@@ -113,10 +113,9 @@ private:
   void next_file() {
     oarchive_ = nullptr;
     ofstream_ = nullptr;
-    ofstream_ = std::unique_ptr<std::ofstream>(
-        new std::ofstream(filename(file_count_), std::ios::binary));
-    oarchive_ = std::unique_ptr<boost::archive::binary_oarchive>(
-        new boost::archive::binary_oarchive(*ofstream_));
+    ofstream_ = std::make_unique<std::ofstream>(filename(file_count_),
+                                                std::ios::binary);
+    oarchive_ = std::make_unique<boost::archive::binary_oarchive>(*ofstream_);
     *oarchive_ << descriptor_;
 
     ++file_count_;

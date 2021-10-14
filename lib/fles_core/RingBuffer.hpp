@@ -80,8 +80,10 @@ public:
       }
     } else {
       if (CLEARED) {
+        // NOLINTNEXTLINE
         buf_ = buf_t(new T[size_](), [&](T* ptr) { delete[] ptr; });
       } else {
+        // NOLINTNEXTLINE
         buf_ = buf_t(new T[size_], [&](T* ptr) { delete[] ptr; });
       }
     }

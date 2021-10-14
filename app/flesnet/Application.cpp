@@ -269,7 +269,7 @@ void Application::run() {
   for (auto& buffer : timeslice_builders_) {
     boost::packaged_task<void> task(std::ref(*buffer));
     futures.push_back(task.get_future());
-    auto* thread = new boost::thread(std::move(task));
+    auto* thread = new boost::thread(std::move(task)); // NOLINT
 #if defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_setname_np(thread->native_handle(), buffer->thread_name().c_str());
 #endif
@@ -279,7 +279,7 @@ void Application::run() {
   for (auto& buffer : input_channel_senders_) {
     boost::packaged_task<void> task(std::ref(*buffer));
     futures.push_back(task.get_future());
-    auto* thread = new boost::thread(std::move(task));
+    auto* thread = new boost::thread(std::move(task)); // NOLINT
 #if defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_setname_np(thread->native_handle(), buffer->thread_name().c_str());
 #endif
@@ -290,7 +290,7 @@ void Application::run() {
   for (auto& buffer : timeslice_builders_zeromq_) {
     boost::packaged_task<void> task(std::ref(*buffer));
     futures.push_back(task.get_future());
-    auto* thread = new boost::thread(std::move(task));
+    auto* thread = new boost::thread(std::move(task)); // NOLINT
 #if defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_setname_np(thread->native_handle(), buffer->thread_name().c_str());
 #endif
@@ -300,7 +300,7 @@ void Application::run() {
   for (auto& buffer : component_senders_zeromq_) {
     boost::packaged_task<void> task(std::ref(*buffer));
     futures.push_back(task.get_future());
-    auto* thread = new boost::thread(std::move(task));
+    auto* thread = new boost::thread(std::move(task)); // NOLINT
 #if defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_setname_np(thread->native_handle(), buffer->thread_name().c_str());
 #endif

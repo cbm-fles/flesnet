@@ -54,14 +54,13 @@ private:
     iarchive_ = nullptr;
     ifstream_ = nullptr;
 
-    ifstream_ = std::unique_ptr<std::ifstream>(
-        new std::ifstream(filename_.c_str(), std::ios::binary));
+    ifstream_ =
+        std::make_unique<std::ifstream>(filename_.c_str(), std::ios::binary);
     if (!*ifstream_) {
       throw std::ios_base::failure("error opening file \"" + filename_ + "\"");
     }
 
-    iarchive_ = std::unique_ptr<boost::archive::binary_iarchive>(
-        new boost::archive::binary_iarchive(*ifstream_));
+    iarchive_ = std::make_unique<boost::archive::binary_iarchive>(*ifstream_);
 
     *iarchive_ >> descriptor_;
 
@@ -81,12 +80,12 @@ private:
 
     Derived* sts = nullptr;
     try {
-      sts = new Derived();
+      sts = new Derived(); // NOLINT
       *iarchive_ >> *sts;
       archive_has_data_ = true;
     } catch (boost::archive::archive_exception& e) {
       if (e.code == boost::archive::archive_exception::input_stream_error) {
-        delete sts;
+        delete sts; // NOLINT
         if (archive_has_data_ && cycle_ < cycles_) {
           init();
           return do_get();

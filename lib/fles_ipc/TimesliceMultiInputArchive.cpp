@@ -183,7 +183,7 @@ std::unique_ptr<Timeslice> TimesliceMultiInputArchive::GetNextTimeslice() {
 bool TimesliceMultiInputArchive::OpenNextFile(int element) {
   // First Close and delete existing source
   if (nullptr != source_.at(element)) {
-    delete source_.at(element).release();
+    delete source_.at(element).release(); // NOLINT
   }
 
   if (!InputFileList.at(element).empty()) {

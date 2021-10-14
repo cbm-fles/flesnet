@@ -92,6 +92,7 @@ private:
       } while (!filter_output.first);
     }
     more = filter_output.second;
+    // NOLINTNEXTLINE
     return new Output(*filter_output.first);
     // TODO(Jan): Solve this without the additional alloc/copy operation
   }
