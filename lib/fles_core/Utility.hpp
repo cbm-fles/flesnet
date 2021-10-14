@@ -8,6 +8,7 @@
 #include <iterator>
 #include <limits>
 #include <sstream>
+#include <string>
 #include <vector>
 
 /// Overloaded output operator for STL vectors.
@@ -28,8 +29,8 @@ inline std::string human_readable_count(uint64_t bytes,
 
   auto exponent = static_cast<uint32_t>(std::log(bytes) / std::log(unit));
 
-  std::string prefix =
-      std::string(use_si ? "kMGTPE" : "KMGTPE").substr(exponent - 1, 1);
+  using namespace std::string_literals;
+  std::string prefix = (use_si ? "kMGTPE"s : "KMGTPE"s).substr(exponent - 1, 1);
   if (!use_si) {
     prefix += "i";
   }

@@ -447,7 +447,7 @@ void InputChannelSender::post_send_data(uint64_t timeslice,
                                         uint64_t data_length,
                                         uint64_t skip) {
   int num_sge = 0;
-  struct ibv_sge sge[4];
+  std::array<ibv_sge, 4> sge{};
   // descriptors
   if ((desc_offset & data_source_.desc_buffer().size_mask()) <=
       ((desc_offset + desc_length - 1) &
@@ -501,7 +501,8 @@ void InputChannelSender::post_send_data(uint64_t timeslice,
     sge[num_sge++].lkey = mr_data_->lkey;
   }
 
-  conn_[cn]->send_data(sge, num_sge, timeslice, desc_length, data_length, skip);
+  conn_[cn]->send_data(sge.data(), num_sge, timeslice, desc_length, data_length,
+                       skip);
 }
 
 void InputChannelSender::on_completion(const struct ibv_wc& wc) {

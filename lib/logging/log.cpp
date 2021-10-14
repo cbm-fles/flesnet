@@ -78,7 +78,7 @@ boost::log::formatting_ostream& operator<<(
     boost::log::formatting_ostream& strm,
     boost::log::to_log_manip<severity_level,
                              logging::severity_with_color_tag> const& manip) {
-  static const char* colors[] = {
+  static const std::array colors = {
       __ansi(__ansi_faint),
       __ansi(__ansi_color_fg_normal(__ansi_color_green) ";" __ansi_faint),
       __ansi(__ansi_color_fg_normal(__ansi_color_green)),
@@ -91,7 +91,7 @@ boost::log::formatting_ostream& operator<<(
 
   severity_level level = manip.get();
 
-  if (static_cast<std::size_t>(level) < sizeof(colors) / sizeof(*colors)) {
+  if (static_cast<std::size_t>(level) < colors.size()) {
     strm << colors[level] << level << ":" << __ansi(__ansi_normal);
   } else {
     strm << level << ":";
