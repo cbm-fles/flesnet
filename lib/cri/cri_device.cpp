@@ -42,6 +42,8 @@ void cri_device::init() {
       std::unique_ptr<register_file_bar>(new register_file_bar(m_bar.get(), 0));
   // enforce correct magic number and hw version
   check_magic_number();
+  m_hardware_version =
+      m_register_file->get_reg(0) >> 16; // CRI_REG_HARDWARE_INFO;
   check_hw_ver(hw_ver_table);
   // create channel objects
   uint8_t num_channels = number_of_hw_channels();
@@ -51,31 +53,31 @@ void cri_device::init() {
   }
 }
 
-bool cri_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
-  uint16_t hw_ver = m_register_file->get_reg(0) >> 16; // CRI_REG_HARDWARE_INFO;
+bool cri_device::check_hw_ver(hw_ver_table_t hw_ver_table) {
   bool match = false;
 
   // check if version of hardware is part of suported versions
   for (auto it = hw_ver_table.begin();
        it != hw_ver_table.end() && match == false; ++it) {
-    if (hw_ver == *it) {
+    if (m_hardware_version == *it) {
       match = true;
     }
   }
   if (!match) {
     std::stringstream msg;
-    msg << "Hardware - libcri version missmatch! CRI ver: " << hw_ver;
+    msg << "Hardware - libcri version missmatch! CRI ver: "
+        << m_hardware_version;
     throw CriException(msg.str());
   }
 
-  // INFO: disabled check to allow 'mixed' hw headers
-  // check if version of hardware matches exactly version of header
-  if (hw_ver != CRI_C_HARDWARE_VERSION) {
+  // INFO: disable check to allow 'mixed' hw headers
+  // check if version of hardware matches or is older than version of header
+  if (m_hardware_version > CRI_C_HARDWARE_VERSION) {
     match = false;
   }
   if (!match) {
     std::stringstream msg;
-    msg << "Header file version missmatch! CRI ver: " << hw_ver;
+    msg << "Header file version missmatch! CRI ver: " << m_hardware_version;
     throw CriException(msg.str());
   }
   return match;
@@ -96,10 +98,7 @@ uint8_t cri_device::number_of_hw_channels() {
   return (m_register_file->get_reg(CRI_REG_N_CHANNELS) & 0xFF);
 }
 
-uint16_t cri_device::hardware_version() {
-  return (static_cast<uint16_t>(m_register_file->get_reg(0) >> 16));
-  // CRI_REG_HARDWARE_INFO
-}
+uint16_t cri_device::hardware_version() { return m_hardware_version; }
 
 time_t cri_device::build_date() {
   time_t time = (static_cast<time_t>(

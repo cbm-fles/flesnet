@@ -21,7 +21,8 @@ namespace cri {
 class cri_channel;
 class register_file_bar;
 
-constexpr std::array<uint16_t, 1> hw_ver_table = {{3}};
+using hw_ver_table_t = std::array<uint16_t, 2>;
+constexpr hw_ver_table_t hw_ver_table = {{2, 3}};
 constexpr uint32_t pci_clk = 250E6;
 
 constexpr size_t pgen_base_size_ns = 1000;
@@ -43,7 +44,6 @@ public:
   cri_device(uint8_t bus, uint8_t device, uint8_t function);
   ~cri_device();
 
-  bool check_hw_ver(std::array<uint16_t, 1> hw_ver_table);
   void enable_mc_cnt(bool enable);
   void set_pgen_mc_size(uint32_t mc_size);
   size_t get_pgen_base_size_ns() { return pgen_base_size_ns; }
@@ -93,9 +93,11 @@ protected:
   std::unique_ptr<pda::pci_bar> m_bar;
   std::unique_ptr<register_file_bar> m_register_file;
   std::vector<std::unique_ptr<cri_channel>> m_channel;
+  uint16_t m_hardware_version;
 
   void init();
   bool check_magic_number();
+  bool check_hw_ver(hw_ver_table_t hw_ver_table);
 };
 
 } // namespace cri
