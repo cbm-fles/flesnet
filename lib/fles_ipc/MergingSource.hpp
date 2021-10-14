@@ -40,7 +40,7 @@ public:
 
   ~MergingSource() override = default;
 
-  bool eos() const override { return eos_; }
+  [[nodiscard]] bool eos() const override { return eos_; }
 
 private:
   std::vector<std::unique_ptr<SourceType>> sources_;

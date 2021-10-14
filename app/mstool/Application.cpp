@@ -12,6 +12,7 @@
 #include "shm_channel_client.hpp"
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <thread>
 
 Application::Application(Parameters const& par) : par_(par) {
@@ -23,8 +24,8 @@ Application::Application(Parameters const& par) : par_(par) {
     shm_device_ = std::make_shared<flib_shm_device_client>(par_.input_shm);
 
     if (par_.channel_idx < shm_device_->num_channels()) {
-      data_source_.reset(
-          new flib_shm_channel_client(shm_device_, par_.channel_idx));
+      data_source_ = std::make_unique<flib_shm_channel_client>(
+          shm_device_, par_.channel_idx);
 
     } else {
       throw std::runtime_error("shared memory channel not available");
@@ -36,15 +37,16 @@ Application::Application(Parameters const& par) : par_(par) {
     constexpr std::size_t desc_buffer_size_exp = 19; // 512 ki entries
     constexpr std::size_t data_buffer_size_exp = 27; // 128 MiB
 
-    data_source_.reset(new FlesnetPatternGenerator(
+    data_source_ = std::make_unique<FlesnetPatternGenerator>(
         data_buffer_size_exp, desc_buffer_size_exp, par_.channel_idx,
-        typical_content_size, true, true));
+        typical_content_size, true, true);
   }
 
   if (data_source_) {
-    source_.reset(new fles::MicrosliceReceiver(*data_source_));
+    source_ = std::make_unique<fles::MicrosliceReceiver>(*data_source_);
   } else if (!par_.input_archive.empty()) {
-    source_.reset(new fles::MicrosliceInputArchive(par_.input_archive));
+    source_ =
+        std::make_unique<fles::MicrosliceInputArchive>(par_.input_archive);
   }
 
   // Sink setup
@@ -69,8 +71,8 @@ Application::Application(Parameters const& par) : par_(par) {
     constexpr std::size_t desc_buffer_size_exp = 19; // 512 ki entries
     constexpr std::size_t data_buffer_size_exp = 27; // 128 MiB
 
-    output_shm_device_.reset(new flib_shm_device_provider(
-        par_.output_shm, 1, data_buffer_size_exp, desc_buffer_size_exp));
+    output_shm_device_ = std::make_unique<flib_shm_device_provider>(
+        par_.output_shm, 1, data_buffer_size_exp, desc_buffer_size_exp);
     InputBufferWriteInterface* data_sink = output_shm_device_->channels().at(0);
     sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
         new fles::MicrosliceTransmitter(*data_sink)));

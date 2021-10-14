@@ -1,12 +1,14 @@
-#ifndef ZMQ_DEMO_ITEMWORKER_HPP
-#define ZMQ_DEMO_ITEMWORKER_HPP
+#ifndef SHM_IPC_ITEMWORKER_HPP
+#define SHM_IPC_ITEMWORKER_HPP
 
 #include "ItemWorkerProtocol.hpp"
+#include "log.hpp"
 
+#include <cassert>
 #include <chrono>
-#include <iostream>
 #include <queue>
 #include <set>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -14,11 +16,21 @@
 
 class ItemWorker {
 public:
+  using DisconnectCallback = std::function<void(void)>;
+
   ItemWorker(std::string distributor_address, WorkerParameters parameters)
       : distributor_address_(std::move(distributor_address)),
         parameters_(std::move(parameters)) {
+    if (parameters_.client_name.empty()) {
+      throw std::invalid_argument(
+          "WorkerParameters.client_name cannot be empty");
+    }
     connect();
   };
+
+  void set_disconnect_callback(DisconnectCallback callback) {
+    disconnect_callback_ = callback;
+  }
 
   std::shared_ptr<const Item> get() {
     while (!stopped_) {
@@ -64,6 +76,7 @@ public:
             send_heartbeat();
           } else if (is_disconnect(message_string)) {
             distributor_socket_ = nullptr;
+            disconnect_callback_();
           } else {
             throw(WorkerProtocolError("invalid message type"));
           }
@@ -72,13 +85,15 @@ public:
             throw(WorkerProtocolError("connection heartbeat expired"));
           }
         }
-      } catch (WorkerProtocolError& error) {
-        std::cerr << "Protocol error: " << error.what() << std::endl;
+      } catch (WorkerProtocolError& wp_error) {
+        L_(error) << "Worker protocol violation: " << wp_error.what();
         distributor_socket_ = nullptr;
+        disconnect_callback_();
         std::queue<ItemID>().swap(completed_items_);
-      } catch (zmq::error_t& error) {
-        std::cerr << "ZMQ error: " << error.what() << std::endl;
+      } catch (zmq::error_t& zmq_error) {
+        L_(error) << "ZMQ: " << zmq_error.what();
         distributor_socket_ = nullptr;
+        disconnect_callback_();
         std::queue<ItemID>().swap(completed_items_);
       }
     }
@@ -91,6 +106,7 @@ public:
 
 private:
   void connect() {
+    assert(!distributor_socket_);
     distributor_socket_ =
         std::make_unique<zmq::socket_t>(context_, zmq::socket_type::req);
     distributor_socket_->connect(distributor_address_);
@@ -153,6 +169,7 @@ private:
   const std::string distributor_address_;
   zmq::context_t context_{1};
   std::unique_ptr<zmq::socket_t> distributor_socket_;
+  DisconnectCallback disconnect_callback_;
 
   const WorkerParameters parameters_{1, 0, WorkerQueuePolicy::QueueAll,
                                      "example_client"};

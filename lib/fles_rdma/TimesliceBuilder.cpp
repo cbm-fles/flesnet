@@ -9,6 +9,7 @@
 #include "log.hpp"
 #include <algorithm>
 #include <limits>
+#include <memory>
 
 TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
                                    TimesliceBuffer& timeslice_buffer,
@@ -27,8 +28,8 @@ TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
 
   if (!monitor_uri.empty()) {
     try {
-      monitor_client_ = std::unique_ptr<web::http::client::http_client>(
-          new web::http::client::http_client(monitor_uri));
+      monitor_client_ =
+          std::make_unique<web::http::client::http_client>(monitor_uri);
     } catch (std::exception& e) {
       L_(error) << "cannot connect to monitoring at " << monitor_uri << ": "
                 << e.what();
@@ -197,13 +198,11 @@ void TimesliceBuilder::report_status() {
                 }
               });
 
-      monitor_task_ =
-          std::unique_ptr<pplx::task<void>>(new pplx::task<void>(task));
+      monitor_task_ = std::make_unique<pplx::task<void>>(task);
     }
   }
 
-  scheduler_.add(std::bind(&TimesliceBuilder::report_status, this),
-                 now + interval);
+  scheduler_.add([this] { report_status(); }, now + interval);
 }
 
 void TimesliceBuilder::request_abort() {
@@ -348,7 +347,7 @@ void TimesliceBuilder::on_completion(const struct ibv_wc& wc) {
 }
 
 void TimesliceBuilder::poll_ts_completion() {
-  fles::TimesliceCompletion c;
+  fles::TimesliceCompletion c{};
   if (!timeslice_buffer_.try_receive_completion(c)) {
     return;
   }

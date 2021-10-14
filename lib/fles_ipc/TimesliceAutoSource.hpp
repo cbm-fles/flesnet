@@ -98,7 +98,7 @@ public:
    * \return Returns true if all managed sources are in the end-of-stream state,
    * false otherwise.
    */
-  bool eos() const override { return source_->eos(); }
+  [[nodiscard]] bool eos() const override { return source_->eos(); }
 
   ~TimesliceAutoSource() override = default;
 

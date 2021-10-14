@@ -66,24 +66,25 @@ int main(int argc, char* argv[]) {
     exit(EXIT_SUCCESS);
   }
   if (vm.count("desc") != 0u) {
-    std::cout << "Displays status and performance counters for all CRI channelss.\n"
-                 "Per device counters:\n"
-                 "idle:     PCIe interface is idle (ratio)\n"
-                 "stall:    back pressure on PCIe interface from host (ratio)\n"
-                 "trans:    data is transmitted via PCIe interface (ratio)\n"
-                 "Per channel status/counters:\n"
-                 "ch:       cri/channle\n"
-                 "src:      choosen data source\n"
-                 "en:       readout enabled\n"
-                 "dma_t:    transmission to dma mux (ratio)\n"
-                 "dma_s:    stall from dma mux (ratio)\n"
-                 "data_s:   stall from full data buffer (ratio)\n"
-                 "desc_s:   stall from full desc buffer (ratio)\n"
-                 "rate:     ms processing rate (Hz*)\n"
-                 "* Based on the assumption that the PCIe clock is exactly 100 "
-                 "MHz.\n"
-                 "  This may not be true in case of PCIe spread-spectrum "
-                 "clocking.\n";
+    std::cout
+        << "Displays status and performance counters for all CRI channelss.\n"
+           "Per device counters:\n"
+           "idle:     PCIe interface is idle (ratio)\n"
+           "stall:    back pressure on PCIe interface from host (ratio)\n"
+           "trans:    data is transmitted via PCIe interface (ratio)\n"
+           "Per channel status/counters:\n"
+           "ch:       cri/channle\n"
+           "src:      choosen data source\n"
+           "en:       readout enabled\n"
+           "dma_t:    transmission to dma mux (ratio)\n"
+           "dma_s:    stall from dma mux (ratio)\n"
+           "data_s:   stall from full data buffer (ratio)\n"
+           "desc_s:   stall from full desc buffer (ratio)\n"
+           "rate:     ms processing rate (Hz*)\n"
+           "* Based on the assumption that the PCIe clock is exactly 100 "
+           "MHz.\n"
+           "  This may not be true in case of PCIe spread-spectrum "
+           "clocking.\n";
     std::cout << std::endl;
     return EXIT_SUCCESS;
   }
@@ -166,7 +167,8 @@ int main(int argc, char* argv[]) {
                     << pci_idle << "   stall " << std::setw(9) << pci_stall
                     << " (max. " << std::setw(5) << pci_max_stall << " us)"
                     << "   trans " << std::setw(9) << pci_trans
-                    << "   raw rate "  << std::setw(5) << pci_throughput / 1e6 << " MB/s    " << std::endl;
+                    << "   raw rate " << std::setw(5) << pci_throughput / 1e6
+                    << " MB/s    " << std::endl;
         }
         if (client) {
           measurement += "dev_status,host=" + hostname +
@@ -174,8 +176,7 @@ int main(int argc, char* argv[]) {
                          " cycles=" + std::to_string(dev_perf.cycles) + "i" +
                          ",busy=" + std::to_string(pci_busy) +
                          ",stall=" + std::to_string(pci_stall) +
-                         ",trans=" + std::to_string(pci_trans) +
-                         "\n";
+                         ",trans=" + std::to_string(pci_trans) + "\n";
         }
 
         ++j;
@@ -183,7 +184,8 @@ int main(int argc, char* argv[]) {
       if (console) {
         std::cout << std::endl;
 
-        std::cout << " ch       src  en      MB/s       kHz      mc_t      mc_s     dma_t     dma_s    data_s    desc_s\n";
+        std::cout << " ch       src  en      MB/s       kHz      mc_t      "
+                     "mc_s     dma_t     dma_s    data_s    desc_s\n";
       }
       j = 0;
       for (auto& cri : cris) {
@@ -220,7 +222,7 @@ int main(int argc, char* argv[]) {
           float mc_trans = perf_gtx.mc_trans / cycles_gtx;
           float mc_stall = perf_gtx.mc_stall / cycles_gtx;
           float mc_busy = perf_gtx.mc_busy / cycles_gtx;
-          float mc_throughput = mc_trans * cri::gtx_clk * 8 ;
+          float mc_throughput = mc_trans * cri::gtx_clk * 8;
 
           if (console) {
             ss << std::setw(1) << j << "/" << i << "  ";

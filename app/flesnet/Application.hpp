@@ -3,6 +3,7 @@
 
 #include "ComponentSenderZeromq.hpp"
 #include "ConnectionGroupWorker.hpp"
+#include "ItemDistributor.hpp"
 #include "Parameters.hpp"
 #include "ThreadContainer.hpp"
 #include "TimesliceBuffer.hpp"
@@ -19,6 +20,8 @@
 #include <csignal>
 #include <map>
 #include <memory>
+#include <thread>
+#include <zmq.hpp>
 
 /// %Application base class.
 /** The Application object represents an instance of the running
@@ -46,6 +49,9 @@ private:
   Parameters const& par_;
   volatile sig_atomic_t* signal_status_;
 
+  /// The application's ZeroMQ context
+  zmq::context_t zmq_context_{1};
+
   // Input node application
   std::map<std::string, std::shared_ptr<flib_shm_device_client>> shm_devices_;
 
@@ -53,14 +59,14 @@ private:
   std::vector<std::unique_ptr<InputBufferReadInterface>> data_sources_;
   std::vector<std::unique_ptr<TimesliceBuffer>> timeslice_buffers_;
 
+  // The application's output item distributor objects
+  std::vector<std::unique_ptr<ItemDistributor>> item_distributors_;
+
 #if defined(HAVE_RDMA) || defined(HAVE_LIBFABRIC)
   /// The application's RDMA or libfabric transport objects
   std::vector<std::unique_ptr<ConnectionGroupWorker>> timeslice_builders_;
   std::vector<std::unique_ptr<ConnectionGroupWorker>> input_channel_senders_;
 #endif
-
-  /// The application's ZeroMQ context
-  std::unique_ptr<void, std::function<int(void*)>> zmq_context_;
 
   /// The application's ZeroMQ transport objects
   std::vector<std::unique_ptr<TimesliceBuilderZeromq>>

@@ -12,6 +12,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
 
 namespace fles {
 
@@ -30,8 +31,8 @@ public:
    *
    * \param filename_template File name pattern of the archive files
    */
-  InputArchiveSequence(const std::string& filename_template)
-      : filename_template_(filename_template) {
+  InputArchiveSequence(std::string filename_template)
+      : filename_template_(std::move(filename_template)) {
     // append sequence number to file name if missing in template
     if (filename_template_.find("%n") == std::string::npos) {
       filename_template_ += ".%n";
@@ -46,8 +47,8 @@ public:
    *
    * \param filenames File names of the archive files
    */
-  InputArchiveSequence(const std::vector<std::string>& filenames)
-      : filenames_(filenames) {
+  InputArchiveSequence(std::vector<std::string> filenames)
+      : filenames_(std::move(filenames)) {
     next_file();
   }
 
@@ -62,9 +63,11 @@ public:
   std::unique_ptr<Derived> get() { return std::unique_ptr<Derived>(do_get()); };
 
   /// Retrieve the archive descriptor.
-  const ArchiveDescriptor& descriptor() const { return descriptor_; };
+  [[nodiscard]] const ArchiveDescriptor& descriptor() const {
+    return descriptor_;
+  };
 
-  bool eos() const override { return eos_; }
+  [[nodiscard]] bool eos() const override { return eos_; }
 
 private:
   std::unique_ptr<std::ifstream> ifstream_;
@@ -77,7 +80,7 @@ private:
 
   bool eos_ = false;
 
-  std::string filename_with_number(std::size_t n) const {
+  [[nodiscard]] std::string filename_with_number(std::size_t n) const {
     std::ostringstream number;
     number << std::setw(4) << std::setfill('0') << n;
     return boost::replace_all_copy(filename_template_, "%n", number.str());
@@ -100,8 +103,7 @@ private:
       filename = filename_with_number(file_count_);
     }
 
-    ifstream_ = std::unique_ptr<std::ifstream>(
-        new std::ifstream(filename, std::ios::binary));
+    ifstream_ = std::make_unique<std::ifstream>(filename, std::ios::binary);
     if (!*ifstream_) {
       if (file_count_ == 0 || !filenames_.empty()) {
         // Not finding the first file or one given explicitely is an error
@@ -112,8 +114,7 @@ private:
       return;
     }
 
-    iarchive_ = std::unique_ptr<boost::archive::binary_iarchive>(
-        new boost::archive::binary_iarchive(*ifstream_));
+    iarchive_ = std::make_unique<boost::archive::binary_iarchive>(*ifstream_);
 
     *iarchive_ >> descriptor_;
 
@@ -132,11 +133,11 @@ private:
 
     Derived* sts = nullptr;
     try {
-      sts = new Derived();
+      sts = new Derived(); // NOLINT
       *iarchive_ >> *sts;
     } catch (boost::archive::archive_exception& e) {
       if (e.code == boost::archive::archive_exception::input_stream_error) {
-        delete sts;
+        delete sts; // NOLINT
         next_file();
         if (!eos_) {
           return do_get();

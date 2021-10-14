@@ -8,18 +8,19 @@
 #include "log.hpp"
 #include <chrono>
 #include <thread>
+#include <utility>
 
 TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     uint64_t compute_index,
     TimesliceBuffer& timeslice_buffer,
-    const std::vector<std::string>& input_server_addresses,
+    std::vector<std::string> input_server_addresses,
     uint32_t num_compute_nodes,
     uint32_t timeslice_size,
     uint32_t max_timeslice_number,
     volatile sig_atomic_t* signal_status,
     void* zmq_context)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
-      input_server_addresses_(input_server_addresses),
+      input_server_addresses_(std::move(input_server_addresses)),
       num_compute_nodes_(num_compute_nodes), timeslice_size_(timeslice_size),
       max_timeslice_number_(max_timeslice_number),
       signal_status_(signal_status), ts_index_(compute_index_),
@@ -176,7 +177,7 @@ void TimesliceBuilderZeromq::run_end() {
 }
 
 void TimesliceBuilderZeromq::handle_timeslice_completions() {
-  fles::TimesliceCompletion c;
+  fles::TimesliceCompletion c{};
   while (timeslice_buffer_.try_receive_completion(c)) {
     if (c.ts_pos == acked_) {
       do {
@@ -232,6 +233,5 @@ void TimesliceBuilderZeromq::report_status() {
   previous_buffer_status_desc_ = status_desc;
   previous_buffer_status_data_ = status_data;
 
-  scheduler_.add(std::bind(&TimesliceBuilderZeromq::report_status, this),
-                 now + interval);
+  scheduler_.add([this] { report_status(); }, now + interval);
 }

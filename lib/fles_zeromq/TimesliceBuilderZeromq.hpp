@@ -24,7 +24,7 @@ public:
   /// The TimesliceBuilderZeromq constructor.
   TimesliceBuilderZeromq(uint64_t compute_index,
                          TimesliceBuffer& timeslice_buffer,
-                         const std::vector<std::string>& input_server_addresses,
+                         std::vector<std::string> input_server_addresses,
                          uint32_t num_compute_nodes,
                          uint32_t timeslice_size,
                          uint32_t max_timeslice_number,
@@ -98,9 +98,9 @@ private:
     ManagedRingBuffer<fles::TimesliceComponentDescriptor> desc;
     ManagedRingBuffer<uint8_t> data;
 
-    void* socket;
-    zmq_msg_t desc_msg;
-    zmq_msg_t data_msg;
+    void* socket = nullptr;
+    zmq_msg_t desc_msg{};
+    zmq_msg_t data_msg{};
   };
 
   /// The vector of connections, one per input server.
@@ -114,23 +114,25 @@ private:
 
   struct BufferStatus {
     std::chrono::system_clock::time_point time;
-    uint64_t size;
+    uint64_t size = 0;
 
-    uint64_t cached_acked;
-    uint64_t acked;
-    uint64_t received;
+    uint64_t cached_acked = 0;
+    uint64_t acked = 0;
+    uint64_t received = 0;
 
-    int64_t used() const { return received - acked; }
-    int64_t freeing() const { return acked - cached_acked; }
-    int64_t unused() const { return cached_acked + size - received; }
+    [[nodiscard]] int64_t used() const { return received - acked; }
+    [[nodiscard]] int64_t freeing() const { return acked - cached_acked; }
+    [[nodiscard]] int64_t unused() const {
+      return cached_acked + size - received;
+    }
 
-    float percentage(int64_t value) const {
+    [[nodiscard]] float percentage(int64_t value) const {
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
     static std::string caption() { return std::string("used/freeing/free"); }
 
-    std::string percentage_str(int64_t value) const {
+    [[nodiscard]] std::string percentage_str(int64_t value) const {
       boost::format percent_fmt("%4.1f%%");
       percent_fmt % (percentage(value) * 100);
       std::string s = percent_fmt.str();
@@ -138,12 +140,12 @@ private:
       return s;
     }
 
-    std::string percentages() const {
+    [[nodiscard]] std::string percentages() const {
       return percentage_str(used()) + " " + percentage_str(freeing()) + " " +
              percentage_str(unused());
     }
 
-    std::vector<int64_t> vector() const {
+    [[nodiscard]] std::vector<int64_t> vector() const {
       return std::vector<int64_t>{used(), freeing(), unused()};
     }
   };

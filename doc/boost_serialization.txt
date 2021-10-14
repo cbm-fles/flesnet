@@ -4,15 +4,30 @@ Boost serialization
 Boost version | BOOST_ARCHIVE_VERSION
 
 1.54 | 10   [Ubuntu Trusty 14.04 LTS default]
-1.55 | 10   [Debian Jessie 15.04] [Ubuntu Trusty 14.04 LTS universe]
+1.55 | 10   [Debian 8 Jessie 15.04] [Ubuntu Trusty 14.04 LTS universe]
 1.56 | 11
 1.57 | 11
 1.58 | 12   [Ubuntu Xenial 16.04 LTS]
 1.59 | 13
 1.60 | 14
 1.61 | 14
-1.62 | 14
-dev  | 15
+1.62 | 14   [Debian 9 Stretch 17.06]
+1.63 | 14
+1.64 | 15
+1.65 | 15   [Ubuntu Bionic 18.04 LTS]
+1.66 | 16
+1.67 | 16   [Debian 10 Buster 19.07]
+1.68 | 17
+1.69 | 17
+1.70 | 17
+1.71 | 17   [Ubuntu Focal 20.04 LTS]
+1.72 | 17
+1.73 | 18
+1.74 | 18   [Debian 11 Bullseye 21.08]
+1.75 | 18
+1.76 | 19
+1.77 | 19
+dev  | 19
 
 - List of BOOST_ARCHIVE_VERSION changes:
 https://github.com/boostorg/serialization/blob/develop/src/basic_archive.cpp

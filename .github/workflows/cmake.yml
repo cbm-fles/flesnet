@@ -7,15 +7,19 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     strategy:
       matrix:
         include:
         - cc: gcc
           cxx: g++
+        - cc: gcc-10
+          cxx: g++-10
         - cc: clang
           cxx: clang++
+        - cc: clang-12
+          cxx: clang++-12
       fail-fast: false
 
     env: 
@@ -27,11 +31,11 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo bash -c "echo 'deb https://download.opensuse.org/repositories/network:/messaging:/zeromq:/release-draft/xUbuntu_18.04/ ./' > /etc/apt/sources.list.d/zmq.list"
+        sudo bash -c "echo 'deb https://download.opensuse.org/repositories/network:/messaging:/zeromq:/release-draft/xUbuntu_20.04/ ./' > /etc/apt/sources.list.d/zmq.list"
         wget https://build.opensuse.org/projects/network:messaging:zeromq:release-draft/public_key -O- | sudo apt-key add
         sudo bash -c "echo -e 'Package: libzmq3-dev\nPin: origin download.opensuse.org\nPin-Priority: 1000\n\nPackage: libzmq5\nPin: origin download.opensuse.org\nPin-Priority: 1000' >> /etc/apt/preferences"
         sudo apt-get update -y
-        sudo apt-get install -yq catch doxygen libboost-all-dev libcpprest-dev libfabric-dev libibverbs-dev libkmod-dev libnuma-dev libpci-dev librdmacm-dev libtool-bin libzmq3-dev valgrind
+        sudo apt-get install -yq catch doxygen libboost-all-dev libcpprest-dev libfabric-dev libibverbs-dev libkmod-dev libnuma-dev libpci-dev librdmacm-dev libtool-bin libzmq3-dev
 
     - name: Install additional dependencies
       run: contrib/merge-dependencies

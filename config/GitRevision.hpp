@@ -1,1 +1,2 @@
-extern const char g_GIT_REVISION[];
+#include <string>
+extern const std::string g_GIT_REVISION;

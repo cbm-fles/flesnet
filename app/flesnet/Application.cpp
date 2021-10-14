@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "ChildProcessManager.hpp"
 #include "FlesnetPatternGenerator.hpp"
+#include "ItemDistributor.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
@@ -15,8 +16,6 @@
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
-  zmq_context_ = std::unique_ptr<void, std::function<int(void*)>>(
-      zmq_ctx_new(), zmq_ctx_destroy);
   create_input_channel_senders();
   create_timeslice_buffers();
   set_node();
@@ -52,25 +51,28 @@ void Application::create_timeslice_buffers() {
       descsize = stou(param.at("descsize"));
     }
 
-    L_(info) << "timeslice buffer " << i
-             << " size: " << human_readable_count(UINT64_C(1) << datasize)
-             << " + "
-             << human_readable_count(
-                    (UINT64_C(1) << descsize) *
-                    sizeof(fles::TimesliceComponentDescriptor));
+    const std::string producer_address = "inproc://" + shm_identifier;
+    const std::string worker_address = "ipc://@" + shm_identifier;
+
+    auto item_distributor = std::make_unique<ItemDistributor>(
+        zmq_context_, producer_address, worker_address);
+    item_distributors_.push_back(std::move(item_distributor));
 
     std::unique_ptr<TimesliceBuffer> tsb(
-        new TimesliceBuffer(shm_identifier, datasize, descsize, input_size));
+        new TimesliceBuffer(zmq_context_, producer_address, shm_identifier,
+                            datasize, descsize, input_size));
+
+    L_(info) << "timeslice buffer " << i << ": " << tsb->description();
 
     start_processes(shm_identifier);
     ChildProcessManager::get().allow_stop_processes(this);
 
     if (par_.transport() == Transport::ZeroMQ) {
       std::unique_ptr<TimesliceBuilderZeromq> builder(
-          new TimesliceBuilderZeromq(i, *tsb, input_server_addresses,
-                                     output_size, par_.timeslice_size(),
-                                     par_.max_timeslice_number(),
-                                     signal_status_, zmq_context_.get()));
+          new TimesliceBuilderZeromq(
+              i, *tsb, input_server_addresses, output_size,
+              par_.timeslice_size(), par_.max_timeslice_number(),
+              signal_status_, static_cast<void*>(zmq_context_)));
       timeslice_builders_zeromq_.push_back(std::move(builder));
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC
@@ -163,6 +165,10 @@ void Application::create_input_channel_senders() {
       if (param.count("delay") != 0u) {
         delay_ns = stoul(param.at("delay"));
       }
+      uint64_t initial_ns = 0;
+      if (param.count("initial") != 0u) {
+        initial_ns = stoul(param.at("initial"));
+      }
 
       L_(info) << "input buffer " << index
                << " size: " << human_readable_count(UINT64_C(1) << datasize)
@@ -174,8 +180,8 @@ void Application::create_input_channel_senders() {
 
       data_sources_.push_back(std::unique_ptr<InputBufferReadInterface>(
           new FlesnetPatternGenerator(datasize, descsize, index, size_mean,
-                                      (pattern != 0), (size_var != 0),
-                                      delay_ns)));
+                                      (pattern != 0), (size_var != 0), delay_ns,
+                                      initial_ns)));
     } else {
       L_(fatal) << "unknown input scheme: " << scheme;
     }
@@ -194,7 +200,7 @@ void Application::create_input_channel_senders() {
       std::unique_ptr<ComponentSenderZeromq> sender(new ComponentSenderZeromq(
           index, *(data_sources_.at(c).get()), listen_address,
           par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
-          signal_status_, zmq_context_.get()));
+          signal_status_, static_cast<void*>(zmq_context_)));
       component_senders_zeromq_.push_back(std::move(sender));
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC
@@ -224,19 +230,34 @@ void Application::create_input_channel_senders() {
 }
 
 void Application::run() {
+  std::vector<std::thread> distributor_threads;
+
+  for (auto& distributor : item_distributors_) {
+    distributor_threads.emplace_back(std::ref(*distributor));
+  }
+
+  auto cleanup_distributor_threads = [&]() {
+    for (auto& distributor : item_distributors_) {
+      distributor->stop();
+    }
+    for (auto& thread : distributor_threads) {
+      thread.join();
+    }
+  };
+
 // Do not spawn additional thread if only one is needed, simplifies
 // debugging
 #if defined(HAVE_RDMA) || defined(HAVE_LIBFABRIC)
   if (timeslice_builders_.size() == 1 && input_channel_senders_.empty()) {
     L_(debug) << "using existing thread for single timeslice builder";
     (*timeslice_builders_[0])();
-    return;
-  };
+    cleanup_distributor_threads();
+  }
   if (input_channel_senders_.size() == 1 && timeslice_builders_.empty()) {
     L_(debug) << "using existing thread for single input channel sender";
     (*input_channel_senders_[0])();
     return;
-  };
+  }
 #endif
 
   // FIXME: temporary code, need to implement interrupt
@@ -248,7 +269,7 @@ void Application::run() {
   for (auto& buffer : timeslice_builders_) {
     boost::packaged_task<void> task(std::ref(*buffer));
     futures.push_back(task.get_future());
-    auto* thread = new boost::thread(std::move(task));
+    auto* thread = new boost::thread(std::move(task)); // NOLINT
 #if defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_setname_np(thread->native_handle(), buffer->thread_name().c_str());
 #endif
@@ -258,7 +279,7 @@ void Application::run() {
   for (auto& buffer : input_channel_senders_) {
     boost::packaged_task<void> task(std::ref(*buffer));
     futures.push_back(task.get_future());
-    auto* thread = new boost::thread(std::move(task));
+    auto* thread = new boost::thread(std::move(task)); // NOLINT
 #if defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_setname_np(thread->native_handle(), buffer->thread_name().c_str());
 #endif
@@ -269,7 +290,7 @@ void Application::run() {
   for (auto& buffer : timeslice_builders_zeromq_) {
     boost::packaged_task<void> task(std::ref(*buffer));
     futures.push_back(task.get_future());
-    auto* thread = new boost::thread(std::move(task));
+    auto* thread = new boost::thread(std::move(task)); // NOLINT
 #if defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_setname_np(thread->native_handle(), buffer->thread_name().c_str());
 #endif
@@ -279,7 +300,7 @@ void Application::run() {
   for (auto& buffer : component_senders_zeromq_) {
     boost::packaged_task<void> task(std::ref(*buffer));
     futures.push_back(task.get_future());
-    auto* thread = new boost::thread(std::move(task));
+    auto* thread = new boost::thread(std::move(task)); // NOLINT
 #if defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_setname_np(thread->native_handle(), buffer->thread_name().c_str());
 #endif
@@ -303,6 +324,8 @@ void Application::run() {
   }
 
   threads.join_all();
+
+  cleanup_distributor_threads();
 }
 
 void Application::start_processes(const std::string& shared_memory_identifier) {

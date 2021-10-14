@@ -19,6 +19,7 @@ public:
     while (size != 0u) {
       ptr[--size].~T();
     }
+    // NOLINTNEXTLINE
     free(const_cast<typename std::remove_volatile<T>::type*>(ptr));
   }
 
@@ -55,7 +56,7 @@ public:
     size_mask_ = size_ - 1;
     if (PAGE_ALIGNED) {
       void* buf;
-      const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
+      const auto page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
       int ret = posix_memalign(&buf, page_size, sizeof(T) * size_);
       if (ret != 0) {
         throw std::runtime_error(std::string("posix_memalign: ") +
@@ -70,6 +71,7 @@ public:
           while (size != 0u) {
             ptr[--size].~T();
           }
+          // NOLINTNEXTLINE
           free(const_cast<typename std::remove_volatile<T>::type*>(ptr));
         });
       } else {
@@ -78,8 +80,10 @@ public:
       }
     } else {
       if (CLEARED) {
+        // NOLINTNEXTLINE
         buf_ = buf_t(new T[size_](), [&](T* ptr) { delete[] ptr; });
       } else {
+        // NOLINTNEXTLINE
         buf_ = buf_t(new T[size_], [&](T* ptr) { delete[] ptr; });
       }
     }
@@ -89,25 +93,25 @@ public:
   T& at(size_t n) { return buf_[n & size_mask_]; }
 
   /// The const element accessor operator.
-  const T& at(size_t n) const { return buf_[n & size_mask_]; }
+  [[nodiscard]] const T& at(size_t n) const { return buf_[n & size_mask_]; }
 
   /// Retrieve pointer to memory buffer.
   T* ptr() { return buf_.get(); }
 
   /// Retrieve const pointer to memory buffer.
-  const T* ptr() const { return buf_.get(); }
+  [[nodiscard]] const T* ptr() const { return buf_.get(); }
 
   /// Retrieve buffer size in maximum number of entries.
-  size_t size() const { return size_; }
+  [[nodiscard]] size_t size() const { return size_; }
 
   /// Retrieve buffer size in maximum number of entries as two's exponent.
-  size_t size_exponent() const { return size_exponent_; }
+  [[nodiscard]] size_t size_exponent() const { return size_exponent_; }
 
   /// Retrieve buffer size bit mask.
-  size_t size_mask() const { return size_mask_; }
+  [[nodiscard]] size_t size_mask() const { return size_mask_; }
 
   /// Retrieve buffer size in bytes.
-  size_t bytes() const { return size_ * sizeof(T); }
+  [[nodiscard]] size_t bytes() const { return size_ * sizeof(T); }
 
   void clear() { std::fill_n(buf_, size_, T()); }
 

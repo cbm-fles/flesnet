@@ -1,42 +1,19 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceReceiver.hpp"
-#include <boost/version.hpp>
+#include "TimesliceShmWorkItem.hpp"
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/uuid/nil_generator.hpp>
 #include <memory>
+
+namespace bi = boost::interprocess;
 
 namespace fles {
 
-TimesliceReceiver::TimesliceReceiver(
-    const std::string& shared_memory_identifier)
-    : shared_memory_identifier_(shared_memory_identifier) {
-  data_shm_ = std::unique_ptr<boost::interprocess::shared_memory_object>(
-      new boost::interprocess::shared_memory_object(
-          boost::interprocess::open_only,
-          (shared_memory_identifier + "data_").c_str(),
-          boost::interprocess::read_only));
-
-  desc_shm_ = std::unique_ptr<boost::interprocess::shared_memory_object>(
-      new boost::interprocess::shared_memory_object(
-          boost::interprocess::open_only,
-          (shared_memory_identifier + "desc_").c_str(),
-          boost::interprocess::read_only));
-
-  data_region_ = std::unique_ptr<boost::interprocess::mapped_region>(
-      new boost::interprocess::mapped_region(*data_shm_,
-                                             boost::interprocess::read_only));
-
-  desc_region_ = std::unique_ptr<boost::interprocess::mapped_region>(
-      new boost::interprocess::mapped_region(*desc_shm_,
-                                             boost::interprocess::read_only));
-
-  work_items_mq_ = std::unique_ptr<boost::interprocess::message_queue>(
-      new boost::interprocess::message_queue(
-          boost::interprocess::open_only,
-          (shared_memory_identifier + "work_items_").c_str()));
-
-  completions_mq_ = std::make_shared<boost::interprocess::message_queue>(
-      boost::interprocess::open_only,
-      (shared_memory_identifier + "completions_").c_str());
+TimesliceReceiver::TimesliceReceiver(const std::string& ipc_identifier,
+                                     WorkerParameters parameters)
+    : worker_("ipc://@" + ipc_identifier, parameters) {
+  worker_.set_disconnect_callback([this] { managed_shm_ = nullptr; });
 }
 
 TimesliceView* TimesliceReceiver::do_get() {
@@ -44,24 +21,46 @@ TimesliceView* TimesliceReceiver::do_get() {
     return nullptr;
   }
 
-  TimesliceWorkItem wi;
-  std::size_t recvd_size;
-  unsigned int priority;
+  while (true) {
+    auto item = worker_.get();
 
-  work_items_mq_->receive(&wi, sizeof(wi), recvd_size, priority);
-  if (recvd_size == 0) {
-    eos_ = true;
-    // put end work item back for other consumers
-    work_items_mq_->send(nullptr, 0, 0);
-    return nullptr;
+    fles::TimesliceShmWorkItem timeslice_item;
+    std::istringstream istream(item->payload());
+    {
+      boost::archive::binary_iarchive iarchive(istream);
+      iarchive >> timeslice_item;
+    }
+
+    // connect to matching shared memory if not already connected
+    if (managed_shm_uuid() != timeslice_item.shm_uuid) {
+      managed_shm_ =
+          std::make_unique<boost::interprocess::managed_shared_memory>(
+              boost::interprocess::open_only,
+              timeslice_item.shm_identifier.c_str());
+      std::cout << "TimesliceReceiver: opened shared memory "
+                << timeslice_item.shm_identifier << " {" << managed_shm_uuid()
+                << "}" << std::endl;
+      if (managed_shm_uuid() != timeslice_item.shm_uuid) {
+        std::cerr
+            << "TimesliceView: discarding item due to shm uuid mismatch (shm: "
+            << managed_shm_uuid() << ", ts_item: " << timeslice_item.shm_uuid
+            << ")" << std::endl;
+        continue;
+      }
+    }
+
+    return new TimesliceView(managed_shm_, item, timeslice_item);
   }
-  assert(recvd_size == sizeof(wi));
+}
 
-  return new TimesliceView(
-      wi, reinterpret_cast<uint8_t*>(data_region_->get_address()),
-      reinterpret_cast<TimesliceComponentDescriptor*>(
-          desc_region_->get_address()),
-      completions_mq_);
+boost::uuids::uuid TimesliceReceiver::managed_shm_uuid() const {
+  if (!managed_shm_) {
+    return boost::uuids::nil_uuid();
+  }
+  auto shm_uuid =
+      managed_shm_->find<boost::uuids::uuid>(bi::unique_instance).first;
+  assert(shm_uuid != nullptr);
+  return *shm_uuid;
 }
 
 } // namespace fles

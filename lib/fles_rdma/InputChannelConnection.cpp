@@ -6,6 +6,7 @@
 #include "RequestIdentifier.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "log.hpp"
+#include <array>
 #include <cassert>
 #include <cstring>
 
@@ -64,7 +65,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
                                        uint64_t data_length,
                                        uint64_t skip) {
   int num_sge2 = 0;
-  struct ibv_sge sge2[4];
+  std::array<ibv_sge, 4> sge2{};
 
   uint64_t cn_wp_data = cn_wp_.data;
   cn_wp_data += skip;
@@ -100,10 +101,9 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
   }
   num_sge -= num_sge_cut;
 
-  struct ibv_send_wr send_wr_ts;
-  struct ibv_send_wr send_wr_tswrap;
-  struct ibv_send_wr send_wr_tscdesc;
-  memset(&send_wr_ts, 0, sizeof(send_wr_ts));
+  struct ibv_send_wr send_wr_ts {};
+  struct ibv_send_wr send_wr_tswrap {};
+  struct ibv_send_wr send_wr_tscdesc {};
   send_wr_ts.wr_id = ID_WRITE_DATA;
   send_wr_ts.opcode = IBV_WR_RDMA_WRITE;
   send_wr_ts.sg_list = sge;
@@ -113,10 +113,9 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
       remote_info_.data.addr + (cn_wp_data & cn_data_buffer_mask));
 
   if (num_sge2 != 0) {
-    memset(&send_wr_tswrap, 0, sizeof(send_wr_ts));
     send_wr_tswrap.wr_id = ID_WRITE_DATA_WRAP;
     send_wr_tswrap.opcode = IBV_WR_RDMA_WRITE;
-    send_wr_tswrap.sg_list = sge2;
+    send_wr_tswrap.sg_list = sge2.data();
     send_wr_tswrap.num_sge = num_sge2;
     send_wr_tswrap.wr.rdma.rkey = remote_info_.data.rkey;
     send_wr_tswrap.wr.rdma.remote_addr =
@@ -128,17 +127,16 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
   }
 
   // timeslice component descriptor
-  fles::TimesliceComponentDescriptor tscdesc;
+  fles::TimesliceComponentDescriptor tscdesc{};
   tscdesc.ts_num = timeslice;
   tscdesc.offset = cn_wp_data;
   tscdesc.size = data_length + desc_length * sizeof(fles::MicrosliceDescriptor);
   tscdesc.num_microslices = desc_length;
-  struct ibv_sge sge3;
+  struct ibv_sge sge3 {};
   sge3.addr = reinterpret_cast<uintptr_t>(&tscdesc);
   sge3.length = sizeof(tscdesc);
   sge3.lkey = 0;
 
-  memset(&send_wr_tscdesc, 0, sizeof(send_wr_tscdesc));
   send_wr_tscdesc.wr_id = ID_WRITE_DESC | (timeslice << 24) | (index_ << 8);
   send_wr_tscdesc.opcode = IBV_WR_RDMA_WRITE;
   send_wr_tscdesc.send_flags =
@@ -310,8 +308,7 @@ InputChannelConnection::get_private_data() {
   std::unique_ptr<std::vector<uint8_t>> private_data(
       new std::vector<uint8_t>(sizeof(InputNodeInfo)));
 
-  InputNodeInfo* in_info =
-      reinterpret_cast<InputNodeInfo*>(private_data->data());
+  auto* in_info = reinterpret_cast<InputNodeInfo*>(private_data->data());
   in_info->index = remote_index_;
 
   return private_data;

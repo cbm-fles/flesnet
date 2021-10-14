@@ -328,7 +328,7 @@ void TimesliceBuilder::operator()() {
     }
 
     LibfabricBarrier::get_instance()->call_barrier();
-    
+
     time_begin_ = std::chrono::high_resolution_clock::now();
     DDSchedulerOrchestrator::set_begin_time(time_begin_);
 

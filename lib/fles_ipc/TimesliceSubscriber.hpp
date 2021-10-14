@@ -39,7 +39,7 @@ public:
     return std::unique_ptr<StorableTimeslice>(do_get());
   };
 
-  bool eos() const override { return eos_flag; }
+  [[nodiscard]] bool eos() const override { return eos_flag; }
 
 private:
   StorableTimeslice* do_get() override;

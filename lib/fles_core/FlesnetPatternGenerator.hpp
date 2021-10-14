@@ -20,14 +20,16 @@ public:
                           uint32_t typical_content_size,
                           bool generate_pattern = false,
                           bool randomize_sizes = false,
-                          uint64_t delay_ns = 0)
+                          uint64_t delay_ns = 0,
+                          uint64_t initial_ns = 0)
       : data_buffer_(data_buffer_size_exp), desc_buffer_(desc_buffer_size_exp),
         data_buffer_view_(data_buffer_.ptr(), data_buffer_size_exp),
         desc_buffer_view_(desc_buffer_.ptr(), desc_buffer_size_exp),
         input_index_(input_index), generate_pattern_(generate_pattern),
         typical_content_size_(typical_content_size),
         randomize_sizes_(randomize_sizes),
-        random_distribution_(typical_content_size), delay_ns_(delay_ns) {
+        random_distribution_(typical_content_size), delay_ns_(delay_ns),
+        initial_ns_(initial_ns) {
     begin_ = std::chrono::high_resolution_clock::now();
   }
 
@@ -76,6 +78,7 @@ private:
   std::poisson_distribution<unsigned int> random_distribution_;
 
   uint64_t delay_ns_;
+  uint64_t initial_ns_;
   std::chrono::high_resolution_clock::time_point begin_;
 
   /// Number of acknowledged data bytes and microslices. Updated by input

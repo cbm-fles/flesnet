@@ -4,8 +4,8 @@
  *
  */
 
-#include "device_operator.hpp"
 #include "cri.hpp"
+#include "device_operator.hpp"
 #include <iostream>
 
 using namespace cri;

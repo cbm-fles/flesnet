@@ -1,117 +1,105 @@
-// Copyright 2016 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2016-2020 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceBuffer.hpp"
+#include "TimesliceDescriptor.hpp"
+#include "TimesliceShmWorkItem.hpp"
+#include "TimesliceWorkItem.hpp"
+#include "Utility.hpp"
+#include <algorithm>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <cassert>
+#include <memory>
 
-#include <utility>
+namespace zmq {
+class context_t;
+}
 
-TimesliceBuffer::TimesliceBuffer(std::string shm_identifier,
+TimesliceBuffer::TimesliceBuffer(zmq::context_t& context,
+                                 const std::string& distributor_address,
+                                 std::string shm_identifier,
                                  uint32_t data_buffer_size_exp,
                                  uint32_t desc_buffer_size_exp,
                                  uint32_t num_input_nodes)
-    : shm_identifier_(std::move(shm_identifier)),
+    : ItemProducer(context, distributor_address),
+      shm_identifier_(std::move(shm_identifier)),
       data_buffer_size_exp_(data_buffer_size_exp),
       desc_buffer_size_exp_(desc_buffer_size_exp),
       num_input_nodes_(num_input_nodes) {
-  boost::interprocess::shared_memory_object::remove(
-      (shm_identifier_ + "data_").c_str());
-  boost::interprocess::shared_memory_object::remove(
-      (shm_identifier_ + "desc_").c_str());
+  boost::uuids::random_generator uuid_gen;
+  shm_uuid_ = uuid_gen();
 
-  std::unique_ptr<boost::interprocess::shared_memory_object> data_shm(
-      new boost::interprocess::shared_memory_object(
-          boost::interprocess::create_only, (shm_identifier_ + "data_").c_str(),
-          boost::interprocess::read_write));
-  data_shm_ = std::move(data_shm);
-
-  std::unique_ptr<boost::interprocess::shared_memory_object> desc_shm(
-      new boost::interprocess::shared_memory_object(
-          boost::interprocess::create_only, (shm_identifier_ + "desc_").c_str(),
-          boost::interprocess::read_write));
-  desc_shm_ = std::move(desc_shm);
+  boost::interprocess::shared_memory_object::remove(shm_identifier_.c_str());
 
   std::size_t data_size =
       (UINT64_C(1) << data_buffer_size_exp_) * num_input_nodes_;
   assert(data_size != 0);
-  data_shm_->truncate(static_cast<boost::interprocess::offset_t>(data_size));
 
   std::size_t desc_buffer_size = (UINT64_C(1) << desc_buffer_size_exp_);
-
   std::size_t desc_size = desc_buffer_size * num_input_nodes_ *
                           sizeof(fles::TimesliceComponentDescriptor);
   assert(desc_size != 0);
-  desc_shm_->truncate(static_cast<boost::interprocess::offset_t>(desc_size));
 
-  std::unique_ptr<boost::interprocess::mapped_region> data_region(
-      new boost::interprocess::mapped_region(*data_shm_,
-                                             boost::interprocess::read_write));
-  data_region_ = std::move(data_region);
+  constexpr size_t overhead_size = 4096; // Wild guess, let's hope it's enough
+  size_t managed_shm_size = data_size + desc_size + overhead_size;
 
-  std::unique_ptr<boost::interprocess::mapped_region> desc_region(
-      new boost::interprocess::mapped_region(*desc_shm_,
-                                             boost::interprocess::read_write));
-  desc_region_ = std::move(desc_region);
+  managed_shm_ = std::make_unique<boost::interprocess::managed_shared_memory>(
+      boost::interprocess::create_only, shm_identifier_.c_str(),
+      managed_shm_size);
 
-// # TODO[jan]: with-valgrind optional in cmake
-#if 0
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-        VALGRIND_MAKE_MEM_DEFINED(data_region_->get_address(),
-                                  data_region_->get_size());
-        VALGRIND_MAKE_MEM_DEFINED(desc_region_->get_address(),
-                                  desc_region_->get_size());
-#pragma GCC diagnostic pop
-#endif
+  managed_shm_->construct<boost::uuids::uuid>(
+      boost::interprocess::unique_instance)(shm_uuid_);
 
-  boost::interprocess::message_queue::remove(
-      (shm_identifier_ + "work_items_").c_str());
-  boost::interprocess::message_queue::remove(
-      (shm_identifier_ + "completions_").c_str());
-
-  std::unique_ptr<boost::interprocess::message_queue> work_items_mq(
-      new boost::interprocess::message_queue(
-          boost::interprocess::create_only,
-          (shm_identifier_ + "work_items_").c_str(), desc_buffer_size,
-          sizeof(fles::TimesliceWorkItem)));
-  work_items_mq_ = std::move(work_items_mq);
-
-  std::unique_ptr<boost::interprocess::message_queue> completions_mq(
-      new boost::interprocess::message_queue(
-          boost::interprocess::create_only,
-          (shm_identifier_ + "completions_").c_str(), desc_buffer_size,
-          sizeof(fles::TimesliceCompletion)));
-  completions_mq_ = std::move(completions_mq);
+  data_ptr_ = static_cast<uint8_t*>(managed_shm_->allocate(data_size));
+  desc_ptr_ = reinterpret_cast<fles::TimesliceComponentDescriptor*>(
+      managed_shm_->allocate(desc_size));
 }
 
 TimesliceBuffer::~TimesliceBuffer() {
-  boost::interprocess::shared_memory_object::remove(
-      (shm_identifier_ + "data_").c_str());
-  boost::interprocess::shared_memory_object::remove(
-      (shm_identifier_ + "desc_").c_str());
-  boost::interprocess::message_queue::remove(
-      (shm_identifier_ + "work_items_").c_str());
-  boost::interprocess::message_queue::remove(
-      (shm_identifier_ + "completions_").c_str());
+  boost::interprocess::shared_memory_object::remove(shm_identifier_.c_str());
 }
 
-uint8_t* TimesliceBuffer::get_data_ptr(uint_fast16_t index) {
-  return static_cast<uint8_t*>(data_region_->get_address()) +
-         index * (UINT64_C(1) << data_buffer_size_exp_);
+void TimesliceBuffer::send_work_item(fles::TimesliceWorkItem wi) {
+  // Create and fill new TimesliceShmWorkItem to be sent via zmq
+  fles::TimesliceShmWorkItem item;
+  item.shm_uuid = shm_uuid_;
+  item.shm_identifier = shm_identifier_;
+  item.ts_desc = wi.ts_desc;
+  const auto num_components = item.ts_desc.num_components;
+  const auto ts_pos = item.ts_desc.ts_pos;
+  item.data.resize(num_components);
+  item.desc.resize(num_components);
+  for (uint32_t c = 0; c < num_components; ++c) {
+    fles::TimesliceComponentDescriptor* tsc_desc = &get_desc(c, ts_pos);
+    uint8_t* tsc_data = &get_data(c, tsc_desc->offset);
+    item.data[c] = managed_shm_->get_handle_from_address(tsc_data);
+    item.desc[c] = managed_shm_->get_handle_from_address(tsc_desc);
+  }
+
+  std::ostringstream ostream;
+  {
+    boost::archive::binary_oarchive oarchive(ostream);
+    oarchive << item;
+  }
+
+  outstanding_.insert(ts_pos);
+  ItemProducer::send_work_item(ts_pos, ostream.str());
 }
 
-fles::TimesliceComponentDescriptor*
-TimesliceBuffer::get_desc_ptr(uint_fast16_t index) {
-  return reinterpret_cast<fles::TimesliceComponentDescriptor*>(
-             desc_region_->get_address()) +
-         index * (UINT64_C(1) << desc_buffer_size_exp_);
-}
+std::string TimesliceBuffer::description() const {
+  size_t data_buffer_size = (UINT64_C(1) << data_buffer_size_exp_);
+  size_t desc_buffer_size = (UINT64_C(1) << desc_buffer_size_exp_) *
+                            sizeof(fles::TimesliceComponentDescriptor);
+  size_t overall_size =
+      num_input_nodes_ * (data_buffer_size + desc_buffer_size);
 
-uint8_t& TimesliceBuffer::get_data(uint_fast16_t index, uint64_t offset) {
-  offset &= (UINT64_C(1) << data_buffer_size_exp_) - 1;
-  return get_data_ptr(index)[offset];
-}
-
-fles::TimesliceComponentDescriptor&
-TimesliceBuffer::get_desc(uint_fast16_t index, uint64_t offset) {
-  offset &= (UINT64_C(1) << desc_buffer_size_exp_) - 1;
-  return get_desc_ptr(index)[offset];
+  std::string desc = shm_identifier_ + " {" +
+                     boost::uuids::to_string(shm_uuid_) +
+                     "}, size: " + std::to_string(num_input_nodes_) + " * (" +
+                     human_readable_count(data_buffer_size) + " + " +
+                     human_readable_count(desc_buffer_size) +
+                     ") = " + human_readable_count(overall_size);
+  return desc;
 }

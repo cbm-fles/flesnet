@@ -178,8 +178,7 @@ ComputeNodeConnection::get_private_data() {
   std::unique_ptr<std::vector<uint8_t>> private_data(
       new std::vector<uint8_t>(sizeof(ComputeNodeInfo)));
 
-  ComputeNodeInfo* cn_info =
-      reinterpret_cast<ComputeNodeInfo*>(private_data->data());
+  auto* cn_info = reinterpret_cast<ComputeNodeInfo*>(private_data->data());
   cn_info->data.addr = reinterpret_cast<uintptr_t>(data_ptr_);
   cn_info->data.rkey = mr_data_->rkey;
   cn_info->desc.addr = reinterpret_cast<uintptr_t>(desc_ptr_);

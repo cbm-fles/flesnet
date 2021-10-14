@@ -25,17 +25,17 @@ public:
 private:
   bool check_microslice(const fles::Microslice& ms);
 
-  std::string statistics() const;
+  [[nodiscard]] std::string statistics() const;
 
-  uint32_t compute_crc(const fles::Microslice& ms) const;
+  [[nodiscard]] uint32_t compute_crc(const fles::Microslice& ms) const;
 
-  bool check_crc(const fles::Microslice& ms) const;
+  [[nodiscard]] bool check_crc(const fles::Microslice& ms) const;
 
   void initialize(const fles::Microslice& ms);
 
   crcutil_interface::CRC* crc32_engine_ = nullptr;
 
-  fles::MicrosliceDescriptor reference_descriptor_;
+  fles::MicrosliceDescriptor reference_descriptor_{};
   std::unique_ptr<PatternChecker> pattern_checker_;
 
   uint64_t output_interval_ = UINT64_MAX;
