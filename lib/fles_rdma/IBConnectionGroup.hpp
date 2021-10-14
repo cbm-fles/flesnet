@@ -117,6 +117,7 @@ public:
     while ((err = rdma_get_cm_event(ec_, &event)) == 0) {
       memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
       if (event_copy.param.conn.private_data != nullptr) {
+        // NOLINTNEXTLINE
         private_data_copy = malloc(event_copy.param.conn.private_data_len);
         if (private_data_copy == nullptr) {
           throw InfinibandException("malloc failed");
@@ -128,6 +129,7 @@ public:
       rdma_ack_cm_event(event);
       on_cm_event(&event_copy);
       if (private_data_copy != nullptr) {
+        // NOLINTNEXTLINE
         free(private_data_copy);
         private_data_copy = nullptr;
       }

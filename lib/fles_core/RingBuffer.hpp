@@ -19,6 +19,7 @@ public:
     while (size != 0u) {
       ptr[--size].~T();
     }
+    // NOLINTNEXTLINE
     free(const_cast<typename std::remove_volatile<T>::type*>(ptr));
   }
 
@@ -70,6 +71,7 @@ public:
           while (size != 0u) {
             ptr[--size].~T();
           }
+          // NOLINTNEXTLINE
           free(const_cast<typename std::remove_volatile<T>::type*>(ptr));
         });
       } else {
