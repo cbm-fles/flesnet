@@ -39,16 +39,16 @@ public:
   }
 
   /// Retrieve the type of archive.
-  ArchiveType archive_type() const { return archive_type_; }
+  [[nodiscard]] ArchiveType archive_type() const { return archive_type_; }
 
   /// Retrieve the time of creation of the archive.
-  std::time_t time_created() const { return time_created_; }
+  [[nodiscard]] std::time_t time_created() const { return time_created_; }
 
   /// Retrieve the hostname of the machine creating the archive.
-  std::string hostname() const { return hostname_; }
+  [[nodiscard]] std::string hostname() const { return hostname_; }
 
   /// Retrieve the hostname of the machine creating the archive.
-  std::string username() const { return username_; }
+  [[nodiscard]] std::string username() const { return username_; }
 
 private:
   friend class boost::serialization::access;
@@ -74,7 +74,7 @@ private:
     ar& username_;
   }
 
-  ArchiveType archive_type_;
+  ArchiveType archive_type_{};
   std::time_t time_created_ = std::time_t();
   std::string hostname_;
   std::string username_;

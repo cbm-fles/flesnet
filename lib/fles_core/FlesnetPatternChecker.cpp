@@ -3,7 +3,7 @@
 #include "FlesnetPatternChecker.hpp"
 
 bool FlesnetPatternChecker::check(const fles::Microslice& m) {
-  const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
+  const auto* content = reinterpret_cast<const uint64_t*>(m.content());
   uint32_t crc = 0x00000000;
   for (size_t pos = 0; pos < m.desc().size / sizeof(uint64_t); ++pos) {
     uint64_t data_word = content[pos];

@@ -25,14 +25,13 @@ public:
    * \param filename File name of the archive file
    */
   InputArchive(const std::string& filename) {
-    ifstream_ = std::unique_ptr<std::ifstream>(
-        new std::ifstream(filename.c_str(), std::ios::binary));
+    ifstream_ =
+        std::make_unique<std::ifstream>(filename.c_str(), std::ios::binary);
     if (!*ifstream_) {
       throw std::ios_base::failure("error opening file \"" + filename + "\"");
     }
 
-    iarchive_ = std::unique_ptr<boost::archive::binary_iarchive>(
-        new boost::archive::binary_iarchive(*ifstream_));
+    iarchive_ = std::make_unique<boost::archive::binary_iarchive>(*ifstream_);
 
     *iarchive_ >> descriptor_;
 
@@ -53,9 +52,11 @@ public:
   std::unique_ptr<Derived> get() { return std::unique_ptr<Derived>(do_get()); };
 
   /// Retrieve the archive descriptor.
-  const ArchiveDescriptor& descriptor() const { return descriptor_; };
+  [[nodiscard]] const ArchiveDescriptor& descriptor() const {
+    return descriptor_;
+  };
 
-  bool eos() const override { return eos_; }
+  [[nodiscard]] bool eos() const override { return eos_; }
 
 private:
   Derived* do_get() override {
@@ -65,11 +66,11 @@ private:
 
     Derived* sts = nullptr;
     try {
-      sts = new Derived();
+      sts = new Derived(); // NOLINT
       *iarchive_ >> *sts;
     } catch (boost::archive::archive_exception& e) {
       if (e.code == boost::archive::archive_exception::input_stream_error) {
-        delete sts;
+        delete sts; // NOLINT
         eos_ = true;
         return nullptr;
       }

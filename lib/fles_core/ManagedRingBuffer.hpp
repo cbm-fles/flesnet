@@ -12,23 +12,23 @@ public:
   ManagedRingBuffer(T* buffer, std::size_t new_size_exponent)
       : RingBufferView<T>(buffer, new_size_exponent) {}
 
-  std::size_t write_index() const { return write_index_; }
+  [[nodiscard]] std::size_t write_index() const { return write_index_; }
 
-  std::size_t read_index() const { return read_index_; }
+  [[nodiscard]] std::size_t read_index() const { return read_index_; }
 
   void set_read_index(std::size_t new_index) { read_index_ = new_index; }
 
-  std::size_t size_used() const {
+  [[nodiscard]] std::size_t size_used() const {
     assert(write_index_ >= read_index_);
     return write_index_ - read_index_;
   }
 
-  std::size_t size_available() const {
+  [[nodiscard]] std::size_t size_available() const {
     assert(this->size() > size_used());
     return this->size() - size_used();
   }
 
-  std::size_t size_available_contiguous() const {
+  [[nodiscard]] std::size_t size_available_contiguous() const {
     std::size_t offset = write_index_ & (this->size() - 1);
     std::size_t size_to_border = this->size() - offset;
 

@@ -46,14 +46,14 @@ public:
     return std::unique_ptr<TimesliceView>(do_get());
   };
 
-  bool eos() const override { return eos_; }
+  [[nodiscard]] bool eos() const override { return eos_; }
 
 private:
   TimesliceView* do_get() override;
 
   std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
 
-  boost::uuids::uuid managed_shm_uuid() const;
+  [[nodiscard]] boost::uuids::uuid managed_shm_uuid() const;
 
   /// The end-of-stream flag.
   bool eos_ = false;

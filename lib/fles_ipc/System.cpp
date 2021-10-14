@@ -1,8 +1,8 @@
 // Copyright 2013-2020 Jan de Cuveland <cmail@cuveland.de>
 
 #include "System.hpp"
+#include <cerrno>
 #include <cstring>
-#include <errno.h>
 #include <netdb.h>
 #include <pwd.h>
 #include <stdexcept>
@@ -11,8 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-namespace fles {
-namespace system {
+namespace fles::system {
 
 std::string stringerror(int errnum) {
   std::vector<char> buf(256);
@@ -46,8 +45,8 @@ std::string current_username() {
 
   std::vector<char> buf(static_cast<size_t>(bufsize));
 
-  passwd pwd;
-  passwd* result;
+  passwd pwd{};
+  passwd* result = nullptr;
 
   int err = getpwuid_r(uid, &pwd, buf.data(), buf.size(), &result);
 
@@ -93,11 +92,10 @@ std::string current_domainname() {
 int current_pid() { return getpid(); }
 
 std::vector<std::string> glob(const std::string& pattern, glob_flags flags) {
-  glob_t glob_result;
-  memset(&glob_result, 0, sizeof(glob_result));
+  glob_t glob_result{};
 
   int return_value =
-      glob(pattern.c_str(), static_cast<int>(flags), NULL, &glob_result);
+      glob(pattern.c_str(), static_cast<int>(flags), nullptr, &glob_result);
   if (return_value != 0) {
     globfree(&glob_result);
     throw std::runtime_error("glob() failed with return value " +
@@ -114,5 +112,4 @@ std::vector<std::string> glob(const std::string& pattern, glob_flags flags) {
   return filenames;
 }
 
-} // namespace system
-} // namespace fles
+} // namespace fles::system

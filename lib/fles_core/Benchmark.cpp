@@ -15,7 +15,7 @@ Benchmark::Benchmark() {
 
   std::mt19937 engine;
   std::uniform_int_distribution<uint8_t> distribution;
-  auto generator = std::bind(distribution, engine);
+  auto generator = [&] { return distribution(engine); };
 
   std::generate_n(std::back_inserter(random_data_), size_, generator);
 }
@@ -66,7 +66,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
     // Castagnoli
     crc ^= 0xFFFFFFFF;
     for (size_t i = 0; i < cycles_; ++i) {
-      uint32_t* p = reinterpret_cast<uint32_t*>(random_data_.data());
+      auto* p = reinterpret_cast<uint32_t*>(random_data_.data());
       const uint32_t* const end = p + random_data_.size() / sizeof(uint32_t);
       while (p < end) {
         crc = _mm_crc32_u32(crc, *p++);
@@ -80,7 +80,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
     // Castagnoli
     uint64_t crc64 = UINT64_C(0xFFFFFFFF);
     for (size_t i = 0; i < cycles_; ++i) {
-      uint64_t* p = reinterpret_cast<uint64_t*>(random_data_.data());
+      auto* p = reinterpret_cast<uint64_t*>(random_data_.data());
       const uint64_t* const end = p + random_data_.size() / sizeof(uint64_t);
       while (p < end) {
         crc64 = _mm_crc32_u64(crc64, *p++);
@@ -95,7 +95,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
     // Castagnoli
     crcutil_interface::CRC* crc_32 = crcutil_interface::CRC::Create(
         0x82f63b78, 0, 32, true, 0, 0, 0,
-        crcutil_interface::CRC::IsSSE42Available(), NULL);
+        crcutil_interface::CRC::IsSSE42Available(), nullptr);
     crcutil_interface::UINT64 crc64 = 0;
     for (size_t i = 0; i < cycles_; ++i) {
       crc_32->Compute(random_data_.data(), random_data_.size(), &crc64);
@@ -109,7 +109,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
     // IEEE
     crcutil_interface::CRC* crc_32 = crcutil_interface::CRC::Create(
         0xedb88320, 0, 32, true, 0, 0, 0,
-        crcutil_interface::CRC::IsSSE42Available(), NULL);
+        crcutil_interface::CRC::IsSSE42Available(), nullptr);
     crcutil_interface::UINT64 crc64 = 0;
     for (size_t i = 0; i < cycles_; ++i) {
       crc_32->Compute(random_data_.data(), random_data_.size(), &crc64);

@@ -3,12 +3,12 @@
 
 #include "ConnectionGroupWorker.hpp"
 #include "InfinibandException.hpp"
+#include <array>
 #include <chrono>
 #include <cstring>
 #include <fcntl.h>
 #include <rdma/rdma_cma.h>
 #include <sstream>
-#include <valgrind/memcheck.h>
 #include <vector>
 
 /// InfiniBand connection group base class.
@@ -76,8 +76,7 @@ public:
     }
 
     // Bind rdma id (for listening) to socket address (local port)
-    struct sockaddr_in sin;
-    memset(&sin, 0, sizeof sin);
+    struct sockaddr_in sin {};
     sin.sin_family = AF_INET;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -112,17 +111,13 @@ public:
   void poll_cm_events() {
     int err;
     struct rdma_cm_event* event;
-    struct rdma_cm_event event_copy;
+    struct rdma_cm_event event_copy {};
     void* private_data_copy = nullptr;
 
     while ((err = rdma_get_cm_event(ec_, &event)) == 0) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-      VALGRIND_MAKE_MEM_DEFINED(event, sizeof(struct rdma_cm_event));
       memcpy(&event_copy, event, sizeof(struct rdma_cm_event));
       if (event_copy.param.conn.private_data != nullptr) {
-        VALGRIND_MAKE_MEM_DEFINED(event_copy.param.conn.private_data,
-                                  event_copy.param.conn.private_data_len);
+        // NOLINTNEXTLINE
         private_data_copy = malloc(event_copy.param.conn.private_data_len);
         if (private_data_copy == nullptr) {
           throw InfinibandException("malloc failed");
@@ -131,10 +126,10 @@ public:
                event_copy.param.conn.private_data_len);
         event_copy.param.conn.private_data = private_data_copy;
       }
-#pragma GCC diagnostic pop
       rdma_ack_cm_event(event);
       on_cm_event(&event_copy);
       if (private_data_copy != nullptr) {
+        // NOLINTNEXTLINE
         free(private_data_copy);
         private_data_copy = nullptr;
       }
@@ -149,13 +144,13 @@ public:
 
   /// The InfiniBand completion notification handler.
   int poll_completion() {
-    const int ne_max = 10;
+    constexpr int ne_max = 10;
 
-    struct ibv_wc wc[ne_max];
+    std::array<ibv_wc, ne_max> wc{};
     int ne;
     int ne_total = 0;
 
-    while (ne_total < 1000 && (ne = ibv_poll_cq(cq_, ne_max, wc))) {
+    while (ne_total < 1000 && (ne = ibv_poll_cq(cq_, ne_max, wc.data()))) {
       if (ne < 0) {
         throw InfinibandException("ibv_poll_cq failed");
       }
@@ -179,25 +174,27 @@ public:
   }
 
   /// Retrieve the InfiniBand protection domain.
-  struct ibv_pd* protection_domain() const {
-    return pd_;
-  }
+  [[nodiscard]] struct ibv_pd* protection_domain() const { return pd_; }
 
   /// Retrieve the InfiniBand completion queue.
-  struct ibv_cq* completion_queue() const {
-    return cq_;
-  }
+  [[nodiscard]] struct ibv_cq* completion_queue() const { return cq_; }
 
-  size_t size() const { return conn_.size(); }
+  [[nodiscard]] size_t size() const { return conn_.size(); }
 
   /// Retrieve the total number of bytes transmitted.
-  uint64_t aggregate_bytes_sent() const { return aggregate_bytes_sent_; }
+  [[nodiscard]] uint64_t aggregate_bytes_sent() const {
+    return aggregate_bytes_sent_;
+  }
 
   /// Retrieve the total number of SEND work requests.
-  uint64_t aggregate_send_requests() const { return aggregate_send_requests_; }
+  [[nodiscard]] uint64_t aggregate_send_requests() const {
+    return aggregate_send_requests_;
+  }
 
   /// Retrieve the total number of RECV work requests.
-  uint64_t aggregate_recv_requests() const { return aggregate_recv_requests_; }
+  [[nodiscard]] uint64_t aggregate_recv_requests() const {
+    return aggregate_recv_requests_;
+  }
 
   void summary() const {
     double runtime = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -217,14 +214,14 @@ protected:
       init_context(id->verbs);
     }
 
-    CONNECTION* conn = static_cast<CONNECTION*>(id->context);
+    auto* conn = static_cast<CONNECTION*>(id->context);
 
     conn->on_addr_resolved(pd_, cq_);
   }
 
   /// Handle RDMA_CM_EVENT_ROUTE_RESOLVED event.
   virtual void on_route_resolved(struct rdma_cm_id* id) {
-    CONNECTION* conn = static_cast<CONNECTION*>(id->context);
+    auto* conn = static_cast<CONNECTION*>(id->context);
 
     conn->on_route_resolved();
   }
@@ -234,7 +231,7 @@ protected:
 
   /// Handle RDMA_CM_EVENT_ESTABLISHED event.
   virtual void on_established(struct rdma_cm_event* event) {
-    CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
+    auto* conn = static_cast<CONNECTION*>(event->id->context);
 
     conn->on_established(event);
     ++connected_;
@@ -245,7 +242,7 @@ protected:
 
   /// Handle RDMA_CM_EVENT_DISCONNECTED event.
   virtual void on_disconnected(struct rdma_cm_event* event) {
-    CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
+    auto* conn = static_cast<CONNECTION*>(event->id->context);
 
     aggregate_bytes_sent_ += conn->total_bytes_sent();
     aggregate_send_requests_ += conn->total_send_requests();
@@ -258,7 +255,7 @@ protected:
 
   /// Handle RDMA_CM_EVENT_TIMEWAIT_EXIT event.
   virtual void on_timewait_exit(struct rdma_cm_event* event) {
-    CONNECTION* conn = static_cast<CONNECTION*>(event->id->context);
+    auto* conn = static_cast<CONNECTION*>(event->id->context);
 
     conn->on_timewait_exit(event);
     --timewait_;

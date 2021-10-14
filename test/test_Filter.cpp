@@ -19,7 +19,7 @@ public:
     static_assert(std::is_integral<T>::value, "Integer required.");
   };
 
-  bool eos() const override { return eos_flag; }
+  [[nodiscard]] bool eos() const override { return eos_flag; }
 
 private:
   T count = 0;

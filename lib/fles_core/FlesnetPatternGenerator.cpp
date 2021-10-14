@@ -40,15 +40,14 @@ void FlesnetPatternGenerator::proceed() {
       return;
     }
 
-    const uint8_t hdr_id =
+    const auto hdr_id =
         static_cast<uint8_t>(fles::HeaderFormatIdentifier::Standard);
-    const uint8_t hdr_ver =
+    const auto hdr_ver =
         static_cast<uint8_t>(fles::HeaderFormatVersion::Standard);
     const uint16_t eq_id = 0xE001;
     const uint16_t flags = 0x0000;
-    const uint8_t sys_id =
-        static_cast<uint8_t>(fles::SubsystemIdentifier::FLES);
-    const uint8_t sys_ver = static_cast<uint8_t>(
+    const auto sys_id = static_cast<uint8_t>(fles::SubsystemIdentifier::FLES);
+    const auto sys_ver = static_cast<uint8_t>(
         generate_pattern_ ? fles::SubsystemFormatFLES::BasicRampPattern
                           : fles::SubsystemFormatFLES::Uninitialized);
     uint64_t idx = write_index_.desc;

@@ -8,6 +8,7 @@
 #include <iterator>
 #include <limits>
 #include <sstream>
+#include <string>
 #include <vector>
 
 /// Overloaded output operator for STL vectors.
@@ -26,10 +27,10 @@ inline std::string human_readable_count(uint64_t bytes,
     return std::to_string(bytes) + " " + unit_string;
   }
 
-  uint32_t exponent = static_cast<uint32_t>(std::log(bytes) / std::log(unit));
+  auto exponent = static_cast<uint32_t>(std::log(bytes) / std::log(unit));
 
-  std::string prefix =
-      std::string(use_si ? "kMGTPE" : "KMGTPE").substr(exponent - 1, 1);
+  using namespace std::string_literals;
+  std::string prefix = (use_si ? "kMGTPE"s : "KMGTPE"s).substr(exponent - 1, 1);
   if (!use_si) {
     prefix += "i";
   }
@@ -59,7 +60,7 @@ bar_graph(std::vector<T> values, std::string symbols, uint32_t length) {
   float filled = 0.0;
   for (size_t i = 0; i < values.size(); ++i) {
     filled += static_cast<float>(values[i]) / static_cast<float>(sum);
-    uint32_t chars =
+    auto chars =
         static_cast<uint32_t>(std::round(filled * static_cast<float>(length)));
     s.append(std::string(chars - s.size(), symbols[i % symbols.size()]));
   }
@@ -80,7 +81,8 @@ inline double calculate_ber(size_t n_bytes, size_t n_errors) {
 }
 
 /// Missing library function
-inline unsigned stou(std::string const& str, size_t* idx = 0, int base = 10) {
+inline unsigned
+stou(std::string const& str, size_t* idx = nullptr, int base = 10) {
   unsigned long result = std::stoul(str, idx, base);
   if (result > std::numeric_limits<unsigned>::max()) {
     throw std::out_of_range("stou");

@@ -104,7 +104,7 @@ void ComponentSenderZeromq::process_pending_acks() {
   while (!pending_acks_.empty()) {
     auto* ack = pending_acks_.front();
     ack_timeslice(ack->timeslice, ack->is_data);
-    delete ack;
+    delete ack; // NOLINT
     pending_acks_.pop();
   }
 }
@@ -179,7 +179,7 @@ zmq_msg_t ComponentSenderZeromq::create_message(RingBufferView<T_>& buf,
     // one chunk
     auto* data = &buf.at(offset);
     size_t bytes = sizeof(T_) * length;
-    auto* hint = new Acknowledgment{this, ts, is_data};
+    auto* hint = new Acknowledgment{this, ts, is_data}; // NOLINT
     zmq_msg_init_data(&msg, data, bytes, enqueue_ack, hint);
   } else {
     // two chunks
@@ -279,6 +279,5 @@ void ComponentSenderZeromq::report_status() {
   previous_send_buffer_status_desc_ = status_desc;
   previous_send_buffer_status_data_ = status_data;
 
-  scheduler_.add(std::bind(&ComponentSenderZeromq::report_status, this),
-                 now + interval);
+  scheduler_.add([this] { report_status(); }, now + interval);
 }

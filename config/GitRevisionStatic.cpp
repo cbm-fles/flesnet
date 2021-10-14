@@ -1,3 +1,3 @@
 #include "GitRevision.hpp"
 
-const char g_GIT_REVISION[] = "UNKNOWN";
+const std::string g_GIT_REVISION = "UNKNOWN";

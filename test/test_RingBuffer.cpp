@@ -11,12 +11,13 @@ public:
 };
 
 int main() {
-
-  RingBuffer<Simple, false, true> s;
-
-  s.alloc_with_size(4);
-
-  std::printf("ptr: %p\n", static_cast<void*>(s.ptr()));
-
-  return 0;
+  try {
+    RingBuffer<Simple, false, true> s;
+    s.alloc_with_size(4);
+    std::printf("ptr: %p\n", static_cast<void*>(s.ptr()));
+  } catch (std::exception const& e) {
+    std::cerr << e.what() << std::endl;
+    return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
 }

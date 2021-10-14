@@ -20,8 +20,8 @@ public:
   /// The InputChannelSender default constructor.
   InputChannelSender(uint64_t input_index,
                      InputBufferReadInterface& data_source,
-                     const std::vector<std::string>& compute_hostnames,
-                     const std::vector<std::string>& compute_services,
+                     std::vector<std::string> compute_hostnames,
+                     std::vector<std::string> compute_services,
                      uint32_t timeslice_size,
                      uint32_t overlap_size,
                      uint32_t max_timeslice_number,
@@ -131,31 +131,31 @@ private:
 
   struct SendBufferStatus {
     std::chrono::system_clock::time_point time;
-    uint64_t size;
+    uint64_t size = 0;
 
-    uint64_t cached_acked;
-    uint64_t acked;
-    uint64_t sent;
-    uint64_t written;
+    uint64_t cached_acked = 0;
+    uint64_t acked = 0;
+    uint64_t sent = 0;
+    uint64_t written = 0;
 
-    int64_t used() const {
+    [[nodiscard]] [[nodiscard]] int64_t used() const {
       assert(sent <= written);
       return written - sent;
     }
-    int64_t sending() const {
+    [[nodiscard]] [[nodiscard]] int64_t sending() const {
       assert(acked <= sent);
       return sent - acked;
     }
-    int64_t freeing() const {
+    [[nodiscard]] [[nodiscard]] int64_t freeing() const {
       assert(cached_acked <= acked);
       return acked - cached_acked;
     }
-    int64_t unused() const {
+    [[nodiscard]] [[nodiscard]] int64_t unused() const {
       assert(written <= cached_acked + size);
       return cached_acked + size - written;
     }
 
-    float percentage(int64_t value) const {
+    [[nodiscard]] [[nodiscard]] float percentage(int64_t value) const {
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
@@ -163,7 +163,8 @@ private:
       return std::string("used/sending/freeing/free");
     }
 
-    std::string percentage_str(int64_t value) const {
+    [[nodiscard]] [[nodiscard]] std::string
+    percentage_str(int64_t value) const {
       boost::format percent_fmt("%4.1f%%");
       percent_fmt % (percentage(value) * 100);
       std::string s = percent_fmt.str();
@@ -171,12 +172,12 @@ private:
       return s;
     }
 
-    std::string percentages() const {
+    [[nodiscard]] [[nodiscard]] std::string percentages() const {
       return percentage_str(used()) + " " + percentage_str(sending()) + " " +
              percentage_str(freeing()) + " " + percentage_str(unused());
     }
 
-    std::vector<int64_t> vector() const {
+    [[nodiscard]] [[nodiscard]] std::vector<int64_t> vector() const {
       return std::vector<int64_t>{used(), sending(), freeing(), unused()};
     }
   };

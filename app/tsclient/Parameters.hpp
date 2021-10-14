@@ -20,41 +20,49 @@ public:
   Parameters(const Parameters&) = delete;
   void operator=(const Parameters&) = delete;
 
-  int32_t client_index() const { return client_index_; }
+  [[nodiscard]] int32_t client_index() const { return client_index_; }
 
-  std::string shm_identifier() const { return shm_identifier_; }
+  [[nodiscard]] std::string shm_identifier() const { return shm_identifier_; }
 
-  bool multi_input() const { return multi_input_; }
+  [[nodiscard]] bool multi_input() const { return multi_input_; }
 
-  std::string input_archive() const { return input_archive_; }
+  [[nodiscard]] std::string input_archive() const { return input_archive_; }
 
-  uint64_t input_archive_cycles() const { return input_archive_cycles_; }
+  [[nodiscard]] uint64_t input_archive_cycles() const {
+    return input_archive_cycles_;
+  }
 
-  std::string output_archive() const { return output_archive_; }
+  [[nodiscard]] std::string output_archive() const { return output_archive_; }
 
-  size_t output_archive_items() const { return output_archive_items_; }
+  [[nodiscard]] size_t output_archive_items() const {
+    return output_archive_items_;
+  }
 
-  size_t output_archive_bytes() const { return output_archive_bytes_; }
+  [[nodiscard]] size_t output_archive_bytes() const {
+    return output_archive_bytes_;
+  }
 
-  bool analyze() const { return analyze_; }
+  [[nodiscard]] bool analyze() const { return analyze_; }
 
-  bool benchmark() const { return benchmark_; }
+  [[nodiscard]] bool benchmark() const { return benchmark_; }
 
-  size_t verbosity() const { return verbosity_; }
+  [[nodiscard]] size_t verbosity() const { return verbosity_; }
 
-  bool histograms() const { return histograms_; }
+  [[nodiscard]] bool histograms() const { return histograms_; }
 
-  std::string publish_address() const { return publish_address_; }
+  [[nodiscard]] std::string publish_address() const { return publish_address_; }
 
-  uint32_t publish_hwm() const { return publish_hwm_; }
+  [[nodiscard]] uint32_t publish_hwm() const { return publish_hwm_; }
 
-  std::string subscribe_address() const { return subscribe_address_; }
+  [[nodiscard]] std::string subscribe_address() const {
+    return subscribe_address_;
+  }
 
-  uint32_t subscribe_hwm() const { return subscribe_hwm_; }
+  [[nodiscard]] uint32_t subscribe_hwm() const { return subscribe_hwm_; }
 
-  uint64_t maximum_number() const { return maximum_number_; }
+  [[nodiscard]] uint64_t maximum_number() const { return maximum_number_; }
 
-  double rate_limit() const { return rate_limit_; }
+  [[nodiscard]] double rate_limit() const { return rate_limit_; }
 
 private:
   void parse_options(int argc, char* argv[]);

@@ -40,8 +40,12 @@ public:
   /// The TimesliceBuffer destructor.
   ~TimesliceBuffer();
 
-  uint32_t get_data_size_exp() const { return data_buffer_size_exp_; }
-  uint32_t get_desc_size_exp() const { return desc_buffer_size_exp_; }
+  [[nodiscard]] uint32_t get_data_size_exp() const {
+    return data_buffer_size_exp_;
+  }
+  [[nodiscard]] uint32_t get_desc_size_exp() const {
+    return desc_buffer_size_exp_;
+  }
 
   uint8_t* get_data_ptr(uint_fast16_t index) {
     return data_ptr_ + index * (UINT64_C(1) << data_buffer_size_exp_);
@@ -62,7 +66,9 @@ public:
     return get_desc_ptr(index)[offset];
   }
 
-  uint32_t get_num_input_nodes() const { return num_input_nodes_; }
+  [[nodiscard]] uint32_t get_num_input_nodes() const {
+    return num_input_nodes_;
+  }
 
   void send_work_item(fles::TimesliceWorkItem wi);
 
@@ -89,15 +95,17 @@ public:
 
   void send_end_completion() {}
 
-  std::size_t get_num_work_items() const { return outstanding_.size(); }
+  [[nodiscard]] std::size_t get_num_work_items() const {
+    return outstanding_.size();
+  }
 
-  std::size_t get_num_completions() const { return 0; }
+  [[nodiscard]] std::size_t get_num_completions() const { return 0; }
 
-  std::string description() const;
+  [[nodiscard]] std::string description() const;
 
 private:
   std::string shm_identifier_;
-  boost::uuids::uuid shm_uuid_;
+  boost::uuids::uuid shm_uuid_{};
   uint32_t data_buffer_size_exp_;
   uint32_t desc_buffer_size_exp_;
   uint32_t num_input_nodes_;

@@ -30,6 +30,7 @@ StorableMicroslice* MicrosliceReceiver::try_get() {
     StorableMicroslice* sms;
 
     if (data_begin <= data_end) {
+      // NOLINTNEXTLINE
       sms = new StorableMicroslice(
           const_cast<const fles::MicrosliceDescriptor&>(desc),
           const_cast<const uint8_t*>(data_begin));
@@ -46,6 +47,7 @@ StorableMicroslice* MicrosliceReceiver::try_get() {
       data.insert(data.end(), buffer_begin, data_end);
       assert(data.size() == desc.size);
 
+      // NOLINTNEXTLINE
       sms = new StorableMicroslice(
           const_cast<const fles::MicrosliceDescriptor&>(desc), data);
     }

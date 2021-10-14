@@ -28,7 +28,7 @@ public:
    */
   std::unique_ptr<T> get() { return std::unique_ptr<T>(do_get()); };
 
-  virtual bool eos() const = 0;
+  [[nodiscard]] virtual bool eos() const = 0;
 
   virtual ~Source() = default;
 

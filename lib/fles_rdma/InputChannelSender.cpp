@@ -10,22 +10,25 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <thread>
+#include <utility>
 
 InputChannelSender::InputChannelSender(
     uint64_t input_index,
     InputBufferReadInterface& data_source,
-    const std::vector<std::string>& compute_hostnames,
-    const std::vector<std::string>& compute_services,
+    std::vector<std::string> compute_hostnames,
+    std::vector<std::string> compute_services,
     uint32_t timeslice_size,
     uint32_t overlap_size,
     uint32_t max_timeslice_number,
     const std::string& monitor_uri)
     : input_index_(input_index), data_source_(data_source),
-      compute_hostnames_(compute_hostnames),
-      compute_services_(compute_services), timeslice_size_(timeslice_size),
-      overlap_size_(overlap_size), max_timeslice_number_(max_timeslice_number),
+      compute_hostnames_(std::move(compute_hostnames)),
+      compute_services_(std::move(compute_services)),
+      timeslice_size_(timeslice_size), overlap_size_(overlap_size),
+      max_timeslice_number_(max_timeslice_number),
       min_acked_desc_(data_source.desc_buffer().size() / 4),
       min_acked_data_(data_source.data_buffer().size() / 4) {
   start_index_desc_ = sent_desc_ = acked_desc_ = cached_acked_desc_ =
@@ -37,18 +40,10 @@ InputChannelSender::InputChannelSender(
       data_source_.desc_buffer().size() / timeslice_size_ + 1;
   ack_.alloc_with_size(min_ack_buffer_size);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-  VALGRIND_MAKE_MEM_DEFINED(data_source_.data_buffer().ptr(),
-                            data_source_.data_buffer().bytes());
-  VALGRIND_MAKE_MEM_DEFINED(data_source_.desc_buffer().ptr(),
-                            data_source_.desc_buffer().bytes());
-#pragma GCC diagnostic pop
-
   if (!monitor_uri.empty()) {
     try {
-      monitor_client_ = std::unique_ptr<web::http::client::http_client>(
-          new web::http::client::http_client(monitor_uri));
+      monitor_client_ =
+          std::make_unique<web::http::client::http_client>(monitor_uri);
     } catch (std::exception& e) {
       L_(error) << "cannot connect to monitoring at " << monitor_uri << ": "
                 << e.what();
@@ -112,7 +107,7 @@ void InputChannelSender::report_status() {
 
   // retrieve SubsystemIdentifier and EquipmentIdentifier
   // from most current MicrosliceDescriptor
-  fles::SubsystemIdentifier sys_id = static_cast<fles::SubsystemIdentifier>(0);
+  auto sys_id = static_cast<fles::SubsystemIdentifier>(0);
   std::string eq_id("Undefined");
   if (written_desc > 0) {
     sys_id = static_cast<fles::SubsystemIdentifier>(
@@ -184,16 +179,14 @@ void InputChannelSender::report_status() {
                 }
               });
 
-      monitor_task_ =
-          std::unique_ptr<pplx::task<void>>(new pplx::task<void>(task));
+      monitor_task_ = std::make_unique<pplx::task<void>>(task);
     }
   }
 
   previous_send_buffer_status_desc_ = status_desc;
   previous_send_buffer_status_data_ = status_data;
 
-  scheduler_.add(std::bind(&InputChannelSender::report_status, this),
-                 now + interval);
+  scheduler_.add([this] { report_status(); }, now + interval);
 }
 
 void InputChannelSender::sync_buffer_positions() {
@@ -202,7 +195,7 @@ void InputChannelSender::sync_buffer_positions() {
   }
 
   auto now = std::chrono::system_clock::now();
-  scheduler_.add(std::bind(&InputChannelSender::sync_buffer_positions, this),
+  scheduler_.add([this] { sync_buffer_positions(); },
                  now + std::chrono::milliseconds(0));
 }
 
@@ -215,7 +208,7 @@ void InputChannelSender::sync_data_source(bool schedule) {
 
   if (schedule) {
     auto now = std::chrono::system_clock::now();
-    scheduler_.add(std::bind(&InputChannelSender::sync_data_source, this, true),
+    scheduler_.add([this] { sync_data_source(true); },
                    now + std::chrono::milliseconds(100));
   }
 }
@@ -410,8 +403,7 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id) {
 }
 
 void InputChannelSender::on_rejected(struct rdma_cm_event* event) {
-  InputChannelConnection* conn =
-      static_cast<InputChannelConnection*>(event->id->context);
+  auto* conn = static_cast<InputChannelConnection*>(event->id->context);
 
   conn->on_rejected(event);
   uint_fast16_t i = conn->index();
@@ -455,7 +447,7 @@ void InputChannelSender::post_send_data(uint64_t timeslice,
                                         uint64_t data_length,
                                         uint64_t skip) {
   int num_sge = 0;
-  struct ibv_sge sge[4];
+  std::array<ibv_sge, 4> sge{};
   // descriptors
   if ((desc_offset & data_source_.desc_buffer().size_mask()) <=
       ((desc_offset + desc_length - 1) &
@@ -509,7 +501,8 @@ void InputChannelSender::post_send_data(uint64_t timeslice,
     sge[num_sge++].lkey = mr_data_->lkey;
   }
 
-  conn_[cn]->send_data(sge, num_sge, timeslice, desc_length, data_length, skip);
+  conn_[cn]->send_data(sge.data(), num_sge, timeslice, desc_length, data_length,
+                       skip);
 }
 
 void InputChannelSender::on_completion(const struct ibv_wc& wc) {

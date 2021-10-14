@@ -5,6 +5,7 @@
 #include <functional>
 #include <queue>
 #include <sys/time.h> // for `time_t` and `struct timeval`
+#include <utility>
 
 class Scheduler {
 public:
@@ -12,8 +13,8 @@ public:
     using callback_type = std::function<void()>;
     using time_type = std::chrono::time_point<std::chrono::system_clock>;
 
-    event(const callback_type& cb, const time_type& when)
-        : callback_(cb), when_(when) {}
+    event(callback_type cb, const time_type& when)
+        : callback_(std::move(cb)), when_(when) {}
 
     void operator()() const { callback_(); }
 
