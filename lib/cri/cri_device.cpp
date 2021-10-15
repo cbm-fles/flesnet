@@ -214,6 +214,15 @@ std::string cri_device::print_uptime() {
   return ss.str();
 }
 
+std::string cri_device::print_version_warning() {
+  std::stringstream ss;
+  if (m_hardware_version != hw_ver_table.back()) {
+    ss << "Hardware version is outdated. "
+       << "Latest version is " << hw_ver_table.back() << ".";
+  }
+  return ss.str();
+}
+
 size_t cri_device::number_of_channels() { return m_channel.size(); }
 
 std::vector<cri_channel*> cri_device::channels() {

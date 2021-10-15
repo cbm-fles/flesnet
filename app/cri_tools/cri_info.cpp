@@ -32,6 +32,10 @@ int main() {
                   << std::endl;
         std::cout << "Uptime: " << cris.back()->print_uptime() << std::endl;
         std::cout << cris.back()->print_build_info() << std::endl;
+        std::string version_warning = cris.back()->print_version_warning();
+        if (!version_warning.empty()) {
+          std::cout << "*WARNING* " << version_warning << std::endl;
+        }
 
       } catch (std::exception& e) {
         std::cout << e.what() << std::endl;
