@@ -15,31 +15,32 @@
 #include <arpa/inet.h> // ntohl
 #include <ctime>
 #include <iomanip>
+#include <memory>
 
 namespace cri {
 
 cri_device::cri_device(int device_nr) {
   m_device_op =
-      std::unique_ptr<pda::device_operator>(new pda::device_operator());
-  m_device = std::unique_ptr<pda::device>(
-      new pda::device(m_device_op.get(), device_nr));
+      std::make_unique<pda::device_operator>();
+  m_device = std::make_unique<pda::device>(
+      m_device_op.get(), device_nr);
   init();
 }
 
 cri_device::cri_device(uint8_t bus, uint8_t device, uint8_t function) {
   m_device_op = nullptr;
   m_device =
-      std::unique_ptr<pda::device>(new pda::device(bus, device, function));
+      std::make_unique<pda::device>(bus, device, function);
   init();
 }
 
 cri_device::~cri_device() = default;
 
 void cri_device::init() {
-  m_bar = std::unique_ptr<pda::pci_bar>(new pda::pci_bar(m_device.get(), 0));
+  m_bar = std::make_unique<pda::pci_bar>(m_device.get(), 0);
   // register file access
   m_register_file =
-      std::unique_ptr<register_file_bar>(new register_file_bar(m_bar.get(), 0));
+      std::make_unique<register_file_bar>(m_bar.get(), 0);
   // enforce correct magic number and hw version
   check_magic_number();
   m_hardware_version =
@@ -48,8 +49,8 @@ void cri_device::init() {
   // create channel objects
   uint8_t num_channels = number_of_hw_channels();
   for (size_t i = 0; i < num_channels; i++) {
-    m_channel.push_back(std::unique_ptr<cri_channel>(
-        new cri_channel(i, m_device.get(), m_bar.get())));
+    m_channel.push_back(std::make_unique<cri_channel>(
+        i, m_device.get(), m_bar.get()));
   }
 }
 

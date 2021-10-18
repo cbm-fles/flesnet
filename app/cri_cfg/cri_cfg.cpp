@@ -4,6 +4,8 @@
  *
  */
 
+#include <memory>
+
 #include "log.hpp"
 #include "parameters.hpp"
 
@@ -15,10 +17,10 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<cri::cri_device> cri;
     // create CRI
     if (par.dev_autodetect()) {
-      cri = std::unique_ptr<cri::cri_device>(new cri::cri_device(0));
+      cri = std::make_unique<cri::cri_device>(0);
     } else {
-      cri = std::unique_ptr<cri::cri_device>(new cri::cri_device(
-          par.dev_addr().bus, par.dev_addr().dev, par.dev_addr().func));
+      cri = std::make_unique<cri::cri_device>(
+          par.dev_addr().bus, par.dev_addr().dev, par.dev_addr().func);
     }
     std::vector<cri::cri_channel*> channels = cri->channels();
 

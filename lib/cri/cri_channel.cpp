@@ -32,9 +32,9 @@ void cri_channel::init_dma(void* data_buffer,
                            void* desc_buffer,
                            size_t desc_buffer_log_size) {
 
-  m_dma_channel = std::unique_ptr<dma_channel>(
-      new dma_channel(this, data_buffer, data_buffer_log_size, desc_buffer,
-                      desc_buffer_log_size, DMA_TRANSFER_SIZE));
+  m_dma_channel = std::make_unique<dma_channel>(
+      this, data_buffer, data_buffer_log_size, desc_buffer,
+                      desc_buffer_log_size, DMA_TRANSFER_SIZE);
 }
 
 void cri_channel::deinit_dma() { m_dma_channel = nullptr; }

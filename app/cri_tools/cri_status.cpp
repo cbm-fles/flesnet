@@ -94,8 +94,8 @@ int main(int argc, char* argv[]) {
   if (!monitor_uri.empty()) {
     console = false;
     try {
-      client = std::unique_ptr<web::http::client::http_client>(
-          new web::http::client::http_client(monitor_uri));
+      client = std::make_unique<web::http::client::http_client>(
+          monitor_uri);
     } catch (std::exception& e) {
       std::cerr << e.what() << std::endl;
       return EXIT_FAILURE;
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
     uint64_t num_dev = dev_op->device_count();
 
     for (size_t i = 0; i < num_dev; ++i) {
-      cris.push_back(std::unique_ptr<cri::cri_device>(new cri::cri_device(i)));
+      cris.push_back(std::make_unique<cri::cri_device>(i));
     }
 
     // set measurement interval for device and all channels

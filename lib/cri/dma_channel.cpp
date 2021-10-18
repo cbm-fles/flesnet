@@ -10,6 +10,7 @@
 #include "data_structures.hpp"
 #include <cassert>
 #include <cstring>
+#include <memory>
 
 namespace cri {
 
@@ -28,15 +29,15 @@ dma_channel::dma_channel(cri_channel* parent_channel,
   if (is_enabled()) {
     throw CriException("DMA Engine already enabled");
   }
-  m_data_buffer = std::unique_ptr<pda::dma_buffer>(
-      new pda::dma_buffer(m_parent_channel->parent_device(), data_buffer,
+  m_data_buffer = std::make_unique<pda::dma_buffer>(
+      m_parent_channel->parent_device(), data_buffer,
                           (UINT64_C(1) << data_buffer_log_size),
-                          (2 * m_parent_channel->channel_index() + 0)));
+                          (2 * m_parent_channel->channel_index() + 0));
 
-  m_desc_buffer = std::unique_ptr<pda::dma_buffer>(
-      new pda::dma_buffer(m_parent_channel->parent_device(), desc_buffer,
+  m_desc_buffer = std::make_unique<pda::dma_buffer>(
+      m_parent_channel->parent_device(), desc_buffer,
                           (UINT64_C(1) << desc_buffer_log_size),
-                          (2 * m_parent_channel->channel_index() + 1)));
+                          (2 * m_parent_channel->channel_index() + 1));
   // clear eb for debugging
   memset(m_data_buffer->mem(), 0, m_data_buffer->size());
   // clear rb for polling
