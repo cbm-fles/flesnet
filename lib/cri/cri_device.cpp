@@ -5,7 +5,7 @@
  */
 
 #include "cri_device.hpp"
-#include "cri_link.hpp"
+#include "cri_channel.hpp"
 #include "cri_registers.hpp"
 #include "data_structures.hpp"
 #include "pda/device.hpp"
@@ -42,40 +42,42 @@ void cri_device::init() {
       std::unique_ptr<register_file_bar>(new register_file_bar(m_bar.get(), 0));
   // enforce correct magic number and hw version
   check_magic_number();
+  m_hardware_version =
+      m_register_file->get_reg(0) >> 16; // CRI_REG_HARDWARE_INFO;
   check_hw_ver(hw_ver_table);
-  // create link objects
-  uint8_t num_links = number_of_hw_links();
-  for (size_t i = 0; i < num_links; i++) {
-    m_link.push_back(std::unique_ptr<cri_link>(
-        new cri_link(i, m_device.get(), m_bar.get())));
+  // create channel objects
+  uint8_t num_channels = number_of_hw_channels();
+  for (size_t i = 0; i < num_channels; i++) {
+    m_channel.push_back(std::unique_ptr<cri_channel>(
+        new cri_channel(i, m_device.get(), m_bar.get())));
   }
 }
 
-bool cri_device::check_hw_ver(std::array<uint16_t, 1> hw_ver_table) {
-  uint16_t hw_ver = m_register_file->get_reg(0) >> 16; // CRI_REG_HARDWARE_INFO;
+bool cri_device::check_hw_ver(hw_ver_table_t hw_ver_table) {
   bool match = false;
 
   // check if version of hardware is part of suported versions
   for (auto it = hw_ver_table.begin();
        it != hw_ver_table.end() && match == false; ++it) {
-    if (hw_ver == *it) {
+    if (m_hardware_version == *it) {
       match = true;
     }
   }
   if (!match) {
     std::stringstream msg;
-    msg << "Hardware - libcri version missmatch! CRI ver: " << hw_ver;
+    msg << "Hardware - libcri version missmatch! CRI ver: "
+        << m_hardware_version;
     throw CriException(msg.str());
   }
 
-  // INFO: disabled check to allow 'mixed' hw headers
-  // check if version of hardware matches exactly version of header
-  if (hw_ver != CRI_C_HARDWARE_VERSION) {
+  // INFO: disable check to allow 'mixed' hw headers
+  // check if version of hardware matches or is older than version of header
+  if (m_hardware_version > CRI_C_HARDWARE_VERSION) {
     match = false;
   }
   if (!match) {
     std::stringstream msg;
-    msg << "Header file version missmatch! CRI ver: " << hw_ver;
+    msg << "Header file version missmatch! CRI ver: " << m_hardware_version;
     throw CriException(msg.str());
   }
   return match;
@@ -92,14 +94,11 @@ void cri_device::set_pgen_mc_size(uint32_t mc_size_ticks) {
   m_register_file->set_reg(CRI_REG_MC_CNT_CFG_H, mc_size_ns, 0x7FFFFFFF);
 }
 
-uint8_t cri_device::number_of_hw_links() {
+uint8_t cri_device::number_of_hw_channels() {
   return (m_register_file->get_reg(CRI_REG_N_CHANNELS) & 0xFF);
 }
 
-uint16_t cri_device::hardware_version() {
-  return (static_cast<uint16_t>(m_register_file->get_reg(0) >> 16));
-  // CRI_REG_HARDWARE_INFO
-}
+uint16_t cri_device::hardware_version() { return m_hardware_version; }
 
 time_t cri_device::build_date() {
   time_t time = (static_cast<time_t>(
@@ -192,17 +191,49 @@ std::string cri_device::print_devinfo() {
   return ss.str();
 }
 
-size_t cri_device::number_of_links() { return m_link.size(); }
-
-std::vector<cri_link*> cri_device::links() {
-  std::vector<cri_link*> links;
-  for (auto& l : m_link) {
-    links.push_back(l.get());
-  }
-  return links;
+std::chrono::seconds cri_device::uptime() {
+  std::chrono::duration<double, std::ratio<1, pci_clk>> uptime(
+      static_cast<uint64_t>(m_register_file->get_reg(CRI_REG_UPTIME)) << 24);
+  return std::chrono::duration_cast<std::chrono::seconds>(uptime);
 }
 
-cri_link* cri_device::link(size_t n) { return m_link.at(n).get(); }
+std::string cri_device::print_uptime() {
+  using namespace std::chrono;
+  typedef duration<int, std::ratio<86400>> days; // INFO: only needed < C++20
+  auto s = uptime();
+  auto d = duration_cast<days>(s);
+  s -= d;
+  auto h = duration_cast<hours>(s);
+  s -= h;
+  auto m = duration_cast<minutes>(s);
+  s -= m;
+  std::stringstream ss;
+  ss.fill('0');
+  ss << d.count() << "d:" << std::setw(2) << h.count() << "h:" << std::setw(2)
+     << m.count() << "m:" << std::setw(2) << s.count() << 's';
+  return ss.str();
+}
+
+std::string cri_device::print_version_warning() {
+  std::stringstream ss;
+  if (m_hardware_version != hw_ver_table.back()) {
+    ss << "Hardware version is outdated. "
+       << "Latest version is " << hw_ver_table.back() << ".";
+  }
+  return ss.str();
+}
+
+size_t cri_device::number_of_channels() { return m_channel.size(); }
+
+std::vector<cri_channel*> cri_device::channels() {
+  std::vector<cri_channel*> channels;
+  for (auto& l : m_channel) {
+    channels.push_back(l.get());
+  }
+  return channels;
+}
+
+cri_channel* cri_device::channel(size_t n) { return m_channel.at(n).get(); }
 
 void cri_device::id_led(bool enable) {
   m_register_file->set_bit(CRI_REG_FLIM_CFG, 0, enable);

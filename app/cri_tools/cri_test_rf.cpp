@@ -54,11 +54,11 @@ int main() {
   std::cout << "device read  0x" << std::hex << reg << std::endl;
 
   uint32_t dma_reg = 0;
-  dma_reg = Cri->link(0)->get_testreg_dma();
+  dma_reg = Cri->channel(0)->get_testreg_dma();
   std::cout << "dma read     0x" << std::hex << dma_reg << std::endl;
 
   uint32_t data_reg = 0;
-  data_reg = Cri->link(0)->get_testreg_data();
+  data_reg = Cri->channel(0)->get_testreg_data();
   std::cout << "data read    0x" << std::hex << data_reg << std::endl;
 
   auto start = std::chrono::high_resolution_clock::now();
@@ -68,13 +68,13 @@ int main() {
   while (ret == 0 && s_interrupted == 0) {
     Cri->set_testreg(reg_wr);
     // std::cout << "write 0x" << std::hex << reg_wr << std::endl;
-    Cri->link(0)->set_testreg_dma(reg_wr << 1);
-    Cri->link(0)->set_testreg_data(reg_wr << 2);
+    Cri->channel(0)->set_testreg_dma(reg_wr << 1);
+    Cri->channel(0)->set_testreg_data(reg_wr << 2);
 
     reg = Cri->get_testreg();
     // std::cout << "read  0x" << std::hex << reg << std::endl;
-    dma_reg = Cri->link(0)->get_testreg_dma();
-    data_reg = Cri->link(0)->get_testreg_data();
+    dma_reg = Cri->channel(0)->get_testreg_dma();
+    data_reg = Cri->channel(0)->get_testreg_data();
 
     if (it % 1000000 == 0) {
       end = std::chrono::high_resolution_clock::now();
@@ -99,14 +99,14 @@ int main() {
     if ((reg_wr << 1) != dma_reg) {
       std::cout << "rf_dma write 0x" << std::hex << (reg_wr << 1) << std::endl;
       std::cout << "rf_dma read  0x" << std::hex << dma_reg << std::endl;
-      dma_reg = Cri->link(0)->get_testreg_dma();
+      dma_reg = Cri->channel(0)->get_testreg_dma();
       std::cout << "rf_dma read  0x" << std::hex << dma_reg << std::endl;
       ret = -1;
     }
     if ((reg_wr << 2) != data_reg) {
       std::cout << "rf_data write 0x" << std::hex << (reg_wr << 2) << std::endl;
       std::cout << "rf_data read  0x" << std::hex << data_reg << std::endl;
-      data_reg = Cri->link(0)->get_testreg_data();
+      data_reg = Cri->channel(0)->get_testreg_data();
       std::cout << "rf_data read  0x" << std::hex << data_reg << std::endl;
       ret = -1;
     }

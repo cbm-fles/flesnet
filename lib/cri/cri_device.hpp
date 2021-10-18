@@ -9,6 +9,7 @@
 #include "pda/device.hpp"
 #include "pda/pci_bar.hpp"
 #include <array>
+#include <chrono>
 #include <ctime>
 #include <memory>
 #include <string>
@@ -17,10 +18,11 @@
 namespace cri {
 
 // class cri_device;
-class cri_link;
+class cri_channel;
 class register_file_bar;
 
-constexpr std::array<uint16_t, 1> hw_ver_table = {{2}};
+using hw_ver_table_t = std::array<uint16_t, 2>;
+constexpr hw_ver_table_t hw_ver_table = {{2, 3}};
 constexpr uint32_t pci_clk = 250E6;
 
 constexpr size_t pgen_base_size_ns = 1000;
@@ -42,11 +44,10 @@ public:
   cri_device(uint8_t bus, uint8_t device, uint8_t function);
   ~cri_device();
 
-  bool check_hw_ver(std::array<uint16_t, 1> hw_ver_table);
   void enable_mc_cnt(bool enable);
   void set_pgen_mc_size(uint32_t mc_size);
   size_t get_pgen_base_size_ns() { return pgen_base_size_ns; }
-  uint8_t number_of_hw_links();
+  uint8_t number_of_hw_channels();
 
   uint16_t hardware_version();
   time_t build_date();
@@ -55,13 +56,16 @@ public:
   struct build_info_t build_info();
   std::string print_build_info();
   std::string print_devinfo();
+  std::chrono::seconds uptime();
+  std::string print_uptime();
+  std::string print_version_warning();
 
   void set_testreg(uint32_t data);
   uint32_t get_testreg();
 
-  size_t number_of_links();
-  std::vector<cri_link*> links();
-  cri_link* link(size_t n);
+  size_t number_of_channels();
+  std::vector<cri_channel*> channels();
+  cri_channel* channel(size_t n);
   register_file_bar* rf() const;
 
   void id_led(bool enable);
@@ -89,10 +93,12 @@ protected:
   std::unique_ptr<pda::device> m_device;
   std::unique_ptr<pda::pci_bar> m_bar;
   std::unique_ptr<register_file_bar> m_register_file;
-  std::vector<std::unique_ptr<cri_link>> m_link;
+  std::vector<std::unique_ptr<cri_channel>> m_channel;
+  uint16_t m_hardware_version;
 
   void init();
   bool check_magic_number();
+  bool check_hw_ver(hw_ver_table_t hw_ver_table);
 };
 
 } // namespace cri

@@ -116,9 +116,9 @@ int main(int argc, char* argv[]) {
     // set measurement interval for device and all channels
     for (auto& cri : cris) {
       cri->set_perf_cnt(false, true); // reset counters
-      for (auto& link : cri->links()) {
-        link->set_perf_cnt(false, true);     // reset counters
-        link->set_perf_gtx_cnt(false, true); // reset counters
+      for (auto& channel : cri->channels()) {
+        channel->set_perf_cnt(false, true);     // reset counters
+        channel->set_perf_gtx_cnt(false, true); // reset counters
       }
     }
 
@@ -189,20 +189,21 @@ int main(int argc, char* argv[]) {
       }
       j = 0;
       for (auto& cri : cris) {
-        size_t num_links = cri->number_of_hw_links();
-        std::vector<cri::cri_link*> links = cri->links();
+        size_t num_channels = cri->number_of_hw_channels();
+        std::vector<cri::cri_channel*> channels = cri->channels();
 
         std::stringstream ss;
-        for (size_t i = 0; i < num_links; ++i) {
-          cri::cri_link::ch_perf_t perf = links.at(i)->get_perf();
-          cri::cri_link::ch_perf_gtx_t perf_gtx = links.at(i)->get_perf_gtx();
-          bool ready_for_data = links.at(i)->get_ready_for_data();
+        for (size_t i = 0; i < num_channels; ++i) {
+          cri::cri_channel::ch_perf_t perf = channels.at(i)->get_perf();
+          cri::cri_channel::ch_perf_gtx_t perf_gtx =
+              channels.at(i)->get_perf_gtx();
+          bool ready_for_data = channels.at(i)->get_ready_for_data();
 
           // check overflow
           if (perf.cycles == 0xFFFFFFFF || perf_gtx.cycles == 0xFFFFFFFF) {
             if (console) {
               ss << std::setw(2) << j << "/" << i << "  ";
-              ss << std::setw(8) << links.at(i)->data_source() << "  ";
+              ss << std::setw(8) << channels.at(i)->data_source() << "  ";
               ss << "stats counter overflow";
               ss << "\n";
             }
@@ -225,7 +226,7 @@ int main(int argc, char* argv[]) {
 
           if (console) {
             ss << std::setw(1) << j << "/" << i << "  ";
-            ss << std::setw(8) << links.at(i)->data_source() << "  ";
+            ss << std::setw(8) << channels.at(i)->data_source() << "  ";
             ss << std::setw(2) << ready_for_data << "  ";
             // perf counters
             ss << std::setprecision(5);
@@ -245,7 +246,8 @@ int main(int argc, char* argv[]) {
             measurement +=
                 "ch_status,host=" + hostname + ",cri=" + cri->print_devinfo() +
                 ",ch=" + std::to_string(i) + " data_src=" +
-                std::to_string(static_cast<int>(links.at(i)->data_source())) +
+                std::to_string(
+                    static_cast<int>(channels.at(i)->data_source())) +
                 "i" + ",enable=" + (ready_for_data ? "true" : "false") +
                 ",throughput=" + std::to_string(mc_throughput) +
                 ",rate=" + std::to_string(microslice_rate) +

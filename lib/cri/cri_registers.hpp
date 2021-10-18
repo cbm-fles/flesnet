@@ -4,20 +4,20 @@
 // This file was automatically generated from:
 // ../flim/src/packages/fles_registers.vhd
 // Repository is: git repository
-// Repository Revision: 567e0eb5fbc15de24dbf4dd7cb895150b7656909
-// Repository Status: clean
-// Build Timestamp: Fri Jul  2 13:58:28 CEST 2021
+// Repository Revision: d0b672c88a00bf4154e2c58a6a88984723b9cb13
+// Repository Status: dirty
+// Build Timestamp: Fri Sep 17 14:35:56 CEST 2021
 // Build System: hutter@eda02
 #define CRI_C_BUILD_REPO 1
-#define CRI_C_BUILD_DATE 1625227108
-#define CRI_C_BUILD_REVISION 567e0eb5fbc15de24dbf4dd7cb895150b7656909
-#define CRI_C_BUILD_STATUS_CLEAN 1
+#define CRI_C_BUILD_DATE 1631882156
+#define CRI_C_BUILD_REVISION d0b672c88a00bf4154e2c58a6a88984723b9cb13
+#define CRI_C_BUILD_STATUS_CLEAN 0
 #define CRI_C_BUILD_HOST 65646130320000000000000000000000
 #define CRI_C_BUILD_USER 68757474657200000000000000000000
 #define CRI_C_HARDWARE_ID 0xf1e5
 #define CRI_C_TIMEOUT_PATTERN 0xa5a5a5a5
 #define CRI_C_ILL_ADDR_PATTERN 0xa6a6a6a6
-#define CRI_C_HARDWARE_VERSION 2
+#define CRI_C_HARDWARE_VERSION 3
 #define CRI_C_CH_ADDR_SEL 15
 #define CRI_C_DMA_ADDR_SEL 14
 #define CRI_REG_HARDWARE_INFO 0
@@ -50,6 +50,7 @@
 #define CRI_REG_PCI_PERF_DMA_STALL 27
 #define CRI_REG_PCI_PERF_DMA_BUSY 28
 #define CRI_REG_PCI_PERF_DMA_MAX_NRDY 29
+#define CRI_REG_UPTIME 30
 #define CRI_REG_EBDM_N_SG_CONFIG 0
 #define CRI_REG_EBDM_BUFFER_SIZE_L 1
 #define CRI_REG_EBDM_BUFFER_SIZE_H 2
@@ -86,6 +87,7 @@
 #define CRI_REG_PKT_PERF_N_EVENTS 33
 #define CRI_REG_PKT_MC_TIME_L 34
 #define CRI_REG_PKT_MC_TIME_H 35
+#define CRI_REG_MAX_MC_WORDS 36
 #define CRI_REG_TESTREG_DATA 0
 #define CRI_REG_GTX_DATAPATH_CFG 1
 #define CRI_REG_GTX_MC_PGEN_CFG_L 2
