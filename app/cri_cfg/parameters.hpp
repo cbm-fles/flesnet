@@ -21,7 +21,7 @@ namespace po = boost::program_options;
 
 static const size_t _num_max_channels = 8;
 
-typedef enum { flim, pgen, disable } data_source;
+enum data_source { flim, pgen, disable };
 
 /// Run parameters exception class.
 class ParametersException : public std::runtime_error {

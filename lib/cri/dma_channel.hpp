@@ -84,7 +84,7 @@ private:
   void configure_sg_manager(sg_bram_t buf_sel);
 
   static std::vector<sg_entry_hw_t>
-  convert_sg_list(const std::vector<pda::sg_entry_t>& sg_list);
+  convert_sg_list(const std::vector<pda::sg_entry>& sg_list);
 
   void write_sg_list_to_device(const std::vector<sg_entry_hw_t>& sg_list,
                                sg_bram_t buf_sel);

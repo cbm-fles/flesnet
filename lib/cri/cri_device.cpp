@@ -200,7 +200,7 @@ std::chrono::seconds cri_device::uptime() {
 
 std::string cri_device::print_uptime() {
   using namespace std::chrono;
-  typedef duration<int, std::ratio<86400>> days; // INFO: only needed < C++20
+  using days = duration<int, std::ratio<86400>>; // INFO: only needed < C++20
   auto s = uptime();
   auto d = duration_cast<days>(s);
   s -= d;

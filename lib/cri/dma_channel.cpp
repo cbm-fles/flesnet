@@ -133,7 +133,7 @@ void dma_channel::configure_sg_manager(sg_bram_t buf_sel) {
 
 // TODO make vector a reference
 std::vector<dma_channel::sg_entry_hw_t>
-dma_channel::convert_sg_list(const std::vector<pda::sg_entry_t>& sg_list) {
+dma_channel::convert_sg_list(const std::vector<pda::sg_entry>& sg_list) {
 
   // convert pda scatter gather list into CRI usable list
   std::vector<sg_entry_hw_t> sg_list_hw;
