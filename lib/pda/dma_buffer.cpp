@@ -90,12 +90,12 @@ void dma_buffer::connect() {
   }
 
   // get and prepare sg list
-  DMABuffer_SGNode* sglist = NULL;
+  DMABuffer_SGNode* sglist = nullptr;
   if (DMABuffer_getSGList(m_buffer, &sglist) != PDA_SUCCESS) {
     throw PdaException("DMA_BUFFER_FAULT_SGLIST");
   }
   sg_entry entry;
-  for (DMABuffer_SGNode* sg = sglist; sg != NULL; sg = sg->next) {
+  for (DMABuffer_SGNode* sg = sglist; sg != nullptr; sg = sg->next) {
     entry.pointer = sg->d_pointer;
     entry.length = sg->length;
     m_sglist.push_back(entry);

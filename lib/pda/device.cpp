@@ -27,7 +27,7 @@ device::device(device_operator* device_operator, int32_t device_index)
 
 device::device(uint8_t bus, uint8_t device, uint8_t function)
     : m_parent_dop(nullptr) {
-  if ((m_device = PciDevice_new(0, bus, device, function)) == NULL) {
+  if ((m_device = PciDevice_new(0, bus, device, function)) == nullptr) {
     throw PdaException("Device object creation from BDF failed.");
   }
 }

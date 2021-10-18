@@ -20,12 +20,12 @@ namespace pda {
 const char* device_operator::m_pci_ids[] = {
     "10dc beaf", /* FLES FLIB */
     "10ee f1e5", /* FLES CRI */
-    NULL         /* Delimiter*/
+    nullptr      /* Delimiter*/
 };
 
 device_operator::device_operator() {
   if ((m_dop = DeviceOperator_new(m_pci_ids, PDA_DONT_ENUMERATE_DEVICES)) ==
-      NULL) {
+      nullptr) {
     throw PdaException(
         "Device operator instantiation failed. Is the kernel module loaded?");
   }

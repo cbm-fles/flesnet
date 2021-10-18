@@ -82,11 +82,11 @@ private:
   void connect();
   void deallocate();
 
-  DMABuffer* m_buffer = NULL;
-  PciDevice* m_device = NULL;
+  DMABuffer* m_buffer = nullptr;
+  PciDevice* m_device = nullptr;
   uint64_t m_id = 0;
 
-  void* m_mem = NULL;
+  void* m_mem = nullptr;
   size_t m_size = 0;
   std::vector<sg_entry> m_sglist;
 };

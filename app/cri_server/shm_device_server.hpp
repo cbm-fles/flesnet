@@ -133,7 +133,7 @@ private:
   std::string m_shm_identifier;
   volatile std::sig_atomic_t* m_signal_status;
   std::unique_ptr<ip::managed_shared_memory> m_shm;
-  shm_device* m_shm_dev = NULL;
+  shm_device* m_shm_dev = nullptr;
   std::vector<std::unique_ptr<shm_channel_server_type>> m_shm_ch_vec;
 
   bool m_run = false;
