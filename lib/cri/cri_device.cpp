@@ -147,15 +147,10 @@ struct build_info_t cri_device::build_info() {
 std::string cri_device::print_build_info() {
   build_info_t build = build_info();
 
-  // TODO: hack to overcome gcc limitation, for c++11 use:
-  // std::put_time(std::localtime(&build.date), "%c %Z")
-  char mbstr[100];
-  std::strftime(mbstr, sizeof(mbstr), "%c %Z UTC%z",
-                std::localtime(&build.date));
-
   std::stringstream ss;
   ss << "CRI Build Info:" << std::endl
-     << "Build Date:     " << mbstr << std::endl
+     << "Build Date:     "
+     << std::put_time(std::localtime(&build.date), "%c %Z UTC%z") << std::endl
      << "Build Source:   " << build.user << "@" << build.host << std::endl;
   switch (build.repo) {
   case 1:
