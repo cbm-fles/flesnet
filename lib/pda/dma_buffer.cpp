@@ -94,7 +94,7 @@ void dma_buffer::connect() {
   if (DMABuffer_getSGList(m_buffer, &sglist) != PDA_SUCCESS) {
     throw PdaException("DMA_BUFFER_FAULT_SGLIST");
   }
-  sg_entry entry;
+  sg_entry entry{};
   for (DMABuffer_SGNode* sg = sglist; sg != nullptr; sg = sg->next) {
     entry.pointer = sg->d_pointer;
     entry.length = sg->length;
