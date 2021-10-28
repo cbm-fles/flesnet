@@ -47,7 +47,7 @@ public:
   void set_testreg_data(uint32_t data);
   uint32_t get_testreg_data();
 
-  typedef enum { rx_disable = 0x0, rx_user = 0x1, rx_pgen = 0x2 } data_source_t;
+  using data_source_t = enum { rx_disable = 0x0, rx_user = 0x1, rx_pgen = 0x2 };
 
   void set_data_source(data_source_t src);
   data_source_t data_source();
@@ -62,7 +62,7 @@ public:
   void reset_pgen_mc_pending();
   uint32_t get_pgen_mc_pending();
 
-  typedef struct {
+  using ch_perf_t = struct {
     uint64_t cycles;
     uint64_t dma_trans;
     uint64_t dma_stall;
@@ -70,7 +70,7 @@ public:
     uint64_t data_buf_stall;
     uint64_t desc_buf_stall;
     uint64_t microslice_cnt;
-  } ch_perf_t;
+  };
 
   ch_perf_t get_perf();
 
@@ -84,12 +84,12 @@ public:
   uint32_t get_microslice_cnt();
   float get_microslice_rate();
 
-  typedef struct {
+  using ch_perf_gtx_t = struct {
     uint64_t cycles;
     uint64_t mc_trans;
     uint64_t mc_stall;
     uint64_t mc_busy;
-  } ch_perf_gtx_t;
+  };
 
   ch_perf_gtx_t get_perf_gtx();
 

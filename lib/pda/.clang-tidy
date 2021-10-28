@@ -1,3 +1,3 @@
 ---
-Checks: -modernize-use-auto,-cppcoreguidelines-pro-type-member-init
+Checks: -modernize-use-auto,-modernize-use-nodiscard,-cppcoreguidelines-pro-type-member-init
 InheritParentConfig: true

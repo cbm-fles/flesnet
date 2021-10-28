@@ -65,19 +65,19 @@ public:
 private:
   enum sg_bram_t { data_sg_bram = 0, desc_sg_bram = 1 };
 
-  typedef struct __attribute__((__packed__)) {
+  using sg_entry_hw_t = struct __attribute__((__packed__)) {
     uint32_t addr_low;
     uint32_t addr_high;
     uint32_t length;
-  } sg_entry_hw_t;
+  };
 
-  typedef struct __attribute__((__packed__)) {
+  using sw_read_pointers_t = struct __attribute__((__packed__)) {
     uint32_t data_low;
     uint32_t data_high;
     uint32_t desc_low;
     uint32_t desc_high;
     uint32_t dma_ctrl;
-  } sw_read_pointers_t;
+  };
 
   void configure();
 

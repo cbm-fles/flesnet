@@ -21,6 +21,6 @@ Checks: -*,
   -modernize-use-trailing-return-type,
   -modernize-use-transparent-functors
 
-HeaderFilterRegex: '(lib/(fles_[^/]+|logging|pda|shm_ipc)/.*\.hpp)|(app/[^/]+/[^/]+.hpp)'
+HeaderFilterRegex: '(lib/(fles_[^/]+|logging|pda|cri|shm_ipc)/.*\.hpp)|(app/[^/]+/[^/]+.hpp)'
 
 FormatStyle: file
