@@ -94,14 +94,17 @@ if(USE_DOXYGEN AND NOT DOXYGEN_FOUND)
 	message(STATUS "Binary not found: Doxygen. Not building documentation.")
 endif()
 
-find_program(CLANG_TIDY
-  NAMES "clang-tidy-12" "clang-tidy-11" "clang-tidy"
-  DOC "Path to clang-tidy executable"
-)
-if(NOT CLANG_TIDY)
-  message(STATUS "clang-tidy not found.")
-else()
-  message(STATUS "clang-tidy found: ${CLANG_TIDY}")
+set(USE_CLANG_TIDY FALSE CACHE BOOL "Run clang-tidy during build.")
+if(USE_CLANG_TIDY)
+  find_program(CLANG_TIDY
+    NAMES "clang-tidy-12" "clang-tidy-11" "clang-tidy"
+    DOC "Path to clang-tidy executable"
+  )
+  if(NOT CLANG_TIDY)
+    message(STATUS "Binary not found: clang-tidy. Skipping checks.")
+  else()
+    message(STATUS "Found clang-tidy: ${CLANG_TIDY}")
+  endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
