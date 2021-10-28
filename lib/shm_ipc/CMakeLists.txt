@@ -18,16 +18,7 @@ target_include_directories(shm_ipc
   PUBLIC .
 )
 
-target_include_directories(shm_ipc SYSTEM
-  PUBLIC ${ZMQ_INCLUDE_DIRS}
-  PUBLIC ${PROJECT_SOURCE_DIR}/external/cppzmq
-)
-
-target_compile_options(shm_ipc
-  PUBLIC ${ZMQ_CFLAGS_OTHER}
-)
-
 target_link_libraries(shm_ipc
   PUBLIC logging
-  PUBLIC ${ZMQ_LIBRARIES}
+  PUBLIC cppzmq-static
 )

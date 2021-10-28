@@ -1,4 +1,4 @@
-# Copyright 2013-2020 Jan de Cuveland <cmail@cuveland.de>
+# Copyright 2013-2021 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 3.14)
 project(flesnet DESCRIPTION "CBM FLES Timeslice Building")
@@ -19,39 +19,71 @@ git_describe(GIT_REVISION "--all" "--tags" "--long" "--always")
 configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
                "${CMAKE_BINARY_DIR}/config/GitRevision.cpp" @ONLY)
 
-set(FETCH_ZMQ FALSE CACHE BOOL "Fetch and build ZeroMQ library.")
-if(FETCH_ZMQ)
-  message(STATUS "Fetching and building ZeroMQ library.")
-  include(FetchContent)
-  FetchContent_Declare(
-    ZeroMQ
-    GIT_REPOSITORY "https://github.com/zeromq/libzmq.git"
-    GIT_TAG "4097855ddaaa65ed7b5e8cb86d143842a594eebd"
-  )
-  if(NOT DEFINED CMAKE_SUPPRESS_DEVELOPER_WARNINGS)
-    set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "No dev warnings")
-  endif()
-  set(ZMQ_BUILD_DRAFT_API 1)
-  set(ZMQ_LIBRARIES zmq)
-  FetchContent_MakeAvailable(ZeroMQ)
-endif()
-
 if(DEFINED ENV{SIMPATH})
   message(WARNING "SIMPATH set, using Fairroot external packages in build.")
+  set(SIMPATH $ENV{SIMPATH})
   set(Boost_NO_SYSTEM_PATHS TRUE)
   set(BOOST_ROOT $ENV{SIMPATH})
-  set(SIMPATH $ENV{SIMPATH})
-  find_package(ExternalZMQ REQUIRED)
-else()
-  if(NOT FETCH_ZMQ)
-    find_library(ZMQ_LIBRARIES zmq)
-  endif()
 endif()
 
-find_package(PkgConfig)
-if(NOT FETCH_ZMQ)
-  pkg_check_modules(ZMQ REQUIRED libzmq)
+set(INCLUDE_ZMQ TRUE CACHE BOOL "Download, build and statically link ZeroMQ library.")
+if(INCLUDE_ZMQ)
+  message(STATUS "Downloading and building static ZeroMQ library.")
+  include(ExternalProject)
+  set_directory_properties(PROPERTIES EP_UPDATE_DISCONNECTED true)
+  set_directory_properties(PROPERTIES EP_PREFIX ${PROJECT_BINARY_DIR})
+  ExternalProject_Add(
+    zeromq
+    GIT_REPOSITORY "https://github.com/zeromq/libzmq.git"
+    GIT_TAG "4097855ddaaa65ed7b5e8cb86d143842a594eebd" # v4.3.4
+    GIT_CONFIG advice.detachedHead=false
+    CMAKE_CACHE_ARGS -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE
+    BUILD_COMMAND $(MAKE) libzmq-static
+    INSTALL_COMMAND ""
+  )
+  ExternalProject_Add(
+    cppzmq
+    GIT_REPOSITORY "https://github.com/zeromq/cppzmq.git"
+    GIT_TAG "dd663fafd830466d34cba278c2cfd0f92eb67614" # v4.8.1
+    GIT_CONFIG advice.detachedHead=false
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+  )
+
+  # CMake hack: pre-create empty directory to make INTERFACE_INCLUDE_DIRECTORIES work
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/zeromq/include)
+
+  add_library(libzmq-static STATIC IMPORTED GLOBAL)
+  add_dependencies(libzmq-static zeromq)
+  target_link_libraries(libzmq-static
+    INTERFACE gnutls
+    INTERFACE bsd
+    INTERFACE sodium
+  )
+  set_target_properties(libzmq-static PROPERTIES
+    IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/src/zeromq-build/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zmq${CMAKE_STATIC_LIBRARY_SUFFIX}
+    INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/src/zeromq/include
+    INTERFACE_COMPILE_DEFINITIONS ZMQ_BUILD_DRAFT_API=1
+  )
+
+  add_library(cppzmq-static INTERFACE IMPORTED GLOBAL)
+  add_dependencies(cppzmq-static cppzmq)
+  set_target_properties(cppzmq-static PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/src/cppzmq
+    INTERFACE_LINK_LIBRARIES libzmq-static
+  )
+elseif(DEFINED SIMPATH)
+  find_package(ExternalZMQ REQUIRED)
+  add_library(cppzmq-static INTERFACE IMPORTED GLOBAL)
+  # ...
+else()
+  find_package(PkgConfig)
+  #find_library(ZMQ_LIBRARIES zmq)
+  pkg_search_module(ZMQ REQUIRED libzmq)
+  # ...
 endif()
+
 if(APPLE)
   find_package(cppzmq REQUIRED)
   set(ZMQ_INCLUDE_DIRS ${PC_LIBZMQ_INCLUDE_DIRS} /usr/local/include)
