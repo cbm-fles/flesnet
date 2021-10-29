@@ -16,10 +16,10 @@ using DMABuffer_SGNode = struct DMABuffer_SGNode_struct;
 
 namespace pda {
 
-typedef struct {
+struct sg_entry {
   void* pointer;
   size_t length;
-} sg_entry_t;
+};
 
 class device;
 
@@ -72,7 +72,7 @@ public:
    * return SG list
    * @return verctor of scatter gather list entries
    **/
-  std::vector<sg_entry_t> sg_list() { return m_sglist; }
+  std::vector<sg_entry> sg_list() { return m_sglist; }
 
   size_t num_sg_entries() { return m_sglist.size(); };
 
@@ -82,12 +82,12 @@ private:
   void connect();
   void deallocate();
 
-  DMABuffer* m_buffer = NULL;
-  PciDevice* m_device = NULL;
+  DMABuffer* m_buffer = nullptr;
+  PciDevice* m_device = nullptr;
   uint64_t m_id = 0;
 
-  void* m_mem = NULL;
+  void* m_mem = nullptr;
   size_t m_size = 0;
-  std::vector<sg_entry_t> m_sglist;
+  std::vector<sg_entry> m_sglist;
 };
 } // namespace pda

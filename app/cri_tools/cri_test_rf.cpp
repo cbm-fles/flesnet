@@ -28,13 +28,13 @@ static void s_signal_handler(int signal_value) {
 }
 
 static void s_catch_signals() {
-  struct sigaction action;
+  struct sigaction action {};
   action.sa_handler = s_signal_handler;
   action.sa_flags = 0;
   sigemptyset(&action.sa_mask);
-  sigaction(SIGABRT, &action, NULL);
-  sigaction(SIGTERM, &action, NULL);
-  sigaction(SIGINT, &action, NULL);
+  sigaction(SIGABRT, &action, nullptr);
+  sigaction(SIGTERM, &action, nullptr);
+  sigaction(SIGINT, &action, nullptr);
 }
 
 int main() {

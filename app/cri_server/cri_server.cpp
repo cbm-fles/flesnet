@@ -6,6 +6,7 @@
 #include "shm_device_server.hpp"
 #include <boost/algorithm/string.hpp>
 #include <csignal>
+#include <memory>
 
 namespace {
 volatile std::sig_atomic_t signal_status = 0;
@@ -37,10 +38,10 @@ int main(int argc, char* argv[]) {
 
     std::unique_ptr<cri::cri_device> cri;
     if (par.dev_autodetect()) {
-      cri = std::unique_ptr<cri::cri_device>(new cri::cri_device(0));
+      cri = std::make_unique<cri::cri_device>(0);
     } else {
-      cri = std::unique_ptr<cri::cri_device>(new cri::cri_device(
-          par.dev_addr().bus, par.dev_addr().dev, par.dev_addr().func));
+      cri = std::make_unique<cri::cri_device>(
+          par.dev_addr().bus, par.dev_addr().dev, par.dev_addr().func);
     }
     L_(info) << "using CRI: " << cri->print_devinfo();
 

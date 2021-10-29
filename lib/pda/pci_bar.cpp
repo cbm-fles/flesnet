@@ -24,7 +24,7 @@ pci_bar::pci_bar(device* dev, uint8_t number) {
 
 void pci_bar::barMap(uint8_t number) {
 
-  m_pda_bar = NULL;
+  m_pda_bar = nullptr;
 
   if (PciDevice_getBar(m_pda_pci_device, &m_pda_bar, number) != PDA_SUCCESS) {
     throw PdaException("Bar fetching failed!");

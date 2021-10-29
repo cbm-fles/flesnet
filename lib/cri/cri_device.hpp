@@ -70,13 +70,13 @@ public:
 
   void id_led(bool enable);
 
-  typedef struct {
+  using dev_perf_t = struct {
     uint64_t cycles;
     uint64_t pci_trans;
     uint64_t pci_stall;
     uint64_t pci_busy;
     uint64_t pci_max_stall;
-  } dev_perf_t;
+  };
 
   dev_perf_t get_perf();
 

@@ -7,6 +7,7 @@
 #include "cri.hpp"
 #include "device_operator.hpp"
 #include <iostream>
+#include <memory>
 
 using namespace cri;
 
@@ -25,7 +26,7 @@ int main() {
     for (size_t i = 0; i < num_dev; ++i) {
       std::cout << "*** CRI " << i << " ***" << std::endl;
       try {
-        cris.push_back(std::unique_ptr<cri_device>(new cri_device(i)));
+        cris.push_back(std::make_unique<cri_device>(i));
         std::cout << "Address: " << cris.back()->print_devinfo() << std::endl;
         std::cout << "Hardware channels: "
                   << static_cast<unsigned>(cris.back()->number_of_hw_channels())

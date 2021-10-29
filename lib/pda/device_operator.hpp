@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <cstdio>
 
@@ -23,7 +24,7 @@ public:
   DeviceOperator* PDADeviceOperator() { return (m_dop); }
 
 private:
-  static const char* m_pci_ids[];
+  static std::array<const char*, 3> m_pci_ids;
   DeviceOperator* m_dop;
 };
 } // namespace pda

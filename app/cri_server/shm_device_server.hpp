@@ -52,9 +52,8 @@ public:
                        2 * sysconf(_SC_PAGESIZE) + sizeof(shm_channel)) *
                           cri_channels.size() +
                       sizeof(shm_device) + 1000;
-    m_shm = std::unique_ptr<ip::managed_shared_memory>(
-        new ip::managed_shared_memory(ip::create_only, m_shm_identifier.c_str(),
-                                      shm_size));
+    m_shm = std::make_unique<ip::managed_shared_memory>(
+        ip::create_only, m_shm_identifier.c_str(), shm_size);
 
     // constuct device exchange object in sharde memory
     std::string device_name = "shm_device";
@@ -63,10 +62,9 @@ public:
     // create channels for active cri channels
     size_t idx = 0;
     for (cri::cri_channel* channel : cri_channels) {
-      m_shm_ch_vec.push_back(std::unique_ptr<shm_channel_server_type>(
-          new shm_channel_server_type(m_shm.get(), m_shm_dev, idx, channel,
-                                      data_buffer_size_exp,
-                                      desc_buffer_size_exp)));
+      m_shm_ch_vec.push_back(std::make_unique<shm_channel_server_type>(
+          m_shm.get(), m_shm_dev, idx, channel, data_buffer_size_exp,
+          desc_buffer_size_exp));
       ++idx;
       m_shm_dev->inc_num_channels();
     }
@@ -133,7 +131,7 @@ private:
   std::string m_shm_identifier;
   volatile std::sig_atomic_t* m_signal_status;
   std::unique_ptr<ip::managed_shared_memory> m_shm;
-  shm_device* m_shm_dev = NULL;
+  shm_device* m_shm_dev = nullptr;
   std::vector<std::unique_ptr<shm_channel_server_type>> m_shm_ch_vec;
 
   bool m_run = false;
