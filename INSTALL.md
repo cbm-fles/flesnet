@@ -54,6 +54,19 @@ archives the reader's Boost version must not be smaller than the Boost
 version used for recording.
 
 
+### Optional: Include ZeroMQ library in the build flow
+
+If you would like to include downloading and building the ZeroMQ library
+in the CMake build flow, you can leave out the ZeroMQ-related commands above.
+Instead, when building flesnet, add the following to your cmake statement:
+
+    -DINCLUDE_ZMQ:BOOL=TRUE
+
+Additional build dependencies in this case:
+
+    sudo apt-get install -yq libgnutls28-dev libbsd-dev libsodium-dev
+
+
 ### Optional: Fairroot external packages
 
 ZMQ and Boost can alternatively be used from a Fairsoft external packages
