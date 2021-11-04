@@ -26,12 +26,15 @@ if(DEFINED ENV{SIMPATH})
   set(BOOST_ROOT $ENV{SIMPATH})
 endif()
 
-set(INCLUDE_ZMQ TRUE CACHE BOOL "Download, build and statically link ZeroMQ library.")
+set(INCLUDE_ZMQ FALSE CACHE BOOL "Download, build and statically link ZeroMQ library.")
+
+include(ExternalProject)
+set_directory_properties(PROPERTIES EP_UPDATE_DISCONNECTED true)
+set_directory_properties(PROPERTIES EP_PREFIX ${PROJECT_BINARY_DIR})
+
+# find or fetch ZeroMQ
 if(INCLUDE_ZMQ)
   message(STATUS "Downloading and building static ZeroMQ library.")
-  include(ExternalProject)
-  set_directory_properties(PROPERTIES EP_UPDATE_DISCONNECTED true)
-  set_directory_properties(PROPERTIES EP_PREFIX ${PROJECT_BINARY_DIR})
   ExternalProject_Add(
     zeromq
     GIT_REPOSITORY "https://github.com/zeromq/libzmq.git"
@@ -42,17 +45,8 @@ if(INCLUDE_ZMQ)
     BUILD_BYPRODUCTS src/zeromq-build/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zmq${CMAKE_STATIC_LIBRARY_SUFFIX}
     INSTALL_COMMAND ""
   )
-  ExternalProject_Add(
-    cppzmq
-    GIT_REPOSITORY "https://github.com/zeromq/cppzmq.git"
-    GIT_TAG "dd663fafd830466d34cba278c2cfd0f92eb67614" # v4.8.1
-    GIT_CONFIG advice.detachedHead=false
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-  )
 
-  # CMake hack: pre-create empty directory to make INTERFACE_INCLUDE_DIRECTORIES work
+  # pre-create empty directory to make INTERFACE_INCLUDE_DIRECTORIES happy
   file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/zeromq/include)
 
   add_library(zmq::libzmq STATIC IMPORTED GLOBAL)
@@ -67,6 +61,43 @@ if(INCLUDE_ZMQ)
     INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/src/zeromq/include
     INTERFACE_COMPILE_DEFINITIONS ZMQ_BUILD_DRAFT_API=1
   )
+elseif(DEFINED SIMPATH)
+  find_package(ExternalZMQ REQUIRED)
+  add_library(zmq::libzmq IMPORTED GLOBAL)
+  set_target_properties(zmq::libzmq PROPERTIES
+    IMPORTED_LOCATION ${ZMQ_LIBRARY_SHARED}
+    INTERFACE_INCLUDE_DIRECTORIES ${ZMQ_INCLUDE_DIRS}
+    INTERFACE_COMPILE_DEFINITIONS ZMQ_BUILD_DRAFT_API=1
+  )
+elseif(APPLE)
+  find_package(cppzmq REQUIRED)
+  set(ZMQ_INCLUDE_DIRS ${PC_LIBZMQ_INCLUDE_DIRS} /usr/local/include)
+  add_library(zmq::libzmq IMPORTED GLOBAL)
+  set_target_properties(zmq::libzmq PROPERTIES
+    IMPORTED_LOCATION ${ZeroMQ_LIBRARY}
+    INTERFACE_INCLUDE_DIRECTORIES ${ZMQ_INCLUDE_DIRS}
+    INTERFACE_COMPILE_DEFINITIONS ZMQ_BUILD_DRAFT_API=1
+  )
+else()
+  find_package(PkgConfig)
+  pkg_search_module(zeromq REQUIRED IMPORTED_TARGET GLOBAL libzmq)
+  add_library(zmq::libzmq ALIAS PkgConfig::zeromq)
+endif()
+
+# find or fetch CppZmq
+find_file(CPPZMQ zmq.hpp)
+find_file(CPPZMQ_ADDON zmq_addon.hpp)
+if(INCLUDE_ZMQ OR CPPZMQ STREQUAL "CPPZMQ-NOTFOUND" OR CPPZMQ_ADDON STREQUAL "CPPZMQ_ADDON-NOTFOUND")
+  message(STATUS "Downloading CppZmq header-only library.")
+  ExternalProject_Add(
+    cppzmq
+    GIT_REPOSITORY "https://github.com/zeromq/cppzmq.git"
+    GIT_TAG "dd663fafd830466d34cba278c2cfd0f92eb67614" # v4.8.1
+    GIT_CONFIG advice.detachedHead=false
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+  )
 
   add_library(zmq::cppzmq INTERFACE IMPORTED GLOBAL)
   add_dependencies(zmq::cppzmq cppzmq)
@@ -74,50 +105,13 @@ if(INCLUDE_ZMQ)
     INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/src/cppzmq
     INTERFACE_LINK_LIBRARIES zmq::libzmq
   )
-elseif(DEFINED SIMPATH)
-  find_package(ExternalZMQ REQUIRED)
-  add_library(zmq::cppzmq INTERFACE IMPORTED GLOBAL)
-  # ...
 else()
-  find_package(PkgConfig)
-  pkg_search_module(zeromq REQUIRED IMPORTED_TARGET GLOBAL libzmq)
-  add_library(zmq::libzmq ALIAS PkgConfig::zeromq)
-
-  # determine if cppzmq is included in libzmq
-  find_file(CPPZMQ zmq.hpp)
-  find_file(CPPZMQ_ADDON zmq_addon.hpp)
-  if(CPPZMQ STREQUAL "CPPZMQ-NOTFOUND" OR CPPZMQ_ADDON STREQUAL "CPPZMQ_ADDON-NOTFOUND")
-    message(STATUS "Downloading cppzmq header-only library.")
-    include(ExternalProject)
-    set_directory_properties(PROPERTIES EP_UPDATE_DISCONNECTED true)
-    set_directory_properties(PROPERTIES EP_PREFIX ${PROJECT_BINARY_DIR})
-    ExternalProject_Add(
-      cppzmq
-      GIT_REPOSITORY "https://github.com/zeromq/cppzmq.git"
-      GIT_TAG "dd663fafd830466d34cba278c2cfd0f92eb67614" # v4.8.1
-      GIT_CONFIG advice.detachedHead=false
-      CONFIGURE_COMMAND ""
-      BUILD_COMMAND ""
-      INSTALL_COMMAND ""
-    )
-    add_library(zmq::cppzmq INTERFACE IMPORTED GLOBAL)
-    add_dependencies(zmq::cppzmq cppzmq)
-    set_target_properties(zmq::cppzmq PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/src/cppzmq
-      INTERFACE_LINK_LIBRARIES zmq::libzmq
-    )
-  else()
-    add_library(zmq::cppzmq ALIAS PkgConfig::zeromq)
-  endif()
+  add_library(zmq::cppzmq ALIAS PkgConfig::zeromq)
 endif()
 
 if(APPLE)
-  find_package(cppzmq REQUIRED)
-  set(ZMQ_INCLUDE_DIRS ${PC_LIBZMQ_INCLUDE_DIRS} /usr/local/include)
-  set(ZMQ_LIBRARIES ${ZeroMQ_LIBRARY})
   set(Boost_USE_MULTITHREADED TRUE)
 endif()
-
 find_package(Boost 1.65.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework regex iostreams)
 find_package(Threads REQUIRED)
 
