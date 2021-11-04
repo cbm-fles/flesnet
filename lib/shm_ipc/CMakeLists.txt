@@ -20,5 +20,5 @@ target_include_directories(shm_ipc
 
 target_link_libraries(shm_ipc
   PUBLIC logging
-  PUBLIC cppzmq-static
+  PUBLIC zmq::cppzmq
 )

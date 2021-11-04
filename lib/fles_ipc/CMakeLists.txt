@@ -16,6 +16,6 @@ target_include_directories(fles_ipc SYSTEM
 
 target_link_libraries(fles_ipc
   PUBLIC shm_ipc
-  PUBLIC cppzmq-static
+  PUBLIC zmq::cppzmq
   PUBLIC logging
 )

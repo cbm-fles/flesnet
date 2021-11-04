@@ -11,5 +11,5 @@ target_link_libraries(fles_zeromq
   PUBLIC fles_ipc
   PUBLIC fles_core
   PUBLIC logging
-  PUBLIC cppzmq-static
+  PUBLIC zmq::cppzmq
 )

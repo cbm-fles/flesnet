@@ -68,15 +68,15 @@ if(INCLUDE_ZMQ)
     INTERFACE_COMPILE_DEFINITIONS ZMQ_BUILD_DRAFT_API=1
   )
 
-  add_library(cppzmq-static INTERFACE IMPORTED GLOBAL)
-  add_dependencies(cppzmq-static cppzmq)
-  set_target_properties(cppzmq-static PROPERTIES
+  add_library(zmq::cppzmq INTERFACE IMPORTED GLOBAL)
+  add_dependencies(zmq::cppzmq cppzmq)
+  set_target_properties(zmq::cppzmq PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/src/cppzmq
     INTERFACE_LINK_LIBRARIES libzmq-static
   )
 elseif(DEFINED SIMPATH)
   find_package(ExternalZMQ REQUIRED)
-  add_library(cppzmq-static INTERFACE IMPORTED GLOBAL)
+  add_library(zmq::cppzmq INTERFACE IMPORTED GLOBAL)
   # ...
 else()
   find_package(PkgConfig)
