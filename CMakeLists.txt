@@ -38,7 +38,8 @@ if(INCLUDE_ZMQ)
     GIT_TAG "4097855ddaaa65ed7b5e8cb86d143842a594eebd" # v4.3.4
     GIT_CONFIG advice.detachedHead=false
     CMAKE_CACHE_ARGS -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE
-    BUILD_COMMAND $(MAKE) libzmq-static
+    BUILD_COMMAND cmake --build . --target libzmq-static
+    BUILD_BYPRODUCTS src/zeromq-build/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zmq${CMAKE_STATIC_LIBRARY_SUFFIX}
     INSTALL_COMMAND ""
   )
   ExternalProject_Add(
