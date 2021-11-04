@@ -12,12 +12,10 @@ target_include_directories(fles_ipc PUBLIC .)
 
 target_include_directories(fles_ipc SYSTEM
   PUBLIC ${Boost_INCLUDE_DIRS}
-  PUBLIC ${ZMQ_INCLUDE_DIRS}
-  PUBLIC ${PROJECT_SOURCE_DIR}/external/cppzmq
 )
 
 target_link_libraries(fles_ipc
   PUBLIC shm_ipc
-  PUBLIC ${ZMQ_LIBRARIES}
+  PUBLIC zmq::cppzmq
   PUBLIC logging
 )
