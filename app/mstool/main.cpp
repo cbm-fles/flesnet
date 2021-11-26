@@ -33,5 +33,6 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
+  L_(info) << "exiting";
   return EXIT_SUCCESS;
 }
