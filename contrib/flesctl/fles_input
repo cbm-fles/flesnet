@@ -24,6 +24,9 @@ fi
 source "$1"
 hostconfig "$2"
 
+# default values
+: ${PHYSICS_RUN:=true}
+
 ###############################################################
 # start procecces
 declare -a SERVER_PID
@@ -90,6 +93,7 @@ done
 echo "Starting cri_server ..." | tee -a ${LOGDIR}fles_input.log
 for cri in ${!ADDR[*]}; do
     ${FLESNETDIR}cri_server -c /dev/null -L ${LOGDIR}cri${cri}_server.log --log-syslog -i ${ADDR[$cri]} \
+                        --archivable-data=${PHYSICS_RUN} \
                         --data-buffer-size-exp $BUF_SIZE_EXP -o $SHM_PREFIX$cri -e "${SPMDIR}spm-provide cri_server_sem" &
     SERVER_PID+=($!)
 done
