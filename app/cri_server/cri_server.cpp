@@ -44,6 +44,13 @@ int main(int argc, char* argv[]) {
           par.dev_addr().bus, par.dev_addr().dev, par.dev_addr().func);
     }
     L_(info) << "using CRI: " << cri->print_devinfo();
+    if (par.archivable_data()) {
+      L_(info) << "enforcing archivable data";
+      if (!cri->check_build()) {
+        L_(error) << "unsupported CRI hardware build";
+        return EXIT_FAILURE;
+      }
+    }
 
     // create server
     cri_shm_device_server server(cri.get(), par.shm(),

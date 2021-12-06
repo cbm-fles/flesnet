@@ -59,6 +59,7 @@ public:
   std::chrono::seconds uptime();
   std::string print_uptime();
   std::string print_version_warning();
+  bool check_build();
 
   void set_testreg(uint32_t data);
   uint32_t get_testreg();

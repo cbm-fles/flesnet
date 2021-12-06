@@ -72,6 +72,7 @@ public:
   size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
   size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
   std::string exec() const { return _exec; }
+  bool archivable_data() const { return _archivable_data; }
 
   std::string print_buffer_info() {
     std::stringstream ss;
@@ -125,6 +126,11 @@ private:
                "enable logging to syslog at given log level");
     config_add("exec,e", po::value<std::string>(&_exec)->value_name("<string>"),
                "name of an executable to run after startup");
+    config_add("archivable-data",
+               po::value<bool>(&_archivable_data)
+                   ->value_name("<bool>")
+                   ->default_value(false),
+               "enforce traceable CRI hardware");
 
     po::options_description cmdline_options("Allowed options");
     cmdline_options.add(generic).add(config);
@@ -186,4 +192,5 @@ private:
   size_t _data_buffer_size_exp;
   size_t _desc_buffer_size_exp;
   std::string _exec;
+  bool _archivable_data;
 };

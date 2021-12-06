@@ -219,6 +219,11 @@ std::string cri_device::print_version_warning() {
   return ss.str();
 }
 
+bool cri_device::check_build() {
+  // check if latest hardware version and clean build
+  return (m_hardware_version == hw_ver_table.back()) && build_info().clean;
+}
+
 size_t cri_device::number_of_channels() { return m_channel.size(); }
 
 std::vector<cri_channel*> cri_device::channels() {
