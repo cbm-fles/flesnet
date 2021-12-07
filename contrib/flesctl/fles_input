@@ -25,7 +25,7 @@ source "$1"
 hostconfig "$2"
 
 # default values
-: ${PHYSICS_RUN:=true}
+: ${ALLOW_UNSUPPORTED_CRI_DESIGNS:=false}
 
 ###############################################################
 # start procecces
@@ -90,10 +90,13 @@ for i in ${!ADDR[*]}; do
                      --c7_source ${LINK[7+$i*8]} --c7_eq_id ${BASE_EQID[$i]}7
 done
 
+ARCH_DATA=true
+if [ "$ALLOW_UNSUPPORTED_CRI_DESIGNS" = true ]; then ARCH_DATA=false; fi;
+
 echo "Starting cri_server ..." | tee -a ${LOGDIR}fles_input.log
 for cri in ${!ADDR[*]}; do
     ${FLESNETDIR}cri_server -c /dev/null -L ${LOGDIR}cri${cri}_server.log --log-syslog -i ${ADDR[$cri]} \
-                        --archivable-data=${PHYSICS_RUN} \
+                        --archivable-data=${ARCH_DATA} \
                         --data-buffer-size-exp $BUF_SIZE_EXP -o $SHM_PREFIX$cri -e "${SPMDIR}spm-provide cri_server_sem" &
     SERVER_PID+=($!)
 done
