@@ -76,5 +76,5 @@ struct UriComponents {
   std::string fragment;
   std::map<std::string, std::string> query_components;
 
-  UriComponents(std::string uri);
+  UriComponents(const std::string& uri);
 };

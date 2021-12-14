@@ -8,6 +8,7 @@
 #include "Utility.hpp"
 
 #include <memory>
+#include <string>
 
 namespace fles {
 
@@ -25,16 +26,10 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
   std::vector<std::unique_ptr<fles::TimesliceSource>> sources;
 
   for (const auto& locator : locators) {
-    // Check if locator has URI pattern
-    std::string protocol;
-    std::string host_path = locator;
-    auto separator = locator.find("://", 0);
-    if (separator != std::string::npos) {
-      protocol = locator.substr(0, separator);
-      host_path = locator.substr(separator + 3);
-    }
+    // If locator has no full URI pattern, everything is in "uri.path"
+    UriComponents uri{locator};
 
-    if (protocol == "file" || protocol.empty()) {
+    if (uri.scheme == "file" || uri.scheme.empty()) {
       // Find pathnames matching a pattern.
       //
       // The sequence number placeholder "%n" is expanded to the first valid
@@ -42,8 +37,8 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
       // will not work if the pathname contains both the placeholder and the
       // string "0000". Nonexistant files are catched already at this stage by
       // glob() throwing a runtime_error.
-      auto paths = system::glob(replace_all_copy(host_path, "%n", "0000"));
-      if (host_path.find("%n") != std::string::npos) {
+      auto paths = system::glob(replace_all_copy(uri.path, "%n", "0000"));
+      if (uri.path.find("%n") != std::string::npos) {
         for (auto& path : paths) {
           replace_all(path, "0000", "%n");
           std::unique_ptr<fles::TimesliceSource> source =
@@ -61,12 +56,23 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
           sources.emplace_back(std::move(source));
         }
       }
-    } else if (protocol == "tcp") {
+    } else if (uri.scheme == "tcp") {
+      uint32_t hwm = 1;
+      for (auto& [key, value] : uri.query_components) {
+        if (key == "hwm") {
+          hwm = std::stoi(value);
+        } else {
+          throw std::runtime_error(
+              "query parameter not implemented for scheme " + uri.scheme +
+              ": " + key);
+        }
+      }
+      auto address = uri.scheme + "://" + uri.authority;
       std::unique_ptr<fles::TimesliceSource> source =
-          std::make_unique<fles::TimesliceSubscriber>(locator);
+          std::make_unique<fles::TimesliceSubscriber>(address, hwm);
       sources.emplace_back(std::move(source));
     } else {
-      throw std::runtime_error("protocol not implemented: " + protocol);
+      throw std::runtime_error("scheme not implemented: " + uri.scheme);
     }
   }
 

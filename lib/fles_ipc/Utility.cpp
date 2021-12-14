@@ -101,7 +101,7 @@ std::vector<std::string> split(const std::string& str,
 }
 
 /// Straightforward URI parser class
-UriComponents::UriComponents(std::string uri) {
+UriComponents::UriComponents(const std::string& uri) {
   // Regular expression from RFC 3986 "URI Generic Syntax"
   // (see https://www.rfc-editor.org/rfc/rfc3986#page-50)
   static const std::regex uri_regex{
