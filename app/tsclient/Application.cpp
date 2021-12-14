@@ -2,14 +2,10 @@
 
 #include "Application.hpp"
 #include "TimesliceAnalyzer.hpp"
+#include "TimesliceAutoSource.hpp"
 #include "TimesliceDebugger.hpp"
-#include "TimesliceInputArchive.hpp"
-#include "TimesliceMultiInputArchive.hpp"
-#include "TimesliceMultiSubscriber.hpp"
 #include "TimesliceOutputArchive.hpp"
 #include "TimeslicePublisher.hpp"
-#include "TimesliceReceiver.hpp"
-#include "TimesliceSubscriber.hpp"
 #include "Utility.hpp"
 #include <memory>
 #include <thread>
@@ -19,35 +15,7 @@ Application::Application(Parameters const& par) : par_(par) {
     output_prefix_ = std::to_string(par_.client_index()) + ": ";
   }
 
-  if (!par_.shm_identifier().empty()) {
-    source_ = std::make_unique<fles::TimesliceReceiver>(par_.shm_identifier());
-  } else if (!par_.input_archive().empty()) {
-    if (par_.input_archive_cycles() <= 1) {
-      if (par_.multi_input()) {
-        source_ = std::make_unique<fles::TimesliceMultiInputArchive>(
-            par_.input_archive());
-      } else {
-        if (par_.input_archive().find("%n") != std::string::npos) {
-          source_ = std::make_unique<fles::TimesliceInputArchiveSequence>(
-              par_.input_archive());
-        } else {
-          source_ = std::make_unique<fles::TimesliceInputArchive>(
-              par_.input_archive());
-        }
-      }
-    } else {
-      source_ = std::make_unique<fles::TimesliceInputArchiveLoop>(
-          par_.input_archive(), par_.input_archive_cycles());
-    }
-  } else if (!par_.subscribe_address().empty()) {
-    if (par_.multi_input()) {
-      source_ = std::make_unique<fles::TimesliceMultiSubscriber>(
-          par_.subscribe_address(), par_.subscribe_hwm(), true);
-    } else {
-      source_ = std::make_unique<fles::TimesliceSubscriber>(
-          par_.subscribe_address(), par_.subscribe_hwm());
-    }
-  }
+  source_ = std::make_unique<fles::TimesliceAutoSource>(par_.input_uri());
 
   if (par_.analyze()) {
     if (par_.histograms()) {
@@ -87,10 +55,6 @@ Application::Application(Parameters const& par) : par_(par) {
 
   if (par_.benchmark()) {
     benchmark_ = std::make_unique<Benchmark>();
-  }
-
-  if (!par_.shm_identifier().empty()) {
-    L_(info) << output_prefix_ << "shm_identifier: " << par.shm_identifier();
   }
 
   if (par_.rate_limit() != 0.0) {

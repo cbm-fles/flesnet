@@ -1,23 +1,22 @@
 // Copyright 2021 Jan de Cuveland <cmail@cuveland.de>
 #include "TimesliceAutoSource.hpp"
 
+#include "ItemWorkerProtocol.hpp"
 #include "MergingSource.hpp"
 #include "System.hpp"
 #include "TimesliceInputArchive.hpp"
+#include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
-
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string_regex.hpp>
+#include "Utility.hpp"
 
 #include <memory>
+#include <string>
 
 namespace fles {
 
 TimesliceAutoSource::TimesliceAutoSource(const std::string& locator) {
   // As a first step, treat ";" characters in the locator string as separators
-  std::vector<std::string> locators;
-  boost::split(locators, locator, [](char c) { return c == ';'; });
-  init(locators);
+  init(split(locator, ";"));
 }
 
 TimesliceAutoSource::TimesliceAutoSource(
@@ -29,16 +28,22 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
   std::vector<std::unique_ptr<fles::TimesliceSource>> sources;
 
   for (const auto& locator : locators) {
-    // Check if locator has URI pattern
-    std::string protocol;
-    std::string host_path = locator;
-    auto separator = locator.find("://", 0);
-    if (separator != std::string::npos) {
-      protocol = locator.substr(0, separator);
-      host_path = locator.substr(separator + 3);
-    }
+    // If locator has no full URI pattern, everything is in "uri.path"
+    UriComponents uri{locator};
 
-    if (protocol == "file" || protocol.empty()) {
+    if (uri.scheme == "file" || uri.scheme.empty()) {
+      uint64_t cycles = 1;
+      for (auto& [key, value] : uri.query_components) {
+        if (key == "cycles") {
+          cycles = stoull(value);
+        } else {
+          throw std::runtime_error(
+              "query parameter not implemented for scheme " + uri.scheme +
+              ": " + key);
+        }
+      }
+      const auto file_path = uri.authority + uri.path;
+
       // Find pathnames matching a pattern.
       //
       // The sequence number placeholder "%n" is expanded to the first valid
@@ -46,32 +51,77 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
       // will not work if the pathname contains both the placeholder and the
       // string "0000". Nonexistant files are catched already at this stage by
       // glob() throwing a runtime_error.
-      auto paths =
-          system::glob(boost::replace_all_copy(host_path, "%n", "0000"));
-      if (host_path.find("%n") != std::string::npos) {
+      auto paths = system::glob(replace_all_copy(file_path, "%n", "0000"));
+      if (file_path.find("%n") != std::string::npos) {
         for (auto& path : paths) {
-          boost::replace_all(path, "0000", "%n");
+          replace_all(path, "0000", "%n");
           std::unique_ptr<fles::TimesliceSource> source =
               std::make_unique<fles::TimesliceInputArchiveSequence>(path);
           sources.emplace_back(std::move(source));
         }
       } else {
         if (paths.size() == 1) {
-          std::unique_ptr<fles::TimesliceSource> source =
-              std::make_unique<fles::TimesliceInputArchive>(paths.front());
-          sources.emplace_back(std::move(source));
+          if (cycles == 1) {
+            std::unique_ptr<fles::TimesliceSource> source =
+                std::make_unique<fles::TimesliceInputArchive>(paths.front());
+            sources.emplace_back(std::move(source));
+          } else {
+            std::unique_ptr<fles::TimesliceSource> source =
+                std::make_unique<fles::TimesliceInputArchiveLoop>(paths.front(),
+                                                                  cycles);
+            sources.emplace_back(std::move(source));
+          }
         } else if (paths.size() > 1) {
           std::unique_ptr<fles::TimesliceSource> source =
               std::make_unique<fles::TimesliceInputArchiveSequence>(paths);
           sources.emplace_back(std::move(source));
         }
       }
-    } else if (protocol == "tcp") {
+
+    } else if (uri.scheme == "tcp") {
+      uint32_t hwm = 1;
+      for (auto& [key, value] : uri.query_components) {
+        if (key == "hwm") {
+          hwm = stou(value);
+        } else {
+          throw std::runtime_error(
+              "query parameter not implemented for scheme " + uri.scheme +
+              ": " + key);
+        }
+      }
+      const auto address = uri.scheme + "://" + uri.authority;
       std::unique_ptr<fles::TimesliceSource> source =
-          std::make_unique<fles::TimesliceSubscriber>(locator);
+          std::make_unique<fles::TimesliceSubscriber>(address, hwm);
       sources.emplace_back(std::move(source));
+
+    } else if (uri.scheme == "shm") {
+      WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll,
+                             "TimesliceAutoSource at PID " +
+                                 std::to_string(system::current_pid())};
+      for (auto& [key, value] : uri.query_components) {
+        if (key == "stride") {
+          param.stride = std::stoull(value);
+        } else if (key == "offset") {
+          param.offset = std::stoull(value);
+        } else if (key == "queue") {
+          static const std::map<std::string, WorkerQueuePolicy> queue_map = {
+              {"all", WorkerQueuePolicy::QueueAll},
+              {"one", WorkerQueuePolicy::PrebufferOne},
+              {"skip", WorkerQueuePolicy::Skip}};
+          param.queue_policy = queue_map.at(value);
+        } else {
+          throw std::runtime_error(
+              "query parameter not implemented for scheme " + uri.scheme +
+              ": " + key);
+        }
+      }
+      const auto ipc_identifier = uri.authority + uri.path;
+      std::unique_ptr<fles::TimesliceSource> source =
+          std::make_unique<fles::TimesliceReceiver>(ipc_identifier, param);
+      sources.emplace_back(std::move(source));
+
     } else {
-      throw std::runtime_error("protocol not implemented: " + protocol);
+      throw std::runtime_error("scheme not implemented: " + uri.scheme);
     }
   }
 
