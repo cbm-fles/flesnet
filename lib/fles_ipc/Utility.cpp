@@ -53,7 +53,7 @@ unsigned stou(std::string const& str, size_t* idx, int base) {
 
 /// Replace all instances of the specified pattern in the input string
 // (see: https://stackoverflow.com/a/29752943/1201694)
-[[nodiscard]] std::string replace_all_copy(std::string& str,
+[[nodiscard]] std::string replace_all_copy(const std::string& str,
                                            const std::string& from,
                                            const std::string& to) {
   std::string new_string;

@@ -42,6 +42,7 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
               ": " + key);
         }
       }
+      const auto file_path = uri.authority + uri.path;
 
       // Find pathnames matching a pattern.
       //
@@ -50,8 +51,8 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
       // will not work if the pathname contains both the placeholder and the
       // string "0000". Nonexistant files are catched already at this stage by
       // glob() throwing a runtime_error.
-      auto paths = system::glob(replace_all_copy(uri.path, "%n", "0000"));
-      if (uri.path.find("%n") != std::string::npos) {
+      auto paths = system::glob(replace_all_copy(file_path, "%n", "0000"));
+      if (file_path.find("%n") != std::string::npos) {
         for (auto& path : paths) {
           replace_all(path, "0000", "%n");
           std::unique_ptr<fles::TimesliceSource> source =

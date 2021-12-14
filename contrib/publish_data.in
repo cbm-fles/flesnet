@@ -16,4 +16,4 @@ check_dma_buffers
 
 echo INFO: all checks OK. Stating flesnet in publish mode...
 
-./flesnet -e "./tsclient -c%i -s%s -a -P" $*
+./flesnet -e "./tsclient -c%i -ishm:%s -a -P" $*

@@ -55,7 +55,7 @@ double calculate_ber(size_t n_bytes, size_t n_errors);
 unsigned stou(std::string const& str, size_t* idx = nullptr, int base = 10);
 
 /// Replace all instances of the specified pattern in the input string
-[[nodiscard]] std::string replace_all_copy(std::string& str,
+[[nodiscard]] std::string replace_all_copy(const std::string& str,
                                            const std::string& from,
                                            const std::string& to);
 

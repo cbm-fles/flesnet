@@ -120,9 +120,9 @@ fi # EXT_CONF
 
 
 if [ "$RECORD" = true ]; then
-    TS_PROCESSOR="./tsclient -c%i -s%s -L tsclient.log -a --output-archive-bytes $OUTPUT_ARCHIVE_BYTES -o ${OUTFILE}%n.tsa"
+    TS_PROCESSOR="./tsclient -c%i -ishm:%s -L tsclient.log -a --output-archive-bytes $OUTPUT_ARCHIVE_BYTES -o ${OUTFILE}%n.tsa"
 else
-    TS_PROCESSOR="./tsclient -c%i -s%s -L tsclient.log -a"
+    TS_PROCESSOR="./tsclient -c%i -ishm:%s -L tsclient.log -a"
 fi
 
 FLESNET_CFG=(-l 2

@@ -98,8 +98,21 @@ std::vector<std::string> glob(const std::string& pattern, glob_flags flags) {
       glob(pattern.c_str(), static_cast<int>(flags), nullptr, &glob_result);
   if (return_value != 0) {
     globfree(&glob_result);
-    throw std::runtime_error("glob() failed with return value " +
-                             std::to_string(return_value));
+    std::string message;
+    switch (return_value) {
+    case GLOB_NOMATCH:
+      message = "no matches found for pattern: \"" + pattern + "\"";
+      break;
+    case GLOB_ABORTED:
+      message = "read error";
+      break;
+    case GLOB_NOSPACE:
+      message = "out of memory";
+      break;
+    default:
+      message = "failed with return value " + std::to_string(return_value);
+    }
+    throw std::runtime_error("glob(): " + message);
   }
 
   std::vector<std::string> filenames;
