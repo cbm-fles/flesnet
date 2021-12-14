@@ -5,9 +5,7 @@
 #include "System.hpp"
 #include "TimesliceInputArchive.hpp"
 #include "TimesliceSubscriber.hpp"
-
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string_regex.hpp>
+#include "Utility.hpp"
 
 #include <memory>
 
@@ -15,9 +13,7 @@ namespace fles {
 
 TimesliceAutoSource::TimesliceAutoSource(const std::string& locator) {
   // As a first step, treat ";" characters in the locator string as separators
-  std::vector<std::string> locators;
-  boost::split(locators, locator, [](char c) { return c == ';'; });
-  init(locators);
+  init(split(locator, ";"));
 }
 
 TimesliceAutoSource::TimesliceAutoSource(
@@ -46,11 +42,10 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
       // will not work if the pathname contains both the placeholder and the
       // string "0000". Nonexistant files are catched already at this stage by
       // glob() throwing a runtime_error.
-      auto paths =
-          system::glob(boost::replace_all_copy(host_path, "%n", "0000"));
+      auto paths = system::glob(replace_all_copy(host_path, "%n", "0000"));
       if (host_path.find("%n") != std::string::npos) {
         for (auto& path : paths) {
-          boost::replace_all(path, "0000", "%n");
+          replace_all(path, "0000", "%n");
           std::unique_ptr<fles::TimesliceSource> source =
               std::make_unique<fles::TimesliceInputArchiveSequence>(path);
           sources.emplace_back(std::move(source));
