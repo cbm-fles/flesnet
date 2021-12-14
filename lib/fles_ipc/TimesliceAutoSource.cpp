@@ -32,6 +32,17 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
     UriComponents uri{locator};
 
     if (uri.scheme == "file" || uri.scheme.empty()) {
+      uint64_t cycles = 1;
+      for (auto& [key, value] : uri.query_components) {
+        if (key == "cycles") {
+          cycles = stoull(value);
+        } else {
+          throw std::runtime_error(
+              "query parameter not implemented for scheme " + uri.scheme +
+              ": " + key);
+        }
+      }
+
       // Find pathnames matching a pattern.
       //
       // The sequence number placeholder "%n" is expanded to the first valid
@@ -49,9 +60,16 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
         }
       } else {
         if (paths.size() == 1) {
-          std::unique_ptr<fles::TimesliceSource> source =
-              std::make_unique<fles::TimesliceInputArchive>(paths.front());
-          sources.emplace_back(std::move(source));
+          if (cycles == 1) {
+            std::unique_ptr<fles::TimesliceSource> source =
+                std::make_unique<fles::TimesliceInputArchive>(paths.front());
+            sources.emplace_back(std::move(source));
+          } else {
+            std::unique_ptr<fles::TimesliceSource> source =
+                std::make_unique<fles::TimesliceInputArchiveLoop>(paths.front(),
+                                                                  cycles);
+            sources.emplace_back(std::move(source));
+          }
         } else if (paths.size() > 1) {
           std::unique_ptr<fles::TimesliceSource> source =
               std::make_unique<fles::TimesliceInputArchiveSequence>(paths);

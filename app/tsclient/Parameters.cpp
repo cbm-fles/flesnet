@@ -38,15 +38,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
   desc_add("verbose,v", po::value<size_t>(&verbosity_), "set output verbosity");
   desc_add("histograms", po::value<bool>(&histograms_)->implicit_value(true),
            "enable microslice histogram data output");
-  desc_add("shm-identifier,s", po::value<std::string>(&shm_identifier_),
-           "shared memory identifier used for receiving timeslices");
-  desc_add("multi-input,m",
-           po::value<bool>(&multi_input_)->implicit_value(true),
-           "enable/disable multi archive/stream input");
-  desc_add("input-archive,i", po::value<std::string>(&input_archive_),
-           "name of an input file archive to read");
-  desc_add("input-archive-cycles", po::value<uint64_t>(&input_archive_cycles_),
-           "repeat reading input archive in a loop (for performance testing)");
+  desc_add("input-uri,i", po::value<std::string>(&input_uri_),
+           "uri of a timeslice source");
   desc_add("output-archive,o", po::value<std::string>(&output_archive_),
            "name of an output file archive to write");
   desc_add("output-archive-items", po::value<size_t>(&output_archive_items_),
@@ -63,13 +56,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
       "enable timeslice publisher on given address");
   desc_add("publish-hwm", po::value<uint32_t>(&publish_hwm_),
            "High-water mark for the publisher, in TS, TS drop happens if more "
-           "buffered (default: 1)");
-  desc_add("subscribe,S",
-           po::value<std::string>(&subscribe_address_)
-               ->implicit_value("tcp://localhost:5556"),
-           "subscribe to timeslice publisher on given address");
-  desc_add("subscribe-hwm", po::value<uint32_t>(&subscribe_hwm_),
-           "High-water mark for the subscriber, in TS, TS drop happens if more "
            "buffered (default: 1)");
   desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number_),
            "set the maximum number of timeslices to process (default: "
@@ -101,8 +87,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
                         static_cast<severity_level>(log_syslog));
   }
 
-  size_t input_sources = vm.count("shm-identifier") +
-                         vm.count("input-archive") + vm.count("subscribe");
+  size_t input_sources = vm.count("input-uri");
   if (input_sources == 0 && !benchmark_) {
     throw ParametersException("no input source specified");
   }

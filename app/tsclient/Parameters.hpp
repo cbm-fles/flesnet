@@ -22,15 +22,7 @@ public:
 
   [[nodiscard]] int32_t client_index() const { return client_index_; }
 
-  [[nodiscard]] std::string shm_identifier() const { return shm_identifier_; }
-
-  [[nodiscard]] bool multi_input() const { return multi_input_; }
-
-  [[nodiscard]] std::string input_archive() const { return input_archive_; }
-
-  [[nodiscard]] uint64_t input_archive_cycles() const {
-    return input_archive_cycles_;
-  }
+  [[nodiscard]] std::string input_uri() const { return input_uri_; }
 
   [[nodiscard]] std::string output_archive() const { return output_archive_; }
 
@@ -54,12 +46,6 @@ public:
 
   [[nodiscard]] uint32_t publish_hwm() const { return publish_hwm_; }
 
-  [[nodiscard]] std::string subscribe_address() const {
-    return subscribe_address_;
-  }
-
-  [[nodiscard]] uint32_t subscribe_hwm() const { return subscribe_hwm_; }
-
   [[nodiscard]] uint64_t maximum_number() const { return maximum_number_; }
 
   [[nodiscard]] double rate_limit() const { return rate_limit_; }
@@ -68,10 +54,7 @@ private:
   void parse_options(int argc, char* argv[]);
 
   int32_t client_index_ = -1;
-  std::string shm_identifier_;
-  bool multi_input_ = false;
-  std::string input_archive_;
-  uint64_t input_archive_cycles_ = 1;
+  std::string input_uri_;
   std::string output_archive_;
   size_t output_archive_items_ = SIZE_MAX;
   size_t output_archive_bytes_ = SIZE_MAX;
@@ -81,8 +64,6 @@ private:
   bool histograms_ = false;
   std::string publish_address_;
   uint32_t publish_hwm_ = 1;
-  std::string subscribe_address_;
-  uint32_t subscribe_hwm_ = 1;
   uint64_t maximum_number_ = UINT64_MAX;
   double rate_limit_ = 0.0;
 };
