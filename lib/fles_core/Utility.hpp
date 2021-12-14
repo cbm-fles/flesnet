@@ -7,7 +7,10 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <map>
+#include <regex>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -89,3 +92,89 @@ stou(std::string const& str, size_t* idx = nullptr, int base = 10) {
   }
   return static_cast<unsigned>(result);
 }
+
+/// Replace all instances of the specified pattern in the input string
+// (see: https://stackoverflow.com/a/29752943/1201694)
+[[nodiscard]] inline std::string replace_all_copy(std::string& str,
+                                                  const std::string& from,
+                                                  const std::string& to) {
+  std::string new_string;
+  new_string.reserve(str.length());
+
+  std::string::size_type last_pos = 0;
+  std::string::size_type pos;
+
+  while ((pos = str.find(from, last_pos)) != std::string::npos) {
+    new_string.append(str, last_pos, pos - last_pos);
+    new_string += to;
+    last_pos = pos + from.length();
+  }
+  new_string.append(str, last_pos, str.length() - last_pos);
+
+  return new_string;
+}
+
+inline void
+replace_all(std::string& str, const std::string& from, const std::string& to) {
+  std::string new_string = replace_all_copy(str, from, to);
+  str.swap(new_string);
+}
+
+/// Split string by any of the separators
+inline std::vector<std::string> split(const std::string& str,
+                                      const std::string& separators) {
+  std::vector<std::string> new_vector;
+
+  std::string::size_type last_pos = 0;
+  std::string::size_type pos;
+
+  while ((pos = str.find_first_of(separators, last_pos)) != std::string::npos) {
+    if (pos > last_pos) {
+      new_vector.emplace_back(str.substr(last_pos, pos - last_pos));
+    }
+    last_pos = pos + 1;
+  }
+  if (last_pos < str.length()) {
+    new_vector.emplace_back(str.substr(last_pos));
+  }
+
+  return new_vector;
+}
+
+/// Straightforward URI parser class
+struct UriComponents {
+  std::string scheme;
+  std::string authority;
+  std::string path;
+  std::string query;
+  std::string fragment;
+  std::map<std::string, std::string> query_components;
+
+  UriComponents(std::string uri) {
+    // Regular expression from RFC 3986 "URI Generic Syntax"
+    // (see https://www.rfc-editor.org/rfc/rfc3986#page-50)
+    static const std::regex uri_regex{
+        R"(^(([^:\/?#]+):)?(//([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)",
+        std::regex::extended};
+    std::smatch uri_match;
+    if (!std::regex_match(uri, uri_match, uri_regex)) {
+      throw(std::runtime_error("malformed uri: " + uri));
+    }
+    scheme = uri_match[2];
+    authority = uri_match[4];
+    path = uri_match[5];
+    query = uri_match[7];
+    fragment = uri_match[9];
+
+    for (auto& qc : split(query, "&")) {
+      if (!qc.empty()) {
+        auto pos = qc.find('=');
+        if (pos != std::string::npos) {
+          query_components[qc.substr(0, pos)] = qc.substr(pos + 1);
+        } else {
+          query_components[qc] = "";
+        }
+      }
+    }
+  };
+};

@@ -1,6 +1,7 @@
 # Copyright 2015, 2016, 2020 Jan de Cuveland <cmail@cuveland.de>
 
 add_executable(test_System test_System.cpp)
+add_executable(test_Utility test_Utility.cpp)
 add_executable(test_Timeslice test_Timeslice.cpp)
 add_executable(test_Archive test_Archive.cpp)
 add_executable(test_TimesliceAutoSource test_TimesliceAutoSource.cpp)
@@ -12,6 +13,7 @@ add_executable(test_MicrosliceReceiver test_MicrosliceReceiver.cpp)
 add_executable(test_logging test_logging.cpp)
 
 target_compile_definitions(test_System PUBLIC BOOST_TEST_DYN_LINK)
+target_compile_definitions(test_Utility PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_Timeslice PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_Archive PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_TimesliceAutoSource PUBLIC BOOST_TEST_DYN_LINK)
@@ -23,6 +25,7 @@ target_compile_definitions(test_MicrosliceReceiver PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_logging PUBLIC BOOST_TEST_DYN_LINK)
 
 target_include_directories(test_System SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(test_Utility SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_Timeslice SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_Archive SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_TimesliceAutoSource SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
@@ -34,6 +37,7 @@ target_include_directories(test_MicrosliceReceiver SYSTEM PUBLIC ${Boost_INCLUDE
 target_include_directories(test_logging SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(test_System fles_ipc ${Boost_LIBRARIES})
+target_link_libraries(test_Utility fles_core ${Boost_LIBRARIES})
 target_link_libraries(test_Timeslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_Archive fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_TimesliceAutoSource fles_ipc ${Boost_LIBRARIES})
@@ -61,6 +65,7 @@ add_custom_command(TARGET test_Filter POST_BUILD
                    $<TARGET_FILE_DIR:test_Filter>)
 
 add_test(NAME test_System COMMAND test_System)
+add_test(NAME test_Utility COMMAND test_Utility)
 add_test(NAME test_Timeslice COMMAND test_Timeslice)
 add_test(NAME test_Archive COMMAND test_Archive)
 add_test(NAME test_TimesliceAutoSource COMMAND test_TimesliceAutoSource)
