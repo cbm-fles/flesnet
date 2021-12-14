@@ -1,9 +1,11 @@
 // Copyright 2021 Jan de Cuveland <cmail@cuveland.de>
 #include "TimesliceAutoSource.hpp"
 
+#include "ItemWorkerProtocol.hpp"
 #include "MergingSource.hpp"
 #include "System.hpp"
 #include "TimesliceInputArchive.hpp"
+#include "TimesliceReceiver.hpp"
 #include "TimesliceSubscriber.hpp"
 #include "Utility.hpp"
 
@@ -56,21 +58,49 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
           sources.emplace_back(std::move(source));
         }
       }
+
     } else if (uri.scheme == "tcp") {
       uint32_t hwm = 1;
       for (auto& [key, value] : uri.query_components) {
         if (key == "hwm") {
-          hwm = std::stoi(value);
+          hwm = stou(value);
         } else {
           throw std::runtime_error(
               "query parameter not implemented for scheme " + uri.scheme +
               ": " + key);
         }
       }
-      auto address = uri.scheme + "://" + uri.authority;
+      const auto address = uri.scheme + "://" + uri.authority;
       std::unique_ptr<fles::TimesliceSource> source =
           std::make_unique<fles::TimesliceSubscriber>(address, hwm);
       sources.emplace_back(std::move(source));
+
+    } else if (uri.scheme == "shm") {
+      WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll,
+                             "TimesliceAutoSource at PID " +
+                                 std::to_string(system::current_pid())};
+      for (auto& [key, value] : uri.query_components) {
+        if (key == "stride") {
+          param.stride = std::stoull(value);
+        } else if (key == "offset") {
+          param.offset = std::stoull(value);
+        } else if (key == "queue") {
+          static const std::map<std::string, WorkerQueuePolicy> queue_map = {
+              {"all", WorkerQueuePolicy::QueueAll},
+              {"one", WorkerQueuePolicy::PrebufferOne},
+              {"skip", WorkerQueuePolicy::Skip}};
+          param.queue_policy = queue_map.at(value);
+        } else {
+          throw std::runtime_error(
+              "query parameter not implemented for scheme " + uri.scheme +
+              ": " + key);
+        }
+      }
+      const auto ipc_identifier = uri.authority + uri.path;
+      std::unique_ptr<fles::TimesliceSource> source =
+          std::make_unique<fles::TimesliceReceiver>(ipc_identifier, param);
+      sources.emplace_back(std::move(source));
+
     } else {
       throw std::runtime_error("scheme not implemented: " + uri.scheme);
     }
