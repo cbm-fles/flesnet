@@ -20,7 +20,6 @@ fi
 # default configuration
 TSBUF_DATA_SIZE_EXP=27
 TSBUF_DESC_SIZE_EXP=19
-TSCLIENT_COUNT=1
 
 CONFIG_FILE="$1"
 source "$CONFIG_FILE"
@@ -77,12 +76,16 @@ declare -a PN_SPM
 output=0
 for node in ${PN_LIST[@]}; do
     hostconfig $node
+    TSCLIENT_COUNT=${#TSCLIENT_PARAM[@]}
     PN_CFG+=("output = shm://$HOSTADDR/$SHM_PREFIX$output?datasize=${TSBUF_DATA_SIZE_EXP}&descsize=${TSBUF_DESC_SIZE_EXP}")
-    PN_SPM+=("$node: bash -c '${FLESNETDIR}preclean; ${FLESNETDIR}flesnet -m -f $FLESNET_CFG -L ${LOGDIR}${node}_flesnet_pn.log --log-syslog -o$output -e \"${SPMDIR}spm-provide -n$TSCLIENT_COUNT %s\"'")
-    for i in `seq $TSCLIENT_COUNT`; do
-        PARAM=${TSCLIENT_PARAM//%run_id%/$RUN_ID}
-        PARAM=${PARAM//%client%/$i}
-        PN_SPM+=("$node: bash -c \"${SPMDIR}spm-require $SHM_PREFIX$output; ${FLESNETDIR}tsclient -c$output -i shm:$SHM_PREFIX$output -L ${LOGDIR}${node}_${i}_tsclient.log --log-syslog ${PARAM}\"")
+    PN_SPM+=("$node: bash -c '${FLESNETDIR}preclean; ${FLESNETDIR}flesnet -m -f $FLESNET_CFG -L ${LOGDIR}${node}_flesnet_pn.log --log-syslog -o$output'")
+    client=0
+    for PARAM in "${TSCLIENT_PARAM[@]}"; do
+        PARAM=${PARAM//%run_id%/$RUN_ID}
+        PARAM=${PARAM//%client%/$client}
+        PARAM=${PARAM//%shm_id%/$SHM_PREFIX$output}
+        PN_SPM+=("$node: ${FLESNETDIR}tsclient -c$output -L ${LOGDIR}${node}_${client}_tsclient.log --log-syslog ${PARAM}")
+        ((client += 1))
     done
     ((output += 1))
 done
