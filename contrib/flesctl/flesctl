@@ -21,6 +21,23 @@ Usage:
   flesctl info <run>
   flesctl -h | --help
   flesctl --version
+
+Commands:
+  list         list available configuration tags
+  list_unused  list unused configuration tags
+  add          add <config_file> as <tag> to configuration db
+  delete       delete (unused) configuration <tag>
+  show         print configuration of <tag>
+  start        start a run with configuration <tag>
+  stop         stop the ongoing run
+  monitor      open the run monitor (in the less pager)
+  status       print information about ongoing runs
+  logbook      open the log entry of the current run
+  info         print information on run <run>
+
+Options:
+  --help       print this help message
+  --version    print version
 """
 
 import os
