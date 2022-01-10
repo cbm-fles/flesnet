@@ -18,7 +18,7 @@ Usage:
   flesctl monitor | mon
   flesctl status
   flesctl logbook
-  flesctl info <run>
+  flesctl info | info <run>
   flesctl -h | --help
   flesctl --version
 
@@ -33,7 +33,7 @@ Commands:
   monitor      open the run monitor (in the less pager)
   status       print information about ongoing runs
   logbook      open the log entry of the current run
-  info         print information on run <run>
+  info         print information on latest run or <run>
 
 Options:
   --help       print this help message
@@ -398,4 +398,7 @@ if __name__ == "__main__":
     edit_logbook()
 
   if arg['info']:
-    run_info(arg['<run>'])
+    if arg['<run>']:
+      run_info(arg['<run>'])
+    else:
+      run_info(str(run_id-1))
