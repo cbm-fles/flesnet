@@ -355,13 +355,16 @@ def run_info(par_run_id):
   starttime = runconf["DEFAULT"].getint("starttime", None)
   stoptime = runconf["DEFAULT"].getint("stoptime", None)
   start_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(starttime))
-  stop_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stoptime))
-  duration = str(datetime.timedelta(seconds=(stoptime - starttime)))
+  stop_str = "N/A"
+  duration_str = "N/A"
+  if stoptime is not None:
+    stop_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stoptime))
+    duration_str = str(datetime.timedelta(seconds=(stoptime - starttime)))
   print("Run number:       ", par_run_id)
   print("Configuration tag:", tag)
   print("Started at:       ", start_str)
   print("Stopped at:       ", stop_str)
-  print("Duration:         ", duration)
+  print("Duration:         ", duration_str)
 
 
 if __name__ == "__main__":
