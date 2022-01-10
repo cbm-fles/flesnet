@@ -201,9 +201,11 @@ def start(tag):
 
   # create run configuration file
   start_time = time.time()
+  start_user = os.environ['SUDO_USER']
   runconf = configparser.ConfigParser()
   runconf['DEFAULT'] = {'Tag': tag, 'RunId': str(run_id),
-                        'StartTime': str(int(start_time))}
+                        'StartTime': str(int(start_time)),
+                        'StartUser': start_user}
   with open("run.conf", "w") as runconffile:
     runconf.write(runconffile)
 
@@ -268,6 +270,7 @@ def stop():
   print("stopping run with id", run_id)
   subprocess.call(["/usr/bin/scancel", "--jobname", "run_{}".format(run_id)])
   stop_time = time.time()
+  stop_user = os.environ['SUDO_USER']
 
   # read run configuration file
   runconf = configparser.ConfigParser()
@@ -294,6 +297,7 @@ def stop():
 
   # update run configuration file
   runconf['DEFAULT']['StopTime'] = str(int(stop_time))
+  runconf['DEFAULT']['StopUser'] = stop_user
   runconf['DEFAULT']['elog_id_stop'] = str(log_id_stop)
   with open("run.conf", "w") as runconffile:
     runconf.write(runconffile)
@@ -354,6 +358,8 @@ def run_info(par_run_id):
   tag = runconf["DEFAULT"].get("tag", None)
   starttime = runconf["DEFAULT"].getint("starttime", None)
   stoptime = runconf["DEFAULT"].getint("stoptime", None)
+  startuser = runconf["DEFAULT"].get("startuser", "N/A")
+  stopuser = runconf["DEFAULT"].get("stopuser", "N/A")
   start_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(starttime))
   stop_str = "N/A"
   duration_str = "N/A"
@@ -362,8 +368,8 @@ def run_info(par_run_id):
     duration_str = str(datetime.timedelta(seconds=(stoptime - starttime)))
   print("Run number:       ", par_run_id)
   print("Configuration tag:", tag)
-  print("Started at:       ", start_str)
-  print("Stopped at:       ", stop_str)
+  print("Started at:       ", start_str, "by", startuser)
+  print("Stopped at:       ", stop_str, "by", stopuser)
   print("Duration:         ", duration_str)
 
 
