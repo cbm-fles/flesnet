@@ -215,7 +215,7 @@ def start(tag):
 
   # start run using spm
   cmd = ["/opt/spm/spm-run", "--batch", "--logfile", "slurm.out",
-         "--jobname", "run_{}".format(run_id)]
+         "--jobname", "run_{}".format(run_id), "--time", "0"]
   if reservation:
     cmd += ["--reservation", reservation]
   subprocess.call(cmd + ["readout.spm"]);
