@@ -56,6 +56,9 @@ import requests
 
 import inspect
 import pprint
+from rich import print as rprint
+from rich.table import Table, Column
+from rich.panel import Panel
 
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 confdir = os.path.normpath("/home/flesctl/config")
@@ -319,14 +322,16 @@ def status():
   output = subprocess.check_output(["/usr/bin/squeue", "-h", "--user",
                                     run_user], universal_newlines=True)
   if len(output) == 0:
-    print("info: no active run found")
+    rprint("slurm status: [bold]no active run[/]")
   else:
+    rprint("slurm status: [bold]run active[/]")
     print(output, end='')
+    run_info()
 
 
 def monitor():
   syslog_mon = True
-  if syslog_mon :
+  if syslog_mon:
     # syslog based monitoring
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     subprocess.call(["/usr/bin/less", "-n",  "+G", "+F", flesctl_syslog])
@@ -347,8 +352,13 @@ def edit_logbook():
   subprocess.call(["nano +$(wc -l \"{}\")".format(filename)], shell=True)
 
 
-def run_info(par_run_id):
-  config_file = os.path.join(rundir_base, par_run_id, "run.conf")
+def run_info(par_run_id = None):
+  if par_run_id is None:
+    info_run_id = run_id - 1
+  else:
+    info_run_id = par_run_id
+
+  config_file = os.path.join(rundir_base, str(info_run_id), "run.conf")
   if not os.path.isfile(config_file):
     print("error: no such run found")
     sys.exit(1)
@@ -360,34 +370,58 @@ def run_info(par_run_id):
   stoptime = runconf["DEFAULT"].getint("stoptime", None)
   startuser = runconf["DEFAULT"].get("startuser", "N/A")
   stopuser = runconf["DEFAULT"].get("stopuser", "N/A")
-  start_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(starttime))
-  stop_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stoptime))
-  print("Run number:       ", par_run_id)
-  print("Configuration tag:", tag)
-  print("Started at:       ", start_str, "by", startuser)
+  duration = None
 
-  # this order of chekcs is needed to prevent a race condition
-  # when a run is stoped and ends durinng this call
-  if current_run_id() == int(par_run_id):
+  # this order of checks is needed to prevent a race condition
+  # when a run is stoped and ends during this call
+  if current_run_id() == info_run_id:
     if stoptime is not None:
-      # pending
-      duration_str = str(datetime.timedelta(seconds=(stoptime - starttime)))
-      print("Stopped at:       ", stop_str, "by", stopuser)
-      print("Duration:         ", duration_str)
-      print("Run end is pending...")
+      status = "pending finalization"
+      duration = datetime.timedelta(seconds=(stoptime - starttime))
     else:
-      # running
-      duration_str = str(datetime.timedelta(seconds=(int(time.time()) - starttime)))
-      print("Run active since: ", duration_str)
+      status = "running"
+      duration = datetime.timedelta(seconds=(int(time.time()) - starttime))
   else:
     if stoptime is not None:
-      # stopped
-      duration_str = str(datetime.timedelta(seconds=(stoptime - starttime)))
-      print("Stopped at:       ", stop_str, "by", stopuser)
-      print("Duration:         ", duration_str)
+      status = "stopped"
+      duration = datetime.timedelta(seconds=(stoptime - starttime))
     else:
-      # crached
-      print("Run ended unexpectedly")
+      status = "ended unexpectedly"
+
+  # assemble output
+  try:
+    startuser = pwd.getpwnam(startuser)[4].split(',')[0]
+  except:
+    pass
+  try:
+    stopuser = pwd.getpwnam(stopuser)[4].split(',')[0]
+  except:
+    pass
+  starttime_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(starttime))
+  stoptime_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stoptime))
+  start_str = starttime_str + " by " + startuser
+  stop_str = stoptime_str + " by " + stopuser
+
+  t = Table(Column(justify="right"), Column(), box=None, show_header=False,
+            padding=(0, 1, 0, 0))
+  t.add_row("Run number:", str(info_run_id))
+  if par_run_id is not None:
+    t.add_row("Status:", status)
+  else:
+    highlite_status = {
+      "pending finalization": "[bold red]PENDING FINALIZATION[/]",
+      "running": "[bold green]RUNNING[/]",
+      "stopped": "[bold blue]STOPPED[/]",
+      "ended unexpectedly": "[bold red]ENDED UNEXPECTEDLY[/]",
+    }
+    t.add_row("Status:", highlite_status[status])
+  t.add_row("Configuration:", tag)
+  t.add_row("Started:", start_str)
+  if stoptime is not None:
+    t.add_row("Stopped:", stop_str)
+  if duration is not None:
+    t.add_row("Duration:", str(duration))
+  rprint(Panel.fit(t, title="Run "+str(info_run_id)))
 
 
 if __name__ == "__main__":
@@ -425,6 +459,6 @@ if __name__ == "__main__":
 
   if arg['info']:
     if arg['<run>']:
-      run_info(arg['<run>'])
+      run_info(int(arg['<run>']))
     else:
-      run_info(str(run_id-1))
+      run_info()
