@@ -20,6 +20,8 @@ public:
   Parameters(const Parameters&) = delete;
   void operator=(const Parameters&) = delete;
 
+  [[nodiscard]] std::string monitor_uri() const { return monitor_uri_; }
+
   [[nodiscard]] int32_t client_index() const { return client_index_; }
 
   [[nodiscard]] std::string input_uri() const { return input_uri_; }
@@ -52,6 +54,8 @@ public:
 
 private:
   void parse_options(int argc, char* argv[]);
+
+  std::string monitor_uri_;
 
   int32_t client_index_ = -1;
   std::string input_uri_;

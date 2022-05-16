@@ -2,8 +2,10 @@
 
 #include "TimesliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
+#include "System.hpp"
 #include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
+#include "log.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <cassert>
@@ -17,7 +19,8 @@
 TimesliceAnalyzer::TimesliceAnalyzer(uint64_t arg_output_interval,
                                      std::ostream& arg_out,
                                      std::string arg_output_prefix,
-                                     std::ostream* arg_hist)
+                                     std::ostream* arg_hist,
+                                     const std::string& monitor_uri)
     : output_interval_(arg_output_interval), out_(arg_out),
       output_prefix_(std::move(arg_output_prefix)), hist_(arg_hist),
       previous_output_time_(std::chrono::system_clock::now()) {
@@ -25,6 +28,19 @@ TimesliceAnalyzer::TimesliceAnalyzer(uint64_t arg_output_interval,
   crc32_engine_ = crcutil_interface::CRC::Create(
       0x82f63b78, 0, 32, true, 0, 0, 0,
       crcutil_interface::CRC::IsSSE42Available(), nullptr);
+
+  if (!monitor_uri.empty()) {
+    try {
+      monitor_client_ =
+          std::make_unique<web::http::client::http_client>(monitor_uri);
+    } catch (std::exception& e) {
+      L_(error) << "cannot connect to monitoring at " << monitor_uri << ": "
+                << e.what();
+    }
+  }
+  hostname_ = fles::system::current_hostname();
+
+  report_status();
 }
 
 TimesliceAnalyzer::~TimesliceAnalyzer() {
@@ -38,6 +54,7 @@ void TimesliceAnalyzer::put(std::shared_ptr<const fles::Timeslice> timeslice) {
   if (!success) {
     ++timeslice_error_count_;
   }
+  scheduler_.timer();
 
   // print statistics if either the next round number (multiple of
   // output_interval_) of timeslices is reached or a given time has passed
@@ -344,4 +361,57 @@ bool TimesliceAnalyzer::output_active() const {
   constexpr size_t limit = 10;
   return timeslice_error_count_ < limit && component_error_count_ < limit &&
          microslice_error_count_ < limit;
+}
+
+void TimesliceAnalyzer::report_status() {
+  constexpr auto interval = std::chrono::seconds(1);
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+  if (monitor_client_) {
+    // if task is pending and done, clean it up
+    if (monitor_task_) {
+      if (monitor_task_->is_done()) {
+        try {
+          monitor_task_->get();
+        } catch (std::exception& e) {
+          L_(error) << "monitor task failed: " << e.what();
+        }
+        monitor_task_ = nullptr;
+      } else {
+        L_(warning) << "monitor task is taking longer than expected";
+      }
+    }
+
+    if (!monitor_task_) {
+      const std::string prefix = output_prefix_.empty() ? ":" : output_prefix_;
+      std::string measurement =
+          "timeslice_analyzer_status,host=" + hostname_ +
+          ",output_prefix=" + prefix +
+          " timeslice_count=" + std::to_string(timeslice_count_) +
+          "i,component_count=" + std::to_string(component_count_) +
+          "i,microslice_count=" + std::to_string(microslice_count_) +
+          "i,content_bytes=" + std::to_string(content_bytes_) +
+          "i,timeslice_error_count=" + std::to_string(timeslice_error_count_) +
+          "i,component_error_count=" + std::to_string(component_error_count_) +
+          "i,microslice_error_count=" +
+          std::to_string(microslice_error_count_) + "i\n";
+
+      auto task =
+          monitor_client_
+              ->request(web::http::methods::POST,
+                        "/write?db=tsclient_status&precision=s", measurement)
+              .then([](const web::http::http_response& response) {
+                if (response.status_code() != 204) {
+                  L_(error)
+                      << "Monitoring client received response status code "
+                      << response.status_code() << ": "
+                      << response.extract_string().get();
+                }
+              });
+
+      monitor_task_ = std::make_unique<pplx::task<void>>(task);
+    }
+  }
+
+  scheduler_.add([this] { report_status(); }, now + interval);
 }
