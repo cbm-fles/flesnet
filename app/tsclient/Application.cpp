@@ -19,13 +19,13 @@ Application::Application(Parameters const& par) : par_(par) {
 
   if (par_.analyze()) {
     if (par_.histograms()) {
-      sinks_.push_back(
-          std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(
-              1000, status_log_.stream, output_prefix_, &std::cout)));
+      sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+          new TimesliceAnalyzer(1000, status_log_.stream, output_prefix_,
+                                &std::cout, par_.monitor_uri())));
     } else {
-      sinks_.push_back(
-          std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(
-              1000, status_log_.stream, output_prefix_, nullptr)));
+      sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+          new TimesliceAnalyzer(1000, status_log_.stream, output_prefix_,
+                                nullptr, par_.monitor_uri())));
     }
   }
 
