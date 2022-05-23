@@ -114,7 +114,7 @@ def tags_unused() -> list:
 
 
 def list_tags():
-  for tag in tags():
+  for tag in sorted(tags()):
     print(tag)
 
 
