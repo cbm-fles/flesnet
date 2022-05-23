@@ -13,12 +13,12 @@ Usage:
   flesctl add <config_file> <tag>
   flesctl delete <tag>
   flesctl show <tag>
+  flesctl sinfo
   flesctl start <tag>
   flesctl stop
   flesctl monitor | mon
-  flesctl status
   flesctl logbook
-  flesctl info | info <run>
+  flesctl status | status <run> | info | info <run>
   flesctl -h | --help
   flesctl --version
 
@@ -31,9 +31,8 @@ Commands:
   start        start a run with configuration <tag>
   stop         stop the ongoing run
   monitor      open the run monitor (in the less pager)
-  status       print information about ongoing runs
+  status|info  print information on latest run or <run>
   logbook      open the log entry of the current run
-  info         print information on latest run or <run>
 
 Options:
   --help       print this help message
@@ -260,6 +259,15 @@ def current_run_id():
     return None
 
 
+def current_nodelist():
+  output = subprocess.check_output(["/usr/bin/squeue", "-h", "-o", "%R", "-u", run_user],
+                                   universal_newlines=True)
+  if len(output) > 0:
+    return output.rstrip()
+  else:
+    return None
+
+
 def stop():
   run_id = current_run_id()
   if run_id is None:
@@ -318,7 +326,7 @@ def stop():
   # TODO: cleanup, remove leftovers
 
 
-def status():
+def sinfo():
   output = subprocess.check_output(["/usr/bin/squeue", "-h", "--user",
                                     run_user], universal_newlines=True)
   if len(output) == 0:
@@ -326,7 +334,6 @@ def status():
   else:
     rprint("slurm status: [bold]run active[/]")
     print(output, end='')
-    run_info()
 
 
 def monitor():
@@ -366,6 +373,7 @@ def run_info(par_run_id = None):
   runconf = configparser.ConfigParser()
   runconf.read(config_file)
   tag = runconf["DEFAULT"].get("tag", None)
+  nodelist = None
   starttime = runconf["DEFAULT"].getint("starttime", None)
   stoptime = runconf["DEFAULT"].getint("stoptime", None)
   startuser = runconf["DEFAULT"].get("startuser", "N/A")
@@ -375,6 +383,7 @@ def run_info(par_run_id = None):
   # this order of checks is needed to prevent a race condition
   # when a run is stoped and ends during this call
   if current_run_id() == info_run_id:
+    nodelist = current_nodelist()
     if stoptime is not None:
       status = "pending finalization"
       duration = datetime.timedelta(seconds=(stoptime - starttime))
@@ -415,6 +424,8 @@ def run_info(par_run_id = None):
       "ended unexpectedly": "[bold red]ENDED UNEXPECTEDLY[/]",
     }
     t.add_row("Status:", highlite_status[status])
+    if nodelist is not None:
+      t.add_row("Slurm nodelist:", nodelist)
   t.add_row("Configuration:", tag)
   t.add_row("Started:", start_str)
   if stoptime is not None:
@@ -442,14 +453,14 @@ if __name__ == "__main__":
   if arg['show']:
     print_config(arg['<tag>'])
 
+  if arg['sinfo']:
+    sinfo()
+
   if arg['start']:
     start(arg['<tag>'])
 
   if arg['stop']:
     stop()
-
-  if arg['status']:
-    status()
 
   if arg['monitor'] or arg['mon']:
     monitor()
@@ -457,7 +468,7 @@ if __name__ == "__main__":
   if arg['logbook']:
     edit_logbook()
 
-  if arg['info']:
+  if arg['status'] or arg['info']:
     if arg['<run>']:
       run_info(int(arg['<run>']))
     else:
