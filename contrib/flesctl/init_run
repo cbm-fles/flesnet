@@ -87,6 +87,11 @@ for node in ${PN_LIST[@]}; do
         PN_SPM+=("$node: ${FLESNETDIR}tsclient -c$output -L ${LOGDIR}${node}_${client}_tsclient.log --log-syslog ${PARAM}")
         ((client += 1))
     done
+    for CMD in "${EXTRA_CMD[@]}"; do
+        CMD=${CMD//%run_id%/$RUN_ID}
+        CMD=${CMD//%shm_id%/$SHM_PREFIX$output}
+        PN_SPM+=("$node: ${CMD}")
+    done
     ((output += 1))
 done
 
