@@ -40,7 +40,11 @@ if(INCLUDE_ZMQ)
     GIT_REPOSITORY "https://github.com/zeromq/libzmq.git"
     GIT_TAG "4097855ddaaa65ed7b5e8cb86d143842a594eebd" # v4.3.4
     GIT_CONFIG advice.detachedHead=false
-    CMAKE_CACHE_ARGS -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE
+    PATCH_COMMAND patch -p1 -i "${CMAKE_SOURCE_DIR}/fix_gnutls_macosx_v4.3.4.patch"
+    CMAKE_CACHE_ARGS
+    -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE
+    -DWITH_LIBBSD:BOOL=FALSE
+    -DWITH_LIBSODIUM:BOOL=FALSE
     BUILD_COMMAND cmake --build . --target libzmq-static
     BUILD_BYPRODUCTS src/zeromq-build/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zmq${CMAKE_STATIC_LIBRARY_SUFFIX}
     INSTALL_COMMAND ""
@@ -51,11 +55,14 @@ if(INCLUDE_ZMQ)
 
   add_library(zmq::libzmq STATIC IMPORTED GLOBAL)
   add_dependencies(zmq::libzmq zeromq)
-  target_link_libraries(zmq::libzmq
-    INTERFACE gnutls
-    INTERFACE bsd
-    INTERFACE sodium
-  )
+
+  find_package("GnuTLS")
+  if(GNUTLS_FOUND)
+    target_link_libraries(zmq::libzmq
+                          INTERFACE ${GNUTLS_LIBRARIES}
+    )
+  endif()
+
   set_target_properties(zmq::libzmq PROPERTIES
     IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/src/zeromq-build/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zmq${CMAKE_STATIC_LIBRARY_SUFFIX}
     INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/src/zeromq/include
@@ -121,6 +128,12 @@ find_package(PDA 11.5.7 EXACT)
 find_package(CPPREST)
 find_package(NUMA)
 find_package(Doxygen)
+
+find_package(OpenSSL REQUIRED)
+if(APPLE)
+  find_package(ZSTD)
+  get_filename_component(ZSTD_LIB_DIR ${ZSTD_LIBRARY} DIRECTORY)
+endif()
 
 set(USE_RDMA TRUE CACHE BOOL "Use RDMA libraries and build RDMA transport.")
 if(USE_RDMA AND NOT RDMA_FOUND)
@@ -224,6 +237,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 if(CLANG_TIDY)
   set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
 endif()
+
+
 add_subdirectory(app/mstool)
 if(USE_CPPREST AND CPPREST_FOUND)
   add_subdirectory(app/tsclient)

@@ -22,8 +22,12 @@ target_include_directories(flesnet SYSTEM PUBLIC
 
 target_link_libraries(flesnet
   flib_ipc fles_core fles_ipc shm_ipc fles_zeromq logging
-  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CPPREST_LIBRARY} crypto
+  ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CPPREST_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY}
 )
+
+if(APPLE)
+  target_link_directories(flesnet PRIVATE ${ZSTD_LIB_DIR})
+endif()
 
 if (USE_RDMA AND RDMA_FOUND)
   target_compile_definitions(flesnet PUBLIC HAVE_RDMA)
