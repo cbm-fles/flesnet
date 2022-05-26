@@ -40,7 +40,10 @@ target_link_libraries(test_System fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_Utility fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_Timeslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_Archive fles_ipc ${Boost_LIBRARIES})
-target_link_libraries(test_TimesliceAutoSource fles_ipc rt ${Boost_LIBRARIES})
+target_link_libraries(test_TimesliceAutoSource fles_ipc ${Boost_LIBRARIES})
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_link_libraries(test_TimesliceAutoSource rt)
+endif()
 target_link_libraries(test_TimesliceMultiInputArchive fles_ipc logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(test_Microslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_RingBuffer fles_core ${Boost_LIBRARIES})
@@ -50,6 +53,20 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(test_MicrosliceReceiver atomic)
 endif()
 target_link_libraries(test_logging logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+
+if(APPLE)
+  target_link_directories(test_System PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_Utility PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_Timeslice PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_Archive PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_TimesliceAutoSource PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_TimesliceMultiInputArchive PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_Microslice PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_RingBuffer PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_Filter PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_MicrosliceReceiver PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_logging PRIVATE ${ZSTD_LIB_DIR})
+endif()
 
 add_custom_command(TARGET test_Timeslice POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy
@@ -81,9 +98,11 @@ if(BASH_PROGRAM)
   add_test(NAME test_mstool
            COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_mstool.sh
            WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-  add_test(NAME test_with_pda
-           COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_with_pda.sh
-           WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  if (NOT APPLE)
+    add_test(NAME test_with_pda
+             COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_with_pda.sh
+             WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  endif()
 endif()
 
 add_subdirectory(shm_ipc)

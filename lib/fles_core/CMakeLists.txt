@@ -12,7 +12,7 @@ add_library(fles_core ${LIB_SOURCES} ${LIB_HEADERS})
 
 target_include_directories(fles_core PUBLIC .)
 
-target_include_directories(fles_core SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(fles_core SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
 
 if(USE_CPPREST AND CPPREST_FOUND)
   target_include_directories(fles_core SYSTEM PUBLIC ${CPPREST_INCLUDE_DIR})
@@ -26,7 +26,7 @@ target_link_libraries(fles_core
 )
 
 if(USE_CPPREST AND CPPREST_FOUND)
-  target_link_libraries(fles_core PUBLIC ${CPPREST_LIBRARY} crypto)
+  target_link_libraries(fles_core PUBLIC ${CPPREST_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
 endif()
 
 if(USE_NUMA AND NUMA_FOUND)

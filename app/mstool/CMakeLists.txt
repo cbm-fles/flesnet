@@ -19,6 +19,10 @@ target_link_libraries(mstool
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
 )
 
+if(APPLE)
+  target_link_directories(mstool PRIVATE ${ZSTD_LIB_DIR})
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(mstool rt atomic)
 endif()
