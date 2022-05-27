@@ -23,7 +23,7 @@ if(DEFINED ENV{SIMPATH})
   message(WARNING "SIMPATH set, using Fairroot external packages in build.")
   set(SIMPATH $ENV{SIMPATH})
   set(Boost_NO_SYSTEM_PATHS TRUE)
-  set(BOOST_ROOT $ENV{SIMPATH})
+  set(Boost_ROOT $ENV{SIMPATH})
 endif()
 
 set(INCLUDE_ZMQ FALSE CACHE BOOL "Download, build and statically link ZeroMQ library.")
