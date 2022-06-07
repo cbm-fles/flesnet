@@ -30,11 +30,11 @@
  */
 
 constexpr static auto distributor_heartbeat_interval =
-    std::chrono::milliseconds{500};
+    std::chrono::milliseconds{1000};
 constexpr static auto distributor_poll_timeout = std::chrono::milliseconds{100};
 constexpr static auto worker_poll_timeout = std::chrono::milliseconds{500};
 constexpr static auto worker_heartbeat_timeout =
-    4 * distributor_heartbeat_interval;
+    10 * distributor_heartbeat_interval;
 
 class WorkerProtocolError : public std::runtime_error {
 public:
