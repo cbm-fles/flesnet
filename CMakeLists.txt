@@ -116,6 +116,16 @@ else()
   add_library(zmq::cppzmq ALIAS PkgConfig::zeromq)
 endif()
 
+include(FetchContent)
+
+# fetch libfmt formatting library, used by lib/monitoring
+FetchContent_Declare(
+  fmtlib
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG 8.1.1)
+FetchContent_MakeAvailable(fmtlib)
+# Adds fmt::fmt
+
 if(APPLE)
   set(Boost_USE_MULTITHREADED TRUE)
 endif()
@@ -195,6 +205,7 @@ if(USE_CPPREST AND CPPREST_FOUND)
 endif()
 
 add_subdirectory(lib/logging)
+add_subdirectory(lib/monitoring)
 add_subdirectory(lib/crcutil)
 add_subdirectory(lib/flib_ipc)
 if(CLANG_TIDY)
