@@ -35,8 +35,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
            "enable/disable pattern check");
   desc_add("monitor,m",
            po::value<std::string>(&monitor_uri_)
-               ->implicit_value("http://login:8086/"),
-           "publish tsclient status to InfluxDB");
+               ->value_name("<uri>")
+               ->implicit_value("influx1:login:8086:tsclient_status"),
+           "publish tsclient status to InfluxDB (or \"file:cout\" for "
+           "console output)");
   desc_add("benchmark,b", po::value<bool>(&benchmark_)->implicit_value(true),
            "run benchmark test only");
   desc_add("verbose,v", po::value<size_t>(&verbosity_), "set output verbosity");

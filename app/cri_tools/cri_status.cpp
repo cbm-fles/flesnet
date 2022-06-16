@@ -4,13 +4,12 @@
  *
  */
 
+#include "Monitor.hpp"
 #include "cri.hpp"
 #include "device_operator.hpp"
 #include "fles_ipc/System.hpp"
 #include <boost/program_options.hpp>
 #include <chrono>
-#define _TURN_OFF_PLATFORM_STRING
-#include <cpprest/http_client.h>
 #include <csignal>
 #include <iostream>
 #include <memory>
@@ -55,8 +54,10 @@ int main(int argc, char* argv[]) {
            "show detailed statistics");
   desc_add("monitor,m",
            po::value<std::string>(&monitor_uri)
-               ->implicit_value("http://login:8086/"),
-           "publish CRI status to InfluxDB");
+               ->value_name("<uri>")
+               ->implicit_value("influx1:login:8086:cri_status"),
+           "publish CRI status to InfluxDB (or \"file:cout\" for "
+           "console output)");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -90,16 +91,10 @@ int main(int argc, char* argv[]) {
   }
 
   bool console = true;
-  std::unique_ptr<web::http::client::http_client> client;
+  std::unique_ptr<cbm::Monitor> monitor;
   if (!monitor_uri.empty()) {
     console = false;
-    try {
-      client = std::make_unique<web::http::client::http_client>(
-          monitor_uri);
-    } catch (std::exception& e) {
-      std::cerr << e.what() << std::endl;
-      return EXIT_FAILURE;
-    }
+    monitor = std::make_unique<cbm::Monitor>(monitor_uri);
   }
   auto hostname = fles::system::current_hostname();
 
@@ -170,13 +165,13 @@ int main(int argc, char* argv[]) {
                     << "   raw rate " << std::setw(5) << pci_throughput / 1e6
                     << " MB/s    " << std::endl;
         }
-        if (client) {
-          measurement += "dev_status,host=" + hostname +
-                         ",cri=" + cri->print_devinfo() +
-                         " cycles=" + std::to_string(dev_perf.cycles) + "i" +
-                         ",busy=" + std::to_string(pci_busy) +
-                         ",stall=" + std::to_string(pci_stall) +
-                         ",trans=" + std::to_string(pci_trans) + "\n";
+        if (monitor) {
+          monitor->QueueMetric(
+              "dev_status", {{"host", hostname}, {"cri", cri->print_devinfo()}},
+              {{"cycles", dev_perf.cycles},
+               {"busy", pci_busy},
+               {"stall", pci_stall},
+               {"trans=", pci_trans}});
         }
 
         ++j;
@@ -242,43 +237,30 @@ int main(int argc, char* argv[]) {
             ss << "\n";
           }
 
-          if (client) {
-            measurement +=
-                "ch_status,host=" + hostname + ",cri=" + cri->print_devinfo() +
-                ",ch=" + std::to_string(i) + " data_src=" +
-                std::to_string(
-                    static_cast<int>(channels.at(i)->data_source())) +
-                "i" + ",enable=" + (ready_for_data ? "true" : "false") +
-                ",throughput=" + std::to_string(mc_throughput) +
-                ",rate=" + std::to_string(microslice_rate) +
-                ",mc_trans=" + std::to_string(mc_trans) +
-                ",mc_stall=" + std::to_string(mc_stall) +
-                ",mc_busy=" + std::to_string(mc_busy) +
-                ",dma_trans=" + std::to_string(dma_trans) +
-                ",dma_stall=" + std::to_string(dma_stall) +
-                ",dma_busy=" + std::to_string(dma_busy) +
-                ",data_buf_stall=" + std::to_string(data_buf_stall) +
-                ",desc_buf_stall=" + std::to_string(desc_buf_stall) +
-                ",cycles_dma=" + std::to_string(perf.cycles) + "i" +
-                ",cycles_mc=" + std::to_string(perf_gtx.cycles) + "i" + "\n";
+          if (monitor) {
+            monitor->QueueMetric(
+                "ch_status",
+                {{"host", hostname},
+                 {"cri", cri->print_devinfo()},
+                 {"ch", std::to_string(i)}},
+                {{"data_src", static_cast<int>(channels.at(i)->data_source())},
+                 {"enable", ready_for_data},
+                 {"throughput", mc_throughput},
+                 {"rate", microslice_rate},
+                 {"mc_trans", mc_trans},
+                 {"mc_stall", mc_stall},
+                 {"mc_busy", mc_busy},
+                 {"dma_trans", dma_trans},
+                 {"dma_stall", dma_stall},
+                 {"dma_busy", dma_busy},
+                 {"data_buf_stall", data_buf_stall},
+                 {"desc_buf_stall", desc_buf_stall},
+                 {"cycles_dma", perf.cycles},
+                 {"cycles_mc", perf_gtx.cycles}});
           }
         }
         if (console) {
           std::cout << ss.str() << std::endl;
-        }
-
-        if (client) {
-          client
-              ->request(web::http::methods::POST,
-                        "/write?db=cri_status&precision=s", measurement)
-              .then([](const web::http::http_response& response) {
-                if (response.status_code() != 204) {
-                  std::cout << "Received response status code: "
-                            << response.status_code() << "\n"
-                            << response.extract_string().get() << std::endl;
-                }
-              })
-              .wait();
         }
 
         ++j;

@@ -18,23 +18,14 @@ TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
                                    uint32_t timeslice_size,
                                    volatile sig_atomic_t* signal_status,
                                    bool drop,
-                                   const std::string& monitor_uri)
+                                   cbm::Monitor* monitor)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
       service_(service), num_input_nodes_(num_input_nodes),
       timeslice_size_(timeslice_size),
       ack_(timeslice_buffer_.get_desc_size_exp()),
-      signal_status_(signal_status), drop_(drop) {
+      signal_status_(signal_status), drop_(drop), monitor_(monitor) {
   assert(timeslice_buffer_.get_num_input_nodes() == num_input_nodes);
 
-  if (!monitor_uri.empty()) {
-    try {
-      monitor_client_ =
-          std::make_unique<web::http::client::http_client>(monitor_uri);
-    } catch (std::exception& e) {
-      L_(error) << "cannot connect to monitoring at " << monitor_uri << ": "
-                << e.what();
-    }
-  }
   hostname_ = fles::system::current_hostname();
 
   previous_recv_buffer_status_data_.resize(num_input_nodes);
@@ -50,8 +41,6 @@ void TimesliceBuilder::report_status() {
 
   L_(debug) << "[c" << compute_index_ << "] " << completely_written_
             << " completely written, " << acked_ << " acked";
-
-  std::string measurement;
 
   double total_rate_desc = 0.;
   double total_rate_data = 0.;
@@ -115,18 +104,19 @@ void TimesliceBuilder::report_status() {
               << human_readable_count(rate_data, true, "B/s") << " ("
               << human_readable_count(rate_desc, true, "Hz") << ")";
 
-    if (monitor_client_) {
-      measurement += "recv_buffer_status,host=" + hostname_ +
-                     ",output_index=" + std::to_string(compute_index_) +
-                     ",input_index=" + std::to_string(c->index()) +
-                     " data_used=" + std::to_string(status_data.used()) +
-                     "i,data_freeing=" + std::to_string(status_data.freeing()) +
-                     "i,data_free=" + std::to_string(status_data.unused()) +
-                     "i,data_rate=" + std::to_string(rate_data) +
-                     ",desc_used=" + std::to_string(status_desc.used()) +
-                     "i,desc_freeing=" + std::to_string(status_desc.freeing()) +
-                     "i,desc_free=" + std::to_string(status_desc.unused()) +
-                     "i,desc_rate=" + std::to_string(rate_desc) + "\n";
+    if (monitor_) {
+      monitor_->QueueMetric("recv_buffer_status",
+                            {{"host", hostname_},
+                             {"output_index", std::to_string(compute_index_)},
+                             {"input_index", std::to_string(c->index())}},
+                            {{"data_used", status_data.used()},
+                             {"data_freeing", status_data.freeing()},
+                             {"data_free", status_data.unused()},
+                             {"data_rate", rate_data},
+                             {"desc_used", status_desc.used()},
+                             {"desc_freeing", status_desc.freeing()},
+                             {"desc_free", status_desc.unused()},
+                             {"desc_rate", rate_desc}});
     }
 
     previous_recv_buffer_status_data_.at(c->index()) = status_data;
@@ -153,53 +143,21 @@ void TimesliceBuilder::report_status() {
              << human_readable_count(total_rate_data, true, "B/s") << " ("
              << human_readable_count(total_rate_desc, true, "Hz") << ")";
 
-  measurement +=
-      "timeslice_buffer_status,host=" + hostname_ +
-      ",output_index=" + std::to_string(compute_index_) +
-      " data_used=" + std::to_string(min_used_data) +
-      ",data_mixed=" + std::to_string(mixed_data) +
-      ",data_freeing=" + std::to_string(min_freeing_data) +
-      ",data_free=" + std::to_string(min_free_data) +
-      ",data_rate=" + std::to_string(total_rate_data) +
-      ",desc_used=" + std::to_string(min_used_desc) +
-      ",desc_mixed=" + std::to_string(mixed_desc) +
-      ",desc_freeing=" + std::to_string(min_freeing_desc) +
-      ",desc_free=" + std::to_string(min_free_desc) +
-      ",desc_rate=" + std::to_string(total_rate_desc) +
-      ",work_items=" + std::to_string(timeslice_buffer_.get_num_work_items()) +
-      "i\n";
-
-  if (monitor_client_) {
-    // if task is pending and done, clean it up
-    if (monitor_task_) {
-      if (monitor_task_->is_done()) {
-        try {
-          monitor_task_->get();
-        } catch (std::exception& e) {
-          L_(error) << "monitor task failed: " << e.what();
-        }
-        monitor_task_ = nullptr;
-      } else {
-        L_(warning) << "monitor task is taking longer than expected";
-      }
-    }
-
-    if (!monitor_task_) {
-      auto task =
-          monitor_client_
-              ->request(web::http::methods::POST,
-                        "/write?db=flesnet_status&precision=s", measurement)
-              .then([](const web::http::http_response& response) {
-                if (response.status_code() != 204) {
-                  L_(error)
-                      << "Monitoring client received response status code "
-                      << response.status_code() << ": "
-                      << response.extract_string().get();
-                }
-              });
-
-      monitor_task_ = std::make_unique<pplx::task<void>>(task);
-    }
+  if (monitor_) {
+    monitor_->QueueMetric(
+        "timeslice_buffer_status",
+        {{"host", hostname_}, {"output_index", std::to_string(compute_index_)}},
+        {{"data_used", min_used_data},
+         {"data_mixed", mixed_data},
+         {"data_freeing", min_freeing_data},
+         {"data_free", min_free_data},
+         {"data_rate", total_rate_data},
+         {"desc_used", min_used_desc},
+         {"desc_mixed", mixed_desc},
+         {"desc_freeing", min_freeing_desc},
+         {"desc_free", min_free_desc},
+         {"desc_rate", total_rate_desc},
+         {"work_items", timeslice_buffer_.get_num_work_items()}});
   }
 
   scheduler_.add([this] { report_status(); }, now + interval);

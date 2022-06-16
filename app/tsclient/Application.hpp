@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Benchmark.hpp"
+#include "Monitor.hpp"
 #include "Parameters.hpp"
 #include "Sink.hpp"
 #include "TimesliceSource.hpp"
@@ -24,6 +25,9 @@ public:
 
 private:
   Parameters const& par_;
+
+  /// The application's monitoring object
+  std::unique_ptr<cbm::Monitor> monitor_;
 
   std::unique_ptr<fles::TimesliceSource> source_;
   std::vector<std::unique_ptr<fles::TimesliceSink>> sinks_;

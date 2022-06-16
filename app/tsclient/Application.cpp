@@ -11,6 +11,11 @@
 #include <thread>
 
 Application::Application(Parameters const& par) : par_(par) {
+  // start up monitoring
+  if (!par.monitor_uri().empty()) {
+    monitor_ = std::make_unique<cbm::Monitor>(par_.monitor_uri());
+  }
+
   if (par_.client_index() != -1) {
     output_prefix_ = std::to_string(par_.client_index()) + ": ";
   }
@@ -21,11 +26,11 @@ Application::Application(Parameters const& par) : par_(par) {
     if (par_.histograms()) {
       sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
           new TimesliceAnalyzer(1000, status_log_.stream, output_prefix_,
-                                &std::cout, par_.monitor_uri())));
+                                &std::cout, monitor_.get())));
     } else {
       sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
           new TimesliceAnalyzer(1000, status_log_.stream, output_prefix_,
-                                nullptr, par_.monitor_uri())));
+                                nullptr, monitor_.get())));
     }
   }
 
@@ -65,6 +70,10 @@ Application::Application(Parameters const& par) : par_(par) {
 
 Application::~Application() {
   L_(info) << output_prefix_ << "total timeslices processed: " << count_;
+
+  // delay to allow monitor to process pending messages
+  constexpr auto destruct_delay = std::chrono::milliseconds(200);
+  std::this_thread::sleep_for(destruct_delay);
 }
 
 void Application::rate_limit_delay() const {

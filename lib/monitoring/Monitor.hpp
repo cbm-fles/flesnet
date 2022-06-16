@@ -24,7 +24,7 @@ class MonitorSink; // forward declaration
 
 class Monitor {
 public:
-  Monitor();
+  explicit Monitor(const string& sname = "");
   virtual ~Monitor();
 
   Monitor(const Monitor&) = delete;
