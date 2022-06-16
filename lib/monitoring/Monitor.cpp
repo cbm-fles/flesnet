@@ -94,7 +94,7 @@ static constexpr scduration kHeartbeat = 60s; // heartbeat interval
   the name "Cbm:monitor" for processing the metrics.
  */
 
-Monitor::Monitor() {
+Monitor::Monitor(const string& sname) {
   // singleton check
   if (fpSingleton)
     throw Exception("Monitor::ctor: already instantiated");
@@ -118,6 +118,10 @@ Monitor::Monitor() {
   fThread = thread([this]() { EventLoop(); });
 
   fpSingleton = this;
+
+  if (!sname.empty()) {
+    OpenSink(sname);
+  }
 }
 
 //-----------------------------------------------------------------------------

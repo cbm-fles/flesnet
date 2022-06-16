@@ -23,14 +23,14 @@ InputChannelSender::InputChannelSender(
     uint32_t timeslice_size,
     uint32_t overlap_size,
     uint32_t max_timeslice_number,
-    const std::string& monitor_uri)
+    cbm::Monitor* monitor)
     : input_index_(input_index), data_source_(data_source),
       compute_hostnames_(std::move(compute_hostnames)),
       compute_services_(std::move(compute_services)),
       timeslice_size_(timeslice_size), overlap_size_(overlap_size),
       max_timeslice_number_(max_timeslice_number),
       min_acked_desc_(data_source.desc_buffer().size() / 4),
-      min_acked_data_(data_source.data_buffer().size() / 4) {
+      min_acked_data_(data_source.data_buffer().size() / 4), monitor_(monitor) {
   start_index_desc_ = sent_desc_ = acked_desc_ = cached_acked_desc_ =
       data_source.get_read_index().desc;
   start_index_data_ = sent_data_ = acked_data_ = cached_acked_data_ =
@@ -40,15 +40,6 @@ InputChannelSender::InputChannelSender(
       data_source_.desc_buffer().size() / timeslice_size_ + 1;
   ack_.alloc_with_size(min_ack_buffer_size);
 
-  if (!monitor_uri.empty()) {
-    try {
-      monitor_client_ =
-          std::make_unique<web::http::client::http_client>(monitor_uri);
-    } catch (std::exception& e) {
-      L_(error) << "cannot connect to monitoring at " << monitor_uri << ": "
-                << e.what();
-    }
-  }
   hostname_ = fles::system::current_hostname();
 }
 
@@ -135,52 +126,22 @@ void InputChannelSender::report_status() {
              << human_readable_count(rate_desc, true, "Hz") << ") "
              << fles::to_string(sys_id) << " " << eq_id;
 
-  if (monitor_client_) {
-    // if task is pending and done, clean it up
-    if (monitor_task_) {
-      if (monitor_task_->is_done()) {
-        try {
-          monitor_task_->get();
-        } catch (std::exception& e) {
-          L_(error) << "monitor task failed: " << e.what();
-        }
-        monitor_task_ = nullptr;
-      } else {
-        L_(warning) << "monitor task is taking longer than expected";
-      }
-    }
-
-    if (!monitor_task_) {
-      std::string measurement =
-          "send_buffer_status,host=" + hostname_ +
-          ",input_index=" + std::to_string(input_index_) +
-          ",sys_id=" + fles::to_string(sys_id) + ",eq_id=" + eq_id +
-          " data_used=" + std::to_string(status_data.used()) +
-          "i,data_sending=" + std::to_string(status_data.sending()) +
-          "i,data_freeing=" + std::to_string(status_data.freeing()) +
-          "i,data_free=" + std::to_string(status_data.unused()) +
-          "i,data_rate=" + std::to_string(rate_data) +
-          ",desc_used=" + std::to_string(status_desc.used()) +
-          "i,desc_sending=" + std::to_string(status_desc.sending()) +
-          "i,desc_freeing=" + std::to_string(status_desc.freeing()) +
-          "i,desc_free=" + std::to_string(status_desc.unused()) +
-          "i,desc_rate=" + std::to_string(rate_desc) + "\n";
-
-      auto task =
-          monitor_client_
-              ->request(web::http::methods::POST,
-                        "/write?db=flesnet_status&precision=s", measurement)
-              .then([](const web::http::http_response& response) {
-                if (response.status_code() != 204) {
-                  L_(error)
-                      << "Monitoring client received response status code "
-                      << response.status_code() << ": "
-                      << response.extract_string().get();
-                }
-              });
-
-      monitor_task_ = std::make_unique<pplx::task<void>>(task);
-    }
+  if (monitor_) {
+    monitor_->QueueMetric("send_buffer_status",
+                          {{"host", hostname_},
+                           {"input_index", std::to_string(input_index_)},
+                           {"sys_id", fles::to_string(sys_id)},
+                           {"eq_id", eq_id}},
+                          {{"data_used", status_data.used()},
+                           {"data_sending", status_data.sending()},
+                           {"data_freeing", status_data.freeing()},
+                           {"data_free", status_data.unused()},
+                           {"data_rate", rate_data},
+                           {"desc_used", status_desc.used()},
+                           {"desc_sending", status_desc.sending()},
+                           {"desc_freeing", status_desc.freeing()},
+                           {"desc_free", status_desc.unused()},
+                           {"desc_rate", rate_desc}});
   }
 
   previous_send_buffer_status_desc_ = status_desc;

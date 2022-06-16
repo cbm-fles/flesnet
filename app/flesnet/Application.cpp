@@ -16,12 +16,21 @@
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
+  // start up monitoring
+  if (!par.monitor_uri().empty()) {
+    monitor_ = std::make_unique<cbm::Monitor>(par_.monitor_uri());
+  }
+
   create_input_channel_senders();
   create_timeslice_buffers();
   set_node();
 }
 
-Application::~Application() = default;
+Application::~Application() {
+  // delay to allow monitor to process pending messages
+  constexpr auto destruct_delay = std::chrono::milliseconds(200);
+  std::this_thread::sleep_for(destruct_delay);
+}
 
 void Application::create_timeslice_buffers() {
   unsigned input_size = static_cast<unsigned>(par_.inputs().size());
@@ -93,7 +102,7 @@ void Application::create_timeslice_buffers() {
 #ifdef HAVE_RDMA
       std::unique_ptr<TimesliceBuilder> builder(new TimesliceBuilder(
           i, *tsb, par_.base_port() + i, input_size, par_.timeslice_size(),
-          signal_status_, false, par_.monitor_uri()));
+          signal_status_, false, monitor_.get()));
       timeslice_builders_.push_back(std::move(builder));
 #else
       L_(fatal) << "flesnet built without RDMA support";
@@ -220,7 +229,7 @@ void Application::create_input_channel_senders() {
       std::unique_ptr<InputChannelSender> sender(new InputChannelSender(
           index, *(data_sources_.at(c).get()), output_hosts, output_services,
           par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
-          par_.monitor_uri()));
+          monitor_.get()));
       input_channel_senders_.push_back(std::move(sender));
 #else
       L_(fatal) << "flesnet built without RDMA support";

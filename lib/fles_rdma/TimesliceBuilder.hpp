@@ -3,10 +3,9 @@
 
 #include "ComputeNodeConnection.hpp"
 #include "IBConnectionGroup.hpp"
+#include "Monitor.hpp"
 #include "RingBuffer.hpp"
 #include "TimesliceBuffer.hpp"
-#define _TURN_OFF_PLATFORM_STRING
-#include <cpprest/http_client.h>
 #include <csignal>
 #include <memory>
 #include <vector>
@@ -25,7 +24,7 @@ public:
                    uint32_t timeslice_size,
                    volatile sig_atomic_t* signal_status,
                    bool drop,
-                   const std::string& monitor_uri);
+                   cbm::Monitor* monitor);
 
   TimesliceBuilder(const TimesliceBuilder&) = delete;
   void operator=(const TimesliceBuilder&) = delete;
@@ -75,7 +74,6 @@ private:
   std::vector<ComputeNodeConnection::BufferStatus>
       previous_recv_buffer_status_data_;
 
-  std::unique_ptr<web::http::client::http_client> monitor_client_;
-  std::unique_ptr<pplx::task<void>> monitor_task_;
+  cbm::Monitor* monitor_;
   std::string hostname_;
 };

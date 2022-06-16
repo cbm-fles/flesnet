@@ -4,11 +4,10 @@
 #include "DualRingBuffer.hpp"
 #include "IBConnectionGroup.hpp"
 #include "InputChannelConnection.hpp"
+#include "Monitor.hpp"
 #include "RingBuffer.hpp"
 #include <boost/format.hpp>
 #include <cassert>
-#define _TURN_OFF_PLATFORM_STRING
-#include <cpprest/http_client.h>
 
 /// Input buffer and compute node connection container class.
 /** An InputChannelSender object represents an input buffer (filled by a
@@ -25,7 +24,7 @@ public:
                      uint32_t timeslice_size,
                      uint32_t overlap_size,
                      uint32_t max_timeslice_number,
-                     const std::string& monitor_uri);
+                     cbm::Monitor* monitor);
 
   InputChannelSender(const InputChannelSender&) = delete;
   void operator=(const InputChannelSender&) = delete;
@@ -125,8 +124,7 @@ private:
 
   bool abort_ = false;
 
-  std::unique_ptr<web::http::client::http_client> monitor_client_;
-  std::unique_ptr<pplx::task<void>> monitor_task_;
+  cbm::Monitor* monitor_;
   std::string hostname_;
 
   struct SendBufferStatus {

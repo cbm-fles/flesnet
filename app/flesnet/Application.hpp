@@ -4,6 +4,7 @@
 #include "ComponentSenderZeromq.hpp"
 #include "ConnectionGroupWorker.hpp"
 #include "ItemDistributor.hpp"
+#include "Monitor.hpp"
 #include "Parameters.hpp"
 #include "ThreadContainer.hpp"
 #include "TimesliceBuffer.hpp"
@@ -48,6 +49,9 @@ private:
   /// The run parameters object.
   Parameters const& par_;
   volatile sig_atomic_t* signal_status_;
+
+  /// The application's monitoring object
+  std::unique_ptr<cbm::Monitor> monitor_;
 
   /// The application's ZeroMQ context
   zmq::context_t zmq_context_{1};

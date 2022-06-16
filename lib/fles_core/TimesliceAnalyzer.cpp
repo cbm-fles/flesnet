@@ -20,24 +20,16 @@ TimesliceAnalyzer::TimesliceAnalyzer(uint64_t arg_output_interval,
                                      std::ostream& arg_out,
                                      std::string arg_output_prefix,
                                      std::ostream* arg_hist,
-                                     const std::string& monitor_uri)
+                                     cbm::Monitor* monitor)
     : output_interval_(arg_output_interval), out_(arg_out),
       output_prefix_(std::move(arg_output_prefix)), hist_(arg_hist),
-      previous_output_time_(std::chrono::system_clock::now()) {
+      previous_output_time_(std::chrono::system_clock::now()),
+      monitor_(monitor) {
   // create CRC-32C engine (Castagnoli polynomial)
   crc32_engine_ = crcutil_interface::CRC::Create(
       0x82f63b78, 0, 32, true, 0, 0, 0,
       crcutil_interface::CRC::IsSSE42Available(), nullptr);
 
-  if (!monitor_uri.empty()) {
-    try {
-      monitor_client_ =
-          std::make_unique<web::http::client::http_client>(monitor_uri);
-    } catch (std::exception& e) {
-      L_(error) << "cannot connect to monitoring at " << monitor_uri << ": "
-                << e.what();
-    }
-  }
   hostname_ = fles::system::current_hostname();
 
   report_status();
@@ -367,50 +359,18 @@ void TimesliceAnalyzer::report_status() {
   constexpr auto interval = std::chrono::seconds(1);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
-  if (monitor_client_) {
-    // if task is pending and done, clean it up
-    if (monitor_task_) {
-      if (monitor_task_->is_done()) {
-        try {
-          monitor_task_->get();
-        } catch (std::exception& e) {
-          L_(error) << "monitor task failed: " << e.what();
-        }
-        monitor_task_ = nullptr;
-      } else {
-        L_(warning) << "monitor task is taking longer than expected";
-      }
-    }
-
-    if (!monitor_task_) {
-      const std::string prefix = output_prefix_.empty() ? ":" : output_prefix_;
-      std::string measurement =
-          "timeslice_analyzer_status,host=" + hostname_ +
-          ",output_prefix=" + prefix +
-          " timeslice_count=" + std::to_string(timeslice_count_) +
-          "i,component_count=" + std::to_string(component_count_) +
-          "i,microslice_count=" + std::to_string(microslice_count_) +
-          "i,content_bytes=" + std::to_string(content_bytes_) +
-          "i,timeslice_error_count=" + std::to_string(timeslice_error_count_) +
-          "i,component_error_count=" + std::to_string(component_error_count_) +
-          "i,microslice_error_count=" +
-          std::to_string(microslice_error_count_) + "i\n";
-
-      auto task =
-          monitor_client_
-              ->request(web::http::methods::POST,
-                        "/write?db=tsclient_status&precision=s", measurement)
-              .then([](const web::http::http_response& response) {
-                if (response.status_code() != 204) {
-                  L_(error)
-                      << "Monitoring client received response status code "
-                      << response.status_code() << ": "
-                      << response.extract_string().get();
-                }
-              });
-
-      monitor_task_ = std::make_unique<pplx::task<void>>(task);
-    }
+  if (monitor_) {
+    const std::string prefix = output_prefix_.empty() ? ":" : output_prefix_;
+    monitor_->QueueMetric(
+        "timeslice_analyzer_status",
+        {{"host", hostname_}, {"output_prefix", prefix}},
+        {{"timeslice_count", timeslice_count_},
+         {"component_count", component_count_},
+         {"microslice_count", microslice_count_},
+         {"content_bytes", content_bytes_},
+         {"timeslice_error_count", timeslice_error_count_},
+         {"component_error_count", component_error_count_},
+         {"microslice_error_count", microslice_error_count_}});
   }
 
   scheduler_.add([this] { report_status(); }, now + interval);

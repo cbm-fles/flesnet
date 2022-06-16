@@ -95,8 +95,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
               "enable logging to syslog at given log level");
   generic_add("monitor,m",
               po::value<std::string>(&monitor_uri_)
-                  ->implicit_value("http://login:8086/"),
-              "publish flesnet status to InfluxDB");
+                  ->value_name("<uri>")
+                  ->implicit_value("influx1:login:8086:flesnet_status"),
+              "publish flesnet status to InfluxDB (or \"file:cout\" for "
+              "console output)");
   generic_add("help,h", "display this help and exit");
   generic_add("version,V", "output version information and exit");
 
