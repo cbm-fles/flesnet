@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
-#define _TURN_OFF_PLATFORM_STRING
-#include <cpprest/base_uri.h>
 #include <fstream>
 #include <iterator>
 
@@ -52,12 +50,12 @@ std::ostream& operator<<(std::ostream& out, const Transport& transport) {
 std::istream& operator>>(std::istream& in, InterfaceSpecification& ifspec) {
   in >> ifspec.full_uri;
   try {
-    web::uri uri(ifspec.full_uri);
-    ifspec.scheme = uri.scheme();
-    ifspec.host = uri.host();
-    ifspec.path = web::uri::split_path(uri.path());
-    ifspec.param = web::uri::split_query(uri.query());
-  } catch (const web::uri_exception& e) {
+    UriComponents uri{ifspec.full_uri};
+    ifspec.scheme = uri.scheme;
+    ifspec.host = uri.authority;
+    ifspec.path = split(uri.path, "/");
+    ifspec.param = uri.query_components;
+  } catch (const std::runtime_error& e) {
     throw po::invalid_option_value(ifspec.full_uri);
   }
   return in;
@@ -248,14 +246,18 @@ void Parameters::parse_options(int argc, char* argv[]) {
   outputs_ = vm["output"].as<std::vector<InterfaceSpecification>>();
 
   for (auto& input : inputs_) {
-    if (!web::uri::validate(input.full_uri)) {
+    try {
+      UriComponents uri{input.full_uri};
+    } catch (const std::runtime_error& e) {
       throw ParametersException("invalid input specification: " +
                                 input.full_uri);
     }
   }
 
   for (auto& output : outputs_) {
-    if (!web::uri::validate(output.full_uri)) {
+    try {
+      UriComponents uri{output.full_uri};
+    } catch (const std::runtime_error& e) {
       throw ParametersException("invalid output specification: " +
                                 output.full_uri);
     }
