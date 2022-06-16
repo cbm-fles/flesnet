@@ -1,3 +1,0 @@
-[submodule "external/etcd-cpp-api"]
-	path = external/etcd-cpp-api
-	url = ../etcd-cpp-api.git
