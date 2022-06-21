@@ -4,9 +4,8 @@
 
 #include "MonitorSinkInflux1.hpp"
 
-#include "ChronoHelper.hpp"
-#include "Exception.hpp"
 #include "Monitor.hpp"
+#include <stdexcept>
 
 #include "fmt/format.h"
 
@@ -49,7 +48,7 @@ static const size_t kSendChunkSize = 2000000; // send chunk size
 /*! \brief Constructor
   \param monitor back reference to Monitor
   \param path write endpoint as `host:[port]:[db]`
-  \throws Exception if `path` does not contain 3 fields
+  \throws std::runtime_error if `path` does not contain 3 fields
 
   Write metrics to an InfluxDB V1 accessed via HTTP and an endpoint defined
   by `path`:
@@ -65,9 +64,9 @@ MonitorSinkInflux1::MonitorSinkInflux1(Monitor& monitor, const string& path)
   regex re_path(R"(^(.+?):([0-9]*?):(.*)$)");
   smatch match;
   if (!regex_search(path.begin(), path.end(), match, re_path))
-    throw Exception(fmt::format("MonitorSinkInflux1::ctor:"
-                                " path not host:[port]:[db] '{}'",
-                                path));
+    throw std::runtime_error(fmt::format("MonitorSinkInflux1::ctor:"
+                                         " path not host:[port]:[db] '{}'",
+                                         path));
   fHost = match[1].str();
   fPort = match[2].str();
   fDB = match[3].str();
@@ -126,7 +125,7 @@ void MonitorSinkInflux1::ProcessHeartbeat() {
 void MonitorSinkInflux1::SendData(const string& msg) {
   try {
     // start timer
-    auto tbeg = ScNow();
+    auto tbeg = chrono::system_clock::now();
 
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
@@ -209,7 +208,8 @@ void MonitorSinkInflux1::SendData(const string& msg) {
     // do stats
     fStatNSend += 1;
     fStatNByte += msg.size();
-    fStatSndTime += ScTimeDiff2Double(tbeg, ScNow());
+    chrono::duration<double> dt = chrono::system_clock::now() - tbeg;
+    fStatSndTime += dt.count();
 
     // If we get here then the connection is closed gracefully
   } catch (exception const& e) {

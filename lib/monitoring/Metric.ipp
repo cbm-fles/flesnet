@@ -19,7 +19,7 @@ namespace cbm {
 inline Metric::Metric(const string& measurement,
                       const MetricTagSet& tagset,
                       const MetricFieldSet& fieldset,
-                      sctime_point timestamp)
+                      sc::time_point timestamp)
     : fMeasurement(measurement), fTagset(tagset), fFieldset(fieldset),
       fTimestamp(timestamp) {}
 
@@ -34,7 +34,7 @@ inline Metric::Metric(const string& measurement,
 inline Metric::Metric(const string& measurement,
                       const MetricTagSet& tagset,
                       MetricFieldSet&& fieldset,
-                      sctime_point timestamp)
+                      sc::time_point timestamp)
     : fMeasurement(measurement), fTagset(tagset), fFieldset(move(fieldset)),
       fTimestamp(timestamp) {}
 
@@ -49,7 +49,7 @@ inline Metric::Metric(const string& measurement,
 inline Metric::Metric(const string& measurement,
                       MetricTagSet&& tagset,
                       MetricFieldSet&& fieldset,
-                      sctime_point timestamp)
+                      sc::time_point timestamp)
     : fMeasurement(measurement), fTagset(move(tagset)),
       fFieldset(move(fieldset)), fTimestamp(timestamp) {}
 
