@@ -4,9 +4,8 @@
 
 #include "MonitorSink.hpp"
 
-#include "ChronoHelper.hpp"
-
 #include <algorithm>
+#include <chrono>
 #include <iomanip>
 #include <sstream>
 
@@ -123,10 +122,13 @@ string MonitorSink::InfluxFields(const Metric& point) {
  */
 
 string MonitorSink::InfluxLine(const Metric& point) {
+  chrono::duration<long, std::nano> timestamp_ns =
+      point.fTimestamp - chrono::system_clock::time_point();
+
   string res = point.fMeasurement;
   res += "," + InfluxTags(point);
   res += " " + InfluxFields(point);
-  res += " " + to_string(ScTimePoint2Nsec(point.fTimestamp));
+  res += " " + to_string(timestamp_ns.count());
   return res;
 }
 

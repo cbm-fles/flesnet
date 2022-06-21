@@ -4,34 +4,21 @@
 
 #include "Monitor.hpp"
 
-#include "ChronoHelper.hpp"
-#include "Exception.hpp"
 #include "MonitorSinkFile.hpp"
 #include "MonitorSinkInflux1.hpp"
 #include "MonitorSinkInflux2.hpp"
-#include "PThreadHelper.hpp"
-#include "SysCallException.hpp"
+#include "System.hpp"
+#include <stdexcept>
 
 #include "fmt/format.h"
 
-#include <errno.h>
-#include <poll.h>
-#include <sys/eventfd.h>
-#include <sys/timerfd.h>
-#include <unistd.h>
-
 namespace cbm {
 using namespace std;
-using namespace std::chrono_literals;
 
 /*! \class Monitor
   \brief Thread-safe metric monitor system for CBM
 
   This class provides a thread-safe metric monitor for the CBM framework.
-  The Monitor is instantiated as a \glos{singleton} in Context right after
-  Logger is up and is destroyed as 2nd last step prior to Logger, and is
-  therefore available for \glos{DObject}s in a \glos{CBMmain} throughout
-  the whole lifetime.
 
   The Monitor system has two layers
   - a core which collects and buffers metrics
@@ -57,23 +44,20 @@ using namespace std::chrono_literals;
 
   See QueueMetric() for a more detailed description the Monitor input interface.
 
-  The Monitor back-end is provided by MonitorSink objects and controlled via
+  The Monitor back end is provided by MonitorSink objects and controlled via
   - OpenSink(): creates a new sink
   - CloseSink(): removes a sink
 
-  Currently two sink type is implemented
+  Currently two sink types are implemented
   - MonitorSinkFile: writes to files
-  - MonitorSinkInflux1: writes to a InfluxDB V1.x time-series database
-  - MonitorSinkInflux2: writes to a InfluxDB V2.x time-series database
+  - MonitorSinkInflux1: writes to an InfluxDB V1.x time-series database
+  - MonitorSinkInflux2: writes to an InfluxDB V2.x time-series database
 
   The Monitor is a \glos{singleton} and accessed via the Monitor::Ref() static
   method.
 
-  \note On \ref objectownership
-    - is owned by Context
-
   \note **Implementation notes**
-  - the Monitor uses a worker thread named "Cbm:monitor" and a `mutex` to
+  - the Monitor uses a worker thread named "cbm:monitor" and a `mutex` to
     protect the metric queue. The code sequences executed under `mutex` lock
     use `std::move` and are absolutely minimal, contention when locking the
     `mutex` is thus very unlikely:
@@ -82,37 +66,24 @@ using namespace std::chrono_literals;
 */
 
 //-----------------------------------------------------------------------------
-// some constants
-static constexpr scduration kHeartbeat = 60s; // heartbeat interval
-
-//-----------------------------------------------------------------------------
 /*! \brief Constructor
-  \throws Exception in case Monitor is already instantiated
-  \throws SysCallException in case a system calls fails
+  \throws std::runtime_error in case Monitor is already instantiated or a system
+  call fails
 
   Initializes the Monitor \glos{singleton} and creates a work thread with
-  the name "Cbm:monitor" for processing the metrics.
+  the name "cbm:monitor" for processing the metrics.
  */
 
 Monitor::Monitor(const string& sname) {
   // singleton check
   if (fpSingleton)
-    throw Exception("Monitor::ctor: already instantiated");
-
-  // setup eventfd
-  int fd = ::eventfd(0U, 0);
-  if (fd < 0)
-    throw SysCallException("Monitor::ctor"s, "eventfd"s, errno);
-  fEvtFd.Set(fd);
+    throw std::runtime_error("Monitor::ctor: already instantiated");
 
   // get hostname
-  char hostname[80];
-  if (int rc = ::gethostname(hostname, sizeof(hostname)); rc < 0)
-    throw SysCallException("Monitor::ctor"s, "gethostname"s, errno);
-  fHostName = hostname;
+  fHostName = cbm::system::current_hostname();
 
   // init heartbeat sequence
-  fNextHeartbeat = ScNow();
+  fNextHeartbeat = chrono::system_clock::now();
 
   // start EventLoop
   fThread = thread([this]() { EventLoop(); });
@@ -127,13 +98,23 @@ Monitor::Monitor(const string& sname) {
 //-----------------------------------------------------------------------------
 /*! \brief Destructor
 
-  Calls Stop(), which will trigger the processing of all still pending
-  metrics and termination of the work thread.
+  Trigger the processing of all still pending metrics and termination of the
+  work thread.
  */
 
 Monitor::~Monitor() {
   fpSingleton = nullptr;
-  Stop();
+
+  // Set fStopped and wake up worker thread. This triggers the processing of all
+  // still pending metrics, after that the thread will terminate.
+  {
+    lock_guard<mutex> lk(fControlMutex);
+    fStopped = true;
+  }
+  fControlCV.notify_one();
+
+  if (fThread.joinable())
+    fThread.join();
 }
 
 //-----------------------------------------------------------------------------
@@ -152,15 +133,15 @@ void Monitor::OpenSink(const string& sname) {
     lock_guard<mutex> lock(fSinkMapMutex);
     auto it = fSinkMap.find(sname);
     if (it != fSinkMap.end())
-      throw Exception(
+      throw std::runtime_error(
           fmt::format("Monitor::OpenSink: sink '{}' already open", sname));
   }
 
   auto pos = sname.find(':');
   if (pos == string::npos)
-    throw Exception(fmt::format("Monitor::OpenSink:"
-                                " no sink type specified in '{}'",
-                                sname));
+    throw std::runtime_error(fmt::format("Monitor::OpenSink:"
+                                         " no sink type specified in '{}'",
+                                         sname));
 
   string stype = sname.substr(0, pos);
   string spath = sname.substr(pos + 1);
@@ -180,7 +161,7 @@ void Monitor::OpenSink(const string& sname) {
     lock_guard<mutex> lock(fSinkMapMutex);
     fSinkMap.try_emplace(sname, move(uptr));
   } else {
-    throw Exception(
+    throw std::runtime_error(
         fmt::format("Monitor::OpenSink: invalid sink type '{}'", stype));
   }
 }
@@ -188,13 +169,13 @@ void Monitor::OpenSink(const string& sname) {
 //-----------------------------------------------------------------------------
 /*! \brief Close a sink
   \param sname    sink name, given as proto:path
-  \throws Exception if no sink named `sname` exists
+  \throws std::runtime_error if no sink named `sname` exists
  */
 
 void Monitor::CloseSink(const string& sname) {
   lock_guard<mutex> lock(fSinkMapMutex);
   if (fSinkMap.erase(sname) == 0)
-    throw Exception(
+    throw std::runtime_error(
         fmt::format("Monitor::CloseSink: sink '{}' not found", sname));
 }
 
@@ -228,8 +209,8 @@ void Monitor::QueueMetric(Metric&& point) {
   if (fStopped)
     return; // discard when already stopped
   auto ts = point.fTimestamp;
-  if (ts == sctime_point())
-    ts = ScNow();
+  if (ts == sc::time_point())
+    ts = chrono::system_clock::now();
   {
     lock_guard<mutex> lock(fMetVecMutex);
     fMetVec.emplace_back(move(point));
@@ -248,7 +229,7 @@ void Monitor::QueueMetric(Metric&& point) {
 void Monitor::QueueMetric(const string& measurement,
                           const MetricTagSet& tagset,
                           const MetricFieldSet& fieldset,
-                          sctime_point timestamp) {
+                          sc::time_point timestamp) {
   Metric point(measurement, tagset, fieldset, timestamp);
   QueueMetric(move(point));
 }
@@ -264,7 +245,7 @@ void Monitor::QueueMetric(const string& measurement,
 void Monitor::QueueMetric(const string& measurement,
                           const MetricTagSet& tagset,
                           MetricFieldSet&& fieldset,
-                          sctime_point timestamp) {
+                          sc::time_point timestamp) {
   Metric point(measurement, tagset, move(fieldset), timestamp);
   QueueMetric(move(point));
 }
@@ -280,38 +261,9 @@ void Monitor::QueueMetric(const string& measurement,
 void Monitor::QueueMetric(const string& measurement,
                           MetricTagSet&& tagset,
                           MetricFieldSet&& fieldset,
-                          sctime_point timestamp) {
+                          sc::time_point timestamp) {
   Metric point(measurement, move(tagset), move(fieldset), timestamp);
   QueueMetric(move(point));
-}
-
-//-----------------------------------------------------------------------------
-/*! \brief Stop Monitor work thread
-
-  Calls Wakeup() to wakeup the work thread. This triggers the processing
-  of all still pending metrics, after that the thread will terminate.
-  Stop() joins the work thread, after that the Monitor object can be
-  safely destructed.
- */
-
-void Monitor::Stop() {
-  fStopped = true;
-  Wakeup();
-  if (fThread.joinable())
-    fThread.join();
-}
-
-//-----------------------------------------------------------------------------
-/*! \brief Wakeup work thread
-
-  Uses an `eventfd` channel to wakeup the work thread. Is used to trigger
-  the processing of metrics, e.g. for thread shutdown with Stop().
- */
-
-void Monitor::Wakeup() {
-  uint64_t one(1);
-  if (::write(fEvtFd, &one, sizeof(one)) != sizeof(one))
-    throw SysCallException("Monitor::Wakeup"s, "write"s, "fEvtFd"s, errno);
 }
 
 //-----------------------------------------------------------------------------
@@ -319,24 +271,15 @@ void Monitor::Wakeup() {
  */
 
 void Monitor::EventLoop() {
-  using namespace std::chrono_literals;
-
   // set worker thread name, for convenience (e.g. for top 'H' display)
-  SetPThreadName("Cbm:monitor");
+  cbm::system::set_thread_name("cbm:monitor");
 
-  pollfd polllist[1];
-  polllist[0] = pollfd{fEvtFd, POLLIN, 0};
-
-  while (true) {
-    ::poll(polllist, 1, kELoopTimeout); // timeout results in auto flush
-
-    // handle fEvtFd -------------------------------------------------
-    if (polllist[0].revents == POLLIN) {
-      uint64_t cnt = 0;
-      if (::read(fEvtFd, &cnt, sizeof(cnt)) != sizeof(cnt))
-        throw SysCallException("Monitor::EventLoop"s, "read"s, "fEvtFd"s,
-                               errno);
-    }
+  bool stopped = false;
+  while (!stopped) {
+    std::unique_lock lk(fControlMutex);
+    stopped =
+        fControlCV.wait_for(lk, kELoopTimeout, [this] { return fStopped; });
+    // timeout results in auto flush
 
     metvec_t metvec;
     {
@@ -361,30 +304,27 @@ void Monitor::EventLoop() {
       for (auto& kv : fSinkMap)
         (*kv.second).ProcessMetricVec(metvec);
     }
-
-    if (ScNow() > fNextHeartbeat && !fStopped) { // handle heartbeats
-      fNextHeartbeat += kHeartbeat;              // schedule nexr
+    if (chrono::system_clock::now() > fNextHeartbeat && !stopped) {
+      // handle heartbeats
+      fNextHeartbeat += kHeartbeat; // schedule next
       lock_guard<mutex> lock(fSinkMapMutex);
       for (auto& kv : fSinkMap)
         (*kv.second).ProcessHeartbeat();
     }
-
-    if (fStopped)
-      break;
-  } // while (true)
+  }
 }
 
 //-----------------------------------------------------------------------------
 /*! \brief Returns reference to a sink
   \param sname    sink name, given as proto:path
-  \throws Exception if no sink named `sname` exists
+  \throws std::runtime_error if no sink named `sname` exists
   \returns MonitorSink reference
  */
 
 MonitorSink& Monitor::SinkRef(const string& sname) {
   auto it = fSinkMap.find(sname);
   if (it == fSinkMap.end())
-    throw Exception(
+    throw std::runtime_error(
         fmt::format("Monitor::SinkRef: sink '{}' not found", sname));
   return *(it->second.get());
 }

@@ -5,11 +5,11 @@
 #ifndef included_Cbm_Monitor
 #define included_Cbm_Monitor 1
 
-#include "ChronoDefs.hpp"
-#include "FileDescriptor.hpp"
 #include "Metric.hpp"
 #include "MonitorSink.hpp"
 
+#include <chrono>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -19,6 +19,8 @@
 
 namespace cbm {
 using namespace std;
+using namespace std::chrono_literals;
+using sc = chrono::system_clock;
 
 class MonitorSink; // forward declaration
 
@@ -39,15 +41,15 @@ public:
   void QueueMetric(const string& measurement,
                    const MetricTagSet& tagset,
                    const MetricFieldSet& fieldset,
-                   sctime_point timestamp = sctime_point());
+                   sc::time_point timestamp = sc::time_point());
   void QueueMetric(const string& measurement,
                    const MetricTagSet& tagset,
                    MetricFieldSet&& fieldset,
-                   sctime_point timestamp = sctime_point());
+                   sc::time_point timestamp = sc::time_point());
   void QueueMetric(const string& measurement,
                    MetricTagSet&& tagset,
                    MetricFieldSet&& fieldset,
-                   sctime_point timestamp = sctime_point());
+                   sc::time_point timestamp = sc::time_point());
   const string& HostName() const;
 
   static Monitor& Ref();
@@ -55,11 +57,10 @@ public:
 
 public:
   // some constants
-  static const int kELoopTimeout = 10000; //!< monitor flush time in ms
+  static constexpr auto kELoopTimeout = 10s; //!< monitor flush time
+  static constexpr auto kHeartbeat = 60s;    //!< heartbeat interval
 
 private:
-  void Stop();
-  void Wakeup();
   void EventLoop();
   MonitorSink& SinkRef(const string& sname);
 
@@ -68,16 +69,18 @@ private:
   using sink_uptr_t = unique_ptr<MonitorSink>;
   using smap_t = unordered_map<string, sink_uptr_t>;
 
-  FileDescriptor fEvtFd{};       //!< fd for eventfd file
-  thread fThread{};              //!< worker thread
-  metvec_t fMetVec{};            //!< metric list
-  mutex fMetVecMutex{};          //!< mutex for fMetVec access
-  string fHostName{""};          //!< hostname
-  bool fStopped{false};          //!< signals thread rundown
-  smap_t fSinkMap{};             //!< sink registry
-  mutex fSinkMapMutex{};         //!< mutex for fSinkMap access
-  sctime_point fNextHeartbeat{}; //!< time of next heartbeat
-  static Monitor* fpSingleton;   //!< \glos{singleton} this
+  thread fThread{};                   //!< worker thread
+  std::condition_variable fControlCV; //!< condition variable for thread control
+  std::mutex fControlMutex{};         //!< mutex for thread control
+  bool fStopped{false};               //!< signals thread rundown
+
+  metvec_t fMetVec{};              //!< metric list
+  mutex fMetVecMutex{};            //!< mutex for fMetVec access
+  string fHostName{""};            //!< hostname
+  smap_t fSinkMap{};               //!< sink registry
+  mutex fSinkMapMutex{};           //!< mutex for fSinkMap access
+  sc::time_point fNextHeartbeat{}; //!< time of next heartbeat
+  static Monitor* fpSingleton;     //!< \glos{singleton} this
 };
 
 } // end namespace cbm

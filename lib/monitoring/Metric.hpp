@@ -5,8 +5,7 @@
 #ifndef included_Cbm_Metric
 #define included_Cbm_Metric 1
 
-#include "ChronoDefs.hpp"
-
+#include <chrono>
 #include <string>
 #include <utility>
 #include <variant>
@@ -18,6 +17,7 @@ using namespace std;
 using MetricTagSet = vector<pair<string, string>>;
 using MetricField = variant<bool, int, long, unsigned long, double, string>;
 using MetricFieldSet = vector<pair<string, MetricField>>;
+using sc = chrono::system_clock;
 
 struct Metric {
   Metric() = default;
@@ -26,22 +26,22 @@ struct Metric {
   Metric(const string& measurement,
          const MetricTagSet& tagset,
          const MetricFieldSet& fieldset,
-         sctime_point timestamp = sctime_point());
+         sc::time_point timestamp = sc::time_point());
   Metric(const string& measurement,
          const MetricTagSet& tagset,
          MetricFieldSet&& fieldset,
-         sctime_point timestamp = sctime_point());
+         sc::time_point timestamp = sc::time_point());
   Metric(const string& measurement,
          MetricTagSet&& tagset,
          MetricFieldSet&& fieldset,
-         sctime_point timestamp = sctime_point());
+         sc::time_point timestamp = sc::time_point());
   Metric& operator=(const Metric&) = default;
   Metric& operator=(Metric&&) = default;
 
-  string fMeasurement{""};  //!< measurement name
-  MetricTagSet fTagset;     //!< set of tags
-  MetricFieldSet fFieldset; //!< set of fields
-  sctime_point fTimestamp;  //!< time stamp
+  string fMeasurement{""};   //!< measurement name
+  MetricTagSet fTagset;      //!< set of tags
+  MetricFieldSet fFieldset;  //!< set of fields
+  sc::time_point fTimestamp; //!< time stamp
 };
 
 } // end namespace cbm

@@ -4,9 +4,8 @@
 
 #include "MonitorSinkInflux2.hpp"
 
-#include "ChronoHelper.hpp"
-#include "Exception.hpp"
 #include "Monitor.hpp"
+#include <stdexcept>
 
 #include "fmt/format.h"
 
@@ -51,8 +50,9 @@ static const size_t kSendChunkSize = 2000000; // send chunk size
 /*! \brief Constructor
   \param monitor back reference to Monitor
   \param path write endpoint as `host:[port]:[bucket]:[token]`
-  \throws Exception if `path` does not contain 4 fields
-  \throws Exception if `token` in `path` is empty and CBM_INFLUX_TOKEN undefined
+  \throws std::runtime_error if `path` does not contain 4 fields
+  \throws std::runtime_error if `token` in `path` is empty and CBM_INFLUX_TOKEN
+  undefined
 
   Write metrics to an InfluxDB V2 accessed via HTTP and an endpoint defined
   by `path`:
@@ -71,9 +71,10 @@ MonitorSinkInflux2::MonitorSinkInflux2(Monitor& monitor, const string& path)
   regex re_path(R"(^(.+?):([0-9]*?):(.*?):(.*)$)");
   smatch match;
   if (!regex_search(path.begin(), path.end(), match, re_path))
-    throw Exception(fmt::format("MonitorSinkInflux2::ctor:"
-                                " path not host:[port]:[bucket]:[token] '{}'",
-                                path));
+    throw std::runtime_error(
+        fmt::format("MonitorSinkInflux2::ctor:"
+                    " path not host:[port]:[bucket]:[token] '{}'",
+                    path));
   fHost = match[1].str();
   fPort = match[2].str();
   fBucket = match[3].str();
@@ -85,8 +86,9 @@ MonitorSinkInflux2::MonitorSinkInflux2(Monitor& monitor, const string& path)
   if (fToken.size() == 0) {
     auto pchar = ::getenv("CBM_INFLUX_TOKEN");
     if (pchar == nullptr)
-      throw Exception("MonitorSinkInflux2::ctor:"
-                      " no token given and CBM_INFLUX_TOKEN not defined");
+      throw std::runtime_error(
+          "MonitorSinkInflux2::ctor:"
+          " no token given and CBM_INFLUX_TOKEN not defined");
     fToken = string(pchar);
   }
 }
@@ -140,7 +142,7 @@ void MonitorSinkInflux2::ProcessHeartbeat() {
 void MonitorSinkInflux2::SendData(const string& msg) {
   try {
     // start timer
-    auto tbeg = ScNow();
+    auto tbeg = chrono::system_clock::now();
 
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
@@ -225,7 +227,8 @@ void MonitorSinkInflux2::SendData(const string& msg) {
     // do stats
     fStatNSend += 1;
     fStatNByte += msg.size();
-    fStatSndTime += ScTimeDiff2Double(tbeg, ScNow());
+    chrono::duration<double> dt = chrono::system_clock::now() - tbeg;
+    fStatSndTime += dt.count();
 
     // If we get here then the connection is closed gracefully
   } catch (exception const& e) {

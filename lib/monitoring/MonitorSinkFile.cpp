@@ -4,12 +4,12 @@
 
 #include "MonitorSinkFile.hpp"
 
-#include "Exception.hpp"
 #include "Monitor.hpp"
 
 #include "fmt/format.h"
 
 #include <fstream>
+#include <stdexcept>
 
 namespace cbm {
 using namespace std;
@@ -39,9 +39,9 @@ MonitorSinkFile::MonitorSinkFile(Monitor& monitor, const string& path)
   } else {
     fpOStream = make_unique<ofstream>(path);
     if (!fpOStream->is_open())
-      throw Exception(fmt::format("MonitorSinkFile::ctor: open()"
-                                  " failed for '{}'",
-                                  path));
+      throw std::runtime_error(fmt::format("MonitorSinkFile::ctor: open()"
+                                           " failed for '{}'",
+                                           path));
   }
 }
 
