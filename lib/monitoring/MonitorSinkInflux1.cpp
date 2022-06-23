@@ -102,9 +102,9 @@ void MonitorSinkInflux1::ProcessMetricVec(const vector<Metric>& metvec) {
  */
 
 void MonitorSinkInflux1::ProcessHeartbeat() {
-  Monitor::Ref().QueueMetric("Monitor",                // measurement
-                             {},                       // no extra tags
-                             {{"points", fStatNPoint}, // fields
+  Monitor::Ref().QueueMetric("Monitor",                       // measurement
+                             {{"host", fMonitor.HostName()}}, // no extra tags
+                             {{"points", fStatNPoint},        // fields
                               {"tags", fStatNTag},
                               {"fields", fStatNField},
                               {"sends", fStatNSend},
