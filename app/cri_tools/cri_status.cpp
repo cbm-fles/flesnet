@@ -94,7 +94,12 @@ int main(int argc, char* argv[]) {
   std::unique_ptr<cbm::Monitor> monitor;
   if (!monitor_uri.empty()) {
     console = false;
-    monitor = std::make_unique<cbm::Monitor>(monitor_uri);
+    try {
+      monitor = std::make_unique<cbm::Monitor>(monitor_uri);
+    } catch (std::exception& e) {
+      std::cerr << e.what() << std::endl;
+      return EXIT_FAILURE;
+    }
   }
   auto hostname = fles::system::current_hostname();
 
