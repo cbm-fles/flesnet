@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo bash -c "echo 'deb https://download.opensuse.org/repositories/network:/messaging:/zeromq:/release-draft/xUbuntu_20.04/ ./' > /etc/apt/sources.list.d/zmq.list"
-        wget https://build.opensuse.org/projects/network:messaging:zeromq:release-draft/public_key -O- | sudo apt-key add
+        wget 'https://build.opensuse.org/projects/network:messaging:zeromq:release-draft/signing_keys/download?kind=gpg' -O- | sudo apt-key add
         sudo bash -c "echo -e 'Package: libzmq3-dev\nPin: origin download.opensuse.org\nPin-Priority: 1000\n\nPackage: libzmq5\nPin: origin download.opensuse.org\nPin-Priority: 1000' >> /etc/apt/preferences"
         sudo apt-get update -y
         sudo apt-get install -yq catch doxygen clang-tidy-12 libboost-all-dev libfabric-dev libibverbs-dev libkmod-dev libnuma-dev libpci-dev librdmacm-dev libtool-bin libzmq3-dev
