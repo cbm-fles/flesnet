@@ -11,28 +11,27 @@
 #include <vector>
 
 namespace cbm {
-using namespace std;
 
 class Monitor; // forward declaration
 
 class MonitorSink {
 public:
-  MonitorSink(Monitor& monitor, const string& path);
+  MonitorSink(Monitor& monitor, const std::string& path);
   virtual ~MonitorSink() = default;
 
-  virtual void ProcessMetricVec(const vector<Metric>& metvec) = 0;
+  virtual void ProcessMetricVec(const std::vector<Metric>& metvec) = 0;
   virtual void ProcessHeartbeat() = 0;
 
 protected:
-  string CleanString(const string& id);
-  string EscapeString(const string& str);
-  string InfluxTags(const Metric& point);
-  string InfluxFields(const Metric& point);
-  string InfluxLine(const Metric& point);
+  std::string CleanString(const std::string& id);
+  std::string EscapeString(const std::string& str);
+  std::string InfluxTags(const Metric& point);
+  std::string InfluxFields(const Metric& point);
+  std::string InfluxLine(const Metric& point);
 
 protected:
   Monitor& fMonitor;       //!< back reference to Monitor
-  string fSinkPath;        //!< path for output
+  std::string fSinkPath;   //!< path for output
   long fStatNPoint{0};     //!< # of processed points
   long fStatNTag{0};       //!< # of processed tags
   long fStatNField{0};     //!< # of processed fields

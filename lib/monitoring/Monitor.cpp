@@ -13,7 +13,6 @@
 #include "fmt/format.h"
 
 namespace cbm {
-using namespace std;
 
 /*! \class Monitor
   \brief Thread-safe metric monitor system for CBM
@@ -74,7 +73,7 @@ using namespace std;
   the name "cbm:monitor" for processing the metrics.
  */
 
-Monitor::Monitor(const string& sname) {
+Monitor::Monitor(const std::string& sname) {
   // singleton check
   if (fpSingleton)
     throw std::runtime_error("Monitor::ctor: already instantiated");
@@ -83,10 +82,10 @@ Monitor::Monitor(const string& sname) {
   fHostName = cbm::system::current_hostname();
 
   // init heartbeat sequence
-  fNextHeartbeat = chrono::system_clock::now();
+  fNextHeartbeat = std::chrono::system_clock::now();
 
   // start EventLoop
-  fThread = thread([this]() { EventLoop(); });
+  fThread = std::thread([this]() { EventLoop(); });
 
   fpSingleton = this;
 
@@ -108,7 +107,7 @@ Monitor::~Monitor() {
   // Set fStopped and wake up worker thread. This triggers the processing of all
   // still pending metrics, after that the thread will terminate.
   {
-    lock_guard<mutex> lk(fControlMutex);
+    std::lock_guard<std::mutex> lk(fControlMutex);
     fStopped = true;
   }
   fControlCV.notify_one();
@@ -127,10 +126,10 @@ Monitor::~Monitor() {
   - `influx2`: will create a MonitorSinkInflux2 sink
  */
 
-void Monitor::OpenSink(const string& sname) {
+void Monitor::OpenSink(const std::string& sname) {
 
   {
-    lock_guard<mutex> lock(fSinkMapMutex);
+    std::lock_guard<std::mutex> lock(fSinkMapMutex);
     auto it = fSinkMap.find(sname);
     if (it != fSinkMap.end())
       throw std::runtime_error(
@@ -138,27 +137,28 @@ void Monitor::OpenSink(const string& sname) {
   }
 
   auto pos = sname.find(':');
-  if (pos == string::npos)
+  if (pos == std::string::npos)
     throw std::runtime_error(fmt::format("Monitor::OpenSink:"
                                          " no sink type specified in '{}'",
                                          sname));
 
-  string stype = sname.substr(0, pos);
-  string spath = sname.substr(pos + 1);
+  std::string stype = sname.substr(0, pos);
+  std::string spath = sname.substr(pos + 1);
 
   if (stype == "file") {
-    unique_ptr<MonitorSink> uptr = make_unique<MonitorSinkFile>(*this, spath);
-    lock_guard<mutex> lock(fSinkMapMutex);
+    std::unique_ptr<MonitorSink> uptr =
+        std::make_unique<MonitorSinkFile>(*this, spath);
+    std::lock_guard<std::mutex> lock(fSinkMapMutex);
     fSinkMap.try_emplace(sname, move(uptr));
   } else if (stype == "influx1") {
-    unique_ptr<MonitorSink> uptr =
-        make_unique<MonitorSinkInflux1>(*this, spath);
-    lock_guard<mutex> lock(fSinkMapMutex);
+    std::unique_ptr<MonitorSink> uptr =
+        std::make_unique<MonitorSinkInflux1>(*this, spath);
+    std::lock_guard<std::mutex> lock(fSinkMapMutex);
     fSinkMap.try_emplace(sname, move(uptr));
   } else if (stype == "influx2") {
-    unique_ptr<MonitorSink> uptr =
-        make_unique<MonitorSinkInflux2>(*this, spath);
-    lock_guard<mutex> lock(fSinkMapMutex);
+    std::unique_ptr<MonitorSink> uptr =
+        std::make_unique<MonitorSinkInflux2>(*this, spath);
+    std::lock_guard<std::mutex> lock(fSinkMapMutex);
     fSinkMap.try_emplace(sname, move(uptr));
   } else {
     throw std::runtime_error(
@@ -172,8 +172,8 @@ void Monitor::OpenSink(const string& sname) {
   \throws std::runtime_error if no sink named `sname` exists
  */
 
-void Monitor::CloseSink(const string& sname) {
-  lock_guard<mutex> lock(fSinkMapMutex);
+void Monitor::CloseSink(const std::string& sname) {
+  std::lock_guard<std::mutex> lock(fSinkMapMutex);
   if (fSinkMap.erase(sname) == 0)
     throw std::runtime_error(
         fmt::format("Monitor::CloseSink: sink '{}' not found", sname));
@@ -182,9 +182,9 @@ void Monitor::CloseSink(const string& sname) {
 //-----------------------------------------------------------------------------
 //! \brief Return list of all sinks
 
-vector<string> Monitor::SinkList() {
-  vector<string> res;
-  lock_guard<mutex> lock(fSinkMapMutex);
+std::vector<std::string> Monitor::SinkList() {
+  std::vector<std::string> res;
+  std::lock_guard<std::mutex> lock(fSinkMapMutex);
   for (auto& kv : fSinkMap)
     res.push_back(kv.first);
   return res;
@@ -197,7 +197,7 @@ vector<string> Monitor::SinkList() {
 
 void Monitor::QueueMetric(const Metric& point) {
   auto tmp = point;
-  QueueMetric(move(tmp));
+  QueueMetric(std::move(tmp));
 }
 
 //-----------------------------------------------------------------------------
@@ -209,11 +209,11 @@ void Monitor::QueueMetric(Metric&& point) {
   if (fStopped)
     return; // discard when already stopped
   auto ts = point.fTimestamp;
-  if (ts == sc::time_point())
-    ts = chrono::system_clock::now();
+  if (ts == time_point())
+    ts = std::chrono::system_clock::now();
   {
-    lock_guard<mutex> lock(fMetVecMutex);
-    fMetVec.emplace_back(move(point));
+    std::lock_guard<std::mutex> lock(fMetVecMutex);
+    fMetVec.emplace_back(std::move(point));
     fMetVec[fMetVec.size() - 1].fTimestamp = ts;
   }
 }
@@ -226,12 +226,12 @@ void Monitor::QueueMetric(Metric&& point) {
   \param timestamp    timestamp (defaults to now() when omitted)
  */
 
-void Monitor::QueueMetric(const string& measurement,
+void Monitor::QueueMetric(const std::string& measurement,
                           const MetricTagSet& tagset,
                           const MetricFieldSet& fieldset,
-                          sc::time_point timestamp) {
+                          time_point timestamp) {
   Metric point(measurement, tagset, fieldset, timestamp);
-  QueueMetric(move(point));
+  QueueMetric(std::move(point));
 }
 
 //-----------------------------------------------------------------------------
@@ -242,12 +242,12 @@ void Monitor::QueueMetric(const string& measurement,
   \param timestamp    timestamp (defaults to now() when omitted)
  */
 
-void Monitor::QueueMetric(const string& measurement,
+void Monitor::QueueMetric(const std::string& measurement,
                           const MetricTagSet& tagset,
                           MetricFieldSet&& fieldset,
-                          sc::time_point timestamp) {
+                          time_point timestamp) {
   Metric point(measurement, tagset, move(fieldset), timestamp);
-  QueueMetric(move(point));
+  QueueMetric(std::move(point));
 }
 
 //-----------------------------------------------------------------------------
@@ -258,12 +258,12 @@ void Monitor::QueueMetric(const string& measurement,
   \param timestamp    timestamp (defaults to now() when omitted)
  */
 
-void Monitor::QueueMetric(const string& measurement,
+void Monitor::QueueMetric(const std::string& measurement,
                           MetricTagSet&& tagset,
                           MetricFieldSet&& fieldset,
-                          sc::time_point timestamp) {
+                          time_point timestamp) {
   Metric point(measurement, move(tagset), move(fieldset), timestamp);
-  QueueMetric(move(point));
+  QueueMetric(std::move(point));
 }
 
 //-----------------------------------------------------------------------------
@@ -283,7 +283,7 @@ void Monitor::EventLoop() {
 
     metvec_t metvec;
     {
-      lock_guard<mutex> lock(fMetVecMutex);
+      std::lock_guard<std::mutex> lock(fMetVecMutex);
       if (!fMetVec.empty()) {
         // move whole vector from protected queue to local environment
         metvec.swap(fMetVec);
@@ -300,14 +300,14 @@ void Monitor::EventLoop() {
     }
 
     if (metvec.size() > 0) {
-      lock_guard<mutex> lock(fSinkMapMutex);
+      std::lock_guard<std::mutex> lock(fSinkMapMutex);
       for (auto& kv : fSinkMap)
         (*kv.second).ProcessMetricVec(metvec);
     }
-    if (chrono::system_clock::now() > fNextHeartbeat && !stopped) {
+    if (std::chrono::system_clock::now() > fNextHeartbeat && !stopped) {
       // handle heartbeats
       fNextHeartbeat += kHeartbeat; // schedule next
-      lock_guard<mutex> lock(fSinkMapMutex);
+      std::lock_guard<std::mutex> lock(fSinkMapMutex);
       for (auto& kv : fSinkMap)
         (*kv.second).ProcessHeartbeat();
     }
@@ -321,7 +321,7 @@ void Monitor::EventLoop() {
   \returns MonitorSink reference
  */
 
-MonitorSink& Monitor::SinkRef(const string& sname) {
+MonitorSink& Monitor::SinkRef(const std::string& sname) {
   auto it = fSinkMap.find(sname);
   if (it == fSinkMap.end())
     throw std::runtime_error(

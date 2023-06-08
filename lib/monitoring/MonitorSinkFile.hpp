@@ -12,18 +12,17 @@
 #include <memory>
 
 namespace cbm {
-using namespace std;
 
 class MonitorSinkFile : public MonitorSink {
 public:
-  MonitorSinkFile(Monitor& monitor, const string& path);
+  MonitorSinkFile(Monitor& monitor, const std::string& path);
 
-  virtual void ProcessMetricVec(const vector<Metric>& metvec);
+  virtual void ProcessMetricVec(const std::vector<Metric>& metvec);
   virtual void ProcessHeartbeat();
 
 private:
-  ostream* fpCout{nullptr};         //!< pointer to cout/cerr
-  unique_ptr<ofstream> fpOStream{}; //!< uptr to general output stream
+  std::ostream* fpCout{nullptr};              //!< pointer to cout/cerr
+  std::unique_ptr<std::ofstream> fpOStream{}; //!< uptr to general output stream
 };
 
 } // end namespace cbm

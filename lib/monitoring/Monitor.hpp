@@ -18,69 +18,70 @@
 #include <vector>
 
 namespace cbm {
-using namespace std;
-using namespace std::chrono_literals;
-using sc = chrono::system_clock;
 
 class MonitorSink; // forward declaration
 
 class Monitor {
 public:
-  explicit Monitor(const string& sname = "");
+  using time_point = std::chrono::system_clock::time_point;
+
+  explicit Monitor(const std::string& sname = "");
   virtual ~Monitor();
 
   Monitor(const Monitor&) = delete;
   Monitor& operator=(const Monitor&) = delete;
 
-  void OpenSink(const string& sname);
-  void CloseSink(const string& sname);
-  vector<string> SinkList();
+  void OpenSink(const std::string& sname);
+  void CloseSink(const std::string& sname);
+  std::vector<std::string> SinkList();
 
   void QueueMetric(const Metric& point);
   void QueueMetric(Metric&& point);
-  void QueueMetric(const string& measurement,
+  void QueueMetric(const std::string& measurement,
                    const MetricTagSet& tagset,
                    const MetricFieldSet& fieldset,
-                   sc::time_point timestamp = sc::time_point());
-  void QueueMetric(const string& measurement,
+                   time_point timestamp = time_point());
+  void QueueMetric(const std::string& measurement,
                    const MetricTagSet& tagset,
                    MetricFieldSet&& fieldset,
-                   sc::time_point timestamp = sc::time_point());
-  void QueueMetric(const string& measurement,
+                   time_point timestamp = time_point());
+  void QueueMetric(const std::string& measurement,
                    MetricTagSet&& tagset,
                    MetricFieldSet&& fieldset,
-                   sc::time_point timestamp = sc::time_point());
-  const string& HostName() const;
+                   time_point timestamp = time_point());
+  const std::string& HostName() const;
 
   static Monitor& Ref();
   static Monitor* Ptr();
 
 public:
   // some constants
-  static constexpr auto kELoopTimeout = 10s; //!< monitor flush time
-  static constexpr auto kHeartbeat = 60s;    //!< heartbeat interval
+  static constexpr auto kELoopTimeout =
+      std::chrono::seconds(10); //!< monitor flush time
+  static constexpr auto kHeartbeat =
+      std::chrono::seconds(60); //!< heartbeat interval
 
 private:
   void EventLoop();
-  MonitorSink& SinkRef(const string& sname);
+  MonitorSink& SinkRef(const std::string& sname);
 
 private:
-  using metvec_t = vector<Metric>;
-  using sink_uptr_t = unique_ptr<MonitorSink>;
-  using smap_t = unordered_map<string, sink_uptr_t>;
+  using metvec_t = std::vector<Metric>;
+  using sink_uptr_t = std::unique_ptr<MonitorSink>;
+  using smap_t = std::unordered_map<std::string, sink_uptr_t>;
 
-  thread fThread{};                   //!< worker thread
+  std::thread fThread{};              //!< worker thread
   std::condition_variable fControlCV; //!< condition variable for thread control
   std::mutex fControlMutex{};         //!< mutex for thread control
   bool fStopped{false};               //!< signals thread rundown
 
-  metvec_t fMetVec{};              //!< metric list
-  mutex fMetVecMutex{};            //!< mutex for fMetVec access
-  string fHostName{""};            //!< hostname
-  smap_t fSinkMap{};               //!< sink registry
-  mutex fSinkMapMutex{};           //!< mutex for fSinkMap access
-  sc::time_point fNextHeartbeat{}; //!< time of next heartbeat
-  static Monitor* fpSingleton;     //!< \glos{singleton} this
+  metvec_t fMetVec{};          //!< metric list
+  std::mutex fMetVecMutex{};   //!< mutex for fMetVec access
+  std::string fHostName{""};   //!< hostname
+  smap_t fSinkMap{};           //!< sink registry
+  std::mutex fSinkMapMutex{};  //!< mutex for fSinkMap access
+  time_point fNextHeartbeat{}; //!< time of next heartbeat
+  static Monitor* fpSingleton; //!< \glos{singleton} this
 };
 
 } // end namespace cbm

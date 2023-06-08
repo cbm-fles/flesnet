@@ -26,11 +26,12 @@
 #include <stdlib.h>
 
 namespace cbm {
-using namespace std;
-using tcp = boost::asio::ip::tcp;    // from <boost/asio/ip/tcp.hpp>
-namespace http = boost::beast::http; // from <boost/beast/http.hpp>
+using tcp = boost::asio::ip::tcp;     // from <boost/asio/ip/tcp.hpp>
+namespace http = boost::beast::http;  // from <boost/beast/http.hpp>
+using namespace std::string_literals; // for ""s
+
 // some constants
-static const size_t kSendChunkSize = 2000000; // send chunk size
+static const size_t kSendChunkSize = 2'000'000ull; // send chunk size
 
 /*! \class MonitorSinkInflux2
   \brief Monitor sink - concrete sink for InfluxDB V2 output
@@ -66,11 +67,12 @@ static const size_t kSendChunkSize = 2000000; // send chunk size
   hardcoded to "CBM" via `?org=CBM`.
  */
 
-MonitorSinkInflux2::MonitorSinkInflux2(Monitor& monitor, const string& path)
+MonitorSinkInflux2::MonitorSinkInflux2(Monitor& monitor,
+                                       const std::string& path)
     : MonitorSink(monitor, path) {
-  regex re_path(R"(^(.+?):([0-9]*?):(.*?):(.*)$)");
-  smatch match;
-  if (!regex_search(path.begin(), path.end(), match, re_path))
+  std::regex re_path(R"(^(.+?):([0-9]*?):(.*?):(.*)$)");
+  std::smatch match;
+  if (!std::regex_search(path.begin(), path.end(), match, re_path))
     throw std::runtime_error(
         fmt::format("MonitorSinkInflux2::ctor:"
                     " path not host:[port]:[bucket]:[token] '{}'",
@@ -89,7 +91,7 @@ MonitorSinkInflux2::MonitorSinkInflux2(Monitor& monitor, const string& path)
       throw std::runtime_error(
           "MonitorSinkInflux2::ctor:"
           " no token given and CBM_INFLUX_TOKEN not defined");
-    fToken = string(pchar);
+    fToken = std::string(pchar);
   }
 }
 
@@ -97,8 +99,8 @@ MonitorSinkInflux2::MonitorSinkInflux2(Monitor& monitor, const string& path)
 /*! \brief Process a vector of metrics
  */
 
-void MonitorSinkInflux2::ProcessMetricVec(const vector<Metric>& metvec) {
-  string msg;
+void MonitorSinkInflux2::ProcessMetricVec(const std::vector<Metric>& metvec) {
+  std::string msg;
 
   fStatNPoint += metvec.size();
   for (auto& met : metvec) {
@@ -139,10 +141,10 @@ void MonitorSinkInflux2::ProcessHeartbeat() {
 /*! \brief Send a set of points in line format to database
  */
 
-void MonitorSinkInflux2::SendData(const string& msg) {
+void MonitorSinkInflux2::SendData(const std::string& msg) {
   try {
     // start timer
-    auto tbeg = chrono::system_clock::now();
+    auto tbeg = std::chrono::system_clock::now();
 
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
@@ -158,7 +160,7 @@ void MonitorSinkInflux2::SendData(const string& msg) {
     boost::asio::connect(socket, results.begin(), results.end());
 
     // Set up an HTTP POST request message
-    string target = "/api/v2/write?org=CBM&bucket="s + fBucket;
+    std::string target = "/api/v2/write?org=CBM&bucket="s + fBucket;
     int version = 11;
     http::request<http::string_body> req{http::verb::post, target, version};
     req.set(http::field::host, fHost);
@@ -166,7 +168,7 @@ void MonitorSinkInflux2::SendData(const string& msg) {
     req.set(http::field::user_agent, "Monitor");
     req.set(http::field::accept, "application/json");
     req.set(http::field::content_type, "text/plain; charset=utf-8");
-    req.set(http::field::content_length, to_string(msg.size()));
+    req.set(http::field::content_length, std::to_string(msg.size()));
     req.body() = msg;
 
     // Send the HTTP request to the remote host
@@ -190,12 +192,12 @@ void MonitorSinkInflux2::SendData(const string& msg) {
     //   returns a 404 -> "Not Found" if data base not existing
     //   returns a 422 -> "Unprocessable entity" if request is ill-formed
     if (res.result_int() != 200 && res.result_int() != 204) { // allow 200 & 204
-      string efields = "";
+      std::string efields = "";
       for (auto const& field : res) {
-        efields += string(field.name_string());       // C++17 string_view
-        efields += "=" + string(field.value()) + ";"; // limitation, grrr
+        efields += std::string(field.name_string());       // C++17 string_view
+        efields += "=" + std::string(field.value()) + ";"; // limitation, grrr
       }
-      string ebody = res.body(); // get body, trim \r and trailing \n
+      std::string ebody = res.body(); // get body, trim \r and trailing \n
       ebody.erase(std::remove(ebody.begin(), ebody.end(), '\r'), ebody.end());
       if (!ebody.empty() && ebody[ebody.size() - 1] == '\n')
         ebody.erase(ebody.size() - 1);
@@ -227,11 +229,11 @@ void MonitorSinkInflux2::SendData(const string& msg) {
     // do stats
     fStatNSend += 1;
     fStatNByte += msg.size();
-    chrono::duration<double> dt = chrono::system_clock::now() - tbeg;
+    std::chrono::duration<double> dt = std::chrono::system_clock::now() - tbeg;
     fStatSndTime += dt.count();
 
     // If we get here then the connection is closed gracefully
-  } catch (exception const& e) {
+  } catch (std::exception const& e) {
 #if defined(CBMLOGERR1)
     CBMLOGERR1("cid=__Monitor", "SendData-err")
         << "sinkname=" << fSinkPath << ", error=" << e.what();
