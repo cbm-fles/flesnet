@@ -12,7 +12,7 @@
 #include <stdexcept>
 
 namespace cbm {
-using namespace std;
+using namespace std::string_literals; // for ""s
 
 /*! \class MonitorSinkFile
   \brief Monitor sink - concrete sink for file output
@@ -30,14 +30,14 @@ using namespace std;
   simultaneously and will receive the same data.
  */
 
-MonitorSinkFile::MonitorSinkFile(Monitor& monitor, const string& path)
+MonitorSinkFile::MonitorSinkFile(Monitor& monitor, const std::string& path)
     : MonitorSink(monitor, path) {
   if (path == "cout"s) {
-    fpCout = &cout;
+    fpCout = &std::cout;
   } else if (path == "cerr"s) {
-    fpCout = &cerr;
+    fpCout = &std::cerr;
   } else {
-    fpOStream = make_unique<ofstream>(path);
+    fpOStream = std::make_unique<std::ofstream>(path);
     if (!fpOStream->is_open())
       throw std::runtime_error(fmt::format("MonitorSinkFile::ctor: open()"
                                            " failed for '{}'",
@@ -49,8 +49,8 @@ MonitorSinkFile::MonitorSinkFile(Monitor& monitor, const string& path)
 /*! \brief Process a vector of metrics
  */
 
-void MonitorSinkFile::ProcessMetricVec(const vector<Metric>& metvec) {
-  ostream& os = fpCout ? *fpCout : *fpOStream;
+void MonitorSinkFile::ProcessMetricVec(const std::vector<Metric>& metvec) {
+  std::ostream& os = fpCout ? *fpCout : *fpOStream;
   for (auto& met : metvec)
     os << InfluxLine(met) << "\n";
   if (size(metvec) > 0)

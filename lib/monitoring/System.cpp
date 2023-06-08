@@ -107,7 +107,7 @@ std::string current_thread_name() {
 #else
   return std::string();
 #endif
-};
+}
 
 void set_thread_name(const std::string& tname [[maybe_unused]]) {
 #if defined(HAVE_PTHREAD_SETNAME_NP)
@@ -122,7 +122,7 @@ void set_thread_name(const std::string& tname [[maybe_unused]]) {
     throw std::runtime_error(stringerror(errno));
   }
 #endif
-};
+}
 
 std::vector<std::string> glob(const std::string& pattern, glob_flags flags) {
   glob_t glob_result{};

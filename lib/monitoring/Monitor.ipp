@@ -7,7 +7,7 @@ namespace cbm {
 //-----------------------------------------------------------------------------
 //! \brief Returns hostname used by Monitor
 
-inline const string& Monitor::HostName() const { return fHostName; }
+inline const std::string& Monitor::HostName() const { return fHostName; }
 
 //-----------------------------------------------------------------------------
 //! \brief Static method which returns a reference of the

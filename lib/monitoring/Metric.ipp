@@ -16,10 +16,10 @@ namespace cbm {
   \param timestamp    timestamp (defaults to time of `QueueMetric` when omitted)
  */
 
-inline Metric::Metric(const string& measurement,
+inline Metric::Metric(const std::string& measurement,
                       const MetricTagSet& tagset,
                       const MetricFieldSet& fieldset,
-                      sc::time_point timestamp)
+                      time_point timestamp)
     : fMeasurement(measurement), fTagset(tagset), fFieldset(fieldset),
       fTimestamp(timestamp) {}
 
@@ -31,10 +31,10 @@ inline Metric::Metric(const string& measurement,
   \param timestamp    timestamp (defaults to time of `QueueMetric` when omitted)
  */
 
-inline Metric::Metric(const string& measurement,
+inline Metric::Metric(const std::string& measurement,
                       const MetricTagSet& tagset,
                       MetricFieldSet&& fieldset,
-                      sc::time_point timestamp)
+                      time_point timestamp)
     : fMeasurement(measurement), fTagset(tagset), fFieldset(move(fieldset)),
       fTimestamp(timestamp) {}
 
@@ -46,10 +46,10 @@ inline Metric::Metric(const string& measurement,
   \param timestamp    timestamp (defaults to time of `QueueMetric` when omitted)
  */
 
-inline Metric::Metric(const string& measurement,
+inline Metric::Metric(const std::string& measurement,
                       MetricTagSet&& tagset,
                       MetricFieldSet&& fieldset,
-                      sc::time_point timestamp)
+                      time_point timestamp)
     : fMeasurement(measurement), fTagset(move(tagset)),
       fFieldset(move(fieldset)), fTimestamp(timestamp) {}
 

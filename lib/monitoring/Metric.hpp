@@ -12,36 +12,36 @@
 #include <vector>
 
 namespace cbm {
-using namespace std;
-
-using MetricTagSet = vector<pair<string, string>>;
-using MetricField = variant<bool, int, long, unsigned long, double, string>;
-using MetricFieldSet = vector<pair<string, MetricField>>;
-using sc = chrono::system_clock;
+using MetricTagSet = std::vector<std::pair<std::string, std::string>>;
+using MetricField =
+    std::variant<bool, int, long, unsigned long, double, std::string>;
+using MetricFieldSet = std::vector<std::pair<std::string, MetricField>>;
 
 struct Metric {
+  using time_point = std::chrono::system_clock::time_point;
+
   Metric() = default;
   Metric(const Metric&) = default;
   Metric(Metric&&) = default;
-  Metric(const string& measurement,
+  Metric(const std::string& measurement,
          const MetricTagSet& tagset,
          const MetricFieldSet& fieldset,
-         sc::time_point timestamp = sc::time_point());
-  Metric(const string& measurement,
+         time_point timestamp = time_point());
+  Metric(const std::string& measurement,
          const MetricTagSet& tagset,
          MetricFieldSet&& fieldset,
-         sc::time_point timestamp = sc::time_point());
-  Metric(const string& measurement,
+         time_point timestamp = time_point());
+  Metric(const std::string& measurement,
          MetricTagSet&& tagset,
          MetricFieldSet&& fieldset,
-         sc::time_point timestamp = sc::time_point());
+         time_point timestamp = time_point());
   Metric& operator=(const Metric&) = default;
   Metric& operator=(Metric&&) = default;
 
-  string fMeasurement{""};   //!< measurement name
-  MetricTagSet fTagset;      //!< set of tags
-  MetricFieldSet fFieldset;  //!< set of fields
-  sc::time_point fTimestamp; //!< time stamp
+  std::string fMeasurement{""}; //!< measurement name
+  MetricTagSet fTagset;         //!< set of tags
+  MetricFieldSet fFieldset;     //!< set of fields
+  time_point fTimestamp;        //!< time stamp
 };
 
 } // end namespace cbm

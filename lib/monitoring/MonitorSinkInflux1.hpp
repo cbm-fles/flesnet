@@ -8,22 +8,21 @@
 #include "MonitorSink.hpp"
 
 namespace cbm {
-using namespace std;
 
 class MonitorSinkInflux1 : public MonitorSink {
 public:
-  MonitorSinkInflux1(Monitor& monitor, const string& path);
+  MonitorSinkInflux1(Monitor& monitor, const std::string& path);
 
-  virtual void ProcessMetricVec(const vector<Metric>& metvec);
+  virtual void ProcessMetricVec(const std::vector<Metric>& metvec);
   virtual void ProcessHeartbeat();
 
 private:
-  void SendData(const string& msg);
+  void SendData(const std::string& msg);
 
 private:
-  string fHost; //!< server host name
-  string fPort; //!< port for InfluxDB
-  string fDB;   //!< target database
+  std::string fHost; //!< server host name
+  std::string fPort; //!< port for InfluxDB
+  std::string fDB;   //!< target database
 };
 
 } // end namespace cbm
