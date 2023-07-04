@@ -26,11 +26,11 @@ enum class Subsystem : uint8_t {
   TRD = 0x40,   ///< Transition Radiation Detector (TRD)
   TRD2D = 0x48, ///< 2-D Transition Radiation Detector (TRD2D)
   MUCH = 0x50,  ///< Muon Chamber system (MuCh)
-  RPC = 0x60,   ///< Resistive Plate Chambers (RPC)
-  ECAL = 0x70,  ///< Electromagnetic CALorimeter (ECAL)
-  PSD = 0x80,   ///< Projectile Spectator Detector (PSD)
+  TOF = 0x60,   ///< Time-Of-Flight detector (TOF, was: RPC)
 
-  // Other detectors (experimental)
+  // Other detectors (historical/experimental)
+  ECAL = 0x70,      ///< Electromagnetic CALorimeter (ECAL)
+  PSD = 0x80,       ///< Projectile Spectator Detector (PSD)
   T0 = 0x90,        ///< mCBM T0 Detector
   TRB3 = 0xE0,      ///< TRB3 Stream
   Hodoscope = 0xE1, ///< Fiber Hodoscope
@@ -43,32 +43,31 @@ enum class Subsystem : uint8_t {
 
 inline const std::string& to_string(Subsystem sys_id) {
   static const std::string undefined = "Undefined";
-  static const std::map<Subsystem, const std::string>
-      SubsystemIdentifierStrings{
+  static const std::map<Subsystem, const std::string> SubsystemStrings{
 
-          // CBM detectors
-          {Subsystem::STS, "STS"},
-          {Subsystem::MVD, "MVD"},
-          {Subsystem::RICH, "RICH"},
-          {Subsystem::TRD, "TRD"},
-          {Subsystem::TRD2D, "TRD2D"},
-          {Subsystem::MUCH, "MUCH"},
-          {Subsystem::RPC, "RPC"},
-          {Subsystem::ECAL, "ECAL"},
-          {Subsystem::PSD, "PSD"},
+      // CBM detectors
+      {Subsystem::STS, "STS"},
+      {Subsystem::MVD, "MVD"},
+      {Subsystem::RICH, "RICH"},
+      {Subsystem::TRD, "TRD"},
+      {Subsystem::TRD2D, "TRD2D"},
+      {Subsystem::MUCH, "MUCH"},
+      {Subsystem::TOF, "TOF"},
 
-          // Other detectors (experimental)
-          {Subsystem::T0, "T0"},
-          {Subsystem::TRB3, "TRB3"},
-          {Subsystem::Hodoscope, "Hodoscope"},
-          {Subsystem::Cherenkov, "Cherenkov"},
-          {Subsystem::LeadGlass, "LeadGlass"},
+      // Other detectors (experimental)
+      {Subsystem::ECAL, "ECAL"},
+      {Subsystem::PSD, "PSD"},
+      {Subsystem::T0, "T0"},
+      {Subsystem::TRB3, "TRB3"},
+      {Subsystem::Hodoscope, "Hodoscope"},
+      {Subsystem::Cherenkov, "Cherenkov"},
+      {Subsystem::LeadGlass, "LeadGlass"},
 
-          // FLES (pattern generators)
-          {Subsystem::FLES, "FLES"}};
+      // FLES (pattern generators)
+      {Subsystem::FLES, "FLES"}};
 
-  auto it = SubsystemIdentifierStrings.find(sys_id);
-  return it == SubsystemIdentifierStrings.end() ? undefined : it->second;
+  auto it = SubsystemStrings.find(sys_id);
+  return it == SubsystemStrings.end() ? undefined : it->second;
 }
 
 enum class SubsystemFormatFLES : uint8_t {
