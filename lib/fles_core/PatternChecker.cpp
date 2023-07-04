@@ -8,15 +8,14 @@
 std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
                                                        uint8_t arg_sys_ver,
                                                        size_t component) {
-  auto sys_id = static_cast<fles::SubsystemIdentifier>(arg_sys_id);
+  auto sys_id = static_cast<fles::Subsystem>(arg_sys_id);
   auto sys_ver = static_cast<fles::SubsystemFormatFLES>(arg_sys_ver);
 
-  using sid = fles::SubsystemIdentifier;
   using sfmtfles = fles::SubsystemFormatFLES;
 
   PatternChecker* pc = nullptr;
 
-  if (sys_id != sid::FLES) {
+  if (sys_id != fles::Subsystem::FLES) {
     pc = new GenericPatternChecker();
   } else {
     switch (sys_ver) {

@@ -98,10 +98,10 @@ void InputChannelSender::report_status() {
 
   // retrieve SubsystemIdentifier and EquipmentIdentifier
   // from most current MicrosliceDescriptor
-  auto sys_id = static_cast<fles::SubsystemIdentifier>(0);
+  auto sys_id = static_cast<fles::Subsystem>(0);
   std::string eq_id("Undefined");
   if (written_desc > 0) {
-    sys_id = static_cast<fles::SubsystemIdentifier>(
+    sys_id = static_cast<fles::Subsystem>(
         data_source_.desc_buffer().at(written_desc - 1).sys_id);
     std::stringstream eq_id_ss;
     eq_id_ss << std::hex << std::uppercase << std::setfill('0') << std::setw(4)

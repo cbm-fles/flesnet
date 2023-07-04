@@ -46,7 +46,7 @@ void FlesnetPatternGenerator::proceed() {
         static_cast<uint8_t>(fles::HeaderFormatVersion::Standard);
     const uint16_t eq_id = 0xE001;
     const uint16_t flags = 0x0000;
-    const auto sys_id = static_cast<uint8_t>(fles::SubsystemIdentifier::FLES);
+    const auto sys_id = static_cast<uint8_t>(fles::Subsystem::FLES);
     const auto sys_ver = static_cast<uint8_t>(
         generate_pattern_ ? fles::SubsystemFormatFLES::BasicRampPattern
                           : fles::SubsystemFormatFLES::Uninitialized);
