@@ -213,9 +213,6 @@ unset(CMAKE_CXX_CLANG_TIDY)
 if (USE_LIBFABRIC AND LIBFABRIC_FOUND)
   add_subdirectory(lib/fles_libfabric)
 endif()
-if (USE_PDA AND PDA_FOUND)
-  add_subdirectory(lib/flib)
-endif()
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "/opt/${PROJECT_NAME}" CACHE PATH "..." FORCE)
@@ -238,6 +235,7 @@ endif()
 
 
 add_subdirectory(app/mstool)
+add_subdirectory(app/msconsumer)
 add_subdirectory(app/tsclient)
 add_subdirectory(app/flesnet)
 if (USE_PDA AND PDA_FOUND)

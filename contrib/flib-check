@@ -1,2 +1,0 @@
-#!/bin/bash
-sudo lspci -vv -d 10dc:beaf
