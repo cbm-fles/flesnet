@@ -297,8 +297,7 @@ void TimesliceAnalyzer::print_reference() {
           boost::str(boost::format(" sys=%02x-%02x") %
                      static_cast<unsigned int>(md.sys_id) %
                      static_cast<unsigned int>(md.sys_ver)) +
-          " " +
-          fles::to_string(static_cast<fles::SubsystemIdentifier>(md.sys_id)));
+          " " + fles::to_string(static_cast<fles::Subsystem>(md.sys_id)));
   }
 }
 

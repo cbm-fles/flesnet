@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(int_filter_test) {
 
 BOOST_AUTO_TEST_CASE(filter_example1_test) {
   fles::DescriptorOverrideFilter filter(
-      static_cast<uint8_t>(fles::SubsystemIdentifier::FLES),
+      static_cast<uint8_t>(fles::Subsystem::FLES),
       static_cast<uint8_t>(fles::SubsystemFormatFLES::Uninitialized));
 
   fles::MicrosliceInputArchive source("example2.msa");
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(filter_example1_test) {
   while (auto item = filtered.get()) {
     std::cout << count << ": " << item->desc().size << "\n";
     BOOST_CHECK_EQUAL(item->desc().sys_id,
-                      static_cast<uint8_t>(fles::SubsystemIdentifier::FLES));
+                      static_cast<uint8_t>(fles::Subsystem::FLES));
     BOOST_CHECK_EQUAL(
         item->desc().sys_ver,
         static_cast<uint8_t>(fles::SubsystemFormatFLES::Uninitialized));

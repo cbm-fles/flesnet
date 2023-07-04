@@ -20,7 +20,7 @@ struct F {
     fles::MicrosliceDescriptor desc = fles::MicrosliceDescriptor();
     desc.hdr_id = static_cast<uint8_t>(fles::HeaderFormatIdentifier::Standard);
     desc.hdr_ver = static_cast<uint8_t>(fles::HeaderFormatVersion::Standard);
-    desc.sys_id = static_cast<uint8_t>(fles::SubsystemIdentifier::FLES);
+    desc.sys_id = static_cast<uint8_t>(fles::Subsystem::FLES);
     desc.sys_ver =
         static_cast<uint8_t>(fles::SubsystemFormatFLES::Uninitialized);
 

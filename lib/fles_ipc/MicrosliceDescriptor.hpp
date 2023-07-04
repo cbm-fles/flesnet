@@ -18,7 +18,7 @@ namespace fles {
  * This enum defines the possible values for the
  * fles::MicrosliceDescriptor::sys_id variable.
  */
-enum class SubsystemIdentifier : uint8_t {
+enum class Subsystem : uint8_t {
   // CBM detectors
   STS = 0x10,   ///< Silicon Tracking System (STS)
   MVD = 0x20,   ///< Micro-Vertex Detector (MVD)
@@ -41,31 +41,31 @@ enum class SubsystemIdentifier : uint8_t {
   FLES = 0xF0 ///< First-level Event Selector (FLES)
 };
 
-inline const std::string& to_string(SubsystemIdentifier sys_id) {
+inline const std::string& to_string(Subsystem sys_id) {
   static const std::string undefined = "Undefined";
-  static const std::map<SubsystemIdentifier, const std::string>
+  static const std::map<Subsystem, const std::string>
       SubsystemIdentifierStrings{
 
           // CBM detectors
-          {SubsystemIdentifier::STS, "STS"},
-          {SubsystemIdentifier::MVD, "MVD"},
-          {SubsystemIdentifier::RICH, "RICH"},
-          {SubsystemIdentifier::TRD, "TRD"},
-          {SubsystemIdentifier::TRD2D, "TRD2D"},
-          {SubsystemIdentifier::MUCH, "MUCH"},
-          {SubsystemIdentifier::RPC, "RPC"},
-          {SubsystemIdentifier::ECAL, "ECAL"},
-          {SubsystemIdentifier::PSD, "PSD"},
+          {Subsystem::STS, "STS"},
+          {Subsystem::MVD, "MVD"},
+          {Subsystem::RICH, "RICH"},
+          {Subsystem::TRD, "TRD"},
+          {Subsystem::TRD2D, "TRD2D"},
+          {Subsystem::MUCH, "MUCH"},
+          {Subsystem::RPC, "RPC"},
+          {Subsystem::ECAL, "ECAL"},
+          {Subsystem::PSD, "PSD"},
 
           // Other detectors (experimental)
-          {SubsystemIdentifier::T0, "T0"},
-          {SubsystemIdentifier::TRB3, "TRB3"},
-          {SubsystemIdentifier::Hodoscope, "Hodoscope"},
-          {SubsystemIdentifier::Cherenkov, "Cherenkov"},
-          {SubsystemIdentifier::LeadGlass, "LeadGlass"},
+          {Subsystem::T0, "T0"},
+          {Subsystem::TRB3, "TRB3"},
+          {Subsystem::Hodoscope, "Hodoscope"},
+          {Subsystem::Cherenkov, "Cherenkov"},
+          {Subsystem::LeadGlass, "LeadGlass"},
 
           // FLES (pattern generators)
-          {SubsystemIdentifier::FLES, "FLES"}};
+          {Subsystem::FLES, "FLES"}};
 
   auto it = SubsystemIdentifierStrings.find(sys_id);
   return it == SubsystemIdentifierStrings.end() ? undefined : it->second;
