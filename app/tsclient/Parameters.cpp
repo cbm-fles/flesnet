@@ -74,6 +74,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
            "(default: 1)");
   desc_add("rate-limit", po::value<double>(&rate_limit_),
            "limit the item rate to given frequency (in Hz)");
+  desc_add("speed", po::value<double>(&native_speed_),
+           "limit the item rate to given factor of original speed");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
