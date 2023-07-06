@@ -96,7 +96,15 @@ void Application::run() {
 
   uint64_t limit = par_.maximum_number();
 
+  uint64_t index = 0;
   while (auto timeslice = source_->get()) {
+    if (index >= par_.offset() &&
+        (index - par_.offset()) % par_.stride() == 0) {
+      ++index;
+    } else {
+      ++index;
+      continue;
+    }
     std::shared_ptr<const fles::Timeslice> ts(std::move(timeslice));
     if (par_.rate_limit() != 0.0) {
       rate_limit_delay();
