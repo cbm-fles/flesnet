@@ -27,11 +27,11 @@ enum class Subsystem : uint8_t {
   TRD2D = 0x48, ///< 2-D Transition Radiation Detector (TRD2D)
   MUCH = 0x50,  ///< Muon Chamber system (MuCh)
   TOF = 0x60,   ///< Time-Of-Flight detector (TOF, was: RPC)
+  BMON = 0x90,  ///< Beam MONitor (BMON, was: T0)
 
   // Other detectors (historical/experimental)
   ECAL = 0x70,      ///< Electromagnetic CALorimeter (ECAL)
   PSD = 0x80,       ///< Projectile Spectator Detector (PSD)
-  T0 = 0x90,        ///< mCBM T0 Detector
   TRB3 = 0xE0,      ///< TRB3 Stream
   Hodoscope = 0xE1, ///< Fiber Hodoscope
   Cherenkov = 0xE2, ///< Cherenkov
@@ -53,11 +53,11 @@ inline const std::string& to_string(Subsystem sys_id) {
       {Subsystem::TRD2D, "TRD2D"},
       {Subsystem::MUCH, "MUCH"},
       {Subsystem::TOF, "TOF"},
+      {Subsystem::BMON, "BMON"},
 
-      // Other detectors (experimental)
+      // Other detectors (historical/experimental)
       {Subsystem::ECAL, "ECAL"},
       {Subsystem::PSD, "PSD"},
-      {Subsystem::T0, "T0"},
       {Subsystem::TRB3, "TRB3"},
       {Subsystem::Hodoscope, "Hodoscope"},
       {Subsystem::Cherenkov, "Cherenkov"},
