@@ -58,6 +58,7 @@ private:
 
   crcutil_interface::CRC* crc32_engine_ = nullptr;
 
+  uint64_t start_index_ = 0;
   std::vector<fles::MicrosliceDescriptor> reference_descriptors_;
   std::vector<std::unique_ptr<PatternChecker>> pattern_checkers_;
 
