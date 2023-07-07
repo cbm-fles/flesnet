@@ -7,6 +7,7 @@
 #include <pwd.h>
 #include <stdexcept>
 #include <string>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -123,6 +124,12 @@ std::vector<std::string> glob(const std::string& pattern, glob_flags flags) {
   globfree(&glob_result);
 
   return filenames;
+}
+
+uint16_t current_terminal_width() {
+  struct winsize ws {};
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
+  return ws.ws_col;
 }
 
 } // namespace fles::system
