@@ -66,8 +66,16 @@ void Parameters::parse_options(int argc, char* argv[]) {
   desc_add("maximum-number,n", po::value<uint64_t>(&maximum_number_),
            "set the maximum number of timeslices to process (default: "
            "unlimited)");
+  desc_add("offset", po::value<uint64_t>(&offset_),
+           "set the offset of timeslices to select for processing "
+           "(default: 0)");
+  desc_add("stride", po::value<uint64_t>(&stride_),
+           "set the stride of timeslices to select for processing "
+           "(default: 1)");
   desc_add("rate-limit", po::value<double>(&rate_limit_),
            "limit the item rate to given frequency (in Hz)");
+  desc_add("speed", po::value<double>(&native_speed_),
+           "limit the item rate to given factor of original speed");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -99,5 +107,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
   if (input_sources > 1) {
     throw ParametersException("more than one input source specified");
+  }
+  if (stride_ == 0) {
+    throw ParametersException("stride must be greater than zero");
   }
 }

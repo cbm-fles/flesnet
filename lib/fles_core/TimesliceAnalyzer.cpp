@@ -9,12 +9,38 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <cassert>
+#include <iomanip>
 #include <sstream>
 
 // Aim for balance: the TimesliceAnalyzer should provide detailed information if
 // an inconsistency is encountered in the data stream. On the other hand, it
 // should never spam stdout so that it can be active even with continuing errors
 // without affecting the run time significantly.
+
+namespace {
+std::string ns_to_string(uint64_t time_ns) {
+  std::stringstream ss;
+  ss.imbue(std::locale("")); // use locale for thousands separator
+  ss << time_ns << " ns";
+  return ss.str();
+}
+
+std::string ns_timestamp(uint64_t time_ns) {
+  // Chrono time_point from nanoseconds
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>
+      tp{std::chrono::nanoseconds{time_ns}};
+  // Convert to time_t and remaining nanoseconds
+  std::time_t t = std::chrono::system_clock::to_time_t(tp);
+  auto rem_ns = (tp.time_since_epoch() - std::chrono::seconds{t}).count();
+
+  std::tm tm = *std::localtime(&t);
+  std::stringstream ss;
+  ss.imbue(std::locale("")); // use locale for thousands separator
+  ss << std::put_time(&tm, "%F %T") << " " << std::setfill('0') << std::setw(9)
+     << rem_ns << " " << std::put_time(&tm, "%Z");
+  return ss.str();
+}
+} // namespace
 
 TimesliceAnalyzer::TimesliceAnalyzer(uint64_t arg_output_interval,
                                      std::ostream& arg_out,
@@ -59,6 +85,7 @@ void TimesliceAnalyzer::put(std::shared_ptr<const fles::Timeslice> timeslice) {
 }
 
 void TimesliceAnalyzer::initialize(const fles::Timeslice& ts) {
+  start_index_ = ts.index();
   reference_descriptors_.clear();
   pattern_checkers_.clear();
   for (size_t c = 0; c < ts.num_components(); ++c) {
@@ -74,6 +101,21 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
   if (timeslice_count_ == 0) {
     initialize(ts);
     print_reference();
+    // print timeslice duration
+    if (ts.num_core_microslices() > 1 && ts.num_components() > 0) {
+      uint64_t ms_length = ts.descriptor(0, 1).idx - ts.descriptor(0, 0).idx;
+      uint64_t ts_length = ts.num_core_microslices() * ms_length;
+      print("ts duration: " + ns_to_string(ts_length) + " (" +
+            std::to_string(ts.num_core_microslices()) + " * " +
+            ns_to_string(ms_length) + ")");
+    }
+    // print start time
+    print("start time: " + ns_timestamp(ts.start_time()));
+  } else if (timeslice_count_ == 1) {
+    // print timeslice start index and stride
+    uint64_t stride = ts.index() - start_index_;
+    print("start index: " + std::to_string(start_index_) +
+          " (stride: " + std::to_string(stride) + ")");
   }
 
   ++timeslice_count_;

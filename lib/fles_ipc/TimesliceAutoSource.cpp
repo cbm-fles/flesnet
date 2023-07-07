@@ -38,8 +38,7 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
           cycles = stoull(value);
         } else {
           throw std::runtime_error(
-              "query parameter not implemented for scheme " + uri.scheme +
-              ": " + key);
+              "query parameter not implemented for scheme file: " + key);
         }
       }
       const auto file_path = uri.authority + uri.path;
@@ -49,7 +48,7 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
       // The sequence number placeholder "%n" is expanded to the first valid
       // value of "0000" before glob'ing and replaced back afterwards. This
       // will not work if the pathname contains both the placeholder and the
-      // string "0000". Nonexistant files are catched already at this stage by
+      // string "0000". Nonexistant files are caught already at this stage by
       // glob() throwing a runtime_error.
       auto paths = system::glob(replace_all_copy(file_path, "%n", "0000"));
       if (file_path.find("%n") != std::string::npos) {

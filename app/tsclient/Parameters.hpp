@@ -50,7 +50,13 @@ public:
 
   [[nodiscard]] uint64_t maximum_number() const { return maximum_number_; }
 
+  [[nodiscard]] uint64_t offset() const { return offset_; }
+
+  [[nodiscard]] uint64_t stride() const { return stride_; }
+
   [[nodiscard]] double rate_limit() const { return rate_limit_; }
+
+  [[nodiscard]] double native_speed() const { return native_speed_; }
 
 private:
   void parse_options(int argc, char* argv[]);
@@ -69,5 +75,8 @@ private:
   std::string publish_address_;
   uint32_t publish_hwm_ = 1;
   uint64_t maximum_number_ = UINT64_MAX;
+  uint64_t offset_ = 0;
+  uint64_t stride_ = 1;
   double rate_limit_ = 0.0;
+  double native_speed_ = 0.0;
 };

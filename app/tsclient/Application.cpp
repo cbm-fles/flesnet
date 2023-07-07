@@ -86,6 +86,20 @@ void Application::rate_limit_delay() const {
   }
 }
 
+void Application::native_speed_delay(uint64_t ts_start_time) {
+  if (count_ == 0) {
+    first_ts_start_time_ = ts_start_time;
+  } else {
+    auto delta_is = std::chrono::high_resolution_clock::now() - time_begin_;
+    auto delta_want =
+        std::chrono::nanoseconds(ts_start_time - first_ts_start_time_) /
+        par_.native_speed();
+    if (delta_want > delta_is) {
+      std::this_thread::sleep_for(delta_want - delta_is);
+    }
+  }
+}
+
 void Application::run() {
   time_begin_ = std::chrono::high_resolution_clock::now();
 
@@ -96,8 +110,19 @@ void Application::run() {
 
   uint64_t limit = par_.maximum_number();
 
+  uint64_t index = 0;
   while (auto timeslice = source_->get()) {
+    if (index >= par_.offset() &&
+        (index - par_.offset()) % par_.stride() == 0) {
+      ++index;
+    } else {
+      ++index;
+      continue;
+    }
     std::shared_ptr<const fles::Timeslice> ts(std::move(timeslice));
+    if (par_.native_speed() != 0.0) {
+      native_speed_delay(ts->start_time());
+    }
     if (par_.rate_limit() != 0.0) {
       rate_limit_delay();
     }
