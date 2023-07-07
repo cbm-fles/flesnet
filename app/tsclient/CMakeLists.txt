@@ -3,9 +3,14 @@
 file(GLOB APP_SOURCES *.cpp)
 file(GLOB APP_HEADERS *.hpp)
 
+list(APPEND APP_SOURCES "${CMAKE_BINARY_DIR}/config/GitRevision.cpp")
+list(APPEND APP_HEADERS "${PROJECT_SOURCE_DIR}/config/GitRevision.hpp")
+
 add_executable(tsclient ${APP_SOURCES} ${APP_HEADERS})
 
 target_compile_definitions(tsclient PUBLIC BOOST_ALL_DYN_LINK)
+
+target_include_directories(tsclient PRIVATE "${PROJECT_SOURCE_DIR}/config")
 
 target_include_directories(tsclient SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 

@@ -98,5 +98,12 @@ std::vector<std::string> glob(const std::string& pattern,
                               glob_flags flags = glob_flags::brace |
                                                  glob_flags::tilde);
 
+/**
+ * @brief Get the current terminal width
+ *
+ * @return terminal width in characters
+ */
+uint16_t current_terminal_width();
+
 } // namespace system
 } // namespace fles
