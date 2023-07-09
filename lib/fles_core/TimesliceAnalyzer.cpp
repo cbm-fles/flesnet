@@ -119,6 +119,7 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
   }
 
   ++timeslice_count_;
+  timeslice_index_ = ts.index();
 
   // timeslice global checks
   if (ts.num_components() == 0) {
@@ -402,16 +403,16 @@ void TimesliceAnalyzer::report_status() {
 
   if (monitor_) {
     const std::string prefix = output_prefix_.empty() ? ":" : output_prefix_;
-    monitor_->QueueMetric(
-        "timeslice_analyzer_status",
-        {{"host", hostname_}, {"output_prefix", prefix}},
-        {{"timeslice_count", timeslice_count_},
-         {"component_count", component_count_},
-         {"microslice_count", microslice_count_},
-         {"content_bytes", content_bytes_},
-         {"timeslice_error_count", timeslice_error_count_},
-         {"component_error_count", component_error_count_},
-         {"microslice_error_count", microslice_error_count_}});
+    monitor_->QueueMetric("timeslice_analyzer_status",
+                          {{"host", hostname_}, {"output_prefix", prefix}},
+                          {{"timeslice_count", timeslice_count_},
+                           {"component_count", component_count_},
+                           {"microslice_count", microslice_count_},
+                           {"content_bytes", content_bytes_},
+                           {"timeslice_error_count", timeslice_error_count_},
+                           {"component_error_count", component_error_count_},
+                           {"microslice_error_count", microslice_error_count_},
+                           {"timeslice_index", timeslice_index_}});
   }
 
   scheduler_.add([this] { report_status(); }, now + interval);
