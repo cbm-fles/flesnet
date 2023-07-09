@@ -69,6 +69,7 @@ private:
   std::chrono::system_clock::time_point previous_output_time_;
   static constexpr std::chrono::seconds output_time_interval_{1};
 
+  uint64_t timeslice_index_ = 0;
   size_t timeslice_count_ = 0;
   size_t timeslice_error_count_ = 0;
   size_t component_count_ = 0;
