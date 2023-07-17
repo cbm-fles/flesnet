@@ -12,7 +12,11 @@
 namespace fles {
 
 /// The archive type enum (e.g., timeslice, microslice)
-enum class ArchiveType { TimesliceArchive, MicrosliceArchive };
+enum class ArchiveType {
+  TimesliceArchive,
+  MicrosliceArchive,
+  RecoResultsArchive
+};
 
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
