@@ -6,15 +6,24 @@
 #define included_Cbm_Metric 1
 
 #include <chrono>
+#include <cstddef>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <variant>
 #include <vector>
 
 namespace cbm {
 using MetricTagSet = std::vector<std::pair<std::string, std::string>>;
-using MetricField =
-    std::variant<bool, int, long, unsigned long, double, std::string>;
+using MetricField = std::variant<bool,
+                                 int32_t,
+                                 uint32_t,
+                                 int64_t,
+                                 uint64_t,
+                                 float,
+                                 double,
+                                 std::string,
+                                 std::string_view>;
 using MetricFieldSet = std::vector<std::pair<std::string, MetricField>>;
 
 struct Metric {

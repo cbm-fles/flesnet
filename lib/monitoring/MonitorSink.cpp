@@ -53,8 +53,8 @@ std::string MonitorSink::CleanString(const std::string& str) {
   \returns string with all '"' characters escaped with a backslash
  */
 
-std::string MonitorSink::EscapeString(const std::string& str) {
-  std::string res = str;
+std::string MonitorSink::EscapeString(std::string_view str) {
+  std::string res(str);
   size_t pos = 0;
   while ((pos = res.find('"', pos)) != std::string::npos) {
     res.replace(pos, 1, "\\\"");
@@ -93,24 +93,31 @@ std::string MonitorSink::InfluxFields(const Metric& point) {
     auto& val = field.second;
     ss << CleanString(key) << "=";
     // use overloaded visitor pattern as described in cppreference.com
-    visit(overloaded{[&ss](bool arg) { // case bool
-                       ss << (arg ? "true" : "false");
-                     },
-                     [&ss](int arg) { // case int
-                       ss << arg << "i";
-                     },
-                     [&ss](long arg) { // case long
-                       ss << arg << "i";
-                     },
-                     [&ss](unsigned long arg) { // case unsigned long
-                       ss << arg << "i";
-                     },
-                     [&ss](double arg) { // case double
-                       ss << arg;
-                     },
-                     [this, &ss](const std::string& arg) { // case string
-                       ss << '"' << EscapeString(arg) << '"';
-                     }},
+    visit(overloaded{
+              [&ss](bool arg) { // case bool
+                ss << (arg ? "true" : "false");
+              },
+              [&ss](int32_t arg) { // case int32_t
+                ss << arg << "i";
+              },
+              [&ss](uint32_t arg) { // case uint32_t
+                ss << arg << "i";
+              },
+              [&ss](int64_t arg) { // case int64_t
+                ss << arg << "i";
+              },
+              [&ss](uint64_t arg) { // case uint64_t
+                ss << arg << "i";
+              },
+              [&ss](float arg) { // case float
+                ss << arg;
+              },
+              [&ss](double arg) { // case double
+                ss << arg;
+              },
+              [this, &ss](std::string_view arg) { // case string + string_view
+                ss << '"' << EscapeString(arg) << '"';
+              }},
           val);
   }
   return ss.str();
