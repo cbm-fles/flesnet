@@ -8,6 +8,7 @@
 #include "Metric.hpp"
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace cbm {
@@ -24,7 +25,7 @@ public:
 
 protected:
   std::string CleanString(const std::string& id);
-  std::string EscapeString(const std::string& str);
+  std::string EscapeString(std::string_view str);
   std::string InfluxTags(const Metric& point);
   std::string InfluxFields(const Metric& point);
   std::string InfluxLine(const Metric& point);
