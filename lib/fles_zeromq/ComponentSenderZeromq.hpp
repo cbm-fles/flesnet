@@ -2,6 +2,7 @@
 #pragma once
 
 #include "DualRingBuffer.hpp"
+#include "Monitor.hpp"
 #include "RingBuffer.hpp"
 #include "Scheduler.hpp"
 #include <boost/format.hpp>
@@ -25,7 +26,8 @@ public:
                         uint32_t overlap_size,
                         uint32_t max_timeslice_number,
                         volatile sig_atomic_t* signal_status,
-                        void* zmq_context);
+                        void* zmq_context,
+                        cbm::Monitor* monitor);
 
   ComponentSenderZeromq(const ComponentSenderZeromq&) = delete;
   void operator=(const ComponentSenderZeromq&) = delete;
@@ -111,6 +113,9 @@ private:
 
   /// Amount of data sent (for performance statistics).
   DualIndex sent_{};
+
+  cbm::Monitor* monitor_;
+  std::string hostname_;
 
   struct SendBufferStatus {
     std::chrono::system_clock::time_point time;
