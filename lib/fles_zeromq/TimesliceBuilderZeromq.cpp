@@ -2,6 +2,7 @@
 
 #include "TimesliceBuilderZeromq.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "System.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceWorkItem.hpp"
 #include "Utility.hpp"
@@ -18,13 +19,14 @@ TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     uint32_t timeslice_size,
     uint32_t max_timeslice_number,
     volatile sig_atomic_t* signal_status,
-    void* zmq_context)
+    void* zmq_context,
+    cbm::Monitor* monitor)
     : compute_index_(compute_index), timeslice_buffer_(timeslice_buffer),
       input_server_addresses_(std::move(input_server_addresses)),
       num_compute_nodes_(num_compute_nodes), timeslice_size_(timeslice_size),
       max_timeslice_number_(max_timeslice_number),
       signal_status_(signal_status), ts_index_(compute_index_),
-      ack_(timeslice_buffer_.get_desc_size_exp()) {
+      ack_(timeslice_buffer_.get_desc_size_exp()), monitor_(monitor) {
   for (size_t i = 0; i < input_server_addresses_.size(); ++i) {
     auto input_server_address = input_server_addresses_.at(i);
 
@@ -45,6 +47,8 @@ TimesliceBuilderZeromq::TimesliceBuilderZeromq(
 
     connections_.push_back(std::move(c));
   }
+
+  hostname_ = fles::system::current_hostname();
 }
 
 TimesliceBuilderZeromq::~TimesliceBuilderZeromq() {
@@ -204,7 +208,6 @@ void TimesliceBuilderZeromq::report_status() {
   BufferStatus status_desc{now, c->desc.size(), acked_, acked_, tpos_};
   BufferStatus status_data{now, c->desc.size(), acked_, acked_, tpos_};
 
-  /*
   double delta_t =
       std::chrono::duration<double, std::chrono::seconds::period>(
           status_desc.time - previous_buffer_status_desc_.time)
@@ -215,7 +218,6 @@ void TimesliceBuilderZeromq::report_status() {
   double rate_data = static_cast<double>(status_data.acked -
                                          previous_buffer_status_data_.acked) /
                      delta_t;
-  */
 
   L_(debug) << "[c" << compute_index_ << "] desc " << status_desc.percentages()
             << " (used..free) | "
@@ -229,6 +231,23 @@ void TimesliceBuilderZeromq::report_status() {
   L_(info) << "[c" << compute_index_ << "] |"
            << bar_graph(status_data.vector(), "#._", 20) << "|"
            << bar_graph(status_desc.vector(), "#._", 10) << "| ";
+
+  if (monitor_) {
+    monitor_->QueueMetric(
+        "recv_buffer_status",
+        {{"host", hostname_},
+         {"output_index", std::to_string(compute_index_)},
+         {"input_index",
+          std::to_string(0)}}, // No there for ZMQ: c->index())}},
+        {{"data_used", status_data.used()},
+         {"data_freeing", status_data.freeing()},
+         {"data_free", status_data.unused()},
+         {"data_rate", rate_data},
+         {"desc_used", status_desc.used()},
+         {"desc_freeing", status_desc.freeing()},
+         {"desc_free", status_desc.unused()},
+         {"desc_rate", rate_desc}});
+  }
 
   previous_buffer_status_desc_ = status_desc;
   previous_buffer_status_data_ = status_data;

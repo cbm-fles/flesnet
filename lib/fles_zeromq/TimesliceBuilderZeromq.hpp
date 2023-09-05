@@ -2,6 +2,7 @@
 #pragma once
 
 #include "ManagedRingBuffer.hpp"
+#include "Monitor.hpp"
 #include "RingBuffer.hpp"
 #include "Scheduler.hpp"
 #include "TimesliceBuffer.hpp"
@@ -29,7 +30,8 @@ public:
                          uint32_t timeslice_size,
                          uint32_t max_timeslice_number,
                          volatile sig_atomic_t* signal_status,
-                         void* zmq_context);
+                         void* zmq_context,
+                         cbm::Monitor* monitor);
 
   TimesliceBuilderZeromq(const TimesliceBuilderZeromq&) = delete;
   void operator=(const TimesliceBuilderZeromq&) = delete;
@@ -111,6 +113,9 @@ private:
 
   /// End of operation (for performance statistics).
   std::chrono::high_resolution_clock::time_point time_end_;
+
+  cbm::Monitor* monitor_;
+  std::string hostname_;
 
   struct BufferStatus {
     std::chrono::system_clock::time_point time;

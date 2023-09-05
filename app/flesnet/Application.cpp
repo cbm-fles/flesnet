@@ -81,7 +81,8 @@ void Application::create_timeslice_buffers() {
           new TimesliceBuilderZeromq(
               i, *tsb, input_server_addresses, output_size,
               par_.timeslice_size(), par_.max_timeslice_number(),
-              signal_status_, static_cast<void*>(zmq_context_)));
+              signal_status_, static_cast<void*>(zmq_context_),
+              monitor_.get()));
       timeslice_builders_zeromq_.push_back(std::move(builder));
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC
@@ -209,7 +210,7 @@ void Application::create_input_channel_senders() {
       std::unique_ptr<ComponentSenderZeromq> sender(new ComponentSenderZeromq(
           index, *(data_sources_.at(c).get()), listen_address,
           par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
-          signal_status_, static_cast<void*>(zmq_context_)));
+          signal_status_, static_cast<void*>(zmq_context_), monitor_.get()));
       component_senders_zeromq_.push_back(std::move(sender));
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC

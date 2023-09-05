@@ -2,9 +2,11 @@
 
 #include "ComponentSenderZeromq.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "System.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include <algorithm>
+#include <iomanip>
 
 ComponentSenderZeromq::ComponentSenderZeromq(
     uint64_t input_index,
@@ -14,13 +16,15 @@ ComponentSenderZeromq::ComponentSenderZeromq(
     uint32_t overlap_size,
     uint32_t max_timeslice_number,
     volatile sig_atomic_t* signal_status,
-    void* zmq_context)
+    void* zmq_context,
+    cbm::Monitor* monitor)
     : input_index_(input_index), data_source_(data_source),
       timeslice_size_(timeslice_size), overlap_size_(overlap_size),
       max_timeslice_number_(max_timeslice_number),
       signal_status_(signal_status),
       min_acked_({data_source.desc_buffer().size() / 4,
-                  data_source.data_buffer().size() / 4}) {
+                  data_source.data_buffer().size() / 4}),
+      monitor_(monitor) {
   start_index_ = sent_ = acked_ = cached_acked_ = data_source.get_read_index();
 
   size_t min_ack_buffer_size =
@@ -38,6 +42,8 @@ ComponentSenderZeromq::ComponentSenderZeromq(
 
   rc = zmq_bind(socket_, listen_address.c_str());
   assert(rc == 0);
+
+  hostname_ = fles::system::current_hostname();
 }
 
 ComponentSenderZeromq::~ComponentSenderZeromq() {
@@ -234,18 +240,31 @@ void ComponentSenderZeromq::report_status() {
 
   DualIndex written = data_source_.get_write_index();
 
+  // if data_source.written pointers are lagging behind due to lazy updates,
+  // use sent value instead
+  // PAL: Not sure if needed for ZMQ, but added to ensure same behavior as
+  //      rdma implementation
+  uint64_t written_desc = written.desc;
+  if (written_desc < sent_.desc) {
+    written_desc = sent_.desc;
+  }
+  uint64_t written_data = written.data;
+  if (written_data < sent_.data) {
+    written_data = sent_.data;
+  }
+
   SendBufferStatus status_desc{now,
                                data_source_.desc_buffer().size(),
                                cached_acked_.desc,
                                acked_.desc,
                                sent_.desc,
-                               written.desc};
+                               written_desc};
   SendBufferStatus status_data{now,
                                data_source_.data_buffer().size(),
                                cached_acked_.data,
                                acked_.data,
                                sent_.data,
-                               written.data};
+                               written_data};
 
   double delta_t =
       std::chrono::duration<double, std::chrono::seconds::period>(
@@ -259,6 +278,19 @@ void ComponentSenderZeromq::report_status() {
       static_cast<double>(status_data.acked -
                           previous_send_buffer_status_data_.acked) /
       delta_t;
+
+  // retrieve SubsystemIdentifier and EquipmentIdentifier
+  // from most current MicrosliceDescriptor
+  auto sys_id = static_cast<fles::Subsystem>(0);
+  std::string eq_id("Undefined");
+  if (written_desc > 0) {
+    sys_id = static_cast<fles::Subsystem>(
+        data_source_.desc_buffer().at(written_desc - 1).sys_id);
+    std::stringstream eq_id_ss;
+    eq_id_ss << std::hex << std::uppercase << std::setfill('0') << std::setw(4)
+             << data_source_.desc_buffer().at(written_desc - 1).eq_id;
+    eq_id = eq_id_ss.str();
+  }
 
   L_(debug) << "[i" << input_index_ << "] desc " << status_desc.percentages()
             << " (used..free) | "
@@ -275,6 +307,24 @@ void ComponentSenderZeromq::report_status() {
            << bar_graph(status_desc.vector(), "#x._", 10) << "| "
            << human_readable_count(rate_data, true, "B/s") << " ("
            << human_readable_count(rate_desc, true, "Hz") << ")";
+
+  if (monitor_) {
+    monitor_->QueueMetric("send_buffer_status",
+                          {{"host", hostname_},
+                           {"input_index", std::to_string(input_index_)},
+                           {"sys_id", fles::to_string(sys_id)},
+                           {"eq_id", eq_id}},
+                          {{"data_used", status_data.used()},
+                           {"data_sending", status_data.sending()},
+                           {"data_freeing", status_data.freeing()},
+                           {"data_free", status_data.unused()},
+                           {"data_rate", rate_data},
+                           {"desc_used", status_desc.used()},
+                           {"desc_sending", status_desc.sending()},
+                           {"desc_freeing", status_desc.freeing()},
+                           {"desc_free", status_desc.unused()},
+                           {"desc_rate", rate_desc}});
+  }
 
   previous_send_buffer_status_desc_ = status_desc;
   previous_send_buffer_status_data_ = status_data;
