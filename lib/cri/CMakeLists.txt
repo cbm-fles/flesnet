@@ -18,7 +18,7 @@ set(LIB_HDR
   cri_registers.hpp
 )
 
-Add_library(cri STATIC ${LIB_HDR} ${LIB_SRC})
+add_library(cri STATIC ${LIB_HDR} ${LIB_SRC})
 
 set_target_properties(cri PROPERTIES OUTPUT_NAME cri)
 
