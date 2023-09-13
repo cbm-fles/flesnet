@@ -8,6 +8,7 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <utility>
 
 namespace cbm {
 
@@ -26,8 +27,8 @@ namespace cbm {
   \param path    path for output
  */
 
-MonitorSink::MonitorSink(Monitor& monitor, const std::string& path)
-    : fMonitor(monitor), fSinkPath(path) {}
+MonitorSink::MonitorSink(Monitor& monitor, std::string path)
+    : fMonitor(monitor), fSinkPath(std::move(path)) {}
 
 //-----------------------------------------------------------------------------
 /*! \brief Removes protocol characters from a string

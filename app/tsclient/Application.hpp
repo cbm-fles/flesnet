@@ -40,7 +40,7 @@ private:
   std::string output_prefix_;
 
   std::chrono::high_resolution_clock::time_point time_begin_;
-  uint64_t first_ts_start_time_;
+  uint64_t first_ts_start_time_{};
 
   void rate_limit_delay() const;
   void native_speed_delay(uint64_t ts_start_time);

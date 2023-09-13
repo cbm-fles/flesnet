@@ -17,7 +17,7 @@ class Monitor; // forward declaration
 
 class MonitorSink {
 public:
-  MonitorSink(Monitor& monitor, const std::string& path);
+  MonitorSink(Monitor& monitor, std::string path);
   virtual ~MonitorSink() = default;
 
   virtual void ProcessMetricVec(const std::vector<Metric>& metvec) = 0;

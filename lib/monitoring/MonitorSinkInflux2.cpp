@@ -20,10 +20,9 @@
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
 
+#include <cstdlib>
 #include <iostream>
 #include <regex>
-
-#include <stdlib.h>
 
 namespace cbm {
 using tcp = boost::asio::ip::tcp;     // from <boost/asio/ip/tcp.hpp>
