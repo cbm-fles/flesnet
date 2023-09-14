@@ -126,7 +126,7 @@ bool TimesliceBuilderZeromq::run_cycle() {
     handle_timeslice_completions();
   }
 
-  // skip remaining bytes in data buffer to avoid fractured entry
+  // skip remaining bytes in data buffer to avoid fragmented entry
   c->data.skip_buffer_wrap(size_required);
 
   // generate timeslice component descriptor

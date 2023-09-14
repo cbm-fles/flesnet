@@ -6,6 +6,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/version.hpp>
 #include <cstdint>
+#include <ostream>
 
 namespace fles {
 
@@ -15,12 +16,18 @@ namespace fles {
  * \brief %Timeslice descriptor struct.
  */
 struct TimesliceDescriptor {
-  /// Global index of this timeslice
+  /// Global index of the timeslice. Monotonically increasing during a run,
+  /// relates to the timestamps of the data contents. Note: this is not the same
+  /// as the local index in the ring buffer.
   uint64_t index;
-  /// Start offset (in items) of this timeslice
+
+  /// Start offset (in items) of the timeslice in the local data stream or ring
+  /// buffer.
   uint64_t ts_pos;
+
   /// Number of core microslices
   uint32_t num_core_microslices;
+
   /// Number of components (contributing input channels)
   uint32_t num_components;
 
