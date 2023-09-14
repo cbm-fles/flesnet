@@ -14,10 +14,21 @@ namespace fles {
  * \brief %Timeslice component descriptor struct.
  */
 struct TimesliceComponentDescriptor {
-  uint64_t ts_num;          ///< Timeslice index.
-  uint64_t offset;          ///< Start offset (in bytes) of corresponding data.
-  uint64_t size;            ///< Size (in bytes) of corresponding data.
-  uint64_t num_microslices; ///< Number of microslices.
+  /// Global index of the corresponding timeslice. Note: this
+  /// is not the same as the local index in the ring buffer.
+  uint64_t ts_num;
+
+  /// Start offset (in bytes) of the corresponding data
+  /// (microslice descriptors followed by microslice contents)
+  /// in the local data stream or ring buffer.
+  uint64_t offset;
+
+  /// Size (in bytes) of the corresponding data (microslice
+  /// descriptors followed by microslice contents).
+  uint64_t size;
+
+  /// Number of microslices.
+  uint64_t num_microslices;
 
   friend class boost::serialization::access;
   /// Provide boost serialization access.
