@@ -15,6 +15,8 @@
 // reasons to avoid segfault similar to
 // http://lists.debian.org/debian-hppa/2009/11/msg00069.html
 
+class ManagedTimesliceBuffer;
+
 namespace fles {
 
 /**
@@ -98,6 +100,7 @@ protected:
   Timeslice() = default;
 
   friend class StorableTimeslice;
+  friend class ::ManagedTimesliceBuffer;
 
   /// The timeslice descriptor.
   TimesliceDescriptor timeslice_descriptor_{};
