@@ -39,9 +39,9 @@ compilation. For other distributions, please proceed accordingly.
 
     sudo apt-get update -y
 
-    sudo apt-get install -yq catch doxygen libboost-all-dev \
+    sudo apt-get install -yq cmake catch doxygen libboost-all-dev \
       libfabric-dev libibverbs-dev libkmod-dev \
-      libnuma-dev libpci-dev librdmacm-dev libtool-bin libzmq3-dev
+      libnuma-dev libpci-dev librdmacm-dev libtool-bin libssl-dev libzmq3-dev
 
 Note: Flesnet currently requires a version of the ZeroMQ library
 compiled with "draft" API. The easiest way to install this dependency
