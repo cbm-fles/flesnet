@@ -58,3 +58,10 @@ jobs:
     - name: Create .deb package
       working-directory: ${{runner.workspace}}/build
       run: cpack
+
+    - name: Archive .deb package
+      uses: actions/upload-artifact@v3
+      with:
+        name: flesnet
+        path: ${{runner.workspace}}/build/*.deb
+  
