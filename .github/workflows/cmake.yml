@@ -40,7 +40,7 @@ jobs:
     - name: Install additional dependencies
       run: contrib/merge-dependencies
 
-    - name: Create Build Environment
+    - name: Create build environment
       run: cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure CMake
@@ -54,3 +54,7 @@ jobs:
     - name: Test
       working-directory: ${{runner.workspace}}/build
       run: make CTEST_OUTPUT_ON_FAILURE=1 test
+
+    - name: Create .deb package
+      working-directory: ${{runner.workspace}}/build
+      run: cpack
