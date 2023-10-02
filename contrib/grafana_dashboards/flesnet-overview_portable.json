@@ -1,0 +1,3258 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "datasource",
+                    "uid": "grafana"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "target": {
+                    "limit": 100,
+                    "matchAny": false,
+                    "tags": [],
+                    "type": "dashboard"
+                },
+                "type": "dashboard"
+            }
+        ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": 26,
+    "iteration": 1655659121826,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 37,
+            "panels": [],
+            "title": "Total rates",
+            "type": "row"
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "InfluxDB-FlesnetStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "links": []
+                },
+                "overrides": []
+            },
+            "fill": 1,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 4,
+                "w": 24,
+                "x": 0,
+                "y": 1
+            },
+            "hiddenSeries": false,
+            "id": 33,
+            "interval": "1s",
+            "legend": {
+                "alignAsTable": true,
+                "avg": true,
+                "current": true,
+                "hideZero": true,
+                "max": true,
+                "min": true,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": "null",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "8.3.3",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "alias": "Total",
+                    "datasource": "InfluxDB-FlesnetStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "send_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_rate"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "sum"
+                            },
+                            {
+                                "params": [
+                                    "*1000/$__interval_ms"
+                                ],
+                                "type": "math"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "thresholds": [],
+            "timeRegions": [],
+            "title": "Total Data Rate",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:7075",
+                    "format": "Bps",
+                    "logBase": 1,
+                    "min": "0",
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:7076",
+                    "format": "short",
+                    "logBase": 1,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false
+            }
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "InfluxDB-FlesnetStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "links": []
+                },
+                "overrides": []
+            },
+            "fill": 1,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 5
+            },
+            "hiddenSeries": false,
+            "id": 16,
+            "interval": "1s",
+            "legend": {
+                "alignAsTable": true,
+                "avg": true,
+                "current": true,
+                "hideZero": true,
+                "max": true,
+                "min": true,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": "null",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "8.3.3",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [
+                {
+                    "$$hashKey": "object:5507",
+                    "alias": "Total",
+                    "yaxis": 2
+                }
+            ],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "alias": "$tag_sys_id",
+                    "datasource": "InfluxDB-FlesnetStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "sys_id"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "send_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_rate"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "sum"
+                            },
+                            {
+                                "params": [
+                                    "*1000/$__interval_ms"
+                                ],
+                                "type": "math"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                },
+                {
+                    "alias": "Total",
+                    "datasource": "InfluxDB-FlesnetStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "send_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "B",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_rate"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "sum"
+                            },
+                            {
+                                "params": [
+                                    "*1000/$__interval_ms"
+                                ],
+                                "type": "math"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "thresholds": [],
+            "timeRegions": [],
+            "title": "Data Rate per Subsystem",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:5514",
+                    "format": "Bps",
+                    "logBase": 1,
+                    "min": "0",
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:5515",
+                    "format": "Bps",
+                    "logBase": 1,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false
+            }
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "fieldConfig": {
+                "defaults": {
+                    "links": []
+                },
+                "overrides": []
+            },
+            "fill": 0,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 17
+            },
+            "hiddenSeries": false,
+            "id": 26,
+            "interval": "1s",
+            "legend": {
+                "alignAsTable": true,
+                "avg": true,
+                "current": true,
+                "hideEmpty": true,
+                "hideZero": true,
+                "max": true,
+                "min": true,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": "null",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "8.3.3",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "alias": "$tag_host $tag_cri $tag_ch",
+                    "datasource": "InfluxDB-CriStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "cri"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "ch"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "ch_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "rate"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "thresholds": [],
+            "timeRegions": [],
+            "title": "Microslice rate",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:1067",
+                    "format": "hertz",
+                    "logBase": 1,
+                    "min": "0",
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:1068",
+                    "format": "short",
+                    "logBase": 1,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false
+            }
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "InfluxDB-FlesnetStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "links": []
+                },
+                "overrides": []
+            },
+            "fill": 1,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 25
+            },
+            "hiddenSeries": false,
+            "id": 53,
+            "interval": "1s",
+            "legend": {
+                "alignAsTable": true,
+                "avg": true,
+                "current": true,
+                "hideEmpty": false,
+                "hideZero": true,
+                "max": true,
+                "min": true,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": "null",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "8.3.3",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [
+                {
+                    "$$hashKey": "object:948",
+                    "alias": "en05 TRD 6196 (14)",
+                    "yaxis": 1
+                }
+            ],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "alias": "$tag_host $tag_sys_id $tag_eq_id",
+                    "datasource": "InfluxDB-FlesnetStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "sys_id"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "eq_id"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "none"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "send_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_rate"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "thresholds": [],
+            "timeRegions": [],
+            "title": "Data Rates per Input Channel",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:955",
+                    "format": "Bps",
+                    "logBase": 1,
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:956",
+                    "format": "short",
+                    "logBase": 1,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false
+            }
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 37
+            },
+            "id": 30,
+            "panels": [],
+            "title": "ELOG",
+            "type": "row"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 45
+            },
+            "id": 39,
+            "panels": [],
+            "title": "Timeslice Analyzer",
+            "type": "row"
+        },
+        {
+            "datasource": "InfluxDB-TsclientStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineStyle": {
+                            "fill": "solid"
+                        },
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "log": 10,
+                            "type": "log"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 0,
+                "y": 46
+            },
+            "id": 35,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "displayMode": "table",
+                    "placement": "right"
+                },
+                "tooltip": {
+                    "mode": "multi"
+                }
+            },
+            "pluginVersion": "8.3.3",
+            "targets": [
+                {
+                    "alias": "$tag_output_prefix ($tag_host)",
+                    "datasource": "InfluxDB-TsclientStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "output_prefix"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_analyzer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "timeslice_count"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "last"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                },
+                {
+                    "alias": "$tag_output_prefix ($tag_host) errors",
+                    "datasource": "InfluxDB-TsclientStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "output_prefix"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "hide": false,
+                    "measurement": "timeslice_analyzer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "B",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "timeslice_error_count"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "last"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "title": "Timeslices",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "InfluxDB-TsclientStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineStyle": {
+                            "fill": "solid"
+                        },
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 12,
+                "y": 46
+            },
+            "id": 42,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "displayMode": "table",
+                    "placement": "right"
+                },
+                "tooltip": {
+                    "mode": "multi"
+                }
+            },
+            "pluginVersion": "8.3.3",
+            "targets": [
+                {
+                    "alias": "$tag_output_prefix ($tag_host)",
+                    "datasource": "InfluxDB-TsclientStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "output_prefix"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_analyzer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "component_count"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "last"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                },
+                {
+                    "alias": "$tag_output_prefix ($tag_host) errors",
+                    "datasource": "InfluxDB-TsclientStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "output_prefix"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "hide": false,
+                    "measurement": "timeslice_analyzer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "B",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "component_error_count"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "last"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "title": "Timeslice Components",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "InfluxDB-TsclientStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineStyle": {
+                            "fill": "solid"
+                        },
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 0,
+                "y": 53
+            },
+            "id": 43,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "displayMode": "table",
+                    "placement": "right"
+                },
+                "tooltip": {
+                    "mode": "multi"
+                }
+            },
+            "pluginVersion": "8.3.3",
+            "targets": [
+                {
+                    "alias": "$tag_output_prefix ($tag_host)",
+                    "datasource": "InfluxDB-TsclientStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "output_prefix"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_analyzer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "microslice_count"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "last"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                },
+                {
+                    "alias": "$tag_output_prefix ($tag_host) errors",
+                    "datasource": "InfluxDB-TsclientStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "output_prefix"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "hide": false,
+                    "measurement": "timeslice_analyzer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "B",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "microslice_error_count"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "last"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "title": "Microslices",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "InfluxDB-TsclientStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineStyle": {
+                            "fill": "solid"
+                        },
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "decbytes"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 12,
+                "y": 53
+            },
+            "id": 44,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "displayMode": "table",
+                    "placement": "right"
+                },
+                "tooltip": {
+                    "mode": "multi"
+                }
+            },
+            "pluginVersion": "8.3.3",
+            "targets": [
+                {
+                    "alias": "$tag_output_prefix ($tag_host)",
+                    "datasource": "InfluxDB-TsclientStatus",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "output_prefix"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_analyzer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "content_bytes"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "last"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "title": "Data content",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 60
+            },
+            "id": 28,
+            "panels": [],
+            "title": "Data rates per channel",
+            "type": "row"
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "InfluxDB-FlesnetStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "links": []
+                },
+                "overrides": []
+            },
+            "fill": 1,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 61
+            },
+            "hiddenSeries": false,
+            "id": 6,
+            "interval": "1s",
+            "legend": {
+                "alignAsTable": true,
+                "avg": true,
+                "current": true,
+                "max": true,
+                "min": true,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": "null",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "8.3.3",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "alias": "$tag_host ($tag_output_index)",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "output_index"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "none"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_rate"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "thresholds": [],
+            "timeRegions": [],
+            "title": "Data Rates per Output Channel",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:1046",
+                    "format": "Bps",
+                    "logBase": 1,
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:1047",
+                    "format": "short",
+                    "logBase": 1,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false
+            }
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 73
+            },
+            "id": 24,
+            "panels": [
+                {
+                    "aliasColors": {},
+                    "bars": false,
+                    "dashLength": 10,
+                    "dashes": false,
+                    "datasource": "InfluxDB-FlesnetStatus",
+                    "fieldConfig": {
+                        "defaults": {
+                            "links": []
+                        },
+                        "overrides": []
+                    },
+                    "fill": 1,
+                    "fillGradient": 0,
+                    "gridPos": {
+                        "h": 8,
+                        "w": 24,
+                        "x": 0,
+                        "y": 74
+                    },
+                    "hiddenSeries": false,
+                    "id": 8,
+                    "legend": {
+                        "alignAsTable": false,
+                        "avg": false,
+                        "current": false,
+                        "max": false,
+                        "min": false,
+                        "show": true,
+                        "total": false,
+                        "values": false
+                    },
+                    "lines": true,
+                    "linewidth": 1,
+                    "maxPerRow": 6,
+                    "nullPointMode": "connected",
+                    "options": {
+                        "alertThreshold": true
+                    },
+                    "percentage": true,
+                    "pluginVersion": "8.3.3",
+                    "pointradius": 2,
+                    "points": true,
+                    "renderer": "flot",
+                    "repeat": "input_index",
+                    "repeatDirection": "h",
+                    "seriesOverrides": [],
+                    "spaceLength": 10,
+                    "stack": true,
+                    "steppedLine": false,
+                    "targets": [
+                        {
+                            "alias": "used",
+                            "groupBy": [
+                                {
+                                    "params": [
+                                        "$__interval"
+                                    ],
+                                    "type": "time"
+                                },
+                                {
+                                    "params": [
+                                        "null"
+                                    ],
+                                    "type": "fill"
+                                }
+                            ],
+                            "measurement": "send_buffer_status",
+                            "orderByTime": "ASC",
+                            "policy": "default",
+                            "refId": "A",
+                            "resultFormat": "time_series",
+                            "select": [
+                                [
+                                    {
+                                        "params": [
+                                            "data_used"
+                                        ],
+                                        "type": "field"
+                                    },
+                                    {
+                                        "params": [],
+                                        "type": "mean"
+                                    }
+                                ]
+                            ],
+                            "tags": [
+                                {
+                                    "key": "input_index",
+                                    "operator": "=~",
+                                    "value": "/^$input_index$/"
+                                }
+                            ]
+                        },
+                        {
+                            "alias": "sending",
+                            "groupBy": [
+                                {
+                                    "params": [
+                                        "$__interval"
+                                    ],
+                                    "type": "time"
+                                },
+                                {
+                                    "params": [
+                                        "null"
+                                    ],
+                                    "type": "fill"
+                                }
+                            ],
+                            "measurement": "send_buffer_status",
+                            "orderByTime": "ASC",
+                            "policy": "default",
+                            "refId": "B",
+                            "resultFormat": "time_series",
+                            "select": [
+                                [
+                                    {
+                                        "params": [
+                                            "data_sending"
+                                        ],
+                                        "type": "field"
+                                    },
+                                    {
+                                        "params": [],
+                                        "type": "mean"
+                                    }
+                                ]
+                            ],
+                            "tags": [
+                                {
+                                    "key": "input_index",
+                                    "operator": "=~",
+                                    "value": "/^$input_index$/"
+                                }
+                            ]
+                        },
+                        {
+                            "alias": "freeing",
+                            "groupBy": [
+                                {
+                                    "params": [
+                                        "$__interval"
+                                    ],
+                                    "type": "time"
+                                },
+                                {
+                                    "params": [
+                                        "null"
+                                    ],
+                                    "type": "fill"
+                                }
+                            ],
+                            "measurement": "send_buffer_status",
+                            "orderByTime": "ASC",
+                            "policy": "default",
+                            "refId": "C",
+                            "resultFormat": "time_series",
+                            "select": [
+                                [
+                                    {
+                                        "params": [
+                                            "data_freeing"
+                                        ],
+                                        "type": "field"
+                                    },
+                                    {
+                                        "params": [],
+                                        "type": "mean"
+                                    }
+                                ]
+                            ],
+                            "tags": [
+                                {
+                                    "key": "input_index",
+                                    "operator": "=~",
+                                    "value": "/^$input_index$/"
+                                }
+                            ]
+                        },
+                        {
+                            "alias": "free",
+                            "groupBy": [
+                                {
+                                    "params": [
+                                        "$__interval"
+                                    ],
+                                    "type": "time"
+                                },
+                                {
+                                    "params": [
+                                        "null"
+                                    ],
+                                    "type": "fill"
+                                }
+                            ],
+                            "measurement": "send_buffer_status",
+                            "orderByTime": "ASC",
+                            "policy": "default",
+                            "refId": "D",
+                            "resultFormat": "time_series",
+                            "select": [
+                                [
+                                    {
+                                        "params": [
+                                            "data_free"
+                                        ],
+                                        "type": "field"
+                                    },
+                                    {
+                                        "params": [],
+                                        "type": "mean"
+                                    }
+                                ]
+                            ],
+                            "tags": [
+                                {
+                                    "key": "input_index",
+                                    "operator": "=~",
+                                    "value": "/^$input_index$/"
+                                }
+                            ]
+                        }
+                    ],
+                    "thresholds": [],
+                    "timeRegions": [],
+                    "title": "Send Data Buffer Status for Channel $input_index",
+                    "tooltip": {
+                        "shared": true,
+                        "sort": 0,
+                        "value_type": "individual"
+                    },
+                    "type": "graph",
+                    "xaxis": {
+                        "mode": "time",
+                        "show": true,
+                        "values": []
+                    },
+                    "yaxes": [
+                        {
+                            "format": "bytes",
+                            "logBase": 1,
+                            "max": "100",
+                            "min": "0",
+                            "show": true
+                        },
+                        {
+                            "format": "short",
+                            "logBase": 1,
+                            "show": true
+                        }
+                    ],
+                    "yaxis": {
+                        "align": false
+                    }
+                },
+                {
+                    "aliasColors": {},
+                    "bars": false,
+                    "dashLength": 10,
+                    "dashes": false,
+                    "datasource": "InfluxDB-FlesnetStatus",
+                    "fieldConfig": {
+                        "defaults": {
+                            "links": []
+                        },
+                        "overrides": []
+                    },
+                    "fill": 1,
+                    "fillGradient": 0,
+                    "gridPos": {
+                        "h": 8,
+                        "w": 24,
+                        "x": 0,
+                        "y": 82
+                    },
+                    "hiddenSeries": false,
+                    "id": 9,
+                    "legend": {
+                        "alignAsTable": false,
+                        "avg": false,
+                        "current": false,
+                        "max": false,
+                        "min": false,
+                        "show": true,
+                        "total": false,
+                        "values": false
+                    },
+                    "lines": true,
+                    "linewidth": 1,
+                    "links": [],
+                    "maxPerRow": 6,
+                    "nullPointMode": "connected",
+                    "options": {
+                        "alertThreshold": true
+                    },
+                    "percentage": false,
+                    "pluginVersion": "8.3.3",
+                    "pointradius": 2,
+                    "points": true,
+                    "renderer": "flot",
+                    "repeat": "input_index",
+                    "repeatDirection": "h",
+                    "seriesOverrides": [],
+                    "spaceLength": 10,
+                    "stack": true,
+                    "steppedLine": false,
+                    "targets": [
+                        {
+                            "alias": "used",
+                            "groupBy": [
+                                {
+                                    "params": [
+                                        "$__interval"
+                                    ],
+                                    "type": "time"
+                                },
+                                {
+                                    "params": [
+                                        "null"
+                                    ],
+                                    "type": "fill"
+                                }
+                            ],
+                            "measurement": "send_buffer_status",
+                            "orderByTime": "ASC",
+                            "policy": "default",
+                            "refId": "A",
+                            "resultFormat": "time_series",
+                            "select": [
+                                [
+                                    {
+                                        "params": [
+                                            "desc_used"
+                                        ],
+                                        "type": "field"
+                                    },
+                                    {
+                                        "params": [],
+                                        "type": "mean"
+                                    }
+                                ]
+                            ],
+                            "tags": [
+                                {
+                                    "key": "input_index",
+                                    "operator": "=~",
+                                    "value": "/^$input_index$/"
+                                }
+                            ]
+                        },
+                        {
+                            "alias": "sending",
+                            "groupBy": [
+                                {
+                                    "params": [
+                                        "$__interval"
+                                    ],
+                                    "type": "time"
+                                },
+                                {
+                                    "params": [
+                                        "null"
+                                    ],
+                                    "type": "fill"
+                                }
+                            ],
+                            "measurement": "send_buffer_status",
+                            "orderByTime": "ASC",
+                            "policy": "default",
+                            "refId": "B",
+                            "resultFormat": "time_series",
+                            "select": [
+                                [
+                                    {
+                                        "params": [
+                                            "desc_sending"
+                                        ],
+                                        "type": "field"
+                                    },
+                                    {
+                                        "params": [],
+                                        "type": "mean"
+                                    }
+                                ]
+                            ],
+                            "tags": [
+                                {
+                                    "key": "input_index",
+                                    "operator": "=~",
+                                    "value": "/^$input_index$/"
+                                }
+                            ]
+                        },
+                        {
+                            "alias": "freeing",
+                            "groupBy": [
+                                {
+                                    "params": [
+                                        "$__interval"
+                                    ],
+                                    "type": "time"
+                                },
+                                {
+                                    "params": [
+                                        "null"
+                                    ],
+                                    "type": "fill"
+                                }
+                            ],
+                            "measurement": "send_buffer_status",
+                            "orderByTime": "ASC",
+                            "policy": "default",
+                            "refId": "C",
+                            "resultFormat": "time_series",
+                            "select": [
+                                [
+                                    {
+                                        "params": [
+                                            "desc_freeing"
+                                        ],
+                                        "type": "field"
+                                    },
+                                    {
+                                        "params": [],
+                                        "type": "mean"
+                                    }
+                                ]
+                            ],
+                            "tags": [
+                                {
+                                    "key": "input_index",
+                                    "operator": "=~",
+                                    "value": "/^$input_index$/"
+                                }
+                            ]
+                        },
+                        {
+                            "alias": "free",
+                            "groupBy": [
+                                {
+                                    "params": [
+                                        "$__interval"
+                                    ],
+                                    "type": "time"
+                                },
+                                {
+                                    "params": [
+                                        "null"
+                                    ],
+                                    "type": "fill"
+                                }
+                            ],
+                            "hide": true,
+                            "measurement": "send_buffer_status",
+                            "orderByTime": "ASC",
+                            "policy": "default",
+                            "refId": "D",
+                            "resultFormat": "time_series",
+                            "select": [
+                                [
+                                    {
+                                        "params": [
+                                            "desc_free"
+                                        ],
+                                        "type": "field"
+                                    },
+                                    {
+                                        "params": [],
+                                        "type": "mean"
+                                    }
+                                ]
+                            ],
+                            "tags": [
+                                {
+                                    "key": "input_index",
+                                    "operator": "=~",
+                                    "value": "/^$input_index$/"
+                                }
+                            ]
+                        }
+                    ],
+                    "thresholds": [],
+                    "timeRegions": [],
+                    "title": "Send Descriptor Buffer Status for Channel $input_index",
+                    "tooltip": {
+                        "shared": true,
+                        "sort": 0,
+                        "value_type": "individual"
+                    },
+                    "type": "graph",
+                    "xaxis": {
+                        "mode": "time",
+                        "show": true,
+                        "values": []
+                    },
+                    "yaxes": [
+                        {
+                            "format": "short",
+                            "logBase": 1,
+                            "show": true
+                        },
+                        {
+                            "format": "short",
+                            "logBase": 1,
+                            "show": true
+                        }
+                    ],
+                    "yaxis": {
+                        "align": false
+                    }
+                }
+            ],
+            "title": "Flesnet sender (en) buffer state",
+            "type": "row"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 74
+            },
+            "id": 13,
+            "panels": [],
+            "title": "Flesnet receiver (pn) buffer state",
+            "type": "row"
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "InfluxDB-FlesnetStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "links": []
+                },
+                "overrides": []
+            },
+            "fill": 0,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 75
+            },
+            "hiddenSeries": false,
+            "id": 10,
+            "legend": {
+                "alignAsTable": false,
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "maxPerRow": 6,
+            "nullPointMode": "connected",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "8.3.3",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "repeat": "output_index",
+            "repeatDirection": "h",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "alias": "used $tag_input_index",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "input_index"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "recv_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_used"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        }
+                    ]
+                },
+                {
+                    "alias": "pending release $tag_input_index",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "input_index"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "recv_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "C",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_freeing"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        }
+                    ]
+                },
+                {
+                    "alias": "free $tag_input_index",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "input_index"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "hide": true,
+                    "measurement": "recv_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "D",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_free"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        }
+                    ]
+                }
+            ],
+            "thresholds": [],
+            "timeRegions": [],
+            "title": "Receive Data Buffer Status for Output Index $output_index and Input Index $input_index",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "format": "bytes",
+                    "logBase": 1,
+                    "min": "0",
+                    "show": true
+                },
+                {
+                    "format": "short",
+                    "logBase": 1,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false
+            }
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "InfluxDB-FlesnetStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "links": []
+                },
+                "overrides": []
+            },
+            "fill": 1,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 83
+            },
+            "hiddenSeries": false,
+            "id": 11,
+            "legend": {
+                "alignAsTable": false,
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "maxPerRow": 6,
+            "nullPointMode": "connected",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "8.3.3",
+            "pointradius": 2,
+            "points": true,
+            "renderer": "flot",
+            "repeat": "output_index",
+            "repeatDirection": "h",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": true,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "alias": "used",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "recv_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "desc_used"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        },
+                        {
+                            "condition": "AND",
+                            "key": "input_index",
+                            "operator": "=~",
+                            "value": "/^$input_index$/"
+                        }
+                    ]
+                },
+                {
+                    "alias": "freeing",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "recv_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "C",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "desc_freeing"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        },
+                        {
+                            "condition": "AND",
+                            "key": "input_index",
+                            "operator": "=~",
+                            "value": "/^$input_index$/"
+                        }
+                    ]
+                },
+                {
+                    "alias": "free",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "hide": true,
+                    "measurement": "recv_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "D",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "desc_free"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        },
+                        {
+                            "condition": "AND",
+                            "key": "input_index",
+                            "operator": "=~",
+                            "value": "/^$input_index$/"
+                        }
+                    ]
+                }
+            ],
+            "thresholds": [],
+            "timeRegions": [],
+            "title": "Receive Descriptor Buffer Status for Output Index $output_index and Input Index $input_index",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:3020",
+                    "format": "short",
+                    "logBase": 1,
+                    "min": "0",
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:3021",
+                    "format": "short",
+                    "logBase": 1,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false
+            }
+        },
+        {
+            "aliasColors": {
+                "free": "green",
+                "freeing": "green",
+                "mixed": "orange",
+                "pending release": "yellow",
+                "used": "red"
+            },
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "InfluxDB-FlesnetStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "links": []
+                },
+                "overrides": []
+            },
+            "fill": 1,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 91
+            },
+            "hiddenSeries": false,
+            "id": 14,
+            "interval": "1s",
+            "legend": {
+                "alignAsTable": false,
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": true,
+                "total": false,
+                "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "maxPerRow": 6,
+            "nullPointMode": "null",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "8.3.3",
+            "pointradius": 1,
+            "points": true,
+            "renderer": "flot",
+            "repeat": "output_index",
+            "repeatDirection": "h",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": true,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "alias": "used",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_used"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        }
+                    ]
+                },
+                {
+                    "alias": "mixed",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "B",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_mixed"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        }
+                    ]
+                },
+                {
+                    "alias": "pending release",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "C",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_freeing"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        }
+                    ]
+                }
+            ],
+            "thresholds": [],
+            "timeRegions": [],
+            "title": "Aggregate Receive Data Buffer Status for Output Index $output_index",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "format": "percentunit",
+                    "logBase": 1,
+                    "max": "1.01",
+                    "show": true
+                },
+                {
+                    "format": "short",
+                    "logBase": 1,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false
+            }
+        },
+        {
+            "aliasColors": {
+                "freeing": "yellow",
+                "mixed": "orange",
+                "pending release": "yellow",
+                "used": "red"
+            },
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "InfluxDB-FlesnetStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "links": []
+                },
+                "overrides": []
+            },
+            "fill": 1,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 99
+            },
+            "hiddenSeries": false,
+            "id": 15,
+            "interval": "1s",
+            "legend": {
+                "alignAsTable": false,
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "rightSide": false,
+                "show": true,
+                "total": false,
+                "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "maxPerRow": 6,
+            "nullPointMode": "null",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "8.3.3",
+            "pointradius": 1,
+            "points": true,
+            "renderer": "flot",
+            "repeat": "output_index",
+            "repeatDirection": "h",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": true,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "alias": "used",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "desc_used"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        }
+                    ]
+                },
+                {
+                    "alias": "mixed",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "B",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "desc_mixed"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        }
+                    ]
+                },
+                {
+                    "alias": "pending release",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "timeslice_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "C",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "desc_freeing"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": [
+                        {
+                            "key": "output_index",
+                            "operator": "=~",
+                            "value": "/^$output_index$/"
+                        }
+                    ]
+                }
+            ],
+            "thresholds": [],
+            "timeRegions": [],
+            "title": "Aggregate Receive Descriptor Buffer Status for Output Index $output_index",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "format": "percentunit",
+                    "logBase": 1,
+                    "max": "1.01",
+                    "show": true
+                },
+                {
+                    "format": "short",
+                    "logBase": 1,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false
+            }
+        },
+        {
+            "columns": [],
+            "fontSize": "100%",
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 107
+            },
+            "id": 32,
+            "pageSize": 6,
+            "showHeader": true,
+            "sort": {
+                "col": 0,
+                "desc": true
+            },
+            "styles": [
+                {
+                    "alias": "Time",
+                    "align": "auto",
+                    "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                    "pattern": "Time",
+                    "type": "date"
+                },
+                {
+                    "alias": "",
+                    "align": "auto",
+                    "colors": [
+                        "rgba(245, 54, 54, 0.9)",
+                        "rgba(237, 129, 40, 0.89)",
+                        "rgba(50, 172, 45, 0.97)"
+                    ],
+                    "decimals": 2,
+                    "pattern": "/.*/",
+                    "thresholds": [],
+                    "type": "number",
+                    "unit": "short"
+                }
+            ],
+            "targets": [
+                {
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "null"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "value"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "title": "Runs",
+            "transform": "annotations",
+            "type": "table-old"
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "InfluxDB-FlesnetStatus",
+            "fieldConfig": {
+                "defaults": {
+                    "links": []
+                },
+                "overrides": []
+            },
+            "fill": 1,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 115
+            },
+            "hiddenSeries": false,
+            "id": 2,
+            "interval": "1s",
+            "legend": {
+                "alignAsTable": true,
+                "avg": true,
+                "current": true,
+                "hideEmpty": false,
+                "hideZero": true,
+                "max": true,
+                "min": true,
+                "rightSide": true,
+                "show": true,
+                "total": false,
+                "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": "null",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "8.3.3",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [
+                {
+                    "$$hashKey": "object:948",
+                    "alias": "en05 TRD 6196 (14)",
+                    "yaxis": 1
+                }
+            ],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "alias": "$tag_host $tag_sys_id $tag_eq_id ($tag_input_index)",
+                    "groupBy": [
+                        {
+                            "params": [
+                                "$__interval"
+                            ],
+                            "type": "time"
+                        },
+                        {
+                            "params": [
+                                "input_index"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "sys_id"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "host"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "eq_id"
+                            ],
+                            "type": "tag"
+                        },
+                        {
+                            "params": [
+                                "none"
+                            ],
+                            "type": "fill"
+                        }
+                    ],
+                    "measurement": "send_buffer_status",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                        [
+                            {
+                                "params": [
+                                    "data_rate"
+                                ],
+                                "type": "field"
+                            },
+                            {
+                                "params": [],
+                                "type": "mean"
+                            }
+                        ]
+                    ],
+                    "tags": []
+                }
+            ],
+            "thresholds": [],
+            "timeRegions": [],
+            "title": "Data Rates per Input Channel",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "mode": "time",
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:955",
+                    "format": "Bps",
+                    "logBase": 1,
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:956",
+                    "format": "short",
+                    "logBase": 1,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false
+            }
+        }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 34,
+    "style": "dark",
+    "tags": [
+        "FLES"
+    ],
+    "templating": {
+        "list": [
+            {
+                "current": {
+                    "selected": true,
+                    "text": [
+                        "0"
+                    ],
+                    "value": [
+                        "0"
+                    ]
+                },
+                "datasource": "InfluxDB-FlesnetStatus",
+                "definition": "SHOW TAG VALUES WITH KEY = \"input_index\"",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Input Index",
+                "multi": true,
+                "name": "input_index",
+                "options": [],
+                "query": "SHOW TAG VALUES WITH KEY = \"input_index\"",
+                "refresh": 2,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 3,
+                "tagValuesQuery": "",
+                "tagsQuery": "",
+                "type": "query",
+                "useTags": false
+            },
+            {
+                "current": {
+                    "selected": true,
+                    "text": [
+                        "0"
+                    ],
+                    "value": [
+                        "0"
+                    ]
+                },
+                "datasource": "InfluxDB-FlesnetStatus",
+                "definition": "SHOW TAG VALUES WITH KEY = \"output_index\"",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Output Index",
+                "multi": true,
+                "name": "output_index",
+                "options": [],
+                "query": "SHOW TAG VALUES WITH KEY = \"output_index\"",
+                "refresh": 2,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 3,
+                "tagValuesQuery": "",
+                "tagsQuery": "",
+                "type": "query",
+                "useTags": false
+            }
+        ]
+    },
+    "time": {
+        "from": "now-12h",
+        "to": "now"
+    },
+    "timepicker": {
+        "refresh_intervals": [
+            "5s",
+            "10s",
+            "30s",
+            "1m",
+            "5m",
+            "15m",
+            "30m",
+            "1h",
+            "2h",
+            "1d"
+        ]
+    },
+    "timezone": "",
+    "title": "FLESNET Overview",
+    "uid": "dVag0c9Wz",
+    "version": 1,
+    "weekStart": ""
+}
