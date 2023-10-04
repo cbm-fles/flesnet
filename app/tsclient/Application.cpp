@@ -1,16 +1,20 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
+#include "ManagedTimesliceBuffer.hpp"
+#include "Timeslice.hpp"
 #include "TimesliceAnalyzer.hpp"
 #include "TimesliceAutoSource.hpp"
 #include "TimesliceDebugger.hpp"
 #include "TimesliceOutputArchive.hpp"
 #include "TimeslicePublisher.hpp"
 #include "Utility.hpp"
-#include <memory>
 #include <thread>
+#include <utility>
 
-Application::Application(Parameters const& par) : par_(par) {
+Application::Application(Parameters const& par,
+                         volatile sig_atomic_t* signal_status)
+    : par_(par), signal_status_(signal_status) {
   // start up monitoring
   if (!par.monitor_uri().empty()) {
     monitor_ = std::make_unique<cbm::Monitor>(par_.monitor_uri());
@@ -39,23 +43,72 @@ Application::Application(Parameters const& par) : par_(par) {
         new TimesliceDumper(debug_log_.stream, par_.verbosity())));
   }
 
-  if (!par_.output_archive().empty()) {
-    if (par_.output_archive_items() == SIZE_MAX &&
-        par_.output_archive_bytes() == SIZE_MAX) {
-      sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-          new fles::TimesliceOutputArchive(par_.output_archive())));
-    } else {
-      sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-          new fles::TimesliceOutputArchiveSequence(
-              par_.output_archive(), par_.output_archive_items(),
-              par_.output_archive_bytes())));
-    }
-  }
+  for (const auto& output_uri : par_.output_uris()) {
+    // If output_uri has no full URI pattern, everything is in "uri.path"
+    UriComponents uri{output_uri};
 
-  if (!par_.publish_address().empty()) {
-    sinks_.push_back(
-        std::unique_ptr<fles::TimesliceSink>(new fles::TimeslicePublisher(
-            par_.publish_address(), par_.publish_hwm())));
+    if (uri.scheme == "file" || uri.scheme.empty()) {
+      size_t items = SIZE_MAX;
+      size_t bytes = SIZE_MAX;
+      for (auto& [key, value] : uri.query_components) {
+        if (key == "items") {
+          items = stoull(value);
+        } else if (key == "bytes") {
+          bytes = stoull(value);
+        } else {
+          throw std::runtime_error(
+              "query parameter not implemented for scheme file: " + key);
+        }
+      }
+      const auto file_path = uri.authority + uri.path;
+      if (items == SIZE_MAX && bytes == SIZE_MAX) {
+        sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+            new fles::TimesliceOutputArchive(file_path)));
+      } else {
+        sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+            new fles::TimesliceOutputArchiveSequence(file_path, items, bytes)));
+      }
+
+    } else if (uri.scheme == "tcp") {
+      uint32_t hwm = 1;
+      for (auto& [key, value] : uri.query_components) {
+        if (key == "hwm") {
+          hwm = stou(value);
+        } else {
+          throw std::runtime_error(
+              "query parameter not implemented for scheme " + uri.scheme +
+              ": " + key);
+        }
+      }
+      const auto address = uri.scheme + "://" + uri.authority;
+      sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+          new fles::TimeslicePublisher(address, hwm)));
+
+    } else if (uri.scheme == "shm") {
+      uint32_t num_components = 1;
+      uint32_t datasize = 27; // 128 MiB
+      uint32_t descsize = 19; // 16 MiB
+      for (auto& [key, value] : uri.query_components) {
+        if (key == "datasize") {
+          datasize = std::stoul(value);
+        } else if (key == "descsize") {
+          descsize = std::stoul(value);
+        } else if (key == "n") {
+          num_components = std::stoul(value);
+        } else {
+          throw std::runtime_error(
+              "query parameter not implemented for scheme " + uri.scheme +
+              ": " + key);
+        }
+      }
+      const auto shm_identifier = split(uri.path, "/").at(0);
+      sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
+          new ManagedTimesliceBuffer(zmq_context_, shm_identifier, datasize,
+                                     descsize, num_components)));
+
+    } else {
+      throw ParametersException("invalid output scheme: " + uri.scheme);
+    }
   }
 
   if (par_.benchmark()) {
@@ -130,7 +183,7 @@ void Application::run() {
       sink->put(ts);
     }
     ++count_;
-    if (count_ == limit) {
+    if (count_ == limit || *signal_status_ != 0) {
       break;
     }
   }

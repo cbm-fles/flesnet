@@ -53,27 +53,25 @@ void Parameters::parse_options(int argc, char* argv[]) {
   desc_add("input-uri,i",
            po::value<std::string>(&input_uri_)->value_name("URI"),
            "uri of a timeslice source");
-  desc_add("output-archive,o",
-           po::value<std::string>(&output_archive_)->value_name("FILENAME"),
-           "name of an output file archive to write");
-  desc_add("output-archive-items",
-           po::value<size_t>(&output_archive_items_)->value_name("N"),
-           "limit number of timeslices per file to given number, create "
-           "sequence of output archive files (use placeholder %n in "
-           "output-archive parameter)");
-  desc_add("output-archive-bytes",
-           po::value<size_t>(&output_archive_bytes_)->value_name("N"),
-           "limit number of bytes per file to given number, create "
-           "sequence of output archive files (use placeholder %n in "
-           "output-archive parameter)");
-  desc_add("publish,P",
-           po::value<std::string>(&publish_address_)
-               ->implicit_value("tcp://*:5556")
-               ->value_name("URI"),
-           "enable timeslice publisher on given address");
-  desc_add("publish-hwm", po::value<uint32_t>(&publish_hwm_)->value_name("N"),
-           "High-water mark for the publisher, in TS, TS drop happens if more "
-           "buffered (default: 1)");
+  desc_add("output-uri,o",
+           po::value<std::vector<std::string>>()->multitoken()->value_name(
+               "scheme://host/path?param=value ..."),
+           "specify an output. The URI scheme determines the type of output, "
+           "which can be one of: 'file' (write to an output file archive), "
+           "'shm' (write to a flesnet shared memory segment managed by this "
+           "process), 'tcp' (enable timeslice publisher on given address).\n"
+           "Supported parameters for 'file': "
+           "'items' (limit number of timeslices per file to given number, "
+           "create sequence of output archive files; use placeholder %n in "
+           "filename), 'bytes' (limit number of bytes per file to given "
+           "number, create sequence of output archive files; use placeholder "
+           "%n in filename). Example: 'file:///tmp/output%n.tsa?items=100'.\n"
+           "Supported parameters for 'shm': "
+           "'n' (number of components), 'datasize', 'descsize'. Example: "
+           "'shm://127.0.0.1/tsclient_0?n=10&datasize=27&descsize=19'.\n"
+           "Supported parameters for 'tcp': "
+           "'hwm' (high-water mark for the publisher, in TS, TS drop happens "
+           "if more buffered; default: 1). Example: 'tcp://*:5556?hwm=2'.");
   desc_add("maximum-number,n",
            po::value<uint64_t>(&maximum_number_)->value_name("N"),
            "set the maximum number of timeslices to process (default: "
@@ -113,6 +111,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
     logging::add_syslog(logging::syslog::local0,
                         static_cast<severity_level>(log_syslog));
   }
+
+  output_uris_ = vm["output-uri"].as<std::vector<std::string>>();
 
   size_t input_sources = vm.count("input-uri");
   if (input_sources == 0 && !benchmark_) {

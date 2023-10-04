@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 /// Run parameter exception class.
 class ParametersException : public std::runtime_error {
@@ -26,14 +27,8 @@ public:
 
   [[nodiscard]] std::string input_uri() const { return input_uri_; }
 
-  [[nodiscard]] std::string output_archive() const { return output_archive_; }
-
-  [[nodiscard]] size_t output_archive_items() const {
-    return output_archive_items_;
-  }
-
-  [[nodiscard]] size_t output_archive_bytes() const {
-    return output_archive_bytes_;
+  [[nodiscard]] std::vector<std::string> output_uris() const {
+    return output_uris_;
   }
 
   [[nodiscard]] bool analyze() const { return analyze_; }
@@ -43,10 +38,6 @@ public:
   [[nodiscard]] size_t verbosity() const { return verbosity_; }
 
   [[nodiscard]] bool histograms() const { return histograms_; }
-
-  [[nodiscard]] std::string publish_address() const { return publish_address_; }
-
-  [[nodiscard]] uint32_t publish_hwm() const { return publish_hwm_; }
 
   [[nodiscard]] uint64_t maximum_number() const { return maximum_number_; }
 
@@ -65,15 +56,11 @@ private:
 
   int32_t client_index_ = -1;
   std::string input_uri_;
-  std::string output_archive_;
-  size_t output_archive_items_ = SIZE_MAX;
-  size_t output_archive_bytes_ = SIZE_MAX;
+  std::vector<std::string> output_uris_;
   bool analyze_ = false;
   bool benchmark_ = false;
   size_t verbosity_ = 0;
   bool histograms_ = false;
-  std::string publish_address_;
-  uint32_t publish_hwm_ = 1;
   uint64_t maximum_number_ = UINT64_MAX;
   uint64_t offset_ = 0;
   uint64_t stride_ = 1;
