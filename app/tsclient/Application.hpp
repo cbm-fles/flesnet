@@ -8,13 +8,15 @@
 #include "TimesliceSource.hpp"
 #include "log.hpp"
 #include <chrono>
+#include <csignal>
 #include <memory>
 #include <vector>
+#include <zmq.hpp>
 
 /// %Application base class.
 class Application {
 public:
-  explicit Application(Parameters const& par);
+  Application(Parameters const& par, volatile sig_atomic_t* signal_status);
 
   Application(const Application&) = delete;
   void operator=(const Application&) = delete;
@@ -25,9 +27,13 @@ public:
 
 private:
   Parameters const& par_;
+  volatile sig_atomic_t* signal_status_;
 
   /// The application's monitoring object
   std::unique_ptr<cbm::Monitor> monitor_;
+
+  /// The application's ZeroMQ context
+  zmq::context_t zmq_context_{1};
 
   std::unique_ptr<fles::TimesliceSource> source_;
   std::vector<std::unique_ptr<fles::TimesliceSink>> sinks_;
