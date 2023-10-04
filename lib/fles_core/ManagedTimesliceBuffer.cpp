@@ -4,28 +4,35 @@
 #include "Timeslice.hpp"
 #include "TimesliceWorkItem.hpp"
 #include <chrono>
-#include <thread>
 
 ManagedTimesliceBuffer::ManagedTimesliceBuffer(
     zmq::context_t& context,
-    const std::string& distributor_address,
     const std::string& shm_identifier,
     uint32_t data_buffer_size_exp,
     uint32_t desc_buffer_size_exp,
     uint32_t num_input_nodes)
-    : timeslice_buffer_(context,
-                        distributor_address,
+    : producer_address_("inproc://" + shm_identifier),
+      worker_address_("ipc://@" + shm_identifier),
+      item_distributor_(context, producer_address_, worker_address_),
+      timeslice_buffer_(context,
+                        producer_address_,
                         shm_identifier,
                         data_buffer_size_exp,
                         desc_buffer_size_exp,
-                        num_input_nodes) {
-
-  for (uint_fast16_t i = 0; i < num_input_nodes; ++i) {
+                        num_input_nodes),
+      ack_(desc_buffer_size_exp),
+      distributor_thread_(std::ref(item_distributor_)) {
+  for (uint32_t i = 0; i < num_input_nodes; ++i) {
     desc_.emplace_back(timeslice_buffer_.get_desc_ptr(i),
                        timeslice_buffer_.get_desc_size_exp());
     data_.emplace_back(timeslice_buffer_.get_data_ptr(i),
                        timeslice_buffer_.get_data_size_exp());
   }
+}
+
+ManagedTimesliceBuffer::~ManagedTimesliceBuffer() {
+  item_distributor_.stop();
+  distributor_thread_.join();
 }
 
 void ManagedTimesliceBuffer::handle_timeslice_completions() {
@@ -35,7 +42,7 @@ void ManagedTimesliceBuffer::handle_timeslice_completions() {
       do {
         ++acked_;
       } while (ack_.at(acked_) > c.ts_pos);
-      for (uint_fast16_t i = 0; i < desc_.size(); ++i) {
+      for (std::size_t i = 0; i < desc_.size(); ++i) {
         desc_.at(i).set_read_index(acked_);
         data_.at(i).set_read_index(desc_.at(i).at(acked_ - 1).offset +
                                    desc_.at(i).at(acked_ - 1).size);
@@ -48,7 +55,7 @@ void ManagedTimesliceBuffer::handle_timeslice_completions() {
 
 bool ManagedTimesliceBuffer::timeslice_fits_in_buffer(
     const fles::Timeslice& timeslice) {
-  for (uint_fast16_t i = 0; i < timeslice.num_components(); ++i) {
+  for (uint64_t i = 0; i < timeslice.num_components(); ++i) {
     if (data_.at(i).size_available_contiguous() < timeslice.size_component(i) ||
         desc_.at(i).size_available() < 1) {
       return false;
@@ -65,7 +72,6 @@ void ManagedTimesliceBuffer::put(
   if (timeslice->num_components() != timeslice_buffer_.get_num_input_nodes()) {
     throw std::runtime_error("Timeslice has wrong number of components");
   }
-
   // Poll for timeslice completions until enough space is available.
   handle_timeslice_completions();
   while (!timeslice_fits_in_buffer(*timeslice)) {
@@ -74,7 +80,7 @@ void ManagedTimesliceBuffer::put(
   }
 
   // Copy each component to the shared memory buffer.
-  for (uint_fast16_t i = 0; i < timeslice->num_components(); ++i) {
+  for (uint64_t i = 0; i < timeslice->num_components(); ++i) {
 
     // Skip remaining bytes in the data buffer to avoid a fragmented entry.
     data_.at(i).skip_buffer_wrap(timeslice->size_component(i));
