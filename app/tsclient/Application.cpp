@@ -43,6 +43,7 @@ Application::Application(Parameters const& par,
         new TimesliceDumper(debug_log_.stream, par_.verbosity())));
   }
 
+  bool has_shm_output = false;
   for (const auto& output_uri : par_.output_uris()) {
     // If output_uri has no full URI pattern, everything is in "uri.path"
     UriComponents uri{output_uri};
@@ -105,10 +106,16 @@ Application::Application(Parameters const& par,
       sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
           new ManagedTimesliceBuffer(zmq_context_, shm_identifier, datasize,
                                      descsize, num_components)));
+      has_shm_output = true;
 
     } else {
       throw ParametersException("invalid output scheme: " + uri.scheme);
     }
+  }
+
+  if (has_shm_output) {
+    // wait a moment to allow the ManagedTimesliceBuffer clients to connect
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
   if (par_.benchmark()) {
@@ -185,6 +192,34 @@ void Application::run() {
     ++count_;
     if (count_ == limit || *signal_status_ != 0) {
       break;
+    }
+    // avoid unneccessary pipelining
+    timeslice.reset();
+  }
+
+  // Loop over sinks. For all sinks of type ManagedTimesliceBuffer, check if
+  // they are empty. If at least one of them is not empty, wait for 100 ms.
+  // Repeat until all sinks are empty.
+  bool all_empty = false;
+  bool first = true;
+  *signal_status_ = 0;
+  while (!all_empty && *signal_status_ == 0) {
+    all_empty = true;
+    for (auto& sink : sinks_) {
+      auto* mtb = dynamic_cast<ManagedTimesliceBuffer*>(sink.get());
+      if (mtb != nullptr) {
+        mtb->handle_timeslice_completions();
+        if (!mtb->empty()) {
+          all_empty = false;
+          if (first) {
+            L_(info) << output_prefix_ << "waiting for shm buffer to empty";
+            L_(info) << output_prefix_ << "press Ctrl-C to abort";
+            first = false;
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          break;
+        }
+      }
     }
   }
 }
