@@ -33,6 +33,12 @@ public:
 
   void put(std::shared_ptr<const fles::Timeslice> timeslice) override;
 
+  /// Return true if the buffer is empty.
+  [[nodiscard]] bool empty() const { return acked_ == ts_pos_; }
+
+  /// Handle pending timeslice completions and advance read indexes.
+  void handle_timeslice_completions();
+
 private:
   /// Address that is used for communication between the TimesliceBuffer and the
   /// ItemDistributor.
@@ -63,9 +69,6 @@ private:
   /// ManagedRingBuffer wrappers for the TimesliceComponentDescriptor buffer.
   std::vector<ManagedRingBuffer<fles::TimesliceComponentDescriptor>> desc_;
   std::vector<ManagedRingBuffer<uint8_t>> data_;
-
-  /// Handle pending timeslice completions and advance read indexes.
-  void handle_timeslice_completions();
 
   /// Check if the timeslice fits in the buffer.
   bool timeslice_fits_in_buffer(const fles::Timeslice& timeslice);
