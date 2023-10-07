@@ -21,9 +21,7 @@ TimesliceView* TimesliceReceiver::do_get() {
     return nullptr;
   }
 
-  while (true) {
-    auto item = worker_.get();
-
+  while (auto item = worker_.get()) {
     fles::TimesliceShmWorkItem timeslice_item;
     std::istringstream istream(item->payload());
     {
@@ -51,6 +49,9 @@ TimesliceView* TimesliceReceiver::do_get() {
 
     return new TimesliceView(managed_shm_, item, timeslice_item);
   }
+
+  eos_ = true;
+  return nullptr;
 }
 
 boost::uuids::uuid TimesliceReceiver::managed_shm_uuid() const {
