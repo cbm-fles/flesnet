@@ -112,7 +112,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
                         static_cast<severity_level>(log_syslog));
   }
 
-  output_uris_ = vm["output-uri"].as<std::vector<std::string>>();
+  if (vm.count("output-uri") != 0u) {
+    output_uris_ = vm["output-uri"].as<std::vector<std::string>>();
+  }
 
   size_t input_sources = vm.count("input-uri");
   if (input_sources == 0 && !benchmark_) {
