@@ -95,6 +95,9 @@ public:
         distributor_socket_ = nullptr;
         disconnect_callback_();
         std::queue<ItemID>().swap(completed_items_);
+        if (zmq_error.num() == EINTR) {
+          stop();
+        }
       }
     }
     return nullptr;
@@ -109,6 +112,7 @@ private:
     assert(!distributor_socket_);
     distributor_socket_ =
         std::make_unique<zmq::socket_t>(context_, zmq::socket_type::req);
+    distributor_socket_->set(zmq::sockopt::linger, 0);
     distributor_socket_->connect(distributor_address_);
     send_register();
   }
