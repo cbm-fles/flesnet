@@ -120,6 +120,14 @@ struct WorkerParameters {
   size_t stride;
   size_t offset;
   WorkerQueuePolicy queue_policy;
+
+  /**
+   * Workers with the same group_id are treated as a group. The distributor will
+   * only send items to one worker of the group. This is useful for load
+   * sharing. Group_id 0 means no grouping.
+   */
+  size_t group_id;
+
   std::string client_name;
 };
 

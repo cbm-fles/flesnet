@@ -121,7 +121,8 @@ private:
     const std::string message_str =
         "REGISTER " + std::to_string(parameters_.stride) + " " +
         std::to_string(parameters_.offset) + " " +
-        to_string(parameters_.queue_policy) + " " + parameters_.client_name;
+        to_string(parameters_.queue_policy) + " " +
+        std::to_string(parameters_.group_id) + " " + parameters_.client_name;
     distributor_socket_->send(zmq::buffer(message_str));
     reset_heartbeat_time();
   }
@@ -175,7 +176,7 @@ private:
   std::unique_ptr<zmq::socket_t> distributor_socket_;
   DisconnectCallback disconnect_callback_;
 
-  const WorkerParameters parameters_{1, 0, WorkerQueuePolicy::QueueAll,
+  const WorkerParameters parameters_{1, 0, WorkerQueuePolicy::QueueAll, 0,
                                      "example_client"};
   std::set<ItemID> items_;
   std::queue<ItemID> completed_items_;
