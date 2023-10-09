@@ -72,7 +72,8 @@ public:
 
   [[nodiscard]] std::string description() const {
     return client_name_ + " (s" + std::to_string(stride_) + "/o" +
-           std::to_string(offset_) + "/p" + to_string(queue_policy_) + ")";
+           std::to_string(offset_) + "/p" + to_string(queue_policy_) + "/g" +
+           std::to_string(group_id_) + ")";
   }
 
 private:
@@ -80,7 +81,8 @@ private:
     std::string command;
     std::stringstream s(message);
     // Read space-separated string into separate variables
-    s >> command >> stride_ >> offset_ >> queue_policy_ >> client_name_;
+    s >> command >> stride_ >> offset_ >> queue_policy_ >> group_id_ >>
+        client_name_;
     // Read remainder of string and add contents to client_name_
     client_name_ += std::string(std::istreambuf_iterator<char>(s), {});
     if (s.fail()) {
@@ -91,6 +93,7 @@ private:
   size_t stride_{};
   size_t offset_{};
   WorkerQueuePolicy queue_policy_{};
+  size_t group_id_{};
   std::string client_name_;
 
   std::deque<std::shared_ptr<Item>> waiting_items_;

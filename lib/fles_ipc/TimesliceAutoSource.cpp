@@ -94,7 +94,7 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
       sources.emplace_back(std::move(source));
 
     } else if (uri.scheme == "shm") {
-      WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll,
+      WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll, 0,
                              "TimesliceAutoSource at PID " +
                                  std::to_string(system::current_pid())};
       for (auto& [key, value] : uri.query_components) {
@@ -108,6 +108,8 @@ void TimesliceAutoSource::init(const std::vector<std::string>& locators) {
               {"one", WorkerQueuePolicy::PrebufferOne},
               {"skip", WorkerQueuePolicy::Skip}};
           param.queue_policy = queue_map.at(value);
+        } else if (key == "group") {
+          param.group_id = std::stoull(value);
         } else {
           throw std::runtime_error(
               "query parameter not implemented for scheme " + uri.scheme +
