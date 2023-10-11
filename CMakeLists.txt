@@ -22,6 +22,7 @@ configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
 if(DEFINED ENV{SIMPATH})
   message(WARNING "SIMPATH set, using Fairroot external packages in build.")
   set(SIMPATH $ENV{SIMPATH})
+  list(PREPEND CMAKE_PREFIX_PATH ${SIMPATH})
   set(Boost_NO_SYSTEM_PATHS TRUE)
   set(Boost_ROOT $ENV{SIMPATH})
 endif()
@@ -35,17 +36,25 @@ set_directory_properties(PROPERTIES EP_PREFIX ${PROJECT_BINARY_DIR})
 # find or fetch ZeroMQ
 if(INCLUDE_ZMQ)
   message(STATUS "Downloading and building static ZeroMQ library.")
+
+  if ("${CMAKE_GENERATOR}" MATCHES "Make")
+    set(ZMQ_BUILD_COMMAND "$(MAKE)")
+  else()
+    set(ZMQ_BUILD_COMMAND "${CMAKE_COMMAND} --build . --target")
+  endif()
+
   ExternalProject_Add(
     zeromq
     GIT_REPOSITORY "https://github.com/zeromq/libzmq.git"
     GIT_TAG "4097855ddaaa65ed7b5e8cb86d143842a594eebd" # v4.3.4
     GIT_CONFIG advice.detachedHead=false
-    PATCH_COMMAND patch -p1 -i "${CMAKE_SOURCE_DIR}/fix_gnutls_macosx_v4.3.4.patch"
+    # patch can get stuck without -t on subsequent builds, if patch was already applied
+    PATCH_COMMAND patch -p1 -t -i "${CMAKE_SOURCE_DIR}/fix_gnutls_macosx_v4.3.4.patch"
     CMAKE_CACHE_ARGS
     -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE
     -DWITH_LIBBSD:BOOL=FALSE
     -DWITH_LIBSODIUM:BOOL=FALSE
-    BUILD_COMMAND cmake --build . --target libzmq-static
+    BUILD_COMMAND ${ZMQ_BUILD_COMMAND} libzmq-static
     BUILD_BYPRODUCTS src/zeromq-build/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zmq${CMAKE_STATIC_LIBRARY_SUFFIX}
     INSTALL_COMMAND ""
   )
@@ -116,15 +125,17 @@ else()
   add_library(zmq::cppzmq ALIAS PkgConfig::zeromq)
 endif()
 
-include(FetchContent)
-
-# fetch libfmt formatting library, used by lib/monitoring
-FetchContent_Declare(
-  fmtlib
-  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG 8.1.1)
-FetchContent_MakeAvailable(fmtlib)
-# Adds fmt::fmt
+# fetch libfmt formatting library, used by lib/monitoring. Should be already included in FairSoft.
+find_package(fmt CONFIG)
+if(NOT fmt_FOUND)
+  message(STATUS "Downloading and building fmtlib.")
+  include(FetchContent)
+  FetchContent_Declare(
+    fmtlib
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG 8.1.1)
+  FetchContent_MakeAvailable(fmtlib) # Adds fmt::fmt
+endif()
 
 if(APPLE)
   set(Boost_USE_MULTITHREADED TRUE)
