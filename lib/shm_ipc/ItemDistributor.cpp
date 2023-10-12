@@ -1,6 +1,7 @@
 #include "ItemDistributor.hpp"
 
 #include <memory>
+#include <set>
 #include <stdexcept>
 
 // Handle incoming message (work item) from the generator
@@ -18,8 +19,15 @@ void ItemDistributor::on_generator_pollin() {
 
   auto new_item = std::make_shared<Item>(&completed_items_, id, payload);
 
-  // Distribute the new work item
+  // Distribute the new work item.
+  // If a group_id is set, send only once per group.
+  std::set<size_t> completed_groups;
   for (auto& [identity, worker] : workers_) {
+    if (worker->group_id() != 0 &&
+        completed_groups.find(worker->group_id()) != completed_groups.end()) {
+      // This group has already been served, skip it
+      continue;
+    }
     try {
       if (worker->wants(new_item->id())) {
         if (worker->queue_policy() == WorkerQueuePolicy::PrebufferOne) {
@@ -27,6 +35,19 @@ void ItemDistributor::on_generator_pollin() {
         }
         if (worker->is_idle()) {
           // The worker is idle, send the item immediately
+          if (worker->group_id() != 0) {
+            completed_groups.insert(worker->group_id());
+            // As we can send the item immediately, delete this work item from
+            // the queues of other (previous) workers with the same group_id
+            for (auto& [identity, other_worker] : workers_) {
+              if (other_worker == worker) {
+                break;
+              }
+              if (other_worker->group_id() == worker->group_id()) {
+                other_worker->delete_from_queue(new_item->id());
+              }
+            }
+          }
           worker->add_outstanding(new_item);
           send_worker_work_item(identity, *new_item);
         } else {
@@ -92,6 +113,16 @@ void ItemDistributor::on_worker_pollin() {
         // Send next item if available
         if (!worker->queue_empty()) {
           auto item = worker->pop_queue();
+          if (worker->group_id() != 0) {
+            // Delete this work item from the queues of other workers with the
+            // same group_id
+            for (auto& [identity, other_worker] : workers_) {
+              if (worker != other_worker &&
+                  other_worker->group_id() == worker->group_id()) {
+                other_worker->delete_from_queue(item->id());
+              }
+            }
+          }
           worker->add_outstanding(item);
           send_worker_work_item(identity, *item);
         } else {
