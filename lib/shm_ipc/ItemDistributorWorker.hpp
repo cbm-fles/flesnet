@@ -24,6 +24,8 @@ public:
 
   [[nodiscard]] WorkerQueuePolicy queue_policy() const { return queue_policy_; }
 
+  [[nodiscard]] size_t group_id() const { return group_id_; }
+
   [[nodiscard]] bool queue_empty() const { return waiting_items_.empty(); }
 
   void clear_queue() { waiting_items_.clear(); }
@@ -39,6 +41,15 @@ public:
     std::shared_ptr<Item> item = waiting_items_.front();
     waiting_items_.pop_front();
     return item;
+  }
+
+  void delete_from_queue(ItemID id) {
+    auto it = std::find_if(
+        std::begin(waiting_items_), std::end(waiting_items_),
+        [id](const std::shared_ptr<Item>& i) { return i->id() == id; });
+    if (it != std::end(waiting_items_)) {
+      waiting_items_.erase(it);
+    }
   }
 
   [[nodiscard]] bool is_idle() const { return outstanding_items_.empty(); }
