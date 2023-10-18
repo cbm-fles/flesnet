@@ -51,8 +51,7 @@ if(INCLUDE_ZMQ)
     GIT_REPOSITORY "https://github.com/zeromq/libzmq.git"
     GIT_TAG "4097855ddaaa65ed7b5e8cb86d143842a594eebd" # v4.3.4
     GIT_CONFIG advice.detachedHead=false
-    # patch can get stuck without -t on subsequent builds, if patch was already applied
-    PATCH_COMMAND patch -p1 -t -i "${CMAKE_SOURCE_DIR}/fix_gnutls_macosx_v4.3.4.patch"
+    PATCH_COMMAND patch --forward -p1 -i "${CMAKE_SOURCE_DIR}/fix_gnutls_macosx_v4.3.4.patch" || echo "Patch was probably already applied..." # '|| ...': allow complete recompile (cmake --build build --clean-first) without failing due to the patch has been already applied
     CMAKE_CACHE_ARGS
     -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE
     -DWITH_LIBBSD:BOOL=FALSE
