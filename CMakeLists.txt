@@ -7,6 +7,9 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
+# emit 'compile_commands.json' used by some IDEs
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 option(COVERALLS "Turn on coveralls support" OFF)
 option(COVERALLS_UPLOAD "Upload the generated coveralls json" ON)
 
