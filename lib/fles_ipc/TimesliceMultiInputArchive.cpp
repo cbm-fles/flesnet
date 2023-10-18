@@ -97,12 +97,12 @@ void TimesliceMultiInputArchive::CreateInputFileList(std::string inputString) {
         continue;
       }
       // Skip if no match
-      // x.path().leaf().string() means get from directory iterator the
-      // current entry as filesys::path, from this extract the leaf
+      // x.path().filename().string() means get from directory iterator the
+      // current entry as filesys::path, from this extract the
       // filename or directory name and convert it to a string to be
       // used in the regex:match
       boost::smatch what;
-      if (!boost::regex_match(x.path().leaf().string(), what, my_filter)) {
+      if (!boost::regex_match(x.path().filename().string(), what, my_filter)) {
         continue;
       }
       v.push_back(x.path().string());
