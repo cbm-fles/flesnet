@@ -35,7 +35,7 @@ inline Metric::Metric(const std::string& measurement,
                       const MetricTagSet& tagset,
                       MetricFieldSet&& fieldset,
                       time_point timestamp)
-    : fMeasurement(measurement), fTagset(tagset), fFieldset(move(fieldset)),
+    : fMeasurement(measurement), fTagset(tagset), fFieldset(std::move(fieldset)),
       fTimestamp(timestamp) {}
 
 //-----------------------------------------------------------------------------
@@ -50,7 +50,7 @@ inline Metric::Metric(const std::string& measurement,
                       MetricTagSet&& tagset,
                       MetricFieldSet&& fieldset,
                       time_point timestamp)
-    : fMeasurement(measurement), fTagset(move(tagset)),
-      fFieldset(move(fieldset)), fTimestamp(timestamp) {}
+    : fMeasurement(measurement), fTagset(std::move(tagset)),
+      fFieldset(std::move(fieldset)), fTimestamp(timestamp) {}
 
 } // end namespace cbm
