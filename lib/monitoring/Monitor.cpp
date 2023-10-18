@@ -149,17 +149,17 @@ void Monitor::OpenSink(const std::string& sname) {
     std::unique_ptr<MonitorSink> uptr =
         std::make_unique<MonitorSinkFile>(*this, spath);
     std::lock_guard<std::mutex> lock(fSinkMapMutex);
-    fSinkMap.try_emplace(sname, move(uptr));
+    fSinkMap.try_emplace(sname, std::move(uptr));
   } else if (stype == "influx1") {
     std::unique_ptr<MonitorSink> uptr =
         std::make_unique<MonitorSinkInflux1>(*this, spath);
     std::lock_guard<std::mutex> lock(fSinkMapMutex);
-    fSinkMap.try_emplace(sname, move(uptr));
+    fSinkMap.try_emplace(sname, std::move(uptr));
   } else if (stype == "influx2") {
     std::unique_ptr<MonitorSink> uptr =
         std::make_unique<MonitorSinkInflux2>(*this, spath);
     std::lock_guard<std::mutex> lock(fSinkMapMutex);
-    fSinkMap.try_emplace(sname, move(uptr));
+    fSinkMap.try_emplace(sname, std::move(uptr));
   } else {
     throw std::runtime_error(
         fmt::format("Monitor::OpenSink: invalid sink type '{}'", stype));
@@ -246,7 +246,7 @@ void Monitor::QueueMetric(const std::string& measurement,
                           const MetricTagSet& tagset,
                           MetricFieldSet&& fieldset,
                           time_point timestamp) {
-  Metric point(measurement, tagset, move(fieldset), timestamp);
+  Metric point(measurement, tagset, std::move(fieldset), timestamp);
   QueueMetric(std::move(point));
 }
 
@@ -262,7 +262,7 @@ void Monitor::QueueMetric(const std::string& measurement,
                           MetricTagSet&& tagset,
                           MetricFieldSet&& fieldset,
                           time_point timestamp) {
-  Metric point(measurement, move(tagset), move(fieldset), timestamp);
+  Metric point(measurement, std::move(tagset), std::move(fieldset), timestamp);
   QueueMetric(std::move(point));
 }
 
