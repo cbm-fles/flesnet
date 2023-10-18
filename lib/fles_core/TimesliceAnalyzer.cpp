@@ -1,4 +1,4 @@
-// Copyright 2013, 2015, 2021 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013, 2015, 2021, 2023 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceAnalyzer.hpp"
 #include "PatternChecker.hpp"
@@ -9,6 +9,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <cassert>
+#include <chrono>
 #include <iomanip>
 #include <sstream>
 
@@ -30,7 +31,8 @@ std::string ns_timestamp(uint64_t time_ns) {
   std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>
       tp{std::chrono::nanoseconds{time_ns}};
   // Convert to time_t and remaining nanoseconds
-  std::time_t t = std::chrono::system_clock::to_time_t(tp);
+  auto tp_seconds = std::chrono::time_point_cast<std::chrono::seconds>(tp);
+  std::time_t t = std::chrono::system_clock::to_time_t(tp_seconds);
   auto rem_ns = (tp.time_since_epoch() - std::chrono::seconds{t}).count();
 
   std::tm tm = *std::localtime(&t);
