@@ -27,3 +27,11 @@ operation of a readout chain, please join the
 [flesnet-wiki]: https://github.com/cbm-fles/flesnet/wiki
 [flibuser-list]: https://www-cbm.gsi.de/cbmcdb/display.cgi?obj=grup;view=show;gid=31
 [list-membership]: https://www-cbm.gsi.de/cbmcdb/modpers.cgi?view=grup
+
+Development
+-----------
+
+Depelopers are encouraged to run the [`contrib/local-setup`] script on their
+development machines to properly set the coding style and pre-commit
+checks.
+
