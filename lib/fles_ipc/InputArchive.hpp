@@ -6,6 +6,8 @@
 #include "ArchiveDescriptor.hpp"
 #include "Source.hpp"
 #include <boost/archive/binary_iarchive.hpp>
+#include <boost/iostreams/filter/zstd.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 #include <fstream>
 #include <memory>
 #include <string>
@@ -24,7 +26,7 @@ public:
    *
    * \param filename File name of the archive file
    */
-  InputArchive(const std::string& filename) {
+  explicit InputArchive(const std::string& filename) {
     ifstream_ =
         std::make_unique<std::ifstream>(filename.c_str(), std::ios::binary);
     if (!*ifstream_) {
@@ -38,6 +40,20 @@ public:
     if (descriptor_.archive_type() != archive_type) {
       throw std::runtime_error("File \"" + filename +
                                "\" is not of correct archive type");
+    }
+
+    if (descriptor_.archive_compression() != ArchiveCompression::None) {
+      in_ = std::make_unique<boost::iostreams::filtering_istream>();
+      if (descriptor_.archive_compression() == ArchiveCompression::Zstd) {
+        in_->push(boost::iostreams::zstd_decompressor());
+      } else {
+        throw std::runtime_error(
+            "Unsupported compression type for input archive file \"" +
+            filename + "\"");
+      }
+      in_->push(*ifstream_);
+      iarchive_ = std::make_unique<boost::archive::binary_iarchive>(
+          *in_, boost::archive::no_header);
     }
   }
 
@@ -80,6 +96,7 @@ private:
   }
 
   std::unique_ptr<std::ifstream> ifstream_;
+  std::unique_ptr<boost::iostreams::filtering_istream> in_;
   std::unique_ptr<boost::archive::binary_iarchive> iarchive_;
   ArchiveDescriptor descriptor_;
 
