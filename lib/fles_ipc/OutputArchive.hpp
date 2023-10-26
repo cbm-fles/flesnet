@@ -39,7 +39,8 @@ public:
     if (compression != ArchiveCompression::None) {
       out_ = std::make_unique<boost::iostreams::filtering_ostream>();
       if (compression == ArchiveCompression::Zstd) {
-        out_->push(boost::iostreams::zstd_compressor());
+        out_->push(boost::iostreams::zstd_compressor(
+            boost::iostreams::zstd::best_speed));
       } else {
         throw std::runtime_error(
             "Unsupported compression type for output archive file \"" +
