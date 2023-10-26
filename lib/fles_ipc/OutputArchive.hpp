@@ -24,6 +24,7 @@ public:
    * for writing, and write the archive descriptor.
    *
    * \param filename File name of the archive file
+   * \param compression Compression type to use
    */
   explicit OutputArchive(
       const std::string& filename,
