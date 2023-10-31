@@ -18,6 +18,9 @@ enum class ArchiveType {
   RecoResultsArchive
 };
 
+/// The archive compression enum
+enum class ArchiveCompression { None, Zstd };
+
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
 
@@ -34,8 +37,10 @@ public:
    *
    * \param archive_type The type of archive (e.g., timeslice, microslice).
    */
-  explicit ArchiveDescriptor(ArchiveType archive_type)
-      : archive_type_(archive_type) {
+  explicit ArchiveDescriptor(
+      ArchiveType archive_type,
+      ArchiveCompression archive_compression = ArchiveCompression::None)
+      : archive_type_(archive_type), archive_compression_(archive_compression) {
     time_created_ =
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     hostname_ = fles::system::current_hostname();
@@ -44,6 +49,11 @@ public:
 
   /// Retrieve the type of archive.
   [[nodiscard]] ArchiveType archive_type() const { return archive_type_; }
+
+  /// Retrieve the compression type of archive.
+  [[nodiscard]] ArchiveCompression archive_compression() const {
+    return archive_compression_;
+  }
 
   /// Retrieve the time of creation of the archive.
   [[nodiscard]] std::time_t time_created() const { return time_created_; }
@@ -73,12 +83,18 @@ private:
     } else {
       archive_type_ = ArchiveType::TimesliceArchive;
     };
+    if (version > 1) {
+      ar& archive_compression_;
+    } else {
+      archive_compression_ = ArchiveCompression::None;
+    };
     ar& time_created_;
     ar& hostname_;
     ar& username_;
   }
 
   ArchiveType archive_type_{};
+  ArchiveCompression archive_compression_{};
   std::time_t time_created_ = std::time_t();
   std::string hostname_;
   std::string username_;
@@ -88,5 +104,5 @@ private:
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-BOOST_CLASS_VERSION(fles::ArchiveDescriptor, 1)
+BOOST_CLASS_VERSION(fles::ArchiveDescriptor, 2)
 #pragma GCC diagnostic pop

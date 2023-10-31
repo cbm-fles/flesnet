@@ -7,6 +7,8 @@
 #include "Sink.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/iostreams/filter/zstd.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 #include <cstdint>
 #include <fstream>
 #include <iomanip>
@@ -33,10 +35,13 @@ public:
    * \param filename_template File name pattern of the archive files
    * \param items_per_file    Number of items to store in each file
    */
-  OutputArchiveSequence(std::string filename_template,
-                        std::size_t items_per_file = SIZE_MAX,
-                        std::size_t bytes_per_file = SIZE_MAX)
-      : filename_template_(std::move(filename_template)),
+  explicit OutputArchiveSequence(
+      std::string filename_template,
+      std::size_t items_per_file = SIZE_MAX,
+      std::size_t bytes_per_file = SIZE_MAX,
+      ArchiveCompression compression = ArchiveCompression::None)
+      : descriptor_{archive_type, compression},
+        filename_template_(std::move(filename_template)),
         items_per_file_(items_per_file), bytes_per_file_(bytes_per_file) {
     if (items_per_file_ == 0) {
       items_per_file_ = SIZE_MAX;
@@ -66,13 +71,15 @@ public:
 
   void end_stream() override {
     oarchive_ = nullptr;
+    out_ = nullptr;
     ofstream_ = nullptr;
   }
 
 private:
   std::unique_ptr<std::ofstream> ofstream_;
+  std::unique_ptr<boost::iostreams::filtering_ostream> out_;
   std::unique_ptr<boost::archive::binary_oarchive> oarchive_;
-  ArchiveDescriptor descriptor_{archive_type};
+  ArchiveDescriptor descriptor_;
 
   std::string filename_template_;
   std::size_t items_per_file_;
@@ -112,11 +119,27 @@ private:
 
   void next_file() {
     oarchive_ = nullptr;
+    out_ = nullptr;
     ofstream_ = nullptr;
     ofstream_ = std::make_unique<std::ofstream>(filename(file_count_),
                                                 std::ios::binary);
     oarchive_ = std::make_unique<boost::archive::binary_oarchive>(*ofstream_);
     *oarchive_ << descriptor_;
+
+    if (descriptor_.archive_compression() != ArchiveCompression::None) {
+      out_ = std::make_unique<boost::iostreams::filtering_ostream>();
+      if (descriptor_.archive_compression() == ArchiveCompression::Zstd) {
+        out_->push(boost::iostreams::zstd_compressor(
+            boost::iostreams::zstd::best_speed));
+      } else {
+        throw std::runtime_error(
+            "Unsupported compression type for output archive file \"" +
+            filename(file_count_) + "\"");
+      }
+      out_->push(*ofstream_);
+      oarchive_ = std::make_unique<boost::archive::binary_oarchive>(
+          *out_, boost::archive::no_header);
+    }
 
     ++file_count_;
     file_item_count_ = 0;

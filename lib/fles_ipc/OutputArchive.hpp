@@ -6,6 +6,8 @@
 #include "ArchiveDescriptor.hpp"
 #include "Sink.hpp"
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/iostreams/filter/zstd.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 #include <fstream>
 #include <string>
 
@@ -22,10 +24,32 @@ public:
    * for writing, and write the archive descriptor.
    *
    * \param filename File name of the archive file
+   * \param compression Compression type to use
    */
-  OutputArchive(const std::string& filename)
-      : ofstream_(filename, std::ios::binary), oarchive_(ofstream_) {
-    oarchive_ << descriptor_;
+  explicit OutputArchive(
+      const std::string& filename,
+      ArchiveCompression compression = ArchiveCompression::None)
+      : ofstream_(filename, std::ios::binary), descriptor_{archive_type,
+                                                           compression} {
+
+    oarchive_ = std::make_unique<boost::archive::binary_oarchive>(ofstream_);
+
+    *oarchive_ << descriptor_;
+
+    if (compression != ArchiveCompression::None) {
+      out_ = std::make_unique<boost::iostreams::filtering_ostream>();
+      if (compression == ArchiveCompression::Zstd) {
+        out_->push(boost::iostreams::zstd_compressor(
+            boost::iostreams::zstd::best_speed));
+      } else {
+        throw std::runtime_error(
+            "Unsupported compression type for output archive file \"" +
+            filename + "\"");
+      }
+      out_->push(ofstream_);
+      oarchive_ = std::make_unique<boost::archive::binary_oarchive>(
+          *out_, boost::archive::no_header);
+    }
   }
 
   /// Delete copy constructor (non-copyable).
@@ -38,14 +62,13 @@ public:
   /// Store an item.
   void put(std::shared_ptr<const Base> item) override { do_put(*item); }
 
-  void end_stream() override { ofstream_.close(); }
-
 private:
   std::ofstream ofstream_;
-  boost::archive::binary_oarchive oarchive_;
-  ArchiveDescriptor descriptor_{archive_type};
+  std::unique_ptr<boost::iostreams::filtering_ostream> out_;
+  std::unique_ptr<boost::archive::binary_oarchive> oarchive_;
+  ArchiveDescriptor descriptor_;
 
-  void do_put(const Derived& item) { oarchive_ << item; }
+  void do_put(const Derived& item) { *oarchive_ << item; }
   // TODO(Jan): Solve this without the additional alloc/copy operation
 };
 
