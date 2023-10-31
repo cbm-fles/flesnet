@@ -3,7 +3,7 @@ Flesnet software dependencies
 
 ### Linux Distributions
 
-- Debian 8 "Jessie", released: 2015-04 released, EOL: 2022-06
+- Debian 8 "Jessie", released: 2015-04, EOL: 2022-06
 - Debian 9 "Stretch", EOL: 2022-06 (2024-06 with LTS)
 - Ubuntu 16.04 LTS "Xenial Xerus", EOL: 2026-04
 - Ubuntu 18.04 LTS "Bionic", EOL: 2028-04
