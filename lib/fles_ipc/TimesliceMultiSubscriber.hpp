@@ -14,10 +14,11 @@
 
 namespace fles {
 /**
- * \brief The TimesliceMultiSubscriber class receives serialized timeslice data
- * from several zeromq socket and returns the timeslice with the smallest index.
+ * \brief The (deprecated) TimesliceMultiSubscriber class receives
+ * serialized timeslice data from several zeromq socket and returns
+ * the timeslice with the smallest index.
  */
-class TimesliceMultiSubscriber : public TimesliceSource {
+class [[deprecated("Replaced by TimeSliceAutoSource")]] TimesliceMultiSubscriber : public TimesliceSource {
 public:
   /// Construct timeslice subscriber receiving from given ZMQ address.
   explicit TimesliceMultiSubscriber(const std::string& /*inputString*/,
