@@ -14,11 +14,11 @@
 
 namespace fles {
 /**
- * \brief The TimesliceMultiInputArchive class reads timeslice data from
- * several TimesliceInputArchives and returns the timslice with the
- * smallest index.
+ * \brief The (deprecated) TimesliceMultiInputArchive class reads
+ * timeslice data from several TimesliceInputArchives and returns the
+ * timslice with the smallest index.
  */
-class TimesliceMultiInputArchive : public TimesliceSource {
+  class [[deprecated("Replaced by TimeSliceAutoSource")]] TimesliceMultiInputArchive : public TimesliceSource {
 public:
   // Construct an input archive object for each of the files passed in the input
   // string open the archive files for reading, and read the archive descriptors
