@@ -176,8 +176,6 @@ void TimesliceBuilderZeromq::run_end() {
   }
   assert(timeslice_buffer_.get_num_work_items() == 0);
   assert(timeslice_buffer_.get_num_completions() == 0);
-  timeslice_buffer_.send_end_work_item();
-  timeslice_buffer_.send_end_completion();
 }
 
 void TimesliceBuilderZeromq::handle_timeslice_completions() {

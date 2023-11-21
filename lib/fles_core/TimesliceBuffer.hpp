@@ -101,16 +101,6 @@ public:
 
   // Remaining member functions are for backwards compatibility only
 
-  [[deprecated]] void send_completion(fles::TimesliceCompletion /* c */) {
-    throw std::runtime_error(
-        "TimesliceBuffer::send_completion() not supported");
-  }
-
-  // Deprecated. Do not use.
-  [[deprecated]] void send_end_work_item() {}
-
-  [[deprecated]] void send_end_completion() {}
-
   [[nodiscard]] std::size_t get_num_work_items() const {
     return outstanding_.size();
   }
