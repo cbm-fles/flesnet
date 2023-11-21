@@ -204,9 +204,6 @@ void TimesliceBuilder::operator()() {
 
     time_end_ = std::chrono::high_resolution_clock::now();
 
-    timeslice_buffer_.send_end_work_item();
-    timeslice_buffer_.send_end_completion();
-
     summary();
   } catch (std::exception& e) {
     L_(error) << "exception in TimesliceBuilder: " << e.what();
@@ -290,8 +287,6 @@ void TimesliceBuilder::on_completion(const struct ibv_wc& wc) {
                 static_cast<uint32_t>(conn_.size())},
                timeslice_buffer_.get_data_size_exp(),
                timeslice_buffer_.get_desc_size_exp()});
-        } else {
-          timeslice_buffer_.send_completion({tpos});
         }
       }
 

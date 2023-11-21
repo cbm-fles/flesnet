@@ -353,9 +353,6 @@ void TimesliceBuilder::operator()() {
 
     time_end_ = std::chrono::high_resolution_clock::now();
 
-    timeslice_buffer_.send_end_work_item();
-    timeslice_buffer_.send_end_completion();
-
     DDSchedulerOrchestrator::generate_log_files();
 
     build_time_file();
@@ -530,8 +527,6 @@ void TimesliceBuilder::process_completed_timeslices() {
                                          static_cast<uint32_t>(conn_.size())},
                                         timeslice_buffer_.get_data_size_exp(),
                                         timeslice_buffer_.get_desc_size_exp()});
-    } else {
-      timeslice_buffer_.send_completion({ts_pos});
     }
   }
   completely_written_ = new_completely_written + 1;
