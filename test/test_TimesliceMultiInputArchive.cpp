@@ -3,6 +3,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "TimesliceMultiInputArchive.hpp"
 
 BOOST_AUTO_TEST_CASE(archive_exception_test) {
@@ -31,3 +34,5 @@ BOOST_AUTO_TEST_CASE(invalid_archive_test) {
   BOOST_CHECK_THROW(fles::TimesliceMultiInputArchive source(filename),
                     std::runtime_error);
 }
+
+#pragma GCC diagnostic pop
