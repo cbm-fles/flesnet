@@ -33,7 +33,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update -y
-        sudo apt-get install -yq catch doxygen libboost-all-dev libfabric-dev libibverbs-dev libkmod-dev libnuma-dev libpci-dev librdmacm-dev libtool-bin ninja
+        sudo apt-get install -yq catch doxygen libboost-all-dev libfabric-dev libibverbs-dev libkmod-dev libnuma-dev libpci-dev librdmacm-dev libtool-bin ninja-build
 
     - name: Install additional dependencies
       run: contrib/merge-dependencies
