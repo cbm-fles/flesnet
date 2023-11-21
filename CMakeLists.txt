@@ -42,6 +42,8 @@ if(INCLUDE_ZMQ)
 
   if ("${CMAKE_GENERATOR}" MATCHES "Make")
     set(ZMQ_BUILD_COMMAND "$(MAKE)")
+  elseif("${CMAKE_GENERATOR}" MATCHES "Ninja")
+    set(ZMQ_BUILD_COMMAND "ninja")
   else()
     set(ZMQ_BUILD_COMMAND "${CMAKE_COMMAND} --build . --target")
   endif()
