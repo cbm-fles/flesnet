@@ -48,7 +48,10 @@ BOOST_AUTO_TEST_CASE(timeslice_input_archive_sequence_vector_test) {
 BOOST_AUTO_TEST_CASE(timeslice_input_archive_sequence_vector_test2) {
   fles::TimesliceInputArchiveSequence source(
       {"test2_0000.tsa", "test2_0001.tsa", "test2_0002.tsa", "test2_0003.tsa"});
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
   uint64_t count = 0;
+#pragma GCC diagnostic pop
   BOOST_CHECK_THROW(
       while (auto timeslice = source.get()) { ++count; },
       std::ios_base::failure);
