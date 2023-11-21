@@ -12,12 +12,12 @@ jobs:
     strategy:
       matrix:
         include:
-        - cc: gcc
-          cxx: g++
-        - cc: gcc-13
-          cxx: g++-13
-        - cc: clang
-          cxx: clang++
+        - cc: gcc-11
+          cxx: g++-11
+        - cc: gcc-12
+          cxx: g++-12
+        - cc: clang-14
+          cxx: clang++-14
         - cc: clang-15
           cxx: clang++-15
       fail-fast: false
@@ -33,7 +33,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update -y
-        sudo apt-get install -yq catch doxygen clang-tidy-15 libboost-all-dev libfabric-dev libibverbs-dev libkmod-dev libnuma-dev libpci-dev librdmacm-dev libtool-bin
+        sudo apt-get install -yq catch doxygen libboost-all-dev libfabric-dev libibverbs-dev libkmod-dev libnuma-dev libpci-dev librdmacm-dev libtool-bin ninja
 
     - name: Install additional dependencies
       run: contrib/merge-dependencies
@@ -43,15 +43,15 @@ jobs:
 
     - name: Configure CMake
       working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DINCLUDE_ZMQ=TRUE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      run: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G Ninja $GITHUB_WORKSPACE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
-      run: make -j 32
+      run: ninja
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
-      run: make CTEST_OUTPUT_ON_FAILURE=1 test
+      run: CTEST_OUTPUT_ON_FAILURE=1 ninja test
 
 #    - name: Create .deb package
 #      working-directory: ${{runner.workspace}}/build
