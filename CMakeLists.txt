@@ -30,7 +30,7 @@ if(DEFINED ENV{SIMPATH})
   set(Boost_ROOT $ENV{SIMPATH})
 endif()
 
-set(INCLUDE_ZMQ FALSE CACHE BOOL "Download, build and statically link ZeroMQ library.")
+set(INCLUDE_ZMQ TRUE CACHE BOOL "Download, build and statically link ZeroMQ library.")
 
 include(ExternalProject)
 set_directory_properties(PROPERTIES EP_UPDATE_DISCONNECTED true)
