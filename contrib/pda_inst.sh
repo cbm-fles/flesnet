@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "This script is deprecated. Please install the PDA library using Debian packages."
+exit 1
+
 set -e
 set -u
 
