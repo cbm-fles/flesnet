@@ -51,9 +51,8 @@ if(INCLUDE_ZMQ)
   ExternalProject_Add(
     zeromq
     GIT_REPOSITORY "https://github.com/zeromq/libzmq.git"
-    GIT_TAG "4097855ddaaa65ed7b5e8cb86d143842a594eebd" # v4.3.4
+    GIT_TAG "622fc6dde99ee172ebaa9c8628d85a7a1995a21d" # v4.3.5
     GIT_CONFIG advice.detachedHead=false
-    PATCH_COMMAND patch --forward -p1 -i "${CMAKE_SOURCE_DIR}/fix_gnutls_macosx_v4.3.4.patch" || echo "Patch was probably already applied..." # '|| ...': allow complete recompile (cmake --build build --clean-first) without failing due to the patch has been already applied
     CMAKE_CACHE_ARGS
     -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE
     -DWITH_LIBBSD:BOOL=FALSE

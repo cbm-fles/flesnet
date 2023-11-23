@@ -3,6 +3,7 @@
 /// \brief Defines utility functions in the fles::system namespace.
 #pragma once
 
+#include <cstdint>
 #include <glob.h>
 #include <string>
 #include <vector>
