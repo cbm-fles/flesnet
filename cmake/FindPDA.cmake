@@ -4,15 +4,15 @@ set(_PDA_PREFIX /opt/pda/${PDA_FIND_VERSION})
 
 find_path(
         PDA_INCLUDE_DIR pda.h
-        PATHS pda/include ${_PDA_PREFIX}/include NO_DEFAULT_PATH)
+        PATHS pda/include ${_PDA_PREFIX}/include)
 
 find_library(
         PDA_LIBRARY pda
-        PATHS pda/lib ${_PDA_PREFIX}/lib NO_DEFAULT_PATH)
+        PATHS pda/lib ${_PDA_PREFIX}/lib)
 
 find_program(PDA_CONFIG
         NAMES pda-config
-        PATHS pda/bin ${_PDA_PREFIX}/bin NO_DEFAULT_PATH)
+        PATHS pda/bin ${_PDA_PREFIX}/bin)
 
 if(PDA_CONFIG)
 execute_process(
