@@ -1,7 +1,8 @@
 # Copyright 2013-2021 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 3.14)
-project(flesnet DESCRIPTION "CBM FLES Timeslice Building")
+project(flesnet DESCRIPTION "CBM FLES Timeslice Building" VERSION 0.0 LANGUAGES CXX)
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "bin")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo)
@@ -19,6 +20,8 @@ include(GitSubmodule)
 
 include(GetGitRevisionDescription)
 git_describe(GIT_REVISION "--all" "--tags" "--long" "--always")
+git_log(GIT_COMMIT "--date=format:%Y%m%d.%H%M" "--format=git%cd.%h" "-n1")
+set(PROJECT_VERSION_GIT ${PROJECT_VERSION}~${GIT_COMMIT})
 configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
                "${CMAKE_BINARY_DIR}/config/GitRevision.cpp" @ONLY)
 
@@ -228,25 +231,15 @@ if (USE_LIBFABRIC AND LIBFABRIC_FOUND)
   add_subdirectory(lib/fles_libfabric)
 endif()
 
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "/opt/${PROJECT_NAME}" CACHE PATH "..." FORCE)
-endif()
-
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# the RPATH to be used when installing, but only if it's not a system directory
-LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-IF("${isSystemDir}" STREQUAL "-1")
-   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-ENDIF("${isSystemDir}" STREQUAL "-1")
+set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
+     OWNER_READ OWNER_WRITE OWNER_EXECUTE
+     GROUP_READ GROUP_EXECUTE
+     WORLD_READ WORLD_EXECUTE)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 if(CLANG_TIDY)
   set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
 endif()
-
 
 add_subdirectory(app/mstool)
 add_subdirectory(app/msconsumer)
@@ -275,11 +268,32 @@ enable_testing()
 add_subdirectory(test)
 
 if (UNIX)
-  set (CPACK_GENERATOR "DEB")
-  set (CPACK_PACKAGE_CONTACT "Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>")
-  set (CPACK_DEBIAN_PACKAGE_SECTION "misc")
-  set (CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/cbm-fles/flesnet")
-  set (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-  set (CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+  set(CPACK_GENERATOR DEB)
+  set(CPACK_DEB_COMPONENT_INSTALL ON)
+  set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION_GIT})
+  set(CPACK_PACKAGE_CONTACT "Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>")
+  set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "")
+  set(CPACK_COMPONENT_BIN_DESCRIPTION "CBM FLES timeslice building
+The First-Level Event Selector (FLES) system of the CBM experiment employs a
+scheme of timeslices (consisting of microslices) instead of events in data
+aquisition. This software aims to implement the timeslice building process
+between several nodes of the FLES cluster over an Infiniband network.
+.
+This package includes the flesnet executables.")
+  set(CPACK_COMPONENT_FLESCTL_DESCRIPTION "CBM FLES timeslice building control system
+The First-Level Event Selector (FLES) system of the CBM experiment employs a
+scheme of timeslices (consisting of microslices) instead of events in data
+aquisition. This software aims to implement the timeslice building process
+between several nodes of the FLES cluster over an Infiniband network.
+.
+This package includes the flesctl system used in the mFLES installation.
+WARNING: This package is experimental and not intended for general use.")
+  set(CPACK_DEBIAN_PACKAGE_SECTION misc)
+  set(CPACK_DEBIAN_PACKAGE_PRIORITY optional)
+  set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/cbm-fles/flesnet")
+  set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+  set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE amd64)
+  set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+  set(CPACK_STRIP_FILES TRUE)
   INCLUDE(CPack)
 endif()

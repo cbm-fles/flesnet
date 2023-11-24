@@ -201,7 +201,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 
   if (vm.count("version") != 0u) {
-    std::cout << "flesnet, git revision " << g_GIT_REVISION << std::endl;
+    std::cout << "flesnet " << g_PROJECT_VERSION_GIT << ", git revision "
+              << g_GIT_REVISION << std::endl;
     exit(EXIT_SUCCESS);
   }
 
