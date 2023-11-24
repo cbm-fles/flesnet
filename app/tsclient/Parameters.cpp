@@ -98,7 +98,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 
   if (vm.count("version") != 0u) {
-    std::cout << "tsclient, git revision " << g_GIT_REVISION << std::endl;
+    std::cout << "tsclient " << g_PROJECT_VERSION_GIT << ", git revision "
+              << g_GIT_REVISION << std::endl;
     exit(EXIT_SUCCESS);
   }
 
