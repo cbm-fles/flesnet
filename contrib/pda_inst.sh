@@ -1,13 +1,27 @@
 #!/bin/bash
 
-echo "This script is deprecated. Please install the PDA library using Debian packages."
-exit 1
-
 set -e
 set -u
 
 PDA_VERSION="11.6.7"
+PDA_KERNEL_VERSION="0.9.0"
 USER_NAME=`id -u -n`
+
+install_kernel()
+{
+  cd /tmp
+  wget https://github.com/cbm-fles/pda/releases/download/$1/pda-kernel-dkms_$2-1_amd64.deb
+  apt-get install ./pda-kernel-dkms_$2-1_amd64.deb
+}
+
+install_lib()
+{
+  cd /tmp
+  wget https://github.com/cbm-fles/pda/releases/download/$1/libpda4_$1-1_amd64.deb
+  apt-get install ./libpda4_$1-1_amd64.deb
+}
+
+# Default install is done via Debian packages. Functions blow are kept for reference.
 
 getdeps()
 {
@@ -74,14 +88,8 @@ if [ "root" = "$USER_NAME" ]
 then
     echo "Now running as $USER_NAME"
 
-    getdeps
-    clean_old_install
-    add_systemgroup
-    install $PDA_VERSION
-    patchmodulelist
-    reload_udev
-
-    echo -e "Please add all intended flib users to group 'pda', e.g., 'usermod -a -G pda <user>'"
+    install_kernel $PDA_VERSION $PDA_KERNEL_VERSION
+    install_lib $PDA_VERSION
 else
     echo "Running as user!"
     sudo $0

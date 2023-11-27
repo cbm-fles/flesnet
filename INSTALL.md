@@ -79,7 +79,8 @@ After installing, set `SIMPATH` to point to this installation.
 ### Optional: CRI device driver (PDA)
 
 If you like to use the CRI you need to install the PDA device driver.
-The installation procedure is scripted, just run:
+The PDA driver can be found on the [PDA release page][pda-releases].
+For debian-based systems the installation procedure is scripted, just run:
 
     ./contrib/pda_inst.sh
 
@@ -91,6 +92,7 @@ add all intended users by running something like
 
 Note that users need to re-login to refresh their group membership.
 
+[pda-releases]: https://github.com/cbm-fles/pda/releases
 
 Building flesnet
 ----------------
