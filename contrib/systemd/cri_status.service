@@ -1,10 +1,10 @@
 [Unit]
-Description=FLIB status monitoring
-After=network.target
+Description=CRI readout status monitoring
+After=remote-fs.target
 ConditionHost=en*
 
 [Service]
-ExecStart=/opt/fles/bin/flib_status -m
+ExecStart=/usr/bin/cri_status -m
 Restart=on-failure
 RestartSec=5s
 
