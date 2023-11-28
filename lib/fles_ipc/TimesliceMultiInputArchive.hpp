@@ -18,15 +18,17 @@ namespace fles {
  * timeslice data from several TimesliceInputArchives and returns the
  * timslice with the smallest index.
  */
-  class [[deprecated("Replaced by TimeSliceAutoSource")]] TimesliceMultiInputArchive : public TimesliceSource {
+class [[deprecated(
+    "Replaced by TimeSliceAutoSource")]] TimesliceMultiInputArchive
+    : public TimesliceSource {
 public:
   // Construct an input archive object for each of the files passed in the input
   // string open the archive files for reading, and read the archive descriptors
   // If a directory is passed as second parameter build first a list of
   // filenames which contains the full path
-  explicit TimesliceMultiInputArchive(
-      const std::string& /*inputString*/,
-      const std::string& /*inputDirectory*/ = "");
+  explicit TimesliceMultiInputArchive(const std::string& /*inputString*/,
+                                      const std::string& /*inputDirectory*/ =
+                                          "");
 
   /// Delete copy constructor (non-copyable).
   TimesliceMultiInputArchive(const TimesliceMultiInputArchive&) = delete;

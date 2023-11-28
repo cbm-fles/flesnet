@@ -28,8 +28,8 @@ public:
     return true;
   }
 
-  void disconnect([
-      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  void
+  disconnect([[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     --m_clients;
   }
