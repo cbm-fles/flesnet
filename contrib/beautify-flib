@@ -1,8 +1,0 @@
-#!/bin/bash
-
-shopt -u nocaseglob
-LANG=C
-
-clang-format-3.8 -i lib/flib_ipc/*.[hc]*
-clang-format-3.8 -i lib/pda/*.[hc]*
-clang-format-3.8 -i app/msconsumer/*.[hc]*
