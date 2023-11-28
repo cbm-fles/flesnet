@@ -21,6 +21,34 @@ install_lib()
   apt-get install ./libpda4_$1-1_amd64.deb
 }
 
+check_old_install()
+{
+  echo "Checking for old PDA installation"
+  ret=0
+  if dkms_status=$(/usr/sbin/dkms status | grep uio_pci_dma); then
+    ret=1
+    echo -e "\nPlease remove the following modules from dkms:"
+    echo "$dkms_status"
+  fi
+  if pda_status=$(ls -d /opt/pda/* 2> /dev/null); then
+    ret=1
+    echo -e "\nPlease remove the following libpda installations:"
+    echo "$pda_status"
+  fi
+  if grep -q uio_pci_dma /etc/modules; then
+    ret=1
+    echo -e "\nPlease remove 'uio_pci_dma' from '/etc/modules'"
+  fi
+  if ls /etc/udev/rules.d/99-pda.rules &> /dev/null; then
+    ret=1
+    echo -e "\nPlease remove '/etc/udev/rules.d/99-pda.rules'"
+  fi
+  if [ $ret != 0 ]; then
+    echo "Please clean old installation before proceeding."
+    exit $ret
+  fi
+}
+
 # Default install is done via Debian packages. Functions blow are kept for reference.
 
 getdeps()
@@ -88,6 +116,7 @@ if [ "root" = "$USER_NAME" ]
 then
     echo "Now running as $USER_NAME"
 
+    check_old_install
     install_kernel $PDA_VERSION $PDA_KERNEL_VERSION
     install_lib $PDA_VERSION
 else
