@@ -49,7 +49,7 @@ check_old_install()
   fi
 }
 
-# Default install is done via Debian packages. Functions blow are kept for reference.
+# Default install is done via Debian packages. Functions below are kept for reference.
 
 getdeps()
 {
