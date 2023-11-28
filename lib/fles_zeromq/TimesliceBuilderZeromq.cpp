@@ -206,10 +206,9 @@ void TimesliceBuilderZeromq::report_status() {
   BufferStatus status_desc{now, c->desc.size(), acked_, acked_, tpos_};
   BufferStatus status_data{now, c->desc.size(), acked_, acked_, tpos_};
 
-  double delta_t =
-      std::chrono::duration<double, std::chrono::seconds::period>(
-          status_desc.time - previous_buffer_status_desc_.time)
-          .count();
+  double delta_t = std::chrono::duration<double, std::chrono::seconds::period>(
+                       status_desc.time - previous_buffer_status_desc_.time)
+                       .count();
   double rate_desc = static_cast<double>(status_desc.acked -
                                          previous_buffer_status_desc_.acked) /
                      delta_t;

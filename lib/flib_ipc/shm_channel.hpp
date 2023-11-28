@@ -51,14 +51,14 @@ public:
   size_t desc_item_size() { return m_desc_item_size; }
 
   // getter / setter
-  bool req_read_index([
-      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  bool req_read_index(
+      [[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     return m_req_read_index;
   }
 
-  bool req_write_index([
-      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  bool req_write_index(
+      [[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     return m_req_write_index;
   }
@@ -77,8 +77,8 @@ public:
     m_req_write_index = req;
   }
 
-  TimedDualIndex write_index([
-      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  TimedDualIndex
+  write_index([[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     TimedDualIndex write_index = m_write_index;
     return write_index;
@@ -92,8 +92,8 @@ public:
     m_cond_write_index.notify_all();
   }
 
-  DualIndex read_index([
-      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  DualIndex
+  read_index([[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     DualIndex read_index = m_read_index;
     return read_index;
@@ -126,8 +126,8 @@ public:
     return true;
   }
 
-  void disconnect([
-      [maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
+  void
+  disconnect([[maybe_unused]] ip::scoped_lock<ip::interprocess_mutex>& lock) {
     assert(lock);
     m_clients = 0;
   }
