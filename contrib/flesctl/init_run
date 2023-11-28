@@ -4,7 +4,8 @@ set -e  # stop on error
 set -u  # ensure variables are defined
 
 # global parameters, may be overwritten by environment
-: ${FLESNETDIR:=/opt/fles/bin/}
+: ${FLESNETDIR:=/usr/bin/}
+: ${FLESCTLDIR:=/opt/fles/bin/}
 : ${SPMDIR:=/opt/spm/}
 : ${RUNDIR:=}
 : ${LOGDIR:=log/}
@@ -63,7 +64,7 @@ for node in ${EN_LIST[@]}; do
         EN_CFG+=("")
         CRI_SPM="${CRI_SPM:+${CRI_SPM},}cri_${node}_${ADDR[$cri]:0:2}"
     done
-    EN_SPM+=("$node: bash -c \"LOGDIR=${LOGDIR}${node}_ ${FLESNETDIR}/fles_input $CONFIG_FILE $node\"")
+    EN_SPM+=("$node: bash -c \"LOGDIR=${LOGDIR}${node}_ ${FLESCTLDIR}/fles_input $CONFIG_FILE $node\"")
     EN_SPM+=("$node: bash -c \"${SPMDIR}spm-require -n1 fles_input_sem; ${FLESNETDIR}flesnet -m -f $FLESNET_CFG -L ${LOGDIR}${node}_flesnet_en.log --log-syslog ${EN_INDEX[*]}\"")
     unset EN_INDEX
 done

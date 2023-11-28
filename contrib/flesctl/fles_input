@@ -9,7 +9,7 @@ set -u  # ensure variables are defined
 #set -x
 
 # global parameters, may be overwritten by environment
-: ${FLESNETDIR:=/opt/fles/bin/}
+: ${FLESNETDIR:=/usr/bin/}
 : ${SPMDIR:=/opt/spm/}
 : ${LOGDIR:=log/}
 : ${SHM_PREFIX:=cri_}
