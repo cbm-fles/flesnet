@@ -10,10 +10,10 @@
 #include "log.hpp"
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/program_options.hpp>
-#include <boost/regex.hpp>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <regex>
 #include <stdexcept>
 #include <string>
 
@@ -50,7 +50,7 @@ void validate(boost::any& v,
               pci_addr* /*unused*/,
               int /*unused*/) {
   // PCI BDF address is BB:DD.F
-  static boost::regex r(
+  static std::regex r(
       "([[:xdigit:]][[:xdigit:]]):([[:xdigit:]][[:xdigit:]]).([[:xdigit:]])");
 
   // Make sure no previous assignment to 'a' was made.
@@ -60,8 +60,8 @@ void validate(boost::any& v,
   const std::string& s = po::validators::get_single_string(values);
 
   // Do regex match and convert the interesting part.
-  boost::smatch match;
-  if (boost::regex_match(s, match, r)) {
+  std::smatch match;
+  if (std::regex_match(s, match, r)) {
     v = boost::any(pci_addr(std::stoul(match[1], nullptr, 16),
                             std::stoul(match[2], nullptr, 16),
                             std::stoul(match[3], nullptr, 16)));

@@ -7,8 +7,8 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/regex.hpp>
 #include <memory>
+#include <regex>
 
 /*
   Unexpected behaviour (from tests):
@@ -88,7 +88,7 @@ void TimesliceMultiInputArchive::CreateInputFileList(std::string inputString) {
     boost::replace_all(filename, "*", ".*");
 
     // create regex
-    const boost::regex my_filter(filename);
+    const std::regex my_filter(filename);
 
     // loop over all files in input directory
     for (auto&& x : filesys::directory_iterator(p.parent_path())) {
@@ -101,8 +101,8 @@ void TimesliceMultiInputArchive::CreateInputFileList(std::string inputString) {
       // current entry as filesys::path, from this extract the
       // filename or directory name and convert it to a string to be
       // used in the regex:match
-      boost::smatch what;
-      if (!boost::regex_match(x.path().filename().string(), what, my_filter)) {
+      std::smatch what;
+      if (!std::regex_match(x.path().filename().string(), what, my_filter)) {
         continue;
       }
       v.push_back(x.path().string());
