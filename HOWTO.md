@@ -134,6 +134,25 @@ Check if:
     shows 'uio\_pci\_dma'.
 
 
+Generate Doxygen documentation
+==============================
+
+To generate the Doxygen documentation run `make doc` from inside the build directory: 
+```
+mkdir build && cd build && cmake ..
+make doc
+```
+
+You can find the generated documentation in `<project>/build/doc`.
+For Debian, if you have the `php-cli` package installed, you can serve the HTML documentation locally by executing:
+```
+cd build/doc/html
+php -S localhost:8181
+```
+
+Open your browser and visit [http://localhost:8181](http://localhost:8181).
+
+
 FAQ
 ===
 
