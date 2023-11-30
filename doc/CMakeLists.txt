@@ -29,4 +29,7 @@ set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
 set(DOXYGEN_WARN_IF_DOC_ERROR NO)
 set(DOXYGEN_WARN_IF_INCOMPLETE_DOC NO)
 
+# Fix warnings resulting from an attempt to build a glossary:
+set(DOXYGEN_ALIASES "glos{1}=\\1")
+
 doxygen_add_docs(doc ../app ../lib ../test)
