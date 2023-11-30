@@ -36,6 +36,7 @@ public:
    * \brief Public constructor.
    *
    * \param archive_type The type of archive (e.g., timeslice, microslice).
+   * \param archive_compression archive_compression.
    */
   explicit ArchiveDescriptor(
       ArchiveType archive_type,

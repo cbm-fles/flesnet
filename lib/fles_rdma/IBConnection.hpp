@@ -41,7 +41,6 @@ public:
   /// Connection handler function, called on successful connection.
   /**
      \param event RDMA connection manager event structure
-     \return      Non-zero if an error occured
   */
   virtual void on_established(struct rdma_cm_event* event);
 

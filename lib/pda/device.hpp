@@ -16,7 +16,7 @@ namespace pda {
 class device_operator;
 
 /**
- * @class
+ * @class FLIBdevice
  * @brief Represents a FLIB PCIe device
  **/
 class device {

@@ -34,6 +34,8 @@ public:
    *
    * \param filename_template File name pattern of the archive files
    * \param items_per_file    Number of items to store in each file
+   * \param bytes_per_file    bytes per file
+   * \param compression       compression
    */
   explicit OutputArchiveSequence(
       std::string filename_template,
