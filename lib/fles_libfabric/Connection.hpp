@@ -55,6 +55,9 @@ public:
   /**
      \param hostname The target hostname
      \param service  The target service or port number
+	 \param domain Domain
+	 \param cq cq
+	 \param av av
   */
   void connect(const std::string& hostname,
                const std::string& service,
@@ -69,7 +72,6 @@ public:
   /// Connection handler function, called on successful connection.
   /**
      \param event RDMA connection manager event structure
-     \return      Non-zero if an error occured
   */
   virtual void on_established(struct fi_eq_cm_entry* event);
 

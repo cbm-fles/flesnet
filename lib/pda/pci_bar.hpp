@@ -16,7 +16,7 @@ namespace pda {
 class device;
 
 /**
- * @class
+ * @class BARfile
  * @brief Represents a Base Address Register (BAR) file
  * mapping of the FLIBs PCIe address space
  */
@@ -24,7 +24,7 @@ class pci_bar {
 public:
   /**
    * @param dev parent rorcfs_device
-   * @param n number of BAR to be mapped [0-6]
+   * @param number number of BAR to be mapped [0-6]
    **/
   pci_bar(device* dev, uint8_t number);
   ~pci_bar() = default;

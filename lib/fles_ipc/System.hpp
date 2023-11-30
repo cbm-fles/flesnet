@@ -93,6 +93,7 @@ inline glob_flags& operator|=(glob_flags& a, glob_flags b) { return a = a | b; }
  * pathnames matching pattern according to the rules used by the shell.
  *
  * @param pattern pattern for pathnames
+ * @param flags flags
  * @return vector of pathnames
  */
 std::vector<std::string> glob(const std::string& pattern,
