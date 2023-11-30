@@ -1,18 +1,16 @@
 # Copyright 2016 Jan de Cuveland <cmail@cuveland.de>
 
-set(_PDA_PREFIX /opt/pda/${PDA_FIND_VERSION})
-
 find_path(
         PDA_INCLUDE_DIR pda.h
-        PATHS pda/include ${_PDA_PREFIX}/include)
+        HINTS ${PDA_PREFIX_PATH}/include)
 
 find_library(
         PDA_LIBRARY pda
-        PATHS pda/lib ${_PDA_PREFIX}/lib)
+        HINTS ${PDA_PREFIX_PATH}/lib)
 
 find_program(PDA_CONFIG
         NAMES pda-config
-        PATHS pda/bin ${_PDA_PREFIX}/bin)
+        HINTS ${PDA_PREFIX_PATH}/bin)
 
 if(PDA_CONFIG)
 execute_process(
