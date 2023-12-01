@@ -23,11 +23,24 @@ set(DOXYGEN_TAB_SIZE 8)
 set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
 
 # Silence doxygen:
-set(DOXYGEN_QUIET YES)
-set(DOXYGEN_WARNINGS NO)
-set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
-set(DOXYGEN_WARN_IF_DOC_ERROR NO)
-set(DOXYGEN_WARN_IF_INCOMPLETE_DOC NO)
+if (NOT DEFINED SILENCE_DOXYGEN)
+  set(SILENCE_DOXYGEN YES)
+endif()
+
+if (SILENCE_DOXYGEN)
+  set(DOXYGEN_QUIET YES)
+  set(DOXYGEN_WARNINGS NO)
+  set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
+  set(DOXYGEN_WARN_IF_DOC_ERROR NO)
+  set(DOXYGEN_WARN_IF_INCOMPLETE_DOC NO)
+else()
+  # Even if doxygen is not supposed to be silent, the sheer amount of
+  # undocumented code in this project is overwhelming. Thus, silence
+  # doxygen warnings about undocumented code anyway.
+  if (NOT DEFINED DOXYGEN_WARN_IF_UNDOCUMENTED)
+    set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
+  endif()
+endif()
 
 # Fix warnings resulting from an attempt to build a glossary:
 set(DOXYGEN_ALIASES "glos{1}=\\1")
