@@ -67,6 +67,26 @@ set(DOXYGEN_ALIASES "glos{1}=\\1")
 #
 # Unclear issue.
 
+## Extended documentation:
+# Since the documentation currently is not complete or up-to-date,
+# enabling the following options makes sense during development. After
+# the doxygen comments in the code are improved, which allow for a more
+# granular control of the generated documentation, enabling the
+# following options will be unnecessary. This will then reduce the
+# amount of generated documentation and thus the build time.
+if (NOT DEFINED EXTENDED_DOXYGEN_DOCUMENTATION)
+  set(EXTENDED_DOXYGEN_DOCUMENTATION NO)
+endif()
+if (EXTENDED_DOXYGEN_DOCUMENTATION)
+  set(DOXYGEN_EXTRACT_ALL YES)
+  set(DOXYGEN_SHOW_FILES YES)
+  set(DOXYGEN_CALL_GRAPH YES)
+  set(DOXYGEN_CALLER_GRAPH YES)
+
+  # default DOT_GRAPH_MAX_NODES: 50, but too small for this project
+  set(DOXYGEN_DOT_GRAPH_MAX_NODES 100)
+endif()
+
 doxygen_add_docs(doc ../app ../lib ../test
 	COMMENT "Generating documentation with doxygen \n\t(doxygen error \
 	\"FileDefImpl::insertMembers()...\" is expected)" )
