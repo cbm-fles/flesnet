@@ -45,4 +45,28 @@ endif()
 # Fix warnings resulting from an attempt to build a glossary:
 set(DOXYGEN_ALIASES "glos{1}=\\1")
 
-doxygen_add_docs(doc ../app ../lib ../test)
+## doxygen warnings/errors that won't fix easily:
+#
+# 1) 	error: FileDefImpl::insertMembers(): member 'RollingCrc< GenericCrc<
+# 		Crc, TableEntry, Word, kStride > >' with class scope '<global>'
+# 		inserted in file scope 'generic_crc.h'!
+#
+# Unclear issue. Possibly a bug in doxygen's lexical parser (compare with
+# https://github.com/doxygen/doxygen/issues/9497).
+#
+# 2)	warning: Detected potential recursive class relation between class
+# 		ParametersException and base class std::runtime_error!
+#
+# This is likely a bug in doxygen's lexical parser related to
+# https://github.com/doxygen/doxygen/issues/10165
+# i.e. duplicate class names in different files. Possibly introducing
+# appropriate namespaces would fix this.
+#
+# 3) 	warning: documented symbol 'logging::LogBuffer::LogBuffer' was not
+# 		declared or defined. (and similar)
+#
+# Unclear issue.
+
+doxygen_add_docs(doc ../app ../lib ../test
+	COMMENT "Generating documentation with doxygen \n\t(doxygen error \
+	\"FileDefImpl::insertMembers()...\" is expected)" )
