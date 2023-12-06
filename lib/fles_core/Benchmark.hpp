@@ -14,8 +14,12 @@ public:
   enum class Algorithm {
     Boost_C,
     Boost_I,
+#if defined(__ARM_FEATURE_CRC32) || defined(__x86_64)
     Intrinsic32,
+#endif
+#if defined(__x86_64)
     Intrinsic64,
+#endif
     CrcUtil_C,
     CrcUtil_I
   };
