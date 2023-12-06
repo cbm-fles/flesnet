@@ -8,7 +8,12 @@
 #include <functional> // std::bind
 #include <iostream>
 #include <random>
+
+#if defined(__x86_64)
 #include <smmintrin.h>
+#elif defined(__ARM_FEATURE_CRC32)
+#include <arm_acle.h>
+#endif
 
 Benchmark::Benchmark() {
   random_data_.reserve(size_);
@@ -69,13 +74,18 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
       auto* p = reinterpret_cast<uint32_t*>(random_data_.data());
       const uint32_t* const end = p + random_data_.size() / sizeof(uint32_t);
       while (p < end) {
+#if defined(__x86_64)
         crc = _mm_crc32_u32(crc, *p++);
+#elif defined(__ARM_FEATURE_CRC32)
+        crc = __crc32w(crc, *p++);
+#endif
       }
     }
     crc ^= 0xFFFFFFFF;
     break;
   }
 
+#if defined(__x86_64)
   case Algorithm::Intrinsic64: {
     // Castagnoli
     uint64_t crc64 = UINT64_C(0xFFFFFFFF);
@@ -90,6 +100,7 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
     crc ^= 0xFFFFFFFF;
     break;
   }
+#endif
 
   case Algorithm::CrcUtil_C: {
     // Castagnoli
@@ -130,8 +141,10 @@ void Benchmark::run() {
   run_single(Algorithm::Boost_I);
   std::cout << "CRC32 Benchmark: Intrinsic32 (Castagnoli)" << std::endl;
   run_single(Algorithm::Intrinsic32);
+#if defined(__x86_64)
   std::cout << "CRC32 Benchmark: Intrinsic64 (Castagnoli)" << std::endl;
   run_single(Algorithm::Intrinsic64);
+#endif
   std::cout << "CRC32 Benchmark: CrcUtil (Castagnoli)" << std::endl;
   run_single(Algorithm::CrcUtil_C);
   std::cout << "CRC32 Benchmark: CrcUtil (IEEE)" << std::endl;
