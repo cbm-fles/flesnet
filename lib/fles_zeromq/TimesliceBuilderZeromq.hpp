@@ -135,7 +135,7 @@ private:
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
-    static std::string caption() { return std::string("used/freeing/free"); }
+    static std::string caption() { return {"used/freeing/free"}; }
 
     [[nodiscard]] std::string percentage_str(int64_t value) const {
       boost::format percent_fmt("%4.1f%%");

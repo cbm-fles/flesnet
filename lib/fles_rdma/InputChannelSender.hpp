@@ -157,9 +157,7 @@ private:
       return static_cast<float>(value) / static_cast<float>(size);
     }
 
-    static std::string caption() {
-      return std::string("used/sending/freeing/free");
-    }
+    static std::string caption() { return {"used/sending/freeing/free"}; }
 
     [[nodiscard]] [[nodiscard]] std::string
     percentage_str(int64_t value) const {

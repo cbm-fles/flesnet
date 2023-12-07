@@ -25,13 +25,13 @@ std::string stringerror(int errnum) {
     return std::string("Unknown error ") + std::to_string(err);
   }
 
-  return std::string(buf.data());
+  return {buf.data()};
 
 #else
 
   // GNU-specific
   char* s = strerror_r(errnum, buf.data(), buf.size());
-  return std::string(s);
+  return {s};
 
 #endif
 }
@@ -56,9 +56,9 @@ std::string current_username() {
   }
 
   if (result != nullptr) {
-    return std::string(pwd.pw_name);
+    return {pwd.pw_name};
   }
-  return std::string("unknown");
+  return {"unknown"};
 }
 
 std::string current_hostname() {
@@ -74,7 +74,7 @@ std::string current_hostname() {
     throw std::runtime_error(stringerror(errno));
   }
 
-  return std::string(buf.data());
+  return {buf.data()};
 }
 
 std::string current_domainname() {
@@ -87,7 +87,7 @@ std::string current_domainname() {
     throw std::runtime_error(stringerror(errno));
   }
 
-  return std::string(buf.data());
+  return {buf.data()};
 }
 
 int current_pid() { return getpid(); }

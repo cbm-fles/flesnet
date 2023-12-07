@@ -111,7 +111,7 @@ std::string cri_device::build_host() {
   host[1] = ntohl(m_register_file->get_reg(CRI_REG_BUILD_HOST_2)); // NOLINT
   host[2] = ntohl(m_register_file->get_reg(CRI_REG_BUILD_HOST_1)); // NOLINT
   host[3] = ntohl(m_register_file->get_reg(CRI_REG_BUILD_HOST_0)); // NOLINT
-  return std::string(reinterpret_cast<const char*>(host));
+  return {reinterpret_cast<const char*>(host)};
 }
 
 std::string cri_device::build_user() {
@@ -120,7 +120,7 @@ std::string cri_device::build_user() {
   user[1] = ntohl(m_register_file->get_reg(CRI_REG_BUILD_USER_2)); // NOLINT
   user[2] = ntohl(m_register_file->get_reg(CRI_REG_BUILD_USER_1)); // NOLINT
   user[3] = ntohl(m_register_file->get_reg(CRI_REG_BUILD_USER_0)); // NOLINT
-  return std::string(reinterpret_cast<const char*>(user));
+  return {reinterpret_cast<const char*>(user)};
 }
 
 struct build_info_t cri_device::build_info() {
