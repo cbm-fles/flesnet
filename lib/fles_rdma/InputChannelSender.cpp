@@ -324,7 +324,7 @@ int InputChannelSender::target_cn_index(uint64_t timeslice) {
   return timeslice % conn_.size();
 }
 
-void InputChannelSender::dump_mr(struct ibv_mr* mr) {
+void InputChannelSender::dump_mr(struct ibv_mr* mr) const {
   L_(debug) << "[i" << input_index_ << "] "
             << "ibv_mr dump:";
   L_(debug) << " addr=" << reinterpret_cast<uint64_t>(mr->addr);

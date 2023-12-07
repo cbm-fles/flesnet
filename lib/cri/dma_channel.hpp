@@ -60,7 +60,7 @@ public:
 
   void reset_datapath(bool enable);
 
-  size_t dma_transfer_size() { return m_dma_transfer_size; }
+  size_t dma_transfer_size() const { return m_dma_transfer_size; }
 
 private:
   enum sg_bram_t { data_sg_bram = 0, desc_sg_bram = 1 };
@@ -107,7 +107,7 @@ private:
 
   void disable(size_t timeout = 10000);
 
-  inline bool is_enabled();
+  inline bool is_enabled() const;
 
   inline bool is_busy();
 

@@ -49,7 +49,7 @@ public:
   size_t get_pgen_base_size_ns() { return pgen_base_size_ns; }
   uint8_t number_of_hw_channels();
 
-  uint16_t hardware_version();
+  uint16_t hardware_version() const;
   time_t build_date();
   std::string build_host();
   std::string build_user();
@@ -58,7 +58,7 @@ public:
   std::string print_devinfo();
   std::chrono::seconds uptime();
   std::string print_uptime();
-  std::string print_version_warning();
+  std::string print_version_warning() const;
   bool check_build();
 
   void set_testreg(uint32_t data);
@@ -99,7 +99,7 @@ protected:
 
   void init();
   bool check_magic_number();
-  bool check_hw_ver(hw_ver_table_t hw_ver_table);
+  bool check_hw_ver(hw_ver_table_t hw_ver_table) const;
 };
 
 } // namespace cri

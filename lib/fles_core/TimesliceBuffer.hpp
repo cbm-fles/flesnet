@@ -65,7 +65,7 @@ public:
 
   /// Get the reference to the data buffer of the specified input node at the
   /// given offset.
-  [[nodiscard]] uint8_t& get_data(uint_fast16_t index, uint64_t offset) {
+  [[nodiscard]] uint8_t& get_data(uint_fast16_t index, uint64_t offset) const {
     offset &= (UINT64_C(1) << data_buffer_size_exp_) - 1;
     return get_data_ptr(index)[offset];
   }

@@ -160,7 +160,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
   post_send(&send_wr_ts);
 }
 
-bool InputChannelConnection::write_request_available() {
+bool InputChannelConnection::write_request_available() const {
   return (pending_write_requests_ < max_pending_write_requests_);
 }
 
@@ -180,7 +180,7 @@ bool InputChannelConnection::try_sync_buffer_positions() {
   return false;
 }
 
-uint64_t InputChannelConnection::skip_required(uint64_t data_size) {
+uint64_t InputChannelConnection::skip_required(uint64_t data_size) const {
   uint64_t databuf_size = UINT64_C(1) << remote_info_.data_buffer_size_exp;
   uint64_t databuf_wp = cn_wp_.data & (databuf_size - 1);
   if (databuf_wp + data_size <= databuf_size) {

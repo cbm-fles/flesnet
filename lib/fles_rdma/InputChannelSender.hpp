@@ -56,7 +56,7 @@ private:
   /// Return target computation node for given timeslice.
   int target_cn_index(uint64_t timeslice);
 
-  void dump_mr(struct ibv_mr* mr);
+  void dump_mr(struct ibv_mr* mr) const;
 
   void on_addr_resolved(struct rdma_cm_id* id) override;
 
