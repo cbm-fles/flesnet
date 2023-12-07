@@ -121,6 +121,6 @@ protected:
   pda::pci_bar* m_bar;
 
   friend std::ostream& operator<<(std::ostream& os,
-                                  cri::cri_channel::data_source_t sel);
+                                  cri::cri_channel::data_source_t src);
 };
 } // namespace cri
