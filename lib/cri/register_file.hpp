@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace cri {
 
 using sys_bus_addr = uint64_t;
@@ -14,9 +16,10 @@ class register_file {
 public:
   virtual ~register_file() = default;
 
-  virtual int get_mem(sys_bus_addr addr, void* dest, size_t dwords) = 0;
+  virtual int get_mem(sys_bus_addr addr, void* dest, std::size_t dwords) = 0;
 
-  virtual int set_mem(sys_bus_addr addr, const void* source, size_t dwords) = 0;
+  virtual int
+  set_mem(sys_bus_addr addr, const void* source, std::size_t dwords) = 0;
 
   virtual uint32_t get_reg(sys_bus_addr addr) {
     uint32_t val = 0;
