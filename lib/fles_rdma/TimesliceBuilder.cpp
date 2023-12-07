@@ -11,6 +11,8 @@
 #include <limits>
 #include <memory>
 
+#define WITH_TRACE 0
+
 TimesliceBuilder::TimesliceBuilder(uint64_t compute_index,
                                    TimesliceBuffer& timeslice_buffer,
                                    unsigned short service,
@@ -240,11 +242,11 @@ void TimesliceBuilder::on_completion(const struct ibv_wc& wc) {
   switch (wc.wr_id & 0xFF) {
 
   case ID_SEND_STATUS:
-    if (false) {
-      L_(trace) << "[c" << compute_index_ << "] "
-                << "[" << in << "] "
-                << "COMPLETE SEND status message";
-    }
+#if WITH_TRACE
+    L_(trace) << "[c" << compute_index_ << "] "
+              << "[" << in << "] "
+              << "COMPLETE SEND status message";
+#endif
     conn_[in]->on_complete_send();
     break;
 
