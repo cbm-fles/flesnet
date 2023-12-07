@@ -22,7 +22,7 @@ Checks: >
   -modernize-macro-to-enum,
   -modernize-use-transparent-functors,
   -performance-unnecessary-value-param,
-  -readability-braces-around-statements,
+  readability-braces-around-statements,
   -readability-container-data-pointer,
   -readability-convert-member-functions-to-static,
   -readability-else-after-return,
