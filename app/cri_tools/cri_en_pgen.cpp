@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     try {
       cris.push_back(std::make_unique<cri_device>(i));
       std::cout << "Address: " << cris.back()->print_devinfo() << std::endl;
-      if (enable == true) {
+      if (enable) {
         std::cout << "enabling pgen ... " << std::endl;
         cris.back()->enable_mc_cnt(true);
       } else {

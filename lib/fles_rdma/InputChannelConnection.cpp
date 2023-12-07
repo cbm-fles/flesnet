@@ -10,6 +10,8 @@
 #include <cassert>
 #include <cstring>
 
+#define WITH_TRACE 0
+
 InputChannelConnection::InputChannelConnection(
     struct rdma_event_channel* ec,
     uint_fast16_t connection_index,
@@ -32,30 +34,20 @@ InputChannelConnection::InputChannelConnection(
 }
 
 bool InputChannelConnection::check_for_buffer_space(uint64_t data_size,
-                                                    uint64_t desc_size) {
-  if (false) {
-    L_(trace) << "[" << index_ << "] "
-              << "SENDER data space (bytes) required=" << data_size
-              << ", avail="
-              << cn_ack_.data +
-                     (UINT64_C(1) << remote_info_.data_buffer_size_exp) -
-                     cn_wp_.data;
-    L_(trace) << "[" << index_ << "] "
-              << "SENDER desc space (entries) required=" << desc_size
-              << ", avail="
-              << cn_ack_.desc +
-                     (UINT64_C(1) << remote_info_.desc_buffer_size_exp) -
-                     cn_wp_.desc;
-  }
-  if (cn_ack_.data - cn_wp_.data +
-              (UINT64_C(1) << remote_info_.data_buffer_size_exp) <
-          data_size ||
-      cn_ack_.desc - cn_wp_.desc +
-              (UINT64_C(1) << remote_info_.desc_buffer_size_exp) <
-          desc_size) { // TODO: extend condition!
-    return false;
-  }
-  return true;
+                                                    uint64_t desc_size) const {
+  auto data_avail = cn_ack_.data - cn_wp_.data +
+                    (UINT64_C(1) << remote_info_.data_buffer_size_exp);
+  auto desc_avail = cn_ack_.desc - cn_wp_.desc +
+                    (UINT64_C(1) << remote_info_.desc_buffer_size_exp);
+#if WITH_TRACE
+  L_(trace) << "[" << index_ << "] "
+            << "SENDER data space (bytes) required=" << data_size
+            << ", avail=" << data_avail;
+  L_(trace) << "[" << index_ << "] "
+            << "SENDER desc space (entries) required=" << desc_size
+            << ", avail=" << desc_avail;
+#endif
+  return (data_size <= data_avail && desc_size <= desc_avail);
 }
 
 void InputChannelConnection::send_data(struct ibv_sge* sge,
@@ -148,11 +140,11 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
       remote_info_.desc.addr + (cn_wp_.desc & cn_desc_buffer_mask) *
                                    sizeof(fles::TimesliceComponentDescriptor));
 
-  if (false) {
-    L_(trace) << "[i" << remote_index_ << "] "
-              << "[" << index_ << "] "
-              << "POST SEND data (timeslice " << timeslice << ")";
-  }
+#if WITH_TRACE
+  L_(trace) << "[i" << remote_index_ << "] "
+            << "[" << index_ << "] "
+            << "POST SEND data (timeslice " << timeslice << ")";
+#endif
 
   // send everything
   assert(pending_write_requests_ < max_pending_write_requests_);
@@ -211,12 +203,12 @@ void InputChannelConnection::on_complete_recv() {
     done_ = true;
     return;
   }
-  if (false) {
-    L_(trace) << "[i" << remote_index_ << "] "
-              << "[" << index_ << "] "
-              << "receive completion, new cn_ack_.data="
-              << recv_status_message_.ack.data;
-  }
+#if WITH_TRACE
+  L_(trace) << "[i" << remote_index_ << "] "
+            << "[" << index_ << "] "
+            << "receive completion, new cn_ack_.data="
+            << recv_status_message_.ack.data;
+#endif
   cn_ack_ = recv_status_message_.ack;
   post_recv_status_message();
 
@@ -315,21 +307,21 @@ InputChannelConnection::get_private_data() {
 }
 
 void InputChannelConnection::post_recv_status_message() {
-  if (false) {
-    L_(trace) << "[i" << remote_index_ << "] "
-              << "[" << index_ << "] "
-              << "POST RECEIVE status message";
-  }
+#if WITH_TRACE
+  L_(trace) << "[i" << remote_index_ << "] "
+            << "[" << index_ << "] "
+            << "POST RECEIVE status message";
+#endif
   post_recv(&recv_wr);
 }
 
 void InputChannelConnection::post_send_status_message() {
-  if (false) {
-    L_(trace) << "[i" << remote_index_ << "] "
-              << "[" << index_ << "] "
-              << "POST SEND status message (wp.data="
-              << send_status_message_.wp.data
-              << " wp.desc=" << send_status_message_.wp.desc << ")";
-  }
+#if WITH_TRACE
+  L_(trace) << "[i" << remote_index_ << "] "
+            << "[" << index_ << "] "
+            << "POST SEND status message (wp.data="
+            << send_status_message_.wp.data
+            << " wp.desc=" << send_status_message_.wp.desc << ")";
+#endif
   post_send(&send_wr);
 }

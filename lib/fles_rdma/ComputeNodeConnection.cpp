@@ -6,6 +6,8 @@
 #include "log.hpp"
 #include <cassert>
 
+#define WITH_TRACE 0
+
 ComputeNodeConnection::ComputeNodeConnection(
     struct rdma_event_channel* ec,
     uint_fast16_t connection_index,
@@ -29,21 +31,21 @@ ComputeNodeConnection::ComputeNodeConnection(
 }
 
 void ComputeNodeConnection::post_recv_status_message() {
-  if (false) {
-    L_(trace) << "[c" << remote_index_ << "] "
-              << "[" << index_ << "] "
-              << "POST RECEIVE status message";
-  }
+#if WITH_TRACE
+  L_(trace) << "[c" << remote_index_ << "] "
+            << "[" << index_ << "] "
+            << "POST RECEIVE status message";
+#endif
   post_recv(&recv_wr);
 }
 
 void ComputeNodeConnection::post_send_status_message() {
-  if (false) {
-    L_(trace) << "[c" << remote_index_ << "] "
-              << "[" << index_ << "] "
-              << "POST SEND status_message"
-              << " (ack.desc=" << send_status_message_.ack.desc << ")";
-  }
+#if WITH_TRACE
+  L_(trace) << "[c" << remote_index_ << "] "
+            << "[" << index_ << "] "
+            << "POST SEND status_message"
+            << " (ack.desc=" << send_status_message_.ack.desc << ")";
+#endif
   while (pending_send_requests_ >= qp_cap_.max_send_wr) {
     throw InfinibandException("Max number of pending send requests exceeded");
   }
@@ -155,12 +157,12 @@ void ComputeNodeConnection::on_complete_recv() {
     post_send_final_status_message();
     return;
   }
-  if (false) {
-    L_(trace) << "[c" << remote_index_ << "] "
-              << "[" << index_ << "] "
-              << "COMPLETE RECEIVE status message"
-              << " (wp.desc=" << recv_status_message_.wp.desc << ")";
-  }
+#if WITH_TRACE
+  L_(trace) << "[c" << remote_index_ << "] "
+            << "[" << index_ << "] "
+            << "COMPLETE RECEIVE status message"
+            << " (wp.desc=" << recv_status_message_.wp.desc << ")";
+#endif
   cn_wp_ = recv_status_message_.wp;
   post_recv_status_message();
   send_status_message_.ack = cn_ack_;

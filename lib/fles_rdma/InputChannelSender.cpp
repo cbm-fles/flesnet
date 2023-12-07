@@ -15,6 +15,8 @@
 #include <thread>
 #include <utility>
 
+#define WITH_TRACE 0
+
 InputChannelSender::InputChannelSender(
     uint64_t input_index,
     InputBufferReadInterface& data_source,
@@ -261,13 +263,13 @@ bool InputChannelSender::try_send_timeslice(uint64_t timeslice) {
     uint64_t total_length =
         data_length + desc_length * sizeof(fles::MicrosliceDescriptor);
 
-    if (false) {
-      L_(trace) << "SENDER working on timeslice " << timeslice
-                << ", microslices " << desc_offset << ".."
-                << (desc_offset + desc_length - 1) << ", data bytes "
-                << data_offset << ".." << (data_offset + data_length - 1);
-      L_(trace) << get_state_string();
-    }
+#if WITH_TRACE
+    L_(trace) << "SENDER working on timeslice " << timeslice << ", microslices "
+              << desc_offset << ".." << (desc_offset + desc_length - 1)
+              << ", data bytes " << data_offset << ".."
+              << (data_offset + data_length - 1);
+    L_(trace) << get_state_string();
+#endif
 
     int cn = target_cn_index(timeslice);
 
@@ -356,10 +358,10 @@ void InputChannelSender::on_addr_resolved(struct rdma_cm_id* id) {
       throw InfinibandException("registration of memory region failed");
     }
 
-    if (true) {
-      dump_mr(mr_desc_);
-      dump_mr(mr_data_);
-    }
+#if true
+    dump_mr(mr_desc_);
+    dump_mr(mr_data_);
+#endif
   }
 }
 
@@ -493,12 +495,12 @@ void InputChannelSender::on_completion(const struct ibv_wc& wc) {
         data_source_.set_read_index({cached_acked_desc_, cached_acked_data_});
       }
     }
-    if (false) {
-      L_(trace) << "[i" << input_index_ << "] "
-                << "write timeslice " << ts
-                << " complete, now: acked_data_=" << acked_data_
-                << " acked_desc_=" << acked_desc_;
-    }
+#if WITH_TRACE
+    L_(trace) << "[i" << input_index_ << "] "
+              << "write timeslice " << ts
+              << " complete, now: acked_data_=" << acked_data_
+              << " acked_desc_=" << acked_desc_;
+#endif
   } break;
 
   case ID_RECEIVE_STATUS: {

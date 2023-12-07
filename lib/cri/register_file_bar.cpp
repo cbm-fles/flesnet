@@ -40,10 +40,12 @@ __attribute__((__target__("no-sse"))) int register_file_bar::set_mem(
       err += msync(
           (reinterpret_cast<uint8_t*>(m_bar) + ((sys_addr << 2) & PAGE_MASK)),
           PAGE_SIZE, MS_SYNC);
+#if false
       if (false) {
         std::cout << "BAR write addr " << sys_addr + i << " data "
                   << static_cast<const uint32_t*>(source)[i] << std::endl;
       }
+#endif
     }
     return err;
   }

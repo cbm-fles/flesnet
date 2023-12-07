@@ -54,8 +54,8 @@ bool cri_device::check_hw_ver(hw_ver_table_t hw_ver_table) const {
   bool match = false;
 
   // check if version of hardware is part of suported versions
-  for (auto* it = hw_ver_table.begin();
-       it != hw_ver_table.end() && match == false; ++it) {
+  for (auto* it = hw_ver_table.begin(); it != hw_ver_table.end() && !match;
+       ++it) {
     if (m_hardware_version == *it) {
       match = true;
     }
