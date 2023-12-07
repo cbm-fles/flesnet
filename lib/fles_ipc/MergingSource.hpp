@@ -67,10 +67,12 @@ private:
     auto item_it =
         std::min_element(prefetched_items_.begin(), prefetched_items_.end(),
                          [](const auto& a, const auto& b) {
-                           if (!a)
+                           if (!a) {
                              return false;
-                           if (!b)
+                           }
+                           if (!b) {
                              return true;
+                           }
                            return a->index() < b->index();
                          });
     auto item_index = item_it - prefetched_items_.begin();
