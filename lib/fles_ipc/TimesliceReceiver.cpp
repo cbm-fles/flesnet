@@ -58,7 +58,7 @@ boost::uuids::uuid TimesliceReceiver::managed_shm_uuid() const {
   if (!managed_shm_) {
     return boost::uuids::nil_uuid();
   }
-  auto shm_uuid =
+  auto* shm_uuid =
       managed_shm_->find<boost::uuids::uuid>(bi::unique_instance).first;
   assert(shm_uuid != nullptr);
   return *shm_uuid;

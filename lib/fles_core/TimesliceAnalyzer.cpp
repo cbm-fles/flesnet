@@ -236,7 +236,7 @@ bool TimesliceAnalyzer::check_microslice(const fles::Timeslice& ts,
                                          size_t c,
                                          size_t m) {
   auto mv = ts.get_microslice(c, m);
-  auto& d = mv.desc();
+  const auto& d = mv.desc();
 
   ++microslice_count_;
   content_bytes_ += d.size;
