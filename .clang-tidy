@@ -32,7 +32,7 @@ Checks: >
   readability-make-member-function-const,
   readability-qualified-auto,
   -readability-redundant-access-specifiers,
-  -readability-redundant-member-init,
+  readability-redundant-member-init,
   readability-redundant-string-init,
   -readability-simplify-boolean-expr,
   -readability-uppercase-literal-suffix,
