@@ -229,7 +229,7 @@ void TimesliceBuilderZeromq::report_status() {
            << bar_graph(status_data.vector(), "#._", 20) << "|"
            << bar_graph(status_desc.vector(), "#._", 10) << "| ";
 
-  if (monitor_) {
+  if (monitor_ != nullptr) {
     monitor_->QueueMetric(
         "recv_buffer_status",
         {{"host", hostname_},

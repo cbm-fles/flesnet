@@ -308,7 +308,7 @@ void ComponentSenderZeromq::report_status() {
            << human_readable_count(rate_data, true, "B/s") << " ("
            << human_readable_count(rate_desc, true, "Hz") << ")";
 
-  if (monitor_) {
+  if (monitor_ != nullptr) {
     monitor_->QueueMetric("send_buffer_status",
                           {{"host", hostname_},
                            {"input_index", std::to_string(input_index_)},

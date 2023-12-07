@@ -403,7 +403,7 @@ void TimesliceAnalyzer::report_status() {
   constexpr auto interval = std::chrono::seconds(1);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
-  if (monitor_) {
+  if (monitor_ != nullptr) {
     const std::string prefix = output_prefix_.empty() ? ":" : output_prefix_;
     monitor_->QueueMetric("timeslice_analyzer_status",
                           {{"host", hostname_}, {"output_prefix", prefix}},

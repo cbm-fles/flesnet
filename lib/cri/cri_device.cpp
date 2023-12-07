@@ -249,7 +249,7 @@ uint32_t cri_device::get_testreg() {
 // synchonously capture and/or reset all perf counters
 void cri_device::set_perf_cnt(bool capture, bool reset) {
   uint32_t reg = 0;
-  reg |= ((capture << 1) | reset);
+  reg |= ((static_cast<int>(capture) << 1) | static_cast<int>(reset));
   m_register_file->set_reg(CRI_REG_PCI_PERF_CFG, reg, 0x3);
 }
 

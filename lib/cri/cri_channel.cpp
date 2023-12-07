@@ -137,7 +137,7 @@ uint32_t cri_channel::get_pgen_mc_pending() {
 // synchonously capture and/or reset all perf counters
 void cri_channel::set_perf_cnt(bool capture, bool reset) {
   uint32_t reg = 0;
-  reg |= ((capture << 1) | reset);
+  reg |= ((static_cast<int>(capture) << 1) | static_cast<int>(reset));
   m_rfpkt->set_reg(CRI_REG_PKT_PERF_CFG, reg, 0x3);
 }
 
@@ -196,7 +196,7 @@ cri_channel::ch_perf_t cri_channel::get_perf() {
 // synchonously capture and/or reset all perf counters
 void cri_channel::set_perf_gtx_cnt(bool capture, bool reset) {
   uint32_t reg = 0;
-  reg |= ((capture << 1) | reset);
+  reg |= ((static_cast<int>(capture) << 1) | static_cast<int>(reset));
   m_rfgtx->set_reg(CRI_REG_GTX_PERF_CFG, reg, 0x3);
 }
 

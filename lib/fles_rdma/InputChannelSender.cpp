@@ -128,7 +128,7 @@ void InputChannelSender::report_status() {
              << human_readable_count(rate_desc, true, "Hz") << ") "
              << fles::to_string(sys_id) << " " << eq_id;
 
-  if (monitor_) {
+  if (monitor_ != nullptr) {
     monitor_->QueueMetric("send_buffer_status",
                           {{"host", hostname_},
                            {"input_index", std::to_string(input_index_)},

@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 
   bool enable = false;
   if (argc >= 2) {
-    enable = atoi(argv[1]);
+    enable = (atoi(argv[1]) != 0);
   }
 
   std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
