@@ -33,7 +33,7 @@ Checks: >
   readability-qualified-auto,
   -readability-redundant-access-specifiers,
   -readability-redundant-member-init,
-  -readability-redundant-string-init,
+  readability-redundant-string-init,
   -readability-simplify-boolean-expr,
   -readability-uppercase-literal-suffix,
   boost-use-to-string,

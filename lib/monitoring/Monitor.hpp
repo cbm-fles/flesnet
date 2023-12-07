@@ -77,7 +77,7 @@ private:
 
   metvec_t fMetVec{};          //!< metric list
   std::mutex fMetVecMutex{};   //!< mutex for fMetVec access
-  std::string fHostName{""};   //!< hostname
+  std::string fHostName;       //!< hostname
   smap_t fSinkMap{};           //!< sink registry
   std::mutex fSinkMapMutex{};  //!< mutex for fSinkMap access
   time_point fNextHeartbeat{}; //!< time of next heartbeat
