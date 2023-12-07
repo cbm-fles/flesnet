@@ -106,7 +106,7 @@ void TimesliceBuilder::report_status() {
               << human_readable_count(rate_data, true, "B/s") << " ("
               << human_readable_count(rate_desc, true, "Hz") << ")";
 
-    if (monitor_) {
+    if (monitor_ != nullptr) {
       monitor_->QueueMetric("recv_buffer_status",
                             {{"host", hostname_},
                              {"output_index", std::to_string(compute_index_)},
@@ -145,7 +145,7 @@ void TimesliceBuilder::report_status() {
              << human_readable_count(total_rate_data, true, "B/s") << " ("
              << human_readable_count(total_rate_desc, true, "Hz") << ")";
 
-  if (monitor_) {
+  if (monitor_ != nullptr) {
     monitor_->QueueMetric(
         "timeslice_buffer_status",
         {{"host", hostname_}, {"output_index", std::to_string(compute_index_)}},

@@ -26,7 +26,7 @@ Checks: >
   -readability-container-data-pointer,
   -readability-convert-member-functions-to-static,
   -readability-else-after-return,
-  -readability-implicit-bool-conversion,
+  readability-implicit-bool-conversion,
   readability-inconsistent-declaration-parameter-name,
   readability-make-member-function-const,
   readability-qualified-auto,

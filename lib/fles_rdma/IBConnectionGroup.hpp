@@ -36,7 +36,7 @@ public:
       c = nullptr;
     }
 
-    if (listen_id_) {
+    if (listen_id_ != nullptr) {
       int err = rdma_destroy_id(listen_id_);
       if (err != 0) {
         L_(error) << "rdma_destroy_id() failed";
@@ -44,7 +44,7 @@ public:
       listen_id_ = nullptr;
     }
 
-    if (cq_) {
+    if (cq_ != nullptr) {
       int err = ibv_destroy_cq(cq_);
       if (err != 0) {
         L_(error) << "ibv_destroy_cq() failed";
@@ -52,7 +52,7 @@ public:
       cq_ = nullptr;
     }
 
-    if (pd_) {
+    if (pd_ != nullptr) {
       int err = ibv_dealloc_pd(pd_);
       if (err != 0) {
         L_(error) << "ibv_dealloc_pd() failed";
@@ -150,7 +150,8 @@ public:
     int ne;
     int ne_total = 0;
 
-    while (ne_total < 1000 && (ne = ibv_poll_cq(cq_, ne_max, wc.data()))) {
+    while (ne_total < 1000 &&
+           ((ne = ibv_poll_cq(cq_, ne_max, wc.data())) != 0)) {
       if (ne < 0) {
         throw InfinibandException("ibv_poll_cq failed");
       }
@@ -277,7 +278,7 @@ protected:
       throw InfinibandException("ibv_create_cq failed");
     }
 
-    if (ibv_req_notify_cq(cq_, 0)) {
+    if (ibv_req_notify_cq(cq_, 0) != 0) {
       throw InfinibandException("ibv_req_notify_cq failed");
     }
   }
