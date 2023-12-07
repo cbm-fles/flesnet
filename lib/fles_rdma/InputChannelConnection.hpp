@@ -35,19 +35,21 @@ public:
                  uint64_t data_length,
                  uint64_t skip);
 
-  bool write_request_available();
+  [[nodiscard]] bool write_request_available() const;
 
   /// Increment target write pointers after data has been sent.
   void inc_write_pointers(uint64_t data_size, uint64_t desc_size);
 
   // Get number of bytes to skip in advance (to avoid buffer wrap)
-  uint64_t skip_required(uint64_t data_size);
+  [[nodiscard]] uint64_t skip_required(uint64_t data_size) const;
 
   bool try_sync_buffer_positions();
 
   void finalize(bool abort);
 
-  bool request_abort_flag() { return recv_status_message_.request_abort; }
+  [[nodiscard]] bool request_abort_flag() const {
+    return recv_status_message_.request_abort;
+  }
 
   void on_complete_write();
 

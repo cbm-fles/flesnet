@@ -69,12 +69,12 @@ public:
   bool dev_autodetect() const { return _dev_autodetect; }
   pci_addr dev_addr() const { return _pci_addr; }
   std::string shm() { return _shm; }
-  size_t data_buffer_size_exp() { return _data_buffer_size_exp; }
-  size_t desc_buffer_size_exp() { return _desc_buffer_size_exp; }
+  size_t data_buffer_size_exp() const { return _data_buffer_size_exp; }
+  size_t desc_buffer_size_exp() const { return _desc_buffer_size_exp; }
   std::string exec() const { return _exec; }
   bool archivable_data() const { return _archivable_data; }
 
-  std::string print_buffer_info() {
+  std::string print_buffer_info() const {
     std::stringstream ss;
     ss << "Buffer size per channel: "
        << human_readable_count(UINT64_C(1) << _data_buffer_size_exp) << " + "

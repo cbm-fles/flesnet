@@ -280,7 +280,7 @@ void dma_channel::reset_datapath(bool enable) {
               (1 << BIT_DMACTRL_DATAPATH_RST));
 }
 
-inline bool dma_channel::is_enabled() {
+inline bool dma_channel::is_enabled() const {
   uint32_t mask = 1 << BIT_DMACTRL_EBDM_EN | 1 << BIT_DMACTRL_RBDM_EN |
                   1 << BIT_DMACTRL_DMA_EN;
   return (m_reg_dmactrl_cached & mask) != 0u;

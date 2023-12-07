@@ -35,7 +35,7 @@ public:
    * Get size of mapped BAR.
    * @return size of mapped BAR in bytes
    **/
-  size_t size() { return (m_size); };
+  size_t size() const { return m_size; };
 
 protected:
   device* m_parent_dev;

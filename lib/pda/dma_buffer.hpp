@@ -52,7 +52,7 @@ public:
    * Buffer-ID
    * @return unsigned long Buffer-ID
    */
-  uint64_t ID() { return m_id; }
+  uint64_t ID() const { return m_id; }
 
   /**
    * Physical Buffer size in bytes. Requested buffer
@@ -60,7 +60,7 @@ public:
    * boundary.
    * @return number of bytes allocated as Buffer
    */
-  size_t size() { return m_size; }
+  size_t size() const { return m_size; }
 
   /**
    * return memory buffer

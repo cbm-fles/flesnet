@@ -50,7 +50,7 @@ void cri_device::init() {
   }
 }
 
-bool cri_device::check_hw_ver(hw_ver_table_t hw_ver_table) {
+bool cri_device::check_hw_ver(hw_ver_table_t hw_ver_table) const {
   bool match = false;
 
   // check if version of hardware is part of suported versions
@@ -95,7 +95,7 @@ uint8_t cri_device::number_of_hw_channels() {
   return (m_register_file->get_reg(CRI_REG_N_CHANNELS) & 0xFF);
 }
 
-uint16_t cri_device::hardware_version() { return m_hardware_version; }
+uint16_t cri_device::hardware_version() const { return m_hardware_version; }
 
 time_t cri_device::build_date() {
   time_t time = (static_cast<time_t>(
@@ -206,7 +206,7 @@ std::string cri_device::print_uptime() {
   return ss.str();
 }
 
-std::string cri_device::print_version_warning() {
+std::string cri_device::print_version_warning() const {
   std::stringstream ss;
   if (m_hardware_version != hw_ver_table.back()) {
     ss << "Hardware version is outdated. "

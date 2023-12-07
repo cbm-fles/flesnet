@@ -100,8 +100,8 @@ public:
   uint32_t get_mc_busy();
 
   /*** Getter ***/
-  size_t channel_index() { return m_ch_index; };
-  sys_bus_addr base_addr() { return m_base_addr; };
+  size_t channel_index() const { return m_ch_index; };
+  sys_bus_addr base_addr() const { return m_base_addr; };
   pda::device* parent_device() { return m_parent_device; };
   pda::pci_bar* bar() { return m_bar; };
 

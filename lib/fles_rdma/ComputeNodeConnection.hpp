@@ -38,7 +38,7 @@ public:
 
   void request_abort() { send_status_message_.request_abort = true; }
 
-  bool abort_flag() { return recv_status_message_.abort; }
+  [[nodiscard]] bool abort_flag() const { return recv_status_message_.abort; }
 
   void setup(struct ibv_pd* pd) override;
 
