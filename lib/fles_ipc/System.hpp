@@ -8,9 +8,8 @@
 #include <string>
 #include <vector>
 
-namespace fles {
 /// Namespace for system-related utilty functions.
-namespace system {
+namespace fles::system {
 /**
  * \brief Textual description of system error messages.
  *
@@ -107,5 +106,4 @@ std::vector<std::string> glob(const std::string& pattern,
  */
 uint16_t current_terminal_width();
 
-} // namespace system
-} // namespace fles
+} // namespace fles::system

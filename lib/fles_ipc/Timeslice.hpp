@@ -85,7 +85,7 @@ public:
         desc_ptr_[component]->num_microslices * sizeof(MicrosliceDescriptor) +
         dd.offset - dd0.offset;
 
-    return MicrosliceView(dd, cc);
+    return {dd, cc};
   }
 
   /// Retrieve the offical start time of the timeslice

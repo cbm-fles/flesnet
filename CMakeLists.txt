@@ -189,7 +189,7 @@ endif()
 set(USE_CLANG_TIDY FALSE CACHE BOOL "Run clang-tidy during build.")
 if(USE_CLANG_TIDY)
   find_program(CLANG_TIDY
-    NAMES "clang-tidy-12" "clang-tidy-11" "clang-tidy"
+    NAMES "clang-tidy-15" "clang-tidy-14" "clang-tidy"
     DOC "Path to clang-tidy executable"
   )
   if(NOT CLANG_TIDY)

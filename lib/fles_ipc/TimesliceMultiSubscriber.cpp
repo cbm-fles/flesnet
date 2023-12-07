@@ -117,7 +117,7 @@ std::unique_ptr<Timeslice> TimesliceMultiSubscriber::GetNextTimeslice() {
 
     return retTimeslice;
   }
-  return std::unique_ptr<Timeslice>(nullptr);
+  return {nullptr};
 }
 
 } // end of namespace fles
