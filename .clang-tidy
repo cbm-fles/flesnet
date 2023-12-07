@@ -2,7 +2,7 @@
 Checks: >
   -*,
   -bugprone-assignment-in-if-condition,
-  -bugprone-reserved-identifier,
+  bugprone-reserved-identifier,
   -cert-err33-c,
   -cert-err34-c,
   -cert-err58-cpp,

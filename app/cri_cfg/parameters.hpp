@@ -19,7 +19,7 @@
 
 namespace po = boost::program_options;
 
-static const size_t _num_max_channels = 8;
+static const size_t num_max_channels = 8;
 
 enum data_source { flim, pgen, disable };
 
@@ -259,7 +259,7 @@ private:
 
     L_(info) << " microslice size limit: " << _mc_size_limit / 1000 << " kB";
 
-    for (size_t i = 0; i < _num_max_channels; ++i) {
+    for (size_t i = 0; i < num_max_channels; ++i) {
       L_(info) << "Channel " << i << " config:";
       parse_data_source(vm, i);
     } // end loop over channels
@@ -282,5 +282,5 @@ private:
   uint32_t _mc_size = 10; // 10,24 us
   float _pgen_rate = 1;
   uint32_t _mc_size_limit = 1 << 20; // 1MB
-  std::array<struct channel_config, _num_max_channels> _channels = {{}};
+  std::array<struct channel_config, num_max_channels> _channels = {{}};
 };
