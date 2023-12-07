@@ -48,7 +48,8 @@ public:
       std::signal(SIGTERM, SIG_IGN);
 #pragma GCC diagnostic pop
 #endif
-      execvp(child_process.path.c_str(), const_cast<char* const*>(&c_arg[0]));
+      execvp(child_process.path.c_str(),
+             const_cast<char* const*>(c_arg.data()));
       L_(error) << "execvp() failed: " << strerror(errno);
       _exit(0);
     } else {
