@@ -30,7 +30,6 @@ protected:
   std::string InfluxFields(const Metric& point);
   std::string InfluxLine(const Metric& point);
 
-protected:
   Monitor& fMonitor;       //!< back reference to Monitor
   std::string fSinkPath;   //!< path for output
   long fStatNPoint{0};     //!< # of processed points

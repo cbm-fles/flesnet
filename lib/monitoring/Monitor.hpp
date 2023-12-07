@@ -54,7 +54,6 @@ public:
   static Monitor& Ref();
   static Monitor* Ptr();
 
-public:
   // some constants
   static constexpr auto kELoopTimeout =
       std::chrono::seconds(10); //!< monitor flush time
@@ -65,7 +64,6 @@ private:
   void EventLoop();
   MonitorSink& SinkRef(const std::string& sname);
 
-private:
   using metvec_t = std::vector<Metric>;
   using sink_uptr_t = std::unique_ptr<MonitorSink>;
   using smap_t = std::unordered_map<std::string, sink_uptr_t>;
