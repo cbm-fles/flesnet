@@ -86,7 +86,7 @@ void ManagedTimesliceBuffer::put(
     data_.at(i).skip_buffer_wrap(timeslice->size_component(i));
 
     // Rewrite the offset in the timeslice component descriptor.
-    auto tscd = timeslice->desc_ptr_[i];
+    auto* tscd = timeslice->desc_ptr_[i];
     tscd->offset = data_.at(i).write_index();
 
     // Copy the data into the shared memory.
