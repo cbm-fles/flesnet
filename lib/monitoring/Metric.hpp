@@ -47,10 +47,10 @@ struct Metric {
   Metric& operator=(const Metric&) = default;
   Metric& operator=(Metric&&) = default;
 
-  std::string fMeasurement{""}; //!< measurement name
-  MetricTagSet fTagset;         //!< set of tags
-  MetricFieldSet fFieldset;     //!< set of fields
-  time_point fTimestamp;        //!< time stamp
+  std::string fMeasurement; //!< measurement name
+  MetricTagSet fTagset;     //!< set of tags
+  MetricFieldSet fFieldset; //!< set of fields
+  time_point fTimestamp;    //!< time stamp
 };
 
 } // end namespace cbm
