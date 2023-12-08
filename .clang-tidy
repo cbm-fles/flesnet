@@ -17,7 +17,7 @@ Checks: >
   -misc-no-recursion,
   -modernize-macro-to-enum,
   -modernize-use-transparent-functors,
-  -performance-unnecessary-value-param,
+  performance-unnecessary-value-param,
   readability-braces-around-statements,
   readability-container-data-pointer,
   readability-else-after-return,

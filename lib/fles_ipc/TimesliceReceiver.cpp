@@ -5,6 +5,7 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <memory>
+#include <utility>
 
 namespace bi = boost::interprocess;
 
@@ -12,7 +13,7 @@ namespace fles {
 
 TimesliceReceiver::TimesliceReceiver(const std::string& ipc_identifier,
                                      WorkerParameters parameters)
-    : worker_("ipc://@" + ipc_identifier, parameters) {
+    : worker_("ipc://@" + ipc_identifier, std::move(parameters)) {
   worker_.set_disconnect_callback([this] { managed_shm_ = nullptr; });
 }
 
