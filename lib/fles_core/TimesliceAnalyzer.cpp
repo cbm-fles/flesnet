@@ -384,13 +384,11 @@ std::string TimesliceAnalyzer::location_string(size_t ts,
                                                std::optional<size_t> m) const {
   if (c && m) {
     return boost::str(boost::format("ts%d/c%d/m%d") % ts % *c % *m);
-
-  } else if (c) {
-    return boost::str(boost::format("ts%d/c%d") % ts % *c);
-
-  } else {
-    return boost::str(boost::format("ts%d") % ts);
   }
+  if (c) {
+    return boost::str(boost::format("ts%d/c%d") % ts % *c);
+  }
+  return boost::str(boost::format("ts%d") % ts);
 }
 
 bool TimesliceAnalyzer::output_active() const {
