@@ -22,7 +22,7 @@ public:
     time_type when_;
   };
 
-  struct event_less : public std::less<event> {
+  struct event_less : public std::less<> {
     bool operator()(const event& e1, const event& e2) const {
       return (e2.when_ < e1.when_);
     }
