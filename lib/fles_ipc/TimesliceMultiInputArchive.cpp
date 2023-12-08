@@ -168,7 +168,7 @@ std::unique_ptr<Timeslice> TimesliceMultiInputArchive::GetNextTimeslice() {
         // if the first file reaches the end stop reading
         // return std::unique_ptr<const Timeslice>(nullptr);
       } else {
-        if ((timeslice = source_.at(currentSource)->get())) {
+        if ((timeslice = source_.at(currentSource)->get())) { // NOLINT
           sortedSource_.insert({timeslice->index(), currentSource});
           timesliceCont.at(currentSource) = std::move(timeslice);
         }
