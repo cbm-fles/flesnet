@@ -36,9 +36,8 @@ public:
     } catch (zmq::error_t& ex) {
       if (ex.num() == EINTR) {
         return false;
-      } else {
-        throw;
       }
+      throw;
     }
     *id = std::stoull(message.to_string());
     return true;
