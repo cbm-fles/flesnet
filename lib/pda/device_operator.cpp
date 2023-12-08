@@ -23,8 +23,8 @@ std::array<const char*, 3> device_operator::m_pci_ids = {
 };
 
 device_operator::device_operator() {
-  if ((m_dop = DeviceOperator_new(m_pci_ids.data(),
-                                  PDA_DONT_ENUMERATE_DEVICES)) == nullptr) {
+  m_dop = DeviceOperator_new(m_pci_ids.data(), PDA_DONT_ENUMERATE_DEVICES);
+  if (m_dop == nullptr) {
     throw PdaException(
         "Device operator instantiation failed. Is the kernel module loaded?");
   }
