@@ -10,6 +10,7 @@
 #include <set>
 #include <stdexcept>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include <zmq.hpp>
@@ -29,7 +30,7 @@ public:
   };
 
   void set_disconnect_callback(DisconnectCallback callback) {
-    disconnect_callback_ = callback;
+    disconnect_callback_ = std::move(callback);
   }
 
   std::shared_ptr<const Item> get() {

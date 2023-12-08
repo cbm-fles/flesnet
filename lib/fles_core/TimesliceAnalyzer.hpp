@@ -41,7 +41,7 @@ private:
   [[nodiscard]] uint32_t compute_crc(const fles::MicrosliceView& m) const;
   [[nodiscard]] bool check_crc(const fles::MicrosliceView& m) const;
 
-  void print(std::string text, std::string prefix = "");
+  void print(std::string text, const std::string& prefix = "");
   void print_reference();
   void
   print_microslice_descriptor(const fles::Timeslice& ts, size_t c, size_t m);

@@ -320,7 +320,7 @@ bool TimesliceAnalyzer::check_crc(const fles::MicrosliceView& m) const {
   return compute_crc(m) == m.desc().crc;
 }
 
-void TimesliceAnalyzer::print(std::string text, std::string prefix) {
+void TimesliceAnalyzer::print(std::string text, const std::string& prefix) {
   if (text.back() == '\n') {
     text.erase(text.end() - 1);
   }

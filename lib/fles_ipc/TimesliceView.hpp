@@ -32,7 +32,7 @@ private:
   TimesliceView(
       std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm,
       std::shared_ptr<const Item> work_item,
-      TimesliceShmWorkItem timeslice_item);
+      const TimesliceShmWorkItem& timeslice_item);
 
   std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
   std::shared_ptr<const Item> work_item_;

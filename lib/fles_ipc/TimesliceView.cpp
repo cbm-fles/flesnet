@@ -10,7 +10,7 @@ namespace fles {
 TimesliceView::TimesliceView(
     std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm,
     std::shared_ptr<const Item> work_item,
-    TimesliceShmWorkItem timeslice_item)
+    const TimesliceShmWorkItem& timeslice_item)
     : managed_shm_(std::move(managed_shm)), work_item_(std::move(work_item)),
       timeslice_item_(timeslice_item) {
 
