@@ -1,8 +1,7 @@
 #ifndef SHM_IPC_ITEMPRODUCER_HPP
 #define SHM_IPC_ITEMPRODUCER_HPP
 
-#include <set>
-
+#include <cstddef>
 #include <zmq.hpp>
 
 using ItemID = size_t;

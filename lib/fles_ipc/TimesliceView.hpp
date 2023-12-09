@@ -5,7 +5,6 @@
 
 #include "ItemWorkerProtocol.hpp"
 #include "Timeslice.hpp"
-#include "TimesliceCompletion.hpp"
 #include "TimesliceShmWorkItem.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <memory>

@@ -10,7 +10,6 @@
 #include <iostream>
 #include <memory>
 #include <set>
-#include <stdexcept>
 #include <string>
 
 namespace fles {

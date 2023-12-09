@@ -2,8 +2,6 @@
 
 #include "Parameters.hpp"
 #include "GitRevision.hpp"
-#include "MicrosliceDescriptor.hpp"
-#include "TimesliceComponentDescriptor.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include <algorithm>

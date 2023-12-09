@@ -5,7 +5,6 @@
 #include "System.hpp"
 #include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
-#include "log.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <cassert>

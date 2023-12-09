@@ -7,7 +7,6 @@
 #include "RingBuffer.hpp"
 #include "TimesliceBuffer.hpp"
 #include <csignal>
-#include <memory>
 #include <vector>
 
 /// Timeslice receiver and input node connection container class.
