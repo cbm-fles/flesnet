@@ -5,7 +5,6 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RequestIdentifier.hpp"
 #include "TimesliceComponentDescriptor.hpp"
-#include "log.hpp"
 #include <array>
 #include <cassert>
 #include <cstring>

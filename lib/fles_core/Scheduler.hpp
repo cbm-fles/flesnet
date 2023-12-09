@@ -2,9 +2,9 @@
 #pragma once
 
 #include <chrono>
+#include <ctime>
 #include <functional>
 #include <queue>
-#include <sys/time.h> // for `time_t` and `struct timeval`
 #include <utility>
 
 class Scheduler {

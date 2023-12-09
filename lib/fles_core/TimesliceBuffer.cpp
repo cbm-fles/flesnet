@@ -5,7 +5,6 @@
 #include "TimesliceShmWorkItem.hpp"
 #include "TimesliceWorkItem.hpp"
 #include "Utility.hpp"
-#include <algorithm>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/uuid/uuid_generators.hpp>

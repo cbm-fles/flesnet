@@ -2,7 +2,6 @@
 
 #include "TimesliceMultiInputArchive.hpp"
 
-#include "StorableTimeslice.hpp"
 #include "TimesliceInputArchive.hpp"
 
 #include <boost/algorithm/string.hpp>
