@@ -26,30 +26,12 @@ public:
    * \param filename File name of the archive file
    * \param compression Compression type to use
    */
-  explicit OutputArchive(
-      const std::string& filename,
-      ArchiveCompression compression = ArchiveCompression::None)
-      : ofstream_(filename, std::ios::binary), descriptor_{archive_type,
-                                                           compression} {
+  explicit OutputArchive(const std::string& filename)
+      : ofstream_(filename, std::ios::binary), descriptor_{archive_type} {
 
     oarchive_ = std::make_unique<boost::archive::binary_oarchive>(ofstream_);
 
     *oarchive_ << descriptor_;
-
-    if (compression != ArchiveCompression::None) {
-      out_ = std::make_unique<boost::iostreams::filtering_ostream>();
-      if (compression == ArchiveCompression::Zstd) {
-        out_->push(boost::iostreams::zstd_compressor(
-            boost::iostreams::zstd::best_speed));
-      } else {
-        throw std::runtime_error(
-            "Unsupported compression type for output archive file \"" +
-            filename + "\"");
-      }
-      out_->push(ofstream_);
-      oarchive_ = std::make_unique<boost::archive::binary_oarchive>(
-          *out_, boost::archive::no_header);
-    }
   }
 
   /// Delete copy constructor (non-copyable).
@@ -64,9 +46,8 @@ public:
 
 private:
   std::ofstream ofstream_;
-  std::unique_ptr<boost::iostreams::filtering_ostream> out_;
   std::unique_ptr<boost::archive::binary_oarchive> oarchive_;
-  ArchiveDescriptor descriptor_;
+  LegacyArchiveDescriptor descriptor_;
 
   void do_put(const Derived& item) { *oarchive_ << item; }
   // TODO(Jan): Solve this without the additional alloc/copy operation

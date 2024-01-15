@@ -51,21 +51,11 @@ Application::Application(Parameters const& par,
     if (uri.scheme == "file" || uri.scheme.empty()) {
       size_t items = SIZE_MAX;
       size_t bytes = SIZE_MAX;
-      fles::ArchiveCompression compression = fles::ArchiveCompression::None;
       for (auto& [key, value] : uri.query_components) {
         if (key == "items") {
           items = stoull(value);
         } else if (key == "bytes") {
           bytes = stoull(value);
-        } else if (key == "c") {
-          if (value == "none") {
-            compression = fles::ArchiveCompression::None;
-          } else if (value == "zstd") {
-            compression = fles::ArchiveCompression::Zstd;
-          } else {
-            throw std::runtime_error(
-                "invalid compression type for scheme file: " + value);
-          }
         } else {
           throw std::runtime_error(
               "query parameter not implemented for scheme file: " + key);
@@ -74,11 +64,10 @@ Application::Application(Parameters const& par,
       const auto file_path = uri.authority + uri.path;
       if (items == SIZE_MAX && bytes == SIZE_MAX) {
         sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-            new fles::TimesliceOutputArchive(file_path, compression)));
+            new fles::TimesliceOutputArchive(file_path)));
       } else {
         sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-            new fles::TimesliceOutputArchiveSequence(file_path, items, bytes,
-                                                     compression)));
+            new fles::TimesliceOutputArchiveSequence(file_path, items, bytes)));
       }
 
     } else if (uri.scheme == "tcp") {
