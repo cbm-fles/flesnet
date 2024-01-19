@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
-
+#include <iostream>
 /// Main FLES namespace.
 namespace fles {
 
@@ -151,6 +151,9 @@ struct MicrosliceDescriptor {
     ar & size;
     ar & offset;
   }
+
+  bool operator==(const MicrosliceDescriptor& msd) const;
+  bool operator!=(const MicrosliceDescriptor& msd) const;
 };
 
 #pragma pack()
