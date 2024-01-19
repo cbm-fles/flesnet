@@ -1,6 +1,6 @@
 # Copyright 2013-2021 Jan de Cuveland <cmail@cuveland.de>
 
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.16)
 project(flesnet DESCRIPTION "CBM FLES Timeslice Building" VERSION 0.0 LANGUAGES CXX)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "bin")
 
