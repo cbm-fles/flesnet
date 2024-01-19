@@ -8,6 +8,7 @@
 #include "MicrosliceReceiver.hpp"
 #include "MicrosliceTransmitter.hpp"
 #include "TimesliceDebugger.hpp"
+#include "Verificator.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
 #include <chrono>
@@ -39,7 +40,7 @@ Application::Application(Parameters const& par) : par_(par) {
 
     data_source_ = std::make_unique<FlesnetPatternGenerator>(
         data_buffer_size_exp, desc_buffer_size_exp, par_.channel_idx,
-        typical_content_size, true, true);
+        typical_content_size, true, false);
   }
 
   if (data_source_) {
@@ -85,6 +86,13 @@ Application::~Application() {
 
 void Application::run() {
   uint64_t limit = par_.maximum_number;
+
+  if (par_.validate_) {
+    Verificator val;
+    bool valid = val.verify(par_.input_archives_, par_.output_archives_, 100, 10);
+    std::cout << "valid: " << valid << std::endl;
+    return;
+  }
 
   while (auto microslice = source_->get()) {
     std::shared_ptr<const fles::Microslice> ms(std::move(microslice));
