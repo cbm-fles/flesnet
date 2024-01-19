@@ -11,7 +11,7 @@
 
 
 using namespace std;
-bool Verificator::verfiy(vector<string> input_archive_paths, vector<string> output_archive_paths, uint64_t timeslice_size, uint64_t timeslice_cnt) {
+bool Verificator::verify(vector<string> input_archive_paths, vector<string> output_archive_paths, uint64_t timeslice_size, uint64_t timeslice_cnt) {
     vector<unique_ptr<fles::MicrosliceInputArchive>> input_archives;
     vector<unique_ptr<fles::TimesliceInputArchive>> output_archives;
     uint64_t entry_node_cnt = input_archive_paths.size();
