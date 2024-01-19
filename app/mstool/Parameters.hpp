@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
-
+#include <vector>
 /// Run parameters exception class.
 class ParametersException : public std::runtime_error {
 public:
@@ -30,4 +30,8 @@ struct Parameters {
   bool analyze = false;
   size_t dump_verbosity = 0;
   std::string output_archive;
+
+  std::vector<std::string> output_archives_;
+  std::vector<std::string> input_archives_;
+  bool validate_ = false;
 };

@@ -8,6 +8,7 @@
 #include "Parameters.hpp"
 #include "Sink.hpp" // MicrosliceSink
 #include "TimesliceDebugger.hpp"
+#include "Verificator.hpp"
 #include "log.hpp"
 #include <cstdint>
 #include <cstdlib>
@@ -53,6 +54,13 @@ Application::~Application() {
 
 void Application::run() {
   uint64_t limit = par_.maximum_number;
+
+  if (par_.validate_) {
+    Verificator val;
+    bool valid = val.verify(par_.input_archives_, par_.output_archives_, 100, 10);
+    std::cout << "valid: " << valid << std::endl;
+    return;
+  }
 
   while (auto microslice = source_->get()) {
     std::shared_ptr<const fles::Microslice> ms(std::move(microslice));
