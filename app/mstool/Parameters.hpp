@@ -37,4 +37,8 @@ struct Parameters {
   std::vector<std::string> output_archives_;
   std::vector<std::string> input_archives_;
   bool validate_ = false;
+
+  std::string analyze_tsa_;
+  std::string analyze_msa_;
+  bool analyze_archive_;
 };

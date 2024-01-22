@@ -47,6 +47,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "name of an input file archive to read");
   source_add("input-archives", po::value<std::vector<std::string>>(&input_archives_)->multitoken(),
             "paths to the input archives to use for validation");
+  source_add("analyze-tsa", po::value<std::string>(&analyze_tsa_),
+            "path to timeslice archive file (*.tsa) to analyze");
+  source_add("analyze-msa", po::value<std::string>(&analyze_msa_),
+            "path to microslice archive file (*.msa) to analyze");
 
   po::options_description sink("Sink options");
   auto sink_add = sink.add_options();
@@ -96,8 +100,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
                          vm.count("input-archive") + vm.count("input-shm");
   
   validate_ = vm.count("input-archives") + vm.count("output-archives") > 0;
+  analyze_archive_ = vm.count("analyze-msa") + vm.count("analyze-tsa") > 0;
 
-  if (!validate_) {
+  if (!(validate_ || analyze_archive_)) {
     if (input_sources == 0) {
       throw ParametersException("no input source specified");
     }
@@ -105,5 +110,4 @@ void Parameters::parse_options(int argc, char* argv[]) {
       throw ParametersException("more than one input source specified");
     }
   }
-
 }
