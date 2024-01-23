@@ -99,7 +99,7 @@ void Application::run() {
 
   if (par_.validate_) {
     Verificator val;
-    bool valid = val.verify(par_.input_archives_, par_.output_archives_, 100, 1);
+    bool valid = val.verify(par_.input_archives_, par_.output_archives_, 100, 2);
     std::cout << "valid: " << valid << std::endl;
     return;
   }
