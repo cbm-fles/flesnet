@@ -45,6 +45,7 @@ With our shared memory microslice input source ready, we can start FLESnet. In t
 - `-o`: Output index. Simililar to the `-i` flag, but refers to the output sink of this FLESnet instance. Example: When `-o` is set to 1, this build node will write the built timeslices into the 2nd (indexing starts at 0) output sink, defined with the `-O` flag. Again, this makes more sense, when having seperate entry and build nodes. 
 - `-O`: List of output sinks. See use of `-o` flag.
 - `--timeslice-size`: Defines how many microslices will make up one timeslice (Does not include overlap. Overlap concept will be explained within a dedicated section).
+- `--processor-instances`: The amount of `-e` executions.
 - `-e`: Defines the start of the `tsclient` binary. The `tsclient` arguments are:
 	- `-i` The source from which the `tsclient` will collect the built timeslices. Here a template parameter is used `%s`. This will be replaced with the respective name of the shared memory, defined in the `-O` list of this `flesnet`  instance; in this case `%s` will be replaced with `flesnet_out_shared_memory`.
 	-  `-o`: Output path of the generated timeslice archive file.
