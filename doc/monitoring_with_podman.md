@@ -26,7 +26,7 @@ Start the `influxdb2` container and the initialisation by executing:
 podman run --name=influxdb2 -p 8086:8086 -v ./influxdb-data:/var/lib/influxdb2:Z -e DOCKER_INFLUXDB_INIT_USERNAME=admin -e DOCKER_INFLUXDB_INIT_MODE=setup -e DOCKER_INFLUXDB_INIT_PASSWORD=password -e DOCKER_INFLUXDB_INIT_ORG=myorg -e DOCKER_INFLUXDB_INIT_BUCKET=mybucket --network host influxdb:latest
 ```
 
-Access the created container by executing
+In a second terminal, access the created container by executing
 ```
 podman exec -it influxdb2 bash
 ```
@@ -53,9 +53,10 @@ All access tokens can also be listed using the `influx auth list` command.
 
 You can now exit the container using the `exit` command.
 
-**Note:** The influxdb container will change the permissions of the provided volume. To be able to access it on the host machine again run:
+**Note:** The influxdb container will change the permissions of the provided volume. To be able to access and remove it on the host machine again run:
 ```
-podman unshare chmod 770 influxdb-data
+podman unshare chmod -R 777 influxdb-data
+rm -rf influxdb-data
 ```
 
 
@@ -81,7 +82,7 @@ admin_password = admin
 
 Now run the container by executing:
 ```
-podman run -p 3000:3000 --name=grafana -v ./grafana.ini:/etc/grafana/grafana.ini -v ./grafana-data:/var/lib/grafana --network host grafana/grafana
+podman run -p 3000:3000 --name=grafana --user "$(id -u)" --userns=keep-id -v ./grafana.ini:/etc/grafana/grafana.ini -v ./grafana-data:/var/lib/grafana:z --network host grafana/grafana
 ```
 
 Open your browser and go to `http://localhost:3000`. The login is
@@ -92,16 +93,17 @@ After your first login you will be asked to change your password.
 
 On the start screen select "Add your first data source". From the "Data sources" list select "InfluxDB"
 
+
 ![Grafana-newdatasource.png](./img/Grafana-newdatasource.png)
 
 ![Grafana-influxdbsource.png](:/img/Grafana-influxdbsource.png)
 
 
-## Using Flux as Query Language
+## Using Flux as the Query Language
 
 - Give the connection a name in the "Name" input
 - Select "Flux" in theQuery Language" dropdown
-- In the HTTP Section the the URL to "http://localhost:8086"
+- In the HTTP Section the the URL to "http://localhost:8086" (Based on the connection info of your InfluxDB container)
 - Deselect everything in the "Auth" section
 - In the "InfluxDB Details" section:
 	- Put CBM as Organisation
@@ -116,12 +118,12 @@ Hit the "Save & test" button to test your configration.
 
 - Give the connection a name in the "Name" input
 - Select "InfluxQL" in theQuery Language" dropdown
-- In the HTTP Section the the URL to "http://localhost:8086"
+- In the HTTP Section the the URL to "http://localhost:8086" (Based on the connection info of your InfluxDB container)
 - Click "Add header" in the "Custom HTTP Headers" section
 	- Header: `Authorization`
 	- Value: `Token <your token from setting up the InfluxDB container>`
 - In the "InfluxDB Details" section:
-	-  Database: `flesnet_status`
+	-  Database: `flesnet_status` (or `cri_status` or `tsclient_status`)
 	-  HTTP Method: `GET`
 
 Hit the "Save & test" button to test your configration.
@@ -132,19 +134,21 @@ Repeat for Databases `cri_status` and `tsclient_status`
 
 # Connecting FLESnet and other to InfluxDB
 
+Processes can be connected to the InfluxDB using the `-m` flag:
+
 - `cri`:
    ```bash
-   export CBM_INFLUX_TOKEN=<Auth token while configuring InfluxDB container>
+   export CBM_INFLUX_TOKEN=<Auth token from configuring InfluxDB container>
    cri_status -m influx2:localhost:8086:cri_status:
    ```
   This should print a line with "Starting measurements", then just let it run silently
 - `flesnet`:
  ```bash
-   export CBM_INFLUX_TOKEN=<Auth token while configuring InfluxDB container>
+   export CBM_INFLUX_TOKEN=<Auth token from configuring InfluxDB container>
    flesnet  [...] -m influx2:localhost:8086:flesnet_status:
    ```
 - `tsclient`:
    ```bash
-   export CBM_INFLUX_TOKEN=<Auth token while configuring InfluxDB container>
+   export CBM_INFLUX_TOKEN=<Auth token from configuring InfluxDB container>
    tsclient [...] -m influx2:localhost:8086:tsclient_status:
    ```
