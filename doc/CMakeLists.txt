@@ -89,6 +89,6 @@ if (EXTENDED_DOXYGEN_DOCUMENTATION)
   set(DOXYGEN_DOT_GRAPH_MAX_NODES 100)
 endif()
 
-doxygen_add_docs(doc ../app ../lib ../test
+doxygen_add_docs(doc ../app/flesnet ../lib ../test
 	COMMENT "Generating documentation with doxygen \n\t(doxygen error \
 	\"FileDefImpl::insertMembers()...\" is expected)" )
