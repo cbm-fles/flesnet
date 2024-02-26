@@ -90,19 +90,35 @@ if (EXTENDED_DOXYGEN_DOCUMENTATION)
 endif()
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/flesnet-doc)
-doxygen_add_docs(doc-flesnet app/flesnet lib test
+doxygen_add_docs(doc-flesnet
+  app/flesnet
+  lib/logging
+  lib/shm_ipc
+  lib/fles_core
+  lib/fles_zeromq
+  lib/fles_ipc
+  lib/monitoring
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating documentation with doxygen \n\t(doxygen error \
 	\"FileDefImpl::insertMembers()...\" is expected)" )
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
-doxygen_add_docs(doc-mstool app/mstool lib test
+doxygen_add_docs(doc-mstool
+  app/mstool
+  lib/logging
+  lib/fles_core
+  lib/fles_ipc
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Generating documentation with doxygen \n\t(doxygen error \
   \"FileDefImpl::insertMembers()...\" is expected)" )
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsclient-doc)
-doxygen_add_docs(doc-tsclient app/tsclient lib test
+doxygen_add_docs(doc-tsclient
+  app/tsclient
+  lib/logging
+  lib/fles_core
+  lib/fles_ipc
+  lib/monitoring
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Generating documentation with doxygen \n\t(doxygen error \
   \"FileDefImpl::insertMembers()...\" is expected)" )
@@ -114,23 +130,72 @@ doxygen_add_docs(doc-msconsumer app/msconsumer lib test
   \"FileDefImpl::insertMembers()...\" is expected)")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_cfg-doc)
-doxygen_add_docs(doc-cri_cfg app/cri_cfg lib test
+doxygen_add_docs(doc-cri_cfg
+  app/cri_cfg
+  lib/cri
+  lib/fles_ipc/MicrosliceDescriptor.hpp
+  lib/pda
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Generating documentation with doxygen \n\t(doxygen error \
   \"FileDefImpl::insertMembers()...\" is expected)")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_server-doc)
-doxygen_add_docs(doc-cri_server app/cri_server lib test
+doxygen_add_docs(doc-cri_server
+  app/cri_server
+  lib/logging
+  lib/fles_ipc/MicrosliceDescriptor.hpp
+  lib/fles_ipc/Utility.hpp
+  lib/cri
+  lib/pda
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Generating documentation with doxygen \n\t(doxygen error \
   \"FileDefImpl::insertMembers()...\" is expected)" )
 
-set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc)
-doxygen_add_docs(doc-cri_tools app/cri_tools lib test
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_en_pgen-doc)
+doxygen_add_docs(doc-cri_en_pgen
+  app/cri_tools/cri_en_pgen.cpp
+  lib/cri
+  lib/pda
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Generating documentation with doxygen \n\t(doxygen error \
   \"FileDefImpl::insertMembers()...\" is expected)" )
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_info-doc)
+doxygen_add_docs(doc-cri_info
+  app/cri_tools/cri_info.cpp
+  lib/fles_ipc/MicrosliceDescriptor.hpp
+  lib/cri
+  lib/pda
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating cri_info documentation with doxygen")
   
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_status-doc)
+doxygen_add_docs(doc-cri_status
+  app/cri_tools/cri_status.cpp
+  lib/monitoring
+  lib/cri
+  lib/fles_ipc/System.hpp
+  lib/fles_ipc/MicrosliceDescriptor.hpp
+  lib/pda
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating cri_status documentation with doxygen")
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_test_rf-doc)
+doxygen_add_docs(doc-cri_test_rf
+  app/cri_tools/cri_test_rf.cpp
+  lib/fles_ipc/MicrosliceDescriptor.hpp
+  lib/cri
+  lib/pda
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating cri_test_rf documentation with doxygen")
+
+add_custom_target(doc-cri_tools
+  DEPENDS
+    doc-cri_info
+    doc-cri_en_pgen
+    doc-cri_status
+    doc-cri_test_rf)
+
 add_custom_target(doc
   DEPENDS
     doc-flesnet
