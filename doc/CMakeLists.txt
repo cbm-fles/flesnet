@@ -90,7 +90,53 @@ if (EXTENDED_DOXYGEN_DOCUMENTATION)
 endif()
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/flesnet-doc)
-doxygen_add_docs(doc app/flesnet lib test
+doxygen_add_docs(doc-flesnet app/flesnet lib test
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating documentation with doxygen \n\t(doxygen error \
 	\"FileDefImpl::insertMembers()...\" is expected)" )
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
+doxygen_add_docs(doc-mstool app/mstool lib test
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
+  \"FileDefImpl::insertMembers()...\" is expected)" )
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsclient-doc)
+doxygen_add_docs(doc-tsclient app/tsclient lib test
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
+  \"FileDefImpl::insertMembers()...\" is expected)" )
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/msconsumer-doc)
+doxygen_add_docs(doc-msconsumer app/msconsumer lib test
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
+  \"FileDefImpl::insertMembers()...\" is expected)")
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_cfg-doc)
+doxygen_add_docs(doc-cri_cfg app/cri_cfg lib test
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
+  \"FileDefImpl::insertMembers()...\" is expected)")
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_server-doc)
+doxygen_add_docs(doc-cri_server app/cri_server lib test
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
+  \"FileDefImpl::insertMembers()...\" is expected)" )
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc)
+doxygen_add_docs(doc-cri_tools app/cri_tools lib test
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
+  \"FileDefImpl::insertMembers()...\" is expected)" )
+  
+add_custom_target(doc
+  DEPENDS
+    doc-flesnet
+    doc-mstool
+    doc-msclient
+    doc-msconsumer
+    doc-cri_cfg
+    doc-cri_server
+    doc-cri_tools)
