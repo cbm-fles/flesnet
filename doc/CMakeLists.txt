@@ -99,8 +99,7 @@ doxygen_add_docs(doc-flesnet
   lib/fles_ipc
   lib/monitoring
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-	COMMENT "Generating documentation with doxygen \n\t(doxygen error \
-	\"FileDefImpl::insertMembers()...\" is expected)" )
+	COMMENT "Generating flesnet documentation with doxygen")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
 doxygen_add_docs(doc-mstool
@@ -109,8 +108,7 @@ doxygen_add_docs(doc-mstool
   lib/fles_core
   lib/fles_ipc
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
-  \"FileDefImpl::insertMembers()...\" is expected)" )
+  COMMENT "Generating documentation with doxygen")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsclient-doc)
 doxygen_add_docs(doc-tsclient
@@ -120,8 +118,7 @@ doxygen_add_docs(doc-tsclient
   lib/fles_ipc
   lib/monitoring
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
-  \"FileDefImpl::insertMembers()...\" is expected)" )
+  COMMENT "Generating documentation wit doxygen" )
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/msconsumer-doc)
 doxygen_add_docs(doc-msconsumer app/msconsumer lib test
@@ -136,8 +133,7 @@ doxygen_add_docs(doc-cri_cfg
   lib/fles_ipc/MicrosliceDescriptor.hpp
   lib/pda
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
-  \"FileDefImpl::insertMembers()...\" is expected)")
+  COMMENT "Generating documentation with doxygen")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_server-doc)
 doxygen_add_docs(doc-cri_server
@@ -148,8 +144,7 @@ doxygen_add_docs(doc-cri_server
   lib/cri
   lib/pda
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
-  \"FileDefImpl::insertMembers()...\" is expected)" )
+  COMMENT "Generating documentation with doxygen" )
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_en_pgen-doc)
 doxygen_add_docs(doc-cri_en_pgen
@@ -157,8 +152,7 @@ doxygen_add_docs(doc-cri_en_pgen
   lib/cri
   lib/pda
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
-  \"FileDefImpl::insertMembers()...\" is expected)" )
+  COMMENT "Generating cri_en_pgen documentation with doxygen")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_info-doc)
 doxygen_add_docs(doc-cri_info
