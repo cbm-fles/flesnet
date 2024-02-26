@@ -89,6 +89,7 @@ if (EXTENDED_DOXYGEN_DOCUMENTATION)
   set(DOXYGEN_DOT_GRAPH_MAX_NODES 100)
 endif()
 
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/flesnet-doc)
 doxygen_add_docs(doc app/flesnet lib test
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating documentation with doxygen \n\t(doxygen error \
