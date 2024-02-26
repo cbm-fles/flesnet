@@ -89,6 +89,11 @@ if (EXTENDED_DOXYGEN_DOCUMENTATION)
   set(DOXYGEN_DOT_GRAPH_MAX_NODES 100)
 endif()
 
+set(DOXYGEN_PREDEFINED
+   "HAVE_RDMA \
+   HAVE_LIBFABRIC")
+
+
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/flesnet-doc)
 doxygen_add_docs(doc-flesnet
   app/flesnet
@@ -96,6 +101,8 @@ doxygen_add_docs(doc-flesnet
   lib/shm_ipc
   lib/fles_core
   lib/fles_zeromq
+  lib/fles_rdma
+  lib/fles_libfabric
   lib/fles_ipc
   lib/monitoring
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
