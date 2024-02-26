@@ -194,7 +194,7 @@ add_custom_target(doc
   DEPENDS
     doc-flesnet
     doc-mstool
-    doc-msclient
+    doc-tsclient
     doc-msconsumer
     doc-cri_cfg
     doc-cri_server
