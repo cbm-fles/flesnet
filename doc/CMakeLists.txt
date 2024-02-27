@@ -89,10 +89,11 @@ if (EXTENDED_DOXYGEN_DOCUMENTATION)
   set(DOXYGEN_DOT_GRAPH_MAX_NODES 100)
 endif()
 
-set(DOXYGEN_PREDEFINED
-   "HAVE_RDMA \
-   HAVE_LIBFABRIC")
-
+set(DOXYGEN_PREDEFINED "")
+# Note that the escaped quotes are necessary. Doxygen expects the macro
+# definitions to be a list of quoted strings.
+string(APPEND DOXYGEN_PREDEFINED "\"HAVE_LIBFABRIC=1\"")
+string(APPEND DOXYGEN_PREDEFINED " \"HAVE_RDMA=1\"")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/flesnet-doc)
 doxygen_add_docs(doc-flesnet
