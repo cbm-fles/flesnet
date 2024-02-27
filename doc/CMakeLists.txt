@@ -126,11 +126,11 @@ doxygen_add_docs(doc-tsclient
   lib/monitoring
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Generating documentation wit doxygen" )
-
+  
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/msconsumer-doc)
 doxygen_add_docs(doc-msconsumer app/msconsumer lib test
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen \n\t(doxygen error \
+  COMMENT "Generating documentation with doxygen (doxygen error \
   \"FileDefImpl::insertMembers()...\" is expected)")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_cfg-doc)
