@@ -89,6 +89,9 @@ if (EXTENDED_DOXYGEN_DOCUMENTATION)
   set(DOXYGEN_DOT_GRAPH_MAX_NODES 100)
 endif()
 
+# In order to include documentation for code guarded by preprocessor
+# macros passed by cmake to the compiler, we must instruct doxygen
+# to define these macros as well.
 set(DOXYGEN_PREDEFINED "")
 # Note that the escaped quotes are necessary. Doxygen expects the macro
 # definitions to be a list of quoted strings.
