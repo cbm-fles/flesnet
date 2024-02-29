@@ -1,12 +1,12 @@
 # Prerequisites
-For these examples you will need the `mstool`, `flesnet` and `tsclient` binaries.
+For these examples, you will need the `mstool`, `flesnet` and `tsclient` binaries.
 
 # Most simple example
 What we are going to do in this example:
-1. In this example we will create a microslice archive (`*.msa`) with 10000 microslices in it, using the `mstool`.
-2. Then we will use the `mstool` to manage a shared memory region and put the data of the microslice archive into this shared memory region.
+1. In this example, we will create a microslice archive (`*.msa`) with 10000 microslices in it using the `mstool`.
+2. Then, we will use the `mstool` to manage a shared memory region and put the data of the microslice archive into this shared memory region.
 3. `flesnet` will then be able to connect to this shared memory region to load the microslices and build timeslices out of them.
-5. `flesnet` will put the built timeslices in another shared memory region, from which the `tsclient` will take them and put them into a timeslice archive file (`*.tsa`). Using specific flags ensures that it will automatically stop, after building 15 timeslices.
+5. `flesnet` will put the built timeslices in another shared memory region, from which the `tsclient` will take them and put them into a timeslice archive file (`*.tsa`). Using specific flags ensures that it will automatically stop after building 15 timeslices.
 
 ## Creating the microslice archive
 
@@ -17,12 +17,12 @@ To create a microslice archive run:
 ```
 
 - `-n`: Amount of microslices to generate.
-- `-p`: Use internal pattern generator as source. Argument value currently unused.
+- `-p`: Use internal pattern generator as source. The argument value is currently unused.
 - `-o`: Name of the output file.
 
 ## Starting flesnet
 
-First we will use the `mstool` again, to provide microslices using a named shared memory region and our previously generated microslice archive. Open a terminal and run:
+First, we will use the `mstool` again to provide microslices using a named shared memory region, and our previously generated microslice archive. Open a terminal and run:
 ```
 ./mstool --input-archive ./ms_archive.msa --output-shm fles_in_shared_memory
 ```
@@ -39,20 +39,20 @@ With our shared memory microslice input source ready, we can start FLESnet. In t
 ./flesnet -t zeromq -i 0 -I shm:/fles_in_shared_memory/0 -o 0 -O shm:fles_out_shared_memory/0 --timeslice-size 20 --processor-instances 1 -e "./tsclient -i shm:%s -o file:timeslice_archive.tsa -n 15"
 ```
 
-- `-t`: We are using the ZeroMQ transport layer to exchange information between entry and build nodes. This makes more sense, when we use seperate FLESnet instance for entry and build nodes. Here this one binary start will do the work of both.
-- `-i`: The input index of this `flesnet` instance. Example: When `-i` is set to 2, this entry node will read from the 3rd (indexing starts at 0) input source, defined with the `-I` flag. Again, this makes more sense, when having seperate entry and build nodes.
+- `-t`: We are using the ZeroMQ transport layer to exchange information between entry and build nodes. This makes more sense when we use seperate FLESnet instances for entry and build nodes. Here, this singke process will do the work of both.
+- `-i`: The input index of this `flesnet` instance. Example: When `-i` is set to 2, this entry node will read from the 3rd (indexing starts at 0) input source, defined with the `-I` flag. Again, this makes more sense when having seperate entry and build nodes.
 - `I`: List of input sources. See use of `-i` flag.
 - `-o`: Output index. Simililar to the `-i` flag, but refers to the output sink of this FLESnet instance. Example: When `-o` is set to 1, this build node will write the built timeslices into the 2nd (indexing starts at 0) output sink, defined with the `-O` flag. Again, this makes more sense, when having seperate entry and build nodes. 
 - `-O`: List of output sinks. See use of `-o` flag.
-- `--timeslice-size`: Defines how many microslices will make up one timeslice (Does not include overlap. Overlap concept will be explained within a dedicated section).
+- `--timeslice-size`: Defines how many microslices will make up one timeslice (This does not include overlap. The overlap concept will be explained within a dedicated section).
 - `--processor-instances`: The amount of `-e` executions.
 - `-e`: Defines the start of the `tsclient` binary. The `tsclient` arguments are:
-	- `-i` The source from which the `tsclient` will collect the built timeslices. Here a template parameter is used `%s`. This will be replaced with the respective name of the shared memory, defined in the `-O` list of this `flesnet`  instance; in this case `%s` will be replaced with `flesnet_out_shared_memory`.
+	- `-i` The source from which the `tsclient` will collect the built timeslices. Here, a template parameter (`%s`) is used. This will be replaced with the respective name of the shared memory, defined in the `-O` list of this `flesnet`  instance; in this case `%s` will be replaced with `flesnet_out_shared_memory`.
 	-  `-o`: Output path of the generated timeslice archive file.
 	-  `-n`: After this amount of build timeslices, the `tsclient` will stop processing timeslices.
 
 Open a terminal and run the shown command.
-When running this command, the output will look like:
+When running this command, the output will look similar to the following:
 ```
 ./flesnet -t zeromq -i 0 -I shm:/fles_in_shared_memory/0 -o 0 -O shm:fles_out_shared_memory/0 --timeslice-size 20 --processor-instances 1 -e "./tsclient -i shm:%s -o file:timeslice_archive.tsa -n 15" 
 [16:04:34] INFO: this is input 0 (of 1)
@@ -84,7 +84,6 @@ TimesliceReceiver: opened shared memory fles_out_shared_memory {5c97dff0-3cb1-44
 [16:04:41] INFO: exiting
 ```
 
-Notice the line `[16:04:34] INFO: total timeslices processed: 15
-`. When the specified amount of timeslices is processed, you can cancel the `flesnet` execution with `Ctrl+C`.
+Notice the line `[16:04:34] INFO: total timeslices processed: 15`. When the specified amount of timeslices is processed, you can cancel the `flesnet` execution with `Ctrl+C`.
 
-You will now have a `timeslice_archive.tsa` which contains 15 timeslices with a sice of  20 microslices each.
+You will now have a `timeslice_archive.tsa` file, which contains 15 timeslices with a size of 20 microslices each.
