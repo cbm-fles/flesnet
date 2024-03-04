@@ -88,19 +88,10 @@ Application::~Application() {
 void Application::run() {
   uint64_t limit = par_.maximum_number;
 
-  if (!par_.analyze_tsa_.empty()) {
-    Verificator val;
-    uint64_t lowest_idx = val.find_lowest_ms_index_in_ts_archive(par_.analyze_tsa_, 0x0);
-    std::cout << "lowest_idx: " << lowest_idx << std::endl;
-    uint64_t highest_idx = val.find_highest_ms_index_in_ts_archive(par_.analyze_tsa_, 0x0);
-    std::cout << "highest_idx: " << highest_idx << std::endl;
-    return;
-  }
-
   if (par_.validate_) {
     Verificator val;
-    bool valid = val.verify(par_.input_archives_, par_.output_archives_, 100, 2);
-    std::cout << "valid: " << valid << std::endl;
+    bool valid = val.verify(par_.input_archives_, par_.output_archives_, par_.timeslice_size, par_.timeslice_cnt, par_.overlap);
+    L_(info) << "Archive " << ((valid) ? "valid" : "NOT valid") << std::endl;
     return;
   }
 
