@@ -7,7 +7,9 @@
 #include "Sink.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/binary_oarchive.hpp>
-#include <boost/iostreams/filter/zstd.hpp>
+#ifdef BOOST_IOS_HAS_ZSTD
+  #include <boost/iostreams/filter/zstd.hpp>
+#endif
 #include <boost/iostreams/filtering_stream.hpp>
 #include <cstdint>
 #include <fstream>
@@ -129,6 +131,7 @@ private:
     *oarchive_ << descriptor_;
 
     if (descriptor_.archive_compression() != ArchiveCompression::None) {
+#ifdef BOOST_IOS_HAS_ZSTD
       out_ = std::make_unique<boost::iostreams::filtering_ostream>();
       if (descriptor_.archive_compression() == ArchiveCompression::Zstd) {
         out_->push(boost::iostreams::zstd_compressor(
@@ -141,6 +144,11 @@ private:
       out_->push(*ofstream_);
       oarchive_ = std::make_unique<boost::archive::binary_oarchive>(
           *out_, boost::archive::no_header);
+#else
+      throw std::runtime_error(
+          "Unsupported compression type for output archive file \"" +
+          filename(file_count_) + "\"");
+#endif
     }
 
     ++file_count_;
