@@ -42,6 +42,15 @@ void Parameters::parse_options(int argc, char* argv[]) {
               "set the maximum number of microslices to process (default: "
               "unlimited)");
 
+  po::options_description archive_validation("Archive validation options");
+  auto validation_add = archive_validation.add_options();
+  validation_add("timeslice-size", po::value<uint64_t>(&timeslice_size),
+              "Used for archive validation. Set the exepected timeslice size.");
+  validation_add("timeslice-cnt", po::value<uint64_t>(&timeslice_cnt),
+              "Used for archive validation. Amount of expected timeslices in the timeslice archive.");
+  validation_add("overlap", po::value<uint64_t>(&overlap)->default_value(overlap),
+              "Used for archive validation. Timeslice overlap size.");
+
   po::options_description source("Source options");
   auto source_add = source.add_options();
   source_add("pattern-generator,p", po::value<uint32_t>(&pattern_generator),
@@ -52,10 +61,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "name of an input file archive to read");
   source_add("input-archives", po::value<std::vector<std::string>>(&input_archives_)->multitoken(),
             "paths to the input archives to use for validation");
-  source_add("analyze-tsa", po::value<std::string>(&analyze_tsa_),
-            "path to timeslice archive file (*.tsa) to analyze");
-  source_add("analyze-msa", po::value<std::string>(&analyze_msa_),
-            "path to microslice archive file (*.msa) to analyze");
 
   po::options_description sink("Sink options");
   auto sink_add = sink.add_options();
@@ -69,7 +74,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
             "paths to the output archives to use for validation");
 
   po::options_description desc;
-  desc.add(general).add(source).add(sink);
+  desc.add(general).add(source).add(sink).add(archive_validation);
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
