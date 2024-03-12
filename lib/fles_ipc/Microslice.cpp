@@ -45,6 +45,11 @@ bool Microslice::operator!=(const Microslice& other) const {
   return !(*this == other);
 }
 
+std::ostream& operator<<(std::ostream& out, const Microslice& ms) {
+  out << "DESCRIPTOR: " << std::endl;
+  out << ms.desc() << std::endl;
+  return out;
+}
 } // namespace fles
 
 
