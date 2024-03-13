@@ -41,7 +41,7 @@ Application::Application(Parameters const& par) : par_(par) {
 
     data_source_ = std::make_unique<FlesnetPatternGenerator>(
         data_buffer_size_exp, desc_buffer_size_exp, par_.channel_idx,
-        typical_content_size, true, false);
+        typical_content_size, true, true);
   }
 
   if (data_source_) {
