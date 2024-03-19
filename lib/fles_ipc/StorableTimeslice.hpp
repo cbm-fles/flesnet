@@ -8,7 +8,6 @@
 #include "Timeslice.hpp"
 #include <algorithm>
 #include <cstdint>
-#include <fstream>
 #include <vector>
 
 #include <boost/serialization/access.hpp>
@@ -25,9 +24,11 @@ template <class Base, class Derived, ArchiveType archive_type>
 class InputArchiveLoop;
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchiveSequence;
+template <class Base, class Derived> class Subscriber;
 
 /**
- * \brief The StorableTimeslice class contains the data of a single timeslice.
+ * \brief The StorableTimeslice class contains the data of a single
+ * timeslice.
  */
 class StorableTimeslice : public Timeslice {
 public:
@@ -125,7 +126,7 @@ private:
   friend class InputArchiveSequence<Timeslice,
                                     StorableTimeslice,
                                     ArchiveType::TimesliceArchive>;
-  friend class TimesliceSubscriber;
+  friend class Subscriber<Timeslice, StorableTimeslice>;
 
   StorableTimeslice();
 
