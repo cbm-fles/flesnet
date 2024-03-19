@@ -3,9 +3,27 @@
 /// \brief Defines the fles::TimesliceAutoSource class type.
 #pragma once
 
-#include "TimesliceSource.hpp"
+#include "ArchiveDescriptor.hpp"
+#include "InputArchive.hpp"
+#include "InputArchiveLoop.hpp"
+#include "InputArchiveSequence.hpp"
+#include "ItemWorkerProtocol.hpp"
+#include "MergingSource.hpp"
+#include "Source.hpp"
+#include "StorableTimeslice.hpp"
+#include "System.hpp"
+#include "TimesliceReceiver.hpp"
+#include "TimesliceSubscriber.hpp"
+#include "TimesliceView.hpp"
+#include "Utility.hpp"
+
+#include <memory>
+#include <string>
 
 namespace fles {
+
+class Timeslice;
+class StorableTimeslice;
 
 /**
  * \brief The TimesliceAutoSource base class implements the generic
@@ -67,30 +85,34 @@ namespace fles {
  * 7. A single TimesliceInputArchiveSequence
 
  */
-class TimesliceAutoSource : public TimesliceSource {
+template <class Base, class Storable, class View, ArchiveType archive_type>
+class AutoSource : public Source<Base> {
 public:
   /**
-   * \brief Construct a TimesliceAutoSource object and initialize the
+   * \brief Construct an AutoSource object and initialize the
    * actual source class(es).
    *
    * \param locator The address of the input source(s) to read data from as a
    * string. Semicolon (";") characters in the string are treated as separators.
    */
-  TimesliceAutoSource(const std::string& locator);
+  AutoSource(const std::string& locator) {
+    // As a first step, treat ";" characters in the locator string as separators
+    init(split(locator, ";"));
+  }
 
   /**
-   * \brief Construct a TimesliceAutoSource object and initialize the
+   * \brief Construct an AutoSource object and initialize the
    * actual source class(es).
    *
    * \param locators The address(es) of the input source(s) to read data from as
    * a vector of strings. No special treatment of the semicolon (";") character.
    */
-  TimesliceAutoSource(const std::vector<std::string>& locators);
+  AutoSource(const std::vector<std::string>& locators) { init(locators); }
 
   /// Delete copy constructor (non-copyable).
-  TimesliceAutoSource(const TimesliceAutoSource&) = delete;
+  AutoSource(const AutoSource&) = delete;
   /// Delete assignment operator (non-copyable).
-  void operator=(const TimesliceAutoSource&) = delete;
+  void operator=(const AutoSource&) = delete;
 
   /**
    * \brief Return the end-of-stream state of the source.
@@ -100,14 +122,131 @@ public:
    */
   [[nodiscard]] bool eos() const override { return source_->eos(); }
 
-  ~TimesliceAutoSource() override = default;
+  ~AutoSource() override = default;
 
 private:
-  std::unique_ptr<TimesliceSource> source_;
+  using TInputArchive = InputArchive<Base, Storable, archive_type>;
+  using TInputArchiveLoop = InputArchiveLoop<Base, Storable, archive_type>;
+  using TInputArchiveSequence =
+      InputArchiveSequence<Base, Storable, archive_type>;
 
-  void init(const std::vector<std::string>& locators);
+  std::unique_ptr<Source<Base>> source_;
 
-  Timeslice* do_get() override { return source_->get().release(); }
+  void init(const std::vector<std::string>& locators) {
+    std::vector<std::unique_ptr<Source<Base>>> sources;
+
+    for (const auto& locator : locators) {
+      // If locator has no full URI pattern, everything is in "uri.path"
+      UriComponents uri{locator};
+
+      if (uri.scheme == "file" || uri.scheme.empty()) {
+        uint64_t cycles = 1;
+        for (auto& [key, value] : uri.query_components) {
+          if (key == "cycles") {
+            cycles = stoull(value);
+          } else {
+            throw std::runtime_error(
+                "query parameter not implemented for scheme file: " + key);
+          }
+        }
+        const auto file_path = uri.authority + uri.path;
+
+        // Find pathnames matching a pattern.
+        //
+        // The sequence number placeholder "%n" is expanded to the first valid
+        // value of "0000" before glob'ing and replaced back afterwards. This
+        // will not work if the pathname contains both the placeholder and the
+        // string "0000". Nonexistant files are caught already at this stage by
+        // glob() throwing a runtime_error.
+        auto paths = system::glob(replace_all_copy(file_path, "%n", "0000"));
+        if (file_path.find("%n") != std::string::npos) {
+          for (auto& path : paths) {
+            replace_all(path, "0000", "%n");
+            std::unique_ptr<Source<Base>> source =
+                std::make_unique<TInputArchiveSequence>(path);
+            sources.emplace_back(std::move(source));
+          }
+        } else {
+          if (paths.size() == 1) {
+            if (cycles == 1) {
+              std::unique_ptr<Source<Base>> source =
+                  std::make_unique<TInputArchive>(paths.front());
+              sources.emplace_back(std::move(source));
+            } else {
+              std::unique_ptr<Source<Base>> source =
+                  std::make_unique<TInputArchiveLoop>(paths.front(), cycles);
+              sources.emplace_back(std::move(source));
+            }
+          } else if (paths.size() > 1) {
+            std::unique_ptr<Source<Base>> source =
+                std::make_unique<TInputArchiveSequence>(paths);
+            sources.emplace_back(std::move(source));
+          }
+        }
+
+      } else if (uri.scheme == "tcp") {
+        uint32_t hwm = 1;
+        for (auto& [key, value] : uri.query_components) {
+          if (key == "hwm") {
+            hwm = stou(value);
+          } else {
+            throw std::runtime_error(
+                "query parameter not implemented for scheme " + uri.scheme +
+                ": " + key);
+          }
+        }
+        const auto address = uri.scheme + "://" + uri.authority;
+        std::unique_ptr<Source<Base>> source =
+            std::make_unique<Subscriber<Base, Storable>>(address, hwm);
+        sources.emplace_back(std::move(source));
+
+      } else if (uri.scheme == "shm") {
+        WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll, 0,
+                               "AutoSource at PID " +
+                                   std::to_string(system::current_pid())};
+        for (auto& [key, value] : uri.query_components) {
+          if (key == "stride") {
+            param.stride = std::stoull(value);
+          } else if (key == "offset") {
+            param.offset = std::stoull(value);
+          } else if (key == "queue") {
+            static const std::map<std::string, WorkerQueuePolicy> queue_map = {
+                {"all", WorkerQueuePolicy::QueueAll},
+                {"one", WorkerQueuePolicy::PrebufferOne},
+                {"skip", WorkerQueuePolicy::Skip}};
+            param.queue_policy = queue_map.at(value);
+          } else if (key == "group") {
+            param.group_id = std::stoull(value);
+          } else {
+            throw std::runtime_error(
+                "query parameter not implemented for scheme " + uri.scheme +
+                ": " + key);
+          }
+        }
+        const auto ipc_identifier = uri.authority + uri.path;
+        std::unique_ptr<Source<Base>> source =
+            std::make_unique<Receiver<Base, View>>(ipc_identifier, param);
+        sources.emplace_back(std::move(source));
+
+      } else {
+        throw std::runtime_error("scheme not implemented: " + uri.scheme);
+      }
+    }
+
+    if (sources.size() == 1) {
+      source_ = std::move(sources.front());
+    } else if (sources.size() > 1) {
+      source_ =
+          std::make_unique<MergingSource<Source<Base>>>(std::move(sources));
+    }
+  }
+
+  Base* do_get() override { return source_->get().release(); }
 };
+
+using TimesliceAutoSource = AutoSource<Timeslice,
+                                       StorableTimeslice,
+                                       TimesliceView,
+                                       ArchiveType::TimesliceArchive>;
 
 } // namespace fles
