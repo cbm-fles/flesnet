@@ -1,12 +1,15 @@
 // Copyright 2012-2013, 2016 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2024 Florian Schintke <schintke@zib.de>
 
 #include "ComponentSenderZeromq.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "RingBufferView.hpp"
 #include "System.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include <algorithm>
 #include <iomanip>
+#include <sstream>
 
 ComponentSenderZeromq::ComponentSenderZeromq(
     uint64_t input_index,

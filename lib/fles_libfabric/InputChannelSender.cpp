@@ -1,7 +1,16 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 // Copyright 2016 Thorsten Schuett <schuett@zib.de>, Farouk Salem <salem@zib.de>
+// Copyright 2024 Florian Schintke <schintke@zib.de>
 
 #include "InputChannelSender.hpp"
+#include "ConstVariables.hpp"                          // for ConstVariables
+
+#include <algorithm>                                   // for min
+#include <cstring>                                     // for strerror, size_t
+#include <sstream>
+#include <sys/errno.h>                                 // for errno
+#include <sys/uio.h>                                   // for iovec
+#include <utility>                                     // for move
 
 namespace tl_libfabric {
 InputChannelSender::InputChannelSender(
@@ -32,11 +41,7 @@ InputChannelSender::InputChannelSender(
       data_source_.desc_buffer().size() / timeslice_size_ + 1;
   ack_.alloc_with_size(min_ack_buffer_size);
 
-  if (Provider::getInst()->is_connection_oriented()) {
-    connection_oriented_ = true;
-  } else {
-    connection_oriented_ = false;
-  }
+  connection_oriented_ = Provider::getInst()->is_connection_oriented();
 
   InputSchedulerOrchestrator::initialize(
       input_index, compute_hostnames.size(),
@@ -126,7 +131,7 @@ void InputChannelSender::report_status() {
   previous_send_buffer_status_desc_ = status_desc;
   previous_send_buffer_status_data_ = status_data;
 
-  scheduler_.add(std::bind(&InputChannelSender::report_status, this),
+  scheduler_.add([this] { report_status(); },
                  now + interval);
 }
 
@@ -139,7 +144,7 @@ void InputChannelSender::sync_data_source(bool schedule) {
 
   if (schedule) {
     auto now = std::chrono::system_clock::now();
-    scheduler_.add(std::bind(&InputChannelSender::sync_data_source, this, true),
+    scheduler_.add([this] { sync_data_source(true); },
                    now + std::chrono::milliseconds(100));
   }
 }
@@ -166,7 +171,7 @@ void InputChannelSender::sync_heartbeat() {
     }
   }
   // TODO 1 second?
-  scheduler_.add(std::bind(&InputChannelSender::sync_heartbeat, this),
+  scheduler_.add([this] { sync_heartbeat(); },
                  std::chrono::system_clock::now() + std::chrono::seconds(1));
 }
 
@@ -189,11 +194,12 @@ void InputChannelSender::send_timeslices() {
   } while (conn_index != (input_index_ % conn_.size()));
 
   if (InputSchedulerOrchestrator::get_sent_timeslices() <=
-      max_timeslice_number_)
-    scheduler_.add(std::bind(&InputChannelSender::send_timeslices, this),
+      max_timeslice_number_) {
+    scheduler_.add([this] { send_timeslices(); },
                    std::chrono::system_clock::now() +
                        std::chrono::microseconds(
                            InputSchedulerOrchestrator::get_next_fire_time()));
+  }
 }
 
 void InputChannelSender::bootstrap_with_connections() {
@@ -254,8 +260,8 @@ void InputChannelSender::operator()() {
     time_begin_ = std::chrono::high_resolution_clock::now();
     InputSchedulerOrchestrator::update_input_begin_time(time_begin_);
 
-    for (uint32_t indx = 0; indx < conn_.size(); indx++) {
-      conn_[indx]->set_time_MPI(time_begin_);
+    for (const auto & indx : conn_) {
+      indx->set_time_MPI(time_begin_);
     }
 
     sync_buffer_positions();
@@ -460,8 +466,7 @@ void InputChannelSender::on_connected(struct fid_domain* pd) {
 void InputChannelSender::on_rejected(struct fi_eq_err_entry* event) {
   L_(debug) << "InputChannelSender:on_rejected";
 
-  InputChannelConnection* conn =
-      static_cast<InputChannelConnection*>(event->fid->context);
+  auto* conn = static_cast<InputChannelConnection*>(event->fid->context);
 
   conn->on_rejected(event);
   uint_fast16_t i = conn->index();
@@ -481,15 +486,17 @@ std::string InputChannelSender::get_state_string() {
 
   s << "/--- desc buf ---" << std::endl;
   s << "|";
-  for (unsigned int i = 0; i < data_source_.desc_buffer().size(); ++i)
+  for (unsigned int i = 0; i < data_source_.desc_buffer().size(); ++i) {
     s << " (" << i << ")" << data_source_.desc_buffer().at(i).offset;
+  }
   s << std::endl;
   s << "| acked_desc_ = " << acked_desc_ << std::endl;
   s << "/--- data buf ---" << std::endl;
   s << "|";
-  for (unsigned int i = 0; i < data_source_.data_buffer().size(); ++i)
+  for (unsigned int i = 0; i < data_source_.data_buffer().size(); ++i) {
     s << " (" << i << ")" << std::hex << data_source_.data_buffer().at(i)
       << std::dec;
+  }
   s << std::endl;
   s << "| acked_data_ = " << acked_data_ << std::endl;
   s << "\\---------";
@@ -559,7 +566,7 @@ bool InputChannelSender::post_send_data(uint64_t timeslice,
     descs[num_sge++] = fi_mr_desc(mr_data_);
   }
 
-  return conn_[cn]->send_data(sge, descs, num_sge, timeslice, desc_length,
+  return conn_[cn]->send_data(static_cast<struct iovec*>(sge), static_cast<void **>(descs), num_sge, timeslice, desc_length,
                               data_length, skip);
 }
 
@@ -592,7 +599,7 @@ void InputChannelSender::on_completion(uint64_t wr_id) {
     update_data_source(cn, last_desc, new_desc);
     InputSchedulerOrchestrator::mark_timeslices_acked(cn, new_desc);
 
-    if (!connection_oriented_ && !conn_[cn]->get_partner_addr()) {
+    if (!connection_oriented_ && (0u == conn_[cn]->get_partner_addr())) {
       conn_[cn]->set_partner_addr(av_);
       conn_[cn]->set_remote_info();
       on_connected(pd_);
@@ -708,15 +715,15 @@ void InputChannelSender::update_data_source(uint32_t compute_index,
   }
 }
 
-void InputChannelSender::mark_connection_completed(uint32_t cn) {
-  conn_[cn]->mark_done();
+void InputChannelSender::mark_connection_completed(uint32_t conn_id) {
+  conn_[conn_id]->mark_done();
   ++connections_done_;
   all_done_ = (connections_done_ == conn_.size());
   if (!connection_oriented_) {
-    on_disconnected(nullptr, cn);
+    on_disconnected(nullptr, conn_id);
   }
   L_(warning) << "[i" << input_index_ << "] "
-              << "ID_RECEIVE_STATUS final for id " << cn
+              << "ID_RECEIVE_STATUS final for id " << conn_id
               << " all_done=" << all_done_ << " done " << connections_done_;
 }
 } // namespace tl_libfabric
