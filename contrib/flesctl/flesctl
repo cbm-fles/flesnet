@@ -381,7 +381,7 @@ def run_info(par_run_id = None):
   duration = None
 
   # this order of checks is needed to prevent a race condition
-  # when a run is stoped and ends during this call
+  # when a run is stopped and ends during this call
   if current_run_id() == info_run_id:
     nodelist = current_nodelist()
     if stoptime is not None:
@@ -396,6 +396,14 @@ def run_info(par_run_id = None):
       duration = datetime.timedelta(seconds=(stoptime - starttime))
     else:
       status = "ended unexpectedly"
+
+  # retrieve additional information from run config
+  components = None
+  flesnet_conf = os.path.join(rundir_base, str(info_run_id), "flesnet.cfg")
+  if os.path.isfile(flesnet_conf):
+    output = subprocess.check_output(["grep", "-c", "^input =", flesnet_conf],
+                                     universal_newlines=True)
+    components = output.rstrip()
 
   # assemble output
   try:
@@ -427,6 +435,8 @@ def run_info(par_run_id = None):
     if nodelist is not None:
       t.add_row("Slurm nodelist:", nodelist)
   t.add_row("Configuration:", tag)
+  if components is not None:
+    t.add_row("Components:", components)
   t.add_row("Started:", start_str)
   if stoptime is not None:
     t.add_row("Stopped:", stop_str)
