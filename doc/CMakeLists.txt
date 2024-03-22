@@ -131,6 +131,14 @@ doxygen_add_docs(doc-flesnet
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating flesnet documentation with doxygen")
 
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsa2msa-doc)
+doxygen_add_docs(doc-tsa2msa
+	app/tsa2msa
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	COMMENT "Generating tsa2msa documentation with doxygen"
+)
+
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
 doxygen_add_docs(doc-mstool
   ${MARKDOWN_DOCS_FOR_DOXYGEN}
@@ -235,6 +243,7 @@ add_custom_target(doc
     doc-mstool
     doc-tsclient
     doc-msconsumer
+	doc-tsa2msa
     doc-cri_cfg
     doc-cri_server
     doc-cri_tools)
