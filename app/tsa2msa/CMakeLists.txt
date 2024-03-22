@@ -16,7 +16,7 @@ target_link_libraries(tsa2msa
 )
 
 # Ensure warnings are enabled and standard is set:
-target_compile_options(tsa2msa PRIVATE -Wall -Wextra -pedantic -std=c++11)
+target_compile_options(tsa2msa PRIVATE -Wall -Wextra -pedantic -std=c++17)
 
 # Ensure we have -Werror in the build:
 target_compile_options(tsa2msa PRIVATE -Werror)
