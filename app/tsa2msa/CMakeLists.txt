@@ -21,21 +21,10 @@ target_compile_options(tsa2msa PRIVATE -Wall -Wextra -pedantic -std=c++17)
 # Ensure we have -Werror in the build:
 target_compile_options(tsa2msa PRIVATE -Werror)
 
-enable_testing()
-include(CTest)
-
-# Print ${CMAKE_CURRENT_SOURCE_DIR} for debugging
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 
-find_program(BASH_PROGRAM bash)
-if(NOT BASH_PROGRAM)
-	# non-fatal error
-	message(WARNING "bash not found, tsa2msa system tests will not be run")
-else()
-	add_test(
-		NAME		tsa2msaSystemTest
-		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/tests/tsa2msaSystemTest.sh
-	)
-endif()
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
 install(TARGETS tsa2msa DESTINATION bin)
+
 

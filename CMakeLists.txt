@@ -245,6 +245,10 @@ add_subdirectory(app/mstool)
 add_subdirectory(app/msconsumer)
 add_subdirectory(app/tsclient)
 add_subdirectory(app/flesnet)
+
+# enable testing must be called before the first add_subdirectory that
+# contains tests
+enable_testing()
 add_subdirectory(app/tsa2msa)
 if (USE_PDA AND PDA_FOUND)
   add_subdirectory(app/cri_tools)
@@ -265,7 +269,6 @@ if (COVERALLS)
   coveralls_setup("${LIB_SRC}" ${COVERALLS_UPLOAD})
 endif()
 
-enable_testing()
 add_subdirectory(test)
 
 if (UNIX)
