@@ -12,6 +12,7 @@
 
 // Project header files:
 #include "GitRevision.hpp"
+#include "msaWriter.hpp"
 
 /**
  * @file main.cpp
@@ -25,7 +26,6 @@
  * files to `.msa` files. Its primary purpose is to facilitate the
  * creation of golden tests for the FLESnet application by converting
  * output data from past runs that processed real experimental data.
- *
  */
 
 /**
@@ -67,7 +67,8 @@ auto main(int argc, char* argv[]) -> int {
   //
   // Note: Use alphabetical order for the switches to make it easier to
   // maintain the code.
-  unsigned int nBooleanSwitches = 4;
+  unsigned int nBooleanSwitches =
+      4 + msaWriterNumberOfExclusiveBooleanSwitches();
   bool beQuiet = false;
   bool beVerbose = false;
   bool showHelp = false;
@@ -82,6 +83,11 @@ auto main(int argc, char* argv[]) -> int {
                                "produce help message")(
       "version,V", boost::program_options::bool_switch(&showVersion),
       "produce version message");
+
+  msaWriterOptions msaWriterOptions = defaultMsaWriterOptions();
+  boost::program_options::options_description msaWriterOptionsDescription =
+      getMsaWriterOptionsDescription(msaWriterOptions, /* hidden = */ false);
+  generic.add(msaWriterOptionsDescription);
 
   boost::program_options::options_description hidden("Hidden options");
   hidden.add_options()

@@ -4,6 +4,10 @@
 list(APPEND SOURCES "${CMAKE_BINARY_DIR}/config/GitRevision.cpp")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/config/GitRevision.hpp")
 
+
+list(APPEND SOURCES msaWriter.cpp)
+list(APPEND HEADERS msaWriter.hpp)
+
 add_executable(tsa2msa main.cpp ${SOURCES} ${HEADERS})
 
 target_include_directories(tsa2msa

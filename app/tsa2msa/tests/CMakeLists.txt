@@ -23,6 +23,14 @@ else()
 		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/smokeTestNoInput.sh
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
+	# Create dir ${CMAKE_BINARY_DIR}/test/reference
+	file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/test/reference)
+	# copy ${CMAKE_PROJECT_SOURCE_DIR}/test/reference/example1.tsa
+	#to ${CMAKE_BINARY_DIR}/test/reference/example1.tsa
+	configure_file(
+		${PROJECT_SOURCE_DIR}/test/reference/example1.tsa
+		${CMAKE_BINARY_DIR}/test/reference/example1.tsa 
+		COPYONLY)
 	add_test(
 		NAME		smokeTestOnlyReadArchive
 		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/smokeTestOnlyReadArchive.sh
