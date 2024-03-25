@@ -13,6 +13,7 @@
 // Project header files:
 #include "GitRevision.hpp"
 #include "msaWriter.hpp"
+#include "tsaReader.hpp"
 
 /**
  * @file main.cpp
@@ -215,6 +216,10 @@ auto main(int argc, char* argv[]) -> int {
     std::cout << "  Project version: " << g_PROJECT_VERSION_GIT << std::endl;
     std::cout << "  Git revision: " << g_GIT_REVISION << std::endl;
   }
+
+  [[maybe_unused]] tsaReader reader;
+
+
 
   return EXIT_SUCCESS;
 }
