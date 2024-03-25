@@ -1,22 +1,54 @@
 #!/bin/bash
 
-set -e
+(
+	# create a subshell to avoid bothering the user with changing the
+	# current directory.
 
-DIR="$(git rev-parse --show-toplevel)"
-cd "$DIR"
+	DIR="$(git rev-parse --show-toplevel)"
+	if [ -z "$DIR" ]; then
+		echo "Please run this script from within the flesnet repository."
+		exit 1
+	fi
+	cd "$DIR"
+	if [ $? -ne 0 ]; then
+		>&2 echo "Could not change to the repository root directory $DIR"
+		>&2 echo "This is a critical error that should never have occurred."
+		exit 1
+	fi
 
-# check if clang-format is installed
-if [ -z "`which clang-format`" -o -z "`which git-clang-format`" ]; then
-	echo "Please install clang-format."
-	echo "If using Mac OS X, use 'brew install clang-format'."
-	echo "Setup not successful."
-	exit 1
-fi
+	# check if clang-format is installed
+	if [ -z "`which clang-format`" -o -z "`which git-clang-format`" ]; then
+		>&2 echo "Please install clang-format."
+		>&2 echo "If using Mac OS X, use 'brew install clang-format'."
+		>&2 echo "Setup not successful."
+		exit 1
+	fi
 
-# add configuration for git-clang-format
-git config --local --add clangFormat.style file
-git config --local --add clangFormat.extension hpp,cpp
+	# add configuration for git-clang-format
+	git config --local --add clangFormat.style file
+	if [ $? -ne 0 ]; then
+		>&2 echo "Could not set local git configuration clangFormat.style."
+		>&2 echo "This is a critical error that should never have occurred."
+		>&2 echo "Check the permissions of the .git directory."
+		exit 1
+	fi
+	git config --local --add clangFormat.extension hpp,cpp
+	if [ $? -ne 0 ]; then
+		>&2 echo "Could not set local git configuration clangFormat.extension."
+		>&2 echo "This is a critical error that should never have occurred."
+		>&2 echo "Check the permissions of the .git directory."
+		exit 1
+	fi
 
-# install pre-commit hook
-cp -p contrib/pre-commit.hook .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
+	# install post-commit hook
+	cp -p contrib/post-commit.hook .git/hooks/post-commit
+	if [ $? -ne 0 ]; then
+		>&2 echo "Could not copy post-commit hook to .git/hooks/post-commit."
+		>&2 echo "This is a critical error that should never have occurred."
+		>&2 echo "Check the permissions of the .git/hooks directory."
+		exit 1
+	fi
+
+
+	chmod +x .git/hooks/post-commit
+)
