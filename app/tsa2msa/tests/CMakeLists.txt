@@ -23,5 +23,10 @@ else()
 		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/smokeTestNoInput.sh
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
+	add_test(
+		NAME		smokeTestOnlyReadArchive
+		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/smokeTestOnlyReadArchive.sh
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	)
 endif()
 
