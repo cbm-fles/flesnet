@@ -17,9 +17,16 @@
 	fi
 
 	# check if clang-format is installed
-	if [ -z "`which clang-format`" -o -z "`which git-clang-format`" ]; then
+	if [ -z "`which clang-format`" ] ; then
 		>&2 echo "Please install clang-format."
 		>&2 echo "If using Mac OS X, use 'brew install clang-format'."
+		>&2 echo "Setup not successful."
+		exit 1
+	fi
+
+	# check if git-clang-format works
+	if [ -z "`which git-clang-format`" ]; then
+		>&2 echo "Please git-clang-format is available"
 		>&2 echo "Setup not successful."
 		exit 1
 	fi
