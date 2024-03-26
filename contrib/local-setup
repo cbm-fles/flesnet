@@ -26,7 +26,7 @@
 
 	# check if git-clang-format works
 	if [ -z "`which git-clang-format`" ]; then
-		>&2 echo "Please git-clang-format is available"
+		>&2 echo "Please make sure git-clang-format is available"
 		>&2 echo "Setup not successful."
 		exit 1
 	fi
