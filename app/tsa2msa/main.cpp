@@ -96,7 +96,7 @@ auto main(int argc, char* argv[]) -> int {
       // Tutorial, the hidden input-file option below is used as a
       // helper for interpreting all positional arguments as input
       // files.
-      ("input-file,i", boost::program_options::value<std::string>(),
+      ("input-file,i", boost::program_options::value<std::vector<std::string>>(),
        "input file");
 
   boost::program_options::positional_options_description
