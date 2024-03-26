@@ -221,6 +221,9 @@ auto main(int argc, char* argv[]) -> int {
   }
 
   [[maybe_unused]] tsaReader reader;
+  // Obtain input files:
+   [[maybe_unused]] std::vector<std::string> inputFiles =
+      vm["input-file"].as<std::vector<std::string>>();
 
 
 
