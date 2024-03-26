@@ -214,10 +214,12 @@ auto main(int argc, char* argv[]) -> int {
     } else {
       std::cout << visible_command_line_options << std::endl;
     }
+    return EXIT_SUCCESS;
   } else if (showVersion) {
     std::cout << "tsa2msa version pre-alpha" << std::endl;
     std::cout << "  Project version: " << g_PROJECT_VERSION_GIT << std::endl;
     std::cout << "  Git revision: " << g_GIT_REVISION << std::endl;
+    return EXIT_SUCCESS;
   }
 
   [[maybe_unused]] tsaReader reader;
