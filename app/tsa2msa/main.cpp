@@ -156,7 +156,10 @@ auto main(int argc, char* argv[]) -> int {
       nPassedBooleanSwitches + nNonBooleanSwitchOptions;
 
   // Check for parsing errors:
-  if (showHelp) {
+  if (nPassedOptions == 0) {
+    errorMessage.push_back("Error: No options provided.");
+    parsingError = true;
+  } else if (showHelp) {
     // If the user asks for help, then we don't need to check for
     // other parsing errors. However, prior to showing the help
     // message, we will inform the user about ignoring any other
