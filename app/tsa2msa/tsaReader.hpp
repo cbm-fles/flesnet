@@ -79,13 +79,13 @@ getTsaReaderOptionsDescription(tsaReaderOptions& options, bool hidden);
 /**
  * @class tsaReader
  * @brief This class represents a reader for tsa archives.
- * 
+ *
  * The tsaReader provides functionality to read TSA data from a file or
  * other input stream. For now, many default methods such as
  * copy constructor, copy assignment, move constructor, and move
  * assignment are deleted until they are needed (if ever). Similarly,
  * the class is marked as final to prevent inheritance (until needed).
-*/
+ */
 class tsaReader final {
 public:
   /**
@@ -112,7 +112,6 @@ public:
   tsaReader& operator=(tsaReader&& other) = delete;
 
 private:
-
 };
 
 #endif // TSAREADER_HPP
