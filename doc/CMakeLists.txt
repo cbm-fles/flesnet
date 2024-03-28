@@ -112,6 +112,8 @@ set(MARKDOWN_DOCS_FOR_DOXYGEN
   INSTALL.md
   doc/Ctrl-C.md
   doc/monitoring.md
+  doc/flesnet_minimal_example.md
+  doc/monitoring_with_podman.md
   doc/TS_Source_Identifier.md
   doc/versions.md
   doc/structure.md)
