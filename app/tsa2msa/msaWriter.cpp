@@ -19,7 +19,7 @@ boost::program_options::options_description
 getMsaWriterOptionsDescription(msaWriterOptions& options, bool hidden) {
   if (hidden) {
     boost::program_options::options_description desc(
-        "Hidden MSA Writer Options");
+        "Additional MSA Writer Options");
     return desc; // No hidden options for now
   } else {
     boost::program_options::options_description desc("MSA Writer Options");
