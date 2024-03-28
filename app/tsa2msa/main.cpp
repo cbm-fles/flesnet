@@ -51,6 +51,8 @@ auto main(int argc, char* argv[]) -> int {
   const std::string program_description =
       "tsa2msa - convert `.tsa` files to `.msa` files\n"
       "\n"
+      "    Usage:\ttsa2msa [options] input1 [input2 ...]\n"
+      "\n"
       "  The tsa2msa tool is a command line utility designed to\n"
       "  convert `.tsa` files to `.msa` files. Its primary purpose\n"
       "  is to facilitate the creation of golden tests for the\n"
@@ -96,13 +98,14 @@ auto main(int argc, char* argv[]) -> int {
       // Tutorial, the hidden input-file option below is used as a
       // helper for interpreting all positional arguments as input
       // files.
-      ("input-file,i", boost::program_options::value<std::vector<std::string>>(),
-       "input file");
+      ("input,i", 
+        boost::program_options::value<std::vector<std::string>>(),
+       "input sources");
 
   boost::program_options::positional_options_description
       positional_command_line_arguments;
   // Specify that all positional arguments are input files:
-  positional_command_line_arguments.add("input-file", -1);
+  positional_command_line_arguments.add("input", -1);
 
   boost::program_options::options_description command_line_options(
       program_description + "\n" + "Command line options");
@@ -176,7 +179,7 @@ auto main(int argc, char* argv[]) -> int {
                              " other options.");
       parsingError = true;
     }
-  } else if (vm.count("input-file") == 0) {
+  } else if (vm.count("input") == 0) {
     errorMessage.push_back("Error: No input file provided.");
     parsingError = true;
   }
@@ -225,7 +228,7 @@ auto main(int argc, char* argv[]) -> int {
   [[maybe_unused]] tsaReader reader;
   // Obtain input files:
    [[maybe_unused]] std::vector<std::string> inputFiles =
-      vm["input-file"].as<std::vector<std::string>>();
+      vm["input"].as<std::vector<std::string>>();
 
 
 

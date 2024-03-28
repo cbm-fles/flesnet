@@ -61,8 +61,8 @@ else
 	echo "Help output does not contain hidden options"
 	exit 1
   fi
-  if ! grep -q "input-file" $out; then
-	echo "Help output does not contain hidden input-file option"
+  if ! grep -q "input" $out; then
+	echo "Help output does not contain hidden input option"
 	exit 1
   fi
 
