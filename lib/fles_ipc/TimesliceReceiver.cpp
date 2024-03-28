@@ -34,7 +34,7 @@ TimesliceView* TimesliceReceiver::do_get() {
     if (managed_shm_uuid() != timeslice_item.shm_uuid) {
       managed_shm_ =
           std::make_unique<boost::interprocess::managed_shared_memory>(
-              boost::interprocess::open_only,
+              boost::interprocess::open_read_only,
               timeslice_item.shm_identifier.c_str());
       std::cout << "TimesliceReceiver: opened shared memory "
                 << timeslice_item.shm_identifier << " {" << managed_shm_uuid()
