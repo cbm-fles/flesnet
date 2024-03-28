@@ -143,10 +143,11 @@ mkdir build && cd build && cmake ..
 make doc
 ```
 
-You can find the generated documentation in `<project>/build/doc`.
-For Debian, if you have the `php-cli` package installed, you can serve the HTML documentation locally by executing:
+You can find the generated documentation in `<project>/build/doc`. Doxygen generates separate documentation for each
+executable within the project. For Debian, if you have the `php-cli` package installed, you can serve the HTML
+documentation (for e.g. flesnet executable) locally by executing:
 ```
-cd build/doc/html
+cd build/doc/doc-flesnet/html
 php -S localhost:8181
 ```
 
