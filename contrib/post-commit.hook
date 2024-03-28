@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Run clang-format on all files that have been changed in the last
+# commit, but instead of modifying the files, just output the diff
+# and throw it away.
+git clang-format --diff HEAD~1 > /dev/null
+exit_code=$?
+
+# If clang-format detected formatting errors, print an error message
+# and help the user to fix the errors.
+if [ $exit_code -ne 0 ]; then
+  >&2 echo "ERROR: clang-format detected formatting errors in the commit"
+  >&2 echo ""
+  >&2 echo "Please fix the formatting errors and amend the commit"
+  >&2 echo "You may run clang-format on the previous commit with"
+  >&2 echo "  git clang-format HEAD~1"
+  >&2 echo "Then amend the previous commit with"
+  >&2 echo "  git commit --amend"
+  if [ -n "$(git status --porcelain)" ] ; then
+	>&2 echo "Beforehand, you may also stash your other changes with"
+	>&2 echo "  git stash"
+	>&2 echo "Then apply the stash after amending the commit with"
+	>&2 echo "  git stash pop"
+	>&2	echo "(or more safely, first 'git stash apply' and later 'git stash drop')"
+  fi
+  exit $exit_code
+fi
