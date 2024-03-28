@@ -1,14 +1,15 @@
-# Prerequisites
+# Minimal Example Illustrating the Use of FLESnet
+## Prerequisites
 For these examples, you will need the `mstool`, `flesnet` and `tsclient` binaries.
 
-# Most simple example
+## Most simple example
 What we are going to do in this example:
 1. In this example, we will create a microslice archive (`*.msa`) with 10000 microslices in it using the `mstool`.
 2. Then, we will use the `mstool` to manage a shared memory region and put the data of the microslice archive into this shared memory region.
 3. `flesnet` will then be able to connect to this shared memory region to load the microslices and build timeslices out of them.
 5. `flesnet` will put the built timeslices in another shared memory region, from which the `tsclient` will take them and put them into a timeslice archive file (`*.tsa`). Using specific flags ensures that it will automatically stop after building 15 timeslices.
 
-## Creating the microslice archive
+### Creating the microslice archive
 
 The `mstool` is capable of creating a microslice archive file with a specific amount of microslices in it. We will use that archive and the `mstool` to feed our local `flesnet` setup.
 To create a microslice archive run:
@@ -20,7 +21,7 @@ To create a microslice archive run:
 - `-p`: Use internal pattern generator as source. The argument value is currently unused.
 - `-o`: Name of the output file.
 
-## Starting flesnet
+### Starting flesnet
 
 First, we will use the `mstool` again to provide microslices using a named shared memory region, and our previously generated microslice archive. Open a terminal and run:
 ```
