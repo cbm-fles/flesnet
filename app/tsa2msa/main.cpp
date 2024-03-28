@@ -93,14 +93,10 @@ auto main(int argc, char* argv[]) -> int {
   generic.add(msaWriterOptionsDescription);
 
   boost::program_options::options_description hidden("Hidden options");
-  hidden.add_options()
-      // Following an example in the Boost Program Options
-      // Tutorial, the hidden input-file option below is used as a
-      // helper for interpreting all positional arguments as input
-      // files.
-      ("input,i", 
-        boost::program_options::value<std::vector<std::string>>(),
-       "input sources");
+  tsaReaderOptions tsaReaderOptions;
+  boost::program_options::options_description tsaReaderOptionsDescription =
+      getTsaReaderOptionsDescription(tsaReaderOptions, /* hidden = */ true);
+  hidden.add(tsaReaderOptionsDescription);
 
   boost::program_options::positional_options_description
       positional_command_line_arguments;
@@ -225,12 +221,9 @@ auto main(int argc, char* argv[]) -> int {
     return EXIT_SUCCESS;
   }
 
-  [[maybe_unused]] tsaReader reader;
-  // Obtain input files:
-   [[maybe_unused]] std::vector<std::string> inputFiles =
-      vm["input"].as<std::vector<std::string>>();
-
-
+  for (const auto& input : tsaReaderOptions.input) {
+    std::cout << "Input file: " << input << std::endl;
+  }
 
   return EXIT_SUCCESS;
 }

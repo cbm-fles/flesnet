@@ -8,6 +8,9 @@ list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/config/GitRevision.hpp")
 list(APPEND SOURCES msaWriter.cpp)
 list(APPEND HEADERS msaWriter.hpp)
 
+list(APPEND SOURCES tsaReader.cpp)
+list(APPEND HEADERS tsaReader.hpp)
+
 add_executable(tsa2msa main.cpp ${SOURCES} ${HEADERS})
 
 target_include_directories(tsa2msa
