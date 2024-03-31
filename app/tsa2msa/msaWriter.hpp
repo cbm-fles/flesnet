@@ -50,6 +50,10 @@ msaWriterOptions defaultMsaWriterOptions();
  * switches, whose values are taken as defaults. Other options need
  * to be extracted from the variables_map.
  *
+ * @param hidden Whether to return hidden or regular options. Hidden options are
+ * additional options that are not shown in the help message unless explicitly
+ * requested by specifying `--help` together with the `--verbose` option.
+ *
  * @return The command line options for the msaWriter. Can be combined
  * with other command line options and used to parse user input. The
  * resulting variables_map can be used to construct an msaWriterOptions
