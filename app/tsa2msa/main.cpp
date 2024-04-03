@@ -225,5 +225,16 @@ auto main(int argc, char* argv[]) -> int {
     std::cout << "Input file: " << input << std::endl;
   }
 
+  // Join the input files into a ;-separated string:
+  std::string input = "";
+  for (const auto& i : tsaReaderOptions.input) {
+    input += i;
+    if (i != tsaReaderOptions.input.back()) {
+      input += ";";
+    }
+  }
+
+  std::cout << "Input files: " << input << std::endl;
+
   return EXIT_SUCCESS;
 }
