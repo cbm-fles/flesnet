@@ -15,8 +15,6 @@
 #include "msaWriter.hpp"
 #include "tsaReader.hpp"
 
-// FLESnet Library header files:
-#include "lib/fles_ipc/TimesliceAutoSource.hpp"
 
 /**
  * @file main.cpp
@@ -79,6 +77,7 @@ auto main(int argc, char* argv[]) -> int {
   bool beVerbose = false;
   bool showHelp = false;
   bool showVersion = false;
+  unsigned int nWithDefault = 1;
 
   generic.add_options()("quiet,q",
                         boost::program_options::bool_switch(&beQuiet),
@@ -153,7 +152,8 @@ auto main(int argc, char* argv[]) -> int {
     ++nPassedBooleanSwitches;
   }
 
-  unsigned int nNonBooleanSwitchOptions = vm.size() - nBooleanSwitches;
+  unsigned int nNonBooleanSwitchOptions =
+      vm.size() - nBooleanSwitches - nWithDefault;
   unsigned int nPassedOptions =
       nPassedBooleanSwitches + nNonBooleanSwitchOptions;
 
@@ -224,17 +224,7 @@ auto main(int argc, char* argv[]) -> int {
     return EXIT_SUCCESS;
   }
 
-  // Join the input files into a ;-separated string:
-  std::string input = "";
-  for (const auto& i : tsaReaderOptions.input) {
-    input += i;
-    if (i != tsaReaderOptions.input.back()) {
-      input += ";";
-    }
-  }
-
-  std::unique_ptr<fles::TimesliceSource> source =
-      std::make_unique<fles::TimesliceAutoSource>(input);
+  tsaReader tsaReader(tsaReaderOptions);
 
   return EXIT_SUCCESS;
 }

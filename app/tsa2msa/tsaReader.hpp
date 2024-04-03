@@ -3,6 +3,9 @@
 
 #include <boost/program_options.hpp>
 
+// FLESnet Library header files:
+#include "lib/fles_ipc/TimesliceAutoSource.hpp"
+
 /**
  * @struct tsaReaderOptions
  * @brief Options that will be used by a tsaReader.
@@ -10,6 +13,7 @@
 typedef struct tsaReaderOptions {
   bool beVerbose;
   std::vector<std::string> input;
+  std::string readingMethod;
 } tsaReaderOptions;
 
 /**
@@ -87,12 +91,38 @@ getTsaReaderOptionsDescription(tsaReaderOptions& options, bool hidden);
  * the class is marked as final to prevent inheritance (until needed).
  */
 class tsaReader final {
+private:
+  tsaReaderOptions options;
+
 public:
   /**
-   * @brief Constructor for the tsaReader object using default options.
    *
+   * @brief Constructor for the tsaReader object.
+   *
+   * @note If given invalid options, the constructor will throw an
+   * exception.
+   *
+   * @param options The options to be used for the tsaReader, including
+   * the input files to be read. Passed by value since we do not allow
+   * the caller to change the options after the object is created.
    */
-  tsaReader() = default;
+  explicit tsaReader(const tsaReaderOptions options) : options(options) {
+    if (options.readingMethod != "auto") {
+      throw std::runtime_error("Invalid reading method");
+    }
+
+    // Join the input files into a ;-separated string:
+    std::string input = "";
+    for (const auto& i : options.input) {
+      input += i;
+      if (i != options.input.back()) {
+        input += ";";
+      }
+    }
+
+    std::unique_ptr<fles::TimesliceSource> source =
+        std::make_unique<fles::TimesliceAutoSource>(input);
+  };
 
   /**
    * @brief Destructor for the tsaReader object.
@@ -111,7 +141,6 @@ public:
   // Delete move assignment:
   tsaReader& operator=(tsaReader&& other) = delete;
 
-private:
 };
 
 #endif // TSAREADER_HPP
