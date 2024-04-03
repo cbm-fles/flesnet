@@ -15,6 +15,9 @@
 #include "msaWriter.hpp"
 #include "tsaReader.hpp"
 
+// FLESnet Library header files:
+#include "lib/fles_ipc/TimesliceAutoSource.hpp"
+
 /**
  * @file main.cpp
  * @brief Main function of the tsa2msa tool
@@ -221,10 +224,6 @@ auto main(int argc, char* argv[]) -> int {
     return EXIT_SUCCESS;
   }
 
-  for (const auto& input : tsaReaderOptions.input) {
-    std::cout << "Input file: " << input << std::endl;
-  }
-
   // Join the input files into a ;-separated string:
   std::string input = "";
   for (const auto& i : tsaReaderOptions.input) {
@@ -234,7 +233,8 @@ auto main(int argc, char* argv[]) -> int {
     }
   }
 
-  std::cout << "Input files: " << input << std::endl;
+  std::unique_ptr<fles::TimesliceSource> source =
+      std::make_unique<fles::TimesliceAutoSource>(input);
 
   return EXIT_SUCCESS;
 }

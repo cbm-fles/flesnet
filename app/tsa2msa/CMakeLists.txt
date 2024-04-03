@@ -14,12 +14,16 @@ list(APPEND HEADERS tsaReader.hpp)
 add_executable(tsa2msa main.cpp ${SOURCES} ${HEADERS})
 
 target_include_directories(tsa2msa
-  SYSTEM PUBLIC 	${Boost_INCLUDE_DIRS}
+  SYSTEM PUBLIC		${Boost_INCLUDE_DIRS}
   PRIVATE 			${PROJECT_SOURCE_DIR}/config
+  PUBLIC			${PROJECT_SOURCE_DIR}
 )
 
+# For lib/fles_ipc/TimesliceAutoSource.o:
 target_link_libraries(tsa2msa
+  fles_ipc
   ${Boost_LIBRARIES}
+  rt
 )
 
 # Ensure warnings are enabled and standard is set:
