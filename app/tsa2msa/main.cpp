@@ -15,7 +15,6 @@
 #include "msaWriter.hpp"
 #include "tsaReader.hpp"
 
-
 /**
  * @file main.cpp
  * @brief Main function of the tsa2msa tool
@@ -77,7 +76,8 @@ auto main(int argc, char* argv[]) -> int {
   bool beVerbose = false;
   bool showHelp = false;
   bool showVersion = false;
-  unsigned int nWithDefault = 1;
+  unsigned int nOptionsWithDefaults =
+      0 + TsaReaderNumberOfOptionsWithDefaults();
 
   generic.add_options()("quiet,q",
                         boost::program_options::bool_switch(&beQuiet),
@@ -95,7 +95,7 @@ auto main(int argc, char* argv[]) -> int {
   generic.add(msaWriterOptionsDescription);
 
   boost::program_options::options_description hidden("Hidden options");
-  tsaReaderOptions tsaReaderOptions;
+  tsaReaderOptions tsaReaderOptions = defaultTsaReaderOptions();
   boost::program_options::options_description tsaReaderOptionsDescription =
       getTsaReaderOptionsDescription(tsaReaderOptions, /* hidden = */ true);
   hidden.add(tsaReaderOptionsDescription);
@@ -153,7 +153,7 @@ auto main(int argc, char* argv[]) -> int {
   }
 
   unsigned int nNonBooleanSwitchOptions =
-      vm.size() - nBooleanSwitches - nWithDefault;
+      vm.size() - nBooleanSwitches - nOptionsWithDefaults;
   unsigned int nPassedOptions =
       nPassedBooleanSwitches + nNonBooleanSwitchOptions;
 
@@ -224,7 +224,9 @@ auto main(int argc, char* argv[]) -> int {
     return EXIT_SUCCESS;
   }
 
+  getTsaReaderOptions(vm, tsaReaderOptions);
   tsaReader tsaReader(tsaReaderOptions);
+  tsaReader.read();
 
   return EXIT_SUCCESS;
 }

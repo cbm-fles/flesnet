@@ -5,6 +5,7 @@
 tsaReaderOptions defaultTsaReaderOptions() {
   tsaReaderOptions options;
   options.beVerbose = false;
+  options.interactive = false;
   options.input = std::vector<std::string>();
   return options;
 }
@@ -33,6 +34,16 @@ getTsaReaderOptionsDescription(tsaReaderOptions& options, bool hidden) {
             "Input file(s) to read from."
         )
         (
+            "interactive",
+              boost::program_options::value<bool>(
+                &options.interactive)
+                  -> default_value(false),
+            "Whether to run the TSA reader in interactive mode."
+            " Useful for debugging .tsa files or the tsaReader itself."
+            " It is recommended to use the 'verbose' option in conjunction"
+            " with this option."
+        )
+        (
            "readingMode",
               boost::program_options::value<std::string>(
                 &options.readingMethod)
@@ -46,3 +57,10 @@ getTsaReaderOptionsDescription(tsaReaderOptions& options, bool hidden) {
     return desc;
   }
 }
+
+void getTsaReaderOptions(const boost::program_options::variables_map& vm,
+                         tsaReaderOptions& tsaReaderOptions) {
+  tsaReaderOptions.beVerbose = vm["verbose"].as<bool>();
+}
+
+unsigned int TsaReaderNumberOfOptionsWithDefaults() { return 2; }

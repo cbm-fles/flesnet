@@ -1,6 +1,13 @@
 #ifndef TSAREADER_HPP
 #define TSAREADER_HPP
 
+// C++ Standard Library header files:
+#include <iostream>
+
+// System dependent header files:
+#include <sysexits.h>
+
+// Boost Library header files:
 #include <boost/program_options.hpp>
 
 // FLESnet Library header files:
@@ -12,6 +19,7 @@
  */
 typedef struct tsaReaderOptions {
   bool beVerbose;
+  bool interactive;
   std::vector<std::string> input;
   std::string readingMethod;
 } tsaReaderOptions;
@@ -81,6 +89,21 @@ boost::program_options::options_description
 getTsaReaderOptionsDescription(tsaReaderOptions& options, bool hidden);
 
 /**
+ * @brief Parses the command line options for the tsaReader.
+ *
+ * @param vm The variables_map object populated by the command line
+ * options given by the user. It is assumed that it was parsed using the
+ * options_description object returned by getTsaReaderOptionsDescription
+ * called with the same tsaReaderOptions object as the one passed to
+ * this function.
+ * @param tsaReaderOptions The tsaReaderOptions object to be populated
+ * with the values given by the user. It is assumed that it was used to
+ * populate the variables_map object given to this function.
+ */
+void getTsaReaderOptions(const boost::program_options::variables_map& vm,
+                         tsaReaderOptions& tsaReaderOptions);
+
+/**
  * @class tsaReader
  * @brief This class represents a reader for tsa archives.
  *
@@ -111,18 +134,14 @@ public:
       throw std::runtime_error("Invalid reading method");
     }
 
-    // Join the input files into a ;-separated string:
-    std::string input = "";
-    for (const auto& i : options.input) {
-      input += i;
-      if (i != options.input.back()) {
-        input += ";";
-      }
-    }
-
-    std::unique_ptr<fles::TimesliceSource> source =
-        std::make_unique<fles::TimesliceAutoSource>(input);
+    // TODO: Check the input file(s) for existence and readability here.
+    // If a reading method is used that allows for complex patterns,
+    // such as TimesliceAutoSource, their expansion should taken into
+    // consideration.
   };
+
+  // Delete default constructor (options must be provided):
+  tsaReader() = delete;
 
   /**
    * @brief Destructor for the tsaReader object.
@@ -141,6 +160,83 @@ public:
   // Delete move assignment:
   tsaReader& operator=(tsaReader&& other) = delete;
 
+  /**
+   * @brief Reads the input file(s) and prints the number of timeslices.
+   *
+   * @note Since checking the validity of the input during construction
+   * is not yet implemented, this method may throw an exception if the
+   * input is invalid. This should be fixed in the future.
+   *
+   * @return EX_OK if successful, EX_SOFTWARE if an error occurred.
+   */
+  int read() {
+    // Join the input files into a ;-separated string:
+    std::string input = "";
+    for (const auto& i : options.input) {
+      input += i;
+      if (i != options.input.back()) {
+        input += ";";
+      }
+    }
+
+    std::unique_ptr<fles::TimesliceSource> source =
+        std::make_unique<fles::TimesliceAutoSource>(input);
+    int nTimeslices = 0;
+    try {
+      bool eos = source->eos();
+      if (options.beVerbose) {
+        std::cout << "Initial eos: " << eos << std::endl;
+      }
+      while (!eos) {
+        [[maybe_unused]] std::unique_ptr<fles::Timeslice> timeslice =
+            source->get();
+        if (!timeslice) {
+          std::cerr << "Error: No timeslice received." << std::endl;
+          std::cout << "Next eos: " << source->eos() << std::endl;
+          return EX_SOFTWARE;
+        }
+        nTimeslices++;
+        uint64_t timesliceIndex = timeslice->index();
+        uint64_t numCoreMicroslices = timeslice->num_core_microslices();
+        uint64_t numComponents = timeslice->num_components();
+        uint64_t start_time = timeslice->start_time();
+        if (options.beVerbose) {
+          std::cout << "Timeslice index: " << timesliceIndex << std::endl;
+          std::cout << "Number of core microslices: " << numCoreMicroslices
+                    << std::endl;
+          std::cout << "Number of components: " << numComponents << std::endl;
+          std::cout << "Start time: " << start_time << std::endl;
+        }
+        if (options.interactive) {
+          // Wait for user input to continue:
+          std::string dummy;
+          std::cout << "Press Enter to continue..." << std::endl;
+          std::getline(std::cin, dummy);
+        }
+        eos = source->eos();
+        if (options.beVerbose) {
+          std::cout << "Next eos: " << eos << std::endl;
+        }
+      }
+    } catch (const std::exception& e) {
+      std::cerr << "Error: " << e.what() << std::endl;
+      return EX_SOFTWARE;
+    }
+
+    std::cout << "Number of timeslices: " << nTimeslices << std::endl;
+    return EX_OK;
+  }
 };
+
+/**
+ * @brief Returns the number of tsaReader options with defaults.
+ *
+ * This function is used to determine the number of options that are
+ * passed on the command line. This number needs to be manually updated
+ * whenever such an option is added or removed.
+ *
+ * @return The number of tsaReader options with defaults.
+ */
+unsigned int TsaReaderNumberOfOptionsWithDefaults();
 
 #endif // TSAREADER_HPP
