@@ -7,7 +7,6 @@
  * @struct tsaReaderOptions
  * @brief Options that will be used by a tsaReader.
  */
-*/
 typedef struct tsaReaderOptions {
   bool beVerbose;
   std::vector<std::string> input;
