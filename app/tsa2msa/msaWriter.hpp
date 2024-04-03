@@ -131,7 +131,6 @@ public:
   msaWriter& operator=(msaWriter&& other) = delete;
 
 private:
-  [[maybe_unused]] // Remove this line if the parameter is used
   const msaWriterOptions options;
 };
 
