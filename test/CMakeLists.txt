@@ -98,10 +98,12 @@ if(BASH_PROGRAM)
   add_test(NAME test_mstool
            COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_mstool.sh
            WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-  if (NOT APPLE)
-    add_test(NAME test_with_pda
+  if (USE_PDA)
+    if (NOT APPLE)
+      add_test(NAME test_with_pda
              COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_with_pda.sh
              WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    endif()
   endif()
 endif()
 
