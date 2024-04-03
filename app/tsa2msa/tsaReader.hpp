@@ -2,6 +2,7 @@
 #define TSAREADER_HPP
 
 // C++ Standard Library header files:
+#include <chrono>
 #include <iostream>
 
 // System dependent header files:
@@ -187,6 +188,8 @@ public:
       if (options.beVerbose) {
         std::cout << "Initial eos: " << eos << std::endl;
       }
+      // get time to measure performance:
+      auto start = std::chrono::steady_clock::now();
       while (!eos) {
         [[maybe_unused]] std::unique_ptr<fles::Timeslice> timeslice =
             source->get();
@@ -216,6 +219,14 @@ public:
         eos = source->eos();
         if (options.beVerbose) {
           std::cout << "Next eos: " << eos << std::endl;
+        }
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end - start;
+        auto per_item = elapsed_seconds.count() / nTimeslices;
+        if (options.beVerbose) {
+          std::cout << "Elapsed time: " << elapsed_seconds.count() << "s"
+                    << std::endl;
+          std::cout << "Time per item: " << per_item << "s" << std::endl;
         }
       }
     } catch (const std::exception& e) {
