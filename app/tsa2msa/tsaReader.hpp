@@ -180,6 +180,14 @@ public:
       }
     }
 
+    bool time_monotonically_increasing = true;
+    bool time_strict_monotonicity = true;
+    uint64_t nMonotonicityViolationsTime = 0;
+    uint64_t nStrictMonotonicityViolationsTime = 0;
+    bool index_monotonically_increasing = true;
+    bool index_strict_monotonicity = true;
+    uint64_t nMonotonicityViolationsIndex = 0;
+    uint64_t nStrictMonotonicityViolationsIndex = 0;
     std::unique_ptr<fles::TimesliceSource> source =
         std::make_unique<fles::TimesliceAutoSource>(input);
     int nTimeslices = 0;
@@ -190,6 +198,8 @@ public:
       }
       // get time to measure performance:
       auto start = std::chrono::steady_clock::now();
+      uint64_t last_timeslice_start_time = 0;
+      uint64_t last_timeslice_index = 0;
       while (!eos) {
         [[maybe_unused]] std::unique_ptr<fles::Timeslice> timeslice =
             source->get();
@@ -203,12 +213,64 @@ public:
         uint64_t numCoreMicroslices = timeslice->num_core_microslices();
         uint64_t numComponents = timeslice->num_components();
         uint64_t start_time = timeslice->start_time();
+        if (last_timeslice_start_time > 0) {
+          if (start_time < last_timeslice_start_time) {
+            time_monotonically_increasing = false;
+            time_strict_monotonicity = false;
+            nMonotonicityViolationsTime++;
+            nStrictMonotonicityViolationsTime++;
+          } else if (start_time == last_timeslice_start_time) {
+            time_strict_monotonicity = false;
+            nStrictMonotonicityViolationsTime++;
+          }
+        }
+        last_timeslice_start_time = start_time;
+
+        if (last_timeslice_index > 0) {
+          if (timesliceIndex < last_timeslice_index) {
+            index_monotonically_increasing = false;
+            index_strict_monotonicity = false;
+            nMonotonicityViolationsIndex++;
+            nStrictMonotonicityViolationsIndex++;
+          } else if (timesliceIndex == last_timeslice_index) {
+            index_strict_monotonicity = false;
+            nStrictMonotonicityViolationsIndex++;
+          }
+        }
+        last_timeslice_index = timesliceIndex;
+
         if (options.beVerbose) {
           std::cout << "Timeslice index: " << timesliceIndex << std::endl;
           std::cout << "Number of core microslices: " << numCoreMicroslices
                     << std::endl;
           std::cout << "Number of components: " << numComponents << std::endl;
           std::cout << "Start time: " << start_time << std::endl;
+          if (!time_monotonically_increasing) {
+            std::cout << "Warning: Timeslice start time is not monotonically "
+                         "increasing."
+                      << std::endl;
+            std::cout << "Number of monotonicity violations: "
+                      << nMonotonicityViolationsTime << std::endl;
+          } else if (!time_strict_monotonicity) {
+            std::cout << "Error: Timeslice start time is not strictly "
+                         "monotonically increasing."
+                      << std::endl;
+            std::cout << "Number of strict monotonicity violations: "
+                      << nStrictMonotonicityViolationsTime << std::endl;
+          }
+          if (!index_monotonically_increasing) {
+            std::cout
+                << "Warning: Timeslice index is not monotonically increasing."
+                << std::endl;
+            std::cout << "Number of monotonicity violations: "
+                      << nMonotonicityViolationsIndex << std::endl;
+          } else if (!index_strict_monotonicity) {
+            std::cout << "Error: Timeslice index is not strictly monotonically "
+                         "increasing."
+                      << std::endl;
+            std::cout << "Number of strict monotonicity violations: "
+                      << nStrictMonotonicityViolationsIndex << std::endl;
+          }
         }
         if (options.interactive) {
           // Wait for user input to continue:
@@ -235,6 +297,24 @@ public:
     }
 
     std::cout << "Number of timeslices: " << nTimeslices << std::endl;
+    if (!time_monotonically_increasing) {
+      std::cerr
+          << "Warning: Timeslice start time is not monotonically increasing."
+          << std::endl;
+    } else if (!time_strict_monotonicity) {
+      std::cerr << "Error: Timeslice start time is not strictly monotonically "
+                   "increasing."
+                << std::endl;
+    }
+    if (!index_monotonically_increasing) {
+      std::cerr << "Warning: Timeslice index is not monotonically increasing."
+                << std::endl;
+    } else if (!index_strict_monotonicity) {
+      std::cerr << "Error: Timeslice index is not strictly monotonically "
+                   "increasing."
+                << std::endl;
+    }
+
     return EX_OK;
   }
 };
