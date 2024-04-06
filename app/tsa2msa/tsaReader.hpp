@@ -188,6 +188,10 @@ public:
     bool index_strict_monotonicity = true;
     uint64_t nMonotonicityViolationsIndex = 0;
     uint64_t nStrictMonotonicityViolationsIndex = 0;
+    bool num_core_microslices_constant = true;
+    bool num_components_constant = true;
+    uint64_t nNumCoreMicroslicesViolations = 0;
+    uint64_t nNumComponentsViolations = 0;
     std::unique_ptr<fles::TimesliceSource> source =
         std::make_unique<fles::TimesliceAutoSource>(input);
     int nTimeslices = 0;
@@ -200,13 +204,20 @@ public:
       auto start = std::chrono::steady_clock::now();
       uint64_t last_timeslice_start_time = 0;
       uint64_t last_timeslice_index = 0;
+      uint64_t last_timeslice_num_core_microslices = 0;
+      uint64_t last_timeslice_num_components = 0;
       while (!eos) {
         [[maybe_unused]] std::unique_ptr<fles::Timeslice> timeslice =
             source->get();
         if (!timeslice) {
           std::cerr << "Error: No timeslice received." << std::endl;
           std::cout << "Next eos: " << source->eos() << std::endl;
-          return EX_SOFTWARE;
+          bool strict_eos = false;
+          if (strict_eos) {
+            return EX_SOFTWARE;
+          } else {
+            break;
+          }
         }
         nTimeslices++;
         uint64_t timesliceIndex = timeslice->index();
@@ -239,7 +250,21 @@ public:
         }
         last_timeslice_index = timesliceIndex;
 
+        if (last_timeslice_num_core_microslices > 0 &&
+            numCoreMicroslices != last_timeslice_num_core_microslices) {
+          num_core_microslices_constant = false;
+          nNumCoreMicroslicesViolations++;
+        }
+        last_timeslice_num_core_microslices = numCoreMicroslices;
+        if (last_timeslice_num_components > 0 &&
+            numComponents != last_timeslice_num_components) {
+          num_components_constant = false;
+          nNumComponentsViolations++;
+        }
+        last_timeslice_num_components = numComponents;
+
         if (options.beVerbose) {
+          std::cout << "Timeslice number: " << nTimeslices << std::endl;
           std::cout << "Timeslice index: " << timesliceIndex << std::endl;
           std::cout << "Number of core microslices: " << numCoreMicroslices
                     << std::endl;
@@ -270,6 +295,18 @@ public:
                       << std::endl;
             std::cout << "Number of strict monotonicity violations: "
                       << nStrictMonotonicityViolationsIndex << std::endl;
+          }
+          if (!num_core_microslices_constant) {
+            std::cout << "Warning: Number of core microslices is not constant."
+                      << std::endl;
+            std::cout << "Number of violations: "
+                      << nNumCoreMicroslicesViolations << std::endl;
+          }
+          if (!num_components_constant) {
+            std::cout << "Warning: Number of components is not constant."
+                      << std::endl;
+            std::cout << "Number of violations: " << nNumComponentsViolations
+                      << std::endl;
           }
         }
         if (options.interactive) {
