@@ -12,6 +12,7 @@
 #include <boost/program_options.hpp>
 
 // FLESnet Library header files:
+#include "lib/fles_ipc/MicrosliceOutputArchive.hpp"
 #include "lib/fles_ipc/TimesliceAutoSource.hpp"
 
 /**
@@ -383,6 +384,7 @@ public:
 
     std::unique_ptr<fles::TimesliceSource> source =
         std::make_unique<fles::TimesliceAutoSource>(input);
+    fles::MicrosliceOutputArchive sink("test.msa");
 
     int nTimeslices = 0;
     try {
@@ -409,6 +411,17 @@ public:
         validator.validate(timeslice);
         if (options.beVerbose) {
           validator.printVerboseIntermediateResult();
+        }
+
+        // Write the timeslice to a file:
+        for (uint64_t tsc = 0; tsc < timeslice->num_components(); tsc++) {
+          for (uint64_t msc = 0; msc < timeslice->num_core_microslices();
+               msc++) {
+            std::shared_ptr<fles::MicrosliceView> ms_ptr =
+                std::make_shared<fles::MicrosliceView>(
+                    timeslice->get_microslice(tsc, msc));
+            sink.put(ms_ptr);
+          }
         }
 
         if (options.interactive) {
