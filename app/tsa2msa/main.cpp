@@ -226,7 +226,7 @@ auto main(int argc, char* argv[]) -> int {
 
   getTsaReaderOptions(vm, tsaReaderOptions);
   tsaReader tsaReader(tsaReaderOptions);
-  tsaReader.read();
+  tsaReader.read_all();
 
   return EXIT_SUCCESS;
 }

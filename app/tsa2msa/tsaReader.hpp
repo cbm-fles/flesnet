@@ -372,7 +372,7 @@ public:
    *
    * @return EX_OK if successful, EX_SOFTWARE if an error occurred.
    */
-  int read() {
+  int read_all() {
     // Join the input files into a ;-separated string:
     std::string input = "";
     for (const auto& i : options.input) {
