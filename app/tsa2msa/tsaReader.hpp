@@ -320,6 +320,10 @@ private:
   tsaReaderOptions options;
   tsaReaderValidator validator;
   std::unique_ptr<fles::TimesliceSource> source;
+  uint64_t nTimeslices;
+
+  std::chrono::duration<double> last_duration;
+  std::chrono::duration<double> total_duration;
 
 public:
   /**
@@ -333,11 +337,14 @@ public:
    * the input files to be read. Passed by value since we do not allow
    * the caller to change the options after the object is created.
    */
-  explicit tsaReader(const tsaReaderOptions options) : options(options) {
-    if (options.readingMethod != "auto") {
-      throw std::runtime_error("Invalid reading method");
-    }
-
+  explicit tsaReader(const tsaReaderOptions options) :
+    options(options),
+    validator(),
+    source(nullptr),
+    nTimeslices(0),
+    last_duration(), // purposefully left unspecified
+    total_duration(0)
+  {
     initSource(options.input);
   };
 
@@ -360,6 +367,80 @@ public:
 
   // Delete move assignment:
   tsaReader& operator=(tsaReader&& other) = delete;
+
+
+private:
+  std::unique_ptr<fles::Timeslice> handleEosError() {
+    // TODO: Make strict_eos an tsaReaderOption:
+    bool strict_eos = false;
+    if (strict_eos) {
+      std::cerr << "Error: No timeslice received." << std::endl;
+      if (options.beVerbose) {
+        std::cout << "Next eos: " << source->eos() << std::endl;
+      }
+      throw std::runtime_error("No timeslice received.");
+    } else {
+      // Ignore the fact that eos did not indicate the end of the
+      // file and return nullptr as if nothing extraordinary
+      // happened:
+      return nullptr;
+    }
+  }
+
+  void printDuration() {
+    if (nTimeslices == 0) {
+      std::cerr << "Warning: Cannot print duration since no timeslices "
+                   "have been read yet."
+                << std::endl;
+      return;
+    }
+    std::cout
+      << "Elapsed time: " << last_duration.count() << "s"
+      << " (" << std::chrono::duration_cast<std::chrono::seconds>(
+                      total_duration) .count() / nTimeslices
+      << "s avg.)"
+      << std::endl;
+  }
+
+public:
+
+  std::unique_ptr<fles::Timeslice> read() {
+    try {
+      bool eos = source->eos();
+      if (eos) {
+        return nullptr;
+      }
+
+      auto start = std::chrono::steady_clock::now();
+      std::unique_ptr<fles::Timeslice> timeslice = source->get();
+      auto end = std::chrono::steady_clock::now();
+
+      // Sometimes the source does not return a timeslice even if it
+      // did not indicate eos.
+      // TODO: Remove this workaround once the source is fixed.
+      if (!timeslice) {
+        return handleEosError();
+      }
+
+      // Adjust statistics:
+      nTimeslices++;
+      auto duration = end - start;
+      total_duration += duration;
+
+      // TODO: Add option to validate the timeslice (or not):
+      validator.validate(timeslice);
+
+      if (options.beVerbose) {
+        printDuration();
+        validator.printVerboseIntermediateResult();
+      }
+
+    } catch (const std::exception& e) {
+      std::cerr << "tsaReader::read(): Error: " << e.what() << std::endl;
+      throw e;
+    }
+
+  }
 
   /**
    * @brief Reads the input file(s) and prints the number of timeslices.
@@ -393,11 +474,6 @@ public:
           } else {
             break;
           }
-        }
-        nTimeslices++;
-        validator.validate(timeslice);
-        if (options.beVerbose) {
-          validator.printVerboseIntermediateResult();
         }
 
         // Write the timeslice to a file:
