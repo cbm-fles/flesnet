@@ -319,6 +319,7 @@ class tsaReader final {
 private:
   tsaReaderOptions options;
   tsaReaderValidator validator;
+  std::unique_ptr<fles::TimesliceSource> source;
 
 public:
   /**
@@ -337,10 +338,7 @@ public:
       throw std::runtime_error("Invalid reading method");
     }
 
-    // TODO: Check the input file(s) for existence and readability here.
-    // If a reading method is used that allows for complex patterns,
-    // such as TimesliceAutoSource, their expansion should taken into
-    // consideration.
+    initSource(options.input);
   };
 
   // Delete default constructor (options must be provided):
@@ -373,17 +371,6 @@ public:
    * @return EX_OK if successful, EX_SOFTWARE if an error occurred.
    */
   int read_all() {
-    // Join the input files into a ;-separated string:
-    std::string input = "";
-    for (const auto& i : options.input) {
-      input += i;
-      if (i != options.input.back()) {
-        input += ";";
-      }
-    }
-
-    std::unique_ptr<fles::TimesliceSource> source =
-        std::make_unique<fles::TimesliceAutoSource>(input);
     fles::MicrosliceOutputArchive sink("test.msa");
 
     int nTimeslices = 0;
@@ -450,6 +437,72 @@ public:
     validator.printSummary();
 
     return EX_OK;
+  }
+
+private:
+  /**
+   * @brief Sets the source of the tsaReader.
+   *
+   * This function is used to set the source of the tsaReader. It's main
+   * purpose is to demonstrate how initialization or changing of the
+   * source can be done. The previous source, if any, is deleted.
+   *
+   * @param source The source to be used for the tsaReader. Since it is
+   * a unique pointer, the caller must ensure to pass the unique pointer
+   * as an rvalue to the function, or the function call will not
+   * compile.
+   */
+  void setSource(std::unique_ptr<fles::TimesliceSource> source) {
+    // The move assignment of a unique pointer calls the destructor of
+    // the object that was previously held by the unique pointer (when
+    // necessary) and assigns the new object to the unique pointer.
+    source = std::move(source);
+  }
+
+  void initAutoSource(const std::vector<std::string>& inputs) {
+
+    // Check if any of the input files are given as a glob pattern
+    // as long as the implementation is not fully reliable:
+    // TODO: Remove this check once the implementation is reliable.
+    for (const auto& input : inputs) {
+      // This is a very simple check that triggers even if the special
+      // characters are escaped, but since it only triggers a warning,
+      // it is acceptable for now.
+      if (input.find('*') != std::string::npos ||
+          input.find('?') != std::string::npos ||
+          input.find('[') != std::string::npos) {
+        std::cerr
+          << "Warning: While TimesliceAutoSource supports glob patterns\n"
+          << "         for input files, the current implementation seems\n"
+          << "         to have issues with glob patterns and occasionally\n"
+          << "         provide Timeslices in the wrong order. It is\n"
+          << "         recommended to let your shell expand the glob.\n"
+          << std::endl;
+        break;
+      }
+    }
+
+    // Join the input files into a ;-separated string, as expected by
+    // the TimesliceAutoSource:
+    std::string input = "";
+    for (auto i = inputs.begin(); i != inputs.end(); i++) {
+      if (i != inputs.begin()) {
+        input += ";";
+      }
+      input += *i;
+    }
+
+    std::unique_ptr<fles::TimesliceAutoSource> s =
+        std::make_unique<fles::TimesliceAutoSource>(input);
+    setSource(std::move(s));
+  }
+
+  void initSource(const std::vector<std::string>& inputs) {
+    if (options.readingMethod == "auto") {
+      initAutoSource(inputs);
+    } else {
+      throw std::runtime_error("Invalid reading method");
+    }
   }
 };
 
