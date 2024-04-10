@@ -337,14 +337,10 @@ public:
    * the input files to be read. Passed by value since we do not allow
    * the caller to change the options after the object is created.
    */
-  explicit tsaReader(const tsaReaderOptions options) :
-    options(options),
-    validator(),
-    source(nullptr),
-    nTimeslices(0),
-    last_duration(), // purposefully left unspecified
-    total_duration(0)
-  {
+  explicit tsaReader(const tsaReaderOptions options)
+      : options(options), validator(), source(nullptr), nTimeslices(0),
+        last_duration(), // purposefully left unspecified
+        total_duration(0) {
     initSource(options.input);
   };
 
@@ -367,7 +363,6 @@ public:
 
   // Delete move assignment:
   tsaReader& operator=(tsaReader&& other) = delete;
-
 
 private:
   std::unique_ptr<fles::Timeslice> handleEosError() {
@@ -394,16 +389,16 @@ private:
                 << std::endl;
       return;
     }
-    std::cout
-      << "Elapsed time: " << last_duration.count() << "s"
-      << " (" << std::chrono::duration_cast<std::chrono::seconds>(
-                      total_duration) .count() / nTimeslices
-      << "s avg.)"
-      << std::endl;
+    std::cout << "Elapsed time: " << last_duration.count() << "s"
+              << " ("
+              << std::chrono::duration_cast<std::chrono::seconds>(
+                     total_duration)
+                         .count() /
+                     nTimeslices
+              << "s avg.)" << std::endl;
   }
 
 public:
-
   std::unique_ptr<fles::Timeslice> read() {
     try {
       bool eos = source->eos();
@@ -457,7 +452,7 @@ public:
 
     try {
       std::unique_ptr<fles::Timeslice> timeslice;
-      while ( (timeslice = read()) != nullptr) {
+      while ((timeslice = read()) != nullptr) {
 
         // Write the timeslice to a file:
         for (uint64_t tsc = 0; tsc < timeslice->num_components(); tsc++) {
@@ -519,12 +514,12 @@ private:
           input.find('?') != std::string::npos ||
           input.find('[') != std::string::npos) {
         std::cerr
-          << "Warning: While TimesliceAutoSource supports glob patterns\n"
-          << "         for input files, the current implementation seems\n"
-          << "         to have issues with glob patterns and occasionally\n"
-          << "         provide Timeslices in the wrong order. It is\n"
-          << "         recommended to let your shell expand the glob.\n"
-          << std::endl;
+            << "Warning: While TimesliceAutoSource supports glob patterns\n"
+            << "         for input files, the current implementation seems\n"
+            << "         to have issues with glob patterns and occasionally\n"
+            << "         provide Timeslices in the wrong order. It is\n"
+            << "         recommended to let your shell expand the glob.\n"
+            << std::endl;
         break;
       }
     }
