@@ -425,6 +425,7 @@ public:
       nTimeslices++;
       auto duration = end - start;
       total_duration += duration;
+      last_duration = duration;
 
       // TODO: Add option to validate the timeslice (or not):
       validator.validate(timeslice);
