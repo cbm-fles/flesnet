@@ -226,7 +226,22 @@ auto main(int argc, char* argv[]) -> int {
 
   getTsaReaderOptions(vm, tsaReaderOptions);
   tsaReader tsaReader(tsaReaderOptions);
-  tsaReader.read_all();
+  std::unique_ptr<fles::Timeslice> timeslice;
+  fles::MicrosliceOutputArchive sink("test.msa");
+  while ((timeslice = tsaReader.read()) != nullptr) {
+
+    // Write the timeslice to a file:
+    for (uint64_t tsc = 0; tsc < timeslice->num_components(); tsc++) {
+      for (uint64_t msc = 0; msc < timeslice->num_core_microslices();
+           msc++) {
+        std::shared_ptr<fles::MicrosliceView> ms_ptr =
+            std::make_shared<fles::MicrosliceView>(
+                timeslice->get_microslice(tsc, msc));
+        sink.put(ms_ptr);
+      }
+    }
+
+  }
 
   return EXIT_SUCCESS;
 }

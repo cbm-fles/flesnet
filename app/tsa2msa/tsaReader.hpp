@@ -435,55 +435,20 @@ public:
         validator.printVerboseIntermediateResult();
       }
 
+      // TODO: Move this to the main function:
+      if (options.interactive) {
+        // Wait for user input to continue:
+        std::string dummy;
+        std::cout << "Press Enter to continue..." << std::endl;
+        std::getline(std::cin, dummy);
+      }
+
       return timeslice;
 
     } catch (const std::exception& e) {
       std::cerr << "tsaReader::read(): Error: " << e.what() << std::endl;
       throw e;
     }
-  }
-
-  /**
-   * @brief Reads the input file(s) and prints the number of timeslices.
-   *
-   * @note Since checking the validity of the input during construction
-   * is not yet implemented, this method may throw an exception if the
-   * input is invalid. This should be fixed in the future.
-   *
-   * @return EX_OK if successful, EX_SOFTWARE if an error occurred.
-   */
-  int read_all() {
-    fles::MicrosliceOutputArchive sink("test.msa");
-
-    try {
-      std::unique_ptr<fles::Timeslice> timeslice;
-      while ((timeslice = read()) != nullptr) {
-
-        // Write the timeslice to a file:
-        for (uint64_t tsc = 0; tsc < timeslice->num_components(); tsc++) {
-          for (uint64_t msc = 0; msc < timeslice->num_core_microslices();
-               msc++) {
-            std::shared_ptr<fles::MicrosliceView> ms_ptr =
-                std::make_shared<fles::MicrosliceView>(
-                    timeslice->get_microslice(tsc, msc));
-            sink.put(ms_ptr);
-          }
-        }
-
-        if (options.interactive) {
-          // Wait for user input to continue:
-          std::string dummy;
-          std::cout << "Press Enter to continue..." << std::endl;
-          std::getline(std::cin, dummy);
-        }
-      }
-    } catch (const std::exception& e) {
-      std::cerr << "Error: " << e.what() << std::endl;
-      return EX_SOFTWARE;
-    }
-    validator.printSummary();
-
-    return EX_OK;
   }
 
 private:
