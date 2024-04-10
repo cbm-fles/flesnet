@@ -394,12 +394,16 @@ private:
               << std::chrono::duration_cast<std::chrono::seconds>(
                      total_duration)
                          .count() /
-                     nTimeslices
+                        static_cast<double>(nTimeslices)
               << "s avg.)" << std::endl;
   }
 
 public:
   std::unique_ptr<fles::Timeslice> read() {
+    if (!source) {
+      std::cerr << "Error: No source set." << std::endl;
+      throw std::runtime_error("No source set.");
+    }
     try {
       bool eos = source->eos();
       if (eos) {
@@ -494,11 +498,11 @@ private:
    * as an rvalue to the function, or the function call will not
    * compile.
    */
-  void setSource(std::unique_ptr<fles::TimesliceSource> source) {
+  void setSource(std::unique_ptr<fles::TimesliceSource> s) {
     // The move assignment of a unique pointer calls the destructor of
     // the object that was previously held by the unique pointer (when
     // necessary) and assigns the new object to the unique pointer.
-    source = std::move(source);
+    source = std::move(s);
   }
 
   void initAutoSource(const std::vector<std::string>& inputs) {
