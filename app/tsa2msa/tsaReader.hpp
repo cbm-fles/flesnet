@@ -454,27 +454,9 @@ public:
   int read_all() {
     fles::MicrosliceOutputArchive sink("test.msa");
 
-    int nTimeslices = 0;
     try {
-      bool eos = source->eos();
-      if (options.beVerbose) {
-        std::cout << "Initial eos: " << eos << std::endl;
-      }
-      // get time to measure performance:
-      auto start = std::chrono::steady_clock::now();
-      while (!eos) {
-        [[maybe_unused]] std::unique_ptr<fles::Timeslice> timeslice =
-            source->get();
-        if (!timeslice) {
-          std::cerr << "Error: No timeslice received." << std::endl;
-          std::cout << "Next eos: " << source->eos() << std::endl;
-          bool strict_eos = false;
-          if (strict_eos) {
-            return EX_SOFTWARE;
-          } else {
-            break;
-          }
-        }
+      std::unique_ptr<fles::Timeslice> timeslice;
+      while ( (timeslice = read()) != nullptr) {
 
         // Write the timeslice to a file:
         for (uint64_t tsc = 0; tsc < timeslice->num_components(); tsc++) {
@@ -492,18 +474,6 @@ public:
           std::string dummy;
           std::cout << "Press Enter to continue..." << std::endl;
           std::getline(std::cin, dummy);
-        }
-        eos = source->eos();
-        if (options.beVerbose) {
-          std::cout << "Next eos: " << eos << std::endl;
-        }
-        auto end = std::chrono::steady_clock::now();
-        std::chrono::duration<double> elapsed_seconds = end - start;
-        auto per_item = elapsed_seconds.count() / nTimeslices;
-        if (options.beVerbose) {
-          std::cout << "Elapsed time: " << elapsed_seconds.count() << "s"
-                    << std::endl;
-          std::cout << "Time per item: " << per_item << "s" << std::endl;
         }
       }
     } catch (const std::exception& e) {
