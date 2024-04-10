@@ -435,11 +435,12 @@ public:
         validator.printVerboseIntermediateResult();
       }
 
+      return timeslice;
+
     } catch (const std::exception& e) {
       std::cerr << "tsaReader::read(): Error: " << e.what() << std::endl;
       throw e;
     }
-
   }
 
   /**
