@@ -394,7 +394,7 @@ private:
               << std::chrono::duration_cast<std::chrono::seconds>(
                      total_duration)
                          .count() /
-                        static_cast<double>(nTimeslices)
+                     static_cast<double>(nTimeslices)
               << "s avg.)" << std::endl;
   }
 
