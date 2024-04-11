@@ -227,7 +227,6 @@ auto main(int argc, char* argv[]) -> int {
   getTsaReaderOptions(vm, tsaReaderOptions);
   tsaReader tsaReader(tsaReaderOptions);
   std::unique_ptr<fles::Timeslice> timeslice;
-  fles::MicrosliceOutputArchive sink("test.msa");
   // TODO: Get rid of the unique_ptr and use emplace instead
   std::map<fles::Subsystem, std::unique_ptr<fles::MicrosliceOutputArchive>>
       msaFiles;
@@ -242,13 +241,15 @@ auto main(int argc, char* argv[]) -> int {
         const fles::MicrosliceDescriptor& msd = ms_ptr->desc();
         const fles::Subsystem& sys_id =
             static_cast<fles::Subsystem>(msd.sys_id);
-        if (msaFiles.find(sys_id) == msaFiles.end()) {
-          std::unique_ptr<fles::MicrosliceOutputArchive> msaFile =
-              std::make_unique<fles::MicrosliceOutputArchive>(
-                  "test_" + fles::to_string(sys_id) + ".msa");
-          msaFiles[sys_id] = std::move(msaFile);
+        if (!msaWriterOptions.dryRun) {
+          if (msaFiles.find(sys_id) == msaFiles.end()) {
+            std::unique_ptr<fles::MicrosliceOutputArchive> msaFile =
+                std::make_unique<fles::MicrosliceOutputArchive>(
+                    "test_" + fles::to_string(sys_id) + ".msa");
+            msaFiles[sys_id] = std::move(msaFile);
+          }
+          msaFiles[sys_id]->put(std::move(ms_ptr));
         }
-        msaFiles[sys_id]->put(std::move(ms_ptr));
       }
     }
   }
