@@ -558,7 +558,8 @@ auto main(int argc, char* argv[]) -> int {
           // macro.
           std::string eq_id_string = std::to_string(eq_id);
           std::string optionalSequenceIndicator =
-              msaWriterOptions.useSequence() ? "" : "_%n";
+              msaWriterOptions.useSequence() ? "_%n" : "";
+
           std::string msa_archive_name = prefix + "_" + sys_id_string + "_" +
                                          eq_id_string +
                                          optionalSequenceIndicator + ".msa";

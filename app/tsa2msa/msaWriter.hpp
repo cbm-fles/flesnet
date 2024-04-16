@@ -2,6 +2,44 @@
 #define MSAWRITER_HPP
 
 #include <boost/program_options.hpp>
+#include <iostream>
+
+/**
+ * @struct bytesNumber
+ * @brief A wrapper around a std::size_t needed by boost::program_options.
+ *
+ * This struct merely a wrapper around a std::size_t needed by the
+ * boost::program_options library to validate human-readable input for
+ * the maxBytesPerArchive option in the msaWriterOption. This follows an
+ * example provided in the boost::program_options documentation (of e.g.
+ * boost version 1.85).
+ */
+struct bytesNumber {
+  std::size_t value;
+  bytesNumber(std::size_t value) : value(value) {}
+  bytesNumber() : value(0) {}
+
+  // Define the conversion operators following std::size_t behaviour.
+  operator bool() const { return value; }
+  operator std::size_t() const { return value; }
+};
+
+// Defining the << operator is necessary to allow the
+// boost::program_options library to set default values (because it
+// uses this operator to print an options description).
+std::ostream& operator<<(std::ostream& os, const struct bytesNumber& bN);
+
+/**
+ * @brief Validate user input for the maxBytesPerArchive option.
+ *
+ * This function is only used by the boost::program_options library to
+ * validate user input for the maxBytesPerArchive option in the
+ * msaWriterOptions struct. It is not intended to be used directly.
+ */
+void validate(boost::any& v,
+              const std::vector<std::string>& values,
+              bytesNumber*,
+              int);
 
 /**
  * @struct msaWriterOptions
@@ -23,9 +61,24 @@ typedef struct msaWriterOptions {
   // regardless of whether a single file not exceeding the limits is
   // sufficient.
   std::size_t maxItemsPerArchive; // zero means no limit
-  std::size_t maxBytesPerArchive; // zero means no limit
+  bytesNumber maxBytesPerArchive; // zero means no limit
 
-  bool useSequence() { return !maxItemsPerArchive || !maxBytesPerArchive; }
+  // TODO: Currently, the OutputArchiveSequence classes do not properly
+  // handle the limits (at least not the maxBytesPerArchive limit).
+  bool useSequence() {
+    static bool gaveWarning = false;
+    if (!gaveWarning) {
+      // TODO: Move this message somewhere else.
+      std::cerr
+          << "Warning: Currently, the OutputArchiveSequence"
+             " classes do not properly handle the limits (at least not the"
+             " maxBytesPerArchive limit; limits may be exceeded by the"
+             " size of a micro slice.)"
+          << std::endl;
+      gaveWarning = true;
+    }
+    return maxItemsPerArchive || maxBytesPerArchive;
+  }
 } msaWriterOptions;
 
 /**
