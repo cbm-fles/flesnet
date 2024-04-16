@@ -11,7 +11,8 @@ msaWriterOptions defaultMsaWriterOptions() {
   // the default values are changed.
   return {
       false, // dryRun
-      false  // beVerbose
+      false, // beVerbose
+      ""     // prefix
   };
 }
 
@@ -24,10 +25,14 @@ getMsaWriterOptionsDescription(msaWriterOptions& options, bool hidden) {
   } else {
     boost::program_options::options_description desc("MSA Writer Options");
     // clang-format off
-    desc.add_options()                                        
+    desc.add_options()
         ("dry-run,d",
           boost::program_options::bool_switch(&options.dryRun),
           "Dry run (do not write any msa files)") 
+        ("prefix,p",
+          boost::program_options::value<std::string>(&options.prefix)
+              -> default_value(""),
+          "Output prefix for msa files")
         ;
     // clang-format on
     return desc;

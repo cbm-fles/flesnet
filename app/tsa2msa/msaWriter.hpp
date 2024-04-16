@@ -11,6 +11,7 @@
 typedef struct msaWriterOptions {
   bool dryRun;
   bool beVerbose;
+  std::string prefix;
 } msaWriterOptions;
 
 /**
