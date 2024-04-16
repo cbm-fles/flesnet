@@ -58,5 +58,3 @@ void getNonSwitchMsaWriterOptions(
   // No exclusive non-switch options for now
 }
 
-unsigned int msaWriterNumberOfExclusiveBooleanSwitches() { return 1; }
-unsigned int msaWriterNumberOfOptionsWithDefaults() { return 3; }

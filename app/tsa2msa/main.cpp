@@ -64,21 +64,12 @@ auto main(int argc, char* argv[]) -> int {
 
   boost::program_options::options_description generic("Generic options");
 
-  // The number of boolean switches is used to determine the number of
-  // options that are passed on the command line. This number needs to
-  // be manually updated whenever such a switch is added or removed.
-  //
   // Note: Use alphabetical order for the switches to make it easier to
   // maintain the code.
-  unsigned int nBooleanSwitches =
-      4 + msaWriterNumberOfExclusiveBooleanSwitches();
   bool beQuiet = false;
   bool beVerbose = false;
   bool showHelp = false;
   bool showVersion = false;
-  unsigned int nOptionsWithDefaults = 0 +
-                                      TsaReaderNumberOfOptionsWithDefaults() +
-                                      msaWriterNumberOfOptionsWithDefaults();
 
   generic.add_options()("quiet,q",
                         boost::program_options::bool_switch(&beQuiet),
@@ -135,53 +126,43 @@ auto main(int argc, char* argv[]) -> int {
     parsingError = true;
   }
 
-  // Count passed options:
+  // Check for further parsing errors:
+  if (!parsingError) {
 
-  // Manually check each boolean switch to count how many differ from
-  // their default setting:
-  unsigned int nPassedBooleanSwitches = 0;
-  if (beQuiet) {
-    ++nPassedBooleanSwitches;
-  }
-  if (beVerbose) {
-    ++nPassedBooleanSwitches;
-  }
-  if (showHelp) {
-    ++nPassedBooleanSwitches;
-  }
-  if (showVersion) {
-    ++nPassedBooleanSwitches;
-  }
+    // Count passed options:
+    unsigned int nPassedOptions = 0;
+    if (!parsingError) {
+      for (const auto& option : vm) {
+        if (!option.second.defaulted()) {
+          nPassedOptions++;
+        }
+      }
+    }
 
-  unsigned int nNonBooleanSwitchOptions =
-      vm.size() - nBooleanSwitches - nOptionsWithDefaults;
-  unsigned int nPassedOptions =
-      nPassedBooleanSwitches + nNonBooleanSwitchOptions;
-
-  // Check for parsing errors:
-  if (nPassedOptions == 0) {
-    errorMessage.push_back("Error: No options provided.");
-    parsingError = true;
-  } else if (showHelp) {
-    // If the user asks for help, then we don't need to check for
-    // other parsing errors. However, prior to showing the help
-    // message, we will inform the user about ignoring any other
-    // options and treat this as a parsing error. In contrast to
-    // all other parsing errors, the error message will be shown
-    // after the help message.
-    unsigned int nAllowedOptions = beVerbose ? 2 : 1;
-    if (nPassedOptions > nAllowedOptions) {
+    if (nPassedOptions == 0) {
+      errorMessage.push_back("Error: No options provided.");
+      parsingError = true;
+    } else if (showHelp) {
+      // If the user asks for help, then we don't need to check for
+      // other parsing errors. However, prior to showing the help
+      // message, we will inform the user about ignoring any other
+      // options and treat this as a parsing error. In contrast to
+      // all other parsing errors, the error message will be shown
+      // after the help message.
+      unsigned int nAllowedOptions = beVerbose ? 2 : 1;
+      if (nPassedOptions > nAllowedOptions) {
+        parsingError = true;
+      }
+    } else if (showVersion) {
+      if (nPassedOptions > 1) {
+        errorMessage.push_back("Error: --version option cannot be combined with"
+                               " other options.");
+        parsingError = true;
+      }
+    } else if (vm.count("input") == 0) {
+      errorMessage.push_back("Error: No input file provided.");
       parsingError = true;
     }
-  } else if (showVersion) {
-    if (nPassedOptions > 1) {
-      errorMessage.push_back("Error: --version option cannot be combined with"
-                             " other options.");
-      parsingError = true;
-    }
-  } else if (vm.count("input") == 0) {
-    errorMessage.push_back("Error: No input file provided.");
-    parsingError = true;
   }
 
   if (parsingError) {

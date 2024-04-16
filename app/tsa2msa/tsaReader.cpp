@@ -63,4 +63,3 @@ void getTsaReaderOptions(const boost::program_options::variables_map& vm,
   tsaReaderOptions.beVerbose = vm["verbose"].as<bool>();
 }
 
-unsigned int TsaReaderNumberOfOptionsWithDefaults() { return 2; }

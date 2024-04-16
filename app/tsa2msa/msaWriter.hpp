@@ -149,19 +149,4 @@ private:
   const msaWriterOptions options;
 };
 
-/**
- * @brief Returns the number of boolean switches exclusive to the
- * msaWriter.
- *
- * This function is used to determine the number of options that are
- * passed on the command line. This number needs to be manually updated
- * whenever such a switch is added or removed.
- *
- * @return The number of boolean switches exclusive to the msaWriter.
- */
-unsigned int msaWriterNumberOfExclusiveBooleanSwitches();
-
-// TODO: Add comment
-unsigned int msaWriterNumberOfOptionsWithDefaults();
-
 #endif // MSAWRITER_HPP

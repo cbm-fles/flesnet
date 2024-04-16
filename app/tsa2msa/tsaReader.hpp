@@ -518,15 +518,4 @@ private:
   }
 };
 
-/**
- * @brief Returns the number of tsaReader options with defaults.
- *
- * This function is used to determine the number of options that are
- * passed on the command line. This number needs to be manually updated
- * whenever such an option is added or removed.
- *
- * @return The number of tsaReader options with defaults.
- */
-unsigned int TsaReaderNumberOfOptionsWithDefaults();
-
 #endif // TSAREADER_HPP
