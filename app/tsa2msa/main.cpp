@@ -76,8 +76,9 @@ auto main(int argc, char* argv[]) -> int {
   bool beVerbose = false;
   bool showHelp = false;
   bool showVersion = false;
-  unsigned int nOptionsWithDefaults =
-      0 + TsaReaderNumberOfOptionsWithDefaults();
+  unsigned int nOptionsWithDefaults = 0 +
+                                      TsaReaderNumberOfOptionsWithDefaults() +
+                                      msaWriterNumberOfOptionsWithDefaults();
 
   generic.add_options()("quiet,q",
                         boost::program_options::bool_switch(&beQuiet),
@@ -292,8 +293,7 @@ auto main(int argc, char* argv[]) -> int {
   // TODO: Get rid of the string as a key and use some enum class or
   // tuple or something else as a key (which simultaneously could be
   // used to derive the string for the filename).
-  std::map<std::string, std::unique_ptr<fles::MicrosliceOutputArchive>>
-      msaFiles;
+  std::map<std::string, std::unique_ptr<fles::Sink<fles::Microslice>>> msaFiles;
 
   uint64_t numTimeslices = 0;
   uint64_t numMicroslices = 0;
@@ -577,7 +577,7 @@ auto main(int argc, char* argv[]) -> int {
           // macro.
           std::string eq_id_string = std::to_string(eq_id);
           std::string optionalSequenceIndicator =
-              msaWriterOptions.sequence ? "" : "_%n";
+              msaWriterOptions.useSequence() ? "" : "_%n";
           std::string msa_archive_name = prefix + "_" + sys_id_string + "_" +
                                          eq_id_string +
                                          optionalSequenceIndicator + ".msa";
@@ -586,9 +586,15 @@ auto main(int argc, char* argv[]) -> int {
           // instead. Only that the values stay constant per
           // TimesliceComponent needs to be checked here.
           if (msaFiles.find(msa_archive_name) == msaFiles.end()) {
-            std::unique_ptr<fles::MicrosliceOutputArchive> msaFile =
-                std::make_unique<fles::MicrosliceOutputArchive>(
-                    msa_archive_name);
+            std::unique_ptr<fles::Sink<fles::Microslice>> msaFile;
+            if (msaWriterOptions.useSequence()) {
+              msaFile = std::make_unique<fles::MicrosliceOutputArchiveSequence>(
+                  msa_archive_name, msaWriterOptions.maxItemsPerArchive,
+                  msaWriterOptions.maxBytesPerArchive);
+            } else {
+              msaFile = std::make_unique<fles::MicrosliceOutputArchive>(
+                  msa_archive_name);
+            }
             msaFiles[msa_archive_name] = std::move(msaFile);
           }
           msaFiles[msa_archive_name]->put(std::move(ms_ptr));

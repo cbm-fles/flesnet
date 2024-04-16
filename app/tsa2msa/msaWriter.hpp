@@ -12,6 +12,20 @@ typedef struct msaWriterOptions {
   bool dryRun;
   bool beVerbose;
   std::string prefix;
+  // Technically, the OutputSequence base classes, if used, does enforce
+  // both of the following options. So, setting one of them to a
+  // non-zero value (as of the time of writing), but not the other, will
+  // behave as if the other value was set to SIZE_MAX. Practically, this
+  // is not going to change behaviour.
+  //
+  // TODO: Comment at some appropriate place that setting one of these
+  // results in the output file(s) being named with a sequence number,
+  // regardless of whether a single file not exceeding the limits is
+  // sufficient.
+  std::size_t maxItemsPerArchive; // zero means no limit
+  std::size_t maxBytesPerArchive; // zero means no limit
+
+  bool useSequence() { return !maxItemsPerArchive || !maxBytesPerArchive; }
 } msaWriterOptions;
 
 /**
@@ -146,5 +160,8 @@ private:
  * @return The number of boolean switches exclusive to the msaWriter.
  */
 unsigned int msaWriterNumberOfExclusiveBooleanSwitches();
+
+// TODO: Add comment
+unsigned int msaWriterNumberOfOptionsWithDefaults();
 
 #endif // MSAWRITER_HPP

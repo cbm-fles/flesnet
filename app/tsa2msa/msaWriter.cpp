@@ -12,7 +12,9 @@ msaWriterOptions defaultMsaWriterOptions() {
   return {
       false, // dryRun
       false, // beVerbose
-      ""     // prefix
+      "",    // prefix
+      0,     // maxItems
+      0      // maxSize
   };
 }
 
@@ -33,8 +35,17 @@ getMsaWriterOptionsDescription(msaWriterOptions& options, bool hidden) {
           boost::program_options::value<std::string>(&options.prefix)
               -> default_value(""),
           "Output prefix for msa files")
+        ("max-items",
+          boost::program_options::value<std::size_t>(&options.maxItemsPerArchive)
+              -> default_value(0),
+          "Maximum number of items to write to msa files")
+        ("max-size",
+          boost::program_options::value<std::size_t>(&options.maxBytesPerArchive)
+              -> default_value(0),
+          "Maximum size of msa files in bytes (sorry for not yet"
+          " supporting human-readable sizes)")
         ;
-    // clang-format on
+    // clang-formBytesPerArchiven
     return desc;
   }
 }
@@ -48,3 +59,4 @@ void getNonSwitchMsaWriterOptions(
 }
 
 unsigned int msaWriterNumberOfExclusiveBooleanSwitches() { return 1; }
+unsigned int msaWriterNumberOfOptionsWithDefaults() { return 3; }
