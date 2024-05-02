@@ -372,9 +372,8 @@ auto main(int argc, char* argv[]) -> int {
       std::set<fles::SubsystemFormatFLES> sys_ver_seen_in_tsc;
       uint64_t numMicroslices_in_tsc = 0;
 
-      // for (uint64_t msc = 0; msc < timeslice->num_core_microslices(); msc++)
-      // {
-      for (uint64_t msc = 0; msc < timeslice->num_microslices(tsc); msc++) {
+      for (uint64_t msc = 0; msc < timeslice->num_core_microslices(tsc);
+           msc++) {
         std::unique_ptr<fles::MicrosliceView> ms_ptr =
             std::make_unique<fles::MicrosliceView>(
                 timeslice->get_microslice(tsc, msc));
