@@ -7,7 +7,7 @@
 #include "Source.hpp"
 #include <boost/archive/binary_iarchive.hpp>
 #ifdef BOOST_IOS_HAS_ZSTD
-  #include <boost/iostreams/filter/zstd.hpp>
+#include <boost/iostreams/filter/zstd.hpp>
 #endif
 #include <boost/iostreams/filtering_stream.hpp>
 #include <fstream>
@@ -88,8 +88,8 @@ private:
           *in_, boost::archive::no_header);
 #else
       throw std::runtime_error(
-          "Unsupported compression type for input archive file \"" +
-          filename_ + "\"");
+          "Unsupported compression type for input archive file \"" + filename_ +
+          "\"");
 #endif
     }
 
