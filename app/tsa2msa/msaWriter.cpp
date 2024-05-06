@@ -64,15 +64,6 @@ getMsaWriterOptionsDescription(msaWriterOptions& options, bool hidden) {
   }
 }
 
-void getNonSwitchMsaWriterOptions(
-    [[maybe_unused]] // Remove this line if the parameter is used
-    const boost::program_options::variables_map& vm,
-    [[maybe_unused]] // Remove this line if the parameter is used
-    msaWriterOptions& msaWriterOptions) {
-  // No exclusive non-switch options for now
-}
-
-
 void validate(boost::any& v, const std::vector<std::string>& values,
               bytesNumber*, int) {
   // Following the example in the boost program_options documentation
@@ -199,3 +190,111 @@ void validate(boost::any& v, const std::vector<std::string>& values,
   v = boost::any(bytesNumber{number * factor});
 
 }
+
+void msaWriter::write_timeslice(std::shared_ptr<fles::Timeslice> timeslice) {
+    // TODO: Count sys_id changes per timeslice, check if there is new
+    // or missing sys_ids.
+
+
+    // Write the timeslice to a file:
+    for (uint64_t tsc = 0; tsc < timeslice->num_components(); tsc++) {
+      write_timeslice_component(timeslice, tsc);
+    }
+
+    // Inform the validator that the Timeslice has ended:
+    validator.timesliceEnd(options.beVerbose);
+
+    if (options.interactive) {
+      std::cout << "Press Enter to continue..." << std::endl;
+      std::cin.get();
+    }
+    numTimeslices++;
+  }
+
+  void msaWriter::write_timeslice_component(std::shared_ptr<fles::Timeslice> timeslice,
+                                 uint64_t tsc) {
+    // TODO: Count sys_id changes per TimesliceComponent, check if
+    // there is new or missing sys_ids.
+
+    // TODO: Check for num_core_microslices() changes.
+    for (uint64_t msc = 0; msc < timeslice->num_core_microslices(); msc++) {
+      std::unique_ptr<fles::MicrosliceView> ms_ptr =
+          std::make_unique<fles::MicrosliceView>(
+              timeslice->get_microslice(tsc, msc));
+      write_microslice(std::move(ms_ptr));
+    }
+
+    // Inform the validator that the TimesliceComponent has ended:
+    validator.timesliceComponentEnd(false && options.beVerbose);
+
+    if (false && options.interactive) {
+      std::cout << "Press Enter to continue..." << std::endl;
+      std::cin.get();
+    }
+  }
+
+  std::string msaWriter::constructArchiveName(const fles::Subsystem& sys_id,
+                                   const uint16_t& eq_id) {
+
+    // TODO: Do not construct the archive name for every microslice,
+    // but do some caching instead.
+    std::string prefix = options.prefix;
+
+    if (prefix.size() == 0) {
+      std::cerr << "Error: Prefix is empty, should not happen."
+                << " Setting arbitrary prefix." << std::endl;
+      prefix = "empty_prefix";
+    }
+    std::string sys_id_string = fles::to_string(sys_id);
+    // eq_id is a uint16_t, and most likely typedefed to some
+    // primitive integer type, so likely implicit conversion to
+    // that integer type is safe. However, the fixed width
+    // integer types are implementation defined, so the correct
+    // way to do this likely involves using the PRIu16 format
+    // macro.
+    std::string eq_id_string = std::to_string(eq_id);
+    std::string optionalSequenceIndicator =
+        options.useSequence() ? "_%n" : "";
+
+    std::string msa_archive_name = prefix + "_" + sys_id_string + "_" +
+                                   eq_id_string + optionalSequenceIndicator +
+                                   ".msa";
+    // TODO: This happens for every microslice, which is really
+    // unnecessary and should happen for every TimesliceComponent
+    // instead. Only that the values stay constant per
+    // TimesliceComponent needs to be checked here.
+    if (msaFiles.find(msa_archive_name) == msaFiles.end()) {
+      std::unique_ptr<fles::Sink<fles::Microslice>> msaFile;
+      if (options.useSequence()) {
+        msaFile = std::make_unique<fles::MicrosliceOutputArchiveSequence>(
+            msa_archive_name, options.maxItemsPerArchive,
+            options.maxBytesPerArchive);
+      } else {
+        msaFile =
+            std::make_unique<fles::MicrosliceOutputArchive>(msa_archive_name);
+      }
+      msaFiles[msa_archive_name] = std::move(msaFile);
+    }
+    return msa_archive_name;
+  }
+
+  void msaWriter::write_microslice(std::shared_ptr<fles::MicrosliceView> ms_ptr) {
+    const fles::MicrosliceDescriptor& msd = ms_ptr->desc();
+
+    // TODO: Take into account that raw values not corresponding to
+    // some named enum value should be treated as an error.
+    const uint16_t& eq_id = msd.eq_id;
+    const fles::Subsystem& sys_id = static_cast<fles::Subsystem>(msd.sys_id);
+
+    validator.check_microslice(ms_ptr, false && options.beVerbose);
+
+    if (!options.dryRun) {
+      std::string msa_archive_name = constructArchiveName(sys_id, eq_id);
+      msaFiles[msa_archive_name]->put(std::move(ms_ptr));
+    }
+
+    if (false && options.interactive) {
+      std::cout << "Press Enter to continue..." << std::endl;
+      std::cin.get();
+    }
+  }
