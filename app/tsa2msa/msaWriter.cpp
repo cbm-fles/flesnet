@@ -41,7 +41,10 @@ getMsaWriterOptionsDescription(msaWriterOptions& options, bool hidden) {
         ("prefix,p",
           boost::program_options::value<std::string>(&options.prefix)
               -> default_value(""),
-          "Output prefix for msa files")
+          "Output prefix for msa files\n"
+          "  \tIf no prefix is given, i.e. the value default to the empty"
+          " string, the longest common prefix of the input files is used."
+          )
         ("max-items",
           boost::program_options::value<std::size_t>(&options.maxItemsPerArchive)
               -> default_value(0),
