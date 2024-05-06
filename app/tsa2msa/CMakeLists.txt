@@ -8,6 +8,9 @@ list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/config/GitRevision.hpp")
 list(APPEND SOURCES msaWriter.cpp)
 list(APPEND HEADERS msaWriter.hpp)
 
+list(APPEND SOURCES msaValidator.cpp)
+list(APPEND HEADERS msaValidator.hpp)
+
 list(APPEND SOURCES tsaReader.cpp)
 list(APPEND HEADERS tsaReader.hpp)
 
