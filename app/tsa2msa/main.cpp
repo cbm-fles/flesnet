@@ -29,10 +29,102 @@
 /**
  * @mainpage The tsa2msa Tool Documentation
  * @section intro_sec Introduction
- * The tsa2msa tool is a command line utility designed to convert `.tsa`
+ * The `tsa2msa` tool is a command line utility designed to convert `.tsa`
  * files to `.msa` files. Its primary purpose is to facilitate the
  * creation of golden tests for the FLESnet application by converting
  * output data from past runs that processed real experimental data.
+ *
+ * @section motivation_sec Motivation
+ * Experiments to develop and test CBM code are expensive
+ * and time consuming. The distributed timeslice building layer
+ * FLESnet is only one of many components that need to be tested, but is
+ * a single point of failure for the entire experiment. Therefore,
+ * testing (possibly experimental) changes and improvements to FLESnet
+ * during experiments of the CBM collaboration is a delicate task.
+ *
+ * It is possible to test FLESnet with data from pattern generators in
+ * software or from the CRI-Board hardware. However, before deploying
+ * FLESnet in experiments of the CBM collaboration, it is desirable to
+ * safely test it against real experimental without risking valuable
+ * resources for other components of CBM. Furthermore, testing how
+ * FLESnet will receive data in production is not possible with the
+ * pattern generator software, and the CRI-Board hardware is not always
+ * available.
+ *
+ * From previous experiments, data is available in form of timeslice
+ * archives (`.tsa` files). The `tsa2msa` tool is designed to convert
+ * these `.tsa` files to microslice archives (`.msa` files). This allows
+ * for a replay of the experiment data in FLESnet using the `mstool`,
+ * which emulates how the `cri-server` and the CRI-boards provide data
+ * in production. (However, see \ref future_sec for how this is going to
+ * change.)
+ *
+ * @section design_sec Design
+ *
+ * In contrast to FLESnet library code which is designed to be used in
+ * experiments under real-time requirements, `tsa2msa` is focused on
+ * file based processing and validation of data. Furthermore it serves
+ * as an exploration of the FLESnet library, its capabilities and
+ * current limitations. Some of the code in `tsa2msa` may later be moved
+ * to the FLESnet library, but this is not the primary goal of the tool.
+ *
+ * The current implementation of `tsa2msa` is sequential and simple.
+ * It is split into a tsaReader and a msaWriter class, and the main
+ * while-read-write loop in the main function is quite simple.
+ * Deliberately, changes to the FLESnet library are avoided for now.
+ * Later, the tool may be extended to process data with a smaller memory
+ * footprint (see \ref data_size_sec).
+ *
+ * @section future_sec Future Challanges
+ * @subsection data_size_sec Data Size
+ * The size of experimental data is large and the conversion of `.tsa`
+ * to `.msa` files is a time and memory consuming task. While processing
+ * time is not a critical issue, the memory consumption may be.
+ * The current implementation of `tsa2msa` is sequential and simple,
+ * using `O(nTimesliceArchive * MaxTimesliceSize)` memory. Soon this
+ * will possibly be a problem and the tool needs to be adapted to
+ * process the data in smaller chunks. However, there is challenges with
+ * the fact that the boost::serialization library does not provide a
+ * straightforward way to "peek" into archives to determine whether it
+ * contains the chronologically next timeslice.
+ *
+ * This issue can be overcome by either reading the entire archives once
+ * to build an index and then read the data from the archives in the
+ * correct order. A different approach is to attempt to copy the
+ * filestream underlying the boost::archive, which may be the
+ * (undocumented but) intended way to achieve "peeking" into
+ * boost::archives. The former approach is likely simpler to implement,
+ * but likely less time efficient. The latter approach is likely more
+ * efficient, but may be more complex to implement since, currently, the
+ * FLESnet library codes does not provide access to the filestreams
+ * underlying the boost::archives.
+ *
+ * \todo Fix formula display in Doxygen. Somehow `\f( ... \f)` does not
+ * work despite having enabled the `MATHJAX` option in the Doxygen.
+ *
+ * @subsection data_input_future_sec Changes in Data Input
+ * The design and responsibilities of the `cri-server` which organizes
+ * the data flow from the CRI-Board to data consumers such as FLESnet
+ * are under development. The planned changes will likely make the
+ * `cri-server` build sub-timeslices and `mstool` is going to loose its
+ * capability to accurately emulate the data flow in production.
+ *
+ * Possible solutions to this problem are:
+ * -# Extending `mstool` to emulate the new data flow.
+ * -# Building a new tool based on `mstool` that can emulate the new
+ *  data flow.
+ * -# Extending `cri-server` by functionality to read either `.tsa` or
+ *  `.msa` files and provide the data to FLESnet.
+ *
+ * Which of these solutions is going to be implemented is not yet
+ * decided and each has its own drawbacks and advantages. By the very
+ * idea `mstool` is designed to only work with microslice archives,
+ * hence building a new tool seems more natural. However, this comes at
+ * the cost of maintaining a further tool. Extending `cri-server` is
+ * possibly more efficient, but so far in the development of the
+ * `cri-tool` it was deliberately avoided to include functionality to
+ * write data as its only purpose is to organize the communication with
+ * the CRI-boards that provide the data themselves.
  */
 
 /**
