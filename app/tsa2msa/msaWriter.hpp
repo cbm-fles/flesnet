@@ -199,7 +199,7 @@ msaWriterOptions defaultMsaWriterOptions();
  *
  * @details Via the boost::program_options library, the object returned
  * by this function can be used to parse user provided command line
- * options for the msaWriter. In accordance with recommended practive,
+ * options for the msaWriter. In accordance with recommended practice,
  * the caller should call this function twice: once to obtain the
  * visible options and once to obtain the hidden options, which despite
  * not needed to be exposed to the user (unless explicitly requested),
