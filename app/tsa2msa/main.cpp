@@ -46,10 +46,10 @@
  * software or from the CRI-Board hardware. However, before deploying
  * FLESnet in experiments of the CBM collaboration, it is desirable to
  * safely test it against real experimental without risking valuable
- * resources for other components of CBM. Furthermore, testing how
- * FLESnet will receive data in production is not possible with the
- * pattern generator software, and the CRI-Board hardware is not always
- * available.
+ * resources for testing other components of CBM and their interaction.
+ * Furthermore, testing how FLESnet will receive data in production is
+ * not possible with the pattern generator software, and the CRI-Board
+ * hardware is not always available.
  *
  * From previous experiments, data is available in form of timeslice
  * archives (`.tsa` files). The `tsa2msa` tool is designed to convert
