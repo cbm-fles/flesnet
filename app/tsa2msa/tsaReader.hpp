@@ -16,13 +16,46 @@
 #include "lib/fles_ipc/TimesliceAutoSource.hpp"
 
 /**
+ * @file tsaReader.hpp
+ * @brief This file contains the declarations of the tsaReader class and
+ * related functions.
+ */
+
+/**
  * @struct tsaReaderOptions
  * @brief Options that will be used by a tsaReader.
  */
 typedef struct tsaReaderOptions {
   bool beVerbose;
+  /**
+   * @brief Whether the tsaReader should stop at each timeslice and wait for
+   * the user to confirm before continuing.
+   *
+   * @details If interactive is set to true, the tsaReader will stop
+   * after each Timeslice read and wait for the user to press enter
+   * before continuing. This is useful for debugging and testing.
+   */
   bool interactive;
+
+  /**
+   * @brief The inputs to be read by the tsaReader.
+   *
+   * @details The inputs files are given as a vector of strings.
+   * Typically, each string represents a path to a file to be read by
+   * the tsaReader. The FLESnet library, to which the input is passed,
+   * allows for other input to be given as well. However, it is
+   * recommended to simply pass the paths to `.tsa` files to be read.
+   */
   std::vector<std::string> input;
+
+  /**
+   * @brief The method to call into the FLESnet library to read the
+   * input.
+   * @details Currently, the only supported method is "auto". However,
+   * this is likely to change in the future as the corresponding FLESnet
+   * library class is expected to be to memory consuming to be used in
+   * the intended application of tsa2msa.
+   */
   std::string readingMethod;
 } tsaReaderOptions;
 
@@ -31,67 +64,70 @@ typedef struct tsaReaderOptions {
  *
  * The default options are:
  * - beVerbose  = false
+ * - interactive = false
  * - input      = empty vector
- * The input vector must be populated with input by the user.
  *
- * @note TODO: Describe what is supposed to happen with the input vector and how
- * it should get populated.
+ * The input vector is expected to be populated by the caller before the
+ * tsaReaderOptions object is used to create a tsaReader.
+ *
+ * @note Unfortunately, the above list is not automatically updated when
+ * the default options are changed in the code. This could be overcome
+ * by using a constant global variable instead of a function. However,
+ * the formatting of the doxygen documentation does not include the
+ * struct member variable names in the description and does not look
+ * very nice. Hence, the current solution is a compromise.
  *
  * @return The default options for an tsaReader.
  */
 tsaReaderOptions defaultTsaReaderOptions();
 
 /**
- * @brief Command line options exclusive to the tsaReader.
+ * @brief Create command line options descriptions exclusive to the tsaReader.
  *
- * Can be used to parse named command line options for the tsaReader. These
- * options are necessarily exclusive to the tsaReader. Options shared
- * with other classes need to be handled separately. Currently, we have
- * the following options:
+ * @details Via the boost::program_options library, the object returned
+ * by this function can be used to parse user provided command line
+ * options for the tsaReader. In accordance with recommended practice,
+ * the caller should call this function twice: once to obtain the
+ * visible options and once to obtain the hidden options, which despite
+ * not needed to be exposed to the user (unless explicitly requested),
+ * are still needed to provide desired functionality.
  *
- * Shared options:
- *  Boolean switches:
- *    --verbose, -v corresponds to beVerbose
- *
- *  Other options:
- *    None
- *
- * Exclusive options:
- *  Boolean switches:
- *    None
- *
- *  Other options:
- *    --input, -i corresponds to input
- *
- * @note The input option is used as a helper for interpreting all positional
- * arguments as input files. The corresponding
- * boost::program_options::positional_options_description object must be
- * created and used separately. Since positional arguments, by their very
- * nature, are very sensitive to the number and order of the options, they
- * are all handled in the main function.
- *
- * @param options The tsaReaderOptions object to be used for tsaReader options,
- * whose values are taken as defaults.
+ * @param options The options description object serving a dual purpose:
+ * its member variables are used as default values for the command line
+ * options and the object itself is used to store the options provided
+ * by the user. These are set automatically by the
+ * boost::program_options library.
  *
  * @param hidden Whether to return hidden or regular options. Hidden options are
  * additional options that are not shown in the help message unless explicitly
  * requested by specifying `--help` together with the `--verbose` option.
  *
- * @return The named command line options for the tsaReader. Can be combined
- * with other command line options and used to parse user input. The
- * resulting variables_map can be used to construct an tsaReaderOptions
- * object.
+ * @return The command line options for the tsaReader. Can be combined
+ * with other command line options and used to parse user input.
  *
- * @note boost::program_options throws an exception if multiple
+ * \todo Provide some template for these kind of functions to get rid of
+ * the duplication of the doxygen description.
+ *
+ * @note boost::program_options throws a runtime exception if multiple
  * options_description objects which contain the same option are
- * combined. Hence, in case of future name clashes, the
- * options_description must be adjusted and the shared option
- * defined somewhere else.*/
+ * combined. Hence, name clashes should be avoided manually.
+ */
 boost::program_options::options_description
 getTsaReaderOptionsDescription(tsaReaderOptions& options, bool hidden);
 
 /**
  * @brief Parses the command line options for the tsaReader.
+ *
+ * Currently, not all options in the tsaReaderOptions object are
+ * automatically set by the boost::program_options library. Until this
+ * is fixed, the user must call this function to populate the remaining
+ * values using the variables_map object returned by the library. The
+ * user must ensure to use the same tsaReaderOptions object to create the
+ * options_description object used to parse the command line options and
+ * populate the variables_map object as the one passed to this function.
+ *
+ * \todo Fix the issue that not all options are automatically set by the
+ * boost::program_options library.
  *
  * @param vm The variables_map object populated by the command line
  * options given by the user. It is assumed that it was parsed using the
@@ -109,177 +145,12 @@ void getTsaReaderOptions(const boost::program_options::variables_map& vm,
  * @class tsaReaderValidator
  * @brief This class validates the Timeslices read by a tsaReader.
  *
- * The tsaReaderValidator provides functionality to validate the Timeslices
- * read by a tsaReader.
- *
- *
+ * @detailed The tsaReaderValidator provides functionality to validate
+ * the Timeslices read by a tsaReader. In particular, it checks whether
+ * the Timeslices are in chronological order and whether the number of
+ * core microslices and components is constant.
  */
 class tsaReaderValidator {
-
-public:
-  /**
-   * @brief Constructor for the tsaReaderValidator object.
-   */
-  tsaReaderValidator()
-      : time_monotonically_increasing(true), time_strict_monotonicity(true),
-        index_monotonically_increasing(true), index_strict_monotonicity(true),
-        num_core_microslices_constant(true), num_components_constant(true),
-
-        nStrictMonotonicityViolationsTime(0),
-        nStrictMonotonicityViolationsIndex(0), nMonotonicityViolationsTime(0),
-        nMonotonicityViolationsIndex(0), nNumCoreMicroslicesViolations(0),
-        nNumComponentsViolations(0),
-
-        last_timeslice_start_time(0), last_timeslice_index(0),
-        last_timeslice_num_core_microslices(0),
-        last_timeslice_num_components(0),
-
-        nTimeslices(0){};
-
-  /**
-   * @brief Destructor for the tsaReaderValidator object.
-   */
-  ~tsaReaderValidator() = default;
-
-  // Delete copy constructor:
-  tsaReaderValidator(const tsaReaderValidator& other) = delete;
-
-  // Delete copy assignment:
-  tsaReaderValidator& operator=(const tsaReaderValidator& other) = delete;
-
-  // Delete move constructor:
-  tsaReaderValidator(tsaReaderValidator&& other) = delete;
-
-  // Delete move assignment:
-  tsaReaderValidator& operator=(tsaReaderValidator&& other) = delete;
-
-  /**
-   * @brief Validates the Timeslices read by a tsaReader and their
-   * order.
-   *
-   * @return EX_OK if successful, EX_SOFTWARE if an error occurred.
-   */
-  int validate(const std::unique_ptr<fles::Timeslice>& timeslice) {
-    if (!timeslice) {
-      std::cerr << "Error: No timeslice received." << std::endl;
-      return EX_SOFTWARE;
-    }
-
-    uint64_t timesliceIndex = timeslice->index();
-    uint64_t numCoreMicroslices = timeslice->num_core_microslices();
-    uint64_t numComponents = timeslice->num_components();
-    uint64_t start_time = timeslice->start_time();
-    if (nTimeslices != 0) {
-      if (start_time < last_timeslice_start_time) {
-        time_monotonically_increasing = false;
-        time_strict_monotonicity = false;
-        nMonotonicityViolationsTime++;
-        nStrictMonotonicityViolationsTime++;
-      } else if (start_time == last_timeslice_start_time) {
-        time_strict_monotonicity = false;
-        nStrictMonotonicityViolationsTime++;
-      }
-    }
-    last_timeslice_start_time = start_time;
-
-    if (nTimeslices != 0) {
-      if (timesliceIndex < last_timeslice_index) {
-        index_monotonically_increasing = false;
-        index_strict_monotonicity = false;
-        nMonotonicityViolationsIndex++;
-        nStrictMonotonicityViolationsIndex++;
-      } else if (timesliceIndex == last_timeslice_index) {
-        index_strict_monotonicity = false;
-        nStrictMonotonicityViolationsIndex++;
-      }
-    }
-    last_timeslice_index = timesliceIndex;
-
-    if (nTimeslices != 0 &&
-        numCoreMicroslices != last_timeslice_num_core_microslices) {
-      num_core_microslices_constant = false;
-      nNumCoreMicroslicesViolations++;
-    }
-    last_timeslice_num_core_microslices = numCoreMicroslices;
-    if (nTimeslices != 0 && numComponents != last_timeslice_num_components) {
-      num_components_constant = false;
-      nNumComponentsViolations++;
-    }
-    last_timeslice_num_components = numComponents;
-    nTimeslices++;
-
-    return EX_OK;
-  }
-
-  void printVerboseIntermediateResult() {
-    std::cout << "Timeslice number: " << nTimeslices << std::endl;
-    std::cout << "Timeslice index: " << last_timeslice_index << std::endl;
-    std::cout << "Number of core microslices: "
-              << last_timeslice_num_core_microslices << std::endl;
-    std::cout << "Number of components: " << last_timeslice_num_components
-              << std::endl;
-    std::cout << "Start time: " << last_timeslice_start_time << std::endl;
-    if (!time_monotonically_increasing) {
-      std::cout << "Warning: Timeslice start time is not monotonically "
-                   "increasing."
-                << std::endl;
-      std::cout << "Number of monotonicity violations: "
-                << nMonotonicityViolationsTime << std::endl;
-    } else if (!time_strict_monotonicity) {
-      std::cout << "Error: Timeslice start time is not strictly "
-                   "monotonically increasing."
-                << std::endl;
-      std::cout << "Number of strict monotonicity violations: "
-                << nStrictMonotonicityViolationsTime << std::endl;
-    }
-    if (!index_monotonically_increasing) {
-      std::cout << "Warning: Timeslice index is not monotonically increasing."
-                << std::endl;
-      std::cout << "Number of monotonicity violations: "
-                << nMonotonicityViolationsIndex << std::endl;
-    } else if (!index_strict_monotonicity) {
-      std::cout << "Error: Timeslice index is not strictly monotonically "
-                   "increasing."
-                << std::endl;
-      std::cout << "Number of strict monotonicity violations: "
-                << nStrictMonotonicityViolationsIndex << std::endl;
-    }
-    if (!num_core_microslices_constant) {
-      std::cout << "Warning: Number of core microslices is not constant."
-                << std::endl;
-      std::cout << "Number of violations: " << nNumCoreMicroslicesViolations
-                << std::endl;
-    }
-    if (!num_components_constant) {
-      std::cout << "Warning: Number of components is not constant."
-                << std::endl;
-      std::cout << "Number of violations: " << nNumComponentsViolations
-                << std::endl;
-    }
-  }
-
-  void printSummary() {
-
-    std::cout << "Number of timeslices: " << nTimeslices << std::endl;
-    if (!time_monotonically_increasing) {
-      std::cerr
-          << "Warning: Timeslice start time is not monotonically increasing."
-          << std::endl;
-    } else if (!time_strict_monotonicity) {
-      std::cerr << "Error: Timeslice start time is not strictly monotonically "
-                   "increasing."
-                << std::endl;
-    }
-    if (!index_monotonically_increasing) {
-      std::cerr << "Warning: Timeslice index is not monotonically increasing."
-                << std::endl;
-    } else if (!index_strict_monotonicity) {
-      std::cerr << "Error: Timeslice index is not strictly monotonically "
-                   "increasing."
-                << std::endl;
-    }
-  }
-
 private:
   // true until proven false:
   bool time_monotonically_increasing;
@@ -303,14 +174,64 @@ private:
   uint64_t last_timeslice_num_core_microslices;
   uint64_t last_timeslice_num_components;
   uint64_t nTimeslices;
+
+public:
+  /**
+   * @brief Constructor for the tsaReaderValidator object.
+   */
+  tsaReaderValidator();
+
+  /**
+   * @brief Destructor for the tsaReaderValidator object.
+   */
+  ~tsaReaderValidator() = default;
+
+
+  /**
+   * @brief Validates the Timeslices read by a tsaReader and their
+   * order.
+   *
+   * \todo Reconsider the return value.
+   *
+   * @return EX_OK if successful, EX_SOFTWARE if an error occurred.
+   */
+  int validate(const std::unique_ptr<fles::Timeslice>& timeslice);
+
+  void printVerboseIntermediateResult();
+
+  void printSummary();
+
+private:
+  // Delete copy constructor:
+  tsaReaderValidator(const tsaReaderValidator& other) = delete;
+
+  // Delete copy assignment:
+  tsaReaderValidator& operator=(const tsaReaderValidator& other) = delete;
+
+  // Delete move constructor:
+  tsaReaderValidator(tsaReaderValidator&& other) = delete;
+
+  // Delete move assignment:
+  tsaReaderValidator& operator=(tsaReaderValidator&& other) = delete;
 };
 
 /**
  * @class tsaReader
  * @brief This class represents a reader for tsa archives.
  *
- * The tsaReader provides functionality to read TSA data from a file or
- * other input stream. For now, many default methods such as
+ * The tsaReader provides functionality to read from multiple timeslices
+ * archives (or other input streams) and provide the timeslices in
+ * chronological order to the caller. Furthermore, it provides basic
+ * validation of the timeslices read and means to print basic
+ * statistics. The main method read() is supposed to be called
+ * repeatedly until it returns a nullptr, indicating that the end of the
+ * input has been reached.
+ *
+ * The tsaReader calls into the FLESnet library to read the timeslices,
+ * overcoming (or at least documenting) some of the limitations of the
+ * library.
+ *
+ * \note For now, many default methods such as
  * copy constructor, copy assignment, move constructor, and move
  * assignment are deleted until they are needed (if ever). Similarly,
  * the class is marked as final to prevent inheritance (until needed).
@@ -331,20 +252,24 @@ public:
    * @brief Constructor for the tsaReader object.
    *
    * @note If given invalid options, the constructor will throw an
-   * exception.
+   * exception. This is a little unfortunate, but seems to be common
+   * practice in C++ whenever not all possible inputs are valid.
+   * Alternatively, we could require the user to check the options
+   * before calling the constructor, but this does not really solve the
+   * problem.
    *
    * @param options The options to be used for the tsaReader, including
    * the input files to be read. Passed by value since we do not allow
    * the caller to change the options after the object is created.
    */
-  explicit tsaReader(const tsaReaderOptions options)
-      : options(options), validator(), source(nullptr), nTimeslices(0),
-        last_duration(), // purposefully left unspecified
-        total_duration(0) {
-    initSource(options.input);
-  };
+  explicit tsaReader(const tsaReaderOptions options);
 
-  // Delete default constructor (options must be provided):
+  /**
+   * @brief Deleted default constructor for the tsaReader object.
+   * @details In contrast to the default msaReader constructor, the
+   * tsaReader is reliant on the input files given in the options, hence
+   * a default constructor is not possible.
+   */
   tsaReader() = delete;
 
   /**
@@ -352,6 +277,14 @@ public:
    */
   ~tsaReader() = default;
 
+  /**
+   * @brief Reads the next Timeslice from the input.
+   *
+   * @return A unique pointer to the Timeslice read from the input.
+   * If the end of the input has been reached, a nullptr is returned.
+   */
+  std::unique_ptr<fles::Timeslice> read();
+private:
   // Delete copy constructor:
   tsaReader(const tsaReader& other) = delete;
 
@@ -364,158 +297,16 @@ public:
   // Delete move assignment:
   tsaReader& operator=(tsaReader&& other) = delete;
 
-private:
-  std::unique_ptr<fles::Timeslice> handleEosError() {
-    // TODO: Make strict_eos an tsaReaderOption:
-    bool strict_eos = false;
-    if (strict_eos) {
-      std::cerr << "Error: No timeslice received." << std::endl;
-      if (options.beVerbose) {
-        std::cout << "Next eos: " << source->eos() << std::endl;
-      }
-      throw std::runtime_error("No timeslice received.");
-    } else {
-      // Ignore the fact that eos did not indicate the end of the
-      // file and return nullptr as if nothing extraordinary
-      // happened:
-      return nullptr;
-    }
-  }
+  std::unique_ptr<fles::Timeslice> handleEosError();
 
-  void printDuration() {
-    if (nTimeslices == 0) {
-      std::cerr << "Warning: Cannot print duration since no timeslices "
-                   "have been read yet."
-                << std::endl;
-      return;
-    }
-    std::cout << "Elapsed time: " << last_duration.count() << "s"
-              << " ("
-              << std::chrono::duration_cast<std::chrono::seconds>(
-                     total_duration)
-                         .count() /
-                     static_cast<double>(nTimeslices)
-              << "s avg.)" << std::endl;
-  }
-
-public:
-  std::unique_ptr<fles::Timeslice> read() {
-    if (!source) {
-      std::cerr << "Error: No source set." << std::endl;
-      throw std::runtime_error("No source set.");
-    }
-    try {
-      bool eos = source->eos();
-      if (eos) {
-        return nullptr;
-      }
-
-      auto start = std::chrono::steady_clock::now();
-      std::unique_ptr<fles::Timeslice> timeslice = source->get();
-      auto end = std::chrono::steady_clock::now();
-
-      // Sometimes the source does not return a timeslice even if it
-      // did not indicate eos.
-      // TODO: Remove this workaround once the source is fixed.
-      if (!timeslice) {
-        return handleEosError();
-      }
-
-      // Adjust statistics:
-      nTimeslices++;
-      auto duration = end - start;
-      total_duration += duration;
-      last_duration = duration;
-
-      // TODO: Add option to validate the timeslice (or not):
-      validator.validate(timeslice);
-
-      if (options.beVerbose) {
-        printDuration();
-        validator.printVerboseIntermediateResult();
-      }
-
-      // TODO: Move this to the main function:
-      if (options.interactive) {
-        // Wait for user input to continue:
-        std::string dummy;
-        std::cout << "Press Enter to continue..." << std::endl;
-        std::getline(std::cin, dummy);
-      }
-
-      return timeslice;
-
-    } catch (const std::exception& e) {
-      std::cerr << "tsaReader::read(): Error: " << e.what() << std::endl;
-      throw e;
-    }
-  }
+  void printDuration();
 
 private:
-  /**
-   * @brief Sets the source of the tsaReader.
-   *
-   * This function is used to set the source of the tsaReader. It's main
-   * purpose is to demonstrate how initialization or changing of the
-   * source can be done. The previous source, if any, is deleted.
-   *
-   * @param source The source to be used for the tsaReader. Since it is
-   * a unique pointer, the caller must ensure to pass the unique pointer
-   * as an rvalue to the function, or the function call will not
-   * compile.
-   */
-  void setSource(std::unique_ptr<fles::TimesliceSource> s) {
-    // The move assignment of a unique pointer calls the destructor of
-    // the object that was previously held by the unique pointer (when
-    // necessary) and assigns the new object to the unique pointer.
-    source = std::move(s);
-  }
+  void setSource(std::unique_ptr<fles::TimesliceSource> s);
 
-  void initAutoSource(const std::vector<std::string>& inputs) {
+  void initAutoSource(const std::vector<std::string>& inputs);
 
-    // Check if any of the input files are given as a glob pattern
-    // as long as the implementation is not fully reliable:
-    // TODO: Remove this check once the implementation is reliable.
-    for (const auto& input : inputs) {
-      // This is a very simple check that triggers even if the special
-      // characters are escaped, but since it only triggers a warning,
-      // it is acceptable for now.
-      if (input.find('*') != std::string::npos ||
-          input.find('?') != std::string::npos ||
-          input.find('[') != std::string::npos) {
-        std::cerr
-            << "Warning: While TimesliceAutoSource supports glob patterns\n"
-            << "         for input files, the current implementation seems\n"
-            << "         to have issues with glob patterns and occasionally\n"
-            << "         provide Timeslices in the wrong order. It is\n"
-            << "         recommended to let your shell expand the glob.\n"
-            << std::endl;
-        break;
-      }
-    }
-
-    // Join the input files into a ;-separated string, as expected by
-    // the TimesliceAutoSource:
-    std::string input = "";
-    for (auto i = inputs.begin(); i != inputs.end(); i++) {
-      if (i != inputs.begin()) {
-        input += ";";
-      }
-      input += *i;
-    }
-
-    std::unique_ptr<fles::TimesliceAutoSource> s =
-        std::make_unique<fles::TimesliceAutoSource>(input);
-    setSource(std::move(s));
-  }
-
-  void initSource(const std::vector<std::string>& inputs) {
-    if (options.readingMethod == "auto") {
-      initAutoSource(inputs);
-    } else {
-      throw std::runtime_error("Invalid reading method");
-    }
-  }
+  void initSource(const std::vector<std::string>& inputs);
 };
 
 #endif // TSAREADER_HPP
