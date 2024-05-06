@@ -20,10 +20,59 @@
 
 /**
  * @file main.cpp
- * @brief Main function of the tsa2msa tool
+ * @brief Contains the main function of the tsa2msa tool as well as
+ * anything related to parsing the command line arguments. Global
+ * options are defined here, too, but options specific to components of
+ * the tool are defined in their respective files.
  */
 
+/**
+ * @mainpage The tsa2msa Tool Documentation
+ * @section intro_sec Introduction
+ * The tsa2msa tool is a command line utility designed to convert `.tsa`
+ * files to `.msa` files. Its primary purpose is to facilitate the
+ * creation of golden tests for the FLESnet application by converting
+ * output data from past runs that processed real experimental data.
+ */
 
+/**
+ * @brief Program description for the command line help message
+ * @details This string contains the introductory paragraph of the
+ * doxygen documentation for the tsa2msa tool, but formatted according
+ * to mechanism as outlined in the Boost Program Options documentation.
+ * Any derivation from the original text should be considered as an
+ * error and reported as a bug.
+ */
+const std::string program_description =
+    "tsa2msa - convert `.tsa` files to `.msa` files\n"
+    "\n"
+    "    Usage:\ttsa2msa [options] input1 [input2 ...]\n"
+    "\n"
+    "  The tsa2msa tool is a command line utility designed to\n"
+    "  convert `.tsa` files to `.msa` files. Its primary purpose\n"
+    "  is to facilitate the creation of golden tests for the\n"
+    "  FLESnet application by converting output data from past\n"
+    "  runs that processed real experimental data.\n"
+    "\n"
+    "  See the Doxygen documentation for the tsa2msa tool for\n"
+    "  more information.\n";
+
+/**
+ * @brief Parse command line arguments and store them in a variables map
+ * @details This function parses the command line arguments using the
+ * Boost Program Options library, storing the results in a variables map
+ * provided by the caller. If the boost library throws an exception, an
+ * appropriate error message is pushed back to the error message vector.
+ *
+ * @param argc Number of command line arguments as passed to main
+ * @param argv Command line arguments as passed to main to main
+ * @param command_line_options Description of all command line options
+ * @param positional_command_line_arguments Description of all
+ * positional command line arguments
+ * @param vm Variables map to store the parsed options
+ * @param errorMessage Vector to store error messages
+ * @return True if there was a parsing error, false otherwise
+ */
 bool parse_command_line(int argc, char* argv[],
                         const boost::program_options::options_description& command_line_options,
                         const boost::program_options::positional_options_description& positional_command_line_arguments,
@@ -48,6 +97,30 @@ bool parse_command_line(int argc, char* argv[],
   return parsingError;
 }
 
+/**
+ * @brief Check for global parsing errors
+ *
+ * @details Checks whether input files were provided and whether the
+ * logical errors of global options are present. I.e. logical errors
+ * that are not specific to any particular component of the tool.
+ *
+ * @note The values of the variables beVerbose, showHelp, and showVersion
+ * need to be passed as arguments as they are obtained via boolean
+ * switches. It is possible to recover their values from the variables
+ * map, but this misses the point of using boolean switches to prevent
+ * error prone manual lookups in the variables map.
+ *
+ * \pre The variables map should have been populated.
+ * \pre The value of the boolean switches beVerbose, showHelp, and
+ * showVersion should be as provided by the user on the command line.
+ *
+ * @param vm Variables map containing the parsed options
+ * @param errorMessage Vector to store error messages
+ * @param beVerbose Whether verbose output is enabled
+ * @param showHelp Whether the user asked for help
+ * @param showVersion Whether the user asked for the version
+ * @return True if there was a parsing error, false otherwise
+ */
 bool check_for_global_parsing_errors(const boost::program_options::variables_map& vm,
                                      std::vector<std::string>& errorMessage,
                                      const bool& beVerbose, const bool& showHelp,
@@ -64,6 +137,9 @@ bool check_for_global_parsing_errors(const boost::program_options::variables_map
   for (const auto& option : vm) {
     if (!option.second.defaulted()) {
       nPassedOptions++;
+    } else {
+      // This option is present, but only because it has a default value
+      // which was used. I.e. the user did not provide this option.
     }
   }
 
@@ -96,6 +172,15 @@ bool check_for_global_parsing_errors(const boost::program_options::variables_map
 
 }
 
+
+/**
+ * @brief Handle parsing errors
+ *
+ * @details This function prints the error messages and usage
+ * information to the standard error stream. The information is printed
+ * in a way that is consistent with whether the user asked for help
+ * and/or verbose output.
+ */
 void handle_parsing_errors(const std::vector<std::string>& errorMessage,
                            const boost::program_options::options_description& command_line_options,
                            const boost::program_options::options_description& visible_command_line_options,
@@ -124,6 +209,13 @@ void handle_parsing_errors(const std::vector<std::string>& errorMessage,
     }
 }
 
+/**
+ * @brief Show help message
+ *
+ * @details This function prints the help message to the standard output
+ * stream. The information is printed in a way that is consistent with
+ * whether the user asked for verbose output.
+ */
 void show_help(const boost::program_options::options_description& command_line_options,
     const boost::program_options::options_description& visible_command_line_options,
     const bool& beVerbose ) {
@@ -134,52 +226,33 @@ void show_help(const boost::program_options::options_description& command_line_o
   }
 }
 
+/**
+ * @brief Show version information
+ *
+ * @details This function prints the version information to the standard
+ * output stream.
+ */
 void show_version() {
     std::cout << "tsa2msa version pre-alpha" << std::endl;
     std::cout << "  Project version: " << g_PROJECT_VERSION_GIT << std::endl;
     std::cout << "  Git revision: " << g_GIT_REVISION << std::endl;
 }
 
-// The program description below uses formatting mechanism as
-// outlined in the Boost Program Options documentation. Apart from
-// the formatting, it is intended to match the introductory
-// paragraph on the main page of the Doxygen documentation for the
-// tsa2msa tool. Any derivations should be considered as errors and
-// reported as a bugs.
-const std::string program_description =
-    "tsa2msa - convert `.tsa` files to `.msa` files\n"
-    "\n"
-    "    Usage:\ttsa2msa [options] input1 [input2 ...]\n"
-    "\n"
-    "  The tsa2msa tool is a command line utility designed to\n"
-    "  convert `.tsa` files to `.msa` files. Its primary purpose\n"
-    "  is to facilitate the creation of golden tests for the\n"
-    "  FLESnet application by converting output data from past\n"
-    "  runs that processed real experimental data.\n"
-    "\n"
-    "  See the Doxygen documentation for the tsa2msa tool for\n"
-    "  more information.\n";
 
-/**
- * @mainpage The tsa2msa Tool Documentation
- * @section intro_sec Introduction
- * The tsa2msa tool is a command line utility designed to convert `.tsa`
- * files to `.msa` files. Its primary purpose is to facilitate the
- * creation of golden tests for the FLESnet application by converting
- * output data from past runs that processed real experimental data.
- */
 
 /**
  * @brief Main function
  *
  * The main function of the tsa2msa tool. Using, Boost Program Options
  * library, it parses the command line arguments and processes them
- * accordingly. TODO: Add more details. The logic to parse the command
- * line arguments may better be moved to a separate function.
+ * accordingly.
  *
- * @param argc Number of command line arguments
- * @param argv Command line arguments
- * @return Exit code
+ * \todo Check that the exit codes indeed comply with the `<sysexits.h>`.
+ * \todo Extract the options logic to a separate class resp. file.
+ * \todo Create a `struct tsa2msaGlobalOptions` to hold all global options.
+ * \todo Create an `--output-dir` option (and a `--mkdir` sub-option).
+ *
+ * @return Exit code according to the `<sysexits.h>` standard.
  */
 auto main(int argc, char* argv[]) -> int {
 
@@ -267,8 +340,6 @@ auto main(int argc, char* argv[]) -> int {
   }
 
   clean_up_path(msaWriterOptions.prefix);
-
-  // TODO: We need an output directory option.
 
   std::unique_ptr<fles::Timeslice> timeslice;
   while ((timeslice = tsaReader.read()) != nullptr) {
