@@ -20,9 +20,10 @@
  * timeslice components, timeslices and consistency overall, as well as
  * erroneous microslice descriptors.
  *
- * \todo Checking if the stream of microslices is
- * chronologically ordered apparently got lost in refactoring and needs
- * to be re-implemented.
+ * \todo Apparently, I forgot to implement the most important check for
+ * the chronological order of the microslice descriptors. I thought I
+ * did, because I manually checked their order so often.
+ * \todo Implement the CRC-32C check.
  */
 class msaValidator final {
   uint64_t numTimeslices;
