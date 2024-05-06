@@ -11,6 +11,9 @@ list(APPEND HEADERS msaWriter.hpp)
 list(APPEND SOURCES tsaReader.cpp)
 list(APPEND HEADERS tsaReader.hpp)
 
+list(APPEND SOURCES utils.cpp)
+list(APPEND HEADERS utils.hpp)
+
 add_executable(tsa2msa main.cpp ${SOURCES} ${HEADERS})
 
 target_include_directories(tsa2msa

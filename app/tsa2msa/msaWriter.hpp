@@ -4,6 +4,10 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 
+// FLESnet Library header files:
+#include "lib/fles_ipc/MicrosliceOutputArchive.hpp"
+#include "lib/fles_ipc/TimesliceAutoSource.hpp"
+
 /**
  * @struct bytesNumber
  * @brief A wrapper around a std::size_t needed by boost::program_options.
@@ -49,6 +53,7 @@ void validate(boost::any& v,
 typedef struct msaWriterOptions {
   bool dryRun;
   bool beVerbose;
+  bool interactive;
   std::string prefix;
   // Technically, the OutputSequence base classes, if used, does enforce
   // both of the following options. So, setting one of them to a
@@ -65,7 +70,7 @@ typedef struct msaWriterOptions {
 
   // TODO: Currently, the OutputArchiveSequence classes do not properly
   // handle the limits (at least not the maxBytesPerArchive limit).
-  bool useSequence() {
+  bool useSequence() const {
     static bool gaveWarning = false;
     if (!gaveWarning) {
       // TODO: Move this message somewhere else.
@@ -157,6 +162,14 @@ void getNonSwitchMsaWriterOptions(
     msaWriterOptions& msaWriterOptions);
 
 class msaValidator final {
+  uint64_t numTimeslices;
+
+  // Within the current Timeslice, the current TimesliceComponent
+  // number:
+  uint64_t tsc;
+
+  // TODO: Make a template class for everything that is needed for
+  // checking an individual field of the MicrosliceDescriptor.
 
   // MicrosliceDescriptor fields with custom enum classes (apart from
   // fles::Subsystem, which is commented out, because it is not used in
@@ -166,7 +179,7 @@ class msaValidator final {
   // MicrosliceDescriptor class, but they are defined in the same
   // header.)
   //
-  // fles::Subsystem last_sys_id;
+  fles::Subsystem last_sys_id;
   fles::SubsystemFormatFLES last_sys_ver;
   fles::HeaderFormatIdentifier last_hdr_id;
   fles::HeaderFormatVersion last_hdr_ver;
@@ -178,12 +191,7 @@ class msaValidator final {
   // they are already listed above. Fields that currently do not need to
   // be checked are commented out.
   //
-  // uint8_t hdr_id;  ///< Header format identifier (0xDD)
-  // uint8_t hdr_ver; ///< Header format version (0x01)
   uint16_t last_eq_id; ///< Equipment identifier
-  // uint16_t flags;  ///< Status and error flags
-  // uint8_t sys_id;  ///< Subsystem identifier
-  // uint8_t sys_ver; ///< Subsystem format/version
   // uint64_t idx;    ///< Microslice index / start time
   // uint32_t crc;    ///< CRC-32C (Castagnoli polynomial) of data content
   // uint32_t size;   ///< Content size (bytes)
@@ -197,7 +205,7 @@ class msaValidator final {
   uint64_t num_hdr_ver_changes;
   uint64_t num_eq_id_changes;
   uint64_t num_flags_changes;
-  // uint64_t num_sys_id_changes; // Not used
+  uint64_t num_sys_id_changes;
   uint64_t num_sys_ver_changes;
 
   // Appeared values.
@@ -214,6 +222,7 @@ class msaValidator final {
   std::set<fles::MicrosliceFlags> flags_seen;
   std::set<fles::Subsystem> sys_id_seen;
   std::set<fles::SubsystemFormatFLES> sys_ver_seen;
+  uint64_t numMicroslices;
 
   // Check if some values stay constant per Timeslice:
   std::set<fles::HeaderFormatIdentifier> hdr_id_seen_in_ts;
@@ -239,17 +248,20 @@ class msaValidator final {
 public:
   // Constructor:
   msaValidator()
-      : last_sys_ver(static_cast<fles::SubsystemFormatFLES>(0)),
+      : numTimeslices(0),
+        tsc(0),
+
+        last_sys_id(static_cast<fles::Subsystem>(0)),
+        last_sys_ver(static_cast<fles::SubsystemFormatFLES>(0)),
         last_hdr_id(static_cast<fles::HeaderFormatIdentifier>(0)),
         last_hdr_ver(static_cast<fles::HeaderFormatVersion>(0)),
-        last_eq_id(static_cast<uint16_t>(0)),
         last_flags(static_cast<fles::MicrosliceFlags>(0)),
-        // last_sys_id(static_cast<fles::Subsystem>(0)), // Not used
-        last_sys_ver(static_cast<fles::SubsystemFormatFLES>(0)),
+
+        last_eq_id(0),
 
         num_hdr_id_changes(0), num_hdr_ver_changes(0), num_eq_id_changes(0),
         num_flags_changes(0),
-        // num_sys_id_changes(0), // Not used
+        num_sys_id_changes(0),
         num_sys_ver_changes(0),
 
         hdr_id_seen(), hdr_ver_seen(), eq_id_seen(), flags_seen(),
@@ -285,22 +297,12 @@ public:
     numMicroslices_in_tsc = 0;
   }
 
-  void check_microslice(std::shared_ptr<fles::MicrosliceView> ms_ptr) {
-    const fles::MicrosliceDescriptor& msd = ms_ptr->desc();
-
-    // Get values from the MicrosliceDescriptor:
-    // TODO: Take into account that raw values not corresponding to
-    // some named enum value should be treated as an error.
-    const fles::HeaderFormatIdentifier& hdr_id =
-        static_cast<fles::HeaderFormatIdentifier>(msd.hdr_id);
-    const fles::HeaderFormatVersion& hdr_ver =
-        static_cast<fles::HeaderFormatVersion>(msd.hdr_ver);
-    const uint16_t& eq_id = msd.eq_id;
-    const fles::MicrosliceFlags& flags =
-        static_cast<fles::MicrosliceFlags>(msd.flags);
-    const fles::Subsystem& sys_id = static_cast<fles::Subsystem>(msd.sys_id);
-    const fles::SubsystemFormatFLES& sys_ver =
-        static_cast<fles::SubsystemFormatFLES>(msd.sys_ver);
+  void insert_values_into_seen_sets(const fles::HeaderFormatIdentifier& hdr_id,
+                                    const fles::HeaderFormatVersion& hdr_ver,
+                                    const uint16_t& eq_id,
+                                    const fles::MicrosliceFlags& flags,
+                                    const fles::Subsystem& sys_id,
+                                    const fles::SubsystemFormatFLES& sys_ver) {
 
     // Insert values into the seen sets:
     hdr_id_seen.insert(hdr_id);
@@ -338,6 +340,14 @@ public:
       // why it is sufficient to simply increment the value here.
       eq_id_count[eq_id]++;
     }
+  }
+
+  void check_against_last_values(const fles::HeaderFormatIdentifier& hdr_id,
+                                 const fles::HeaderFormatVersion& hdr_ver,
+                                 const uint16_t& eq_id,
+                                 const fles::MicrosliceFlags& flags,
+                                 const fles::Subsystem& sys_id,
+                                 const fles::SubsystemFormatFLES& sys_ver) {
 
     // Compare to last values:
     if (numMicroslices > 0) {
@@ -353,9 +363,9 @@ public:
       if (flags != last_flags) {
         ++num_flags_changes;
       }
-      // if (sys_id != last_sys_id) { // Not used
-      //  ++num_sys_id_changes;
-      //}
+      if (sys_id != last_sys_id) { // Not used
+        ++num_sys_id_changes;
+      }
       if (sys_ver != last_sys_ver) {
         ++num_sys_ver_changes;
       }
@@ -365,12 +375,38 @@ public:
     numMicroslices_in_tsc++;
 
     // Set last values
-    last_hdr_id = static_cast<fles::HeaderFormatIdentifier>(msd.hdr_id);
-    last_hdr_ver = static_cast<fles::HeaderFormatVersion>(msd.hdr_ver);
-    last_eq_id = msd.eq_id;
-    last_flags = static_cast<fles::MicrosliceFlags>(msd.flags);
-    // last_sysId = static_cast<fles::Subsystem>(msd.sys_id); // Not used
-    last_sys_ver = static_cast<fles::SubsystemFormatFLES>(msd.sys_ver);
+    last_hdr_id = static_cast<fles::HeaderFormatIdentifier>(hdr_id);
+    last_hdr_ver = static_cast<fles::HeaderFormatVersion>(hdr_ver);
+    last_eq_id = eq_id;
+    last_flags = static_cast<fles::MicrosliceFlags>(flags);
+    last_sys_id = static_cast<fles::Subsystem>(sys_id);
+    last_sys_ver = static_cast<fles::SubsystemFormatFLES>(sys_ver);
+
+  }
+
+  void check_microslice(std::shared_ptr<fles::MicrosliceView> ms_ptr) {
+    const fles::MicrosliceDescriptor& msd = ms_ptr->desc();
+
+    // Get values from the MicrosliceDescriptor:
+    // TODO: Take into account that raw values not corresponding to
+    // some named enum value should be treated as an error.
+    // TODO: It should be evaluated whether it makes sense to define a
+    // struct that contains those values instead of handling them as
+    // separate variables.
+    const fles::HeaderFormatIdentifier& hdr_id =
+        static_cast<fles::HeaderFormatIdentifier>(msd.hdr_id);
+    const fles::HeaderFormatVersion& hdr_ver =
+        static_cast<fles::HeaderFormatVersion>(msd.hdr_ver);
+    const uint16_t& eq_id = msd.eq_id;
+    const fles::MicrosliceFlags& flags =
+        static_cast<fles::MicrosliceFlags>(msd.flags);
+    const fles::Subsystem& sys_id = static_cast<fles::Subsystem>(msd.sys_id);
+    const fles::SubsystemFormatFLES& sys_ver =
+        static_cast<fles::SubsystemFormatFLES>(msd.sys_ver);
+
+    insert_values_into_seen_sets(hdr_id, hdr_ver, eq_id, flags, sys_id, sys_ver);
+    check_against_last_values(hdr_id, hdr_ver, eq_id, flags, sys_id, sys_ver);
+
   }
 
   void print_timeslice_info() {
@@ -537,7 +573,7 @@ public:
 
     // Print current hdr_id, set of appeared hdr_ids and its size,
     // and the number of changes of hdr_id, all in one line:
-    std::cout << "hdr_id: " << static_cast<int>(hdr_id) << " ("
+    std::cout << "hdr_id: " << static_cast<int>(last_hdr_id) << " ("
               << hdr_id_seen.size() << " seen: ";
     for (const auto& seen_hdr_id : hdr_id_seen) {
       std::cout << static_cast<int>(seen_hdr_id) << " ";
@@ -546,7 +582,7 @@ public:
 
     // Print current hdr_ver, set of appeared hdr_vers and its size,
     // and the number of changes of hdr_ver, all in one line:
-    std::cout << "hdr_ver: " << static_cast<int>(hdr_ver) << " ("
+    std::cout << "hdr_ver: " << static_cast<int>(last_hdr_ver) << " ("
               << hdr_ver_seen.size() << " seen: ";
     for (const auto& seen_hdr_ver : hdr_ver_seen) {
       std::cout << static_cast<int>(seen_hdr_ver) << " ";
@@ -557,7 +593,7 @@ public:
     // and the number of changes of eq_id, all in one line:
     // Note: No static_cast is needed here, because eq_id does not
     // have a custom enum class.
-    std::cout << "eq_id: " << static_cast<int>(eq_id) << " ("
+    std::cout << "eq_id: " << static_cast<int>(last_eq_id) << " ("
               << eq_id_seen.size() << " seen: ";
     for (const auto& seen_eq_id : eq_id_seen) {
       std::cout << static_cast<int>(seen_eq_id) << " ";
@@ -568,7 +604,7 @@ public:
     // and the number of changes of flags, all in one line:
     // TODO: These are likely or-ed together, so we should rewrite
     // the code to take that into account.
-    std::cout << "flags: " << static_cast<int>(flags) << " ("
+    std::cout << "flags: " << static_cast<int>(last_flags) << " ("
               << flags_seen.size() << " seen: ";
     for (const auto& seen_flags : flags_seen) {
       std::cout << static_cast<int>(seen_flags) << " ";
@@ -580,7 +616,7 @@ public:
     // TODO: No number of changes is printed, but printing the
     // number of sys_ids per Timeslice and TimesliceComponent might
     // be useful.
-    std::cout << "sys_id: " << static_cast<int>(sys_id) << " ("
+    std::cout << "sys_id: " << static_cast<int>(last_sys_id) << " ("
               << sys_id_seen.size() << " seen: ";
     for (const auto& seen_sys_id : sys_id_seen) {
       std::cout << static_cast<int>(seen_sys_id) << " ";
@@ -589,7 +625,7 @@ public:
 
     // Print current sys_ver, set of appeared sys_vers and its size,
     // and the number of changes of sys_ver, all in one line:
-    std::cout << "sys_ver: " << static_cast<int>(sys_ver) << " ("
+    std::cout << "sys_ver: " << static_cast<int>(last_sys_ver) << " ("
               << sys_ver_seen.size() << " seen: ";
     for (const auto& seen_sys_ver : sys_ver_seen) {
       std::cout << static_cast<int>(seen_sys_ver) << " ";
@@ -621,6 +657,7 @@ class msaWriter final {
 
   uint64_t numTimeslices = 0;
   uint64_t numMicroslices = 0;
+  const msaWriterOptions options;
 
 public:
   /**
@@ -653,7 +690,7 @@ public:
   // Delete move assignment:
   msaWriter& operator=(msaWriter&& other) = delete;
 
-  void write_timeslice() {
+  void write_timeslice(std::shared_ptr<fles::Timeslice> timeslice) {
     // TODO: Count sys_id changes per timeslice, check if there is new
     // or missing sys_ids.
 
@@ -662,45 +699,53 @@ public:
 
     // Write the timeslice to a file:
     for (uint64_t tsc = 0; tsc < timeslice->num_components(); tsc++) {
-      msaWriter.write_timeslice_component();
+      write_timeslice_component(timeslice, tsc);
     }
 
-    if (beVerbose) {
+    if (options.beVerbose) {
       validator.print_timeslice_info();
     }
 
-    if (tsaReaderOptions.interactive) {
+    if (options.interactive) {
       std::cout << "Press Enter to continue..." << std::endl;
       std::cin.get();
     }
     numTimeslices++;
   }
 
-  void write_timeslice_component() {
+  void write_timeslice_component(std::shared_ptr<fles::Timeslice> timeslice,
+                                 uint64_t tsc) {
     // TODO: Count sys_id changes per TimesliceComponent, check if
     // there is new or missing sys_ids.
 
     // Inform the validator that a new TimesliceComponent is being written:
     validator.next_timeslice_component();
 
-    for (uint64_t msc = 0; msc < timeslice->num_core_microslices(tsc); msc++) {
+    // TODO: Check for num_core_microslices() changes.
+    for (uint64_t msc = 0; msc < timeslice->num_core_microslices(); msc++) {
       std::unique_ptr<fles::MicrosliceView> ms_ptr =
           std::make_unique<fles::MicrosliceView>(
               timeslice->get_microslice(tsc, msc));
-      msaWriter.write_microslice(std::move(ms_ptr));
+      write_microslice(std::move(ms_ptr));
     }
 
-    if (false && beVerbose) {
+    if (false && options.beVerbose) {
       validator.print_timeslice_component_info();
     }
 
-    if (false && tsaReaderOptions.interactive) {
+    if (false && options.interactive) {
       std::cout << "Press Enter to continue..." << std::endl;
       std::cin.get();
     }
   }
 
-  std::string constructArchiveName() {
+  std::string constructArchiveName(const fles::Subsystem& sys_id,
+                                   const uint16_t& eq_id) {
+
+    // TODO: Do not construct the archive name for every microslice,
+    // but do some caching instead.
+    std::string prefix = options.prefix;
+
     if (prefix.size() == 0) {
       std::cerr << "Error: Prefix is empty, should not happen."
                 << " Setting arbitrary prefix." << std::endl;
@@ -715,7 +760,7 @@ public:
     // macro.
     std::string eq_id_string = std::to_string(eq_id);
     std::string optionalSequenceIndicator =
-        msaWriterOptions.useSequence() ? "_%n" : "";
+        options.useSequence() ? "_%n" : "";
 
     std::string msa_archive_name = prefix + "_" + sys_id_string + "_" +
                                    eq_id_string + optionalSequenceIndicator +
@@ -726,51 +771,42 @@ public:
     // TimesliceComponent needs to be checked here.
     if (msaFiles.find(msa_archive_name) == msaFiles.end()) {
       std::unique_ptr<fles::Sink<fles::Microslice>> msaFile;
-      if (msaWriterOptions.useSequence()) {
+      if (options.useSequence()) {
         msaFile = std::make_unique<fles::MicrosliceOutputArchiveSequence>(
-            msa_archive_name, msaWriterOptions.maxItemsPerArchive,
-            msaWriterOptions.maxBytesPerArchive);
+            msa_archive_name, options.maxItemsPerArchive,
+            options.maxBytesPerArchive);
       } else {
         msaFile =
             std::make_unique<fles::MicrosliceOutputArchive>(msa_archive_name);
       }
       msaFiles[msa_archive_name] = std::move(msaFile);
     }
+    return msa_archive_name;
   }
 
   void write_microslice(std::shared_ptr<fles::MicrosliceView> ms_ptr) {
     const fles::MicrosliceDescriptor& msd = ms_ptr->desc();
 
-    // Get values from the MicrosliceDescriptor:
     // TODO: Take into account that raw values not corresponding to
     // some named enum value should be treated as an error.
-    const fles::HeaderFormatIdentifier& hdr_id =
-        static_cast<fles::HeaderFormatIdentifier>(msd.hdr_id);
-    const fles::HeaderFormatVersion& hdr_ver =
-        static_cast<fles::HeaderFormatVersion>(msd.hdr_ver);
     const uint16_t& eq_id = msd.eq_id;
-    const fles::MicrosliceFlags& flags =
-        static_cast<fles::MicrosliceFlags>(msd.flags);
     const fles::Subsystem& sys_id = static_cast<fles::Subsystem>(msd.sys_id);
-    const fles::SubsystemFormatFLES& sys_ver =
-        static_cast<fles::SubsystemFormatFLES>(msd.sys_ver);
-    if (false && beVerbose) {
+
+    if (false && options.beVerbose) {
       validator.print_microslice_stats();
     }
 
-    if (!msaWriterOptions.dryRun) {
-      std::string msa_archive_name = constructArchiveName();
+    if (!options.dryRun) {
+      std::string msa_archive_name = constructArchiveName(sys_id, eq_id);
       msaFiles[msa_archive_name]->put(std::move(ms_ptr));
     }
 
-    if (false && tsaReaderOptions.interactive) {
+    if (false && options.interactive) {
       std::cout << "Press Enter to continue..." << std::endl;
       std::cin.get();
     }
   }
 
-private:
-  const msaWriterOptions options;
 };
 
 #endif // MSAWRITER_HPP

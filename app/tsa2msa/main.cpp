@@ -3,6 +3,8 @@
 
 // C++ Standard Library header files:
 #include <iostream>
+#include <string>
+#include <vector>
 
 // System dependent header files:
 #include <sysexits.h>
@@ -14,6 +16,7 @@
 #include "GitRevision.hpp"
 #include "msaWriter.hpp"
 #include "tsaReader.hpp"
+#include "utils.hpp"
 
 /**
  * @file main.cpp
@@ -23,10 +26,10 @@
 
 bool parse_command_line(int argc, char* argv[],
                         const boost::program_options::options_description& command_line_options,
-                        const boost::program_options::options_description& visible_command_line_options,
-                        const boost::program_options::positional_options_description& positional_command_line_arguments
+                        const boost::program_options::positional_options_description& positional_command_line_arguments,
+                        boost::program_options::variables_map& vm,
                         std::vector<std::string>& errorMessage) {
-  boost::program_options::variables_map vm;
+  bool parsingError = false;
   try {
     // Since we are using positional arguments, we need to use the
     // command_line_parser instead of the parse_command_line
@@ -42,17 +45,25 @@ bool parse_command_line(int argc, char* argv[],
     errorMessage.push_back("Error: " + std::string(e.what()));
     parsingError = true;
   }
+  return parsingError;
 }
 
 bool check_for_global_parsing_errors(const boost::program_options::variables_map& vm,
-                                     const std::vector<std::string>& errorMessage) {
+                                     std::vector<std::string>& errorMessage,
+                                     const bool& beVerbose, const bool& showHelp,
+                                     const bool& showVersion) {
+  bool parsingError = false;
+
+  if (errorMessage.size() > 0) {
+    // TODO: Handle this case more gracefully.
+    std::cerr << "Warning: Expected that so far no error messages are present.";
+  }
+
   // Count passed options:
   unsigned int nPassedOptions = 0;
-  if (!parsingError) {
-    for (const auto& option : vm) {
-      if (!option.second.defaulted()) {
-        nPassedOptions++;
-      }
+  for (const auto& option : vm) {
+    if (!option.second.defaulted()) {
+      nPassedOptions++;
     }
   }
 
@@ -81,9 +92,14 @@ bool check_for_global_parsing_errors(const boost::program_options::variables_map
     parsingError = true;
   }
 
+  return parsingError;
+
 }
 
-void handle_parsing_errors(const std::vector<std::string>& errorMessage) {
+void handle_parsing_errors(const std::vector<std::string>& errorMessage,
+                           const boost::program_options::options_description& command_line_options,
+                           const boost::program_options::options_description& visible_command_line_options,
+                           const bool& beVerbose, const bool& showHelp) {
     for (const auto& msg : errorMessage) {
       std::cerr << msg << std::endl;
     }
@@ -108,10 +124,9 @@ void handle_parsing_errors(const std::vector<std::string>& errorMessage) {
     }
 }
 
-void show_help(const bool& verbose, const
-    boost::program_options::options_description& command_line_options,
-    const boost::program_options::options_description&
-    visible_command_line_options) {
+void show_help(const boost::program_options::options_description& command_line_options,
+    const boost::program_options::options_description& visible_command_line_options,
+    const bool& beVerbose ) {
   if (beVerbose) {
     std::cout << command_line_options << std::endl;
   } else {
@@ -214,23 +229,27 @@ auto main(int argc, char* argv[]) -> int {
 
   // Parse command line options:
   std::vector<std::string> errorMessage;
+  boost::program_options::variables_map vm;
   bool parsingError = parse_command_line(argc, argv, command_line_options,
-                                         visible_command_line_options,
                                          positional_command_line_arguments,
+                                         vm,
                                          errorMessage);
 
   // Check for further parsing errors:
   if (!parsingError) {
-    parsingError = check_for_global_parsing_errors(vm, errorMessage);
+    parsingError = check_for_global_parsing_errors(vm, errorMessage,
+                                                    beVerbose, showHelp,
+                                                    showVersion);
   }
 
   if (parsingError) {
-    handle_parsing_errors(errorMessage);
+    handle_parsing_errors(errorMessage, command_line_options,
+                          visible_command_line_options, beVerbose, showHelp);
     return EX_USAGE;
   }
 
   if (showHelp) {
-    show_help(verbose, command_line_options, visible_command_line_options);
+    show_help(command_line_options, visible_command_line_options, beVerbose);
     return EXIT_SUCCESS;
   } else if (showVersion) {
     show_version();
@@ -239,6 +258,7 @@ auto main(int argc, char* argv[]) -> int {
 
   getTsaReaderOptions(vm, tsaReaderOptions);
   tsaReader tsaReader(tsaReaderOptions);
+  msaWriter msaWriter(msaWriterOptions);
 
   std::string prefix = msaWriterOptions.prefix;
   if (prefix.size() == 0) {
@@ -252,7 +272,7 @@ auto main(int argc, char* argv[]) -> int {
 
   std::unique_ptr<fles::Timeslice> timeslice;
   while ((timeslice = tsaReader.read()) != nullptr) {
-    msaWriter.write_timeslice(timeslice);
+    msaWriter.write_timeslice(std::move(timeslice));
   }
 
   return EXIT_SUCCESS;

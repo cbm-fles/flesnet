@@ -18,6 +18,7 @@ msaWriterOptions defaultMsaWriterOptions() {
   return {
       false, // dryRun
       false, // beVerbose
+      false, // interactive
       "",    // prefix
       0,     // maxItems
       0      // maxSize
