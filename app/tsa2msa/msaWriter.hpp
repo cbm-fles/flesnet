@@ -92,7 +92,6 @@ typedef struct msaWriterOptions {
 
   bool beVerbose;
 
-
   /**
    * @brief If set to true, the msaWriter will stop at some points and
    * wait for user input before continuing.
@@ -272,7 +271,6 @@ public:
    */
   ~msaWriter() = default;
 
-
   /**
    * @brief Writes a timeslice to the microslice archives.
    *
@@ -294,7 +292,8 @@ public:
    * written in chronological order and the overlap between different
    * timeslices is discarded.
    *
-   * @param timeslice The timeslice containing the microslices to be written to the microslice archives.
+   * @param timeslice The timeslice containing the microslices to be written to
+   * the microslice archives.
    */
   void write_timeslice(std::shared_ptr<fles::Timeslice> timeslice);
 

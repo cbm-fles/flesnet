@@ -186,7 +186,6 @@ public:
    */
   ~tsaReaderValidator() = default;
 
-
   /**
    * @brief Validates the Timeslices read by a tsaReader and their
    * order.
@@ -284,6 +283,7 @@ public:
    * If the end of the input has been reached, a nullptr is returned.
    */
   std::unique_ptr<fles::Timeslice> read();
+
 private:
   // Delete copy constructor:
   tsaReader(const tsaReader& other) = delete;

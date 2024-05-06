@@ -165,11 +165,14 @@ const std::string program_description =
  * @param errorMessage Vector to store error messages
  * @return True if there was a parsing error, false otherwise
  */
-bool parse_command_line(int argc, char* argv[],
-                        const boost::program_options::options_description& command_line_options,
-                        const boost::program_options::positional_options_description& positional_command_line_arguments,
-                        boost::program_options::variables_map& vm,
-                        std::vector<std::string>& errorMessage) {
+bool parse_command_line(
+    int argc,
+    char* argv[],
+    const boost::program_options::options_description& command_line_options,
+    const boost::program_options::positional_options_description&
+        positional_command_line_arguments,
+    boost::program_options::variables_map& vm,
+    std::vector<std::string>& errorMessage) {
   bool parsingError = false;
   try {
     // Since we are using positional arguments, we need to use the
@@ -213,10 +216,12 @@ bool parse_command_line(int argc, char* argv[],
  * @param showVersion Whether the user asked for the version
  * @return True if there was a parsing error, false otherwise
  */
-bool check_for_global_parsing_errors(const boost::program_options::variables_map& vm,
-                                     std::vector<std::string>& errorMessage,
-                                     const bool& beVerbose, const bool& showHelp,
-                                     const bool& showVersion) {
+bool check_for_global_parsing_errors(
+    const boost::program_options::variables_map& vm,
+    std::vector<std::string>& errorMessage,
+    const bool& beVerbose,
+    const bool& showHelp,
+    const bool& showVersion) {
   bool parsingError = false;
 
   if (errorMessage.size() > 0) {
@@ -261,9 +266,7 @@ bool check_for_global_parsing_errors(const boost::program_options::variables_map
   }
 
   return parsingError;
-
 }
-
 
 /**
  * @brief Handle parsing errors
@@ -273,32 +276,35 @@ bool check_for_global_parsing_errors(const boost::program_options::variables_map
  * in a way that is consistent with whether the user asked for help
  * and/or verbose output.
  */
-void handle_parsing_errors(const std::vector<std::string>& errorMessage,
-                           const boost::program_options::options_description& command_line_options,
-                           const boost::program_options::options_description& visible_command_line_options,
-                           const bool& beVerbose, const bool& showHelp) {
-    for (const auto& msg : errorMessage) {
-      std::cerr << msg << std::endl;
-    }
+void handle_parsing_errors(
+    const std::vector<std::string>& errorMessage,
+    const boost::program_options::options_description& command_line_options,
+    const boost::program_options::options_description&
+        visible_command_line_options,
+    const bool& beVerbose,
+    const bool& showHelp) {
+  for (const auto& msg : errorMessage) {
+    std::cerr << msg << std::endl;
+  }
 
-    if (!showHelp) {
-      // Otherwise, the user is expecting a help message, anyway.
-      // So, we don't need to inform them about our decision to
-      // show them usage information without having been asked.
-      std::cerr << "Errors occurred: Printing usage." << std::endl << std::endl;
-    }
+  if (!showHelp) {
+    // Otherwise, the user is expecting a help message, anyway.
+    // So, we don't need to inform them about our decision to
+    // show them usage information without having been asked.
+    std::cerr << "Errors occurred: Printing usage." << std::endl << std::endl;
+  }
 
-    if (beVerbose) {
-      std::cerr << command_line_options << std::endl;
-    } else {
-      std::cerr << visible_command_line_options << std::endl;
-    }
+  if (beVerbose) {
+    std::cerr << command_line_options << std::endl;
+  } else {
+    std::cerr << visible_command_line_options << std::endl;
+  }
 
-    if (showHelp) {
-      // There was a parsing error, which means that additional
-      // options were provided.
-      std::cerr << "Error: Ignoring any other options." << std::endl;
-    }
+  if (showHelp) {
+    // There was a parsing error, which means that additional
+    // options were provided.
+    std::cerr << "Error: Ignoring any other options." << std::endl;
+  }
 }
 
 /**
@@ -308,9 +314,11 @@ void handle_parsing_errors(const std::vector<std::string>& errorMessage,
  * stream. The information is printed in a way that is consistent with
  * whether the user asked for verbose output.
  */
-void show_help(const boost::program_options::options_description& command_line_options,
-    const boost::program_options::options_description& visible_command_line_options,
-    const bool& beVerbose ) {
+void show_help(
+    const boost::program_options::options_description& command_line_options,
+    const boost::program_options::options_description&
+        visible_command_line_options,
+    const bool& beVerbose) {
   if (beVerbose) {
     std::cout << command_line_options << std::endl;
   } else {
@@ -325,12 +333,10 @@ void show_help(const boost::program_options::options_description& command_line_o
  * output stream.
  */
 void show_version() {
-    std::cout << "tsa2msa version pre-alpha" << std::endl;
-    std::cout << "  Project version: " << g_PROJECT_VERSION_GIT << std::endl;
-    std::cout << "  Git revision: " << g_GIT_REVISION << std::endl;
+  std::cout << "tsa2msa version pre-alpha" << std::endl;
+  std::cout << "  Project version: " << g_PROJECT_VERSION_GIT << std::endl;
+  std::cout << "  Git revision: " << g_GIT_REVISION << std::endl;
 }
-
-
 
 /**
  * @brief Main function
@@ -395,16 +401,14 @@ auto main(int argc, char* argv[]) -> int {
   // Parse command line options:
   std::vector<std::string> errorMessage;
   boost::program_options::variables_map vm;
-  bool parsingError = parse_command_line(argc, argv, command_line_options,
-                                         positional_command_line_arguments,
-                                         vm,
-                                         errorMessage);
+  bool parsingError =
+      parse_command_line(argc, argv, command_line_options,
+                         positional_command_line_arguments, vm, errorMessage);
 
   // Check for further parsing errors:
   if (!parsingError) {
-    parsingError = check_for_global_parsing_errors(vm, errorMessage,
-                                                    beVerbose, showHelp,
-                                                    showVersion);
+    parsingError = check_for_global_parsing_errors(vm, errorMessage, beVerbose,
+                                                   showHelp, showVersion);
   }
 
   if (parsingError) {
@@ -428,7 +432,6 @@ auto main(int argc, char* argv[]) -> int {
   std::string prefix = msaWriterOptions.prefix;
   if (prefix.size() == 0) {
     msaWriterOptions.prefix = compute_common_prefix(tsaReaderOptions.input);
-
   }
 
   clean_up_path(msaWriterOptions.prefix);

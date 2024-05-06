@@ -148,7 +148,8 @@ public:
    *
    * @param ms_ptr Pointer to the Microslice to be checked.
    */
-  void check_microslice(std::shared_ptr<fles::MicrosliceView> ms_ptr, const bool& printInfo);
+  void check_microslice(std::shared_ptr<fles::MicrosliceView> ms_ptr,
+                        const bool& printInfo);
 
 private:
   /**
