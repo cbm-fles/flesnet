@@ -2,6 +2,7 @@
 
 #include "Application.hpp"
 #include "ManagedTimesliceBuffer.hpp"
+#include "StorableTimeslice.hpp"
 #include "Timeslice.hpp"
 #include "TimesliceAnalyzer.hpp"
 #include "TimesliceAutoSource.hpp"
@@ -190,7 +191,13 @@ void Application::run() {
       ++index;
       continue;
     }
-    std::shared_ptr<const fles::Timeslice> ts(std::move(timeslice));
+    std::shared_ptr<const fles::Timeslice> ts;
+    if (par_.release_mode()) {
+      ts = std::make_shared<const fles::StorableTimeslice>(*timeslice);
+      timeslice.reset();
+    } else {
+      ts = std::shared_ptr<const fles::Timeslice>(std::move(timeslice));
+    }
     if (par_.native_speed() != 0.0) {
       native_speed_delay(ts->start_time());
     }
