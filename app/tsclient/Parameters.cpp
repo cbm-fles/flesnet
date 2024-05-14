@@ -86,6 +86,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
            "limit the item rate to given frequency (in Hz)");
   desc_add("speed", po::value<double>(&native_speed_)->value_name("X"),
            "limit the item rate to given factor of original speed");
+  desc_add("release-mode,R",
+           po::value<bool>(&release_mode_)->implicit_value(true),
+           "copy and release each timeslice immediately after receiving it");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);

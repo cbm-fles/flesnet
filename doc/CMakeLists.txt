@@ -115,6 +115,8 @@ set(MARKDOWN_DOCS_FOR_DOXYGEN
   INSTALL.md
   doc/Ctrl-C.md
   doc/monitoring.md
+  doc/flesnet_minimal_example.md
+  doc/monitoring_with_podman.md
   doc/TS_Source_Identifier.md
   doc/versions.md
   doc/structure.md)
@@ -133,7 +135,6 @@ doxygen_add_docs(doc-flesnet
   lib/monitoring
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating flesnet documentation with doxygen")
-
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsa2msa-doc)
 doxygen_add_docs(doc-tsa2msa
@@ -246,7 +247,7 @@ add_custom_target(doc
     doc-mstool
     doc-tsclient
     doc-msconsumer
-	doc-tsa2msa
+    doc-tsa2msa
     doc-cri_cfg
     doc-cri_server
     doc-cri_tools)
