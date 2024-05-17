@@ -21,7 +21,7 @@ namespace fles {
  * \brief The InputArchiveLoop class deserializes data sets from an input file.
  * For testing, it can loop over the file a given number of times.
  */
-template <class Base, class Derived, ArchiveType archive_type>
+template <class Base, class Storable, ArchiveType archive_type>
 class InputArchiveLoop : public Source<Base> {
 public:
   /**
@@ -44,7 +44,9 @@ public:
   ~InputArchiveLoop() override = default;
 
   /// Read the next data set.
-  std::unique_ptr<Derived> get() { return std::unique_ptr<Derived>(do_get()); };
+  std::unique_ptr<Storable> get() {
+    return std::unique_ptr<Storable>(do_get());
+  };
 
   /// Retrieve the archive descriptor.
   [[nodiscard]] const ArchiveDescriptor& descriptor() const {
@@ -97,14 +99,14 @@ private:
     archive_has_data_ = false;
   }
 
-  Derived* do_get() override {
+  Storable* do_get() override {
     if (eos_) {
       return nullptr;
     }
 
-    Derived* sts = nullptr;
+    Storable* sts = nullptr;
     try {
-      sts = new Derived(); // NOLINT
+      sts = new Storable(); // NOLINT
       *iarchive_ >> *sts;
       archive_has_data_ = true;
     } catch (boost::archive::archive_exception& e) {

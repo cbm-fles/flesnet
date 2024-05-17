@@ -17,11 +17,11 @@
 
 namespace fles {
 
-template <class Base, class Derived, ArchiveType archive_type>
+template <class Base, class Storable, ArchiveType archive_type>
 class InputArchive;
-template <class Base, class Derived, ArchiveType archive_type>
+template <class Base, class Storable, ArchiveType archive_type>
 class InputArchiveLoop;
-template <class Base, class Derived, ArchiveType archive_type>
+template <class Base, class Storable, ArchiveType archive_type>
 class InputArchiveSequence;
 
 /**

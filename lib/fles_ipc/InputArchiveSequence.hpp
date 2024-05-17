@@ -24,7 +24,7 @@ namespace fles {
  * \brief The InputArchiveSequence class deserializes microslice data sets from
  * a sequence of input files.
  */
-template <class Base, class Derived, ArchiveType archive_type>
+template <class Base, class Storable, ArchiveType archive_type>
 class InputArchiveSequence : public Source<Base> {
 public:
   /**
@@ -64,7 +64,9 @@ public:
   ~InputArchiveSequence() override = default;
 
   /// Read the next data set.
-  std::unique_ptr<Derived> get() { return std::unique_ptr<Derived>(do_get()); };
+  std::unique_ptr<Storable> get() {
+    return std::unique_ptr<Storable>(do_get());
+  };
 
   /// Retrieve the archive descriptor.
   [[nodiscard]] const ArchiveDescriptor& descriptor() const {
@@ -151,14 +153,14 @@ private:
     ++file_count_;
   }
 
-  Derived* do_get() override {
+  Storable* do_get() override {
     if (eos_) {
       return nullptr;
     }
 
-    Derived* sts = nullptr;
+    Storable* sts = nullptr;
     try {
-      sts = new Derived(); // NOLINT
+      sts = new Storable(); // NOLINT
       *iarchive_ >> *sts;
     } catch (boost::archive::archive_exception& e) {
       if (e.code == boost::archive::archive_exception::input_stream_error) {

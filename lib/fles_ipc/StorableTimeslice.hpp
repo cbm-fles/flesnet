@@ -18,13 +18,13 @@
 
 namespace fles {
 
-template <class Base, class Derived, ArchiveType archive_type>
+template <class Base, class Storable, ArchiveType archive_type>
 class InputArchive;
-template <class Base, class Derived, ArchiveType archive_type>
+template <class Base, class Storable, ArchiveType archive_type>
 class InputArchiveLoop;
-template <class Base, class Derived, ArchiveType archive_type>
+template <class Base, class Storable, ArchiveType archive_type>
 class InputArchiveSequence;
-template <class Base, class Derived> class Subscriber;
+template <class Base, class Storable> class Subscriber;
 
 /**
  * \brief The StorableTimeslice class contains the data of a single
