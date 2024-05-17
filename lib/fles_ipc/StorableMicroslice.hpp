@@ -6,14 +6,9 @@
 #include "ArchiveDescriptor.hpp"
 #include "Microslice.hpp"
 #include "MicrosliceDescriptor.hpp"
-#include <fstream>
-#include <vector>
-
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
-// Note: <fstream> has to precede boost/serialization includes for non-obvious
-// reasons to avoid segfault similar to
-// http://lists.debian.org/debian-hppa/2009/11/msg00069.html
+#include <vector>
 
 namespace fles {
 
