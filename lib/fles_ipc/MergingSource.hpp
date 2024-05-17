@@ -51,8 +51,8 @@ private:
 
   void init_prefetch() {
     for (auto& source : sources_) {
-      auto timeslice = source->get();
-      prefetched_items_.push_back(std::move(timeslice));
+      auto item = source->get();
+      prefetched_items_.push_back(std::move(item));
     }
   }
 

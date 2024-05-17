@@ -11,7 +11,7 @@
 
 namespace fles {
 
-template <class Base, class Derived> class Receiver;
+template <class Base, class View> class Receiver;
 
 /**
  * \brief The TimesliceView class provides access to the data of a single

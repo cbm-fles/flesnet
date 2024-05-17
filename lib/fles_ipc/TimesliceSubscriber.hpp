@@ -1,6 +1,6 @@
 // Copyright 2014 Jan de Cuveland <cmail@cuveland.de>
 /// \file
-/// \brief Defines the fles::TimesliceSubscriber class.
+/// \brief Defines the fles::Subscriber template class.
 #pragma once
 
 #include "Source.hpp"
@@ -14,12 +14,12 @@
 
 namespace fles {
 /**
- * \brief The TimesliceSubscriber class receives serialized timeslice data sets
+ * \brief The Subscriber template class receives serialized data sets
  * from a zeromq socket.
  */
-template <class Base, class Derived> class Subscriber : public Source<Base> {
+template <class Base, class Storable> class Subscriber : public Source<Base> {
 public:
-  /// Construct timeslice subscriber receiving from given ZMQ address.
+  /// Construct subscriber receiving from given ZMQ address.
   Subscriber(const std::string& address, uint32_t hwm) {
     subscriber_.set(zmq::sockopt::rcvhwm, int(hwm));
     subscriber_.connect(address.c_str());
@@ -40,12 +40,14 @@ public:
    *
    * \return pointer to the item, or nullptr if end-of-file
    */
-  std::unique_ptr<Derived> get() { return std::unique_ptr<Derived>(do_get()); };
+  std::unique_ptr<Storable> get() {
+    return std::unique_ptr<Storable>(do_get());
+  };
 
   [[nodiscard]] bool eos() const override { return eos_flag; }
 
 private:
-  Derived* do_get() override {
+  Storable* do_get() override {
     if (eos_flag) {
       return nullptr;
     }
@@ -59,16 +61,16 @@ private:
         device);
     boost::archive::binary_iarchive ia(s);
 
-    Derived* sts = nullptr;
+    Storable* storable = nullptr;
     try {
-      sts = new Derived(); // NOLINT
-      ia >> *sts;
+      storable = new Storable(); // NOLINT
+      ia >> *storable;
     } catch (boost::archive::archive_exception& e) {
-      delete sts; // NOLINT
+      delete storable; // NOLINT
       eos_flag = true;
       return nullptr;
     }
-    return sts;
+    return storable;
   }
 
   zmq::context_t context_{1};
@@ -77,6 +79,10 @@ private:
   bool eos_flag = false;
 };
 
+/**
+ * \brief The TimesliceSubscriber class receives serialized timeslice data sets
+ * from a zeromq socket.
+ */
 using TimesliceSubscriber = Subscriber<Timeslice, StorableTimeslice>;
 
 } // namespace fles
