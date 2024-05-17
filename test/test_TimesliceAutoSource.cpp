@@ -66,6 +66,5 @@ BOOST_AUTO_TEST_CASE(item_auto_source_test) {
   using ItemAutoSource =
       fles::AutoSource<item, item, item, fles::ArchiveType::RecoResultsArchive>;
 
-  ItemAutoSource source("test2_%n.tsa");
-  BOOST_CHECK_EQUAL(source.eos(), true);
+  BOOST_CHECK_THROW(ItemAutoSource source("unknown.rra"), std::runtime_error);
 }
