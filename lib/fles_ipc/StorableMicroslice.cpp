@@ -4,10 +4,13 @@
 
 namespace fles {
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wextra"
 StorableMicroslice::StorableMicroslice(const StorableMicroslice& ms)
     : desc_(ms.desc_), content_(ms.content_) {
   init_pointers();
 }
+#pragma GCC diagnostic pop
 
 StorableMicroslice::StorableMicroslice(StorableMicroslice&& ms) noexcept
     : desc_(ms.desc_), content_(std::move(ms.content_)) {
