@@ -59,8 +59,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "use given channel/component index for source/sink");
   source_add("input-archive,i", po::value<std::string>(&input_archive),
              "name of an input file archive to read");
-  source_add("input-archives", po::value<std::vector<std::string>>(&input_archives_)->multitoken(),
-            "paths to the input archives to use for validation");
 
   po::options_description sink("Sink options");
   auto sink_add = sink.add_options();
@@ -70,8 +68,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
            "set output debug dump verbosity");
   sink_add("output-archive,o", po::value<std::string>(&output_archive),
            "name of an output file archive to write");
-  sink_add("output-archives", po::value<std::vector<std::string>>(&output_archives_)->multitoken(),
-            "paths to the output archives to use for validation");
 
   po::options_description desc;
   desc.add(general).add(source).add(sink).add(archive_validation);
