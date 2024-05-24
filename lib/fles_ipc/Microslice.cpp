@@ -33,7 +33,6 @@ bool Microslice::operator==(const Microslice& other) const {
   uint64_t ms_conent_size = (*desc_ptr_).size;
   for (uint64_t i = 0; i < ms_conent_size; i++) {
     if (content_ptr_[i] != other.content_ptr_[i]) {
-      std::cout << "content different" << std::endl;
       return false;
     }
   }

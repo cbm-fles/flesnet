@@ -403,7 +403,6 @@ void ComputeNodeConnection::set_remote_info(InputNodeInfo remote_info) {
 }
 
 void ComputeNodeConnection::send_ep_addr() {
-
   size_t addr_len = sizeof(send_status_message_.my_address);
   send_status_message_.connect = true;
   int res = fi_getname(&ep_->fid, &send_status_message_.my_address, &addr_len);
@@ -438,6 +437,7 @@ void ComputeNodeConnection::write_received_descriptors() {
   }
   acked_ts = nullptr;
 }
+
 void ComputeNodeConnection::on_complete_heartbeat_recv() {
   if (final_msg_sent_)
     return;

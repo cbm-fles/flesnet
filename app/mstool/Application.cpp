@@ -8,7 +8,7 @@
 #include "MicrosliceReceiver.hpp"
 #include "MicrosliceTransmitter.hpp"
 #include "TimesliceDebugger.hpp"
-#include "Verificator.hpp"
+// #include "Verificator.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
 #include <chrono>
@@ -88,12 +88,12 @@ Application::~Application() {
 void Application::run() {
   uint64_t limit = par_.maximum_number;
 
-  if (par_.validate_) {
-    Verificator val;
-    bool valid = val.verify(par_.input_archives_, par_.output_archives_, par_.timeslice_size, par_.timeslice_cnt, par_.overlap);
-    L_(info) << "Archive " << ((valid) ? "valid" : "NOT valid") << std::endl;
-    return;
-  }
+  // if (par_.validate_) {
+  //   Verificator val;
+  //   bool valid = val.verify(par_.input_archives_, par_.output_archives_, par_.timeslice_size, par_.timeslice_cnt, par_.overlap);
+  //   L_(info) << "Archive " << ((valid) ? "valid" : "NOT valid") << std::endl;
+  //   return;
+  // }
 
   while (auto microslice = source_->get()) {
     std::shared_ptr<const fles::Microslice> ms(std::move(microslice));
