@@ -218,7 +218,8 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
             if (next_ts_archive_select == 0) {
                 ts_offset++;
             }
-            fles::TimesliceInputArchive ts_next_archive(output_archive_paths[next_ts_archive_select]);
+            output_archive_path = output_archive_paths[next_ts_archive_select];
+            fles::TimesliceInputArchive ts_next_archive(output_archive_path);
             skip_to_idx(ts_offset, ts_next_archive);
             std::shared_ptr<fles::StorableTimeslice> next_ts = ts_next_archive.get();
 
