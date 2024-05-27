@@ -81,7 +81,7 @@ void Verificator::skip_to_idx(uint64_t idx,fles::MicrosliceInputArchive &ms_arch
     }
 }
 
-bool Verificator::verify_forward(vector<string> input_archive_paths, vector<string> output_archive_paths, uint64_t timeslice_size, uint64_t timeslice_cnt, uint64_t overlap) {
+bool Verificator::verify_forward(vector<string> input_archive_paths, vector<string> output_archive_paths, uint64_t timeslice_cnt, uint64_t overlap) {
     std::sort(output_archive_paths.begin(), output_archive_paths.end(),  
         [this](string lhs, string rhs) { return sort_timeslice_archives(lhs, rhs); });
 
@@ -114,6 +114,7 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
     // Variables to keep track of certain statistics
     uint64_t ms_cnt_stat = 0;  // counts how many ms are validated
     uint64_t overlap_cnt_stat = 0; // counts how many overlaps between ts components were checked
+
     for (string& input_archive_path : input_archive_paths) {
         fles::MicrosliceInputArchive ms_archive(input_archive_path); // open microslice archive
         shared_ptr<fles::StorableMicroslice> ms = nullptr; // microslice to search for
@@ -125,7 +126,6 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
 
         do {
             string output_archive_path = output_archive_paths[ts_file_select];
-            L_(info) << output_archive_path;
             fles::TimesliceInputArchive ts_archive(output_archive_path);
             skip_to_idx(ts_offset, ts_archive);
             std::shared_ptr<fles::StorableTimeslice> current_ts = ts_archive.get(); // timeslice to search in
@@ -206,7 +206,9 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
             ts_cnt_stat++;
         } while (ts_cnt_stat < timeslice_cnt);
     }
+    
     L_(info) << "ms_cnt_stat: " << ms_cnt_stat;
     L_(info) << "overlap_cnt_stat: " << overlap_cnt_stat;
+    // L_(info) << "ts_cnt_stat: " << ts_cnt_stat;
     return true;
 }

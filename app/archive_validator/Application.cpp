@@ -22,10 +22,10 @@ Application::Application(Parameters const& par) : par_(par) {}
 Application::~Application() {}
 
 void Application::run() {
-  if (par_.validate_) {
+  if (par_.validate) {
     Verificator val;
-    bool valid = val.verify_forward(par_.input_archives_, par_.output_archives_, par_.timeslice_size, par_.timeslice_cnt, par_.overlap);
-    L_(info) << "Archive " << ((valid) ? "valid" : "NOT valid") << std::endl;
+    bool valid = val.verify_forward(par_.input_archives, par_.output_archives, par_.timeslice_cnt, par_.overlap);
+    L_(info) << "Archive " << ((valid) ? "valid" : "NOT valid");
     return;
   }
 }
