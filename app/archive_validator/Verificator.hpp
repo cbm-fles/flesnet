@@ -19,4 +19,5 @@ public:
     Verificator() = default;
     ~Verificator() = default;
     bool verify_forward(std::vector<std::string> input_archive_paths, std::vector<std::string> output_archive_paths, uint64_t timeslice_cnt, uint64_t overlap = 1);
+    bool verify_ts_metadata(vector<string> output_archive_paths, uint64_t timeslice_cnt, uint64_t timeslice_size, uint64_t overlap_size, uint64_t timeslice_components);
 };
