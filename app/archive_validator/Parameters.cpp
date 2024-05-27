@@ -36,6 +36,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
   auto validation_add = archive_validation.add_options();
   validation_add("timeslice-cnt", po::value<uint64_t>(&timeslice_cnt),
               "Amount of expected timeslices in the timeslice archive.");
+  validation_add("timeslice-size", po::value<uint64_t>(&timeslice_size),
+              "Expected timeslice size.");
   validation_add("overlap", po::value<uint64_t>(&overlap)->default_value(overlap),
               "Timeslice overlap size.");
   validation_add("input-archives", po::value<std::vector<std::string>>(&input_archives)->multitoken(),
@@ -74,8 +76,13 @@ void Parameters::parse_options(int argc, char* argv[]) {
     L_(fatal) << "'timeslice-cnt' option not set";
     analyze_parameter_set = false;
   }
-  
+
+  if (vm.count("timeslice-size") == 0) {
+    L_(fatal) << "'timeslice-size' option not set";
+    analyze_parameter_set = false;
+  }
+
   if (!analyze_parameter_set) {
-    throw ParametersException("Not all necessary parameter for archive analyzing set.");
+    throw ParametersException("Not all necessary parameter for archive analyzing are set.");
   }
 }
