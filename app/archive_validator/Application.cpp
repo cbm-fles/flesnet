@@ -25,12 +25,12 @@ void Application::run() {
   if (par_.validate) {
     Verificator val;
     bool valid = false;
-    // uint64_t components_cnt = par_.input_archives.size();
-    // valid = val.verify_ts_metadata(par_.output_archives, par_.timeslice_cnt, par_.timeslice_size, par_.overlap, components_cnt);
-    // if (!valid) {
-    //   L_(fatal) << "Output metadata check FAILED. Archives NOT VALID!";
-    //   return;
-    // }
+    uint64_t components_cnt = par_.input_archives.size();
+    valid = val.verify_ts_metadata(par_.output_archives, par_.timeslice_cnt, par_.timeslice_size, par_.overlap, components_cnt);
+    if (!valid) {
+      L_(fatal) << "Output metadata check FAILED. Archives NOT VALID!";
+      return;
+    }
     valid = val.verify_forward(par_.input_archives, par_.output_archives, par_.timeslice_cnt, par_.overlap);
     if (!valid) {
       L_(fatal) << "Forward varification FAILED. Archives NOT VALID!";
