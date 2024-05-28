@@ -7,6 +7,10 @@
 #include "Source.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/binary_iarchive.hpp>
+#ifdef BOOST_IOS_HAS_ZSTD
+#include <boost/iostreams/filter/zstd.hpp>
+#endif
+#include <boost/iostreams/filtering_stream.hpp>
 #include <fstream>
 #include <iomanip>
 #include <memory>
@@ -71,6 +75,7 @@ public:
 
 private:
   std::unique_ptr<std::ifstream> ifstream_;
+  std::unique_ptr<boost::iostreams::filtering_istream> in_;
   std::unique_ptr<boost::archive::binary_iarchive> iarchive_;
   ArchiveDescriptor descriptor_;
 
@@ -121,6 +126,26 @@ private:
     if (descriptor_.archive_type() != archive_type) {
       throw std::runtime_error("File \"" + filename +
                                "\" is not of correct archive type");
+    }
+
+    if (descriptor_.archive_compression() != ArchiveCompression::None) {
+#ifdef BOOST_IOS_HAS_ZSTD
+      in_ = std::make_unique<boost::iostreams::filtering_istream>();
+      if (descriptor_.archive_compression() == ArchiveCompression::Zstd) {
+        in_->push(boost::iostreams::zstd_decompressor());
+      } else {
+        throw std::runtime_error(
+            "Unsupported compression type for input archive file \"" +
+            filename + "\"");
+      }
+      in_->push(*ifstream_);
+      iarchive_ = std::make_unique<boost::archive::binary_iarchive>(
+          *in_, boost::archive::no_header);
+#else
+      throw std::runtime_error(
+          "Unsupported compression type for input archive file \"" + filename +
+          "\"");
+#endif
     }
 
     ++file_count_;

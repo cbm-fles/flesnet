@@ -82,11 +82,161 @@ if (EXTENDED_DOXYGEN_DOCUMENTATION)
   set(DOXYGEN_SHOW_FILES YES)
   set(DOXYGEN_CALL_GRAPH YES)
   set(DOXYGEN_CALLER_GRAPH YES)
+  set(DOXYGEN_INLINE_SOURCES YES)
+  set(DOXYGEN_GENERATE_TREEVIEW YES)
 
   # default DOT_GRAPH_MAX_NODES: 50, but too small for this project
   set(DOXYGEN_DOT_GRAPH_MAX_NODES 100)
 endif()
 
-doxygen_add_docs(doc ../app ../lib ../test
-	COMMENT "Generating documentation with doxygen \n\t(doxygen error \
-	\"FileDefImpl::insertMembers()...\" is expected)" )
+# In order to include documentation for code guarded by preprocessor
+# macros passed by cmake to the compiler, we must instruct doxygen
+# to define these macros as well.
+set(DOXYGEN_PREDEFINED "")
+# Note that the escaped quotes are necessary. Doxygen expects the macro
+# definitions to be a list of quoted strings.
+string(APPEND DOXYGEN_PREDEFINED "\"HAVE_LIBFABRIC=1\"")
+string(APPEND DOXYGEN_PREDEFINED " \"HAVE_RDMA=1\"")
+
+set(DOXYGEN_MARKDOWN_SUPPORT YES)
+set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
+
+# It is necessary to have these be the first files in the list of input
+# files and directories to doxygen, because otherwise doxygen will not
+# generate the corresponding pages for them. Right now, we will include
+# them to the documentation of all executables, but later we might want 
+# to have them only in the documentation where they are relevant.
+set(MARKDOWN_DOCS_FOR_DOXYGEN
+  README.md
+  HOWTO.md
+  INSTALL.md
+  doc/Ctrl-C.md
+  doc/monitoring.md
+  doc/flesnet_minimal_example.md
+  doc/monitoring_with_podman.md
+  doc/TS_Source_Identifier.md
+  doc/versions.md
+  doc/structure.md)
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/flesnet-doc)
+doxygen_add_docs(doc-flesnet
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  app/flesnet
+  lib/logging
+  lib/shm_ipc
+  lib/fles_core
+  lib/fles_zeromq
+  lib/fles_rdma
+  lib/fles_libfabric
+  lib/fles_ipc
+  lib/monitoring
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	COMMENT "Generating flesnet documentation with doxygen")
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
+doxygen_add_docs(doc-mstool
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  app/mstool
+  lib/logging
+  lib/fles_core
+  lib/fles_ipc
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation with doxygen")
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsclient-doc)
+doxygen_add_docs(doc-tsclient
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  app/tsclient
+  lib/logging
+  lib/fles_core
+  lib/fles_ipc
+  lib/monitoring
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation wit doxygen" )
+  
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/msconsumer-doc)
+doxygen_add_docs(doc-msconsumer app/msconsumer lib test
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation with doxygen (doxygen error \
+  \"FileDefImpl::insertMembers()...\" is expected)")
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_cfg-doc)
+doxygen_add_docs(doc-cri_cfg
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  app/cri_cfg
+  lib/cri
+  lib/fles_ipc/MicrosliceDescriptor.hpp
+  lib/pda
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation with doxygen")
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_server-doc)
+doxygen_add_docs(doc-cri_server
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  app/cri_server
+  lib/logging
+  lib/fles_ipc/MicrosliceDescriptor.hpp
+  lib/fles_ipc/Utility.hpp
+  lib/cri
+  lib/pda
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating documentation with doxygen" )
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_en_pgen-doc)
+doxygen_add_docs(doc-cri_en_pgen
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  app/cri_tools/cri_en_pgen.cpp
+  lib/cri
+  lib/pda
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating cri_en_pgen documentation with doxygen")
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_info-doc)
+doxygen_add_docs(doc-cri_info
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  app/cri_tools/cri_info.cpp
+  lib/fles_ipc/MicrosliceDescriptor.hpp
+  lib/cri
+  lib/pda
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating cri_info documentation with doxygen")
+  
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_status-doc)
+doxygen_add_docs(doc-cri_status
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  app/cri_tools/cri_status.cpp
+  lib/monitoring
+  lib/cri
+  lib/fles_ipc/System.hpp
+  lib/fles_ipc/MicrosliceDescriptor.hpp
+  lib/pda
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating cri_status documentation with doxygen")
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_test_rf-doc)
+doxygen_add_docs(doc-cri_test_rf
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  app/cri_tools/cri_test_rf.cpp
+  lib/fles_ipc/MicrosliceDescriptor.hpp
+  lib/cri
+  lib/pda
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating cri_test_rf documentation with doxygen")
+
+add_custom_target(doc-cri_tools
+  DEPENDS
+    doc-cri_info
+    doc-cri_en_pgen
+    doc-cri_status
+    doc-cri_test_rf)
+
+add_custom_target(doc
+  DEPENDS
+    doc-flesnet
+    doc-mstool
+    doc-tsclient
+    doc-msconsumer
+    doc-cri_cfg
+    doc-cri_server
+    doc-cri_tools)

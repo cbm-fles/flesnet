@@ -49,6 +49,8 @@ public:
 
   [[nodiscard]] double native_speed() const { return native_speed_; }
 
+  [[nodiscard]] bool release_mode() const { return release_mode_; }
+
 private:
   void parse_options(int argc, char* argv[]);
 
@@ -66,4 +68,5 @@ private:
   uint64_t stride_ = 1;
   double rate_limit_ = 0.0;
   double native_speed_ = 0.0;
+  bool release_mode_ = false;
 };
