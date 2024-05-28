@@ -35,16 +35,21 @@ void Parameters::parse_options(int argc, char* argv[]) {
   po::options_description archive_validation("Archive validation options");
   auto validation_add = archive_validation.add_options();
   validation_add("timeslice-cnt", po::value<uint64_t>(&timeslice_cnt),
-              "Amount of expected timeslices in the timeslice archive.");
+              "Summed up amount of expected timeslices in the timeslice archives.");
   validation_add("timeslice-size", po::value<uint64_t>(&timeslice_size),
               "Expected timeslice size.");
   validation_add("overlap", po::value<uint64_t>(&overlap)->default_value(overlap),
               "Timeslice overlap size.");
-  validation_add("input-archives", po::value<std::vector<std::string>>(&input_archives)->multitoken(),
+  validation_add("input-archives,I", po::value<std::vector<std::string>>(&input_archives)->multitoken(),
             "Paths to the input microslice archives.");
-  validation_add("output-archives", po::value<std::vector<std::string>>(&output_archives)->multitoken(),
+  validation_add("output-archives,O", po::value<std::vector<std::string>>(&output_archives)->multitoken(),
             "Paths to the output timeslice archives.");
-  po::options_description desc;
+
+  po::options_description desc(
+    "\nUsage:\n"
+    "\tarchive_validator [options] -I input1.msa [ input2.msa ... ] -O output1.tsa [ output2.tsa ... ]"
+    "\n\n"
+    "Command line options");
   desc
     .add(general)
     .add(archive_validation);
@@ -59,11 +64,18 @@ void Parameters::parse_options(int argc, char* argv[]) {
     exit(EXIT_SUCCESS);
   }
 
+  if (vm.count("version") != 0u) {
+    std::cout << "archive_validator " << g_PROJECT_VERSION_GIT << ", git revision "
+              << g_GIT_REVISION << std::endl;
+    exit(EXIT_SUCCESS);
+  }
+
   logging::add_console(static_cast<severity_level>(log_level));
   if (vm.count("log-file") != 0u) {
     L_(info) << "Logging output to " << log_file;
     logging::add_file(log_file, static_cast<severity_level>(log_level));
   }
+
   if (vm.count("log-syslog") != 0u) {
     logging::add_syslog(logging::syslog::local0,
                         static_cast<severity_level>(log_syslog));
@@ -81,6 +93,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
     L_(fatal) << "'timeslice-size' option not set";
     analyze_parameter_set = false;
   }
+
 
   if (!analyze_parameter_set) {
     throw ParametersException("Not all necessary parameter for archive analyzing are set.");
