@@ -30,19 +30,25 @@ void Parameters::parse_options(int argc, char* argv[]) {
                   ->value_name("<n>"),
               "enable logging to syslog at given log level");
 
-
-
   po::options_description archive_validation("Archive validation options");
   auto validation_add = archive_validation.add_options();
-  validation_add("timeslice-cnt", po::value<uint64_t>(&timeslice_cnt),
+  validation_add("timeslice-cnt", po::value<uint64_t>(&timeslice_cnt)
+                                            ->value_name("<n>"),
               "Summed up amount of expected timeslices in the timeslice archives.");
-  validation_add("timeslice-size", po::value<uint64_t>(&timeslice_size),
+  validation_add("timeslice-size", po::value<uint64_t>(&timeslice_size)
+                                            ->value_name("<n>"),
               "Expected timeslice size.");
-  validation_add("overlap", po::value<uint64_t>(&overlap)->default_value(overlap),
+  validation_add("overlap", po::value<uint64_t>(&overlap)
+                                      ->default_value(overlap)
+                                      ->value_name("<n>"),
               "Timeslice overlap size.");
-  validation_add("input-archives,I", po::value<std::vector<std::string>>(&input_archives)->multitoken(),
+  validation_add("input-archives,I", po::value<std::vector<std::string>>(&input_archives)
+                                              ->multitoken()
+                                              ->value_name("<space-separated-msa-files>"),
             "Paths to the input microslice archives.");
-  validation_add("output-archives,O", po::value<std::vector<std::string>>(&output_archives)->multitoken(),
+  validation_add("output-archives,O", po::value<std::vector<std::string>>(&output_archives)
+                                                ->multitoken()
+                                                ->value_name("<space-separated-tsa-files>"),
             "Paths to the output timeslice archives.");
 
   po::options_description desc(
@@ -94,8 +100,17 @@ void Parameters::parse_options(int argc, char* argv[]) {
     analyze_parameter_set = false;
   }
 
+  if (vm.count("input-archives") == 0) {
+    L_(fatal) << "'input-archives' option not set";
+    analyze_parameter_set = false;
+  }
+
+  if (vm.count("output-archives") == 0) {
+    L_(fatal) << "'output-archives' option not set";
+    analyze_parameter_set = false;
+  }
 
   if (!analyze_parameter_set) {
-    throw ParametersException("Not all necessary parameter for archive analyzing are set.");
+    throw ParametersException("Not all necessary parameters for archive analyzing are set.");
   }
 }
