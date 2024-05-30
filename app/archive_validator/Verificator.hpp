@@ -34,8 +34,9 @@ private:
      */
     void skip_to_idx(uint64_t idx,fles::MicrosliceInputArchive &ts_archive);
 
+    uint64_t usable_threads_ = 0;
 public:
-    Verificator() = default;
+    Verificator();
     ~Verificator() = default;
 
     /**
@@ -60,5 +61,5 @@ public:
      * @param timeslice_components expected amount of components in all of the timeslices in the given timeslice archives
      * @return true if valid
      */
-    bool verify_ts_metadata(vector<string> output_archive_paths, uint64_t timeslice_cnt, uint64_t timeslice_size, uint64_t overlap_size, uint64_t timeslice_components);
+    [[nodiscard]] bool verify_ts_metadata(vector<string> output_archive_paths, uint64_t timeslice_cnt, uint64_t timeslice_size, uint64_t overlap_size, uint64_t timeslice_components) const;
 };
