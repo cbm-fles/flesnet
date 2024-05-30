@@ -73,34 +73,34 @@ bool Verificator::verify_ts_metadata(vector<string> output_archive_paths, uint64
             while ((current_ts = ts_archive.get()) != nullptr) {
                 uint64_t num_core_microslice = current_ts->num_core_microslices();
                 if (num_core_microslice != timeslice_size) {
-                    L_(fatal) << "Difference in num of core microslices: ";
-                    L_(fatal) << "Expeced: " << timeslice_size;
-                    L_(fatal) << "Found: " << num_core_microslice;
-                    L_(fatal) << "Timeslice archive: " << output_archive_path;
-                    L_(fatal) << "Timeslice IDX: " << local_ts_idx;
-                    goto fail;
+                    L_(fatal) << "Difference in num of core microslices: \n" 
+                        << "Expeced: " << timeslice_size << "\n"
+                        << "Found: " << num_core_microslice << "\n"
+                        << "Timeslice archive: " << output_archive_path << "\n"
+                        << "Timeslice IDX: " << local_ts_idx;
+                    goto fail_ts;
                 }
 
                 uint64_t num_components = current_ts->num_components();
                 if (num_components != timeslice_components) {
-                    L_(fatal) << "Difference in num of components: ";
-                    L_(fatal) << "Expeced: " << timeslice_components;
-                    L_(fatal) << "Found: " << num_components;
-                    L_(fatal) << "Timeslice archive: " << output_archive_path;
-                    L_(fatal) << "Timeslice IDX: " << local_ts_idx;
-                    goto fail;
+                    L_(fatal) << "Difference in num of components: \n"
+                        << "Expeced: " << timeslice_components << "\n"
+                        << "Found: " << num_components << "\n"
+                        << "Timeslice archive: " << output_archive_path << "\n"
+                        << "Timeslice IDX: " << local_ts_idx;
+                    goto fail_ts;
                 }
 
                 for (uint64_t c = 0; c < current_ts->num_components(); c++) {
                     uint64_t num_microslices = current_ts->num_microslices(c);
                     uint64_t ts_overlap = num_microslices - num_core_microslice;
                     if (ts_overlap != overlap_size) {
-                        L_(fatal) << "Difference in overlap size: ";
-                        L_(fatal) << "Expeced: " << overlap_size;
-                        L_(fatal) << "Found: " << ts_overlap;
-                        L_(fatal) << "Timeslice archive: " << output_archive_path;
-                        L_(fatal) << "Timeslice IDX: " << local_ts_idx;
-                        goto fail;
+                        L_(fatal) << "Difference in overlap size: \n"
+                            << "Expeced: " << overlap_size << "\n"
+                            << "Found: " << ts_overlap << "\n"
+                            << "Timeslice archive: " << output_archive_path << "\n"
+                            << "Timeslice IDX: " << local_ts_idx;
+                        goto fail_ts;
                     }
                 }
                 local_ts_idx++;
@@ -109,7 +109,7 @@ bool Verificator::verify_ts_metadata(vector<string> output_archive_paths, uint64
             L_(info) << "Successfully verified metadata of: '" <<  output_archive_path << "'. "<< archive_cnt.fetch_sub(1, std::memory_order_relaxed) - 1 << " remaining ..." << endl;
             sem.post();
             return true;
-        fail:
+        fail_ts:
             L_(fatal) << "FAILED to verify metadata of: '" << output_archive_path << "'";
             sem.post();
             return false;
@@ -162,8 +162,11 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                 for (; ms_idx < current_ts->num_core_microslices(); ms_idx++) {
                     ms = ms_archive.get();
                     if (!ms) {
-                        L_(fatal) << "Failed to get next microslice";
-                        // ToDo: print stats
+                        L_(fatal) << "Failed to get next microslice\n"
+                            << "Timeslice archive: " << current_ts_archive_path << ", offset: " << current_ts_offset << "\n"
+                            << "Timeslice idx: " << ts_cnt_stat << "\n"
+                            << "Microslice archive: " << input_archive_path << "\n"
+                            << "Microslice idx: " << ms_idx;
                         goto fail;
                     }
                     
@@ -171,11 +174,11 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                     if (compontent_idx < 0) {
                         compontent_idx = get_component_idx_of_microslice(current_ts, ms);
                         if (compontent_idx < 0) {
-                            L_(fatal) << "Could not associate timeslice component to microslice: ";
-                            L_(fatal) << "Timeslice archive: " << current_ts_archive_path << ", offset: " << current_ts_offset;
-                            L_(fatal) << "Timeslice idx: " << ts_cnt_stat;
-                            L_(fatal) << "Microslice archive: " << input_archive_path;
-                            L_(fatal) << "Microslice idx: " << ms_idx;
+                            L_(fatal) << "Could not associate timeslice component to microslice: \n"
+                                << "Timeslice archive: " << current_ts_archive_path << ", offset: " << current_ts_offset << "\n"
+                                << "Timeslice idx: " << ts_cnt_stat << "\n"
+                                << "Microslice archive: " << input_archive_path << "\n"
+                                << "Microslice idx: " << ms_idx;
                             goto fail;
                         }
                     }
@@ -183,11 +186,11 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                     fles::MicrosliceView ms_in_curr_component = current_ts->get_microslice(compontent_idx, ms_idx);
 
                     if (ms_in_curr_component != *ms) {
-                        L_(info) << "Found inequality in core area of timeslice";
-                        L_(fatal) << "Timeslice archive: " << current_ts_archive_path << ", offset: " << current_ts_offset;
-                        L_(fatal) << "Timeslice idx: " << ts_cnt_stat;
-                        L_(fatal) << "Microslice archive: " << input_archive_path;
-                        L_(fatal) << "Microslice idx: " << ms_idx;
+                        L_(fatal) << "Found inequality in core area of timeslice\n"
+                            << "Timeslice archive: " << current_ts_archive_path << ", offset: " << current_ts_offset << "\n"
+                            << "Timeslice idx: " << ts_cnt_stat << "\n"
+                            << "Microslice archive: " << input_archive_path << "\n"
+                            << "Microslice idx: " << ms_idx;
                         goto fail;
                     }
                     ++overall_ms_cnt_stat;
@@ -208,19 +211,19 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                     for (ms_idx = 0; ms_idx < overlap; ms_idx++) {
                         ms = ms_archive.get();
                         if (!ms) {
-                            L_(fatal) << "Could not get next microslice from MS archive";
-                            L_(fatal) << "Timeslice archive: " << current_ts_archive_path << ", offset: " << current_ts_offset;
-                            L_(fatal) << "Microslice archive: " << input_archive_path;
-                            L_(fatal) << "Microslice idx: " << ms_idx;
+                            L_(fatal) << "Could not get next microslice from MS archive\n"
+                                << "Timeslice archive: " << current_ts_archive_path << ", offset: " << current_ts_offset << "\n"
+                                << "Microslice archive: " << input_archive_path << "\n"
+                                << "Microslice idx: " << ms_idx;
                             goto fail;
                         }
 
                         fles::MicrosliceView ms_in_curr_component = current_ts->get_microslice(compontent_idx, ms_idx + current_ts->num_core_microslices());
                         if (*ms != ms_in_curr_component) {
-                            L_(fatal) << "Found inequality in overlap of last timeslice";
-                            L_(fatal) << "Timeslice archive: " << current_ts_archive_path << ", offset: " << current_ts_offset;
-                            L_(fatal) << "Microslice archive: " << input_archive_path;
-                            L_(fatal) << "Microslice idx: " << ms_idx;
+                            L_(fatal) << "Found inequality in overlap of last timeslice\n"
+                                << "Timeslice archive: " << current_ts_archive_path << ", offset: " << current_ts_offset << "\n"
+                                << "Microslice archive: " << input_archive_path << "\n"
+                                << "Microslice idx: " << ms_idx;
                             goto fail;
                         }
                         ++overall_ms_cnt_stat;
@@ -229,20 +232,20 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                     for (ms_idx = 0; ms_idx < overlap; ms_idx++) {
                         ms = ms_archive.get();
                         if (!ms) {
-                            L_(fatal) << "Could not get next microslice from MS archive while overlap checking";
-                            L_(fatal) << "Microslice archive: " << input_archive_path;
-                            L_(fatal) << "From: '" << current_ts_archive_path <<"', offset: " << current_ts_offset;  
-                            L_(fatal) << "To: '" << next_ts_archive_path <<"', offset: " << next_ts_offset;  
+                            L_(fatal) << "Could not get next microslice from MS archive while overlap checking\n"
+                                << "Microslice archive: " << input_archive_path << "\n"
+                                << "From: '" << current_ts_archive_path <<"', offset: " << current_ts_offset << "\n"  
+                                << "To: '" << next_ts_archive_path <<"', offset: " << next_ts_offset;
                             goto fail;
                         }
 
                         fles::MicrosliceView ms_in_curr_component = current_ts->get_microslice(compontent_idx, ms_idx + current_ts->num_core_microslices());
                         fles::MicrosliceView ms_in_next_component = next_ts->get_microslice(compontent_idx, ms_idx);
                         if (*ms != ms_in_curr_component || *ms != ms_in_next_component) {
-                            L_(fatal) << "Overlap check failed: ";
-                            L_(fatal) << "Microslice archive: " << input_archive_path;
-                            L_(fatal) << "From: '" << current_ts_archive_path <<"', offset: " << current_ts_offset;  
-                            L_(fatal) << "To: '" << next_ts_archive_path <<"', offset: " << next_ts_offset;  
+                            L_(fatal) << "Overlap check failed:\n"
+                                << "Microslice archive: " << input_archive_path << "\n"
+                                << "From: '" << current_ts_archive_path <<"', offset: " << current_ts_offset << "\n"  
+                                << "To: '" << next_ts_archive_path <<"', offset: " << next_ts_offset;  
                             goto fail;
                         }
                         ++overall_ms_cnt_stat;
