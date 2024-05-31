@@ -61,5 +61,5 @@ public:
      * @param timeslice_components expected amount of components in all of the timeslices in the given timeslice archives
      * @return true if valid
      */
-    [[nodiscard]] bool verify_ts_metadata(vector<string> output_archive_paths, uint64_t timeslice_cnt, uint64_t timeslice_size, uint64_t overlap_size, uint64_t timeslice_components) const;
+    [[nodiscard]] bool verify_ts_metadata(vector<string> output_archive_paths, uint64_t *timeslice_cnt, uint64_t timeslice_size, uint64_t overlap_size, uint64_t timeslice_components) const;
 };
