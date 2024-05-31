@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <thread>
 
 Application::Application(Parameters const& par) : par_(par) {}
@@ -26,15 +27,16 @@ void Application::run() {
     Verificator val;
     bool valid = false;
     uint64_t components_cnt = par_.input_archives.size();
-    valid = val.verify_ts_metadata(par_.output_archives, par_.timeslice_cnt, par_.timeslice_size, par_.overlap, components_cnt);
+    uint64_t timeslice_cnt = par_.timeslice_cnt;
+    valid = val.verify_ts_metadata(par_.output_archives, &timeslice_cnt, par_.timeslice_size, par_.overlap, components_cnt);
     if (!valid) {
       L_(fatal) << "Output metadata check FAILED. Archives NOT VALID!";
-      return;
+      throw std::runtime_error("Output metadata check FAILED. Archives NOT VALID!");
     }
-    valid = val.verify_forward(par_.input_archives, par_.output_archives, par_.timeslice_cnt, par_.overlap);
+    valid = val.verify_forward(par_.input_archives, par_.output_archives, timeslice_cnt, par_.overlap);
     if (!valid) {
       L_(fatal) << "Forward varification FAILED. Archives NOT VALID!";
-      return;
+      throw std::runtime_error("Forward varification FAILED. Archives NOT VALID!");
     }
 
     L_(info) << "Success - Archives valid.";
