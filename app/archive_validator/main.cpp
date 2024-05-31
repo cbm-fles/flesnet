@@ -5,6 +5,7 @@
 #include "Parameters.hpp"
 #include "log.hpp"
 #include <boost/algorithm/string.hpp>
+#include <cstdlib>
 
 void start_exec(const std::string& executable,
                 const std::string& shared_memory_identifier) {

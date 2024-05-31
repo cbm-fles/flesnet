@@ -58,7 +58,7 @@ void Verificator::skip_to_idx(uint64_t idx,fles::MicrosliceInputArchive &ms_arch
     }
 }
 
-bool Verificator::verify_ts_metadata(vector<string> output_archive_paths, uint64_t timeslice_cnt, uint64_t timeslice_size, uint64_t overlap_size, uint64_t timeslice_components) const {
+bool Verificator::verify_ts_metadata(vector<string> output_archive_paths, uint64_t *timeslice_cnt, uint64_t timeslice_size, uint64_t overlap_size, uint64_t timeslice_components) const {
     boost::interprocess::interprocess_semaphore sem(usable_threads_);
     vector<future<bool>> thread_handles;
     atomic_uint64_t ts_cnt = 0;
@@ -123,9 +123,11 @@ bool Verificator::verify_ts_metadata(vector<string> output_archive_paths, uint64
         }
     }
 
-    if (ts_cnt != timeslice_cnt) {
+    if (*timeslice_cnt == 0) {
+        *timeslice_cnt = ts_cnt;
+    } else if (ts_cnt != *timeslice_cnt) {
         L_(fatal) << "Difference in num of timeslices: ";
-        L_(fatal) << "Expeced: " << timeslice_cnt;
+        L_(fatal) << "Expeced: " << *timeslice_cnt;
         L_(fatal) << "Found: " << ts_cnt;
         return false;
     }
@@ -184,7 +186,6 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                     }
 
                     fles::MicrosliceView ms_in_curr_component = current_ts->get_microslice(compontent_idx, ms_idx);
-
                     if (ms_in_curr_component != *ms) {
                         L_(fatal) << "Found inequality in core area of timeslice\n"
                             << "Timeslice archive: " << current_ts_archive_path << ", offset: " << current_ts_offset << "\n"
