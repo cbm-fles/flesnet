@@ -14,17 +14,22 @@ function is_number() {
     esac
 }
 
-
+# Creates msa files with mstool, feeds them into flesnet via mstool and shm,
+# starts entry and build nodes and validates the generated tsa files agains the
+# used msa files.
 # $1 - number of entry nodes
 # $2 - number of build nodes
 # $3 - number of timeslices
 # $4 - timeslice size
 # $5 - overlap size
 function test_chain() {
+    # Check correct number of arguments
     if [ $# -ne 5 ]; then
         return 1;
     fi
     
+    # Check if all arguments are actual integers
+    # Strings could do serious harm in later contexts
     for arg in "$@"
     do
         local num_check=$(is_number $arg)
@@ -33,16 +38,16 @@ function test_chain() {
         fi
     done
 
-    local entry_cnt=$1
-    local build_cnt=$2
-    local timeslice_cnt=$3
-    local timeslice_size=$4
-    local overlap_size=$5
-    local dir_name="$1to$2_test"
+    local entry_cnt=$1 # how many entry nodes
+    local build_cnt=$2 # how many build nodes
+    local timeslice_cnt=$3 # how many timeslices do we want to construct
+    local timeslice_size=$4 # size of the timeslices
+    local overlap_size=$5 # size of overlap between timeslices
+    local dir_name="$1to$2_test" # the directory which will contain the generated msa/tsa archive files
     local microslice_cnt=$(($timeslice_size * $timeslice_cnt + $overlap_size))
-    rm -rf ./$dir_name
-    mkdir ./$dir_name
-    echo $timeslice_size
+    rm -rf "./$dir_name" # Cleanup leftovers from last testrun
+    mkdir "./$dir_name"
+    
     # Use mstool to create input microslice archives
     for i in $(seq 0 $(($entry_cnt - 1)));
     do
@@ -53,18 +58,17 @@ function test_chain() {
     done
 
     # Use mstool to provide the created microslice archives via shared memory
-    #./mstool -c 1 --input-archive ./ms_archive1.msa --output-shm fles_in_shared_memory1
     local mstool_ids=()
     for i in $(seq 0 $(($entry_cnt - 1)));
     do
-        rm -rf /dev/shm/fles_in_shared_memory$i
+        rm -rf /dev/shm/fles_in_shared_memory$i # Cleanup leftovers from last testrun
         $mstool -c $i --input-archive "./$dir_name/input$i.msa" --output-shm fles_in_shared_memory$i > /dev/null 2>&1 &
         mstool_ids+=($!)
     done
 
-    # ./flesnet -n 15 -t zeromq -i 1 -I shm:/fles_in_shared_memory0/0 shm:/fles_in_shared_memory1/0 -O shm:/fles_out_shared_memory0/0 shm:/fles_out_shared_memory1/0 --processor-instances 1 -e "./tsclient -i shm:%s -o file:timeslice_archive.tsa"
+    # reference entry node command: ./flesnet -n 15 -t zeromq -i 1 -I shm:/fles_in_shared_memory0/0 shm:/fles_in_shared_memory1/0 -O shm:/fles_out_shared_memory0/0 shm:/fles_out_shared_memory1/0 --processor-instances 1 -e "./tsclient -i shm:%s -o file:timeslice_archive.tsa"
     local entry_input_vector_arg="" # -I arg for entry nodes
-    # ./flesnet -n 15 -t zeromq -o 1 -I shm://127.0.0.1/0 shm://127.0.0.1/0 -O shm:/fles_out_shared_memory0/0 shm:/fles_out_shared_memory1/1 --processor-instances 1 -e "./tsclient -i shm:%s -o file:timeslice_archive1.tsa"
+    # reference build node command: ./flesnet -n 15 -t zeromq -o 1 -I shm://127.0.0.1/0 shm://127.0.0.1/0 -O shm:/fles_out_shared_memory0/0 shm:/fles_out_shared_memory1/1 --processor-instances 1 -e "./tsclient -i shm:%s -o file:timeslice_archive1.tsa"
     local build_input_vector_arg="" # -I arg for build nodes
     for i in $(seq 0 $(($entry_cnt  - 1)));
     do
@@ -78,17 +82,17 @@ function test_chain() {
         output_vector_arg=" $output_vector_arg shm:/fles_out_shared_memory$i/0?overlap=$overlap_size"
     done
 
-    local build_ids=()
     # Start build nodes
+    local build_ids=()
     for i in $(seq 0 $(($build_cnt - 1)));
     do
         local processor_executable="$tsclient --input-uri shm:%s -o file:./$dir_name/output$i.tsa"
         $flesnet -n $timeslice_cnt --timeslice-size $timeslice_size -o $i -I $build_input_vector_arg -O $output_vector_arg --processor-instances 1 -e "$processor_executable" -t zeromq > /dev/null 2>&1 &
         build_ids+=($!)
     done
-    
-    local entry_ids=()
+
     # Start entry nodes
+    local entry_ids=()
     for i in $(seq 0 $(($entry_cnt - 1)));
     do
         local processor_executable="$tsclient --input-uri shm:%s -o file:./$dir_name/output$i.tsa"
@@ -96,13 +100,15 @@ function test_chain() {
         entry_ids+=($!)
     done
 
+    # Wait for build and entry node to exit
     wait ${build_ids[*]}
     wait ${entry_ids[*]}
-    for id in "${mstool_ids[@]}";
+    for id in "${mstool_ids[@]}"; # mstool has to be killed forcefully
     do
         kill -9 $id > /dev/null 2>&1
     done
 
+    # Finally, validate output tsa files against input msa files
     $archive_validator -I $(find ./$dir_name -name "*.msa") -O $(find ./$dir_name -name "*.tsa") --timeslice-size $timeslice_size --timeslice-cnt $timeslice_cnt --overlap $overlap_size
     return $?
 }
