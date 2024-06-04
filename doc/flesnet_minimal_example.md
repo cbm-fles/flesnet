@@ -34,7 +34,7 @@ Build nodes will build timeslices out of the received microslices.
 ./flesnet -t zeromq --timeslice-size 20 -n 15 -o 0 -I shm://127.0.0.1/0 -O shm:/fles_out_shared_memory/0 --processor-instances 1 -e "./tsclient -i shm:%s -o file:timeslice_archive.tsa"
 ```
 
-- `-t`: We are using the ZeroMQ transport layer to exchange information between entry and build nodes. This makes more sense when we use seperate FLESnet instances for entry and build nodes. Here, this singke process will do the work of both.
+- `-t`: We are using the ZeroMQ transport layer to exchange information between entry and build nodes.
 - `-o`: Output index. Refers to the output sink of this Flesnet instance. Example: When `-o` is set to 1, this build node will write the built timeslices into the 2nd (indexing starts at 0) output sink, defined with the `-O` flag.
 - `-O`: List of output sinks. See use of `-o` flag.
 - `--timeslice-size`: Defines how many microslices will make up one timeslice (This does not include overlap. The overlap concept will be explained within a dedicated section).
