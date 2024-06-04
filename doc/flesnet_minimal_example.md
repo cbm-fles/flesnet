@@ -63,7 +63,7 @@ With our shared memory microslice input source ready, we can start a Flesnet ent
 ./flesnet -t zeromq --timeslice-size 20 -n 15 -i 0 -I shm:/fles_in_shared_memory/0 -O shm:/fles_out_shared_memory/0 --processor-instances 1 -e "./tsclient -i shm:%s -o file:timeslice_archive.tsa"
 ```
 
-- `-i`: The input index of this `flesnet` instance. Example: When `-i` is set to 2, this entry node will read from the 3rd (indexing starts at 0) input source, defined with the `-I` flag. Again, this makes more sense when having seperate entry and build nodes.
+- `-i`: The input index of this `flesnet` instance. Example: When `-i` is set to 2, this entry node will read from the 3rd (indexing starts at 0) input source, defined with the `-I` flag.
 - `I`: List of input sources. See use of `-i` flag.
 
 The fact that we provide a value for `-i` makes this an entry node. Using `-i` and `-o` together is also possible but will not be explained in this manual.   
