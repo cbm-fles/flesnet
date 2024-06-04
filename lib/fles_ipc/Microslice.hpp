@@ -4,8 +4,9 @@
 #pragma once
 
 #include "MicrosliceDescriptor.hpp"
+#include <cstdint>
 #include <fstream>
-
+#include <iostream>
 #include <boost/serialization/access.hpp>
 // Note: <fstream> has to precede boost/serialization includes for non-obvious
 // reasons to avoid segfault similar to
@@ -35,6 +36,10 @@ public:
   /// Compare computed CRC-32 checksum to value in header
   [[nodiscard]] bool check_crc() const;
 
+  bool operator==(const Microslice& other) const;
+  bool operator!=(const Microslice& other) const;
+  friend std::ostream& operator<<(std::ostream& out, const Microslice& ms);
+  
 protected:
   Microslice() = default;
 

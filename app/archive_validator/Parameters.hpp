@@ -17,25 +17,12 @@ struct Parameters {
   Parameters(int argc, char* argv[]) { parse_options(argc, argv); }
   void parse_options(int argc, char* argv[]);
 
-  // general options
-  uint64_t maximum_number = UINT64_MAX;
-  std::string exec;
-
   // archive validation options
   uint64_t timeslice_size;
   uint64_t timeslice_cnt;
   uint64_t overlap = 1;
-  
-  // source selection
-  uint32_t pattern_generator = 0;
-  bool use_pattern_generator = false;
-  size_t channel_idx = 0;
-  std::string input_shm;
-  std::string input_archive;
 
-  // sink selection
-  bool analyze = false;
-  size_t dump_verbosity = 0;
-  std::string output_shm;
-  std::string output_archive;
+  std::vector<std::string> output_archives;
+  std::vector<std::string> input_archives;
+  bool validate = false;
 };
