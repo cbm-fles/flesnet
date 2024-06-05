@@ -1,6 +1,6 @@
 // Copyright 2014 Jan de Cuveland <cmail@cuveland.de>
 /// \file
-/// \brief Defines the fles::Subscriber template class.
+/// \brief Defines the fles::TimesliceSubscriber class.
 #pragma once
 
 #include "StorableTimeslice.hpp"

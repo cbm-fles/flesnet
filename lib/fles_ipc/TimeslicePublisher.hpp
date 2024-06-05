@@ -1,6 +1,6 @@
 // Copyright 2014 Jan de Cuveland <cmail@cuveland.de>
 /// \file
-/// \brief Defines the fles::Publisher template class.
+/// \brief Defines the fles::TimeslicePublisher class.
 #pragma once
 
 #include "Publisher.hpp"
