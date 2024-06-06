@@ -58,12 +58,12 @@ function test_chain() {
     done
 
     # Use mstool to provide the created microslice archives via shared memory
-    local mstool_ids=()
+    local mstool_pids=()
     for i in $(seq 0 $(($entry_cnt - 1)));
     do
         rm -rf /dev/shm/fles_in_shared_memory$i # Cleanup leftovers from last testrun
         $mstool -c $i --input-archive "./$dir_name/input$i.msa" --output-shm fles_in_shared_memory$i > /dev/null 2>&1 &
-        mstool_ids+=($!)
+        mstool_pids+=($!)
     done
 
     # reference entry node command: ./flesnet -n 15 -t zeromq -i 1 -I shm:/fles_in_shared_memory0/0 shm:/fles_in_shared_memory1/0 -O shm:/fles_out_shared_memory0/0 shm:/fles_out_shared_memory1/0 --processor-instances 1 -e "./tsclient -i shm:%s -o file:timeslice_archive.tsa"
@@ -83,29 +83,29 @@ function test_chain() {
     done
 
     # Start build nodes
-    local build_ids=()
+    local build_pids=()
     for i in $(seq 0 $(($build_cnt - 1)));
     do
         local processor_executable="$tsclient --input-uri shm:%s -o file:./$dir_name/output$i.tsa"
         $flesnet -n $timeslice_cnt --timeslice-size $timeslice_size -o $i -I $build_input_vector_arg -O $output_vector_arg --processor-instances 1 -e "$processor_executable" -t zeromq > /dev/null 2>&1 &
-        build_ids+=($!)
+        build_pids+=($!)
     done
 
     # Start entry nodes
-    local entry_ids=()
+    local entry_pids=()
     for i in $(seq 0 $(($entry_cnt - 1)));
     do
         local processor_executable="$tsclient --input-uri shm:%s -o file:./$dir_name/output$i.tsa"
         $flesnet -n $timeslice_cnt --timeslice-size $timeslice_size -i $i -I $entry_input_vector_arg -O $output_vector_arg -t zeromq --processor-instances 1 -e "$processor_executable" > /dev/null 2>&1 &
-        entry_ids+=($!)
+        entry_pids+=($!)
     done
 
     # Wait for build and entry node to exit
-    wait ${build_ids[*]}
-    wait ${entry_ids[*]}
-    for id in "${mstool_ids[@]}"; # mstool has to be killed forcefully
+    wait ${build_pids[@]}
+    wait ${entry_pids[@]}
+    for pid in "${mstool_pids[@]}"; # mstool has to be killed forcefully
     do
-        kill -9 $id > /dev/null 2>&1
+        kill -9 $pid > /dev/null 2>&1
     done
 
     # Finally, validate output tsa files against input msa files

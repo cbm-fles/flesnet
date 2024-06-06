@@ -30,12 +30,10 @@ void Application::run() {
     uint64_t timeslice_cnt = par_.timeslice_cnt;
     valid = val.verify_ts_metadata(par_.output_archives, &timeslice_cnt, par_.timeslice_size, par_.overlap, components_cnt);
     if (!valid) {
-      L_(fatal) << "Output metadata check FAILED. Archives NOT VALID!";
       throw std::runtime_error("Output metadata check FAILED. Archives NOT VALID!");
     }
     valid = val.verify_forward(par_.input_archives, par_.output_archives, timeslice_cnt, par_.overlap);
     if (!valid) {
-      L_(fatal) << "Forward varification FAILED. Archives NOT VALID!";
       throw std::runtime_error("Forward varification FAILED. Archives NOT VALID!");
     }
 

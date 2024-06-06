@@ -64,7 +64,7 @@ With our shared memory microslice input source ready, we can start a Flesnet ent
 ```
 
 - `-i`: The input index of this `flesnet` instance. Example: When `-i` is set to 2, this entry node will read from the 3rd (indexing starts at 0) input source, defined with the `-I` flag.
-- `I`: List of input sources. See use of `-i` flag.
+- `-I`: List of input sources. See use of `-i` flag.
 
 The fact that we provide a value for `-i` makes this an entry node. Using `-i` and `-o` together is also possible but will not be explained in this manual.   
 
