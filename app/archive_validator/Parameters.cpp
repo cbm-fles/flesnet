@@ -46,7 +46,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
   ts_parameters_add("timeslice-cnt", po::value<uint64_t>(&timeslice_cnt)
                                             ->default_value(0)
                                             ->value_name("<n>"),
-              "Summed up amount of expected timeslices in the timeslice archives.");
+              "Summed up number of expected timeslices in the timeslice archives.");
   ts_parameters_add("timeslice-size", po::value<uint64_t>(&timeslice_size)
                                             ->value_name("<n>"),
               "Expected timeslice size.");

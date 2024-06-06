@@ -46,7 +46,7 @@ public:
      * microslice against the microslices in the microslice archive. Also verifies the overlap between following timeslices.  
      * @param input_archive_paths list of microslice archive file paths
      * @param output_archive_paths list of timeslice archive file paths
-     * @param timeslice_cnt the summed up amount of timeslices to be expected in all the timeslice archives
+     * @param timeslice_cnt the summed up number of timeslices to be expected in all the timeslice archives
      * @param overlap overlap size of timeslices
      * @return true if valid
      */
@@ -56,9 +56,9 @@ public:
      * @brief Checks if each timeslice in the given timeslice archive files fulfills the expections given by the other function arguments.
      * @param output_archive_paths list of timeslice archive file paths
      * @param overlap_size overlap size of timeslices
-     * @param timeslice_cnt the summed up amount of timeslices to be expected in all the timeslice archives
+     * @param timeslice_cnt the summed up number of timeslices to be expected in all the timeslice archives
      * @param timeslice_size expected timeslice sizes
-     * @param timeslice_components expected amount of components in all of the timeslices in the given timeslice archives
+     * @param timeslice_components expected number of components in all of the timeslices in the given timeslice archives
      * @return true if valid
      */
     [[nodiscard]] bool verify_ts_metadata(vector<string> output_archive_paths, uint64_t *timeslice_cnt, uint64_t timeslice_size, uint64_t overlap_size, uint64_t timeslice_components) const;
