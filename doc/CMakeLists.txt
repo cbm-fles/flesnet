@@ -101,6 +101,9 @@ string(APPEND DOXYGEN_PREDEFINED " \"HAVE_RDMA=1\"")
 set(DOXYGEN_MARKDOWN_SUPPORT YES)
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
 
+# TODO: Unfortunately, this MathJax does not work as expected.
+set(DOXYGEN_USE_MATHJAX YES)
+
 # It is necessary to have these be the first files in the list of input
 # files and directories to doxygen, because otherwise doxygen will not
 # generate the corresponding pages for them. Right now, we will include
@@ -132,6 +135,13 @@ doxygen_add_docs(doc-flesnet
   lib/monitoring
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating flesnet documentation with doxygen")
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsa2msa-doc)
+doxygen_add_docs(doc-tsa2msa
+	app/tsa2msa
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	COMMENT "Generating tsa2msa documentation with doxygen"
+)
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
 doxygen_add_docs(doc-mstool
@@ -237,6 +247,7 @@ add_custom_target(doc
     doc-mstool
     doc-tsclient
     doc-msconsumer
+    doc-tsa2msa
     doc-cri_cfg
     doc-cri_server
     doc-cri_tools)
