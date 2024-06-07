@@ -2,6 +2,7 @@
 #include "Verificator.hpp"
 #include "InputArchive.hpp"
 #include "MergingSource.hpp"
+#include "Microslice.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceView.hpp"
 #include "StorableMicroslice.hpp"
@@ -22,6 +23,7 @@
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <string>
 #include <thread>
+#include "TimesliceDebugger.hpp"
 
 using namespace std;
 
@@ -125,12 +127,41 @@ bool Verificator::verify_ts_metadata(vector<string> output_archive_paths, uint64
     return true;
 }
 
+bool is_sorted(fles::MergingSource<fles::TimesliceSource>& ts_source) {
+    unique_ptr<fles::Timeslice> ts = nullptr;
+    
+    uint64_t idx = 0;
+    uint64_t last_idx = 0;
+    
+    while ((ts = ts_source.get()) != nullptr) {
+        idx = ts->index();
+        cout << idx << endl;
+        if (idx < last_idx) {
+            return false;
+        }
+        last_idx = idx;
+    }
+    return true;
+}
+
 bool Verificator::verify_forward(vector<string> input_archive_paths, vector<string> output_archive_paths, uint64_t timeslice_cnt, uint64_t overlap) {
     atomic_uint64_t overall_ms_cnt_stat = 0;  // counts how many ms are validated
     atomic_uint64_t overlap_cnt_stat = 0; // counts how many overlaps between ts components were checked
     atomic_uint64_t overall_ts_cnt_stat = 0; // counts how many overlaps between ts components were checked
     boost::interprocess::interprocess_semaphore sem(usable_threads_);
     vector<future<bool>> thread_handles;
+
+    vector<unique_ptr<fles::TimesliceSource>> ts_sources = {};
+    for (auto p : output_archive_paths) {
+        std::unique_ptr<fles::TimesliceSource> source =
+            std::make_unique<fles::TimesliceInputArchive>(p);
+        ts_sources.emplace_back(std::move(source));
+    }
+
+    fles::MergingSource<fles::TimesliceSource> ts_source(std::move(ts_sources));
+
+
+    // return is_sorted(ts_source);
 
     for (string& input_archive_path : input_archive_paths) {
         sem.wait();
@@ -189,7 +220,7 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
 
                     shared_ptr<fles::Timeslice> next_ts = ts_source.get();
 
-                    if (!next_ts) { // if we still have no follow up ts, we are in the very last ts - check the remaining ms in the current ts
+                    if (!next_ts) { // if we have no follow up ts, we are in the very last ts - check the remaining ms in the current ts
                         for (ms_idx = 0; ms_idx < overlap; ms_idx++) {
                             ms = ms_archive.get();
                             if (!ms) {
@@ -227,7 +258,21 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                                 err_sstr << "Overlap check failed:" << endl
                                         << "Microslice archive: " << input_archive_path << endl
                                         << "From timeslice idx: " << ts_cnt_stat << endl
-                                        << "To timeslice idx: " << (ts_cnt_stat + 1) << endl;
+                                        << "To timeslice idx: " << (ts_cnt_stat + 1) << endl
+                                        << "Archive MS:" << endl << MicrosliceDescriptorDump(ms->desc()) << endl
+                                        << "Current TS (idx: " << ts_cnt_stat << ") MS:" << endl << MicrosliceDescriptorDump(ms_in_curr_component.desc()) << endl
+                                        << "Next TS (idx: " << (ts_cnt_stat + 1) << ") MS:" << endl <<  MicrosliceDescriptorDump(ms_in_next_component.desc()) << endl;
+                                if (ms->content() != ms_in_curr_component.content()) {
+                                    err_sstr << R"(Content of "Archive MS" and "Current TS MS" is different)"<< endl;
+                                }
+
+                                if (ms->content() != ms_in_next_component.content()) {
+                                    err_sstr << R"(Content of "Archive MS" and "Next TS MS" is different)"<< endl;
+                                }
+
+                                if (ms_in_curr_component.content() != ms_in_next_component.content()) {
+                                    err_sstr << R"(Content of "Current TS MS" and "Next TS MS" is different)"<< endl;
+                                }
                                 throw runtime_error(err_sstr.str());
                             }
                             ++overall_ms_cnt_stat;
