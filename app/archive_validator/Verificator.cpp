@@ -1,10 +1,15 @@
 
 #include "Verificator.hpp"
+#include "InputArchive.hpp"
+#include "MergingSource.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceView.hpp"
 #include "StorableMicroslice.hpp"
 #include "StorableTimeslice.hpp"
+#include "Timeslice.hpp"
+#include "TimesliceAutoSource.hpp"
 #include "TimesliceInputArchive.hpp"
+#include "TimesliceSource.hpp"
 #include "log.hpp"
 #include <algorithm>
 #include <atomic>
@@ -23,19 +28,7 @@ Verificator::Verificator() {
     usable_threads_ = usable_threads_ > 16 ? 16 : usable_threads_;
 }
 
-bool Verificator::sort_timeslice_archives(string const& lhs, string const& rhs) {
-    fles::TimesliceInputArchive lhs_archive(lhs);
-    std::unique_ptr<fles::StorableTimeslice> lhs_first_ts  = lhs_archive.get();
-    fles::MicrosliceView lhs_first_ms = lhs_first_ts->get_microslice(0, 0);
-
-    fles::TimesliceInputArchive rhs_archive(rhs);
-    std::unique_ptr<fles::StorableTimeslice> rhs_first_ts  = rhs_archive.get();
-    fles::MicrosliceView rhs_first_ms = rhs_first_ts->get_microslice(0, 0);
-
-    return lhs_first_ms.desc().idx < rhs_first_ms.desc().idx;
-}
-
-int64_t Verificator::get_component_idx_of_microslice(shared_ptr<fles::StorableTimeslice> ts, shared_ptr<fles::StorableMicroslice> ms) {
+int64_t Verificator::get_component_idx_of_microslice(shared_ptr<fles::Timeslice> ts, shared_ptr<fles::StorableMicroslice> ms) {
     for (uint64_t c = 0; c < ts->num_components(); c++) {
         for (uint64_t ms_idx = 0; ms_idx < ts->num_microslices(c); ms_idx++) {
             fles::MicrosliceView ms_in_timeslice = ts->get_microslice(c, ms_idx);
@@ -45,18 +38,6 @@ int64_t Verificator::get_component_idx_of_microslice(shared_ptr<fles::StorableTi
         }
     }
     return -1;
-}
-
-void Verificator::skip_to_idx(uint64_t idx,fles::TimesliceInputArchive &ts_archive) {
-    for (uint64_t i = 0; i < idx; i++) {
-        ts_archive.get();
-    }
-}
-
-void Verificator::skip_to_idx(uint64_t idx,fles::MicrosliceInputArchive &ms_archive) {
-    for (uint64_t i = 0; i < idx; i++) {
-        ms_archive.get();
-    }
 }
 
 bool Verificator::verify_ts_metadata(vector<string> output_archive_paths, uint64_t *timeslice_cnt, uint64_t timeslice_size, uint64_t overlap_size, uint64_t timeslice_components) const {
@@ -145,9 +126,6 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
     boost::interprocess::interprocess_semaphore sem(usable_threads_);
     vector<future<bool>> thread_handles;
 
-    std::sort(output_archive_paths.begin(), output_archive_paths.end(),  
-        [this](string lhs, string rhs) { return sort_timeslice_archives(lhs, rhs); });
-
     for (string& input_archive_path : input_archive_paths) {
         sem.wait();
         future<bool> handle = std::async(std::launch::async, [this, &overall_ms_cnt_stat, &overall_ts_cnt_stat, &overlap_cnt_stat, input_archive_path, &output_archive_paths, &overlap, &timeslice_cnt, &sem] {
@@ -155,24 +133,27 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
             shared_ptr<fles::StorableMicroslice> ms = nullptr; // microslice to search for
             int64_t compontent_idx = -1;
             uint64_t ms_idx = 0;
-            uint64_t ts_file_select = 0;
-            uint64_t current_ts_offset = 0; // keeps track of the timeslice offset inside tsa files to get the next fimeslice
             uint64_t ts_cnt_stat = 0; // counts how many timeslices were checked
 
-            string current_ts_archive_path = output_archive_paths[ts_file_select];
-            fles::TimesliceInputArchive ts_archive(current_ts_archive_path);
-            std::shared_ptr<fles::StorableTimeslice> current_ts = ts_archive.get(); // timeslice to search in
+            vector<unique_ptr<fles::TimesliceSource>> ts_sources = {};
+            for (auto p : output_archive_paths) {
+                std::unique_ptr<fles::TimesliceSource> source =
+                    std::make_unique<fles::TimesliceInputArchive>(p);
+                ts_sources.emplace_back(std::move(source));
+            }
+
+            fles::MergingSource<fles::TimesliceSource> ts_source(std::move(ts_sources));
+            shared_ptr<fles::Timeslice> current_ts = ts_source.get(); // timeslice to search in
             try {
                 do {
                     for (; ms_idx < current_ts->num_core_microslices(); ms_idx++) {
                         ms = ms_archive.get();
                         if (!ms) {
                             string err_str =  "Failed to get next microslice\n"
-                                "Timeslice archive: " + current_ts_archive_path + ", offset: " + to_string(current_ts_offset) + "\n"
                                 "Timeslice idx: " + to_string(ts_cnt_stat) + "\n"
                                 "Microslice archive: " + input_archive_path + "\n"
                                 "Microslice idx: " + to_string(ms_idx);
-                            throw std::runtime_error(err_str);
+                            throw runtime_error(err_str);
                         }
                         
                         // Here we figure out which component is associated to this microslice archive file - we have to do this only once per archive file
@@ -180,52 +161,41 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                             compontent_idx = get_component_idx_of_microslice(current_ts, ms);
                             if (compontent_idx < 0) {
                                 string err_str = "Could not associate timeslice component to microslice: \n"
-                                    "Timeslice archive: " + current_ts_archive_path + ", offset: " + to_string(current_ts_offset) + "\n"
                                     "Timeslice idx: " + to_string(ts_cnt_stat) + "\n"
                                     "Microslice archive: " + input_archive_path + "\n"
                                     "Microslice idx: " + to_string(ms_idx);
-                                throw std::runtime_error(err_str);
+                                throw runtime_error(err_str);
                             }
                         }
 
                         fles::MicrosliceView ms_in_curr_component = current_ts->get_microslice(compontent_idx, ms_idx);
                         if (ms_in_curr_component != *ms) {
                             string err_str = "Found inequality in core area of timeslice\n"
-                                "Timeslice archive: " + current_ts_archive_path + ", offset: " + to_string(current_ts_offset) + "\n"
                                 "Timeslice idx: " + to_string(ts_cnt_stat) + "\n"
                                 "Microslice archive: " + input_archive_path + "\n"
                                 "Microslice idx: " + to_string(ms_idx);
-                            throw std::runtime_error(err_str);
+                            throw runtime_error(err_str);
                         }
                         ++overall_ms_cnt_stat;
                     }
 
-                    // overlap check
-                    uint64_t next_ts_archive_select = (ts_file_select + 1) % output_archive_paths.size();
-                    uint64_t next_ts_offset = current_ts_offset;
-                    if (next_ts_archive_select == 0) {
-                        next_ts_offset++;
-                    }
-                    string next_ts_archive_path = output_archive_paths[next_ts_archive_select];
-                    fles::TimesliceInputArchive ts_next_archive(next_ts_archive_path);
-                    skip_to_idx(next_ts_offset, ts_next_archive);
-                    shared_ptr<fles::StorableTimeslice> next_ts = ts_next_archive.get();
+                    shared_ptr<fles::Timeslice> next_ts = ts_source.get();
 
                     if (!next_ts) { // if we still have no follow up ts, we are in the very last ts - check the remaining ms in the current ts
                         for (ms_idx = 0; ms_idx < overlap; ms_idx++) {
                             ms = ms_archive.get();
                             if (!ms) {
                                 string err_str = "Could not get next microslice from MS archive\n"
-                                    "Timeslice archive: " + current_ts_archive_path + ", offset: " + to_string(current_ts_offset) + "\n"
+                                    "Timeslice idx: " + to_string(ts_cnt_stat) + "\n"
                                     "Microslice archive: " + input_archive_path + "\n"
                                     "Microslice idx: " + to_string(ms_idx);
-                                throw std::runtime_error(err_str);
+                                throw runtime_error(err_str);
                             }
 
                             fles::MicrosliceView ms_in_curr_component = current_ts->get_microslice(compontent_idx, ms_idx + current_ts->num_core_microslices());
                             if (*ms != ms_in_curr_component) {
                                 string err_str = "Found inequality in overlap of last timeslice\n"
-                                    "Timeslice archive: " + current_ts_archive_path + ", offset: " + to_string(current_ts_offset) + "\n"
+                                    "Timeslice idx: " + to_string(ts_cnt_stat) + "\n"
                                     "Microslice archive: " + input_archive_path + "\n"
                                     "Microslice idx: " + to_string(ms_idx);
                                 throw runtime_error(err_str);
@@ -238,8 +208,8 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                             if (!ms) {
                                 string err_str = "Could not get next microslice from MS archive while overlap checking\n"
                                     "Microslice archive: " + input_archive_path + "\n"
-                                    "From: '" + current_ts_archive_path + "', offset: " + to_string(current_ts_offset) + "\n"  
-                                    "To: '" + next_ts_archive_path + "', offset: " + to_string(next_ts_offset);
+                                    "From timeslice idx: " + to_string(ts_cnt_stat) + "\n"  
+                                    "To timeslice idx: " + to_string(ts_cnt_stat + 1);
                                 throw runtime_error(err_str);
                             }
 
@@ -247,9 +217,9 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                             fles::MicrosliceView ms_in_next_component = next_ts->get_microslice(compontent_idx, ms_idx);
                             if (*ms != ms_in_curr_component || *ms != ms_in_next_component) {
                                 string err_str = "Overlap check failed:\n"
-                                        "Microslice archive: " + input_archive_path + "\n"
-                                        "From: '" + current_ts_archive_path + "', offset: " + to_string(current_ts_offset) + "\n"  
-                                        "To: '" + next_ts_archive_path + "', offset: " + to_string(next_ts_offset);
+                                        "Microslice archive: " + input_archive_path + "\n";
+                                        "From timeslice idx: " + to_string(ts_cnt_stat) + "\n"  
+                                        "To timeslice idx: " + to_string(ts_cnt_stat + 1);
                                 throw runtime_error(err_str);
                             }
                             ++overall_ms_cnt_stat;
@@ -258,17 +228,15 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                     }
 
                     current_ts = next_ts;
-                    ts_file_select = next_ts_archive_select;
-                    current_ts_archive_path = next_ts_archive_path;
-                    current_ts_offset = next_ts_offset;
                     ++ts_cnt_stat;
                     ++overall_ts_cnt_stat;
                 } while (ts_cnt_stat < timeslice_cnt);
-            } catch (std::runtime_error err) {
+            } catch (runtime_error err) {
                 L_(fatal) << err.what();
                 sem.post();
                 return false;
             }
+
             sem.post();
             return true;
         });

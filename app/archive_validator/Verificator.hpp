@@ -12,27 +12,12 @@ using namespace std;
 
 /// Contains the methods used for input/ouput verification
 class Verificator {
-private:
-    /**
-     * @brief Intended to be used with std::sort as the comparision function
-     */
-    bool sort_timeslice_archives(string const& lhs, string const& rhs);
-    
+private:    
     /**
      * @brief Detects the component the given microslice belongs to in the given timeslice
      * @returns -1 on fail, else component index
      */
-    int64_t get_component_idx_of_microslice(shared_ptr<fles::StorableTimeslice> ts, shared_ptr<fles::StorableMicroslice> ms);
-
-    /**
-     * @brief Consumes the ts_archive up until to the given idx - the next get call will retrieve the timeslice at idx
-     */
-    void skip_to_idx(uint64_t idx,fles::TimesliceInputArchive &ts_archive);
-    
-    /**
-     * @brief Consumes the ts_archive up until to the given idx - the next get call will retrieve the timeslice at idx
-     */
-    void skip_to_idx(uint64_t idx,fles::MicrosliceInputArchive &ts_archive);
+    int64_t get_component_idx_of_microslice(shared_ptr<fles::Timeslice> ts, shared_ptr<fles::StorableMicroslice> ms);
 
     uint64_t usable_threads_ = 0;
 public:
