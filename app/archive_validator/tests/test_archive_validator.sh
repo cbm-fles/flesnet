@@ -5,14 +5,14 @@ flesnet="../../../build/flesnet"
 tsclient="../../../build/tsclient"
 archive_validator="../../../build/archive_validator"
 
-# Checks if the given argument is a integer
+# Checks if the given argument is an integer
 # $1 - number to check
 function is_number() {
     case $1 in
         ''|*[!0-9]*) echo 0;; # no - is not a number
         *) echo 1 ;; # yes - is number
     esac
-}
+}   
 
 # Creates msa files with mstool, feeds them into flesnet via mstool and shm,
 # starts entry and build nodes and validates the generated tsa files agains the
@@ -100,7 +100,7 @@ function test_chain() {
         entry_pids+=($!)
     done
 
-    # Wait for build and entry node to exit
+    # Wait for build and entry nodes to exit
     wait ${build_pids[@]}
     wait ${entry_pids[@]}
     for pid in "${mstool_pids[@]}"; # mstool has to be killed forcefully
@@ -108,8 +108,9 @@ function test_chain() {
         kill -9 $pid > /dev/null 2>&1
     done
 
-    # Finally, validate output tsa files against input msa files
-    $archive_validator -I $(find ./$dir_name -name "*.msa") -O $(find ./$dir_name -name "*.tsa") --timeslice-size $timeslice_size --timeslice-cnt $timeslice_cnt --overlap $overlap_size
+    local msa_files=$(find ./$dir_name -name "*.msa")
+    local tsa_files=$(find ./$dir_name -name "*.tsa")
+    $archive_validator -I ${msa_files[@]} -O ${tsa_files[@]} --timeslice-size $timeslice_size --timeslice-cnt $timeslice_cnt --overlap $overlap_size
     return $?
 }
         
