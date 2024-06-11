@@ -7,20 +7,28 @@
 #include "MicrosliceInputArchive.hpp"
 #include "StorableMicroslice.hpp"
 #include "TimesliceInputArchive.hpp"
+#include <cstdint>
 #include <string>
 
-/// Contains the methods used for input/ouput verification
+/// Contains the methods used for input/output verification
 class Verificator {
-private:    
+private:
     /**
      * @brief Detects the component the given microslice belongs to in the given timeslice
      * @returns -1 on fail, else component index
      */
     int64_t get_component_idx_of_microslice(std::shared_ptr<fles::Timeslice> ts, std::shared_ptr<fles::StorableMicroslice> ms);
 
+    /**
+     * @brief Formats the given seconds into Hh:MMm:SSs 
+     * @param seconds seconds to turn into a formatted string
+     * @returns formatted string
+     */
+    std::string format_time_seconds(uint64_t seconds);
+
     uint64_t usable_threads_ = 0;
 public:
-    Verificator();
+    Verificator(uint64_t max_threads = 1);
     ~Verificator() = default;
 
     /**
@@ -43,7 +51,7 @@ public:
      * @param timeslice_cnt the summed up number of timeslices to be expected in all the timeslice archives
      * @param timeslice_size expected timeslice sizes
      * @param timeslice_components expected number of components in all of the timeslices in the given timeslice archives
-     * @return true if valid
+     * @return true if valid 
      */
     [[nodiscard]] bool verify_ts_metadata(std::vector<std::string> output_archive_paths, uint64_t *timeslice_cnt, uint64_t timeslice_size, uint64_t overlap_size, uint64_t timeslice_components) const;
 };
