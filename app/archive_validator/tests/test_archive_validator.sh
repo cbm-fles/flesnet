@@ -90,6 +90,7 @@ function test_chain() {
         $flesnet -n $timeslice_cnt --timeslice-size $timeslice_size -o $i -I $build_input_vector_arg -O $output_vector_arg --processor-instances 1 -e "$processor_executable" -t zeromq > /dev/null 2>&1 &
         build_pids+=($!)
     done
+    echo "Started $build_cnt build nodes" 
 
     # Start entry nodes
     local entry_pids=()
@@ -99,6 +100,9 @@ function test_chain() {
         $flesnet -n $timeslice_cnt --timeslice-size $timeslice_size -i $i -I $entry_input_vector_arg -O $output_vector_arg -t zeromq --processor-instances 1 -e "$processor_executable" > /dev/null 2>&1 &
         entry_pids+=($!)
     done
+    echo "Started $entry_cnt entry nodes" 
+
+    echo "Wating for flesnet to finish data processing ..." 
 
     # Wait for build and entry nodes to exit
     wait ${build_pids[@]}
@@ -138,6 +142,18 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+test_chain 3 2 80 200 1
+if [ $? -ne 0 ]; then
+    echo -e "\e[1;37;1;41mTests FAILED\e[0m" >&2
+    exit 1
+fi
+
+
+test_chain 6 3 80 200 1
+if [ $? -ne 0 ]; then
+    echo -e "\e[1;37;1;41mTests FAILED\e[0m" >&2
+    exit 1
+fi
 
 echo -e "\e[1;37;1;42mTests successful\e[0m"
 exit 0

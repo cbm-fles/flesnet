@@ -35,15 +35,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
   general_add("exec,e", po::value<std::string>(&exec)->value_name("<string>"),
               "name of an executable to run after startup");
 
-  po::options_description archive_validation("Archive validation options");
-  auto validation_add = archive_validation.add_options();
-  validation_add("timeslice-size", po::value<uint64_t>(&timeslice_size),
-              "Used for archive validation. Set the exepected timeslice size.");
-  validation_add("timeslice-cnt", po::value<uint64_t>(&timeslice_cnt),
-              "Used for archive validation. Amount of expected timeslices in the timeslice archive.");
-  validation_add("overlap", po::value<uint64_t>(&overlap)->default_value(overlap),
-              "Used for archive validation. Timeslice overlap size.");
-
   po::options_description source("Source options");
   auto source_add = source.add_options();
   source_add("pattern-generator,p", po::value<uint32_t>(&pattern_generator),
@@ -67,7 +58,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
            "name of an output file archive to write");
 
   po::options_description desc;
-  desc.add(general).add(source).add(sink).add(archive_validation);
+  desc.add(general).add(source).add(sink);
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -99,7 +90,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
   size_t input_sources = vm.count("pattern-generator") +
                          vm.count("input-archive") + vm.count("input-shm");
-    
   if (input_sources == 0) {
     throw ParametersException("no input source specified");
   }

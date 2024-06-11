@@ -23,22 +23,22 @@ Application::Application(Parameters const& par) : par_(par) {}
 Application::~Application() {}
 
 void Application::run() {
-  if (par_.validate) {
-    Verificator val;
-    bool valid = false;
-    uint64_t components_cnt = par_.input_archives.size();
-    uint64_t timeslice_cnt = par_.timeslice_cnt;
-    // valid = val.verify_ts_metadata(par_.output_archives, &timeslice_cnt, par_.timeslice_size, par_.overlap, components_cnt);
-    // if (!valid) {
-    //   throw std::runtime_error("Output metadata check FAILED. Archives NOT VALID!");
-    // }
-    valid = val.verify_forward(par_.input_archives, par_.output_archives, timeslice_cnt, par_.overlap);
+  Verificator val(par_.max_threads);
+  bool valid = false;
+  uint64_t components_cnt = par_.input_archives.size();
+  uint64_t timeslice_cnt = par_.timeslice_cnt;
+  
+  if (!par_.skip_metadata) {
+    valid = val.verify_ts_metadata(par_.output_archives, &timeslice_cnt, par_.timeslice_size, par_.overlap, components_cnt);
     if (!valid) {
-      throw std::runtime_error("Forward varification FAILED. Archives NOT VALID!");
+      throw std::runtime_error("Output metadata check FAILED. Archives NOT VALID!");
     }
-
-    L_(info) << "Success - Archives valid.";
-    
-    return;
   }
+
+  valid = val.verify_forward(par_.input_archives, par_.output_archives, timeslice_cnt, par_.overlap);
+  if (!valid) {
+    throw std::runtime_error("Forward varification FAILED. Archives NOT VALID!");
+  }
+
+  L_(info) << "Success - Archives valid.";
 }

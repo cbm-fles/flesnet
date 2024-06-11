@@ -71,7 +71,6 @@ std::unique_ptr<Provider> Provider::get_provider(std::string local_host_name) {
 
 struct fi_info* Provider::get_hints(enum fi_ep_type ep_type, std::string prov) {
   struct fi_info* hints = fi_allocinfo();
-  std::cout << " in get hints" << std::endl;
   hints->caps = FI_MSG | FI_RMA | FI_WRITE | FI_SEND | FI_RECV |
                 FI_REMOTE_WRITE | FI_TAGGED;
   hints->mode = FI_LOCAL_MR | FI_CONTEXT;

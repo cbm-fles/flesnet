@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
-#include <vector>
 /// Run parameters exception class.
 class ParametersException : public std::runtime_error {
 public:
@@ -21,11 +20,6 @@ struct Parameters {
   uint64_t maximum_number = UINT64_MAX;
   std::string exec;
 
-  // archive validation options
-  uint64_t timeslice_size;
-  uint64_t timeslice_cnt;
-  uint64_t overlap = 1;
-  
   // source selection
   uint32_t pattern_generator = 0;
   bool use_pattern_generator = false;

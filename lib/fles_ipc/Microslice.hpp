@@ -38,7 +38,6 @@ public:
 
   bool operator==(const Microslice& other) const;
   bool operator!=(const Microslice& other) const;
-  friend std::ostream& operator<<(std::ostream& out, const Microslice& ms);
   
 protected:
   Microslice() = default;
