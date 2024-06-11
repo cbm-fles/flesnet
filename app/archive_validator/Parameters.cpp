@@ -31,6 +31,16 @@ void Parameters::parse_options(int argc, char* argv[]) {
                   ->implicit_value(log_syslog)
                   ->value_name("<n>"),
               "enable logging to syslog at given log level");
+  general_add("max-threads,j",
+                po::value<uint64_t>(&max_threads)
+                  ->default_value(1)
+                  ->value_name("<n>"),
+                  "How many threads to use for validation. Set to 0 to use all available physical cores.");
+  general_add("skip-metadata",
+                po::value<bool>(&skip_metadata)
+                  ->implicit_value(true),
+                  "Will skip timeslice archive metadata verification.");
+
 
   po::options_description archives("Input/Output archives");
   auto archives_add = archives.add_options();
@@ -100,7 +110,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
                         static_cast<severity_level>(log_syslog));
   }
 
-  validate = vm.count("input-archives") + vm.count("output-archives") > 0;
   
   bool analyze_parameter_set = true;
   if (vm.count("timeslice-cnt") == 0) {
