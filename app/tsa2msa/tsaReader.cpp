@@ -320,6 +320,20 @@ void tsaReader::initAutoSource(const std::vector<std::string>& inputs) {
       break;
     }
   }
+
+  // Join the input files into a ;-separated string, as expected by
+  // the TimesliceAutoSource:
+  std::string input = "";
+  for (auto i = inputs.begin(); i != inputs.end(); i++) {
+    if (i != inputs.begin()) {
+      input += ";";
+    }
+    input += *i;
+  }
+
+  std::unique_ptr<fles::TimesliceAutoSource> s =
+      std::make_unique<fles::TimesliceAutoSource>(input);
+  setSource(std::move(s));
 }
 
 void tsaReader::initSource(const std::vector<std::string>& inputs) {
