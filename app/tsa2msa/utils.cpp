@@ -27,29 +27,6 @@ std::string compute_common_prefix(const std::vector<std::string>& strings) {
       break;
     }
   }
+
   return prefix;
-}
-
-void clean_up_path(std::string& path) {
-  // Check if linux:
-#ifdef __linux__
-  size_t last_slash = path.find_last_of('/');
-  if (last_slash != std::string::npos) {
-    // Add 1 to remove the slash itself:
-    path = path.substr(last_slash + 1);
-  }
-  if (path.size() == 0) {
-    // No common prefix found, set arbitrary prefix:
-    path = "some_prefix";
-  }
-
-#else  // __linux__
-  std::cerr << "Error: Using the common prefix of input files as the"
-            << std::endl
-            << "       prefix for the output files is only implemented"
-            << std::endl
-            << "       for linux systems. Using arbitrary prefix instead."
-            << std::endl;
-  path = "some_prefix";
-#endif // __linux__
 }

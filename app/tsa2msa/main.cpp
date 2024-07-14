@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 // System dependent header files:
 #include <sysexits.h>
@@ -425,16 +426,27 @@ auto main(int argc, char* argv[]) -> int {
     return EXIT_SUCCESS;
   }
 
-  getTsaReaderOptions(vm, tsaReaderOptions);
-  tsaReader tsaReader(tsaReaderOptions);
-  msaWriter msaWriter(msaWriterOptions);
+  if (msaWriterOptions.prefix.size() == 0) {
+    std::string path_prefix = compute_common_prefix(tsaReaderOptions.input);
 
-  std::string prefix = msaWriterOptions.prefix;
-  if (prefix.size() == 0) {
-    msaWriterOptions.prefix = compute_common_prefix(tsaReaderOptions.input);
+    // We only need the file name, not the entire path. This is because
+    // the user likely wants to store the output files in the current
+    // directory and not in the directory of the input files, which
+    // likely would come as a surprise to the user.
+    std::string prefix = std::filesystem::path(path_prefix).filename().string();
+
+    if (prefix.size() == 0) {
+      // No common prefix found, set arbitrary prefix:
+      prefix = "some_prefix";
+    } else {
+      msaWriterOptions.prefix = prefix;
+    }
   }
 
-  clean_up_path(msaWriterOptions.prefix);
+  getTsaReaderOptions(vm, tsaReaderOptions);
+
+  tsaReader tsaReader(tsaReaderOptions);
+  msaWriter msaWriter(msaWriterOptions);
 
   std::unique_ptr<fles::Timeslice> timeslice;
   while ((timeslice = tsaReader.read()) != nullptr) {
