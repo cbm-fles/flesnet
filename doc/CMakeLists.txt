@@ -136,12 +136,15 @@ doxygen_add_docs(doc-flesnet
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating flesnet documentation with doxygen")
 
+set(DOXYGEN_MDFILE_AS_MAINPAGE_OLD ${DOXYGEN_USE_MDFILE_AS_MAINPAGE})
+unset(DOXYGEN_USE_MDFILE_AS_MAINPAGE)
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsa2msa-doc)
 doxygen_add_docs(doc-tsa2msa
 	app/tsa2msa
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating tsa2msa documentation with doxygen"
 )
+set(DOXYGEN_USE_MDFILE_AS_MAINPAGE ${DOXYGEN_MDFILE_AS_MAINPAGE_OLD})
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
 doxygen_add_docs(doc-mstool
