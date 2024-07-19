@@ -24,6 +24,15 @@
 /**
  * @struct tsaReaderOptions
  * @brief Options that will be used by a tsaReader.
+ *
+ * @details The tsaReaderOptions struct contains the options that will
+ * be used by a tsaReader. Using the function defaultTsaReaderOptions()
+ * the caller can obtain an object with default values for the options.
+ * Furthermore, using the boost::program_options library and the
+ * functions getTsaReaderOptionsDescription(), the user-provided
+ * modifications can be parsed from the command line and automatically
+ * applied to the tsaReaderOptions object.
+ *
  */
 typedef struct tsaReaderOptions {
   bool beVerbose;
