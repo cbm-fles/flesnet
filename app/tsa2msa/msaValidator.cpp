@@ -2,7 +2,7 @@
 #include <iostream>
 #include <set>
 
-// FLESnet Library header files:
+// Flesnet Library header files:
 #include "lib/fles_ipc/MicrosliceOutputArchive.hpp"
 #include "lib/fles_ipc/TimesliceAutoSource.hpp"
 

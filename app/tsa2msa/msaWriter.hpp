@@ -4,7 +4,7 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 
-// FLESnet Library header files:
+// Flesnet Library header files:
 #include "lib/fles_ipc/MicrosliceOutputArchive.hpp"
 #include "lib/fles_ipc/TimesliceAutoSource.hpp"
 
@@ -76,7 +76,7 @@ void validate(boost::any& v,
  * msaWriterOptions object.
  *
  * \note Technically, if any of the options maxItemsPerArchive or
- * maxBytesPerArchive is set to a non-zero value, then the FLESnet
+ * maxBytesPerArchive is set to a non-zero value, then the Flesnet
  * library will set the other option as well to SIZE_MAX. Practically,
  * this is not going to change behaviour.
  *
@@ -128,7 +128,7 @@ typedef struct msaWriterOptions {
    * items are microslices in this case. If set to zero, there is no
    * limit.
    *
-   * \todo Check whether the FLESnet library has an off-by-one error
+   * \todo Check whether the Flesnet library has an off-by-one error
    * when it comes to the number of items per archive, similarly how it
    * has an error with the limit for the number of bytes per archive.
    */
@@ -139,7 +139,7 @@ typedef struct msaWriterOptions {
    *
    * @details If set to a non-zero value, the msaWriter will create
    * multiple archives if the number of bytes exceeds this limit. If set
-   * to zero, there is no limit. Currently, the FLESnet library is
+   * to zero, there is no limit. Currently, the Flesnet library is
    * incapable of correctly respecting this limit and will exceed it by
    * the size of one microslice.
    */
@@ -153,7 +153,7 @@ typedef struct msaWriterOptions {
    * be used. This is a helper function to determine whether these
    * options are set (and, if called for the first time, provides a
    * warning about the current state of the OutputArchiveSequence
-   * classes in the FLESnet library).
+   * classes in the Flesnet library).
    *
    */
   bool useSequence() const {
@@ -230,7 +230,7 @@ getMsaWriterOptionsDescription(msaWriterOptions& options, bool hidden);
  *
  * @details The msaWriter takes timeslices and writes their contents to
  * microslice archives. It is a wrapper around existing classes from the
- * FLESnet library, enhanced with some basic validation and options. Its
+ * Flesnet library, enhanced with some basic validation and options. Its
  * main method write_timeslice is intended to be called repeatedly with
  * (chronologically sorted) timeslices read from a source.
  *

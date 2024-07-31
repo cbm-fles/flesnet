@@ -4,7 +4,7 @@
 // System dependent header files:
 #include <sysexits.h>
 
-// FLESnet Library header files:
+// Flesnet Library header files:
 #include "lib/fles_ipc/TimesliceAutoSource.hpp"
 
 // tsa2msa Library header files:

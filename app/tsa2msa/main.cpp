@@ -32,47 +32,47 @@
  * @section intro_sec Introduction
  * The `tsa2msa` tool is a command line utility designed to convert `.tsa`
  * files to `.msa` files. Its primary purpose is to facilitate the
- * creation of golden tests for the FLESnet application by converting
+ * creation of golden tests for the Flesnet application by converting
  * output data from past runs that processed real experimental data.
  *
  * @section motivation_sec Motivation
  * Experiments to develop and test CBM code are expensive
  * and time consuming. The distributed timeslice building layer
- * FLESnet is only one of many components that need to be tested, but is
+ * Flesnet is only one of many components that need to be tested, but is
  * a single point of failure for the entire experiment. Therefore,
- * testing (possibly experimental) changes and improvements to FLESnet
+ * testing (possibly experimental) changes and improvements to Flesnet
  * during experiments of the CBM collaboration is a delicate task.
  *
- * It is possible to test FLESnet with data from pattern generators in
+ * It is possible to test Flesnet with data from pattern generators in
  * software or from the CRI-Board hardware. However, before deploying
- * FLESnet in experiments of the CBM collaboration, it is desirable to
+ * Flesnet in experiments of the CBM collaboration, it is desirable to
  * safely test it against real experimental without risking valuable
  * resources for testing other components of CBM and their interaction.
- * Furthermore, testing how FLESnet will receive data in production is
+ * Furthermore, testing how Flesnet will receive data in production is
  * not possible with the pattern generator software, and the CRI-Board
  * hardware is not always available.
  *
  * From previous experiments, data is available in form of timeslice
  * archives (`.tsa` files). The `tsa2msa` tool is designed to convert
  * these `.tsa` files to microslice archives (`.msa` files). This allows
- * for a replay of the experiment data in FLESnet using the `mstool`,
+ * for a replay of the experiment data in Flesnet using the `mstool`,
  * which emulates how the `cri-server` and the CRI-boards provide data
  * in production. (However, see \ref future_sec for how this is going to
  * change.)
  *
  * @section design_sec Design
  *
- * In contrast to FLESnet library code which is designed to be used in
+ * In contrast to Flesnet library code which is designed to be used in
  * experiments under real-time requirements, `tsa2msa` is focused on
  * file based processing and validation of data. Furthermore it serves
- * as an exploration of the FLESnet library, its capabilities and
+ * as an exploration of the Flesnet library, its capabilities and
  * current limitations. Some of the code in `tsa2msa` may later be moved
- * to the FLESnet library, but this is not the primary goal of the tool.
+ * to the Flesnet library, but this is not the primary goal of the tool.
  *
  * The current implementation of `tsa2msa` is sequential and simple.
  * It is split into a tsaReader and a msaWriter class, and the main
  * while-read-write loop in the main function is quite simple.
- * Deliberately, changes to the FLESnet library are avoided for now.
+ * Deliberately, changes to the Flesnet library are avoided for now.
  * Later, the tool may be extended to process data with a smaller memory
  * footprint (see \ref data_size_sec).
  *
@@ -98,12 +98,12 @@
  * boost::archives. The former approach is likely simpler to implement,
  * but likely less time efficient. The latter approach is likely more
  * efficient, but may be more complex to implement since, currently, the
- * FLESnet library codes does not provide access to the filestreams
+ * Flesnet library codes does not provide access to the filestreams
  * underlying the boost::archives.
  *
  * @subsection data_input_future_sec Changes in Data Input
  * The design and responsibilities of the `cri-server` which organizes
- * the data flow from the CRI-Board to data consumers such as FLESnet
+ * the data flow from the CRI-Board to data consumers such as Flesnet
  * are under development. The planned changes will likely make the
  * `cri-server` build sub-timeslices and `mstool` is going to loose its
  * capability to accurately emulate the data flow in production.
@@ -113,7 +113,7 @@
  * -# Building a new tool based on `mstool` that can emulate the new
  *  data flow.
  * -# Extending `cri-server` by functionality to read either `.tsa` or
- *  `.msa` files and provide the data to FLESnet.
+ *  `.msa` files and provide the data to Flesnet.
  *
  * Which of these solutions is going to be implemented is not yet
  * decided and each has its own drawbacks and advantages. By the very
@@ -142,7 +142,7 @@ const std::string program_description =
     "  The tsa2msa tool is a command line utility designed to\n"
     "  convert `.tsa` files to `.msa` files. Its primary purpose\n"
     "  is to facilitate the creation of golden tests for the\n"
-    "  FLESnet application by converting output data from past\n"
+    "  Flesnet application by converting output data from past\n"
     "  runs that processed real experimental data.\n"
     "\n"
     "  See the Doxygen documentation for the tsa2msa tool for\n"

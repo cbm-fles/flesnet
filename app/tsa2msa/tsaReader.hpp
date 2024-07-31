@@ -11,7 +11,7 @@
 // Boost Library header files:
 #include <boost/program_options.hpp>
 
-// FLESnet Library header files:
+// Flesnet Library header files:
 #include "lib/fles_ipc/MicrosliceOutputArchive.hpp"
 #include "lib/fles_ipc/TimesliceAutoSource.hpp"
 
@@ -54,17 +54,17 @@ typedef struct tsaReaderOptions {
    *
    * @details The inputs files are given as a vector of strings.
    * Typically, each string represents a path to a file to be read by
-   * the tsaReader. The FLESnet library, to which the input is passed,
+   * the tsaReader. The Flesnet library, to which the input is passed,
    * allows for other input to be given as well. However, it is
    * recommended to simply pass the paths to `.tsa` files to be read.
    */
   std::vector<std::string> input;
 
   /**
-   * @brief The method to call into the FLESnet library to read the
+   * @brief The method to call into the Flesnet library to read the
    * input.
    * @details Currently, the only supported method is "auto". However,
-   * this is likely to change in the future as the corresponding FLESnet
+   * this is likely to change in the future as the corresponding Flesnet
    * library class is expected to be to memory consuming to be used in
    * the intended application of tsa2msa.
    */
@@ -165,7 +165,7 @@ void getTsaReaderOptions(const boost::program_options::variables_map& vm,
  * repeatedly until it returns a nullptr, indicating that the end of the
  * input has been reached.
  *
- * The tsaReader calls into the FLESnet library to read the timeslices,
+ * The tsaReader calls into the Flesnet library to read the timeslices,
  * overcoming (or at least documenting) some of the limitations of the
  * library.
  *
