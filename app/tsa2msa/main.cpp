@@ -436,6 +436,14 @@ auto main(int argc, char* argv[]) -> int {
     // likely would come as a surprise to the user.
     std::string prefix = std::filesystem::path(path_prefix).filename().string();
 
+    // Truncate the prefix to only contain the part up to (and
+    // excluding) the first `%` in order to avoid collisions with the
+    // `%n` format specifier for archive sequences.
+    size_t pos = prefix.find('%');
+    if (pos != std::string::npos) {
+      prefix = prefix.substr(0, pos);
+    }
+
     if (prefix.size() == 0) {
       // No common prefix found, set arbitrary prefix:
       prefix = "some_prefix";
