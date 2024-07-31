@@ -370,7 +370,9 @@ auto main(int argc, char* argv[]) -> int {
       "verbose,v", boost::program_options::bool_switch(&beVerbose),
       "enable verbose output")("help,h",
                                boost::program_options::bool_switch(&showHelp),
-                               "produce help message")(
+                               "produce help message\n"
+                               "  (combine with --verbose to see all"
+                               " options)")(
       "version,V", boost::program_options::bool_switch(&showVersion),
       "produce version message");
 
