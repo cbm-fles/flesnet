@@ -50,9 +50,11 @@ getTsaReaderOptionsDescription(tsaReaderOptions& options, bool hidden) {
               boost::program_options::value<std::string>(
                 &options.readingMethod)
                   -> default_value("auto"),
-            "Reading mode for the TSA reader."
+            "How the TSA reader should read the input files."
             " Currently, only 'auto' is supported for using the"
-            " TimesliceAutoSource class."
+            " TimesliceAutoSource class. In the future, other ways of reading"
+            " the input files might be supported, such as by using"
+            " TimesliceInputArchiveSequence directly."
         )
         // clang-format on
         ;
