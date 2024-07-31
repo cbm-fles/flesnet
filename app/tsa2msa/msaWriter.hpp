@@ -246,6 +246,7 @@ class msaWriter final {
   // TODO: Get rid of the string as a key and use some enum class or
   // tuple or something else as a key (which simultaneously could be
   // used to derive the string for the filename).
+  // TODO: Explain implementation
   std::map<std::string, std::unique_ptr<fles::Sink<fles::Microslice>>> msaFiles;
 
   uint64_t numTimeslices = 0;

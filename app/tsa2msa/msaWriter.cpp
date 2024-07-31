@@ -16,7 +16,7 @@ msaWriterOptions defaultMsaWriterOptions() {
   // Make sure to update doxygen documentation at declaration site if
   // the default values are changed.
   return {
-      false, // dryRun
+      false, // dryRun  // TODO: make .dryRun = false syntax work
       false, // beVerbose
       false, // interactive
       "",    // prefix
@@ -220,6 +220,7 @@ void msaWriter::write_timeslice(std::shared_ptr<fles::Timeslice> timeslice) {
     // there is new or missing sys_ids.
 
     // TODO: Check for num_core_microslices() changes.
+    // TODO: Check if microslices get lost at first resp. last component
     for (uint64_t msc = 0; msc < timeslice->num_core_microslices(); msc++) {
       std::unique_ptr<fles::MicrosliceView> ms_ptr =
           std::make_unique<fles::MicrosliceView>(

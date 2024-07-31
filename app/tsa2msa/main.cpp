@@ -365,6 +365,7 @@ auto main(int argc, char* argv[]) -> int {
   bool showVersion = false;
 
   // TODO: Create a class for these options:
+  // TODO: format
   generic.add_options()("quiet,q",
                         boost::program_options::bool_switch(&beQuiet),
                         "suppress all output")(
@@ -391,10 +392,12 @@ auto main(int argc, char* argv[]) -> int {
   // Specify that all positional arguments are input files:
   positional_command_line_arguments.add("input", -1);
 
+  // For verbose help text only:
   boost::program_options::options_description command_line_options(
       program_description + "\n" + "Command line options");
   command_line_options.add(generic).add(hidden);
 
+  // For help text only:
   boost::program_options::options_description visible_command_line_options(
       program_description + "\n" + "Command line options");
   visible_command_line_options.add(generic);
@@ -442,6 +445,18 @@ auto main(int argc, char* argv[]) -> int {
       msaWriterOptions.prefix = prefix;
     }
   }
+
+  // 1) erstelle irgendeine form von localen options variablen (zum
+  // Beispiel in einem Struct)
+  // 2) erstelle eine options_description dafür bei der die Adressen der
+  // option variablen übergeben werden
+  // 3) bisschen boilerplate für --help und --help --verbose
+  // 4) lasse boost::program_options mit hilfe der
+  // options_description's die Kommandozeilenargumente parsen
+  // (was dabei automatisch passiert ist, dass locale Optionen an die
+  // richtige Adresse geschrieben werden)
+  // 5) Setze globale/shared options noch mal explizit, wo sie gebraucht
+  // werden (außer das bereits anderweitig gehandhabt)
 
   // Since the input files are positional arguments, we need to extract
   // them from the variables map, in contrast to how for the main and

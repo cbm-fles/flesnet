@@ -257,7 +257,8 @@ std::unique_ptr<fles::Timeslice> tsaReader::read() {
 
     // Sometimes the source does not return a timeslice even if it
     // did not indicate eos.
-    // TODO: Remove this workaround once the source is fixed.
+    // TODO: Remove this workaround once the source is fixed. -> delete
+    // this
     if (!timeslice) {
       return handleEosError();
     }

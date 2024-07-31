@@ -1,0 +1,13 @@
+Testnamen sollen tsa2msa enthalten
+readingMode besser beschreiben
+doxygen check if stuff works if run with php (links, MATHJAX)
+make common prefix go up to first % at max
+tsaValidator in eigene Datei
+mention hidden options in help message
+check if timeslice Autosource creates monoticity violations if find is
+used to give input (i.e. not sorted)
+check if memory footprint is smaller if %n syntax is used
+describe %n syntax usage
+add round robin option
+add GiB and GB example to help text
+change FLESnet to Flesnet
