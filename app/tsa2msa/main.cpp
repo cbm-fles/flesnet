@@ -446,18 +446,6 @@ auto main(int argc, char* argv[]) -> int {
     }
   }
 
-  // 1) erstelle irgendeine form von localen options variablen (zum
-  // Beispiel in einem Struct)
-  // 2) erstelle eine options_description dafür bei der die Adressen der
-  // option variablen übergeben werden
-  // 3) bisschen boilerplate für --help und --help --verbose
-  // 4) lasse boost::program_options mit hilfe der
-  // options_description's die Kommandozeilenargumente parsen
-  // (was dabei automatisch passiert ist, dass locale Optionen an die
-  // richtige Adresse geschrieben werden)
-  // 5) Setze globale/shared options noch mal explizit, wo sie gebraucht
-  // werden (außer das bereits anderweitig gehandhabt)
-
   // Since the input files are positional arguments, we need to extract
   // them from the variables map, in contrast to how for the main and
   // the msaWriter all options are automatically set in the
