@@ -101,7 +101,9 @@ string(APPEND DOXYGEN_PREDEFINED " \"HAVE_RDMA=1\"")
 set(DOXYGEN_MARKDOWN_SUPPORT YES)
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
 
-# TODO: Unfortunately, this MathJax does not work as expected.
+# MathJax is a JavaScript display engine for mathematics. Note that
+# displaying mathematical formulas in the documentation may not work if
+# the `index.html` file is opened directly in a browser.
 set(DOXYGEN_USE_MATHJAX YES)
 
 # It is necessary to have these be the first files in the list of input

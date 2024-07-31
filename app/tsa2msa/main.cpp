@@ -82,7 +82,8 @@
  * to `.msa` files is a time and memory consuming task. While processing
  * time is not a critical issue, the memory consumption may be.
  * The current implementation of `tsa2msa` is sequential and simple,
- * using `O(nTimesliceArchive * MaxTimesliceSize)` memory. Soon this
+ * using \f( \mathcal{O}(\mathit{nTimesliceArchive} \cdot
+ * \mathit{MaxTimesliceSize}) \f) memory. Soon this
  * will possibly be a problem and the tool needs to be adapted to
  * process the data in smaller chunks. However, there is challenges with
  * the fact that the boost::serialization library does not provide a
@@ -99,9 +100,6 @@
  * efficient, but may be more complex to implement since, currently, the
  * FLESnet library codes does not provide access to the filestreams
  * underlying the boost::archives.
- *
- * \todo Fix formula display in Doxygen. Somehow `\f( ... \f)` does not
- * work despite having enabled the `MATHJAX` option in the Doxygen.
  *
  * @subsection data_input_future_sec Changes in Data Input
  * The design and responsibilities of the `cri-server` which organizes
