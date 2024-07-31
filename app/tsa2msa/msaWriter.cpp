@@ -55,7 +55,8 @@ getMsaWriterOptionsDescription(msaWriterOptions& options, bool hidden) {
           // TODO: The following text is too long for a --help message
           // and should be placed somewhere else.
           "Maximum size of msa files:\n"
-          "  \tHuman readable units according to the SI or IEC standart are"
+          "  \tHuman readable units according to the SI or IEC standart (e.g"
+          " 1kB = 1000B according to SI, 1KiB = 1024B according to IEC) are"
           " supported, zero means no limit (default). Units are case"
           " insensitive and default unit is bytes. Both, using a space"
           " between number and unit or not, are supported. (Make sure that"

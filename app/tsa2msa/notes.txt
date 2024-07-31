@@ -3,5 +3,4 @@ used to give input (i.e. not sorted)
 check if memory footprint is smaller if %n syntax is used
 describe %n syntax usage
 add round robin option
-add GiB and GB example to help text
 change FLESnet to Flesnet
