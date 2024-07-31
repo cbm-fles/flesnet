@@ -17,8 +17,6 @@ set(DOXYGEN_LANGUAGE "English" CACHE STRING "Language used by doxygen")
 mark_as_advanced(DOXYGEN_LANGUAGE)
 set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-# Non-default doxygen configuration options from the obsolete
-# Doxyfile.in:
 set(DOXYGEN_TAB_SIZE 8)
 set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
 
