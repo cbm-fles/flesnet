@@ -1,4 +1,3 @@
-Testnamen sollen tsa2msa enthalten
 readingMode besser beschreiben
 doxygen check if stuff works if run with php (links, MATHJAX)
 make common prefix go up to first % at max

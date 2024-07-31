@@ -9,18 +9,18 @@ else()
 	message(STATUS "bash found at ${BASH_PROGRAM}")
 	message(STATUS "tsa2msa system tests will be run")
 	add_test(
-		NAME		smokeTestVersion
+		NAME		tsa2msa_smokeTestVersion
 		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/smokeTestVersion.sh
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
 	add_test(
-		NAME		smokeTestHelp
+		NAME		tsa2msa_smokeTestHelp
 		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/smokeTestHelp.sh
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
 	add_test(
-		NAME		smokeTestNoInput
-		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/smokeTestNoInput.sh
+		NAME		tsa2msa_smokeTestWithMissingInput
+		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/smokeTestWithMissingInput.sh
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
 	# Create dir ${CMAKE_BINARY_DIR}/test/reference
@@ -32,8 +32,8 @@ else()
 		${CMAKE_BINARY_DIR}/test/reference/example1.tsa 
 		COPYONLY)
 	add_test(
-		NAME		smokeTestOnlyReadArchive
-		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/smokeTestOnlyReadArchive.sh
+		NAME		tsa2msa_smokeTestDryRunOption
+		COMMAND		${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/smokeTestDryRunOption.sh
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
 endif()
