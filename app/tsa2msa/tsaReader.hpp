@@ -15,6 +15,9 @@
 #include "lib/fles_ipc/MicrosliceOutputArchive.hpp"
 #include "lib/fles_ipc/TimesliceAutoSource.hpp"
 
+// tsa2msa Library header files:
+#include "tsaValidator.hpp"
+
 /**
  * @file tsaReader.hpp
  * @brief This file contains the declarations of the tsaReader class and
@@ -151,79 +154,6 @@ void getTsaReaderOptions(const boost::program_options::variables_map& vm,
                          tsaReaderOptions& tsaReaderOptions);
 
 /**
- * @class tsaReaderValidator
- * @brief This class validates the Timeslices read by a tsaReader.
- *
- * @detailed The tsaReaderValidator provides functionality to validate
- * the Timeslices read by a tsaReader. In particular, it checks whether
- * the Timeslices are in chronological order and whether the number of
- * core microslices and components is constant.
- */
-class tsaReaderValidator {
-private:
-  // true until proven false:
-  bool time_monotonically_increasing;
-  bool time_strict_monotonicity;
-  bool index_monotonically_increasing;
-  bool index_strict_monotonicity;
-  bool num_core_microslices_constant;
-  bool num_components_constant;
-
-  // number of violations:
-  uint64_t nStrictMonotonicityViolationsTime;
-  uint64_t nStrictMonotonicityViolationsIndex;
-  uint64_t nMonotonicityViolationsTime;
-  uint64_t nMonotonicityViolationsIndex;
-  uint64_t nNumCoreMicroslicesViolations;
-  uint64_t nNumComponentsViolations;
-
-  // last values, used for comparison with current values:
-  uint64_t last_timeslice_start_time;
-  uint64_t last_timeslice_index;
-  uint64_t last_timeslice_num_core_microslices;
-  uint64_t last_timeslice_num_components;
-  uint64_t nTimeslices;
-
-public:
-  /**
-   * @brief Constructor for the tsaReaderValidator object.
-   */
-  tsaReaderValidator();
-
-  /**
-   * @brief Destructor for the tsaReaderValidator object.
-   */
-  ~tsaReaderValidator() = default;
-
-  /**
-   * @brief Validates the Timeslices read by a tsaReader and their
-   * order.
-   *
-   * \todo Reconsider the return value.
-   *
-   * @return EX_OK if successful, EX_SOFTWARE if an error occurred.
-   */
-  int validate(const std::unique_ptr<fles::Timeslice>& timeslice);
-
-  void printVerboseIntermediateResult();
-
-  void printSummary();
-
-private:
-  // Delete copy constructor:
-  tsaReaderValidator(const tsaReaderValidator& other) = delete;
-
-  // Delete copy assignment:
-  tsaReaderValidator& operator=(const tsaReaderValidator& other) = delete;
-
-  // Delete move constructor:
-  tsaReaderValidator(tsaReaderValidator&& other) = delete;
-
-  // Delete move assignment:
-  tsaReaderValidator& operator=(tsaReaderValidator&& other) = delete;
-};
-
-/**
  * @class tsaReader
  * @brief This class represents a reader for tsa archives.
  *
@@ -247,7 +177,7 @@ private:
 class tsaReader final {
 private:
   tsaReaderOptions options;
-  tsaReaderValidator validator;
+  tsaValidator validator;
   std::unique_ptr<fles::TimesliceSource> source;
   uint64_t nTimeslices;
 

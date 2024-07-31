@@ -14,6 +14,9 @@ list(APPEND HEADERS msaValidator.hpp)
 list(APPEND SOURCES tsaReader.cpp)
 list(APPEND HEADERS tsaReader.hpp)
 
+list(APPEND SOURCES tsaValidator.cpp)
+list(APPEND HEADERS tsaValidator.hpp)
+
 list(APPEND SOURCES utils.cpp)
 list(APPEND HEADERS utils.hpp)
 

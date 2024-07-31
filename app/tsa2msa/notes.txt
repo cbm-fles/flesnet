@@ -1,4 +1,3 @@
-tsaValidator in eigene Datei
 mention hidden options in help message
 check if timeslice Autosource creates monoticity violations if find is
 used to give input (i.e. not sorted)
