@@ -466,7 +466,7 @@ auto main(int argc, char* argv[]) -> int {
 
   std::unique_ptr<fles::Timeslice> timeslice;
   while ((timeslice = tsaReader.read()) != nullptr) {
-    msaWriter.write_timeslice(std::move(timeslice));
+    msaWriter.write(std::move(timeslice));
   }
 
   return EXIT_SUCCESS;

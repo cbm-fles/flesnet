@@ -239,16 +239,17 @@ public:
    * @param timeslice The timeslice containing the microslices to be written to
    * the microslice archives.
    */
-  void write_timeslice(std::shared_ptr<fles::Timeslice> timeslice);
+  void write(std::shared_ptr<fles::Timeslice> timeslice);
 
 private:
-  void write_timeslice_component(std::shared_ptr<fles::Timeslice> timeslice,
+  void write(std::shared_ptr<fles::Timeslice> timeslice,
                                  uint64_t tsc);
+
+  void write(std::shared_ptr<fles::MicrosliceView> ms_ptr);
 
   std::string constructArchiveName(const fles::Subsystem& sys_id,
                                    const uint16_t& eq_id);
 
-  void write_microslice(std::shared_ptr<fles::MicrosliceView> ms_ptr);
 
   // Delete copy constructor:
   msaWriter(const msaWriter& other) = delete;

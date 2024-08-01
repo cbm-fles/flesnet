@@ -77,14 +77,14 @@ msaWriter::optionsDescription(msaWriterOptions& options, bool hidden) {
   }
 }
 
-void msaWriter::write_timeslice(std::shared_ptr<fles::Timeslice> timeslice) {
+void msaWriter::write(std::shared_ptr<fles::Timeslice> timeslice) {
     // TODO: Count sys_id changes per timeslice, check if there is new
     // or missing sys_ids.
 
 
     // Write the timeslice to a file:
     for (uint64_t tsc = 0; tsc < timeslice->num_components(); tsc++) {
-      write_timeslice_component(timeslice, tsc);
+      write(timeslice, tsc);
     }
 
     // Inform the validator that the Timeslice has ended:
@@ -97,7 +97,7 @@ void msaWriter::write_timeslice(std::shared_ptr<fles::Timeslice> timeslice) {
     numTimeslices++;
   }
 
-  void msaWriter::write_timeslice_component(std::shared_ptr<fles::Timeslice> timeslice,
+  void msaWriter::write(std::shared_ptr<fles::Timeslice> timeslice,
                                  uint64_t tsc) {
     // TODO: Count sys_id changes per TimesliceComponent, check if
     // there is new or missing sys_ids.
@@ -108,7 +108,7 @@ void msaWriter::write_timeslice(std::shared_ptr<fles::Timeslice> timeslice) {
       std::unique_ptr<fles::MicrosliceView> ms_ptr =
           std::make_unique<fles::MicrosliceView>(
               timeslice->get_microslice(tsc, msc));
-      write_microslice(std::move(ms_ptr));
+      write(std::move(ms_ptr));
     }
 
     // Inform the validator that the TimesliceComponent has ended:
@@ -165,7 +165,7 @@ void msaWriter::write_timeslice(std::shared_ptr<fles::Timeslice> timeslice) {
     return msa_archive_name;
   }
 
-  void msaWriter::write_microslice(std::shared_ptr<fles::MicrosliceView> ms_ptr) {
+  void msaWriter::write(std::shared_ptr<fles::MicrosliceView> ms_ptr) {
     const fles::MicrosliceDescriptor& msd = ms_ptr->desc();
 
     // TODO: Take into account that raw values not corresponding to
