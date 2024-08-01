@@ -31,6 +31,11 @@ msaWriterOptions msaWriter::defaults() {
 
 boost::program_options::options_description
 msaWriter::optionsDescription(msaWriterOptions& options, bool hidden) {
+  /*
+   * Note: boost::program_options throws a runtime exception if multiple
+   * options_description objects which contain the same option are
+   * combined. Hence, name clashes must be avoided manually.
+   */
   if (hidden) {
     boost::program_options::options_description desc(
         "Additional MSA Writer Options");

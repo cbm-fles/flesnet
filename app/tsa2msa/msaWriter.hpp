@@ -215,9 +215,6 @@ public:
    * @return The command line options for the msaWriter. Can be combined
    * with other command line options and used to parse user input.
    *
-   * @note boost::program_options throws a runtime exception if multiple
-   * options_description objects which contain the same option are
-   * combined. Hence, name clashes should be avoided manually.
    */
   static boost::program_options::options_description
   optionsDescription(msaWriterOptions& options, bool hidden);
