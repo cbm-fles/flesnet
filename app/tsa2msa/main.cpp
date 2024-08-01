@@ -376,9 +376,9 @@ auto main(int argc, char* argv[]) -> int {
       "version,V", boost::program_options::bool_switch(&showVersion),
       "produce version message");
 
-  msaWriterOptions msaWriterOptions = defaultMsaWriterOptions();
+  msaWriterOptions msaWriterOptions = msaWriter::defaultMsaWriterOptions();
   boost::program_options::options_description msaWriterOptionsDescription =
-      getMsaWriterOptionsDescription(msaWriterOptions, /* hidden = */ false);
+      msaWriter::getMsaWriterOptionsDescription(msaWriterOptions, /* hidden = */ false);
   generic.add(msaWriterOptionsDescription);
 
   boost::program_options::options_description hidden("Hidden options");

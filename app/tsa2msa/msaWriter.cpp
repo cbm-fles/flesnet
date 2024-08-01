@@ -9,7 +9,7 @@ msaWriter::msaWriter(const msaWriterOptions& options) : options(options) {
   // Do nothing for now
 }
 
-msaWriterOptions defaultMsaWriterOptions() {
+msaWriterOptions msaWriter::defaultMsaWriterOptions() {
   // Make sure to update doxygen documentation at declaration site if
   // the default values are changed.
   return {
@@ -23,7 +23,7 @@ msaWriterOptions defaultMsaWriterOptions() {
 }
 
 boost::program_options::options_description
-getMsaWriterOptionsDescription(msaWriterOptions& options, bool hidden) {
+msaWriter::getMsaWriterOptionsDescription(msaWriterOptions& options, bool hidden) {
   if (hidden) {
     boost::program_options::options_description desc(
         "Additional MSA Writer Options");
