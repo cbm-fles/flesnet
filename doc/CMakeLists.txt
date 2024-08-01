@@ -136,6 +136,8 @@ doxygen_add_docs(doc-flesnet
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating flesnet documentation with doxygen")
 
+# In contrast to other doxygen targets (at the time of writing), the
+# tsa2msa utility has its own main page.
 set(DOXYGEN_MDFILE_AS_MAINPAGE_OLD ${DOXYGEN_USE_MDFILE_AS_MAINPAGE})
 unset(DOXYGEN_USE_MDFILE_AS_MAINPAGE)
 
