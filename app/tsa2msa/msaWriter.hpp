@@ -23,7 +23,7 @@
  *
  * @details The msaWriterOptions struct is a container for options that
  * are used by the msaWriter class. Using the function
- * defaultMsaWriterOptions() an object with default values can be
+ * defaults() an object with default values can be
  * created, and then modified as desired. Furthermore, using the
  * boost::program_options library and the function
  * getMsaWriterOptionsDescription(), the user-provided modifications can
@@ -166,7 +166,7 @@ public:
    * @brief Constructor for the msaWriter object using default options.
    *
    */
-  msaWriter() : msaWriter(defaultMsaWriterOptions()){};
+  msaWriter() : msaWriter(defaults()){};
 
   /**
    * @brief Constructs an msaWriter object with the specified options.
@@ -199,7 +199,7 @@ public:
    *
    * @return The default options for an msaWriter.
    */
-  static msaWriterOptions defaultMsaWriterOptions();
+  static msaWriterOptions defaults();
 
   /**
    * @brief Command line options descriptions exclusive to the msaWriter.
@@ -230,7 +230,7 @@ public:
    * combined. Hence, name clashes should be avoided manually.
    */
   static boost::program_options::options_description
-  getMsaWriterOptionsDescription(msaWriterOptions& options, bool hidden);
+  optionsDescription(msaWriterOptions& options, bool hidden);
 
   /**
    * @brief Writes a timeslice to the microslice archives.
