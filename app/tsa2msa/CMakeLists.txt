@@ -32,7 +32,7 @@ target_include_directories(tsa2msa
 target_link_libraries(tsa2msa
   fles_ipc
   ${Boost_LIBRARIES}
-  rt
+  rt  # is this really needed?
 )
 
 # Ensure warnings are enabled and standard is set:
