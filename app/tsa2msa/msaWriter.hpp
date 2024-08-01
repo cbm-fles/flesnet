@@ -250,7 +250,6 @@ class msaWriter final {
   std::map<std::string, std::unique_ptr<fles::Sink<fles::Microslice>>> msaFiles;
 
   uint64_t numTimeslices = 0;
-  uint64_t numMicroslices = 0;
   const msaWriterOptions options;
 
 public:
