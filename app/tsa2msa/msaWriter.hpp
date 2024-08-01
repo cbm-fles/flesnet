@@ -204,9 +204,10 @@ public:
    * boost::program_options library with options provided
    * by the user on the command line.
    *
-   * @param hidden Whether to return hidden or regular options. Hidden options are
-   * additional options that are not shown in the help message unless explicitly
-   * requested by specifying `--help` together with the `--verbose` option.
+   * @param hidden Whether to return hidden or regular options. Hidden options
+   * are additional options that are not shown in the help message unless
+   * explicitly requested by specifying `--help` together with the `--verbose`
+   * option.
    *
    * @return The command line options for the msaWriter. Can be combined
    * with other command line options and used to parse user input.
@@ -216,7 +217,7 @@ public:
   optionsDescription(msaWriterOptions& options, bool hidden);
 
   /**
-   * @brief Writes a timeslice to the microslice archives.
+   * @brief Writes contents of a timeslice to the microslice archives.
    *
    * @details The microslices contained in the timeslice are written to
    * microslice archives according to the options specified in the
@@ -242,25 +243,22 @@ public:
   void write(std::shared_ptr<fles::Timeslice> timeslice);
 
 private:
-  void write(std::shared_ptr<fles::Timeslice> timeslice,
-                                 uint64_t tsc);
+  // A helper that is called by write(std::shared_ptr<fles::Timeslice>
+  // timeslice) for each component in the timeslice.
+  void write(std::shared_ptr<fles::Timeslice> timeslice, uint64_t tsc);
 
+  // A helper that is called by write(std::shared_ptr<fles::Timeslice>
+  // timeslice, uint64_t tsc) for each microslice in the component.
   void write(std::shared_ptr<fles::MicrosliceView> ms_ptr);
 
   std::string constructArchiveName(const fles::Subsystem& sys_id,
                                    const uint16_t& eq_id);
 
-
-  // Delete copy constructor:
+  // Other constructors are deleted because reasoning about what should
+  // be the desired behaviour is non-trivial:
   msaWriter(const msaWriter& other) = delete;
-
-  // Delete copy assignment:
   msaWriter& operator=(const msaWriter& other) = delete;
-
-  // Delete move constructor:
   msaWriter(msaWriter&& other) = delete;
-
-  // Delete move assignment:
   msaWriter& operator=(msaWriter&& other) = delete;
 };
 
