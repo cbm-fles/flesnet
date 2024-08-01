@@ -10,16 +10,23 @@ msaWriter::msaWriter(const msaWriterOptions& options) : options(options) {
 }
 
 msaWriterOptions msaWriter::defaults() {
-  // Make sure to update doxygen documentation at declaration site if
-  // the default values are changed.
-  return {
-      false, // dryRun  // TODO: make .dryRun = false syntax work
+  msaWriterOptions defaults =
+    // Note: The following is automatically inserted into the doxygen
+    // documentation, where from context it is not clear which member
+    // variables are being initialized. This could be overcome by using
+    // C++20 which allows for designated initializers, but until then
+    // the comments containing the member variable names are necessary.
+    //! [msaWriterDefaults]
+    {
+      false, // dryRun
       false, // beVerbose
       false, // interactive
       "",    // prefix
-      0,     // maxItems
-      0      // maxSize
-  };
+      0,     // maxItems ( 0 means no limit)
+      0      // maxSize ( 0 means no limit)
+    };
+    //! [msaWriterDefaults]
+    return defaults;
 }
 
 boost::program_options::options_description

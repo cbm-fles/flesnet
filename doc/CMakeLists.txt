@@ -138,6 +138,12 @@ doxygen_add_docs(doc-flesnet
 
 set(DOXYGEN_MDFILE_AS_MAINPAGE_OLD ${DOXYGEN_USE_MDFILE_AS_MAINPAGE})
 unset(DOXYGEN_USE_MDFILE_AS_MAINPAGE)
+
+# In order to include code snippets and alike in the documentation, we
+# need to provide the path to the source files from which the snippets
+# are extracted.
+string(APPEND DOXYGEN_EXAMPLE_PATH ${CMAKE_SOURCE_DIR}/app/tsa2msa)
+
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsa2msa-doc)
 doxygen_add_docs(doc-tsa2msa
 	app/tsa2msa
