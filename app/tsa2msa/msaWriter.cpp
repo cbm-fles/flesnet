@@ -61,12 +61,12 @@ msaWriter::optionsDescription(msaWriterOptions& options, bool hidden) {
         ("max-size",
           boost::program_options::value<bytesNumber>(&options.maxBytesPerArchive)
             -> default_value(bytesNumber{0}),
-          // TODO: The following text is too long for a --help message
-          // and should be placed somewhere else.
           "Maximum size of msa files:\n"
           "  \tHuman readable units according to the SI or IEC standart (e.g"
           " 1kB = 1000B according to SI, 1KiB = 1024B according to IEC) are"
-          " supported, zero means no limit (default). Units are case"
+          " supported, zero means no limit (default).\n"
+          "\n"
+          "  \tUnits are case"
           " insensitive and default unit is bytes. Both, using a space"
           " between number and unit or not, are supported. (Make sure that"
           " your shell does not interpret the space as a separator between"
