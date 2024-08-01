@@ -191,7 +191,8 @@ public:
   static msaWriterOptions defaults();
 
   /**
-   * @brief Command line options descriptions exclusive to the msaWriter.
+   * @brief Provides command line options descriptions exclusive to the
+   * msaWriter.
    *
    * @details Via the boost::program_options library, the object returned
    * by this function can be used to parse user provided command line
