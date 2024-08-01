@@ -191,12 +191,12 @@ public:
   static msaWriterOptions defaults();
 
   /**
-   * @brief Provides command line options descriptions exclusive to the
-   * msaWriter.
+   * @brief Provides command line options descriptions for use with the
+   * boost::program_options library, which then automatically updates
+   * the msaWriterOptions object passed by reference as an argument.
    *
-   * @details Via the boost::program_options library, the object returned
-   * by this function can be used to parse user provided command line
-   * options for the msaWriter. In accordance with recommended practice,
+   * @details
+   * In accordance with recommended practice,
    * the caller should call this function twice: once to obtain the
    * visible options and once to obtain the hidden options, which despite
    * not needed to be exposed to the user (unless explicitly requested),
@@ -204,9 +204,9 @@ public:
    *
    * @param options The options description object serving a dual purpose:
    * its member variables are used as default values for the command line
-   * options and the object itself is used to store the options provided
-   * by the user. These are set automatically by the
-   * boost::program_options library.
+   * options and the object itself is later on automatically updated by the
+   * boost::program_options library with options provided
+   * by the user on the command line.
    *
    * @param hidden Whether to return hidden or regular options. Hidden options are
    * additional options that are not shown in the help message unless explicitly
