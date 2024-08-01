@@ -143,10 +143,6 @@ typedef struct msaWriterOptions {
  * main method write_timeslice is intended to be called repeatedly with
  * (chronologically sorted) timeslices read from a source.
  *
- * \note For now, many default methods such as copy constructor, copy
- * assignment, move constructor, and move assignment are private and
- * deleted until they are needed (if ever). Similarly, the class is
- * marked as final to prevent inheritance (until needed).
  */
 class msaWriter final {
   msaValidator validator;
