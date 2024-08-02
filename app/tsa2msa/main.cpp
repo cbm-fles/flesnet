@@ -354,30 +354,10 @@ void show_version() {
  */
 auto main(int argc, char* argv[]) -> int {
 
-  boost::program_options::options_description generic("Generic options");
-
   options options;
 
-  // Note: Use alphabetical order for the switches to make it easier to
-  // maintain the code.
-  bool& beQuiet = options.global.beQuiet;
-  bool& beVerbose = options.global.beVerbose;
-  bool& showHelp = options.global.showHelp;
-  bool& showVersion = options.global.showVersion;
-
-  // TODO: Create a class for these options:
-  // TODO: format
-  generic.add_options()("quiet,q",
-                        boost::program_options::bool_switch(&beQuiet),
-                        "suppress all output")(
-      "verbose,v", boost::program_options::bool_switch(&beVerbose),
-      "enable verbose output")("help,h",
-                               boost::program_options::bool_switch(&showHelp),
-                               "produce help message\n"
-                               "  (combine with --verbose to see all"
-                               " options)")(
-      "version,V", boost::program_options::bool_switch(&showVersion),
-      "produce version message");
+  boost::program_options::options_description generic =
+      genericOptions::optionsDescription(options.generic);
 
   msaWriterOptions msaWriterOptions = msaWriter::defaults();
   boost::program_options::options_description msaWriterOptionsDescription =
@@ -415,20 +395,23 @@ auto main(int argc, char* argv[]) -> int {
 
   // Check for further parsing errors:
   if (!parsingError) {
-    parsingError = check_for_global_parsing_errors(vm, errorMessage, beVerbose,
-                                                   showHelp, showVersion);
+    parsingError = check_for_global_parsing_errors(
+        vm, errorMessage, options.generic.beVerbose, options.generic.showHelp,
+        options.generic.showVersion);
   }
 
   if (parsingError) {
     handle_parsing_errors(errorMessage, command_line_options,
-                          visible_command_line_options, beVerbose, showHelp);
+                          visible_command_line_options,
+                          options.generic.beVerbose, options.generic.showHelp);
     return EX_USAGE;
   }
 
-  if (showHelp) {
-    show_help(command_line_options, visible_command_line_options, beVerbose);
+  if (options.generic.showHelp) {
+    show_help(command_line_options, visible_command_line_options,
+              options.generic.beVerbose);
     return EXIT_SUCCESS;
-  } else if (showVersion) {
+  } else if (options.generic.showVersion) {
     show_version();
     return EXIT_SUCCESS;
   }

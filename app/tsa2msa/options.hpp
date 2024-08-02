@@ -1,26 +1,38 @@
 #ifndef OPTIONS_HPP
 #define OPTIONS_HPP
 
-struct globalOptions {
+#include <boost/program_options.hpp>
+
+struct genericOptions {
   bool beQuiet;
   bool beVerbose;
   bool showHelp;
   bool showVersion;
+
+  /**
+   * @brief Returns the defaults for genericOptions
+   *
+   * @return genericOptions with default values
+   */
+  static genericOptions defaults();
+
+  static boost::program_options::options_description
+  optionsDescription(genericOptions& options);
 };
 
 class options final {
 public:
-  globalOptions global;
+  genericOptions generic;
 
   options();
   ~options() = default;
 
   /**
-   * @brief Returns the defaults for globalOptions
+   * @brief Returns the defaults for genericOptions
    *
-   * @return globalOptions with default values
+   * @return genericOptions with default values
    */
-  static globalOptions defaults();
+  static genericOptions defaults();
 
 private:
   // Other constructors and operators are deleted because it is not
