@@ -150,49 +150,6 @@ const std::string program_description =
     "  more information.\n";
 
 /**
- * @brief Parse command line arguments and store them in a variables map
- * @details This function parses the command line arguments using the
- * Boost Program Options library, storing the results in a variables map
- * provided by the caller. If the boost library throws an exception, an
- * appropriate error message is pushed back to the error message vector.
- *
- * @param argc Number of command line arguments as passed to main
- * @param argv Command line arguments as passed to main to main
- * @param command_line_options Description of all command line options
- * @param positional_command_line_arguments Description of all
- * positional command line arguments
- * @param vm Variables map to store the parsed options
- * @param errorMessage Vector to store error messages
- * @return True if there was a parsing error, false otherwise
- */
-bool parse_command_line(
-    int argc,
-    char* argv[],
-    const boost::program_options::options_description& command_line_options,
-    const boost::program_options::positional_options_description&
-        positional_command_line_arguments,
-    boost::program_options::variables_map& vm,
-    std::vector<std::string>& errorMessage) {
-  bool parsingError = false;
-  try {
-    // Since we are using positional arguments, we need to use the
-    // command_line_parser instead of the parse_command_line
-    // function, which only supports named options.
-    boost::program_options::store(
-        boost::program_options::command_line_parser(argc, argv)
-            .options(command_line_options)
-            .positional(positional_command_line_arguments)
-            .run(),
-        vm);
-    boost::program_options::notify(vm);
-  } catch (const boost::program_options::error& e) {
-    errorMessage.push_back("Error: " + std::string(e.what()));
-    parsingError = true;
-  }
-  return parsingError;
-}
-
-/**
  * @brief Check for global parsing errors
  *
  * @details Checks whether input files were provided and whether the
@@ -387,9 +344,9 @@ auto main(int argc, char* argv[]) -> int {
   // Parse command line options:
   std::vector<std::string> errorMessage;
   boost::program_options::variables_map vm;
-  bool parsingError =
-      parse_command_line(argc, argv, command_line_options,
-                         positional_command_line_arguments, vm, errorMessage);
+  bool parsingError = options.parseCommandLine(
+      argc, argv, command_line_options, positional_command_line_arguments, vm,
+      errorMessage);
 
   // Check for further parsing errors:
   if (!parsingError) {
