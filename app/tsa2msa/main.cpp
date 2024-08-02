@@ -326,11 +326,6 @@ auto main(int argc, char* argv[]) -> int {
                                     /* hidden = */ true);
   hidden.add(tsaReaderOptionsDescription);
 
-  boost::program_options::positional_options_description
-      positional_command_line_arguments;
-  // Specify that all positional arguments are input files:
-  positional_command_line_arguments.add("input", -1);
-
   // For verbose help text only:
   boost::program_options::options_description command_line_options(
       program_description + "\n" + "Command line options");
@@ -344,9 +339,8 @@ auto main(int argc, char* argv[]) -> int {
   // Parse command line options:
   std::vector<std::string> errorMessage;
   boost::program_options::variables_map vm;
-  bool parsingError = options.parseCommandLine(
-      argc, argv, command_line_options, positional_command_line_arguments, vm,
-      errorMessage);
+  bool parsingError = options.parseCommandLine(argc, argv, command_line_options,
+                                               vm, errorMessage);
 
   // Check for further parsing errors:
   if (!parsingError) {

@@ -47,10 +47,14 @@ void options::parseCommandLine(
     int argc,
     char* argv[],
     const boost::program_options::options_description& command_line_options,
-    const boost::program_options::positional_options_description&
-        positional_command_line_arguments,
     boost::program_options::variables_map& vm,
     std::vector<std::string>& errorMessage) {
+
+  boost::program_options::positional_options_description
+      positional_command_line_arguments;
+  // Specify that all positional arguments are input files:
+  positional_command_line_arguments.add("input", -1);
+
   // Parse command line arguments and store them in a variables map
   try {
     // Since we are using positional arguments, we need to use the

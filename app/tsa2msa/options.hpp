@@ -45,8 +45,6 @@ public:
       int argc,
       char* argv[],
       const boost::program_options::options_description& command_line_options,
-      const boost::program_options::positional_options_description&
-          positional_command_line_arguments,
       boost::program_options::variables_map& vm,
       std::vector<std::string>& errorMessage);
 
