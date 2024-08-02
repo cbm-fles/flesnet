@@ -4,6 +4,8 @@
 
 tsaReaderOptions tsaReader::defaults() {
   tsaReaderOptions defaults;
+  // The following defaults are automatically included in the
+  // doxygen documentation as a code snippet:
   // [tsaReaderDefaults]
   defaults.beVerbose = false;
   defaults.interactive = false;
@@ -14,6 +16,11 @@ tsaReaderOptions tsaReader::defaults() {
 
 boost::program_options::options_description
 tsaReader::optionsDescription(tsaReaderOptions& options, bool hidden) {
+  /*
+   * Note: boost::program_options throws a runtime exception if multiple
+   * options_description objects which contain the same option are
+   * combined. Hence, name clashes must be avoided manually.
+   */
   if (!hidden) {
     boost::program_options::options_description desc(
         "Additional TSA Reader Options:");

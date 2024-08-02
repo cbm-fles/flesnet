@@ -173,12 +173,12 @@ public:
    */
   static tsaReaderOptions defaults();
 
-  /**
-   * @brief Create command line options descriptions exclusive to the tsaReader.
+  /** @brief Provides command line options descriptions for use with the
+   * boost::program_options library, which then automatically updates the
+   * tsaReaderOptions object passed by reference as an argument.
    *
-   * @details Via the boost::program_options library, the object returned
-   * by this function can be used to parse user provided command line
-   * options for the tsaReader. In accordance with recommended practice,
+   * @details
+   * In accordance with recommended practice,
    * the caller should call this function twice: once to obtain the
    * visible options and once to obtain the hidden options, which despite
    * not needed to be exposed to the user (unless explicitly requested),
@@ -200,10 +200,6 @@ public:
    *
    * \todo Provide some template for these kind of functions to get rid of
    * the duplication of the doxygen description.
-   *
-   * @note boost::program_options throws a runtime exception if multiple
-   * options_description objects which contain the same option are
-   * combined. Hence, name clashes should be avoided manually.
    */
   static boost::program_options::options_description
   optionsDescription(tsaReaderOptions& options, bool hidden);
@@ -217,28 +213,22 @@ public:
   std::unique_ptr<fles::Timeslice> read();
 
 private:
-  // Delete copy constructor:
-  tsaReader(const tsaReader& other) = delete;
-
-  // Delete copy assignment:
-  tsaReader& operator=(const tsaReader& other) = delete;
-
-  // Delete move constructor:
-  tsaReader(tsaReader&& other) = delete;
-
-  // Delete move assignment:
-  tsaReader& operator=(tsaReader&& other) = delete;
-
   std::unique_ptr<fles::Timeslice> handleEosError();
 
   void printDuration();
 
-private:
   void setSource(std::unique_ptr<fles::TimesliceSource> s);
 
   void initAutoSource(const std::vector<std::string>& inputs);
 
   void initSource(const std::vector<std::string>& inputs);
+
+  // Other constructors are deleted because reasoning about what should
+  // be the desired behaviour is non-trivial:
+  tsaReader(const tsaReader& other) = delete;
+  tsaReader& operator=(const tsaReader& other) = delete;
+  tsaReader(tsaReader&& other) = delete;
+  tsaReader& operator=(tsaReader&& other) = delete;
 };
 
 #endif // TSAREADER_HPP
