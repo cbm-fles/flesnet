@@ -16,7 +16,7 @@ msaWriterOptions msaWriter::defaults() {
     // variables are being initialized. This could be overcome by using
     // C++20 which allows for designated initializers, but until then
     // the comments containing the member variable names are necessary.
-    //! [msaWriterDefaults]
+    // [msaWriterDefaults]
     {
       false, // dryRun
       false, // beVerbose
@@ -25,7 +25,7 @@ msaWriterOptions msaWriter::defaults() {
       0,     // maxItems ( 0 means no limit)
       0      // maxSize ( 0 means no limit)
     };
-    //! [msaWriterDefaults]
+    // [msaWriterDefaults]
     return defaults;
 }
 
