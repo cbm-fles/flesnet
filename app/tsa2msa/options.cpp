@@ -34,4 +34,10 @@ genericOptions::optionsDescription(genericOptions& options) {
   return desc;
 }
 
-options::options() : generic(genericOptions::defaults()) {}
+// clang-format off
+options::options() :
+  generic(genericOptions::defaults()),
+  tsaReader(tsaReader::defaults()),
+  msaWriter(msaWriter::defaults())
+// clang-format on
+{}

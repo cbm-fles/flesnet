@@ -359,15 +359,13 @@ auto main(int argc, char* argv[]) -> int {
   boost::program_options::options_description generic =
       genericOptions::optionsDescription(options.generic);
 
-  msaWriterOptions msaWriterOptions = msaWriter::defaults();
   boost::program_options::options_description msaWriterOptionsDescription =
-      msaWriter::optionsDescription(msaWriterOptions, /* hidden = */ false);
+      msaWriter::optionsDescription(options.msaWriter, /* hidden = */ false);
   generic.add(msaWriterOptionsDescription);
 
   boost::program_options::options_description hidden("Hidden options");
-  tsaReaderOptions tsaReaderOptions = tsaReader::defaults();
   boost::program_options::options_description tsaReaderOptionsDescription =
-      tsaReader::optionsDescription(tsaReaderOptions,
+      tsaReader::optionsDescription(options.tsaReader,
                                     /* hidden = */ true);
   hidden.add(tsaReaderOptionsDescription);
 
@@ -416,8 +414,8 @@ auto main(int argc, char* argv[]) -> int {
     return EXIT_SUCCESS;
   }
 
-  if (msaWriterOptions.prefix.size() == 0) {
-    std::string path_prefix = compute_common_prefix(tsaReaderOptions.input);
+  if (options.msaWriter.prefix.size() == 0) {
+    std::string path_prefix = compute_common_prefix(options.tsaReader.input);
 
     // We only need the file name, not the entire path. This is because
     // the user likely wants to store the output files in the current
@@ -437,11 +435,11 @@ auto main(int argc, char* argv[]) -> int {
       // No common prefix found, set arbitrary prefix:
       prefix = "some_prefix";
     } else {
-      msaWriterOptions.prefix = prefix;
+      options.msaWriter.prefix = prefix;
     }
   }
 
-  if (msaWriterOptions.useSequence()) {
+  if (options.msaWriter.useSequence()) {
     std::cerr << "Warning: Currently, the OutputArchiveSequence"
                  " classes do not properly handle the limits (at least not the"
                  " maxBytesPerArchive limit; limits may be exceeded by the"
@@ -454,10 +452,10 @@ auto main(int argc, char* argv[]) -> int {
   // the msaWriter all options are automatically set in the
   // msaWriterOptions struct via boost::program_options::value and
   // boost::program_options::bool_switch.
-  getTsaReaderOptions(vm, tsaReaderOptions);
+  getTsaReaderOptions(vm, options.tsaReader);
 
-  tsaReader tsaReader(tsaReaderOptions);
-  msaWriter msaWriter(msaWriterOptions);
+  tsaReader tsaReader(options.tsaReader);
+  msaWriter msaWriter(options.msaWriter);
 
   std::unique_ptr<fles::Timeslice> timeslice;
   while ((timeslice = tsaReader.read()) != nullptr) {

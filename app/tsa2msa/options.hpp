@@ -3,6 +3,9 @@
 
 #include <boost/program_options.hpp>
 
+#include "msaWriter.hpp"
+#include "tsaReader.hpp"
+
 struct genericOptions {
   bool beQuiet;
   bool beVerbose;
@@ -23,6 +26,8 @@ struct genericOptions {
 class options final {
 public:
   genericOptions generic;
+  tsaReaderOptions tsaReader;
+  msaWriterOptions msaWriter;
 
   options();
   ~options() = default;
