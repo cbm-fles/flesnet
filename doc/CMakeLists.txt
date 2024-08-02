@@ -141,6 +141,12 @@ doxygen_add_docs(doc-flesnet
 set(DOXYGEN_MDFILE_AS_MAINPAGE_OLD ${DOXYGEN_USE_MDFILE_AS_MAINPAGE})
 unset(DOXYGEN_USE_MDFILE_AS_MAINPAGE)
 
+# At the time of writing, other doxygen targets do not generate a tree
+# view. Possibly it is a good idea to enable this for all targets, but
+# for now we will only enable it for the tsa2msa target.
+set(DOXYGEN_GENERATE_TREEVIEW_OLD ${DOXYGEN_GENERATE_TREEVIEW})
+set(DOXYGEN_GENERATE_TREEVIEW YES)
+
 # In order to include code snippets and alike in the documentation, we
 # need to provide the path to the source files from which the snippets
 # are extracted.
@@ -153,6 +159,7 @@ doxygen_add_docs(doc-tsa2msa
 	COMMENT "Generating tsa2msa documentation with doxygen"
 )
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE ${DOXYGEN_MDFILE_AS_MAINPAGE_OLD})
+set(DOXYGEN_GENERATE_TREEVIEW ${DOXYGEN_GENERATE_TREEVIEW_OLD})
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
 doxygen_add_docs(doc-mstool

@@ -57,7 +57,7 @@
  * these `.tsa` files to microslice archives (`.msa` files). This allows
  * for a replay of the experiment data in Flesnet using the `mstool`,
  * which emulates how the `cri-server` and the CRI-boards provide data
- * in production. (However, see \ref future_sec for how this is going to
+ * in production. (However, see \subpage future_sec for how this is going to
  * change.)
  *
  * @section design_sec Design
