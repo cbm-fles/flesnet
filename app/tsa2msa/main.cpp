@@ -2,10 +2,10 @@
 #include <cstdlib>
 
 // C++ Standard Library header files:
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <filesystem>
 
 // System dependent header files:
 #include <sysexits.h>
@@ -452,6 +452,14 @@ auto main(int argc, char* argv[]) -> int {
     } else {
       msaWriterOptions.prefix = prefix;
     }
+  }
+
+  if (msaWriterOptions.useSequence()) {
+    std::cerr << "Warning: Currently, the OutputArchiveSequence"
+                 " classes do not properly handle the limits (at least not the"
+                 " maxBytesPerArchive limit; limits may be exceeded by the"
+                 " size of a micro slice.)"
+              << std::endl;
   }
 
   // Since the input files are positional arguments, we need to extract

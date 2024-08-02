@@ -110,28 +110,11 @@ typedef struct msaWriterOptions {
    * @details If either maxItemsPerArchive or maxBytesPerArchive is set
    * to a non-zero value, then the OutputArchiveSequence classes should
    * be used. This is a helper function to determine whether these
-   * options are set (and, if called for the first time, provides a
-   * warning about the current state of the OutputArchiveSequence
-   * classes in the Flesnet library).
+   * options are set.
    *
    */
-  bool useSequence() const {
-    static bool gaveWarning = false;
-    if (!gaveWarning) {
-      // TODO: Move this message somewhere else.
-      std::cerr
-          << "Warning: Currently, the OutputArchiveSequence"
-             " classes do not properly handle the limits (at least not the"
-             " maxBytesPerArchive limit; limits may be exceeded by the"
-             " size of a micro slice.)"
-          << std::endl;
-      gaveWarning = true;
-    }
-    return maxItemsPerArchive || maxBytesPerArchive;
-  }
+  bool useSequence() const { return maxItemsPerArchive || maxBytesPerArchive; }
 } msaWriterOptions;
-
-
 
 /**
  * @class msaWriter
