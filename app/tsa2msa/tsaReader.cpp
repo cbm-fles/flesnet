@@ -2,18 +2,18 @@
 
 #include "tsaReader.hpp"
 
-// Make sure that any changes to the default options are reflected in
-// the doxygen documentation of the function.
-tsaReaderOptions defaultTsaReaderOptions() {
-  tsaReaderOptions options;
-  options.beVerbose = false;
-  options.interactive = false;
-  options.input = std::vector<std::string>();
-  return options;
+tsaReaderOptions tsaReader::defaults() {
+  tsaReaderOptions defaults;
+  // [tsaReaderDefaults]
+  defaults.beVerbose = false;
+  defaults.interactive = false;
+  defaults.input = std::vector<std::string>();
+  // [tsaReaderDefaults]
+  return defaults;
 }
 
 boost::program_options::options_description
-getTsaReaderOptionsDescription(tsaReaderOptions& options, bool hidden) {
+tsaReader::optionsDescription(tsaReaderOptions& options, bool hidden) {
   if (!hidden) {
     boost::program_options::options_description desc(
         "Additional TSA Reader Options:");

@@ -72,62 +72,6 @@ typedef struct tsaReaderOptions {
 } tsaReaderOptions;
 
 /**
- * @brief Returns the default options for an tsaReader.
- *
- * The default options are:
- * - beVerbose  = false
- * - interactive = false
- * - input      = empty vector
- *
- * The input vector is expected to be populated by the caller before the
- * tsaReaderOptions object is used to create a tsaReader.
- *
- * @note Unfortunately, the above list is not automatically updated when
- * the default options are changed in the code. This could be overcome
- * by using a constant global variable instead of a function. However,
- * the formatting of the doxygen documentation does not include the
- * struct member variable names in the description and does not look
- * very nice. Hence, the current solution is a compromise.
- *
- * @return The default options for an tsaReader.
- */
-tsaReaderOptions defaultTsaReaderOptions();
-
-/**
- * @brief Create command line options descriptions exclusive to the tsaReader.
- *
- * @details Via the boost::program_options library, the object returned
- * by this function can be used to parse user provided command line
- * options for the tsaReader. In accordance with recommended practice,
- * the caller should call this function twice: once to obtain the
- * visible options and once to obtain the hidden options, which despite
- * not needed to be exposed to the user (unless explicitly requested),
- * are still needed to provide desired functionality.
- *
- * @param options The options description object serving a dual purpose:
- * its member variables are used as default values for the command line
- * options and the object itself is used to store the options provided
- * by the user. These are set automatically by the
- * boost::program_options library.
- *
- * @param hidden Whether to return hidden or regular options. Hidden options are
- * additional options that are not shown in the help message unless explicitly
- * requested by specifying `--help` together with the `--verbose` option.
- *
- * @return The command line options for the tsaReader. Can be combined
- * with other command line options and used to parse user input.
- *
- * \todo Provide some template for these kind of functions to get rid of
- * the duplication of the doxygen description.
- *
- * @note boost::program_options throws a runtime exception if multiple
- * options_description objects which contain the same option are
- * combined. Hence, name clashes should be avoided manually.
- */
-boost::program_options::options_description
-getTsaReaderOptionsDescription(tsaReaderOptions& options, bool hidden);
-
-/**
  * @brief Parses the command line options for the tsaReader.
  *
  * Currently, not all options in the tsaReaderOptions object are
@@ -214,6 +158,55 @@ public:
    * @brief Destructor for the tsaReader object.
    */
   ~tsaReader() = default;
+
+  /**
+   * @brief Returns the default options for an tsaReader.
+   *
+   * @details The default options for an tsaReader are as follows:
+   *
+   * \snippet tsaReader.cpp tsaReaderDefaults
+   *
+   * The input vector is expected to be populated by the caller before the
+   * tsaReaderOptions object is used to create a tsaReader.
+   *
+   * @return The default options for an tsaReader.
+   */
+  static tsaReaderOptions defaults();
+
+  /**
+   * @brief Create command line options descriptions exclusive to the tsaReader.
+   *
+   * @details Via the boost::program_options library, the object returned
+   * by this function can be used to parse user provided command line
+   * options for the tsaReader. In accordance with recommended practice,
+   * the caller should call this function twice: once to obtain the
+   * visible options and once to obtain the hidden options, which despite
+   * not needed to be exposed to the user (unless explicitly requested),
+   * are still needed to provide desired functionality.
+   *
+   * @param options The options description object serving a dual purpose:
+   * its member variables are used as default values for the command line
+   * options and the object itself is used to store the options provided
+   * by the user. These are set automatically by the
+   * boost::program_options library.
+   *
+   * @param hidden Whether to return hidden or regular options. Hidden options
+   * are additional options that are not shown in the help message unless
+   * explicitly requested by specifying `--help` together with the `--verbose`
+   * option.
+   *
+   * @return The command line options for the tsaReader. Can be combined
+   * with other command line options and used to parse user input.
+   *
+   * \todo Provide some template for these kind of functions to get rid of
+   * the duplication of the doxygen description.
+   *
+   * @note boost::program_options throws a runtime exception if multiple
+   * options_description objects which contain the same option are
+   * combined. Hence, name clashes should be avoided manually.
+   */
+  static boost::program_options::options_description
+  optionsDescription(tsaReaderOptions& options, bool hidden);
 
   /**
    * @brief Reads the next Timeslice from the input.

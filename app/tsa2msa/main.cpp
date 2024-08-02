@@ -382,9 +382,10 @@ auto main(int argc, char* argv[]) -> int {
   generic.add(msaWriterOptionsDescription);
 
   boost::program_options::options_description hidden("Hidden options");
-  tsaReaderOptions tsaReaderOptions = defaultTsaReaderOptions();
+  tsaReaderOptions tsaReaderOptions = tsaReader::defaults();
   boost::program_options::options_description tsaReaderOptionsDescription =
-      getTsaReaderOptionsDescription(tsaReaderOptions, /* hidden = */ true);
+      tsaReader::optionsDescription(tsaReaderOptions,
+                                    /* hidden = */ true);
   hidden.add(tsaReaderOptionsDescription);
 
   boost::program_options::positional_options_description
