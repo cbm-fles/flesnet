@@ -76,8 +76,8 @@
  * Later, the tool may be extended to process data with a smaller memory
  * footprint (see \ref data_size_sec).
  *
- * @section future_sec Future Challanges
- * @subsection data_size_sec Data Size
+ * @page future_sec Future Challanges
+ * @section data_size_sec Data Size
  * The size of experimental data is large and the conversion of `.tsa`
  * to `.msa` files is a time and memory consuming task. While processing
  * time is not a critical issue, the memory consumption may be.
@@ -101,7 +101,7 @@
  * Flesnet library codes does not provide access to the filestreams
  * underlying the boost::archives.
  *
- * @subsection data_input_future_sec Changes in Data Input
+ * @section data_input_future_sec Changes in Data Input
  * The design and responsibilities of the `cri-server` which organizes
  * the data flow from the CRI-Board to data consumers such as Flesnet
  * are under development. The planned changes will likely make the
