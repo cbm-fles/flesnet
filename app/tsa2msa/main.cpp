@@ -226,45 +226,6 @@ bool check_for_global_parsing_errors(
 }
 
 /**
- * @brief Handle parsing errors
- *
- * @details This function prints the error messages and usage
- * information to the standard error stream. The information is printed
- * in a way that is consistent with whether the user asked for help
- * and/or verbose output.
- */
-void handle_parsing_errors(
-    const std::vector<std::string>& errorMessage,
-    const boost::program_options::options_description& command_line_options,
-    const boost::program_options::options_description&
-        visible_command_line_options,
-    const bool& beVerbose,
-    const bool& showHelp) {
-  for (const auto& msg : errorMessage) {
-    std::cerr << msg << std::endl;
-  }
-
-  if (!showHelp) {
-    // Otherwise, the user is expecting a help message, anyway.
-    // So, we don't need to inform them about our decision to
-    // show them usage information without having been asked.
-    std::cerr << "Errors occurred: Printing usage." << std::endl << std::endl;
-  }
-
-  if (beVerbose) {
-    std::cerr << command_line_options << std::endl;
-  } else {
-    std::cerr << visible_command_line_options << std::endl;
-  }
-
-  if (showHelp) {
-    // There was a parsing error, which means that additional
-    // options were provided.
-    std::cerr << "Error: Ignoring any other options." << std::endl;
-  }
-}
-
-/**
  * @brief Show help message
  *
  * @details This function prints the help message to the standard output
@@ -350,9 +311,8 @@ auto main(int argc, char* argv[]) -> int {
   }
 
   if (parsingError) {
-    handle_parsing_errors(errorMessage, command_line_options,
-                          visible_command_line_options,
-                          options.generic.beVerbose, options.generic.showHelp);
+    options.handleErrors(errorMessage, command_line_options,
+                         visible_command_line_options);
     return EX_USAGE;
   }
 
