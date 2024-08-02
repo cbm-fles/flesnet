@@ -11,7 +11,7 @@ std::string compute_common_prefix(const std::vector<std::string>& strings) {
   if (strings.size() == 0) {
     // If there are no strings, return an empty string
     return prefix;
-  } 
+  }
 
   // Initialize the prefix to the first string
   prefix = strings[0];
@@ -38,7 +38,6 @@ std::string compute_common_prefix(const std::vector<std::string>& strings) {
         break;
       }
     }
-
   }
 
   return prefix;
@@ -48,8 +47,10 @@ std::ostream& operator<<(std::ostream& os, const struct bytesNumber& bN) {
   return os << bN.value;
 }
 
-void validate(boost::any& v, const std::vector<std::string>& values,
-              bytesNumber*, int) {
+void validate(boost::any& v,
+              const std::vector<std::string>& values,
+              bytesNumber*,
+              int) {
   // Following the example in the boost program_options documentation
   // (e.g. boost version 1.85.0) for validating custom types, the
   // following code needs to be added here before the input can be
@@ -60,15 +61,17 @@ void validate(boost::any& v, const std::vector<std::string>& values,
 
   // Extract the first string from 'values'. If there is more than
   // one string, it's an error, and exception will be thrown.
-  const std::string& s = boost::program_options::validators::get_single_string(values);
+  const std::string& s =
+      boost::program_options::validators::get_single_string(values);
 
   // Split s in number and unit:
   std::size_t number;
-  std::string unit; 
+  std::string unit;
   std::istringstream is(s);
   is >> number;
   if (is.fail()) {
-    std::cerr << "Invalid value: " << s << ", see --help for available options" << std::endl;
+    std::cerr << "Invalid value: " << s << ", see --help for available options"
+              << std::endl;
     throw boost::program_options::validation_error(
         boost::program_options::validation_error::invalid_option_value);
   }
@@ -82,7 +85,9 @@ void validate(boost::any& v, const std::vector<std::string>& values,
   }
 
   if (is.fail()) {
-    std::cerr << "Invalid unit after parsing number: " << number << "input: " << s << ", see --help for available options" << std::endl;
+    std::cerr << "Invalid unit after parsing number: " << number
+              << "input: " << s << ", see --help for available options"
+              << std::endl;
     throw boost::program_options::validation_error(
         boost::program_options::validation_error::invalid_option_value);
   }
@@ -93,7 +98,8 @@ void validate(boost::any& v, const std::vector<std::string>& values,
     is >> rest;
     for (auto& c : rest) {
       if (!std::isspace(c)) {
-        std::cerr << "Error: invalid character after parsing unit: " << c << std::endl;
+        std::cerr << "Error: invalid character after parsing unit: " << c
+                  << std::endl;
         throw boost::program_options::validation_error(
             boost::program_options::validation_error::invalid_option_value);
       }
@@ -104,10 +110,11 @@ void validate(boost::any& v, const std::vector<std::string>& values,
   }
 
   // Check if the unit is valid:
-  std::map<std::string, std::size_t> specialUnits = { {"",1} };
+  std::map<std::string, std::size_t> specialUnits = {{"", 1}};
 
   // decimal units according to the SI standard
   std::map<std::string, std::size_t> SI = {
+      // clang-format off
       {"B", 1},
       {"kB", 1000},
       {"MB", 1000 * 1000},
@@ -119,10 +126,12 @@ void validate(boost::any& v, const std::vector<std::string>& values,
       // {"eb", 1000 * 1000 * 1000 * 1000 * 1000 * 1000},
       // {"zb", 1000 * 1000 * 1000 * 1000 * 1000 * 1000 * 1000},
       // {"yb", 1000 * 1000 * 1000 * 1000 * 1000 * 1000 * 1000 * 1000},
+      // clang-format on
   };
 
   // binary units according to the IEC standard:
   std::map<std::string, std::size_t> IEC = {
+      // clang-format off
       {"B", 1},
       {"KiB", 1024},
       {"MiB", 1024 * 1024},
@@ -134,6 +143,7 @@ void validate(boost::any& v, const std::vector<std::string>& values,
       // {"EiB", 1024 * 1024 * 1024 * 1024 * 1024 * 1024},
       // {"ZiB", 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024},
       // {"YiB", 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024},
+      // clang-format on
   };
 
   // Join the maps:
@@ -165,13 +175,12 @@ void validate(boost::any& v, const std::vector<std::string>& values,
   }
 
   if (factor == 0) {
-    std::cerr << "Invalid unit: " << unit << ", see --help for available options" << std::endl;
+    std::cerr << "Invalid unit: " << unit
+              << ", see --help for available options" << std::endl;
     throw boost::program_options::validation_error(
         boost::program_options::validation_error::invalid_option_value);
   }
 
-  // Assign the value to 'v': 
+  // Assign the value to 'v':
   v = boost::any(bytesNumber{number * factor});
-
 }
-
