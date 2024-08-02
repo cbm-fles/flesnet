@@ -20,6 +20,9 @@ list(APPEND HEADERS tsaValidator.hpp)
 list(APPEND SOURCES utils.cpp)
 list(APPEND HEADERS utils.hpp)
 
+list(APPEND SOURCES options.cpp)
+list(APPEND HEADERS options.hpp)
+
 add_executable(tsa2msa main.cpp ${SOURCES} ${HEADERS})
 
 target_include_directories(tsa2msa

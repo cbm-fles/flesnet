@@ -16,6 +16,7 @@
 // Project header files:
 #include "GitRevision.hpp"
 #include "msaWriter.hpp"
+#include "options.hpp"
 #include "tsaReader.hpp"
 #include "utils.hpp"
 
@@ -355,12 +356,14 @@ auto main(int argc, char* argv[]) -> int {
 
   boost::program_options::options_description generic("Generic options");
 
+  options options;
+
   // Note: Use alphabetical order for the switches to make it easier to
   // maintain the code.
-  bool beQuiet = false;
-  bool beVerbose = false;
-  bool showHelp = false;
-  bool showVersion = false;
+  bool& beQuiet = options.global.beQuiet;
+  bool& beVerbose = options.global.beVerbose;
+  bool& showHelp = options.global.showHelp;
+  bool& showVersion = options.global.showVersion;
 
   // TODO: Create a class for these options:
   // TODO: format
