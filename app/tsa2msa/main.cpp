@@ -226,25 +226,6 @@ bool check_for_global_parsing_errors(
 }
 
 /**
- * @brief Show help message
- *
- * @details This function prints the help message to the standard output
- * stream. The information is printed in a way that is consistent with
- * whether the user asked for verbose output.
- */
-void show_help(
-    const boost::program_options::options_description& command_line_options,
-    const boost::program_options::options_description&
-        visible_command_line_options,
-    const bool& beVerbose) {
-  if (beVerbose) {
-    std::cout << command_line_options << std::endl;
-  } else {
-    std::cout << visible_command_line_options << std::endl;
-  }
-}
-
-/**
  * @brief Show version information
  *
  * @details This function prints the version information to the standard
@@ -317,8 +298,7 @@ auto main(int argc, char* argv[]) -> int {
   }
 
   if (options.generic.showHelp) {
-    show_help(command_line_options, visible_command_line_options,
-              options.generic.beVerbose);
+    options.showHelp(command_line_options, visible_command_line_options);
     return EXIT_SUCCESS;
   } else if (options.generic.showVersion) {
     show_version();

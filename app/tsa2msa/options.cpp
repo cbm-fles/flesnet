@@ -102,3 +102,14 @@ void options::handleErrors(
     std::cerr << "Error: Ignoring any other options." << std::endl;
   }
 }
+
+void options::showHelp(
+    const boost::program_options::options_description& command_line_options,
+    const boost::program_options::options_description&
+        visible_command_line_options) {
+  if (generic.beVerbose) {
+    std::cout << command_line_options << std::endl;
+  } else {
+    std::cout << visible_command_line_options << std::endl;
+  }
+}
