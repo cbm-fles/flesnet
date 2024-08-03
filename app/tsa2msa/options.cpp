@@ -71,6 +71,11 @@ void options::parseCommandLine(
     errorMessage.push_back("Error: " + std::string(e.what()));
     parsingError = true;
   }
+
+  // Check for further parsing errors:
+  if (!parsingError) {
+    checkForLogicErrors(vm, errorMessage);
+  }
 }
 
 void options::handleErrors(
