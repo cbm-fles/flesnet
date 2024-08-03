@@ -177,49 +177,13 @@ void show_version() {
  */
 auto main(int argc, char* argv[]) -> int {
 
-  options options;
+  options options(program_description);
 
-  boost::program_options::options_description generic =
-      genericOptions::optionsDescription(options.generic);
-
-  boost::program_options::options_description msaWriterOptionsDescription =
-      msaWriter::optionsDescription(options.msaWriter, /* hidden = */ false);
-  generic.add(msaWriterOptionsDescription);
-
-  boost::program_options::options_description hidden("Hidden options");
-  boost::program_options::options_description tsaReaderOptionsDescription =
-      tsaReader::optionsDescription(options.tsaReader,
-                                    /* hidden = */ true);
-  hidden.add(tsaReaderOptionsDescription);
-
-  // For verbose help text only:
-  boost::program_options::options_description command_line_options(
-      program_description + "\n" + "Command line options");
-  command_line_options.add(generic).add(hidden);
-
-  // For help text only:
-  boost::program_options::options_description visible_command_line_options(
-      program_description + "\n" + "Command line options");
-  visible_command_line_options.add(generic);
-
-  // Parse command line options:
-  std::vector<std::string> errorMessage;
-  boost::program_options::variables_map vm;
-  options.parseCommandLine(argc, argv, command_line_options, vm, errorMessage);
-
-  // Check for further parsing errors:
-  if (!options.parsingError) {
-    options.checkForLogicErrors(vm, errorMessage);
-  }
+  options.parseCommandLine(argc, argv);
 
   if (options.parsingError) {
-    options.handleErrors(errorMessage, command_line_options,
-                         visible_command_line_options);
     return EX_USAGE;
-  }
-
-  if (options.generic.showHelp) {
-    options.showHelp(command_line_options, visible_command_line_options);
+  } else if (options.generic.showHelp) {
     return EXIT_SUCCESS;
   } else if (options.generic.showVersion) {
     show_version();
@@ -258,13 +222,6 @@ auto main(int argc, char* argv[]) -> int {
                  " size of a micro slice.)"
               << std::endl;
   }
-
-  // Since the input files are positional arguments, we need to extract
-  // them from the variables map, in contrast to how for the main and
-  // the msaWriter all options are automatically set in the
-  // msaWriterOptions struct via boost::program_options::value and
-  // boost::program_options::bool_switch.
-  getTsaReaderOptions(vm, options.tsaReader);
 
   tsaReader tsaReader(options.tsaReader);
   msaWriter msaWriter(options.msaWriter);

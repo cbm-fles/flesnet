@@ -25,13 +25,14 @@ struct genericOptions {
 
 class options final {
 public:
+  const std::string programDescription;
   genericOptions generic;
   tsaReaderOptions tsaReader;
   msaWriterOptions msaWriter;
 
   bool parsingError;
 
-  options();
+  options(const std::string& programDescription);
   ~options() = default;
 
   /**
@@ -41,12 +42,7 @@ public:
    */
   static genericOptions defaults();
 
-  void parseCommandLine(
-      int argc,
-      char* argv[],
-      const boost::program_options::options_description& command_line_options,
-      boost::program_options::variables_map& vm,
-      std::vector<std::string>& errorMessage);
+  void parseCommandLine(int argc, char* argv[]);
 
   /**
    * @brief Handle parsing errors

@@ -35,7 +35,8 @@ genericOptions::optionsDescription(genericOptions& options) {
 }
 
 // clang-format off
-options::options() :
+options::options(const std::string& programDescription) :
+  programDescription(programDescription),
   generic(genericOptions::defaults()),
   tsaReader(tsaReader::defaults()),
   msaWriter(msaWriter::defaults()),
@@ -43,12 +44,34 @@ options::options() :
 // clang-format on
 {}
 
-void options::parseCommandLine(
-    int argc,
-    char* argv[],
-    const boost::program_options::options_description& command_line_options,
-    boost::program_options::variables_map& vm,
-    std::vector<std::string>& errorMessage) {
+void options::parseCommandLine(int argc, char* argv[]) {
+
+  boost::program_options::options_description genericDesc =
+      genericOptions::optionsDescription(generic);
+
+  boost::program_options::options_description msaWriterOptionsDescription =
+      msaWriter::optionsDescription(msaWriter, /* hidden = */ false);
+  genericDesc.add(msaWriterOptionsDescription);
+
+  boost::program_options::options_description hiddenDesc("Hidden options");
+  boost::program_options::options_description tsaReaderOptionsDescription =
+      tsaReader::optionsDescription(tsaReader,
+                                    /* hidden = */ true);
+  hiddenDesc.add(tsaReaderOptionsDescription);
+
+  // For verbose help text only:
+  boost::program_options::options_description command_line_options(
+      programDescription + "\n" + "Command line options");
+  command_line_options.add(genericDesc).add(hiddenDesc);
+
+  // For help text only:
+  boost::program_options::options_description visible_command_line_options(
+      programDescription + "\n" + "Command line options");
+  visible_command_line_options.add(genericDesc);
+
+  // Parse command line options:
+  std::vector<std::string> errorMessage;
+  boost::program_options::variables_map vm;
 
   boost::program_options::positional_options_description
       positional_command_line_arguments;
@@ -76,6 +99,20 @@ void options::parseCommandLine(
   if (!parsingError) {
     checkForLogicErrors(vm, errorMessage);
   }
+
+  if (parsingError) {
+    handleErrors(errorMessage, command_line_options,
+                 visible_command_line_options);
+  } else if (generic.showHelp) {
+    showHelp(command_line_options, visible_command_line_options);
+  }
+
+  // Since the input files are positional arguments, we need to extract
+  // them from the variables map, in contrast to how for the main and
+  // the msaWriter all options are automatically set in the
+  // msaWriterOptions struct via boost::program_options::value and
+  // boost::program_options::bool_switch.
+  getTsaReaderOptions(vm, tsaReader);
 }
 
 void options::handleErrors(
