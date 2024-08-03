@@ -74,6 +74,9 @@ public:
       const boost::program_options::options_description&
           visible_command_line_options);
 
+  void checkForLogicErrors(const boost::program_options::variables_map& vm,
+                           std::vector<std::string>& errorMessage);
+
 private:
   // Other constructors and operators are deleted because it is not
   // trivial to reason about desired behavior for them.

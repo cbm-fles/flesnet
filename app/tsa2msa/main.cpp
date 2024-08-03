@@ -150,82 +150,6 @@ const std::string program_description =
     "  more information.\n";
 
 /**
- * @brief Check for global parsing errors
- *
- * @details Checks whether input files were provided and whether the
- * logical errors of global options are present. I.e. logical errors
- * that are not specific to any particular component of the tool.
- *
- * @note The values of the variables beVerbose, showHelp, and showVersion
- * need to be passed as arguments as they are obtained via boolean
- * switches. It is possible to recover their values from the variables
- * map, but this misses the point of using boolean switches to prevent
- * error prone manual lookups in the variables map.
- *
- * \pre The variables map should have been populated.
- * \pre The value of the boolean switches beVerbose, showHelp, and
- * showVersion should be as provided by the user on the command line.
- *
- * @param vm Variables map containing the parsed options
- * @param errorMessage Vector to store error messages
- * @param beVerbose Whether verbose output is enabled
- * @param showHelp Whether the user asked for help
- * @param showVersion Whether the user asked for the version
- * @return True if there was a parsing error, false otherwise
- */
-bool check_for_global_parsing_errors(
-    const boost::program_options::variables_map& vm,
-    std::vector<std::string>& errorMessage,
-    const bool& beVerbose,
-    const bool& showHelp,
-    const bool& showVersion) {
-  bool parsingError = false;
-
-  if (errorMessage.size() > 0) {
-    // TODO: Handle this case more gracefully.
-    std::cerr << "Warning: Expected that so far no error messages are present.";
-  }
-
-  // Count passed options:
-  unsigned int nPassedOptions = 0;
-  for (const auto& option : vm) {
-    if (!option.second.defaulted()) {
-      nPassedOptions++;
-    } else {
-      // This option is present, but only because it has a default value
-      // which was used. I.e. the user did not provide this option.
-    }
-  }
-
-  if (nPassedOptions == 0) {
-    errorMessage.push_back("Error: No options provided.");
-    parsingError = true;
-  } else if (showHelp) {
-    // If the user asks for help, then we don't need to check for
-    // other parsing errors. However, prior to showing the help
-    // message, we will inform the user about ignoring any other
-    // options and treat this as a parsing error. In contrast to
-    // all other parsing errors, the error message will be shown
-    // after the help message.
-    unsigned int nAllowedOptions = beVerbose ? 2 : 1;
-    if (nPassedOptions > nAllowedOptions) {
-      parsingError = true;
-    }
-  } else if (showVersion) {
-    if (nPassedOptions > 1) {
-      errorMessage.push_back("Error: --version option cannot be combined with"
-                             " other options.");
-      parsingError = true;
-    }
-  } else if (vm.count("input") == 0) {
-    errorMessage.push_back("Error: No input file provided.");
-    parsingError = true;
-  }
-
-  return parsingError;
-}
-
-/**
  * @brief Show version information
  *
  * @details This function prints the version information to the standard
@@ -281,17 +205,14 @@ auto main(int argc, char* argv[]) -> int {
   // Parse command line options:
   std::vector<std::string> errorMessage;
   boost::program_options::variables_map vm;
-  bool parsingError = options.parseCommandLine(argc, argv, command_line_options,
-                                               vm, errorMessage);
+  options.parseCommandLine(argc, argv, command_line_options, vm, errorMessage);
 
   // Check for further parsing errors:
-  if (!parsingError) {
-    parsingError = check_for_global_parsing_errors(
-        vm, errorMessage, options.generic.beVerbose, options.generic.showHelp,
-        options.generic.showVersion);
+  if (!options.parsingError) {
+    options.checkForLogicErrors(vm, errorMessage);
   }
 
-  if (parsingError) {
+  if (options.parsingError) {
     options.handleErrors(errorMessage, command_line_options,
                          visible_command_line_options);
     return EX_USAGE;
