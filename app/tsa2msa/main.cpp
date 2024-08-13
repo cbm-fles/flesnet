@@ -212,8 +212,9 @@ bool NumParsedOptionsAreValid(unsigned int nParsedOptions,
  * in a way that is consistent with whether the user asked for help
  * and/or verbose output.
  */
-void handleErrors(const commandLineParser& parser) {
-  for (const auto& msg : parser.errorMessage) {
+void handleErrors(const commandLineParser& parser,
+                  const std::vector<std::string>& errorMessage) {
+  for (const auto& msg : errorMessage) {
     std::cerr << msg << std::endl;
   }
 
@@ -252,20 +253,21 @@ auto main(int argc, char* argv[]) -> int {
   options options(program_description);
   commandLineParser parser(options);
 
-  parser.parse(argc, argv);
+  std::vector<std::string> errorMessage;
+  parser.parse(argc, argv, errorMessage);
 
   if (!parser.parsingError) {
     unsigned int nParsedOptions = parser.numParsedOptions();
-    parser.parsingError = !NumParsedOptionsAreValid(nParsedOptions, parser.opts,
-                                                    parser.errorMessage);
+    parser.parsingError =
+        !NumParsedOptionsAreValid(nParsedOptions, parser.opts, errorMessage);
   }
 
   if (!parser.parsingError) {
-    parser.parsingError = !options.areValid(parser.errorMessage);
+    parser.parsingError = !options.areValid(errorMessage);
   }
 
   if (parser.parsingError) {
-    handleErrors(parser);
+    handleErrors(parser, errorMessage);
     return EX_USAGE;
   } else if (parser.opts.generic.showHelp) {
     std::cout << parser.getUsage();

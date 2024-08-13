@@ -23,7 +23,6 @@ public:
   boost::program_options::variables_map vm;
 
   bool parsingError;
-  std::vector<std::string> errorMessage;
 
 public:
   /**
@@ -40,7 +39,7 @@ public:
 
   unsigned int numParsedOptions() const;
 
-  void parse(int argc, char* argv[]);
+  void parse(int argc, char* argv[], std::vector<std::string>& errorMessage);
 
   commandLineParser(options& opts);
   ~commandLineParser() = default;
