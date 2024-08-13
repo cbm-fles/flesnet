@@ -52,22 +52,4 @@ void options::parseCommandLine(int argc, char* argv[]) {
 
   // Parse command line options:
   parser.parse(argc, argv);
-
-  // Check for further parsing errors:
-  if (!parsingError) {
-    parser.checkForLogicErrors();
-  }
-
-  if (parsingError) {
-    parser.handleErrors();
-  } else if (generic.showHelp) {
-    parser.showHelp(std::cout);
-  }
-
-  // Since the input files are positional arguments, we need to extract
-  // them from the variables map, in contrast to how for the main and
-  // the msaWriter all options are automatically set in the
-  // msaWriterOptions struct via boost::program_options::value and
-  // boost::program_options::bool_switch.
-  getTsaReaderOptions(parser.vm, tsaReader);
 }

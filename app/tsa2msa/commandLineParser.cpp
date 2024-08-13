@@ -123,4 +123,22 @@ void commandLineParser::parse(int argc, char* argv[]) {
     errorMessage.push_back("Error: " + std::string(e.what()));
     opts.parsingError = true;
   }
+
+  // Check for further parsing errors:
+  if (!opts.parsingError) {
+    checkForLogicErrors();
+  }
+
+  if (opts.parsingError) {
+    handleErrors();
+  } else if (opts.generic.showHelp) {
+    showHelp(std::cout);
+  }
+
+  // Since the input files are positional arguments, we need to extract
+  // them from the variables map, in contrast to how for the main and
+  // the msaWriter all options are automatically set in the
+  // msaWriterOptions struct via boost::program_options::value and
+  // boost::program_options::bool_switch.
+  getTsaReaderOptions(vm, opts.tsaReader);
 }
