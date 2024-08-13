@@ -45,11 +45,3 @@ options::options(const std::string& programDescription) :
   parsingError(false)
 // clang-format on
 {}
-
-void options::parseCommandLine(int argc, char* argv[]) {
-
-  commandLineParser parser(*this);
-
-  // Parse command line options:
-  parser.parse(argc, argv);
-}

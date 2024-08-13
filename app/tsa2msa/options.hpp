@@ -42,8 +42,6 @@ public:
    */
   static genericOptions defaults();
 
-  void parseCommandLine(int argc, char* argv[]);
-
 private:
   // Other constructors and operators are deleted because it is not
   // trivial to reason about desired behavior for them.

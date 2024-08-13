@@ -15,6 +15,7 @@
 
 // Project header files:
 #include "GitRevision.hpp"
+#include "commandLineParser.hpp"
 #include "msaWriter.hpp"
 #include "options.hpp"
 #include "tsaReader.hpp"
@@ -178,8 +179,9 @@ void show_version() {
 auto main(int argc, char* argv[]) -> int {
 
   options options(program_description);
+  commandLineParser parser(options);
 
-  options.parseCommandLine(argc, argv);
+  parser.parse(argc, argv);
 
   if (options.parsingError) {
     return EX_USAGE;
