@@ -247,6 +247,51 @@ void handleErrors(const std::string& helpMessage,
   }
 }
 
+/*
+ * @brief Make minor adjustments to the options based on the user input.
+ *
+ * @details This function is called after the command line arguments
+ * have been parsed and validated. It makes minor adjustments to the
+ * options that do not fit elsewhere, because of interdependencies
+ * between sub-options structures within the options structure.
+ */
+void sanitizeOptions(options& options) {
+  if (options.msaWriter.prefix.size() == 0) {
+    std::string path_prefix = compute_common_prefix(options.tsaReader.input);
+
+    // We only need the file name, not the entire path. This is because
+    // the user likely wants to store the output files in the current
+    // directory and not in the directory of the input files, which
+    // likely would come as a surprise to the user.
+    std::string prefix = std::filesystem::path(path_prefix).filename().string();
+
+    // Truncate the prefix to only contain the part up to (and
+    // excluding) the first `%` in order to avoid collisions with the
+    // `%n` format specifier for archive sequences.
+    size_t pos = prefix.find('%');
+    if (pos != std::string::npos) {
+      prefix = prefix.substr(0, pos);
+    }
+
+    if (prefix.size() == 0) {
+      // No common prefix found, set arbitrary prefix:
+      prefix = "some_prefix";
+    } else {
+      options.msaWriter.prefix = prefix;
+    }
+  }
+
+  // \todo This msaWriter.useSequence() warning should be moved to the
+  // validation of the options.
+  if (options.msaWriter.useSequence()) {
+    std::cerr << "Warning: Currently, the OutputArchiveSequence"
+                 " classes do not properly handle the limits (at least not the"
+                 " maxBytesPerArchive limit; limits may be exceeded by the"
+                 " size of a micro slice.)"
+              << std::endl;
+  }
+}
+
 /**
  * @brief Main function
  *
@@ -284,46 +329,15 @@ auto main(int argc, char* argv[]) -> int {
     handleErrors(parser.getHelpMessage(), errorMessage,
                  options.generic.showHelp);
     return EX_USAGE;
-  } else if (parser.opts.generic.showHelp) {
+  } else if (options.generic.showHelp) {
     std::cout << parser.getHelpMessage();
     return EXIT_SUCCESS;
-  } else if (parser.opts.generic.showVersion) {
+  } else if (options.generic.showVersion) {
     show_version();
     return EXIT_SUCCESS;
   }
 
-  if (options.msaWriter.prefix.size() == 0) {
-    std::string path_prefix = compute_common_prefix(options.tsaReader.input);
-
-    // We only need the file name, not the entire path. This is because
-    // the user likely wants to store the output files in the current
-    // directory and not in the directory of the input files, which
-    // likely would come as a surprise to the user.
-    std::string prefix = std::filesystem::path(path_prefix).filename().string();
-
-    // Truncate the prefix to only contain the part up to (and
-    // excluding) the first `%` in order to avoid collisions with the
-    // `%n` format specifier for archive sequences.
-    size_t pos = prefix.find('%');
-    if (pos != std::string::npos) {
-      prefix = prefix.substr(0, pos);
-    }
-
-    if (prefix.size() == 0) {
-      // No common prefix found, set arbitrary prefix:
-      prefix = "some_prefix";
-    } else {
-      options.msaWriter.prefix = prefix;
-    }
-  }
-
-  if (options.msaWriter.useSequence()) {
-    std::cerr << "Warning: Currently, the OutputArchiveSequence"
-                 " classes do not properly handle the limits (at least not the"
-                 " maxBytesPerArchive limit; limits may be exceeded by the"
-                 " size of a micro slice.)"
-              << std::endl;
-  }
+  sanitizeOptions(options);
 
   tsaReader tsaReader(options.tsaReader);
   msaWriter msaWriter(options.msaWriter);
