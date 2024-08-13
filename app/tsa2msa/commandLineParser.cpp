@@ -92,7 +92,11 @@ void commandLineParser::checkForLogicErrors() {
     // after the help message.
     unsigned int nAllowedOptions = opts.generic.beVerbose ? 2 : 1;
     if (nPassedOptions > nAllowedOptions) {
-      opts.parsingError = true;
+      if (!(opts.generic.beVerbose && nPassedOptions == 2)) {
+        errorMessage.push_back("Error: --help option cannot be combined with"
+                               " other options (than --verbose).");
+        opts.parsingError = true;
+      }
     }
   } else if (opts.generic.showVersion) {
     if (nPassedOptions > 1) {
