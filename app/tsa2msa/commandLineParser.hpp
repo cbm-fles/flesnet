@@ -1,6 +1,8 @@
 #ifndef COMMANDLINEPARSER_HPP
 #define COMMANDLINEPARSER_HPP
 
+#include <sstream>
+
 #include "options.hpp"
 
 class commandLineParser {
@@ -31,6 +33,7 @@ public:
    */
   void showHelp(std::ostream& out) const;
 
+  std::string getUsage() const;
   void checkForLogicErrors();
 
   unsigned int numParsedOptions() const;

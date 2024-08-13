@@ -224,7 +224,7 @@ void handleErrors(const commandLineParser& parser) {
     std::cerr << "Errors occurred: Printing usage." << std::endl << std::endl;
   }
 
-  parser.showHelp(std::cerr);
+  std::cerr << parser.getUsage();
 
   if (parser.opts.generic.showHelp) {
     // There was a parsing error, which means that additional
@@ -267,7 +267,7 @@ auto main(int argc, char* argv[]) -> int {
   if (parser.opts.parsingError) {
     handleErrors(parser);
   } else if (parser.opts.generic.showHelp) {
-    parser.showHelp(std::cout);
+    std::cout << parser.getUsage();
   }
 
   if (options.parsingError) {

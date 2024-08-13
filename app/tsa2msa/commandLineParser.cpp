@@ -80,3 +80,13 @@ void commandLineParser::parse(int argc, char* argv[]) {
     getTsaReaderOptions(vm, opts.tsaReader);
   }
 }
+
+std::string commandLineParser::getUsage() const {
+  std::stringstream ss;
+  if (opts.generic.beVerbose) {
+    ss << all;
+  } else {
+    ss << visible;
+  }
+  return ss.str();
+}
