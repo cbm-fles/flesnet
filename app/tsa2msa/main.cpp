@@ -212,22 +212,23 @@ bool NumParsedOptionsAreValid(unsigned int nParsedOptions,
  * in a way that is consistent with whether the user asked for help
  * and/or verbose output.
  */
-void handleErrors(const commandLineParser& parser,
-                  const std::vector<std::string>& errorMessage) {
+void handleErrors(const std::string& usageMessage,
+                  const std::vector<std::string>& errorMessage,
+                  bool showHelp) {
   for (const auto& msg : errorMessage) {
     std::cerr << msg << std::endl;
   }
 
-  if (!parser.opts.generic.showHelp) {
+  if (!showHelp) {
     // Otherwise, the user is expecting a help message, anyway.
     // So, we don't need to inform them about our decision to
     // show them usage information without having been asked.
     std::cerr << "Errors occurred: Printing usage." << std::endl << std::endl;
   }
 
-  std::cerr << parser.getUsage();
+  std::cerr << usageMessage;
 
-  if (parser.opts.generic.showHelp) {
+  if (showHelp) {
     // There was a parsing error, which means that additional
     // options were provided.
     std::cerr << "Error: Ignoring any other options." << std::endl;
@@ -267,7 +268,7 @@ auto main(int argc, char* argv[]) -> int {
   }
 
   if (parser.parsingError) {
-    handleErrors(parser, errorMessage);
+    handleErrors(parser.getUsage(), errorMessage, opts.generic.showHelp);
     return EX_USAGE;
   } else if (parser.opts.generic.showHelp) {
     std::cout << parser.getUsage();
