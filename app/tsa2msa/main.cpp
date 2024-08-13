@@ -311,9 +311,9 @@ auto main(int argc, char* argv[]) -> int {
   options options(program_description);
   commandLineParser parser(options);
 
-  std::vector<std::string> errorMessage;
+  // Obtain user input and validate it:
   bool error = false;
-
+  std::vector<std::string> errorMessage;
   if (!parser.parse(argc, argv, errorMessage)) {
     errorMessage.push_back("Error: Parsing command line arguments failed.");
     error = true;
@@ -325,6 +325,7 @@ auto main(int argc, char* argv[]) -> int {
     }
   }
 
+  // Handle non-default paths of execution:
   if (error) {
     handleErrors(parser.getHelpMessage(), errorMessage,
                  options.generic.showHelp);
@@ -337,11 +338,12 @@ auto main(int argc, char* argv[]) -> int {
     return EXIT_SUCCESS;
   }
 
+  // Sanitize the options and initialize the tsaReader and msaWriter
   sanitizeOptions(options);
-
   tsaReader tsaReader(options.tsaReader);
   msaWriter msaWriter(options.msaWriter);
 
+  // Read the timeslices from the input files and write them to the output
   std::unique_ptr<fles::Timeslice> timeslice;
   while ((timeslice = tsaReader.read()) != nullptr) {
     msaWriter.write(std::move(timeslice));
