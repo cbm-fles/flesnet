@@ -105,3 +105,22 @@ void commandLineParser::checkForLogicErrors() {
     opts.parsingError = true;
   }
 }
+
+void commandLineParser::parse(int argc, char* argv[]) {
+  // Parse command line arguments and store them in a variables map
+  try {
+    // Since we are using positional arguments, we need to use the
+    // command_line_parser instead of the parse_command_line
+    // function, which only supports named options.
+    boost::program_options::store(
+        boost::program_options::command_line_parser(argc, argv)
+            .options(all)
+            .positional(positional)
+            .run(),
+        vm);
+    boost::program_options::notify(vm);
+  } catch (const boost::program_options::error& e) {
+    errorMessage.push_back("Error: " + std::string(e.what()));
+    opts.parsingError = true;
+  }
+}

@@ -43,6 +43,8 @@ public:
 
   void checkForLogicErrors();
 
+  void parse(int argc, char* argv[]);
+
   commandLineParser(options& opts);
   ~commandLineParser() = default;
 
