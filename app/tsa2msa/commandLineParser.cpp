@@ -1,3 +1,4 @@
+#include <iostream>
 
 #include "commandLineParser.hpp"
 #include "msaWriter.hpp"
@@ -28,4 +29,12 @@ commandLineParser::commandLineParser(options& opts)
 
   // Specify that all positional arguments are input files:
   positional.add("input", -1);
+}
+
+void commandLineParser::showHelp() {
+  if (opts.generic.beVerbose) {
+    std::cout << all << std::endl;
+  } else {
+    std::cout << visible << std::endl;
+  }
 }

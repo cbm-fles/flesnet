@@ -77,7 +77,7 @@ void options::parseCommandLine(int argc, char* argv[]) {
   if (parsingError) {
     handleErrors(parser.errorMessage, parser.all, parser.visible);
   } else if (generic.showHelp) {
-    showHelp(parser.all, parser.visible);
+    parser.showHelp();
   }
 
   // Since the input files are positional arguments, we need to extract
@@ -115,17 +115,6 @@ void options::handleErrors(
     // There was a parsing error, which means that additional
     // options were provided.
     std::cerr << "Error: Ignoring any other options." << std::endl;
-  }
-}
-
-void options::showHelp(
-    const boost::program_options::options_description& command_line_options,
-    const boost::program_options::options_description&
-        visible_command_line_options) {
-  if (generic.beVerbose) {
-    std::cout << command_line_options << std::endl;
-  } else {
-    std::cout << visible_command_line_options << std::endl;
   }
 }
 

@@ -22,6 +22,15 @@ public:
   std::vector<std::string> errorMessage;
 
 public:
+  /**
+   * @brief Show help message
+   *
+   * @details This function prints the help message to the standard output
+   * stream. The information is printed in a way that is consistent with
+   * whether the user asked for verbose output.
+   */
+  void showHelp();
+
   commandLineParser(options& opts);
   ~commandLineParser() = default;
 

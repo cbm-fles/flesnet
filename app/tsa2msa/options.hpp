@@ -58,18 +58,6 @@ public:
       const boost::program_options::options_description&
           visible_command_line_options);
 
-  /**
-   * @brief Show help message
-   *
-   * @details This function prints the help message to the standard output
-   * stream. The information is printed in a way that is consistent with
-   * whether the user asked for verbose output.
-   */
-  void showHelp(
-      const boost::program_options::options_description& command_line_options,
-      const boost::program_options::options_description&
-          visible_command_line_options);
-
   void checkForLogicErrors(const boost::program_options::variables_map& vm,
                            std::vector<std::string>& errorMessage);
 
