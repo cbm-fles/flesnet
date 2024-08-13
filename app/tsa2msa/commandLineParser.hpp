@@ -5,9 +5,9 @@
 
 class commandLineParser {
 
+public:
   options& opts;
 
-public:
   boost::program_options::options_description generic;
   boost::program_options::options_description hidden;
   boost::program_options::options_description visible;
@@ -29,19 +29,11 @@ public:
    * stream. The information is printed in a way that is consistent with
    * whether the user asked for verbose output.
    */
-  void showHelp(std::ostream& out);
-
-  /**
-   * @brief Handle parsing errors
-   *
-   * @details This function prints the error messages and usage
-   * information to the standard error stream. The information is printed
-   * in a way that is consistent with whether the user asked for help
-   * and/or verbose output.
-   */
-  void handleErrors();
+  void showHelp(std::ostream& out) const;
 
   void checkForLogicErrors();
+
+  unsigned int numParsedOptions() const;
 
   void parse(int argc, char* argv[]);
 

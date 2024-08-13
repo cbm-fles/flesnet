@@ -31,7 +31,7 @@ commandLineParser::commandLineParser(options& opts)
   positional.add("input", -1);
 }
 
-void commandLineParser::showHelp(std::ostream& out) {
+void commandLineParser::showHelp(std::ostream& out) const {
 
   if (opts.generic.beVerbose) {
     out << all << std::endl;
@@ -40,74 +40,17 @@ void commandLineParser::showHelp(std::ostream& out) {
   }
 }
 
-void commandLineParser::handleErrors() {
-
-  for (const auto& msg : errorMessage) {
-    std::cerr << msg << std::endl;
-  }
-
-  if (!opts.generic.showHelp) {
-    // Otherwise, the user is expecting a help message, anyway.
-    // So, we don't need to inform them about our decision to
-    // show them usage information without having been asked.
-    std::cerr << "Errors occurred: Printing usage." << std::endl << std::endl;
-  }
-
-  showHelp(std::cerr);
-
-  if (opts.generic.showHelp) {
-    // There was a parsing error, which means that additional
-    // options were provided.
-    std::cerr << "Error: Ignoring any other options." << std::endl;
-  }
-}
-
-void commandLineParser::checkForLogicErrors() {
-
-  if (errorMessage.size() > 0) {
-    // TODO: Handle this case more gracefully.
-    std::cerr << "Warning: Expected that so far no error messages are present.";
-  }
-
-  // Count passed options:
-  unsigned int nPassedOptions = 0;
+unsigned int commandLineParser::numParsedOptions() const {
+  unsigned int nParsedOptions = 0;
   for (const auto& option : vm) {
     if (!option.second.defaulted()) {
-      nPassedOptions++;
+      nParsedOptions++;
     } else {
       // This option is present, but only because it has a default value
       // which was used. I.e. the user did not provide this option.
     }
   }
-
-  if (nPassedOptions == 0) {
-    errorMessage.push_back("Error: No options provided.");
-    opts.parsingError = true;
-  } else if (opts.generic.showHelp) {
-    // If the user asks for help, then we don't need to check for
-    // other parsing errors. However, prior to showing the help
-    // message, we will inform the user about ignoring any other
-    // options and treat this as a parsing error. In contrast to
-    // all other parsing errors, the error message will be shown
-    // after the help message.
-    unsigned int nAllowedOptions = opts.generic.beVerbose ? 2 : 1;
-    if (nPassedOptions > nAllowedOptions) {
-      if (!(opts.generic.beVerbose && nPassedOptions == 2)) {
-        errorMessage.push_back("Error: --help option cannot be combined with"
-                               " other options (than --verbose).");
-        opts.parsingError = true;
-      }
-    }
-  } else if (opts.generic.showVersion) {
-    if (nPassedOptions > 1) {
-      errorMessage.push_back("Error: --version option cannot be combined with"
-                             " other options.");
-      opts.parsingError = true;
-    }
-  } else if (vm.count("input") == 0) {
-    errorMessage.push_back("Error: No input file provided.");
-    opts.parsingError = true;
-  }
+  return nParsedOptions;
 }
 
 void commandLineParser::parse(int argc, char* argv[]) {
@@ -128,21 +71,12 @@ void commandLineParser::parse(int argc, char* argv[]) {
     opts.parsingError = true;
   }
 
-  // Check for further parsing errors:
   if (!opts.parsingError) {
-    checkForLogicErrors();
+    // Since the input files are positional arguments, we need to extract
+    // them from the variables map, in contrast to how for the main and
+    // the msaWriter all options are automatically set in the
+    // msaWriterOptions struct via boost::program_options::value and
+    // boost::program_options::bool_switch.
+    getTsaReaderOptions(vm, opts.tsaReader);
   }
-
-  if (opts.parsingError) {
-    handleErrors();
-  } else if (opts.generic.showHelp) {
-    showHelp(std::cout);
-  }
-
-  // Since the input files are positional arguments, we need to extract
-  // them from the variables map, in contrast to how for the main and
-  // the msaWriter all options are automatically set in the
-  // msaWriterOptions struct via boost::program_options::value and
-  // boost::program_options::bool_switch.
-  getTsaReaderOptions(vm, opts.tsaReader);
 }

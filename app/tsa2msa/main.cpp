@@ -162,6 +162,77 @@ void show_version() {
   std::cout << "  Git revision: " << g_GIT_REVISION << std::endl;
 }
 
+/*
+ * @brief Check for errors that can be detected by the number of passed
+ * options.
+ *
+ * @details The commandLineParser is the only class that has access to
+ * this information and there is no need to pollute the options class
+ * with this information (which would be equally ugly). Hence, it does
+ * make sense to have all checks that involve the number of passed
+ * options in a separate function.
+ */
+bool NumParsedOptionsAreValid(unsigned int nParsedOptions,
+                              const options& opts,
+                              std::vector<std::string>& errorMessage) {
+  bool numOptionsError = false;
+  if (nParsedOptions == 0) {
+    errorMessage.push_back("Error: No options provided.");
+    numOptionsError = true;
+  } else if (opts.generic.showHelp) {
+    // If the user asks for help, then we don't need to check for
+    // other parsing errors. However, prior to showing the help
+    // message, we will inform the user about ignoring any other
+    // options and treat this as a parsing error. In contrast to
+    // all other parsing errors, the error message will be shown
+    // after the help message.
+    unsigned int nAllowedOptions = opts.generic.beVerbose ? 2 : 1;
+    if (nParsedOptions > nAllowedOptions) {
+      if (!(opts.generic.beVerbose && nParsedOptions == 2)) {
+        errorMessage.push_back("Error: --help option cannot be combined with"
+                               " other options (than --verbose).");
+        numOptionsError = true;
+      }
+    }
+  } else if (opts.generic.showVersion) {
+    if (nParsedOptions > 1) {
+      errorMessage.push_back("Error: --version option cannot be combined with"
+                             " other options.");
+      numOptionsError = true;
+    }
+  }
+  return !numOptionsError;
+}
+
+/**
+ * @brief Handle parsing errors
+ *
+ * @details This function prints the error messages and usage
+ * information to the standard error stream. The information is printed
+ * in a way that is consistent with whether the user asked for help
+ * and/or verbose output.
+ */
+void handleErrors(const commandLineParser& parser) {
+  for (const auto& msg : parser.errorMessage) {
+    std::cerr << msg << std::endl;
+  }
+
+  if (!parser.opts.generic.showHelp) {
+    // Otherwise, the user is expecting a help message, anyway.
+    // So, we don't need to inform them about our decision to
+    // show them usage information without having been asked.
+    std::cerr << "Errors occurred: Printing usage." << std::endl << std::endl;
+  }
+
+  parser.showHelp(std::cerr);
+
+  if (parser.opts.generic.showHelp) {
+    // There was a parsing error, which means that additional
+    // options were provided.
+    std::cerr << "Error: Ignoring any other options." << std::endl;
+  }
+}
+
 /**
  * @brief Main function
  *
@@ -182,6 +253,22 @@ auto main(int argc, char* argv[]) -> int {
   commandLineParser parser(options);
 
   parser.parse(argc, argv);
+
+  if (!parser.opts.parsingError) {
+    unsigned int nParsedOptions = parser.numParsedOptions();
+    parser.opts.parsingError = !NumParsedOptionsAreValid(
+        nParsedOptions, parser.opts, parser.errorMessage);
+  }
+
+  if (!parser.opts.parsingError) {
+    parser.opts.parsingError = !options.areValid(parser.errorMessage);
+  }
+
+  if (parser.opts.parsingError) {
+    handleErrors(parser);
+  } else if (parser.opts.generic.showHelp) {
+    parser.showHelp(std::cout);
+  }
 
   if (options.parsingError) {
     return EX_USAGE;

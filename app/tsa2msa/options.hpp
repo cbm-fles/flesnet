@@ -42,6 +42,8 @@ public:
    */
   static genericOptions defaults();
 
+  bool areValid(std::vector<std::string>& errorMessage) const;
+
 private:
   // Other constructors and operators are deleted because it is not
   // trivial to reason about desired behavior for them.
