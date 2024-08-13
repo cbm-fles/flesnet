@@ -1,5 +1,7 @@
 #include "options.hpp"
 
+#include "commandLineParser.hpp"
+
 genericOptions genericOptions::defaults() {
   genericOptions defaults;
   // [genericDefaults]
@@ -46,12 +48,11 @@ options::options(const std::string& programDescription) :
 
 void options::parseCommandLine(int argc, char* argv[]) {
 
-  boost::program_options::options_description genericDesc =
-      genericOptions::optionsDescription(generic);
+  commandLineParser parser(*this);
 
   boost::program_options::options_description msaWriterOptionsDescription =
       msaWriter::optionsDescription(msaWriter, /* hidden = */ false);
-  genericDesc.add(msaWriterOptionsDescription);
+  parser.generic.add(msaWriterOptionsDescription);
 
   boost::program_options::options_description hiddenDesc("Hidden options");
   boost::program_options::options_description tsaReaderOptionsDescription =
@@ -62,12 +63,12 @@ void options::parseCommandLine(int argc, char* argv[]) {
   // For verbose help text only:
   boost::program_options::options_description command_line_options(
       programDescription + "\n" + "Command line options");
-  command_line_options.add(genericDesc).add(hiddenDesc);
+  command_line_options.add(parser.generic).add(hiddenDesc);
 
   // For help text only:
   boost::program_options::options_description visible_command_line_options(
       programDescription + "\n" + "Command line options");
-  visible_command_line_options.add(genericDesc);
+  visible_command_line_options.add(parser.generic);
 
   // Parse command line options:
   std::vector<std::string> errorMessage;

@@ -23,6 +23,9 @@ list(APPEND HEADERS utils.hpp)
 list(APPEND SOURCES options.cpp)
 list(APPEND HEADERS options.hpp)
 
+list(APPEND SOURCES commandLineParser.cpp)
+list(APPEND HEADERS commandLineParser.hpp)
+
 add_executable(tsa2msa main.cpp ${SOURCES} ${HEADERS})
 
 target_include_directories(tsa2msa
