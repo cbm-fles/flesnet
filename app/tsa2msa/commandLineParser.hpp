@@ -29,7 +29,17 @@ public:
    * stream. The information is printed in a way that is consistent with
    * whether the user asked for verbose output.
    */
-  void showHelp();
+  void showHelp(std::ostream& out);
+
+  /**
+   * @brief Handle parsing errors
+   *
+   * @details This function prints the error messages and usage
+   * information to the standard error stream. The information is printed
+   * in a way that is consistent with whether the user asked for help
+   * and/or verbose output.
+   */
+  void handleErrors();
 
   commandLineParser(options& opts);
   ~commandLineParser() = default;

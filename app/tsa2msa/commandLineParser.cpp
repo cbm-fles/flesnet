@@ -31,10 +31,33 @@ commandLineParser::commandLineParser(options& opts)
   positional.add("input", -1);
 }
 
-void commandLineParser::showHelp() {
+void commandLineParser::showHelp(std::ostream& out) {
+
   if (opts.generic.beVerbose) {
-    std::cout << all << std::endl;
+    out << all << std::endl;
   } else {
-    std::cout << visible << std::endl;
+    out << visible << std::endl;
+  }
+}
+
+void commandLineParser::handleErrors() {
+
+  for (const auto& msg : errorMessage) {
+    std::cerr << msg << std::endl;
+  }
+
+  if (!opts.generic.showHelp) {
+    // Otherwise, the user is expecting a help message, anyway.
+    // So, we don't need to inform them about our decision to
+    // show them usage information without having been asked.
+    std::cerr << "Errors occurred: Printing usage." << std::endl << std::endl;
+  }
+
+  showHelp(std::cerr);
+
+  if (opts.generic.showHelp) {
+    // There was a parsing error, which means that additional
+    // options were provided.
+    std::cerr << "Error: Ignoring any other options." << std::endl;
   }
 }

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+
 out=$(mktemp)
 err=$(mktemp)
 
