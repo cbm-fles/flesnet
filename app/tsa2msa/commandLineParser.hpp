@@ -39,7 +39,7 @@ public:
 
   unsigned int numParsedOptions() const;
 
-  void parse(int argc, char* argv[], std::vector<std::string>& errorMessage);
+  bool parse(int argc, char* argv[], std::vector<std::string>& errorMessage);
 
   commandLineParser(options& opts);
   ~commandLineParser() = default;

@@ -255,20 +255,21 @@ auto main(int argc, char* argv[]) -> int {
   commandLineParser parser(options);
 
   std::vector<std::string> errorMessage;
-  parser.parse(argc, argv, errorMessage);
+  bool error = false;
+  error = parser.parse(argc, argv, errorMessage);
 
-  if (!parser.parsingError) {
+  if (!error) {
     unsigned int nParsedOptions = parser.numParsedOptions();
-    parser.parsingError =
+    error =
         !NumParsedOptionsAreValid(nParsedOptions, parser.opts, errorMessage);
   }
 
-  if (!parser.parsingError) {
-    parser.parsingError = !options.areValid(errorMessage);
+  if (!error) {
+    error = !options.areValid(errorMessage);
   }
 
-  if (parser.parsingError) {
-    handleErrors(parser.getUsage(), errorMessage, opts.generic.showHelp);
+  if (error) {
+    handleErrors(parser.getUsage(), errorMessage, options.generic.showHelp);
     return EX_USAGE;
   } else if (parser.opts.generic.showHelp) {
     std::cout << parser.getUsage();

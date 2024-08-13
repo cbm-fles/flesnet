@@ -54,7 +54,7 @@ unsigned int commandLineParser::numParsedOptions() const {
   return nParsedOptions;
 }
 
-void commandLineParser::parse(int argc,
+bool commandLineParser::parse(int argc,
                               char* argv[],
                               std::vector<std::string>& errorMessage) {
   // Parse command line arguments and store them in a variables map
@@ -82,6 +82,8 @@ void commandLineParser::parse(int argc,
     // boost::program_options::bool_switch.
     getTsaReaderOptions(vm, opts.tsaReader);
   }
+
+  return parsingError;
 }
 
 std::string commandLineParser::getUsage() const {
