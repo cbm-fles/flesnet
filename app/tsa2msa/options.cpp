@@ -50,34 +50,7 @@ void options::parseCommandLine(int argc, char* argv[]) {
 
   commandLineParser parser(*this);
 
-  boost::program_options::options_description msaWriterOptionsDescription =
-      msaWriter::optionsDescription(msaWriter, /* hidden = */ false);
-  parser.generic.add(msaWriterOptionsDescription);
-
-  boost::program_options::options_description hiddenDesc("Hidden options");
-  boost::program_options::options_description tsaReaderOptionsDescription =
-      tsaReader::optionsDescription(tsaReader,
-                                    /* hidden = */ true);
-  hiddenDesc.add(tsaReaderOptionsDescription);
-
-  // For verbose help text only:
-  boost::program_options::options_description command_line_options(
-      programDescription + "\n" + "Command line options");
-  command_line_options.add(parser.generic).add(hiddenDesc);
-
-  // For help text only:
-  boost::program_options::options_description visible_command_line_options(
-      programDescription + "\n" + "Command line options");
-  visible_command_line_options.add(parser.generic);
-
   // Parse command line options:
-  std::vector<std::string> errorMessage;
-  boost::program_options::variables_map vm;
-
-  boost::program_options::positional_options_description
-      positional_command_line_arguments;
-  // Specify that all positional arguments are input files:
-  positional_command_line_arguments.add("input", -1);
 
   // Parse command line arguments and store them in a variables map
   try {
@@ -86,26 +59,25 @@ void options::parseCommandLine(int argc, char* argv[]) {
     // function, which only supports named options.
     boost::program_options::store(
         boost::program_options::command_line_parser(argc, argv)
-            .options(command_line_options)
-            .positional(positional_command_line_arguments)
+            .options(parser.all)
+            .positional(parser.positional)
             .run(),
-        vm);
-    boost::program_options::notify(vm);
+        parser.vm);
+    boost::program_options::notify(parser.vm);
   } catch (const boost::program_options::error& e) {
-    errorMessage.push_back("Error: " + std::string(e.what()));
+    parser.errorMessage.push_back("Error: " + std::string(e.what()));
     parsingError = true;
   }
 
   // Check for further parsing errors:
   if (!parsingError) {
-    checkForLogicErrors(vm, errorMessage);
+    checkForLogicErrors(parser.vm, parser.errorMessage);
   }
 
   if (parsingError) {
-    handleErrors(errorMessage, command_line_options,
-                 visible_command_line_options);
+    handleErrors(parser.errorMessage, parser.all, parser.visible);
   } else if (generic.showHelp) {
-    showHelp(command_line_options, visible_command_line_options);
+    showHelp(parser.all, parser.visible);
   }
 
   // Since the input files are positional arguments, we need to extract
@@ -113,7 +85,7 @@ void options::parseCommandLine(int argc, char* argv[]) {
   // the msaWriter all options are automatically set in the
   // msaWriterOptions struct via boost::program_options::value and
   // boost::program_options::bool_switch.
-  getTsaReaderOptions(vm, tsaReader);
+  getTsaReaderOptions(parser.vm, tsaReader);
 }
 
 void options::handleErrors(
