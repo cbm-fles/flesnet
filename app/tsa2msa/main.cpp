@@ -204,6 +204,18 @@ bool NumParsedOptionsAreValid(unsigned int nParsedOptions,
   return !numOptionsError;
 }
 
+bool optionsAreValid(const options& opts,
+                     const unsigned int nParsedOptions,
+                     std::vector<std::string>& errorMessage) {
+
+  if (!NumParsedOptionsAreValid(nParsedOptions, opts, errorMessage)) {
+    return false;
+  } else if (!opts.areValid(errorMessage)) {
+    return false;
+  }
+  return true;
+}
+
 /**
  * @brief Handle parsing errors
  *
@@ -256,16 +268,16 @@ auto main(int argc, char* argv[]) -> int {
 
   std::vector<std::string> errorMessage;
   bool error = false;
-  error = parser.parse(argc, argv, errorMessage);
 
-  if (!error) {
+  if (!parser.parse(argc, argv, errorMessage)) {
+    errorMessage.push_back("Error: Parsing command line arguments failed.");
+    error = true;
+  } else {
     unsigned int nParsedOptions = parser.numParsedOptions();
-    error =
-        !NumParsedOptionsAreValid(nParsedOptions, parser.opts, errorMessage);
-  }
-
-  if (!error) {
-    error = !options.areValid(errorMessage);
+    if (!optionsAreValid(options, nParsedOptions, errorMessage)) {
+      errorMessage.push_back("Error: Invalid options.");
+      error = true;
+    }
   }
 
   if (error) {

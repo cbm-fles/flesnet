@@ -18,8 +18,7 @@ commandLineParser::commandLineParser(options& opts)
     msaWriter(msaWriter::optionsDescription(opts.msaWriter,
         /* hidden */ false)),
 
-    positional(),
-    parsingError(false)
+    positional()
 // clang-format on
 {
   generic.add(msaWriter);
@@ -57,6 +56,7 @@ unsigned int commandLineParser::numParsedOptions() const {
 bool commandLineParser::parse(int argc,
                               char* argv[],
                               std::vector<std::string>& errorMessage) {
+  bool parsingError = false;
   // Parse command line arguments and store them in a variables map
   try {
     // Since we are using positional arguments, we need to use the
@@ -83,7 +83,7 @@ bool commandLineParser::parse(int argc,
     getTsaReaderOptions(vm, opts.tsaReader);
   }
 
-  return parsingError;
+  return !parsingError;
 }
 
 std::string commandLineParser::getUsage() const {

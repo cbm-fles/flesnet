@@ -22,8 +22,6 @@ public:
 
   boost::program_options::variables_map vm;
 
-  bool parsingError;
-
 public:
   /**
    * @brief Show help message
