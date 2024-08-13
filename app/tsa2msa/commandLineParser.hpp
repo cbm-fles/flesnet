@@ -21,6 +21,8 @@ public:
   boost::program_options::positional_options_description positional;
 
   boost::program_options::variables_map vm;
+
+  bool parsingError;
   std::vector<std::string> errorMessage;
 
 public:

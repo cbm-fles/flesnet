@@ -18,7 +18,9 @@ commandLineParser::commandLineParser(options& opts)
     msaWriter(msaWriter::optionsDescription(opts.msaWriter,
         /* hidden */ false)),
 
-    positional()
+    positional(),
+    parsingError(false),
+    errorMessage()
 // clang-format on
 {
   generic.add(msaWriter);
@@ -68,10 +70,10 @@ void commandLineParser::parse(int argc, char* argv[]) {
     boost::program_options::notify(vm);
   } catch (const boost::program_options::error& e) {
     errorMessage.push_back("Error: " + std::string(e.what()));
-    opts.parsingError = true;
+    parsingError = true;
   }
 
-  if (!opts.parsingError) {
+  if (!parsingError) {
     // Since the input files are positional arguments, we need to extract
     // them from the variables map, in contrast to how for the main and
     // the msaWriter all options are automatically set in the

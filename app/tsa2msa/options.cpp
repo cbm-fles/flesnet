@@ -41,8 +41,7 @@ options::options(const std::string& programDescription) :
   programDescription(programDescription),
   generic(genericOptions::defaults()),
   tsaReader(tsaReader::defaults()),
-  msaWriter(msaWriter::defaults()),
-  parsingError(false)
+  msaWriter(msaWriter::defaults())
 // clang-format on
 {}
 

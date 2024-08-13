@@ -254,17 +254,17 @@ auto main(int argc, char* argv[]) -> int {
 
   parser.parse(argc, argv);
 
-  if (!parser.opts.parsingError) {
+  if (!parser.parsingError) {
     unsigned int nParsedOptions = parser.numParsedOptions();
-    parser.opts.parsingError = !NumParsedOptionsAreValid(
-        nParsedOptions, parser.opts, parser.errorMessage);
+    parser.parsingError = !NumParsedOptionsAreValid(nParsedOptions, parser.opts,
+                                                    parser.errorMessage);
   }
 
-  if (!parser.opts.parsingError) {
-    parser.opts.parsingError = !options.areValid(parser.errorMessage);
+  if (!parser.parsingError) {
+    parser.parsingError = !options.areValid(parser.errorMessage);
   }
 
-  if (parser.opts.parsingError) {
+  if (parser.parsingError) {
     handleErrors(parser);
     return EX_USAGE;
   } else if (parser.opts.generic.showHelp) {

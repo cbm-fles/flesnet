@@ -30,8 +30,6 @@ public:
   tsaReaderOptions tsaReader;
   msaWriterOptions msaWriter;
 
-  bool parsingError;
-
   options(const std::string& programDescription);
   ~options() = default;
 
