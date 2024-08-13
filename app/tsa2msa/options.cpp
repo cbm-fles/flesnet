@@ -71,7 +71,7 @@ void options::parseCommandLine(int argc, char* argv[]) {
 
   // Check for further parsing errors:
   if (!parsingError) {
-    checkForLogicErrors(parser.vm, parser.errorMessage);
+    parser.checkForLogicErrors();
   }
 
   if (parsingError) {
@@ -86,50 +86,4 @@ void options::parseCommandLine(int argc, char* argv[]) {
   // msaWriterOptions struct via boost::program_options::value and
   // boost::program_options::bool_switch.
   getTsaReaderOptions(parser.vm, tsaReader);
-}
-
-void options::checkForLogicErrors(
-    const boost::program_options::variables_map& vm,
-    std::vector<std::string>& errorMessage) {
-
-  if (errorMessage.size() > 0) {
-    // TODO: Handle this case more gracefully.
-    std::cerr << "Warning: Expected that so far no error messages are present.";
-  }
-
-  // Count passed options:
-  unsigned int nPassedOptions = 0;
-  for (const auto& option : vm) {
-    if (!option.second.defaulted()) {
-      nPassedOptions++;
-    } else {
-      // This option is present, but only because it has a default value
-      // which was used. I.e. the user did not provide this option.
-    }
-  }
-
-  if (nPassedOptions == 0) {
-    errorMessage.push_back("Error: No options provided.");
-    parsingError = true;
-  } else if (generic.showHelp) {
-    // If the user asks for help, then we don't need to check for
-    // other parsing errors. However, prior to showing the help
-    // message, we will inform the user about ignoring any other
-    // options and treat this as a parsing error. In contrast to
-    // all other parsing errors, the error message will be shown
-    // after the help message.
-    unsigned int nAllowedOptions = generic.beVerbose ? 2 : 1;
-    if (nPassedOptions > nAllowedOptions) {
-      parsingError = true;
-    }
-  } else if (generic.showVersion) {
-    if (nPassedOptions > 1) {
-      errorMessage.push_back("Error: --version option cannot be combined with"
-                             " other options.");
-      parsingError = true;
-    }
-  } else if (vm.count("input") == 0) {
-    errorMessage.push_back("Error: No input file provided.");
-    parsingError = true;
-  }
 }

@@ -41,6 +41,8 @@ public:
    */
   void handleErrors();
 
+  void checkForLogicErrors();
+
   commandLineParser(options& opts);
   ~commandLineParser() = default;
 
