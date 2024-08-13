@@ -266,15 +266,11 @@ auto main(int argc, char* argv[]) -> int {
 
   if (parser.opts.parsingError) {
     handleErrors(parser);
+    return EX_USAGE;
   } else if (parser.opts.generic.showHelp) {
     std::cout << parser.getUsage();
-  }
-
-  if (options.parsingError) {
-    return EX_USAGE;
-  } else if (options.generic.showHelp) {
     return EXIT_SUCCESS;
-  } else if (options.generic.showVersion) {
+  } else if (parser.opts.generic.showVersion) {
     show_version();
     return EXIT_SUCCESS;
   }
