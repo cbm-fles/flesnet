@@ -32,7 +32,7 @@ public:
    */
   void showHelp(std::ostream& out) const;
 
-  std::string getUsage() const;
+  std::string getHelpMessage() const;
   void checkForLogicErrors();
 
   unsigned int numParsedOptions() const;

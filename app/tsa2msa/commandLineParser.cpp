@@ -86,7 +86,7 @@ bool commandLineParser::parse(int argc,
   return !parsingError;
 }
 
-std::string commandLineParser::getUsage() const {
+std::string commandLineParser::getHelpMessage() const {
   std::stringstream ss;
   if (opts.generic.beVerbose) {
     ss << all;

@@ -224,7 +224,7 @@ bool optionsAreValid(const options& opts,
  * in a way that is consistent with whether the user asked for help
  * and/or verbose output.
  */
-void handleErrors(const std::string& usageMessage,
+void handleErrors(const std::string& helpMessage,
                   const std::vector<std::string>& errorMessage,
                   bool showHelp) {
   for (const auto& msg : errorMessage) {
@@ -238,7 +238,7 @@ void handleErrors(const std::string& usageMessage,
     std::cerr << "Errors occurred: Printing usage." << std::endl << std::endl;
   }
 
-  std::cerr << usageMessage;
+  std::cerr << helpMessage;
 
   if (showHelp) {
     // There was a parsing error, which means that additional
@@ -281,10 +281,11 @@ auto main(int argc, char* argv[]) -> int {
   }
 
   if (error) {
-    handleErrors(parser.getUsage(), errorMessage, options.generic.showHelp);
+    handleErrors(parser.getHelpMessage(), errorMessage,
+                 options.generic.showHelp);
     return EX_USAGE;
   } else if (parser.opts.generic.showHelp) {
-    std::cout << parser.getUsage();
+    std::cout << parser.getHelpMessage();
     return EXIT_SUCCESS;
   } else if (parser.opts.generic.showVersion) {
     show_version();
