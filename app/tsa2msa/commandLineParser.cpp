@@ -7,7 +7,7 @@
 commandLineParser::commandLineParser(options& opts)
     : // clang-format off
     opts(opts),
-    generic(genericOptions::optionsDescription(opts.generic)),
+    generic(opts.generic.optionsDescription(/* hidden = */ false)),
 
     hidden("Hidden options"),
     visible(opts.programDescription + "\n" + "Command line options"),

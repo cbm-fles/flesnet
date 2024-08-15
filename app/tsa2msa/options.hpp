@@ -6,7 +6,8 @@
 #include "msaWriter.hpp"
 #include "tsaReader.hpp"
 
-struct genericOptions {
+class genericOptions : public optionsGroup {
+public:
   bool beQuiet;
   bool beVerbose;
   bool showHelp;
@@ -19,8 +20,11 @@ struct genericOptions {
    */
   static genericOptions defaults();
 
-  static boost::program_options::options_description
-  optionsDescription(genericOptions& options);
+  boost::program_options::options_description
+  optionsDescription(bool hidden) override;
+
+  genericOptions() = default;
+  ~genericOptions() override = default;
 };
 
 class options final {
