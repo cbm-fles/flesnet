@@ -22,7 +22,7 @@
 /**
  * @file tsaReader.hpp
  * @brief This file contains the declarations of the tsaReader class and
- * related functions.
+ * related declarations.
  */
 
 /**
