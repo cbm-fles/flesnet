@@ -1,11 +1,12 @@
 #include <boost/program_options.hpp>
 
+#include "options.hpp"
 #include "tsaReader.hpp"
 
-tsaReaderOptions::tsaReaderOptions()
+tsaReaderOptions::tsaReaderOptions(genericOptions& genericOptions)
     : // clang-format off
   // [tsaReaderDefaults]
-  beVerbose(false),
+  beVerbose(genericOptions.beVerbose),
   interactive(false),
   input(std::vector<std::string>()), // \todo: use input()
   readingMethod("auto")
@@ -66,11 +67,6 @@ tsaReaderOptions::optionsDescription(bool hidden) {
         ;
     return desc;
   }
-}
-
-void getTsaReaderOptions(const boost::program_options::variables_map& vm,
-                         tsaReaderOptions& tsaReaderOptions) {
-  tsaReaderOptions.beVerbose = vm["verbose"].as<bool>();
 }
 
 tsaReader::tsaReader(const tsaReaderOptions options)

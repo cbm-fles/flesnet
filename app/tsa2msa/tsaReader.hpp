@@ -16,6 +16,7 @@
 #include "lib/fles_ipc/TimesliceAutoSource.hpp"
 
 // tsa2msa Library header files:
+#include "genericOptions.hpp"
 #include "optionsGroup.hpp"
 #include "tsaValidator.hpp"
 
@@ -87,35 +88,9 @@ public:
    *
    * @return The default options for an tsaReader.
    */
-  tsaReaderOptions();
+  tsaReaderOptions(genericOptions& genericOptions);
   ~tsaReaderOptions() override = default;
 };
-
-/**
- * @brief Parses the command line options for the tsaReader.
- *
- * Currently, not all options in the tsaReaderOptions object are
- * automatically set by the boost::program_options library. Until this
- * is fixed, the user must call this function to populate the remaining
- * values using the variables_map object returned by the library. The
- * user must ensure to use the same tsaReaderOptions object to create the
- * options_description object used to parse the command line options and
- * populate the variables_map object as the one passed to this function.
- *
- * \todo Fix the issue that not all options are automatically set by the
- * boost::program_options library.
- *
- * @param vm The variables_map object populated by the command line
- * options given by the user. It is assumed that it was parsed using the
- * options_description object returned by getTsaReaderOptionsDescription
- * called with the same tsaReaderOptions object as the one passed to
- * this function.
- * @param tsaReaderOptions The tsaReaderOptions object to be populated
- * with the values given by the user. It is assumed that it was used to
- * populate the variables_map object given to this function.
- */
-void getTsaReaderOptions(const boost::program_options::variables_map& vm,
-                         tsaReaderOptions& tsaReaderOptions);
 
 /**
  * @class tsaReader

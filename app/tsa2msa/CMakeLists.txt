@@ -23,6 +23,9 @@ list(APPEND HEADERS utils.hpp)
 list(APPEND SOURCES options.cpp)
 list(APPEND HEADERS options.hpp)
 
+list(APPEND SOURCES genericOptions.cpp)
+list(APPEND HEADERS genericOptions.hpp)
+
 list(APPEND SOURCES commandLineParser.cpp)
 list(APPEND HEADERS commandLineParser.hpp)
 
