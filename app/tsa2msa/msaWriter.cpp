@@ -9,25 +9,21 @@ msaWriter::msaWriter(const msaWriterOptions& options) : options(options) {
   // Do nothing for now
 }
 
-msaWriterOptions msaWriter::defaults() {
-  msaWriterOptions defaults;
-  // The following defaults are automatically included in the
-  // doxygen documentation as a code snippet:
-  // [msaWriterDefaults]
-  defaults.dryRun = false;
-  defaults.beVerbose = false;
-  defaults.interactive = false;
-  defaults.prefix = "";
-  defaults.maxItemsPerArchive = 0; // 0 means no limit
-  defaults.maxBytesPerArchive = 0; // 0 means no limit
-  // [msaWriterDefaults]
-  return defaults;
-}
+msaWriterOptions::msaWriterOptions()
+    : // clang-format off
+    // [msaWriterDefaults]
+    dryRun(false),
+    beVerbose(false),
+    interactive(false),
+    prefix(""),
+    maxItemsPerArchive(0), // 0 means no limit
+    maxBytesPerArchive(0)  // 0 means no limit
+    // [msaWriterDefaults]
+      // clang-format on
+      {};
 
 boost::program_options::options_description
 msaWriterOptions::optionsDescription(bool hidden) {
-  msaWriterOptions defaults = msaWriter::defaults();
-
   /*
    * Note: boost::program_options throws a runtime exception if multiple
    * options_description objects which contain the same option are
@@ -42,22 +38,23 @@ msaWriterOptions::optionsDescription(bool hidden) {
     // clang-format off
     desc.add_options()
         ("dry-run,d",
-          boost::program_options::bool_switch(&this->dryRun),
+          boost::program_options::bool_switch(&this->dryRun)
+              -> default_value(this->dryRun),
           "Dry run (do not write any msa files)") 
         ("prefix,p",
           boost::program_options::value<std::string>(&this->prefix)
-              -> default_value(defaults.prefix),
+              -> default_value(this->prefix),
           "Output prefix for msa files\n"
           "  \tIf no prefix is given, i.e. the value default to the empty"
           " string, the longest common prefix of the input files is used."
           )
         ("max-items",
           boost::program_options::value<std::size_t>(&this->maxItemsPerArchive)
-              -> default_value(defaults.maxItemsPerArchive),
+              -> default_value(this->maxItemsPerArchive),
           "Maximum number of items to write to msa files")
         ("max-size",
           boost::program_options::value<bytesNumber>(&this->maxBytesPerArchive)
-            -> default_value(defaults.maxBytesPerArchive),
+            -> default_value(this->maxBytesPerArchive),
           "Maximum size of msa files:\n"
           "  \tHuman readable units according to the SI or IEC standart (e.g"
           " 1kB = 1000B according to SI, 1KiB = 1024B according to IEC) are"

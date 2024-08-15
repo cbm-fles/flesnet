@@ -120,7 +120,15 @@ public:
   boost::program_options::options_description
   optionsDescription(bool hidden) override;
 
-  msaWriterOptions() = default;
+  /**
+   * @brief Provides default msaWriterOptions.
+   *
+   * The default options are:
+   * \snippet msaWriter.cpp msaWriterDefaults
+   *
+   * @return The default options for an msaWriter.
+   */
+  msaWriterOptions();
   ~msaWriterOptions() override = default;
 };
 
@@ -153,7 +161,7 @@ public:
    * @brief Constructor for the msaWriter object using default options.
    *
    */
-  msaWriter() : msaWriter(defaults()){};
+  msaWriter() = default;
 
   /**
    * @brief Constructs an msaWriter object with the specified options.
@@ -166,16 +174,6 @@ public:
    * @brief Destructor for the msaWriter object.
    */
   ~msaWriter() = default;
-
-  /**
-   * @brief Provides default msaWriterOptions.
-   *
-   * The default options are:
-   * \snippet msaWriter.cpp msaWriterDefaults
-   *
-   * @return The default options for an msaWriter.
-   */
-  static msaWriterOptions defaults();
 
   /**
    * @brief Provides command line options descriptions for use with the

@@ -13,17 +13,15 @@ public:
   bool showHelp;
   bool showVersion;
 
+  boost::program_options::options_description
+  optionsDescription(bool hidden) override;
+
   /**
    * @brief Returns the defaults for genericOptions
    *
    * @return genericOptions with default values
    */
-  static genericOptions defaults();
-
-  boost::program_options::options_description
-  optionsDescription(bool hidden) override;
-
-  genericOptions() = default;
+  genericOptions();
   ~genericOptions() override = default;
 };
 
@@ -36,13 +34,6 @@ public:
 
   options(const std::string& programDescription);
   ~options() = default;
-
-  /**
-   * @brief Returns the defaults for genericOptions
-   *
-   * @return genericOptions with default values
-   */
-  static genericOptions defaults();
 
   bool areValid(std::vector<std::string>& errorMessage) const;
 

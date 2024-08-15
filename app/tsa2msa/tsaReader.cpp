@@ -2,17 +2,16 @@
 
 #include "tsaReader.hpp"
 
-tsaReaderOptions tsaReader::defaults() {
-  tsaReaderOptions defaults;
-  // The following defaults are automatically included in the
-  // doxygen documentation as a code snippet:
+tsaReaderOptions::tsaReaderOptions()
+    : // clang-format off
   // [tsaReaderDefaults]
-  defaults.beVerbose = false;
-  defaults.interactive = false;
-  defaults.input = std::vector<std::string>();
+  beVerbose(false),
+  interactive(false),
+  input(std::vector<std::string>()), // \todo: use input()
+  readingMethod("auto")
   // [tsaReaderDefaults]
-  return defaults;
-}
+      // clang-format on
+      {};
 
 boost::program_options::options_description
 tsaReaderOptions::optionsDescription(bool hidden) {
@@ -46,7 +45,7 @@ tsaReaderOptions::optionsDescription(bool hidden) {
             "interactive",
               boost::program_options::value<bool>(
                 &this->interactive)
-                  -> default_value(false),
+                  -> default_value(this->interactive),
             "Whether to run the TSA reader in interactive mode."
             " Useful for debugging .tsa files or the tsaReader itself."
             " It is recommended to use the 'verbose' option in conjunction"
@@ -56,7 +55,7 @@ tsaReaderOptions::optionsDescription(bool hidden) {
            "readingMode",
               boost::program_options::value<std::string>(
                 &this->readingMethod)
-                  -> default_value("auto"),
+                  -> default_value(this->readingMethod),
             "How the TSA reader should read the input files."
             " Currently, only 'auto' is supported for using the"
             " TimesliceAutoSource class. In the future, other ways of reading"

@@ -75,7 +75,19 @@ public:
   boost::program_options::options_description
   optionsDescription(bool hidden) override;
 
-  tsaReaderOptions() = default;
+  /**
+   * @brief Returns the default options for an tsaReader.
+   *
+   * @details The default options for an tsaReader are as follows:
+   *
+   * \snippet tsaReader.cpp tsaReaderDefaults
+   *
+   * The input vector is expected to be populated by the caller before the
+   * tsaReaderOptions object is used to create a tsaReader.
+   *
+   * @return The default options for an tsaReader.
+   */
+  tsaReaderOptions();
   ~tsaReaderOptions() override = default;
 };
 
@@ -166,20 +178,6 @@ public:
    * @brief Destructor for the tsaReader object.
    */
   ~tsaReader() = default;
-
-  /**
-   * @brief Returns the default options for an tsaReader.
-   *
-   * @details The default options for an tsaReader are as follows:
-   *
-   * \snippet tsaReader.cpp tsaReaderDefaults
-   *
-   * The input vector is expected to be populated by the caller before the
-   * tsaReaderOptions object is used to create a tsaReader.
-   *
-   * @return The default options for an tsaReader.
-   */
-  static tsaReaderOptions defaults();
 
   /** @brief Provides command line options descriptions for use with the
    * boost::program_options library, which then automatically updates the

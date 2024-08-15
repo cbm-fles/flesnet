@@ -2,16 +2,16 @@
 
 #include "commandLineParser.hpp"
 
-genericOptions genericOptions::defaults() {
-  genericOptions defaults;
+genericOptions::genericOptions()
+    : // clang-format off
   // [genericDefaults]
-  defaults.beQuiet = false;
-  defaults.beVerbose = false;
-  defaults.showHelp = false;
-  defaults.showVersion = false;
+  beQuiet(false),
+  beVerbose(false),
+  showHelp(false),
+  showVersion(false)
   // [genericDefaults]
-  return defaults;
-}
+// clang-format on
+{}
 
 boost::program_options::options_description
 genericOptions::optionsDescription(bool hidden) {
@@ -24,17 +24,21 @@ genericOptions::optionsDescription(bool hidden) {
   desc.add_options()
       // clang-format off
       ("quiet,q",
-        boost::program_options::bool_switch(&this->beQuiet),
+        boost::program_options::bool_switch(&this->beQuiet)
+            ->default_value(this->beQuiet),
         "suppress all output")
       ("verbose,v",
-        boost::program_options::bool_switch(&this->beVerbose),
+        boost::program_options::bool_switch(&this->beVerbose)
+            ->default_value(this->beVerbose),
         "enable verbose output")
       ("help,h",
-        boost::program_options::bool_switch(&this->showHelp),
+        boost::program_options::bool_switch(&this->showHelp)
+            ->default_value(this->showHelp),
         "produce help message\n"
         "  (combine with --verbose to see all options)")
       ("version,V",
-        boost::program_options::bool_switch(&this->showVersion),
+        boost::program_options::bool_switch(&this->showVersion)
+            ->default_value(this->showVersion),
         "produce version message")
       // clang-format on
       ;
@@ -44,9 +48,9 @@ genericOptions::optionsDescription(bool hidden) {
 // clang-format off
 options::options(const std::string& programDescription) :
   programDescription(programDescription),
-  generic(genericOptions::defaults()),
-  tsaReader(tsaReader::defaults()),
-  msaWriter(msaWriter::defaults())
+  generic(),
+  tsaReader(),
+  msaWriter()
 // clang-format on
 {}
 
