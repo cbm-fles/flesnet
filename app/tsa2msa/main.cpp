@@ -315,7 +315,8 @@ auto main(int argc, char* argv[]) -> int {
   bool error = false;
   std::vector<std::string> errorMessage;
   if (!parser.parse(argc, argv, errorMessage)) {
-    errorMessage.push_back("Error: Parsing command line arguments failed.");
+    errorMessage.push_back(
+        "Error: Parsing command line arguments completed with errors.");
     error = true;
   } else {
     unsigned int nParsedOptions = parser.numParsedOptions();
