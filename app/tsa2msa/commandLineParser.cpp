@@ -13,8 +13,7 @@ commandLineParser::commandLineParser(options& opts)
     visible(opts.programDescription + "\n" + "Command line options"),
     all(opts.programDescription + "\n" + "Command line options"),
 
-    tsaReader(tsaReader::optionsDescription(opts.tsaReader,
-        /* hidden */ true)),
+    tsaReader(opts.tsaReader.optionsDescription(/* hidden = */ true)),
     msaWriter(msaWriter::optionsDescription(opts.msaWriter,
         /* hidden */ false)),
 

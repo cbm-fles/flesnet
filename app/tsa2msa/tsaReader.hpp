@@ -16,6 +16,7 @@
 #include "lib/fles_ipc/TimesliceAutoSource.hpp"
 
 // tsa2msa Library header files:
+#include "optionsGroup.hpp"
 #include "tsaValidator.hpp"
 
 /**
@@ -37,7 +38,8 @@
  * applied to the tsaReaderOptions object.
  *
  */
-typedef struct tsaReaderOptions {
+class tsaReaderOptions : public optionsGroup {
+public:
   bool beVerbose;
   /**
    * @brief Whether the tsaReader should stop at each timeslice and wait for
@@ -69,7 +71,13 @@ typedef struct tsaReaderOptions {
    * the intended application of tsa2msa.
    */
   std::string readingMethod;
-} tsaReaderOptions;
+
+  boost::program_options::options_description
+  optionsDescription(bool hidden) override;
+
+  tsaReaderOptions() = default;
+  ~tsaReaderOptions() override = default;
+};
 
 /**
  * @brief Parses the command line options for the tsaReader.

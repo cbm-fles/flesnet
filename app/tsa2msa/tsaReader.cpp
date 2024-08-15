@@ -15,7 +15,7 @@ tsaReaderOptions tsaReader::defaults() {
 }
 
 boost::program_options::options_description
-tsaReader::optionsDescription(tsaReaderOptions& options, bool hidden) {
+tsaReaderOptions::optionsDescription(bool hidden) {
   /*
    * Note: boost::program_options throws a runtime exception if multiple
    * options_description objects which contain the same option are
@@ -39,13 +39,13 @@ tsaReader::optionsDescription(tsaReaderOptions& options, bool hidden) {
           // files.
           "input,i",
             boost::program_options::value<std::vector<std::string>>(
-              &options.input),
+              &this->input),
             "Input file(s) to read from."
         )
         (
             "interactive",
               boost::program_options::value<bool>(
-                &options.interactive)
+                &this->interactive)
                   -> default_value(false),
             "Whether to run the TSA reader in interactive mode."
             " Useful for debugging .tsa files or the tsaReader itself."
@@ -55,7 +55,7 @@ tsaReader::optionsDescription(tsaReaderOptions& options, bool hidden) {
         (
            "readingMode",
               boost::program_options::value<std::string>(
-                &options.readingMethod)
+                &this->readingMethod)
                   -> default_value("auto"),
             "How the TSA reader should read the input files."
             " Currently, only 'auto' is supported for using the"
