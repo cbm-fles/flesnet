@@ -10,6 +10,7 @@
 
 // tsa2msa header files:
 #include "msaValidator.hpp"
+#include "optionsGroup.hpp"
 #include "utils.hpp"
 
 /**
@@ -36,7 +37,8 @@
  * this is not going to change behaviour.
  *
  */
-typedef struct msaWriterOptions {
+class msaWriterOptions : public optionsGroup {
+public:
   /**
    * @brief If set to true, the msaWriter will not perform any writes.
    *
@@ -114,7 +116,13 @@ typedef struct msaWriterOptions {
    *
    */
   bool useSequence() const { return maxItemsPerArchive || maxBytesPerArchive; }
-} msaWriterOptions;
+
+  boost::program_options::options_description
+  optionsDescription(bool hidden) override;
+
+  msaWriterOptions() = default;
+  ~msaWriterOptions() override = default;
+};
 
 /**
  * @class msaWriter

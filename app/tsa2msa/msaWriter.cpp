@@ -25,7 +25,9 @@ msaWriterOptions msaWriter::defaults() {
 }
 
 boost::program_options::options_description
-msaWriter::optionsDescription(msaWriterOptions& options, bool hidden) {
+msaWriterOptions::optionsDescription(bool hidden) {
+  msaWriterOptions defaults = msaWriter::defaults();
+
   /*
    * Note: boost::program_options throws a runtime exception if multiple
    * options_description objects which contain the same option are
@@ -40,22 +42,22 @@ msaWriter::optionsDescription(msaWriterOptions& options, bool hidden) {
     // clang-format off
     desc.add_options()
         ("dry-run,d",
-          boost::program_options::bool_switch(&options.dryRun),
+          boost::program_options::bool_switch(&this->dryRun),
           "Dry run (do not write any msa files)") 
         ("prefix,p",
-          boost::program_options::value<std::string>(&options.prefix)
-              -> default_value(""),
+          boost::program_options::value<std::string>(&this->prefix)
+              -> default_value(defaults.prefix),
           "Output prefix for msa files\n"
           "  \tIf no prefix is given, i.e. the value default to the empty"
           " string, the longest common prefix of the input files is used."
           )
         ("max-items",
-          boost::program_options::value<std::size_t>(&options.maxItemsPerArchive)
-              -> default_value(0),
+          boost::program_options::value<std::size_t>(&this->maxItemsPerArchive)
+              -> default_value(defaults.maxItemsPerArchive),
           "Maximum number of items to write to msa files")
         ("max-size",
-          boost::program_options::value<bytesNumber>(&options.maxBytesPerArchive)
-            -> default_value(bytesNumber{0}),
+          boost::program_options::value<bytesNumber>(&this->maxBytesPerArchive)
+            -> default_value(defaults.maxBytesPerArchive),
           "Maximum size of msa files:\n"
           "  \tHuman readable units according to the SI or IEC standart (e.g"
           " 1kB = 1000B according to SI, 1KiB = 1024B according to IEC) are"

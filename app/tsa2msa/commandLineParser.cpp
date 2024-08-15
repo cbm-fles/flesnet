@@ -14,8 +14,7 @@ commandLineParser::commandLineParser(options& opts)
     all(opts.programDescription + "\n" + "Command line options"),
 
     tsaReader(opts.tsaReader.optionsDescription(/* hidden = */ true)),
-    msaWriter(msaWriter::optionsDescription(opts.msaWriter,
-        /* hidden */ false)),
+    msaWriter(opts.msaWriter.optionsDescription(/* hidden = */ false)),
 
     positional()
 // clang-format on
