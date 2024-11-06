@@ -36,7 +36,7 @@ jobs:
 
     - name: Install additional dependencies
       run: |
-        wget https://github.com/cbm-fles/pda/releases/download/11.6.7/libpda4_11.6.7-1_amd64.deb
+        wget https://github.com/cbm-fles/pda/releases/download/11.7.7/libpda4_11.7.7-1_amd64.deb
         sudo dpkg -i libpda4_*_amd64.deb
 
     - name: Create build environment

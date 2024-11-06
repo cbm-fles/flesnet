@@ -3,8 +3,8 @@
 set -e
 set -u
 
-PDA_VERSION="11.6.7"
-PDA_KERNEL_VERSION="0.9.0"
+PDA_VERSION="11.7.7"
+PDA_KERNEL_VERSION="0.10.0"
 USER_NAME=`id -u -n`
 
 install_kernel()
