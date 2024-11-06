@@ -7,18 +7,24 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
-
     strategy:
       matrix:
         include:
+        - cc: gcc-12
+          cxx: g++-12
+          os: ubuntu-22.04
         - cc: gcc-13
           cxx: g++-13
+          os: ubuntu-24.04
         - cc: gcc-14
           cxx: g++-14
+          os: ubuntu-24.04
         - cc: clang-18
           cxx: clang++-18
+          os: ubuntu-24.04
       fail-fast: false
+
+    runs-on: ${{matrix.os}}
 
     env:
       CC: ${{matrix.cc}}
