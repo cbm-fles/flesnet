@@ -147,7 +147,7 @@ endif()
 if(APPLE)
   set(Boost_USE_MULTITHREADED TRUE)
 endif()
-find_package(Boost 1.74.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework iostreams)
+find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS filesystem log program_options serialization system thread unit_test_framework iostreams)
 find_package(Threads REQUIRED)
 
 find_package(LIBFABRIC)
