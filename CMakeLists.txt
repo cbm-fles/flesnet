@@ -139,7 +139,8 @@ if(NOT fmt_FOUND)
   FetchContent_Declare(
     fmtlib
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG 9.1.0)
+    GIT_TAG 9.1.0
+    SYSTEM)
   FetchContent_MakeAvailable(fmtlib) # Adds fmt::fmt
 endif()
 
