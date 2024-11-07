@@ -37,7 +37,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update -y
-        sudo apt-get install -yq libboost-dev libboost-iostreams-dev libboost-log-dev libboost-program-options-dev libboost-serialization-dev libboost-system-dev libboost-test-dev libboost-thread-dev libfabric-dev libibverbs-dev libnuma-dev librdmacm-dev libgnutls28-dev ninja-build
+        sudo apt-get install -yq libboost-dev libboost-iostreams-dev libboost-log-dev libboost-program-options-dev libboost-serialization-dev libboost-system-dev libboost-test-dev libboost-thread-dev libfabric-dev libibverbs-dev libnuma-dev librdmacm-dev libgnutls28-dev libfmt-dev ninja-build
         sudo apt-get install -yq libkmod-dev libpci-dev libtool-bin
 
     - name: Install additional dependencies
