@@ -162,8 +162,11 @@ def print_config(tag):
     print("error: tag unknown")
     sys.exit(1)
   print("# Tag:", tag)
-  with open(os.path.join(confdir, tag + ".conf"), 'r') as cfile:
-    print(cfile.read())
+  with open(os.path.join(confdir, tag + ".conf"), 'r') as cfile:    
+    if sys.stdout.isatty():
+      subprocess.run(["/usr/bin/less"], input=cfile.read(), text=True)
+    else:
+      print(cfile.read())
 
 
 def start(tag):
