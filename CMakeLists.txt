@@ -134,13 +134,18 @@ endif()
 # fetch libfmt formatting library, used by lib/monitoring. Should be already included in FairSoft.
 find_package(fmt CONFIG)
 if(NOT fmt_FOUND)
+  if(CMAKE_VERSION VERSION_GREATER "3.26.0")
+    set(FetchContent_Declare_SYSTEM "SYSTEM")
+  else()
+    set(FetchContent_Declare_SYSTEM "")
+  endif()
   message(STATUS "Downloading and building fmtlib.")
   include(FetchContent)
   FetchContent_Declare(
     fmtlib
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
     GIT_TAG 9.1.0
-    SYSTEM)
+    ${FetchContent_Declare_SYSTEM})
   FetchContent_MakeAvailable(fmtlib) # Adds fmt::fmt
 endif()
 
