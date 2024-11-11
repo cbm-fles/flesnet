@@ -116,7 +116,7 @@ Based on the parameters used in the `Running Flesnet` section you can validate t
 ```
 
 - `--timeslice-size`: The expected (core) size of timeslices in the *.tsa file(s) 
-- `--timeslice-cnt`: (Optional) The expected summed up amount of timeslices accross all given timeslice archive files. If the given value does not meet the found timeslices count the verification failes. Don't set it, for a more relaxed verification.
+- `--timeslice-cnt`: (Optional) The expected summed up amount of timeslices accross all given timeslice archive files. If the given value does not meet the found timeslices count verification fails. Don't set it, for a more relaxed verification.
 - `--overlap`: Size of overlap between timeslices. In the `Running Flesnet` example did not explicitly set this parameter, therefore the default value of 1 was used.
 - `-I`: Space-seperated list of filepaths pointing to the used microslice archive files. 
 - `-O`: Space-seperated list of filepaths pointing to the created timeslice archive files created by Flesnet and its build nodes.
