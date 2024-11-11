@@ -19,7 +19,7 @@ namespace fles {
 /**
  * \brief The InputArchive class deserializes data sets from an input file.
  */
-template <class Base, class Derived, ArchiveType archive_type>
+template <class Base, class Storable, ArchiveType archive_type>
 class InputArchive : public Source<Base> {
 public:
   /**
@@ -73,7 +73,9 @@ public:
   ~InputArchive() override = default;
 
   /// Read the next data set.
-  std::unique_ptr<Derived> get() { return std::unique_ptr<Derived>(do_get()); };
+  std::unique_ptr<Storable> get() {
+    return std::unique_ptr<Storable>(do_get());
+  };
 
   /// Retrieve the archive descriptor.
   [[nodiscard]] const ArchiveDescriptor& descriptor() const {
@@ -83,14 +85,14 @@ public:
   [[nodiscard]] bool eos() const override { return eos_; }
 
 private:
-  Derived* do_get() override {
+  Storable* do_get() override {
     if (eos_) {
       return nullptr;
     }
 
-    Derived* sts = nullptr;
+    Storable* sts = nullptr;
     try {
-      sts = new Derived(); // NOLINT
+      sts = new Storable(); // NOLINT
       *iarchive_ >> *sts;
     } catch (boost::archive::archive_exception& e) {
       if (e.code == boost::archive::archive_exception::input_stream_error) {

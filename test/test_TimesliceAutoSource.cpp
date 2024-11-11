@@ -1,10 +1,10 @@
-// Copyright 2021 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2021-2024 Jan de Cuveland <cmail@cuveland.de>
 #define BOOST_TEST_MODULE test_TimesliceAutoSource
-#include <boost/test/unit_test.hpp>
-
+#include "ArchiveDescriptor.hpp"
 #include "TimesliceAutoSource.hpp"
-
-#include <memory>
+#include <boost/serialization/access.hpp>
+#include <boost/test/tools/old/interface.hpp>
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(input_archive_sequence_test) {
   fles::TimesliceAutoSource source("test2_%n.tsa");
@@ -45,4 +45,26 @@ BOOST_AUTO_TEST_CASE(invalid_input_archive_test) {
   std::string filename("./example1.msa");
   BOOST_CHECK_THROW(fles::TimesliceAutoSource source(filename),
                     std::runtime_error);
+}
+
+// Minimal example for a class that can be used with AutoSource
+class item {
+public:
+  int a;
+  [[nodiscard]] int index() const { return a; };
+
+private:
+  friend class boost::serialization::access;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int /* version */) {
+    ar& a;
+  }
+};
+
+BOOST_AUTO_TEST_CASE(item_auto_source_test) {
+  using ItemAutoSource =
+      fles::AutoSource<item, item, item, fles::ArchiveType::RecoResultsArchive>;
+
+  BOOST_CHECK_THROW(ItemAutoSource source("unknown.rra"), std::runtime_error);
 }

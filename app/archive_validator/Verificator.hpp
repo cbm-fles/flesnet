@@ -26,6 +26,15 @@ private:
      */
     std::string format_time_seconds(uint64_t seconds);
 
+    /**
+     * @brief Figures out the microslice offset for the given output timeslices - skip the found offset from the given microslice archive before starting the verification process
+     * @param input_archive_path path to the microslice archive (*.msa)
+     * @param output_archive_paths vector with all output timeslice archives (*.tsa) 
+     * @param offset will contain the offset
+     * @returns true if offset was found, else false
+     */
+    bool find_ms_build_offset(std::string input_archive_path, std::vector<std::string> output_archive_paths, std::shared_ptr<uint64_t> offset);
+    
     uint64_t usable_threads_ = 0;
 public:
     Verificator(uint64_t max_threads = 1);

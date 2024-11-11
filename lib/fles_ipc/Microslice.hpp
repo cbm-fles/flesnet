@@ -4,13 +4,7 @@
 #pragma once
 
 #include "MicrosliceDescriptor.hpp"
-#include <cstdint>
-#include <fstream>
-#include <iostream>
 #include <boost/serialization/access.hpp>
-// Note: <fstream> has to precede boost/serialization includes for non-obvious
-// reasons to avoid segfault similar to
-// http://lists.debian.org/debian-hppa/2009/11/msg00069.html
 
 namespace fles {
 

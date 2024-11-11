@@ -3,13 +3,14 @@
 set -e
 set -u
 
-PDA_VERSION="11.6.7"
-PDA_KERNEL_VERSION="0.9.0"
+PDA_VERSION="11.7.7"
+PDA_KERNEL_VERSION="0.10.0"
 USER_NAME=`id -u -n`
 
 install_kernel()
 {
   cd /tmp
+  rm pda-kernel-dkms_$2-1_amd64.deb
   wget https://github.com/cbm-fles/pda/releases/download/$1/pda-kernel-dkms_$2-1_amd64.deb
   apt-get install ./pda-kernel-dkms_$2-1_amd64.deb
 }
@@ -17,6 +18,7 @@ install_kernel()
 install_lib()
 {
   cd /tmp
+  rm libpda4_$1-1_amd64.deb
   wget https://github.com/cbm-fles/pda/releases/download/$1/libpda4_$1-1_amd64.deb
   apt-get install ./libpda4_$1-1_amd64.deb
 }

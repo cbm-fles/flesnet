@@ -114,10 +114,23 @@ function test_chain() {
 
     local msa_files=$(find ./$dir_name -name "*.msa")
     local tsa_files=$(find ./$dir_name -name "*.tsa")
-    $archive_validator -I ${msa_files[@]} -O ${tsa_files[@]} --timeslice-size $timeslice_size --timeslice-cnt $timeslice_cnt --overlap $overlap_size
+    # $archive_validator -I ${msa_files[@]} -O ${tsa_files[@]} --timeslice-size $timeslice_size --timeslice-cnt $timeslice_cnt --overlap $overlap_size
+    $archive_validator -I ${msa_files[@]} -O ${tsa_files[@]} --timeslice-size $timeslice_size --overlap $overlap_size
     return $?
 }
-        
+
+test_chain 1 1 15 100 1
+if [ $? -ne 0 ]; then
+    echo -e "\e[1;37;1;41mTests FAILED\e[0m" >&2
+    exit 1
+fi
+
+test_chain 1 1 15 100 15
+if [ $? -ne 0 ]; then
+    echo -e "\e[1;37;1;41mTests FAILED\e[0m" >&2
+    exit 1
+fi      
+
 test_chain 1 1 15 200 1
 if [ $? -ne 0 ]; then
     echo -e "\e[1;37;1;41mTests FAILED\e[0m" >&2
@@ -150,6 +163,12 @@ fi
 
 
 test_chain 6 3 80 200 1
+if [ $? -ne 0 ]; then
+    echo -e "\e[1;37;1;41mTests FAILED\e[0m" >&2
+    exit 1
+fi
+
+test_chain 6 3 80 200 10
 if [ $? -ne 0 ]; then
     echo -e "\e[1;37;1;41mTests FAILED\e[0m" >&2
     exit 1

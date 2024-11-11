@@ -29,7 +29,6 @@ int main(int argc, char *argv[])
 
 if(BOOST_IOS_HAS_ZSTD)
   message(STATUS "=> Boost::iostream with ZSTD filter found.")
-  add_compile_definitions(BOOST_IOS_HAS_ZSTD)
 else()
   message(STATUS "=> Boost::iostream does not support ZSTD filter.")
 endif()
@@ -42,6 +41,9 @@ set(CMAKE_REQUIRED_LIBRARIES ${OLD_CMAKE_REQUIRED_LIBRARIES})
 add_library(fles_ipc ${LIB_SOURCES} ${LIB_HEADERS})
 
 target_compile_definitions(fles_ipc PUBLIC BOOST_ALL_DYN_LINK)
+if(BOOST_IOS_HAS_ZSTD)
+  target_compile_definitions(fles_ipc PUBLIC BOOST_IOS_HAS_ZSTD)
+endif()
 
 target_include_directories(fles_ipc PUBLIC .)
 

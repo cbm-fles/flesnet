@@ -3,38 +3,15 @@
 /// \brief Defines the fles::TimeslicePublisher class.
 #pragma once
 
-#include "Sink.hpp"
+#include "Publisher.hpp"
 #include "StorableTimeslice.hpp"
-#include <string>
-#include <zmq.hpp>
+#include "Timeslice.hpp"
 
 namespace fles {
-
 /**
  * \brief The TimeslicePublisher class publishes serialized timeslice data sets
  * to a zeromq socket.
  */
-class TimeslicePublisher : public TimesliceSink {
-public:
-  /// Construct timeslice publisher sending at given ZMQ address.
-  TimeslicePublisher(const std::string& address, uint32_t hwm = 1);
-
-  /// Delete copy constructor (non-copyable).
-  TimeslicePublisher(const TimeslicePublisher&) = delete;
-  /// Delete assignment operator (non-copyable).
-  void operator=(const TimeslicePublisher&) = delete;
-
-  /// Send a timeslice to all connected subscribers.
-  void put(std::shared_ptr<const fles::Timeslice> timeslice) override {
-    do_put(*timeslice);
-  };
-
-private:
-  zmq::context_t context_{1};
-  zmq::socket_t publisher_{context_, ZMQ_PUB};
-  std::string serial_str_;
-
-  void do_put(const fles::StorableTimeslice& timeslice);
-};
+using TimeslicePublisher = Publisher<Timeslice, StorableTimeslice>;
 
 } // namespace fles
