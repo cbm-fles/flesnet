@@ -6,6 +6,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 // System dependent header files:
 #include <sysexits.h>
@@ -247,6 +249,13 @@ void handleErrors(const std::string& helpMessage,
   }
 }
 
+int dirExists(const char *path){
+    struct stat info;
+    if(stat(path, &info) != 0){ return 0;}
+    else if(info.st_mode & S_IFDIR){ return 1;}
+    else{ return 0; }
+}
+
 /*
  * @brief Make minor adjustments to the options based on the user input.
  *
@@ -264,7 +273,15 @@ void sanitizeOptions(options& options) {
     // directory and not in the directory of the input files, which
     // likely would come as a surprise to the user.
     std::string prefix = std::filesystem::path(path_prefix).filename().string();
-
+    if(!dirExists(options.msaWriter.output_folder.c_str())){
+      if(options.msaWriter.create_folder){
+        std::filesystem::create_directories(options.msaWriter.output_folder);
+      }
+      else{
+        throw std::ios_base::failure("Folder do not exists. Use parameter create Folders to create them.");
+      }
+    }
+    prefix = options.msaWriter.output_folder + "/" + prefix; //note: this does not work on windows
     // Truncate the prefix to only contain the part up to (and
     // excluding) the first `%` in order to avoid collisions with the
     // `%n` format specifier for archive sequences.

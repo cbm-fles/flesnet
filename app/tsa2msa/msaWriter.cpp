@@ -20,7 +20,9 @@ msaWriterOptions::msaWriterOptions()
     maxItemsPerArchive(0), // 0 means no limit
     maxBytesPerArchive(0),  // 0 means no limit
     sys_ids(std::vector<std::string>()),
-    eq_ids(std::vector<std::string>())
+    eq_ids(std::vector<std::string>()),
+    output_folder(""),
+    create_folder(false)
     // [msaWriterDefaults]
       // clang-format on
       {};
@@ -76,6 +78,14 @@ msaWriterOptions::optionsDescription(bool hidden) {
           boost::program_options::value<std::vector<std::string>>(&this->eq_ids)
                 ->multitoken(),
               "eq_ids which should be converted")
+          ("output-folder,o",
+            boost::program_options::value<std::string>(&this->output_folder)
+                ->default_value(this->output_folder),
+                "gives the output_folder")
+          ("create-folder,c",
+            boost::program_options::value<bool>(&this->create_folder)
+                ->default_value(this->create_folder),
+                "enable-disable the option to create the missing folders")
         ;
     // clang-format on
     return desc;
@@ -179,7 +189,6 @@ void msaWriter::write(std::shared_ptr<fles::MicrosliceView> ms_ptr) {
   std::string sys_id_string = fles::to_string(sys_id);
   std::string eq_id_string = std::to_string(eq_id);
   validator.check_microslice(ms_ptr, false && options.beVerbose);
-
   if (!options.dryRun) {
     if (options.sys_ids.empty() || std::count(options.sys_ids.begin(),options.sys_ids.end(),sys_id_string)>0){
       if (options.eq_ids.empty() || std::count(options.eq_ids.begin(),options.eq_ids.end(),eq_id_string) > 0){
