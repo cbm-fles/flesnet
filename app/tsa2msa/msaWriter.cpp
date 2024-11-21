@@ -81,7 +81,8 @@ msaWriterOptions::optionsDescription(bool hidden) {
           ("output-folder,o",
             boost::program_options::value<std::string>(&this->output_folder)
                 ->default_value(this->output_folder),
-                "gives the output_folder")
+                "gives the output_folder \n"
+                "Caution: The string has to end with an /")
           ("create-folder,c",
             boost::program_options::value<bool>(&this->create_folder)
                 ->default_value(this->create_folder),

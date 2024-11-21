@@ -273,7 +273,7 @@ void sanitizeOptions(options& options) {
     // directory and not in the directory of the input files, which
     // likely would come as a surprise to the user.
     std::string prefix = std::filesystem::path(path_prefix).filename().string();
-    if(!dirExists(options.msaWriter.output_folder.c_str())){
+    if(!dirExists(options.msaWriter.output_folder.c_str()) && options.msaWriter.output_folder != ""){
       if(options.msaWriter.create_folder){
         std::filesystem::create_directories(options.msaWriter.output_folder);
       }
@@ -281,10 +281,11 @@ void sanitizeOptions(options& options) {
         throw std::ios_base::failure("Folder do not exists. Use parameter create Folders to create them.");
       }
     }
-    prefix = options.msaWriter.output_folder + "/" + prefix; //note: this does not work on windows
+    prefix = options.msaWriter.output_folder + prefix; //note: this does not work on windows
     // Truncate the prefix to only contain the part up to (and
     // excluding) the first `%` in order to avoid collisions with the
     // `%n` format specifier for archive sequences.
+    std::cout<<prefix<<std::endl;
     size_t pos = prefix.find('%');
     if (pos != std::string::npos) {
       prefix = prefix.substr(0, pos);
