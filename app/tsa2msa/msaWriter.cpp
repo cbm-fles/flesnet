@@ -4,6 +4,7 @@
 #include <boost/program_options.hpp>
 
 #include <iostream>
+#include <vector>
 
 msaWriter::msaWriter(const msaWriterOptions& options) : options(options) {
   // Do nothing for now
@@ -17,7 +18,11 @@ msaWriterOptions::msaWriterOptions()
     interactive(false),
     prefix(""),
     maxItemsPerArchive(0), // 0 means no limit
-    maxBytesPerArchive(0)  // 0 means no limit
+    maxBytesPerArchive(0),  // 0 means no limit
+    sys_ids(std::vector<std::string>()),
+    eq_ids(std::vector<std::string>()),
+    output_folder(""),
+    create_folder(false)
     // [msaWriterDefaults]
       // clang-format on
       {};
@@ -65,6 +70,23 @@ msaWriterOptions::optionsDescription(bool hidden) {
           " between number and unit or not, are supported. (Make sure that"
           " your shell does not interpret the space as a separator between"
           " arguments.)\n")
+          ("sys_ids,s",
+            boost::program_options::value<std::vector<std::string>>(&this->sys_ids)
+                ->multitoken(),
+                "sys_ids which should be converted")
+          ("eq_ids,e",
+          boost::program_options::value<std::vector<std::string>>(&this->eq_ids)
+                ->multitoken(),
+              "eq_ids which should be converted")
+          ("output-folder,o",
+            boost::program_options::value<std::string>(&this->output_folder)
+                ->default_value(this->output_folder),
+                "gives the output_folder \n"
+                "Caution: The string has to end with an /")
+          ("create-folder,c",
+            boost::program_options::value<bool>(&this->create_folder)
+                ->default_value(this->create_folder),
+                "enable-disable the option to create the missing folders")
         ;
     // clang-format on
     return desc;
@@ -165,11 +187,16 @@ void msaWriter::write(std::shared_ptr<fles::MicrosliceView> ms_ptr) {
   const uint16_t& eq_id = msd.eq_id;
   const fles::Subsystem& sys_id = static_cast<fles::Subsystem>(msd.sys_id);
 
+  std::string sys_id_string = fles::to_string(sys_id);
+  std::string eq_id_string = std::to_string(eq_id);
   validator.check_microslice(ms_ptr, false && options.beVerbose);
-
   if (!options.dryRun) {
-    std::string msa_archive_name = constructArchiveName(sys_id, eq_id);
-    msaFiles[msa_archive_name]->put(std::move(ms_ptr));
+    if (options.sys_ids.empty() || std::count(options.sys_ids.begin(),options.sys_ids.end(),sys_id_string)>0){
+      if (options.eq_ids.empty() || std::count(options.eq_ids.begin(),options.eq_ids.end(),eq_id_string) > 0){
+        std::string msa_archive_name = constructArchiveName(sys_id, eq_id);
+        msaFiles[msa_archive_name]->put(std::move(ms_ptr));
+      }
+    }
   }
 
   if (false && options.interactive) {

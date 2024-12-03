@@ -117,6 +117,14 @@ public:
    */
   bool useSequence() const { return maxItemsPerArchive || maxBytesPerArchive; }
 
+  std::vector<std::string> sys_ids;
+
+  std::vector<std::string> eq_ids;
+
+  std::string output_folder;
+
+  bool create_folder;
+
   boost::program_options::options_description
   optionsDescription(bool hidden) override;
 
