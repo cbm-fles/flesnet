@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+
+# Manage flesnet and data taking configuration
+#
+# 2024-12-03 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
+
+def recursive_merge(dict1, dict2):
+    for key, value in dict2.items():
+        if key in dict1 and isinstance(dict1[key], dict) and isinstance(value, dict):
+            # Recursively merge nested dictionaries
+            dict1[key] = recursive_merge(dict1[key], value)
+        else:
+            # Merge non-dictionary values
+            dict1[key] = value
+    return dict1
+
+ 
+CONFIG = {
+  "common": {
+    "timeslice_size": "1000",
+    "default_overlap": "1",
+    "transport": "rdma",
+    "allow_unsupported_cri_designs": "false",
+    "mc_size_limit_bytes": "2097152",
+    "buf_size_exp": "31",
+    "mc_size_ns": "100000",
+    "pgen_rate": "1"
+  }
+}
+
+
+CONFIG = {
+  "hosts": {
+    "en02": {
+      "address": "en02ib0",
+      "cards": {
+        "CRI_0": {
+          "pci_address": "87:00.0",
+          "pgen_base_eqid": 0xF00,
+          "channels": {
+            "0": "pgen",
+            "4": "flim",
+          }
+        }
+      }
+    }
+  }
+}
+
+CONFIG2 = {
+  "hosts": {
+    "en02": {
+      "address": "en02ib0",
+      "cards": {
+        "CRI_0": {
+          "pci_address": "GURU",
+          "pgen_base_eqid": 0xF00,
+          "channels": {
+            "1": {
+              "type": "GAGA",
+            }
+          }
+        },
+        "CRI_1": {
+          "pgen_base_eqid": 0xF01,
+          "channels": {
+            "2": "DoubleD",
+          }
+        }
+      }
+    }
+  }
+}
+
+MAIN_CONFIG = ["base", "sts01", "trd01", "publish", "write"]
+
+result = recursive_merge(CONFIG, CONFIG2)
+print(result)
