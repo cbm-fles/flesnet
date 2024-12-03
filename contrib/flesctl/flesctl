@@ -94,7 +94,7 @@ mattermost_static = {"channel": "mfles-status", "username": "flesctl"}
 def tags():
   for filename in glob.iglob(confdir + '/**/*.conf', recursive=True):
     if not filename.startswith(confdir + '/'):
-      throw
+      raise ValueError("Filename does not start with confdir")
     tag, _ = os.path.splitext(filename[len(confdir + '/'):])
     yield tag
 
