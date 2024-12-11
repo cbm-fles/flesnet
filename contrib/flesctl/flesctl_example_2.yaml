@@ -17,17 +17,20 @@ common:
   mc_size_ns: 100000      # only used for cri pgen
   pgen_rate: 1
 
+  tsclient_param:
+    - "-a -m -i shm://%shm_id%"
+
 entry_nodes:
-  en02:
+  en03:
     address: en03ib0
     cards:
-      CRI_0:
+      0:
         pci_address: 0b:00.1
         pgen_base_eqid: 0xF02
         channels:
           0: pgen
           1: pgen
-      CRI_1:
+      1:
         pci_address: 0a:00.1
         pgen_base_eqid: 0xF03
         channels:
@@ -37,9 +40,5 @@ entry_nodes:
 build_nodes:
   node10:
     address: node10ib1
-    tsclient_param:
-      - "-a -m -i shm://%shm_id%"
   node11:
     address: node11ib1
-    tsclient_param:
-      - "-a -m -i shm://%shm_id%"
