@@ -21,12 +21,14 @@ CONFIG_SCHEMA = Schema({
     "buf_size_exp": And(Use(int), lambda n: 0 < n < 10000),
     "mc_size_ns": And(Use(int), lambda n: 0 < n),
     "pgen_rate": And(Use(int), lambda n: 0 < n < 10000),
+    "tsclient_param": [str],
+    "extra_cmd": [str],
   },
   "entry_nodes": {
-    str: {
+    Use(str): {
       "address": str,
       "cards": {
-        str: {
+        Use(str): {
           "pci_address": str,
           "pgen_base_eqid": Use(int),
           "channels": {
@@ -37,9 +39,10 @@ CONFIG_SCHEMA = Schema({
     }
   },
   "build_nodes": {
-    str: {
+    Use(str): {
       "address": str,
-      "tsclient_param": [str],
+      Optional("tsclient_param"): [str],
+      Optional("extra_cmd"): [str],
     }
   }
 })
@@ -55,6 +58,8 @@ CONFIG_DEFAULTS = {
     "buf_size_exp": 31,
     "mc_size_ns": 100000,
     "pgen_rate": 1,
+    "tsclient_param": [],
+    "extra_cmd": [],
   }
 }
 
@@ -97,8 +102,8 @@ def validate_yaml(yaml_data):
     return False
 
 
-def load(file_paths: str | list[str], default: dict={}):
-  data = load_yaml(file_paths, default)
+def load(file_paths: str | list[str]):
+  data = load_yaml(file_paths, CONFIG_DEFAULTS)
   if validate_yaml(data):
     return data
   else:
@@ -113,7 +118,7 @@ if __name__ == "__main__":
   parser.add_argument("-v", "--verbose", action="store_true", help="print combined configuration")
   args = parser.parse_args()
 
-  config = load(args.config_fn, CONFIG_DEFAULTS)
+  config = load(args.config_fn)
   if config is not None:
     print("Configuration is valid.")
     if args.verbose:
