@@ -1,0 +1,17 @@
+#!/bin/bash
+# 2024-12-11, Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
+set -euo pipefail
+IFS=$'\n\t'
+
+
+./init_run flesctl_example_2.cfg 1234
+mv readout.spm readout.spm.shell
+mv flesnet.cfg flesnet.cfg.shell
+./init_run.py flesctl_example_2.yaml 1234
+mv readout.spm readout.spm.python
+mv flesnet.cfg flesnet.cfg.python
+
+echo "Comparing shell and python versions of flesnet.cfg"
+diff -u flesnet.cfg.shell flesnet.cfg.python || true
+echo "Comparing shell and python versions of readout.spm"
+diff -u readout.spm.shell readout.spm.python || true
