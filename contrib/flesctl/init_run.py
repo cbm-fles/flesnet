@@ -70,7 +70,7 @@ def main():
                     input += 1
             EN_CFG.append("")
             CRI_SPM.append(f"cri_{node}_{cardinfo['pci_address'][:2]}")
-        EN_SPM.append(f"{node}: bash -c \"LOGDIR={LOGDIR}{node}_ {FLESCTLDIR}/fles_input {config_file} {node}\"")
+        EN_SPM.append(f"{node}: bash -c \"LOGDIR={LOGDIR}{node}_ {FLESCTLDIR}/fles_input.py {config_file} {node}\"")
         EN_SPM.append(f"{node}: bash -c \"{SPMDIR}spm-require -n1 fles_input_sem; {FLESNETDIR}flesnet -m -f {FLESNET_CFG} -L {LOGDIR}{node}_flesnet_en.log --log-syslog {' '.join(EN_INDEX)}\"")
         EN_INDEX = []
 
