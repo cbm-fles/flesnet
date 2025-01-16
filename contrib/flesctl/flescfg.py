@@ -32,7 +32,7 @@ CONFIG_SCHEMA = Schema({
           "pci_address": str,
           "pgen_base_eqid": Use(int),
           "channels": {
-            int: str,
+            int: And(str, Use(str.lower), Or("flim", "pgen", "disable")),
           }
         }
       }
