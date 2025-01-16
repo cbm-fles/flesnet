@@ -26,16 +26,16 @@ entry_nodes:
     cards:
       0:
         pci_address: 0b:00.1
-        pgen_base_eqid: 0xF02
+        pgen_base_eqid: 0xF020
         channels:
           0: pgen
           1: pgen
       1:
         pci_address: 0a:00.1
-        pgen_base_eqid: 0xF03
+        pgen_base_eqid: 0xF030
         channels:
-          0: pgen
           1: pgen
+          4: pgen
 
 build_nodes:
   node10:
