@@ -39,7 +39,8 @@ def cleanup_shm():
         os.remove(shm_file)
 
 def term_subprocesses(timeout=10) -> bool:
-    """Send SIGTERM to all subprocesses and wait for them to exit. If any remain, return False."""
+    """Send SIGTERM to all subprocesses and wait for them to exit.
+       If any remain, return False."""
     print(f"Sending SIGTERM to all {len(processes)} subprocesses...")
     for process in processes:
         if process.poll() is None:  # Process is still running
@@ -69,7 +70,8 @@ def end_readout():
     print("Shutting down...")
     if pgen_in_use:
         print("Disabling pattern generators...")
-        subprocess.run([FLESNETDIR + 'cri_en_pgen', '0'], stdout=open(LOGDIR + 'cri_en_pgen.log', 'a'))
+        subprocess.run([os.path.join(FLESNETDIR, 'cri_en_pgen'), '0'],
+                       stdout=open(LOGDIR + 'cri_en_pgen.log', 'a'))
     if term_subprocesses():
         print("Exiting")
         sys.exit(0)
@@ -94,12 +96,12 @@ def handle_signal(signum, frame):
         END_REQUESTED = True
 
 # handle end signals
-signal.signal(signal.SIGINT, handle_signal)
-signal.signal(signal.SIGTERM, handle_signal)
-signal.signal(signal.SIGHUP, handle_signal)
+for sig in [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]:
+    signal.signal(sig, handle_signal)
 
 print("Starting readout...")
-subprocess.run([FLESNETDIR + 'cri_info'], stdout=open(LOGDIR + 'cri_info.log', "w"))
+subprocess.run([os.path.join(FLESNETDIR, "cri_info")],
+               stdout=open(LOGDIR + "cri_info.log", "w"))
 
 pgen_in_use = False
 common = config['common']
@@ -109,7 +111,7 @@ print("Configuring CRIs...")
 for card in cards:
     cardinfo = cards[card]
     cmd = [
-        f"{FLESNETDIR}cri_cfg",
+        os.path.join(FLESNETDIR, "cri_cfg"),
         "-l", "2",
         "-L", f"{LOGDIR}cri{card}_cfg.log",
         "-i", f"{cardinfo['pci_address']}",
@@ -120,11 +122,9 @@ for card in cards:
     channels = cardinfo['channels']
     for channel in channels:
         channel_type = channels[channel]
-        cmd.extend([
-            f"--c{channel}_source", f"{channel_type}",
-            f"--c{channel}_eq_id", f"{cardinfo['pgen_base_eqid'] + channel}",
-        ])
+        cmd += [f"--c{channel}_source", f"{channel_type}"]
         if channel_type == "pgen":
+            cmd += [f"--c{channel}_eq_id", f"{cardinfo['pgen_base_eqid'] + channel}"]
             pgen_in_use = True
     subprocess.run(cmd)
 
@@ -135,7 +135,7 @@ print("Starting cri_server instance(s)...")
 for card in cards:
     cardinfo = cards[card]
     cmd = [
-        f"{FLESNETDIR}cri_server",
+        os.path.join(FLESNETDIR, "cri_server"),
         "-c", "/dev/null",
         "-L", f"{LOGDIR}cri{card}_server.log",
         "--log-syslog",
@@ -143,14 +143,15 @@ for card in cards:
         f"--archivable-data={str(archivable_data).lower()}",
         f"--data-buffer-size-exp={common['buf_size_exp']}",
         "-o", f"{SHM_PREFIX}{card}",
-        "-e", f"{SPMDIR}spm-provide cri_server_sem",
-    ]
+        "-e", f"{os.path.join(SPMDIR, "spm-provide")} cri_server_sem",
+    ]    
     process = subprocess.Popen(cmd, preexec_fn=os.setsid)
     processes.append(process)
 
 # Block until servers are ready
 print(f"Waiting for {len(cards)} cri_server instance(s)...")
-subprocess.run([f"{SPMDIR}spm-require", f"-n{len(cards)}", "cri_server_sem"])
+subprocess.run([os.path.join(SPMDIR, "spm-require"),
+                f"-n{len(cards)}", "cri_server_sem"])
 print("... all cri_server(s) started")
 
 # First opportunity to safely shutdown
@@ -160,7 +161,8 @@ if END_REQUESTED:
 time.sleep(1)
 if pgen_in_use:
     print("Enabling pattern generators...")
-    subprocess.run([FLESNETDIR + 'cri_en_pgen', '1'], stdout=open(LOGDIR + 'cri_en_pgen.log', "w"))
+    subprocess.run([FLESNETDIR + 'cri_en_pgen', '1'],
+                   stdout=open(LOGDIR + 'cri_en_pgen.log', "w"))
 
 # From this point it is safe to shut down any time
 MAY_END = True
@@ -168,7 +170,7 @@ MAY_END = True
 if END_REQUESTED:
     end_readout()
 
-subprocess.run([f"{SPMDIR}spm-provide", "fles_input_sem"])
+subprocess.run([os.path.join(SPMDIR, "spm-provide"), "fles_input_sem"])
 print("Running...")
 # Monitor all subprocesses
 while processes:
