@@ -30,56 +30,82 @@ if config is None:
     print("Error loading configuration file.")
     exit(1)
     
-# Start processes
-SERVER_PID = []
+# Spawned processes
+processes = []
 
-def cleanup():
-    print("Cleaning up ...")
-    for pid in SERVER_PID:
-        os.killpg(os.getpgid(pid), signal.SIGKILL)
+def cleanup_shm():
+    print("Cleaning up shm files...")
     for shm_file in glob.glob('/dev/shm/{}*'.format(SHM_PREFIX)):
         os.remove(shm_file)
-    sys.exit(-1)
+
+def term_subprocesses(timeout=10) -> bool:
+    """Send SIGTERM to all subprocesses and wait for them to exit. If any remain, return False."""
+    print(f"Sending SIGTERM to all {len(processes)} subprocesses...")
+    for process in processes:
+        if process.poll() is None:  # Process is still running
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+
+    # Wait for all processes to terminate or timeout
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        all_terminated = True
+        for process in processes:
+            if process.poll() is None:  # Process is still running
+                all_terminated = False
+                break
+        if all_terminated:
+            print("All subprocesses terminated gracefully.")
+            return True
+        time.sleep(0.5)  # Check every 500ms
+    return False
+
+def kill_subprocesses() -> None:
+    print("Sending SIGKILL to remaining subprocesses...")
+    for process in processes:
+        if process.poll() is None:  # Process is still running
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
 
 def end_readout():
-    print("Shutting down ...")
-    subprocess.run([FLESNETDIR + 'cri_en_pgen', '0'], stdout=open(LOGDIR + 'cri_en_pgen.log', 'a'))
-    for pid in SERVER_PID:
-        os.kill(pid, signal.SIGINT)
-    time.sleep(10)
-    for pid in SERVER_PID:
-        try:
-            os.kill(pid, 0)
-        except OSError:
-            continue
-        print("Cleanup required, cri_server left.")
-        cleanup()
-    print("Exiting")
-    sys.exit(0)
+    print("Shutting down...")
+    if pgen_in_use:
+        print("Disabling pattern generators...")
+        subprocess.run([FLESNETDIR + 'cri_en_pgen', '0'], stdout=open(LOGDIR + 'cri_en_pgen.log', 'a'))
+    if term_subprocesses():
+        print("Exiting")
+        sys.exit(0)
+    else:
+        print("Some subprocesses did not terminate gracefully.")
+        kill_subprocesses()
+        cleanup_shm()
+        sys.exit(1)
 
+MAY_END = False
 END_REQUESTED = False
 
-def request_end(signum, frame):
-    global END_REQUESTED
-    END_REQUESTED = True
+def handle_signal(signum, frame):
+    """Handle SIGINT or SIGTERM signal by initiating end of readout."""
+    signal_name = signal.Signals(signum).name
+    print(f"Received signal {signal_name}.")
+    global MAY_END, END_REQUESTED
+    if MAY_END:
+        end_readout()
+    else:
+        print("Requesting end of readout.")
+        END_REQUESTED = True
 
-# set end request on signal
-signal.signal(signal.SIGINT, request_end)
-signal.signal(signal.SIGTERM, request_end)
-signal.signal(signal.SIGHUP, request_end)
+# handle end signals
+signal.signal(signal.SIGINT, handle_signal)
+signal.signal(signal.SIGTERM, handle_signal)
+signal.signal(signal.SIGHUP, handle_signal)
 
-print("Starting readout ...")
-subprocess.run([FLESNETDIR + 'cri_info'], stdout=open(LOGDIR + 'cri_info.log', 'a'))
+print("Starting readout...")
+subprocess.run([FLESNETDIR + 'cri_info'], stdout=open(LOGDIR + 'cri_info.log', "w"))
 
-print("Configuring CRIs ...")
-# round up to next possible size (given mc_size is min. size)
-#PGEN_MC_SIZE=`echo "scale=0; (${MC_SIZE_NS}+1024-1)/1024" | bc -l`
-# round down to next possible size (given mc_size is max. size)
-MC_SIZE_NS = config['common']['mc_size_ns']
-PGEN_MC_SIZE = MC_SIZE_NS // 1000
-PGEN_RATE = config['common']['pgen_rate']
-MC_SIZE_LIMIT_BYTES = config['common']['mc_size_limit_bytes']
+pgen_in_use = False
+common = config['common']
 cards = config['entry_nodes'][hostname]['cards']
+
+print("Configuring CRIs...")
 for card in cards:
     cardinfo = cards[card]
     cmd = [
@@ -87,23 +113,25 @@ for card in cards:
         "-l", "2",
         "-L", f"{LOGDIR}cri{card}_cfg.log",
         "-i", f"{cardinfo['pci_address']}",
-        "-t", f"{PGEN_MC_SIZE}",
-        "-r", f"{PGEN_RATE}",
-        "--mc-size-limit", f"{MC_SIZE_LIMIT_BYTES}",
+        "-t", f"{common['mc_size_ns'] // 1000}",
+        "-r", f"{common['pgen_rate']}",
+        "--mc-size-limit", f"{common['mc_size_limit_bytes']}",
     ]
     channels = cardinfo['channels']
     for channel in channels:
         channel_type = channels[channel]
-        cmd.append([
+        cmd.extend([
             f"--c{channel}_source", f"{channel_type}",
-            f"--c{channel}_eq_id", f"{card['pgen_base_eqid'] + channel}",
+            f"--c{channel}_eq_id", f"{cardinfo['pgen_base_eqid'] + channel}",
         ])
+        if channel_type == "pgen":
+            pgen_in_use = True
     subprocess.run(cmd)
 
-ALLOW_UNSUPPORTED_CRI_DESIGNS = config['common']['allow_unsupported_cri_designs']
-ARCH_DATA = not ALLOW_UNSUPPORTED_CRI_DESIGNS
+archivable_data = not common['allow_unsupported_cri_designs']
 
-print("Starting cri_server ...")
+# Start cri_server subprocesses, each in its own process group
+print("Starting cri_server instance(s)...")
 for card in cards:
     cardinfo = cards[card]
     cmd = [
@@ -112,20 +140,17 @@ for card in cards:
         "-L", f"{LOGDIR}cri{card}_server.log",
         "--log-syslog",
         "-i", f"{cardinfo['pci_address']}",
-        f"--archivable-data={str(ARCH_DATA).lower()}",
-        f"--data-buffer-size-exp", "{BUF_SIZE_EXP}",
+        f"--archivable-data={str(archivable_data).lower()}",
+        f"--data-buffer-size-exp={common['buf_size_exp']}",
         "-o", f"{SHM_PREFIX}{card}",
-        "-e", f"\"{SPMDIR}spm-provide cri_server_sem\"",
+        "-e", f"{SPMDIR}spm-provide cri_server_sem",
     ]
     process = subprocess.Popen(cmd, preexec_fn=os.setsid)
-    SERVER_PID.append(process.pid)
+    processes.append(process)
 
-# Get group ID for cleanup
-SID = subprocess.check_output(["ps", "o", "sid", "-p", str(SERVER_PID[0])]).decode().splitlines()[-1]
-
-# Block till server is ready
-print(f"Waiting for {len(SERVER_PID)} cri_server instance(s) ...")
-subprocess.run([f"{SPMDIR}spm-require", f"-n{len(SERVER_PID)}", "cri_server_sem"])
+# Block until servers are ready
+print(f"Waiting for {len(cards)} cri_server instance(s)...")
+subprocess.run([f"{SPMDIR}spm-require", f"-n{len(cards)}", "cri_server_sem"])
 print("... all cri_server(s) started")
 
 # First opportunity to safely shutdown
@@ -133,24 +158,25 @@ if END_REQUESTED:
     end_readout()
 
 time.sleep(1)
-print("Enabling pattern generators ...")
-subprocess.run([FLESNETDIR + 'cri_en_pgen', '1'], stdout=open(LOGDIR + 'cri_en_pgen.log', 'a'))
+if pgen_in_use:
+    print("Enabling pattern generators...")
+    subprocess.run([FLESNETDIR + 'cri_en_pgen', '1'], stdout=open(LOGDIR + 'cri_en_pgen.log', "w"))
 
 # From this point it is safe to shut down any time
-signal.signal(signal.SIGINT, end_readout)
-signal.signal(signal.SIGTERM, end_readout)
-signal.signal(signal.SIGHUP, end_readout)
-
+MAY_END = True
 # Check for race conditions
 if END_REQUESTED:
     end_readout()
 
 subprocess.run([f"{SPMDIR}spm-provide", "fles_input_sem"])
-print("Running ...")
-try:
-    while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    end_readout()
+print("Running...")
+# Monitor all subprocesses
+while processes:
+    for process in processes[:]:
+        retcode = process.poll()  # Check if the process has terminated
+        if retcode is not None:  # Process has finished
+            print(f"Subprocess {process.pid} finished with return code {retcode}")
+            processes.remove(process)
+    time.sleep(0.5)  # Avoid busy-waiting
 
 print("*** YOU SHOULD NEVER SEE THIS ***")
