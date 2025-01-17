@@ -4,6 +4,7 @@
 #include "FlesnetPatternChecker.hpp"
 #include "FlibLegacyPatternChecker.hpp"
 #include "FlibPatternChecker.hpp"
+#include "FlimPatternChecker.hpp"
 
 std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
                                                        uint8_t arg_sys_ver,
@@ -28,6 +29,9 @@ std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
       break;
     case sfmtfles::FlibPattern:
       pc = new FlibPatternChecker();
+      break;
+    case sfmtfles::FlimPattern:
+      pc = new FlimPatternChecker();
       break;
     default:
       pc = new GenericPatternChecker();
