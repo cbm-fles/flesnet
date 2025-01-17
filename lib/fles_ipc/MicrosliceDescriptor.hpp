@@ -72,9 +72,12 @@ inline const std::string& to_string(Subsystem sys_id) {
 
 enum class SubsystemFormatFLES : uint8_t {
   // FLIB hardware pattern generators
-  CbmNetPattern = 0x10,           ///< FLIB hardware pattern generator ("pgen")
-  CbmNetFrontendEmulation = 0x11, ///< FLIB front-end emulation ("emu")
-  FlibPattern = 0x20,
+  CbmNetPattern =
+      0x10, ///< !deprecated! FLIB hardware pattern generator ("pgen")
+  CbmNetFrontendEmulation =
+      0x11,           ///< !deprecated! FLIB front-end emulation ("emu")
+  FlibPattern = 0x20, ///< FLIB and FLIM 1.0 hardware pattern generator ("pgen")
+  FlimPattern = 0x21, ///< FLIM 2.0 hardware pattern generator ("pgen")
 
   // Flesnet software pattern generators
   Uninitialized = 0x80,   ///< Uninitialized data content (without crc)
