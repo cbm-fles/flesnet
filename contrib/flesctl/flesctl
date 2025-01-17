@@ -170,7 +170,7 @@ def print_config(tag):
 
 
 def start(tag):
-  # check if readaut is active
+  # check if readout is active
   output = subprocess.check_output(["/usr/bin/squeue", "-h", "-u", run_user],
                                    universal_newlines=True)
   if len(output) > 0:
