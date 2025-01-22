@@ -1,0 +1,489 @@
+#!/usr/bin/env python3
+
+# Control configuration and data taking on mFLES
+#
+# 2018-11-06 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
+# 2018-11-06 Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+
+"""
+flesctl-ng
+Usage:
+  flesctl list
+  flesctl list_unused
+  flesctl add <config_file> <tag>
+  flesctl delete <tag>
+  flesctl show <tag>
+  flesctl sinfo
+  flesctl start <tag>
+  flesctl stop
+  flesctl monitor | mon
+  flesctl logbook
+  flesctl status | status <run> | info | info <run>
+  flesctl -h | --help
+  flesctl --version
+
+Commands:
+  list         list available configuration tags
+  list_unused  list unused configuration tags
+  add          add <config_file> as <tag> to configuration db
+  delete       delete (unused) configuration <tag>
+  show         print configuration of <tag>
+  start        start a run with configuration <tag>
+  stop         stop the ongoing run
+  monitor      open the run monitor (in the less pager)
+  status|info  print information on latest run or <run>
+  logbook      open the log entry of the current run
+
+Options:
+  --help       print this help message
+  --version    print version
+"""
+
+import os
+import pwd
+import sys
+import docopt
+import glob
+import subprocess
+import shutil
+import configparser
+import time
+import datetime
+import elog
+import signal
+import requests
+import flescfg
+
+import inspect
+import pprint
+from rich import print as rprint
+from rich.table import Table, Column
+from rich.panel import Panel
+
+scriptdir = os.path.dirname(os.path.realpath(__file__))
+confdir = os.path.normpath("/home/flesctl/config")
+rundir_base = "/home/flesctl/run"
+flesctl_conf = "/home/flesctl/private/flesctl.conf"
+log_template = "/home/flesctl/private/logbook.template"
+flesctl_syslog = "/var/log/remote_serv/flesctl.log"
+
+# check if run as correct user
+run_user = "flesctl"
+username = pwd.getpwuid(os.getuid()).pw_name
+sudo_user = os.environ.get("SUDO_USER")
+if sudo_user == None or username != run_user:
+  print("start using sudo as user", run_user)
+  sys.exit()
+
+# read global configuration
+config = configparser.ConfigParser()
+config.read(flesctl_conf)
+run_id = config["DEFAULT"].getint("NextRunID")
+if not run_id:
+  print("error: no configuration at", flesctl_conf)
+  sys.exit(1)
+reservation = config["DEFAULT"].get("Reservation", None)
+
+# elog configuration
+log_host = 'http://mcbmgw01:8080/mCBM/'
+log_attr_static = {'author': 'flesctl', 'type': 'Routine', 'category': 'mFLES'}
+
+# mattermost configuration
+mattermost_host = "https://mattermost.web.cern.ch/hooks/8i895g6rmjbqdjop3m6ee3t4qo"
+mattermost_static = {"channel": "mfles-status", "username": "flesctl"}
+
+def tags():
+  for filename in glob.iglob(confdir + '/**/*.yaml', recursive=True):
+    if not filename.startswith(confdir + '/'):
+      raise ValueError("Filename does not start with confdir")
+    tag, _ = os.path.splitext(filename[len(confdir + '/'):])
+    yield tag
+
+def tags_mentioned() -> set:
+  tags = set()
+  run_config = configparser.ConfigParser()
+  for filename in glob.iglob(rundir_base + '/*/run.conf'):
+    run_config.read(filename)
+    run_tag = run_config["DEFAULT"].get("tag")
+    tags.add(run_tag)
+  return tags
+
+def tags_unused() -> list:
+  present = tags()
+  mentioned = tags_mentioned()
+  return [tag for tag in present if tag not in mentioned]
+
+
+def list_tags():
+  for tag in sorted(tags()):
+    print(tag)
+
+
+def list_unused_tags():
+  for tag in tags_unused():
+    print(tag)
+
+
+def add(tag, filename):
+  # check if tag is new
+  if tag in tags():
+    print("error: tag already exists")
+    sys.exit(1)
+
+  # TODO: check if config is duplicate, warn
+
+  # check syntax of new config file by loading it
+  if flescfg.load(filename) is None:
+    print("error: cannot parse", filename)
+    sys.exit(1)
+  print("adding new tag", tag)
+
+  # cp filename /opt/flesctl/config/tag
+  destpath = os.path.join(confdir, tag + ".yaml")
+  os.makedirs(os.path.dirname(destpath), exist_ok=True)
+  shutil.copy(filename, destpath)
+
+
+def delete(tag):
+  # check if tag exists and has never been used
+  if tag not in tags():
+    print("unknown tag:", tag)
+    return
+  if tag not in tags_unused():
+    print("cannot delete tag, it has already been used")
+    return
+
+  tag_file = os.path.join(confdir, tag + ".yaml")
+  os.remove(tag_file)
+
+
+def print_config(tag):
+  # check if tag exists
+  if tag not in tags():
+    print("error: tag unknown")
+    sys.exit(1)
+  print("# Tag:", tag)
+  with open(os.path.join(confdir, tag + ".yaml"), 'r') as cfile:    
+    if sys.stdout.isatty():
+      subprocess.run(["/usr/bin/less"], input=cfile.read(), text=True)
+    else:
+      print(cfile.read())
+
+
+def start(tag):
+  # check if readout is active
+  output = subprocess.check_output(["/usr/bin/squeue", "-h", "-u", run_user],
+                                   universal_newlines=True)
+  if len(output) > 0:
+    print("error: job is already active")
+    print(output, end='')
+    sys.exit(1)
+
+  # check if tag exists
+  if tag not in tags():
+    print("error: tag unknown")
+    sys.exit(1)
+
+  # create run directory
+  rundir = os.path.join(rundir_base, str(run_id))
+  try:
+    os.mkdir(rundir)
+  except FileExistsError:
+    print("error: run directory", rundir, "exists")
+    sys.exit(1)
+  os.chdir(rundir)
+  os.mkdir("log")
+
+  # increment next run id
+  config["DEFAULT"]["NextRunID"] = str(run_id + 1)
+  with open(flesctl_conf, 'w') as configfile:
+    config.write(configfile)
+  print("starting run with id", run_id)
+
+  # TODO: check prerequisites, e.g. leftovers from previous runs
+
+  # create run-local copy of tag config
+  shutil.copy(os.path.join(confdir, tag + ".yaml"), "readout.yaml")
+
+  # create run configuration file
+  start_time = time.time()
+  start_user = os.environ['SUDO_USER']
+  runconf = configparser.ConfigParser()
+  runconf['DEFAULT'] = {'Tag': tag, 'RunId': str(run_id),
+                        'StartTime': str(int(start_time)),
+                        'StartUser': start_user}
+  with open("run.conf", "w") as runconffile:
+    runconf.write(runconffile)
+
+  # create spm and flesnet configuration from tag
+  subprocess.call([os.path.join(scriptdir, "init_run.py"), "readout.yaml", str(run_id)])
+
+  # initialize logbook
+  shutil.copy(log_template, "logbook.txt")
+
+  # start run using spm
+  cmd = ["/opt/spm/spm-run", "--batch", "--logfile", "slurm.out",
+         "--jobname", "run_{}".format(run_id), "--time", "0"]
+  if reservation:
+    cmd += ["--reservation", reservation]
+  subprocess.call(cmd + ["readout.spm"]);
+
+  # create elog entry
+  log_msg = "Run started at {}\n".format(
+    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)))
+  log_msg += " Tag: {}".format(tag)
+  try:
+    logbook = elog.open(log_host)
+    log_id_start = logbook.post(log_msg, attributes=log_attr_static,
+                                RunNumber=run_id, subject='Run start')
+  except:
+    print("Error: electronic logbook not reachable")
+    log_id_start = -1
+
+  runconf['DEFAULT']['elog_id_start'] = str(log_id_start)
+  with open("run.conf", "w") as runconffile:
+    runconf.write(runconffile)
+
+  # create mattermost message
+  mattermost_msg = ":white_check_mark:  Run {} started with tag '{}'".format(run_id, tag)
+  mattermost_data = mattermost_static.copy()
+  mattermost_data["text"] = mattermost_msg
+  try:
+    requests.post(url = mattermost_host, json = mattermost_data)
+  except requests.exceptions.RequestException as e:
+    print("Error: Mattermost exception: {}".format(e))
+
+
+def current_run_id():
+  output = subprocess.check_output(["/usr/bin/squeue", "-h", "-o", "%j", "-u", run_user],
+                                   universal_newlines=True)
+  if output.startswith("run_"):
+    return int(output[len("run_"):])
+  else:
+    return None
+
+
+def current_nodelist():
+  output = subprocess.check_output(["/usr/bin/squeue", "-h", "-o", "%R", "-u", run_user],
+                                   universal_newlines=True)
+  if len(output) > 0:
+    return output.rstrip()
+  else:
+    return None
+
+
+def stop():
+  run_id = current_run_id()
+  if run_id is None:
+    print("error: no run job active")
+    sys.exit(1)
+
+  # change to run directory
+  rundir = os.path.join(rundir_base, str(run_id))
+  os.chdir(rundir)
+
+  print("stopping run with id", run_id)
+  subprocess.call(["/usr/bin/scancel", "--jobname", "run_{}".format(run_id)])
+  stop_time = time.time()
+  stop_user = os.environ['SUDO_USER']
+
+  # read run configuration file
+  runconf = configparser.ConfigParser()
+  runconf.read("run.conf")
+  start_time = int(runconf['DEFAULT']['StartTime'])
+  log_id_start = int(runconf['DEFAULT']['elog_id_start'])
+
+  # create elog entry
+  log_msg = "Run stopped at {}\n".format(
+    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stop_time)))
+  log_msg += " Duration: {}".format(str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
+  try:
+    logbook = elog.open(log_host)
+    # do not reply if elog failed during start
+    if log_id_start == -1:
+      log_id_stop = logbook.post(log_msg,
+                                 attributes=log_attr_static, RunNumber=run_id, subject='Run stop')
+    else:
+      log_id_stop = logbook.post(log_msg, msg_id=log_id_start, reply=True,
+                                 attributes=log_attr_static, RunNumber=run_id, subject='Run stop')
+  except:
+    print("Error: electronic logbook not reachable")
+    log_id_stop = -1
+
+  # update run configuration file
+  runconf['DEFAULT']['StopTime'] = str(int(stop_time))
+  runconf['DEFAULT']['StopUser'] = stop_user
+  runconf['DEFAULT']['elog_id_stop'] = str(log_id_stop)
+  with open("run.conf", "w") as runconffile:
+    runconf.write(runconffile)
+
+  # create mattermost message
+  mattermost_msg = ":stop_sign:  Run {} stopped after {}".format(
+    run_id, str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
+  mattermost_data = mattermost_static.copy()
+  mattermost_data["text"] = mattermost_msg
+  try:
+    requests.post(url = mattermost_host, json = mattermost_data)
+  except requests.exceptions.RequestException as e:
+    print("Error: Mattermost exception: {}".format(e))
+
+  # TODO: cleanup, remove leftovers
+
+
+def sinfo():
+  output = subprocess.check_output(["/usr/bin/squeue", "-h", "--user",
+                                    run_user], universal_newlines=True)
+  if len(output) == 0:
+    rprint("slurm status: [bold]no active run[/]")
+  else:
+    rprint("slurm status: [bold]run active[/]")
+    print(output, end='')
+
+
+def monitor():
+  syslog_mon = True
+  if syslog_mon:
+    # syslog based monitoring
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    subprocess.call(["/usr/bin/less", "-n",  "+G", "+F", flesctl_syslog])
+  else:
+    # slurm log based monitoring
+    run_id = current_run_id()
+    if run_id is None:
+      print("error: no active run found")
+      sys.exit(1)
+    subprocess.call(["/usr/bin/tail", "-f", "/home/flesctl/run/{}/slurm.out".format(run_id)])
+
+
+def edit_logbook():
+  # TODO: add line with modifiy info like: new entry on "date"
+  rundir = os.path.join(rundir_base, str(run_id-1))
+  filename = os.path.join(rundir, "logbook.txt")
+  # open file and jump to last line
+  subprocess.call(["nano +$(wc -l \"{}\")".format(filename)], shell=True)
+
+
+def run_info(par_run_id = None):
+  if par_run_id is None:
+    info_run_id = run_id - 1
+  else:
+    info_run_id = par_run_id
+
+  config_file = os.path.join(rundir_base, str(info_run_id), "run.conf")
+  if not os.path.isfile(config_file):
+    print("error: no such run found")
+    sys.exit(1)
+
+  runconf = configparser.ConfigParser()
+  runconf.read(config_file)
+  tag = runconf["DEFAULT"].get("tag", None)
+  nodelist = None
+  starttime = runconf["DEFAULT"].getint("starttime", None)
+  stoptime = runconf["DEFAULT"].getint("stoptime", None)
+  startuser = runconf["DEFAULT"].get("startuser", "N/A")
+  stopuser = runconf["DEFAULT"].get("stopuser", "N/A")
+  duration = None
+
+  # this order of checks is needed to prevent a race condition
+  # when a run is stopped and ends during this call
+  if current_run_id() == info_run_id:
+    nodelist = current_nodelist()
+    if stoptime is not None:
+      status = "pending finalization"
+      duration = datetime.timedelta(seconds=(stoptime - starttime))
+    else:
+      status = "running"
+      duration = datetime.timedelta(seconds=(int(time.time()) - starttime))
+  else:
+    if stoptime is not None:
+      status = "stopped"
+      duration = datetime.timedelta(seconds=(stoptime - starttime))
+    else:
+      status = "ended unexpectedly"
+
+  # retrieve additional information from run config
+  components = None
+  flesnet_conf = os.path.join(rundir_base, str(info_run_id), "flesnet.cfg")
+  if os.path.isfile(flesnet_conf):
+    output = subprocess.check_output(["grep", "-c", "^input =", flesnet_conf],
+                                     universal_newlines=True)
+    components = output.rstrip()
+
+  # assemble output
+  try:
+    startuser = pwd.getpwnam(startuser)[4].split(',')[0]
+  except:
+    pass
+  try:
+    stopuser = pwd.getpwnam(stopuser)[4].split(',')[0]
+  except:
+    pass
+  starttime_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(starttime))
+  stoptime_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stoptime))
+  start_str = starttime_str + " by " + startuser
+  stop_str = stoptime_str + " by " + stopuser
+
+  t = Table(Column(justify="right"), Column(), box=None, show_header=False,
+            padding=(0, 1, 0, 0))
+  t.add_row("Run number:", str(info_run_id))
+  if par_run_id is not None:
+    t.add_row("Status:", status)
+  else:
+    highlite_status = {
+      "pending finalization": "[bold red]PENDING FINALIZATION[/]",
+      "running": "[bold green]RUNNING[/]",
+      "stopped": "[bold blue]STOPPED[/]",
+      "ended unexpectedly": "[bold red]ENDED UNEXPECTEDLY[/]",
+    }
+    t.add_row("Status:", highlite_status[status])
+    if nodelist is not None:
+      t.add_row("Slurm nodelist:", nodelist)
+  t.add_row("Configuration:", tag)
+  if components is not None:
+    t.add_row("Components:", components)
+  t.add_row("Started:", start_str)
+  if stoptime is not None:
+    t.add_row("Stopped:", stop_str)
+  if duration is not None:
+    t.add_row("Duration:", str(duration))
+  rprint(Panel.fit(t, title="Run "+str(info_run_id)))
+
+
+if __name__ == "__main__":
+  arg = docopt.docopt(__doc__, version='0.2')
+
+  if arg['list']:
+    list_tags()
+
+  if arg['list_unused']:
+    list_unused_tags()
+
+  if arg['add']:
+    add(arg['<tag>'], arg['<config_file>'])
+
+  if arg['delete']:
+    delete(arg['<tag>'])
+
+  if arg['show']:
+    print_config(arg['<tag>'])
+
+  if arg['sinfo']:
+    sinfo()
+
+  if arg['start']:
+    start(arg['<tag>'])
+
+  if arg['stop']:
+    stop()
+
+  if arg['monitor'] or arg['mon']:
+    monitor()
+
+  if arg['logbook']:
+    edit_logbook()
+
+  if arg['status'] or arg['info']:
+    if arg['<run>']:
+      run_info(int(arg['<run>']))
+    else:
+      run_info()
