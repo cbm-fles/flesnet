@@ -215,7 +215,7 @@ def start(tag):
   with open("run.conf", "w") as runconffile:
     runconf.write(runconffile)
 
-  # create spm and flesnet configuration from tag
+  # create spm and flesnet configuration from tag -- TODO: Use direct python calls
   subprocess.call([os.path.join(scriptdir, "init_run.py"), "readout.yaml", str(run_id)])
 
   # initialize logbook
