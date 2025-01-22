@@ -24,10 +24,6 @@ def main():
     FLESNET_CFG = os.getenv('FLESNET_CFG', os.path.join(RUNDIR, 'flesnet.cfg'))
     SPM_CFG = os.getenv('SPM_CFG', os.path.join(RUNDIR, 'readout.spm'))
 
-    # default configuration
-    TSBUF_DATA_SIZE_EXP = 27
-    TSBUF_DESC_SIZE_EXP = 19
-
     # load the config file
     config = flescfg.load(config_file)
     if config is None:
@@ -36,9 +32,11 @@ def main():
     
     INPUT = config['use_entry_nodes']
     OUTPUT = config['use_build_nodes']
-    TRANSPORT = config['common']['transport']
     TIMESLICE_SIZE = config['common']['timeslice_size']
     OVERLAP_SIZE = config['common']['timeslice_overlap']
+    TSBUF_DATA_SIZE_EXP = config['common']['tsbuf_data_size_exp']
+    TSBUF_DESC_SIZE_EXP = config['common']['tsbuf_desc_size_exp']
+    TRANSPORT = config['common']['transport']
     TSCLIENT_PARAM = config['common']['tsclient_param']
     EXTRA_CMD = config['common']['extra_cmd']
 
