@@ -144,7 +144,7 @@ for card in cards:
         f"--data-buffer-size-exp={common['buf_size_exp']}",
         "-o", f"{SHM_PREFIX}{card}",
         "-e", f"{os.path.join(SPMDIR, "spm-provide")} cri_server_sem",
-    ]    
+    ]
     process = subprocess.Popen(cmd, preexec_fn=os.setsid)
     processes.append(process)
 

@@ -35,7 +35,7 @@ entry_nodes:
         pgen_base_eqid: 0xF030
         channels:
           1: pgen
-          4: pgen
+          3: pgen
 
 build_nodes:
   node10:
