@@ -6,7 +6,7 @@
 # 2018-11-06 Dirk Hutter <hutter@compeng.uni-frankfurt.de>
 
 """
-flesctl
+flesctl-ng
 Usage:
   flesctl list
   flesctl list_unused
@@ -52,6 +52,7 @@ import datetime
 import elog
 import signal
 import requests
+import flescfg
 
 import inspect
 import pprint
@@ -92,7 +93,7 @@ mattermost_host = "https://mattermost.web.cern.ch/hooks/8i895g6rmjbqdjop3m6ee3t4
 mattermost_static = {"channel": "mfles-status", "username": "flesctl"}
 
 def tags():
-  for filename in glob.iglob(confdir + '/**/*.conf', recursive=True):
+  for filename in glob.iglob(confdir + '/**/*.yaml', recursive=True):
     if not filename.startswith(confdir + '/'):
       raise ValueError("Filename does not start with confdir")
     tag, _ = os.path.splitext(filename[len(confdir + '/'):])
@@ -131,14 +132,14 @@ def add(tag, filename):
 
   # TODO: check if config is duplicate, warn
 
-  # check syntax of new config file by running bash on it
-  if subprocess.call(["/bin/bash", filename]) != 0:
+  # check syntax of new config file by loading it
+  if flescfg.load(filename) is None:
     print("error: cannot parse", filename)
     sys.exit(1)
   print("adding new tag", tag)
 
   # cp filename /opt/flesctl/config/tag
-  destpath = os.path.join(confdir, tag + ".conf")
+  destpath = os.path.join(confdir, tag + ".yaml")
   os.makedirs(os.path.dirname(destpath), exist_ok=True)
   shutil.copy(filename, destpath)
 
@@ -152,7 +153,7 @@ def delete(tag):
     print("cannot delete tag, it has already been used")
     return
 
-  tag_file = os.path.join(confdir, tag + ".conf")
+  tag_file = os.path.join(confdir, tag + ".yaml")
   os.remove(tag_file)
 
 
@@ -162,7 +163,7 @@ def print_config(tag):
     print("error: tag unknown")
     sys.exit(1)
   print("# Tag:", tag)
-  with open(os.path.join(confdir, tag + ".conf"), 'r') as cfile:    
+  with open(os.path.join(confdir, tag + ".yaml"), 'r') as cfile:    
     if sys.stdout.isatty():
       subprocess.run(["/usr/bin/less"], input=cfile.read(), text=True)
     else:
@@ -202,7 +203,7 @@ def start(tag):
   # TODO: check prerequisites, e.g. leftovers from previous runs
 
   # create run-local copy of tag config
-  shutil.copy(os.path.join(confdir, tag + ".conf"), "readout.conf")
+  shutil.copy(os.path.join(confdir, tag + ".yaml"), "readout.yaml")
 
   # create run configuration file
   start_time = time.time()
@@ -214,8 +215,8 @@ def start(tag):
   with open("run.conf", "w") as runconffile:
     runconf.write(runconffile)
 
-  # create spm and flesnet configuration from tag
-  subprocess.call([os.path.join(scriptdir, "init_run"), "readout.conf", str(run_id)])
+  # create spm and flesnet configuration from tag -- TODO: Use direct python calls
+  subprocess.call([os.path.join(scriptdir, "init_run.py"), "readout.yaml", str(run_id)])
 
   # initialize logbook
   shutil.copy(log_template, "logbook.txt")

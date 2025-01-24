@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+sudo -u flesctl python3 /opt/fles/flesctl-ng/flesctl-ng.py "$@"
