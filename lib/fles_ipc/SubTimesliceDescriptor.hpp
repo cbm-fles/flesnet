@@ -34,11 +34,14 @@ struct SubTimesliceComponentDescriptor {
   /// A vector of IO vectors to the microslice content data blocks in the shared
   /// memory
   std::vector<ShmIovec> contents;
+
   /// A vector of IO vectors to the microslice descriptor data blocks in the
   /// shared memory
   std::vector<ShmIovec> descriptors;
+
   // Flag: Microslices are missing in this component.
   bool is_missing_microslices;
+
   // Flag: one or more of the microslices in this component have their
   // "truncate" flag set
   // bool contains_incomplete_microslices; // TODO: Future addition
@@ -77,16 +80,21 @@ struct SubTimesliceComponentDescriptor {
 struct SubTimesliceDescriptor {
   /// The identifier string of the containing managed shared memory
   std::string shm_identifier;
+
   /// The UUID of the containing managed shared memory
   boost::uuids::uuid shm_uuid{};
+
   /// The start time of the subtimeslice in nanoseconds, should be divisible by
   /// the duration (duration_ns)
   uint64_t start_time_ns;
+
   /// The duration of the subtimeslice in nanoseconds
   uint64_t duration_ns;
+
   /// Flag to indicate that components are missing in this SubTimeslice, e. g.
   /// due to a failed entry node
   bool is_incomplete;
+
   /// The subtimeslice component descriptors
   std::vector<SubTimesliceComponentDescriptor> components;
 
