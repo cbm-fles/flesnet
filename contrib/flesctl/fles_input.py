@@ -13,7 +13,7 @@ import flescfg
 FLESNETDIR = os.getenv('FLESNETDIR', '/usr/bin/')
 SPMDIR = os.getenv('SPMDIR', '/opt/spm/')
 LOGDIR = os.getenv('LOGDIR', 'log/')
-SHM_PREFIX = os.getenv('SHM_PREFIX', 'cri_')
+SHM_PREFIX = os.getenv('SHM_PREFIX', 'readout_')
 
 # Command line parameters
 parser = argparse.ArgumentParser(description='Start Flesnet input processes.')
@@ -108,40 +108,42 @@ common = config['common']
 cards = config['entry_nodes'][hostname]['cards']
 
 print("Configuring CRIs...")
-for card in cards:
-    cardinfo = cards[card]
+for card, cardinfo in cards.items():
     cmd = [
         os.path.join(FLESNETDIR, "cri_cfg"),
         "-l", "2",
-        "-L", f"{LOGDIR}cri{card}_cfg.log",
+        "-L", f"{LOGDIR}{card}_cfg.log",
         "-i", f"{cardinfo['pci_address']}",
-        "-t", f"{common['mc_size_ns'] // 1000}",
+        "-t", f"{common['pgen_mc_size_ns'] // 1000}",
         "-r", f"{common['pgen_rate']}",
         "--mc-size-limit", f"{common['mc_size_limit_bytes']}",
     ]
     channels = cardinfo['channels']
-    for channel in channels:
-        channel_type = channels[channel]
-        cmd += [f"--c{channel}_source", f"{channel_type}"]
-        if channel_type == "pgen":
+    for channel, channelinfo in channels.items():
+        mode = channelinfo['mode']
+        cmd += [f"--c{channel}_source", f"{mode}"]
+        if mode == "pgen":
             cmd += [f"--c{channel}_eq_id", f"{cardinfo['pgen_base_eqid'] + channel}"]
             pgen_in_use = True
     subprocess.run(cmd)
 
-archivable_data = not common['allow_unsupported_cri_designs']
-
 # Start cri_server subprocesses, each in its own process group
 print("Starting cri_server instance(s)...")
-for card in cards:
-    cardinfo = cards[card]
+for card, cardinfo in cards.items():
+    readout_buffer_size = cardinfo.get('default_readout_buffer_size',
+                                       common['default_readout_buffer_size'])
+    # Find the smallest power of 2 that is greater or equal to the buffer size
+    readout_buffer_size_exp = 0
+    while (1 << readout_buffer_size_exp) < readout_buffer_size:
+        readout_buffer_size_exp += 1
     cmd = [
         os.path.join(FLESNETDIR, "cri_server"),
         "-c", "/dev/null",
-        "-L", f"{LOGDIR}cri{card}_server.log",
+        "-L", f"{LOGDIR}{card}_server.log",
         "--log-syslog",
         "-i", f"{cardinfo['pci_address']}",
-        f"--archivable-data={str(archivable_data).lower()}",
-        f"--data-buffer-size-exp={common['buf_size_exp']}",
+        f"--archivable-data=false",
+        f"--data-buffer-size-exp={readout_buffer_size_exp}",
         "-o", f"{SHM_PREFIX}{card}",
         "-e", f"{os.path.join(SPMDIR, "spm-provide")} cri_server_sem",
     ]
