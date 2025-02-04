@@ -7,6 +7,20 @@
 import yaml
 from schema import Schema, And, Or, Use, Optional, SchemaError
 
+def parse_size(value: str | int) -> int:
+  if isinstance(value, int):
+    return value
+  suffixes = {'K': 1 << 10, 'M': 1 << 20, 'G': 1 << 30, 'T': 1 << 40}
+  val = value.strip().upper().replace(" ", "")
+  if len(val) > 0 and val[-1] in suffixes:
+    number = float(val[:-1])
+    unit = val[-1]
+  else:
+    number = float(val)
+    unit = ''
+  return int(number * suffixes.get(unit, 1))
+
+
 CONFIG_SCHEMA = Schema({
   "use_entry_nodes": str,
   "use_build_nodes": str,
@@ -16,11 +30,10 @@ CONFIG_SCHEMA = Schema({
     "tsbuf_data_size_exp": And(Use(int), lambda n: 0 < n < 10000),
     "tsbuf_desc_size_exp": And(Use(int), lambda n: 0 < n < 10000),
     "transport": And(str, Use(str.lower), Or("rdma", "libfabric", "zeromq")),
-    "allow_unsupported_cri_designs": bool,
-    "mc_size_limit_bytes": And(Use(int), lambda n: 0 < n),
-    "buf_size_exp": And(Use(int), lambda n: 0 < n < 10000),
-    "mc_size_ns": And(Use(int), lambda n: 0 < n),
-    "pgen_rate": And(Use(int), lambda n: 0 < n < 10000),
+    "mc_size_limit_bytes": And(Use(parse_size), lambda n: 0 < n),
+    "default_readout_buffer_size": And(Use(parse_size), lambda n: 0 < n),
+    "pgen_mc_size_ns": And(Use(int), lambda n: 0 < n),
+    "pgen_rate": And(Use(float), lambda x: 0 <= x <= 1),
     "tsclient_param": [str],
     "extra_cmd": [str],
   },
@@ -32,10 +45,14 @@ CONFIG_SCHEMA = Schema({
           "pci_address": str,
           "pgen_base_eqid": Use(int),
           "channels": {
-            int: And(str, Use(str.lower), Or("flim", "pgen", "disable")),
-          }
-        }
-      }
+            int: {
+              "mode": And(str, Use(str.lower), Or("flim", "pgen", "disable")),
+              Optional("readout_buffer_size"): And(Use(parse_size), lambda n: 0 < n),
+            },
+          },          
+          Optional("default_readout_buffer_size"): And(Use(parse_size), lambda n: 0 < n),
+        },
+      },
     }
   },
   "build_nodes": {
@@ -53,10 +70,8 @@ CONFIG_DEFAULTS = {
     "timeslice_size": 1000,
     "timeslice_overlap": 1,
     "transport": "rdma",
-    "allow_unsupported_cri_designs": False,
     "mc_size_limit_bytes": 2097152,
-    "buf_size_exp": 31,
-    "mc_size_ns": 100000,
+    "default_readout_buffer_size": 2^31,
     "pgen_rate": 1,
     "tsclient_param": [],
     "extra_cmd": [],
@@ -64,7 +79,7 @@ CONFIG_DEFAULTS = {
 }
 
 
-def recursive_merge(dict1, dict2):
+def recursive_merge(dict1: dict, dict2: dict) -> dict:
   for key, value in dict2.items():
     if key in dict1 and isinstance(dict1[key], dict) and isinstance(value, dict):
       # Recursively merge nested dictionaries
@@ -75,7 +90,7 @@ def recursive_merge(dict1, dict2):
   return dict1
 
 
-def load_yaml(file_paths: str | list[str], default: dict={}):
+def load_yaml(file_paths: str | list[str], default: dict={}) -> dict:
   if isinstance(file_paths, str):
     file_paths = [file_paths]
 
@@ -93,20 +108,13 @@ def load_yaml(file_paths: str | list[str], default: dict={}):
   return data
 
 
-def validate_yaml(yaml_data):
+def load(file_paths: str | list[str]) -> dict | None:
+  data = load_yaml(file_paths, CONFIG_DEFAULTS)
   try:
-    CONFIG_SCHEMA.validate(yaml_data)
-    return True
+    validated = CONFIG_SCHEMA.validate(data)
+    return validated
   except SchemaError as e:
     print(e)
-    return False
-
-
-def load(file_paths: str | list[str]):
-  data = load_yaml(file_paths, CONFIG_DEFAULTS)
-  if validate_yaml(data):
-    return data
-  else:
     return None
   
 

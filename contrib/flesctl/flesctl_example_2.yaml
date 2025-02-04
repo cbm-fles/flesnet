@@ -9,12 +9,11 @@ common:
   tsbuf_data_size_exp: 30
   tsbuf_desc_size_exp: 22
   transport: rdma
-  allow_unsupported_cri_designs: false
   
   # cri settings
   mc_size_limit_bytes: 2097152
-  buf_size_exp: 31
-  mc_size_ns: 100000      # only used for cri pgen
+  default_readout_buffer_size: 1G
+  pgen_mc_size_ns: 100000
   pgen_rate: 1
 
   tsclient_param:
@@ -24,18 +23,23 @@ entry_nodes:
   en03:
     address: en03ib0
     cards:
-      0:
+      cri0:
         pci_address: 0b:00.1
+        default_readout_buffer_size: 2G
         pgen_base_eqid: 0xF020
         channels:
-          0: pgen
-          1: pgen
-      1:
+          0:
+            mode: pgen
+          1:
+            mode: pgen
+      cri1:
         pci_address: 0a:00.1
         pgen_base_eqid: 0xF030
         channels:
-          1: pgen
-          3: pgen
+          1:
+            mode: pgen
+          3:
+            mode: pgen
 
 build_nodes:
   node10:
