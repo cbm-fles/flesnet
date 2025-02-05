@@ -6,111 +6,101 @@ import datetime
 import argparse
 import flescfg
 
-def main():
-    parser = argparse.ArgumentParser(description='Generate Flesnet and SPM configurations.')
-    parser.add_argument('config', help='Path to the configuration file')
-    parser.add_argument('run_id', help='Run ID')
-    args = parser.parse_args()
+# global parameters, may be overwritten by environment
+FLESNETDIR = os.getenv('FLESNETDIR', '/usr/bin/')
+FLESCTLDIR = os.getenv('FLESCTLDIR', '/opt/fles/bin/')
+SPMDIR = os.getenv('SPMDIR', '/opt/spm/')
+RUNDIR = os.getenv('RUNDIR', '')
+LOGDIR = os.getenv('LOGDIR', 'log/')
+FLESNET_CFG = os.getenv('FLESNET_CFG', os.path.join(RUNDIR, 'flesnet.cfg'))
+SPM_CFG = os.getenv('SPM_CFG', os.path.join(RUNDIR, 'readout.spm'))
 
-    config_file = args.config
-    run_id = args.run_id
 
-    # global parameters, may be overwritten by environment
-    FLESNETDIR = os.getenv('FLESNETDIR', '/usr/bin/')
-    FLESCTLDIR = os.getenv('FLESCTLDIR', '/opt/fles/bin/')
-    SPMDIR = os.getenv('SPMDIR', '/opt/spm/')
-    RUNDIR = os.getenv('RUNDIR', '')
-    LOGDIR = os.getenv('LOGDIR', 'log/')
-    FLESNET_CFG = os.getenv('FLESNET_CFG', os.path.join(RUNDIR, 'flesnet.cfg'))
-    SPM_CFG = os.getenv('SPM_CFG', os.path.join(RUNDIR, 'readout.spm'))
-
+def main(config_file: str, run_id: str):
     # load the config file
     config = flescfg.load(config_file)
     if config is None:
         print("Error loading configuration file.")
         exit(1)
+
+    common = config['common']
     
-    INPUT = config['use_entry_nodes']
-    OUTPUT = config['use_build_nodes']
-    TIMESLICE_SIZE = config['common']['timeslice_size']
-    OVERLAP_SIZE = config['common']['timeslice_overlap']
-    TSBUF_DATA_SIZE_EXP = config['common']['tsbuf_data_size_exp']
-    TSBUF_DESC_SIZE_EXP = config['common']['tsbuf_desc_size_exp']
-    TRANSPORT = config['common']['transport']
-    TSCLIENT_PARAM = config['common']['tsclient_param']
-    EXTRA_CMD = config['common']['extra_cmd']
-
     # read node list into python lists
-    EN_LIST = subprocess.check_output(["scontrol", "show", "hostname", INPUT]).decode().split()
-    PN_LIST = subprocess.check_output(["scontrol", "show", "hostname", OUTPUT]).decode().split()
+    entry_nodes = subprocess.check_output(["scontrol", "show", "hostname",
+                                           config['use_entry_nodes']]).decode().split()
+    build_nodes = subprocess.check_output(["scontrol", "show", "hostname",
+                                           config['use_build_nodes']]).decode().split()
 
-    print("Generating configs for", EN_LIST, PN_LIST)
+    print("Generating configs for", entry_nodes, build_nodes)
     print("Writing output to", FLESNET_CFG, "and", SPM_CFG)
 
     # entry nodes
-    EN_CFG = []
-    EN_INDEX = []
-    EN_SPM = []
+    en_cfg = []
+    en_index = []
+    en_spm = []
     input = 0
-
-    SHM_PREFIX = 'readout_'
-    for node in EN_LIST:
+    for node in entry_nodes:
         nodeinfo = config["entry_nodes"][node]
-        for card in nodeinfo['cards']:
-            cardinfo = nodeinfo['cards'][card]
+        for card, cardinfo in nodeinfo['cards'].items():
             shm_channel = 0
             for channel in range(8):
                 if channel in cardinfo["channels"]:
-                    EN_CFG.append(f"input = shm://{nodeinfo['address']}/{SHM_PREFIX}{card}/{shm_channel}?overlap={OVERLAP_SIZE}")
-                    EN_INDEX.append(f"-i{input}")
+                    en_cfg.append(f"input = shm://{nodeinfo['address']}/readout_{card}/{shm_channel}?overlap={common['timeslice_overlap']}")
+                    en_index.append(f"-i{input}")
                     shm_channel += 1
                     input += 1
-            EN_CFG.append("")
-        EN_SPM.append(f"{node}: bash -c \"LOGDIR={LOGDIR}{node}_ {FLESCTLDIR}/fles_input.py {config_file} {node}\"")
-        EN_SPM.append(f"{node}: bash -c \"{SPMDIR}spm-require -n1 fles_input_sem; {FLESNETDIR}flesnet -m -f {FLESNET_CFG} -L {LOGDIR}{node}_flesnet_en.log --log-syslog {' '.join(EN_INDEX)}\"")
-        EN_INDEX = []
+            en_cfg.append("")
+        en_spm.append(f"{node}: bash -c \"LOGDIR={LOGDIR}{node}_ {FLESCTLDIR}/fles_input.py {config_file} {node}\"")
+        en_spm.append(f"{node}: bash -c \"{SPMDIR}spm-require -n1 fles_input_sem; {FLESNETDIR}flesnet -m -f {FLESNET_CFG} -L {LOGDIR}{node}_flesnet_en.log --log-syslog {' '.join(en_index)}\"")
+        en_index = []
 
-    # processing nodes
-    SHM_PREFIX = f'flesnet_{datetime.datetime.now().strftime("%S%f")}_'
-    PN_CFG = []
-    PN_SPM = []
+    # build nodes
+    pn_cfg = []
+    pn_spm = []
     output = 0
-    for node in PN_LIST:
+    for node in build_nodes:
         nodeinfo = config["build_nodes"][node]
-        TSCLIENT_COUNT = len(TSCLIENT_PARAM)
-        PN_CFG.append(f"output = shm://{nodeinfo['address']}/{SHM_PREFIX}{output}?datasize={TSBUF_DATA_SIZE_EXP}&descsize={TSBUF_DESC_SIZE_EXP}")
-        PN_SPM.append(f"{node}: bash -c '{FLESNETDIR}preclean; {FLESNETDIR}flesnet -m -f {FLESNET_CFG} -L {LOGDIR}{node}_flesnet_pn.log --log-syslog -o{output}'")
+        shm_id = f"flesnet_{run_id}_{output}"
+        pn_cfg.append(f"output = shm://{nodeinfo['address']}/{shm_id}?datasize={common['tsbuf_data_size_exp']}&descsize={common['tsbuf_desc_size_exp']}")
+        pn_spm.append(f"{node}: bash -c '{FLESNETDIR}preclean; {FLESNETDIR}flesnet -m -f {FLESNET_CFG} -L {LOGDIR}{node}_flesnet_pn.log --log-syslog -o{output}'")
         client = 0
-        for param in TSCLIENT_PARAM:
-            param = param.replace('%run_id%', run_id).replace('%client%', str(client)).replace('%shm_id%', f"{SHM_PREFIX}{output}")
-            PN_SPM.append(f"{node}: {FLESNETDIR}tsclient -c{output} -L {LOGDIR}{node}_{client}_tsclient.log --log-syslog {param}")
+        for param in common['tsclient_param']:
+            param = param.replace('%run_id%', run_id).replace('%client%', str(client)).replace('%shm_id%', shm_id)
+            pn_spm.append(f"{node}: {FLESNETDIR}tsclient -c{output} -L {LOGDIR}{node}_{client}_tsclient.log --log-syslog {param}")
             client += 1
-        for cmd in EXTRA_CMD:
-            cmd = cmd.replace('%run_id%', run_id).replace('%shm_id%', f"{SHM_PREFIX}{output}")
-            PN_SPM.append(f"{node}: {cmd}")
+        for cmd in common['extra_cmd']:
+            cmd = cmd.replace('%run_id%', run_id).replace('%shm_id%', shm_id)
+            pn_spm.append(f"{node}: {cmd}")
         output += 1
-
-    GLOBAL_CFG = [
-        f"transport = {TRANSPORT}",
-        f"timeslice-size = {TIMESLICE_SIZE}",
-        "processor-executable = /bin/true"
-    ]
 
     with open(FLESNET_CFG, 'w') as f:
         f.write(f"# Flesnet configuration autogenerated from {config_file} at {datetime.datetime.now()}\n")
-        f.write("\n# Global configuration\n")
-        f.write("\n".join(GLOBAL_CFG) + "\n")
-        f.write("\n# Entry nodes\n")
-        f.write("\n".join(EN_CFG))
-        f.write("\n# Processing nodes\n")
-        f.write("\n".join(PN_CFG) + "\n")
+        f.write("\n")
+        f.write("# Global configuration\n")
+        f.write(f"transport = {common['transport']}\n")
+        f.write(f"timeslice-size = {common['timeslice_size']}\n")
+        f.write("processor-executable = /bin/true\n")
+        f.write("\n")
+       
+        f.write("# Entry nodes\n")
+        f.write("\n".join(en_cfg) + "\n")
+        f.write("# Processing nodes\n")
+        f.write("\n".join(pn_cfg) + "\n")
 
     with open(SPM_CFG, 'w') as f:
         f.write(f"# SPM configuration autogenerated from {config_file} at {datetime.datetime.now()}\n")
-        f.write("\n# Entry nodes\n")
-        f.write("\n".join(EN_SPM) + "\n")
-        f.write("\n# Processing nodes\n")
-        f.write("\n".join(PN_SPM) + "\n")
+        f.write("\n")
+        f.write("# Entry nodes\n")
+        f.write("\n".join(en_spm) + "\n")
+        f.write("\n")
+        f.write("# Processing nodes\n")
+        f.write("\n".join(pn_spm) + "\n")
+
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Generate Flesnet and SPM configurations.')
+    parser.add_argument('config', help='Path to the configuration file')
+    parser.add_argument('run_id', help='Run ID')
+    args = parser.parse_args()
+
+    main(args.config, args.run_id)
