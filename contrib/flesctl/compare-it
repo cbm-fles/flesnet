@@ -9,7 +9,7 @@ export SPMDIR="./dummy/"
 ./init_run flesctl_example_2.cfg 1234
 mv readout.spm readout.spm.shell
 mv flesnet.cfg flesnet.cfg.shell
-./init_run.py flesctl_example_2.yaml 1234
+../../flesctl/init_run.py ../../flesctl/flesctl_example_2.yaml 1234
 mv readout.spm readout.spm.python
 mv flesnet.cfg flesnet.cfg.python
 
@@ -20,4 +20,4 @@ diff -u readout.spm.shell readout.spm.python || true
 
 # compare manually
 # FLESNETDIR="./dummy/" SPMDIR="./dummy/" LOGDIR=delme_shell_en03_ ./fles_input flesctl_example_2.cfg en03
-# FLESNETDIR="./dummy/" SPMDIR="./dummy/" LOGDIR=delme_python_en03_ ./fles_input.py flesctl_example_2.yaml en03
+# FLESNETDIR="./dummy/" SPMDIR="./dummy/" LOGDIR=delme_python_en03_ ../../flesctl/fles_input.py ../../flesctl/flesctl_example_2.yaml en03
