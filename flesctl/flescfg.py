@@ -9,6 +9,7 @@ import sys
 import yaml
 from schema import Schema, And, Or, Use, Optional, SchemaError
 
+
 def parse_size(value: str | int) -> int:
   if isinstance(value, int):
     return value
@@ -51,7 +52,7 @@ CONFIG_SCHEMA = Schema({
               "mode": And(str, Use(str.lower), Or("flim", "pgen", "disable")),
               Optional("readout_buffer_size"): And(Use(parse_size), lambda n: 0 < n),
             },
-          },          
+          },
           Optional("default_readout_buffer_size"): And(Use(parse_size), lambda n: 0 < n),
         },
       },
@@ -73,7 +74,7 @@ CONFIG_DEFAULTS = {
     "timeslice_overlap": 1,
     "transport": "rdma",
     "mc_size_limit_bytes": 2097152,
-    "default_readout_buffer_size": 2^31,
+    "default_readout_buffer_size": 2 ^ 31,
     "pgen_rate": 1,
     "tsclient_param": [],
     "extra_cmd": [],
@@ -92,14 +93,16 @@ def recursive_merge(dict1: dict, dict2: dict) -> dict:
   return dict1
 
 
-def load_yaml(file_paths: str | list[str], default: dict={}) -> dict:
+def load_yaml(file_paths: str | list[str], default: dict | None = None) -> dict:
+  if default is None:
+    default = {}
   if isinstance(file_paths, str):
     file_paths = [file_paths]
 
   data = default.copy()
   for file_path in file_paths:
     try:
-      with open(file_path, 'r') as file:
+      with open(file_path, 'r', encoding='utf8') as file:
         new_data = yaml.safe_load(file)
         data = recursive_merge(data, new_data)
     except FileNotFoundError:
@@ -118,7 +121,7 @@ def load(file_paths: str | list[str]) -> dict | None:
   except SchemaError as e:
     print(e)
     return None
-  
+
 
 if __name__ == "__main__":
   import argparse
@@ -137,4 +140,3 @@ if __name__ == "__main__":
   else:
     print("Configuration is invalid.")
     sys.exit(1)
-
