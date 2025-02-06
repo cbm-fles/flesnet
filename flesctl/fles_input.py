@@ -7,6 +7,7 @@ import signal
 import sys
 import time
 import argparse
+
 import flescfg
 
 # Global parameters, may be overwritten by environment
@@ -21,10 +22,10 @@ def main(config_file: str, hostname: str):
     config = flescfg.load(config_file)
     if config is None:
         print("Error loading configuration file.")
-        exit(1)
+        sys.exit(1)
 
     # Spawned processes
-    processes = []
+    processes: list[subprocess.Popen] = []
 
     def cleanup_shm():
         print("Cleaning up shm files...")

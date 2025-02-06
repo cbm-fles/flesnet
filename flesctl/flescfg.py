@@ -4,6 +4,8 @@
 #
 # 2024-12-03 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
 
+import sys
+
 import yaml
 from schema import Schema, And, Or, Use, Optional, SchemaError
 
@@ -131,8 +133,8 @@ if __name__ == "__main__":
     print("Configuration is valid.")
     if args.verbose:
       print(config)
-    exit(0)
+    sys.exit(0)
   else:
     print("Configuration is invalid.")
-    exit(1)
+    sys.exit(1)
 
