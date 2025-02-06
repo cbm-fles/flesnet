@@ -72,7 +72,7 @@ flesctl_syslog = "/var/log/remote_serv/flesctl.log"
 run_user = "flesctl"
 username = pwd.getpwuid(os.getuid()).pw_name
 sudo_user = os.environ.get("SUDO_USER")
-if sudo_user == None or username != run_user:
+if sudo_user is None or username != run_user:
   print("start using sudo as user", run_user)
   sys.exit()
 
