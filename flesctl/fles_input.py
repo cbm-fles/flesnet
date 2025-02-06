@@ -10,6 +10,7 @@ import argparse
 
 import flescfg
 
+
 # Global parameters, may be overwritten by environment
 FLESNETDIR = os.getenv('FLESNETDIR', '/usr/bin/')
 SPMDIR = os.getenv('SPMDIR', '/opt/spm/')
@@ -29,7 +30,7 @@ def main(config_file: str, hostname: str):
 
     def cleanup_shm():
         print("Cleaning up shm files...")
-        for shm_file in glob.glob('/dev/shm/{}*'.format(SHM_PREFIX)):
+        for shm_file in glob.glob(f"/dev/shm/{SHM_PREFIX}*"):
             os.remove(shm_file)
 
     def term_subprocesses(timeout=10) -> bool:
@@ -136,7 +137,7 @@ def main(config_file: str, hostname: str):
             "-L", f"{LOGDIR}{card}_server.log",
             "--log-syslog",
             "-i", f"{cardinfo['pci_address']}",
-            f"--archivable-data=false",
+            "--archivable-data=false",
             f"--data-buffer-size-exp={readout_buffer_size_exp}",
             "-o", f"{SHM_PREFIX}{card}",
             "-e", f"{os.path.join(SPMDIR, "spm-provide")} cri_server_sem",

@@ -61,6 +61,7 @@ from rich import print as rprint
 from rich.table import Table, Column
 from rich.panel import Panel
 
+
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 confdir = os.path.normpath("/home/flesctl/config")
 rundir_base = "/home/flesctl/run"
@@ -164,7 +165,7 @@ def print_config(tag):
     print("error: tag unknown")
     sys.exit(1)
   print("# Tag:", tag)
-  with open(os.path.join(confdir, tag + ".yaml"), 'r') as cfile:    
+  with open(os.path.join(confdir, tag + ".yaml"), 'r') as cfile:
     if sys.stdout.isatty():
       subprocess.run(["/usr/bin/less"], input=cfile.read(), text=True)
     else:
@@ -224,15 +225,15 @@ def start(tag):
 
   # start run using spm
   cmd = ["/opt/spm/spm-run", "--batch", "--logfile", "slurm.out",
-         "--jobname", "run_{}".format(run_id), "--time", "0"]
+         "--jobname", f"run_{run_id}", "--time", "0"]
   if reservation:
     cmd += ["--reservation", reservation]
   subprocess.call(cmd + ["readout.spm"]);
 
   # create elog entry
-  log_msg = "Run started at {}\n".format(
-    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)))
-  log_msg += " Tag: {}".format(tag)
+  now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time))
+  log_msg = f"Run started at {now}\n"
+  log_msg += f" Tag: {tag}"
   try:
     logbook = elog.open(log_host)
     log_id_start = logbook.post(log_msg, attributes=log_attr_static,
@@ -246,13 +247,13 @@ def start(tag):
     runconf.write(runconffile)
 
   # create mattermost message
-  mattermost_msg = ":white_check_mark:  Run {} started with tag '{}'".format(run_id, tag)
+  mattermost_msg = f":white_check_mark:  Run {run_id} started with tag '{tag}'"
   mattermost_data = mattermost_static.copy()
   mattermost_data["text"] = mattermost_msg
   try:
     requests.post(url = mattermost_host, json = mattermost_data)
   except requests.exceptions.RequestException as e:
-    print("Error: Mattermost exception: {}".format(e))
+    print(f"Error: Mattermost exception: {e}")
 
 
 def current_run_id():
@@ -284,7 +285,7 @@ def stop():
   os.chdir(rundir)
 
   print("stopping run with id", run_id)
-  subprocess.call(["/usr/bin/scancel", "--jobname", "run_{}".format(run_id)])
+  subprocess.call(["/usr/bin/scancel", "--jobname", f"run_{run_id}"])
   stop_time = time.time()
   stop_user = os.environ['SUDO_USER']
 
@@ -295,9 +296,10 @@ def stop():
   log_id_start = int(runconf['DEFAULT']['elog_id_start'])
 
   # create elog entry
-  log_msg = "Run stopped at {}\n".format(
-    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stop_time)))
-  log_msg += " Duration: {}".format(str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
+  now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stop_time))
+  duration = str(datetime.timedelta(seconds=(int(stop_time) - start_time)))
+  log_msg = f"Run stopped at {now}\n"
+  log_msg += f" Duration: {duration}"
   try:
     logbook = elog.open(log_host)
     # do not reply if elog failed during start
@@ -319,14 +321,14 @@ def stop():
     runconf.write(runconffile)
 
   # create mattermost message
-  mattermost_msg = ":stop_sign:  Run {} stopped after {}".format(
-    run_id, str(datetime.timedelta(seconds=(int(stop_time) - start_time))))
+  duration = str(datetime.timedelta(seconds=(int(stop_time) - start_time)))
+  mattermost_msg = f":stop_sign:  Run {run_id} stopped after {duration}"
   mattermost_data = mattermost_static.copy()
   mattermost_data["text"] = mattermost_msg
   try:
     requests.post(url = mattermost_host, json = mattermost_data)
   except requests.exceptions.RequestException as e:
-    print("Error: Mattermost exception: {}".format(e))
+    print(f"Error: Mattermost exception: {e}")
 
   # TODO: cleanup, remove leftovers
 
@@ -353,7 +355,7 @@ def monitor():
     if run_id is None:
       print("error: no active run found")
       sys.exit(1)
-    subprocess.call(["/usr/bin/tail", "-f", "/home/flesctl/run/{}/slurm.out".format(run_id)])
+    subprocess.call(["/usr/bin/tail", "-f", f"/home/flesctl/run/{run_id}/slurm.out"])
 
 
 def edit_logbook():
@@ -361,7 +363,7 @@ def edit_logbook():
   rundir = os.path.join(rundir_base, str(run_id-1))
   filename = os.path.join(rundir, "logbook.txt")
   # open file and jump to last line
-  subprocess.call(["nano +$(wc -l \"{}\")".format(filename)], shell=True)
+  subprocess.call([f"nano +$(wc -l \"{filename}\")"], shell=True)
 
 
 def run_info(par_run_id = None):
