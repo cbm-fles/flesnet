@@ -9,13 +9,13 @@ import sys
 import flescfg
 
 # global parameters, may be overwritten by environment
-FLESNETDIR = os.getenv('FLESNETDIR', '/usr/bin/')
-FLESCTLDIR = os.getenv('FLESCTLDIR', '/opt/fles/bin/')
-SPMDIR = os.getenv('SPMDIR', '/opt/spm/')
-RUNDIR = os.getenv('RUNDIR', '')
-LOGDIR = os.getenv('LOGDIR', 'log/')
-FLESNET_CFG = os.getenv('FLESNET_CFG', os.path.join(RUNDIR, 'flesnet.cfg'))
-SPM_CFG = os.getenv('SPM_CFG', os.path.join(RUNDIR, 'readout.spm'))
+FLESNETDIR = os.getenv("FLESNETDIR", "/usr/bin/")
+FLESCTLDIR = os.getenv("FLESCTLDIR", "/opt/fles/bin/")
+SPMDIR = os.getenv("SPMDIR", "/opt/spm/")
+RUNDIR = os.getenv("RUNDIR", "")
+LOGDIR = os.getenv("LOGDIR", "log/")
+FLESNET_CFG = os.getenv("FLESNET_CFG", os.path.join(RUNDIR, "flesnet.cfg"))
+SPM_CFG = os.getenv("SPM_CFG", os.path.join(RUNDIR, "readout.spm"))
 
 
 def main(config_file: str, run_id: str):
@@ -25,13 +25,23 @@ def main(config_file: str, run_id: str):
         print("Error loading configuration file.")
         sys.exit(1)
 
-    common = config['common']
+    common = config["common"]
 
     # read node list into python lists
-    entry_nodes = subprocess.check_output(["scontrol", "show", "hostname",
-                                           config['use_entry_nodes']]).decode().split()
-    build_nodes = subprocess.check_output(["scontrol", "show", "hostname",
-                                           config['use_build_nodes']]).decode().split()
+    entry_nodes = (
+        subprocess.check_output(
+            ["scontrol", "show", "hostname", config["use_entry_nodes"]]
+        )
+        .decode()
+        .split()
+    )
+    build_nodes = (
+        subprocess.check_output(
+            ["scontrol", "show", "hostname", config["use_build_nodes"]]
+        )
+        .decode()
+        .split()
+    )
 
     print("Generating configs for", entry_nodes, build_nodes)
     print("Writing output to", FLESNET_CFG, "and", SPM_CFG)
@@ -43,17 +53,23 @@ def main(config_file: str, run_id: str):
     input_count = 0
     for node in entry_nodes:
         nodeinfo = config["entry_nodes"][node]
-        for card, cardinfo in nodeinfo['cards'].items():
+        for card, cardinfo in nodeinfo["cards"].items():
             shm_channel = 0
             for channel in range(8):
                 if channel in cardinfo["channels"]:
-                    en_cfg.append(f"input = shm://{nodeinfo['address']}/readout_{card}/{shm_channel}?overlap={common['timeslice_overlap']}")
+                    en_cfg.append(
+                        f"input = shm://{nodeinfo['address']}/readout_{card}/{shm_channel}?overlap={common['timeslice_overlap']}"
+                    )
                     en_index.append(f"-i{input_count}")
                     shm_channel += 1
                     input_count += 1
             en_cfg.append("")
-        en_spm.append(f"{node}: bash -c \"LOGDIR={LOGDIR}{node}_ {FLESCTLDIR}/fles_input.py {config_file} {node}\"")
-        en_spm.append(f"{node}: bash -c \"{SPMDIR}spm-require -n1 fles_input_sem; {FLESNETDIR}flesnet -m -f {FLESNET_CFG} -L {LOGDIR}{node}_flesnet_en.log --log-syslog {' '.join(en_index)}\"")
+        en_spm.append(
+            f'{node}: bash -c "LOGDIR={LOGDIR}{node}_ {FLESCTLDIR}/fles_input.py {config_file} {node}"'
+        )
+        en_spm.append(
+            f"{node}: bash -c \"{SPMDIR}spm-require -n1 fles_input_sem; {FLESNETDIR}flesnet -m -f {FLESNET_CFG} -L {LOGDIR}{node}_flesnet_en.log --log-syslog {' '.join(en_index)}\""
+        )
         en_index = []
 
     # build nodes
@@ -63,20 +79,32 @@ def main(config_file: str, run_id: str):
     for node in build_nodes:
         nodeinfo = config["build_nodes"][node]
         shm_id = f"flesnet_{run_id}_{output_count}"
-        pn_cfg.append(f"output = shm://{nodeinfo['address']}/{shm_id}?datasize={common['tsbuf_data_size_exp']}&descsize={common['tsbuf_desc_size_exp']}")
-        pn_spm.append(f"{node}: bash -c '{FLESNETDIR}preclean; {FLESNETDIR}flesnet -m -f {FLESNET_CFG} -L {LOGDIR}{node}_flesnet_pn.log --log-syslog -o{output_count}'")
+        pn_cfg.append(
+            f"output = shm://{nodeinfo['address']}/{shm_id}?datasize={common['tsbuf_data_size_exp']}&descsize={common['tsbuf_desc_size_exp']}"
+        )
+        pn_spm.append(
+            f"{node}: bash -c '{FLESNETDIR}preclean; {FLESNETDIR}flesnet -m -f {FLESNET_CFG} -L {LOGDIR}{node}_flesnet_pn.log --log-syslog -o{output_count}'"
+        )
         client = 0
-        for param in common['tsclient_param']:
-            param = param.replace('%run_id%', run_id).replace('%client%', str(client)).replace('%shm_id%', shm_id)
-            pn_spm.append(f"{node}: {FLESNETDIR}tsclient -c{output_count} -L {LOGDIR}{node}_{client}_tsclient.log --log-syslog {param}")
+        for param in common["tsclient_param"]:
+            param = (
+                param.replace("%run_id%", run_id)
+                .replace("%client%", str(client))
+                .replace("%shm_id%", shm_id)
+            )
+            pn_spm.append(
+                f"{node}: {FLESNETDIR}tsclient -c{output_count} -L {LOGDIR}{node}_{client}_tsclient.log --log-syslog {param}"
+            )
             client += 1
-        for cmd in common['extra_cmd']:
-            cmd = cmd.replace('%run_id%', run_id).replace('%shm_id%', shm_id)
+        for cmd in common["extra_cmd"]:
+            cmd = cmd.replace("%run_id%", run_id).replace("%shm_id%", shm_id)
             pn_spm.append(f"{node}: {cmd}")
         output_count += 1
 
-    with open(FLESNET_CFG, 'w', encoding='utf-8') as f:
-        f.write(f"# Flesnet configuration autogenerated from {config_file} at {datetime.datetime.now()}\n")
+    with open(FLESNET_CFG, "w", encoding="utf-8") as f:
+        f.write(
+            f"# Flesnet configuration autogenerated from {config_file} at {datetime.datetime.now()}\n"
+        )
         f.write("\n")
         f.write("# Global configuration\n")
         f.write(f"transport = {common['transport']}\n")
@@ -89,8 +117,10 @@ def main(config_file: str, run_id: str):
         f.write("# Processing nodes\n")
         f.write("\n".join(pn_cfg) + "\n")
 
-    with open(SPM_CFG, 'w', encoding='utf-8') as f:
-        f.write(f"# SPM configuration autogenerated from {config_file} at {datetime.datetime.now()}\n")
+    with open(SPM_CFG, "w", encoding="utf-8") as f:
+        f.write(
+            f"# SPM configuration autogenerated from {config_file} at {datetime.datetime.now()}\n"
+        )
         f.write("\n")
         f.write("# Entry nodes\n")
         f.write("\n".join(en_spm) + "\n")
@@ -100,8 +130,10 @@ def main(config_file: str, run_id: str):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Generate Flesnet and SPM configurations.')
-    parser.add_argument('config', help='Path to the configuration file')
-    parser.add_argument('run_id', help='Run ID')
+    parser = argparse.ArgumentParser(
+        description="Generate Flesnet and SPM configurations."
+    )
+    parser.add_argument("config", help="Path to the configuration file")
+    parser.add_argument("run_id", help="Run ID")
     args = parser.parse_args()
     main(args.config, args.run_id)
