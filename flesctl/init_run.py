@@ -102,5 +102,4 @@ if __name__ == "__main__":
     parser.add_argument('config', help='Path to the configuration file')
     parser.add_argument('run_id', help='Run ID')
     args = parser.parse_args()
-
     main(args.config, args.run_id)
