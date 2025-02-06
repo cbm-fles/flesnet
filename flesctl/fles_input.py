@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Start readout on a node."""
 
 import glob
 import os
@@ -18,79 +19,90 @@ LOGDIR = os.getenv("LOGDIR", "log/")
 SHM_PREFIX = os.getenv("SHM_PREFIX", "readout_")
 
 
+# Global variables
+processes: list[subprocess.Popen] = []  # Spawned processes
+pgen_in_use: bool = False
+MAY_END: bool = False
+END_REQUESTED: bool = False
+
+
+def cleanup_shm():
+    """Remove all shared memory files."""
+    print("Cleaning up shm files...")
+    for shm_file in glob.glob(f"/dev/shm/{SHM_PREFIX}*"):
+        os.remove(shm_file)
+
+
+def term_subprocesses(timeout=10) -> bool:
+    """Send SIGTERM to all subprocesses and wait for them to exit.
+    If any remain, return False."""
+    print(f"Sending SIGTERM to all {len(processes)} subprocesses...")
+    for process in processes:
+        if process.poll() is None:  # Process is still running
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+
+    # Wait for all processes to terminate or timeout
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        all_terminated = True
+        for process in processes:
+            if process.poll() is None:  # Process is still running
+                all_terminated = False
+                break
+        if all_terminated:
+            print("All subprocesses terminated gracefully.")
+            return True
+        time.sleep(0.5)  # Check every 500ms
+    return False
+
+
+def kill_subprocesses() -> None:
+    """Send SIGKILL to all subprocesses."""
+    print("Sending SIGKILL to remaining subprocesses...")
+    for process in processes:
+        if process.poll() is None:  # Process is still running
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+
+
+def end_readout():
+    """End readout by shutting down all subprocesses."""
+    print("Shutting down...")
+    if pgen_in_use:
+        print("Disabling pattern generators...")
+        subprocess.run(
+            [os.path.join(FLESNETDIR, "cri_en_pgen"), "0"],
+            stdout=open(LOGDIR + "cri_en_pgen.log", "a", encoding="utf-8"),
+            check=False,
+        )
+    if term_subprocesses():
+        print("Exiting")
+        sys.exit(0)
+    else:
+        print("Some subprocesses did not terminate gracefully.")
+        kill_subprocesses()
+        cleanup_shm()
+        sys.exit(1)
+
+
+def handle_signal(signum, _):
+    """Handle SIGINT or SIGTERM signal by initiating end of readout."""
+    signal_name = signal.Signals(signum).name
+    print(f"Received signal {signal_name}.")
+    if MAY_END:
+        end_readout()
+    else:
+        print("Requesting end of readout.")
+        global END_REQUESTED  # pylint: disable=global-statement
+        END_REQUESTED = True
+
+
 def main(config_file: str, hostname: str):
+    """Start readout on a node."""
     # load the config file
     config = flescfg.load(config_file)
     if config is None:
         print("Error loading configuration file.")
         sys.exit(1)
-
-    # Spawned processes
-    processes: list[subprocess.Popen] = []
-
-    def cleanup_shm():
-        print("Cleaning up shm files...")
-        for shm_file in glob.glob(f"/dev/shm/{SHM_PREFIX}*"):
-            os.remove(shm_file)
-
-    def term_subprocesses(timeout=10) -> bool:
-        """Send SIGTERM to all subprocesses and wait for them to exit.
-        If any remain, return False."""
-        print(f"Sending SIGTERM to all {len(processes)} subprocesses...")
-        for process in processes:
-            if process.poll() is None:  # Process is still running
-                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-
-        # Wait for all processes to terminate or timeout
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            all_terminated = True
-            for process in processes:
-                if process.poll() is None:  # Process is still running
-                    all_terminated = False
-                    break
-            if all_terminated:
-                print("All subprocesses terminated gracefully.")
-                return True
-            time.sleep(0.5)  # Check every 500ms
-        return False
-
-    def kill_subprocesses() -> None:
-        print("Sending SIGKILL to remaining subprocesses...")
-        for process in processes:
-            if process.poll() is None:  # Process is still running
-                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
-
-    def end_readout():
-        print("Shutting down...")
-        if pgen_in_use:
-            print("Disabling pattern generators...")
-            subprocess.run(
-                [os.path.join(FLESNETDIR, "cri_en_pgen"), "0"],
-                stdout=open(LOGDIR + "cri_en_pgen.log", "a"),
-            )
-        if term_subprocesses():
-            print("Exiting")
-            sys.exit(0)
-        else:
-            print("Some subprocesses did not terminate gracefully.")
-            kill_subprocesses()
-            cleanup_shm()
-            sys.exit(1)
-
-    MAY_END = False
-    END_REQUESTED = False
-
-    def handle_signal(signum, frame):
-        """Handle SIGINT or SIGTERM signal by initiating end of readout."""
-        signal_name = signal.Signals(signum).name
-        print(f"Received signal {signal_name}.")
-        global MAY_END, END_REQUESTED
-        if MAY_END:
-            end_readout()
-        else:
-            print("Requesting end of readout.")
-            END_REQUESTED = True
 
     # handle end signals
     for sig in [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]:
@@ -99,10 +111,11 @@ def main(config_file: str, hostname: str):
     print("Starting readout...")
     subprocess.run(
         [os.path.join(FLESNETDIR, "cri_info")],
-        stdout=open(LOGDIR + "cri_info.log", "w"),
+        stdout=open(LOGDIR + "cri_info.log", "w", encoding="utf-8"),
+        check=False,
     )
 
-    pgen_in_use = False
+    use_pgen = False
     common = config["common"]
     cards = config["entry_nodes"][hostname]["cards"]
 
@@ -132,8 +145,10 @@ def main(config_file: str, hostname: str):
                     f"--c{channel}_eq_id",
                     f"{cardinfo['pgen_base_eqid'] + channel}",
                 ]
-                pgen_in_use = True
-        subprocess.run(cmd)
+                use_pgen = True
+        subprocess.run(cmd, check=False)
+    global pgen_in_use  # pylint: disable=global-statement
+    pgen_in_use = use_pgen
 
     # Start cri_server subprocesses, each in its own process group
     print("Starting cri_server instance(s)...")
@@ -161,13 +176,14 @@ def main(config_file: str, hostname: str):
             "-e",
             f"{os.path.join(SPMDIR, "spm-provide")} cri_server_sem",
         ]
-        process = subprocess.Popen(cmd, preexec_fn=os.setsid)
+        process = subprocess.Popen(cmd, start_new_session=True)
         processes.append(process)
 
     # Block until servers are ready
     print(f"Waiting for {len(cards)} cri_server instance(s)...")
     subprocess.run(
-        [os.path.join(SPMDIR, "spm-require"), f"-n{len(cards)}", "cri_server_sem"]
+        [os.path.join(SPMDIR, "spm-require"), f"-n{len(cards)}", "cri_server_sem"],
+        check=False,
     )
     print("... all cri_server(s) started")
 
@@ -180,16 +196,18 @@ def main(config_file: str, hostname: str):
         print("Enabling pattern generators...")
         subprocess.run(
             [FLESNETDIR + "cri_en_pgen", "1"],
-            stdout=open(LOGDIR + "cri_en_pgen.log", "w"),
+            stdout=open(LOGDIR + "cri_en_pgen.log", "w", encoding="utf-8"),
+            check=False,
         )
 
     # From this point it is safe to shut down any time
+    global MAY_END  # pylint: disable=global-statement
     MAY_END = True
     # Check for race conditions
     if END_REQUESTED:
         end_readout()
 
-    subprocess.run([os.path.join(SPMDIR, "spm-provide"), "fles_input_sem"])
+    subprocess.run([os.path.join(SPMDIR, "spm-provide"), "fles_input_sem"], check=False)
     print("Running...")
     # Monitor all subprocesses
     while processes:
