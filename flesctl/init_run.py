@@ -2,11 +2,11 @@
 """Generate Flesnet and SPM configurations."""
 
 import os
-import subprocess
 import datetime
 import sys
 
 import flescfg
+import slurm
 
 
 # global parameters, may be overwritten by environment
@@ -30,20 +30,8 @@ def main(config_file: str, run_id: str):
     common = config["common"]
 
     # read node list into python lists
-    entry_nodes = (
-        subprocess.check_output(
-            ["scontrol", "show", "hostname", config["use_entry_nodes"]]
-        )
-        .decode()
-        .split()
-    )
-    build_nodes = (
-        subprocess.check_output(
-            ["scontrol", "show", "hostname", config["use_build_nodes"]]
-        )
-        .decode()
-        .split()
-    )
+    entry_nodes = slurm.node_list(config["use_entry_nodes"])
+    build_nodes = slurm.node_list(config["use_build_nodes"])
 
     print("Generating configs for", entry_nodes, build_nodes)
     print("Writing output to", FLESNET_CFG, "and", SPM_CFG)
