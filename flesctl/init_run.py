@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+"""Generate Flesnet and SPM configurations."""
 
 import os
 import subprocess
 import datetime
-import argparse
 import sys
 
 import flescfg
+
 
 # global parameters, may be overwritten by environment
 FLESNETDIR = os.getenv("FLESNETDIR", "/usr/bin/")
@@ -19,6 +20,7 @@ SPM_CFG = os.getenv("SPM_CFG", os.path.join(RUNDIR, "readout.spm"))
 
 
 def main(config_file: str, run_id: str):
+    """Generate Flesnet and SPM configurations."""
     # load the config file
     config = flescfg.load(config_file)
     if config is None:
@@ -130,6 +132,8 @@ def main(config_file: str, run_id: str):
 
 
 if __name__ == "__main__":
+    import argparse
+
     parser = argparse.ArgumentParser(
         description="Generate Flesnet and SPM configurations."
     )

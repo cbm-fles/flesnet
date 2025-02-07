@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-
-# Manage flesnet and data taking configuration
-#
+"""Manage flesnet and data taking configuration."""
 # 2024-12-03 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
 
 import sys
@@ -11,6 +9,7 @@ from schema import Schema, And, Or, Use, Optional, SchemaError
 
 
 def parse_size(value: str | int) -> int:
+    """Parse a human-readable size string into bytes."""
     if isinstance(value, int):
         return value
     suffixes = {"K": 1 << 10, "M": 1 << 20, "G": 1 << 30, "T": 1 << 40}
@@ -91,6 +90,7 @@ CONFIG_DEFAULTS = {
 
 
 def recursive_merge(dict1: dict, dict2: dict) -> dict:
+    """Recursively merge two dictionaries."""
     for key, value in dict2.items():
         if key in dict1 and isinstance(dict1[key], dict) and isinstance(value, dict):
             # Recursively merge nested dictionaries
@@ -102,6 +102,7 @@ def recursive_merge(dict1: dict, dict2: dict) -> dict:
 
 
 def load_yaml(file_paths: str | list[str], default: dict | None = None) -> dict:
+    """Load and merge YAML configuration files."""
     if default is None:
         default = {}
     if isinstance(file_paths, str):
@@ -122,6 +123,7 @@ def load_yaml(file_paths: str | list[str], default: dict | None = None) -> dict:
 
 
 def load(file_paths: str | list[str]) -> dict | None:
+    """Load and validate configuration files."""
     data = load_yaml(file_paths, CONFIG_DEFAULTS)
     try:
         validated = CONFIG_SCHEMA.validate(data)
