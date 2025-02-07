@@ -17,7 +17,6 @@ Usage:
   flesctl start <tag>
   flesctl stop
   flesctl monitor | mon
-  flesctl logbook
   flesctl status | status <run> | info | info <run>
   flesctl -h | --help
   flesctl --version
@@ -32,7 +31,6 @@ Commands:
   stop         stop the ongoing run
   monitor      open the run monitor (in the less pager)
   status|info  print information on latest run or <run>
-  logbook      open the log entry of the current run
 
 Options:
   --help       print this help message
@@ -63,7 +61,6 @@ scriptdir = os.path.dirname(os.path.realpath(__file__))
 confdir = os.path.normpath("/home/flesctl/config")
 rundir_base = "/home/flesctl/run"
 flesctl_conf = "/home/flesctl/private/flesctl.conf"
-log_template = "/home/flesctl/private/logbook.template"
 flesctl_syslog = "/var/log/remote_serv/flesctl.log"
 
 # check if run as correct user
@@ -226,9 +223,6 @@ def start(tag):
     # create spm and flesnet configuration from tag
     init_run.main("readout.yaml", str(run_id))
 
-    # initialize logbook
-    shutil.copy(log_template, "logbook.txt")
-
     # start run using spm
     cmd = [
         "/opt/spm/spm-run",
@@ -386,14 +380,6 @@ def monitor():
         )
 
 
-def edit_logbook():
-    # TODO: add line with modifiy info like: new entry on "date"
-    rundir = os.path.join(rundir_base, str(run_id - 1))
-    filename = os.path.join(rundir, "logbook.txt")
-    # open file and jump to last line
-    subprocess.call([f'nano +$(wc -l "{filename}")'], shell=True)
-
-
 def run_info(par_run_id=None):
     if par_run_id is None:
         info_run_id = run_id - 1
@@ -515,9 +501,6 @@ if __name__ == "__main__":
 
     if arg["monitor"] or arg["mon"]:
         monitor()
-
-    if arg["logbook"]:
-        edit_logbook()
 
     if arg["status"] or arg["info"]:
         if arg["<run>"]:
