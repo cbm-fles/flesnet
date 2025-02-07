@@ -51,7 +51,7 @@ import sys
 import time
 
 import docopt
-import elog
+import elog  # type: ignore
 import flescfg
 import init_run
 import requests
