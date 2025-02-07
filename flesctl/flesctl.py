@@ -4,14 +4,12 @@
 #
 # 2018-11-06 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
 # 2018-11-06 Dirk Hutter <hutter@compeng.uni-frankfurt.de>
+# 2025-02-07 Jan de Cuveland
 
 """
 flesctl
 Usage:
   flesctl list
-  flesctl list_unused
-  flesctl add <config_file> <tag>
-  flesctl delete <tag>
   flesctl show <tag>
   flesctl start <tag>
   flesctl stop
@@ -22,9 +20,6 @@ Usage:
 
 Commands:
   list         list available configuration tags
-  list_unused  list unused configuration tags
-  add          add <config_file> as <tag> to configuration db
-  delete       delete (unused) configuration <tag>
   show         print configuration of <tag>
   start        start a run with configuration <tag>
   stop         stop the ongoing run
@@ -96,63 +91,9 @@ def tags():
         yield tag
 
 
-def tags_mentioned() -> set:
-    tags = set()
-    run_config = configparser.ConfigParser()
-    for filename in glob.iglob(rundir_base + "/*/run.conf"):
-        run_config.read(filename)
-        run_tag = run_config["DEFAULT"].get("tag")
-        tags.add(run_tag)
-    return tags
-
-
-def tags_unused() -> list:
-    present = tags()
-    mentioned = tags_mentioned()
-    return [tag for tag in present if tag not in mentioned]
-
-
 def list_tags():
     for tag in sorted(tags()):
         print(tag)
-
-
-def list_unused_tags():
-    for tag in tags_unused():
-        print(tag)
-
-
-def add(tag, filename):
-    # check if tag is new
-    if tag in tags():
-        print("error: tag already exists")
-        sys.exit(1)
-
-    # TODO: check if config is duplicate, warn
-
-    # check syntax of new config file by loading it
-    if flescfg.load(filename) is None:
-        print("error: cannot parse", filename)
-        sys.exit(1)
-    print("adding new tag", tag)
-
-    # cp filename /opt/flesctl/config/tag
-    destpath = os.path.join(confdir, tag + ".yaml")
-    os.makedirs(os.path.dirname(destpath), exist_ok=True)
-    shutil.copy(filename, destpath)
-
-
-def delete(tag):
-    # check if tag exists and has never been used
-    if tag not in tags():
-        print("unknown tag:", tag)
-        return
-    if tag not in tags_unused():
-        print("cannot delete tag, it has already been used")
-        return
-
-    tag_file = os.path.join(confdir, tag + ".yaml")
-    os.remove(tag_file)
 
 
 def print_config(tag):
@@ -465,15 +406,6 @@ if __name__ == "__main__":
 
     if arg["list"]:
         list_tags()
-
-    if arg["list_unused"]:
-        list_unused_tags()
-
-    if arg["add"]:
-        add(arg["<tag>"], arg["<config_file>"])
-
-    if arg["delete"]:
-        delete(arg["<tag>"])
 
     if arg["show"]:
         print_config(arg["<tag>"])
