@@ -13,7 +13,6 @@ Usage:
   flesctl add <config_file> <tag>
   flesctl delete <tag>
   flesctl show <tag>
-  flesctl sinfo
   flesctl start <tag>
   flesctl stop
   flesctl monitor | mon
@@ -352,17 +351,6 @@ def stop():
     # TODO: cleanup, remove leftovers
 
 
-def sinfo():
-    output = subprocess.check_output(
-        ["/usr/bin/squeue", "-h", "--user", run_user], universal_newlines=True
-    )
-    if len(output) == 0:
-        rprint("slurm status: [bold]no active run[/]")
-    else:
-        rprint("slurm status: [bold]run active[/]")
-        print(output, end="")
-
-
 def monitor():
     syslog_mon = True
     if syslog_mon:
@@ -489,9 +477,6 @@ if __name__ == "__main__":
 
     if arg["show"]:
         print_config(arg["<tag>"])
-
-    if arg["sinfo"]:
-        sinfo()
 
     if arg["start"]:
         start(arg["<tag>"])
