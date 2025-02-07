@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Manage flesnet and data taking configuration."""
 # 2024-12-03 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
+# pyright: reportArgumentType=false
 
 import sys
 
 import yaml
-from schema import Schema, And, Or, Use, Optional, SchemaError
+from schema import Schema, And, Or, Use, Optional, SchemaError  # type: ignore
 
 
 def parse_size(value: str | int) -> int:
