@@ -39,28 +39,25 @@ Options:
   --version    print version
 """
 
+import configparser
+import datetime
+import glob
 import os
 import pwd
-import sys
-import docopt
-import glob
-import subprocess
 import shutil
-import configparser
-import time
-import datetime
-import elog
 import signal
-import requests
+import subprocess
+import sys
+import time
+
+import docopt
+import elog
 import flescfg
 import init_run
-
-import inspect
-import pprint
+import requests
 from rich import print as rprint
-from rich.table import Table, Column
 from rich.panel import Panel
-
+from rich.table import Column, Table
 
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 confdir = os.path.normpath("/home/flesctl/config")
@@ -168,9 +165,11 @@ def print_config(tag):
         print("error: tag unknown")
         sys.exit(1)
     print("# Tag:", tag)
-    with open(os.path.join(confdir, tag + ".yaml"), "r") as cfile:
+    with open(os.path.join(confdir, tag + ".yaml"), "r", encoding="utf8") as cfile:
         if sys.stdout.isatty():
-            subprocess.run(["/usr/bin/less"], input=cfile.read(), text=True)
+            subprocess.run(
+                ["/usr/bin/less"], input=cfile.read(), text=True, check=False
+            )
         else:
             print(cfile.read())
 
@@ -202,7 +201,7 @@ def start(tag):
 
     # increment next run id
     config["DEFAULT"]["NextRunID"] = str(run_id + 1)
-    with open(flesctl_conf, "w") as configfile:
+    with open(flesctl_conf, "w", encoding="utf8") as configfile:
         config.write(configfile)
     print("starting run with id", run_id)
 
@@ -221,7 +220,7 @@ def start(tag):
         "StartTime": str(int(start_time)),
         "StartUser": start_user,
     }
-    with open("run.conf", "w") as runconffile:
+    with open("run.conf", "w", encoding="utf8") as runconffile:
         runconf.write(runconffile)
 
     # create spm and flesnet configuration from tag
@@ -254,12 +253,12 @@ def start(tag):
         log_id_start = logbook.post(
             log_msg, attributes=log_attr_static, RunNumber=run_id, subject="Run start"
         )
-    except:
+    except elog.LogbookError:
         print("Error: electronic logbook not reachable")
         log_id_start = -1
 
     runconf["DEFAULT"]["elog_id_start"] = str(log_id_start)
-    with open("run.conf", "w") as runconffile:
+    with open("run.conf", "w", encoding="utf8") as runconffile:
         runconf.write(runconffile)
 
     # create mattermost message
@@ -267,7 +266,7 @@ def start(tag):
     mattermost_data = mattermost_static.copy()
     mattermost_data["text"] = mattermost_msg
     try:
-        requests.post(url=mattermost_host, json=mattermost_data)
+        requests.post(url=mattermost_host, json=mattermost_data, timeout=10)
     except requests.exceptions.RequestException as e:
         print(f"Error: Mattermost exception: {e}")
 
@@ -278,8 +277,7 @@ def current_run_id():
     )
     if output.startswith("run_"):
         return int(output[len("run_") :])
-    else:
-        return None
+    return None
 
 
 def current_nodelist():
@@ -288,8 +286,7 @@ def current_nodelist():
     )
     if len(output) > 0:
         return output.rstrip()
-    else:
-        return None
+    return None
 
 
 def stop():
@@ -337,7 +334,7 @@ def stop():
                 RunNumber=run_id,
                 subject="Run stop",
             )
-    except:
+    except elog.LogbookError:
         print("Error: electronic logbook not reachable")
         log_id_stop = -1
 
@@ -345,7 +342,7 @@ def stop():
     runconf["DEFAULT"]["StopTime"] = str(int(stop_time))
     runconf["DEFAULT"]["StopUser"] = stop_user
     runconf["DEFAULT"]["elog_id_stop"] = str(log_id_stop)
-    with open("run.conf", "w") as runconffile:
+    with open("run.conf", "w", encoding="utf8") as runconffile:
         runconf.write(runconffile)
 
     # create mattermost message
@@ -354,7 +351,7 @@ def stop():
     mattermost_data = mattermost_static.copy()
     mattermost_data["text"] = mattermost_msg
     try:
-        requests.post(url=mattermost_host, json=mattermost_data)
+        requests.post(url=mattermost_host, json=mattermost_data, timeout=10)
     except requests.exceptions.RequestException as e:
         print(f"Error: Mattermost exception: {e}")
 
