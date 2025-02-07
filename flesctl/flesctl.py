@@ -44,7 +44,6 @@ import time
 
 import docopt
 import elog  # type: ignore
-import flescfg
 import init_run
 import requests
 from rich import print as rprint
@@ -53,37 +52,52 @@ from rich.table import Column, Table
 
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 confdir = os.path.normpath("/home/flesctl/config")
-rundir_base = "/home/flesctl/run"
-flesctl_conf = "/home/flesctl/private/flesctl.conf"
-flesctl_syslog = "/var/log/remote_serv/flesctl.log"
+RUNDIR_BASE = "/home/flesctl/run"
+FLESCTL_CONF = "/home/flesctl/private/flesctl.conf"
+FLESCTL_SYSLOG = "/var/log/remote_serv/flesctl.log"
+RUN_AS_USER = "flesctl"
 
-# check if run as correct user
-run_user = "flesctl"
-username = pwd.getpwuid(os.getuid()).pw_name
-sudo_user = os.environ.get("SUDO_USER")
-if sudo_user is None or username != run_user:
-    print("start using sudo as user", run_user)
-    sys.exit()
+# elog configuration
+ELOG_HOST = "http://mcbmgw01:8080/mCBM/"
+ELOG_ATTR_STATIC = {"author": "flesctl", "type": "Routine", "category": "mFLES"}
+
+# mattermost configuration
+MATTERMOST_HOST = "https://mattermost.web.cern.ch/hooks/8i895g6rmjbqdjop3m6ee3t4qo"
+MATTERMOST_ATTR_STATIC = {"channel": "mfles-status", "username": "flesctl"}
+
+
+def get_user_fullname(user: str) -> str:
+    """Get the full name of a user."""
+    try:
+        fullname = pwd.getpwnam(user)[4].split(",")[0]
+        if not fullname:
+            fullname = user
+    except KeyError:
+        fullname = user
+    return fullname
+
+
+def check_user_or_exit():
+    """Check if run as correct user."""
+    username = pwd.getpwuid(os.getuid()).pw_name
+    sudo_user = os.environ.get("SUDO_USER")
+    if sudo_user is None or username != RUN_AS_USER:
+        print("start using sudo as user", RUN_AS_USER)
+        sys.exit()
+
 
 # read global configuration
 config = configparser.ConfigParser()
-config.read(flesctl_conf)
+config.read(FLESCTL_CONF)
 run_id = config["DEFAULT"].getint("NextRunID")
 if not run_id:
-    print("error: no configuration at", flesctl_conf)
+    print("error: no configuration at", FLESCTL_CONF)
     sys.exit(1)
 reservation = config["DEFAULT"].get("Reservation", None)
 
-# elog configuration
-log_host = "http://mcbmgw01:8080/mCBM/"
-log_attr_static = {"author": "flesctl", "type": "Routine", "category": "mFLES"}
-
-# mattermost configuration
-mattermost_host = "https://mattermost.web.cern.ch/hooks/8i895g6rmjbqdjop3m6ee3t4qo"
-mattermost_static = {"channel": "mfles-status", "username": "flesctl"}
-
 
 def tags():
+    """Yield all available configuration tags."""
     for filename in glob.iglob(confdir + "/**/*.yaml", recursive=True):
         if not filename.startswith(confdir + "/"):
             raise ValueError("Filename does not start with confdir")
@@ -92,6 +106,7 @@ def tags():
 
 
 def list_tags():
+    """List all available configuration tags."""
     for tag in sorted(tags()):
         print(tag)
 
@@ -114,7 +129,7 @@ def print_config(tag):
 def start(tag):
     # check if readout is active
     output = subprocess.check_output(
-        ["/usr/bin/squeue", "-h", "-u", run_user], universal_newlines=True
+        ["/usr/bin/squeue", "-h", "-u", RUN_AS_USER], universal_newlines=True
     )
     if len(output) > 0:
         print("error: job is already active")
@@ -127,7 +142,7 @@ def start(tag):
         sys.exit(1)
 
     # create run directory
-    rundir = os.path.join(rundir_base, str(run_id))
+    rundir = os.path.join(RUNDIR_BASE, str(run_id))
     try:
         os.mkdir(rundir)
     except FileExistsError:
@@ -138,7 +153,7 @@ def start(tag):
 
     # increment next run id
     config["DEFAULT"]["NextRunID"] = str(run_id + 1)
-    with open(flesctl_conf, "w", encoding="utf8") as configfile:
+    with open(FLESCTL_CONF, "w", encoding="utf8") as configfile:
         config.write(configfile)
     print("starting run with id", run_id)
 
@@ -183,9 +198,9 @@ def start(tag):
     log_msg = f"Run started at {now}\n"
     log_msg += f" Tag: {tag}"
     try:
-        logbook = elog.open(log_host)
+        logbook = elog.open(ELOG_HOST)
         log_id_start = logbook.post(
-            log_msg, attributes=log_attr_static, RunNumber=run_id, subject="Run start"
+            log_msg, attributes=ELOG_ATTR_STATIC, RunNumber=run_id, subject="Run start"
         )
     except elog.LogbookError:
         print("Error: electronic logbook not reachable")
@@ -197,17 +212,17 @@ def start(tag):
 
     # create mattermost message
     mattermost_msg = f":white_check_mark:  Run {run_id} started with tag '{tag}'"
-    mattermost_data = mattermost_static.copy()
+    mattermost_data = MATTERMOST_ATTR_STATIC.copy()
     mattermost_data["text"] = mattermost_msg
     try:
-        requests.post(url=mattermost_host, json=mattermost_data, timeout=10)
+        requests.post(url=MATTERMOST_HOST, json=mattermost_data, timeout=10)
     except requests.exceptions.RequestException as e:
         print(f"Error: Mattermost exception: {e}")
 
 
 def current_run_id():
     output = subprocess.check_output(
-        ["/usr/bin/squeue", "-h", "-o", "%j", "-u", run_user], universal_newlines=True
+        ["/usr/bin/squeue", "-h", "-o", "%j", "-u", RUN_AS_USER], universal_newlines=True
     )
     if output.startswith("run_"):
         return int(output[len("run_") :])
@@ -216,7 +231,7 @@ def current_run_id():
 
 def current_nodelist():
     output = subprocess.check_output(
-        ["/usr/bin/squeue", "-h", "-o", "%R", "-u", run_user], universal_newlines=True
+        ["/usr/bin/squeue", "-h", "-o", "%R", "-u", RUN_AS_USER], universal_newlines=True
     )
     if len(output) > 0:
         return output.rstrip()
@@ -230,7 +245,7 @@ def stop():
         sys.exit(1)
 
     # change to run directory
-    rundir = os.path.join(rundir_base, str(run_id))
+    rundir = os.path.join(RUNDIR_BASE, str(run_id))
     os.chdir(rundir)
 
     print("stopping run with id", run_id)
@@ -250,12 +265,12 @@ def stop():
     log_msg = f"Run stopped at {now}\n"
     log_msg += f" Duration: {duration}"
     try:
-        logbook = elog.open(log_host)
+        logbook = elog.open(ELOG_HOST)
         # do not reply if elog failed during start
         if log_id_start == -1:
             log_id_stop = logbook.post(
                 log_msg,
-                attributes=log_attr_static,
+                attributes=ELOG_ATTR_STATIC,
                 RunNumber=run_id,
                 subject="Run stop",
             )
@@ -264,7 +279,7 @@ def stop():
                 log_msg,
                 msg_id=log_id_start,
                 reply=True,
-                attributes=log_attr_static,
+                attributes=ELOG_ATTR_STATIC,
                 RunNumber=run_id,
                 subject="Run stop",
             )
@@ -282,10 +297,10 @@ def stop():
     # create mattermost message
     duration = str(datetime.timedelta(seconds=(int(stop_time) - start_time)))
     mattermost_msg = f":stop_sign:  Run {run_id} stopped after {duration}"
-    mattermost_data = mattermost_static.copy()
+    mattermost_data = MATTERMOST_ATTR_STATIC.copy()
     mattermost_data["text"] = mattermost_msg
     try:
-        requests.post(url=mattermost_host, json=mattermost_data, timeout=10)
+        requests.post(url=MATTERMOST_HOST, json=mattermost_data, timeout=10)
     except requests.exceptions.RequestException as e:
         print(f"Error: Mattermost exception: {e}")
 
@@ -297,7 +312,7 @@ def monitor():
     if syslog_mon:
         # syslog based monitoring
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-        subprocess.call(["/usr/bin/less", "-n", "+G", "+F", flesctl_syslog])
+        subprocess.call(["/usr/bin/less", "-n", "+G", "+F", FLESCTL_SYSLOG])
     else:
         # slurm log based monitoring
         run_id = current_run_id()
@@ -315,7 +330,7 @@ def run_info(par_run_id=None):
     else:
         info_run_id = par_run_id
 
-    config_file = os.path.join(rundir_base, str(info_run_id), "run.conf")
+    config_file = os.path.join(RUNDIR_BASE, str(info_run_id), "run.conf")
     if not os.path.isfile(config_file):
         print("error: no such run found")
         sys.exit(1)
@@ -349,7 +364,7 @@ def run_info(par_run_id=None):
 
     # retrieve additional information from run config
     components = None
-    flesnet_conf = os.path.join(rundir_base, str(info_run_id), "flesnet.cfg")
+    flesnet_conf = os.path.join(RUNDIR_BASE, str(info_run_id), "flesnet.cfg")
     if os.path.isfile(flesnet_conf):
         output = subprocess.check_output(
             ["grep", "-c", "^input =", flesnet_conf], universal_newlines=True
@@ -357,14 +372,8 @@ def run_info(par_run_id=None):
         components = output.rstrip()
 
     # assemble output
-    try:
-        startuser = pwd.getpwnam(startuser)[4].split(",")[0]
-    except:
-        pass
-    try:
-        stopuser = pwd.getpwnam(stopuser)[4].split(",")[0]
-    except:
-        pass
+    startuser = get_user_fullname(startuser)
+    stopuser = get_user_fullname(stopuser)
     starttime_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(starttime))
     stoptime_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stoptime))
     start_str = starttime_str + " by " + startuser
@@ -402,7 +411,9 @@ def run_info(par_run_id=None):
 
 
 if __name__ == "__main__":
-    arg = docopt.docopt(__doc__, version="0.2")
+    check_user_or_exit()
+
+    arg = docopt.docopt(__doc__, version="0.3")
 
     if arg["list"]:
         list_tags()
