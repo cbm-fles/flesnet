@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-
-# Control configuration and data taking on mFLES
-#
+"""Control configuration and data taking on mFLES."""
 # 2018-11-06 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
 # 2018-11-06 Dirk Hutter <hutter@compeng.uni-frankfurt.de>
 # 2025-02-07 Jan de Cuveland
@@ -52,7 +50,7 @@ def get_user_fullname(user: str) -> str:
     return fullname
 
 
-def check_user_or_exit():
+def check_user_or_exit() -> None:
     """Check if run as correct user."""
     username = pwd.getpwuid(os.getuid()).pw_name
     sudo_user = os.environ.get("SUDO_USER")
@@ -80,13 +78,14 @@ def tags():
         yield tag
 
 
-def list_tags():
+def list_tags() -> None:
     """List all available configuration tags."""
     for tag in sorted(tags()):
         print(tag)
 
 
-def print_config(tag):
+def print_config(tag: str) -> None:
+    """Print the configuration of a tag."""
     # check if tag exists
     if tag not in tags():
         print("error: tag unknown")
@@ -101,7 +100,8 @@ def print_config(tag):
             print(cfile.read())
 
 
-def start(tag):
+def start(tag: str) -> None:
+    """Start a run with a given tag."""
     # check if readout is active
     output = subprocess.check_output(
         ["/usr/bin/squeue", "-h", "-u", RUN_AS_USER], universal_newlines=True
@@ -195,25 +195,30 @@ def start(tag):
         print(f"Error: Mattermost exception: {e}")
 
 
-def current_run_id():
+def current_run_id() -> int | None:
+    """Return the current run id or None if no run is active."""
     output = subprocess.check_output(
-        ["/usr/bin/squeue", "-h", "-o", "%j", "-u", RUN_AS_USER], universal_newlines=True
+        ["/usr/bin/squeue", "-h", "-o", "%j", "-u", RUN_AS_USER],
+        universal_newlines=True,
     )
     if output.startswith("run_"):
         return int(output[len("run_") :])
     return None
 
 
-def current_nodelist():
+def current_nodelist() -> str | None:
+    """Return the current nodelist or None if no run is active."""
     output = subprocess.check_output(
-        ["/usr/bin/squeue", "-h", "-o", "%R", "-u", RUN_AS_USER], universal_newlines=True
+        ["/usr/bin/squeue", "-h", "-o", "%R", "-u", RUN_AS_USER],
+        universal_newlines=True,
     )
     if len(output) > 0:
         return output.rstrip()
     return None
 
 
-def stop():
+def stop() -> None:
+    """Stop the ongoing run."""
     run_id = current_run_id()
     if run_id is None:
         print("error: no run job active")
@@ -236,7 +241,8 @@ def stop():
 
     # create elog entry
     now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stop_time))
-    duration = str(datetime.timedelta(seconds=(int(stop_time) - start_time)))
+    dt_s: int = int(stop_time) - start_time
+    duration = str(datetime.timedelta(seconds=dt_s))
     log_msg = f"Run stopped at {now}\n"
     log_msg += f" Duration: {duration}"
     try:
@@ -270,7 +276,8 @@ def stop():
         runconf.write(runconffile)
 
     # create mattermost message
-    duration = str(datetime.timedelta(seconds=(int(stop_time) - start_time)))
+    dt_s = int(stop_time) - start_time
+    duration = str(datetime.timedelta(seconds=dt_s))
     mattermost_msg = f":stop_sign:  Run {run_id} stopped after {duration}"
     mattermost_data = MATTERMOST_ATTR_STATIC.copy()
     mattermost_data["text"] = mattermost_msg
@@ -279,10 +286,11 @@ def stop():
     except requests.exceptions.RequestException as e:
         print(f"Error: Mattermost exception: {e}")
 
-    # TODO: cleanup, remove leftovers
+    # Cleanup: remove leftovers (currently not implemented)
 
 
-def monitor():
+def monitor() -> None:
+    """Open the run monitor."""
     syslog_mon = True
     if syslog_mon:
         # syslog based monitoring
@@ -299,7 +307,8 @@ def monitor():
         )
 
 
-def run_info(par_run_id=None):
+def run_info(par_run_id=None) -> None:
+    """Print information on the latest run or a specified run."""
     if par_run_id is None:
         info_run_id = run_id - 1
     else:
@@ -326,14 +335,20 @@ def run_info(par_run_id=None):
         nodelist = current_nodelist()
         if stoptime is not None:
             status = "pending finalization"
-            duration = datetime.timedelta(seconds=(stoptime - starttime))
+            if starttime is not None:
+                dt_s = stoptime - starttime
+                duration = datetime.timedelta(seconds=dt_s)
         else:
             status = "running"
-            duration = datetime.timedelta(seconds=(int(time.time()) - starttime))
+            if starttime is not None:
+                dt_s = int(time.time()) - starttime
+                duration = datetime.timedelta(seconds=dt_s)
     else:
         if stoptime is not None:
             status = "stopped"
-            duration = datetime.timedelta(seconds=(stoptime - starttime))
+            if starttime is not None:
+                dt_s = stoptime - starttime
+                duration = datetime.timedelta(seconds=dt_s)
         else:
             status = "ended unexpectedly"
 
@@ -399,14 +414,20 @@ if __name__ == "__main__":
     parser_show = subparsers.add_parser("show", help="print configuration of <tag>")
     parser_show.add_argument("tag", help="configuration tag")
 
-    parser_start = subparsers.add_parser("start", help="start a run with configuration <tag>")
+    parser_start = subparsers.add_parser(
+        "start", help="start a run with configuration <tag>"
+    )
     parser_start.add_argument("tag", help="configuration tag")
 
     subparsers.add_parser("stop", help="stop the ongoing run")
 
     subparsers.add_parser("monitor", aliases=["mon"], help="open the run monitor")
 
-    parser_status = subparsers.add_parser("status", aliases=["info"], help="print information on latest run or a specified run")
+    parser_status = subparsers.add_parser(
+        "status",
+        aliases=["info"],
+        help="print information on latest run or a specified run",
+    )
     parser_status.add_argument("run", nargs="?", type=int, help="run number (optional)")
 
     args = parser.parse_args()
