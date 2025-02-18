@@ -39,6 +39,41 @@ MATTERMOST_HOST = "https://mattermost.web.cern.ch/hooks/8i895g6rmjbqdjop3m6ee3t4
 MATTERMOST_ATTR_STATIC = {"channel": "mfles-status", "username": "flesctl"}
 
 
+class GlobalConfig:
+    """Global configuration class."""
+
+    def __init__(self) -> None:
+        """Initialize global configuration."""
+        self.config = configparser.ConfigParser()
+        self.config.read(FLESCTL_CONF)
+        # NextRunID is a mandatory integer configuration parameter
+        next_run_id_: int | None = self.config["DEFAULT"].getint("NextRunID")
+        if next_run_id_ is None:
+            raise ValueError("NextRunID is None")
+        self.next_run_id: int = next_run_id_
+
+    def get_next_run_id(self) -> int | None:
+        """Return the next run id."""
+        return self.next_run_id
+
+    def increment_next_run_id(self) -> None:
+        """Increment the next run id."""
+        self.next_run_id += 1
+        self.config["DEFAULT"]["NextRunID"] = str(self.next_run_id)
+        with open(FLESCTL_CONF, "w", encoding="utf8") as cfile:
+            self.config.write(cfile)
+
+    def get_previous_run_id(self) -> int | None:
+        """Return the previous run id."""
+        if self.next_run_id is None:
+            return None
+        return self.next_run_id - 1
+
+    def get_reservation(self) -> str | None:
+        """Return the reservation name."""
+        return self.config["DEFAULT"].get("Reservation", None)
+
+
 def get_user_fullname(user: str) -> str:
     """Get the full name of a user."""
     try:
@@ -57,16 +92,6 @@ def check_user_or_exit() -> None:
     if sudo_user is None or username != RUN_AS_USER:
         print("start using sudo as user", RUN_AS_USER)
         sys.exit()
-
-
-# read global configuration
-config = configparser.ConfigParser()
-config.read(FLESCTL_CONF)
-run_id = config["DEFAULT"].getint("NextRunID")
-if not run_id:
-    print("error: no configuration at", FLESCTL_CONF)
-    sys.exit(1)
-reservation = config["DEFAULT"].get("Reservation", None)
 
 
 def tags():
@@ -100,7 +125,7 @@ def print_config(tag: str) -> None:
             print(cfile.read())
 
 
-def start(tag: str) -> None:
+def start(cfg: GlobalConfig, tag: str) -> None:
     """Start a run with a given tag."""
     # check if readout is active
     output = subprocess.check_output(
@@ -116,6 +141,15 @@ def start(tag: str) -> None:
         print("error: tag unknown")
         sys.exit(1)
 
+    # retrieve next run id and reservation
+    next_run_id: int | None = cfg.get_next_run_id()
+    if next_run_id is None:
+        print("error: no valid configuration at", FLESCTL_CONF)
+        sys.exit(1)
+    else:
+        run_id: int = next_run_id
+    reservation = cfg.get_reservation()
+
     # create run directory
     rundir = os.path.join(RUNDIR_BASE, str(run_id))
     try:
@@ -126,13 +160,11 @@ def start(tag: str) -> None:
     os.chdir(rundir)
     os.mkdir("log")
 
-    # increment next run id
-    config["DEFAULT"]["NextRunID"] = str(run_id + 1)
-    with open(FLESCTL_CONF, "w", encoding="utf8") as configfile:
-        config.write(configfile)
-    print("starting run with id", run_id)
+    # increment stored next run id
+    cfg.increment_next_run_id()
+    print(f"starting run with id {run_id}")
 
-    # TODO: check prerequisites, e.g. leftovers from previous runs
+    # TODO: check prerequisites, e.g. leftovers from previous runs  # pylint: disable=fixme
 
     # create run-local copy of tag config
     shutil.copy(os.path.join(confdir, tag + ".yaml"), "readout.yaml")
@@ -307,10 +339,10 @@ def monitor() -> None:
         )
 
 
-def run_info(par_run_id=None) -> None:
+def run_info(cfg: GlobalConfig, par_run_id: int | None = None) -> None:
     """Print information on the latest run or a specified run."""
     if par_run_id is None:
-        info_run_id = run_id - 1
+        info_run_id = cfg.get_previous_run_id()
     else:
         info_run_id = par_run_id
 
@@ -432,15 +464,18 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # read global configuration
+    config = GlobalConfig()
+
     if args.command == "list":
         list_tags()
     elif args.command == "show":
         print_config(args.tag)
     elif args.command == "start":
-        start(args.tag)
+        start(cfg=config, tag=args.tag)
     elif args.command == "stop":
         stop()
     elif args.command in ("monitor", "mon"):
         monitor()
     elif args.command in ("status", "info"):
-        run_info(args.run)
+        run_info(cfg=config, par_run_id=args.run)
