@@ -1,0 +1,26 @@
+towards ecs:
+- flesctl
+  - flesctl config handling ausbauen, stattdessen git-repo pullen
+- flescfg:
+  - nodelists ausbauen
+  - "active" bei entry_nodes und build_nodes
+
+
+flesctl
+Usage:
+  flesctl list | ls
+  # flesctl list_unused
+  flesctl add <config_file> <tag>
+  flesctl delete <tag> | rm
+  flesctl show <tag> | cat
+  mv <tag> <new_tag>
+  edit <tag>
+
+  # flesctl sinfo
+  flesctl start <tag> ...   # ohne tag: wie letztes mal; run_id: tags von run
+  flesctl stop
+  flesctl monitor | mon
+  # flesctl logbook
+  flesctl status | status <run> | info | info <run>
+  flesctl -h | --help
+  flesctl --version
