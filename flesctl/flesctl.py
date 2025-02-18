@@ -17,6 +17,7 @@ import sys
 import time
 
 import elog  # type: ignore
+import flescfg
 import init_run
 import requests
 from rich import print as rprint
@@ -94,7 +95,7 @@ def check_user_or_exit() -> None:
         sys.exit()
 
 
-def tags():
+def all_tags():
     """Yield all available configuration tags."""
     for filename in glob.iglob(confdir + "/**/*.yaml", recursive=True):
         if not filename.startswith(confdir + "/"):
@@ -105,27 +106,58 @@ def tags():
 
 def list_tags() -> None:
     """List all available configuration tags."""
-    for tag in sorted(tags()):
+    for tag in sorted(all_tags()):
         print(tag)
 
 
-def print_config(tag: str) -> None:
-    """Print the configuration of a tag."""
-    # check if tag exists
-    if tag not in tags():
-        print("error: tag unknown")
+def validate_tags(tags: list[str]) -> None:
+    """Check if tags exist."""
+    unknown_tags = [tag for tag in tags if tag not in all_tags()]
+    if unknown_tags:
+        print(f"error: tag unknown: {unknown_tags}")
         sys.exit(1)
-    print("# Tag:", tag)
-    with open(os.path.join(confdir, tag + ".yaml"), "r", encoding="utf8") as cfile:
-        if sys.stdout.isatty():
-            subprocess.run(
-                ["/usr/bin/less"], input=cfile.read(), text=True, check=False
-            )
-        else:
-            print(cfile.read())
 
 
-def start(cfg: GlobalConfig, tag: str) -> None:
+def get_tag_config(tags: list[str]) -> dict | None:
+    """Get the configuration of a tag list."""
+    validate_tags(tags)
+    config_files = [os.path.join(confdir, tag + ".yaml") for tag in tags]
+    return flescfg.load(config_files)
+
+
+def get_tag_config_str(tags: list[str]) -> str:
+    """Get the configuration of a tag list as string."""
+    cfg = get_tag_config(tags)
+    if cfg is None:
+        print("error: invalid configuration")
+        sys.exit(1)
+    out: str = ""
+    for tag in tags:
+        out += f"# {tag}\n"
+    out += flescfg.dump(cfg)
+    return out
+
+
+def print_or_pager(out: str) -> None:
+    """Print the output or pipe it to the pager specified by the PAGER environment variable."""
+    if sys.stdout.isatty():
+        pager = os.environ.get("PAGER", "/usr/bin/less")
+        pager_bin = shutil.which(pager)
+        if pager_bin is None:
+            print(out, end="")
+            return
+        subprocess.run([pager_bin], input=out, text=True, check=False)
+    else:
+        print(out, end="")
+
+
+def print_config(tags: list[str]) -> None:
+    """Print the configuration of a tag."""
+    out = get_tag_config_str(tags)
+    print_or_pager(out)
+
+
+def start(cfg: GlobalConfig, tags: list[str]) -> None:
     """Start a run with a given tag."""
     # check if readout is active
     output = subprocess.check_output(
@@ -136,10 +168,8 @@ def start(cfg: GlobalConfig, tag: str) -> None:
         print(output, end="")
         sys.exit(1)
 
-    # check if tag exists
-    if tag not in tags():
-        print("error: tag unknown")
-        sys.exit(1)
+    # get joint tag configuration (also checks for validity)
+    joint_config = get_tag_config_str(tags)
 
     # retrieve next run id and reservation
     next_run_id: int | None = cfg.get_next_run_id()
@@ -166,15 +196,17 @@ def start(cfg: GlobalConfig, tag: str) -> None:
 
     # TODO: check prerequisites, e.g. leftovers from previous runs  # pylint: disable=fixme
 
-    # create run-local copy of tag config
-    shutil.copy(os.path.join(confdir, tag + ".yaml"), "readout.yaml")
+    # create run-local version of the joint tag config
+    with open("readout.yaml", "w", encoding="utf8") as config_file:
+        config_file.write(joint_config)
 
     # create run configuration file
     start_time = time.time()
     start_user = os.environ["SUDO_USER"]
+    tag_str = ",".join(tags)
     runconf = configparser.ConfigParser()
     runconf["DEFAULT"] = {
-        "Tag": tag,
+        "Tag": tag_str,
         "RunId": str(run_id),
         "StartTime": str(int(start_time)),
         "StartUser": start_user,
@@ -203,7 +235,7 @@ def start(cfg: GlobalConfig, tag: str) -> None:
     # create elog entry
     now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time))
     log_msg = f"Run started at {now}\n"
-    log_msg += f" Tag: {tag}"
+    log_msg += f" Tag: {tag_str}"
     try:
         logbook = elog.open(ELOG_HOST)
         log_id_start = logbook.post(
@@ -218,7 +250,7 @@ def start(cfg: GlobalConfig, tag: str) -> None:
         runconf.write(runconffile)
 
     # create mattermost message
-    mattermost_msg = f":white_check_mark:  Run {run_id} started with tag '{tag}'"
+    mattermost_msg = f":white_check_mark:  Run {run_id} started with tag '{tag_str}'"
     mattermost_data = MATTERMOST_ATTR_STATIC.copy()
     mattermost_data["text"] = mattermost_msg
     try:
@@ -451,17 +483,17 @@ if __name__ == "__main__":
     # flesctl show
     parser_show = subparsers.add_parser(
         "show",
-        help="Print configuration of <tag>",
-        description="Print the configuration of a tag",
+        help="Print the configuration of <tag>",
+        description="Print the configuration of one or more configuration tags",
     )
-    parser_show.add_argument("tag", help="configuration tag")
+    parser_show.add_argument("tag", nargs="+", help="configuration tag")
     # flesctl start
     parser_start = subparsers.add_parser(
         "start",
         help="Start a run with configuration <tag>",
-        description="Start a run with a given configuration tag",
+        description="Start a run with one or more given configuration tags",
     )
-    parser_start.add_argument("tag", help="configuration tag")
+    parser_start.add_argument("tag", nargs="+", help="configuration tag")
     # flesctl stop
     subparsers.add_parser(
         "stop",
@@ -492,9 +524,9 @@ if __name__ == "__main__":
     if args.command == "list":
         list_tags()
     elif args.command == "show":
-        print_config(args.tag)
+        print_config(tags=args.tag)
     elif args.command == "start":
-        start(cfg=config, tag=args.tag)
+        start(cfg=config, tags=args.tag)
     elif args.command == "stop":
         stop()
     elif args.command in ("monitor", "mon"):
