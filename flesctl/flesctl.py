@@ -353,12 +353,12 @@ def run_info(cfg: GlobalConfig, par_run_id: int | None = None) -> None:
 
     runconf = configparser.ConfigParser()
     runconf.read(config_file)
-    tag = runconf["DEFAULT"].get("tag", None)
-    nodelist = None
-    starttime = runconf["DEFAULT"].getint("starttime", None)
-    stoptime = runconf["DEFAULT"].getint("stoptime", None)
-    startuser = runconf["DEFAULT"].get("startuser", "N/A")
-    stopuser = runconf["DEFAULT"].get("stopuser", "N/A")
+    tag: str | None = runconf["DEFAULT"].get("tag", None)
+    nodelist: str | None = None
+    starttime: int | None = runconf["DEFAULT"].getint("starttime", None)
+    stoptime: int | None = runconf["DEFAULT"].getint("stoptime", None)
+    startuser: str = runconf["DEFAULT"].get("startuser", "N/A")
+    stopuser: str = runconf["DEFAULT"].get("stopuser", "N/A")
     duration = None
 
     # this order of checks is needed to prevent a race condition
@@ -396,10 +396,10 @@ def run_info(cfg: GlobalConfig, par_run_id: int | None = None) -> None:
     # assemble output
     startuser = get_user_fullname(startuser)
     stopuser = get_user_fullname(stopuser)
-    starttime_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(starttime))
-    stoptime_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stoptime))
-    start_str = starttime_str + " by " + startuser
-    stop_str = stoptime_str + " by " + stopuser
+    starttime_str: str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(starttime))
+    stoptime_str: str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stoptime))
+    start_str: str = starttime_str + " by " + startuser
+    stop_str: str = stoptime_str + " by " + stopuser
 
     t = Table(
         Column(justify="right"),
