@@ -134,6 +134,11 @@ def load(file_paths: str | list[str]) -> dict | None:
         return None
 
 
+def dump(data: dict) -> str:
+    """Dump data to a YAML string."""
+    return yaml.dump(data, default_flow_style=False, sort_keys=False)
+
+
 if __name__ == "__main__":
     import argparse
 
