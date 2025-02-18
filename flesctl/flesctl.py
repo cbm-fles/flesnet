@@ -6,31 +6,7 @@
 # 2018-11-06 Dirk Hutter <hutter@compeng.uni-frankfurt.de>
 # 2025-02-07 Jan de Cuveland
 
-"""
-flesctl
-Usage:
-  flesctl list
-  flesctl show <tag>
-  flesctl start <tag>
-  flesctl stop
-  flesctl monitor | mon
-  flesctl status | status <run> | info | info <run>
-  flesctl -h | --help
-  flesctl --version
-
-Commands:
-  list         list available configuration tags
-  show         print configuration of <tag>
-  start        start a run with configuration <tag>
-  stop         stop the ongoing run
-  monitor      open the run monitor (in the less pager)
-  status|info  print information on latest run or <run>
-
-Options:
-  --help       print this help message
-  --version    print version
-"""
-
+import argparse
 import configparser
 import datetime
 import glob
@@ -42,7 +18,6 @@ import subprocess
 import sys
 import time
 
-import docopt
 import elog  # type: ignore
 import init_run
 import requests
@@ -413,25 +388,38 @@ def run_info(par_run_id=None):
 if __name__ == "__main__":
     check_user_or_exit()
 
-    arg = docopt.docopt(__doc__, version="0.3")
+    parser = argparse.ArgumentParser(
+        description="Control configuration and data taking on mFLES"
+    )
+    parser.add_argument("--version", action="version", version="0.3")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    if arg["list"]:
+    subparsers.add_parser("list", help="list available configuration tags")
+
+    parser_show = subparsers.add_parser("show", help="print configuration of <tag>")
+    parser_show.add_argument("tag", help="configuration tag")
+
+    parser_start = subparsers.add_parser("start", help="start a run with configuration <tag>")
+    parser_start.add_argument("tag", help="configuration tag")
+
+    subparsers.add_parser("stop", help="stop the ongoing run")
+
+    subparsers.add_parser("monitor", aliases=["mon"], help="open the run monitor")
+
+    parser_status = subparsers.add_parser("status", aliases=["info"], help="print information on latest run or a specified run")
+    parser_status.add_argument("run", nargs="?", type=int, help="run number (optional)")
+
+    args = parser.parse_args()
+
+    if args.command == "list":
         list_tags()
-
-    if arg["show"]:
-        print_config(arg["<tag>"])
-
-    if arg["start"]:
-        start(arg["<tag>"])
-
-    if arg["stop"]:
+    elif args.command == "show":
+        print_config(args.tag)
+    elif args.command == "start":
+        start(args.tag)
+    elif args.command == "stop":
         stop()
-
-    if arg["monitor"] or arg["mon"]:
+    elif args.command in ("monitor", "mon"):
         monitor()
-
-    if arg["status"] or arg["info"]:
-        if arg["<run>"]:
-            run_info(int(arg["<run>"]))
-        else:
-            run_info()
+    elif args.command in ("status", "info"):
+        run_info(args.run)
