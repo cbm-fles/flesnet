@@ -434,31 +434,53 @@ def run_info(cfg: GlobalConfig, par_run_id: int | None = None) -> None:
 
 if __name__ == "__main__":
     check_user_or_exit()
-
+    # flesctl main parser
     parser = argparse.ArgumentParser(
         description="Control configuration and data taking on mFLES"
     )
     parser.add_argument("--version", action="version", version="0.3")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    subparsers.add_parser("list", help="list available configuration tags")
-
-    parser_show = subparsers.add_parser("show", help="print configuration of <tag>")
+    subparsers = parser.add_subparsers(
+        dest="command", required=True, help="flesctl command"
+    )
+    # flesctl list
+    subparsers.add_parser(
+        "list",
+        help="List available configuration tags",
+        description="List all available configuration tags",
+    )
+    # flesctl show
+    parser_show = subparsers.add_parser(
+        "show",
+        help="Print configuration of <tag>",
+        description="Print the configuration of a tag",
+    )
     parser_show.add_argument("tag", help="configuration tag")
-
+    # flesctl start
     parser_start = subparsers.add_parser(
-        "start", help="start a run with configuration <tag>"
+        "start",
+        help="Start a run with configuration <tag>",
+        description="Start a run with a given configuration tag",
     )
     parser_start.add_argument("tag", help="configuration tag")
-
-    subparsers.add_parser("stop", help="stop the ongoing run")
-
-    subparsers.add_parser("monitor", aliases=["mon"], help="open the run monitor")
-
+    # flesctl stop
+    subparsers.add_parser(
+        "stop",
+        help="Stop the ongoing run",
+        description="Stop a run by cancelling the slurm job",
+    )
+    # flesctl monitor
+    subparsers.add_parser(
+        "monitor",
+        aliases=["mon"],
+        help="open the run monitor",
+        description="Open the run monitor. This will show the main log of the current run.",
+    )
+    # flesctl status
     parser_status = subparsers.add_parser(
         "status",
         aliases=["info"],
-        help="print information on latest run or a specified run",
+        help="Print information on latest run or a specified run",
+        description="Print information on the latest run or a specified run",
     )
     parser_status.add_argument("run", nargs="?", type=int, help="run number (optional)")
 
