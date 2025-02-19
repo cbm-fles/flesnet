@@ -1,6 +1,4 @@
 # Tag: 2023/fles/en03_pgen
-use_entry_nodes: en03
-use_build_nodes: node[10,11]
 
 common:
   # flesnet settings
@@ -40,8 +38,21 @@ entry_nodes:
             mode: pgen
           3:
             mode: pgen
+  en04:
+    address: en04ib0
+    active: false
+    cards:
+      cri0:
+        pci_address: 0b:00.1
+        pgen_base_eqid: 0xF040
+        channels:
+          0:
+            mode: pgen
 
 build_nodes:
+  node9:
+    address: node9ib1
+    active: false
   node10:
     address: node10ib1
   node11:

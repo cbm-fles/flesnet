@@ -26,8 +26,6 @@ def parse_size(value: str | int) -> int:
 
 CONFIG_SCHEMA = Schema(
     {
-        "use_entry_nodes": str,
-        "use_build_nodes": str,
         "common": {
             "timeslice_size": And(Use(int), lambda n: 0 < n),
             "timeslice_overlap": And(Use(int), lambda n: 0 < n < 10000),
@@ -44,6 +42,7 @@ CONFIG_SCHEMA = Schema(
         "entry_nodes": {
             Use(str): {
                 "address": str,
+                Optional("active"): bool,
                 "cards": {
                     Use(str): {
                         "pci_address": str,
@@ -68,6 +67,7 @@ CONFIG_SCHEMA = Schema(
         "build_nodes": {
             Use(str): {
                 "address": str,
+                Optional("active"): bool,
                 Optional("tsclient_param"): [str],
                 Optional("extra_cmd"): [str],
             }

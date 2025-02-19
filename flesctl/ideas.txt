@@ -1,9 +1,6 @@
 towards ecs:
 - flesctl
   - flesctl config handling ausbauen, stattdessen git-repo pullen
-- flescfg:
-  - nodelists ausbauen
-  - "active" bei entry_nodes und build_nodes
 
 
 flesctl
