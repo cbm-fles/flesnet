@@ -6,7 +6,6 @@ import datetime
 import sys
 
 import flescfg
-import slurm
 
 
 # global parameters, may be overwritten by environment
@@ -29,9 +28,17 @@ def main(config_file: str, run_id: str):
 
     common = config["common"]
 
-    # read node list into python lists
-    entry_nodes = slurm.node_list(config["use_entry_nodes"])
-    build_nodes = slurm.node_list(config["use_build_nodes"])
+    # read node list into python lists (only active nodes)
+    entry_nodes = [
+        node
+        for node, nodeinfo in config["entry_nodes"].items()
+        if nodeinfo.get("active", True)
+    ]
+    build_nodes = [
+        node
+        for node, nodeinfo in config["build_nodes"].items()
+        if nodeinfo.get("active", True)
+    ]
 
     print("Generating configs for", entry_nodes, build_nodes)
     print("Writing output to", FLESNET_CFG, "and", SPM_CFG)
@@ -41,8 +48,9 @@ def main(config_file: str, run_id: str):
     en_index = []
     en_spm = []
     input_count = 0
-    for node in entry_nodes:
-        nodeinfo = config["entry_nodes"][node]
+    for node, nodeinfo in config["entry_nodes"].items():
+        if not nodeinfo.get("active", True):
+            continue
         for card, cardinfo in nodeinfo["cards"].items():
             shm_channel = 0
             for channel in range(8):
@@ -66,8 +74,9 @@ def main(config_file: str, run_id: str):
     pn_cfg = []
     pn_spm = []
     output_count = 0
-    for node in build_nodes:
-        nodeinfo = config["build_nodes"][node]
+    for node, nodeinfo in config["build_nodes"].items():
+        if not nodeinfo.get("active", True):
+            continue
         shm_id = f"flesnet_{run_id}_{output_count}"
         pn_cfg.append(
             f"output = shm://{nodeinfo['address']}/{shm_id}?datasize={common['tsbuf_data_size_exp']}&descsize={common['tsbuf_desc_size_exp']}"
