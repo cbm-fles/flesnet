@@ -110,29 +110,31 @@ def list_tags() -> None:
         print(tag)
 
 
-def validate_tags(tags: list[str]) -> None:
+def validate_tags(tags: str) -> None:
     """Check if tags exist."""
-    unknown_tags = [tag for tag in tags if tag not in all_tags()]
+    tag_list: list[str] = tags.split(",")
+    unknown_tags = [tag for tag in tag_list if tag not in all_tags()]
     if unknown_tags:
-        print(f"error: tag unknown: {unknown_tags}")
+        print(f"error: tag unknown: {','.join(unknown_tags)}")
         sys.exit(1)
 
 
-def get_tag_config(tags: list[str]) -> dict | None:
-    """Get the configuration of a tag list."""
+def get_tag_config(tags: str) -> dict | None:
+    """Get the configuration dictionary of a tag list."""
     validate_tags(tags)
-    config_files = [os.path.join(confdir, tag + ".yaml") for tag in tags]
+    tag_list: list[str] = tags.split(",")
+    config_files = [os.path.join(confdir, tag + ".yaml") for tag in tag_list]
     return flescfg.load(config_files)
 
 
-def get_tag_config_str(tags: list[str]) -> str:
+def get_tag_config_str(tags: str) -> str:
     """Get the configuration of a tag list as string."""
     cfg = get_tag_config(tags)
     if cfg is None:
         print("error: invalid configuration")
         sys.exit(1)
     out: str = ""
-    for tag in tags:
+    for tag in tags.split(","):
         out += f"# {tag}\n"
     out += flescfg.dump(cfg)
     return out
@@ -151,14 +153,35 @@ def print_or_pager(out: str) -> None:
         print(out, end="")
 
 
-def print_config(tags: list[str]) -> None:
-    """Print the configuration of a tag."""
-    out = get_tag_config_str(tags)
+def print_config(tags: str) -> None:
+    """Print the configuration of a tag list."""
+    out: str = get_tag_config_str(tags)
     print_or_pager(out)
 
 
-def start(cfg: GlobalConfig, tags: list[str]) -> None:
-    """Start a run with a given tag."""
+def get_tags(
+    cfg: GlobalConfig, tags: str | None = None, run_id: int | None = None
+) -> str:
+    """Optionally get the tags from a previous run."""
+    if tags is not None:
+        return tags
+    if run_id is None:
+        run_id = cfg.get_previous_run_id()
+    if run_id is None:
+        print("error: no tags specified")
+        sys.exit(1)
+    from_runconf = configparser.ConfigParser()
+    from_runconf.read(os.path.join(RUNDIR_BASE, str(run_id), "run.conf"))
+    tags = from_runconf["DEFAULT"]["tag"]
+    return tags
+
+
+def start(
+    cfg: GlobalConfig,
+    tags: str,
+    simulate: bool = False,
+) -> None:
+    """Start a run with given tags."""
     # check if readout is active
     output = subprocess.check_output(
         ["/usr/bin/squeue", "-h", "-u", RUN_AS_USER], universal_newlines=True
@@ -179,6 +202,13 @@ def start(cfg: GlobalConfig, tags: list[str]) -> None:
     else:
         run_id: int = next_run_id
     reservation = cfg.get_reservation()
+
+    if simulate:
+        print("Simulation mode:")
+        print(f"Tags: {tags}")
+        print(f"Run ID: {run_id}")
+        print(f"Reservation: {reservation}")
+        return
 
     # create run directory
     rundir = os.path.join(RUNDIR_BASE, str(run_id))
@@ -464,7 +494,8 @@ def run_info(cfg: GlobalConfig, par_run_id: int | None = None) -> None:
     rprint(Panel.fit(t, title="Run " + str(info_run_id)))
 
 
-if __name__ == "__main__":
+def main():
+    """Main function."""
     check_user_or_exit()
     # flesctl main parser
     parser = argparse.ArgumentParser(
@@ -483,17 +514,48 @@ if __name__ == "__main__":
     # flesctl show
     parser_show = subparsers.add_parser(
         "show",
-        help="Print the configuration of <tag>",
-        description="Print the configuration of one or more configuration tags",
+        help="Show the contents of a given configuration",
+        description="Print the contents of a list of configuration tags"
+        "Use --from-run to use the configuration tags from a previous run.",
     )
-    parser_show.add_argument("tag", nargs="+", help="configuration tag")
+    group_show = parser_show.add_mutually_exclusive_group(required=True)
+    group_show.add_argument(
+        "-r",
+        "--from-run",
+        type=int,
+        help="run id to use configuration tags from a previous run",
+    )
+    group_show.add_argument(
+        "-t",
+        "--tag",
+        help="configuration tag list (comma separated)",
+    )
     # flesctl start
     parser_start = subparsers.add_parser(
         "start",
-        help="Start a run with configuration <tag>",
-        description="Start a run with one or more given configuration tags",
+        help="Start a run",
+        description="Start a run with one or more given configuration tags. "
+        "Use --from-run to use the configuration tags from a previous run.",
     )
-    parser_start.add_argument("tag", nargs="+", help="configuration tag")
+    parser_start.add_argument(
+        "-s",
+        "--simulate",
+        action="store_true",
+        default=False,
+        help="no action; simulate the run start without executing it",
+    )
+    group = parser_start.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "-r",
+        "--from-run",
+        type=int,
+        help="run id to use configuration tags from a previous run",
+    )
+    group.add_argument(
+        "-t",
+        "--tag",
+        help="configuration tag list (comma separated)",
+    )
     # flesctl stop
     subparsers.add_parser(
         "stop",
@@ -524,12 +586,18 @@ if __name__ == "__main__":
     if args.command == "list":
         list_tags()
     elif args.command == "show":
-        print_config(tags=args.tag)
+        tags = get_tags(cfg=config, tags=args.tag, run_id=args.from_run)
+        print_config(tags=tags)
     elif args.command == "start":
-        start(cfg=config, tags=args.tag)
+        tags = get_tags(cfg=config, tags=args.tag, run_id=args.from_run)
+        start(cfg=config, tags=tags, simulate=args.simulate)
     elif args.command == "stop":
         stop()
     elif args.command in ("monitor", "mon"):
         monitor()
     elif args.command in ("status", "info"):
         run_info(cfg=config, par_run_id=args.run)
+
+
+if __name__ == "__main__":
+    main()
