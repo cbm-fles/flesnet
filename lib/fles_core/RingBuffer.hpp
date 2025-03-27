@@ -63,17 +63,8 @@ public:
                                  strerror(ret));
       }
       if (CLEARED) {
-        // TODO(Jan): Remove this hack for gcc < 4.8
-        // buf_ = buf_t(new(buf) T[size_](), [&](T* ptr){
-        // array_delete_(ptr, size_); });
-        buf_ = buf_t(new (buf) T[size_](), [&](T* ptr) {
-          size_t size = size_;
-          while (size != 0u) {
-            ptr[--size].~T();
-          }
-          // NOLINTNEXTLINE
-          free(const_cast<typename std::remove_volatile<T>::type*>(ptr));
-        });
+        buf_ = buf_t(new (buf) T[size_](),
+                     [&](T* ptr) { array_delete_(ptr, size_); });
       } else {
         buf_ = buf_t(new (buf) T[size_],
                      [&](T* ptr) { array_delete_(ptr, size_); });
