@@ -53,10 +53,20 @@ template <typename T_DESC, typename T_DATA>
 DualIndex cri_source<T_DESC, T_DATA>::get_write_index() {
   DualIndex write_index;
   write_index.desc = m_dma_channel->get_desc_index();
+  // write index points to the end of an element, so we substract 1 to access
+  // the last desc
   write_index.data = m_desc_buffer_view->at(write_index.desc - 1).offset +
                      m_desc_buffer_view->at(write_index.desc - 1).size;
   L_(trace) << "fetching write_index: data " << write_index.data << " desc "
             << write_index.desc;
+  return write_index;
+}
+
+template <typename T_DESC, typename T_DATA>
+DualIndexTimed cri_source<T_DESC, T_DATA>::get_write_index_timed() {
+  DualIndexTimed write_index;
+  write_index.updated = std::chrono::high_resolution_clock::now();
+  write_index.index = get_write_index();
   return write_index;
 }
 
@@ -67,6 +77,7 @@ bool cri_source<T_DESC, T_DATA>::get_eof() {
   return false;
 }
 
+// TODO: index to offset calculations could also be done by the RingBuffer class
 template <typename T_DESC, typename T_DATA>
 size_t cri_source<T_DESC, T_DATA>::hw_pointer(size_t index,
                                               size_t size_exponent,

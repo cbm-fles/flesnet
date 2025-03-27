@@ -6,7 +6,15 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RingBufferView.hpp"
 #include "dma_channel.hpp"
+#include <chrono>
 #include <memory>
+
+struct DualIndexTimed {
+  DualIndex index;
+  std::chrono::time_point<std::chrono::high_resolution_clock,
+                          std::chrono::nanoseconds>
+      updated;
+};
 
 template <typename T_DESC, typename T_DATA>
 class cri_source : public DualRingBufferReadInterface<T_DESC, T_DATA> {
@@ -27,6 +35,8 @@ public:
   DualIndex get_read_index() override;
 
   DualIndex get_write_index() override;
+
+  DualIndexTimed get_write_index_timed();
 
   bool get_eof() override;
 
