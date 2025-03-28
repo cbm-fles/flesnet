@@ -7,7 +7,7 @@
 
 namespace ip = boost::interprocess;
 
-template <typename T_DESC, typename T_DATA> class ComponentBuilder {
+class ComponentBuilder {
 
 public:
   ComponentBuilder(ip::managed_shared_memory* shm,
@@ -25,8 +25,5 @@ private:
   ip::managed_shared_memory* m_shm;
   cri::cri_channel* m_cri_channel;
 
-  std::unique_ptr<cri_source<T_DESC, T_DATA>> m_cri_source_buffer;
-
-  constexpr static size_t data_item_size = sizeof(T_DATA);
-  constexpr static size_t desc_item_size = sizeof(T_DESC);
+  std::unique_ptr<cri_source> m_cri_source_buffer;
 };

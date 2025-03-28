@@ -95,9 +95,9 @@ int main(int argc, char* argv[]) {
         ip::create_only, shm_id.c_str(), shm_size);
 
     // Create Component Builder for each Channel
-    std::vector<std::unique_ptr<ComponentBuilder<T_DESC, T_DATA>>> builders;
+    std::vector<std::unique_ptr<ComponentBuilder>> builders;
     for (cri::cri_channel* channel : cri_channels) {
-      builders.push_back(std::make_unique<ComponentBuilder<T_DESC, T_DATA>>(
+      builders.push_back(std::make_unique<ComponentBuilder>(
           shm.get(), channel, par.data_buffer_size_exp(),
           par.desc_buffer_size_exp()));
     }
