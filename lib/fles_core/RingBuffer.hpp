@@ -12,7 +12,10 @@
 #include <unistd.h>
 
 /// Simple generic ring buffer class.
-template <typename T, bool CLEARED = false, bool PAGE_ALIGNED = false>
+template <typename T,
+          bool CLEARED = false,
+          bool PAGE_ALIGNED = false,
+          bool POWER_OF_TWO = true>
 class RingBuffer {
 public:
   void array_delete_(T* ptr, size_t size) const {
@@ -29,24 +32,28 @@ public:
   RingBuffer() = default;
 
   /// The RingBuffer initializing constructor.
-  explicit RingBuffer(size_t new_size_exponent) {
-    alloc_with_size_exponent(new_size_exponent);
+  explicit RingBuffer(size_t new_size) {
+    if (POWER_OF_TWO) {
+      alloc_with_size_exponent(new_size);
+    } else {
+      alloc_with_size(new_size);
+    }
   }
 
   RingBuffer(const RingBuffer&) = delete;
   void operator=(const RingBuffer&) = delete;
 
-  /// Create and initialize buffer with given minimum size.
-  void alloc_with_size(size_t minimum_size) {
-    size_t new_size_exponent = 0;
-    if (minimum_size > 1) {
-      minimum_size--;
-      ++new_size_exponent;
-      while ((minimum_size >>= 1) != 0u) {
-        ++new_size_exponent;
-      }
+  /// Create and initialize buffer with given size.
+  void alloc_with_size(size_t size) {
+    if (POWER_OF_TWO) {
+      // Interpret size as minimum size, round up to next power of two.
+      size_t new_size_exponent = size_to_exponent(size);
+      alloc_with_size_exponent(new_size_exponent);
+    } else {
+      // Interpret size as exact size.
+      size_ = size;
+      do_alloc();
     }
-    alloc_with_size_exponent(new_size_exponent);
   }
 
   /// Create and initialize buffer with given size exponent.
@@ -54,6 +61,67 @@ public:
     size_exponent_ = new_size_exponent;
     size_ = UINT64_C(1) << size_exponent_;
     size_mask_ = size_ - 1;
+    do_alloc();
+  }
+
+  /// The element accessor operator.
+  T& at(size_t n) {
+    if (POWER_OF_TWO) {
+      return buf_[n & size_mask_];
+    }
+    return buf_[n % size_];
+  }
+
+  /// The const element accessor operator.
+  [[nodiscard]] const T& at(size_t n) const {
+    if (POWER_OF_TWO) {
+      return buf_[n & size_mask_];
+    }
+    return buf_[n % size_];
+  }
+
+  /// Retrieve pointer to memory buffer.
+  T* ptr() { return buf_.get(); }
+
+  /// Retrieve const pointer to memory buffer.
+  [[nodiscard]] const T* ptr() const { return buf_.get(); }
+
+  /// Retrieve buffer size in maximum number of entries.
+  [[nodiscard]] size_t size() const { return size_; }
+
+  /// Retrieve buffer size in maximum number of entries as two's exponent.
+  /// Only available if POWER_OF_TWO is true.
+  template <bool P = POWER_OF_TWO>
+  [[nodiscard]] typename std::enable_if<P, size_t>::type size_exponent() const {
+    return size_exponent_;
+  }
+
+  /// Retrieve buffer size bit mask.
+  /// Only available if POWER_OF_TWO is true.
+  template <bool P = POWER_OF_TWO>
+  [[nodiscard]] typename std::enable_if<P, size_t>::type size_mask() const {
+    return size_mask_;
+  }
+
+  /// Retrieve buffer size in bytes.
+  [[nodiscard]] size_t bytes() const { return size_ * sizeof(T); }
+
+  void clear() { std::fill_n(buf_, size_, T()); }
+
+private:
+  /// Convert size to two's exponent.
+  static size_t size_to_exponent(size_t size) {
+    size_t exp = 0;
+    while ((UINT64_C(1) << exp) < size) {
+      ++exp;
+    }
+    return exp;
+  }
+
+  void do_alloc() {
+    if (size_ == 0) {
+      throw std::runtime_error("RingBuffer: size is zero");
+    }
     if (PAGE_ALIGNED) {
       void* buf;
       const auto page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
@@ -80,40 +148,13 @@ public:
     }
   }
 
-  /// The element accessor operator.
-  T& at(size_t n) { return buf_[n & size_mask_]; }
-
-  /// The const element accessor operator.
-  [[nodiscard]] const T& at(size_t n) const { return buf_[n & size_mask_]; }
-
-  /// Retrieve pointer to memory buffer.
-  T* ptr() { return buf_.get(); }
-
-  /// Retrieve const pointer to memory buffer.
-  [[nodiscard]] const T* ptr() const { return buf_.get(); }
-
-  /// Retrieve buffer size in maximum number of entries.
-  [[nodiscard]] size_t size() const { return size_; }
-
-  /// Retrieve buffer size in maximum number of entries as two's exponent.
-  [[nodiscard]] size_t size_exponent() const { return size_exponent_; }
-
-  /// Retrieve buffer size bit mask.
-  [[nodiscard]] size_t size_mask() const { return size_mask_; }
-
-  /// Retrieve buffer size in bytes.
-  [[nodiscard]] size_t bytes() const { return size_ * sizeof(T); }
-
-  void clear() { std::fill_n(buf_, size_, T()); }
-
-private:
   /// Buffer size (maximum number of entries).
   size_t size_ = 0;
 
   /// Buffer size given as two's exponent.
   size_t size_exponent_ = 0;
 
-  /// Buffer addressing bit mask.
+  /// Buffer addressing bit mask (only used when POWER_OF_TWO is true).
   size_t size_mask_ = 0;
 
   /// The data buffer.
