@@ -1,0 +1,64 @@
+
+
+## Requirements
+- Deliver fully built subtimeslices through a shared memory and a descriptor
+
+## Flexibility
+- Channels can start independently
+
+## Overload scenarios
+In hardware:
+- truncate/drop microslice contents, buffer some descriptors
+- If not enough: give up, tell software
+- Support resync procedure initiated by software
+In software:
+- treat truncated microslices regularly, maybe collect flags
+- handle give up / resync procedure
+- 
+
+
+
+--- per channel ---
+time_overlap_before = ...; // ns
+time_overlap_after = ...; // ns
+
+--- main loop ---
+
+uint64_t ts_duration = 100 ms;
+
+// Start-up procedure
+for
+  ch.discard_until()
+
+
+// Main operation
+uint64_t start_time = ...
+
+LOOP:
+
+handle_itemdistrib_completions();
+
+// Wait / handle timeout / participating channels
+for (int ch : channels) {
+    ch.ts_component_state(start_time, ts_duration) -> StateCode;
+    // StateCode: Okay, Failed (requested start_time too old), TryLater (not yet available)
+
+    // ...
+
+}
+
+// Now we have a list of participating channels, ready to serve
+
+SubTimesliceDescriptor stsd;
+for (int ch : channels) {
+    SubTimesliceComponentDescriptor desc = ch.get_ts_component(start_time, ts_duration)
+    // If StateCode was okay (previously asked), returned Descriptor should be usable
+    // Exception: Microslices not continuous -> flag in Descriptor
+
+    stsd.components.append(desc);
+}
+
+itemdistrib->send(stsd);
+
+start_time += ts_duration;
+goto LOOP;
