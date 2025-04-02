@@ -18,7 +18,9 @@ std::istream& operator>>(std::istream& in, Transport& transport) {
   std::transform(std::begin(token), std::end(token), std::begin(token),
                  [](const unsigned char i) { return tolower(i); });
 
-  if (token == "rdma" || token == "r") {
+  if (token == "ucx" || token == "u") {
+    transport = Transport::UCX;
+  } else if (token == "rdma" || token == "r") {
     transport = Transport::RDMA;
   } else if (token == "libfabric" || token == "f") {
     transport = Transport::LibFabric;
@@ -32,6 +34,9 @@ std::istream& operator>>(std::istream& in, Transport& transport) {
 
 std::ostream& operator<<(std::ostream& out, const Transport& transport) {
   switch (transport) {
+  case Transport::UCX:
+    out << "UCX";
+    break;
   case Transport::RDMA:
     out << "RDMA";
     break;
@@ -145,7 +150,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
                  ->default_value(transport_)
                  ->value_name("<id>"),
              "select transport implementation; possible values "
-             "(case-insensitive) are: RDMA, LibFabric, ZeroMQ");
+             "(case-insensitive) are: UCX, RDMA, LibFabric, ZeroMQ");
   config_add("discard-all-ts",
              po::value<bool>(&drop_process_ts_)->default_value(false),
              "Discard all timeslices at receiver (debug only)");
@@ -225,6 +230,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
 #ifndef HAVE_RDMA
   if (transport_ == Transport::RDMA) {
     throw ParametersException("flesnet built without RDMA support");
+  }
+#endif
+#ifndef HAVE_UCX
+  if (transport_ == Transport::UCX) {
+    throw ParametersException("flesnet built without UCX support");
   }
 #endif
 #ifndef HAVE_LIBFABRIC
