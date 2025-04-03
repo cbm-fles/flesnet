@@ -155,12 +155,36 @@ endif()
 find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS filesystem log program_options serialization system thread unit_test_framework iostreams)
 find_package(Threads REQUIRED)
 
-find_package(UCX)
+find_package(UCX CONFIG)
+if (UCX_FOUND)
+  message(STATUS "UCX found: ${UCX_VERSION}")
+endif()
 find_package(LIBFABRIC)
 find_package(RDMA)
 find_package(PDA)
 find_package(NUMA)
 find_package(Doxygen)
+
+# Workaround for https://bugs.launchpad.net/ubuntu/+source/ucx/+bug/2076529
+# If UCX is found and the prefix variable is equal to "/usr/lib", change
+# the IMPORTED_LOCATION and INTERFACE_INCLUDE_DIRECTORIES properties
+# of the imported libraries ucx::ucp, ucx::uct, and ucx::ucs by replacing
+# the "/usr/lib" prefix with "/usr".
+# This is necessary because the UCX package on Ubuntu 22.04 is broken.
+if (UCX_FOUND AND prefix STREQUAL "/usr/lib")
+  message(STATUS "UCX found, but prefix is /usr/lib. Fixing imported libraries.")
+  foreach(component IN ITEMS ucp uct ucs)
+    get_target_property(${component}_location ucx::${component} IMPORTED_LOCATION)
+    get_target_property(${component}_include_dirs ucx::${component} INTERFACE_INCLUDE_DIRECTORIES)
+    string(REPLACE "/usr/lib" "/usr" ${component}_location ${${component}_location})
+    string(REPLACE "/usr/lib" "/usr" ${component}_include_dirs ${${component}_include_dirs})
+    set_target_properties(ucx::${component} PROPERTIES
+      IMPORTED_LOCATION ${${component}_location}
+      INTERFACE_INCLUDE_DIRECTORIES ${${component}_include_dirs}
+    )
+  endforeach()
+endif()
+# End of workaround. Delete this block when the UCX package is fixed.
 
 find_package(OpenSSL REQUIRED)
 if(APPLE)
