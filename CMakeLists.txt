@@ -288,6 +288,7 @@ if(CLANG_TIDY)
 endif()
 
 add_subdirectory(app/mstool)
+add_subdirectory(app/timeslice_forwarder)
 add_subdirectory(app/tsclient)
 if (USE_PDA AND PDA_FOUND)
   add_subdirectory(app/cri_tools)
