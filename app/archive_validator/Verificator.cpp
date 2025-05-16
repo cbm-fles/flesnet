@@ -147,7 +147,7 @@ string Verificator::format_time_seconds(uint64_t seconds) {
  * Would make sense to come up with a solution to pull that out.
  * Variables related to progress reports have "_stat" appended to their name (stat = statistics)
  */
-bool Verificator::verify_forward(vector<string> input_archive_paths, vector<string> output_archive_paths, uint64_t timeslice_cnt, uint64_t overlap) {
+bool Verificator::verify_forward(vector<string> input_archive_paths, vector<string> output_archive_paths, uint64_t timeslice_cnt, uint64_t overlap, uint64_t start_idx) {
     atomic_uint64_t overall_ms_cnt_stat = 0;  // counts how many ms are validated - summed up accrross the whole validation process
     atomic_uint64_t overlap_cnt_stat = 0; // counts how many overlaps between ts components were checked
     atomic_uint64_t overall_components_cnt_stat = 0; // counts how many timesliced were validated
@@ -170,7 +170,7 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
     const uint64_t epoch_start_stat = chrono::duration_cast<std::chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count(); 
     for (string& input_archive_path : input_archive_paths) {
         sem.wait();
-        future<bool> handle = std::async(std::launch::async, [this, &input_archives_cnt_stat, &epoch_start_stat, &archive_cnt_stat, &overall_ms_cnt_stat, &overall_components_cnt_stat, &overlap_cnt_stat, input_archive_path, &output_archive_paths, &overlap, &timeslice_cnt, &sem] {
+        future<bool> handle = std::async(std::launch::async, [this, &input_archives_cnt_stat, &epoch_start_stat, &archive_cnt_stat, &overall_ms_cnt_stat, &overall_components_cnt_stat, &overlap_cnt_stat, &start_idx, input_archive_path, &output_archive_paths, &overlap, &timeslice_cnt, &sem] {
             uint64_t local_ts_cnt_stat = 0; // counts how many timeslices were checked
             uint64_t local_ms_cnt_stat = 0; // counts the validated microslices of this specific microslice archive 
             uint64_t components_per_ts_stat = 0; // will hold the number of components per ts to calculate progress in percent
@@ -217,13 +217,14 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                         }
 
                         fles::MicrosliceView ms_in_curr_component = current_ts->get_microslice(compontent_idx, ms_idx);
-                        if (ms_in_curr_component != *ms) {
-                            err_sstr << "Found inequality in core area of timeslice:" << endl
-                                << "Microslice #" << ms_idx <<" in timeslice #" << local_ts_cnt_stat << " (TS idx: " << current_ts->index() << ")" << endl
-                                << "Microslice archive: " << input_archive_path << " microslice #" << local_ms_cnt_stat;
-                            throw runtime_error(err_sstr.str());
+                        if (start_idx <= local_ms_cnt_stat) {
+                            if (ms_in_curr_component != *ms) {
+                                err_sstr << "Found inequality in core area of timeslice:" << endl
+                                    << "Microslice #" << ms_idx <<" in timeslice #" << local_ts_cnt_stat << " (TS idx: " << current_ts->index() << ")" << endl
+                                    << "Microslice archive: " << input_archive_path << " microslice #" << local_ms_cnt_stat;
+                                throw runtime_error(err_sstr.str());
+                            }
                         }
-
                         ++local_ms_cnt_stat;
                         uint64_t last_overall_ms_cnt_stat = overall_ms_cnt_stat.fetch_add(1); 
                         if (((last_overall_ms_cnt_stat + 1) % log_interval_stat) == 0u) {
@@ -251,11 +252,13 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                             }
 
                             fles::MicrosliceView ms_in_curr_component = current_ts->get_microslice(compontent_idx, ms_idx + current_ts->num_core_microslices());
-                            if (*ms != ms_in_curr_component) {
-                                err_sstr << "Found inequality in overlap of last timeslice:" << endl
-                                    << "Microslice #" << ms_idx <<" in timeslice #" << local_ts_cnt_stat << " (TS idx: " << current_ts->index() << ")" << endl
-                                    << "Microslice archive: " << input_archive_path << " microslice #" << local_ms_cnt_stat;
-                                throw runtime_error(err_sstr.str());
+                            if (start_idx <= local_ms_cnt_stat) {
+                                if (*ms != ms_in_curr_component) {
+                                    err_sstr << "Found inequality in overlap of last timeslice:" << endl
+                                        << "Microslice #" << ms_idx <<" in timeslice #" << local_ts_cnt_stat << " (TS idx: " << current_ts->index() << ")" << endl
+                                        << "Microslice archive: " << input_archive_path << " microslice #" << local_ms_cnt_stat;
+                                    throw runtime_error(err_sstr.str());
+                                }
                             }
 
                             ++local_ms_cnt_stat;
@@ -283,28 +286,29 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
 
                             fles::MicrosliceView ms_in_curr_component = current_ts->get_microslice(compontent_idx, ms_idx + current_ts->num_core_microslices());
                             fles::MicrosliceView ms_in_next_component = next_ts->get_microslice(compontent_idx, ms_idx);
-                            if (*ms != ms_in_curr_component || *ms != ms_in_next_component) {
-                                err_sstr << "Overlap check failed:" << endl
-                                        << "Microslice archive: " << input_archive_path << " microslice #" << local_ms_cnt_stat << endl
-                                        << "From timeslice #: " << local_ts_cnt_stat << " (TS idx: " << current_ts->index() << ")" << endl
-                                        << "To timeslice #: " << (local_ts_cnt_stat + 1) << " (TS idx: " << next_ts->index() << ")" << endl
-                                        << "MS in TS # " << local_ts_cnt_stat << ":" << endl << MicrosliceDescriptorDump(ms_in_curr_component.desc()) << endl
-                                        << "MS in TS #:" << (local_ts_cnt_stat + 1) << ":" << endl <<  MicrosliceDescriptorDump(ms_in_next_component.desc()) << endl
-                                        << "MS in archive:" << endl << MicrosliceDescriptorDump(ms->desc());
-                                if (ms->content() != ms_in_curr_component.content()) {
-                                    err_sstr << R"(Content of "Archive MS" and "Current TS MS" is different)"<< endl;
-                                }
+                            if (start_idx <= local_ms_cnt_stat) {
+                                if ((*ms != ms_in_curr_component || *ms != ms_in_next_component)) {
+                                    err_sstr << "Overlap check failed:" << endl
+                                            << "Microslice archive: " << input_archive_path << " microslice #" << local_ms_cnt_stat << endl
+                                            << "From timeslice #: " << local_ts_cnt_stat << " (TS idx: " << current_ts->index() << ")" << endl
+                                            << "To timeslice #: " << (local_ts_cnt_stat + 1) << " (TS idx: " << next_ts->index() << ")" << endl
+                                            << "MS in TS # " << local_ts_cnt_stat << ":" << endl << MicrosliceDescriptorDump(ms_in_curr_component.desc()) << endl
+                                            << "MS in TS #:" << (local_ts_cnt_stat + 1) << ":" << endl <<  MicrosliceDescriptorDump(ms_in_next_component.desc()) << endl
+                                            << "MS in archive:" << endl << MicrosliceDescriptorDump(ms->desc());
+                                    if (ms->content() != ms_in_curr_component.content()) {
+                                        err_sstr << R"(Content of "Archive MS" and "Current TS MS" is different)"<< endl;
+                                    }
 
-                                if (ms->content() != ms_in_next_component.content()) {
-                                    err_sstr << R"(Content of "Archive MS" and "Next TS MS" is different)"<< endl;
-                                }
+                                    if (ms->content() != ms_in_next_component.content()) {
+                                        err_sstr << R"(Content of "Archive MS" and "Next TS MS" is different)"<< endl;
+                                    }
 
-                                if (ms_in_curr_component.content() != ms_in_next_component.content()) {
-                                    err_sstr << R"(Content of "Current TS MS" and "Next TS MS" is different)"<< endl;
+                                    if (ms_in_curr_component.content() != ms_in_next_component.content()) {
+                                        err_sstr << R"(Content of "Current TS MS" and "Next TS MS" is different)"<< endl;
+                                    }
+                                    throw runtime_error(err_sstr.str());
                                 }
-                                throw runtime_error(err_sstr.str());
                             }
-                            
                             ++local_ms_cnt_stat;
                             uint64_t last_overall_ms_cnt_stat = overall_ms_cnt_stat.fetch_add(1); 
                             if (((last_overall_ms_cnt_stat + 1) % log_interval_stat) == 0u) {

@@ -40,6 +40,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
                 po::value<bool>(&skip_metadata)
                   ->implicit_value(true),
                   "Will skip timeslice archive metadata verification.");
+  general_add("ms-start-idx",
+                  po::value<uint64_t>(&ms_start_idx)
+                  ->default_value(0)
+                  ->value_name("<n>"),
+                  "Start verification process at microslice index n.");
 
 
   po::options_description archives("Input/Output archives");

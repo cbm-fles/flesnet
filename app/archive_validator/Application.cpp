@@ -35,7 +35,7 @@ void Application::run() {
     }
   }
 
-  valid = val.verify_forward(par_.input_archives, par_.output_archives, timeslice_cnt, par_.overlap);
+  valid = val.verify_forward(par_.input_archives, par_.output_archives, timeslice_cnt, par_.overlap, par_.ms_start_idx);
   if (!valid) {
     throw std::runtime_error("Forward varification FAILED. Archives NOT VALID!");
   }
