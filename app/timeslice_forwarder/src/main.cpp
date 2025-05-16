@@ -27,8 +27,10 @@
 #include <iostream>
 using namespace std;
 
+
 int main (int argc, char** argv) {
     InterfaceFactory<ConnectorInterface, ConnectorFromFlesnet> connector_factory;
+
     // if (p.is_node) { // we start as a node
     //     shared_ptr<Node> node(new Node(p.node_id,p.group_id));
 

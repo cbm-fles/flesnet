@@ -1,8 +1,14 @@
 #pragma once
 
+#include "ManagedRingBuffer.hpp"
+#include "ManagedTimesliceBuffer.hpp"
 #include "StorableTimeslice.hpp"
+#include "Timeslice.hpp"
 #include "TimesliceAutoSource.hpp"
+#include <cstdint>
 #include <df/Connectors/ConnectorInterface.hpp>
+#include "TimesliceComponentDescriptor.hpp"
+#include "TimesliceDescriptor.hpp"
 #include "log.hpp"
 #include <boost/archive/text_oarchive.hpp>
 #include <cstring>
@@ -23,7 +29,7 @@ private:
 
     std::mutex unmanaged_recv_mtx_;
     std::vector<std::function<void (std::string address, std::shared_ptr<char> data, uint64_t size)>> unmanaged_recv_callbacks_;
-
+    std::vector<std::unique_ptr<fles::Timeslice>> timeslices;
 public:
 
     void start_timeslice_fetching() {
@@ -42,13 +48,42 @@ public:
                 if (!timeslice) {
                     break;
                 }
-                // timeslice->
-                // std::shared_ptr<const fles::StorableTimeslice> ts = std::make_shared<const fles::StorableTimeslice>(*timeslice);
-                // timeslice.reset();
-                // archive & *ts.get();y
-                // uint64_t size = sstream.str().length() + 1;
-                // std::shared_ptr<char> data = std::shared_ptr<char>(strdup(sstream.str().c_str()));
-                // call_unmanaged_recv_cbs(listen_address_, data, size);
+
+                for (uint64_t i = 0; i < timeslice->num_components(); i++) {
+                    auto component_data_ptr = timeslice->data_ptr_[i];
+                    auto component_data_size = timeslice->size_component(i);
+
+                    auto component_desc_ptr = timeslice->desc_ptr_.at(1);
+                    auto component_desc_size = sizeof(fles::TimesliceComponentDescriptor);
+
+                    //! @todo
+                    // Global Buffer Using SHM of flesnet:
+                    // ./tsclient -i file:///scratch/htc/bzcschin/mcbm_data/2022_gold_partial/2488_node17_1_0001.tsa -o "shm://127.0.0.1/tsclientout?n=29"&
+                    //  auto shm_name = "tsclientout";
+                    //  auto shm_fd = shmopen(tsclientout, O_RDRW);
+                    //  ftruncate(shm_fd, size_of_shm); // maybe not
+                    //  auto shm_ptr = mmap(0, size_of_shm, PROT_WRITE | PROT_READ, MAP_SHARED, shm_id, 0);
+                    // On Node:
+                    //  - Extend BufferMap interface so I can decide the memory address (the decision about the memory pos was obsviously already made by the outside world)
+                    //  - Insert multiple items at once into the buffer map which then *belong together* so that all these items are transmitted together
+                    //  Input:
+                    //   - Update buffer map with component_data_ptr addr and size;
+                    //   - Update buffer map with component_desc_ptr addr and size;
+                    //  Output:
+                    //   - Extend `ManagedTimesliceBuffer` so the write head can be moved forward appropriately to an already received RDMA transmission
+                    //   -
+                    // On CM:
+                    // - Extend `ManagedTimesliceBuffer` so the current write and read idx can be set to calculate the buffer offset for the next insertion:
+                    //      Plan:
+                    //      1. CM recv buffer map/current ring buffer state
+                    //      2. Use extended ManagedTimesliceBuffer to "hypthatically insert" and get the adddress(es) of the insert
+                    //      3. Command the entry node to transmit TS descriptors and compontent data to the calculated adresses
+                    //      4. On successfull receive update the actual ManagedTimesliceBuffer with the newly received TS
+                    //
+                }
+
+                //! @todo when timslice was transmitted call reset on pointer and remove from this vector
+                timeslices.push_back(std::move(timeslice));
             }
 
             return int(!stop_listening_);

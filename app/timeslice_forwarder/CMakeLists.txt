@@ -1,9 +1,9 @@
 
-SET(TIMESLICE_FORWARDER_LIB_INCLUDES /home/ngreve/prog/timeslice_forwarder/build/install_dir/include/)
-find_library(TIMESLICE_FORWARDER_LIB NAMES data_forwarder PATHS /home/ngreve/prog/timeslice_forwarder/build/install_dir/lib/ NO_DEFAULT_PATH)
+SET(TIMESLICE_FORWARDER_LIB_INCLUDES /home/htc/ngreve/prog/timeslice_forwarder/build/install_dir/include/)
+find_library(TIMESLICE_FORWARDER_LIB NAMES data_forwarder PATHS /home/htc/ngreve/prog/timeslice_forwarder/build/install_dir/lib/ NO_DEFAULT_PATH)
 
-SET(LIBFABRIC_INCLUDE_DIR /home/ngreve/prog/libfabric/install_dir/include/)
-find_library(LIBFABRIC_LIBRARY NAMES fabric PATHS /home/ngreve/prog/libfabric/install_dir/lib/ NO_DEFAULT_PATH)
+SET(LIBFABRIC_INCLUDE_DIR /home/htc/ngreve/prog/libfabric/install_dir/include/)
+find_library(LIBFABRIC_LIBRARY NAMES fabric PATHS /home/htc/ngreve/prog/libfabric/install_dir/lib/ NO_DEFAULT_PATH)
 
 find_package(Boost 1.74.0 REQUIRED COMPONENTS serialization program_options graph iostreams)
 

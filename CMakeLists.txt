@@ -246,6 +246,7 @@ else()
   message(STATUS "No std::format, building flesnet without tsclient")
 endif()
 
+add_subdirectory(app/timeslice_forwarder)
 if (USE_PDA AND PDA_FOUND)
   add_subdirectory(app/cri_tools)
   add_subdirectory(app/cri_cfg)
