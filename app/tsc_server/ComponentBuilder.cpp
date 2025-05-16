@@ -35,8 +35,14 @@ ComponentBuilder::~ComponentBuilder() {
 
 void ComponentBuilder::proceed() {
   // TODO: make this usefull
-  DualIndex index = m_cri_source_buffer->get_write_index();
-  m_cri_source_buffer->set_read_index(index);
+  DualIndexTimed index = m_cri_source_buffer->get_write_index_timed();
+  m_cri_source_buffer->set_read_index(index.index);
+
+  L_(status) << "Fetching microslice: data " << index.index.data << " desc "
+             << index.index.desc << " update time "
+             << index.updated.time_since_epoch().count() << " delta "
+             << index.delta.count();
+
   return;
 }
 

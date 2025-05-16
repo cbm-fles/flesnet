@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
       for (auto&& builder : builders) {
         builder->proceed();
       }
-      std::this_thread::sleep_for(500ms);
+      std::this_thread::sleep_for(100ms);
     }
 
   } catch (std::exception const& e) {

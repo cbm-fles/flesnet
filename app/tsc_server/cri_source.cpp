@@ -61,6 +61,14 @@ DualIndexTimed cri_source::get_write_index_timed() {
   DualIndexTimed write_index;
   write_index.updated = std::chrono::high_resolution_clock::now();
   write_index.index = get_write_index();
+  write_index.delta =
+      (write_index.updated -
+       (std::chrono::time_point<std::chrono::high_resolution_clock>(
+           std::chrono::nanoseconds(
+               m_desc_buffer_view->at(write_index.index.desc - 1).idx))));
+  L_(trace) << "fetching write_index_timed: update time "
+            << write_index.updated.time_since_epoch().count() << " delta "
+            << write_index.delta.count();
   return write_index;
 }
 
