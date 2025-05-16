@@ -16,6 +16,7 @@
 // http://lists.debian.org/debian-hppa/2009/11/msg00069.html
 
 class ManagedTimesliceBuffer;
+class ConnectorFromFlesnet;
 
 namespace fles {
 
@@ -95,22 +96,28 @@ public:
     }
     return 0;
   }
-
-protected:
-  Timeslice() = default;
-
-  friend class StorableTimeslice;
-  friend class ::ManagedTimesliceBuffer;
-
-  /// The timeslice descriptor.
-  TimesliceDescriptor timeslice_descriptor_{};
-
   /// A vector of pointers to the data content, one per timeslice component.
   std::vector<uint8_t*> data_ptr_;
 
   /// \brief A vector of pointers to the microslice descriptors, one per
   /// timeslice component.
   std::vector<TimesliceComponentDescriptor*> desc_ptr_;
+protected:
+  Timeslice() = default;
+
+  friend class StorableTimeslice;
+  friend class ::ManagedTimesliceBuffer;
+  friend class ConnectorFromFlesnet;
+
+  /// The timeslice descriptor.
+  TimesliceDescriptor timeslice_descriptor_{};
+
+  // /// A vector of pointers to the data content, one per timeslice component.
+  // std::vector<uint8_t*> data_ptr_;
+
+  // /// \brief A vector of pointers to the microslice descriptors, one per
+  // /// timeslice component.
+  // std::vector<TimesliceComponentDescriptor*> desc_ptr_;
 };
 
 } // namespace fles
