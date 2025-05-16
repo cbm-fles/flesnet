@@ -42,7 +42,7 @@ public:
      * @param overlap overlap size of timeslices
      * @return true if valid
      */
-    bool verify_forward(std::vector<std::string> input_archive_paths, std::vector<std::string> output_archive_paths, uint64_t timeslice_cnt, uint64_t overlap = 1);
+    bool verify_forward(std::vector<std::string> input_archive_paths, std::vector<std::string> output_archive_paths, uint64_t timeslice_cnt, uint64_t overlap = 1, uint64_t start_idx = 0);
   
     /**
      * @brief Checks if each timeslice in the given timeslice archive files fulfills the expections given by the other function arguments.
