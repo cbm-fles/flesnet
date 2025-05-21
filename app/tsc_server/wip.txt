@@ -46,6 +46,12 @@ for (int ch : channels) {
     // ...
 
 }
+bool timeout_reached = (now() > start_time + timeout)
+if (channel states contain TryLater && !timeout_reached) {
+  wait a bit
+  gote LOOP
+}
+
 
 // Now we have a list of participating channels, ready to serve
 
