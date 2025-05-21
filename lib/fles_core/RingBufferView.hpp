@@ -1,9 +1,58 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include <boost/iterator/iterator_facade.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
+
+/// Simple generic ring buffer iterator class.
+template <typename T, bool POWER_OF_TWO = true>
+class RingBufferIterator
+    : public boost::iterator_facade<RingBufferIterator<T>,
+                                    T,
+                                    boost::random_access_traversal_tag> {
+public:
+  /// The RingBufferIterator constructor.
+  RingBufferIterator(T* buffer, std::size_t size, std::size_t n)
+      : buf_(buffer), size_(size), n_(n) {}
+  // Need to add a default constructor for the iterator
+  RingBufferIterator() : buf_(nullptr), size_(0), n_(0) {}
+
+  [[nodiscard]] std::size_t get_index() const { return n_; }
+
+private:
+  friend class boost::iterator_core_access;
+
+  /// The iterator dereference operator.
+  T& dereference() const {
+    if (POWER_OF_TWO) {
+      return buf_[n_ & (size_ - 1)];
+    }
+    return buf_[n_ % size_];
+  }
+
+  /// The iterator equality operator.
+  bool equal(RingBufferIterator const& other) const { return n_ == other.n_; }
+
+  /// The iterator increment operator.
+  void increment() { ++n_; }
+
+  /// The iterator decrement operator.
+  void decrement() { --n_; }
+
+  /// The iterator addition operator.
+  void advance(std::ptrdiff_t n) { n_ += n; }
+
+  /// The iterator difference operator.
+  std::ptrdiff_t distance_to(RingBufferIterator const& other) const {
+    return other.n_ - n_;
+  }
+
+  T* buf_;
+  std::size_t size_;
+  std::size_t n_;
+};
 
 /// Simple generic ring buffer view class.
 template <typename T, bool POWER_OF_TWO = true> class RingBufferView {
@@ -25,6 +74,13 @@ public:
       return buf_[n & size_mask_];
     }
     return buf_[n % size_];
+  }
+
+  /// Get interator to element.
+  using T_iter = RingBufferIterator<T, POWER_OF_TWO>;
+  [[nodiscard]]
+  T_iter get_iter(std::size_t n) {
+    return T_iter(buf_, size_, n);
   }
 
   /// The const element accessor operator.
