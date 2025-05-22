@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <netdb.h>
+#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -24,17 +25,14 @@ UcxConnection::UcxConnection(UcxContext& context,
 UcxConnection::~UcxConnection() { disconnect(); }
 
 void UcxConnection::connect(const std::string& hostname, uint16_t port) {
-  struct addrinfo hints;
-  struct addrinfo* result;
-
-  memset(&hints, 0, sizeof(hints));
+  struct addrinfo hints {};
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
 
-  char port_str[8];
-  snprintf(port_str, sizeof(port_str), "%d", port);
+  std::string port_str = std::to_string(port);
 
-  int err = getaddrinfo(hostname.c_str(), port_str, &hints, &result);
+  struct addrinfo* result;
+  int err = getaddrinfo(hostname.c_str(), port_str.c_str(), &hints, &result);
   if (err != 0) {
     throw UcxException("Failed to resolve hostname: " +
                        std::string(gai_strerror(err)));
@@ -141,10 +139,6 @@ void UcxConnection::disconnect() {
   disconnecting_ = true;
 
   // Request endpoint close
-  ucp_ep_close_nb_t close_param;
-  close_param.field_mask = UCP_EP_CLOSE_FIELD_FLAGS;
-  close_param.flags = UCP_EP_CLOSE_FLAG_FORCE;
-
   void* request = ucp_ep_close_nb(ep_, UCP_EP_CLOSE_MODE_FLUSH);
 
   if (request != nullptr && UCS_PTR_IS_PTR(request)) {
@@ -196,54 +190,48 @@ void UcxConnection::send_tagged(const void* buffer,
 
   auto* cb_data = new CallbackData{callback, const_cast<void*>(buffer), length};
 
-  ucp_tag_send_nbx_callback_t cb = [](void* request, ucs_status_t status,
-                                      void* user_data) {
-    auto* data = static_cast<CallbackData*>(user_data);
-    if (data->user_callback) {
-      data->user_callback(status);
-    }
-    delete data;
-  };
-
   ucp_request_param_t param;
+  memset(&param, 0, sizeof(param)); // Zero initialize all fields first
   param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
-  param.cb.send = cb;
+  param.cb.send = send_callback; // Use the class method instead of lambda
   param.user_data = cb_data;
 
   void* request = ucp_tag_send_nbx(ep_, buffer, length, tag, &param);
 
   if (UCS_PTR_IS_ERR(request)) {
     ucs_status_t status = UCS_PTR_STATUS(request);
-    if (callback)
+    if (callback) {
       callback(status);
+    }
     delete cb_data;
   } else if (request == nullptr) {
     // Operation completed immediately
-    if (callback)
+    if (callback) {
       callback(UCS_OK);
+    }
     delete cb_data;
   }
+  // For pending operations, the callback will be invoked later
+  // and send_callback will handle the cleanup
 }
 
 void UcxConnection::recv_tagged(void* buffer,
                                 size_t length,
                                 uint64_t tag,
                                 CompletionCallback callback) {
+  if (!connected_) {
+    if (callback) {
+      callback(UCS_ERR_NOT_CONNECTED);
+    }
+    return;
+  }
+
   auto* cb_data = new CallbackData{callback, buffer, length};
 
-  ucp_tag_recv_nbx_callback_t cb = [](void* request, ucs_status_t status,
-                                      ucp_tag_recv_info_t* info,
-                                      void* user_data) {
-    auto* data = static_cast<CallbackData*>(user_data);
-    if (data->user_callback) {
-      data->user_callback(status);
-    }
-    delete data;
-  };
-
   ucp_request_param_t param;
+  memset(&param, 0, sizeof(param)); // Zero initialize all fields first
   param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
-  param.cb.recv = cb;
+  param.cb.recv = recv_callback; // Use the class method instead of lambda
   param.user_data = cb_data;
 
   void* request =
@@ -262,6 +250,8 @@ void UcxConnection::recv_tagged(void* buffer,
     }
     delete cb_data;
   }
+  // For pending operations, the callback will be invoked later
+  // and recv_callback will handle the cleanup
 }
 
 void UcxConnection::rma_put(const void* buffer,
@@ -352,7 +342,7 @@ void UcxConnection::send_callback(void* request,
 
 void UcxConnection::recv_callback(void* request,
                                   ucs_status_t status,
-                                  ucp_tag_recv_info_t* info,
+                                  const ucp_tag_recv_info_t* /* info */,
                                   void* user_data) {
   auto* cb_data = static_cast<CallbackData*>(user_data);
   if (cb_data->user_callback) {
@@ -378,8 +368,8 @@ void UcxConnection::rma_callback(void* request,
 }
 
 void UcxConnection::ep_close_callback(void* request,
-                                      ucs_status_t status,
-                                      void* arg) {
+                                      ucs_status_t /* status */,
+                                      void* /* arg */) {
   if (request != nullptr) {
     ucp_request_free(request);
   }
