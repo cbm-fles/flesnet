@@ -56,7 +56,7 @@ public:
   bool wait_for_all_connections(int timeout_ms = -1);
 
   /// Get number of active connections
-  size_t connection_count() const { return connections_.size(); }
+  [[nodiscard]] size_t connection_count() const { return connections_.size(); }
 
 private:
   UcxContext& context_;

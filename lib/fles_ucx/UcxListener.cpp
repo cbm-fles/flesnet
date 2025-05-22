@@ -10,15 +10,12 @@ UcxListener::UcxListener(UcxContext& context,
                          ConnectionCallback callback)
     : context_(context), callback_(callback) {
 
-  struct sockaddr_in listen_addr;
-  memset(&listen_addr, 0, sizeof(listen_addr));
+  struct sockaddr_in listen_addr {};
   listen_addr.sin_family = AF_INET;
   listen_addr.sin_addr.s_addr = INADDR_ANY;
   listen_addr.sin_port = htons(port);
 
-  ucp_listener_params_t params;
-  memset(&params, 0, sizeof(params));
-
+  ucp_listener_params_t params{};
   params.field_mask = UCP_LISTENER_PARAM_FIELD_SOCK_ADDR |
                       UCP_LISTENER_PARAM_FIELD_CONN_HANDLER;
   params.sockaddr.addr = reinterpret_cast<const struct sockaddr*>(&listen_addr);
@@ -68,7 +65,7 @@ void UcxListener::connection_handler(ucp_conn_request_h conn_request,
 
   // Get client address
   const struct sockaddr* client_addr;
-  ucp_conn_request_attr_t attr;
+  ucp_conn_request_attr_t attr{};
   attr.field_mask = UCP_CONN_REQUEST_ATTR_FIELD_CLIENT_ADDR;
 
   ucs_status_t status = ucp_conn_request_query(conn_request, &attr);
@@ -78,7 +75,7 @@ void UcxListener::connection_handler(ucp_conn_request_h conn_request,
     return;
   }
 
-  client_addr = attr.client_address;
+  client_addr = reinterpret_cast<const struct sockaddr*>(&attr.client_address);
 
   // Call user callback
   if (listener->callback_) {
@@ -118,12 +115,9 @@ bool UcxConnectionManager::wait_for_all_connections(int timeout_ms) {
     // Wait indefinitely
     cv_.wait(lock, [this]() { return connected_ >= expected_connections_; });
     return true;
-  } else {
-    // Wait with timeout
-    return cv_.wait_for(lock, std::chrono::milliseconds(timeout_ms), [this]() {
-      return connected_ >= expected_connections_;
-    });
-  }
+  } // Wait with timeout
+  return cv_.wait_for(lock, std::chrono::milliseconds(timeout_ms),
+                      [this]() { return connected_ >= expected_connections_; });
 }
 
 void UcxConnectionManager::on_connection(ucp_conn_request_h conn_request,
@@ -133,12 +127,16 @@ void UcxConnectionManager::on_connection(ucp_conn_request_h conn_request,
 
   // Extract client IP and port
   if (client_addr->sa_family == AF_INET) {
-    auto* addr_in = reinterpret_cast<const struct sockaddr_in*>(client_addr);
-    inet_ntop(AF_INET, &addr_in->sin_addr, client_ip, sizeof(client_ip));
+    const auto* addr_in =
+        reinterpret_cast<const struct sockaddr_in*>(client_addr);
+    inet_ntop(AF_INET, &addr_in->sin_addr, static_cast<char*>(client_ip),
+              sizeof(client_ip));
     client_port = ntohs(addr_in->sin_port);
   } else if (client_addr->sa_family == AF_INET6) {
-    auto* addr_in6 = reinterpret_cast<const struct sockaddr_in6*>(client_addr);
-    inet_ntop(AF_INET6, &addr_in6->sin6_addr, client_ip, sizeof(client_ip));
+    const auto* addr_in6 =
+        reinterpret_cast<const struct sockaddr_in6*>(client_addr);
+    inet_ntop(AF_INET6, &addr_in6->sin6_addr, static_cast<char*>(client_ip),
+              sizeof(client_ip));
     client_port = ntohs(addr_in6->sin6_port);
   }
 
