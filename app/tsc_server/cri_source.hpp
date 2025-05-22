@@ -33,6 +33,8 @@ public:
 
   void set_read_index(DualIndex read_index) override;
 
+  void set_read_index(uint64_t desc_read_index);
+
   DualIndex get_read_index() override;
 
   DualIndex get_write_index() override;
@@ -70,6 +72,6 @@ private:
       m_desc_buffer_view;
   std::unique_ptr<RingBufferView<uint8_t>> m_data_buffer_view;
 
-  // TODO: chould be initialized with hw value?
+  // TODO: in case of reconnects this has to be initialized with the hw value
   DualIndex m_read_index{0, 0}; // INFO not actual hw value
 };

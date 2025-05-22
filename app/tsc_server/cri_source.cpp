@@ -1,9 +1,11 @@
 // Copyright 2025 Dirk Hutter
 
 #include "cri_source.hpp"
+#include "DualRingBuffer.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "RingBufferView.hpp"
 #include "log.hpp"
+#include <cstddef>
 #include <type_traits>
 
 cri_source::cri_source(fles::MicrosliceDescriptor* desc_buffer,
@@ -22,6 +24,8 @@ cri_source::cri_source(fles::MicrosliceDescriptor* desc_buffer,
           desc_buffer, m_desc_buffer_size_exp);
   m_data_buffer_view = std::make_unique<RingBufferView<uint8_t>>(
       data_buffer, m_data_buffer_size_exp);
+
+  // TODO: intialize m_read_index to the current hardware read index
 }
 
 cri_source::~cri_source() {}
@@ -40,6 +44,15 @@ void cri_source::set_read_index(DualIndex read_index) {
   m_read_index = read_index;
 }
 
+void cri_source::set_read_index(uint64_t desc_read_index) {
+  DualIndex read_index{};
+  read_index.desc = desc_read_index;
+  read_index.data = m_desc_buffer_view->at(read_index.desc - 1).offset +
+                    m_desc_buffer_view->at(read_index.desc - 1).size;
+
+  set_read_index(read_index);
+}
+
 DualIndex cri_source::get_read_index() {
   // We only return the locally cached index and do not consult the hardware
   return m_read_index;
@@ -53,7 +66,8 @@ DualIndex cri_source::get_write_index() {
   write_index.data = m_desc_buffer_view->at(write_index.desc - 1).offset +
                      m_desc_buffer_view->at(write_index.desc - 1).size;
   L_(trace) << "fetching write_index: data " << write_index.data << " desc "
-            << write_index.desc;
+            << write_index.desc << " ms_time "
+            << m_desc_buffer_view->at(write_index.desc - 1).idx;
   return write_index;
 }
 

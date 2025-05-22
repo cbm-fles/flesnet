@@ -19,6 +19,8 @@ public:
 
   void proceed();
 
+  void ack_before(uint64_t time);
+
 private:
   void* alloc_buffer(size_t size_exp, size_t item_size);
 

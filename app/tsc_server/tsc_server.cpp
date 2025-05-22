@@ -104,7 +104,8 @@ int main(int argc, char* argv[]) {
 
     while (signal_status == 0) {
       for (auto&& builder : builders) {
-        builder->proceed();
+        // ack far in the future to clear all elements
+        builder->ack_before(2000000000000000000);
       }
       std::this_thread::sleep_for(100ms);
     }

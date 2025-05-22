@@ -1,6 +1,7 @@
 // Copyright 2025 Dirk Hutter
 
 #include "ComponentBuilder.hpp"
+#include "DualRingBuffer.hpp"
 #include "SubTimesliceDescriptor.hpp"
 #include "log.hpp"
 
@@ -43,6 +44,40 @@ void ComponentBuilder::proceed() {
              << index.updated.time_since_epoch().count() << " delta "
              << index.delta.count();
 
+  return;
+}
+void ComponentBuilder::ack_before(uint64_t time) {
+  // fetch the current read and write index and initialize iterators
+  // INFO: iterator desc_end points (as the write index does) to the next
+  // element after the last valid element and must not be dereferenced
+  // TODO: we may want to introduce a cached write index as member of builder
+  // and rely on other call to update it from HW
+  DualIndex write_index = m_cri_source_buffer->get_write_index();
+  DualIndex read_index = m_cri_source_buffer->get_read_index();
+  auto desc_begin =
+      m_cri_source_buffer->desc_buffer().get_iter(read_index.desc);
+  auto desc_end = m_cri_source_buffer->desc_buffer().get_iter(write_index.desc);
+
+  // find the first element with a time greater than or equal to requested time
+  // INFO: To delete all elements until (aka time less than) the requested time,
+  // we set the read index to the found element. The element the read index
+  // points to is kept. If the requested time is greater than the last valid
+  // element (write_index-1) the function returns desc_end (= write_index) and
+  // we set read_index to write_index to clear everything. If the requested time
+  // is less than the first element the function returns desc_begin (=
+  // read_index). Setting the read index to desc_begin would not harm but we do
+  // nothing to reduce strain on the hardware.
+  auto it = std::lower_bound(desc_begin, desc_end, time,
+                             [](const fles::MicrosliceDescriptor& desc,
+                                uint64_t t) { return desc.idx < t; });
+
+  L_(trace) << "searching for time " << time << " in range "
+            << desc_begin.get_index() << " - " << desc_end.get_index()
+            << ". Setting read index to " << it.get_index();
+
+  if (it != desc_begin) {
+    m_cri_source_buffer->set_read_index(it.get_index());
+  }
   return;
 }
 
