@@ -8,6 +8,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <chrono>
 #include <csignal>
+#include <iostream>
 #include <memory>
 #include <thread>
 
@@ -24,6 +25,21 @@ static void signal_handler(int sig) { signal_status = sig; }
 using T_DESC = fles::MicrosliceDescriptor;
 using T_DATA = uint8_t;
 
+uint64_t
+chrono_to_timestamp(std::chrono::time_point<std::chrono::high_resolution_clock,
+                                            std::chrono::nanoseconds> time) {
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(
+             time.time_since_epoch())
+      .count();
+}
+
+std::chrono::time_point<std::chrono::high_resolution_clock,
+                        std::chrono::nanoseconds>
+timestamp_to_chrono(uint64_t time) {
+  return std::chrono::high_resolution_clock::time_point(
+      std::chrono::nanoseconds(time));
+}
+
 int main(int argc, char* argv[]) {
 
   std::signal(SIGINT, signal_handler);
@@ -34,6 +50,10 @@ int main(int argc, char* argv[]) {
   try {
 
     parameters par(argc, argv);
+
+    // aditional parameters TODO: add to parameters class
+    uint64_t time_overlap_before = 0;
+    uint64_t time_overlap_after = 0;
 
     /////// Create Hardware Objects ///////////
 
@@ -99,15 +119,59 @@ int main(int argc, char* argv[]) {
     for (cri::cri_channel* channel : cri_channels) {
       builders.push_back(std::make_unique<ComponentBuilder>(
           shm.get(), channel, par.data_buffer_size_exp(),
-          par.desc_buffer_size_exp()));
+          par.desc_buffer_size_exp(), time_overlap_before, time_overlap_after));
     }
 
+    //////// Main logic ////////
+
+    for (auto&& builder : builders) {
+      // ack far in the future to clear all elements
+      builder->ack_before(2000000000000000000);
+    }
+
+    uint64_t ts_start_time =
+        chrono_to_timestamp(std::chrono::high_resolution_clock::now()) + 1e9;
+    uint64_t ts_size_time = 100e6;
+
+    // TODO: we may want to split this into startup and main loop phase
     while (signal_status == 0) {
       for (auto&& builder : builders) {
-        // ack far in the future to clear all elements
-        builder->ack_before(2000000000000000000);
+
+        // search for a component
+        auto state =
+            builder->check_component_state(ts_start_time, ts_size_time);
+        if (state == ComponentBuilder::ComponentState_t::Ok) {
+          L_(info) << "Component available";
+          try {
+            builder->get_component(ts_start_time, ts_size_time);
+          } catch (std::out_of_range const& e) {
+            L_(error) << e.what();
+          }
+          ts_start_time += ts_size_time;
+          builder->ack_before(ts_start_time);
+          continue;
+        }
+        if (state == ComponentBuilder::ComponentState_t::TryLater) {
+          L_(info) << "Component not available yet";
+          // potentially we do not want to ack her all the time and split the
+          // logic
+          builder->ack_before(ts_start_time);
+          continue;
+        }
+        if (state == ComponentBuilder::ComponentState_t::Failed) {
+          // if we are in the initializing phase this could be ok, in the real
+          // phase this is an error hoewever we can argue that a maximum nagativ
+          // microslice delay would guarantee component cant be too old at
+          // startup if we add enough time to the start time for debug we just
+          // skip 100 timeslices here
+          ts_start_time += (ts_size_time * 10);
+          L_(info) << "Component too old. setting new start time to "
+                   << ts_start_time;
+          builder->ack_before(ts_start_time);
+          continue;
+        }
       }
-      std::this_thread::sleep_for(100ms);
+      std::this_thread::sleep_for(200ms);
     }
 
   } catch (std::exception const& e) {

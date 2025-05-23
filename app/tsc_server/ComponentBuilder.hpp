@@ -1,9 +1,11 @@
 // Copyright 2025 Dirk Hutter
 #pragma once
 
+#include "DualRingBuffer.hpp"
 #include "cri_channel.hpp"
 #include "cri_source.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <sys/types.h>
 
 namespace ip = boost::interprocess;
 
@@ -13,13 +15,26 @@ public:
   ComponentBuilder(ip::managed_shared_memory* shm,
                    cri::cri_channel* cri_channel,
                    size_t data_buffer_size_exp,
-                   size_t desc_buffer_size_exp);
+                   size_t desc_buffer_size_exp,
+                   uint64_t time_overlap_before,
+                   uint64_t time_overlap_after);
 
   ~ComponentBuilder();
+
+  enum class ComponentState_t {
+    Ok,       // component is available
+    TryLater, // component is not available yet
+    Failed    // component is too old and not available anymore
+  };
 
   void proceed();
 
   void ack_before(uint64_t time);
+
+  ComponentState_t check_component_state(uint64_t start_time,
+                                         uint64_t duration);
+
+  void get_component(uint64_t start_time, uint64_t duration);
 
 private:
   void* alloc_buffer(size_t size_exp, size_t item_size);
@@ -28,4 +43,7 @@ private:
   cri::cri_channel* m_cri_channel;
 
   std::unique_ptr<cri_source> m_cri_source_buffer;
+
+  uint64_t m_time_overlap_before;
+  uint64_t m_time_overlap_after;
 };
