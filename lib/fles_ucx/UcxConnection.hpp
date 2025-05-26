@@ -91,6 +91,4 @@ protected:
                             ucs_status_t status,
                             const ucp_tag_recv_info_t* info,
                             void* user_data);
-  static void rma_callback(void* request, ucs_status_t status, void* user_data);
-  static void ep_close_callback(void* request, ucs_status_t status, void* arg);
 };
