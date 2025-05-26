@@ -353,24 +353,3 @@ void UcxConnection::recv_callback(void* request,
     ucp_request_free(request);
   }
 }
-
-void UcxConnection::rma_callback(void* request,
-                                 ucs_status_t status,
-                                 void* user_data) {
-  auto* cb_data = static_cast<CallbackData*>(user_data);
-  if (cb_data->user_callback) {
-    cb_data->user_callback(status);
-  }
-  delete cb_data;
-  if (request != nullptr) {
-    ucp_request_free(request);
-  }
-}
-
-void UcxConnection::ep_close_callback(void* request,
-                                      ucs_status_t /* status */,
-                                      void* /* arg */) {
-  if (request != nullptr) {
-    ucp_request_free(request);
-  }
-}
