@@ -10,6 +10,7 @@
 #include "TimesliceShmWorkItem.hpp"
 #include "TimesliceView.hpp"
 #include <boost/archive/binary_iarchive.hpp>
+#include <boost/interprocess/creation_tags.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -60,6 +61,7 @@ public:
   };
 
   [[nodiscard]] bool eos() const override { return eos_; }
+  std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
 
 private:
   TimesliceView* do_get() override {
@@ -77,9 +79,13 @@ private:
 
       // connect to matching shared memory if not already connected
       if (managed_shm_uuid() != timeslice_item.shm_uuid) {
+        // managed_shm_ =
+        //     std::make_unique<boost::interprocess::managed_shared_memory>(
+        //         boost::interprocess::open_read_only,
+        //         timeslice_item.shm_identifier.c_str());
         managed_shm_ =
             std::make_unique<boost::interprocess::managed_shared_memory>(
-                boost::interprocess::open_read_only,
+                boost::interprocess::open_only,
                 timeslice_item.shm_identifier.c_str());
         std::cout << "TimesliceReceiver: opened shared memory "
                   << timeslice_item.shm_identifier << " {" << managed_shm_uuid()
@@ -101,7 +107,7 @@ private:
     return nullptr;
   }
 
-  std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
+  // std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
 
   [[nodiscard]] boost::uuids::uuid managed_shm_uuid() const {
     if (!managed_shm_) {
