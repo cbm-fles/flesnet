@@ -31,6 +31,20 @@ cri_source::cri_source(fles::MicrosliceDescriptor* desc_buffer,
 cri_source::~cri_source() {}
 
 void cri_source::set_read_index(DualIndex read_index) {
+  if (read_index == m_read_index) {
+    L_(trace) << "updating read_index, nothing to do for: data "
+              << read_index.data << " desc " << read_index.desc;
+    return;
+  }
+
+  if (read_index < m_read_index) {
+    std::stringstream ss;
+    ss << "new read index " << read_index.data << " desc " << read_index.desc
+       << " is smaller than the current read index " << m_read_index.data
+       << " desc " << m_read_index.desc << ", this should not happen!";
+    throw std::runtime_error(ss.str());
+  }
+
   L_(trace) << "updating read_index: data " << read_index.data << " desc "
             << read_index.desc;
 

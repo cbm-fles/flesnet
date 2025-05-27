@@ -120,6 +120,17 @@ struct SubTimesliceDescriptor {
   }
 };
 
+struct SubTimesliceCompletion {
+  uint64_t ts_id;
+
+  friend class boost::serialization::access;
+  /// Provide boost serialization access.
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int /* version */) {
+    ar& ts_id;
+  }
+};
+
 #pragma pack()
 
 } // namespace fles

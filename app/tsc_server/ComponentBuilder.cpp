@@ -96,7 +96,7 @@ void ComponentBuilder::ack_before(uint64_t time) {
   return;
 }
 
-ComponentBuilder::ComponentState_t
+ComponentBuilder::ComponentState
 ComponentBuilder::check_component_state(uint64_t start_time,
                                         uint64_t duration) {
 
@@ -111,14 +111,14 @@ ComponentBuilder::check_component_state(uint64_t start_time,
 
   if (write_index == read_index) {
     L_(trace) << "write and read index are equal, no data available";
-    return ComponentBuilder::ComponentState_t::TryLater;
+    return ComponentBuilder::ComponentState::TryLater;
   }
   if (first_ms_time <
       m_cri_source_buffer->desc_buffer().at(read_index.desc).idx) {
     L_(trace) << "too old, first time " << first_ms_time
               << " is before the first element in the buffer "
               << m_cri_source_buffer->desc_buffer().at(read_index.desc).idx;
-    return ComponentBuilder::ComponentState_t::Failed;
+    return ComponentBuilder::ComponentState::Failed;
   }
   if (last_ms_time >=
       m_cri_source_buffer->desc_buffer().at(write_index.desc - 1).idx) {
@@ -126,9 +126,9 @@ ComponentBuilder::check_component_state(uint64_t start_time,
         << "not available yet, last time " << last_ms_time
         << " is after the last element in the buffer "
         << m_cri_source_buffer->desc_buffer().at(write_index.desc - 1).idx;
-    return ComponentBuilder::ComponentState_t::TryLater;
+    return ComponentBuilder::ComponentState::TryLater;
   }
-  return ComponentBuilder::ComponentState_t::Ok;
+  return ComponentBuilder::ComponentState::Ok;
 }
 
 // Returns the component in the range [start_time - ovelap_before, start_time +

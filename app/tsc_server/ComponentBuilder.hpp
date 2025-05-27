@@ -21,18 +21,18 @@ public:
 
   ~ComponentBuilder();
 
-  enum class ComponentState_t {
+  enum class ComponentState {
     Ok,       // component is available
     TryLater, // component is not available yet
     Failed    // component is too old and not available anymore
   };
 
+  // TODO: remove this function, it is only for debugging
   void proceed();
 
   void ack_before(uint64_t time);
 
-  ComponentState_t check_component_state(uint64_t start_time,
-                                         uint64_t duration);
+  ComponentState check_component_state(uint64_t start_time, uint64_t duration);
 
   void get_component(uint64_t start_time, uint64_t duration);
 

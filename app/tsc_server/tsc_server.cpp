@@ -1,6 +1,7 @@
 // Copyright 2025 Dirk Hutter
 
 #include "ComponentBuilder.hpp"
+#include "SubTimesliceDescriptor.hpp"
 #include "cri.hpp"
 #include "device_operator.hpp"
 #include "log.hpp"
@@ -10,6 +11,7 @@
 #include <csignal>
 #include <iostream>
 #include <memory>
+#include <sys/types.h>
 #include <thread>
 
 namespace ip = boost::interprocess;
@@ -140,7 +142,7 @@ int main(int argc, char* argv[]) {
         // search for a component
         auto state =
             builder->check_component_state(ts_start_time, ts_size_time);
-        if (state == ComponentBuilder::ComponentState_t::Ok) {
+        if (state == ComponentBuilder::ComponentState::Ok) {
           L_(info) << "Component available";
           try {
             builder->get_component(ts_start_time, ts_size_time);
@@ -151,14 +153,14 @@ int main(int argc, char* argv[]) {
           builder->ack_before(ts_start_time);
           continue;
         }
-        if (state == ComponentBuilder::ComponentState_t::TryLater) {
+        if (state == ComponentBuilder::ComponentState::TryLater) {
           L_(info) << "Component not available yet";
           // potentially we do not want to ack her all the time and split the
           // logic
           builder->ack_before(ts_start_time);
-          continue;
+          // continue;
         }
-        if (state == ComponentBuilder::ComponentState_t::Failed) {
+        if (state == ComponentBuilder::ComponentState::Failed) {
           // if we are in the initializing phase this could be ok, in the real
           // phase this is an error hoewever we can argue that a maximum nagativ
           // microslice delay would guarantee component cant be too old at
@@ -170,8 +172,8 @@ int main(int argc, char* argv[]) {
           builder->ack_before(ts_start_time);
           continue;
         }
+        std::this_thread::sleep_for(200ms);
       }
-      std::this_thread::sleep_for(200ms);
     }
 
   } catch (std::exception const& e) {
