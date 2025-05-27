@@ -97,8 +97,7 @@ void ComponentBuilder::ack_before(uint64_t time) {
 }
 
 ComponentBuilder::ComponentState
-ComponentBuilder::check_component_state(uint64_t start_time,
-                                        uint64_t duration) {
+ComponentBuilder::check_component(uint64_t start_time, uint64_t duration) {
 
   DualIndex write_index = m_cri_source_buffer->get_write_index();
   DualIndex read_index = m_cri_source_buffer->get_read_index();
@@ -131,10 +130,13 @@ ComponentBuilder::check_component_state(uint64_t start_time,
   return ComponentBuilder::ComponentState::Ok;
 }
 
+// private member functions
+
 // Returns the component in the range [start_time - ovelap_before, start_time +
 // duration + overlap_after) Expacts that the component is available. Check the
 // compenten state before calling check_component_state.
-void ComponentBuilder::get_component(uint64_t start_time, uint64_t duration) {
+std::pair<uint64_t, uint64_t>
+ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
   DualIndex write_index = m_cri_source_buffer->get_write_index();
   DualIndex read_index = m_cri_source_buffer->get_read_index();
 
@@ -179,9 +181,9 @@ void ComponentBuilder::get_component(uint64_t start_time, uint64_t duration) {
             << int64_t(first_it->idx - first_ms_time) << ", "
             << last_it->idx - last_ms_time << " as [" << firt_idx << ", "
             << last_idx << "), " << last_idx - firt_idx << " microslices";
-}
 
-// private member functions
+  return {firt_idx, last_idx};
+}
 
 void* ComponentBuilder::alloc_buffer(size_t size_exp, size_t item_size) {
   size_t bytes = (UINT64_C(1) << size_exp) * item_size;

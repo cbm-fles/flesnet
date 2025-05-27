@@ -6,6 +6,8 @@
 #include "ItemProducer.hpp"
 #include "Monitor.hpp"
 #include "Parameters.hpp"
+#include "RingBuffer.hpp"
+#include "SubTimesliceDescriptor.hpp"
 #include "cri_device.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <csignal>
@@ -25,9 +27,12 @@ public:
 
   void run();
 
+  void send_subtimeslice_item(fles::SubTimesliceDescriptor st);
+  void handle_completions();
+
 private:
   Parameters const& par_;
-  volatile sig_atomic_t* signal_status_;
+  volatile std::sig_atomic_t* signal_status_;
 
   /// The application's monitoring object
   std::unique_ptr<cbm::Monitor> monitor_;
@@ -42,4 +47,7 @@ private:
 
   std::unique_ptr<ItemProducer> item_producer_;
   std::unique_ptr<ItemDistributor> item_distributor_;
+
+  RingBuffer<uint64_t, true> completions_{20};
+  uint64_t acked_ = 0;
 };

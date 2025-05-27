@@ -2,9 +2,11 @@
 #pragma once
 
 #include "DualRingBuffer.hpp"
+#include "SubTimesliceDescriptor.hpp"
 #include "cri_channel.hpp"
 #include "cri_source.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <cstdint>
 #include <sys/types.h>
 
 namespace ip = boost::interprocess;
@@ -32,9 +34,13 @@ public:
 
   void ack_before(uint64_t time);
 
-  ComponentState check_component_state(uint64_t start_time, uint64_t duration);
+  ComponentState check_component(uint64_t start_time, uint64_t duration);
 
-  void get_component(uint64_t start_time, uint64_t duration);
+  fles::SubTimesliceComponentDescriptor get_component(uint64_t start_time,
+                                                      uint64_t duration);
+
+  std::pair<uint64_t, uint64_t>
+  find_component(uint64_t start_time, uint64_t duration); // TODO: make private
 
 private:
   void* alloc_buffer(size_t size_exp, size_t item_size);

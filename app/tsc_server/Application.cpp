@@ -4,6 +4,7 @@
 #include "SubTimesliceDescriptor.hpp"
 #include "device_operator.hpp"
 #include "log.hpp"
+#include <boost/archive/binary_oarchive.hpp>
 #include <chrono>
 #include <iostream>
 #include <sys/types.h>
@@ -124,18 +125,18 @@ void Application::run() {
 
   uint64_t ts_start_time =
       chrono_to_timestamp(std::chrono::high_resolution_clock::now()) + 1e9;
-  uint64_t ts_size_time = 100e6;
+  uint64_t ts_size_time = par_.timeslice_duration_ns();
 
   // TODO: we may want to split this into startup and main loop phase
-  while (signal_status_ == 0) {
+  while (*signal_status_ == 0) {
     for (auto&& builder : builders_) {
 
       // search for a component
-      auto state = builder->check_component_state(ts_start_time, ts_size_time);
+      auto state = builder->check_component(ts_start_time, ts_size_time);
       if (state == ComponentBuilder::ComponentState::Ok) {
         L_(info) << "Component available";
         try {
-          builder->get_component(ts_start_time, ts_size_time);
+          builder->find_component(ts_start_time, ts_size_time);
         } catch (std::out_of_range const& e) {
           L_(error) << e.what();
         }
@@ -175,4 +176,37 @@ Application::~Application() {
   // cleanup
   ip::shared_memory_object::remove(par_.shm_id().c_str());
   L_(info) << "Shared memory segment removed: " << par_.shm_id();
+}
+
+void Application::send_subtimeslice_item(fles::SubTimesliceDescriptor st) {
+  // Serialize the SubTimesliceComponentDescriptor to a string
+  std::ostringstream oss;
+  {
+    boost::archive::binary_oarchive oa(oss);
+    oa << st;
+  }
+  // Send the serialized data as a work item
+  uint64_t ts_id = st.start_time_ns / st.duration_ns;
+  item_producer_->send_work_item(ts_id, oss.str());
+}
+
+void Application::handle_completions() {
+  ItemID id;
+  while (item_producer_->try_receive_completion(&id)) {
+    if (id == acked_) {
+      // we reveived a completion for the oldest element in the buffer,
+      // therefore we search for all consecutive elements ...
+      do {
+        ++acked_;
+      } while (completions_.at(acked_) > id);
+      // ... and acknowledge them
+      for (auto&& builder : builders_) {
+        builder->ack_before(acked_ * par_.timeslice_duration_ns());
+      }
+    } else {
+      // we received a completion for an element other then the oldest,
+      // we store it for later
+      completions_.at(id) = id;
+    }
+  }
 }
