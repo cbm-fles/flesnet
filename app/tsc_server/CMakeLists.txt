@@ -1,6 +1,6 @@
 # Copyright 2025 Dirk Hutter
 
-add_executable(tsc_server tsc_server.cpp ComponentBuilder.cpp cri_source.cpp SubTimesliceItemProducer.cpp)
+add_executable(tsc_server main.cpp Application.cpp Parameters.cpp ComponentBuilder.cpp cri_source.cpp)
 
 target_include_directories(tsc_server SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
