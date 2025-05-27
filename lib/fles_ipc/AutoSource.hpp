@@ -196,21 +196,31 @@ private:
         sources.emplace_back(std::move(source));
 
       } else if (uri.scheme == "shm") {
+        std::cout << "AutoSource: scheme shm" << std::endl;
         WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll, 0,
                                "AutoSource at PID " +
                                    std::to_string(system::current_pid())};
         for (auto& [key, value] : uri.query_components) {
           if (key == "stride") {
+            std::cout << "AutoSource: set stride" << std::endl;
+
             param.stride = std::stoull(value);
+
           } else if (key == "offset") {
+            std::cout << "AutoSource: set offset" << std::endl;
+
             param.offset = std::stoull(value);
           } else if (key == "queue") {
+            std::cout << "AutoSource: set queue" << std::endl;
+
             static const std::map<std::string, WorkerQueuePolicy> queue_map = {
                 {"all", WorkerQueuePolicy::QueueAll},
                 {"one", WorkerQueuePolicy::PrebufferOne},
                 {"skip", WorkerQueuePolicy::Skip}};
             param.queue_policy = queue_map.at(value);
           } else if (key == "group") {
+            std::cout << "AutoSource: set group" << std::endl;
+
             param.group_id = std::stoull(value);
           } else {
             throw std::runtime_error(
@@ -219,6 +229,8 @@ private:
           }
         }
         const auto ipc_identifier = uri.authority + uri.path;
+        std::cout << "AutoSource: ipc_identifier" << ipc_identifier << std::endl;
+
         std::unique_ptr<Source<Base>> source =
             std::make_unique<Receiver<Base, View>>(ipc_identifier, param);
         sources.emplace_back(std::move(source));
