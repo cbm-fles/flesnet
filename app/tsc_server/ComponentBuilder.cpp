@@ -146,15 +146,7 @@ void ComponentBuilder::get_component(uint64_t start_time, uint64_t duration) {
   auto desc_end = m_cri_source_buffer->desc_buffer().get_iter(write_index.desc);
 
   // We search for mircroslice in the range [first_ms_time, last_ms_time)
-  // search for the end iterator, i.e., the first microslice >= time
-  auto last_it = std::lower_bound(desc_begin, desc_end, last_ms_time,
-                                  [](const fles::MicrosliceDescriptor& desc,
-                                     uint64_t t) { return desc.idx < t; });
-  if (last_it == desc_begin || last_it == desc_end) {
-    throw std::out_of_range(
-        "ComponentBuilder::get_component: end of component ot of range");
-  }
-  uint64_t last_idx = last_it.get_index();
+  // (we use the index from the fist search to limit the second search)
 
   // search for begin iterator, i.e., the microslice before the first microslice
   // > time
@@ -168,6 +160,16 @@ void ComponentBuilder::get_component(uint64_t start_time, uint64_t duration) {
         "ComponentBuilder::get_component: beginning of component out of range");
   }
   uint64_t firt_idx = first_it--.get_index();
+
+  // search for the end iterator, i.e., the first microslice >= time
+  auto last_it = std::lower_bound(first_it, desc_end, last_ms_time,
+                                  [](const fles::MicrosliceDescriptor& desc,
+                                     uint64_t t) { return desc.idx < t; });
+  if (last_it == desc_begin || last_it == desc_end) {
+    throw std::out_of_range(
+        "ComponentBuilder::get_component: end of component ot of range");
+  }
+  uint64_t last_idx = last_it.get_index();
 
   // TODO: technically we are not allowed to dereference last_it because its ms
   // is not guaranteed to be written
