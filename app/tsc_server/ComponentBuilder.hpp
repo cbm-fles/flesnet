@@ -18,8 +18,8 @@ public:
                    cri::cri_channel* cri_channel,
                    size_t data_buffer_size_exp,
                    size_t desc_buffer_size_exp,
-                   uint64_t time_overlap_before,
-                   uint64_t time_overlap_after);
+                   uint64_t overlap_before_ns,
+                   uint64_t overlap_after_ns);
 
   ~ComponentBuilder();
 
@@ -50,6 +50,6 @@ private:
 
   std::unique_ptr<cri_source> m_cri_source_buffer;
 
-  uint64_t m_time_overlap_before;
-  uint64_t m_time_overlap_after;
+  uint64_t m_overlap_before_ns;
+  uint64_t m_overlap_after_ns;
 };

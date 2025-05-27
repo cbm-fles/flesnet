@@ -12,8 +12,8 @@ ComponentBuilder::ComponentBuilder(ip::managed_shared_memory* shm,
                                    uint64_t time_overlap_before,
                                    uint64_t time_overlap_after)
     : m_shm(shm), m_cri_channel(cri_channel),
-      m_time_overlap_before(time_overlap_before),
-      m_time_overlap_after(time_overlap_after) {
+      m_overlap_before_ns(time_overlap_before),
+      m_overlap_after_ns(time_overlap_after) {
 
   // allocate buffers in shm
   void* data_buffer_raw = alloc_buffer(data_buffer_size_exp, sizeof(uint8_t));
@@ -77,7 +77,7 @@ void ComponentBuilder::ack_before(uint64_t time) {
   // is less than the first element the function returns desc_begin (=
   // read_index). Setting the read index to desc_begin would not harm but we do
   // nothing to reduce strain on the hardware.
-  time -= m_time_overlap_before;
+  time -= m_overlap_before_ns;
   auto it =
       std::upper_bound(desc_begin, desc_end, time,
                        [](uint64_t t, const fles::MicrosliceDescriptor& desc) {
@@ -102,8 +102,8 @@ ComponentBuilder::check_component(uint64_t start_time, uint64_t duration) {
   DualIndex write_index = m_cri_source_buffer->get_write_index();
   DualIndex read_index = m_cri_source_buffer->get_read_index();
 
-  uint64_t first_ms_time = start_time - m_time_overlap_before;
-  uint64_t last_ms_time = start_time + duration + m_time_overlap_after;
+  uint64_t first_ms_time = start_time - m_overlap_before_ns;
+  uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
 
   L_(trace) << "searching for component [" << first_ms_time << ", "
             << last_ms_time << ").";
@@ -140,8 +140,8 @@ ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
   DualIndex write_index = m_cri_source_buffer->get_write_index();
   DualIndex read_index = m_cri_source_buffer->get_read_index();
 
-  uint64_t first_ms_time = start_time - m_time_overlap_before;
-  uint64_t last_ms_time = start_time + duration + m_time_overlap_after;
+  uint64_t first_ms_time = start_time - m_overlap_before_ns;
+  uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
 
   auto desc_begin =
       m_cri_source_buffer->desc_buffer().get_iter(read_index.desc);
