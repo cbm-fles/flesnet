@@ -55,92 +55,172 @@ int main (int argc, char** argv) {
     memset(cm_buffer.get(), 0, cm_buffer_size);
 
     if (par.is_node) { // start data node
-        cout <<"Preparing node ..." << endl;
+        if (!par.shm_name.empty()) {  // input node
+            cout <<"Preparing input node ..." << endl;
 
-        // PREPARE NODE
-        std::shared_ptr<Node> node = std::make_shared<Node>(par.node_id, par.group_id);
-        std::shared_ptr<uint64_t> node_uid = std::make_shared<uint64_t>(MAKE_UID(par.group_id, par.node_id));
-        InterfaceFactory<ConnectorInterface, ConnectorFromFlesnet, ConnectorInfinibandRmaV> connector_factory;
+            // PREPARE NODE
+            std::shared_ptr<Node> node = std::make_shared<Node>(par.node_id, par.group_id);
+            std::shared_ptr<uint64_t> node_uid = std::make_shared<uint64_t>(MAKE_UID(par.group_id, par.node_id));
+            InterfaceFactory<ConnectorInterface, ConnectorFromFlesnet, ConnectorInfinibandRmaV> connector_factory;
 
-        // PREPARE FLESNET INPUT CONNECTOR
-        auto connector_fles_in = connector_factory.get("ConnectorFromFlesnet");
-        connector_fles_in->listen_for_clients(par.shm_name);
-        std::shared_ptr<char >buffer_ptr = nullptr;
-        cout << "Waiting for Buffer to get initialized (" << par.shm_name << ") ..." << endl;
-        do {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100)); // to initialize the buffer inside the connector it first has to receive a TS - best guess is to wait 500ms for now
-            buffer_ptr = connector_fles_in->get_global_buffer();
-        } while (buffer_ptr == nullptr);
-        cout << "Buffer initialized!" << endl;
+            // PREPARE FLESNET INPUT CONNECTOR
+            auto connector_fles_in = connector_factory.get("ConnectorFromFlesnet");
+            connector_fles_in->listen_for_clients(par.shm_name);
+            std::shared_ptr<char >buffer_ptr = nullptr;
+            cout << "Waiting for Buffer to get initialized (" << par.shm_name << ") ..." << endl;
+            do {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100)); // to initialize the buffer inside the connector it first has to receive a TS - best guess is to wait 500ms for now
+                buffer_ptr = connector_fles_in->get_global_buffer();
+            } while (buffer_ptr == nullptr);
+            cout << "Buffer initialized!" << endl;
 
-        auto buffer_size = connector_fles_in->get_global_buffer_size();
-        // uint64_t buffer_size = 1024 * 1024;
-        // std::string shm_id = "tsforwarder";
-        // auto shm_fd = shm_open(shm_id.c_str(), O_RDWR | O_CREAT, 0666);
-        // if (shm_fd == 0) {
-        //     cerr << "failed to create andaccess shm" << endl;
-        //     exit(-1);
-        // }
-        // ftruncate(shm_fd, buffer_size);
-        // auto buffer_ptr = std::shared_ptr<char>(reinterpret_cast<char*>(mmap(nullptr, buffer_size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0)));
-        // if (buffer_ptr == nullptr) {
-        //     cerr << "mmap failed" << endl;
-        //     exit(-1);
-        // }
-        // PREPARE BUFFER MAP
-        auto buffer_map = make_shared<BufferMap>(64, buffer_size);
+            auto buffer_size = connector_fles_in->get_global_buffer_size();
+            // uint64_t buffer_size = 1024 * 1024;
+            // std::string shm_id = "tsforwarder";
+            // auto shm_fd = shm_open(shm_id.c_str(), O_RDWR | O_CREAT, 0666);
+            // if (shm_fd == 0) {
+            //     cerr << "failed to create andaccess shm" << endl;
+            //     exit(-1);
+            // }
+            // ftruncate(shm_fd, buffer_size);
+            // auto buffer_ptr = std::shared_ptr<char>(reinterpret_cast<char*>(mmap(nullptr, buffer_size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0)));
+            // if (buffer_ptr == nullptr) {
+            //     cerr << "mmap failed" << endl;
+            //     exit(-1);
+            // }
+            // PREPARE BUFFER MAP
+            auto buffer_map = make_shared<BufferMap>(64, buffer_size);
 
-        // PREPARE NODE CONNECTORS
-        for (auto c : par.connectors) {
-            std::shared_ptr<ConnectorInterface> connector = connector_factory.get(c.name);
-            if (!connector) {
-                std::cerr << "Invalid connector name: " << c.name << std::endl <<
-                    "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
-                return -1;
+            // PREPARE NODE CONNECTORS
+            for (auto c : par.connectors) {
+                std::shared_ptr<ConnectorInterface> connector = connector_factory.get(c.name);
+                if (!connector) {
+                    std::cerr << "Invalid connector name: " << c.name << std::endl <<
+                        "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
+                    return -1;
+                }
+                // connector->set_memory_manager(mem_mng);
+                connector->set_global_buffer(buffer_ptr, buffer_size);
+                connector->set_global_buffer_map(buffer_map);
+
+                node->add_connector(
+                    connector,
+                    c.connector_uid,
+                    c.listen_addr,
+                    std::reinterpret_pointer_cast<char>(node_uid),
+                    sizeof(uint64_t)
+                );
             }
-            // connector->set_memory_manager(mem_mng);
-            connector->set_global_buffer(buffer_ptr, buffer_size);
-            connector->set_global_buffer_map(buffer_map);
 
-            node->add_connector(
-                connector,
-                c.connector_uid,
-                c.listen_addr,
-                std::reinterpret_pointer_cast<char>(node_uid),
-                sizeof(uint64_t)
-            );
-        }
+            std::string cm_connector_name = par.central_manager.name;
+            std::shared_ptr<ConnectorInterface> cm_connector = connector_factory.get(cm_connector_name);
+            if (cm_connector == nullptr) {
+                std::cerr << "Invalid CM Connector name: " << cm_connector_name << std::endl <<
+                    "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
+                exit(-1);
+            }
 
-        std::string cm_connector_name = par.central_manager.name;
-        std::shared_ptr<ConnectorInterface> cm_connector = connector_factory.get(cm_connector_name);
-        if (cm_connector == nullptr) {
-            std::cerr << "Invalid CM Connector name: " << cm_connector_name << std::endl <<
-                "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
-            exit(-1);
-        }
+            // const uint64_t cm_buffer_size = static_cast<uint64_t>(1024) * 1024;
+            std::shared_ptr<char> cm_buffer = std::shared_ptr<char>(new char[cm_buffer_size]);
+            memset(cm_buffer.get(), 0, cm_buffer_size);
+            if (cm_connector->set_global_buffer(cm_buffer, cm_buffer_size) != 0) {
+                cerr << "CM connector: unable to set global buffer" <<  endl;
+                exit(-1);
+            }
 
-        // const uint64_t cm_buffer_size = static_cast<uint64_t>(1024) * 1024;
-        std::shared_ptr<char> cm_buffer = std::shared_ptr<char>(new char[cm_buffer_size]);
-        memset(cm_buffer.get(), 0, cm_buffer_size);
-        if (cm_connector->set_global_buffer(cm_buffer, cm_buffer_size) != 0) {
-            cerr << "CM connector: unable to set global buffer" <<  endl;
-            exit(-1);
-        }
+            auto cm_buffer_map = make_shared<BufferMap>(64, cm_buffer_size);
+            cm_connector->set_global_buffer_map(cm_buffer_map);
 
-        auto cm_buffer_map = make_shared<BufferMap>(64, cm_buffer_size);
-        cm_connector->set_global_buffer_map(cm_buffer_map);
+            std::string cm_address = par.central_manager.listen_addr;
+            node->set_cm_connector(cm_connector, cm_address);
 
-        std::string cm_address = par.central_manager.listen_addr;
-        node->set_cm_connector(cm_connector, cm_address);
+            // PREPARE FLESNET INPUT CONNECTOR
+            // connector_fles_in->set_global_buffer(buffer_ptr, buffer_size);
+            node->set_input_connector(connector_fles_in, "");
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            connector_fles_in->set_global_buffer_map(buffer_map);
+            cout << "Input node ready" << endl;
+            while (true) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        } else { // output node
+            cout <<"Preparing output node ..." << endl;
 
-        // PREPARE FLESNET INPUT CONNECTOR
-        // connector_fles_in->set_global_buffer(buffer_ptr, buffer_size);
-        node->set_input_connector(connector_fles_in, "");
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        connector_fles_in->set_global_buffer_map(buffer_map);
-        cout << "Node ready" << endl;
-        while (true) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            // PREPARE NODE
+            std::shared_ptr<Node> node = std::make_shared<Node>(par.node_id, par.group_id);
+            std::shared_ptr<uint64_t> node_uid = std::make_shared<uint64_t>(MAKE_UID(par.group_id, par.node_id));
+            InterfaceFactory<ConnectorInterface, ConnectorFromFlesnet, ConnectorInfinibandRmaV> connector_factory;
+
+            // PREPARE FLESNET INPUT CONNECTOR
+            uint64_t buffer_size = static_cast<long>(1024 * 1024) * 16;
+            auto buffer_ptr = std::shared_ptr<char>(new char[buffer_size]);
+            auto buffer_map = make_shared<BufferMap>(64, buffer_size);
+
+            // auto buffer_size = connector_fles_in->get_global_buffer_size();
+            // uint64_t buffer_size = 1024 * 1024;
+            // std::string shm_id = "tsforwarder";
+            // auto shm_fd = shm_open(shm_id.c_str(), O_RDWR | O_CREAT, 0666);
+            // if (shm_fd == 0) {
+            //     cerr << "failed to create andaccess shm" << endl;
+            //     exit(-1);
+            // }
+            // ftruncate(shm_fd, buffer_size);
+            // auto buffer_ptr = std::shared_ptr<char>(reinterpret_cast<char*>(mmap(nullptr, buffer_size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0)));
+            // if (buffer_ptr == nullptr) {
+            //     cerr << "mmap failed" << endl;
+            //     exit(-1);
+            // }
+            // PREPARE BUFFER MAP
+
+            // PREPARE NODE CONNECTORS
+            for (auto c : par.connectors) {
+                std::shared_ptr<ConnectorInterface> connector = connector_factory.get(c.name);
+                if (!connector) {
+                    std::cerr << "Invalid connector name: " << c.name << std::endl <<
+                        "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
+                    return -1;
+                }
+                // connector->set_memory_manager(mem_mng);
+                connector->set_global_buffer(buffer_ptr, buffer_size);
+                connector->set_global_buffer_map(buffer_map);
+
+                node->add_connector(
+                    connector,
+                    c.connector_uid,
+                    c.listen_addr,
+                    std::reinterpret_pointer_cast<char>(node_uid),
+                    sizeof(uint64_t)
+                );
+            }
+
+            std::string cm_connector_name = par.central_manager.name;
+            std::shared_ptr<ConnectorInterface> cm_connector = connector_factory.get(cm_connector_name);
+            if (cm_connector == nullptr) {
+                std::cerr << "Invalid CM Connector name: " << cm_connector_name << std::endl <<
+                    "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
+                exit(-1);
+            }
+
+            // const uint64_t cm_buffer_size = static_cast<uint64_t>(1024) * 1024;
+            std::shared_ptr<char> cm_buffer = std::shared_ptr<char>(new char[cm_buffer_size]);
+            memset(cm_buffer.get(), 0, cm_buffer_size);
+            if (cm_connector->set_global_buffer(cm_buffer, cm_buffer_size) != 0) {
+                cerr << "CM connector: unable to set global buffer" <<  endl;
+                exit(-1);
+            }
+
+            auto cm_buffer_map = make_shared<BufferMap>(64, cm_buffer_size);
+            cm_connector->set_global_buffer_map(cm_buffer_map);
+
+            std::string cm_address = par.central_manager.listen_addr;
+            node->set_cm_connector(cm_connector, cm_address);
+
+            // PREPARE FLESNET INPUT CONNECTOR
+            // connector_fles_in->set_global_buffer(buffer_ptr, buffer_size);
+            cout << "Output node ready" << endl;
+            while (true) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
         }
     } else { // start Central Manager (CM)
         cout << "Starting Central Manager ..." << endl;
