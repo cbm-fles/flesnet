@@ -16,8 +16,6 @@
 #include <thread>
 #include <vector>
 
-namespace ip = boost::interprocess;
-
 using namespace std::chrono_literals;
 
 namespace {
@@ -102,8 +100,8 @@ Application::Application(Parameters const& par,
           cri_channels_.size() +
       4096;
 
-  shm_ = std::make_unique<ip::managed_shared_memory>(
-      ip::create_only, par.shm_id().c_str(), shm_size);
+  shm_ = std::make_unique<boost::interprocess::managed_shared_memory>(
+      boost::interprocess::create_only, par.shm_id().c_str(), shm_size);
 
   // Store a random UUID in the shared memory segment to identify it reliably
   shm_->construct<boost::uuids::uuid>(boost::interprocess::unique_instance)(
@@ -184,7 +182,7 @@ void Application::run() {
 
 Application::~Application() {
   // cleanup
-  ip::shared_memory_object::remove(par_.shm_id().c_str());
+  boost::interprocess::shared_memory_object::remove(par_.shm_id().c_str());
   L_(info) << "Shared memory segment removed: " << par_.shm_id();
 }
 

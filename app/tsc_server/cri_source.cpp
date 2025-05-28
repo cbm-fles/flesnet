@@ -6,7 +6,6 @@
 #include "RingBufferView.hpp"
 #include "log.hpp"
 #include <cstddef>
-#include <type_traits>
 
 cri_source::cri_source(fles::MicrosliceDescriptor* desc_buffer,
                        uint8_t* data_buffer,
@@ -17,7 +16,7 @@ cri_source::cri_source(fles::MicrosliceDescriptor* desc_buffer,
       m_data_buffer_size_exp(data_buffer_size_exp), m_dma_channel(dma_channel),
       m_dma_transfer_size(dma_channel->dma_transfer_size()) {
   // TODO: we can possibly extract all buffer information from dma_channel
-  // (or cri_channel), especially if size in not a exponent
+  // (or cri_channel), especially if size in not an exponent
 
   m_desc_buffer_view =
       std::make_unique<RingBufferView<fles::MicrosliceDescriptor>>(
@@ -98,12 +97,6 @@ DualIndexTimed cri_source::get_write_index_timed() {
             << write_index.updated.time_since_epoch().count() << " delta "
             << write_index.delta.count();
   return write_index;
-}
-
-bool cri_source::get_eof() {
-  // TODO: no idea who should ever set eof, should this check if something in hw
-  // is enabled?
-  return false;
 }
 
 // TODO: index to offset calculations could also be done by the RingBuffer class

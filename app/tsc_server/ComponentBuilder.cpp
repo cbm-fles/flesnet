@@ -10,11 +10,11 @@ ComponentBuilder::ComponentBuilder(ip::managed_shared_memory* shm,
                                    cri::cri_channel* cri_channel,
                                    size_t data_buffer_size_exp,
                                    size_t desc_buffer_size_exp,
-                                   uint64_t time_overlap_before,
-                                   uint64_t time_overlap_after)
+                                   uint64_t overlap_before_ns,
+                                   uint64_t overlap_after_ns)
     : m_shm(shm), m_cri_channel(cri_channel),
-      m_overlap_before_ns(time_overlap_before),
-      m_overlap_after_ns(time_overlap_after) {
+      m_overlap_before_ns(overlap_before_ns),
+      m_overlap_after_ns(overlap_after_ns) {
 
   // allocate buffers in shm
   void* data_buffer_raw = alloc_buffer(data_buffer_size_exp, sizeof(uint8_t));

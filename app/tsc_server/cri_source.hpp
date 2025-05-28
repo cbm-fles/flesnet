@@ -41,10 +41,10 @@ public:
 
   DualIndexTimed get_write_index_timed();
 
-  bool get_eof() override;
+  bool get_eof() override { return false; };
 
-  size_t data_buffer_size_exp() { return m_data_buffer_size_exp; }
-  size_t desc_buffer_size_exp() { return m_desc_buffer_size_exp; }
+  size_t data_buffer_size_exp() const { return m_data_buffer_size_exp; }
+  size_t desc_buffer_size_exp() const { return m_desc_buffer_size_exp; }
 
   RingBufferView<uint8_t>& data_buffer() override {
     return *m_data_buffer_view;
