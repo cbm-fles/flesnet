@@ -139,6 +139,7 @@ void Application::run() {
   uint64_t ts_start_time =
       chrono_to_timestamp(std::chrono::high_resolution_clock::now()) + 1e9;
   uint64_t ts_size_time = par_.timeslice_duration_ns();
+  acked_ = ts_start_time / ts_size_time;
 
   std::vector<ComponentBuilder::ComponentState> states(builders_.size());
   std::vector<std::size_t> ask_again(builders_.size());
