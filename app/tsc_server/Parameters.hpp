@@ -59,6 +59,9 @@ public:
   [[nodiscard]] uint64_t timeslice_duration_ns() const {
     return (_timeslice_duration_ns);
   }
+  [[nodiscard]] uint64_t timeslice_timeout_ns() const {
+    return (_timeslice_timeout_ns);
+  }
 
   [[nodiscard]] std::string print_buffer_info() const {
     std::stringstream ss;
@@ -83,5 +86,7 @@ private:
   // TODO: parse as per-channel input parameters
   uint64_t _overlap_before_ns = 0;
   uint64_t _overlap_after_ns = 0;
+
   uint64_t _timeslice_duration_ns = 100e6; // 100 ms
+  uint64_t _timeslice_timeout_ns = 1e9;    // 1 s
 };

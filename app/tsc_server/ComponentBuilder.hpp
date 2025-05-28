@@ -1,7 +1,6 @@
 // Copyright 2025 Dirk Hutter
 #pragma once
 
-#include "DualRingBuffer.hpp"
 #include "SubTimesliceDescriptor.hpp"
 #include "cri_channel.hpp"
 #include "cri_source.hpp"

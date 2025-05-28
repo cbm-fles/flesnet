@@ -9,7 +9,8 @@
 #include "RingBuffer.hpp"
 #include "SubTimesliceDescriptor.hpp"
 #include "cri_device.hpp"
-#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/interprocess_fwd.hpp>
+#include <boost/uuid/uuid.hpp>
 #include <csignal>
 #include <memory>
 #include <vector>
@@ -27,10 +28,14 @@ public:
 
   void run();
 
-  void send_subtimeslice_item(fles::SubTimesliceDescriptor st);
-  void handle_completions();
-
 private:
+  void handle_completions();
+  void send_subtimeslice_item(fles::SubTimesliceDescriptor st);
+  void provide_subtimeslice(
+      std::vector<ComponentBuilder::ComponentState> const& states,
+      uint64_t start_time,
+      uint64_t duration);
+
   Parameters const& par_;
   volatile std::sig_atomic_t* signal_status_;
 
@@ -39,6 +44,8 @@ private:
 
   /// The application's ZeroMQ context
   zmq::context_t zmq_context_{1};
+
+  boost::uuids::uuid shm_uuid_{}; ///< shared memory UUID
 
   std::vector<std::unique_ptr<cri::cri_device>> cris_;
   std::vector<cri::cri_channel*> cri_channels_;

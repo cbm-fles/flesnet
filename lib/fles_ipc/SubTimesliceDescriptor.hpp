@@ -60,8 +60,8 @@ struct SubTimesliceComponentDescriptor {
   /// Provide boost serialization access.
   template <class Archive>
   void serialize(Archive& ar, const unsigned int /* version */) {
-    ar & contents;
     ar & descriptors;
+    ar & contents;
     ar & is_missing_microslices;
   }
 

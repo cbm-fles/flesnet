@@ -1,14 +1,20 @@
 // Copyright 2025 Dirk Hutter
 
 #include "Application.hpp"
+#include "ComponentBuilder.hpp"
 #include "SubTimesliceDescriptor.hpp"
 #include "device_operator.hpp"
 #include "log.hpp"
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 #include <iostream>
+#include <numeric>
 #include <sys/types.h>
 #include <thread>
+#include <vector>
 
 namespace ip = boost::interprocess;
 
@@ -34,6 +40,9 @@ timestamp_to_chrono(uint64_t time) {
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
+  boost::uuids::random_generator uuid_gen;
+  shm_uuid_ = uuid_gen();
+
   // start up monitoring
   if (!par.monitor_uri().empty()) {
     monitor_ = std::make_unique<cbm::Monitor>(par_.monitor_uri());
@@ -91,10 +100,14 @@ Application::Application(Parameters const& par,
            sizeof(fles::MicrosliceDescriptor) +
        2 * sysconf(_SC_PAGESIZE)) *
           cri_channels_.size() +
-      1000;
+      4096;
 
   shm_ = std::make_unique<ip::managed_shared_memory>(
       ip::create_only, par.shm_id().c_str(), shm_size);
+
+  // Store a random UUID in the shared memory segment to identify it reliably
+  shm_->construct<boost::uuids::uuid>(boost::interprocess::unique_instance)(
+      shm_uuid_);
 
   // Create Component Builder for each Channel
   for (cri::cri_channel* channel : cri_channels_) {
@@ -127,44 +140,40 @@ void Application::run() {
       chrono_to_timestamp(std::chrono::high_resolution_clock::now()) + 1e9;
   uint64_t ts_size_time = par_.timeslice_duration_ns();
 
-  // TODO: we may want to split this into startup and main loop phase
-  while (*signal_status_ == 0) {
-    for (auto&& builder : builders_) {
+  std::vector<ComponentBuilder::ComponentState> states(builders_.size());
+  std::vector<std::size_t> ask_again(builders_.size());
+  std::iota(ask_again.begin(), ask_again.end(), 0);
 
-      // search for a component
-      auto state = builder->check_component(ts_start_time, ts_size_time);
-      if (state == ComponentBuilder::ComponentState::Ok) {
-        L_(info) << "Component available";
-        try {
-          builder->get_component(ts_start_time, ts_size_time);
-        } catch (std::out_of_range const& e) {
-          L_(error) << e.what();
-        }
-        ts_start_time += ts_size_time;
-        builder->ack_before(ts_start_time);
-        continue;
+  while (*signal_status_ == 0) {
+    handle_completions();
+
+    // call check_component for all builders and store the states
+    for (auto i : ask_again) {
+      auto state = builders_[i]->check_component(ts_start_time, ts_size_time);
+      states[i] = state;
+      if (state != ComponentBuilder::ComponentState::TryLater) {
+        // if the state is not TryLater, we do not need to ask again
+        ask_again.erase(std::remove(ask_again.begin(), ask_again.end(), i),
+                        ask_again.end());
       }
-      if (state == ComponentBuilder::ComponentState::TryLater) {
-        L_(info) << "Component not available yet";
-        // potentially we do not want to ack her all the time and split the
-        // logic
-        builder->ack_before(ts_start_time);
-        // continue;
-      }
-      if (state == ComponentBuilder::ComponentState::Failed) {
-        // if we are in the initializing phase this could be ok, in the real
-        // phase this is an error hoewever we can argue that a maximum nagativ
-        // microslice delay would guarantee component cant be too old at
-        // startup if we add enough time to the start time for debug we just
-        // skip 100 timeslices here
-        ts_start_time += (ts_size_time * 10);
-        L_(info) << "Component too old. setting new start time to "
-                 << ts_start_time;
-        builder->ack_before(ts_start_time);
-        continue;
-      }
-      std::this_thread::sleep_for(200ms);
     }
+
+    // if some builders are in the TryLater state and the timeout has not been
+    // reached, wait a bit and try again
+    bool timeout_reached =
+        (chrono_to_timestamp(std::chrono::high_resolution_clock::now()) >
+         ts_start_time + par_.timeslice_duration_ns() +
+             par_.timeslice_timeout_ns());
+    if (!ask_again.empty() && !timeout_reached) {
+      std::this_thread::sleep_for(10ms);
+      continue;
+    };
+
+    // provide subtimeslice and advance to the next timeslice
+    provide_subtimeslice(states, ts_start_time, ts_size_time);
+    ts_start_time += ts_size_time;
+    ask_again.resize(builders_.size());
+    std::iota(ask_again.begin(), ask_again.end(), 0);
   }
 
   // Stop the item distributor thread
@@ -176,18 +185,6 @@ Application::~Application() {
   // cleanup
   ip::shared_memory_object::remove(par_.shm_id().c_str());
   L_(info) << "Shared memory segment removed: " << par_.shm_id();
-}
-
-void Application::send_subtimeslice_item(fles::SubTimesliceDescriptor st) {
-  // Serialize the SubTimesliceComponentDescriptor to a string
-  std::ostringstream oss;
-  {
-    boost::archive::binary_oarchive oa(oss);
-    oa << st;
-  }
-  // Send the serialized data as a work item
-  uint64_t ts_id = st.start_time_ns / st.duration_ns;
-  item_producer_->send_work_item(ts_id, oss.str());
 }
 
 void Application::handle_completions() {
@@ -209,4 +206,48 @@ void Application::handle_completions() {
       completions_.at(id) = id;
     }
   }
+}
+
+void Application::send_subtimeslice_item(fles::SubTimesliceDescriptor st) {
+  // Serialize the SubTimesliceComponentDescriptor to a string
+  std::ostringstream oss;
+  {
+    boost::archive::binary_oarchive oa(oss);
+    oa << st;
+  }
+  // Send the serialized data as a work item
+  uint64_t ts_id = st.start_time_ns / st.duration_ns;
+  item_producer_->send_work_item(ts_id, oss.str());
+}
+
+void Application::provide_subtimeslice(
+    std::vector<ComponentBuilder::ComponentState> const& states,
+    uint64_t start_time,
+    uint64_t duration) {
+
+  // Create a SubTimesliceDescriptor
+  fles::SubTimesliceDescriptor st;
+  st.shm_identifier = par_.shm_id();
+  st.shm_uuid = shm_uuid_;
+  st.start_time_ns = start_time;
+  st.duration_ns = duration;
+  st.is_incomplete = false;
+
+  // Create SubTimesliceComponentDescriptors for each builder
+  for (size_t i = 0; i < builders_.size(); ++i) {
+    auto& builder = builders_[i];
+    auto state = states[i];
+    switch (state) {
+    case ComponentBuilder::ComponentState::Ok:
+      st.components.push_back(builder->get_component(start_time, duration));
+      break;
+    case ComponentBuilder::ComponentState::Failed:
+    case ComponentBuilder::ComponentState::TryLater:
+      st.is_incomplete = true;
+      break;
+    }
+  }
+
+  // Send the SubTimesliceDescriptor as an item
+  send_subtimeslice_item(st);
 }
