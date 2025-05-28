@@ -82,10 +82,10 @@ void Parameters::parse_options(int argc, char** argv) {
             connectors.push_back(c);
         }
 
-        if (shm_name.empty()) {
-            cerr << "!!! No SHM name provided" << endl;
-            exit(EXIT_FAILURE);
-        }
+        // if (shm_name.empty()) {
+        //     cerr << "!!! No SHM name provided" << endl;
+        //     exit(EXIT_FAILURE);
+        // }
     }
 
     if (vm.count("input") != 0) {
