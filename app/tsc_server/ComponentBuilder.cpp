@@ -4,6 +4,7 @@
 #include "DualRingBuffer.hpp"
 #include "SubTimesliceDescriptor.hpp"
 #include "log.hpp"
+#include <cstddef>
 
 ComponentBuilder::ComponentBuilder(ip::managed_shared_memory* shm,
                                    cri::cri_channel* cri_channel,
@@ -39,7 +40,7 @@ ComponentBuilder::~ComponentBuilder() {
 }
 
 void ComponentBuilder::proceed() {
-  // TODO: debugg functionality which can be removed, ack_before(uint64_max)
+  // TODO: debug functionality which can be removed, ack_before(uint64_max)
   // does the same
   DualIndexTimed index = m_cri_source_buffer->get_write_index_timed();
   m_cri_source_buffer->set_read_index(index.index);
@@ -66,7 +67,7 @@ void ComponentBuilder::ack_before(uint64_t time) {
 
   // Find the first element with a time greater than requested time and deduce 1
   // to get the last element with a time <= requested time. This has to be the
-  // same logic as in get_component. We also deduce the overlap before time to
+  // same logic as in find_component. We also deduce the overlap before time to
   // ensure next component can still be built.
 
   // INFO: To delete all elements until (aka time less than) the requested time,
@@ -130,11 +131,78 @@ ComponentBuilder::check_component(uint64_t start_time, uint64_t duration) {
   return ComponentBuilder::ComponentState::Ok;
 }
 
+fles::SubTimesliceComponentDescriptor
+ComponentBuilder::get_component(uint64_t start_time, uint64_t duration) {
+  // find the component in the buffer
+  auto [desc_begin_idx, desc_end_idx] = find_component(start_time, duration);
+  assert(desc_begin_idx < desc_end_idx);
+
+  // generate one or two i/o vectors for the descriptors
+  std::vector<fles::ShmIovec> descriptors;
+  auto& desc_buffer = m_cri_source_buffer->desc_buffer();
+  auto* desc_begin = &desc_buffer.at(desc_begin_idx);
+  auto* desc_end = &desc_buffer.at(desc_end_idx);
+  if (desc_begin < desc_end) {
+    // the descriptors are contiguous in memory, so we only create one iovec
+    descriptors.push_back(
+        {m_shm->get_handle_from_address(desc_begin),
+         (desc_end - desc_begin) * sizeof(fles::MicrosliceDescriptor)});
+  } else if (desc_begin > desc_end) {
+    // the descriptors have wrapped around the end of the buffer
+    auto* desc_buffer_begin = desc_buffer.ptr();
+    auto* desc_buffer_end = desc_buffer.ptr() + desc_buffer.size();
+    descriptors.push_back(
+        {m_shm->get_handle_from_address(desc_begin),
+         (desc_buffer_end - desc_begin) * sizeof(fles::MicrosliceDescriptor)});
+    descriptors.push_back(
+        {m_shm->get_handle_from_address(desc_buffer_begin),
+         (desc_end - desc_buffer_begin) * sizeof(fles::MicrosliceDescriptor)});
+  }
+
+  // find the data blocks for the component
+  auto data_begin_idx = desc_begin->offset;
+  auto data_end_idx = (desc_end - 1)->offset + (desc_end - 1)->size;
+
+  // generate one or two i/o vectors for the descriptors
+  std::vector<fles::ShmIovec> contents;
+  auto& data_buffer = m_cri_source_buffer->data_buffer();
+  auto* data_begin = &data_buffer.at(data_begin_idx);
+  auto* data_end = &data_buffer.at(data_end_idx);
+  if (data_begin < data_end) {
+    // the data blocks are contiguous in memory, so we only create one iovec
+    contents.push_back({m_shm->get_handle_from_address(data_begin),
+                        (data_end - data_begin) * sizeof(uint8_t)});
+  } else if (data_begin > data_end) {
+    // the data blocks have wrapped around the end of the buffer
+    auto* data_buffer_begin = data_buffer.ptr();
+    auto* data_buffer_end = data_buffer.ptr() + data_buffer.size();
+    contents.push_back({m_shm->get_handle_from_address(data_begin),
+                        (data_buffer_end - data_begin) * sizeof(uint8_t)});
+    contents.push_back({m_shm->get_handle_from_address(data_buffer_begin),
+                        (data_end - data_buffer_begin) * sizeof(uint8_t)});
+  }
+
+  // TODO: this is a placeholder for any aggregated information about the
+  // microslices in the component
+  bool is_missing_microslices = false;
+  for (auto it = desc_buffer.get_iter(desc_begin_idx);
+       it < desc_buffer.get_iter(desc_end_idx); ++it) {
+    if ((it->flags &
+         static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) != 0) {
+      is_missing_microslices = true;
+      break;
+    }
+  }
+
+  return {descriptors, contents, is_missing_microslices};
+}
+
 // private member functions
 
-// Returns the component in the range [start_time - ovelap_before, start_time +
-// duration + overlap_after) Expacts that the component is available. Check the
-// compenten state before calling check_component_state.
+// Returns the component's microslice descriptor indexes in the range
+// [start_time - ovelap_before, start_time + duration + overlap_after). Expects
+// that the component is available. Check the component state before calling
+// find_component.
 std::pair<uint64_t, uint64_t>
 ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
   DualIndex write_index = m_cri_source_buffer->get_write_index();
@@ -147,8 +215,8 @@ ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
       m_cri_source_buffer->desc_buffer().get_iter(read_index.desc);
   auto desc_end = m_cri_source_buffer->desc_buffer().get_iter(write_index.desc);
 
-  // We search for mircroslice in the range [first_ms_time, last_ms_time)
-  // (we use the index from the fist search to limit the second search)
+  // We search for microslice in the range [first_ms_time, last_ms_time)
+  // (we use the index from the first search to limit the second search)
 
   // search for begin iterator, i.e., the microslice before the first microslice
   // > time
@@ -158,10 +226,10 @@ ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
                          return t < desc.idx;
                        });
   if (first_it == desc_begin || first_it == desc_end) {
-    throw std::out_of_range(
-        "ComponentBuilder::get_component: beginning of component out of range");
+    throw std::out_of_range("ComponentBuilder::find_component: beginning of "
+                            "component out of range");
   }
-  uint64_t firt_idx = first_it--.get_index();
+  uint64_t first_idx = first_it--.get_index();
 
   // search for the end iterator, i.e., the first microslice >= time
   auto last_it = std::lower_bound(first_it, desc_end, last_ms_time,
@@ -169,7 +237,7 @@ ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
                                      uint64_t t) { return desc.idx < t; });
   if (last_it == desc_begin || last_it == desc_end) {
     throw std::out_of_range(
-        "ComponentBuilder::get_component: end of component ot of range");
+        "ComponentBuilder::find_component: end of component out of range");
   }
   uint64_t last_idx = last_it.get_index();
 
@@ -179,10 +247,10 @@ ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
             << last_ms_time << "). Found component [" << first_it->idx << ", "
             << last_it->idx << ") with difference "
             << int64_t(first_it->idx - first_ms_time) << ", "
-            << last_it->idx - last_ms_time << " as [" << firt_idx << ", "
-            << last_idx << "), " << last_idx - firt_idx << " microslices";
+            << last_it->idx - last_ms_time << " as [" << first_idx << ", "
+            << last_idx << "), " << last_idx - first_idx << " microslices";
 
-  return {firt_idx, last_idx};
+  return {first_idx, last_idx};
 }
 
 void* ComponentBuilder::alloc_buffer(size_t size_exp, size_t item_size) {

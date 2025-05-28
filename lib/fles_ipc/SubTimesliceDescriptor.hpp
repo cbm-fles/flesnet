@@ -31,13 +31,13 @@ struct ShmIovec {
  * \brief Subtimeslice component descriptor struct.
  */
 struct SubTimesliceComponentDescriptor {
-  /// A vector of IO vectors to the microslice content data blocks in the shared
-  /// memory
-  std::vector<ShmIovec> contents;
-
   /// A vector of IO vectors to the microslice descriptor data blocks in the
   /// shared memory
   std::vector<ShmIovec> descriptors;
+
+  /// A vector of IO vectors to the microslice content data blocks in the shared
+  /// memory
+  std::vector<ShmIovec> contents;
 
   // Flag: Microslices are missing in this component.
   bool is_missing_microslices;

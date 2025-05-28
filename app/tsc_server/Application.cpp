@@ -136,7 +136,7 @@ void Application::run() {
       if (state == ComponentBuilder::ComponentState::Ok) {
         L_(info) << "Component available";
         try {
-          builder->find_component(ts_start_time, ts_size_time);
+          builder->get_component(ts_start_time, ts_size_time);
         } catch (std::out_of_range const& e) {
           L_(error) << e.what();
         }

@@ -12,7 +12,6 @@
 namespace ip = boost::interprocess;
 
 class ComponentBuilder {
-
 public:
   ComponentBuilder(ip::managed_shared_memory* shm,
                    cri::cri_channel* cri_channel,
@@ -39,11 +38,11 @@ public:
   fles::SubTimesliceComponentDescriptor get_component(uint64_t start_time,
                                                       uint64_t duration);
 
-  std::pair<uint64_t, uint64_t>
-  find_component(uint64_t start_time, uint64_t duration); // TODO: make private
-
 private:
   void* alloc_buffer(size_t size_exp, size_t item_size);
+
+  std::pair<uint64_t, uint64_t> find_component(uint64_t start_time,
+                                               uint64_t duration);
 
   ip::managed_shared_memory* m_shm;
   cri::cri_channel* m_cri_channel;
