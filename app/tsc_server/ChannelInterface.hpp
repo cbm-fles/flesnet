@@ -38,9 +38,6 @@ private:
                     size_t item_size,
                     size_t dma_size);
 
-  size_t m_desc_buffer_size_exp;
-  size_t m_data_buffer_size_exp;
-
   cri::dma_channel* m_dma_channel;
   size_t m_dma_transfer_size;
 

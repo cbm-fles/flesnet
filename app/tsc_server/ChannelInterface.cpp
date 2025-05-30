@@ -10,17 +10,16 @@ ChannelInterface::ChannelInterface(fles::MicrosliceDescriptor* desc_buffer,
                                    size_t desc_buffer_size_exp,
                                    size_t data_buffer_size_exp,
                                    cri::dma_channel* dma_channel)
-    : m_desc_buffer_size_exp(desc_buffer_size_exp),
-      m_data_buffer_size_exp(data_buffer_size_exp), m_dma_channel(dma_channel),
+    : m_dma_channel(dma_channel),
       m_dma_transfer_size(dma_channel->dma_transfer_size()) {
   // TODO: we can possibly extract all buffer information from dma_channel
   // (or cri_channel), especially if size in not an exponent
 
   m_desc_buffer_view =
       std::make_unique<RingBufferView<fles::MicrosliceDescriptor>>(
-          desc_buffer, m_desc_buffer_size_exp);
+          desc_buffer, desc_buffer_size_exp);
   m_data_buffer_view = std::make_unique<RingBufferView<uint8_t>>(
-      data_buffer, m_data_buffer_size_exp);
+      data_buffer, data_buffer_size_exp);
 
   // TODO: intialize m_read_index to the current hardware read index
 }
@@ -47,9 +46,9 @@ void ChannelInterface::set_read_index(uint64_t read_index) {
             << read_index;
 
   m_dma_channel->set_sw_read_pointers(
-      hw_pointer(data_read_index, m_data_buffer_size_exp, sizeof(uint8_t),
-                 m_dma_transfer_size),
-      hw_pointer(read_index, m_desc_buffer_size_exp,
+      hw_pointer(data_read_index, m_data_buffer_view->size_exponent(),
+                 sizeof(uint8_t), m_dma_transfer_size),
+      hw_pointer(read_index, m_desc_buffer_view->size_exponent(),
                  sizeof(fles::MicrosliceDescriptor)));
 
   // cache the read_index locally
