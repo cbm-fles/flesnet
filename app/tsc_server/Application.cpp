@@ -206,18 +206,6 @@ void Application::handle_completions() {
   }
 }
 
-void Application::send_subtimeslice_item(fles::SubTimesliceDescriptor st) {
-  // Serialize the SubTimesliceComponentDescriptor to a string
-  std::ostringstream oss;
-  {
-    boost::archive::binary_oarchive oa(oss);
-    oa << st;
-  }
-  // Send the serialized data as a work item
-  uint64_t ts_id = st.start_time_ns / st.duration_ns;
-  item_producer_->send_work_item(ts_id, oss.str());
-}
-
 void Application::provide_subtimeslice(
     std::vector<Component::State> const& states,
     uint64_t start_time,
@@ -246,6 +234,14 @@ void Application::provide_subtimeslice(
     }
   }
 
-  // Send the SubTimesliceDescriptor as an item
-  send_subtimeslice_item(st);
+  // Serialize the SubTimesliceComponentDescriptor to a string
+  std::ostringstream oss;
+  {
+    boost::archive::binary_oarchive oa(oss);
+    oa << st;
+  }
+
+  // Send the serialized data as a work item
+  uint64_t ts_id = start_time / duration;
+  item_producer_->send_work_item(ts_id, oss.str());
 }

@@ -53,18 +53,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
   po::options_description config("Configuration (tsc_server.cfg or cmd line)");
   auto config_add = config.add_options();
-  config_add("pci-addr,i", po::value<pci_addr>(),
-             "PCI BDF address of target CRI in BB:DD.F format");
-  config_add("shm,o", po::value<std::string>(&_shm_id)->default_value("cri_0"),
-             "name of the shared memory to be used");
-  config_add(
-      "data-buffer-size",
-      po::value<size_t>(&_data_buffer_size)->default_value(UINT64_C(1) << 27),
-      "size of the data buffer in bytes");
-  config_add(
-      "desc-buffer-size",
-      po::value<size_t>(&_desc_buffer_size)->default_value(UINT64_C(1) << 19),
-      "size of the descriptor buffer (number of entries)");
   config_add("log-level,l",
              po::value<unsigned>(&log_level)
                  ->default_value(log_level)
@@ -77,6 +65,42 @@ void Parameters::parse_options(int argc, char* argv[]) {
                  ->implicit_value(log_syslog)
                  ->value_name("<n>"),
              "enable logging to syslog at given log level");
+  config_add("monitor,m",
+             po::value<std::string>(&_monitor_uri)
+                 ->value_name("URI")
+                 ->implicit_value("influx1:login:8086:tsc_server_status"),
+             "publish tsclient status to InfluxDB (or \"file:cout\" for "
+             "console output)");
+  config_add("pci-addr,i", po::value<pci_addr>(),
+             "PCI BDF address of target CRI in BB:DD.F format");
+  config_add("shm,o",
+             po::value<std::string>(&_shm_id)->default_value("tsc_shm"),
+             "name of the shared memory to be used");
+
+  config_add("timeslice-duration",
+             po::value<uint64_t>(&_timeslice_duration_ns)
+                 ->default_value(_timeslice_duration_ns),
+             "duration of a timeslice in nanoseconds");
+  config_add("timeslice-timeout",
+             po::value<uint64_t>(&_timeslice_timeout_ns)
+                 ->default_value(_timeslice_timeout_ns),
+             "timeout for timeslice reception in nanoseconds");
+  config_add(
+      "data-buffer-size",
+      po::value<size_t>(&_data_buffer_size)->default_value(_data_buffer_size),
+      "size of the data buffer in bytes");
+  config_add(
+      "desc-buffer-size",
+      po::value<size_t>(&_desc_buffer_size)->default_value(_desc_buffer_size),
+      "size of the descriptor buffer (number of entries)");
+  config_add("overlap-before",
+             po::value<int64_t>(&_overlap_before_ns)
+                 ->default_value(_overlap_before_ns),
+             "overlap before the timeslice in nanoseconds");
+  config_add(
+      "overlap-after",
+      po::value<int64_t>(&_overlap_after_ns)->default_value(_overlap_after_ns),
+      "overlap after the timeslice in nanoseconds");
 
   po::options_description cmdline_options("Allowed options");
   cmdline_options.add(generic).add(config);
@@ -129,10 +153,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 
   L_(info) << "Shared memory file: " << _shm_id;
-  L_(info) << print_buffer_info();
+  L_(info) << buffer_info();
 }
 
-[[nodiscard]] std::string Parameters::print_buffer_info() const {
+[[nodiscard]] std::string Parameters::buffer_info() const {
   std::stringstream ss;
   ss << "Buffer size per channel: " << human_readable_count(_data_buffer_size)
      << " + "

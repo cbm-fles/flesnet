@@ -7,7 +7,6 @@
 #include "Monitor.hpp"
 #include "Parameters.hpp"
 #include "RingBuffer.hpp"
-#include "SubTimesliceDescriptor.hpp"
 #include "cri_device.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -30,7 +29,6 @@ public:
 
 private:
   void handle_completions();
-  void send_subtimeslice_item(fles::SubTimesliceDescriptor st);
   void provide_subtimeslice(std::vector<Component::State> const& states,
                             uint64_t start_time,
                             uint64_t duration);
