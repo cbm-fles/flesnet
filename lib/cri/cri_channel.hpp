@@ -33,9 +33,9 @@ public:
   ~cri_channel();
 
   void init_dma(void* data_buffer,
-                size_t data_buffer_log_size,
+                size_t data_buffer_size,
                 void* desc_buffer,
-                size_t desc_buffer_log_size);
+                size_t desc_buffer_size);
 
   void deinit_dma();
 

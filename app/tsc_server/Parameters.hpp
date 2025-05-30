@@ -33,12 +33,8 @@ public:
   [[nodiscard]] bool device_autodetect() const { return _device_autodetect; }
   [[nodiscard]] pci_addr device_address() const { return _device_address; }
   [[nodiscard]] std::string shm_id() const { return _shm_id; }
-  [[nodiscard]] size_t data_buffer_size_exp() const {
-    return _data_buffer_size_exp;
-  }
-  [[nodiscard]] size_t desc_buffer_size_exp() const {
-    return _desc_buffer_size_exp;
-  }
+  [[nodiscard]] size_t data_buffer_size() const { return _data_buffer_size; }
+  [[nodiscard]] size_t desc_buffer_size() const { return _desc_buffer_size; }
 
   [[nodiscard]] uint64_t overlap_before_ns() const {
     return (_overlap_before_ns);
@@ -63,8 +59,8 @@ private:
   bool _device_autodetect = true;
   pci_addr _device_address;
   std::string _shm_id;
-  size_t _data_buffer_size_exp = 0;
-  size_t _desc_buffer_size_exp = 0;
+  size_t _data_buffer_size = 0;
+  size_t _desc_buffer_size = 0;
 
   // TODO: parse as per-channel input parameters
   uint64_t _overlap_before_ns = 0;

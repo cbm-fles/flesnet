@@ -17,9 +17,9 @@ namespace cri {
 // constructor for using user buffers
 dma_channel::dma_channel(cri_channel* parent_channel,
                          void* data_buffer,
-                         size_t data_buffer_log_size,
+                         size_t data_buffer_size,
                          void* desc_buffer,
-                         size_t desc_buffer_log_size,
+                         size_t desc_buffer_size,
                          size_t dma_transfer_size)
     : m_parent_channel(parent_channel), m_dma_transfer_size(dma_transfer_size) {
   m_rfpkt = m_parent_channel->register_file_packetizer();
@@ -30,13 +30,11 @@ dma_channel::dma_channel(cri_channel* parent_channel,
     throw CriException("DMA Engine already enabled");
   }
   m_data_buffer = std::make_unique<pda::dma_buffer>(
-      m_parent_channel->parent_device(), data_buffer,
-      (UINT64_C(1) << data_buffer_log_size),
+      m_parent_channel->parent_device(), data_buffer, data_buffer_size,
       (2 * m_parent_channel->channel_index() + 0));
 
   m_desc_buffer = std::make_unique<pda::dma_buffer>(
-      m_parent_channel->parent_device(), desc_buffer,
-      (UINT64_C(1) << desc_buffer_log_size),
+      m_parent_channel->parent_device(), desc_buffer, desc_buffer_size,
       (2 * m_parent_channel->channel_index() + 1));
   // clear eb for debugging
   memset(m_data_buffer->mem(), 0, m_data_buffer->size());

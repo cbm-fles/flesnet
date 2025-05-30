@@ -6,36 +6,42 @@
 
 Component::Component(boost::interprocess::managed_shared_memory* shm,
                      cri::cri_channel* cri_channel,
-                     size_t data_buffer_size_exp,
-                     size_t desc_buffer_size_exp,
+                     size_t data_buffer_size,
+                     size_t desc_buffer_size,
                      uint64_t overlap_before_ns,
                      uint64_t overlap_after_ns)
     : m_shm(shm), m_cri_channel(cri_channel), m_dma_channel(cri_channel->dma()),
       m_overlap_before_ns(overlap_before_ns),
       m_overlap_after_ns(overlap_after_ns) {
 
+  std::size_t desc_buffer_size_bytes =
+      desc_buffer_size * sizeof(fles::MicrosliceDescriptor);
+  std::size_t data_buffer_size_bytes = data_buffer_size * sizeof(uint8_t);
+
   // allocate buffers in shm
-  void* data_buffer_raw = alloc_buffer(data_buffer_size_exp, sizeof(uint8_t));
+  L_(trace) << "allocating shm buffers of " << data_buffer_size_bytes << "+"
+            << desc_buffer_size_bytes << " bytes";
+  void* data_buffer_raw =
+      m_shm->allocate_aligned(data_buffer_size_bytes, sysconf(_SC_PAGESIZE));
   void* desc_buffer_raw =
-      alloc_buffer(desc_buffer_size_exp, sizeof(fles::MicrosliceDescriptor));
+      m_shm->allocate_aligned(desc_buffer_size_bytes, sysconf(_SC_PAGESIZE));
 
   // initialize cri DMA engine
-  m_cri_channel->init_dma(data_buffer_raw, data_buffer_size_exp + 0,
-                          desc_buffer_raw, desc_buffer_size_exp + 5);
+  m_cri_channel->init_dma(data_buffer_raw, data_buffer_size_bytes,
+                          desc_buffer_raw, desc_buffer_size_bytes);
   m_cri_channel->enable_readout();
 
   // initialize buffer interface
-  // TODO: we can possibly extract all buffer information from dma_channel
-  // (or cri_channel), especially if size in not an exponent
   auto* desc_buffer =
       reinterpret_cast<fles::MicrosliceDescriptor*>(desc_buffer_raw);
   auto* data_buffer = reinterpret_cast<uint8_t*>(data_buffer_raw);
-  m_desc_buffer = std::make_unique<RingBufferView<fles::MicrosliceDescriptor>>(
-      desc_buffer, desc_buffer_size_exp);
-  m_data_buffer = std::make_unique<RingBufferView<uint8_t>>(
-      data_buffer, data_buffer_size_exp);
+  m_desc_buffer =
+      std::make_unique<RingBufferView<fles::MicrosliceDescriptor, false>>(
+          desc_buffer, desc_buffer_size);
+  m_data_buffer = std::make_unique<RingBufferView<uint8_t, false>>(
+      data_buffer, data_buffer_size);
 
-  // TODO: intialize m_read_index to the current hardware read index
+  // TODO: initialize m_read_index to the current hardware read index
 }
 
 Component::~Component() {
@@ -233,12 +239,6 @@ std::pair<uint64_t, uint64_t> Component::find_component(uint64_t start_time,
             << last_idx << "), " << last_idx - first_idx << " microslices";
 
   return {first_idx, last_idx};
-}
-
-void* Component::alloc_buffer(size_t size_exp, size_t item_size) {
-  size_t bytes = (UINT64_C(1) << size_exp) * item_size;
-  L_(trace) << "allocating shm buffer of " << bytes << " bytes";
-  return m_shm->allocate_aligned(bytes, sysconf(_SC_PAGESIZE));
 }
 
 void Component::set_read_index(uint64_t read_index) {

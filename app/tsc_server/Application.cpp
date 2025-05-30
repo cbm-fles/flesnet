@@ -93,9 +93,8 @@ Application::Application(Parameters const& par,
   // create shared memory segment with enough space for page aligned buffers
   // TODO: replace with explicit size for each channel
   size_t shm_size =
-      ((UINT64_C(1) << par.data_buffer_size_exp()) * sizeof(uint8_t) +
-       (UINT64_C(1) << par.desc_buffer_size_exp()) *
-           sizeof(fles::MicrosliceDescriptor) +
+      (par.data_buffer_size() * sizeof(uint8_t) +
+       par.desc_buffer_size() * sizeof(fles::MicrosliceDescriptor) +
        2 * sysconf(_SC_PAGESIZE)) *
           cri_channels_.size() +
       4096;
@@ -110,9 +109,8 @@ Application::Application(Parameters const& par,
   // Create Component for each Channel
   for (cri::cri_channel* channel : cri_channels_) {
     components_.push_back(std::make_unique<Component>(
-        shm_.get(), channel, par.data_buffer_size_exp(),
-        par.desc_buffer_size_exp(), par.overlap_before_ns(),
-        par.overlap_after_ns()));
+        shm_.get(), channel, par.data_buffer_size(), par.desc_buffer_size(),
+        par.overlap_before_ns(), par.overlap_after_ns()));
   }
 
   // Create ItemProducer and ItemDistributor

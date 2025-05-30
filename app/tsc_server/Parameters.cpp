@@ -57,12 +57,14 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "PCI BDF address of target CRI in BB:DD.F format");
   config_add("shm,o", po::value<std::string>(&_shm_id)->default_value("cri_0"),
              "name of the shared memory to be used");
-  config_add("data-buffer-size-exp",
-             po::value<size_t>(&_data_buffer_size_exp)->default_value(27),
-             "exp. size of the data buffer in bytes");
-  config_add("desc-buffer-size-exp",
-             po::value<size_t>(&_desc_buffer_size_exp)->default_value(19),
-             "exp. size of the descriptor buffer (number of entries)");
+  config_add(
+      "data-buffer-size",
+      po::value<size_t>(&_data_buffer_size)->default_value(UINT64_C(1) << 27),
+      "size of the data buffer in bytes");
+  config_add(
+      "desc-buffer-size",
+      po::value<size_t>(&_desc_buffer_size)->default_value(UINT64_C(1) << 19),
+      "size of the descriptor buffer (number of entries)");
   config_add("log-level,l",
              po::value<unsigned>(&log_level)
                  ->default_value(log_level)
@@ -132,9 +134,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
 [[nodiscard]] std::string Parameters::print_buffer_info() const {
   std::stringstream ss;
-  ss << "Buffer size per channel: "
-     << human_readable_count(UINT64_C(1) << _data_buffer_size_exp) << " + "
-     << human_readable_count((UINT64_C(1) << _desc_buffer_size_exp) *
+  ss << "Buffer size per channel: " << human_readable_count(_data_buffer_size)
+     << " + "
+     << human_readable_count(_desc_buffer_size *
                              sizeof(fles::MicrosliceDescriptor));
   return ss.str();
 }

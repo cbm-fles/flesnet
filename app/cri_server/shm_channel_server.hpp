@@ -53,8 +53,9 @@ public:
     static_assert(data_item_size == (UINT64_C(1) << 0),
                   "incompatible data_item_size in shm_channel_server");
 
-    m_cri_channel->init_dma(data_buffer_raw, data_buffer_size_exp + 0,
-                            desc_buffer_raw, desc_buffer_size_exp + 5);
+    m_cri_channel->init_dma(
+        data_buffer_raw, (UINT64_C(1) << (data_buffer_size_exp + 0)),
+        desc_buffer_raw, (UINT64_C(1) << (desc_buffer_size_exp + 5)));
     m_dma_transfer_size = m_cri_channel->dma()->dma_transfer_size();
 
     m_cri_channel->enable_readout();
