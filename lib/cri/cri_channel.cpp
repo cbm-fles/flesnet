@@ -28,13 +28,13 @@ cri_channel::cri_channel(size_t ch_index, pda::device* dev, pda::pci_bar* bar)
 cri_channel::~cri_channel() { deinit_dma(); }
 
 void cri_channel::init_dma(void* data_buffer,
-                           size_t data_buffer_log_size,
+                           size_t data_buffer_size,
                            void* desc_buffer,
-                           size_t desc_buffer_log_size) {
+                           size_t desc_buffer_size) {
 
   m_dma_channel = std::make_unique<dma_channel>(
-      this, data_buffer, data_buffer_log_size, desc_buffer,
-      desc_buffer_log_size, DMA_TRANSFER_SIZE);
+      this, data_buffer, data_buffer_size, desc_buffer, desc_buffer_size,
+      DMA_TRANSFER_SIZE);
 }
 
 void cri_channel::deinit_dma() { m_dma_channel = nullptr; }
