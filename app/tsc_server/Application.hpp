@@ -1,7 +1,7 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "ComponentBuilder.hpp"
+#include "Component.hpp"
 #include "ItemDistributor.hpp"
 #include "ItemProducer.hpp"
 #include "Monitor.hpp"
@@ -31,10 +31,9 @@ public:
 private:
   void handle_completions();
   void send_subtimeslice_item(fles::SubTimesliceDescriptor st);
-  void provide_subtimeslice(
-      std::vector<ComponentBuilder::ComponentState> const& states,
-      uint64_t start_time,
-      uint64_t duration);
+  void provide_subtimeslice(std::vector<Component::State> const& states,
+                            uint64_t start_time,
+                            uint64_t duration);
 
   Parameters const& par_;
   volatile std::sig_atomic_t* signal_status_;
@@ -50,7 +49,7 @@ private:
   std::vector<std::unique_ptr<cri::cri_device>> cris_;
   std::vector<cri::cri_channel*> cri_channels_;
   std::unique_ptr<boost::interprocess::managed_shared_memory> shm_;
-  std::vector<std::unique_ptr<ComponentBuilder>> builders_;
+  std::vector<std::unique_ptr<Component>> components_;
 
   std::unique_ptr<ItemProducer> item_producer_;
   std::unique_ptr<ItemDistributor> item_distributor_;

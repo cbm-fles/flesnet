@@ -1,17 +1,17 @@
 // Copyright 2025 Dirk Hutter
 
-#include "cri_source.hpp"
+#include "ChannelInterface.hpp"
 #include "DualRingBuffer.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "RingBufferView.hpp"
 #include "log.hpp"
 #include <cstddef>
 
-cri_source::cri_source(fles::MicrosliceDescriptor* desc_buffer,
-                       uint8_t* data_buffer,
-                       size_t desc_buffer_size_exp,
-                       size_t data_buffer_size_exp,
-                       cri::dma_channel* dma_channel)
+ChannelInterface::ChannelInterface(fles::MicrosliceDescriptor* desc_buffer,
+                                   uint8_t* data_buffer,
+                                   size_t desc_buffer_size_exp,
+                                   size_t data_buffer_size_exp,
+                                   cri::dma_channel* dma_channel)
     : m_desc_buffer_size_exp(desc_buffer_size_exp),
       m_data_buffer_size_exp(data_buffer_size_exp), m_dma_channel(dma_channel),
       m_dma_transfer_size(dma_channel->dma_transfer_size()) {
@@ -27,9 +27,9 @@ cri_source::cri_source(fles::MicrosliceDescriptor* desc_buffer,
   // TODO: intialize m_read_index to the current hardware read index
 }
 
-cri_source::~cri_source() {}
+ChannelInterface::~ChannelInterface() {}
 
-void cri_source::set_read_index(DualIndex read_index) {
+void ChannelInterface::set_read_index(DualIndex read_index) {
   if (read_index == m_read_index) {
     L_(trace) << "updating read_index, nothing to do for: data "
               << read_index.data << " desc " << read_index.desc;
@@ -57,7 +57,7 @@ void cri_source::set_read_index(DualIndex read_index) {
   m_read_index = read_index;
 }
 
-void cri_source::set_read_index(uint64_t desc_read_index) {
+void ChannelInterface::set_read_index(uint64_t desc_read_index) {
   DualIndex read_index{};
   read_index.desc = desc_read_index;
   read_index.data = m_desc_buffer_view->at(read_index.desc - 1).offset +
@@ -66,12 +66,12 @@ void cri_source::set_read_index(uint64_t desc_read_index) {
   set_read_index(read_index);
 }
 
-DualIndex cri_source::get_read_index() {
+DualIndex ChannelInterface::get_read_index() {
   // We only return the locally cached index and do not consult the hardware
   return m_read_index;
 }
 
-DualIndex cri_source::get_write_index() {
+DualIndex ChannelInterface::get_write_index() {
   DualIndex write_index{};
   write_index.desc = m_dma_channel->get_desc_index();
   // write index points to the end of an element, so we substract 1 to access
@@ -84,7 +84,7 @@ DualIndex cri_source::get_write_index() {
   return write_index;
 }
 
-DualIndexTimed cri_source::get_write_index_timed() {
+DualIndexTimed ChannelInterface::get_write_index_timed() {
   DualIndexTimed write_index;
   write_index.updated = std::chrono::high_resolution_clock::now();
   write_index.index = get_write_index();
@@ -100,17 +100,18 @@ DualIndexTimed cri_source::get_write_index_timed() {
 }
 
 // TODO: index to offset calculations could also be done by the RingBuffer class
-size_t
-cri_source::hw_pointer(size_t index, size_t size_exponent, size_t item_size) {
+size_t ChannelInterface::hw_pointer(size_t index,
+                                    size_t size_exponent,
+                                    size_t item_size) {
   size_t buffer_size = UINT64_C(1) << size_exponent;
   size_t masked_index = index & (buffer_size - 1);
   return masked_index * item_size;
 }
 
-size_t cri_source::hw_pointer(size_t index,
-                              size_t size_exponent,
-                              size_t item_size,
-                              size_t dma_size) {
+size_t ChannelInterface::hw_pointer(size_t index,
+                                    size_t size_exponent,
+                                    size_t item_size,
+                                    size_t dma_size) {
   size_t byte_index = hw_pointer(index, size_exponent, item_size);
   // will hang one transfer size behind
   return byte_index & ~(dma_size - 1);

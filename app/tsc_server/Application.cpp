@@ -1,7 +1,7 @@
 // Copyright 2025 Dirk Hutter
 
 #include "Application.hpp"
-#include "ComponentBuilder.hpp"
+#include "Component.hpp"
 #include "SubTimesliceDescriptor.hpp"
 #include "device_operator.hpp"
 #include "log.hpp"
@@ -107,9 +107,9 @@ Application::Application(Parameters const& par,
   shm_->construct<boost::uuids::uuid>(boost::interprocess::unique_instance)(
       shm_uuid_);
 
-  // Create Component Builder for each Channel
+  // Create Component for each Channel
   for (cri::cri_channel* channel : cri_channels_) {
-    builders_.push_back(std::make_unique<ComponentBuilder>(
+    components_.push_back(std::make_unique<Component>(
         shm_.get(), channel, par.data_buffer_size_exp(),
         par.desc_buffer_size_exp(), par.overlap_before_ns(),
         par.overlap_after_ns()));
@@ -129,9 +129,9 @@ void Application::run() {
   std::thread distributor_thread(
       std::ref(*item_distributor_)); // Start the item distributor thread
 
-  for (auto&& builder : builders_) {
+  for (auto&& component : components_) {
     // ack far in the future to clear all elements
-    builder->ack_before(2000000000000000000);
+    component->ack_before(2000000000000000000);
   }
 
   uint64_t ts_start_time =
@@ -139,25 +139,26 @@ void Application::run() {
   uint64_t ts_size_time = par_.timeslice_duration_ns();
   acked_ = ts_start_time / ts_size_time;
 
-  std::vector<ComponentBuilder::ComponentState> states(builders_.size());
-  std::vector<std::size_t> ask_again(builders_.size());
+  std::vector<Component::State> states(components_.size());
+  std::vector<std::size_t> ask_again(components_.size());
   std::iota(ask_again.begin(), ask_again.end(), 0);
 
   while (*signal_status_ == 0) {
     handle_completions();
 
-    // call check_component for all builders and store the states
+    // call check_component for all components and store the states
     for (auto i : ask_again) {
-      auto state = builders_[i]->check_component(ts_start_time, ts_size_time);
+      auto state =
+          components_[i]->check_availability(ts_start_time, ts_size_time);
       states[i] = state;
-      if (state != ComponentBuilder::ComponentState::TryLater) {
+      if (state != Component::State::TryLater) {
         // if the state is not TryLater, we do not need to ask again
         ask_again.erase(std::remove(ask_again.begin(), ask_again.end(), i),
                         ask_again.end());
       }
     }
 
-    // if some builders are in the TryLater state and the timeout has not been
+    // if some components are in the TryLater state and the timeout has not been
     // reached, wait a bit and try again
     bool timeout_reached =
         (chrono_to_timestamp(std::chrono::high_resolution_clock::now()) >
@@ -171,7 +172,7 @@ void Application::run() {
     // provide subtimeslice and advance to the next timeslice
     provide_subtimeslice(states, ts_start_time, ts_size_time);
     ts_start_time += ts_size_time;
-    ask_again.resize(builders_.size());
+    ask_again.resize(components_.size());
     std::iota(ask_again.begin(), ask_again.end(), 0);
   }
 
@@ -196,8 +197,8 @@ void Application::handle_completions() {
         ++acked_;
       } while (completions_.at(acked_) > id);
       // ... and acknowledge them
-      for (auto&& builder : builders_) {
-        builder->ack_before(acked_ * par_.timeslice_duration_ns());
+      for (auto&& component : components_) {
+        component->ack_before(acked_ * par_.timeslice_duration_ns());
       }
     } else {
       // we received a completion for an element other then the oldest,
@@ -220,7 +221,7 @@ void Application::send_subtimeslice_item(fles::SubTimesliceDescriptor st) {
 }
 
 void Application::provide_subtimeslice(
-    std::vector<ComponentBuilder::ComponentState> const& states,
+    std::vector<Component::State> const& states,
     uint64_t start_time,
     uint64_t duration) {
 
@@ -232,16 +233,16 @@ void Application::provide_subtimeslice(
   st.duration_ns = duration;
   st.is_incomplete = false;
 
-  // Create SubTimesliceComponentDescriptors for each builder
-  for (size_t i = 0; i < builders_.size(); ++i) {
-    auto& builder = builders_[i];
+  // Create SubTimesliceComponentDescriptors for each component
+  for (size_t i = 0; i < components_.size(); ++i) {
+    auto& component = components_[i];
     auto state = states[i];
     switch (state) {
-    case ComponentBuilder::ComponentState::Ok:
-      st.components.push_back(builder->get_component(start_time, duration));
+    case Component::State::Ok:
+      st.components.push_back(component->get_descriptor(start_time, duration));
       break;
-    case ComponentBuilder::ComponentState::Failed:
-    case ComponentBuilder::ComponentState::TryLater:
+    case Component::State::Failed:
+    case Component::State::TryLater:
       st.is_incomplete = true;
       break;
     }

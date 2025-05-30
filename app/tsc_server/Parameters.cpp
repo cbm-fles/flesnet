@@ -1,4 +1,14 @@
 #include "Parameters.hpp"
+#include "MicrosliceDescriptor.hpp"
+#include "Utility.hpp"
+#include "log.hpp"
+#include <boost/program_options.hpp>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <regex>
+
+namespace po = boost::program_options;
 
 // Overload validate for PCI BDF address
 void validate(boost::any& v,
@@ -118,4 +128,13 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
   L_(info) << "Shared memory file: " << _shm_id;
   L_(info) << print_buffer_info();
+}
+
+[[nodiscard]] std::string Parameters::print_buffer_info() const {
+  std::stringstream ss;
+  ss << "Buffer size per channel: "
+     << human_readable_count(UINT64_C(1) << _data_buffer_size_exp) << " + "
+     << human_readable_count((UINT64_C(1) << _desc_buffer_size_exp) *
+                             sizeof(fles::MicrosliceDescriptor));
+  return ss.str();
 }

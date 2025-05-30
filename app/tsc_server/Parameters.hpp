@@ -1,19 +1,9 @@
 // Copyright 2015 Dirk Hutter
-
 #pragma once
 
-#include "MicrosliceDescriptor.hpp"
-#include "Utility.hpp"
-#include "log.hpp"
-#include <boost/numeric/conversion/cast.hpp>
-#include <boost/program_options.hpp>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <regex>
+#include <cstdint>
+#include <stdexcept>
 #include <string>
-
-namespace po = boost::program_options;
 
 /// Run parameters exception class.
 class ParametersException : public std::runtime_error {
@@ -63,14 +53,7 @@ public:
     return (_timeslice_timeout_ns);
   }
 
-  [[nodiscard]] std::string print_buffer_info() const {
-    std::stringstream ss;
-    ss << "Buffer size per channel: "
-       << human_readable_count(UINT64_C(1) << _data_buffer_size_exp) << " + "
-       << human_readable_count((UINT64_C(1) << _desc_buffer_size_exp) *
-                               sizeof(fles::MicrosliceDescriptor));
-    return ss.str();
-  }
+  [[nodiscard]] std::string print_buffer_info() const;
 
 private:
   void parse_options(int argc, char* argv[]);

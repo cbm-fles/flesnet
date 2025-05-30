@@ -1,17 +1,15 @@
 // Copyright 2025 Dirk Hutter
 
-#include "ComponentBuilder.hpp"
+#include "Component.hpp"
 #include "DualRingBuffer.hpp"
-#include "SubTimesliceDescriptor.hpp"
 #include "log.hpp"
-#include <cstddef>
 
-ComponentBuilder::ComponentBuilder(ip::managed_shared_memory* shm,
-                                   cri::cri_channel* cri_channel,
-                                   size_t data_buffer_size_exp,
-                                   size_t desc_buffer_size_exp,
-                                   uint64_t overlap_before_ns,
-                                   uint64_t overlap_after_ns)
+Component::Component(boost::interprocess::managed_shared_memory* shm,
+                     cri::cri_channel* cri_channel,
+                     size_t data_buffer_size_exp,
+                     size_t desc_buffer_size_exp,
+                     uint64_t overlap_before_ns,
+                     uint64_t overlap_after_ns)
     : m_shm(shm), m_cri_channel(cri_channel),
       m_overlap_before_ns(overlap_before_ns),
       m_overlap_after_ns(overlap_after_ns) {
@@ -27,43 +25,29 @@ ComponentBuilder::ComponentBuilder(ip::managed_shared_memory* shm,
   m_cri_channel->enable_readout();
 
   // initialize buffer interface
-  m_cri_source_buffer = std::make_unique<cri_source>(
+  m_channel_interface = std::make_unique<ChannelInterface>(
       reinterpret_cast<fles::MicrosliceDescriptor*>(desc_buffer_raw),
       reinterpret_cast<uint8_t*>(data_buffer_raw), desc_buffer_size_exp,
       data_buffer_size_exp, m_cri_channel->dma());
 }
 
-ComponentBuilder::~ComponentBuilder() {
+Component::~Component() {
   m_cri_channel->disable_readout();
   m_cri_channel->deinit_dma();
   // TODO deallocate buffers if it is worth to do
 }
 
-void ComponentBuilder::proceed() {
-  // TODO: debug functionality which can be removed, ack_before(uint64_max)
-  // does the same
-  DualIndexTimed index = m_cri_source_buffer->get_write_index_timed();
-  m_cri_source_buffer->set_read_index(index.index);
-
-  L_(status) << "Fetching microslice: data " << index.index.data << " desc "
-             << index.index.desc << " update time "
-             << index.updated.time_since_epoch().count() << " delta "
-             << index.delta.count();
-
-  return;
-}
-
-void ComponentBuilder::ack_before(uint64_t time) {
+void Component::ack_before(uint64_t time) {
   // fetch the current read and write index and initialize iterators
   // INFO: iterator desc_end points (as the write index does) to the next
   // element after the last valid element and must not be dereferenced
-  // TODO: we may want to introduce a cached write index as member of builder
+  // TODO: we may want to introduce a cached write index as member of component
   // and rely on other call to update it from HW
-  DualIndex write_index = m_cri_source_buffer->get_write_index();
-  DualIndex read_index = m_cri_source_buffer->get_read_index();
+  DualIndex write_index = m_channel_interface->get_write_index();
+  DualIndex read_index = m_channel_interface->get_read_index();
   auto desc_begin =
-      m_cri_source_buffer->desc_buffer().get_iter(read_index.desc);
-  auto desc_end = m_cri_source_buffer->desc_buffer().get_iter(write_index.desc);
+      m_channel_interface->desc_buffer().get_iter(read_index.desc);
+  auto desc_end = m_channel_interface->desc_buffer().get_iter(write_index.desc);
 
   // Find the first element with a time greater than requested time and deduce 1
   // to get the last element with a time <= requested time. This has to be the
@@ -87,7 +71,7 @@ void ComponentBuilder::ack_before(uint64_t time) {
 
   if (it != desc_begin) {
     it--;
-    m_cri_source_buffer->set_read_index(it.get_index());
+    m_channel_interface->set_read_index(it.get_index());
   }
 
   L_(trace) << "searching for time " << time << " in range "
@@ -97,11 +81,11 @@ void ComponentBuilder::ack_before(uint64_t time) {
   return;
 }
 
-ComponentBuilder::ComponentState
-ComponentBuilder::check_component(uint64_t start_time, uint64_t duration) {
+Component::State Component::check_availability(uint64_t start_time,
+                                               uint64_t duration) {
 
-  DualIndex write_index = m_cri_source_buffer->get_write_index();
-  DualIndex read_index = m_cri_source_buffer->get_read_index();
+  DualIndex write_index = m_channel_interface->get_write_index();
+  DualIndex read_index = m_channel_interface->get_read_index();
 
   uint64_t first_ms_time = start_time - m_overlap_before_ns;
   uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
@@ -111,35 +95,35 @@ ComponentBuilder::check_component(uint64_t start_time, uint64_t duration) {
 
   if (write_index == read_index) {
     L_(trace) << "write and read index are equal, no data available";
-    return ComponentBuilder::ComponentState::TryLater;
+    return Component::State::TryLater;
   }
   if (first_ms_time <
-      m_cri_source_buffer->desc_buffer().at(read_index.desc).idx) {
+      m_channel_interface->desc_buffer().at(read_index.desc).idx) {
     L_(trace) << "too old, first time " << first_ms_time
               << " is before the first element in the buffer "
-              << m_cri_source_buffer->desc_buffer().at(read_index.desc).idx;
-    return ComponentBuilder::ComponentState::Failed;
+              << m_channel_interface->desc_buffer().at(read_index.desc).idx;
+    return Component::State::Failed;
   }
   if (last_ms_time >=
-      m_cri_source_buffer->desc_buffer().at(write_index.desc - 1).idx) {
+      m_channel_interface->desc_buffer().at(write_index.desc - 1).idx) {
     L_(trace)
         << "not available yet, last time " << last_ms_time
         << " is after the last element in the buffer "
-        << m_cri_source_buffer->desc_buffer().at(write_index.desc - 1).idx;
-    return ComponentBuilder::ComponentState::TryLater;
+        << m_channel_interface->desc_buffer().at(write_index.desc - 1).idx;
+    return Component::State::TryLater;
   }
-  return ComponentBuilder::ComponentState::Ok;
+  return Component::State::Ok;
 }
 
 fles::SubTimesliceComponentDescriptor
-ComponentBuilder::get_component(uint64_t start_time, uint64_t duration) {
+Component::get_descriptor(uint64_t start_time, uint64_t duration) {
   // find the component in the buffer
   auto [desc_begin_idx, desc_end_idx] = find_component(start_time, duration);
   assert(desc_begin_idx < desc_end_idx);
 
   // generate one or two i/o vectors for the descriptors
   std::vector<fles::ShmIovec> descriptors;
-  auto& desc_buffer = m_cri_source_buffer->desc_buffer();
+  auto& desc_buffer = m_channel_interface->desc_buffer();
   auto* desc_begin = &desc_buffer.at(desc_begin_idx);
   auto* desc_end = &desc_buffer.at(desc_end_idx);
   if (desc_begin < desc_end) {
@@ -165,7 +149,7 @@ ComponentBuilder::get_component(uint64_t start_time, uint64_t duration) {
 
   // generate one or two i/o vectors for the descriptors
   std::vector<fles::ShmIovec> contents;
-  auto& data_buffer = m_cri_source_buffer->data_buffer();
+  auto& data_buffer = m_channel_interface->data_buffer();
   auto* data_begin = &data_buffer.at(data_begin_idx);
   auto* data_end = &data_buffer.at(data_end_idx);
   if (data_begin < data_end) {
@@ -197,23 +181,21 @@ ComponentBuilder::get_component(uint64_t start_time, uint64_t duration) {
   return {descriptors, contents, is_missing_microslices};
 }
 
-// private member functions
-
 // Returns the component's microslice descriptor indexes in the range
 // [start_time - ovelap_before, start_time + duration + overlap_after). Expects
 // that the component is available. Check the component state before calling
 // find_component.
-std::pair<uint64_t, uint64_t>
-ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
-  DualIndex write_index = m_cri_source_buffer->get_write_index();
-  DualIndex read_index = m_cri_source_buffer->get_read_index();
+std::pair<uint64_t, uint64_t> Component::find_component(uint64_t start_time,
+                                                        uint64_t duration) {
+  DualIndex write_index = m_channel_interface->get_write_index();
+  DualIndex read_index = m_channel_interface->get_read_index();
 
   uint64_t first_ms_time = start_time - m_overlap_before_ns;
   uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
 
   auto desc_begin =
-      m_cri_source_buffer->desc_buffer().get_iter(read_index.desc);
-  auto desc_end = m_cri_source_buffer->desc_buffer().get_iter(write_index.desc);
+      m_channel_interface->desc_buffer().get_iter(read_index.desc);
+  auto desc_end = m_channel_interface->desc_buffer().get_iter(write_index.desc);
 
   // We search for microslice in the range [first_ms_time, last_ms_time)
   // (we use the index from the first search to limit the second search)
@@ -226,7 +208,7 @@ ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
                          return t < desc.idx;
                        });
   if (first_it == desc_begin || first_it == desc_end) {
-    throw std::out_of_range("ComponentBuilder::find_component: beginning of "
+    throw std::out_of_range("Component::find_component: beginning of "
                             "component out of range");
   }
   uint64_t first_idx = first_it--.get_index();
@@ -237,7 +219,7 @@ ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
                                      uint64_t t) { return desc.idx < t; });
   if (last_it == desc_begin || last_it == desc_end) {
     throw std::out_of_range(
-        "ComponentBuilder::find_component: end of component out of range");
+        "Component::find_component: end of component out of range");
   }
   uint64_t last_idx = last_it.get_index();
 
@@ -253,7 +235,7 @@ ComponentBuilder::find_component(uint64_t start_time, uint64_t duration) {
   return {first_idx, last_idx};
 }
 
-void* ComponentBuilder::alloc_buffer(size_t size_exp, size_t item_size) {
+void* Component::alloc_buffer(size_t size_exp, size_t item_size) {
   size_t bytes = (UINT64_C(1) << size_exp) * item_size;
   L_(trace) << "allocating shm buffer of " << bytes << " bytes";
   return m_shm->allocate_aligned(bytes, sysconf(_SC_PAGESIZE));

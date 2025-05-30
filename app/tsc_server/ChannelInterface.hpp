@@ -17,19 +17,19 @@ struct DualIndexTimed {
   std::chrono::nanoseconds delta;
 };
 
-class cri_source
+class ChannelInterface
     : public DualRingBufferReadInterface<fles::MicrosliceDescriptor, uint8_t> {
 
 public:
-  cri_source(fles::MicrosliceDescriptor* desc_buffer,
-             uint8_t* data_buffer,
-             size_t desc_buffer_size_exp,
-             size_t data_buffer_size_exp,
-             cri::dma_channel* dma_channel);
-  cri_source(const cri_source&) = delete;
-  void operator=(const cri_source&) = delete;
+  ChannelInterface(fles::MicrosliceDescriptor* desc_buffer,
+                   uint8_t* data_buffer,
+                   size_t desc_buffer_size_exp,
+                   size_t data_buffer_size_exp,
+                   cri::dma_channel* dma_channel);
+  ChannelInterface(const ChannelInterface&) = delete;
+  void operator=(const ChannelInterface&) = delete;
 
-  ~cri_source() override;
+  ~ChannelInterface() override;
 
   void set_read_index(DualIndex read_index) override;
 
@@ -43,8 +43,12 @@ public:
 
   bool get_eof() override { return false; };
 
-  size_t data_buffer_size_exp() const { return m_data_buffer_size_exp; }
-  size_t desc_buffer_size_exp() const { return m_desc_buffer_size_exp; }
+  [[nodiscard]] size_t data_buffer_size_exp() const {
+    return m_data_buffer_size_exp;
+  }
+  [[nodiscard]] size_t desc_buffer_size_exp() const {
+    return m_desc_buffer_size_exp;
+  }
 
   RingBufferView<uint8_t>& data_buffer() override {
     return *m_data_buffer_view;
