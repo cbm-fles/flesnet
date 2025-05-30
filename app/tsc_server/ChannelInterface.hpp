@@ -2,24 +2,13 @@
 
 #pragma once
 
-#include "DualRingBuffer.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "RingBufferView.hpp"
 #include "dma_channel.hpp"
 #include <chrono>
 #include <memory>
 
-struct DualIndexTimed {
-  DualIndex index;
-  std::chrono::time_point<std::chrono::high_resolution_clock,
-                          std::chrono::nanoseconds>
-      updated;
-  std::chrono::nanoseconds delta;
-};
-
-class ChannelInterface
-    : public DualRingBufferReadInterface<fles::MicrosliceDescriptor, uint8_t> {
-
+class ChannelInterface {
 public:
   ChannelInterface(fles::MicrosliceDescriptor* desc_buffer,
                    uint8_t* data_buffer,
@@ -29,31 +18,14 @@ public:
   ChannelInterface(const ChannelInterface&) = delete;
   void operator=(const ChannelInterface&) = delete;
 
-  ~ChannelInterface() override;
-
-  void set_read_index(DualIndex read_index) override;
-
   void set_read_index(uint64_t desc_read_index);
 
-  DualIndex get_read_index() override;
+  [[nodiscard]] uint64_t get_read_index() const;
 
-  DualIndex get_write_index() override;
+  [[nodiscard]] uint64_t get_write_index();
 
-  DualIndexTimed get_write_index_timed();
-
-  bool get_eof() override { return false; };
-
-  [[nodiscard]] size_t data_buffer_size_exp() const {
-    return m_data_buffer_size_exp;
-  }
-  [[nodiscard]] size_t desc_buffer_size_exp() const {
-    return m_desc_buffer_size_exp;
-  }
-
-  RingBufferView<uint8_t>& data_buffer() override {
-    return *m_data_buffer_view;
-  }
-  RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() override {
+  RingBufferView<uint8_t>& data_buffer() { return *m_data_buffer_view; }
+  RingBufferView<fles::MicrosliceDescriptor>& desc_buffer() {
     return *m_desc_buffer_view;
   }
 
@@ -77,5 +49,5 @@ private:
   std::unique_ptr<RingBufferView<uint8_t>> m_data_buffer_view;
 
   // TODO: in case of reconnects this has to be initialized with the hw value
-  DualIndex m_read_index{0, 0}; // INFO not actual hw value
+  uint64_t m_read_index = 0; // INFO not actual hw value
 };

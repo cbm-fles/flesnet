@@ -1,7 +1,6 @@
 // Copyright 2025 Dirk Hutter
 
 #include "Component.hpp"
-#include "DualRingBuffer.hpp"
 #include "log.hpp"
 
 Component::Component(boost::interprocess::managed_shared_memory* shm,
@@ -43,11 +42,10 @@ void Component::ack_before(uint64_t time) {
   // element after the last valid element and must not be dereferenced
   // TODO: we may want to introduce a cached write index as member of component
   // and rely on other call to update it from HW
-  DualIndex write_index = m_channel_interface->get_write_index();
-  DualIndex read_index = m_channel_interface->get_read_index();
-  auto desc_begin =
-      m_channel_interface->desc_buffer().get_iter(read_index.desc);
-  auto desc_end = m_channel_interface->desc_buffer().get_iter(write_index.desc);
+  uint64_t write_index = m_channel_interface->get_write_index();
+  uint64_t read_index = m_channel_interface->get_read_index();
+  auto desc_begin = m_channel_interface->desc_buffer().get_iter(read_index);
+  auto desc_end = m_channel_interface->desc_buffer().get_iter(write_index);
 
   // Find the first element with a time greater than requested time and deduce 1
   // to get the last element with a time <= requested time. This has to be the
@@ -84,8 +82,8 @@ void Component::ack_before(uint64_t time) {
 Component::State Component::check_availability(uint64_t start_time,
                                                uint64_t duration) {
 
-  DualIndex write_index = m_channel_interface->get_write_index();
-  DualIndex read_index = m_channel_interface->get_read_index();
+  uint64_t write_index = m_channel_interface->get_write_index();
+  uint64_t read_index = m_channel_interface->get_read_index();
 
   uint64_t first_ms_time = start_time - m_overlap_before_ns;
   uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
@@ -97,19 +95,17 @@ Component::State Component::check_availability(uint64_t start_time,
     L_(trace) << "write and read index are equal, no data available";
     return Component::State::TryLater;
   }
-  if (first_ms_time <
-      m_channel_interface->desc_buffer().at(read_index.desc).idx) {
+  if (first_ms_time < m_channel_interface->desc_buffer().at(read_index).idx) {
     L_(trace) << "too old, first time " << first_ms_time
               << " is before the first element in the buffer "
-              << m_channel_interface->desc_buffer().at(read_index.desc).idx;
+              << m_channel_interface->desc_buffer().at(read_index).idx;
     return Component::State::Failed;
   }
   if (last_ms_time >=
-      m_channel_interface->desc_buffer().at(write_index.desc - 1).idx) {
-    L_(trace)
-        << "not available yet, last time " << last_ms_time
-        << " is after the last element in the buffer "
-        << m_channel_interface->desc_buffer().at(write_index.desc - 1).idx;
+      m_channel_interface->desc_buffer().at(write_index - 1).idx) {
+    L_(trace) << "not available yet, last time " << last_ms_time
+              << " is after the last element in the buffer "
+              << m_channel_interface->desc_buffer().at(write_index - 1).idx;
     return Component::State::TryLater;
   }
   return Component::State::Ok;
@@ -187,15 +183,14 @@ Component::get_descriptor(uint64_t start_time, uint64_t duration) {
 // find_component.
 std::pair<uint64_t, uint64_t> Component::find_component(uint64_t start_time,
                                                         uint64_t duration) {
-  DualIndex write_index = m_channel_interface->get_write_index();
-  DualIndex read_index = m_channel_interface->get_read_index();
+  uint64_t write_index = m_channel_interface->get_write_index();
+  uint64_t read_index = m_channel_interface->get_read_index();
 
   uint64_t first_ms_time = start_time - m_overlap_before_ns;
   uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
 
-  auto desc_begin =
-      m_channel_interface->desc_buffer().get_iter(read_index.desc);
-  auto desc_end = m_channel_interface->desc_buffer().get_iter(write_index.desc);
+  auto desc_begin = m_channel_interface->desc_buffer().get_iter(read_index);
+  auto desc_end = m_channel_interface->desc_buffer().get_iter(write_index);
 
   // We search for microslice in the range [first_ms_time, last_ms_time)
   // (we use the index from the first search to limit the second search)
