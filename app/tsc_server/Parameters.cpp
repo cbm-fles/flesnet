@@ -1,3 +1,5 @@
+// Copyright 2025 Dirk Hutter, Jan de Cuveland
+
 #include "Parameters.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "Utility.hpp"

@@ -1,4 +1,4 @@
-// Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2025 Dirk Hutter, Jan de Cuveland
 
 #include "Application.hpp"
 #include "Parameters.hpp"

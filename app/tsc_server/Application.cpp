@@ -1,4 +1,4 @@
-// Copyright 2025 Dirk Hutter
+// Copyright 2025 Dirk Hutter, Jan de Cuveland
 
 #include "Application.hpp"
 #include "Component.hpp"
