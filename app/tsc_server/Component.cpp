@@ -9,7 +9,7 @@ Component::Component(boost::interprocess::managed_shared_memory* shm,
                      size_t desc_buffer_size_exp,
                      uint64_t overlap_before_ns,
                      uint64_t overlap_after_ns)
-    : m_shm(shm), m_cri_channel(cri_channel),
+    : m_shm(shm), m_cri_channel(cri_channel), m_dma_channel(cri_channel->dma()),
       m_overlap_before_ns(overlap_before_ns),
       m_overlap_after_ns(overlap_after_ns) {
 
@@ -24,10 +24,17 @@ Component::Component(boost::interprocess::managed_shared_memory* shm,
   m_cri_channel->enable_readout();
 
   // initialize buffer interface
-  m_channel_interface = std::make_unique<ChannelInterface>(
-      reinterpret_cast<fles::MicrosliceDescriptor*>(desc_buffer_raw),
-      reinterpret_cast<uint8_t*>(data_buffer_raw), desc_buffer_size_exp,
-      data_buffer_size_exp, m_cri_channel->dma());
+  // TODO: we can possibly extract all buffer information from dma_channel
+  // (or cri_channel), especially if size in not an exponent
+  auto* desc_buffer =
+      reinterpret_cast<fles::MicrosliceDescriptor*>(desc_buffer_raw);
+  auto* data_buffer = reinterpret_cast<uint8_t*>(data_buffer_raw);
+  m_desc_buffer = std::make_unique<RingBufferView<fles::MicrosliceDescriptor>>(
+      desc_buffer, desc_buffer_size_exp);
+  m_data_buffer = std::make_unique<RingBufferView<uint8_t>>(
+      data_buffer, data_buffer_size_exp);
+
+  // TODO: intialize m_read_index to the current hardware read index
 }
 
 Component::~Component() {
@@ -42,10 +49,10 @@ void Component::ack_before(uint64_t time) {
   // element after the last valid element and must not be dereferenced
   // TODO: we may want to introduce a cached write index as member of component
   // and rely on other call to update it from HW
-  uint64_t write_index = m_channel_interface->get_write_index();
-  uint64_t read_index = m_channel_interface->get_read_index();
-  auto desc_begin = m_channel_interface->desc_buffer().get_iter(read_index);
-  auto desc_end = m_channel_interface->desc_buffer().get_iter(write_index);
+  uint64_t write_index = m_dma_channel->get_desc_index();
+  uint64_t read_index = m_cached_read_index;
+  auto desc_begin = m_desc_buffer->get_iter(read_index);
+  auto desc_end = m_desc_buffer->get_iter(write_index);
 
   // Find the first element with a time greater than requested time and deduce 1
   // to get the last element with a time <= requested time. This has to be the
@@ -69,7 +76,7 @@ void Component::ack_before(uint64_t time) {
 
   if (it != desc_begin) {
     it--;
-    m_channel_interface->set_read_index(it.get_index());
+    set_read_index(it.get_index());
   }
 
   L_(trace) << "searching for time " << time << " in range "
@@ -82,8 +89,8 @@ void Component::ack_before(uint64_t time) {
 Component::State Component::check_availability(uint64_t start_time,
                                                uint64_t duration) {
 
-  uint64_t write_index = m_channel_interface->get_write_index();
-  uint64_t read_index = m_channel_interface->get_read_index();
+  uint64_t write_index = m_dma_channel->get_desc_index();
+  uint64_t read_index = m_cached_read_index;
 
   uint64_t first_ms_time = start_time - m_overlap_before_ns;
   uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
@@ -95,17 +102,16 @@ Component::State Component::check_availability(uint64_t start_time,
     L_(trace) << "write and read index are equal, no data available";
     return Component::State::TryLater;
   }
-  if (first_ms_time < m_channel_interface->desc_buffer().at(read_index).idx) {
+  if (first_ms_time < m_desc_buffer->at(read_index).idx) {
     L_(trace) << "too old, first time " << first_ms_time
               << " is before the first element in the buffer "
-              << m_channel_interface->desc_buffer().at(read_index).idx;
+              << m_desc_buffer->at(read_index).idx;
     return Component::State::Failed;
   }
-  if (last_ms_time >=
-      m_channel_interface->desc_buffer().at(write_index - 1).idx) {
+  if (last_ms_time >= m_desc_buffer->at(write_index - 1).idx) {
     L_(trace) << "not available yet, last time " << last_ms_time
               << " is after the last element in the buffer "
-              << m_channel_interface->desc_buffer().at(write_index - 1).idx;
+              << m_desc_buffer->at(write_index - 1).idx;
     return Component::State::TryLater;
   }
   return Component::State::Ok;
@@ -119,9 +125,8 @@ Component::get_descriptor(uint64_t start_time, uint64_t duration) {
 
   // generate one or two i/o vectors for the descriptors
   std::vector<fles::ShmIovec> descriptors;
-  auto& desc_buffer = m_channel_interface->desc_buffer();
-  auto* desc_begin = &desc_buffer.at(desc_begin_idx);
-  auto* desc_end = &desc_buffer.at(desc_end_idx);
+  auto* desc_begin = &m_desc_buffer->at(desc_begin_idx);
+  auto* desc_end = &m_desc_buffer->at(desc_end_idx);
   if (desc_begin < desc_end) {
     // the descriptors are contiguous in memory, so we only create one iovec
     descriptors.push_back(
@@ -129,8 +134,8 @@ Component::get_descriptor(uint64_t start_time, uint64_t duration) {
          (desc_end - desc_begin) * sizeof(fles::MicrosliceDescriptor)});
   } else if (desc_begin > desc_end) {
     // the descriptors have wrapped around the end of the buffer
-    auto* desc_buffer_begin = desc_buffer.ptr();
-    auto* desc_buffer_end = desc_buffer.ptr() + desc_buffer.size();
+    auto* desc_buffer_begin = m_desc_buffer->ptr();
+    auto* desc_buffer_end = m_desc_buffer->ptr() + m_desc_buffer->size();
     descriptors.push_back(
         {m_shm->get_handle_from_address(desc_begin),
          (desc_buffer_end - desc_begin) * sizeof(fles::MicrosliceDescriptor)});
@@ -145,17 +150,16 @@ Component::get_descriptor(uint64_t start_time, uint64_t duration) {
 
   // generate one or two i/o vectors for the descriptors
   std::vector<fles::ShmIovec> contents;
-  auto& data_buffer = m_channel_interface->data_buffer();
-  auto* data_begin = &data_buffer.at(data_begin_idx);
-  auto* data_end = &data_buffer.at(data_end_idx);
+  auto* data_begin = &m_data_buffer->at(data_begin_idx);
+  auto* data_end = &m_data_buffer->at(data_end_idx);
   if (data_begin < data_end) {
     // the data blocks are contiguous in memory, so we only create one iovec
     contents.push_back({m_shm->get_handle_from_address(data_begin),
                         (data_end - data_begin) * sizeof(uint8_t)});
   } else if (data_begin > data_end) {
     // the data blocks have wrapped around the end of the buffer
-    auto* data_buffer_begin = data_buffer.ptr();
-    auto* data_buffer_end = data_buffer.ptr() + data_buffer.size();
+    auto* data_buffer_begin = m_data_buffer->ptr();
+    auto* data_buffer_end = m_data_buffer->ptr() + m_data_buffer->size();
     contents.push_back({m_shm->get_handle_from_address(data_begin),
                         (data_buffer_end - data_begin) * sizeof(uint8_t)});
     contents.push_back({m_shm->get_handle_from_address(data_buffer_begin),
@@ -165,8 +169,8 @@ Component::get_descriptor(uint64_t start_time, uint64_t duration) {
   // TODO: this is a placeholder for any aggregated information about the
   // microslices in the component
   bool is_missing_microslices = false;
-  for (auto it = desc_buffer.get_iter(desc_begin_idx);
-       it < desc_buffer.get_iter(desc_end_idx); ++it) {
+  for (auto it = m_desc_buffer->get_iter(desc_begin_idx);
+       it < m_desc_buffer->get_iter(desc_end_idx); ++it) {
     if ((it->flags &
          static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) != 0) {
       is_missing_microslices = true;
@@ -183,14 +187,14 @@ Component::get_descriptor(uint64_t start_time, uint64_t duration) {
 // find_component.
 std::pair<uint64_t, uint64_t> Component::find_component(uint64_t start_time,
                                                         uint64_t duration) {
-  uint64_t write_index = m_channel_interface->get_write_index();
-  uint64_t read_index = m_channel_interface->get_read_index();
+  uint64_t write_index = m_dma_channel->get_desc_index();
+  uint64_t read_index = m_cached_read_index;
 
   uint64_t first_ms_time = start_time - m_overlap_before_ns;
   uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
 
-  auto desc_begin = m_channel_interface->desc_buffer().get_iter(read_index);
-  auto desc_end = m_channel_interface->desc_buffer().get_iter(write_index);
+  auto desc_begin = m_desc_buffer->get_iter(read_index);
+  auto desc_end = m_desc_buffer->get_iter(write_index);
 
   // We search for microslice in the range [first_ms_time, last_ms_time)
   // (we use the index from the first search to limit the second search)
@@ -234,4 +238,52 @@ void* Component::alloc_buffer(size_t size_exp, size_t item_size) {
   size_t bytes = (UINT64_C(1) << size_exp) * item_size;
   L_(trace) << "allocating shm buffer of " << bytes << " bytes";
   return m_shm->allocate_aligned(bytes, sysconf(_SC_PAGESIZE));
+}
+
+void Component::set_read_index(uint64_t read_index) {
+  uint64_t data_read_index = m_desc_buffer->at(read_index - 1).offset +
+                             m_desc_buffer->at(read_index - 1).size;
+
+  if (read_index == m_cached_read_index) {
+    L_(trace) << "updating read_index, nothing to do for: data "
+              << data_read_index << " desc " << read_index;
+    return;
+  }
+
+  if (read_index < m_cached_read_index) {
+    std::stringstream ss;
+    ss << "new read index " << data_read_index << " desc " << read_index
+       << " is smaller than the current read index desc " << m_cached_read_index
+       << ", this should not happen!";
+    throw std::runtime_error(ss.str());
+  }
+
+  L_(trace) << "updating read_index: data " << data_read_index << " desc "
+            << read_index;
+
+  m_dma_channel->set_sw_read_pointers(
+      hw_pointer(data_read_index, m_data_buffer->size_exponent(),
+                 sizeof(uint8_t), m_dma_channel->dma_transfer_size()),
+      hw_pointer(read_index, m_desc_buffer->size_exponent(),
+                 sizeof(fles::MicrosliceDescriptor)));
+
+  // cache the read_index locally
+  m_cached_read_index = read_index;
+}
+
+// TODO: index to offset calculations could also be done by the RingBuffer class
+size_t
+Component::hw_pointer(size_t index, size_t size_exponent, size_t item_size) {
+  size_t buffer_size = UINT64_C(1) << size_exponent;
+  size_t masked_index = index & (buffer_size - 1);
+  return masked_index * item_size;
+}
+
+size_t Component::hw_pointer(size_t index,
+                             size_t size_exponent,
+                             size_t item_size,
+                             size_t dma_size) {
+  size_t byte_index = hw_pointer(index, size_exponent, item_size);
+  // will hang one transfer size behind
+  return byte_index & ~(dma_size - 1);
 }

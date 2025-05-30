@@ -1,11 +1,14 @@
 // Copyright 2025 Dirk Hutter
 #pragma once
 
-#include "ChannelInterface.hpp"
+#include "MicrosliceDescriptor.hpp"
+#include "RingBufferView.hpp"
 #include "SubTimesliceDescriptor.hpp"
 #include "cri_channel.hpp"
+#include "dma_channel.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <cstdint>
+#include <memory>
 
 class Component {
 public:
@@ -32,16 +35,31 @@ public:
                                                        uint64_t duration);
 
 private:
+  boost::interprocess::managed_shared_memory* m_shm;
+  cri::cri_channel* m_cri_channel;
+  cri::dma_channel* m_dma_channel;
+
+  uint64_t m_overlap_before_ns;
+  uint64_t m_overlap_after_ns;
+
+  std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor>> m_desc_buffer;
+  std::unique_ptr<RingBufferView<uint8_t>> m_data_buffer;
+
+  // TODO: in case of reconnects this has to be initialized with the hw value
+  uint64_t m_cached_read_index = 0; // INFO not actual hw value
+
   void* alloc_buffer(size_t size_exp, size_t item_size);
 
   std::pair<uint64_t, uint64_t> find_component(uint64_t start_time,
                                                uint64_t duration);
 
-  boost::interprocess::managed_shared_memory* m_shm;
-  cri::cri_channel* m_cri_channel;
+  void set_read_index(uint64_t desc_read_index);
 
-  std::unique_ptr<ChannelInterface> m_channel_interface;
-
-  uint64_t m_overlap_before_ns;
-  uint64_t m_overlap_after_ns;
+  // Convert index into byte pointer for hardware
+  size_t hw_pointer(size_t index, size_t size_exponent, size_t item_size);
+  // Convert index into byte pointer and round to dma_size
+  size_t hw_pointer(size_t index,
+                    size_t size_exponent,
+                    size_t item_size,
+                    size_t dma_size);
 };
