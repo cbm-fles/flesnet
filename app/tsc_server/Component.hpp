@@ -54,12 +54,4 @@ private:
                                                uint64_t duration);
 
   void set_read_index(uint64_t desc_read_index);
-
-  // Convert index into byte pointer for hardware
-  size_t hw_pointer(size_t index, size_t size_exponent, size_t item_size);
-  // Convert index into byte pointer and round to dma_size
-  size_t hw_pointer(size_t index,
-                    size_t size_exponent,
-                    size_t item_size,
-                    size_t dma_size);
 };

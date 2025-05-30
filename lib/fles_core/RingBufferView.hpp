@@ -117,6 +117,11 @@ public:
   /// Retrieve buffer size in bytes.
   [[nodiscard]] std::size_t bytes() const { return size_ * sizeof(T); }
 
+  /// Retrieve the offset of the element at index n in bytes.
+  [[nodiscard]] std::size_t offset_bytes(std::size_t n) const {
+    return (POWER_OF_TWO ? (n & size_mask_) : (n % size_)) * sizeof(T);
+  }
+
 private:
   /// The data buffer.
   T* buf_;

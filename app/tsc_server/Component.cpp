@@ -2,6 +2,7 @@
 
 #include "Component.hpp"
 #include "log.hpp"
+#include <cstddef>
 
 Component::Component(boost::interprocess::managed_shared_memory* shm,
                      cri::cri_channel* cri_channel,
@@ -261,29 +262,14 @@ void Component::set_read_index(uint64_t read_index) {
   L_(trace) << "updating read_index: data " << data_read_index << " desc "
             << read_index;
 
-  m_dma_channel->set_sw_read_pointers(
-      hw_pointer(data_read_index, m_data_buffer->size_exponent(),
-                 sizeof(uint8_t), m_dma_channel->dma_transfer_size()),
-      hw_pointer(read_index, m_desc_buffer->size_exponent(),
-                 sizeof(fles::MicrosliceDescriptor)));
+  uint64_t desc_offset = m_desc_buffer->offset_bytes(read_index);
+  uint64_t data_offset = m_data_buffer->offset_bytes(data_read_index);
+  // Rount data_offset down to dma transfer size, will hang one transfer
+  // size behind
+  data_offset &= ~(m_dma_channel->dma_transfer_size() - 1);
+
+  m_dma_channel->set_sw_read_pointers(data_offset, desc_offset);
 
   // cache the read_index locally
   m_cached_read_index = read_index;
-}
-
-// TODO: index to offset calculations could also be done by the RingBuffer class
-size_t
-Component::hw_pointer(size_t index, size_t size_exponent, size_t item_size) {
-  size_t buffer_size = UINT64_C(1) << size_exponent;
-  size_t masked_index = index & (buffer_size - 1);
-  return masked_index * item_size;
-}
-
-size_t Component::hw_pointer(size_t index,
-                             size_t size_exponent,
-                             size_t item_size,
-                             size_t dma_size) {
-  size_t byte_index = hw_pointer(index, size_exponent, item_size);
-  // will hang one transfer size behind
-  return byte_index & ~(dma_size - 1);
 }
