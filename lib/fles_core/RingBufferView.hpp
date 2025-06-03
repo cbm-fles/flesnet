@@ -7,9 +7,9 @@
 #include <type_traits>
 
 /// Simple generic ring buffer iterator class.
-template <typename T, bool POWER_OF_TWO = true>
+template <typename T, bool POWER_OF_TWO>
 class RingBufferIterator
-    : public boost::iterator_facade<RingBufferIterator<T>,
+    : public boost::iterator_facade<RingBufferIterator<T, POWER_OF_TWO>,
                                     T,
                                     boost::random_access_traversal_tag> {
 public:
