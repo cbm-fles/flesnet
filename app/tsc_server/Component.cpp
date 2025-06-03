@@ -10,7 +10,7 @@ Component::Component(boost::interprocess::managed_shared_memory* shm,
                      size_t desc_buffer_size,
                      uint64_t overlap_before_ns,
                      uint64_t overlap_after_ns)
-    : m_shm(shm), m_cri_channel(cri_channel), m_dma_channel(cri_channel->dma()),
+    : m_shm(shm), m_cri_channel(cri_channel),
       m_overlap_before_ns(overlap_before_ns),
       m_overlap_after_ns(overlap_after_ns) {
 
@@ -30,6 +30,7 @@ Component::Component(boost::interprocess::managed_shared_memory* shm,
   m_cri_channel->init_dma(data_buffer_raw, data_buffer_size_bytes,
                           desc_buffer_raw, desc_buffer_size_bytes);
   m_cri_channel->enable_readout();
+  m_dma_channel = cri_channel->dma();
 
   // initialize buffer interface
   auto* desc_buffer =
@@ -242,22 +243,21 @@ std::pair<uint64_t, uint64_t> Component::find_component(uint64_t start_time,
 }
 
 void Component::set_read_index(uint64_t read_index) {
-  uint64_t data_read_index = m_desc_buffer->at(read_index - 1).offset +
-                             m_desc_buffer->at(read_index - 1).size;
-
   if (read_index == m_cached_read_index) {
-    L_(trace) << "updating read_index, nothing to do for: data "
-              << data_read_index << " desc " << read_index;
+    L_(trace) << "updating read_index, nothing to do for desc " << read_index;
     return;
   }
 
   if (read_index < m_cached_read_index) {
     std::stringstream ss;
-    ss << "new read index " << data_read_index << " desc " << read_index
+    ss << "new read index desc " << read_index
        << " is smaller than the current read index desc " << m_cached_read_index
        << ", this should not happen!";
     throw std::runtime_error(ss.str());
   }
+
+  uint64_t data_read_index = m_desc_buffer->at(read_index - 1).offset +
+                             m_desc_buffer->at(read_index - 1).size;
 
   L_(trace) << "updating read_index: data " << data_read_index << " desc "
             << read_index;
