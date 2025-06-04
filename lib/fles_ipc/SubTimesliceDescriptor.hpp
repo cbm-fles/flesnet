@@ -49,11 +49,25 @@ struct SubTimesliceComponentDescriptor {
   /// The number of microslices, computed from the size of the microslice
   /// descriptor data blocks
   [[nodiscard]] uint32_t num_microslices() const {
-    std::size_t descriptors_size = 0;
+    return descriptors_size() / sizeof(fles::MicrosliceDescriptor);
+  }
+
+  /// The number of descriptor bytes
+  [[nodiscard]] uint64_t descriptors_size() const {
+    uint64_t descriptors_size = 0;
     for (const auto& sg : descriptors) {
       descriptors_size += sg.size;
     }
-    return descriptors_size / sizeof(fles::MicrosliceDescriptor);
+    return descriptors_size;
+  }
+
+  /// The number of content bytes
+  [[nodiscard]] uint64_t contents_size() const {
+    uint64_t contents_size = 0;
+    for (const auto& sg : contents) {
+      contents_size += sg.size;
+    }
+    return contents_size;
   }
 
   friend class boost::serialization::access;

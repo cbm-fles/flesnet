@@ -2,6 +2,7 @@
 
 #include "Application.hpp"
 #include "SubTimesliceDescriptor.hpp"
+#include "System.hpp"
 #include "device_operator.hpp"
 #include "log.hpp"
 #include <boost/archive/binary_oarchive.hpp>
@@ -43,6 +44,7 @@ Application::Application(Parameters const& par,
   if (!par.monitor_uri().empty()) {
     monitor_ = std::make_unique<cbm::Monitor>(par_.monitor_uri());
   }
+  hostname_ = fles::system::current_hostname();
 
   /////// Create Hardware Objects ///////////
 
@@ -135,12 +137,15 @@ void Application::run() {
       par_.timeslice_duration_ns() * par_.timeslice_duration_ns();
   acked_ = ts_start_time / par_.timeslice_duration_ns();
 
+  report_status();
+
   std::vector<Channel::State> states(channels_.size());
   std::vector<std::size_t> ask_again(channels_.size());
   std::iota(ask_again.begin(), ask_again.end(), 0);
 
   while (*signal_status_ == 0) {
     handle_completions();
+    scheduler_.timer();
 
     // call check_component for all channels and store the states
     for (auto i : ask_again) {
@@ -182,6 +187,10 @@ Application::~Application() {
   // cleanup
   boost::interprocess::shared_memory_object::remove(par_.shm_id().c_str());
   L_(info) << "Shared memory segment removed: " << par_.shm_id();
+
+  // delay to allow monitor to process pending messages
+  constexpr auto destruct_delay = std::chrono::milliseconds(200);
+  std::this_thread::sleep_for(destruct_delay);
 }
 
 void Application::handle_completions() {
@@ -246,4 +255,33 @@ void Application::provide_subtimeslice(
   L_(trace) << "Sent SubTimesliceDescriptor for timeslice " << ts_id << " with "
             << st.components.size()
             << " components (complete: " << !st.is_incomplete << ")";
+
+  // Update statistics
+  ++timeslice_count_;
+  component_count_ += st.components.size();
+  for (const auto& comp : st.components) {
+    microslice_count_ += comp.num_microslices();
+    content_bytes_ += comp.contents_size();
+    total_bytes_ += comp.descriptors_size() + comp.contents_size();
+  }
+  if (st.is_incomplete) {
+    ++timeslice_incomplete_count_;
+  }
+}
+
+void Application::report_status() {
+  constexpr auto interval = std::chrono::seconds(1);
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+  if (monitor_ != nullptr) {
+    monitor_->QueueMetric(
+        "tsc_server_status", {{"host", hostname_}},
+        {{"timeslice_count", timeslice_count_},
+         {"component_count", component_count_},
+         {"microslice_count", microslice_count_},
+         {"content_bytes", content_bytes_},
+         {"timeslice_incomplete_count", timeslice_incomplete_count_}});
+  }
+
+  scheduler_.add([this] { report_status(); }, now + interval);
 }

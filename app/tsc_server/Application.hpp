@@ -7,6 +7,7 @@
 #include "Monitor.hpp"
 #include "Parameters.hpp"
 #include "RingBuffer.hpp"
+#include "Scheduler.hpp"
 #include "cri_device.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -36,9 +37,6 @@ private:
   Parameters const& par_;
   volatile std::sig_atomic_t* signal_status_;
 
-  /// The application's monitoring object
-  std::unique_ptr<cbm::Monitor> monitor_;
-
   /// The application's ZeroMQ context
   zmq::context_t zmq_context_{1};
 
@@ -54,4 +52,18 @@ private:
 
   RingBuffer<uint64_t, true> completions_{20};
   uint64_t acked_ = 0;
+
+  size_t timeslice_count_ = 0;  ///< total number of processed timeslices
+  size_t component_count_ = 0;  ///< total number of processed components
+  size_t microslice_count_ = 0; ///< total number of processed microslices
+  size_t content_bytes_ = 0;    ///< total number of processed content bytes
+  size_t total_bytes_ = 0;      ///< total number of processed bytes
+  size_t timeslice_incomplete_count_ = 0; ///< number of incomplete timeslices
+
+  void report_status();
+
+  std::unique_ptr<cbm::Monitor> monitor_;
+  std::string hostname_;
+
+  Scheduler scheduler_;
 };
