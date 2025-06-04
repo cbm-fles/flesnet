@@ -1,7 +1,7 @@
 // Copyright 2025 Dirk Hutter, Jan de Cuveland
 #pragma once
 
-#include "Component.hpp"
+#include "Channel.hpp"
 #include "ItemDistributor.hpp"
 #include "ItemProducer.hpp"
 #include "Monitor.hpp"
@@ -29,7 +29,7 @@ public:
 
 private:
   void handle_completions();
-  void provide_subtimeslice(std::vector<Component::State> const& states,
+  void provide_subtimeslice(std::vector<Channel::State> const& states,
                             uint64_t start_time,
                             uint64_t duration);
 
@@ -47,7 +47,7 @@ private:
   std::vector<std::unique_ptr<cri::cri_device>> cris_;
   std::vector<cri::cri_channel*> cri_channels_;
   std::unique_ptr<boost::interprocess::managed_shared_memory> shm_;
-  std::vector<std::unique_ptr<Component>> components_;
+  std::vector<std::unique_ptr<Channel>> channels_;
 
   std::unique_ptr<ItemProducer> item_producer_;
   std::unique_ptr<ItemDistributor> item_distributor_;

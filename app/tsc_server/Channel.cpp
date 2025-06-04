@@ -1,6 +1,6 @@
 // Copyright 2025 Dirk Hutter, Jan de Cuveland
 
-#include "Component.hpp"
+#include "Channel.hpp"
 #include "log.hpp"
 
 namespace {
@@ -22,12 +22,12 @@ std::string pt(uint64_t time_ns) {
 }
 } // namespace
 
-Component::Component(boost::interprocess::managed_shared_memory* shm,
-                     cri::cri_channel* cri_channel,
-                     size_t data_buffer_size,
-                     size_t desc_buffer_size,
-                     uint64_t overlap_before_ns,
-                     uint64_t overlap_after_ns)
+Channel::Channel(boost::interprocess::managed_shared_memory* shm,
+                 cri::cri_channel* cri_channel,
+                 size_t data_buffer_size,
+                 size_t desc_buffer_size,
+                 uint64_t overlap_before_ns,
+                 uint64_t overlap_after_ns)
     : m_shm(shm), m_cri_channel(cri_channel),
       m_overlap_before_ns(overlap_before_ns),
       m_overlap_after_ns(overlap_after_ns) {
@@ -63,13 +63,13 @@ Component::Component(boost::interprocess::managed_shared_memory* shm,
   // TODO: initialize m_read_index to the current hardware read index
 }
 
-Component::~Component() {
+Channel::~Channel() {
   m_cri_channel->disable_readout();
   m_cri_channel->deinit_dma();
   // TODO deallocate buffers if it is worth to do
 }
 
-void Component::ack_before(uint64_t time) {
+void Channel::ack_before(uint64_t time) {
   // fetch the current read and write index and initialize iterators
   // INFO: iterator desc_end points (as the write index does) to the next
   // element after the last valid element and must not be dereferenced
@@ -112,8 +112,8 @@ void Component::ack_before(uint64_t time) {
   return;
 }
 
-Component::State Component::check_availability(uint64_t start_time,
-                                               uint64_t duration) {
+Channel::State Channel::check_availability(uint64_t start_time,
+                                           uint64_t duration) {
 
   uint64_t write_index = m_dma_channel->get_desc_index();
   uint64_t read_index = m_cached_read_index;
@@ -126,27 +126,27 @@ Component::State Component::check_availability(uint64_t start_time,
 
   if (write_index == read_index) {
     L_(trace) << "write and read index are equal, no data available";
-    return Component::State::TryLater;
+    return Channel::State::TryLater;
   }
   if (first_ms_time < m_desc_buffer->at(read_index).idx) {
     L_(trace) << "Failed; begin want= " << pt(first_ms_time)
               << " have=" << pt(m_desc_buffer->at(read_index).idx)
               << ", difference="
               << int64_t(m_desc_buffer->at(read_index).idx - first_ms_time);
-    return Component::State::Failed;
+    return Channel::State::Failed;
   }
   if (last_ms_time >= m_desc_buffer->at(write_index - 1).idx) {
     L_(trace) << "TryLater: end want=" << pt(last_ms_time)
               << " have=" << pt(m_desc_buffer->at(write_index - 1).idx)
               << ", difference="
               << int64_t(last_ms_time - m_desc_buffer->at(write_index - 1).idx);
-    return Component::State::TryLater;
+    return Channel::State::TryLater;
   }
-  return Component::State::Ok;
+  return Channel::State::Ok;
 }
 
 fles::SubTimesliceComponentDescriptor
-Component::get_descriptor(uint64_t start_time, uint64_t duration) {
+Channel::get_descriptor(uint64_t start_time, uint64_t duration) {
   // find the component in the buffer
   auto [desc_begin_idx, desc_end_idx] = find_component(start_time, duration);
   assert(desc_begin_idx < desc_end_idx);
@@ -213,8 +213,8 @@ Component::get_descriptor(uint64_t start_time, uint64_t duration) {
 // [start_time - ovelap_before, start_time + duration + overlap_after). Expects
 // that the component is available. Check the component state before calling
 // find_component.
-std::pair<uint64_t, uint64_t> Component::find_component(uint64_t start_time,
-                                                        uint64_t duration) {
+std::pair<uint64_t, uint64_t> Channel::find_component(uint64_t start_time,
+                                                      uint64_t duration) {
   uint64_t write_index = m_dma_channel->get_desc_index();
   uint64_t read_index = m_cached_read_index;
 
@@ -264,7 +264,7 @@ std::pair<uint64_t, uint64_t> Component::find_component(uint64_t start_time,
   return {first_idx, last_idx};
 }
 
-void Component::set_read_index(uint64_t read_index) {
+void Channel::set_read_index(uint64_t read_index) {
   if (read_index == m_cached_read_index) {
     L_(trace) << "updating read_index, nothing to do for desc " << read_index;
     return;

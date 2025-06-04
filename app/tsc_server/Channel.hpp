@@ -10,16 +10,16 @@
 #include <cstdint>
 #include <memory>
 
-class Component {
+class Channel {
 public:
-  Component(boost::interprocess::managed_shared_memory* shm,
-            cri::cri_channel* cri_channel,
-            size_t data_buffer_size,
-            size_t desc_buffer_size,
-            uint64_t overlap_before_ns,
-            uint64_t overlap_after_ns);
+  Channel(boost::interprocess::managed_shared_memory* shm,
+          cri::cri_channel* cri_channel,
+          size_t data_buffer_size,
+          size_t desc_buffer_size,
+          uint64_t overlap_before_ns,
+          uint64_t overlap_after_ns);
 
-  ~Component();
+  ~Channel();
 
   enum class State {
     Ok,       // component is available

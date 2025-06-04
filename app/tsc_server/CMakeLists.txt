@@ -1,6 +1,6 @@
 # Copyright 2025 Dirk Hutter, Jan de Cuveland
 
-add_executable(tsc_server main.cpp Application.cpp Parameters.cpp Component.cpp)
+add_executable(tsc_server main.cpp Application.cpp Parameters.cpp Channel.cpp)
 
 target_include_directories(tsc_server SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
