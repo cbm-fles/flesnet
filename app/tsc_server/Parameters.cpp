@@ -154,6 +154,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
     L_(debug) << "CRI address: autodetect";
   }
 
+  if (_timeslice_duration_ns == 0) {
+    throw ParametersException("timeslice duration must be greater than 0");
+  }
+
   L_(info) << "Shared memory file: " << _shm_id;
   L_(info) << buffer_info();
 }

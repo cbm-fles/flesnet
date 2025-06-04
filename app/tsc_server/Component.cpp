@@ -2,7 +2,25 @@
 
 #include "Component.hpp"
 #include "log.hpp"
-#include <cstddef>
+
+namespace {
+std::string pt(uint64_t time_ns) {
+  // Chrono time_point from nanoseconds
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>
+      tp{std::chrono::nanoseconds{time_ns}};
+  // Convert to time_t and remaining nanoseconds
+  auto tp_seconds = std::chrono::time_point_cast<std::chrono::seconds>(tp);
+  std::time_t t = std::chrono::system_clock::to_time_t(tp_seconds);
+  auto rem_ns = (tp.time_since_epoch() - std::chrono::seconds{t}).count();
+
+  std::tm tm = *std::localtime(&t);
+  std::stringstream ss;
+  ss.imbue(std::locale("")); // use locale for thousands separator
+  ss << std::put_time(&tm, "%S") << "." << std::setfill('0') << std::setw(11)
+     << rem_ns;
+  return ss.str();
+}
+} // namespace
 
 Component::Component(boost::interprocess::managed_shared_memory* shm,
                      cri::cri_channel* cri_channel,
@@ -87,7 +105,7 @@ void Component::ack_before(uint64_t time) {
     set_read_index(it.get_index());
   }
 
-  L_(trace) << "searching for time " << time << " in range "
+  L_(trace) << "ack before: searching for time " << time << " in range "
             << desc_begin.get_index() << " - " << desc_end.get_index()
             << ". Setting read index to " << it.get_index();
 
@@ -103,23 +121,25 @@ Component::State Component::check_availability(uint64_t start_time,
   uint64_t first_ms_time = start_time - m_overlap_before_ns;
   uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
 
-  L_(trace) << "searching for component [" << first_ms_time << ", "
-            << last_ms_time << ").";
+  L_(trace) << "searching for component [" << pt(first_ms_time) << ", "
+            << pt(last_ms_time) << ").";
 
   if (write_index == read_index) {
     L_(trace) << "write and read index are equal, no data available";
     return Component::State::TryLater;
   }
   if (first_ms_time < m_desc_buffer->at(read_index).idx) {
-    L_(trace) << "too old, first time " << first_ms_time
-              << " is before the first element in the buffer "
-              << m_desc_buffer->at(read_index).idx;
+    L_(trace) << "Failed; begin want= " << pt(first_ms_time)
+              << " have=" << pt(m_desc_buffer->at(read_index).idx)
+              << ", difference="
+              << int64_t(m_desc_buffer->at(read_index).idx - first_ms_time);
     return Component::State::Failed;
   }
   if (last_ms_time >= m_desc_buffer->at(write_index - 1).idx) {
-    L_(trace) << "not available yet, last time " << last_ms_time
-              << " is after the last element in the buffer "
-              << m_desc_buffer->at(write_index - 1).idx;
+    L_(trace) << "TryLater: end want=" << pt(last_ms_time)
+              << " have=" << pt(m_desc_buffer->at(write_index - 1).idx)
+              << ", difference="
+              << int64_t(last_ms_time - m_desc_buffer->at(write_index - 1).idx);
     return Component::State::TryLater;
   }
   return Component::State::Ok;
@@ -218,7 +238,8 @@ std::pair<uint64_t, uint64_t> Component::find_component(uint64_t start_time,
     throw std::out_of_range("Component::find_component: beginning of "
                             "component out of range");
   }
-  uint64_t first_idx = first_it--.get_index();
+  first_it--; // we want the first microslice <= time
+  uint64_t first_idx = first_it.get_index();
 
   // search for the end iterator, i.e., the first microslice >= time
   auto last_it = std::lower_bound(first_it, desc_end, last_ms_time,
@@ -232,12 +253,13 @@ std::pair<uint64_t, uint64_t> Component::find_component(uint64_t start_time,
 
   // TODO: technically we are not allowed to dereference last_it because its ms
   // is not guaranteed to be written
-  L_(trace) << "Searching for component [" << first_ms_time << ", "
-            << last_ms_time << "). Found component [" << first_it->idx << ", "
-            << last_it->idx << ") with difference "
+  L_(trace) << "find_component: want [" << pt(first_ms_time) << ", "
+            << pt(last_ms_time) << "), have [" << pt(first_it->idx) << ", "
+            << pt(last_it->idx) << "), diff "
             << int64_t(first_it->idx - first_ms_time) << ", "
-            << last_it->idx - last_ms_time << " as [" << first_idx << ", "
-            << last_idx << "), " << last_idx - first_idx << " microslices";
+            << int64_t(last_it->idx - last_ms_time) << ", idx [" << first_idx
+            << ", " << last_idx << "), " << last_idx - first_idx
+            << " microslices";
 
   return {first_idx, last_idx};
 }

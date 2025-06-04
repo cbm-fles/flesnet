@@ -133,9 +133,9 @@ void Application::run() {
   }
 
   uint64_t ts_start_time =
-      chrono_to_timestamp(std::chrono::high_resolution_clock::now()) + 1e9;
-  uint64_t ts_size_time = par_.timeslice_duration_ns();
-  acked_ = ts_start_time / ts_size_time;
+      chrono_to_timestamp(std::chrono::high_resolution_clock::now()) /
+      par_.timeslice_duration_ns() * par_.timeslice_duration_ns();
+  acked_ = ts_start_time / par_.timeslice_duration_ns();
 
   std::vector<Component::State> states(components_.size());
   std::vector<std::size_t> ask_again(components_.size());
@@ -146,8 +146,8 @@ void Application::run() {
 
     // call check_component for all components and store the states
     for (auto i : ask_again) {
-      auto state =
-          components_[i]->check_availability(ts_start_time, ts_size_time);
+      auto state = components_[i]->check_availability(
+          ts_start_time, par_.timeslice_duration_ns());
       states[i] = state;
       if (state != Component::State::TryLater) {
         // if the state is not TryLater, we do not need to ask again
@@ -161,15 +161,16 @@ void Application::run() {
     bool timeout_reached =
         (chrono_to_timestamp(std::chrono::high_resolution_clock::now()) >
          ts_start_time + par_.timeslice_duration_ns() +
-             par_.timeslice_timeout_ns());
+             par_.overlap_after_ns() + par_.timeslice_timeout_ns());
     if (!ask_again.empty() && !timeout_reached) {
-      std::this_thread::sleep_for(10ms);
+      std::this_thread::sleep_for(
+          std::chrono::nanoseconds(par_.timeslice_duration_ns() / 10));
       continue;
     };
 
     // provide subtimeslice and advance to the next timeslice
-    provide_subtimeslice(states, ts_start_time, ts_size_time);
-    ts_start_time += ts_size_time;
+    provide_subtimeslice(states, ts_start_time, par_.timeslice_duration_ns());
+    ts_start_time += par_.timeslice_duration_ns();
     ask_again.resize(components_.size());
     std::iota(ask_again.begin(), ask_again.end(), 0);
   }
@@ -234,7 +235,7 @@ void Application::provide_subtimeslice(
     }
   }
 
-  // Serialize the SubTimesliceComponentDescriptor to a string
+  // Serialize the SubTimesliceDescriptor to a string
   std::ostringstream oss;
   {
     boost::archive::binary_oarchive oa(oss);
@@ -244,4 +245,7 @@ void Application::provide_subtimeslice(
   // Send the serialized data as a work item
   uint64_t ts_id = start_time / duration;
   item_producer_->send_work_item(ts_id, oss.str());
+  L_(trace) << "Sent SubTimesliceDescriptor for timeslice " << ts_id << " with "
+            << st.components.size()
+            << " components (complete: " << !st.is_incomplete << ")";
 }
