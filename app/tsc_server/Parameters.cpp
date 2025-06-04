@@ -38,6 +38,53 @@ void validate(boost::any& v,
   }
 }
 
+std::istream& operator>>(std::istream& in, Nanoseconds& time) {
+  std::string token;
+  in >> token;
+
+  // Parse the time with a suffix
+  std::regex r("(-?[0-9]+)(ns|us|µs|ms|s)");
+  std::smatch match;
+
+  if (std::regex_match(token, match, r)) {
+    long long value = std::stoll(match[1]);
+    if (match[2] == "ns") {
+      time = Nanoseconds(std::chrono::nanoseconds(value));
+    } else if (match[2] == "us" || match[2] == "µs") {
+      time = Nanoseconds(std::chrono::microseconds(value));
+    } else if (match[2] == "ms") {
+      time = Nanoseconds(std::chrono::milliseconds(value));
+    } else if (match[2] == "s") {
+      time = Nanoseconds(std::chrono::seconds(value));
+    } else {
+      throw po::invalid_option_value(token);
+    }
+  } else {
+    throw po::invalid_option_value(token);
+  }
+  return in;
+}
+
+std::ostream& operator<<(std::ostream& out, const Nanoseconds& time) {
+  out << time.to_str();
+  return out;
+}
+
+std::string Nanoseconds::to_str() const {
+  std::stringstream out;
+  // Convert the time to a human-readable format
+  if (count() % UINT64_C(1000000000) == 0) {
+    out << count() / UINT64_C(1000000000) << "s";
+  } else if (count() % UINT64_C(1000000) == 0) {
+    out << count() / UINT64_C(1000000) << "ms";
+  } else if (count() % UINT64_C(1000) == 0) {
+    out << count() / UINT64_C(1000) << "us";
+  } else {
+    out << count() << "ns";
+  }
+  return out.str();
+}
+
 void Parameters::parse_options(int argc, char* argv[]) {
 
   std::string config_file;
@@ -80,13 +127,13 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "name of the shared memory to be used");
 
   config_add("timeslice-duration",
-             po::value<uint64_t>(&_timeslice_duration_ns)
-                 ->default_value(_timeslice_duration_ns),
-             "duration of a timeslice in nanoseconds");
+             po::value<Nanoseconds>(&_timeslice_duration)
+                 ->default_value(_timeslice_duration),
+             "duration of a timeslice (with suffix ns, us, ms, s)");
   config_add("timeslice-timeout",
-             po::value<uint64_t>(&_timeslice_timeout_ns)
-                 ->default_value(_timeslice_timeout_ns),
-             "timeout for timeslice reception in nanoseconds");
+             po::value<Nanoseconds>(&_timeslice_timeout)
+                 ->default_value(_timeslice_timeout),
+             "timeout for timeslice reception (with suffix ns, us, ms, s)");
   config_add(
       "data-buffer-size",
       po::value<size_t>(&_data_buffer_size)->default_value(_data_buffer_size),
@@ -95,14 +142,14 @@ void Parameters::parse_options(int argc, char* argv[]) {
       "desc-buffer-size",
       po::value<size_t>(&_desc_buffer_size)->default_value(_desc_buffer_size),
       "size of the descriptor buffer (number of entries)");
-  config_add("overlap-before",
-             po::value<int64_t>(&_overlap_before_ns)
-                 ->default_value(_overlap_before_ns),
-             "overlap before the timeslice in nanoseconds");
+  config_add(
+      "overlap-before",
+      po::value<Nanoseconds>(&_overlap_before)->default_value(_overlap_before),
+      "overlap before the timeslice (with suffix ns, us, ms, s)");
   config_add(
       "overlap-after",
-      po::value<int64_t>(&_overlap_after_ns)->default_value(_overlap_after_ns),
-      "overlap after the timeslice in nanoseconds");
+      po::value<Nanoseconds>(&_overlap_after)->default_value(_overlap_after),
+      "overlap after the timeslice (with suffix ns, us, ms, s)");
 
   po::options_description cmdline_options("Allowed options");
   cmdline_options.add(generic).add(config);
@@ -113,6 +160,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
   po::notify(vm);
+
+  std::cout << "Parsed parameter: " << _timeslice_duration << "\n";
+  // throw ParametersException("DEBUG END");
 
   std::ifstream ifs(config_file.c_str());
   if (!ifs) {
@@ -154,8 +204,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
     L_(debug) << "CRI address: autodetect";
   }
 
-  if (_timeslice_duration_ns == 0) {
+  if (timeslice_duration_ns() <= 0) {
     throw ParametersException("timeslice duration must be greater than 0");
+  }
+  if (timeslice_timeout_ns() <= 0) {
+    throw ParametersException("timeslice timeout must be greater than 0");
   }
 
   L_(info) << "Shared memory file: " << _shm_id;
