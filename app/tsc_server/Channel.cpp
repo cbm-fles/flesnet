@@ -4,7 +4,7 @@
 #include "log.hpp"
 
 namespace {
-std::string pt(uint64_t time_ns) {
+[[maybe_unused]] std::string pt(uint64_t time_ns) {
   // Chrono time_point from nanoseconds
   std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>
       tp{std::chrono::nanoseconds{time_ns}};

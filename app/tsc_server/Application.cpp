@@ -18,7 +18,7 @@
 using namespace std::chrono_literals;
 
 namespace {
-inline uint64_t
+[[maybe_unused]] inline uint64_t
 chrono_to_timestamp(std::chrono::time_point<std::chrono::high_resolution_clock,
                                             std::chrono::nanoseconds> time) {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -26,9 +26,9 @@ chrono_to_timestamp(std::chrono::time_point<std::chrono::high_resolution_clock,
       .count();
 }
 
-inline std::chrono::time_point<std::chrono::high_resolution_clock,
-                               std::chrono::nanoseconds>
-timestamp_to_chrono(uint64_t time) {
+[[maybe_unused]] inline std::chrono::
+    time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds>
+    timestamp_to_chrono(uint64_t time) {
   return std::chrono::high_resolution_clock::time_point(
       std::chrono::nanoseconds(time));
 }
