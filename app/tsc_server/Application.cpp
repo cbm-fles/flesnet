@@ -163,7 +163,7 @@ void Application::run() {
     bool timeout_reached =
         (chrono_to_timestamp(std::chrono::high_resolution_clock::now()) >
          ts_start_time + par_.timeslice_duration_ns() +
-             par_.overlap_after_ns() + par_.timeslice_timeout_ns());
+             par_.overlap_after_ns() + par_.timeout_ns());
     if (!ask_again.empty() && !timeout_reached) {
       std::this_thread::sleep_for(
           std::chrono::nanoseconds(par_.timeslice_duration_ns() / 10));

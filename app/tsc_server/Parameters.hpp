@@ -61,9 +61,7 @@ public:
   [[nodiscard]] uint64_t timeslice_duration_ns() const {
     return (_timeslice_duration.count());
   }
-  [[nodiscard]] uint64_t timeslice_timeout_ns() const {
-    return (_timeslice_timeout.count());
-  }
+  [[nodiscard]] uint64_t timeout_ns() const { return (_timeout.count()); }
 
   // Channel parameters (may be set individually in the future)
   [[nodiscard]] size_t data_buffer_size() const { return _data_buffer_size; }
@@ -87,7 +85,7 @@ private:
 
   // Global parameters
   Nanoseconds _timeslice_duration{100ms};
-  Nanoseconds _timeslice_timeout{1s};
+  Nanoseconds _timeout{1ms};
 
   // Channel parameters (may be set individually in the future)
   size_t _data_buffer_size = UINT64_C(1) << 27; // 128 MiB

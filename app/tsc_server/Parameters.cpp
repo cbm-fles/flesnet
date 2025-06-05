@@ -130,10 +130,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
              po::value<Nanoseconds>(&_timeslice_duration)
                  ->default_value(_timeslice_duration),
              "duration of a timeslice (with suffix ns, us, ms, s)");
-  config_add("timeslice-timeout",
-             po::value<Nanoseconds>(&_timeslice_timeout)
-                 ->default_value(_timeslice_timeout),
-             "timeout for timeslice reception (with suffix ns, us, ms, s)");
+  config_add("timeout",
+             po::value<Nanoseconds>(&_timeout)->default_value(_timeout),
+             "timeout for data reception (with suffix ns, us, ms, s)");
   config_add(
       "data-buffer-size",
       po::value<size_t>(&_data_buffer_size)->default_value(_data_buffer_size),
@@ -207,8 +206,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
   if (timeslice_duration_ns() <= 0) {
     throw ParametersException("timeslice duration must be greater than 0");
   }
-  if (timeslice_timeout_ns() <= 0) {
-    throw ParametersException("timeslice timeout must be greater than 0");
+  if (timeout_ns() <= 0) {
+    throw ParametersException("timeout must be greater than 0");
   }
 
   L_(info) << "Shared memory file: " << _shm_id;
