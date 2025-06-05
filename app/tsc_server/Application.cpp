@@ -61,8 +61,7 @@ Application::Application(Parameters const& par,
                << std::endl;
     }
   } else {
-    // TODO: this should actually loop over a list of BDF, parameters need to
-    // be implemented.
+    // TODO parameters: this should actually loop over a list of BDF addresses
     cris_.push_back(std::make_unique<cri::cri_device>(
         par.device_address().bus, par.device_address().dev,
         par.device_address().func));
@@ -71,7 +70,7 @@ Application::Application(Parameters const& par,
   }
 
   // create all cri channels and remove inactive channels
-  // TODO: may be replaced with explicit channel list
+  // TODO parameters: to be replaced with explicit channel list
   for (const auto& cri : cris_) {
 #ifdef __cpp_lib_containers_ranges
     cri_channels.append_range(cri->channels());
@@ -91,7 +90,7 @@ Application::Application(Parameters const& par,
   /////// Create Shared Memory //////////////
 
   // create shared memory segment with enough space for page aligned buffers
-  // TODO: replace with explicit size for each channel
+  // TODO parameters: replace with explicit size for each channel
   size_t shm_size =
       (par.data_buffer_size() * sizeof(uint8_t) +
        par.desc_buffer_size() * sizeof(fles::MicrosliceDescriptor) +

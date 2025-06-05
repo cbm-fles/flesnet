@@ -59,20 +59,15 @@ Channel::Channel(boost::interprocess::managed_shared_memory* shm,
           desc_buffer, desc_buffer_size);
   m_data_buffer = std::make_unique<RingBufferView<uint8_t, false>>(
       data_buffer, data_buffer_size);
-
-  // TODO: initialize m_read_index to the current hardware read index
 }
 
 Channel::~Channel() {
   m_cri_channel->disable_readout();
   m_cri_channel->deinit_dma();
-  // TODO deallocate buffers if it is worth to do
+  // INFO we do not explicitly deallocate shared memory buffers
 }
 
 void Channel::ack_before(uint64_t time) {
-  // fetch the current read and write index and initialize iterators
-  // INFO: iterator desc_end points (as the write index does) to the next
-  // element after the last valid element and must not be dereferenced
   // TODO: we may want to introduce a cached write index as member of component
   // and rely on other call to update it from HW
   uint64_t write_index = m_dma_channel->get_desc_index();
@@ -81,18 +76,9 @@ void Channel::ack_before(uint64_t time) {
   auto desc_end = m_desc_buffer->get_iter(write_index);
 
   // Find the first element with a time greater than requested time and deduce 1
-  // to get the last element with a time <= requested time. This has to be the
-  // same logic as in find_component. We also deduce the overlap before time to
-  // ensure next component can still be built.
-
-  // INFO: To delete all elements until (aka time less than) the requested time,
-  // we set the read index to the found element. The element the read index
-  // points to is kept. If the requested time is greater than the last valid
-  // element (write_index-1) the function returns desc_end (= write_index) and
-  // we set read_index to write_index to clear everything. If the requested time
-  // is less than the first element the function returns desc_begin (=
-  // read_index). Setting the read index to desc_begin would not harm but we do
-  // nothing to reduce strain on the hardware.
+  // to get the last element with a time <= requested time. We deduce the
+  // overlap_before from the requested time to ensure next component can still
+  // be built. This has to be the same logic as in find_component!
   time -= m_overlap_before_ns;
   auto it =
       std::upper_bound(desc_begin, desc_end, time,
@@ -100,6 +86,14 @@ void Channel::ack_before(uint64_t time) {
                          return t < desc.idx;
                        });
 
+  // To delete all elements before (aka time less than) the requested
+  // time, we set the read index to the found element (the element the read
+  // index points to is kept). If the requested time is greater than the last
+  // valid element (write_index-1) the function returns desc_end (= write_index)
+  // and we set read_index to write_index to clear everything. If the requested
+  // time is less than the first element the function returns desc_begin (=
+  // read_index). Setting the read index to desc_begin would not harm but we do
+  // nothing to reduce strain on the hardware.
   if (it != desc_begin) {
     it--;
     set_read_index(it.get_index());
@@ -251,7 +245,7 @@ std::pair<uint64_t, uint64_t> Channel::find_component(uint64_t start_time,
   }
   uint64_t last_idx = last_it.get_index();
 
-  // TODO: technically we are not allowed to dereference last_it because its ms
+  // INFO technically we are not allowed to dereference last_it because its ms
   // is not guaranteed to be written
   L_(trace) << "find_component: want [" << pt(first_ms_time) << ", "
             << pt(last_ms_time) << "), have [" << pt(first_it->idx) << ", "
@@ -292,6 +286,5 @@ void Channel::set_read_index(uint64_t read_index) {
 
   m_dma_channel->set_sw_read_pointers(data_offset, desc_offset);
 
-  // cache the read_index locally
   m_cached_read_index = read_index;
 }

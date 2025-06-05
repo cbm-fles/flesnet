@@ -46,8 +46,7 @@ private:
       m_desc_buffer;
   std::unique_ptr<RingBufferView<uint8_t, false>> m_data_buffer;
 
-  // TODO: in case of reconnects this has to be initialized with the hw value
-  uint64_t m_cached_read_index = 0; // INFO not actual hw value
+  uint64_t m_cached_read_index = 0; // hardware value is also initialized to 0
 
   std::pair<uint64_t, uint64_t> find_component(uint64_t start_time,
                                                uint64_t duration);
