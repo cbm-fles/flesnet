@@ -280,6 +280,15 @@ void Application::report_status() {
          {"microslice_count", microslice_count_},
          {"content_bytes", content_bytes_},
          {"timeslice_incomplete_count", timeslice_incomplete_count_}});
+    for (const auto& channel : channels_) {
+      auto mon = channel->get_monitoring();
+      monitor_->QueueMetric(
+          "tsc_server_channel_status",
+          {{"host", hostname_}, {"channel", channel->name()}},
+          {{"desc_buffer_utilization", mon.desc_buffer_utilization},
+           {"data_buffer_utilization", mon.data_buffer_utilization},
+           {"delay", mon.delay}});
+    }
   }
 
   scheduler_.add([this] { report_status(); }, now + interval);

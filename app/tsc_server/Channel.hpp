@@ -34,6 +34,15 @@ public:
   fles::SubTimesliceComponentDescriptor get_descriptor(uint64_t start_time,
                                                        uint64_t duration);
 
+  struct Monitoring {
+    float desc_buffer_utilization;
+    float data_buffer_utilization;
+    int64_t delay;
+  };
+
+  [[nodiscard]] Monitoring get_monitoring() const;
+  [[nodiscard]] const std::string& name() const { return m_name; }
+
 private:
   boost::interprocess::managed_shared_memory* m_shm;
   cri::cri_channel* m_cri_channel;
@@ -42,11 +51,13 @@ private:
   uint64_t m_overlap_before_ns;
   uint64_t m_overlap_after_ns;
 
+  std::string m_name;
+
   std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor, false>>
       m_desc_buffer;
   std::unique_ptr<RingBufferView<uint8_t, false>> m_data_buffer;
 
-  uint64_t m_cached_read_index = 0; // hardware value is also initialized to 0
+  uint64_t m_read_index = 0; // hardware value is also initialized to 0
 
   std::pair<uint64_t, uint64_t> find_component(uint64_t start_time,
                                                uint64_t duration);

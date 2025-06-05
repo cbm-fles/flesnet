@@ -1,6 +1,7 @@
 // Copyright 2025 Dirk Hutter, Jan de Cuveland
 
 #include "Channel.hpp"
+#include "device.hpp"
 #include "log.hpp"
 
 namespace {
@@ -20,6 +21,16 @@ namespace {
      << rem_ns;
   return ss.str();
 }
+
+// This should be a member function of cri_channel
+std::string device_address(pda::device* device) {
+  std::stringstream ss;
+  ss << std::hex << std::setw(2) << std::setfill('0')
+     << static_cast<unsigned>(device->bus()) << ":" << std::setw(2)
+     << std::setfill('0') << static_cast<unsigned>(device->slot()) << "."
+     << static_cast<unsigned>(device->func());
+  return ss.str();
+}
 } // namespace
 
 Channel::Channel(boost::interprocess::managed_shared_memory* shm,
@@ -31,6 +42,9 @@ Channel::Channel(boost::interprocess::managed_shared_memory* shm,
     : m_shm(shm), m_cri_channel(cri_channel),
       m_overlap_before_ns(overlap_before_ns),
       m_overlap_after_ns(overlap_after_ns) {
+  // set channel name, used for monitoring
+  m_name = device_address(cri_channel->parent_device()) + "-" +
+           std::to_string(cri_channel->channel_index());
 
   std::size_t desc_buffer_size_bytes =
       desc_buffer_size * sizeof(fles::MicrosliceDescriptor);
@@ -71,7 +85,7 @@ void Channel::ack_before(uint64_t time) {
   // TODO: we may want to introduce a cached write index as member of component
   // and rely on other call to update it from HW
   uint64_t write_index = m_dma_channel->get_desc_index();
-  uint64_t read_index = m_cached_read_index;
+  uint64_t read_index = m_read_index;
   auto desc_begin = m_desc_buffer->get_iter(read_index);
   auto desc_end = m_desc_buffer->get_iter(write_index);
 
@@ -110,7 +124,7 @@ Channel::State Channel::check_availability(uint64_t start_time,
                                            uint64_t duration) {
 
   uint64_t write_index = m_dma_channel->get_desc_index();
-  uint64_t read_index = m_cached_read_index;
+  uint64_t read_index = m_read_index;
 
   uint64_t first_ms_time = start_time - m_overlap_before_ns;
   uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
@@ -214,7 +228,7 @@ Channel::get_descriptor(uint64_t start_time, uint64_t duration) {
 std::pair<uint64_t, uint64_t> Channel::find_component(uint64_t start_time,
                                                       uint64_t duration) {
   uint64_t write_index = m_dma_channel->get_desc_index();
-  uint64_t read_index = m_cached_read_index;
+  uint64_t read_index = m_read_index;
 
   uint64_t first_ms_time = start_time - m_overlap_before_ns;
   uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
@@ -263,15 +277,15 @@ std::pair<uint64_t, uint64_t> Channel::find_component(uint64_t start_time,
 }
 
 void Channel::set_read_index(uint64_t read_index) {
-  if (read_index == m_cached_read_index) {
+  if (read_index == m_read_index) {
     L_(trace) << "updating read_index, nothing to do for desc " << read_index;
     return;
   }
 
-  if (read_index < m_cached_read_index) {
+  if (read_index < m_read_index) {
     std::stringstream ss;
     ss << "new read index desc " << read_index
-       << " is smaller than the current read index desc " << m_cached_read_index
+       << " is smaller than the current read index desc " << m_read_index
        << ", this should not happen!";
     throw std::runtime_error(ss.str());
   }
@@ -290,5 +304,30 @@ void Channel::set_read_index(uint64_t read_index) {
 
   m_dma_channel->set_sw_read_pointers(data_offset, desc_offset);
 
-  m_cached_read_index = read_index;
+  m_read_index = read_index;
+}
+
+Channel::Monitoring Channel::get_monitoring() const {
+  Monitoring state{};
+  int64_t now =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::high_resolution_clock::now().time_since_epoch())
+          .count();
+
+  uint64_t write_index = m_dma_channel->get_desc_index();
+
+  const std::size_t desc_buffer_items = write_index - m_read_index;
+  const std::size_t data_buffer_items =
+      m_desc_buffer->at(write_index - 1).offset +
+      m_desc_buffer->at(write_index - 1).size -
+      m_desc_buffer->at(m_read_index).offset;
+
+  state.desc_buffer_utilization =
+      static_cast<float>(desc_buffer_items) / m_desc_buffer->size();
+  state.data_buffer_utilization =
+      static_cast<float>(data_buffer_items) / m_data_buffer->size();
+  state.delay =
+      now - static_cast<int64_t>(m_desc_buffer->at(write_index - 1).idx);
+
+  return state;
 }

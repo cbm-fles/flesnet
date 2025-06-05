@@ -117,7 +117,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
   config_add("monitor,m",
              po::value<std::string>(&_monitor_uri)
                  ->value_name("URI")
-                 ->implicit_value("influx1:login:8086:tsc_server_status"),
+                 ->implicit_value("influx1:login:8086:flesnet_status"),
              "publish tsclient status to InfluxDB (or \"file:cout\" for "
              "console output)");
   config_add("pci-addr,i", po::value<pci_addr>(),
