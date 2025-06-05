@@ -123,6 +123,8 @@ Channel::State Channel::check_availability(uint64_t start_time,
     return Channel::State::TryLater;
   }
   if (first_ms_time < m_desc_buffer->at(read_index).idx) {
+    // the first (oldest) microslice in the buffer is younger than the first
+    // microslice we want, so we can never provide that component
     L_(trace) << "Failed; begin want= " << pt(first_ms_time)
               << " have=" << pt(m_desc_buffer->at(read_index).idx)
               << ", difference="
@@ -130,6 +132,8 @@ Channel::State Channel::check_availability(uint64_t start_time,
     return Channel::State::Failed;
   }
   if (last_ms_time >= m_desc_buffer->at(write_index - 1).idx) {
+    // the last (youngest) microslice in the buffer is older than the last
+    // microslice we want, so we can't provide that component yet
     L_(trace) << "TryLater: end want=" << pt(last_ms_time)
               << " have=" << pt(m_desc_buffer->at(write_index - 1).idx)
               << ", difference="
