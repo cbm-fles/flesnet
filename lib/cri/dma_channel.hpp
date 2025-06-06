@@ -35,9 +35,9 @@ class dma_channel {
 public:
   dma_channel(cri_channel* channel,
               void* data_buffer,
-              size_t data_buffer_log_size,
+              size_t data_buffer_size,
               void* desc_buffer,
-              size_t desc_buffer_log_size,
+              size_t desc_buffer_size,
               size_t dma_transfer_size);
 
   ~dma_channel();
