@@ -309,10 +309,6 @@ void Channel::set_read_index(uint64_t read_index) {
 
 Channel::Monitoring Channel::get_monitoring() const {
   Monitoring state{};
-  int64_t now =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(
-          std::chrono::high_resolution_clock::now().time_since_epoch())
-          .count();
 
   uint64_t write_index = m_dma_channel->get_desc_index();
 
@@ -326,8 +322,7 @@ Channel::Monitoring Channel::get_monitoring() const {
       static_cast<float>(desc_buffer_items) / m_desc_buffer->size();
   state.data_buffer_utilization =
       static_cast<float>(data_buffer_items) / m_data_buffer->size();
-  state.delay =
-      now - static_cast<int64_t>(m_desc_buffer->at(write_index - 1).idx);
+  state.latest_microslice_time_ns = m_desc_buffer->at(write_index - 1).idx;
 
   return state;
 }

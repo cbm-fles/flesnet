@@ -272,6 +272,11 @@ void Application::report_status() {
   constexpr auto interval = std::chrono::seconds(1);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
+  int64_t now_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::high_resolution_clock::now().time_since_epoch())
+          .count();
+
   if (monitor_ != nullptr) {
     monitor_->QueueMetric(
         "tsc_server_status", {{"host", hostname_}},
@@ -282,12 +287,13 @@ void Application::report_status() {
          {"timeslice_incomplete_count", timeslice_incomplete_count_}});
     for (const auto& channel : channels_) {
       auto mon = channel->get_monitoring();
+      int64_t delay = now_ns - mon.latest_microslice_time_ns;
       monitor_->QueueMetric(
           "tsc_server_channel_status",
           {{"host", hostname_}, {"channel", channel->name()}},
           {{"desc_buffer_utilization", mon.desc_buffer_utilization},
            {"data_buffer_utilization", mon.data_buffer_utilization},
-           {"delay", mon.delay}});
+           {"delay", delay}});
     }
   }
 

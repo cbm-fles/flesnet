@@ -37,7 +37,7 @@ public:
   struct Monitoring {
     float desc_buffer_utilization;
     float data_buffer_utilization;
-    int64_t delay;
+    int64_t latest_microslice_time_ns;
   };
 
   [[nodiscard]] Monitoring get_monitoring() const;
