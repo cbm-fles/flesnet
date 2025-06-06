@@ -312,6 +312,10 @@ Channel::Monitoring Channel::get_monitoring() const {
 
   uint64_t write_index = m_dma_channel->get_desc_index();
 
+  if (write_index == m_read_index) {
+    return state;
+  }
+
   const std::size_t desc_buffer_items = write_index - m_read_index;
   const std::size_t data_buffer_items =
       m_desc_buffer->at(write_index - 1).offset +

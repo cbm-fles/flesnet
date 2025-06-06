@@ -287,13 +287,21 @@ void Application::report_status() {
          {"timeslice_incomplete_count", timeslice_incomplete_count_}});
     for (const auto& channel : channels_) {
       auto mon = channel->get_monitoring();
-      int64_t delay = now_ns - mon.latest_microslice_time_ns;
-      monitor_->QueueMetric(
-          "tsc_server_channel_status",
-          {{"host", hostname_}, {"channel", channel->name()}},
-          {{"desc_buffer_utilization", mon.desc_buffer_utilization},
-           {"data_buffer_utilization", mon.data_buffer_utilization},
-           {"delay", delay}});
+      if (mon.latest_microslice_time_ns) {
+        int64_t delay = now_ns - mon.latest_microslice_time_ns.value();
+        monitor_->QueueMetric(
+            "tsc_server_channel_status",
+            {{"host", hostname_}, {"channel", channel->name()}},
+            {{"desc_buffer_utilization", mon.desc_buffer_utilization},
+             {"data_buffer_utilization", mon.data_buffer_utilization},
+             {"delay", delay}});
+      } else {
+        monitor_->QueueMetric(
+            "tsc_server_channel_status",
+            {{"host", hostname_}, {"channel", channel->name()}},
+            {{"desc_buffer_utilization", mon.desc_buffer_utilization},
+             {"data_buffer_utilization", mon.data_buffer_utilization}});
+      }
     }
   }
 

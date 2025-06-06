@@ -9,6 +9,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 class Channel {
 public:
@@ -35,9 +36,9 @@ public:
                                                        uint64_t duration);
 
   struct Monitoring {
-    float desc_buffer_utilization;
-    float data_buffer_utilization;
-    int64_t latest_microslice_time_ns;
+    float desc_buffer_utilization{};
+    float data_buffer_utilization{};
+    std::optional<int64_t> latest_microslice_time_ns;
   };
 
   [[nodiscard]] Monitoring get_monitoring() const;
