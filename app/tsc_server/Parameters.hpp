@@ -58,19 +58,19 @@ public:
   [[nodiscard]] std::string shm_id() const { return _shm_id; }
 
   // Global parameters
-  [[nodiscard]] uint64_t timeslice_duration_ns() const {
-    return (_timeslice_duration.count());
+  [[nodiscard]] int64_t timeslice_duration_ns() const {
+    return _timeslice_duration.count();
   }
-  [[nodiscard]] uint64_t timeout_ns() const { return (_timeout.count()); }
+  [[nodiscard]] int64_t timeout_ns() const { return _timeout.count(); }
 
   // Channel parameters (may be set individually in the future)
   [[nodiscard]] size_t data_buffer_size() const { return _data_buffer_size; }
   [[nodiscard]] size_t desc_buffer_size() const { return _desc_buffer_size; }
-  [[nodiscard]] uint64_t overlap_before_ns() const {
-    return (_overlap_before.count());
+  [[nodiscard]] int64_t overlap_before_ns() const {
+    return _overlap_before.count();
   }
-  [[nodiscard]] uint64_t overlap_after_ns() const {
-    return (_overlap_after.count());
+  [[nodiscard]] int64_t overlap_after_ns() const {
+    return _overlap_after.count();
   }
 
 private:

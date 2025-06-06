@@ -206,6 +206,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
   if (timeslice_duration_ns() <= 0) {
     throw ParametersException("timeslice duration must be greater than 0");
   }
+  if ((overlap_before_ns() + overlap_after_ns()) < 0) {
+    throw ParametersException("negative total overlap cuts into timeslice");
+  }
   if (timeout_ns() <= 0) {
     throw ParametersException("timeout must be greater than 0");
   }
