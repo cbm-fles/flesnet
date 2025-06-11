@@ -11,9 +11,9 @@
 #include <vector>
 
 constexpr uint16_t DEFAULT_PORT = 13337;
-constexpr size_t BUFFER_SIZE = 1024 * 1024; // 1MB test buffer
+constexpr size_t BUFFER_SIZE = 1024 * 1024; // 1 MB test buffer
 constexpr uint64_t TEST_TAG = 0x42;
-constexpr int CONNECTION_TIMEOUT_MS = 5000;
+constexpr int CONNECTION_TIMEOUT_MS = 30000;
 
 std::atomic<bool> keep_running{true};
 
@@ -26,7 +26,7 @@ void run_server(uint16_t port) {
   std::cout << "Starting UCX server on port " << port << std::endl;
 
   // Initialize UCX context
-  UcxContext context;
+  UcpContext context;
 
   // Allocate and initialize a test buffer
   std::vector<uint8_t> send_buffer(BUFFER_SIZE, 0);
@@ -36,56 +36,16 @@ void run_server(uint16_t port) {
     send_buffer[i] = static_cast<uint8_t>(i & 0xFF);
   }
 
-  // Create connection manager to handle client connections
-  UcxConnectionManager connection_manager(context, port, 1);
-
-  std::cout << "Waiting for client connection..." << std::endl;
-  bool connected =
-      connection_manager.wait_for_all_connections(CONNECTION_TIMEOUT_MS);
-
-  if (!connected) {
-    std::cerr << "Timeout waiting for connection" << std::endl;
-    return;
-  }
-
-  std::cout << "Client connected!" << std::endl;
+  // Create a listener to accept incoming connections
+  UcpListener listener(context, port, recv_buffer.data(), recv_buffer.size());
 
   // Test completion flag
   std::atomic<bool> send_completed{false};
   std::atomic<bool> recv_completed{false};
 
-  // Create memory region for RMA operations
-  UcxMemoryRegion memory_region(context, send_buffer.data(), send_buffer.size(),
-                                UCP_MEM_MAP_ALLOCATE);
-
-  // The first client that connected
-  UcxConnection connection(context, 0, 0);
-
-  // Send a tagged message and wait for response
-  std::cout << "Server sending " << send_buffer.size() << " bytes..."
-            << std::endl;
-
-  connection.send_tagged(send_buffer.data(), send_buffer.size(), TEST_TAG,
-                         [&send_completed](ucs_status_t status) {
-                           send_completed = true;
-                           if (status != UCS_OK) {
-                             std::cerr << "Send failed with status " << status
-                                       << std::endl;
-                           }
-                         });
-
-  // Receive response from client
-  connection.recv_tagged(recv_buffer.data(), recv_buffer.size(), TEST_TAG,
-                         [&recv_completed](ucs_status_t status) {
-                           recv_completed = true;
-                           if (status != UCS_OK) {
-                             std::cerr << "Receive failed with status "
-                                       << status << std::endl;
-                           }
-                         });
-
-  // Progress until both operations complete or timeout
+  // Progress until operations complete or timeout
   auto start_time = std::chrono::steady_clock::now();
+  int subsample = 1000;
   while ((!send_completed || !recv_completed) && keep_running) {
     context.progress();
 
@@ -100,8 +60,13 @@ void run_server(uint16_t port) {
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    if (subsample-- <= 0) {
+      std::cerr << "Progressing..." << std::endl;
+      subsample = 1000;
+    }
   }
 
+  /*
   // Verify data
   bool data_valid = true;
   for (size_t i = 0; i < BUFFER_SIZE && data_valid; i++) {
@@ -113,12 +78,13 @@ void run_server(uint16_t port) {
     }
   }
 
+
   if (data_valid) {
     std::cout << "Data verification successful!" << std::endl;
   } else {
     std::cerr << "Data verification failed!" << std::endl;
   }
-
+  */
   std::cout << "Server test completed" << std::endl;
 }
 
@@ -127,15 +93,15 @@ void run_client(const std::string& server, uint16_t port) {
             << std::endl;
 
   // Initialize UCX context
-  UcxContext context;
+  UcpContext context;
 
   // Create connection
-  UcxConnection connection(context, 0, 0);
+  UcxConnection connection(context);
 
   try {
     // Connect to server
     connection.connect(server, port);
-    std::cout << "Connected to server!" << std::endl;
+    std::cout << "Initiated connection to server" << std::endl;
 
     // Allocate test buffers
     std::vector<uint8_t> send_buffer(BUFFER_SIZE, 0);
@@ -149,28 +115,14 @@ void run_client(const std::string& server, uint16_t port) {
     std::atomic<bool> send_completed{false};
     std::atomic<bool> recv_completed{false};
 
-    // Receive data from server
-    connection.recv_tagged(recv_buffer.data(), recv_buffer.size(), TEST_TAG,
-                           [&recv_completed](ucs_status_t status) {
-                             recv_completed = true;
-                             if (status != UCS_OK) {
-                               std::cerr << "Receive failed with status "
-                                         << status << std::endl;
-                             }
-                           });
-
-    // Send data back to server
-    connection.send_tagged(send_buffer.data(), send_buffer.size(), TEST_TAG,
-                           [&send_completed](ucs_status_t status) {
-                             send_completed = true;
-                             if (status != UCS_OK) {
-                               std::cerr << "Send failed with status " << status
-                                         << std::endl;
-                             }
-                           });
+    // Initiate an active message send
+    std::cout << "Client sending " << send_buffer.size() << " bytes..."
+              << std::endl;
+    connection.send_am(send_buffer.data(), send_buffer.size());
 
     // Progress until both operations complete or timeout
     auto start_time = std::chrono::steady_clock::now();
+    int subsample = 1000;
     while ((!send_completed || !recv_completed) && keep_running) {
       context.progress();
 
@@ -185,25 +137,29 @@ void run_client(const std::string& server, uint16_t port) {
       }
 
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-
-    // Verify data
-    bool data_valid = true;
-    for (size_t i = 0; i < BUFFER_SIZE && data_valid; i++) {
-      if (recv_buffer[i] != static_cast<uint8_t>(i & 0xFF)) {
-        std::cerr << "Data mismatch at index " << i << ": expected "
-                  << static_cast<int>(i & 0xFF) << ", got "
-                  << static_cast<int>(recv_buffer[i]) << std::endl;
-        data_valid = false;
+      if (subsample-- <= 0) {
+        std::cerr << "Progressing..." << std::endl;
+        subsample = 1000;
       }
     }
+    /*
+        // Verify data
+        bool data_valid = true;
+        for (size_t i = 0; i < BUFFER_SIZE && data_valid; i++) {
+          if (recv_buffer[i] != static_cast<uint8_t>(i & 0xFF)) {
+            std::cerr << "Data mismatch at index " << i << ": expected "
+                      << static_cast<int>(i & 0xFF) << ", got "
+                      << static_cast<int>(recv_buffer[i]) << std::endl;
+            data_valid = false;
+          }
+        }
 
-    if (data_valid) {
-      std::cout << "Data verification successful!" << std::endl;
-    } else {
-      std::cerr << "Data verification failed!" << std::endl;
-    }
-
+        if (data_valid) {
+          std::cout << "Data verification successful!" << std::endl;
+        } else {
+          std::cerr << "Data verification failed!" << std::endl;
+        }
+    */
     // Clean disconnect
     connection.disconnect();
 

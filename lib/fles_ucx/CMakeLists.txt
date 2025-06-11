@@ -16,4 +16,6 @@ target_link_libraries(fles_ucx
   PUBLIC monitoring
   PUBLIC ${RDMA_LIBRARIES}
   PUBLIC ucx::ucp
+  PUBLIC ucx::uct
+  PUBLIC ucx::ucs
 )
