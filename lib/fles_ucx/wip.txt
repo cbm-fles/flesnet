@@ -1,0 +1,70 @@
+
+Three components:
+- stsender
+- tsbuilder
+- tssched
+
+# Draft protocol
+
+stsender <-> tsbuilder
+----------------------
+
+-> REGISTER
+     hostname, pid
+<- OK
+
+-> NEW_SUBTIMESLICE
+     serialized descriptor
+     rkey
+<- OK
+
+<- RELEASE_SUBTIMESLICE
+-> OK
+
+-> UNREGISTER
+<- OK
+
+(What happens if one of the partners stops unexpectedly?
+Should we do heartbeating?)
+
+
+tsbuilder <-> tssched
+---------------------
+
+-> REGISTER
+     hostname, pid
+<- OK
+
+-> MEMORY_AVAILABLE
+     size
+<- OK
+
+<- NEW_TIMESLICE
+     serialized descriptor
+-> OK
+
+-> RELEASE_TIMESLICE / FAILED_TIMESLICE(?)
+     timeslice id
+     success state
+<- OK
+
+-> UNREGISTER
+<- OK
+
+
+--------------------------------------
+
+support for partitions!
+
+
+
+stsender implementation
+-----------------------
+
+send REGISTER to tssched
+connect to subtimeslice item distributor (tsc_server)
+wait for message on either interface:
+  tsc_server:
+    WORK_iTEM -> 
+
+... maybe integrate? seems awfully redundant otherwise...

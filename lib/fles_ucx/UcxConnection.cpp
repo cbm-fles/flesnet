@@ -7,6 +7,8 @@
 #include <netdb.h>
 #include <string>
 #include <sys/socket.h>
+#include <ucp/api/ucp.h>
+#include <ucs/type/status.h>
 #include <unistd.h>
 
 // Struct to hold data for callbacks
@@ -16,15 +18,12 @@ struct CallbackData {
   size_t length;
 };
 
-UcxConnection::UcxConnection(UcxContext& context,
-                             uint_fast16_t connection_index,
-                             uint_fast16_t remote_connection_index)
-    : context_(context), index_(connection_index),
-      remote_index_(remote_connection_index) {}
+UcxConnection::UcxConnection(UcpContext& context) : context_(context) {}
 
 UcxConnection::~UcxConnection() { disconnect(); }
 
 void UcxConnection::connect(const std::string& hostname, uint16_t port) {
+
   struct addrinfo hints {};
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
@@ -38,100 +37,42 @@ void UcxConnection::connect(const std::string& hostname, uint16_t port) {
                        std::string(gai_strerror(err)));
   }
 
-  // Create socket and connect
-  int sockfd = -1;
+  // Create endpoint to remote worker
+  ucs_status_t status;
   for (struct addrinfo* rp = result; rp != nullptr; rp = rp->ai_next) {
-    sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-    if (sockfd == -1) {
-      continue;
-    }
+    ucp_ep_params_t ep_params{};
+    ep_params.flags = UCP_EP_PARAMS_FLAGS_CLIENT_SERVER;
+    ep_params.field_mask =
+        UCP_EP_PARAM_FIELD_SOCK_ADDR | UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE |
+        UCP_EP_PARAM_FIELD_ERR_HANDLER | UCP_EP_PARAM_FIELD_FLAGS;
+    ep_params.sockaddr.addr = rp->ai_addr;
+    ep_params.sockaddr.addrlen = rp->ai_addrlen;
+    ep_params.err_mode = UCP_ERR_HANDLING_MODE_PEER;
+    ep_params.err_handler.cb = err_handler_cb;
+    ep_params.err_handler.arg = this; // Pass this instance to the callback
 
-    if (::connect(sockfd, rp->ai_addr, rp->ai_addrlen) != -1) {
-      break;
+    status = ucp_ep_create(context_.worker(), &ep_params, &ep_);
+    if (status != UCS_OK) {
+      L_(error) << "(Loop) Failed to create UCX endpoint: "
+                << ucs_status_string(status);
+    } else {
+      L_(debug) << "(Loop) UCX endpoint created successfully";
+      break; // Exit loop on success
     }
-
-    close(sockfd);
-    sockfd = -1;
   }
-
   freeaddrinfo(result);
 
-  if (sockfd == -1) {
-    throw UcxException("Failed to connect to server");
-  }
-
-  // Exchange connection information
-  ucp_address_t* local_addr;
-  size_t local_addr_len;
-  ucs_status_t status =
-      ucp_worker_get_address(context_.worker(), &local_addr, &local_addr_len);
   if (status != UCS_OK) {
-    close(sockfd);
-    throw UcxException("Failed to get worker address");
+    L_(error) << "Failed to create UCX endpoint: " << ucs_status_string(status);
+    return;
   }
-
-  // Send local address length and connection ID
-  UcxConnectionInfo local_info{};
-  local_info.address = local_addr;
-  local_info.address_length = local_addr_len;
-  local_info.connection_id = index_;
-
-  ssize_t sent = send(sockfd, &local_info, sizeof(local_info), 0);
-  if (sent != sizeof(local_info)) {
-    ucp_worker_release_address(context_.worker(), local_addr);
-    close(sockfd);
-    throw UcxException("Failed to send connection info");
-  }
-
-  // Send address buffer
-  sent = send(sockfd, local_addr, local_addr_len, 0);
-  if (sent != static_cast<ssize_t>(local_addr_len)) {
-    ucp_worker_release_address(context_.worker(), local_addr);
-    close(sockfd);
-    throw UcxException("Failed to send address");
-  }
-
-  ucp_worker_release_address(context_.worker(), local_addr);
-
-  // Receive remote address info
-  UcxConnectionInfo remote_info{};
-  ssize_t received = recv(sockfd, &remote_info, sizeof(remote_info), 0);
-  if (received != sizeof(remote_info)) {
-    close(sockfd);
-    throw UcxException("Failed to receive remote connection info");
-  }
-
-  // Allocate buffer for remote address
-  std::vector<uint8_t> remote_addr_buf(remote_info.address_length);
-
-  // Receive remote address
-  received =
-      recv(sockfd, remote_addr_buf.data(), remote_info.address_length, 0);
-  if (received != static_cast<ssize_t>(remote_info.address_length)) {
-    close(sockfd);
-    throw UcxException("Failed to receive remote address");
-  }
-
-  close(sockfd);
-
-  // Create endpoint to remote worker
-  ucp_ep_params_t ep_params;
-  memset(&ep_params, 0, sizeof(ep_params));
-
-  ep_params.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS;
-  ep_params.address = reinterpret_cast<ucp_address_t*>(remote_addr_buf.data());
-
-  status = ucp_ep_create(context_.worker(), &ep_params, &ep_);
-  if (status != UCS_OK) {
-    throw UcxException("Failed to create endpoint");
-  }
-
   connected_ = true;
-  L_(debug) << "[" << index_ << "] Connected to remote endpoint "
-            << remote_info.connection_id;
+  L_(info) << "Connected to remote endpoint" << std::endl;
 }
 
 void UcxConnection::disconnect() {
+  L_(debug) << "Disconnecting from remote endpoint";
+
   if (ep_ == nullptr || disconnecting_) {
     return;
   }
@@ -139,7 +80,9 @@ void UcxConnection::disconnect() {
   disconnecting_ = true;
 
   // Request endpoint close
-  void* request = ucp_ep_close_nb(ep_, UCP_EP_CLOSE_MODE_FLUSH);
+  L_(debug) << "Requesting endpoint close";
+  ucp_request_param_t param{};
+  ucs_status_ptr_t request = ucp_ep_close_nbx(ep_, &param);
 
   if (request != nullptr && UCS_PTR_IS_PTR(request)) {
     ucs_status_t status;
@@ -155,201 +98,51 @@ void UcxConnection::disconnect() {
   connected_ = false;
   disconnecting_ = false;
 
-  L_(debug) << "[" << index_ << "] Disconnected from remote endpoint";
+  L_(debug) << "Disconnected from remote endpoint";
 }
 
 void UcxConnection::progress() { context_.progress(); }
 
-void UcxConnection::flush() {
-  if (!connected_) {
-    return;
-  }
+/// Send data with active message semantics
+void UcxConnection::send_am(const void* buffer, size_t length) {
+  ucp_request_param_t param{};
+  param.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS | UCP_OP_ATTR_FIELD_CALLBACK |
+                       UCP_OP_ATTR_FIELD_USER_DATA;
+  param.flags = UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_RNDV;
+  param.cb.send = send_am_cb;
+  param.user_data = this;
 
-  void* request = ucp_ep_flush_nb(ep_, 0, nullptr);
-  if (request != nullptr && UCS_PTR_IS_PTR(request)) {
-    ucs_status_t status;
-    do {
-      context_.progress();
-      status = ucp_request_check_status(request);
-    } while (status == UCS_INPROGRESS);
-
-    ucp_request_free(request);
-  }
-}
-
-void UcxConnection::send_tagged(const void* buffer,
-                                size_t length,
-                                uint64_t tag,
-                                CompletionCallback callback) {
-  if (!connected_) {
-    if (callback) {
-      callback(UCS_ERR_NOT_CONNECTED);
-    }
-    return;
-  }
-
-  auto* cb_data = new CallbackData{callback, const_cast<void*>(buffer), length};
-
-  ucp_request_param_t param;
-  memset(&param, 0, sizeof(param)); // Zero initialize all fields first
-  param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
-  param.cb.send = send_callback; // Use the class method instead of lambda
-  param.user_data = cb_data;
-
-  void* request = ucp_tag_send_nbx(ep_, buffer, length, tag, &param);
+  uint64_t header = 5678; // Example header, adjust as needed
+  ucs_status_ptr_t request = ucp_am_send_nbx(ep_, 1234, &header, sizeof(header),
+                                             buffer, length, &param);
 
   if (UCS_PTR_IS_ERR(request)) {
-    ucs_status_t status = UCS_PTR_STATUS(request);
-    if (callback) {
-      callback(status);
-    }
-    delete cb_data;
-  } else if (request == nullptr) {
-    // Operation completed immediately
-    if (callback) {
-      callback(UCS_OK);
-    }
-    delete cb_data;
-  }
-  // For pending operations, the callback will be invoked later
-  // and send_callback will handle the cleanup
-}
-
-void UcxConnection::recv_tagged(void* buffer,
-                                size_t length,
-                                uint64_t tag,
-                                CompletionCallback callback) {
-  if (!connected_) {
-    if (callback) {
-      callback(UCS_ERR_NOT_CONNECTED);
-    }
+    L_(error) << "Failed to send active message: "
+              << ucs_status_string(UCS_PTR_STATUS(request));
     return;
-  }
-
-  auto* cb_data = new CallbackData{callback, buffer, length};
-
-  ucp_request_param_t param;
-  memset(&param, 0, sizeof(param)); // Zero initialize all fields first
-  param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
-  param.cb.recv = recv_callback; // Use the class method instead of lambda
-  param.user_data = cb_data;
-
-  void* request =
-      ucp_tag_recv_nbx(context_.worker(), buffer, length, tag, 0, &param);
-
-  if (UCS_PTR_IS_ERR(request)) {
-    ucs_status_t status = UCS_PTR_STATUS(request);
-    if (callback) {
-      callback(status);
-    }
-    delete cb_data;
-  } else if (request == nullptr) {
+  };
+  if (request == nullptr) {
     // Operation completed immediately
-    if (callback) {
-      callback(UCS_OK);
-    }
-    delete cb_data;
-  }
-  // For pending operations, the callback will be invoked later
-  // and recv_callback will handle the cleanup
-}
-
-void UcxConnection::rma_put(const void* buffer,
-                            size_t length,
-                            uint64_t remote_addr,
-                            ucp_rkey_h rkey,
-                            CompletionCallback callback) {
-  if (!connected_) {
-    if (callback) {
-      callback(UCS_ERR_NOT_CONNECTED);
-    }
-    return;
-  }
-
-  auto* cb_data = new CallbackData{callback, const_cast<void*>(buffer), length};
-
-  ucp_request_param_t param;
-  param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
-  param.cb.send = send_callback;
-  param.user_data = cb_data;
-
-  void* request = ucp_put_nbx(ep_, buffer, length, remote_addr, rkey, &param);
-
-  if (UCS_PTR_IS_ERR(request)) {
-    ucs_status_t status = UCS_PTR_STATUS(request);
-    if (callback) {
-      callback(status);
-    }
-    delete cb_data;
-  } else if (request == nullptr) {
-    // Operation completed immediately
-    if (callback) {
-      callback(UCS_OK);
-    }
-    delete cb_data;
+    L_(debug) << "Active message sent successfully";
   }
 }
 
-void UcxConnection::rma_get(void* buffer,
-                            size_t length,
-                            uint64_t remote_addr,
-                            ucp_rkey_h rkey,
-                            CompletionCallback callback) {
-  if (!connected_) {
-    if (callback) {
-      callback(UCS_ERR_NOT_CONNECTED);
-    }
-    return;
-  }
+void UcxConnection::err_handler_cb(void* arg,
+                                   ucp_ep_h ep,
+                                   ucs_status_t status) {
+  auto* connection = static_cast<UcxConnection*>(arg);
+  L_(error) << "Error on UCX endpoint: " << ucs_status_string(status);
 
-  auto* cb_data = new CallbackData{callback, buffer, length};
-
-  ucp_request_param_t param;
-  param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
-  param.cb.send =
-      send_callback; // Using send callback, as get uses same prototype
-  param.user_data = cb_data;
-
-  void* request = ucp_get_nbx(ep_, buffer, length, remote_addr, rkey, &param);
-
-  if (UCS_PTR_IS_ERR(request)) {
-    ucs_status_t status = UCS_PTR_STATUS(request);
-    if (callback) {
-      callback(status);
-    }
-    delete cb_data;
-  } else if (request == nullptr) {
-    // Operation completed immediately
-    if (callback) {
-      callback(UCS_OK);
-    }
-    delete cb_data;
+  // Handle disconnection
+  if (connection->ep_ == ep) {
+    connection->disconnect();
   }
 }
 
-void UcxConnection::send_callback(void* request,
-                                  ucs_status_t status,
-                                  void* user_data) {
-  auto* cb_data = static_cast<CallbackData*>(user_data);
-  if (cb_data->user_callback) {
-    cb_data->user_callback(status);
-  }
-  delete cb_data;
-  if (request != nullptr) {
-    ucp_request_free(request);
-  }
-}
-
-void UcxConnection::recv_callback(void* request,
-                                  ucs_status_t status,
-                                  const ucp_tag_recv_info_t* /* info */,
-                                  void* user_data) {
-  auto* cb_data = static_cast<CallbackData*>(user_data);
-  if (cb_data->user_callback) {
-    cb_data->user_callback(status);
-  }
-  delete cb_data;
-  if (request != nullptr) {
-    ucp_request_free(request);
-  }
+void UcxConnection::send_am_cb(void* request,
+                               ucs_status_t status,
+                               void* user_data) {
+  auto* connection = static_cast<UcxConnection*>(user_data);
+  L_(info) << "AM Send Callback: " << ucs_status_string(status);
+  ucp_request_free(request);
 }

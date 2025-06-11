@@ -1,73 +1,45 @@
-// Copyright 2023-2025 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2025 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
+#include "UcxConnection.hpp"
 #include "UcxContext.hpp"
-#include <atomic>
-#include <condition_variable>
 #include <functional>
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <vector>
 
-class UcxListener {
+/// UCP listener wrapper class
+class UcpListener {
 public:
-  using ConnectionCallback =
-      std::function<void(ucp_conn_request_h, const struct sockaddr*)>;
+  UcpListener(UcpContext& context,
+              uint16_t port,
+              void* recv_buffer_data,
+              size_t recv_buffer_size);
+  ~UcpListener();
 
-  UcxListener(UcxContext& context, uint16_t port, ConnectionCallback callback);
-  ~UcxListener();
+  UcpListener(const UcpListener&) = delete;
+  UcpListener& operator=(const UcpListener&) = delete;
 
-  UcxListener(const UcxListener&) = delete;
-  UcxListener& operator=(const UcxListener&) = delete;
+  void conn_callback(ucp_conn_request_h conn_request);
 
-  /// Accept a connection request
-  ucp_ep_h accept(ucp_conn_request_h conn_request);
-
-  /// Reject a connection request
-  void reject(ucp_conn_request_h conn_request);
-
-private:
-  UcxContext& context_;
+  // private:
+public:
+  UcpContext& context_;
   ucp_listener_h listener_ = nullptr;
-  ConnectionCallback callback_;
 
-  static void connection_handler(ucp_conn_request_h conn_request, void* arg);
-};
+  void* recv_buffer_data_;
+  size_t recv_buffer_size_;
 
-class UcxConnectionManager {
-public:
-  using NewConnectionCallback = std::function<void(ucp_ep_h, uint16_t)>;
-
-  UcxConnectionManager(UcxContext& context,
-                       uint16_t port,
-                       uint32_t expected_connections);
-  ~UcxConnectionManager();
-
-  UcxConnectionManager(const UcxConnectionManager&) = delete;
-  UcxConnectionManager& operator=(const UcxConnectionManager&) = delete;
-
-  /// Set callback for new connections
-  void set_connection_callback(NewConnectionCallback callback) {
-    connection_callback_ = callback;
-  }
-
-  /// Wait for all expected connections
-  bool wait_for_all_connections(int timeout_ms = -1);
-
-  /// Get number of active connections
-  [[nodiscard]] size_t connection_count() const { return connections_.size(); }
-
-private:
-  UcxContext& context_;
-  std::unique_ptr<UcxListener> listener_;
   std::vector<ucp_ep_h> connections_;
-  std::mutex mutex_;
-  std::condition_variable cv_;
-  std::atomic<uint32_t> connected_{0};
-  uint32_t expected_connections_;
-  NewConnectionCallback connection_callback_;
 
-  void on_connection(ucp_conn_request_h conn_request,
-                     const struct sockaddr* client_addr);
+  static void static_conn_callback(ucp_conn_request_h conn_request, void* arg);
+
+  static void err_handler_cb(void* arg, ucp_ep_h ep, ucs_status_t status);
+  static ucs_status_t am_recv_callback(void* arg,
+                                       const void* header,
+                                       size_t header_length,
+                                       void* data,
+                                       size_t length,
+                                       const ucp_am_recv_param_t* param);
+  static void am_recv_data_nbx_callback(void* request,
+                                        ucs_status_t status,
+                                        size_t length,
+                                        void* user_data);
 };
