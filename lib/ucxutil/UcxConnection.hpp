@@ -4,7 +4,6 @@
 #include "UcxContext.hpp"
 #include <atomic>
 #include <functional>
-#include <future>
 #include <string>
 
 class UcxConnection {
@@ -41,7 +40,6 @@ protected:
   ucp_ep_h ep_ = nullptr;
   std::atomic<bool> connected_{false};
   std::atomic<bool> disconnecting_{false};
-  std::promise<void> connect_promise_;
 
   static void err_handler_cb(void* arg, ucp_ep_h ep, ucs_status_t status);
   static void send_am_cb(void* request, ucs_status_t status, void* user_data);

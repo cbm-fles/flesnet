@@ -105,8 +105,10 @@ void UcpListener::static_conn_callback(ucp_conn_request_h conn_request,
   static_cast<UcpListener*>(arg)->conn_callback(conn_request);
 }
 
-void UcpListener::err_handler_cb(void* arg, ucp_ep_h ep, ucs_status_t status) {
-  auto* connection = static_cast<UcpListener*>(arg);
+void UcpListener::err_handler_cb(void* /* arg */,
+                                 ucp_ep_h /* ep */,
+                                 ucs_status_t status) {
+  // auto* connection = static_cast<UcpListener*>(arg);
   L_(error) << "Error on UCX endpoint: " << ucs_status_string(status);
 
   // Handle disconnection
