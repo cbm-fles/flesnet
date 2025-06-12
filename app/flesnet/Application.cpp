@@ -83,15 +83,6 @@ void Application::create_timeslice_buffers() {
               signal_status_, static_cast<void*>(zmq_context_),
               monitor_.get()));
       timeslice_builders_zeromq_.push_back(std::move(builder));
-    } else if (par_.transport() == Transport::UCX) {
-#ifdef HAVE_UCX
-      std::unique_ptr<TimesliceBuilderUcx> builder(new TimesliceBuilderUcx(
-          i, *tsb, par_.base_port() + i, input_size, par_.timeslice_size(),
-          signal_status_, false, monitor_.get()));
-      timeslice_builders_.push_back(std::move(builder));
-#else
-      L_(fatal) << "flesnet built without UCX support";
-#endif
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC
       std::unique_ptr<tl_libfabric::TimesliceBuilder> builder(
@@ -220,16 +211,6 @@ void Application::create_input_channel_senders() {
           par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
           signal_status_, static_cast<void*>(zmq_context_), monitor_.get()));
       component_senders_zeromq_.push_back(std::move(sender));
-    } else if (par_.transport() == Transport::UCX) {
-#ifdef HAVE_UCX
-      std::unique_ptr<InputChannelSenderUcx> sender(new InputChannelSenderUcx(
-          index, *(data_sources_.at(c).get()), output_hosts, output_services,
-          par_.timeslice_size(), overlap_size, par_.max_timeslice_number(),
-          monitor_.get()));
-      input_channel_senders_.push_back(std::move(sender));
-#else
-      L_(fatal) << "flesnet built without UCX support";
-#endif
     } else if (par_.transport() == Transport::LibFabric) {
 #ifdef HAVE_LIBFABRIC
       std::unique_ptr<tl_libfabric::InputChannelSender> sender(
@@ -275,7 +256,7 @@ void Application::run() {
 
 // Do not spawn additional thread if only one is needed, simplifies
 // debugging
-#if defined(HAVE_UCX) || defined(HAVE_RDMA) || defined(HAVE_LIBFABRIC)
+#if defined(HAVE_RDMA) || defined(HAVE_LIBFABRIC)
   if (timeslice_builders_.size() == 1 && input_channel_senders_.empty()) {
     L_(debug) << "using existing thread for single timeslice builder";
     (*timeslice_builders_[0])();
@@ -293,7 +274,7 @@ void Application::run() {
   std::vector<boost::unique_future<void>> futures;
   bool stop = false;
 
-#if defined(HAVE_UCX) || defined(HAVE_RDMA) || defined(HAVE_LIBFABRIC)
+#if defined(HAVE_RDMA) || defined(HAVE_LIBFABRIC)
   for (auto& buffer : timeslice_builders_) {
     boost::packaged_task<void> task(std::ref(*buffer));
     futures.push_back(task.get_future());

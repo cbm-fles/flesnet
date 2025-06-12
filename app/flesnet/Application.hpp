@@ -10,10 +10,6 @@
 #include "TimesliceBuffer.hpp"
 #include "TimesliceBuilderZeromq.hpp"
 #include "shm_device_client.hpp"
-#if defined(HAVE_UCX)
-#include "fles_ucx/InputChannelSenderUcx.hpp"
-#include "fles_ucx/TimesliceBuilderUcx.hpp"
-#endif
 #if defined(HAVE_RDMA)
 #include "fles_rdma/InputChannelSender.hpp"
 #include "fles_rdma/TimesliceBuilder.hpp"
@@ -70,8 +66,8 @@ private:
   // The application's output item distributor objects
   std::vector<std::unique_ptr<ItemDistributor>> item_distributors_;
 
-#if defined(HAVE_UCX) || defined(HAVE_RDMA) || defined(HAVE_LIBFABRIC)
-  /// The application's UCX, RDMA, or libfabric transport objects
+#if defined(HAVE_RDMA) || defined(HAVE_LIBFABRIC)
+  /// The application's RDMA or libfabric transport objects
   std::vector<std::unique_ptr<ConnectionGroupWorker>> timeslice_builders_;
   std::vector<std::unique_ptr<ConnectionGroupWorker>> input_channel_senders_;
 #endif

@@ -1,4 +1,4 @@
-// Copyright 2023-2025 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2025 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
 #include <stdexcept>

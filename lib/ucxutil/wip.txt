@@ -6,19 +6,19 @@ Three components:
 
 # Draft protocol
 
-stsender <-> tsbuilder
+stsender (connect) <-> tsbuilder (listen)
 ----------------------
 
 -> REGISTER
      hostname, pid
 <- OK
 
--> NEW_SUBTIMESLICE
-     serialized descriptor
-     rkey
+-> ANNOUNCE_SUBTIMESLICE
+     id, size
 <- OK
 
 <- RELEASE_SUBTIMESLICE
+     id
 -> OK
 
 -> UNREGISTER
@@ -50,6 +50,18 @@ tsbuilder <-> tssched
 
 -> UNREGISTER
 <- OK
+
+
+tsbuilder (connect) <-> stsender (listen)
+----------------------
+
+-> REQUEST_SUBTIMESLICE
+    timeslice id
+
+<- SEND_SUBTIMESLICE
+    return status
+    serialized descriptor, timeslice data (optional)
+
 
 
 --------------------------------------
