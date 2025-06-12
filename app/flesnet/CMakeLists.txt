@@ -28,11 +28,6 @@ if(APPLE)
   target_link_directories(flesnet PRIVATE ${ZSTD_LIB_DIR})
 endif()
 
-if (USE_UCX AND UCX_FOUND)
-  target_compile_definitions(flesnet PUBLIC HAVE_UCX)
-  target_link_libraries(flesnet fles_ucx)
-endif()
-
 if (USE_RDMA AND RDMA_FOUND)
   target_compile_definitions(flesnet PUBLIC HAVE_RDMA)
   target_link_libraries(flesnet fles_rdma)

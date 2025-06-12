@@ -27,7 +27,7 @@ struct InterfaceSpecification {
 };
 
 /// Transport implementation enum.
-enum class Transport { UCX, RDMA, LibFabric, ZeroMQ };
+enum class Transport { RDMA, LibFabric, ZeroMQ };
 
 std::istream& operator>>(std::istream& in, Transport& transport);
 std::ostream& operator<<(std::ostream& out, const Transport& transport);

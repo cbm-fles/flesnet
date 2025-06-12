@@ -20,7 +20,6 @@ public:
   void conn_callback(ucp_conn_request_h conn_request);
 
   // private:
-public:
   UcpContext& context_;
   ucp_listener_h listener_ = nullptr;
 
