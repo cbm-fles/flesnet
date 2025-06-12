@@ -1,9 +1,8 @@
 // Copyright 2025 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
-#include "UcxConnection.hpp"
 #include "UcxContext.hpp"
-#include <functional>
+#include <vector>
 
 /// UCP listener wrapper class
 class UcpListener {

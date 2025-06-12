@@ -2,21 +2,11 @@
 
 #include "UcxConnection.hpp"
 #include "log.hpp"
-#include <arpa/inet.h>
-#include <cstring>
 #include <netdb.h>
 #include <string>
 #include <sys/socket.h>
 #include <ucp/api/ucp.h>
 #include <ucs/type/status.h>
-#include <unistd.h>
-
-// Struct to hold data for callbacks
-struct CallbackData {
-  UcxConnection::CompletionCallback user_callback;
-  void* buffer;
-  size_t length;
-};
 
 UcxConnection::UcxConnection(UcpContext& context) : context_(context) {}
 
@@ -141,8 +131,8 @@ void UcxConnection::err_handler_cb(void* arg,
 
 void UcxConnection::send_am_cb(void* request,
                                ucs_status_t status,
-                               void* user_data) {
-  auto* connection = static_cast<UcxConnection*>(user_data);
+                               void* /* user_data */) {
+  // auto* connection = static_cast<UcxConnection*>(user_data);
   L_(info) << "AM Send Callback: " << ucs_status_string(status);
   ucp_request_free(request);
 }
