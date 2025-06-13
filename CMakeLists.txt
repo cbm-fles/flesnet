@@ -155,7 +155,7 @@ endif()
 find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS filesystem log program_options serialization system thread unit_test_framework iostreams)
 find_package(Threads REQUIRED)
 
-find_package(UCX CONFIG)
+find_package(UCX CONFIG 1.16.0)
 if (UCX_FOUND)
   message(STATUS "UCX found: ${UCX_VERSION}")
 endif()
