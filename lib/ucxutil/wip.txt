@@ -17,6 +17,9 @@ stsender (connect) <-> tsbuilder (listen)
      id, size
 <- OK
 
+-> RETRACT_SUBTIMESLICE
+     id, size
+
 <- RELEASE_SUBTIMESLICE
      id
 -> OK
@@ -28,7 +31,18 @@ stsender (connect) <-> tsbuilder (listen)
 Should we do heartbeating?)
 
 
-tsbuilder <-> tssched
+tsbuilder (connect) <-> stsender (listen)
+----------------------
+
+-> REQUEST_SUBTIMESLICE
+    timeslice id
+
+<- SEND_SUBTIMESLICE
+    return status
+    serialized descriptor, timeslice data (optional)
+
+
+tsbuilder <-> tssched (TO BE UPDATED!)
 ---------------------
 
 -> REGISTER
@@ -52,16 +66,6 @@ tsbuilder <-> tssched
 <- OK
 
 
-tsbuilder (connect) <-> stsender (listen)
-----------------------
-
--> REQUEST_SUBTIMESLICE
-    timeslice id
-
-<- SEND_SUBTIMESLICE
-    return status
-    serialized descriptor, timeslice data (optional)
-
 
 
 --------------------------------------
@@ -80,3 +84,17 @@ wait for message on either interface:
     WORK_iTEM -> 
 
 ... maybe integrate? seems awfully redundant otherwise...
+
+--------------------------------------
+
+# WORK PLAN
+
+- Merge dev_ucx into tsc_server branch
+- Update app/tsc_server:
+  - Make dependent on ucx
+  - Put app logic from Application into new class (stbuilder)
+  - Create new class (stsender) with its own thread
+  - Start with internal interface, remove shm_ipc interface
+  - Implement UCX connections (listener for tsbuilders, initiate connection to tssched)
+  - Create new st descriptor class for transmission
+  
