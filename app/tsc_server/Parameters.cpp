@@ -125,6 +125,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
   config_add("shm,o",
              po::value<std::string>(&_shm_id)->default_value("tsc_shm"),
              "name of the shared memory to be used");
+  config_add("listen-port,p",
+             po::value<uint16_t>(&_listen_port)->default_value(0),
+             "port to listen for tsbuilder connections");
+  config_add("tssched-address", po::value<std::string>(&_tssched_address),
+             "address of the tssched server to connect to");
 
   config_add("timeslice-duration",
              po::value<Nanoseconds>(&_timeslice_duration)

@@ -8,6 +8,7 @@
 #include "Parameters.hpp"
 #include "RingBuffer.hpp"
 #include "Scheduler.hpp"
+#include "StSender.hpp"
 #include "cri_device.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -49,6 +50,7 @@ private:
 
   std::unique_ptr<ItemProducer> item_producer_;
   std::unique_ptr<ItemDistributor> item_distributor_;
+  std::unique_ptr<StSender> st_sender_;
 
   RingBuffer<uint64_t, true> completions_{20};
   uint64_t acked_ = 0;

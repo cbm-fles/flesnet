@@ -56,6 +56,8 @@ public:
   [[nodiscard]] bool device_autodetect() const { return _device_autodetect; }
   [[nodiscard]] pci_addr device_address() const { return _device_address; }
   [[nodiscard]] std::string shm_id() const { return _shm_id; }
+  [[nodiscard]] uint16_t listen_port() const { return _listen_port; }
+  [[nodiscard]] std::string tssched_address() const { return _tssched_address; }
 
   // Global parameters
   [[nodiscard]] int64_t timeslice_duration_ns() const {
@@ -82,6 +84,8 @@ private:
   bool _device_autodetect = true;
   pci_addr _device_address;
   std::string _shm_id;
+  uint16_t _listen_port = 0;
+  std::string _tssched_address;
 
   // Global parameters
   Nanoseconds _timeslice_duration{100ms};

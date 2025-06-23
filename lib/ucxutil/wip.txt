@@ -6,7 +6,7 @@ Three components:
 
 # Draft protocol
 
-stsender (connect) <-> tsbuilder (listen)
+stsender (connect) <-> tssched (listen)
 ----------------------
 
 -> REGISTER
@@ -89,7 +89,7 @@ wait for message on either interface:
 
 # WORK PLAN
 
-- Merge dev_ucx into tsc_server branch
+DONE - Merge dev_ucx into tsc_server branch
 - Update app/tsc_server:
   - Make dependent on ucx
   - Put app logic from Application into new class (stbuilder)

@@ -120,11 +120,18 @@ Application::Application(Parameters const& par,
       std::make_unique<ItemProducer>(zmq_context_, producer_address);
   item_distributor_ = std::make_unique<ItemDistributor>(
       zmq_context_, producer_address, worker_address);
+
+  // Create StSender
+  st_sender_ = std::make_unique<StSender>(par.listen_port(),
+                                          par.tssched_address(), shm_.get());
 }
 
 void Application::run() {
-  std::thread distributor_thread(
-      std::ref(*item_distributor_)); // Start the item distributor thread
+  // Start the item distributor thread
+  std::thread distributor_thread(std::ref(*item_distributor_));
+
+  // Start the StSender thread
+  std::thread st_sender_thread(std::ref(*st_sender_));
 
   for (auto&& channel : channels_) {
     // ack far in the future to clear all elements
@@ -180,6 +187,10 @@ void Application::run() {
   // Stop the item distributor thread
   item_distributor_->stop();
   distributor_thread.join();
+
+  // Stop the StSender thread
+  st_sender_->stop();
+  st_sender_thread.join();
 }
 
 Application::~Application() {
@@ -194,7 +205,7 @@ Application::~Application() {
 
 void Application::handle_completions() {
   ItemID id;
-  while (item_producer_->try_receive_completion(&id)) {
+  while (st_sender_->try_receive_completion(&id)) {
     if (id == acked_) {
       // we reveived a completion for the oldest element in the buffer,
       // therefore we search for all consecutive elements ...
@@ -251,6 +262,7 @@ void Application::provide_subtimeslice(
   // Send the serialized data as a work item
   uint64_t ts_id = start_time / duration;
   item_producer_->send_work_item(ts_id, oss.str());
+  st_sender_->announce_subtimeslice(ts_id, st);
   L_(trace) << "Sent SubTimesliceDescriptor for timeslice " << ts_id << " with "
             << st.components.size()
             << " components (complete: " << !st.is_incomplete << ")";
