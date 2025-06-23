@@ -4,6 +4,7 @@
 #include "Scheduler.hpp"
 #include "SubTimesliceDescriptor.hpp"
 #include <atomic>
+#include <boost/archive/binary_oarchive.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
@@ -11,6 +12,7 @@
 #include <deque>
 #include <mutex>
 #include <queue>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <sys/eventfd.h>
@@ -70,6 +72,13 @@ struct StUcx {
     ar & duration_ns;
     ar & is_incomplete;
     ar & components;
+  }
+
+  [[nodiscard]] std::string to_string() const {
+    std::ostringstream oss;
+    boost::archive::binary_oarchive oa(oss);
+    oa << *this;
+    return oss.str();
   }
 };
 

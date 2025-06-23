@@ -4,7 +4,6 @@
 #include "log.hpp"
 #include "ucxutil.hpp"
 #include <arpa/inet.h>
-#include <boost/archive/text_oarchive.hpp>
 #include <cstddef>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -579,12 +578,7 @@ void StSender::handle_announcement(StID id,
     st.components.push_back({descriptor, content, c.is_missing_microslices});
   }
 
-  std::ostringstream oss;
-  {
-    boost::archive::text_oarchive oa(oss);
-    oa << st;
-  }
-  std::string st_str = oss.str();
+  std::string st_str = st.to_string();
 
   // Insert the serialized descriptor at the beginning
   iov_vector.insert(iov_vector.begin(), {st_str.data(), st_str.size()});
