@@ -162,7 +162,7 @@ private:
   void connect_to_scheduler_if_needed();
 
   // Queue processing
-  void notify_queue_update();
+  void notify_queue_update() const;
   std::size_t process_queues();
   void process_announcement(StID id, const fles::SubTimesliceDescriptor& st_d);
   void process_retraction(StID id);
@@ -199,34 +199,31 @@ private:
                                         size_t length,
                                         const ucp_am_recv_param_t* param);
 
-  // UCX Static callbacks
-  static void ucp_listener_conn_callback(ucp_conn_request_h conn_request,
-                                         void* arg);
-  static void ucp_err_handler_cb(void* arg, ucp_ep_h ep, ucs_status_t status);
+  // UCX static callbacks
+  static void on_new_connection(ucp_conn_request_h conn_request, void* arg);
+  static void on_endpoint_error(void* arg, ucp_ep_h ep, ucs_status_t status);
+  static void on_scheduler_error(void* arg, ucp_ep_h ep, ucs_status_t status);
+  static ucs_status_t on_builder_request(void* arg,
+                                         const void* header,
+                                         size_t header_length,
+                                         void* data,
+                                         size_t length,
+                                         const ucp_am_recv_param_t* param);
+  static ucs_status_t on_scheduler_release(void* arg,
+                                           const void* header,
+                                           size_t header_length,
+                                           void* data,
+                                           size_t length,
+                                           const ucp_am_recv_param_t* param);
   static void
-  scheduler_err_handler_cb(void* arg, ucp_ep_h ep, ucs_status_t status);
-  static ucs_status_t
-  ucp_am_recv_builder_request_st(void* arg,
-                                 const void* header,
-                                 size_t header_length,
-                                 void* data,
-                                 size_t length,
-                                 const ucp_am_recv_param_t* param);
-  static ucs_status_t
-  scheduler_am_recv_release_st(void* arg,
-                               const void* header,
-                               size_t header_length,
-                               void* data,
-                               size_t length,
-                               const ucp_am_recv_param_t* param);
-  static void
-  send_callback(void* request, ucs_status_t status, void* user_data);
-  void send_nbx_callback(void* request, ucs_status_t status);
-  static void
-  scheduler_send_callback(void* request, ucs_status_t status, void* user_data);
+  on_builder_send_complete(void* request, ucs_status_t status, void* user_data);
+  static void on_scheduler_send_complete(void* request,
+                                         ucs_status_t status,
+                                         void* user_data);
 
   // Helper methods
   void send_subtimeslice_to_builder(StID id, ucp_ep_h ep);
+  void handle_builder_send_complete(void* request, ucs_status_t status);
   void send_announcement_to_scheduler(StID id);
   void send_retraction_to_scheduler(StID id);
   StUcx create_subtimeslice_ucx(const fles::SubTimesliceDescriptor& st_d);

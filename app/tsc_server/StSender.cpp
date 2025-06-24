@@ -147,7 +147,7 @@ void StSender::create_listener() {
                       UCP_LISTENER_PARAM_FIELD_CONN_HANDLER;
   params.sockaddr.addr = reinterpret_cast<const struct sockaddr*>(&listen_addr);
   params.sockaddr.addrlen = sizeof(listen_addr);
-  params.conn_handler.cb = ucp_listener_conn_callback;
+  params.conn_handler.cb = on_new_connection;
   params.conn_handler.arg = this;
 
   ucs_status_t status = ucp_listener_create(worker_, &params, &listener_);
@@ -194,7 +194,7 @@ void StSender::connect_to_scheduler() {
       UCP_EP_PARAM_FIELD_SOCK_ADDR | UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE |
       UCP_EP_PARAM_FIELD_ERR_HANDLER | UCP_EP_PARAM_FIELD_FLAGS;
   ep_params.err_mode = UCP_ERR_HANDLING_MODE_PEER;
-  ep_params.err_handler.cb = scheduler_err_handler_cb;
+  ep_params.err_handler.cb = on_scheduler_error;
   ep_params.err_handler.arg = this;
 
   for (struct addrinfo* rp = result; rp != nullptr; rp = rp->ai_next) {
@@ -211,7 +211,7 @@ void StSender::connect_to_scheduler() {
   }
   freeaddrinfo(result);
 
-  if (!scheduler_ep_) {
+  if (scheduler_ep_ == nullptr) {
     return;
   }
 
@@ -228,7 +228,7 @@ void StSender::register_scheduler_handlers() {
                      UCP_AM_HANDLER_PARAM_FIELD_CB |
                      UCP_AM_HANDLER_PARAM_FIELD_ARG;
   param.id = AM_SCHED_RELEASE_ST;
-  param.cb = scheduler_am_recv_release_st;
+  param.cb = on_scheduler_release;
   param.arg = this;
 
   ucs_status_t status = ucp_worker_set_am_recv_handler(worker_, &param);
@@ -243,7 +243,7 @@ void StSender::register_scheduler_handlers() {
 
 void StSender::register_with_scheduler() {
   send_active_message(scheduler_ep_, AM_SENDER_REGISTER, sender_id_.data(),
-                      sender_id_.size(), nullptr, 0, scheduler_send_callback,
+                      sender_id_.size(), nullptr, 0, on_scheduler_send_complete,
                       0);
   scheduler_registered_ = true;
 }
@@ -288,7 +288,7 @@ void StSender::connect_to_scheduler_if_needed() {
 
 // Queue processing
 
-void StSender::notify_queue_update() {
+void StSender::notify_queue_update() const {
   uint64_t value = 1;
   write(queue_event_fd_, &value, sizeof(value));
 }
@@ -448,7 +448,7 @@ void StSender::handle_new_connection(ucp_conn_request_h conn_request) {
                          UCP_EP_PARAM_FIELD_ERR_HANDLER;
   ep_params.conn_request = conn_request;
   ep_params.err_mode = UCP_ERR_HANDLING_MODE_PEER;
-  ep_params.err_handler.cb = ucp_err_handler_cb;
+  ep_params.err_handler.cb = on_endpoint_error;
   ep_params.err_handler.arg = this;
 
   status = ucp_ep_create(worker_, &ep_params, &ep);
@@ -472,7 +472,7 @@ void StSender::register_builder_message_handlers(ucp_ep_h ep) {
                      UCP_AM_HANDLER_PARAM_FIELD_CB |
                      UCP_AM_HANDLER_PARAM_FIELD_ARG;
   param.id = AM_BUILDER_REQUEST_ST;
-  param.cb = ucp_am_recv_builder_request_st;
+  param.cb = on_builder_request;
   param.arg = this;
 
   ucs_status_t status = ucp_worker_set_am_recv_handler(worker_, &param);
@@ -569,70 +569,50 @@ StSender::handle_scheduler_release(const void* header,
   return UCS_OK;
 }
 
-// UCX Static callbacks
+// UCX static callbacks
 
-void StSender::ucp_listener_conn_callback(ucp_conn_request_h conn_request,
-                                          void* arg) {
+void StSender::on_new_connection(ucp_conn_request_h conn_request, void* arg) {
   static_cast<StSender*>(arg)->handle_new_connection(conn_request);
 }
 
-void StSender::ucp_err_handler_cb(void* arg, ucp_ep_h ep, ucs_status_t status) {
+void StSender::on_endpoint_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
   static_cast<StSender*>(arg)->handle_endpoint_error(ep, status);
 }
 
-void StSender::scheduler_err_handler_cb(void* arg,
-                                        ucp_ep_h ep,
-                                        ucs_status_t status) {
+void StSender::on_scheduler_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
   static_cast<StSender*>(arg)->handle_scheduler_error(ep, status);
 }
 
-ucs_status_t
-StSender::ucp_am_recv_builder_request_st(void* arg,
-                                         const void* header,
-                                         size_t header_length,
-                                         void* data,
-                                         size_t length,
-                                         const ucp_am_recv_param_t* param) {
+ucs_status_t StSender::on_builder_request(void* arg,
+                                          const void* header,
+                                          size_t header_length,
+                                          void* data,
+                                          size_t length,
+                                          const ucp_am_recv_param_t* param) {
   return static_cast<StSender*>(arg)->handle_builder_request(
       header, header_length, data, length, param);
 }
 
-ucs_status_t
-StSender::scheduler_am_recv_release_st(void* arg,
-                                       const void* header,
-                                       size_t header_length,
-                                       void* data,
-                                       size_t length,
-                                       const ucp_am_recv_param_t* param) {
+ucs_status_t StSender::on_scheduler_release(void* arg,
+                                            const void* header,
+                                            size_t header_length,
+                                            void* data,
+                                            size_t length,
+                                            const ucp_am_recv_param_t* param) {
   return static_cast<StSender*>(arg)->handle_scheduler_release(
       header, header_length, data, length, param);
 }
 
-void StSender::send_callback(void* request,
-                             ucs_status_t status,
-                             void* user_data) {
-  static_cast<StSender*>(user_data)->send_nbx_callback(request, status);
+void StSender::on_builder_send_complete(void* request,
+                                        ucs_status_t status,
+                                        void* user_data) {
+  static_cast<StSender*>(user_data)->handle_builder_send_complete(request,
+                                                                  status);
 }
 
-void StSender::send_nbx_callback(void* request, ucs_status_t status) {
-  if (UCS_PTR_IS_ERR(request)) {
-    L_(error) << "Send operation failed: " << ucs_status_string(status);
-  } else if (status != UCS_OK) {
-    L_(error) << "Send operation completed with status: "
-              << ucs_status_string(status);
-  } else {
-    L_(trace) << "Send operation completed successfully";
-  }
-
-  StID id = active_send_requests_[request];
-  complete_subtimeslice(id);
-  active_send_requests_.erase(request);
-  ucp_request_free(request);
-}
-
-void StSender::scheduler_send_callback(void* request,
-                                       ucs_status_t status,
-                                       void* /* user_data */) {
+void StSender::on_scheduler_send_complete(void* request,
+                                          ucs_status_t status,
+                                          void* /* user_data */) {
   if (UCS_PTR_IS_ERR(request)) {
     L_(error) << "Send operation failed: " << ucs_status_string(status);
   } else if (status != UCS_OK) {
@@ -656,7 +636,7 @@ void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
       UCP_OP_ATTR_FIELD_FLAGS | UCP_OP_ATTR_FIELD_CALLBACK |
       UCP_OP_ATTR_FIELD_USER_DATA | UCP_OP_ATTR_FIELD_DATATYPE;
   req_param.flags = UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_RNDV;
-  req_param.cb.send = send_callback;
+  req_param.cb.send = on_builder_send_complete;
   req_param.user_data = this;
   req_param.datatype = ucp_dt_make_iov();
 
@@ -704,6 +684,23 @@ void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
   announced_sts_.erase(it);
 }
 
+void StSender::handle_builder_send_complete(void* request,
+                                            ucs_status_t status) {
+  if (UCS_PTR_IS_ERR(request)) {
+    L_(error) << "Send operation failed: " << ucs_status_string(status);
+  } else if (status != UCS_OK) {
+    L_(error) << "Send operation completed with status: "
+              << ucs_status_string(status);
+  } else {
+    L_(trace) << "Send operation completed successfully";
+  }
+
+  StID id = active_send_requests_[request];
+  complete_subtimeslice(id);
+  active_send_requests_.erase(request);
+  ucp_request_free(request);
+}
+
 void StSender::send_announcement_to_scheduler(StID id) {
   auto it = announced_sts_.find(id);
   if (it == announced_sts_.end()) {
@@ -721,13 +718,13 @@ void StSender::send_announcement_to_scheduler(StID id) {
 
   send_active_message(scheduler_ep_, AM_SENDER_ANNOUNCE_ST, hdr.data(),
                       sizeof(hdr), iov_vector[0].buffer, iov_vector[0].length,
-                      scheduler_send_callback, UCP_AM_SEND_FLAG_COPY_HEADER);
+                      on_scheduler_send_complete, UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
 void StSender::send_retraction_to_scheduler(StID id) {
   std::array<uint64_t, 1> hdr{id};
   send_active_message(scheduler_ep_, AM_SENDER_RETRACT_ST, hdr.data(),
-                      sizeof(hdr), nullptr, 0, scheduler_send_callback,
+                      sizeof(hdr), nullptr, 0, on_scheduler_send_complete,
                       UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
