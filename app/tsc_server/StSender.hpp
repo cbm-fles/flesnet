@@ -150,8 +150,8 @@ private:
   bool scheduler_registered_ = false;
 
   // Network initialization/cleanup
-  void initialize_ucx();
-  void create_listener();
+  bool initialize_ucx();
+  bool create_listener();
   void cleanup();
 
   // Scheduler connection management

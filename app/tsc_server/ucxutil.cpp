@@ -2,21 +2,22 @@
 
 #include "ucxutil.hpp"
 #include "log.hpp"
-#include <stdexcept>
 #include <ucp/api/ucp.h>
 #include <ucs/type/status.h>
 
 namespace ucx::util {
-void ucx_init(ucp_context_h& context, ucp_worker_h& worker) {
+bool ucx_init(ucp_context_h& context, ucp_worker_h& worker) {
   if (context != nullptr || worker != nullptr) {
-    throw std::runtime_error("UCP context or worker already initialized");
+    L_(error) << "UCP context or worker already initialized";
+    return false;
   }
 
   // Initialize UCP context
   ucp_config_t* config = nullptr;
   ucs_status_t status = ucp_config_read(nullptr, nullptr, &config);
   if (status != UCS_OK) {
-    throw std::runtime_error("Failed to read UCP config");
+    L_(error) << "Failed to read UCP config";
+    return false;
   }
 
   ucp_params_t ucp_params = {};
@@ -26,9 +27,9 @@ void ucx_init(ucp_context_h& context, ucp_worker_h& worker) {
 
   status = ucp_init(&ucp_params, config, &context);
   ucp_config_release(config);
-
   if (status != UCS_OK) {
-    throw std::runtime_error("Failed to initialize UCP context");
+    L_(error) << "Failed to initialize UCP context";
+    return false;
   }
 
   // Create UCP worker
@@ -41,8 +42,11 @@ void ucx_init(ucp_context_h& context, ucp_worker_h& worker) {
   status = ucp_worker_create(context, &worker_params, &worker);
   if (status != UCS_OK) {
     ucp_cleanup(context);
-    throw std::runtime_error("Failed to create UCP worker");
+    L_(error) << "Failed to create UCP worker";
+    return false;
   }
+
+  return true;
 }
 
 void ucx_cleanup(ucp_context_h& context, ucp_worker_h& worker) {

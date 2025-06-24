@@ -89,9 +89,15 @@ bool StSender::try_receive_completion(StID* id) {
 // Main operation loop
 
 void StSender::operator()() {
-  initialize_ucx();
+  if (!initialize_ucx()) {
+    L_(error) << "Failed to initialize UCX";
+    return;
+  }
   connect_to_scheduler_if_needed();
-  create_listener();
+  if (!create_listener()) {
+    L_(error) << "Failed to create UCX listener";
+    return;
+  }
 
   std::array<epoll_event, 1> events{};
   while (!stopped_) {
@@ -113,28 +119,34 @@ void StSender::operator()() {
 
 // Network initialization/cleanup
 
-void StSender::initialize_ucx() {
+bool StSender::initialize_ucx() {
   if (context_ == nullptr) {
-    ucx::util::ucx_init(context_, worker_);
+    if (!ucx::util::ucx_init(context_, worker_)) {
+      L_(error) << "Failed to initialize UCP context and worker";
+      return false;
+    }
     ucs_status_t status = ucp_worker_get_efd(worker_, &ucx_event_fd_);
     if (status != UCS_OK) {
-      throw std::runtime_error("Failed to get UCP worker event fd: " +
-                               std::string(ucs_status_string(status)));
+      L_(error) << "Failed to get UCP worker event fd: " +
+                       std::string(ucs_status_string(status));
+      return false;
     }
-    L_(info) << "UCP context and worker initialized successfully";
+    L_(debug) << "UCP context and worker initialized successfully";
 
     epoll_event ev{};
     ev.events = EPOLLIN;
     ev.data.fd = ucx_event_fd_;
     if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, ucx_event_fd_, &ev) == -1) {
-      throw std::runtime_error("epoll_ctl failed for ucx event fd");
+      L_(error) << "epoll_ctl failed for ucx_event_fd";
+      return false;
     }
   }
+  return true;
 }
 
-void StSender::create_listener() {
+bool StSender::create_listener() {
   if (listener_ != nullptr) {
-    return;
+    return false;
   }
 
   struct sockaddr_in listen_addr {};
@@ -152,9 +164,12 @@ void StSender::create_listener() {
 
   ucs_status_t status = ucp_listener_create(worker_, &params, &listener_);
   if (status != UCS_OK) {
-    throw std::runtime_error("Failed to create UCP listener");
+    L_(error) << "UCP listener creation failed: " << ucs_status_string(status);
+    return false;
   }
   L_(info) << "Listening for connections on port " << listen_port_;
+
+  return true;
 }
 
 void StSender::cleanup() {
