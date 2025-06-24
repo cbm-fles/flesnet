@@ -204,14 +204,13 @@ Application::~Application() {
 }
 
 void Application::handle_completions() {
-  ItemID id;
-  while (st_sender_->try_receive_completion(&id)) {
-    if (id == acked_) {
+  while (auto id = st_sender_->try_receive_completion()) {
+    if (*id == acked_) {
       // we reveived a completion for the oldest element in the buffer,
       // therefore we search for all consecutive elements ...
       do {
         ++acked_;
-      } while (completions_.at(acked_) > id);
+      } while (completions_.at(acked_) > *id);
       // ... and acknowledge them
       for (auto&& channel : channels_) {
         channel->ack_before(acked_ * par_.timeslice_duration_ns());
@@ -219,7 +218,7 @@ void Application::handle_completions() {
     } else {
       // we received a completion for an element other then the oldest,
       // we store it for later
-      completions_.at(id) = id;
+      completions_.at(*id) = *id;
     }
   }
 }

@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <deque>
 #include <mutex>
+#include <optional>
 #include <queue>
 #include <sstream>
 #include <string>
@@ -99,7 +100,7 @@ public:
   // Public API methods
   void announce_subtimeslice(StID id, const fles::SubTimesliceDescriptor& st);
   void retract_subtimeslice(StID id);
-  bool try_receive_completion(StID* id);
+  std::optional<StID> try_receive_completion();
 
   // Main operation loop
   void operator()();

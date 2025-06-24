@@ -76,14 +76,14 @@ void StSender::retract_subtimeslice(StID id) {
   notify_queue_update();
 }
 
-bool StSender::try_receive_completion(StID* id) {
+std::optional<StSender::StID> StSender::try_receive_completion() {
   std::lock_guard<std::mutex> lock(completions_mutex_);
   if (completed_sts_.empty()) {
-    return false;
+    return std::nullopt;
   }
-  *id = completed_sts_.front();
+  StID id = completed_sts_.front();
   completed_sts_.pop();
-  return true;
+  return id;
 }
 
 // Main operation loop
