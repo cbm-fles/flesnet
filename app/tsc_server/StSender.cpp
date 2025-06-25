@@ -199,11 +199,11 @@ void StSender::connect_to_scheduler() {
     return;
   }
 
-  auto ep = ucx::util::connect(worker_, scheduler_address_, listen_port_,
+  auto ep = ucx::util::connect(worker_, scheduler_address_, scheduler_port_,
                                on_scheduler_error, this);
   if (!ep) {
     L_(error) << "Failed to connect to scheduler at " << scheduler_address_
-              << ":" << listen_port_;
+              << ":" << scheduler_port_;
     return;
   }
 

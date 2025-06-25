@@ -178,10 +178,11 @@ std::optional<ucp_ep_h> connect(ucp_worker_h& worker,
     L_(error) << "Failed to create UCX endpoint";
     return std::nullopt;
   }
-  L_(debug) << "Connected to scheduler at " << address << ":" << port;
+  L_(debug) << "Connecting to " << address << ":" << port;
   return ep;
 }
 // TODO: fix control flow!!!, return nullopt on error
+// TODO: fix output
 
 void wait_for_request_completion(ucp_worker_h& worker,
                                  ucs_status_ptr_t& request) {
