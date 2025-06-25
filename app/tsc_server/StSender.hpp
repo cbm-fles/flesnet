@@ -202,7 +202,6 @@ private:
 
   // UCX message handling
   bool arm_worker_and_wait(std::array<epoll_event, 1>& events);
-  void wait_for_request_completion(ucs_status_ptr_t& request);
   bool send_active_message(ucp_ep_h ep,
                            unsigned id,
                            const void* header,
