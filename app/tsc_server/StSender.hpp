@@ -123,7 +123,7 @@ private:
   uint16_t listen_port_;
   std::string scheduler_address_;
   uint16_t scheduler_port_ = 13373;
-  std::string sender_id_ = "StSender"; // TODO: set from hostname plus pid
+  std::string sender_id_;
   boost::interprocess::managed_shared_memory* shm_ = nullptr;
 
   std::atomic<bool> stopped_ = false;

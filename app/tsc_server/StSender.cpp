@@ -2,6 +2,7 @@
 
 #include "StSender.hpp"
 #include "SubTimesliceDescriptor.hpp"
+#include "System.hpp"
 #include "log.hpp"
 #include "ucxutil.hpp"
 #include <arpa/inet.h>
@@ -22,6 +23,9 @@ StSender::StSender(uint16_t listen_port,
                    boost::interprocess::managed_shared_memory* shm)
     : listen_port_(listen_port), scheduler_address_(scheduler_address),
       shm_(shm) {
+  sender_id_ = fles::system::current_hostname() + ":" +
+               std::to_string(fles::system::current_pid());
+
   // Initialize event handling
   queue_event_fd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
   if (queue_event_fd_ == -1) {
