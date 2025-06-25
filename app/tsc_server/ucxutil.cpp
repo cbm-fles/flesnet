@@ -152,7 +152,7 @@ std::optional<ucp_ep_h> connect(ucp_worker_h& worker,
     return std::nullopt;
   }
 
-  ucp_ep_h ep;
+  ucp_ep_h ep = nullptr;
   ucp_ep_params_t ep_params{};
   ep_params.flags = UCP_EP_PARAMS_FLAGS_CLIENT_SERVER;
   ep_params.field_mask =
@@ -168,21 +168,20 @@ std::optional<ucp_ep_h> connect(ucp_worker_h& worker,
 
     ucs_status_t status = ucp_ep_create(worker, &ep_params, &ep);
     if (status == UCS_OK) {
-      L_(debug) << "UCX endpoint created successfully";
+      L_(trace) << "UCX endpoint created successfully";
       break;
     }
-    L_(error) << "Failed to create UCX endpoint: " << ucs_status_string(status);
+    L_(trace) << "Failed to create UCX endpoint: " << ucs_status_string(status);
   }
   freeaddrinfo(result);
+
   if (ep == nullptr) {
-    L_(error) << "Failed to create UCX endpoint";
+    L_(error) << "Failed to connect to " << address << ":" << port;
     return std::nullopt;
   }
   L_(debug) << "Connecting to " << address << ":" << port;
   return ep;
 }
-// TODO: fix control flow!!!, return nullopt on error
-// TODO: fix output
 
 void wait_for_request_completion(ucp_worker_h& worker,
                                  ucs_status_ptr_t& request) {
