@@ -228,14 +228,13 @@ bool set_receive_handler(ucp_worker_h& worker,
 
 bool send_active_message_with_params(ucp_ep_h ep,
                                      unsigned id,
-                                     const void* header,
-                                     size_t header_length,
-                                     const void* buffer,
-                                     size_t count,
+                                     std::span<const std::byte> header,
+                                     std::span<const std::byte> buffer,
                                      ucp_request_param_t& param) {
 
   ucs_status_ptr_t request =
-      ucp_am_send_nbx(ep, id, header, header_length, buffer, count, &param);
+      ucp_am_send_nbx(ep, id, header.data(), header.size(), buffer.data(),
+                      buffer.size(), &param);
 
   if (UCS_PTR_IS_ERR(request)) {
     L_(error) << "Failed to send active message: "
@@ -256,10 +255,8 @@ bool send_active_message_with_params(ucp_ep_h ep,
 
 bool send_active_message(ucp_ep_h ep,
                          unsigned id,
-                         const void* header,
-                         size_t header_length,
-                         const void* buffer,
-                         size_t count,
+                         std::span<const std::byte> header,
+                         std::span<const std::byte> buffer,
                          ucp_send_nbx_callback_t callback,
                          void* user_data,
                          uint32_t flags) {
@@ -270,7 +267,6 @@ bool send_active_message(ucp_ep_h ep,
   param.cb.send = callback;
   param.user_data = user_data;
 
-  return send_active_message_with_params(ep, id, header, header_length, buffer,
-                                         count, param);
+  return send_active_message_with_params(ep, id, header, buffer, param);
 }
 } // namespace ucx::util

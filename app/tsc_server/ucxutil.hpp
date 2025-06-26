@@ -2,6 +2,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <ucp/api/ucp.h>
 
@@ -27,10 +28,8 @@ bool set_receive_handler(ucp_worker_h& worker,
                          void* arg);
 bool send_active_message(ucp_ep_h ep,
                          unsigned id,
-                         const void* header,
-                         size_t header_length,
-                         const void* buffer,
-                         size_t count,
+                         std::span<const std::byte> header,
+                         std::span<const std::byte> buffer,
                          ucp_send_nbx_callback_t callback,
                          void* user_data,
                          uint32_t flags);

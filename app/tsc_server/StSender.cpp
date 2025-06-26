@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include <optional>
 #include <sched.h>
+#include <span>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <ucp/api/ucp.h>
@@ -236,9 +237,10 @@ void StSender::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
 }
 
 bool StSender::register_with_scheduler() {
+  auto header = std::as_bytes(std::span(sender_id_));
   return ucx::util::send_active_message(
-      scheduler_ep_, AM_SENDER_REGISTER, sender_id_.data(), sender_id_.size(),
-      nullptr, 0, on_scheduler_register_complete, this, 0);
+      scheduler_ep_, AM_SENDER_REGISTER, header, {},
+      on_scheduler_register_complete, this, 0);
 }
 
 void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
@@ -289,17 +291,22 @@ void StSender::send_announcement_to_scheduler(StID id) {
   }
   std::array<uint64_t, 3> hdr{id, desc_size, content_size};
 
-  ucx::util::send_active_message(
-      scheduler_ep_, AM_SENDER_ANNOUNCE_ST, hdr.data(), sizeof(hdr),
-      iov_vector[0].buffer, iov_vector[0].length, on_scheduler_send_complete,
-      this, UCP_AM_SEND_FLAG_COPY_HEADER);
+  auto header = std::as_bytes(std::span(hdr));
+  auto buffer = std::span(static_cast<const std::byte*>(iov_vector[0].buffer),
+                          iov_vector[0].length);
+
+  ucx::util::send_active_message(scheduler_ep_, AM_SENDER_ANNOUNCE_ST, header,
+                                 buffer, on_scheduler_send_complete, this,
+                                 UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
 void StSender::send_retraction_to_scheduler(StID id) {
   std::array<uint64_t, 1> hdr{id};
-  ucx::util::send_active_message(
-      scheduler_ep_, AM_SENDER_RETRACT_ST, hdr.data(), sizeof(hdr), nullptr, 0,
-      on_scheduler_send_complete, this, UCP_AM_SEND_FLAG_COPY_HEADER);
+
+  auto header = std::as_bytes(std::span(hdr));
+  ucx::util::send_active_message(scheduler_ep_, AM_SENDER_RETRACT_ST, header,
+                                 {}, on_scheduler_send_complete, this,
+                                 UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
 void StSender::handle_scheduler_send_complete(void* request,
