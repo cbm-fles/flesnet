@@ -1,14 +1,12 @@
 // Copyright 2025 Dirk Hutter, Jan de Cuveland
 
 #include "Application.hpp"
-#include "SubTimesliceDescriptor.hpp"
+#include "SubTimeslice.hpp"
 #include "System.hpp"
 #include "device_operator.hpp"
 #include "log.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 #include <iostream>
 #include <numeric>
@@ -37,9 +35,6 @@ chrono_to_timestamp(std::chrono::time_point<std::chrono::high_resolution_clock,
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
-  boost::uuids::random_generator uuid_gen;
-  shm_uuid_ = uuid_gen();
-
   // start up monitoring
   if (!par.monitor_uri().empty()) {
     monitor_ = std::make_unique<cbm::Monitor>(par_.monitor_uri());
@@ -101,10 +96,6 @@ Application::Application(Parameters const& par,
   shm_ = std::make_unique<boost::interprocess::managed_shared_memory>(
       boost::interprocess::create_only, par.shm_id().c_str(), shm_size);
 
-  // Store a random UUID in the shared memory segment to identify it reliably
-  shm_->construct<boost::uuids::uuid>(boost::interprocess::unique_instance)(
-      shm_uuid_);
-
   // Create Channel objects
   for (cri::cri_channel* channel : cri_channels_) {
     channels_.push_back(std::make_unique<Channel>(
@@ -113,8 +104,8 @@ Application::Application(Parameters const& par,
   }
 
   // Create StSender
-  st_sender_ = std::make_unique<StSender>(par.listen_port(),
-                                          par.tssched_address(), shm_.get());
+  st_sender_ =
+      std::make_unique<StSender>(par.listen_port(), par.tssched_address());
 }
 
 void Application::run() {
@@ -206,9 +197,7 @@ void Application::provide_subtimeslice(
     uint64_t duration) {
 
   // Create a SubTimesliceDescriptor
-  fles::SubTimesliceDescriptor st;
-  st.shm_identifier = par_.shm_id();
-  st.shm_uuid = shm_uuid_;
+  SubTimesliceHandle st;
   st.start_time_ns = start_time;
   st.duration_ns = duration;
   st.is_incomplete = false;
@@ -228,17 +217,10 @@ void Application::provide_subtimeslice(
     }
   }
 
-  // Serialize the SubTimesliceDescriptor to a string
-  std::ostringstream oss;
-  {
-    boost::archive::binary_oarchive oa(oss);
-    oa << st;
-  }
-
-  // Send the serialized data as a work item
+  // Announce the subtimeslice
   uint64_t ts_id = start_time / duration;
   st_sender_->announce_subtimeslice(ts_id, st);
-  L_(trace) << "Sent SubTimesliceDescriptor for timeslice " << ts_id << " with "
+  L_(trace) << "Sent announcement for timeslice " << ts_id << " with "
             << st.components.size()
             << " components (complete: " << !st.is_incomplete << ")";
 

@@ -2,19 +2,13 @@
 #pragma once
 
 #include "Scheduler.hpp"
-#include "SubTimesliceDescriptor.hpp"
+#include "SubTimeslice.hpp"
 #include <array>
-#include <atomic>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/vector.hpp>
 #include <cstdint>
 #include <deque>
 #include <mutex>
 #include <optional>
 #include <queue>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <sys/epoll.h>
@@ -27,79 +21,18 @@
 #include <unordered_map>
 #include <vector>
 
-struct IovecUcx {
-  std::ptrdiff_t offset;
-  std::size_t size;
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int /* version */) {
-    ar & offset;
-    ar & size;
-  }
-};
-
-struct StComponentUcx {
-  IovecUcx descriptor{};
-  IovecUcx content{};
-  bool is_missing_microslices = false;
-
-  [[nodiscard]] uint64_t size() const { return descriptor.size + content.size; }
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int /* version */) {
-    ar & descriptor;
-    ar & content;
-    ar & is_missing_microslices;
-  }
-};
-
-struct StUcx {
-  uint64_t start_time_ns;
-  uint64_t duration_ns;
-  bool is_incomplete;
-  std::vector<StComponentUcx> components;
-
-  [[nodiscard]] uint64_t size() const {
-    uint64_t total_size = 0;
-    for (const auto& component : components) {
-      total_size += component.size();
-    }
-    return total_size;
-  }
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int /* version */) {
-    ar & start_time_ns;
-    ar & duration_ns;
-    ar & is_incomplete;
-    ar & components;
-  }
-
-  [[nodiscard]] std::string to_string() const {
-    std::ostringstream oss;
-    boost::archive::binary_oarchive oa(oss);
-    oa << *this;
-    return oss.str();
-  }
-};
-
 // Announce subtimeslices to tssched and send them to tsbuilders
 class StSender {
 public:
   using StID = std::size_t;
 
-  StSender(uint16_t listen_port,
-           std::string_view scheduler_address,
-           boost::interprocess::managed_shared_memory* shm);
+  StSender(uint16_t listen_port, std::string_view scheduler_address);
   ~StSender();
   StSender(const StSender&) = delete;
   StSender& operator=(const StSender&) = delete;
 
   // Public API methods
-  void announce_subtimeslice(StID id, const fles::SubTimesliceDescriptor& st);
+  void announce_subtimeslice(StID id, const SubTimesliceHandle& st);
   void retract_subtimeslice(StID id);
   std::optional<StID> try_receive_completion();
 
@@ -121,11 +54,9 @@ private:
   std::string scheduler_address_;
   uint16_t scheduler_port_ = 13373;
   std::string sender_id_;
-  boost::interprocess::managed_shared_memory* shm_ = nullptr;
 
   int queue_event_fd_ = -1;
-  std::deque<std::pair<StID, fles::SubTimesliceDescriptor>>
-      pending_announcements_;
+  std::deque<std::pair<StID, SubTimesliceHandle>> pending_announcements_;
   std::deque<std::size_t> pending_retractions_;
   std::mutex queue_mutex_;
   std::queue<std::size_t> completed_sts_;
@@ -191,14 +122,14 @@ private:
   // Queue processing
   void notify_queue_update() const;
   std::size_t process_queues();
-  void process_announcement(StID id, const fles::SubTimesliceDescriptor& st_d);
+  void process_announcement(StID id, const SubTimesliceHandle& st_d);
   void process_retraction(StID id);
   void complete_subtimeslice(std::size_t id);
   void flush_announced();
 
   // Helper methods
-  StUcx create_subtimeslice_ucx(const fles::SubTimesliceDescriptor& st_d);
-  std::vector<ucp_dt_iov> create_iov_vector(const StUcx& st,
+  StDescriptor create_subtimeslice_ucx(const SubTimesliceHandle& st_d);
+  std::vector<ucp_dt_iov> create_iov_vector(const SubTimesliceHandle& st,
                                             const std::string& serialized);
 
   // UCX event handling

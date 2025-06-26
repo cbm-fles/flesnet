@@ -157,30 +157,28 @@ Channel::State Channel::check_availability(uint64_t start_time,
   return Channel::State::Ok;
 }
 
-fles::SubTimesliceComponentDescriptor
-Channel::get_descriptor(uint64_t start_time, uint64_t duration) {
+StComponentHandle Channel::get_descriptor(uint64_t start_time,
+                                          uint64_t duration) {
   // find the component in the buffer
   auto [desc_begin_idx, desc_end_idx] = find_component(start_time, duration);
   assert(desc_begin_idx < desc_end_idx);
 
   // generate one or two i/o vectors for the descriptors
-  std::vector<fles::ShmIovec> descriptors;
+  std::vector<ucp_dt_iov> descriptors;
   auto* desc_begin = &m_desc_buffer->at(desc_begin_idx);
   auto* desc_end = &m_desc_buffer->at(desc_end_idx);
   if (desc_begin < desc_end) {
     // the descriptors are contiguous in memory, so we only create one iovec
-    descriptors.push_back(
-        {m_shm->get_handle_from_address(desc_begin),
-         (desc_end - desc_begin) * sizeof(fles::MicrosliceDescriptor)});
+    descriptors.push_back({desc_begin, (desc_end - desc_begin) *
+                                           sizeof(fles::MicrosliceDescriptor)});
   } else if (desc_begin > desc_end) {
     // the descriptors have wrapped around the end of the buffer
     auto* desc_buffer_begin = m_desc_buffer->ptr();
     auto* desc_buffer_end = m_desc_buffer->ptr() + m_desc_buffer->size();
+    descriptors.push_back({desc_begin, (desc_buffer_end - desc_begin) *
+                                           sizeof(fles::MicrosliceDescriptor)});
     descriptors.push_back(
-        {m_shm->get_handle_from_address(desc_begin),
-         (desc_buffer_end - desc_begin) * sizeof(fles::MicrosliceDescriptor)});
-    descriptors.push_back(
-        {m_shm->get_handle_from_address(desc_buffer_begin),
+        {desc_buffer_begin,
          (desc_end - desc_buffer_begin) * sizeof(fles::MicrosliceDescriptor)});
   }
 
@@ -189,21 +187,20 @@ Channel::get_descriptor(uint64_t start_time, uint64_t duration) {
   auto data_end_idx = (desc_end - 1)->offset + (desc_end - 1)->size;
 
   // generate one or two i/o vectors for the descriptors
-  std::vector<fles::ShmIovec> contents;
+  std::vector<ucp_dt_iov> contents;
   auto* data_begin = &m_data_buffer->at(data_begin_idx);
   auto* data_end = &m_data_buffer->at(data_end_idx);
   if (data_begin < data_end) {
     // the data blocks are contiguous in memory, so we only create one iovec
-    contents.push_back({m_shm->get_handle_from_address(data_begin),
-                        (data_end - data_begin) * sizeof(uint8_t)});
+    contents.push_back({data_begin, (data_end - data_begin) * sizeof(uint8_t)});
   } else if (data_begin > data_end) {
     // the data blocks have wrapped around the end of the buffer
     auto* data_buffer_begin = m_data_buffer->ptr();
     auto* data_buffer_end = m_data_buffer->ptr() + m_data_buffer->size();
-    contents.push_back({m_shm->get_handle_from_address(data_begin),
-                        (data_buffer_end - data_begin) * sizeof(uint8_t)});
-    contents.push_back({m_shm->get_handle_from_address(data_buffer_begin),
-                        (data_end - data_buffer_begin) * sizeof(uint8_t)});
+    contents.push_back(
+        {data_begin, (data_buffer_end - data_begin) * sizeof(uint8_t)});
+    contents.push_back(
+        {data_buffer_begin, (data_end - data_buffer_begin) * sizeof(uint8_t)});
   }
 
   // TODO: this is a placeholder for any aggregated information about the

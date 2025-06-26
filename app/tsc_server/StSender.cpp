@@ -1,7 +1,6 @@
 // Copyright 2025 Jan de Cuveland
 
 #include "StSender.hpp"
-#include "SubTimesliceDescriptor.hpp"
 #include "System.hpp"
 #include "log.hpp"
 #include "ucxutil.hpp"
@@ -19,11 +18,8 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
-StSender::StSender(uint16_t listen_port,
-                   std::string_view scheduler_address,
-                   boost::interprocess::managed_shared_memory* shm)
-    : listen_port_(listen_port), scheduler_address_(scheduler_address),
-      shm_(shm) {
+StSender::StSender(uint16_t listen_port, std::string_view scheduler_address)
+    : listen_port_(listen_port), scheduler_address_(scheduler_address) {
   sender_id_ = fles::system::current_hostname() + ":" +
                std::to_string(fles::system::current_pid());
 
@@ -62,8 +58,7 @@ StSender::~StSender() {
 
 // Public API methods
 
-void StSender::announce_subtimeslice(StID id,
-                                     const fles::SubTimesliceDescriptor& st) {
+void StSender::announce_subtimeslice(StID id, const SubTimesliceHandle& st) {
   {
     std::lock_guard<std::mutex> lock(queue_mutex_);
     pending_announcements_.emplace_back(id, st);
@@ -493,7 +488,7 @@ void StSender::notify_queue_update() const {
 }
 
 std::size_t StSender::process_queues() {
-  std::deque<std::pair<StID, fles::SubTimesliceDescriptor>> announcements;
+  std::deque<std::pair<StID, SubTimesliceHandle>> announcements;
   std::deque<std::size_t> retractions;
   {
     std::lock_guard<std::mutex> lock(queue_mutex_);
@@ -522,13 +517,12 @@ std::size_t StSender::process_queues() {
   return announcements.size() + retractions.size();
 }
 
-void StSender::process_announcement(StID id,
-                                    const fles::SubTimesliceDescriptor& st_d) {
+void StSender::process_announcement(StID id, const SubTimesliceHandle& st_d) {
   // Create and serialize subtimeslice
-  StUcx st = create_subtimeslice_ucx(st_d);
+  StDescriptor st = create_subtimeslice_ucx(st_d);
 
   std::string serialized = st.to_string();
-  std::vector<ucp_dt_iov> iov_vector = create_iov_vector(st, serialized);
+  std::vector<ucp_dt_iov> iov_vector = create_iov_vector(st_d, serialized);
 
   // Store for future use
   announced_sts_[id] = {std::move(serialized), std::move(iov_vector)};
@@ -568,9 +562,13 @@ void StSender::flush_announced() {
 
 // Helper methods
 
-StUcx StSender::create_subtimeslice_ucx(
-    const fles::SubTimesliceDescriptor& st_d) {
-  StUcx st;
+// Create subtimeslice structure for transmission to scheduler and builders.
+// It contains, for each component, the offset and size of the
+// descriptors and contents data blocks. The offsets are relative to the start
+// of the overall data block and assume that all blocks are contiguous in
+// memory.
+StDescriptor StSender::create_subtimeslice_ucx(const SubTimesliceHandle& st_d) {
+  StDescriptor st;
   st.start_time_ns = st_d.start_time_ns;
   st.duration_ns = st_d.duration_ns;
   st.is_incomplete = st_d.is_incomplete;
@@ -578,17 +576,21 @@ StUcx StSender::create_subtimeslice_ucx(
   std::ptrdiff_t offset = 0;
   for (const auto& c : st_d.components) {
     std::size_t descriptors_size = 0;
+    // Simply add all sizes as the blocks will be contiguous in memory after
+    // transferring to the builder
     for (auto descriptor : c.descriptors) {
-      descriptors_size += descriptor.size;
+      descriptors_size += descriptor.length;
     }
-    const IovecUcx descriptor = {offset, descriptors_size};
+    const DataDescriptor descriptor = {offset, descriptors_size};
     offset += descriptors_size;
 
     std::size_t content_size = 0;
     for (auto content : c.contents) {
-      content_size += content.size;
+      // Simply add all sizes as the blocks will be contiguous in memory after
+      // transferring to the builder
+      content_size += content.length;
     }
-    const IovecUcx content = {offset, content_size};
+    const DataDescriptor content = {offset, content_size};
     offset += content_size;
 
     st.components.push_back({descriptor, content, c.is_missing_microslices});
@@ -597,9 +599,12 @@ StUcx StSender::create_subtimeslice_ucx(
   return st;
 }
 
+// Create a vector of ucp_dt_iov structures for use with UCX send operations.
+// The first element in the vector is the serialized descriptor string, followed
+// by the descriptors and contents of each component in the shared memory.
 std::vector<ucp_dt_iov>
-StSender::create_iov_vector(const StUcx& st, const std::string& serialized) {
-
+StSender::create_iov_vector(const SubTimesliceHandle& st_d,
+                            const std::string& serialized) {
   std::vector<ucp_dt_iov> iov_vector;
 
   // Add serialized descriptor at the beginning
@@ -608,14 +613,13 @@ StSender::create_iov_vector(const StUcx& st, const std::string& serialized) {
   iov_vector.push_back({buffer, length});
 
   // Add component data from shared memory
-  for (const auto& c : st.components) {
-    // Add descriptors
-    void* desc_ptr = shm_->get_address_from_handle(c.descriptor.offset);
-    iov_vector.push_back({desc_ptr, c.descriptor.size});
-
-    // Add content
-    void* content_ptr = shm_->get_address_from_handle(c.content.offset);
-    iov_vector.push_back({content_ptr, c.content.size});
+  for (const auto& c : st_d.components) {
+    for (const auto& iov : c.descriptors) {
+      iov_vector.push_back(iov);
+    }
+    for (const auto& iov : c.contents) {
+      iov_vector.push_back(iov);
+    }
   }
 
   return iov_vector;

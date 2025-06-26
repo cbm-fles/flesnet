@@ -3,7 +3,7 @@
 
 #include "MicrosliceDescriptor.hpp"
 #include "RingBufferView.hpp"
-#include "SubTimesliceDescriptor.hpp"
+#include "SubTimeslice.hpp"
 #include "cri_channel.hpp"
 #include "dma_channel.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -32,8 +32,7 @@ public:
 
   State check_availability(uint64_t start_time, uint64_t duration);
 
-  fles::SubTimesliceComponentDescriptor get_descriptor(uint64_t start_time,
-                                                       uint64_t duration);
+  StComponentHandle get_descriptor(uint64_t start_time, uint64_t duration);
 
   struct Monitoring {
     float desc_buffer_utilization{};
