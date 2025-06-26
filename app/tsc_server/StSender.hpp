@@ -24,7 +24,7 @@
 // Announce subtimeslices to tssched and send them to tsbuilders
 class StSender {
 public:
-  using StID = std::size_t;
+  using StID = uint64_t;
 
   StSender(uint16_t listen_port, std::string_view scheduler_address);
   ~StSender();

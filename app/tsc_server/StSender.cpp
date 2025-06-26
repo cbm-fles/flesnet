@@ -474,7 +474,13 @@ void StSender::handle_builder_send_complete(void* request,
     L_(trace) << "Send operation completed successfully";
   }
 
-  StID id = active_send_requests_[request];
+  auto it = active_send_requests_.find(request);
+  if (it == active_send_requests_.end()) {
+    L_(error) << "Received completion for unknown send request";
+    ucp_request_free(request);
+    return;
+  }
+  StID id = it->second;
   complete_subtimeslice(id);
   active_send_requests_.erase(request);
   ucp_request_free(request);
