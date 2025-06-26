@@ -519,7 +519,7 @@ std::size_t StSender::process_queues() {
 
 void StSender::process_announcement(StID id, const SubTimesliceHandle& st_d) {
   // Create and serialize subtimeslice
-  StDescriptor st = create_subtimeslice_ucx(st_d);
+  StDescriptor st = create_subtimeslice_handle(st_d);
 
   std::string serialized = st.to_string();
   std::vector<ucp_dt_iov> iov_vector = create_iov_vector(st_d, serialized);
@@ -567,11 +567,12 @@ void StSender::flush_announced() {
 // descriptors and contents data blocks. The offsets are relative to the start
 // of the overall data block and assume that all blocks are contiguous in
 // memory.
-StDescriptor StSender::create_subtimeslice_ucx(const SubTimesliceHandle& st_d) {
+StDescriptor
+StSender::create_subtimeslice_handle(const SubTimesliceHandle& st_d) {
   StDescriptor st;
   st.start_time_ns = st_d.start_time_ns;
   st.duration_ns = st_d.duration_ns;
-  st.is_incomplete = st_d.is_incomplete;
+  st.flags = st_d.flags;
 
   std::ptrdiff_t offset = 0;
   for (const auto& c : st_d.components) {
@@ -593,7 +594,7 @@ StDescriptor StSender::create_subtimeslice_ucx(const SubTimesliceHandle& st_d) {
     const DataDescriptor content = {offset, content_size};
     offset += content_size;
 
-    st.components.push_back({descriptor, content, c.is_missing_microslices});
+    st.components.push_back({descriptor, content, c.flags});
   }
 
   return st;

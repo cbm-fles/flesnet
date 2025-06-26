@@ -205,17 +205,17 @@ StComponentHandle Channel::get_descriptor(uint64_t start_time,
 
   // TODO: this is a placeholder for any aggregated information about the
   // microslices in the component
-  bool is_missing_microslices = false;
+  uint32_t flags = 0;
   for (auto it = m_desc_buffer->get_iter(desc_begin_idx);
        it < m_desc_buffer->get_iter(desc_end_idx); ++it) {
     if ((it->flags &
          static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) != 0) {
-      is_missing_microslices = true;
+      flags |= static_cast<uint32_t>(StComponentFlag::OverflowFlim);
       break;
     }
   }
 
-  return {descriptors, contents, is_missing_microslices};
+  return {descriptors, contents, flags};
 }
 
 // Returns the component's microslice descriptor indexes in the range

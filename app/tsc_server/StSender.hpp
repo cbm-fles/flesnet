@@ -128,7 +128,7 @@ private:
   void flush_announced();
 
   // Helper methods
-  StDescriptor create_subtimeslice_ucx(const SubTimesliceHandle& st_d);
+  StDescriptor create_subtimeslice_handle(const SubTimesliceHandle& st_d);
   std::vector<ucp_dt_iov> create_iov_vector(const SubTimesliceHandle& st,
                                             const std::string& serialized);
 
