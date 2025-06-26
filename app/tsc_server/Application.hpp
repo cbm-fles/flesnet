@@ -13,7 +13,6 @@
 #include <csignal>
 #include <memory>
 #include <vector>
-#include <zmq.hpp>
 
 /// %Application base class.
 class Application {
@@ -35,9 +34,6 @@ private:
 
   Parameters const& par_;
   volatile std::sig_atomic_t* signal_status_;
-
-  /// The application's ZeroMQ context
-  zmq::context_t zmq_context_{1};
 
   boost::uuids::uuid shm_uuid_{}; ///< shared memory UUID
 
