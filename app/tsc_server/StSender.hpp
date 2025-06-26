@@ -20,6 +20,7 @@
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/types.h>
+#include <thread>
 #include <ucp/api/ucp.h>
 #include <ucp/api/ucp_def.h>
 #include <unistd.h>
@@ -102,10 +103,6 @@ public:
   void retract_subtimeslice(StID id);
   std::optional<StID> try_receive_completion();
 
-  // Main operation loop
-  void operator()();
-  void stop() { stopped_ = true; }
-
 private:
   // stsender (connect) -> tssched (listen)
   static constexpr unsigned int AM_SENDER_REGISTER = 20;
@@ -126,7 +123,6 @@ private:
   std::string sender_id_;
   boost::interprocess::managed_shared_memory* shm_ = nullptr;
 
-  std::atomic<bool> stopped_ = false;
   int queue_event_fd_ = -1;
   std::deque<std::pair<StID, fles::SubTimesliceDescriptor>>
       pending_announcements_;
@@ -149,6 +145,11 @@ private:
   ucp_ep_h scheduler_ep_ = nullptr;
   bool scheduler_connecting_ = false;
   bool scheduler_connected_ = false;
+
+  std::jthread worker_thread_;
+
+  // Main operation loop
+  void operator()(std::stop_token stop_token);
 
   // Network initialization/cleanup
   bool initialize_ucx();

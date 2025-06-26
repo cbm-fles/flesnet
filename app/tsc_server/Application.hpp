@@ -46,8 +46,6 @@ private:
   std::unique_ptr<boost::interprocess::managed_shared_memory> shm_;
   std::vector<std::unique_ptr<Channel>> channels_;
 
-  std::unique_ptr<StSender> st_sender_;
-
   RingBuffer<uint64_t, true> completions_{20};
   uint64_t acked_ = 0;
 
@@ -64,4 +62,6 @@ private:
   std::string hostname_;
 
   Scheduler scheduler_;
+
+  std::unique_ptr<StSender> st_sender_;
 };

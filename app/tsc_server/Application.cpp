@@ -118,9 +118,6 @@ Application::Application(Parameters const& par,
 }
 
 void Application::run() {
-  // Start the StSender thread
-  std::thread st_sender_thread(std::ref(*st_sender_));
-
   for (auto&& channel : channels_) {
     // ack far in the future to clear all elements
     channel->ack_before(2000000000000000000);
@@ -171,10 +168,6 @@ void Application::run() {
     ask_again.resize(channels_.size());
     std::iota(ask_again.begin(), ask_again.end(), 0);
   }
-
-  // Stop the StSender thread
-  st_sender_->stop();
-  st_sender_thread.join();
 }
 
 Application::~Application() {

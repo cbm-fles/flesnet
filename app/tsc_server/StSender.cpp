@@ -44,9 +44,14 @@ StSender::StSender(uint16_t listen_port,
   if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, queue_event_fd_, &ev) == -1) {
     throw std::runtime_error("epoll_ctl failed for message queue");
   }
+
+  // Start the worker thread
+  worker_thread_ = std::jthread([this](std::stop_token st) { (*this)(st); });
 }
 
 StSender::~StSender() {
+  worker_thread_.request_stop();
+
   if (epoll_fd_ != -1) {
     close(epoll_fd_);
   }
@@ -94,7 +99,7 @@ std::optional<StSender::StID> StSender::try_receive_completion() {
 
 // Main operation loop
 
-void StSender::operator()() {
+void StSender::operator()(std::stop_token stop_token) {
   if (!initialize_ucx()) {
     L_(error) << "Failed to initialize UCX";
     return;
@@ -113,7 +118,7 @@ void StSender::operator()() {
   }
 
   std::array<epoll_event, 1> events{};
-  while (!stopped_) {
+  while (!stop_token.stop_requested()) {
     if (ucp_worker_progress(worker_) != 0) {
       continue;
     }
@@ -193,8 +198,8 @@ void StSender::cleanup() {
 void StSender::connect_to_scheduler_if_needed() {
   constexpr auto interval = std::chrono::seconds(2);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-
-  if (!scheduler_connecting_ && !stopped_) {
+  if (!scheduler_connecting_ &&
+      !worker_thread_.get_stop_token().stop_requested()) {
     connect_to_scheduler();
   }
 
