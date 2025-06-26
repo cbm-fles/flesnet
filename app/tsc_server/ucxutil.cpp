@@ -3,7 +3,6 @@
 #include "ucxutil.hpp"
 #include "log.hpp"
 #include <netdb.h>
-#include <string_view>
 #include <ucp/api/ucp.h>
 #include <ucs/type/status.h>
 
@@ -183,6 +182,15 @@ std::optional<ucp_ep_h> connect(ucp_worker_h& worker,
   return ep;
 }
 
+void close_endpoint(ucp_worker_h& worker, ucp_ep_h ep, bool force) {
+  ucp_request_param_t param{};
+  param.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS;
+  param.flags = force ? UCP_EP_CLOSE_MODE_FORCE : UCP_EP_CLOSE_MODE_FLUSH;
+
+  ucs_status_ptr_t request = ucp_ep_close_nbx(ep, &param);
+  wait_for_request_completion(worker, request);
+}
+
 void wait_for_request_completion(ucp_worker_h& worker,
                                  ucs_status_ptr_t& request) {
   if (request != nullptr && UCS_PTR_IS_PTR(request)) {
@@ -196,13 +204,73 @@ void wait_for_request_completion(ucp_worker_h& worker,
   }
 }
 
-void close_endpoint(ucp_worker_h& worker, ucp_ep_h ep, bool force) {
-  ucp_request_param_t param{};
-  param.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS;
-  param.flags = force ? UCP_EP_CLOSE_MODE_FORCE : UCP_EP_CLOSE_MODE_FLUSH;
+bool set_receive_handler(ucp_worker_h& worker,
+                         unsigned int id,
+                         ucp_am_recv_callback_t callback,
+                         void* arg) {
+  ucp_am_handler_param_t param{};
+  param.field_mask = UCP_AM_HANDLER_PARAM_FIELD_ID |
+                     UCP_AM_HANDLER_PARAM_FIELD_CB |
+                     UCP_AM_HANDLER_PARAM_FIELD_ARG;
+  param.id = id;
+  param.cb = callback;
+  param.arg = arg;
 
-  ucs_status_ptr_t request = ucp_ep_close_nbx(ep, &param);
-  wait_for_request_completion(worker, request);
+  ucs_status_t status = ucp_worker_set_am_recv_handler(worker, &param);
+  if (status != UCS_OK) {
+    L_(error) << "Failed to set active message receive handler: "
+              << ucs_status_string(status);
+    return false;
+  }
+  L_(debug) << "Active message receive handler set for ID " << id;
+  return true;
 }
 
+bool send_active_message_with_params(ucp_ep_h ep,
+                                     unsigned id,
+                                     const void* header,
+                                     size_t header_length,
+                                     const void* buffer,
+                                     size_t count,
+                                     ucp_request_param_t& param) {
+
+  ucs_status_ptr_t request =
+      ucp_am_send_nbx(ep, id, header, header_length, buffer, count, &param);
+
+  if (UCS_PTR_IS_ERR(request)) {
+    L_(error) << "Failed to send active message: "
+              << ucs_status_string(UCS_PTR_STATUS(request));
+    return false;
+  }
+
+  if (request == nullptr) {
+    // Operation has completed successfully in-place
+    L_(trace) << "Active message sent successfully";
+    if (param.cb.send != nullptr) {
+      param.cb.send(nullptr, UCS_OK, param.user_data);
+    }
+  }
+
+  return true;
+}
+
+bool send_active_message(ucp_ep_h ep,
+                         unsigned id,
+                         const void* header,
+                         size_t header_length,
+                         const void* buffer,
+                         size_t count,
+                         ucp_send_nbx_callback_t callback,
+                         void* user_data,
+                         uint32_t flags) {
+  ucp_request_param_t param{};
+  param.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS | UCP_OP_ATTR_FIELD_CALLBACK |
+                       UCP_OP_ATTR_FIELD_USER_DATA;
+  param.flags = flags;
+  param.cb.send = callback;
+  param.user_data = user_data;
+
+  return send_active_message_with_params(ep, id, header, header_length, buffer,
+                                         count, param);
+}
 } // namespace ucx::util

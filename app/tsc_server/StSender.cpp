@@ -98,8 +98,10 @@ void StSender::operator()() {
     L_(error) << "Failed to initialize UCX";
     return;
   }
-  if (!set_receive_handler(AM_SCHED_RELEASE_ST, on_scheduler_release) ||
-      !set_receive_handler(AM_BUILDER_REQUEST_ST, on_builder_request)) {
+  if (!ucx::util::set_receive_handler(worker_, AM_SCHED_RELEASE_ST,
+                                      on_scheduler_release, this) ||
+      !ucx::util::set_receive_handler(worker_, AM_BUILDER_REQUEST_ST,
+                                      on_builder_request, this)) {
     L_(error) << "Failed to register receive handlers";
     return;
   }
@@ -234,9 +236,9 @@ void StSender::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
 }
 
 bool StSender::register_with_scheduler() {
-  return send_active_message(scheduler_ep_, AM_SENDER_REGISTER,
-                             sender_id_.data(), sender_id_.size(), nullptr, 0,
-                             on_scheduler_register_complete, 0);
+  return ucx::util::send_active_message(
+      scheduler_ep_, AM_SENDER_REGISTER, sender_id_.data(), sender_id_.size(),
+      nullptr, 0, on_scheduler_register_complete, this, 0);
 }
 
 void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
@@ -251,7 +253,9 @@ void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
     L_(info) << "Successfully registered with scheduler";
   }
 
-  ucp_request_free(request);
+  if (request != nullptr) {
+    ucp_request_free(request);
+  }
 };
 
 void StSender::disconnect_from_scheduler(bool force) {
@@ -285,16 +289,17 @@ void StSender::send_announcement_to_scheduler(StID id) {
   }
   std::array<uint64_t, 3> hdr{id, desc_size, content_size};
 
-  send_active_message(scheduler_ep_, AM_SENDER_ANNOUNCE_ST, hdr.data(),
-                      sizeof(hdr), iov_vector[0].buffer, iov_vector[0].length,
-                      on_scheduler_send_complete, UCP_AM_SEND_FLAG_COPY_HEADER);
+  ucx::util::send_active_message(
+      scheduler_ep_, AM_SENDER_ANNOUNCE_ST, hdr.data(), sizeof(hdr),
+      iov_vector[0].buffer, iov_vector[0].length, on_scheduler_send_complete,
+      this, UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
 void StSender::send_retraction_to_scheduler(StID id) {
   std::array<uint64_t, 1> hdr{id};
-  send_active_message(scheduler_ep_, AM_SENDER_RETRACT_ST, hdr.data(),
-                      sizeof(hdr), nullptr, 0, on_scheduler_send_complete,
-                      UCP_AM_SEND_FLAG_COPY_HEADER);
+  ucx::util::send_active_message(
+      scheduler_ep_, AM_SENDER_RETRACT_ST, hdr.data(), sizeof(hdr), nullptr, 0,
+      on_scheduler_send_complete, this, UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
 void StSender::handle_scheduler_send_complete(void* request,
@@ -604,7 +609,7 @@ StSender::create_iov_vector(const StUcx& st, const std::string& serialized) {
   return iov_vector;
 }
 
-// UCX message handling
+// UCX event handling
 
 bool StSender::arm_worker_and_wait(std::array<epoll_event, 1>& events) {
   ucs_status_t status = ucp_worker_arm(worker_);
@@ -628,62 +633,7 @@ bool StSender::arm_worker_and_wait(std::array<epoll_event, 1>& events) {
   return true;
 }
 
-bool StSender::send_active_message(ucp_ep_h ep,
-                                   unsigned id,
-                                   const void* header,
-                                   size_t header_length,
-                                   const void* buffer,
-                                   size_t count,
-                                   ucp_send_nbx_callback_t callback,
-                                   uint32_t flags) {
-  ucp_request_param_t param{};
-  param.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS | UCP_OP_ATTR_FIELD_CALLBACK |
-                       UCP_OP_ATTR_FIELD_USER_DATA;
-  param.flags = flags;
-  param.cb.send = callback;
-  param.user_data = this;
-
-  ucs_status_ptr_t request =
-      ucp_am_send_nbx(ep, id, header, header_length, buffer, count, &param);
-
-  if (UCS_PTR_IS_ERR(request)) {
-    L_(error) << "Failed to send active message: "
-              << ucs_status_string(UCS_PTR_STATUS(request));
-    return false;
-  }
-
-  if (request == nullptr) {
-    // Operation has completed successfully in-place
-    L_(trace) << "Active message sent successfully";
-    if (callback != nullptr) {
-      callback(nullptr, UCS_OK, this);
-    }
-  }
-
-  return true;
-}
-
-bool StSender::set_receive_handler(unsigned int id,
-                                   ucp_am_recv_callback_t callback) {
-  ucp_am_handler_param_t param{};
-  param.field_mask = UCP_AM_HANDLER_PARAM_FIELD_ID |
-                     UCP_AM_HANDLER_PARAM_FIELD_CB |
-                     UCP_AM_HANDLER_PARAM_FIELD_ARG;
-  param.id = id;
-  param.cb = callback;
-  param.arg = this;
-
-  ucs_status_t status = ucp_worker_set_am_recv_handler(worker_, &param);
-  if (status != UCS_OK) {
-    L_(error) << "Failed to set active message receive handler: "
-              << ucs_status_string(status);
-    return false;
-  }
-  L_(debug) << "Active message receive handler set for ID " << id;
-  return true;
-}
-
-// UCX static callbacks
+// UCX static callbacks (trampolines)
 
 void StSender::on_new_connection(ucp_conn_request_h conn_request, void* arg) {
   static_cast<StSender*>(arg)->handle_new_connection(conn_request);

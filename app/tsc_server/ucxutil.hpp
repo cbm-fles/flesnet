@@ -18,7 +18,20 @@ std::optional<ucp_ep_h> connect(ucp_worker_h& worker,
                                 uint16_t port,
                                 ucp_err_handler_cb_t on_endpoint_error,
                                 void* arg);
+void close_endpoint(ucp_worker_h& worker, ucp_ep_h ep, bool force);
 void wait_for_request_completion(ucp_worker_h& worker,
                                  ucs_status_ptr_t& request);
-void close_endpoint(ucp_worker_h& worker, ucp_ep_h ep, bool force);
+bool set_receive_handler(ucp_worker_h& worker,
+                         unsigned int id,
+                         ucp_am_recv_callback_t callback,
+                         void* arg);
+bool send_active_message(ucp_ep_h ep,
+                         unsigned id,
+                         const void* header,
+                         size_t header_length,
+                         const void* buffer,
+                         size_t count,
+                         ucp_send_nbx_callback_t callback,
+                         void* user_data,
+                         uint32_t flags);
 } // namespace ucx::util

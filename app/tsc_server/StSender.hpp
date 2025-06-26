@@ -200,19 +200,10 @@ private:
   std::vector<ucp_dt_iov> create_iov_vector(const StUcx& st,
                                             const std::string& serialized);
 
-  // UCX message handling
+  // UCX event handling
   bool arm_worker_and_wait(std::array<epoll_event, 1>& events);
-  bool send_active_message(ucp_ep_h ep,
-                           unsigned id,
-                           const void* header,
-                           size_t header_length,
-                           const void* buffer,
-                           size_t count,
-                           ucp_send_nbx_callback_t callback,
-                           uint32_t flags);
-  bool set_receive_handler(unsigned int id, ucp_am_recv_callback_t callback);
 
-  // UCX static callbacks
+  // UCX static callbacks (trampolines)
   static void on_new_connection(ucp_conn_request_h conn_request, void* arg);
   static void on_endpoint_error(void* arg, ucp_ep_h ep, ucs_status_t status);
   static void on_scheduler_error(void* arg, ucp_ep_h ep, ucs_status_t status);
