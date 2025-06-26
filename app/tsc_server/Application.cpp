@@ -112,24 +112,12 @@ Application::Application(Parameters const& par,
         par.overlap_before_ns(), par.overlap_after_ns()));
   }
 
-  // Create ItemProducer and ItemDistributor
-  const std::string producer_address = "inproc://" + par.shm_id();
-  const std::string worker_address = "ipc://@" + par.shm_id();
-
-  item_producer_ =
-      std::make_unique<ItemProducer>(zmq_context_, producer_address);
-  item_distributor_ = std::make_unique<ItemDistributor>(
-      zmq_context_, producer_address, worker_address);
-
   // Create StSender
   st_sender_ = std::make_unique<StSender>(par.listen_port(),
                                           par.tssched_address(), shm_.get());
 }
 
 void Application::run() {
-  // Start the item distributor thread
-  std::thread distributor_thread(std::ref(*item_distributor_));
-
   // Start the StSender thread
   std::thread st_sender_thread(std::ref(*st_sender_));
 
@@ -183,10 +171,6 @@ void Application::run() {
     ask_again.resize(channels_.size());
     std::iota(ask_again.begin(), ask_again.end(), 0);
   }
-
-  // Stop the item distributor thread
-  item_distributor_->stop();
-  distributor_thread.join();
 
   // Stop the StSender thread
   st_sender_->stop();
@@ -260,7 +244,6 @@ void Application::provide_subtimeslice(
 
   // Send the serialized data as a work item
   uint64_t ts_id = start_time / duration;
-  item_producer_->send_work_item(ts_id, oss.str());
   st_sender_->announce_subtimeslice(ts_id, st);
   L_(trace) << "Sent SubTimesliceDescriptor for timeslice " << ts_id << " with "
             << st.components.size()

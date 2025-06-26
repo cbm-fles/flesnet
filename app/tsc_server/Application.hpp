@@ -2,8 +2,6 @@
 #pragma once
 
 #include "Channel.hpp"
-#include "ItemDistributor.hpp"
-#include "ItemProducer.hpp"
 #include "Monitor.hpp"
 #include "Parameters.hpp"
 #include "RingBuffer.hpp"
@@ -48,8 +46,6 @@ private:
   std::unique_ptr<boost::interprocess::managed_shared_memory> shm_;
   std::vector<std::unique_ptr<Channel>> channels_;
 
-  std::unique_ptr<ItemProducer> item_producer_;
-  std::unique_ptr<ItemDistributor> item_distributor_;
   std::unique_ptr<StSender> st_sender_;
 
   RingBuffer<uint64_t, true> completions_{20};
