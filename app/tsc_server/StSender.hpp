@@ -48,6 +48,8 @@ private:
   // stsender (listen) -> tsbuilder (connect)
   static constexpr unsigned int AM_SENDER_SEND_ST = 50;
 
+  static constexpr int EPOLL_TIMEOUT_MS = 1000;
+
   Scheduler tasks_;
 
   uint16_t listen_port_;

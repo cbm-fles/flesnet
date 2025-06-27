@@ -645,8 +645,8 @@ bool StSender::arm_worker_and_wait(std::array<epoll_event, 1>& events) {
     return false;
   }
 
-  int nfds = epoll_wait(epoll_fd_, events.data(), events.size(),
-                        1000); // 1 second timeout
+  int nfds =
+      epoll_wait(epoll_fd_, events.data(), events.size(), EPOLL_TIMEOUT_MS);
   if (nfds == -1) {
     if (errno == EINTR) {
       return true;
