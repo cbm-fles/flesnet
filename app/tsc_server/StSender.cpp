@@ -84,11 +84,11 @@ void StSender::retract_subtimeslice(StID id) {
 
 std::optional<StSender::StID> StSender::try_receive_completion() {
   std::lock_guard<std::mutex> lock(completions_mutex_);
-  if (completed_sts_.empty()) {
+  if (completed_.empty()) {
     return std::nullopt;
   }
-  StID id = completed_sts_.front();
-  completed_sts_.pop();
+  StID id = completed_.front();
+  completed_.pop();
   return id;
 }
 
@@ -277,14 +277,14 @@ void StSender::disconnect_from_scheduler(bool force) {
 // Scheduler message handling
 
 void StSender::send_announcement_to_scheduler(StID id) {
-  auto it = announced_sts_.find(id);
-  if (it == announced_sts_.end()) {
+  auto it = announced_.find(id);
+  if (it == announced_.end()) {
     return;
   }
 
-  const auto& [st_str, iov_vector] = it->second;
+  const auto& [descriptor_bytes, iov_vector] = it->second;
   assert(iov_vector.size() > 0);
-  uint64_t desc_size = st_str.size();
+  uint64_t desc_size = descriptor_bytes.size();
   uint64_t content_size = 0;
   for (std::size_t i = 1; i < iov_vector.size(); ++i) {
     content_size += iov_vector[i].length;
@@ -341,10 +341,10 @@ StSender::handle_scheduler_release(const void* header,
   }
 
   auto id = *static_cast<const uint64_t*>(header);
-  auto it = announced_sts_.find(id);
-  if (it != announced_sts_.end()) {
+  auto it = announced_.find(id);
+  if (it != announced_.end()) {
     L_(debug) << "Removing released SubTimeslice with ID: " << id;
-    announced_sts_.erase(it);
+    announced_.erase(it);
     complete_subtimeslice(id);
   } else {
     L_(warning) << "Release for unknown SubTimeslice ID: " << id;
@@ -409,8 +409,8 @@ StSender::handle_builder_request(const void* header,
 }
 
 void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
-  auto it = announced_sts_.find(id);
-  if (it == announced_sts_.end()) {
+  auto it = announced_.find(id);
+  if (it == announced_.end()) {
     L_(warning) << "SubTimeslice with ID " << id << " not found";
     std::array<uint64_t, 3> hdr{id, 0, 0};
     auto header = std::as_bytes(std::span(hdr));
@@ -431,8 +431,8 @@ void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
   req_param.datatype = ucp_dt_make_iov();
 
   // Prepare header data
-  const auto& [st_bytes, iov_vector] = it->second;
-  uint64_t desc_size = st_bytes.size();
+  const auto& [descriptor_bytes, iov_vector] = it->second;
+  uint64_t desc_size = descriptor_bytes.size();
   uint64_t content_size = 0;
   for (std::size_t i = 1; i < iov_vector.size(); ++i) {
     content_size += iov_vector[i].length;
@@ -455,7 +455,7 @@ void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
     // Operation has completed successfully in-place
     L_(trace) << "Active message sent successfully";
     complete_subtimeslice(id);
-    announced_sts_.erase(it);
+    announced_.erase(it);
     return;
   }
 
@@ -482,10 +482,12 @@ void StSender::handle_builder_send_complete(void* request,
     StID id = it->second;
     active_send_requests_.erase(request);
     complete_subtimeslice(id);
-    announced_sts_.erase(id);
+    announced_.erase(id);
   }
 
-  ucp_request_free(request);
+  if (request != nullptr) {
+    ucp_request_free(request);
+  }
 }
 
 // Queue processing
@@ -497,7 +499,7 @@ void StSender::notify_queue_update() const {
 
 std::size_t StSender::process_queues() {
   std::deque<std::pair<StID, SubTimesliceHandle>> announcements;
-  std::deque<std::size_t> retractions;
+  std::deque<StID> retractions;
   {
     std::lock_guard<std::mutex> lock(queue_mutex_);
     if (pending_announcements_.empty() && pending_retractions_.empty()) {
@@ -509,7 +511,7 @@ std::size_t StSender::process_queues() {
 
   if (!scheduler_connected_) {
     L_(trace) << "Scheduler not registered, skipping announcements";
-    for (const auto& [id, st_d] : announcements) {
+    for (const auto& [id, sth] : announcements) {
       complete_subtimeslice(id);
     }
     return announcements.size();
@@ -518,36 +520,35 @@ std::size_t StSender::process_queues() {
   for (auto id : retractions) {
     process_retraction(id);
   }
-  for (const auto& [id, st_d] : announcements) {
-    process_announcement(id, st_d);
+  for (const auto& [id, sth] : announcements) {
+    process_announcement(id, sth);
   }
 
   return announcements.size() + retractions.size();
 }
 
-void StSender::process_announcement(StID id, const SubTimesliceHandle& st_d) {
+void StSender::process_announcement(StID id, const SubTimesliceHandle& sth) {
   // Create and serialize subtimeslice
-  StDescriptor st = create_subtimeslice_descriptor(st_d);
-  auto st_bytes = st.to_bytes();
+  StDescriptor descriptor = create_subtimeslice_descriptor(sth);
+  auto descriptor_bytes = descriptor.to_bytes();
 
-  std::vector<ucp_dt_iov> iov_vector = create_iov_vector(st_d, st_bytes);
+  std::vector<ucp_dt_iov> iov_vector = create_iov_vector(sth, descriptor_bytes);
 
   // Store for future use (and retention during send)
-  announced_sts_[id] = {std::move(st_bytes), std::move(iov_vector)};
+  announced_[id] = {std::move(descriptor_bytes), std::move(iov_vector)};
 
   // Ensure that the first iov component points to the string data
-  assert(announced_sts_[id].second.front().buffer ==
-         announced_sts_[id].first.data());
+  assert(announced_[id].second.front().buffer == announced_[id].first.data());
 
   // Send announcement to scheduler
   send_announcement_to_scheduler(id);
 }
 
 void StSender::process_retraction(StID id) {
-  auto it = announced_sts_.find(id);
-  if (it != announced_sts_.end()) {
+  auto it = announced_.find(id);
+  if (it != announced_.end()) {
     L_(debug) << "Retracting SubTimeslice with ID: " << id;
-    announced_sts_.erase(it);
+    announced_.erase(it);
     send_retraction_to_scheduler(id);
     complete_subtimeslice(id);
   } else {
@@ -557,15 +558,15 @@ void StSender::process_retraction(StID id) {
 
 void StSender::complete_subtimeslice(StID id) {
   std::lock_guard<std::mutex> lock(completions_mutex_);
-  completed_sts_.push(id);
+  completed_.push(id);
 }
 
 void StSender::flush_announced() {
-  for (const auto& [id, st] : announced_sts_) {
+  for (const auto& [id, st] : announced_) {
     L_(debug) << "Flushing announced SubTimeslice with ID: " << id;
     complete_subtimeslice(id);
   }
-  announced_sts_.clear();
+  announced_.clear();
 }
 
 // Helper methods
@@ -576,14 +577,14 @@ void StSender::flush_announced() {
 // of the overall data block and assume that all blocks are contiguous in
 // memory.
 StDescriptor
-StSender::create_subtimeslice_descriptor(const SubTimesliceHandle& st_d) {
-  StDescriptor st;
-  st.start_time_ns = st_d.start_time_ns;
-  st.duration_ns = st_d.duration_ns;
-  st.flags = st_d.flags;
+StSender::create_subtimeslice_descriptor(const SubTimesliceHandle& sth) {
+  StDescriptor d;
+  d.start_time_ns = sth.start_time_ns;
+  d.duration_ns = sth.duration_ns;
+  d.flags = sth.flags;
 
   std::ptrdiff_t offset = 0;
-  for (const auto& c : st_d.components) {
+  for (const auto& c : sth.components) {
     std::size_t descriptors_size = 0;
     // Simply add all sizes as the blocks will be contiguous in memory after
     // transferring to the builder
@@ -602,25 +603,25 @@ StSender::create_subtimeslice_descriptor(const SubTimesliceHandle& st_d) {
     const DataDescriptor content = {offset, content_size};
     offset += content_size;
 
-    st.components.push_back({descriptor, content, c.flags});
+    d.components.push_back({descriptor, content, c.flags});
   }
 
-  return st;
+  return d;
 }
 
 // Create a vector of ucp_dt_iov structures for use with UCX send operations.
 // The first element in the vector is the serialized descriptor string, followed
 // by the descriptors and contents of each component in the shared memory.
 std::vector<ucp_dt_iov>
-StSender::create_iov_vector(const SubTimesliceHandle& st_d,
-                            std::span<std::byte> descriptor) {
+StSender::create_iov_vector(const SubTimesliceHandle& sth,
+                            std::span<std::byte> descriptor_bytes) {
   std::vector<ucp_dt_iov> iov_vector;
 
   // Add serialized descriptor at the beginning
-  iov_vector.push_back({descriptor.data(), descriptor.size()});
+  iov_vector.push_back({descriptor_bytes.data(), descriptor_bytes.size()});
 
   // Add component data from shared memory
-  for (const auto& c : st_d.components) {
+  for (const auto& c : sth.components) {
     for (const auto& iov : c.descriptors) {
       iov_vector.push_back(iov);
     }

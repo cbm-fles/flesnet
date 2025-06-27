@@ -198,5 +198,3 @@ struct SubTimesliceHandle {
               << ", components=...)";
   }
 };
-
-#pragma pack()

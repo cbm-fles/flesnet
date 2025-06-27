@@ -32,7 +32,7 @@ public:
   StSender& operator=(const StSender&) = delete;
 
   // Public API methods
-  void announce_subtimeslice(StID id, const SubTimesliceHandle& st);
+  void announce_subtimeslice(StID id, const SubTimesliceHandle& sth);
   void retract_subtimeslice(StID id);
   std::optional<StID> try_receive_completion();
 
@@ -57,16 +57,16 @@ private:
 
   int queue_event_fd_ = -1;
   std::deque<std::pair<StID, SubTimesliceHandle>> pending_announcements_;
-  std::deque<std::size_t> pending_retractions_;
+  std::deque<StID> pending_retractions_;
   std::mutex queue_mutex_;
-  std::queue<std::size_t> completed_sts_;
+  std::queue<StID> completed_;
   std::mutex completions_mutex_;
   int ucx_event_fd_ = -1;
   int epoll_fd_ = -1;
 
   std::unordered_map<StID,
                      std::pair<std::vector<std::byte>, std::vector<ucp_dt_iov>>>
-      announced_sts_;
+      announced_;
   std::unordered_map<ucs_status_ptr_t, StID> active_send_requests_;
 
   ucp_context_h context_ = nullptr;
@@ -123,15 +123,17 @@ private:
   // Queue processing
   void notify_queue_update() const;
   std::size_t process_queues();
-  void process_announcement(StID id, const SubTimesliceHandle& st_d);
+  void process_announcement(StID id, const SubTimesliceHandle& sth);
   void process_retraction(StID id);
-  void complete_subtimeslice(std::size_t id);
+  void complete_subtimeslice(StID id);
   void flush_announced();
 
   // Helper methods
-  StDescriptor create_subtimeslice_descriptor(const SubTimesliceHandle& st_d);
-  std::vector<ucp_dt_iov> create_iov_vector(const SubTimesliceHandle& st,
-                                            std::span<std::byte> descriptor);
+  static StDescriptor
+  create_subtimeslice_descriptor(const SubTimesliceHandle& sth);
+  static std::vector<ucp_dt_iov>
+  create_iov_vector(const SubTimesliceHandle& sth,
+                    std::span<std::byte> descriptor_bytes);
 
   // UCX event handling
   bool arm_worker_and_wait(std::array<epoll_event, 1>& events);
