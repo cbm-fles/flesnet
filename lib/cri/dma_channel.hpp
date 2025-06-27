@@ -33,7 +33,7 @@ class cri_channel;
 class basic_dma_channel {
 public:
   basic_dma_channel() = default;
-  virtual ~basic_dma_channel(){};
+  virtual ~basic_dma_channel() = default;
   virtual void set_sw_read_pointers(uint64_t data_offset,
                                     uint64_t desc_offset) = 0;
   virtual uint64_t get_desc_index() = 0;
