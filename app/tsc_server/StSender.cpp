@@ -525,13 +525,13 @@ std::size_t StSender::process_queues() {
 
 void StSender::process_announcement(StID id, const SubTimesliceHandle& st_d) {
   // Create and serialize subtimeslice
-  StDescriptor st = create_subtimeslice_handle(st_d);
+  StDescriptor st = create_subtimeslice_descriptor(st_d);
+  auto st_bytes = st.to_bytes();
 
-  std::string serialized = st.to_string();
-  std::vector<ucp_dt_iov> iov_vector = create_iov_vector(st_d, serialized);
+  std::vector<ucp_dt_iov> iov_vector = create_iov_vector(st_d, st_bytes);
 
-  // Store for future use
-  announced_sts_[id] = {std::move(serialized), std::move(iov_vector)};
+  // Store for future use (and retention during send)
+  announced_sts_[id] = {std::move(st_bytes), std::move(iov_vector)};
 
   // Ensure that the first iov component points to the string data
   assert(announced_sts_[id].second.front().buffer ==
@@ -574,7 +574,7 @@ void StSender::flush_announced() {
 // of the overall data block and assume that all blocks are contiguous in
 // memory.
 StDescriptor
-StSender::create_subtimeslice_handle(const SubTimesliceHandle& st_d) {
+StSender::create_subtimeslice_descriptor(const SubTimesliceHandle& st_d) {
   StDescriptor st;
   st.start_time_ns = st_d.start_time_ns;
   st.duration_ns = st_d.duration_ns;
@@ -611,13 +611,11 @@ StSender::create_subtimeslice_handle(const SubTimesliceHandle& st_d) {
 // by the descriptors and contents of each component in the shared memory.
 std::vector<ucp_dt_iov>
 StSender::create_iov_vector(const SubTimesliceHandle& st_d,
-                            const std::string& serialized) {
+                            std::span<std::byte> descriptor) {
   std::vector<ucp_dt_iov> iov_vector;
 
   // Add serialized descriptor at the beginning
-  void* buffer = const_cast<char*>(serialized.data());
-  std::size_t length = serialized.size();
-  iov_vector.push_back({buffer, length});
+  iov_vector.push_back({descriptor.data(), descriptor.size()});
 
   // Add component data from shared memory
   for (const auto& c : st_d.components) {

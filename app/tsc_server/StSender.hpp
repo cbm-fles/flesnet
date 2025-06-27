@@ -64,7 +64,8 @@ private:
   int ucx_event_fd_ = -1;
   int epoll_fd_ = -1;
 
-  std::unordered_map<StID, std::pair<std::string, std::vector<ucp_dt_iov>>>
+  std::unordered_map<StID,
+                     std::pair<std::vector<std::byte>, std::vector<ucp_dt_iov>>>
       announced_sts_;
   std::unordered_map<ucs_status_ptr_t, StID> active_send_requests_;
 
@@ -128,9 +129,9 @@ private:
   void flush_announced();
 
   // Helper methods
-  StDescriptor create_subtimeslice_handle(const SubTimesliceHandle& st_d);
+  StDescriptor create_subtimeslice_descriptor(const SubTimesliceHandle& st_d);
   std::vector<ucp_dt_iov> create_iov_vector(const SubTimesliceHandle& st,
-                                            const std::string& serialized);
+                                            std::span<std::byte> descriptor);
 
   // UCX event handling
   bool arm_worker_and_wait(std::array<epoll_event, 1>& events);

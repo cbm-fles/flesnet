@@ -119,11 +119,16 @@ struct StDescriptor {
     ar & components;
   }
 
-  [[nodiscard]] std::string to_string() const {
+  [[nodiscard]] std::vector<std::byte> to_bytes() const {
     std::ostringstream oss;
-    boost::archive::binary_oarchive oa(oss);
-    oa << *this;
-    return oss.str();
+    {
+      boost::archive::binary_oarchive oa(oss);
+      oa << *this;
+    }
+    std::string str = oss.str();
+    std::vector<std::byte> serialized{str.length()};
+    std::memcpy(serialized.data(), str.data(), str.length());
+    return serialized;
   }
 };
 
