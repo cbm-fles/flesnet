@@ -72,29 +72,3 @@ tsbuilder <-> tssched (TO BE UPDATED!)
 
 support for partitions!
 
-
-
-stsender implementation
------------------------
-
-send REGISTER to tssched
-connect to subtimeslice item distributor (tsc_server)
-wait for message on either interface:
-  tsc_server:
-    WORK_iTEM -> 
-
-... maybe integrate? seems awfully redundant otherwise...
-
---------------------------------------
-
-# WORK PLAN
-
-DONE - Merge dev_ucx into tsc_server branch
-- Update app/tsc_server:
-  - Make dependent on ucx
-  - Put app logic from Application into new class (stbuilder)
-  - Create new class (stsender) with its own thread
-  - Start with internal interface, remove shm_ipc interface
-  - Implement UCX connections (listener for tsbuilders, initiate connection to tssched)
-  - Create new st descriptor class for transmission
-  
