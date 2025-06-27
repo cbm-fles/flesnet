@@ -9,7 +9,6 @@
 #include "StSender.hpp"
 #include "cri_device.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
-#include <boost/uuid/uuid.hpp>
 #include <csignal>
 #include <memory>
 #include <vector>
@@ -34,8 +33,6 @@ private:
 
   Parameters const& par_;
   volatile std::sig_atomic_t* signal_status_;
-
-  boost::uuids::uuid shm_uuid_{}; ///< shared memory UUID
 
   std::vector<std::unique_ptr<cri::cri_device>> cris_;
   std::vector<cri::cri_channel*> cri_channels_;

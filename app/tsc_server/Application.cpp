@@ -4,13 +4,13 @@
 #include "SubTimeslice.hpp"
 #include "System.hpp"
 #include "device_operator.hpp"
+#include "dma_channel.hpp"
 #include "log.hpp"
-#include <boost/archive/binary_oarchive.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <chrono>
 #include <iostream>
 #include <numeric>
-#include <sys/types.h>
+#include <span>
 #include <thread>
 
 using namespace std::chrono_literals;
@@ -97,10 +97,39 @@ Application::Application(Parameters const& par,
       boost::interprocess::create_only, par.shm_id().c_str(), shm_size);
 
   // Create Channel objects
-  for (cri::cri_channel* channel : cri_channels_) {
+  for (auto* cri_channel : cri_channels_) {
+    // set channel name, used for monitoring
+    std::string channel_name = cri_channel->device_address() + "-" +
+                               std::to_string(cri_channel->channel_index());
+
+    std::size_t desc_buffer_size_bytes =
+        par.desc_buffer_size() * sizeof(fles::MicrosliceDescriptor);
+    std::size_t data_buffer_size_bytes =
+        par.data_buffer_size() * sizeof(uint8_t);
+
+    // allocate buffers in shm
+    L_(trace) << "allocating shm buffers of " << data_buffer_size_bytes << "+"
+              << desc_buffer_size_bytes << " bytes";
+    void* data_buffer_raw =
+        shm_->allocate_aligned(data_buffer_size_bytes, sysconf(_SC_PAGESIZE));
+    void* desc_buffer_raw =
+        shm_->allocate_aligned(desc_buffer_size_bytes, sysconf(_SC_PAGESIZE));
+
+    // initialize cri DMA engine
+    cri_channel->init_dma(data_buffer_raw, data_buffer_size_bytes,
+                          desc_buffer_raw, desc_buffer_size_bytes);
+    cri_channel->enable_readout();
+    cri::basic_dma_channel* dma_channel = cri_channel->dma();
+
+    std::span desc_buffer(
+        reinterpret_cast<fles::MicrosliceDescriptor*>(desc_buffer_raw),
+        par.desc_buffer_size());
+    std::span data_buffer(reinterpret_cast<uint8_t*>(data_buffer_raw),
+                          par.data_buffer_size());
+
     channels_.push_back(std::make_unique<Channel>(
-        shm_.get(), channel, par.data_buffer_size(), par.desc_buffer_size(),
-        par.overlap_before_ns(), par.overlap_after_ns()));
+        dma_channel, desc_buffer, data_buffer, par.overlap_before_ns(),
+        par.overlap_after_ns(), channel_name));
   }
 
   // Create StSender
@@ -162,6 +191,10 @@ void Application::run() {
 }
 
 Application::~Application() {
+  for (auto* cri_channel : cri_channels_) {
+    cri_channel->disable_readout();
+  }
+
   // cleanup
   boost::interprocess::shared_memory_object::remove(par_.shm_id().c_str());
   L_(info) << "Shared memory segment removed: " << par_.shm_id();

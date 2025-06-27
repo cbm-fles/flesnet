@@ -1,7 +1,7 @@
 // Copyright 2025 Dirk Hutter, Jan de Cuveland
 
 #include "Channel.hpp"
-#include "device.hpp"
+#include "MicrosliceDescriptor.hpp"
 #include "log.hpp"
 
 namespace {
@@ -21,64 +21,23 @@ namespace {
      << rem_ns;
   return ss.str();
 }
-
-// This should be a member function of cri_channel
-std::string device_address(pda::device* device) {
-  std::stringstream ss;
-  ss << std::hex << std::setw(2) << std::setfill('0')
-     << static_cast<unsigned>(device->bus()) << ":" << std::setw(2)
-     << std::setfill('0') << static_cast<unsigned>(device->slot()) << "."
-     << static_cast<unsigned>(device->func());
-  return ss.str();
-}
 } // namespace
 
-Channel::Channel(boost::interprocess::managed_shared_memory* shm,
-                 cri::cri_channel* cri_channel,
-                 size_t data_buffer_size,
-                 size_t desc_buffer_size,
+Channel::Channel(cri::basic_dma_channel* dma_channel,
+                 std::span<fles::MicrosliceDescriptor> desc_buffer,
+                 std::span<uint8_t> data_buffer,
                  uint64_t overlap_before_ns,
-                 uint64_t overlap_after_ns)
-    : m_shm(shm), m_cri_channel(cri_channel),
-      m_overlap_before_ns(overlap_before_ns),
-      m_overlap_after_ns(overlap_after_ns) {
-  // set channel name, used for monitoring
-  m_name = device_address(cri_channel->parent_device()) + "-" +
-           std::to_string(cri_channel->channel_index());
-
-  std::size_t desc_buffer_size_bytes =
-      desc_buffer_size * sizeof(fles::MicrosliceDescriptor);
-  std::size_t data_buffer_size_bytes = data_buffer_size * sizeof(uint8_t);
-
-  // allocate buffers in shm
-  L_(trace) << "allocating shm buffers of " << data_buffer_size_bytes << "+"
-            << desc_buffer_size_bytes << " bytes";
-  void* data_buffer_raw =
-      m_shm->allocate_aligned(data_buffer_size_bytes, sysconf(_SC_PAGESIZE));
-  void* desc_buffer_raw =
-      m_shm->allocate_aligned(desc_buffer_size_bytes, sysconf(_SC_PAGESIZE));
-
-  // initialize cri DMA engine
-  m_cri_channel->init_dma(data_buffer_raw, data_buffer_size_bytes,
-                          desc_buffer_raw, desc_buffer_size_bytes);
-  m_cri_channel->enable_readout();
-  m_dma_channel = cri_channel->dma();
+                 uint64_t overlap_after_ns,
+                 std::string name)
+    : m_dma_channel(dma_channel), m_overlap_before_ns(overlap_before_ns),
+      m_overlap_after_ns(overlap_after_ns), m_name(std::move(name)) {
 
   // initialize buffer interface
-  auto* desc_buffer =
-      reinterpret_cast<fles::MicrosliceDescriptor*>(desc_buffer_raw);
-  auto* data_buffer = reinterpret_cast<uint8_t*>(data_buffer_raw);
   m_desc_buffer =
       std::make_unique<RingBufferView<fles::MicrosliceDescriptor, false>>(
-          desc_buffer, desc_buffer_size);
+          desc_buffer.data(), desc_buffer.size());
   m_data_buffer = std::make_unique<RingBufferView<uint8_t, false>>(
-      data_buffer, data_buffer_size);
-}
-
-Channel::~Channel() {
-  m_cri_channel->disable_readout();
-  m_cri_channel->deinit_dma();
-  // INFO we do not explicitly deallocate shared memory buffers
+      data_buffer.data(), data_buffer.size());
 }
 
 void Channel::ack_before(uint64_t time) {

@@ -4,23 +4,19 @@
 #include "MicrosliceDescriptor.hpp"
 #include "RingBufferView.hpp"
 #include "SubTimeslice.hpp"
-#include "cri_channel.hpp"
 #include "dma_channel.hpp"
-#include <boost/interprocess/managed_shared_memory.hpp>
 #include <cstdint>
 #include <memory>
 #include <optional>
 
 class Channel {
 public:
-  Channel(boost::interprocess::managed_shared_memory* shm,
-          cri::cri_channel* cri_channel,
-          size_t data_buffer_size,
-          size_t desc_buffer_size,
+  Channel(cri::basic_dma_channel* dma_channel,
+          std::span<fles::MicrosliceDescriptor> desc_buffer,
+          std::span<uint8_t> data_buffer,
           uint64_t overlap_before_ns,
-          uint64_t overlap_after_ns);
-
-  ~Channel();
+          uint64_t overlap_after_ns,
+          std::string name);
 
   enum class State {
     Ok,       // component is available
@@ -44,9 +40,7 @@ public:
   [[nodiscard]] const std::string& name() const { return m_name; }
 
 private:
-  boost::interprocess::managed_shared_memory* m_shm;
-  cri::cri_channel* m_cri_channel;
-  cri::dma_channel* m_dma_channel;
+  cri::basic_dma_channel* m_dma_channel;
 
   uint64_t m_overlap_before_ns;
   uint64_t m_overlap_after_ns;

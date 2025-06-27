@@ -18,6 +18,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
 #include <memory>
+#include <string>
 
 namespace cri {
 
@@ -108,6 +109,8 @@ public:
   dma_channel* dma() const;
   register_file* register_file_packetizer() const { return m_rfpkt.get(); }
   register_file* register_file_gtx() const { return m_rfgtx.get(); }
+
+  std::string device_address() const;
 
 protected:
   std::unique_ptr<dma_channel> m_dma_channel;

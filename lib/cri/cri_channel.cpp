@@ -11,6 +11,7 @@
 #include <arpa/inet.h> // ntohl
 #include <cassert>
 #include <memory>
+#include <sstream>
 
 #define DMA_TRANSFER_SIZE 128
 
@@ -230,6 +231,15 @@ cri_channel::ch_perf_gtx_t cri_channel::get_perf_gtx() {
   perf.mc_stall = get_mc_stall();
   perf.mc_busy = get_mc_busy();
   return perf;
+}
+
+std::string cri_channel::device_address() const {
+  std::stringstream ss;
+  ss << std::hex << std::setw(2) << std::setfill('0')
+     << static_cast<unsigned>(m_parent_device->bus()) << ":" << std::setw(2)
+     << std::setfill('0') << static_cast<unsigned>(m_parent_device->slot())
+     << "." << static_cast<unsigned>(m_parent_device->func());
+  return ss.str();
 }
 
 } // namespace cri
