@@ -296,7 +296,7 @@ void StSender::send_announcement_to_scheduler(StID id) {
                           iov_vector[0].length);
 
   ucx::util::send_active_message(scheduler_ep_, AM_SENDER_ANNOUNCE_ST, header,
-                                 buffer, on_scheduler_send_complete, this,
+                                 buffer, on_generic_send_complete, this,
                                  UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
@@ -305,12 +305,12 @@ void StSender::send_retraction_to_scheduler(StID id) {
 
   auto header = std::as_bytes(std::span(hdr));
   ucx::util::send_active_message(scheduler_ep_, AM_SENDER_RETRACT_ST, header,
-                                 {}, on_scheduler_send_complete, this,
+                                 {}, on_generic_send_complete, this,
                                  UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
-void StSender::handle_scheduler_send_complete(void* request,
-                                              ucs_status_t status) {
+void StSender::handle_generic_send_complete(void* request,
+                                            ucs_status_t status) {
   if (UCS_PTR_IS_ERR(request)) {
     L_(error) << "Send operation failed: " << ucs_status_string(status);
   } else if (status != UCS_OK) {
@@ -409,6 +409,17 @@ StSender::handle_builder_request(const void* header,
 }
 
 void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
+  auto it = announced_sts_.find(id);
+  if (it == announced_sts_.end()) {
+    L_(warning) << "SubTimeslice with ID " << id << " not found";
+    std::array<uint64_t, 3> hdr{id, 0, 0};
+    auto header = std::as_bytes(std::span(hdr));
+    ucx::util::send_active_message(ep, AM_SENDER_SEND_ST, header, {},
+                                   on_generic_send_complete, this,
+                                   UCP_AM_SEND_FLAG_COPY_HEADER);
+    return;
+  }
+
   // Prepare send parameters
   ucp_request_param_t req_param{};
   req_param.op_attr_mask =
@@ -420,47 +431,37 @@ void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
   req_param.datatype = ucp_dt_make_iov();
 
   // Prepare header data
-  std::array<uint64_t, 3> hdr{id, 0, 0};
-  void const* buffer = nullptr;
-  std::size_t count = 0;
-
-  auto it = announced_sts_.find(id);
-  if (it != announced_sts_.end()) {
-    const auto& [st_str, iov_vector] = it->second;
-    uint64_t desc_size = st_str.size();
-    uint64_t content_size = 0;
-    for (std::size_t i = 1; i < iov_vector.size(); ++i) {
-      content_size += iov_vector[i].length;
-    }
-    hdr[1] = desc_size;
-    hdr[2] = content_size;
-    buffer = iov_vector.data();
-    count = iov_vector.size();
-  } else {
-    L_(warning) << "SubTimeslice with ID " << id << " not found";
+  const auto& [st_bytes, iov_vector] = it->second;
+  uint64_t desc_size = st_bytes.size();
+  uint64_t content_size = 0;
+  for (std::size_t i = 1; i < iov_vector.size(); ++i) {
+    content_size += iov_vector[i].length;
   }
+  std::array<uint64_t, 3> hdr{id, desc_size, content_size};
 
   // Send the data
   ucs_status_ptr_t request =
-      ucp_am_send_nbx(ep, AM_SENDER_SEND_ST, hdr.data(), sizeof(hdr), buffer,
-                      count, &req_param);
+      ucp_am_send_nbx(ep, AM_SENDER_SEND_ST, hdr.data(), sizeof(hdr),
+                      iov_vector.data(), iov_vector.size(), &req_param);
 
   if (UCS_PTR_IS_ERR(request)) {
     L_(error) << "Failed to send active message: "
               << ucs_status_string(UCS_PTR_STATUS(request));
+    // Ignore the interaction with the builder, keep the announced subtimeslice
     return;
   }
 
   if (request == nullptr) {
-    // Operation completed immediately
+    // Operation has completed successfully in-place
     L_(trace) << "Active message sent successfully";
     complete_subtimeslice(id);
     announced_sts_.erase(it);
     return;
   }
 
+  // Keep the element in announced_sts_ until the send completes and store the
+  // request
   active_send_requests_[request] = id;
-  announced_sts_.erase(it);
 }
 
 void StSender::handle_builder_send_complete(void* request,
@@ -477,12 +478,13 @@ void StSender::handle_builder_send_complete(void* request,
   auto it = active_send_requests_.find(request);
   if (it == active_send_requests_.end()) {
     L_(error) << "Received completion for unknown send request";
-    ucp_request_free(request);
-    return;
+  } else {
+    StID id = it->second;
+    active_send_requests_.erase(request);
+    complete_subtimeslice(id);
+    announced_sts_.erase(id);
   }
-  StID id = it->second;
-  complete_subtimeslice(id);
-  active_send_requests_.erase(request);
+
   ucp_request_free(request);
 }
 
@@ -702,9 +704,9 @@ void StSender::on_scheduler_register_complete(void* request,
                                                                         status);
 }
 
-void StSender::on_scheduler_send_complete(void* request,
-                                          ucs_status_t status,
-                                          void* user_data) {
-  static_cast<StSender*>(user_data)->handle_scheduler_send_complete(request,
-                                                                    status);
+void StSender::on_generic_send_complete(void* request,
+                                        ucs_status_t status,
+                                        void* user_data) {
+  static_cast<StSender*>(user_data)->handle_generic_send_complete(request,
+                                                                  status);
 }

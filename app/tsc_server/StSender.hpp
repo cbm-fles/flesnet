@@ -100,7 +100,7 @@ private:
   // Scheduler message handling
   void send_announcement_to_scheduler(StID id);
   void send_retraction_to_scheduler(StID id);
-  void handle_scheduler_send_complete(void* request, ucs_status_t status);
+  void handle_generic_send_complete(void* request, ucs_status_t status);
   ucs_status_t handle_scheduler_release(const void* header,
                                         size_t header_length,
                                         void* data,
@@ -157,7 +157,6 @@ private:
   static void on_scheduler_register_complete(void* request,
                                              ucs_status_t status,
                                              void* user_data);
-  static void on_scheduler_send_complete(void* request,
-                                         ucs_status_t status,
-                                         void* user_data);
+  static void
+  on_generic_send_complete(void* request, ucs_status_t status, void* user_data);
 };
