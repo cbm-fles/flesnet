@@ -59,6 +59,15 @@ public:
   [[nodiscard]] uint16_t listen_port() const { return _listen_port; }
   [[nodiscard]] std::string tssched_address() const { return _tssched_address; }
 
+  // Pattern generator parameters
+  [[nodiscard]] uint32_t pgen_channels() const { return _pgen_channels; }
+  [[nodiscard]] int64_t pgen_microslice_duration_ns() const {
+    return _pgen_microslice_duration.count();
+  }
+  [[nodiscard]] size_t pgen_microslice_size() const {
+    return _pgen_microslice_size;
+  }
+
   // Global parameters
   [[nodiscard]] int64_t timeslice_duration_ns() const {
     return _timeslice_duration.count();
@@ -86,6 +95,11 @@ private:
   std::string _shm_id;
   uint16_t _listen_port = 0;
   std::string _tssched_address;
+
+  // Pattern generator parameters
+  uint32_t _pgen_channels = 0;
+  Nanoseconds _pgen_microslice_duration{100us};
+  size_t _pgen_microslice_size = 1024; // 1 KiB
 
   // Global parameters
   Nanoseconds _timeslice_duration{100ms};

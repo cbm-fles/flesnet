@@ -30,6 +30,19 @@ chrono_to_timestamp(std::chrono::time_point<std::chrono::high_resolution_clock,
   return std::chrono::high_resolution_clock::time_point(
       std::chrono::nanoseconds(time));
 }
+
+template <typename T>
+inline std::span<T>
+shm_allocate(boost::interprocess::managed_shared_memory* shm,
+             std::size_t count) {
+  std::size_t size_bytes = count * sizeof(T);
+
+  L_(trace) << "allocating shm buffer of " << size_bytes << " bytes";
+  void* buffer_raw = shm->allocate_aligned(size_bytes, sysconf(_SC_PAGESIZE));
+
+  return {static_cast<T*>(buffer_raw), count};
+}
+
 } // namespace
 
 Application::Application(Parameters const& par,
@@ -96,40 +109,48 @@ Application::Application(Parameters const& par,
   shm_ = std::make_unique<boost::interprocess::managed_shared_memory>(
       boost::interprocess::create_only, par.shm_id().c_str(), shm_size);
 
-  // Create Channel objects
+  // Create Channel objects for each CRI channel
   for (auto* cri_channel : cri_channels_) {
     // set channel name, used for monitoring
     std::string channel_name = cri_channel->device_address() + "-" +
                                std::to_string(cri_channel->channel_index());
 
-    std::size_t desc_buffer_size_bytes =
-        par.desc_buffer_size() * sizeof(fles::MicrosliceDescriptor);
-    std::size_t data_buffer_size_bytes =
-        par.data_buffer_size() * sizeof(uint8_t);
-
     // allocate buffers in shm
-    L_(trace) << "allocating shm buffers of " << data_buffer_size_bytes << "+"
-              << desc_buffer_size_bytes << " bytes";
-    void* data_buffer_raw =
-        shm_->allocate_aligned(data_buffer_size_bytes, sysconf(_SC_PAGESIZE));
-    void* desc_buffer_raw =
-        shm_->allocate_aligned(desc_buffer_size_bytes, sysconf(_SC_PAGESIZE));
+    std::span desc_buffer = shm_allocate<fles::MicrosliceDescriptor>(
+        shm_.get(), par.desc_buffer_size());
+    std::span data_buffer =
+        shm_allocate<uint8_t>(shm_.get(), par.data_buffer_size());
 
     // initialize cri DMA engine
-    cri_channel->init_dma(data_buffer_raw, data_buffer_size_bytes,
-                          desc_buffer_raw, desc_buffer_size_bytes);
+    cri_channel->init_dma(data_buffer.data(), data_buffer.size_bytes(),
+                          desc_buffer.data(), desc_buffer.size_bytes());
     cri_channel->enable_readout();
     cri::basic_dma_channel* dma_channel = cri_channel->dma();
-
-    std::span desc_buffer(
-        reinterpret_cast<fles::MicrosliceDescriptor*>(desc_buffer_raw),
-        par.desc_buffer_size());
-    std::span data_buffer(reinterpret_cast<uint8_t*>(data_buffer_raw),
-                          par.data_buffer_size());
 
     channels_.push_back(std::make_unique<Channel>(
         dma_channel, desc_buffer, data_buffer, par.overlap_before_ns(),
         par.overlap_after_ns(), channel_name));
+  }
+
+  // Create Channel objects for pattern generator channels if requested
+  for (uint32_t i = 0; i < par.pgen_channels(); ++i) {
+    // set channel name, used for monitoring
+    std::string channel_name = "pgen-" + std::to_string(i);
+
+    // allocate buffers in shm
+    std::span desc_buffer = shm_allocate<fles::MicrosliceDescriptor>(
+        shm_.get(), par.desc_buffer_size());
+    std::span data_buffer =
+        shm_allocate<uint8_t>(shm_.get(), par.data_buffer_size());
+
+    // initialize pgen
+    pgen_channels_.push_back(std::make_unique<cri::pgen_channel>(
+        desc_buffer, data_buffer, par.pgen_microslice_duration_ns(),
+        par.pgen_microslice_size()));
+
+    channels_.push_back(std::make_unique<Channel>(
+        pgen_channels_.back().get(), desc_buffer, data_buffer,
+        par.overlap_before_ns(), par.overlap_after_ns(), channel_name));
   }
 
   // Create StSender

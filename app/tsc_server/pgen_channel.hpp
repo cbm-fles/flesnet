@@ -9,17 +9,17 @@
 
 namespace cri {
 
-class dma_channel_pgen : public basic_dma_channel {
+class pgen_channel : public basic_dma_channel {
 public:
-  dma_channel_pgen(std::span<fles::MicrosliceDescriptor> desc_buffer,
-                   std::span<uint8_t> data_buffer,
-                   uint64_t microslice_time_ns,
-                   std::size_t microslice_size);
-  ~dma_channel_pgen() = default;
+  pgen_channel(std::span<fles::MicrosliceDescriptor> desc_buffer,
+               std::span<uint8_t> data_buffer,
+               uint64_t microslice_time_ns,
+               std::size_t microslice_size);
+  ~pgen_channel() = default;
   void set_sw_read_pointers(uint64_t data_offset,
                             uint64_t desc_offset) override;
   uint64_t get_desc_index() override { return m_desc_write_index; }
-  size_t dma_transfer_size() const override { return 64; }
+  [[nodiscard]] size_t dma_transfer_size() const override { return 64; }
 
 private:
   std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor, false>>

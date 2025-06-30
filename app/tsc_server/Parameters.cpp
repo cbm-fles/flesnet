@@ -126,10 +126,24 @@ void Parameters::parse_options(int argc, char* argv[]) {
              po::value<std::string>(&_shm_id)->default_value("tsc_shm"),
              "name of the shared memory to be used");
   config_add("listen-port,p",
-             po::value<uint16_t>(&_listen_port)->default_value(0),
+             po::value<uint16_t>(&_listen_port)->default_value(_listen_port),
              "port to listen for tsbuilder connections");
   config_add("tssched-address", po::value<std::string>(&_tssched_address),
              "address of the tssched server to connect to");
+  config_add("pgen-channels,p",
+             po::value<uint32_t>(&_pgen_channels)
+                 ->default_value(_pgen_channels)
+                 ->implicit_value(1),
+             "number of additional pattern generator channels (0 to disable)");
+  config_add(
+      "pgen-microslice-duration",
+      po::value<Nanoseconds>(&_pgen_microslice_duration)
+          ->default_value(_pgen_microslice_duration),
+      "duration of a pattern generator microslice (with suffix ns, us, ms, s)");
+  config_add("pgen-microslice-size",
+             po::value<size_t>(&_pgen_microslice_size)
+                 ->default_value(_pgen_microslice_size),
+             "size of a pattern generator microslice in bytes");
 
   config_add("timeslice-duration",
              po::value<Nanoseconds>(&_timeslice_duration)

@@ -8,6 +8,7 @@
 #include "Scheduler.hpp"
 #include "StSender.hpp"
 #include "cri_device.hpp"
+#include "pgen_channel.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <csignal>
 #include <memory>
@@ -36,6 +37,7 @@ private:
 
   std::vector<std::unique_ptr<cri::cri_device>> cris_;
   std::vector<cri::cri_channel*> cri_channels_;
+  std::vector<std::unique_ptr<cri::pgen_channel>> pgen_channels_;
   std::unique_ptr<boost::interprocess::managed_shared_memory> shm_;
   std::vector<std::unique_ptr<Channel>> channels_;
 
