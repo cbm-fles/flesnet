@@ -7,7 +7,7 @@ add_executable(tsc_server
   Channel.cpp
   StSender.cpp
   ucxutil.cpp
-  SubTimeslice.hpp
+  dma_channel_pgen.cpp
 )
 
 target_include_directories(tsc_server
