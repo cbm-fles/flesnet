@@ -130,7 +130,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "port to listen for tsbuilder connections");
   config_add("tssched-address", po::value<std::string>(&_tssched_address),
              "address of the tssched server to connect to");
-  config_add("pgen-channels,p",
+  config_add("pgen-channels,P",
              po::value<uint32_t>(&_pgen_channels)
                  ->default_value(_pgen_channels)
                  ->implicit_value(1),

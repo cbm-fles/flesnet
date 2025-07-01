@@ -3,6 +3,7 @@
 #include "StSender.hpp"
 #include "System.hpp"
 #include "log.hpp"
+#include "monitoring/System.hpp"
 #include "ucxutil.hpp"
 #include <arpa/inet.h>
 #include <cstddef>
@@ -95,6 +96,8 @@ std::optional<StSender::StID> StSender::try_receive_completion() {
 // Main operation loop
 
 void StSender::operator()(std::stop_token stop_token) {
+  cbm::system::set_thread_name("StSender");
+
   if (!initialize_ucx()) {
     L_(error) << "Failed to initialize UCX";
     return;

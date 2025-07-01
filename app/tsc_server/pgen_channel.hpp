@@ -5,7 +5,6 @@
 #include "fles_core/RingBufferView.hpp"
 #include "fles_ipc/MicrosliceDescriptor.hpp"
 #include <atomic>
-#include <mutex>
 #include <random>
 #include <span>
 #include <thread>
@@ -27,10 +26,11 @@ class pgen_channel : public basic_dma_channel {
 public:
   pgen_channel(std::span<fles::MicrosliceDescriptor> desc_buffer,
                std::span<uint8_t> data_buffer,
+               uint64_t channel_index,
                uint64_t duration_ns,
                uint32_t typical_content_size,
                uint32_t flags);
-  ~pgen_channel() = default;
+  ~pgen_channel() override { m_worker_thread.request_stop(); };
   void set_sw_read_pointers(uint64_t data_offset,
                             uint64_t desc_offset) override;
   uint64_t get_desc_index() override;
@@ -39,6 +39,7 @@ public:
 private:
   RingBufferView<fles::MicrosliceDescriptor, false> m_desc_buffer;
   RingBufferView<uint8_t, false> m_data_buffer;
+  uint64_t m_channel_index;
   uint64_t m_duration_ns;
   std::size_t m_typical_content_size;
   uint32_t m_flags;

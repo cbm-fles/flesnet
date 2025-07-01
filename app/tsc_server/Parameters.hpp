@@ -94,8 +94,8 @@ private:
   bool _device_autodetect = true;
   pci_addr _device_address;
   std::string _shm_id;
-  uint16_t _listen_port = 0;
-  std::string _tssched_address;
+  uint16_t _listen_port = 12345;
+  std::string _tssched_address = "localhost";
 
   // Pattern generator parameters
   uint32_t _pgen_channels = 0;

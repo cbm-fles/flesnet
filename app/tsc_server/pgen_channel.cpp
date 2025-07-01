@@ -2,6 +2,7 @@
 
 #include "pgen_channel.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "monitoring/System.hpp"
 #include <chrono>
 #include <sys/types.h>
 
@@ -19,14 +20,16 @@ namespace cri {
 
 pgen_channel::pgen_channel(std::span<fles::MicrosliceDescriptor> desc_buffer,
                            std::span<uint8_t> data_buffer,
+                           uint64_t channel_index,
                            uint64_t duration_ns,
                            uint32_t typical_content_size,
                            uint32_t flags)
     : m_desc_buffer(desc_buffer.data(), desc_buffer.size()),
       m_data_buffer(data_buffer.data(), data_buffer.size()),
-      m_duration_ns(duration_ns), m_typical_content_size(typical_content_size),
-      m_flags(flags), m_random_distribution(typical_content_size),
-      m_worker_thread(&pgen_channel::thread_work, this, std::stop_token{}) {}
+      m_channel_index(channel_index), m_duration_ns(duration_ns),
+      m_typical_content_size(typical_content_size), m_flags(flags),
+      m_random_distribution(typical_content_size),
+      m_worker_thread(&pgen_channel::thread_work, this) {}
 
 void pgen_channel::set_sw_read_pointers(uint64_t data_offset,
                                         uint64_t desc_offset) {
@@ -56,6 +59,9 @@ void pgen_channel::set_sw_read_pointers(uint64_t data_offset,
 uint64_t pgen_channel::get_desc_index() { return m_desc_write_index; }
 
 void pgen_channel::thread_work(std::stop_token stop_token) {
+  std::string thread_name = "pgen-" + std::to_string(m_channel_index);
+  ::cbm::system::set_thread_name(thread_name);
+
   uint64_t ms_time =
       chrono_to_timestamp(std::chrono::high_resolution_clock::now()) /
       m_duration_ns * m_duration_ns;
@@ -114,10 +120,8 @@ void pgen_channel::generate_microslice(uint64_t time_ns) {
 
   // Write to data buffer
   if (has_flag(PgenFlags::GeneratePattern)) {
-    constexpr uint64_t input_index = 0; // This can be provided to distinguish
-                                        // patterns from different channels
     for (uint64_t i = 0; i < content_bytes; i += sizeof(uint64_t)) {
-      uint64_t data_word = (input_index << 48L) | i;
+      uint64_t data_word = (m_channel_index << 48L) | i;
       reinterpret_cast<uint64_t&>(m_data_buffer.at(m_data_write_index)) =
           data_word;
       m_data_write_index += sizeof(uint64_t);

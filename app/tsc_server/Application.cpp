@@ -56,44 +56,49 @@ Application::Application(Parameters const& par,
 
   /////// Create Hardware Objects ///////////
 
-  // create all needed CRI objects
-  if (par.device_autodetect()) {
-    // use all available CRIs
-    std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
-    uint64_t num_dev = dev_op->device_count();
-    L_(info) << "Total number of CRIs: " << num_dev << std::endl;
+  try {
+    // create all needed CRI objects
+    if (par.device_autodetect()) {
+      // use all available CRIs
+      std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
+      uint64_t num_dev = dev_op->device_count();
+      L_(info) << "Total number of CRIs: " << num_dev << std::endl;
 
-    for (size_t i = 0; i < num_dev; ++i) {
-      cris_.push_back(std::make_unique<cri::cri_device>(i));
+      for (size_t i = 0; i < num_dev; ++i) {
+        cris_.push_back(std::make_unique<cri::cri_device>(i));
+        L_(info) << "Initialized CRI: " << cris_.back()->print_devinfo()
+                 << std::endl;
+      }
+    } else {
+      // TODO parameters: this should actually loop over a list of BDF addresses
+      cris_.push_back(std::make_unique<cri::cri_device>(
+          par.device_address().bus, par.device_address().dev,
+          par.device_address().func));
       L_(info) << "Initialized CRI: " << cris_.back()->print_devinfo()
                << std::endl;
     }
-  } else {
-    // TODO parameters: this should actually loop over a list of BDF addresses
-    cris_.push_back(std::make_unique<cri::cri_device>(
-        par.device_address().bus, par.device_address().dev,
-        par.device_address().func));
-    L_(info) << "Initialized CRI: " << cris_.back()->print_devinfo()
-             << std::endl;
-  }
 
-  // create all cri channels and remove inactive channels
-  // TODO parameters: to be replaced with explicit channel list
-  for (const auto& cri : cris_) {
+    // create all cri channels and remove inactive channels
+    // TODO parameters: to be replaced with explicit channel list
+    for (const auto& cri : cris_) {
 #ifdef __cpp_lib_containers_ranges
-    cri_channels.append_range(cri->channels());
+      cri_channels.append_range(cri->channels());
 #else
-    auto tmp = cri->channels();
-    cri_channels_.insert(cri_channels_.end(), tmp.cbegin(), tmp.cend());
+      auto tmp = cri->channels();
+      cri_channels_.insert(cri_channels_.end(), tmp.cbegin(), tmp.cend());
 #endif
+    }
+    cri_channels_.erase(std::remove_if(cri_channels_.begin(),
+                                       cri_channels_.end(),
+                                       [](decltype(cri_channels_[0]) channel) {
+                                         return channel->data_source() ==
+                                                cri::cri_channel::rx_disable;
+                                       }),
+                        cri_channels_.end());
+    L_(info) << "Enabled cri channels detected: " << cri_channels_.size();
+  } catch (std::exception const& e) {
+    L_(warning) << "Could not create hardware objects: " << e.what();
   }
-  cri_channels_.erase(std::remove_if(cri_channels_.begin(), cri_channels_.end(),
-                                     [](decltype(cri_channels_[0]) channel) {
-                                       return channel->data_source() ==
-                                              cri::cri_channel::rx_disable;
-                                     }),
-                      cri_channels_.end());
-  L_(info) << "Enabled cri channels detected: " << cri_channels_.size();
 
   /////// Create Shared Memory //////////////
 
@@ -103,7 +108,7 @@ Application::Application(Parameters const& par,
       (par.data_buffer_size() * sizeof(uint8_t) +
        par.desc_buffer_size() * sizeof(fles::MicrosliceDescriptor) +
        2 * sysconf(_SC_PAGESIZE)) *
-          cri_channels_.size() +
+          (cri_channels_.size() + par.pgen_channels()) +
       4096;
 
   shm_ = std::make_unique<boost::interprocess::managed_shared_memory>(
@@ -145,7 +150,7 @@ Application::Application(Parameters const& par,
 
     // initialize pgen
     pgen_channels_.push_back(std::make_unique<cri::pgen_channel>(
-        desc_buffer, data_buffer, par.pgen_microslice_duration_ns(),
+        desc_buffer, data_buffer, i, par.pgen_microslice_duration_ns(),
         par.pgen_microslice_size(), par.pgen_flags()));
 
     channels_.push_back(std::make_unique<Channel>(
