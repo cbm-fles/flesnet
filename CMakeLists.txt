@@ -209,7 +209,11 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
+if( NOT "arm64" STREQUAL ${CMAKE_SYSTEM_PROCESSOR} )
+    add_compile_options(-msse4.2)
+endif()
+
+add_compile_options(-Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
 
 if (COVERALLS)
   include(Coveralls)
