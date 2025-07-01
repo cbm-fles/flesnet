@@ -98,8 +98,8 @@ private:
 
   // Pattern generator parameters
   uint32_t _pgen_channels = 0;
-  Nanoseconds _pgen_microslice_duration{100us};
-  size_t _pgen_microslice_size = 1024; // 1 KiB
+  Nanoseconds _pgen_microslice_duration{125us};
+  size_t _pgen_microslice_size = 100000; // 100 kB
 
   // Global parameters
   Nanoseconds _timeslice_duration{100ms};

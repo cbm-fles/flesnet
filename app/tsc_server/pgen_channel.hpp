@@ -4,6 +4,7 @@
 #include "dma_channel.hpp"
 #include "fles_core/RingBufferView.hpp"
 #include "fles_ipc/MicrosliceDescriptor.hpp"
+#include <mutex>
 #include <span>
 #include <thread>
 
@@ -18,18 +19,22 @@ public:
   ~pgen_channel() = default;
   void set_sw_read_pointers(uint64_t data_offset,
                             uint64_t desc_offset) override;
-  uint64_t get_desc_index() override { return m_desc_write_index; }
+  uint64_t get_desc_index() override;
   [[nodiscard]] size_t dma_transfer_size() const override { return 64; }
 
 private:
-  std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor, false>>
-      m_desc_buffer;
-  std::unique_ptr<RingBufferView<uint8_t, false>> m_data_buffer;
+  RingBufferView<fles::MicrosliceDescriptor, false> m_desc_buffer;
+  RingBufferView<uint8_t, false> m_data_buffer;
+  uint64_t m_microslice_time_ns;
+  std::size_t m_microslice_size;
 
   uint64_t m_desc_write_index = 0;
   uint64_t m_data_write_index = 0;
   uint64_t m_desc_read_index = 0;
   uint64_t m_data_read_index = 0;
+  uint64_t m_desc_offset = 0;
+  uint64_t m_data_offset = 0;
+  std::mutex m_mutex;
 
   std::jthread m_worker_thread;
   void thread_work(std::stop_token stop_token);
