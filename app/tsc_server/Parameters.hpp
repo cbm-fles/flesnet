@@ -67,6 +67,7 @@ public:
   [[nodiscard]] size_t pgen_microslice_size() const {
     return _pgen_microslice_size;
   }
+  [[nodiscard]] uint32_t pgen_flags() const { return _pgen_flags; }
 
   // Global parameters
   [[nodiscard]] int64_t timeslice_duration_ns() const {
@@ -100,6 +101,7 @@ private:
   uint32_t _pgen_channels = 0;
   Nanoseconds _pgen_microslice_duration{125us};
   size_t _pgen_microslice_size = 100000; // 100 kB
+  uint32_t _pgen_flags = 0;
 
   // Global parameters
   Nanoseconds _timeslice_duration{100ms};

@@ -146,7 +146,7 @@ Application::Application(Parameters const& par,
     // initialize pgen
     pgen_channels_.push_back(std::make_unique<cri::pgen_channel>(
         desc_buffer, data_buffer, par.pgen_microslice_duration_ns(),
-        par.pgen_microslice_size()));
+        par.pgen_microslice_size(), par.pgen_flags()));
 
     channels_.push_back(std::make_unique<Channel>(
         pgen_channels_.back().get(), desc_buffer, data_buffer,

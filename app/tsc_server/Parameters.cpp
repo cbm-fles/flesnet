@@ -144,6 +144,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
              po::value<size_t>(&_pgen_microslice_size)
                  ->default_value(_pgen_microslice_size),
              "size of a pattern generator microslice in bytes");
+  config_add("pgen-flags",
+             po::value<uint32_t>(&_pgen_flags)->default_value(_pgen_flags),
+             "flags for pattern generator channels (0: no flags, "
+             "1: generate pattern, 2: randomize sizes, "
+             "3: generate pattern + randomize sizes, ...)");
 
   config_add("timeslice-duration",
              po::value<Nanoseconds>(&_timeslice_duration)
