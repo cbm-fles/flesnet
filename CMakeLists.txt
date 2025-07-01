@@ -1,4 +1,4 @@
-# Copyright 2013-2021 Jan de Cuveland <cmail@cuveland.de>
+# Copyright 2013-2025 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 3.16)
 project(flesnet DESCRIPTION "CBM FLES Timeslice Building" VERSION 0.0 LANGUAGES CXX)
@@ -57,6 +57,8 @@ if(INCLUDE_ZMQ)
     GIT_TAG "622fc6dde99ee172ebaa9c8628d85a7a1995a21d" # v4.3.5
     GIT_CONFIG advice.detachedHead=false
     CMAKE_CACHE_ARGS
+    # override ZMQ's cmake version allowing builds with modern cmakes
+    -DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.16
     -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE
     -DWITH_LIBBSD:BOOL=FALSE
     -DWITH_LIBSODIUM:BOOL=FALSE
