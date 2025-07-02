@@ -120,12 +120,25 @@ void pgen_channel::generate_microslice(uint64_t time_ns) {
 
   // Write to data buffer
   if (has_flag(PgenFlags::GeneratePattern)) {
-    for (uint64_t i = 0; i < content_bytes; i += sizeof(uint64_t)) {
-      uint64_t data_word = (m_channel_index << 48L) | i;
-      reinterpret_cast<uint64_t&>(m_data_buffer.at(m_data_write_index)) =
-          data_word;
-      m_data_write_index += sizeof(uint64_t);
-      crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);
+    bool is_contiguous =
+        (m_data_buffer.offset_bytes(m_data_write_index) + content_bytes <=
+         m_data_buffer.bytes());
+    if (is_contiguous) {
+      uint8_t* begin = &m_data_buffer.at(m_data_write_index);
+      for (uint64_t i = 0; i < content_bytes; i += sizeof(uint64_t)) {
+        uint64_t data_word = (m_channel_index << 48L) | i;
+        *reinterpret_cast<uint64_t*>(begin + content_bytes) = data_word;
+        crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);
+      }
+      m_data_write_index += content_bytes;
+    } else {
+      for (uint64_t i = 0; i < content_bytes; i += sizeof(uint64_t)) {
+        uint64_t data_word = (m_channel_index << 48L) | i;
+        reinterpret_cast<uint64_t&>(m_data_buffer.at(m_data_write_index)) =
+            data_word;
+        m_data_write_index += sizeof(uint64_t);
+        crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);
+      }
     }
   } else {
     m_data_write_index += content_bytes;

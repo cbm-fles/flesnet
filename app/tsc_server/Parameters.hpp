@@ -108,7 +108,7 @@ private:
   Nanoseconds _timeout{1ms};
 
   // Channel parameters (may be set individually in the future)
-  size_t _data_buffer_size = UINT64_C(1) << 27; // 128 MiB
+  size_t _data_buffer_size = UINT64_C(1) << 28; // 256 MiB
   size_t _desc_buffer_size = UINT64_C(1) << 19; // 512 ki entries
   Nanoseconds _overlap_before{100us};
   Nanoseconds _overlap_after{100us};

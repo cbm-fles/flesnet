@@ -184,9 +184,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
   po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
   po::notify(vm);
 
-  std::cout << "Parsed parameter: " << _timeslice_duration << "\n";
-  // throw ParametersException("DEBUG END");
-
   std::ifstream ifs(config_file.c_str());
   if (!ifs) {
     if (config_file != "tsc_server.cfg") {
