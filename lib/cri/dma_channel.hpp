@@ -30,22 +30,33 @@ namespace cri {
 
 class cri_channel;
 
-class dma_channel {
+class basic_dma_channel {
+public:
+  basic_dma_channel() = default;
+  virtual ~basic_dma_channel() = default;
+  virtual void set_sw_read_pointers(uint64_t data_offset,
+                                    uint64_t desc_offset) = 0;
+  virtual uint64_t get_desc_index() = 0;
+  virtual size_t dma_transfer_size() const = 0;
+};
+
+class dma_channel : public basic_dma_channel {
 
 public:
   dma_channel(cri_channel* channel,
               void* data_buffer,
-              size_t data_buffer_log_size,
+              size_t data_buffer_size,
               void* desc_buffer,
-              size_t desc_buffer_log_size,
+              size_t desc_buffer_size,
               size_t dma_transfer_size);
 
   ~dma_channel();
 
-  void set_sw_read_pointers(uint64_t data_offset, uint64_t desc_offset);
+  void set_sw_read_pointers(uint64_t data_offset,
+                            uint64_t desc_offset) override;
 
   uint64_t get_data_offset();
-  uint64_t get_desc_index();
+  uint64_t get_desc_index() override;
 
   std::string data_buffer_info();
   std::string desc_buffer_info();
@@ -60,7 +71,7 @@ public:
 
   void reset_datapath(bool enable);
 
-  size_t dma_transfer_size() const { return m_dma_transfer_size; }
+  size_t dma_transfer_size() const override { return m_dma_transfer_size; }
 
 private:
   enum sg_bram_t { data_sg_bram = 0, desc_sg_bram = 1 };

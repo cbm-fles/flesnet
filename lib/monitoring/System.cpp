@@ -103,7 +103,7 @@ std::string current_thread_name() {
     throw std::runtime_error(stringerror(errno));
   }
 
-  return string(tname);
+  return std::string(tname);
 #else
   return std::string();
 #endif
@@ -113,7 +113,7 @@ void set_thread_name(const std::string& tname [[maybe_unused]]) {
 #if defined(HAVE_PTHREAD_SETNAME_NP)
   // Note: the kernel limit is 16 char, see TASK_COMM_LEN; so truncate
   static constexpr size_t TASK_COMM_LEN = 16;
-  string tname16 = tname;
+  std::string tname16 = tname;
   if (tname16.length() > TASK_COMM_LEN)
     tname16.resize(TASK_COMM_LEN);
 
