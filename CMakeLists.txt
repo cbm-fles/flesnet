@@ -51,17 +51,26 @@ if(INCLUDE_ZMQ)
     set(ZMQ_BUILD_COMMAND "${CMAKE_COMMAND} --build . --target")
   endif()
 
+  # override ZMQ's cmake version allowing builds with modern cmakes
+  set(__cmake_params
+    "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.16"
+    "-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE"
+    "-DWITH_LIBBSD:BOOL=FALSE"
+    "-DWITH_LIBSODIUM:BOOL=FALSE"
+  )
+
+  if(APPLE AND CMAKE_OSX_SYSROOT)
+    set(__cmake_params ${__cmake_params}
+      "-DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}"
+    )
+  endif()
+
   ExternalProject_Add(
     zeromq
     GIT_REPOSITORY "https://github.com/zeromq/libzmq.git"
     GIT_TAG "622fc6dde99ee172ebaa9c8628d85a7a1995a21d" # v4.3.5
     GIT_CONFIG advice.detachedHead=false
-    CMAKE_CACHE_ARGS
-    # override ZMQ's cmake version allowing builds with modern cmakes
-    -DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.16
-    -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE
-    -DWITH_LIBBSD:BOOL=FALSE
-    -DWITH_LIBSODIUM:BOOL=FALSE
+    CMAKE_CACHE_ARGS ${__cmake_params}
     BUILD_COMMAND ${ZMQ_BUILD_COMMAND} libzmq-static
     BUILD_BYPRODUCTS src/zeromq-build/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zmq${CMAKE_STATIC_LIBRARY_SUFFIX}
     INSTALL_COMMAND ""
