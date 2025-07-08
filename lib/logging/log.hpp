@@ -55,4 +55,8 @@ public:
 };
 } // namespace logging
 
+// For a debug build, you can log from where in the sources each message came from.
+// Unfortunately, it does not help too much for globally catched errors.
+// Just uncomment the following line and comment the next one instead.
+// #define L_(severity) BOOST_LOG_SEV(g_logger::get(), severity) << __FILE__ << ":" << __LINE__ << ":" << __func__ << "(): "
 #define L_(severity) BOOST_LOG_SEV(g_logger::get(), severity)
