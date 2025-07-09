@@ -34,7 +34,6 @@ public:
   void set_sw_read_pointers(uint64_t data_offset,
                             uint64_t desc_offset) override;
   uint64_t get_desc_index() override;
-  [[nodiscard]] size_t dma_transfer_size() const override { return 8; }
 
 private:
   RingBufferView<fles::MicrosliceDescriptor, false> m_desc_buffer;

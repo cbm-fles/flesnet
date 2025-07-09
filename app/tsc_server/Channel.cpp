@@ -254,9 +254,6 @@ void Channel::set_read_index(uint64_t read_index) {
 
   uint64_t desc_offset = m_desc_buffer->offset_bytes(read_index);
   uint64_t data_offset = m_data_buffer->offset_bytes(data_read_index);
-  // Round data_offset down to dma transfer size, will hang one transfer
-  // size behind
-  data_offset &= ~(m_dma_channel->dma_transfer_size() - 1);
 
   m_dma_channel->set_sw_read_pointers(data_offset, desc_offset);
 

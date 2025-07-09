@@ -8,9 +8,11 @@
 #include "dma_channel.hpp"
 #include "cri_registers.hpp"
 #include "data_structures.hpp"
+#include "fles_ipc/MicrosliceDescriptor.hpp"
 #include <cassert>
 #include <cstring>
 #include <memory>
+#include <unistd.h> //sysconf
 
 namespace cri {
 
@@ -29,6 +31,16 @@ dma_channel::dma_channel(cri_channel* parent_channel,
   if (is_enabled()) {
     throw CriException("DMA Engine already enabled");
   }
+  // buffer sizes must be a multiple of the DMA engines transfer size, which is
+  // dma_transfer_size for the data buffer and
+  // sizeof(MicrosliceDescriptor) for the desc buffer (hard coded in HW!)
+  assert(data_buffer_size % m_dma_transfer_size == 0);
+  assert(desc_buffer_size % sizeof(fles::MicrosliceDescriptor) == 0);
+  // buffers must be page aligned (which implies that they are also aligned to
+  // the DMA engines transfer size which is <= page size and power of two)
+  assert(reinterpret_cast<uintptr_t>(data_buffer) % sysconf(_SC_PAGESIZE) == 0);
+  assert(reinterpret_cast<uintptr_t>(desc_buffer) % sysconf(_SC_PAGESIZE) == 0);
+
   m_data_buffer = std::make_unique<pda::dma_buffer>(
       m_parent_channel->parent_device(), data_buffer, data_buffer_size,
       (2 * m_parent_channel->channel_index() + 0));
@@ -57,16 +69,19 @@ dma_channel::~dma_channel() { disable(); }
 //
 // Pointers return number of bytes. However the DMA engine internally
 // handles only entries of size dma_transfer_size and MicrosliceDescriptor.
-// Therefore the updated pointes have to aligen to these elements.
+// Therefore the updated pointes have to align to these elements.
 //
 // The DMA engine provides indices in addition to pointers
 // - Indices grow monotonously.
 // - The descrioptor index gives the number of written descript.
-// - The data index gives the number od written bytes in the data buffer.
+// - The data index gives the number of written bytes in the data buffer.
 //
 void dma_channel::set_sw_read_pointers(uint64_t data_offset,
                                        uint64_t desc_offset) {
-  assert(data_offset % m_dma_transfer_size == 0);
+  // align data_offset to dma transfer size (round down, will hang one transfer
+  // size behind) TODO: check if rounding up is ok
+  data_offset &= ~(m_dma_transfer_size - 1);
+  // desc_offset is usually already aligned, so we only make sure it is
   assert(desc_offset % sizeof(fles::MicrosliceDescriptor) == 0);
 
   sw_read_pointers_t offsets;
@@ -148,7 +163,7 @@ dma_channel::convert_sg_list(const std::vector<pda::sg_entry>& sg_list) {
       hw_entry.addr_low = get_lo_32(cur_addr);
       hw_entry.addr_high = get_hi_32(cur_addr);
       hw_entry.length =
-          (UINT64_C(1) << 32) - PAGE_SIZE; // TODO: why -page_size?
+          (UINT64_C(1) << 32) - sysconf(_SC_PAGESIZE); // TODO: why -page_size?
       sg_list_hw.push_back(hw_entry);
 
       cur_addr += hw_entry.length;
@@ -225,8 +240,6 @@ void dma_channel::set_configured_sg_entries(sg_bram_t buf_sel,
 }
 
 void dma_channel::set_configured_buffer_size(sg_bram_t buf_sel) {
-  // this HW register does not influence the dma engine
-  // they are for debug purpose only
   pda::dma_buffer* buffer =
       (buf_sel) != 0u ? m_desc_buffer.get() : m_data_buffer.get();
   sys_bus_addr addr =

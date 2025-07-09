@@ -8,12 +8,9 @@
 #pragma once
 
 #include "cri_channel.hpp"
-#include "fles_ipc/MicrosliceDescriptor.hpp"
-#include "pda/data_structures.hpp"
 #include "pda/dma_buffer.hpp"
 #include "register_file.hpp"
 #include <memory>
-#include <unistd.h> //sysconf
 
 #define BIT_SGENTRY_CTRL_WRITE_EN 31
 #define BIT_SGENTRY_CTRL_TARGET 30
@@ -37,7 +34,6 @@ public:
   virtual void set_sw_read_pointers(uint64_t data_offset,
                                     uint64_t desc_offset) = 0;
   virtual uint64_t get_desc_index() = 0;
-  virtual size_t dma_transfer_size() const = 0;
 };
 
 class dma_channel : public basic_dma_channel {
@@ -71,7 +67,7 @@ public:
 
   void reset_datapath(bool enable);
 
-  size_t dma_transfer_size() const override { return m_dma_transfer_size; }
+  size_t dma_transfer_size() const { return m_dma_transfer_size; }
 
 private:
   enum sg_bram_t { data_sg_bram = 0, desc_sg_bram = 1 };
