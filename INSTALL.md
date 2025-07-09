@@ -1,4 +1,4 @@
-Installing FLESnet
+Installing Flesnet
 ==================
 
 General remarks: OS and Software Environment
@@ -188,13 +188,13 @@ programming scripts are provided (see [HOWTO.md](HOWTO.md)).
 To use these scripts install the Xilinx Vivado Lab Tools or any other
 Vivado edition.
 
-Legacy FLIB readout with FLESnet
-==================================
+Legacy FLIB readout with Flesnet
+================================
 
 Flesnet Version
 ---------------
 
-The legacy readout isn't supported in newer versions of flesnet
+The legacy readout is not supported in newer versions of Flesnet
 anymore. Versions still supporting the legacy readout are tagged in
 the repository. The naming schema for these tags is legacy-ro-vX.X. If
 serious issues are fixed a new tag will be created.
