@@ -1,4 +1,5 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2025 Florian Schintke <schintke@zib.de>
 
 #include "Parameters.hpp"
 #include "GitRevision.hpp"
@@ -126,9 +127,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   config_add("max-timeslice-number,n",
              po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
              "quit after processing given number of timeslices");
-  config_add(
-      "processor-executable,e",
-      po::value<std::string>(&processor_executable_)->value_name("<string>"),
+  config_add("processor-executable,e",
+             po::value<std::string>(&processor_executable_)
+                 ->default_value(processor_executable_)
+                 ->value_name("<string>"),
       "name of the executable acting as timeslice processor");
   config_add("processor-instances",
              po::value<uint32_t>(&processor_instances_)
