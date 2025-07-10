@@ -27,6 +27,7 @@ enum class Subsystem : uint8_t {
   TRD2D = 0x48, ///< 2-D Transition Radiation Detector (TRD2D)
   MUCH = 0x50,  ///< Muon Chamber system (MuCh)
   TOF = 0x60,   ///< Time-Of-Flight detector (TOF, was: RPC)
+  FSD = 0x81,   ///< Forward Spectator Detector (FSD)
   BMON = 0x90,  ///< Beam MONitor (BMON, was: T0)
 
   // Other detectors (historical/experimental)
@@ -53,6 +54,7 @@ inline const std::string& to_string(Subsystem sys_id) {
       {Subsystem::TRD2D, "TRD2D"},
       {Subsystem::MUCH, "MUCH"},
       {Subsystem::TOF, "TOF"},
+      {Subsystem::FSD, "FSD"},
       {Subsystem::BMON, "BMON"},
 
       // Other detectors (historical/experimental)
