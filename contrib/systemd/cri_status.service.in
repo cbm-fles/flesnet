@@ -1,0 +1,11 @@
+[Unit]
+Description=CRI readout status monitoring
+
+[Service]
+EnvironmentFile=-/etc/default/cri_status
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/cri_status -m $monitor_uri
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
