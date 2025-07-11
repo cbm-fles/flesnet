@@ -49,7 +49,7 @@ public:
                    MetricTagSet&& tagset,
                    MetricFieldSet&& fieldset,
                    time_point timestamp = time_point());
-  const std::string& HostName() const;
+  [[nodiscard]] const std::string& HostName() const;
 
   static Monitor& Ref();
   static Monitor* Ptr();
