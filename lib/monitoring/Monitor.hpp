@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// (C) Copyright 2021 GSI Helmholtzzentrum für Schwerionenforschung
+// (C) Copyright 2021, 2025 GSI Helmholtzzentrum für Schwerionenforschung
 // Original author: Walter F.J. Mueller <w.f.j.mueller@gsi.de>
 
 #ifndef included_Cbm_Monitor
@@ -68,17 +68,17 @@ private:
   using sink_uptr_t = std::unique_ptr<MonitorSink>;
   using smap_t = std::unordered_map<std::string, sink_uptr_t>;
 
-  std::thread fThread{};              //!< worker thread
+  std::thread fThread;                //!< worker thread
   std::condition_variable fControlCV; //!< condition variable for thread control
-  std::mutex fControlMutex{};         //!< mutex for thread control
+  std::mutex fControlMutex;           //!< mutex for thread control
   bool fStopped{false};               //!< signals thread rundown
 
-  metvec_t fMetVec{};          //!< metric list
-  std::mutex fMetVecMutex{};   //!< mutex for fMetVec access
+  metvec_t fMetVec;            //!< metric list
+  std::mutex fMetVecMutex;     //!< mutex for fMetVec access
   std::string fHostName;       //!< hostname
-  smap_t fSinkMap{};           //!< sink registry
-  std::mutex fSinkMapMutex{};  //!< mutex for fSinkMap access
-  time_point fNextHeartbeat{}; //!< time of next heartbeat
+  smap_t fSinkMap;             //!< sink registry
+  std::mutex fSinkMapMutex;    //!< mutex for fSinkMap access
+  time_point fNextHeartbeat;   //!< time of next heartbeat
   static Monitor* fpSingleton; //!< \glos{singleton} this
 };
 
