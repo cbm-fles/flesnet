@@ -86,7 +86,7 @@ bool FlimPatternChecker::check(const fles::Microslice& m) {
   }
 
   // check ramp, everything from third 64-bit word but last 256-bit word
-  const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
+  const auto* content = reinterpret_cast<const uint64_t*>(m.content());
 
   // number of full 256-bit words
   size_t size256 = m.desc().size / 32;
