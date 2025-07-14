@@ -3,8 +3,17 @@
 #include "Parameters.hpp"
 #include "GitRevision.hpp"
 #include "log.hpp"
-#include <boost/program_options.hpp>
+//#include <boost/program_options.hpp>
+#include <boost/log/sinks/syslog_constants.hpp>
+//#include <boost/program_options.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/value_semantic.hpp>
+#include <boost/program_options/variables_map.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
+#include <string>
 
 namespace po = boost::program_options;
 

@@ -2,18 +2,27 @@
 
 #include "Application.hpp"
 #include "FlesnetPatternGenerator.hpp"
+#include "DualRingBuffer.hpp"          // InputBufferWriteInterface
+#include "Parameters.hpp"
 #include "MicrosliceAnalyzer.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
 #include "MicrosliceReceiver.hpp"
+#include "Sink.hpp"                    // MicrosliceSink
 #include "MicrosliceTransmitter.hpp"
 #include "TimesliceDebugger.hpp"
+#include "shm_device_client.hpp"
+#include "shm_device_provider.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
 #include <chrono>
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <thread>
+#include <utility>
 
 Application::Application(Parameters const& par) : par_(par) {
 

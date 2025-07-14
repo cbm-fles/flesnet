@@ -5,11 +5,15 @@
 // Timeslices are treated as independet
 // Microslices are treated as consecutive data stream
 // Checks for:
-// - cosecutive pgen sequence numbers across all microslices
+// - consecutive pgen sequence numbers across all microslices
 //   in one timeslice component
 // Implementation is not dump parallelizable across ts components!
 
 #include "FlimPatternChecker.hpp"
+#include "Microslice.hpp"
+#include "MicrosliceDescriptor.hpp" // MicrosliceFlags
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
 
 bool FlimPatternChecker::check(const fles::Microslice& m) {

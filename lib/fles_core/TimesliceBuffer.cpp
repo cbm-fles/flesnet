@@ -1,16 +1,27 @@
 // Copyright 2016-2020 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceBuffer.hpp"
+#include "ItemProducer.hpp"
+#include "TimesliceComponentDescriptor.hpp"
 #include "TimesliceDescriptor.hpp"
 #include "TimesliceShmWorkItem.hpp"
 #include "TimesliceWorkItem.hpp"
 #include "Utility.hpp"
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/interprocess/creation_tags.hpp>
+#include <boost/interprocess/detail/segment_manager_helper.hpp>
+#include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/uuid/uuid_generators.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <cassert>
+#include <cstdint>
+#include <cstdlib>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <utility>
 
 namespace zmq {
 class context_t;

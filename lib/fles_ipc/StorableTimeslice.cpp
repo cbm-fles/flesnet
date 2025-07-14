@@ -1,8 +1,12 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "StorableTimeslice.hpp"
+#include "Timeslice.hpp"
 
 #include <algorithm>
+#include <cstdint>
+#include <cstdlib>
+#include <utility>
 
 namespace fles {
 

@@ -2,10 +2,15 @@
 #include "Utility.hpp"
 
 #include <array>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
 #include <limits>
 #include <regex>
 #include <sstream>
+#include <string>
 #include <stdexcept>
+#include <vector>
 
 std::string human_readable_count(uint64_t bytes,
                                  bool use_si,
