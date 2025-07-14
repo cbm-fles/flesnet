@@ -12,7 +12,7 @@
 #include <sys/ioctl.h>
 //#include <sys/socket.h>
 //#include <sys/types.h>
-#include <sys/ttycom.h>
+//#include <sys/ttycom.h> // definition of winsize and TIOCGWINSZ on MacOS, but Linux is missing the file
 #include <unistd.h>
 #include <vector>
 
