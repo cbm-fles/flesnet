@@ -11,6 +11,12 @@
 // Implementation is not dump parallelizable across ts components!
 
 #include "FlibLegacyPatternChecker.hpp"
+
+#include "Microslice.hpp"
+#include "MicrosliceDescriptor.hpp"
+
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
 
 bool FlibLegacyPatternChecker::check_content_pgen(const uint16_t* content,

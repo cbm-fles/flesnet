@@ -4,6 +4,8 @@
 #include "Parameters.hpp"
 #include "log.hpp"
 #include <csignal>
+#include <cstdlib>
+#include <exception>
 
 namespace {
 volatile sig_atomic_t signal_status = 0;

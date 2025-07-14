@@ -5,10 +5,23 @@
 #include "Utility.hpp"
 #include "log.hpp"
 #include <algorithm>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/program_options.hpp>
+#include <boost/log/sinks/syslog_constants.hpp>
+//#include <boost/program_options.hpp>
+#include <boost/program_options/errors.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/value_semantic.hpp>
+#include <boost/program_options/variables_map.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <cctype>
+#include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <iterator>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <stdexcept>
+#include <vector>
 
 namespace po = boost::program_options;
 

@@ -2,15 +2,19 @@
 
 #include "System.hpp"
 #include <cerrno>
+#include <cstdint>
 #include <cstring>
-#include <netdb.h>
+#include <glob.h>
+//#include <netdb.h>
 #include <pwd.h>
 #include <stdexcept>
 #include <string>
 #include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/types.h>
+//#include <sys/socket.h>
+//#include <sys/types.h>
+#include <sys/ttycom.h>
 #include <unistd.h>
+#include <vector>
 
 namespace fles::system {
 

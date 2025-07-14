@@ -1,6 +1,10 @@
 // Copyright 2013, 2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "FlesnetPatternChecker.hpp"
+#include "Microslice.hpp"
+
+#include <cstdint>
+#include <cstdlib>
 
 bool FlesnetPatternChecker::check(const fles::Microslice& m) {
   const auto* content = reinterpret_cast<const uint64_t*>(m.content());
