@@ -10,7 +10,7 @@ These dashboards correspond to the ones used in the mCBM beam campaign 2022, exp
 portable data-source names instead of hashes specific to the local `Grafana to InfluxDB` configuration.
 
 This HowTo will explain:
-- the installation and configuration of recent versions of InfluxDB to be compatible with the FLESnet monitoring
+- the installation and configuration of recent versions of InfluxDB to be compatible with the Flesnet monitoring
 - the installation and configuration of recent versions of Grafana to be compatible with the the InfluxDB setup in
   previous step
 - the importation of the dashboards in Grafana
@@ -235,12 +235,12 @@ Detailled back-pressure monitoring for a single selected EN and a choice of its 
 
 TODO
 
-#### FLESNET Overview
+#### Flesnet Overview
 
 Main monitoring panel: total data rate, data rate per system, microslice-rate per link, timeslice building buffers usage
 
 TODO
 
-#### FLESnet Data Rates Details
+#### Flesnet Data Rates Details
 
 TODO
