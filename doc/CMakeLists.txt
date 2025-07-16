@@ -224,6 +224,13 @@ doxygen_add_docs(doc-cri_test_rf
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Generating cri_test_rf documentation with doxygen")
 
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/archive_validator-doc)
+doxygen_add_docs(doc-archive_validator
+  ${MARKDOWN_DOCS_FOR_DOXYGEN}
+  app/archive_validator
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating archive_validator documentation with doxygen" )
+
 add_custom_target(doc-cri_tools
   DEPENDS
     doc-cri_info
@@ -237,6 +244,7 @@ add_custom_target(doc
     doc-mstool
     doc-tsclient
     doc-msconsumer
+    doc-archive_validator
     doc-cri_cfg
     doc-cri_server
     doc-cri_tools)

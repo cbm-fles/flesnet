@@ -71,7 +71,6 @@ std::unique_ptr<Provider> Provider::get_provider(std::string local_host_name) {
 
 struct fi_info* Provider::get_hints(enum fi_ep_type ep_type, std::string prov) {
   struct fi_info* hints = fi_allocinfo();
-
   hints->caps = FI_MSG | FI_RMA | FI_WRITE | FI_SEND | FI_RECV |
                 FI_REMOTE_WRITE | FI_TAGGED;
   hints->mode = FI_LOCAL_MR | FI_CONTEXT;
@@ -80,7 +79,7 @@ struct fi_info* Provider::get_hints(enum fi_ep_type ep_type, std::string prov) {
   hints->domain_attr->data_progress = FI_PROGRESS_AUTO;
   hints->domain_attr->mr_mode = FI_MR_BASIC;
   hints->fabric_attr->prov_name = strdup(prov.c_str());
-
+  
   return hints;
 }
 

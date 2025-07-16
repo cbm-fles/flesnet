@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <vector>
 /// Run parameters exception class.
 class ParametersException : public std::runtime_error {
 public:
@@ -16,20 +17,13 @@ struct Parameters {
   Parameters(int argc, char* argv[]) { parse_options(argc, argv); }
   void parse_options(int argc, char* argv[]);
 
-  // general options
-  uint64_t maximum_number = UINT64_MAX;
-  std::string exec;
-
-  // source selection
-  uint32_t pattern_generator = 0;
-  bool use_pattern_generator = false;
-  size_t channel_idx = 0;
-  std::string input_shm;
-  std::string input_archive;
-
-  // sink selection
-  bool analyze = false;
-  size_t dump_verbosity = 0;
-  std::string output_shm;
-  std::string output_archive;
+  // archive validation options
+  uint64_t timeslice_size;
+  uint64_t timeslice_cnt;
+  uint64_t overlap = 1;
+  uint64_t max_threads = 1;
+  bool skip_metadata = false;
+  
+  std::vector<std::string> output_archives;
+  std::vector<std::string> input_archives;
 };
