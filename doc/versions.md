@@ -25,8 +25,8 @@ mCBM, GSI/FAIR, github CI and ZIB.
 The following list helps to find minimal versions we should support.
 
 |            | Bookworm | Rocky 8.10 | Ubuntu 22 | Ubuntu 24           |
-|            | @ZIB     | @virgo     | @githubCI | @githubCI, @cbmfles |
 |------------|----------|------------|-----------|---------------------|
+|            | @ZIB     | @virgo     | @githubCI | @githubCI, @cbmfles |
 | boost      | 1.74.0   |            | 1.74.0    | 1.83.0              |
 | clang      | 14.0.6   |            | 14.0      | 18.1.3              |
 | cmake      | 3.25.1   |            | 3.22.1    | 3.28.3              |
