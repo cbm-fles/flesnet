@@ -2,15 +2,44 @@
 
 #include "Application.hpp"
 #include "ChildProcessManager.hpp"
+#include "ComponentSenderZeromq.hpp"
+#include "DualRingBuffer.hpp"           // InputBufferReadInterface
 #include "FlesnetPatternGenerator.hpp"
 #include "ItemDistributor.hpp"
+#include "MicrosliceDescriptor.hpp"
+#include "Monitor.hpp"
+#include "Parameters.hpp"
+#include "TimesliceBuffer.hpp"
+#include "TimesliceBuilderZeromq.hpp"
+#include "fles_libfabric/TimesliceBuilder.hpp"
+#include "fles_libfabric/InputChannelSender.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
-#include <boost/algorithm/string.hpp>
+#include "shm_device_client.hpp"
+// #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/constants.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include <boost/thread/future.hpp>
-#include <boost/thread/thread.hpp>
+// #include <boost/thread/thread.hpp>
+#include <boost/thread/detail/thread_group.hpp>
+#include <boost/thread/futures/wait_for_any.hpp>
+#include <chrono>
+#include <cassert>
+#include <csignal>
+#include <cstdint>
+#include <cstdlib>
+#include <exception>
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <sstream>
 #include <string>
+#include <thread>
+#include <utility>
+#include <vector>
 
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)

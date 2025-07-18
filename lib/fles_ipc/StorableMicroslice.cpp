@@ -1,6 +1,11 @@
 // Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "StorableMicroslice.hpp"
+#include "Microslice.hpp"
+
+#include <cstdint>
+#include <utility>
+#include <vector>
 
 namespace fles {
 

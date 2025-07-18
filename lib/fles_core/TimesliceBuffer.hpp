@@ -110,7 +110,7 @@ public:
 
 private:
   std::string shm_identifier_;    ///< shared memory identifier
-  boost::uuids::uuid shm_uuid_{}; ///< shared memory UUID
+  boost::uuids::uuid shm_uuid_;   ///< shared memory UUID
   uint32_t data_buffer_size_exp_; ///< 2's exponent of data buffer size in bytes
   uint32_t desc_buffer_size_exp_; ///< 2's exponent of descriptor buffer size
                                   ///< in units of TimesliceComponentDescriptors

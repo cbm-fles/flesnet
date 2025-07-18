@@ -5,11 +5,15 @@
 // Timeslices are treated as independet
 // Microslices are treated as consecutive data stream
 // Checks for:
-// - cosecutive pgen sequence numbers across all microslices
+// - consecutive pgen sequence numbers across all microslices
 //   in one timeslice component
 // Implementation is not dump parallelizable across ts components!
 
 #include "FlimPatternChecker.hpp"
+#include "Microslice.hpp"
+#include "MicrosliceDescriptor.hpp" // MicrosliceFlags
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
 
 bool FlimPatternChecker::check(const fles::Microslice& m) {
@@ -86,7 +90,7 @@ bool FlimPatternChecker::check(const fles::Microslice& m) {
   }
 
   // check ramp, everything from third 64-bit word but last 256-bit word
-  const uint64_t* content = reinterpret_cast<const uint64_t*>(m.content());
+  const auto* content = reinterpret_cast<const uint64_t*>(m.content());
 
   // number of full 256-bit words
   size_t size256 = m.desc().size / 32;

@@ -2,14 +2,25 @@
 
 #include "TimesliceBuilderZeromq.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "Monitor.hpp"
 #include "System.hpp"
+#include "TimesliceBuffer.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceWorkItem.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
+#include <cassert>
+#include <cerrno>
 #include <chrono>
+#include <csignal>
+#include <cstdint>
+#include <cstdlib>
+#include <memory>
+#include <string>
 #include <thread>
 #include <utility>
+#include <vector>
+#include <zmq.h>
 
 TimesliceBuilderZeromq::TimesliceBuilderZeromq(
     uint64_t compute_index,

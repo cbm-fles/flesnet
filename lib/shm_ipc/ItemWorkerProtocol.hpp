@@ -60,7 +60,14 @@ public:
 
   [[nodiscard]] const std::string& payload() const { return payload_; }
 
-  ~Item() { completed_items_->push(id_); }
+  ~Item() {
+    try {
+      completed_items_->push(id_);
+    }
+    catch (...) {
+      L_(info) << "Exception in Item::~Item() occurred";
+    }
+  }
 
 private:
   std::queue<ItemID>* completed_items_;

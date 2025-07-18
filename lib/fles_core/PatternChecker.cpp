@@ -5,6 +5,10 @@
 #include "FlibLegacyPatternChecker.hpp"
 #include "FlibPatternChecker.hpp"
 #include "FlimPatternChecker.hpp"
+#include "MicrosliceDescriptor.hpp"
+#include <cstdint>
+#include <cstdlib>
+#include <memory>
 
 std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
                                                        uint8_t arg_sys_ver,

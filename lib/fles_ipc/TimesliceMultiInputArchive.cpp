@@ -3,11 +3,19 @@
 #include "TimesliceMultiInputArchive.hpp"
 
 #include "TimesliceInputArchive.hpp"
+#include "log.hpp"
 
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
+#include <algorithm>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/filesystem/directory.hpp>
+#include <boost/filesystem/path.hpp>
+#include <cstdlib>
 #include <memory>
 #include <regex>
+#include <string>
+#include <utility>
+#include <vector>
 
 /*
   Unexpected behaviour (from tests):
