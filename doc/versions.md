@@ -16,6 +16,7 @@ Deprecated
 - Debian 9 "Stretch", EOL: 2022-06 (2024-06 with LTS)
 - Debian 10 "Buster" 19.07, EOL: 2022-08
 - Debian 11 "Bullseye" 21.08, EOL: 2024-07
+- Rocky Linux 8.9 "Green Obsidian", EOL: 2024-05
 
 ### Minimum Versions to Support
 
@@ -24,17 +25,17 @@ mCBM, GSI/FAIR, github CI and ZIB.
 
 The following list helps to find minimal versions we should support.
 
-|            | Bookworm | Rocky 8.10 | Ubuntu 22 | Ubuntu 24           |
-|------------|----------|------------|-----------|---------------------|
-|            | @ZIB     | @virgo     | @githubCI | @githubCI, @cbmfles |
-| boost      | 1.74.0   |            | 1.74.0    | 1.83.0              |
-| clang      | 14.0.6   |            | 14.0      | 18.1.3              |
-| cmake      | 3.25.1   |            | 3.22.1    | 3.28.3              |
-| gcc        | 12.2.0   |            | 11.2      | 13.3.0              |
-| libibverbs | 44.0     |            | 39.0      | 50.0                |
-| libfabric  | 1.17     |            | 1.11      | 1.17                |
-| libzmq     | 4.3.4    |            | 4.3.4     | 4.3.5               |
-
+|            | Bookworm | Rocky 8.9 | Ubuntu 22.04 | Ubuntu 24.04        |
+|------------|----------|-----------|--------------|---------------------|
+|            | @ZIB     | @virgo    | @githubCI    | @githubCI, @cbmfles |
+| boost      | 1.74.0   | 1.66      | 1.74.0       | 1.83.0              |
+| clang      | 14.0.6   | 16.0.6    | 14.0         | 18.1.3              |
+| cmake      | 3.25.1   | 3.20-3.26 | 3.22.1       | 3.28.3              |
+| gcc        | 12.2.0   | 8.5.0     | 11.2         | 13.3.0              |
+| libfabric  | 1.17     | 1.18.0    | 1.11         | 1.17                |
+| libibverbs | 44.0     | 46.0      | 39.0         | 50.0                |
+| libzmq     | 4.3.4    | -         | 4.3.4        | 4.3.5               |
+| libzstd    | 1.5.4    | 1.4.4     | 1.4.8        | 1.5.5               |
 
 ### Debian 8 "Jessie"
 
