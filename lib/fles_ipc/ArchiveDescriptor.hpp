@@ -1,4 +1,5 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2025 Florian Schintke <schintke@zib.de>
 /// \file
 /// \brief Defines the fles::ArchiveDescriptor class.
 #pragma once
@@ -19,8 +20,28 @@ enum class ArchiveType {
   QaDataArchive
 };
 
+constexpr const char* ArchiveTypeToString(ArchiveType e) noexcept
+{
+    switch (e) {
+    case ArchiveType::TimesliceArchive: return "TimesliceArchive";
+    case ArchiveType::MicrosliceArchive: return "MicrosliceArchive";
+    case ArchiveType::RecoResultsArchive: return "RecoResultsArchive";
+    case ArchiveType::QaDataArchive: return "QaDataArchive";
+    default: return "unknown archive type";
+    }
+}
+
 /// The archive compression enum
 enum class ArchiveCompression { None, Zstd };
+
+constexpr const char* ArchiveCompressionToString(ArchiveCompression e) noexcept
+{
+    switch (e) {
+    case ArchiveCompression::None: return "None";
+    case ArchiveCompression::Zstd: return "Zstd";
+    default: return "unknown compression type";
+    }
+}
 
 template <class Base, class Derived, ArchiveType archive_type>
 class InputArchive;
