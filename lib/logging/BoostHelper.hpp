@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <fstream>
 
 namespace fles {
 /**
@@ -31,5 +32,10 @@ constexpr const char* boostlib_for_archive_version(uint64_t v) {
     return "newer than 1.88";
   }
 }
+
+/**
+ * \brief Find boost archive version of an archive ifstream.
+ */
+  uint64_t boost_peek_for_archive_version(std::ifstream &stream);
 
 } // namespace fles

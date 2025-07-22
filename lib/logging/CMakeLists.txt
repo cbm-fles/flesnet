@@ -1,6 +1,6 @@
 # Copyright 2013-2014, 2016 Jan de Cuveland <cmail@cuveland.de>
 
-add_library(logging BoostHelper.hpp log.cpp log.hpp)
+add_library(logging BoostHelper.cpp BoostHelper.hpp log.cpp log.hpp)
 
 target_compile_definitions(logging
   PUBLIC BOOST_LOG_DYN_LINK
