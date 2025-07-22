@@ -34,6 +34,10 @@ Boost version | BOOST_ARCHIVE_VERSION
 1.82 | 19
 1.83 | 19
 1.84 | 20
+1.85 | 20
+1.86 | 20
+1.87 | 20
+1.88 | 20
 dev  | 20
 
 - List of BOOST_ARCHIVE_VERSION changes:
