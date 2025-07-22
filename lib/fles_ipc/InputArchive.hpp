@@ -89,8 +89,9 @@ public:
           *in_, boost::archive::no_header);
 #else
       throw std::runtime_error(
-          "Unsupported compression type for input archive file \"" +
-          filename + "\"");
+        "Unsupported compression type for input archive file \"" +
+          filename + "\". Your boost library does not support \"" +
+          ArchiveCompressionToString(descriptor_.archive_compression()) + "\".");
 #endif
     }
   }

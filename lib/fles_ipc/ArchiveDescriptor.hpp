@@ -37,8 +37,8 @@ enum class ArchiveCompression { None, Zstd };
 constexpr const char* ArchiveCompressionToString(ArchiveCompression e) noexcept
 {
     switch (e) {
-    case ArchiveCompression::None: return "None";
-    case ArchiveCompression::Zstd: return "Zstd";
+    case ArchiveCompression::None: return "none";
+    case ArchiveCompression::Zstd: return "zstd";
     default: return "unknown compression type";
     }
 }
