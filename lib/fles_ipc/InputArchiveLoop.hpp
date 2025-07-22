@@ -120,7 +120,8 @@ private:
 #else
       throw std::runtime_error(
           "Unsupported compression type for input archive file \"" + filename_ +
-          "\"");
+          "\". Your boost library does not support \"" +
+          ArchiveCompressionToString(descriptor_.archive_compression()) + "\".");
 #endif
     }
 

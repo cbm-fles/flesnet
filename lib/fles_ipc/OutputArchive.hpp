@@ -55,7 +55,8 @@ public:
 #else
       throw std::runtime_error(
           "Unsupported compression type for output archive file \"" +
-          filename + "\"");
+          filename + "\". Your boost library does not support " +
+          ArchiveCompressionToString(descriptor_.archive_compression()) + ".");
 #endif
     }
   }
