@@ -3,7 +3,6 @@
 #include "ManagedTimesliceBuffer.hpp"
 #include "Timeslice.hpp"
 #include "TimesliceCompletion.hpp"
-#include "TimesliceWorkItem.hpp"
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>

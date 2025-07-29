@@ -4,6 +4,7 @@
 #include "ItemProducer.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceComponentDescriptor.hpp"
+#include "TimesliceWorkItem.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <cstdint>
@@ -12,9 +13,6 @@
 #include <set>
 #include <string>
 
-namespace fles {
-struct TimesliceWorkItem;
-}
 namespace zmq {
 class context_t;
 }
