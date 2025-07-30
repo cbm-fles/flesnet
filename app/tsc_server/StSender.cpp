@@ -497,7 +497,10 @@ void StSender::handle_builder_send_complete(void* request,
 
 void StSender::notify_queue_update() const {
   uint64_t value = 1;
-  write(queue_event_fd_, &value, sizeof(value));
+  ssize_t ret = write(queue_event_fd_, &value, sizeof(value));
+  if (ret != sizeof(value)) {
+    L_(error) << "Failed to write to queue_event_fd_: " << strerror(errno);
+  }
 }
 
 std::size_t StSender::process_queues() {
