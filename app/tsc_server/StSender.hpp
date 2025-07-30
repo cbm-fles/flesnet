@@ -37,16 +37,28 @@ public:
   std::optional<StID> try_receive_completion();
 
 private:
-  // stsender (connect) -> tssched (listen)
+  // AM IDs for communication
+
+  // 1. tssched (listen) <-> stsender (connect)
+  // stsender -> tssched
   static constexpr unsigned int AM_SENDER_REGISTER = 20;
   static constexpr unsigned int AM_SENDER_ANNOUNCE_ST = 21;
   static constexpr unsigned int AM_SENDER_RETRACT_ST = 22;
-  // stsender (connect) <- tssched (listen)
+  // tssched -> stsender
   static constexpr unsigned int AM_SCHED_RELEASE_ST = 30;
-  // stsender (listen) <- tsbuilder (connect)
-  static constexpr unsigned int AM_BUILDER_REQUEST_ST = 40;
-  // stsender (listen) -> tsbuilder (connect)
-  static constexpr unsigned int AM_SENDER_SEND_ST = 50;
+
+  // 2. tssched (listen) <-> tsbuilder (connect)
+  // tsbuilder -> tssched
+  static constexpr unsigned int AM_BUILDER_REGISTER = 40;
+  static constexpr unsigned int AM_BUILDER_STATUS = 41;
+  // tssched -> tsbuilder
+  static constexpr unsigned int AM_SCHED_SEND_ST = 50;
+
+  // 3. stsender (listen) <-> tsbuilder (connect)
+  // tsbuilder -> stsender
+  static constexpr unsigned int AM_BUILDER_REQUEST_ST = 60;
+  // stsender -> tsbuilder
+  static constexpr unsigned int AM_SENDER_SEND_ST = 70;
 
   static constexpr int EPOLL_TIMEOUT_MS = 1000;
 
