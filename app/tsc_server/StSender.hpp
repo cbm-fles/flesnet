@@ -3,6 +3,7 @@
 
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
+#include "TsbProtocol.hpp"
 #include <array>
 #include <cstdint>
 #include <deque>
@@ -37,31 +38,6 @@ public:
   std::optional<StID> try_receive_completion();
 
 private:
-  // AM IDs for communication
-
-  // 1. tssched (listen) <-> stsender (connect)
-  // stsender -> tssched
-  static constexpr unsigned int AM_SENDER_REGISTER = 20;
-  static constexpr unsigned int AM_SENDER_ANNOUNCE_ST = 21;
-  static constexpr unsigned int AM_SENDER_RETRACT_ST = 22;
-  // tssched -> stsender
-  static constexpr unsigned int AM_SCHED_RELEASE_ST = 30;
-
-  // 2. tssched (listen) <-> tsbuilder (connect)
-  // tsbuilder -> tssched
-  static constexpr unsigned int AM_BUILDER_REGISTER = 40;
-  static constexpr unsigned int AM_BUILDER_STATUS = 41;
-  // tssched -> tsbuilder
-  static constexpr unsigned int AM_SCHED_SEND_ST = 50;
-
-  // 3. stsender (listen) <-> tsbuilder (connect)
-  // tsbuilder -> stsender
-  static constexpr unsigned int AM_BUILDER_REQUEST_ST = 60;
-  // stsender -> tsbuilder
-  static constexpr unsigned int AM_SENDER_SEND_ST = 70;
-
-  static constexpr int EPOLL_TIMEOUT_MS = 1000;
-
   Scheduler tasks_;
 
   uint16_t listen_port_;
@@ -75,7 +51,6 @@ private:
   std::mutex queue_mutex_;
   std::queue<StID> completed_;
   std::mutex completions_mutex_;
-  int ucx_event_fd_ = -1;
   int epoll_fd_ = -1;
 
   std::unordered_map<StID,
@@ -97,11 +72,6 @@ private:
   // Main operation loop
   void operator()(std::stop_token stop_token);
 
-  // Network initialization/cleanup
-  bool initialize_ucx();
-  bool create_listener();
-  void cleanup();
-
   // Scheduler connection management
   void connect_to_scheduler_if_needed();
   void connect_to_scheduler();
@@ -114,7 +84,6 @@ private:
   // Scheduler message handling
   void send_announcement_to_scheduler(StID id);
   void send_retraction_to_scheduler(StID id);
-  void handle_generic_send_complete(void* request, ucs_status_t status);
   ucs_status_t handle_scheduler_release(const void* header,
                                         size_t header_length,
                                         void* data,
@@ -149,30 +118,44 @@ private:
   create_iov_vector(const SubTimesliceHandle& sth,
                     std::span<std::byte> descriptor_bytes);
 
-  // UCX event handling
-  bool arm_worker_and_wait(std::array<epoll_event, 1>& events);
-
   // UCX static callbacks (trampolines)
-  static void on_new_connection(ucp_conn_request_h conn_request, void* arg);
-  static void on_endpoint_error(void* arg, ucp_ep_h ep, ucs_status_t status);
-  static void on_scheduler_error(void* arg, ucp_ep_h ep, ucs_status_t status);
+  static void on_new_connection(ucp_conn_request_h conn_request, void* arg) {
+    static_cast<StSender*>(arg)->handle_new_connection(conn_request);
+  }
+  static void on_endpoint_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
+    static_cast<StSender*>(arg)->handle_endpoint_error(ep, status);
+  }
+  static void on_scheduler_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
+    static_cast<StSender*>(arg)->handle_scheduler_error(ep, status);
+  }
   static ucs_status_t on_builder_request(void* arg,
                                          const void* header,
                                          size_t header_length,
                                          void* data,
                                          size_t length,
-                                         const ucp_am_recv_param_t* param);
+                                         const ucp_am_recv_param_t* param) {
+    return static_cast<StSender*>(arg)->handle_builder_request(
+        header, header_length, data, length, param);
+  }
   static ucs_status_t on_scheduler_release(void* arg,
                                            const void* header,
                                            size_t header_length,
                                            void* data,
                                            size_t length,
-                                           const ucp_am_recv_param_t* param);
-  static void
-  on_builder_send_complete(void* request, ucs_status_t status, void* user_data);
+                                           const ucp_am_recv_param_t* param) {
+    return static_cast<StSender*>(arg)->handle_scheduler_release(
+        header, header_length, data, length, param);
+  }
+  static void on_builder_send_complete(void* request,
+                                       ucs_status_t status,
+                                       void* user_data) {
+    static_cast<StSender*>(user_data)->handle_builder_send_complete(request,
+                                                                    status);
+  }
   static void on_scheduler_register_complete(void* request,
                                              ucs_status_t status,
-                                             void* user_data);
-  static void
-  on_generic_send_complete(void* request, ucs_status_t status, void* user_data);
+                                             void* user_data) {
+    static_cast<StSender*>(user_data)->handle_scheduler_register_complete(
+        request, status);
+  }
 };

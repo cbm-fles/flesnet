@@ -3,11 +3,12 @@
 #include "ucxutil.hpp"
 #include "log.hpp"
 #include <netdb.h>
+#include <sys/epoll.h>
 #include <ucp/api/ucp.h>
 #include <ucs/type/status.h>
 
 namespace ucx::util {
-bool init(ucp_context_h& context, ucp_worker_h& worker, int& event_fd) {
+bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
   if (context != nullptr || worker != nullptr) {
     L_(error) << "UCP context or worker already initialized";
     return false;
@@ -48,6 +49,8 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int& event_fd) {
     return false;
   }
 
+  // Set up epoll
+  int event_fd = -1;
   status = ucp_worker_get_efd(worker, &event_fd);
   if (status != UCS_OK) {
     L_(error) << "Failed to get UCP worker event_fd: " +
@@ -56,8 +59,22 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int& event_fd) {
     worker = nullptr;
     ucp_cleanup(context);
     context = nullptr;
+    return false;
   }
 
+  epoll_event ev{};
+  ev.events = EPOLLIN;
+  ev.data.fd = event_fd;
+  if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &ev) == -1) {
+    L_(error) << "Failed to set up epoll for UCP worker";
+    ucp_worker_destroy(worker);
+    worker = nullptr;
+    ucp_cleanup(context);
+    context = nullptr;
+    return false;
+  }
+
+  L_(debug) << "UCP context and worker initialized successfully";
   return true;
 }
 
@@ -70,6 +87,29 @@ void cleanup(ucp_context_h& context, ucp_worker_h& worker) {
     ucp_cleanup(context);
     context = nullptr;
   }
+}
+
+bool arm_worker_and_wait(ucp_worker_h worker, int epoll_fd) {
+  ucs_status_t status = ucp_worker_arm(worker);
+  if (status == UCS_ERR_BUSY) {
+    return true;
+  }
+  if (status != UCS_OK) {
+    L_(error) << "Failed to arm UCP worker: " << ucs_status_string(status);
+    return false;
+  }
+
+  std::array<epoll_event, 1> events{};
+  int nfds =
+      epoll_wait(epoll_fd, events.data(), events.size(), EPOLL_TIMEOUT_MS);
+  if (nfds == -1) {
+    if (errno == EINTR) {
+      return true;
+    }
+    L_(error) << "epoll_wait failed: " << strerror(errno);
+    return false;
+  }
+  return true;
 }
 
 std::optional<std::string> get_client_address(ucp_conn_request_h conn_request) {
@@ -98,7 +138,39 @@ std::optional<std::string> get_client_address(ucp_conn_request_h conn_request) {
          std::string(static_cast<char*>(service));
 }
 
-std::optional<ucp_ep_h> create_endpoint(ucp_worker_h& worker,
+bool create_listener(ucp_worker_h worker,
+                     ucp_listener_h& listener,
+                     uint16_t listen_port,
+                     ucp_listener_conn_callback_t conn_cb,
+                     void* arg) {
+  if (listener != nullptr) {
+    return false;
+  }
+
+  struct sockaddr_in listen_addr {};
+  listen_addr.sin_family = AF_INET;
+  listen_addr.sin_addr.s_addr = INADDR_ANY;
+  listen_addr.sin_port = htons(listen_port);
+
+  ucp_listener_params_t params{};
+  params.field_mask = UCP_LISTENER_PARAM_FIELD_SOCK_ADDR |
+                      UCP_LISTENER_PARAM_FIELD_CONN_HANDLER;
+  params.sockaddr.addr = reinterpret_cast<const struct sockaddr*>(&listen_addr);
+  params.sockaddr.addrlen = sizeof(listen_addr);
+  params.conn_handler.cb = conn_cb;
+  params.conn_handler.arg = arg;
+
+  ucs_status_t status = ucp_listener_create(worker, &params, &listener);
+  if (status != UCS_OK) {
+    L_(error) << "UCP listener creation failed: " << ucs_status_string(status);
+    return false;
+  }
+  L_(info) << "Listening for connections on port " << listen_port;
+
+  return true;
+}
+
+std::optional<ucp_ep_h> create_endpoint(ucp_worker_h worker,
                                         ucp_conn_request_h conn_request,
                                         ucp_err_handler_cb_t on_endpoint_error,
                                         void* arg) {
@@ -121,7 +193,7 @@ std::optional<ucp_ep_h> create_endpoint(ucp_worker_h& worker,
   return ep;
 }
 
-std::optional<ucp_ep_h> accept(ucp_worker_h& worker,
+std::optional<ucp_ep_h> accept(ucp_worker_h worker,
                                ucp_conn_request_h conn_request,
                                ucp_err_handler_cb_t on_endpoint_error,
                                void* arg) {
@@ -133,7 +205,7 @@ std::optional<ucp_ep_h> accept(ucp_worker_h& worker,
   return *ep;
 }
 
-std::optional<ucp_ep_h> connect(ucp_worker_h& worker,
+std::optional<ucp_ep_h> connect(ucp_worker_h worker,
                                 const std::string& address,
                                 uint16_t port,
                                 ucp_err_handler_cb_t on_endpoint_error,
@@ -182,7 +254,7 @@ std::optional<ucp_ep_h> connect(ucp_worker_h& worker,
   return ep;
 }
 
-void close_endpoint(ucp_worker_h& worker, ucp_ep_h ep, bool force) {
+void close_endpoint(ucp_worker_h worker, ucp_ep_h ep, bool force) {
   ucp_request_param_t param{};
   param.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS;
   param.flags = force ? UCP_EP_CLOSE_MODE_FORCE : UCP_EP_CLOSE_MODE_FLUSH;
@@ -191,7 +263,7 @@ void close_endpoint(ucp_worker_h& worker, ucp_ep_h ep, bool force) {
   wait_for_request_completion(worker, request);
 }
 
-void wait_for_request_completion(ucp_worker_h& worker,
+void wait_for_request_completion(ucp_worker_h worker,
                                  ucs_status_ptr_t& request) {
   if (request != nullptr && UCS_PTR_IS_PTR(request)) {
     ucs_status_t status;
@@ -204,7 +276,7 @@ void wait_for_request_completion(ucp_worker_h& worker,
   }
 }
 
-bool set_receive_handler(ucp_worker_h& worker,
+bool set_receive_handler(ucp_worker_h worker,
                          unsigned int id,
                          ucp_am_recv_callback_t callback,
                          void* arg) {
@@ -269,4 +341,22 @@ bool send_active_message(ucp_ep_h ep,
 
   return send_active_message_with_params(ep, id, header, buffer, param);
 }
+
+void on_generic_send_complete(void* request,
+                              ucs_status_t status,
+                              void* /* user_data */) {
+  if (UCS_PTR_IS_ERR(request)) {
+    L_(error) << "Send operation failed: " << ucs_status_string(status);
+  } else if (status != UCS_OK) {
+    L_(error) << "Send operation completed with status: "
+              << ucs_status_string(status);
+  } else {
+    L_(trace) << "Send operation completed successfully";
+  }
+
+  if (request != nullptr) {
+    ucp_request_free(request);
+  }
+}
+
 } // namespace ucx::util

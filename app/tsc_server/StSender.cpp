@@ -13,6 +13,7 @@
 #include <optional>
 #include <sched.h>
 #include <span>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <ucp/api/ucp.h>
@@ -98,7 +99,7 @@ std::optional<StSender::StID> StSender::try_receive_completion() {
 void StSender::operator()(std::stop_token stop_token) {
   cbm::system::set_thread_name("StSender");
 
-  if (!initialize_ucx()) {
+  if (!ucx::util::init(context_, worker_, epoll_fd_)) {
     L_(error) << "Failed to initialize UCX";
     return;
   }
@@ -110,12 +111,12 @@ void StSender::operator()(std::stop_token stop_token) {
     return;
   }
   connect_to_scheduler_if_needed();
-  if (!create_listener()) {
+  if (!ucx::util::create_listener(worker_, listener_, listen_port_,
+                                  on_new_connection, this)) {
     L_(error) << "Failed to create UCX listener";
     return;
   }
 
-  std::array<epoll_event, 1> events{};
   while (!stop_token.stop_requested()) {
     if (ucp_worker_progress(worker_) != 0) {
       continue;
@@ -125,64 +126,11 @@ void StSender::operator()(std::stop_token stop_token) {
     }
     tasks_.timer();
 
-    if (!arm_worker_and_wait(events)) {
+    if (!ucx::util::arm_worker_and_wait(worker_, epoll_fd_)) {
       break;
     }
   }
 
-  cleanup();
-}
-
-// Network initialization/cleanup
-
-bool StSender::initialize_ucx() {
-  if (context_ == nullptr) {
-    if (!ucx::util::init(context_, worker_, ucx_event_fd_)) {
-      L_(error) << "Failed to initialize UCP context and worker";
-      return false;
-    }
-    L_(debug) << "UCP context and worker initialized successfully";
-
-    epoll_event ev{};
-    ev.events = EPOLLIN;
-    ev.data.fd = ucx_event_fd_;
-    if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, ucx_event_fd_, &ev) == -1) {
-      L_(error) << "epoll_ctl failed for ucx_event_fd";
-      return false;
-    }
-  }
-  return true;
-}
-
-bool StSender::create_listener() {
-  if (listener_ != nullptr) {
-    return false;
-  }
-
-  struct sockaddr_in listen_addr {};
-  listen_addr.sin_family = AF_INET;
-  listen_addr.sin_addr.s_addr = INADDR_ANY;
-  listen_addr.sin_port = htons(listen_port_);
-
-  ucp_listener_params_t params{};
-  params.field_mask = UCP_LISTENER_PARAM_FIELD_SOCK_ADDR |
-                      UCP_LISTENER_PARAM_FIELD_CONN_HANDLER;
-  params.sockaddr.addr = reinterpret_cast<const struct sockaddr*>(&listen_addr);
-  params.sockaddr.addrlen = sizeof(listen_addr);
-  params.conn_handler.cb = on_new_connection;
-  params.conn_handler.arg = this;
-
-  ucs_status_t status = ucp_listener_create(worker_, &params, &listener_);
-  if (status != UCS_OK) {
-    L_(error) << "UCP listener creation failed: " << ucs_status_string(status);
-    return false;
-  }
-  L_(info) << "Listening for connections on port " << listen_port_;
-
-  return true;
-}
-
-void StSender::cleanup() {
   if (listener_ != nullptr) {
     ucp_listener_destroy(listener_);
     listener_ = nullptr;
@@ -299,8 +247,8 @@ void StSender::send_announcement_to_scheduler(StID id) {
                           iov_vector[0].length);
 
   ucx::util::send_active_message(scheduler_ep_, AM_SENDER_ANNOUNCE_ST, header,
-                                 buffer, on_generic_send_complete, this,
-                                 UCP_AM_SEND_FLAG_COPY_HEADER);
+                                 buffer, ucx::util::on_generic_send_complete,
+                                 this, UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
 void StSender::send_retraction_to_scheduler(StID id) {
@@ -308,24 +256,8 @@ void StSender::send_retraction_to_scheduler(StID id) {
 
   auto header = std::as_bytes(std::span(hdr));
   ucx::util::send_active_message(scheduler_ep_, AM_SENDER_RETRACT_ST, header,
-                                 {}, on_generic_send_complete, this,
+                                 {}, ucx::util::on_generic_send_complete, this,
                                  UCP_AM_SEND_FLAG_COPY_HEADER);
-}
-
-void StSender::handle_generic_send_complete(void* request,
-                                            ucs_status_t status) {
-  if (UCS_PTR_IS_ERR(request)) {
-    L_(error) << "Send operation failed: " << ucs_status_string(status);
-  } else if (status != UCS_OK) {
-    L_(error) << "Send operation completed with status: "
-              << ucs_status_string(status);
-  } else {
-    L_(trace) << "Send operation completed successfully";
-  }
-
-  if (request != nullptr) {
-    ucp_request_free(request);
-  }
 }
 
 ucs_status_t
@@ -418,7 +350,7 @@ void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
     std::array<uint64_t, 3> hdr{id, 0, 0};
     auto header = std::as_bytes(std::span(hdr));
     ucx::util::send_active_message(ep, AM_SENDER_SEND_ST, header, {},
-                                   on_generic_send_complete, this,
+                                   ucx::util::on_generic_send_complete, this,
                                    UCP_AM_SEND_FLAG_COPY_HEADER);
     return;
   }
@@ -637,83 +569,4 @@ StSender::create_iov_vector(const SubTimesliceHandle& sth,
   }
 
   return iov_vector;
-}
-
-// UCX event handling
-
-bool StSender::arm_worker_and_wait(std::array<epoll_event, 1>& events) {
-  ucs_status_t status = ucp_worker_arm(worker_);
-  if (status == UCS_ERR_BUSY) {
-    return true;
-  }
-  if (status != UCS_OK) {
-    L_(fatal) << "Failed to arm UCP worker: " << ucs_status_string(status);
-    return false;
-  }
-
-  int nfds =
-      epoll_wait(epoll_fd_, events.data(), events.size(), EPOLL_TIMEOUT_MS);
-  if (nfds == -1) {
-    if (errno == EINTR) {
-      return true;
-    }
-    L_(fatal) << "epoll_wait failed: " << strerror(errno);
-    return false;
-  }
-  return true;
-}
-
-// UCX static callbacks (trampolines)
-
-void StSender::on_new_connection(ucp_conn_request_h conn_request, void* arg) {
-  static_cast<StSender*>(arg)->handle_new_connection(conn_request);
-}
-
-void StSender::on_endpoint_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
-  static_cast<StSender*>(arg)->handle_endpoint_error(ep, status);
-}
-
-void StSender::on_scheduler_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
-  static_cast<StSender*>(arg)->handle_scheduler_error(ep, status);
-}
-
-ucs_status_t StSender::on_builder_request(void* arg,
-                                          const void* header,
-                                          size_t header_length,
-                                          void* data,
-                                          size_t length,
-                                          const ucp_am_recv_param_t* param) {
-  return static_cast<StSender*>(arg)->handle_builder_request(
-      header, header_length, data, length, param);
-}
-
-ucs_status_t StSender::on_scheduler_release(void* arg,
-                                            const void* header,
-                                            size_t header_length,
-                                            void* data,
-                                            size_t length,
-                                            const ucp_am_recv_param_t* param) {
-  return static_cast<StSender*>(arg)->handle_scheduler_release(
-      header, header_length, data, length, param);
-}
-
-void StSender::on_builder_send_complete(void* request,
-                                        ucs_status_t status,
-                                        void* user_data) {
-  static_cast<StSender*>(user_data)->handle_builder_send_complete(request,
-                                                                  status);
-}
-
-void StSender::on_scheduler_register_complete(void* request,
-                                              ucs_status_t status,
-                                              void* user_data) {
-  static_cast<StSender*>(user_data)->handle_scheduler_register_complete(request,
-                                                                        status);
-}
-
-void StSender::on_generic_send_complete(void* request,
-                                        ucs_status_t status,
-                                        void* user_data) {
-  static_cast<StSender*>(user_data)->handle_generic_send_complete(request,
-                                                                  status);
 }

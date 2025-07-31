@@ -6,7 +6,6 @@ add_executable(tsc_server
   Parameters.cpp
   Channel.cpp
   StSender.cpp
-  ucxutil.cpp
   pgen_channel.cpp
 )
 
@@ -17,8 +16,8 @@ target_include_directories(tsc_server
 target_link_libraries(tsc_server
   pda
   cri
-  fles_ipc
   fles_core
+  tsb
   logging
   ucx::ucp
   ucx::uct
