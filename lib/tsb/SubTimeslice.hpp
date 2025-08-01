@@ -11,6 +11,8 @@
 #include <ucp/api/ucp.h>
 #include <vector>
 
+using StID = uint64_t;
+
 // Flags
 
 enum class StComponentFlag : uint32_t {

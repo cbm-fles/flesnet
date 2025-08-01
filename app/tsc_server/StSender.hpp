@@ -3,8 +3,6 @@
 
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
-#include "TsbProtocol.hpp"
-#include <array>
 #include <cstdint>
 #include <deque>
 #include <mutex>
@@ -25,8 +23,6 @@
 // Announce subtimeslices to tssched and send them to tsbuilders
 class StSender {
 public:
-  using StID = uint64_t;
-
   StSender(uint16_t listen_port, std::string_view scheduler_address);
   ~StSender();
   StSender(const StSender&) = delete;

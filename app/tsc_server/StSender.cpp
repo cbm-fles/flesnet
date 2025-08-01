@@ -2,10 +2,12 @@
 
 #include "StSender.hpp"
 #include "System.hpp"
+#include "TsbProtocol.hpp"
 #include "log.hpp"
 #include "monitoring/System.hpp"
 #include "ucxutil.hpp"
 #include <arpa/inet.h>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <netdb.h>
@@ -84,7 +86,7 @@ void StSender::retract_subtimeslice(StID id) {
   notify_queue_update();
 }
 
-std::optional<StSender::StID> StSender::try_receive_completion() {
+std::optional<StID> StSender::try_receive_completion() {
   std::lock_guard<std::mutex> lock(completions_mutex_);
   if (completed_.empty()) {
     return std::nullopt;
