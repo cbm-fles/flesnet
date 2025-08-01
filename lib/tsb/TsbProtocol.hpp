@@ -23,7 +23,7 @@ static constexpr unsigned int AM_BUILDER_STATUS =
     41; // header: {bytes_available, bytes_processed}, data: none
 // tssched -> tsbuilder
 static constexpr unsigned int AM_SCHED_SEND_TS =
-    50; // header: {StId, desc_size, content_size}, data: TsDescriptor
+    50; // header: {StId, desc_size, content_size}, data: StCollectionDescriptor
 
 // 3. stsender (listen) <-> tsbuilder (connect)
 // tsbuilder -> stsender

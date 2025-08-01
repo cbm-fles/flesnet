@@ -43,7 +43,7 @@ enum class StFlag : uint32_t {
   MissingComponents = 1 << 2,
 };
 
-// Descriptors for transferring subtimeslice data to the builder
+// Descriptors for transferring subtimeslice data from the sender to the builder
 
 struct DataDescriptor {
   std::ptrdiff_t offset;
@@ -199,4 +199,10 @@ struct SubTimesliceHandle {
               << ", duration_ns=" << i.duration_ns << ", flags=" << i.flags
               << ", components=...)";
   }
+};
+
+// Descriptors for transferring subtimeslice data from the sender to the builder
+
+struct StCollectionDescriptor {
+  // ... (continue here)
 };

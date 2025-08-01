@@ -236,6 +236,7 @@ if(USE_CLANG_TIDY)
 endif()
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options(-msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
 
@@ -291,7 +292,7 @@ if (USE_PDA AND PDA_FOUND)
   add_subdirectory(app/cri_server)
   if (USE_UCX AND UCX_FOUND)
     add_subdirectory(app/tsc_server)
-    #add_subdirectory(app/tssched)
+    add_subdirectory(app/tssched)
   endif()
 endif()
 unset(CMAKE_CXX_CLANG_TIDY)
