@@ -11,8 +11,10 @@
 #include "Parameters.hpp"
 #include "TimesliceBuffer.hpp"
 #include "TimesliceBuilderZeromq.hpp"
+#if defined(HAVE_LIBFABRIC)
 #include "fles_libfabric/TimesliceBuilder.hpp"
 #include "fles_libfabric/InputChannelSender.hpp"
+#endif
 #include "Utility.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
