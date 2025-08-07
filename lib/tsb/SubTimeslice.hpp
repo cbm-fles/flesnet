@@ -2,10 +2,14 @@
 #pragma once
 
 #include "MicrosliceDescriptor.hpp"
+#include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/device/back_inserter.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
-#include <sstream>
+#include <span>
 #include <string>
 #include <sys/types.h>
 #include <ucp/api/ucp.h>
@@ -51,7 +55,7 @@ struct DataDescriptor {
 
   friend class boost::serialization::access;
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int /* version */) {
+  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
     ar & offset;
     ar & size;
   }
@@ -77,7 +81,7 @@ struct StComponentDescriptor {
 
   friend class boost::serialization::access;
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int /* version */) {
+  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
     ar & descriptor;
     ar & content;
     ar & flags;
@@ -114,23 +118,11 @@ struct StDescriptor {
 
   friend class boost::serialization::access;
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int /* version */) {
+  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
     ar & start_time_ns;
     ar & duration_ns;
     ar & flags;
     ar & components;
-  }
-
-  [[nodiscard]] std::vector<std::byte> to_bytes() const {
-    std::ostringstream oss;
-    {
-      boost::archive::binary_oarchive oa(oss);
-      oa << *this;
-    }
-    std::string str = oss.str();
-    std::vector<std::byte> serialized{str.length()};
-    std::memcpy(serialized.data(), str.data(), str.length());
-    return serialized;
   }
 };
 
@@ -203,6 +195,56 @@ struct SubTimesliceHandle {
 
 // Descriptors for transferring subtimeslice data from the sender to the builder
 
-struct StCollectionDescriptor {
-  // ... (continue here)
+struct TsContribution {
+  std::string sender_id; // ID of the sender
+  uint64_t desc_size;    // Size of the descriptor data
+  uint64_t content_size; // Size of the content data
+
+  friend class boost::serialization::access;
+  template <class Archive>
+  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
+    ar & sender_id;
+    ar & desc_size;
+    ar & content_size;
+  }
 };
+
+struct StCollectionDescriptor {
+  StID id{};
+  std::vector<TsContribution> contributions;
+
+  friend class boost::serialization::access;
+  template <class Archive>
+  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
+    ar & id;
+    ar & contributions;
+  }
+};
+
+// Generic serialization utilities
+
+template <typename T> std::vector<std::byte> to_bytes(const T& obj) {
+  std::vector<char> char_buffer;
+  char_buffer.reserve(1024);
+  boost::iostreams::stream<
+      boost::iostreams::back_insert_device<std::vector<char>>>
+      stream(char_buffer);
+  boost::archive::binary_oarchive archive(stream);
+  archive << obj;
+  stream.flush();
+  // Fancy memcpy to convert char to std::byte
+  std::vector<std::byte> result(char_buffer.size());
+  std::transform(char_buffer.begin(), char_buffer.end(), result.begin(),
+                 [](char c) { return std::bit_cast<std::byte>(c); });
+
+  return result;
+}
+
+template <typename T> T to_obj(std::span<const std::byte> data) {
+  boost::iostreams::stream<boost::iostreams::array_source> stream(
+      reinterpret_cast<const char*>(data.data()), data.size());
+  boost::archive::binary_iarchive archive(stream);
+  T obj;
+  archive >> obj;
+  return obj;
+}

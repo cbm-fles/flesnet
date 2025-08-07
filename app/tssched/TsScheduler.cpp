@@ -303,33 +303,54 @@ TsScheduler::handle_builder_status(const void* header,
 }
 
 void TsScheduler::send_timeslice_to_builder(StID id, ucp_ep_h ep) {
-  // TODO ...
-}
+  uint64_t desc_size = 0;
+  uint64_t content_size = 0;
 
-void TsScheduler::handle_builder_send_complete(void* request,
-                                               ucs_status_t status) {
-  if (UCS_PTR_IS_ERR(request)) {
-    L_(error) << "Send operation failed: " << ucs_status_string(status);
-  } else if (status != UCS_OK) {
-    L_(error) << "Send operation completed with status: "
-              << ucs_status_string(status);
+  StCollectionDescriptor desc{id, {}};
+  for (auto& [sender_ep, sender_conn] : sender_connections_) {
+    auto it = std::find_if(sender_conn.announced_st.begin(),
+                           sender_conn.announced_st.end(),
+                           [id](const auto& st) { return st.id == id; });
+    if (it != sender_conn.announced_st.end()) {
+      L_(trace) << "Adding contribution from sender " << sender_conn.id
+                << " with ID: " << id << ", desc size: " << it->desc_size
+                << ", content size: " << it->content_size;
+      desc.contributions.push_back(
+          {sender_conn.id, it->desc_size, it->content_size});
+      desc_size += it->desc_size;
+      content_size += it->content_size;
+      sender_conn.announced_st.erase(it);
+    } else {
+      L_(debug) << "No contribution found for sender " << sender_conn.id
+                << " with ID: " << id;
+    }
+  }
+
+  if (desc.contributions.empty()) {
+    L_(warning) << "No contributions found for timeslice ID: " << id;
+    return;
+  }
+
+  auto builder_it = builder_connections_.find(ep);
+  if (builder_it != builder_connections_.end()) {
+    auto& builder_conn = builder_it->second;
+    builder_conn.bytes_assigned += content_size;
   } else {
-    L_(trace) << "Send operation completed successfully";
+    L_(error) << "Builder connection not found for endpoint";
+    return;
   }
 
-  auto it = active_send_requests_.find(request);
-  if (it == active_send_requests_.end()) {
-    L_(error) << "Received completion for unknown send request";
-  } else {
-    StID id = it->second;
-    active_send_requests_.erase(request);
-    // TODO
-    // release the metadata for the timeslice with the given id
-    // complete_timeslice(id);
-    // announced_.erase(id);
-  }
+  std::array<uint64_t, 3> hdr{id, desc_size, content_size};
+  auto header = std::as_bytes(std::span(hdr));
+  auto buffer = std::make_unique<std::vector<std::byte>>(to_bytes(desc));
+  auto* raw_ptr = buffer.release();
 
-  if (request != nullptr) {
-    ucp_request_free(request);
-  }
+  ucx::util::send_active_message(
+      ep, AM_SCHED_SEND_TS, header, *buffer,
+      [](void* request, ucs_status_t status, void* user_data) {
+        auto buffer = std::unique_ptr<std::vector<std::byte>>(
+            static_cast<std::vector<std::byte>*>(user_data));
+        ucx::util::on_generic_send_complete(request, status, user_data);
+      },
+      raw_ptr, UCP_AM_SEND_FLAG_COPY_HEADER);
 }

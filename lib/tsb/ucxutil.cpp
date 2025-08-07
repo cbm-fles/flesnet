@@ -344,7 +344,7 @@ bool send_active_message(ucp_ep_h ep,
 
 void on_generic_send_complete(void* request,
                               ucs_status_t status,
-                              void* /* user_data */) {
+                              [[maybe_unused]] void* user_data) {
   if (UCS_PTR_IS_ERR(request)) {
     L_(error) << "Send operation failed: " << ucs_status_string(status);
   } else if (status != UCS_OK) {

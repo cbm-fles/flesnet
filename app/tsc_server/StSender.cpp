@@ -396,7 +396,7 @@ void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
     return;
   }
 
-  // Keep the element in announced_sts_ until the send completes and store the
+  // Keep the element in announced_ until the send completes and store the
   // request
   active_send_requests_[request] = id;
 }
@@ -470,7 +470,7 @@ std::size_t StSender::process_queues() {
 void StSender::process_announcement(StID id, const SubTimesliceHandle& sth) {
   // Create and serialize subtimeslice
   StDescriptor descriptor = create_subtimeslice_descriptor(sth);
-  auto descriptor_bytes = descriptor.to_bytes();
+  auto descriptor_bytes = to_bytes(descriptor);
 
   std::vector<ucp_dt_iov> iov_vector = create_iov_vector(sth, descriptor_bytes);
 

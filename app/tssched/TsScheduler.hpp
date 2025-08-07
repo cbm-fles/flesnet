@@ -4,6 +4,7 @@
 #include "SubTimeslice.hpp"
 #include <array>
 #include <cstdint>
+#include <deque>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/types.h>
@@ -11,6 +12,9 @@
 #include <ucp/api/ucp.h>
 #include <ucp/api/ucp_def.h>
 #include <unistd.h>
+
+// TsScheduler: Receive subtimeslice announcements from stsenders, aggregate,
+// and send subtimeslice handles to tsbuilders
 
 struct SenderConnection {
   std::string id;
@@ -20,7 +24,7 @@ struct SenderConnection {
     uint64_t desc_size;
     uint64_t content_size;
   };
-  std::vector<StDesc> announced_st;
+  std::deque<StDesc> announced_st;
 };
 
 struct BuilderConnection {
@@ -31,8 +35,6 @@ struct BuilderConnection {
   uint64_t bytes_assigned = 0;
 };
 
-// Receive subtimeslice announcements from stsenders, aggregate, and send
-// subtimeslice handles to tsbuilders
 class TsScheduler {
 public:
   TsScheduler(uint16_t listen_port);
@@ -42,9 +44,7 @@ public:
 
 private:
   uint16_t listen_port_;
-
   int epoll_fd_ = -1;
-
   std::unordered_map<ucs_status_ptr_t, StID> active_send_requests_;
 
   ucp_context_h context_ = nullptr;
@@ -93,7 +93,6 @@ private:
                                      size_t length,
                                      const ucp_am_recv_param_t* param);
   void send_timeslice_to_builder(StID id, ucp_ep_h ep);
-  void handle_builder_send_complete(void* request, ucs_status_t status);
 
   // UCX event handling
   bool arm_worker_and_wait(std::array<epoll_event, 1>& events);
@@ -149,11 +148,5 @@ private:
                                         const ucp_am_recv_param_t* param) {
     return static_cast<TsScheduler*>(arg)->handle_builder_status(
         header, header_length, data, length, param);
-  }
-  static void on_builder_send_complete(void* request,
-                                       ucs_status_t status,
-                                       void* user_data) {
-    static_cast<TsScheduler*>(user_data)->handle_builder_send_complete(request,
-                                                                       status);
   }
 };
