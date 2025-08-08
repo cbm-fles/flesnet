@@ -10,7 +10,9 @@ namespace ucx::util {
 static constexpr int EPOLL_TIMEOUT_MS = 1000;
 bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd);
 void cleanup(ucp_context_h& context, ucp_worker_h& worker);
-bool arm_worker_and_wait(ucp_worker_h worker, int epoll_fd);
+bool arm_worker_and_wait(ucp_worker_h worker,
+                         int epoll_fd,
+                         int timeout_ms = EPOLL_TIMEOUT_MS);
 std::optional<std::string> get_client_address(ucp_conn_request_h conn_request);
 bool create_listener(ucp_worker_h worker,
                      ucp_listener_h& listener,

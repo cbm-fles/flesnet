@@ -1,6 +1,7 @@
 // Copyright 2025 Jan de Cuveland
 
 #include "TsScheduler.hpp"
+#include "SubTimeslice.hpp"
 #include "TsbProtocol.hpp"
 #include "log.hpp"
 #include "monitoring/System.hpp"
@@ -19,7 +20,19 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
-TsScheduler::TsScheduler(uint16_t listen_port) : listen_port_(listen_port) {
+namespace {
+inline uint64_t now_ns() {
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(
+             std::chrono::high_resolution_clock::now().time_since_epoch())
+      .count();
+}
+} // namespace
+
+TsScheduler::TsScheduler(uint16_t listen_port,
+                         int64_t timeslice_duration_ns,
+                         int64_t timeout_ns)
+    : listen_port_(listen_port), timeslice_duration_ns_{timeslice_duration_ns},
+      timeout_ns_{timeout_ns} {
   // Initialize event handling
   epoll_fd_ = epoll_create1(EPOLL_CLOEXEC);
   if (epoll_fd_ == -1) {
@@ -66,13 +79,30 @@ void TsScheduler::operator()(std::stop_token stop_token) {
     return;
   }
 
+  uint64_t id = now_ns() / timeslice_duration_ns_;
+
   while (!stop_token.stop_requested()) {
     if (ucp_worker_progress(worker_) != 0) {
       continue;
     }
-    if (!ucx::util::arm_worker_and_wait(worker_, epoll_fd_)) {
-      break;
+
+    bool try_later = std::any_of(
+        sender_connections_.begin(), sender_connections_.end(),
+        [id](const auto& s) { return s.second.last_received_st < id; });
+    uint64_t current_time_ns = now_ns();
+    uint64_t timeout_ns = (id + 1) * timeslice_duration_ns_ + timeout_ns_;
+
+    if (try_later && current_time_ns < timeout_ns) {
+      int timeout_ms =
+          static_cast<int>((timeout_ns - current_time_ns + 999999) / 1000000);
+      if (!ucx::util::arm_worker_and_wait(worker_, epoll_fd_, timeout_ms)) {
+        break;
+      }
+      continue;
     }
+
+    send_timeslice(id);
+    id++;
   }
 
   if (listener_ != nullptr) {
@@ -80,6 +110,27 @@ void TsScheduler::operator()(std::stop_token stop_token) {
     listener_ = nullptr;
   }
   ucx::util::cleanup(context_, worker_);
+}
+
+void TsScheduler::send_timeslice(StID id) {
+  ts_count_++;
+
+  StCollectionDescriptor desc = create_collection_descriptor(id);
+  if (desc.contributions.empty()) {
+    L_(warning) << "No contributions found for timeslice ID: " << id;
+    return;
+  }
+
+  for (std::size_t i = 0; i < builders_.size(); ++i) {
+    auto& builder = builders_[(ts_count_ + i) % builders_.size()];
+    if (builder.bytes_available >= desc.content_size) {
+      builder.bytes_assigned += desc.content_size;
+      send_timeslice_to_builder(desc, builder);
+      return;
+    }
+  }
+  L_(warning) << "No builder available for timeslice ID: " << id;
+  send_release_to_senders(id);
 }
 
 // Connection management
@@ -121,10 +172,12 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
     sender_connections_.erase(sender_it);
   }
 
-  auto builder_it = builder_connections_.find(ep);
-  if (builder_it != builder_connections_.end()) {
-    L_(info) << "Removing disconnected builder: " << builder_it->second.id;
-    builder_connections_.erase(builder_it);
+  if (auto it =
+          std::find_if(builders_.begin(), builders_.end(),
+                       [ep](const BuilderConnection& b) { return b.ep == ep; });
+      it != builders_.end()) {
+    L_(debug) << "Removing disconnected builder: " << it->id;
+    builders_.erase(it);
   }
 }
 
@@ -193,6 +246,7 @@ TsScheduler::handle_sender_announce(const void* header,
                                            descriptor_bytes.end());
 
   sender_conn.announced_st.emplace_back(id, desc_size, content_size);
+  sender_conn.last_received_st = id;
   L_(debug) << "Received ST announcement from sender " << sender_conn.id
             << " with ID: " << id << ", desc size: " << desc_size
             << ", content size: " << content_size;
@@ -261,10 +315,11 @@ TsScheduler::handle_builder_register(const void* header,
     return UCS_OK;
   }
 
-  auto sender_id = std::string(static_cast<const char*>(header), header_length);
+  auto builder_id =
+      std::string(static_cast<const char*>(header), header_length);
   ucp_ep_h ep = param->reply_ep;
-  builder_connections_[ep] = {sender_id, ep, 0, 0, 0};
-  L_(debug) << "Accepted builder registration with id " << sender_id;
+  builders_.emplace_back(builder_id, ep, 0, 0, 0);
+  L_(debug) << "Accepted builder registration with id " << builder_id;
 
   return UCS_OK;
 }
@@ -286,27 +341,45 @@ TsScheduler::handle_builder_status(const void* header,
     return UCS_OK;
   }
 
-  auto it = builder_connections_.find(param->reply_ep);
-  if (it == builder_connections_.end()) {
+  // Find the builder connection
+  auto it = std::find_if(builders_.begin(), builders_.end(),
+                         [ep = param->reply_ep](const BuilderConnection& b) {
+                           return b.ep == ep;
+                         });
+  if (it == builders_.end()) {
     L_(error) << "Received status from unknown builder";
     return UCS_OK;
   }
-  auto& conn = it->second;
-
   const uint64_t bytes_available = hdr[0];
   const uint64_t bytes_processed = hdr[1];
 
-  conn.bytes_available = bytes_available;
-  conn.bytes_processed = bytes_processed;
+  it->bytes_available = bytes_available;
+  it->bytes_processed = bytes_processed;
 
   return UCS_OK;
 }
 
-void TsScheduler::send_timeslice_to_builder(StID id, ucp_ep_h ep) {
-  uint64_t desc_size = 0;
-  uint64_t content_size = 0;
+void TsScheduler::send_timeslice_to_builder(const StCollectionDescriptor& desc,
+                                            BuilderConnection& builder) {
+  std::array<uint64_t, 3> hdr{desc.id, desc.desc_size, desc.content_size};
+  auto header = std::as_bytes(std::span(hdr));
+  auto buffer = std::make_unique<std::vector<std::byte>>(to_bytes(desc));
+  auto* raw_ptr = buffer.release();
 
-  StCollectionDescriptor desc{id, {}};
+  ucx::util::send_active_message(
+      builder.ep, AM_SCHED_SEND_TS, header, *buffer,
+      [](void* request, ucs_status_t status, void* user_data) {
+        auto buffer = std::unique_ptr<std::vector<std::byte>>(
+            static_cast<std::vector<std::byte>*>(user_data));
+        ucx::util::on_generic_send_complete(request, status, user_data);
+      },
+      raw_ptr, UCP_AM_SEND_FLAG_COPY_HEADER);
+}
+
+// Helper methods
+
+StCollectionDescriptor TsScheduler::create_collection_descriptor(StID id) {
+  StCollectionDescriptor desc{id, 0, 0, {}};
   for (auto& [sender_ep, sender_conn] : sender_connections_) {
     auto it = std::find_if(sender_conn.announced_st.begin(),
                            sender_conn.announced_st.end(),
@@ -317,40 +390,13 @@ void TsScheduler::send_timeslice_to_builder(StID id, ucp_ep_h ep) {
                 << ", content size: " << it->content_size;
       desc.contributions.push_back(
           {sender_conn.id, it->desc_size, it->content_size});
-      desc_size += it->desc_size;
-      content_size += it->content_size;
+      desc.desc_size += it->desc_size;
+      desc.content_size += it->content_size;
       sender_conn.announced_st.erase(it);
     } else {
       L_(debug) << "No contribution found for sender " << sender_conn.id
                 << " with ID: " << id;
     }
   }
-
-  if (desc.contributions.empty()) {
-    L_(warning) << "No contributions found for timeslice ID: " << id;
-    return;
-  }
-
-  auto builder_it = builder_connections_.find(ep);
-  if (builder_it != builder_connections_.end()) {
-    auto& builder_conn = builder_it->second;
-    builder_conn.bytes_assigned += content_size;
-  } else {
-    L_(error) << "Builder connection not found for endpoint";
-    return;
-  }
-
-  std::array<uint64_t, 3> hdr{id, desc_size, content_size};
-  auto header = std::as_bytes(std::span(hdr));
-  auto buffer = std::make_unique<std::vector<std::byte>>(to_bytes(desc));
-  auto* raw_ptr = buffer.release();
-
-  ucx::util::send_active_message(
-      ep, AM_SCHED_SEND_TS, header, *buffer,
-      [](void* request, ucs_status_t status, void* user_data) {
-        auto buffer = std::unique_ptr<std::vector<std::byte>>(
-            static_cast<std::vector<std::byte>*>(user_data));
-        ucx::util::on_generic_send_complete(request, status, user_data);
-      },
-      raw_ptr, UCP_AM_SEND_FLAG_COPY_HEADER);
+  return desc;
 }

@@ -25,6 +25,7 @@ struct SenderConnection {
     uint64_t content_size;
   };
   std::deque<StDesc> announced_st;
+  StID last_received_st = 0;
 };
 
 struct BuilderConnection {
@@ -37,13 +38,18 @@ struct BuilderConnection {
 
 class TsScheduler {
 public:
-  TsScheduler(uint16_t listen_port);
+  TsScheduler(uint16_t listen_port,
+              int64_t timeslice_duration_ns,
+              int64_t timeout_ns);
   ~TsScheduler();
   TsScheduler(const TsScheduler&) = delete;
   TsScheduler& operator=(const TsScheduler&) = delete;
 
 private:
   uint16_t listen_port_;
+  int64_t timeslice_duration_ns_;
+  int64_t timeout_ns_;
+
   int epoll_fd_ = -1;
   std::unordered_map<ucs_status_ptr_t, StID> active_send_requests_;
 
@@ -52,12 +58,14 @@ private:
   ucp_listener_h listener_ = nullptr;
   std::unordered_map<ucp_ep_h, std::string> connections_;
   std::unordered_map<ucp_ep_h, SenderConnection> sender_connections_;
-  std::unordered_map<ucp_ep_h, BuilderConnection> builder_connections_;
+  std::vector<BuilderConnection> builders_;
+  std::size_t ts_count_ = 0;
 
   std::jthread worker_thread_;
 
   // Main operation loop
   void operator()(std::stop_token stop_token);
+  void send_timeslice(StID id);
 
   // Connection management
   void handle_new_connection(ucp_conn_request_h conn_request);
@@ -92,10 +100,11 @@ private:
                                      void* data,
                                      size_t length,
                                      const ucp_am_recv_param_t* param);
-  void send_timeslice_to_builder(StID id, ucp_ep_h ep);
+  void send_timeslice_to_builder(const StCollectionDescriptor& desc,
+                                 BuilderConnection& builder);
 
-  // UCX event handling
-  bool arm_worker_and_wait(std::array<epoll_event, 1>& events);
+  // Helper methods
+  StCollectionDescriptor create_collection_descriptor(StID id);
 
   // UCX static callbacks (trampolines)
   static void on_new_connection(ucp_conn_request_h conn_request, void* arg) {

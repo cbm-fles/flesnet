@@ -210,7 +210,10 @@ struct TsContribution {
 };
 
 struct StCollectionDescriptor {
-  StID id{};
+  StID id = 0;
+  uint64_t desc_size = 0;
+  uint64_t content_size = 0;
+
   std::vector<TsContribution> contributions;
 
   friend class boost::serialization::access;

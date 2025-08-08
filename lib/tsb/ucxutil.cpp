@@ -89,7 +89,7 @@ void cleanup(ucp_context_h& context, ucp_worker_h& worker) {
   }
 }
 
-bool arm_worker_and_wait(ucp_worker_h worker, int epoll_fd) {
+bool arm_worker_and_wait(ucp_worker_h worker, int epoll_fd, int timeout_ms) {
   ucs_status_t status = ucp_worker_arm(worker);
   if (status == UCS_ERR_BUSY) {
     return true;
@@ -100,8 +100,7 @@ bool arm_worker_and_wait(ucp_worker_h worker, int epoll_fd) {
   }
 
   std::array<epoll_event, 1> events{};
-  int nfds =
-      epoll_wait(epoll_fd, events.data(), events.size(), EPOLL_TIMEOUT_MS);
+  int nfds = epoll_wait(epoll_fd, events.data(), events.size(), timeout_ms);
   if (nfds == -1) {
     if (errno == EINTR) {
       return true;

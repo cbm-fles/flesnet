@@ -7,24 +7,6 @@
 
 using namespace std::chrono_literals;
 
-namespace {
-[[maybe_unused]] inline uint64_t
-chrono_to_timestamp(std::chrono::time_point<std::chrono::high_resolution_clock,
-                                            std::chrono::nanoseconds> time) {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(
-             time.time_since_epoch())
-      .count();
-}
-
-[[maybe_unused]] inline std::chrono::
-    time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds>
-    timestamp_to_chrono(uint64_t time) {
-  return std::chrono::high_resolution_clock::time_point(
-      std::chrono::nanoseconds(time));
-}
-
-} // namespace
-
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
     : par_(par), signal_status_(signal_status) {
@@ -33,19 +15,16 @@ Application::Application(Parameters const& par,
   }
   hostname_ = fles::system::current_hostname();
 
-  ts_scheduler_ = std::make_unique<TsScheduler>(par.listen_port());
+  ts_scheduler_ = std::make_unique<TsScheduler>(
+      par.listen_port(), par.timeslice_duration_ns(), par.timeout_ns());
 }
 
 void Application::run() {
-  uint64_t ts_start_time =
-      chrono_to_timestamp(std::chrono::high_resolution_clock::now()) /
-      par_.timeslice_duration_ns() * par_.timeslice_duration_ns();
-  // acked_ = ts_start_time / par_.timeslice_duration_ns();
-
   report_status();
 
   while (*signal_status_ == 0) {
     scheduler_.timer();
+    std::this_thread::sleep_until(scheduler_.when_next());
   }
 }
 
@@ -65,6 +44,7 @@ void Application::report_status() {
           .count();
 
   if (monitor_ != nullptr) {
+    // TODO: Report scheduler status
     // monitor_->QueueMetric(...)
   }
 
