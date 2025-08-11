@@ -1,11 +1,11 @@
-#include <cstddef>
+#include <atomic>
 #include <cstdint>
 #include <cstdlib>
 #include <fcntl.h>
 #include <getopt.h>
 #include <chrono>
 #include <memory>
-#include <ratio>
+#include <mutex>
 #include <rdma/fabric.h>
 #include <sys/mman.h>
 #include <thread>
@@ -17,30 +17,191 @@
 #include "ConnectorFromFlesnet.hpp"
 #include "Parameters.hpp"
 #include <df/CentralManagers/CentralManager.hpp>
-#include <df/Connectors/ConnectorInfinibandMsg.hpp>
 #include <df/WorkItems/WiData.hpp>
 #include <df/WorkItems/WorkItem.hpp>
+#include <df/EvaluationLogic/EvaluationLogic.hpp>
 // #include <df/
 #include <df/WorkItems/WiConnectorConfig.hpp>
-#include <df/Buffers/BufferFifo.hpp>
 #include <df/Node.hpp>
-#include <df/Buffers/BufferFifo.hpp>
+#include "df/BufferMap/BufferMap.hpp"
+#include "df/CentralManagers/CentralManagerInterface.hpp"
 #include <df/Connectors/ConnectorFile.hpp>
-#include <df/Connectors/ConnectorEthernetTCP.hpp>
 #include <df/Connectors/ConnectorInterface.hpp>
 #include <df/InterfaceFactory.hpp>
-#include <df/Connectors/ConnectorInfinibandRmaV.hpp>
+#include <df/Connectors/ConnectorInfiniband.hpp>
 
 #include <iostream>
 // #define DEFAULT_CONNECTOR_CLASSES ConnectorEthernetTCP, ConnectorInfinibandMsg, ConnectorFile, ConnectorInfinibandMsgRmaNew
 #define DEFAULT_CM_CLASSES CentralManager
 
 using namespace std;
-// Parameters par;
+
+Parameters par;
+constexpr uint64_t BUFFER_MAP_ELEMENTS = 256;
+constexpr uint64_t BUFFER_SIZE = 1024 * 1024 * 10;
+
+int start_cm() {
+    const auto cm_listen_addr = par.central_manager.listen_addr;
+
+    auto buffer = shared_ptr<char>(new char[BUFFER_SIZE], std::default_delete<char[]>());
+    auto buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, BUFFER_SIZE);
+
+    InterfaceFactory<ConnectorInterface, ConnectorInfiniband> connector_factory;
+    auto connector_infiniband = connector_factory.get(par.central_manager.name);
+
+    string sender_addr;
+    string receiver_addr;
+
+    connector_infiniband->add_new_remote_buffer_callback([connector_infiniband, buffer, buffer_map] (const std::string& address, uint64_t index) {
+        cout << "New remote buffer on " << address << " at index: " << index << endl;
+    });
+
+    EvaluationLogic eval_logic;
+    connector_infiniband->add_buffer_map_copy_update_callback([connector_infiniband, &sender_addr, &receiver_addr, &eval_logic] (const std::string& address, std::shared_ptr<BufferMap> first_buffer_map, uint64_t index) {
+        cout << "Buffer map on " << address << ", buffer index: " << index << " was updated" << endl;
+        if (address != sender_addr) {
+            return;
+        }
+        cout << "Fetching buffer map from receiver ..." << endl;
+        connector_infiniband->lock_and_get_buffer_map(receiver_addr, 0, [first_buffer_map, &eval_logic] (const std::string&, std::shared_ptr<BufferMap> second_buffer_map) {
+            first_buffer_map->lock();
+
+            auto *oldes_el = first_buffer_map->get_oldest_linked_list_element();
+            auto offsets_and_spaces = second_buffer_map->get_offsets_and_spaces();
+
+            uint64_t target_address;
+            eval_logic.evaluate(oldes_el->address, oldes_el->len, offsets_and_spaces, target_address);
+            cout << "Caluclated target address: " << target_address << endl;
+
+            //! @todo Transmit calculated address to
+
+
+            first_buffer_map->unlock();
+        });
+    });
+
+    connector_infiniband->add_connection_established_cb([&sender_addr, &receiver_addr] (std::string address, std::shared_ptr<char> /*custom_data*/, uint64_t custom_data_size) {
+        if (sender_addr.empty()) {
+            sender_addr = address;
+        }
+        cout << "Connection established to: " << address << endl;
+
+        if (custom_data_size > 0) {
+            sender_addr = address;
+        } else {
+            receiver_addr = address;
+        }
+    });
+    connector_infiniband->listen_for_clients(cm_listen_addr);
+    cout << "CM listening on: " << connector_infiniband->get_listen_address() << endl;
+    while (true) {
+        this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    return 0;
+}
+
+int sender_node() {
+    InterfaceFactory<ConnectorInterface, ConnectorFromFlesnet, ConnectorInfiniband> connector_factory;
+
+    const auto cm_address = par.central_manager.listen_addr;
+
+    const auto cm_connector = connector_factory.get("ConnectorInfiniband");
+    constexpr auto CM_BUFFER_SIZE = 1024 * 1024 * 8;
+    const auto cm_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, CM_BUFFER_SIZE);
+    const auto cm_buffer = std::shared_ptr<char>(new char[CM_BUFFER_SIZE], std::default_delete<char[]>());
+
+    const auto node_connector = connector_factory.get("ConnectorInfiniband");
+    constexpr auto BUFFER_SIZE = 1024 * 1024 * 450; ///< @todo calculate proper BUFFER_SIZE depending on flesnet output
+    const auto buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, BUFFER_SIZE);
+    const auto buffer = std::shared_ptr<char>(new char[BUFFER_SIZE], std::default_delete<char[]>());
+
+    atomic_uint16_t link_cnt = 0;
+    cm_connector->add_connection_established_cb([cm_connector, &cm_address, buffer, buffer_map, cm_buffer, cm_buffer_map, &link_cnt] (std::string, std::shared_ptr<char>, uint64_t) {
+        cout << "CM connection established" << endl;
+        cm_connector->link_rdma_buffer(cm_address, buffer, BUFFER_SIZE, buffer_map, 0, [&link_cnt] (const std::string& address, const uint64_t& idx) {
+            cout << "Buffer with index " << idx << " was communicated to CM (" << address << ")" << endl;
+            link_cnt++;
+        });
+
+        cm_connector->link_rdma_buffer(cm_address, cm_buffer, CM_BUFFER_SIZE, cm_buffer_map, 1, [&link_cnt] (const std::string& address, const uint64_t& idx) {
+            cout << "Buffer with index " << idx << " was communicated to CM (" << address << ")" << endl;
+            link_cnt++;
+        });
+    });
+
+    std::shared_ptr<char> dummy_data = std::shared_ptr<char>(new char[1], std::default_delete<char[]>());
+    cm_connector->connect_to_server(cm_address, dummy_data, 1);
+
+    while (link_cnt != 2) {
+        cout << "Waiting for buffers to get linked ..." << endl;
+        this_thread::sleep_for(chrono::milliseconds(500));
+    }
+
+    buffer_map->add_elements_inserted_callback([&cm_address, buffer_map, cm_connector] () {
+        cout << "BufferMap insert callback" << endl;
+        cm_connector->lock_and_update_remote_buffer_map_copy(cm_address, buffer_map, 0);
+    });
+
+    *reinterpret_cast<uint64_t*>(buffer.get()) = 4211;
+    buffer_map->insert(0, sizeof(uint64_t), 99999, BufferMap::ListElement::RX);
+
+    while (true) {
+        this_thread::sleep_for(chrono::milliseconds(3000));
+    }
+}
+
+
+int receiver_node() {
+    InterfaceFactory<ConnectorInterface, ConnectorFromFlesnet, ConnectorInfiniband> connector_factory;
+
+    const auto cm_address = par.central_manager.listen_addr;
+
+    const auto cm_connector = connector_factory.get("ConnectorInfiniband");
+    constexpr auto CM_BUFFER_SIZE = 1024 * 1024 * 8;
+    const auto cm_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, CM_BUFFER_SIZE);
+    const auto cm_buffer = std::shared_ptr<char>(new char[CM_BUFFER_SIZE], std::default_delete<char[]>());
+
+    const auto node_connector = connector_factory.get("ConnectorInfiniband");
+    constexpr auto BUFFER_SIZE = 1024 * 1024 * 450; ///< @todo calculate proper BUFFER_SIZE depending on flesnet output
+    const auto buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, BUFFER_SIZE);
+    const auto buffer = std::shared_ptr<char>(new char[BUFFER_SIZE], std::default_delete<char[]>());
+
+    atomic_uint16_t link_cnt = 0;
+    cm_connector->add_connection_established_cb([cm_connector, &cm_address, buffer, buffer_map, cm_buffer, cm_buffer_map, &link_cnt] (std::string, std::shared_ptr<char>, uint64_t) {
+        cout << "CM connection established" << endl;
+        cm_connector->link_rdma_buffer(cm_address, buffer, BUFFER_SIZE, buffer_map, 0, [&link_cnt] (const std::string& address, const uint64_t& idx) {
+            cout << "Buffer with index " << idx << " was communicated to CM (" << address << ")" << endl;
+            link_cnt++;
+        });
+
+        cm_connector->link_rdma_buffer(cm_address, cm_buffer, CM_BUFFER_SIZE, cm_buffer_map, 1, [&link_cnt] (const std::string& address, const uint64_t& idx) {
+            cout << "Buffer with index " << idx << " was communicated to CM (" << address << ")" << endl;
+            link_cnt++;
+        });
+    });
+    buffer_map->insert(0, 12);
+    cm_connector->connect_to_server(cm_address);
+
+    while (link_cnt != 2) {
+        cout << "Waiting for buffers to get linked ..." << endl;
+        this_thread::sleep_for(chrono::milliseconds(500));
+    }
+
+
+    while (true) {
+        this_thread::sleep_for(chrono::milliseconds(3000));
+    }
+
+
+    return 0;
+}
+
+
+
 
 
 int main (int argc, char** argv) {
-    Parameters par(argc, argv);
+    par.parse_options(argc, argv);
     if (FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION) != fi_version()) {
         cerr << "Libfabric: Header version and library version do not match" << endl;
         cerr << "Header: " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION << endl;
@@ -50,216 +211,14 @@ int main (int argc, char** argv) {
         cerr << "Libfabric: invalid version." << endl;
         cerr << "Minimum version required 2.1 - found " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION << endl;
     }
-    const uint64_t cm_buffer_size = static_cast<uint64_t>(1024) * 1024 * 5;
-    std::shared_ptr<char> cm_buffer = std::shared_ptr<char>(new char[cm_buffer_size]);
-    memset(cm_buffer.get(), 0, cm_buffer_size);
 
-    if (par.is_node) { // start data node
-        if (!par.shm_name.empty()) {  // input node
-            cout <<"Preparing input node ..." << endl;
-
-            // PREPARE NODE
-            std::shared_ptr<Node> node = std::make_shared<Node>(par.node_id, par.group_id);
-            std::shared_ptr<uint64_t> node_uid = std::make_shared<uint64_t>(MAKE_UID(par.group_id, par.node_id));
-            InterfaceFactory<ConnectorInterface, ConnectorFromFlesnet, ConnectorInfinibandRmaV> connector_factory;
-
-            // PREPARE FLESNET INPUT CONNECTOR
-            auto connector_fles_in = connector_factory.get("ConnectorFromFlesnet");
-            connector_fles_in->listen_for_clients(par.shm_name);
-            std::shared_ptr<char >buffer_ptr = nullptr;
-            cout << "Waiting for Buffer to get initialized (" << par.shm_name << ") ..." << endl;
-            do {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100)); // to initialize the buffer inside the connector it first has to receive a TS - best guess is to wait 500ms for now
-                buffer_ptr = connector_fles_in->get_global_buffer();
-            } while (buffer_ptr == nullptr);
-            cout << "Buffer initialized!" << endl;
-
-            auto buffer_size = connector_fles_in->get_global_buffer_size();
-            // uint64_t buffer_size = 1024 * 1024;
-            // std::string shm_id = "tsforwarder";
-            // auto shm_fd = shm_open(shm_id.c_str(), O_RDWR | O_CREAT, 0666);
-            // if (shm_fd == 0) {
-            //     cerr << "failed to create andaccess shm" << endl;
-            //     exit(-1);
-            // }
-            // ftruncate(shm_fd, buffer_size);
-            // auto buffer_ptr = std::shared_ptr<char>(reinterpret_cast<char*>(mmap(nullptr, buffer_size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0)));
-            // if (buffer_ptr == nullptr) {
-            //     cerr << "mmap failed" << endl;
-            //     exit(-1);
-            // }
-            // PREPARE BUFFER MAP
-            auto buffer_map = make_shared<BufferMap>(64, buffer_size);
-
-            // PREPARE NODE CONNECTORS
-            for (auto c : par.connectors) {
-                std::shared_ptr<ConnectorInterface> connector = connector_factory.get(c.name);
-                if (!connector) {
-                    std::cerr << "Invalid connector name: " << c.name << std::endl <<
-                        "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
-                    return -1;
-                }
-                // connector->set_memory_manager(mem_mng);
-                connector->set_global_buffer(buffer_ptr, buffer_size);
-                connector->set_global_buffer_map(buffer_map);
-
-                node->add_connector(
-                    connector,
-                    c.connector_uid,
-                    c.listen_addr,
-                    std::reinterpret_pointer_cast<char>(node_uid),
-                    sizeof(uint64_t)
-                );
-            }
-
-            std::string cm_connector_name = par.central_manager.name;
-            std::shared_ptr<ConnectorInterface> cm_connector = connector_factory.get(cm_connector_name);
-            if (cm_connector == nullptr) {
-                std::cerr << "Invalid CM Connector name: " << cm_connector_name << std::endl <<
-                    "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
-                exit(-1);
-            }
-
-            // const uint64_t cm_buffer_size = static_cast<uint64_t>(1024) * 1024;
-            std::shared_ptr<char> cm_buffer = std::shared_ptr<char>(new char[cm_buffer_size]);
-            memset(cm_buffer.get(), 0, cm_buffer_size);
-            if (cm_connector->set_global_buffer(cm_buffer, cm_buffer_size) != 0) {
-                cerr << "CM connector: unable to set global buffer" <<  endl;
-                exit(-1);
-            }
-
-            auto cm_buffer_map = make_shared<BufferMap>(64, cm_buffer_size);
-            cm_connector->set_global_buffer_map(cm_buffer_map);
-
-            std::string cm_address = par.central_manager.listen_addr;
-            node->set_cm_connector(cm_connector, cm_address);
-
-            // PREPARE FLESNET INPUT CONNECTOR
-            // connector_fles_in->set_global_buffer(buffer_ptr, buffer_size);
-            node->set_input_connector(connector_fles_in, "");
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            connector_fles_in->set_global_buffer_map(buffer_map);
-            cout << "Input node ready" << endl;
-            while (true) {
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-            }
-        } else { // output node
-            cout <<"Preparing output node ..." << endl;
-
-            // PREPARE NODE
-            std::shared_ptr<Node> node = std::make_shared<Node>(par.node_id, par.group_id);
-            std::shared_ptr<uint64_t> node_uid = std::make_shared<uint64_t>(MAKE_UID(par.group_id, par.node_id));
-            InterfaceFactory<ConnectorInterface, ConnectorFromFlesnet, ConnectorInfinibandRmaV> connector_factory;
-
-            // PREPARE FLESNET INPUT CONNECTOR
-            uint64_t buffer_size = static_cast<long>(1024 * 1024) * 16;
-            auto buffer_ptr = std::shared_ptr<char>(new char[buffer_size]);
-            auto buffer_map = make_shared<BufferMap>(64, buffer_size);
-
-            // auto buffer_size = connector_fles_in->get_global_buffer_size();
-            // uint64_t buffer_size = 1024 * 1024;
-            // std::string shm_id = "tsforwarder";
-            // auto shm_fd = shm_open(shm_id.c_str(), O_RDWR | O_CREAT, 0666);
-            // if (shm_fd == 0) {
-            //     cerr << "failed to create andaccess shm" << endl;
-            //     exit(-1);
-            // }
-            // ftruncate(shm_fd, buffer_size);
-            // auto buffer_ptr = std::shared_ptr<char>(reinterpret_cast<char*>(mmap(nullptr, buffer_size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0)));
-            // if (buffer_ptr == nullptr) {
-            //     cerr << "mmap failed" << endl;
-            //     exit(-1);
-            // }
-            // PREPARE BUFFER MAP
-
-            // PREPARE NODE CONNECTORS
-            for (auto c : par.connectors) {
-                std::shared_ptr<ConnectorInterface> connector = connector_factory.get(c.name);
-                if (!connector) {
-                    std::cerr << "Invalid connector name: " << c.name << std::endl <<
-                        "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
-                    return -1;
-                }
-                // connector->set_memory_manager(mem_mng);
-                connector->set_global_buffer(buffer_ptr, buffer_size);
-                connector->set_global_buffer_map(buffer_map);
-
-                node->add_connector(
-                    connector,
-                    c.connector_uid,
-                    c.listen_addr,
-                    std::reinterpret_pointer_cast<char>(node_uid),
-                    sizeof(uint64_t)
-                );
-            }
-
-            std::string cm_connector_name = par.central_manager.name;
-            std::shared_ptr<ConnectorInterface> cm_connector = connector_factory.get(cm_connector_name);
-            if (cm_connector == nullptr) {
-                std::cerr << "Invalid CM Connector name: " << cm_connector_name << std::endl <<
-                    "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
-                exit(-1);
-            }
-
-            // const uint64_t cm_buffer_size = static_cast<uint64_t>(1024) * 1024;
-            std::shared_ptr<char> cm_buffer = std::shared_ptr<char>(new char[cm_buffer_size]);
-            memset(cm_buffer.get(), 0, cm_buffer_size);
-            if (cm_connector->set_global_buffer(cm_buffer, cm_buffer_size) != 0) {
-                cerr << "CM connector: unable to set global buffer" <<  endl;
-                exit(-1);
-            }
-
-            auto cm_buffer_map = make_shared<BufferMap>(64, cm_buffer_size);
-            cm_connector->set_global_buffer_map(cm_buffer_map);
-
-            std::string cm_address = par.central_manager.listen_addr;
-            node->set_cm_connector(cm_connector, cm_address);
-
-            // PREPARE FLESNET INPUT CONNECTOR
-            // connector_fles_in->set_global_buffer(buffer_ptr, buffer_size);
-            cout << "Output node ready" << endl;
-            while (true) {
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-            }
-        }
-    } else { // start Central Manager (CM)
-        cout << "Starting Central Manager ..." << endl;
-
-        InterfaceFactory<CentralManagerInterface, DEFAULT_CM_CLASSES> central_manager_factory;
-        //! @todo get the type of central manager from options
-        std::string cm_name = "CentralManager";
-        std::shared_ptr<CentralManagerInterface> central_manager = central_manager_factory.get(cm_name);
-        if (!central_manager) {
-            std::cerr << "Invalid Central Manager name: " << cm_name << std::endl <<
-                "Did you add it to the template parameter if the InterfaceFactory?";
-            return -1;
-        }
-
-        // InterfaceFactory<ConnectorInterface, ConnectorInfinibandRmaV> connector_factory;
-        // std::shared_ptr<ConnectorInterface> connector = connector_factory.get(par.central_manager.name);
-        auto connector =  make_shared<ConnectorInfinibandRmaV>();
-
-        if (!connector) {
-            std::cerr << "Invalid Connector name: " << par.central_manager.name << std::endl <<
-                "Did you add it to the template parameter if the InterfaceFactory?" << std::endl;
-            return -1;
-        }
-
-        connector->set_global_buffer(cm_buffer, cm_buffer_size);
-
-        auto cm_buffer_map = make_shared<BufferMap>(64, cm_buffer_size);
-        connector->set_global_buffer_map(cm_buffer_map);
-        central_manager->add_connector(connector, par.central_manager.listen_addr);
-        while (connector->get_listen_address().empty()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-        std::cout << "Running Central Manager: " << par.central_manager.listen_addr << std::endl;
-
-        while (true) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
+    if (!par.is_node) {
+        start_cm();
+    } else if (par.group_id == 1){
+        sender_node();
+    } else {
+        receiver_node();
     }
-
 
     return 0;
 }

@@ -2,6 +2,7 @@
 #include "Parameters.hpp"
 #include <boost/program_options.hpp>
 #include <cstdlib>
+#include <ostream>
 #include <string>
 #include <iostream>
 #include <boost/assign/list_of.hpp>
@@ -20,16 +21,16 @@ void Parameters::parse_options(int argc, char** argv) {
 
     general_add("help,h", "Print this help");
     // general_add("central-manager", )
-    general_add("connector",
+    general_add("connector,c",
         po::value<vector<string>>(&connectors_option)->composing(),
         "Add a connector with '--connector \"<name> <listen_addr> <UID>\"'. Note the quotation marks surrounding the argument. To use multiple connectors simply use this flag multiple times with the shown pattern.");
-    general_add("input",
+    general_add("input,i",
         po::value<vector<string>>(&input_option)->composing(),
         "Adds an input connector with '--input \"<name> <listen_addr>\"'. Note: UID is not necessary here. Usually this is set for the node acting as the input to the network.");
-    general_add("output",
+    general_add("output,o",
         po::value<vector<string>>(&output_option)->composing(),
         "Adds an input connector with '--output \"<name> <listen_addr>\"'. Note: UID is not necessary here. Usually this is set for the node acting as the output to the network.");
-    general_add("central-manager",
+    general_add("central-manager,m",
         po::value<vector<string>>(&central_manager_option)->composing(),
         "Adds an central manager connector with '--central-manager \"<name> <listen_addr>\"'. Note: UID is not necessary here.");
     general_add("node-id,n",
@@ -41,13 +42,18 @@ void Parameters::parse_options(int argc, char** argv) {
     general_add("shm-id",
         po::value<std::string>(&shm_name),
         "SHM name");
+    general_add("address,a",
+        po::value<std::string>(&ib_address),
+        "IB address");
 
     stringstream desc_sstr;
     desc_sstr << endl
-        << "Usage:" << endl
-        << "!! TODO"
-        << endl << endl
-        << "Command line options";
+        << "Start Central Manager: " << endl
+        << "\t" << "timeslice_forwarder --central-manager \"ConnectorInfiniband <ip>:<port>\"" << endl << endl
+        << "Start Input Node:" << endl
+        << "\t" << R"(timeslice_forwarder --node-id 1 --group-id 1 --central-manager "ConnectorInfiniband <ip>:<port>" --connector "ConnectorInfiniband <own_ip>:<port> 1" --input "ConnectorFromFlesnet <shm_id>")" << endl << endl
+        << endl << endl;
+        // << "Command line options";
     po::variables_map vm;
     po::options_description desc(desc_sstr.str());
     desc
@@ -59,6 +65,13 @@ void Parameters::parse_options(int argc, char** argv) {
     if (vm.count("help") != 0) {
         cout << desc << endl;
         exit(EXIT_SUCCESS);
+    }
+
+    if (vm.count("central-manager") != 0) {
+        vector<string> central_manager_option_splitted = split(central_manager_option[0], ' ');
+        central_manager.type = WorkItem::connector_config;
+        central_manager.name = central_manager_option_splitted[0];
+        central_manager.listen_addr = central_manager_option_splitted[1];
     }
 
     if (vm.count("group-id") != 0 || vm.count("node-id") != 0) {
@@ -88,6 +101,9 @@ void Parameters::parse_options(int argc, char** argv) {
         // }
     }
 
+    return;
+
+
     if (vm.count("input") != 0) {
         is_node = true;
         vector<string> input_option_splitted = split(input_option[0], ' ');
@@ -116,12 +132,7 @@ void Parameters::parse_options(int argc, char** argv) {
         output.listen_addr = output_option_splitted[1];
     }
 
-    if (vm.count("central-manager") != 0) {
-        vector<string> central_manager_option_splitted = split(central_manager_option[0], ' ');
-        central_manager.type = WorkItem::connector_config;
-        central_manager.name = central_manager_option_splitted[0];
-        central_manager.listen_addr = central_manager_option_splitted[1];
-    }
+
 }
 
 Parameters::Parameters(int argc, char** argv) {

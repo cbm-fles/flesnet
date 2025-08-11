@@ -105,6 +105,17 @@ public:
     return worker_.reconnect_count();
   }
 
+  [[nodiscard]] boost::uuids::uuid managed_shm_uuid() const {
+    if (!managed_shm_) {
+      return boost::uuids::nil_uuid();
+    }
+    auto* shm_uuid =
+        managed_shm_
+            ->find<boost::uuids::uuid>(boost::interprocess::unique_instance)
+            .first;
+    assert(shm_uuid != nullptr);
+    return *shm_uuid;
+  }
 private:
   TimesliceView* do_get() override {
     if (eos_) {
@@ -166,17 +177,7 @@ private:
 
   // std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
 
-  [[nodiscard]] boost::uuids::uuid managed_shm_uuid() const {
-    if (!managed_shm_) {
-      return boost::uuids::nil_uuid();
-    }
-    auto* shm_uuid =
-        managed_shm_
-            ->find<boost::uuids::uuid>(boost::interprocess::unique_instance)
-            .first;
-    assert(shm_uuid != nullptr);
-    return *shm_uuid;
-  }
+
 
   /// The end-of-stream flag.
   bool eos_ = false;
