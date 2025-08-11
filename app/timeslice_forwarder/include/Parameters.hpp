@@ -15,6 +15,7 @@ public:
     uint32_t group_id = 0;
     bool is_node = false;
     std::string shm_name;
+    std::string ib_address;
 
     Parameters(int argc, char** argv);
     Parameters() = default;

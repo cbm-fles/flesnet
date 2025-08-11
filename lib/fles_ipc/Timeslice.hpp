@@ -113,6 +113,8 @@ public:
   /// A vector of pointers to the timeslice component descriptors, one per
   /// timeslice component.
   std::vector<TimesliceComponentDescriptor*> desc_ptr_;
+  TimesliceDescriptor timeslice_descriptor_{};
+
 protected:
   Timeslice() = default;
 
@@ -121,7 +123,6 @@ protected:
   friend class ConnectorFromFlesnet;
 
   /// The timeslice descriptor.
-  TimesliceDescriptor timeslice_descriptor_{};
 
   // /// A vector of pointers to the data content, one per timeslice component.
   // std::vector<uint8_t*> data_ptr_;
