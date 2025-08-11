@@ -82,7 +82,6 @@ void TimesliceBuffer::send_work_item(fles::TimesliceWorkItem wi) {
     boost::archive::binary_oarchive oarchive(ostream);
     oarchive << item;
   }
-
   outstanding_.insert(ts_pos);
   ItemProducer::send_work_item(ts_pos, ostream.str());
 }

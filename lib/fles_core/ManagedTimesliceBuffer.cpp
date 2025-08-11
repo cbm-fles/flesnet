@@ -66,7 +66,6 @@ bool ManagedTimesliceBuffer::timeslice_fits_in_buffer(
 
 void ManagedTimesliceBuffer::put(
     std::shared_ptr<const fles::Timeslice> timeslice) {
-
   // The existing shared memory TimesliceBuffer has to support the correct
   // number of input nodes.
   if (timeslice->num_components() != timeslice_buffer_.get_num_input_nodes()) {

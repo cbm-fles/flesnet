@@ -107,6 +107,8 @@ public:
   [[nodiscard]] std::size_t get_num_completions() const { return 0; }
 
   [[nodiscard]] std::string description() const;
+  std::unique_ptr<boost::interprocess::managed_shared_memory>
+      managed_shm_;   ///< shared memory object
 
 private:
   std::string shm_identifier_;    ///< shared memory identifier
@@ -116,8 +118,6 @@ private:
                                   ///< in units of TimesliceComponentDescriptors
   uint32_t num_input_nodes_;      // number of input nodes
 
-  std::unique_ptr<boost::interprocess::managed_shared_memory>
-      managed_shm_;   ///< shared memory object
   uint8_t* data_ptr_; ///< pointer to data buffer within shared memory
   fles::TimesliceComponentDescriptor*
       desc_ptr_;                 ///< pointer to descriptor
