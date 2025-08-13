@@ -1,0 +1,44 @@
+// Copyright 2025 Jan de Cuveland
+#pragma once
+
+#include "Monitor.hpp"
+#include "Parameters.hpp"
+#include "Scheduler.hpp"
+#include "TsBuilder.hpp"
+#include <csignal>
+#include <memory>
+
+/// %Application base class.
+class Application {
+public:
+  Application(Parameters const& par, volatile sig_atomic_t* signal_status);
+
+  Application(const Application&) = delete;
+  void operator=(const Application&) = delete;
+
+  ~Application();
+
+  void run();
+
+private:
+  Parameters const& par_;
+  volatile std::sig_atomic_t* signal_status_;
+
+  /*
+  size_t timeslice_count_ = 0;  ///< total number of processed timeslices
+  size_t component_count_ = 0;  ///< total number of processed components
+  size_t microslice_count_ = 0; ///< total number of processed microslices
+  size_t content_bytes_ = 0;    ///< total number of processed content bytes
+  size_t total_bytes_ = 0;      ///< total number of processed bytes
+  size_t timeslice_incomplete_count_ = 0; ///< number of incomplete timeslices
+*/
+
+  void report_status();
+
+  std::unique_ptr<cbm::Monitor> monitor_;
+  std::string hostname_;
+
+  Scheduler scheduler_;
+
+  std::unique_ptr<TsBuilder> ts_builder_;
+};
