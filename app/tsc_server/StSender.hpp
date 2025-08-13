@@ -20,10 +20,11 @@
 #include <unordered_map>
 #include <vector>
 
-// Announce subtimeslices to tssched and send them to tsbuilders
+// StSender: Announce subtimeslices to tssched and send them to tsbuilders
+
 class StSender {
 public:
-  StSender(uint16_t listen_port, std::string_view scheduler_address);
+  StSender(std::string_view scheduler_address, uint16_t listen_port);
   ~StSender();
   StSender(const StSender&) = delete;
   StSender& operator=(const StSender&) = delete;
@@ -36,9 +37,8 @@ public:
 private:
   Scheduler tasks_;
 
-  uint16_t listen_port_;
   std::string scheduler_address_;
-  uint16_t scheduler_port_ = 13373;
+  uint16_t listen_port_;
   std::string sender_id_;
 
   int queue_event_fd_ = -1;

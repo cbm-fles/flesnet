@@ -46,4 +46,6 @@ void handle_generic_send_complete(void* request, ucs_status_t status);
 void on_generic_send_complete(void* request,
                               ucs_status_t status,
                               void* user_data);
+std::pair<std::string, uint16_t> parse_address(const std::string& address,
+                                               uint16_t default_port);
 } // namespace ucx::util

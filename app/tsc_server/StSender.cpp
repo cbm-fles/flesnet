@@ -22,10 +22,10 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
-StSender::StSender(uint16_t listen_port, std::string_view scheduler_address)
-    : listen_port_(listen_port), scheduler_address_(scheduler_address) {
+StSender::StSender(std::string_view scheduler_address, uint16_t listen_port)
+    : scheduler_address_(scheduler_address), listen_port_(listen_port) {
   sender_id_ = fles::system::current_hostname() + ":" +
-               std::to_string(fles::system::current_pid());
+               std::to_string(fles::system::current_pid()); // TODO
 
   // Initialize event handling
   queue_event_fd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
@@ -159,11 +159,12 @@ void StSender::connect_to_scheduler() {
     return;
   }
 
-  auto ep = ucx::util::connect(worker_, scheduler_address_, scheduler_port_,
-                               on_scheduler_error, this);
+  auto [address, port] =
+      ucx::util::parse_address(scheduler_address_, DEFAULT_SCHEDULER_PORT);
+  auto ep =
+      ucx::util::connect(worker_, address, port, on_scheduler_error, this);
   if (!ep) {
-    L_(error) << "Failed to connect to scheduler at " << scheduler_address_
-              << ":" << scheduler_port_;
+    L_(error) << "Failed to connect to scheduler at " << address << ":" << port;
     return;
   }
 

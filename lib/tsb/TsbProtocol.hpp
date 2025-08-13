@@ -1,6 +1,11 @@
 // Copyright 2025 Jan de Cuveland
 #pragma once
 
+#include "cstdint"
+
+static constexpr uint16_t DEFAULT_SCHEDULER_PORT = 13373;
+static constexpr uint16_t DEFAULT_SENDER_PORT = 13374;
+
 // AM IDs for communication
 
 // 1. tssched (listen) <-> stsender (connect)

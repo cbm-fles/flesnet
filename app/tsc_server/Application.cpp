@@ -160,7 +160,7 @@ Application::Application(Parameters const& par,
 
   // Create StSender
   st_sender_ =
-      std::make_unique<StSender>(par.listen_port(), par.tssched_address());
+      std::make_unique<StSender>(par.tssched_address(), par.listen_port());
 }
 
 void Application::run() {

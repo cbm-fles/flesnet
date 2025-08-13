@@ -224,6 +224,19 @@ struct StCollectionDescriptor {
   }
 };
 
+// Descriptors for storing timeslice data in a shared memory region
+
+struct TsDescriptor {
+  StID id = 0;
+  // TODO
+
+  friend class boost::serialization::access;
+  template <class Archive>
+  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
+    ar & id;
+  }
+};
+
 // Generic serialization utilities
 
 template <typename T> std::vector<std::byte> to_bytes(const T& obj) {

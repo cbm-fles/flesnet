@@ -1,6 +1,7 @@
 // Copyright 2025 Dirk Hutter, Jan de Cuveland
 #pragma once
 
+#include "TsbProtocol.hpp"
 #include <chrono>
 #include <cstdint>
 #include <stdexcept>
@@ -94,7 +95,7 @@ private:
   bool _device_autodetect = true;
   pci_addr _device_address;
   std::string _shm_id;
-  uint16_t _listen_port = 12345;
+  uint16_t _listen_port = DEFAULT_SENDER_PORT;
   std::string _tssched_address = "localhost";
 
   // Pattern generator parameters

@@ -1,6 +1,7 @@
 // Copyright 2025 Jan de Cuveland
 #pragma once
 
+#include "TsbProtocol.hpp"
 #include <chrono>
 #include <cstdint>
 #include <stdexcept>
@@ -53,7 +54,7 @@ private:
   void parse_options(int argc, char* argv[]);
 
   std::string _monitor_uri;
-  uint16_t _listen_port = 13373;
+  uint16_t _listen_port = DEFAULT_SCHEDULER_PORT;
   Nanoseconds _timeslice_duration{100ms};
   Nanoseconds _timeout{100ms};
 };
