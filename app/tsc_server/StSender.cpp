@@ -392,8 +392,6 @@ void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
   if (request == nullptr) {
     // Operation has completed successfully in-place
     L_(trace) << "Active message sent successfully";
-    complete_subtimeslice(id);
-    announced_.erase(it);
     return;
   }
 
@@ -417,10 +415,7 @@ void StSender::handle_builder_send_complete(void* request,
   if (it == active_send_requests_.end()) {
     L_(error) << "Received completion for unknown send request";
   } else {
-    StID id = it->second;
     active_send_requests_.erase(request);
-    complete_subtimeslice(id);
-    announced_.erase(id);
   }
 
   if (request != nullptr) {
@@ -498,6 +493,10 @@ void StSender::process_retraction(StID id) {
 }
 
 void StSender::complete_subtimeslice(StID id) {
+  // In the future, this could check if there is an ongoning send operation
+  // concerning this SubTimeslice (cf. active_send_requests_) and wait for it to
+  // complete before marking the SubTimeslice as completed. This would avoid
+  // sending inconsistent data in special cases.
   std::lock_guard<std::mutex> lock(completions_mutex_);
   completed_.push(id);
 }

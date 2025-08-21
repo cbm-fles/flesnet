@@ -25,7 +25,16 @@ static constexpr unsigned int AM_SCHED_RELEASE_ST =
 static constexpr unsigned int AM_BUILDER_REGISTER =
     40; // header: {builder_id}, data: none
 static constexpr unsigned int AM_BUILDER_STATUS =
-    41; // header: {bytes_available, bytes_processed}, data: none
+    41; // header: {event, StId, size}, data: none
+/*
+   {event, StId, size}
+
+   no_op, (--), bytes_free
+   allocated, StId, new_bytes_free
+   out_of_memory, StId, (--)
+   received, StId, (--)
+   released, StId, new_bytes_free
+*/
 // tssched -> tsbuilder
 static constexpr unsigned int AM_SCHED_SEND_TS =
     50; // header: {StId, desc_size, content_size}, data: StCollectionDescriptor
@@ -38,3 +47,9 @@ static constexpr unsigned int AM_BUILDER_REQUEST_ST =
 static constexpr unsigned int AM_SENDER_SEND_ST =
     70; // header: {StId, desc_size, content_size}, data: {StDescriptor,
         // StContent}
+
+static constexpr uint64_t BUILDER_EVENT_NO_OP = 0;
+static constexpr uint64_t BUILDER_EVENT_ALLOCATED = 1;
+static constexpr uint64_t BUILDER_EVENT_OUT_OF_MEMORY = 2;
+static constexpr uint64_t BUILDER_EVENT_RECEIVED = 3;
+static constexpr uint64_t BUILDER_EVENT_RELEASED = 4;

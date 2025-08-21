@@ -32,8 +32,9 @@ struct BuilderConnection {
   std::string id;
   ucp_ep_h ep;
   uint64_t bytes_available = 0;
-  uint64_t bytes_processed = 0;
-  uint64_t bytes_assigned = 0;
+  bool is_out_of_memory = false;
+  // uint64_t bytes_processed = 0;
+  // uint64_t bytes_assigned = 0;
 };
 
 class TsScheduler {

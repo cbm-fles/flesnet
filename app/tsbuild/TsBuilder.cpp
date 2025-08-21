@@ -31,8 +31,11 @@ inline uint64_t now_ns() {
 }
 } // namespace
 
-TsBuilder::TsBuilder(std::string_view scheduler_address, int64_t timeout_ns)
-    : scheduler_address_(scheduler_address), timeout_ns_{timeout_ns} {
+TsBuilder::TsBuilder(TimesliceBufferFlex& timeslice_buffer,
+                     std::string_view scheduler_address,
+                     int64_t timeout_ns)
+    : timeslice_buffer_(timeslice_buffer),
+      scheduler_address_(scheduler_address), timeout_ns_{timeout_ns} {
   builder_id_ = fles::system::current_hostname() + ":" +
                 std::to_string(fles::system::current_pid()); // TODO
 
@@ -197,7 +200,7 @@ TsBuilder::handle_scheduler_send_ts(const void* header,
                                     const ucp_am_recv_param_t* param) {
   L_(trace) << "Received TS from scheduler with header length " << header_length
             << " and data length " << length;
-  /*
+  /* TODO
     auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                          header_length / sizeof(uint64_t));
     if (hdr.size() != 3 || length == 0 ||
@@ -277,17 +280,14 @@ void TsBuilder::disconnect_from_senders() {
 
 // Sender message handling
 
-void send_request_to_sender(StID id) {
-  // TODO
-  /*
-  std::array<uint64_t, 2> hdr{bytes_available_, bytes_processed_}; // TODO
+void TsBuilder::send_request_to_sender(StID id) {
+  std::array<uint64_t, 1> hdr{id};
 
   auto header = std::as_bytes(std::span(hdr));
 
-  ucx::util::send_active_message(scheduler_ep_, AM_BUILDER_STATUS, header,
-                                 buffer, ucx::util::on_generic_send_complete,
-                                 this, UCP_AM_SEND_FLAG_COPY_HEADER);
-  */
+  ucx::util::send_active_message(scheduler_ep_, AM_BUILDER_REQUEST_ST, header,
+                                 {}, ucx::util::on_generic_send_complete, this,
+                                 UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
 ucs_status_t TsBuilder::handle_sender_data(const void* header,
@@ -297,7 +297,7 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
                                            const ucp_am_recv_param_t* param) {
   L_(trace) << "Received sender ST data with header length " << header_length
             << " and data length " << length;
-  /*
+  /* TODO
     auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                          header_length / sizeof(uint64_t));
     if (hdr.size() != 3 || length == 0 ||
@@ -348,4 +348,6 @@ std::size_t TsBuilder::process_queues() {
 
 TsDescriptor TsBuilder::create_timeslice_descriptor(StID id) {
   // TODO
+
+  return {};
 }

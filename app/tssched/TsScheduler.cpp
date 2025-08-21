@@ -113,8 +113,6 @@ void TsScheduler::operator()(std::stop_token stop_token) {
 }
 
 void TsScheduler::send_timeslice(StID id) {
-  ts_count_++;
-
   StCollectionDescriptor desc = create_collection_descriptor(id);
   if (desc.contributions.empty()) {
     L_(warning) << "No contributions found for timeslice ID: " << id;
@@ -122,9 +120,9 @@ void TsScheduler::send_timeslice(StID id) {
   }
 
   for (std::size_t i = 0; i < builders_.size(); ++i) {
-    auto& builder = builders_[(ts_count_ + i) % builders_.size()];
-    if (builder.bytes_available >= desc.content_size) {
-      builder.bytes_assigned += desc.content_size;
+    auto& builder = builders_[(id + i) % builders_.size()];
+    if (builder.bytes_available >= desc.content_size &&
+        !builder.is_out_of_memory) {
       send_timeslice_to_builder(desc, builder);
       return;
     }
@@ -318,7 +316,7 @@ TsScheduler::handle_builder_register(const void* header,
   auto builder_id =
       std::string(static_cast<const char*>(header), header_length);
   ucp_ep_h ep = param->reply_ep;
-  builders_.emplace_back(builder_id, ep, 0, 0, 0);
+  builders_.emplace_back(builder_id, ep, 0, false);
   L_(debug) << "Accepted builder registration with id " << builder_id;
 
   return UCS_OK;
@@ -335,7 +333,7 @@ TsScheduler::handle_builder_status(const void* header,
 
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
-  if (hdr.size() != 2 || length != 0 ||
+  if (hdr.size() != 3 || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
     L_(error) << "Invalid builder status received";
     return UCS_OK;
@@ -350,11 +348,43 @@ TsScheduler::handle_builder_status(const void* header,
     L_(error) << "Received status from unknown builder";
     return UCS_OK;
   }
-  const uint64_t bytes_available = hdr[0];
-  const uint64_t bytes_processed = hdr[1];
+  const uint64_t event = hdr[0];
+  const StID id = hdr[1];
+  const uint64_t new_bytes_free = hdr[2];
 
-  it->bytes_available = bytes_available;
-  it->bytes_processed = bytes_processed;
+  switch (event) {
+  case BUILDER_EVENT_NO_OP:
+    L_(debug) << "Builder " << it->id
+              << " reported bytes free: " << new_bytes_free;
+    if (new_bytes_free > it->bytes_available) {
+      it->is_out_of_memory = false;
+    }
+    it->bytes_available = new_bytes_free;
+    break;
+  case BUILDER_EVENT_ALLOCATED:
+    L_(debug) << "Builder " << it->id << " allocated ST with ID: " << id
+              << ", new bytes free: " << new_bytes_free;
+    it->bytes_available = new_bytes_free;
+    break;
+  case BUILDER_EVENT_OUT_OF_MEMORY:
+    L_(info) << "Builder " << it->id
+             << " reported out of memory for ST with ID: " << id;
+    it->is_out_of_memory = true;
+    send_timeslice(id);
+    break;
+  case BUILDER_EVENT_RECEIVED:
+    L_(debug) << "Builder " << it->id << " received ST with ID: " << id;
+    send_release_to_senders(id);
+    break;
+  case BUILDER_EVENT_RELEASED:
+    L_(debug) << "Builder " << it->id << " released ST with ID: " << id
+              << ", new bytes free: " << new_bytes_free;
+    if (new_bytes_free > it->bytes_available) {
+      it->is_out_of_memory = false;
+    }
+    it->bytes_available = new_bytes_free;
+    break;
+  }
 
   return UCS_OK;
 }

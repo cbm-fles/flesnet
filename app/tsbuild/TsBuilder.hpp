@@ -3,6 +3,7 @@
 
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
+#include "TimesliceBufferFlex.hpp"
 #include <cstdint>
 #include <string_view>
 #include <sys/epoll.h>
@@ -30,13 +31,16 @@ struct SenderConnection {
 
 class TsBuilder {
 public:
-  TsBuilder(std::string_view scheduler_address, int64_t timeout_ns);
+  TsBuilder(TimesliceBufferFlex& timeslice_buffer,
+            std::string_view scheduler_address,
+            int64_t timeout_ns);
   ~TsBuilder();
   TsBuilder(const TsBuilder&) = delete;
   TsBuilder& operator=(const TsBuilder&) = delete;
 
 private:
   Scheduler tasks_;
+  TimesliceBufferFlex& timeslice_buffer_;
 
   std::string scheduler_address_;
   int64_t timeout_ns_;

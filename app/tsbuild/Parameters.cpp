@@ -96,6 +96,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
   config_add("timeout",
              po::value<Nanoseconds>(&_timeout)->default_value(_timeout),
              "timeout for data reception (with suffix ns, us, ms, s)");
+  config_add("shm-id", po::value<std::string>(&_shm_id)->default_value(_shm_id),
+             "shared memory identifier for timeslice buffer");
+  config_add("buffer-size",
+             po::value<size_t>(&_buffer_size)->default_value(_buffer_size),
+             "size of the timeslice buffer in bytes");
 
   po::options_description cmdline_options("Allowed options");
   cmdline_options.add(generic).add(config);
