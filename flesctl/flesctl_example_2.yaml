@@ -1,0 +1,59 @@
+# Tag: 2023/fles/en03_pgen
+
+common:
+  # flesnet settings
+  timeslice_size: 1000
+  timeslice_overlap: 1
+  tsbuf_data_size_exp: 30
+  tsbuf_desc_size_exp: 22
+  transport: rdma
+  
+  # cri settings
+  mc_size_limit_bytes: 2097152
+  default_readout_buffer_size: 1G
+  pgen_mc_size_ns: 100000
+  pgen_rate: 1
+
+  tsclient_param:
+    - "-a -m -i shm://%shm_id%"
+
+entry_nodes:
+  en03:
+    address: en03ib0
+    cards:
+      cri0:
+        pci_address: 0b:00.1
+        default_readout_buffer_size: 2G
+        pgen_base_eqid: 0xF020
+        channels:
+          0:
+            mode: pgen
+          1:
+            mode: pgen
+      cri1:
+        pci_address: 0a:00.1
+        pgen_base_eqid: 0xF030
+        channels:
+          1:
+            mode: pgen
+          3:
+            mode: pgen
+  en04:
+    address: en04ib0
+    active: false
+    cards:
+      cri0:
+        pci_address: 0b:00.1
+        pgen_base_eqid: 0xF040
+        channels:
+          0:
+            mode: pgen
+
+build_nodes:
+  node9:
+    address: node9ib1
+    active: false
+  node10:
+    address: node10ib1
+  node11:
+    address: node11ib1
