@@ -11,6 +11,7 @@
 #include <iostream>
 #include <numeric>
 #include <span>
+#include <string>
 #include <thread>
 
 using namespace std::chrono_literals;
@@ -287,30 +288,34 @@ void Application::report_status() {
   constexpr auto interval = std::chrono::seconds(1);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
-  int64_t now_ns = fles::system::current_time_ns();
-
   if (monitor_ != nullptr) {
     monitor_->QueueMetric(
-        "tsc_server_status", {{"host", hostname_}},
+        "tsc_server_status",
+        {{"host", hostname_}, {"port", std::to_string(par_.listen_port())}},
         {{"timeslice_count", timeslice_count_},
          {"component_count", component_count_},
          {"microslice_count", microslice_count_},
          {"content_bytes", content_bytes_},
          {"timeslice_incomplete_count", timeslice_incomplete_count_}});
+    int64_t now_ns = fles::system::current_time_ns();
     for (const auto& channel : channels_) {
       auto mon = channel->get_monitoring();
       if (mon.latest_microslice_time_ns) {
         int64_t delay = now_ns - mon.latest_microslice_time_ns.value();
         monitor_->QueueMetric(
             "tsc_server_channel_status",
-            {{"host", hostname_}, {"channel", channel->name()}},
+            {{"host", hostname_},
+             {"port", std::to_string(par_.listen_port())},
+             {"channel", channel->name()}},
             {{"desc_buffer_utilization", mon.desc_buffer_utilization},
              {"data_buffer_utilization", mon.data_buffer_utilization},
              {"delay", delay}});
       } else {
         monitor_->QueueMetric(
             "tsc_server_channel_status",
-            {{"host", hostname_}, {"channel", channel->name()}},
+            {{"host", hostname_},
+             {"port", std::to_string(par_.listen_port())},
+             {"channel", channel->name()}},
             {{"desc_buffer_utilization", mon.desc_buffer_utilization},
              {"data_buffer_utilization", mon.data_buffer_utilization}});
       }

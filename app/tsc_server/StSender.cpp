@@ -24,8 +24,8 @@
 
 StSender::StSender(std::string_view scheduler_address, uint16_t listen_port)
     : scheduler_address_(scheduler_address), listen_port_(listen_port) {
-  sender_id_ = fles::system::current_hostname() + ":" +
-               std::to_string(fles::system::current_pid()); // TODO
+  sender_id_ =
+      fles::system::current_hostname() + ":" + std::to_string(listen_port_);
 
   // Initialize event handling
   queue_event_fd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);

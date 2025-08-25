@@ -25,12 +25,11 @@
 
 TsBuilder::TsBuilder(TimesliceBufferFlex& timeslice_buffer,
                      std::string_view scheduler_address,
-                     int64_t timeout_ns)
+                     int64_t timeout_ns,
+                     cbm::Monitor* monitor)
     : timeslice_buffer_(timeslice_buffer),
-      scheduler_address_(scheduler_address), timeout_ns_{timeout_ns} {
-  builder_id_ = fles::system::current_hostname() + ":" +
-                std::to_string(fles::system::current_pid()); // TODO
-
+      scheduler_address_(scheduler_address), timeout_ns_(timeout_ns),
+      hostname_(fles::system::current_hostname()), monitor_(monitor) {
   // Initialize event handling
   epoll_fd_ = epoll_create1(EPOLL_CLOEXEC);
   if (epoll_fd_ == -1) {
@@ -66,6 +65,8 @@ void TsBuilder::operator()(std::stop_token stop_token) {
     return;
   }
   connect_to_scheduler_if_needed();
+  send_periodic_status_to_scheduler();
+  report_status();
 
   while (!stop_token.stop_requested()) {
     if (ucp_worker_progress(worker_) != 0) {
@@ -77,7 +78,7 @@ void TsBuilder::operator()(std::stop_token stop_token) {
     }
     tasks_.timer();
 
-    if (!ucx::util::arm_worker_and_wait(worker_, epoll_fd_)) {
+    if (!ucx::util::arm_worker_and_wait(worker_, epoll_fd_, 100)) {
       break;
     }
   }
@@ -85,6 +86,27 @@ void TsBuilder::operator()(std::stop_token stop_token) {
   disconnect_from_scheduler();
   disconnect_from_senders();
   ucx::util::cleanup(context_, worker_);
+}
+
+void TsBuilder::report_status() {
+  constexpr auto interval = std::chrono::seconds(1);
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+  if (monitor_ != nullptr) {
+    size_t timeslices_allocated = ts_handlers_.size();
+    size_t bytes_allocated =
+        timeslice_buffer_.get_size() - timeslice_buffer_.get_free_memory();
+    monitor_->QueueMetric(
+        "tsbuild_status", {{"host", hostname_}},
+        {{"timeslice_count", timeslice_count_},
+         {"component_count", component_count_},
+         {"byte_count", byte_count_},
+         {"timeslice_incomplete_count", timeslice_incomplete_count_},
+         {"timeslices_allocated", timeslices_allocated},
+         {"bytes_allocated", bytes_allocated}});
+  }
+
+  tasks_.add([this] { report_status(); }, now + interval);
 }
 
 // Scheduler connection management
@@ -137,7 +159,7 @@ void TsBuilder::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
 }
 
 bool TsBuilder::register_with_scheduler() {
-  auto header = std::as_bytes(std::span(builder_id_));
+  auto header = std::as_bytes(std::span(hostname_));
   return ucx::util::send_active_message(
       scheduler_ep_, AM_SENDER_REGISTER, header, {},
       on_scheduler_register_complete, this, 0);
@@ -185,6 +207,17 @@ void TsBuilder::send_status_to_scheduler(uint64_t event, TsID id) {
                                  UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
+void TsBuilder::send_periodic_status_to_scheduler() {
+  constexpr auto interval = std::chrono::seconds(1);
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+  if (scheduler_connected_) {
+    send_status_to_scheduler(BUILDER_EVENT_NO_OP, 0);
+  }
+
+  tasks_.add([this] { send_periodic_status_to_scheduler(); }, now + interval);
+}
+
 ucs_status_t TsBuilder::handle_scheduler_send_ts(
     const void* header,
     size_t header_length,
@@ -210,6 +243,13 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
     return UCS_OK;
   }
 
+  auto desc = to_obj_nothrow<StCollectionDescriptor>(
+      std::span(static_cast<const std::byte*>(data), desc_size));
+  if (!desc) {
+    L_(error) << "Failed to deserialize TS descriptor for TS with ID: " << id;
+    return UCS_OK;
+  }
+
   // Try to allocate memory for the content
   auto* buffer = timeslice_buffer_.allocate(content_size);
   if (buffer == nullptr) {
@@ -218,12 +258,10 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
     return UCS_OK;
   }
 
-  // TODO: add error handling for deserialization
-  auto desc = to_obj<StCollectionDescriptor>(
-      std::span(static_cast<const std::byte*>(data), desc_size));
   ts_handlers_.emplace_back(
-      std::make_unique<TsHandler>(buffer, std::move(desc)));
+      std::make_unique<TsHandler>(buffer, std::move(*desc)));
   auto& tsh = *ts_handlers_.back();
+  timeslice_count_++;
   send_status_to_scheduler(BUILDER_EVENT_ALLOCATED, id);
 
   L_(debug) << "Received TS from scheduler with ID: " << id
@@ -235,6 +273,18 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
     send_request_to_sender(tsh.contributions[i].sender_id, id);
     update_st_state(tsh, i, StState::Requested);
   }
+
+  // Handle timeout
+  tasks_.add(
+      [&] {
+        for (std::size_t i = 0; i < tsh.states.size(); ++i) {
+          if (tsh.states[i] == StState::Requested ||
+              tsh.states[i] == StState::Receiving) {
+            update_st_state(tsh, i, StState::Failed);
+          }
+        }
+      },
+      std::chrono::system_clock::now() + std::chrono::nanoseconds(timeout_ns_));
 
   return UCS_OK;
 }
@@ -445,6 +495,8 @@ void TsBuilder::handle_sender_data_recv_complete(
                 << contribution_index << " for TS ID: " << id;
       return;
     }
+    component_count_++;
+    byte_count_ += tsh.contributions[contribution_index].content_size;
     update_st_state(tsh, contribution_index, StState::Complete);
     active_data_recv_requests_.erase(request);
   }
@@ -481,9 +533,15 @@ void TsBuilder::update_st_state(TsHandler& tsh,
   tsh.states[contribution_index] = new_state;
   if (new_state == StState::Complete) {
     // Deserialize the descriptor
-    tsh.descriptors[contribution_index] = to_obj<StDescriptor>(
+    auto desc = to_obj_nothrow<StDescriptor>(
         std::span(tsh.serialized_descriptors[contribution_index]));
-    // TODO: add error handling for deserialization
+    if (!desc) {
+      L_(error) << "Failed to deserialize ST descriptor for TS with ID: "
+                << tsh.id;
+      update_st_state(tsh, contribution_index, StState::Failed);
+      return;
+    }
+    tsh.descriptors[contribution_index] = std::move(*desc);
   }
   if (new_state == StState::Complete || new_state == StState::Failed) {
     if (std::all_of(tsh.states.begin(), tsh.states.end(), [](StState state) {
@@ -491,13 +549,19 @@ void TsBuilder::update_st_state(TsHandler& tsh,
         })) {
       // All contributions are complete (or failed), publish the timeslice
       if (!tsh.is_published) {
+        send_status_to_scheduler(BUILDER_EVENT_RECEIVED, tsh.id);
         StDescriptor ts_desc = create_timeslice_descriptor(tsh);
         timeslice_buffer_.send_work_item(tsh.buffer, tsh.id, ts_desc);
         tsh.is_published = true;
-        L_(debug) << "Published TS with ID: " << tsh.id;
+        tsh.published_at_ns = fles::system::current_time_ns();
+        if (ts_desc.has_flag(StFlag::MissingSubtimeslices)) {
+          L_(info) << "Published incomplete TS with ID: " << tsh.id;
+          timeslice_incomplete_count_++;
+        } else {
+          L_(debug) << "Published complete TS with ID: " << tsh.id;
+        }
       }
     }
-    // TODO: add timeout handling for incomplete timeslices
   }
 }
 

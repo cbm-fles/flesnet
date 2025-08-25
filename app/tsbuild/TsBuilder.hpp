@@ -1,6 +1,7 @@
 // Copyright 2025 Jan de Cuveland
 #pragma once
 
+#include "Monitor.hpp"
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
 #include "System.hpp"
@@ -36,7 +37,7 @@ enum class StState : uint8_t {
 
 struct TsHandler {
   TsHandler(std::byte* buffer, StCollectionDescriptor desc)
-      : id(desc.id), allocated_at_ns_(fles::system::current_time_ns()),
+      : id(desc.id), allocated_at_ns(fles::system::current_time_ns()),
         buffer(buffer), contributions(std::move(desc.contributions)),
         offsets(contributions.size()), iovectors(contributions.size()),
         descriptors(contributions.size()), states(contributions.size()) {
@@ -63,7 +64,8 @@ struct TsHandler {
   TsHandler& operator=(const TsHandler&) = delete;
 
   const TsID id;
-  const uint64_t allocated_at_ns_;
+  const uint64_t allocated_at_ns;
+  uint64_t published_at_ns = 0;
   std::byte* const buffer;
   std::vector<TsContribution> contributions;
   std::vector<uint64_t> offsets;
@@ -78,7 +80,8 @@ class TsBuilder {
 public:
   TsBuilder(TimesliceBufferFlex& timeslice_buffer,
             std::string_view scheduler_address,
-            int64_t timeout_ns);
+            int64_t timeout_ns,
+            cbm::Monitor* monitor);
   ~TsBuilder();
   TsBuilder(const TsBuilder&) = delete;
   TsBuilder& operator=(const TsBuilder&) = delete;
@@ -89,7 +92,8 @@ private:
 
   std::string scheduler_address_;
   int64_t timeout_ns_;
-  std::string builder_id_;
+  std::string hostname_;
+  cbm::Monitor* monitor_ = nullptr;
 
   int epoll_fd_ = -1;
   ucp_context_h context_ = nullptr;
@@ -104,14 +108,16 @@ private:
   bool scheduler_connecting_ = false;
   bool scheduler_connected_ = false;
 
-  uint64_t bytes_available_ = 0; // TODO: use!
-  uint64_t bytes_processed_ = 0; // TODO: use!
-  // uint64_t bytes_assigned = 0;
+  size_t timeslice_count_ = 0; ///< total number of assigned timeslices
+  size_t component_count_ = 0; ///< total number of received components
+  size_t byte_count_ = 0;      ///< total number of processed bytes
+  size_t timeslice_incomplete_count_ = 0; ///< number of incomplete timeslices
 
   std::jthread worker_thread_;
 
   // Main operation loop
   void operator()(std::stop_token stop_token);
+  void report_status();
 
   // Scheduler connection management
   void connect_to_scheduler_if_needed();
@@ -124,6 +130,7 @@ private:
 
   // Scheduler message handling
   void send_status_to_scheduler(uint64_t event, TsID id);
+  void send_periodic_status_to_scheduler();
   ucs_status_t handle_scheduler_send_ts(const void* header,
                                         size_t header_length,
                                         void* data,
