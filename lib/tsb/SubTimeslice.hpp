@@ -9,13 +9,16 @@
 #include <boost/iostreams/stream.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_serialize.hpp>
 #include <span>
 #include <string>
 #include <sys/types.h>
 #include <ucp/api/ucp.h>
 #include <vector>
 
-using StID = uint64_t;
+using TsID = uint64_t;
 
 // Flags
 
@@ -45,6 +48,9 @@ enum class StFlag : uint32_t {
 
   // Subtimeslice is incomplete due to missing components
   MissingComponents = 1 << 2,
+
+  // Timeslice is incomplete due to missing subtimeslices
+  MissingSubtimeslices = 1 << 3,
 };
 
 // Descriptors for transferring subtimeslice data from the sender to the builder
@@ -77,6 +83,8 @@ struct StComponentDescriptor {
     return (flags & static_cast<uint32_t>(f)) != 0;
   }
 
+  // The size (in bytes) of the component (i.e., microslice descriptor +
+  // content)
   [[nodiscard]] uint64_t size() const { return descriptor.size + content.size; }
 
   friend class boost::serialization::access;
@@ -108,6 +116,8 @@ struct StDescriptor {
     return (flags & static_cast<uint32_t>(f)) != 0;
   }
 
+  /// The total size (in bytes) of the subtimeslice (i.e., microslice
+  /// descriptors + content of all contained components)
   [[nodiscard]] uint64_t size() const {
     uint64_t total_size = 0;
     for (const auto& component : components) {
@@ -210,7 +220,7 @@ struct TsContribution {
 };
 
 struct StCollectionDescriptor {
-  StID id = 0;
+  TsID id = 0;
   uint64_t desc_size = 0;
   uint64_t content_size = 0;
 
@@ -224,16 +234,26 @@ struct StCollectionDescriptor {
   }
 };
 
-// Descriptors for storing timeslice data in a shared memory region
+// Descriptor for storing timeslice data in a shared memory region
 
-struct TsDescriptor {
-  StID id = 0;
-  // TODO
+struct TsDescriptorShm {
+  /// The UUID of the containing managed shared memory
+  boost::uuids::uuid shm_uuid{};
+  /// The identifier string of the containing managed shared memory
+  std::string shm_identifier;
+  /// The additional overall offset of all the data blocks
+  std::ptrdiff_t offset = 0;
+  /// Timeslice descriptor including component descriptors
+  StDescriptor ts_desc{};
 
   friend class boost::serialization::access;
+  /// Provide boost serialization access.
   template <class Archive>
   void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
-    ar & id;
+    ar & shm_uuid;
+    ar & shm_identifier;
+    ar & offset;
+    ar & ts_desc;
   }
 };
 

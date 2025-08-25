@@ -16,21 +16,6 @@
 using namespace std::chrono_literals;
 
 namespace {
-[[maybe_unused]] inline uint64_t
-chrono_to_timestamp(std::chrono::time_point<std::chrono::high_resolution_clock,
-                                            std::chrono::nanoseconds> time) {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(
-             time.time_since_epoch())
-      .count();
-}
-
-[[maybe_unused]] inline std::chrono::
-    time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds>
-    timestamp_to_chrono(uint64_t time) {
-  return std::chrono::high_resolution_clock::time_point(
-      std::chrono::nanoseconds(time));
-}
-
 template <typename T>
 inline std::span<T>
 shm_allocate(boost::interprocess::managed_shared_memory* shm,
@@ -169,9 +154,9 @@ void Application::run() {
     channel->ack_before(2000000000000000000);
   }
 
-  uint64_t ts_start_time =
-      chrono_to_timestamp(std::chrono::high_resolution_clock::now()) /
-      par_.timeslice_duration_ns() * par_.timeslice_duration_ns();
+  uint64_t ts_start_time = fles::system::current_time_ns() /
+                           par_.timeslice_duration_ns() *
+                           par_.timeslice_duration_ns();
   acked_ = ts_start_time / par_.timeslice_duration_ns();
 
   report_status();
@@ -198,10 +183,9 @@ void Application::run() {
 
     // if some channels are in the TryLater state and the timeout has not been
     // reached, wait a bit and try again
-    bool timeout_reached =
-        (chrono_to_timestamp(std::chrono::high_resolution_clock::now()) >
-         ts_start_time + par_.timeslice_duration_ns() +
-             par_.overlap_after_ns() + par_.timeout_ns());
+    bool timeout_reached = (fles::system::current_time_ns() >
+                            ts_start_time + par_.timeslice_duration_ns() +
+                                par_.overlap_after_ns() + par_.timeout_ns());
     if (!ask_again.empty() && !timeout_reached) {
       std::this_thread::sleep_for(
           std::chrono::nanoseconds(par_.timeslice_duration_ns() / 10));
@@ -303,10 +287,7 @@ void Application::report_status() {
   constexpr auto interval = std::chrono::seconds(1);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
-  int64_t now_ns =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(
-          std::chrono::high_resolution_clock::now().time_since_epoch())
-          .count();
+  int64_t now_ns = fles::system::current_time_ns();
 
   if (monitor_ != nullptr) {
     monitor_->QueueMetric(

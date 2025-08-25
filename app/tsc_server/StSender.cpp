@@ -62,7 +62,7 @@ StSender::~StSender() {
 
 // Public API methods
 
-void StSender::announce_subtimeslice(StID id, const SubTimesliceHandle& st) {
+void StSender::announce_subtimeslice(TsID id, const SubTimesliceHandle& st) {
   {
     std::lock_guard<std::mutex> lock(queue_mutex_);
     pending_announcements_.emplace_back(id, st);
@@ -70,7 +70,7 @@ void StSender::announce_subtimeslice(StID id, const SubTimesliceHandle& st) {
   notify_queue_update();
 }
 
-void StSender::retract_subtimeslice(StID id) {
+void StSender::retract_subtimeslice(TsID id) {
   {
     std::lock_guard<std::mutex> lock(queue_mutex_);
     auto it = std::find_if(pending_announcements_.begin(),
@@ -86,12 +86,12 @@ void StSender::retract_subtimeslice(StID id) {
   notify_queue_update();
 }
 
-std::optional<StID> StSender::try_receive_completion() {
+std::optional<TsID> StSender::try_receive_completion() {
   std::lock_guard<std::mutex> lock(completions_mutex_);
   if (completed_.empty()) {
     return std::nullopt;
   }
-  StID id = completed_.front();
+  TsID id = completed_.front();
   completed_.pop();
   return id;
 }
@@ -230,7 +230,7 @@ void StSender::disconnect_from_scheduler(bool force) {
 
 // Scheduler message handling
 
-void StSender::send_announcement_to_scheduler(StID id) {
+void StSender::send_announcement_to_scheduler(TsID id) {
   auto it = announced_.find(id);
   if (it == announced_.end()) {
     return;
@@ -254,7 +254,7 @@ void StSender::send_announcement_to_scheduler(StID id) {
                                  this, UCP_AM_SEND_FLAG_COPY_HEADER);
 }
 
-void StSender::send_retraction_to_scheduler(StID id) {
+void StSender::send_retraction_to_scheduler(TsID id) {
   std::array<uint64_t, 1> hdr{id};
 
   auto header = std::as_bytes(std::span(hdr));
@@ -346,7 +346,7 @@ StSender::handle_builder_request(const void* header,
   return UCS_OK;
 }
 
-void StSender::send_subtimeslice_to_builder(StID id, ucp_ep_h ep) {
+void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
   auto it = announced_.find(id);
   if (it == announced_.end()) {
     L_(warning) << "SubTimeslice with ID " << id << " not found";
@@ -434,8 +434,8 @@ void StSender::notify_queue_update() const {
 }
 
 std::size_t StSender::process_queues() {
-  std::deque<std::pair<StID, SubTimesliceHandle>> announcements;
-  std::deque<StID> retractions;
+  std::deque<std::pair<TsID, SubTimesliceHandle>> announcements;
+  std::deque<TsID> retractions;
   {
     std::lock_guard<std::mutex> lock(queue_mutex_);
     if (pending_announcements_.empty() && pending_retractions_.empty()) {
@@ -463,7 +463,7 @@ std::size_t StSender::process_queues() {
   return announcements.size() + retractions.size();
 }
 
-void StSender::process_announcement(StID id, const SubTimesliceHandle& sth) {
+void StSender::process_announcement(TsID id, const SubTimesliceHandle& sth) {
   // Create and serialize subtimeslice
   StDescriptor descriptor = create_subtimeslice_descriptor(sth);
   auto descriptor_bytes = to_bytes(descriptor);
@@ -480,7 +480,7 @@ void StSender::process_announcement(StID id, const SubTimesliceHandle& sth) {
   send_announcement_to_scheduler(id);
 }
 
-void StSender::process_retraction(StID id) {
+void StSender::process_retraction(TsID id) {
   auto it = announced_.find(id);
   if (it != announced_.end()) {
     L_(debug) << "Retracting SubTimeslice with ID: " << id;
@@ -492,7 +492,7 @@ void StSender::process_retraction(StID id) {
   }
 }
 
-void StSender::complete_subtimeslice(StID id) {
+void StSender::complete_subtimeslice(TsID id) {
   // In the future, this could check if there is an ongoning send operation
   // concerning this SubTimeslice (cf. active_send_requests_) and wait for it to
   // complete before marking the SubTimeslice as completed. This would avoid

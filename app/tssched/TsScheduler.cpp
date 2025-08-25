@@ -2,6 +2,7 @@
 
 #include "TsScheduler.hpp"
 #include "SubTimeslice.hpp"
+#include "System.hpp"
 #include "TsbProtocol.hpp"
 #include "log.hpp"
 #include "monitoring/System.hpp"
@@ -19,14 +20,6 @@
 #include <ucp/api/ucp.h>
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
-
-namespace {
-inline uint64_t now_ns() {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(
-             std::chrono::high_resolution_clock::now().time_since_epoch())
-      .count();
-}
-} // namespace
 
 TsScheduler::TsScheduler(uint16_t listen_port,
                          int64_t timeslice_duration_ns,
@@ -79,7 +72,7 @@ void TsScheduler::operator()(std::stop_token stop_token) {
     return;
   }
 
-  uint64_t id = now_ns() / timeslice_duration_ns_;
+  uint64_t id = fles::system::current_time_ns() / timeslice_duration_ns_;
 
   while (!stop_token.stop_requested()) {
     if (ucp_worker_progress(worker_) != 0) {
@@ -89,7 +82,7 @@ void TsScheduler::operator()(std::stop_token stop_token) {
     bool try_later = std::any_of(
         sender_connections_.begin(), sender_connections_.end(),
         [id](const auto& s) { return s.second.last_received_st < id; });
-    uint64_t current_time_ns = now_ns();
+    uint64_t current_time_ns = fles::system::current_time_ns();
     uint64_t timeout_ns = (id + 1) * timeslice_duration_ns_ + timeout_ns_;
 
     if (try_later && current_time_ns < timeout_ns) {
@@ -112,7 +105,7 @@ void TsScheduler::operator()(std::stop_token stop_token) {
   ucx::util::cleanup(context_, worker_);
 }
 
-void TsScheduler::send_timeslice(StID id) {
+void TsScheduler::send_timeslice(TsID id) {
   StCollectionDescriptor desc = create_collection_descriptor(id);
   if (desc.contributions.empty()) {
     L_(warning) << "No contributions found for timeslice ID: " << id;
@@ -166,7 +159,7 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
 
   auto sender_it = sender_connections_.find(ep);
   if (sender_it != sender_connections_.end()) {
-    L_(info) << "Removing disconnected sender: " << sender_it->second.id;
+    L_(info) << "Removing disconnected sender: " << sender_it->second.sender_id;
     sender_connections_.erase(sender_it);
   }
 
@@ -245,7 +238,7 @@ TsScheduler::handle_sender_announce(const void* header,
 
   sender_conn.announced_st.emplace_back(id, desc_size, content_size);
   sender_conn.last_received_st = id;
-  L_(debug) << "Received ST announcement from sender " << sender_conn.id
+  L_(debug) << "Received ST announcement from sender " << sender_conn.sender_id
             << " with ID: " << id << ", desc size: " << desc_size
             << ", content size: " << content_size;
 
@@ -284,7 +277,7 @@ TsScheduler::handle_sender_retract(const void* header,
   return UCS_OK;
 }
 
-void TsScheduler::send_release_to_senders(StID id) {
+void TsScheduler::send_release_to_senders(TsID id) {
   std::array<uint64_t, 1> hdr{id};
   auto header = std::as_bytes(std::span(hdr));
 
@@ -349,7 +342,7 @@ TsScheduler::handle_builder_status(const void* header,
     return UCS_OK;
   }
   const uint64_t event = hdr[0];
-  const StID id = hdr[1];
+  const TsID id = hdr[1];
   const uint64_t new_bytes_free = hdr[2];
 
   switch (event) {
@@ -408,23 +401,23 @@ void TsScheduler::send_timeslice_to_builder(const StCollectionDescriptor& desc,
 
 // Helper methods
 
-StCollectionDescriptor TsScheduler::create_collection_descriptor(StID id) {
+StCollectionDescriptor TsScheduler::create_collection_descriptor(TsID id) {
   StCollectionDescriptor desc{id, 0, 0, {}};
   for (auto& [sender_ep, sender_conn] : sender_connections_) {
     auto it = std::find_if(sender_conn.announced_st.begin(),
                            sender_conn.announced_st.end(),
                            [id](const auto& st) { return st.id == id; });
     if (it != sender_conn.announced_st.end()) {
-      L_(trace) << "Adding contribution from sender " << sender_conn.id
+      L_(trace) << "Adding contribution from sender " << sender_conn.sender_id
                 << " with ID: " << id << ", desc size: " << it->desc_size
                 << ", content size: " << it->content_size;
       desc.contributions.push_back(
-          {sender_conn.id, it->desc_size, it->content_size});
+          {sender_conn.sender_id, it->desc_size, it->content_size});
       desc.desc_size += it->desc_size;
       desc.content_size += it->content_size;
       sender_conn.announced_st.erase(it);
     } else {
-      L_(debug) << "No contribution found for sender " << sender_conn.id
+      L_(debug) << "No contribution found for sender " << sender_conn.sender_id
                 << " with ID: " << id;
     }
   }

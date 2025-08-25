@@ -1,8 +1,8 @@
 // Copyright 2016-2020 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceBufferFlex.hpp"
+#include "SubTimeslice.hpp"
 #include "TimesliceDescriptor.hpp"
-#include "TimesliceShmWorkItem.hpp"
 #include "TimesliceWorkItem.hpp"
 #include "Utility.hpp"
 #include <boost/archive/binary_oarchive.hpp>
@@ -41,32 +41,18 @@ TimesliceBufferFlex::~TimesliceBufferFlex() {
   boost::interprocess::shared_memory_object::remove(shm_identifier_.c_str());
 }
 
-void TimesliceBufferFlex::send_work_item(fles::TimesliceWorkItem wi) {
-  // Create and fill new TimesliceShmWorkItem to be sent via zmq
-  // TODO
-  /*
-  fles::TimesliceShmWorkItem item;
+void TimesliceBufferFlex::send_work_item(std::byte* buffer,
+                                         TsID id,
+                                         const StDescriptor& ts_desc) {
+  TsDescriptorShm item;
   item.shm_uuid = shm_uuid_;
   item.shm_identifier = shm_identifier_;
-  item.ts_desc = wi.ts_desc;
-  const auto num_components = item.ts_desc.num_components;
-  const auto ts_pos = item.ts_desc.ts_pos;
-  item.data.resize(num_components);
-  item.desc.resize(num_components);
-  for (uint32_t c = 0; c < num_components; ++c) {
-    fles::TimesliceComponentDescriptor* tsc_desc = &get_desc(c, ts_pos);
-    uint8_t* tsc_data = &get_data(c, tsc_desc->offset);
-    item.data[c] = managed_shm_->get_handle_from_address(tsc_data);
-    item.desc[c] = managed_shm_->get_handle_from_address(tsc_desc);
-  }
+  item.offset = managed_shm_->get_handle_from_address(buffer);
+  item.ts_desc = ts_desc;
 
-  std::ostringstream ostream;
-  {
-    boost::archive::binary_oarchive oarchive(ostream);
-    oarchive << item;
-  }
-
-  outstanding_.insert(ts_pos);
-  ItemProducer::send_work_item(ts_pos, ostream.str());
-  */
+  std::vector<std::byte> bytes = to_bytes(item);
+  std::string bytes_str(reinterpret_cast<const char*>(bytes.data()),
+                        bytes.size());
+  ItemProducer::send_work_item(id, bytes_str);
+  outstanding_.insert(id);
 }

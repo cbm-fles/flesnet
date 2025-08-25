@@ -38,10 +38,7 @@ void Application::report_status() {
   constexpr auto interval = std::chrono::seconds(1);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
-  int64_t now_ns =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(
-          std::chrono::high_resolution_clock::now().time_since_epoch())
-          .count();
+  int64_t now_ns = fles::system::current_time_ns();
 
   if (monitor_ != nullptr) {
     // TODO: Report scheduler status

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "ItemProducer.hpp"
+#include "SubTimeslice.hpp"
 #include "TimesliceCompletion.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -9,6 +10,7 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 
@@ -50,19 +52,18 @@ public:
   void deallocate(std::byte* ptr) noexcept { managed_shm_->deallocate(ptr); }
 
   /// Send a work item to the item distributor.
-  void send_work_item(fles::TimesliceWorkItem wi);
+  void send_work_item(std::byte* buffer, TsID id, const StDescriptor& ts_desc);
 
   /// Receive a completion from the item distributor.
-  [[nodiscard]] bool try_receive_completion(fles::TimesliceCompletion& c) {
+  [[nodiscard]] std::optional<ItemID> try_receive_completion() {
     ItemID id;
     if (!ItemProducer::try_receive_completion(&id)) {
-      return false;
+      return std::nullopt;
     }
     if (outstanding_.erase(id) != 1) {
       std::cerr << "Error: invalid item " << id << std::endl;
     }
-    c.ts_pos = id;
-    return true;
+    return id;
   };
 
 private:
