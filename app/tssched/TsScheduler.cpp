@@ -23,9 +23,11 @@
 
 TsScheduler::TsScheduler(uint16_t listen_port,
                          int64_t timeslice_duration_ns,
-                         int64_t timeout_ns)
+                         int64_t timeout_ns,
+                         cbm::Monitor* monitor)
     : listen_port_(listen_port), timeslice_duration_ns_{timeslice_duration_ns},
-      timeout_ns_{timeout_ns} {
+      timeout_ns_{timeout_ns}, hostname_(fles::system::current_hostname()),
+      monitor_(monitor) {
   // Initialize event handling
   epoll_fd_ = epoll_create1(EPOLL_CLOEXEC);
   if (epoll_fd_ == -1) {
@@ -73,11 +75,13 @@ void TsScheduler::operator()(std::stop_token stop_token) {
   }
 
   uint64_t id = fles::system::current_time_ns() / timeslice_duration_ns_;
+  report_status();
 
   while (!stop_token.stop_requested()) {
     if (ucp_worker_progress(worker_) != 0) {
       continue;
     }
+    tasks_.timer();
 
     bool try_later = std::any_of(
         sender_connections_.begin(), sender_connections_.end(),
@@ -86,8 +90,16 @@ void TsScheduler::operator()(std::stop_token stop_token) {
     uint64_t timeout_ns = (id + 1) * timeslice_duration_ns_ + timeout_ns_;
 
     if (try_later && current_time_ns < timeout_ns) {
-      int timeout_ms =
+      int sender_wait_ms =
           static_cast<int>((timeout_ns - current_time_ns + 999999) / 1000000);
+      int timer_wait_ms = std::max(
+          static_cast<int>(
+              std::chrono::duration_cast<std::chrono::milliseconds>(
+                  tasks_.when_next() - std::chrono::system_clock::now())
+                  .count() +
+              1),
+          0);
+      int timeout_ms = std::min(sender_wait_ms, timer_wait_ms);
       if (!ucx::util::arm_worker_and_wait(worker_, epoll_fd_, timeout_ms)) {
         break;
       }
@@ -422,4 +434,17 @@ StCollectionDescriptor TsScheduler::create_collection_descriptor(TsID id) {
     }
   }
   return desc;
+}
+
+void TsScheduler::report_status() {
+  constexpr auto interval = std::chrono::seconds(1);
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+  if (monitor_ != nullptr) {
+    monitor_->QueueMetric("tssched_status", {{"host", hostname_}},
+                          {{"timeslice_count", 0}});
+  }
+  // TODO: Add real metrics
+
+  tasks_.add([this] { report_status(); }, now + interval);
 }

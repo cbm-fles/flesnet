@@ -56,7 +56,7 @@ private:
   std::unique_ptr<cbm::Monitor> monitor_;
   std::string hostname_;
 
-  Scheduler scheduler_;
+  Scheduler tasks_;
 
   std::unique_ptr<StSender> st_sender_;
 };

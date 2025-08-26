@@ -30,8 +30,8 @@ Application::Application(Parameters const& par,
 
 void Application::run() {
   while (*signal_status_ == 0) {
-    scheduler_.timer();
-    std::this_thread::sleep_until(scheduler_.when_next());
+    tasks_.timer();
+    std::this_thread::sleep_until(tasks_.when_next());
   }
 }
 

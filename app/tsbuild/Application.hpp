@@ -31,7 +31,7 @@ private:
 
   std::unique_ptr<cbm::Monitor> monitor_;
 
-  Scheduler scheduler_;
+  Scheduler tasks_;
 
   /// Address that is used for communication between the TimesliceBuffer and the
   /// ItemDistributor.

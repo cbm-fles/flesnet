@@ -1,6 +1,8 @@
 // Copyright 2025 Jan de Cuveland
 #pragma once
 
+#include "Monitor.hpp"
+#include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
 #include <array>
 #include <cstdint>
@@ -41,15 +43,20 @@ class TsScheduler {
 public:
   TsScheduler(uint16_t listen_port,
               int64_t timeslice_duration_ns,
-              int64_t timeout_ns);
+              int64_t timeout_ns,
+              cbm::Monitor* monitor);
   ~TsScheduler();
   TsScheduler(const TsScheduler&) = delete;
   TsScheduler& operator=(const TsScheduler&) = delete;
 
 private:
+  Scheduler tasks_;
+
   uint16_t listen_port_;
   int64_t timeslice_duration_ns_;
   int64_t timeout_ns_;
+  std::string hostname_;
+  cbm::Monitor* monitor_ = nullptr;
 
   int epoll_fd_ = -1;
   std::unordered_map<ucs_status_ptr_t, TsID> active_send_requests_;
@@ -106,6 +113,7 @@ private:
 
   // Helper methods
   StCollectionDescriptor create_collection_descriptor(TsID id);
+  void report_status();
 
   // UCX static callbacks (trampolines)
   static void on_new_connection(ucp_conn_request_h conn_request, void* arg) {

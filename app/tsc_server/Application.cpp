@@ -168,7 +168,7 @@ void Application::run() {
 
   while (*signal_status_ == 0) {
     handle_completions();
-    scheduler_.timer();
+    tasks_.timer();
 
     // call check_component for all channels and store the states
     for (auto i : ask_again) {
@@ -322,5 +322,5 @@ void Application::report_status() {
     }
   }
 
-  scheduler_.add([this] { report_status(); }, now + interval);
+  tasks_.add([this] { report_status(); }, now + interval);
 }

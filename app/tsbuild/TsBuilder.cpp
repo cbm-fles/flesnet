@@ -88,27 +88,6 @@ void TsBuilder::operator()(std::stop_token stop_token) {
   ucx::util::cleanup(context_, worker_);
 }
 
-void TsBuilder::report_status() {
-  constexpr auto interval = std::chrono::seconds(1);
-  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-
-  if (monitor_ != nullptr) {
-    size_t timeslices_allocated = ts_handlers_.size();
-    size_t bytes_allocated =
-        timeslice_buffer_.get_size() - timeslice_buffer_.get_free_memory();
-    monitor_->QueueMetric(
-        "tsbuild_status", {{"host", hostname_}},
-        {{"timeslice_count", timeslice_count_},
-         {"component_count", component_count_},
-         {"byte_count", byte_count_},
-         {"timeslice_incomplete_count", timeslice_incomplete_count_},
-         {"timeslices_allocated", timeslices_allocated},
-         {"bytes_allocated", bytes_allocated}});
-  }
-
-  tasks_.add([this] { report_status(); }, now + interval);
-}
-
 // Scheduler connection management
 
 void TsBuilder::connect_to_scheduler_if_needed() {
@@ -590,4 +569,25 @@ StDescriptor TsBuilder::create_timeslice_descriptor(TsHandler& tsh) {
     }
   }
   return d;
+}
+
+void TsBuilder::report_status() {
+  constexpr auto interval = std::chrono::seconds(1);
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+  if (monitor_ != nullptr) {
+    size_t timeslices_allocated = ts_handlers_.size();
+    size_t bytes_allocated =
+        timeslice_buffer_.get_size() - timeslice_buffer_.get_free_memory();
+    monitor_->QueueMetric(
+        "tsbuild_status", {{"host", hostname_}},
+        {{"timeslice_count", timeslice_count_},
+         {"component_count", component_count_},
+         {"byte_count", byte_count_},
+         {"timeslice_incomplete_count", timeslice_incomplete_count_},
+         {"timeslices_allocated", timeslices_allocated},
+         {"bytes_allocated", bytes_allocated}});
+  }
+
+  tasks_.add([this] { report_status(); }, now + interval);
 }

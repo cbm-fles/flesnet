@@ -117,7 +117,6 @@ private:
 
   // Main operation loop
   void operator()(std::stop_token stop_token);
-  void report_status();
 
   // Scheduler connection management
   void connect_to_scheduler_if_needed();
@@ -161,6 +160,7 @@ private:
                        std::size_t contribution_index,
                        StState new_state);
   StDescriptor create_timeslice_descriptor(TsHandler& tsh);
+  void report_status();
 
   // UCX static callbacks (trampolines)
   static void on_scheduler_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
