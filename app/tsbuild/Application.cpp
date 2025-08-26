@@ -1,7 +1,6 @@
 // Copyright 2025 Jan de Cuveland
 
 #include "Application.hpp"
-#include "System.hpp"
 #include <chrono>
 #include <thread>
 

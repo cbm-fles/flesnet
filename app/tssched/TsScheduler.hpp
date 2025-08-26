@@ -4,7 +4,6 @@
 #include "Monitor.hpp"
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
-#include <array>
 #include <cstdint>
 #include <deque>
 #include <sys/epoll.h>
@@ -35,8 +34,6 @@ struct BuilderConnection {
   ucp_ep_h ep;
   uint64_t bytes_available = 0;
   bool is_out_of_memory = false;
-  // uint64_t bytes_processed = 0;
-  // uint64_t bytes_assigned = 0;
 };
 
 class TsScheduler {
@@ -65,7 +62,7 @@ private:
   ucp_worker_h worker_ = nullptr;
   ucp_listener_h listener_ = nullptr;
   std::unordered_map<ucp_ep_h, std::string> connections_;
-  std::unordered_map<ucp_ep_h, SenderConnection> sender_connections_;
+  std::unordered_map<ucp_ep_h, SenderConnection> senders_;
   std::vector<BuilderConnection> builders_;
   std::size_t ts_count_ = 0;
 

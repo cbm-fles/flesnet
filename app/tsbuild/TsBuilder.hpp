@@ -22,11 +22,6 @@
 // TsBuilder: Receive timeslice announcements from tssched, connect to senders,
 // receive subtimeslices and aggregate the data to timeslices
 
-struct SenderConnection {
-  std::string sender_id;
-  ucp_ep_h ep;
-};
-
 enum class StState : uint8_t {
   Allocated = 0,
   Requested = 1,
@@ -35,8 +30,8 @@ enum class StState : uint8_t {
   Failed = 4
 };
 
-struct TsHandler {
-  TsHandler(std::byte* buffer, StCollectionDescriptor desc)
+struct TsHandle {
+  TsHandle(std::byte* buffer, StCollectionDescriptor desc)
       : id(desc.id), allocated_at_ns(fles::system::current_time_ns()),
         buffer(buffer), contributions(std::move(desc.contributions)),
         offsets(contributions.size()), iovectors(contributions.size()),
@@ -60,8 +55,8 @@ struct TsHandler {
   }
 
   // Cannot be moved or copied (pointer to data is used by ucx)
-  TsHandler(const TsHandler&) = delete;
-  TsHandler& operator=(const TsHandler&) = delete;
+  TsHandle(const TsHandle&) = delete;
+  TsHandle& operator=(const TsHandle&) = delete;
 
   const TsID id;
   const uint64_t allocated_at_ns;
@@ -98,9 +93,11 @@ private:
   int epoll_fd_ = -1;
   ucp_context_h context_ = nullptr;
   ucp_worker_h worker_ = nullptr;
-  std::unordered_map<ucp_ep_h, std::string> connections_;
-  std::vector<SenderConnection> senders_;
-  std::vector<std::unique_ptr<TsHandler>> ts_handlers_;
+
+  std::unordered_map<std::string, ucp_ep_h> sender_to_ep_;
+  std::unordered_map<ucp_ep_h, std::string> ep_to_sender_;
+
+  std::unordered_map<TsID, std::unique_ptr<TsHandle>> ts_handles_;
   std::unordered_map<ucs_status_ptr_t, std::pair<TsID, std::size_t>>
       active_data_recv_requests_;
 
@@ -137,12 +134,12 @@ private:
                                         const ucp_am_recv_param_t* param);
 
   // Sender connection management
-  void connect_to_sender(std::string sender_id);
+  void connect_to_sender(const std::string& sender_id);
   void handle_sender_error(ucp_ep_h ep, ucs_status_t status);
   void disconnect_from_senders();
 
   // Sender message handling
-  void send_request_to_sender(std::string_view sender_id, TsID id);
+  void send_request_to_sender(const std::string& sender_id, TsID id);
   ucs_status_t handle_sender_data(const void* header,
                                   size_t header_length,
                                   void* data,
@@ -156,10 +153,10 @@ private:
   void process_completion(TsID id);
 
   // Helper methods
-  void update_st_state(TsHandler& tsh,
+  void update_st_state(TsHandle& tsh,
                        std::size_t contribution_index,
                        StState new_state);
-  StDescriptor create_timeslice_descriptor(TsHandler& tsh);
+  StDescriptor create_timeslice_descriptor(TsHandle& tsh);
   void report_status();
 
   // UCX static callbacks (trampolines)

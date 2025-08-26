@@ -111,14 +111,15 @@ void TsBuilder::connect_to_scheduler() {
   auto ep =
       ucx::util::connect(worker_, address, port, on_scheduler_error, this);
   if (!ep) {
-    L_(error) << "Failed to connect to scheduler at " << address << ":" << port;
+    L_(warning) << "Failed to connect to scheduler at " << address << ":"
+                << port << ", will retry";
     return;
   }
 
   scheduler_ep_ = *ep;
 
   if (!register_with_scheduler()) {
-    L_(error) << "Failed to register with scheduler";
+    L_(warning) << "Failed to register with scheduler, will retry";
     disconnect_from_scheduler(true);
     return;
   }
@@ -134,7 +135,7 @@ void TsBuilder::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
   }
 
   disconnect_from_scheduler(true);
-  L_(info) << "Disconnected from scheduler: " << ucs_status_string(status);
+  L_(warning) << "Disconnected from scheduler: " << ucs_status_string(status);
 }
 
 bool TsBuilder::register_with_scheduler() {
@@ -218,7 +219,12 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
   const uint64_t content_size = hdr[2];
 
   if (desc_size != length) {
-    L_(error) << "Invalid header data in scheduler TS";
+    L_(error) << "Invalid header data in scheduler TS with ID: " << id;
+    return UCS_OK;
+  }
+
+  if (ts_handles_.contains(id)) {
+    L_(error) << "Received duplicate TS with ID: " << id;
     return UCS_OK;
   }
 
@@ -232,14 +238,13 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
   // Try to allocate memory for the content
   auto* buffer = timeslice_buffer_.allocate(content_size);
   if (buffer == nullptr) {
-    L_(error) << "Failed to allocate memory for TS with ID: " << id;
+    L_(info) << "Failed to allocate memory for TS with ID: " << id;
     send_status_to_scheduler(BUILDER_EVENT_OUT_OF_MEMORY, id);
     return UCS_OK;
   }
 
-  ts_handlers_.emplace_back(
-      std::make_unique<TsHandler>(buffer, std::move(*desc)));
-  auto& tsh = *ts_handlers_.back();
+  ts_handles_.emplace(id, std::make_unique<TsHandle>(buffer, std::move(*desc)));
+  auto& tsh = *ts_handles_.at(id);
   timeslice_count_++;
   send_status_to_scheduler(BUILDER_EVENT_ALLOCATED, id);
 
@@ -270,7 +275,7 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
 
 // Sender connection management
 
-void TsBuilder::connect_to_sender(std::string sender_id) {
+void TsBuilder::connect_to_sender(const std::string& sender_id) {
   auto [address, port] =
       ucx::util::parse_address(sender_id, DEFAULT_SENDER_PORT);
   auto ep =
@@ -280,58 +285,52 @@ void TsBuilder::connect_to_sender(std::string sender_id) {
     return;
   }
 
-  senders_.emplace_back(sender_id, *ep);
+  sender_to_ep_[sender_id] = *ep;
+  ep_to_sender_[*ep] = sender_id;
 }
 
 void TsBuilder::handle_sender_error(ucp_ep_h ep, ucs_status_t status) {
-  auto it =
-      std::find_if(senders_.begin(), senders_.end(),
-                   [ep](const SenderConnection& s) { return s.ep == ep; });
-  if (it == senders_.end()) {
+  if (!ep_to_sender_.contains(ep)) {
     L_(error) << "Received error for unknown sender endpoint: "
               << ucs_status_string(status);
     return;
   }
-  ucx::util::close_endpoint(worker_, it->ep, true);
-  senders_.erase(it);
-  L_(info) << "Sender " << it->sender_id
+  ucx::util::close_endpoint(worker_, ep, true);
+
+  auto sender = ep_to_sender_[ep];
+  L_(info) << "Sender " << sender
            << " disconnected: " << ucs_status_string(status);
+
+  ep_to_sender_.erase(ep);
+  sender_to_ep_.erase(sender);
 }
 
 void TsBuilder::disconnect_from_senders() {
-  for (auto& sender : senders_) {
-    ucx::util::close_endpoint(worker_, sender.ep, true);
+  for (const auto& [ep, sender] : ep_to_sender_) {
+    ucx::util::close_endpoint(worker_, ep, true);
   }
-  senders_.clear();
   L_(info) << "Disconnected from all senders";
+
+  ep_to_sender_.clear();
+  sender_to_ep_.clear();
 }
 
 // Sender message handling
 
-void TsBuilder::send_request_to_sender(std::string_view sender_id, TsID id) {
-  auto it = std::find_if(senders_.begin(), senders_.end(),
-                         [sender_id](const SenderConnection& s) {
-                           return s.sender_id == sender_id;
-                         });
-
-  if (it == senders_.end()) {
+void TsBuilder::send_request_to_sender(const std::string& sender_id, TsID id) {
+  if (!sender_to_ep_.contains(sender_id)) {
     L_(debug) << "Connecting to sender: " << sender_id;
-    connect_to_sender(std::string(sender_id));
-
-    it = std::find_if(senders_.begin(), senders_.end(),
-                      [sender_id](const SenderConnection& s) {
-                        return s.sender_id == sender_id;
-                      });
-
-    if (it == senders_.end()) {
+    connect_to_sender(sender_id);
+    if (!sender_to_ep_.contains(sender_id)) {
       return;
     }
   }
 
+  auto* ep = sender_to_ep_[sender_id];
   std::array<uint64_t, 1> hdr{id};
   auto header = std::as_bytes(std::span(hdr));
 
-  ucx::util::send_active_message(it->ep, AM_BUILDER_REQUEST_ST, header, {},
+  ucx::util::send_active_message(ep, AM_BUILDER_REQUEST_ST, header, {},
                                  ucx::util::on_generic_send_complete, this,
                                  UCP_AM_SEND_FLAG_COPY_HEADER);
 }
@@ -364,23 +363,18 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
 
   // Check if we have a sender connection for this endpoint
   ucp_ep_h ep = param->reply_ep;
-  auto it =
-      std::find_if(senders_.begin(), senders_.end(),
-                   [ep](const SenderConnection& s) { return s.ep == ep; });
-  if (it == senders_.end()) {
-    L_(error) << "Received ST data from unknown sender";
+  if (!ep_to_sender_.contains(ep)) {
+    L_(error) << "Received ST data from unknown sender endpoint";
     return UCS_OK;
   }
-  auto& sender_id = it->sender_id;
+  const std::string& sender_id = ep_to_sender_.at(ep);
 
   // Check if we have a handler for this TS id
-  auto ts_it = std::find_if(ts_handlers_.begin(), ts_handlers_.end(),
-                            [id](const auto& ts) { return ts->id == id; });
-  if (ts_it == ts_handlers_.end()) {
+  if (!ts_handles_.contains(id)) {
     L_(error) << "Received ST data for unknown TS ID: " << id;
     return UCS_OK;
   }
-  auto& tsh = **ts_it;
+  auto& tsh = *ts_handles_.at(id);
 
   // Check if we have a contribution for this sender
   auto contribution_it =
@@ -434,14 +428,14 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
   if (request == nullptr) {
     // Operation has completed successfully in-place
     update_st_state(tsh, contribution_index, StState::Complete);
-    L_(debug) << "Received ST data from sender " << sender_id
+    L_(trace) << "Received ST data from sender " << sender_id
               << " for TS ID: " << id << ", desc size: " << desc_size
               << ", content size: " << content_size;
     return UCS_OK;
   }
 
   active_data_recv_requests_[request] = {id, contribution_index};
-  L_(debug) << "Started receiving ST data from sender " << sender_id;
+  L_(trace) << "Started receiving ST data from sender " << sender_id;
 
   return UCS_OK;
 }
@@ -457,18 +451,16 @@ void TsBuilder::handle_sender_data_recv_complete(
     L_(trace) << "Data recv operation completed successfully";
   }
 
-  auto it = active_data_recv_requests_.find(request);
-  if (it == active_data_recv_requests_.end()) {
+  if (!active_data_recv_requests_.contains(request)) {
     L_(error) << "Received completion for unknown data recv request";
   } else {
-    auto [id, contribution_index] = it->second;
-    auto ts_it = std::find_if(ts_handlers_.begin(), ts_handlers_.end(),
-                              [id](const auto& ts) { return ts->id == id; });
-    if (ts_it == ts_handlers_.end()) {
+    auto [id, contribution_index] = active_data_recv_requests_.at(request);
+
+    if (!ts_handles_.contains(id)) {
       L_(error) << "Received completion for unknown TS ID: " << id;
       return;
     }
-    auto& tsh = **ts_it;
+    auto& tsh = *ts_handles_.at(id);
     if (contribution_index >= tsh.contributions.size()) {
       L_(error) << "Received completion for unknown contribution index: "
                 << contribution_index << " for TS ID: " << id;
@@ -488,21 +480,19 @@ void TsBuilder::handle_sender_data_recv_complete(
 // Queue processing
 
 void TsBuilder::process_completion(TsID id) {
-  auto ts_it = std::find_if(ts_handlers_.begin(), ts_handlers_.end(),
-                            [id](const auto& ts) { return ts->id == id; });
-  if (ts_it == ts_handlers_.end()) {
+  if (!ts_handles_.contains(id)) {
     L_(error) << "Received completion for unknown TS ID: " << id;
     return;
   }
-  timeslice_buffer_.deallocate((*ts_it)->buffer);
-  ts_handlers_.erase(ts_it);
+  timeslice_buffer_.deallocate(ts_handles_.at(id)->buffer);
+  ts_handles_.erase(id);
   send_status_to_scheduler(BUILDER_EVENT_RELEASED, id);
   L_(debug) << "Processed TS completion for ID: " << id;
 }
 
 // Helper methods
 
-void TsBuilder::update_st_state(TsHandler& tsh,
+void TsBuilder::update_st_state(TsHandle& tsh,
                                 std::size_t contribution_index,
                                 StState new_state) {
   assert(contribution_index < states.size());
@@ -544,7 +534,7 @@ void TsBuilder::update_st_state(TsHandler& tsh,
   }
 }
 
-StDescriptor TsBuilder::create_timeslice_descriptor(TsHandler& tsh) {
+StDescriptor TsBuilder::create_timeslice_descriptor(TsHandle& tsh) {
   StDescriptor d{};
   for (std::size_t i = 0; i < tsh.contributions.size(); ++i) {
     if (tsh.states[i] != StState::Complete) {
@@ -576,7 +566,7 @@ void TsBuilder::report_status() {
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
   if (monitor_ != nullptr) {
-    size_t timeslices_allocated = ts_handlers_.size();
+    size_t timeslices_allocated = ts_handles_.size();
     size_t bytes_allocated =
         timeslice_buffer_.get_size() - timeslice_buffer_.get_free_memory();
     monitor_->QueueMetric(

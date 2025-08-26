@@ -2,6 +2,7 @@
 
 #include "ucxutil.hpp"
 #include "log.hpp"
+#include <charconv>
 #include <netdb.h>
 #include <sys/epoll.h>
 #include <ucp/api/ucp.h>
@@ -358,16 +359,21 @@ void on_generic_send_complete(void* request,
   }
 }
 
-std::pair<std::string, uint16_t> parse_address(const std::string& address,
+std::pair<std::string, uint16_t> parse_address(std::string_view address,
                                                uint16_t default_port) {
   auto last_colon = address.rfind(':');
   if (last_colon != std::string::npos) {
-    std::string port_str = address.substr(last_colon + 1);
-    if (auto port_val = std::stoul(port_str); port_val <= 65535) {
-      return {address.substr(0, last_colon), static_cast<uint16_t>(port_val)};
+    std::string_view port_str = address.substr(last_colon + 1);
+    unsigned long port_val;
+    auto [ptr, ec] = std::from_chars(
+        port_str.data(), port_str.data() + port_str.size(), port_val);
+    if (ec == std::errc() && ptr == port_str.data() + port_str.size() &&
+        port_val <= 65535) {
+      return {std::string(address.substr(0, last_colon)),
+              static_cast<uint16_t>(port_val)};
     }
   }
-  return {address, default_port};
+  return {std::string(address), default_port};
 }
 
 } // namespace ucx::util

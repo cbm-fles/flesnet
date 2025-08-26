@@ -83,9 +83,10 @@ void TsScheduler::operator()(std::stop_token stop_token) {
     }
     tasks_.timer();
 
-    bool try_later = std::any_of(
-        sender_connections_.begin(), sender_connections_.end(),
-        [id](const auto& s) { return s.second.last_received_st < id; });
+    bool try_later =
+        std::any_of(senders_.begin(), senders_.end(), [id](const auto& s) {
+          return s.second.last_received_st < id;
+        });
     uint64_t current_time_ns = fles::system::current_time_ns();
     uint64_t timeout_ns = (id + 1) * timeslice_duration_ns_ + timeout_ns_;
 
@@ -169,10 +170,10 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
     L_(error) << "Received error for unknown endpoint";
   }
 
-  auto sender_it = sender_connections_.find(ep);
-  if (sender_it != sender_connections_.end()) {
+  auto sender_it = senders_.find(ep);
+  if (sender_it != senders_.end()) {
     L_(info) << "Removing disconnected sender: " << sender_it->second.sender_id;
-    sender_connections_.erase(sender_it);
+    senders_.erase(sender_it);
   }
 
   if (auto it =
@@ -203,7 +204,7 @@ TsScheduler::handle_sender_register(const void* header,
 
   auto sender_id = std::string(static_cast<const char*>(header), header_length);
   ucp_ep_h ep = param->reply_ep;
-  sender_connections_[ep] = {sender_id, ep, {}};
+  senders_[ep] = {sender_id, ep, {}};
   L_(debug) << "Accepted sender registration with id " << sender_id;
 
   return UCS_OK;
@@ -235,8 +236,8 @@ TsScheduler::handle_sender_announce(const void* header,
     return UCS_OK;
   }
 
-  auto it = sender_connections_.find(param->reply_ep);
-  if (it == sender_connections_.end()) {
+  auto it = senders_.find(param->reply_ep);
+  if (it == senders_.end()) {
     L_(error) << "Received announcement from unknown sender";
     return UCS_OK;
   }
@@ -276,8 +277,8 @@ TsScheduler::handle_sender_retract(const void* header,
 
   const uint64_t id = hdr[0];
 
-  auto it = sender_connections_.find(param->reply_ep);
-  if (it == sender_connections_.end()) {
+  auto it = senders_.find(param->reply_ep);
+  if (it == senders_.end()) {
     L_(error) << "Received retraction from unknown sender";
     return UCS_OK;
   }
@@ -293,7 +294,7 @@ void TsScheduler::send_release_to_senders(TsID id) {
   std::array<uint64_t, 1> hdr{id};
   auto header = std::as_bytes(std::span(hdr));
 
-  for (auto& [ep, conn] : sender_connections_) {
+  for (auto& [ep, conn] : senders_) {
     ucx::util::send_active_message(ep, AM_SCHED_RELEASE_ST, header, {},
                                    ucx::util::on_generic_send_complete, this,
                                    UCP_AM_SEND_FLAG_COPY_HEADER);
@@ -415,21 +416,21 @@ void TsScheduler::send_timeslice_to_builder(const StCollectionDescriptor& desc,
 
 StCollectionDescriptor TsScheduler::create_collection_descriptor(TsID id) {
   StCollectionDescriptor desc{id, 0, 0, {}};
-  for (auto& [sender_ep, sender_conn] : sender_connections_) {
-    auto it = std::find_if(sender_conn.announced_st.begin(),
-                           sender_conn.announced_st.end(),
-                           [id](const auto& st) { return st.id == id; });
-    if (it != sender_conn.announced_st.end()) {
-      L_(trace) << "Adding contribution from sender " << sender_conn.sender_id
+  for (auto& [sender_ep, sender] : senders_) {
+    auto it =
+        std::find_if(sender.announced_st.begin(), sender.announced_st.end(),
+                     [id](const auto& st) { return st.id == id; });
+    if (it != sender.announced_st.end()) {
+      L_(trace) << "Adding contribution from sender " << sender.sender_id
                 << " with ID: " << id << ", desc size: " << it->desc_size
                 << ", content size: " << it->content_size;
       desc.contributions.push_back(
-          {sender_conn.sender_id, it->desc_size, it->content_size});
+          {sender.sender_id, it->desc_size, it->content_size});
       desc.desc_size += it->desc_size;
       desc.content_size += it->content_size;
-      sender_conn.announced_st.erase(it);
+      sender.announced_st.erase(it);
     } else {
-      L_(debug) << "No contribution found for sender " << sender_conn.sender_id
+      L_(debug) << "No contribution found for sender " << sender.sender_id
                 << " with ID: " << id;
     }
   }
