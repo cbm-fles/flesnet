@@ -291,7 +291,7 @@ std::optional<T> to_obj_nothrow(std::span<const std::byte> data) noexcept {
   try {
     return to_obj<T>(data);
   } catch (const std::exception& e) {
-    L_(error) << "Deserialization error: " << e.what();
+    ERROR("Deserialization error: {}", e.what());
     return std::nullopt;
   }
 }

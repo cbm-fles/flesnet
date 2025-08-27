@@ -6,6 +6,7 @@
 #include <boost/log/common.hpp>
 #include <boost/log/sinks/syslog_backend.hpp>
 #include <boost/log/utility/manipulators/to_log.hpp>
+#include <format>
 #include <iosfwd>
 #include <iostream>
 
@@ -31,7 +32,7 @@ namespace syslog = boost::log::sinks::syslog;
 
 void add_console(severity_level minimum_severity);
 void add_file(std::string filename, severity_level minimum_severity);
-void add_syslog(syslog::facility /*facility*/, severity_level minimum_severity);
+void add_syslog(syslog::facility facility, severity_level minimum_severity);
 
 class LogBuffer {
 public:
@@ -56,3 +57,12 @@ public:
 } // namespace logging
 
 #define L_(severity) BOOST_LOG_SEV(g_logger::get(), severity)
+#define LF(severity, fmt, ...) L_(severity) << std::format(fmt, ##__VA_ARGS__)
+
+#define TRACE(...) LF(trace, ##__VA_ARGS__)
+#define DEBUG(...) LF(debug, ##__VA_ARGS__)
+#define STATUS(...) LF(status, ##__VA_ARGS__)
+#define INFO(...) LF(info, ##__VA_ARGS__)
+#define WARN(...) LF(warning, ##__VA_ARGS__)
+#define ERROR(...) LF(error, ##__VA_ARGS__)
+#define FATAL(...) LF(fatal, ##__VA_ARGS__)

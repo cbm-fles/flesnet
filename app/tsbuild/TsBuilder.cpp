@@ -54,14 +54,14 @@ void TsBuilder::operator()(std::stop_token stop_token) {
   cbm::system::set_thread_name("TsBuilder");
 
   if (!ucx::util::init(context_, worker_, epoll_fd_)) {
-    L_(error) << "Failed to initialize UCX";
+    ERROR("Failed to initialize UCX");
     return;
   }
   if (!ucx::util::set_receive_handler(worker_, AM_SCHED_SEND_TS,
                                       on_scheduler_send_ts, this) ||
       !ucx::util::set_receive_handler(worker_, AM_SENDER_SEND_ST,
                                       on_sender_data, this)) {
-    L_(error) << "Failed to register receive handlers";
+    ERROR("Failed to register receive handlers");
     return;
   }
   connect_to_scheduler_if_needed();
@@ -111,15 +111,14 @@ void TsBuilder::connect_to_scheduler() {
   auto ep =
       ucx::util::connect(worker_, address, port, on_scheduler_error, this);
   if (!ep) {
-    L_(warning) << "Failed to connect to scheduler at " << address << ":"
-                << port << ", will retry";
+    WARN("Failed to connect to scheduler at {}:{}, will retry", address, port);
     return;
   }
 
   scheduler_ep_ = *ep;
 
   if (!register_with_scheduler()) {
-    L_(warning) << "Failed to register with scheduler, will retry";
+    WARN("Failed to register with scheduler, will retry");
     disconnect_from_scheduler(true);
     return;
   }
@@ -129,13 +128,12 @@ void TsBuilder::connect_to_scheduler() {
 
 void TsBuilder::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
   if (ep != scheduler_ep_) {
-    L_(error) << "Received error for unknown endpoint: "
-              << ucs_status_string(status);
+    ERROR("Received error for unknown endpoint: {}", ucs_status_string(status));
     return;
   }
 
   disconnect_from_scheduler(true);
-  L_(warning) << "Disconnected from scheduler: " << ucs_status_string(status);
+  WARN("Disconnected from scheduler: {}", ucs_status_string(status));
 }
 
 bool TsBuilder::register_with_scheduler() {
@@ -150,11 +148,10 @@ void TsBuilder::handle_scheduler_register_complete(ucs_status_ptr_t request,
   scheduler_connecting_ = false;
 
   if (status != UCS_OK) {
-    L_(error) << "Failed to register with scheduler: "
-              << ucs_status_string(status);
+    ERROR("Failed to register with scheduler: {}", ucs_status_string(status));
   } else {
     scheduler_connected_ = true;
-    L_(info) << "Successfully registered with scheduler";
+    INFO("Successfully registered with scheduler");
   }
 
   if (request != nullptr) {
@@ -172,7 +169,7 @@ void TsBuilder::disconnect_from_scheduler(bool force) {
 
   ucx::util::close_endpoint(worker_, scheduler_ep_, force);
   scheduler_ep_ = nullptr;
-  L_(debug) << "Disconnected from scheduler";
+  DEBUG("Disconnected from scheduler");
 }
 
 // Scheduler message handling
@@ -204,13 +201,13 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
     void* data,
     size_t length,
     [[maybe_unused]] const ucp_am_recv_param_t* param) {
-  L_(trace) << "Received TS from scheduler with header length " << header_length
-            << " and data length " << length;
+  TRACE("Received TS from scheduler with header length {} and data length {}",
+        header_length, length);
 
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
   if (hdr.size() != 3 || length == 0) {
-    L_(error) << "Invalid scheduler TS received";
+    ERROR("Invalid scheduler TS received");
     return UCS_OK;
   }
 
@@ -219,26 +216,26 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
   const uint64_t content_size = hdr[2];
 
   if (desc_size != length) {
-    L_(error) << "Invalid header data in scheduler TS with ID: " << id;
+    ERROR("Invalid header data in scheduler TS with ID: {}", id);
     return UCS_OK;
   }
 
   if (ts_handles_.contains(id)) {
-    L_(error) << "Received duplicate TS with ID: " << id;
+    ERROR("Received duplicate TS with ID: {}", id);
     return UCS_OK;
   }
 
   auto desc = to_obj_nothrow<StCollectionDescriptor>(
       std::span(static_cast<const std::byte*>(data), desc_size));
   if (!desc) {
-    L_(error) << "Failed to deserialize TS descriptor for TS with ID: " << id;
+    ERROR("Failed to deserialize TS descriptor for TS with ID: {}", id);
     return UCS_OK;
   }
 
   // Try to allocate memory for the content
   auto* buffer = timeslice_buffer_.allocate(content_size);
   if (buffer == nullptr) {
-    L_(info) << "Failed to allocate memory for TS with ID: " << id;
+    INFO("Failed to allocate memory for TS with ID: {}", id);
     send_status_to_scheduler(BUILDER_EVENT_OUT_OF_MEMORY, id);
     return UCS_OK;
   }
@@ -248,9 +245,9 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
   timeslice_count_++;
   send_status_to_scheduler(BUILDER_EVENT_ALLOCATED, id);
 
-  L_(debug) << "Received TS from scheduler with ID: " << id
-            << ", desc size: " << desc_size
-            << ", content size: " << content_size;
+  DEBUG(
+      "Received TS from scheduler with ID: {}, desc size: {}, content size: {}",
+      id, desc_size, content_size);
 
   // Ask senders for the contributions
   for (std::size_t i = 0; i < tsh.contributions.size(); ++i) {
@@ -281,7 +278,7 @@ void TsBuilder::connect_to_sender(const std::string& sender_id) {
   auto ep =
       ucx::util::connect(worker_, address, port, on_scheduler_error, this);
   if (!ep) {
-    L_(error) << "Failed to connect to sender at " << address << ":" << port;
+    ERROR("Failed to connect to sender at {}:{}", address, port);
     return;
   }
 
@@ -291,15 +288,14 @@ void TsBuilder::connect_to_sender(const std::string& sender_id) {
 
 void TsBuilder::handle_sender_error(ucp_ep_h ep, ucs_status_t status) {
   if (!ep_to_sender_.contains(ep)) {
-    L_(error) << "Received error for unknown sender endpoint: "
-              << ucs_status_string(status);
+    ERROR("Received error for unknown sender endpoint: {}",
+          ucs_status_string(status));
     return;
   }
   ucx::util::close_endpoint(worker_, ep, true);
 
   auto sender = ep_to_sender_[ep];
-  L_(info) << "Sender " << sender
-           << " disconnected: " << ucs_status_string(status);
+  INFO("Sender {} disconnected: {}", sender, ucs_status_string(status));
 
   ep_to_sender_.erase(ep);
   sender_to_ep_.erase(sender);
@@ -309,7 +305,7 @@ void TsBuilder::disconnect_from_senders() {
   for (const auto& [ep, sender] : ep_to_sender_) {
     ucx::util::close_endpoint(worker_, ep, true);
   }
-  L_(info) << "Disconnected from all senders";
+  INFO("Disconnected from all senders");
 
   ep_to_sender_.clear();
   sender_to_ep_.clear();
@@ -319,7 +315,7 @@ void TsBuilder::disconnect_from_senders() {
 
 void TsBuilder::send_request_to_sender(const std::string& sender_id, TsID id) {
   if (!sender_to_ep_.contains(sender_id)) {
-    L_(debug) << "Connecting to sender: " << sender_id;
+    DEBUG("Connecting to sender: {}", sender_id);
     connect_to_sender(sender_id);
     if (!sender_to_ep_.contains(sender_id)) {
       return;
@@ -340,15 +336,15 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
                                            void* data,
                                            size_t length,
                                            const ucp_am_recv_param_t* param) {
-  L_(trace) << "Received sender ST data with header length " << header_length
-            << " and data length " << length;
+  TRACE("Received sender ST data with header length {} and data length {}",
+        header_length, length);
 
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
   if (hdr.size() != 3 || length == 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FLAG_RNDV) == 0u) {
-    L_(error) << "Invalid sender ST data received";
+    ERROR("Invalid sender ST data received");
     return UCS_OK;
   }
 
@@ -357,21 +353,21 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
   const uint64_t content_size = hdr[2];
 
   if (desc_size != length) {
-    L_(error) << "Invalid header data in sender ST announcement";
+    ERROR("Invalid header data in sender ST announcement");
     return UCS_OK;
   }
 
   // Check if we have a sender connection for this endpoint
   ucp_ep_h ep = param->reply_ep;
   if (!ep_to_sender_.contains(ep)) {
-    L_(error) << "Received ST data from unknown sender endpoint";
+    ERROR("Received ST data from unknown sender endpoint");
     return UCS_OK;
   }
   const std::string& sender_id = ep_to_sender_.at(ep);
 
   // Check if we have a handler for this TS id
   if (!ts_handles_.contains(id)) {
-    L_(error) << "Received ST data for unknown TS ID: " << id;
+    ERROR("Received ST data for unknown TS ID: {}", id);
     return UCS_OK;
   }
   auto& tsh = *ts_handles_.at(id);
@@ -383,8 +379,8 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
                      return c.sender_id == sender_id;
                    });
   if (contribution_it == tsh.contributions.end()) {
-    L_(error) << "Received ST data from unknown sender: " << sender_id
-              << " for TS ID: " << id;
+    ERROR("Received ST data from unknown sender: {} for TS ID: {}", sender_id,
+          id);
     return UCS_OK;
   }
   std::size_t contribution_index =
@@ -392,12 +388,11 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
 
   if (desc_size != contribution_it->desc_size ||
       content_size != contribution_it->content_size) {
-    L_(error) << "Invalid ST data sizes from sender " << sender_id
-              << " for TS ID: " << id
-              << ", expected desc size: " << contribution_it->desc_size
-              << ", content size: " << contribution_it->content_size
-              << ", received desc size: " << desc_size
-              << ", content size: " << content_size;
+    ERROR(
+        "Invalid ST data sizes from sender {} for TS ID: {}, expected desc "
+        "size: {}, content size: {}, received desc size: {}, content size: {}",
+        sender_id, id, contribution_it->desc_size,
+        contribution_it->content_size, desc_size, content_size);
     update_st_state(tsh, contribution_index, StState::Failed);
     return UCS_OK;
   }
@@ -418,9 +413,8 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
       tsh.iovectors[contribution_index].size(), &req_param);
 
   if (UCS_PTR_IS_ERR(request)) {
-    L_(error) << "Failed to receive ST data from sender " << sender_id
-              << " for TS ID: " << id
-              << ", error: " << ucs_status_string(UCS_PTR_STATUS(request));
+    ERROR("Failed to receive ST data from sender {} for TS ID: {}, error: {}",
+          sender_id, id, ucs_status_string(UCS_PTR_STATUS(request)));
     update_st_state(tsh, contribution_index, StState::Failed);
     return UCS_OK;
   }
@@ -428,14 +422,15 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
   if (request == nullptr) {
     // Operation has completed successfully in-place
     update_st_state(tsh, contribution_index, StState::Complete);
-    L_(trace) << "Received ST data from sender " << sender_id
-              << " for TS ID: " << id << ", desc size: " << desc_size
-              << ", content size: " << content_size;
+    TRACE(
+        "Received ST data from sender {} for TS ID: {}, desc size: {}, content "
+        "size: {}",
+        sender_id, id, desc_size, content_size);
     return UCS_OK;
   }
 
   active_data_recv_requests_[request] = {id, contribution_index};
-  L_(trace) << "Started receiving ST data from sender " << sender_id;
+  TRACE("Started receiving ST data from sender {}", sender_id);
 
   return UCS_OK;
 }
@@ -443,27 +438,28 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
 void TsBuilder::handle_sender_data_recv_complete(
     void* request, ucs_status_t status, [[maybe_unused]] size_t length) {
   if (UCS_PTR_IS_ERR(request)) {
-    L_(error) << "Data recv operation failed: " << ucs_status_string(status);
+    ERROR("Data recv operation failed: {}", ucs_status_string(status));
   } else if (status != UCS_OK) {
-    L_(error) << "Data recv operation completed with status: "
-              << ucs_status_string(status);
+    ERROR("Data recv operation completed with status: {}",
+          ucs_status_string(status));
   } else {
-    L_(trace) << "Data recv operation completed successfully";
+    TRACE("Data recv operation completed successfully");
   }
 
   if (!active_data_recv_requests_.contains(request)) {
-    L_(error) << "Received completion for unknown data recv request";
+    ERROR("Received completion for unknown data recv request");
   } else {
     auto [id, contribution_index] = active_data_recv_requests_.at(request);
 
     if (!ts_handles_.contains(id)) {
-      L_(error) << "Received completion for unknown TS ID: " << id;
+      ERROR("Received completion for unknown TS ID: {}", id);
       return;
     }
     auto& tsh = *ts_handles_.at(id);
     if (contribution_index >= tsh.contributions.size()) {
-      L_(error) << "Received completion for unknown contribution index: "
-                << contribution_index << " for TS ID: " << id;
+      ERROR("Received completion for unknown contribution index: {} for TS ID: "
+            "{}",
+            contribution_index, id);
       return;
     }
     component_count_++;
@@ -481,13 +477,13 @@ void TsBuilder::handle_sender_data_recv_complete(
 
 void TsBuilder::process_completion(TsID id) {
   if (!ts_handles_.contains(id)) {
-    L_(error) << "Received completion for unknown TS ID: " << id;
+    ERROR("Received completion for unknown TS ID: {}", id);
     return;
   }
   timeslice_buffer_.deallocate(ts_handles_.at(id)->buffer);
   ts_handles_.erase(id);
   send_status_to_scheduler(BUILDER_EVENT_RELEASED, id);
-  L_(debug) << "Processed TS completion for ID: " << id;
+  DEBUG("Processed TS completion for ID: {}", id);
 }
 
 // Helper methods
@@ -505,8 +501,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
     auto desc = to_obj_nothrow<StDescriptor>(
         std::span(tsh.serialized_descriptors[contribution_index]));
     if (!desc) {
-      L_(error) << "Failed to deserialize ST descriptor for TS with ID: "
-                << tsh.id;
+      ERROR("Failed to deserialize ST descriptor for TS with ID: {}", tsh.id);
       update_st_state(tsh, contribution_index, StState::Failed);
       return;
     }
@@ -524,10 +519,10 @@ void TsBuilder::update_st_state(TsHandle& tsh,
         tsh.is_published = true;
         tsh.published_at_ns = fles::system::current_time_ns();
         if (ts_desc.has_flag(StFlag::MissingSubtimeslices)) {
-          L_(info) << "Published incomplete TS with ID: " << tsh.id;
+          INFO("Published incomplete TS with ID: {}", tsh.id);
           timeslice_incomplete_count_++;
         } else {
-          L_(debug) << "Published complete TS with ID: " << tsh.id;
+          DEBUG("Published complete TS with ID: {}", tsh.id);
         }
       }
     }
@@ -547,7 +542,7 @@ StDescriptor TsBuilder::create_timeslice_descriptor(TsHandle& tsh) {
       d.duration_ns = contrib.duration_ns;
     } else if (d.start_time_ns != contrib.start_time_ns ||
                d.duration_ns != contrib.duration_ns) {
-      L_(error) << "Inconsistent start time or duration in contributions";
+      ERROR("Inconsistent start time or duration in contributions");
       d.set_flag(StFlag::MissingSubtimeslices);
       continue;
     }

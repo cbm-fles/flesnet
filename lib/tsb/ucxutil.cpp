@@ -11,7 +11,7 @@
 namespace ucx::util {
 bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
   if (context != nullptr || worker != nullptr) {
-    L_(error) << "UCP context or worker already initialized";
+    ERROR("UCP context or worker already initialized");
     return false;
   }
 
@@ -19,7 +19,7 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
   ucp_config_t* config = nullptr;
   ucs_status_t status = ucp_config_read(nullptr, nullptr, &config);
   if (status != UCS_OK) {
-    L_(error) << "Failed to read UCP config";
+    ERROR("Failed to read UCP config");
     return false;
   }
 
@@ -31,7 +31,7 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
   status = ucp_init(&ucp_params, config, &context);
   ucp_config_release(config);
   if (status != UCS_OK) {
-    L_(error) << "Failed to initialize UCP context";
+    ERROR("Failed to initialize UCP context");
     return false;
   }
 
@@ -44,7 +44,7 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
 
   status = ucp_worker_create(context, &worker_params, &worker);
   if (status != UCS_OK) {
-    L_(error) << "Failed to create UCP worker";
+    ERROR("Failed to create UCP worker");
     ucp_cleanup(context);
     context = nullptr;
     return false;
@@ -54,8 +54,7 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
   int event_fd = -1;
   status = ucp_worker_get_efd(worker, &event_fd);
   if (status != UCS_OK) {
-    L_(error) << "Failed to get UCP worker event_fd: " +
-                     std::string(ucs_status_string(status));
+    ERROR("Failed to get UCP worker event_fd: {}", ucs_status_string(status));
     ucp_worker_destroy(worker);
     worker = nullptr;
     ucp_cleanup(context);
@@ -67,7 +66,7 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
   ev.events = EPOLLIN;
   ev.data.fd = event_fd;
   if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &ev) == -1) {
-    L_(error) << "Failed to set up epoll for UCP worker";
+    ERROR("Failed to set up epoll for UCP worker");
     ucp_worker_destroy(worker);
     worker = nullptr;
     ucp_cleanup(context);
@@ -75,7 +74,7 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
     return false;
   }
 
-  L_(debug) << "UCP context and worker initialized successfully";
+  DEBUG("UCP context and worker initialized successfully");
   return true;
 }
 
@@ -96,7 +95,7 @@ bool arm_worker_and_wait(ucp_worker_h worker, int epoll_fd, int timeout_ms) {
     return true;
   }
   if (status != UCS_OK) {
-    L_(error) << "Failed to arm UCP worker: " << ucs_status_string(status);
+    ERROR("Failed to arm UCP worker: {}", ucs_status_string(status));
     return false;
   }
 
@@ -106,7 +105,7 @@ bool arm_worker_and_wait(ucp_worker_h worker, int epoll_fd, int timeout_ms) {
     if (errno == EINTR) {
       return true;
     }
-    L_(error) << "epoll_wait failed: " << strerror(errno);
+    ERROR("epoll_wait failed: {}", strerror(errno));
     return false;
   }
   return true;
@@ -118,7 +117,7 @@ std::optional<std::string> get_client_address(ucp_conn_request_h conn_request) {
 
   ucs_status_t status = ucp_conn_request_query(conn_request, &attr);
   if (status != UCS_OK) {
-    L_(error) << "Failed to query connection request for client address";
+    ERROR("Failed to query connection request for client address");
     return std::nullopt;
   }
 
@@ -129,8 +128,8 @@ std::optional<std::string> get_client_address(ucp_conn_request_h conn_request) {
           sizeof(attr.client_address), static_cast<char*>(host), sizeof(host),
           static_cast<char*>(service), sizeof(service),
           NI_NUMERICHOST | NI_NUMERICSERV) != 0) {
-    L_(error) << "Failed to get client address from connection request: "
-              << gai_strerror(errno);
+    ERROR("Failed to get client address from connection request: {}",
+          gai_strerror(errno));
     return std::nullopt;
   }
 
@@ -162,10 +161,10 @@ bool create_listener(ucp_worker_h worker,
 
   ucs_status_t status = ucp_listener_create(worker, &params, &listener);
   if (status != UCS_OK) {
-    L_(error) << "UCP listener creation failed: " << ucs_status_string(status);
+    ERROR("UCP listener creation failed: {}", ucs_status_string(status));
     return false;
   }
-  L_(info) << "Listening for connections on port " << listen_port;
+  INFO("Listening for connections on port {}", listen_port);
 
   return true;
 }
@@ -186,7 +185,7 @@ std::optional<ucp_ep_h> create_endpoint(ucp_worker_h worker,
 
   ucs_status_t status = ucp_ep_create(worker, &ep_params, &ep);
   if (status != UCS_OK) {
-    L_(error) << "Failed to create endpoint from connection request";
+    ERROR("Failed to create endpoint from connection request");
     return std::nullopt;
   }
 
@@ -199,7 +198,7 @@ std::optional<ucp_ep_h> accept(ucp_worker_h worker,
                                void* arg) {
   auto ep = create_endpoint(worker, conn_request, on_endpoint_error, arg);
   if (!ep) {
-    L_(error) << "Failed to create endpoint for new connection";
+    ERROR("Failed to create endpoint for new connection");
     return std::nullopt;
   }
   return *ep;
@@ -218,8 +217,7 @@ std::optional<ucp_ep_h> connect(ucp_worker_h worker,
   struct addrinfo* result;
   int err = getaddrinfo(address.c_str(), port_str.c_str(), &hints, &result);
   if (err != 0) {
-    L_(error) << "Failed to resolve hostname: " +
-                     std::string(gai_strerror(err));
+    ERROR("Failed to resolve hostname: {}", gai_strerror(err));
     return std::nullopt;
   }
 
@@ -239,18 +237,18 @@ std::optional<ucp_ep_h> connect(ucp_worker_h worker,
 
     ucs_status_t status = ucp_ep_create(worker, &ep_params, &ep);
     if (status == UCS_OK) {
-      L_(trace) << "UCX endpoint created successfully";
+      TRACE("UCX endpoint created successfully");
       break;
     }
-    L_(trace) << "Failed to create UCX endpoint: " << ucs_status_string(status);
+    TRACE("Failed to create UCX endpoint: {}", ucs_status_string(status));
   }
   freeaddrinfo(result);
 
   if (ep == nullptr) {
-    L_(error) << "Failed to connect to " << address << ":" << port;
+    ERROR("Failed to connect to {}:{}", address, port);
     return std::nullopt;
   }
-  L_(debug) << "Connecting to " << address << ":" << port;
+  DEBUG("Connecting to {}:{}", address, port);
   return ep;
 }
 
@@ -290,11 +288,11 @@ bool set_receive_handler(ucp_worker_h worker,
 
   ucs_status_t status = ucp_worker_set_am_recv_handler(worker, &param);
   if (status != UCS_OK) {
-    L_(error) << "Failed to set active message receive handler: "
-              << ucs_status_string(status);
+    ERROR("Failed to set active message receive handler: {}",
+          ucs_status_string(status));
     return false;
   }
-  L_(debug) << "Active message receive handler set for ID " << id;
+  DEBUG("Active message receive handler set for ID {}", id);
   return true;
 }
 
@@ -309,14 +307,14 @@ bool send_active_message_with_params(ucp_ep_h ep,
                       buffer.size(), &param);
 
   if (UCS_PTR_IS_ERR(request)) {
-    L_(error) << "Failed to send active message: "
-              << ucs_status_string(UCS_PTR_STATUS(request));
+    ERROR("Failed to send active message: {}",
+          ucs_status_string(UCS_PTR_STATUS(request)));
     return false;
   }
 
   if (request == nullptr) {
     // Operation has completed successfully in-place
-    L_(trace) << "Active message sent successfully";
+    TRACE("Active message sent successfully");
     if (param.cb.send != nullptr) {
       param.cb.send(nullptr, UCS_OK, param.user_data);
     }
@@ -346,12 +344,12 @@ void on_generic_send_complete(void* request,
                               ucs_status_t status,
                               [[maybe_unused]] void* user_data) {
   if (UCS_PTR_IS_ERR(request)) {
-    L_(error) << "Send operation failed: " << ucs_status_string(status);
+    ERROR("Send operation failed: {}", ucs_status_string(status));
   } else if (status != UCS_OK) {
-    L_(error) << "Send operation completed with status: "
-              << ucs_status_string(status);
+    ERROR("Send operation completed with status: {}",
+          ucs_status_string(status));
   } else {
-    L_(trace) << "Send operation completed successfully";
+    TRACE("Send operation completed successfully");
   }
 
   if (request != nullptr) {

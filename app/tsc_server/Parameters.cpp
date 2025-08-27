@@ -202,7 +202,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
   logging::add_console(static_cast<severity_level>(log_level));
   if (vm.count("log-file") != 0u) {
-    L_(info) << "Logging output to " << log_file;
+    INFO("Logging output to {}", log_file);
     logging::add_file(log_file, static_cast<severity_level>(log_level));
   }
 
@@ -214,14 +214,13 @@ void Parameters::parse_options(int argc, char* argv[]) {
   if (vm.count("pci-addr") != 0u) {
     _device_address = vm["pci-addr"].as<pci_addr>();
     _device_autodetect = false;
-    L_(debug) << "CRI address: " << std::hex << std::setw(2)
-              << std::setfill('0') << static_cast<unsigned>(_device_address.bus)
-              << ":" << std::setw(2) << std::setfill('0')
-              << static_cast<unsigned>(_device_address.dev) << "."
-              << static_cast<unsigned>(_device_address.func);
+    DEBUG("CRI address: {:02x}:{:02x}.{:x}",
+          static_cast<unsigned>(_device_address.bus),
+          static_cast<unsigned>(_device_address.dev),
+          static_cast<unsigned>(_device_address.func));
   } else {
     _device_autodetect = true;
-    L_(debug) << "CRI address: autodetect";
+    DEBUG("CRI address: autodetect");
   }
 
   if (timeslice_duration_ns() <= 0) {
@@ -234,8 +233,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
     throw ParametersException("timeout must be greater than 0");
   }
 
-  L_(info) << "Shared memory file: " << _shm_id;
-  L_(info) << buffer_info();
+  INFO("Shared memory file: {}", _shm_id);
+  INFO("{}", buffer_info());
 }
 
 [[nodiscard]] std::string Parameters::buffer_info() const {

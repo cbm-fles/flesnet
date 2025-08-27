@@ -20,10 +20,10 @@ int main(int argc, char* argv[]) {
     Application app(par, &signal_status);
     app.run();
   } catch (std::exception const& e) {
-    L_(fatal) << e.what();
+    FATAL("{}", e.what());
     return EXIT_FAILURE;
   }
 
-  L_(info) << "exiting";
+  INFO("exiting");
   return EXIT_SUCCESS;
 }

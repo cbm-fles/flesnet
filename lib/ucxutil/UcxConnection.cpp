@@ -22,13 +22,13 @@ void UcxConnection::connect(const std::string& hostname, uint16_t port) {
 
   struct addrinfo* result;
   int err = getaddrinfo(hostname.c_str(), port_str.c_str(), &hints, &result);
-  if (err != 0) {
+  if (err != 0 || result == nullptr) {
     throw UcxException("Failed to resolve hostname: " +
                        std::string(gai_strerror(err)));
   }
 
   // Create endpoint to remote worker
-  ucs_status_t status;
+  ucs_status_t status{};
   for (struct addrinfo* rp = result; rp != nullptr; rp = rp->ai_next) {
     ucp_ep_params_t ep_params{};
     ep_params.flags = UCP_EP_PARAMS_FLAGS_CLIENT_SERVER;

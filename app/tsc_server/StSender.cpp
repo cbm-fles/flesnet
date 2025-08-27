@@ -102,20 +102,20 @@ void StSender::operator()(std::stop_token stop_token) {
   cbm::system::set_thread_name("StSender");
 
   if (!ucx::util::init(context_, worker_, epoll_fd_)) {
-    L_(error) << "Failed to initialize UCX";
+    ERROR("Failed to initialize UCX");
     return;
   }
   if (!ucx::util::set_receive_handler(worker_, AM_SCHED_RELEASE_ST,
                                       on_scheduler_release, this) ||
       !ucx::util::set_receive_handler(worker_, AM_BUILDER_REQUEST_ST,
                                       on_builder_request, this)) {
-    L_(error) << "Failed to register receive handlers";
+    ERROR("Failed to register receive handlers");
     return;
   }
   connect_to_scheduler_if_needed();
   if (!ucx::util::create_listener(worker_, listener_, listen_port_,
                                   on_new_connection, this)) {
-    L_(error) << "Failed to create UCX listener";
+    ERROR("Failed to create UCX listener");
     return;
   }
 
@@ -164,14 +164,14 @@ void StSender::connect_to_scheduler() {
   auto ep =
       ucx::util::connect(worker_, address, port, on_scheduler_error, this);
   if (!ep) {
-    L_(error) << "Failed to connect to scheduler at " << address << ":" << port;
+    ERROR("Failed to connect to scheduler at {}:{}", address, port);
     return;
   }
 
   scheduler_ep_ = *ep;
 
   if (!register_with_scheduler()) {
-    L_(error) << "Failed to register with scheduler";
+    ERROR("Failed to register with scheduler");
     disconnect_from_scheduler(true);
     return;
   }
@@ -181,13 +181,12 @@ void StSender::connect_to_scheduler() {
 
 void StSender::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
   if (ep != scheduler_ep_) {
-    L_(error) << "Received error for unknown endpoint: "
-              << ucs_status_string(status);
+    ERROR("Received error for unknown endpoint: {}", ucs_status_string(status));
     return;
   }
 
   disconnect_from_scheduler(true);
-  L_(info) << "Disconnected from scheduler: " << ucs_status_string(status);
+  INFO("Disconnected from scheduler: {}", ucs_status_string(status));
 }
 
 bool StSender::register_with_scheduler() {
@@ -202,11 +201,10 @@ void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
   scheduler_connecting_ = false;
 
   if (status != UCS_OK) {
-    L_(error) << "Failed to register with scheduler: "
-              << ucs_status_string(status);
+    ERROR("Failed to register with scheduler: {}", ucs_status_string(status));
   } else {
     scheduler_connected_ = true;
-    L_(info) << "Successfully registered with scheduler";
+    INFO("Successfully registered with scheduler");
   }
 
   if (request != nullptr) {
@@ -225,7 +223,7 @@ void StSender::disconnect_from_scheduler(bool force) {
   flush_announced();
   ucx::util::close_endpoint(worker_, scheduler_ep_, force);
   scheduler_ep_ = nullptr;
-  L_(debug) << "Disconnected from scheduler";
+  DEBUG("Disconnected from scheduler");
 }
 
 // Scheduler message handling
@@ -269,23 +267,24 @@ StSender::handle_scheduler_release(const void* header,
                                    void* /* data */,
                                    size_t length,
                                    const ucp_am_recv_param_t* param) {
-  L_(trace) << "Received scheduler release ST with header length "
-            << header_length << " and data length " << length;
+  TRACE(
+      "Received scheduler release ST with header length {} and data length {}",
+      header_length, length);
 
   if (header_length != sizeof(uint64_t) || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
-    L_(error) << "Invalid scheduler request received";
+    ERROR("Invalid scheduler request received");
     return UCS_OK;
   }
 
   auto id = *static_cast<const uint64_t*>(header);
   auto it = announced_.find(id);
   if (it != announced_.end()) {
-    L_(debug) << "Removing released SubTimeslice with ID: " << id;
+    DEBUG("Removing released SubTimeslice with ID: {}", id);
     announced_.erase(it);
     complete_subtimeslice(id);
   } else {
-    L_(warning) << "Release for unknown SubTimeslice ID: " << id;
+    WARN("Release for unknown SubTimeslice ID: {}", id);
   }
   return UCS_OK;
 }
@@ -293,34 +292,34 @@ StSender::handle_scheduler_release(const void* header,
 // Builder connection management
 
 void StSender::handle_new_connection(ucp_conn_request_h conn_request) {
-  L_(debug) << "New connection request received";
+  DEBUG("New connection request received");
 
   auto client_address = ucx::util::get_client_address(conn_request);
   if (!client_address) {
-    L_(error) << "Failed to retrieve client address from connection request";
+    ERROR("Failed to retrieve client address from connection request");
     ucp_listener_reject(listener_, conn_request);
     return;
   }
 
   auto ep = ucx::util::accept(worker_, conn_request, on_endpoint_error, this);
   if (!ep) {
-    L_(error) << "Failed to create endpoint for new connection";
+    ERROR("Failed to create endpoint for new connection");
     return;
   }
 
   connections_[*ep] = *client_address;
-  L_(debug) << "Accepted connection from " << *client_address;
+  DEBUG("Accepted connection from {}", *client_address);
 }
 
 void StSender::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
-  L_(error) << "Error on UCX endpoint: " << ucs_status_string(status);
+  ERROR("Error on UCX endpoint: {}", ucs_status_string(status));
 
   auto it = connections_.find(ep);
   if (it != connections_.end()) {
-    L_(info) << "Removing disconnected endpoint: " << it->second;
+    INFO("Removing disconnected endpoint: {}", it->second);
     connections_.erase(it);
   } else {
-    L_(error) << "Received error for unknown endpoint";
+    ERROR("Received error for unknown endpoint");
   }
 }
 
@@ -332,12 +331,12 @@ StSender::handle_builder_request(const void* header,
                                  void* /* data */,
                                  size_t length,
                                  const ucp_am_recv_param_t* param) {
-  L_(trace) << "Received builder request ST with header length "
-            << header_length << " and data length " << length;
+  TRACE("Received builder request ST with header length {} and data length {}",
+        header_length, length);
 
   if (header_length != sizeof(uint64_t) || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
-    L_(error) << "Invalid builder request received";
+    ERROR("Invalid builder request received");
     return UCS_OK;
   }
 
@@ -349,7 +348,7 @@ StSender::handle_builder_request(const void* header,
 void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
   auto it = announced_.find(id);
   if (it == announced_.end()) {
-    L_(warning) << "SubTimeslice with ID " << id << " not found";
+    WARN("SubTimeslice with ID {} not found", id);
     std::array<uint64_t, 3> hdr{id, 0, 0};
     auto header = std::as_bytes(std::span(hdr));
     ucx::util::send_active_message(ep, AM_SENDER_SEND_ST, header, {},
@@ -383,15 +382,15 @@ void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
                       iov_vector.data(), iov_vector.size(), &req_param);
 
   if (UCS_PTR_IS_ERR(request)) {
-    L_(error) << "Failed to send active message: "
-              << ucs_status_string(UCS_PTR_STATUS(request));
+    ERROR("Failed to send active message: {}",
+          ucs_status_string(UCS_PTR_STATUS(request)));
     // Ignore the interaction with the builder, keep the announced subtimeslice
     return;
   }
 
   if (request == nullptr) {
     // Operation has completed successfully in-place
-    L_(trace) << "Active message sent successfully";
+    TRACE("Active message sent successfully");
     return;
   }
 
@@ -403,17 +402,17 @@ void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
 void StSender::handle_builder_send_complete(void* request,
                                             ucs_status_t status) {
   if (UCS_PTR_IS_ERR(request)) {
-    L_(error) << "Send operation failed: " << ucs_status_string(status);
+    ERROR("Send operation failed: {}", ucs_status_string(status));
   } else if (status != UCS_OK) {
-    L_(error) << "Send operation completed with status: "
-              << ucs_status_string(status);
+    ERROR("Send operation completed with status: {}",
+          ucs_status_string(status));
   } else {
-    L_(trace) << "Send operation completed successfully";
+    TRACE("Send operation completed successfully");
   }
 
   auto it = active_send_requests_.find(request);
   if (it == active_send_requests_.end()) {
-    L_(error) << "Received completion for unknown send request";
+    ERROR("Received completion for unknown send request");
   } else {
     active_send_requests_.erase(request);
   }
@@ -429,7 +428,7 @@ void StSender::notify_queue_update() const {
   uint64_t value = 1;
   ssize_t ret = write(queue_event_fd_, &value, sizeof(value));
   if (ret != sizeof(value)) {
-    L_(error) << "Failed to write to queue_event_fd_: " << strerror(errno);
+    ERROR("Failed to write to queue_event_fd_: {}", strerror(errno));
   }
 }
 
@@ -446,7 +445,7 @@ std::size_t StSender::process_queues() {
   }
 
   if (!scheduler_connected_) {
-    L_(trace) << "Scheduler not registered, skipping announcements";
+    TRACE("Scheduler not registered, skipping announcements");
     for (const auto& [id, sth] : announcements) {
       complete_subtimeslice(id);
     }
@@ -483,12 +482,12 @@ void StSender::process_announcement(TsID id, const SubTimesliceHandle& sth) {
 void StSender::process_retraction(TsID id) {
   auto it = announced_.find(id);
   if (it != announced_.end()) {
-    L_(debug) << "Retracting SubTimeslice with ID: " << id;
+    DEBUG("Retracting SubTimeslice with ID: {}", id);
     announced_.erase(it);
     send_retraction_to_scheduler(id);
     complete_subtimeslice(id);
   } else {
-    L_(warning) << "Attempted to retract unknown SubTimeslice ID: " << id;
+    WARN("Attempted to retract unknown SubTimeslice ID: {}", id);
   }
 }
 
@@ -503,7 +502,7 @@ void StSender::complete_subtimeslice(TsID id) {
 
 void StSender::flush_announced() {
   for (const auto& [id, st] : announced_) {
-    L_(debug) << "Flushing announced SubTimeslice with ID: " << id;
+    DEBUG("Flushing announced SubTimeslice with ID: {}", id);
     complete_subtimeslice(id);
   }
   announced_.clear();

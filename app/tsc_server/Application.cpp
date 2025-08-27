@@ -8,7 +8,6 @@
 #include "log.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <chrono>
-#include <iostream>
 #include <numeric>
 #include <span>
 #include <string>
@@ -23,7 +22,7 @@ shm_allocate(boost::interprocess::managed_shared_memory* shm,
              std::size_t count) {
   std::size_t size_bytes = count * sizeof(T);
 
-  L_(trace) << "allocating shm buffer of " << size_bytes << " bytes";
+  TRACE("allocating shm buffer of {} bytes", size_bytes);
   void* buffer_raw = shm->allocate_aligned(size_bytes, sysconf(_SC_PAGESIZE));
 
   return {static_cast<T*>(buffer_raw), count};
@@ -48,20 +47,18 @@ Application::Application(Parameters const& par,
       // use all available CRIs
       std::unique_ptr<pda::device_operator> dev_op(new pda::device_operator);
       uint64_t num_dev = dev_op->device_count();
-      L_(info) << "Total number of CRIs: " << num_dev << std::endl;
+      INFO("Total number of CRIs: {}", num_dev);
 
       for (size_t i = 0; i < num_dev; ++i) {
         cris_.push_back(std::make_unique<cri::cri_device>(i));
-        L_(info) << "Initialized CRI: " << cris_.back()->print_devinfo()
-                 << std::endl;
+        INFO("Initialized CRI: {}", cris_.back()->print_devinfo());
       }
     } else {
       // TODO parameters: this should actually loop over a list of BDF addresses
       cris_.push_back(std::make_unique<cri::cri_device>(
           par.device_address().bus, par.device_address().dev,
           par.device_address().func));
-      L_(info) << "Initialized CRI: " << cris_.back()->print_devinfo()
-               << std::endl;
+      INFO("Initialized CRI: {}", cris_.back()->print_devinfo());
     }
 
     // create all cri channels and remove inactive channels
@@ -81,9 +78,9 @@ Application::Application(Parameters const& par,
                                                 cri::cri_channel::rx_disable;
                                        }),
                         cri_channels_.end());
-    L_(info) << "Enabled cri channels detected: " << cri_channels_.size();
+    INFO("Enabled cri channels detected: {}", cri_channels_.size());
   } catch (std::exception const& e) {
-    L_(warning) << "Could not create hardware objects: " << e.what();
+    WARN("Could not create hardware objects: {}", e.what());
   }
 
   /////// Create Shared Memory //////////////
@@ -208,7 +205,7 @@ Application::~Application() {
 
   // cleanup
   boost::interprocess::shared_memory_object::remove(par_.shm_id().c_str());
-  L_(info) << "Shared memory segment removed: " << par_.shm_id();
+  INFO("Shared memory segment removed: {}", par_.shm_id());
 
   // delay to allow monitor to process pending messages
   constexpr auto destruct_delay = std::chrono::milliseconds(200);
@@ -267,9 +264,8 @@ void Application::provide_subtimeslice(
   // Announce the subtimeslice
   uint64_t ts_id = start_time / duration;
   st_sender_->announce_subtimeslice(ts_id, st);
-  L_(trace) << "Sent announcement for timeslice " << ts_id << " with "
-            << st.components.size() << " components (flags: " << st.flags
-            << ")";
+  TRACE("Sent announcement for timeslice {} with {} components (flags: {})",
+        ts_id, st.components.size(), st.flags);
 
   // Update statistics
   ++timeslice_count_;
