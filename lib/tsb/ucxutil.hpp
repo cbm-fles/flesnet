@@ -1,6 +1,7 @@
 // Copyright 2025 Jan de Cuveland
 #pragma once
 
+#include <format>
 #include <optional>
 #include <span>
 #include <string>
@@ -50,3 +51,11 @@ void on_generic_send_complete(void* request,
 std::pair<std::string, uint16_t> parse_address(std::string_view address,
                                                uint16_t default_port);
 } // namespace ucx::util
+
+// Specialize std::formatter for ucs_status_t to simplify logging
+template <> struct std::formatter<ucs_status_t> {
+  constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+  auto format(const ucs_status_t& status, std::format_context& ctx) const {
+    return std::format_to(ctx.out(), "{}", ucs_status_string(status));
+  }
+};

@@ -128,12 +128,12 @@ void TsBuilder::connect_to_scheduler() {
 
 void TsBuilder::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
   if (ep != scheduler_ep_) {
-    ERROR("Received error for unknown endpoint: {}", ucs_status_string(status));
+    ERROR("Received error for unknown endpoint: {}", status);
     return;
   }
 
   disconnect_from_scheduler(true);
-  WARN("Disconnected from scheduler: {}", ucs_status_string(status));
+  WARN("Disconnected from scheduler: {}", status);
 }
 
 bool TsBuilder::register_with_scheduler() {
@@ -148,7 +148,7 @@ void TsBuilder::handle_scheduler_register_complete(ucs_status_ptr_t request,
   scheduler_connecting_ = false;
 
   if (status != UCS_OK) {
-    ERROR("Failed to register with scheduler: {}", ucs_status_string(status));
+    ERROR("Failed to register with scheduler: {}", status);
   } else {
     scheduler_connected_ = true;
     INFO("Successfully registered with scheduler");
@@ -288,14 +288,13 @@ void TsBuilder::connect_to_sender(const std::string& sender_id) {
 
 void TsBuilder::handle_sender_error(ucp_ep_h ep, ucs_status_t status) {
   if (!ep_to_sender_.contains(ep)) {
-    ERROR("Received error for unknown sender endpoint: {}",
-          ucs_status_string(status));
+    ERROR("Received error for unknown sender endpoint: {}", status);
     return;
   }
   ucx::util::close_endpoint(worker_, ep, true);
 
   auto sender = ep_to_sender_[ep];
-  INFO("Sender {} disconnected: {}", sender, ucs_status_string(status));
+  INFO("Sender {} disconnected: {}", sender, status);
 
   ep_to_sender_.erase(ep);
   sender_to_ep_.erase(sender);
@@ -413,8 +412,9 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
       tsh.iovectors[contribution_index].size(), &req_param);
 
   if (UCS_PTR_IS_ERR(request)) {
+    ucs_status_t status = UCS_PTR_STATUS(request);
     ERROR("Failed to receive ST data from sender {} for TS ID: {}, error: {}",
-          sender_id, id, ucs_status_string(UCS_PTR_STATUS(request)));
+          sender_id, id, status);
     update_st_state(tsh, contribution_index, StState::Failed);
     return UCS_OK;
   }
@@ -438,10 +438,9 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
 void TsBuilder::handle_sender_data_recv_complete(
     void* request, ucs_status_t status, [[maybe_unused]] size_t length) {
   if (UCS_PTR_IS_ERR(request)) {
-    ERROR("Data recv operation failed: {}", ucs_status_string(status));
+    ERROR("Data recv operation failed: {}", status);
   } else if (status != UCS_OK) {
-    ERROR("Data recv operation completed with status: {}",
-          ucs_status_string(status));
+    ERROR("Data recv operation completed with status: {}", status);
   } else {
     TRACE("Data recv operation completed successfully");
   }

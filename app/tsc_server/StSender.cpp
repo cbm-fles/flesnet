@@ -181,12 +181,12 @@ void StSender::connect_to_scheduler() {
 
 void StSender::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
   if (ep != scheduler_ep_) {
-    ERROR("Received error for unknown endpoint: {}", ucs_status_string(status));
+    ERROR("Received error for unknown endpoint: {}", status);
     return;
   }
 
   disconnect_from_scheduler(true);
-  INFO("Disconnected from scheduler: {}", ucs_status_string(status));
+  INFO("Disconnected from scheduler: {}", status);
 }
 
 bool StSender::register_with_scheduler() {
@@ -201,7 +201,7 @@ void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
   scheduler_connecting_ = false;
 
   if (status != UCS_OK) {
-    ERROR("Failed to register with scheduler: {}", ucs_status_string(status));
+    ERROR("Failed to register with scheduler: {}", status);
   } else {
     scheduler_connected_ = true;
     INFO("Successfully registered with scheduler");
@@ -312,7 +312,7 @@ void StSender::handle_new_connection(ucp_conn_request_h conn_request) {
 }
 
 void StSender::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
-  ERROR("Error on UCX endpoint: {}", ucs_status_string(status));
+  ERROR("Error on UCX endpoint: {}", status);
 
   auto it = connections_.find(ep);
   if (it != connections_.end()) {
@@ -382,8 +382,8 @@ void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
                       iov_vector.data(), iov_vector.size(), &req_param);
 
   if (UCS_PTR_IS_ERR(request)) {
-    ERROR("Failed to send active message: {}",
-          ucs_status_string(UCS_PTR_STATUS(request)));
+    ucs_status_t status = UCS_PTR_STATUS(request);
+    ERROR("Failed to send active message: {}", status);
     // Ignore the interaction with the builder, keep the announced subtimeslice
     return;
   }
@@ -402,10 +402,9 @@ void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
 void StSender::handle_builder_send_complete(void* request,
                                             ucs_status_t status) {
   if (UCS_PTR_IS_ERR(request)) {
-    ERROR("Send operation failed: {}", ucs_status_string(status));
+    ERROR("Send operation failed: {}", status);
   } else if (status != UCS_OK) {
-    ERROR("Send operation completed with status: {}",
-          ucs_status_string(status));
+    ERROR("Send operation completed with status: {}", status);
   } else {
     TRACE("Send operation completed successfully");
   }

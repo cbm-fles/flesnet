@@ -160,7 +160,7 @@ void TsScheduler::handle_new_connection(ucp_conn_request_h conn_request) {
 }
 
 void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
-  ERROR("Error on UCX endpoint: {}", ucs_status_string(status));
+  ERROR("Error on UCX endpoint: {}", status);
 
   auto it = connections_.find(ep);
   if (it != connections_.end()) {

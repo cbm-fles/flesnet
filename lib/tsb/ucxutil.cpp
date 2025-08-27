@@ -54,7 +54,7 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
   int event_fd = -1;
   status = ucp_worker_get_efd(worker, &event_fd);
   if (status != UCS_OK) {
-    ERROR("Failed to get UCP worker event_fd: {}", ucs_status_string(status));
+    ERROR("Failed to get UCP worker event_fd: {}", status);
     ucp_worker_destroy(worker);
     worker = nullptr;
     ucp_cleanup(context);
@@ -95,7 +95,7 @@ bool arm_worker_and_wait(ucp_worker_h worker, int epoll_fd, int timeout_ms) {
     return true;
   }
   if (status != UCS_OK) {
-    ERROR("Failed to arm UCP worker: {}", ucs_status_string(status));
+    ERROR("Failed to arm UCP worker: {}", status);
     return false;
   }
 
@@ -161,7 +161,7 @@ bool create_listener(ucp_worker_h worker,
 
   ucs_status_t status = ucp_listener_create(worker, &params, &listener);
   if (status != UCS_OK) {
-    ERROR("UCP listener creation failed: {}", ucs_status_string(status));
+    ERROR("UCP listener creation failed: {}", status);
     return false;
   }
   INFO("Listening for connections on port {}", listen_port);
@@ -240,7 +240,7 @@ std::optional<ucp_ep_h> connect(ucp_worker_h worker,
       TRACE("UCX endpoint created successfully");
       break;
     }
-    TRACE("Failed to create UCX endpoint: {}", ucs_status_string(status));
+    TRACE("Failed to create UCX endpoint: {}", status);
   }
   freeaddrinfo(result);
 
@@ -288,8 +288,7 @@ bool set_receive_handler(ucp_worker_h worker,
 
   ucs_status_t status = ucp_worker_set_am_recv_handler(worker, &param);
   if (status != UCS_OK) {
-    ERROR("Failed to set active message receive handler: {}",
-          ucs_status_string(status));
+    ERROR("Failed to set active message receive handler: {}", status);
     return false;
   }
   DEBUG("Active message receive handler set for ID {}", id);
@@ -307,8 +306,8 @@ bool send_active_message_with_params(ucp_ep_h ep,
                       buffer.size(), &param);
 
   if (UCS_PTR_IS_ERR(request)) {
-    ERROR("Failed to send active message: {}",
-          ucs_status_string(UCS_PTR_STATUS(request)));
+    ucs_status_t status = UCS_PTR_STATUS(request);
+    ERROR("Failed to send active message: {}", status);
     return false;
   }
 
@@ -344,10 +343,9 @@ void on_generic_send_complete(void* request,
                               ucs_status_t status,
                               [[maybe_unused]] void* user_data) {
   if (UCS_PTR_IS_ERR(request)) {
-    ERROR("Send operation failed: {}", ucs_status_string(status));
+    ERROR("Send operation failed: {}", status);
   } else if (status != UCS_OK) {
-    ERROR("Send operation completed with status: {}",
-          ucs_status_string(status));
+    ERROR("Send operation completed with status: {}", status);
   } else {
     TRACE("Send operation completed successfully");
   }
