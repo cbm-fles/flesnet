@@ -23,7 +23,7 @@ using TsID = uint64_t;
 
 // Flags
 
-enum class StComponentFlag : uint32_t {
+enum class TsComponentFlag : uint32_t {
   None = 0,
 
   // Microslices are missing in this component
@@ -34,7 +34,7 @@ enum class StComponentFlag : uint32_t {
   OverflowFlim = 1 << 1
 };
 
-enum class StFlag : uint32_t {
+enum class TsFlag : uint32_t {
   None = 0,
 
   // One or more components are missing microslices
@@ -56,7 +56,7 @@ enum class StFlag : uint32_t {
 
 // Descriptors for transferring subtimeslice data from the sender to the builder
 
-struct DataDescriptor {
+struct DataRegion {
   std::ptrdiff_t offset;
   std::size_t size;
 
@@ -70,29 +70,31 @@ struct DataDescriptor {
 
 struct StComponentDescriptor {
   /// A data descriptor pointing to the microslice descriptor data blocks
-  DataDescriptor descriptor{};
+  DataRegion ms_descriptors{};
 
   /// A data descriptor pointing to the microslice content data blocks
-  DataDescriptor content{};
+  DataRegion ms_contents{};
 
   // Flags
   uint32_t flags = 0;
 
-  void set_flag(StComponentFlag f) { flags |= static_cast<uint32_t>(f); }
-  void clear_flag(StComponentFlag f) { flags &= ~static_cast<uint32_t>(f); }
-  [[nodiscard]] bool has_flag(StComponentFlag f) const {
+  void set_flag(TsComponentFlag f) { flags |= static_cast<uint32_t>(f); }
+  void clear_flag(TsComponentFlag f) { flags &= ~static_cast<uint32_t>(f); }
+  [[nodiscard]] bool has_flag(TsComponentFlag f) const {
     return (flags & static_cast<uint32_t>(f)) != 0;
   }
 
   // The size (in bytes) of the component (i.e., microslice descriptor +
   // content)
-  [[nodiscard]] uint64_t size() const { return descriptor.size + content.size; }
+  [[nodiscard]] uint64_t size() const {
+    return ms_descriptors.size + ms_contents.size;
+  }
 
   friend class boost::serialization::access;
   template <class Archive>
   void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
-    ar & descriptor;
-    ar & content;
+    ar & ms_descriptors;
+    ar & ms_contents;
     ar & flags;
   }
 };
@@ -111,9 +113,9 @@ struct StDescriptor {
   /// The subtimeslice component descriptors
   std::vector<StComponentDescriptor> components;
 
-  void set_flag(StFlag f) { flags |= static_cast<uint32_t>(f); }
-  void clear_flag(StFlag f) { flags &= ~static_cast<uint32_t>(f); }
-  [[nodiscard]] bool has_flag(StFlag f) const {
+  void set_flag(TsFlag f) { flags |= static_cast<uint32_t>(f); }
+  void clear_flag(TsFlag f) { flags &= ~static_cast<uint32_t>(f); }
+  [[nodiscard]] bool has_flag(TsFlag f) const {
     return (flags & static_cast<uint32_t>(f)) != 0;
   }
 
@@ -145,9 +147,9 @@ struct StComponentHandle {
   std::vector<ucp_dt_iov> contents;
   uint32_t flags = 0;
 
-  void set_flag(StComponentFlag f) { flags |= static_cast<uint32_t>(f); }
-  void clear_flag(StComponentFlag f) { flags &= ~static_cast<uint32_t>(f); }
-  [[nodiscard]] bool has_flag(StComponentFlag f) const {
+  void set_flag(TsComponentFlag f) { flags |= static_cast<uint32_t>(f); }
+  void clear_flag(TsComponentFlag f) { flags &= ~static_cast<uint32_t>(f); }
+  [[nodiscard]] bool has_flag(TsComponentFlag f) const {
     return (flags & static_cast<uint32_t>(f)) != 0;
   }
 
@@ -183,22 +185,21 @@ struct StComponentHandle {
   }
 };
 
-struct SubTimesliceHandle {
+struct StHandle {
   uint64_t start_time_ns;
   uint64_t duration_ns;
   uint32_t flags;
   std::vector<StComponentHandle> components;
 
-  void set_flag(StFlag f) { flags |= static_cast<uint32_t>(f); }
-  void clear_flag(StFlag f) { flags &= ~static_cast<uint32_t>(f); }
-  [[nodiscard]] bool has_flag(StFlag f) const {
+  void set_flag(TsFlag f) { flags |= static_cast<uint32_t>(f); }
+  void clear_flag(TsFlag f) { flags &= ~static_cast<uint32_t>(f); }
+  [[nodiscard]] bool has_flag(TsFlag f) const {
     return (flags & static_cast<uint32_t>(f)) != 0;
   }
 
   /// Dump contents (for debugging)
-  friend std::ostream& operator<<(std::ostream& os,
-                                  const SubTimesliceHandle& i) {
-    return os << "SubTimesliceHandle(start_time_ns=" << i.start_time_ns
+  friend std::ostream& operator<<(std::ostream& os, const StHandle& i) {
+    return os << "StHandle(start_time_ns=" << i.start_time_ns
               << ", duration_ns=" << i.duration_ns << ", flags=" << i.flags
               << ", components=...)";
   }

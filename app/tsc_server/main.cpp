@@ -24,6 +24,6 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  INFO("exiting");
+  INFO("Exiting");
   return EXIT_SUCCESS;
 }

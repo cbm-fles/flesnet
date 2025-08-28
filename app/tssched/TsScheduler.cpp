@@ -84,6 +84,7 @@ void TsScheduler::operator()(std::stop_token stop_token) {
     tasks_.timer();
 
     bool try_later =
+        senders_.empty() ||
         std::any_of(senders_.begin(), senders_.end(), [id](const auto& s) {
           return s.second.last_received_st < id;
         });
@@ -345,6 +346,8 @@ TsScheduler::handle_builder_status(const void* header,
   if (hdr.size() != 3 || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
     ERROR("Invalid builder status received");
+    DEBUG("hdr size: {}, length: {}, recv_attr: {}", hdr.size(), length,
+          param->recv_attr);
     return UCS_OK;
   }
 
@@ -363,29 +366,29 @@ TsScheduler::handle_builder_status(const void* header,
 
   switch (event) {
   case BUILDER_EVENT_NO_OP:
-    DEBUG("Builder {} reported bytes free: {}", it->id, new_bytes_free);
+    DEBUG("Builder '{}' reported bytes free: {}", it->id, new_bytes_free);
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
     }
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_ALLOCATED:
-    DEBUG("Builder {} allocated ST with ID: {}, new bytes free: {}", it->id, id,
-          new_bytes_free);
+    DEBUG("Builder '{}' allocated ST with ID: {}, new bytes free: {}", it->id,
+          id, new_bytes_free);
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_OUT_OF_MEMORY:
-    INFO("Builder {} reported out of memory for ST with ID: {}", it->id, id);
+    INFO("Builder '{}' reported out of memory for ST with ID: {}", it->id, id);
     it->is_out_of_memory = true;
     send_timeslice(id);
     break;
   case BUILDER_EVENT_RECEIVED:
-    DEBUG("Builder {} received ST with ID: {}", it->id, id);
+    DEBUG("Builder '{}' received ST with ID: {}", it->id, id);
     send_release_to_senders(id);
     break;
   case BUILDER_EVENT_RELEASED:
-    DEBUG("Builder {} released ST with ID: {}, new bytes free: {}", it->id, id,
-          new_bytes_free);
+    DEBUG("Builder '{}' released ST with ID: {}, new bytes free: {}", it->id,
+          id, new_bytes_free);
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
     }
@@ -404,7 +407,7 @@ void TsScheduler::send_timeslice_to_builder(const StCollectionDescriptor& desc,
   auto* raw_ptr = buffer.release();
 
   ucx::util::send_active_message(
-      builder.ep, AM_SCHED_SEND_TS, header, *buffer,
+      builder.ep, AM_SCHED_SEND_TS, header, *raw_ptr,
       [](void* request, ucs_status_t status, void* user_data) {
         auto buffer = std::unique_ptr<std::vector<std::byte>>(
             static_cast<std::vector<std::byte>*>(user_data));

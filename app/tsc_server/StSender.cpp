@@ -62,7 +62,7 @@ StSender::~StSender() {
 
 // Public API methods
 
-void StSender::announce_subtimeslice(TsID id, const SubTimesliceHandle& st) {
+void StSender::announce_subtimeslice(TsID id, const StHandle& st) {
   {
     std::lock_guard<std::mutex> lock(queue_mutex_);
     pending_announcements_.emplace_back(id, st);
@@ -193,7 +193,7 @@ bool StSender::register_with_scheduler() {
   auto header = std::as_bytes(std::span(sender_id_));
   return ucx::util::send_active_message(
       scheduler_ep_, AM_SENDER_REGISTER, header, {},
-      on_scheduler_register_complete, this, 0);
+      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
 }
 
 void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
@@ -247,9 +247,10 @@ void StSender::send_announcement_to_scheduler(TsID id) {
   auto buffer = std::span(static_cast<const std::byte*>(iov_vector[0].buffer),
                           iov_vector[0].length);
 
-  ucx::util::send_active_message(scheduler_ep_, AM_SENDER_ANNOUNCE_ST, header,
-                                 buffer, ucx::util::on_generic_send_complete,
-                                 this, UCP_AM_SEND_FLAG_COPY_HEADER);
+  ucx::util::send_active_message(
+      scheduler_ep_, AM_SENDER_ANNOUNCE_ST, header, buffer,
+      ucx::util::on_generic_send_complete, this,
+      UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
 }
 
 void StSender::send_retraction_to_scheduler(TsID id) {
@@ -258,21 +259,21 @@ void StSender::send_retraction_to_scheduler(TsID id) {
   auto header = std::as_bytes(std::span(hdr));
   ucx::util::send_active_message(scheduler_ep_, AM_SENDER_RETRACT_ST, header,
                                  {}, ucx::util::on_generic_send_complete, this,
-                                 UCP_AM_SEND_FLAG_COPY_HEADER);
+                                 UCP_AM_SEND_FLAG_COPY_HEADER |
+                                     UCP_AM_SEND_FLAG_REPLY);
 }
 
-ucs_status_t
-StSender::handle_scheduler_release(const void* header,
-                                   size_t header_length,
-                                   void* /* data */,
-                                   size_t length,
-                                   const ucp_am_recv_param_t* param) {
+ucs_status_t StSender::handle_scheduler_release(
+    const void* header,
+    size_t header_length,
+    [[maybe_unused]] void* data,
+    size_t length,
+    [[maybe_unused]] const ucp_am_recv_param_t* param) {
   TRACE(
       "Received scheduler release ST with header length {} and data length {}",
       header_length, length);
 
-  if (header_length != sizeof(uint64_t) || length != 0 ||
-      (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
+  if (header_length != sizeof(uint64_t) || length != 0) {
     ERROR("Invalid scheduler request received");
     return UCS_OK;
   }
@@ -351,9 +352,9 @@ void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
     WARN("SubTimeslice with ID {} not found", id);
     std::array<uint64_t, 3> hdr{id, 0, 0};
     auto header = std::as_bytes(std::span(hdr));
-    ucx::util::send_active_message(ep, AM_SENDER_SEND_ST, header, {},
-                                   ucx::util::on_generic_send_complete, this,
-                                   UCP_AM_SEND_FLAG_COPY_HEADER);
+    ucx::util::send_active_message(
+        ep, AM_SENDER_SEND_ST, header, {}, ucx::util::on_generic_send_complete,
+        this, UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
     return;
   }
 
@@ -432,7 +433,7 @@ void StSender::notify_queue_update() const {
 }
 
 std::size_t StSender::process_queues() {
-  std::deque<std::pair<TsID, SubTimesliceHandle>> announcements;
+  std::deque<std::pair<TsID, StHandle>> announcements;
   std::deque<TsID> retractions;
   {
     std::lock_guard<std::mutex> lock(queue_mutex_);
@@ -461,7 +462,7 @@ std::size_t StSender::process_queues() {
   return announcements.size() + retractions.size();
 }
 
-void StSender::process_announcement(TsID id, const SubTimesliceHandle& sth) {
+void StSender::process_announcement(TsID id, const StHandle& sth) {
   // Create and serialize subtimeslice
   StDescriptor descriptor = create_subtimeslice_descriptor(sth);
   auto descriptor_bytes = to_bytes(descriptor);
@@ -514,8 +515,7 @@ void StSender::flush_announced() {
 // descriptors and contents data blocks. The offsets are relative to the start
 // of the overall data block and assume that all blocks are contiguous in
 // memory.
-StDescriptor
-StSender::create_subtimeslice_descriptor(const SubTimesliceHandle& sth) {
+StDescriptor StSender::create_subtimeslice_descriptor(const StHandle& sth) {
   StDescriptor d;
   d.start_time_ns = sth.start_time_ns;
   d.duration_ns = sth.duration_ns;
@@ -529,7 +529,7 @@ StSender::create_subtimeslice_descriptor(const SubTimesliceHandle& sth) {
     for (auto descriptor : c.descriptors) {
       descriptors_size += descriptor.length;
     }
-    const DataDescriptor descriptor = {offset, descriptors_size};
+    const DataRegion descriptor = {offset, descriptors_size};
     offset += descriptors_size;
 
     std::size_t content_size = 0;
@@ -538,7 +538,7 @@ StSender::create_subtimeslice_descriptor(const SubTimesliceHandle& sth) {
       // transferring to the builder
       content_size += content.length;
     }
-    const DataDescriptor content = {offset, content_size};
+    const DataRegion content = {offset, content_size};
     offset += content_size;
 
     d.components.push_back({descriptor, content, c.flags});
@@ -551,7 +551,7 @@ StSender::create_subtimeslice_descriptor(const SubTimesliceHandle& sth) {
 // The first element in the vector is the serialized descriptor string, followed
 // by the descriptors and contents of each component in the shared memory.
 std::vector<ucp_dt_iov>
-StSender::create_iov_vector(const SubTimesliceHandle& sth,
+StSender::create_iov_vector(const StHandle& sth,
                             std::span<std::byte> descriptor_bytes) {
   std::vector<ucp_dt_iov> iov_vector;
 

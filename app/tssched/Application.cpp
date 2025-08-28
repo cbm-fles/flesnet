@@ -1,7 +1,6 @@
 // Copyright 2025 Jan de Cuveland
 
 #include "Application.hpp"
-#include <chrono>
 #include <thread>
 
 using namespace std::chrono_literals;
@@ -20,13 +19,12 @@ Application::Application(Parameters const& par,
 
 void Application::run() {
   while (*signal_status_ == 0) {
-    tasks_.timer();
-    std::this_thread::sleep_until(tasks_.when_next());
+    std::this_thread::sleep_for(100ms);
   }
 }
 
 Application::~Application() {
   // delay to allow monitor to process pending messages
-  constexpr auto destruct_delay = std::chrono::milliseconds(200);
+  constexpr auto destruct_delay = 200ms;
   std::this_thread::sleep_for(destruct_delay);
 }

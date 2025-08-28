@@ -3,7 +3,6 @@
 
 #include "Monitor.hpp"
 #include "Parameters.hpp"
-#include "Scheduler.hpp"
 #include "TsScheduler.hpp"
 #include <csignal>
 #include <memory>
@@ -25,8 +24,6 @@ private:
   volatile std::sig_atomic_t* signal_status_;
 
   std::unique_ptr<cbm::Monitor> monitor_;
-
-  Scheduler tasks_;
 
   std::unique_ptr<TsScheduler> ts_scheduler_;
 };

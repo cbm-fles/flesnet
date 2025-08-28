@@ -45,8 +45,8 @@ static constexpr unsigned int AM_BUILDER_REQUEST_ST =
     60; // header: {StId}, data: none
 // stsender -> tsbuilder
 static constexpr unsigned int AM_SENDER_SEND_ST =
-    70; // header: {StId, desc_size, content_size}, data: {StDescriptor,
-        // StContent}
+    70; // header: {StId, desc_size, content_size},
+        // data: {StDescriptor, StContent}
 
 static constexpr uint64_t BUILDER_EVENT_NO_OP = 0;
 static constexpr uint64_t BUILDER_EVENT_ALLOCATED = 1;

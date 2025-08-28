@@ -2,9 +2,6 @@
 
 #include "TimesliceBufferFlex.hpp"
 #include "SubTimeslice.hpp"
-#include "TimesliceDescriptor.hpp"
-#include "TimesliceWorkItem.hpp"
-#include "Utility.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -29,15 +26,19 @@ TimesliceBufferFlex::TimesliceBufferFlex(zmq::context_t& context,
   constexpr size_t overhead_size = 4096; // Wild guess, let's hope it's enough
   size_t managed_shm_size = buffer_size + overhead_size;
 
+  INFO("Creating shared memory segment '{}' of size {} MiB", shm_identifier_,
+       managed_shm_size / static_cast<long>(1024 * 1024));
   managed_shm_ = std::make_unique<boost::interprocess::managed_shared_memory>(
       boost::interprocess::create_only, shm_identifier_.c_str(),
       managed_shm_size);
 
   managed_shm_->construct<boost::uuids::uuid>(
       boost::interprocess::unique_instance)(shm_uuid_);
+  DEBUG("Shared memory segment '{}' initialized", shm_identifier_);
 }
 
 TimesliceBufferFlex::~TimesliceBufferFlex() {
+  INFO("Removing shared memory segment '{}'", shm_identifier_);
   boost::interprocess::shared_memory_object::remove(shm_identifier_.c_str());
 }
 

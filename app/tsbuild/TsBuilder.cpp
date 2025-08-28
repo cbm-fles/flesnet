@@ -139,8 +139,8 @@ void TsBuilder::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
 bool TsBuilder::register_with_scheduler() {
   auto header = std::as_bytes(std::span(hostname_));
   return ucx::util::send_active_message(
-      scheduler_ep_, AM_SENDER_REGISTER, header, {},
-      on_scheduler_register_complete, this, 0);
+      scheduler_ep_, AM_BUILDER_REGISTER, header, {},
+      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
 }
 
 void TsBuilder::handle_scheduler_register_complete(ucs_status_ptr_t request,
@@ -181,7 +181,8 @@ void TsBuilder::send_status_to_scheduler(uint64_t event, TsID id) {
 
   ucx::util::send_active_message(scheduler_ep_, AM_BUILDER_STATUS, header, {},
                                  ucx::util::on_generic_send_complete, this,
-                                 UCP_AM_SEND_FLAG_COPY_HEADER);
+                                 UCP_AM_SEND_FLAG_COPY_HEADER |
+                                     UCP_AM_SEND_FLAG_REPLY);
 }
 
 void TsBuilder::send_periodic_status_to_scheduler() {
@@ -217,6 +218,8 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
 
   if (desc_size != length) {
     ERROR("Invalid header data in scheduler TS with ID: {}", id);
+    ERROR("desc_size: {}, length: {}", desc_size, length);
+    ERROR("contant_size: {}", content_size);
     return UCS_OK;
   }
 
@@ -327,7 +330,8 @@ void TsBuilder::send_request_to_sender(const std::string& sender_id, TsID id) {
 
   ucx::util::send_active_message(ep, AM_BUILDER_REQUEST_ST, header, {},
                                  ucx::util::on_generic_send_complete, this,
-                                 UCP_AM_SEND_FLAG_COPY_HEADER);
+                                 UCP_AM_SEND_FLAG_COPY_HEADER |
+                                     UCP_AM_SEND_FLAG_REPLY);
 }
 
 ucs_status_t TsBuilder::handle_sender_data(const void* header,
@@ -517,7 +521,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
         timeslice_buffer_.send_work_item(tsh.buffer, tsh.id, ts_desc);
         tsh.is_published = true;
         tsh.published_at_ns = fles::system::current_time_ns();
-        if (ts_desc.has_flag(StFlag::MissingSubtimeslices)) {
+        if (ts_desc.has_flag(TsFlag::MissingSubtimeslices)) {
           INFO("Published incomplete TS with ID: {}", tsh.id);
           timeslice_incomplete_count_++;
         } else {
@@ -532,7 +536,7 @@ StDescriptor TsBuilder::create_timeslice_descriptor(TsHandle& tsh) {
   StDescriptor d{};
   for (std::size_t i = 0; i < tsh.contributions.size(); ++i) {
     if (tsh.states[i] != StState::Complete) {
-      d.set_flag(StFlag::MissingSubtimeslices);
+      d.set_flag(TsFlag::MissingSubtimeslices);
       continue;
     }
     const auto& contrib = tsh.descriptors[i];
@@ -542,14 +546,14 @@ StDescriptor TsBuilder::create_timeslice_descriptor(TsHandle& tsh) {
     } else if (d.start_time_ns != contrib.start_time_ns ||
                d.duration_ns != contrib.duration_ns) {
       ERROR("Inconsistent start time or duration in contributions");
-      d.set_flag(StFlag::MissingSubtimeslices);
+      d.set_flag(TsFlag::MissingSubtimeslices);
       continue;
     }
     d.flags |= contrib.flags;
     for (const auto& c : contrib.components) {
       d.components.push_back(c);
-      d.components.back().descriptor.offset += tsh.offsets[i];
-      d.components.back().content.offset += tsh.offsets[i];
+      d.components.back().ms_descriptors.offset += tsh.offsets[i];
+      d.components.back().ms_contents.offset += tsh.offsets[i];
     }
   }
   return d;

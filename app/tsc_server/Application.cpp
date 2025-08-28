@@ -238,7 +238,7 @@ void Application::provide_subtimeslice(
     uint64_t duration) {
 
   // Create a SubTimesliceDescriptor
-  SubTimesliceHandle st;
+  StHandle st;
   st.start_time_ns = start_time;
   st.duration_ns = duration;
   st.flags = 0;
@@ -250,13 +250,13 @@ void Application::provide_subtimeslice(
     switch (state) {
     case Channel::State::Ok:
       st.components.push_back(channel->get_descriptor(start_time, duration));
-      if (st.components.back().has_flag(StComponentFlag::OverflowFlim)) {
-        st.set_flag(StFlag::OverflowFlim);
+      if (st.components.back().has_flag(TsComponentFlag::OverflowFlim)) {
+        st.set_flag(TsFlag::OverflowFlim);
       }
       break;
     case Channel::State::Failed:
     case Channel::State::TryLater:
-      st.set_flag(StFlag::MissingComponents);
+      st.set_flag(TsFlag::MissingComponents);
       break;
     }
   }
@@ -275,7 +275,7 @@ void Application::provide_subtimeslice(
     content_bytes_ += comp.contents_size();
     total_bytes_ += comp.descriptors_size() + comp.contents_size();
   }
-  if (st.has_flag(StFlag::MissingComponents)) {
+  if (st.has_flag(TsFlag::MissingComponents)) {
     ++timeslice_incomplete_count_;
   }
 }

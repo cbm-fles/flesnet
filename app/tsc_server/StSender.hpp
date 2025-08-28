@@ -30,7 +30,7 @@ public:
   StSender& operator=(const StSender&) = delete;
 
   // Public API methods
-  void announce_subtimeslice(TsID id, const SubTimesliceHandle& sth);
+  void announce_subtimeslice(TsID id, const StHandle& sth);
   void retract_subtimeslice(TsID id);
   std::optional<TsID> try_receive_completion();
 
@@ -42,7 +42,7 @@ private:
   std::string sender_id_;
 
   int queue_event_fd_ = -1;
-  std::deque<std::pair<TsID, SubTimesliceHandle>> pending_announcements_;
+  std::deque<std::pair<TsID, StHandle>> pending_announcements_;
   std::deque<TsID> pending_retractions_;
   std::mutex queue_mutex_;
   std::queue<TsID> completed_;
@@ -102,17 +102,15 @@ private:
   // Queue processing
   void notify_queue_update() const;
   std::size_t process_queues();
-  void process_announcement(TsID id, const SubTimesliceHandle& sth);
+  void process_announcement(TsID id, const StHandle& sth);
   void process_retraction(TsID id);
   void complete_subtimeslice(TsID id);
   void flush_announced();
 
   // Helper methods
-  static StDescriptor
-  create_subtimeslice_descriptor(const SubTimesliceHandle& sth);
+  static StDescriptor create_subtimeslice_descriptor(const StHandle& sth);
   static std::vector<ucp_dt_iov>
-  create_iov_vector(const SubTimesliceHandle& sth,
-                    std::span<std::byte> descriptor_bytes);
+  create_iov_vector(const StHandle& sth, std::span<std::byte> descriptor_bytes);
 
   // UCX static callbacks (trampolines)
   static void on_new_connection(ucp_conn_request_h conn_request, void* arg) {

@@ -3,12 +3,9 @@
 
 #include "ItemProducer.hpp"
 #include "SubTimeslice.hpp"
-#include "TimesliceCompletion.hpp"
-#include "TimesliceComponentDescriptor.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/uuid/uuid.hpp>
-#include <cstdint>
-#include <iostream>
+#include <log.hpp>
 #include <memory>
 #include <optional>
 #include <set>
@@ -61,7 +58,7 @@ public:
       return std::nullopt;
     }
     if (outstanding_.erase(id) != 1) {
-      std::cerr << "Error: invalid item " << id << std::endl;
+      ERROR("Invalid item with id {}", id);
     }
     return id;
   };

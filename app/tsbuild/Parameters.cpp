@@ -68,10 +68,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   generic_add("help,h", "produce help message");
   generic_add(
       "config-file,c",
-      po::value<std::string>(&config_file)->default_value("tssched.cfg"),
+      po::value<std::string>(&config_file)->default_value("tsbuild.cfg"),
       "name of a configuration file");
 
-  po::options_description config("Configuration (tssched.cfg or cmd line)");
+  po::options_description config("Configuration (tsbuild.cfg or cmd line)");
   auto config_add = config.add_options();
   config_add("log-level,l",
              po::value<unsigned>(&log_level)

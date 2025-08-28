@@ -29,8 +29,7 @@ Application::Application(Parameters const& par,
 
 void Application::run() {
   while (*signal_status_ == 0) {
-    tasks_.timer();
-    std::this_thread::sleep_until(tasks_.when_next());
+    std::this_thread::sleep_for(100ms);
   }
 }
 

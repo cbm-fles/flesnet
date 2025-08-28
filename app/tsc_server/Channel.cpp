@@ -3,6 +3,7 @@
 #include "Channel.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "log.hpp"
+#include <sstream>
 
 namespace {
 [[maybe_unused]] std::string pt(uint64_t time_ns) {
@@ -168,7 +169,7 @@ StComponentHandle Channel::get_descriptor(uint64_t start_time,
        it < m_desc_buffer->get_iter(desc_end_idx); ++it) {
     if ((it->flags &
          static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) != 0) {
-      flags |= static_cast<uint32_t>(StComponentFlag::OverflowFlim);
+      flags |= static_cast<uint32_t>(TsComponentFlag::OverflowFlim);
       break;
     }
   }
