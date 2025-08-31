@@ -120,21 +120,21 @@ void TsScheduler::operator()(std::stop_token stop_token) {
 }
 
 void TsScheduler::send_timeslice(TsID id) {
-  StCollectionDescriptor desc = create_collection_descriptor(id);
-  if (desc.contributions.empty()) {
-    WARN("No contributions found for timeslice ID: {}", id);
+  StCollection coll = create_collection_descriptor(id);
+  if (coll.sender_ids.empty()) {
+    WARN("No contributions found for timeslice {}", id);
     return;
   }
 
   for (std::size_t i = 0; i < builders_.size(); ++i) {
     auto& builder = builders_[(id + i) % builders_.size()];
-    if (builder.bytes_available >= desc.content_size &&
+    if (builder.bytes_available >= coll.ms_data_size() &&
         !builder.is_out_of_memory) {
-      send_timeslice_to_builder(desc, builder);
+      send_timeslice_to_builder(coll, builder);
       return;
     }
   }
-  WARN("No builder available for timeslice ID: {}", id);
+  WARN("No builder available for timeslice {}", id);
   send_release_to_senders(id);
 }
 
@@ -165,7 +165,7 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
 
   auto it = connections_.find(ep);
   if (it != connections_.end()) {
-    INFO("Removing disconnected endpoint: {}", it->second);
+    INFO("Removing disconnected endpoint '{}'", it->second);
     connections_.erase(it);
   } else {
     ERROR("Received error for unknown endpoint");
@@ -173,7 +173,7 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
 
   auto sender_it = senders_.find(ep);
   if (sender_it != senders_.end()) {
-    INFO("Removing disconnected sender: {}", sender_it->second.sender_id);
+    INFO("Removing disconnected sender '{}'", sender_it->second.sender_id);
     senders_.erase(sender_it);
   }
 
@@ -181,7 +181,7 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
           std::find_if(builders_.begin(), builders_.end(),
                        [ep](const BuilderConnection& b) { return b.ep == ep; });
       it != builders_.end()) {
-    DEBUG("Removing disconnected builder: {}", it->id);
+    DEBUG("Removing disconnected builder '{}'", it->id);
     builders_.erase(it);
   }
 }
@@ -194,9 +194,6 @@ TsScheduler::handle_sender_register(const void* header,
                                     [[maybe_unused]] void* data,
                                     size_t length,
                                     const ucp_am_recv_param_t* param) {
-  TRACE("Received sender registration with header length {} and data length {}",
-        header_length, length);
-
   if (header_length == 0 || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
     ERROR("Invalid sender registration request received");
@@ -206,7 +203,7 @@ TsScheduler::handle_sender_register(const void* header,
   auto sender_id = std::string(static_cast<const char*>(header), header_length);
   ucp_ep_h ep = param->reply_ep;
   senders_[ep] = {sender_id, ep, {}};
-  DEBUG("Accepted sender registration with id {}", sender_id);
+  DEBUG("Accepted sender registration from '{}'", sender_id);
 
   return UCS_OK;
 }
@@ -217,26 +214,16 @@ TsScheduler::handle_sender_announce(const void* header,
                                     void* data,
                                     size_t length,
                                     const ucp_am_recv_param_t* param) {
-  TRACE("Received sender ST announcement with header length {} and data length "
-        "{}",
-        header_length, length);
-
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
-  if (hdr.size() != 3 || length == 0 ||
+  if (hdr.size() != 2 || length == 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
-    ERROR("Invalid sender ST announcement received");
+    ERROR("Invalid subtimeslice announcement received");
     return UCS_OK;
   }
 
   const uint64_t id = hdr[0];
-  const uint64_t desc_size = hdr[1];
-  const uint64_t content_size = hdr[2];
-
-  if (desc_size != length) {
-    ERROR("Invalid header data in sender ST announcement");
-    return UCS_OK;
-  }
+  const uint64_t ms_data_size = hdr[1];
 
   auto it = senders_.find(param->reply_ep);
   if (it == senders_.end()) {
@@ -245,17 +232,17 @@ TsScheduler::handle_sender_announce(const void* header,
   }
   auto& sender_conn = it->second;
 
-  // descriptor can be used for statistics in the future, ignored for now
-  auto descriptor_bytes =
-      std::span(static_cast<const std::byte*>(data), desc_size);
-  std::vector<std::byte> descriptor_vector(descriptor_bytes.begin(),
-                                           descriptor_bytes.end());
+  // StDescriptor can be used for statistics in the future, ignored for now
+  auto st_descriptor_bytes =
+      std::span(static_cast<const std::byte*>(data), length);
+  std::vector<std::byte> st_descriptor_vector(st_descriptor_bytes.begin(),
+                                              st_descriptor_bytes.end());
 
-  sender_conn.announced_st.emplace_back(id, desc_size, content_size);
+  sender_conn.announced_st.emplace_back(id, ms_data_size);
   sender_conn.last_received_st = id;
-  DEBUG("Received ST announcement from sender {} with ID: {}, desc size: {}, "
-        "content size: {}",
-        sender_conn.sender_id, id, desc_size, content_size);
+  DEBUG("Received subtimeslice announcement from sender '{}' for {}, "
+        "ms_data_size: {}",
+        sender_conn.sender_id, id, ms_data_size);
 
   return UCS_OK;
 }
@@ -266,15 +253,11 @@ TsScheduler::handle_sender_retract(const void* header,
                                    [[maybe_unused]] void* data,
                                    size_t length,
                                    const ucp_am_recv_param_t* param) {
-  TRACE(
-      "Received sender ST retraction with header length {} and data length {}",
-      header_length, length);
-
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
   if (hdr.size() != 1 || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
-    ERROR("Invalid sender ST retraction received");
+    ERROR("Invalid subtimeslice retraction received");
     return UCS_OK;
   }
 
@@ -313,10 +296,6 @@ TsScheduler::handle_builder_register(const void* header,
                                      [[maybe_unused]] void* data,
                                      size_t length,
                                      const ucp_am_recv_param_t* param) {
-  TRACE(
-      "Received builder registration with header length {} and data length {}",
-      header_length, length);
-
   if (header_length == 0 || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
     ERROR("Invalid builder registration request received");
@@ -327,7 +306,7 @@ TsScheduler::handle_builder_register(const void* header,
       std::string(static_cast<const char*>(header), header_length);
   ucp_ep_h ep = param->reply_ep;
   builders_.emplace_back(builder_id, ep, 0, false);
-  DEBUG("Accepted builder registration with id {}", builder_id);
+  DEBUG("Accepted builder registration from '{}'", builder_id);
 
   return UCS_OK;
 }
@@ -338,16 +317,11 @@ TsScheduler::handle_builder_status(const void* header,
                                    [[maybe_unused]] void* data,
                                    size_t length,
                                    const ucp_am_recv_param_t* param) {
-  TRACE("Received builder status with header length {} and data length {}",
-        header_length, length);
-
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
   if (hdr.size() != 3 || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
     ERROR("Invalid builder status received");
-    DEBUG("hdr size: {}, length: {}, recv_attr: {}", hdr.size(), length,
-          param->recv_attr);
     return UCS_OK;
   }
 
@@ -373,21 +347,21 @@ TsScheduler::handle_builder_status(const void* header,
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_ALLOCATED:
-    DEBUG("Builder '{}' allocated ST with ID: {}, new bytes free: {}", it->id,
+    DEBUG("Builder '{}' has allocated timeslice {}, new bytes free: {}", it->id,
           id, new_bytes_free);
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_OUT_OF_MEMORY:
-    INFO("Builder '{}' reported out of memory for ST with ID: {}", it->id, id);
+    INFO("Builder '{}' reported out of memory for timeslice {}", it->id, id);
     it->is_out_of_memory = true;
     send_timeslice(id);
     break;
   case BUILDER_EVENT_RECEIVED:
-    DEBUG("Builder '{}' received ST with ID: {}", it->id, id);
+    DEBUG("Builder '{}' has received timeslice {}", it->id, id);
     send_release_to_senders(id);
     break;
   case BUILDER_EVENT_RELEASED:
-    DEBUG("Builder '{}' released ST with ID: {}, new bytes free: {}", it->id,
+    DEBUG("Builder '{}' has released timeslice {}, new bytes free: {}", it->id,
           id, new_bytes_free);
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
@@ -399,11 +373,11 @@ TsScheduler::handle_builder_status(const void* header,
   return UCS_OK;
 }
 
-void TsScheduler::send_timeslice_to_builder(const StCollectionDescriptor& desc,
+void TsScheduler::send_timeslice_to_builder(const StCollection& coll,
                                             BuilderConnection& builder) {
-  std::array<uint64_t, 3> hdr{desc.id, desc.desc_size, desc.content_size};
+  std::array<uint64_t, 3> hdr{coll.id, coll.ms_data_size()};
   auto header = std::as_bytes(std::span(hdr));
-  auto buffer = std::make_unique<std::vector<std::byte>>(to_bytes(desc));
+  auto buffer = std::make_unique<std::vector<std::byte>>(to_bytes(coll));
   auto* raw_ptr = buffer.release();
 
   ucx::util::send_active_message(
@@ -418,27 +392,24 @@ void TsScheduler::send_timeslice_to_builder(const StCollectionDescriptor& desc,
 
 // Helper methods
 
-StCollectionDescriptor TsScheduler::create_collection_descriptor(TsID id) {
-  StCollectionDescriptor desc{id, 0, 0, {}};
+StCollection TsScheduler::create_collection_descriptor(TsID id) {
+  StCollection coll{id, {}, {}};
   for (auto& [sender_ep, sender] : senders_) {
     auto it =
         std::find_if(sender.announced_st.begin(), sender.announced_st.end(),
                      [id](const auto& st) { return st.id == id; });
     if (it != sender.announced_st.end()) {
-      TRACE("Adding contribution from sender {} with ID: {}, desc size: {}, "
-            "content size: {}",
-            sender.sender_id, id, it->desc_size, it->content_size);
-      desc.contributions.push_back(
-          {sender.sender_id, it->desc_size, it->content_size});
-      desc.desc_size += it->desc_size;
-      desc.content_size += it->content_size;
+      TRACE("Adding contribution from sender '{}' for {}, ms_data_size: {}",
+            sender.sender_id, id, it->ms_data_size);
+      coll.sender_ids.push_back(sender.sender_id);
+      coll.ms_data_sizes.push_back(it->ms_data_size);
       sender.announced_st.erase(it);
     } else {
-      DEBUG("No contribution found for sender {} with ID: {}", sender.sender_id,
+      DEBUG("No contribution found for sender '{}' for {}", sender.sender_id,
             id);
     }
   }
-  return desc;
+  return coll;
 }
 
 void TsScheduler::report_status() {

@@ -1,7 +1,7 @@
 // Copyright 2025 Jan de Cuveland
 #pragma once
 
-#include "cstdint"
+#include <cstdint>
 
 static constexpr uint16_t DEFAULT_SCHEDULER_PORT = 13373;
 static constexpr uint16_t DEFAULT_SENDER_PORT = 13374;
@@ -13,7 +13,8 @@ static constexpr uint16_t DEFAULT_SENDER_PORT = 13374;
 static constexpr unsigned int AM_SENDER_REGISTER =
     20; // header: {sender_id}, data: none
 static constexpr unsigned int AM_SENDER_ANNOUNCE_ST =
-    21; // header: {StId, desc_size, content_size}, data: StDescriptor
+    21; // header: {StId, ms_data_size},
+        // data: StDescriptor
 static constexpr unsigned int AM_SENDER_RETRACT_ST =
     22; // header: {StId}, data: none
 // tssched -> stsender
@@ -37,7 +38,7 @@ static constexpr unsigned int AM_BUILDER_STATUS =
 */
 // tssched -> tsbuilder
 static constexpr unsigned int AM_SCHED_SEND_TS =
-    50; // header: {StId, desc_size, content_size}, data: StCollectionDescriptor
+    50; // header: {StId, ms_data_size}, data: StCollectionDescriptor
 
 // 3. stsender (listen) <-> tsbuilder (connect)
 // tsbuilder -> stsender
@@ -45,8 +46,8 @@ static constexpr unsigned int AM_BUILDER_REQUEST_ST =
     60; // header: {StId}, data: none
 // stsender -> tsbuilder
 static constexpr unsigned int AM_SENDER_SEND_ST =
-    70; // header: {StId, desc_size, content_size},
-        // data: {StDescriptor, StContent}
+    70; // header: {StId, sizeof(serialized StDescriptor), ms_data_size},
+        // data: {StDescriptor, ms_data}
 
 static constexpr uint64_t BUILDER_EVENT_NO_OP = 0;
 static constexpr uint64_t BUILDER_EVENT_ALLOCATED = 1;

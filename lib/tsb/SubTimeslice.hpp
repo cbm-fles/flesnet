@@ -54,7 +54,78 @@ enum class TsFlag : uint32_t {
   MissingSubtimeslices = 1 << 3,
 };
 
+// 1: sender only
+//
+// Internal structures for transferring subtimeslice memory handles to the
+// StSender
+
+struct StComponentHandle {
+  std::vector<ucp_dt_iov> ms_descriptors;
+  std::vector<ucp_dt_iov> ms_contents;
+  uint32_t flags = 0;
+
+  void set_flag(TsComponentFlag f) { flags |= static_cast<uint32_t>(f); }
+  void clear_flag(TsComponentFlag f) { flags &= ~static_cast<uint32_t>(f); }
+  [[nodiscard]] bool has_flag(TsComponentFlag f) const {
+    return (flags & static_cast<uint32_t>(f)) != 0;
+  }
+
+  /// The number of microslices, computed from the size of the microslice
+  /// descriptor data blocks
+  [[nodiscard]] uint32_t num_microslices() const {
+    return ms_descriptors_size() / sizeof(fles::MicrosliceDescriptor);
+  }
+
+  /// The number of microslice descriptor bytes
+  [[nodiscard]] uint64_t ms_descriptors_size() const {
+    uint64_t descriptors_size = 0;
+    for (const auto& sg : ms_descriptors) {
+      descriptors_size += sg.length;
+    }
+    return descriptors_size;
+  }
+
+  /// The number of microslice content bytes
+  [[nodiscard]] uint64_t ms_contents_size() const {
+    uint64_t contents_size = 0;
+    for (const auto& sg : ms_contents) {
+      contents_size += sg.length;
+    }
+    return contents_size;
+  }
+
+  /// Dump contents (for debugging).
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const StComponentHandle& i) {
+    return os << "StComponentHandle(num_microslices=" << i.num_microslices()
+              << ", flags=" << i.flags << ")";
+  }
+};
+
+struct StHandle {
+  uint64_t start_time_ns;
+  uint64_t duration_ns;
+  uint32_t flags;
+  std::vector<StComponentHandle> components;
+
+  void set_flag(TsFlag f) { flags |= static_cast<uint32_t>(f); }
+  void clear_flag(TsFlag f) { flags &= ~static_cast<uint32_t>(f); }
+  [[nodiscard]] bool has_flag(TsFlag f) const {
+    return (flags & static_cast<uint32_t>(f)) != 0;
+  }
+
+  /// Dump contents (for debugging)
+  friend std::ostream& operator<<(std::ostream& os, const StHandle& i) {
+    return os << "StHandle(start_time_ns=" << i.start_time_ns
+              << ", duration_ns=" << i.duration_ns << ", flags=" << i.flags
+              << ", components=...)";
+  }
+};
+
+// 2: sender -> builder and sender -> scheduler
+//
 // Descriptors for transferring subtimeslice data from the sender to the builder
+// (and to the scheduler, for statistics)
 
 struct DataRegion {
   std::ptrdiff_t offset;
@@ -86,7 +157,7 @@ struct StComponentDescriptor {
 
   // The size (in bytes) of the component (i.e., microslice descriptor +
   // content)
-  [[nodiscard]] uint64_t size() const {
+  [[nodiscard]] uint64_t ms_data_size() const {
     return ms_descriptors.size + ms_contents.size;
   }
 
@@ -121,12 +192,12 @@ struct StDescriptor {
 
   /// The total size (in bytes) of the subtimeslice (i.e., microslice
   /// descriptors + content of all contained components)
-  [[nodiscard]] uint64_t size() const {
-    uint64_t total_size = 0;
+  [[nodiscard]] uint64_t ms_data_size() const {
+    uint64_t total_ms_data_size = 0;
     for (const auto& component : components) {
-      total_size += component.size();
+      total_ms_data_size += component.ms_data_size();
     }
-    return total_size;
+    return total_ms_data_size;
   }
 
   friend class boost::serialization::access;
@@ -139,103 +210,38 @@ struct StDescriptor {
   }
 };
 
-// Internal structures for transferring subtimeslice memory handles to the
-// StSender
+// 3: scheduler -> builder
+//
+// Descriptor for transferring timeslice metadata from the scheduler to the
+// builder
 
-struct StComponentHandle {
-  std::vector<ucp_dt_iov> descriptors;
-  std::vector<ucp_dt_iov> contents;
-  uint32_t flags = 0;
-
-  void set_flag(TsComponentFlag f) { flags |= static_cast<uint32_t>(f); }
-  void clear_flag(TsComponentFlag f) { flags &= ~static_cast<uint32_t>(f); }
-  [[nodiscard]] bool has_flag(TsComponentFlag f) const {
-    return (flags & static_cast<uint32_t>(f)) != 0;
-  }
-
-  /// The number of microslices, computed from the size of the microslice
-  /// descriptor data blocks
-  [[nodiscard]] uint32_t num_microslices() const {
-    return descriptors_size() / sizeof(fles::MicrosliceDescriptor);
-  }
-
-  /// The number of descriptor bytes
-  [[nodiscard]] uint64_t descriptors_size() const {
-    uint64_t descriptors_size = 0;
-    for (const auto& sg : descriptors) {
-      descriptors_size += sg.length;
-    }
-    return descriptors_size;
-  }
-
-  /// The number of content bytes
-  [[nodiscard]] uint64_t contents_size() const {
-    uint64_t contents_size = 0;
-    for (const auto& sg : contents) {
-      contents_size += sg.length;
-    }
-    return contents_size;
-  }
-
-  /// Dump contents (for debugging).
-  friend std::ostream& operator<<(std::ostream& os,
-                                  const StComponentHandle& i) {
-    return os << "StComponentHandle(num_microslices=" << i.num_microslices()
-              << ", flags=" << i.flags << ")";
-  }
-};
-
-struct StHandle {
-  uint64_t start_time_ns;
-  uint64_t duration_ns;
-  uint32_t flags;
-  std::vector<StComponentHandle> components;
-
-  void set_flag(TsFlag f) { flags |= static_cast<uint32_t>(f); }
-  void clear_flag(TsFlag f) { flags &= ~static_cast<uint32_t>(f); }
-  [[nodiscard]] bool has_flag(TsFlag f) const {
-    return (flags & static_cast<uint32_t>(f)) != 0;
-  }
-
-  /// Dump contents (for debugging)
-  friend std::ostream& operator<<(std::ostream& os, const StHandle& i) {
-    return os << "StHandle(start_time_ns=" << i.start_time_ns
-              << ", duration_ns=" << i.duration_ns << ", flags=" << i.flags
-              << ", components=...)";
-  }
-};
-
-// Descriptors for transferring subtimeslice data from the sender to the builder
-
-struct TsContribution {
-  std::string sender_id; // ID of the sender
-  uint64_t desc_size;    // Size of the descriptor data
-  uint64_t content_size; // Size of the content data
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
-    ar & sender_id;
-    ar & desc_size;
-    ar & content_size;
-  }
-};
-
-struct StCollectionDescriptor {
+struct StCollection {
   TsID id = 0;
-  uint64_t desc_size = 0;
-  uint64_t content_size = 0;
 
-  std::vector<TsContribution> contributions;
+  std::vector<std::string> sender_ids; // IDs of the senders
+  std::vector<uint64_t> ms_data_sizes; // Sizes of the content data
+
+  /// The total size (in bytes) of the collection (i.e., microslice
+  /// descriptors + content of all contained components)
+  [[nodiscard]] uint64_t ms_data_size() const {
+    uint64_t total_ms_data_size = 0;
+    for (const auto& size : ms_data_sizes) {
+      total_ms_data_size += size;
+    }
+    return total_ms_data_size;
+  }
 
   friend class boost::serialization::access;
   template <class Archive>
   void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
     ar & id;
-    ar & contributions;
+    ar & sender_ids;
+    ar & ms_data_sizes;
   }
 };
 
+// 4: builder only
+//
 // Descriptor for storing timeslice data in a shared memory region
 
 struct TsDescriptorShm {

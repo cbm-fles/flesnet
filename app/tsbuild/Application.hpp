@@ -4,8 +4,7 @@
 #include "ItemDistributor.hpp"
 #include "Monitor.hpp"
 #include "Parameters.hpp"
-#include "Scheduler.hpp"
-#include "TimesliceBufferFlex.hpp"
+#include "TsBuffer.hpp"
 #include "TsBuilder.hpp"
 #include <csignal>
 #include <memory>
@@ -42,7 +41,7 @@ private:
   ItemDistributor item_distributor_;
 
   /// Shared memory buffer to store received timeslices.
-  TimesliceBufferFlex timeslice_buffer_;
+  TsBuffer timeslice_buffer_;
 
   /// Thread for the ItemDistributor.
   std::thread distributor_thread_;

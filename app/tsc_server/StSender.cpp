@@ -164,7 +164,7 @@ void StSender::connect_to_scheduler() {
   auto ep =
       ucx::util::connect(worker_, address, port, on_scheduler_error, this);
   if (!ep) {
-    ERROR("Failed to connect to scheduler at {}:{}", address, port);
+    ERROR("Failed to connect to scheduler at '{}:{}'", address, port);
     return;
   }
 
@@ -233,19 +233,15 @@ void StSender::send_announcement_to_scheduler(TsID id) {
   if (it == announced_.end()) {
     return;
   }
+  const auto& [st_descriptor_bytes, iov_vector] = it->second;
 
-  const auto& [descriptor_bytes, iov_vector] = it->second;
-  assert(iov_vector.size() > 0);
-  uint64_t desc_size = descriptor_bytes.size();
-  uint64_t content_size = 0;
+  uint64_t total_ms_data_size = 0;
   for (std::size_t i = 1; i < iov_vector.size(); ++i) {
-    content_size += iov_vector[i].length;
+    total_ms_data_size += iov_vector[i].length;
   }
-  std::array<uint64_t, 3> hdr{id, desc_size, content_size};
-
+  std::array<uint64_t, 3> hdr{id, total_ms_data_size};
   auto header = std::as_bytes(std::span(hdr));
-  auto buffer = std::span(static_cast<const std::byte*>(iov_vector[0].buffer),
-                          iov_vector[0].length);
+  auto buffer = std::as_bytes(std::span(st_descriptor_bytes));
 
   ucx::util::send_active_message(
       scheduler_ep_, AM_SENDER_ANNOUNCE_ST, header, buffer,
@@ -269,10 +265,6 @@ ucs_status_t StSender::handle_scheduler_release(
     [[maybe_unused]] void* data,
     size_t length,
     [[maybe_unused]] const ucp_am_recv_param_t* param) {
-  TRACE(
-      "Received scheduler release ST with header length {} and data length {}",
-      header_length, length);
-
   if (header_length != sizeof(uint64_t) || length != 0) {
     ERROR("Invalid scheduler request received");
     return UCS_OK;
@@ -281,11 +273,11 @@ ucs_status_t StSender::handle_scheduler_release(
   auto id = *static_cast<const uint64_t*>(header);
   auto it = announced_.find(id);
   if (it != announced_.end()) {
-    DEBUG("Removing released SubTimeslice with ID: {}", id);
+    DEBUG("Removing released subtimeslice {}", id);
     announced_.erase(it);
     complete_subtimeslice(id);
   } else {
-    WARN("Release for unknown SubTimeslice ID: {}", id);
+    WARN("Release for unknown subtimeslice {}", id);
   }
   return UCS_OK;
 }
@@ -309,7 +301,7 @@ void StSender::handle_new_connection(ucp_conn_request_h conn_request) {
   }
 
   connections_[*ep] = *client_address;
-  DEBUG("Accepted connection from {}", *client_address);
+  DEBUG("Accepted connection from '{}'", *client_address);
 }
 
 void StSender::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
@@ -317,7 +309,7 @@ void StSender::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
 
   auto it = connections_.find(ep);
   if (it != connections_.end()) {
-    INFO("Removing disconnected endpoint: {}", it->second);
+    INFO("Removing disconnected endpoint '{}'", it->second);
     connections_.erase(it);
   } else {
     ERROR("Received error for unknown endpoint");
@@ -329,12 +321,9 @@ void StSender::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
 ucs_status_t
 StSender::handle_builder_request(const void* header,
                                  size_t header_length,
-                                 void* /* data */,
+                                 [[maybe_unused]] void* data,
                                  size_t length,
                                  const ucp_am_recv_param_t* param) {
-  TRACE("Received builder request ST with header length {} and data length {}",
-        header_length, length);
-
   if (header_length != sizeof(uint64_t) || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
     ERROR("Invalid builder request received");
@@ -349,7 +338,7 @@ StSender::handle_builder_request(const void* header,
 void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
   auto it = announced_.find(id);
   if (it == announced_.end()) {
-    WARN("SubTimeslice with ID {} not found", id);
+    WARN("Subtimeslice {} not found", id);
     std::array<uint64_t, 3> hdr{id, 0, 0};
     auto header = std::as_bytes(std::span(hdr));
     ucx::util::send_active_message(
@@ -369,13 +358,13 @@ void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
   req_param.datatype = ucp_dt_make_iov();
 
   // Prepare header data
-  const auto& [descriptor_bytes, iov_vector] = it->second;
-  uint64_t desc_size = descriptor_bytes.size();
-  uint64_t content_size = 0;
+  const auto& [st_descriptor_bytes, iov_vector] = it->second;
+  uint64_t st_descriptor_size = st_descriptor_bytes.size();
+  uint64_t ms_data_size = 0;
   for (std::size_t i = 1; i < iov_vector.size(); ++i) {
-    content_size += iov_vector[i].length;
+    ms_data_size += iov_vector[i].length;
   }
-  std::array<uint64_t, 3> hdr{id, desc_size, content_size};
+  std::array<uint64_t, 3> hdr{id, st_descriptor_size, ms_data_size};
 
   // Send the data
   ucs_status_ptr_t request =
@@ -391,7 +380,7 @@ void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
 
   if (request == nullptr) {
     // Operation has completed successfully in-place
-    TRACE("Active message sent successfully");
+    TRACE("Active message sent successfully in-place");
     return;
   }
 
@@ -464,13 +453,14 @@ std::size_t StSender::process_queues() {
 
 void StSender::process_announcement(TsID id, const StHandle& sth) {
   // Create and serialize subtimeslice
-  StDescriptor descriptor = create_subtimeslice_descriptor(sth);
-  auto descriptor_bytes = to_bytes(descriptor);
+  StDescriptor st_descriptor = create_subtimeslice_descriptor(sth);
+  auto st_descriptor_bytes = to_bytes(st_descriptor);
 
-  std::vector<ucp_dt_iov> iov_vector = create_iov_vector(sth, descriptor_bytes);
+  std::vector<ucp_dt_iov> iov_vector =
+      create_iov_vector(sth, st_descriptor_bytes);
 
   // Store for future use (and retention during send)
-  announced_[id] = {std::move(descriptor_bytes), std::move(iov_vector)};
+  announced_[id] = {std::move(st_descriptor_bytes), std::move(iov_vector)};
 
   // Ensure that the first iov component points to the string data
   assert(announced_[id].second.front().buffer == announced_[id].first.data());
@@ -482,12 +472,12 @@ void StSender::process_announcement(TsID id, const StHandle& sth) {
 void StSender::process_retraction(TsID id) {
   auto it = announced_.find(id);
   if (it != announced_.end()) {
-    DEBUG("Retracting SubTimeslice with ID: {}", id);
+    DEBUG("Retracting subtimeslice {}", id);
     announced_.erase(it);
     send_retraction_to_scheduler(id);
     complete_subtimeslice(id);
   } else {
-    WARN("Attempted to retract unknown SubTimeslice ID: {}", id);
+    WARN("Attempted to retract unknown subtimeslice {}", id);
   }
 }
 
@@ -502,7 +492,7 @@ void StSender::complete_subtimeslice(TsID id) {
 
 void StSender::flush_announced() {
   for (const auto& [id, st] : announced_) {
-    DEBUG("Flushing announced SubTimeslice with ID: {}", id);
+    DEBUG("Flushing announced subtimeslice {}", id);
     complete_subtimeslice(id);
   }
   announced_.clear();
@@ -511,10 +501,10 @@ void StSender::flush_announced() {
 // Helper methods
 
 // Create subtimeslice structure for transmission to scheduler and builders.
-// It contains, for each component, the offset and size of the
-// descriptors and contents data blocks. The offsets are relative to the start
-// of the overall data block and assume that all blocks are contiguous in
-// memory.
+// It contains, for each component, the offset and size of the microslice
+// descriptors and microslice contents data blocks. The offsets are relative to
+// the start of the overall data block and assume that all blocks are contiguous
+// in memory.
 StDescriptor StSender::create_subtimeslice_descriptor(const StHandle& sth) {
   StDescriptor d;
   d.start_time_ns = sth.start_time_ns;
@@ -526,14 +516,14 @@ StDescriptor StSender::create_subtimeslice_descriptor(const StHandle& sth) {
     std::size_t descriptors_size = 0;
     // Simply add all sizes as the blocks will be contiguous in memory after
     // transferring to the builder
-    for (auto descriptor : c.descriptors) {
+    for (auto descriptor : c.ms_descriptors) {
       descriptors_size += descriptor.length;
     }
     const DataRegion descriptor = {offset, descriptors_size};
     offset += descriptors_size;
 
     std::size_t content_size = 0;
-    for (auto content : c.contents) {
+    for (auto content : c.ms_contents) {
       // Simply add all sizes as the blocks will be contiguous in memory after
       // transferring to the builder
       content_size += content.length;
@@ -560,10 +550,10 @@ StSender::create_iov_vector(const StHandle& sth,
 
   // Add component data from shared memory
   for (const auto& c : sth.components) {
-    for (const auto& iov : c.descriptors) {
+    for (const auto& iov : c.ms_descriptors) {
       iov_vector.push_back(iov);
     }
-    for (const auto& iov : c.contents) {
+    for (const auto& iov : c.ms_contents) {
       iov_vector.push_back(iov);
     }
   }

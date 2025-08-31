@@ -1,6 +1,6 @@
 // Copyright 2016-2020 Jan de Cuveland <cmail@cuveland.de>
 
-#include "TimesliceBufferFlex.hpp"
+#include "TsBuffer.hpp"
 #include "SubTimeslice.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -12,10 +12,10 @@ namespace zmq {
 class context_t;
 }
 
-TimesliceBufferFlex::TimesliceBufferFlex(zmq::context_t& context,
-                                         const std::string& distributor_address,
-                                         std::string shm_identifier,
-                                         std::size_t buffer_size)
+TsBuffer::TsBuffer(zmq::context_t& context,
+                   const std::string& distributor_address,
+                   std::string shm_identifier,
+                   std::size_t buffer_size)
     : ItemProducer(context, distributor_address),
       shm_identifier_(std::move(shm_identifier)), buffer_size_(buffer_size) {
   boost::uuids::random_generator uuid_gen;
@@ -37,14 +37,14 @@ TimesliceBufferFlex::TimesliceBufferFlex(zmq::context_t& context,
   DEBUG("Shared memory segment '{}' initialized", shm_identifier_);
 }
 
-TimesliceBufferFlex::~TimesliceBufferFlex() {
+TsBuffer::~TsBuffer() {
   INFO("Removing shared memory segment '{}'", shm_identifier_);
   boost::interprocess::shared_memory_object::remove(shm_identifier_.c_str());
 }
 
-void TimesliceBufferFlex::send_work_item(std::byte* buffer,
-                                         TsID id,
-                                         const StDescriptor& ts_desc) {
+void TsBuffer::send_work_item(std::byte* buffer,
+                              TsID id,
+                              const StDescriptor& ts_desc) {
   TsDescriptorShm item;
   item.shm_uuid = shm_uuid_;
   item.shm_identifier = shm_identifier_;

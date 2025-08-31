@@ -19,20 +19,20 @@ class context_t;
 }
 
 /// Timeslice buffer container class.
-/** A TimesliceBufferFlex object represents the build node's timeslice buffer
+/** A TsBuffer object represents the build node's timeslice buffer
  */
 
-class TimesliceBufferFlex : public ItemProducer {
+class TsBuffer : public ItemProducer {
 public:
-  TimesliceBufferFlex(zmq::context_t& context,
-                      const std::string& distributor_address,
-                      std::string shm_identifier,
-                      std::size_t buffer_size);
+  TsBuffer(zmq::context_t& context,
+           const std::string& distributor_address,
+           std::string shm_identifier,
+           std::size_t buffer_size);
 
-  TimesliceBufferFlex(const TimesliceBufferFlex&) = delete;
-  void operator=(const TimesliceBufferFlex&) = delete;
+  TsBuffer(const TsBuffer&) = delete;
+  void operator=(const TsBuffer&) = delete;
 
-  ~TimesliceBufferFlex();
+  ~TsBuffer();
 
   [[nodiscard]] std::size_t get_size() const { return buffer_size_; }
 

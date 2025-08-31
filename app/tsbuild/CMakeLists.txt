@@ -4,6 +4,7 @@ add_executable(tsbuild
   main.cpp
   Application.cpp
   Parameters.cpp
+  TsBuffer.cpp
   TsBuilder.cpp
 )
 

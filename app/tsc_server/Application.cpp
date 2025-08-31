@@ -237,13 +237,11 @@ void Application::provide_subtimeslice(
     uint64_t start_time,
     uint64_t duration) {
 
-  // Create a SubTimesliceDescriptor
   StHandle st;
   st.start_time_ns = start_time;
   st.duration_ns = duration;
   st.flags = 0;
 
-  // Create SubTimesliceComponentDescriptors for each component
   for (size_t i = 0; i < channels_.size(); ++i) {
     auto& channel = channels_[i];
     auto state = states[i];
@@ -272,8 +270,8 @@ void Application::provide_subtimeslice(
   component_count_ += st.components.size();
   for (const auto& comp : st.components) {
     microslice_count_ += comp.num_microslices();
-    content_bytes_ += comp.contents_size();
-    total_bytes_ += comp.descriptors_size() + comp.contents_size();
+    content_bytes_ += comp.ms_contents_size();
+    total_bytes_ += comp.ms_descriptors_size() + comp.ms_contents_size();
   }
   if (st.has_flag(TsFlag::MissingComponents)) {
     ++timeslice_incomplete_count_;

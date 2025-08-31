@@ -22,8 +22,7 @@ struct SenderConnection {
   ucp_ep_h ep;
   struct StDesc {
     TsID id;
-    uint64_t desc_size;
-    uint64_t content_size;
+    uint64_t ms_data_size;
   };
   std::deque<StDesc> announced_st;
   TsID last_received_st = 0;
@@ -105,11 +104,11 @@ private:
                                      void* data,
                                      size_t length,
                                      const ucp_am_recv_param_t* param);
-  void send_timeslice_to_builder(const StCollectionDescriptor& desc,
+  void send_timeslice_to_builder(const StCollection& coll,
                                  BuilderConnection& builder);
 
   // Helper methods
-  StCollectionDescriptor create_collection_descriptor(TsID id);
+  StCollection create_collection_descriptor(TsID id);
   void report_status();
 
   // UCX static callbacks (trampolines)

@@ -5,10 +5,11 @@
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
 #include "System.hpp"
-#include "TimesliceBufferFlex.hpp"
+#include "TsBuffer.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <numeric>
 #include <string_view>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
@@ -31,27 +32,18 @@ enum class StState : uint8_t {
 };
 
 struct TsHandle {
-  TsHandle(std::byte* buffer, StCollectionDescriptor desc)
-      : id(desc.id), allocated_at_ns(fles::system::current_time_ns()),
-        buffer(buffer), contributions(std::move(desc.contributions)),
-        offsets(contributions.size()), iovectors(contributions.size()),
-        descriptors(contributions.size()), states(contributions.size()) {
-    // Compute offsets from TsContribution.content_size
-    offsets.resize(contributions.size());
-    std::size_t offset = 0;
-    for (std::size_t i = 0; i < contributions.size(); ++i) {
-      offsets[i] = offset;
-      offset += contributions[i].content_size;
-    }
-    // Initialize serialized_descriptors and iovectors
-    iovectors.resize(contributions.size());
-    serialized_descriptors.resize(contributions.size());
-    for (std::size_t i = 0; i < contributions.size(); ++i) {
-      serialized_descriptors[i].resize(contributions[i].desc_size);
-      iovectors[i][0] = {serialized_descriptors[i].data(),
-                         contributions[i].desc_size};
-      iovectors[i][1] = {buffer + offsets[i], contributions[i].content_size};
-    }
+  TsHandle(std::byte* buffer, StCollection contributions)
+      : id(contributions.id), allocated_at_ns(fles::system::current_time_ns()),
+        buffer(buffer), sender_ids(std::move(contributions.sender_ids)),
+        ms_data_sizes(std::move(contributions.ms_data_sizes)),
+        offsets(sender_ids.size()), iovectors(sender_ids.size()),
+        serialized_descriptors(sender_ids.size()),
+        descriptors(sender_ids.size()), states(sender_ids.size()) {
+    // Initialize offsets
+    std::partial_sum(ms_data_sizes.begin(), ms_data_sizes.end() - 1,
+                     offsets.begin() + 1);
+    // Initialize states
+    std::fill(states.begin(), states.end(), StState::Allocated);
   }
 
   // Cannot be moved or copied (pointer to data is used by ucx)
@@ -62,7 +54,8 @@ struct TsHandle {
   const uint64_t allocated_at_ns;
   uint64_t published_at_ns = 0;
   std::byte* const buffer;
-  std::vector<TsContribution> contributions;
+  std::vector<std::string> sender_ids; // IDs of the senders
+  std::vector<uint64_t> ms_data_sizes; // Sizes of the content data
   std::vector<uint64_t> offsets;
   std::vector<std::array<ucp_dt_iov, 2>> iovectors;
   std::vector<std::vector<std::byte>> serialized_descriptors;
@@ -73,7 +66,7 @@ struct TsHandle {
 
 class TsBuilder {
 public:
-  TsBuilder(TimesliceBufferFlex& timeslice_buffer,
+  TsBuilder(TsBuffer& timeslice_buffer,
             std::string_view scheduler_address,
             int64_t timeout_ns,
             cbm::Monitor* monitor);
@@ -83,7 +76,7 @@ public:
 
 private:
   Scheduler tasks_;
-  TimesliceBufferFlex& timeslice_buffer_;
+  TsBuffer& timeslice_buffer_;
 
   std::string scheduler_address_;
   int64_t timeout_ns_;

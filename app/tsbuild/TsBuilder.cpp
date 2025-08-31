@@ -23,7 +23,7 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
-TsBuilder::TsBuilder(TimesliceBufferFlex& timeslice_buffer,
+TsBuilder::TsBuilder(TsBuffer& timeslice_buffer,
                      std::string_view scheduler_address,
                      int64_t timeout_ns,
                      cbm::Monitor* monitor)
@@ -111,7 +111,8 @@ void TsBuilder::connect_to_scheduler() {
   auto ep =
       ucx::util::connect(worker_, address, port, on_scheduler_error, this);
   if (!ep) {
-    WARN("Failed to connect to scheduler at {}:{}, will retry", address, port);
+    WARN("Failed to connect to scheduler at '{}:{}', will retry", address,
+         port);
     return;
   }
 
@@ -202,43 +203,32 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
     void* data,
     size_t length,
     [[maybe_unused]] const ucp_am_recv_param_t* param) {
-  TRACE("Received TS from scheduler with header length {} and data length {}",
-        header_length, length);
-
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
-  if (hdr.size() != 3 || length == 0) {
-    ERROR("Invalid scheduler TS received");
+  if (hdr.size() != 2 || length == 0) {
+    ERROR("Received invalid subtimeslice collection from scheduler");
     return UCS_OK;
   }
 
   const uint64_t id = hdr[0];
-  const uint64_t desc_size = hdr[1];
-  const uint64_t content_size = hdr[2];
-
-  if (desc_size != length) {
-    ERROR("Invalid header data in scheduler TS with ID: {}", id);
-    ERROR("desc_size: {}, length: {}", desc_size, length);
-    ERROR("contant_size: {}", content_size);
-    return UCS_OK;
-  }
+  const uint64_t ms_data_size = hdr[1];
 
   if (ts_handles_.contains(id)) {
-    ERROR("Received duplicate TS with ID: {}", id);
+    ERROR("Received duplicate subtimeslice collection for {}", id);
     return UCS_OK;
   }
 
-  auto desc = to_obj_nothrow<StCollectionDescriptor>(
-      std::span(static_cast<const std::byte*>(data), desc_size));
+  auto desc = to_obj_nothrow<StCollection>(
+      std::span(static_cast<const std::byte*>(data), length));
   if (!desc) {
-    ERROR("Failed to deserialize TS descriptor for TS with ID: {}", id);
+    ERROR("Failed to deserialize subtimeslice collection for {}", id);
     return UCS_OK;
   }
 
   // Try to allocate memory for the content
-  auto* buffer = timeslice_buffer_.allocate(content_size);
+  auto* buffer = timeslice_buffer_.allocate(ms_data_size);
   if (buffer == nullptr) {
-    INFO("Failed to allocate memory for TS with ID: {}", id);
+    INFO("Failed to allocate memory for timeslice {}", id);
     send_status_to_scheduler(BUILDER_EVENT_OUT_OF_MEMORY, id);
     return UCS_OK;
   }
@@ -248,13 +238,12 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
   timeslice_count_++;
   send_status_to_scheduler(BUILDER_EVENT_ALLOCATED, id);
 
-  DEBUG(
-      "Received TS from scheduler with ID: {}, desc size: {}, content size: {}",
-      id, desc_size, content_size);
+  DEBUG("Received subtimeslice collection for {}, ms_data_size: {}", id,
+        ms_data_size);
 
   // Ask senders for the contributions
-  for (std::size_t i = 0; i < tsh.contributions.size(); ++i) {
-    send_request_to_sender(tsh.contributions[i].sender_id, id);
+  for (std::size_t i = 0; i < tsh.sender_ids.size(); ++i) {
+    send_request_to_sender(tsh.sender_ids[i], id);
     update_st_state(tsh, i, StState::Requested);
   }
 
@@ -281,7 +270,7 @@ void TsBuilder::connect_to_sender(const std::string& sender_id) {
   auto ep =
       ucx::util::connect(worker_, address, port, on_scheduler_error, this);
   if (!ep) {
-    ERROR("Failed to connect to sender at {}:{}", address, port);
+    ERROR("Failed to connect to sender at '{}:{}'", address, port);
     return;
   }
 
@@ -297,7 +286,7 @@ void TsBuilder::handle_sender_error(ucp_ep_h ep, ucs_status_t status) {
   ucx::util::close_endpoint(worker_, ep, true);
 
   auto sender = ep_to_sender_[ep];
-  INFO("Sender {} disconnected: {}", sender, status);
+  INFO("Sender '{}' disconnected: {}", sender, status);
 
   ep_to_sender_.erase(ep);
   sender_to_ep_.erase(sender);
@@ -317,7 +306,7 @@ void TsBuilder::disconnect_from_senders() {
 
 void TsBuilder::send_request_to_sender(const std::string& sender_id, TsID id) {
   if (!sender_to_ep_.contains(sender_id)) {
-    DEBUG("Connecting to sender: {}", sender_id);
+    DEBUG("Connecting to sender '{}'", sender_id);
     connect_to_sender(sender_id);
     if (!sender_to_ep_.contains(sender_id)) {
       return;
@@ -339,69 +328,64 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
                                            void* data,
                                            size_t length,
                                            const ucp_am_recv_param_t* param) {
-  TRACE("Received sender ST data with header length {} and data length {}",
-        header_length, length);
-
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
   if (hdr.size() != 3 || length == 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FLAG_RNDV) == 0u) {
-    ERROR("Invalid sender ST data received");
+    ERROR("Invalid subtimeslice data received");
     return UCS_OK;
   }
 
   const uint64_t id = hdr[0];
-  const uint64_t desc_size = hdr[1];
-  const uint64_t content_size = hdr[2];
+  const uint64_t st_descriptor_size = hdr[1];
+  const uint64_t ms_data_size = hdr[2];
 
-  if (desc_size != length) {
-    ERROR("Invalid header data in sender ST announcement");
+  if (st_descriptor_size + ms_data_size != length) {
+    ERROR("Invalid header data in subtimeslice data received");
     return UCS_OK;
   }
 
   // Check if we have a sender connection for this endpoint
   ucp_ep_h ep = param->reply_ep;
   if (!ep_to_sender_.contains(ep)) {
-    ERROR("Received ST data from unknown sender endpoint");
+    ERROR("Received subtimeslice data from unknown sender endpoint");
     return UCS_OK;
   }
   const std::string& sender_id = ep_to_sender_.at(ep);
 
   // Check if we have a handler for this TS id
   if (!ts_handles_.contains(id)) {
-    ERROR("Received ST data for unknown TS ID: {}", id);
+    ERROR("Received subtimeslice data for unknown timeslice {}", id);
     return UCS_OK;
   }
   auto& tsh = *ts_handles_.at(id);
 
   // Check if we have a contribution for this sender
-  auto contribution_it =
-      std::find_if(tsh.contributions.begin(), tsh.contributions.end(),
-                   [sender_id](const TsContribution& c) {
-                     return c.sender_id == sender_id;
-                   });
-  if (contribution_it == tsh.contributions.end()) {
-    ERROR("Received ST data from unknown sender: {} for TS ID: {}", sender_id,
-          id);
+  auto sender_id_it =
+      std::find(tsh.sender_ids.begin(), tsh.sender_ids.end(), sender_id);
+  if (sender_id_it == tsh.sender_ids.end()) {
+    ERROR("Received subtimeslice data from unknown sender '{}' for {}",
+          sender_id, id);
     return UCS_OK;
   }
-  std::size_t contribution_index =
-      std::distance(tsh.contributions.begin(), contribution_it);
+  std::size_t ci = std::distance(tsh.sender_ids.begin(), sender_id_it);
 
-  if (desc_size != contribution_it->desc_size ||
-      content_size != contribution_it->content_size) {
-    ERROR(
-        "Invalid ST data sizes from sender {} for TS ID: {}, expected desc "
-        "size: {}, content size: {}, received desc size: {}, content size: {}",
-        sender_id, id, contribution_it->desc_size,
-        contribution_it->content_size, desc_size, content_size);
-    update_st_state(tsh, contribution_index, StState::Failed);
+  if (ms_data_size != tsh.ms_data_sizes[ci]) {
+    ERROR("Unexpected ms_data_size from sender '{}' for {}, expected: "
+          "{}, received: {}",
+          sender_id, id, tsh.ms_data_sizes[ci], ms_data_size);
+    update_st_state(tsh, ci, StState::Failed);
     return UCS_OK;
   }
 
   // RNDV receive: First desc_size bytes are the serialized StDescriptor,
   // remaining bytes are the content
+  tsh.serialized_descriptors[ci].resize(st_descriptor_size);
+  tsh.iovectors[ci][0] = {tsh.serialized_descriptors[ci].data(),
+                          st_descriptor_size};
+  tsh.iovectors[ci][1] = {tsh.buffer + tsh.offsets[ci], tsh.ms_data_sizes[ci]};
+
   ucp_request_param_t req_param{};
   req_param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
                            UCP_OP_ATTR_FIELD_USER_DATA |
@@ -410,31 +394,31 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
   req_param.user_data = this;
   req_param.datatype = ucp_dt_make_iov();
 
-  update_st_state(tsh, contribution_index, StState::Receiving);
-  ucs_status_ptr_t request = ucp_am_recv_data_nbx(
-      worker_, data, tsh.iovectors[contribution_index].data(),
-      tsh.iovectors[contribution_index].size(), &req_param);
+  update_st_state(tsh, ci, StState::Receiving);
+  ucs_status_ptr_t request =
+      ucp_am_recv_data_nbx(worker_, data, tsh.iovectors[ci].data(),
+                           tsh.iovectors[ci].size(), &req_param);
 
   if (UCS_PTR_IS_ERR(request)) {
     ucs_status_t status = UCS_PTR_STATUS(request);
-    ERROR("Failed to receive ST data from sender {} for TS ID: {}, error: {}",
+    ERROR("Failed to receive subtimeslice data from sender '{}' for {}: {}",
           sender_id, id, status);
-    update_st_state(tsh, contribution_index, StState::Failed);
+    update_st_state(tsh, ci, StState::Failed);
     return UCS_OK;
   }
 
   if (request == nullptr) {
     // Operation has completed successfully in-place
-    update_st_state(tsh, contribution_index, StState::Complete);
-    TRACE(
-        "Received ST data from sender {} for TS ID: {}, desc size: {}, content "
-        "size: {}",
-        sender_id, id, desc_size, content_size);
+    update_st_state(tsh, ci, StState::Complete);
+    TRACE("Received subtimeslice data from sender '{}' for {}, "
+          "st_descriptor_size: "
+          "{}, ms_data_size: {}",
+          sender_id, id, st_descriptor_size, ms_data_size);
     return UCS_OK;
   }
 
-  active_data_recv_requests_[request] = {id, contribution_index};
-  TRACE("Started receiving ST data from sender {}", sender_id);
+  active_data_recv_requests_[request] = {id, ci};
+  TRACE("Started receiving subtimeslice data from sender '{}'", sender_id);
 
   return UCS_OK;
 }
@@ -452,22 +436,22 @@ void TsBuilder::handle_sender_data_recv_complete(
   if (!active_data_recv_requests_.contains(request)) {
     ERROR("Received completion for unknown data recv request");
   } else {
-    auto [id, contribution_index] = active_data_recv_requests_.at(request);
+    auto [id, ci] = active_data_recv_requests_.at(request);
 
     if (!ts_handles_.contains(id)) {
-      ERROR("Received completion for unknown TS ID: {}", id);
+      ERROR("Received completion for unknown TS {}", id);
       return;
     }
     auto& tsh = *ts_handles_.at(id);
-    if (contribution_index >= tsh.contributions.size()) {
-      ERROR("Received completion for unknown contribution index: {} for TS ID: "
-            "{}",
-            contribution_index, id);
+    if (ci >= tsh.ms_data_sizes.size()) {
+      ERROR("Received completion for unknown contribution index {} for "
+            "timeslice {}",
+            ci, id);
       return;
     }
     component_count_++;
-    byte_count_ += tsh.contributions[contribution_index].content_size;
-    update_st_state(tsh, contribution_index, StState::Complete);
+    byte_count_ += tsh.ms_data_sizes[ci];
+    update_st_state(tsh, ci, StState::Complete);
     active_data_recv_requests_.erase(request);
   }
 
@@ -480,13 +464,13 @@ void TsBuilder::handle_sender_data_recv_complete(
 
 void TsBuilder::process_completion(TsID id) {
   if (!ts_handles_.contains(id)) {
-    ERROR("Received completion for unknown TS ID: {}", id);
+    ERROR("Received completion for unknown timeslice {}", id);
     return;
   }
   timeslice_buffer_.deallocate(ts_handles_.at(id)->buffer);
   ts_handles_.erase(id);
   send_status_to_scheduler(BUILDER_EVENT_RELEASED, id);
-  DEBUG("Processed TS completion for ID: {}", id);
+  DEBUG("Processed timeslice completion for {}", id);
 }
 
 // Helper methods
@@ -504,7 +488,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
     auto desc = to_obj_nothrow<StDescriptor>(
         std::span(tsh.serialized_descriptors[contribution_index]));
     if (!desc) {
-      ERROR("Failed to deserialize ST descriptor for TS with ID: {}", tsh.id);
+      ERROR("Failed to deserialize subtimeslice descriptor for TS {}", tsh.id);
       update_st_state(tsh, contribution_index, StState::Failed);
       return;
     }
@@ -522,10 +506,10 @@ void TsBuilder::update_st_state(TsHandle& tsh,
         tsh.is_published = true;
         tsh.published_at_ns = fles::system::current_time_ns();
         if (ts_desc.has_flag(TsFlag::MissingSubtimeslices)) {
-          INFO("Published incomplete TS with ID: {}", tsh.id);
+          INFO("Published incomplete timeslice {}", tsh.id);
           timeslice_incomplete_count_++;
         } else {
-          DEBUG("Published complete TS with ID: {}", tsh.id);
+          DEBUG("Published complete timeslice {}", tsh.id);
         }
       }
     }
@@ -534,7 +518,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
 
 StDescriptor TsBuilder::create_timeslice_descriptor(TsHandle& tsh) {
   StDescriptor d{};
-  for (std::size_t i = 0; i < tsh.contributions.size(); ++i) {
+  for (std::size_t i = 0; i < tsh.sender_ids.size(); ++i) {
     if (tsh.states[i] != StState::Complete) {
       d.set_flag(TsFlag::MissingSubtimeslices);
       continue;
