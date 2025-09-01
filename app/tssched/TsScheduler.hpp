@@ -74,6 +74,7 @@ private:
   // Connection management
   void handle_new_connection(ucp_conn_request_h conn_request);
   void handle_endpoint_error(ucp_ep_h ep, ucs_status_t status);
+  void disconnect_from_all();
 
   // Sender message handling
   ucs_status_t handle_sender_register(const void* header,

@@ -116,6 +116,7 @@ void TsScheduler::operator()(std::stop_token stop_token) {
     ucp_listener_destroy(listener_);
     listener_ = nullptr;
   }
+  disconnect_from_all();
   ucx::util::cleanup(context_, worker_);
 }
 
@@ -184,6 +185,17 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
     DEBUG("Removing disconnected builder '{}'", it->id);
     builders_.erase(it);
   }
+}
+
+void TsScheduler::disconnect_from_all() {
+  for (auto& [ep, _] : connections_) {
+    ucx::util::close_endpoint(worker_, ep, true);
+  }
+  INFO("Disconnected from all senders and builders");
+
+  connections_.clear();
+  senders_.clear();
+  builders_.clear();
 }
 
 // Sender message handling

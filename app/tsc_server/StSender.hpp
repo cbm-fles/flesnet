@@ -98,6 +98,7 @@ private:
                                       const ucp_am_recv_param_t* param);
   void send_subtimeslice_to_builder(TsID id, ucp_ep_h ep);
   void handle_builder_send_complete(void* request, ucs_status_t status);
+  void disconnect_from_builders();
 
   // Queue processing
   void notify_queue_update() const;

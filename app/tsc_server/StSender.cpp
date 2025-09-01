@@ -138,6 +138,7 @@ void StSender::operator()(std::stop_token stop_token) {
     listener_ = nullptr;
   }
   disconnect_from_scheduler();
+  disconnect_from_builders();
   ucx::util::cleanup(context_, worker_);
 }
 
@@ -409,6 +410,15 @@ void StSender::handle_builder_send_complete(void* request,
   if (request != nullptr) {
     ucp_request_free(request);
   }
+}
+
+void StSender::disconnect_from_builders() {
+  for (auto& [ep, _] : connections_) {
+    ucx::util::close_endpoint(worker_, ep, true);
+  }
+  INFO("Disconnected from all builders");
+
+  connections_.clear();
 }
 
 // Queue processing
