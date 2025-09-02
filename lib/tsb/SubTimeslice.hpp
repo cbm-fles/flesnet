@@ -12,6 +12,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_serialize.hpp>
+#include <format>
 #include <log.hpp>
 #include <span>
 #include <string>
@@ -237,6 +238,38 @@ struct StCollection {
     ar & id;
     ar & sender_ids;
     ar & ms_data_sizes;
+  }
+};
+
+// Specialize std::formatter for std::vector to simplify debugging
+template <typename T> struct std::formatter<std::vector<T>> {
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+  auto format(const std::vector<T>& vec, format_context& ctx) const {
+    auto out = ctx.out();
+    *out++ = '[';
+
+    bool first = true;
+    for (const auto& item : vec) {
+      if (!first) {
+        *out++ = ',';
+        *out++ = ' ';
+      }
+      first = false;
+      out = std::format_to(out, "{}", item);
+    }
+
+    *out++ = ']';
+    return out;
+  }
+};
+
+// Specialize std::formatter for StCollection to simplify debugging
+template <> struct std::formatter<StCollection> {
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+  auto format(const StCollection& sc, format_context& ctx) const {
+    return std::format_to(
+        ctx.out(), "StCollection(id={}, sender_ids={}, ms_data_sizes={})",
+        sc.id, sc.sender_ids, sc.ms_data_sizes);
   }
 };
 

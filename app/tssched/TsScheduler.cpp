@@ -122,6 +122,7 @@ void TsScheduler::operator()(std::stop_token stop_token) {
 
 void TsScheduler::send_timeslice(TsID id) {
   StCollection coll = create_collection_descriptor(id);
+  DEBUG("Processing timeslice {}: {}", id, coll);
   if (coll.sender_ids.empty()) {
     WARN("No contributions found for timeslice {}", id);
     return;
@@ -185,6 +186,9 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
     DEBUG("Removing disconnected builder '{}'", it->id);
     builders_.erase(it);
   }
+
+  // Fail any in-progress timeslice allocations that involved this endpoint
+  // (TODO: not implemented yet)
 }
 
 void TsScheduler::disconnect_from_all() {
@@ -387,7 +391,7 @@ TsScheduler::handle_builder_status(const void* header,
 
 void TsScheduler::send_timeslice_to_builder(const StCollection& coll,
                                             BuilderConnection& builder) {
-  std::array<uint64_t, 3> hdr{coll.id, coll.ms_data_size()};
+  std::array<uint64_t, 2> hdr{coll.id, coll.ms_data_size()};
   auto header = std::as_bytes(std::span(hdr));
   auto buffer = std::make_unique<std::vector<std::byte>>(to_bytes(coll));
   auto* raw_ptr = buffer.release();
@@ -417,7 +421,7 @@ StCollection TsScheduler::create_collection_descriptor(TsID id) {
       coll.ms_data_sizes.push_back(it->ms_data_size);
       sender.announced_st.erase(it);
     } else {
-      DEBUG("No contribution found for sender '{}' for {}", sender.sender_id,
+      DEBUG("No contribution found from sender '{}' for {}", sender.sender_id,
             id);
     }
   }

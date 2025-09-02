@@ -240,9 +240,12 @@ void StSender::send_announcement_to_scheduler(TsID id) {
   for (std::size_t i = 1; i < iov_vector.size(); ++i) {
     total_ms_data_size += iov_vector[i].length;
   }
-  std::array<uint64_t, 3> hdr{id, total_ms_data_size};
+  std::array<uint64_t, 2> hdr{id, total_ms_data_size};
   auto header = std::as_bytes(std::span(hdr));
   auto buffer = std::as_bytes(std::span(st_descriptor_bytes));
+  DEBUG("Announcing subtimeslice {} to scheduler", id);
+  DEBUG("StDescriptor size: {}, total_ms_data_size: {}", buffer.size(),
+        total_ms_data_size);
 
   ucx::util::send_active_message(
       scheduler_ep_, AM_SENDER_ANNOUNCE_ST, header, buffer,
@@ -353,7 +356,8 @@ void StSender::send_subtimeslice_to_builder(TsID id, ucp_ep_h ep) {
   req_param.op_attr_mask =
       UCP_OP_ATTR_FIELD_FLAGS | UCP_OP_ATTR_FIELD_CALLBACK |
       UCP_OP_ATTR_FIELD_USER_DATA | UCP_OP_ATTR_FIELD_DATATYPE;
-  req_param.flags = UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_RNDV;
+  req_param.flags = UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY |
+                    UCP_AM_SEND_FLAG_RNDV;
   req_param.cb.send = on_builder_send_complete;
   req_param.user_data = this;
   req_param.datatype = ucp_dt_make_iov();

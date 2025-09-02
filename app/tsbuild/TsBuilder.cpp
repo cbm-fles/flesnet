@@ -330,10 +330,11 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
                                            const ucp_am_recv_param_t* param) {
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
-  if (hdr.size() != 3 || length == 0 ||
-      (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u ||
-      (param->recv_attr & UCP_AM_RECV_ATTR_FLAG_RNDV) == 0u) {
-    ERROR("Invalid subtimeslice data received");
+  if (hdr.size() != 3 ||
+      (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
+    ERROR("Invalid subtimeslice data received>");
+    DEBUG("hdr.size() = {}, length = {}, param->recv_attr = {}", hdr.size(),
+          length, param->recv_attr);
     return UCS_OK;
   }
 
@@ -375,6 +376,13 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
     ERROR("Unexpected ms_data_size from sender '{}' for {}, expected: "
           "{}, received: {}",
           sender_id, id, tsh.ms_data_sizes[ci], ms_data_size);
+    update_st_state(tsh, ci, StState::Failed);
+    return UCS_OK;
+  }
+
+  if ((param->recv_attr & UCP_AM_RECV_ATTR_FLAG_RNDV) == 0) {
+    ERROR("Received non-RNDV subtimeslice data from sender '{}' for {}",
+          sender_id, id);
     update_st_state(tsh, ci, StState::Failed);
     return UCS_OK;
   }
