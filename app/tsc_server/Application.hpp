@@ -11,7 +11,9 @@
 #include "pgen_channel.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <csignal>
+#include <map>
 #include <memory>
+#include <sys/types.h>
 #include <vector>
 
 /// %Application base class.
@@ -41,8 +43,7 @@ private:
   std::unique_ptr<boost::interprocess::managed_shared_memory> shm_;
   std::vector<std::unique_ptr<Channel>> channels_;
 
-  RingBuffer<uint64_t, true> completions_{20};
-  uint64_t acked_ = 0;
+  std::map<uint64_t, bool> completed_;
 
   size_t timeslice_count_ = 0;  ///< total number of processed timeslices
   size_t component_count_ = 0;  ///< total number of processed components

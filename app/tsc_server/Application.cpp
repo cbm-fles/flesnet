@@ -12,6 +12,7 @@
 #include <span>
 #include <string>
 #include <thread>
+#include <vector>
 
 using namespace std::chrono_literals;
 
@@ -155,7 +156,6 @@ void Application::run() {
   uint64_t ts_start_time = fles::system::current_time_ns() /
                            par_.timeslice_duration_ns() *
                            par_.timeslice_duration_ns();
-  acked_ = ts_start_time / par_.timeslice_duration_ns();
 
   report_status();
 
@@ -214,20 +214,23 @@ Application::~Application() {
 
 void Application::handle_completions() {
   while (auto id = st_sender_->try_receive_completion()) {
-    if (*id == acked_) {
-      // we reveived a completion for the oldest element in the buffer,
-      // therefore we search for all consecutive elements ...
-      do {
-        ++acked_;
-      } while (completions_.at(acked_) > *id);
-      // ... and acknowledge them
-      for (auto&& channel : channels_) {
-        channel->ack_before(acked_ * par_.timeslice_duration_ns());
-      }
+    auto it = completed_.find(*id);
+    if (it != completed_.end()) {
+      it->second = true;
     } else {
-      // we received a completion for an element other then the oldest,
-      // we store it for later
-      completions_.at(*id) = *id;
+      ERROR("Received completion for unknown timeslice ID {}", *id);
+    }
+    auto iter = completed_.begin();
+    while (iter != completed_.end() && iter->second) {
+      ++iter;
+    }
+    if (iter != completed_.begin()) {
+      uint64_t last_completed = std::prev(iter)->first;
+      for (auto&& channel : channels_) {
+        channel->ack_before((last_completed + 1) *
+                            par_.timeslice_duration_ns());
+      }
+      completed_.erase(completed_.begin(), iter);
     }
   }
 }
@@ -264,6 +267,7 @@ void Application::provide_subtimeslice(
   st_sender_->announce_subtimeslice(ts_id, st);
   TRACE("Sent announcement for timeslice {} with {} components (flags: {})",
         ts_id, st.components.size(), st.flags);
+  completed_[ts_id] = false;
 
   // Update statistics
   ++timeslice_count_;
@@ -282,18 +286,15 @@ void Application::report_status() {
   constexpr auto interval = std::chrono::seconds(1);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
-  if (monitor_ != nullptr) {
-    monitor_->QueueMetric(
-        "tsc_server_status",
-        {{"host", hostname_}, {"port", std::to_string(par_.listen_port())}},
-        {{"timeslice_count", timeslice_count_},
-         {"component_count", component_count_},
-         {"microslice_count", microslice_count_},
-         {"content_bytes", content_bytes_},
-         {"timeslice_incomplete_count", timeslice_incomplete_count_}});
-    int64_t now_ns = fles::system::current_time_ns();
-    for (const auto& channel : channels_) {
-      auto mon = channel->get_monitoring();
+  float max_buffer_utilization = 0.0;
+
+  int64_t now_ns = fles::system::current_time_ns();
+  for (const auto& channel : channels_) {
+    auto mon = channel->get_monitoring();
+    max_buffer_utilization =
+        std::max(max_buffer_utilization, std::max(mon.desc_buffer_utilization,
+                                                  mon.data_buffer_utilization));
+    if (monitor_ != nullptr) {
       if (mon.latest_microslice_time_ns) {
         int64_t delay = now_ns - mon.latest_microslice_time_ns.value();
         monitor_->QueueMetric(
@@ -314,6 +315,35 @@ void Application::report_status() {
              {"data_buffer_utilization", mon.data_buffer_utilization}});
       }
     }
+  }
+
+  if (monitor_ != nullptr) {
+    monitor_->QueueMetric(
+        "tsc_server_status",
+        {{"host", hostname_}, {"port", std::to_string(par_.listen_port())}},
+        {{"timeslice_count", timeslice_count_},
+         {"component_count", component_count_},
+         {"microslice_count", microslice_count_},
+         {"content_bytes", content_bytes_},
+         {"timeslice_incomplete_count", timeslice_incomplete_count_},
+         {"buffer_utilization", max_buffer_utilization}});
+  }
+
+  if (max_buffer_utilization > 0.9) {
+    std::size_t completed_count =
+        std::count_if(completed_.begin(), completed_.end(),
+                      [](auto const& pair) { return pair.second; });
+    std::size_t pending_count = completed_.size() - completed_count;
+    WARN("High buffer utilization: {:.1f}%", max_buffer_utilization * 100.0);
+    WARN("Pending timeslices: {}, completed: {}", pending_count,
+         completed_count);
+    WARN("Retracting all {} pending subtimeslices", pending_count);
+    for (auto& [ts_id, completed] : completed_) {
+      if (!completed) {
+        st_sender_->retract_subtimeslice(ts_id);
+      }
+    }
+    // TODO: Find a better solution
   }
 
   tasks_.add([this] { report_status(); }, now + interval);
