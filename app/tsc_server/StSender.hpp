@@ -30,9 +30,9 @@ public:
   StSender& operator=(const StSender&) = delete;
 
   // Public API methods
-  void announce_subtimeslice(TsID id, const StHandle& sth);
-  void retract_subtimeslice(TsID id);
-  std::optional<TsID> try_receive_completion();
+  void announce_subtimeslice(TsId id, const StHandle& sth);
+  void retract_subtimeslice(TsId id);
+  std::optional<TsId> try_receive_completion();
 
 private:
   Scheduler tasks_;
@@ -42,17 +42,17 @@ private:
   std::string sender_id_;
 
   int queue_event_fd_ = -1;
-  std::deque<std::pair<TsID, StHandle>> pending_announcements_;
-  std::deque<TsID> pending_retractions_;
+  std::deque<std::pair<TsId, StHandle>> pending_announcements_;
+  std::deque<TsId> pending_retractions_;
   std::mutex queue_mutex_;
-  std::queue<TsID> completed_;
+  std::queue<TsId> completed_;
   std::mutex completions_mutex_;
   int epoll_fd_ = -1;
 
-  std::unordered_map<TsID,
+  std::unordered_map<TsId,
                      std::pair<std::vector<std::byte>, std::vector<ucp_dt_iov>>>
       announced_;
-  std::unordered_map<ucs_status_ptr_t, TsID> active_send_requests_;
+  std::unordered_map<ucs_status_ptr_t, TsId> active_send_requests_;
 
   ucp_context_h context_ = nullptr;
   ucp_worker_h worker_ = nullptr;
@@ -78,8 +78,8 @@ private:
   void disconnect_from_scheduler(bool force = false);
 
   // Scheduler message handling
-  void send_announcement_to_scheduler(TsID id);
-  void send_retraction_to_scheduler(TsID id);
+  void send_announcement_to_scheduler(TsId id);
+  void send_retraction_to_scheduler(TsId id);
   ucs_status_t handle_scheduler_release(const void* header,
                                         size_t header_length,
                                         void* data,
@@ -96,16 +96,16 @@ private:
                                       void* data,
                                       size_t length,
                                       const ucp_am_recv_param_t* param);
-  void send_subtimeslice_to_builder(TsID id, ucp_ep_h ep);
+  void send_subtimeslice_to_builder(TsId id, ucp_ep_h ep);
   void handle_builder_send_complete(void* request, ucs_status_t status);
   void disconnect_from_builders();
 
   // Queue processing
   void notify_queue_update() const;
   std::size_t process_queues();
-  void process_announcement(TsID id, const StHandle& sth);
-  void process_retraction(TsID id);
-  void complete_subtimeslice(TsID id);
+  void process_announcement(TsId id, const StHandle& sth);
+  void process_retraction(TsId id);
+  void complete_subtimeslice(TsId id);
   void flush_announced();
 
   // Helper methods

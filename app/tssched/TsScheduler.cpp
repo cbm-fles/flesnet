@@ -120,7 +120,7 @@ void TsScheduler::operator()(std::stop_token stop_token) {
   ucx::util::cleanup(context_, worker_);
 }
 
-void TsScheduler::send_timeslice(TsID id) {
+void TsScheduler::send_timeslice(TsId id) {
   StCollection coll = create_collection_descriptor(id);
   DEBUG("Processing timeslice {}: {}", id, coll);
   if (coll.sender_ids.empty()) {
@@ -238,7 +238,7 @@ TsScheduler::handle_sender_announce(const void* header,
     return UCS_OK;
   }
 
-  const uint64_t id = hdr[0];
+  const TsId id = hdr[0];
   const uint64_t ms_data_size = hdr[1];
 
   auto it = senders_.find(param->reply_ep);
@@ -277,7 +277,7 @@ TsScheduler::handle_sender_retract(const void* header,
     return UCS_OK;
   }
 
-  const uint64_t id = hdr[0];
+  const TsId id = hdr[0];
 
   auto it = senders_.find(param->reply_ep);
   if (it == senders_.end()) {
@@ -292,7 +292,7 @@ TsScheduler::handle_sender_retract(const void* header,
   return UCS_OK;
 }
 
-void TsScheduler::send_release_to_senders(TsID id) {
+void TsScheduler::send_release_to_senders(TsId id) {
   std::array<uint64_t, 1> hdr{id};
   auto header = std::as_bytes(std::span(hdr));
 
@@ -351,7 +351,7 @@ TsScheduler::handle_builder_status(const void* header,
     return UCS_OK;
   }
   const uint64_t event = hdr[0];
-  const TsID id = hdr[1];
+  const TsId id = hdr[1];
   const uint64_t new_bytes_free = hdr[2];
 
   switch (event) {
@@ -408,7 +408,7 @@ void TsScheduler::send_timeslice_to_builder(const StCollection& coll,
 
 // Helper methods
 
-StCollection TsScheduler::create_collection_descriptor(TsID id) {
+StCollection TsScheduler::create_collection_descriptor(TsId id) {
   StCollection coll{id, {}, {}};
   for (auto& [sender_ep, sender] : senders_) {
     auto it =

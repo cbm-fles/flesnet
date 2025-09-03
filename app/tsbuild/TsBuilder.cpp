@@ -175,7 +175,7 @@ void TsBuilder::disconnect_from_scheduler(bool force) {
 
 // Scheduler message handling
 
-void TsBuilder::send_status_to_scheduler(uint64_t event, TsID id) {
+void TsBuilder::send_status_to_scheduler(uint64_t event, TsId id) {
   uint64_t bytes_free = timeslice_buffer_.get_free_memory();
   std::array<uint64_t, 3> hdr{event, id, bytes_free};
   auto header = std::as_bytes(std::span(hdr));
@@ -210,7 +210,7 @@ ucs_status_t TsBuilder::handle_scheduler_send_ts(
     return UCS_OK;
   }
 
-  const uint64_t id = hdr[0];
+  const TsId id = hdr[0];
   const uint64_t ms_data_size = hdr[1];
 
   if (ts_handles_.contains(id)) {
@@ -304,7 +304,7 @@ void TsBuilder::disconnect_from_senders() {
 
 // Sender message handling
 
-void TsBuilder::send_request_to_sender(const std::string& sender_id, TsID id) {
+void TsBuilder::send_request_to_sender(const std::string& sender_id, TsId id) {
   if (!sender_to_ep_.contains(sender_id)) {
     DEBUG("Connecting to sender '{}'", sender_id);
     connect_to_sender(sender_id);
@@ -338,7 +338,7 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
     return UCS_OK;
   }
 
-  const uint64_t id = hdr[0];
+  const TsId id = hdr[0];
   const uint64_t st_descriptor_size = hdr[1];
   const uint64_t ms_data_size = hdr[2];
 
@@ -470,7 +470,7 @@ void TsBuilder::handle_sender_data_recv_complete(
 
 // Queue processing
 
-void TsBuilder::process_completion(TsID id) {
+void TsBuilder::process_completion(TsId id) {
   if (!ts_handles_.contains(id)) {
     ERROR("Received completion for unknown timeslice {}", id);
     return;

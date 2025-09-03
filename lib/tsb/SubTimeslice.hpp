@@ -20,7 +20,7 @@
 #include <ucp/api/ucp.h>
 #include <vector>
 
-using TsID = uint64_t;
+using TsId = uint64_t;
 
 // Flags
 
@@ -217,7 +217,7 @@ struct StDescriptor {
 // builder
 
 struct StCollection {
-  TsID id = 0;
+  TsId id = 0;
 
   std::vector<std::string> sender_ids; // IDs of the senders
   std::vector<uint64_t> ms_data_sizes; // Sizes of the content data

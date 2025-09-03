@@ -43,7 +43,7 @@ TsBuffer::~TsBuffer() {
 }
 
 void TsBuffer::send_work_item(std::byte* buffer,
-                              TsID id,
+                              TsId id,
                               const StDescriptor& ts_desc) {
   TsDescriptorShm item;
   item.shm_uuid = shm_uuid_;

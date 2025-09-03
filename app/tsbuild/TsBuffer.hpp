@@ -49,7 +49,7 @@ public:
   void deallocate(std::byte* ptr) noexcept { managed_shm_->deallocate(ptr); }
 
   /// Send a work item to the item distributor.
-  void send_work_item(std::byte* buffer, TsID id, const StDescriptor& ts_desc);
+  void send_work_item(std::byte* buffer, TsId id, const StDescriptor& ts_desc);
 
   /// Receive a completion from the item distributor.
   [[nodiscard]] std::optional<ItemID> try_receive_completion() {

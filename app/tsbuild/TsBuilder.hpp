@@ -50,7 +50,7 @@ struct TsHandle {
   TsHandle(const TsHandle&) = delete;
   TsHandle& operator=(const TsHandle&) = delete;
 
-  const TsID id;
+  const TsId id;
   const uint64_t allocated_at_ns;
   uint64_t published_at_ns = 0;
   std::byte* const buffer;
@@ -90,8 +90,8 @@ private:
   std::unordered_map<std::string, ucp_ep_h> sender_to_ep_;
   std::unordered_map<ucp_ep_h, std::string> ep_to_sender_;
 
-  std::unordered_map<TsID, std::unique_ptr<TsHandle>> ts_handles_;
-  std::unordered_map<ucs_status_ptr_t, std::pair<TsID, std::size_t>>
+  std::unordered_map<TsId, std::unique_ptr<TsHandle>> ts_handles_;
+  std::unordered_map<ucs_status_ptr_t, std::pair<TsId, std::size_t>>
       active_data_recv_requests_;
 
   ucp_ep_h scheduler_ep_ = nullptr;
@@ -118,7 +118,7 @@ private:
   void disconnect_from_scheduler(bool force = false);
 
   // Scheduler message handling
-  void send_status_to_scheduler(uint64_t event, TsID id);
+  void send_status_to_scheduler(uint64_t event, TsId id);
   void send_periodic_status_to_scheduler();
   ucs_status_t handle_scheduler_send_ts(const void* header,
                                         size_t header_length,
@@ -132,7 +132,7 @@ private:
   void disconnect_from_senders();
 
   // Sender message handling
-  void send_request_to_sender(const std::string& sender_id, TsID id);
+  void send_request_to_sender(const std::string& sender_id, TsId id);
   ucs_status_t handle_sender_data(const void* header,
                                   size_t header_length,
                                   void* data,
@@ -143,7 +143,7 @@ private:
                                         size_t length);
 
   // Queue processing
-  void process_completion(TsID id);
+  void process_completion(TsId id);
 
   // Helper methods
   void update_st_state(TsHandle& tsh,

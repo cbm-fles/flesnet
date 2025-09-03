@@ -21,11 +21,11 @@ struct SenderConnection {
   std::string sender_id;
   ucp_ep_h ep;
   struct StDesc {
-    TsID id;
+    TsId id;
     uint64_t ms_data_size;
   };
   std::deque<StDesc> announced_st;
-  TsID last_received_st = 0;
+  TsId last_received_st = 0;
 };
 
 struct BuilderConnection {
@@ -55,7 +55,7 @@ private:
   cbm::Monitor* monitor_ = nullptr;
 
   int epoll_fd_ = -1;
-  std::unordered_map<ucs_status_ptr_t, TsID> active_send_requests_;
+  std::unordered_map<ucs_status_ptr_t, TsId> active_send_requests_;
 
   ucp_context_h context_ = nullptr;
   ucp_worker_h worker_ = nullptr;
@@ -69,7 +69,7 @@ private:
 
   // Main operation loop
   void operator()(std::stop_token stop_token);
-  void send_timeslice(TsID id);
+  void send_timeslice(TsId id);
 
   // Connection management
   void handle_new_connection(ucp_conn_request_h conn_request);
@@ -92,7 +92,7 @@ private:
                                      void* data,
                                      size_t length,
                                      const ucp_am_recv_param_t* param);
-  void send_release_to_senders(TsID id);
+  void send_release_to_senders(TsId id);
 
   // Builder message handling
   ucs_status_t handle_builder_register(const void* header,
@@ -109,7 +109,7 @@ private:
                                  BuilderConnection& builder);
 
   // Helper methods
-  StCollection create_collection_descriptor(TsID id);
+  StCollection create_collection_descriptor(TsId id);
   void report_status();
 
   // UCX static callbacks (trampolines)
