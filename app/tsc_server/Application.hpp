@@ -4,7 +4,6 @@
 #include "Channel.hpp"
 #include "Monitor.hpp"
 #include "Parameters.hpp"
-#include "RingBuffer.hpp"
 #include "Scheduler.hpp"
 #include "StSender.hpp"
 #include "cri_device.hpp"

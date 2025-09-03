@@ -2,6 +2,7 @@
 
 #include "TsBuffer.hpp"
 #include "SubTimeslice.hpp"
+#include "Utility.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -26,8 +27,8 @@ TsBuffer::TsBuffer(zmq::context_t& context,
   constexpr size_t overhead_size = 4096; // Wild guess, let's hope it's enough
   size_t managed_shm_size = buffer_size + overhead_size;
 
-  INFO("Creating shared memory segment '{}' of size {} MiB", shm_identifier_,
-       managed_shm_size / static_cast<long>(1024 * 1024));
+  INFO("Creating shared memory segment '{}' of size {}", shm_identifier_,
+       human_readable_count(managed_shm_size));
   managed_shm_ = std::make_unique<boost::interprocess::managed_shared_memory>(
       boost::interprocess::create_only, shm_identifier_.c_str(),
       managed_shm_size);

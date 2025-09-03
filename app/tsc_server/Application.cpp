@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "SubTimeslice.hpp"
 #include "System.hpp"
+#include "Utility.hpp"
 #include "device_operator.hpp"
 #include "dma_channel.hpp"
 #include "log.hpp"
@@ -95,6 +96,8 @@ Application::Application(Parameters const& par,
           (cri_channels_.size() + par.pgen_channels()) +
       4096;
 
+  INFO("Creating shared memory segment '{}' of size {}", par.shm_id(),
+       human_readable_count(shm_size));
   shm_ = std::make_unique<boost::interprocess::managed_shared_memory>(
       boost::interprocess::create_only, par.shm_id().c_str(), shm_size);
 
@@ -202,13 +205,14 @@ Application::~Application() {
   for (auto* cri_channel : cri_channels_) {
     cri_channel->disable_readout();
   }
+  st_sender_.reset();
 
   // cleanup
+  INFO("Removing shared memory segment '{}'", par_.shm_id());
   boost::interprocess::shared_memory_object::remove(par_.shm_id().c_str());
-  INFO("Shared memory segment removed: {}", par_.shm_id());
 
   // delay to allow monitor to process pending messages
-  constexpr auto destruct_delay = std::chrono::milliseconds(200);
+  constexpr auto destruct_delay = 200ms;
   std::this_thread::sleep_for(destruct_delay);
 }
 

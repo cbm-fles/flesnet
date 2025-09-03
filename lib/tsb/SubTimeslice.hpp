@@ -47,6 +47,11 @@ template <> struct std::hash<TsId> {
 template <> struct std::formatter<TsId> {
   constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
   auto format(const TsId& id, format_context& ctx) const {
+    std::string id_str = std::to_string(id.value);
+    if (id_str.length() > 6) {
+      return std::format_to(ctx.out(), "ts..{}",
+                            id_str.substr(id_str.length() - 3));
+    }
     return std::format_to(ctx.out(), "ts{}", id.value);
   }
 };

@@ -38,6 +38,6 @@ Application::~Application() {
   distributor_thread_.join();
 
   // delay to allow monitor to process pending messages
-  constexpr auto destruct_delay = std::chrono::milliseconds(200);
+  constexpr auto destruct_delay = 200ms;
   std::this_thread::sleep_for(destruct_delay);
 }
