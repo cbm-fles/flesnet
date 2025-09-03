@@ -145,35 +145,44 @@ void StSender::operator()(std::stop_token stop_token) {
 // Scheduler connection management
 
 void StSender::connect_to_scheduler_if_needed() {
-  constexpr auto interval = std::chrono::seconds(2);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
   if (!scheduler_connecting_ &&
       !worker_thread_.get_stop_token().stop_requested()) {
     connect_to_scheduler();
   }
 
-  tasks_.add([this] { connect_to_scheduler_if_needed(); }, now + interval);
+  tasks_.add([this] { connect_to_scheduler_if_needed(); },
+             now + scheduler_retry_interval_);
 }
 
 void StSender::connect_to_scheduler() {
-  if (scheduler_connecting_ || scheduler_connected_) {
-    return;
-  }
+  assert(!scheduler_connecting_ && !scheduler_connected_);
 
   auto [address, port] =
       ucx::util::parse_address(scheduler_address_, DEFAULT_SCHEDULER_PORT);
   auto ep =
       ucx::util::connect(worker_, address, port, on_scheduler_error, this);
-  if (!ep) {
-    ERROR("Failed to connect to scheduler at '{}:{}'", address, port);
+  if (ep) {
+    if (!mute_scheduler_reconnect_) {
+      INFO("Trying to connect to scheduler at '{}:{}'", address, port);
+    }
+  } else {
+    WARN("Failed to connect to scheduler at '{}:{}', will retry", address,
+         port);
     return;
   }
 
   scheduler_ep_ = *ep;
 
-  if (!register_with_scheduler()) {
-    ERROR("Failed to register with scheduler");
-    disconnect_from_scheduler(true);
+  auto header = std::as_bytes(std::span(sender_id_));
+  bool send_am_ok = ucx::util::send_active_message(
+      scheduler_ep_, AM_SENDER_REGISTER, header, {},
+      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
+  if (!send_am_ok) {
+    WARN("Failed to register with scheduler at '{}:{}', will retry", address,
+         port);
+    ucx::util::close_endpoint(worker_, scheduler_ep_, true);
+    scheduler_ep_ = nullptr;
     return;
   }
 
@@ -186,15 +195,11 @@ void StSender::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
     return;
   }
 
+  if (scheduler_connected_) {
+    WARN("Disconnected from scheduler: {}", status);
+  }
+  scheduler_connected_ = false;
   disconnect_from_scheduler(true);
-  INFO("Disconnected from scheduler: {}", status);
-}
-
-bool StSender::register_with_scheduler() {
-  auto header = std::as_bytes(std::span(sender_id_));
-  return ucx::util::send_active_message(
-      scheduler_ep_, AM_SENDER_REGISTER, header, {},
-      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
 }
 
 void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
@@ -202,9 +207,17 @@ void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
   scheduler_connecting_ = false;
 
   if (status != UCS_OK) {
-    ERROR("Failed to register with scheduler: {}", status);
+    if (!mute_scheduler_reconnect_) {
+      WARN("Failed to register with scheduler: {}", status);
+      INFO("Will retry connection to scheduler every {}s",
+           std::chrono::duration_cast<std::chrono::seconds>(
+               scheduler_retry_interval_)
+               .count());
+      mute_scheduler_reconnect_ = true;
+    }
   } else {
     scheduler_connected_ = true;
+    mute_scheduler_reconnect_ = false;
     INFO("Successfully registered with scheduler");
   }
 
@@ -214,6 +227,9 @@ void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
 };
 
 void StSender::disconnect_from_scheduler(bool force) {
+  if (scheduler_connected_) {
+    INFO("Disconnecting from scheduler");
+  }
   scheduler_connecting_ = false;
   scheduler_connected_ = false;
 
@@ -221,10 +237,8 @@ void StSender::disconnect_from_scheduler(bool force) {
     return;
   }
 
-  flush_announced();
   ucx::util::close_endpoint(worker_, scheduler_ep_, force);
   scheduler_ep_ = nullptr;
-  DEBUG("Disconnected from scheduler");
 }
 
 // Scheduler message handling
@@ -304,17 +318,17 @@ void StSender::handle_new_connection(ucp_conn_request_h conn_request) {
     return;
   }
 
-  connections_[*ep] = *client_address;
+  builders_[*ep] = *client_address;
   DEBUG("Accepted connection from '{}'", *client_address);
 }
 
 void StSender::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
   ERROR("Error on UCX endpoint: {}", status);
 
-  auto it = connections_.find(ep);
-  if (it != connections_.end()) {
+  auto it = builders_.find(ep);
+  if (it != builders_.end()) {
     INFO("Removing disconnected endpoint '{}'", it->second);
-    connections_.erase(it);
+    builders_.erase(it);
   } else {
     ERROR("Received error for unknown endpoint");
   }
@@ -417,12 +431,15 @@ void StSender::handle_builder_send_complete(void* request,
 }
 
 void StSender::disconnect_from_builders() {
-  for (auto& [ep, _] : connections_) {
+  if (builders_.empty()) {
+    return;
+  }
+  INFO("Disconnecting from {} builders", builders_.size());
+  for (auto& [ep, _] : builders_) {
     ucx::util::close_endpoint(worker_, ep, true);
   }
-  INFO("Disconnected from all builders");
 
-  connections_.clear();
+  builders_.clear();
 }
 
 // Queue processing

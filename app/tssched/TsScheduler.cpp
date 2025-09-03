@@ -122,9 +122,11 @@ void TsScheduler::operator()(std::stop_token stop_token) {
 
 void TsScheduler::send_timeslice(TsId id) {
   StCollection coll = create_collection_descriptor(id);
-  DEBUG("Processing timeslice {}: {}", id, coll);
+  TRACE("Processing timeslice {}: {}", id, coll);
   if (coll.sender_ids.empty()) {
-    WARN("No contributions found for timeslice {}", id);
+    if (!senders_.empty()) {
+      WARN("No contributions found for timeslice {}", id);
+    }
     return;
   }
 
@@ -143,8 +145,6 @@ void TsScheduler::send_timeslice(TsId id) {
 // Connection management
 
 void TsScheduler::handle_new_connection(ucp_conn_request_h conn_request) {
-  DEBUG("New connection request received");
-
   auto client_address = ucx::util::get_client_address(conn_request);
   if (!client_address) {
     ERROR("Failed to retrieve client address from connection request");
@@ -163,19 +163,17 @@ void TsScheduler::handle_new_connection(ucp_conn_request_h conn_request) {
 }
 
 void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
-  ERROR("Error on UCX endpoint: {}", status);
-
   auto it = connections_.find(ep);
   if (it != connections_.end()) {
-    INFO("Removing disconnected endpoint '{}'", it->second);
+    DEBUG("Disconnected from endpoint '{}': {}", it->second, status);
     connections_.erase(it);
   } else {
-    ERROR("Received error for unknown endpoint");
+    ERROR("Received error for unknown endpoint: {}", status);
   }
 
   auto sender_it = senders_.find(ep);
   if (sender_it != senders_.end()) {
-    INFO("Removing disconnected sender '{}'", sender_it->second.sender_id);
+    INFO("Disconnected from sender '{}'", sender_it->second.sender_id);
     senders_.erase(sender_it);
   }
 
@@ -183,7 +181,7 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
           std::find_if(builders_.begin(), builders_.end(),
                        [ep](const BuilderConnection& b) { return b.ep == ep; });
       it != builders_.end()) {
-    DEBUG("Removing disconnected builder '{}'", it->id);
+    INFO("Disconnected from builder '{}'", it->id);
     builders_.erase(it);
   }
 
@@ -192,10 +190,14 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
 }
 
 void TsScheduler::disconnect_from_all() {
+  if (connections_.empty() && senders_.empty() && builders_.empty()) {
+    return;
+  }
+  INFO("Disconnecting from {} senders and {} builders", senders_.size(),
+       builders_.size());
   for (auto& [ep, _] : connections_) {
     ucx::util::close_endpoint(worker_, ep, true);
   }
-  INFO("Disconnected from all senders and builders");
 
   connections_.clear();
   senders_.clear();
@@ -219,7 +221,7 @@ TsScheduler::handle_sender_register(const void* header,
   auto sender_id = std::string(static_cast<const char*>(header), header_length);
   ucp_ep_h ep = param->reply_ep;
   senders_[ep] = {sender_id, ep, {}};
-  DEBUG("Accepted sender registration from '{}'", sender_id);
+  INFO("Accepted sender registration from '{}'", sender_id);
 
   return UCS_OK;
 }
@@ -322,7 +324,7 @@ TsScheduler::handle_builder_register(const void* header,
       std::string(static_cast<const char*>(header), header_length);
   ucp_ep_h ep = param->reply_ep;
   builders_.emplace_back(builder_id, ep, 0, false);
-  DEBUG("Accepted builder registration from '{}'", builder_id);
+  INFO("Accepted builder registration from '{}'", builder_id);
 
   return UCS_OK;
 }
@@ -356,7 +358,9 @@ TsScheduler::handle_builder_status(const void* header,
 
   switch (event) {
   case BUILDER_EVENT_NO_OP:
-    DEBUG("Builder '{}' reported bytes free: {}", it->id, new_bytes_free);
+    if (new_bytes_free != it->bytes_available) {
+      DEBUG("Builder '{}' reported bytes free: {}", it->id, new_bytes_free);
+    }
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
     }

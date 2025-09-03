@@ -248,7 +248,6 @@ std::optional<ucp_ep_h> connect(ucp_worker_h worker,
     ERROR("Failed to connect to {}:{}", address, port);
     return std::nullopt;
   }
-  DEBUG("Connecting to {}:{}", address, port);
   return ep;
 }
 
@@ -291,7 +290,6 @@ bool set_receive_handler(ucp_worker_h worker,
     ERROR("Failed to set active message receive handler: {}", status);
     return false;
   }
-  DEBUG("Active message receive handler set for ID {}", id);
   return true;
 }
 
@@ -313,7 +311,6 @@ bool send_active_message_with_params(ucp_ep_h ep,
 
   if (request == nullptr) {
     // Operation has completed successfully in-place
-    TRACE("Active message sent successfully");
     if (param.cb.send != nullptr) {
       param.cb.send(nullptr, UCS_OK, param.user_data);
     }

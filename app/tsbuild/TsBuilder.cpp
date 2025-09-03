@@ -91,26 +91,28 @@ void TsBuilder::operator()(std::stop_token stop_token) {
 // Scheduler connection management
 
 void TsBuilder::connect_to_scheduler_if_needed() {
-  constexpr auto interval = std::chrono::seconds(2);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-  if (!scheduler_connecting_ &&
+  if (!scheduler_connecting_ && !scheduler_connected_ &&
       !worker_thread_.get_stop_token().stop_requested()) {
     connect_to_scheduler();
   }
 
-  tasks_.add([this] { connect_to_scheduler_if_needed(); }, now + interval);
+  tasks_.add([this] { connect_to_scheduler_if_needed(); },
+             now + scheduler_retry_interval_);
 }
 
 void TsBuilder::connect_to_scheduler() {
-  if (scheduler_connecting_ || scheduler_connected_) {
-    return;
-  }
+  assert(!scheduler_connecting_ && !scheduler_connected_);
 
   auto [address, port] =
       ucx::util::parse_address(scheduler_address_, DEFAULT_SCHEDULER_PORT);
   auto ep =
       ucx::util::connect(worker_, address, port, on_scheduler_error, this);
-  if (!ep) {
+  if (ep) {
+    if (!mute_scheduler_reconnect_) {
+      INFO("Trying to connect to scheduler at '{}:{}'", address, port);
+    }
+  } else {
     WARN("Failed to connect to scheduler at '{}:{}', will retry", address,
          port);
     return;
@@ -118,9 +120,15 @@ void TsBuilder::connect_to_scheduler() {
 
   scheduler_ep_ = *ep;
 
-  if (!register_with_scheduler()) {
-    WARN("Failed to register with scheduler, will retry");
-    disconnect_from_scheduler(true);
+  auto header = std::as_bytes(std::span(hostname_));
+  bool send_am_ok = ucx::util::send_active_message(
+      scheduler_ep_, AM_BUILDER_REGISTER, header, {},
+      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
+  if (!send_am_ok) {
+    WARN("Failed to register with scheduler at '{}:{}', will retry", address,
+         port);
+    ucx::util::close_endpoint(worker_, scheduler_ep_, true);
+    scheduler_ep_ = nullptr;
     return;
   }
 
@@ -133,15 +141,11 @@ void TsBuilder::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
     return;
   }
 
+  if (scheduler_connected_) {
+    WARN("Disconnected from scheduler: {}", status);
+  }
+  scheduler_connected_ = false;
   disconnect_from_scheduler(true);
-  WARN("Disconnected from scheduler: {}", status);
-}
-
-bool TsBuilder::register_with_scheduler() {
-  auto header = std::as_bytes(std::span(hostname_));
-  return ucx::util::send_active_message(
-      scheduler_ep_, AM_BUILDER_REGISTER, header, {},
-      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
 }
 
 void TsBuilder::handle_scheduler_register_complete(ucs_status_ptr_t request,
@@ -149,9 +153,17 @@ void TsBuilder::handle_scheduler_register_complete(ucs_status_ptr_t request,
   scheduler_connecting_ = false;
 
   if (status != UCS_OK) {
-    ERROR("Failed to register with scheduler: {}", status);
+    if (!mute_scheduler_reconnect_) {
+      WARN("Failed to register with scheduler: {}", status);
+      INFO("Will retry connection to scheduler every {}s",
+           std::chrono::duration_cast<std::chrono::seconds>(
+               scheduler_retry_interval_)
+               .count());
+      mute_scheduler_reconnect_ = true;
+    }
   } else {
     scheduler_connected_ = true;
+    mute_scheduler_reconnect_ = false;
     INFO("Successfully registered with scheduler");
   }
 
@@ -161,6 +173,9 @@ void TsBuilder::handle_scheduler_register_complete(ucs_status_ptr_t request,
 };
 
 void TsBuilder::disconnect_from_scheduler(bool force) {
+  if (scheduler_connected_) {
+    INFO("Disconnecting from scheduler");
+  }
   scheduler_connecting_ = false;
   scheduler_connected_ = false;
 
@@ -170,7 +185,6 @@ void TsBuilder::disconnect_from_scheduler(bool force) {
 
   ucx::util::close_endpoint(worker_, scheduler_ep_, force);
   scheduler_ep_ = nullptr;
-  DEBUG("Disconnected from scheduler");
 }
 
 // Scheduler message handling
@@ -269,7 +283,9 @@ void TsBuilder::connect_to_sender(const std::string& sender_id) {
       ucx::util::parse_address(sender_id, DEFAULT_SENDER_PORT);
   auto ep =
       ucx::util::connect(worker_, address, port, on_scheduler_error, this);
-  if (!ep) {
+  if (ep) {
+    DEBUG("Connecting to sender at '{}:{}'", address, port);
+  } else {
     ERROR("Failed to connect to sender at '{}:{}'", address, port);
     return;
   }
@@ -293,10 +309,13 @@ void TsBuilder::handle_sender_error(ucp_ep_h ep, ucs_status_t status) {
 }
 
 void TsBuilder::disconnect_from_senders() {
-  for (const auto& [ep, sender] : ep_to_sender_) {
+  if (ep_to_sender_.empty()) {
+    return;
+  }
+  INFO("Disconnecting from {} senders", ep_to_sender_.size());
+  for (const auto& [ep, _] : ep_to_sender_) {
     ucx::util::close_endpoint(worker_, ep, true);
   }
-  INFO("Disconnected from all senders");
 
   ep_to_sender_.clear();
   sender_to_ep_.clear();

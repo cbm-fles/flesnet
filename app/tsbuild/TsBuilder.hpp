@@ -20,6 +20,8 @@
 #include <unistd.h>
 #include <unordered_map>
 
+using namespace std::chrono_literals;
+
 // TsBuilder: Receive timeslice announcements from tssched, connect to senders,
 // receive subtimeslices and aggregate the data to timeslices
 
@@ -94,6 +96,9 @@ private:
   std::unordered_map<ucs_status_ptr_t, std::pair<TsId, std::size_t>>
       active_data_recv_requests_;
 
+  static constexpr auto scheduler_retry_interval_ = 2s;
+  bool mute_scheduler_reconnect_ = false;
+
   ucp_ep_h scheduler_ep_ = nullptr;
   bool scheduler_connecting_ = false;
   bool scheduler_connected_ = false;
@@ -112,7 +117,6 @@ private:
   void connect_to_scheduler_if_needed();
   void connect_to_scheduler();
   void handle_scheduler_error(ucp_ep_h ep, ucs_status_t status);
-  bool register_with_scheduler();
   void handle_scheduler_register_complete(ucs_status_ptr_t request,
                                           ucs_status_t status);
   void disconnect_from_scheduler(bool force = false);

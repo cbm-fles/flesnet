@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <vector>
 
+using namespace std::chrono_literals;
+
 // StSender: Announce subtimeslices to tssched and send them to tsbuilders
 
 class StSender {
@@ -57,7 +59,10 @@ private:
   ucp_context_h context_ = nullptr;
   ucp_worker_h worker_ = nullptr;
   ucp_listener_h listener_ = nullptr;
-  std::unordered_map<ucp_ep_h, std::string> connections_;
+  std::unordered_map<ucp_ep_h, std::string> builders_;
+
+  static constexpr auto scheduler_retry_interval_ = 2s;
+  bool mute_scheduler_reconnect_ = false;
 
   ucp_ep_h scheduler_ep_ = nullptr;
   bool scheduler_connecting_ = false;
@@ -72,7 +77,6 @@ private:
   void connect_to_scheduler_if_needed();
   void connect_to_scheduler();
   void handle_scheduler_error(ucp_ep_h ep, ucs_status_t status);
-  bool register_with_scheduler();
   void handle_scheduler_register_complete(ucs_status_ptr_t request,
                                           ucs_status_t status);
   void disconnect_from_scheduler(bool force = false);
