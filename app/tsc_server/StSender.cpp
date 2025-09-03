@@ -274,7 +274,7 @@ ucs_status_t StSender::handle_scheduler_release(
     return UCS_OK;
   }
 
-  auto id = *static_cast<const uint64_t*>(header);
+  TsId id = *static_cast<const uint64_t*>(header);
   auto it = announced_.find(id);
   if (it != announced_.end()) {
     DEBUG("Removing released subtimeslice {}", id);

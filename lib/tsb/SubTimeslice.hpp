@@ -13,6 +13,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_serialize.hpp>
 #include <format>
+#include <functional>
 #include <log.hpp>
 #include <span>
 #include <string>
@@ -20,7 +21,35 @@
 #include <ucp/api/ucp.h>
 #include <vector>
 
-using TsId = uint64_t;
+// Strongly typed timeslice (or subtimeslice) identifier
+
+struct TsId {
+  TsId(uint64_t v) : value(v) {}
+  TsId() : value(0) {}
+
+  bool operator==(const TsId& other) const { return value == other.value; }
+  operator uint64_t() const { return value; }
+
+  uint64_t value;
+
+  template <class Archive>
+  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
+    ar & value;
+  }
+};
+
+template <> struct std::hash<TsId> {
+  std::size_t operator()(const TsId& id) const noexcept {
+    return std::hash<uint64_t>{}(id.value);
+  }
+};
+
+template <> struct std::formatter<TsId> {
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+  auto format(const TsId& id, format_context& ctx) const {
+    return std::format_to(ctx.out(), "ts{}", id.value);
+  }
+};
 
 // Flags
 
