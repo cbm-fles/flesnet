@@ -138,9 +138,9 @@ struct StComponentHandle {
 };
 
 struct StHandle {
-  uint64_t start_time_ns;
-  uint64_t duration_ns;
-  uint32_t flags;
+  uint64_t start_time_ns = 0;
+  uint64_t duration_ns = 0;
+  uint32_t flags = 0;
   std::vector<StComponentHandle> components;
 
   void set_flag(TsFlag f) { flags |= static_cast<uint32_t>(f); }
@@ -208,10 +208,10 @@ struct StComponentDescriptor {
 struct StDescriptor {
   /// The start time of the subtimeslice in nanoseconds, should be divisible by
   /// the duration (duration_ns)
-  uint64_t start_time_ns;
+  uint64_t start_time_ns = 0;
 
   /// The duration of the subtimeslice in nanoseconds
-  uint64_t duration_ns;
+  uint64_t duration_ns = 0;
 
   // Flags
   uint32_t flags = 0;

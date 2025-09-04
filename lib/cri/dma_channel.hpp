@@ -46,7 +46,7 @@ public:
               size_t desc_buffer_size,
               size_t dma_transfer_size);
 
-  ~dma_channel();
+  ~dma_channel() override;
 
   void set_sw_read_pointers(uint64_t data_offset,
                             uint64_t desc_offset) override;

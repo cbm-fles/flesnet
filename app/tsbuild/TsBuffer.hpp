@@ -40,13 +40,12 @@ public:
     return m_managed_shm->get_free_memory();
   }
 
-  [[nodiscard]] std::byte* allocate(std::size_t size) noexcept {
+  [[nodiscard]] std::byte* allocate(std::size_t size) {
     void* raw_ptr = m_managed_shm->allocate(size, std::nothrow);
     return static_cast<std::byte*>(raw_ptr);
   }
 
-  // free bytes in the shared memory
-  void deallocate(std::byte* ptr) noexcept { m_managed_shm->deallocate(ptr); }
+  void deallocate(std::byte* ptr) { m_managed_shm->deallocate(ptr); }
 
   /// Send a work item to the item distributor.
   void send_work_item(std::byte* buffer, TsId id, const StDescriptor& ts_desc);

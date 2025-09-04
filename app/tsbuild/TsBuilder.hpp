@@ -153,7 +153,7 @@ private:
   void update_st_state(TsHandle& tsh,
                        std::size_t contribution_index,
                        StState new_state);
-  StDescriptor create_timeslice_descriptor(TsHandle& tsh);
+  static StDescriptor create_timeslice_descriptor(TsHandle& tsh);
   void report_status();
 
   // UCX static callbacks (trampolines)

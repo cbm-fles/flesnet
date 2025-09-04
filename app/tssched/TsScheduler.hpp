@@ -19,7 +19,7 @@
 
 struct SenderConnection {
   std::string sender_id;
-  ucp_ep_h ep;
+  ucp_ep_h ep = nullptr;
   struct StDesc {
     TsId id;
     uint64_t ms_data_size = 0;

@@ -115,6 +115,6 @@ Checks: >
   readability-redundant-string-init,
   readability-simplify-boolean-expr
 
-HeaderFilterRegex: '(lib/(cri|fles_core|fles_ipc|fles_rdma|fles_zeromq|logging|monitoring|pda|shm_ipc)/.*\.hpp)|(app/[^/]+/[^/]+.hpp)'
+HeaderFilterRegex: '(lib/(cri|fles_core|fles_ipc|fles_rdma|fles_zeromq|logging|monitoring|pda|shm_ipc|tsb)/.*\.hpp)|(app/[^/]+/[^/]+.hpp)'
 
 FormatStyle: file
