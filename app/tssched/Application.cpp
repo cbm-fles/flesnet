@@ -17,11 +17,7 @@ Application::Application(Parameters const& par,
       monitor_.get());
 }
 
-void Application::run() {
-  while (*signal_status_ == 0) {
-    std::this_thread::sleep_for(100ms);
-  }
-}
+void Application::run() { ts_scheduler_->run(*signal_status_); }
 
 Application::~Application() {
   // delay to allow monitor to process pending messages

@@ -5,7 +5,6 @@
 #include "System.hpp"
 #include "TsbProtocol.hpp"
 #include "log.hpp"
-#include "monitoring/System.hpp"
 #include "ucxutil.hpp"
 #include <arpa/inet.h>
 #include <cstddef>
@@ -33,17 +32,9 @@ TsScheduler::TsScheduler(uint16_t listen_port,
   if (epoll_fd_ == -1) {
     throw std::runtime_error("epoll_create1 failed");
   }
-
-  // Start the worker thread
-  worker_thread_ = std::jthread([this](std::stop_token st) { (*this)(st); });
 }
 
 TsScheduler::~TsScheduler() {
-  if (worker_thread_.joinable()) {
-    worker_thread_.request_stop();
-    worker_thread_.join();
-  }
-
   if (epoll_fd_ != -1) {
     close(epoll_fd_);
   }
@@ -51,9 +42,7 @@ TsScheduler::~TsScheduler() {
 
 // Main operation loop
 
-void TsScheduler::operator()(std::stop_token stop_token) {
-  cbm::system::set_thread_name("TsScheduler");
-
+void TsScheduler::run(volatile std::sig_atomic_t& signal_status) {
   if (!ucx::util::init(context_, worker_, epoll_fd_)) {
     ERROR("Failed to initialize UCX");
     return;
@@ -80,7 +69,7 @@ void TsScheduler::operator()(std::stop_token stop_token) {
   uint64_t id = fles::system::current_time_ns() / timeslice_duration_ns_;
   report_status();
 
-  while (!stop_token.stop_requested()) {
+  while (signal_status == 0) {
     if (ucp_worker_progress(worker_) != 0) {
       continue;
     }
@@ -121,28 +110,6 @@ void TsScheduler::operator()(std::stop_token stop_token) {
   }
   disconnect_from_all();
   ucx::util::cleanup(context_, worker_);
-}
-
-void TsScheduler::send_timeslice(TsId id) {
-  StCollection coll = create_collection_descriptor(id);
-  TRACE("Processing timeslice {}: {}", id, coll);
-  if (coll.sender_ids.empty()) {
-    if (!senders_.empty()) {
-      WARN("No contributions found for timeslice {}", id);
-    }
-    return;
-  }
-
-  for (std::size_t i = 0; i < builders_.size(); ++i) {
-    auto& builder = builders_[(id + i) % builders_.size()];
-    if (builder.bytes_available >= coll.ms_data_size() &&
-        !builder.is_out_of_memory) {
-      send_timeslice_to_builder(coll, builder);
-      return;
-    }
-  }
-  WARN("No builder available for timeslice {}", id);
-  send_release_to_senders(id);
 }
 
 // Connection management
@@ -394,6 +361,28 @@ TsScheduler::handle_builder_status(const void* header,
   }
 
   return UCS_OK;
+}
+
+void TsScheduler::send_timeslice(TsId id) {
+  StCollection coll = create_collection_descriptor(id);
+  TRACE("Processing timeslice {}: {}", id, coll);
+  if (coll.sender_ids.empty()) {
+    if (!senders_.empty()) {
+      WARN("No contributions found for timeslice {}", id);
+    }
+    return;
+  }
+
+  for (std::size_t i = 0; i < builders_.size(); ++i) {
+    auto& builder = builders_[(id + i) % builders_.size()];
+    if (builder.bytes_available >= coll.ms_data_size() &&
+        !builder.is_out_of_memory) {
+      send_timeslice_to_builder(coll, builder);
+      return;
+    }
+  }
+  WARN("No builder available for timeslice {}", id);
+  send_release_to_senders(id);
 }
 
 void TsScheduler::send_timeslice_to_builder(const StCollection& coll,

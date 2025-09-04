@@ -4,12 +4,12 @@
 #include "Monitor.hpp"
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
+#include <csignal>
 #include <cstdint>
 #include <deque>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/types.h>
-#include <thread>
 #include <ucp/api/ucp.h>
 #include <ucp/api/ucp_def.h>
 #include <unistd.h>
@@ -45,6 +45,8 @@ public:
   TsScheduler(const TsScheduler&) = delete;
   TsScheduler& operator=(const TsScheduler&) = delete;
 
+  void run(volatile std::sig_atomic_t& signal_status);
+
 private:
   Scheduler tasks_;
 
@@ -64,12 +66,6 @@ private:
   std::unordered_map<ucp_ep_h, SenderConnection> senders_;
   std::vector<BuilderConnection> builders_;
   std::size_t ts_count_ = 0;
-
-  std::jthread worker_thread_;
-
-  // Main operation loop
-  void operator()(std::stop_token stop_token);
-  void send_timeslice(TsId id);
 
   // Connection management
   void handle_new_connection(ucp_conn_request_h conn_request);
@@ -105,6 +101,7 @@ private:
                                      void* data,
                                      size_t length,
                                      const ucp_am_recv_param_t* param);
+  void send_timeslice(TsId id);
   void send_timeslice_to_builder(const StCollection& coll,
                                  BuilderConnection& builder);
 
