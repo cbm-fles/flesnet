@@ -1,0 +1,26 @@
+// Copyright 2025 Jan de Cuveland
+
+#include "Application.hpp"
+#include <thread>
+
+using namespace std::chrono_literals;
+
+Application::Application(Parameters const& par,
+                         volatile sig_atomic_t* signal_status)
+    : m_par(par), m_signal_status(signal_status) {
+  if (!par.monitor_uri().empty()) {
+    m_monitor = std::make_unique<cbm::Monitor>(m_par.monitor_uri());
+  }
+
+  m_ts_scheduler = std::make_unique<TsScheduler>(
+      par.listen_port(), par.timeslice_duration_ns(), par.timeout_ns(),
+      m_monitor.get());
+}
+
+void Application::run() { m_ts_scheduler->run(*m_signal_status); }
+
+Application::~Application() {
+  // delay to allow monitor to process pending messages
+  constexpr auto destruct_delay = 200ms;
+  std::this_thread::sleep_for(destruct_delay);
+}

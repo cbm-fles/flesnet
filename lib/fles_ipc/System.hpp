@@ -1,8 +1,9 @@
-// Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2013-2025 Jan de Cuveland <cmail@cuveland.de>
 /// \file
 /// \brief Defines utility functions in the fles::system namespace.
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <glob.h>
 #include <string>
@@ -105,5 +106,16 @@ std::vector<std::string> glob(const std::string& pattern,
  * @return terminal width in characters
  */
 uint16_t current_terminal_width();
+
+/**
+ * @brief Get the current time in nanoseconds since the epoch
+ *
+ * @return current time in nanoseconds
+ */
+inline uint64_t current_time_ns() {
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(
+             std::chrono::high_resolution_clock::now().time_since_epoch())
+      .count();
+}
 
 } // namespace fles::system

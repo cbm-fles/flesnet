@@ -19,3 +19,7 @@ target_link_libraries(monitoring
 target_compile_features(monitoring PUBLIC cxx_std_17)
 
 target_compile_options(monitoring PRIVATE -Wall -Wextra -Wpedantic)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_compile_definitions(monitoring PUBLIC HAVE_PTHREAD_SETNAME_NP)
+endif()
