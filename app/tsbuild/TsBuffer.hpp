@@ -34,19 +34,19 @@ public:
 
   ~TsBuffer();
 
-  [[nodiscard]] std::size_t get_size() const { return buffer_size_; }
+  [[nodiscard]] std::size_t get_size() const { return m_buffer_size; }
 
   [[nodiscard]] std::size_t get_free_memory() const {
-    return managed_shm_->get_free_memory();
+    return m_managed_shm->get_free_memory();
   }
 
   [[nodiscard]] std::byte* allocate(std::size_t size) noexcept {
-    void* raw_ptr = managed_shm_->allocate(size, std::nothrow);
+    void* raw_ptr = m_managed_shm->allocate(size, std::nothrow);
     return static_cast<std::byte*>(raw_ptr);
   }
 
   // free bytes in the shared memory
-  void deallocate(std::byte* ptr) noexcept { managed_shm_->deallocate(ptr); }
+  void deallocate(std::byte* ptr) noexcept { m_managed_shm->deallocate(ptr); }
 
   /// Send a work item to the item distributor.
   void send_work_item(std::byte* buffer, TsId id, const StDescriptor& ts_desc);
@@ -57,18 +57,18 @@ public:
     if (!ItemProducer::try_receive_completion(&id)) {
       return std::nullopt;
     }
-    if (outstanding_.erase(id) != 1) {
+    if (m_outstanding.erase(id) != 1) {
       ERROR("Invalid item with id {}", id);
     }
     return id;
   };
 
 private:
-  std::string shm_identifier_;    ///< shared memory identifier
-  boost::uuids::uuid shm_uuid_{}; ///< shared memory UUID
-  std::size_t buffer_size_;       ///< buffer size in bytes
+  std::string m_shm_identifier;    ///< shared memory identifier
+  boost::uuids::uuid m_shm_uuid{}; ///< shared memory UUID
+  std::size_t m_buffer_size;       ///< buffer size in bytes
 
   std::unique_ptr<boost::interprocess::managed_shared_memory>
-      managed_shm_;              ///< shared memory object
-  std::set<ItemID> outstanding_; ///< set of outstanding work items
+      m_managed_shm;              ///< shared memory object
+  std::set<ItemID> m_outstanding; ///< set of outstanding work items
 };

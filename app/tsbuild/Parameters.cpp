@@ -86,20 +86,21 @@ void Parameters::parse_options(int argc, char* argv[]) {
                  ->value_name("<n>"),
              "enable logging to syslog at given log level");
   config_add("monitor,m",
-             po::value<std::string>(&_monitor_uri)
+             po::value<std::string>(&m_monitor_uri)
                  ->value_name("URI")
                  ->implicit_value("influx1:login:8086:flesnet_status"),
              "publish tsclient status to InfluxDB (or \"file:cout\" for "
              "console output)");
-  config_add("tssched-address", po::value<std::string>(&_tssched_address),
+  config_add("tssched-address", po::value<std::string>(&m_tssched_address),
              "address of the tssched server to connect to");
   config_add("timeout",
-             po::value<Nanoseconds>(&_timeout)->default_value(_timeout),
+             po::value<Nanoseconds>(&m_timeout)->default_value(m_timeout),
              "timeout for data reception (with suffix ns, us, ms, s)");
-  config_add("shm-id", po::value<std::string>(&_shm_id)->default_value(_shm_id),
+  config_add("shm-id",
+             po::value<std::string>(&m_shm_id)->default_value(m_shm_id),
              "shared memory identifier for timeslice buffer");
   config_add("buffer-size",
-             po::value<size_t>(&_buffer_size)->default_value(_buffer_size),
+             po::value<size_t>(&m_buffer_size)->default_value(m_buffer_size),
              "size of the timeslice buffer in bytes");
 
   po::options_description cmdline_options("Allowed options");

@@ -49,24 +49,24 @@ public:
   void run(volatile std::sig_atomic_t& signal_status);
 
 private:
-  Scheduler tasks_;
+  Scheduler m_tasks;
 
-  uint16_t listen_port_;
-  int64_t timeslice_duration_ns_;
-  int64_t timeout_ns_;
-  std::string hostname_;
-  cbm::Monitor* monitor_ = nullptr;
+  uint16_t m_listen_port;
+  int64_t m_timeslice_duration_ns;
+  int64_t m_timeout_ns;
+  std::string m_hostname;
+  cbm::Monitor* m_monitor = nullptr;
 
-  int epoll_fd_ = -1;
-  std::unordered_map<ucs_status_ptr_t, TsId> active_send_requests_;
+  int m_epoll_fd = -1;
+  std::unordered_map<ucs_status_ptr_t, TsId> m_active_send_requests;
 
-  ucp_context_h context_ = nullptr;
-  ucp_worker_h worker_ = nullptr;
-  ucp_listener_h listener_ = nullptr;
-  std::unordered_map<ucp_ep_h, std::string> connections_;
-  std::unordered_map<ucp_ep_h, SenderConnection> senders_;
-  std::vector<BuilderConnection> builders_;
-  std::size_t ts_count_ = 0;
+  ucp_context_h m_context = nullptr;
+  ucp_worker_h m_worker = nullptr;
+  ucp_listener_h m_listener = nullptr;
+  std::unordered_map<ucp_ep_h, std::string> m_connections;
+  std::unordered_map<ucp_ep_h, SenderConnection> m_senders;
+  std::vector<BuilderConnection> m_builders;
+  std::size_t m_ts_count = 0;
 
   // Connection management
   void handle_new_connection(ucp_conn_request_h conn_request);

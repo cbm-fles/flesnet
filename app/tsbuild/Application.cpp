@@ -8,34 +8,34 @@ using namespace std::chrono_literals;
 
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
-    : par_(par), signal_status_(signal_status),
-      producer_address_("inproc://" + par.shm_id()),
-      worker_address_("ipc://@" + par.shm_id()),
-      item_distributor_(zmq_context_, producer_address_, worker_address_),
-      timeslice_buffer_(
-          zmq_context_, producer_address_, par.shm_id(), par.buffer_size()),
-      distributor_thread_(std::ref(item_distributor_)) {
+    : m_par(par), m_signalStatus(signal_status),
+      m_producerAddress("inproc://" + par.shm_id()),
+      m_workerAddress("ipc://@" + par.shm_id()),
+      m_itemDistributor(m_zmqContext, m_producerAddress, m_workerAddress),
+      m_timesliceBuffer(
+          m_zmqContext, m_producerAddress, par.shm_id(), par.buffer_size()),
+      m_distributorThread(std::ref(m_itemDistributor)) {
   if (!par.monitor_uri().empty()) {
-    monitor_ = std::make_unique<cbm::Monitor>(par_.monitor_uri());
+    m_monitor = std::make_unique<cbm::Monitor>(m_par.monitor_uri());
   }
 
   // wait a moment to allow the timeslice buffer clients to connect
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-  ts_builder_ =
-      std::make_unique<TsBuilder>(timeslice_buffer_, par.tssched_address(),
-                                  par.timeout_ns(), monitor_.get());
+  m_tsBuilder =
+      std::make_unique<TsBuilder>(m_timesliceBuffer, par.tssched_address(),
+                                  par.timeout_ns(), m_monitor.get());
 }
 
 void Application::run() {
-  while (*signal_status_ == 0) {
+  while (*m_signalStatus == 0) {
     std::this_thread::sleep_for(100ms);
   }
 }
 
 Application::~Application() {
-  item_distributor_.stop();
-  distributor_thread_.join();
+  m_itemDistributor.stop();
+  m_distributorThread.join();
 
   // delay to allow monitor to process pending messages
   constexpr auto destruct_delay = 200ms;

@@ -23,29 +23,29 @@ public:
   void run();
 
 private:
-  Parameters const& par_;
-  volatile std::sig_atomic_t* signal_status_;
+  Parameters const& m_par;
+  volatile std::sig_atomic_t* m_signalStatus;
 
-  zmq::context_t zmq_context_{1};
+  zmq::context_t m_zmqContext{1};
 
-  std::unique_ptr<cbm::Monitor> monitor_;
+  std::unique_ptr<cbm::Monitor> m_monitor;
 
   /// Address that is used for communication between the TimesliceBuffer and the
   /// ItemDistributor.
-  const std::string producer_address_;
+  const std::string m_producerAddress;
 
   /// Address that is used by Workers to connect to the ItemDistributor.
-  const std::string worker_address_;
+  const std::string m_workerAddress;
 
   /// The ItemDistributor object.
-  ItemDistributor item_distributor_;
+  ItemDistributor m_itemDistributor;
 
   /// Shared memory buffer to store received timeslices.
-  TsBuffer timeslice_buffer_;
+  TsBuffer m_timesliceBuffer;
 
   /// Thread for the ItemDistributor.
-  std::thread distributor_thread_;
+  std::thread m_distributorThread;
 
   /// TsBuilder instance
-  std::unique_ptr<TsBuilder> ts_builder_;
+  std::unique_ptr<TsBuilder> m_tsBuilder;
 };

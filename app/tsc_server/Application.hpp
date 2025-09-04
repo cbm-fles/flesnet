@@ -33,30 +33,30 @@ private:
                             uint64_t start_time,
                             uint64_t duration);
 
-  Parameters const& par_;
-  volatile std::sig_atomic_t* signal_status_;
+  Parameters const& m_par;
+  volatile std::sig_atomic_t* m_signal_status;
 
-  std::vector<std::unique_ptr<cri::cri_device>> cris_;
-  std::vector<cri::cri_channel*> cri_channels_;
-  std::vector<std::unique_ptr<cri::pgen_channel>> pgen_channels_;
-  std::unique_ptr<boost::interprocess::managed_shared_memory> shm_;
-  std::vector<std::unique_ptr<Channel>> channels_;
+  std::vector<std::unique_ptr<cri::cri_device>> m_cris;
+  std::vector<cri::cri_channel*> m_cri_channels;
+  std::vector<std::unique_ptr<cri::pgen_channel>> m_pgen_channels;
+  std::unique_ptr<boost::interprocess::managed_shared_memory> m_shm;
+  std::vector<std::unique_ptr<Channel>> m_channels;
 
-  std::map<uint64_t, bool> completed_;
+  std::map<uint64_t, bool> m_completed;
 
-  size_t timeslice_count_ = 0;  ///< total number of processed timeslices
-  size_t component_count_ = 0;  ///< total number of processed components
-  size_t microslice_count_ = 0; ///< total number of processed microslices
-  size_t content_bytes_ = 0;    ///< total number of processed content bytes
-  size_t total_bytes_ = 0;      ///< total number of processed bytes
-  size_t timeslice_incomplete_count_ = 0; ///< number of incomplete timeslices
+  size_t m_timeslice_count = 0;  ///< total number of processed timeslices
+  size_t m_component_count = 0;  ///< total number of processed components
+  size_t m_microslice_count = 0; ///< total number of processed microslices
+  size_t m_content_bytes = 0;    ///< total number of processed content bytes
+  size_t m_total_bytes = 0;      ///< total number of processed bytes
+  size_t m_timeslice_incomplete_count = 0; ///< number of incomplete timeslices
 
   void report_status();
 
-  std::unique_ptr<cbm::Monitor> monitor_;
-  std::string hostname_;
+  std::unique_ptr<cbm::Monitor> m_monitor;
+  std::string m_hostname;
 
-  Scheduler tasks_;
+  Scheduler m_tasks;
 
-  std::unique_ptr<StSender> st_sender_;
+  std::unique_ptr<StSender> m_st_sender;
 };

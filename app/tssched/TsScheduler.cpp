@@ -24,64 +24,64 @@ TsScheduler::TsScheduler(uint16_t listen_port,
                          int64_t timeslice_duration_ns,
                          int64_t timeout_ns,
                          cbm::Monitor* monitor)
-    : listen_port_(listen_port), timeslice_duration_ns_{timeslice_duration_ns},
-      timeout_ns_{timeout_ns}, hostname_(fles::system::current_hostname()),
-      monitor_(monitor) {
+    : m_listen_port(listen_port),
+      m_timeslice_duration_ns{timeslice_duration_ns}, m_timeout_ns{timeout_ns},
+      m_hostname(fles::system::current_hostname()), m_monitor(monitor) {
   // Initialize event handling
-  epoll_fd_ = epoll_create1(EPOLL_CLOEXEC);
-  if (epoll_fd_ == -1) {
+  m_epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+  if (m_epoll_fd == -1) {
     throw std::runtime_error("epoll_create1 failed");
   }
 }
 
 TsScheduler::~TsScheduler() {
-  if (epoll_fd_ != -1) {
-    close(epoll_fd_);
+  if (m_epoll_fd != -1) {
+    close(m_epoll_fd);
   }
 }
 
 // Main operation loop
 
 void TsScheduler::run(volatile std::sig_atomic_t& signal_status) {
-  if (!ucx::util::init(context_, worker_, epoll_fd_)) {
+  if (!ucx::util::init(m_context, m_worker, m_epoll_fd)) {
     ERROR("Failed to initialize UCX");
     return;
   }
-  if (!ucx::util::set_receive_handler(worker_, AM_SENDER_REGISTER,
+  if (!ucx::util::set_receive_handler(m_worker, AM_SENDER_REGISTER,
                                       on_sender_register, this) ||
-      !ucx::util::set_receive_handler(worker_, AM_SENDER_ANNOUNCE_ST,
+      !ucx::util::set_receive_handler(m_worker, AM_SENDER_ANNOUNCE_ST,
                                       on_sender_announce, this) ||
-      !ucx::util::set_receive_handler(worker_, AM_SENDER_RETRACT_ST,
+      !ucx::util::set_receive_handler(m_worker, AM_SENDER_RETRACT_ST,
                                       on_sender_retract, this) ||
-      !ucx::util::set_receive_handler(worker_, AM_BUILDER_REGISTER,
+      !ucx::util::set_receive_handler(m_worker, AM_BUILDER_REGISTER,
                                       on_builder_register, this) ||
-      !ucx::util::set_receive_handler(worker_, AM_BUILDER_STATUS,
+      !ucx::util::set_receive_handler(m_worker, AM_BUILDER_STATUS,
                                       on_builder_status, this)) {
     ERROR("Failed to register receive handlers");
     return;
   }
-  if (!ucx::util::create_listener(worker_, listener_, listen_port_,
+  if (!ucx::util::create_listener(m_worker, m_listener, m_listen_port,
                                   on_new_connection, this)) {
     ERROR("Failed to create UCX listener");
     return;
   }
 
-  uint64_t id = fles::system::current_time_ns() / timeslice_duration_ns_;
+  uint64_t id = fles::system::current_time_ns() / m_timeslice_duration_ns;
   report_status();
 
   while (signal_status == 0) {
-    if (ucp_worker_progress(worker_) != 0) {
+    if (ucp_worker_progress(m_worker) != 0) {
       continue;
     }
-    tasks_.timer();
+    m_tasks.timer();
 
     bool try_later =
-        senders_.empty() ||
-        std::any_of(senders_.begin(), senders_.end(), [id](const auto& s) {
+        m_senders.empty() ||
+        std::any_of(m_senders.begin(), m_senders.end(), [id](const auto& s) {
           return s.second.last_received_st < id;
         });
     uint64_t current_time_ns = fles::system::current_time_ns();
-    uint64_t timeout_ns = (id + 1) * timeslice_duration_ns_ + timeout_ns_;
+    uint64_t timeout_ns = (id + 1) * m_timeslice_duration_ns + m_timeout_ns;
 
     if (try_later && current_time_ns < timeout_ns) {
       int sender_wait_ms =
@@ -89,12 +89,12 @@ void TsScheduler::run(volatile std::sig_atomic_t& signal_status) {
       int timer_wait_ms = std::max(
           static_cast<int>(
               std::chrono::duration_cast<std::chrono::milliseconds>(
-                  tasks_.when_next() - std::chrono::system_clock::now())
+                  m_tasks.when_next() - std::chrono::system_clock::now())
                   .count() +
               1),
           0);
       int timeout_ms = std::min(sender_wait_ms, timer_wait_ms);
-      if (!ucx::util::arm_worker_and_wait(worker_, epoll_fd_, timeout_ms)) {
+      if (!ucx::util::arm_worker_and_wait(m_worker, m_epoll_fd, timeout_ms)) {
         break;
       }
       continue;
@@ -104,12 +104,12 @@ void TsScheduler::run(volatile std::sig_atomic_t& signal_status) {
     id++;
   }
 
-  if (listener_ != nullptr) {
-    ucp_listener_destroy(listener_);
-    listener_ = nullptr;
+  if (m_listener != nullptr) {
+    ucp_listener_destroy(m_listener);
+    m_listener = nullptr;
   }
   disconnect_from_all();
-  ucx::util::cleanup(context_, worker_);
+  ucx::util::cleanup(m_context, m_worker);
 }
 
 // Connection management
@@ -118,41 +118,41 @@ void TsScheduler::handle_new_connection(ucp_conn_request_h conn_request) {
   auto client_address = ucx::util::get_client_address(conn_request);
   if (!client_address) {
     ERROR("Failed to retrieve client address from connection request");
-    ucp_listener_reject(listener_, conn_request);
+    ucp_listener_reject(m_listener, conn_request);
     return;
   }
 
-  auto ep = ucx::util::accept(worker_, conn_request, on_endpoint_error, this);
+  auto ep = ucx::util::accept(m_worker, conn_request, on_endpoint_error, this);
   if (!ep) {
     ERROR("Failed to create endpoint for new connection");
     return;
   }
 
-  connections_[*ep] = *client_address;
+  m_connections[*ep] = *client_address;
   DEBUG("Accepted connection from {}", *client_address);
 }
 
 void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
-  auto it = connections_.find(ep);
-  if (it != connections_.end()) {
+  auto it = m_connections.find(ep);
+  if (it != m_connections.end()) {
     DEBUG("Disconnected from endpoint '{}': {}", it->second, status);
-    connections_.erase(it);
+    m_connections.erase(it);
   } else {
     ERROR("Received error for unknown endpoint: {}", status);
   }
 
-  auto sender_it = senders_.find(ep);
-  if (sender_it != senders_.end()) {
+  auto sender_it = m_senders.find(ep);
+  if (sender_it != m_senders.end()) {
     INFO("Disconnected from sender '{}'", sender_it->second.sender_id);
-    senders_.erase(sender_it);
+    m_senders.erase(sender_it);
   }
 
   if (auto it =
-          std::find_if(builders_.begin(), builders_.end(),
+          std::find_if(m_builders.begin(), m_builders.end(),
                        [ep](const BuilderConnection& b) { return b.ep == ep; });
-      it != builders_.end()) {
+      it != m_builders.end()) {
     INFO("Disconnected from builder '{}'", it->id);
-    builders_.erase(it);
+    m_builders.erase(it);
   }
 
   // Fail any in-progress timeslice allocations that involved this endpoint
@@ -160,18 +160,18 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
 }
 
 void TsScheduler::disconnect_from_all() {
-  if (connections_.empty() && senders_.empty() && builders_.empty()) {
+  if (m_connections.empty() && m_senders.empty() && m_builders.empty()) {
     return;
   }
-  INFO("Disconnecting from {} senders and {} builders", senders_.size(),
-       builders_.size());
-  for (auto& [ep, _] : connections_) {
-    ucx::util::close_endpoint(worker_, ep, true);
+  INFO("Disconnecting from {} senders and {} builders", m_senders.size(),
+       m_builders.size());
+  for (auto& [ep, _] : m_connections) {
+    ucx::util::close_endpoint(m_worker, ep, true);
   }
 
-  connections_.clear();
-  senders_.clear();
-  builders_.clear();
+  m_connections.clear();
+  m_senders.clear();
+  m_builders.clear();
 }
 
 // Sender message handling
@@ -190,7 +190,7 @@ TsScheduler::handle_sender_register(const void* header,
 
   auto sender_id = std::string(static_cast<const char*>(header), header_length);
   ucp_ep_h ep = param->reply_ep;
-  senders_[ep] = {sender_id, ep, {}};
+  m_senders[ep] = {sender_id, ep, {}};
   INFO("Accepted sender registration from '{}'", sender_id);
 
   return UCS_OK;
@@ -213,8 +213,8 @@ TsScheduler::handle_sender_announce(const void* header,
   const TsId id = hdr[0];
   const uint64_t ms_data_size = hdr[1];
 
-  auto it = senders_.find(param->reply_ep);
-  if (it == senders_.end()) {
+  auto it = m_senders.find(param->reply_ep);
+  if (it == m_senders.end()) {
     ERROR("Received announcement from unknown sender");
     return UCS_OK;
   }
@@ -230,7 +230,7 @@ TsScheduler::handle_sender_announce(const void* header,
   }
 
   if (st_descriptor->duration_ns !=
-      static_cast<uint64_t>(timeslice_duration_ns_)) {
+      static_cast<uint64_t>(m_timeslice_duration_ns)) {
     ERROR("Invalid timeslice duration from sender '{}'", sender_conn.sender_id);
     return UCS_OK;
   }
@@ -261,8 +261,8 @@ TsScheduler::handle_sender_retract(const void* header,
 
   const TsId id = hdr[0];
 
-  auto it = senders_.find(param->reply_ep);
-  if (it == senders_.end()) {
+  auto it = m_senders.find(param->reply_ep);
+  if (it == m_senders.end()) {
     ERROR("Received retraction from unknown sender");
     return UCS_OK;
   }
@@ -278,7 +278,7 @@ void TsScheduler::send_release_to_senders(TsId id) {
   std::array<uint64_t, 1> hdr{id};
   auto header = std::as_bytes(std::span(hdr));
 
-  for (auto& [ep, conn] : senders_) {
+  for (auto& [ep, conn] : m_senders) {
     ucx::util::send_active_message(ep, AM_SCHED_RELEASE_ST, header, {},
                                    ucx::util::on_generic_send_complete, this,
                                    UCP_AM_SEND_FLAG_COPY_HEADER);
@@ -303,7 +303,7 @@ TsScheduler::handle_builder_register(const void* header,
   auto builder_id =
       std::string(static_cast<const char*>(header), header_length);
   ucp_ep_h ep = param->reply_ep;
-  builders_.emplace_back(builder_id, ep, 0, false);
+  m_builders.emplace_back(builder_id, ep, 0, false);
   INFO("Accepted builder registration from '{}'", builder_id);
 
   return UCS_OK;
@@ -324,11 +324,11 @@ TsScheduler::handle_builder_status(const void* header,
   }
 
   // Find the builder connection
-  auto it = std::find_if(builders_.begin(), builders_.end(),
+  auto it = std::find_if(m_builders.begin(), m_builders.end(),
                          [ep = param->reply_ep](const BuilderConnection& b) {
                            return b.ep == ep;
                          });
-  if (it == builders_.end()) {
+  if (it == m_builders.end()) {
     ERROR("Received status from unknown builder");
     return UCS_OK;
   }
@@ -377,14 +377,14 @@ void TsScheduler::send_timeslice(TsId id) {
   StCollection coll = create_collection_descriptor(id);
   TRACE("Processing timeslice {}: {}", id, coll);
   if (coll.sender_ids.empty()) {
-    if (!senders_.empty()) {
+    if (!m_senders.empty()) {
       WARN("No contributions found for timeslice {}", id);
     }
     return;
   }
 
-  for (std::size_t i = 0; i < builders_.size(); ++i) {
-    auto& builder = builders_[(id + i) % builders_.size()];
+  for (std::size_t i = 0; i < m_builders.size(); ++i) {
+    auto& builder = m_builders[(id + i) % m_builders.size()];
     if (builder.bytes_available >= coll.ms_data_size() &&
         !builder.is_out_of_memory) {
       send_timeslice_to_builder(coll, builder);
@@ -416,7 +416,7 @@ void TsScheduler::send_timeslice_to_builder(const StCollection& coll,
 
 StCollection TsScheduler::create_collection_descriptor(TsId id) {
   StCollection coll{id, {}, {}};
-  for (auto& [sender_ep, sender] : senders_) {
+  for (auto& [sender_ep, sender] : m_senders) {
     auto it =
         std::find_if(sender.announced_st.begin(), sender.announced_st.end(),
                      [id](const auto& st) { return st.id == id; });
@@ -438,11 +438,11 @@ void TsScheduler::report_status() {
   constexpr auto interval = std::chrono::seconds(1);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
-  if (monitor_ != nullptr) {
-    monitor_->QueueMetric("tssched_status", {{"host", hostname_}},
-                          {{"timeslice_count", 0}});
+  if (m_monitor != nullptr) {
+    m_monitor->QueueMetric("tssched_status", {{"host", m_hostname}},
+                           {{"timeslice_count", 0}});
   }
   // TODO: Add real metrics
 
-  tasks_.add([this] { report_status(); }, now + interval);
+  m_tasks.add([this] { report_status(); }, now + interval);
 }

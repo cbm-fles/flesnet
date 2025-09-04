@@ -86,20 +86,20 @@ void Parameters::parse_options(int argc, char* argv[]) {
                  ->value_name("<n>"),
              "enable logging to syslog at given log level");
   config_add("monitor,m",
-             po::value<std::string>(&_monitor_uri)
+             po::value<std::string>(&m_monitor_uri)
                  ->value_name("URI")
                  ->implicit_value("influx1:login:8086:flesnet_status"),
              "publish tsclient status to InfluxDB (or \"file:cout\" for "
              "console output)");
   config_add("listen-port,p",
-             po::value<uint16_t>(&_listen_port)->default_value(_listen_port),
+             po::value<uint16_t>(&m_listen_port)->default_value(m_listen_port),
              "port to listen for stsender and tsbuilder connections");
   config_add("timeslice-duration",
-             po::value<Nanoseconds>(&_timeslice_duration)
-                 ->default_value(_timeslice_duration),
+             po::value<Nanoseconds>(&m_timeslice_duration)
+                 ->default_value(m_timeslice_duration),
              "duration of a timeslice (with suffix ns, us, ms, s)");
   config_add("timeout",
-             po::value<Nanoseconds>(&_timeout)->default_value(_timeout),
+             po::value<Nanoseconds>(&m_timeout)->default_value(m_timeout),
              "timeout for data reception (with suffix ns, us, ms, s)");
 
   po::options_description cmdline_options("Allowed options");

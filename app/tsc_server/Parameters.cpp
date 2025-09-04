@@ -115,7 +115,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
                  ->value_name("<n>"),
              "enable logging to syslog at given log level");
   config_add("monitor,m",
-             po::value<std::string>(&_monitor_uri)
+             po::value<std::string>(&m_monitor_uri)
                  ->value_name("URI")
                  ->implicit_value("influx1:login:8086:flesnet_status"),
              "publish tsclient status to InfluxDB (or \"file:cout\" for "
@@ -123,55 +123,55 @@ void Parameters::parse_options(int argc, char* argv[]) {
   config_add("pci-addr,i", po::value<pci_addr>(),
              "PCI BDF address of target CRI in BB:DD.F format");
   config_add("shm,o",
-             po::value<std::string>(&_shm_id)->default_value("tsc_shm"),
+             po::value<std::string>(&m_shm_id)->default_value("tsc_shm"),
              "name of the shared memory to be used");
   config_add("listen-port,p",
-             po::value<uint16_t>(&_listen_port)->default_value(_listen_port),
+             po::value<uint16_t>(&m_listen_port)->default_value(m_listen_port),
              "port to listen for tsbuilder connections");
-  config_add("tssched-address", po::value<std::string>(&_tssched_address),
+  config_add("tssched-address", po::value<std::string>(&m_tssched_address),
              "address of the tssched server to connect to");
   config_add("pgen-channels,P",
-             po::value<uint32_t>(&_pgen_channels)
-                 ->default_value(_pgen_channels)
+             po::value<uint32_t>(&m_pgen_channels)
+                 ->default_value(m_pgen_channels)
                  ->implicit_value(1),
              "number of additional pattern generator channels (0 to disable)");
   config_add(
       "pgen-microslice-duration",
-      po::value<Nanoseconds>(&_pgen_microslice_duration)
-          ->default_value(_pgen_microslice_duration),
+      po::value<Nanoseconds>(&m_pgen_microslice_duration)
+          ->default_value(m_pgen_microslice_duration),
       "duration of a pattern generator microslice (with suffix ns, us, ms, s)");
   config_add("pgen-microslice-size",
-             po::value<size_t>(&_pgen_microslice_size)
-                 ->default_value(_pgen_microslice_size),
+             po::value<size_t>(&m_pgen_microslice_size)
+                 ->default_value(m_pgen_microslice_size),
              "size of a pattern generator microslice in bytes");
   config_add("pgen-flags",
-             po::value<uint32_t>(&_pgen_flags)->default_value(_pgen_flags),
+             po::value<uint32_t>(&m_pgen_flags)->default_value(m_pgen_flags),
              "flags for pattern generator channels (0: no flags, "
              "1: generate pattern, 2: randomize sizes, "
              "3: generate pattern + randomize sizes, ...)");
 
   config_add("timeslice-duration",
-             po::value<Nanoseconds>(&_timeslice_duration)
-                 ->default_value(_timeslice_duration),
+             po::value<Nanoseconds>(&m_timeslice_duration)
+                 ->default_value(m_timeslice_duration),
              "duration of a timeslice (with suffix ns, us, ms, s)");
   config_add("timeout",
-             po::value<Nanoseconds>(&_timeout)->default_value(_timeout),
+             po::value<Nanoseconds>(&m_timeout)->default_value(m_timeout),
              "timeout for data reception (with suffix ns, us, ms, s)");
   config_add(
       "data-buffer-size",
-      po::value<size_t>(&_data_buffer_size)->default_value(_data_buffer_size),
+      po::value<size_t>(&m_data_buffer_size)->default_value(m_data_buffer_size),
       "size of the data buffer in bytes");
   config_add(
       "desc-buffer-size",
-      po::value<size_t>(&_desc_buffer_size)->default_value(_desc_buffer_size),
+      po::value<size_t>(&m_desc_buffer_size)->default_value(m_desc_buffer_size),
       "size of the descriptor buffer (number of entries)");
-  config_add(
-      "overlap-before",
-      po::value<Nanoseconds>(&_overlap_before)->default_value(_overlap_before),
-      "overlap before the timeslice (with suffix ns, us, ms, s)");
+  config_add("overlap-before",
+             po::value<Nanoseconds>(&m_overlap_before)
+                 ->default_value(m_overlap_before),
+             "overlap before the timeslice (with suffix ns, us, ms, s)");
   config_add(
       "overlap-after",
-      po::value<Nanoseconds>(&_overlap_after)->default_value(_overlap_after),
+      po::value<Nanoseconds>(&m_overlap_after)->default_value(m_overlap_after),
       "overlap after the timeslice (with suffix ns, us, ms, s)");
 
   po::options_description cmdline_options("Allowed options");
@@ -212,14 +212,14 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 
   if (vm.count("pci-addr") != 0u) {
-    _device_address = vm["pci-addr"].as<pci_addr>();
-    _device_autodetect = false;
+    m_device_address = vm["pci-addr"].as<pci_addr>();
+    m_device_autodetect = false;
     DEBUG("CRI address: {:02x}:{:02x}.{:x}",
-          static_cast<unsigned>(_device_address.bus),
-          static_cast<unsigned>(_device_address.dev),
-          static_cast<unsigned>(_device_address.func));
+          static_cast<unsigned>(m_device_address.bus),
+          static_cast<unsigned>(m_device_address.dev),
+          static_cast<unsigned>(m_device_address.func));
   } else {
-    _device_autodetect = true;
+    m_device_autodetect = true;
     DEBUG("CRI address: autodetect");
   }
 
@@ -233,15 +233,15 @@ void Parameters::parse_options(int argc, char* argv[]) {
     throw ParametersException("timeout must be greater than 0");
   }
 
-  INFO("Shared memory file: {}", _shm_id);
+  INFO("Shared memory file: {}", m_shm_id);
   INFO("{}", buffer_info());
 }
 
 [[nodiscard]] std::string Parameters::buffer_info() const {
   std::stringstream ss;
-  ss << "Buffer size per channel: " << human_readable_count(_data_buffer_size)
+  ss << "Buffer size per channel: " << human_readable_count(m_data_buffer_size)
      << " + "
-     << human_readable_count(_desc_buffer_size *
+     << human_readable_count(m_desc_buffer_size *
                              sizeof(fles::MicrosliceDescriptor));
   return ss.str();
 }

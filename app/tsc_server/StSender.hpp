@@ -37,38 +37,38 @@ public:
   std::optional<TsId> try_receive_completion();
 
 private:
-  Scheduler tasks_;
+  Scheduler m_tasks;
 
-  std::string scheduler_address_;
-  uint16_t listen_port_;
-  std::string sender_id_;
+  std::string m_scheduler_address;
+  uint16_t m_listen_port;
+  std::string m_sender_id;
 
-  int queue_event_fd_ = -1;
-  std::deque<std::pair<TsId, StHandle>> pending_announcements_;
-  std::deque<TsId> pending_retractions_;
-  std::mutex queue_mutex_;
-  std::queue<TsId> completed_;
-  std::mutex completions_mutex_;
-  int epoll_fd_ = -1;
+  int m_queue_event_fd = -1;
+  std::deque<std::pair<TsId, StHandle>> m_pending_announcements;
+  std::deque<TsId> m_pending_retractions;
+  std::mutex m_queue_mutex;
+  std::queue<TsId> m_completed;
+  std::mutex m_completions_mutex;
+  int m_epoll_fd = -1;
 
   std::unordered_map<TsId,
                      std::pair<std::vector<std::byte>, std::vector<ucp_dt_iov>>>
-      announced_;
-  std::unordered_map<ucs_status_ptr_t, TsId> active_send_requests_;
+      m_announced;
+  std::unordered_map<ucs_status_ptr_t, TsId> m_active_send_requests;
 
-  ucp_context_h context_ = nullptr;
-  ucp_worker_h worker_ = nullptr;
-  ucp_listener_h listener_ = nullptr;
-  std::unordered_map<ucp_ep_h, std::string> builders_;
+  ucp_context_h m_context = nullptr;
+  ucp_worker_h m_worker = nullptr;
+  ucp_listener_h m_listener = nullptr;
+  std::unordered_map<ucp_ep_h, std::string> m_builders;
 
-  static constexpr auto scheduler_retry_interval_ = 2s;
-  bool mute_scheduler_reconnect_ = false;
+  static constexpr auto m_scheduler_retry_interval = 2s;
+  bool m_mute_scheduler_reconnect = false;
 
-  ucp_ep_h scheduler_ep_ = nullptr;
-  bool scheduler_connecting_ = false;
-  bool scheduler_connected_ = false;
+  ucp_ep_h m_scheduler_ep = nullptr;
+  bool m_scheduler_connecting = false;
+  bool m_scheduler_connected = false;
 
-  std::jthread worker_thread_;
+  std::jthread m_worker_thread;
 
   // Main operation loop
   void operator()(std::stop_token stop_token);

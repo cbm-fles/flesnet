@@ -7,17 +7,17 @@ using namespace std::chrono_literals;
 
 Application::Application(Parameters const& par,
                          volatile sig_atomic_t* signal_status)
-    : par_(par), signal_status_(signal_status) {
+    : m_par(par), m_signal_status(signal_status) {
   if (!par.monitor_uri().empty()) {
-    monitor_ = std::make_unique<cbm::Monitor>(par_.monitor_uri());
+    m_monitor = std::make_unique<cbm::Monitor>(m_par.monitor_uri());
   }
 
-  ts_scheduler_ = std::make_unique<TsScheduler>(
+  m_ts_scheduler = std::make_unique<TsScheduler>(
       par.listen_port(), par.timeslice_duration_ns(), par.timeout_ns(),
-      monitor_.get());
+      m_monitor.get());
 }
 
-void Application::run() { ts_scheduler_->run(*signal_status_); }
+void Application::run() { m_ts_scheduler->run(*m_signal_status); }
 
 Application::~Application() {
   // delay to allow monitor to process pending messages

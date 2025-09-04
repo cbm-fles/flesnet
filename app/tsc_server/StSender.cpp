@@ -23,43 +23,43 @@
 #include <ucs/type/status.h>
 
 StSender::StSender(std::string_view scheduler_address, uint16_t listen_port)
-    : scheduler_address_(scheduler_address), listen_port_(listen_port) {
-  sender_id_ =
-      fles::system::current_hostname() + ":" + std::to_string(listen_port_);
+    : m_scheduler_address(scheduler_address), m_listen_port(listen_port) {
+  m_sender_id =
+      fles::system::current_hostname() + ":" + std::to_string(m_listen_port);
 
   // Initialize event handling
-  queue_event_fd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-  if (queue_event_fd_ == -1) {
+  m_queue_event_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+  if (m_queue_event_fd == -1) {
     throw std::runtime_error("eventfd failed");
   }
-  epoll_fd_ = epoll_create1(EPOLL_CLOEXEC);
-  if (epoll_fd_ == -1) {
+  m_epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+  if (m_epoll_fd == -1) {
     throw std::runtime_error("epoll_create1 failed");
   }
 
   // Add message queue's eventfd to epoll
   epoll_event ev{};
   ev.events = EPOLLIN | EPOLLET; // Edge-triggered
-  ev.data.fd = queue_event_fd_;
-  if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, queue_event_fd_, &ev) == -1) {
+  ev.data.fd = m_queue_event_fd;
+  if (epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, m_queue_event_fd, &ev) == -1) {
     throw std::runtime_error("epoll_ctl failed for message queue");
   }
 
   // Start the worker thread
-  worker_thread_ = std::jthread([this](std::stop_token st) { (*this)(st); });
+  m_worker_thread = std::jthread([this](std::stop_token st) { (*this)(st); });
 }
 
 StSender::~StSender() {
-  if (worker_thread_.joinable()) {
-    worker_thread_.request_stop();
-    worker_thread_.join();
+  if (m_worker_thread.joinable()) {
+    m_worker_thread.request_stop();
+    m_worker_thread.join();
   }
 
-  if (epoll_fd_ != -1) {
-    close(epoll_fd_);
+  if (m_epoll_fd != -1) {
+    close(m_epoll_fd);
   }
-  if (queue_event_fd_ != -1) {
-    close(queue_event_fd_);
+  if (m_queue_event_fd != -1) {
+    close(m_queue_event_fd);
   }
 }
 
@@ -67,35 +67,35 @@ StSender::~StSender() {
 
 void StSender::announce_subtimeslice(TsId id, const StHandle& st) {
   {
-    std::lock_guard<std::mutex> lock(queue_mutex_);
-    pending_announcements_.emplace_back(id, st);
+    std::lock_guard<std::mutex> lock(m_queue_mutex);
+    m_pending_announcements.emplace_back(id, st);
   }
   notify_queue_update();
 }
 
 void StSender::retract_subtimeslice(TsId id) {
   {
-    std::lock_guard<std::mutex> lock(queue_mutex_);
-    auto it = std::find_if(pending_announcements_.begin(),
-                           pending_announcements_.end(),
+    std::lock_guard<std::mutex> lock(m_queue_mutex);
+    auto it = std::find_if(m_pending_announcements.begin(),
+                           m_pending_announcements.end(),
                            [id](const auto& item) { return item.first == id; });
-    if (it != pending_announcements_.end()) {
-      pending_announcements_.erase(it);
+    if (it != m_pending_announcements.end()) {
+      m_pending_announcements.erase(it);
       complete_subtimeslice(id);
       return;
     }
-    pending_retractions_.emplace_back(id);
+    m_pending_retractions.emplace_back(id);
   }
   notify_queue_update();
 }
 
 std::optional<TsId> StSender::try_receive_completion() {
-  std::lock_guard<std::mutex> lock(completions_mutex_);
-  if (completed_.empty()) {
+  std::lock_guard<std::mutex> lock(m_completions_mutex);
+  if (m_completed.empty()) {
     return std::nullopt;
   }
-  TsId id = completed_.front();
-  completed_.pop();
+  TsId id = m_completed.front();
+  m_completed.pop();
   return id;
 }
 
@@ -104,69 +104,69 @@ std::optional<TsId> StSender::try_receive_completion() {
 void StSender::operator()(std::stop_token stop_token) {
   cbm::system::set_thread_name("StSender");
 
-  if (!ucx::util::init(context_, worker_, epoll_fd_)) {
+  if (!ucx::util::init(m_context, m_worker, m_epoll_fd)) {
     ERROR("Failed to initialize UCX");
     return;
   }
-  if (!ucx::util::set_receive_handler(worker_, AM_SCHED_RELEASE_ST,
+  if (!ucx::util::set_receive_handler(m_worker, AM_SCHED_RELEASE_ST,
                                       on_scheduler_release, this) ||
-      !ucx::util::set_receive_handler(worker_, AM_BUILDER_REQUEST_ST,
+      !ucx::util::set_receive_handler(m_worker, AM_BUILDER_REQUEST_ST,
                                       on_builder_request, this)) {
     ERROR("Failed to register receive handlers");
     return;
   }
   connect_to_scheduler_if_needed();
-  if (!ucx::util::create_listener(worker_, listener_, listen_port_,
+  if (!ucx::util::create_listener(m_worker, m_listener, m_listen_port,
                                   on_new_connection, this)) {
     ERROR("Failed to create UCX listener");
     return;
   }
 
   while (!stop_token.stop_requested()) {
-    if (ucp_worker_progress(worker_) != 0) {
+    if (ucp_worker_progress(m_worker) != 0) {
       continue;
     }
     if (process_queues() > 0) {
       continue;
     }
-    tasks_.timer();
+    m_tasks.timer();
 
-    if (!ucx::util::arm_worker_and_wait(worker_, epoll_fd_)) {
+    if (!ucx::util::arm_worker_and_wait(m_worker, m_epoll_fd)) {
       break;
     }
   }
 
-  if (listener_ != nullptr) {
-    ucp_listener_destroy(listener_);
-    listener_ = nullptr;
+  if (m_listener != nullptr) {
+    ucp_listener_destroy(m_listener);
+    m_listener = nullptr;
   }
   disconnect_from_scheduler();
   disconnect_from_builders();
-  ucx::util::cleanup(context_, worker_);
+  ucx::util::cleanup(m_context, m_worker);
 }
 
 // Scheduler connection management
 
 void StSender::connect_to_scheduler_if_needed() {
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-  if (!scheduler_connecting_ && !scheduler_connected_ &&
-      !worker_thread_.get_stop_token().stop_requested()) {
+  if (!m_scheduler_connecting && !m_scheduler_connected &&
+      !m_worker_thread.get_stop_token().stop_requested()) {
     connect_to_scheduler();
   }
 
-  tasks_.add([this] { connect_to_scheduler_if_needed(); },
-             now + scheduler_retry_interval_);
+  m_tasks.add([this] { connect_to_scheduler_if_needed(); },
+              now + m_scheduler_retry_interval);
 }
 
 void StSender::connect_to_scheduler() {
-  assert(!scheduler_connecting_ && !scheduler_connected_);
+  assert(!m_scheduler_connecting && !m_scheduler_connected);
 
   auto [address, port] =
-      ucx::util::parse_address(scheduler_address_, DEFAULT_SCHEDULER_PORT);
+      ucx::util::parse_address(m_scheduler_address, DEFAULT_SCHEDULER_PORT);
   auto ep =
-      ucx::util::connect(worker_, address, port, on_scheduler_error, this);
+      ucx::util::connect(m_worker, address, port, on_scheduler_error, this);
   if (ep) {
-    if (!mute_scheduler_reconnect_) {
+    if (!m_mute_scheduler_reconnect) {
       INFO("Trying to connect to scheduler at '{}:{}'", address, port);
     }
   } else {
@@ -175,52 +175,52 @@ void StSender::connect_to_scheduler() {
     return;
   }
 
-  scheduler_ep_ = *ep;
+  m_scheduler_ep = *ep;
 
-  auto header = std::as_bytes(std::span(sender_id_));
+  auto header = std::as_bytes(std::span(m_sender_id));
   bool send_am_ok = ucx::util::send_active_message(
-      scheduler_ep_, AM_SENDER_REGISTER, header, {},
+      m_scheduler_ep, AM_SENDER_REGISTER, header, {},
       on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
   if (!send_am_ok) {
     WARN("Failed to register with scheduler at '{}:{}', will retry", address,
          port);
-    ucx::util::close_endpoint(worker_, scheduler_ep_, true);
-    scheduler_ep_ = nullptr;
+    ucx::util::close_endpoint(m_worker, m_scheduler_ep, true);
+    m_scheduler_ep = nullptr;
     return;
   }
 
-  scheduler_connecting_ = true;
+  m_scheduler_connecting = true;
 }
 
 void StSender::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
-  if (ep != scheduler_ep_) {
+  if (ep != m_scheduler_ep) {
     ERROR("Received error for unknown endpoint: {}", status);
     return;
   }
 
-  if (scheduler_connected_) {
+  if (m_scheduler_connected) {
     WARN("Disconnected from scheduler: {}", status);
   }
-  scheduler_connected_ = false;
+  m_scheduler_connected = false;
   disconnect_from_scheduler(true);
 }
 
 void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
                                                   ucs_status_t status) {
-  scheduler_connecting_ = false;
+  m_scheduler_connecting = false;
 
   if (status != UCS_OK) {
-    if (!mute_scheduler_reconnect_) {
+    if (!m_mute_scheduler_reconnect) {
       WARN("Failed to register with scheduler: {}", status);
       INFO("Will retry connection to scheduler every {}s",
            std::chrono::duration_cast<std::chrono::seconds>(
-               scheduler_retry_interval_)
+               m_scheduler_retry_interval)
                .count());
-      mute_scheduler_reconnect_ = true;
+      m_mute_scheduler_reconnect = true;
     }
   } else {
-    scheduler_connected_ = true;
-    mute_scheduler_reconnect_ = false;
+    m_scheduler_connected = true;
+    m_mute_scheduler_reconnect = false;
     INFO("Successfully registered with scheduler");
   }
 
@@ -230,25 +230,25 @@ void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
 };
 
 void StSender::disconnect_from_scheduler(bool force) {
-  if (scheduler_connected_) {
+  if (m_scheduler_connected) {
     INFO("Disconnecting from scheduler");
   }
-  scheduler_connecting_ = false;
-  scheduler_connected_ = false;
+  m_scheduler_connecting = false;
+  m_scheduler_connected = false;
 
-  if (scheduler_ep_ == nullptr) {
+  if (m_scheduler_ep == nullptr) {
     return;
   }
 
-  ucx::util::close_endpoint(worker_, scheduler_ep_, force);
-  scheduler_ep_ = nullptr;
+  ucx::util::close_endpoint(m_worker, m_scheduler_ep, force);
+  m_scheduler_ep = nullptr;
 }
 
 // Scheduler message handling
 
 void StSender::send_announcement_to_scheduler(TsId id) {
-  auto it = announced_.find(id);
-  if (it == announced_.end()) {
+  auto it = m_announced.find(id);
+  if (it == m_announced.end()) {
     return;
   }
   const auto& [st_descriptor_bytes, iov_vector] = it->second;
@@ -265,7 +265,7 @@ void StSender::send_announcement_to_scheduler(TsId id) {
         total_ms_data_size);
 
   ucx::util::send_active_message(
-      scheduler_ep_, AM_SENDER_ANNOUNCE_ST, header, buffer,
+      m_scheduler_ep, AM_SENDER_ANNOUNCE_ST, header, buffer,
       ucx::util::on_generic_send_complete, this,
       UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
 }
@@ -274,7 +274,7 @@ void StSender::send_retraction_to_scheduler(TsId id) {
   std::array<uint64_t, 1> hdr{id};
 
   auto header = std::as_bytes(std::span(hdr));
-  ucx::util::send_active_message(scheduler_ep_, AM_SENDER_RETRACT_ST, header,
+  ucx::util::send_active_message(m_scheduler_ep, AM_SENDER_RETRACT_ST, header,
                                  {}, ucx::util::on_generic_send_complete, this,
                                  UCP_AM_SEND_FLAG_COPY_HEADER |
                                      UCP_AM_SEND_FLAG_REPLY);
@@ -292,10 +292,10 @@ ucs_status_t StSender::handle_scheduler_release(
   }
 
   TsId id = *static_cast<const uint64_t*>(header);
-  auto it = announced_.find(id);
-  if (it != announced_.end()) {
+  auto it = m_announced.find(id);
+  if (it != m_announced.end()) {
     DEBUG("Removing released subtimeslice {}", id);
-    announced_.erase(it);
+    m_announced.erase(it);
     complete_subtimeslice(id);
   } else {
     WARN("Release for unknown subtimeslice {}", id);
@@ -311,27 +311,27 @@ void StSender::handle_new_connection(ucp_conn_request_h conn_request) {
   auto client_address = ucx::util::get_client_address(conn_request);
   if (!client_address) {
     ERROR("Failed to retrieve client address from connection request");
-    ucp_listener_reject(listener_, conn_request);
+    ucp_listener_reject(m_listener, conn_request);
     return;
   }
 
-  auto ep = ucx::util::accept(worker_, conn_request, on_endpoint_error, this);
+  auto ep = ucx::util::accept(m_worker, conn_request, on_endpoint_error, this);
   if (!ep) {
     ERROR("Failed to create endpoint for new connection");
     return;
   }
 
-  builders_[*ep] = *client_address;
+  m_builders[*ep] = *client_address;
   DEBUG("Accepted connection from '{}'", *client_address);
 }
 
 void StSender::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
   ERROR("Error on UCX endpoint: {}", status);
 
-  auto it = builders_.find(ep);
-  if (it != builders_.end()) {
+  auto it = m_builders.find(ep);
+  if (it != m_builders.end()) {
     INFO("Removing disconnected endpoint '{}'", it->second);
-    builders_.erase(it);
+    m_builders.erase(it);
   } else {
     ERROR("Received error for unknown endpoint");
   }
@@ -357,8 +357,8 @@ StSender::handle_builder_request(const void* header,
 }
 
 void StSender::send_subtimeslice_to_builder(TsId id, ucp_ep_h ep) {
-  auto it = announced_.find(id);
-  if (it == announced_.end()) {
+  auto it = m_announced.find(id);
+  if (it == m_announced.end()) {
     WARN("Subtimeslice {} not found", id);
     std::array<uint64_t, 3> hdr{id, 0, 0};
     auto header = std::as_bytes(std::span(hdr));
@@ -406,9 +406,9 @@ void StSender::send_subtimeslice_to_builder(TsId id, ucp_ep_h ep) {
     return;
   }
 
-  // Keep the element in announced_ until the send completes and store the
+  // Keep the element in m_announced until the send completes and store the
   // request
-  active_send_requests_[request] = id;
+  m_active_send_requests[request] = id;
 }
 
 void StSender::handle_builder_send_complete(void* request,
@@ -421,11 +421,11 @@ void StSender::handle_builder_send_complete(void* request,
     TRACE("Send operation completed successfully");
   }
 
-  auto it = active_send_requests_.find(request);
-  if (it == active_send_requests_.end()) {
+  auto it = m_active_send_requests.find(request);
+  if (it == m_active_send_requests.end()) {
     ERROR("Received completion for unknown send request");
   } else {
-    active_send_requests_.erase(request);
+    m_active_send_requests.erase(request);
   }
 
   if (request != nullptr) {
@@ -434,24 +434,24 @@ void StSender::handle_builder_send_complete(void* request,
 }
 
 void StSender::disconnect_from_builders() {
-  if (builders_.empty()) {
+  if (m_builders.empty()) {
     return;
   }
-  INFO("Disconnecting from {} builders", builders_.size());
-  for (auto& [ep, _] : builders_) {
-    ucx::util::close_endpoint(worker_, ep, true);
+  INFO("Disconnecting from {} builders", m_builders.size());
+  for (auto& [ep, _] : m_builders) {
+    ucx::util::close_endpoint(m_worker, ep, true);
   }
 
-  builders_.clear();
+  m_builders.clear();
 }
 
 // Queue processing
 
 void StSender::notify_queue_update() const {
   uint64_t value = 1;
-  ssize_t ret = write(queue_event_fd_, &value, sizeof(value));
+  ssize_t ret = write(m_queue_event_fd, &value, sizeof(value));
   if (ret != sizeof(value)) {
-    ERROR("Failed to write to queue_event_fd_: {}", strerror(errno));
+    ERROR("Failed to write to m_queue_event_fd: {}", strerror(errno));
   }
 }
 
@@ -459,15 +459,15 @@ std::size_t StSender::process_queues() {
   std::deque<std::pair<TsId, StHandle>> announcements;
   std::deque<TsId> retractions;
   {
-    std::lock_guard<std::mutex> lock(queue_mutex_);
-    if (pending_announcements_.empty() && pending_retractions_.empty()) {
+    std::lock_guard<std::mutex> lock(m_queue_mutex);
+    if (m_pending_announcements.empty() && m_pending_retractions.empty()) {
       return 0;
     }
-    announcements.swap(pending_announcements_);
-    retractions.swap(pending_retractions_);
+    announcements.swap(m_pending_announcements);
+    retractions.swap(m_pending_retractions);
   }
 
-  if (!scheduler_connected_) {
+  if (!m_scheduler_connected) {
     TRACE("Scheduler not registered, skipping announcements");
     for (const auto& [id, sth] : announcements) {
       complete_subtimeslice(id);
@@ -494,20 +494,20 @@ void StSender::process_announcement(TsId id, const StHandle& sth) {
       create_iov_vector(sth, st_descriptor_bytes);
 
   // Store for future use (and retention during send)
-  announced_[id] = {std::move(st_descriptor_bytes), std::move(iov_vector)};
+  m_announced[id] = {std::move(st_descriptor_bytes), std::move(iov_vector)};
 
   // Ensure that the first iov component points to the string data
-  assert(announced_[id].second.front().buffer == announced_[id].first.data());
+  assert(m_announced[id].second.front().buffer == m_announced[id].first.data());
 
   // Send announcement to scheduler
   send_announcement_to_scheduler(id);
 }
 
 void StSender::process_retraction(TsId id) {
-  auto it = announced_.find(id);
-  if (it != announced_.end()) {
+  auto it = m_announced.find(id);
+  if (it != m_announced.end()) {
     DEBUG("Retracting subtimeslice {}", id);
-    announced_.erase(it);
+    m_announced.erase(it);
     send_retraction_to_scheduler(id);
     complete_subtimeslice(id);
   } else {
@@ -517,19 +517,19 @@ void StSender::process_retraction(TsId id) {
 
 void StSender::complete_subtimeslice(TsId id) {
   // In the future, this could check if there is an ongoning send operation
-  // concerning this SubTimeslice (cf. active_send_requests_) and wait for it to
-  // complete before marking the SubTimeslice as completed. This would avoid
+  // concerning this SubTimeslice (cf. m_active_send_requests) and wait for it
+  // to complete before marking the SubTimeslice as completed. This would avoid
   // sending inconsistent data in special cases.
-  std::lock_guard<std::mutex> lock(completions_mutex_);
-  completed_.push(id);
+  std::lock_guard<std::mutex> lock(m_completions_mutex);
+  m_completed.push(id);
 }
 
 void StSender::flush_announced() {
-  for (const auto& [id, st] : announced_) {
+  for (const auto& [id, st] : m_announced) {
     DEBUG("Flushing announced subtimeslice {}", id);
     complete_subtimeslice(id);
   }
-  announced_.clear();
+  m_announced.clear();
 }
 
 // Helper methods

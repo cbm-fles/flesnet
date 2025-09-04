@@ -77,38 +77,38 @@ public:
   TsBuilder& operator=(const TsBuilder&) = delete;
 
 private:
-  Scheduler tasks_;
-  TsBuffer& timeslice_buffer_;
+  Scheduler m_tasks;
+  TsBuffer& m_timeslice_buffer;
 
-  std::string scheduler_address_;
-  int64_t timeout_ns_;
-  std::string hostname_;
-  cbm::Monitor* monitor_ = nullptr;
+  std::string m_scheduler_address;
+  int64_t m_timeout_ns;
+  std::string m_hostname;
+  cbm::Monitor* m_monitor = nullptr;
 
-  int epoll_fd_ = -1;
-  ucp_context_h context_ = nullptr;
-  ucp_worker_h worker_ = nullptr;
+  int m_epoll_fd = -1;
+  ucp_context_h m_context = nullptr;
+  ucp_worker_h m_worker = nullptr;
 
-  std::unordered_map<std::string, ucp_ep_h> sender_to_ep_;
-  std::unordered_map<ucp_ep_h, std::string> ep_to_sender_;
+  std::unordered_map<std::string, ucp_ep_h> m_sender_to_ep;
+  std::unordered_map<ucp_ep_h, std::string> m_ep_to_sender;
 
-  std::unordered_map<TsId, std::unique_ptr<TsHandle>> ts_handles_;
+  std::unordered_map<TsId, std::unique_ptr<TsHandle>> m_ts_handles;
   std::unordered_map<ucs_status_ptr_t, std::pair<TsId, std::size_t>>
-      active_data_recv_requests_;
+      m_active_data_recv_requests;
 
-  static constexpr auto scheduler_retry_interval_ = 2s;
-  bool mute_scheduler_reconnect_ = false;
+  static constexpr auto m_scheduler_retry_interval = 2s;
+  bool m_mute_scheduler_reconnect = false;
 
-  ucp_ep_h scheduler_ep_ = nullptr;
-  bool scheduler_connecting_ = false;
-  bool scheduler_connected_ = false;
+  ucp_ep_h m_scheduler_ep = nullptr;
+  bool m_scheduler_connecting = false;
+  bool m_scheduler_connected = false;
 
-  size_t timeslice_count_ = 0; ///< total number of assigned timeslices
-  size_t component_count_ = 0; ///< total number of received components
-  size_t byte_count_ = 0;      ///< total number of processed bytes
-  size_t timeslice_incomplete_count_ = 0; ///< number of incomplete timeslices
+  size_t m_timeslice_count = 0; ///< total number of assigned timeslices
+  size_t m_component_count = 0; ///< total number of received components
+  size_t m_byte_count = 0;      ///< total number of processed bytes
+  size_t m_timeslice_incomplete_count = 0; ///< number of incomplete timeslices
 
-  std::jthread worker_thread_;
+  std::jthread m_worker_thread;
 
   // Main operation loop
   void operator()(std::stop_token stop_token);
