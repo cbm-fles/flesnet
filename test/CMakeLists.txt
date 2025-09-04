@@ -108,6 +108,3 @@ if(BASH_PROGRAM)
 endif()
 
 add_subdirectory(shm_ipc)
-if (USE_UCX AND UCX_FOUND)
-  add_subdirectory(ucx)
-endif()
