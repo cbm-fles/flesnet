@@ -39,7 +39,10 @@ TsScheduler::TsScheduler(uint16_t listen_port,
 }
 
 TsScheduler::~TsScheduler() {
-  worker_thread_.request_stop();
+  if (worker_thread_.joinable()) {
+    worker_thread_.request_stop();
+    worker_thread_.join();
+  }
 
   if (epoll_fd_ != -1) {
     close(epoll_fd_);

@@ -50,7 +50,10 @@ StSender::StSender(std::string_view scheduler_address, uint16_t listen_port)
 }
 
 StSender::~StSender() {
-  worker_thread_.request_stop();
+  if (worker_thread_.joinable()) {
+    worker_thread_.request_stop();
+    worker_thread_.join();
+  }
 
   if (epoll_fd_ != -1) {
     close(epoll_fd_);
@@ -58,7 +61,6 @@ StSender::~StSender() {
   if (queue_event_fd_ != -1) {
     close(queue_event_fd_);
   }
-  // TODO: fix desctruction order
 }
 
 // Public API methods

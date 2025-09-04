@@ -205,6 +205,9 @@ Application::~Application() {
   for (auto* cri_channel : cri_channels_) {
     cri_channel->disable_readout();
   }
+  channels_.clear();
+  pgen_channels_.clear();
+  cri_channels_.clear();
   st_sender_.reset();
 
   // cleanup

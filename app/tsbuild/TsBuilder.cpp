@@ -41,7 +41,10 @@ TsBuilder::TsBuilder(TsBuffer& timeslice_buffer,
 }
 
 TsBuilder::~TsBuilder() {
-  worker_thread_.request_stop();
+  if (worker_thread_.joinable()) {
+    worker_thread_.request_stop();
+    worker_thread_.join();
+  }
 
   if (epoll_fd_ != -1) {
     close(epoll_fd_);
