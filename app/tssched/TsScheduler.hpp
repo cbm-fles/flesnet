@@ -23,6 +23,7 @@ struct SenderConnection {
   struct StDesc {
     TsId id;
     uint64_t ms_data_size = 0;
+    StDescriptor st_descriptor;
   };
   std::deque<StDesc> announced_st;
   TsId last_received_st = 0;

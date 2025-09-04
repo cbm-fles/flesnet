@@ -220,13 +220,23 @@ TsScheduler::handle_sender_announce(const void* header,
   }
   auto& sender_conn = it->second;
 
-  // StDescriptor can be used for statistics in the future, ignored for now
   auto st_descriptor_bytes =
       std::span(static_cast<const std::byte*>(data), length);
-  std::vector<std::byte> st_descriptor_vector(st_descriptor_bytes.begin(),
-                                              st_descriptor_bytes.end());
+  auto st_descriptor = to_obj_nothrow<StDescriptor>(st_descriptor_bytes);
+  if (!st_descriptor) {
+    ERROR("Failed to deserialize announcement from sender '{}'",
+          sender_conn.sender_id);
+    return UCS_OK;
+  }
 
-  sender_conn.announced_st.emplace_back(id, ms_data_size);
+  if (st_descriptor->duration_ns !=
+      static_cast<uint64_t>(timeslice_duration_ns_)) {
+    ERROR("Invalid timeslice duration from sender '{}'", sender_conn.sender_id);
+    return UCS_OK;
+  }
+
+  sender_conn.announced_st.emplace_back(id, ms_data_size,
+                                        std::move(*st_descriptor));
   sender_conn.last_received_st = id;
   DEBUG("Received subtimeslice announcement from sender '{}' for {}, "
         "ms_data_size: {}",
