@@ -58,6 +58,7 @@ StSender::~StSender() {
   if (queue_event_fd_ != -1) {
     close(queue_event_fd_);
   }
+  // TODO: fix desctruction order
 }
 
 // Public API methods
@@ -146,7 +147,7 @@ void StSender::operator()(std::stop_token stop_token) {
 
 void StSender::connect_to_scheduler_if_needed() {
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-  if (!scheduler_connecting_ &&
+  if (!scheduler_connecting_ && !scheduler_connected_ &&
       !worker_thread_.get_stop_token().stop_requested()) {
     connect_to_scheduler();
   }

@@ -22,7 +22,7 @@ struct SenderConnection {
   ucp_ep_h ep;
   struct StDesc {
     TsId id;
-    uint64_t ms_data_size;
+    uint64_t ms_data_size = 0;
   };
   std::deque<StDesc> announced_st;
   TsId last_received_st = 0;
