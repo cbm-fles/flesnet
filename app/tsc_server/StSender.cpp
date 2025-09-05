@@ -553,8 +553,8 @@ StDescriptor StSender::create_subtimeslice_descriptor(const StHandle& sth) {
     for (auto iov : c.ms_data) {
       component_size += iov.length;
     }
-    const DataRegion descriptor = {offset, component_size};
-    d.components.push_back({descriptor, c.num_microslices, c.flags});
+    d.components.push_back(
+        {offset, component_size, c.num_microslices, c.flags});
     offset += component_size;
   }
 

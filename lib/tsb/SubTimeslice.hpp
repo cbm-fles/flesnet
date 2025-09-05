@@ -148,22 +148,11 @@ struct StHandle {
 // Descriptors for transferring subtimeslice data from the sender to the builder
 // (and to the scheduler, for statistics)
 
-struct DataRegion {
-  std::ptrdiff_t offset;
-  std::size_t size;
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
-    ar & offset;
-    ar & size;
-  }
-};
-
 struct StComponentDescriptor {
   /// A data descriptor pointing to the microslice descriptor data blocks,
   /// followed by the microslice content data blocks
-  DataRegion ms_data{};
+  std::ptrdiff_t ms_data_offset = 0;
+  std::size_t ms_data_size = 0;
 
   /// The number of microslices in this component
   std::size_t num_microslices = 0;
@@ -177,14 +166,12 @@ struct StComponentDescriptor {
     return (flags & static_cast<uint32_t>(f)) != 0;
   }
 
-  /// The size (in bytes) of the component (i.e., microslice descriptor +
-  /// content)
-  [[nodiscard]] uint64_t ms_data_size() const { return ms_data.size; }
-
   friend class boost::serialization::access;
   template <class Archive>
   void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
-    ar & ms_data;
+    ar & ms_data_offset;
+    ar & ms_data_size;
+    ar & num_microslices;
     ar & flags;
   }
 };
@@ -214,7 +201,7 @@ struct StDescriptor {
   [[nodiscard]] uint64_t ms_data_size() const {
     uint64_t total_ms_data_size = 0;
     for (const auto& component : components) {
-      total_ms_data_size += component.ms_data_size();
+      total_ms_data_size += component.ms_data_size;
     }
     return total_ms_data_size;
   }
