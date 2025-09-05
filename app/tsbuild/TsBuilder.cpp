@@ -568,8 +568,7 @@ StDescriptor TsBuilder::create_timeslice_descriptor(TsHandle& tsh) {
     d.flags |= contrib.flags;
     for (const auto& c : contrib.components) {
       d.components.push_back(c);
-      d.components.back().ms_descriptors.offset += tsh.offsets[i];
-      d.components.back().ms_contents.offset += tsh.offsets[i];
+      d.components.back().ms_data.offset += tsh.offsets[i];
     }
   }
   return d;

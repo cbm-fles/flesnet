@@ -122,43 +122,43 @@ StComponentHandle Channel::get_descriptor(uint64_t start_time,
   auto [desc_begin_idx, desc_end_idx] = find_component(start_time, duration);
   assert(desc_begin_idx < desc_end_idx);
 
-  // generate one or two i/o vectors for the descriptors
-  std::vector<ucp_dt_iov> descriptors;
+  std::size_t num_microslices = desc_end_idx - desc_begin_idx;
+  std::vector<ucp_dt_iov> iovs;
+
+  // generate one or two i/o vectors for the microslice descriptors
   auto* desc_begin = &m_desc_buffer->at(desc_begin_idx);
   auto* desc_end = &m_desc_buffer->at(desc_end_idx);
   if (desc_begin < desc_end) {
     // the descriptors are contiguous in memory, so we only create one iovec
-    descriptors.push_back({desc_begin, (desc_end - desc_begin) *
-                                           sizeof(fles::MicrosliceDescriptor)});
+    iovs.push_back({desc_begin, (desc_end - desc_begin) *
+                                    sizeof(fles::MicrosliceDescriptor)});
   } else if (desc_begin > desc_end) {
     // the descriptors have wrapped around the end of the buffer
     auto* desc_buffer_begin = m_desc_buffer->ptr();
     auto* desc_buffer_end = m_desc_buffer->ptr() + m_desc_buffer->size();
-    descriptors.push_back({desc_begin, (desc_buffer_end - desc_begin) *
+    iovs.push_back({desc_begin, (desc_buffer_end - desc_begin) *
+                                    sizeof(fles::MicrosliceDescriptor)});
+    iovs.push_back({desc_buffer_begin, (desc_end - desc_buffer_begin) *
                                            sizeof(fles::MicrosliceDescriptor)});
-    descriptors.push_back(
-        {desc_buffer_begin,
-         (desc_end - desc_buffer_begin) * sizeof(fles::MicrosliceDescriptor)});
   }
 
   // find the data blocks for the component
   auto data_begin_idx = desc_begin->offset;
   auto data_end_idx = (desc_end - 1)->offset + (desc_end - 1)->size;
 
-  // generate one or two i/o vectors for the descriptors
-  std::vector<ucp_dt_iov> contents;
+  // generate one or two i/o vectors for the microslice contents
   auto* data_begin = &m_data_buffer->at(data_begin_idx);
   auto* data_end = &m_data_buffer->at(data_end_idx);
   if (data_begin < data_end) {
     // the data blocks are contiguous in memory, so we only create one iovec
-    contents.push_back({data_begin, (data_end - data_begin) * sizeof(uint8_t)});
+    iovs.push_back({data_begin, (data_end - data_begin) * sizeof(uint8_t)});
   } else if (data_begin > data_end) {
     // the data blocks have wrapped around the end of the buffer
     auto* data_buffer_begin = m_data_buffer->ptr();
     auto* data_buffer_end = m_data_buffer->ptr() + m_data_buffer->size();
-    contents.push_back(
+    iovs.push_back(
         {data_begin, (data_buffer_end - data_begin) * sizeof(uint8_t)});
-    contents.push_back(
+    iovs.push_back(
         {data_buffer_begin, (data_end - data_buffer_begin) * sizeof(uint8_t)});
   }
 
@@ -174,7 +174,7 @@ StComponentHandle Channel::get_descriptor(uint64_t start_time,
     }
   }
 
-  return {descriptors, contents, flags};
+  return {iovs, num_microslices, flags};
 }
 
 // Returns the component's microslice descriptor indexes in the range

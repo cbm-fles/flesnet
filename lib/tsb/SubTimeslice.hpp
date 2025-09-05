@@ -12,6 +12,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_serialize.hpp>
+#include <cstddef>
 #include <format>
 #include <functional>
 #include <log.hpp>
@@ -95,8 +96,8 @@ enum class TsFlag : uint32_t {
 // StSender
 
 struct StComponentHandle {
-  std::vector<ucp_dt_iov> ms_descriptors;
-  std::vector<ucp_dt_iov> ms_contents;
+  std::vector<ucp_dt_iov> ms_data;
+  std::size_t num_microslices = 0;
   uint32_t flags = 0;
 
   void set_flag(TsComponentFlag f) { flags |= static_cast<uint32_t>(f); }
@@ -105,34 +106,19 @@ struct StComponentHandle {
     return (flags & static_cast<uint32_t>(f)) != 0;
   }
 
-  /// The number of microslices, computed from the size of the microslice
-  /// descriptor data blocks
-  [[nodiscard]] uint32_t num_microslices() const {
-    return ms_descriptors_size() / sizeof(fles::MicrosliceDescriptor);
-  }
-
-  /// The number of microslice descriptor bytes
-  [[nodiscard]] uint64_t ms_descriptors_size() const {
-    uint64_t descriptors_size = 0;
-    for (const auto& sg : ms_descriptors) {
-      descriptors_size += sg.length;
+  /// The number of microslice data (descriptors + contents) bytes
+  [[nodiscard]] uint64_t ms_data_size() const {
+    uint64_t size = 0;
+    for (const auto& sg : ms_data) {
+      size += sg.length;
     }
-    return descriptors_size;
-  }
-
-  /// The number of microslice content bytes
-  [[nodiscard]] uint64_t ms_contents_size() const {
-    uint64_t contents_size = 0;
-    for (const auto& sg : ms_contents) {
-      contents_size += sg.length;
-    }
-    return contents_size;
+    return size;
   }
 
   /// Dump contents (for debugging).
   friend std::ostream& operator<<(std::ostream& os,
                                   const StComponentHandle& i) {
-    return os << "StComponentHandle(num_microslices=" << i.num_microslices()
+    return os << "StComponentHandle(num_microslices=" << i.num_microslices
               << ", flags=" << i.flags << ")";
   }
 };
@@ -175,13 +161,14 @@ struct DataRegion {
 };
 
 struct StComponentDescriptor {
-  /// A data descriptor pointing to the microslice descriptor data blocks
-  DataRegion ms_descriptors{};
+  /// A data descriptor pointing to the microslice descriptor data blocks,
+  /// followed by the microslice content data blocks
+  DataRegion ms_data{};
 
-  /// A data descriptor pointing to the microslice content data blocks
-  DataRegion ms_contents{};
+  /// The number of microslices in this component
+  std::size_t num_microslices = 0;
 
-  // Flags
+  /// Flags
   uint32_t flags = 0;
 
   void set_flag(TsComponentFlag f) { flags |= static_cast<uint32_t>(f); }
@@ -190,17 +177,14 @@ struct StComponentDescriptor {
     return (flags & static_cast<uint32_t>(f)) != 0;
   }
 
-  // The size (in bytes) of the component (i.e., microslice descriptor +
-  // content)
-  [[nodiscard]] uint64_t ms_data_size() const {
-    return ms_descriptors.size + ms_contents.size;
-  }
+  /// The size (in bytes) of the component (i.e., microslice descriptor +
+  /// content)
+  [[nodiscard]] uint64_t ms_data_size() const { return ms_data.size; }
 
   friend class boost::serialization::access;
   template <class Archive>
   void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
-    ar & ms_descriptors;
-    ar & ms_contents;
+    ar & ms_data;
     ar & flags;
   }
 };
@@ -213,7 +197,7 @@ struct StDescriptor {
   /// The duration of the subtimeslice in nanoseconds
   uint64_t duration_ns = 0;
 
-  // Flags
+  /// Flags
   uint32_t flags = 0;
 
   /// The subtimeslice component descriptors

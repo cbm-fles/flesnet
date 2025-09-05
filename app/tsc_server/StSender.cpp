@@ -547,25 +547,15 @@ StDescriptor StSender::create_subtimeslice_descriptor(const StHandle& sth) {
 
   std::ptrdiff_t offset = 0;
   for (const auto& c : sth.components) {
-    std::size_t descriptors_size = 0;
+    std::size_t component_size = 0;
     // Simply add all sizes as the blocks will be contiguous in memory after
     // transferring to the builder
-    for (auto descriptor : c.ms_descriptors) {
-      descriptors_size += descriptor.length;
+    for (auto iov : c.ms_data) {
+      component_size += iov.length;
     }
-    const DataRegion descriptor = {offset, descriptors_size};
-    offset += descriptors_size;
-
-    std::size_t content_size = 0;
-    for (auto content : c.ms_contents) {
-      // Simply add all sizes as the blocks will be contiguous in memory after
-      // transferring to the builder
-      content_size += content.length;
-    }
-    const DataRegion content = {offset, content_size};
-    offset += content_size;
-
-    d.components.push_back({descriptor, content, c.flags});
+    const DataRegion descriptor = {offset, component_size};
+    d.components.push_back({descriptor, c.num_microslices, c.flags});
+    offset += component_size;
   }
 
   return d;
@@ -584,12 +574,7 @@ StSender::create_iov_vector(const StHandle& sth,
 
   // Add component data from shared memory
   for (const auto& c : sth.components) {
-    for (const auto& iov : c.ms_descriptors) {
-      iov_vector.push_back(iov);
-    }
-    for (const auto& iov : c.ms_contents) {
-      iov_vector.push_back(iov);
-    }
+    iov_vector.insert(iov_vector.end(), c.ms_data.begin(), c.ms_data.end());
   }
 
   return iov_vector;

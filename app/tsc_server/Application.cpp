@@ -280,9 +280,8 @@ void Application::provide_subtimeslice(
   ++m_timeslice_count;
   m_component_count += st.components.size();
   for (const auto& comp : st.components) {
-    m_microslice_count += comp.num_microslices();
-    m_content_bytes += comp.ms_contents_size();
-    m_total_bytes += comp.ms_descriptors_size() + comp.ms_contents_size();
+    m_microslice_count += comp.num_microslices;
+    m_data_bytes += comp.ms_data_size();
   }
   if (st.has_flag(TsFlag::MissingComponents)) {
     ++m_timeslice_incomplete_count;
@@ -331,7 +330,7 @@ void Application::report_status() {
         {{"timeslice_count", m_timeslice_count},
          {"component_count", m_component_count},
          {"microslice_count", m_microslice_count},
-         {"content_bytes", m_content_bytes},
+         {"data_bytes", m_data_bytes},
          {"timeslice_incomplete_count", m_timeslice_incomplete_count},
          {"buffer_utilization", max_buffer_utilization}});
   }

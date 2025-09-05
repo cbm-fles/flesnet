@@ -47,8 +47,7 @@ private:
   size_t m_timeslice_count = 0;  ///< total number of processed timeslices
   size_t m_component_count = 0;  ///< total number of processed components
   size_t m_microslice_count = 0; ///< total number of processed microslices
-  size_t m_content_bytes = 0;    ///< total number of processed content bytes
-  size_t m_total_bytes = 0;      ///< total number of processed bytes
+  size_t m_data_bytes = 0;       ///< total number of processed content bytes
   size_t m_timeslice_incomplete_count = 0; ///< number of incomplete timeslices
 
   void report_status();
