@@ -22,8 +22,8 @@ TimesliceView::TimesliceView(
   for (size_t c = 0; c < num_components(); ++c) {
     desc_ptr_[c] = reinterpret_cast<fles::TimesliceComponentDescriptor*>(
         managed_shm_->get_address_from_handle(timeslice_item_.desc[c]));
-    data_ptr_[c] = static_cast<uint8_t*>(
-        managed_shm_->get_address_from_handle(timeslice_item_.data[c]));
+    data_ptr_[c] = static_cast<uint8_t*>(managed_shm_->get_address_from_handle(
+        timeslice_item_.ms_data_offset[c]));
   }
 
   // consistency check

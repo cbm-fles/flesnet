@@ -278,31 +278,6 @@ template <> struct std::formatter<StCollection> {
   }
 };
 
-// 4: builder only
-//
-// Descriptor for storing timeslice data in a shared memory region
-
-struct TsDescriptorShm {
-  /// The UUID of the containing managed shared memory
-  boost::uuids::uuid shm_uuid{};
-  /// The identifier string of the containing managed shared memory
-  std::string shm_identifier;
-  /// The additional overall offset of all the data blocks
-  std::ptrdiff_t offset = 0;
-  /// Timeslice descriptor including component descriptors
-  StDescriptor ts_desc{};
-
-  friend class boost::serialization::access;
-  /// Provide boost serialization access.
-  template <class Archive>
-  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
-    ar & shm_uuid;
-    ar & shm_identifier;
-    ar & offset;
-    ar & ts_desc;
-  }
-};
-
 // Generic serialization utilities
 
 template <typename T> std::vector<std::byte> to_bytes(const T& obj) {

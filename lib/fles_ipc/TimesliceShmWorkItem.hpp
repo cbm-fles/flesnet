@@ -30,19 +30,41 @@ struct TimesliceShmWorkItem {
   /// The timeslice descriptor
   TimesliceDescriptor ts_desc{};
   /// A vector of handles to the data blocks
-  std::vector<std::ptrdiff_t> data;
+  std::vector<std::ptrdiff_t> ms_data_offset;
+
+  // Legacy member kept for backward compatibility
+
   /// A vector of handles to the tsc descriptor blocks
   std::vector<std::ptrdiff_t> desc;
+
+  // New members (replaces the legacy desc member)
+
+  /// Sizes of the data blocks
+  std::vector<std::size_t> ms_data_size;
+  /// Number of microslices in each component
+  std::vector<std::size_t> num_microslices;
+  /// Flags of each component
+  std::vector<uint32_t> component_flags;
+  /// The additional overall offset of all the data blocks
+  std::ptrdiff_t offset = 0;
 
   friend class boost::serialization::access;
   /// Provide boost serialization access.
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int /* version */) {
-    ar& shm_uuid;
-    ar& shm_identifier;
-    ar& ts_desc;
-    ar& data;
-    ar& desc;
+  void serialize(Archive& ar, const unsigned int version) {
+    ar & shm_uuid;
+    ar & shm_identifier;
+    ar & ts_desc;
+    ar & ms_data_offset;
+    if (version == 0) {
+      ar & desc;
+    }
+    if (version > 0) {
+      ar & ms_data_size;
+      ar & num_microslices;
+      ar & component_flags;
+      ar & offset;
+    }
   }
 
   /// Dump contents (for debugging).
@@ -50,10 +72,15 @@ struct TimesliceShmWorkItem {
                                   const TimesliceShmWorkItem& i) {
     return os << "TimesliceShmWorkItem(shm_uuid=" << i.shm_uuid
               << ", shm_identifier=" << i.shm_identifier
-              << ", ts_desc=" << i.ts_desc << ", data=..., desc=...)";
+              << ", ts_desc=" << i.ts_desc << ", ...)";
   }
 };
 
 #pragma pack()
 
 } // namespace fles
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+BOOST_CLASS_VERSION(fles::TimesliceShmWorkItem, 1)
+#pragma GCC diagnostic pop

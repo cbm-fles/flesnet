@@ -2,6 +2,8 @@
 
 #include "TsBuffer.hpp"
 #include "SubTimeslice.hpp"
+#include "TimesliceDescriptor.hpp"
+#include "TimesliceShmWorkItem.hpp"
 #include "Utility.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -46,11 +48,24 @@ TsBuffer::~TsBuffer() {
 void TsBuffer::send_work_item(std::byte* buffer,
                               TsId id,
                               const StDescriptor& ts_desc) {
-  TsDescriptorShm item;
+  fles::TimesliceDescriptor d{};
+  d.index = static_cast<uint64_t>(id);
+  d.start_time = ts_desc.start_time_ns;
+  d.duration = ts_desc.duration_ns;
+  d.flags = ts_desc.flags;
+  d.num_components = ts_desc.components.size();
+
+  fles::TimesliceShmWorkItem item{};
   item.shm_uuid = m_shm_uuid;
   item.shm_identifier = m_shm_identifier;
+  item.ts_desc = d;
+  for (const auto& c : ts_desc.components) {
+    item.ms_data_offset.push_back(c.ms_data_offset);
+    item.ms_data_size.push_back(c.ms_data_size);
+    item.num_microslices.push_back(c.num_microslices);
+    item.component_flags.push_back(c.flags);
+  }
   item.offset = m_managed_shm->get_handle_from_address(buffer);
-  item.ts_desc = ts_desc;
 
   std::vector<std::byte> bytes = to_bytes(item);
   std::string bytes_str(reinterpret_cast<const char*>(bytes.data()),
