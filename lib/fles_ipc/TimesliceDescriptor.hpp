@@ -16,39 +16,54 @@ namespace fles {
  * \brief %Timeslice descriptor struct.
  */
 struct TimesliceDescriptor {
-  /// Global index of the timeslice. Monotonically increasing during a run,
-  /// relates to the timestamps of the data contents. Note: this is not the same
-  /// as the local index in the ring buffer.
-  uint64_t index;
+  /// Global identifier of the timeslice, unique during a run.
+  uint64_t index = 0;
+
+  /// The start time of the subtimeslice in nanoseconds, should be divisible by
+  /// the duration
+  uint64_t start_time = 0;
+
+  /// The duration of the timeslice in nanoseconds
+  uint64_t duration = 0;
+
+  /// The flags of the timeslice
+  uint32_t flags = 0;
 
   /// Start offset (in items) of the timeslice in the local data stream or ring
   /// buffer.
-  uint64_t ts_pos;
+  // Deprecated. Kept for now for backward compatibility.
+  uint64_t ts_pos = 0;
 
-  /// Number of core microslices
-  uint32_t num_core_microslices;
+  /// Number of core microslices.
+  // Deprecated. Kept for now for backward compatibility.
+  uint32_t num_core_microslices = 0;
 
   /// Number of components (contributing input channels)
-  uint32_t num_components;
+  uint32_t num_components = 0;
 
   friend class boost::serialization::access;
   /// Provide boost serialization access.
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version) {
     if (version > 0) {
-      ar& index;
+      ar & index;
     }
-    ar& ts_pos;
-    ar& num_core_microslices;
-    ar& num_components;
+    if (version > 1) {
+      ar & start_time;
+      ar & duration;
+      ar & flags;
+    }
+    if (version <= 1) {
+      ar & ts_pos;
+      ar & num_core_microslices;
+    }
+    ar & num_components;
   }
 
   /// Dump contents (for debugging).
   friend std::ostream& operator<<(std::ostream& os,
                                   const TimesliceDescriptor& d) {
     return os << "TimesliceDescriptor(index=" << d.index
-              << ", ts_pos=" << d.ts_pos
-              << ", num_core_microslices=" << d.num_core_microslices
               << ", num_components=" << d.num_components << ")";
   }
 };
@@ -59,5 +74,5 @@ struct TimesliceDescriptor {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-BOOST_CLASS_VERSION(fles::TimesliceDescriptor, 1)
+BOOST_CLASS_VERSION(fles::TimesliceDescriptor, 2)
 #pragma GCC diagnostic pop

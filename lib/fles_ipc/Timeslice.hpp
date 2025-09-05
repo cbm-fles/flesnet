@@ -29,25 +29,27 @@ class Timeslice {
 public:
   virtual ~Timeslice() = 0;
 
-  /// Retrieve the timeslice index.
+  /// Retrieve the timeslice identifier.
   [[nodiscard]] uint64_t index() const { return timeslice_descriptor_.index; }
 
   /// Retrieve the number of core microslices.
+  // Deprecated. Kept for now for backward compatibility.
   [[nodiscard]] uint64_t num_core_microslices() const {
     return timeslice_descriptor_.num_core_microslices;
   }
 
-  /// Retrieve the total number of microslices.
+  /// Retrieve the number of microslices for a given component.
   [[nodiscard]] uint64_t num_microslices(uint64_t component) const {
     return desc_ptr_[component]->num_microslices;
   }
 
-  /// Retrieve the number of components (contributing input channels).
+  /// Retrieve the number of timeslice components (contributing input channels).
   [[nodiscard]] uint64_t num_components() const {
     return timeslice_descriptor_.num_components;
   }
 
-  /// Retrieve the size of a given component.
+  /// Retrieve the size (in bytes) of the microslice contents for a given
+  /// component.
   [[nodiscard]] uint64_t size_component(uint64_t component) const {
     return desc_ptr_[component]->size;
   }
@@ -88,13 +90,23 @@ public:
     return {dd, cc};
   }
 
-  /// Retrieve the offical start time of the timeslice
+  /// The start time of the timeslice in nanoseconds, should be divisible by the
+  /// duration
   [[nodiscard]] uint64_t start_time() const {
+    // TODO: change to using timeslice_descriptor_.start_time
     if (num_components() != 0 && num_microslices(0) != 0) {
       return descriptor(0, 0).idx;
     }
     return 0;
   }
+
+  /// The duration of the timeslice in nanoseconds
+  [[nodiscard]] uint64_t duration() const {
+    return timeslice_descriptor_.duration;
+  }
+
+  /// The flags of the timeslice
+  [[nodiscard]] uint32_t flags() const { return timeslice_descriptor_.flags; }
 
 protected:
   Timeslice() = default;
@@ -105,10 +117,12 @@ protected:
   /// The timeslice descriptor.
   TimesliceDescriptor timeslice_descriptor_{};
 
-  /// A vector of pointers to the data content, one per timeslice component.
+  /// A vector of pointers to the microslice data, one per timeslice component.
+  // We assume that all microslice descriptors and contents of a given component
+  // are stored in a single contiguous memory block.
   std::vector<uint8_t*> data_ptr_;
 
-  /// \brief A vector of pointers to the microslice descriptors, one per
+  /// A vector of pointers to the timeslice component descriptors, one per
   /// timeslice component.
   std::vector<TimesliceComponentDescriptor*> desc_ptr_;
 };
