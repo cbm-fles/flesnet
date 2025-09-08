@@ -137,7 +137,7 @@ bool TimesliceBuilderZeromq::run_cycle() {
   assert(tpos_ == c->desc.write_index());
   c->desc.append(
       {ts_index_, c->data.write_index(), size_required,
-       zmq_msg_size(&c->desc_msg) / sizeof(fles::MicrosliceDescriptor)});
+       zmq_msg_size(&c->desc_msg) / sizeof(fles::MicrosliceDescriptor), 0});
 
   // copy into shared memory and release messages
   c->data.append(static_cast<uint8_t*>(zmq_msg_data(&c->desc_msg)),

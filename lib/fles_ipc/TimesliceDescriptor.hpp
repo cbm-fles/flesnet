@@ -53,10 +53,8 @@ struct TimesliceDescriptor {
       ar & duration;
       ar & flags;
     }
-    if (version <= 1) {
-      ar & ts_pos;
-      ar & num_core_microslices;
-    }
+    ar & ts_pos;
+    ar & num_core_microslices;
     ar & num_components;
   }
 

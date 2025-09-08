@@ -68,12 +68,12 @@ void TimesliceBuffer::send_work_item(fles::TimesliceWorkItem wi) {
   item.ts_desc = wi.ts_desc;
   const auto num_components = item.ts_desc.num_components;
   const auto ts_pos = item.ts_desc.ts_pos;
-  item.ms_data_offset.resize(num_components);
+  item.data.resize(num_components);
   item.desc.resize(num_components);
   for (uint32_t c = 0; c < num_components; ++c) {
     fles::TimesliceComponentDescriptor* tsc_desc = &get_desc(c, ts_pos);
     uint8_t* tsc_data = &get_data(c, tsc_desc->offset);
-    item.ms_data_offset[c] = managed_shm_->get_handle_from_address(tsc_data);
+    item.data[c] = managed_shm_->get_handle_from_address(tsc_data);
     item.desc[c] = managed_shm_->get_handle_from_address(tsc_desc);
   }
 

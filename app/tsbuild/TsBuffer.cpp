@@ -60,10 +60,13 @@ void TsBuffer::send_work_item(std::byte* buffer,
   item.shm_identifier = m_shm_identifier;
   item.ts_desc = d;
   for (const auto& c : ts_desc.components) {
-    item.ms_data_offset.push_back(c.ms_data_offset);
-    item.ms_data_size.push_back(c.ms_data_size);
-    item.num_microslices.push_back(c.num_microslices);
-    item.component_flags.push_back(c.flags);
+    fles::TimesliceComponentDescriptor tscd{};
+    tscd.ts_num = static_cast<uint64_t>(id); // unused
+    tscd.offset = c.ms_data_offset;          // unused
+    tscd.size = c.ms_data_size;
+    tscd.num_microslices = c.num_microslices;
+    tscd.flags = c.flags;
+    item.tsc_desc.push_back(tscd);
   }
   item.offset = m_managed_shm->get_handle_from_address(buffer);
 

@@ -93,7 +93,12 @@ public:
   /// The start time of the timeslice in nanoseconds, should be divisible by the
   /// duration
   [[nodiscard]] uint64_t start_time() const {
-    // TODO: change to using timeslice_descriptor_.start_time
+    if (timeslice_descriptor_.start_time != 0) {
+      return timeslice_descriptor_.start_time;
+    }
+    // Fallback for older data formats that do not store the start time in the
+    // timeslice descriptor: use the start time of the first microslice of the
+    // first component (if available)
     if (num_components() != 0 && num_microslices(0) != 0) {
       return descriptor(0, 0).idx;
     }

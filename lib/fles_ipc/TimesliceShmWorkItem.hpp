@@ -3,11 +3,13 @@
 /// \brief Defines the fles::TimesliceShmWorkItem serializable struct.
 #pragma once
 
+#include "TimesliceComponentDescriptor.hpp"
 #include "TimesliceDescriptor.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/version.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_serialize.hpp>
@@ -30,7 +32,7 @@ struct TimesliceShmWorkItem {
   /// The timeslice descriptor
   TimesliceDescriptor ts_desc{};
   /// A vector of handles to the data blocks
-  std::vector<std::ptrdiff_t> ms_data_offset;
+  std::vector<std::ptrdiff_t> data;
 
   // Legacy member kept for backward compatibility
 
@@ -39,12 +41,8 @@ struct TimesliceShmWorkItem {
 
   // New members (replaces the legacy desc member)
 
-  /// Sizes of the data blocks
-  std::vector<std::size_t> ms_data_size;
-  /// Number of microslices in each component
-  std::vector<std::size_t> num_microslices;
-  /// Flags of each component
-  std::vector<uint32_t> component_flags;
+  /// A vector of timeslice component descriptors
+  std::vector<TimesliceComponentDescriptor> tsc_desc;
   /// The additional overall offset of all the data blocks
   std::ptrdiff_t offset = 0;
 
@@ -55,14 +53,10 @@ struct TimesliceShmWorkItem {
     ar & shm_uuid;
     ar & shm_identifier;
     ar & ts_desc;
-    ar & ms_data_offset;
-    if (version == 0) {
-      ar & desc;
-    }
+    ar & data;
+    ar & desc;
     if (version > 0) {
-      ar & ms_data_size;
-      ar & num_microslices;
-      ar & component_flags;
+      ar & tsc_desc;
       ar & offset;
     }
   }
