@@ -341,6 +341,13 @@ void TsBuilder::send_request_to_sender(const std::string& sender_id, TsId id) {
   std::array<uint64_t, 1> hdr{id};
   auto header = std::as_bytes(std::span(hdr));
 
+  // PROBLEM HERE: In the first invocation after connecting, we run into a UCX
+  // bug. UCX versions between 1.16 and 1.18 do not handle
+  // UCP_AM_SEND_FLAG_COPY_HEADER correctly when using protocol version 2,
+  // leading to data corruption. As a workaround, start the program with
+  // UCX_PROTO_ENABLE=n to disable protocol version 2 if you are not using
+  // UCX 1.19 or later. See: https://github.com/openucx/ucx/issues/10424
+
   ucx::util::send_active_message(ep, AM_BUILDER_REQUEST_ST, header, {},
                                  ucx::util::on_generic_send_complete, this,
                                  UCP_AM_SEND_FLAG_COPY_HEADER |
