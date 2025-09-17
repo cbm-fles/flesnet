@@ -163,7 +163,7 @@ void Application::run() {
   std::vector<std::size_t> ask_again(m_channels.size());
   std::iota(ask_again.begin(), ask_again.end(), 0);
 
-  while (*m_signal_status == 0) {
+  while (*m_signal_status == 0 && !m_st_sender->has_stopped()) {
     handle_completions();
     m_tasks.timer();
 

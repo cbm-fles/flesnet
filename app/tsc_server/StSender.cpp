@@ -48,7 +48,10 @@ StSender::StSender(std::string_view scheduler_address, uint16_t listen_port)
   }
 
   // Start the worker thread
-  m_worker_thread = std::jthread([this](std::stop_token st) { (*this)(st); });
+  m_worker_thread = std::jthread([this](std::stop_token st) {
+    (*this)(st);
+    m_thread_stopped = true;
+  });
 }
 
 StSender::~StSender() {

@@ -54,6 +54,7 @@ public:
   void announce_subtimeslice(TsId id, const StHandle& sth);
   void retract_subtimeslice(TsId id);
   std::optional<TsId> try_receive_completion();
+  bool has_stopped() const { return m_thread_stopped; }
 
 private:
   Scheduler m_tasks;
@@ -86,6 +87,7 @@ private:
   bool m_scheduler_connected = false;
 
   std::jthread m_worker_thread;
+  std::atomic_bool m_thread_stopped = false;
 
   // Main operation loop
   void operator()(std::stop_token stop_token);
