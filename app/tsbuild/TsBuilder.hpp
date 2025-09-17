@@ -100,6 +100,7 @@ private:
   std::string m_scheduler_address;
   int64_t m_timeout_ns;
   std::string m_hostname;
+  std::string m_builder_id;
   cbm::Monitor* m_monitor = nullptr;
 
   int m_epoll_fd = -1;

@@ -237,10 +237,8 @@ std::optional<ucp_ep_h> connect(ucp_worker_h worker,
 
     ucs_status_t status = ucp_ep_create(worker, &ep_params, &ep);
     if (status == UCS_OK) {
-      TRACE("UCX endpoint created successfully");
       break;
     }
-    TRACE("Failed to create UCX endpoint: {}", status);
   }
   freeaddrinfo(result);
 
@@ -343,8 +341,6 @@ void on_generic_send_complete(void* request,
     ERROR("Send operation failed: {}", status);
   } else if (status != UCS_OK) {
     ERROR("Send operation completed with status: {}", status);
-  } else {
-    TRACE("Send operation completed successfully");
   }
 
   if (request != nullptr) {

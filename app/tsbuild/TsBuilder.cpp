@@ -30,7 +30,10 @@ TsBuilder::TsBuilder(TsBuffer& timeslice_buffer,
                      cbm::Monitor* monitor)
     : m_timeslice_buffer(timeslice_buffer),
       m_scheduler_address(scheduler_address), m_timeout_ns(timeout_ns),
-      m_hostname(fles::system::current_hostname()), m_monitor(monitor) {
+      m_hostname(fles::system::current_hostname()),
+      m_builder_id(m_hostname + "#" +
+                   std::to_string(fles::system::current_pid())),
+      m_monitor(monitor) {
   // Initialize event handling
   m_epoll_fd = epoll_create1(EPOLL_CLOEXEC);
   if (m_epoll_fd == -1) {
@@ -124,7 +127,7 @@ void TsBuilder::connect_to_scheduler() {
 
   m_scheduler_ep = *ep;
 
-  auto header = std::as_bytes(std::span(m_hostname));
+  auto header = std::as_bytes(std::span(m_builder_id));
   bool send_am_ok = ucx::util::send_active_message(
       m_scheduler_ep, AM_BUILDER_REGISTER, header, {},
       on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
@@ -273,7 +276,7 @@ ucs_status_t TsBuilder::handle_scheduler_assign_ts(
   m_timeslice_count++;
   send_status_to_scheduler(BUILDER_EVENT_ALLOCATED, id);
 
-  DEBUG("{}| Received timeslice assignment ({})", id,
+  DEBUG("{}| Received assignment ({}s, {})", id, tsh.sender_ids.size(),
         human_readable_count(ms_data_size));
 
   // Ask senders for the contributions
@@ -413,16 +416,17 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
   std::size_t ci = std::distance(tsh.sender_ids.begin(), sender_id_it);
 
   if (ms_data_size != tsh.ms_data_sizes[ci]) {
-    ERROR("{}| Unexpected ms_data_size from sender '{}', expected: "
+    ERROR("{}|s{}/{}| Unexpected ms_data_size from '{}', expected: "
           "{}, received: {}",
-          id, sender_id, tsh.ms_data_sizes[ci], ms_data_size);
+          id, ci, tsh.sender_ids.size(), sender_id, tsh.ms_data_sizes[ci],
+          ms_data_size);
     update_st_state(tsh, ci, StState::Failed);
     return UCS_OK;
   }
 
   if ((param->recv_attr & UCP_AM_RECV_ATTR_FLAG_RNDV) == 0) {
-    ERROR("{}| Received non-RNDV subtimeslice data from sender '{}'", id,
-          sender_id);
+    ERROR("{}|s{}/{}| Received non-RNDV subtimeslice data from '{}'", id, ci,
+          tsh.sender_ids.size(), sender_id);
     update_st_state(tsh, ci, StState::Failed);
     return UCS_OK;
   }
@@ -442,9 +446,10 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
   req_param.user_data = this;
   req_param.datatype = ucp_dt_make_iov();
 
-  DEBUG("{}| Receiving subtimeslice data from sender '{}', "
-        "st_descriptor_size: {}, {}",
-        id, sender_id, st_descriptor_size, human_readable_count(ms_data_size));
+  DEBUG("{}|s{}/{}| Receiving from '{}' ({} + {})", id, ci,
+        tsh.sender_ids.size(), sender_id,
+        human_readable_count(st_descriptor_size),
+        human_readable_count(ms_data_size));
 
   update_st_state(tsh, ci, StState::Receiving);
   ucs_status_ptr_t request =
@@ -453,8 +458,8 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
 
   if (UCS_PTR_IS_ERR(request)) {
     ucs_status_t status = UCS_PTR_STATUS(request);
-    ERROR("{}| Failed to receive subtimeslice data from sender '{}': {}", id,
-          sender_id, status);
+    ERROR("{}|s{}/{}| Failed to receive from '{}': {}", id, ci,
+          tsh.sender_ids.size(), sender_id, status);
     update_st_state(tsh, ci, StState::Failed);
     return UCS_OK;
   }
@@ -462,17 +467,10 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
   if (request == nullptr) {
     // Operation has completed successfully in-place
     update_st_state(tsh, ci, StState::Complete);
-    TRACE("{}| Received subtimeslice data from sender '{}', "
-          "st_descriptor_size: "
-          "{}, ms_data_size: {}",
-          id, sender_id, st_descriptor_size, ms_data_size);
     return UCS_OK;
   }
 
   m_active_data_recv_requests[request] = {id, ci};
-  TRACE("{}| Started receiving subtimeslice data from sender '{}'", id,
-        sender_id);
-
   return UCS_OK;
 }
 
@@ -482,8 +480,6 @@ void TsBuilder::handle_sender_data_recv_complete(
     ERROR("Data recv operation failed: {}", status);
   } else if (status != UCS_OK) {
     ERROR("Data recv operation completed with status: {}", status);
-  } else {
-    TRACE("Data recv operation completed successfully");
   }
 
   if (!m_active_data_recv_requests.contains(request)) {
@@ -522,7 +518,7 @@ void TsBuilder::process_completion(TsId id) {
   m_timeslice_buffer.deallocate(m_ts_handles.at(id)->buffer);
   m_ts_handles.erase(id);
   send_status_to_scheduler(BUILDER_EVENT_RELEASED, id);
-  DEBUG("{}| Processed timeslice completion", id);
+  DEBUG("{}| Released", id);
 }
 
 // Helper methods
@@ -534,8 +530,8 @@ void TsBuilder::update_st_state(TsHandle& tsh,
   if (new_state == tsh.states[contribution_index]) {
     return;
   }
-  DEBUG("{}| Contribution {} state change: {} -> {}", tsh.id,
-        contribution_index, to_string(tsh.states[contribution_index]),
+  DEBUG("{}|s{}/{}| State: {} -> {}", tsh.id, contribution_index,
+        tsh.sender_ids.size(), to_string(tsh.states[contribution_index]),
         to_string(new_state));
   tsh.states[contribution_index] = new_state;
   if (new_state == StState::Complete) {
@@ -543,7 +539,8 @@ void TsBuilder::update_st_state(TsHandle& tsh,
     auto desc = to_obj_nothrow<StDescriptor>(
         std::span(tsh.serialized_descriptors[contribution_index]));
     if (!desc) {
-      ERROR("{}| Failed to deserialize subtimeslice descriptor", tsh.id);
+      ERROR("{}|s{}/{}| Failed to deserialize subtimeslice descriptor", tsh.id,
+            contribution_index, tsh.sender_ids.size());
       update_st_state(tsh, contribution_index, StState::Failed);
       return;
     }
@@ -564,7 +561,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
           INFO("{}| Published incomplete timeslice", tsh.id);
           m_timeslice_incomplete_count++;
         } else {
-          DEBUG("{}| Published complete timeslice", tsh.id);
+          DEBUG("{}| Published", tsh.id);
         }
       }
     }

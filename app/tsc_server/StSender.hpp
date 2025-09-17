@@ -126,11 +126,6 @@ private:
   std::size_t process_queues();
   void flush_announced();
 
-  // Helper methods
-  static StDescriptor create_subtimeslice_descriptor(const StHandle& sth);
-  static std::vector<ucp_dt_iov>
-  create_iov_vector(const StHandle& sth, std::span<std::byte> descriptor_bytes);
-
   // UCX static callbacks (trampolines)
   static void on_new_connection(ucp_conn_request_h conn_request, void* arg) {
     static_cast<StSender*>(arg)->handle_new_connection(conn_request);

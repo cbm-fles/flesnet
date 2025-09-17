@@ -23,10 +23,7 @@ inline std::span<T>
 shm_allocate(boost::interprocess::managed_shared_memory* shm,
              std::size_t count) {
   std::size_t size_bytes = count * sizeof(T);
-
-  TRACE("allocating shm buffer of {} bytes", size_bytes);
   void* buffer_raw = shm->allocate_aligned(size_bytes, sysconf(_SC_PAGESIZE));
-
   return {static_cast<T*>(buffer_raw), count};
 }
 
@@ -272,8 +269,6 @@ void Application::provide_subtimeslice(
   // Announce the subtimeslice
   uint64_t ts_id = start_time / duration;
   m_st_sender->announce_subtimeslice(ts_id, st);
-  TRACE("Sent announcement for timeslice {} with {} components (flags: {})",
-        ts_id, st.components.size(), st.flags);
   m_completed[ts_id] = false;
 
   // Update statistics

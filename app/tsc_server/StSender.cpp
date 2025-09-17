@@ -270,12 +270,42 @@ void StSender::disconnect_from_scheduler(bool force) {
 // Scheduler message handling
 
 void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
-  // Create and serialize subtimeslice
-  StDescriptor st_descriptor = create_subtimeslice_descriptor(sth);
+  // Create subtimeslice structure for transmission to scheduler and builders.
+  // It contains, for each component, the offset and size of the microslice
+  // descriptors and microslice contents data blocks. The offsets are relative
+  // to the start of the overall data block and assume that all blocks are
+  // contiguous in memory.
+  StDescriptor st_descriptor;
+  st_descriptor.start_time_ns = sth.start_time_ns;
+  st_descriptor.duration_ns = sth.duration_ns;
+  st_descriptor.flags = sth.flags;
+
+  std::size_t ms_data_size = 0;
+  std::size_t num_microslices = 0;
+  for (const auto& c : sth.components) {
+    // Simply add all sizes as the blocks will be contiguous in memory after
+    // transferring to the builder
+    const std::size_t component_size = c.ms_data_size();
+    st_descriptor.components.push_back({static_cast<ptrdiff_t>(ms_data_size),
+                                        component_size, c.num_microslices,
+                                        c.flags});
+    ms_data_size += component_size;
+    num_microslices += c.num_microslices;
+  }
+
+  // Serialize subtimeslice structure
   auto st_descriptor_bytes = to_bytes(st_descriptor);
 
-  std::vector<ucp_dt_iov> iov_vector =
-      create_iov_vector(sth, st_descriptor_bytes);
+  // Assemble a vector of ucp_dt_iov structures for use with UCX send
+  // operations. The first element in the vector is the serialized descriptor
+  // string, followed by the descriptors and contents of each component in the
+  // shared memory.
+  std::vector<ucp_dt_iov> iov_vector;
+  iov_vector.push_back(
+      {st_descriptor_bytes.data(), st_descriptor_bytes.size()});
+  for (const auto& c : sth.components) {
+    iov_vector.insert(iov_vector.end(), c.ms_data.begin(), c.ms_data.end());
+  }
 
   // Store for future use (and retention during send)
   m_announced.emplace(
@@ -286,17 +316,14 @@ void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
   // Ensure that the first iov component points to the string data
   assert(ah.iovector.front().buffer == ah.st_descriptor_bytes.data());
 
+  DEBUG("{}| Announcing ({}c, {}m, {}, flags={:04x})", id,
+        st_descriptor.components.size(), num_microslices,
+        human_readable_count(ms_data_size), st_descriptor.flags);
+
   // Send announcement to scheduler
-  uint64_t total_ms_data_size = 0;
-  for (std::size_t i = 1; i < ah.iov_vector.size(); ++i) {
-    total_ms_data_size += ah.iov_vector[i].length;
-  }
-  std::array<uint64_t, 2> hdr{id, total_ms_data_size};
+  std::array<uint64_t, 2> hdr{id, ms_data_size};
   auto header = std::as_bytes(std::span(hdr));
   auto buffer = std::as_bytes(std::span(ah.st_descriptor_bytes));
-  DEBUG("{}| Announcing ({}c, {})", id, st_descriptor.components.size(),
-        human_readable_count(total_ms_data_size));
-
   ucx::util::send_active_message(
       m_scheduler_ep, AM_SENDER_ANNOUNCE_ST, header, buffer,
       ucx::util::on_generic_send_complete, this,
@@ -461,7 +488,6 @@ void StSender::send_subtimeslice_to_builder(TsId id, ucp_ep_h ep) {
 
   if (request == nullptr) {
     // Operation has completed successfully in-place
-    TRACE("Active message sent successfully in-place");
     return;
   }
 
@@ -477,8 +503,6 @@ void StSender::handle_builder_send_complete(void* request,
     ERROR("Send operation failed: {}", status);
   } else if (status != UCS_OK) {
     ERROR("Send operation completed with status: {}", status);
-  } else {
-    TRACE("Send operation completed successfully");
   }
 
   if (!m_active_send_requests.contains(request)) {
@@ -542,7 +566,7 @@ std::size_t StSender::process_queues() {
   }
 
   if (!m_scheduler_connected) {
-    TRACE("Scheduler not registered, skipping announcements");
+    // Scheduler not registered, skipping announcements
     for (const auto& [id, sth] : announcements) {
       std::lock_guard<std::mutex> lock(m_completions_mutex);
       m_completed.push(id);
@@ -567,52 +591,4 @@ void StSender::flush_announced() {
     m_completed.push(id);
   }
   m_announced.clear();
-}
-
-// Helper methods
-
-// Create subtimeslice structure for transmission to scheduler and builders.
-// It contains, for each component, the offset and size of the microslice
-// descriptors and microslice contents data blocks. The offsets are relative to
-// the start of the overall data block and assume that all blocks are contiguous
-// in memory.
-StDescriptor StSender::create_subtimeslice_descriptor(const StHandle& sth) {
-  StDescriptor d;
-  d.start_time_ns = sth.start_time_ns;
-  d.duration_ns = sth.duration_ns;
-  d.flags = sth.flags;
-
-  std::ptrdiff_t offset = 0;
-  for (const auto& c : sth.components) {
-    std::size_t component_size = 0;
-    // Simply add all sizes as the blocks will be contiguous in memory after
-    // transferring to the builder
-    for (auto iov : c.ms_data) {
-      component_size += iov.length;
-    }
-    d.components.push_back(
-        {offset, component_size, c.num_microslices, c.flags});
-    offset += component_size;
-  }
-
-  return d;
-}
-
-// Create a vector of ucp_dt_iov structures for use with UCX send operations.
-// The first element in the vector is the serialized descriptor string, followed
-// by the descriptors and contents of each component in the shared memory.
-std::vector<ucp_dt_iov>
-StSender::create_iov_vector(const StHandle& sth,
-                            std::span<std::byte> descriptor_bytes) {
-  std::vector<ucp_dt_iov> iov_vector;
-
-  // Add serialized descriptor at the beginning
-  iov_vector.push_back({descriptor_bytes.data(), descriptor_bytes.size()});
-
-  // Add component data from shared memory
-  for (const auto& c : sth.components) {
-    iov_vector.insert(iov_vector.end(), c.ms_data.begin(), c.ms_data.end());
-  }
-
-  return iov_vector;
 }

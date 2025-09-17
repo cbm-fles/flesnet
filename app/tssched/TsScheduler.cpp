@@ -351,7 +351,8 @@ TsScheduler::handle_builder_status(const void* header,
   switch (event) {
   case BUILDER_EVENT_NO_OP:
     if (new_bytes_free != it->bytes_available) {
-      DEBUG("Builder '{}' reported bytes free: {}", it->id, new_bytes_free);
+      DEBUG("Builder '{}' reported free: {}", it->id,
+            human_readable_count(new_bytes_free));
     }
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
@@ -359,12 +360,12 @@ TsScheduler::handle_builder_status(const void* header,
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_ALLOCATED:
-    DEBUG("{}| Builder '{}' has allocated timeslice, new bytes free: {}", id,
-          it->id, new_bytes_free);
+    DEBUG("{}| Builder '{}' has allocated timeslice, now free: {}", id, it->id,
+          human_readable_count(new_bytes_free));
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_OUT_OF_MEMORY:
-    INFO("{}| Builder '{}' reported out of memory", id, it->id);
+    INFO("{}| Builder '{}' has reported out of memory", id, it->id);
     it->is_out_of_memory = true;
     assign_timeslice(id);
     break;
@@ -373,8 +374,8 @@ TsScheduler::handle_builder_status(const void* header,
     send_release_to_senders(id);
     break;
   case BUILDER_EVENT_RELEASED:
-    DEBUG("{}| Builder '{}' has released timeslice, new bytes free: {}", id,
-          it->id, new_bytes_free);
+    DEBUG("{}| Builder '{}' has released timeslice, now free: {}", id, it->id,
+          human_readable_count(new_bytes_free));
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
     }
@@ -387,7 +388,6 @@ TsScheduler::handle_builder_status(const void* header,
 
 void TsScheduler::assign_timeslice(TsId id) {
   StCollection coll = create_collection_descriptor(id);
-  TRACE("{}| Processing timeslice: {}", id, coll);
   if (coll.sender_ids.empty()) {
     if (!m_senders.empty()) {
       WARN("{}| Sender connected ({}), but no contributions", id,
@@ -434,8 +434,6 @@ StCollection TsScheduler::create_collection_descriptor(TsId id) {
         std::find_if(sender.announced_st.begin(), sender.announced_st.end(),
                      [id](const auto& st) { return st.id == id; });
     if (it != sender.announced_st.end()) {
-      TRACE("{}| Adding contribution from sender '{}', ms_data_size: {}", id,
-            sender.sender_id, it->ms_data_size);
       coll.sender_ids.push_back(sender.sender_id);
       coll.ms_data_sizes.push_back(it->ms_data_size);
       sender.announced_st.erase(it);
