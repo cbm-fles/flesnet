@@ -37,7 +37,7 @@ static constexpr unsigned int AM_BUILDER_STATUS =
    released, StId, new_bytes_free
 */
 // tssched -> tsbuilder
-static constexpr unsigned int AM_SCHED_SEND_TS =
+static constexpr unsigned int AM_SCHED_ASSIGN_TS =
     50; // header: {StId, ms_data_size}, data: StCollectionDescriptor
 
 // 3. stsender (listen) <-> tsbuilder (connect)

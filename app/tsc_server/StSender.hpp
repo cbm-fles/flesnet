@@ -3,6 +3,7 @@
 
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <deque>
 #include <mutex>
@@ -23,6 +24,24 @@
 using namespace std::chrono_literals;
 
 // StSender: Announce subtimeslices to tssched and send them to tsbuilders
+
+struct AnnouncementHandle {
+  AnnouncementHandle(TsId id,
+                     std::vector<std::byte> st_descriptor_bytes,
+                     std::vector<ucp_dt_iov> iov_vector)
+      : id(id), st_descriptor_bytes(std::move(st_descriptor_bytes)),
+        iov_vector(std::move(iov_vector)) {}
+
+  // Cannot be moved or copied (pointer to data is used by ucx)
+  AnnouncementHandle(const AnnouncementHandle&) = delete;
+  AnnouncementHandle& operator=(const AnnouncementHandle&) = delete;
+
+  const TsId id;
+  std::vector<std::byte> st_descriptor_bytes;
+  std::vector<ucp_dt_iov> iov_vector;
+  size_t active_send_requests = 0;
+  bool pending_release = false;
+};
 
 class StSender {
 public:
@@ -51,9 +70,7 @@ private:
   std::mutex m_completions_mutex;
   int m_epoll_fd = -1;
 
-  std::unordered_map<TsId,
-                     std::pair<std::vector<std::byte>, std::vector<ucp_dt_iov>>>
-      m_announced;
+  std::unordered_map<TsId, std::unique_ptr<AnnouncementHandle>> m_announced;
   std::unordered_map<ucs_status_ptr_t, TsId> m_active_send_requests;
 
   ucp_context_h m_context = nullptr;
@@ -82,8 +99,8 @@ private:
   void disconnect_from_scheduler(bool force = false);
 
   // Scheduler message handling
-  void send_announcement_to_scheduler(TsId id);
-  void send_retraction_to_scheduler(TsId id);
+  void do_announce_subtimeslice(TsId id, const StHandle& sth);
+  void do_retract_subtimeslice(TsId id);
   ucs_status_t handle_scheduler_release(const void* header,
                                         size_t header_length,
                                         void* data,
@@ -107,9 +124,6 @@ private:
   // Queue processing
   void notify_queue_update() const;
   std::size_t process_queues();
-  void process_announcement(TsId id, const StHandle& sth);
-  void process_retraction(TsId id);
-  void complete_subtimeslice(TsId id);
   void flush_announced();
 
   // Helper methods

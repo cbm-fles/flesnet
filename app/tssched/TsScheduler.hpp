@@ -67,6 +67,7 @@ private:
   std::unordered_map<ucp_ep_h, SenderConnection> m_senders;
   std::vector<BuilderConnection> m_builders;
   std::size_t m_ts_count = 0;
+  uint64_t m_id = 0;
 
   // Connection management
   void handle_new_connection(ucp_conn_request_h conn_request);
@@ -102,9 +103,9 @@ private:
                                      void* data,
                                      size_t length,
                                      const ucp_am_recv_param_t* param);
-  void send_timeslice(TsId id);
-  void send_timeslice_to_builder(const StCollection& coll,
-                                 BuilderConnection& builder);
+  void assign_timeslice(TsId id);
+  void send_assignment_to_builder(const StCollection& coll,
+                                  BuilderConnection& builder);
 
   // Helper methods
   StCollection create_collection_descriptor(TsId id);

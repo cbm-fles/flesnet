@@ -1,8 +1,10 @@
 // Copyright 2025 Jan de Cuveland
 
 #include "StSender.hpp"
+#include "SubTimeslice.hpp"
 #include "System.hpp"
 #include "TsbProtocol.hpp"
+#include "Utility.hpp"
 #include "log.hpp"
 #include "monitoring/System.hpp"
 #include "ucxutil.hpp"
@@ -80,8 +82,11 @@ void StSender::retract_subtimeslice(TsId id) {
                            m_pending_announcements.end(),
                            [id](const auto& item) { return item.first == id; });
     if (it != m_pending_announcements.end()) {
+      {
+        std::lock_guard<std::mutex> lock(m_completions_mutex);
+        m_completed.push(id);
+      }
       m_pending_announcements.erase(it);
-      complete_subtimeslice(id);
       return;
     }
     m_pending_retractions.emplace_back(id);
@@ -242,27 +247,55 @@ void StSender::disconnect_from_scheduler(bool force) {
 
   ucx::util::close_endpoint(m_worker, m_scheduler_ep, force);
   m_scheduler_ep = nullptr;
+
+  // Flush all announced subtimeslices
+  auto it = m_announced.begin();
+  while (it != m_announced.end()) {
+    const auto& [id, ah] = *it;
+    if (ah->active_send_requests > 0) {
+      DEBUG("{}| Marking for release (currently sending)", id);
+      ah->pending_release = true;
+      ++it;
+    } else {
+      DEBUG("{}| Releasing", id);
+      {
+        std::lock_guard<std::mutex> lock(m_completions_mutex);
+        m_completed.push(id);
+      }
+      it = m_announced.erase(it);
+    }
+  }
 }
 
 // Scheduler message handling
 
-void StSender::send_announcement_to_scheduler(TsId id) {
-  auto it = m_announced.find(id);
-  if (it == m_announced.end()) {
-    return;
-  }
-  const auto& [st_descriptor_bytes, iov_vector] = it->second;
+void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
+  // Create and serialize subtimeslice
+  StDescriptor st_descriptor = create_subtimeslice_descriptor(sth);
+  auto st_descriptor_bytes = to_bytes(st_descriptor);
 
+  std::vector<ucp_dt_iov> iov_vector =
+      create_iov_vector(sth, st_descriptor_bytes);
+
+  // Store for future use (and retention during send)
+  m_announced.emplace(
+      id, std::make_unique<AnnouncementHandle>(
+              id, std::move(st_descriptor_bytes), std::move(iov_vector)));
+  auto& ah = *m_announced.at(id);
+
+  // Ensure that the first iov component points to the string data
+  assert(ah.iovector.front().buffer == ah.st_descriptor_bytes.data());
+
+  // Send announcement to scheduler
   uint64_t total_ms_data_size = 0;
-  for (std::size_t i = 1; i < iov_vector.size(); ++i) {
-    total_ms_data_size += iov_vector[i].length;
+  for (std::size_t i = 1; i < ah.iov_vector.size(); ++i) {
+    total_ms_data_size += ah.iov_vector[i].length;
   }
   std::array<uint64_t, 2> hdr{id, total_ms_data_size};
   auto header = std::as_bytes(std::span(hdr));
-  auto buffer = std::as_bytes(std::span(st_descriptor_bytes));
-  DEBUG("Announcing subtimeslice {} to scheduler", id);
-  DEBUG("StDescriptor size: {}, total_ms_data_size: {}", buffer.size(),
-        total_ms_data_size);
+  auto buffer = std::as_bytes(std::span(ah.st_descriptor_bytes));
+  DEBUG("{}| Announcing ({}c, {})", id, st_descriptor.components.size(),
+        human_readable_count(total_ms_data_size));
 
   ucx::util::send_active_message(
       m_scheduler_ep, AM_SENDER_ANNOUNCE_ST, header, buffer,
@@ -270,14 +303,33 @@ void StSender::send_announcement_to_scheduler(TsId id) {
       UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
 }
 
-void StSender::send_retraction_to_scheduler(TsId id) {
-  std::array<uint64_t, 1> hdr{id};
+void StSender::do_retract_subtimeslice(TsId id) {
+  auto it = m_announced.find(id);
+  if (it != m_announced.end()) {
+    DEBUG("{}| Retracting subtimeslice", id);
 
-  auto header = std::as_bytes(std::span(hdr));
-  ucx::util::send_active_message(m_scheduler_ep, AM_SENDER_RETRACT_ST, header,
-                                 {}, ucx::util::on_generic_send_complete, this,
-                                 UCP_AM_SEND_FLAG_COPY_HEADER |
-                                     UCP_AM_SEND_FLAG_REPLY);
+    // Send retraction to scheduler
+    std::array<uint64_t, 1> hdr{id};
+    auto header = std::as_bytes(std::span(hdr));
+    ucx::util::send_active_message(
+        m_scheduler_ep, AM_SENDER_RETRACT_ST, header, {},
+        ucx::util::on_generic_send_complete, this,
+        UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
+
+    auto& ah = *it->second;
+    if (ah.active_send_requests > 0) {
+      DEBUG("{}| Marking for release (currently sending)", id);
+      ah.pending_release = true;
+    } else {
+      {
+        std::lock_guard<std::mutex> lock(m_completions_mutex);
+        m_completed.push(id);
+      }
+      m_announced.erase(it);
+    }
+  } else {
+    WARN("{}| Attempted to retract unknown subtimeslice", id);
+  }
 }
 
 ucs_status_t StSender::handle_scheduler_release(
@@ -294,11 +346,20 @@ ucs_status_t StSender::handle_scheduler_release(
   TsId id = *static_cast<const uint64_t*>(header);
   auto it = m_announced.find(id);
   if (it != m_announced.end()) {
-    DEBUG("Removing released subtimeslice {}", id);
-    m_announced.erase(it);
-    complete_subtimeslice(id);
+    auto& ah = *it->second;
+    if (ah.active_send_requests > 0) {
+      DEBUG("{}| Marking for release (currently sending)", id);
+      ah.pending_release = true;
+    } else {
+      DEBUG("{}| Releasing", id);
+      {
+        std::lock_guard<std::mutex> lock(m_completions_mutex);
+        m_completed.push(id);
+      }
+      m_announced.erase(it);
+    }
   } else {
-    WARN("Release for unknown subtimeslice {}", id);
+    WARN("{}| Received release for unknown subtimeslice", id);
   }
   return UCS_OK;
 }
@@ -326,14 +387,12 @@ void StSender::handle_new_connection(ucp_conn_request_h conn_request) {
 }
 
 void StSender::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
-  ERROR("Error on UCX endpoint: {}", status);
-
   auto it = m_builders.find(ep);
   if (it != m_builders.end()) {
-    INFO("Removing disconnected endpoint '{}'", it->second);
+    INFO("Disconnect from builder '{}': {}", it->second, status);
     m_builders.erase(it);
   } else {
-    ERROR("Received error for unknown endpoint");
+    ERROR("Received error for unknown endpoint: {}", status);
   }
 }
 
@@ -357,9 +416,8 @@ StSender::handle_builder_request(const void* header,
 }
 
 void StSender::send_subtimeslice_to_builder(TsId id, ucp_ep_h ep) {
-  auto it = m_announced.find(id);
-  if (it == m_announced.end()) {
-    WARN("Subtimeslice {} not found", id);
+  if (!m_announced.contains(id)) {
+    WARN("{}| Subtimeslice not found", id);
     std::array<uint64_t, 3> hdr{id, 0, 0};
     auto header = std::as_bytes(std::span(hdr));
     ucx::util::send_active_message(
@@ -367,6 +425,7 @@ void StSender::send_subtimeslice_to_builder(TsId id, ucp_ep_h ep) {
         this, UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
     return;
   }
+  auto& ah = *m_announced.at(id);
 
   // Prepare send parameters
   ucp_request_param_t req_param{};
@@ -380,18 +439,18 @@ void StSender::send_subtimeslice_to_builder(TsId id, ucp_ep_h ep) {
   req_param.datatype = ucp_dt_make_iov();
 
   // Prepare header data
-  const auto& [st_descriptor_bytes, iov_vector] = it->second;
-  uint64_t st_descriptor_size = st_descriptor_bytes.size();
+  uint64_t st_descriptor_size = ah.st_descriptor_bytes.size();
   uint64_t ms_data_size = 0;
-  for (std::size_t i = 1; i < iov_vector.size(); ++i) {
-    ms_data_size += iov_vector[i].length;
+  for (std::size_t i = 1; i < ah.iov_vector.size(); ++i) {
+    ms_data_size += ah.iov_vector[i].length;
   }
   std::array<uint64_t, 3> hdr{id, st_descriptor_size, ms_data_size};
 
   // Send the data
+  DEBUG("{}| Sending to builder '{}'", id, m_builders[ep]);
   ucs_status_ptr_t request =
       ucp_am_send_nbx(ep, AM_SENDER_SEND_ST, hdr.data(), sizeof(hdr),
-                      iov_vector.data(), iov_vector.size(), &req_param);
+                      ah.iov_vector.data(), ah.iov_vector.size(), &req_param);
 
   if (UCS_PTR_IS_ERR(request)) {
     ucs_status_t status = UCS_PTR_STATUS(request);
@@ -409,6 +468,7 @@ void StSender::send_subtimeslice_to_builder(TsId id, ucp_ep_h ep) {
   // Keep the element in m_announced until the send completes and store the
   // request
   m_active_send_requests[request] = id;
+  ah.active_send_requests++;
 }
 
 void StSender::handle_builder_send_complete(void* request,
@@ -421,10 +481,24 @@ void StSender::handle_builder_send_complete(void* request,
     TRACE("Send operation completed successfully");
   }
 
-  auto it = m_active_send_requests.find(request);
-  if (it == m_active_send_requests.end()) {
+  if (!m_active_send_requests.contains(request)) {
     ERROR("Received completion for unknown send request");
   } else {
+    TsId id = m_active_send_requests.at(request);
+    if (!m_announced.contains(id)) {
+      ERROR("{}| Sent subtimeslice not found in announced list", id);
+    } else {
+      auto& ah = *m_announced.at(id);
+      ah.active_send_requests--;
+      if (ah.pending_release && ah.active_send_requests == 0) {
+        DEBUG("{}| Releasing after send completion", id);
+        {
+          std::lock_guard<std::mutex> lock(m_completions_mutex);
+          m_completed.push(id);
+        }
+        m_announced.erase(id);
+      }
+    }
     m_active_send_requests.erase(request);
   }
 
@@ -470,64 +544,27 @@ std::size_t StSender::process_queues() {
   if (!m_scheduler_connected) {
     TRACE("Scheduler not registered, skipping announcements");
     for (const auto& [id, sth] : announcements) {
-      complete_subtimeslice(id);
+      std::lock_guard<std::mutex> lock(m_completions_mutex);
+      m_completed.push(id);
     }
     return announcements.size();
   }
 
   for (auto id : retractions) {
-    process_retraction(id);
+    do_retract_subtimeslice(id);
   }
   for (const auto& [id, sth] : announcements) {
-    process_announcement(id, sth);
+    do_announce_subtimeslice(id, sth);
   }
 
   return announcements.size() + retractions.size();
 }
 
-void StSender::process_announcement(TsId id, const StHandle& sth) {
-  // Create and serialize subtimeslice
-  StDescriptor st_descriptor = create_subtimeslice_descriptor(sth);
-  auto st_descriptor_bytes = to_bytes(st_descriptor);
-
-  std::vector<ucp_dt_iov> iov_vector =
-      create_iov_vector(sth, st_descriptor_bytes);
-
-  // Store for future use (and retention during send)
-  m_announced[id] = {std::move(st_descriptor_bytes), std::move(iov_vector)};
-
-  // Ensure that the first iov component points to the string data
-  assert(m_announced[id].second.front().buffer == m_announced[id].first.data());
-
-  // Send announcement to scheduler
-  send_announcement_to_scheduler(id);
-}
-
-void StSender::process_retraction(TsId id) {
-  auto it = m_announced.find(id);
-  if (it != m_announced.end()) {
-    DEBUG("Retracting subtimeslice {}", id);
-    m_announced.erase(it);
-    send_retraction_to_scheduler(id);
-    complete_subtimeslice(id);
-  } else {
-    WARN("Attempted to retract unknown subtimeslice {}", id);
-  }
-}
-
-void StSender::complete_subtimeslice(TsId id) {
-  // In the future, this could check if there is an ongoning send operation
-  // concerning this SubTimeslice (cf. m_active_send_requests) and wait for it
-  // to complete before marking the SubTimeslice as completed. This would avoid
-  // sending inconsistent data in special cases.
-  std::lock_guard<std::mutex> lock(m_completions_mutex);
-  m_completed.push(id);
-}
-
 void StSender::flush_announced() {
   for (const auto& [id, st] : m_announced) {
-    DEBUG("Flushing announced subtimeslice {}", id);
-    complete_subtimeslice(id);
+    DEBUG("{}| Flushing announced subtimeslice", id);
+    std::lock_guard<std::mutex> lock(m_completions_mutex);
+    m_completed.push(id);
   }
   m_announced.clear();
 }

@@ -4,6 +4,7 @@
 #include "SubTimeslice.hpp"
 #include "System.hpp"
 #include "TsbProtocol.hpp"
+#include "Utility.hpp"
 #include "log.hpp"
 #include "ucxutil.hpp"
 #include <arpa/inet.h>
@@ -66,7 +67,7 @@ void TsScheduler::run(volatile std::sig_atomic_t& signal_status) {
     return;
   }
 
-  uint64_t id = fles::system::current_time_ns() / m_timeslice_duration_ns;
+  m_id = fles::system::current_time_ns() / m_timeslice_duration_ns;
   report_status();
 
   while (signal_status == 0) {
@@ -77,11 +78,11 @@ void TsScheduler::run(volatile std::sig_atomic_t& signal_status) {
 
     bool try_later =
         m_senders.empty() ||
-        std::any_of(m_senders.begin(), m_senders.end(), [id](const auto& s) {
-          return s.second.last_received_st < id;
+        std::any_of(m_senders.begin(), m_senders.end(), [this](const auto& s) {
+          return s.second.last_received_st < m_id;
         });
     uint64_t current_time_ns = fles::system::current_time_ns();
-    uint64_t timeout_ns = (id + 1) * m_timeslice_duration_ns + m_timeout_ns;
+    uint64_t timeout_ns = (m_id + 1) * m_timeslice_duration_ns + m_timeout_ns;
 
     if (try_later && current_time_ns < timeout_ns) {
       int sender_wait_ms =
@@ -100,8 +101,8 @@ void TsScheduler::run(volatile std::sig_atomic_t& signal_status) {
       continue;
     }
 
-    send_timeslice(id);
-    id++;
+    assign_timeslice(m_id);
+    m_id++;
   }
 
   if (m_listener != nullptr) {
@@ -135,7 +136,6 @@ void TsScheduler::handle_new_connection(ucp_conn_request_h conn_request) {
 void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
   auto it = m_connections.find(ep);
   if (it != m_connections.end()) {
-    DEBUG("Disconnected from endpoint '{}': {}", it->second, status);
     m_connections.erase(it);
   } else {
     ERROR("Received error for unknown endpoint: {}", status);
@@ -143,7 +143,8 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
 
   auto sender_it = m_senders.find(ep);
   if (sender_it != m_senders.end()) {
-    INFO("Disconnected from sender '{}'", sender_it->second.sender_id);
+    INFO("Disconnect from sender '{}': {}", sender_it->second.sender_id,
+         status);
     m_senders.erase(sender_it);
   }
 
@@ -151,7 +152,7 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
           std::find_if(m_builders.begin(), m_builders.end(),
                        [ep](const BuilderConnection& b) { return b.ep == ep; });
       it != m_builders.end()) {
-    INFO("Disconnected from builder '{}'", it->id);
+    INFO("Disconnect from builder '{}': {}", it->id, status);
     m_builders.erase(it);
   }
 
@@ -215,7 +216,7 @@ TsScheduler::handle_sender_announce(const void* header,
 
   auto it = m_senders.find(param->reply_ep);
   if (it == m_senders.end()) {
-    ERROR("Received announcement from unknown sender");
+    ERROR("{}| Received announcement from unknown sender", id);
     return UCS_OK;
   }
   auto& sender_conn = it->second;
@@ -224,23 +225,34 @@ TsScheduler::handle_sender_announce(const void* header,
       std::span(static_cast<const std::byte*>(data), length);
   auto st_descriptor = to_obj_nothrow<StDescriptor>(st_descriptor_bytes);
   if (!st_descriptor) {
-    ERROR("Failed to deserialize announcement from sender '{}'",
+    ERROR("{}| Failed to deserialize announcement from sender '{}'", id,
           sender_conn.sender_id);
     return UCS_OK;
   }
 
   if (st_descriptor->duration_ns !=
       static_cast<uint64_t>(m_timeslice_duration_ns)) {
-    ERROR("Invalid timeslice duration from sender '{}'", sender_conn.sender_id);
+    ERROR("{}| Invalid timeslice duration from sender '{}'", id,
+          sender_conn.sender_id);
+    return UCS_OK;
+  }
+
+  if (id < m_id) {
+    DEBUG("{}| Late announcement from '{}', sending release", id,
+          sender_conn.sender_id);
+    std::array<uint64_t, 1> hdr{id};
+    auto header = std::as_bytes(std::span(hdr));
+    ucx::util::send_active_message(param->reply_ep, AM_SCHED_RELEASE_ST, header,
+                                   {}, ucx::util::on_generic_send_complete,
+                                   this, UCP_AM_SEND_FLAG_COPY_HEADER);
     return UCS_OK;
   }
 
   sender_conn.announced_st.emplace_back(id, ms_data_size,
                                         std::move(*st_descriptor));
   sender_conn.last_received_st = id;
-  DEBUG("Received subtimeslice announcement from sender '{}' for {}, "
-        "ms_data_size: {}",
-        sender_conn.sender_id, id, ms_data_size);
+  DEBUG("{}| Announcement from '{}' ({})", id, sender_conn.sender_id,
+        human_readable_count(ms_data_size));
 
   return UCS_OK;
 }
@@ -347,22 +359,22 @@ TsScheduler::handle_builder_status(const void* header,
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_ALLOCATED:
-    DEBUG("Builder '{}' has allocated timeslice {}, new bytes free: {}", it->id,
-          id, new_bytes_free);
+    DEBUG("{}| Builder '{}' has allocated timeslice, new bytes free: {}", id,
+          it->id, new_bytes_free);
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_OUT_OF_MEMORY:
-    INFO("Builder '{}' reported out of memory for timeslice {}", it->id, id);
+    INFO("{}| Builder '{}' reported out of memory", id, it->id);
     it->is_out_of_memory = true;
-    send_timeslice(id);
+    assign_timeslice(id);
     break;
   case BUILDER_EVENT_RECEIVED:
-    DEBUG("Builder '{}' has received timeslice {}", it->id, id);
+    DEBUG("{}| Builder '{}' has received timeslice", id, it->id);
     send_release_to_senders(id);
     break;
   case BUILDER_EVENT_RELEASED:
-    DEBUG("Builder '{}' has released timeslice {}, new bytes free: {}", it->id,
-          id, new_bytes_free);
+    DEBUG("{}| Builder '{}' has released timeslice, new bytes free: {}", id,
+          it->id, new_bytes_free);
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
     }
@@ -373,12 +385,13 @@ TsScheduler::handle_builder_status(const void* header,
   return UCS_OK;
 }
 
-void TsScheduler::send_timeslice(TsId id) {
+void TsScheduler::assign_timeslice(TsId id) {
   StCollection coll = create_collection_descriptor(id);
-  TRACE("Processing timeslice {}: {}", id, coll);
+  TRACE("{}| Processing timeslice: {}", id, coll);
   if (coll.sender_ids.empty()) {
     if (!m_senders.empty()) {
-      WARN("No contributions found for timeslice {}", id);
+      WARN("{}| Sender connected ({}), but no contributions", id,
+           m_senders.size());
     }
     return;
   }
@@ -387,23 +400,23 @@ void TsScheduler::send_timeslice(TsId id) {
     auto& builder = m_builders[(id + i) % m_builders.size()];
     if (builder.bytes_available >= coll.ms_data_size() &&
         !builder.is_out_of_memory) {
-      send_timeslice_to_builder(coll, builder);
+      send_assignment_to_builder(coll, builder);
       return;
     }
   }
-  WARN("No builder available for timeslice {}", id);
+  WARN("{}| No builder available", id);
   send_release_to_senders(id);
 }
 
-void TsScheduler::send_timeslice_to_builder(const StCollection& coll,
-                                            BuilderConnection& builder) {
+void TsScheduler::send_assignment_to_builder(const StCollection& coll,
+                                             BuilderConnection& builder) {
   std::array<uint64_t, 2> hdr{coll.id, coll.ms_data_size()};
   auto header = std::as_bytes(std::span(hdr));
   auto buffer = std::make_unique<std::vector<std::byte>>(to_bytes(coll));
   auto* raw_ptr = buffer.release();
 
   ucx::util::send_active_message(
-      builder.ep, AM_SCHED_SEND_TS, header, *raw_ptr,
+      builder.ep, AM_SCHED_ASSIGN_TS, header, *raw_ptr,
       [](void* request, ucs_status_t status, void* user_data) {
         auto buffer = std::unique_ptr<std::vector<std::byte>>(
             static_cast<std::vector<std::byte>*>(user_data));
@@ -421,14 +434,13 @@ StCollection TsScheduler::create_collection_descriptor(TsId id) {
         std::find_if(sender.announced_st.begin(), sender.announced_st.end(),
                      [id](const auto& st) { return st.id == id; });
     if (it != sender.announced_st.end()) {
-      TRACE("Adding contribution from sender '{}' for {}, ms_data_size: {}",
-            sender.sender_id, id, it->ms_data_size);
+      TRACE("{}| Adding contribution from sender '{}', ms_data_size: {}", id,
+            sender.sender_id, it->ms_data_size);
       coll.sender_ids.push_back(sender.sender_id);
       coll.ms_data_sizes.push_back(it->ms_data_size);
       sender.announced_st.erase(it);
     } else {
-      DEBUG("No contribution found from sender '{}' for {}", sender.sender_id,
-            id);
+      DEBUG("{}| No contribution found from sender '{}'", id, sender.sender_id);
     }
   }
   return coll;

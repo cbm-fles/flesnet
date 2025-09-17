@@ -33,6 +33,23 @@ enum class StState : uint8_t {
   Failed = 4
 };
 
+inline std::string to_string(StState state) {
+  switch (state) {
+  case StState::Allocated:
+    return "Allocated";
+  case StState::Requested:
+    return "Requested";
+  case StState::Receiving:
+    return "Receiving";
+  case StState::Complete:
+    return "Complete";
+  case StState::Failed:
+    return "Failed";
+  default:
+    return "Unknown";
+  }
+}
+
 struct TsHandle {
   TsHandle(std::byte* buffer, StCollection contributions)
       : id(contributions.id), allocated_at_ns(fles::system::current_time_ns()),
@@ -124,11 +141,12 @@ private:
   // Scheduler message handling
   void send_status_to_scheduler(uint64_t event, TsId id);
   void send_periodic_status_to_scheduler();
-  ucs_status_t handle_scheduler_send_ts(const void* header,
-                                        size_t header_length,
-                                        void* data,
-                                        size_t length,
-                                        const ucp_am_recv_param_t* param);
+  void check_for_timeout(TsId id);
+  ucs_status_t handle_scheduler_assign_ts(const void* header,
+                                          size_t header_length,
+                                          void* data,
+                                          size_t length,
+                                          const ucp_am_recv_param_t* param);
 
   // Sender connection management
   void connect_to_sender(const std::string& sender_id);
@@ -166,13 +184,13 @@ private:
     static_cast<TsBuilder*>(user_data)->handle_scheduler_register_complete(
         request, status);
   }
-  static ucs_status_t on_scheduler_send_ts(void* arg,
-                                           const void* header,
-                                           size_t header_length,
-                                           void* data,
-                                           size_t length,
-                                           const ucp_am_recv_param_t* param) {
-    return static_cast<TsBuilder*>(arg)->handle_scheduler_send_ts(
+  static ucs_status_t on_scheduler_assign_ts(void* arg,
+                                             const void* header,
+                                             size_t header_length,
+                                             void* data,
+                                             size_t length,
+                                             const ucp_am_recv_param_t* param) {
+    return static_cast<TsBuilder*>(arg)->handle_scheduler_assign_ts(
         header, header_length, data, length, param);
   }
   static void on_sender_error(void* arg, ucp_ep_h ep, ucs_status_t status) {

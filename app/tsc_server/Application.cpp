@@ -225,7 +225,7 @@ void Application::handle_completions() {
     if (it != m_completed.end()) {
       it->second = true;
     } else {
-      ERROR("Received completion for unknown timeslice ID {}", *id);
+      ERROR("{}| Received completion for unknown timeslice", *id);
     }
     auto iter = m_completed.begin();
     while (iter != m_completed.end() && iter->second) {
