@@ -74,7 +74,7 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
     return false;
   }
 
-  DEBUG("UCP context and worker initialized successfully");
+  DEBUG("UCP context and worker initialized");
   return true;
 }
 

@@ -161,7 +161,7 @@ void TsBuilder::handle_scheduler_register_complete(ucs_status_ptr_t request,
   } else {
     m_scheduler_connected = true;
     m_mute_scheduler_reconnect = false;
-    INFO("Successfully registered with scheduler");
+    INFO("Registered with scheduler");
   }
 
   if (request != nullptr) {
