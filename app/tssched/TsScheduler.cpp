@@ -64,7 +64,7 @@ void TsScheduler::run() {
   }
   if (!ucx::util::create_listener(m_worker, m_listener, m_listen_port,
                                   on_new_connection, this)) {
-    ERROR("Failed to create UCX listener");
+    ERROR("Failed to create UCX listener at port {}", m_listen_port);
     return;
   }
 
