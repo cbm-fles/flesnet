@@ -298,8 +298,7 @@ ucs_status_t TsBuilder::handle_scheduler_assign_ts(
 void TsBuilder::connect_to_sender(const std::string& sender_id) {
   auto [address, port] =
       ucx::util::parse_address(sender_id, DEFAULT_SENDER_PORT);
-  auto ep =
-      ucx::util::connect(m_worker, address, port, on_scheduler_error, this);
+  auto ep = ucx::util::connect(m_worker, address, port, on_sender_error, this);
   if (ep) {
     DEBUG("Connecting to sender at '{}:{}'", address, port);
   } else {
