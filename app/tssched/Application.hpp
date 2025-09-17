@@ -21,7 +21,6 @@ public:
 
 private:
   Parameters const& m_par;
-  volatile std::sig_atomic_t* m_signal_status;
 
   std::unique_ptr<cbm::Monitor> m_monitor;
 

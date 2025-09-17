@@ -38,7 +38,8 @@ struct BuilderConnection {
 
 class TsScheduler {
 public:
-  TsScheduler(uint16_t listen_port,
+  TsScheduler(volatile sig_atomic_t* signal_status,
+              uint16_t listen_port,
               int64_t timeslice_duration_ns,
               int64_t timeout_ns,
               cbm::Monitor* monitor);
@@ -46,9 +47,10 @@ public:
   TsScheduler(const TsScheduler&) = delete;
   TsScheduler& operator=(const TsScheduler&) = delete;
 
-  void run(volatile std::sig_atomic_t& signal_status);
+  void run();
 
 private:
+  volatile sig_atomic_t* m_signal_status;
   Scheduler m_tasks;
 
   uint16_t m_listen_port;

@@ -24,28 +24,27 @@ public:
 
 private:
   Parameters const& m_par;
-  volatile std::sig_atomic_t* m_signalStatus;
 
-  zmq::context_t m_zmqContext{1};
+  zmq::context_t m_zmq_context{1};
 
   std::unique_ptr<cbm::Monitor> m_monitor;
 
   /// Address that is used for communication between the TimesliceBuffer and the
   /// ItemDistributor.
-  const std::string m_producerAddress;
+  const std::string m_producer_address;
 
   /// Address that is used by Workers to connect to the ItemDistributor.
-  const std::string m_workerAddress;
+  const std::string m_worker_address;
 
   /// The ItemDistributor object.
-  ItemDistributor m_itemDistributor;
+  ItemDistributor m_item_distributor;
 
   /// Shared memory buffer to store received timeslices.
-  TsBuffer m_timesliceBuffer;
+  TsBuffer m_timeslice_buffer;
 
   /// Thread for the ItemDistributor.
-  std::thread m_distributorThread;
+  std::thread m_distributor_thread;
 
   /// TsBuilder instance
-  std::unique_ptr<TsBuilder> m_tsBuilder;
+  std::unique_ptr<TsBuilder> m_ts_builder;
 };

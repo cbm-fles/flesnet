@@ -21,11 +21,12 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
-TsScheduler::TsScheduler(uint16_t listen_port,
+TsScheduler::TsScheduler(volatile sig_atomic_t* signal_status,
+                         uint16_t listen_port,
                          int64_t timeslice_duration_ns,
                          int64_t timeout_ns,
                          cbm::Monitor* monitor)
-    : m_listen_port(listen_port),
+    : m_signal_status(signal_status), m_listen_port(listen_port),
       m_timeslice_duration_ns{timeslice_duration_ns}, m_timeout_ns{timeout_ns},
       m_hostname(fles::system::current_hostname()), m_monitor(monitor) {
   // Initialize event handling
@@ -43,7 +44,7 @@ TsScheduler::~TsScheduler() {
 
 // Main operation loop
 
-void TsScheduler::run(volatile std::sig_atomic_t& signal_status) {
+void TsScheduler::run() {
   if (!ucx::util::init(m_context, m_worker, m_epoll_fd)) {
     ERROR("Failed to initialize UCX");
     return;
@@ -70,7 +71,7 @@ void TsScheduler::run(volatile std::sig_atomic_t& signal_status) {
   m_id = fles::system::current_time_ns() / m_timeslice_duration_ns;
   report_status();
 
-  while (signal_status == 0) {
+  while (*m_signal_status == 0) {
     if (ucp_worker_progress(m_worker) != 0) {
       continue;
     }

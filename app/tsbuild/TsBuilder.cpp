@@ -6,7 +6,6 @@
 #include "TsbProtocol.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
-#include "monitoring/System.hpp"
 #include "ucxutil.hpp"
 #include <arpa/inet.h>
 #include <array>
@@ -24,11 +23,12 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
-TsBuilder::TsBuilder(TsBuffer& timeslice_buffer,
+TsBuilder::TsBuilder(volatile sig_atomic_t* signal_status,
+                     TsBuffer& timeslice_buffer,
                      std::string_view scheduler_address,
                      int64_t timeout_ns,
                      cbm::Monitor* monitor)
-    : m_timeslice_buffer(timeslice_buffer),
+    : m_signal_status(signal_status), m_timeslice_buffer(timeslice_buffer),
       m_scheduler_address(scheduler_address), m_timeout_ns(timeout_ns),
       m_hostname(fles::system::current_hostname()),
       m_builder_id(m_hostname + "#" +
@@ -39,17 +39,9 @@ TsBuilder::TsBuilder(TsBuffer& timeslice_buffer,
   if (m_epoll_fd == -1) {
     throw std::runtime_error("epoll_create1 failed");
   }
-
-  // Start the worker thread
-  m_worker_thread = std::jthread([this](std::stop_token st) { (*this)(st); });
 }
 
 TsBuilder::~TsBuilder() {
-  if (m_worker_thread.joinable()) {
-    m_worker_thread.request_stop();
-    m_worker_thread.join();
-  }
-
   if (m_epoll_fd != -1) {
     close(m_epoll_fd);
   }
@@ -57,9 +49,7 @@ TsBuilder::~TsBuilder() {
 
 // Main operation loop
 
-void TsBuilder::operator()(std::stop_token stop_token) {
-  cbm::system::set_thread_name("TsBuilder");
-
+void TsBuilder::run() {
   if (!ucx::util::init(m_context, m_worker, m_epoll_fd)) {
     ERROR("Failed to initialize UCX");
     return;
@@ -75,7 +65,7 @@ void TsBuilder::operator()(std::stop_token stop_token) {
   send_periodic_status_to_scheduler();
   report_status();
 
-  while (!stop_token.stop_requested()) {
+  while (*m_signal_status == 0) {
     if (ucp_worker_progress(m_worker) != 0) {
       continue;
     }
@@ -100,7 +90,7 @@ void TsBuilder::operator()(std::stop_token stop_token) {
 void TsBuilder::connect_to_scheduler_if_needed() {
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
   if (!m_scheduler_connecting && !m_scheduler_connected &&
-      !m_worker_thread.get_stop_token().stop_requested()) {
+      *m_signal_status == 0) {
     connect_to_scheduler();
   }
 

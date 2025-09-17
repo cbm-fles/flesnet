@@ -6,6 +6,7 @@
 #include "SubTimeslice.hpp"
 #include "System.hpp"
 #include "TsBuffer.hpp"
+#include <csignal>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -14,7 +15,6 @@
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/types.h>
-#include <thread>
 #include <ucp/api/ucp.h>
 #include <ucp/api/ucp_def.h>
 #include <unistd.h>
@@ -85,7 +85,8 @@ struct TsHandle {
 
 class TsBuilder {
 public:
-  TsBuilder(TsBuffer& timeslice_buffer,
+  TsBuilder(volatile sig_atomic_t* signal_status,
+            TsBuffer& timeslice_buffer,
             std::string_view scheduler_address,
             int64_t timeout_ns,
             cbm::Monitor* monitor);
@@ -93,7 +94,10 @@ public:
   TsBuilder(const TsBuilder&) = delete;
   TsBuilder& operator=(const TsBuilder&) = delete;
 
+  void run();
+
 private:
+  volatile std::sig_atomic_t* m_signal_status;
   Scheduler m_tasks;
   TsBuffer& m_timeslice_buffer;
 
@@ -125,11 +129,6 @@ private:
   size_t m_component_count = 0; ///< total number of received components
   size_t m_byte_count = 0;      ///< total number of processed bytes
   size_t m_timeslice_incomplete_count = 0; ///< number of incomplete timeslices
-
-  std::jthread m_worker_thread;
-
-  // Main operation loop
-  void operator()(std::stop_token stop_token);
 
   // Scheduler connection management
   void connect_to_scheduler_if_needed();
