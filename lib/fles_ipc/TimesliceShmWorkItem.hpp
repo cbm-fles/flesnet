@@ -39,12 +39,10 @@ struct TimesliceShmWorkItem {
   /// A vector of handles to the tsc descriptor blocks
   std::vector<std::ptrdiff_t> desc;
 
-  // New members (replaces the legacy desc member)
+  // New member (replaces the legacy desc member)
 
   /// A vector of timeslice component descriptors
   std::vector<TimesliceComponentDescriptor> tsc_desc;
-  /// The additional overall offset of all the data blocks
-  std::ptrdiff_t offset = 0;
 
   friend class boost::serialization::access;
   /// Provide boost serialization access.
@@ -57,7 +55,6 @@ struct TimesliceShmWorkItem {
     ar & desc;
     if (version > 0) {
       ar & tsc_desc;
-      ar & offset;
     }
   }
 
