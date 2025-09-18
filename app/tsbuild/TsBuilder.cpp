@@ -542,7 +542,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
       // All contributions are complete (or failed), publish the timeslice
       if (!tsh.is_published) {
         send_status_to_scheduler(BUILDER_EVENT_RECEIVED, tsh.id);
-        StDescriptor ts_desc = create_timeslice_descriptor(tsh);
+        StDescriptor ts_desc = combine_st_descriptors(tsh);
         m_timeslice_buffer.send_work_item(tsh.buffer, tsh.id, ts_desc);
         tsh.is_published = true;
         tsh.published_at_ns = fles::system::current_time_ns();
@@ -557,7 +557,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
   }
 }
 
-StDescriptor TsBuilder::create_timeslice_descriptor(TsHandle& tsh) {
+StDescriptor TsBuilder::combine_st_descriptors(TsHandle& tsh) {
   StDescriptor d{};
   for (std::size_t i = 0; i < tsh.sender_ids.size(); ++i) {
     if (tsh.states[i] != StState::Complete) {
