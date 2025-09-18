@@ -127,7 +127,7 @@ void pgen_channel::generate_microslice(uint64_t time_ns) {
       uint8_t* begin = &m_data_buffer.at(m_data_write_index);
       for (uint64_t i = 0; i < content_bytes; i += sizeof(uint64_t)) {
         uint64_t data_word = (m_channel_index << 48L) | i;
-        *reinterpret_cast<uint64_t*>(begin + content_bytes) = data_word;
+        *reinterpret_cast<uint64_t*>(begin + i) = data_word;
         crc ^= (data_word & 0xffffffff) ^ (data_word >> 32L);
       }
       m_data_write_index += content_bytes;
