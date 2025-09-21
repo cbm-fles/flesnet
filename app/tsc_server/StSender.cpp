@@ -321,7 +321,7 @@ void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
 
   DEBUG("{}| Announcing ({}c, {}m, {}, flags={:04x})", id,
         st_descriptor.components.size(), num_microslices,
-        human_readable_count(ms_data_size), st_descriptor.flags);
+        human_readable_count(ms_data_size, true), st_descriptor.flags);
 
   // Send announcement to scheduler
   std::array<uint64_t, 2> hdr{id, ms_data_size};

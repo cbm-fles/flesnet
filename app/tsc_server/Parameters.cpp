@@ -239,9 +239,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
 [[nodiscard]] std::string Parameters::buffer_info() const {
   std::stringstream ss;
-  ss << "Buffer size per channel: " << human_readable_count(m_data_buffer_size)
-     << " + "
-     << human_readable_count(m_desc_buffer_size *
-                             sizeof(fles::MicrosliceDescriptor));
+  ss << "Buffer size per channel: "
+     << human_readable_count(m_data_buffer_size, true) << " + "
+     << human_readable_count(
+            m_desc_buffer_size * sizeof(fles::MicrosliceDescriptor), true);
   return ss.str();
 }

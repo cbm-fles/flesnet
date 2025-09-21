@@ -94,7 +94,7 @@ Application::Application(Parameters const& par,
       4096;
 
   INFO("Creating shared memory segment '{}' of size {}", m_par.shm_id(),
-       human_readable_count(shm_size));
+       human_readable_count(shm_size, true));
   m_shm = std::make_unique<boost::interprocess::managed_shared_memory>(
       boost::interprocess::create_only, m_par.shm_id().c_str(), shm_size);
 

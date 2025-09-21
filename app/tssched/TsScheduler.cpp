@@ -253,7 +253,7 @@ TsScheduler::handle_sender_announce(const void* header,
                                         std::move(*st_descriptor));
   sender_conn.last_received_st = id;
   DEBUG("{}| Announcement from '{}' ({})", id, sender_conn.sender_id,
-        human_readable_count(ms_data_size));
+        human_readable_count(ms_data_size, true));
 
   return UCS_OK;
 }
@@ -353,7 +353,7 @@ TsScheduler::handle_builder_status(const void* header,
   case BUILDER_EVENT_NO_OP:
     if (new_bytes_free != it->bytes_available) {
       DEBUG("Builder '{}' reported free: {}", it->id,
-            human_readable_count(new_bytes_free));
+            human_readable_count(new_bytes_free, true));
     }
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
@@ -362,7 +362,7 @@ TsScheduler::handle_builder_status(const void* header,
     break;
   case BUILDER_EVENT_ALLOCATED:
     DEBUG("{}| Builder '{}' has allocated timeslice, now free: {}", id, it->id,
-          human_readable_count(new_bytes_free));
+          human_readable_count(new_bytes_free, true));
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_OUT_OF_MEMORY:
@@ -376,7 +376,7 @@ TsScheduler::handle_builder_status(const void* header,
     break;
   case BUILDER_EVENT_RELEASED:
     DEBUG("{}| Builder '{}' has released timeslice, now free: {}", id, it->id,
-          human_readable_count(new_bytes_free));
+          human_readable_count(new_bytes_free, true));
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
     }

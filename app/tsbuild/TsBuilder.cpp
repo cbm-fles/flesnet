@@ -267,7 +267,7 @@ ucs_status_t TsBuilder::handle_scheduler_assign_ts(
   send_status_to_scheduler(BUILDER_EVENT_ALLOCATED, id);
 
   DEBUG("{}| Received assignment ({}s, {})", id, tsh.sender_ids.size(),
-        human_readable_count(ms_data_size));
+        human_readable_count(ms_data_size, true));
 
   // Ask senders for the contributions
   for (std::size_t i = 0; i < tsh.sender_ids.size(); ++i) {
@@ -437,8 +437,8 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
 
   DEBUG("{}|s{}/{}| Receiving from '{}' ({} + {})", id, ci,
         tsh.sender_ids.size(), sender_id,
-        human_readable_count(st_descriptor_size),
-        human_readable_count(ms_data_size));
+        human_readable_count(st_descriptor_size, true),
+        human_readable_count(ms_data_size, true));
 
   update_st_state(tsh, ci, StState::Receiving);
   ucs_status_ptr_t request =

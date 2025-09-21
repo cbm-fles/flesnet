@@ -30,7 +30,7 @@ TsBuffer::TsBuffer(zmq::context_t& context,
   size_t managed_shm_size = m_buffer_size + overhead_size;
 
   INFO("Creating shared memory segment '{}' of size {}", m_shm_identifier,
-       human_readable_count(managed_shm_size));
+       human_readable_count(managed_shm_size, true));
   m_managed_shm = std::make_unique<boost::interprocess::managed_shared_memory>(
       boost::interprocess::create_only, m_shm_identifier.c_str(),
       managed_shm_size);
