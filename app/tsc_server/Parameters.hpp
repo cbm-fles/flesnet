@@ -50,7 +50,7 @@ public:
     return m_pgen_microslice_duration.count();
   }
   [[nodiscard]] size_t pgen_microslice_size() const {
-    return m_pgen_microslice_size;
+    return m_pgen_microslice_size.value();
   }
   [[nodiscard]] uint32_t pgen_flags() const { return m_pgen_flags; }
 
@@ -61,7 +61,9 @@ public:
   [[nodiscard]] int64_t timeout_ns() const { return m_timeout.count(); }
 
   // Channel parameters (may be set individually in the future)
-  [[nodiscard]] size_t data_buffer_size() const { return m_data_buffer_size; }
+  [[nodiscard]] size_t data_buffer_size() const {
+    return m_data_buffer_size.value();
+  }
   [[nodiscard]] size_t desc_buffer_size() const { return m_desc_buffer_size; }
   [[nodiscard]] int64_t overlap_before_ns() const {
     return m_overlap_before.count();
@@ -85,7 +87,7 @@ private:
   // Pattern generator parameters
   uint32_t m_pgen_channels = 0;
   Nanoseconds m_pgen_microslice_duration{125us};
-  size_t m_pgen_microslice_size = 100000; // 100 kB
+  SizeValue m_pgen_microslice_size = 100000; // 100 kB
   uint32_t m_pgen_flags = 0;
 
   // Global parameters
@@ -93,8 +95,8 @@ private:
   Nanoseconds m_timeout{1ms};
 
   // Channel parameters (may be set individually in the future)
-  size_t m_data_buffer_size = UINT64_C(1) << 28; // 256 MiB
-  size_t m_desc_buffer_size = UINT64_C(1) << 19; // 512 ki entries
+  SizeValue m_data_buffer_size = UINT64_C(1) << 28; // 256 MiB
+  size_t m_desc_buffer_size = UINT64_C(1) << 19;    // 512 ki entries
   Nanoseconds m_overlap_before{100us};
   Nanoseconds m_overlap_after{100us};
 };

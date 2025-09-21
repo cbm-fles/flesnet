@@ -29,7 +29,7 @@ public:
   }
   [[nodiscard]] int64_t timeout_ns() const { return m_timeout.count(); }
   [[nodiscard]] std::string shm_id() const { return m_shm_id; }
-  [[nodiscard]] size_t buffer_size() const { return m_buffer_size; }
+  [[nodiscard]] size_t buffer_size() const { return m_buffer_size.value(); }
 
 private:
   void parse_options(int argc, char* argv[]);
@@ -38,5 +38,5 @@ private:
   std::string m_tssched_address = "localhost";
   Nanoseconds m_timeout{10s};
   std::string m_shm_id = "flesnet_ts_builder";
-  size_t m_buffer_size = UINT64_C(1) << 35; // 32 GiB
+  SizeValue m_buffer_size = UINT64_C(1) << 35; // 32 GiB
 };

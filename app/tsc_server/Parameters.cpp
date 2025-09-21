@@ -92,10 +92,12 @@ void Parameters::parse_options(int argc, char* argv[]) {
       po::value<Nanoseconds>(&m_pgen_microslice_duration)
           ->default_value(m_pgen_microslice_duration),
       "duration of a pattern generator microslice (with suffix ns, us, ms, s)");
-  config_add("pgen-microslice-size",
-             po::value<size_t>(&m_pgen_microslice_size)
-                 ->default_value(m_pgen_microslice_size),
-             "size of a pattern generator microslice in bytes");
+  config_add(
+      "pgen-microslice-size",
+      po::value<SizeValue>(&m_pgen_microslice_size)
+          ->default_value(m_pgen_microslice_size),
+      "size of a pattern generator microslice in bytes (supports SI units: kB, "
+      "MB, GB, etc. or binary: KiB, MiB, GiB, etc.)");
   config_add("pgen-flags",
              po::value<uint32_t>(&m_pgen_flags)->default_value(m_pgen_flags),
              "flags for pattern generator channels (0: no flags, "
@@ -109,10 +111,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
   config_add("timeout",
              po::value<Nanoseconds>(&m_timeout)->default_value(m_timeout),
              "timeout for data reception (with suffix ns, us, ms, s)");
-  config_add(
-      "data-buffer-size",
-      po::value<size_t>(&m_data_buffer_size)->default_value(m_data_buffer_size),
-      "size of the data buffer in bytes");
+  config_add("data-buffer-size",
+             po::value<SizeValue>(&m_data_buffer_size)
+                 ->default_value(m_data_buffer_size),
+             "size of the data buffer in bytes (supports SI units: kB, "
+             "MB, GB, etc. or binary: KiB, MiB, GiB, etc.)");
   config_add(
       "desc-buffer-size",
       po::value<size_t>(&m_desc_buffer_size)->default_value(m_desc_buffer_size),

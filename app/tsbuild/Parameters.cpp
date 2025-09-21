@@ -52,8 +52,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
              po::value<std::string>(&m_shm_id)->default_value(m_shm_id),
              "shared memory identifier for timeslice buffer");
   config_add("buffer-size",
-             po::value<size_t>(&m_buffer_size)->default_value(m_buffer_size),
-             "size of the timeslice buffer in bytes");
+             po::value<SizeValue>(&m_buffer_size)->default_value(m_buffer_size),
+             "size of the timeslice buffer in bytes (supports SI units: kB, "
+             "MB, GB, etc. or binary: KiB, MiB, GiB, etc.)");
 
   po::options_description cmdline_options("Allowed options");
   cmdline_options.add(generic).add(config);
