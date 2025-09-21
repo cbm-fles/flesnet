@@ -1,7 +1,6 @@
 // Copyright 2025 Dirk Hutter, Jan de Cuveland
 
 #include "Parameters.hpp"
-#include "MicrosliceDescriptor.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include <boost/program_options.hpp>
@@ -74,8 +73,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "console output)");
   config_add("pci-addr,i", po::value<pci_addr>(),
              "PCI BDF address of target CRI in BB:DD.F format");
-  config_add("shm,o",
-             po::value<std::string>(&m_shm_id)->default_value("tsc_shm"),
+  config_add("shm", po::value<std::string>(&m_shm_id)->default_value("tsc_shm"),
              "name of the shared memory to be used");
   config_add("listen-port,p",
              po::value<uint16_t>(&m_listen_port)->default_value(m_listen_port),
@@ -116,10 +114,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
                  ->default_value(m_data_buffer_size),
              "size of the data buffer in bytes (supports SI units: kB, "
              "MB, GB, etc. or binary: KiB, MiB, GiB, etc.)");
-  config_add(
-      "desc-buffer-size",
-      po::value<size_t>(&m_desc_buffer_size)->default_value(m_desc_buffer_size),
-      "size of the descriptor buffer (number of entries)");
+  config_add("desc-buffer-size",
+             po::value<SizeValue>(&m_desc_buffer_size_bytes)
+                 ->default_value(m_desc_buffer_size_bytes),
+             "size of the descriptor buffer in bytes (supports SI units: kB, "
+             "MB, GB, etc. or binary: KiB, MiB, GiB, etc.)");
   config_add("overlap-before",
              po::value<Nanoseconds>(&m_overlap_before)
                  ->default_value(m_overlap_before),
@@ -196,7 +195,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
   std::stringstream ss;
   ss << "Buffer size per channel: "
      << human_readable_count(m_data_buffer_size, true) << " + "
-     << human_readable_count(
-            m_desc_buffer_size * sizeof(fles::MicrosliceDescriptor), true);
+     << human_readable_count(m_desc_buffer_size_bytes, true);
   return ss.str();
 }

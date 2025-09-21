@@ -1,14 +1,14 @@
 // Copyright 2025 Dirk Hutter, Jan de Cuveland
 #pragma once
 
+#include "MicrosliceDescriptor.hpp"
 #include "OptionValues.hpp"
 #include "TsbProtocol.hpp"
-#include <chrono>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
 
-using namespace std::chrono_literals;
+using namespace option_value_literals;
 
 /// Run parameters exception class.
 class ParametersException : public std::runtime_error {
@@ -64,7 +64,9 @@ public:
   [[nodiscard]] size_t data_buffer_size() const {
     return m_data_buffer_size.value();
   }
-  [[nodiscard]] size_t desc_buffer_size() const { return m_desc_buffer_size; }
+  [[nodiscard]] size_t desc_buffer_size() const {
+    return m_desc_buffer_size_bytes / sizeof(fles::MicrosliceDescriptor);
+  }
   [[nodiscard]] int64_t overlap_before_ns() const {
     return m_overlap_before.count();
   }
@@ -86,17 +88,17 @@ private:
 
   // Pattern generator parameters
   uint32_t m_pgen_channels = 0;
-  Nanoseconds m_pgen_microslice_duration{125us};
-  SizeValue m_pgen_microslice_size = 100000; // 100 kB
+  Nanoseconds m_pgen_microslice_duration = 125_us;
+  SizeValue m_pgen_microslice_size = 100_kB;
   uint32_t m_pgen_flags = 0;
 
   // Global parameters
-  Nanoseconds m_timeslice_duration{100ms};
-  Nanoseconds m_timeout{1ms};
+  Nanoseconds m_timeslice_duration = 100_ms;
+  Nanoseconds m_timeout = 1_ms;
 
   // Channel parameters (may be set individually in the future)
-  SizeValue m_data_buffer_size = UINT64_C(1) << 28; // 256 MiB
-  size_t m_desc_buffer_size = UINT64_C(1) << 19;    // 512 ki entries
-  Nanoseconds m_overlap_before{100us};
-  Nanoseconds m_overlap_after{100us};
+  SizeValue m_data_buffer_size = 256_MiB;
+  SizeValue m_desc_buffer_size_bytes = 16_MiB;
+  Nanoseconds m_overlap_before = 100_us;
+  Nanoseconds m_overlap_after = 100_us;
 };

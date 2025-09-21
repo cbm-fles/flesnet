@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <string>
 
-using namespace std::chrono_literals;
+using namespace option_value_literals;
 
 /// Run parameters exception class.
 class ParametersException : public std::runtime_error {
@@ -36,7 +36,7 @@ private:
 
   std::string m_monitor_uri;
   std::string m_tssched_address = "localhost";
-  Nanoseconds m_timeout{10s};
+  Nanoseconds m_timeout = 10_s;
   std::string m_shm_id = "flesnet_ts_builder";
-  SizeValue m_buffer_size = UINT64_C(1) << 35; // 32 GiB
+  SizeValue m_buffer_size = 32_GiB;
 };

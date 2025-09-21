@@ -1,6 +1,7 @@
 // Copyright 2025 Jan de Cuveland
 
 #include "OptionValues.hpp"
+#include <algorithm>
 #include <cmath>
 #include <regex>
 #include <sstream>
@@ -27,7 +28,8 @@ Nanoseconds Nanoseconds::parse(const std::string& str) {
   std::smatch match;
 
   if (!std::regex_match(str, match, pattern)) {
-    throw std::invalid_argument("Invalid time format: " + str);
+    throw std::invalid_argument("Invalid time format: '" + str +
+                                "'. Expected format: <number>[ns|us|ms|s]");
   }
 
   long long number = std::stoll(match[1]);
@@ -45,7 +47,7 @@ Nanoseconds Nanoseconds::parse(const std::string& str) {
   if (suffix == "s") {
     return {std::chrono::seconds(number)};
   }
-  throw std::invalid_argument("Unknown time suffix: " + suffix);
+  throw std::invalid_argument("Unknown time suffix: '" + suffix + "'");
 }
 
 std::string SizeValue::to_string() const {
@@ -84,12 +86,18 @@ std::string SizeValue::to_string() const {
 }
 
 SizeValue SizeValue::parse(const std::string& str) {
+  if (str.empty()) {
+    throw std::invalid_argument("Empty size string");
+  }
+
   std::regex pattern(
-      R"(^\s*([0-9]*\.?[0-9]+)\s*([kKmMgGtTpP]?[iI]?[bB]?)\s*$)");
+      R"(^\s*([0-9]*\.?[0-9]+)\s*([kKmMgGtTpP]?[iI]?)[bB]?\s*$)");
   std::smatch match;
 
   if (!std::regex_match(str, match, pattern)) {
-    throw std::invalid_argument("Invalid size format: " + str);
+    throw std::invalid_argument(
+        "Invalid size format: '" + str +
+        "'. Expected format: <number>[B|kB|KiB|MB|MiB|GB|GiB|TB|TiB|PB|PiB]");
   }
 
   double number = std::stod(match[1].str());
@@ -99,35 +107,35 @@ SizeValue SizeValue::parse(const std::string& str) {
 
   size_t multiplier = 1;
 
-  if (suffix.empty() || suffix == "b") {
+  if (suffix.empty()) {
     multiplier = 1;
-  } else if (suffix == "kb" || suffix == "k") {
+  } else if (suffix == "k") {
     multiplier = 1000ULL;
-  } else if (suffix == "kib" || suffix == "ki") {
+  } else if (suffix == "ki") {
     multiplier = 1024ULL;
-  } else if (suffix == "mb" || suffix == "m") {
+  } else if (suffix == "m") {
     multiplier = 1000ULL * 1000;
-  } else if (suffix == "mib" || suffix == "mi") {
+  } else if (suffix == "mi") {
     multiplier = 1024ULL * 1024;
-  } else if (suffix == "gb" || suffix == "g") {
+  } else if (suffix == "g") {
     multiplier = 1000ULL * 1000 * 1000;
-  } else if (suffix == "gib" || suffix == "gi") {
+  } else if (suffix == "gi") {
     multiplier = 1024ULL * 1024 * 1024;
-  } else if (suffix == "tb" || suffix == "t") {
+  } else if (suffix == "t") {
     multiplier = 1000ULL * 1000 * 1000 * 1000;
-  } else if (suffix == "tib" || suffix == "ti") {
+  } else if (suffix == "ti") {
     multiplier = 1024ULL * 1024 * 1024 * 1024;
-  } else if (suffix == "pb" || suffix == "p") {
+  } else if (suffix == "p") {
     multiplier = 1000ULL * 1000 * 1000 * 1000 * 1000;
-  } else if (suffix == "pib" || suffix == "pi") {
+  } else if (suffix == "pi") {
     multiplier = 1024ULL * 1024 * 1024 * 1024 * 1024;
   } else {
-    throw std::invalid_argument("Unknown size suffix: " + suffix);
+    throw std::invalid_argument("Unknown size suffix: '" + suffix + "'");
   }
 
   if (number > static_cast<double>(SIZE_MAX) / multiplier) {
-    throw std::overflow_error("Size value too large");
+    throw std::overflow_error("Size value too large: '" + str + "'");
   }
 
-  return SizeValue(static_cast<size_t>(number * multiplier));
+  return {static_cast<size_t>(std::round(number * multiplier))};
 }
