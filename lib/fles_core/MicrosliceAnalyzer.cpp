@@ -10,11 +10,9 @@
 MicrosliceAnalyzer::MicrosliceAnalyzer(uint64_t arg_output_interval,
                                        size_t arg_out_verbosity,
                                        std::ostream& arg_out,
-                                       std::string arg_output_prefix,
-                                       size_t component)
+                                       std::string arg_output_prefix)
     : output_interval_(arg_output_interval), out_verbosity_(arg_out_verbosity),
-      out_(arg_out), output_prefix_(std::move(arg_output_prefix)),
-      component_(component) {
+      out_(arg_out), output_prefix_(std::move(arg_output_prefix)) {
   // create CRC-32C engine (Castagnoli polynomial)
   crc32_engine_ = crcutil_interface::CRC::Create(
       0x82f63b78, 0, 32, true, 0, 0, 0,
@@ -43,8 +41,7 @@ bool MicrosliceAnalyzer::check_crc(const fles::Microslice& ms) const {
 void MicrosliceAnalyzer::initialize(const fles::Microslice& ms) {
   fles::MicrosliceDescriptor desc = ms.desc();
   reference_descriptor_ = desc;
-  pattern_checker_ =
-      PatternChecker::create(desc.sys_id, desc.sys_ver, component_);
+  pattern_checker_ = PatternChecker::create(desc.sys_id, desc.sys_ver);
 }
 
 bool MicrosliceAnalyzer::check_microslice(const fles::Microslice& ms) {

@@ -94,7 +94,7 @@ void TimesliceAnalyzer::initialize(const fles::Timeslice& ts) {
     fles::MicrosliceDescriptor desc = ts.get_microslice(c, 0).desc();
     reference_descriptors_.push_back(desc);
     pattern_checkers_.push_back(
-        PatternChecker::create(desc.sys_id, desc.sys_ver, c));
+        PatternChecker::create(desc.sys_id, desc.sys_ver));
   }
 }
 

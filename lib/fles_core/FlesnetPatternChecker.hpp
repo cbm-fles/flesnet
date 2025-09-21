@@ -2,14 +2,13 @@
 #pragma once
 
 #include "PatternChecker.hpp"
+#include <optional>
 
 class FlesnetPatternChecker : public PatternChecker {
 public:
-  explicit FlesnetPatternChecker(std::size_t arg_component)
-      : component(arg_component){};
-
   bool check(const fles::Microslice& m) override;
+  void reset() override { component.reset(); }
 
 private:
-  std::size_t component = 0;
+  std::optional<uint64_t> component;
 };

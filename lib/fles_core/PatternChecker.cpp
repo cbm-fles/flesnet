@@ -7,8 +7,7 @@
 #include "FlimPatternChecker.hpp"
 
 std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
-                                                       uint8_t arg_sys_ver,
-                                                       size_t component) {
+                                                       uint8_t arg_sys_ver) {
   auto sys_id = static_cast<fles::Subsystem>(arg_sys_id);
   auto sys_ver = static_cast<fles::SubsystemFormatFLES>(arg_sys_ver);
 
@@ -21,7 +20,7 @@ std::unique_ptr<PatternChecker> PatternChecker::create(uint8_t arg_sys_id,
   } else {
     switch (sys_ver) {
     case sfmtfles::BasicRampPattern:
-      pc = new FlesnetPatternChecker(component);
+      pc = new FlesnetPatternChecker();
       break;
     case sfmtfles::CbmNetPattern:
     case sfmtfles::CbmNetFrontendEmulation:
