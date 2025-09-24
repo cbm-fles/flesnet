@@ -335,10 +335,9 @@ void Application::report_status() {
         std::count_if(m_completed.begin(), m_completed.end(),
                       [](auto const& pair) { return pair.second; });
     std::size_t pending_count = m_completed.size() - completed_count;
-    WARN("High buffer utilization: {:.1f}%", max_buffer_utilization * 100.0);
-    WARN("Pending timeslices: {}, completed: {}", pending_count,
-         completed_count);
-    WARN("Retracting all {} pending subtimeslices", pending_count);
+    WARN("High buffer utilization ({:.1f}%), retracting {} pending "
+         "subtimeslices",
+         max_buffer_utilization * 100.0, pending_count);
     for (auto& [ts_id, completed] : m_completed) {
       if (!completed) {
         m_st_sender->retract_subtimeslice(ts_id);
