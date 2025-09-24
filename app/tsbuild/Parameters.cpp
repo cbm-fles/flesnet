@@ -3,6 +3,7 @@
    Author: Jan de Cuveland */
 
 #include "Parameters.hpp"
+#include "System.hpp"
 #include "log.hpp"
 #include <boost/program_options.hpp>
 #include <fstream>
@@ -17,7 +18,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   unsigned log_syslog = 2;
   std::string log_file;
 
-  po::options_description generic("Generic options");
+  auto terminal_width = fles::system::current_terminal_width();
+
+  po::options_description generic("Generic options", terminal_width,
+                                  terminal_width / 2);
   auto generic_add = generic.add_options();
   generic_add("help,h", "produce help message");
   generic_add(
@@ -25,7 +29,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
       po::value<std::string>(&config_file)->default_value("tsbuild.cfg"),
       "name of a configuration file");
 
-  po::options_description config("Configuration (tsbuild.cfg or cmd line)");
+  po::options_description config("Configuration (tsbuild.cfg or cmd line)",
+                                 terminal_width, terminal_width / 2);
   auto config_add = config.add_options();
   config_add("log-level,l",
              po::value<unsigned>(&log_level)
@@ -58,7 +63,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "size of the timeslice buffer in bytes (supports SI units: kB, "
              "MB, GB, etc. or binary: KiB, MiB, GiB, etc.)");
 
-  po::options_description cmdline_options("Allowed options");
+  po::options_description cmdline_options("Allowed options", terminal_width,
+                                          terminal_width / 2);
   cmdline_options.add(generic).add(config);
 
   po::options_description config_file_options;
