@@ -3,6 +3,7 @@
 
 #include "MicrosliceDescriptor.hpp"
 #include "OptionValues.hpp"
+#include "SubTimeslice.hpp"
 #include "TsbProtocol.hpp"
 #include <cstdint>
 #include <stdexcept>
@@ -40,9 +41,11 @@ public:
   [[nodiscard]] pci_addr device_address() const { return m_device_address; }
   [[nodiscard]] std::string shm_id() const { return m_shm_id; }
   [[nodiscard]] uint16_t listen_port() const { return m_listen_port; }
+  [[nodiscard]] std::string advertise_host() const { return m_advertise_host; }
   [[nodiscard]] std::string tssched_address() const {
     return m_tssched_address;
   }
+  [[nodiscard]] SenderInfo sender_info() const { return m_sender_info; }
 
   // Pattern generator parameters
   [[nodiscard]] uint32_t pgen_channels() const { return m_pgen_channels; }
@@ -84,6 +87,8 @@ private:
   pci_addr m_device_address;
   std::string m_shm_id;
   uint16_t m_listen_port = DEFAULT_SENDER_PORT;
+  std::string m_advertise_host;
+  SenderInfo m_sender_info;
   std::string m_tssched_address = "localhost";
 
   // Pattern generator parameters

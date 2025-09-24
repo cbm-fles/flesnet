@@ -2,7 +2,6 @@
 
 #include "StSender.hpp"
 #include "SubTimeslice.hpp"
-#include "System.hpp"
 #include "TsbProtocol.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
@@ -24,11 +23,11 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
-StSender::StSender(std::string_view scheduler_address, uint16_t listen_port)
-    : m_scheduler_address(scheduler_address), m_listen_port(listen_port) {
-  m_sender_id =
-      fles::system::current_hostname() + ":" + std::to_string(m_listen_port);
-
+StSender::StSender(std::string_view scheduler_address,
+                   uint16_t listen_port,
+                   SenderInfo sender_info)
+    : m_scheduler_address(scheduler_address), m_listen_port(listen_port),
+      m_sender_info(std::move(sender_info)) {
   // Initialize event handling
   m_queue_event_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
   if (m_queue_event_fd == -1) {
@@ -185,10 +184,12 @@ void StSender::connect_to_scheduler() {
 
   m_scheduler_ep = *ep;
 
-  auto header = std::as_bytes(std::span(m_sender_id));
+  auto sender_info_bytes = to_bytes(m_sender_info);
+  auto header = std::as_bytes(std::span(sender_info_bytes));
   bool send_am_ok = ucx::util::send_active_message(
       m_scheduler_ep, AM_SENDER_REGISTER, header, {},
-      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
+      on_scheduler_register_complete, this,
+      UCP_AM_SEND_FLAG_REPLY | UCP_AM_SEND_FLAG_COPY_HEADER);
   if (!send_am_ok) {
     WARN("Failed to register with scheduler at '{}:{}', will retry", address,
          port);

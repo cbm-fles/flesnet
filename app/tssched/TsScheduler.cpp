@@ -144,7 +144,7 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
 
   auto sender_it = m_senders.find(ep);
   if (sender_it != m_senders.end()) {
-    INFO("Disconnect from sender '{}': {}", sender_it->second.sender_id,
+    INFO("Disconnect from sender '{}': {}", sender_it->second.info.id(),
          status);
     m_senders.erase(sender_it);
   }
@@ -153,7 +153,7 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
           std::find_if(m_builders.begin(), m_builders.end(),
                        [ep](const BuilderConnection& b) { return b.ep == ep; });
       it != m_builders.end()) {
-    INFO("Disconnect from builder '{}': {}", it->id, status);
+    INFO("Disconnect from builder '{}': {}", it->info.id(), status);
     m_builders.erase(it);
   }
 
@@ -190,10 +190,17 @@ TsScheduler::handle_sender_register(const void* header,
     return UCS_OK;
   }
 
-  auto sender_id = std::string(static_cast<const char*>(header), header_length);
+  auto sender_info_bytes =
+      std::span(static_cast<const std::byte*>(header), header_length);
+  auto sender_info = to_obj_nothrow<SenderInfo>(sender_info_bytes);
+  if (!sender_info) {
+    ERROR("Failed to deserialize sender registration info");
+    return UCS_OK;
+  }
+
   ucp_ep_h ep = param->reply_ep;
-  m_senders[ep] = {sender_id, ep, {}};
-  INFO("Accepted sender registration from '{}'", sender_id);
+  m_senders[ep] = {*sender_info, ep, {}};
+  INFO("Accepted sender registration from '{}'", sender_info->id());
 
   return UCS_OK;
 }
@@ -227,20 +234,20 @@ TsScheduler::handle_sender_announce(const void* header,
   auto st_descriptor = to_obj_nothrow<StDescriptor>(st_descriptor_bytes);
   if (!st_descriptor) {
     ERROR("{}| Failed to deserialize announcement from sender '{}'", id,
-          sender_conn.sender_id);
+          sender_conn.info.id());
     return UCS_OK;
   }
 
   if (st_descriptor->duration_ns !=
       static_cast<uint64_t>(m_timeslice_duration_ns)) {
     ERROR("{}| Invalid timeslice duration from sender '{}'", id,
-          sender_conn.sender_id);
+          sender_conn.info.id());
     return UCS_OK;
   }
 
   if (id < m_id) {
     DEBUG("{}| Late announcement from '{}', sending release", id,
-          sender_conn.sender_id);
+          sender_conn.info.id());
     std::array<uint64_t, 1> hdr{id};
     auto header = std::as_bytes(std::span(hdr));
     ucx::util::send_active_message(param->reply_ep, AM_SCHED_RELEASE_ST, header,
@@ -252,7 +259,7 @@ TsScheduler::handle_sender_announce(const void* header,
   sender_conn.announced_st.emplace_back(id, ms_data_size,
                                         std::move(*st_descriptor));
   sender_conn.last_received_st = id;
-  DEBUG("{}| Announcement from '{}' ({})", id, sender_conn.sender_id,
+  DEBUG("{}| Announcement from '{}' ({})", id, sender_conn.info.id(),
         human_readable_count(ms_data_size, true));
 
   return UCS_OK;
@@ -313,11 +320,17 @@ TsScheduler::handle_builder_register(const void* header,
     return UCS_OK;
   }
 
-  auto builder_id =
-      std::string(static_cast<const char*>(header), header_length);
+  auto builder_info_bytes =
+      std::span(static_cast<const std::byte*>(header), header_length);
+  auto builder_info = to_obj_nothrow<BuilderInfo>(builder_info_bytes);
+  if (!builder_info) {
+    ERROR("Failed to deserialize builder registration info");
+    return UCS_OK;
+  }
+
   ucp_ep_h ep = param->reply_ep;
-  m_builders.emplace_back(builder_id, ep, 0, false);
-  INFO("Accepted builder registration from '{}'", builder_id);
+  m_builders.emplace_back(*builder_info, ep, 0, false);
+  INFO("Accepted builder registration from '{}'", builder_info->id());
 
   return UCS_OK;
 }
@@ -352,7 +365,7 @@ TsScheduler::handle_builder_status(const void* header,
   switch (event) {
   case BUILDER_EVENT_NO_OP:
     if (new_bytes_free != it->bytes_available) {
-      DEBUG("Builder '{}' reported free: {}", it->id,
+      DEBUG("Builder '{}' reported free: {}", it->info.id(),
             human_readable_count(new_bytes_free, true));
     }
     if (new_bytes_free > it->bytes_available) {
@@ -361,22 +374,22 @@ TsScheduler::handle_builder_status(const void* header,
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_ALLOCATED:
-    DEBUG("{}| Builder '{}' has allocated timeslice, now free: {}", id, it->id,
-          human_readable_count(new_bytes_free, true));
+    DEBUG("{}| Builder '{}' has allocated timeslice, now free: {}", id,
+          it->info.id(), human_readable_count(new_bytes_free, true));
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_OUT_OF_MEMORY:
-    INFO("{}| Builder '{}' has reported out of memory", id, it->id);
+    INFO("{}| Builder '{}' has reported out of memory", id, it->info.id());
     it->is_out_of_memory = true;
     assign_timeslice(id);
     break;
   case BUILDER_EVENT_RECEIVED:
-    DEBUG("{}| Builder '{}' has received timeslice", id, it->id);
+    DEBUG("{}| Builder '{}' has received timeslice", id, it->info.id());
     send_release_to_senders(id);
     break;
   case BUILDER_EVENT_RELEASED:
-    DEBUG("{}| Builder '{}' has released timeslice, now free: {}", id, it->id,
-          human_readable_count(new_bytes_free, true));
+    DEBUG("{}| Builder '{}' has released timeslice, now free: {}", id,
+          it->info.id(), human_readable_count(new_bytes_free, true));
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
     }
@@ -391,7 +404,7 @@ void TsScheduler::assign_timeslice(TsId id) {
   StCollection coll = create_collection_descriptor(id);
   if (coll.sender_ids.empty()) {
     if (!m_senders.empty()) {
-      WARN("{}| Sender connected ({}), but no contributions", id,
+      WARN("{}| Sender(s) connected ({}), but no contributions", id,
            m_senders.size());
     }
     return;
@@ -435,11 +448,11 @@ StCollection TsScheduler::create_collection_descriptor(TsId id) {
         std::find_if(sender.announced_st.begin(), sender.announced_st.end(),
                      [id](const auto& st) { return st.id == id; });
     if (it != sender.announced_st.end()) {
-      coll.sender_ids.push_back(sender.sender_id);
+      coll.sender_ids.push_back(sender.info.advertise_id());
       coll.ms_data_sizes.push_back(it->ms_data_size);
       sender.announced_st.erase(it);
     } else {
-      DEBUG("{}| No contribution found from sender '{}'", id, sender.sender_id);
+      DEBUG("{}| No contribution found from sender '{}'", id, sender.info.id());
     }
   }
   return coll;

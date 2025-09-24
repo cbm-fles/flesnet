@@ -45,7 +45,9 @@ struct AnnouncementHandle {
 
 class StSender {
 public:
-  StSender(std::string_view scheduler_address, uint16_t listen_port);
+  StSender(std::string_view scheduler_address,
+           uint16_t listen_port,
+           SenderInfo sender_info);
   ~StSender();
   StSender(const StSender&) = delete;
   StSender& operator=(const StSender&) = delete;
@@ -61,7 +63,7 @@ private:
 
   std::string m_scheduler_address;
   uint16_t m_listen_port;
-  std::string m_sender_id;
+  SenderInfo m_sender_info;
 
   int m_queue_event_fd = -1;
   std::deque<std::pair<TsId, StHandle>> m_pending_announcements;

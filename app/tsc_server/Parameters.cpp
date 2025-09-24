@@ -1,8 +1,10 @@
 // Copyright 2025 Dirk Hutter, Jan de Cuveland
 
 #include "Parameters.hpp"
+#include "System.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
+#include "ucxutil.hpp"
 #include <boost/program_options.hpp>
 #include <fstream>
 #include <iostream>
@@ -78,8 +80,14 @@ void Parameters::parse_options(int argc, char* argv[]) {
   config_add("listen-port,p",
              po::value<uint16_t>(&m_listen_port)->default_value(m_listen_port),
              "port to listen for tsbuilder connections");
-  config_add("tssched-address", po::value<std::string>(&m_tssched_address),
-             "address of the tssched server to connect to");
+  config_add("advertise-host", po::value<std::string>(&m_advertise_host),
+             "host address (and optionally port number) to advertise to "
+             "scheduler for tsbuilder connections");
+  config_add("tssched-address",
+             po::value<std::string>(&m_tssched_address)
+                 ->default_value(m_tssched_address),
+             "address (and optionally port number) of the tssched server to "
+             "connect to");
   config_add("pgen-channels,P",
              po::value<uint32_t>(&m_pgen_channels)
                  ->default_value(m_pgen_channels)
@@ -176,6 +184,18 @@ void Parameters::parse_options(int argc, char* argv[]) {
     m_device_autodetect = true;
     DEBUG("CRI address: autodetect");
   }
+
+  m_sender_info.hostname = fles::system::current_hostname();
+  m_sender_info.pid = fles::system::current_pid();
+  m_sender_info.address = m_sender_info.hostname;
+  m_sender_info.port = m_listen_port;
+  if (!m_advertise_host.empty()) {
+    auto [address, port] =
+        ucx::util::parse_address(m_advertise_host, m_listen_port);
+    m_sender_info.address = address;
+    m_sender_info.port = port;
+  }
+  DEBUG("Sender info: {}", m_sender_info);
 
   if (timeslice_duration_ns() <= 0) {
     throw ParametersException("timeslice duration must be greater than 0");

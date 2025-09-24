@@ -18,7 +18,7 @@
 // and send subtimeslice handles to tsbuilders
 
 struct SenderConnection {
-  std::string sender_id;
+  SenderInfo info;
   ucp_ep_h ep = nullptr;
   struct StDesc {
     TsId id;
@@ -30,8 +30,8 @@ struct SenderConnection {
 };
 
 struct BuilderConnection {
-  std::string id;
-  ucp_ep_h ep;
+  BuilderInfo info;
+  ucp_ep_h ep = nullptr;
   uint64_t bytes_available = 0;
   bool is_out_of_memory = false;
 };

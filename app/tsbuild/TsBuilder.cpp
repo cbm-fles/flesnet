@@ -31,8 +31,7 @@ TsBuilder::TsBuilder(volatile sig_atomic_t* signal_status,
     : m_signal_status(signal_status), m_timeslice_buffer(timeslice_buffer),
       m_scheduler_address(scheduler_address), m_timeout_ns(timeout_ns),
       m_hostname(fles::system::current_hostname()),
-      m_builder_id(m_hostname + "#" +
-                   std::to_string(fles::system::current_pid())),
+      m_builder_info(m_hostname, fles::system::current_pid()),
       m_monitor(monitor) {
   // Initialize event handling
   m_epoll_fd = epoll_create1(EPOLL_CLOEXEC);
@@ -117,10 +116,12 @@ void TsBuilder::connect_to_scheduler() {
 
   m_scheduler_ep = *ep;
 
-  auto header = std::as_bytes(std::span(m_builder_id));
+  auto builder_info_bytes = to_bytes(m_builder_info);
+  auto header = std::as_bytes(std::span(builder_info_bytes));
   bool send_am_ok = ucx::util::send_active_message(
       m_scheduler_ep, AM_BUILDER_REGISTER, header, {},
-      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
+      on_scheduler_register_complete, this,
+      UCP_AM_SEND_FLAG_REPLY | UCP_AM_SEND_FLAG_COPY_HEADER);
   if (!send_am_ok) {
     WARN("Failed to register with scheduler at '{}:{}', will retry", address,
          port);

@@ -1,7 +1,6 @@
 // Copyright 2025 Dirk Hutter, Jan de Cuveland
 #pragma once
 
-#include "MicrosliceDescriptor.hpp"
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/iostreams/device/array.hpp>
@@ -140,6 +139,62 @@ struct StHandle {
     return os << "StHandle(start_time_ns=" << i.start_time_ns
               << ", duration_ns=" << i.duration_ns << ", flags=" << i.flags
               << ", components=...)";
+  }
+};
+
+// Sender and builder information for registration with the scheduler
+
+struct SenderInfo {
+  std::string hostname;
+  int pid = 0;
+  std::string address;
+  uint16_t port = 0;
+
+  friend class boost::serialization::access;
+  template <class Archive>
+  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
+    ar & hostname;
+    ar & pid;
+    ar & address;
+    ar & port;
+  }
+
+  [[nodiscard]] std::string id() const {
+    return std::format("{}#{}", hostname, pid);
+  }
+  [[nodiscard]] std::string advertise_id() const {
+    return std::format("{}:{}", address, port);
+  }
+};
+
+struct BuilderInfo {
+  std::string hostname;
+  int pid = 0;
+
+  friend class boost::serialization::access;
+  template <class Archive>
+  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
+    ar & hostname;
+    ar & pid;
+  }
+
+  [[nodiscard]] std::string id() const {
+    return std::format("{}#{}", hostname, pid);
+  }
+};
+
+template <> struct std::formatter<SenderInfo> {
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+  auto format(const SenderInfo& si, format_context& ctx) const {
+    return std::format_to(ctx.out(), "{}#{}/{}:{}", si.hostname, si.pid,
+                          si.address, si.port);
+  }
+};
+
+template <> struct std::formatter<BuilderInfo> {
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+  auto format(const BuilderInfo& bi, format_context& ctx) const {
+    return std::format_to(ctx.out(), "{}#{}", bi.hostname, bi.pid);
   }
 };
 
