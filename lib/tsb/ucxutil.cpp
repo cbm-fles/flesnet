@@ -1,4 +1,6 @@
-// Copyright 2025 Jan de Cuveland
+/* Copyright (C) 2025 FIAS, Goethe-Universität Frankfurt am Main
+   SPDX-License-Identifier: GPL-3.0-only
+   Author: Jan de Cuveland */
 
 #include "ucxutil.hpp"
 #include "log.hpp"

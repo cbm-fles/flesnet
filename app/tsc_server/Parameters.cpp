@@ -1,4 +1,6 @@
-// Copyright 2025 Dirk Hutter, Jan de Cuveland
+/* Copyright (C) 2025 FIAS, Goethe-Universität Frankfurt am Main
+   SPDX-License-Identifier: GPL-3.0-only
+   Authors: Dirk Hutter, Jan de Cuveland */
 
 #include "Parameters.hpp"
 #include "System.hpp"

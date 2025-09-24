@@ -1,4 +1,6 @@
-// Copyright 2016-2020 Jan de Cuveland <cmail@cuveland.de>
+/* Copyright (C) 2016-2025 FIAS, Goethe-Universität Frankfurt am Main
+   SPDX-License-Identifier: GPL-3.0-only
+   Author: Jan de Cuveland */
 
 #include "TsBuffer.hpp"
 #include "SubTimeslice.hpp"

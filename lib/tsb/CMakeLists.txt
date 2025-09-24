@@ -1,4 +1,6 @@
-# Copyright 2025 Jan de Cuveland <cmail@cuveland.de>
+# Copyright (C) 2025 FIAS, Goethe-Universität Frankfurt am Main
+# SPDX-License-Identifier: GPL-3.0-only
+# Author: Jan de Cuveland */
 
 file(GLOB LIB_SOURCES *.cpp)
 file(GLOB LIB_HEADERS *.hpp)
