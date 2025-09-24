@@ -417,10 +417,14 @@ void TsScheduler::assign_timeslice(TsId id) {
     if (builder.bytes_available >= coll.ms_data_size() &&
         !builder.is_out_of_memory) {
       send_assignment_to_builder(coll, builder);
+      DEBUG("{}| Assigned to '{}' ({}s, {})", id, builder.info.id(),
+            coll.sender_ids.size(),
+            human_readable_count(coll.ms_data_size(), true));
       return;
     }
   }
-  WARN("{}| No builder available", id);
+  WARN("{}| No builder available ({}s, {})", id, coll.sender_ids.size(),
+       human_readable_count(coll.ms_data_size(), true));
   send_release_to_senders(id);
 }
 
