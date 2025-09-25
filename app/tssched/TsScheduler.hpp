@@ -38,6 +38,25 @@ struct BuilderConnection {
   bool is_out_of_memory = false;
 };
 
+struct StatusInfo {
+  size_t timeslice_count = 0; ///< total number of processed timeslices
+  size_t component_count = 0; ///< total number of processed components
+  size_t data_bytes = 0;      ///< total number of processed data bytes
+  size_t timeslice_discarded_count = 0; ///< number of discarded timeslices
+
+  StatusInfo operator-(const StatusInfo& other) const {
+    StatusInfo result;
+    result.timeslice_count = timeslice_count - other.timeslice_count;
+    result.component_count = component_count - other.component_count;
+    result.data_bytes = data_bytes - other.data_bytes;
+    result.timeslice_discarded_count =
+        timeslice_discarded_count - other.timeslice_discarded_count;
+    return result;
+  }
+
+  bool operator==(const StatusInfo& other) const = default;
+};
+
 class TsScheduler {
 public:
   TsScheduler(volatile sig_atomic_t* signal_status,
@@ -72,6 +91,10 @@ private:
   std::vector<BuilderConnection> m_builders;
   std::size_t m_ts_count = 0;
   uint64_t m_id = 0;
+
+  StatusInfo m_status_info = {};
+  StatusInfo m_status_info_last = {};
+  std::chrono::system_clock::time_point m_status_time_last;
 
   // Connection management
   void handle_new_connection(ucp_conn_request_h conn_request);
@@ -114,6 +137,7 @@ private:
   // Helper methods
   StCollection create_collection_descriptor(TsId id);
   void report_status();
+  void log_status();
 
   // UCX static callbacks (trampolines)
   static void on_new_connection(ucp_conn_request_h conn_request, void* arg) {

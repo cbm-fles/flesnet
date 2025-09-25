@@ -23,6 +23,8 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
+using namespace std::chrono_literals;
+
 TsScheduler::TsScheduler(volatile sig_atomic_t* signal_status,
                          uint16_t listen_port,
                          int64_t timeslice_duration_ns,
@@ -72,6 +74,7 @@ void TsScheduler::run() {
 
   m_id = fles::system::current_time_ns() / m_timeslice_duration_ns;
   report_status();
+  log_status();
 
   while (*m_signal_status == 0) {
     if (ucp_worker_progress(m_worker) != 0) {
@@ -461,12 +464,16 @@ StCollection TsScheduler::create_collection_descriptor(TsId id) {
       DEBUG("{}| No contribution found from sender '{}'", id, sender.info.id());
     }
   }
+  // ... TODO: remove this code
+  m_status_info.timeslice_count++;
+  m_status_info.component_count += coll.sender_ids.size();
+  // ...
   return coll;
 }
 
 void TsScheduler::report_status() {
-  constexpr auto interval = std::chrono::seconds(1);
-  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+  constexpr auto interval = 1s;
+  auto now = std::chrono::system_clock::now();
 
   if (m_monitor != nullptr) {
     m_monitor->QueueMetric("tssched_status", {{"host", m_hostname}},
@@ -475,4 +482,37 @@ void TsScheduler::report_status() {
   // TODO: Add real metrics
 
   m_tasks.add([this] { report_status(); }, now + interval);
+}
+
+void TsScheduler::log_status() {
+  constexpr auto interval = 2s;
+  auto now = std::chrono::system_clock::now();
+  m_tasks.add([this] { log_status(); }, now + interval);
+
+  auto dt = std::chrono::duration<double>(now - m_status_time_last).count();
+  m_status_time_last = now;
+  if (m_status_info == m_status_info_last) {
+    return;
+  }
+
+  StatusInfo diff = m_status_info - m_status_info_last;
+  double data_rate = static_cast<double>(diff.data_bytes) / dt;
+  m_status_info_last = m_status_info;
+
+  std::string additional;
+  if (diff.timeslice_discarded_count > 0) {
+    additional =
+        std::format(" [discarded: {} ts]", diff.timeslice_discarded_count);
+  }
+  STATUS("* {} s, {} b, {} ts, {} c, {}, {}{}", m_senders.size(),
+         m_builders.size(), m_status_info.timeslice_count,
+         m_status_info.component_count,
+         human_readable_count(m_status_info.data_bytes, true),
+         human_readable_count(static_cast<uint64_t>(data_rate), true),
+         additional);
+  // STATUS: * 3 s, 2 b, 123 ts, 8285 c, 1.234 GB, 100.6 MB/s [discarded: 12 ts]
+  // STATUS: * checked 41 ts, 82 c, 41164 m, 4.116 GB
+  // TODO: Keep better track of timeslices in various states
+  // (including: only send release to contributing senders)
+  // TODO: Fill statistics
 }
