@@ -1,0 +1,10 @@
+#!/bin/bash
+
+sleep infinity & PID=$!
+trap "kill $PID" INT TERM
+
+echo "$0" "$@"
+
+wait
+
+echo "stopping $0"
