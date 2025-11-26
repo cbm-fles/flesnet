@@ -320,7 +320,7 @@ void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
   auto& ah = *m_announced.at(id);
 
   // Ensure that the first iov component points to the string data
-  assert(ah.iovector.front().buffer == ah.st_descriptor_bytes.data());
+  assert(ah.iov_vector.front().buffer == ah.st_descriptor_bytes.data());
 
   DEBUG("{}| Announcing ({}c, {}m, {}, flags={:04x})", id,
         st_descriptor.components.size(), num_microslices,

@@ -518,7 +518,7 @@ void TsBuilder::process_completion(TsId id) {
 void TsBuilder::update_st_state(TsHandle& tsh,
                                 std::size_t contribution_index,
                                 StState new_state) {
-  assert(contribution_index < states.size());
+  assert(contribution_index < tsh.states.size());
   if (new_state == tsh.states[contribution_index]) {
     return;
   }
