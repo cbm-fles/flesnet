@@ -301,7 +301,7 @@ void Application::report_status() {
       if (mon.latest_microslice_time_ns) {
         int64_t delay = now_ns - mon.latest_microslice_time_ns.value();
         m_monitor->QueueMetric(
-            "tsc_server_channel_status",
+            "stserver_channel_status",
             {{"host", m_hostname},
              {"port", std::to_string(m_par.listen_port())},
              {"channel", channel->name()}},
@@ -310,7 +310,7 @@ void Application::report_status() {
              {"delay", delay}});
       } else {
         m_monitor->QueueMetric(
-            "tsc_server_channel_status",
+            "stserver_channel_status",
             {{"host", m_hostname},
              {"port", std::to_string(m_par.listen_port())},
              {"channel", channel->name()}},
@@ -322,7 +322,7 @@ void Application::report_status() {
 
   if (m_monitor != nullptr) {
     m_monitor->QueueMetric(
-        "tsc_server_status",
+        "stserver_status",
         {{"host", m_hostname}, {"port", std::to_string(m_par.listen_port())}},
         {{"timeslice_count", m_timeslice_count},
          {"component_count", m_component_count},

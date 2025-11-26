@@ -55,10 +55,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   generic_add("help,h", "produce help message");
   generic_add(
       "config-file,c",
-      po::value<std::string>(&config_file)->default_value("tsc_server.cfg"),
+      po::value<std::string>(&config_file)->default_value("stserver.cfg"),
       "name of a configuration file");
 
-  po::options_description config("Configuration (tsc_server.cfg or cmd line)",
+  po::options_description config("Configuration (stserver.cfg or cmd line)",
                                  terminal_width, terminal_width / 2);
   auto config_add = config.add_options();
   config_add("log-level,l",
@@ -155,7 +155,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
   std::ifstream ifs(config_file.c_str());
   if (!ifs) {
-    if (config_file != "tsc_server.cfg") {
+    if (config_file != "stserver.cfg") {
       throw ParametersException("Cannot open config file: " + config_file);
     }
   } else {
