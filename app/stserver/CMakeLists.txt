@@ -7,6 +7,7 @@ add_executable(stserver
   Application.cpp
   Parameters.cpp
   Channel.cpp
+  StBuilder.cpp
   StSender.cpp
   pgen_channel.cpp
 )
