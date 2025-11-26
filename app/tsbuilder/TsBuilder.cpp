@@ -595,7 +595,7 @@ void TsBuilder::report_status() {
     size_t bytes_allocated =
         m_timeslice_buffer.get_size() - m_timeslice_buffer.get_free_memory();
     m_monitor->QueueMetric(
-        "tsbuild_status", {{"host", m_hostname}},
+        "tsbuilder_status", {{"host", m_hostname}},
         {{"timeslice_count", m_timeslice_count},
          {"component_count", m_component_count},
          {"byte_count", m_byte_count},

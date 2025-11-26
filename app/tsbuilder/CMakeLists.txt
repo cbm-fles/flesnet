@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Author: Jan de Cuveland
 
-add_executable(tsbuild
+add_executable(tsbuilder
   main.cpp
   Application.cpp
   Parameters.cpp
@@ -10,15 +10,15 @@ add_executable(tsbuild
   TsBuilder.cpp
 )
 
-target_include_directories(tsbuild
+target_include_directories(tsbuilder
   SYSTEM PUBLIC ${Boost_INCLUDE_DIRS}
 )
 
-target_include_directories(tsbuild
+target_include_directories(tsbuilder
   PUBLIC ../../lib
 )
 
-target_link_libraries(tsbuild
+target_link_libraries(tsbuilder
   fles_ipc
   fles_core
   tsb
@@ -30,4 +30,4 @@ target_link_libraries(tsbuild
   ${Boost_LIBRARIES}
 )
 
-install(TARGETS tsbuild DESTINATION bin)
+install(TARGETS tsbuilder DESTINATION bin)

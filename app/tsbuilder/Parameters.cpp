@@ -26,10 +26,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   generic_add("help,h", "produce help message");
   generic_add(
       "config-file,c",
-      po::value<std::string>(&config_file)->default_value("tsbuild.cfg"),
+      po::value<std::string>(&config_file)->default_value("tsbuilder.cfg"),
       "name of a configuration file");
 
-  po::options_description config("Configuration (tsbuild.cfg or cmd line)",
+  po::options_description config("Configuration (tsbuilder.cfg or cmd line)",
                                  terminal_width, terminal_width / 2);
   auto config_add = config.add_options();
   config_add("log-level,l",
@@ -76,7 +76,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
   std::ifstream ifs(config_file.c_str());
   if (!ifs) {
-    if (config_file != "tsbuild.cfg") {
+    if (config_file != "tsbuilder.cfg") {
       throw ParametersException("Cannot open config file: " + config_file);
     }
   } else {
