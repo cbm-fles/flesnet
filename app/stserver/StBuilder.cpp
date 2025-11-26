@@ -107,10 +107,10 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
                         (m_cri_channels.size() + pgen_channels) +
                     4096;
 
-  INFO("Creating shared memory segment '{}' of size {}", shm_id,
+  INFO("Creating shared memory segment '{}' of size {}", m_shm_id,
        human_readable_count(shm_size, true));
   m_shm = std::make_unique<boost::interprocess::managed_shared_memory>(
-      boost::interprocess::create_only, shm_id.c_str(), shm_size);
+      boost::interprocess::create_only, m_shm_id.c_str(), shm_size);
 
   // Create Channel objects for each CRI channel
   for (auto* cri_channel : m_cri_channels) {
