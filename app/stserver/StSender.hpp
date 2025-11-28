@@ -66,6 +66,7 @@ private:
   std::string m_scheduler_address;
   uint16_t m_listen_port;
   SenderInfo m_sender_info;
+  std::vector<std::byte> m_sender_info_bytes;
 
   int m_queue_event_fd = -1;
   std::deque<std::pair<TsId, StHandle>> m_pending_announcements;

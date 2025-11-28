@@ -29,7 +29,8 @@ StSender::StSender(std::string_view scheduler_address,
                    uint16_t listen_port,
                    SenderInfo sender_info)
     : m_scheduler_address(scheduler_address), m_listen_port(listen_port),
-      m_sender_info(std::move(sender_info)) {
+      m_sender_info(std::move(sender_info)),
+      m_sender_info_bytes(to_bytes(m_sender_info)) {
   // Initialize event handling
   m_queue_event_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
   if (m_queue_event_fd == -1) {
@@ -186,12 +187,10 @@ void StSender::connect_to_scheduler() {
 
   m_scheduler_ep = *ep;
 
-  auto sender_info_bytes = to_bytes(m_sender_info);
-  auto header = std::as_bytes(std::span(sender_info_bytes));
+  auto header = std::as_bytes(std::span(m_sender_info_bytes));
   bool send_am_ok = ucx::util::send_active_message(
       m_scheduler_ep, AM_SENDER_REGISTER, header, {},
-      on_scheduler_register_complete, this,
-      UCP_AM_SEND_FLAG_REPLY | UCP_AM_SEND_FLAG_COPY_HEADER);
+      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
   if (!send_am_ok) {
     WARN("Failed to register with scheduler at '{}:{}', will retry", address,
          port);
