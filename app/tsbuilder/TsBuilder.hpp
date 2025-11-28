@@ -107,6 +107,7 @@ private:
   int64_t m_timeout_ns;
   std::string m_hostname;
   BuilderInfo m_builder_info;
+  std::vector<std::byte> m_builder_info_bytes;
   cbm::Monitor* m_monitor = nullptr;
 
   int m_epoll_fd = -1;
