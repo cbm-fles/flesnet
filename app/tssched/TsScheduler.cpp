@@ -124,7 +124,7 @@ void TsScheduler::run() {
 void TsScheduler::handle_new_connection(ucp_conn_request_h conn_request) {
   auto client_address = ucx::util::get_client_address(conn_request);
   if (!client_address) {
-    ERROR("Failed to retrieve client address from connection request");
+    ERROR("{}", client_address.error());
     ucp_listener_reject(m_listener, conn_request);
     return;
   }

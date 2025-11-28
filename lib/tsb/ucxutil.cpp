@@ -113,14 +113,15 @@ bool arm_worker_and_wait(ucp_worker_h worker, int epoll_fd, int timeout_ms) {
   return true;
 }
 
-std::optional<std::string> get_client_address(ucp_conn_request_h conn_request) {
+std::expected<std::string, std::string>
+get_client_address(ucp_conn_request_h conn_request) {
   ucp_conn_request_attr_t attr{};
   attr.field_mask = UCP_CONN_REQUEST_ATTR_FIELD_CLIENT_ADDR;
 
   ucs_status_t status = ucp_conn_request_query(conn_request, &attr);
   if (status != UCS_OK) {
-    ERROR("Failed to query connection request for client address");
-    return std::nullopt;
+    return std::unexpected(
+        "Failed to query connection request for client address");
   }
 
   char host[NI_MAXHOST];
@@ -130,9 +131,9 @@ std::optional<std::string> get_client_address(ucp_conn_request_h conn_request) {
           sizeof(attr.client_address), static_cast<char*>(host), sizeof(host),
           static_cast<char*>(service), sizeof(service),
           NI_NUMERICHOST | NI_NUMERICSERV) != 0) {
-    ERROR("Failed to get client address from connection request: {}",
-          gai_strerror(errno));
-    return std::nullopt;
+    return std::unexpected(
+        std::string("Failed to get client address from connection request: ") +
+        gai_strerror(errno));
   }
 
   return std::string(static_cast<char*>(host)) + ":" +
@@ -206,11 +207,12 @@ std::optional<ucp_ep_h> accept(ucp_worker_h worker,
   return *ep;
 }
 
-std::optional<ucp_ep_h> connect(ucp_worker_h worker,
-                                const std::string& address,
-                                uint16_t port,
-                                ucp_err_handler_cb_t on_endpoint_error,
-                                void* arg) {
+std::expected<ucp_ep_h, std::string>
+connect(ucp_worker_h worker,
+        const std::string& address,
+        uint16_t port,
+        ucp_err_handler_cb_t on_endpoint_error,
+        void* arg) {
   struct addrinfo hints {};
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
@@ -219,8 +221,8 @@ std::optional<ucp_ep_h> connect(ucp_worker_h worker,
   struct addrinfo* result;
   int err = getaddrinfo(address.c_str(), port_str.c_str(), &hints, &result);
   if (err != 0) {
-    ERROR("Failed to resolve hostname: {}", gai_strerror(err));
-    return std::nullopt;
+    return std::unexpected(std::string("Failed to resolve hostname: ") +
+                           gai_strerror(err));
   }
 
   ucp_ep_h ep = nullptr;
@@ -245,8 +247,8 @@ std::optional<ucp_ep_h> connect(ucp_worker_h worker,
   freeaddrinfo(result);
 
   if (ep == nullptr) {
-    ERROR("Failed to connect to {}:{}", address, port);
-    return std::nullopt;
+    return std::unexpected("Failed to connect to " + address + ":" +
+                           std::to_string(port));
   }
   return ep;
 }

@@ -173,27 +173,40 @@ void StSender::connect_to_scheduler() {
 
   auto [address, port] =
       ucx::util::parse_address(m_scheduler_address, DEFAULT_SCHEDULER_PORT);
-  auto ep =
+  auto ep_result =
       ucx::util::connect(m_worker, address, port, on_scheduler_error, this);
-  if (ep) {
+  if (ep_result) {
     if (!m_mute_scheduler_reconnect) {
       INFO("Trying to connect to scheduler at '{}:{}'", address, port);
     }
   } else {
-    WARN("Failed to connect to scheduler at '{}:{}', will retry", address,
-         port);
+    if (!m_mute_scheduler_reconnect) {
+      ERROR("Failed to connect to scheduler at '{}:{}': {}", address, port,
+            ep_result.error());
+      INFO("Will retry connection to scheduler every {}s",
+           std::chrono::duration_cast<std::chrono::seconds>(
+               m_scheduler_retry_interval)
+               .count());
+      m_mute_scheduler_reconnect = true;
+    }
     return;
   }
 
-  m_scheduler_ep = *ep;
+  m_scheduler_ep = *ep_result;
 
   auto header = std::as_bytes(std::span(m_sender_info_bytes));
   bool send_am_ok = ucx::util::send_active_message(
       m_scheduler_ep, AM_SENDER_REGISTER, header, {},
       on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
   if (!send_am_ok) {
-    WARN("Failed to register with scheduler at '{}:{}', will retry", address,
-         port);
+    if (!m_mute_scheduler_reconnect) {
+      WARN("Failed to register with scheduler at '{}:{}'", address, port);
+      INFO("Will retry connection to scheduler every {}s",
+           std::chrono::duration_cast<std::chrono::seconds>(
+               m_scheduler_retry_interval)
+               .count());
+      m_mute_scheduler_reconnect = true;
+    }
     ucx::util::close_endpoint(m_worker, m_scheduler_ep, true);
     m_scheduler_ep = nullptr;
     return;

@@ -3,6 +3,7 @@
    Author: Jan de Cuveland */
 #pragma once
 
+#include <expected>
 #include <format>
 #include <optional>
 #include <span>
@@ -17,7 +18,8 @@ void cleanup(ucp_context_h& context, ucp_worker_h& worker);
 bool arm_worker_and_wait(ucp_worker_h worker,
                          int epoll_fd,
                          int timeout_ms = EPOLL_TIMEOUT_MS);
-std::optional<std::string> get_client_address(ucp_conn_request_h conn_request);
+std::expected<std::string, std::string>
+get_client_address(ucp_conn_request_h conn_request);
 bool create_listener(ucp_worker_h worker,
                      ucp_listener_h& listener,
                      uint16_t listen_port,
@@ -27,11 +29,12 @@ std::optional<ucp_ep_h> accept(ucp_worker_h worker,
                                ucp_conn_request_h conn_request,
                                ucp_err_handler_cb_t on_endpoint_error,
                                void* arg);
-std::optional<ucp_ep_h> connect(ucp_worker_h worker,
-                                const std::string& address,
-                                uint16_t port,
-                                ucp_err_handler_cb_t on_endpoint_error,
-                                void* arg);
+std::expected<ucp_ep_h, std::string>
+connect(ucp_worker_h worker,
+        const std::string& address,
+        uint16_t port,
+        ucp_err_handler_cb_t on_endpoint_error,
+        void* arg);
 void close_endpoint(ucp_worker_h worker, ucp_ep_h ep, bool force);
 void wait_for_request_completion(ucp_worker_h worker,
                                  ucs_status_ptr_t& request);
