@@ -1,6 +1,6 @@
 // Copyright 2013-2022 Jan de Cuveland <cmail@cuveland.de>
 
-#include "System.hpp"
+#include "SystemInfo.hpp"
 #include <cerrno>
 #include <cstring>
 #include <netdb.h>

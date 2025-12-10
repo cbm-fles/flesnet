@@ -8,6 +8,8 @@
 #include "Metric.hpp"
 #include "MonitorSink.hpp"
 
+#include "SystemInfo.hpp" // for convenience for the users of Monitor
+
 #include <chrono>
 #include <condition_variable>
 #include <memory>
