@@ -304,11 +304,15 @@ void TsScheduler::send_release_to_senders(TsId id) {
   auto header = std::as_bytes(std::span(hdr));
 
   for (auto& [ep, conn] : m_senders) {
-    ucx::util::send_active_message(ep, AM_SCHED_RELEASE_ST, header, {},
-                                   ucx::util::on_generic_send_complete, this,
-                                   UCP_AM_SEND_FLAG_COPY_HEADER);
-    std::erase_if(conn.announced_st,
-                  [id](const auto& st) { return st.id == id; });
+    // Check if this sender has announced the subtimeslice
+    auto it = std::find_if(conn.announced_st.begin(), conn.announced_st.end(),
+                           [id](const auto& st) { return st.id == id; });
+    if (it != conn.announced_st.end()) {
+      ucx::util::send_active_message(ep, AM_SCHED_RELEASE_ST, header, {},
+                                     ucx::util::on_generic_send_complete, this,
+                                     UCP_AM_SEND_FLAG_COPY_HEADER);
+      conn.announced_st.erase(it);
+    }
   }
 }
 
