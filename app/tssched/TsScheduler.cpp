@@ -288,13 +288,19 @@ TsScheduler::handle_sender_retract(const void* header,
 
   auto it = m_senders.find(param->reply_ep);
   if (it == m_senders.end()) {
-    ERROR("Received retraction from unknown sender");
+    ERROR("{}| Received retraction from unknown sender", id);
     return UCS_OK;
   }
   auto& conn = it->second;
 
-  std::erase_if(conn.announced_st,
-                [id](const auto& st) { return st.id == id; });
+  auto st_it = std::find_if(conn.announced_st.begin(), conn.announced_st.end(),
+                            [id](const auto& st) { return st.id == id; });
+  if (st_it == conn.announced_st.end()) {
+    DEBUG("{}| Retraction for unannounced subtimeslice from sender '{}'", id,
+          conn.info.id());
+    return UCS_OK;
+  }
+  conn.announced_st.erase(st_it);
 
   return UCS_OK;
 }
@@ -463,7 +469,6 @@ StCollection TsScheduler::create_collection_descriptor(TsId id) {
     if (it != sender.announced_st.end()) {
       coll.sender_ids.push_back(sender.info.advertise_id());
       coll.ms_data_sizes.push_back(it->ms_data_size);
-      sender.announced_st.erase(it);
     } else {
       DEBUG("{}| No contribution found from sender '{}'", id, sender.info.id());
     }
@@ -489,7 +494,7 @@ void TsScheduler::report_status() {
 }
 
 void TsScheduler::log_status() {
-  constexpr auto interval = 2s;
+  constexpr auto interval = 10s;
   auto now = std::chrono::system_clock::now();
   m_tasks.add([this] { log_status(); }, now + interval);
 
