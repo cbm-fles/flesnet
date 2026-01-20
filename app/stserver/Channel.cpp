@@ -22,6 +22,7 @@ namespace {
   ss.imbue(std::locale("")); // use locale for thousands separator
   ss << std::put_time(&tm, "%S") << "." << std::setfill('0') << std::setw(11)
      << rem_ns;
+  // Bug here: 25.0000100,000 because setfill does not give thousands separators
   return ss.str();
 }
 } // namespace
@@ -75,10 +76,10 @@ void Channel::ack_before(uint64_t time) {
     set_read_index(it.get_index());
   }
 
-  TRACE(
-      "ack before: searching for time {} in range {} - {}. Setting read index "
-      "to {}",
-      time, desc_begin.get_index(), desc_end.get_index(), it.get_index());
+  TRACE("{}: ack before: searching for time {} in range {} - {}. Setting read "
+        "index to {}",
+        m_name, pt(time), desc_begin.get_index(), desc_end.get_index(),
+        it.get_index());
 
   return;
 }
@@ -92,26 +93,26 @@ Channel::State Channel::check_availability(uint64_t start_time,
   uint64_t first_ms_time = start_time - m_overlap_before_ns;
   uint64_t last_ms_time = start_time + duration + m_overlap_after_ns;
 
-  TRACE("searching for component [{}, {}).", pt(first_ms_time),
+  TRACE("{}: searching for component [{}, {}).", m_name, pt(first_ms_time),
         pt(last_ms_time));
 
   if (write_index == read_index) {
-    TRACE("write and read index are equal, no data available");
+    TRACE("{}: write and read index are equal, no data available", m_name);
     return Channel::State::TryLater;
   }
   if (first_ms_time < m_desc_buffer->at(read_index).idx) {
     // the first (oldest) microslice in the buffer is younger than the first
     // microslice we want, so we can never provide that component
-    TRACE("Failed; begin want= {} have={}, difference={}", pt(first_ms_time),
-          pt(m_desc_buffer->at(read_index).idx),
-          int64_t(m_desc_buffer->at(read_index).idx - first_ms_time));
+    TRACE("{}: Failed; begin want= {} have={}, difference={}", m_name,
+          pt(first_ms_time), pt(m_desc_buffer->at(read_index).idx),
+          int64_t(first_ms_time - m_desc_buffer->at(read_index).idx));
     return Channel::State::Failed;
   }
   if (last_ms_time >= m_desc_buffer->at(write_index - 1).idx) {
     // the last (youngest) microslice in the buffer is older than the last
     // microslice we want, so we can't provide that component yet
-    TRACE("TryLater: end want={} have={}, difference={}", pt(last_ms_time),
-          pt(m_desc_buffer->at(write_index - 1).idx),
+    TRACE("{}: TryLater: end want={} have={}, difference={}", m_name,
+          pt(last_ms_time), pt(m_desc_buffer->at(write_index - 1).idx),
           int64_t(last_ms_time - m_desc_buffer->at(write_index - 1).idx));
     return Channel::State::TryLater;
   }
@@ -223,20 +224,21 @@ std::pair<uint64_t, uint64_t> Channel::find_component(uint64_t start_time,
 
   // INFO technically we are not allowed to dereference last_it because its ms
   // is not guaranteed to be written
-  TRACE("find_component: want [{}, {}), have [{}, {}), diff {}, {}, idx [{}, "
-        "{}), "
-        "{} microslices",
-        pt(first_ms_time), pt(last_ms_time), pt(first_it->idx),
-        pt(last_it->idx), int64_t(first_it->idx - first_ms_time),
-        int64_t(last_it->idx - last_ms_time), first_idx, last_idx,
-        last_idx - first_idx);
+  TRACE(
+      "{}: find_component: want [{}, {}), have [{}, {}), diff {}, {}, idx [{}, "
+      "{}), {} microslices",
+      m_name, pt(first_ms_time), pt(last_ms_time), pt(first_it->idx),
+      pt(last_it->idx), int64_t(first_it->idx - first_ms_time),
+      int64_t(last_it->idx - last_ms_time), first_idx, last_idx,
+      last_idx - first_idx);
 
   return {first_idx, last_idx};
 }
 
 void Channel::set_read_index(uint64_t read_index) {
   if (read_index == m_read_index) {
-    TRACE("updating read_index, nothing to do for desc {}", read_index);
+    TRACE("{}: updating read_index, nothing to do for desc {}", m_name,
+          read_index);
     return;
   }
 
@@ -251,7 +253,8 @@ void Channel::set_read_index(uint64_t read_index) {
   uint64_t data_read_index = m_desc_buffer->at(read_index - 1).offset +
                              m_desc_buffer->at(read_index - 1).size;
 
-  TRACE("updating read_index: data {} desc {}", data_read_index, read_index);
+  TRACE("{}: updating read_index: data {} desc {}", m_name, data_read_index,
+        read_index);
 
   uint64_t desc_offset = m_desc_buffer->offset_bytes(read_index);
   uint64_t data_offset = m_data_buffer->offset_bytes(data_read_index);
