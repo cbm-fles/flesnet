@@ -148,9 +148,10 @@ void pgen_channel::generate_microslice(uint64_t time_ns) {
 
   // Write to descriptor buffer
   const_cast<fles::MicrosliceDescriptor&>(
-      m_desc_buffer.at(m_desc_write_index++)) =
+      m_desc_buffer.at(m_desc_write_index)) =
       fles::MicrosliceDescriptor({hdr_id, hdr_ver, eq_id, flags, sys_id,
                                   sys_ver, idx, crc, size, offset});
+  m_desc_write_index++;
 }
 
 } // namespace cri

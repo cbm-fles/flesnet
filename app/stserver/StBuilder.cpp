@@ -177,14 +177,16 @@ void StBuilder::run() {
     m_tasks.timer();
 
     // call check_component for all channels and store the states
-    for (auto i : ask_again) {
+    for (auto it = ask_again.begin(); it != ask_again.end();) {
+      auto i = *it;
       auto state = m_channels[i]->check_availability(ts_start_time,
                                                      m_timeslice_duration_ns);
       states[i] = state;
       if (state != Channel::State::TryLater) {
         // if the state is not TryLater, we do not need to ask again
-        ask_again.erase(std::remove(ask_again.begin(), ask_again.end(), i),
-                        ask_again.end());
+        it = ask_again.erase(it); // erase returns iterator to next element
+      } else {
+        ++it;
       }
     }
 
