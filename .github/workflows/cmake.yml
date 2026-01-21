@@ -7,20 +7,24 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
     strategy:
       matrix:
         include:
-        - cc: gcc-11
-          cxx: g++-11
         - cc: gcc-12
           cxx: g++-12
-        - cc: clang-14
-          cxx: clang++-14
-        - cc: clang-15
-          cxx: clang++-15
+          os: ubuntu-22.04
+        - cc: gcc-13
+          cxx: g++-13
+          os: ubuntu-24.04
+        - cc: gcc-14
+          cxx: g++-14
+          os: ubuntu-24.04
+        - cc: clang-18
+          cxx: clang++-18
+          os: ubuntu-24.04
       fail-fast: false
+
+    runs-on: ${{matrix.os}}
 
     env:
       CC: ${{matrix.cc}}
@@ -33,35 +37,35 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update -y
-        sudo apt-get install -yq libboost-dev libboost-iostreams-dev libboost-log-dev libboost-program-options-dev libboost-serialization-dev libboost-system-dev libboost-test-dev libboost-thread-dev libfabric-dev libibverbs-dev libnuma-dev librdmacm-dev libgnutls28-dev ninja-build
+        sudo apt-get install -yq libboost-dev libboost-iostreams-dev libboost-log-dev libboost-program-options-dev libboost-serialization-dev libboost-system-dev libboost-test-dev libboost-thread-dev libfabric-dev libibverbs-dev libnuma-dev librdmacm-dev libgnutls28-dev libfmt-dev ninja-build
         sudo apt-get install -yq libkmod-dev libpci-dev libtool-bin
 
     - name: Install additional dependencies
       run: |
-        wget https://github.com/cbm-fles/pda/releases/download/11.6.7/libpda4_11.6.7-1_amd64.deb
+        wget https://github.com/cbm-fles/pda/releases/download/11.7.7/libpda4_11.7.7-1_amd64.deb
         sudo dpkg -i libpda4_*_amd64.deb
 
     - name: Create build environment
-      run: cmake -E make_directory ${{runner.workspace}}/build
+      run: cmake -E make_directory ${{github.workspace}}/build
 
     - name: Configure CMake
-      working-directory: ${{runner.workspace}}/build
+      working-directory: ${{github.workspace}}/build
       run: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G Ninja $GITHUB_WORKSPACE
 
     - name: Build
-      working-directory: ${{runner.workspace}}/build
+      working-directory: ${{github.workspace}}/build
       run: ninja
 
     - name: Test
-      working-directory: ${{runner.workspace}}/build
+      working-directory: ${{github.workspace}}/build
       run: CTEST_OUTPUT_ON_FAILURE=1 ninja test
 
     - name: Create .deb package
-      working-directory: ${{runner.workspace}}/build
+      working-directory: ${{github.workspace}}/build
       run: cpack
 
     - name: Archive .deb package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: flesnet-${{matrix.cc}}
-        path: ${{runner.workspace}}/build/*.deb
+        name: flesnet-${{matrix.os}}-${{matrix.cc}}
+        path: ${{github.workspace}}/build/*.deb

@@ -58,8 +58,6 @@ constexpr uint64_t BUFFER_MAP_ELEMENTS = 256;
 constexpr uint64_t DATA_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 450;
 constexpr uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
 
-
-
 int start_cm() {
     auto node = make_shared<Node>(0, 0);
     std::shared_mutex mtx;
@@ -381,16 +379,73 @@ int start_receiver() {
     cout << "SHM: " << par.shm_name << endl;
 
     // cout << "tswriter init" << endl;
-    TsclientWriter ts_writer(par.shm_name);
+    shared_ptr<TsSink> ts_sink = nullptr;
+    std::shared_ptr<char> data_buffer = nullptr;
+    std::shared_ptr<char> data_buffer_size = nullptr;
+    uint64_t buffer_size = 0;
+    std::function<void(std::string /*address*/, uint64_t /*group_id*/, uint64_t /*node_id*/)> on_new_work_item;
+    std::shared_ptr<BufferMap> data_buffer_map = nullptr;
+    if (true) {
+        ts_sink = make_shared<TsclientWriter>(par.shm_name);
+        data_buffer = ts_sink->get_buffer();
+        buffer_size = ts_sink->get_buffer_size();
+        // on_new_work_item = [data_buffer_map, node_connector, ts_sink] (std::string /*address*/, uint64_t /*group_id*/, uint64_t /*node_id*/) {
+        //     node_connector->lock_buffer_map(data_buffer_map, [data_buffer_map, node_connector, ts_sink] () {
+        //         auto *el = data_buffer_map->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
+        //         if (el == nullptr) {
+        //             node_connector->unlock_buffer_map(data_buffer_map);
+        //             return;
+        //         }
+        //         uint64_t component_size = 0;
+        //         auto component = data_buffer_map->get_elements_of_component(el->compontent_id, component_size);
+        //         cout << "component size: " << component_size << endl;
+        //         ts_sink->write_timeslice(component);
+        //         data_buffer_map->remove_elements(component);
+        //         // data_buffer_map->get_elements_of_component(el->compontent_id, component_size);
+        //         el = data_buffer_map->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
+        //         if (el != nullptr) {
+        //             cerr << "more data availables" << endl;
+        //         }
+        //         // data_buffer_map->remove_elements(component);
+        //         node_connector->unlock_buffer_map(data_buffer_map);
+        //     });
+        // };
+    } else {
+        ts_sink = make_shared<TimesliceWriter>("tsout.tsa");
+        buffer_size = DATA_BUFFER_SIZE;
+        data_buffer = std::shared_ptr<char>(new char[buffer_size], std::default_delete<char[]>());
+        ts_sink->set_buffer(data_buffer);
+        // on_new_work_item = [data_buffer_map, node_connector, ts_sink] (std::string /*address*/, uint64_t /*group_id*/, uint64_t /*node_id*/) {
+        //     node_connector->lock_buffer_map(data_buffer_map, [data_buffer_map, node_connector, ts_sink] () {
+        //         auto *el = data_buffer_map->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
+        //         if (el == nullptr) {
+        //             node_connector->unlock_buffer_map(data_buffer_map);
+        //             return;
+        //         }
+        //         uint64_t component_size = 0;
+        //         auto component = data_buffer_map->get_elements_of_component(el->compontent_id, component_size);
+        //         cout << "component size: " << component_size << endl;
+        //         ts_sink->write_timeslice(component);
+        //         data_buffer_map->remove_elements(component);
+        //         // data_buffer_map->get_elements_of_component(el->compontent_id, component_size);
+        //         el = data_buffer_map->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
+        //         if (el != nullptr) {
+        //             cerr << "more data availables" << endl;
+        //         }
+        //         // data_buffer_map->remove_elements(component);
+        //         node_connector->unlock_buffer_map(data_buffer_map);
+        //     });
+        // };
+    }
+
     // sleep(5);
 
     // cout << "tswriter init DONE" << endl;
 
     // const auto buffer_size = DATA_BUFFER_SIZE;
     // const auto data_buffer = std::shared_ptr<char>(new char[buffer_size], std::default_delete<char[]>());
-    const auto data_buffer = ts_writer.get_buffer();
-    const auto buffer_size = ts_writer.get_buffer_size();
-    const auto data_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, buffer_size);
+    // const auto data_buffer = ts_sink->get_buffer();
+    data_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, buffer_size);
     data_buffer_map->insert(0, 336, BufferMap::TAG_UNSET);
     node->set_wi_buffer(wi_buffer, wi_buffer_map, WI_BUFFER_SIZE);
     node->set_data_buffer(data_buffer, data_buffer_map, buffer_size);
@@ -424,8 +479,8 @@ int start_receiver() {
         }
     });
 
-    node->on_new_data([data_buffer_map, node_connector, &ts_writer] (std::string /*address*/, uint64_t /*group_id*/, uint64_t /*node_id*/) {
-        node_connector->lock_buffer_map(data_buffer_map, [data_buffer_map, node_connector, &ts_writer] () {
+    node->on_new_data([data_buffer_map, node_connector, ts_sink] (std::string /*address*/, uint64_t /*group_id*/, uint64_t /*node_id*/) {
+        node_connector->lock_buffer_map(data_buffer_map, [data_buffer_map, node_connector, ts_sink] () {
             auto *el = data_buffer_map->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
             if (el == nullptr) {
                 node_connector->unlock_buffer_map(data_buffer_map);
@@ -434,7 +489,7 @@ int start_receiver() {
             uint64_t component_size = 0;
             auto component = data_buffer_map->get_elements_of_component(el->compontent_id, component_size);
             cout << "component size: " << component_size << endl;
-            ts_writer.write_timeslice(component);
+            ts_sink->write_timeslice(component);
             data_buffer_map->remove_elements(component);
             // data_buffer_map->get_elements_of_component(el->compontent_id, component_size);
             el = data_buffer_map->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);

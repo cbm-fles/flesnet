@@ -98,12 +98,12 @@ private:
       // std::cout << "timeslice_item.data.size(): " << timeslice_item.data.size() << std::endl;
       // std::cout << "timeslice_item.desc.size(): " << timeslice_item.desc.size() << std::endl;
       // // std::cout << "timeslice_item.desc.size(): " << timeslice_item. << std::endl;
-      // for (auto const& d : timeslice_item.desc) {
-      //   std::cout << "desc_ptr: " << d << std::endl;
-      // }
-      // for (auto const& d : timeslice_item.data) {
-      //   std::cout << "data_ptr: " << d << std::endl;
-      // }
+      for (auto const& d : timeslice_item.desc) {
+        std::cout << "desc_ptr: " << d << std::endl;
+      }
+      for (auto const& d : timeslice_item.data) {
+        std::cout << "data_ptr: " << d << std::endl;
+      }
       // std::cout << "timeslice_item.desc.size(): " << timeslice_item.desc.size() << std::endl;
       // timeslice_item.desc.size();
       std::cout << "do get 4" << std::endl;
@@ -148,9 +148,11 @@ private:
         }
       }
     std::cout << "do get 5" << std::endl;
+
       auto *ts_view = new TimesliceView(managed_shm_, item, timeslice_item);
       std::cout << "ts_index in TimesliceBufferMap: " << ts_view->timeslice_descriptor_.index << std::endl;
       std::cout << "num_core_microslices in TimesliceBufferMap: " << ts_view->timeslice_descriptor_.num_core_microslices << std::endl;
+      std::cout << "ts_view->num_microslices(0) in TimesliceBufferMap: " << ts_view->num_microslices(0) << std::endl;
       return ts_view; // NOLINT
     }
 

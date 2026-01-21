@@ -5,12 +5,14 @@
 #include <df/BufferMap/BufferMap.hpp>
 #include <df/WorkerThread.hpp>
 #include <df/Connectors/ConnectorInterface.hpp>
+#include <memory>
 #include "TimesliceShmWorkItem.hpp"
 #include "MyTimeslice.hpp"
+#include "Tssink.hpp"
 
 #pragma once
 
-class TimesliceWriter {
+class TimesliceWriter : public TsSink {
 private:
     std::shared_ptr<char> buffer_ = nullptr;
     std::unique_ptr<MyTimesliceArchive> ts_sink_ = nullptr;
@@ -22,7 +24,17 @@ public:
             address, compression);
     }
 
-    void write_timeslice(std::vector<BufferMap::ListElement*>& elements) {
+    virtual ~TimesliceWriter(){};
+
+    uint64_t get_buffer_size() override {
+        return 0;
+    }
+
+    // void clear_last_timeslice() override {
+    //     return;
+    // }
+
+    void write_timeslice(std::vector<BufferMap::ListElement*>& elements) override {
         std::vector<fles::TimesliceComponentDescriptor*> desc_ptr;
         std::vector<uint8_t*> data_ptr;
 
@@ -39,7 +51,7 @@ public:
                 }
             } // else referencing data
         }
-        fles::TimesliceShmWorkItem shm_wi;
+        // fles::TimesliceShmWorkItem shm_wi;
 
         std::cout << "create timeslice 6" << std::endl;
         std::cout << "desc_ptr.size(): " << desc_ptr.size() << std::endl;
@@ -70,7 +82,11 @@ public:
 
     }
 
-    void set_buffer(std::shared_ptr<char> buffer) {
+    void set_buffer(std::shared_ptr<char> buffer) override {
         buffer_ = buffer;
+    }
+
+    std::shared_ptr<char> get_buffer() override {
+        return buffer_;
     }
 };

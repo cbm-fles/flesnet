@@ -134,19 +134,25 @@ endif()
 # fetch libfmt formatting library, used by lib/monitoring. Should be already included in FairSoft.
 find_package(fmt CONFIG)
 if(NOT fmt_FOUND)
+  if(CMAKE_VERSION VERSION_GREATER "3.26.0")
+    set(FetchContent_Declare_SYSTEM "SYSTEM")
+  else()
+    set(FetchContent_Declare_SYSTEM "")
+  endif()
   message(STATUS "Downloading and building fmtlib.")
   include(FetchContent)
   FetchContent_Declare(
     fmtlib
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG 8.1.1)
+    GIT_TAG 9.1.0
+    ${FetchContent_Declare_SYSTEM})
   FetchContent_MakeAvailable(fmtlib) # Adds fmt::fmt
 endif()
 
 if(APPLE)
   set(Boost_USE_MULTITHREADED TRUE)
 endif()
-find_package(Boost 1.74.0 REQUIRED COMPONENTS filesystem log program_options serialization system thread unit_test_framework iostreams)
+find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS filesystem log program_options serialization system thread unit_test_framework iostreams)
 find_package(Threads REQUIRED)
 
 find_package(LIBFABRIC)

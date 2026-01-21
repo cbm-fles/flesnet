@@ -1,3 +1,4 @@
+#include "FragmentedTimesliceBuffer.hpp"
 #include "ItemDistributor.hpp"
 #include "ManagedTimesliceBuffer.hpp"
 #include "OutputArchive.hpp"
@@ -17,7 +18,7 @@
 
 #pragma once
 
-class TsclientWriter {
+class TsclientWriter : public TsSink {
 private:
     CallbackContainer<void()> callbacks;
     std::shared_ptr<BufferMap> buffer_map_ = nullptr;
@@ -34,7 +35,8 @@ private:
     std::unique_ptr<MyTimesliceArchive> ts_sink_ = nullptr;
     zmq::context_t zmq_context_{1};
     std::shared_ptr<ManagedTimesliceBuffer> managed_timeslice_buffer = nullptr;
-    std::shared_ptr<TimesliceBuffer> ts_buffer_ = nullptr;
+    std::shared_ptr<FragmentedTimesliceBuffer> ts_buffer_ = nullptr;
+    // std::shared_ptr<TimesliceBuffer> ts_buffer_ = nullptr;
     uint64_t acked_ = 0;
     std::unique_ptr<ItemDistributor> item_distributor_ = nullptr;
     std::thread distributor_thread_;
@@ -74,23 +76,23 @@ bool handle_timeslice_completions() {
         worker_address_ = "ipc://@ts_in";
 
         item_distributor_ = std::make_unique<ItemDistributor>(zmq_context_, producer_address_, worker_address_),
-        ts_buffer_ = std::make_shared<TimesliceBuffer>(zmq_context_, producer_address_, shm_identifier, datasize, descsize, 26);
+        ts_buffer_ = std::make_shared<FragmentedTimesliceBuffer>(zmq_context_, producer_address_, shm_identifier, datasize, descsize, 26);
         distributor_thread_ = std::thread(std::ref(*(item_distributor_.get())));
         buffer_ = std::shared_ptr<char>(static_cast<char*>(ts_buffer_->managed_shm_->get_address()));
         buffer_size_ = ts_buffer_->managed_shm_->get_size();
     }
 
-    uint64_t get_buffer_size() const {
+    uint64_t get_buffer_size() override {
         return buffer_size_;
     }
 
-    std::shared_ptr<char> get_buffer() const {
+    std::shared_ptr<char> get_buffer() override  {
         return std::shared_ptr<char>(buffer_.get(), no_del(char));
     }
 
-    void clear_last_timeslice() {
-        last_timeslice_ = nullptr;
-    };
+    // void clear_last_timeslice() override {
+    //     last_timeslice_ = nullptr;
+    // };
 
     void on_new_timeslice(std::function<void()> cb) {
         callbacks.add(cb);
@@ -104,9 +106,7 @@ bool handle_timeslice_completions() {
         node_connector_ = node_connector;
     }
 
-    void write_timeslice(std::vector<BufferMap::ListElement*>& elements) {
-        // sleep(2);
-        handle_timeslice_completions();
+    void write_timeslice(std::vector<BufferMap::ListElement*>& elements) override {
         std::vector<fles::TimesliceComponentDescriptor*> desc_ptr;
         std::vector<uint8_t*> data_ptr;
         for (auto desc_it = elements.begin(); desc_it != elements.end(); ++desc_it) {
@@ -151,8 +151,13 @@ bool handle_timeslice_completions() {
         std::cout << "tsd.num_core_microslices: " << tsd.num_core_microslices << std::endl;
         // tsd.ts_pos = ts_pos_++;
 
-        ts_buffer_->send_work_item({tsd, ts_buffer_->get_data_size_exp(), ts_buffer_->get_desc_size_exp()});
+        // ts_buffer_->send_work_item({tsd, ts_buffer_->get_data_size_exp(), ts_buffer_->get_desc_size_exp()});
+        ts_buffer_->send_work_item(ts);
         while (!handle_timeslice_completions()) {}
+        // std::cout << "sleeping..." << std::endl;
+        // sleep(4);
+        // std::cout << "sleeping done" << std::endl;
+
         // sleep(3);
         // managed_timeslice_buffer->put(ts);
         // buffer_map_->remove_elements(elements);
@@ -162,14 +167,12 @@ bool handle_timeslice_completions() {
 
     }
 
-    void set_buffer(std::shared_ptr<char> buffer) {
+    void set_buffer(std::shared_ptr<char> buffer) override {
         buffer_ = buffer;
     }
 
-    ~TsclientWriter() {
+    virtual ~TsclientWriter() {
         item_distributor_->stop();
       distributor_thread_.join();
     }
-
-
 };
