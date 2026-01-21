@@ -230,6 +230,9 @@ void Application::run() {
       ++index;
       continue;
     }
+    std::cout << "timeslice->timeslice_descriptor_.num_core_microslices: " << timeslice->timeslice_descriptor_.num_core_microslices << std::endl;
+    std::cout << "timeslice->num_microslices(0): " << timeslice->num_microslices(0) << std::endl;
+
     std::shared_ptr<const fles::Timeslice> ts;
     if (par_.release_mode()) {
       ts = std::make_shared<const fles::StorableTimeslice>(*timeslice);
@@ -247,6 +250,7 @@ void Application::run() {
     if (par_.rate_limit() != 0.0) {
       rate_limit_delay();
     }
+    // ts->descriptor()
     for (auto& sink : sinks_) {
       sink->put(ts);
     }

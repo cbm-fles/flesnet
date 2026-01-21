@@ -14,6 +14,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid.hpp>
+#include <exception>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -118,11 +119,16 @@ public:
   }
 private:
   TimesliceView* do_get() override {
+    std::cout << "do get" << std::endl;
     if (eos_) {
       return nullptr;
     }
 
+          std::cout << "do get 1" << std::endl;
+
     while (auto item = worker_.get()) {
+      std::cout << "do get 2" << std::endl;
+
       fles::TimesliceShmWorkItem timeslice_item;
       std::istringstream istream(item->payload());
       try {
@@ -134,6 +140,18 @@ private:
                         "uses an incompatible format: ") +
             e.what());
       }
+      // std::cout << "timeslice_item.data.size(): " << timeslice_item.data.size() << std::endl;
+      // std::cout << "timeslice_item.desc.size(): " << timeslice_item.desc.size() << std::endl;
+      // // std::cout << "timeslice_item.desc.size(): " << timeslice_item. << std::endl;
+      // for (auto const& d : timeslice_item.desc) {
+      //   std::cout << "desc_ptr: " << d << std::endl;
+      // }
+      // for (auto const& d : timeslice_item.data) {
+      //   std::cout << "data_ptr: " << d << std::endl;
+      // }
+      // std::cout << "timeslice_item.desc.size(): " << timeslice_item.desc.size() << std::endl;
+      // timeslice_item.desc.size();
+      std::cout << "do get 4" << std::endl;
 
       // connect to matching shared memory if not already connected
       if (managed_shm_uuid() != timeslice_item.shm_uuid) {
@@ -152,11 +170,15 @@ private:
                   << timeslice_item.shm_identifier << " {" << managed_shm_uuid()
                   << "}" << std::endl;
         if (managed_shm_uuid() != timeslice_item.shm_uuid) {
+    std::cout << "do get 4.2" << std::endl;
+
           std::cerr << "TimesliceReceiver: discarding item due to shm uuid "
                        "mismatch (shm: "
                     << managed_shm_uuid()
                     << ", ts_item: " << timeslice_item.shm_uuid << ")"
                     << std::endl;
+    std::cout << "do get 4.3" << std::endl;
+
           continue;
         }
       }
