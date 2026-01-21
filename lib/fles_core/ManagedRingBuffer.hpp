@@ -4,7 +4,7 @@
 #include "RingBufferView.hpp"
 #include <algorithm>
 #include <cassert>
-
+#include <iostream>
 /// Simple generic managed ring buffer class.
 template <typename T> class ManagedRingBuffer : public RingBufferView<T> {
 public:

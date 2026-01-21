@@ -101,7 +101,6 @@ void ManagedTimesliceBuffer::put(
     // Copy the data into the shared memory.
     data_.at(i).append(timeslice->data_ptr_[i], timeslice->size_component(i));
     desc_.at(i).append(tscd, 1);
-
   }
 
   // Rewrite the timeslice index in the descriptor
@@ -111,4 +110,12 @@ void ManagedTimesliceBuffer::put(
   // Send the work item.
   timeslice_buffer_.send_work_item({tsd, timeslice_buffer_.get_data_size_exp(),
                                     timeslice_buffer_.get_desc_size_exp()});
+}
+
+void* ManagedTimesliceBuffer::get_managed_shm_ptr() {
+  return timeslice_buffer_.get_shm_ptr();
+}
+
+uint64_t ManagedTimesliceBuffer::get_managed_shm_size() {
+  return timeslice_buffer_.get_shm_size();
 }
