@@ -115,6 +115,8 @@ Application::Application(Parameters const& par,
         }
       }
       const auto shm_identifier = split(uri.path, "/").at(0);
+      std::cout << "shm_identifier: " << shm_identifier << std::endl;
+      std::cout << "num_components: " << num_components << std::endl;
       sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
           new ManagedTimesliceBuffer(zmq_context_, shm_identifier, datasize,
                                      descsize, num_components)));
@@ -191,6 +193,9 @@ void Application::run() {
       ++index;
       continue;
     }
+    std::cout << "timeslice->timeslice_descriptor_.num_core_microslices: " << timeslice->timeslice_descriptor_.num_core_microslices << std::endl;
+    std::cout << "timeslice->num_microslices(0): " << timeslice->num_microslices(0) << std::endl;
+
     std::shared_ptr<const fles::Timeslice> ts;
     if (par_.release_mode()) {
       ts = std::make_shared<const fles::StorableTimeslice>(*timeslice);
@@ -198,12 +203,16 @@ void Application::run() {
     } else {
       ts = std::shared_ptr<const fles::Timeslice>(std::move(timeslice));
     }
+    std::cout << "ts->timeslice_descriptor_.num_core_microslices: " << ts->timeslice_descriptor_.num_core_microslices << std::endl;
+    std::cout << "ts->num_microslices(0): " << ts->num_microslices(0) << std::endl;
+
     if (par_.native_speed() != 0.0) {
       native_speed_delay(ts->start_time());
     }
     if (par_.rate_limit() != 0.0) {
       rate_limit_delay();
     }
+    // ts->descriptor()
     for (auto& sink : sinks_) {
       sink->put(ts);
     }

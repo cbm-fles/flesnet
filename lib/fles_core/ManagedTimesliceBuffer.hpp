@@ -38,6 +38,8 @@ public:
 
   /// Handle pending timeslice completions and advance read indexes.
   void handle_timeslice_completions();
+  void* get_managed_shm_ptr();
+  uint64_t get_managed_shm_size();
 
 private:
   /// Address that is used for communication between the TimesliceBuffer and the

@@ -107,8 +107,12 @@ public:
   [[nodiscard]] std::size_t get_num_completions() const { return 0; }
 
   [[nodiscard]] std::string description() const;
-  std::unique_ptr<boost::interprocess::managed_shared_memory>
-      managed_shm_;   ///< shared memory object
+  std::unique_ptr<boost::interprocess::managed_shared_memory> managed_shm_;   ///< shared memory object
+  // std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
+  void* get_shm_ptr();
+  uint64_t get_shm_size();
+
+  // std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;   ///< shared memory object
 
 private:
   std::string shm_identifier_;    ///< shared memory identifier

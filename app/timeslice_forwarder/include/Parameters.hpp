@@ -16,7 +16,13 @@ public:
     bool is_node = false;
     std::string shm_name;
     std::string ib_address;
-
+    bool is_sender = false;
+    bool is_receiver = false;
+    bool is_central_manager = false;
+    std::string listen_addr;
+    std::string central_manager_listen_addr;
+    std::string input_listen_addr;
+    std::string output_listen_addr;
     Parameters(int argc, char** argv);
     Parameters() = default;
     void parse_options(int argc, char** argv);
