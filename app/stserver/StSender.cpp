@@ -351,26 +351,31 @@ void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
 void StSender::do_retract_subtimeslice(TsId id) {
   auto it = m_announced.find(id);
   if (it != m_announced.end()) {
-    DEBUG("{}| Retracting subtimeslice", id);
-
-    // Send retraction to scheduler
-    std::array<uint64_t, 1> hdr{id};
-    auto header = std::as_bytes(std::span(hdr));
-    ucx::util::send_active_message(
-        m_scheduler_ep, AM_SENDER_RETRACT_ST, header, {},
-        ucx::util::on_generic_send_complete, this,
-        UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
-
     auto& ah = *it->second;
-    if (ah.active_send_requests > 0) {
-      DEBUG("{}| Marking for release (currently sending)", id);
-      ah.pending_release = true;
-    } else {
-      {
-        std::lock_guard<std::mutex> lock(m_completions_mutex);
-        m_completed.push(id);
+    if (!ah.pending_release) {
+      DEBUG("{}| Retracting subtimeslice", id);
+
+      // Send retraction to scheduler
+      std::array<uint64_t, 1> hdr{id};
+      auto header = std::as_bytes(std::span(hdr));
+      ucx::util::send_active_message(
+          m_scheduler_ep, AM_SENDER_RETRACT_ST, header, {},
+          ucx::util::on_generic_send_complete, this,
+          UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
+
+      if (ah.active_send_requests > 0) {
+        DEBUG("{}| Marking for release (currently sending)", id);
+        ah.pending_release = true;
+      } else {
+        {
+          std::lock_guard<std::mutex> lock(m_completions_mutex);
+          m_completed.push(id);
+        }
+        m_announced.erase(it);
       }
-      m_announced.erase(it);
+    } else {
+      WARN("{}| Attempted to retract subtimeslice already marked for release",
+           id);
     }
   } else {
     WARN("{}| Attempted to retract unknown subtimeslice", id);

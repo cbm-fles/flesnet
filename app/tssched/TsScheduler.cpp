@@ -296,10 +296,11 @@ TsScheduler::handle_sender_retract(const void* header,
   auto st_it = std::find_if(conn.announced_st.begin(), conn.announced_st.end(),
                             [id](const auto& st) { return st.id == id; });
   if (st_it == conn.announced_st.end()) {
-    DEBUG("{}| Retraction for unannounced subtimeslice from sender '{}'", id,
-          conn.info.id());
+    WARN("{}| Retraction for unannounced subtimeslice from sender '{}'", id,
+         conn.info.id());
     return UCS_OK;
   }
+  DEBUG("{}| Retraction for subtimeslice from sender '{}'", id, conn.info.id());
   conn.announced_st.erase(st_it);
 
   return UCS_OK;

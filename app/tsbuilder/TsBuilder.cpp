@@ -235,6 +235,8 @@ void TsBuilder::check_for_timeout(TsId id) {
         update_st_state(tsh, i, StState::Failed);
       }
     }
+    // Bug: Memory might be released while transmission is still
+    //      in progress (only marked as "failed")
   }
 }
 
