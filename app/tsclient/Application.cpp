@@ -1,7 +1,12 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
+#include "ArchiveDescriptor.hpp"
+#include "Benchmark.hpp"
 #include "ManagedTimesliceBuffer.hpp"
+#include "Monitor.hpp"
+#include "Parameters.hpp"
+#include "Sink.hpp"                     // TimesliceSink
 #include "StorableTimeslice.hpp"
 #include "Timeslice.hpp"
 #include "TimesliceAnalyzer.hpp"
@@ -10,6 +15,15 @@
 #include "TimesliceOutputArchive.hpp"
 #include "TimeslicePublisher.hpp"
 #include "Utility.hpp"
+#include "log.hpp"
+#include <chrono>
+#include <csignal>
+#include <cstdint>
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
 #include <thread>
 #include <utility>
 

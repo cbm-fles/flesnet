@@ -26,7 +26,9 @@ enum class Subsystem : uint8_t {
   TRD = 0x40,   ///< Transition Radiation Detector (TRD)
   TRD2D = 0x48, ///< 2-D Transition Radiation Detector (TRD2D)
   MUCH = 0x50,  ///< Muon Chamber system (MuCh)
+  MUST = 0x58,  ///< Muon Straws (MUST)
   TOF = 0x60,   ///< Time-Of-Flight detector (TOF, was: RPC)
+  FSD = 0x81,   ///< Forward Spectator Detector (FSD)
   BMON = 0x90,  ///< Beam MONitor (BMON, was: T0)
 
   // Other detectors (historical/experimental)
@@ -52,7 +54,9 @@ inline const std::string& to_string(Subsystem sys_id) {
       {Subsystem::TRD, "TRD"},
       {Subsystem::TRD2D, "TRD2D"},
       {Subsystem::MUCH, "MUCH"},
+      {Subsystem::MUST, "MUST"},
       {Subsystem::TOF, "TOF"},
+      {Subsystem::FSD, "FSD"},
       {Subsystem::BMON, "BMON"},
 
       // Other detectors (historical/experimental)
@@ -72,9 +76,12 @@ inline const std::string& to_string(Subsystem sys_id) {
 
 enum class SubsystemFormatFLES : uint8_t {
   // FLIB hardware pattern generators
-  CbmNetPattern = 0x10,           ///< FLIB hardware pattern generator ("pgen")
-  CbmNetFrontendEmulation = 0x11, ///< FLIB front-end emulation ("emu")
-  FlibPattern = 0x20,
+  CbmNetPattern =
+      0x10, ///< !deprecated! FLIB hardware pattern generator ("pgen")
+  CbmNetFrontendEmulation =
+      0x11,           ///< !deprecated! FLIB front-end emulation ("emu")
+  FlibPattern = 0x20, ///< FLIB and FLIM 1.0 hardware pattern generator ("pgen")
+  FlimPattern = 0x21, ///< FLIM 2.0 hardware pattern generator ("pgen")
 
   // Flesnet software pattern generators
   Uninitialized = 0x80,   ///< Uninitialized data content (without crc)

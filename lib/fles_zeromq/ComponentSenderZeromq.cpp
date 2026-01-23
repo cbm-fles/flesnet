@@ -2,14 +2,26 @@
 // Copyright 2024 Florian Schintke <schintke@zib.de>
 
 #include "ComponentSenderZeromq.hpp"
+#include "DualRingBuffer.hpp"        // InputBufferReadInterface
 #include "MicrosliceDescriptor.hpp"
+#include "Monitor.hpp"
 #include "RingBufferView.hpp"
 #include "System.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include <algorithm>
+#include <cassert>
+#include <cerrno>
+#include <csignal>
+#include <cstdint>
+#include <cstdlib>
+#include <chrono>
 #include <iomanip>
+#include <iostream>
+#include <mutex>
 #include <sstream>
+#include <string>
+#include <zmq.h>
 
 ComponentSenderZeromq::ComponentSenderZeromq(
     uint64_t input_index,

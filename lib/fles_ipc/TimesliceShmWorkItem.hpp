@@ -24,7 +24,7 @@ namespace fles {
  */
 struct TimesliceShmWorkItem {
   /// The UUID of the containing managed shared memory
-  boost::uuids::uuid shm_uuid{};
+  boost::uuids::uuid shm_uuid;
   /// The identifier string of the containing managed shared memory
   std::string shm_identifier;
   /// The timeslice descriptor

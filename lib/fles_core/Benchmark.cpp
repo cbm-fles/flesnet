@@ -4,9 +4,11 @@
 #include "interface.h" // crcutil_interface
 #include <algorithm>   // std::generate_n
 #include <boost/crc.hpp>
+#include <cstdint>
+#include <cstdlib>
 #include <chrono>
-#include <functional> // std::bind
 #include <iostream>
+#include <iterator>
 #include <random>
 
 #if defined(__x86_64)

@@ -1,4 +1,4 @@
-# Minimal Example Illustrating the Use of FLESnet
+# Minimal Example Illustrating the Use of Flesnet
 ## Prerequisites
 For these examples, you will need the `mstool`, `flesnet` and `tsclient` binaries.
 
@@ -34,16 +34,16 @@ First, we will use the `mstool` again to provide microslices using a named share
 ```
 Keep this terminal open.
 
-With our shared memory microslice input source ready, we can start FLESnet. In this most simple example, we will start FLESnet so that one entry node and one build node is represented using one FLESnet process.
+With our shared memory microslice input source ready, we can start Flesnet. In this most simple example, we will start Flesnet so that one entry node and one build node is represented using one Flesnet process.
 
 ```
 ./flesnet -t zeromq -i 0 -I shm:/fles_in_shared_memory/0 -o 0 -O shm:fles_out_shared_memory/0 --timeslice-size 20 --processor-instances 1 -e "./tsclient -i shm:%s -o file:timeslice_archive.tsa -n 15"
 ```
 
-- `-t`: We are using the ZeroMQ transport layer to exchange information between entry and build nodes. This makes more sense when we use seperate FLESnet instances for entry and build nodes. Here, this singke process will do the work of both.
-- `-i`: The input index of this `flesnet` instance. Example: When `-i` is set to 2, this entry node will read from the 3rd (indexing starts at 0) input source, defined with the `-I` flag. Again, this makes more sense when having seperate entry and build nodes.
+- `-t`: We are using the ZeroMQ transport layer to exchange information between entry and build nodes. This makes more sense when we use separate Flesnet instances for entry and build nodes. Here, this single process will do the work of both.
+- `-i`: The input index of this `flesnet` instance. Example: When `-i` is set to 2, this entry node will read from the 3rd (indexing starts at 0) input source, defined with the `-I` flag. Again, this makes more sense when having separate entry and build nodes.
 - `I`: List of input sources. See use of `-i` flag.
-- `-o`: Output index. Simililar to the `-i` flag, but refers to the output sink of this FLESnet instance. Example: When `-o` is set to 1, this build node will write the built timeslices into the 2nd (indexing starts at 0) output sink, defined with the `-O` flag. Again, this makes more sense, when having seperate entry and build nodes. 
+- `-o`: Output index. Similar to the `-i` flag, but refers to the output sink of this Flesnet instance. Example: When `-o` is set to 1, this build node will write the built timeslices into the 2nd (indexing starts at 0) output sink, defined with the `-O` flag. Again, this makes more sense, when having separate entry and build nodes. 
 - `-O`: List of output sinks. See use of `-o` flag.
 - `--timeslice-size`: Defines how many microslices will make up one timeslice (This does not include overlap. The overlap concept will be explained within a dedicated section).
 - `--processor-instances`: The amount of `-e` executions.

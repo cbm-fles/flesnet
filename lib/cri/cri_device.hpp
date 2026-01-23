@@ -21,8 +21,8 @@ namespace cri {
 class cri_channel;
 class register_file_bar;
 
-using hw_ver_table_t = std::array<uint16_t, 2>;
-constexpr hw_ver_table_t hw_ver_table = {{2, 3}};
+using hw_ver_table_t = std::array<uint16_t, 3>;
+constexpr hw_ver_table_t hw_ver_table = {{2, 3, 4}};
 constexpr uint32_t pci_clk = 250E6;
 
 constexpr size_t pgen_base_size_ns = 1000;
@@ -46,6 +46,8 @@ public:
 
   void enable_mc_cnt(bool enable);
   void set_pgen_mc_size(uint32_t mc_size);
+  void set_pgen_start_time(uint64_t start_time);
+  uint32_t get_pgen_mc_size_ns();
   size_t get_pgen_base_size_ns() { return pgen_base_size_ns; }
   uint8_t number_of_hw_channels();
 

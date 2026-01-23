@@ -1,16 +1,20 @@
 // Copyright 2013, 2020 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2025 Florian Schintke <schintke@zib.de>
 /// \file
 /// \brief Defines the fles::InputArchiveSequence template class.
 #pragma once
 
 #include "ArchiveDescriptor.hpp"
+#include "BoostHelper.hpp"
 #include "Source.hpp"
+#include "log.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #ifdef BOOST_IOS_HAS_ZSTD
 #include <boost/iostreams/filter/zstd.hpp>
 #endif
 #include <boost/iostreams/filtering_stream.hpp>
+#include <boost/version.hpp>
 #include <fstream>
 #include <iomanip>
 #include <memory>
@@ -121,13 +125,36 @@ private:
       return;
     }
 
-    iarchive_ = std::make_unique<boost::archive::binary_iarchive>(*ifstream_);
+    try {
+      iarchive_ = std::make_unique<boost::archive::binary_iarchive>(*ifstream_);
+    } catch (boost::archive::archive_exception const &e) {
+      switch (e.code) {
+      case boost::archive::archive_exception::unsupported_version: {
+        L_(warning) << "This executable has support up to archive version "
+                    << boost::archive::BOOST_ARCHIVE_VERSION() << "." << std::endl;
+        // try to figure out the archive's version
+        auto vers = boost_peek_for_archive_version(*ifstream_);
+        L_(warning) << "Found archive version " << vers
+                    << " in file \"" << filename << "\"." << std::endl;
+        L_(warning) << "Consider recompiling with BOOST library >="
+                    << boostlib_for_archive_version(vers)
+                    << " (this uses boost " << BOOST_LIB_VERSION << ")." << std::endl;
+        throw e;
+        break; }
+      default:
+        throw e;
+      }
+    }
 
     *iarchive_ >> descriptor_;
 
     if (descriptor_.archive_type() != archive_type) {
       throw std::runtime_error("File \"" + filename +
-                               "\" is not of correct archive type");
+                               "\" is not of correct archive type. InputArchiveSequence \"" +
+                               ArchiveTypeToString(archive_type) +
+                               "\" found \"" +
+                               ArchiveTypeToString(descriptor_.archive_type()) + "\"."
+        );
     }
 
     if (descriptor_.archive_compression() != ArchiveCompression::None) {
@@ -138,7 +165,7 @@ private:
       } else {
         throw std::runtime_error(
             "Unsupported compression type for input archive file \"" +
-            filename + "\"");
+            filename + "\". Expected " + ArchiveCompressionToString(ArchiveCompression::Zstd) + ".");
       }
       in_->push(*ifstream_);
       iarchive_ = std::make_unique<boost::archive::binary_iarchive>(
@@ -146,7 +173,8 @@ private:
 #else
       throw std::runtime_error(
           "Unsupported compression type for input archive file \"" + filename +
-          "\"");
+          "\". Your boost library does not support \"" +
+          ArchiveCompressionToString(descriptor_.archive_compression()) + "\".");
 #endif
     }
 

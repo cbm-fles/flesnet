@@ -133,7 +133,7 @@ Repeat for Databases `cri_status` and `tsclient_status`
 
 ![Grafana-influxqlanguage.png](./img/Grafana-influxqlanguage.png)
 
-## Connecting FLESnet and other to InfluxDB
+## Connecting Flesnet and other to InfluxDB
 
 Processes can be connected to the InfluxDB using the `-m` flag:
 
