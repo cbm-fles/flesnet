@@ -224,34 +224,25 @@ private:
         sources.emplace_back(std::move(source));
 
       } else if (uri.scheme == "shm") {
-        std::cout << "AutoSource: scheme shm" << std::endl;
         WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll, 0,
                                "AutoSource at PID " +
                                    std::to_string(system::current_pid())};
         for (auto& [key, value] : uri.query_components) {
           if (key == "stride") {
-            std::cout << "AutoSource: set stride" << std::endl;
-
             param.stride = std::stoull(value);
             if (param.stride == 0) {
               throw std::runtime_error(
                   "invalid value for query parameter stride: " + value);
             }
           } else if (key == "offset") {
-            std::cout << "AutoSource: set offset" << std::endl;
-
             param.offset = std::stoull(value);
           } else if (key == "queue") {
-            std::cout << "AutoSource: set queue" << std::endl;
-
             static const std::map<std::string, WorkerQueuePolicy> queue_map = {
                 {"all", WorkerQueuePolicy::QueueAll},
                 {"one", WorkerQueuePolicy::PrebufferOne},
                 {"skip", WorkerQueuePolicy::Skip}};
             param.queue_policy = queue_map.at(value);
           } else if (key == "group") {
-            std::cout << "AutoSource: set group" << std::endl;
-
             param.group_id = std::stoull(value);
           } else if (key == "window") {
             param.window = std::stoull(value);
@@ -271,7 +262,6 @@ private:
         item_receivers_.push_back(receiver.get());
         std::unique_ptr<Source<Base>> source = std::move(receiver);
         sources.emplace_back(std::move(source));
-
       } else {
         throw std::runtime_error("scheme not implemented: " + uri.scheme);
       }

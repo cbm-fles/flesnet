@@ -230,8 +230,8 @@ void Application::run() {
       ++index;
       continue;
     }
-    std::cout << "timeslice->timeslice_descriptor_.num_core_microslices: " << timeslice->timeslice_descriptor_.num_core_microslices << std::endl;
-    std::cout << "timeslice->num_microslices(0): " << timeslice->num_microslices(0) << std::endl;
+    // std::cout << "timeslice->timeslice_descriptor_.num_core_microslices: " << timeslice->timeslice_descriptor_.num_core_microslices << std::endl;
+    // std::cout << "timeslice->num_microslices(0): " << timeslice->num_microslices(0) << std::endl;
 
     std::shared_ptr<const fles::Timeslice> ts;
     if (par_.release_mode()) {
