@@ -75,85 +75,42 @@ public:
     assert(shm_uuid != nullptr);
     return *shm_uuid;
   }
+
 private:
   TimesliceView* do_get() override {
-    std::cout << "do get" << std::endl;
     if (eos_) {
       return nullptr;
     }
 
-          std::cout << "do get 1" << std::endl;
-
     while (auto item = worker_.get()) {
-      std::cout << "do get 2" << std::endl;
-
       fles::TimesliceShmWorkItem timeslice_item;
       std::istringstream istream(item->payload());
-      std::cout << "do get 3" << std::endl;
-
       {
         boost::archive::binary_iarchive iarchive(istream);
         iarchive >> timeslice_item;
       }
-      // std::cout << "timeslice_item.data.size(): " << timeslice_item.data.size() << std::endl;
-      // std::cout << "timeslice_item.desc.size(): " << timeslice_item.desc.size() << std::endl;
-      // // std::cout << "timeslice_item.desc.size(): " << timeslice_item. << std::endl;
-      for (auto const& d : timeslice_item.desc) {
-        std::cout << "desc_ptr: " << d << std::endl;
-      }
-      for (auto const& d : timeslice_item.data) {
-        std::cout << "data_ptr: " << d << std::endl;
-      }
-      // std::cout << "timeslice_item.desc.size(): " << timeslice_item.desc.size() << std::endl;
-      // timeslice_item.desc.size();
-      std::cout << "do get 4" << std::endl;
 
       // connect to matching shared memory if not already connected
       if (managed_shm_uuid() != timeslice_item.shm_uuid) {
-        // managed_shm_ =
-        //     std::make_unique<boost::interprocess::managed_shared_memory>(
-        //         boost::interprocess::open_read_only,
-        //         timeslice_item.shm_identifier.c_str());
-      std::cout << "do get 4.1: timeslice_item.shm_identifier: " << timeslice_item.shm_identifier << " (" << timeslice_item.shm_identifier.size() << ")" << std::endl;
-      std::cout << ".1: timeslice_item.shm_uuid: " << timeslice_item.shm_uuid << std::endl;
-        // sleep(2);
-        // std::cout << "after sleep" << std::endl;
-        // this memory will be used for RDMA transmissions. Therefore it needs to handle read and write calls
-        try {
         managed_shm_ =
             std::make_unique<boost::interprocess::managed_shared_memory>(
                 boost::interprocess::open_only,
                 timeslice_item.shm_identifier.c_str());
-          std::cout << "do get 4.11" << std::endl;
-      } catch (boost::interprocess::interprocess_exception const& ex) {
-            std::cerr << "exception caught" << std::endl;
 
-        std::cerr << ex.what() << std::endl;
-        exit(-1);
-      }
         std::cout << "TimesliceReceiver: opened shared memory "
                   << timeslice_item.shm_identifier << " {" << managed_shm_uuid()
                   << "}" << std::endl;
         if (managed_shm_uuid() != timeslice_item.shm_uuid) {
-    std::cout << "do get 4.2" << std::endl;
-
           std::cerr << "TimesliceReceiver: discarding item due to shm uuid "
                        "mismatch (shm: "
                     << managed_shm_uuid()
                     << ", ts_item: " << timeslice_item.shm_uuid << ")"
                     << std::endl;
-    std::cout << "do get 4.3" << std::endl;
-
           continue;
         }
       }
-    std::cout << "do get 5" << std::endl;
 
-      auto *ts_view = new TimesliceView(managed_shm_, item, timeslice_item);
-      std::cout << "ts_index in TimesliceBufferMap: " << ts_view->timeslice_descriptor_.index << std::endl;
-      std::cout << "num_core_microslices in TimesliceBufferMap: " << ts_view->timeslice_descriptor_.num_core_microslices << std::endl;
-      std::cout << "ts_view->num_microslices(0) in TimesliceBufferMap: " << ts_view->num_microslices(0) << std::endl;
-      return ts_view; // NOLINT
+      return new TimesliceView(managed_shm_, item, timeslice_item); // NOLINT
     }
 
     eos_ = true;

@@ -75,13 +75,13 @@ bool ManagedTimesliceBuffer::timeslice_fits_in_buffer(
 }
 
 void ManagedTimesliceBuffer::put(
-    std::shared_ptr<const fles::Timeslice> timeslice) {
+  std::shared_ptr<const fles::Timeslice> timeslice) {
   // The existing shared memory TimesliceBuffer has to support the correct
   // number of input nodes.
   if (timeslice->num_components() != timeslice_buffer_.get_num_input_nodes()) {
-    std::cout << "timeslice->num_components(): " << timeslice->num_components() << std::endl;
-    std::cout << "timeslice_buffer_.get_num_input_nodes(): " << timeslice_buffer_.get_num_input_nodes() << std::endl;
-    throw std::runtime_error("Timeslice has wrong number of components");
+    throw std::runtime_error("Timeslice has wrong number of components (" \
+      "Got: " + std::to_string(timeslice->num_components()) + " - " \
+      "Expected: " + std::to_string(timeslice_buffer_.get_num_input_nodes()) + ")");
   }
   // Poll for timeslice completions until enough space is available.
   handle_timeslice_completions();
@@ -112,12 +112,4 @@ void ManagedTimesliceBuffer::put(
   // Send the work item.
   timeslice_buffer_.send_work_item({tsd, timeslice_buffer_.get_data_size_exp(),
                                     timeslice_buffer_.get_desc_size_exp()});
-}
-
-void* ManagedTimesliceBuffer::get_managed_shm_ptr() {
-  return timeslice_buffer_.get_shm_ptr();
-}
-
-uint64_t ManagedTimesliceBuffer::get_managed_shm_size() {
-  return timeslice_buffer_.get_shm_size();
 }

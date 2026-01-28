@@ -1,14 +1,16 @@
 #include "OutputArchive.hpp"
 #include "StorableTimeslice.hpp"
 #include "Timeslice.hpp"
+#include "MyTimeslice.hpp"
+#include "Tssink.hpp"
+
 #include <cstdint>
+#include <memory>
+
 #include <df/BufferMap/BufferMap.hpp>
 #include <df/WorkerThread.hpp>
 #include <df/Connectors/ConnectorInterface.hpp>
-#include <memory>
-#include "TimesliceShmWorkItem.hpp"
-#include "MyTimeslice.hpp"
-#include "Tssink.hpp"
+
 
 #pragma once
 
@@ -30,10 +32,6 @@ public:
         return 0;
     }
 
-    // void clear_last_timeslice() override {
-    //     return;
-    // }
-
     void write_timeslice(std::vector<BufferMap::ListElement*>& elements) override {
         std::vector<fles::TimesliceComponentDescriptor*> desc_ptr;
         std::vector<uint8_t*> data_ptr;
@@ -51,35 +49,16 @@ public:
                 }
             } // else referencing data
         }
-        // fles::TimesliceShmWorkItem shm_wi;
-
-        std::cout << "create timeslice 6" << std::endl;
-        std::cout << "desc_ptr.size(): " << desc_ptr.size() << std::endl;
-        std::cout << "data_ptr.size(): " << data_ptr.size() << std::endl;
-        std::cout << "desc_ptr[0]->ts_num: " << desc_ptr[0]->ts_num << std::endl;
         auto ts = std::make_shared<MyTimeslice>();
-        std::cout << "create timeslice 7" << std::endl;
-
         ts->set_timeslice_descriptor({
             desc_ptr[0]->ts_num,
             0, 100,
             static_cast<uint32_t>(desc_ptr.size())
         });
-        std::cout << "create timeslice 8" << std::endl;
-
         ts->set_desc(desc_ptr);
         ts->set_data(data_ptr);
 
         ts_sink_->put(std::reinterpret_pointer_cast<fles::StorableTimeslice>(ts));
-
-        std::cout << "ts_index: " << ts->index() << std::endl;
-        std::cout << "before remove elements" << std::endl;
-
-        // buffer_map_->remove_elements(elements);
-        // buffer_map_->unlock();
-        std::cout << "create timeslice done" << std::endl;
-        // ts_sink_ = nullptr;
-
     }
 
     void set_buffer(std::shared_ptr<char> buffer) override {

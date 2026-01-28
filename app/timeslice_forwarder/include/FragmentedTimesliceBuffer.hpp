@@ -3,12 +3,13 @@
 #include "StorableTimeslice.hpp"
 #include "Timeslice.hpp"
 #include "TimesliceBuffer.hpp"
+#include "TimesliceShmWorkItem.hpp"
+
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include "TimesliceShmWorkItem.hpp"
-#include "TimesliceWorkItem.hpp"
+
 #pragma once
 
 class FragmentedTimesliceBuffer : public TimesliceBuffer {
@@ -19,12 +20,9 @@ private:
     uint32_t desc_buffer_size_exp_; ///< 2's exponent of descriptor buffer size
                                     ///< in units of TimesliceComponentDescriptors
     uint32_t num_input_nodes_;      // number of input nodes
-    uint8_t *shm_ptr_ = nullptr;
-    std::set<ItemID> outstanding_;
-public:
 
+public:
     std::unique_ptr<boost::interprocess::managed_shared_memory> managed_shm_;   ///< shared memory object
-    // std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
 
     FragmentedTimesliceBuffer(zmq::context_t& context,
                                     const std::string& distributor_address,
@@ -62,7 +60,6 @@ public:
         managed_shm_->construct<boost::uuids::uuid>(
             boost::interprocess::unique_instance)(shm_uuid_);
 
-        shm_ptr_ = static_cast<uint8_t*>(managed_shm_->allocate(data_size + desc_size));
     };
 
     void send_work_item(std::shared_ptr<fles::StorableTimeslice> ts) {
@@ -85,8 +82,7 @@ public:
             boost::archive::binary_oarchive oarchive(ostream);
             oarchive << item;
         }
-        outstanding_.insert(ts_pos);
+        TimesliceBuffer::outstanding_.insert(ts_pos);
         ItemProducer::send_work_item(ts_pos, ostream.str());
     }
-
 };
