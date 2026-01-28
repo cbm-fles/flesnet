@@ -25,7 +25,7 @@ struct Parameters {
   uint64_t ms_start_idx = 0;
   bool skip_metadata = false;
 
-  
   std::vector<std::string> output_archives;
+  std::vector<std::string> tsa_archives;
   std::vector<std::string> input_archives;
 };
