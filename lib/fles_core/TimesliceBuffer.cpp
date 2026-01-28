@@ -41,7 +41,6 @@ TimesliceBuffer::TimesliceBuffer(zmq::context_t& context,
       num_input_nodes_(num_input_nodes) {
   boost::uuids::random_generator uuid_gen;
   shm_uuid_ = uuid_gen();
-        std::cout << "shm_uuid: " << shm_uuid_ << std::endl;
   boost::interprocess::shared_memory_object::remove(shm_identifier_.c_str());
 
   std::size_t data_size =
@@ -55,9 +54,6 @@ TimesliceBuffer::TimesliceBuffer(zmq::context_t& context,
 
   constexpr size_t overhead_size = 4096; // Wild guess, let's hope it's enough
   size_t managed_shm_size = data_size + desc_size + overhead_size;
-  // size_t managed_shm_size = data_size + desc_size /*+ overhead_size*/;
-  std::cout << "managed_shm_size: " << managed_shm_size << std::endl;
-  // size_t managed_shm_size = 1024 * 8;
 
   managed_shm_ = std::make_unique<boost::interprocess::managed_shared_memory>(
       boost::interprocess::create_only, shm_identifier_.c_str(),
@@ -68,11 +64,7 @@ TimesliceBuffer::TimesliceBuffer(zmq::context_t& context,
 
   data_ptr_ = static_cast<uint8_t*>(managed_shm_->allocate(data_size));
   desc_ptr_ = reinterpret_cast<fles::TimesliceComponentDescriptor*>(
-  managed_shm_->allocate(desc_size));
-  // std::cout << reinterpret_cast<uint64_t>(managed_shm_->get_address()) << std::endl;
-  // std::cout << reinterpret_cast<uint64_t>(data_ptr_) - reinterpret_cast<uint64_t>(managed_shm_->get_address())<< std::endl;
-  // std::cout << managed_shm_->get_handle_from_address(data_ptr_) << std::endl;
-  // std::cout << reinterpret_cast<uint64_t>(desc_ptr_) - reinterpret_cast<uint64_t>(managed_shm_->get_address())<< std::endl;
+    managed_shm_->allocate(desc_size));
 }
 
 TimesliceBuffer::~TimesliceBuffer() {
@@ -119,12 +111,4 @@ std::string TimesliceBuffer::description() const {
                      human_readable_count(desc_buffer_size) +
                      ") = " + human_readable_count(overall_size);
   return desc;
-}
-
-void* TimesliceBuffer::get_shm_ptr() {
-  return managed_shm_->get_address();
-}
-
-uint64_t TimesliceBuffer::get_shm_size() {
-  return managed_shm_->get_size();
 }
