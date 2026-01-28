@@ -24,7 +24,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
                   ->default_value(log_level)
                   ->value_name("<n>"),
               "set the file log level (all:0)");
-  general_add("log-file,L", po::value<string>(&log_file), 
+  general_add("log-file,L", po::value<string>(&log_file),
               "name of target log file");
   general_add("log-syslog,S",
               po::value<unsigned>(&log_syslog)
@@ -52,7 +52,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
                                                 ->multitoken()
                                                 ->value_name("<space-separated-tsa-files>"),
             "Paths to output timeslice archives (.tsa).");
-
+  archives_add("verify-tsa,t", po::value<vector<string>>(&tsa_archives)
+                                                ->multitoken()
+                                                ->value_name("<space-separated-tsa-files>"));
   po::options_description ts_parameters("Timeslice parameters");
   auto ts_parameters_add = ts_parameters.add_options();
   ts_parameters_add("timeslice-cnt", po::value<uint64_t>(&timeslice_cnt)
@@ -110,27 +112,27 @@ void Parameters::parse_options(int argc, char* argv[]) {
                         static_cast<severity_level>(log_syslog));
   }
 
-  
+
   bool analyze_parameter_set = true;
-  if (vm.count("timeslice-cnt") == 0) {
-    L_(fatal) << "'timeslice-cnt' option not set";
-    analyze_parameter_set = false;
-  }
+  // if (vm.count("timeslice-cnt") == 0) {
+  //   L_(fatal) << "'timeslice-cnt' option not set";
+  //   analyze_parameter_set = false;
+  // }
 
-  if (vm.count("timeslice-size") == 0) {
-    L_(fatal) << "'timeslice-size' option not set";
-    analyze_parameter_set = false;
-  }
+  // if (vm.count("timeslice-size") == 0) {
+  //   L_(fatal) << "'timeslice-size' option not set";
+  //   analyze_parameter_set = false;
+  // }
 
-  if (vm.count("input-archives") == 0) {
-    L_(fatal) << "'input-archives' option not set";
-    analyze_parameter_set = false;
-  }
+  // if (vm.count("input-archives") == 0) {
+  //   L_(fatal) << "'input-archives' option not set";
+  //   analyze_parameter_set = false;
+  // }
 
-  if (vm.count("output-archives") == 0) {
-    L_(fatal) << "'output-archives' option not set";
-    analyze_parameter_set = false;
-  }
+  // if (vm.count("output-archives") == 0) {
+  //   L_(fatal) << "'output-archives' option not set";
+  //   analyze_parameter_set = false;
+  // }
 
   if (!analyze_parameter_set) {
     throw ParametersException("Not all necessary parameters for archive analyzing are set.");

@@ -22,6 +22,7 @@
 #include <future>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <string>
+#include <sys/types.h>
 #include <thread>
 #include "TimesliceDebugger.hpp"
 
@@ -32,10 +33,85 @@ using namespace std;
 
 Verificator::Verificator(uint64_t max_threads) {
     if (max_threads != 0) {
-        usable_threads_ = max_threads;   
+        usable_threads_ = max_threads;
     } else {
         usable_threads_ = thread::hardware_concurrency();
     }
+}
+
+bool Verificator::find_tsa_b_in_a(const std::string& archive_a, const std::string& archive_b) {
+    cout << "Finding timeslices of archive B in A" << endl;
+    cout << "Archive A: " << archive_a << endl;
+    cout << "Archive B: " << archive_b << endl;
+
+    unique_ptr<fles::TimesliceSource> source_a = make_unique<fles::TimesliceInputArchive>(archive_a);
+    unique_ptr<fles::TimesliceSource> source_b = make_unique<fles::TimesliceInputArchive>(archive_b);
+
+    std::unique_ptr<fles::Timeslice> b_ts = nullptr;
+    std::unique_ptr<fles::Timeslice> a_ts = nullptr;
+    uint64_t count = 0;
+    while ((b_ts = source_b->get()) != nullptr) {
+        auto a_ts = source_a->get();
+        cout << "Checking TS idx: " << b_ts->index() << " ..." << endl;
+        while (a_ts != nullptr && b_ts->index() != a_ts->index()) {
+            a_ts = source_a->get();
+        }
+
+        if (a_ts == nullptr) {
+            cerr << "Failed to find TS index: " << b_ts->index() << endl;
+            return false;
+        }
+
+
+        if (b_ts->num_components() != a_ts->num_components()) {
+            cerr << "Timeslices have different number of components: " << '\n' <<
+                "A TS" << a_ts->num_components() <<
+                "B TS: " << b_ts->num_components() << endl;
+            return false;
+        }
+
+        if (b_ts->num_components() == 0) {
+            cerr << "Timeslices don't have any components" << endl;
+            return false;
+        }
+
+        for (uint64_t c = 0; c < b_ts->num_components(); c++) {
+            if (a_ts->num_microslices(c) != b_ts->num_microslices(c)) {
+                cerr << "Timeslice components " << c << " have different amount of microslices: " <<
+                    "A TS" << a_ts->num_microslices(c) <<
+                    "B TS: " << b_ts->num_microslices(c) <<
+                endl;
+                return false;
+            }
+            uint64_t n = 0;
+            for (n = 0; n < b_ts->num_microslices(c); n++) {
+                auto b_ms = b_ts->get_microslice(c, n);
+                auto b_desc = b_ts->descriptor(c, n);
+                auto a_ms = a_ts->get_microslice(c, n);
+
+                uint64_t m = 0;
+                for (m = 0; m < b_desc.size; m++) {
+                    if (b_ms.content()[m] != a_ms.content()[m]) {
+                        cout << "Microslice content different" << endl;
+                        return false;
+                    }
+                }
+                if (m == 0) {
+                    cerr << "Did not check the microslices in component " << c << endl;
+                    return false;
+                }
+            }
+            if (n == 0) {
+                cerr << "Did not check component: " << c << endl;
+                return false;
+            }
+        }
+
+        cout << "Checked TS idx: " << a_ts->index() << '\n' <<
+            "Checked timeslices: " << ++count << '\n' << endl;
+    }
+
+    return count != 0;
 }
 
 int64_t Verificator::get_component_idx_of_microslice(shared_ptr<fles::Timeslice> ts, shared_ptr<fles::StorableMicroslice> ms) {
@@ -69,7 +145,7 @@ bool Verificator::verify_ts_metadata(vector<string> output_archive_paths, uint64
                 while ((current_ts = ts_archive.get()) != nullptr) {
                     uint64_t num_core_microslice = current_ts->num_core_microslices();
                     if (num_core_microslice != timeslice_size) {
-                        err_sstr << "Difference in num of core microslices:" << endl 
+                        err_sstr << "Difference in num of core microslices:" << endl
                             << "Expected: " << timeslice_size << endl
                             << "Found: " << num_core_microslice << endl
                             << "Timeslice archive: " << output_archive_path << endl
@@ -128,7 +204,7 @@ bool Verificator::verify_ts_metadata(vector<string> output_archive_paths, uint64
         L_(fatal) << "Found: " << ts_cnt;
         return false;
     }
-    
+
     return true;
 }
 
@@ -139,13 +215,13 @@ string Verificator::format_time_seconds(uint64_t seconds) {
     const uint16_t sec = seconds  - hour * 3600 - static_cast<uint64_t>(min) * 60;
     sstream << hour << "h:"
         << setw(2) << setfill('0') << min << "m:"
-        << setw(2) << setfill('0') << sec << "s";  
+        << setw(2) << setfill('0') << sec << "s";
     return sstream.str();
 }
 
 
 bool Verificator::find_ms_build_offset(string input_archive_path, vector<string> output_archive_paths, shared_ptr<uint64_t> offset) {
-    // Use MergingSource to automatically get a sorted timeslice source 
+    // Use MergingSource to automatically get a sorted timeslice source
     vector<unique_ptr<fles::TimesliceSource>> ts_sources = {};
     for (auto p : output_archive_paths) {
         unique_ptr<fles::TimesliceSource> source =
@@ -154,7 +230,7 @@ bool Verificator::find_ms_build_offset(string input_archive_path, vector<string>
     }
     fles::MergingSource<fles::TimesliceSource> ts_source(std::move(ts_sources));
     shared_ptr<fles::Timeslice> first_timeslice = ts_source.get(); // timeslice to search in
-    
+
     vector<fles::MicrosliceView> first_microslices;
     for (uint64_t i = 0; i < first_timeslice->num_components(); i++) {
        first_microslices.push_back(first_timeslice->get_microslice(i, 0));
@@ -173,7 +249,7 @@ bool Verificator::find_ms_build_offset(string input_archive_path, vector<string>
         (*offset)++;
         ms = ms_archive.get();
     }
-    
+
     return false;
 }
 
@@ -191,12 +267,12 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
     atomic_uint64_t archive_cnt_stat = 0; // counts how many archives were validated
     const uint64_t log_interval_stat = 100; // every n microslices we print a short progress report
     const uint64_t input_archives_cnt_stat = input_archive_paths.size();
-    
+
     boost::interprocess::interprocess_semaphore sem(usable_threads_);
     vector<future<bool>> thread_handles;
 
     shared_ptr<uint64_t> offset = make_shared<uint64_t>(0);
-    
+
     if (find_ms_build_offset(input_archive_paths[0], output_archive_paths, offset)) {
         L_(info) << "MS build offset: " << *offset;
     } else {
@@ -204,12 +280,12 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
         return false;
     }
 
-    const uint64_t epoch_start_stat = chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count(); 
+    const uint64_t epoch_start_stat = chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count();
     for (string& input_archive_path : input_archive_paths) {
         sem.wait();
         future<bool> handle = async(launch::async, [this, &offset, &input_archives_cnt_stat, &epoch_start_stat, &archive_cnt_stat, &overall_ms_cnt_stat, &overall_components_cnt_stat, &overlap_cnt_stat, input_archive_path, &output_archive_paths, &overlap, &timeslice_cnt, &sem] {
             uint64_t local_ts_cnt_stat = 0; // counts how many timeslices were checked
-            uint64_t local_ms_cnt_stat = 0; // counts the validated microslices of this specific microslice archive 
+            uint64_t local_ms_cnt_stat = 0; // counts the validated microslices of this specific microslice archive
             uint64_t components_per_ts_stat = 0; // will hold the number of components per ts to calculate progress in percent
             uint64_t overall_components_to_validate_stat = 0;
             stringstream err_sstr; // for error printing
@@ -243,7 +319,7 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                                 << "Microslice archive: " << input_archive_path << " microslice #" << local_ms_cnt_stat;
                             throw runtime_error(err_sstr.str());
                         }
-                        
+
                         // Here we figure out which component is associated to this microslice archive file - we have to do this only once per archive file
                         if (compontent_idx < 0) {
                             compontent_idx = get_component_idx_of_microslice(current_ts, ms);
@@ -265,14 +341,14 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                         }
 
                         ++local_ms_cnt_stat;
-                        uint64_t last_overall_ms_cnt_stat = overall_ms_cnt_stat.fetch_add(1); 
+                        uint64_t last_overall_ms_cnt_stat = overall_ms_cnt_stat.fetch_add(1);
                         if (((last_overall_ms_cnt_stat + 1) % log_interval_stat) == 0u) {
                             uint64_t t_epoch_now = chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count();
                             uint64_t t_diff = t_epoch_now - epoch_start_stat;
                             double microslices_per_sec = double(last_overall_ms_cnt_stat) / double(t_diff);
                             double progress = (double(overall_components_cnt_stat) / double(overall_components_to_validate_stat)) * 100.0;
                             double estimted_time = (100.0 / progress) * t_diff - t_diff;
-                            L_(debug) << "--- Status (" << STREAM_FLOAT(2, progress)  << "% - " << format_time_seconds(estimted_time) << " remaining): ---" << endl 
+                            L_(debug) << "--- Status (" << STREAM_FLOAT(2, progress)  << "% - " << format_time_seconds(estimted_time) << " remaining): ---" << endl
                                 << last_overall_ms_cnt_stat + 1 << " microslices validated"  << " (" << STREAM_FLOAT(2, microslices_per_sec) << " microslices per sec)" << endl
                                 << archive_cnt_stat << "/"  << input_archives_cnt_stat << " input archives validated";
                         }
@@ -299,14 +375,14 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                             }
 
                             ++local_ms_cnt_stat;
-                            uint64_t last_overall_ms_cnt_stat = overall_ms_cnt_stat.fetch_add(1); 
+                            uint64_t last_overall_ms_cnt_stat = overall_ms_cnt_stat.fetch_add(1);
                             if (((last_overall_ms_cnt_stat + 1) % log_interval_stat) == 0u) {
                                 uint64_t t_epoch_now = chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count();
                                 uint64_t t_diff = t_epoch_now - epoch_start_stat;
                                 double microslices_per_sec = double(last_overall_ms_cnt_stat)/ double(t_diff);
                                 double progress = (double(overall_components_cnt_stat) / double(overall_components_to_validate_stat)) * 100.0;
                                 double estimted_time = (100.0 / progress) * t_diff - t_diff;
-                                L_(debug) << "--- Status (" << STREAM_FLOAT(2, progress)  << "% - " << format_time_seconds(estimted_time) << " remaining): ---" << endl 
+                                L_(debug) << "--- Status (" << STREAM_FLOAT(2, progress)  << "% - " << format_time_seconds(estimted_time) << " remaining): ---" << endl
                                     << last_overall_ms_cnt_stat + 1 << " microslices validated"  << " (" << STREAM_FLOAT(2, microslices_per_sec) << " microslices per sec)" << endl
                                     << archive_cnt_stat << "/"  << input_archives_cnt_stat << " input archives validated";
                             }
@@ -344,16 +420,16 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                                 }
                                 throw runtime_error(err_sstr.str());
                             }
-                            
+
                             ++local_ms_cnt_stat;
-                            uint64_t last_overall_ms_cnt_stat = overall_ms_cnt_stat.fetch_add(1); 
+                            uint64_t last_overall_ms_cnt_stat = overall_ms_cnt_stat.fetch_add(1);
                             if (((last_overall_ms_cnt_stat + 1) % log_interval_stat) == 0u) {
                                 uint64_t t_epoch_now = chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count();
                                 uint64_t t_diff = t_epoch_now - epoch_start_stat;
                                 double microslices_per_sec = double(last_overall_ms_cnt_stat)/ double(t_diff);
                                 double progress = (double(overall_components_cnt_stat) / double(overall_components_to_validate_stat)) * 100.0;
                                 double estimted_time = (100.0 / progress) * t_diff - t_diff;
-                                L_(debug) << "--- Status (" << STREAM_FLOAT(2, progress)  << "% - " << format_time_seconds(estimted_time) << " remaining): ---" << endl 
+                                L_(debug) << "--- Status (" << STREAM_FLOAT(2, progress)  << "% - " << format_time_seconds(estimted_time) << " remaining): ---" << endl
                                     << last_overall_ms_cnt_stat + 1 << " microslices validated"  << " (" << STREAM_FLOAT(2, microslices_per_sec) << " microslices per sec)" << endl
                                     << archive_cnt_stat << "/"  << input_archives_cnt_stat << " input archives validated";
                             }

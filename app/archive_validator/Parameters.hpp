@@ -23,7 +23,8 @@ struct Parameters {
   uint64_t overlap = 1;
   uint64_t max_threads = 1;
   bool skip_metadata = false;
-  
+
   std::vector<std::string> output_archives;
+  std::vector<std::string> tsa_archives;
   std::vector<std::string> input_archives;
 };
