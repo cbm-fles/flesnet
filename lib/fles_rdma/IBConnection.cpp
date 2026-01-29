@@ -47,7 +47,7 @@ void IBConnection::connect(const std::string& hostname,
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
   struct addrinfo* res;
-
+  std::cout << "hostname: " << hostname << std::endl;
   int err = getaddrinfo(hostname.c_str(), service.c_str(), &hints, &res);
   if (err != 0) {
     throw InfinibandException("getaddrinfo failed");

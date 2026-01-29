@@ -1,7 +1,12 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
+#include "ArchiveDescriptor.hpp"
+#include "Benchmark.hpp"
 #include "ManagedTimesliceBuffer.hpp"
+#include "Monitor.hpp"
+#include "Parameters.hpp"
+#include "Sink.hpp"                     // TimesliceSink
 #include "StorableTimeslice.hpp"
 #include "Timeslice.hpp"
 #include "TimesliceAnalyzer.hpp"
@@ -10,6 +15,15 @@
 #include "TimesliceOutputArchive.hpp"
 #include "TimeslicePublisher.hpp"
 #include "Utility.hpp"
+#include "log.hpp"
+#include <chrono>
+#include <csignal>
+#include <cstdint>
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
 #include <thread>
 #include <utility>
 
@@ -191,6 +205,9 @@ void Application::run() {
       ++index;
       continue;
     }
+    // std::cout << "timeslice->timeslice_descriptor_.num_core_microslices: " << timeslice->timeslice_descriptor_.num_core_microslices << std::endl;
+    // std::cout << "timeslice->num_microslices(0): " << timeslice->num_microslices(0) << std::endl;
+
     std::shared_ptr<const fles::Timeslice> ts;
     if (par_.release_mode()) {
       ts = std::make_shared<const fles::StorableTimeslice>(*timeslice);
@@ -198,12 +215,16 @@ void Application::run() {
     } else {
       ts = std::shared_ptr<const fles::Timeslice>(std::move(timeslice));
     }
+    // std::cout << "ts->timeslice_descriptor_.num_core_microslices: " << ts->timeslice_descriptor_.num_core_microslices << std::endl;
+    // std::cout << "ts->num_microslices(0): " << ts->num_microslices(0) << std::endl;
+
     if (par_.native_speed() != 0.0) {
       native_speed_delay(ts->start_time());
     }
     if (par_.rate_limit() != 0.0) {
       rate_limit_delay();
     }
+    // ts->descriptor()
     for (auto& sink : sinks_) {
       sink->put(ts);
     }

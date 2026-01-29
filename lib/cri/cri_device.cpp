@@ -86,9 +86,17 @@ void cri_device::enable_mc_cnt(bool enable) {
 
 void cri_device::set_pgen_mc_size(uint32_t mc_size_ticks) {
   uint32_t mc_size_ns = mc_size_ticks * pgen_base_size_ns;
-  // time resters are 31 bit wide, we don't check input here
+  // time registers are 31 bit wide, we don't check input here
   m_register_file->set_reg(CRI_REG_MC_CNT_CFG_L, mc_size_ticks, 0x7FFFFFFF);
   m_register_file->set_reg(CRI_REG_MC_CNT_CFG_H, mc_size_ns, 0x7FFFFFFF);
+}
+
+uint32_t cri_device::get_pgen_mc_size_ns() {
+  return (m_register_file->get_reg(CRI_REG_MC_CNT_CFG_H) & 0x7FFFFFFF);
+}
+
+void cri_device::set_pgen_start_time(uint64_t start_time) {
+  m_register_file->set_mem(CRI_REG_MC_CNT_TIME_L, &start_time, 2);
 }
 
 uint8_t cri_device::number_of_hw_channels() {

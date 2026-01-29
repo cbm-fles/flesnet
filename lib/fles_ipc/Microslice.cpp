@@ -3,6 +3,7 @@
 #include "Microslice.hpp"
 #include <boost/crc.hpp>
 #include <cassert>
+#include <cstdint>
 
 namespace fles {
 

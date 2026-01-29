@@ -1,16 +1,28 @@
 // Copyright 2016-2020 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceBuffer.hpp"
+#include "ItemProducer.hpp"
+#include "TimesliceComponentDescriptor.hpp"
 #include "TimesliceDescriptor.hpp"
 #include "TimesliceShmWorkItem.hpp"
 #include "TimesliceWorkItem.hpp"
 #include "Utility.hpp"
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/interprocess/creation_tags.hpp>
+#include <boost/interprocess/detail/segment_manager_helper.hpp>
+#include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/uuid/uuid_generators.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <cassert>
+#include <cstdint>
+#include <cstdlib>
 #include <memory>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <utility>
 
 namespace zmq {
 class context_t;
@@ -29,7 +41,6 @@ TimesliceBuffer::TimesliceBuffer(zmq::context_t& context,
       num_input_nodes_(num_input_nodes) {
   boost::uuids::random_generator uuid_gen;
   shm_uuid_ = uuid_gen();
-
   boost::interprocess::shared_memory_object::remove(shm_identifier_.c_str());
 
   std::size_t data_size =
@@ -53,7 +64,7 @@ TimesliceBuffer::TimesliceBuffer(zmq::context_t& context,
 
   data_ptr_ = static_cast<uint8_t*>(managed_shm_->allocate(data_size));
   desc_ptr_ = reinterpret_cast<fles::TimesliceComponentDescriptor*>(
-      managed_shm_->allocate(desc_size));
+    managed_shm_->allocate(desc_size));
 }
 
 TimesliceBuffer::~TimesliceBuffer() {
@@ -82,7 +93,6 @@ void TimesliceBuffer::send_work_item(fles::TimesliceWorkItem wi) {
     boost::archive::binary_oarchive oarchive(ostream);
     oarchive << item;
   }
-
   outstanding_.insert(ts_pos);
   ItemProducer::send_work_item(ts_pos, ostream.str());
 }

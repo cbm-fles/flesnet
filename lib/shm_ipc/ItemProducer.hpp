@@ -3,7 +3,7 @@
 
 #include <cstddef>
 #include <zmq.hpp>
-
+#include <iostream>
 using ItemID = size_t;
 
 class ItemProducer {
@@ -14,6 +14,7 @@ public:
   };
 
   void send_work_item(ItemID id, const std::string& payload) {
+    // std::cout << "ItemProducer::send_work_item" << std::endl;
     if (payload.empty()) {
       distributor_socket_.send(zmq::buffer(std::to_string(id)));
     } else {
