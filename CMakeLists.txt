@@ -216,7 +216,7 @@ if(USE_CLANG_TIDY)
   endif()
 endif()
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 17)
 
 if( NOT "arm64" STREQUAL ${CMAKE_SYSTEM_PROCESSOR} )
     add_compile_options(-msse4.2)
