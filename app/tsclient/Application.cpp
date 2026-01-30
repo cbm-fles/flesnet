@@ -149,8 +149,8 @@ Application::Application(Parameters const& par,
   }
 
   if (par_.rate_limit() != 0.0) {
-    L_(info) << output_prefix_ << "rate limit active: "
-             << human_readable_count(par_.rate_limit(), true, "Hz");
+    L_(info) << output_prefix_ << "rate limit active: " << par_.rate_limit()
+             << " Hz";
   }
 }
 
@@ -163,12 +163,23 @@ Application::~Application() {
 }
 
 void Application::rate_limit_delay() const {
+  if (count_ == 0) {
+    return;
+  }
   auto delta_is = std::chrono::high_resolution_clock::now() - time_begin_;
   auto delta_want = std::chrono::microseconds(
       static_cast<uint64_t>(count_ * 1.0e6 / par_.rate_limit()));
 
   if (delta_want > delta_is) {
     std::this_thread::sleep_for(delta_want - delta_is);
+  } else {
+    L_(warning) << output_prefix_
+                << "replay rate cannot be maintained, lacking by "
+                << std::chrono::duration_cast<std::chrono::milliseconds>(
+                       delta_is - delta_want)
+                           .count() /
+                       1000.
+                << " s";
   }
 }
 
@@ -187,8 +198,6 @@ void Application::native_speed_delay(uint64_t ts_start_time) {
 }
 
 void Application::run() {
-  time_begin_ = std::chrono::high_resolution_clock::now();
-
   if (benchmark_) {
     benchmark_->run();
     return;
@@ -211,6 +220,10 @@ void Application::run() {
       timeslice.reset();
     } else {
       ts = std::shared_ptr<const fles::Timeslice>(std::move(timeslice));
+    }
+    // once we (pre-)fetched the timeslice we might delay publishing it
+    if (count_ == 0) {
+      time_begin_ = std::chrono::high_resolution_clock::now();
     }
     if (par_.native_speed() != 0.0) {
       native_speed_delay(ts->start_time());
