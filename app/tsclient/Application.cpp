@@ -169,18 +169,7 @@ void Application::rate_limit_delay() const {
   auto delta_is = std::chrono::high_resolution_clock::now() - time_begin_;
   auto delta_want = std::chrono::microseconds(
       static_cast<uint64_t>(count_ * 1.0e6 / par_.rate_limit()));
-
-  if (delta_want > delta_is) {
-    std::this_thread::sleep_for(delta_want - delta_is);
-  } else {
-    L_(warning) << output_prefix_
-                << "replay rate cannot be maintained, lacking by "
-                << std::chrono::duration_cast<std::chrono::milliseconds>(
-                       delta_is - delta_want)
-                           .count() /
-                       1000.
-                << " s";
-  }
+  try_delay(delta_want - delta_is);
 }
 
 void Application::native_speed_delay(uint64_t ts_start_time) {
@@ -188,12 +177,28 @@ void Application::native_speed_delay(uint64_t ts_start_time) {
     first_ts_start_time_ = ts_start_time;
   } else {
     auto delta_is = std::chrono::high_resolution_clock::now() - time_begin_;
-    auto delta_want =
-        std::chrono::nanoseconds(ts_start_time - first_ts_start_time_) /
-        par_.native_speed();
-    if (delta_want > delta_is) {
-      std::this_thread::sleep_for(delta_want - delta_is);
-    }
+    auto delta_want = std::chrono::nanoseconds(static_cast<uint64_t>(
+        (ts_start_time - first_ts_start_time_) / par_.native_speed()));
+    try_delay(delta_want - delta_is);
+  }
+}
+
+void Application::try_delay(std::chrono::nanoseconds sleep_duration) const {
+  if (sleep_duration.count() > 0) {
+    L_(debug) << output_prefix_ << "maintaining replay rate, sleeping for "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(
+                     sleep_duration)
+                         .count() /
+                     1000.
+              << " s";
+    std::this_thread::sleep_for(sleep_duration);
+  } else {
+    L_(warning) << output_prefix_ << "replay rate not maintained, lacking by "
+                << std::chrono::duration_cast<std::chrono::milliseconds>(
+                       sleep_duration)
+                           .count() /
+                       1000.
+                << " s";
   }
 }
 
