@@ -10,6 +10,9 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#if __cplusplus >= 202002L
+#include <stop_token>
+#endif
 
 namespace fles {
 
@@ -49,7 +52,11 @@ public:
   ~AggregatingSource() override {
     // Request all threads to stop
     for (auto& async_source : async_sources_) {
+#if __cplusplus >= 202002L
       async_source->prefetch_thread.request_stop();
+#else
+      async_source->stop_requested = true;
+#endif
     }
     // Wake up all threads so they can check the stop token
     for (auto& async_source : async_sources_) {
@@ -57,6 +64,14 @@ public:
       async_source->item_consumed = true;
       async_source->cv_consumed.notify_one();
     }
+#if __cplusplus < 202002L
+    // Join all threads
+    for (auto& async_source : async_sources_) {
+      if (async_source->prefetch_thread.joinable()) {
+        async_source->prefetch_thread.join();
+      }
+    }
+#endif
   }
 
   [[nodiscard]] bool eos() const override { return eos_; }
@@ -65,7 +80,12 @@ private:
   struct AsyncSource {
     std::unique_ptr<SourceType> source;
     std::unique_ptr<item_type> prefetched_item = nullptr;
+#if __cplusplus >= 202002L
     std::jthread prefetch_thread;
+#else
+    std::thread prefetch_thread;
+    std::atomic<bool> stop_requested{false};
+#endif
     std::size_t index;
     std::size_t items_fetched = 0;
 
@@ -81,12 +101,21 @@ private:
                 AggregatingSource& parent,
                 std::size_t index)
         : source(std::move(src)), index(index), parent(parent) {
+#if __cplusplus >= 202002L
       prefetch_thread =
           std::jthread([this](std::stop_token st) { thread_loop(st); });
+#else
+      prefetch_thread = std::thread([this]() { thread_loop(); });
+#endif
     }
 
+#if __cplusplus >= 202002L
     void thread_loop(const std::stop_token& st) {
       while (!st.stop_requested()) {
+#else
+    void thread_loop() {
+      while (!stop_requested.load()) {
+#endif
         // Fetch the next item (this may block)
         L_(debug) << "AsyncSource " << index << ": fetching item "
                   << items_fetched << " from source";
@@ -112,8 +141,13 @@ private:
         parent.cv_any_available_.notify_one();
 
         // Wait until the item has been consumed (or stop requested)
+#if __cplusplus >= 202002L
         cv_consumed.wait(
             lock, [this, &st] { return item_consumed || st.stop_requested(); });
+#else
+        cv_consumed.wait(
+            lock, [this] { return item_consumed || stop_requested.load(); });
+#endif
       }
     }
 
