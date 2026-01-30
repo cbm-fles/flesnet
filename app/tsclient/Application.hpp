@@ -50,4 +50,5 @@ private:
 
   void rate_limit_delay() const;
   void native_speed_delay(uint64_t ts_start_time);
+  void try_delay(std::chrono::nanoseconds sleep_duration) const;
 };
