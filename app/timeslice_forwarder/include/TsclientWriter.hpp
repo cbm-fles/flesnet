@@ -55,6 +55,7 @@ public:
         uint32_t descsize = 19; // 16 MiB
         uint32_t num_components = 26;
         const auto shm_identifier = uri.path;
+        std::cout << "shm_identifier: " << uri.path << std::endl;
         for (auto& [key, value] : uri.query_components) {
             if (key == "datasize") {
                 datasize = std::stoul(value);

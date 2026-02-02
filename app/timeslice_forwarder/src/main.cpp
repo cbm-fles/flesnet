@@ -2,10 +2,12 @@
 #include <boost/proto/proto_fwd.hpp>
 #include <boost/thread/pthread/thread_data.hpp>
 #include <TimesliceWriter.hpp>
+#include <condition_variable>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <future>
 #include <getopt.h>
 #include <chrono>
 #include <memory>
@@ -23,15 +25,13 @@
 #include "Tssink.hpp"
 #include <sys/stat.h>        /* For mode constants */
 #include "Parameters.hpp"
-#include <df/CentralManagers/CentralManager.hpp>
 #include <df/WorkItems/WiData.hpp>
 #include <df/WorkItems/WorkItem.hpp>
 #include <df/EvaluationLogic/EvaluationLogic.hpp>
 #include <df/WorkItems/WiConnectorConfig.hpp>
 #include <df/Node.hpp>
-#include "df/BufferMap/BufferMap.hpp"
-#include "df/WorkerThread.hpp"
-#include <df/Connectors/ConnectorFile.hpp>
+#include <df/BufferMap/BufferMap.hpp>
+#include <df/WorkerThread.hpp>
 #include <df/Connectors/ConnectorInterface.hpp>
 #include <df/InterfaceFactory.hpp>
 #include <df/Connectors/ConnectorInfiniband.hpp>
@@ -40,13 +40,11 @@
 #include <df/ConnectionManager.hpp>
 #include <df/WorkItems/WiConnection.hpp>
 #include <iostream>
-// #define DEFAULT_CONNECTOR_CLASSES ConnectorEthernetTCP, ConnectorInfinibandMsg, ConnectorFile, ConnectorInfinibandMsgRmaNew
-#define DEFAULT_CM_CLASSES CentralManager
 
 using namespace std;
 
 Parameters par;
-constexpr uint64_t BUFFER_MAP_ELEMENTS = 256;
+constexpr uint64_t BUFFER_MAP_ELEMENTS = 512;
 constexpr uint64_t DATA_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 450;
 constexpr uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
 
@@ -54,9 +52,7 @@ constexpr uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
 
 int start_cm() {
     auto node = make_shared<Node>(0, 0);
-
-    std::shared_mutex mtx;
-    std::mutex buffer_evaluation_mtx;
+    mutex mtx;
 
     // maps used to translate node UID to IP addresses
     unordered_map<uint64_t, std::string> uid_address_map;
@@ -72,7 +68,6 @@ int start_cm() {
     // const auto node_connector = connector_factory.get("");
     auto node_connector = make_shared<ConnectorInfiniband>();
     const auto node_listen_addr = par.central_manager_listen_addr;
-    const auto node_connector_uid = 0;
 
     const auto wi_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, WI_BUFFER_SIZE);
     const auto wi_buffer = std::shared_ptr<char>(new char[WI_BUFFER_SIZE], std::default_delete<char[]>());
@@ -82,16 +77,13 @@ int start_cm() {
 
     node->set_wi_buffer(wi_buffer, wi_buffer_map, WI_BUFFER_SIZE);
     node->set_data_buffer(data_buffer, data_buffer_map, DATA_BUFFER_SIZE);
-    node->add_connector(node_connector, node_connector_uid, node_listen_addr);
+    node->add_connector(node_connector, node_listen_addr);
 
     // This lambda callback will be called to evaluate data transmission based on the status update of the given node
     atomic_uint16_t target_idx = 0;
     auto eval_node_status = [&] (uint32_t group_id, uint32_t node_id) {
         const auto node_uid = MAKE_UID(group_id, node_id);
-        std::unique_lock<mutex> l1(buffer_evaluation_mtx, std::defer_lock);
-        std::shared_lock<std::shared_mutex> l2(mtx, std::defer_lock);
-        std::lock(l1,l2);
-
+        unique_lock<mutex> l1(mtx);
 
         if (group_id == 1) { // TS sender
             auto connections = connection_manager.get_connections(node_uid);
@@ -116,15 +108,61 @@ int start_cm() {
         }
     };
 
-    node->on_new_work_item([&mtx, &uid_listen_address_map, &connection_manager, node, node_connector, &uid_buffer_map_map, eval_node_status, &worker, &buffer_evaluation_mtx] (std::string address, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id) {
+    atomic_bool stop_eval_worker = false;
+    condition_variable eval_worker_cv;
+    auto nodes_with_buffer_change = make_shared<vector<uint64_t>>();
+
+    auto fetch_buffer_maps = [&] (const vector<uint64_t>& node_uids) {
+        atomic_uint64_t cnt = node_uids.size();
+        for (auto const& uid : node_uids) {
+            unique_lock<mutex> l(mtx);
+            string address = uid_address_map[uid];
+            node_connector->lock_and_get_buffer_map(
+                address,
+                Node::DATA_BUFFER_IDX,
+                [&, address] (std::shared_ptr<BufferMap> buffer_map_copy) {
+                    node_connector->unlock_remote_buffer_map(address, buffer_map_copy, Node::DATA_BUFFER_IDX);
+                    unique_lock<mutex> l(mtx);
+                    if (uid_buffer_map_map.find(uid) == uid_buffer_map_map.end()) {
+                        uid_buffer_map_map[uid] = buffer_map_copy;
+                    }
+                    cnt--;
+                },
+                [] () {
+                    return true;
+                }
+            );
+        }
+        while (cnt != 0) {};
+    };
+
+    future<void> eval_worker = async(launch::async, [&] {
+        std::vector<uint64_t> nodes_cpy;
+        while (!stop_eval_worker) {
+            {
+                unique_lock<mutex> l(mtx);
+                eval_worker_cv.wait(l, [&] () {
+                    return !nodes_with_buffer_change->empty() || stop_eval_worker;
+                });
+                nodes_cpy = *nodes_with_buffer_change;
+                nodes_with_buffer_change->clear();
+            }
+            // fetch_buffer_maps(nodes_cpy);
+            for (auto const& uid : nodes_cpy) {
+                eval_node_status(GROUP_ID(uid), NODE_ID(uid));
+            }
+        }
+    });
+
+    node->on_new_work_item([&mtx, &uid_listen_address_map, &connection_manager, node, node_connector, &nodes_with_buffer_change, &eval_worker_cv] (std::string address, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id) {
         auto node_uid = MAKE_UID(group_id, node_id);
         if (wi_type == WorkItem::connector_config) { // The given node informed us about its connection possibilities
             WiConnectorConfig conn_config;
             conn_config.deserialize(wi_ptr);
-            std::unique_lock<std::shared_mutex> l(mtx);
+            unique_lock<mutex> l(mtx);
             uid_listen_address_map[node_uid] = conn_config.listen_addr;
             auto all_possible_connections = connection_manager.get_connections(node_uid, false);
-            std::vector<uint64_t> relevant_connections;
+            vector<uint64_t> relevant_connections;
             for (auto &remote_uid : all_possible_connections) {
                 if (GROUP_ID(remote_uid) == group_id + 1 || GROUP_ID(remote_uid) == group_id - 1) {
                     auto wi_connection = make_shared<WiConnection>();
@@ -139,35 +177,20 @@ int start_cm() {
             wi_connection.deserialize(wi_ptr);
             auto from = MAKE_UID(wi_connection.from_group_id, wi_connection.from_node_id);
             auto to = MAKE_UID(wi_connection.to_group_id, wi_connection.to_node_id);
-            std::unique_lock<std::shared_mutex> l(mtx);
+            unique_lock<mutex> l(mtx);
             connection_manager.connect_unidirectional(from, to);
         } else if (wi_type == WorkItem::buffer_status) { // The told us, that its buffer map has changed
-            std::unique_lock<mutex> l(buffer_evaluation_mtx, std::defer_lock);
-            //! @todo needs refinement. currently way too naiv
-            if (l.try_lock()) { // If locked that means a buffer map eveluation is currently running.
-                node_connector->lock_and_get_buffer_map(
-                    address,
-                    Node::DATA_BUFFER_IDX,
-                    [node_connector, address, &mtx, node_uid, &uid_buffer_map_map, eval_node_status, node_id, group_id, &worker] (std::shared_ptr<BufferMap> buffer_map_copy) {
-                        {
-                            shared_lock<shared_mutex> l(mtx);
-                            uid_buffer_map_map[node_uid] = buffer_map_copy;
-                        }
-                        worker.dispatch(std::bind(eval_node_status, group_id, node_id));
-                        node_connector->unlock_remote_buffer_map(address, buffer_map_copy, Node::DATA_BUFFER_IDX);
-                    },
-                    [] () {
-                        return true;
-                    }
-                );
-            }
+            cout << "buffer status- node_id: " << node_id << " - group_id" << group_id << endl;
+            unique_lock<mutex> l(mtx);
+            nodes_with_buffer_change->push_back(node_uid);
+            eval_worker_cv.notify_all();
         } else {
             cerr << "Received unknown WorkItem type: " << wi_type << endl;
         }
     });
 
     node->on_node_disconnected([&connection_manager, &uid_address_map, &mtx] (string /*address*/, uint64_t group_id, uint64_t node_id) {
-        std::unique_lock<std::shared_mutex> l(mtx);
+        unique_lock<mutex> l(mtx);
         auto node_uid = MAKE_UID(group_id, node_id);
         auto key_pos = uid_address_map.find(node_uid);
         uid_address_map.erase(key_pos);
@@ -179,7 +202,7 @@ int start_cm() {
                 "Group ID: " << group_id << '\n' <<
                 "Node ID: " << node_id  << endl;
         auto node_uid = MAKE_UID(group_id, node_id);
-        std::unique_lock<std::shared_mutex> l(mtx);
+        unique_lock<mutex> l(mtx);
         uid_address_map[node_uid] = address;
         connection_manager.add_node(node_uid);
     });
@@ -229,7 +252,7 @@ int start_sender() {
     node->set_wi_buffer(wi_buffer, wi_buffer_map, WI_BUFFER_SIZE);
     node->set_data_buffer(data_buffer, data_buffer_map, buffer_size);
 
-    node->add_connector(node_connector, node_connector_uid, node_listen_addr);
+    node->add_connector(node_connector, node_listen_addr);
     ts_reader.set_buffer_map(data_buffer_map);
 
     node->on_new_work_item([&mtx, &uid_address_map, data_buffer_map, node, node_connector, data_buffer, &eval_logic, &ts_reader] (std::string /*address*/, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id) {
@@ -244,64 +267,93 @@ int start_sender() {
                     shared_lock<shared_mutex> l(mtx);
                     rem_address = uid_address_map[wi_transmission.node_uid];
                 }
+
                 cout << "Commanded to send data to Node ID: " << remote_node_id << " - Group ID: " << remote_group_id << " - address: " << rem_address << endl;
                 auto *el = data_buffer_map->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
                 if (el == nullptr) { // no oldest element available (should not happen in current implementation)
                     return;
                 }
+
                 uint64_t combined_size = 0;
                 auto component_elements = data_buffer_map->get_elements_of_component(el->compontent_id, combined_size);
-                node_connector->lock_and_get_buffer_map(
-                    rem_address,
-                    Node::DATA_BUFFER_IDX,
-                    [node_connector, data_buffer, component_elements, &eval_logic, rem_address, data_buffer_map, &ts_reader] (shared_ptr<BufferMap> rem_buffer_map_copy) {
-                        auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
-                        auto dest_addresses = eval_logic.evaluate(component_elements, rem_offsets_and_spaces);
-                        if (dest_addresses.empty()) { //! @todo handle properly
-                            cerr << "No space in remote buffer map available. Currently not handled - exiting..." << endl;
-                            exit(-1);
-                        }
-                        vector<uint64_t> src_mem_addresses;
-                        vector<uint64_t> sizes;
-                        src_mem_addresses.resize(component_elements.size());
-                        sizes.resize(component_elements.size());
-                        for (uint64_t i = 0; i < component_elements.size(); i++) {
-                            src_mem_addresses[i] = component_elements[i]->address;
-                            sizes[i] = component_elements[i]->len;
-                        }
+                auto *data_write_chain = new std::function<void()>;
+                (*data_write_chain) = [data_write_chain, node_connector, rem_address, data_buffer, component_elements, &eval_logic, data_buffer_map, &ts_reader] () {
+                    node_connector->lock_and_get_buffer_map(
+                        rem_address,
+                        Node::DATA_BUFFER_IDX,
+                        [node_connector, data_write_chain, data_buffer, component_elements, &eval_logic, rem_address, data_buffer_map, &ts_reader] (shared_ptr<BufferMap> rem_buffer_map_copy) {
+                            auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
+                            auto dest_addresses = eval_logic.evaluate(component_elements, rem_offsets_and_spaces);
+                            // cout << "lock_and_get_buffer_map 3" << endl;
 
-                        // update rem_buffer_map_copy with the new content
-                        rem_buffer_map_copy->insert(component_elements, dest_addresses, BufferMap::ListElement::RX);
-                        node_connector->sendv(
-                            rem_address,
-                            data_buffer,
-                            Node::DATA_BUFFER_IDX,
-                            src_mem_addresses,
-                            dest_addresses,
-                            sizes,
-                            [rem_address, node_connector, rem_buffer_map_copy, data_buffer_map, component_elements, &ts_reader] () {
-                                // send the new buffer map to remote node and unlock
-                                node_connector->write_remote_buffer_map_and_unlock(rem_address, rem_buffer_map_copy,
+                            if (dest_addresses.empty()) { //! @todo handle properly
+                                node_connector->unlock_remote_buffer_map(
+                                    rem_address,
+                                    rem_buffer_map_copy,
                                     Node::DATA_BUFFER_IDX,
-                                    [data_buffer_map, component_elements, &ts_reader] () {
-                                        // remove the sent ts from own buffermap
-                                        data_buffer_map->remove_elements(component_elements);
-                                        // call clear_timeslice on ts_reader
-                                        ts_reader.clear_last_timeslice();
+                                    [data_write_chain] () {
+                                        (*data_write_chain)();
                                     }
                                 );
                             }
-                        );
-                    },
-                    [] () {
-                        return true;
-                    }
-                );
+                            vector<uint64_t> src_mem_addresses;
+                            vector<uint64_t> sizes;
+                            src_mem_addresses.resize(component_elements.size());
+                            sizes.resize(component_elements.size());
+                            for (uint64_t i = 0; i < component_elements.size(); i++) {
+                                src_mem_addresses[i] = component_elements[i]->address;
+                                sizes[i] = component_elements[i]->len;
+                            }
+                            // cout << "lock_and_get_buffer_map 4" << endl;
+
+                            // update rem_buffer_map_copy with the new content
+                            // rem_buffer_map_copy->print_all();
+                            bool insert_successfull = rem_buffer_map_copy->insert(component_elements, dest_addresses, BufferMap::ListElement::RX);
+                            if (!insert_successfull) {
+                                node_connector->unlock_remote_buffer_map(
+                                    rem_address,
+                                    rem_buffer_map_copy,
+                                    Node::DATA_BUFFER_IDX,
+                                    [data_write_chain] () {
+                                        (*data_write_chain)();
+                                    }
+                                );
+                                return;
+                            }
+                            delete data_write_chain;
+                            node_connector->sendv(
+                                rem_address,
+                                data_buffer,
+                                Node::DATA_BUFFER_IDX,
+                                src_mem_addresses,
+                                dest_addresses,
+                                sizes,
+                                [rem_address, node_connector, rem_buffer_map_copy, data_buffer_map, component_elements, &ts_reader] () {
+                                    // send the new buffer map to remote node and unlock
+                                    node_connector->write_remote_buffer_map_and_unlock(rem_address, rem_buffer_map_copy,
+                                        Node::DATA_BUFFER_IDX,
+                                        [data_buffer_map, component_elements, &ts_reader] () {
+                                            // remove the sent ts from own buffermap
+                                            data_buffer_map->remove_elements(component_elements);
+                                            // call clear_timeslice on ts_reader
+                                            ts_reader.clear_last_timeslice();
+                                        }
+                                    );
+                                }
+                            );
+                        },
+                        [] () {
+                            // cout << "retry to get lock" << endl;
+                            return true;
+                        }
+                    );
+                };
+                (*data_write_chain)();
             }
         }
     });
-
-    node->on_node_connected([&node_listen_addr, node, node_connector, &node_id, &group_id, &cm_address, &uid_address_map, &mtx] (string address, uint64_t rem_group_id, uint64_t rem_node_id) {
+    atomic_bool is_cm_connected = false;
+    node->on_node_connected([&node_listen_addr, node, node_connector, &node_id, &group_id, &cm_address, &uid_address_map, &mtx, &is_cm_connected, wi] (string address, uint64_t rem_group_id, uint64_t rem_node_id) {
         cout << "Node connected: \n" <<
                 "Group ID: " << rem_group_id << '\n' <<
                 "Node ID: " << rem_node_id  << endl;
@@ -313,6 +365,7 @@ int start_sender() {
             conn_config->listen_addr = node_listen_addr;
             conn_config->name = "ConnectorInfiniband";
             node->send_work_item(address, node_connector, conn_config);
+            is_cm_connected = true;
         } else { // Connected to some other node - tell the central manager about it
             auto const node_uid = MAKE_UID(rem_group_id, rem_node_id);
             auto wi_connection = make_shared<WiConnection>();
@@ -324,11 +377,19 @@ int start_sender() {
             unique_lock<shared_mutex> l(mtx);
             uid_address_map[node_uid] = address;
             node->send_work_item(cm_address, node_connector, wi_connection);
+            node->send_work_item(cm_address, node_connector, wi);
+        }
+    });
+
+    node->on_connection_refused([node, cm_address] (std::string address) {
+        if (address == cm_address) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            node->connect_to_node(cm_address);
         }
     });
 
     node->connect_to_node(cm_address, node_connector_uid);
-
+    while (!is_cm_connected) {};
     //! @todo figure out the race condition that makes this timeout necessary
     std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 
@@ -350,7 +411,6 @@ int start_receiver() {
     const auto node_connector = make_shared<ConnectorInfiniband>();
     const auto node_listen_addr = par.output_listen_addr;
     cout << "Started as receiver (" << node_listen_addr << ")" << endl;
-    const auto node_connector_uid = 0;
 
     const auto wi_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, WI_BUFFER_SIZE);
     const auto wi_buffer = std::shared_ptr<char>(new char[WI_BUFFER_SIZE], std::default_delete<char[]>());
@@ -383,7 +443,7 @@ int start_receiver() {
     data_buffer_map->insert(0, 336, BufferMap::TAG_UNSET);
     node->set_wi_buffer(wi_buffer, wi_buffer_map, WI_BUFFER_SIZE);
     node->set_data_buffer(data_buffer, data_buffer_map, buffer_size);
-    node->add_connector(node_connector, node_connector_uid, node_listen_addr);
+    node->add_connector(node_connector, node_listen_addr);
 
     // Currently unused
     node->on_new_work_item([] (std::string /*address*/, std::shared_ptr<char> /*wi_ptr*/, WorkItem::Type /*wi_type*/, uint64_t group_id, uint64_t node_id) {
@@ -414,6 +474,12 @@ int start_receiver() {
         }
     });
 
+    node->on_connection_refused([node, cm_address] (std::string address) {
+        if (address == cm_address) {
+            // sleep(1);
+            node->connect_to_node(cm_address);
+        }
+    });
 
     node->on_new_data([data_buffer_map, node_connector, ts_sink] (const std::string& /*address*/, uint64_t group_id, uint64_t node_id) {
         // New data has arrived - check buffer map
@@ -429,10 +495,12 @@ int start_receiver() {
             ts_sink->write_timeslice(component);
             data_buffer_map->remove_elements(component);
             node_connector->unlock_buffer_map(data_buffer_map);
+        }, [] () {
+            return true;
         });
     });
 
-    node->connect_to_node(cm_address, node_connector_uid);
+    node->connect_to_node(cm_address);
     while (true) {
         this_thread::sleep_for(chrono::milliseconds(3000));
     }
