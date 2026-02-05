@@ -40,7 +40,8 @@ public:
     Verificator(uint64_t max_threads = 1);
     ~Verificator() = default;
 
-    bool find_tsa_b_in_a(const std::string& archive_a, const std::string& archive_b);
+    uint64_t find_tsa_b_in_a(const std::string& archive_a, const std::string& archive_b);
+    bool verify_ts_forwarding(const std::vector<std::string>& input_archives, const std::vector<std::string>& output_archives);
 
     /**
      * @brief Checks input msa files against output tsa files

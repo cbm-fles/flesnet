@@ -1,22 +1,12 @@
 // Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
-#include "FlesnetPatternGenerator.hpp"
-#include "MicrosliceAnalyzer.hpp"
-#include "MicrosliceInputArchive.hpp"
-#include "MicrosliceOutputArchive.hpp"
-#include "MicrosliceReceiver.hpp"
-#include "MicrosliceTransmitter.hpp"
-#include "TimesliceDebugger.hpp"
 #include "Verificator.hpp"
 #include "log.hpp"
-#include "shm_channel_client.hpp"
-#include <chrono>
 #include <cstdint>
 #include <iostream>
-#include <memory>
 #include <stdexcept>
-#include <thread>
+
 using namespace std;
 Application::Application(Parameters const& par) : par_(par) {}
 
@@ -28,12 +18,19 @@ void Application::run() {
   uint64_t components_cnt = par_.input_archives.size();
   uint64_t timeslice_cnt = par_.timeslice_cnt;
 
-  if (par_.tsa_archives.size() > 0) {
+
+  if (par_.tsa_archives.size() == 2) {
     if (val.find_tsa_b_in_a(par_.tsa_archives[0], par_.tsa_archives[1])) {
       L_(info) << "Archives valid" << endl;
     } else {
       throw runtime_error("Archives NOT VALID!");
     }
+  } else if (par_.check_tsa_forwarding) {
+    if (!val.verify_ts_forwarding(par_.input_archives, par_.output_archives)) {
+          throw runtime_error("Archives NOT VALID!");
+    };
+    L_(info) << "Archives valid" << endl;
+    return;
   } else {
     if (!par_.skip_metadata) {
       valid = val.verify_ts_metadata(par_.output_archives, &timeslice_cnt, par_.timeslice_size, par_.overlap, components_cnt);

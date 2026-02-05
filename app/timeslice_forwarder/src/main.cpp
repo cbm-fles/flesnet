@@ -162,9 +162,11 @@ int start_cm() {
             unique_lock<mutex> l(mtx);
             uid_listen_address_map[node_uid] = conn_config.listen_addr;
             auto all_possible_connections = connection_manager.get_connections(node_uid, false);
-            vector<uint64_t> relevant_connections;
+            // vector<uint64_t> relevant_connections;
+            // cout << "relevant connections: " << relevant_connections.size() << endl;
             for (auto &remote_uid : all_possible_connections) {
                 if (GROUP_ID(remote_uid) == group_id + 1 || GROUP_ID(remote_uid) == group_id - 1) {
+                    std::cout << "tell N: " << node_id << " - G: " << group_id << " to connect to N: "<< NODE_ID(remote_uid) << " - G: " << GROUP_ID(remote_uid) << std::endl;
                     auto wi_connection = make_shared<WiConnection>();
                     wi_connection->type = WorkItem::connection_req;
                     wi_connection->connector_uid = 0;
@@ -254,8 +256,9 @@ int start_sender() {
 
     node->add_connector(node_connector, node_listen_addr);
     ts_reader.set_buffer_map(data_buffer_map);
+    std::atomic_uint64_t send_cnt = 0;
 
-    node->on_new_work_item([&mtx, &uid_address_map, data_buffer_map, node, node_connector, data_buffer, &eval_logic, &ts_reader] (std::string /*address*/, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id) {
+    node->on_new_work_item([&mtx, &uid_address_map, data_buffer_map, node, node_connector, data_buffer, &eval_logic, &ts_reader, &send_cnt] (std::string /*address*/, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id) {
         if (group_id == 0 && node_id == 0) { // received new work item from central manager
             if (wi_type == WorkItem::transmission) { // CM told us to send data to a specific node
                 WiTransmission wi_transmission;
@@ -277,16 +280,16 @@ int start_sender() {
                 uint64_t combined_size = 0;
                 auto component_elements = data_buffer_map->get_elements_of_component(el->compontent_id, combined_size);
                 auto *data_write_chain = new std::function<void()>;
-                (*data_write_chain) = [data_write_chain, node_connector, rem_address, data_buffer, component_elements, &eval_logic, data_buffer_map, &ts_reader] () {
+                (*data_write_chain) = [data_write_chain, node_connector, rem_address, data_buffer, component_elements, &eval_logic, data_buffer_map, &ts_reader, &send_cnt] () {
                     node_connector->lock_and_get_buffer_map(
                         rem_address,
                         Node::DATA_BUFFER_IDX,
-                        [node_connector, data_write_chain, data_buffer, component_elements, &eval_logic, rem_address, data_buffer_map, &ts_reader] (shared_ptr<BufferMap> rem_buffer_map_copy) {
+                        [node_connector, data_write_chain, data_buffer, component_elements, &eval_logic, rem_address, data_buffer_map, &ts_reader, &send_cnt] (shared_ptr<BufferMap> rem_buffer_map_copy) {
                             auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
                             auto dest_addresses = eval_logic.evaluate(component_elements, rem_offsets_and_spaces);
                             // cout << "lock_and_get_buffer_map 3" << endl;
 
-                            if (dest_addresses.empty()) { //! @todo handle properly
+                            if (dest_addresses.empty()) {
                                 node_connector->unlock_remote_buffer_map(
                                     rem_address,
                                     rem_buffer_map_copy,
@@ -307,8 +310,19 @@ int start_sender() {
                             // cout << "lock_and_get_buffer_map 4" << endl;
 
                             // update rem_buffer_map_copy with the new content
+                            // cout << "component_elements: " << send_cnt  << endl;
+                            // for (uint64_t i = 0; i < component_elements.size(); i++) {
+                            //     cout << "i: " << i << endl;
+                            //     cout << "len: " << component_elements[i]->len << endl;
+                            //     cout << "dest_addr: " << dest_addresses[i] << endl;
+                            // }
+                            // cout << "Buffer Map before: " << send_cnt << endl;
                             // rem_buffer_map_copy->print_all();
                             bool insert_successfull = rem_buffer_map_copy->insert(component_elements, dest_addresses, BufferMap::ListElement::RX);
+                            // cout << "Buffer Map after: " << send_cnt << endl;
+                            // rem_buffer_map_copy->print_all();
+                            // send_cnt++;
+
                             if (!insert_successfull) {
                                 node_connector->unlock_remote_buffer_map(
                                     rem_address,
@@ -491,6 +505,7 @@ int start_receiver() {
                 return;
             }
             uint64_t component_size = 0;
+            cout << "component_id: " << el->compontent_id << endl;
             auto component = data_buffer_map->get_elements_of_component(el->compontent_id, component_size);
             ts_sink->write_timeslice(component);
             data_buffer_map->remove_elements(component);

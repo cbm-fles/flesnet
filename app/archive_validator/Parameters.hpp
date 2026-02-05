@@ -24,6 +24,7 @@ struct Parameters {
   uint64_t max_threads = 1;
   uint64_t ms_start_idx = 0;
   bool skip_metadata = false;
+  bool check_tsa_forwarding = false;
 
   std::vector<std::string> output_archives;
   std::vector<std::string> tsa_archives;
