@@ -186,9 +186,6 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
     };
 
     std::vector<archive_bundle> input_sources;
-
-    cout << "2" << endl;
-
     for (auto const& input_path : input_archives) {
         auto input_archive = make_unique<fles::TimesliceInputArchive>(input_path);
 
@@ -231,6 +228,10 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
                 out.curr_ts_idx = 0;
             }
         }
+        if (!found_beginning) {
+            cerr << "None of " << in_archive.source_path  <<  " was transmitted" << endl;
+            return false;
+        }
         cout << "found first transmitted timeslice: " << in_archive.curr_ts->index() << std::endl;
 
 
@@ -258,7 +259,7 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
                     for (uint64_t i = 0; i < out.curr_ts_idx; i++) {
                         out.curr_ts = out.source->get();
                     }
-                    cout << "not found in " << out.source_path;
+                    cout << "not found in " << out.source_path << endl;
                     // cout << "not found in " << out.source_path << " - " <<  out.curr_ts_idx << endl;
                 } else {
                     break;
