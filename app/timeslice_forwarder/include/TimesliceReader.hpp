@@ -26,7 +26,7 @@ private:
     uint64_t num_components_ = 0;
 public:
     TimesliceReader(std::string shm_uri) {
-        WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll, 0,
+        WorkerParameters param{1, 0, WorkerQueuePolicy::PrebufferOne, 0,
             "AutoSource at PID " +
                 std::to_string(fles::system::current_pid())};
         UriComponents uri{shm_uri};
@@ -44,7 +44,6 @@ public:
         // }
 
         source_ = std::make_unique<fles::Receiver<fles::Timeslice,fles::TimesliceView>>(shm_uri, param);
-
         // we have to read out one timeslice so the fles::Receiver class initializes the SHM and we can get necessary SHM pointer
         std::unique_ptr<fles::Timeslice> timeslice = source_->get();
         num_components_ = timeslice->num_components();
@@ -88,12 +87,14 @@ public:
             }
 
             std::unique_ptr<fles::Timeslice> timeslice = nullptr;
+            std::unique_ptr<fles::Timeslice> timeslice2 = nullptr;
             auto addresses = std::shared_ptr<uint64_t>(new uint64_t[num_components_ * 2], std::default_delete<uint64_t[]>());
             auto sizes = std::shared_ptr<uint64_t>(new uint64_t[num_components_ * 2], std::default_delete<uint64_t[]>());
             auto tags = std::shared_ptr<uint32_t>(new uint32_t[num_components_ * 2], std::default_delete<uint32_t[]>());
 
             while (!stop_)  {
                 timeslice = source_->get();
+                // timeslice2 = source_->get();
                 if (!timeslice) {
                     break;
                 }
