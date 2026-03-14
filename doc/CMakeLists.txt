@@ -17,8 +17,6 @@ set(DOXYGEN_LANGUAGE "English" CACHE STRING "Language used by doxygen")
 mark_as_advanced(DOXYGEN_LANGUAGE)
 set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-# Non-default doxygen configuration options from the obsolete
-# Doxyfile.in:
 set(DOXYGEN_TAB_SIZE 8)
 set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
 
@@ -101,6 +99,11 @@ string(APPEND DOXYGEN_PREDEFINED " \"HAVE_RDMA=1\"")
 set(DOXYGEN_MARKDOWN_SUPPORT YES)
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
 
+# MathJax is a JavaScript display engine for mathematics. Note that
+# displaying mathematical formulas in the documentation may not work if
+# the `index.html` file is opened directly in a browser.
+set(DOXYGEN_USE_MATHJAX YES)
+
 # It is necessary to have these be the first files in the list of input
 # files and directories to doxygen, because otherwise doxygen will not
 # generate the corresponding pages for them. Right now, we will include
@@ -133,6 +136,31 @@ doxygen_add_docs(doc-flesnet
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating flesnet documentation with doxygen")
 
+# In contrast to other doxygen targets (at the time of writing), the
+# tsa2msa utility has its own main page.
+set(DOXYGEN_MDFILE_AS_MAINPAGE_OLD ${DOXYGEN_USE_MDFILE_AS_MAINPAGE})
+unset(DOXYGEN_USE_MDFILE_AS_MAINPAGE)
+
+# At the time of writing, other doxygen targets do not generate a tree
+# view. Possibly it is a good idea to enable this for all targets, but
+# for now we will only enable it for the tsa2msa target.
+set(DOXYGEN_GENERATE_TREEVIEW_OLD ${DOXYGEN_GENERATE_TREEVIEW})
+set(DOXYGEN_GENERATE_TREEVIEW YES)
+
+# In order to include code snippets and alike in the documentation, we
+# need to provide the path to the source files from which the snippets
+# are extracted.
+string(APPEND DOXYGEN_EXAMPLE_PATH ${CMAKE_SOURCE_DIR}/app/tsa2msa)
+
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsa2msa-doc)
+doxygen_add_docs(doc-tsa2msa
+	app/tsa2msa
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	COMMENT "Generating tsa2msa documentation with doxygen"
+)
+set(DOXYGEN_USE_MDFILE_AS_MAINPAGE ${DOXYGEN_MDFILE_AS_MAINPAGE_OLD})
+set(DOXYGEN_GENERATE_TREEVIEW ${DOXYGEN_GENERATE_TREEVIEW_OLD})
+
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
 doxygen_add_docs(doc-mstool
   ${MARKDOWN_DOCS_FOR_DOXYGEN}
@@ -141,7 +169,7 @@ doxygen_add_docs(doc-mstool
   lib/fles_core
   lib/fles_ipc
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen")
+  COMMENT "Generating mstool documentation with doxygen")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tsclient-doc)
 doxygen_add_docs(doc-tsclient
@@ -152,13 +180,13 @@ doxygen_add_docs(doc-tsclient
   lib/fles_ipc
   lib/monitoring
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation wit doxygen" )
+  COMMENT "Generating tsclient documentation wit doxygen" )
   
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/msconsumer-doc)
 doxygen_add_docs(doc-msconsumer app/msconsumer lib test
   ${MARKDOWN_DOCS_FOR_DOXYGEN}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen (doxygen error \
+  COMMENT "Generating msconsumer documentation with doxygen (doxygen error \
   \"FileDefImpl::insertMembers()...\" is expected)")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_cfg-doc)
@@ -169,7 +197,7 @@ doxygen_add_docs(doc-cri_cfg
   lib/fles_ipc/MicrosliceDescriptor.hpp
   lib/pda
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen")
+  COMMENT "Generating cri_cfg documentation with doxygen")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_server-doc)
 doxygen_add_docs(doc-cri_server
@@ -181,7 +209,7 @@ doxygen_add_docs(doc-cri_server
   lib/cri
   lib/pda
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen" )
+  COMMENT "Generating cri_server documentation with doxygen" )
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_en_pgen-doc)
 doxygen_add_docs(doc-cri_en_pgen
@@ -237,6 +265,7 @@ add_custom_target(doc
     doc-mstool
     doc-tsclient
     doc-msconsumer
+    doc-tsa2msa
     doc-cri_cfg
     doc-cri_server
     doc-cri_tools)
