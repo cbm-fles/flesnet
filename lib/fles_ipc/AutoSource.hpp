@@ -222,7 +222,6 @@ private:
         std::unique_ptr<Source<Base>> source =
             std::make_unique<Receiver<Base, View>>(ipc_identifier, param);
         sources.emplace_back(std::move(source));
-
       } else {
         throw std::runtime_error("scheme not implemented: " + uri.scheme);
       }

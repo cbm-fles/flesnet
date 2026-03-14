@@ -1,0 +1,2 @@
+/tests/**/*
+!/tests/test_archive_validator.sh

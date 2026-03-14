@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -40,7 +41,6 @@ TimesliceBuffer::TimesliceBuffer(zmq::context_t& context,
       num_input_nodes_(num_input_nodes) {
   boost::uuids::random_generator uuid_gen;
   shm_uuid_ = uuid_gen();
-
   boost::interprocess::shared_memory_object::remove(shm_identifier_.c_str());
 
   std::size_t data_size =
@@ -64,7 +64,7 @@ TimesliceBuffer::TimesliceBuffer(zmq::context_t& context,
 
   data_ptr_ = static_cast<uint8_t*>(managed_shm_->allocate(data_size));
   desc_ptr_ = reinterpret_cast<fles::TimesliceComponentDescriptor*>(
-      managed_shm_->allocate(desc_size));
+    managed_shm_->allocate(desc_size));
 }
 
 TimesliceBuffer::~TimesliceBuffer() {
@@ -93,7 +93,6 @@ void TimesliceBuffer::send_work_item(fles::TimesliceWorkItem wi) {
     boost::archive::binary_oarchive oarchive(ostream);
     oarchive << item;
   }
-
   outstanding_.insert(ts_pos);
   ItemProducer::send_work_item(ts_pos, ostream.str());
 }

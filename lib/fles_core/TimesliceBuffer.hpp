@@ -114,11 +114,12 @@ private:
                                   ///< in units of TimesliceComponentDescriptors
   uint32_t num_input_nodes_;      // number of input nodes
 
-  std::unique_ptr<boost::interprocess::managed_shared_memory>
-      managed_shm_;   ///< shared memory object
   uint8_t* data_ptr_; ///< pointer to data buffer within shared memory
   fles::TimesliceComponentDescriptor*
       desc_ptr_;                 ///< pointer to descriptor
                                  ///< buffer within shared memory
+  std::unique_ptr<boost::interprocess::managed_shared_memory> managed_shm_;   ///< shared memory object
+
+protected:
   std::set<ItemID> outstanding_; ///< set of outstanding work items
 };

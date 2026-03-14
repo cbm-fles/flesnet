@@ -263,6 +263,11 @@ if(CLANG_TIDY)
 endif()
 
 add_subdirectory(app/mstool)
+<<<<<<< HEAD
+add_subdirectory(app/archive_validator)
+=======
+add_subdirectory(app/timeslice_forwarder)
+>>>>>>> timeslice_forwarder
 add_subdirectory(app/msconsumer)
 add_subdirectory(app/tsclient)
 add_subdirectory(app/flesnet)
