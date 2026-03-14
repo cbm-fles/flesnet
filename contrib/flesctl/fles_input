@@ -117,7 +117,7 @@ fi
 sleep 1
 echo "Enabling pattern generators ..." | tee -a ${LOGDIR}fles_input.log
 # TODO: for now we simple enable all, even if unused
-${FLESNETDIR}cri_en_pgen 1 >> ${LOGDIR}cri_en_pgen.log
+${FLESNETDIR}cri_en_pgen 1 > ${LOGDIR}cri_en_pgen.log
 
 # from this point it is safe to shut down any time
 trap end_readout SIGINT SIGTERM SIGHUP
