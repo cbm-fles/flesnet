@@ -23,6 +23,12 @@ install_lib()
   apt-get install ./libpda4_$1-1_amd64.deb
 }
 
+install_dependencies(){
+  # we install the generic package for future version
+  # and the named package to make sure we have the one for the loaded kernel
+  apt install linux-headers-amd64 linux-headers-`uname -r`
+}
+
 check_old_install()
 {
   echo "Checking for old PDA installation"
@@ -31,6 +37,10 @@ check_old_install()
     ret=1
     echo -e "\nPlease remove the following modules from dkms:"
     echo "$dkms_status"
+  fi
+  if ls /usr/src/uio_pci_dma* &> /dev/null; then
+    ret=1
+    echo -e "\nOld module sources found. Please remove '/usr/src/uio_pci_dma*'"
   fi
   if pda_status=$(ls -d /opt/pda/* 2> /dev/null); then
     ret=1
@@ -119,6 +129,7 @@ then
     echo "Now running as $USER_NAME"
 
     check_old_install
+    install_dependencies
     install_kernel $PDA_VERSION $PDA_KERNEL_VERSION
     install_lib $PDA_VERSION
 else
