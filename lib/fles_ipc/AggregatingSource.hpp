@@ -12,6 +12,8 @@
 #include <vector>
 #if __cplusplus >= 202002L
 #include <stop_token>
+#else
+#include <atomic>
 #endif
 
 namespace fles {
