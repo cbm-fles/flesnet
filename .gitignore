@@ -8,3 +8,5 @@ xcuserdata/
 /.cproject
 /.project
 /.cache
+__pycache__/
+*.pyc
