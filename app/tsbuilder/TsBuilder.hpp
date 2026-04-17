@@ -59,12 +59,15 @@ struct TsHandle {
         ms_data_sizes(std::move(contributions.ms_data_sizes)),
         offsets(sender_ids.size()), iovectors(sender_ids.size()),
         serialized_descriptors(sender_ids.size()),
-        descriptors(sender_ids.size()), states(sender_ids.size()) {
+        descriptors(sender_ids.size()), states(sender_ids.size()),
+        state_change_at_ns(sender_ids.size()) {
     // Initialize offsets
     std::partial_sum(ms_data_sizes.begin(), ms_data_sizes.end() - 1,
                      offsets.begin() + 1);
     // Initialize states
     std::fill(states.begin(), states.end(), StState::Allocated);
+    std::fill(state_change_at_ns.begin(), state_change_at_ns.end(),
+              allocated_at_ns);
   }
 
   // Cannot be moved or copied (pointer to data is used by ucx)
@@ -82,6 +85,7 @@ struct TsHandle {
   std::vector<std::vector<std::byte>> serialized_descriptors;
   std::vector<StDescriptor> descriptors;
   std::vector<StState> states;
+  std::vector<uint64_t> state_change_at_ns;
   bool is_published = false;
 };
 

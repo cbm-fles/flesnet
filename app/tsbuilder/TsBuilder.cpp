@@ -228,15 +228,22 @@ void TsBuilder::check_for_timeout(TsId id) {
     if (tsh.is_published) {
       return;
     }
-    WARN("{}| Build timeout", id);
+    WARN("{}| Build timeout (after {} ms)", id,
+         (fles::system::current_time_ns() - tsh.allocated_at_ns + 500000) /
+             1000000);
     for (std::size_t i = 0; i < tsh.states.size(); ++i) {
       if (tsh.states[i] == StState::Requested ||
           tsh.states[i] == StState::Receiving) {
-        update_st_state(tsh, i, StState::Failed);
+        // Cancel potential ongoing receive operation
+        for (const auto& [request, req_id] : m_active_data_recv_requests) {
+          if (req_id.first == id && req_id.second == i) {
+            ucp_request_cancel(m_worker, request);
+            DEBUG("{}|s{}/{}| Canceling receive operation", id, i,
+                  tsh.sender_ids.size());
+          }
+        }
       }
     }
-    // Bug: Memory might be released while transmission is still
-    //      in progress (only marked as "failed")
   }
 }
 
@@ -271,7 +278,10 @@ ucs_status_t TsBuilder::handle_scheduler_assign_ts(
   // Try to allocate memory for the content
   auto* buffer = m_timeslice_buffer.allocate(ms_data_size);
   if (buffer == nullptr) {
-    INFO("{}| Failed to allocate memory", id);
+    INFO("{}| Failed to allocate {} of contiguous memory (free: {} of {})", id,
+         human_readable_count(ms_data_size, true),
+         human_readable_count(m_timeslice_buffer.get_free_memory(), true),
+         human_readable_count(m_timeslice_buffer.get_size(), true));
     send_status_to_scheduler(BUILDER_EVENT_OUT_OF_MEMORY, id);
     return UCS_OK;
   }
@@ -520,10 +530,13 @@ void TsBuilder::process_completion(TsId id) {
     ERROR("{}| Received completion for unknown timeslice", id);
     return;
   }
+  const uint64_t published_at_ns = m_ts_handles.at(id)->published_at_ns;
+  const uint64_t now_ns = fles::system::current_time_ns();
   m_timeslice_buffer.deallocate(m_ts_handles.at(id)->buffer);
   m_ts_handles.erase(id);
   send_status_to_scheduler(BUILDER_EVENT_RELEASED, id);
-  DEBUG("{}| Released", id);
+  DEBUG("{}| Released (after {} ms)", id,
+        (now_ns - published_at_ns + 500000) / 1000000);
 }
 
 // Helper methods
@@ -535,10 +548,20 @@ void TsBuilder::update_st_state(TsHandle& tsh,
   if (new_state == tsh.states[contribution_index]) {
     return;
   }
-  DEBUG("{}|s{}/{}| State: {} -> {}", tsh.id, contribution_index,
-        tsh.sender_ids.size(), to_string(tsh.states[contribution_index]),
-        to_string(new_state));
+  const uint64_t now_ns = fles::system::current_time_ns();
+  if (now_ns - tsh.state_change_at_ns[contribution_index] < 1000000) {
+    DEBUG("{}|s{}/{}| State: {} -> {}", tsh.id, contribution_index,
+          tsh.sender_ids.size(), to_string(tsh.states[contribution_index]),
+          to_string(new_state));
+  } else {
+    DEBUG("{}|s{}/{}| State: {} -> {} (after {} ms)", tsh.id,
+          contribution_index, tsh.sender_ids.size(),
+          to_string(tsh.states[contribution_index]), to_string(new_state),
+          (now_ns - tsh.state_change_at_ns[contribution_index] + 500000) /
+              1000000);
+  }
   tsh.states[contribution_index] = new_state;
+  tsh.state_change_at_ns[contribution_index] = now_ns;
   if (new_state == StState::Complete) {
     // Deserialize the descriptor
     auto desc = to_obj_nothrow<StDescriptor>(
@@ -563,10 +586,12 @@ void TsBuilder::update_st_state(TsHandle& tsh,
         tsh.is_published = true;
         tsh.published_at_ns = fles::system::current_time_ns();
         if (ts_desc.has_flag(TsFlag::MissingSubtimeslices)) {
-          INFO("{}| Published incomplete timeslice", tsh.id);
+          INFO("{}| Published incomplete timeslice (after {} ms)", tsh.id,
+               (tsh.published_at_ns - tsh.allocated_at_ns + 500000) / 1000000);
           m_timeslice_incomplete_count++;
         } else {
-          DEBUG("{}| Published", tsh.id);
+          DEBUG("{}| Published (after {} ms)", tsh.id,
+                (tsh.published_at_ns - tsh.allocated_at_ns + 500000) / 1000000);
         }
       }
     }
