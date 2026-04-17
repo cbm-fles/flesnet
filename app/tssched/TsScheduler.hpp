@@ -20,9 +20,12 @@
 // TsScheduler: Receive subtimeslice announcements from stsenders, aggregate,
 // and send subtimeslice handles to tsbuilders
 
+enum class SenderState { registered, active };
+
 struct SenderConnection {
   SenderInfo info;
   ucp_ep_h ep = nullptr;
+  SenderState state = SenderState::registered;
   struct StDesc {
     TsId id;
     uint64_t ms_data_size = 0;

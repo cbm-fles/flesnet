@@ -85,9 +85,13 @@ void TsScheduler::run() {
     m_tasks.timer();
 
     bool try_later =
-        m_senders.empty() ||
+        std::none_of(m_senders.begin(), m_senders.end(),
+                     [](const auto& s) {
+                       return s.second.state == SenderState::active;
+                     }) ||
         std::any_of(m_senders.begin(), m_senders.end(), [this](const auto& s) {
-          return s.second.last_received_st < m_id;
+          return s.second.state == SenderState::active &&
+                 s.second.last_received_st < m_id;
         });
     uint64_t current_time_ns = fles::system::current_time_ns();
     uint64_t timeout_ns = (m_id + 1) * m_timeslice_duration_ns + m_timeout_ns;
@@ -210,7 +214,7 @@ TsScheduler::handle_sender_register(const void* header,
   }
 
   ucp_ep_h ep = param->reply_ep;
-  m_senders[ep] = {*sender_info, ep, {}};
+  m_senders[ep] = {*sender_info, ep, SenderState::registered, {}, 0};
   INFO("Accepted sender registration from '{}'", sender_info->id());
 
   return UCS_OK;
@@ -270,6 +274,10 @@ TsScheduler::handle_sender_announce(const void* header,
   sender_conn.announced_st.emplace_back(id, ms_data_size,
                                         std::move(*st_descriptor));
   sender_conn.last_received_st = id;
+  if (sender_conn.state == SenderState::registered) {
+    sender_conn.state = SenderState::active;
+    INFO("Sender '{}' is now active", sender_conn.info.id());
+  }
   DEBUG("{}| Announcement from '{}' ({})", id, sender_conn.info.id(),
         human_readable_count(ms_data_size, true));
 
@@ -427,9 +435,12 @@ TsScheduler::handle_builder_status(const void* header,
 void TsScheduler::assign_timeslice(TsId id) {
   StCollection coll = create_collection_descriptor(id);
   if (coll.sender_ids.empty()) {
-    if (!m_senders.empty()) {
-      WARN("{}| Sender(s) connected ({}), but no contributions", id,
-           m_senders.size());
+    auto active_count =
+        std::count_if(m_senders.begin(), m_senders.end(), [](const auto& s) {
+          return s.second.state == SenderState::active;
+        });
+    if (active_count > 0) {
+      WARN("{}| Sender(s) active ({}), but no contributions", id, active_count);
     }
     return;
   }
@@ -481,7 +492,7 @@ StCollection TsScheduler::create_collection_descriptor(TsId id) {
     if (it != sender.announced_st.end()) {
       coll.sender_ids.push_back(sender.info.advertise_id());
       coll.ms_data_sizes.push_back(it->ms_data_size);
-    } else {
+    } else if (sender.state == SenderState::active) {
       DEBUG("{}| No contribution found from sender '{}'", id, sender.info.id());
     }
   }
