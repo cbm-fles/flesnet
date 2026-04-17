@@ -152,7 +152,12 @@ void StSender::operator()(std::stop_token stop_token) {
   }
   disconnect_from_scheduler();
   disconnect_from_builders();
+  // Drain remaining UCX internal operations (e.g., rendezvous protocol
+  // buffers) before destroying the worker
+  while (ucp_worker_progress(m_worker) != 0) {
+  }
   ucx::util::cleanup(m_context, m_worker);
+  flush_announced();
 }
 
 // Scheduler connection management
