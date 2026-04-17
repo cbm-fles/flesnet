@@ -91,8 +91,12 @@ void Parameters::parse_options(int argc, char* argv[]) {
            "copy and release each timeslice immediately after receiving it");
 
   po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, desc), vm);
-  po::notify(vm);
+  try {
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+  } catch (po::error const& e) {
+    throw ParametersException(e.what());
+  }
 
   if (vm.count("help") != 0u) {
     std::cout << "tsclient, git revision " << g_GIT_REVISION << std::endl;
