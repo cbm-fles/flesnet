@@ -16,7 +16,7 @@ Application::Application(Parameters const& par,
 
   m_ts_scheduler = std::make_unique<TsScheduler>(
       signal_status, par.listen_port(), par.timeslice_duration_ns(),
-      par.timeout_ns(), m_monitor.get());
+      par.timeout_ns(), par.max_in_flight(), m_monitor.get());
 }
 
 void Application::run() { m_ts_scheduler->run(); }

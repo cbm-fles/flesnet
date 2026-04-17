@@ -60,6 +60,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   config_add("timeout",
              po::value<Nanoseconds>(&m_timeout)->default_value(m_timeout),
              "timeout for data reception (with suffix ns, us, ms, s)");
+  config_add(
+      "max-in-flight",
+      po::value<uint32_t>(&m_max_in_flight)->default_value(m_max_in_flight),
+      "maximum number of timeslices in flight per builder");
 
   po::options_description cmdline_options("Allowed options", terminal_width,
                                           terminal_width / 2);
@@ -104,5 +108,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
   if (timeout_ns() <= 0) {
     throw ParametersException("timeout must be greater than 0");
+  }
+  if (m_max_in_flight == 0) {
+    throw ParametersException("max-in-flight must be greater than 0");
   }
 }

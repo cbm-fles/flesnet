@@ -15,6 +15,7 @@
 #include <ucp/api/ucp.h>
 #include <ucp/api/ucp_def.h>
 #include <unistd.h>
+#include <unordered_set>
 
 // TsScheduler: Receive subtimeslice announcements from stsenders, aggregate,
 // and send subtimeslice handles to tsbuilders
@@ -36,6 +37,7 @@ struct BuilderConnection {
   ucp_ep_h ep = nullptr;
   uint64_t bytes_available = 0;
   bool is_out_of_memory = false;
+  std::unordered_set<TsId> assigned_ts;
 };
 
 struct StatusInfo {
@@ -63,6 +65,7 @@ public:
               uint16_t listen_port,
               int64_t timeslice_duration_ns,
               int64_t timeout_ns,
+              uint32_t max_in_flight,
               cbm::Monitor* monitor);
   ~TsScheduler();
   TsScheduler(const TsScheduler&) = delete;
@@ -77,6 +80,7 @@ private:
   uint16_t m_listen_port;
   int64_t m_timeslice_duration_ns;
   int64_t m_timeout_ns;
+  uint32_t m_max_in_flight;
   std::string m_hostname;
   cbm::Monitor* m_monitor = nullptr;
 

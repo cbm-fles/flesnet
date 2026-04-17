@@ -29,9 +29,11 @@ TsScheduler::TsScheduler(volatile sig_atomic_t* signal_status,
                          uint16_t listen_port,
                          int64_t timeslice_duration_ns,
                          int64_t timeout_ns,
+                         uint32_t max_in_flight,
                          cbm::Monitor* monitor)
     : m_signal_status(signal_status), m_listen_port(listen_port),
       m_timeslice_duration_ns{timeslice_duration_ns}, m_timeout_ns{timeout_ns},
+      m_max_in_flight{max_in_flight},
       m_hostname(fles::system::current_hostname()), m_monitor(monitor) {
   // Initialize event handling
   m_epoll_fd = epoll_create1(EPOLL_CLOEXEC);
@@ -158,12 +160,16 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
           std::find_if(m_builders.begin(), m_builders.end(),
                        [ep](const BuilderConnection& b) { return b.ep == ep; });
       it != m_builders.end()) {
+    if (!it->assigned_ts.empty()) {
+      INFO("Releasing {} in-flight timeslice(s) from builder '{}'",
+           it->assigned_ts.size(), it->info.id());
+      for (auto ts_id : it->assigned_ts) {
+        send_release_to_senders(ts_id);
+      }
+    }
     INFO("Disconnect from builder '{}': {}", it->info.id(), status);
     m_builders.erase(it);
   }
-
-  // Fail any in-progress timeslice allocations that involved this endpoint
-  // (TODO: not implemented yet)
 }
 
 void TsScheduler::disconnect_from_all() {
@@ -397,10 +403,12 @@ TsScheduler::handle_builder_status(const void* header,
   case BUILDER_EVENT_OUT_OF_MEMORY:
     INFO("{}| Builder '{}' has reported out of memory", id, it->info.id());
     it->is_out_of_memory = true;
+    it->assigned_ts.erase(id);
     assign_timeslice(id);
     break;
   case BUILDER_EVENT_RECEIVED:
     DEBUG("{}| Builder '{}' has received timeslice", id, it->info.id());
+    it->assigned_ts.erase(id);
     send_release_to_senders(id);
     break;
   case BUILDER_EVENT_RELEASED:
@@ -428,8 +436,10 @@ void TsScheduler::assign_timeslice(TsId id) {
 
   for (std::size_t i = 0; i < m_builders.size(); ++i) {
     auto& builder = m_builders[(id + i) % m_builders.size()];
-    if (builder.bytes_available >= coll.ms_data_size() &&
+    if (builder.assigned_ts.size() < m_max_in_flight &&
+        builder.bytes_available >= coll.ms_data_size() &&
         !builder.is_out_of_memory) {
+      builder.assigned_ts.insert(id);
       send_assignment_to_builder(coll, builder);
       DEBUG("{}| Assigned to '{}' ({}s, {})", id, builder.info.id(),
             coll.sender_ids.size(),
@@ -439,6 +449,7 @@ void TsScheduler::assign_timeslice(TsId id) {
   }
   WARN("{}| No builder available ({}s, {})", id, coll.sender_ids.size(),
        human_readable_count(coll.ms_data_size(), true));
+  m_status_info.timeslice_discarded_count++;
   send_release_to_senders(id);
 }
 

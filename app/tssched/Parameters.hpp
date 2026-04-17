@@ -33,6 +33,7 @@ public:
     return m_timeslice_duration.count();
   }
   [[nodiscard]] int64_t timeout_ns() const { return m_timeout.count(); }
+  [[nodiscard]] uint32_t max_in_flight() const { return m_max_in_flight; }
 
 private:
   void parse_options(int argc, char* argv[]);
@@ -41,4 +42,5 @@ private:
   uint16_t m_listen_port = DEFAULT_SCHEDULER_PORT;
   Nanoseconds m_timeslice_duration{100ms};
   Nanoseconds m_timeout{100ms};
+  uint32_t m_max_in_flight = 1;
 };
