@@ -201,6 +201,11 @@ void TsBuilder::disconnect_from_scheduler(bool force) {
 // Scheduler message handling
 
 void TsBuilder::send_status_to_scheduler(uint64_t event, TsId id) {
+  if (!m_scheduler_connected) {
+    WARN("Cannot send status to disconnected scheduler");
+    return;
+  }
+
   uint64_t bytes_free = m_timeslice_buffer.get_free_memory();
   std::array<uint64_t, 3> hdr{event, id, bytes_free};
   auto header = std::as_bytes(std::span(hdr));
@@ -341,6 +346,14 @@ void TsBuilder::handle_sender_error(ucp_ep_h ep, ucs_status_t status) {
 }
 
 void TsBuilder::disconnect_from_senders() {
+  // Cancel all in-flight receive operations first
+  for (const auto& [request, req_id] : m_active_data_recv_requests) {
+    ucp_request_cancel(m_worker, request);
+  }
+  // Progress worker to process cancellations
+  while (ucp_worker_progress(m_worker) != 0) {
+  }
+
   if (m_ep_to_sender.empty()) {
     return;
   }
