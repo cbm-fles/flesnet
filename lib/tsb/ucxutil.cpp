@@ -3,6 +3,7 @@
    Author: Jan de Cuveland */
 
 #include "ucxutil.hpp"
+#include "Utility.hpp"
 #include "log.hpp"
 #include <charconv>
 #include <netdb.h>
@@ -367,6 +368,36 @@ std::pair<std::string, uint16_t> parse_address(std::string_view address,
     }
   }
   return {std::string(address), default_port};
+}
+
+std::optional<ucp_mem_h> register_memory(ucp_context_h context,
+                                         std::span<std::byte> region) {
+  ucp_mem_map_params_t params{};
+  params.field_mask =
+      UCP_MEM_MAP_PARAM_FIELD_ADDRESS | UCP_MEM_MAP_PARAM_FIELD_LENGTH;
+  params.address = region.data();
+  params.length = region.size();
+
+  ucp_mem_h memh = nullptr;
+  ucs_status_t status = ucp_mem_map(context, &params, &memh);
+  if (status != UCS_OK) {
+    ERROR("Failed to register memory region of {}: {}",
+          human_readable_count(region.size(), true), status);
+    return std::nullopt;
+  }
+
+  INFO("Registered memory region of {}",
+       human_readable_count(region.size(), true));
+  return memh;
+}
+
+void unregister_memory(ucp_context_h context, ucp_mem_h memh) {
+  ucs_status_t status = ucp_mem_unmap(context, memh);
+  if (status != UCS_OK) {
+    ERROR("Failed to unregister memory region: {}", status);
+  } else {
+    DEBUG("Unregistered memory region");
+  }
 }
 
 } // namespace ucx::util

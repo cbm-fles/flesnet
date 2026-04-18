@@ -13,8 +13,10 @@
 #include "pgen_channel.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <csignal>
+#include <cstddef>
 #include <map>
 #include <memory>
+#include <span>
 #include <sys/types.h>
 #include <vector>
 
@@ -45,6 +47,8 @@ public:
   ~StBuilder();
 
   void run();
+
+  [[nodiscard]] std::span<std::byte> get_memory_region() const;
 
 private:
   void handle_completions();

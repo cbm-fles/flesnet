@@ -27,6 +27,10 @@ Application::Application(Parameters const& par,
       m_par.timeslice_duration_ns(), m_par.timeout_ns(),
       m_par.data_buffer_size(), m_par.desc_buffer_size(),
       m_par.overlap_before_ns(), m_par.overlap_after_ns());
+
+  // Register shared memory with UCX for RDMA and start sender thread
+  m_st_sender->set_memory_region(m_st_builder->get_memory_region());
+  m_st_sender->start();
 }
 
 void Application::run() { m_st_builder->run(); }

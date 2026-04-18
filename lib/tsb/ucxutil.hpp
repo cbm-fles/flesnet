@@ -55,6 +55,9 @@ void on_generic_send_complete(void* request,
                               void* user_data);
 std::pair<std::string, uint16_t> parse_address(std::string_view address,
                                                uint16_t default_port);
+std::optional<ucp_mem_h> register_memory(ucp_context_h context,
+                                         std::span<std::byte> region);
+void unregister_memory(ucp_context_h context, ucp_mem_h memh);
 } // namespace ucx::util
 
 // Specialize std::formatter for ucs_status_t to simplify logging

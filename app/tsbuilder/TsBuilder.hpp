@@ -117,6 +117,7 @@ private:
   int m_epoll_fd = -1;
   ucp_context_h m_context = nullptr;
   ucp_worker_h m_worker = nullptr;
+  ucp_mem_h m_buffer_memh = nullptr;
 
   std::unordered_map<std::string, ucp_ep_h> m_sender_to_ep;
   std::unordered_map<ucp_ep_h, std::string> m_ep_to_sender;

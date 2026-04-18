@@ -11,6 +11,7 @@
 #include <mutex>
 #include <optional>
 #include <queue>
+#include <span>
 #include <string>
 #include <string_view>
 #include <sys/epoll.h>
@@ -55,6 +56,8 @@ public:
   StSender& operator=(const StSender&) = delete;
 
   // Public API methods
+  void set_memory_region(std::span<std::byte> region);
+  void start();
   void announce_subtimeslice(TsId id, const StHandle& sth);
   void retract_subtimeslice(TsId id);
   std::optional<TsId> try_receive_completion();
@@ -81,6 +84,8 @@ private:
 
   ucp_context_h m_context = nullptr;
   ucp_worker_h m_worker = nullptr;
+  ucp_mem_h m_buffer_memh = nullptr;
+  std::span<std::byte> m_memory_region;
   ucp_listener_h m_listener = nullptr;
   std::unordered_map<ucp_ep_h, std::string> m_builders;
 

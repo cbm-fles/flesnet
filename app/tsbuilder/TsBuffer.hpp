@@ -7,10 +7,12 @@
 #include "SubTimeslice.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/uuid/uuid.hpp>
+#include <cstddef>
 #include <log.hpp>
 #include <memory>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 
 namespace fles {
@@ -37,6 +39,11 @@ public:
   ~TsBuffer();
 
   [[nodiscard]] std::size_t get_size() const { return m_buffer_size; }
+
+  [[nodiscard]] std::span<std::byte> get_memory_region() const {
+    return {static_cast<std::byte*>(m_managed_shm->get_address()),
+            m_managed_shm->get_size()};
+  }
 
   [[nodiscard]] std::size_t get_free_memory() const {
     return m_managed_shm->get_free_memory();

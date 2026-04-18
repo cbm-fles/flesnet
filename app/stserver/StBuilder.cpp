@@ -157,6 +157,10 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
   }
 }
 
+std::span<std::byte> StBuilder::get_memory_region() const {
+  return {static_cast<std::byte*>(m_shm->get_address()), m_shm->get_size()};
+}
+
 void StBuilder::run() {
   for (auto&& channel : m_channels) {
     // ack far in the future to clear all elements

@@ -48,12 +48,6 @@ StSender::StSender(std::string_view scheduler_address,
   if (epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, m_queue_event_fd, &ev) == -1) {
     throw std::runtime_error("epoll_ctl failed for message queue");
   }
-
-  // Start the worker thread
-  m_worker_thread = std::jthread([this](std::stop_token st) {
-    (*this)(st);
-    m_thread_stopped = true;
-  });
 }
 
 StSender::~StSender() {
@@ -71,6 +65,17 @@ StSender::~StSender() {
 }
 
 // Public API methods
+
+void StSender::set_memory_region(std::span<std::byte> region) {
+  m_memory_region = region;
+}
+
+void StSender::start() {
+  m_worker_thread = std::jthread([this](std::stop_token st) {
+    (*this)(st);
+    m_thread_stopped = true;
+  });
+}
 
 void StSender::announce_subtimeslice(TsId id, const StHandle& st) {
   {
@@ -118,6 +123,11 @@ void StSender::operator()(std::stop_token stop_token) {
     ERROR("Failed to initialize UCX");
     return;
   }
+  if (!m_memory_region.empty()) {
+    if (auto memh = ucx::util::register_memory(m_context, m_memory_region)) {
+      m_buffer_memh = *memh;
+    }
+  }
   if (!ucx::util::set_receive_handler(m_worker, AM_SCHED_RELEASE_ST,
                                       on_scheduler_release, this) ||
       !ucx::util::set_receive_handler(m_worker, AM_BUILDER_REQUEST_ST,
@@ -155,6 +165,10 @@ void StSender::operator()(std::stop_token stop_token) {
   // Drain remaining UCX internal operations (e.g., rendezvous protocol
   // buffers) before destroying the worker
   while (ucp_worker_progress(m_worker) != 0) {
+  }
+  if (m_buffer_memh != nullptr) {
+    ucx::util::unregister_memory(m_context, m_buffer_memh);
+    m_buffer_memh = nullptr;
   }
   ucx::util::cleanup(m_context, m_worker);
   flush_announced();

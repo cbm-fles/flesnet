@@ -55,6 +55,10 @@ void TsBuilder::run() {
     ERROR("Failed to initialize UCX");
     return;
   }
+  if (auto memh = ucx::util::register_memory(
+          m_context, m_timeslice_buffer.get_memory_region())) {
+    m_buffer_memh = *memh;
+  }
   if (!ucx::util::set_receive_handler(m_worker, AM_SCHED_ASSIGN_TS,
                                       on_scheduler_assign_ts, this) ||
       !ucx::util::set_receive_handler(m_worker, AM_SENDER_SEND_ST,
@@ -83,6 +87,10 @@ void TsBuilder::run() {
 
   disconnect_from_scheduler();
   disconnect_from_senders();
+  if (m_buffer_memh != nullptr) {
+    ucx::util::unregister_memory(m_context, m_buffer_memh);
+    m_buffer_memh = nullptr;
+  }
   ucx::util::cleanup(m_context, m_worker);
 }
 
