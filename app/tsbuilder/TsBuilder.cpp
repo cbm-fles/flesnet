@@ -87,6 +87,10 @@ void TsBuilder::run() {
 
   disconnect_from_scheduler();
   disconnect_from_senders();
+  // Drain remaining UCX internal operations (e.g., rendezvous protocol
+  // buffers) before destroying the worker
+  while (ucp_worker_progress(m_worker) != 0) {
+  }
   if (m_buffer_memh != nullptr) {
     ucx::util::unregister_memory(m_context, m_buffer_memh);
     m_buffer_memh = nullptr;
@@ -366,12 +370,20 @@ void TsBuilder::disconnect_from_senders() {
     return;
   }
   INFO("Disconnecting from {} senders", m_ep_to_sender.size());
-  for (const auto& [ep, _] : m_ep_to_sender) {
-    ucx::util::close_endpoint(m_worker, ep, true);
-  }
 
+  // Collect endpoints and clear maps before closing, so that error
+  // callbacks during close do not modify the maps during iteration
+  std::vector<ucp_ep_h> eps_to_close;
+  eps_to_close.reserve(m_ep_to_sender.size());
+  for (const auto& [ep, _] : m_ep_to_sender) {
+    eps_to_close.push_back(ep);
+  }
   m_ep_to_sender.clear();
   m_sender_to_ep.clear();
+
+  for (auto* ep : eps_to_close) {
+    ucx::util::close_endpoint(m_worker, ep, true);
+  }
 }
 
 // Sender message handling

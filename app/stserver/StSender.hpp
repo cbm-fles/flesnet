@@ -58,6 +58,7 @@ public:
   // Public API methods
   void set_memory_region(std::span<std::byte> region);
   void start();
+  void stop();
   void announce_subtimeslice(TsId id, const StHandle& sth);
   void retract_subtimeslice(TsId id);
   std::optional<TsId> try_receive_completion();

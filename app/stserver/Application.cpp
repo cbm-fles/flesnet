@@ -36,6 +36,7 @@ Application::Application(Parameters const& par,
 void Application::run() { m_st_builder->run(); }
 
 Application::~Application() {
+  m_st_sender->stop(); // Stop sender thread while shared memory is still valid
   m_st_builder.reset();
   m_st_sender.reset();
 

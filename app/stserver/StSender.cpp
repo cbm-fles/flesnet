@@ -51,10 +51,7 @@ StSender::StSender(std::string_view scheduler_address,
 }
 
 StSender::~StSender() {
-  if (m_worker_thread.joinable()) {
-    m_worker_thread.request_stop();
-    m_worker_thread.join();
-  }
+  stop();
 
   if (m_epoll_fd != -1) {
     close(m_epoll_fd);
@@ -75,6 +72,13 @@ void StSender::start() {
     (*this)(st);
     m_thread_stopped = true;
   });
+}
+
+void StSender::stop() {
+  if (m_worker_thread.joinable()) {
+    m_worker_thread.request_stop();
+    m_worker_thread.join();
+  }
 }
 
 void StSender::announce_subtimeslice(TsId id, const StHandle& st) {
@@ -578,11 +582,19 @@ void StSender::disconnect_from_builders() {
     return;
   }
   INFO("Disconnecting from {} builders", m_builders.size());
+
+  // Collect endpoints and clear map before closing, so that error
+  // callbacks during close do not modify the map during iteration
+  std::vector<ucp_ep_h> eps_to_close;
+  eps_to_close.reserve(m_builders.size());
   for (auto& [ep, _] : m_builders) {
+    eps_to_close.push_back(ep);
+  }
+  m_builders.clear();
+
+  for (auto* ep : eps_to_close) {
     ucx::util::close_endpoint(m_worker, ep, true);
   }
-
-  m_builders.clear();
 }
 
 // Queue processing
