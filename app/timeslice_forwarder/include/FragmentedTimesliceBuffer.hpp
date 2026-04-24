@@ -59,7 +59,6 @@ public:
 
         managed_shm_->construct<boost::uuids::uuid>(
             boost::interprocess::unique_instance)(shm_uuid_);
-
     };
 
     void send_work_item(std::shared_ptr<fles::StorableTimeslice> ts) {

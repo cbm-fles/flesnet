@@ -71,7 +71,7 @@ int start_cm() {
     const auto cm_address = par.central_manager_listen_addr;
 
     // const auto node_connector = connector_factory.get("");
-    auto node_connector = make_shared<ConnectorInfiniband>();
+    std::shared_ptr<ConnectorInterface> node_connector = make_shared<ConnectorInfiniband>();
     const auto node_listen_addr = par.central_manager_listen_addr;
 
     const auto wi_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, WI_BUFFER_SIZE);
@@ -104,7 +104,7 @@ int start_cm() {
             auto wi_tx = make_shared<WiTransmission>();
             wi_tx->node_uid = target_node_uid;
             wi_tx->type = WorkItem::transmission;
-            node->send_work_item(uid_address_map[node_uid], node_connector, wi_tx);
+            node->send_work_item(uid_address_map[node_uid], wi_tx);
         } else if (group_id == 2) { // TS receiver
             cout << "evaluation of TS receiver status" << endl;
         } else {
@@ -179,7 +179,7 @@ int start_cm() {
                     wi_connection->type = WorkItem::connection_req;
                     wi_connection->connector_uid = 0;
                     wi_connection->connector_address = uid_listen_address_map[remote_uid];
-                    node->send_work_item(address, node_connector, wi_connection);
+                    node->send_work_item(address, wi_connection);
                 }
             }
         } else if (wi_type == WorkItem::connection) { // The given node informed us about a new available connection
@@ -272,7 +272,7 @@ int start_sender() {
     const auto wi_buffer = std::shared_ptr<char>(new char[WI_BUFFER_SIZE], std::default_delete<char[]>());
 
     // the ts_reader connects to the shm, therefore it can give use the pointer to the memory containing the timeslices
-    // cout << "SHM: " << par.shm_name << endl;
+    cout << "SHM: " << par.shm_name << endl;
     TimesliceReader ts_reader(par.shm_name);
     const auto buffer_size = ts_reader.get_buffer_size();
     auto data_buffer = std::shared_ptr<char>(ts_reader.get_buffer());
@@ -282,7 +282,7 @@ int start_sender() {
     wi->type = WorkItem::buffer_status;
 
     ts_reader.on_new_timeslice([node, &cm_address, node_connector, wi] () {
-        node->send_work_item(cm_address, node_connector, wi);
+        node->send_work_item(cm_address, wi);
     });
 
     // using the shm ptr to initialize our data buffer and buffer map
@@ -412,7 +412,7 @@ int start_sender() {
             conn_config->connector_uid = 0;
             conn_config->listen_addr = node_listen_addr;
             conn_config->name = "ConnectorInfiniband";
-            node->send_work_item(address, node_connector, conn_config);
+            node->send_work_item(address, conn_config);
             is_cm_connected = true;
         } else { // Connected to some other node - tell the central manager about it
             auto const node_uid = MAKE_UID(rem_group_id, rem_node_id);
@@ -424,8 +424,8 @@ int start_sender() {
             wi_connection->to_node_id = rem_node_id;
             unique_lock<shared_mutex> l(mtx);
             uid_address_map[node_uid] = address;
-            node->send_work_item(cm_address, node_connector, wi_connection, [wi, cm_address, node_connector, node] () {
-                node->send_work_item(cm_address, node_connector, wi);
+            node->send_work_item(cm_address, wi_connection, [wi, cm_address, node_connector, node] () {
+                node->send_work_item(cm_address, wi);
             });
         }
     });
@@ -514,7 +514,7 @@ int start_receiver() {
             conn_config->connector_uid = 0;
             conn_config->listen_addr = node_listen_addr;
             conn_config->name = "ConnectorInfiniband";
-            node->send_work_item(address, node_connector, conn_config);
+            node->send_work_item(address, conn_config);
         } else { // Connected to some other node - tell the central manager about it
             auto wi_connection = make_shared<WiConnection>();
             wi_connection->type = WorkItem::connection;
@@ -522,7 +522,7 @@ int start_receiver() {
             wi_connection->from_node_id = node_id;
             wi_connection->to_group_id = rem_group_id;
             wi_connection->to_node_id = rem_node_id;
-            node->send_work_item(cm_address, node_connector, wi_connection, [] () {
+            node->send_work_item(cm_address, wi_connection, [] () {
                 cout << "send work item done (WorkItem::connection)" << endl;
             });
         }
