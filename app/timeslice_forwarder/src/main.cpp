@@ -575,15 +575,15 @@ int start_receiver() {
 
 int main (int argc, char** argv) {
     par.parse_options(argc, argv);
-    if (FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION) != fi_version()) {
-        cerr << "Libfabric: Header version and library version do not match" << endl;
-        cerr << "Header: " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION << endl;
-        cerr << "Lib: " << FI_MAJOR(fi_version()) << "." << FI_MINOR(fi_version()) << endl;
-        exit(-1);
-    } else if (FI_MAJOR_VERSION != 2 || FI_MINOR_VERSION < 1) {
-        cerr << "Libfabric: invalid version." << endl;
-        cerr << "Minimum version required 2.1 - found " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION << endl;
-    }
+    // if (FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION) != fi_version()) {
+    //     cerr << "Libfabric: Header version and library version do not match" << endl;
+    //     cerr << "Header: " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION << endl;
+    //     cerr << "Lib: " << FI_MAJOR(fi_version()) << "." << FI_MINOR(fi_version()) << endl;
+    //     exit(-1);
+    // } else if (FI_MAJOR_VERSION != 2 || FI_MINOR_VERSION < 1) {
+    //     cerr << "Libfabric: invalid version." << endl;
+    //     cerr << "Minimum version required 2.1 - found " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION << endl;
+    // }
 
     if (par.group_id == 0) {
         start_cm();
