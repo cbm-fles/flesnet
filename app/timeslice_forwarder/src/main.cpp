@@ -54,7 +54,10 @@ constexpr uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
 
 
 int start_cm() {
-    auto monitor = make_shared<cbm::Monitor>(par.monitoring_uri);
+    auto monitor = make_shared<cbm::Monitor>();
+    if (par.is_monitoring_enabled) {
+        monitor->OpenSink(par.monitoring_uri);
+    }
 
     auto node = make_shared<Node>(0, 0);
     mutex mtx;
@@ -240,7 +243,7 @@ int start_cm() {
         connection_manager.add_node(node_uid);
 
     });
-
+    node->start();
     cout << "Central Manager listening on: " << node_listen_addr << endl;
     while (true) {
         this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -249,7 +252,10 @@ int start_cm() {
 }
 
 int start_sender() {
-    auto monitor = make_shared<cbm::Monitor>(par.monitoring_uri);
+    auto monitor = make_shared<cbm::Monitor>();
+    if (par.is_monitoring_enabled) {
+        monitor->OpenSink(par.monitoring_uri);
+    }
 
     auto node_id = par.node_id;
     auto group_id = par.group_id;
@@ -436,7 +442,7 @@ int start_sender() {
             node->connect_to_node(cm_address);
         }
     });
-
+    node->start();
     node->connect_to_node(cm_address, node_connector_uid);
     while (!is_cm_connected) {};
     //! @todo figure out the race condition that makes this timeout necessary
@@ -451,7 +457,10 @@ int start_sender() {
 }
 
 int start_receiver() {
-    auto monitor = make_shared<cbm::Monitor>(par.monitoring_uri);
+    auto monitor = make_shared<cbm::Monitor>();
+    if (par.is_monitoring_enabled) {
+        monitor->OpenSink(par.monitoring_uri);
+    }
 
     auto node_id = par.node_id;
     auto group_id = par.group_id;
@@ -460,6 +469,7 @@ int start_receiver() {
 
     // const auto node_connector = connector_factory.get(par.connectors[0].name);
     const auto node_connector = make_shared<ConnectorInfiniband>();
+
     const auto node_listen_addr = par.listen_addr;
     cout << "Started as receiver (" << node_listen_addr << ")" << endl;
 
@@ -529,8 +539,8 @@ int start_receiver() {
     });
 
     node->on_connection_refused([node, cm_address] (std::string address) {
+        cout << "connection refused" << endl;
         if (address == cm_address) {
-            // sleep(1);
             node->connect_to_node(cm_address);
         }
     });
@@ -564,7 +574,9 @@ int start_receiver() {
             return true;
         });
     });
+    node->start();
 
+    cout << "Connecting to CM at: " << cm_address << endl;
     node->connect_to_node(cm_address);
     while (true) {
         this_thread::sleep_for(chrono::milliseconds(3000));

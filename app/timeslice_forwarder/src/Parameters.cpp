@@ -63,6 +63,7 @@ void Parameters::parse_options(int argc, char** argv) {
         exit(EXIT_SUCCESS);
     }
 
+    is_monitoring_enabled = !monitoring_uri.empty(); // convinience variable
     return;
 }
 
