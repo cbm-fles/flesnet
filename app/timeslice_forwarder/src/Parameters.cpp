@@ -20,11 +20,11 @@ void Parameters::parse_options(int argc, char** argv) {
 
     general_add("listen-address,l",
         po::value<string>(&listen_addr),
-        "Defines interface listen address to be used by other nodes to establish a connnection '-l <listen_address>");
+        "Defines interface listen address to be used by other nodes to establish a connnection '-l <own_IB_ip>:<port>'");
 
     general_add("central-manager,c",
         po::value<string>(&central_manager_listen_addr),
-        "If this is defined by its own the node will run as the central manager. Otherwise combine it with -o or -i so the node can connect to the central manager.");
+        "IP and port of the IB interface of the CM manager '-c <CM_IB_ip>:<port>'");
 
     general_add("monitor,m",
         po::value<string>(&monitoring_uri),
@@ -32,24 +32,26 @@ void Parameters::parse_options(int argc, char** argv) {
 
     general_add("node-id,n",
         po::value<uint32_t>(&node_id),
-        "Sets the node ID for this node");
+        "Sets the node ID for this node. Within one Group the node ID has to be unique.");
 
     general_add("group-id,g",
         po::value<uint32_t>(&group_id),
-        "Sets the group ID for this node");
+        "Sets the group ID for this node.\nGroup ID 1 = TS sender.\nGroup ID 2 = TS Receiver.");
 
     general_add("shm-id",
         po::value<std::string>(&shm_name),
-        "SHM name");
+        "SHM name with query parameters similar to tsclient and flesnet. eg. '--shm-id ts_in?n=16'");
 
     stringstream desc_sstr;
     desc_sstr << endl
         << "Start Central Manager: " << endl
-        << "\t" << "timeslice_forwarder --central-manager \"ConnectorInfiniband <ip>:<port>\"" << endl << endl
-        << "Start Input Node:" << endl
-        << "\t" << R"(timeslice_forwarder --node-id 1 --group-id 1 --central-manager "ConnectorInfiniband <ip>:<port>" --connector "ConnectorInfiniband <own_ip>:<port> 1" --input "ConnectorFromFlesnet <shm_id>")" << endl << endl
+        << "timeslice_forwarder --central-manager <CM_IB_ip>:<CM_port>" << endl << endl
+        << "Start TS Sender Node:" << endl
+        << "timeslice_forwarder --node-id <n> --group-id 1 -l <own_IB_ip>:<own_port> --central-manager <CM_IB_ip>:<CM_port> --shm-id <shm uri like in flesnet>" << endl << endl
+        << "Start TS Receiver Node:" << endl
+        << "timeslice_forwarder --node-id <n> --group-id 2 -l <own_IB_ip>:<own_port> --central-manager <CM_IB_ip>:<CM_port> --shm-id <shm uri like in flesnet>"
         << endl << endl;
-        // << "Command line options";
+
     po::variables_map vm;
     po::options_description desc(desc_sstr.str());
     desc
