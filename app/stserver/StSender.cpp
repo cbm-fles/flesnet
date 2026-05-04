@@ -8,7 +8,6 @@
 #include "Utility.hpp"
 #include "log.hpp"
 #include "monitoring/System.hpp"
-#include "ucxutil.hpp"
 #include <arpa/inet.h>
 #include <array>
 #include <cstddef>
@@ -123,7 +122,7 @@ std::optional<TsId> StSender::try_receive_completion() {
 void StSender::operator()(std::stop_token stop_token) {
   cbm::system::set_thread_name("StSender");
 
-  if (!ucx::util::init(m_context, m_worker, m_epoll_fd)) {
+  if (!ucx::util::init(m_context, m_worker, m_epoll_fd, m_ucx_loop_mode)) {
     ERROR("Failed to initialize UCX");
     return;
   }
@@ -155,7 +154,9 @@ void StSender::operator()(std::stop_token stop_token) {
     }
     m_tasks.timer();
 
-    if (!ucx::util::arm_worker_and_wait(m_worker, m_epoll_fd)) {
+    if (!ucx::util::arm_worker_and_wait(m_worker, m_epoll_fd,
+                                        ucx::util::EPOLL_TIMEOUT_MS,
+                                        m_ucx_loop_mode)) {
       break;
     }
   }

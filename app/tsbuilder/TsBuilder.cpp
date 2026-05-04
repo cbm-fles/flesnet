@@ -8,7 +8,6 @@
 #include "TsbProtocol.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
-#include "ucxutil.hpp"
 #include <arpa/inet.h>
 #include <array>
 #include <cstddef>
@@ -51,7 +50,7 @@ TsBuilder::~TsBuilder() {
 // Main operation loop
 
 void TsBuilder::run() {
-  if (!ucx::util::init(m_context, m_worker, m_epoll_fd)) {
+  if (!ucx::util::init(m_context, m_worker, m_epoll_fd, m_ucx_loop_mode)) {
     ERROR("Failed to initialize UCX");
     return;
   }
@@ -80,7 +79,8 @@ void TsBuilder::run() {
     }
     m_tasks.timer();
 
-    if (!ucx::util::arm_worker_and_wait(m_worker, m_epoll_fd, 100)) {
+    if (!ucx::util::arm_worker_and_wait(m_worker, m_epoll_fd, 100,
+                                        m_ucx_loop_mode)) {
       break;
     }
   }

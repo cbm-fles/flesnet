@@ -8,7 +8,6 @@
 #include "TsbProtocol.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
-#include "ucxutil.hpp"
 #include <arpa/inet.h>
 #include <cstddef>
 #include <cstdint>
@@ -51,7 +50,7 @@ TsScheduler::~TsScheduler() {
 // Main operation loop
 
 void TsScheduler::run() {
-  if (!ucx::util::init(m_context, m_worker, m_epoll_fd)) {
+  if (!ucx::util::init(m_context, m_worker, m_epoll_fd, m_ucx_loop_mode)) {
     ERROR("Failed to initialize UCX");
     return;
   }
@@ -107,7 +106,8 @@ void TsScheduler::run() {
               1),
           0);
       int timeout_ms = std::min(sender_wait_ms, timer_wait_ms);
-      if (!ucx::util::arm_worker_and_wait(m_worker, m_epoll_fd, timeout_ms)) {
+      if (!ucx::util::arm_worker_and_wait(m_worker, m_epoll_fd, timeout_ms,
+                                          m_ucx_loop_mode)) {
         break;
       }
       continue;

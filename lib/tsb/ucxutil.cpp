@@ -6,13 +6,18 @@
 #include "Utility.hpp"
 #include "log.hpp"
 #include <charconv>
+#include <chrono>
 #include <netdb.h>
 #include <sys/epoll.h>
+#include <thread>
 #include <ucp/api/ucp.h>
 #include <ucs/type/status.h>
 
 namespace ucx::util {
-bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
+bool init(ucp_context_h& context,
+          ucp_worker_h& worker,
+          int epoll_fd,
+          LoopMode loop_mode) {
   if (context != nullptr || worker != nullptr) {
     ERROR("UCP context or worker already initialized");
     return false;
@@ -29,7 +34,10 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
   ucp_params_t ucp_params = {};
   // Request Active Message support
   ucp_params.field_mask = UCP_PARAM_FIELD_FEATURES;
-  ucp_params.features = UCP_FEATURE_AM | UCP_FEATURE_WAKEUP;
+  ucp_params.features = UCP_FEATURE_AM;
+  if (loop_mode == LoopMode::event_fd) {
+    ucp_params.features |= UCP_FEATURE_WAKEUP;
+  }
 
   status = ucp_init(&ucp_params, config, &context);
   ucp_config_release(config);
@@ -51,6 +59,11 @@ bool init(ucp_context_h& context, ucp_worker_h& worker, int epoll_fd) {
     ucp_cleanup(context);
     context = nullptr;
     return false;
+  }
+
+  if (loop_mode == LoopMode::busy_poll) {
+    DEBUG("UCP context and worker initialized");
+    return true;
   }
 
   // Set up epoll
@@ -92,7 +105,52 @@ void cleanup(ucp_context_h& context, ucp_worker_h& worker) {
   }
 }
 
-bool arm_worker_and_wait(ucp_worker_h worker, int epoll_fd, int timeout_ms) {
+bool arm_worker_and_wait(ucp_worker_h worker,
+                         int epoll_fd,
+                         int timeout_ms,
+                         LoopMode loop_mode) {
+  if (loop_mode == LoopMode::busy_poll) {
+    auto has_epoll_event = [epoll_fd]() {
+      if (epoll_fd < 0) {
+        return false;
+      }
+      std::array<epoll_event, 1> events{};
+      int nfds = epoll_wait(epoll_fd, events.data(), events.size(), 0);
+      if (nfds > 0) {
+        return true;
+      }
+      if (nfds == -1 && errno != EINTR) {
+        ERROR("epoll_wait failed: {}", strerror(errno));
+      }
+      return false;
+    };
+
+    if (timeout_ms < 0) {
+      while (true) {
+        if (has_epoll_event()) {
+          return true;
+        }
+        if (ucp_worker_progress(worker) != 0) {
+          return true;
+        }
+        std::this_thread::yield();
+      }
+    }
+
+    auto deadline = std::chrono::steady_clock::now() +
+                    std::chrono::milliseconds(timeout_ms);
+    do {
+      if (has_epoll_event()) {
+        return true;
+      }
+      if (ucp_worker_progress(worker) != 0) {
+        return true;
+      }
+      std::this_thread::yield();
+    } while (std::chrono::steady_clock::now() < deadline);
+    return true;
+  }
+
   ucs_status_t status = ucp_worker_arm(worker);
   if (status == UCS_ERR_BUSY) {
     return true;

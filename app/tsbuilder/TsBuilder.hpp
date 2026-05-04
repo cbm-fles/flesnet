@@ -8,6 +8,7 @@
 #include "SubTimeslice.hpp"
 #include "System.hpp"
 #include "TsBuffer.hpp"
+#include "ucxutil.hpp"
 #include <csignal>
 #include <cstddef>
 #include <cstdint>
@@ -109,6 +110,8 @@ private:
 
   std::string m_scheduler_address;
   int64_t m_timeout_ns;
+  static constexpr ucx::util::LoopMode m_ucx_loop_mode =
+      ucx::util::LoopMode::busy_poll;
   std::string m_hostname;
   BuilderInfo m_builder_info;
   std::vector<std::byte> m_builder_info_bytes;

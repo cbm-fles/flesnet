@@ -5,6 +5,7 @@
 
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
+#include "ucxutil.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <deque>
@@ -70,6 +71,8 @@ private:
   std::string m_scheduler_address;
   uint16_t m_listen_port;
   SenderInfo m_sender_info;
+  static constexpr ucx::util::LoopMode m_ucx_loop_mode =
+      ucx::util::LoopMode::busy_poll;
   std::vector<std::byte> m_sender_info_bytes;
 
   int m_queue_event_fd = -1;

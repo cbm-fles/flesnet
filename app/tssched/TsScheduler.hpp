@@ -6,6 +6,7 @@
 #include "Monitor.hpp"
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
+#include "ucxutil.hpp"
 #include <csignal>
 #include <cstdint>
 #include <deque>
@@ -84,6 +85,8 @@ private:
   int64_t m_timeslice_duration_ns;
   int64_t m_timeout_ns;
   uint32_t m_max_in_flight;
+  static constexpr ucx::util::LoopMode m_ucx_loop_mode =
+      ucx::util::LoopMode::busy_poll;
   std::string m_hostname;
   cbm::Monitor* m_monitor = nullptr;
 
