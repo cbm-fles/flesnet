@@ -9,32 +9,48 @@ include(ExternalProject)
 ExternalProject_Add(libfabric
     GIT_REPOSITORY    https://github.com/ofiwg/libfabric.git
     GIT_TAG           v2.5.1
-    CONFIGURE_COMMAND ./autogen.sh COMMAND ./configure --prefix=${LIBFABRIC_INSTALL_DIR}
+    CONFIGURE_COMMAND ./autogen.sh COMMAND ./configure --prefix=${LIBFABRIC_INSTALL_DIR} --disable-sockets --disable-upd --disable-tcp --disable-opx --disable-psm2 --disable-psm3 --disable-rxm --disable-usnic --disable-shm --disable-efa --enable-verbs
     UPDATE_DISCONNECTED 1
     BUILD_IN_SOURCE 1
 )
+add_dependencies(timeslice_forwarder libfabric)
 
-ExternalProject_Add(timeslice_forwarder_lib
-    GIT_REPOSITORY    https://git.zib.de/ngreve/timeslice_forwarder.git
-    GIT_TAG dev
-    CMAKE_ARGS
-        -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
-        -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/timeslice_forwarder_lib_build/install_dir
-    UPDATE_DISCONNECTED 1
-    BUILD_IN_SOURCE 1
-)
-add_dependencies(timeslice_forwarder_lib libfabric)
-add_dependencies(timeslice_forwarder timeslice_forwarder_lib)
+#ExternalProject_Add(timeslice_forwarder_lib
+#    GIT_REPOSITORY    /home/htc/ngreve/prog/timeslice_forwarder/
+#    GIT_TAG dev
+#    CMAKE_ARGS
+#        -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
+#        -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/timeslice_forwarder_lib_build/install_dir
+#    UPDATE_DISCONNECTED 1
+#    BUILD_IN_SOURCE 1
+#)
+#add_dependencies(timeslice_forwarder_lib libfabric)
+#add_dependencies(timeslice_forwarder timeslice_forwarder_lib)
+
+set(DATA_FORWARDER_INSTALL_DIR "/home/htc/ngreve/prog/timeslice_forwarder/build/install_dir")
+set(DATA_FORWARDER_INCLUDE_DIR "${DATA_FORWARDER_INSTALL_DIR}/include")
+set(DATA_FORWARDER_LIB_DIR     "${DATA_FORWARDER_INSTALL_DIR}/lib")
+set(DATA_FORWARDER_LIBRARY "${DATA_FORWARDER_LIB_DIR}/libdata_forwarder.a")
 
 find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS serialization program_options graph iostreams)
 target_include_directories(timeslice_forwarder PRIVATE
     ./include
     ${LIBFABRIC_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}/config
-    ${CMAKE_CURRENT_BINARY_DIR}/timeslice_forwarder_lib_build/install_dir/include
+    ${DATA_FORWARDER_INCLUDE_DIR}
 )
 
-target_link_libraries(timeslice_forwarder PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/timeslice_forwarder_lib_build/install_dir/lib/libdata_forwarder.a fles_ipc fles_core flib_ipc logging crcutil ${Boost_LIBRARIES} ${LIBFABRIC_LIBRARY})
+target_link_libraries(timeslice_forwarder PRIVATE
+    ${DATA_FORWARDER_LIBRARY}
+    fles_ipc
+    fles_core
+    flib_ipc
+    logging
+    crcutil
+    ${Boost_LIBRARIES}
+    ${LIBFABRIC_LIBRARY}
+)
+
 file(GLOB timeslice_forwarder_SRC
     "src/**/*.cpp"
     "src/*.cpp"

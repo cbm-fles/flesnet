@@ -124,6 +124,7 @@ private:
         to_string(parameters_.queue_policy) + " " +
         std::to_string(parameters_.group_id) + " " + parameters_.client_name;
     distributor_socket_->send(zmq::buffer(message_str));
+    std::cout <<  "send_register()" << std::endl;
     reset_heartbeat_time();
   }
 

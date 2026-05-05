@@ -101,9 +101,9 @@ int compare_ts(fles::Timeslice& ts_a, fles::Timeslice& ts_b) {
 }
 
 uint64_t Verificator::find_tsa_b_in_a(const std::string& archive_a, const std::string& archive_b) {
-    // cout << "Finding timeslices of archive B in A" << endl;
-    // cout << "Archive A: " << archive_a << endl;
-    // cout << "Archive B: " << archive_b << endl;
+    cout << "Finding timeslices of archive B in A" << endl;
+    cout << "Archive A: " << archive_a << endl;
+    cout << "Archive B: " << archive_b << endl;
 
     unique_ptr<fles::TimesliceSource> source_a = make_unique<fles::TimesliceInputArchive>(archive_a);
     unique_ptr<fles::TimesliceSource> source_b = make_unique<fles::TimesliceInputArchive>(archive_b);
@@ -185,6 +185,8 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
         uint64_t found_cnt = 0;
     };
 
+    // cout << "verify_ts_forwarding" << endl;
+
     std::vector<archive_bundle> input_sources;
     for (auto const& input_path : input_archives) {
         auto input_archive = make_unique<fles::TimesliceInputArchive>(input_path);
@@ -219,6 +221,7 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
             for (auto &out : output_sinks) {
                 cout << "in " << out.source_path << endl;
                 while (!found_beginning && (out.curr_ts = out.source->get()) != nullptr) {
+                    // cout << "out.curr_ts->index(): " << out.curr_ts->index() << endl;
                     if (out.curr_ts->index() == in_archive.curr_ts->index()) {
                         found_beginning = true;
                     }
