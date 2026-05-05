@@ -26,7 +26,7 @@ private:
     uint64_t num_components_ = 0;
 public:
     TimesliceReader(std::string shm_uri) {
-        WorkerParameters param{1, 0, WorkerQueuePolicy::PrebufferOne, 0,
+        WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll, 0,
             "AutoSource at PID " +
                 std::to_string(fles::system::current_pid())};
         UriComponents uri{shm_uri};
@@ -98,6 +98,7 @@ public:
                 if (!timeslice) {
                     break;
                 }
+                std::cout << "timeslice->index(): " << timeslice->index() << std::endl;
 
                 if (base_mem_addres_ != reinterpret_cast<char*>(source_->managed_shm_->get_address())) {
                     base_mem_addres_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());

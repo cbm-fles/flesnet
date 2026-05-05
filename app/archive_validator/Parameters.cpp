@@ -4,6 +4,7 @@
 #include "GitRevision.hpp"
 #include "log.hpp"
 #include <boost/program_options.hpp>
+#include <boost/program_options/value_semantic.hpp>
 #include <iostream>
 #include <ostream>
 #include <sstream>
@@ -46,7 +47,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
                   ->value_name("<n>"),
                   "Start verification process at microslice index n.");
   general_add("tsa-forwarding",
-                po::value<bool>(&check_tsa_forwarding)->implicit_value(check_tsa_forwarding));
+                po::bool_switch(&check_tsa_forwarding));
 
   po::options_description archives("Input/Output archives");
   auto archives_add = archives.add_options();

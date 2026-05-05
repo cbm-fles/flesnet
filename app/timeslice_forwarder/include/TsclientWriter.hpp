@@ -16,7 +16,7 @@
 #include <df/Connectors/ConnectorInterface.hpp>
 #pragma once
 
-class TsclientWriter {
+class TsclientWriter  {
 private:
     CallbackContainer<void()> callbacks;
     std::shared_ptr<BufferMap> buffer_map_ = nullptr;
@@ -33,6 +33,7 @@ private:
     zmq::context_t zmq_context_{1};
     std::shared_ptr<ManagedTimesliceBuffer> managed_timeslice_buffer = nullptr;
     std::shared_ptr<FragmentedTimesliceBuffer> ts_buffer_ = nullptr;
+    // std::shared_ptr<ManagedTimesliceBuffer> ts_buffer2_ = nullptr;
     std::unique_ptr<ItemDistributor> item_distributor_ = nullptr;
     std::thread distributor_thread_;
     std::string producer_address_;
@@ -74,8 +75,10 @@ public:
         producer_address_ = "inproc://" + shm_identifier;
         worker_address_ = "ipc://@" + shm_identifier;
 
+
         item_distributor_ = std::make_unique<ItemDistributor>(zmq_context_, producer_address_, worker_address_),
         ts_buffer_ = std::make_shared<FragmentedTimesliceBuffer>(zmq_context_, producer_address_, shm_identifier, datasize, descsize, num_components);
+        // managed_timeslice_buffer = std::make_shared<ManagedTimesliceBuffer>(zmq_context_, shm_identifier, datasize, descsize, num_components);
         distributor_thread_ = std::thread(std::ref(*(item_distributor_.get())));
         buffer_ = std::shared_ptr<char>(static_cast<char*>(ts_buffer_->managed_shm_->get_address()));
         buffer_size_ = ts_buffer_->managed_shm_->get_size();
@@ -97,7 +100,7 @@ public:
         buffer_map_ = buffer_map;
     }
 
-    void write_timeslice(std::vector<BufferMap::ListElement*>& elements) override {
+    void write_timeslice(std::vector<BufferMap::ListElement*>& elements) {
         std::vector<fles::TimesliceComponentDescriptor*> desc_ptr;
         std::vector<uint8_t*> data_ptr;
         for (auto desc_it = elements.begin(); desc_it != elements.end(); ++desc_it) {
@@ -132,10 +135,9 @@ public:
         buffer_ = buffer;
     }
 
-    ~TsclientWriter() {
+    virtual ~TsclientWriter() {
+        std::cout << "ts writer destructor" << std::endl;
         item_distributor_->stop();
         distributor_thread_.join();
     }
-
-
 };
