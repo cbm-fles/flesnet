@@ -10,7 +10,7 @@ public:
     std::vector<WiConnectorConfig> connectors;
     uint32_t node_id = 0;
     uint32_t group_id = 0;
-    std::string shm_name;
+    std::string shm_uri;
     std::string listen_addr;
     std::string central_manager_listen_addr;
     std::string monitoring_uri;

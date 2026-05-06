@@ -72,27 +72,6 @@ private:
         }
     }
 
-    void connect_nodes(uint64_t node_uid) {
-            // auto node_uid = MAKE_UID(group_id, node_id);
-            uint64_t group_id = GROUP_ID(node_uid);
-            uint64_t node_id = GROUP_ID(node_uid);
-            auto all_possible_connections = connection_manager.get_connections(node_uid, false);
-            // vector<uint64_t> relevant_connections;
-            // cout << "relevant connections: " << relevant_connections.size() << endl;
-            cout << "all_possible_connections.size(): " << all_possible_connections.size() << endl;
-            for (auto &remote_uid : all_possible_connections) {
-                if (GROUP_ID(remote_uid) == group_id + 1 || GROUP_ID(remote_uid) == group_id - 1) {
-                    std::cout << "tell N: " << node_id << " - G: " << group_id << " ---> N: "<< NODE_ID(remote_uid) << " - G: " << GROUP_ID(remote_uid) << std::endl;
-                    auto wi_connection = make_shared<WiConnection>();
-                    wi_connection->type = WorkItem::connection_req;
-                    wi_connection->connector_uid = 0;
-                    wi_connection->connector_address = uid_listen_address_map[remote_uid];
-                    std::cout << "send work item" << std::endl;
-                    Node::send_work_item(uid_address_map[node_uid], wi_connection);
-                }
-            }
-    }
-
     void on_new_work_item(std::string /*address*/, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id) {
         auto node_uid = MAKE_UID(group_id, node_id);
         cout << "new work item: " << node_id << " - group_id " << group_id << endl;
@@ -120,6 +99,27 @@ private:
         } else {
             cerr << "Received unknown WorkItem type: " << wi_type << endl;
         }
+    }
+
+    void connect_nodes(uint64_t node_uid) {
+            // auto node_uid = MAKE_UID(group_id, node_id);
+            uint64_t group_id = GROUP_ID(node_uid);
+            uint64_t node_id = GROUP_ID(node_uid);
+            auto all_possible_connections = connection_manager.get_connections(node_uid, false);
+            // vector<uint64_t> relevant_connections;
+            // cout << "relevant connections: " << relevant_connections.size() << endl;
+            cout << "all_possible_connections.size(): " << all_possible_connections.size() << endl;
+            for (auto &remote_uid : all_possible_connections) {
+                if (GROUP_ID(remote_uid) == group_id + 1 || GROUP_ID(remote_uid) == group_id - 1) {
+                    std::cout << "tell N: " << node_id << " - G: " << group_id << " ---> N: "<< NODE_ID(remote_uid) << " - G: " << GROUP_ID(remote_uid) << std::endl;
+                    auto wi_connection = make_shared<WiConnection>();
+                    wi_connection->type = WorkItem::connection_req;
+                    wi_connection->connector_uid = 0;
+                    wi_connection->connector_address = uid_listen_address_map[remote_uid];
+                    std::cout << "send work item" << std::endl;
+                    Node::send_work_item(uid_address_map[node_uid], wi_connection);
+                }
+            }
     }
 
     void eval_node_status(uint64_t group_id, uint64_t node_id) {
