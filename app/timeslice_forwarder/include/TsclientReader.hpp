@@ -10,7 +10,7 @@
 #include <df/BufferMap/BufferMap.hpp>
 #include <df/Utils/CallbackContainer.hpp>
 
-class TimesliceReader {
+class TsclientReader {
 private:
     CallbackContainer<void()> callbacks;
     std::shared_ptr<BufferMap> buffer_map_ = nullptr;
@@ -25,7 +25,7 @@ private:
     std::atomic_bool stop_ = false;
     uint64_t num_components_ = 0;
 public:
-    TimesliceReader(std::string shm_uri) {
+    TsclientReader(std::string shm_uri) {
         WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll, 0,
             "AutoSource at PID " +
                 std::to_string(fles::system::current_pid())};

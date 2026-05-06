@@ -28,7 +28,7 @@ void Parameters::parse_options(int argc, char** argv) {
 
     general_add("monitor,m",
         po::value<string>(&monitoring_uri),
-        "monitoring uri influxdb2:host:bucket:[auth_token]");
+        "monitoring uri influxdb2:host:timeslice_forwarder_state:[auth_token]");
 
     general_add("node-id,n",
         po::value<uint32_t>(&node_id),
@@ -39,7 +39,7 @@ void Parameters::parse_options(int argc, char** argv) {
         "Sets the group ID for this node.\nGroup ID 1 = TS sender.\nGroup ID 2 = TS Receiver.");
 
     general_add("shm-id",
-        po::value<std::string>(&shm_name),
+        po::value<std::string>(&shm_uri),
         "SHM name with query parameters similar to tsclient and flesnet. eg. '--shm-id ts_in?n=16'");
 
     stringstream desc_sstr;
