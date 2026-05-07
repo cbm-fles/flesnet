@@ -34,17 +34,6 @@ public:
         UriComponents uri{shm_uri};
         const auto shm_identifier = uri.path;
 
-        /** Currently no parameters are available **/
-        // for (auto& [key, value] : uri.query_components) {
-        //     if (key == "n") {
-        //         num_components_ = std::stoul(value);
-        //     } else {
-        //         throw std::runtime_error(
-        //             "Query parameter not implemented for scheme " + uri.scheme +
-        //             ": " + key);
-        //     }
-        // }
-
         source_ = std::make_unique<fles::Receiver<fles::Timeslice,fles::TimesliceView>>(shm_uri, param);
         // we have to read out one timeslice so the fles::Receiver class initializes the SHM and we can get necessary SHM pointer
         std::unique_ptr<fles::Timeslice> timeslice = source_->get();
@@ -89,14 +78,12 @@ public:
             }
 
             std::unique_ptr<fles::Timeslice> timeslice = nullptr;
-            std::unique_ptr<fles::Timeslice> timeslice2 = nullptr;
             auto addresses = std::shared_ptr<uint64_t>(new uint64_t[num_components_ * 2], std::default_delete<uint64_t[]>());
             auto sizes = std::shared_ptr<uint64_t>(new uint64_t[num_components_ * 2], std::default_delete<uint64_t[]>());
             auto tags = std::shared_ptr<uint32_t>(new uint32_t[num_components_ * 2], std::default_delete<uint32_t[]>());
 
             while (!stop_)  {
                 timeslice = source_->get();
-                // timeslice2 = source_->get();
                 if (!timeslice) {
                     break;
                 }
@@ -106,6 +93,25 @@ public:
                     base_mem_addres_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());
                     std::cerr << "(TimesliceReader) SHM base memory address changed" << std::endl;
                 }
+
+                // for (uint64_t c = 0; c < timeslice->num_components(); c++) {
+                //     if (timeslice->size_component(c) == 0) {
+                //         std::cout << "is 0" << std::endl;
+                //         exit(-1);
+                //     }
+                //     for (uint64_t m = 0;  m < timeslice->num_microslices(c); m++) {
+                //         auto m_desc = timeslice->descriptor(c, m);
+                //         if (m_desc.size == 0) {
+                //             std::cout << "component: " << c << std::endl;
+                //             std::cout << "ms idx: " << m << std::endl;
+                //             std::cout << "m_desc.sys_id: " << uint64_t(m_desc.sys_id) << std::endl;
+                //             std::cout << "m_desc.eq_id: " << uint64_t(m_desc.eq_id) << std::endl;
+                //             std::cout << "m_desc.flags: " << uint64_t(m_desc.flags) << std::endl;
+                //             std::cout << "microslice == 0" << std::endl;
+                //             exit(-1);
+                //         }
+                //     }
+                // }
 
                 // Proactively request lock and start preparing data in the meantime
                 std::atomic_bool is_locked = false;
