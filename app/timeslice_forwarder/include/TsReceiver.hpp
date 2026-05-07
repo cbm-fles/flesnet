@@ -23,7 +23,6 @@ private:
     std::shared_mutex mtx_;
     std::shared_ptr<cbm::Monitor> monitor_{std::make_shared<cbm::Monitor>()};
     std::unordered_map<uint64_t, std::string> uid_address_map_;
-    EvaluationLogic eval_logic_;
     std::string cm_address_;
     uint64_t data_buffer_size_ = 0;
     std::shared_ptr<char> data_buffer_ = nullptr;
@@ -105,7 +104,7 @@ private:
             monitor_->QueueMetric("timeslice_forwarder_state",
                         {{"host", std::to_string(node_id_) + " - " + std::to_string(group_id_)}},
                         {{"failed_self_locks", ++failed_self_locks_}});
-            cout << "failed self lock: " << failed_self_locks_ << endl;
+            // cout << "failed self lock: " << failed_self_locks_ << endl;
             return true;
         });
     }
@@ -147,6 +146,6 @@ public:
         Node::on_node_connected(std::bind(&TsReceiver::on_node_connected, this, _1, _2, _3));
         Node::on_connection_refused(std::bind(&TsReceiver::on_connection_refused, this, _1));
         Node::start();
-        Node::connect_to_node(central_manager_address);
+        Node::connect_to_node(cm_address_);
     }
 };

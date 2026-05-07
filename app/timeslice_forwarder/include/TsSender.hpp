@@ -52,100 +52,113 @@ private:
                 }
 
                 cout << "Commanded to send data to Node ID: " << remote_node_id << " - Group ID: " << remote_group_id << " - address: " << rem_address << endl;
-                auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
-                if (el == nullptr) { // no oldest element available
-                    cout << "no oldest element available" << endl;
-                    return;
-                }
-
-                uint64_t combined_size = 0;
-                auto component_elements = data_buffer_map_->get_elements_of_component(el->compontent_id, combined_size);
-                auto *data_write_chain = new std::function<void()>;
-                (*data_write_chain) = [this, data_write_chain, rem_address, component_elements, combined_size] () {
-                    node_connector_->lock_and_get_buffer_map(
-                        rem_address,
-                        Node::DATA_BUFFER_IDX,
-                        [this, data_write_chain, component_elements, rem_address, combined_size] (shared_ptr<BufferMap> rem_buffer_map_copy) {
-                            auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
-                            auto dest_addresses = eval_logic_.evaluate(component_elements, rem_offsets_and_spaces);
-                            if (dest_addresses.empty()) {
-                                cout << "no dest addresses caluclated" << endl;
-                                node_connector_->unlock_remote_buffer_map(
-                                    rem_address,
-                                    rem_buffer_map_copy,
-                                    Node::DATA_BUFFER_IDX,
-                                    [data_write_chain] () {
-                                        std::this_thread::sleep_for(std::chrono::nanoseconds(500));
-                                        (*data_write_chain)();
-                                    }
-                                );
-                            }
-                            vector<uint64_t> src_mem_addresses;
-                            vector<uint64_t> sizes;
-                            src_mem_addresses.resize(component_elements.size());
-                            sizes.resize(component_elements.size());
-                            for (uint64_t i = 0; i < component_elements.size(); i++) {
-                                src_mem_addresses[i] = component_elements[i]->address;
-                                sizes[i] = component_elements[i]->len;
-                            }
-                            bool insert_successfull = rem_buffer_map_copy->insert(component_elements, dest_addresses, BufferMap::ListElement::RX);
-                            // cout << "Buffer Map after: " << send_cnt << endl;
-                            // rem_buffer_map_copy->print_all();
-
-
-                            if (!insert_successfull) {
-                                cout << "!insert_successfull" << endl;
-                                node_connector_->unlock_remote_buffer_map(
-                                    rem_address,
-                                    rem_buffer_map_copy,
-                                    Node::DATA_BUFFER_IDX,
-                                    [data_write_chain] () {
-                                        std::this_thread::sleep_for(std::chrono::nanoseconds(500));
-                                        (*data_write_chain)();
-                                    }
-                                );
-                                return;
-                            }
-                            delete data_write_chain;
-                            cout << "sendv done" << endl;
-
-                            node_connector_->sendv(
-                                rem_address,
-                                data_buffer_,
-                                Node::DATA_BUFFER_IDX,
-                                src_mem_addresses,
-                                dest_addresses,
-                                sizes,
-                                [this, rem_address, rem_buffer_map_copy, component_elements, combined_size] () {
-                                    cout << "sendv done" << endl;
-                                    // send the new buffer map to remote node and unlock
-                                    node_connector_->write_remote_buffer_map_and_unlock(rem_address, rem_buffer_map_copy,
+                node_connector_->lock_buffer_map(data_buffer_map_, [this, rem_address] () {
+                    auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
+                    if (el == nullptr) { // no oldest element available
+                        node_connector_->unlock_buffer_map(data_buffer_map_);
+                        return;
+                    }
+                    uint64_t combined_size = 0;
+                    auto component_elements = data_buffer_map_->get_elements_of_component(el->compontent_id, combined_size);
+                    auto *data_write_chain = new std::function<void()>;
+                    (*data_write_chain) = [this, data_write_chain, rem_address, component_elements, combined_size] () {
+                        node_connector_->lock_and_get_buffer_map(
+                            rem_address,
+                            Node::DATA_BUFFER_IDX,
+                            [this, data_write_chain, component_elements, rem_address, combined_size] (shared_ptr<BufferMap> rem_buffer_map_copy) {
+                                auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
+                                auto dest_addresses = eval_logic_.evaluate(component_elements, rem_offsets_and_spaces);
+                                if (dest_addresses.empty()) {
+                                    cout << "no dest addresses caluclated" << endl;
+                                    node_connector_->unlock_remote_buffer_map(
+                                        rem_address,
+                                        rem_buffer_map_copy,
                                         Node::DATA_BUFFER_IDX,
-                                        [this, component_elements, combined_size] () {
-                                            monitor_->QueueMetric("timeslice_forwarder_state",
-                                                {{"host", std::to_string(node_id_) + " - " + std::to_string(1)}},
-                                                {{"send_cnt", ++send_cnt_}});
-                                            monitor_->QueueMetric("timeslice_forwarder_state",
-                                                {{"host", std::to_string(node_id_) + " - " + std::to_string(1)}},
-                                                {{"bytes_sent", combined_size}});
-                                            // remove the sent TS from own buffermap
-                                            data_buffer_map_->remove_elements(component_elements);
-                                            // call clear_timeslice on ts_reader
-                                            ts_reader->clear_last_timeslice();
+                                        [data_write_chain] () {
+                                            std::this_thread::sleep_for(std::chrono::nanoseconds(500));
+                                            (*data_write_chain)();
                                         }
                                     );
                                 }
-                            );
-                        },
-                        [this] () {
-                            monitor_->QueueMetric("timeslice_forwarder_state",
-                                {{"host", std::to_string(node_id_) + " - " + std::to_string(1)}},
-                                {{"failed_remote_lock", ++failed_remote_lock_cnt_}});
-                            return true;
-                        }
-                    );
-                };
-                (*data_write_chain)();
+                                vector<uint64_t> src_mem_addresses;
+                                vector<uint64_t> sizes;
+
+                                src_mem_addresses.resize(component_elements.size());
+                                sizes.resize(component_elements.size());
+                                for (uint64_t i = 0; i < component_elements.size(); i++) {
+                                    src_mem_addresses[i] = component_elements[i]->address;
+                                    sizes[i] = component_elements[i]->len;
+                                    if (sizes[i] == 0) {
+                                        cout << "sizes[i] == 0" << std::endl;
+                                        exit(-1);
+                                    }
+                                    if (sizes[i] + dest_addresses[i] > rem_buffer_map_copy->get_buffer_size()) {
+                                        cout << "trying to send data outside of buffer" << std::endl;
+                                        exit(-1);
+
+                                    }
+                                }
+
+                                bool insert_successfull = rem_buffer_map_copy->insert(component_elements, dest_addresses, BufferMap::ListElement::RX);
+
+                                if (!insert_successfull) {
+                                    cout << "!insert_successfull" << endl;
+                                    node_connector_->unlock_remote_buffer_map(
+                                        rem_address,
+                                        rem_buffer_map_copy,
+                                        Node::DATA_BUFFER_IDX,
+                                        [data_write_chain] () {
+                                            std::this_thread::sleep_for(std::chrono::nanoseconds(500));
+                                            (*data_write_chain)();
+                                        }
+                                    );
+                                    return;
+                                }
+                                delete data_write_chain;
+
+                                node_connector_->sendv(
+                                    rem_address,
+                                    data_buffer_,
+                                    Node::DATA_BUFFER_IDX,
+                                    src_mem_addresses,
+                                    dest_addresses,
+                                    sizes,
+                                    [this, rem_address, rem_buffer_map_copy, component_elements, combined_size] () {
+
+                                        // send the new buffer map to remote node and unlock
+                                        node_connector_->write_remote_buffer_map_and_unlock(rem_address, rem_buffer_map_copy,
+                                            Node::DATA_BUFFER_IDX,
+                                            [this, component_elements, combined_size] () {
+                                                monitor_->QueueMetric("timeslice_forwarder_state",
+                                                    {{"host", std::to_string(node_id_) + " - " + std::to_string(1)}},
+                                                    {{"send_cnt", ++send_cnt_}});
+                                                monitor_->QueueMetric("timeslice_forwarder_state",
+                                                    {{"host", std::to_string(node_id_) + " - " + std::to_string(1)}},
+                                                    {{"bytes_sent", combined_size}});
+                                                // remove the sent TS from own buffermap
+                                                data_buffer_map_->remove_elements(component_elements);
+                                                node_connector_->unlock_buffer_map(data_buffer_map_);
+
+                                                // call clear_timeslice on ts_reader
+                                                ts_reader->clear_last_timeslice();
+
+                                            }
+                                        );
+                                    }
+                                );
+                            },
+                            [this] () {
+                                monitor_->QueueMetric("timeslice_forwarder_state",
+                                    {{"host", std::to_string(node_id_) + " - " + std::to_string(1)}},
+                                    {{"failed_remote_lock", ++failed_remote_lock_cnt_}});
+                                return true;
+                            }
+                        );
+                    };
+                    (*data_write_chain)();
+                }, [] () {
+                    return true;
+                });
             }
         }
     }

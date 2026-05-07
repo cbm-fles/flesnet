@@ -219,8 +219,6 @@ void Application::run() {
       ++index;
       continue;
     }
-    // std::cout << "timeslice->timeslice_descriptor_.num_core_microslices: " << timeslice->timeslice_descriptor_.num_core_microslices << std::endl;
-    // std::cout << "timeslice->num_microslices(0): " << timeslice->num_microslices(0) << std::endl;
 
     std::shared_ptr<const fles::Timeslice> ts;
     if (par_.release_mode()) {
@@ -239,7 +237,25 @@ void Application::run() {
     if (par_.rate_limit() != 0.0) {
       rate_limit_delay();
     }
-    // ts->descriptor()
+
+                    for (uint64_t c = 0; c < ts->num_components(); c++) {
+                    if (ts->size_component(c) == 0) {
+                        std::cout << "is 0" << std::endl;
+                        exit(-1);
+                    }
+                    for (uint64_t m = 0;  m < ts->num_microslices(c); m++) {
+                        auto m_desc = ts->descriptor(c, m);
+                        if (m_desc.size == 0) {
+                            std::cout << "component: " << c << std::endl;
+                            std::cout << "ms idx: " << m << std::endl;
+                            std::cout << "m_desc.sys_id: " << uint64_t(m_desc.sys_id) << std::endl;
+                            std::cout << "m_desc.eq_id: " << uint64_t(m_desc.eq_id) << std::endl;
+                            std::cout << "m_desc.flags: " << uint64_t(m_desc.flags) << std::endl;
+                            std::cout << "microslice == 0" << std::endl;
+                            exit(-1);
+                        }
+                    }
+                }
     for (auto& sink : sinks_) {
       sink->put(ts);
     }
