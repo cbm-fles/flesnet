@@ -93,7 +93,7 @@ private:
             monitor_->QueueMetric("timeslice_forwarder_state",
                 {{"host", std::to_string(node_id_) + " - " + std::to_string(group_id_)}},
                 {{"bytes_received", component_size}});
-            data_buffer_map_->print_all();
+            // data_buffer_map_->print_all();
             cout << "write_timeslice start " << endl;
             ts_sink_->write_timeslice(component);
             cout << "write_timeslice done" << endl;
