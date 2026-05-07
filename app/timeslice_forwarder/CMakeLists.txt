@@ -15,22 +15,26 @@ ExternalProject_Add(libfabric
 )
 add_dependencies(timeslice_forwarder libfabric)
 
-#ExternalProject_Add(timeslice_forwarder_lib
-#    GIT_REPOSITORY    /home/htc/ngreve/prog/timeslice_forwarder/
-#    GIT_TAG dev
-#    CMAKE_ARGS
-#        -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
-#        -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/timeslice_forwarder_lib_build/install_dir
-#    UPDATE_DISCONNECTED 1
-#    BUILD_IN_SOURCE 1
-#)
-#add_dependencies(timeslice_forwarder_lib libfabric)
-#add_dependencies(timeslice_forwarder timeslice_forwarder_lib)
-
-set(DATA_FORWARDER_INSTALL_DIR "/home/htc/ngreve/prog/timeslice_forwarder/build/install_dir")
-set(DATA_FORWARDER_INCLUDE_DIR "${DATA_FORWARDER_INSTALL_DIR}/include")
-set(DATA_FORWARDER_LIB_DIR     "${DATA_FORWARDER_INSTALL_DIR}/lib")
-set(DATA_FORWARDER_LIBRARY "${DATA_FORWARDER_LIB_DIR}/libdata_forwarder.a")
+IF (DATA_FORWARDER_INSTALL_PATH)
+    message("Using installed data forwarder library at: ${DATA_FORWARDER_INSTALL_PATH}")
+    set(DATA_FORWARDER_INSTALL_DIR "${DATA_FORWARDER_INSTALL_PATH}")
+    set(DATA_FORWARDER_INCLUDE_DIR "${DATA_FORWARDER_INSTALL_DIR}/include")
+    set(DATA_FORWARDER_LIB_DIR     "${DATA_FORWARDER_INSTALL_DIR}/lib")
+    set(DATA_FORWARDER_LIBRARY "${DATA_FORWARDER_LIB_DIR}/libdata_forwarder.a")
+ELSE ()
+    message("Pulling data forwarder lib from git")
+    ExternalProject_Add(timeslice_forwarder_lib
+        GIT_REPOSITORY    /home/htc/ngreve/prog/timeslice_forwarder/
+        GIT_TAG dev
+        CMAKE_ARGS
+            -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
+            -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/timeslice_forwarder_lib_build/install_dir
+        UPDATE_DISCONNECTED 1
+        BUILD_IN_SOURCE 1
+    )
+    add_dependencies(timeslice_forwarder_lib libfabric)
+    add_dependencies(timeslice_forwarder timeslice_forwarder_lib)
+ENDIF()
 
 find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS serialization program_options graph iostreams)
 target_include_directories(timeslice_forwarder PRIVATE
@@ -55,11 +59,5 @@ file(GLOB timeslice_forwarder_SRC
     "src/**/*.cpp"
     "src/*.cpp"
 )
-
-get_cmake_property(_variableNames VARIABLES)
-list (SORT _variableNames)
-foreach (_variableName ${_variableNames})
-    message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()
 
 target_sources(timeslice_forwarder PRIVATE ${timeslice_forwarder_SRC})

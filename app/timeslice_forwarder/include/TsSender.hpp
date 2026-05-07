@@ -13,12 +13,13 @@
 
 using namespace std::placeholders;
 using namespace std;
-constexpr uint64_t BUFFER_MAP_ELEMENTS = 512;
-constexpr uint64_t DATA_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 450;
-constexpr uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
 
-class Sender : public Node {
+class TsSender : public Node {
 private:
+    const uint64_t BUFFER_MAP_ELEMENTS = 512;
+    const uint64_t DATA_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 450;
+    const uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
+
     std::shared_mutex mtx_;
     shared_ptr<cbm::Monitor> monitor_{make_shared<cbm::Monitor>()};
     unordered_map<uint64_t, std::string> uid_address_map_;
@@ -188,8 +189,9 @@ private:
             Node::connect_to_node(cm_address_);
         }
     };
+
 public:
-    Sender(uint64_t node_id,
+    TsSender(uint64_t node_id,
         std::string listen_address,
         std::string shm_uri,
         std::string central_manager_address,
@@ -213,9 +215,9 @@ public:
         Node::set_wi_buffer(wi_buffer_, wi_buffer_map_, WI_BUFFER_SIZE);
         Node::set_data_buffer(data_buffer_, data_buffer_map_, data_buffer_size_);
 
-        Node::on_new_work_item(std::bind(&Sender::on_new_work_item, this, _1, _2, _3, _4, _5));
-        Node::on_node_connected(std::bind(&Sender::on_node_connected, this, _1, _2, _3));
-        Node::on_connection_refused(std::bind(&Sender::on_connection_refused, this, _1));
+        Node::on_new_work_item(std::bind(&TsSender::on_new_work_item, this, _1, _2, _3, _4, _5));
+        Node::on_node_connected(std::bind(&TsSender::on_node_connected, this, _1, _2, _3));
+        Node::on_connection_refused(std::bind(&TsSender::on_connection_refused, this, _1));
 
         wi_buffer_status_ = make_shared<WorkItem>();
         wi_buffer_status_->type = WorkItem::buffer_status;
