@@ -24,7 +24,7 @@ IF (DATA_FORWARDER_INSTALL_PATH)
 ELSE ()
     message("Pulling data forwarder lib from git")
     ExternalProject_Add(timeslice_forwarder_lib
-        GIT_REPOSITORY    /home/htc/ngreve/prog/timeslice_forwarder/
+        GIT_REPOSITORY https://git.zib.de/ngreve/timeslice_forwarder.git
         GIT_TAG dev
         CMAKE_ARGS
             -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
