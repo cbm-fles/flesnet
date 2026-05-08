@@ -1,38 +1,19 @@
-#include <boost/proto/proto_fwd.hpp>
-#include <boost/thread/pthread/thread_data.hpp>
-#include <TimesliceWriter.hpp>
-#include <cstdlib>
-#include <cstring>
-#include <fcntl.h>
+
+#include "CentralManager.hpp"
+#include "TsSender.hpp"
+#include "TsReceiver.hpp"
+
 #include <getopt.h>
 #include <chrono>
 #include <memory>
+
 #include <rdma/fabric.h>
 #include <sched.h>
 #include <sys/mman.h>
-#include <thread>
-#include <unistd.h>
-#include "CentralManager.hpp"
-#include "TsSender.hpp"
-#include <sys/stat.h>        /* For mode constants */
 #include "Parameters.hpp"
-#include <df/WorkItems/WiData.hpp>
-#include <df/WorkItems/WorkItem.hpp>
-#include <df/EvaluationLogic/EvaluationLogic.hpp>
-#include <df/WorkItems/WiConnectorConfig.hpp>
-#include <df/Node.hpp>
-#include <df/BufferMap/BufferMap.hpp>
-#include <df/WorkerThread.hpp>
-#include <df/Connectors/ConnectorInterface.hpp>
-#include <df/InterfaceFactory.hpp>
-#include <df/Connectors/ConnectorInfiniband.hpp>
-#include <df/WorkItems/WiTransmission.hpp>
-#include <df/Connectors/ConnectorInterface.hpp>
-#include <df/ConnectionManager.hpp>
-#include <df/WorkItems/WiConnection.hpp>
 #include <iostream>
-#include <MonitorSinkInflux2.hpp>
-#include "TsReceiver.hpp"
+#include <thread>
+
 using namespace std;
 
 Parameters par;

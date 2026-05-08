@@ -1,3 +1,5 @@
+#pragma once
+
 #include "OutputArchive.hpp"
 #include "StorableTimeslice.hpp"
 #include "Timeslice.hpp"
@@ -8,7 +10,6 @@
 #include <df/WorkerThread.hpp>
 #include <df/Connectors/ConnectorInterface.hpp>
 
-#pragma once
 class MyTimeslice : public fles::StorableTimeslice {
 public:
     // friend class fles::StorableTimeslice;
