@@ -1,3 +1,4 @@
+#pragma once
 
 #include "ItemProducer.hpp"
 #include "StorableTimeslice.hpp"
@@ -10,7 +11,6 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-#pragma once
 
 class FragmentedTimesliceBuffer : public TimesliceBuffer {
 private:
