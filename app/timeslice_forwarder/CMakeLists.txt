@@ -13,28 +13,30 @@ ExternalProject_Add(libfabric
     UPDATE_DISCONNECTED 1
     BUILD_IN_SOURCE 1
 )
-add_dependencies(timeslice_forwarder libfabric)
 
 IF (DATA_FORWARDER_INSTALL_PATH)
+    add_dependencies(timeslice_forwarder libfabric)
     message("Using installed data forwarder library at: ${DATA_FORWARDER_INSTALL_PATH}")
     set(DATA_FORWARDER_INSTALL_DIR "${DATA_FORWARDER_INSTALL_PATH}")
-    set(DATA_FORWARDER_INCLUDE_DIR "${DATA_FORWARDER_INSTALL_DIR}/include")
-    set(DATA_FORWARDER_LIB_DIR     "${DATA_FORWARDER_INSTALL_DIR}/lib")
-    set(DATA_FORWARDER_LIBRARY "${DATA_FORWARDER_LIB_DIR}/libdata_forwarder.a")
 ELSE ()
     message("Pulling data forwarder lib from git")
-    ExternalProject_Add(timeslice_forwarder_lib
+    set(DATA_FORWARDER_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/data_forwarder_lib_build/install_dir")
+    ExternalProject_Add(data_forwarder_lib
         GIT_REPOSITORY https://git.zib.de/ngreve/timeslice_forwarder.git
         GIT_TAG dev
         CMAKE_ARGS
             -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
-            -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/timeslice_forwarder_lib_build/install_dir
+            -DCMAKE_INSTALL_PREFIX=${DATA_FORWARDER_INSTALL_DIR}
         UPDATE_DISCONNECTED 1
         BUILD_IN_SOURCE 1
     )
-    add_dependencies(timeslice_forwarder_lib libfabric)
-    add_dependencies(timeslice_forwarder timeslice_forwarder_lib)
+    add_dependencies(data_forwarder_lib libfabric)
+    add_dependencies(timeslice_forwarder data_forwarder_lib)
 ENDIF()
+
+set(DATA_FORWARDER_INCLUDE_DIR "${DATA_FORWARDER_INSTALL_DIR}/include")
+set(DATA_FORWARDER_LIB_DIR     "${DATA_FORWARDER_INSTALL_DIR}/lib")
+set(DATA_FORWARDER_LIBRARY "${DATA_FORWARDER_LIB_DIR}/libdata_forwarder.a")
 
 find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS serialization program_options graph iostreams)
 target_include_directories(timeslice_forwarder PRIVATE
