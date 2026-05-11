@@ -18,7 +18,7 @@ TsclientWriter::TsclientWriter(std::string shm_uri) {
     uint32_t descsize = 19; // 16 MiB
     uint32_t num_components = 26;
     const auto shm_identifier = uri.path;
-    cout << "shm_identifier: " << uri.path << endl;
+    L_(debug) << "shm_identifier: " << uri.path;
     for (auto& [key, value] : uri.query_components) {
         if (key == "datasize") {
             datasize = stoul(value);
@@ -33,14 +33,12 @@ TsclientWriter::TsclientWriter(std::string shm_uri) {
         }
     }
 
-    // cout << "shm_identifier: " << shm_identifier << endl;
     producer_address_ = "inproc://" + shm_identifier;
     worker_address_ = "ipc://@" + shm_identifier;
 
 
     item_distributor_ = make_unique<ItemDistributor>(zmq_context_, producer_address_, worker_address_),
     ts_buffer_ = make_shared<FragmentedTimesliceBuffer>(zmq_context_, producer_address_, shm_identifier, datasize, descsize, num_components);
-    // managed_timeslice_buffer = make_shared<ManagedTimesliceBuffer>(zmq_context_, shm_identifier, datasize, descsize, num_components);
     distributor_thread_ = thread(ref(*(item_distributor_.get())));
     buffer_ = shared_ptr<char>(static_cast<char*>(ts_buffer_->managed_shm_->get_address()));
     buffer_size_ = ts_buffer_->managed_shm_->get_size();

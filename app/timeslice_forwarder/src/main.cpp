@@ -13,6 +13,7 @@
 #include "Parameters.hpp"
 #include <iostream>
 #include <thread>
+#include <log.hpp>
 
 using namespace std;
 
@@ -22,7 +23,7 @@ Parameters par;
 
 int start_cm() {
     auto node = make_shared<CentralManager>(par.central_manager_listen_addr, par.monitoring_uri);
-    cout << "Central Manager listening on: " << par.central_manager_listen_addr << endl;
+    L_(info) << "Central Manager listening on: " << par.central_manager_listen_addr;
     while (true) {
         this_thread::sleep_for(std::chrono::milliseconds(500));
     }
@@ -37,6 +38,8 @@ int start_sender() {
         par.central_manager_listen_addr,
         par.monitoring_uri
     );
+    L_(info) << "Started TS sender (" << par.listen_addr << ")";
+
     while (true) {
         this_thread::sleep_for(chrono::milliseconds(2000));
     }
@@ -51,6 +54,8 @@ int start_receiver() {
         par.central_manager_listen_addr,
         par.monitoring_uri
     );
+    L_(info) << "Started TS receiver (" << par.listen_addr << ")";
+
     while (true) {
         this_thread::sleep_for(chrono::milliseconds(3000));
     }
@@ -61,13 +66,14 @@ int start_receiver() {
 int main (int argc, char** argv) {
     par.parse_options(argc, argv);
     if (FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION) != fi_version()) {
-        cerr << "Libfabric: Header version and library version do not match" << endl;
-        cerr << "Header: " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION << endl;
-        cerr << "Lib: " << FI_MAJOR(fi_version()) << "." << FI_MINOR(fi_version()) << endl;
+        L_(fatal) << "Libfabric: Header version and library version do not match";
+        L_(fatal) << "Header: " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION;
+        L_(fatal) << "Lib: " << FI_MAJOR(fi_version()) << "." << FI_MINOR(fi_version());
         exit(-1);
     } else if (FI_MAJOR_VERSION != 2 || FI_MINOR_VERSION < 2) {
-        cerr << "Libfabric: invalid version." << endl;
-        cerr << "Minimum version required 2.2 - found " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION << endl;
+        L_(fatal) << "Libfabric: invalid version.";
+        L_(fatal) << "Minimum version required 2.2 - found " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION;
+        exit(-1);
     }
 
     if (par.group_id == 0) {
@@ -77,7 +83,7 @@ int main (int argc, char** argv) {
     } else if (par.group_id == 2) {
         start_receiver();
     } else { // Should never happen
-        cerr << "! Was unable to determine if node is sender, receiver or central manager" << endl;
+        L_(fatal) << "! Was unable to determine if node is sender, receiver or central manager";
     }
 
     return 0;

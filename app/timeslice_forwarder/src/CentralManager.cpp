@@ -1,12 +1,13 @@
 #include "CentralManager.hpp"
+#include "log.hpp"
 
 using namespace std::placeholders;
 using namespace std;
 
 void CentralManager::on_node_connected(std::string address, uint64_t group_id, uint64_t node_id) {
-    cout << "node connected: \n" <<
+    L_(info) << "Node connected: \n" <<
             "Node ID: " << node_id  << '\n' <<
-            "Group ID: " << group_id << endl;
+            "Group ID: " << group_id;
 
     auto node_uid = MAKE_UID(group_id, node_id);
     if (group_id == 1) {
@@ -45,17 +46,17 @@ void CentralManager::on_node_disconnected(std::string address, uint64_t group_id
 
 void CentralManager::on_new_work_item(std::string /*address*/, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id) {
     auto node_uid = MAKE_UID(group_id, node_id);
-    cout << "new work item: " << node_id << " - group_id " << group_id << endl;
+    L_(debug) << "new work item: " << node_id << " - group_id " << group_id;
 
     if (wi_type == WorkItem::connector_config) { // The given node informed us about its connection possibilities
-        cout << "-- connector config" << endl;
+        L_(debug) << "connector config";
         WiConnectorConfig conn_config;
         conn_config.deserialize(wi_ptr);
         unique_lock<mutex> l(mtx_);
         uid_listen_address_map_[node_uid] = conn_config.listen_addr;
         connect_nodes(node_uid);
     } else if (wi_type == WorkItem::connection) { // The given node informed us about a new available connection
-        cout << "-- connection" << endl;
+        L_(debug) << "connection";
         WiConnection wi_connection;
         wi_connection.deserialize(wi_ptr);
         auto from = MAKE_UID(wi_connection.from_group_id, wi_connection.from_node_id);
@@ -63,31 +64,27 @@ void CentralManager::on_new_work_item(std::string /*address*/, std::shared_ptr<c
         unique_lock<mutex> l(mtx_);
         connection_manager_.connect_unidirectional(from, to);
     } else if (wi_type == WorkItem::buffer_status) { // The told us, that its buffer map has changed
-        cout << "-- buffer status" << endl;
+        L_(debug) << "buffer status";
         unique_lock<mutex> l(mtx_);
         nodes_with_buffer_change_->push_back(node_uid);
         eval_worker_cv_.notify_all();
     } else {
-        cerr << "Received unknown WorkItem type: " << wi_type << endl;
+        L_(warning) << "Received unknown WorkItem type: " << wi_type;
     }
 }
 
 void CentralManager::connect_nodes(uint64_t node_uid) {
-        // auto node_uid = MAKE_UID(group_id, node_id);
         uint64_t group_id = GROUP_ID(node_uid);
         uint64_t node_id = GROUP_ID(node_uid);
         auto all_possible_connections = connection_manager_.get_connections(node_uid, false);
-        // vector<uint64_t> relevant_connections;
-        // cout << "relevant connections: " << relevant_connections.size() << endl;
-        cout << "all_possible_connections.size(): " << all_possible_connections.size() << endl;
+        L_(debug) << "all_possible_connections.size(): " << all_possible_connections.size();
         for (auto &remote_uid : all_possible_connections) {
             if (GROUP_ID(remote_uid) == group_id + 1 || GROUP_ID(remote_uid) == group_id - 1) {
-                cout << "tell N: " << node_id << " - G: " << group_id << " ---> N: "<< NODE_ID(remote_uid) << " - G: " << GROUP_ID(remote_uid) << endl;
+                L_(debug) << "tell N: " << node_id << " - G: " << group_id << " ---> N: "<< NODE_ID(remote_uid) << " - G: " << GROUP_ID(remote_uid);
                 auto wi_connection = make_shared<WiConnection>();
                 wi_connection->type = WorkItem::connection_req;
                 wi_connection->connector_uid = 0;
                 wi_connection->connector_address = uid_listen_address_map_[remote_uid];
-                cout << "send work item" << endl;
                 Node::send_work_item(uid_address_map_[node_uid], wi_connection);
             }
         }
@@ -100,23 +97,23 @@ void CentralManager::eval_node_status(uint64_t group_id, uint64_t node_id) {
     if (group_id == 1) { // TS sender
         auto connections = connection_manager_.get_connections(node_uid);
         if (connections.empty()) {
-            cout << "no connections available" << endl;
+            L_(debug) << "no connections available";
             return;
         }
         target_idx_++;
         auto target_node_uid = connections[target_idx_ % connections.size()];
         auto target_node_id  = NODE_ID(target_node_uid);
         auto target_group_id  = GROUP_ID(target_node_uid);
-        cout << "Planing to send data from N:" << node_id << " - G: " << group_id  << " to N: " << target_node_id << " - G: " << target_group_id << endl;
+        L_(info) << "Planing to send data from N:" << node_id << " - G: " << group_id  << " to N: " << target_node_id << " - G: " << target_group_id;
         auto wi_tx = make_shared<WiTransmission>();
         wi_tx->node_uid = target_node_uid;
         wi_tx->type = WorkItem::transmission;
         Node::send_work_item(uid_address_map_[node_uid], wi_tx);
     } else if (group_id == 2) { // TS receiver
-        cout << "evaluation of TS receiver status" << endl;
+        L_(debug) << "evaluation of TS receiver status" << endl;
     } else {
-        cerr << "! Invalid Group ID: " << group_id << '\n' <<
-                "! Nodes should either have Group ID 1 or 2" << endl;
+        L_(warning) << "! Invalid Group ID: " << group_id << '\n' <<
+                "! Nodes should either have Group ID 1 or 2";
     }
 }
 
@@ -160,5 +157,4 @@ CentralManager::CentralManager(std::string listen_address, std::string monitorin
     Node::add_connector(node_connector, listen_address_);
 
     Node::start();
-
 }

@@ -11,9 +11,9 @@ void TsReceiver::on_new_work_item(std::string /*address*/, std::shared_ptr<char>
 }
 
 void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64_t rem_node_id) {
-    cout << "node connected: \n" <<
+    L_(debug) << "Node connected: \n" <<
             "Group ID: " << rem_group_id << '\n' <<
-            "Node ID: " << rem_node_id  << endl;
+            "Node ID: " << rem_node_id;
 
     if (rem_group_id == 0 && rem_node_id == 0) { // connected to central manager - tell it about our connection possibilities
         auto conn_config = make_shared<WiConnectorConfig>();
@@ -30,7 +30,7 @@ void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64
         wi_connection->to_group_id = rem_group_id;
         wi_connection->to_node_id = rem_node_id;
         Node::send_work_item(cm_address_, wi_connection, [] () {
-            cout << "send work item done (WorkItem::connection)" << endl;
+            L_(debug) << "send work item done (WorkItem::connection)";
         });
     }
 }
@@ -47,7 +47,7 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
     monitor_->QueueMetric("timeslice_forwarder_state",
                     {{"host", std::to_string(node_id_) + " - " + std::to_string(group_id_)}},
                     {{"recv_cnt", ++recv_cnt_}});
-    cout << "New data from Node ID: " << node_id << " - Group ID: " << group_id << endl;
+    L_(info)  << "New data from Node ID: " << node_id << " - Group ID: " << group_id;
     node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         if (el == nullptr) { // not expected to happen in the current implementation
@@ -56,14 +56,12 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         }
         uint64_t component_size = 0;
         auto component = data_buffer_map_->get_elements_of_component(el->compontent_id, component_size);
-        std::cout << "component.size: " << component.size() << endl;
         monitor_->QueueMetric("timeslice_forwarder_state",
             {{"host", std::to_string(node_id_) + " - " + std::to_string(group_id_)}},
             {{"bytes_received", component_size}});
-        // data_buffer_map_->print_all();
-        cout << "write_timeslice start " << endl;
+        L_(debug) << "write_timeslice start";
         ts_sink_->write_timeslice(component);
-        cout << "write_timeslice done" << endl;
+        L_(debug) << "write_timeslice done";
 
         data_buffer_map_->remove_elements(component);
         node_connector_->unlock_buffer_map(data_buffer_map_);
@@ -71,7 +69,6 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         monitor_->QueueMetric("timeslice_forwarder_state",
                     {{"host", std::to_string(node_id_) + " - " + std::to_string(group_id_)}},
                     {{"failed_self_locks", ++failed_self_locks_}});
-        // cout << "failed self lock: " << failed_self_locks_ << endl;
         return true;
     });
 }

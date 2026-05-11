@@ -37,7 +37,6 @@ public:
                                     num_input_nodes_(num_input_nodes) {
         boost::uuids::random_generator uuid_gen;
         shm_uuid_ = uuid_gen();
-        // std::cout << "shm_uuid: " << shm_uuid_ << std::endl;
         boost::interprocess::shared_memory_object::remove(shm_identifier_.c_str());
 
         std::size_t data_size =
