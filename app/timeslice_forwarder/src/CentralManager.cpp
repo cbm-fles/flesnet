@@ -104,7 +104,7 @@ void CentralManager::eval_node_status(uint64_t group_id, uint64_t node_id) {
         auto target_node_uid = connections[target_idx_ % connections.size()];
         auto target_node_id  = NODE_ID(target_node_uid);
         auto target_group_id  = GROUP_ID(target_node_uid);
-        L_(info) << "Planing to send data from N:" << node_id << " - G: " << group_id  << " to N: " << target_node_id << " - G: " << target_group_id;
+        L_(info) << "Planning to send data from N:" << node_id << " - G: " << group_id  << " to N: " << target_node_id << " - G: " << target_group_id;
         auto wi_tx = make_shared<WiTransmission>();
         wi_tx->node_uid = target_node_uid;
         wi_tx->type = WorkItem::transmission;
