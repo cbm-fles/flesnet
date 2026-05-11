@@ -65,11 +65,11 @@ void TsclientReader::start_timeslice_reading() {
             if (!timeslice) {
                 break;
             }
-            cout << "timeslice->index(): " << timeslice->index() << endl;
+            L_(debug) << "timeslice->index(): " << timeslice->index();
 
             if (base_mem_addres_ != reinterpret_cast<char*>(source_->managed_shm_->get_address())) {
                 base_mem_addres_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());
-                cerr << "(TimesliceReader) SHM base memory address changed" << endl;
+                L_(warning) << "(TimesliceReader) SHM base memory address changed";
             }
 
             // Proactively request lock and start preparing data in the meantime
@@ -115,7 +115,7 @@ void TsclientReader::start_timeslice_reading() {
                 BufferMap::ListElement::IO::RX
             );
             if (buffer_map_ret == nullptr) {
-                cerr << "(TimesliceReader) Buffer map full. Not handled yet - exiting" << endl;
+                L_(fatal) << "(TimesliceReader) Buffer map full. Not handled yet - exiting";
                 exit(-1);
             }
 

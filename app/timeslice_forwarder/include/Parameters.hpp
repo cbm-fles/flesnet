@@ -14,7 +14,7 @@ public:
     std::string listen_addr;
     std::string central_manager_listen_addr;
     std::string monitoring_uri;
-    bool is_monitoring_enabled = false; // convinience variable
+
     Parameters(int argc, char** argv);
     Parameters() = default;
     void parse_options(int argc, char** argv);

@@ -11,7 +11,6 @@
 #include "TimesliceSource.hpp"
 #include "log.hpp"
 #include <atomic>
-#include <bitset>
 #include <boost/interprocess/detail/os_thread_functions.hpp>
 #include <cstdint>
 #include <iomanip>
@@ -214,7 +213,7 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
 
         // it is allowed that at the start of the archive, some TS may be skipped so we
         // consume in_archive.source until in_archive.curr_ts contains the first transmitted timeslice
-        cout << "Searching for first transmitted timeslice of: " << in_archive.source_path << " ..." << std::endl;
+        L_(info) << "Searching for first transmitted timeslice of: " << in_archive.source_path << " ..." << std::endl;
         bool found_beginning = false;
         while (!found_beginning && (in_archive.curr_ts = in_archive.source->get()) != nullptr) {
             cout << "search for in TS idx: " << in_archive.curr_ts->index() << endl;

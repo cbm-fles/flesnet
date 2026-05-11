@@ -43,7 +43,6 @@ public:
   ItemDistributor& operator=(ItemDistributor&& other) = delete;
 
   void operator()() {
-    std::cout << "in () operator" << std::endl;
     zmq::active_poller_t poller;
     poller.add(generator_socket_, zmq::event_flags::pollin,
                [&](zmq::event_flags /*e*/) { on_generator_pollin(); });
