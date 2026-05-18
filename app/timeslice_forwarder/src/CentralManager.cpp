@@ -93,7 +93,6 @@ void CentralManager::connect_nodes(uint64_t node_uid) {
 void CentralManager::eval_node_status(uint64_t group_id, uint64_t node_id) {
     const auto node_uid = MAKE_UID(group_id, node_id);
     unique_lock<mutex> l(mtx_);
-
     if (group_id == 1) { // TS sender
         auto connections = connection_manager_.get_connections(node_uid);
         if (connections.empty()) {
