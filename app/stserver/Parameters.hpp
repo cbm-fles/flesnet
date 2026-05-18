@@ -91,20 +91,20 @@ private:
   uint16_t m_listen_port = DEFAULT_SENDER_PORT;
   std::string m_advertise_host;
   SenderInfo m_sender_info;
-  std::string m_tssched_address = "localhost";
+  std::string m_tssched_address = "login";
 
   // Pattern generator parameters
   uint32_t m_pgen_channels = 0;
-  Nanoseconds m_pgen_microslice_duration = 125_us;
+  Nanoseconds m_pgen_microslice_duration = 400_us;
   SizeValue m_pgen_microslice_size = 100_kB;
-  uint32_t m_pgen_flags = 0;
+  uint32_t m_pgen_flags = 3;
 
   // Global parameters
-  Nanoseconds m_timeslice_duration = 100_ms;
-  Nanoseconds m_timeout = 1_ms;
+  Nanoseconds m_timeslice_duration = 40_ms;
+  Nanoseconds m_timeout = 4_ms;
 
   // Channel parameters (may be set individually in the future)
-  SizeValue m_data_buffer_size = 256_MiB;
+  SizeValue m_data_buffer_size = 1_GiB;
   SizeValue m_desc_buffer_size_bytes = 16_MiB;
   Nanoseconds m_overlap_before = 100_us;
   Nanoseconds m_overlap_after = 100_us;

@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <string>
 
-using namespace std::chrono_literals;
+using namespace option_value_literals;
 
 /// Run parameters exception class.
 class ParametersException : public std::runtime_error {
@@ -40,7 +40,7 @@ private:
 
   std::string m_monitor_uri;
   uint16_t m_listen_port = DEFAULT_SCHEDULER_PORT;
-  Nanoseconds m_timeslice_duration{100ms};
-  Nanoseconds m_timeout{100ms};
+  Nanoseconds m_timeslice_duration = 40_ms;
+  Nanoseconds m_timeout = 40_ms;
   uint32_t m_max_in_flight = 1;
 };

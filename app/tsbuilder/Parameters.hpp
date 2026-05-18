@@ -37,8 +37,8 @@ private:
   void parse_options(int argc, char* argv[]);
 
   std::string m_monitor_uri;
-  std::string m_tssched_address = "localhost";
-  Nanoseconds m_timeout = 10_s;
+  std::string m_tssched_address = "login";
+  Nanoseconds m_timeout = 1_s;
   std::string m_shm_id = "flesnet_ts_builder";
-  SizeValue m_buffer_size = 32_GiB;
+  SizeValue m_buffer_size = 20_GiB;
 };
