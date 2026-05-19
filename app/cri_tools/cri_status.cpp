@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
         float pci_busy = dev_perf.pci_busy / cycles;
         float pci_idle = 1 - pci_trans - pci_stall - pci_busy;
         float pci_max_stall = dev_perf.pci_max_stall;
-        float pci_throughput = pci_trans * cri::pci_clk * 32;
+        float pci_throughput = pci_trans * cri::pci_clk * cri::pci_width;
 
         if (console) {
           std::cout << "CRI " << j << " (" << cri->print_devinfo() << ")"
@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
           float mc_trans = perf_gtx.mc_trans / cycles_gtx;
           float mc_stall = perf_gtx.mc_stall / cycles_gtx;
           float mc_busy = perf_gtx.mc_busy / cycles_gtx;
-          float mc_throughput = mc_trans * cri::gtx_clk * 8;
+          float mc_throughput = mc_trans * cri::gtx_clk * cri::mc_width;
 
           if (console) {
             ss << std::setw(1) << j << "/" << i << "  ";

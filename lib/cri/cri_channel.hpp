@@ -24,8 +24,11 @@ namespace cri {
 
 class dma_channel;
 
+// TODO: define these constants in the cri build flow to support different
+// designs
 constexpr uint32_t pkt_clk = 250E6;
 constexpr uint32_t gtx_clk = 160E6;
+constexpr uint32_t mc_width = 32; // in bytes
 
 class cri_channel {
 
