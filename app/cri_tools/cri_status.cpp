@@ -15,8 +15,6 @@
 #include <memory>
 #include <thread>
 
-// measurement interval (equals output interval)
-constexpr uint32_t interval_ms = 1000;
 constexpr bool clear_screen = true;
 
 struct pci_perf_data_t {
@@ -46,12 +44,15 @@ namespace po = boost::program_options;
 int main(int argc, char* argv[]) {
   std::string monitor_uri;
   bool detailed_stats = false;
+  uint32_t interval_s = 1;
   po::options_description desc("Allowed options");
   auto desc_add = desc.add_options();
   desc_add("help,h", "produce help message");
   desc_add("desc", "show output description");
   desc_add("verbose,v", po::value<bool>(&detailed_stats)->implicit_value(true),
            "show detailed statistics");
+  desc_add("interval,n", po::value<uint32_t>(&interval_s)->default_value(1),
+           "measurement/output interval in seconds");
   desc_add("monitor,m",
            po::value<std::string>(&monitor_uri)
                ->value_name("<uri>")
@@ -274,7 +275,7 @@ int main(int argc, char* argv[]) {
       // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66803
       ++loop_cnt;
       std::this_thread::sleep_until(
-          start + loop_cnt * std::chrono::milliseconds(interval_ms));
+          start + loop_cnt * std::chrono::seconds(interval_s));
     }
   } catch (std::exception& e) {
     std::cerr << e.what() << std::endl;
