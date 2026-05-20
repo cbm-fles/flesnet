@@ -285,8 +285,8 @@ ucs_status_t TsBuilder::handle_scheduler_assign_ts(
     return UCS_OK;
   }
 
-  auto desc = to_obj_nothrow<StCollection>(
-      std::span(static_cast<const std::byte*>(data), length));
+  auto desc =
+      parse_collection(std::span(static_cast<const std::byte*>(data), length));
   if (!desc) {
     ERROR("{}| Failed to deserialize subtimeslice collection", id);
     return UCS_OK;
@@ -421,7 +421,7 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
                                            const ucp_am_recv_param_t* param) {
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
-  if (hdr.size() != 3 ||
+  if (hdr.size() != 2 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
     ERROR("Invalid subtimeslice data received");
     DEBUG("hdr.size() = {}, length = {}, param->recv_attr = {}", hdr.size(),
@@ -430,10 +430,9 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
   }
 
   const TsId id = hdr[0];
-  const uint64_t st_descriptor_size = hdr[1];
-  const uint64_t ms_data_size = hdr[2];
+  const uint64_t ms_data_size = hdr[1];
 
-  if (st_descriptor_size + ms_data_size != length) {
+  if (ms_data_size != length) {
     ERROR("Invalid header data in subtimeslice data received");
     return UCS_OK;
   }
@@ -479,30 +478,19 @@ ucs_status_t TsBuilder::handle_sender_data(const void* header,
     return UCS_OK;
   }
 
-  // RNDV receive: First desc_size bytes are the serialized StDescriptor,
-  // remaining bytes are the content
-  tsh.serialized_descriptors[ci].resize(st_descriptor_size);
-  tsh.iovectors[ci][0] = {tsh.serialized_descriptors[ci].data(),
-                          st_descriptor_size};
-  tsh.iovectors[ci][1] = {tsh.buffer + tsh.offsets[ci], tsh.ms_data_sizes[ci]};
-
   ucp_request_param_t req_param{};
-  req_param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
-                           UCP_OP_ATTR_FIELD_USER_DATA |
-                           UCP_OP_ATTR_FIELD_DATATYPE;
+  req_param.op_attr_mask =
+      UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
   req_param.cb.recv_am = on_sender_data_recv_complete;
   req_param.user_data = this;
-  req_param.datatype = ucp_dt_make_iov();
 
-  DEBUG("{}|s{}/{}| Receiving from '{}' ({} + {})", id, ci,
-        tsh.sender_ids.size(), sender_id,
-        human_readable_count(st_descriptor_size, true),
-        human_readable_count(ms_data_size, true));
+  DEBUG("{}|s{}/{}| Receiving from '{}' ({})", id, ci, tsh.sender_ids.size(),
+        sender_id, human_readable_count(ms_data_size, true));
 
   update_st_state(tsh, ci, StState::Receiving);
   ucs_status_ptr_t request =
-      ucp_am_recv_data_nbx(m_worker, data, tsh.iovectors[ci].data(),
-                           tsh.iovectors[ci].size(), &req_param);
+      ucp_am_recv_data_nbx(m_worker, data, tsh.buffer + tsh.offsets[ci],
+                           tsh.ms_data_sizes[ci], &req_param);
 
   if (UCS_PTR_IS_ERR(request)) {
     ucs_status_t status = UCS_PTR_STATUS(request);
@@ -595,18 +583,6 @@ void TsBuilder::update_st_state(TsHandle& tsh,
   }
   tsh.states[contribution_index] = new_state;
   tsh.state_change_at_ns[contribution_index] = now_ns;
-  if (new_state == StState::Complete) {
-    // Deserialize the descriptor
-    auto desc = to_obj_nothrow<StDescriptor>(
-        std::span(tsh.serialized_descriptors[contribution_index]));
-    if (!desc) {
-      ERROR("{}|s{}/{}| Failed to deserialize subtimeslice descriptor", tsh.id,
-            contribution_index, tsh.sender_ids.size());
-      update_st_state(tsh, contribution_index, StState::Failed);
-      return;
-    }
-    tsh.descriptors[contribution_index] = std::move(*desc);
-  }
   if (new_state == StState::Complete || new_state == StState::Failed) {
     if (std::all_of(tsh.states.begin(), tsh.states.end(), [](StState state) {
           return state == StState::Complete || state == StState::Failed;
@@ -614,7 +590,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
       // All contributions are complete (or failed), publish the timeslice
       if (!tsh.is_published) {
         send_status_to_scheduler(BUILDER_EVENT_RECEIVED, tsh.id);
-        StDescriptor ts_desc = combine_st_descriptors(tsh);
+        StDescriptor ts_desc = build_published_descriptor(tsh);
         m_timeslice_buffer.send_work_item(tsh.buffer, tsh.id, ts_desc);
         tsh.is_published = true;
         tsh.published_at_ns = fles::system::current_time_ns();
@@ -631,28 +607,14 @@ void TsBuilder::update_st_state(TsHandle& tsh,
   }
 }
 
-StDescriptor TsBuilder::combine_st_descriptors(TsHandle& tsh) {
-  StDescriptor d{};
-  for (std::size_t i = 0; i < tsh.sender_ids.size(); ++i) {
-    if (tsh.states[i] != StState::Complete) {
-      d.set_flag(TsFlag::MissingSubtimeslices);
-      continue;
-    }
-    const auto& contrib = tsh.descriptors[i];
-    if (d.duration_ns == 0) {
-      d.start_time_ns = contrib.start_time_ns;
-      d.duration_ns = contrib.duration_ns;
-    } else if (d.start_time_ns != contrib.start_time_ns ||
-               d.duration_ns != contrib.duration_ns) {
-      ERROR("Inconsistent start time or duration in contributions");
-      d.set_flag(TsFlag::MissingSubtimeslices);
-      continue;
-    }
-    d.flags |= contrib.flags;
-    for (const auto& c : contrib.components) {
-      d.components.push_back(c);
-      d.components.back().ms_data_offset += tsh.offsets[i];
-    }
+StDescriptor TsBuilder::build_published_descriptor(TsHandle& tsh) {
+  // The scheduler has already merged per-sender descriptors into
+  // tsh.merged_descriptor with absolute offsets. Here we only have to mark the
+  // timeslice as incomplete if any contribution did not arrive.
+  StDescriptor d = tsh.merged_descriptor;
+  if (std::any_of(tsh.states.begin(), tsh.states.end(),
+                  [](StState s) { return s != StState::Complete; })) {
+    d.set_flag(TsFlag::MissingSubtimeslices);
   }
   return d;
 }

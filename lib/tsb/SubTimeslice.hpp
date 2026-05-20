@@ -217,21 +217,18 @@ struct StComponentDescriptor {
   /// Flags
   uint32_t flags = 0;
 
+  // Explicit padding so the on-wire layout is unambiguous and matches the
+  // C++ struct size (trailing 4-byte alignment hole made explicit).
+  uint32_t reserved_ = 0;
+
   void set_flag(TsComponentFlag f) { flags |= static_cast<uint32_t>(f); }
   void clear_flag(TsComponentFlag f) { flags &= ~static_cast<uint32_t>(f); }
   [[nodiscard]] bool has_flag(TsComponentFlag f) const {
     return (flags & static_cast<uint32_t>(f)) != 0;
   }
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
-    ar & ms_data_offset;
-    ar & ms_data_size;
-    ar & num_microslices;
-    ar & flags;
-  }
 };
+static_assert(std::is_trivially_copyable_v<StComponentDescriptor>);
+static_assert(sizeof(StComponentDescriptor) == 32);
 
 struct StDescriptor {
   /// The start time of the subtimeslice in nanoseconds, should be divisible by
@@ -262,15 +259,6 @@ struct StDescriptor {
     }
     return total_ms_data_size;
   }
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
-    ar & start_time_ns;
-    ar & duration_ns;
-    ar & flags;
-    ar & components;
-  }
 };
 
 // 3: scheduler -> builder
@@ -284,6 +272,11 @@ struct StCollection {
   std::vector<std::string> sender_ids; // IDs of the senders
   std::vector<uint64_t> ms_data_sizes; // Sizes of the content data
 
+  /// Merged subtimeslice descriptor (aggregated by the scheduler from all
+  /// announced contributions). Component offsets are absolute, i.e. already
+  /// shifted by the per-sender offsets derived from ms_data_sizes.
+  StDescriptor merged_descriptor;
+
   /// The total size (in bytes) of the collection (i.e., microslice
   /// descriptors + content of all contained components)
   [[nodiscard]] uint64_t ms_data_size() const {
@@ -292,14 +285,6 @@ struct StCollection {
       total_ms_data_size += size;
     }
     return total_ms_data_size;
-  }
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
-    ar & id;
-    ar & sender_ids;
-    ar & ms_data_sizes;
   }
 };
 
@@ -371,4 +356,177 @@ std::optional<T> to_obj_nothrow(std::span<const std::byte> data) noexcept {
     ERROR("Deserialization error: {}", e.what());
     return std::nullopt;
   }
+}
+
+// Wire (POD) serialization for StDescriptor and StCollection
+//
+// These structures sit on the hot path of the sender/scheduler/builder
+// protocol; the generic Boost archive used for SenderInfo/BuilderInfo would
+// require per-message heap traffic and is unnecessary for trivially-copyable
+// payloads. The layout is a fixed POD header followed by packed arrays.
+// All participants are assumed to share the same native endianness (x86_64).
+
+namespace wire {
+
+struct StDescriptorHeader {
+  uint64_t start_time_ns;
+  uint64_t duration_ns;
+  uint32_t flags;
+  uint32_t num_components;
+};
+static_assert(sizeof(StDescriptorHeader) == 24);
+static_assert(std::is_trivially_copyable_v<StDescriptorHeader>);
+
+struct StCollectionHeader {
+  uint64_t id;
+  uint32_t num_senders;
+  uint32_t num_components;
+  uint64_t merged_start_time_ns;
+  uint64_t merged_duration_ns;
+  uint32_t merged_flags;
+  uint32_t total_sender_id_bytes;
+};
+static_assert(sizeof(StCollectionHeader) == 40);
+static_assert(std::is_trivially_copyable_v<StCollectionHeader>);
+
+} // namespace wire
+
+inline std::vector<std::byte> serialize_descriptor(const StDescriptor& d) {
+  wire::StDescriptorHeader h{};
+  h.start_time_ns = d.start_time_ns;
+  h.duration_ns = d.duration_ns;
+  h.flags = d.flags;
+  h.num_components = static_cast<uint32_t>(d.components.size());
+
+  const std::size_t comp_bytes =
+      d.components.size() * sizeof(StComponentDescriptor);
+  std::vector<std::byte> out(sizeof(h) + comp_bytes);
+  std::memcpy(out.data(), &h, sizeof(h));
+  if (comp_bytes != 0) {
+    std::memcpy(out.data() + sizeof(h), d.components.data(), comp_bytes);
+  }
+  return out;
+}
+
+inline std::optional<StDescriptor>
+parse_descriptor(std::span<const std::byte> data) {
+  if (data.size() < sizeof(wire::StDescriptorHeader)) {
+    return std::nullopt;
+  }
+  wire::StDescriptorHeader h{};
+  std::memcpy(&h, data.data(), sizeof(h));
+  const std::size_t comp_bytes =
+      h.num_components * sizeof(StComponentDescriptor);
+  if (data.size() != sizeof(h) + comp_bytes) {
+    return std::nullopt;
+  }
+  StDescriptor d;
+  d.start_time_ns = h.start_time_ns;
+  d.duration_ns = h.duration_ns;
+  d.flags = h.flags;
+  d.components.resize(h.num_components);
+  if (comp_bytes != 0) {
+    std::memcpy(d.components.data(), data.data() + sizeof(h), comp_bytes);
+  }
+  return d;
+}
+
+inline std::vector<std::byte> serialize_collection(const StCollection& c) {
+  std::size_t sender_id_total = 0;
+  for (const auto& s : c.sender_ids) {
+    sender_id_total += s.size();
+  }
+
+  wire::StCollectionHeader h{};
+  h.id = c.id;
+  h.num_senders = static_cast<uint32_t>(c.sender_ids.size());
+  h.num_components =
+      static_cast<uint32_t>(c.merged_descriptor.components.size());
+  h.merged_start_time_ns = c.merged_descriptor.start_time_ns;
+  h.merged_duration_ns = c.merged_descriptor.duration_ns;
+  h.merged_flags = c.merged_descriptor.flags;
+  h.total_sender_id_bytes = static_cast<uint32_t>(sender_id_total);
+
+  const std::size_t comp_bytes =
+      h.num_components * sizeof(StComponentDescriptor);
+  const std::size_t sizes_bytes = h.num_senders * sizeof(uint64_t);
+  const std::size_t lens_bytes = h.num_senders * sizeof(uint32_t);
+  std::vector<std::byte> out(sizeof(h) + comp_bytes + sizes_bytes + lens_bytes +
+                             sender_id_total);
+
+  std::byte* p = out.data();
+  std::memcpy(p, &h, sizeof(h));
+  p += sizeof(h);
+  if (comp_bytes != 0) {
+    std::memcpy(p, c.merged_descriptor.components.data(), comp_bytes);
+    p += comp_bytes;
+  }
+  if (sizes_bytes != 0) {
+    std::memcpy(p, c.ms_data_sizes.data(), sizes_bytes);
+    p += sizes_bytes;
+  }
+  for (const auto& s : c.sender_ids) {
+    auto len = static_cast<uint32_t>(s.size());
+    std::memcpy(p, &len, sizeof(len));
+    p += sizeof(len);
+  }
+  for (const auto& s : c.sender_ids) {
+    std::memcpy(p, s.data(), s.size());
+    p += s.size();
+  }
+  return out;
+}
+
+inline std::optional<StCollection>
+parse_collection(std::span<const std::byte> data) {
+  if (data.size() < sizeof(wire::StCollectionHeader)) {
+    return std::nullopt;
+  }
+  wire::StCollectionHeader h{};
+  std::memcpy(&h, data.data(), sizeof(h));
+  const std::size_t comp_bytes =
+      h.num_components * sizeof(StComponentDescriptor);
+  const std::size_t sizes_bytes = h.num_senders * sizeof(uint64_t);
+  const std::size_t lens_bytes = h.num_senders * sizeof(uint32_t);
+  const std::size_t expected = sizeof(h) + comp_bytes + sizes_bytes +
+                               lens_bytes + h.total_sender_id_bytes;
+  if (data.size() != expected) {
+    return std::nullopt;
+  }
+
+  StCollection c;
+  c.id = h.id;
+  c.merged_descriptor.start_time_ns = h.merged_start_time_ns;
+  c.merged_descriptor.duration_ns = h.merged_duration_ns;
+  c.merged_descriptor.flags = h.merged_flags;
+  c.merged_descriptor.components.resize(h.num_components);
+
+  const std::byte* p = data.data() + sizeof(h);
+  if (comp_bytes != 0) {
+    std::memcpy(c.merged_descriptor.components.data(), p, comp_bytes);
+    p += comp_bytes;
+  }
+  c.ms_data_sizes.resize(h.num_senders);
+  if (sizes_bytes != 0) {
+    std::memcpy(c.ms_data_sizes.data(), p, sizes_bytes);
+    p += sizes_bytes;
+  }
+  std::vector<uint32_t> lens(h.num_senders);
+  if (lens_bytes != 0) {
+    std::memcpy(lens.data(), p, lens_bytes);
+    p += lens_bytes;
+  }
+  std::size_t sum = 0;
+  for (auto l : lens) {
+    sum += l;
+  }
+  if (sum != h.total_sender_id_bytes) {
+    return std::nullopt;
+  }
+  c.sender_ids.reserve(h.num_senders);
+  for (auto l : lens) {
+    c.sender_ids.emplace_back(reinterpret_cast<const char*>(p), l);
+    p += l;
+  }
+  return c;
 }

@@ -16,7 +16,7 @@ static constexpr unsigned int AM_SENDER_REGISTER =
     20; // header: {sender_id}, data: none
 static constexpr unsigned int AM_SENDER_ANNOUNCE_ST =
     21; // header: {StId, ms_data_size},
-        // data: StDescriptor
+        // data: serialized StDescriptor
 static constexpr unsigned int AM_SENDER_RETRACT_ST =
     22; // header: {StId}, data: none
 // tssched -> stsender
@@ -40,7 +40,8 @@ static constexpr unsigned int AM_BUILDER_STATUS =
 */
 // tssched -> tsbuilder
 static constexpr unsigned int AM_SCHED_ASSIGN_TS =
-    50; // header: {StId, ms_data_size}, data: StCollectionDescriptor
+    50; // header: {StId, ms_data_size},
+        // data: serialized StCollection (incl. merged StDescriptor)
 
 // 3. stsender (listen) <-> tsbuilder (connect)
 // tsbuilder -> stsender
@@ -48,8 +49,7 @@ static constexpr unsigned int AM_BUILDER_REQUEST_ST =
     60; // header: {StId}, data: none
 // stsender -> tsbuilder
 static constexpr unsigned int AM_SENDER_SEND_ST =
-    70; // header: {StId, sizeof(serialized StDescriptor), ms_data_size},
-        // data: {StDescriptor, ms_data}
+    70; // header: {StId, ms_data_size}, data: ms_data (raw microslice bytes)
 
 static constexpr uint64_t BUILDER_EVENT_NO_OP = 0;
 static constexpr uint64_t BUILDER_EVENT_ALLOCATED = 1;

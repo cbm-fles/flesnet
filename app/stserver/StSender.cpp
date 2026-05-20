@@ -26,31 +26,20 @@
 
 namespace {
 
-// Merge adjacent iovs that are contiguous in memory, starting at `from`;
-// zero-length entries are dropped. Merging is transparent on the wire (a UCX
-// send iov is a pure gather list, and the builder splits the flat byte stream
-// by sizes from the header, not by iov boundaries), so in aggregation mode --
-// where the whole payload lives in one contiguous slot -- this collapses the
-// per-component iovs into a single one, drastically reducing the iov count
-// handed to UCX.
-//
-// `from` is not a wire requirement but an StSender-internal contract: the
-// serialized descriptor occupies iov[0], and send_subtimeslice_to_builder
-// derives the header fields from that split -- st_descriptor_size from
-// st_descriptor_bytes and ms_data_size from the sum of iov[1..]. Coalescing
-// from index 1 keeps the descriptor as its own leading iov so that split
-// stays well-defined (the descriptor is a separate heap allocation and never
-// actually contiguous with the payload, so from=0 would yield the same result
-// in practice -- from=1 just makes the invariant explicit instead of relying
-// on that coincidence).
-void coalesce_iovs(std::vector<ucp_dt_iov>& iovs, std::size_t from) {
-  std::size_t out = from;
-  for (std::size_t in = from; in < iovs.size(); ++in) {
+// Merge adjacent iovs that are contiguous in memory; zero-length entries are
+// dropped. Merging is transparent on the wire (a UCX send iov is a pure
+// gather list, and the builder splits the flat byte stream by sizes from the
+// header, not by iov boundaries), so in aggregation mode -- where the whole
+// payload lives in one contiguous slot -- this collapses the per-component
+// iovs into a single one, drastically reducing the iov count handed to UCX.
+void coalesce_iovs(std::vector<ucp_dt_iov>& iovs) {
+  std::size_t out = 0;
+  for (std::size_t in = 0; in < iovs.size(); ++in) {
     const ucp_dt_iov& cur = iovs[in];
     if (cur.length == 0) {
       continue;
     }
-    if (out > from) {
+    if (out > 0) {
       ucp_dt_iov& prev = iovs[out - 1];
       if (static_cast<std::byte*>(prev.buffer) + prev.length ==
           static_cast<std::byte*>(cur.buffer)) {
@@ -376,34 +365,26 @@ void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
     num_microslices += c.num_microslices;
   }
 
-  // Serialize subtimeslice structure
-  auto st_descriptor_bytes = to_bytes(st_descriptor);
+  // Serialize subtimeslice structure for transmission to the scheduler. The
+  // builder no longer receives this descriptor directly; the scheduler relays
+  // the (merged) descriptor as part of the assignment.
+  auto st_descriptor_bytes = serialize_descriptor(st_descriptor);
 
-  // Assemble a vector of ucp_dt_iov structures for use with UCX send
-  // operations. The first element in the vector is the serialized descriptor
-  // string, followed by the descriptors and contents of each component in the
-  // shared memory.
+  // Assemble a vector of ucp_dt_iov structures pointing at the (registered)
+  // microslice data blocks. With the aggregation buffer the whole payload is
+  // one contiguous block, so coalescing collapses the per-component iovs
+  // down to a single one.
   std::vector<ucp_dt_iov> iov_vector;
-  iov_vector.push_back(
-      {st_descriptor_bytes.data(), st_descriptor_bytes.size()});
   for (const auto& c : sth.components) {
     iov_vector.insert(iov_vector.end(), c.ms_data.begin(), c.ms_data.end());
   }
-
-  // Merge the payload iovs (everything after the descriptor at index 0) that
-  // are contiguous in memory. With the aggregation buffer the whole payload is
-  // one contiguous block, so this collapses ~one-iov-per-component down to a
-  // single payload iov.
-  coalesce_iovs(iov_vector, 1);
+  coalesce_iovs(iov_vector);
 
   // Store for future use (and retention during send)
   m_announced.emplace(
       id, std::make_unique<AnnouncementHandle>(
               id, std::move(st_descriptor_bytes), std::move(iov_vector)));
   auto& ah = *m_announced.at(id);
-
-  // Ensure that the first iov component points to the string data
-  assert(ah.iov_vector.front().buffer == ah.st_descriptor_bytes.data());
 
   DEBUG("{}| Announcing ({}c, {}m, {}, flags={:04x})", id,
         st_descriptor.components.size(), num_microslices,
@@ -539,7 +520,7 @@ StSender::handle_builder_request(const void* header,
 void StSender::send_subtimeslice_to_builder(TsId id, ucp_ep_h ep) {
   if (!m_announced.contains(id)) {
     WARN("{}| Subtimeslice not found", id);
-    std::array<uint64_t, 3> hdr{id, 0, 0};
+    std::array<uint64_t, 2> hdr{id, 0};
     auto header = std::as_bytes(std::span(hdr));
     ucx::util::send_active_message(
         ep, AM_SENDER_SEND_ST, header, {}, ucx::util::on_generic_send_complete,
@@ -560,12 +541,11 @@ void StSender::send_subtimeslice_to_builder(TsId id, ucp_ep_h ep) {
   req_param.datatype = ucp_dt_make_iov();
 
   // Prepare header data
-  uint64_t st_descriptor_size = ah.st_descriptor_bytes.size();
   uint64_t ms_data_size = 0;
-  for (std::size_t i = 1; i < ah.iov_vector.size(); ++i) {
-    ms_data_size += ah.iov_vector[i].length;
+  for (const auto& iov : ah.iov_vector) {
+    ms_data_size += iov.length;
   }
-  std::array<uint64_t, 3> hdr{id, st_descriptor_size, ms_data_size};
+  std::array<uint64_t, 2> hdr{id, ms_data_size};
 
   // Send the data
   DEBUG("{}| Sending to builder '{}'", id, m_builders[ep]);

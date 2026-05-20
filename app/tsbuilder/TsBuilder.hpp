@@ -58,13 +58,14 @@ struct TsHandle {
       : id(contributions.id), allocated_at_ns(fles::system::current_time_ns()),
         buffer(buffer), sender_ids(std::move(contributions.sender_ids)),
         ms_data_sizes(std::move(contributions.ms_data_sizes)),
-        offsets(sender_ids.size()), iovectors(sender_ids.size()),
-        serialized_descriptors(sender_ids.size()),
-        descriptors(sender_ids.size()), states(sender_ids.size()),
+        merged_descriptor(std::move(contributions.merged_descriptor)),
+        offsets(sender_ids.size()), states(sender_ids.size()),
         state_change_at_ns(sender_ids.size()) {
     // Initialize offsets
-    std::partial_sum(ms_data_sizes.begin(), ms_data_sizes.end() - 1,
-                     offsets.begin() + 1);
+    if (!ms_data_sizes.empty()) {
+      std::partial_sum(ms_data_sizes.begin(), ms_data_sizes.end() - 1,
+                       offsets.begin() + 1);
+    }
     // Initialize states
     std::fill(states.begin(), states.end(), StState::Allocated);
     std::fill(state_change_at_ns.begin(), state_change_at_ns.end(),
@@ -81,10 +82,8 @@ struct TsHandle {
   std::byte* const buffer;
   std::vector<std::string> sender_ids; // IDs of the senders
   std::vector<uint64_t> ms_data_sizes; // Sizes of the content data
+  StDescriptor merged_descriptor;      // Merged descriptor from scheduler
   std::vector<uint64_t> offsets;
-  std::vector<std::array<ucp_dt_iov, 2>> iovectors;
-  std::vector<std::vector<std::byte>> serialized_descriptors;
-  std::vector<StDescriptor> descriptors;
   std::vector<StState> states;
   std::vector<uint64_t> state_change_at_ns;
   bool is_published = false;
@@ -182,7 +181,7 @@ private:
   void update_st_state(TsHandle& tsh,
                        std::size_t contribution_index,
                        StState new_state);
-  static StDescriptor combine_st_descriptors(TsHandle& tsh);
+  static StDescriptor build_published_descriptor(TsHandle& tsh);
   void report_status();
 
   // UCX static callbacks (trampolines)

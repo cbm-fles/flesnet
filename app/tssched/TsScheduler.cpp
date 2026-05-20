@@ -246,7 +246,7 @@ TsScheduler::handle_sender_announce(const void* header,
 
   auto st_descriptor_bytes =
       std::span(static_cast<const std::byte*>(data), length);
-  auto st_descriptor = to_obj_nothrow<StDescriptor>(st_descriptor_bytes);
+  auto st_descriptor = parse_descriptor(st_descriptor_bytes);
   if (!st_descriptor) {
     ERROR("{}| Failed to deserialize announcement from sender '{}'", id,
           sender_conn.info.id());
@@ -468,7 +468,8 @@ void TsScheduler::send_assignment_to_builder(const StCollection& coll,
                                              BuilderConnection& builder) {
   std::array<uint64_t, 2> hdr{coll.id, coll.ms_data_size()};
   auto header = std::as_bytes(std::span(hdr));
-  auto buffer = std::make_unique<std::vector<std::byte>>(to_bytes(coll));
+  auto buffer =
+      std::make_unique<std::vector<std::byte>>(serialize_collection(coll));
   auto* raw_ptr = buffer.release();
 
   ucx::util::send_active_message(
@@ -484,7 +485,11 @@ void TsScheduler::send_assignment_to_builder(const StCollection& coll,
 // Helper methods
 
 StCollection TsScheduler::create_collection_descriptor(TsId id) {
-  StCollection coll{id, {}, {}};
+  StCollection coll;
+  coll.id = id;
+
+  // First pass: collect contributors in iteration order and sum sizes
+  std::vector<const SenderConnection::StDesc*> contributions;
   for (auto& [sender_ep, sender] : m_senders) {
     auto it =
         std::find_if(sender.announced_st.begin(), sender.announced_st.end(),
@@ -492,10 +497,35 @@ StCollection TsScheduler::create_collection_descriptor(TsId id) {
     if (it != sender.announced_st.end()) {
       coll.sender_ids.push_back(sender.info.advertise_id());
       coll.ms_data_sizes.push_back(it->ms_data_size);
+      contributions.push_back(&*it);
     } else if (sender.state == SenderState::active) {
       DEBUG("{}| No contribution found from sender '{}'", id, sender.info.id());
     }
   }
+
+  // Build the merged descriptor: per-sender offsets are the partial_sum of
+  // ms_data_sizes; each contributor's components are appended with their
+  // ms_data_offset shifted by that offset to become absolute within the
+  // combined buffer.
+  uint64_t running_offset = 0;
+  for (std::size_t i = 0; i < contributions.size(); ++i) {
+    const auto& contrib = contributions[i]->st_descriptor;
+    if (coll.merged_descriptor.duration_ns == 0) {
+      coll.merged_descriptor.start_time_ns = contrib.start_time_ns;
+      coll.merged_descriptor.duration_ns = contrib.duration_ns;
+    } else if (coll.merged_descriptor.start_time_ns != contrib.start_time_ns ||
+               coll.merged_descriptor.duration_ns != contrib.duration_ns) {
+      ERROR("{}| Inconsistent start time or duration in contributions", id);
+    }
+    coll.merged_descriptor.flags |= contrib.flags;
+    for (const auto& c : contrib.components) {
+      coll.merged_descriptor.components.push_back(c);
+      coll.merged_descriptor.components.back().ms_data_offset +=
+          static_cast<std::ptrdiff_t>(running_offset);
+    }
+    running_offset += coll.ms_data_sizes[i];
+  }
+
   // ... TODO: remove this code
   m_status_info.timeslice_count++;
   m_status_info.component_count += coll.sender_ids.size();
