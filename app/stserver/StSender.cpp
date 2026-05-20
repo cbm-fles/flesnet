@@ -506,56 +506,59 @@ StSender::handle_builder_request(const void* header,
                                  [[maybe_unused]] void* data,
                                  size_t length,
                                  const ucp_am_recv_param_t* param) {
-  if (header_length != sizeof(uint64_t) || length != 0 ||
+  auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
+                                       header_length / sizeof(uint64_t));
+  if (hdr.size() != 2 || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
     ERROR("Invalid builder request received");
     return UCS_OK;
   }
 
-  auto id = *static_cast<const uint64_t*>(header);
-  send_subtimeslice_to_builder(id, param->reply_ep);
+  TsId id = hdr[0];
+  uint64_t tag = hdr[1];
+  send_subtimeslice_to_builder(id, param->reply_ep, tag);
   return UCS_OK;
 }
 
-void StSender::send_subtimeslice_to_builder(TsId id, ucp_ep_h ep) {
+void StSender::send_subtimeslice_to_builder(TsId id,
+                                            ucp_ep_h ep,
+                                            uint64_t tag) {
   if (!m_announced.contains(id)) {
+    // Subtimeslice not found: send a zero-byte tag-matched message so the
+    // builder's pre-posted recv completes (with a length of 0 it will be
+    // marked as Failed there). This keeps the protocol synchronous.
     WARN("{}| Subtimeslice not found", id);
-    std::array<uint64_t, 2> hdr{id, 0};
-    auto header = std::as_bytes(std::span(hdr));
-    ucx::util::send_active_message(
-        ep, AM_SENDER_SEND_ST, header, {}, ucx::util::on_generic_send_complete,
-        this, UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
+    ucp_request_param_t req_param{};
+    req_param.op_attr_mask =
+        UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
+    req_param.cb.send = ucx::util::on_generic_send_complete;
+    req_param.user_data = this;
+    ucs_status_ptr_t request =
+        ucp_tag_send_nbx(ep, nullptr, 0, tag, &req_param);
+    if (UCS_PTR_IS_ERR(request)) {
+      ERROR("Failed to send empty tag send: {}", UCS_PTR_STATUS(request));
+    }
     return;
   }
   auto& ah = *m_announced.at(id);
 
   // Prepare send parameters
   ucp_request_param_t req_param{};
-  req_param.op_attr_mask =
-      UCP_OP_ATTR_FIELD_FLAGS | UCP_OP_ATTR_FIELD_CALLBACK |
-      UCP_OP_ATTR_FIELD_USER_DATA | UCP_OP_ATTR_FIELD_DATATYPE;
-  req_param.flags = UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY |
-                    UCP_AM_SEND_FLAG_RNDV;
+  req_param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
+                           UCP_OP_ATTR_FIELD_USER_DATA |
+                           UCP_OP_ATTR_FIELD_DATATYPE;
   req_param.cb.send = on_builder_send_complete;
   req_param.user_data = this;
   req_param.datatype = ucp_dt_make_iov();
 
-  // Prepare header data
-  uint64_t ms_data_size = 0;
-  for (const auto& iov : ah.iov_vector) {
-    ms_data_size += iov.length;
-  }
-  std::array<uint64_t, 2> hdr{id, ms_data_size};
-
   // Send the data
   DEBUG("{}| Sending to builder '{}'", id, m_builders[ep]);
-  ucs_status_ptr_t request =
-      ucp_am_send_nbx(ep, AM_SENDER_SEND_ST, hdr.data(), sizeof(hdr),
-                      ah.iov_vector.data(), ah.iov_vector.size(), &req_param);
+  ucs_status_ptr_t request = ucp_tag_send_nbx(
+      ep, ah.iov_vector.data(), ah.iov_vector.size(), tag, &req_param);
 
   if (UCS_PTR_IS_ERR(request)) {
     ucs_status_t status = UCS_PTR_STATUS(request);
-    ERROR("Failed to send active message: {}", status);
+    ERROR("Failed to send tag message: {}", status);
     // Ignore the interaction with the builder, keep the announced subtimeslice
     return;
   }

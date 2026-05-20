@@ -32,9 +32,11 @@ bool init(ucp_context_h& context,
   }
 
   ucp_params_t ucp_params = {};
-  // Request Active Message support
+  // Request Active Message support (control plane) and Tag Matching (used for
+  // the bulk sender->builder data path, where the builder pre-posts receives
+  // into registered memory to avoid the rendezvous CTS round-trip).
   ucp_params.field_mask = UCP_PARAM_FIELD_FEATURES;
-  ucp_params.features = UCP_FEATURE_AM;
+  ucp_params.features = UCP_FEATURE_AM | UCP_FEATURE_TAG;
   if (loop_mode == LoopMode::event_fd) {
     ucp_params.features |= UCP_FEATURE_WAKEUP;
   }

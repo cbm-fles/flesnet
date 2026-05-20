@@ -59,9 +59,7 @@ void TsBuilder::run() {
     m_buffer_memh = *memh;
   }
   if (!ucx::util::set_receive_handler(m_worker, AM_SCHED_ASSIGN_TS,
-                                      on_scheduler_assign_ts, this) ||
-      !ucx::util::set_receive_handler(m_worker, AM_SENDER_SEND_ST,
-                                      on_sender_data, this)) {
+                                      on_scheduler_assign_ts, this)) {
     ERROR("Failed to register receive handlers");
     return;
   }
@@ -312,9 +310,16 @@ ucs_status_t TsBuilder::handle_scheduler_assign_ts(
   DEBUG("{}| Received assignment ({}s, {})", id, tsh.sender_ids.size(),
         human_readable_count(ms_data_size, true));
 
+  // Pre-post the tag-matched receives into the registered timeslice buffer
+  // BEFORE asking senders for the contributions, so the recvs are "expected"
+  // by the time the senders start sending (no rendezvous CTS round-trip).
+  for (std::size_t i = 0; i < tsh.sender_ids.size(); ++i) {
+    post_tag_recv(tsh, i);
+  }
+
   // Ask senders for the contributions
   for (std::size_t i = 0; i < tsh.sender_ids.size(); ++i) {
-    send_request_to_sender(tsh.sender_ids[i], id);
+    send_request_to_sender(tsh.sender_ids[i], id, i);
     update_st_state(tsh, i, StState::Requested);
   }
 
@@ -388,7 +393,41 @@ void TsBuilder::disconnect_from_senders() {
 
 // Sender message handling
 
-void TsBuilder::send_request_to_sender(const std::string& sender_id, TsId id) {
+void TsBuilder::post_tag_recv(TsHandle& tsh, std::size_t ci) {
+  const ucp_tag_t tag = make_st_data_tag(tsh.id, static_cast<uint32_t>(ci));
+  const ucp_tag_t tag_mask = ~ucp_tag_t{0}; // exact match
+
+  ucp_request_param_t req_param{};
+  req_param.op_attr_mask =
+      UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
+  req_param.cb.recv = on_sender_data_recv_complete;
+  req_param.user_data = this;
+
+  ucs_status_ptr_t request =
+      ucp_tag_recv_nbx(m_worker, tsh.buffer + tsh.offsets[ci],
+                       tsh.ms_data_sizes[ci], tag, tag_mask, &req_param);
+
+  if (UCS_PTR_IS_ERR(request)) {
+    ucs_status_t status = UCS_PTR_STATUS(request);
+    ERROR("{}|s{}/{}| Failed to post tag recv: {}", tsh.id, ci,
+          tsh.sender_ids.size(), status);
+    update_st_state(tsh, ci, StState::Failed);
+    return;
+  }
+
+  if (request == nullptr) {
+    // Already completed (shouldn't normally happen for a pre-posted recv
+    // since the matching send hasn't been requested yet, but handle it).
+    update_st_state(tsh, ci, StState::Complete);
+    return;
+  }
+
+  m_active_data_recv_requests[request] = {tsh.id, ci};
+}
+
+void TsBuilder::send_request_to_sender(const std::string& sender_id,
+                                       TsId id,
+                                       std::size_t ci) {
   if (!m_sender_to_ep.contains(sender_id)) {
     DEBUG("Connecting to sender '{}'", sender_id);
     connect_to_sender(sender_id);
@@ -398,7 +437,8 @@ void TsBuilder::send_request_to_sender(const std::string& sender_id, TsId id) {
   }
 
   auto* ep = m_sender_to_ep[sender_id];
-  std::array<uint64_t, 1> hdr{id};
+  const uint64_t tag = make_st_data_tag(id, static_cast<uint32_t>(ci));
+  std::array<uint64_t, 2> hdr{id, tag};
   auto header = std::as_bytes(std::span(hdr));
 
   // PROBLEM HERE: In the first invocation after connecting, we run into a UCX
@@ -414,102 +454,6 @@ void TsBuilder::send_request_to_sender(const std::string& sender_id, TsId id) {
                                      UCP_AM_SEND_FLAG_REPLY);
 }
 
-ucs_status_t TsBuilder::handle_sender_data(const void* header,
-                                           size_t header_length,
-                                           void* data,
-                                           size_t length,
-                                           const ucp_am_recv_param_t* param) {
-  auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
-                                       header_length / sizeof(uint64_t));
-  if (hdr.size() != 2 ||
-      (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
-    ERROR("Invalid subtimeslice data received");
-    DEBUG("hdr.size() = {}, length = {}, param->recv_attr = {}", hdr.size(),
-          length, param->recv_attr);
-    return UCS_OK;
-  }
-
-  const TsId id = hdr[0];
-  const uint64_t ms_data_size = hdr[1];
-
-  if (ms_data_size != length) {
-    ERROR("Invalid header data in subtimeslice data received");
-    return UCS_OK;
-  }
-
-  // Check if we have a sender connection for this endpoint
-  ucp_ep_h ep = param->reply_ep;
-  if (!m_ep_to_sender.contains(ep)) {
-    ERROR("Received subtimeslice data from unknown sender endpoint");
-    return UCS_OK;
-  }
-  const std::string& sender_id = m_ep_to_sender.at(ep);
-
-  // Check if we have a handler for this TS id
-  if (!m_ts_handles.contains(id)) {
-    ERROR("{}| Received subtimeslice data for unknown timeslice", id);
-    return UCS_OK;
-  }
-  auto& tsh = *m_ts_handles.at(id);
-
-  // Check if we have a contribution for this sender
-  auto sender_id_it =
-      std::find(tsh.sender_ids.begin(), tsh.sender_ids.end(), sender_id);
-  if (sender_id_it == tsh.sender_ids.end()) {
-    ERROR("{}| Received subtimeslice data from unknown sender '{}'", id,
-          sender_id);
-    return UCS_OK;
-  }
-  std::size_t ci = std::distance(tsh.sender_ids.begin(), sender_id_it);
-
-  if (ms_data_size != tsh.ms_data_sizes[ci]) {
-    ERROR("{}|s{}/{}| Unexpected ms_data_size from '{}', expected: "
-          "{}, received: {}",
-          id, ci, tsh.sender_ids.size(), sender_id, tsh.ms_data_sizes[ci],
-          ms_data_size);
-    update_st_state(tsh, ci, StState::Failed);
-    return UCS_OK;
-  }
-
-  if ((param->recv_attr & UCP_AM_RECV_ATTR_FLAG_RNDV) == 0) {
-    ERROR("{}|s{}/{}| Received non-RNDV subtimeslice data from '{}'", id, ci,
-          tsh.sender_ids.size(), sender_id);
-    update_st_state(tsh, ci, StState::Failed);
-    return UCS_OK;
-  }
-
-  ucp_request_param_t req_param{};
-  req_param.op_attr_mask =
-      UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
-  req_param.cb.recv_am = on_sender_data_recv_complete;
-  req_param.user_data = this;
-
-  DEBUG("{}|s{}/{}| Receiving from '{}' ({})", id, ci, tsh.sender_ids.size(),
-        sender_id, human_readable_count(ms_data_size, true));
-
-  update_st_state(tsh, ci, StState::Receiving);
-  ucs_status_ptr_t request =
-      ucp_am_recv_data_nbx(m_worker, data, tsh.buffer + tsh.offsets[ci],
-                           tsh.ms_data_sizes[ci], &req_param);
-
-  if (UCS_PTR_IS_ERR(request)) {
-    ucs_status_t status = UCS_PTR_STATUS(request);
-    ERROR("{}|s{}/{}| Failed to receive from '{}': {}", id, ci,
-          tsh.sender_ids.size(), sender_id, status);
-    update_st_state(tsh, ci, StState::Failed);
-    return UCS_OK;
-  }
-
-  if (request == nullptr) {
-    // Operation has completed successfully in-place
-    update_st_state(tsh, ci, StState::Complete);
-    return UCS_OK;
-  }
-
-  m_active_data_recv_requests[request] = {id, ci};
-  return UCS_OK;
-}
-
 void TsBuilder::handle_sender_data_recv_complete(
     void* request, ucs_status_t status, [[maybe_unused]] size_t length) {
   if (UCS_PTR_IS_ERR(request)) {
@@ -522,21 +466,35 @@ void TsBuilder::handle_sender_data_recv_complete(
     ERROR("Received completion for unknown data recv request");
   } else {
     auto [id, ci] = m_active_data_recv_requests.at(request);
+    m_active_data_recv_requests.erase(request);
 
     if (!m_ts_handles.contains(id)) {
       ERROR("{}| Received completion for unknown timeslice", id);
+      if (request != nullptr) {
+        ucp_request_free(request);
+      }
       return;
     }
     auto& tsh = *m_ts_handles.at(id);
     if (ci >= tsh.ms_data_sizes.size()) {
       ERROR("{}| Received completion for unknown contribution index {}", id,
             ci);
+      if (request != nullptr) {
+        ucp_request_free(request);
+      }
       return;
     }
-    m_component_count++;
-    m_byte_count += tsh.ms_data_sizes[ci];
-    update_st_state(tsh, ci, StState::Complete);
-    m_active_data_recv_requests.erase(request);
+    if (status != UCS_OK || length != tsh.ms_data_sizes[ci]) {
+      if (status == UCS_OK) {
+        ERROR("{}|s{}/{}| Unexpected received length: expected {}, got {}", id,
+              ci, tsh.sender_ids.size(), tsh.ms_data_sizes[ci], length);
+      }
+      update_st_state(tsh, ci, StState::Failed);
+    } else {
+      m_component_count++;
+      m_byte_count += length;
+      update_st_state(tsh, ci, StState::Complete);
+    }
   }
 
   if (request != nullptr) {

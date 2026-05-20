@@ -46,10 +46,24 @@ static constexpr unsigned int AM_SCHED_ASSIGN_TS =
 // 3. stsender (listen) <-> tsbuilder (connect)
 // tsbuilder -> stsender
 static constexpr unsigned int AM_BUILDER_REQUEST_ST =
-    60; // header: {StId}, data: none
-// stsender -> tsbuilder
-static constexpr unsigned int AM_SENDER_SEND_ST =
-    70; // header: {StId, ms_data_size}, data: ms_data (raw microslice bytes)
+    60; // header: {StId, tag}, data: none
+//
+// The actual bulk transfer stsender -> tsbuilder uses UCX tag matching
+// (ucp_tag_send_nbx / ucp_tag_recv_nbx), not an active message. The builder
+// pre-posts the receive into its registered timeslice buffer immediately
+// after receiving AM_SCHED_ASSIGN_TS and before issuing the request to the
+// sender, so the recv is "expected" by the time the sender starts the send,
+// allowing UCX to skip the rendezvous CTS round-trip and (with put_zcopy)
+// issue an RDMA WRITE directly into the target buffer.
+
+// Tag encoding for the bulk sender->builder transfer.
+// Layout: high 48 bits = TsId, low 16 bits = contribution (sender) index
+// within the timeslice. The tag fully identifies a (TsId, sender) pair, so
+// the receive can be posted with an exact-match tag_mask.
+inline constexpr uint64_t make_st_data_tag(uint64_t ts_id,
+                                           uint32_t contribution_index) {
+  return (ts_id << 16) | (static_cast<uint64_t>(contribution_index) & 0xffffu);
+}
 
 static constexpr uint64_t BUILDER_EVENT_NO_OP = 0;
 static constexpr uint64_t BUILDER_EVENT_ALLOCATED = 1;

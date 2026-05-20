@@ -164,12 +164,9 @@ private:
   void disconnect_from_senders();
 
   // Sender message handling
-  void send_request_to_sender(const std::string& sender_id, TsId id);
-  ucs_status_t handle_sender_data(const void* header,
-                                  size_t header_length,
-                                  void* data,
-                                  size_t length,
-                                  const ucp_am_recv_param_t* param);
+  void post_tag_recv(TsHandle& tsh, std::size_t ci);
+  void
+  send_request_to_sender(const std::string& sender_id, TsId id, std::size_t ci);
   void handle_sender_data_recv_complete(void* request,
                                         ucs_status_t status,
                                         size_t length);
@@ -206,20 +203,11 @@ private:
   static void on_sender_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
     static_cast<TsBuilder*>(arg)->handle_sender_error(ep, status);
   }
-  static ucs_status_t on_sender_data(void* arg,
-                                     const void* header,
-                                     size_t header_length,
-                                     void* data,
-                                     size_t length,
-                                     const ucp_am_recv_param_t* param) {
-    return static_cast<TsBuilder*>(arg)->handle_sender_data(
-        header, header_length, data, length, param);
-  }
   static void on_sender_data_recv_complete(void* request,
                                            ucs_status_t status,
-                                           size_t length,
+                                           const ucp_tag_recv_info_t* info,
                                            void* user_data) {
     static_cast<TsBuilder*>(user_data)->handle_sender_data_recv_complete(
-        request, status, length);
+        request, status, info != nullptr ? info->length : 0);
   }
 };

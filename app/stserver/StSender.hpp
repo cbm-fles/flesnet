@@ -133,7 +133,7 @@ private:
                                       void* data,
                                       size_t length,
                                       const ucp_am_recv_param_t* param);
-  void send_subtimeslice_to_builder(TsId id, ucp_ep_h ep);
+  void send_subtimeslice_to_builder(TsId id, ucp_ep_h ep, uint64_t tag);
   void handle_builder_send_complete(void* request, ucs_status_t status);
   void disconnect_from_builders();
 
