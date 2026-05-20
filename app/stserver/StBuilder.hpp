@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <optional>
 #include <span>
 #include <sys/types.h>
 #include <vector>
@@ -39,7 +40,8 @@ public:
             size_t data_buffer_size,
             size_t desc_buffer_size,
             int64_t overlap_before_ns,
-            int64_t overlap_after_ns);
+            int64_t overlap_after_ns,
+            size_t aggregation_buffer_size);
 
   StBuilder(const StBuilder&) = delete;
   void operator=(const StBuilder&) = delete;
@@ -51,10 +53,27 @@ public:
   [[nodiscard]] std::span<std::byte> get_memory_region() const;
 
 private:
+  struct AggregationAllocation {
+    size_t offset = 0;
+    size_t size = 0;
+  };
+
+  // Per-subtimeslice bookkeeping for the window between announcing a
+  // subtimeslice and the builder confirming it. `completed` tracks the
+  // confirmation; `allocation` holds the aggregation buffer slot to free on
+  // confirmation (size 0 if no slot is held, e.g. in non-aggregation mode).
+  struct SubtimesliceState {
+    bool completed = false;
+    AggregationAllocation allocation;
+  };
+
   void handle_completions();
   void provide_subtimeslice(std::vector<Channel::State> const& states,
                             uint64_t start_time,
                             uint64_t duration);
+  [[nodiscard]] std::optional<AggregationAllocation>
+  try_allocate_aggregation_slot(size_t size);
+  void release_aggregation_slot(const AggregationAllocation& allocation);
 
   volatile std::sig_atomic_t* m_signal_status;
   std::string m_shm_id;
@@ -71,7 +90,12 @@ private:
   std::unique_ptr<boost::interprocess::managed_shared_memory> m_shm;
   std::vector<std::unique_ptr<Channel>> m_channels;
 
-  std::map<uint64_t, bool> m_completed;
+  std::vector<std::byte> m_aggregation_buffer;
+  std::map<size_t, size_t> m_aggregation_free_chunks;
+  size_t m_aggregation_allocation_failures = 0;
+  size_t m_reported_aggregation_failures = 0;
+
+  std::map<uint64_t, SubtimesliceState> m_subtimeslices;
 
   size_t m_timeslice_count = 0;  ///< total number of processed timeslices
   size_t m_component_count = 0;  ///< total number of processed components

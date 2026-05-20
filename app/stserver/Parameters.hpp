@@ -78,6 +78,9 @@ public:
   [[nodiscard]] int64_t overlap_after_ns() const {
     return m_overlap_after.count();
   }
+  [[nodiscard]] size_t aggregation_buffer_size() const {
+    return m_aggregation_buffer_size.value();
+  }
 
 private:
   void parse_options(int argc, char* argv[]);
@@ -108,4 +111,5 @@ private:
   SizeValue m_desc_buffer_size_bytes = 16_MiB;
   Nanoseconds m_overlap_before = 100_us;
   Nanoseconds m_overlap_after = 100_us;
+  SizeValue m_aggregation_buffer_size = 10_GiB;
 };

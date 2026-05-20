@@ -26,9 +26,10 @@ Application::Application(Parameters const& par,
       m_par.pgen_microslice_size(), m_par.pgen_flags(),
       m_par.timeslice_duration_ns(), m_par.timeout_ns(),
       m_par.data_buffer_size(), m_par.desc_buffer_size(),
-      m_par.overlap_before_ns(), m_par.overlap_after_ns());
+      m_par.overlap_before_ns(), m_par.overlap_after_ns(),
+      m_par.aggregation_buffer_size());
 
-  // Register shared memory with UCX for RDMA and start sender thread
+  // Register memory region with UCX for RDMA and start sender thread
   m_st_sender->set_memory_region(m_st_builder->get_memory_region());
   m_st_sender->start();
 }

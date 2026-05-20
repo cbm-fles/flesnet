@@ -24,6 +24,47 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
+namespace {
+
+// Merge adjacent iovs that are contiguous in memory, starting at `from`;
+// zero-length entries are dropped. Merging is transparent on the wire (a UCX
+// send iov is a pure gather list, and the builder splits the flat byte stream
+// by sizes from the header, not by iov boundaries), so in aggregation mode --
+// where the whole payload lives in one contiguous slot -- this collapses the
+// per-component iovs into a single one, drastically reducing the iov count
+// handed to UCX.
+//
+// `from` is not a wire requirement but an StSender-internal contract: the
+// serialized descriptor occupies iov[0], and send_subtimeslice_to_builder
+// derives the header fields from that split -- st_descriptor_size from
+// st_descriptor_bytes and ms_data_size from the sum of iov[1..]. Coalescing
+// from index 1 keeps the descriptor as its own leading iov so that split
+// stays well-defined (the descriptor is a separate heap allocation and never
+// actually contiguous with the payload, so from=0 would yield the same result
+// in practice -- from=1 just makes the invariant explicit instead of relying
+// on that coincidence).
+void coalesce_iovs(std::vector<ucp_dt_iov>& iovs, std::size_t from) {
+  std::size_t out = from;
+  for (std::size_t in = from; in < iovs.size(); ++in) {
+    const ucp_dt_iov& cur = iovs[in];
+    if (cur.length == 0) {
+      continue;
+    }
+    if (out > from) {
+      ucp_dt_iov& prev = iovs[out - 1];
+      if (static_cast<std::byte*>(prev.buffer) + prev.length ==
+          static_cast<std::byte*>(cur.buffer)) {
+        prev.length += cur.length;
+        continue;
+      }
+    }
+    iovs[out++] = cur;
+  }
+  iovs.resize(out);
+}
+
+} // namespace
+
 StSender::StSender(std::string_view scheduler_address,
                    uint16_t listen_port,
                    SenderInfo sender_info)
@@ -348,6 +389,12 @@ void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
   for (const auto& c : sth.components) {
     iov_vector.insert(iov_vector.end(), c.ms_data.begin(), c.ms_data.end());
   }
+
+  // Merge the payload iovs (everything after the descriptor at index 0) that
+  // are contiguous in memory. With the aggregation buffer the whole payload is
+  // one contiguous block, so this collapses ~one-iov-per-component down to a
+  // single payload iov.
+  coalesce_iovs(iov_vector, 1);
 
   // Store for future use (and retention during send)
   m_announced.emplace(

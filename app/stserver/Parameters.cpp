@@ -141,6 +141,13 @@ void Parameters::parse_options(int argc, char* argv[]) {
       "overlap-after",
       po::value<Nanoseconds>(&m_overlap_after)->default_value(m_overlap_after),
       "overlap after the timeslice (with suffix ns, us, ms, s)");
+  config_add("aggregation-buffer-size",
+             po::value<SizeValue>(&m_aggregation_buffer_size)
+                 ->default_value(m_aggregation_buffer_size),
+             "size of the contiguous aggregation buffer in bytes; "
+             "set to 0 to disable aggregation and use scatter-gather sends "
+             "(supports SI units: kB, MB, GB, etc. or binary: KiB, MiB, "
+             "GiB, etc.)");
 
   po::options_description cmdline_options("Allowed options", terminal_width,
                                           terminal_width / 2);

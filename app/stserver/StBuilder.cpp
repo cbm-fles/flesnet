@@ -9,8 +9,10 @@
 #include "device_operator.hpp"
 #include "dma_channel.hpp"
 #include "log.hpp"
+#include <algorithm>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <chrono>
+#include <cstring>
 #include <numeric>
 #include <span>
 #include <string>
@@ -48,7 +50,8 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
                      size_t data_buffer_size,
                      size_t desc_buffer_size,
                      int64_t overlap_before_ns,
-                     int64_t overlap_after_ns)
+                     int64_t overlap_after_ns,
+                     size_t aggregation_buffer_size)
     : m_signal_status(signal_status), m_shm_id(std::move(shm_id)),
       m_timeslice_duration_ns(timeslice_duration_ns), m_timeout_ns(timeout_ns),
       m_overlap_before_ns(overlap_before_ns),
@@ -135,6 +138,13 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
         overlap_after_ns, channel_name));
   }
 
+  if (aggregation_buffer_size > 0) {
+    m_aggregation_buffer.resize(aggregation_buffer_size);
+    m_aggregation_free_chunks.emplace(0, m_aggregation_buffer.size());
+    INFO("Contiguous aggregation buffer: {}",
+         human_readable_count(m_aggregation_buffer.size(), true));
+  }
+
   // Create Channel objects for pattern generator channels if requested
   for (uint32_t i = 0; i < pgen_channels; ++i) {
     // set channel name, used for monitoring
@@ -158,7 +168,76 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
 }
 
 std::span<std::byte> StBuilder::get_memory_region() const {
+  if (!m_aggregation_buffer.empty()) {
+    return {const_cast<std::byte*>(m_aggregation_buffer.data()),
+            m_aggregation_buffer.size()};
+  }
   return {static_cast<std::byte*>(m_shm->get_address()), m_shm->get_size()};
+}
+
+std::optional<StBuilder::AggregationAllocation>
+StBuilder::try_allocate_aggregation_slot(size_t size) {
+  if (size == 0) {
+    return AggregationAllocation{0, 0};
+  }
+
+  // Best-fit: pick the smallest free chunk that still satisfies the request.
+  // Compared to first-fit this keeps large contiguous regions intact for large
+  // subtimeslices, which minimizes external fragmentation for this workload of
+  // mixed-size, roughly-FIFO allocations.
+  auto best = m_aggregation_free_chunks.end();
+  for (auto it = m_aggregation_free_chunks.begin();
+       it != m_aggregation_free_chunks.end(); ++it) {
+    if (it->second < size) {
+      continue;
+    }
+    if (best == m_aggregation_free_chunks.end() || it->second < best->second) {
+      best = it;
+      if (best->second == size) {
+        break; // exact fit, cannot do better
+      }
+    }
+  }
+  if (best == m_aggregation_free_chunks.end()) {
+    return std::nullopt;
+  }
+
+  const size_t offset = best->first;
+  const size_t chunk_size = best->second;
+  m_aggregation_free_chunks.erase(best);
+  if (chunk_size > size) {
+    m_aggregation_free_chunks.emplace(offset + size, chunk_size - size);
+  }
+
+  return AggregationAllocation{offset, size};
+}
+
+void StBuilder::release_aggregation_slot(
+    const AggregationAllocation& allocation) {
+  if (allocation.size == 0) {
+    return;
+  }
+
+  size_t offset = allocation.offset;
+  size_t size = allocation.size;
+
+  auto it = m_aggregation_free_chunks.lower_bound(offset);
+
+  if (it != m_aggregation_free_chunks.begin()) {
+    auto prev = std::prev(it);
+    if (prev->first + prev->second == offset) {
+      offset = prev->first;
+      size += prev->second;
+      m_aggregation_free_chunks.erase(prev);
+    }
+  }
+
+  if (it != m_aggregation_free_chunks.end() && offset + size == it->first) {
+    size += it->second;
+    m_aggregation_free_chunks.erase(it);
+  }
+
+  m_aggregation_free_chunks.emplace(offset, size);
 }
 
 void StBuilder::run() {
@@ -227,23 +306,43 @@ StBuilder::~StBuilder() {
 }
 
 void StBuilder::handle_completions() {
+  const bool aggregating = !m_aggregation_buffer.empty();
+
   while (auto id = m_st_sender.try_receive_completion()) {
-    auto it = m_completed.find(*id);
-    if (it != m_completed.end()) {
-      it->second = true;
-    } else {
+    auto it = m_subtimeslices.find(*id);
+    if (it == m_subtimeslices.end()) {
       ERROR("{}| Received completion for unknown timeslice", *id);
+      continue;
     }
-    auto iter = m_completed.begin();
-    while (iter != m_completed.end() && iter->second) {
-      ++iter;
-    }
-    if (iter != m_completed.begin()) {
-      uint64_t last_completed = std::prev(iter)->first;
-      for (auto&& channel : m_channels) {
-        channel->ack_before((last_completed + 1) * m_timeslice_duration_ns);
+    it->second.completed = true;
+
+    if (aggregating) {
+      // Aggregation mode: the readout ring buffers were already released in
+      // provide_subtimeslice, right after the microslice data was copied into
+      // the aggregation buffer. A completion here only signals that the
+      // network transfer is done, so the sole resource to free is the
+      // aggregation buffer slot. Slots are independent, so this is handled
+      // per subtimeslice and is insensitive to completion order.
+      // (release_aggregation_slot is a no-op for a zero-size allocation.)
+      release_aggregation_slot(it->second.allocation);
+      m_subtimeslices.erase(it);
+    } else {
+      // Non-aggregation mode: the microslice data still lives in the readout
+      // ring buffers and is sent directly from there. The ring buffers may
+      // only be released once the builder has confirmed the data, and only up
+      // to the oldest still-unconfirmed subtimeslice (acknowledgement is
+      // monotonic in time, so it must follow the contiguous completed prefix).
+      auto iter = m_subtimeslices.begin();
+      while (iter != m_subtimeslices.end() && iter->second.completed) {
+        ++iter;
       }
-      m_completed.erase(m_completed.begin(), iter);
+      if (iter != m_subtimeslices.begin()) {
+        uint64_t last_completed = std::prev(iter)->first;
+        for (auto&& channel : m_channels) {
+          channel->ack_before((last_completed + 1) * m_timeslice_duration_ns);
+        }
+        m_subtimeslices.erase(m_subtimeslices.begin(), iter);
+      }
     }
   }
 }
@@ -274,10 +373,60 @@ void StBuilder::provide_subtimeslice(std::vector<Channel::State> const& states,
     }
   }
 
-  // Announce the subtimeslice
   uint64_t ts_id = start_time / duration;
+
+  // Aggregation buffer slot held for this subtimeslice (size 0 = none).
+  AggregationAllocation slot;
+
+  if (!m_aggregation_buffer.empty()) {
+    // Optional double buffering: copy the scattered microslice data out of the
+    // readout ring buffers into a contiguous slot. This lets us release the
+    // ring buffers immediately (decoupling them from the network round-trip,
+    // avoiding head-of-line blocking) and reduces the network transmission to
+    // a single iov per component. The aggregation slot itself is held until
+    // the builder confirms the subtimeslice (see handle_completions).
+    const size_t payload_size = std::accumulate(
+        st.components.begin(), st.components.end(), static_cast<size_t>(0),
+        [](size_t sum, const StComponentHandle& c) {
+          return sum + c.ms_data_size();
+        });
+
+    if (payload_size > 0) {
+      if (auto allocation = try_allocate_aggregation_slot(payload_size)) {
+        std::byte* base = m_aggregation_buffer.data() + allocation->offset;
+        size_t write_offset = 0;
+        for (auto& component : st.components) {
+          std::byte* component_ptr = base + write_offset;
+          const uint64_t component_size = component.ms_data_size();
+          for (const auto& sg : component.ms_data) {
+            std::memcpy(base + write_offset, sg.buffer, sg.length);
+            write_offset += sg.length;
+          }
+          // Replace the scatter-gather list with a single contiguous iov
+          // pointing into the aggregation buffer.
+          component.ms_data.assign(1,
+                                   ucp_dt_iov{component_ptr, component_size});
+        }
+        slot = *allocation;
+      } else {
+        // Aggregation buffer full: drop the payload for this subtimeslice
+        // rather than stalling readout.
+        ++m_aggregation_allocation_failures;
+        st.set_flag(TsFlag::MissingComponents);
+        st.components.clear();
+      }
+    }
+
+    // The microslice data is now copied (or dropped); the ring buffers are no
+    // longer needed for this subtimeslice and can be released right away.
+    for (auto&& channel : m_channels) {
+      channel->ack_before(start_time + duration);
+    }
+  }
+
+  // Announce the subtimeslice
   m_st_sender.announce_subtimeslice(ts_id, st);
-  m_completed[ts_id] = false;
+  m_subtimeslices[ts_id] = SubtimesliceState{false, slot};
 
   // Update statistics
   ++m_timeslice_count;
@@ -336,19 +485,26 @@ void StBuilder::report_status() {
          {"microslice_count", m_microslice_count},
          {"data_bytes", m_data_bytes},
          {"timeslice_incomplete_count", m_timeslice_incomplete_count},
+         {"aggregation_allocation_failures", m_aggregation_allocation_failures},
          {"buffer_utilization", max_buffer_utilization}});
+  }
+
+  if (m_aggregation_allocation_failures > m_reported_aggregation_failures) {
+    WARN("Aggregation buffer full: dropped {} subtimeslice(s) so far",
+         m_aggregation_allocation_failures);
+    m_reported_aggregation_failures = m_aggregation_allocation_failures;
   }
 
   if (max_buffer_utilization > 0.9) {
     std::size_t completed_count =
-        std::count_if(m_completed.begin(), m_completed.end(),
-                      [](auto const& pair) { return pair.second; });
-    std::size_t pending_count = m_completed.size() - completed_count;
+        std::count_if(m_subtimeslices.begin(), m_subtimeslices.end(),
+                      [](auto const& pair) { return pair.second.completed; });
+    std::size_t pending_count = m_subtimeslices.size() - completed_count;
     WARN("High buffer utilization ({:.1f}%), retracting {} pending "
          "subtimeslices",
          max_buffer_utilization * 100.0, pending_count);
-    for (auto& [ts_id, completed] : m_completed) {
-      if (!completed) {
+    for (auto& [ts_id, state] : m_subtimeslices) {
+      if (!state.completed) {
         m_st_sender.retract_subtimeslice(ts_id);
       }
     }
