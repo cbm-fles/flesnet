@@ -11,7 +11,6 @@
 #include <sched.h>
 #include <sys/mman.h>
 #include "Parameters.hpp"
-#include <iostream>
 #include <thread>
 #include <log.hpp>
 
@@ -63,7 +62,16 @@ int start_receiver() {
 }
 
 
+/**
+ * @brief Profiling data is only written if the program exits gracefully, that is why this minimal signal handler is here.
+ */
+void signalHandler(int sig) {
+    exit(sig);
+}
+
 int main (int argc, char** argv) {
+    signal(SIGINT, signalHandler);
+
     par.parse_options(argc, argv);
     if (FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION) != fi_version()) {
         L_(fatal) << "Libfabric: Header version and library version do not match";
