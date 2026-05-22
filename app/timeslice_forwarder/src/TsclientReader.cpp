@@ -12,7 +12,7 @@ TsclientReader::TsclientReader(std::string shm_uri) {
     UriComponents uri{shm_uri};
     const auto shm_identifier = uri.path;
 
-    source_ = make_unique<fles::Receiver<fles::Timeslice,fles::TimesliceView>>(shm_uri, param);
+    source_ = make_unique<fles::Receiver<fles::Timeslice,fles::TimesliceView>>(shm_identifier, param);
     // we have to read out one timeslice so the fles::Receiver class initializes the SHM and we can get necessary SHM pointer
     unique_ptr<fles::Timeslice> timeslice = source_->get();
     num_components_ = timeslice->num_components();

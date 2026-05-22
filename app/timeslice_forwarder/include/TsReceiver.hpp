@@ -47,7 +47,7 @@ public:
     TsReceiver(
         uint64_t node_id,
         std::string listen_address,
-        std::string shm_uri,
+        std::string output_uri,
         std::string central_manager_address,
         std::string monitoring_uri = ""
     );

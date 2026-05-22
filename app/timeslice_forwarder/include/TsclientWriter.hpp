@@ -40,7 +40,7 @@ private:
     bool handle_timeslice_completions();
 
 public:
-    TsclientWriter(std::string shm_uri);
+    TsclientWriter(std::string output_uri);
     virtual ~TsclientWriter() override;
     void on_new_timeslice(std::function<void()> cb);
 

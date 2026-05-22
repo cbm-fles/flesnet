@@ -12,13 +12,16 @@ bool TsclientWriter::handle_timeslice_completions() {
     return found_completion;
 }
 
-TsclientWriter::TsclientWriter(std::string shm_uri) {
-    UriComponents uri{shm_uri};
+TsclientWriter::TsclientWriter(std::string output_uri) {
+    UriComponents uri{output_uri};
     uint32_t datasize = 27; // 128 MiB
     uint32_t descsize = 19; // 16 MiB
     uint32_t num_components = 26;
     const auto shm_identifier = uri.path;
-    L_(debug) << "shm_identifier: " << uri.path;
+    const auto sheme = uri.scheme;
+    L_(info) << "shm_identifier: " << uri.path;
+    L_(info) << "sheme: " << uri.scheme;
+
     for (auto& [key, value] : uri.query_components) {
         if (key == "datasize") {
             datasize = stoul(value);
