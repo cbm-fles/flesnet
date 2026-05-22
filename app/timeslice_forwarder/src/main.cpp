@@ -33,7 +33,7 @@ int start_sender() {
     auto node = make_shared<TsSender>(
         par.node_id,
         par.listen_addr,
-        par.shm_uri,
+        par.input_uri,
         par.central_manager_listen_addr,
         par.monitoring_uri
     );
@@ -46,10 +46,12 @@ int start_sender() {
 }
 
 int start_receiver() {
+    L_(info) << "Starting receiver...";
+
     auto node = make_shared<TsReceiver>(
         par.node_id,
         par.listen_addr,
-        par.shm_uri,
+        par.output_uri,
         par.central_manager_listen_addr,
         par.monitoring_uri
     );
@@ -84,11 +86,11 @@ int main (int argc, char** argv) {
         exit(-1);
     }
 
-    if (par.group_id == 0) {
+    if (par.role == Parameters::CentralManager) {
         start_cm();
-    } else if (par.group_id == 1) {
+    } else if (par.role == Parameters::Sender) {
         start_sender();
-    } else if (par.group_id == 2) {
+    } else if (par.role == Parameters::Receiver) {
         start_receiver();
     } else { // Should never happen
         L_(fatal) << "! Was unable to determine if node is sender, receiver or central manager";

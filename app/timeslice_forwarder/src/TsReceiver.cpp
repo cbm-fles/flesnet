@@ -75,7 +75,7 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
 
 TsReceiver::TsReceiver(uint64_t node_id,
     std::string listen_address,
-    std::string shm_uri,
+    std::string output_uri,
     std::string central_manager_address,
     std::string monitoring_uri) :
 Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen_address) {
@@ -83,7 +83,7 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
         monitor_->OpenSink(monitoring_uri);
     }
 
-    ts_sink_ = make_shared<TsclientWriter>(shm_uri);
+    ts_sink_ = make_shared<TsclientWriter>(output_uri);
     data_buffer_ = ts_sink_->get_buffer();
     data_buffer_size_ = ts_sink_->get_buffer_size();
     data_buffer_map_ = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, data_buffer_size_);

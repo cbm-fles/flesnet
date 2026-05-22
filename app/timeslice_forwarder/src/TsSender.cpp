@@ -177,14 +177,14 @@ void TsSender::on_connection_refused(std::string address) {
 
 TsSender::TsSender(uint64_t node_id,
     std::string listen_address,
-    std::string shm_uri,
+    std::string input_uri,
     std::string central_manager_address,
     std::string monitoring_uri) :
 Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen_address) {
     if (!monitoring_uri.empty()) {
         monitor_->OpenSink(monitoring_uri);
     }
-    ts_reader = make_shared<TsclientReader>(shm_uri);
+    ts_reader = make_shared<TsclientReader>(input_uri);
 
     data_buffer_size_  = ts_reader->get_buffer_size();
     data_buffer_ = shared_ptr<char>(ts_reader->get_buffer());
