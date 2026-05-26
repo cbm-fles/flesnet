@@ -136,7 +136,7 @@ void TsSender::on_new_work_item(std::string /*address*/, std::shared_ptr<char> w
 }
 
 void TsSender::on_node_connected(string address, uint64_t rem_group_id, uint64_t rem_node_id) {
-    L_(debug) << "Node connected: \n" <<
+    L_(info) << "Node connected: \n" <<
             "Group ID: " << rem_group_id << '\n' <<
             "Node ID: " << rem_node_id;
 
@@ -159,8 +159,10 @@ void TsSender::on_node_connected(string address, uint64_t rem_group_id, uint64_t
         wi_connection->from_node_id = node_id_;
         wi_connection->to_group_id = rem_group_id;
         wi_connection->to_node_id = rem_node_id;
-        unique_lock<shared_mutex> l(mtx_);
-        uid_address_map_[node_uid] = address;
+        {
+            unique_lock<shared_mutex> l(mtx_);
+            uid_address_map_[node_uid] = address;
+        }
         Node::send_work_item(cm_address_, wi_connection, [this] () {
             // Node::send_work_item(cm_address_, wi_buffer_status_);
         });

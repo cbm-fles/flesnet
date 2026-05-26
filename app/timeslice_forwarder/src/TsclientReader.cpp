@@ -32,7 +32,7 @@ char* TsclientReader::get_buffer() {
 
 void TsclientReader::clear_last_timeslice() {
     last_timeslice_ = nullptr;
-};
+}
 
 void TsclientReader::on_new_timeslice(std::function<void()> cb) {
     callbacks.add(cb);
@@ -62,6 +62,8 @@ void TsclientReader::start_timeslice_reading() {
 
         while (!stop_)  {
             timeslice = source_->get();
+
+            // source_.get();
             if (!timeslice) {
                 break;
             }

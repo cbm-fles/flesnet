@@ -7,11 +7,12 @@ using namespace std::placeholders;
 
 void TsReceiver::on_new_work_item(std::string /*address*/, std::shared_ptr<char> /*wi_ptr*/, WorkItem::Type /*wi_type*/, uint64_t group_id, uint64_t node_id) {
     if (group_id == 0 && node_id == 0) { // received new work item from central manager
+
     }
 }
 
 void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64_t rem_node_id) {
-    L_(debug) << "Node connected: \n" <<
+    L_(info) << "Node connected: \n" <<
             "Group ID: " << rem_group_id << '\n' <<
             "Node ID: " << rem_node_id;
 
