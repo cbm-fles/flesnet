@@ -15,7 +15,6 @@ namespace po = boost::program_options;
 void Parameters::parse_options(int argc, char** argv) {
     unsigned log_syslog = 2;
     unsigned log_level = 2;
-
     po::options_description general("General options");
     auto general_add = general.add_options();
     string connectors_option;
@@ -56,7 +55,11 @@ void Parameters::parse_options(int argc, char** argv) {
                   ->implicit_value(log_syslog)
                   ->value_name("<n>"),
               "enable logging to syslog at given log level");
-
+    general_add("timeslice-size",
+             po::value<uint32_t>(&timeslice_size)
+                 ->default_value(timeslice_size)
+                 ->value_name("<n>"),
+             "set the global timeslice size in number of microslices");
     stringstream desc_sstr;
     desc_sstr << endl
         << "Start Central Manager: " << endl

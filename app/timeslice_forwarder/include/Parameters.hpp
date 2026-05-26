@@ -24,6 +24,7 @@ public:
     std::string monitoring_uri;
     std::string output_uri;
     std::string input_uri;
+    uint32_t timeslice_size = 100;
 
     Parameters(int argc, char** argv);
     Parameters() = default;

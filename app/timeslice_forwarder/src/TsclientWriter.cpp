@@ -1,5 +1,6 @@
 #include "TsclientWriter.hpp"
 #include "Utility.hpp"
+#include <cstdint>
 
 using namespace std;
 
@@ -12,7 +13,7 @@ bool TsclientWriter::handle_timeslice_completions() {
     return found_completion;
 }
 
-TsclientWriter::TsclientWriter(std::string output_uri) {
+TsclientWriter::TsclientWriter(std::string output_uri, uint32_t timeslice_size) : timeslice_size_(timeslice_size) {
     UriComponents uri{output_uri};
     uint32_t datasize = 27; // 128 MiB
     uint32_t descsize = 19; // 16 MiB
@@ -60,6 +61,8 @@ void TsclientWriter::set_buffer_map(std::shared_ptr<BufferMap> buffer_map) {
 void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& elements) {
     vector<fles::TimesliceComponentDescriptor*> desc_ptr;
     vector<uint8_t*> data_ptr;
+    L_(trace) << "Building timeslice...";
+    uint64_t combined_size = 0;
     for (auto desc_it = elements.begin(); desc_it != elements.end(); ++desc_it) {
         auto *const descriptor_el = *desc_it;
         if (1 == (descriptor_el->tag >> (sizeof(uint16_t) * 8))) { // referencing a descriptor
@@ -67,6 +70,8 @@ void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& eleme
             const auto idx = static_cast<uint16_t>(descriptor_el->tag);
             for (const auto& element : elements) {
                 if (static_cast<uint16_t>(element->tag) == idx && 2 == (element->tag >> (sizeof(uint16_t) * 8))) { // is refere
+                    combined_size += descriptor_el->len;
+                    combined_size += element->len;
                     data_ptr.push_back(reinterpret_cast<uint8_t*>(buffer_.get() + element->address));
                     break;
                 }
@@ -77,14 +82,16 @@ void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& eleme
     auto ts = make_shared<MyTimeslice>();
     ts->set_timeslice_descriptor({
         desc_ptr[0]->ts_num,
-        0, 100,
+        0, timeslice_size_,
         static_cast<uint32_t>(desc_ptr.size())
     });
     ts->timeslice_descriptor_.ts_pos = ts_cnt_++;
     ts->set_desc(std::move(desc_ptr));
     ts->set_data(std::move(data_ptr));
+    L_(trace) << "Sending work item ... size: " << combined_size;
 
     ts_buffer_->send_work_item(ts);
+    L_(trace) << "waiting for completion";
     while (!handle_timeslice_completions()) {}
 }
 

@@ -37,10 +37,11 @@ private:
     std::string producer_address_;
     std::string worker_address_;
     uint64_t ts_cnt_ = 0;
+    uint32_t timeslice_size_ = 100;
     bool handle_timeslice_completions();
 
 public:
-    TsclientWriter(std::string output_uri);
+    TsclientWriter(std::string output_uri, uint32_t timeslice_size);
     virtual ~TsclientWriter() override;
     void on_new_timeslice(std::function<void()> cb);
 
