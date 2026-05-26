@@ -19,8 +19,6 @@ TsclientWriter::TsclientWriter(std::string output_uri) {
     uint32_t num_components = 26;
     const auto shm_identifier = uri.path;
     const auto sheme = uri.scheme;
-    L_(info) << "shm_identifier: " << uri.path;
-    L_(info) << "sheme: " << uri.scheme;
 
     for (auto& [key, value] : uri.query_components) {
         if (key == "datasize") {
