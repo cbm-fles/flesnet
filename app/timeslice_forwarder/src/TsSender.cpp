@@ -5,6 +5,7 @@
 #include <df/WorkItems/WiTransmission.hpp>
 #include <memory>
 #include "TsclientReader.hpp"
+#include "WiBufferRequest.hpp"
 #include "df/WorkItems/WorkItem.hpp"
 #include <df/Connectors/ConnectorInfiniband.hpp>
 #include <df/Connectors/ConnectorInfiniband.hpp>
@@ -61,7 +62,7 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                         sizes[i] = component_elements[i]->len;
                     }
 
-                    bool insert_successfull = rem_buffer_map_copy->insert(component_elements, dest_addresses, BufferMap::ListElement::RX);
+                    bool insert_successfull = rem_buffer_map_copy->insert(component_elements, dest_addresses, node_id_, group_id_, BufferMap::ListElement::RX);
                     if (!insert_successfull) {
                         L_(debug) << "Remote buffer map has no elements available";
                         node_connector_->unlock_remote_buffer_map(

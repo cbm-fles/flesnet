@@ -113,6 +113,8 @@ void TsclientReader::start_timeslice_reading() {
                 num_components * 2,
                 sizes.get(),
                 addresses.get(),
+                0,
+                0,
                 tags.get(),
                 BufferMap::ListElement::IO::RX
             );
