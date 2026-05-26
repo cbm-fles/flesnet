@@ -52,6 +52,7 @@ int start_receiver() {
         par.node_id,
         par.listen_addr,
         par.output_uri,
+        par.timeslice_size,
         par.central_manager_listen_addr,
         par.monitoring_uri
     );
