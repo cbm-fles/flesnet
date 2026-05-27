@@ -5,7 +5,7 @@
 #include <df/WorkItems/WiTransmission.hpp>
 #include <memory>
 #include "TsclientReader.hpp"
-#include "WiBufferRequest.hpp"
+#include "WorkItems.hpp"
 #include "df/WorkItems/WorkItem.hpp"
 #include <df/Connectors/ConnectorInfiniband.hpp>
 #include <df/Connectors/ConnectorInfiniband.hpp>
@@ -151,7 +151,6 @@ void TsSender::on_node_connected(string address, uint64_t rem_group_id, uint64_t
         //! @todo figure out the race condition that makes this timeout necessary
         std::this_thread::sleep_for(std::chrono::milliseconds(1500));
         ts_reader->start_timeslice_reading();
-        // is_cm_connected = true;
     } else { // Connected to some other node - tell the central manager about it
         auto const node_uid = MAKE_UID(rem_group_id, rem_node_id);
         auto wi_connection = make_shared<WiConnection>();
@@ -167,7 +166,6 @@ void TsSender::on_node_connected(string address, uint64_t rem_group_id, uint64_t
         Node::send_work_item(cm_address_, wi_connection, [this] () {
             // Node::send_work_item(cm_address_, wi_buffer_status_);
         });
-        send_latest_data(rem_group_id, rem_node_id);
     }
 }
 
@@ -209,17 +207,17 @@ Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen
     wi_buffer_status_ = make_shared<WorkItem>();
     wi_buffer_status_->type = WorkItem::buffer_status;
     ts_reader->on_new_timeslice([this] () {
-        // Node::send_work_item(cm_address_, wi_buffer_status_);
+        Node::send_work_item(cm_address_, wi_buffer_status_);
 
-        uint64_t node_uid;
-        {
-            shared_lock<shared_mutex> l(mtx_);
-            if (uid_address_map_.begin() == uid_address_map_.end()) {
-                return;
-            }
-            node_uid = (*uid_address_map_.begin()).first;
-        }
-        send_latest_data(GROUP_ID(node_uid), NODE_ID(node_uid));
+        // uint64_t node_uid;
+        // {
+        //     shared_lock<shared_mutex> l(mtx_);
+        //     if (uid_address_map_.begin() == uid_address_map_.end()) {
+        //         return;
+        //     }
+        //     node_uid = (*uid_address_map_.begin()).first;
+        // }
+        // send_latest_data(GROUP_ID(node_uid), NODE_ID(node_uid));
     });
 
     ts_reader->set_node_connector(node_connector_);

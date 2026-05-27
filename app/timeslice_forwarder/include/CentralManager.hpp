@@ -7,6 +7,10 @@
 #include <df/WorkItems/WiConnection.hpp>
 #include <df/WorkItems/WiTransmission.hpp>
 #include <memory>
+#include <queue>
+#include <shared_mutex>
+#include <type_traits>
+#include "WorkItems.hpp"
 
 class CentralManager : public Node {
 private:
@@ -14,6 +18,7 @@ private:
     const uint64_t DATA_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 450;
     const uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
 
+    /// @brief used to lock ANY shared resources
     std::mutex mtx_;
     std::shared_ptr<cbm::Monitor> monitor_{std::make_shared<cbm::Monitor>()};
     // maps used to translate node UID to IP addresses
@@ -22,7 +27,7 @@ private:
 
     // used to translate between node uid and its WI buffer map
     std::unordered_map<uint64_t, std::shared_ptr<BufferMap>> uid_buffer_map_map_;
-    std::shared_ptr<std::vector<uint64_t>> nodes_with_buffer_change_{std::make_shared<std::vector<uint64_t>>()};
+    // std::shared_ptr<std::vector<uint64_t>> nodes_with_buffer_change_{std::make_shared<std::vector<uint64_t>>()};
 
     // WorkerThread worker;
     ConnectionManager connection_manager_; // used to take track of connections between nodes
@@ -35,6 +40,20 @@ private:
     std::atomic_uint64_t output_nodes_cnt_ = 0;
     std::string listen_address_;
 
+    /**
+    * @brief Will queue all sender node UID which want to get rid of Timeslices
+    */
+    std::vector<uint64_t> node_data_available_;
+
+    /**
+    * @brief key: receiver node UID, value: the number of assigned tasks
+    * @details the value gets increased everytime the CM tells a sender to transmit its data to a receiver node.
+    * The sender node will send a work item to the CM once it has processed a TS and the value for this receiver node will be decreased again.
+    * In short, the node UID with the lowest value has currently the least amount of work.
+    */
+    std::unordered_map<uint64_t, std::atomic_uint64_t> node_load_;
+
+
     void on_node_connected(std::string address, uint64_t group_id, uint64_t node_id);
 
     void on_node_disconnected(std::string address, uint64_t group_id, uint64_t node_id);
@@ -43,10 +62,13 @@ private:
 
     void connect_nodes(uint64_t node_uid);
 
-    void eval_node_status(uint64_t group_id, uint64_t node_id);
+    void eval_node_status();
 
     void eval_thread();
 
 public:
+    constexpr static uint64_t SENDER_GROUP_ID = 1;
+    constexpr static uint64_t RECEIVER_GROUP_ID = 2;
+
     CentralManager(std::string listen_address, std::string monitoring_uri = "");
 };

@@ -1,6 +1,8 @@
-#include "WiBufferRequest.hpp"
+#include "WorkItems.hpp"
 #include <TsReceiver.hpp>
 #include <TsclientWriter.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 using namespace std::placeholders;
@@ -70,7 +72,8 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         L_(debug) << "write_timeslice start";
         ts_sink_->write_timeslice(component);
         L_(debug) << "write_timeslice done";
-
+        // this_thread::sleep_for(chrono::milliseconds(400));
+        Node::send_work_item(cm_address_, wi_work_done_);
         data_buffer_map_->remove_elements(component);
         node_connector_->unlock_buffer_map(data_buffer_map_);
     }, [this] () {
@@ -91,7 +94,7 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     if (!monitoring_uri.empty()) {
         monitor_->OpenSink(monitoring_uri);
     }
-
+    wi_work_done_ = make_shared<WiWorkDone>();
     ts_sink_ = make_shared<TsclientWriter>(output_uri, timeslice_size);
     data_buffer_ = ts_sink_->get_buffer();
     data_buffer_size_ = ts_sink_->get_buffer_size();
