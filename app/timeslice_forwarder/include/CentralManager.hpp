@@ -1,5 +1,6 @@
 #pragma once
 #include "Monitor.hpp"
+#include <atomic>
 #include <df/Connectors/ConnectorInfiniband.hpp>
 #include <cstdint>
 #include <df/ConnectionManager.hpp>
@@ -43,7 +44,7 @@ private:
     /**
     * @brief Will queue all sender node UID which want to get rid of Timeslices
     */
-    std::vector<uint64_t> node_data_available_;
+    std::vector<uint64_t> nodes_data_available_;
 
     /**
     * @brief key: receiver node UID, value: the number of assigned tasks
@@ -51,8 +52,16 @@ private:
     * The sender node will send a work item to the CM once it has processed a TS and the value for this receiver node will be decreased again.
     * In short, the node UID with the lowest value has currently the least amount of work.
     */
-    std::unordered_map<uint64_t, std::atomic_uint64_t> node_load_;
+    std::unordered_map<uint64_t, std::atomic_uint64_t> nodes_load_;
 
+    /**
+    * @brief (key: receiver node UID, value: is buffer full)
+    * @details The central manager just puts out transmission commands. If the sender reports to the central manager that the buffer of the suggested
+    * receiver node is full, it will be noted in this map by settings the node UID to true.
+    * Once the receiver ndoe reports that it has finished some work, the value will be resetted to false.
+    * If a node UID is set to true, this node will not be considered to transmit data to.
+    */
+    std::unordered_map<uint64_t, std::atomic_bool> nodes_buffer_full_;
 
     void on_node_connected(std::string address, uint64_t group_id, uint64_t node_id);
 

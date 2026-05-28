@@ -2,6 +2,7 @@
 #include <TsReceiver.hpp>
 #include <TsclientWriter.hpp>
 #include <chrono>
+#include <cstdint>
 #include <thread>
 
 using namespace std;
@@ -56,7 +57,10 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
                     {{"host", std::to_string(node_id_) + " - " + std::to_string(group_id_)}},
                     {{"recv_cnt", ++recv_cnt_}});
     // L_(info)  << "New data from Node ID: " << node_id << " - Group ID: " << group_id;
+    // this_thread::sleep_for(chrono::milliseconds(500));
     node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
+        L_(debug) << "BUFFER MAP LOCKED - on_new_data";
+        // auto *el = data_buffer_map_->get_latest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         if (el == nullptr) { // not expected to happen in the current implementation
             node_connector_->unlock_buffer_map(data_buffer_map_);
@@ -64,6 +68,9 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         }
         uint64_t component_size = 0;
         auto component = data_buffer_map_->get_elements_of_component(el->compontent_id, component_size);
+        for (auto &component : component) {
+            component->rx_tx = BufferMap::ListElement::IO::UNSPEC; // asynchronousity makes it possible to read it twice, therefore we remove the RX mark to prevent this from happening
+        }
         L_(info)  << "New data from Node ID: " << component[0]->node_id << " - Group ID: " << component[0]->group_id;
 
         monitor_->QueueMetric("timeslice_forwarder_state",
@@ -72,10 +79,9 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         L_(debug) << "write_timeslice start";
         ts_sink_->write_timeslice(component);
         L_(debug) << "write_timeslice done";
-        // this_thread::sleep_for(chrono::milliseconds(400));
-        Node::send_work_item(cm_address_, wi_work_done_);
-        data_buffer_map_->remove_elements(component);
         node_connector_->unlock_buffer_map(data_buffer_map_);
+        L_(debug) << "BUFFER MAP UNlocked  - on_new_data";
+
     }, [this] () {
         monitor_->QueueMetric("timeslice_forwarder_state",
                     {{"host", std::to_string(node_id_) + " - " + std::to_string(group_id_)}},
@@ -99,7 +105,35 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     data_buffer_ = ts_sink_->get_buffer();
     data_buffer_size_ = ts_sink_->get_buffer_size();
     data_buffer_map_ = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, data_buffer_size_);
+    ts_sink_->on_timeslices_handled([this] (uint64_t /*finished_ts_cnt*/) {
+        L_(trace) << "on_timeslices_handled";
+        if (ts_sink_->get_finished_component_id_cnt() == 0) {
+            return;
+        }
+        node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
+            L_(debug) << "BUFFER MAP LOCKED - on_timeslices_handled";
 
+            uint64_t component_id;
+            L_(trace) << "on_timeslices_handled - lock_buffer_map:";
+            while (ts_sink_->pop_finished_component_id(component_id)) {
+                L_(trace) << "on_timeslices_handled - component_id: " << component_id;
+
+                uint64_t combined_size;
+                auto a = data_buffer_map_->get_elements_of_component(component_id, combined_size);
+                L_(debug) << "a.size(): " << a.size();
+                if (a.size() != 52) {
+                    L_(fatal) << "component size not 52: " << a.size();
+                }
+                // data_buffer_map_->print_all();
+                data_buffer_map_->remove_elements(a);
+                Node::send_work_item(cm_address_, wi_work_done_);
+            }
+            node_connector_->unlock_buffer_map(data_buffer_map_);
+            L_(debug) << "BUFFER MAP UNlocked  - on_timeslices_handled";
+        }, [] () {
+            return true;
+        });
+    });
     /**
     * The shared memory is represented by boost::managed_shared_memory.
     * Boost seems to store some metadata for its management in the SHM too.

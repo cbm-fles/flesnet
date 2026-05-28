@@ -8,6 +8,7 @@
 #include <df/WorkItems/WiConnection.hpp>
 #include <df/WorkItems/WiTransmission.hpp>
 #include <memory>
+#include "TsclientWriter.hpp"
 #include "Tssink.hpp"
 #include "WorkItems.hpp"
 #include <df/WorkItems/WorkItem.hpp>
@@ -17,7 +18,7 @@
 
 class TsReceiver : public Node {
 private:
-    const uint64_t BUFFER_MAP_ELEMENTS = 512;
+    const uint64_t BUFFER_MAP_ELEMENTS = 4096;
     const uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
 
     std::shared_mutex mtx_;
@@ -35,7 +36,7 @@ private:
     std::atomic_uint64_t failed_remote_lock_cnt_ = 0;
     std::string node_listen_addr_;
     std::shared_ptr<WorkItem> wi_buffer_status_ = nullptr;
-    std::shared_ptr<TsSink> ts_sink_ = nullptr;
+    std::shared_ptr<TsclientWriter> ts_sink_ = nullptr;
     std::atomic_uint64_t recv_cnt_ = 0;
     std::atomic_uint64_t failed_self_locks_ = 0;
     std::shared_ptr<WiWorkDone> wi_work_done_ = nullptr;

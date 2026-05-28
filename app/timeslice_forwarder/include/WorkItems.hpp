@@ -6,28 +6,24 @@
 
 enum WiType : uint64_t {
     WI_TYPES,
-    wi_buffer_request,
-    wi_work_done
+    wi_work_done,
+    wi_buffer_full_report
 };
 
-class WiBufferRequest : public WorkItem {
+class WiBufferFullReport : public WorkItem {
 public:
-    WiBufferRequest() {
-        type = static_cast<WorkItem::Type>(wi_buffer_request);
+    uint64_t node_id = 0; //!> node_id of which the buffer is full
+    uint64_t group_id = 0; //!> group_id of which the buffer is full
+
+    WiBufferFullReport() {
+        type = static_cast<WorkItem::Type>(wi_buffer_full_report);
     }
 
     // Boost
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
-    template<class Archive>
-    // Boost
-    void save(Archive & ar, const unsigned int /*version*/) const {
+    template<typename Archive>
+    void serialize(Archive& ar, const unsigned /*version*/) {
         WI_SERIALIZE(ar);
-    }
-
-    // Boost
-    template<class Archive>
-    void load(Archive & ar, const unsigned int /*version*/) {
-        WI_SERIALIZE(ar);
+        ar & node_id & group_id;
     }
 
     std::shared_ptr<char> serialize(uint64_t *size) override {
@@ -54,16 +50,8 @@ public:
     }
 
     // Boost
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
-    template<class Archive>
-    // Boost
-    void save(Archive & ar, const unsigned int /*version*/) const {
-        WI_SERIALIZE(ar);
-    }
-
-    // Boost
-    template<class Archive>
-    void load(Archive & ar, const unsigned int /*version*/) {
+    template<typename Archive>
+    void serialize(Archive& ar, const unsigned /*version*/) {
         WI_SERIALIZE(ar);
     }
 

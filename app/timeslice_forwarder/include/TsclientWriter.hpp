@@ -8,6 +8,7 @@
 #include "MyTimeslice.hpp"
 #include "FragmentedTimesliceBuffer.hpp"
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 
@@ -38,18 +39,25 @@ private:
     std::string worker_address_;
     uint64_t ts_cnt_ = 0;
     uint32_t timeslice_size_ = 100;
-    bool handle_timeslice_completions();
+    uint64_t handle_timeslice_completions();
+    CallbackContainer<void(uint64_t ts_finished_cnt)> handled_timeslice_callbacks_;
+    std::future<void> ts_completions_thread_;
+    uint64_t ts_pos_ = 0; // will simply increase with every written timeslice
+    std::unordered_map<uint64_t, uint64_t> tspos_componentid_map_;
 
+    std::mutex mtx_;
+    std::queue<uint64_t> component_ids_done_;
+
+    std::atomic_uint64_t ts_input_output_cnt_diff;
 public:
     TsclientWriter(std::string output_uri, uint32_t timeslice_size);
     virtual ~TsclientWriter() override;
-    void on_new_timeslice(std::function<void()> cb);
-
+    bool on_timeslices_handled(std::function<void(uint64_t)> cb);
     std::shared_ptr<char> get_buffer() override;
-
     uint64_t get_buffer_size() override;
-
     void set_buffer_map(std::shared_ptr<BufferMap> buffer_map);
-
     void write_timeslice(std::vector<BufferMap::ListElement*>& elements) override;
+    bool pop_finished_component_id(uint64_t& component_id);
+    uint64_t get_finished_component_id_cnt();
+
 };

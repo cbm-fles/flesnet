@@ -1,10 +1,12 @@
 #include "CentralManager.hpp"
+#include "WorkItems.hpp"
 #include "df/Node.hpp"
 #include "df/WorkItems/WorkItem.hpp"
 #include "log.hpp"
 
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <thread>
 
 using namespace std::placeholders;
@@ -22,7 +24,7 @@ void CentralManager::on_node_connected(std::string address, uint64_t group_id, u
             {{"input_nodes_cnt", ++input_nodes_cnt_}});
     } else { // group_id == RECEIVER_GROUP_ID
         unique_lock<mutex> l(mtx_);
-        node_load_[node_uid] = 0;
+        nodes_load_[node_uid] = 0;
         monitor_->QueueMetric("timeslice_forwarder_state",
             {{"CM", "CM"}},
             {{"output_nodes_cnt", ++output_nodes_cnt_}});
@@ -71,15 +73,27 @@ void CentralManager::on_new_work_item(std::string /*address*/, std::shared_ptr<c
         unique_lock<mutex> l(mtx_);
         connection_manager_.connect_unidirectional(from, to);
     } else if (static_cast<WiType>(wi_type) == WiType::buffer_status) { // The told us, that its buffer map has changed
-        L_(debug) << "buffer status";
+        L_(debug) << "WiType::buffer_status";
         unique_lock<mutex> l(mtx_);
-        node_data_available_.push_back(node_uid);
+        nodes_data_available_.push_back(node_uid);
         eval_worker_cv_.notify_all();
     } else if (static_cast<WiType>(wi_type) == WiType::wi_work_done) {
-        L_(debug) << "work done";
+        L_(debug) << "WiType::wi_work_done";
         unique_lock<mutex> l(mtx_);
-        L_(debug) << "node_load_[node_uid]: " << --node_load_[node_uid];
+        // nodes_buffer_full_[node_uid] = false;
+        L_(debug) << "nodes_load_[node_uid]: " << --nodes_load_[node_uid];
+        L_(debug) << "nodes_data_available_.size()" << nodes_data_available_.size();
         eval_worker_cv_.notify_all();
+    } else if (static_cast<WiType>(wi_type) == WiType::wi_buffer_full_report) {
+        auto wi_buffer_full_report = make_shared<WiBufferFullReport>();
+        wi_buffer_full_report->deserialize(wi_ptr);
+        L_(warning) << "WiType::wi_buffer_full_report FROM node_id: " << node_id << " - group_id " << group_id << " - ABOUT N: " << wi_buffer_full_report->node_id << " - G: " << wi_buffer_full_report->group_id;
+        auto rem_node_uid = MAKE_UID(wi_buffer_full_report->group_id, wi_buffer_full_report->node_id);
+        unique_lock<mutex> l(mtx_);
+        // nodes_buffer_full_[rem_node_uid] = true;
+        nodes_data_available_.push_back(node_uid);
+        L_(trace) << "nodes_load_[node_uid]: " << --nodes_load_[rem_node_uid];
+        // eval_worker_cv_.notify_all();
     } else {
         L_(warning) << "Received unknown WorkItem type: " << static_cast<WiType>(wi_type);
     }
@@ -104,59 +118,100 @@ void CentralManager::connect_nodes(uint64_t node_uid) {
 }
 
 void CentralManager::eval_node_status() {
+    // {
+    //     {
+    //         unique_lock<mutex> l(mtx_);
+    //         auto it = nodes_data_available_.begin();
+    //         while (it != nodes_data_available_.end()) {
+    //             auto sender_uid = *it;
+    //             auto connections = connection_manager_.get_connections(sender_uid);
+    //             L_(debug) << "eval node status - node_id: " << NODE_ID(sender_uid) << " - group_id: " << GROUP_ID(sender_uid);
+    //             // L_(debug) << "eval node status - connections.size(): " << connections.size();
+    //             // L_(debug) << "eval node status - nodes_load_.size(): " << nodes_load_.size();
+
+    //             if (connections.empty()) {
+    //                 return;
+    //             }
+    //             uint64_t node_uid_lowest_load;
+    //             uint64_t lowest_load_value = UINT64_MAX;
+    //             for (auto &conn : connections) {
+    //                 // L_(debug) << "nodes_load_[conn]: " << nodes_load_[conn] << " - node_id: " << NODE_ID(conn) << " - group_id: " << GROUP_ID(conn);
+    //                 if (nodes_load_[conn] == 0) {
+    //                     lowest_load_value = nodes_load_[conn];
+    //                     node_uid_lowest_load = conn;
+    //                     break;
+    //                 }
+    //             }
+    //             if (lowest_load_value == UINT64_MAX) {
+    //                  return;
+    //             }
+
+    //             L_(debug) << "eval node status - sending to node_id: " << NODE_ID(node_uid_lowest_load);
+    //             // L_(debug) << "eval node status - lowest_load_value: " << lowest_load_value;
+    //             nodes_load_[node_uid_lowest_load]++;
+
+    //             auto wi_tx = make_shared<WiTransmission>();
+    //             wi_tx->node_uid = node_uid_lowest_load;
+    //             wi_tx->type = WorkItem::transmission;
+    //             Node::send_work_item(uid_address_map_[sender_uid], wi_tx);
+    //             it = nodes_data_available_.erase(it);
+    //         }
+    //     }
+
+    // }
+
     {
-        unique_lock<mutex> l(mtx_);
-        auto it = node_data_available_.begin();
-        while (it != node_data_available_.end()) {
-            auto sender_uid = *it;
-            auto connections = connection_manager_.get_connections(sender_uid);
-            L_(debug) << "eval node status - node_id: " << NODE_ID(sender_uid) << " - group_id: " << GROUP_ID(sender_uid);
-            // L_(debug) << "eval node status - connections.size(): " << connections.size();
-            // L_(debug) << "eval node status - node_load_.size(): " << node_load_.size();
+        {
+            unique_lock<mutex> l(mtx_);
+            auto it = nodes_data_available_.begin();
+            while (it != nodes_data_available_.end()) {
+                auto sender_uid = *it;
+                auto connections = connection_manager_.get_connections(sender_uid);
+                L_(debug) << "eval node status - node_id: " << NODE_ID(sender_uid) << " - group_id: " << GROUP_ID(sender_uid);
 
-            if (connections.empty()) {
-                return;
-            }
-            uint64_t node_uid_lowest_load;
-            uint64_t lowest_load_value = UINT64_MAX;
-            for (auto &conn : connections) {
-                // L_(debug) << "node_load_[conn]: " << node_load_[conn] << " - node_id: " << NODE_ID(conn) << " - group_id: " << GROUP_ID(conn);
-                if (node_load_[conn] == 0) {
-                    lowest_load_value = node_load_[conn];
-                    node_uid_lowest_load = conn;
-                    break;
+                if (connections.empty()) {
+                    return;
                 }
-            }
-            if (lowest_load_value == UINT64_MAX) {
-                break;
-            }
 
-            L_(debug) << "eval node status - sending to node_id: " << NODE_ID(node_uid_lowest_load);
-            // L_(debug) << "eval node status - lowest_load_value: " << lowest_load_value;
-            node_load_[node_uid_lowest_load]++;
+                uint64_t node_uid_lowest_load;
+                uint64_t lowest_load_value = UINT64_MAX;
+                for (auto &conn : connections) {
+                    if (nodes_load_[conn] < lowest_load_value /*&& !nodes_buffer_full_[conn]*/) {
+                        lowest_load_value = nodes_load_[conn];
+                        node_uid_lowest_load = conn;
+                        if (nodes_load_[conn] == 0) { // 0 is the lowest load value possible -> exit early
+                            break;
+                        }
+                    }
+                }
 
-            auto wi_tx = make_shared<WiTransmission>();
-            wi_tx->node_uid = node_uid_lowest_load;
-            wi_tx->type = WorkItem::transmission;
-            Node::send_work_item(uid_address_map_[sender_uid], wi_tx);
-            it = node_data_available_.erase(it);
+                if (lowest_load_value == UINT64_MAX) {
+                    return;
+                }
+
+                L_(debug) << "eval node status - sending to node_id: " << NODE_ID(node_uid_lowest_load);
+                // L_(debug) << "eval node status - lowest_load_value: " << lowest_load_value;
+                nodes_load_[node_uid_lowest_load]++;
+
+                auto wi_tx = make_shared<WiTransmission>();
+                wi_tx->node_uid = node_uid_lowest_load;
+                wi_tx->type = WorkItem::transmission;
+                Node::send_work_item(uid_address_map_[sender_uid], wi_tx);
+                it = nodes_data_available_.erase(it);
+            }
         }
     }
-    // we could not serve all sender nodes
-    // That only happens if there were not enough free receiver nodes, so we wait a bit
-    // in hopes that free receiver nodes will be available again
-    if (!node_data_available_.empty()) {
-        this_thread::sleep_for(chrono::milliseconds(100));
-    }
 }
+
+
 
 void CentralManager::eval_thread() {
     vector<uint64_t> nodes_cpy;
     while (!stop_eval_worker) {
         {
             unique_lock<mutex> l(mtx_);
-            eval_worker_cv_.wait(l, [&] () {
-                return !node_data_available_.empty() || stop_eval_worker;
+            eval_worker_cv_.wait_for(l, std::chrono::milliseconds(100), [&] () {
+                return !nodes_data_available_.empty() ||  static_cast<bool>(stop_eval_worker);
             });
         }
         eval_node_status();
