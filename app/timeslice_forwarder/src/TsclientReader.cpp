@@ -71,7 +71,8 @@ void TsclientReader::start_timeslice_reading() {
 
             if (base_mem_addres_ != reinterpret_cast<char*>(source_->managed_shm_->get_address())) {
                 base_mem_addres_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());
-                L_(warning) << "(TimesliceReader) SHM base memory address changed";
+                L_(fatal) << "(TimesliceReader) SHM base memory address changed";
+                exit(-1);
             }
 
             // Proactively request lock and start preparing data in the meantime
