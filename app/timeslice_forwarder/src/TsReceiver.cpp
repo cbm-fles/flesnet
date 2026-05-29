@@ -9,19 +9,14 @@ using namespace std;
 using namespace std::placeholders;
 
 
-void TsReceiver::on_new_work_item(std::string /*address*/, std::shared_ptr<char> /*wi_ptr*/, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id) {
-    if (group_id == 0 && node_id == 0) { // received new work item from central manager
-
-    } else {
-        L_(info) << "Received work item: " << wi_type << endl;
-    }
+void TsReceiver::on_new_work_item(std::string /*address*/, std::shared_ptr<char> /*wi_ptr*/, WorkItem::Type /*wi_type*/, uint64_t group_id, uint64_t node_id) {
+    L_(warning) << "Received work item from Node ID: " << node_id << " - " << " - Group ID: " << group_id << " - no handler implemented on receiver side";
 }
 
 void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64_t rem_node_id) {
-    L_(info) << "Node connected: \n" <<
-            "Group ID: " << rem_group_id << '\n' <<
+    L_(info) << "Node connected: " << endl <<
+            "Group ID: " << rem_group_id << endl <<
             "Node ID: " << rem_node_id;
-
     if (rem_group_id == 0 && rem_node_id == 0) { // connected to central manager - tell it about our connection possibilities
         auto conn_config = make_shared<WiConnectorConfig>();
         conn_config->type = WorkItem::connector_config;
@@ -29,8 +24,6 @@ void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64
         conn_config->listen_addr = node_listen_addr_;
         conn_config->name = "ConnectorInfiniband";
         Node::send_work_item(address, conn_config);
-        // auto wi_buffer_request = make_shared<WiBufferRequest>();
-        // Node::send_work_item(address, wi_buffer_request);
     } else { // Connected to some other node - tell the central manager about it
         auto wi_connection = make_shared<WiConnection>();
         wi_connection->type = WorkItem::connection;
@@ -38,29 +31,23 @@ void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64
         wi_connection->from_node_id = node_id_;
         wi_connection->to_group_id = rem_group_id;
         wi_connection->to_node_id = rem_node_id;
-        Node::send_work_item(cm_address_, wi_connection, [] () {
-            L_(debug) << "send work item done (WorkItem::connection)";
-        });
+        Node::send_work_item(cm_address_, wi_connection);
     }
 }
 
 void TsReceiver::on_connection_refused(std::string address) {
-    if (address == cm_address_) {
+    if (address == cm_address_) { // connection refused
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         Node::connect_to_node(cm_address_);
+    } else {
+        L_(fatal) << "Connection refused: Node with address '" << address << "' not available";
     }
 };
 
 void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id, uint64_t node_id) {
     // New data has arrived - check buffer map
-    monitor_->QueueMetric("timeslice_forwarder_state",
-                    {{"host", std::to_string(node_id_) + " - " + std::to_string(group_id_)}},
-                    {{"recv_cnt", ++recv_cnt_}});
-    // L_(info)  << "New data from Node ID: " << node_id << " - Group ID: " << group_id;
-    // this_thread::sleep_for(chrono::milliseconds(500));
+    // this_thread::sleep_for(chrono::milliseconds(200));
     node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
-        L_(debug) << "BUFFER MAP LOCKED - on_new_data";
-        // auto *el = data_buffer_map_->get_latest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         if (el == nullptr) { // not expected to happen in the current implementation
             node_connector_->unlock_buffer_map(data_buffer_map_);
@@ -72,19 +59,26 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
             component->rx_tx = BufferMap::ListElement::IO::UNSPEC; // asynchronousity makes it possible to read it twice, therefore we remove the RX mark to prevent this from happening
         }
         L_(info)  << "New data from Node ID: " << component[0]->node_id << " - Group ID: " << component[0]->group_id;
-
-        monitor_->QueueMetric("timeslice_forwarder_state",
-            {{"host", std::to_string(node_id_) + " - " + std::to_string(group_id_)}},
-            {{"bytes_received", component_size}});
-        L_(debug) << "write_timeslice start";
         ts_sink_->write_timeslice(component);
-        L_(debug) << "write_timeslice done";
+        auto buffer_fill_state =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
+        auto buffer_map_fill_state = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
         node_connector_->unlock_buffer_map(data_buffer_map_);
-        L_(debug) << "BUFFER MAP UNlocked  - on_new_data";
-
+        monitor_->QueueMetric("timeslice_forwarder_state",
+            {
+                {"host", hostname_},
+            {"receiver", to_string(node_id_)}
+        },
+            {
+                {"bytes_received", component_size},
+                {"buffer_fill", buffer_fill_state},
+                {"buffer_map_fill", buffer_map_fill_state},
+                {"recv_cnt", ++recv_cnt_}
+            }
+        );
     }, [this] () {
         monitor_->QueueMetric("timeslice_forwarder_state",
-                    {{"host", std::to_string(node_id_) + " - " + std::to_string(group_id_)}},
+            {{"host", hostname_},
+            {"receiver", to_string(node_id_)}},
                     {{"failed_self_locks", ++failed_self_locks_}});
         return true;
     });
@@ -95,8 +89,9 @@ TsReceiver::TsReceiver(uint64_t node_id,
     std::string output_uri,
     uint32_t timeslice_size,
     std::string central_manager_address,
-    std::string monitoring_uri) :
-Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen_address) {
+    std::string monitoring_uri,
+    std::string hostname) :
+Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen_address), hostname_(hostname) {
     if (!monitoring_uri.empty()) {
         monitor_->OpenSink(monitoring_uri);
     }
@@ -106,34 +101,23 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     data_buffer_size_ = ts_sink_->get_buffer_size();
     data_buffer_map_ = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, data_buffer_size_);
     ts_sink_->on_timeslices_handled([this] (uint64_t /*finished_ts_cnt*/) {
-        L_(trace) << "on_timeslices_handled";
         if (ts_sink_->get_finished_component_id_cnt() == 0) {
             return;
         }
         node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
-            L_(debug) << "BUFFER MAP LOCKED - on_timeslices_handled";
-
             uint64_t component_id;
-            L_(trace) << "on_timeslices_handled - lock_buffer_map:";
             while (ts_sink_->pop_finished_component_id(component_id)) {
-                L_(trace) << "on_timeslices_handled - component_id: " << component_id;
-
                 uint64_t combined_size;
-                auto a = data_buffer_map_->get_elements_of_component(component_id, combined_size);
-                L_(debug) << "a.size(): " << a.size();
-                if (a.size() != 52) {
-                    L_(fatal) << "component size not 52: " << a.size();
-                }
-                // data_buffer_map_->print_all();
-                data_buffer_map_->remove_elements(a);
+                auto component = data_buffer_map_->get_elements_of_component(component_id, combined_size);
+                data_buffer_map_->remove_elements(component);
                 Node::send_work_item(cm_address_, wi_work_done_);
             }
             node_connector_->unlock_buffer_map(data_buffer_map_);
-            L_(debug) << "BUFFER MAP UNlocked  - on_timeslices_handled";
         }, [] () {
             return true;
         });
     });
+
     /**
     * The shared memory is represented by boost::managed_shared_memory.
     * Boost seems to store some metadata for its management in the SHM too.
@@ -143,7 +127,6 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
 
     wi_buffer_map_ = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, WI_BUFFER_SIZE);
     wi_buffer_ = std::shared_ptr<char>(new char[WI_BUFFER_SIZE], std::default_delete<char[]>());
-
     node_connector_ = make_shared<ConnectorInfiniband>();
 
     Node::set_wi_buffer(wi_buffer_, wi_buffer_map_, WI_BUFFER_SIZE);

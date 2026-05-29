@@ -29,10 +29,18 @@ private:
     std::shared_ptr<char> wi_buffer_ = nullptr;
     std::shared_ptr<BufferMap> wi_buffer_map_ = nullptr;
     std::shared_ptr<ConnectorInterface> node_connector_ = nullptr;
-    std::atomic_uint64_t send_cnt_ = 0;
-    std::atomic_uint64_t failed_remote_lock_cnt_ = 0;
     std::string node_listen_addr_;
     std::shared_ptr<WorkItem> wi_buffer_status_ = nullptr;
+
+    /**
+    * @brief values used for influxDB/grafana monitoring
+    */
+    std::string hostname_;
+    std::atomic_uint64_t failed_remote_lock_cnt_ = 0;
+    std::atomic_uint64_t send_cnt_ = 0;
+    std::atomic_uint64_t rem_buffer_full_cnt_ = 0;
+    std::atomic_uint64_t rem_buffer_map_full_cnt_ = 0;
+
 
     void on_new_work_item(std::string /*address*/, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id);
 
@@ -47,7 +55,8 @@ public:
         std::string listen_address,
         std::string input_uri,
         std::string central_manager_address,
-        std::string monitoring_uri = ""
+        std::string monitoring_uri = "",
+        std::string hostname = ""
     );
 
 

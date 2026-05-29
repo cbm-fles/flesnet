@@ -12,16 +12,14 @@
 #include <sys/mman.h>
 #include "Parameters.hpp"
 #include <thread>
-#include <log.hpp>
+#include <unistd.h>
 
 using namespace std;
 
 Parameters par;
 
-
-
-int start_cm() {
-    auto node = make_shared<CentralManager>(par.central_manager_listen_addr, par.monitoring_uri);
+int start_cm(string hostname = "") {
+    auto node = make_shared<CentralManager>(par.central_manager_listen_addr, par.monitoring_uri, hostname);
     L_(info) << "Central Manager listening on: " << par.central_manager_listen_addr;
     while (true) {
         this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -29,13 +27,14 @@ int start_cm() {
     return 0;
 }
 
-int start_sender() {
+int start_sender(string hostname = "") {
     auto node = make_shared<TsSender>(
         par.node_id,
         par.listen_addr,
         par.input_uri,
         par.central_manager_listen_addr,
-        par.monitoring_uri
+        par.monitoring_uri,
+        hostname
     );
     L_(info) << "Started TS sender (" << par.listen_addr << ")";
 
@@ -45,16 +44,16 @@ int start_sender() {
     return 0;
 }
 
-int start_receiver() {
+int start_receiver(string hostname = "") {
     L_(info) << "Starting receiver...";
-
     auto node = make_shared<TsReceiver>(
         par.node_id,
         par.listen_addr,
         par.output_uri,
         par.timeslice_size,
         par.central_manager_listen_addr,
-        par.monitoring_uri
+        par.monitoring_uri,
+        hostname
     );
     L_(info) << "Started TS receiver (" << par.listen_addr << ")";
 
@@ -86,13 +85,16 @@ int main (int argc, char** argv) {
         L_(fatal) << "Minimum version required 2.2 - found " << FI_MAJOR_VERSION << "." << FI_MINOR_VERSION;
         exit(-1);
     }
-
+    const uint16_t HOSTNAME_LEN = 50;
+    char c_hostname[HOSTNAME_LEN] = {0};
+    gethostname(&c_hostname[0], HOSTNAME_LEN);
+    string hostname(&c_hostname[0]);
     if (par.role == Parameters::CentralManager) {
-        start_cm();
+        start_cm(hostname);
     } else if (par.role == Parameters::Sender) {
-        start_sender();
+        start_sender(hostname);
     } else if (par.role == Parameters::Receiver) {
-        start_receiver();
+        start_receiver(hostname);
     } else { // Should never happen
         L_(fatal) << "! Was unable to determine if node is sender, receiver or central manager";
     }

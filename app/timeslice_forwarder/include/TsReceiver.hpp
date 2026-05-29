@@ -40,7 +40,7 @@ private:
     std::atomic_uint64_t recv_cnt_ = 0;
     std::atomic_uint64_t failed_self_locks_ = 0;
     std::shared_ptr<WiWorkDone> wi_work_done_ = nullptr;
-
+    std::string hostname_;
     void on_new_work_item(std::string address, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id);
     void on_node_connected(std::string address, uint64_t rem_group_id, uint64_t rem_node_id);
     void on_connection_refused(std::string address);
@@ -53,6 +53,7 @@ public:
         std::string output_uri,
         uint32_t timeslice_size,
         std::string central_manager_address,
-        std::string monitoring_uri = ""
+        std::string monitoring_uri = "",
+        std::string hostname = ""
     );
 };
