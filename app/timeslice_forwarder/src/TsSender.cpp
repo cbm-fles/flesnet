@@ -10,7 +10,6 @@
 #include "df/WorkItems/WorkItem.hpp"
 #include <df/Connectors/ConnectorInfiniband.hpp>
 #include <df/Connectors/ConnectorInfiniband.hpp>
-
 #include <TsSender.hpp>
 
 using namespace std::placeholders;
@@ -20,15 +19,27 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
     string rem_address;
     auto node_uid = MAKE_UID(group_id, node_id);
     {
-            shared_lock<shared_mutex> l(mtx_);
-            rem_address = uid_address_map_[node_uid];
+        shared_lock<shared_mutex> l(mtx_);
+        rem_address = uid_address_map_[node_uid];
     }
 
     L_(info) << "Commanded to send data to Node ID: " << node_id << " - Group ID: " << group_id << " - address: " << rem_address;
     node_connector_->lock_buffer_map(data_buffer_map_, [this, rem_address, node_id, group_id] () {
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
+        auto buffer_fill_state =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
+        auto buffer_map_fill_state = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
+        monitor_->QueueMetric("timeslice_forwarder_state",
+        {
+                {"host", hostname_},
+            {"sender", to_string(node_id_)}
+        },
+            {
+                {"buffer_fill", buffer_fill_state},
+                {"buffer_map_fill", buffer_map_fill_state},
+            }
+        );
         if (el == nullptr) { // no oldest element available
-            L_(debug) << "no data available to send";
+            L_(debug) << "No data available to send";
             node_connector_->unlock_buffer_map(data_buffer_map_);
             return;
         }
@@ -37,17 +48,14 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
         auto *data_write_chain = new std::function<void()>;
         (*data_write_chain) = [this, data_write_chain, rem_address, component_elements, combined_size, node_id, group_id] () {
             atomic_uint64_t fail_cnt = 0;
-            L_(trace) << "requesting remote buffer map";
             node_connector_->lock_and_get_buffer_map(
                 rem_address,
                 Node::DATA_BUFFER_IDX,
                 [this, data_write_chain, component_elements, rem_address, combined_size, node_id, group_id] (shared_ptr<BufferMap> rem_buffer_map_copy) {
-                    L_(trace) << "GOT remote buffer map";
-
                     auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
                     auto dest_addresses = eval_logic_.evaluate(component_elements, rem_offsets_and_spaces);
                     if (dest_addresses.empty()) {
-                        L_(warning) << "Remote buffer full";
+                        L_(warning) << "Remote buffer full - Node ID: " << node_id << " - Group ID: " << group_id;
                         auto wi_buffer_full_report = make_shared<WiBufferFullReport>();
                         wi_buffer_full_report->node_id = node_id;
                         wi_buffer_full_report->group_id = group_id;
@@ -58,6 +66,10 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                             Node::DATA_BUFFER_IDX
                         );
                         node_connector_->unlock_buffer_map(data_buffer_map_);
+                        monitor_->QueueMetric("timeslice_forwarder_state",
+                                    {{"host", hostname_},
+                                        {"sender", to_string(node_id_)}},
+                                    {{"rem_buffer_full", ++rem_buffer_full_cnt_}});
                         delete data_write_chain;
                         return;
                     }
@@ -73,7 +85,7 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
 
                     bool insert_successfull = rem_buffer_map_copy->insert(component_elements, dest_addresses, node_id_, group_id_, BufferMap::ListElement::RX);
                     if (!insert_successfull) {
-                        L_(warning) << "Remote buffer map has no elements available";
+                        L_(warning) << "Remote buffer map has no elements available - Node ID: " << node_id << " - Group ID: " << group_id;
                         auto wi_buffer_full_report = make_shared<WiBufferFullReport>();
                         wi_buffer_full_report->node_id = node_id;
                         wi_buffer_full_report->group_id = group_id;
@@ -84,11 +96,16 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                             Node::DATA_BUFFER_IDX
                         );
                         node_connector_->unlock_buffer_map(data_buffer_map_);
+                        monitor_->QueueMetric("timeslice_forwarder_state",
+                                    {{"host", hostname_},
+                                        {"sender", to_string(node_id_)}},
+                                    {{"rem_buffer_map_full", ++rem_buffer_map_full_cnt_}});
+
                         delete data_write_chain;
                         return;
                     }
                     delete data_write_chain;
-                    L_(trace) << "about to sendv remote buffer map";
+
                     node_connector_->sendv(
                         rem_address,
                         data_buffer_,
@@ -97,17 +114,17 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                         dest_addresses,
                         sizes,
                         [this, rem_address, rem_buffer_map_copy, component_elements, combined_size] () {
-                            L_(trace) << "sendv completed";
                             // send the new buffer map to remote node and unlock
                             node_connector_->write_remote_buffer_map_and_unlock(rem_address, rem_buffer_map_copy,
                                 Node::DATA_BUFFER_IDX,
                                 [this, component_elements, combined_size, rem_address] () {
-                                    L_(info) << "Remote buffer map updated - transmission completed (" << rem_address << ")";
                                     monitor_->QueueMetric("timeslice_forwarder_state",
-                                        {{"host", std::to_string(node_id_) + " - " + std::to_string(1)}},
+                                        {{"host", hostname_},
+                                            {"sender", to_string(node_id_)}},
                                         {{"send_cnt", ++send_cnt_}});
                                     monitor_->QueueMetric("timeslice_forwarder_state",
-                                        {{"host", std::to_string(node_id_) + " - " + std::to_string(1)}},
+                                        {{"host", hostname_},
+                                            {"sender", to_string(node_id_)}},
                                         {{"bytes_sent", combined_size}});
 
                                     // remove the sent TS from own buffermap
@@ -122,10 +139,11 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                 },
                 [this, &fail_cnt] () {
                     if ((++fail_cnt % 200) == 0) {
-                        L_(debug) << "failed t get remote lock";
+                        L_(debug) << "failed to get remote lock";
                     };
                     monitor_->QueueMetric("timeslice_forwarder_state",
-                        {{"host", std::to_string(node_id_) + " - " + std::to_string(1)}},
+                            {{"host", hostname_},
+                                {"sender", to_string(node_id_)}},
                         {{"failed_remote_lock", ++failed_remote_lock_cnt_}});
                     return true;
                 }
@@ -176,9 +194,7 @@ void TsSender::on_node_connected(string address, uint64_t rem_group_id, uint64_t
             unique_lock<shared_mutex> l(mtx_);
             uid_address_map_[node_uid] = address;
         }
-        Node::send_work_item(cm_address_, wi_connection, [this] () {
-            // Node::send_work_item(cm_address_, wi_buffer_status_);
-        });
+        Node::send_work_item(cm_address_, wi_connection);
     }
 }
 
@@ -193,8 +209,9 @@ TsSender::TsSender(uint64_t node_id,
     std::string listen_address,
     std::string input_uri,
     std::string central_manager_address,
-    std::string monitoring_uri) :
-Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen_address) {
+    std::string monitoring_uri,
+    std::string hostname) :
+Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen_address), hostname_(hostname) {
     if (!monitoring_uri.empty()) {
         monitor_->OpenSink(monitoring_uri);
     }

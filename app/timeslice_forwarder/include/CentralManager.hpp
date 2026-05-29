@@ -40,6 +40,7 @@ private:
     std::atomic_uint64_t input_nodes_cnt_ = 0;
     std::atomic_uint64_t output_nodes_cnt_ = 0;
     std::string listen_address_;
+    std::string hostname_;
 
     /**
     * @brief Will queue all sender node UID which want to get rid of Timeslices
@@ -79,5 +80,5 @@ public:
     constexpr static uint64_t SENDER_GROUP_ID = 1;
     constexpr static uint64_t RECEIVER_GROUP_ID = 2;
 
-    CentralManager(std::string listen_address, std::string monitoring_uri = "");
+    CentralManager(std::string listen_address, std::string monitoring_uri = "", std::string hostname = "");
 };

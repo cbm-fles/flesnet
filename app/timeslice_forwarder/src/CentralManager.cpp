@@ -20,13 +20,15 @@ void CentralManager::on_node_connected(std::string address, uint64_t group_id, u
     auto node_uid = MAKE_UID(group_id, node_id);
     if (group_id == SENDER_GROUP_ID) {
         monitor_->QueueMetric("timeslice_forwarder_state",
-            {{"CM", "CM"}},
+            {{"CM", "CM"},
+                        {"host", hostname_}},
             {{"input_nodes_cnt", ++input_nodes_cnt_}});
     } else { // group_id == RECEIVER_GROUP_ID
         unique_lock<mutex> l(mtx_);
         nodes_load_[node_uid] = 0;
         monitor_->QueueMetric("timeslice_forwarder_state",
-            {{"CM", "CM"}},
+            {{"CM", "CM"},
+                    {"host", hostname_}},
             {{"output_nodes_cnt", ++output_nodes_cnt_}});
     }
     unique_lock<mutex> l(mtx_);
@@ -45,11 +47,13 @@ void CentralManager::on_node_disconnected(std::string address, uint64_t group_id
     connection_manager_.remove_node(node_uid);
     if (group_id == 1) {
         monitor_->QueueMetric("timeslice_forwarder_state",
-            {{"CM", "CM"}},
+            {{"CM", "CM"},
+                {"host", hostname_}},
             {{"input_nodes_cnt", --input_nodes_cnt_}});
     } else {
         monitor_->QueueMetric("timeslice_forwarder_state",
-            {{"CM", "CM"}},
+            {{"CM", "CM"},
+            {"host", hostname_},},
             {{"output_nodes_cnt", --output_nodes_cnt_}});
     }
 }
@@ -81,8 +85,12 @@ void CentralManager::on_new_work_item(std::string /*address*/, std::shared_ptr<c
         L_(debug) << "WiType::wi_work_done";
         unique_lock<mutex> l(mtx_);
         // nodes_buffer_full_[node_uid] = false;
-        L_(debug) << "nodes_load_[node_uid]: " << --nodes_load_[node_uid];
-        L_(debug) << "nodes_data_available_.size()" << nodes_data_available_.size();
+        --nodes_load_[node_uid];
+        monitor_->QueueMetric("timeslice_forwarder_state",
+        {{"CM", "CM"},
+                {"host", hostname_},
+        {"receiver", to_string(node_id)}},
+        {{"load", nodes_load_[node_uid]}});
         eval_worker_cv_.notify_all();
     } else if (static_cast<WiType>(wi_type) == WiType::wi_buffer_full_report) {
         auto wi_buffer_full_report = make_shared<WiBufferFullReport>();
@@ -93,6 +101,11 @@ void CentralManager::on_new_work_item(std::string /*address*/, std::shared_ptr<c
         // nodes_buffer_full_[rem_node_uid] = true;
         nodes_data_available_.push_back(node_uid);
         L_(trace) << "nodes_load_[node_uid]: " << --nodes_load_[rem_node_uid];
+        monitor_->QueueMetric("timeslice_forwarder_state",
+        {{"CM", "CM"},
+        {"host", hostname_},
+        {"receiver", to_string(wi_buffer_full_report->node_id)}},
+        {{"load", nodes_load_[rem_node_uid]}});
         // eval_worker_cv_.notify_all();
     } else {
         L_(warning) << "Received unknown WorkItem type: " << static_cast<WiType>(wi_type);
@@ -192,6 +205,11 @@ void CentralManager::eval_node_status() {
                 L_(debug) << "eval node status - sending to node_id: " << NODE_ID(node_uid_lowest_load);
                 // L_(debug) << "eval node status - lowest_load_value: " << lowest_load_value;
                 nodes_load_[node_uid_lowest_load]++;
+                monitor_->QueueMetric("timeslice_forwarder_state",
+                    {{"CM", "CM"},
+                    {"host", hostname_},
+                    {"receiver", to_string(NODE_ID(node_uid_lowest_load))}},
+                    {{"load", nodes_load_[node_uid_lowest_load]}});
 
                 auto wi_tx = make_shared<WiTransmission>();
                 wi_tx->node_uid = node_uid_lowest_load;
@@ -218,7 +236,7 @@ void CentralManager::eval_thread() {
     }
 }
 
-CentralManager::CentralManager(std::string listen_address, std::string monitoring_uri) : Node(0, 0), listen_address_(listen_address) {
+CentralManager::CentralManager(std::string listen_address, std::string monitoring_uri, std::string hostname) : Node(0, 0), listen_address_(listen_address), hostname_(hostname) {
     if (!monitoring_uri.empty()) {
         monitor_->OpenSink(monitoring_uri);
     }
