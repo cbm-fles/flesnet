@@ -115,6 +115,7 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                         sizes,
                         [this, rem_address, rem_buffer_map_copy, component_elements, combined_size] () {
                             // send the new buffer map to remote node and unlock
+                            ts_reader->clear_last_timeslice();
                             node_connector_->write_remote_buffer_map_and_unlock(rem_address, rem_buffer_map_copy,
                                 Node::DATA_BUFFER_IDX,
                                 [this, component_elements, combined_size, rem_address] () {
@@ -130,8 +131,6 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                                     // remove the sent TS from own buffermap
                                     data_buffer_map_->remove_elements(component_elements);
                                     node_connector_->unlock_buffer_map(data_buffer_map_);
-                                    // call clear_timeslice on ts_reader
-                                    ts_reader->clear_last_timeslice();
                                 }
                             );
                         }
@@ -200,7 +199,7 @@ void TsSender::on_node_connected(string address, uint64_t rem_group_id, uint64_t
 
 void TsSender::on_connection_refused(std::string address) {
     if (address == cm_address_) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
         Node::connect_to_node(cm_address_);
     }
 };

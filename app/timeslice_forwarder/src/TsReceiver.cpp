@@ -46,7 +46,6 @@ void TsReceiver::on_connection_refused(std::string address) {
 
 void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id, uint64_t node_id) {
     // New data has arrived - check buffer map
-    // this_thread::sleep_for(chrono::milliseconds(200));
     node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         if (el == nullptr) { // not expected to happen in the current implementation
@@ -67,7 +66,7 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
             {
                 {"host", hostname_},
             {"receiver", to_string(node_id_)}
-        },
+            },
             {
                 {"bytes_received", component_size},
                 {"buffer_fill", buffer_fill_state},
