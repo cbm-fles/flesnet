@@ -49,8 +49,9 @@ TsclientWriter::TsclientWriter(std::string output_uri, uint32_t timeslice_size) 
     item_distributor_ = make_unique<ItemDistributor>(zmq_context_, producer_address_, worker_address_),
     ts_buffer_ = make_shared<FragmentedTimesliceBuffer>(zmq_context_, producer_address_, shm_identifier, datasize, descsize, num_components);
     distributor_thread_ = thread(ref(*(item_distributor_.get())));
-    buffer_ = shared_ptr<char>(static_cast<char*>(ts_buffer_->managed_shm_->get_address()));
-    buffer_size_ = ts_buffer_->managed_shm_->get_size();
+    buffer_ = shared_ptr<char>(static_cast<char*>(ts_buffer_->get_shm_ptr()));
+
+    buffer_size_ = ts_buffer_->get_shm_size();
     handled_timeslice_callbacks_.set_worker(make_shared<WorkerThread>());
 
     ts_completions_thread_ = std::async([this] () {
@@ -65,14 +66,8 @@ TsclientWriter::TsclientWriter(std::string output_uri, uint32_t timeslice_size) 
                 found_completions++;
             }
 
-            if (found_completions == 0) {
-                // L_(trace) << "ts_completions_thread_ - no completions";
-                this_thread::sleep_for(chrono::milliseconds(100));
-            } else {
+            if (found_completions != 0) {
                 L_(trace) << "ts_completions_thread_ - completions: " << found_completions;
-                ts_input_output_cnt_diff -= found_completions;
-                L_(trace) << "ts_input_output_diff: " << ts_input_output_cnt_diff  ;
-
                 handled_timeslice_callbacks_.call_async(found_completions);
                 L_(trace) << "ts_completions_thread_ - call_async called" << found_completions;
             }
@@ -96,7 +91,7 @@ void TsclientWriter::set_buffer_map(std::shared_ptr<BufferMap> buffer_map) {
 void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& elements) {
     vector<fles::TimesliceComponentDescriptor*> desc_ptr;
     vector<uint8_t*> data_ptr;
-    L_(trace) << "write_timeslice - ts_input_output_diff: " << ++ts_input_output_cnt_diff  ;
+    // L_(trace) << "write_timeslice - ts_input_output_diff: " << ++ts_input_output_cnt_diff  ;
     uint64_t combined_size = 0;
     for (auto desc_it = elements.begin(); desc_it != elements.end(); ++desc_it) {
         auto *const descriptor_el = *desc_it;

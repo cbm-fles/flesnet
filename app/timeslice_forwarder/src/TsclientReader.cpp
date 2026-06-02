@@ -11,14 +11,13 @@ TsclientReader::TsclientReader(std::string shm_uri) {
             to_string(fles::system::current_pid())};
     UriComponents uri{shm_uri};
     const auto shm_identifier = uri.path;
-
     source_ = make_unique<fles::Receiver<fles::Timeslice,fles::TimesliceView>>(shm_identifier, param);
-    // we have to read out one timeslice so the fles::Receiver class initializes the SHM and we can get necessary SHM pointer
+
+    // We have to read out one timeslice so the fles::Receiver class initializes the SHM and we can get necessary SHM pointer
     unique_ptr<fles::Timeslice> timeslice = source_->get();
     num_components_ = timeslice->num_components();
     buffer_size_ = source_->managed_shm_->get_size();
-    buffer = reinterpret_cast<char*>(source_->managed_shm_->get_address());
-    base_mem_addres_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());
+    buffer_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());
     timeslice.reset();
 }
 
@@ -27,7 +26,7 @@ uint64_t TsclientReader::get_buffer_size() const {
 }
 
 char* TsclientReader::get_buffer() {
-    return buffer;
+    return buffer_;
 }
 
 void TsclientReader::clear_last_timeslice() {
@@ -35,7 +34,7 @@ void TsclientReader::clear_last_timeslice() {
 }
 
 void TsclientReader::on_new_timeslice(std::function<void()> cb) {
-    callbacks.add(cb);
+    new_timeslice_callbacks_.add(cb);
 }
 
 void TsclientReader::set_buffer_map(std::shared_ptr<BufferMap> buffer_map) {
@@ -62,15 +61,14 @@ void TsclientReader::start_timeslice_reading() {
 
         while (!stop_)  {
             timeslice = source_->get();
-
-            // source_.get();
             if (!timeslice) {
                 break;
             }
-            L_(debug) << "timeslice->index(): " << timeslice->index();
 
-            if (base_mem_addres_ != reinterpret_cast<char*>(source_->managed_shm_->get_address())) {
-                base_mem_addres_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());
+            L_(debug) << "TS index: " << timeslice->index();
+
+            if (buffer_ != reinterpret_cast<char*>(source_->managed_shm_->get_address())) {
+                buffer_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());
                 L_(fatal) << "(TimesliceReader) SHM base memory address changed";
                 exit(-1);
             }
@@ -102,8 +100,8 @@ void TsclientReader::start_timeslice_reading() {
                 tags.get()[i] = static_cast<uint32_t>(1) << (sizeof(uint16_t) * 8) | static_cast<uint16_t>(i); // descriptor has tag
                 tags.get()[num_components + i] = static_cast<uint32_t>(2) << (sizeof(uint16_t) * 8) | static_cast<uint16_t>(i);
 
-                addresses.get()[i] = reinterpret_cast<char*>(component_desc_ptr) - base_mem_addres_;
-                addresses.get()[num_components + i] = reinterpret_cast<char*>(component_data_ptr) - base_mem_addres_;
+                addresses.get()[i] = reinterpret_cast<char*>(component_desc_ptr) - buffer_;
+                addresses.get()[num_components + i] = reinterpret_cast<char*>(component_data_ptr) - buffer_;
             }
 
             // waiting to get the lock
@@ -128,8 +126,15 @@ void TsclientReader::start_timeslice_reading() {
             node_connector_->unlock_buffer_map(buffer_map_);
 
             // tell everyone about the new data
-            callbacks.call();
+            new_timeslice_callbacks_.call();
         }
         return int(!stop_);
     });
+}
+
+TsclientReader::~TsclientReader() {
+    stop_ = true;
+    try {
+        ts_reading_thread_.wait();
+    } catch (...) {};
 }

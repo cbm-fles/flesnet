@@ -118,8 +118,8 @@ private:
   fles::TimesliceComponentDescriptor*
       desc_ptr_;                 ///< pointer to descriptor
                                  ///< buffer within shared memory
-  std::unique_ptr<boost::interprocess::managed_shared_memory> managed_shm_;   ///< shared memory object
 
 protected:
+  std::unique_ptr<boost::interprocess::managed_shared_memory> managed_shm_;   ///< shared memory object
   std::set<ItemID> outstanding_; ///< set of outstanding work items
 };
