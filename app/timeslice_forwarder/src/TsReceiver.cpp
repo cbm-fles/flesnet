@@ -7,6 +7,7 @@
 
 using namespace std;
 using namespace std::placeholders;
+using namespace std::chrono;
 
 
 void TsReceiver::on_new_work_item(std::string /*address*/, std::shared_ptr<char> /*wi_ptr*/, WorkItem::Type /*wi_type*/, uint64_t group_id, uint64_t node_id) {
@@ -47,6 +48,11 @@ void TsReceiver::on_connection_refused(std::string address) {
 void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id, uint64_t node_id) {
     // New data has arrived - check buffer map
     node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
+        time_point<high_resolution_clock> start;
+        time_point<high_resolution_clock> stop;
+        start = high_resolution_clock::now();
+        L_(info) << "TS writer - ts written after: " <<  duration_cast<milliseconds>(stop-start).count();
+
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         if (el == nullptr) { // not expected to happen in the current implementation
             node_connector_->unlock_buffer_map(data_buffer_map_);
@@ -62,6 +68,9 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         auto buffer_fill_state =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
         auto buffer_map_fill_state = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
         node_connector_->unlock_buffer_map(data_buffer_map_);
+        stop = high_resolution_clock::now();
+        L_(info) << "TS on_new_data - done after: " <<  duration_cast<milliseconds>(stop-start).count();
+
         monitor_->QueueMetric("timeslice_forwarder_state",
             {
                 {"host", hostname_},
@@ -104,6 +113,10 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
             return;
         }
         node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
+            time_point<high_resolution_clock> start;
+            time_point<high_resolution_clock> stop;
+            start = high_resolution_clock::now();
+
             uint64_t component_id;
             while (ts_sink_->pop_finished_component_id(component_id)) {
                 uint64_t combined_size;
@@ -112,6 +125,9 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
                 Node::send_work_item(cm_address_, wi_work_done_);
             }
             node_connector_->unlock_buffer_map(data_buffer_map_);
+            stop = high_resolution_clock::now();
+            L_(info) << "TS on_timeslices_handled - done after: " <<  duration_cast<milliseconds>(stop-start).count();
+
         }, [] () {
             return true;
         });

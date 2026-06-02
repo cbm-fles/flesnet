@@ -1,4 +1,5 @@
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <df/ConnectionManager.hpp>
 #include <df/Node.hpp>
@@ -14,6 +15,7 @@
 
 using namespace std::placeholders;
 using namespace std;
+using namespace std::chrono;
 
 void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
     string rem_address;
@@ -24,7 +26,11 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
     }
 
     L_(info) << "Commanded to send data to Node ID: " << node_id << " - Group ID: " << group_id << " - address: " << rem_address;
-    node_connector_->lock_buffer_map(data_buffer_map_, [this, rem_address, node_id, group_id] () {
+    time_point<high_resolution_clock> start = high_resolution_clock::now();
+
+    node_connector_->lock_buffer_map(data_buffer_map_, [this, rem_address, node_id, group_id, start] () {
+        L_(info) << "send_latest_data - got own buffer map after: " <<  duration_cast<milliseconds>(high_resolution_clock::now()-start).count();
+
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         auto buffer_fill_state =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
         auto buffer_map_fill_state = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
@@ -48,10 +54,14 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
         auto *data_write_chain = new std::function<void()>;
         (*data_write_chain) = [this, data_write_chain, rem_address, component_elements, combined_size, node_id, group_id] () {
             atomic_uint64_t fail_cnt = 0;
+            time_point<high_resolution_clock> start = high_resolution_clock::now();
             node_connector_->lock_and_get_buffer_map(
                 rem_address,
                 Node::DATA_BUFFER_IDX,
-                [this, data_write_chain, component_elements, rem_address, combined_size, node_id, group_id] (shared_ptr<BufferMap> rem_buffer_map_copy) {
+                [this, data_write_chain, start, component_elements, rem_address, combined_size, node_id, group_id, &fail_cnt] (shared_ptr<BufferMap> rem_buffer_map_copy) {
+                    L_(info) << "send_latest_data - Got remote buffer map after " << fail_cnt << " tries";
+                    L_(info) << "send_latest_data - got own buffer map after: " <<  duration_cast<milliseconds>(high_resolution_clock::now()-start).count();
+
                     auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
                     auto dest_addresses = eval_logic_.evaluate(component_elements, rem_offsets_and_spaces);
                     if (dest_addresses.empty()) {
@@ -131,6 +141,8 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                                     // remove the sent TS from own buffermap
                                     data_buffer_map_->remove_elements(component_elements);
                                     node_connector_->unlock_buffer_map(data_buffer_map_);
+                                    stop_ = high_resolution_clock::now();
+                                    L_(info) << "TS transmitted in: " << duration_cast<milliseconds>(stop_-start_).count();
                                 }
                             );
                         }
@@ -202,7 +214,11 @@ void TsSender::on_connection_refused(std::string address) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         Node::connect_to_node(cm_address_);
     }
-};
+}
+
+bool TsSender::is_cm_available() {
+    return true;
+}
 
 TsSender::TsSender(uint64_t node_id,
     std::string listen_address,
@@ -236,7 +252,17 @@ Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen
     wi_buffer_status_ = make_shared<WorkItem>();
     wi_buffer_status_->type = WorkItem::buffer_status;
     ts_reader->on_new_timeslice([this] () {
-        Node::send_work_item(cm_address_, wi_buffer_status_);
+        start_ = high_resolution_clock::now();
+        if (is_cm_available()) {
+            Node::send_work_item(cm_address_, wi_buffer_status_);
+        } else {
+            uint64_t node_uid;
+            {
+                shared_lock<shared_mutex> l(mtx_);
+                node_uid = uid_address_map_.begin()->first;
+            }
+            send_latest_data(GROUP_ID(node_uid), NODE_ID(node_uid));
+        }
     });
 
     ts_reader->set_node_connector(node_connector_);

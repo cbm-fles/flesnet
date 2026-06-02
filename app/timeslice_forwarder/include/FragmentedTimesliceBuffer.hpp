@@ -16,8 +16,8 @@
 
 class FragmentedTimesliceBuffer : public TimesliceBuffer {
 private:
-    std::string shm_identifier_;    ///< shared memory identifier
-    boost::uuids::uuid shm_uuid_{}; ///< shared memory UUID
+    // std::string shm_identifier_;    ///< shared memory identifier
+    // boost::uuids::uuid shm_uuid_{}; ///< shared memory UUID
     uint32_t data_buffer_size_exp_; ///< 2's exponent of data buffer size in bytes
     uint32_t desc_buffer_size_exp_; ///< 2's exponent of descriptor buffer size
                                     ///< in units of TimesliceComponentDescriptors
@@ -33,7 +33,7 @@ public:
                                     uint32_t desc_buffer_size_exp,
                                     uint32_t num_input_nodes)
                                     : TimesliceBuffer(context, distributor_address, shm_identifier, data_buffer_size_exp, desc_buffer_size_exp, num_input_nodes),
-                                    shm_identifier_(std::move(shm_identifier)),
+                                    // shm_identifier_(std::move(shm_identifier)),
                                     data_buffer_size_exp_(data_buffer_size_exp),
                                     desc_buffer_size_exp_(desc_buffer_size_exp),
                                     num_input_nodes_(num_input_nodes) {

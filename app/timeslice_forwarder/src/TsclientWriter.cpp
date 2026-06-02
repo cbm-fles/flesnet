@@ -4,8 +4,10 @@
 #include <cstdint>
 #include <mutex>
 #include <thread>
+#include <chrono>
 
 using namespace std;
+using namespace std::chrono;
 
 uint64_t TsclientWriter::handle_timeslice_completions() {
     fles::TimesliceCompletion c{};
@@ -89,6 +91,9 @@ void TsclientWriter::set_buffer_map(std::shared_ptr<BufferMap> buffer_map) {
 }
 
 void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& elements) {
+    time_point<high_resolution_clock> start;
+    time_point<high_resolution_clock> stop;
+    start = high_resolution_clock::now();
     vector<fles::TimesliceComponentDescriptor*> desc_ptr;
     vector<uint8_t*> data_ptr;
     // L_(trace) << "write_timeslice - ts_input_output_diff: " << ++ts_input_output_cnt_diff  ;
@@ -122,6 +127,8 @@ void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& eleme
     ts->set_data(std::move(data_ptr));
     L_(trace) << "Sending work item ... size: " << combined_size;
     ts_buffer_->send_work_item(ts);
+    stop = high_resolution_clock::now();
+    L_(info) << "TS writer - ts written after: " <<  duration_cast<milliseconds>(stop-start).count();
 }
 
 TsclientWriter::~TsclientWriter() {
