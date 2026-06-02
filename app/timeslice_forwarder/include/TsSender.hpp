@@ -1,6 +1,7 @@
 #pragma once
 #include "Monitor.hpp"
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <df/ConnectionManager.hpp>
 #include <df/Node.hpp>
@@ -49,6 +50,13 @@ private:
     void on_connection_refused(std::string address);
     void send_latest_data(uint64_t group_id, uint64_t node_id);
 
+    /**
+     * @brief returns if the connection to the Central Manager is available
+     * @todo implement - Currenty returns hardcoded value
+     */
+    bool is_cm_available();
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_;
+    std::chrono::time_point<std::chrono::high_resolution_clock> stop_;
 public:
     TsSender(
         uint64_t node_id,

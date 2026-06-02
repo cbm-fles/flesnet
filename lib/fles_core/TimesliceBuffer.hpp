@@ -107,8 +107,6 @@ public:
   [[nodiscard]] std::string description() const;
 
 private:
-  std::string shm_identifier_;    ///< shared memory identifier
-  boost::uuids::uuid shm_uuid_;   ///< shared memory UUID
   uint32_t data_buffer_size_exp_; ///< 2's exponent of data buffer size in bytes
   uint32_t desc_buffer_size_exp_; ///< 2's exponent of descriptor buffer size
                                   ///< in units of TimesliceComponentDescriptors
@@ -120,6 +118,9 @@ private:
                                  ///< buffer within shared memory
 
 protected:
+  std::string shm_identifier_;    ///< shared memory identifier
+  boost::uuids::uuid shm_uuid_;   ///< shared memory UUID
+
   std::unique_ptr<boost::interprocess::managed_shared_memory> managed_shm_;   ///< shared memory object
   std::set<ItemID> outstanding_; ///< set of outstanding work items
 };

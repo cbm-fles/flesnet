@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Timeslice.hpp"
+#include <chrono>
 #include <cstdint>
 #include "TimesliceReceiver.hpp"
 
@@ -21,6 +22,11 @@ private:
     std::unique_ptr<fles::Timeslice> last_timeslice_ = nullptr;
     std::atomic_bool stop_ = false;
     uint64_t num_components_ = 0;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_clock_;
+    std::chrono::time_point<std::chrono::high_resolution_clock> stop_clock_;
+    std::mutex m;
+    std::condition_variable cv;
+    std::atomic_bool timeslice_available = false;
 public:
     TsclientReader(std::string shm_uri);
     ~TsclientReader();
