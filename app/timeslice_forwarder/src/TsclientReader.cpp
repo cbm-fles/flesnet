@@ -74,7 +74,7 @@ void TsclientReader::start_timeslice_reading() {
             start = high_resolution_clock::now();
             std::unique_lock lk(m);
             cv.wait(lk, [this]{ return !timeslice_available; });
-
+            // this_thread::sleep_for(chrono::milliseconds(300));
             timeslice = source_->get();
             stop = high_resolution_clock::now();
             L_(info) << "TS reader - got ts after: " <<  duration_cast<milliseconds>(stop-start).count();

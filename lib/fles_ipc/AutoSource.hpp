@@ -262,6 +262,7 @@ private:
         item_receivers_.push_back(receiver.get());
         std::unique_ptr<Source<Base>> source = std::move(receiver);
         sources.emplace_back(std::move(source));
+
       } else {
         throw std::runtime_error("scheme not implemented: " + uri.scheme);
       }

@@ -60,19 +60,24 @@ TsclientWriter::TsclientWriter(std::string output_uri, uint32_t timeslice_size) 
         while (true) {
             fles::TimesliceCompletion c{};
             uint64_t found_completions = 0;
-            while (ts_buffer_->try_receive_completion(c)) {
+            {
                 unique_lock<mutex> l(mtx_);
-                L_(debug) << "c.ts_pos: " << c.ts_pos << " - tspos_componentid_map_[c.ts_pos]: " << tspos_componentid_map_[c.ts_pos];
-                component_ids_done_.push(tspos_componentid_map_[c.ts_pos]);
-                tspos_componentid_map_.erase(c.ts_pos);
-                found_completions++;
+                while (ts_buffer_->try_receive_completion(c)) {
+                    L_(debug) << "c.ts_pos: " << c.ts_pos << " - tspos_componentid_map_[c.ts_pos]: " << tspos_componentid_map_[c.ts_pos];
+                    component_ids_done_.push(tspos_componentid_map_[c.ts_pos]);
+                    tspos_componentid_map_.erase(c.ts_pos);
+                    found_completions++;
+                }
             }
 
             if (found_completions != 0) {
+                ts_input_output_cnt_diff_ -= found_completions;
+                L_(info) << "ts_completions_thread_ - open completions: " << ts_input_output_cnt_diff_;
                 L_(trace) << "ts_completions_thread_ - completions: " << found_completions;
                 handled_timeslice_callbacks_.call_async(found_completions);
                 L_(trace) << "ts_completions_thread_ - call_async called" << found_completions;
             }
+
         }
     });
 
@@ -121,13 +126,20 @@ void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& eleme
         static_cast<uint32_t>(desc_ptr.size())
     });
     L_(debug) << "elements[0]->compontent_id: " << elements[0]->compontent_id << endl;
-    tspos_componentid_map_[ts_pos_] = elements[0]->compontent_id;
+
     ts_pos_++;
     ts->set_desc(std::move(desc_ptr));
     ts->set_data(std::move(data_ptr));
+    {
+        unique_lock<mutex> l(mtx_);
+        tspos_componentid_map_[ts_pos_] = elements[0]->compontent_id;
+        L_(info) << "send_work_item - open completions: " << ts_input_output_cnt_diff_;
+        ts_input_output_cnt_diff_++;
+        ts_buffer_->send_work_item(ts);
+    }
     L_(trace) << "Sending work item ... size: " << combined_size;
-    ts_buffer_->send_work_item(ts);
     stop = high_resolution_clock::now();
+
     L_(info) << "TS writer - ts written after: " <<  duration_cast<milliseconds>(stop-start).count();
 }
 

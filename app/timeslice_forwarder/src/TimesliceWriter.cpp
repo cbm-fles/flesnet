@@ -39,7 +39,6 @@ void TimesliceWriter::write_timeslice(std::vector<BufferMap::ListElement*>& elem
     });
     ts->set_desc(desc_ptr);
     ts->set_data(data_ptr);
-
     ts_sink_->put(std::reinterpret_pointer_cast<fles::StorableTimeslice>(ts));
 }
 
