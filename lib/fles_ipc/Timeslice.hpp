@@ -16,7 +16,6 @@
 // http://lists.debian.org/debian-hppa/2009/11/msg00069.html
 
 class ManagedTimesliceBuffer;
-class ConnectorFromFlesnet;
 
 namespace fles {
 
@@ -120,7 +119,6 @@ protected:
 
   friend class StorableTimeslice;
   friend class ::ManagedTimesliceBuffer;
-  friend class ConnectorFromFlesnet;
 
   /// The timeslice descriptor.
 

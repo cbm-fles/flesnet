@@ -48,7 +48,7 @@ private:
     std::mutex mtx_;
     std::queue<uint64_t> component_ids_done_;
 
-    std::atomic_uint64_t ts_input_output_cnt_diff;
+    std::atomic_uint64_t ts_input_output_cnt_diff_;
 public:
     TsclientWriter(std::string output_uri, uint32_t timeslice_size);
     virtual ~TsclientWriter() override;

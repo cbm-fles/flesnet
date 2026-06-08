@@ -5,6 +5,7 @@
 #include "Timeslice.hpp"
 #include "TimesliceBuffer.hpp"
 #include "TimesliceShmWorkItem.hpp"
+#include "TimesliceWorkItem.hpp"
 
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/interprocess/creation_tags.hpp>
