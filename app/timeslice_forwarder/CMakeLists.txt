@@ -9,7 +9,7 @@ include(ExternalProject)
 ExternalProject_Add(libfabric
     GIT_REPOSITORY    https://github.com/ofiwg/libfabric.git
     GIT_TAG           v2.5.1
-    CONFIGURE_COMMAND ./autogen.sh COMMAND ./configure --prefix=${LIBFABRIC_INSTALL_DIR} --disable-sockets --disable-upd --disable-tcp --disable-opx --disable-psm2 --disable-psm3 --disable-rxm --disable-usnic --disable-shm --disable-efa --enable-verbs
+    CONFIGURE_COMMAND ./autogen.sh COMMAND ./configure --prefix=${LIBFABRIC_INSTALL_DIR} --disable-sockets --disable-udp --disable-tcp --disable-opx --disable-psm2 --disable-psm3 --disable-rxm --disable-usnic --disable-shm --disable-efa --enable-verbs
     UPDATE_DISCONNECTED 1
     BUILD_IN_SOURCE 1
 )
@@ -22,7 +22,7 @@ ELSE ()
     message("Pulling data forwarder lib from git")
     set(DATA_FORWARDER_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/data_forwarder_lib_build/install_dir")
     ExternalProject_Add(data_forwarder_lib
-        GIT_REPOSITORY https://git.zib.de/ngreve/timeslice_forwarder.git
+        GIT_REPOSITORY https://git.zib.de/ngreve/data_forwarder.git
         GIT_TAG dev
         CMAKE_ARGS
             -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
