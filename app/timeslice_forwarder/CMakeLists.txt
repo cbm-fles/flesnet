@@ -63,3 +63,4 @@ file(GLOB timeslice_forwarder_SRC
 )
 
 target_sources(timeslice_forwarder PRIVATE ${timeslice_forwarder_SRC})
+install(TARGETS timeslice_forwarder DESTINATION bin)
