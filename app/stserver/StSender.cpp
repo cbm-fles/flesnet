@@ -544,17 +544,31 @@ void StSender::send_subtimeslice_to_builder(TsId id,
 
   // Prepare send parameters
   ucp_request_param_t req_param{};
-  req_param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
-                           UCP_OP_ATTR_FIELD_USER_DATA |
-                           UCP_OP_ATTR_FIELD_DATATYPE;
+  req_param.op_attr_mask =
+      UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
   req_param.cb.send = on_builder_send_complete;
   req_param.user_data = this;
-  req_param.datatype = ucp_dt_make_iov();
+
+  // For a single contiguous block (the common case with the aggregation
+  // buffer), send with the default contiguous datatype: for the iov datatype
+  // UCX cannot use the single-RDMA-read rendezvous protocol and falls back to
+  // fragmented sends at roughly half the achievable bandwidth.
+  const void* send_buffer = nullptr;
+  size_t send_count = 0;
+  if (ah.iov_vector.size() == 1) {
+    send_buffer = ah.iov_vector[0].buffer;
+    send_count = ah.iov_vector[0].length;
+  } else {
+    req_param.op_attr_mask |= UCP_OP_ATTR_FIELD_DATATYPE;
+    req_param.datatype = ucp_dt_make_iov();
+    send_buffer = ah.iov_vector.data();
+    send_count = ah.iov_vector.size();
+  }
 
   // Send the data
   DEBUG("{}| Sending to builder '{}'", id, m_builders[ep]);
-  ucs_status_ptr_t request = ucp_tag_send_nbx(
-      ep, ah.iov_vector.data(), ah.iov_vector.size(), tag, &req_param);
+  ucs_status_ptr_t request =
+      ucp_tag_send_nbx(ep, send_buffer, send_count, tag, &req_param);
 
   if (UCS_PTR_IS_ERR(request)) {
     ucs_status_t status = UCS_PTR_STATUS(request);
