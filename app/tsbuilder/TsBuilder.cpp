@@ -249,14 +249,10 @@ void TsBuilder::check_for_timeout(TsId id) {
     for (std::size_t i = 0; i < tsh.states.size(); ++i) {
       if (tsh.states[i] == StState::Requested ||
           tsh.states[i] == StState::Receiving) {
-        // Cancel potential ongoing receive operation
-        for (const auto& [request, req_id] : m_active_data_recv_requests) {
-          if (req_id.first == id && req_id.second == i) {
-            ucp_request_cancel(m_worker, request);
-            DEBUG("{}|s{}/{}| Canceling receive operation", id, i,
-                  tsh.sender_ids.size());
-          }
-        }
+        // Cancel potential ongoing receive operations
+        DEBUG("{}|s{}/{}| Canceling receive operations", id, i,
+              tsh.sender_ids.size());
+        cancel_data_recvs(id, i);
       }
     }
   }
@@ -314,11 +310,15 @@ ucs_status_t TsBuilder::handle_scheduler_assign_ts(
   // BEFORE asking senders for the contributions, so the recvs are "expected"
   // by the time the senders start sending (no rendezvous CTS round-trip).
   for (std::size_t i = 0; i < tsh.sender_ids.size(); ++i) {
-    post_tag_recv(tsh, i);
+    post_tag_recvs(tsh, i);
   }
 
   // Ask senders for the contributions
   for (std::size_t i = 0; i < tsh.sender_ids.size(); ++i) {
+    if (tsh.states[i] != StState::Allocated) {
+      // Posting the receives failed; do not trigger unmatched sends
+      continue;
+    }
     send_request_to_sender(tsh.sender_ids[i], id, i);
     update_st_state(tsh, i, StState::Requested);
   }
@@ -393,36 +393,66 @@ void TsBuilder::disconnect_from_senders() {
 
 // Sender message handling
 
-void TsBuilder::post_tag_recv(TsHandle& tsh, std::size_t ci) {
+void TsBuilder::post_tag_recvs(TsHandle& tsh, std::size_t ci) {
   const ucp_tag_t tag = make_st_data_tag(tsh.id, static_cast<uint32_t>(ci));
   const ucp_tag_t tag_mask = ~ucp_tag_t{0}; // exact match
 
-  ucp_request_param_t req_param{};
-  req_param.op_attr_mask =
-      UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
-  req_param.cb.recv = on_sender_data_recv_complete;
-  req_param.user_data = this;
+  // Post one receive per transfer block, all with the same tag: tag matching
+  // is FIFO per tag, and the sender sends the blocks in the same order.
+  for (const auto& block : tsh.blocks[ci]) {
+    ucp_request_param_t req_param{};
+    req_param.op_attr_mask =
+        UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
+    req_param.cb.recv = on_sender_data_recv_complete;
+    req_param.user_data = this;
 
-  ucs_status_ptr_t request =
-      ucp_tag_recv_nbx(m_worker, tsh.buffer + tsh.offsets[ci],
-                       tsh.ms_data_sizes[ci], tag, tag_mask, &req_param);
+    ucs_status_ptr_t request =
+        ucp_tag_recv_nbx(m_worker, tsh.buffer + block.offset, block.size, tag,
+                         tag_mask, &req_param);
 
-  if (UCS_PTR_IS_ERR(request)) {
-    ucs_status_t status = UCS_PTR_STATUS(request);
-    ERROR("{}|s{}/{}| Failed to post tag recv: {}", tsh.id, ci,
-          tsh.sender_ids.size(), status);
-    update_st_state(tsh, ci, StState::Failed);
-    return;
+    if (UCS_PTR_IS_ERR(request)) {
+      ucs_status_t status = UCS_PTR_STATUS(request);
+      ERROR("{}|s{}/{}| Failed to post tag recv: {}", tsh.id, ci,
+            tsh.sender_ids.size(), status);
+      update_st_state(tsh, ci, StState::Failed);
+      cancel_data_recvs(tsh.id, ci);
+      return;
+    }
+
+    if (request == nullptr) {
+      // Already completed (shouldn't normally happen for a pre-posted recv
+      // since the matching send hasn't been requested yet, but handle it).
+      complete_block(tsh, ci);
+      continue;
+    }
+
+    m_active_data_recv_requests[request] = {tsh.id, ci, block.size};
   }
+}
 
-  if (request == nullptr) {
-    // Already completed (shouldn't normally happen for a pre-posted recv
-    // since the matching send hasn't been requested yet, but handle it).
+// Cancel all outstanding data receive operations of one contribution.
+// Collect the requests first: ucp_request_cancel may invoke the completion
+// callback inline, which erases from m_active_data_recv_requests.
+void TsBuilder::cancel_data_recvs(TsId id, std::size_t ci) {
+  std::vector<ucs_status_ptr_t> to_cancel;
+  for (const auto& [request, info] : m_active_data_recv_requests) {
+    if (info.id == id && info.ci == ci) {
+      to_cancel.push_back(request);
+    }
+  }
+  for (auto* request : to_cancel) {
+    ucp_request_cancel(m_worker, request);
+  }
+}
+
+// Account for a completed transfer block; the contribution is complete when
+// all of its blocks have been received.
+void TsBuilder::complete_block(TsHandle& tsh, std::size_t ci) {
+  assert(tsh.blocks_remaining[ci] > 0);
+  if (--tsh.blocks_remaining[ci] == 0) {
+    m_component_count++;
     update_st_state(tsh, ci, StState::Complete);
-    return;
   }
-
-  m_active_data_recv_requests[request] = {tsh.id, ci};
 }
 
 void TsBuilder::send_request_to_sender(const std::string& sender_id,
@@ -465,7 +495,7 @@ void TsBuilder::handle_sender_data_recv_complete(
   if (!m_active_data_recv_requests.contains(request)) {
     ERROR("Received completion for unknown data recv request");
   } else {
-    auto [id, ci] = m_active_data_recv_requests.at(request);
+    auto [id, ci, expected_size] = m_active_data_recv_requests.at(request);
     m_active_data_recv_requests.erase(request);
 
     if (!m_ts_handles.contains(id)) {
@@ -484,16 +514,19 @@ void TsBuilder::handle_sender_data_recv_complete(
       }
       return;
     }
-    if (status != UCS_OK || length != tsh.ms_data_sizes[ci]) {
+    if (status != UCS_OK || length != expected_size) {
       if (status == UCS_OK) {
-        ERROR("{}|s{}/{}| Unexpected received length: expected {}, got {}", id,
-              ci, tsh.sender_ids.size(), tsh.ms_data_sizes[ci], length);
+        ERROR("{}|s{}/{}| Unexpected received block length: expected {}, "
+              "got {}",
+              id, ci, tsh.sender_ids.size(), expected_size, length);
       }
       update_st_state(tsh, ci, StState::Failed);
+      // Cancel the remaining pre-posted receives of this contribution (e.g.,
+      // after the zero-size "not found" reply from the sender)
+      cancel_data_recvs(id, ci);
     } else {
-      m_component_count++;
       m_byte_count += length;
-      update_st_state(tsh, ci, StState::Complete);
+      complete_block(tsh, ci);
     }
   }
 

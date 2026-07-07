@@ -32,9 +32,9 @@ using namespace std::chrono_literals;
 struct AnnouncementHandle {
   AnnouncementHandle(TsId id,
                      std::vector<std::byte> st_descriptor_bytes,
-                     std::vector<ucp_dt_iov> iov_vector)
+                     std::vector<std::vector<ucp_dt_iov>> blocks)
       : id(id), st_descriptor_bytes(std::move(st_descriptor_bytes)),
-        iov_vector(std::move(iov_vector)) {}
+        blocks(std::move(blocks)) {}
 
   // Cannot be moved or copied (pointer to data is used by ucx)
   AnnouncementHandle(const AnnouncementHandle&) = delete;
@@ -42,7 +42,9 @@ struct AnnouncementHandle {
 
   const TsId id;
   std::vector<std::byte> st_descriptor_bytes;
-  std::vector<ucp_dt_iov> iov_vector;
+  /// Scatter-gather lists of the transfer blocks (two per component:
+  /// microslice descriptors, then content), each sent as one tagged message
+  std::vector<std::vector<ucp_dt_iov>> blocks;
   size_t active_send_requests = 0;
   bool pending_release = false;
 };
