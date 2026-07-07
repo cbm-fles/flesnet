@@ -3,6 +3,7 @@
    Author: Jan de Cuveland */
 
 #include "StSender.hpp"
+#include "MicrosliceDescriptor.hpp"
 #include "SubTimeslice.hpp"
 #include "TsbProtocol.hpp"
 #include "Utility.hpp"
@@ -26,30 +27,39 @@
 
 namespace {
 
-// Merge adjacent iovs that are contiguous in memory; zero-length entries are
-// dropped. Merging is transparent on the wire (a UCX send iov is a pure
-// gather list, and the builder splits the flat byte stream by sizes from the
-// header, not by iov boundaries), so in aggregation mode -- where the whole
-// payload lives in one contiguous slot -- this collapses the per-component
-// iovs into a single one, drastically reducing the iov count handed to UCX.
-void coalesce_iovs(std::vector<ucp_dt_iov>& iovs) {
-  std::size_t out = 0;
-  for (std::size_t in = 0; in < iovs.size(); ++in) {
-    const ucp_dt_iov& cur = iovs[in];
-    if (cur.length == 0) {
+// Split a component's scatter-gather list into the two transfer blocks
+// (microslice descriptors, then content) and append them to `blocks`. The
+// split position is num_microslices * sizeof(MicrosliceDescriptor), which the
+// builder derives independently from the merged descriptor to pre-post the
+// matching receives. Without aggregation the iov boundary coincides with the
+// split (descriptors and content come from different ring buffers); with
+// aggregation the single contiguous iov is split arithmetically.
+void append_component_blocks(std::vector<std::vector<ucp_dt_iov>>& blocks,
+                             const StComponentHandle& component) {
+  blocks.emplace_back();
+  blocks.emplace_back();
+  auto& desc_block = blocks[blocks.size() - 2];
+  auto& content_block = blocks[blocks.size() - 1];
+
+  uint64_t desc_remaining =
+      component.num_microslices * sizeof(fles::MicrosliceDescriptor);
+  for (ucp_dt_iov iov : component.ms_data) {
+    if (iov.length == 0) {
       continue;
     }
-    if (out > 0) {
-      ucp_dt_iov& prev = iovs[out - 1];
-      if (static_cast<std::byte*>(prev.buffer) + prev.length ==
-          static_cast<std::byte*>(cur.buffer)) {
-        prev.length += cur.length;
+    if (desc_remaining > 0) {
+      if (iov.length <= desc_remaining) {
+        desc_block.push_back(iov);
+        desc_remaining -= iov.length;
         continue;
       }
+      desc_block.push_back({iov.buffer, desc_remaining});
+      iov.buffer = static_cast<std::byte*>(iov.buffer) + desc_remaining;
+      iov.length -= desc_remaining;
+      desc_remaining = 0;
     }
-    iovs[out++] = cur;
+    content_block.push_back(iov);
   }
-  iovs.resize(out);
 }
 
 } // namespace
@@ -370,20 +380,24 @@ void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
   // the (merged) descriptor as part of the assignment.
   auto st_descriptor_bytes = serialize_descriptor(st_descriptor);
 
-  // Assemble a vector of ucp_dt_iov structures pointing at the (registered)
-  // microslice data blocks. With the aggregation buffer the whole payload is
-  // one contiguous block, so coalescing collapses the per-component iovs
-  // down to a single one.
-  std::vector<ucp_dt_iov> iov_vector;
+  // Assemble the scatter-gather lists of the transfer blocks (two per
+  // component) pointing at the (registered) microslice data. Each block is
+  // later sent as one tagged message into a receive the builder pre-posts
+  // from the same layout information.
+  std::vector<std::vector<ucp_dt_iov>> blocks;
   for (const auto& c : sth.components) {
-    iov_vector.insert(iov_vector.end(), c.ms_data.begin(), c.ms_data.end());
+    append_component_blocks(blocks, c);
   }
-  coalesce_iovs(iov_vector);
+  if (blocks.empty()) {
+    // No components: exchange a single zero-size message so the builder's
+    // pre-posted receive completes and the protocol stays synchronous
+    blocks.emplace_back();
+  }
 
   // Store for future use (and retention during send)
   m_announced.emplace(
       id, std::make_unique<AnnouncementHandle>(
-              id, std::move(st_descriptor_bytes), std::move(iov_vector)));
+              id, std::move(st_descriptor_bytes), std::move(blocks)));
   auto& ah = *m_announced.at(id);
 
   DEBUG("{}| Announcing ({}c, {}m, {}, flags={:04x})", id,
@@ -525,8 +539,9 @@ void StSender::send_subtimeslice_to_builder(TsId id,
                                             uint64_t tag) {
   if (!m_announced.contains(id)) {
     // Subtimeslice not found: send a zero-byte tag-matched message so the
-    // builder's pre-posted recv completes (with a length of 0 it will be
-    // marked as Failed there). This keeps the protocol synchronous.
+    // builder's first pre-posted recv completes (with a length of 0 it will
+    // be marked as Failed there and the remaining pre-posted recvs of this
+    // contribution are canceled). This keeps the protocol synchronous.
     WARN("{}| Subtimeslice not found", id);
     ucp_request_param_t req_param{};
     req_param.op_attr_mask =
@@ -542,50 +557,56 @@ void StSender::send_subtimeslice_to_builder(TsId id,
   }
   auto& ah = *m_announced.at(id);
 
-  // Prepare send parameters
-  ucp_request_param_t req_param{};
-  req_param.op_attr_mask =
-      UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
-  req_param.cb.send = on_builder_send_complete;
-  req_param.user_data = this;
+  // Send the transfer blocks as separate tagged messages, all with the same
+  // tag: tag matching is FIFO per tag, so they complete the builder's
+  // pre-posted receives in order. A block is sent with the default contiguous
+  // datatype whenever it consists of a single fragment (always the case with
+  // the aggregation buffer): for the iov datatype UCX cannot use the
+  // single-RDMA-read rendezvous protocol and falls back to fragmented sends
+  // at roughly half the achievable bandwidth. Only blocks split by a ring
+  // buffer wrap-around still use the iov datatype.
+  DEBUG("{}| Sending {} blocks to builder '{}'", id, ah.blocks.size(),
+        m_builders[ep]);
+  for (const auto& block : ah.blocks) {
+    ucp_request_param_t req_param{};
+    req_param.op_attr_mask =
+        UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
+    req_param.cb.send = on_builder_send_complete;
+    req_param.user_data = this;
 
-  // For a single contiguous block (the common case with the aggregation
-  // buffer), send with the default contiguous datatype: for the iov datatype
-  // UCX cannot use the single-RDMA-read rendezvous protocol and falls back to
-  // fragmented sends at roughly half the achievable bandwidth.
-  const void* send_buffer = nullptr;
-  size_t send_count = 0;
-  if (ah.iov_vector.size() == 1) {
-    send_buffer = ah.iov_vector[0].buffer;
-    send_count = ah.iov_vector[0].length;
-  } else {
-    req_param.op_attr_mask |= UCP_OP_ATTR_FIELD_DATATYPE;
-    req_param.datatype = ucp_dt_make_iov();
-    send_buffer = ah.iov_vector.data();
-    send_count = ah.iov_vector.size();
+    const void* send_buffer = nullptr;
+    size_t send_count = 0;
+    if (block.size() == 1) {
+      send_buffer = block[0].buffer;
+      send_count = block[0].length;
+    } else if (block.size() > 1) {
+      req_param.op_attr_mask |= UCP_OP_ATTR_FIELD_DATATYPE;
+      req_param.datatype = ucp_dt_make_iov();
+      send_buffer = block.data();
+      send_count = block.size();
+    }
+
+    ucs_status_ptr_t request =
+        ucp_tag_send_nbx(ep, send_buffer, send_count, tag, &req_param);
+
+    if (UCS_PTR_IS_ERR(request)) {
+      ucs_status_t status = UCS_PTR_STATUS(request);
+      ERROR("Failed to send tag message: {}", status);
+      // Stop sending; the builder handles the missing blocks via its timeout.
+      // Keep the announced subtimeslice.
+      return;
+    }
+
+    if (request == nullptr) {
+      // Operation has completed successfully in-place
+      continue;
+    }
+
+    // Keep the element in m_announced until the send completes and store the
+    // request
+    m_active_send_requests[request] = id;
+    ah.active_send_requests++;
   }
-
-  // Send the data
-  DEBUG("{}| Sending to builder '{}'", id, m_builders[ep]);
-  ucs_status_ptr_t request =
-      ucp_tag_send_nbx(ep, send_buffer, send_count, tag, &req_param);
-
-  if (UCS_PTR_IS_ERR(request)) {
-    ucs_status_t status = UCS_PTR_STATUS(request);
-    ERROR("Failed to send tag message: {}", status);
-    // Ignore the interaction with the builder, keep the announced subtimeslice
-    return;
-  }
-
-  if (request == nullptr) {
-    // Operation has completed successfully in-place
-    return;
-  }
-
-  // Keep the element in m_announced until the send completes and store the
-  // request
-  m_active_send_requests[request] = id;
-  ah.active_send_requests++;
 }
 
 void StSender::handle_builder_send_complete(void* request,

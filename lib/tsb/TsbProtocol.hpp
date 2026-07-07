@@ -49,12 +49,22 @@ static constexpr unsigned int AM_BUILDER_REQUEST_ST =
     60; // header: {StId, tag}, data: none
 //
 // The actual bulk transfer stsender -> tsbuilder uses UCX tag matching
-// (ucp_tag_send_nbx / ucp_tag_recv_nbx), not an active message. The builder
-// pre-posts the receive into its registered timeslice buffer immediately
-// after receiving AM_SCHED_ASSIGN_TS and before issuing the request to the
-// sender, so the recv is "expected" by the time the sender starts the send,
-// allowing UCX to skip the rendezvous CTS round-trip and (with put_zcopy)
-// issue an RDMA WRITE directly into the target buffer.
+// (ucp_tag_send_nbx / ucp_tag_recv_nbx), not an active message. A
+// contribution is transferred as a sequence of contiguous blocks -- two per
+// component: the microslice descriptors, then the content -- each sent as
+// one tagged message. All blocks of a contribution use the same tag; tag
+// matching is FIFO per tag, so they complete the builder's pre-posted
+// receives in order. Both sides derive the identical block layout
+// independently: the sender from its announced descriptor, the builder from
+// the merged descriptor relayed by the scheduler (descriptor block size =
+// num_microslices * sizeof(MicrosliceDescriptor)). Contiguous blocks are
+// sent with the default (contiguous) UCX datatype, which allows the
+// single-RDMA-read rendezvous protocol; the iov datatype would force UCX
+// into fragmented sends at roughly half the achievable bandwidth. The
+// builder pre-posts the receives into its registered timeslice buffer
+// immediately after receiving AM_SCHED_ASSIGN_TS and before issuing the
+// request to the sender, so the recvs are "expected" by the time the sender
+// starts sending, avoiding the rendezvous CTS round-trip.
 
 // Tag encoding for the bulk sender->builder transfer.
 // Layout: high 48 bits = TsId, low 16 bits = contribution (sender) index

@@ -3,6 +3,7 @@
    Author: Jan de Cuveland */
 #pragma once
 
+#include "MicrosliceDescriptor.hpp"
 #include "Monitor.hpp"
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
@@ -53,6 +54,13 @@ inline std::string to_string(StState state) {
   }
 }
 
+/// A contiguous destination range within the timeslice buffer, received as
+/// one tagged message
+struct StDataBlock {
+  uint64_t offset = 0; ///< absolute offset within the timeslice buffer
+  uint64_t size = 0;
+};
+
 struct TsHandle {
   TsHandle(std::byte* buffer, StCollection contributions)
       : id(contributions.id), allocated_at_ns(fles::system::current_time_ns()),
@@ -70,6 +78,43 @@ struct TsHandle {
     std::fill(states.begin(), states.end(), StState::Allocated);
     std::fill(state_change_at_ns.begin(), state_change_at_ns.end(),
               allocated_at_ns);
+    // Derive the per-contribution transfer block layout: each component
+    // arrives as two contiguous tagged messages (microslice descriptors, then
+    // content). The sender derives the identical layout from its announced
+    // descriptor, of which the merged descriptor contains a copy with
+    // absolute offsets, components in sender order.
+    blocks.resize(sender_ids.size());
+    blocks_remaining.resize(sender_ids.size(), 0);
+    std::size_t comp = 0; // running index into merged_descriptor.components
+    for (std::size_t ci = 0; ci < sender_ids.size(); ++ci) {
+      uint64_t remaining = ms_data_sizes[ci];
+      uint64_t pos = offsets[ci];
+      while (remaining > 0 && comp < merged_descriptor.components.size()) {
+        const auto& c = merged_descriptor.components[comp];
+        const uint64_t desc_size =
+            c.num_microslices * sizeof(fles::MicrosliceDescriptor);
+        if (static_cast<uint64_t>(c.ms_data_offset) != pos ||
+            c.ms_data_size < desc_size || c.ms_data_size > remaining) {
+          break; // inconsistent component metadata, use fallback below
+        }
+        blocks[ci].push_back({pos, desc_size});
+        blocks[ci].push_back({pos + desc_size, c.ms_data_size - desc_size});
+        pos += c.ms_data_size;
+        remaining -= c.ms_data_size;
+        ++comp;
+      }
+      if (remaining > 0) {
+        // Inconsistent or missing component metadata: fall back to a single
+        // full-size block (the transfer will fail via the timeout if the
+        // sender disagrees)
+        blocks[ci].assign(1, {offsets[ci], ms_data_sizes[ci]});
+      } else if (blocks[ci].empty()) {
+        // Empty contribution: the sender sends a single zero-size message to
+        // keep the protocol synchronous
+        blocks[ci].assign(1, {offsets[ci], 0});
+      }
+      blocks_remaining[ci] = blocks[ci].size();
+    }
   }
 
   // Cannot be moved or copied (pointer to data is used by ucx)
@@ -86,6 +131,8 @@ struct TsHandle {
   std::vector<uint64_t> offsets;
   std::vector<StState> states;
   std::vector<uint64_t> state_change_at_ns;
+  std::vector<std::vector<StDataBlock>> blocks; ///< per contribution
+  std::vector<std::size_t> blocks_remaining;    ///< per contribution
   bool is_published = false;
 };
 
@@ -125,7 +172,12 @@ private:
   std::unordered_map<ucp_ep_h, std::string> m_ep_to_sender;
 
   std::unordered_map<TsId, std::unique_ptr<TsHandle>> m_ts_handles;
-  std::unordered_map<ucs_status_ptr_t, std::pair<TsId, std::size_t>>
+  struct RecvRequestInfo {
+    TsId id = 0;
+    std::size_t ci = 0;
+    uint64_t expected_size = 0;
+  };
+  std::unordered_map<ucs_status_ptr_t, RecvRequestInfo>
       m_active_data_recv_requests;
 
   static constexpr auto m_scheduler_retry_interval = 2s;
@@ -164,7 +216,9 @@ private:
   void disconnect_from_senders();
 
   // Sender message handling
-  void post_tag_recv(TsHandle& tsh, std::size_t ci);
+  void post_tag_recvs(TsHandle& tsh, std::size_t ci);
+  void cancel_data_recvs(TsId id, std::size_t ci);
+  void complete_block(TsHandle& tsh, std::size_t ci);
   void
   send_request_to_sender(const std::string& sender_id, TsId id, std::size_t ci);
   void handle_sender_data_recv_complete(void* request,
