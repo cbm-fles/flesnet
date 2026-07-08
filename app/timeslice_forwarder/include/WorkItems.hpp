@@ -30,8 +30,16 @@ public:
         std::ostringstream sstream;
         boost::archive::text_oarchive archive(sstream);
         archive & *this;
-        *size = sstream.str().size() + 1;
-        return {strdup(sstream.str().c_str()), std::default_delete<char>()};
+
+        auto str = sstream.str();
+        const char* cstr = str.c_str();
+        *size = str.size() + 1;
+        std::shared_ptr<char> shared_ptr(
+            new char[*size],
+            std::default_delete<char[]>()
+        );
+        std::copy(cstr, cstr + *size, shared_ptr.get());
+        return shared_ptr;
     }
 
     bool deserialize(std::shared_ptr<char> serialized) override {
@@ -59,8 +67,16 @@ public:
         std::ostringstream sstream;
         boost::archive::text_oarchive archive(sstream);
         archive & *this;
-        *size = sstream.str().size() + 1;
-        return {strdup(sstream.str().c_str()), std::default_delete<char>()};
+
+        auto str = sstream.str();
+        const char* cstr = str.c_str();
+        *size = str.size() + 1;
+        std::shared_ptr<char> shared_ptr(
+            new char[*size],
+            std::default_delete<char[]>()
+        );
+        std::copy(cstr, cstr + *size, shared_ptr.get());
+        return shared_ptr;
     }
 
     bool deserialize(std::shared_ptr<char> serialized) override {

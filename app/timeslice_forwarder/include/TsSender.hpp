@@ -1,15 +1,20 @@
 #pragma once
-#include "Monitor.hpp"
-#include <atomic>
-#include <chrono>
-#include <cstdint>
+
+
 #include <df/ConnectionManager.hpp>
 #include <df/Node.hpp>
 #include <df/WorkItems/WiConnection.hpp>
 #include <df/WorkItems/WiTransmission.hpp>
-#include <memory>
+#include <df/WorkItems/WorkItem.hpp>
+
+#include "LogVar.hpp"
+#include "Monitor.hpp"
 #include "TsclientReader.hpp"
-#include "df/WorkItems/WorkItem.hpp"
+
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <memory>
 
 
 class TsSender : public Node {
@@ -32,6 +37,9 @@ private:
     std::shared_ptr<ConnectorInterface> node_connector_ = nullptr;
     std::string node_listen_addr_;
     std::shared_ptr<WorkItem> wi_buffer_status_ = nullptr;
+
+    std::future<void> log_thread_;
+    Avg<std::atomic<double>> bytes_sent_;
 
     /**
     * @brief values used for influxDB/grafana monitoring

@@ -51,7 +51,7 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         time_point<high_resolution_clock> start;
         time_point<high_resolution_clock> stop;
         start = high_resolution_clock::now();
-        L_(info) << "TS writer - ts written after: " <<  duration_cast<milliseconds>(stop-start).count();
+        L_(debug) << "TS writer - ts written after: " <<  duration_cast<milliseconds>(stop-start).count();
 
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         if (el == nullptr) { // not expected to happen in the current implementation
@@ -63,18 +63,19 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         for (auto &component : component) {
             component->rx_tx = BufferMap::ListElement::IO::UNSPEC; // asynchronousity makes it possible to read it twice, therefore we remove the RX mark to prevent this from happening
         }
-        L_(info)  << "New data from Node ID: " << component[0]->node_id << " - Group ID: " << component[0]->group_id;
+        *(bytes_received_.value) = *(bytes_received_.value) + component_size;
+        L_(debug)  << "New data from Node ID: " << component[0]->node_id << " - Group ID: " << component[0]->group_id;
         ts_sink_->write_timeslice(component);
         auto buffer_fill_state =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
         auto buffer_map_fill_state = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
         node_connector_->unlock_buffer_map(data_buffer_map_);
         stop = high_resolution_clock::now();
-        L_(info) << "TS on_new_data - done after: " <<  duration_cast<milliseconds>(stop-start).count();
+        L_(debug) << "TS on_new_data - done after: " <<  duration_cast<milliseconds>(stop-start).count();
 
         monitor_->QueueMetric("timeslice_forwarder_state",
             {
                 {"host", hostname_},
-            {"receiver", to_string(node_id_)}
+                {"receiver", to_string(node_id_)}
             },
             {
                 {"bytes_received", component_size},
@@ -103,6 +104,12 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     if (!monitoring_uri.empty()) {
         monitor_->OpenSink(monitoring_uri);
     }
+    log_thread_ = std::async([this] {
+        while (true) {
+            this_thread::sleep_for(chrono::seconds(1));
+            L_(info) << "Input MB/s: " << (*bytes_received_.per_seconds() / 1000000.0);
+        }
+    });
     wi_work_done_ = make_shared<WiWorkDone>();
     ts_sink_ = make_shared<TsclientWriter>(output_uri, timeslice_size);
     data_buffer_ = ts_sink_->get_buffer();
@@ -126,7 +133,7 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
             }
             node_connector_->unlock_buffer_map(data_buffer_map_);
             stop = high_resolution_clock::now();
-            L_(info) << "TS on_timeslices_handled - done after: " <<  duration_cast<milliseconds>(stop-start).count();
+            L_(debug) << "TS on_timeslices_handled - done after: " <<  duration_cast<milliseconds>(stop-start).count();
 
         }, [] () {
             return true;
