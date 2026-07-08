@@ -20,7 +20,6 @@
 class TsclientWriter : public TsSink {
 private:
     std::shared_ptr<BufferMap> buffer_map_ = nullptr;
-    std::future<int> ts_reading_thread_;
     std::unique_ptr<fles::Receiver<fles::Timeslice,fles::TimesliceView>> source_ = nullptr;
     uint64_t buffer_size_ = 0;
     std::shared_ptr<char> buffer_ = nullptr;

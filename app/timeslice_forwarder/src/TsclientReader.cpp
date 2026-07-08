@@ -39,7 +39,7 @@ void TsclientReader::clear_last_timeslice() {
     timeslice_available = false;
     cv.notify_all();
     stop_clock_ = high_resolution_clock::now();
-    L_(info) << "TS reader - last_timeslice_ resetted after: " <<  duration_cast<milliseconds>(stop_clock_-start_clock_).count();
+    L_(debug) << "TS reader - last_timeslice_ resetted after: " <<  duration_cast<milliseconds>(stop_clock_-start_clock_).count();
 }
 
 void TsclientReader::on_new_timeslice(std::function<void()> cb) {
@@ -77,7 +77,7 @@ void TsclientReader::start_timeslice_reading() {
             // this_thread::sleep_for(chrono::milliseconds(300));
             timeslice = source_->get();
             stop = high_resolution_clock::now();
-            L_(info) << "TS reader - got ts after: " <<  duration_cast<milliseconds>(stop-start).count();
+            L_(debug) << "TS reader - got ts after: " <<  duration_cast<milliseconds>(stop-start).count();
 
             if (!timeslice) {
                 break;
@@ -126,7 +126,7 @@ void TsclientReader::start_timeslice_reading() {
             start = high_resolution_clock::now();
             while (!is_locked) {};
             stop = high_resolution_clock::now();
-            L_(info) << "TS reader - got buffer map after: " <<  duration_cast<milliseconds>(stop-start).count();
+            L_(debug) << "TS reader - got buffer map after: " <<  duration_cast<milliseconds>(stop-start).count();
 
             // reperesent new data in the buffer map
             const auto *const buffer_map_ret = buffer_map_->insert(

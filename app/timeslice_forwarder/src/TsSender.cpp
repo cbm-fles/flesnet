@@ -25,11 +25,11 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
         rem_address = uid_address_map_[node_uid];
     }
 
-    L_(info) << "Commanded to send data to Node ID: " << node_id << " - Group ID: " << group_id << " - address: " << rem_address;
+    L_(debug) << "Commanded to send data to Node ID: " << node_id << " - Group ID: " << group_id << " - address: " << rem_address;
     time_point<high_resolution_clock> start = high_resolution_clock::now();
 
     node_connector_->lock_buffer_map(data_buffer_map_, [this, rem_address, node_id, group_id, start] () {
-        L_(info) << "send_latest_data - got own buffer map after: " <<  duration_cast<milliseconds>(high_resolution_clock::now()-start).count();
+        L_(debug) << "send_latest_data - got own buffer map after: " <<  duration_cast<milliseconds>(high_resolution_clock::now()-start).count();
 
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         auto buffer_fill_state =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
@@ -59,8 +59,8 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                 rem_address,
                 Node::DATA_BUFFER_IDX,
                 [this, data_write_chain, start, component_elements, rem_address, combined_size, node_id, group_id, &fail_cnt] (shared_ptr<BufferMap> rem_buffer_map_copy) {
-                    L_(info) << "send_latest_data - Got remote buffer map after " << fail_cnt << " tries";
-                    L_(info) << "send_latest_data - got own buffer map after: " <<  duration_cast<milliseconds>(high_resolution_clock::now()-start).count();
+                    L_(debug) << "send_latest_data - Got remote buffer map after " << fail_cnt << " tries";
+                    L_(debug) << "send_latest_data - got own buffer map after: " <<  duration_cast<milliseconds>(high_resolution_clock::now()-start).count();
 
                     auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
                     auto dest_addresses = eval_logic_.evaluate(component_elements, rem_offsets_and_spaces);
@@ -129,6 +129,7 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                             node_connector_->write_remote_buffer_map_and_unlock(rem_address, rem_buffer_map_copy,
                                 Node::DATA_BUFFER_IDX,
                                 [this, component_elements, combined_size, rem_address] () {
+                                    *(bytes_sent_.value) = *(bytes_sent_.value) + combined_size;
                                     monitor_->QueueMetric("timeslice_forwarder_state",
                                         {{"host", hostname_},
                                             {"sender", to_string(node_id_)}},
@@ -142,7 +143,7 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                                     data_buffer_map_->remove_elements(component_elements);
                                     node_connector_->unlock_buffer_map(data_buffer_map_);
                                     stop_ = high_resolution_clock::now();
-                                    L_(info) << "TS transmitted in: " << duration_cast<milliseconds>(stop_-start_).count();
+                                    L_(debug) << "TS transmitted in: " << duration_cast<milliseconds>(stop_-start_).count();
                                 }
                             );
                         }
@@ -231,6 +232,13 @@ Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen
         monitor_->OpenSink(monitoring_uri);
     }
     ts_reader = make_shared<TsclientReader>(input_uri);
+
+    log_thread_ = std::async([this] {
+        while (true) {
+            this_thread::sleep_for(chrono::seconds(1));
+            L_(info) << "Output MB/s: " << (*bytes_sent_.per_seconds() / 1000000.0);
+        }
+    });
 
     data_buffer_size_  = ts_reader->get_buffer_size();
     data_buffer_ = shared_ptr<char>(ts_reader->get_buffer());

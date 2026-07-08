@@ -13,7 +13,7 @@
 #include "WorkItems.hpp"
 #include <df/WorkItems/WorkItem.hpp>
 #include <df/Connectors/ConnectorInfiniband.hpp>
-
+#include "LogVar.hpp"
 
 
 class TsReceiver : public Node {
@@ -45,6 +45,10 @@ private:
     void on_node_connected(std::string address, uint64_t rem_group_id, uint64_t rem_node_id);
     void on_connection_refused(std::string address);
     void on_new_data (const std::string& /*address*/, uint64_t group_id, uint64_t node_id);
+
+    std::future<void> log_thread_;
+    Avg<std::atomic<double>> bytes_received_;
+
 
 public:
     TsReceiver(
