@@ -28,7 +28,8 @@ void Parameters::parse_options(int argc, char** argv) {
 
     general_add("listen-address,A",
         po::value<string>(&listen_addr),
-        "Defines interface listen address to be used by other nodes to establish a connnection '-a <own_IB_ip>:<port>'");
+        "Defines interface listen address to be used by other nodes to establish a connnection '-A <own_IB_ip>:<port>'. \
+        If you start multiple forwarder nodes on the same host, make sure that the ports are not in conflict.");
 
     general_add("central-manager,c",
         po::value<string>(&central_manager_listen_addr),
@@ -62,6 +63,7 @@ void Parameters::parse_options(int argc, char** argv) {
              "set the global timeslice size in number of microslices");
     stringstream desc_sstr;
     desc_sstr << endl
+        << "NOTE: The TS Sender node expects the timeslices to be provided using a timeslice client via SHM." << endl
         << "Start Central Manager: " << endl
         << "timeslice_forwarder --central-manager <CM_IB_ip>:<CM_port>" << endl << endl
         << "Start TS Sender Node:" << endl
