@@ -44,6 +44,7 @@ target_include_directories(timeslice_forwarder PRIVATE
     ${LIBFABRIC_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}/config
     ${DATA_FORWARDER_INCLUDE_DIR}
+    ${Boost_INCLUDE_DIRS}
 )
 
 target_link_libraries(timeslice_forwarder PRIVATE
