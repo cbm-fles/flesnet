@@ -38,7 +38,7 @@ set(DATA_FORWARDER_INCLUDE_DIR "${DATA_FORWARDER_INSTALL_DIR}/include")
 set(DATA_FORWARDER_LIB_DIR     "${DATA_FORWARDER_INSTALL_DIR}/lib")
 set(DATA_FORWARDER_LIBRARY "${DATA_FORWARDER_LIB_DIR}/libdata_forwarder.a")
 
-find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS serialization program_options graph iostreams)
+target_compile_definitions(timeslice_forwarder PUBLIC BOOST_ALL_DYN_LINK)
 target_include_directories(timeslice_forwarder PRIVATE
     ./include
     ${LIBFABRIC_INCLUDE_DIR}
