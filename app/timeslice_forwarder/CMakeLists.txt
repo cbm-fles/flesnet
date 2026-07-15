@@ -21,15 +21,29 @@ IF (DATA_FORWARDER_INSTALL_PATH)
 ELSE ()
     message("Pulling data forwarder lib from git")
     set(DATA_FORWARDER_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/data_forwarder_lib_build/install_dir")
-    ExternalProject_Add(data_forwarder_lib
-        GIT_REPOSITORY https://git.zib.de/ngreve/data_forwarder.git
-        GIT_TAG dev
-        CMAKE_ARGS
-            -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
-            -DCMAKE_INSTALL_PREFIX=${DATA_FORWARDER_INSTALL_DIR}
-        UPDATE_DISCONNECTED 1
-        BUILD_IN_SOURCE 1
-    )
+    IF (DEFINED ENV{SIMPATH})
+        ExternalProject_Add(data_forwarder_lib
+            GIT_REPOSITORY https://git.zib.de/ngreve/data_forwarder.git
+            GIT_TAG dev
+            CMAKE_ARGS
+                -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
+                -DCMAKE_INSTALL_PREFIX=${DATA_FORWARDER_INSTALL_DIR}
+                -DBoost_NO_SYSTEM_PATHS=True
+                -DBoost_ROOT=$ENV{SIMPATH}
+            UPDATE_DISCONNECTED 1
+            BUILD_IN_SOURCE 1
+        )
+    ELSE()
+        ExternalProject_Add(data_forwarder_lib
+            GIT_REPOSITORY https://git.zib.de/ngreve/data_forwarder.git
+            GIT_TAG dev
+            CMAKE_ARGS
+                -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
+                -DCMAKE_INSTALL_PREFIX=${DATA_FORWARDER_INSTALL_DIR}
+            UPDATE_DISCONNECTED 1
+            BUILD_IN_SOURCE 1
+        )
+    ENDIF()
     add_dependencies(data_forwarder_lib libfabric)
     add_dependencies(timeslice_forwarder data_forwarder_lib)
 ENDIF()
