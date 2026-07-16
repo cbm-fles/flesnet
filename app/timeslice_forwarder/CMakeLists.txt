@@ -30,6 +30,7 @@ ELSE ()
                 -DCMAKE_INSTALL_PREFIX=${DATA_FORWARDER_INSTALL_DIR}
                 -DBoost_NO_SYSTEM_PATHS=True
                 -DBoost_ROOT=$ENV{SIMPATH}
+                -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
             UPDATE_DISCONNECTED 1
             BUILD_IN_SOURCE 1
         )
