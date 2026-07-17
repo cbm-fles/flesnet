@@ -112,7 +112,7 @@ void CentralManager::on_new_work_item(std::string /*address*/, std::shared_ptr<c
 
 void CentralManager::connect_nodes(uint64_t node_uid) {
     uint64_t group_id = GROUP_ID(node_uid);
-    uint64_t node_id = GROUP_ID(node_uid);
+    uint64_t node_id = NODE_ID(node_uid);
     auto all_possible_connections = connection_manager_.get_connections(node_uid, false);
     L_(debug) << all_possible_connections.size() << " possible connections for N: " << node_id << " - G: " << group_id;
     for (auto &remote_uid : all_possible_connections) {
