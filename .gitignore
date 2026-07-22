@@ -5,6 +5,7 @@
 project.xcworkspace/
 xcuserdata/
 .vscode/
+.claude/
 /.cproject
 /.project
 /.cache
