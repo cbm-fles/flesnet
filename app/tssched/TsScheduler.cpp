@@ -261,8 +261,10 @@ TsScheduler::handle_sender_announce(const void* header,
   }
 
   if (id < m_id) {
-    DEBUG("{}| Late announcement from '{}', sending release", id,
-          sender_conn.info.id());
+    auto late_ts = m_id - id;
+    auto late_ns = late_ts * m_timeslice_duration_ns;
+    DEBUG("{}| Late announcement from '{}' by {} ts ({} ms), sending release",
+          id, sender_conn.info.id(), late_ts, (late_ns + 500000) / 1000000);
     std::array<uint64_t, 1> hdr{id};
     auto header = std::as_bytes(std::span(hdr));
     ucx::util::send_active_message(param->reply_ep, AM_SCHED_RELEASE_ST, header,
