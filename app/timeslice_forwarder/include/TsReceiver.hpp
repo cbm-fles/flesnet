@@ -9,13 +9,14 @@
 #include <df/WorkItems/WiTransmission.hpp>
 #include <memory>
 #include "TsclientWriter.hpp"
-#include "Tssink.hpp"
 #include "WorkItems.hpp"
 #include <df/WorkItems/WorkItem.hpp>
 #include <df/Connectors/ConnectorInfiniband.hpp>
 #include "LogVar.hpp"
 
-
+/**
+ * @brief Timeslice Receiver Node implementation
+ */
 class TsReceiver : public Node {
 private:
     const uint64_t BUFFER_MAP_ELEMENTS = 4096;
@@ -32,7 +33,6 @@ private:
     std::shared_ptr<char> wi_buffer_ = nullptr;
     std::shared_ptr<BufferMap> wi_buffer_map_ = nullptr;
     std::shared_ptr<ConnectorInterface> node_connector_ = nullptr;
-    std::atomic_uint64_t send_cnt_ = 0;
     std::atomic_uint64_t failed_remote_lock_cnt_ = 0;
     std::string node_listen_addr_;
     std::shared_ptr<WorkItem> wi_buffer_status_ = nullptr;

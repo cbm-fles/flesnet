@@ -79,6 +79,7 @@ private:
 
       // connect to matching shared memory if not already connected
       if (managed_shm_uuid() != timeslice_item.shm_uuid) {
+          std::cout << "init shm" << std::endl;
         managed_shm_ =
             std::make_unique<boost::interprocess::managed_shared_memory>(
                 boost::interprocess::open_only,

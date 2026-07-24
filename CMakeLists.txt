@@ -31,7 +31,7 @@ configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
 
 if(DEFINED ENV{SIMPATH})
   message(WARNING "SIMPATH set, using Fairroot external packages in build.")
-  set(SIMPATH $ENV{SIMPATH})
+  set(SIMPATH $ENV{SIMPATH})used
   list(PREPEND CMAKE_PREFIX_PATH ${SIMPATH})
   set(Boost_NO_SYSTEM_PATHS TRUE)
   set(Boost_ROOT $ENV{SIMPATH})
@@ -288,7 +288,15 @@ if(CLANG_TIDY)
 endif()
 
 add_subdirectory(app/mstool)
-add_subdirectory(app/timeslice_forwarder)
+
+if (BUILD_TIMESLICE_FORWARDER)
+    add_subdirectory(app/timeslice_forwarder)
+endif()
+
+if (BUILD_ARCHIVE_VALIDATOR)
+    add_subdirectory(app/archive_validator)
+endif()
+
 add_subdirectory(app/tsclient)
 if (USE_PDA AND PDA_FOUND)
   add_subdirectory(app/cri_tools)
