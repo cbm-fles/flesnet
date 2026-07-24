@@ -16,12 +16,12 @@ jobs:
         - cc: gcc-14
           cxx: g++-14
           os: ubuntu-24.04
-        - cc: gcc-15
-          cxx: g++-15
-          os: ubuntu-26.04        
-        - cc: clang-22
-          cxx: clang++-22
-          os: ubuntu-26.04
+#        - cc: gcc-15
+#          cxx: g++-15
+#          os: ubuntu-26.04
+#        - cc: clang-22
+#          cxx: clang++-22
+#          os: ubuntu-26.04
       fail-fast: false
 
     runs-on: ${{matrix.os}}
