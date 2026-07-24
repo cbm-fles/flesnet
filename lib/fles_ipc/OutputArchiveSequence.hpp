@@ -138,7 +138,7 @@ private:
             boost::iostreams::zstd::best_speed));
       } else {
         throw std::runtime_error(
-            "Unsupported compression type for output archive file \"" +
+            "Unsupported compression type for output archive sequence file \"" +
             filename(file_count_) + "\"");
       }
       out_->push(*ofstream_);
@@ -146,8 +146,9 @@ private:
           *out_, boost::archive::no_header);
 #else
       throw std::runtime_error(
-          "Unsupported compression type for output archive file \"" +
-          filename(file_count_) + "\"");
+          "Unsupported compression type for output archive sequence file \"" +
+          filename(file_count_) + "\". Your boost library does not support " +
+          ArchiveCompressionToString(descriptor_.archive_compression()) + ".");
 #endif
     }
 

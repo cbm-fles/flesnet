@@ -2,8 +2,17 @@
 
 #include "ManagedTimesliceBuffer.hpp"
 #include "Timeslice.hpp"
-#include "TimesliceWorkItem.hpp"
+#include "TimesliceCompletion.hpp"
 #include <chrono>
+#include <cstdint>
+#include <cstdlib>
+#include <functional> // ref
+#include <memory>
+#include <string>
+#include <stdexcept>
+#include <thread>
+#include <zmq.hpp>
+
 
 ManagedTimesliceBuffer::ManagedTimesliceBuffer(
     zmq::context_t& context,

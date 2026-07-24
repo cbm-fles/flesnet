@@ -8,7 +8,7 @@
 #include "TsbProtocol.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
-#include "monitoring/System.hpp"
+#include "monitoring/SystemInfo.hpp"
 #include <arpa/inet.h>
 #include <array>
 #include <cstddef>

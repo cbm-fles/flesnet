@@ -1,11 +1,20 @@
 // Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "MicrosliceAnalyzer.hpp"
+#include "interface.h"
+#include "Microslice.hpp"
+#include "MicrosliceDescriptor.hpp"
 #include "PatternChecker.hpp"
 #include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
 #include <cassert>
+#include <cstdint>
+#include <cstdlib>
+#include <iostream>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <utility>
 
 MicrosliceAnalyzer::MicrosliceAnalyzer(uint64_t arg_output_interval,
                                        size_t arg_out_verbosity,

@@ -1,8 +1,17 @@
 // Copyright 2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceView.hpp"
-#include <boost/uuid/uuid.hpp>
+
+#include "ItemWorkerProtocol.hpp"
+#include "TimesliceComponentDescriptor.hpp"
+#include "TimesliceShmWorkItem.hpp"
+
+#include <boost/interprocess/interprocess_fwd.hpp>
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
+#include <memory>
+#include <utility>
 
 namespace fles {
 

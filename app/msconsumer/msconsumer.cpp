@@ -5,10 +5,14 @@
 #include "shm_device_client.hpp"
 #include <chrono>
 #include <csignal>
-#include <iomanip>
+#include <cstdlib>
+#include <exception>
 #include <iostream>
 #include <numeric>
+#include <memory>
+#include <stdexcept>
 #include <sstream>
+#include <string>
 #include <thread>
 #include <vector>
 

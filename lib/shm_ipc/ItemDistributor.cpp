@@ -1,8 +1,18 @@
 #include "ItemDistributor.hpp"
+#include "ItemProducer.hpp"
+#include "ItemWorkerProtocol.hpp"
+#include "log.hpp"
 
+#include <cassert>
+#include <exception>
 #include <memory>
+#include <cstdlib>
 #include <set>
 #include <stdexcept>
+#include <string>
+#include <sstream>
+#include <utility>
+#include <zmq_addon.hpp>
 
 // Handle incoming message (work item) from the generator
 void ItemDistributor::on_generator_pollin() {

@@ -1,9 +1,14 @@
 // Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "MicrosliceTransmitter.hpp"
+#include "DualRingBuffer.hpp"
+#include "Microslice.hpp"
 #include <algorithm>
 #include <cassert>
 #include <chrono>
+#include <cstdint>
+#include <cstdlib>
+#include <memory>
 #include <thread>
 
 namespace fles {

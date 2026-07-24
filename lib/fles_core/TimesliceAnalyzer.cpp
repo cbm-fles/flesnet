@@ -1,16 +1,31 @@
 // Copyright 2013, 2015, 2021, 2023 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceAnalyzer.hpp"
+#include "interface.h"
+#include "MicrosliceDescriptor.hpp"
+#include "Monitor.hpp"
 #include "PatternChecker.hpp"
 #include "System.hpp"
+#include "Timeslice.hpp"
 #include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
-#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include <boost/format.hpp>
+#include <boost/format/free_funcs.hpp>
 #include <cassert>
 #include <chrono>
+#include <cstdint>
+#include <cstdlib>
+#include <ctime>
 #include <iomanip>
+#include <iostream>
+#include <locale>
+#include <memory>
+#include <optional>
 #include <sstream>
+#include <string>
+#include <vector>
+#include <utility>
 
 // Aim for balance: the TimesliceAnalyzer should provide detailed information if
 // an inconsistency is encountered in the data stream. On the other hand, it

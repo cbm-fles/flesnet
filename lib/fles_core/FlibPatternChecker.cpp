@@ -11,6 +11,10 @@
 // Implementation is not dump parallelizable across ts components!
 
 #include "FlibPatternChecker.hpp"
+#include "Microslice.hpp"
+#include "MicrosliceDescriptor.hpp" // MicrosliceFlags
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
 
 bool FlibPatternChecker::check(const fles::Microslice& m) {

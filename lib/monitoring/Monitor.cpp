@@ -7,7 +7,6 @@
 #include "MonitorSinkFile.hpp"
 #include "MonitorSinkInflux1.hpp"
 #include "MonitorSinkInflux2.hpp"
-#include "System.hpp"
 #include <stdexcept>
 
 #include "fmt/format.h"

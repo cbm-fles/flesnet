@@ -1,14 +1,28 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2025 Florian Schintke <schintke@zib.de>
 
 #include "Parameters.hpp"
 #include "GitRevision.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include <algorithm>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/program_options.hpp>
+#include <boost/log/sinks/syslog_constants.hpp>
+//#include <boost/program_options.hpp>
+#include <boost/program_options/errors.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/value_semantic.hpp>
+#include <boost/program_options/variables_map.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <cctype>
+#include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <iterator>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <stdexcept>
+#include <vector>
 
 namespace po = boost::program_options;
 
@@ -126,9 +140,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   config_add("max-timeslice-number,n",
              po::value<uint32_t>(&max_timeslice_number_)->value_name("<n>"),
              "quit after processing given number of timeslices");
-  config_add(
-      "processor-executable,e",
-      po::value<std::string>(&processor_executable_)->value_name("<string>"),
+  config_add("processor-executable,e",
+             po::value<std::string>(&processor_executable_)
+                 ->default_value(processor_executable_)
+                 ->value_name("<string>"),
       "name of the executable acting as timeslice processor");
   config_add("processor-instances",
              po::value<uint32_t>(&processor_instances_)

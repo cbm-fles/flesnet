@@ -1,4 +1,4 @@
-# Copyright 2013-2021 Jan de Cuveland <cmail@cuveland.de>
+# Copyright 2013-2025 Jan de Cuveland <cmail@cuveland.de>
 
 cmake_minimum_required(VERSION 3.16)
 project(flesnet DESCRIPTION "CBM FLES Timeslice Building" VERSION 0.0 LANGUAGES CXX)
@@ -55,15 +55,26 @@ if(INCLUDE_ZMQ)
     set(ZMQ_BUILD_COMMAND "${CMAKE_COMMAND} --build . --target")
   endif()
 
+  # override ZMQ's cmake version allowing builds with modern cmakes
+  set(__cmake_params
+    "-DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.16"
+    "-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE"
+    "-DWITH_LIBBSD:BOOL=FALSE"
+    "-DWITH_LIBSODIUM:BOOL=FALSE"
+  )
+
+  if(APPLE AND CMAKE_OSX_SYSROOT)
+    set(__cmake_params ${__cmake_params}
+      "-DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}"
+    )
+  endif()
+
   ExternalProject_Add(
     zeromq
     GIT_REPOSITORY "https://github.com/zeromq/libzmq.git"
     GIT_TAG "622fc6dde99ee172ebaa9c8628d85a7a1995a21d" # v4.3.5
     GIT_CONFIG advice.detachedHead=false
-    CMAKE_CACHE_ARGS
-    -DCMAKE_SUPPRESS_DEVELOPER_WARNINGS:BOOL=TRUE
-    -DWITH_LIBBSD:BOOL=FALSE
-    -DWITH_LIBSODIUM:BOOL=FALSE
+    CMAKE_CACHE_ARGS ${__cmake_params}
     BUILD_COMMAND ${ZMQ_BUILD_COMMAND} libzmq-static
     BUILD_BYPRODUCTS src/zeromq-build/lib/${CMAKE_STATIC_LIBRARY_PREFIX}zmq${CMAKE_STATIC_LIBRARY_SUFFIX}
     INSTALL_COMMAND ""
@@ -156,7 +167,7 @@ endif()
 if(APPLE)
   set(Boost_USE_MULTITHREADED TRUE)
 endif()
-find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS filesystem log program_options serialization system thread unit_test_framework iostreams)
+find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS filesystem log program_options serialization thread unit_test_framework iostreams)
 find_package(Threads REQUIRED)
 
 find_package(UCX CONFIG 1.16.0)
@@ -229,7 +240,7 @@ endif()
 set(USE_CLANG_TIDY FALSE CACHE BOOL "Run clang-tidy during build.")
 if(USE_CLANG_TIDY)
   find_program(CLANG_TIDY
-    NAMES "clang-tidy"
+    NAMES "clang-tidy-20" "clang-tidy-19" "clang-tidy-18" "clang-tidy-16" "clang-tidy-15" "clang-tidy-14" "clang-tidy"
     DOC "Path to clang-tidy executable"
   )
   if(NOT CLANG_TIDY)
@@ -242,7 +253,11 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-msse4.2 -Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
+if( NOT "arm64" STREQUAL ${CMAKE_SYSTEM_PROCESSOR} )
+    add_compile_options(-msse4.2)
+endif()
+
+add_compile_options(-Wall -Wpedantic -Wextra -Winit-self -Wundef -Wold-style-cast -Woverloaded-virtual -Wwrite-strings -Wnon-virtual-dtor -fno-omit-frame-pointer)
 
 if (COVERALLS)
   include(Coveralls)

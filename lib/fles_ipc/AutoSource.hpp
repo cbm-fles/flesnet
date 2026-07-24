@@ -3,6 +3,7 @@
 /// \brief Defines the fles::AutoSource template class.
 #pragma once
 
+#include "AggregatingSource.hpp"
 #include "ArchiveDescriptor.hpp"
 #include "InputArchive.hpp"
 #include "InputArchiveLoop.hpp"
@@ -232,7 +233,7 @@ private:
       source_ = std::move(sources.front());
     } else if (sources.size() > 1) {
       source_ =
-          std::make_unique<MergingSource<Source<Base>>>(std::move(sources));
+          std::make_unique<AggregatingSource<Source<Base>>>(std::move(sources));
     }
   }
 

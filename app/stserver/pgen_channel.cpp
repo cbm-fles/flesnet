@@ -4,7 +4,7 @@
 
 #include "pgen_channel.hpp"
 #include "MicrosliceDescriptor.hpp"
-#include "monitoring/System.hpp"
+#include "monitoring/SystemInfo.hpp"
 #include <chrono>
 #include <sys/types.h>
 

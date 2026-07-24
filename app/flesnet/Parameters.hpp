@@ -1,4 +1,5 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2025 Florian Schintke <schintke@zib.de>
 #pragma once
 
 #include <cstdint>
@@ -149,7 +150,10 @@ private:
   uint32_t max_timeslice_number_ = UINT32_MAX;
 
   /// The name of the executable acting as timeslice processor.
-  std::string processor_executable_;
+  // The default value "true" calls the UNIX command 'true' as a dummy.
+  // An actual processor can then be started in a separate command and
+  // does not not need to be spawned by the flesnet process itself.
+  std::string processor_executable_ = "true";
 
   /// The number of instances of the timeslice processor executable.
   uint32_t processor_instances_ = 1;
