@@ -23,7 +23,8 @@ class [[deprecated("Replaced by TimeSliceAutoSource")]] TimesliceMultiSubscriber
 public:
   /// Construct timeslice subscriber receiving from given ZMQ address.
   explicit TimesliceMultiSubscriber(const std::string& /*inputString*/,
-                                    uint32_t hwm = 1, bool initflag = false);
+                                    uint32_t hwm = 1,
+                                    bool initflag = false);
 
   /// Delete copy constructor (non-copyable).
   TimesliceMultiSubscriber(const TimesliceMultiSubscriber&) = delete;

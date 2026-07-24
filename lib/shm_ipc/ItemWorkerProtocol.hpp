@@ -63,8 +63,7 @@ public:
   ~Item() {
     try {
       completed_items_->push(id_);
-    }
-    catch (...) {
+    } catch (...) {
       L_(info) << "Exception in Item::~Item() occurred";
     }
   }

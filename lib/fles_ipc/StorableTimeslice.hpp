@@ -132,9 +132,9 @@ private:
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int /* version */) {
-    ar& timeslice_descriptor_;
-    ar& data_;
-    ar& desc_;
+    ar & timeslice_descriptor_;
+    ar & data_;
+    ar & desc_;
 
     init_pointers();
   }

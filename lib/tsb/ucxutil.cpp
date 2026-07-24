@@ -210,7 +210,7 @@ bool create_listener(ucp_worker_h worker,
     return false;
   }
 
-  struct sockaddr_in listen_addr {};
+  struct sockaddr_in listen_addr{};
   listen_addr.sin_family = AF_INET;
   listen_addr.sin_addr.s_addr = INADDR_ANY;
   listen_addr.sin_port = htons(listen_port);
@@ -274,7 +274,7 @@ connect(ucp_worker_h worker,
         uint16_t port,
         ucp_err_handler_cb_t on_endpoint_error,
         void* arg) {
-  struct addrinfo hints {};
+  struct addrinfo hints{};
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
 

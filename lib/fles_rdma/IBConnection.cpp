@@ -43,7 +43,7 @@ IBConnection::~IBConnection() {
 
 void IBConnection::connect(const std::string& hostname,
                            const std::string& service) {
-  struct addrinfo hints {};
+  struct addrinfo hints{};
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
   struct addrinfo* res;
@@ -106,7 +106,7 @@ void IBConnection::on_timewait_exit(struct rdma_cm_event* /* event */) {
 void IBConnection::on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq) {
   L_(debug) << "address resolved";
 
-  struct ibv_qp_init_attr qp_attr {};
+  struct ibv_qp_init_attr qp_attr{};
   qp_attr.cap = qp_cap_;
   qp_attr.send_cq = cq;
   qp_attr.recv_cq = cq;
@@ -125,7 +125,7 @@ void IBConnection::on_addr_resolved(struct ibv_pd* pd, struct ibv_cq* cq) {
 }
 
 void IBConnection::create_qp(struct ibv_pd* pd, struct ibv_cq* cq) {
-  struct ibv_qp_init_attr qp_attr {};
+  struct ibv_qp_init_attr qp_attr{};
   qp_attr.cap = qp_cap_;
   qp_attr.send_cq = cq;
   qp_attr.recv_cq = cq;

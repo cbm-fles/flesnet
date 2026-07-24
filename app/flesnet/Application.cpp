@@ -3,7 +3,7 @@
 #include "Application.hpp"
 #include "ChildProcessManager.hpp"
 #include "ComponentSenderZeromq.hpp"
-#include "DualRingBuffer.hpp"           // InputBufferReadInterface
+#include "DualRingBuffer.hpp" // InputBufferReadInterface
 #include "FlesnetPatternGenerator.hpp"
 #include "ItemDistributor.hpp"
 #include "MicrosliceDescriptor.hpp"
@@ -12,8 +12,8 @@
 #include "TimesliceBuffer.hpp"
 #include "TimesliceBuilderZeromq.hpp"
 #if defined(HAVE_LIBFABRIC)
-#include "fles_libfabric/TimesliceBuilder.hpp"
 #include "fles_libfabric/InputChannelSender.hpp"
+#include "fles_libfabric/TimesliceBuilder.hpp"
 #endif
 #include "Utility.hpp"
 #include "log.hpp"
@@ -28,8 +28,8 @@
 // #include <boost/thread/thread.hpp>
 #include <boost/thread/detail/thread_group.hpp>
 #include <boost/thread/futures/wait_for_any.hpp>
-#include <chrono>
 #include <cassert>
+#include <chrono>
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>

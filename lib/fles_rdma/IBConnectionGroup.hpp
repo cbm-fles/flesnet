@@ -76,7 +76,7 @@ public:
     }
 
     // Bind rdma id (for listening) to socket address (local port)
-    struct sockaddr_in sin {};
+    struct sockaddr_in sin{};
     sin.sin_family = AF_INET;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -111,7 +111,7 @@ public:
   void poll_cm_events() {
     int err;
     struct rdma_cm_event* event;
-    struct rdma_cm_event event_copy {};
+    struct rdma_cm_event event_copy{};
     void* private_data_copy = nullptr;
 
     while ((err = rdma_get_cm_event(ec_, &event)) == 0) {

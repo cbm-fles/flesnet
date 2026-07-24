@@ -85,8 +85,8 @@ private:
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int /* version */) {
-    ar& desc_;
-    ar& content_;
+    ar & desc_;
+    ar & content_;
 
     init_pointers();
   }

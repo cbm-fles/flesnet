@@ -2,7 +2,7 @@
 // Copyright 2024 Florian Schintke <schintke@zib.de>
 
 #include "ComponentSenderZeromq.hpp"
-#include "DualRingBuffer.hpp"        // InputBufferReadInterface
+#include "DualRingBuffer.hpp" // InputBufferReadInterface
 #include "MicrosliceDescriptor.hpp"
 #include "Monitor.hpp"
 #include "RingBufferView.hpp"
@@ -12,10 +12,10 @@
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
+#include <chrono>
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
-#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <mutex>

@@ -1,12 +1,12 @@
 // Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "MicrosliceAnalyzer.hpp"
-#include "interface.h"
 #include "Microslice.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "PatternChecker.hpp"
 #include "TimesliceDebugger.hpp"
 #include "Utility.hpp"
+#include "interface.h"
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>

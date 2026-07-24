@@ -8,11 +8,10 @@
 #include <cstdlib>
 #include <functional> // ref
 #include <memory>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <zmq.hpp>
-
 
 ManagedTimesliceBuffer::ManagedTimesliceBuffer(
     zmq::context_t& context,

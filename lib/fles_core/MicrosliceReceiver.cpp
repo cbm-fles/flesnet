@@ -1,11 +1,11 @@
 // Copyright 2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "MicrosliceReceiver.hpp"
-#include "MicrosliceDescriptor.hpp"
 #include "DualRingBuffer.hpp"
+#include "MicrosliceDescriptor.hpp"
 #include "StorableMicroslice.hpp"
-#include <chrono>
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <thread>
 #include <vector>

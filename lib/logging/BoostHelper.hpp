@@ -15,17 +15,28 @@ constexpr const char* boostlib_for_archive_version(uint64_t v) {
     // earliest boost library version known to support the given
     // archive version according to doc/boost_serialization.txt and
     // https://github.com/boostorg/serialization/blob/develop/src/basic_archive.cpp
-  case 10: return "1.54";
-  case 11: return "1.56";
-  case 12: return "1.58";
-  case 13: return "1.59";
-  case 14: return "1.60";
-  case 15: return "1.64";
-  case 16: return "1.66";
-  case 17: return "1.68";
-  case 18: return "1.73";
-  case 19: return "1.76";
-  case 20: return "1.84";
+  case 10:
+    return "1.54";
+  case 11:
+    return "1.56";
+  case 12:
+    return "1.58";
+  case 13:
+    return "1.59";
+  case 14:
+    return "1.60";
+  case 15:
+    return "1.64";
+  case 16:
+    return "1.66";
+  case 17:
+    return "1.68";
+  case 18:
+    return "1.73";
+  case 19:
+    return "1.76";
+  case 20:
+    return "1.84";
   default:
     // latest known version of boost that still uses the largest
     // explicitly listed archive version above
@@ -36,6 +47,6 @@ constexpr const char* boostlib_for_archive_version(uint64_t v) {
 /**
  * \brief Find boost archive version of an archive ifstream.
  */
-  uint64_t boost_peek_for_archive_version(std::ifstream &stream);
+uint64_t boost_peek_for_archive_version(std::ifstream& stream);
 
 } // namespace fles

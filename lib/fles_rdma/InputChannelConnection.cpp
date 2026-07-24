@@ -92,9 +92,9 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
   }
   num_sge -= num_sge_cut;
 
-  struct ibv_send_wr send_wr_ts {};
-  struct ibv_send_wr send_wr_tswrap {};
-  struct ibv_send_wr send_wr_tscdesc {};
+  struct ibv_send_wr send_wr_ts{};
+  struct ibv_send_wr send_wr_tswrap{};
+  struct ibv_send_wr send_wr_tscdesc{};
   send_wr_ts.wr_id = ID_WRITE_DATA;
   send_wr_ts.opcode = IBV_WR_RDMA_WRITE;
   send_wr_ts.sg_list = sge;
@@ -123,7 +123,7 @@ void InputChannelConnection::send_data(struct ibv_sge* sge,
   tscdesc.offset = cn_wp_data;
   tscdesc.size = data_length + desc_length * sizeof(fles::MicrosliceDescriptor);
   tscdesc.num_microslices = desc_length;
-  struct ibv_sge sge3 {};
+  struct ibv_sge sge3{};
   sge3.addr = reinterpret_cast<uintptr_t>(&tscdesc);
   sge3.length = sizeof(tscdesc);
   sge3.lkey = 0;

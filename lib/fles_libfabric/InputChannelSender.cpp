@@ -3,14 +3,14 @@
 // Copyright 2024 Florian Schintke <schintke@zib.de>
 
 #include "InputChannelSender.hpp"
-#include "ConstVariables.hpp"                          // for ConstVariables
+#include "ConstVariables.hpp" // for ConstVariables
 
-#include <algorithm>                                   // for min
-#include <cstring>                                     // for strerror, size_t
+#include <algorithm> // for min
+#include <cstring>   // for strerror, size_t
 #include <sstream>
-#include <sys/errno.h>                                 // for errno
-#include <sys/uio.h>                                   // for iovec
-#include <utility>                                     // for move
+#include <sys/errno.h> // for errno
+#include <sys/uio.h>   // for iovec
+#include <utility>     // for move
 
 namespace tl_libfabric {
 InputChannelSender::InputChannelSender(
@@ -131,8 +131,7 @@ void InputChannelSender::report_status() {
   previous_send_buffer_status_desc_ = status_desc;
   previous_send_buffer_status_data_ = status_data;
 
-  scheduler_.add([this] { report_status(); },
-                 now + interval);
+  scheduler_.add([this] { report_status(); }, now + interval);
 }
 
 void InputChannelSender::sync_data_source(bool schedule) {
@@ -260,7 +259,7 @@ void InputChannelSender::operator()() {
     time_begin_ = std::chrono::high_resolution_clock::now();
     InputSchedulerOrchestrator::update_input_begin_time(time_begin_);
 
-    for (const auto & indx : conn_) {
+    for (const auto& indx : conn_) {
       indx->set_time_MPI(time_begin_);
     }
 
@@ -566,8 +565,9 @@ bool InputChannelSender::post_send_data(uint64_t timeslice,
     descs[num_sge++] = fi_mr_desc(mr_data_);
   }
 
-  return conn_[cn]->send_data(static_cast<struct iovec*>(sge), static_cast<void **>(descs), num_sge, timeslice, desc_length,
-                              data_length, skip);
+  return conn_[cn]->send_data(static_cast<struct iovec*>(sge),
+                              static_cast<void**>(descs), num_sge, timeslice,
+                              desc_length, data_length, skip);
 }
 
 void InputChannelSender::on_completion(uint64_t wr_id) {

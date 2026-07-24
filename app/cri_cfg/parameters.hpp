@@ -85,9 +85,7 @@ public:
   float pgen_rate() const { return _pgen_rate; }
   uint32_t mc_size_limit() const { return _mc_size_limit; }
 
-  struct channel_config channel(size_t i) const {
-    return _channels.at(i);
-  }
+  struct channel_config channel(size_t i) const { return _channels.at(i); }
 
 private:
   void parse_eq_id(const po::variables_map& vm, size_t i) {
