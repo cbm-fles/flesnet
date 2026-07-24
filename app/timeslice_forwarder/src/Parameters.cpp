@@ -1,5 +1,6 @@
-#include <df/Utils/Utils.hpp>
 #include "Parameters.hpp"
+
+#include <df/Utils/Utils.hpp>
 #include <boost/program_options.hpp>
 #include <cstdlib>
 #include <ostream>
@@ -12,6 +13,8 @@
 
 using namespace std;
 namespace po = boost::program_options;
+
+
 void Parameters::parse_options(int argc, char** argv) {
     unsigned log_syslog = 2;
     unsigned log_level = 2;

@@ -9,19 +9,6 @@
 using namespace std;
 using namespace std::chrono;
 
-uint64_t TsclientWriter::handle_timeslice_completions() {
-    fles::TimesliceCompletion c{};
-    uint64_t found_completions = 0;
-    while (ts_buffer_->try_receive_completion(c)) {
-        found_completions++;
-    }
-
-    return found_completions;
-}
-
-bool TsclientWriter::on_timeslices_handled(std::function<void(uint64_t)> cb) {
-    return handled_timeslice_callbacks_.add(cb);
-}
 
 TsclientWriter::TsclientWriter(std::string output_uri, uint32_t timeslice_size) : timeslice_size_(timeslice_size) {
     UriComponents uri{output_uri};
@@ -87,6 +74,20 @@ TsclientWriter::TsclientWriter(std::string output_uri, uint32_t timeslice_size) 
 
 }
 
+uint64_t TsclientWriter::handle_timeslice_completions() {
+    fles::TimesliceCompletion c{};
+    uint64_t found_completions = 0;
+    while (ts_buffer_->try_receive_completion(c)) {
+        found_completions++;
+    }
+
+    return found_completions;
+}
+
+bool TsclientWriter::on_timeslices_handled(std::function<void(uint64_t)> cb) {
+    return handled_timeslice_callbacks_.add(cb);
+}
+
 uint64_t TsclientWriter::get_buffer_size() {
     return buffer_size_;
 }
@@ -148,11 +149,6 @@ void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& eleme
     L_(debug) << "TS writer - ts written after: " <<  duration_cast<milliseconds>(stop-start).count();
 }
 
-TsclientWriter::~TsclientWriter() {
-    item_distributor_->stop();
-    distributor_thread_.join();
-}
-
 bool TsclientWriter::pop_finished_component_id(uint64_t& component_id) {
     unique_lock<mutex> l(mtx_);
 
@@ -169,4 +165,9 @@ bool TsclientWriter::pop_finished_component_id(uint64_t& component_id) {
 uint64_t TsclientWriter::get_finished_component_id_cnt() {
     unique_lock<mutex> l(mtx_);
     return component_ids_done_.size();
+}
+
+TsclientWriter::~TsclientWriter() {
+    item_distributor_->stop();
+    distributor_thread_.join();
 }

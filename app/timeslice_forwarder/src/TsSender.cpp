@@ -50,7 +50,9 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
             return;
         }
         uint64_t combined_size = 0;
+        L_(debug) << "get_elements of component...";
         auto component_elements = data_buffer_map_->get_elements_of_component(el->compontent_id, combined_size);
+        L_(debug) << "got elements";
         auto *data_write_chain = new std::function<void()>;
         (*data_write_chain) = [this, data_write_chain, rem_address, component_elements, combined_size, node_id, group_id] () {
             atomic_uint64_t fail_cnt = 0;
@@ -63,7 +65,9 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                     L_(debug) << "send_latest_data - got own buffer map after: " <<  duration_cast<milliseconds>(high_resolution_clock::now()-start).count();
 
                     auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
+                    L_(debug) << "send_latest_data - start calculating addresses...";
                     auto dest_addresses = eval_logic_.evaluate(component_elements, rem_offsets_and_spaces);
+                    L_(debug) << "send_latest_data - done calculating";
                     if (dest_addresses.empty()) {
                         L_(warning) << "Remote buffer full - Node ID: " << node_id << " - Group ID: " << group_id;
                         auto wi_buffer_full_report = make_shared<WiBufferFullReport>();
@@ -92,8 +96,9 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                         src_mem_addresses[i] = component_elements[i]->address;
                         sizes[i] = component_elements[i]->len;
                     }
-
+                    L_(debug) << "send_latest_data - start inserting in remote buffer map...";
                     bool insert_successfull = rem_buffer_map_copy->insert(component_elements, dest_addresses, node_id_, group_id_, BufferMap::ListElement::RX);
+                    L_(debug) << "send_latest_data - inserting done";
                     if (!insert_successfull) {
                         L_(warning) << "Remote buffer map has no elements available - Node ID: " << node_id << " - Group ID: " << group_id;
                         auto wi_buffer_full_report = make_shared<WiBufferFullReport>();
@@ -115,8 +120,8 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                         return;
                     }
                     delete data_write_chain;
-
-                    node_connector_->sendv(
+                    L_(debug) << "send_latest_data - calling sendv...";
+                    int ret = node_connector_->sendv(
                         rem_address,
                         data_buffer_,
                         Node::DATA_BUFFER_IDX,
@@ -124,11 +129,15 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                         dest_addresses,
                         sizes,
                         [this, rem_address, rem_buffer_map_copy, component_elements, combined_size] () {
+                            L_(debug) << "sendv - in callback";
                             // send the new buffer map to remote node and unlock
                             ts_reader->clear_last_timeslice();
+
+                            L_(debug) << "sendv - cleared last timeslice";
                             node_connector_->write_remote_buffer_map_and_unlock(rem_address, rem_buffer_map_copy,
                                 Node::DATA_BUFFER_IDX,
                                 [this, component_elements, combined_size, rem_address] () {
+
                                     *(bytes_sent_.value) = *(bytes_sent_.value) + combined_size;
                                     monitor_->QueueMetric("timeslice_forwarder_state",
                                         {{"host", hostname_},
@@ -148,6 +157,11 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                             );
                         }
                     );
+                    if (ret) {
+                        L_(warning) << "sendv returned error";
+                    } else {
+                        L_(debug) << "send_latest_data - sendv returned";
+                    }
                 },
                 [this, &fail_cnt] () {
                     if ((++fail_cnt % 200) == 0) {

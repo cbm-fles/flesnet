@@ -9,16 +9,23 @@
 using namespace std;
 using namespace std::chrono;
 
+
 TsclientReader::TsclientReader(std::string shm_uri) {
-    WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll, 0,
+    WorkerParameters param{
+        1,
+        0,
+        WorkerQueuePolicy::QueueAll,
+        0,
         "AutoSource at PID " +
-            to_string(fles::system::current_pid())};
+        to_string(fles::system::current_pid())
+    };
     UriComponents uri{shm_uri};
     const auto shm_identifier = uri.path;
     source_ = make_unique<fles::Receiver<fles::Timeslice,fles::TimesliceView>>(shm_identifier, param);
     new_timeslice_callbacks_.set_worker(make_shared<WorkerThread>());
 
-    // We have to read out one timeslice so the fles::Receiver class initializes the SHM and we can get necessary SHM pointer
+    // We have to read out one timeslice so the fles::Receiver class initializes the SHM and we can get the
+    // necessary SHM pointer to register it for RDMA transmissions
     unique_ptr<fles::Timeslice> timeslice = source_->get();
     num_components_ = timeslice->num_components();
     buffer_size_ = source_->managed_shm_->get_size();
@@ -70,11 +77,9 @@ void TsclientReader::start_timeslice_reading() {
         time_point<high_resolution_clock> start;
         time_point<high_resolution_clock> stop;
         while (!stop_)  {
-            // while (last_timeslice_ != nullptr) {};
             start = high_resolution_clock::now();
             std::unique_lock lk(m);
             cv.wait(lk, [this]{ return !timeslice_available; });
-            // this_thread::sleep_for(chrono::milliseconds(300));
             timeslice = source_->get();
             stop = high_resolution_clock::now();
             L_(debug) << "TS reader - got ts after: " <<  duration_cast<milliseconds>(stop-start).count();
@@ -88,7 +93,7 @@ void TsclientReader::start_timeslice_reading() {
             if (buffer_ != reinterpret_cast<char*>(source_->managed_shm_->get_address())) {
                 buffer_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());
                 L_(fatal) << "(TimesliceReader) SHM base memory address changed";
-                exit(-1);
+                exit(-EXIT_FAILURE);
             }
 
             // Proactively request lock and start preparing data in the meantime
@@ -138,20 +143,17 @@ void TsclientReader::start_timeslice_reading() {
                 tags.get(),
                 BufferMap::ListElement::IO::RX
             );
+
             if (buffer_map_ret == nullptr) {
                 L_(fatal) << "(TimesliceReader) Buffer map full. Not handled yet - exiting";
-                exit(-1);
+                exit(-EXIT_FAILURE);
             }
-            // auto *el = buffer_map_->get_oldest_linked_list_element();
-            // uint64_t combined_size;
-            // buffer_map_->remove_elements(buffer_map_->get_elements_of_component(el->compontent_id, combined_size));
-            // timeslice.reset();
-            node_connector_->unlock_buffer_map(buffer_map_);
 
+            node_connector_->unlock_buffer_map(buffer_map_);
             last_timeslice_ = std::move(timeslice);
             start_clock_ = high_resolution_clock::now();
             timeslice_available = true;
-            // // tell everyone about the new data
+            // tell everyone about the new data
             new_timeslice_callbacks_.call();
         }
         return int(!stop_);

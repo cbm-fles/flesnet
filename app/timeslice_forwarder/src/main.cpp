@@ -2,19 +2,19 @@
 #include "CentralManager.hpp"
 #include "TsSender.hpp"
 #include "TsReceiver.hpp"
+#include "Parameters.hpp"
 
 #include <getopt.h>
 #include <chrono>
 #include <memory>
-
 #include <rdma/fabric.h>
 #include <sched.h>
 #include <sys/mman.h>
-#include "Parameters.hpp"
 #include <thread>
 #include <unistd.h>
 
 using namespace std;
+
 
 Parameters par;
 
@@ -65,7 +65,8 @@ int start_receiver(string hostname = "") {
 
 
 /**
- * @brief Profiling data is only written if the program exits gracefully, that is why this minimal signal handler is here.
+ * @brief Signal handler for profiling.
+ * Profiling data is only written if the program exits gracefully, that is why this minimal signal handler is here.
  */
 void signalHandler(int sig) {
     exit(sig);

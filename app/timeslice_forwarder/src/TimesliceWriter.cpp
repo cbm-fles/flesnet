@@ -1,14 +1,11 @@
 #include "TimesliceWriter.hpp"
 
 
-
 TimesliceWriter::TimesliceWriter(std::string address) {
     fles::ArchiveCompression compression = fles::ArchiveCompression::None;
     ts_sink_ = std::make_unique<MyTimesliceArchive>(
         address, compression);
 }
-
-TimesliceWriter::~TimesliceWriter(){};
 
 uint64_t TimesliceWriter::get_buffer_size() {
     return 0;
@@ -49,3 +46,5 @@ void TimesliceWriter::set_buffer(std::shared_ptr<char> buffer) {
 std::shared_ptr<char> TimesliceWriter::get_buffer() {
     return buffer_;
 }
+
+TimesliceWriter::~TimesliceWriter(){};

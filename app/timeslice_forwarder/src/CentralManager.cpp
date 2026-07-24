@@ -7,10 +7,34 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
-#include <thread>
 
 using namespace std::placeholders;
 using namespace std;
+
+
+CentralManager::CentralManager(std::string listen_address, std::string monitoring_uri, std::string hostname) : Node(0, 0), listen_address_(listen_address), hostname_(hostname) {
+    if (!monitoring_uri.empty()) {
+        monitor_->OpenSink(monitoring_uri);
+    }
+    eval_worker_ = async(launch::async, &CentralManager::eval_thread, this);
+    Node::on_node_connected(bind(&CentralManager::on_node_connected, this, _1, _2, _3));
+    Node::on_node_disconnected(bind(&CentralManager::on_node_disconnected, this, _1, _2, _3));
+    Node::on_new_work_item(bind(&CentralManager::on_new_work_item, this, _1, _2, _3, _4, _5));
+
+    shared_ptr<ConnectorInterface> node_connector = make_shared<ConnectorInfiniband>();
+
+    const auto wi_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, WI_BUFFER_SIZE);
+    const auto wi_buffer = shared_ptr<char>(new char[WI_BUFFER_SIZE], default_delete<char[]>());
+
+    const auto data_buffer = shared_ptr<char>(new char[DATA_BUFFER_SIZE], default_delete<char[]>());
+    const auto data_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, DATA_BUFFER_SIZE);
+
+    Node::set_wi_buffer(wi_buffer, wi_buffer_map, WI_BUFFER_SIZE);
+    Node::set_data_buffer(data_buffer, data_buffer_map, DATA_BUFFER_SIZE);
+    Node::add_connector(node_connector, listen_address_);
+
+    Node::start();
+}
 
 void CentralManager::on_node_connected(std::string address, uint64_t group_id, uint64_t node_id) {
     L_(info) << "Node connected: \n" <<
@@ -172,8 +196,6 @@ void CentralManager::eval_node_status() {
     }
 }
 
-
-
 void CentralManager::eval_thread() {
     vector<uint64_t> nodes_cpy;
     while (!stop_eval_worker) {
@@ -185,28 +207,4 @@ void CentralManager::eval_thread() {
         }
         eval_node_status();
     }
-}
-
-CentralManager::CentralManager(std::string listen_address, std::string monitoring_uri, std::string hostname) : Node(0, 0), listen_address_(listen_address), hostname_(hostname) {
-    if (!monitoring_uri.empty()) {
-        monitor_->OpenSink(monitoring_uri);
-    }
-    eval_worker_ = async(launch::async, &CentralManager::eval_thread, this);
-    Node::on_node_connected(bind(&CentralManager::on_node_connected, this, _1, _2, _3));
-    Node::on_node_disconnected(bind(&CentralManager::on_node_disconnected, this, _1, _2, _3));
-    Node::on_new_work_item(bind(&CentralManager::on_new_work_item, this, _1, _2, _3, _4, _5));
-
-    shared_ptr<ConnectorInterface> node_connector = make_shared<ConnectorInfiniband>();
-
-    const auto wi_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, WI_BUFFER_SIZE);
-    const auto wi_buffer = shared_ptr<char>(new char[WI_BUFFER_SIZE], default_delete<char[]>());
-
-    const auto data_buffer = shared_ptr<char>(new char[DATA_BUFFER_SIZE], default_delete<char[]>());
-    const auto data_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, DATA_BUFFER_SIZE);
-
-    Node::set_wi_buffer(wi_buffer, wi_buffer_map, WI_BUFFER_SIZE);
-    Node::set_data_buffer(data_buffer, data_buffer_map, DATA_BUFFER_SIZE);
-    Node::add_connector(node_connector, listen_address_);
-
-    Node::start();
 }
