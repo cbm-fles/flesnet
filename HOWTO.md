@@ -147,11 +147,13 @@ You can find the generated documentation in `<project>/build/doc`. Doxygen gener
 executable within the project. For Debian, if you have the `php-cli` package installed, you can serve the HTML
 documentation (for e.g. flesnet executable) locally by executing:
 ```
-cd build/doc/doc-flesnet/html
+cd build/doc/flesnet-doc/html
 php -S localhost:8181
 ```
 
-Open your browser and visit [http://localhost:8181](http://localhost:8181).
+Open your browser and visit [http://localhost:8181](http://localhost:8181). Alternatively, instead of using a proper
+web server, you can open the `index.html` file in your browser directly, but some features such as search and
+displaying mathematical formulas may not work.
 
 Since the current state of the documentation is limited, you can also instruct doxygen to automatically generate
 documentation for undocumented code by setting the cmake variable `EXTENDED_DOXYGEN_DOCUMENTATION` to `YES` (default is

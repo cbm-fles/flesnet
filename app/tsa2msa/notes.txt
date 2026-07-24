@@ -1,0 +1,5 @@
+check if timeslice Autosource creates monoticity violations if find is
+used to give input (i.e. not sorted)
+check if memory footprint is smaller if %n syntax is used
+describe %n syntax usage
+add round robin option
