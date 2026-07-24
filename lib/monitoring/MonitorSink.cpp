@@ -81,7 +81,9 @@ std::string MonitorSink::InfluxTags(const Metric& point) {
 /*! \brief Return field string for a Metric `point` in InfluxDB line format
  */
 
-template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts> struct overloaded : Ts... {
+  using Ts::operator()...;
+};
 template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 std::string MonitorSink::InfluxFields(const Metric& point) {

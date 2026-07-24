@@ -4,9 +4,9 @@
 #include "interface.h" // crcutil_interface
 #include <algorithm>   // std::generate_n
 #include <boost/crc.hpp>
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
-#include <chrono>
 #include <iostream>
 #include <iterator>
 #include <random>

@@ -11,6 +11,7 @@
 #include <arpa/inet.h> // ntohl
 #include <cassert>
 #include <memory>
+#include <sstream>
 
 #define DMA_TRANSFER_SIZE 128
 
@@ -28,13 +29,13 @@ cri_channel::cri_channel(size_t ch_index, pda::device* dev, pda::pci_bar* bar)
 cri_channel::~cri_channel() { deinit_dma(); }
 
 void cri_channel::init_dma(void* data_buffer,
-                           size_t data_buffer_log_size,
+                           size_t data_buffer_size,
                            void* desc_buffer,
-                           size_t desc_buffer_log_size) {
+                           size_t desc_buffer_size) {
 
   m_dma_channel = std::make_unique<dma_channel>(
-      this, data_buffer, data_buffer_log_size, desc_buffer,
-      desc_buffer_log_size, DMA_TRANSFER_SIZE);
+      this, data_buffer, data_buffer_size, desc_buffer, desc_buffer_size,
+      DMA_TRANSFER_SIZE);
 }
 
 void cri_channel::deinit_dma() { m_dma_channel = nullptr; }
@@ -230,6 +231,15 @@ cri_channel::ch_perf_gtx_t cri_channel::get_perf_gtx() {
   perf.mc_stall = get_mc_stall();
   perf.mc_busy = get_mc_busy();
   return perf;
+}
+
+std::string cri_channel::device_address() const {
+  std::stringstream ss;
+  ss << std::hex << std::setw(2) << std::setfill('0')
+     << static_cast<unsigned>(m_parent_device->bus()) << ":" << std::setw(2)
+     << std::setfill('0') << static_cast<unsigned>(m_parent_device->slot())
+     << "." << static_cast<unsigned>(m_parent_device->func());
+  return ss.str();
 }
 
 } // namespace cri

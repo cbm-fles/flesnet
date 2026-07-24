@@ -8,10 +8,10 @@
 #include <cstdlib>
 #include <exception>
 #include <iostream>
-#include <numeric>
 #include <memory>
-#include <stdexcept>
+#include <numeric>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>

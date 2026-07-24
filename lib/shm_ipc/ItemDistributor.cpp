@@ -4,13 +4,13 @@
 #include "log.hpp"
 
 #include <cassert>
+#include <cstdlib>
 #include <exception>
 #include <memory>
-#include <cstdlib>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <sstream>
 #include <utility>
 #include <zmq_addon.hpp>
 

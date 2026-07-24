@@ -7,7 +7,7 @@ LANG=C
 DIR="$(git rev-parse --show-toplevel)"
 cd "$DIR"
 
-clang-format -style=file -fallback-style=none -i \
-  lib/{cri,fles_core,fles_ipc,fles_libfabric,fles_rdma,fles_zeromq,flib_ipc,logging,monitoring,pda,shm_ipc}/*.[hc]pp \
+clang-format-22 -style=file -fallback-style=none -i \
+  lib/{cri,fles_core,fles_ipc,fles_libfabric,fles_rdma,fles_zeromq,flib_ipc,logging,monitoring,pda,shm_ipc,tsb}/*.[hc]pp \
   app/*/*.[hc]pp \
   test/*.[hc]pp

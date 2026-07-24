@@ -26,9 +26,9 @@ struct TimesliceWorkItem {
   /// Provide boost serialization access.
   template <class Archive>
   void serialize(Archive& ar, const unsigned int /* version */) {
-    ar& ts_desc;
-    ar& data_buffer_size_exp;
-    ar& desc_buffer_size_exp;
+    ar & ts_desc;
+    ar & data_buffer_size_exp;
+    ar & desc_buffer_size_exp;
   }
 };
 

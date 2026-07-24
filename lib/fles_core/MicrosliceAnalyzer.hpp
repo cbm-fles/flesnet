@@ -16,8 +16,7 @@ public:
   MicrosliceAnalyzer(uint64_t arg_output_interval,
                      size_t arg_out_verbosity,
                      std::ostream& arg_out,
-                     std::string arg_output_prefix,
-                     size_t component = 0);
+                     std::string arg_output_prefix);
   ~MicrosliceAnalyzer() override;
 
   void put(std::shared_ptr<const fles::Microslice> ms) override;
@@ -42,7 +41,6 @@ private:
   size_t out_verbosity_;
   std::ostream& out_;
   std::string output_prefix_;
-  size_t component_;
 
   uint64_t reference_delta_t_ = 0;
   uint64_t previous_start_ = 0;

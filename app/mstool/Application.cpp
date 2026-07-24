@@ -1,20 +1,20 @@
 // Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Application.hpp"
+#include "DualRingBuffer.hpp" // InputBufferWriteInterface
 #include "FlesnetPatternGenerator.hpp"
-#include "DualRingBuffer.hpp"          // InputBufferWriteInterface
-#include "Parameters.hpp"
 #include "MicrosliceAnalyzer.hpp"
 #include "MicrosliceInputArchive.hpp"
 #include "MicrosliceOutputArchive.hpp"
 #include "MicrosliceReceiver.hpp"
-#include "Sink.hpp"                    // MicrosliceSink
 #include "MicrosliceTransmitter.hpp"
+#include "Parameters.hpp"
+#include "Sink.hpp" // MicrosliceSink
 #include "TimesliceDebugger.hpp"
-#include "shm_device_client.hpp"
-#include "shm_device_provider.hpp"
 #include "log.hpp"
 #include "shm_channel_client.hpp"
+#include "shm_device_client.hpp"
+#include "shm_device_provider.hpp"
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -61,7 +61,7 @@ Application::Application(Parameters const& par) : par_(par) {
   // Sink setup
   if (par_.analyze) {
     sinks_.push_back(std::unique_ptr<fles::MicrosliceSink>(
-        new MicrosliceAnalyzer(100000, 3, std::cout, "", par_.channel_idx)));
+        new MicrosliceAnalyzer(100000, 3, std::cout, "")));
   }
 
   if (par_.dump_verbosity > 0) {

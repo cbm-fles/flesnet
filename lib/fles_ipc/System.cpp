@@ -5,14 +5,15 @@
 #include <cstdint>
 #include <cstring>
 #include <glob.h>
-//#include <netdb.h>
+// #include <netdb.h>
 #include <pwd.h>
 #include <stdexcept>
 #include <string>
 #include <sys/ioctl.h>
-//#include <sys/socket.h>
-//#include <sys/types.h>
-//#include <sys/ttycom.h> // definition of winsize and TIOCGWINSZ on MacOS, but Linux is missing the file
+// #include <sys/socket.h>
+// #include <sys/types.h>
+// #include <sys/ttycom.h> // definition of winsize and TIOCGWINSZ on MacOS, but
+// Linux is missing the file
 #include <unistd.h>
 #include <vector>
 
@@ -131,7 +132,7 @@ std::vector<std::string> glob(const std::string& pattern, glob_flags flags) {
 }
 
 uint16_t current_terminal_width() {
-  struct winsize ws {};
+  struct winsize ws{};
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
   return ws.ws_col;
 }

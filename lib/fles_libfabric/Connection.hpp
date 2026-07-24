@@ -55,9 +55,9 @@ public:
   /**
      \param hostname The target hostname
      \param service  The target service or port number
-	 \param domain Domain
-	 \param cq cq
-	 \param av av
+         \param domain Domain
+         \param cq cq
+         \param av av
   */
   void connect(const std::string& hostname,
                const std::string& service,

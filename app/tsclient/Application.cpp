@@ -6,7 +6,7 @@
 #include "ManagedTimesliceBuffer.hpp"
 #include "Monitor.hpp"
 #include "Parameters.hpp"
-#include "Sink.hpp"                     // TimesliceSink
+#include "Sink.hpp" // TimesliceSink
 #include "StorableTimeslice.hpp"
 #include "Timeslice.hpp"
 #include "TimesliceAnalyzer.hpp"

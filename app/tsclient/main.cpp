@@ -16,9 +16,17 @@ int main(int argc, char* argv[]) {
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
-  Parameters par(argc, argv);
-  Application app(par, &signal_status);
-  app.run();
+  try {
+    Parameters par(argc, argv);
+    Application app(par, &signal_status);
+    app.run();
+  } catch (ParametersException const& e) {
+    std::cerr << "Parameter error: " << e.what() << std::endl;
+    return EXIT_FAILURE;
+  } catch (std::exception const& e) {
+    L_(fatal) << "Unknown exception: " << e.what();
+    std::abort();
+  }
 
   L_(info) << "exiting";
   return EXIT_SUCCESS;

@@ -23,7 +23,10 @@ class register_file_bar;
 
 using hw_ver_table_t = std::array<uint16_t, 3>;
 constexpr hw_ver_table_t hw_ver_table = {{2, 3, 4}};
+// TODO: define these constants in the cri build flow to support different
+// designs
 constexpr uint32_t pci_clk = 250E6;
+constexpr uint32_t pci_width = 32; // in bytes
 
 constexpr size_t pgen_base_size_ns = 1000;
 

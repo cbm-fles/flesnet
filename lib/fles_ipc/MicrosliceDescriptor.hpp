@@ -140,16 +140,16 @@ struct MicrosliceDescriptor {
   /// Provide boost serialization access.
   template <class Archive>
   void serialize(Archive& ar, const unsigned int /* version */) {
-    ar& hdr_id;
-    ar& hdr_ver;
-    ar& eq_id;
-    ar& flags;
-    ar& sys_id;
-    ar& sys_ver;
-    ar& idx;
-    ar& crc;
-    ar& size;
-    ar& offset;
+    ar & hdr_id;
+    ar & hdr_ver;
+    ar & eq_id;
+    ar & flags;
+    ar & sys_id;
+    ar & sys_ver;
+    ar & idx;
+    ar & crc;
+    ar & size;
+    ar & offset;
   }
 };
 

@@ -35,7 +35,7 @@ protected:
 
   /// Construct microslice with given content.
   Microslice(MicrosliceDescriptor* desc_ptr, uint8_t* content_ptr)
-      : desc_ptr_(desc_ptr), content_ptr_(content_ptr){};
+      : desc_ptr_(desc_ptr), content_ptr_(content_ptr) {};
 
   friend class StorableMicroslice;
 

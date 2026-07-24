@@ -1,0 +1,44 @@
+/* Copyright (C) 2025 FIAS, Goethe-Universität Frankfurt am Main
+   SPDX-License-Identifier: GPL-3.0-only
+   Author: Jan de Cuveland */
+#pragma once
+
+#include "OptionValues.hpp"
+#include <cstdint>
+#include <stdexcept>
+#include <string>
+
+using namespace option_value_literals;
+
+/// Run parameters exception class.
+class ParametersException : public std::runtime_error {
+public:
+  explicit ParametersException(const std::string& what_arg = "")
+      : std::runtime_error(what_arg) {}
+};
+
+class Parameters {
+
+public:
+  Parameters(int argc, char* argv[]) { parse_options(argc, argv); }
+
+  Parameters(const Parameters&) = delete;
+  void operator=(const Parameters&) = delete;
+
+  [[nodiscard]] std::string monitor_uri() const { return m_monitor_uri; }
+  [[nodiscard]] std::string tssched_address() const {
+    return m_tssched_address;
+  }
+  [[nodiscard]] int64_t timeout_ns() const { return m_timeout.count(); }
+  [[nodiscard]] std::string shm_id() const { return m_shm_id; }
+  [[nodiscard]] size_t buffer_size() const { return m_buffer_size.value(); }
+
+private:
+  void parse_options(int argc, char* argv[]);
+
+  std::string m_monitor_uri;
+  std::string m_tssched_address = "login";
+  Nanoseconds m_timeout = 1_s;
+  std::string m_shm_id = "flesnet_ts_builder";
+  SizeValue m_buffer_size = 20_GiB;
+};

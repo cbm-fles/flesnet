@@ -13,9 +13,35 @@ if [ -z "`which clang-format`" -o -z "`which git-clang-format`" ]; then
 	exit 1
 fi
 
+# find the most recent versioned clang-format in PATH (e.g. clang-format-22),
+# falling back to the unversioned one
+CLANG_FORMAT=clang-format
+BEST_VERSION=-1
+OLD_IFS="$IFS"
+IFS=:
+for dir in $PATH; do
+	IFS="$OLD_IFS"
+	for binary in "$dir"/clang-format-[0-9]*; do
+		[ -x "$binary" ] || continue
+		version="${binary##*/clang-format-}"
+		case "$version" in
+		*[!0-9]*) continue ;;
+		esac
+		if [ "$version" -gt "$BEST_VERSION" ]; then
+			BEST_VERSION="$version"
+			CLANG_FORMAT="${binary##*/}"
+		fi
+	done
+	IFS=:
+done
+IFS="$OLD_IFS"
+
+echo "Using $("$CLANG_FORMAT" --version)"
+
 # add configuration for git-clang-format
-git config --local --add clangFormat.style file
-git config --local --add clangFormat.extension hpp,cpp
+git config --local --replace-all clangFormat.style file
+git config --local --replace-all clangFormat.extension hpp,cpp
+git config --local --replace-all clangFormat.binary "$CLANG_FORMAT"
 
 # install pre-commit hook
 cp -p contrib/pre-commit.hook .git/hooks/pre-commit

@@ -9,10 +9,10 @@ public:
   virtual ~PatternChecker() = default;
 
   virtual bool check(const fles::Microslice& m) = 0;
-  virtual void reset(){};
+  virtual void reset() {};
 
-  static std::unique_ptr<PatternChecker>
-  create(uint8_t arg_sys_id, uint8_t arg_sys_ver, size_t component);
+  static std::unique_ptr<PatternChecker> create(uint8_t arg_sys_id,
+                                                uint8_t arg_sys_ver);
 };
 
 class GenericPatternChecker : public PatternChecker {

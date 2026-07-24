@@ -18,13 +18,17 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
 #include <memory>
+#include <string>
 
 namespace cri {
 
 class dma_channel;
 
+// TODO: define these constants in the cri build flow to support different
+// designs
 constexpr uint32_t pkt_clk = 250E6;
 constexpr uint32_t gtx_clk = 160E6;
+constexpr uint32_t mc_width = 32; // in bytes
 
 class cri_channel {
 
@@ -33,9 +37,9 @@ public:
   ~cri_channel();
 
   void init_dma(void* data_buffer,
-                size_t data_buffer_log_size,
+                size_t data_buffer_size,
                 void* desc_buffer,
-                size_t desc_buffer_log_size);
+                size_t desc_buffer_size);
 
   void deinit_dma();
 
@@ -108,6 +112,8 @@ public:
   dma_channel* dma() const;
   register_file* register_file_packetizer() const { return m_rfpkt.get(); }
   register_file* register_file_gtx() const { return m_rfgtx.get(); }
+
+  std::string device_address() const;
 
 protected:
   std::unique_ptr<dma_channel> m_dma_channel;

@@ -13,7 +13,7 @@ namespace fles {
 /**
  * \brief Find boost archive version of an archive ifstream.
  */
-uint64_t boost_peek_for_archive_version(std::ifstream &stream) {
+uint64_t boost_peek_for_archive_version(std::ifstream& stream) {
   // remember stream position
   auto pos = stream.tellg();
 
@@ -23,7 +23,7 @@ uint64_t boost_peek_for_archive_version(std::ifstream &stream) {
   // quad 22
   uint64_t beginning = 0;
   char eightBytes[9];
-  stream.get(static_cast<char *>(eightBytes), 8+1); // 8 + '\0' auto appended
+  stream.get(static_cast<char*>(eightBytes), 8 + 1); // 8 + '\0' auto appended
   for (auto i = 7; i >= 0; i--) {
     beginning = (beginning << 8) + eightBytes[i];
   }
@@ -33,14 +33,14 @@ uint64_t boost_peek_for_archive_version(std::ifstream &stream) {
   }
   // next: expect the string "serialization::archive"
   char str[23];
-  stream.get(static_cast<char *>(str), 22+1); // 22 + '\0' auto appended
-  std::string marker = std::string(static_cast<char *>(str),22);
+  stream.get(static_cast<char*>(str), 22 + 1); // 22 + '\0' auto appended
+  std::string marker = std::string(static_cast<char*>(str), 22);
   if (marker != std::string("serialization::archive")) {
     return 0;
   }
   // next: expect the archive version as 2-byte short
   char archivversbytes[3]; // 2 + '\0' auto appended
-  stream.get(static_cast<char *>(archivversbytes), 2+1);
+  stream.get(static_cast<char*>(archivversbytes), 2 + 1);
   uint16_t archivvers = (archivversbytes[1] << 8) + archivversbytes[0];
 
   // restore stream position

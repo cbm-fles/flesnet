@@ -200,6 +200,9 @@ void add_syslog(syslog::facility facility, severity_level minimum_severity) {
 LogBuffer::LogBuffer(severity_level level) : level_(level) {}
 
 std::streamsize LogBuffer::write(char_type const* s, std::streamsize n) {
+  if (n <= 0) {
+    return n;
+  }
   // don't send tailing new lines as they are added by boost
   std::streamsize m = n;
   if (s[n - 1] == '\n') {

@@ -247,7 +247,7 @@ protected:
   /// Handle RDMA_CM_REJECTED event.
   virtual void on_rejected(struct fi_eq_err_entry* /* event */) {}
 
-  virtual void on_connected(struct fid_domain* /*pd*/){};
+  virtual void on_connected(struct fid_domain* /*pd*/) {};
 
   /// Handle RDMA_CM_EVENT_ESTABLISHED event.
   virtual void on_established(struct fi_eq_cm_entry* event) {
@@ -260,7 +260,7 @@ protected:
 
   /// Handle RDMA_CM_EVENT_CONNECT_REQUEST event.
   virtual void on_connect_request(struct fi_eq_cm_entry* /* event */,
-                                  size_t /* private_data_len */){};
+                                  size_t /* private_data_len */) {};
 
   /// Handle RDMA_CM_EVENT_DISCONNECTED event.
   virtual void on_disconnected(struct fi_eq_cm_entry* event,

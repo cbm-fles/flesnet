@@ -21,7 +21,7 @@ namespace fles {
 
 template <class Base, class Derived> class Receiver : public Source<Base> {
 public:
-  Receiver(const std::string&, WorkerParameters){};
+  Receiver(const std::string&, WorkerParameters) {};
   [[nodiscard]] bool eos() const override { return true; };
 
 private:

@@ -2,16 +2,16 @@
 
 #include "TimesliceMultiSubscriber.hpp"
 
-#include "log.hpp"
 #include "TimesliceSubscriber.hpp"
+#include "log.hpp"
 
 #include <boost/algorithm/string/split.hpp>
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 namespace fles {
 

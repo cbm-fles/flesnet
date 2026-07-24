@@ -7,21 +7,21 @@
 #include "log.hpp"
 #include <algorithm>
 #include <boost/log/sinks/syslog_constants.hpp>
-//#include <boost/program_options.hpp>
+// #include <boost/program_options.hpp>
 #include <boost/program_options/errors.hpp>
 #include <boost/program_options/options_description.hpp>
+#include <boost/program_options/parsers.hpp>
 #include <boost/program_options/value_semantic.hpp>
 #include <boost/program_options/variables_map.hpp>
-#include <boost/program_options/parsers.hpp>
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
-#include <iterator>
 #include <iostream>
+#include <iterator>
 #include <sstream>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace po = boost::program_options;
@@ -144,7 +144,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
              po::value<std::string>(&processor_executable_)
                  ->default_value(processor_executable_)
                  ->value_name("<string>"),
-      "name of the executable acting as timeslice processor");
+             "name of the executable acting as timeslice processor");
   config_add("processor-instances",
              po::value<uint32_t>(&processor_instances_)
                  ->default_value(processor_instances_)

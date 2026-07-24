@@ -1,4 +1,4 @@
-// Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
+// Copyright 2012-2013, 2025 Jan de Cuveland <cmail@cuveland.de>
 #pragma once
 
 #include <chrono>
@@ -53,6 +53,15 @@ public:
       event_queue_.top()();
       event_queue_.pop();
     }
+  }
+
+  [[nodiscard]] bool empty() const { return event_queue_.empty(); }
+
+  [[nodiscard]] event::time_type when_next() const {
+    if (event_queue_.empty()) {
+      return std::chrono::time_point<std::chrono::system_clock>::max();
+    }
+    return event_queue_.top().when_;
   }
 
 private:

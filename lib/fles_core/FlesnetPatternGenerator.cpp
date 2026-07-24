@@ -5,8 +5,8 @@
 #include "DualRingBuffer.hpp"
 #include "MicrosliceDescriptor.hpp"
 
-#include <cstdint>
 #include <chrono>
+#include <cstdint>
 
 void FlesnetPatternGenerator::proceed() {
   const DualIndex min_avail = {desc_buffer_.size() / 4,
