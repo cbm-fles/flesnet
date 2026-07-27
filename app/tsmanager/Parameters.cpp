@@ -26,10 +26,10 @@ void Parameters::parse_options(int argc, char* argv[]) {
   generic_add("help,h", "produce help message");
   generic_add(
       "config-file,c",
-      po::value<std::string>(&config_file)->default_value("tssched.cfg"),
+      po::value<std::string>(&config_file)->default_value("tsmanager.cfg"),
       "name of a configuration file");
 
-  po::options_description config("Configuration (tssched.cfg or cmd line)",
+  po::options_description config("Configuration (tsmanager.cfg or cmd line)",
                                  terminal_width, terminal_width / 2);
   auto config_add = config.add_options();
   config_add("log-level,l",
@@ -48,7 +48,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
              po::value<std::string>(&m_monitor_uri)
                  ->value_name("URI")
                  ->implicit_value("influx1:login:8086:flesnet_status"),
-             "publish tsclient status to InfluxDB (or \"file:cout\" for "
+             "publish tsmanager status to InfluxDB (or \"file:cout\" for "
              "console output)");
   config_add("listen-port,p",
              po::value<uint16_t>(&m_listen_port)->default_value(m_listen_port),
@@ -78,7 +78,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
   std::ifstream ifs(config_file.c_str());
   if (!ifs) {
-    if (config_file != "tssched.cfg") {
+    if (config_file != "tsmanager.cfg") {
       throw ParametersException("Cannot open config file: " + config_file);
     }
   } else {

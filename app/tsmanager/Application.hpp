@@ -5,7 +5,7 @@
 
 #include "Monitor.hpp"
 #include "Parameters.hpp"
-#include "TsScheduler.hpp"
+#include "TsManager.hpp"
 #include <csignal>
 #include <memory>
 
@@ -26,5 +26,5 @@ private:
 
   std::unique_ptr<cbm::Monitor> m_monitor;
 
-  std::unique_ptr<TsScheduler> m_ts_scheduler;
+  std::unique_ptr<TsManager> m_ts_manager;
 };

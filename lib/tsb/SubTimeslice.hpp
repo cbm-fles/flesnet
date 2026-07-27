@@ -144,7 +144,7 @@ struct StHandle {
   }
 };
 
-// Sender and builder information for registration with the scheduler
+// Sender and builder information for registration with the manager
 
 struct SenderInfo {
   std::string hostname;
@@ -200,10 +200,10 @@ template <> struct std::formatter<BuilderInfo> {
   }
 };
 
-// 2: sender -> builder and sender -> scheduler
+// 2: sender -> builder and sender -> manager
 //
 // Descriptors for transferring subtimeslice data from the sender to the builder
-// (and to the scheduler, for statistics)
+// (and to the manager, for statistics)
 
 struct StComponentDescriptor {
   /// A data descriptor pointing to the microslice descriptor data blocks,
@@ -261,9 +261,9 @@ struct StDescriptor {
   }
 };
 
-// 3: scheduler -> builder
+// 3: manager -> builder
 //
-// Descriptor for transferring timeslice metadata from the scheduler to the
+// Descriptor for transferring timeslice metadata from the manager to the
 // builder
 
 struct StCollection {
@@ -272,7 +272,7 @@ struct StCollection {
   std::vector<std::string> sender_ids; // IDs of the senders
   std::vector<uint64_t> ms_data_sizes; // Sizes of the content data
 
-  /// Merged subtimeslice descriptor (aggregated by the scheduler from all
+  /// Merged subtimeslice descriptor (aggregated by the manager from all
   /// announced contributions). Component offsets are absolute, i.e. already
   /// shifted by the per-sender offsets derived from ms_data_sizes.
   StDescriptor merged_descriptor;
@@ -360,7 +360,7 @@ std::optional<T> to_obj_nothrow(std::span<const std::byte> data) noexcept {
 
 // Wire (POD) serialization for StDescriptor and StCollection
 //
-// These structures sit on the hot path of the sender/scheduler/builder
+// These structures sit on the hot path of the sender/manager/builder
 // protocol; the generic Boost archive used for SenderInfo/BuilderInfo would
 // require per-message heap traffic and is unnecessary for trivially-copyable
 // payloads. The layout is a fixed POD header followed by packed arrays.

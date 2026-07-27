@@ -2,7 +2,7 @@
    SPDX-License-Identifier: GPL-3.0-only
    Author: Jan de Cuveland */
 
-#include "TsScheduler.hpp"
+#include "TsManager.hpp"
 #include "SubTimeslice.hpp"
 #include "System.hpp"
 #include "TsbProtocol.hpp"
@@ -24,12 +24,12 @@
 
 using namespace std::chrono_literals;
 
-TsScheduler::TsScheduler(volatile sig_atomic_t* signal_status,
-                         uint16_t listen_port,
-                         int64_t timeslice_duration_ns,
-                         int64_t timeout_ns,
-                         uint32_t max_in_flight,
-                         cbm::Monitor* monitor)
+TsManager::TsManager(volatile sig_atomic_t* signal_status,
+                     uint16_t listen_port,
+                     int64_t timeslice_duration_ns,
+                     int64_t timeout_ns,
+                     uint32_t max_in_flight,
+                     cbm::Monitor* monitor)
     : m_signal_status(signal_status), m_listen_port(listen_port),
       m_timeslice_duration_ns{timeslice_duration_ns}, m_timeout_ns{timeout_ns},
       m_max_in_flight{max_in_flight},
@@ -41,7 +41,7 @@ TsScheduler::TsScheduler(volatile sig_atomic_t* signal_status,
   }
 }
 
-TsScheduler::~TsScheduler() {
+TsManager::~TsManager() {
   if (m_epoll_fd != -1) {
     close(m_epoll_fd);
   }
@@ -49,7 +49,7 @@ TsScheduler::~TsScheduler() {
 
 // Main operation loop
 
-void TsScheduler::run() {
+void TsManager::run() {
   if (!ucx::util::init(m_context, m_worker, m_epoll_fd, m_ucx_loop_mode)) {
     ERROR("Failed to initialize UCX");
     return;
@@ -127,7 +127,7 @@ void TsScheduler::run() {
 
 // Connection management
 
-void TsScheduler::handle_new_connection(ucp_conn_request_h conn_request) {
+void TsManager::handle_new_connection(ucp_conn_request_h conn_request) {
   auto client_address = ucx::util::get_client_address(conn_request);
   if (!client_address) {
     ERROR("{}", client_address.error());
@@ -145,7 +145,7 @@ void TsScheduler::handle_new_connection(ucp_conn_request_h conn_request) {
   DEBUG("Accepted connection from {}", *client_address);
 }
 
-void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
+void TsManager::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
   auto it = m_connections.find(ep);
   if (it != m_connections.end()) {
     m_connections.erase(it);
@@ -176,7 +176,7 @@ void TsScheduler::handle_endpoint_error(ucp_ep_h ep, ucs_status_t status) {
   }
 }
 
-void TsScheduler::disconnect_from_all() {
+void TsManager::disconnect_from_all() {
   if (m_connections.empty() && m_senders.empty() && m_builders.empty()) {
     return;
   }
@@ -194,11 +194,11 @@ void TsScheduler::disconnect_from_all() {
 // Sender message handling
 
 ucs_status_t
-TsScheduler::handle_sender_register(const void* header,
-                                    size_t header_length,
-                                    [[maybe_unused]] void* data,
-                                    size_t length,
-                                    const ucp_am_recv_param_t* param) {
+TsManager::handle_sender_register(const void* header,
+                                  size_t header_length,
+                                  [[maybe_unused]] void* data,
+                                  size_t length,
+                                  const ucp_am_recv_param_t* param) {
   if (header_length == 0 || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
     ERROR("Invalid sender registration request received");
@@ -221,11 +221,11 @@ TsScheduler::handle_sender_register(const void* header,
 }
 
 ucs_status_t
-TsScheduler::handle_sender_announce(const void* header,
-                                    size_t header_length,
-                                    void* data,
-                                    size_t length,
-                                    const ucp_am_recv_param_t* param) {
+TsManager::handle_sender_announce(const void* header,
+                                  size_t header_length,
+                                  void* data,
+                                  size_t length,
+                                  const ucp_am_recv_param_t* param) {
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
   if (hdr.size() != 2 || length == 0 ||
@@ -267,9 +267,10 @@ TsScheduler::handle_sender_announce(const void* header,
           id, sender_conn.info.id(), late_ts, (late_ns + 500000) / 1000000);
     std::array<uint64_t, 1> hdr{id};
     auto header = std::as_bytes(std::span(hdr));
-    ucx::util::send_active_message(param->reply_ep, AM_SCHED_RELEASE_ST, header,
-                                   {}, ucx::util::on_generic_send_complete,
-                                   this, UCP_AM_SEND_FLAG_COPY_HEADER);
+    ucx::util::send_active_message(param->reply_ep, AM_MANAGER_RELEASE_ST,
+                                   header, {},
+                                   ucx::util::on_generic_send_complete, this,
+                                   UCP_AM_SEND_FLAG_COPY_HEADER);
     return UCS_OK;
   }
 
@@ -287,11 +288,11 @@ TsScheduler::handle_sender_announce(const void* header,
 }
 
 ucs_status_t
-TsScheduler::handle_sender_retract(const void* header,
-                                   size_t header_length,
-                                   [[maybe_unused]] void* data,
-                                   size_t length,
-                                   const ucp_am_recv_param_t* param) {
+TsManager::handle_sender_retract(const void* header,
+                                 size_t header_length,
+                                 [[maybe_unused]] void* data,
+                                 size_t length,
+                                 const ucp_am_recv_param_t* param) {
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
   if (hdr.size() != 1 || length != 0 ||
@@ -322,7 +323,7 @@ TsScheduler::handle_sender_retract(const void* header,
   return UCS_OK;
 }
 
-void TsScheduler::send_release_to_senders(TsId id) {
+void TsManager::send_release_to_senders(TsId id) {
   std::array<uint64_t, 1> hdr{id};
   auto header = std::as_bytes(std::span(hdr));
 
@@ -331,7 +332,7 @@ void TsScheduler::send_release_to_senders(TsId id) {
     auto it = std::find_if(conn.announced_st.begin(), conn.announced_st.end(),
                            [id](const auto& st) { return st.id == id; });
     if (it != conn.announced_st.end()) {
-      ucx::util::send_active_message(ep, AM_SCHED_RELEASE_ST, header, {},
+      ucx::util::send_active_message(ep, AM_MANAGER_RELEASE_ST, header, {},
                                      ucx::util::on_generic_send_complete, this,
                                      UCP_AM_SEND_FLAG_COPY_HEADER);
       conn.announced_st.erase(it);
@@ -341,11 +342,11 @@ void TsScheduler::send_release_to_senders(TsId id) {
 
 // Builder message handling
 ucs_status_t
-TsScheduler::handle_builder_register(const void* header,
-                                     size_t header_length,
-                                     [[maybe_unused]] void* data,
-                                     size_t length,
-                                     const ucp_am_recv_param_t* param) {
+TsManager::handle_builder_register(const void* header,
+                                   size_t header_length,
+                                   [[maybe_unused]] void* data,
+                                   size_t length,
+                                   const ucp_am_recv_param_t* param) {
   if (header_length == 0 || length != 0 ||
       (param->recv_attr & UCP_AM_RECV_ATTR_FIELD_REPLY_EP) == 0u) {
     ERROR("Invalid builder registration request received");
@@ -368,11 +369,11 @@ TsScheduler::handle_builder_register(const void* header,
 }
 
 ucs_status_t
-TsScheduler::handle_builder_status(const void* header,
-                                   size_t header_length,
-                                   [[maybe_unused]] void* data,
-                                   size_t length,
-                                   const ucp_am_recv_param_t* param) {
+TsManager::handle_builder_status(const void* header,
+                                 size_t header_length,
+                                 [[maybe_unused]] void* data,
+                                 size_t length,
+                                 const ucp_am_recv_param_t* param) {
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
   if (hdr.size() != 3 || length != 0 ||
@@ -434,7 +435,7 @@ TsScheduler::handle_builder_status(const void* header,
   return UCS_OK;
 }
 
-void TsScheduler::assign_timeslice(TsId id) {
+void TsManager::assign_timeslice(TsId id) {
   StCollection coll = create_collection_descriptor(id);
   if (coll.sender_ids.empty()) {
     auto active_count =
@@ -466,8 +467,8 @@ void TsScheduler::assign_timeslice(TsId id) {
   send_release_to_senders(id);
 }
 
-void TsScheduler::send_assignment_to_builder(const StCollection& coll,
-                                             BuilderConnection& builder) {
+void TsManager::send_assignment_to_builder(const StCollection& coll,
+                                           BuilderConnection& builder) {
   std::array<uint64_t, 2> hdr{coll.id, coll.ms_data_size()};
   auto header = std::as_bytes(std::span(hdr));
   auto buffer =
@@ -475,7 +476,7 @@ void TsScheduler::send_assignment_to_builder(const StCollection& coll,
   auto* raw_ptr = buffer.release();
 
   ucx::util::send_active_message(
-      builder.ep, AM_SCHED_ASSIGN_TS, header, *raw_ptr,
+      builder.ep, AM_MANAGER_ASSIGN_TS, header, *raw_ptr,
       [](void* request, ucs_status_t status, void* user_data) {
         auto buffer = std::unique_ptr<std::vector<std::byte>>(
             static_cast<std::vector<std::byte>*>(user_data));
@@ -486,7 +487,7 @@ void TsScheduler::send_assignment_to_builder(const StCollection& coll,
 
 // Helper methods
 
-StCollection TsScheduler::create_collection_descriptor(TsId id) {
+StCollection TsManager::create_collection_descriptor(TsId id) {
   StCollection coll;
   coll.id = id;
 
@@ -535,12 +536,12 @@ StCollection TsScheduler::create_collection_descriptor(TsId id) {
   return coll;
 }
 
-void TsScheduler::report_status() {
+void TsManager::report_status() {
   constexpr auto interval = 1s;
   auto now = std::chrono::system_clock::now();
 
   if (m_monitor != nullptr) {
-    m_monitor->QueueMetric("tssched_status", {{"host", m_hostname}},
+    m_monitor->QueueMetric("tsmanager_status", {{"host", m_hostname}},
                            {{"timeslice_count", 0}});
   }
   // TODO: Add real metrics
@@ -548,7 +549,7 @@ void TsScheduler::report_status() {
   m_tasks.add([this] { report_status(); }, now + interval);
 }
 
-void TsScheduler::log_status() {
+void TsManager::log_status() {
   constexpr auto interval = 10s;
   auto now = std::chrono::system_clock::now();
   m_tasks.add([this] { log_status(); }, now + interval);

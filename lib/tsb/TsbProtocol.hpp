@@ -5,13 +5,13 @@
 
 #include <cstdint>
 
-static constexpr uint16_t DEFAULT_SCHEDULER_PORT = 13373;
+static constexpr uint16_t DEFAULT_MANAGER_PORT = 13373;
 static constexpr uint16_t DEFAULT_SENDER_PORT = 13374;
 
 // AM IDs for communication
 
-// 1. tssched (listen) <-> stsender (connect)
-// stsender -> tssched
+// 1. tsmanager (listen) <-> stsender (connect)
+// stsender -> tsmanager
 static constexpr unsigned int AM_SENDER_REGISTER =
     20; // header: {sender_id}, data: none
 static constexpr unsigned int AM_SENDER_ANNOUNCE_ST =
@@ -19,12 +19,12 @@ static constexpr unsigned int AM_SENDER_ANNOUNCE_ST =
         // data: serialized StDescriptor
 static constexpr unsigned int AM_SENDER_RETRACT_ST =
     22; // header: {StId}, data: none
-// tssched -> stsender
-static constexpr unsigned int AM_SCHED_RELEASE_ST =
+// tsmanager -> stsender
+static constexpr unsigned int AM_MANAGER_RELEASE_ST =
     30; // header: {StId}, data: none
 
-// 2. tssched (listen) <-> tsbuilder (connect)
-// tsbuilder -> tssched
+// 2. tsmanager (listen) <-> tsbuilder (connect)
+// tsbuilder -> tsmanager
 static constexpr unsigned int AM_BUILDER_REGISTER =
     40; // header: {builder_id}, data: none
 static constexpr unsigned int AM_BUILDER_STATUS =
@@ -38,8 +38,8 @@ static constexpr unsigned int AM_BUILDER_STATUS =
    received, StId, (--)
    released, StId, new_bytes_free
 */
-// tssched -> tsbuilder
-static constexpr unsigned int AM_SCHED_ASSIGN_TS =
+// tsmanager -> tsbuilder
+static constexpr unsigned int AM_MANAGER_ASSIGN_TS =
     50; // header: {StId, ms_data_size},
         // data: serialized StCollection (incl. merged StDescriptor)
 
@@ -56,13 +56,13 @@ static constexpr unsigned int AM_BUILDER_REQUEST_ST =
 // matching is FIFO per tag, so they complete the builder's pre-posted
 // receives in order. Both sides derive the identical block layout
 // independently: the sender from its announced descriptor, the builder from
-// the merged descriptor relayed by the scheduler (descriptor block size =
+// the merged descriptor relayed by the manager (descriptor block size =
 // num_microslices * sizeof(MicrosliceDescriptor)). Contiguous blocks are
 // sent with the default (contiguous) UCX datatype, which allows the
 // single-RDMA-read rendezvous protocol; the iov datatype would force UCX
 // into fragmented sends at roughly half the achievable bandwidth. The
 // builder pre-posts the receives into its registered timeslice buffer
-// immediately after receiving AM_SCHED_ASSIGN_TS and before issuing the
+// immediately after receiving AM_MANAGER_ASSIGN_TS and before issuing the
 // request to the sender, so the recvs are "expected" by the time the sender
 // starts sending, avoiding the rendezvous CTS round-trip.
 

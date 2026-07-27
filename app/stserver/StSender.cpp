@@ -64,10 +64,10 @@ void append_component_blocks(std::vector<std::vector<ucp_dt_iov>>& blocks,
 
 } // namespace
 
-StSender::StSender(std::string_view scheduler_address,
+StSender::StSender(std::string_view manager_address,
                    uint16_t listen_port,
                    SenderInfo sender_info)
-    : m_scheduler_address(scheduler_address), m_listen_port(listen_port),
+    : m_manager_address(manager_address), m_listen_port(listen_port),
       m_sender_info(std::move(sender_info)),
       m_sender_info_bytes(to_bytes(m_sender_info)) {
   // Initialize event handling
@@ -171,14 +171,14 @@ void StSender::operator()(std::stop_token stop_token) {
       m_buffer_memh = *memh;
     }
   }
-  if (!ucx::util::set_receive_handler(m_worker, AM_SCHED_RELEASE_ST,
-                                      on_scheduler_release, this) ||
+  if (!ucx::util::set_receive_handler(m_worker, AM_MANAGER_RELEASE_ST,
+                                      on_manager_release, this) ||
       !ucx::util::set_receive_handler(m_worker, AM_BUILDER_REQUEST_ST,
                                       on_builder_request, this)) {
     ERROR("Failed to register receive handlers");
     return;
   }
-  connect_to_scheduler_if_needed();
+  connect_to_manager_if_needed();
   if (!ucx::util::create_listener(m_worker, m_listener, m_listen_port,
                                   on_new_connection, this)) {
     ERROR("Failed to create UCX listener at port {}", m_listen_port);
@@ -205,7 +205,7 @@ void StSender::operator()(std::stop_token stop_token) {
     ucp_listener_destroy(m_listener);
     m_listener = nullptr;
   }
-  disconnect_from_scheduler();
+  disconnect_from_manager();
   disconnect_from_builders();
   // Drain remaining UCX internal operations (e.g., rendezvous protocol
   // buffers) before destroying the worker
@@ -219,96 +219,96 @@ void StSender::operator()(std::stop_token stop_token) {
   flush_announced();
 }
 
-// Scheduler connection management
+// Manager connection management
 
-void StSender::connect_to_scheduler_if_needed() {
+void StSender::connect_to_manager_if_needed() {
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-  if (!m_scheduler_connecting && !m_scheduler_connected &&
+  if (!m_manager_connecting && !m_manager_connected &&
       !m_worker_thread.get_stop_token().stop_requested()) {
-    connect_to_scheduler();
+    connect_to_manager();
   }
 
-  m_tasks.add([this] { connect_to_scheduler_if_needed(); },
-              now + m_scheduler_retry_interval);
+  m_tasks.add([this] { connect_to_manager_if_needed(); },
+              now + m_manager_retry_interval);
 }
 
-void StSender::connect_to_scheduler() {
-  assert(!m_scheduler_connecting && !m_scheduler_connected);
+void StSender::connect_to_manager() {
+  assert(!m_manager_connecting && !m_manager_connected);
 
   auto [address, port] =
-      ucx::util::parse_address(m_scheduler_address, DEFAULT_SCHEDULER_PORT);
+      ucx::util::parse_address(m_manager_address, DEFAULT_MANAGER_PORT);
   auto ep_result =
-      ucx::util::connect(m_worker, address, port, on_scheduler_error, this);
+      ucx::util::connect(m_worker, address, port, on_manager_error, this);
   if (ep_result) {
-    if (!m_mute_scheduler_reconnect) {
-      INFO("Trying to connect to scheduler at '{}:{}'", address, port);
+    if (!m_mute_manager_reconnect) {
+      INFO("Trying to connect to manager at '{}:{}'", address, port);
     }
   } else {
-    if (!m_mute_scheduler_reconnect) {
-      ERROR("Failed to connect to scheduler at '{}:{}': {}", address, port,
+    if (!m_mute_manager_reconnect) {
+      ERROR("Failed to connect to manager at '{}:{}': {}", address, port,
             ep_result.error());
-      INFO("Will retry connection to scheduler every {}s",
+      INFO("Will retry connection to manager every {}s",
            std::chrono::duration_cast<std::chrono::seconds>(
-               m_scheduler_retry_interval)
+               m_manager_retry_interval)
                .count());
-      m_mute_scheduler_reconnect = true;
+      m_mute_manager_reconnect = true;
     }
     return;
   }
 
-  m_scheduler_ep = *ep_result;
+  m_manager_ep = *ep_result;
 
   auto header = std::as_bytes(std::span(m_sender_info_bytes));
   bool send_am_ok = ucx::util::send_active_message(
-      m_scheduler_ep, AM_SENDER_REGISTER, header, {},
-      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
+      m_manager_ep, AM_SENDER_REGISTER, header, {},
+      on_manager_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
   if (!send_am_ok) {
-    if (!m_mute_scheduler_reconnect) {
-      WARN("Failed to register with scheduler at '{}:{}'", address, port);
-      INFO("Will retry connection to scheduler every {}s",
+    if (!m_mute_manager_reconnect) {
+      WARN("Failed to register with manager at '{}:{}'", address, port);
+      INFO("Will retry connection to manager every {}s",
            std::chrono::duration_cast<std::chrono::seconds>(
-               m_scheduler_retry_interval)
+               m_manager_retry_interval)
                .count());
-      m_mute_scheduler_reconnect = true;
+      m_mute_manager_reconnect = true;
     }
-    ucx::util::close_endpoint(m_worker, m_scheduler_ep, true);
-    m_scheduler_ep = nullptr;
+    ucx::util::close_endpoint(m_worker, m_manager_ep, true);
+    m_manager_ep = nullptr;
     return;
   }
 
-  m_scheduler_connecting = true;
+  m_manager_connecting = true;
 }
 
-void StSender::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
-  if (ep != m_scheduler_ep) {
+void StSender::handle_manager_error(ucp_ep_h ep, ucs_status_t status) {
+  if (ep != m_manager_ep) {
     ERROR("Received error for unknown endpoint: {}", status);
     return;
   }
 
-  if (m_scheduler_connected) {
-    WARN("Disconnected from scheduler: {}", status);
+  if (m_manager_connected) {
+    WARN("Disconnected from manager: {}", status);
   }
-  m_scheduler_connected = false;
-  disconnect_from_scheduler(true);
+  m_manager_connected = false;
+  disconnect_from_manager(true);
 }
 
-void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
-                                                  ucs_status_t status) {
-  m_scheduler_connecting = false;
+void StSender::handle_manager_register_complete(ucs_status_ptr_t request,
+                                                ucs_status_t status) {
+  m_manager_connecting = false;
 
   if (status != UCS_OK) {
-    if (!m_mute_scheduler_reconnect) {
-      WARN("Failed to register with scheduler: {}", status);
-      INFO("Will retry connection to scheduler every {}s",
+    if (!m_mute_manager_reconnect) {
+      WARN("Failed to register with manager: {}", status);
+      INFO("Will retry connection to manager every {}s",
            std::chrono::duration_cast<std::chrono::seconds>(
-               m_scheduler_retry_interval)
+               m_manager_retry_interval)
                .count());
-      m_mute_scheduler_reconnect = true;
+      m_mute_manager_reconnect = true;
     }
   } else {
-    m_scheduler_connected = true;
-    m_mute_scheduler_reconnect = false;
-    INFO("Registered with scheduler");
+    m_manager_connected = true;
+    m_mute_manager_reconnect = false;
+    INFO("Registered with manager");
   }
 
   if (request != nullptr) {
@@ -316,19 +316,19 @@ void StSender::handle_scheduler_register_complete(ucs_status_ptr_t request,
   }
 };
 
-void StSender::disconnect_from_scheduler(bool force) {
-  if (m_scheduler_connected) {
-    INFO("Disconnecting from scheduler");
+void StSender::disconnect_from_manager(bool force) {
+  if (m_manager_connected) {
+    INFO("Disconnecting from manager");
   }
-  m_scheduler_connecting = false;
-  m_scheduler_connected = false;
+  m_manager_connecting = false;
+  m_manager_connected = false;
 
-  if (m_scheduler_ep == nullptr) {
+  if (m_manager_ep == nullptr) {
     return;
   }
 
-  ucx::util::close_endpoint(m_worker, m_scheduler_ep, force);
-  m_scheduler_ep = nullptr;
+  ucx::util::close_endpoint(m_worker, m_manager_ep, force);
+  m_manager_ep = nullptr;
 
   // Flush all announced subtimeslices
   auto it = m_announced.begin();
@@ -349,10 +349,10 @@ void StSender::disconnect_from_scheduler(bool force) {
   }
 }
 
-// Scheduler message handling
+// Manager message handling
 
 void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
-  // Create subtimeslice structure for transmission to scheduler and builders.
+  // Create subtimeslice structure for transmission to manager and builders.
   // It contains, for each component, the offset and size of the microslice
   // descriptors and microslice contents data blocks. The offsets are relative
   // to the start of the overall data block and assume that all blocks are
@@ -375,8 +375,8 @@ void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
     num_microslices += c.num_microslices;
   }
 
-  // Serialize subtimeslice structure for transmission to the scheduler. The
-  // builder no longer receives this descriptor directly; the scheduler relays
+  // Serialize subtimeslice structure for transmission to the manager. The
+  // builder no longer receives this descriptor directly; the manager relays
   // the (merged) descriptor as part of the assignment.
   auto st_descriptor_bytes = serialize_descriptor(st_descriptor);
 
@@ -404,12 +404,12 @@ void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
         st_descriptor.components.size(), num_microslices,
         human_readable_count(ms_data_size, true), st_descriptor.flags);
 
-  // Send announcement to scheduler
+  // Send announcement to manager
   std::array<uint64_t, 2> hdr{id, ms_data_size};
   auto header = std::as_bytes(std::span(hdr));
   auto buffer = std::as_bytes(std::span(ah.st_descriptor_bytes));
   ucx::util::send_active_message(
-      m_scheduler_ep, AM_SENDER_ANNOUNCE_ST, header, buffer,
+      m_manager_ep, AM_SENDER_ANNOUNCE_ST, header, buffer,
       ucx::util::on_generic_send_complete, this,
       UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
 }
@@ -421,11 +421,11 @@ void StSender::do_retract_subtimeslice(TsId id) {
     if (!ah.pending_release) {
       DEBUG("{}| Retracting subtimeslice", id);
 
-      // Send retraction to scheduler
+      // Send retraction to manager
       std::array<uint64_t, 1> hdr{id};
       auto header = std::as_bytes(std::span(hdr));
       ucx::util::send_active_message(
-          m_scheduler_ep, AM_SENDER_RETRACT_ST, header, {},
+          m_manager_ep, AM_SENDER_RETRACT_ST, header, {},
           ucx::util::on_generic_send_complete, this,
           UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
 
@@ -448,14 +448,14 @@ void StSender::do_retract_subtimeslice(TsId id) {
   }
 }
 
-ucs_status_t StSender::handle_scheduler_release(
+ucs_status_t StSender::handle_manager_release(
     const void* header,
     size_t header_length,
     [[maybe_unused]] void* data,
     size_t length,
     [[maybe_unused]] const ucp_am_recv_param_t* param) {
   if (header_length != sizeof(uint64_t) || length != 0) {
-    ERROR("Invalid scheduler request received");
+    ERROR("Invalid manager request received");
     return UCS_OK;
   }
 
@@ -685,8 +685,8 @@ std::size_t StSender::process_queues() {
     retractions.swap(m_pending_retractions);
   }
 
-  if (!m_scheduler_connected) {
-    // Scheduler not registered, skipping announcements
+  if (!m_manager_connected) {
+    // Manager not registered, skipping announcements
     for (const auto& [id, sth] : announcements) {
       std::lock_guard<std::mutex> lock(m_completions_mutex);
       m_completed.push(id);

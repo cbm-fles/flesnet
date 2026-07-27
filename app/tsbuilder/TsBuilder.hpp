@@ -26,8 +26,8 @@
 
 using namespace std::chrono_literals;
 
-// TsBuilder: Receive timeslice announcements from tssched, connect to senders,
-// receive subtimeslices and aggregate the data to timeslices
+// TsBuilder: Receive timeslice announcements from tsmanager, connect to
+// senders, receive subtimeslices and aggregate the data to timeslices
 
 enum class StState : uint8_t {
   Allocated = 0,
@@ -127,7 +127,7 @@ struct TsHandle {
   std::byte* const buffer;
   std::vector<std::string> sender_ids; // IDs of the senders
   std::vector<uint64_t> ms_data_sizes; // Sizes of the content data
-  StDescriptor merged_descriptor;      // Merged descriptor from scheduler
+  StDescriptor merged_descriptor;      // Merged descriptor from manager
   std::vector<uint64_t> offsets;
   std::vector<StState> states;
   std::vector<uint64_t> state_change_at_ns;
@@ -140,7 +140,7 @@ class TsBuilder {
 public:
   TsBuilder(volatile sig_atomic_t* signal_status,
             TsBuffer& timeslice_buffer,
-            std::string_view scheduler_address,
+            std::string_view manager_address,
             int64_t timeout_ns,
             cbm::Monitor* monitor);
   ~TsBuilder();
@@ -154,7 +154,7 @@ private:
   Scheduler m_tasks;
   TsBuffer& m_timeslice_buffer;
 
-  std::string m_scheduler_address;
+  std::string m_manager_address;
   int64_t m_timeout_ns;
   static constexpr ucx::util::LoopMode m_ucx_loop_mode =
       ucx::util::LoopMode::busy_poll;
@@ -180,35 +180,35 @@ private:
   std::unordered_map<ucs_status_ptr_t, RecvRequestInfo>
       m_active_data_recv_requests;
 
-  static constexpr auto m_scheduler_retry_interval = 2s;
-  bool m_mute_scheduler_reconnect = false;
+  static constexpr auto m_manager_retry_interval = 2s;
+  bool m_mute_manager_reconnect = false;
 
-  ucp_ep_h m_scheduler_ep = nullptr;
-  bool m_scheduler_connecting = false;
-  bool m_scheduler_connected = false;
+  ucp_ep_h m_manager_ep = nullptr;
+  bool m_manager_connecting = false;
+  bool m_manager_connected = false;
 
   size_t m_timeslice_count = 0; ///< total number of assigned timeslices
   size_t m_component_count = 0; ///< total number of received components
   size_t m_byte_count = 0;      ///< total number of processed bytes
   size_t m_timeslice_incomplete_count = 0; ///< number of incomplete timeslices
 
-  // Scheduler connection management
-  void connect_to_scheduler_if_needed();
-  void connect_to_scheduler();
-  void handle_scheduler_error(ucp_ep_h ep, ucs_status_t status);
-  void handle_scheduler_register_complete(ucs_status_ptr_t request,
-                                          ucs_status_t status);
-  void disconnect_from_scheduler(bool force = false);
+  // Manager connection management
+  void connect_to_manager_if_needed();
+  void connect_to_manager();
+  void handle_manager_error(ucp_ep_h ep, ucs_status_t status);
+  void handle_manager_register_complete(ucs_status_ptr_t request,
+                                        ucs_status_t status);
+  void disconnect_from_manager(bool force = false);
 
-  // Scheduler message handling
-  void send_status_to_scheduler(uint64_t event, TsId id);
-  void send_periodic_status_to_scheduler();
+  // Manager message handling
+  void send_status_to_manager(uint64_t event, TsId id);
+  void send_periodic_status_to_manager();
   void check_for_timeout(TsId id);
-  ucs_status_t handle_scheduler_assign_ts(const void* header,
-                                          size_t header_length,
-                                          void* data,
-                                          size_t length,
-                                          const ucp_am_recv_param_t* param);
+  ucs_status_t handle_manager_assign_ts(const void* header,
+                                        size_t header_length,
+                                        void* data,
+                                        size_t length,
+                                        const ucp_am_recv_param_t* param);
 
   // Sender connection management
   void connect_to_sender(const std::string& sender_id);
@@ -236,22 +236,22 @@ private:
   void report_status();
 
   // UCX static callbacks (trampolines)
-  static void on_scheduler_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
-    static_cast<TsBuilder*>(arg)->handle_scheduler_error(ep, status);
+  static void on_manager_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
+    static_cast<TsBuilder*>(arg)->handle_manager_error(ep, status);
   }
-  static void on_scheduler_register_complete(void* request,
-                                             ucs_status_t status,
-                                             void* user_data) {
-    static_cast<TsBuilder*>(user_data)->handle_scheduler_register_complete(
+  static void on_manager_register_complete(void* request,
+                                           ucs_status_t status,
+                                           void* user_data) {
+    static_cast<TsBuilder*>(user_data)->handle_manager_register_complete(
         request, status);
   }
-  static ucs_status_t on_scheduler_assign_ts(void* arg,
-                                             const void* header,
-                                             size_t header_length,
-                                             void* data,
-                                             size_t length,
-                                             const ucp_am_recv_param_t* param) {
-    return static_cast<TsBuilder*>(arg)->handle_scheduler_assign_ts(
+  static ucs_status_t on_manager_assign_ts(void* arg,
+                                           const void* header,
+                                           size_t header_length,
+                                           void* data,
+                                           size_t length,
+                                           const ucp_am_recv_param_t* param) {
+    return static_cast<TsBuilder*>(arg)->handle_manager_assign_ts(
         header, header_length, data, length, param);
   }
   static void on_sender_error(void* arg, ucp_ep_h ep, ucs_status_t status) {

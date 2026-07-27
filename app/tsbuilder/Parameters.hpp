@@ -26,8 +26,8 @@ public:
   void operator=(const Parameters&) = delete;
 
   [[nodiscard]] std::string monitor_uri() const { return m_monitor_uri; }
-  [[nodiscard]] std::string tssched_address() const {
-    return m_tssched_address;
+  [[nodiscard]] std::string tsmanager_address() const {
+    return m_tsmanager_address;
   }
   [[nodiscard]] int64_t timeout_ns() const { return m_timeout.count(); }
   [[nodiscard]] std::string shm_id() const { return m_shm_id; }
@@ -37,7 +37,7 @@ private:
   void parse_options(int argc, char* argv[]);
 
   std::string m_monitor_uri;
-  std::string m_tssched_address = "login";
+  std::string m_tsmanager_address = "login";
   Nanoseconds m_timeout = 1_s;
   std::string m_shm_id = "flesnet_ts_builder";
   SizeValue m_buffer_size = 20_GiB;

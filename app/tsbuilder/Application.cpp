@@ -24,7 +24,7 @@ Application::Application(Parameters const& par,
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   m_ts_builder = std::make_unique<TsBuilder>(signal_status, m_timeslice_buffer,
-                                             par.tssched_address(),
+                                             par.tsmanager_address(),
                                              par.timeout_ns(), m_monitor.get());
 }
 

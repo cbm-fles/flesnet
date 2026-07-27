@@ -2,22 +2,22 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Author: Jan de Cuveland
 
-add_executable(tssched
+add_executable(tsmanager
   main.cpp
   Application.cpp
   Parameters.cpp
-  TsScheduler.cpp
+  TsManager.cpp
 )
 
-target_include_directories(tssched
+target_include_directories(tsmanager
   SYSTEM PUBLIC ${Boost_INCLUDE_DIRS}
 )
 
-target_include_directories(tssched
+target_include_directories(tsmanager
   PUBLIC ../../lib
 )
 
-target_link_libraries(tssched
+target_link_libraries(tsmanager
   fles_ipc
   fles_core
   tsb
@@ -29,4 +29,4 @@ target_link_libraries(tssched
   ${Boost_LIBRARIES}
 )
 
-install(TARGETS tssched DESTINATION bin)
+install(TARGETS tsmanager DESTINATION bin)

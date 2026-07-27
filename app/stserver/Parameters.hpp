@@ -44,8 +44,8 @@ public:
   [[nodiscard]] std::string shm_id() const { return m_shm_id; }
   [[nodiscard]] uint16_t listen_port() const { return m_listen_port; }
   [[nodiscard]] std::string advertise_host() const { return m_advertise_host; }
-  [[nodiscard]] std::string tssched_address() const {
-    return m_tssched_address;
+  [[nodiscard]] std::string tsmanager_address() const {
+    return m_tsmanager_address;
   }
   [[nodiscard]] SenderInfo sender_info() const { return m_sender_info; }
 
@@ -94,7 +94,7 @@ private:
   uint16_t m_listen_port = DEFAULT_SENDER_PORT;
   std::string m_advertise_host;
   SenderInfo m_sender_info;
-  std::string m_tssched_address = "login";
+  std::string m_tsmanager_address = "login";
 
   // Pattern generator parameters
   uint32_t m_pgen_channels = 0;
