@@ -39,7 +39,7 @@ private:
   void parse_options(int argc, char* argv[]);
 
   std::string m_monitor_uri;
-  uint16_t m_listen_port = DEFAULT_SCHEDULER_PORT;
+  uint16_t m_listen_port = DEFAULT_MANAGER_PORT;
   Nanoseconds m_timeslice_duration = 40_ms;
   Nanoseconds m_timeout = 40_ms;
   uint32_t m_max_in_flight = 1;

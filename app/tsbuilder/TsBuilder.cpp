@@ -26,11 +26,11 @@
 
 TsBuilder::TsBuilder(volatile sig_atomic_t* signal_status,
                      TsBuffer& timeslice_buffer,
-                     std::string_view scheduler_address,
+                     std::string_view manager_address,
                      int64_t timeout_ns,
                      cbm::Monitor* monitor)
     : m_signal_status(signal_status), m_timeslice_buffer(timeslice_buffer),
-      m_scheduler_address(scheduler_address), m_timeout_ns(timeout_ns),
+      m_manager_address(manager_address), m_timeout_ns(timeout_ns),
       m_hostname(fles::system::current_hostname()),
       m_builder_info(m_hostname, fles::system::current_pid()),
       m_builder_info_bytes(to_bytes(m_builder_info)), m_monitor(monitor) {
@@ -58,13 +58,13 @@ void TsBuilder::run() {
           m_context, m_timeslice_buffer.get_memory_region())) {
     m_buffer_memh = *memh;
   }
-  if (!ucx::util::set_receive_handler(m_worker, AM_SCHED_ASSIGN_TS,
-                                      on_scheduler_assign_ts, this)) {
+  if (!ucx::util::set_receive_handler(m_worker, AM_MANAGER_ASSIGN_TS,
+                                      on_manager_assign_ts, this)) {
     ERROR("Failed to register receive handlers");
     return;
   }
-  connect_to_scheduler_if_needed();
-  send_periodic_status_to_scheduler();
+  connect_to_manager_if_needed();
+  send_periodic_status_to_manager();
   report_status();
 
   while (*m_signal_status == 0) {
@@ -83,7 +83,7 @@ void TsBuilder::run() {
     }
   }
 
-  disconnect_from_scheduler();
+  disconnect_from_manager();
   disconnect_from_senders();
   // Drain remaining UCX internal operations (e.g., rendezvous protocol
   // buffers) before destroying the worker
@@ -96,96 +96,95 @@ void TsBuilder::run() {
   ucx::util::cleanup(m_context, m_worker);
 }
 
-// Scheduler connection management
+// Manager connection management
 
-void TsBuilder::connect_to_scheduler_if_needed() {
+void TsBuilder::connect_to_manager_if_needed() {
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-  if (!m_scheduler_connecting && !m_scheduler_connected &&
-      *m_signal_status == 0) {
-    connect_to_scheduler();
+  if (!m_manager_connecting && !m_manager_connected && *m_signal_status == 0) {
+    connect_to_manager();
   }
 
-  m_tasks.add([this] { connect_to_scheduler_if_needed(); },
-              now + m_scheduler_retry_interval);
+  m_tasks.add([this] { connect_to_manager_if_needed(); },
+              now + m_manager_retry_interval);
 }
 
-void TsBuilder::connect_to_scheduler() {
-  assert(!m_scheduler_connecting && !m_scheduler_connected);
+void TsBuilder::connect_to_manager() {
+  assert(!m_manager_connecting && !m_manager_connected);
 
   auto [address, port] =
-      ucx::util::parse_address(m_scheduler_address, DEFAULT_SCHEDULER_PORT);
+      ucx::util::parse_address(m_manager_address, DEFAULT_MANAGER_PORT);
   auto ep_result =
-      ucx::util::connect(m_worker, address, port, on_scheduler_error, this);
+      ucx::util::connect(m_worker, address, port, on_manager_error, this);
   if (ep_result) {
-    if (!m_mute_scheduler_reconnect) {
-      INFO("Trying to connect to scheduler at '{}:{}'", address, port);
+    if (!m_mute_manager_reconnect) {
+      INFO("Trying to connect to manager at '{}:{}'", address, port);
     }
   } else {
-    if (!m_mute_scheduler_reconnect) {
-      ERROR("Failed to connect to scheduler at '{}:{}': {}", address, port,
+    if (!m_mute_manager_reconnect) {
+      ERROR("Failed to connect to manager at '{}:{}': {}", address, port,
             ep_result.error());
-      INFO("Will retry connection to scheduler every {}s",
+      INFO("Will retry connection to manager every {}s",
            std::chrono::duration_cast<std::chrono::seconds>(
-               m_scheduler_retry_interval)
+               m_manager_retry_interval)
                .count());
-      m_mute_scheduler_reconnect = true;
+      m_mute_manager_reconnect = true;
     }
     return;
   }
 
-  m_scheduler_ep = *ep_result;
+  m_manager_ep = *ep_result;
 
   auto header = std::as_bytes(std::span(m_builder_info_bytes));
   bool send_am_ok = ucx::util::send_active_message(
-      m_scheduler_ep, AM_BUILDER_REGISTER, header, {},
-      on_scheduler_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
+      m_manager_ep, AM_BUILDER_REGISTER, header, {},
+      on_manager_register_complete, this, UCP_AM_SEND_FLAG_REPLY);
   if (!send_am_ok) {
-    if (!m_mute_scheduler_reconnect) {
-      WARN("Failed to register with scheduler at '{}:{}'", address, port);
-      INFO("Will retry connection to scheduler every {}s",
+    if (!m_mute_manager_reconnect) {
+      WARN("Failed to register with manager at '{}:{}'", address, port);
+      INFO("Will retry connection to manager every {}s",
            std::chrono::duration_cast<std::chrono::seconds>(
-               m_scheduler_retry_interval)
+               m_manager_retry_interval)
                .count());
-      m_mute_scheduler_reconnect = true;
+      m_mute_manager_reconnect = true;
     }
-    ucx::util::close_endpoint(m_worker, m_scheduler_ep, true);
-    m_scheduler_ep = nullptr;
+    ucx::util::close_endpoint(m_worker, m_manager_ep, true);
+    m_manager_ep = nullptr;
     return;
   }
 
-  m_scheduler_connecting = true;
+  m_manager_connecting = true;
 }
 
-void TsBuilder::handle_scheduler_error(ucp_ep_h ep, ucs_status_t status) {
-  if (ep != m_scheduler_ep) {
+void TsBuilder::handle_manager_error(ucp_ep_h ep, ucs_status_t status) {
+  if (ep != m_manager_ep) {
     ERROR("Received error for unknown endpoint: {}", status);
     return;
   }
 
-  if (m_scheduler_connected) {
-    WARN("Disconnected from scheduler: {}", status);
+  if (m_manager_connected) {
+    WARN("Disconnected from manager: {}", status);
   }
-  m_scheduler_connected = false;
-  disconnect_from_scheduler(true);
+  m_manager_connected = false;
+  disconnect_from_manager(true);
 }
 
-void TsBuilder::handle_scheduler_register_complete(ucs_status_ptr_t request,
-                                                   ucs_status_t status) {
-  m_scheduler_connecting = false;
+void TsBuilder::handle_manager_register_complete(ucs_status_ptr_t request,
+                                                 ucs_status_t status) {
+  m_manager_connecting = false;
 
   if (status != UCS_OK) {
-    if (!m_mute_scheduler_reconnect) {
-      WARN("Failed to register with scheduler: {}", status);
-      INFO("Will retry connection to scheduler every {}s",
+    if (!m_mute_manager_reconnect) {
+      WARN("Failed to register with manager: {}", status);
+      INFO("Will retry connection to manager every {}s",
            std::chrono::duration_cast<std::chrono::seconds>(
-               m_scheduler_retry_interval)
+               m_manager_retry_interval)
                .count());
-      m_mute_scheduler_reconnect = true;
+      m_mute_manager_reconnect = true;
     }
   } else {
-    m_scheduler_connected = true;
-    m_mute_scheduler_reconnect = false;
-    INFO("Registered with scheduler");
+    m_manager_connected = true;
+    m_mute_manager_reconnect = false;
+    INFO("Registered with manager");
   }
 
   if (request != nullptr) {
@@ -193,26 +192,26 @@ void TsBuilder::handle_scheduler_register_complete(ucs_status_ptr_t request,
   }
 };
 
-void TsBuilder::disconnect_from_scheduler(bool force) {
-  if (m_scheduler_connected) {
-    INFO("Disconnecting from scheduler");
+void TsBuilder::disconnect_from_manager(bool force) {
+  if (m_manager_connected) {
+    INFO("Disconnecting from manager");
   }
-  m_scheduler_connecting = false;
-  m_scheduler_connected = false;
+  m_manager_connecting = false;
+  m_manager_connected = false;
 
-  if (m_scheduler_ep == nullptr) {
+  if (m_manager_ep == nullptr) {
     return;
   }
 
-  ucx::util::close_endpoint(m_worker, m_scheduler_ep, force);
-  m_scheduler_ep = nullptr;
+  ucx::util::close_endpoint(m_worker, m_manager_ep, force);
+  m_manager_ep = nullptr;
 }
 
-// Scheduler message handling
+// Manager message handling
 
-void TsBuilder::send_status_to_scheduler(uint64_t event, TsId id) {
-  if (!m_scheduler_connected) {
-    WARN("Cannot send status to disconnected scheduler");
+void TsBuilder::send_status_to_manager(uint64_t event, TsId id) {
+  if (!m_manager_connected) {
+    WARN("Cannot send status to disconnected manager");
     return;
   }
 
@@ -220,21 +219,21 @@ void TsBuilder::send_status_to_scheduler(uint64_t event, TsId id) {
   std::array<uint64_t, 3> hdr{event, id, bytes_free};
   auto header = std::as_bytes(std::span(hdr));
 
-  ucx::util::send_active_message(m_scheduler_ep, AM_BUILDER_STATUS, header, {},
+  ucx::util::send_active_message(m_manager_ep, AM_BUILDER_STATUS, header, {},
                                  ucx::util::on_generic_send_complete, this,
                                  UCP_AM_SEND_FLAG_COPY_HEADER |
                                      UCP_AM_SEND_FLAG_REPLY);
 }
 
-void TsBuilder::send_periodic_status_to_scheduler() {
+void TsBuilder::send_periodic_status_to_manager() {
   constexpr auto interval = std::chrono::seconds(1);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
-  if (m_scheduler_connected) {
-    send_status_to_scheduler(BUILDER_EVENT_NO_OP, 0);
+  if (m_manager_connected) {
+    send_status_to_manager(BUILDER_EVENT_NO_OP, 0);
   }
 
-  m_tasks.add([this] { send_periodic_status_to_scheduler(); }, now + interval);
+  m_tasks.add([this] { send_periodic_status_to_manager(); }, now + interval);
 }
 
 void TsBuilder::check_for_timeout(TsId id) {
@@ -258,7 +257,7 @@ void TsBuilder::check_for_timeout(TsId id) {
   }
 }
 
-ucs_status_t TsBuilder::handle_scheduler_assign_ts(
+ucs_status_t TsBuilder::handle_manager_assign_ts(
     const void* header,
     size_t header_length,
     void* data,
@@ -267,7 +266,7 @@ ucs_status_t TsBuilder::handle_scheduler_assign_ts(
   auto hdr = std::span<const uint64_t>(static_cast<const uint64_t*>(header),
                                        header_length / sizeof(uint64_t));
   if (hdr.size() != 2 || length == 0) {
-    ERROR("Received invalid subtimeslice collection from scheduler");
+    ERROR("Received invalid subtimeslice collection from manager");
     return UCS_OK;
   }
 
@@ -293,7 +292,7 @@ ucs_status_t TsBuilder::handle_scheduler_assign_ts(
          human_readable_count(ms_data_size, true),
          human_readable_count(m_timeslice_buffer.get_free_memory(), true),
          human_readable_count(m_timeslice_buffer.get_size(), true));
-    send_status_to_scheduler(BUILDER_EVENT_OUT_OF_MEMORY, id);
+    send_status_to_manager(BUILDER_EVENT_OUT_OF_MEMORY, id);
     return UCS_OK;
   }
 
@@ -301,7 +300,7 @@ ucs_status_t TsBuilder::handle_scheduler_assign_ts(
                        std::make_unique<TsHandle>(buffer, std::move(*desc)));
   auto& tsh = *m_ts_handles.at(id);
   m_timeslice_count++;
-  send_status_to_scheduler(BUILDER_EVENT_ALLOCATED, id);
+  send_status_to_manager(BUILDER_EVENT_ALLOCATED, id);
 
   DEBUG("{}| Received assignment ({}s, {})", id, tsh.sender_ids.size(),
         human_readable_count(ms_data_size, true));
@@ -546,7 +545,7 @@ void TsBuilder::process_completion(TsId id) {
   const uint64_t now_ns = fles::system::current_time_ns();
   m_timeslice_buffer.deallocate(m_ts_handles.at(id)->buffer);
   m_ts_handles.erase(id);
-  send_status_to_scheduler(BUILDER_EVENT_RELEASED, id);
+  send_status_to_manager(BUILDER_EVENT_RELEASED, id);
   DEBUG("{}| Released (after {} ms)", id,
         (now_ns - published_at_ns + 500000) / 1000000);
 }
@@ -580,7 +579,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
         })) {
       // All contributions are complete (or failed), publish the timeslice
       if (!tsh.is_published) {
-        send_status_to_scheduler(BUILDER_EVENT_RECEIVED, tsh.id);
+        send_status_to_manager(BUILDER_EVENT_RECEIVED, tsh.id);
         StDescriptor ts_desc = build_published_descriptor(tsh);
         m_timeslice_buffer.send_work_item(tsh.buffer, tsh.id, ts_desc);
         tsh.is_published = true;
@@ -599,7 +598,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
 }
 
 StDescriptor TsBuilder::build_published_descriptor(TsHandle& tsh) {
-  // The scheduler has already merged per-sender descriptors into
+  // The manager has already merged per-sender descriptors into
   // tsh.merged_descriptor with absolute offsets. Here we only have to mark the
   // timeslice as incomplete if any contribution did not arrive.
   StDescriptor d = tsh.merged_descriptor;

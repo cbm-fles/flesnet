@@ -87,12 +87,12 @@ void Parameters::parse_options(int argc, char* argv[]) {
              po::value<uint16_t>(&m_listen_port)->default_value(m_listen_port),
              "port to listen for tsbuilder connections");
   config_add("advertise-host", po::value<std::string>(&m_advertise_host),
-             "host address (and optionally port number) to advertise to "
-             "scheduler for tsbuilder connections");
-  config_add("tssched-address",
-             po::value<std::string>(&m_tssched_address)
-                 ->default_value(m_tssched_address),
-             "address (and optionally port number) of the tssched server to "
+             "host address (and optionally port number) to advertise to the "
+             "timeslice manager for tsbuilder connections");
+  config_add("tsmanager-address",
+             po::value<std::string>(&m_tsmanager_address)
+                 ->default_value(m_tsmanager_address),
+             "address (and optionally port number) of the tsmanager server to "
              "connect to");
   config_add("pgen-channels,P",
              po::value<uint32_t>(&m_pgen_channels)

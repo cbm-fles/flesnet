@@ -50,8 +50,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
                  ->implicit_value("influx1:login:8086:flesnet_status"),
              "publish tsclient status to InfluxDB (or \"file:cout\" for "
              "console output)");
-  config_add("tssched-address", po::value<std::string>(&m_tssched_address),
-             "address of the tssched server to connect to");
+  config_add("tsmanager-address", po::value<std::string>(&m_tsmanager_address),
+             "address of the tsmanager server to connect to");
   config_add("timeout",
              po::value<Nanoseconds>(&m_timeout)->default_value(m_timeout),
              "timeout for data reception (with suffix ns, us, ms, s)");

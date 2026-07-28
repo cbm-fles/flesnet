@@ -14,12 +14,12 @@ Application::Application(Parameters const& par,
     m_monitor = std::make_unique<cbm::Monitor>(m_par.monitor_uri());
   }
 
-  m_ts_scheduler = std::make_unique<TsScheduler>(
+  m_ts_manager = std::make_unique<TsManager>(
       signal_status, par.listen_port(), par.timeslice_duration_ns(),
       par.timeout_ns(), par.max_in_flight(), m_monitor.get());
 }
 
-void Application::run() { m_ts_scheduler->run(); }
+void Application::run() { m_ts_manager->run(); }
 
 Application::~Application() {
   // delay to allow monitor to process pending messages

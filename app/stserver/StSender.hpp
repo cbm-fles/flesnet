@@ -27,7 +27,7 @@
 
 using namespace std::chrono_literals;
 
-// StSender: Announce subtimeslices to tssched and send them to tsbuilders
+// StSender: Announce subtimeslices to tsmanager and send them to tsbuilders
 
 struct AnnouncementHandle {
   AnnouncementHandle(TsId id,
@@ -51,7 +51,7 @@ struct AnnouncementHandle {
 
 class StSender {
 public:
-  StSender(std::string_view scheduler_address,
+  StSender(std::string_view manager_address,
            uint16_t listen_port,
            SenderInfo sender_info);
   ~StSender();
@@ -70,7 +70,7 @@ public:
 private:
   Scheduler m_tasks;
 
-  std::string m_scheduler_address;
+  std::string m_manager_address;
   uint16_t m_listen_port;
   SenderInfo m_sender_info;
   static constexpr ucx::util::LoopMode m_ucx_loop_mode =
@@ -95,12 +95,12 @@ private:
   ucp_listener_h m_listener = nullptr;
   std::unordered_map<ucp_ep_h, std::string> m_builders;
 
-  static constexpr auto m_scheduler_retry_interval = 2s;
-  bool m_mute_scheduler_reconnect = false;
+  static constexpr auto m_manager_retry_interval = 2s;
+  bool m_mute_manager_reconnect = false;
 
-  ucp_ep_h m_scheduler_ep = nullptr;
-  bool m_scheduler_connecting = false;
-  bool m_scheduler_connected = false;
+  ucp_ep_h m_manager_ep = nullptr;
+  bool m_manager_connecting = false;
+  bool m_manager_connected = false;
 
   std::jthread m_worker_thread;
   std::atomic_bool m_thread_stopped = false;
@@ -108,22 +108,22 @@ private:
   // Main operation loop
   void operator()(std::stop_token stop_token);
 
-  // Scheduler connection management
-  void connect_to_scheduler_if_needed();
-  void connect_to_scheduler();
-  void handle_scheduler_error(ucp_ep_h ep, ucs_status_t status);
-  void handle_scheduler_register_complete(ucs_status_ptr_t request,
-                                          ucs_status_t status);
-  void disconnect_from_scheduler(bool force = false);
+  // Manager connection management
+  void connect_to_manager_if_needed();
+  void connect_to_manager();
+  void handle_manager_error(ucp_ep_h ep, ucs_status_t status);
+  void handle_manager_register_complete(ucs_status_ptr_t request,
+                                        ucs_status_t status);
+  void disconnect_from_manager(bool force = false);
 
-  // Scheduler message handling
+  // Manager message handling
   void do_announce_subtimeslice(TsId id, const StHandle& sth);
   void do_retract_subtimeslice(TsId id);
-  ucs_status_t handle_scheduler_release(const void* header,
-                                        size_t header_length,
-                                        void* data,
-                                        size_t length,
-                                        const ucp_am_recv_param_t* param);
+  ucs_status_t handle_manager_release(const void* header,
+                                      size_t header_length,
+                                      void* data,
+                                      size_t length,
+                                      const ucp_am_recv_param_t* param);
 
   // Builder connection management
   void handle_new_connection(ucp_conn_request_h conn_request);
@@ -151,8 +151,8 @@ private:
   static void on_endpoint_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
     static_cast<StSender*>(arg)->handle_endpoint_error(ep, status);
   }
-  static void on_scheduler_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
-    static_cast<StSender*>(arg)->handle_scheduler_error(ep, status);
+  static void on_manager_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
+    static_cast<StSender*>(arg)->handle_manager_error(ep, status);
   }
   static ucs_status_t on_builder_request(void* arg,
                                          const void* header,
@@ -163,13 +163,13 @@ private:
     return static_cast<StSender*>(arg)->handle_builder_request(
         header, header_length, data, length, param);
   }
-  static ucs_status_t on_scheduler_release(void* arg,
-                                           const void* header,
-                                           size_t header_length,
-                                           void* data,
-                                           size_t length,
-                                           const ucp_am_recv_param_t* param) {
-    return static_cast<StSender*>(arg)->handle_scheduler_release(
+  static ucs_status_t on_manager_release(void* arg,
+                                         const void* header,
+                                         size_t header_length,
+                                         void* data,
+                                         size_t length,
+                                         const ucp_am_recv_param_t* param) {
+    return static_cast<StSender*>(arg)->handle_manager_release(
         header, header_length, data, length, param);
   }
   static void on_builder_send_complete(void* request,
@@ -178,10 +178,10 @@ private:
     static_cast<StSender*>(user_data)->handle_builder_send_complete(request,
                                                                     status);
   }
-  static void on_scheduler_register_complete(void* request,
-                                             ucs_status_t status,
-                                             void* user_data) {
-    static_cast<StSender*>(user_data)->handle_scheduler_register_complete(
-        request, status);
+  static void on_manager_register_complete(void* request,
+                                           ucs_status_t status,
+                                           void* user_data) {
+    static_cast<StSender*>(user_data)->handle_manager_register_complete(request,
+                                                                        status);
   }
 };

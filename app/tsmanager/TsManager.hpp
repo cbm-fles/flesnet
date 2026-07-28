@@ -18,7 +18,7 @@
 #include <unistd.h>
 #include <unordered_set>
 
-// TsScheduler: Receive subtimeslice announcements from stsenders, aggregate,
+// TsManager: Receive subtimeslice announcements from stsenders, aggregate,
 // and send subtimeslice handles to tsbuilders
 
 enum class SenderState { registered, active };
@@ -63,17 +63,17 @@ struct StatusInfo {
   bool operator==(const StatusInfo& other) const = default;
 };
 
-class TsScheduler {
+class TsManager {
 public:
-  TsScheduler(volatile sig_atomic_t* signal_status,
-              uint16_t listen_port,
-              int64_t timeslice_duration_ns,
-              int64_t timeout_ns,
-              uint32_t max_in_flight,
-              cbm::Monitor* monitor);
-  ~TsScheduler();
-  TsScheduler(const TsScheduler&) = delete;
-  TsScheduler& operator=(const TsScheduler&) = delete;
+  TsManager(volatile sig_atomic_t* signal_status,
+            uint16_t listen_port,
+            int64_t timeslice_duration_ns,
+            int64_t timeout_ns,
+            uint32_t max_in_flight,
+            cbm::Monitor* monitor);
+  ~TsManager();
+  TsManager(const TsManager&) = delete;
+  TsManager& operator=(const TsManager&) = delete;
 
   void run();
 
@@ -151,10 +151,10 @@ private:
 
   // UCX static callbacks (trampolines)
   static void on_new_connection(ucp_conn_request_h conn_request, void* arg) {
-    static_cast<TsScheduler*>(arg)->handle_new_connection(conn_request);
+    static_cast<TsManager*>(arg)->handle_new_connection(conn_request);
   }
   static void on_endpoint_error(void* arg, ucp_ep_h ep, ucs_status_t status) {
-    static_cast<TsScheduler*>(arg)->handle_endpoint_error(ep, status);
+    static_cast<TsManager*>(arg)->handle_endpoint_error(ep, status);
   }
   static ucs_status_t on_sender_register(void* arg,
                                          const void* header,
@@ -162,7 +162,7 @@ private:
                                          void* data,
                                          size_t length,
                                          const ucp_am_recv_param_t* param) {
-    return static_cast<TsScheduler*>(arg)->handle_sender_register(
+    return static_cast<TsManager*>(arg)->handle_sender_register(
         header, header_length, data, length, param);
   }
   static ucs_status_t on_sender_announce(void* arg,
@@ -171,7 +171,7 @@ private:
                                          void* data,
                                          size_t length,
                                          const ucp_am_recv_param_t* param) {
-    return static_cast<TsScheduler*>(arg)->handle_sender_announce(
+    return static_cast<TsManager*>(arg)->handle_sender_announce(
         header, header_length, data, length, param);
   }
   static ucs_status_t on_sender_retract(void* arg,
@@ -180,7 +180,7 @@ private:
                                         void* data,
                                         size_t length,
                                         const ucp_am_recv_param_t* param) {
-    return static_cast<TsScheduler*>(arg)->handle_sender_retract(
+    return static_cast<TsManager*>(arg)->handle_sender_retract(
         header, header_length, data, length, param);
   }
   static ucs_status_t on_builder_register(void* arg,
@@ -189,7 +189,7 @@ private:
                                           void* data,
                                           size_t length,
                                           const ucp_am_recv_param_t* param) {
-    return static_cast<TsScheduler*>(arg)->handle_builder_register(
+    return static_cast<TsManager*>(arg)->handle_builder_register(
         header, header_length, data, length, param);
   }
   static ucs_status_t on_builder_status(void* arg,
@@ -198,7 +198,7 @@ private:
                                         void* data,
                                         size_t length,
                                         const ucp_am_recv_param_t* param) {
-    return static_cast<TsScheduler*>(arg)->handle_builder_status(
+    return static_cast<TsManager*>(arg)->handle_builder_status(
         header, header_length, data, length, param);
   }
 };
