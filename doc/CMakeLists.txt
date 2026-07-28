@@ -89,15 +89,6 @@ if (EXTENDED_DOXYGEN_DOCUMENTATION)
   set(DOXYGEN_DOT_GRAPH_MAX_NODES 100)
 endif()
 
-# In order to include documentation for code guarded by preprocessor
-# macros passed by cmake to the compiler, we must instruct doxygen
-# to define these macros as well.
-set(DOXYGEN_PREDEFINED "")
-# Note that the escaped quotes are necessary. Doxygen expects the macro
-# definitions to be a list of quoted strings.
-string(APPEND DOXYGEN_PREDEFINED "\"HAVE_LIBFABRIC=1\"")
-string(APPEND DOXYGEN_PREDEFINED " \"HAVE_RDMA=1\"")
-
 set(DOXYGEN_MARKDOWN_SUPPORT YES)
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
 
@@ -117,21 +108,6 @@ set(MARKDOWN_DOCS_FOR_DOXYGEN
   doc/TS_Source_Identifier.md
   doc/versions.md
   doc/structure.md)
-
-set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/flesnet-doc)
-doxygen_add_docs(doc-flesnet
-  ${MARKDOWN_DOCS_FOR_DOXYGEN}
-  app/flesnet
-  lib/logging
-  lib/shm_ipc
-  lib/fles_core
-  lib/fles_zeromq
-  lib/fles_rdma
-  lib/fles_libfabric
-  lib/fles_ipc
-  lib/monitoring
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-	COMMENT "Generating flesnet documentation with doxygen")
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
 doxygen_add_docs(doc-mstool
@@ -154,13 +130,6 @@ doxygen_add_docs(doc-tsclient
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Generating documentation wit doxygen" )
   
-set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/msconsumer-doc)
-doxygen_add_docs(doc-msconsumer app/msconsumer lib test
-  ${MARKDOWN_DOCS_FOR_DOXYGEN}
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen (doxygen error \
-  \"FileDefImpl::insertMembers()...\" is expected)")
-
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_cfg-doc)
 doxygen_add_docs(doc-cri_cfg
   ${MARKDOWN_DOCS_FOR_DOXYGEN}
@@ -170,18 +139,6 @@ doxygen_add_docs(doc-cri_cfg
   lib/pda
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Generating documentation with doxygen")
-
-set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_server-doc)
-doxygen_add_docs(doc-cri_server
-  ${MARKDOWN_DOCS_FOR_DOXYGEN}
-  app/cri_server
-  lib/logging
-  lib/fles_ipc/MicrosliceDescriptor.hpp
-  lib/fles_ipc/Utility.hpp
-  lib/cri
-  lib/pda
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Generating documentation with doxygen" )
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cri_tools-doc/cri_en_pgen-doc)
 doxygen_add_docs(doc-cri_en_pgen
@@ -233,10 +190,7 @@ add_custom_target(doc-cri_tools
 
 add_custom_target(doc
   DEPENDS
-    doc-flesnet
     doc-mstool
     doc-tsclient
-    doc-msconsumer
     doc-cri_cfg
-    doc-cri_server
     doc-cri_tools)
