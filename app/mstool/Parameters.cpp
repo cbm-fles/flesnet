@@ -41,8 +41,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
   general_add("maximum-number,n", po::value<uint64_t>(&maximum_number),
               "set the maximum number of microslices to process (default: "
               "unlimited)");
-  general_add("exec,e", po::value<std::string>(&exec)->value_name("<string>"),
-              "name of an executable to run after startup");
 
   po::options_description source("Source options");
   auto source_add = source.add_options();
@@ -50,8 +48,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "use pattern generator to produce timeslices");
   source_add("channel,c", po::value<size_t>(&channel_idx),
              "use given channel/component index for source/sink");
-  source_add("input-shm,I", po::value<std::string>(&input_shm),
-             "name of a shared memory to use as data source");
   source_add("input-archive,i", po::value<std::string>(&input_archive),
              "name of an input file archive to read");
 
@@ -61,8 +57,6 @@ void Parameters::parse_options(int argc, char* argv[]) {
            "enable/disable pattern check");
   sink_add("dump_verbosity,v", po::value<size_t>(&dump_verbosity),
            "set output debug dump verbosity");
-  sink_add("output-shm,O", po::value<std::string>(&output_shm),
-           "name of a shared memory to write to");
   sink_add("output-archive,o", po::value<std::string>(&output_archive),
            "name of an output file archive to write");
 
@@ -97,8 +91,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
   use_pattern_generator = vm.count("pattern-generator") != 0;
 
-  size_t input_sources = vm.count("pattern-generator") +
-                         vm.count("input-archive") + vm.count("input-shm");
+  size_t input_sources =
+      vm.count("pattern-generator") + vm.count("input-archive");
   if (input_sources == 0) {
     throw ParametersException("no input source specified");
   }

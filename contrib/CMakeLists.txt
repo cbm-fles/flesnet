@@ -2,12 +2,6 @@
 #                Dirk Hutter <hutter@compeng.uni-frankfurt.de>
 
 add_custom_command(
-  OUTPUT run
-  COMMAND ${CMAKE_COMMAND} -E create_symlink
-          ${CMAKE_CURRENT_SOURCE_DIR}/run ${CMAKE_BINARY_DIR}/run
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/run)
-
-add_custom_command(
   OUTPUT boost.supp
   COMMAND ${CMAKE_COMMAND} -E create_symlink
           ${CMAKE_CURRENT_SOURCE_DIR}/boost.supp ${CMAKE_BINARY_DIR}/boost.supp
@@ -21,6 +15,6 @@ add_custom_target (
           -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyIfNotExits.cmake
 )
 
-add_custom_target(links ALL DEPENDS run boost.supp)
+add_custom_target(links ALL DEPENDS boost.supp)
 
 install(PROGRAMS preclean DESTINATION bin)

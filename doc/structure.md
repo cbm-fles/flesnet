@@ -19,4 +19,4 @@ Libraries with internal dependencies
   -> shm_ipc
     -> fles_ipc
       -> fles_core (with crcutil, monitoring)
-        -> flib_ipc
+  -> tsb (with fles_ipc)

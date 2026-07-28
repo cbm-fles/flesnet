@@ -5,8 +5,6 @@
 #include "MicrosliceSource.hpp"
 #include "Parameters.hpp"
 #include "Sink.hpp"
-#include "shm_device_client.hpp"
-#include "shm_device_provider.hpp"
 #include <memory>
 #include <vector>
 
@@ -25,8 +23,6 @@ public:
 private:
   Parameters const& par_;
 
-  std::shared_ptr<flib_shm_device_client> shm_device_;
-  std::unique_ptr<flib_shm_device_provider> output_shm_device_;
   std::unique_ptr<InputBufferReadInterface> data_source_;
 
   std::unique_ptr<fles::MicrosliceSource> source_;
