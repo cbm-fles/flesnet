@@ -31,7 +31,7 @@ configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
 
 if(DEFINED ENV{SIMPATH})
   message(WARNING "SIMPATH set, using Fairroot external packages in build.")
-  set(SIMPATH $ENV{SIMPATH})used
+  set(SIMPATH $ENV{SIMPATH})
   list(PREPEND CMAKE_PREFIX_PATH ${SIMPATH})
   set(Boost_NO_SYSTEM_PATHS TRUE)
   set(Boost_ROOT $ENV{SIMPATH})
