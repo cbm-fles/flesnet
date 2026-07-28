@@ -290,10 +290,10 @@ endif()
 add_subdirectory(app/mstool)
 
 if (BUILD_TIMESLICE_FORWARDER)
-    message("Building with timeslice forwarder")
+    message(STATUS "Building with timeslice forwarder")
     add_subdirectory(app/timeslice_forwarder)
 else()
-    message("Building without timeslice forwarder")
+    message(STATUS "Building without timeslice forwarder")
 endif()
 
 if (BUILD_ARCHIVE_VALIDATOR)
