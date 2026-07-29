@@ -99,12 +99,9 @@ set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
 # to have them only in the documentation where they are relevant.
 set(MARKDOWN_DOCS_FOR_DOXYGEN
   README.md
-  HOWTO.md
-  INSTALL.md
-  doc/monitoring.md
-  doc/monitoring_with_podman.md
+  doc/INSTALL.md
+  doc/FAQ.md
   doc/TS_Source_Identifier.md
-  doc/versions.md
   doc/structure.md)
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)

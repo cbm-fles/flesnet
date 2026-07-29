@@ -18,25 +18,16 @@ also used for testbeam readout using the FLES Interface Board (FLIB).
 Getting started
 ---------------
 
-If you are using *flesnet* for the first time or setting up a FLIB-based
-readout chain, please read [`INSTALL.md`](INSTALL.md) and
-[`HOWTO.md`](HOWTO.md) in this repository. These files will be continuously
-updated, so it might be worth checking them from time to time. Additional
-information on how to set up a system for flesnet can be found in the
-[flesnet wiki][flesnet-wiki].
+Some basic information about *Flesnet* can be found in the documentation folder [`doc`](./doc).
+Start with the documentation landing page at [`doc/README.md`](./doc/README.md), 
+then follow the installation guide in [`doc/INSTALL.md`](./doc/INSTALL.md).
+For common setup questions, see [`doc/FAQ.md`](./doc/FAQ.md).
 
-CBM scientists: For updates and information concerning *flesnet* and the
-operation of a readout chain, please join the
-[cbm-flibuser mailing list][flibuser-list] via [this form][list-membership].
-
-[flesnet-wiki]: https://github.com/cbm-fles/flesnet/wiki
-[flibuser-list]: https://www-cbm.gsi.de/cbmcdb/display.cgi?obj=grup;view=show;gid=31
-[list-membership]: https://www-cbm.gsi.de/cbmcdb/modpers.cgi?view=grup
 
 Development
 -----------
 
-Depelopers are encouraged to run the [`contrib/local-setup`] script on their
+Developers are encouraged to run the [`contrib/local-setup`] script on their
 development machines to properly set the coding style and pre-commit
 checks.
 
