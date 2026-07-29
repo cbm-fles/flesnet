@@ -101,7 +101,6 @@ set(MARKDOWN_DOCS_FOR_DOXYGEN
   README.md
   HOWTO.md
   INSTALL.md
-  doc/Ctrl-C.md
   doc/monitoring.md
   doc/monitoring_with_podman.md
   doc/TS_Source_Identifier.md
