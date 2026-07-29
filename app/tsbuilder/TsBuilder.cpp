@@ -432,6 +432,9 @@ void TsBuilder::post_tag_recvs(TsHandle& tsh, std::size_t ci) {
 // Cancel all outstanding data receive operations of one contribution.
 // Collect the requests first: ucp_request_cancel may invoke the completion
 // callback inline, which erases from m_active_data_recv_requests.
+// That callback can also re-enter this function and cancel (and free) the
+// remaining requests of the contribution, so re-check every request against
+// the map before cancelling it.
 void TsBuilder::cancel_data_recvs(TsId id, std::size_t ci) {
   std::vector<ucs_status_ptr_t> to_cancel;
   for (const auto& [request, info] : m_active_data_recv_requests) {
@@ -440,7 +443,9 @@ void TsBuilder::cancel_data_recvs(TsId id, std::size_t ci) {
     }
   }
   for (auto* request : to_cancel) {
-    ucp_request_cancel(m_worker, request);
+    if (m_active_data_recv_requests.contains(request)) {
+      ucp_request_cancel(m_worker, request);
+    }
   }
 }
 
