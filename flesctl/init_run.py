@@ -135,8 +135,8 @@ def main(config_file: str, run_id: str):
     # fles_input.py configures the CRIs and only then starts the stserver, which
     # picks up the enabled channels once at startup.
     en_spm = [
-        f"{node}: env LOGDIR={LOGDIR}{node}_ {os.path.join(FLESCTLDIR, 'fles_input.py')}"
-        f" {config_file} {node}"
+        f"{node}: env LOGDIR={LOGDIR}{node}_ STSERVER_CFG={STSERVER_CFG}"
+        f" {os.path.join(FLESCTLDIR, 'fles_input.py')} {config_file} {node}"
         for node in entry_nodes
     ]
 
