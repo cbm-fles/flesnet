@@ -20,8 +20,6 @@ STSERVER_CFG = os.getenv("STSERVER_CFG", "stserver.cfg")
 # Global variables
 stserver: subprocess.Popen | None = None  # The spawned stserver process
 pgen_in_use: bool = False
-MAY_END: bool = False
-END_REQUESTED: bool = False
 
 
 def stop_stserver(timeout=10) -> bool:
@@ -63,14 +61,8 @@ def end_readout():
 
 def handle_signal(signum, _):
     """Handle SIGINT or SIGTERM signal by initiating end of readout."""
-    signal_name = signal.Signals(signum).name
-    print(f"Received signal {signal_name}.")
-    if MAY_END:
-        end_readout()
-    else:
-        print("Requesting end of readout.")
-        global END_REQUESTED  # pylint: disable=global-statement
-        END_REQUESTED = True
+    print(f"Received signal {signal.Signals(signum).name}.")
+    end_readout()
 
 
 def main(config_file: str, hostname: str):
@@ -157,10 +149,6 @@ def main(config_file: str, hostname: str):
     global stserver  # pylint: disable=global-statement
     stserver = subprocess.Popen(cmd, env=env, start_new_session=True)
 
-    # First opportunity to safely shutdown
-    if END_REQUESTED:
-        end_readout()
-
     # The data path is established asynchronously, so the pattern generators
     # can be enabled right away; data produced before the stserver is ready is
     # dropped at the CRI.
@@ -171,13 +159,6 @@ def main(config_file: str, hostname: str):
             stdout=open(LOGDIR + "cri_en_pgen.log", "w", encoding="utf-8"),
             check=False,
         )
-
-    # From this point it is safe to shut down any time
-    global MAY_END  # pylint: disable=global-statement
-    MAY_END = True
-    # Check for race conditions
-    if END_REQUESTED:
-        end_readout()
 
     print("Running...")
     # Poll instead of waiting: a blocking wait holds the lock that the wait in
