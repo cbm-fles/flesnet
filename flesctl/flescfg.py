@@ -3,6 +3,7 @@
 # 2024-12-03 Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
 # pyright: reportArgumentType=false
 
+import re
 import sys
 
 import yaml
@@ -24,25 +25,75 @@ def parse_size(value: str | int) -> int:
     return int(number * suffixes.get(unit, 1))
 
 
+# Durations are passed through to the flesnet binaries verbatim. Their parser
+# (Nanoseconds::parse in lib/tsb/OptionValues.cpp) requires a unit suffix and
+# rejects a bare number, so validate the format here rather than converting.
+DURATION_RE = re.compile(r"^-?[0-9]+(ns|us|µs|ms|s)$")
+
+
+def parse_duration(value: str) -> str:
+    """Validate a duration string with unit suffix, returning it unchanged."""
+    val = str(value).strip()
+    if not DURATION_RE.match(val):
+        raise ValueError(f"invalid duration '{value}', expected <number>[ns|us|ms|s]")
+    return val
+
+
+# The keys of the tsmanager, stserver and tsbuilder sections are translated
+# directly into options of the corresponding generated configuration file, with
+# underscores replaced by dashes. Adding an option supported by one of those
+# binaries requires no more than a new entry here.
 CONFIG_SCHEMA = Schema(
     {
         "common": {
-            "timeslice_size": And(Use(int), lambda n: 0 < n),
-            "timeslice_overlap": And(Use(int), lambda n: 0 < n < 10000),
-            "tsbuf_data_size_exp": And(Use(int), lambda n: 0 < n < 10000),
-            "tsbuf_desc_size_exp": And(Use(int), lambda n: 0 < n < 10000),
-            "transport": And(str, Use(str.lower), Or("rdma", "libfabric", "zeromq")),
-            "mc_size_limit_bytes": And(Use(parse_size), lambda n: 0 < n),
-            "default_readout_buffer_size": And(Use(parse_size), lambda n: 0 < n),
-            "pgen_mc_size_ns": And(Use(int), lambda n: 0 < n),
-            "pgen_rate": And(Use(float), lambda x: 0 <= x <= 1),
-            "tsclient_param": [str],
+            # shared by tsmanager and stserver, must be identical for both
+            "timeslice_duration": And(str, Use(parse_duration)),
+            "tsmanager": {
+                "timeout": And(str, Use(parse_duration)),
+                "max_in_flight": And(Use(int), lambda n: 0 < n),
+            },
+            "stserver": {
+                "timeout": And(str, Use(parse_duration)),
+                "overlap_before": And(str, Use(parse_duration)),
+                "overlap_after": And(str, Use(parse_duration)),
+                # buffer sizes are per readout channel
+                "data_buffer_size": And(Use(parse_size), lambda n: 0 < n),
+                "desc_buffer_size": And(Use(parse_size), lambda n: 0 < n),
+                # 0 disables aggregation and uses scatter-gather sends
+                "aggregation_buffer_size": And(Use(parse_size), lambda n: 0 <= n),
+                # software pattern generator, independent of the CRI one below
+                "pgen_channels": And(Use(int), lambda n: 0 <= n),
+                "pgen_microslice_duration": And(str, Use(parse_duration)),
+                "pgen_microslice_size": And(Use(parse_size), lambda n: 0 < n),
+                "pgen_flags": And(Use(int), lambda n: 0 <= n),
+            },
+            "tsbuilder": {
+                "timeout": And(str, Use(parse_duration)),
+                "buffer_size": And(Use(parse_size), lambda n: 0 < n),
+            },
+            # CRI settings, applied by cri_cfg before stserver is started
+            "cri": {
+                "mc_size_limit_bytes": And(Use(parse_size), lambda n: 0 < n),
+                "pgen_mc_size_ns": And(Use(int), lambda n: 0 < n),
+                "pgen_rate": And(Use(float), lambda x: 0 <= x <= 1),
+            },
+            # timeslice consumers, started on every build node
+            "analyzers": [str],
+            "publishers": [str],
+            "recorders": [str],
             "extra_cmd": [str],
+        },
+        # the single node running the tsmanager the other roles connect to
+        "manager_node": {
+            "name": str,
+            "address": str,
+            Optional("ucx_net_devices"): str,
         },
         "entry_nodes": {
             Use(str): {
                 "address": str,
                 Optional("active"): bool,
+                Optional("ucx_net_devices"): str,
                 "cards": {
                     Use(str): {
                         "pci_address": str,
@@ -52,14 +103,8 @@ CONFIG_SCHEMA = Schema(
                                 "mode": And(
                                     str, Use(str.lower), Or("flim", "pgen", "disable")
                                 ),
-                                Optional("readout_buffer_size"): And(
-                                    Use(parse_size), lambda n: 0 < n
-                                ),
                             },
                         },
-                        Optional("default_readout_buffer_size"): And(
-                            Use(parse_size), lambda n: 0 < n
-                        ),
                     },
                 },
             }
@@ -68,7 +113,10 @@ CONFIG_SCHEMA = Schema(
             Use(str): {
                 "address": str,
                 Optional("active"): bool,
-                Optional("tsclient_param"): [str],
+                Optional("ucx_net_devices"): str,
+                Optional("analyzers"): [str],
+                Optional("publishers"): [str],
+                Optional("recorders"): [str],
                 Optional("extra_cmd"): [str],
             }
         },
@@ -76,15 +124,37 @@ CONFIG_SCHEMA = Schema(
 )
 
 
+# Defaults match the compiled-in defaults of the corresponding binaries.
 CONFIG_DEFAULTS = {
     "common": {
-        "timeslice_size": 1000,
-        "timeslice_overlap": 1,
-        "transport": "rdma",
-        "mc_size_limit_bytes": 2097152,
-        "default_readout_buffer_size": 2 ^ 31,
-        "pgen_rate": 1,
-        "tsclient_param": [],
+        "timeslice_duration": "40ms",
+        "tsmanager": {
+            "timeout": "1s",
+            "max_in_flight": 8,
+        },
+        "stserver": {
+            "timeout": "100ms",
+            "overlap_before": "100us",
+            "overlap_after": "100us",
+            "data_buffer_size": "1G",
+            "desc_buffer_size": "16M",
+            "aggregation_buffer_size": "10G",
+            "pgen_channels": 0,
+            "pgen_microslice_duration": "400us",
+            "pgen_microslice_size": "100K",
+            "pgen_flags": 3,
+        },
+        "tsbuilder": {
+            "timeout": "10s",
+            "buffer_size": "20G",
+        },
+        "cri": {
+            "mc_size_limit_bytes": 2097152,
+            "pgen_rate": 1,
+        },
+        "analyzers": [],
+        "publishers": [],
+        "recorders": [],
         "extra_cmd": [],
     }
 }

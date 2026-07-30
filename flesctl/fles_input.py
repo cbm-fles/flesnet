@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Start readout on a node."""
 
-import glob
 import os
 import subprocess
 import signal
@@ -14,9 +13,8 @@ import flescfg
 
 # Global parameters, may be overwritten by environment
 FLESNETDIR = os.getenv("FLESNETDIR", "/usr/bin/")
-SPMDIR = os.getenv("SPMDIR", "/opt/spm/")
 LOGDIR = os.getenv("LOGDIR", "log/")
-SHM_PREFIX = os.getenv("SHM_PREFIX", "readout_")
+STSERVER_CFG = os.getenv("STSERVER_CFG", "stserver.cfg")
 
 
 # Global variables
@@ -24,13 +22,6 @@ processes: list[subprocess.Popen] = []  # Spawned processes
 pgen_in_use: bool = False
 MAY_END: bool = False
 END_REQUESTED: bool = False
-
-
-def cleanup_shm():
-    """Remove all shared memory files."""
-    print("Cleaning up shm files...")
-    for shm_file in glob.glob(f"/dev/shm/{SHM_PREFIX}*"):
-        os.remove(shm_file)
 
 
 def term_subprocesses(timeout=10) -> bool:
@@ -80,7 +71,6 @@ def end_readout():
     else:
         print("Some subprocesses did not terminate gracefully.")
         kill_subprocesses()
-        cleanup_shm()
         sys.exit(1)
 
 
@@ -116,8 +106,10 @@ def main(config_file: str, hostname: str):
     )
 
     use_pgen = False
+    nodeinfo = config["entry_nodes"][hostname]
     common = config["common"]
-    cards = config["entry_nodes"][hostname]["cards"]
+    cri = common["cri"]
+    cards = nodeinfo["cards"]
 
     print("Configuring CRIs...")
     for card, cardinfo in cards.items():
@@ -130,11 +122,11 @@ def main(config_file: str, hostname: str):
             "-i",
             f"{cardinfo['pci_address']}",
             "-t",
-            f"{common['pgen_mc_size_ns'] // 1000}",
+            f"{cri['pgen_mc_size_ns'] // 1000}",
             "-r",
-            f"{common['pgen_rate']}",
+            f"{cri['pgen_rate']}",
             "--mc-size-limit",
-            f"{common['mc_size_limit_bytes']}",
+            f"{cri['mc_size_limit_bytes']}",
         ]
         channels = cardinfo["channels"]
         for channel, channelinfo in channels.items():
@@ -150,42 +142,24 @@ def main(config_file: str, hostname: str):
     global pgen_in_use  # pylint: disable=global-statement
     pgen_in_use = use_pgen
 
-    # Start cri_server subprocesses, each in its own process group
-    print("Starting cri_server instance(s)...")
-    for card, cardinfo in cards.items():
-        readout_buffer_size = cardinfo.get(
-            "default_readout_buffer_size", common["default_readout_buffer_size"]
-        )
-        # Find the smallest power of 2 that is greater or equal to the buffer size
-        readout_buffer_size_exp = 0
-        while (1 << readout_buffer_size_exp) < readout_buffer_size:
-            readout_buffer_size_exp += 1
-        cmd = [
-            os.path.join(FLESNETDIR, "cri_server"),
-            "-c",
-            "/dev/null",
-            "-L",
-            f"{LOGDIR}{card}_server.log",
-            "--log-syslog",
-            "-i",
-            f"{cardinfo['pci_address']}",
-            "--archivable-data=false",
-            f"--data-buffer-size-exp={readout_buffer_size_exp}",
-            "-o",
-            f"{SHM_PREFIX}{card}",
-            "-e",
-            f"{os.path.join(SPMDIR, "spm-provide")} cri_server_sem",
-        ]
-        process = subprocess.Popen(cmd, start_new_session=True)
-        processes.append(process)
-
-    # Block until servers are ready
-    print(f"Waiting for {len(cards)} cri_server instance(s)...")
-    subprocess.run(
-        [os.path.join(SPMDIR, "spm-require"), f"-n{len(cards)}", "cri_server_sem"],
-        check=False,
-    )
-    print("... all cri_server(s) started")
+    # A single stserver instance takes care of all CRIs of this node. It has to
+    # be started after cri_cfg, as it determines the set of enabled channels
+    # once at startup.
+    print("Starting stserver...")
+    env = os.environ.copy()
+    if "ucx_net_devices" in nodeinfo:
+        env["UCX_NET_DEVICES"] = nodeinfo["ucx_net_devices"]
+    cmd = [
+        os.path.join(FLESNETDIR, "stserver"),
+        "-c",
+        STSERVER_CFG,
+        "-L",
+        f"{LOGDIR}stserver.log",
+        "--log-syslog",
+        "--advertise-host",
+        f"{nodeinfo['address']}",
+    ]
+    processes.append(subprocess.Popen(cmd, env=env, start_new_session=True))
 
     # First opportunity to safely shutdown
     if END_REQUESTED:
@@ -207,7 +181,6 @@ def main(config_file: str, hostname: str):
     if END_REQUESTED:
         end_readout()
 
-    subprocess.run([os.path.join(SPMDIR, "spm-provide"), "fles_input_sem"], check=False)
     print("Running...")
     # Monitor all subprocesses
     while processes:

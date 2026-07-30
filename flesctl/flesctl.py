@@ -446,14 +446,27 @@ def run_info(cfg: GlobalConfig, par_run_id: int | None = None) -> None:
         else:
             status = "ended unexpectedly"
 
-    # retrieve additional information from run config
+    # retrieve additional information from run config. There is no central list
+    # of inputs any more, so count the components each stserver contributes:
+    # its enabled readout channels plus its software pattern generator channels.
     components = None
-    flesnet_conf = os.path.join(RUNDIR_BASE, str(info_run_id), "flesnet.cfg")
-    if os.path.isfile(flesnet_conf):
-        output = subprocess.check_output(
-            ["grep", "-c", "^input =", flesnet_conf], universal_newlines=True
-        )
-        components = output.rstrip()
+    readout_conf = os.path.join(RUNDIR_BASE, str(info_run_id), "readout.yaml")
+    if os.path.isfile(readout_conf):
+        run_config = flescfg.load(readout_conf)
+        if run_config is not None:
+            pgen_channels = run_config["common"]["stserver"]["pgen_channels"]
+            count = 0
+            for nodeinfo in run_config["entry_nodes"].values():
+                if not nodeinfo.get("active", True):
+                    continue
+                count += pgen_channels
+                for cardinfo in nodeinfo["cards"].values():
+                    count += sum(
+                        1
+                        for channelinfo in cardinfo["channels"].values()
+                        if channelinfo["mode"] != "disable"
+                    )
+            components = str(count)
 
     # assemble output
     startuser = get_user_fullname(startuser)
