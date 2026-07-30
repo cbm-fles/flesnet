@@ -19,18 +19,15 @@ struct Parameters {
 
   // general options
   uint64_t maximum_number = UINT64_MAX;
-  std::string exec;
 
   // source selection
   uint32_t pattern_generator = 0;
   bool use_pattern_generator = false;
   size_t channel_idx = 0;
-  std::string input_shm;
   std::string input_archive;
 
   // sink selection
   bool analyze = false;
   size_t dump_verbosity = 0;
-  std::string output_shm;
   std::string output_archive;
 };

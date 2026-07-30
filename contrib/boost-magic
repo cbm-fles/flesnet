@@ -1,7 +1,7 @@
 # File magic for Boost binary serialization archives.
 # 2024-06-12, Jan de Cuveland <cuveland@compeng.uni-frankfurt.de>
 
-# Copy this file to /etc/magic ot $HOME/.magic to enable magic(5) support.
+# Copy this file to /etc/magic or $HOME/.magic to enable magic(5) support.
 # The magic is used by the file(1) command to detect Boost serialization binary archives.
 
 0     quad    22

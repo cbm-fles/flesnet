@@ -10,5 +10,5 @@ else
     # try to start an executable only available if build includes libpda
     # without actually using anything from libpda.
     echo "Testing without pda kernel module"
-    ./cri_server -h
+    ./cri_cfg -h
 fi    
