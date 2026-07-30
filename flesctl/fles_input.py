@@ -18,60 +18,47 @@ STSERVER_CFG = os.getenv("STSERVER_CFG", "stserver.cfg")
 
 
 # Global variables
-processes: list[subprocess.Popen] = []  # Spawned processes
+stserver: subprocess.Popen | None = None  # The spawned stserver process
 pgen_in_use: bool = False
 MAY_END: bool = False
 END_REQUESTED: bool = False
 
 
-def term_subprocesses(timeout=10) -> bool:
-    """Send SIGTERM to all subprocesses and wait for them to exit.
-    If any remain, return False."""
-    print(f"Sending SIGTERM to all {len(processes)} subprocesses...")
-    for process in processes:
-        if process.poll() is None:  # Process is still running
-            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-
-    # Wait for all processes to terminate or timeout
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        all_terminated = True
-        for process in processes:
-            if process.poll() is None:  # Process is still running
-                all_terminated = False
-                break
-        if all_terminated:
-            print("All subprocesses terminated gracefully.")
-            return True
-        time.sleep(0.5)  # Check every 500ms
-    return False
+def stop_stserver(timeout=10) -> bool:
+    """Stop the stserver, forcefully if it does not react in time."""
+    if stserver is None or stserver.poll() is not None:
+        return True
+    print("Sending SIGTERM to stserver...")
+    os.killpg(os.getpgid(stserver.pid), signal.SIGTERM)
+    try:
+        stserver.wait(timeout=timeout)
+        print("stserver terminated gracefully.")
+        return True
+    except subprocess.TimeoutExpired:
+        print("stserver did not terminate gracefully, sending SIGKILL...")
+        os.killpg(os.getpgid(stserver.pid), signal.SIGKILL)
+        return False
 
 
-def kill_subprocesses() -> None:
-    """Send SIGKILL to all subprocesses."""
-    print("Sending SIGKILL to remaining subprocesses...")
-    for process in processes:
-        if process.poll() is None:  # Process is still running
-            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+def disable_pgen() -> None:
+    """Disable the CRI pattern generators if they are in use."""
+    if not pgen_in_use:
+        return
+    print("Disabling pattern generators...")
+    subprocess.run(
+        [os.path.join(FLESNETDIR, "cri_en_pgen"), "0"],
+        stdout=open(LOGDIR + "cri_en_pgen.log", "a", encoding="utf-8"),
+        check=False,
+    )
 
 
 def end_readout():
-    """End readout by shutting down all subprocesses."""
+    """End readout by shutting the stserver down."""
     print("Shutting down...")
-    if pgen_in_use:
-        print("Disabling pattern generators...")
-        subprocess.run(
-            [os.path.join(FLESNETDIR, "cri_en_pgen"), "0"],
-            stdout=open(LOGDIR + "cri_en_pgen.log", "a", encoding="utf-8"),
-            check=False,
-        )
-    if term_subprocesses():
-        print("Exiting")
-        sys.exit(0)
-    else:
-        print("Some subprocesses did not terminate gracefully.")
-        kill_subprocesses()
-        sys.exit(1)
+    disable_pgen()
+    ok = stop_stserver()
+    print("Exiting")
+    sys.exit(0 if ok else 1)
 
 
 def handle_signal(signum, _):
@@ -167,17 +154,20 @@ def main(config_file: str, hostname: str):
         "--advertise-host",
         f"{nodeinfo['address']}",
     ]
-    processes.append(subprocess.Popen(cmd, env=env, start_new_session=True))
+    global stserver  # pylint: disable=global-statement
+    stserver = subprocess.Popen(cmd, env=env, start_new_session=True)
 
     # First opportunity to safely shutdown
     if END_REQUESTED:
         end_readout()
 
-    time.sleep(1)
+    # The data path is established asynchronously, so the pattern generators
+    # can be enabled right away; data produced before the stserver is ready is
+    # dropped at the CRI.
     if pgen_in_use:
         print("Enabling pattern generators...")
         subprocess.run(
-            [FLESNETDIR + "cri_en_pgen", "1"],
+            [os.path.join(FLESNETDIR, "cri_en_pgen"), "1"],
             stdout=open(LOGDIR + "cri_en_pgen.log", "w", encoding="utf-8"),
             check=False,
         )
@@ -190,16 +180,14 @@ def main(config_file: str, hostname: str):
         end_readout()
 
     print("Running...")
-    # Monitor all subprocesses
-    while processes:
-        for process in processes[:]:
-            retcode = process.poll()  # Check if the process has terminated
-            if retcode is not None:  # Process has finished
-                print(f"Subprocess {process.pid} finished with return code {retcode}")
-                processes.remove(process)
-        time.sleep(0.5)  # Avoid busy-waiting
-
-    print("*** YOU SHOULD NEVER SEE THIS ***")
+    # Poll instead of waiting: a blocking wait holds the lock that the wait in
+    # stop_stserver needs when a signal arrives, which would keep the handler
+    # from reaping the process.
+    while stserver.poll() is None:
+        time.sleep(0.5)
+    print(f"Error: stserver exited unexpectedly with return code {stserver.returncode}")
+    disable_pgen()
+    sys.exit(stserver.returncode)
 
 
 if __name__ == "__main__":
