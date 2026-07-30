@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+"""Run a generated configuration on the local machine.
+
+Takes the place of SPM for testing: it generates the run configuration from a
+tag, then starts every command of the resulting job description locally,
+ignoring the node names. Waits for the tsclients to finish and shuts the
+remaining processes down afterwards.
+
+Usage: run-local <build_dir> [config_file]
+"""
+
+import os
+import shlex
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+
+FLESCTLDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local.yaml")
+
+# default ports of tsmanager and stserver, see lib/tsb/TsbProtocol.hpp
+PORTS = (13373, 13374)
+
+
+def check_ports() -> bool:
+    """Check that the ports the roles need are free.
+
+    Refuse to run otherwise: the roles would silently attach to whatever else
+    is listening there, which on a shared machine may well belong to somebody
+    else's run.
+    """
+    for port in PORTS:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                sock.bind(("0.0.0.0", port))
+            except OSError:
+                print(f"Error: port {port} is in use, refusing to start")
+                return False
+    return True
+
+
+def parse_spm(filename: str) -> list[tuple[str, str]]:
+    """Read an SPM job description into a list of node and command pairs."""
+    entries = []
+    with open(filename, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            node, _, command = line.partition(":")
+            entries.append((node.strip(), command.strip()))
+    return entries
+
+
+def main() -> int:
+    """Generate a configuration and run it locally."""
+    if len(sys.argv) < 2:
+        print(__doc__)
+        return 2
+    build_dir = os.path.abspath(sys.argv[1])
+    config_file = os.path.abspath(sys.argv[2] if len(sys.argv) > 2 else DEFAULT_CONFIG)
+
+    if not check_ports():
+        return 1
+
+    rundir = tempfile.mkdtemp(prefix="flesctl-local-")
+    os.mkdir(os.path.join(rundir, "log"))
+    print(f"Run directory: {rundir}")
+
+    # generate the configuration, pointing the generator at the build directory
+    # and at this working copy instead of the installed locations
+    env = os.environ.copy()
+    env["FLESNETDIR"] = build_dir + "/"
+    env["FLESCTLDIR"] = FLESCTLDIR
+    env["RUNDIR"] = rundir + "/"
+    env["PYTHONPATH"] = FLESCTLDIR
+    result = subprocess.run(
+        [sys.executable, os.path.join(FLESCTLDIR, "init_run.py"), config_file, "0"],
+        env=env,
+        check=False,
+    )
+    if result.returncode != 0:
+        return result.returncode
+
+    entries = parse_spm(os.path.join(rundir, "readout.spm"))
+
+    # check the executables up front, so that a missing one does not leave the
+    # processes started before it running
+    for _, command in entries:
+        executable = next(
+            word for word in shlex.split(command) if "=" not in word and word != "env"
+        )
+        if shutil.which(executable) is None:
+            print(f"Error: {executable} not found")
+            return 1
+
+    # start everything at once; the roles establish their connections
+    # themselves, so no particular order is required here
+    processes = []
+    failed = False
+    try:
+        for node, command in entries:
+            print(f"[{node}] {command}")
+            processes.append(
+                (
+                    command,
+                    subprocess.Popen(
+                        shlex.split(command),
+                        cwd=rundir,
+                        env=env,
+                        start_new_session=True,
+                    ),
+                )
+            )
+
+        # the tsclients stop by themselves once they have seen enough timeslices
+        deadline = time.time() + 120
+        for command, process in [(c, p) for c, p in processes if "tsclient" in c]:
+            try:
+                if process.wait(timeout=max(0, deadline - time.time())) != 0:
+                    print(f"FAILED ({process.returncode}): {command}")
+                    failed = True
+            except subprocess.TimeoutExpired:
+                print(f"TIMEOUT: {command}")
+                failed = True
+    finally:
+        print("Shutting down...")
+        for _, process in processes:
+            if process.poll() is None:
+                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        for _, process in processes:
+            try:
+                process.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+
+    print(f"Logs in {os.path.join(rundir, 'log')}")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,60 @@
+# Single-machine test configuration.
+#
+# All three roles run on the local host and no CRI is involved: the data comes
+# from the software pattern generator of the stserver, which tsclient then
+# checks. Buffers are kept small so that a run starts quickly.
+#
+# See run-local in this directory for how to start it.
+
+common:
+  timeslice_duration: 100ms
+
+  tsmanager:
+    timeout: 1s
+    max_in_flight: 4
+
+  stserver:
+    timeout: 100ms
+    overlap_before: 1ms
+    overlap_after: 1ms
+    data_buffer_size: 64M
+    desc_buffer_size: 4M
+    aggregation_buffer_size: 256M
+    # the pattern generator replaces the readout of a CRI here
+    pgen_channels: 2
+    pgen_microslice_duration: 10ms
+    pgen_microslice_size: 10K
+    # 1: generate pattern, 2: randomize sizes
+    pgen_flags: 3
+
+  tsbuilder:
+    timeout: 10s
+    buffer_size: 1G
+
+  cri:
+    mc_size_limit_bytes: 2M
+    pgen_mc_size_ns: 100000
+    pgen_rate: 1
+
+  # -a checks the generated pattern, so a clean run means the data arrived
+  # intact; -n limits the run to a fixed number of timeslices
+  analyzers:
+    - "-a -i shm://%shm_id% -n 20"
+  publishers: []
+  recorders: []
+  extra_cmd: []
+
+# ucx_net_devices is left unset throughout, so that UCX picks a transport
+# suitable for the loopback interface by itself
+
+manager_node:
+  name: localhost
+  address: 127.0.0.1
+
+entry_nodes:
+  localhost:
+    address: 127.0.0.1
+
+build_nodes:
+  localhost:
+    address: 127.0.0.1
