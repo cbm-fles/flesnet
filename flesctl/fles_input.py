@@ -109,6 +109,7 @@ def main(config_file: str, hostname: str):
     # a node without cards runs the software pattern generator of its stserver
     # only, so there is no CRI to inspect and configure
     if cards:
+        # diagnostic only, its output is not used further
         subprocess.run(
             [os.path.join(FLESNETDIR, "cri_info")],
             stdout=open(LOGDIR + "cri_info.log", "w", encoding="utf-8"),
@@ -141,7 +142,11 @@ def main(config_file: str, hostname: str):
                     f"{cardinfo['pgen_base_eqid'] + channel}",
                 ]
                 use_pgen = True
-        subprocess.run(cmd, check=False)
+        # the stserver determines the set of enabled channels once at startup,
+        # so a failed configuration cannot be recovered from later in the run
+        if subprocess.run(cmd, check=False).returncode != 0:
+            print(f"Error: cri_cfg failed for card {card}, aborting.")
+            sys.exit(1)
     global pgen_in_use  # pylint: disable=global-statement
     pgen_in_use = use_pgen
 
