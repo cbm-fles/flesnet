@@ -296,6 +296,7 @@ unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
 add_subdirectory(contrib)
 add_subdirectory(contrib/flesctl)
+add_subdirectory(flesctl)
 if (USE_DOXYGEN AND DOXYGEN_FOUND)
   add_subdirectory(doc)
 endif()
