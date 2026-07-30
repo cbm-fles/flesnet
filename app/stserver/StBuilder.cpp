@@ -110,6 +110,10 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
                         (m_cri_channels.size() + pgen_channels) +
                     4096;
 
+  // remove a segment left behind by a previous process that did not shut down
+  // cleanly, as create_only would fail on it
+  boost::interprocess::shared_memory_object::remove(m_shm_id.c_str());
+
   INFO("Creating shared memory segment '{}' of size {}", m_shm_id,
        human_readable_count(shm_size, true));
   m_shm = std::make_unique<boost::interprocess::managed_shared_memory>(
