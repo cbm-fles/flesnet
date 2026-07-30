@@ -94,7 +94,9 @@ CONFIG_SCHEMA = Schema(
                 "address": str,
                 Optional("active"): bool,
                 Optional("ucx_net_devices"): str,
-                "cards": {
+                # a node without cards is valid, running only the software
+                # pattern generator of its stserver
+                Optional("cards", default={}): {
                     Use(str): {
                         "pci_address": str,
                         "pgen_base_eqid": Use(int),

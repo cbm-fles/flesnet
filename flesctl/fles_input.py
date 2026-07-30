@@ -99,11 +99,6 @@ def main(config_file: str, hostname: str):
         signal.signal(sig, handle_signal)
 
     print("Starting readout...")
-    subprocess.run(
-        [os.path.join(FLESNETDIR, "cri_info")],
-        stdout=open(LOGDIR + "cri_info.log", "w", encoding="utf-8"),
-        check=False,
-    )
 
     use_pgen = False
     nodeinfo = config["entry_nodes"][hostname]
@@ -111,7 +106,15 @@ def main(config_file: str, hostname: str):
     cri = common["cri"]
     cards = nodeinfo["cards"]
 
-    print("Configuring CRIs...")
+    # a node without cards runs the software pattern generator of its stserver
+    # only, so there is no CRI to inspect and configure
+    if cards:
+        subprocess.run(
+            [os.path.join(FLESNETDIR, "cri_info")],
+            stdout=open(LOGDIR + "cri_info.log", "w", encoding="utf-8"),
+            check=False,
+        )
+        print("Configuring CRIs...")
     for card, cardinfo in cards.items():
         cmd = [
             os.path.join(FLESNETDIR, "cri_cfg"),
