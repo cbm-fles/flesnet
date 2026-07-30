@@ -1,29 +1,60 @@
 # Tag: 2023/fles/en03_pgen
 
 common:
-  # flesnet settings
-  timeslice_size: 1000
-  timeslice_overlap: 1
-  tsbuf_data_size_exp: 30
-  tsbuf_desc_size_exp: 22
-  transport: rdma
-  
-  # cri settings
-  mc_size_limit_bytes: 2097152
-  default_readout_buffer_size: 1G
-  pgen_mc_size_ns: 100000
-  pgen_rate: 1
+  # timeslice building; used by both the tsmanager and the stservers
+  timeslice_duration: 40ms
 
-  tsclient_param:
+  tsmanager:
+    timeout: 1s
+    max_in_flight: 8
+
+  stserver:
+    timeout: 100ms
+    overlap_before: 100us
+    overlap_after: 100us
+    # buffer sizes are per readout channel
+    data_buffer_size: 1G
+    desc_buffer_size: 16M
+    # set to 0 to disable aggregation and use scatter-gather sends
+    aggregation_buffer_size: 10G
+    # software pattern generator, unrelated to the CRI one configured below
+    pgen_channels: 0
+    pgen_microslice_duration: 400us
+    pgen_microslice_size: 100K
+    pgen_flags: 3
+
+  tsbuilder:
+    timeout: 10s
+    buffer_size: 20G
+
+  # applied by cri_cfg before the stserver is started
+  cri:
+    mc_size_limit_bytes: 2M
+    pgen_mc_size_ns: 100000
+    pgen_rate: 1
+
+  # timeslice consumers, started on every build node. The three groups are
+  # listed separately so that they can later be started and stopped along with
+  # the transitions of the ECS state machine; for now all of them are started
+  # together. Placeholders: %run_id%, %node%, %shm_id%, %client%.
+  analyzers:
     - "-a -m -i shm://%shm_id%"
+  publishers: []
+  recorders: []
+  extra_cmd: []
+
+manager_node:
+  name: node9
+  address: node9ib1
+  ucx_net_devices: ibp59s0:1
 
 entry_nodes:
   en03:
     address: en03ib0
+    ucx_net_devices: ibp59s0:1
     cards:
       cri0:
         pci_address: 0b:00.1
-        default_readout_buffer_size: 2G
         pgen_base_eqid: 0xF020
         channels:
           0:
@@ -40,6 +71,7 @@ entry_nodes:
             mode: pgen
   en04:
     address: en04ib0
+    ucx_net_devices: ibp59s0:1
     active: false
     cards:
       cri0:
@@ -50,10 +82,13 @@ entry_nodes:
             mode: pgen
 
 build_nodes:
-  node9:
-    address: node9ib1
-    active: false
   node10:
     address: node10ib1
+    ucx_net_devices: ibp59s0:1
+    publishers:
+      - "-i shm://%shm_id% -o 'tcp://*:5560?hwm=2'"
   node11:
     address: node11ib1
+    ucx_net_devices: ibp59s0:1
+    recorders:
+      - "-i shm://%shm_id% -o 'file:///local/data/%run_id%_%node%_%n.tsa?bytes=10000000000'"
