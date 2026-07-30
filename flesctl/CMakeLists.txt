@@ -6,4 +6,4 @@
 # New system
 install(PROGRAMS flesctl-wrapper DESTINATION bin RENAME flesctl-ng COMPONENT flesctl EXCLUDE_FROM_ALL)
 install(PROGRAMS init_run.py fles_input.py DESTINATION flesctl-ng COMPONENT flesctl EXCLUDE_FROM_ALL)
-install(FILES flesctl.py flescfg.py DESTINATION flesctl-ng COMPONENT flesctl EXCLUDE_FROM_ALL)
+install(FILES flesctl.py flescfg.py slurm.py DESTINATION flesctl-ng COMPONENT flesctl EXCLUDE_FROM_ALL)
