@@ -7,6 +7,9 @@ file(GLOB LIB_HEADERS *.hpp)
 
 add_library(tsb ${LIB_SOURCES} ${LIB_HEADERS})
 
+# Uses std::format and other C++23 features, independent of the global default
+target_compile_features(tsb PUBLIC cxx_std_23)
+
 target_include_directories(tsb PUBLIC .)
 
 target_include_directories(fles_core SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
