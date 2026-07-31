@@ -36,12 +36,17 @@ common:
     pgen_mc_size_ns: 100000
     pgen_rate: 1
 
-  # -a checks the generated pattern, so a clean run means the data arrived
-  # intact; -n limits the run to a fixed number of timeslices
+  # Every client receives every timeslice, so all three see the same 20 and
+  # then stop. -a checks the generated pattern, so a clean analyzer means the
+  # data arrived intact; what the recorder writes is read back afterwards.
   analyzers:
     - "-a -i shm://%shm_id% -n 20"
-  publishers: []
-  recorders: []
+  publishers:
+    # bound to the loopback interface, so that testing exposes no port
+    - "-i shm://%shm_id% -n 20 -o 'tcp://127.0.0.1:15560?hwm=2'"
+  recorders:
+    # written to the run directory, which is the working directory of the run
+    - "-i shm://%shm_id% -n 20 -o ts_%run_id%_%node%.tsa"
   extra_cmd: []
 
 # ucx_net_devices is left unset throughout, so that UCX picks a transport
