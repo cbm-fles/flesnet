@@ -10,6 +10,7 @@ Usage: run-local <build_dir> [config_file]
 """
 
 import os
+import re
 import shlex
 import shutil
 import signal
@@ -22,25 +23,52 @@ import time
 FLESCTLDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local.yaml")
 
-# default ports of tsmanager and stserver, see lib/tsb/TsbProtocol.hpp
-PORTS = (13373, 13374)
+# default ports of tsmanager and stserver, see lib/tsb/TsbProtocol.hpp, plus
+# the publisher port used by local.yaml
+PORTS = (13373, 13374, 15560)
+
+# the analyzer reports errors in its log, but still exits successfully, so the
+# log is what has to be checked
+ERROR_MARKERS = ("error in ", "with errors:")
 
 
-def check_ports() -> bool:
-    """Check that the ports the roles need are free.
+def is_listening(port: int) -> bool:
+    """Check whether something accepts connections on a port."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(1)
+        return sock.connect_ex(("127.0.0.1", port)) == 0
 
-    Refuse to run otherwise: the roles would silently attach to whatever else
-    is listening there, which on a shared machine may well belong to somebody
-    else's run.
+
+def is_bindable(port: int) -> bool:
+    """Check whether a port can be listened on."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind(("0.0.0.0", port))
+            return True
+        except OSError:
+            return False
+
+
+def check_ports(timeout=90) -> bool:
+    """Wait until the ports the roles need can be listened on.
+
+    Something already listening belongs to somebody else on a shared machine,
+    and the roles would silently attach to it, so give up in that case. A port
+    that merely cannot be bound yet holds a TIME-WAIT entry of a preceding run,
+    which the roles cannot listen on either, so wait for it to expire.
     """
     for port in PORTS:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            try:
-                sock.bind(("0.0.0.0", port))
-            except OSError:
-                print(f"Error: port {port} is in use, refusing to start")
+        deadline = time.time() + timeout
+        while not is_bindable(port):
+            if is_listening(port):
+                print(f"Error: something is listening on port {port}, not starting")
                 return False
+            if time.time() >= deadline:
+                print(f"Error: port {port} did not become available")
+                return False
+            print(f"Waiting for port {port} to be released...")
+            time.sleep(5)
     return True
 
 
@@ -55,6 +83,48 @@ def parse_spm(filename: str) -> list[tuple[str, str]]:
             node, _, command = line.partition(":")
             entries.append((node.strip(), command.strip()))
     return entries
+
+
+def verify(rundir: str, build_dir: str) -> bool:
+    """Check what the clients reported and read back what was recorded."""
+    ok = True
+    logdir = os.path.join(rundir, "log")
+    for name in sorted(os.listdir(logdir)):
+        if not name.endswith("_tsclient.log"):
+            continue
+        with open(os.path.join(logdir, name), "r", encoding="utf-8") as f:
+            text = f.read()
+        if any(marker in text for marker in ERROR_MARKERS):
+            print(f"Error: pattern errors reported in {name}")
+            ok = False
+
+    # reading the archive back checks the data all the way through the chain,
+    # from the pattern generator to the file
+    archives = sorted(name for name in os.listdir(rundir) if name.endswith(".tsa"))
+    if not archives:
+        print("Error: no timeslice archive was written")
+        return False
+    for archive in archives:
+        result = subprocess.run(
+            [os.path.join(build_dir, "tsclient"), "-a", "-i", archive],
+            cwd=rundir,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        output = result.stdout + result.stderr
+        match = re.search(r"total timeslices processed: (\d+)", output)
+        if (
+            result.returncode != 0
+            or match is None
+            or int(match.group(1)) == 0
+            or any(marker in output for marker in ERROR_MARKERS)
+        ):
+            print(f"Error: reading back {archive} failed:\n{output}")
+            ok = False
+        else:
+            print(f"Read back {archive}: {match.group(1)} timeslices, pattern intact")
+    return ok
 
 
 def main() -> int:
@@ -139,7 +209,10 @@ def main() -> int:
             except subprocess.TimeoutExpired:
                 os.killpg(os.getpgid(process.pid), signal.SIGKILL)
 
-    print(f"Logs in {os.path.join(rundir, 'log')}")
+    if not failed and not verify(rundir, build_dir):
+        failed = True
+
+    print(f"{'FAILED' if failed else 'PASSED'}, logs in {os.path.join(rundir, 'log')}")
     return 1 if failed else 0
 
 
