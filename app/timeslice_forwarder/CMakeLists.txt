@@ -66,7 +66,6 @@ target_link_libraries(timeslice_forwarder PRIVATE
     ${DATA_FORWARDER_LIBRARY}
     fles_ipc
     fles_core
-    flib_ipc
     logging
     crcutil
     ${Boost_LIBRARIES}
