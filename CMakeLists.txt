@@ -238,7 +238,14 @@ if(USE_CLANG_TIDY)
   endif()
 endif()
 
-set(CMAKE_CXX_STANDARD 23)
+# C++23 unless a consumer explicitly requests otherwise. Projects embedding the
+# externally consumed libraries (logging, monitoring, fles_ipc, shm_ipc,
+# tsclient) may still be on an older toolchain and can pass
+# -DCMAKE_CXX_STANDARD=17. Targets that genuinely need C++23 declare it via
+# target_compile_features().
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 23)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if( NOT "arm64" STREQUAL ${CMAKE_SYSTEM_PROCESSOR} )

@@ -9,6 +9,9 @@ add_executable(tsmanager
   TsManager.cpp
 )
 
+# Uses std::format, independent of the global default
+target_compile_features(tsmanager PRIVATE cxx_std_23)
+
 target_include_directories(tsmanager
   SYSTEM PUBLIC ${Boost_INCLUDE_DIRS}
 )

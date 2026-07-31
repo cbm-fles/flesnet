@@ -6,7 +6,11 @@
 #include <boost/log/common.hpp>
 #include <boost/log/sinks/syslog_backend.hpp>
 #include <boost/log/utility/manipulators/to_log.hpp>
+// Only required by the LF()/ERROR()/... macros below. Guarded so that this
+// header stays includable from C++17 consumers and pre-13 libstdc++.
+#if __has_include(<format>)
 #include <format>
+#endif
 #include <iosfwd>
 #include <iostream>
 
