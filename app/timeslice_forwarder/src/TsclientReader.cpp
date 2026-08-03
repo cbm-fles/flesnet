@@ -9,8 +9,13 @@
 using namespace std;
 using namespace std::chrono;
 
-
+struct MyStruct {
+    int foo;
+};
 TsclientReader::TsclientReader(std::string shm_uri) {
+    struct MyStruct b = {
+        0
+    };
     WorkerParameters param{
         1,
         0,
@@ -83,11 +88,14 @@ void TsclientReader::start_timeslice_reading() {
             timeslice = source_->get();
             stop = high_resolution_clock::now();
             L_(debug) << "TS reader - got ts after: " <<  duration_cast<milliseconds>(stop-start).count();
-
             if (!timeslice) {
                 break;
             }
-
+            /*
+            std::stringstream ss;
+            boost::archive::text_oarchive a(ss);
+            timeslice->timeslice_descriptor_.serialize(a, 1);
+            */
             L_(debug) << "TS index: " << timeslice->index();
 
             if (buffer_ != reinterpret_cast<char*>(source_->managed_shm_->get_address())) {
