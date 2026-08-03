@@ -103,6 +103,7 @@ public:
     return worker_.reconnect_count();
   }
 
+protected:
   std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
 
 private:

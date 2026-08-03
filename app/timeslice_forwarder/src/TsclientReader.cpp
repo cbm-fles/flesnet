@@ -5,17 +5,11 @@
 #include "System.hpp"
 #include "Utility.hpp"
 #include "df/WorkerThread.hpp"
-
+#include <Receiver.hpp>
 using namespace std;
 using namespace std::chrono;
 
-struct MyStruct {
-    int foo;
-};
 TsclientReader::TsclientReader(std::string shm_uri) {
-    struct MyStruct b = {
-        0
-    };
     WorkerParameters param{
         1,
         0,
@@ -26,15 +20,16 @@ TsclientReader::TsclientReader(std::string shm_uri) {
     };
     UriComponents uri{shm_uri};
     const auto shm_identifier = uri.path;
-    source_ = make_unique<fles::Receiver<fles::Timeslice,fles::TimesliceView>>(shm_identifier, param);
+    //source_ = make_unique<fles::Receiver<fles::Timeslice,fles::TimesliceView>>(shm_identifier, param);
+    source_ = make_unique<tsforwarder::Receiver>(shm_identifier, param);
     new_timeslice_callbacks_.set_worker(make_shared<WorkerThread>());
 
     // We have to read out one timeslice so the fles::Receiver class initializes the SHM and we can get the
     // necessary SHM pointer to register it for RDMA transmissions
     unique_ptr<fles::Timeslice> timeslice = source_->get();
     num_components_ = timeslice->num_components();
-    buffer_size_ = source_->managed_shm_->get_size();
-    buffer_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());
+    buffer_size_ = source_->get_managed_shm()->get_size();
+    buffer_ = reinterpret_cast<char*>(source_->get_managed_shm()->get_address());
     timeslice.reset();
 }
 
@@ -98,8 +93,8 @@ void TsclientReader::start_timeslice_reading() {
             */
             L_(debug) << "TS index: " << timeslice->index();
 
-            if (buffer_ != reinterpret_cast<char*>(source_->managed_shm_->get_address())) {
-                buffer_ = reinterpret_cast<char*>(source_->managed_shm_->get_address());
+            if (buffer_ != reinterpret_cast<char*>(source_->get_managed_shm()->get_address())) {
+                buffer_ = reinterpret_cast<char*>(source_->get_managed_shm()->get_address());
                 L_(fatal) << "(TimesliceReader) SHM base memory address changed";
                 exit(-EXIT_FAILURE);
             }
