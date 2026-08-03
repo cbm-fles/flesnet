@@ -66,6 +66,7 @@ public:
   /// expects, after replacing the offsets with those in the target segment.
   [[nodiscard]] tsb::StDescriptor st_descriptor() const;
 
+  fles::TimesliceShmWorkItem timeslice_item_;
 private:
   friend class Receiver<Timeslice, TimesliceView>;
   friend class StorableTimeslice;
@@ -77,7 +78,6 @@ private:
 
   std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
   std::shared_ptr<const Item> work_item_;
-  fles::TimesliceShmWorkItem timeslice_item_;
 };
 
 } // namespace fles

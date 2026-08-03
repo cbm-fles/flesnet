@@ -127,11 +127,12 @@ void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& eleme
     auto ts = make_shared<MyTimeslice>();
     ts_pos_++;
 
-    ts->set_timeslice_descriptor({
-        desc_ptr[0]->ts_num,
-        ts_pos_, timeslice_size_,
-        static_cast<uint32_t>(desc_ptr.size())
-    });
+    fles::TimesliceDescriptor ts_desc; 
+    ts_desc.index = desc_ptr[0]->ts_num;
+    ts_desc.ts_pos = ts_pos_;
+    ts_desc.num_core_microslices = timeslice_size_;
+    ts_desc.num_components = static_cast<uint32_t>(desc_ptr.size());
+    ts->set_timeslice_descriptor(ts_desc);
     L_(debug) << "elements[0]->compontent_id: " << elements[0]->compontent_id << endl;
 
     ts->set_desc(std::move(desc_ptr));
