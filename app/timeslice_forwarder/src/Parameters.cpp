@@ -1,5 +1,6 @@
 #include "Parameters.hpp"
 
+#include <cstdint>
 #include <df/Utils/Utils.hpp>
 #include <boost/program_options.hpp>
 #include <cstdlib>
@@ -54,6 +55,24 @@ void Parameters::parse_options(int argc, char** argv) {
         po::value<string>(&input_uri),
         "If defined this node will start as the a sender. !Currently only SHM supported");
 
+    general_add("data-buffer-map-size",
+        po::value<uint64_t>(&data_buffer_map_size)
+            ->default_value(data_buffer_map_size),
+        "Sets how many data references the data buffer map can contain. One timeslice currently needs `<component cnt> * 2` references."
+    );
+
+    general_add("wi-buffer-size",
+        po::value<uint64_t>(&wi_buffer_size_in_mb)
+            ->default_value(wi_buffer_size_in_mb),
+        "Sets how big the buffer containing the work items should be in MB."
+    );
+
+    general_add("wi-buffer-map-size",
+        po::value<uint64_t>(&wi_buffer_map_size)
+            ->default_value(wi_buffer_map_size),
+        "Sets how many data references the buffer map for the WorkItem Buffer can contain. Each work item uses one reference."
+    );
+
     general_add("log-syslog,S",
               po::value<unsigned>(&log_syslog)
                   ->implicit_value(log_syslog)
@@ -88,6 +107,7 @@ void Parameters::parse_options(int argc, char** argv) {
         exit(EXIT_SUCCESS);
     }
 
+    wi_buffer_size_in_mb = wi_buffer_size_in_mb*1000;
     logging::add_console(static_cast<severity_level>(log_level));
     if (vm.count("log-syslog") != 0u) {
         logging::add_syslog(logging::syslog::local0,

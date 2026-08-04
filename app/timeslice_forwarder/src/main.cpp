@@ -19,10 +19,17 @@ using namespace std;
 Parameters par;
 
 int start_cm(string hostname = "") {
-    auto node = make_shared<CentralManager>(par.central_manager_listen_addr, par.monitoring_uri, hostname);
-    L_(info) << "Central Manager listening on: " << par.central_manager_listen_addr;
+    auto node = make_shared<CentralManager>(
+        par.central_manager_listen_addr,
+        par.wi_buffer_size,
+        par.wi_buffer_map_size,
+        par.monitoring_uri,
+        hostname
+    );
+    L_(info) << "Started Central Manager - waiting for incoming connections on: " << par.central_manager_listen_addr;
+
     while (true) {
-        this_thread::sleep_for(std::chrono::milliseconds(500));
+        this_thread::sleep_for(std::chrono::milliseconds(2000));
     }
     return 0;
 }
@@ -33,6 +40,9 @@ int start_sender(string hostname = "") {
         par.listen_addr,
         par.input_uri,
         par.central_manager_listen_addr,
+        par.data_buffer_map_size,
+        par.wi_buffer_size,
+        par.wi_buffer_map_size,
         par.monitoring_uri,
         hostname
     );
@@ -52,13 +62,16 @@ int start_receiver(string hostname = "") {
         par.output_uri,
         par.timeslice_size,
         par.central_manager_listen_addr,
+        par.data_buffer_map_size,
+        par.wi_buffer_size,
+        par.wi_buffer_map_size,
         par.monitoring_uri,
         hostname
     );
     L_(info) << "Started TS receiver (" << par.listen_addr << ")";
 
     while (true) {
-        this_thread::sleep_for(chrono::milliseconds(3000));
+        this_thread::sleep_for(chrono::milliseconds(2000));
     }
     return 0;
 }

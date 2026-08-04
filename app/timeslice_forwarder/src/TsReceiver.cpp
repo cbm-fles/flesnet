@@ -15,6 +15,9 @@ TsReceiver::TsReceiver(uint64_t node_id,
     std::string output_uri,
     uint32_t timeslice_size,
     std::string central_manager_address,
+    uint64_t data_buffer_map_size,
+    uint64_t wi_buffer_size,
+    uint64_t wi_buffer_map_size,
     std::string monitoring_uri,
     std::string hostname) :
 Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen_address), hostname_(hostname) {
@@ -31,7 +34,7 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     ts_sink_ = make_shared<TsclientWriter>(output_uri, timeslice_size);
     data_buffer_ = ts_sink_->get_buffer();
     data_buffer_size_ = ts_sink_->get_buffer_size();
-    data_buffer_map_ = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, data_buffer_size_);
+    data_buffer_map_ = make_shared<BufferMap>(data_buffer_map_size, data_buffer_size_);
     ts_sink_->on_timeslices_handled([this] (uint64_t /*finished_ts_cnt*/) {
         if (ts_sink_->get_finished_component_id_cnt() == 0) {
             return;
@@ -62,13 +65,14 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     * Boost seems to store some metadata for its management in the SHM too.
     * It seems to be constant 336 byte. Therefore this needs to be represented in the buffer map too.
     */
+    // TODO: figure it out dynamically
     data_buffer_map_->insert(0, 336, node_id_, group_id_, BufferMap::TAG_UNSET);
 
-    wi_buffer_map_ = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, WI_BUFFER_SIZE);
-    wi_buffer_ = std::shared_ptr<char>(new char[WI_BUFFER_SIZE], std::default_delete<char[]>());
+    wi_buffer_map_ = make_shared<BufferMap>(wi_buffer_map_size, wi_buffer_size);
+    wi_buffer_ = std::shared_ptr<char>(new char[wi_buffer_size], std::default_delete<char[]>());
     node_connector_ = make_shared<ConnectorInfiniband>();
 
-    Node::set_wi_buffer(wi_buffer_, wi_buffer_map_, WI_BUFFER_SIZE);
+    Node::set_wi_buffer(wi_buffer_, wi_buffer_map_, wi_buffer_size);
     Node::set_data_buffer(data_buffer_, data_buffer_map_, data_buffer_size_);
     Node::add_connector(node_connector_, node_listen_addr_);
     Node::on_new_data(std::bind(&TsReceiver::on_new_data, this, _1, _2, _3));

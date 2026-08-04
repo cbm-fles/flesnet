@@ -12,7 +12,13 @@ using namespace std::placeholders;
 using namespace std;
 
 
-CentralManager::CentralManager(std::string listen_address, std::string monitoring_uri, std::string hostname) : Node(0, 0), listen_address_(listen_address), hostname_(hostname) {
+CentralManager::CentralManager(
+    std::string listen_address,
+    uint64_t wi_buffer_size,
+    uint64_t wi_buffer_map_size,
+    std::string monitoring_uri,
+    std::string hostname
+) : Node(0, 0), listen_address_(listen_address), hostname_(hostname) {
     if (!monitoring_uri.empty()) {
         monitor_->OpenSink(monitoring_uri);
     }
@@ -23,14 +29,18 @@ CentralManager::CentralManager(std::string listen_address, std::string monitorin
 
     shared_ptr<ConnectorInterface> node_connector = make_shared<ConnectorInfiniband>();
 
-    const auto wi_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, WI_BUFFER_SIZE);
-    const auto wi_buffer = shared_ptr<char>(new char[WI_BUFFER_SIZE], default_delete<char[]>());
+    const auto wi_buffer_map = make_shared<BufferMap>(wi_buffer_map_size, wi_buffer_size);
+    const auto wi_buffer = shared_ptr<char>(new char[wi_buffer_size], default_delete<char[]>());
 
-    const auto data_buffer = shared_ptr<char>(new char[DATA_BUFFER_SIZE], default_delete<char[]>());
-    const auto data_buffer_map = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, DATA_BUFFER_SIZE);
+    // The data buffer has be initialized, that's what the Node class expects.
+    // So we just initialize it with some miminal sizes. The Central Manager just communicates using Work Items
+    const auto data_buffer_size = 32;
+    const auto data_buffer_map_elements = 6;
+    const auto data_buffer = shared_ptr<char>(new char[data_buffer_size], default_delete<char[]>());
+    const auto data_buffer_map = make_shared<BufferMap>(data_buffer_map_elements, data_buffer_size);
 
-    Node::set_wi_buffer(wi_buffer, wi_buffer_map, WI_BUFFER_SIZE);
-    Node::set_data_buffer(data_buffer, data_buffer_map, DATA_BUFFER_SIZE);
+    Node::set_wi_buffer(wi_buffer, wi_buffer_map, wi_buffer_size);
+    Node::set_data_buffer(data_buffer, data_buffer_map, data_buffer_size);
     Node::add_connector(node_connector, listen_address_);
 
     Node::start();
