@@ -3,7 +3,6 @@
 #include "Timeslice.hpp"
 #include <chrono>
 #include <cstdint>
-#include "TimesliceReceiver.hpp"
 
 #include <df/Connectors/ConnectorInterface.hpp>
 #include <df/BufferMap/BufferMap.hpp>

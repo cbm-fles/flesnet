@@ -104,15 +104,6 @@ public:
     }
     return 0;
   }
-  /// A vector of pointers to the microslice data, one per timeslice component.
-  // We assume that all microslice descriptors and contents of a given component
-  // are stored in a single contiguous memory block.
-  std::vector<uint8_t*> data_ptr_;
-
-  /// A vector of pointers to the timeslice component descriptors, one per
-  /// timeslice component.
-  std::vector<TimesliceComponentDescriptor*> desc_ptr_;
-  TimesliceDescriptor timeslice_descriptor_{};
 
 protected:
   Timeslice() = default;
@@ -121,13 +112,16 @@ protected:
   friend class ::ManagedTimesliceBuffer;
 
   /// The timeslice descriptor.
+  TimesliceDescriptor timeslice_descriptor_{};
 
-  // /// A vector of pointers to the data content, one per timeslice component.
-  // std::vector<uint8_t*> data_ptr_;
+  /// A vector of pointers to the microslice data, one per timeslice component.
+  // We assume that all microslice descriptors and contents of a given component
+  // are stored in a single contiguous memory block.
+  std::vector<uint8_t*> data_ptr_;
 
   // /// \brief A vector of pointers to the microslice descriptors, one per
   // /// timeslice component.
-  // std::vector<TimesliceComponentDescriptor*> desc_ptr_;
+  std::vector<TimesliceComponentDescriptor*> desc_ptr_;
 };
 
 } // namespace fles

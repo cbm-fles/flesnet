@@ -5,7 +5,7 @@
 #include "Timeslice.hpp"
 #include "TimesliceReceiver.hpp"
 #include "Tssink.hpp"
-#include "MyTimeslice.hpp"
+#include "TsfTimeslice.hpp"
 #include "FragmentedTimesliceBuffer.hpp"
 
 #include <atomic>
@@ -28,7 +28,7 @@ private:
     // std::string shm_address_ = "";
     std::unique_ptr<fles::Timeslice> last_timeslice_ = nullptr;
     std::atomic_bool stop_ = false;
-    std::unique_ptr<MyTimesliceArchive> ts_sink_ = nullptr;
+    std::unique_ptr<tsforwarder::TimesliceArchive> ts_sink_ = nullptr;
     zmq::context_t zmq_context_{1};
     std::shared_ptr<ManagedTimesliceBuffer> managed_timeslice_buffer = nullptr;
     std::shared_ptr<FragmentedTimesliceBuffer> ts_buffer_ = nullptr;

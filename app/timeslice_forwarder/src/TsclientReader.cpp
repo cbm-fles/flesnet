@@ -1,11 +1,15 @@
 #include <TsclientReader.hpp>
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <thread>
 #include "System.hpp"
+#include "Timeslice.hpp"
 #include "Utility.hpp"
 #include "df/WorkerThread.hpp"
 #include <Receiver.hpp>
+#include <TsfTimesliceView.hpp>
+
 using namespace std;
 using namespace std::chrono;
 
@@ -70,7 +74,8 @@ void TsclientReader::start_timeslice_reading() {
             this_thread::sleep_for(chrono::milliseconds(sleep_timeout));
         }
 
-        unique_ptr<fles::TimesliceView> timeslice = nullptr;
+        // unique_ptr<tsforwarder::TimesliceView> timeslice = nullptr;
+        unique_ptr<fles::TimesliceView> ts = nullptr;
         auto addresses = shared_ptr<uint64_t>(new uint64_t[num_components_ * 2], default_delete<uint64_t[]>());
         auto sizes = shared_ptr<uint64_t>(new uint64_t[num_components_ * 2], default_delete<uint64_t[]>());
         auto tags = shared_ptr<uint32_t>(new uint32_t[num_components_ * 2], default_delete<uint32_t[]>());
@@ -80,18 +85,28 @@ void TsclientReader::start_timeslice_reading() {
             start = high_resolution_clock::now();
             std::unique_lock lk(m);
             cv.wait(lk, [this]{ return !timeslice_available; });
-            timeslice = source_->get();
+            // dynamic_cast<tsforwarder::TimesliceView&>(*my_unique_ptr)
+            ts = (source_->get());
+            // unique_ptr<tsforwarder::TimesliceView> timeslice{dynamic_cast<tsforwarder::TimesliceView*>(fles_timeslice.get())};
+            // std::unique_ptr<uint32_t> a = nullptr;
+            // auto b = 0;
+            // a{&b;};
+            // fles_timeslice.release();
+            // timeslice{dynamic_cast<tsforwarder::TimesliceView*>(fles_timeslice.get())};
             stop = high_resolution_clock::now();
             L_(debug) << "TS reader - got ts after: " <<  duration_cast<milliseconds>(stop-start).count();
-            if (!timeslice) {
+            if (!ts) {
                 break;
             }
+            // TODO: This does not make an sense
+            auto *tsf_timeslice = dynamic_cast<tsforwarder::TimesliceView*>(ts.get());
+
             /*
             std::stringstream ss;
             boost::archive::text_oarchive a(ss);
             timeslice->timeslice_descriptor_.serialize(a, 1);
             */
-            L_(debug) << "TS index: " << timeslice->index();
+            L_(debug) << "TS index: " << tsf_timeslice->index();
 
             if (buffer_ != reinterpret_cast<char*>(source_->get_managed_shm()->get_address())) {
                 buffer_ = reinterpret_cast<char*>(source_->get_managed_shm()->get_address());
@@ -109,7 +124,7 @@ void TsclientReader::start_timeslice_reading() {
                     return true;
                 }
             );
-            const auto num_components = timeslice->num_components();
+            const auto num_components = tsf_timeslice->num_components();
 
             // tag layout:
             // [<is_descriptor or data> (uint16_t)] [data and descriptor have the same int here (uint16_t)]
@@ -118,10 +133,10 @@ void TsclientReader::start_timeslice_reading() {
             // e.g.:
             // tag: [1][8] is a descriptor that belongs to the corrosponding data element with tag [2][8]
             for (uint64_t i = 0; i < num_components; i++) {
-                auto *component_desc_ptr = timeslice->desc_ptr_.at(i);
-                auto *component_data_ptr = timeslice->data_ptr_[i];
+                auto *component_desc_ptr = tsf_timeslice->get_desc().at(i);
+                auto *component_data_ptr = tsf_timeslice->get_data().at(i);
                 sizes.get()[i] = sizeof(fles::TimesliceComponentDescriptor);
-                sizes.get()[num_components + i] = timeslice->size_component(i);
+                sizes.get()[num_components + i] = tsf_timeslice->size_component(i);
 
                 tags.get()[i] = static_cast<uint32_t>(1) << (sizeof(uint16_t) * 8) | static_cast<uint16_t>(i); // descriptor has tag
                 tags.get()[num_components + i] = static_cast<uint32_t>(2) << (sizeof(uint16_t) * 8) | static_cast<uint16_t>(i);
@@ -153,7 +168,7 @@ void TsclientReader::start_timeslice_reading() {
             }
 
             node_connector_->unlock_buffer_map(buffer_map_);
-            last_timeslice_ = std::move(timeslice);
+            last_timeslice_ = std::move(ts);
             start_clock_ = high_resolution_clock::now();
             timeslice_available = true;
             // tell everyone about the new data

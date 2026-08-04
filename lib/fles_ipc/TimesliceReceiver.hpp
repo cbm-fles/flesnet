@@ -63,6 +63,23 @@ public:
 
 protected:
   std::shared_ptr<boost::interprocess::managed_shared_memory> managed_shm_;
+  /// The end-of-stream flag.
+  bool eos_ = false;
+
+  // The respective item worker object
+  ItemWorker worker_;
+
+  [[nodiscard]] boost::uuids::uuid managed_shm_uuid() const {
+    if (!managed_shm_) {
+      return boost::uuids::nil_uuid();
+    }
+    auto* shm_uuid =
+        managed_shm_
+            ->find<boost::uuids::uuid>(boost::interprocess::unique_instance)
+            .first;
+    assert(shm_uuid != nullptr);
+    return *shm_uuid;
+  }
 
 private:
   TimesliceView* do_get() override {
@@ -80,7 +97,6 @@ private:
 
       // connect to matching shared memory if not already connected
       if (managed_shm_uuid() != timeslice_item.shm_uuid) {
-          std::cout << "init shm" << std::endl;
         managed_shm_ =
             std::make_unique<boost::interprocess::managed_shared_memory>(
                 boost::interprocess::open_only,
@@ -106,23 +122,6 @@ private:
     return nullptr;
   }
 
-  [[nodiscard]] boost::uuids::uuid managed_shm_uuid() const {
-    if (!managed_shm_) {
-      return boost::uuids::nil_uuid();
-    }
-    auto* shm_uuid =
-        managed_shm_
-            ->find<boost::uuids::uuid>(boost::interprocess::unique_instance)
-            .first;
-    assert(shm_uuid != nullptr);
-    return *shm_uuid;
-  }
-
-  /// The end-of-stream flag.
-  bool eos_ = false;
-
-  // The respective item worker object
-  ItemWorker worker_;
 };
 
 } // namespace fles
