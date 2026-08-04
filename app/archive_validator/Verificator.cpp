@@ -41,35 +41,34 @@ Verificator::Verificator(uint64_t max_threads) {
 
 int compare_ts(fles::Timeslice& ts_a, fles::Timeslice& ts_b) {
         if (ts_a.index() != ts_b.index()) {
-            cerr << "Timeslices have different index: " << '\n' <<
+            L_(error) << "Timeslices have different index: " << '\n' <<
                 "A TS" << ts_a.index() <<
-                "B TS: " << ts_b.index() << endl;
+                "B TS: " << ts_b.index();
             return -1;
         }
 
         if (ts_a.num_components() != ts_b.num_components()) {
-            cerr << "Timeslices have different number of components: " << '\n' <<
+            L_(error) << "Timeslices have different number of components: " << '\n' <<
                 "A TS" << ts_a.num_components() <<
-                "B TS: " << ts_b.num_components() << endl;
+                "B TS: " << ts_b.num_components();
             return -1;
         }
 
         if (ts_a.num_components() == 0) {
-            cerr << "A TS: Timeslices don't have any components" << endl;
+            L_(error) << "A TS: Timeslices don't have any components";
             return -2;
         }
 
         if (ts_b.num_components() == 0) {
-            cerr << "B TS: Timeslices don't have any components" << endl;
+            L_(error) << "B TS: Timeslices don't have any components";
             return -2;
         }
 
         for (uint64_t c = 0; c < ts_a.num_components(); c++) {
             if (ts_b.num_microslices(c) != ts_a.num_microslices(c)) {
-                cerr << "Timeslice components " << c << " have different amount of microslices: " <<
+                L_(error) << "Timeslice components " << c << " have different amount of microslices: " <<
                     "A TS" << ts_a.num_microslices(c) <<
-                    "B TS: " << ts_b.num_microslices(c) <<
-                endl;
+                    "B TS: " << ts_b.num_microslices(c);
                 return -3;
             }
             uint64_t n = 0;
@@ -81,17 +80,17 @@ int compare_ts(fles::Timeslice& ts_a, fles::Timeslice& ts_b) {
                 uint64_t m = 0;
                 for (m = 0; m < b_desc.size; m++) {
                     if (b_ms.content()[m] != a_ms.content()[m]) {
-                        cout << "Microslice content different (" << m << ")" << endl;
+                        L_(error) << "Microslice content different (" << m << ")";
                         return -4;
                     }
                 }
                 if (m == 0) {
-                    cerr << "Did not check the microslices in component " << c << endl;
+                    L_(error) << "Did not check the microslices in component " << c;
                     return -5;
                 }
             }
             if (n == 0) {
-                cerr << "Did not check component: " << c << endl;
+                L_(error) << "Did not check component: " << c;
                 return -6;
             }
         }
@@ -100,9 +99,9 @@ int compare_ts(fles::Timeslice& ts_a, fles::Timeslice& ts_b) {
 }
 
 uint64_t Verificator::find_tsa_b_in_a(const std::string& archive_a, const std::string& archive_b) {
-    cout << "Finding timeslices of archive B in A" << endl;
-    cout << "Archive A: " << archive_a << endl;
-    cout << "Archive B: " << archive_b << endl;
+    L_(info) << "Finding timeslices of archive B in A";
+    L_(info) << "Archive A: " << archive_a;
+    L_(info) << "Archive B: " << archive_b;
 
     unique_ptr<fles::TimesliceSource> source_a = make_unique<fles::TimesliceInputArchive>(archive_a);
     unique_ptr<fles::TimesliceSource> source_b = make_unique<fles::TimesliceInputArchive>(archive_b);
@@ -112,35 +111,32 @@ uint64_t Verificator::find_tsa_b_in_a(const std::string& archive_a, const std::s
     uint64_t found_count = 0;
     while ((b_ts = source_b->get()) != nullptr) {
         auto a_ts = source_a->get();
-        // cout << "Checking TS idx: " << b_ts->index() << " ..." << endl;
         while (a_ts != nullptr && b_ts->index() != a_ts->index()) {
             a_ts = source_a->get();
         }
 
         if (a_ts == nullptr) {
-            // cerr << "Failed to find TS index: " << b_ts->index() << endl;
             continue;
         }
 
 
         if (b_ts->num_components() != a_ts->num_components()) {
-            cerr << "Timeslices have different number of components: " << '\n' <<
+            L_(error) << "Timeslices have different number of components: " << endl <<
                 "A TS" << a_ts->num_components() <<
-                "B TS: " << b_ts->num_components() << endl;
+                "B TS: " << b_ts->num_components();
             return 0;
         }
 
         if (b_ts->num_components() == 0) {
-            cerr << "Timeslices don't have any components" << endl;
+            L_(error) << "Timeslices don't have any components";
             return 0;
         }
 
         for (uint64_t c = 0; c < b_ts->num_components(); c++) {
             if (a_ts->num_microslices(c) != b_ts->num_microslices(c)) {
-                cerr << "Timeslice components " << c << " have different amount of microslices: " <<
+                L_(error) << "Timeslice components " << c << " have different amount of microslices: " <<
                     "A TS" << a_ts->num_microslices(c) <<
-                    "B TS: " << b_ts->num_microslices(c) <<
-                endl;
+                    "B TS: " << b_ts->num_microslices(c);
                 return 0;
             }
             uint64_t n = 0;
@@ -152,23 +148,20 @@ uint64_t Verificator::find_tsa_b_in_a(const std::string& archive_a, const std::s
                 uint64_t m = 0;
                 for (m = 0; m < b_desc.size; m++) {
                     if (b_ms.content()[m] != a_ms.content()[m]) {
-                        cout << "Microslice content different" << endl;
+                        L_(error) << "Microslice content different";
                         return 0;
                     }
                 }
                 if (m == 0) {
-                    cerr << "Did not check the microslices in component " << c << endl;
+                    L_(error) << "Did not check the microslices in component " << c;
                     return 0;
                 }
             }
             if (n == 0) {
-                cerr << "Did not check component: " << c << endl;
+                L_(error) << "Did not check component: " << c;
                 return 0;
             }
         }
-
-        // cout << "Checked TS idx: " << a_ts->index() << '\n' <<
-        //     "Checked timeslices: " << ++found_count << '\n' << endl;
     }
 
     return found_count;
@@ -183,8 +176,6 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
         uint64_t curr_ts_idx = 0;
         uint64_t found_cnt = 0;
     };
-
-    // cout << "verify_ts_forwarding" << endl;
 
     std::vector<archive_bundle> input_sources;
     for (auto const& input_path : input_archives) {
@@ -213,14 +204,13 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
 
         // it is allowed that at the start of the archive, some TS may be skipped so we
         // consume in_archive.source until in_archive.curr_ts contains the first transmitted timeslice
-        L_(info) << "Searching for first transmitted timeslice of: " << in_archive.source_path << " ..." << std::endl;
+        L_(info) << "Searching for first transmitted timeslice of: " << in_archive.source_path << " ...";
         bool found_beginning = false;
         while (!found_beginning && (in_archive.curr_ts = in_archive.source->get()) != nullptr) {
-            cout << "search for in TS idx: " << in_archive.curr_ts->index() << endl;
+            L_(info) << "search for in TS idx: " << in_archive.curr_ts->index();
             for (auto &out : output_sinks) {
-                cout << "in " << out.source_path << endl;
+                L_(info) << "in " << out.source_path;
                 while (!found_beginning && (out.curr_ts = out.source->get()) != nullptr) {
-                    // cout << "out.curr_ts->index(): " << out.curr_ts->index() << endl;
                     if (out.curr_ts->index() == in_archive.curr_ts->index()) {
                         found_beginning = true;
                     }
@@ -231,23 +221,23 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
             }
         }
         if (!found_beginning) {
-            cerr << "None of " << in_archive.source_path  <<  " was transmitted" << endl;
+            L_(error) << "None of " << in_archive.source_path  <<  " was transmitted";
             return false;
         }
-        cout << "found first transmitted timeslice: " << in_archive.curr_ts->index() << std::endl;
+        L_(info) << "found first transmitted timeslice: " << in_archive.curr_ts->index();
 
 
         // from now on, all TS of in_archive.source have to be found in one of the output archives
         do {
-            cout << "searching and checking TS idx: " << in_archive.curr_ts->index() << endl;
+            L_(info) << "searching and checking TS idx: " << in_archive.curr_ts->index();
             bool found_ts = false;
             for (auto &out : output_sinks) {
                 uint64_t tmp_idx = out.curr_ts_idx;
                 while (!found_ts && (out.curr_ts = out.source->get()) != nullptr) {
                     if (out.curr_ts->index() == in_archive.curr_ts->index()) {
-                        cout << "found in: " << out.source_path << endl;
+                        L_(info) << "found in: " << out.source_path;
                         if (compare_ts(*out.curr_ts, *in_archive.curr_ts) != 0) {
-                            cerr << "TS not identical" << endl;
+                            L_(error) << "TS not identical";
                             return false;
                         }
                         found_ts = true;
@@ -261,15 +251,14 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
                     for (uint64_t i = 0; i < out.curr_ts_idx; i++) {
                         out.curr_ts = out.source->get();
                     }
-                    cout << "not found in " << out.source_path << endl;
-                    // cout << "not found in " << out.source_path << " - " <<  out.curr_ts_idx << endl;
+                    L_(info) << "not found in " << out.source_path;
                 } else {
                     break;
                 }
             }
 
             if (!found_ts) {
-                cerr << "unable to find ts" << endl;
+                L_(error) << "unable to find ts";
                 return false;
             }
         } while ((in_archive.curr_ts = in_archive.source->get()) != nullptr);
@@ -342,7 +331,7 @@ bool Verificator::verify_ts_metadata(vector<string> output_archive_paths, uint64
                     local_ts_idx++;
                     ts_cnt++;
                 }
-            } catch (runtime_error err) {
+            } catch (runtime_error& err) {
                 L_(fatal) << "FAILED to verify metadata of: '" << output_archive_path << "'" << endl << err.what();
                 sem.post();
                 return false;
@@ -440,7 +429,7 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
     if (find_ms_build_offset(input_archive_paths[0], output_archive_paths, offset)) {
         L_(info) << "MS build offset: " << *offset;
     } else {
-        L_(fatal) << "MS build offset could not be found" << endl;
+        L_(fatal) << "MS build offset could not be found";
         return false;
     }
     //fles::MergingSource<fles::TimesliceSource> ts_source(std::move(ts_sources));
@@ -608,7 +597,7 @@ bool Verificator::verify_forward(vector<string> input_archive_paths, vector<stri
                     ++local_ts_cnt_stat;
                     ++overall_components_cnt_stat;
                 } while (local_ts_cnt_stat < timeslice_cnt);
-            } catch (runtime_error err) {
+            } catch (runtime_error& err) {
                 L_(fatal) << err.what();
                 ++archive_cnt_stat;
                 sem.post();

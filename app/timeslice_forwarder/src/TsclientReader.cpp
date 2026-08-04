@@ -23,7 +23,6 @@ TsclientReader::TsclientReader(std::string shm_uri) {
     };
     UriComponents uri{shm_uri};
     const auto shm_identifier = uri.path;
-    //source_ = make_unique<fles::Receiver<fles::Timeslice,fles::TimesliceView>>(shm_identifier, param);
     source_ = make_unique<tsforwarder::Receiver>(shm_identifier, param);
     new_timeslice_callbacks_.set_worker(make_shared<WorkerThread>());
 
@@ -73,7 +72,6 @@ void TsclientReader::start_timeslice_reading() {
             this_thread::sleep_for(chrono::milliseconds(sleep_timeout));
         }
 
-        // unique_ptr<tsforwarder::TimesliceView> timeslice = nullptr;
         unique_ptr<fles::TimesliceView> ts = nullptr;
         auto addresses = shared_ptr<uint64_t>(new uint64_t[num_components_ * 2], default_delete<uint64_t[]>());
         auto sizes = shared_ptr<uint64_t>(new uint64_t[num_components_ * 2], default_delete<uint64_t[]>());
@@ -84,14 +82,8 @@ void TsclientReader::start_timeslice_reading() {
             start = high_resolution_clock::now();
             std::unique_lock lk(m);
             cv.wait(lk, [this]{ return !timeslice_available; });
-            // dynamic_cast<tsforwarder::TimesliceView&>(*my_unique_ptr)
-            ts = (source_->get());
-            // unique_ptr<tsforwarder::TimesliceView> timeslice{dynamic_cast<tsforwarder::TimesliceView*>(fles_timeslice.get())};
-            // std::unique_ptr<uint32_t> a = nullptr;
-            // auto b = 0;
-            // a{&b;};
-            // fles_timeslice.release();
-            // timeslice{dynamic_cast<tsforwarder::TimesliceView*>(fles_timeslice.get())};
+            ts = source_->get();
+
             stop = high_resolution_clock::now();
             L_(debug) << "TS reader - got ts after: " <<  duration_cast<milliseconds>(stop-start).count();
             if (!ts) {
@@ -100,13 +92,7 @@ void TsclientReader::start_timeslice_reading() {
             // TODO: This does not make an sense
             auto *tsf_timeslice = dynamic_cast<tsforwarder::TimesliceView*>(ts.get());
 
-            /*
-            std::stringstream ss;
-            boost::archive::text_oarchive a(ss);
-            timeslice->timeslice_descriptor_.serialize(a, 1);
-            */
             L_(debug) << "TS index: " << tsf_timeslice->index();
-
             if (buffer_ != reinterpret_cast<char*>(source_->get_managed_shm()->get_address())) {
                 buffer_ = reinterpret_cast<char*>(source_->get_managed_shm()->get_address());
                 L_(fatal) << "(TimesliceReader) SHM base memory address changed";
