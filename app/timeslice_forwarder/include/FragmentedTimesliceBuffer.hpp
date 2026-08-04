@@ -12,7 +12,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <cstdint>
-
+#include <TsfTimeslice.hpp>
 
 class FragmentedTimesliceBuffer : public TimesliceBuffer {
 public:
@@ -24,19 +24,20 @@ public:
                                 uint32_t num_input_nodes)
                                 : TimesliceBuffer(context, distributor_address, shm_identifier, data_buffer_size_exp, desc_buffer_size_exp, num_input_nodes) {};
 
-    void send_work_item(std::shared_ptr<fles::StorableTimeslice> ts) {
+    void send_work_item(std::shared_ptr<tsforwarder::Timeslice> ts) {
         // Create and fill new TimesliceShmWorkItem to be sent via zmq
         fles::TimesliceShmWorkItem item;
         item.shm_uuid = shm_uuid_;
         item.shm_identifier = shm_identifier_;
-        item.ts_desc = ts->timeslice_descriptor_;
+        //item.ts_desc = ts->timeslice_descriptor_;
+        item.ts_desc = ts->get_timeslice_descriptor();
         const auto num_components = item.ts_desc.num_components;
         const auto ts_pos = item.ts_desc.ts_pos;
         item.data.resize(num_components);
         item.desc.resize(num_components);
         for (uint32_t c = 0; c < num_components; ++c) {
-            item.data[c] = managed_shm_->get_handle_from_address(ts->data_ptr_[c]);
-            item.desc[c] = managed_shm_->get_handle_from_address(ts->desc_ptr_[c]);
+            item.data[c] = managed_shm_->get_handle_from_address(ts->get_data()[c]);
+            item.desc[c] = managed_shm_->get_handle_from_address(ts->get_desc()[c]);
         }
 
         std::ostringstream ostream;

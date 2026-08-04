@@ -124,7 +124,7 @@ void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& eleme
         } // else referencing data
     }
 
-    auto ts = make_shared<MyTimeslice>();
+    auto ts = make_shared<tsforwarder::Timeslice>();
     ts_pos_++;
 
     fles::TimesliceDescriptor ts_desc; 

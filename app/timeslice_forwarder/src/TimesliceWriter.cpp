@@ -3,7 +3,7 @@
 
 TimesliceWriter::TimesliceWriter(std::string address) {
     fles::ArchiveCompression compression = fles::ArchiveCompression::None;
-    ts_sink_ = std::make_unique<MyTimesliceArchive>(
+    ts_sink_ = std::make_unique<tsforwarder::TimesliceArchive>(
         address, compression);
 }
 
@@ -28,7 +28,7 @@ void TimesliceWriter::write_timeslice(std::vector<BufferMap::ListElement*>& elem
             }
         } // else referencing data
     }
-    auto ts = std::make_shared<MyTimeslice>();
+    auto ts = std::make_shared<tsforwarder::Timeslice>();
     ts->set_timeslice_descriptor({
         desc_ptr[0]->ts_num,
         0, 100,
