@@ -7,7 +7,6 @@
 #include "Timeslice.hpp"
 #include "Utility.hpp"
 #include "df/WorkerThread.hpp"
-#include <Receiver.hpp>
 #include <TsfTimesliceView.hpp>
 
 using namespace std;

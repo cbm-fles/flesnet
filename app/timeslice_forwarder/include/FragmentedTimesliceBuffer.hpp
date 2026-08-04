@@ -1,8 +1,6 @@
 #pragma once
 
 #include "ItemProducer.hpp"
-#include "StorableTimeslice.hpp"
-#include "Timeslice.hpp"
 #include "TimesliceBuffer.hpp"
 #include "TimesliceShmWorkItem.hpp"
 

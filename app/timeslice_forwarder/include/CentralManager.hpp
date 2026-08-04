@@ -2,16 +2,12 @@
 #include "Monitor.hpp"
 #include <atomic>
 #include <df/Connectors/ConnectorInfiniband.hpp>
-#include <cstdint>
 #include <df/ConnectionManager.hpp>
 #include <df/Node.hpp>
 #include <df/WorkItems/WiConnection.hpp>
 #include <df/WorkItems/WiTransmission.hpp>
+#include <cstdint>
 #include <memory>
-#include <queue>
-#include <shared_mutex>
-#include <type_traits>
-#include "WorkItems.hpp"
 
 class CentralManager : public Node {
 private:

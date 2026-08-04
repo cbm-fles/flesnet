@@ -4,7 +4,6 @@
 #include "ManagedTimesliceBuffer.hpp"
 #include "Timeslice.hpp"
 #include "TimesliceReceiver.hpp"
-#include "Tssink.hpp"
 #include "TsfTimeslice.hpp"
 #include "FragmentedTimesliceBuffer.hpp"
 
@@ -17,7 +16,7 @@
 #include <df/WorkerThread.hpp>
 #include <df/Connectors/ConnectorInterface.hpp>
 
-class TsclientWriter : public TsSink {
+class TsclientWriter {
 private:
     std::shared_ptr<BufferMap> buffer_map_ = nullptr;
     std::unique_ptr<fles::Receiver<fles::Timeslice,fles::TimesliceView>> source_ = nullptr;
@@ -50,12 +49,12 @@ private:
     std::atomic_uint64_t ts_input_output_cnt_diff_;
 public:
     TsclientWriter(std::string output_uri, uint32_t timeslice_size);
-    virtual ~TsclientWriter() override;
+    virtual ~TsclientWriter();
     bool on_timeslices_handled(std::function<void(uint64_t)> cb);
-    std::shared_ptr<char> get_buffer() override;
-    uint64_t get_buffer_size() override;
+    std::shared_ptr<char> get_buffer();
+    uint64_t get_buffer_size();
     void set_buffer_map(std::shared_ptr<BufferMap> buffer_map);
-    void write_timeslice(std::vector<BufferMap::ListElement*>& elements) override;
+    void write_timeslice(std::vector<BufferMap::ListElement*>& elements);
     bool pop_finished_component_id(uint64_t& component_id);
     uint64_t get_finished_component_id_cnt();
 

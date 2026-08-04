@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Timeslice.hpp"
+#include <TsfReceiver.hpp>
 #include <chrono>
 #include <cstdint>
 
 #include <df/Connectors/ConnectorInterface.hpp>
 #include <df/BufferMap/BufferMap.hpp>
 #include <df/Utils/CallbackContainer.hpp>
-#include <Receiver.hpp>
+
+
 class TsclientReader {
 private:
     CallbackContainer<void()> new_timeslice_callbacks_;
@@ -26,6 +27,7 @@ private:
     std::mutex m;
     std::condition_variable cv;
     std::atomic_bool timeslice_available = false;
+
 public:
     TsclientReader(std::string shm_uri);
     ~TsclientReader();
