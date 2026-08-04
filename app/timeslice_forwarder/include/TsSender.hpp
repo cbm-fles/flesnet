@@ -72,7 +72,7 @@ private:
 
     /**
      * @brief Used as callback for refused connections
-     * @param address - address of which the connection got refused 
+     * @param address - address of which the connection got refused
      */
     void on_connection_refused(std::string address);
 
@@ -99,6 +99,9 @@ public:
         std::string listen_address,
         std::string input_uri,
         std::string central_manager_address,
+        uint64_t data_buffer_map_size,
+        uint64_t wi_buffer_size,
+        uint64_t wi_buffer_map_size,
         std::string monitoring_uri = "",
         std::string hostname = ""
     );

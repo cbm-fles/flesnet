@@ -239,6 +239,9 @@ TsSender::TsSender(uint64_t node_id,
     std::string listen_address,
     std::string input_uri,
     std::string central_manager_address,
+    uint64_t data_buffer_map_size,
+    uint64_t wi_buffer_size,
+    uint64_t wi_buffer_map_size,
     std::string monitoring_uri,
     std::string hostname) :
 Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen_address), hostname_(hostname) {

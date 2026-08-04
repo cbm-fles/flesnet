@@ -19,8 +19,8 @@
  */
 class TsReceiver : public Node {
 private:
-    const uint64_t BUFFER_MAP_ELEMENTS = 4096;
-    const uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
+    // const uint64_t BUFFER_MAP_ELEMENTS = 4096;
+    // const uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
 
     std::shared_mutex mtx_;
     std::shared_ptr<cbm::Monitor> monitor_{std::make_shared<cbm::Monitor>()};
@@ -57,6 +57,9 @@ public:
         std::string output_uri,
         uint32_t timeslice_size,
         std::string central_manager_address,
+        uint64_t data_buffer_map_size,
+        uint64_t wi_buffer_size,
+        uint64_t wi_buffer_map_size,
         std::string monitoring_uri = "",
         std::string hostname = ""
     );

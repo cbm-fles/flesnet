@@ -11,9 +11,9 @@
 
 class CentralManager : public Node {
 private:
-    const uint64_t BUFFER_MAP_ELEMENTS = 512;
-    const uint64_t DATA_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 450;
-    const uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
+    // const uint64_t BUFFER_MAP_ELEMENTS = 512;
+    // const uint64_t DATA_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 450;
+    // const uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
 
     /// @brief used to lock ANY shared resources
     std::mutex mtx_;
@@ -76,5 +76,11 @@ public:
     constexpr static uint64_t SENDER_GROUP_ID = 1;
     constexpr static uint64_t RECEIVER_GROUP_ID = 2;
 
-    CentralManager(std::string listen_address, std::string monitoring_uri = "", std::string hostname = "");
+    CentralManager(
+        std::string listen_address,
+        uint64_t wi_buffer_size,
+        uint64_t wi_buffer_map_size,
+        std::string monitoring_uri = "",
+        std::string hostname = ""
+    );
 };
