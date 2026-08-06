@@ -259,15 +259,15 @@ Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen
 
     data_buffer_size_  = ts_reader->get_buffer_size();
     data_buffer_ = shared_ptr<char>(ts_reader->get_buffer());
-    data_buffer_map_ = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, data_buffer_size_);
+    data_buffer_map_ = make_shared<BufferMap>(data_buffer_map_size, data_buffer_size_);
     ts_reader->set_buffer_map(data_buffer_map_);
 
-    wi_buffer_map_ = make_shared<BufferMap>(BUFFER_MAP_ELEMENTS, WI_BUFFER_SIZE);
-    wi_buffer_ = std::shared_ptr<char>(new char[WI_BUFFER_SIZE], std::default_delete<char[]>());
+    wi_buffer_map_ = make_shared<BufferMap>(wi_buffer_map_size, wi_buffer_size);
+    wi_buffer_ = std::shared_ptr<char>(new char[wi_buffer_size], std::default_delete<char[]>());
     node_connector_ = make_shared<ConnectorInfiniband>();
 
     Node::add_connector(node_connector_, node_listen_addr_);
-    Node::set_wi_buffer(wi_buffer_, wi_buffer_map_, WI_BUFFER_SIZE);
+    Node::set_wi_buffer(wi_buffer_, wi_buffer_map_, wi_buffer_size);
     Node::set_data_buffer(data_buffer_, data_buffer_map_, data_buffer_size_);
 
     Node::on_new_work_item(std::bind(&TsSender::on_new_work_item, this, _1, _2, _3, _4, _5));

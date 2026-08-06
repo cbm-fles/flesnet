@@ -21,8 +21,8 @@
 class TsSender : public Node {
 
 private:
-    const uint64_t BUFFER_MAP_ELEMENTS = 512;
-    const uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
+    // const uint64_t BUFFER_MAP_ELEMENTS = 512;
+    // const uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
 
     std::shared_mutex mtx_;
     std::shared_ptr<cbm::Monitor> monitor_{std::make_shared<cbm::Monitor>()};
