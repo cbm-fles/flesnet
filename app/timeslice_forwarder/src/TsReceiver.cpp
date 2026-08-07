@@ -78,9 +78,16 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     Node::on_new_data(std::bind(&TsReceiver::on_new_data, this, _1, _2, _3));
     Node::on_new_work_item(std::bind(&TsReceiver::on_new_work_item, this, _1, _2, _3, _4, _5));
     Node::on_node_connected(std::bind(&TsReceiver::on_node_connected, this, _1, _2, _3));
+    Node::on_node_disconnected(std::bind(&TsReceiver::on_node_disconnected, this, _1, _2, _3));
     Node::on_connection_refused(std::bind(&TsReceiver::on_connection_refused, this, _1));
     Node::start();
     Node::connect_to_node(cm_address_);
+}
+
+void TsReceiver::on_node_disconnected(std::string /*address*/, uint64_t group_id, uint64_t node_id) {
+    L_(info) << "Node DISCONNECTED:" << endl <<
+        "Node ID: " << node_id << endl <<
+        "Group ID: " << group_id;
 }
 
 void TsReceiver::on_new_work_item(std::string /*address*/, std::shared_ptr<char> /*wi_ptr*/, WorkItem::Type /*wi_type*/, uint64_t group_id, uint64_t node_id) {
@@ -88,9 +95,9 @@ void TsReceiver::on_new_work_item(std::string /*address*/, std::shared_ptr<char>
 }
 
 void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64_t rem_node_id) {
-    L_(info) << "Node connected: " << endl <<
-            "Group ID: " << rem_group_id << endl <<
-            "Node ID: " << rem_node_id;
+    L_(info) << "Node connected: " << endl << 
+            "Node ID: " << rem_node_id << endl <<
+            "Group ID: " << rem_group_id;
     if (rem_group_id == 0 && rem_node_id == 0) { // connected to central manager - tell it about our connection possibilities
         auto conn_config = make_shared<WiConnectorConfig>();
         conn_config->type = WorkItem::connector_config;
