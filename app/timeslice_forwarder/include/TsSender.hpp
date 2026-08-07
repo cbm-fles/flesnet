@@ -75,7 +75,7 @@ private:
      * @param address - address of which the connection got refused
      */
     void on_connection_refused(std::string address);
-
+    void on_node_disconnected(std::string address, uint64_t group_id, uint64_t node_id);
     /**
      * @brief Sends the latest inserted data from the buffer map to the given node
      * @param group_id - Group ID of the target node

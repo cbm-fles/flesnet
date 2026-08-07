@@ -73,8 +73,11 @@ void CentralManager::on_node_connected(std::string address, uint64_t group_id, u
     }
 }
 
-void CentralManager::on_node_disconnected(std::string address, uint64_t group_id, uint64_t node_id) {
+void CentralManager::on_node_disconnected(std::string /*address*/, uint64_t group_id, uint64_t node_id) {
     unique_lock<mutex> l(mtx_);
+    L_(info) << "Node DISCONNECTED:" << endl
+        << "Node ID: " << node_id << endl
+        << "Group ID: " << group_id;
     auto node_uid = MAKE_UID(group_id, node_id);
     auto key_pos = uid_address_map_.find(node_uid);
     uid_address_map_.erase(key_pos);

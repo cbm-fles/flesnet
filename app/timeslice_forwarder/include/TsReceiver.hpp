@@ -44,7 +44,8 @@ private:
     void on_new_work_item(std::string address, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id);
     void on_node_connected(std::string address, uint64_t rem_group_id, uint64_t rem_node_id);
     void on_connection_refused(std::string address);
-    void on_new_data (const std::string& /*address*/, uint64_t group_id, uint64_t node_id);
+    void on_new_data (const std::string& address, uint64_t group_id, uint64_t node_id);
+    void on_node_disconnected(std::string address, uint64_t group_id, uint64_t node_id);
 
     std::future<void> log_thread_;
     Avg<std::atomic<double>> bytes_received_;
