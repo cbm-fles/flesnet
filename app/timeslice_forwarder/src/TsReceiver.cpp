@@ -137,7 +137,6 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
             component->rx_tx = BufferMap::ListElement::IO::UNSPEC; // asynchronousity makes it possible to read it twice, therefore we remove the RX mark to prevent this from happening
         }
 
-        L_(info) << "Component.size(): " << component.size();
         *(bytes_received_.value) = *(bytes_received_.value) + component_size;
         L_(debug)  << "New data from Node ID: " << component[0]->node_id << " - Group ID: " << component[0]->group_id;
         ts_sink_->write_timeslice(component);
