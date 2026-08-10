@@ -27,7 +27,6 @@ public:
         fles::TimesliceShmWorkItem item;
         item.shm_uuid = shm_uuid_;
         item.shm_identifier = shm_identifier_;
-        //item.ts_desc = ts->timeslice_descriptor_;
         item.ts_desc = ts->get_timeslice_descriptor();
         const auto num_components = item.ts_desc.num_components;
         const auto ts_pos = item.ts_desc.ts_pos;

@@ -115,10 +115,6 @@ public:
     return append_microslice(component, microslice, m.desc(), m.content());
   }
 
-protected:
-  StorableTimeslice();
-
-
 private:
   friend class boost::serialization::access;
   friend class InputArchive<Timeslice,
@@ -132,6 +128,7 @@ private:
                                     ArchiveType::TimesliceArchive>;
   friend class Subscriber<Timeslice, StorableTimeslice>;
 
+  StorableTimeslice();
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int /* version */) {
