@@ -105,6 +105,14 @@ public:
     return 0;
   }
 
+  /// The duration of the timeslice in nanoseconds
+  [[nodiscard]] uint64_t duration() const {
+    return timeslice_descriptor_.duration;
+  }
+
+  /// The flags of the timeslice
+  [[nodiscard]] uint32_t flags() const { return timeslice_descriptor_.flags; }
+
 protected:
   Timeslice() = default;
 
@@ -119,8 +127,8 @@ protected:
   // are stored in a single contiguous memory block.
   std::vector<uint8_t*> data_ptr_;
 
-  // /// \brief A vector of pointers to the microslice descriptors, one per
-  // /// timeslice component.
+  /// A vector of pointers to the timeslice component descriptors, one per
+  /// timeslice component.
   std::vector<TimesliceComponentDescriptor*> desc_ptr_;
 };
 
