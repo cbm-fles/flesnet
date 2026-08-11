@@ -1,5 +1,3 @@
-// Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
-
 #include "Application.hpp"
 #include "Verificator.hpp"
 #include "log.hpp"

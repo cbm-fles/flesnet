@@ -23,7 +23,6 @@
 #include <string>
 #include <utility>
 
-#include <iostream>
 namespace zmq {
 class context_t;
 }
