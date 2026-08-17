@@ -3,7 +3,7 @@ add_executable(timeslice_forwarder)
 set(LIBFABRIC_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/libfabric_build/install_dir")
 set(LIBFABRIC_INCLUDE_DIR "${LIBFABRIC_INSTALL_DIR}/include")
 set(LIBFABRIC_LIB_DIR     "${LIBFABRIC_INSTALL_DIR}/lib")
-set(LIBFABRIC_LIBRARY "${LIBFABRIC_LIB_DIR}/libfabric.so")
+set(LIBFABRIC_LIBRARY "${LIBFABRIC_LIB_DIR}/libfabric.a")
 
 include(ExternalProject)
 ExternalProject_Add(libfabric
@@ -64,12 +64,14 @@ target_include_directories(timeslice_forwarder PRIVATE
 
 target_link_libraries(timeslice_forwarder PRIVATE
     ${DATA_FORWARDER_LIBRARY}
+    ${LIBFABRIC_LIBRARY}
+    rdmacm
+    ibverbs
     fles_ipc
     fles_core
     logging
     crcutil
     ${Boost_LIBRARIES}
-    ${LIBFABRIC_LIBRARY}
 )
 
 file(GLOB timeslice_forwarder_SRC
