@@ -14,7 +14,6 @@ class WiBufferFullReport : public WorkItem {
 public:
     uint64_t node_id = 0; //!> node_id of which the buffer is full
     uint64_t group_id = 0; //!> group_id of which the buffer is full
-
     WiBufferFullReport() {
         type = static_cast<WorkItem::Type>(wi_buffer_full_report);
     }
@@ -52,7 +51,8 @@ public:
 };
 
 class WiWorkDone : public WorkItem {
-public:
+    public:
+        uint64_t cnt = 0;
     WiWorkDone() {
         type = static_cast<WorkItem::Type>(wi_work_done);
     }
@@ -61,6 +61,7 @@ public:
     template<typename Archive>
     void serialize(Archive& ar, const unsigned /*version*/) {
         WI_SERIALIZE(ar);
+        ar & cnt;
     }
 
     std::shared_ptr<char> serialize(uint64_t *size) override {

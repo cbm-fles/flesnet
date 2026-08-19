@@ -24,6 +24,7 @@ TsclientReader::TsclientReader(std::string shm_uri) {
     UriComponents uri{shm_uri};
     const auto shm_identifier = uri.path;
     source_ = make_unique<tsforwarder::Receiver>(shm_identifier, param);
+    //source_orig_ = make_unique<fles::Receiver<fles::Timeslice, fles::TimesliceView>>(shm_identifier, param);
     new_timeslice_callbacks_.set_worker(make_shared<WorkerThread>());
 
     // We have to read out one timeslice so the fles::Receiver class initializes the SHM and we can get the
@@ -44,11 +45,15 @@ char* TsclientReader::get_buffer() {
 }
 
 void TsclientReader::clear_last_timeslice() {
-    last_timeslice_ = nullptr;
-    timeslice_available = false;
+    {
+        std::unique_lock lk(m);
+        //last_timeslice_.reset();
+        last_timeslice_ = nullptr;
+        timeslice_available = false;
+    }
     cv.notify_all();
     stop_clock_ = high_resolution_clock::now();
-    L_(debug) << "TS reader - last_timeslice_ resetted after: " <<  duration_cast<milliseconds>(stop_clock_-start_clock_).count();
+    L_(trace) << "TS reader - last_timeslice_ resetted after: " <<  duration_cast<milliseconds>(stop_clock_-start_clock_).count();
 }
 
 void TsclientReader::on_new_timeslice(std::function<void()> cb) {
@@ -81,12 +86,17 @@ void TsclientReader::start_timeslice_reading() {
         while (!stop_)  {
             start = high_resolution_clock::now();
             std::unique_lock lk(m);
+            L_(trace) << "waiting for consumption";
             cv.wait(lk, [this]{ return !timeslice_available; });
+            //sleep(6);
+            L_(trace) << "Getting new";
+
             ts = source_->get();
 
             stop = high_resolution_clock::now();
-            L_(debug) << "TS reader - got ts after: " <<  duration_cast<milliseconds>(stop-start).count();
+            L_(trace) << "TS reader - got ts after: " <<  duration_cast<milliseconds>(stop-start).count();
             if (!ts) {
+                L_(debug) << "ts is null";
                 break;
             }
             // TODO: This does not make an sense
@@ -134,7 +144,7 @@ void TsclientReader::start_timeslice_reading() {
             start = high_resolution_clock::now();
             while (!is_locked) {};
             stop = high_resolution_clock::now();
-            L_(debug) << "TS reader - got buffer map after: " <<  duration_cast<milliseconds>(stop-start).count();
+            L_(trace) << "TS reader - got buffer map after: " <<  duration_cast<milliseconds>(stop-start).count();
 
             // reperesent new data in the buffer map
             const auto *const buffer_map_ret = buffer_map_->insert(

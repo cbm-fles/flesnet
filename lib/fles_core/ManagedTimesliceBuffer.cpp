@@ -51,7 +51,9 @@ void ManagedTimesliceBuffer::handle_timeslice_completions() {
         ++acked_;
       } while (ack_.at(acked_) > c.ts_pos);
       for (std::size_t i = 0; i < desc_.size(); ++i) {
+        // L_(info) << "set_read_index: acked...";
         desc_.at(i).set_read_index(acked_);
+        // L_(info) << "set_read_index: acked...";
         data_.at(i).set_read_index(desc_.at(i).at(acked_ - 1).offset +
                                    desc_.at(i).at(acked_ - 1).size);
       }

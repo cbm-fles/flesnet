@@ -132,7 +132,7 @@ void Parameters::parse_options(int argc, char** argv) {
         .add(general)
         .add(advanced);
 
-    po::store(po::parse_command_line(argc, argv, general), vm);
+    po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
     if (vm.count("help") != 0) {

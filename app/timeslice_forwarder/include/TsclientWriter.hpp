@@ -57,5 +57,7 @@ public:
     void write_timeslice(std::vector<BufferMap::ListElement*>& elements);
     bool pop_finished_component_id(uint64_t& component_id);
     uint64_t get_finished_component_id_cnt();
-
+    uint64_t get_boost_shm_offset() {
+        return ts_buffer_->get_boost_shm_offset();
+    }
 };

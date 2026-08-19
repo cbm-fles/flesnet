@@ -53,4 +53,14 @@ public:
     uint64_t get_shm_size() {
         return managed_shm_->get_size();
     }
+
+    uint64_t get_boost_shm_offset() {
+        auto diff_desc = reinterpret_cast<char*>(get_desc_ptr(0)) - reinterpret_cast<char*>(managed_shm_->get_address()) ;
+        auto diff_data = reinterpret_cast<char*>(get_data_ptr(0)) - reinterpret_cast<char*>(managed_shm_->get_address()) ;
+        if (diff_data < diff_desc) {
+            return diff_data;
+        } else {
+            return diff_desc;
+        }
+    }
 };

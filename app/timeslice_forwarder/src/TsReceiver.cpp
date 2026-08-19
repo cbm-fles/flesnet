@@ -39,18 +39,23 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
         if (ts_sink_->get_finished_component_id_cnt() == 0) {
             return;
         }
+        //sleep(10);
+        //return;
         node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
             time_point<high_resolution_clock> start;
             time_point<high_resolution_clock> stop;
             start = high_resolution_clock::now();
 
             uint64_t component_id;
+            uint64_t work_done_cnt = 0;
             while (ts_sink_->pop_finished_component_id(component_id)) {
                 uint64_t combined_size;
                 auto component = data_buffer_map_->get_elements_of_component(component_id, combined_size);
                 data_buffer_map_->remove_elements(component);
-                Node::send_work_item(cm_address_, wi_work_done_);
+                work_done_cnt++;
             }
+            wi_work_done_->cnt =  work_done_cnt;
+            Node::send_work_item(cm_address_, wi_work_done_);
             node_connector_->unlock_buffer_map(data_buffer_map_);
             stop = high_resolution_clock::now();
             L_(debug) << "TS on_timeslices_handled - done after: " <<  duration_cast<milliseconds>(stop-start).count();
@@ -65,8 +70,10 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     * Boost seems to store some metadata for its management in the SHM too.
     * It seems to be constant 336 byte. Therefore this needs to be represented in the buffer map too.
     */
-    // TODO: figure it out dynamically
-    data_buffer_map_->insert(0, 336, node_id_, group_id_, BufferMap::TAG_UNSET);
+    auto boost_management_offset = ts_sink_->get_boost_shm_offset();
+    L_(debug) << "Boost offset: " << boost_management_offset;
+    // 336 before
+    data_buffer_map_->insert(0, boost_management_offset, node_id_, group_id_, BufferMap::TAG_UNSET);
 
     wi_buffer_map_ = make_shared<BufferMap>(wi_buffer_map_size, wi_buffer_size);
     wi_buffer_ = std::shared_ptr<char>(new char[wi_buffer_size], std::default_delete<char[]>());
@@ -95,7 +102,7 @@ void TsReceiver::on_new_work_item(std::string /*address*/, std::shared_ptr<char>
 }
 
 void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64_t rem_node_id) {
-    L_(info) << "Node connected: " << endl << 
+    L_(info) << "Node connected: " << endl <<
             "Node ID: " << rem_node_id << endl <<
             "Group ID: " << rem_group_id;
     if (rem_group_id == 0 && rem_node_id == 0) { // connected to central manager - tell it about our connection possibilities
@@ -131,7 +138,7 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         time_point<high_resolution_clock> start;
         time_point<high_resolution_clock> stop;
         start = high_resolution_clock::now();
-        L_(debug) << "TS writer - ts written after: " <<  duration_cast<milliseconds>(stop-start).count();
+        //L_(debug) << "TS writer - ts written after: " <<  duration_cast<milliseconds>(stop-start).count();
 
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         if (el == nullptr) { // not expected to happen in the current implementation
@@ -139,9 +146,10 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
             return;
         }
         uint64_t component_size = 0;
+        
         auto component = data_buffer_map_->get_elements_of_component(el->compontent_id, component_size);
-        for (auto &component : component) {
-            component->rx_tx = BufferMap::ListElement::IO::UNSPEC; // asynchronousity makes it possible to read it twice, therefore we remove the RX mark to prevent this from happening
+        for (auto &c : component) {
+            c->rx_tx = BufferMap::ListElement::IO::UNSPEC; // asynchronousity makes it possible to read it twice, therefore we remove the RX mark to prevent this from happening
         }
 
         *(bytes_received_.value) = *(bytes_received_.value) + component_size;
@@ -149,9 +157,10 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         ts_sink_->write_timeslice(component);
         auto buffer_fill_state =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
         auto buffer_map_fill_state = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
+        //sleep(6);
         node_connector_->unlock_buffer_map(data_buffer_map_);
         stop = high_resolution_clock::now();
-        L_(debug) << "TS on_new_data - done after: " <<  duration_cast<milliseconds>(stop-start).count();
+        L_(trace) << "TS on_new_data - done after: " <<  duration_cast<milliseconds>(stop-start).count();
 
         monitor_->QueueMetric("timeslice_forwarder_state",
             {
@@ -165,6 +174,7 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
                 {"recv_cnt", ++recv_cnt_}
             }
         );
+
     }, [this] () {
         monitor_->QueueMetric("timeslice_forwarder_state",
             {{"host", hostname_},
