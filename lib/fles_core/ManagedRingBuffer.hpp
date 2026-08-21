@@ -17,21 +17,16 @@ public:
   [[nodiscard]] std::size_t read_index() const { return read_index_; }
 
   void set_read_index(std::size_t new_index) {
-    //L_(info) << "set read index: " << new_index;
     read_index_ = new_index;
   }
 
   [[nodiscard]] std::size_t size_used() const {
-    //L_(info) << "write_index_: " << write_index_;
-    //L_(info) << "read_index_: " << write_index_;
     assert(write_index_ >= read_index_);
     return write_index_ - read_index_;
   }
 
   [[nodiscard]] std::size_t size_available() const {
-    //L_(info) << "this->size: " << this->size();
-    //L_(info) << "size used: " << size_used();
-    assert(this->size() + 1 > size_used());
+    assert(this->size() >= size_used());
     return this->size() - size_used();
   }
 

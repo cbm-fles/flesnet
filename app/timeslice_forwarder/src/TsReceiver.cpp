@@ -26,8 +26,12 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     }
     log_thread_ = std::async([this] {
         while (true) {
-            this_thread::sleep_for(chrono::seconds(1));
-            L_(info) << "Input MB/s: " << (*bytes_received_.per_seconds() / 1000000.0);
+            this_thread::sleep_for(chrono::seconds(2));
+            L_(info) << "Input MB/s: " << (*bytes_received_.per_seconds() / 1000000.0) << endl <<
+                "Buffer Fill State in %: " << buffer_fill_state_ << endl <<
+                "Available timeslices in buffer: " << available_timeslices_cnt_ << endl <<
+                "Timeslices Received: " << received_timeslices_cnt_ << endl <<
+                "Connected sender nodes: " << connected_sender_nodes_cnt_;
         }
     });
     wi_work_done_ = make_shared<WiWorkDone>();
@@ -39,13 +43,8 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
         if (ts_sink_->get_finished_component_id_cnt() == 0) {
             return;
         }
-        //sleep(10);
-        //return;
-        node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
-            time_point<high_resolution_clock> start;
-            time_point<high_resolution_clock> stop;
-            start = high_resolution_clock::now();
 
+        node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
             uint64_t component_id;
             uint64_t work_done_cnt = 0;
             while (ts_sink_->pop_finished_component_id(component_id)) {
@@ -54,12 +53,14 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
                 data_buffer_map_->remove_elements(component);
                 work_done_cnt++;
             }
+
+            buffer_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
+            buffer_map_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
+            available_timeslices_cnt_ -= work_done_cnt; 
+
             wi_work_done_->cnt =  work_done_cnt;
             Node::send_work_item(cm_address_, wi_work_done_);
             node_connector_->unlock_buffer_map(data_buffer_map_);
-            stop = high_resolution_clock::now();
-            L_(debug) << "TS on_timeslices_handled - done after: " <<  duration_cast<milliseconds>(stop-start).count();
-
         }, [] () {
             return true;
         });
@@ -92,9 +93,14 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
 }
 
 void TsReceiver::on_node_disconnected(std::string /*address*/, uint64_t group_id, uint64_t node_id) {
-    L_(info) << "Node DISCONNECTED:" << endl <<
+    if (group_id == 0) {
+        L_(warning) << "Central Manager DISCONNECTED";
+    } else {
+        L_(warning) << "Node DISCONNECTED:" << endl <<
         "Node ID: " << node_id << endl <<
-        "Group ID: " << group_id;
+        "Group ID: " << group_id << " (sender)";
+        connected_sender_nodes_cnt_--;
+    }
 }
 
 void TsReceiver::on_new_work_item(std::string /*address*/, std::shared_ptr<char> /*wi_ptr*/, WorkItem::Type /*wi_type*/, uint64_t group_id, uint64_t node_id) {
@@ -102,10 +108,8 @@ void TsReceiver::on_new_work_item(std::string /*address*/, std::shared_ptr<char>
 }
 
 void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64_t rem_node_id) {
-    L_(info) << "Node connected: " << endl <<
-            "Node ID: " << rem_node_id << endl <<
-            "Group ID: " << rem_group_id;
     if (rem_group_id == 0 && rem_node_id == 0) { // connected to central manager - tell it about our connection possibilities
+        L_(info) << "Connected to Central Manager (" << address  << ")";
         auto conn_config = make_shared<WiConnectorConfig>();
         conn_config->type = WorkItem::connector_config;
         conn_config->connector_uid = 0;
@@ -113,6 +117,7 @@ void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64
         conn_config->name = "ConnectorInfiniband";
         Node::send_work_item(address, conn_config);
     } else { // Connected to some other node - tell the central manager about it
+        L_(info) << "Connected to Sender - Node ID: " << rem_node_id << " (" << address  << ")";
         auto wi_connection = make_shared<WiConnection>();
         wi_connection->type = WorkItem::connection;
         wi_connection->from_group_id = group_id_;
@@ -120,6 +125,7 @@ void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64
         wi_connection->to_group_id = rem_group_id;
         wi_connection->to_node_id = rem_node_id;
         Node::send_work_item(cm_address_, wi_connection);
+        connected_sender_nodes_cnt_++;
     }
 }
 
@@ -132,21 +138,15 @@ void TsReceiver::on_connection_refused(std::string address) {
     }
 };
 
-void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id, uint64_t node_id) {
+void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t /*group_id*/, uint64_t /*node_id*/) {
     // New data has arrived - check buffer map
     node_connector_->lock_buffer_map(data_buffer_map_, [this] () {
-        time_point<high_resolution_clock> start;
-        time_point<high_resolution_clock> stop;
-        start = high_resolution_clock::now();
-        //L_(debug) << "TS writer - ts written after: " <<  duration_cast<milliseconds>(stop-start).count();
-
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         if (el == nullptr) { // not expected to happen in the current implementation
             node_connector_->unlock_buffer_map(data_buffer_map_);
             return;
         }
         uint64_t component_size = 0;
-        
         auto component = data_buffer_map_->get_elements_of_component(el->compontent_id, component_size);
         for (auto &c : component) {
             c->rx_tx = BufferMap::ListElement::IO::UNSPEC; // asynchronousity makes it possible to read it twice, therefore we remove the RX mark to prevent this from happening
@@ -155,12 +155,11 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
         *(bytes_received_.value) = *(bytes_received_.value) + component_size;
         L_(debug)  << "New data from Node ID: " << component[0]->node_id << " - Group ID: " << component[0]->group_id;
         ts_sink_->write_timeslice(component);
-        auto buffer_fill_state =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
-        auto buffer_map_fill_state = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
-        //sleep(6);
+        buffer_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
+        buffer_map_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
+        available_timeslices_cnt_++;
+        received_timeslices_cnt_++;
         node_connector_->unlock_buffer_map(data_buffer_map_);
-        stop = high_resolution_clock::now();
-        L_(trace) << "TS on_new_data - done after: " <<  duration_cast<milliseconds>(stop-start).count();
 
         monitor_->QueueMetric("timeslice_forwarder_state",
             {
@@ -169,8 +168,8 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t group_id,
             },
             {
                 {"bytes_received", component_size},
-                {"buffer_fill", buffer_fill_state},
-                {"buffer_map_fill", buffer_map_fill_state},
+                {"buffer_fill", buffer_fill_state_},
+                {"buffer_map_fill", buffer_map_fill_state_},
                 {"recv_cnt", ++recv_cnt_}
             }
         );
