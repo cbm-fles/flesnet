@@ -48,11 +48,8 @@ TsclientWriter::TsclientWriter(std::string output_uri, uint32_t timeslice_size) 
             fles::TimesliceCompletion c{};
             uint64_t found_completions = 0;
             {
-                //L_(trace) << "ts_completions_thread_ - before mtx";
                 unique_lock<mutex> l(mtx_);
-                //L_(trace) << "ts_completions_thread_ - try_receive_completion ...";
                 while (ts_buffer_->try_receive_completion(c)) {
-                    //L_(debug) << "c.ts_pos: " << c.ts_pos << " - tspos_componentid_map_[c.ts_pos]: " << tspos_componentid_map_[c.ts_pos];
                     component_ids_done_.push(tspos_componentid_map_[c.ts_pos]);
                     if (tspos_componentid_map_.erase(c.ts_pos) != 1) {
                         L_(fatal) << "tspos_componentid_map_.erase failed";
@@ -64,10 +61,8 @@ TsclientWriter::TsclientWriter(std::string output_uri, uint32_t timeslice_size) 
 
             if (found_completions != 0) {
                 ts_input_output_cnt_diff_ -= found_completions;
-                L_(debug) << "ts_completions_thread_ - open completions: " << ts_input_output_cnt_diff_;
-                //L_(trace) << "ts_completions_thread_ - completions: " << found_completions;
+                L_(debug) << "Available timeslices: " << ts_input_output_cnt_diff_;
                 handled_timeslice_callbacks_.call_async(found_completions);
-                //L_(trace) << "ts_completions_thread_ - call_async called" << found_completions;
             } else {
                 L_(trace) << "no completions found ...";
                 this_thread::sleep_for(chrono::milliseconds(500));
@@ -103,22 +98,15 @@ void TsclientWriter::set_buffer_map(std::shared_ptr<BufferMap> buffer_map) {
 }
 
 void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& elements) {
-    time_point<high_resolution_clock> start;
-    time_point<high_resolution_clock> stop;
-    start = high_resolution_clock::now();
     vector<fles::TimesliceComponentDescriptor*> desc_ptr;
     vector<uint8_t*> data_ptr;
-    // L_(trace) << "write_timeslice - ts_input_output_diff: " << ++ts_input_output_cnt_diff  ;
-    uint64_t combined_size = 0;
     for (auto desc_it = elements.begin(); desc_it != elements.end(); ++desc_it) {
         auto *const descriptor_el = *desc_it;
         if (1 == (descriptor_el->tag >> (sizeof(uint16_t) * 8))) { // referencing a descriptor
             desc_ptr.push_back(reinterpret_cast<fles::TimesliceComponentDescriptor*>(buffer_.get() + descriptor_el->address));
             const auto idx = static_cast<uint16_t>(descriptor_el->tag);
             for (const auto& element : elements) {
-                if (static_cast<uint16_t>(element->tag) == idx && 2 == (element->tag >> (sizeof(uint16_t) * 8))) { // is refere
-                    combined_size += descriptor_el->len;
-                    combined_size += element->len;
+                if (static_cast<uint16_t>(element->tag) == idx && 2 == (element->tag >> (sizeof(uint16_t) * 8))) { // is referencing descriptor
                     data_ptr.push_back(reinterpret_cast<uint8_t*>(buffer_.get() + element->address));
                     break;
                 }
@@ -135,8 +123,6 @@ void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& eleme
     ts_desc.num_core_microslices = timeslice_size_;
     ts_desc.num_components = static_cast<uint32_t>(desc_ptr.size());
     ts->set_timeslice_descriptor(ts_desc);
-    //L_(debug) << "elements[0]->compontent_id: " << elements[0]->compontent_id << endl;
-
     ts->set_desc(std::move(desc_ptr));
     ts->set_data(std::move(data_ptr));
     {
@@ -146,10 +132,6 @@ void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& eleme
         ts_input_output_cnt_diff_++;
         ts_buffer_->send_work_item(ts);
     }
-    //L_(trace) << "Sending work item ... size: " << combined_size;
-    stop = high_resolution_clock::now();
-
-    //L_(debug) << "TS writer - ts written after: " <<  duration_cast<milliseconds>(stop-start).count();
 }
 
 bool TsclientWriter::pop_finished_component_id(uint64_t& component_id) {

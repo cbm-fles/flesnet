@@ -49,10 +49,6 @@ CentralManager::CentralManager(
 }
 
 void CentralManager::on_node_connected(std::string address, uint64_t group_id, uint64_t node_id) {
-    L_(info) << "Node connected: \n" <<
-            "Node ID: " << node_id  << '\n' <<
-            "Group ID: " << group_id;
-
     auto node_uid = MAKE_UID(group_id, node_id);
     if (group_id == SENDER_GROUP_ID) {
         monitor_->QueueMetric("timeslice_forwarder_state",
@@ -67,6 +63,11 @@ void CentralManager::on_node_connected(std::string address, uint64_t group_id, u
                     {"host", hostname_}},
             {{"output_nodes_cnt", ++output_nodes_cnt_}});
     }
+    L_(info) << "Node connected:" << endl
+        << "Node ID: " << node_id << endl
+        << "Group ID: " << group_id << " (" << ((group_id == 1) ? "sender" : "receiver") << ")" << endl
+        << "Sender nodes: " << input_nodes_cnt_ << endl
+        << "Receiver nodes: " << output_nodes_cnt_;
     unique_lock<mutex> l(mtx_);
     uid_address_map_[node_uid] = address;
     connection_manager_.add_node(node_uid);
@@ -77,9 +78,6 @@ void CentralManager::on_node_connected(std::string address, uint64_t group_id, u
 
 void CentralManager::on_node_disconnected(std::string /*address*/, uint64_t group_id, uint64_t node_id) {
     unique_lock<mutex> l(mtx_);
-    L_(info) << "Node DISCONNECTED:" << endl
-        << "Node ID: " << node_id << endl
-        << "Group ID: " << group_id;
     auto node_uid = MAKE_UID(group_id, node_id);
     auto key_pos = uid_address_map_.find(node_uid);
     uid_address_map_.erase(key_pos);
@@ -96,19 +94,25 @@ void CentralManager::on_node_disconnected(std::string /*address*/, uint64_t grou
             {"host", hostname_},},
             {{"output_nodes_cnt", --output_nodes_cnt_}});
     }
+
+    L_(info) << "Node DISCONNECTED:" << endl
+        << "Node ID: " << node_id << endl
+        << "Group ID: " << group_id << " (" << ((group_id == 1) ? "sender" : "receiver") << ")" << endl
+        << "Sender nodes: " << input_nodes_cnt_ << endl
+        << "Receiver nodes: " << output_nodes_cnt_;
 }
 
 void CentralManager::on_new_work_item(std::string /*address*/, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id) {
     auto node_uid = MAKE_UID(group_id, node_id);
     if (static_cast<WiType>(wi_type) == WiType::connector_config) { // The given node informed us about its connection possibilities (its listen address)
-        L_(debug) << "WiType::connector_config - node_id: " << node_id << " - group_id " << group_id;;
+        L_(trace) << "WiType::connector_config - node_id: " << node_id << " - group_id " << group_id;;
         WiConnectorConfig conn_config;
         conn_config.deserialize(wi_ptr);
         unique_lock<mutex> l(mtx_);
         uid_listen_address_map_[node_uid] = conn_config.listen_addr;
         connect_nodes(node_uid);
     } else if (static_cast<WiType>(wi_type) == WiType::connection) { // The given node informed us about a new available connection it established
-        L_(debug) << "WiType::connection - node_id: " << node_id << " - group_id " << group_id;
+        L_(trace) << "WiType::connection - node_id: " << node_id << " - group_id " << group_id;
         WiConnection wi_connection;
         wi_connection.deserialize(wi_ptr);
         auto from = MAKE_UID(wi_connection.from_group_id, wi_connection.from_node_id);
@@ -116,14 +120,14 @@ void CentralManager::on_new_work_item(std::string /*address*/, std::shared_ptr<c
         unique_lock<mutex> l(mtx_);
         connection_manager_.connect_unidirectional(from, to);
     } else if (static_cast<WiType>(wi_type) == WiType::buffer_status) { // The sender node has new data available
-        L_(debug) << "WiType::buffer_status - node_id: " << node_id << " - group_id " << group_id;
+        L_(trace) << "WiType::buffer_status - node_id: " << node_id << " - group_id " << group_id;
         unique_lock<mutex> l(mtx_);
         nodes_data_available_.push_back(node_uid);
         eval_worker_cv_.notify_all();
     } else if (static_cast<WiType>(wi_type) == WiType::wi_work_done) { // The receiver node processed a timeslice
         WiWorkDone wi_done;
         wi_done.deserialize(wi_ptr);
-        L_(debug) << "WiType::wi_work_done - node_id: " << node_id << " - group_id " << group_id << " - cnt: " << wi_done.cnt;
+        L_(trace) << "WiType::wi_work_done - node_id: " << node_id << " - group_id " << group_id << " - cnt: " << wi_done.cnt;
         unique_lock<mutex> l(mtx_);
         nodes_load_[node_uid] -= wi_done.cnt;
         monitor_->QueueMetric("timeslice_forwarder_state",
@@ -135,7 +139,7 @@ void CentralManager::on_new_work_item(std::string /*address*/, std::shared_ptr<c
     } else if (static_cast<WiType>(wi_type) == WiType::wi_buffer_full_report) { // The sender node failed to transmit data because of a full remote buffer
         auto wi_buffer_full_report = make_shared<WiBufferFullReport>();
         wi_buffer_full_report->deserialize(wi_ptr);
-        L_(debug) << "WiType::wi_buffer_full_report FROM node_id: " << node_id << " - group_id " << group_id << " - ABOUT N: " << wi_buffer_full_report->node_id << " - G: " << wi_buffer_full_report->group_id;
+        L_(trace) << "WiType::wi_buffer_full_report FROM node_id: " << node_id << " - group_id " << group_id << " - ABOUT N: " << wi_buffer_full_report->node_id << " - G: " << wi_buffer_full_report->group_id;
         auto rem_node_uid = MAKE_UID(wi_buffer_full_report->group_id, wi_buffer_full_report->node_id);
         unique_lock<mutex> l(mtx_);
         nodes_data_available_.push_back(node_uid);
@@ -158,12 +162,15 @@ void CentralManager::connect_nodes(uint64_t node_uid) {
     L_(debug) << all_possible_connections.size() << " possible connections for N: " << node_id << " - G: " << group_id;
     for (auto &remote_uid : all_possible_connections) {
         if (GROUP_ID(remote_uid) == group_id + 1 || GROUP_ID(remote_uid) == group_id - 1) {
-            L_(debug) << "Telling N: " << node_id << " - G: " << group_id << " --connect to--> N: "<< NODE_ID(remote_uid) << " - G: " << GROUP_ID(remote_uid);
             auto wi_connection = make_shared<WiConnection>();
             wi_connection->type = WorkItem::connection_req;
             wi_connection->connector_uid = 0;
             wi_connection->connector_address = uid_listen_address_map_[remote_uid];
-            L_(debug) << "address: " << wi_connection->connector_address;
+            L_(debug) <<
+                "Telling N: " << node_id <<" - G: " << group_id <<
+                " --connect to--> "
+                "N: " << NODE_ID(remote_uid) << " - G: " << GROUP_ID(remote_uid) <<
+                " - address: " << wi_connection->connector_address;
             Node::send_work_item(uid_address_map_[node_uid], wi_connection);
         }
     }
@@ -175,12 +182,11 @@ void CentralManager::eval_node_status() {
     while (it != nodes_data_available_.end()) {
         auto sender_uid = *it;
         auto connections = connection_manager_.get_connections(sender_uid);
-//L_(debug) << "Eval node status - node_id: " << NODE_ID(sender_uid) << " - group_id: " << GROUP_ID(sender_uid);
-
-        if (connections.empty()) {
+        if (connections.empty()) { // node is not connected to any other node
             return;
         }
-
+    
+        // find receiver node with lowest load
         uint64_t node_uid_lowest_load;
         uint64_t lowest_load_value = UINT64_MAX;
         for (auto &conn : connections) {
@@ -197,8 +203,8 @@ void CentralManager::eval_node_status() {
             continue;
         }
 
-        L_(debug) << "Eval node status - sending to node_id: " << NODE_ID(node_uid_lowest_load);
-        // L_(debug) << "eval node status - lowest_load_value: " << lowest_load_value;
+        L_(debug) << "Eval node status"
+            << "Send from: " << NODE_ID(sender_uid) << " - to: " << NODE_ID(node_uid_lowest_load);
         nodes_load_[node_uid_lowest_load]++;
         monitor_->QueueMetric("timeslice_forwarder_state",
             {{"CM", "CM"},

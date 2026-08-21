@@ -24,14 +24,11 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
         shared_lock<shared_mutex> l(mtx_);
         rem_address = uid_address_map_[node_uid];
     }
-    //tsleep(6);
 
-    L_(debug) << "Commanded to send data to Node ID: " << node_id << " - Group ID: " << group_id << " - address: " << rem_address;
+    L_(trace) << "Commanded to send data to Node ID: " << node_id << " - Group ID: " << group_id << " - address: " << rem_address;
     time_point<high_resolution_clock> start = high_resolution_clock::now();
 
     node_connector_->lock_buffer_map(data_buffer_map_, [this, rem_address, node_id, group_id, start] () {
-        L_(trace) << "send_latest_data - got own buffer map after: " <<  duration_cast<milliseconds>(high_resolution_clock::now()-start).count();
-
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         auto buffer_fill_state =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
         auto buffer_map_fill_state = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
@@ -51,9 +48,7 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
             return;
         }
         uint64_t combined_size = 0;
-        L_(trace) << "get_elements of component...";
         auto component_elements = data_buffer_map_->get_elements_of_component(el->compontent_id, combined_size);
-        L_(trace) << "got elements";
         auto *data_write_chain = new std::function<void()>;
         (*data_write_chain) = [this, data_write_chain, rem_address, component_elements, combined_size, node_id, group_id] () {
             atomic_uint64_t fail_cnt = 0;
@@ -63,7 +58,6 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                 Node::DATA_BUFFER_IDX,
                 [this, data_write_chain, start, component_elements, rem_address, combined_size, node_id, group_id, &fail_cnt] (shared_ptr<BufferMap> rem_buffer_map_copy) {
                     L_(trace) << "send_latest_data - Got remote buffer map after " << fail_cnt << " tries";
-                    L_(trace) << "send_latest_data - got own buffer map after: " <<  duration_cast<milliseconds>(high_resolution_clock::now()-start).count();
 
                     auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
                     L_(trace) << "send_latest_data - start calculating addresses...";
@@ -97,9 +91,7 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                         src_mem_addresses[i] = component_elements[i]->address;
                         sizes[i] = component_elements[i]->len;
                     }
-                    L_(trace) << "send_latest_data - start inserting in remote buffer map...";
                     bool insert_successfull = rem_buffer_map_copy->insert(component_elements, dest_addresses, node_id_, group_id_, BufferMap::ListElement::RX);
-                    L_(trace) << "send_latest_data - inserting done";
                     if (!insert_successfull) {
                         L_(warning) << "Remote buffer map has no elements available - Node ID: " << node_id << " - Group ID: " << group_id;
                         auto wi_buffer_full_report = make_shared<WiBufferFullReport>();
@@ -121,7 +113,6 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                         return;
                     }
                     delete data_write_chain;
-                    L_(trace) << "send_latest_data - calling sendv...";
                     int ret = node_connector_->sendv(
                         rem_address,
                         data_buffer_,
@@ -130,15 +121,13 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                         dest_addresses,
                         sizes,
                         [this, rem_address, rem_buffer_map_copy, component_elements, combined_size] () {
-                            L_(trace) << "sendv - in callback";
                             // send the new buffer map to remote node and unlock
                             ts_reader->clear_last_timeslice();
-
-                            L_(trace) << "sendv - cleared last timeslice";
                             node_connector_->write_remote_buffer_map_and_unlock(rem_address, rem_buffer_map_copy,
                                 Node::DATA_BUFFER_IDX,
                                 [this, component_elements, combined_size, rem_address] () {
-
+                                    available_timeslices_cnt_--;
+                                    sent_timeslices_cnt_++;
                                     *(bytes_sent_.value) = *(bytes_sent_.value) + combined_size;
                                     monitor_->QueueMetric("timeslice_forwarder_state",
                                         {{"host", hostname_},
@@ -152,8 +141,6 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                                     // remove the sent TS from own buffermap
                                     data_buffer_map_->remove_elements(component_elements);
                                     node_connector_->unlock_buffer_map(data_buffer_map_);
-                                    stop_ = high_resolution_clock::now();
-                                    L_(trace) << "TS transmitted in: " << duration_cast<milliseconds>(stop_-start_).count();
                                 }
                             );
                         }
@@ -191,15 +178,12 @@ void TsSender::on_new_work_item(std::string /*address*/, std::shared_ptr<char> w
             auto remote_group_id = GROUP_ID(wi_transmission.node_uid);
             send_latest_data(remote_group_id, remote_node_id);
         }
-    }
+    } 
 }
 
 void TsSender::on_node_connected(string address, uint64_t rem_group_id, uint64_t rem_node_id) {
-    L_(info) << "Node connected: " << endl << 
-            "Node ID: " << rem_node_id << endl << 
-            "Group ID: " << rem_group_id;
-
     if (rem_group_id == 0 && rem_node_id == 0) { // connected to central manager - tell it about our connection possibilities
+        L_(info) << "Connected to Central Manager (" << address  << ")";
         auto conn_config = make_shared<WiConnectorConfig>();
         conn_config->type = WorkItem::connector_config;
         conn_config->connector_uid = 0;
@@ -210,6 +194,7 @@ void TsSender::on_node_connected(string address, uint64_t rem_group_id, uint64_t
         std::this_thread::sleep_for(std::chrono::milliseconds(1500));
         ts_reader->start_timeslice_reading();
     } else { // Connected to some other node - tell the central manager about it
+        L_(info) << "Connected to Receiver - Node ID: " << rem_node_id << " (" << address  << ")";
         auto const node_uid = MAKE_UID(rem_group_id, rem_node_id);
         auto wi_connection = make_shared<WiConnection>();
         wi_connection->type = WorkItem::connection;
@@ -221,14 +206,17 @@ void TsSender::on_node_connected(string address, uint64_t rem_group_id, uint64_t
             unique_lock<shared_mutex> l(mtx_);
             uid_address_map_[node_uid] = address;
         }
+        connected_receiver_nodes_cnt_++;
         Node::send_work_item(cm_address_, wi_connection);
     }
 }
 
 void TsSender::on_connection_refused(std::string address) {
     if (address == cm_address_) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         Node::connect_to_node(cm_address_);
+    } else {
+        L_(fatal) << "Connection refused: Node with address '" << address << "' not available";
     }
 }
 
@@ -237,9 +225,14 @@ bool TsSender::is_cm_available() {
 }
 
 void TsSender::on_node_disconnected(std::string /*address*/, uint64_t group_id, uint64_t node_id) {
-    L_(info) << "Node DISCONNECTED:" << endl <<
+    if (group_id == 0) {
+        L_(warning) << "Central Manager DISCONNECTED";
+    } else {
+        L_(warning) << "Node DISCONNECTED:" << endl <<
         "Node ID: " << node_id << endl <<
-        "Group ID: " << group_id;
+        "Group ID: " << group_id << " (receiver)";
+        connected_receiver_nodes_cnt_--;
+    }
 }
 
 TsSender::TsSender(uint64_t node_id,
@@ -259,8 +252,11 @@ Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen
 
     log_thread_ = std::async([this] {
         while (true) {
-            this_thread::sleep_for(chrono::seconds(5));
-            L_(info) << "Output MB/s: " << (*bytes_sent_.per_seconds() / 1000000.0);
+            this_thread::sleep_for(chrono::seconds(2));
+            L_(info) << "Output MB/s: " << (*bytes_sent_.per_seconds() / 1000000.0) << endl << 
+                "Available timeslices in buffer: " << available_timeslices_cnt_ << endl <<
+                "Timeslices sent: " << sent_timeslices_cnt_ << endl <<
+                "Connected receiver nodes: " << connected_receiver_nodes_cnt_;
         }
     });
 
@@ -285,8 +281,8 @@ Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen
     wi_buffer_status_ = make_shared<WorkItem>();
     wi_buffer_status_->type = WorkItem::buffer_status;
     ts_reader->on_new_timeslice([this] () {
-        start_ = high_resolution_clock::now();
-        if (is_cm_available()) {
+        available_timeslices_cnt_++;
+        if (is_cm_available()) { // currently always true
             Node::send_work_item(cm_address_, wi_buffer_status_);
         } else {
             uint64_t node_uid;

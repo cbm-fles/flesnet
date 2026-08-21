@@ -42,6 +42,11 @@ private:
 
     std::future<void> log_thread_;
     Avg<std::atomic<double>> bytes_sent_;
+    std::atomic<double> buffer_fill_state_ = 0.0;
+    std::atomic<double> buffer_map_fill_state_ = 0.0;
+    std::atomic<uint64_t> available_timeslices_cnt_ = 0;
+    std::atomic<uint64_t> sent_timeslices_cnt_ = 0;
+    std::atomic<uint64_t> connected_receiver_nodes_cnt_ = 0;
 
     /**
     * @brief values used for influxDB/grafana monitoring
@@ -88,10 +93,6 @@ private:
      * @todo implement - Currenty returns hardcoded value
      */
     bool is_cm_available();
-
-    // debugging variables to internall meassure performance
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_;
-    std::chrono::time_point<std::chrono::high_resolution_clock> stop_;
 
 public:
     TsSender(

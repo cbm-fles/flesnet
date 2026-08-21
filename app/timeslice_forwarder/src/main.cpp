@@ -19,6 +19,7 @@ using namespace std;
 Parameters par;
 
 int start_cm(string hostname = "") {
+    L_(info) << "Starting Central Manager ...";
     auto node = make_shared<CentralManager>(
         par.central_manager_listen_addr,
         par.wi_buffer_size,
@@ -35,6 +36,7 @@ int start_cm(string hostname = "") {
 }
 
 int start_sender(string hostname = "") {
+    L_(info) << "Starting sender ...";
     auto node = make_shared<TsSender>(
         par.node_id,
         par.listen_addr,
@@ -55,7 +57,7 @@ int start_sender(string hostname = "") {
 }
 
 int start_receiver(string hostname = "") {
-    L_(info) << "Starting receiver...";
+    L_(info) << "Starting receiver ...";
     auto node = make_shared<TsReceiver>(
         par.node_id,
         par.listen_addr,
