@@ -99,29 +99,30 @@ void Parameters::parse_options(int argc, char** argv) {
 
     stringstream minimal_example;
     minimal_example << endl
-        << "This is a minmal example using the tsclient for providing timeslices to the TS Sender and unsing it on the TS Receiver to process it:" << endl
+        << "This is a minmal example. The tsclient is used to provide timeslices via SHM on the sender side and it is used on the receiver side to consume received timeslices: " << endl
         << "" << endl
         << "                  ____________ CM ___________ " << endl
         << "                  |                          |" << endl
-        << "tsclient->SHM->TS Sender->IB Connectiony->TS Receiver->SHM->tsclient" << endl
+        << "tsclient->SHM->TS Sender->IB Connection->TS Receiver->SHM->tsclient" << endl
         << "" << endl
-        << "The timeslice forwarder is robust enough for arbitrary starting order of the participants. Nontheless it is recommondendet to do it in the following order:" << endl
+        << "The timeslice forwarder is robust enough for any arbitrary starting order of the participants. Nontheless it is recommended to do it in the following order:" << endl
         << "Node A: Central Manager (CM)" << endl
         << "Node B: TS Receiver and output tsclient" << endl
         << "Node C: TS Sender and input tsclient" << endl
-        << "For the following example we assume that the timeslices will have 29 components." << endl
+        << "For the following example we assume that the timeslices have 29 components. This example uses IP addresses, alternatively use the hostname which resolves to the IB IP." << endl
         << "" << endl
         << "On Node A:" << endl
         << "Start the Central Manager: " << endl
-        << "./timeslice_forwarder -c 10.253.31.143:8080" << endl
+        << "\t./timeslice_forwarder -c 10.253.31.143:8080" << endl
         << "" << endl
         << "On Node B:" << endl
-        << "Start the TS Receiver in one process (increment N with each sender):" << endl
+        << "Start the TS Receiver in one process (increment N with each receiver):" << endl
         << "\t./timeslice_forwarder -c 10.253.31.143:8080 -A 10.253.30.67:8080 -o shm:ts_out?n=29 -N 1" << endl
-        << "Start the tsclient who will take out the received timeslices in another process:" << endl
-        << "\t./tsclient -i shm:ts_out -o your_output_archive.tsa" << endl << endl
+        << "Start the tsclient which will take out the received timeslices in another process:" << endl
+        << "\t./tsclient -i shm:ts_out -o your_output_archive.tsa" << endl
+        << "" << endl
         << "On Node C:" << endl
-        << "Start the TS Sender in one process (increment N with each receiver):" << endl
+        << "Start the TS Sender in one process (increment N with each sender):" << endl
         << "\t./timeslice_forwarder -c 10.253.31.143:8080 -A 10.253.31.135:8080 -i shm:ts_in -N 1" << endl
         << "Start the tsclient which will provide timeslices to the TS Sender via SHM:" << endl
         << "\t./tsclient -i your_input_archive.tsa -o shm:/ts_in?n=29 -l 0" << endl;
