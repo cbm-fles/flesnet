@@ -95,7 +95,7 @@ void CentralManager::on_node_disconnected(std::string /*address*/, uint64_t grou
             {{"output_nodes_cnt", --output_nodes_cnt_}});
     }
 
-    L_(info) << "Node DISCONNECTED:" << endl
+    L_(warning) << "Node DISCONNECTED:" << endl
         << "Node ID: " << node_id << endl
         << "Group ID: " << group_id << " (" << ((group_id == 1) ? "sender" : "receiver") << ")" << endl
         << "Sender nodes: " << input_nodes_cnt_ << endl
