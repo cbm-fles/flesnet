@@ -253,10 +253,15 @@ Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen
     log_thread_ = std::async([this] {
         while (true) {
             this_thread::sleep_for(chrono::seconds(2));
-            L_(info) << "Output MB/s: " << (*bytes_sent_.per_seconds() / 1000000.0) << endl << 
+            double mb_per_second = (*bytes_sent_.per_seconds() / 1000000.0);
+            L_(info) << "Output MB/s: " << mb_per_second << endl << 
                 "Available timeslices in buffer: " << available_timeslices_cnt_ << endl <<
                 "Timeslices sent: " << sent_timeslices_cnt_ << endl <<
                 "Connected receiver nodes: " << connected_receiver_nodes_cnt_;
+            monitor_->QueueMetric("timeslice_forwarder_state",
+                    {{"host", hostname_},
+                    {"sender", to_string(node_id_)}},
+                    {{"tx_mb_per_second", mb_per_second}});
         }
     });
 

@@ -105,6 +105,7 @@ int main (int argc, char** argv) {
     char c_hostname[HOSTNAME_LEN] = {0};
     gethostname(&c_hostname[0], HOSTNAME_LEN);
     string hostname(&c_hostname[0]);
+    hostname += " (" + std::to_string(par.node_id) + ")";
     if (par.role == Parameters::CentralManager) {
         start_cm(hostname);
     } else if (par.role == Parameters::Sender) {
