@@ -43,7 +43,7 @@ void Parameters::parse_options(int argc, char** argv) {
 
     general_add("monitor,m",
         po::value<string>(&monitoring_uri),
-        "Monitoring URI influxdb2:host:timeslice_forwarder_state:[auth_token]");
+        "Monitoring URI influx2:host:port:timeslice_forwarder_status:[auth_token]");
 
     general_add("node-id,N",
         po::value<uint32_t>(&node_id),

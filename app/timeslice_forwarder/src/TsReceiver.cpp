@@ -27,11 +27,16 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     log_thread_ = std::async([this] {
         while (true) {
             this_thread::sleep_for(chrono::seconds(2));
-            L_(info) << "Input MB/s: " << (*bytes_received_.per_seconds() / 1000000.0) << endl <<
+            double mb_per_second = (*bytes_received_.per_seconds() / 1000000.0);
+            L_(info) << "Input MB/s: " << mb_per_second << endl <<
                 "Buffer Fill State in %: " << buffer_fill_state_ << endl <<
                 "Available timeslices in buffer: " << available_timeslices_cnt_ << endl <<
                 "Timeslices Received: " << received_timeslices_cnt_ << endl <<
                 "Connected sender nodes: " << connected_sender_nodes_cnt_;
+            monitor_->QueueMetric("timeslice_forwarder_state",
+                    {{"host", hostname_},
+                    {"receiver", to_string(node_id_)}},
+                    {{"rx_mb_per_second", mb_per_second}});
         }
     });
     wi_work_done_ = make_shared<WiWorkDone>();
