@@ -49,6 +49,7 @@ private:
 
     std::future<void> log_thread_;
     Avg<std::atomic<double>> bytes_received_;
+    std::atomic<uint64_t> mb_received_cumulative_ = 0;
     std::atomic<double> buffer_fill_state_ = 0.0;
     std::atomic<double> buffer_map_fill_state_ = 0.0;
     std::atomic<uint64_t> available_timeslices_cnt_ = 0;

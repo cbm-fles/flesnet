@@ -53,14 +53,14 @@ void CentralManager::on_node_connected(std::string address, uint64_t group_id, u
     if (group_id == SENDER_GROUP_ID) {
         monitor_->QueueMetric("timeslice_forwarder_state",
             {{"CM", "CM"},
-                        {"host", hostname_}},
+            {"host", hostname_}},
             {{"input_nodes_cnt", ++input_nodes_cnt_}});
     } else { // group_id == RECEIVER_GROUP_ID
         unique_lock<mutex> l(mtx_);
         nodes_load_[node_uid] = 0;
         monitor_->QueueMetric("timeslice_forwarder_state",
             {{"CM", "CM"},
-                    {"host", hostname_}},
+            {"host", hostname_}},
             {{"output_nodes_cnt", ++output_nodes_cnt_}});
     }
     L_(info) << "Node connected:" << endl
@@ -143,7 +143,8 @@ void CentralManager::on_new_work_item(std::string /*address*/, std::shared_ptr<c
         auto rem_node_uid = MAKE_UID(wi_buffer_full_report->group_id, wi_buffer_full_report->node_id);
         unique_lock<mutex> l(mtx_);
         nodes_data_available_.push_back(node_uid);
-        L_(trace) << "nodes_load_[node_uid]: " << --nodes_load_[rem_node_uid];
+        --nodes_load_[rem_node_uid];
+        L_(trace) << "nodes_load_[node_uid]: " << nodes_load_[rem_node_uid];
         monitor_->QueueMetric("timeslice_forwarder_state",
         {{"CM", "CM"},
         {"host", hostname_},
@@ -185,7 +186,7 @@ void CentralManager::eval_node_status() {
         if (connections.empty()) { // node is not connected to any other node
             return;
         }
-    
+
         // find receiver node with lowest load
         uint64_t node_uid_lowest_load;
         uint64_t lowest_load_value = UINT64_MAX;

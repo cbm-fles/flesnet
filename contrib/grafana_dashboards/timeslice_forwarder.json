@@ -3,20 +3,10 @@
   "kind": "Dashboard",
   "metadata": {
     "name": "ad9lwxf",
-    "namespace": "default",
-    "uid": "43bb693b-0455-4188-9a4d-7467d6316057",
-    "resourceVersion": "1787581975223015",
-    "generation": 35,
+    "generation": 52,
     "creationTimestamp": "2026-08-24T12:59:47Z",
-    "labels": {
-      "grafana.app/deprecatedInternalID": "2202876654563328"
-    },
-    "annotations": {
-      "grafana.app/createdBy": "user:dfw5df70x73swc",
-      "grafana.app/saved-from-ui": "Grafana v13.2.0 (f681b1359f)",
-      "grafana.app/updatedBy": "user:dfw5df70x73swc",
-      "grafana.app/updatedTimestamp": "2026-08-24T14:32:55Z"
-    }
+    "labels": {},
+    "annotations": {}
   },
   "spec": {
     "annotations": [
@@ -27,10 +17,10 @@
             "kind": "DataQuery",
             "group": "grafana",
             "version": "v0",
-            "datasource": {
-              "name": "-- Grafana --"
-            },
-            "spec": {}
+            "spec": {},
+            "labels": {
+              "grafana.app/export-label": "grafana-1"
+            }
           },
           "enable": true,
           "hide": true,
@@ -47,7 +37,7 @@
         "kind": "Panel",
         "spec": {
           "id": 1,
-          "title": "[RX] tranmission cnt",
+          "title": "[RX] Transmission Count",
           "description": "",
           "links": [],
           "data": {
@@ -61,9 +51,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_host",
                         "groupBy": [
@@ -101,11 +88,15 @@
                             },
                             {
                               "params": [],
-                              "type": "mean"
+                              "type": "distinct"
                             }
                           ]
                         ],
                         "tags": []
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -202,7 +193,7 @@
         "kind": "Panel",
         "spec": {
           "id": 10,
-          "title": "[TX] MB Sent",
+          "title": "[TX] GB Sent (Cumulative)",
           "description": "",
           "links": [],
           "data": {
@@ -216,9 +207,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_host",
                         "groupBy": [
@@ -250,23 +238,27 @@
                           [
                             {
                               "params": [
-                                "bytes_sent"
+                                "mb_sent_cumulative"
                               ],
                               "type": "field"
                             },
                             {
                               "params": [],
-                              "type": "mean"
+                              "type": "distinct"
                             },
                             {
                               "params": [
-                                " / 1000000"
+                                " / 1000"
                               ],
                               "type": "math"
                             }
                           ]
                         ],
                         "tags": []
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -377,9 +369,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_host",
                         "groupBy": [
@@ -422,6 +411,10 @@
                           ]
                         ],
                         "tags": []
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -532,9 +525,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_host",
                         "groupBy": [
@@ -577,6 +567,10 @@
                           ]
                         ],
                         "tags": []
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -687,9 +681,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_host",
                         "groupBy": [
@@ -739,6 +730,10 @@
                             "value": "select tag value"
                           }
                         ]
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -851,9 +846,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_host",
                         "groupBy": [
@@ -903,6 +895,10 @@
                             "value": "1"
                           }
                         ]
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -1015,9 +1011,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_receiver",
                         "groupBy": [
@@ -1061,11 +1054,15 @@
                             },
                             {
                               "params": [],
-                              "type": "mean"
+                              "type": "distinct"
                             }
                           ]
                         ],
                         "tags": []
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -1176,9 +1173,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "Available Senders Count",
                         "groupBy": [
@@ -1215,6 +1209,10 @@
                           ]
                         ],
                         "tags": []
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -1228,9 +1226,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "Available Receivers Count",
                         "groupBy": [
@@ -1266,6 +1261,10 @@
                           ]
                         ],
                         "tags": []
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "B",
@@ -1376,9 +1375,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_host",
                         "groupBy": [
@@ -1415,11 +1411,15 @@
                             },
                             {
                               "params": [],
-                              "type": "mean"
+                              "type": "distinct"
                             }
                           ]
                         ],
                         "tags": []
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -1530,9 +1530,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_host",
                         "groupBy": [
@@ -1582,6 +1579,10 @@
                             "value": "select tag value"
                           }
                         ]
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -1694,9 +1695,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_host",
                         "groupBy": [
@@ -1733,6 +1731,10 @@
                           ]
                         ],
                         "tags": []
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",
@@ -1831,7 +1833,7 @@
         "kind": "Panel",
         "spec": {
           "id": 9,
-          "title": "[RX] MB Received",
+          "title": "[RX] GB Received (Cumulative)",
           "description": "",
           "links": [],
           "data": {
@@ -1845,9 +1847,6 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "dfw5eht6p0veoc"
-                      },
                       "spec": {
                         "alias": "$tag_host",
                         "groupBy": [
@@ -1878,23 +1877,27 @@
                           [
                             {
                               "params": [
-                                "bytes_received"
+                                "mb_received_cumulative"
                               ],
                               "type": "field"
                             },
                             {
                               "params": [],
-                              "type": "mean"
+                              "type": "distinct"
                             },
                             {
                               "params": [
-                                " / 1000000"
+                                " / 1000"
                               ],
                               "type": "math"
                             }
                           ]
                         ],
                         "tags": []
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1",
+                        "grafana.app/export-datasource-name": "influxdb"
                       }
                     },
                     "refId": "A",

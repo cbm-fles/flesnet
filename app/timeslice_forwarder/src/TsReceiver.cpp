@@ -165,7 +165,7 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t /*group_i
         available_timeslices_cnt_++;
         received_timeslices_cnt_++;
         node_connector_->unlock_buffer_map(data_buffer_map_);
-
+        mb_received_cumulative_ += (component_size / 1000000);
         monitor_->QueueMetric("timeslice_forwarder_state",
             {
                 {"host", hostname_},
@@ -174,6 +174,7 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t /*group_i
             {
                 {"bytes_received", component_size},
                 {"buffer_fill", buffer_fill_state_},
+                {"mb_received_cumulative", mb_received_cumulative_},
                 {"buffer_map_fill", buffer_map_fill_state_},
                 {"recv_cnt", ++recv_cnt_}
             }
