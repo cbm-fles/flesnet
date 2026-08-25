@@ -47,6 +47,7 @@ private:
     std::atomic<uint64_t> available_timeslices_cnt_ = 0;
     std::atomic<uint64_t> sent_timeslices_cnt_ = 0;
     std::atomic<uint64_t> connected_receiver_nodes_cnt_ = 0;
+    std::atomic<uint64_t> mb_sent_cumulative_ = 0;
 
     /**
     * @brief values used for influxDB/grafana monitoring

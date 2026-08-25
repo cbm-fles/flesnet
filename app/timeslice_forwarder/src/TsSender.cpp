@@ -34,13 +34,13 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
         auto buffer_map_fill_state = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
         monitor_->QueueMetric("timeslice_forwarder_state",
         {
-                {"host", hostname_},
+            {"host", hostname_},
             {"sender", to_string(node_id_)}
         },
-            {
+        {
                 {"buffer_fill", buffer_fill_state},
                 {"buffer_map_fill", buffer_map_fill_state},
-            }
+         }
         );
         if (el == nullptr) { // no oldest element available
             L_(debug) << "No data available to send";
@@ -52,11 +52,10 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
         auto *data_write_chain = new std::function<void()>;
         (*data_write_chain) = [this, data_write_chain, rem_address, component_elements, combined_size, node_id, group_id] () {
             atomic_uint64_t fail_cnt = 0;
-            time_point<high_resolution_clock> start = high_resolution_clock::now();
             node_connector_->lock_and_get_buffer_map(
                 rem_address,
                 Node::DATA_BUFFER_IDX,
-                [this, data_write_chain, start, component_elements, rem_address, combined_size, node_id, group_id, &fail_cnt] (shared_ptr<BufferMap> rem_buffer_map_copy) {
+                [this, data_write_chain, component_elements, rem_address, combined_size, node_id, group_id, &fail_cnt] (shared_ptr<BufferMap> rem_buffer_map_copy) {
                     L_(trace) << "send_latest_data - Got remote buffer map after " << fail_cnt << " tries";
 
                     auto rem_offsets_and_spaces = rem_buffer_map_copy->get_offsets_and_spaces();
@@ -129,14 +128,18 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                                     available_timeslices_cnt_--;
                                     sent_timeslices_cnt_++;
                                     *(bytes_sent_.value) = *(bytes_sent_.value) + combined_size;
+                                    mb_sent_cumulative_ +=  (combined_size / 1000000);
                                     monitor_->QueueMetric("timeslice_forwarder_state",
-                                        {{"host", hostname_},
-                                            {"sender", to_string(node_id_)}},
-                                        {{"send_cnt", ++send_cnt_}});
-                                    monitor_->QueueMetric("timeslice_forwarder_state",
-                                        {{"host", hostname_},
-                                            {"sender", to_string(node_id_)}},
-                                        {{"bytes_sent", combined_size}});
+                                        {
+                                            {"host", hostname_},
+                                            {"sender", to_string(node_id_)}
+                                        },
+                                        {
+                                            {"send_cnt", ++send_cnt_},
+                                            {"bytes_sent", combined_size},
+                                            {"mb_sent_cumulative", mb_sent_cumulative_}
+                                        }
+                                    );
 
                                     // remove the sent TS from own buffermap
                                     data_buffer_map_->remove_elements(component_elements);
@@ -178,7 +181,7 @@ void TsSender::on_new_work_item(std::string /*address*/, std::shared_ptr<char> w
             auto remote_group_id = GROUP_ID(wi_transmission.node_uid);
             send_latest_data(remote_group_id, remote_node_id);
         }
-    } 
+    }
 }
 
 void TsSender::on_node_connected(string address, uint64_t rem_group_id, uint64_t rem_node_id) {
@@ -254,7 +257,7 @@ Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen
         while (true) {
             this_thread::sleep_for(chrono::seconds(2));
             double mb_per_second = (*bytes_sent_.per_seconds() / 1000000.0);
-            L_(info) << "Output MB/s: " << mb_per_second << endl << 
+            L_(info) << "Output MB/s: " << mb_per_second << endl <<
                 "Available timeslices in buffer: " << available_timeslices_cnt_ << endl <<
                 "Timeslices sent: " << sent_timeslices_cnt_ << endl <<
                 "Connected receiver nodes: " << connected_receiver_nodes_cnt_;
