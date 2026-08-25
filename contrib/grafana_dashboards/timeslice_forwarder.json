@@ -3,7 +3,7 @@
   "kind": "Dashboard",
   "metadata": {
     "name": "ad9lwxf",
-    "generation": 52,
+    "generation": 53,
     "creationTimestamp": "2026-08-24T12:59:47Z",
     "labels": {},
     "annotations": {}
@@ -1204,7 +1204,7 @@
                             },
                             {
                               "params": [],
-                              "type": "mean"
+                              "type": "distinct"
                             }
                           ]
                         ],
@@ -1256,7 +1256,7 @@
                             },
                             {
                               "params": [],
-                              "type": "mean"
+                              "type": "distinct"
                             }
                           ]
                         ],
@@ -1324,7 +1324,7 @@
                     "axisPlacement": "auto",
                     "barAlignment": 0,
                     "barWidthFactor": 0.6,
-                    "drawStyle": "line",
+                    "drawStyle": "points",
                     "fillOpacity": 0,
                     "gradientMode": "none",
                     "hideFrom": {
