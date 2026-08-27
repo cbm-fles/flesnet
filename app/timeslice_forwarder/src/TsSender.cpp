@@ -30,18 +30,8 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
 
     node_connector_->lock_buffer_map(data_buffer_map_, [this, rem_address, node_id, group_id, start] () {
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
-        auto buffer_fill_state =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
-        auto buffer_map_fill_state = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
-        monitor_->QueueMetric("timeslice_forwarder_state",
-        {
-            {"host", hostname_},
-            {"sender", to_string(node_id_)}
-        },
-        {
-                {"buffer_fill", buffer_fill_state},
-                {"buffer_map_fill", buffer_map_fill_state},
-         }
-        );
+        buffer_fill_state_ =(static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
+        buffer_map_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
         if (el == nullptr) { // no oldest element available
             L_(debug) << "No data available to send";
             node_connector_->unlock_buffer_map(data_buffer_map_);
@@ -74,10 +64,7 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                             Node::DATA_BUFFER_IDX
                         );
                         node_connector_->unlock_buffer_map(data_buffer_map_);
-                        monitor_->QueueMetric("timeslice_forwarder_state",
-                                    {{"host", hostname_},
-                                        {"sender", to_string(node_id_)}},
-                                    {{"rem_buffer_full", ++rem_buffer_full_cnt_}});
+                        rem_buffer_full_cnt_++;
                         delete data_write_chain;
                         return;
                     }
@@ -103,11 +90,7 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                             Node::DATA_BUFFER_IDX
                         );
                         node_connector_->unlock_buffer_map(data_buffer_map_);
-                        monitor_->QueueMetric("timeslice_forwarder_state",
-                                    {{"host", hostname_},
-                                        {"sender", to_string(node_id_)}},
-                                    {{"rem_buffer_map_full", ++rem_buffer_map_full_cnt_}});
-
+                        rem_buffer_full_cnt_++;
                         delete data_write_chain;
                         return;
                     }
@@ -129,20 +112,21 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                                     sent_timeslices_cnt_++;
                                     *(bytes_sent_.value) = *(bytes_sent_.value) + combined_size;
                                     mb_sent_cumulative_ +=  (combined_size / 1000000);
+                                    send_cnt_++;
                                     monitor_->QueueMetric("timeslice_forwarder_state",
                                         {
                                             {"host", hostname_},
                                             {"sender", to_string(node_id_)}
                                         },
                                         {
-                                            {"send_cnt", ++send_cnt_},
                                             {"bytes_sent", combined_size},
-                                            {"mb_sent_cumulative", mb_sent_cumulative_}
                                         }
                                     );
 
                                     // remove the sent TS from own buffermap
                                     data_buffer_map_->remove_elements(component_elements);
+                                    buffer_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
+                                    buffer_map_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
                                     node_connector_->unlock_buffer_map(data_buffer_map_);
                                 }
                             );
@@ -158,10 +142,7 @@ void TsSender::send_latest_data(uint64_t group_id, uint64_t node_id) {
                     if ((++fail_cnt % 200) == 0) {
                         L_(trace) << "failed to get remote lock";
                     };
-                    monitor_->QueueMetric("timeslice_forwarder_state",
-                            {{"host", hostname_},
-                                {"sender", to_string(node_id_)}},
-                        {{"failed_remote_lock", ++failed_remote_lock_cnt_}});
+                    failed_remote_lock_cnt_++;
                     return true;
                 }
             );
@@ -262,9 +243,20 @@ Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen
                 "Timeslices sent: " << sent_timeslices_cnt_ << endl <<
                 "Connected receiver nodes: " << connected_receiver_nodes_cnt_;
             monitor_->QueueMetric("timeslice_forwarder_state",
-                    {{"host", hostname_},
+                {
+                    {"host", hostname_},
                     {"sender", to_string(node_id_)}},
-                    {{"tx_mb_per_second", mb_per_second}});
+                {
+                    {"tx_mb_per_second", mb_per_second},
+                    {"buffer_fill", buffer_fill_state_},
+                    {"buffer_map_fill", buffer_map_fill_state_},
+                    {"mb_sent_cumulative", mb_sent_cumulative_},
+                    {"send_cnt", send_cnt_},
+                    {"rem_buffer_map_full", rem_buffer_map_full_cnt_},
+                    {"connected_receiver_nodes_cnt", connected_receiver_nodes_cnt_},
+                    {"failed_remote_lock_cnt", failed_remote_lock_cnt_}
+                }
+            );
         }
     });
 
