@@ -33,22 +33,22 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
                 "Available timeslices in buffer: " << available_timeslices_cnt_ << endl <<
                 "Timeslices Received: " << received_timeslices_cnt_ << endl <<
                 "Connected sender nodes: " << connected_sender_nodes_cnt_;
-        monitor_->QueueMetric("timeslice_forwarder_state",
-            {
-                {"host", hostname_},
-                {"receiver", to_string(node_id_)}
-            },
-            {
-                {"rx_mb_per_second", mb_per_second},
-                {"buffer_fill", buffer_fill_state_},
-                {"available_timeslices_cnt", available_timeslices_cnt_},
-                {"received_timeslices_cnt", received_timeslices_cnt_},
-                {"mb_received_cumulative", mb_received_cumulative_},
-                {"buffer_map_fill", buffer_map_fill_state_},
-                {"recv_cnt", recv_cnt_},
-                {"failed_self_locks", failed_self_locks_}
-            }
-        );
+            monitor_->QueueMetric("timeslice_forwarder_state",
+                {
+                    {"host", hostname_},
+                    {"receiver", to_string(node_id_)}
+                },
+                {
+                    {"rx_mb_per_second", mb_per_second},
+                    {"rx_buffer_fill", buffer_fill_state_},
+                    {"rx_buffer_map_fill", buffer_map_fill_state_},
+                    {"rx_available_timeslices_cnt", available_timeslices_cnt_},
+                    {"rx_timeslices_cnt", received_timeslices_cnt_},
+                    {"rx_mb_received_cumulative", mb_received_cumulative_},
+                    {"rx_cnt", recv_cnt_},
+                    {"rx_failed_self_locks", failed_self_locks_}
+                }
+            );
         }
     });
     wi_work_done_ = make_shared<WiWorkDone>();
@@ -186,7 +186,7 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t /*group_i
                 {"receiver", to_string(node_id_)}
             },
             {
-                {"bytes_received", component_size},
+                {"rx_bytes_received", component_size},
             }
         );
 

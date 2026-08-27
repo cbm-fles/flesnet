@@ -41,22 +41,20 @@ private:
     std::shared_ptr<WorkItem> wi_buffer_status_ = nullptr;
 
     std::future<void> log_thread_;
+
+    /**
+    * @brief values used for influxDB/grafana monitoring
+    */
+    std::string hostname_; // own hostname
     Avg<std::atomic<double>> bytes_sent_;
+    std::atomic_uint64_t failed_remote_lock_cnt_ = 0; // couts how many time remote buffer map lock failed
+    std::atomic_uint64_t rem_buffer_full_cnt_ = 0; // counts how many times the remote buffer was full when trying to transmit data
     std::atomic<double> buffer_fill_state_ = 0.0;
     std::atomic<double> buffer_map_fill_state_ = 0.0;
     std::atomic<uint64_t> available_timeslices_cnt_ = 0;
     std::atomic<uint64_t> sent_timeslices_cnt_ = 0;
     std::atomic<uint64_t> connected_receiver_nodes_cnt_ = 0;
     std::atomic<uint64_t> mb_sent_cumulative_ = 0;
-
-    /**
-    * @brief values used for influxDB/grafana monitoring
-    */
-    std::string hostname_; // own hostname
-    std::atomic_uint64_t failed_remote_lock_cnt_ = 0; // couts how many time remote buffer map lock failed
-    std::atomic_uint64_t send_cnt_ = 0; // counts how many tranmissions were performed
-    std::atomic_uint64_t rem_buffer_full_cnt_ = 0; // counts how many times the remote buffer was full when trying to transmit data
-    std::atomic_uint64_t rem_buffer_map_full_cnt_ = 0; // counts how many times the remote buffer map was out of elements when trying to transmit data
 
     /**
      * @brief Callback for newly received work items
