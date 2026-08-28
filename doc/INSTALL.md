@@ -55,6 +55,36 @@ After installing, set `SIMPATH` to point to this installation.
 [fairsoft-ext]: http://fairroot.gsi.de/?q=node/8
 
 
+### Optional: Building the Timeslice Forwarder
+
+Before building the Timeslice Forwarder make sure the following libraries are available on your system:
+
+- libibverbs
+- libibverbs-devel
+- librdmacm
+- librdmacm-devel
+
+To build the Timeslice Forwarder use the `BUILD_TIMESLICE_FORWARDER=ON` CMake option, e.g.:
+
+```
+mkdir build
+cd build
+cmake .. -DBUILD_TIMESLICE_FORWARDER=ON
+```
+
+Use the `--help` option of the `timeslice_forwarder` to see the usage instructions.
+
+### Optional: Building the Archive Validator
+
+To build the Timeslice Forwarder use the following `BUILD_ARCHIVE_VALIDATOR` CMake option, e.g.:
+
+```
+mkdir build
+cd build
+cmake .. -DBUILD_ARCHIVE_VALIDATOR=ON
+```
+
+Use the `--help` option of the `archive_validator` to see the usage instructions.
 
 ## Preparing the system and OS
 

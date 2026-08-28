@@ -1,0 +1,66 @@
+#pragma once
+
+#include "ItemProducer.hpp"
+#include "TimesliceBuffer.hpp"
+#include "TimesliceShmWorkItem.hpp"
+
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/interprocess/creation_tags.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <cstdint>
+#include <TsfTimeslice.hpp>
+
+class FragmentedTimesliceBuffer : public TimesliceBuffer {
+public:
+    FragmentedTimesliceBuffer(zmq::context_t& context,
+                                const std::string& distributor_address,
+                                std::string shm_identifier,
+                                uint32_t data_buffer_size_exp,
+                                uint32_t desc_buffer_size_exp,
+                                uint32_t num_input_nodes)
+                                : TimesliceBuffer(context, distributor_address, shm_identifier, data_buffer_size_exp, desc_buffer_size_exp, num_input_nodes) {};
+
+    void send_work_item(std::shared_ptr<tsforwarder::Timeslice> ts) {
+        // Create and fill new TimesliceShmWorkItem to be sent via zmq
+        fles::TimesliceShmWorkItem item;
+        item.shm_uuid = shm_uuid_;
+        item.shm_identifier = shm_identifier_;
+        item.ts_desc = ts->get_timeslice_descriptor();
+        const auto num_components = item.ts_desc.num_components;
+        const auto ts_pos = item.ts_desc.ts_pos;
+        item.data.resize(num_components);
+        item.desc.resize(num_components);
+        for (uint32_t c = 0; c < num_components; ++c) {
+            item.data[c] = managed_shm_->get_handle_from_address(ts->get_data()[c]);
+            item.desc[c] = managed_shm_->get_handle_from_address(ts->get_desc()[c]);
+        }
+
+        std::ostringstream ostream;
+        {
+            boost::archive::binary_oarchive oarchive(ostream);
+            oarchive << item;
+        }
+        TimesliceBuffer::outstanding_.insert(ts_pos);
+        ItemProducer::send_work_item(ts_pos, ostream.str());
+    }
+
+    void* get_shm_ptr() {
+        return managed_shm_->get_address();
+    }
+
+    uint64_t get_shm_size() {
+        return managed_shm_->get_size();
+    }
+
+    uint64_t get_boost_shm_offset() {
+        auto diff_desc = reinterpret_cast<char*>(get_desc_ptr(0)) - reinterpret_cast<char*>(managed_shm_->get_address()) ;
+        auto diff_data = reinterpret_cast<char*>(get_data_ptr(0)) - reinterpret_cast<char*>(managed_shm_->get_address()) ;
+        if (diff_data < diff_desc) {
+            return diff_data;
+        } else {
+            return diff_desc;
+        }
+    }
+};

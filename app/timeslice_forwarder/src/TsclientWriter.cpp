@@ -1,0 +1,158 @@
+#include "TsclientWriter.hpp"
+#include "Utility.hpp"
+#include <chrono>
+#include <cstdint>
+#include <mutex>
+#include <thread>
+#include <chrono>
+
+using namespace std;
+using namespace std::chrono;
+
+
+TsclientWriter::TsclientWriter(std::string output_uri, uint32_t timeslice_size) : timeslice_size_(timeslice_size) {
+    UriComponents uri{output_uri};
+    uint32_t datasize = 27; // 128 MiB
+    uint32_t descsize = 19; // 16 MiB
+    uint32_t num_components = 26;
+    const auto shm_identifier = uri.path;
+    const auto sheme = uri.scheme;
+
+    for (auto& [key, value] : uri.query_components) {
+        if (key == "datasize") {
+            datasize = stoul(value);
+        } else if (key == "descsize") {
+            descsize = stoul(value);
+        } else if (key == "n") {
+            num_components = stoul(value);
+        } else {
+            throw runtime_error(
+                "Query parameter not implemented for scheme " + uri.scheme +
+                ": " + key);
+        }
+    }
+
+    producer_address_ = "inproc://" + shm_identifier;
+    worker_address_ = "ipc://@" + shm_identifier;
+
+    item_distributor_ = make_unique<ItemDistributor>(zmq_context_, producer_address_, worker_address_),
+    ts_buffer_ = make_shared<FragmentedTimesliceBuffer>(zmq_context_, producer_address_, shm_identifier, datasize, descsize, num_components);
+    distributor_thread_ = thread(ref(*(item_distributor_.get())));
+    buffer_ = shared_ptr<char>(static_cast<char*>(ts_buffer_->get_shm_ptr()));
+
+    buffer_size_ = ts_buffer_->get_shm_size();
+    handled_timeslice_callbacks_.set_worker(make_shared<WorkerThread>());
+
+    ts_completions_thread_ = std::async([this] () {
+        while (true) {
+            fles::TimesliceCompletion c{};
+            uint64_t found_completions = 0;
+            {
+                unique_lock<mutex> l(mtx_);
+                while (ts_buffer_->try_receive_completion(c)) {
+                    component_ids_done_.push(tspos_componentid_map_[c.ts_pos]);
+                    if (tspos_componentid_map_.erase(c.ts_pos) != 1) {
+                        L_(fatal) << "tspos_componentid_map_.erase failed";
+                        exit(-1);
+                    }
+                    found_completions++;
+                }
+            }
+
+            if (found_completions != 0) {
+                ts_input_output_cnt_diff_ -= found_completions;
+                L_(debug) << "Available timeslices: " << ts_input_output_cnt_diff_;
+                handled_timeslice_callbacks_.call_async(found_completions);
+            } else {
+                L_(trace) << "no completions found ...";
+                this_thread::sleep_for(chrono::milliseconds(500));
+            }
+        }
+    });
+}
+
+uint64_t TsclientWriter::handle_timeslice_completions() {
+    fles::TimesliceCompletion c{};
+    uint64_t found_completions = 0;
+    while (ts_buffer_->try_receive_completion(c)) {
+        found_completions++;
+    }
+
+    return found_completions;
+}
+
+bool TsclientWriter::on_timeslices_handled(std::function<void(uint64_t)> cb) {
+    return handled_timeslice_callbacks_.add(cb);
+}
+
+uint64_t TsclientWriter::get_buffer_size() {
+    return buffer_size_;
+}
+
+std::shared_ptr<char> TsclientWriter::get_buffer()  {
+    return shared_ptr<char>(buffer_.get(), no_del(char));
+}
+
+void TsclientWriter::set_buffer_map(std::shared_ptr<BufferMap> buffer_map) {
+    buffer_map_ = buffer_map;
+}
+
+void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& elements) {
+    vector<fles::TimesliceComponentDescriptor*> desc_ptr;
+    vector<uint8_t*> data_ptr;
+    for (auto desc_it = elements.begin(); desc_it != elements.end(); ++desc_it) {
+        auto *const descriptor_el = *desc_it;
+        if (1 == (descriptor_el->tag >> (sizeof(uint16_t) * 8))) { // referencing a descriptor
+            desc_ptr.push_back(reinterpret_cast<fles::TimesliceComponentDescriptor*>(buffer_.get() + descriptor_el->address));
+            const auto idx = static_cast<uint16_t>(descriptor_el->tag);
+            for (const auto& element : elements) {
+                if (static_cast<uint16_t>(element->tag) == idx && 2 == (element->tag >> (sizeof(uint16_t) * 8))) { // is referencing descriptor
+                    data_ptr.push_back(reinterpret_cast<uint8_t*>(buffer_.get() + element->address));
+                    break;
+                }
+            }
+        } // else referencing data
+    }
+
+    auto ts = make_shared<tsforwarder::Timeslice>();
+    ts_pos_++;
+
+    fles::TimesliceDescriptor ts_desc;
+    ts_desc.index = desc_ptr[0]->ts_num;
+    ts_desc.ts_pos = ts_pos_;
+    ts_desc.num_core_microslices = timeslice_size_;
+    ts_desc.num_components = static_cast<uint32_t>(desc_ptr.size());
+    ts->set_timeslice_descriptor(ts_desc);
+    ts->set_desc(std::move(desc_ptr));
+    ts->set_data(std::move(data_ptr));
+    {
+        unique_lock<mutex> l(mtx_);
+        tspos_componentid_map_[ts_pos_] = elements[0]->compontent_id;
+        L_(debug) << "send_work_item - open completions: " << ts_input_output_cnt_diff_;
+        ts_input_output_cnt_diff_++;
+        ts_buffer_->send_work_item(ts);
+    }
+}
+
+bool TsclientWriter::pop_finished_component_id(uint64_t& component_id) {
+    unique_lock<mutex> l(mtx_);
+
+    if (!component_ids_done_.empty()) {
+        component_id = component_ids_done_.front();
+        //L_(debug) << "TsclientWriter::pop_finished_component_id - component_id: " << component_id;
+        component_ids_done_.pop();
+        return true;
+    }
+
+    return false;
+}
+
+uint64_t TsclientWriter::get_finished_component_id_cnt() {
+    unique_lock<mutex> l(mtx_);
+    return component_ids_done_.size();
+}
+
+TsclientWriter::~TsclientWriter() {
+    item_distributor_->stop();
+    distributor_thread_.join();
+}

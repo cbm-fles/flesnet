@@ -1,0 +1,73 @@
+#pragma once
+
+#include "Monitor.hpp"
+#include <atomic>
+#include <cstdint>
+#include <df/ConnectionManager.hpp>
+#include <df/Node.hpp>
+#include <df/WorkItems/WiConnection.hpp>
+#include <df/WorkItems/WiTransmission.hpp>
+#include <memory>
+#include "TsclientWriter.hpp"
+#include "WorkItems.hpp"
+#include <df/WorkItems/WorkItem.hpp>
+#include <df/Connectors/ConnectorInfiniband.hpp>
+#include "LogVar.hpp"
+
+/**
+ * @brief Timeslice Receiver Node implementation
+ */
+class TsReceiver : public Node {
+private:
+    // const uint64_t BUFFER_MAP_ELEMENTS = 4096;
+    // const uint64_t WI_BUFFER_SIZE = static_cast<uint64_t>(1024 * 1024) * 5;
+
+    std::shared_mutex mtx_;
+    std::shared_ptr<cbm::Monitor> monitor_{std::make_shared<cbm::Monitor>()};
+    std::unordered_map<uint64_t, std::string> uid_address_map_;
+    std::string cm_address_;
+    uint64_t data_buffer_size_ = 0;
+    std::shared_ptr<char> data_buffer_ = nullptr;
+    std::shared_ptr<BufferMap> data_buffer_map_ = nullptr;
+
+    std::shared_ptr<char> wi_buffer_ = nullptr;
+    std::shared_ptr<BufferMap> wi_buffer_map_ = nullptr;
+    std::shared_ptr<ConnectorInterface> node_connector_ = nullptr;
+    std::atomic_uint64_t failed_remote_lock_cnt_ = 0;
+    std::string node_listen_addr_;
+    std::shared_ptr<WorkItem> wi_buffer_status_ = nullptr;
+    std::shared_ptr<TsclientWriter> ts_sink_ = nullptr;
+    std::atomic_uint64_t recv_cnt_ = 0;
+    std::atomic_uint64_t failed_self_locks_ = 0;
+    std::shared_ptr<WiWorkDone> wi_work_done_ = nullptr;
+    std::string hostname_;
+    void on_new_work_item(std::string address, std::shared_ptr<char> wi_ptr, WorkItem::Type wi_type, uint64_t group_id, uint64_t node_id);
+    void on_node_connected(std::string address, uint64_t rem_group_id, uint64_t rem_node_id);
+    void on_connection_refused(std::string address);
+    void on_new_data (const std::string& address, uint64_t group_id, uint64_t node_id);
+    void on_node_disconnected(std::string address, uint64_t group_id, uint64_t node_id);
+
+    std::future<void> log_thread_;
+    Avg<std::atomic<double>> bytes_received_;
+    std::atomic<uint64_t> mb_received_cumulative_ = 0;
+    std::atomic<double> buffer_fill_state_ = 0.0;
+    std::atomic<double> buffer_map_fill_state_ = 0.0;
+    std::atomic<uint64_t> available_timeslices_cnt_ = 0;
+    std::atomic<uint64_t> received_timeslices_cnt_ = 0;
+    std::atomic<uint64_t> connected_sender_nodes_cnt_ = 0;
+
+
+public:
+    TsReceiver(
+        uint64_t node_id,
+        std::string listen_address,
+        std::string output_uri,
+        uint32_t timeslice_size,
+        std::string central_manager_address,
+        uint64_t data_buffer_map_size,
+        uint64_t wi_buffer_size,
+        uint64_t wi_buffer_map_size,
+        std::string monitoring_uri = "",
+        std::string hostname = ""
+    );
+};

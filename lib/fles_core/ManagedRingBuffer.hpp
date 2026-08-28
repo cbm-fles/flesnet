@@ -16,7 +16,9 @@ public:
 
   [[nodiscard]] std::size_t read_index() const { return read_index_; }
 
-  void set_read_index(std::size_t new_index) { read_index_ = new_index; }
+  void set_read_index(std::size_t new_index) {
+    read_index_ = new_index;
+  }
 
   [[nodiscard]] std::size_t size_used() const {
     assert(write_index_ >= read_index_);
@@ -24,7 +26,7 @@ public:
   }
 
   [[nodiscard]] std::size_t size_available() const {
-    assert(this->size() > size_used());
+    assert(this->size() >= size_used());
     return this->size() - size_used();
   }
 

@@ -17,6 +17,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(COVERALLS "Turn on coveralls support" OFF)
 option(COVERALLS_UPLOAD "Upload the generated coveralls json" ON)
+option(BUILD_TIMESLICE_FORWARDER "Disable/Enable building the timeslice forwarder" OFF)
+option(BUILD_ARCHIVE_VALIDATOR "Disable/Enable building the archive validator" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
@@ -288,6 +290,18 @@ if(CLANG_TIDY)
 endif()
 
 add_subdirectory(app/mstool)
+
+if (BUILD_TIMESLICE_FORWARDER)
+    message(STATUS "Building with timeslice forwarder (to disable unset '-DBUILD_TIMESLICE_FORWARDER=' or set it to OFF)")
+    add_subdirectory(app/timeslice_forwarder)
+else()
+    message(STATUS "Building without timeslice forwarder (to enable set '-DBUILD_TIMESLICE_FORWARDER=ON')")
+endif()
+
+if (BUILD_ARCHIVE_VALIDATOR)
+    add_subdirectory(app/archive_validator)
+endif()
+
 add_subdirectory(app/tsclient)
 if (USE_PDA AND PDA_FOUND)
   add_subdirectory(app/cri_tools)

@@ -78,7 +78,9 @@ void ManagedTimesliceBuffer::put(
   // The existing shared memory TimesliceBuffer has to support the correct
   // number of input nodes.
   if (timeslice->num_components() != timeslice_buffer_.get_num_input_nodes()) {
-    throw std::runtime_error("Timeslice has wrong number of components");
+    throw std::runtime_error("Timeslice has wrong number of components (" \
+      "Got: " + std::to_string(timeslice->num_components()) + " - " \
+      "Expected: " + std::to_string(timeslice_buffer_.get_num_input_nodes()) + ")");
   }
   // Poll for timeslice completions until enough space is available.
   handle_timeslice_completions();

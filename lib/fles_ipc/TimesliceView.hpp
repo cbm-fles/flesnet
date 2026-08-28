@@ -26,7 +26,7 @@ public:
 
   ~TimesliceView() override = default;
 
-private:
+protected:
   friend class Receiver<Timeslice, TimesliceView>;
   friend class StorableTimeslice;
 
