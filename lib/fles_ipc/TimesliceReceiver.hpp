@@ -126,6 +126,15 @@ private:
         }
       }
 
+      if (timeslice_item.tsc_desc.size() !=
+              timeslice_item.ts_desc.num_components ||
+          timeslice_item.data.size() != timeslice_item.ts_desc.num_components) {
+        std::cerr << "TimesliceReceiver: discarding item without matching "
+                     "component descriptors (legacy producer?)"
+                  << std::endl;
+        continue;
+      }
+
       return new TimesliceView(managed_shm_, item, timeslice_item); // NOLINT
     }
 

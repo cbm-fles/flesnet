@@ -34,12 +34,9 @@ struct TimesliceShmWorkItem {
   /// A vector of handles to the data blocks
   std::vector<std::ptrdiff_t> data;
 
-  // Legacy member kept for backward compatibility
-
-  /// A vector of handles to the tsc descriptor blocks
+  /// Unused, always empty. Formerly a vector of handles to the tsc descriptor
+  /// blocks, still serialized to keep the format unchanged.
   std::vector<std::ptrdiff_t> desc;
-
-  // New member (replaces the legacy desc member)
 
   /// A vector of timeslice component descriptors
   std::vector<TimesliceComponentDescriptor> tsc_desc;
