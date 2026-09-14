@@ -20,7 +20,7 @@ target_link_libraries(stserver
   pda
   cri
   fles_core
-  tsb
+  tsb_ucx
   logging
   ucx::ucp
   ucx::uct
