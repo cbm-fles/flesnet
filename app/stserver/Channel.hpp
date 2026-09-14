@@ -5,6 +5,7 @@
 
 #include "MicrosliceDescriptor.hpp"
 #include "RingBufferView.hpp"
+#include "StHandle.hpp"
 #include "SubTimeslice.hpp"
 #include "dma_channel.hpp"
 #include <cstdint>

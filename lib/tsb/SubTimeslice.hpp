@@ -3,6 +3,8 @@
    Authors: Jan de Cuveland, Dirk Hutter */
 #pragma once
 
+#include <algorithm>
+#include <bit>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/iostreams/device/array.hpp>
@@ -14,13 +16,15 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_serialize.hpp>
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <format>
 #include <functional>
 #include <log.hpp>
+#include <optional>
 #include <span>
 #include <string>
 #include <sys/types.h>
-#include <ucp/api/ucp.h>
 #include <vector>
 
 // Strongly typed timeslice (or subtimeslice) identifier
@@ -91,59 +95,6 @@ enum class TsFlag : uint32_t {
   MissingSubtimeslices = 1 << 3,
 };
 
-// 1: sender only
-//
-// Internal structures for transferring subtimeslice memory handles to the
-// StSender
-
-struct StComponentHandle {
-  std::vector<ucp_dt_iov> ms_data;
-  std::size_t num_microslices = 0;
-  uint32_t flags = 0;
-
-  void set_flag(TsComponentFlag f) { flags |= static_cast<uint32_t>(f); }
-  void clear_flag(TsComponentFlag f) { flags &= ~static_cast<uint32_t>(f); }
-  [[nodiscard]] bool has_flag(TsComponentFlag f) const {
-    return (flags & static_cast<uint32_t>(f)) != 0;
-  }
-
-  /// The number of microslice data (descriptors + contents) bytes
-  [[nodiscard]] uint64_t ms_data_size() const {
-    uint64_t size = 0;
-    for (const auto& sg : ms_data) {
-      size += sg.length;
-    }
-    return size;
-  }
-
-  /// Dump contents (for debugging).
-  friend std::ostream& operator<<(std::ostream& os,
-                                  const StComponentHandle& i) {
-    return os << "StComponentHandle(num_microslices=" << i.num_microslices
-              << ", flags=" << i.flags << ")";
-  }
-};
-
-struct StHandle {
-  uint64_t start_time_ns = 0;
-  uint64_t duration_ns = 0;
-  uint32_t flags = 0;
-  std::vector<StComponentHandle> components;
-
-  void set_flag(TsFlag f) { flags |= static_cast<uint32_t>(f); }
-  void clear_flag(TsFlag f) { flags &= ~static_cast<uint32_t>(f); }
-  [[nodiscard]] bool has_flag(TsFlag f) const {
-    return (flags & static_cast<uint32_t>(f)) != 0;
-  }
-
-  /// Dump contents (for debugging)
-  friend std::ostream& operator<<(std::ostream& os, const StHandle& i) {
-    return os << "StHandle(start_time_ns=" << i.start_time_ns
-              << ", duration_ns=" << i.duration_ns << ", flags=" << i.flags
-              << ", components=...)";
-  }
-};
-
 // Sender and builder information for registration with the manager
 
 struct SenderInfo {
@@ -200,7 +151,7 @@ template <> struct std::formatter<BuilderInfo> {
   }
 };
 
-// 2: sender -> builder and sender -> manager
+// 1: sender -> builder and sender -> manager
 //
 // Descriptors for transferring subtimeslice data from the sender to the builder
 // (and to the manager, for statistics)
@@ -261,7 +212,7 @@ struct StDescriptor {
   }
 };
 
-// 3: manager -> builder
+// 2: manager -> builder
 //
 // Descriptor for transferring timeslice metadata from the manager to the
 // builder
@@ -288,35 +239,32 @@ struct StCollection {
   }
 };
 
-// Specialize std::formatter for std::vector to simplify debugging
-template <typename T> struct std::formatter<std::vector<T>> {
-  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-  auto format(const std::vector<T>& vec, format_context& ctx) const {
-    auto out = ctx.out();
-    *out++ = '[';
-
-    bool first = true;
-    for (const auto& item : vec) {
-      if (!first) {
-        *out++ = ',';
-        *out++ = ' ';
-      }
-      first = false;
-      out = std::format_to(out, "{}", item);
-    }
-
-    *out++ = ']';
-    return out;
-  }
-};
-
 // Specialize std::formatter for StCollection to simplify debugging
 template <> struct std::formatter<StCollection> {
   constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
   auto format(const StCollection& sc, format_context& ctx) const {
-    return std::format_to(
-        ctx.out(), "StCollection(id={}, sender_ids={}, ms_data_sizes={})",
-        sc.id, sc.sender_ids, sc.ms_data_sizes);
+    auto out =
+        std::format_to(ctx.out(), "StCollection(id={}, sender_ids=", sc.id);
+    out = format_list(out, sc.sender_ids);
+    out = std::format_to(out, ", ms_data_sizes=");
+    out = format_list(out, sc.ms_data_sizes);
+    return std::format_to(out, ")");
+  }
+
+private:
+  static format_context::iterator format_list(format_context::iterator out,
+                                              const auto& items) {
+    *out++ = '[';
+    bool first = true;
+    for (const auto& item : items) {
+      if (!first) {
+        out = std::format_to(out, ", ");
+      }
+      first = false;
+      out = std::format_to(out, "{}", item);
+    }
+    *out++ = ']';
+    return out;
   }
 };
 
