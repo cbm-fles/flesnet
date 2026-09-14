@@ -10,7 +10,9 @@
 #include <stdexcept>
 #include <string>
 
-using namespace option_value_literals;
+using fles::Nanoseconds;
+
+using namespace fles::option_value_literals;
 
 /// Run parameters exception class.
 class ParametersException : public std::runtime_error {

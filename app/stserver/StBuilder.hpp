@@ -22,6 +22,8 @@
 #include <sys/types.h>
 #include <vector>
 
+using fles::tsb::SenderInfo;
+
 /// %StBuilder base class.
 class StBuilder {
 public:

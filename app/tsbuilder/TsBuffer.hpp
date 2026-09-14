@@ -15,6 +15,9 @@
 #include <span>
 #include <string>
 
+using fles::tsb::StDescriptor;
+using fles::tsb::TsId;
+
 namespace fles {
 struct TimesliceWorkItem;
 }

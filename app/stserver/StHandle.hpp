@@ -10,6 +10,9 @@
 #include <ucp/api/ucp.h>
 #include <vector>
 
+using fles::tsb::TsComponentFlag;
+using fles::tsb::TsFlag;
+
 // Sender only: internal structures for transferring subtimeslice memory handles
 // to the StSender
 

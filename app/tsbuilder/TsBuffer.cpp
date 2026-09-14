@@ -13,6 +13,8 @@
 #include <cassert>
 #include <memory>
 
+using fles::tsb::to_bytes;
+
 namespace zmq {
 class context_t;
 }
