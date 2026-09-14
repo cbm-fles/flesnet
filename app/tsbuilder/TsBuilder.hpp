@@ -8,7 +8,7 @@
 #include "Scheduler.hpp"
 #include "SubTimeslice.hpp"
 #include "System.hpp"
-#include "TsBuffer.hpp"
+#include "TimesliceShmBuffer.hpp"
 #include "ucxutil.hpp"
 #include <csignal>
 #include <cstddef>
@@ -144,7 +144,7 @@ struct TsHandle {
 class TsBuilder {
 public:
   TsBuilder(volatile sig_atomic_t* signal_status,
-            TsBuffer& timeslice_buffer,
+            fles::TimesliceShmBuffer& timeslice_buffer,
             std::string_view manager_address,
             int64_t timeout_ns,
             cbm::Monitor* monitor);
@@ -157,7 +157,7 @@ public:
 private:
   volatile std::sig_atomic_t* m_signal_status;
   Scheduler m_tasks;
-  TsBuffer& m_timeslice_buffer;
+  fles::TimesliceShmBuffer& m_timeslice_buffer;
 
   std::string m_manager_address;
   int64_t m_timeout_ns;
