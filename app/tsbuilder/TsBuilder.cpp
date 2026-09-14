@@ -29,7 +29,7 @@ using fles::tsb::to_bytes;
 using fles::tsb::TsFlag;
 
 TsBuilder::TsBuilder(volatile sig_atomic_t* signal_status,
-                     TsBuffer& timeslice_buffer,
+                     fles::TimesliceShmBuffer& timeslice_buffer,
                      std::string_view manager_address,
                      int64_t timeout_ns,
                      cbm::Monitor* monitor)
