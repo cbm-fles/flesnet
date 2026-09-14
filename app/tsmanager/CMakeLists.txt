@@ -22,7 +22,7 @@ target_include_directories(tsmanager
 
 target_link_libraries(tsmanager
   fles_ipc
-  fles_core
+  fles_tools
   tsb_ucx
   logging
   monitoring
