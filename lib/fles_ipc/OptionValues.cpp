@@ -10,6 +10,8 @@
 #include <stdexcept>
 
 // Convert the time to a human-readable format
+namespace fles {
+
 std::string Nanoseconds::to_string() const {
   std::stringstream out;
   if (count() % UINT64_C(1000000000) == 0) {
@@ -141,3 +143,5 @@ SizeValue SizeValue::parse(const std::string& str) {
 
   return {static_cast<size_t>(std::round(number * multiplier))};
 }
+
+} // namespace fles

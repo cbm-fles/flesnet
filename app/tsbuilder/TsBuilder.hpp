@@ -24,6 +24,11 @@
 #include <unistd.h>
 #include <unordered_map>
 
+using fles::tsb::BuilderInfo;
+using fles::tsb::StCollection;
+using fles::tsb::StDescriptor;
+using fles::tsb::TsId;
+
 using namespace std::chrono_literals;
 
 // TsBuilder: Receive timeslice announcements from tsmanager, connect to

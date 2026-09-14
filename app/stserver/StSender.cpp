@@ -25,6 +25,10 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
+using fles::tsb::serialize_descriptor;
+using fles::tsb::StDescriptor;
+using fles::tsb::to_bytes;
+
 namespace {
 
 // Split a component's scatter-gather list into the two transfer blocks

@@ -24,6 +24,10 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
+using fles::tsb::parse_collection;
+using fles::tsb::to_bytes;
+using fles::tsb::TsFlag;
+
 TsBuilder::TsBuilder(volatile sig_atomic_t* signal_status,
                      TsBuffer& timeslice_buffer,
                      std::string_view manager_address,

@@ -22,6 +22,10 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
+using fles::tsb::parse_descriptor;
+using fles::tsb::serialize_collection;
+using fles::tsb::to_obj_nothrow;
+
 using namespace std::chrono_literals;
 
 TsManager::TsManager(volatile sig_atomic_t* signal_status,

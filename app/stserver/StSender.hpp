@@ -26,6 +26,9 @@
 #include <unordered_map>
 #include <vector>
 
+using fles::tsb::SenderInfo;
+using fles::tsb::TsId;
+
 using namespace std::chrono_literals;
 
 // StSender: Announce subtimeslices to tsmanager and send them to tsbuilders

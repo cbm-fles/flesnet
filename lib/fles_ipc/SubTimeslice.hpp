@@ -27,6 +27,8 @@
 #include <sys/types.h>
 #include <vector>
 
+namespace fles::tsb {
+
 // Strongly typed timeslice (or subtimeslice) identifier
 
 struct TsId {
@@ -44,15 +46,17 @@ struct TsId {
   }
 };
 
-template <> struct std::hash<TsId> {
-  std::size_t operator()(const TsId& id) const noexcept {
+} // namespace fles::tsb
+
+template <> struct std::hash<fles::tsb::TsId> {
+  std::size_t operator()(const fles::tsb::TsId& id) const noexcept {
     return std::hash<uint64_t>{}(id.value);
   }
 };
 
-template <> struct std::formatter<TsId> {
+template <> struct std::formatter<fles::tsb::TsId> {
   constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-  auto format(const TsId& id, format_context& ctx) const {
+  auto format(const fles::tsb::TsId& id, format_context& ctx) const {
     std::string id_str = std::to_string(id.value);
     if (id_str.length() > 6) {
       return std::format_to(ctx.out(), "ts..{}",
@@ -61,6 +65,8 @@ template <> struct std::formatter<TsId> {
     return std::format_to(ctx.out(), "ts{}", id.value);
   }
 };
+
+namespace fles::tsb {
 
 // Flags
 
@@ -136,20 +142,24 @@ struct BuilderInfo {
   }
 };
 
-template <> struct std::formatter<SenderInfo> {
+} // namespace fles::tsb
+
+template <> struct std::formatter<fles::tsb::SenderInfo> {
   constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-  auto format(const SenderInfo& si, format_context& ctx) const {
+  auto format(const fles::tsb::SenderInfo& si, format_context& ctx) const {
     return std::format_to(ctx.out(), "{}#{}/{}:{}", si.hostname, si.pid,
                           si.address, si.port);
   }
 };
 
-template <> struct std::formatter<BuilderInfo> {
+template <> struct std::formatter<fles::tsb::BuilderInfo> {
   constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-  auto format(const BuilderInfo& bi, format_context& ctx) const {
+  auto format(const fles::tsb::BuilderInfo& bi, format_context& ctx) const {
     return std::format_to(ctx.out(), "{}#{}", bi.hostname, bi.pid);
   }
 };
+
+namespace fles::tsb {
 
 // 1: sender -> builder and sender -> manager
 //
@@ -239,10 +249,12 @@ struct StCollection {
   }
 };
 
+} // namespace fles::tsb
+
 // Specialize std::formatter for StCollection to simplify debugging
-template <> struct std::formatter<StCollection> {
+template <> struct std::formatter<fles::tsb::StCollection> {
   constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-  auto format(const StCollection& sc, format_context& ctx) const {
+  auto format(const fles::tsb::StCollection& sc, format_context& ctx) const {
     auto out =
         std::format_to(ctx.out(), "StCollection(id={}, sender_ids=", sc.id);
     out = format_list(out, sc.sender_ids);
@@ -267,6 +279,8 @@ private:
     return out;
   }
 };
+
+namespace fles::tsb {
 
 // Generic serialization utilities
 
@@ -478,3 +492,5 @@ parse_collection(std::span<const std::byte> data) {
   }
   return c;
 }
+
+} // namespace fles::tsb

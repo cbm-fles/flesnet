@@ -8,6 +8,8 @@
 #include <iostream>
 #include <string>
 
+namespace fles {
+
 class Nanoseconds {
 public:
   constexpr Nanoseconds() : m_value(0) {}
@@ -181,3 +183,5 @@ using namespace time_literals;
 using namespace size_literals;
 
 } // namespace option_value_literals
+
+} // namespace fles
