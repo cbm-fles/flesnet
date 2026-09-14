@@ -19,7 +19,7 @@ target_include_directories(tsbuilder
 
 target_link_libraries(tsbuilder
   fles_ipc
-  fles_core
+  fles_tools
   tsb_ucx
   logging
   monitoring
