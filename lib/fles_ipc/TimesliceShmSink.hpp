@@ -43,6 +43,8 @@ public:
 
   void put(std::shared_ptr<const Timeslice> timeslice) override;
 
+  void end_stream() override { m_buffer.send_end_of_stream(); }
+
   /// Release the timeslices that are no longer in use.
   void handle_completions();
 
