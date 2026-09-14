@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Scheduler.hpp"
+#include "StHandle.hpp"
 #include "SubTimeslice.hpp"
 #include "ucxutil.hpp"
 #include <cstddef>
