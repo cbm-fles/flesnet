@@ -118,6 +118,7 @@ protected:
 
   friend class StorableTimeslice;
   friend class ::ManagedTimesliceBuffer;
+  friend class TimesliceShmSink;
 
   /// The timeslice descriptor.
   TimesliceDescriptor timeslice_descriptor_{};
