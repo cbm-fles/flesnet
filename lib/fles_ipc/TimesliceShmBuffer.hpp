@@ -71,6 +71,9 @@ public:
                       tsb::TsId id,
                       const tsb::StDescriptor& ts_desc);
 
+  /// Announce that no more timeslices will follow.
+  void send_end_of_stream() { m_producer.send_end_of_stream(); }
+
   /// Receive the id of a timeslice that is no longer in use, if any.
   [[nodiscard]] std::optional<ItemID> try_receive_completion();
 
