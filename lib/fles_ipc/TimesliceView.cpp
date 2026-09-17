@@ -6,6 +6,7 @@
 #include "TimesliceComponentDescriptor.hpp"
 #include "TimesliceShmWorkItem.hpp"
 
+#include <algorithm>
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <cstdint>
 #include <cstdlib>
@@ -42,6 +43,37 @@ TimesliceView::TimesliceView(
                 << "]=" << desc_ptr_.at(c)->ts_num << std::endl;
     }
   }
+}
+
+std::span<const std::byte> TimesliceView::data_block() const {
+  if (num_components() == 0) {
+    return {};
+  }
+  const uint8_t* begin = data_ptr_[0];
+  const uint8_t* end = data_ptr_[0] + size_component(0);
+  for (size_t c = 1; c < num_components(); ++c) {
+    begin = std::min<const uint8_t*>(begin, data_ptr_[c]);
+    end = std::max<const uint8_t*>(end, data_ptr_[c] + size_component(c));
+  }
+  return {reinterpret_cast<const std::byte*>(begin),
+          static_cast<size_t>(end - begin)};
+}
+
+tsb::StDescriptor TimesliceView::st_descriptor() const {
+  const auto* block = reinterpret_cast<const uint8_t*>(data_block().data());
+
+  tsb::StDescriptor desc;
+  desc.start_time_ns = start_time();
+  desc.duration_ns = duration();
+  desc.flags = flags();
+  for (size_t c = 0; c < num_components(); ++c) {
+    tsb::StComponentDescriptor& component = desc.components.emplace_back();
+    component.ms_data_offset = data_ptr_[c] - block;
+    component.ms_data_size = size_component(c);
+    component.num_microslices = num_microslices(c);
+    component.flags = desc_ptr_[c]->flags;
+  }
+  return desc;
 }
 
 } // namespace fles
