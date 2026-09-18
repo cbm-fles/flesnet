@@ -1,6 +1,7 @@
 #ifndef SHM_IPC_ITEMWORKERPROTOCOL_HPP
 #define SHM_IPC_ITEMWORKERPROTOCOL_HPP
 
+#include "ItemID.hpp"
 #include "log.hpp"
 
 #include <chrono>
@@ -41,8 +42,6 @@ public:
   explicit WorkerProtocolError(const std::string& msg = "")
       : runtime_error(msg) {}
 };
-
-using ItemID = size_t;
 
 class Item {
 public:

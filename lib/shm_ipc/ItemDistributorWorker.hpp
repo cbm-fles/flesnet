@@ -4,8 +4,10 @@
 #include "ItemWorkerProtocol.hpp"
 
 #include <algorithm>
+#include <deque>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 
 class ItemDistributorWorker {
 public:
@@ -98,6 +100,12 @@ private:
     client_name_ += std::string(std::istreambuf_iterator<char>(s), {});
     if (s.fail()) {
       throw std::invalid_argument("Invalid register message: " + message);
+    }
+    // A zero stride would cause a division by zero in wants()
+    if (stride_ == 0) {
+      throw std::invalid_argument("Invalid register message, stride must not "
+                                  "be zero: " +
+                                  message);
     }
   }
 

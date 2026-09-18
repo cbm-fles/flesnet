@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 #include <zmq_addon.hpp>
 
 // Handle incoming message (work item) from the generator
@@ -27,11 +28,15 @@ void ItemDistributor::on_generator_pollin() {
     payload = message.popstr();
   }
 
-  auto new_item = std::make_shared<Item>(&completed_items_, id, payload);
+  auto new_item =
+      std::make_shared<Item>(&completed_items_, id, std::move(payload));
 
   // Distribute the new work item.
   // If a group_id is set, send only once per group.
   std::set<size_t> completed_groups;
+  // Erasing from workers_ while iterating over it would invalidate the loop
+  // iterator, so collect the dead workers and remove them afterwards.
+  std::vector<std::string> dead_workers;
   for (auto& [identity, worker] : workers_) {
     if (worker->group_id() != 0 &&
         completed_groups.find(worker->group_id()) != completed_groups.end()) {
@@ -69,8 +74,11 @@ void ItemDistributor::on_generator_pollin() {
       }
     } catch (std::exception& e) {
       L_(error) << e.what();
-      workers_.erase(identity);
+      dead_workers.push_back(identity);
     }
+  }
+  for (const auto& identity : dead_workers) {
+    workers_.erase(identity);
   }
   new_item = nullptr;
   // A pending completion could occur here if this item is not sent to any
