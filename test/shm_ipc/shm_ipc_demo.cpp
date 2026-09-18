@@ -15,7 +15,7 @@ int main() {
   zmq::context_t zmq_context{1};
 
   const std::string producer_address = "inproc://TEST";
-  const std::string worker_address = "ipc:///tmp/TEST_DELME";
+  const std::string worker_address = "ipc://@shm_ipc_demo";
 
   auto distributor = std::make_unique<ItemDistributor>(
       zmq_context, producer_address, worker_address);
