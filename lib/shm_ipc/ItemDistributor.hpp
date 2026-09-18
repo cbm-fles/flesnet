@@ -6,6 +6,7 @@
 #include "log.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cassert>
 #include <chrono>
 #include <exception>
@@ -13,6 +14,7 @@
 #include <memory>
 #include <queue>
 #include <string>
+#include <vector>
 
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
@@ -65,6 +67,9 @@ private:
   void send_heartbeats() {
     std::chrono::system_clock::time_point now =
         std::chrono::system_clock::now();
+    // Erasing from workers_ while iterating over it would invalidate the loop
+    // iterator, so collect the dead workers and remove them afterwards.
+    std::vector<std::string> dead_workers;
     for (auto& [identity, worker] : workers_) {
       try {
         if (worker->wants_heartbeat(now)) {
@@ -73,8 +78,11 @@ private:
         }
       } catch (std::exception& e) {
         L_(error) << e.what();
-        workers_.erase(identity);
+        dead_workers.push_back(identity);
       }
+    }
+    for (const auto& identity : dead_workers) {
+      workers_.erase(identity);
     }
   }
 
@@ -126,7 +134,7 @@ private:
   zmq::socket_t worker_socket_;
   std::queue<ItemID> completed_items_;
   std::map<std::string, std::unique_ptr<ItemDistributorWorker>> workers_;
-  bool stopped_ = false;
+  std::atomic<bool> stopped_ = false;
 };
 
 #endif

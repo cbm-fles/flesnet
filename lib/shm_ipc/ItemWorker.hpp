@@ -4,10 +4,10 @@
 #include "ItemWorkerProtocol.hpp"
 #include "log.hpp"
 
+#include <atomic>
 #include <cassert>
 #include <chrono>
 #include <queue>
-#include <set>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -144,7 +144,6 @@ private:
       auto id = completed_items_.front();
       send_completion(id);
       completed_items_.pop();
-      items_.erase(id);
     }
   }
 
@@ -178,11 +177,10 @@ private:
 
   const WorkerParameters parameters_{1, 0, WorkerQueuePolicy::QueueAll, 0,
                                      "example_client"};
-  std::set<ItemID> items_;
   std::queue<ItemID> completed_items_;
   std::chrono::system_clock::time_point last_heartbeat_time_ =
       std::chrono::system_clock::now();
-  bool stopped_ = false;
+  std::atomic<bool> stopped_ = false;
 };
 
 #endif

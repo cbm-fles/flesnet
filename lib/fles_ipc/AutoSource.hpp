@@ -203,6 +203,10 @@ private:
         for (auto& [key, value] : uri.query_components) {
           if (key == "stride") {
             param.stride = std::stoull(value);
+            if (param.stride == 0) {
+              throw std::runtime_error(
+                  "invalid value for query parameter stride: " + value);
+            }
           } else if (key == "offset") {
             param.offset = std::stoull(value);
           } else if (key == "queue") {

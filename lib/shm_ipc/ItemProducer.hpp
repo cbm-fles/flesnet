@@ -1,10 +1,9 @@
 #ifndef SHM_IPC_ITEMPRODUCER_HPP
 #define SHM_IPC_ITEMPRODUCER_HPP
 
-#include <cstddef>
-#include <zmq.hpp>
+#include "ItemID.hpp"
 
-using ItemID = size_t;
+#include <zmq.hpp>
 
 class ItemProducer {
 public:
