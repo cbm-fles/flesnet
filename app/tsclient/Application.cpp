@@ -41,6 +41,19 @@ Application::Application(Parameters const& par,
 
   source_ = std::make_unique<fles::TimesliceAutoSource>(par_.input_uri());
 
+  if (monitor_) {
+    // The callback runs on the source's communication thread, which is why it
+    // reports a connection loss even while the main loop is blocked in get().
+    const std::string prefix = output_prefix_.empty() ? ":" : output_prefix_;
+    source_->set_state_callback(
+        [this, prefix](ConnectionState state, const std::string& reason) {
+          monitor_->QueueMetric(
+              "timeslice_source_status",
+              {{"host", monitor_->HostName()}, {"output_prefix", prefix}},
+              {{"state", to_string(state)}, {"reason", reason}});
+        });
+  }
+
   if (par_.analyze()) {
     if (par_.histograms()) {
       sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
@@ -245,6 +258,12 @@ void Application::run() {
     }
     // avoid unneccessary pipelining
     timeslice.reset();
+  }
+
+  // Tell the sinks that no timeslices will follow, so that consumers further
+  // downstream can finish instead of waiting for data that will not come.
+  for (auto& sink : sinks_) {
+    sink->end_stream();
   }
 
   // Loop over sinks. For all sinks of type ManagedTimesliceBuffer, check if

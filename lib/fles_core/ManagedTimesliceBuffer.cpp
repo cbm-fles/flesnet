@@ -43,6 +43,10 @@ ManagedTimesliceBuffer::~ManagedTimesliceBuffer() {
   distributor_thread_.join();
 }
 
+void ManagedTimesliceBuffer::end_stream() {
+  timeslice_buffer_.send_end_of_stream();
+}
+
 void ManagedTimesliceBuffer::handle_timeslice_completions() {
   fles::TimesliceCompletion c{};
   while (timeslice_buffer_.try_receive_completion(c)) {

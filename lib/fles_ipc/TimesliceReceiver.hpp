@@ -23,6 +23,10 @@ template <class Base, class Derived> class Receiver : public Source<Base> {
 public:
   Receiver(const std::string&, WorkerParameters) {};
   [[nodiscard]] bool eos() const override { return true; };
+  void set_state_callback(ItemWorker::StateCallback){};
+  [[nodiscard]] ConnectionState connection_state() const {
+    return ConnectionState::Disconnected;
+  };
 
 private:
   Derived* do_get() override { return nullptr; };
@@ -60,6 +64,34 @@ public:
   };
 
   [[nodiscard]] bool eos() const override { return eos_; }
+
+  /**
+   * \brief Install a callback invoked on every connection state change.
+   *
+   * Must be called before the first call to get().
+   */
+  void set_state_callback(ItemWorker::StateCallback callback) {
+    worker_.set_state_callback(std::move(callback));
+  }
+
+  [[nodiscard]] ConnectionState connection_state() const {
+    return worker_.connection_state();
+  }
+
+  /// Identifier of the distributor instance this receiver is connected to.
+  [[nodiscard]] std::string distributor_instance_id() const {
+    return worker_.distributor_instance_id();
+  }
+
+  [[nodiscard]] size_t items_received() const {
+    return worker_.items_received();
+  }
+  [[nodiscard]] size_t items_completed() const {
+    return worker_.items_completed();
+  }
+  [[nodiscard]] size_t reconnect_count() const {
+    return worker_.reconnect_count();
+  }
 
 private:
   TimesliceView* do_get() override {
