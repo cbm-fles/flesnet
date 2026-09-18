@@ -4,13 +4,13 @@
 #include "ItemWorkerProtocol.hpp"
 #include "log.hpp"
 
+#include <array>
 #include <atomic>
 #include <cassert>
 #include <chrono>
 #include <queue>
 #include <stdexcept>
 #include <utility>
-#include <vector>
 
 #include <zmq.hpp>
 
@@ -41,10 +41,10 @@ public:
           send_pending_completions();
         }
 
-        zmq::poller_t poller;
-        poller.add(*distributor_socket_, zmq::event_flags::pollin);
-        std::vector<decltype(poller)::event_type> events(1);
-        size_t num_events = poller.wait_all(events, worker_poll_timeout);
+        std::array<zmq_pollitem_t, 1> items = {
+            {{distributor_socket_->handle(), 0, ZMQ_POLLIN, 0}}};
+        const int num_events =
+            zmq::poll(items.data(), items.size(), worker_poll_timeout);
 
         if (num_events > 0) {
           // receive message

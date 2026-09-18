@@ -6,6 +6,7 @@
 #include "log.hpp"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cassert>
 #include <chrono>
@@ -45,14 +46,19 @@ public:
   ItemDistributor& operator=(ItemDistributor&& other) = delete;
 
   void operator()() {
-    zmq::active_poller_t poller;
-    poller.add(generator_socket_, zmq::event_flags::pollin,
-               [&](zmq::event_flags /*e*/) { on_generator_pollin(); });
-    poller.add(worker_socket_, zmq::event_flags::pollin,
-               [&](zmq::event_flags /*e*/) { on_worker_pollin(); });
+    std::array<zmq_pollitem_t, 2> items = {{
+        {generator_socket_.handle(), 0, ZMQ_POLLIN, 0},
+        {worker_socket_.handle(), 0, ZMQ_POLLIN, 0},
+    }};
 
     while (!stopped_) {
-      poller.wait(distributor_poll_timeout);
+      zmq::poll(items.data(), items.size(), distributor_poll_timeout);
+      if ((items.at(0).revents & ZMQ_POLLIN) != 0) {
+        on_generator_pollin();
+      }
+      if ((items.at(1).revents & ZMQ_POLLIN) != 0) {
+        on_worker_pollin();
+      }
       send_heartbeats();
     }
   }
