@@ -11,6 +11,7 @@ add_executable(test_RingBuffer test_RingBuffer.cpp)
 add_executable(test_Filter test_Filter.cpp)
 add_executable(test_MicrosliceReceiver test_MicrosliceReceiver.cpp)
 add_executable(test_logging test_logging.cpp)
+add_executable(test_ItemProtocol test_ItemProtocol.cpp)
 
 target_compile_definitions(test_System PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_Utility PUBLIC BOOST_TEST_DYN_LINK)
@@ -23,6 +24,7 @@ target_compile_definitions(test_RingBuffer PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_Filter PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_MicrosliceReceiver PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_logging PUBLIC BOOST_TEST_DYN_LINK)
+target_compile_definitions(test_ItemProtocol PUBLIC BOOST_TEST_DYN_LINK)
 
 target_include_directories(test_System SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_Utility SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
@@ -35,6 +37,7 @@ target_include_directories(test_RingBuffer SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_Filter SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_MicrosliceReceiver SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_logging SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(test_ItemProtocol SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(test_System fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_Utility fles_ipc ${Boost_LIBRARIES})
@@ -53,6 +56,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(test_MicrosliceReceiver atomic)
 endif()
 target_link_libraries(test_logging logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_ItemProtocol shm_ipc logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 if(APPLE)
   target_link_directories(test_System PRIVATE ${ZSTD_LIB_DIR})
@@ -66,6 +70,7 @@ if(APPLE)
   target_link_directories(test_Filter PRIVATE ${ZSTD_LIB_DIR})
   target_link_directories(test_MicrosliceReceiver PRIVATE ${ZSTD_LIB_DIR})
   target_link_directories(test_logging PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_ItemProtocol PRIVATE ${ZSTD_LIB_DIR})
 endif()
 
 add_custom_command(TARGET test_Timeslice POST_BUILD
@@ -92,12 +97,18 @@ add_test(NAME test_RingBuffer COMMAND test_RingBuffer)
 add_test(NAME test_Filter COMMAND test_Filter)
 add_test(NAME test_MicrosliceReceiver COMMAND test_MicrosliceReceiver)
 add_test(NAME test_logging COMMAND test_logging)
+add_test(NAME test_ItemProtocol COMMAND test_ItemProtocol)
+set_tests_properties(test_ItemProtocol PROPERTIES TIMEOUT 120)
 
 find_program(BASH_PROGRAM bash)
 if(BASH_PROGRAM)
   add_test(NAME test_mstool
            COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_mstool.sh
            WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  add_test(NAME test_shm_stream
+           COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/test_shm_stream.sh
+           WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  set_tests_properties(test_shm_stream PROPERTIES TIMEOUT 180)
   if (USE_PDA)
     if (NOT APPLE)
       add_test(NAME test_with_pda
