@@ -33,6 +33,9 @@ public:
 
   void put(std::shared_ptr<const fles::Timeslice> timeslice) override;
 
+  /// Announce that no further timeslices will follow.
+  void end_stream() override;
+
   /// Return true if the buffer is empty.
   [[nodiscard]] bool empty() const { return acked_ == ts_pos_; }
 
