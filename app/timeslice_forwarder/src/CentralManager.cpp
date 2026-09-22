@@ -9,6 +9,8 @@
 #include <memory>
 #include <future>
 #include <string>
+#include <iostream>
+#include <random>
 
 using namespace std::placeholders;
 using namespace std;

@@ -147,7 +147,7 @@ void TsclientReader::start_timeslice_reading() {
             L_(trace) << "TS reader - got buffer map after: " <<  duration_cast<milliseconds>(stop-start).count();
 
             // reperesent new data in the buffer map
-            const auto *const buffer_map_ret = buffer_map_->insert(
+            auto *const buffer_map_ret = buffer_map_->insert(
                 num_components * 2,
                 sizes.get(),
                 addresses.get(),
@@ -162,6 +162,8 @@ void TsclientReader::start_timeslice_reading() {
                 exit(-EXIT_FAILURE);
             }
 
+            // first element of the insertion will contain the TS index
+            buffer_map_ret->user_0 = tsf_timeslice->index();
             node_connector_->unlock_buffer_map(buffer_map_);
             last_timeslice_ = std::move(ts);
             start_clock_ = high_resolution_clock::now();

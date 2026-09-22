@@ -7,6 +7,7 @@
 #include <df/WorkItems/WiConnection.hpp>
 #include <df/WorkItems/WiTransmission.hpp>
 #include <cstdint>
+#include <future>
 #include <memory>
 
 class CentralManager : public Node {
@@ -38,6 +39,7 @@ private:
     std::string listen_address_;
     std::string hostname_;
 
+    std::future<void> dummy_monitor_thread_;
     /**
     * @brief Will queue all sender node UID which want to get rid of Timeslices
     */

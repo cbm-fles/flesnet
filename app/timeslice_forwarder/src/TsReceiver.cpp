@@ -73,7 +73,7 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
 
             buffer_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
             buffer_map_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
-            available_timeslices_cnt_ -= work_done_cnt; 
+            available_timeslices_cnt_ -= work_done_cnt;
 
             wi_work_done_->cnt =  work_done_cnt;
             Node::send_work_item(cm_address_, wi_work_done_);
@@ -177,9 +177,6 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t /*group_i
         buffer_map_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
         available_timeslices_cnt_++;
         received_timeslices_cnt_++;
-        node_connector_->unlock_buffer_map(data_buffer_map_);
-        recv_cnt_++;
-        mb_received_cumulative_ += (component_size / 1000000);
         monitor_->QueueMetric("timeslice_forwarder_state",
             {
                 {"host", hostname_},
@@ -187,9 +184,14 @@ void TsReceiver::on_new_data (const std::string& /*address*/, uint64_t /*group_i
             },
             {
                 {"rx_bytes_received", component_size},
+                {"rx_timeslice_from", el->node_id},
+                {"rx_timeslice_to", node_id_},
+                {"rx_timeslice_idx", el->user_0}
             }
         );
-
+        node_connector_->unlock_buffer_map(data_buffer_map_);
+        recv_cnt_++;
+        mb_received_cumulative_ += (component_size / 1000000);
     }, [this] () {
         failed_self_locks_++;
         return true;
