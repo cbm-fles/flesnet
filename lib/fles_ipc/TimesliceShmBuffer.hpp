@@ -11,6 +11,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <new>
@@ -29,10 +30,11 @@ namespace fles {
  * \brief The TimesliceShmBuffer class provides a shared memory segment for
  * timeslices and publishes them to the connected workers.
  *
- * Each timeslice occupies one allocation in the segment, holding the data of
- * all its components. Once a timeslice is written, send_work_item() announces
- * it. When all workers are done with it, try_receive_completion() returns its
- * id and location, and the allocation can be released.
+ * The caller allocates the memory for the components of a timeslice, in one
+ * or several allocations. Once a timeslice is written, send_work_item()
+ * announces it. When all workers are done with it, try_receive_completion()
+ * hands back its id and the caller's user data, and the memory can be
+ * released.
  *
  * The work items are numbered consecutively, independent of the timeslice
  * index. The workers select items by this number (stride and offset), so the
@@ -71,17 +73,24 @@ public:
 
   void deallocate(std::byte* ptr) { m_managed_shm->deallocate(ptr); }
 
+  /// The offset of a location in the segment, as used in the descriptors.
+  [[nodiscard]] std::ptrdiff_t offset_of(const std::byte* ptr) const {
+    return ptr - static_cast<const std::byte*>(m_managed_shm->get_address());
+  }
+
   /// A published timeslice that is no longer in use
   struct Completion {
-    tsb::TsId id;      ///< timeslice index
-    std::byte* buffer; ///< buffer location given to send_work_item()
+    tsb::TsId id;            ///< timeslice index
+    std::uint64_t user_data; ///< value given to send_work_item()
   };
 
-  /// Announce a timeslice stored at the given buffer location. The component
-  /// offsets in the descriptor are relative to this location.
-  void send_work_item(std::byte* buffer,
-                      tsb::TsId id,
-                      const tsb::StDescriptor& ts_desc);
+  /// Announce a timeslice stored in the segment. The component offsets in the
+  /// descriptor are relative to the start of the segment (see offset_of()), so
+  /// the components can be placed independently. The user data is handed back
+  /// on completion, e.g., to identify the memory to release.
+  void send_work_item(tsb::TsId id,
+                      const tsb::StDescriptor& ts_desc,
+                      std::uint64_t user_data = 0);
 
   /// Announce that no more timeslices will follow.
   void send_end_of_stream() { m_producer.send_end_of_stream(); }

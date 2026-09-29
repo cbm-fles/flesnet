@@ -237,7 +237,7 @@ private:
   void update_st_state(TsHandle& tsh,
                        std::size_t contribution_index,
                        StState new_state);
-  static StDescriptor build_published_descriptor(TsHandle& tsh);
+  StDescriptor build_published_descriptor(TsHandle& tsh) const;
   void report_status();
 
   // UCX static callbacks (trampolines)
