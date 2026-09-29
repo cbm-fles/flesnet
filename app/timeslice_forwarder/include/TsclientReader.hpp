@@ -1,6 +1,8 @@
 #pragma once
 
-#include <TsfReceiver.hpp>
+#include "TimesliceReceiver.hpp"
+
+#include <boost/uuid/uuid.hpp>
 #include <chrono>
 #include <cstdint>
 
@@ -14,15 +16,15 @@ private:
     CallbackContainer<void()> new_timeslice_callbacks_;
     std::shared_ptr<BufferMap> buffer_map_ = nullptr;
     std::future<int> ts_reading_thread_;
-    std::unique_ptr<tsforwarder::Receiver> source_ = nullptr;
-    //std::unique_ptr<fles::Receiver<fles::Timeslice, fles::TimesliceView>> source_orig_ = nullptr;
+    std::unique_ptr<fles::Receiver<fles::Timeslice, fles::TimesliceView>> source_ = nullptr;
+    std::unique_ptr<fles::TimesliceView> first_timeslice_ = nullptr; ///< read in the constructor to learn the SHM region
+    boost::uuids::uuid shm_uuid_{}; ///< UUID of the registered SHM segment
     uint64_t buffer_size_ = 0;
     char* buffer_ = nullptr; ///< Pointer to the SHM where the timeslices reside
     std::shared_ptr<ConnectorInterface> node_connector_ = nullptr;
 
     std::unique_ptr<fles::Timeslice> last_timeslice_ = nullptr;
     std::atomic_bool stop_ = false;
-    uint64_t num_components_ = 0;
     std::chrono::time_point<std::chrono::high_resolution_clock> start_clock_;
     std::chrono::time_point<std::chrono::high_resolution_clock> stop_clock_;
     std::mutex m;

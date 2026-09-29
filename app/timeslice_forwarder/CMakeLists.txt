@@ -68,7 +68,7 @@ target_link_libraries(timeslice_forwarder PRIVATE
     rdmacm
     ibverbs
     fles_ipc
-    fles_core
+    monitoring
     logging
     crcutil
     ${Boost_LIBRARIES}
