@@ -23,9 +23,3 @@ target_link_libraries(shm_ipc
   PUBLIC logging
   PUBLIC zmq::cppzmq
 )
-
-if(GNUTLS_FOUND)
-  target_link_libraries(shm_ipc
-                        INTERFACE ${GNUTLS_LIBRARIES}
-  )
-endif()
