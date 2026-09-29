@@ -88,6 +88,8 @@ constexpr auto poll_timeout = heartbeat_interval / 4;
 /// Bounds of the randomized backoff between reconnection attempts.
 constexpr auto reconnect_interval_min = std::chrono::milliseconds{100};
 constexpr auto reconnect_interval_max = std::chrono::milliseconds{2000};
+/// Interval at which a worker retries connecting to an absent distributor.
+constexpr auto zmq_reconnect_interval = std::chrono::milliseconds{10};
 
 /// Default upper bound on the items queued for a single worker.
 constexpr size_t default_max_queued_items = 1024;
