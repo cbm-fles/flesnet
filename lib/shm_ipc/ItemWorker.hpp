@@ -258,6 +258,10 @@ private:
     distributor_socket_->set(zmq::sockopt::heartbeat_timeout,
                              static_cast<int>(peer_timeout.count()));
     distributor_socket_->set(zmq::sockopt::tcp_keepalive, 1);
+    // Attach soon after a distributor appears, since items published before
+    // the registration are not delivered to this worker
+    distributor_socket_->set(zmq::sockopt::reconnect_ivl,
+                             static_cast<int>(zmq_reconnect_interval.count()));
     distributor_socket_->connect(distributor_address_);
     last_receive_time_ = std::chrono::steady_clock::now();
     send_register();
