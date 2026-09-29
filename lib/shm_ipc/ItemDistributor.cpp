@@ -1,81 +1,144 @@
 #include "ItemDistributor.hpp"
-#include "ItemProducer.hpp"
 #include "ItemWorkerProtocol.hpp"
 #include "log.hpp"
 
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <exception>
+#include <iomanip>
 #include <memory>
+#include <random>
 #include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 #include <zmq_addon.hpp>
+
+std::string ItemDistributor::generate_instance_id() {
+  std::random_device random_device;
+  std::mt19937_64 generator(random_device());
+  std::uniform_int_distribution<uint64_t> distribution;
+  std::ostringstream stream;
+  stream << std::hex << std::setw(16) << std::setfill('0')
+         << distribution(generator);
+  return stream.str();
+}
 
 // Handle incoming message (work item) from the generator
 void ItemDistributor::on_generator_pollin() {
   zmq::multipart_t message(generator_socket_);
+  if (message.empty()) {
+    throw WorkerProtocolError("empty message from the producer");
+  }
+  const std::string verb = message.popstr();
 
-  // Receive item ID
-  ItemID id = std::stoull(message.popstr());
+  if (verb == end_of_stream_verb) {
+    end_of_stream_ = true;
+    return;
+  }
+  if (verb != work_item_verb) {
+    throw WorkerProtocolError("unknown message from the producer: " + verb);
+  }
+  if (message.empty()) {
+    throw WorkerProtocolError("work item without an id");
+  }
 
-  // Receive optional item payload
+  // Receive item ID and optional item payload
+  const ItemID id = parse_number_frame(message.popstr(), "item id");
   std::string payload;
   if (!message.empty()) {
     payload = message.popstr();
   }
 
-  auto new_item = std::make_shared<Item>(&completed_items_, id, payload);
+  auto new_item =
+      std::make_shared<Item>(completion_sink_, id, std::move(payload));
 
   // Distribute the new work item.
   // If a group_id is set, send only once per group.
-  std::set<size_t> completed_groups;
+  std::set<size_t> served_groups;
+  std::vector<std::string> dead_workers;
   for (auto& [identity, worker] : workers_) {
     if (worker->group_id() != 0 &&
-        completed_groups.find(worker->group_id()) != completed_groups.end()) {
+        served_groups.find(worker->group_id()) != served_groups.end()) {
       // This group has already been served, skip it
       continue;
     }
     try {
-      if (worker->wants(new_item->id())) {
-        if (worker->queue_policy() == WorkerQueuePolicy::PrebufferOne) {
-          worker->clear_queue();
-        }
-        if (worker->is_idle()) {
-          // The worker is idle, send the item immediately
-          if (worker->group_id() != 0) {
-            completed_groups.insert(worker->group_id());
-            // As we can send the item immediately, delete this work item from
-            // the queues of other (previous) workers with the same group_id
-            for (auto& [identity, other_worker] : workers_) {
-              if (other_worker == worker) {
-                break;
-              }
-              if (other_worker->group_id() == worker->group_id()) {
-                other_worker->delete_from_queue(new_item->id());
-              }
-            }
-          }
-          worker->add_outstanding(new_item);
-          send_worker_work_item(identity, *new_item);
-        } else {
-          // The worker is busy, enqueue the item
-          if (worker->queue_policy() != WorkerQueuePolicy::Skip) {
-            worker->push_queue(new_item);
-          }
-        }
-      }
+      offer_item(identity, *worker, new_item, served_groups);
     } catch (std::exception& e) {
-      L_(error) << e.what();
-      workers_.erase(identity);
+      L_(warning) << "dropping worker " << worker->description() << ": "
+                  << e.what();
+      try {
+        send_worker_disconnect(identity, e.what());
+      } catch (std::exception&) {
+      }
+      dead_workers.push_back(identity);
     }
   }
   new_item = nullptr;
   // A pending completion could occur here if this item is not sent to any
   // worker, so...
+  remove_workers(dead_workers);
   send_pending_completions();
+}
+
+void ItemDistributor::offer_item(const std::string& identity,
+                                 ItemDistributorWorker& worker,
+                                 const std::shared_ptr<Item>& item,
+                                 std::set<size_t>& served_groups) {
+  if (!worker.wants(item->id())) {
+    return;
+  }
+  if (worker.queue_policy() == WorkerQueuePolicy::PrebufferOne) {
+    worker.clear_queue();
+  }
+  if (worker.has_capacity()) {
+    // The worker has room for another item, send it immediately
+    if (worker.group_id() != 0) {
+      served_groups.insert(worker.group_id());
+      // As we can send the item immediately, delete this work item from
+      // the queues of other (previous) workers with the same group_id
+      for (auto& [other_identity, other_worker] : workers_) {
+        if (other_worker.get() == &worker) {
+          break;
+        }
+        if (other_worker->group_id() == worker.group_id()) {
+          other_worker->delete_from_queue(item->id());
+        }
+      }
+    }
+    worker.add_outstanding(item);
+    send_worker_work_item(identity, *item);
+  } else if (worker.queue_policy() != WorkerQueuePolicy::Skip) {
+    // The worker is busy, enqueue the item
+    worker.push_queue(item);
+  }
+}
+
+void ItemDistributor::handle_completion(const std::string& identity,
+                                        ItemDistributorWorker& worker,
+                                        ItemID id) {
+  // Find the corresponding outstanding item object and delete it
+  worker.delete_outstanding(id);
+  // Send further items while the worker's window allows it
+  while (worker.has_capacity() && !worker.queue_empty()) {
+    auto item = worker.pop_queue();
+    if (worker.group_id() != 0) {
+      // Delete this work item from the queues of other workers with the
+      // same group_id
+      for (auto& [other_identity, other_worker] : workers_) {
+        if (other_worker.get() != &worker &&
+            other_worker->group_id() == worker.group_id()) {
+          other_worker->delete_from_queue(item->id());
+        }
+      }
+    }
+    worker.add_outstanding(item);
+    send_worker_work_item(identity, *item);
+  }
 }
 
 // Handle incoming message from a worker
@@ -85,73 +148,65 @@ void ItemDistributor::on_worker_pollin() {
   assert(!message.at(0).empty()); // for ROUTER sockets
   assert(message.at(1).empty());  //
 
-  std::string identity = message.peekstr(0);
+  const std::string identity = message.peekstr(0);
 
-  if (message.size() == 2) {
-    // Handle ZMQ worker disconnect notification
-    if (workers_.count(identity) != 0) {
-      L_(info) << "worker disconnected: "
-               << workers_.at(identity)->description();
-    }
-    if (workers_.erase(identity) == 0) {
-      // This could happen if a misbehaving worker did not send a REGISTER
-      // message
-      L_(error) << "disconnect from unknown worker";
-    }
-  } else {
-    try {
-      // Handle general message from a worker
-      std::string message_string = message.peekstr(2);
-      if (message_string.rfind("REGISTER ", 0) == 0) {
-        // Handle new worker registration
-        auto worker = std::make_unique<ItemDistributorWorker>(message_string);
-        workers_[identity] = std::move(worker);
-        L_(info) << "worker connected: "
-                 << workers_.at(identity)->description();
-      } else if (message_string.rfind("COMPLETE ", 0) == 0) {
-        // Handle worker completion message
-        auto& worker = workers_.at(identity);
-        std::string command;
-        ItemID id;
-        std::stringstream s(message_string);
-        s >> command >> id;
-        if (s.fail()) {
-          throw std::invalid_argument("Invalid completion message");
-        }
-        // Find the corresponding outstanding item object and delete it
-        worker->delete_outstanding(id);
-        // Send next item if available
-        if (!worker->queue_empty()) {
-          auto item = worker->pop_queue();
-          if (worker->group_id() != 0) {
-            // Delete this work item from the queues of other workers with the
-            // same group_id
-            for (auto& [identity, other_worker] : workers_) {
-              if (worker != other_worker &&
-                  other_worker->group_id() == worker->group_id()) {
-                other_worker->delete_from_queue(item->id());
-              }
-            }
-          }
-          worker->add_outstanding(item);
-          send_worker_work_item(identity, *item);
-        } else {
-          worker->reset_heartbeat_time();
-        }
-      } else if (message_string.rfind("HEARTBEAT", 0) == 0) {
-        // Ignore heartbeat reply
-      } else {
-        throw std::invalid_argument("Unknown message type: " + message_string);
+  if (message.size() < 3) {
+    L_(error) << "malformed message from a worker";
+    return;
+  }
+
+  const std::string verb = message.peekstr(2);
+  std::vector<std::string> args;
+  args.reserve(message.size() - 3);
+  for (size_t i = 3; i < message.size(); ++i) {
+    args.push_back(message.peekstr(i));
+  }
+
+  try {
+    if (verb == register_verb) {
+      // Handle new worker registration. An existing entry for this identity is
+      // replaced, which releases the items outstanding for it.
+      auto worker =
+          std::make_unique<ItemDistributorWorker>(args, max_queued_items_);
+      L_(info) << "worker connected: " << worker->description();
+      workers_[identity] = std::move(worker);
+      send_worker_welcome(identity);
+      workers_.at(identity)->reset_recv_time();
+    } else {
+      auto it = workers_.find(identity);
+      if (it == workers_.end()) {
+        throw WorkerProtocolError("message from an unregistered worker: " +
+                                  verb);
       }
-    } catch (std::exception& e) {
-      L_(error) << e.what();
-      L_(error) << "protocol violation, disconnecting worker";
-      try {
-        send_worker_disconnect(identity);
-      } catch (std::exception&) {
-      };
-      workers_.erase(identity);
+      auto& worker = *it->second;
+      worker.reset_recv_time();
+
+      if (verb == complete_verb) {
+        if (args.empty()) {
+          throw WorkerProtocolError("completion message without an item id");
+        }
+        for (const auto& arg : args) {
+          handle_completion(identity, worker,
+                            parse_number_frame(arg, "item "
+                                                    "id"));
+        }
+      } else if (verb == heartbeat_verb) {
+        // Nothing to do, the receive time has been updated already
+      } else if (verb == disconnect_verb) {
+        L_(info) << "worker disconnected: " << worker.description()
+                 << (args.empty() ? "" : " (" + args.at(0) + ")");
+        remove_workers({identity});
+      } else {
+        throw WorkerProtocolError("unknown message type: " + verb);
+      }
     }
+  } catch (std::exception& e) {
+    L_(error) << "protocol violation, disconnecting worker: " << e.what();
+    try {
+      send_worker_disconnect(identity, e.what());
+    } catch (std::exception&) {
+    }
+    remove_workers({identity});
   }
   send_pending_completions();
 }

@@ -19,3 +19,6 @@ target_link_libraries(shm_ipc_demo
   shm_ipc
   ${CMAKE_THREAD_LIBS_INIT}
 )
+
+add_test(NAME shm_ipc_demo COMMAND shm_ipc_demo)
+set_tests_properties(shm_ipc_demo PROPERTIES TIMEOUT 120)

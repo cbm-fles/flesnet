@@ -36,6 +36,10 @@ We request every timeslice with sequence number _n_ for which exists _m_ in N: _
 
 While the receiver retains a handle to a timeslice, the corresponding memory cannot be overwritten. Therefore, independent of the queueing scheme, a slow `shm` client may have to copy the relevant information to local memory buffer and release the handle before processing to not cause backpressure on the readout system.
 
+The sender and the receivers exchange heartbeats continuously, independent of whether timeslices are flowing, and treat a peer that has gone quiet for several heartbeat intervals as dead. A receiver that loses the sender reconnects on its own, so a restarted timeslice builder is picked up without restarting its clients; timeslices produced while no receiver was registered are not retained. When the sender reaches the end of its stream, it tells each receiver so after the last timeslice that receiver will get, which is what lets a client terminate on its own instead of waiting for data that will not come.
+
+The sender and its receivers speak a versioned protocol and must come from the same Flesnet release. A version mismatch is reported and the connection is refused, rather than being misinterpreted.
+
 
 ### Parameters of the `shm` scheme
 
@@ -47,6 +51,15 @@ While the receiver retains a handle to a timeslice, the corresponding memory can
 
 `queue`
 : Specify the queueing mode. Possible values are: `all` (default), `one`, `skip`.
+
+`group`
+: Receivers sharing a non-zero `group` are treated as a group, and each timeslice is sent to only one member of the group (default: 0, meaning no grouping).
+This distributes the load over several receivers without any of them seeing a timeslice twice.
+
+`window`
+: Number of timeslices the sender may have outstanding for this receiver at the same time (default: 1).
+The default reproduces the strict one-at-a-time behaviour, in which the next timeslice is only sent once the previous one has been released.
+A larger window lets the receiver work on one timeslice while the next is already on its way, which matters on a connection with a noticeable round-trip time, at the cost of holding more timeslices at once.
 
 **Queue parameter values**
 

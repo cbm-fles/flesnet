@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Scheduler.hpp"
+#include "StHandle.hpp"
 #include "SubTimeslice.hpp"
 #include "ucxutil.hpp"
 #include <cstddef>
@@ -24,6 +25,9 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
+
+using fles::tsb::SenderInfo;
+using fles::tsb::TsId;
 
 using namespace std::chrono_literals;
 

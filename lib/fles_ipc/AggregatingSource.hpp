@@ -52,28 +52,24 @@ public:
   void operator=(const AggregatingSource&) = delete;
 
   ~AggregatingSource() override {
-    // Request all threads to stop
-    for (auto& async_source : async_sources_) {
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      for (auto& async_source : async_sources_) {
 #if __cplusplus >= 202002L
-      async_source->prefetch_thread.request_stop();
+        async_source->prefetch_thread.request_stop();
 #else
-      async_source->stop_requested = true;
+        async_source->stop_requested = true;
 #endif
+        // Wake up the thread so it can check the stop condition
+        async_source->cv_consumed.notify_one();
+      }
     }
-    // Wake up all threads so they can check the stop token
-    for (auto& async_source : async_sources_) {
-      std::lock_guard<std::mutex> lock(async_source->mutex);
-      async_source->item_consumed = true;
-      async_source->cv_consumed.notify_one();
-    }
-#if __cplusplus < 202002L
-    // Join all threads
+    // Join all threads while the synchronization primitives are still alive
     for (auto& async_source : async_sources_) {
       if (async_source->prefetch_thread.joinable()) {
         async_source->prefetch_thread.join();
       }
     }
-#endif
   }
 
   [[nodiscard]] bool eos() const override { return eos_; }
@@ -81,23 +77,20 @@ public:
 private:
   struct AsyncSource {
     std::unique_ptr<SourceType> source;
+    std::size_t index;
+    std::size_t items_fetched = 0;
+    AggregatingSource& parent;
+
+    // State shared with the main thread, guarded by parent.mutex_
     std::unique_ptr<item_type> prefetched_item = nullptr;
+    bool source_exhausted = false;
+    std::condition_variable cv_consumed; // signaled when item was consumed
 #if __cplusplus >= 202002L
     std::jthread prefetch_thread;
 #else
-    std::thread prefetch_thread;
     std::atomic<bool> stop_requested{false};
+    std::thread prefetch_thread;
 #endif
-    std::size_t index;
-    std::size_t items_fetched = 0;
-
-    // Synchronization primitives
-    std::mutex mutex;
-    std::condition_variable cv_consumed; // signaled when item was consumed
-    bool item_consumed = true;     // true when main thread has taken the item
-    bool source_exhausted = false; // true when source returned nullptr
-
-    AggregatingSource& parent;
 
     AsyncSource(std::unique_ptr<SourceType> src,
                 AggregatingSource& parent,
@@ -113,23 +106,24 @@ private:
 
 #if __cplusplus >= 202002L
     void thread_loop(const std::stop_token& st) {
-      while (!st.stop_requested()) {
+      auto stop = [&st] { return st.stop_requested(); };
 #else
     void thread_loop() {
-      while (!stop_requested.load()) {
+      auto stop = [this] { return stop_requested.load(); };
 #endif
+      while (!stop()) {
         // Fetch the next item (this may block)
         L_(debug) << "AsyncSource " << index << ": fetching item "
                   << items_fetched << " from source";
         auto item = source->get();
 
-        std::unique_lock<std::mutex> lock(mutex);
+        // All state changes that the main thread waits for happen under
+        // parent.mutex_, so that no notification can get lost
+        std::unique_lock<std::mutex> lock(parent.mutex_);
 
         if (item == nullptr) {
-          // Source is exhausted
           L_(debug) << "AsyncSource " << index << ": source exhausted";
           source_exhausted = true;
-          prefetched_item = nullptr;
           parent.cv_any_available_.notify_one();
           break;
         }
@@ -139,42 +133,23 @@ private:
         L_(debug) << "AsyncSource " << index << ": item " << items_fetched
                   << " prefetched";
         items_fetched++;
-        item_consumed = false;
         parent.cv_any_available_.notify_one();
 
         // Wait until the item has been consumed (or stop requested)
-#if __cplusplus >= 202002L
-        cv_consumed.wait(
-            lock, [this, &st] { return item_consumed || st.stop_requested(); });
-#else
-        cv_consumed.wait(
-            lock, [this] { return item_consumed || stop_requested.load(); });
-#endif
+        cv_consumed.wait(lock, [this, &stop] {
+          return prefetched_item == nullptr || stop();
+        });
       }
-    }
-
-    /// Check if an item is available (call with mutex held)
-    [[nodiscard]] bool has_item_available() const {
-      return prefetched_item != nullptr;
-    }
-
-    /// Check if the source is exhausted (call with mutex held)
-    [[nodiscard]] bool is_exhausted() const { return source_exhausted; }
-
-    /// Take the prefetched item (call with mutex held)
-    std::unique_ptr<item_type> take_item() {
-      item_consumed = true;
-      cv_consumed.notify_one();
-      return std::move(prefetched_item);
     }
   };
 
+  // Guards the shared state of all AsyncSource objects; declared before
+  // async_sources_ so that it outlives them
+  std::mutex mutex_;
+  std::condition_variable cv_any_available_;
+
   std::vector<std::unique_ptr<AsyncSource>> async_sources_;
   std::size_t next_source_index_ = 0;
-
-  // Synchronization for do_get() blocking
-  std::mutex main_mutex_;
-  std::condition_variable cv_any_available_;
 
   bool eos_ = false;
 
@@ -183,7 +158,7 @@ private:
       return nullptr;
     }
 
-    std::unique_lock<std::mutex> main_lock(main_mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
 
     L_(debug) << "AggregatingSource: do_get() called";
     while (true) {
@@ -195,17 +170,17 @@ private:
             (next_source_index_ + i) % async_sources_.size();
         auto& async_source = async_sources_.at(source_index);
 
-        std::unique_lock<std::mutex> source_lock(async_source->mutex);
-        if (async_source->has_item_available()) {
+        if (async_source->prefetched_item != nullptr) {
           L_(debug) << "AggregatingSource: item available from source "
                     << source_index;
-          auto item = async_source->take_item();
+          auto item = std::move(async_source->prefetched_item);
+          async_source->cv_consumed.notify_one();
           next_source_index_ = (source_index + 1) % async_sources_.size();
           return item.release();
         }
         L_(debug) << "AggregatingSource: no item available from source "
                   << source_index;
-        if (!async_source->is_exhausted()) {
+        if (!async_source->source_exhausted) {
           has_active_sources = true;
         }
       }
@@ -217,8 +192,8 @@ private:
       }
       L_(debug) << "AggregatingSource: no items available yet, waiting...";
 
-      // Wait for an item to become available or all sources to be exhausted
-      cv_any_available_.wait(main_lock);
+      // Wait for an item to become available or a source to be exhausted
+      cv_any_available_.wait(lock);
     }
   }
 };

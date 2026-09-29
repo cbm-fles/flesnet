@@ -18,6 +18,12 @@
 #include <unistd.h>
 #include <unordered_set>
 
+using fles::tsb::BuilderInfo;
+using fles::tsb::SenderInfo;
+using fles::tsb::StCollection;
+using fles::tsb::StDescriptor;
+using fles::tsb::TsId;
+
 // TsManager: Receive subtimeslice announcements from stsenders, aggregate,
 // and send subtimeslice handles to tsbuilders
 

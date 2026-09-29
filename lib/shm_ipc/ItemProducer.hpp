@@ -1,10 +1,13 @@
 #ifndef SHM_IPC_ITEMPRODUCER_HPP
 #define SHM_IPC_ITEMPRODUCER_HPP
 
-#include <cstddef>
-#include <zmq.hpp>
+#include "ItemID.hpp"
+#include "ItemWorkerProtocol.hpp"
 
-using ItemID = size_t;
+#include <string>
+
+#include <zmq.hpp>
+#include <zmq_addon.hpp>
 
 class ItemProducer {
 public:
@@ -14,22 +17,26 @@ public:
   };
 
   void send_work_item(ItemID id, const std::string& payload) {
-    if (payload.empty()) {
-      distributor_socket_.send(zmq::buffer(std::to_string(id)));
-    } else {
-      zmq::message_t message(std::to_string(id));
-      zmq::message_t payload_message(payload);
-      distributor_socket_.send(message, zmq::send_flags::sndmore);
-      distributor_socket_.send(payload_message, zmq::send_flags::none);
+    zmq::multipart_t message;
+    message.addstr(work_item_verb);
+    message.addstr(std::to_string(id));
+    if (!payload.empty()) {
+      message.addstr(payload);
     }
+    message.send(distributor_socket_);
+  }
+
+  /// Announce that no further work items will follow.
+  void send_end_of_stream() {
+    zmq::multipart_t message;
+    message.addstr(end_of_stream_verb);
+    message.send(distributor_socket_);
   }
 
   bool try_receive_completion(ItemID* id) {
-    zmq::message_t message;
+    zmq::multipart_t message;
     try {
-      const auto result =
-          distributor_socket_.recv(message, zmq::recv_flags::dontwait);
-      if (!result.has_value()) {
+      if (!message.recv(distributor_socket_, ZMQ_DONTWAIT)) {
         return false;
       }
     } catch (zmq::error_t& ex) {
@@ -38,7 +45,10 @@ public:
       }
       throw;
     }
-    *id = std::stoull(message.to_string());
+    if (message.size() != 2 || message.peekstr(0) != complete_verb) {
+      throw WorkerProtocolError("invalid message from item distributor");
+    }
+    *id = parse_number_frame(message.peekstr(1), "item id");
     return true;
   }
 
