@@ -14,6 +14,7 @@
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -111,9 +112,14 @@ private:
     while (auto item = worker_.get()) {
       fles::TimesliceShmWorkItem timeslice_item;
       std::istringstream istream(item->payload());
-      {
+      try {
         boost::archive::binary_iarchive iarchive(istream);
         iarchive >> timeslice_item;
+      } catch (const boost::archive::archive_exception& e) {
+        throw std::runtime_error(
+            std::string("TimesliceReceiver: cannot read work item, producer "
+                        "uses an incompatible format: ") +
+            e.what());
       }
 
       // connect to matching shared memory if not already connected
@@ -145,10 +151,8 @@ private:
       if (timeslice_item.tsc_desc.size() !=
               timeslice_item.ts_desc.num_components ||
           timeslice_item.data.size() != timeslice_item.ts_desc.num_components) {
-        std::cerr << "TimesliceReceiver: discarding item without matching "
-                     "component descriptors (legacy producer?)"
-                  << std::endl;
-        continue;
+        throw std::runtime_error("TimesliceReceiver: invalid work item, "
+                                 "component count mismatch");
       }
 
       return new TimesliceView(managed_shm_, item, timeslice_item); // NOLINT
