@@ -11,7 +11,6 @@
 #include <cstddef>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 namespace zmq {
 class context_t;
@@ -53,9 +52,6 @@ public:
 
 private:
   TimesliceShmBuffer m_buffer;
-
-  /// The buffer locations of the published timeslices
-  std::unordered_map<ItemID, std::byte*> m_allocations;
 };
 
 } // namespace fles

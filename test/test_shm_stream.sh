@@ -30,10 +30,10 @@ EXPECTED=40
 # A consumer has to be registered before the producer starts, otherwise the
 # items are gone before anyone asks for them.
 echo "== end of stream terminates the consumer =="
-timeout 60 ./tsclient -i "shm://$ID" -o "file://$OUT.tsa" &
+timeout -k 5 60 ./tsclient -i "shm://$ID" -o "file://$OUT.tsa" &
 PIDS="$!"
 sleep 0.5
-timeout 60 ./tsclient -i "$INPUT" -o "shm://127.0.0.1/$ID?n=2"
+timeout -k 5 60 ./tsclient -i "$INPUT" -o "shm://127.0.0.1/$ID?size=16MiB"
 
 # No -n was given, so the consumer can only have exited on end of stream.
 wait $PIDS
@@ -48,12 +48,12 @@ fi
 
 echo "== stride and offset split the stream =="
 ID="${ID}_b"
-timeout 60 ./tsclient -i "shm://$ID?stride=2&offset=0" -o "file://$OUT.even.tsa" &
+timeout -k 5 60 ./tsclient -i "shm://$ID?stride=2&offset=0" -o "file://$OUT.even.tsa" &
 PIDS="$!"
-timeout 60 ./tsclient -i "shm://$ID?stride=2&offset=1" -o "file://$OUT.odd.tsa" &
+timeout -k 5 60 ./tsclient -i "shm://$ID?stride=2&offset=1" -o "file://$OUT.odd.tsa" &
 PIDS="$PIDS $!"
 sleep 0.5
-timeout 60 ./tsclient -i "$INPUT" -o "shm://127.0.0.1/$ID?n=2"
+timeout -k 5 60 ./tsclient -i "$INPUT" -o "shm://127.0.0.1/$ID?size=16MiB"
 
 for pid in $PIDS; do
 	wait "$pid"

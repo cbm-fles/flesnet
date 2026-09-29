@@ -54,6 +54,12 @@
  *   producer -> broker      WORK_ITEM <id> [<payload>] | END_OF_STREAM
  *   broker -> producer      COMPLETE <id>
  *
+ * Item ids are assigned by the producer. They must be unique among the
+ * outstanding items and are meant to be consecutive sequence numbers, since
+ * workers select items by id (stride and offset). They carry no meaning beyond
+ * that; any application-level identity, e.g., a timeslice index, belongs in
+ * the payload.
+ *
  * The version frame comes first in REGISTER so that a mismatch is detected
  * before anything else is parsed. Peers of different protocol versions do not
  * interoperate; the broker rejects them with a DISCONNECT naming both
