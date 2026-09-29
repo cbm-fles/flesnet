@@ -43,13 +43,18 @@ public:
             managed_shm_->get_size()};
   }
 
-  /// The contiguous memory range within the segment that holds the data of all
-  /// components.
-  [[nodiscard]] std::span<const std::byte> data_block() const;
+  /// The contiguous memory range within the segment that holds the data of a
+  /// component (microslice descriptors followed by the contents). The
+  /// components of a timeslice may be placed anywhere in the segment.
+  [[nodiscard]] std::span<const std::byte>
+  component_data(uint64_t component) const {
+    return {reinterpret_cast<const std::byte*>(data_ptr_[component]),
+            size_component(component)};
+  }
 
-  /// The timeslice descriptor in the layout expected by
-  /// TimesliceShmBuffer::send_work_item(), with component offsets relative to
-  /// data_block().
+  /// The timeslice descriptor, with component offsets relative to
+  /// shm_region(). This is the form TimesliceShmBuffer::send_work_item()
+  /// expects, after replacing the offsets with those in the target segment.
   [[nodiscard]] tsb::StDescriptor st_descriptor() const;
 
 private:

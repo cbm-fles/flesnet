@@ -13,8 +13,10 @@
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <cstdint>
+#include <format>
 #include <functional>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -63,9 +65,12 @@ TimesliceShmBuffer::~TimesliceShmBuffer() {
   boost::interprocess::shared_memory_object::remove(m_shm_identifier.c_str());
 }
 
-void TimesliceShmBuffer::send_work_item(std::byte* buffer,
-                                        tsb::TsId id,
-                                        const tsb::StDescriptor& ts_desc) {
+void TimesliceShmBuffer::send_work_item(tsb::TsId id,
+                                        const tsb::StDescriptor& ts_desc,
+                                        std::uint64_t user_data) {
+  auto* base = static_cast<std::byte*>(m_managed_shm->get_address());
+  const auto segment_size = m_managed_shm->get_size();
+
   TimesliceDescriptor d{};
   d.index = static_cast<uint64_t>(id);
   d.start_time = ts_desc.start_time_ns;
@@ -78,6 +83,14 @@ void TimesliceShmBuffer::send_work_item(std::byte* buffer,
   item.shm_identifier = m_shm_identifier;
   item.ts_desc = d;
   for (const auto& c : ts_desc.components) {
+    if (c.ms_data_offset < 0 ||
+        static_cast<std::size_t>(c.ms_data_offset) > segment_size ||
+        c.ms_data_size > segment_size - c.ms_data_offset) {
+      throw std::out_of_range(
+          std::format("timeslice {}: component data outside of shared memory "
+                      "segment '{}'",
+                      id, m_shm_identifier));
+    }
     TimesliceComponentDescriptor tscd{};
     tscd.ts_num = static_cast<uint64_t>(id);
     tscd.offset = 0; // unused
@@ -85,7 +98,7 @@ void TimesliceShmBuffer::send_work_item(std::byte* buffer,
     tscd.num_microslices = c.num_microslices;
     tscd.flags = c.flags;
     item.data.push_back(
-        m_managed_shm->get_handle_from_address(buffer + c.ms_data_offset));
+        m_managed_shm->get_handle_from_address(base + c.ms_data_offset));
     item.tsc_desc.push_back(tscd);
   }
 
@@ -94,7 +107,7 @@ void TimesliceShmBuffer::send_work_item(std::byte* buffer,
                         bytes.size());
   const ItemID item_id = m_next_item_id++;
   m_producer.send_work_item(item_id, bytes_str);
-  m_outstanding.emplace(item_id, Completion{id, buffer});
+  m_outstanding.emplace(item_id, Completion{id, user_data});
 }
 
 std::optional<TimesliceShmBuffer::Completion>

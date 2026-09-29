@@ -66,12 +66,15 @@ void TimesliceShmSink::put(std::shared_ptr<const Timeslice> timeslice) {
                 component.ms_data_size);
   }
 
-  m_buffer.send_work_item(buffer, id, desc);
+  for (auto& component : desc.components) {
+    component.ms_data_offset += m_buffer.offset_of(buffer);
+  }
+  m_buffer.send_work_item(id, desc, reinterpret_cast<std::uintptr_t>(buffer));
 }
 
 void TimesliceShmSink::handle_completions() {
   while (auto completion = m_buffer.try_receive_completion()) {
-    m_buffer.deallocate(completion->buffer);
+    m_buffer.deallocate(reinterpret_cast<std::byte*>(completion->user_data));
   }
 }
 

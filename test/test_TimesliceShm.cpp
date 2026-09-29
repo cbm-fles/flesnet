@@ -10,6 +10,7 @@
 #include "TimesliceReceiver.hpp"
 #include "TimesliceShmBuffer.hpp"
 #include "TimesliceShmSink.hpp"
+#include <algorithm>
 #include <chrono>
 #include <cstring>
 #include <future>
@@ -80,20 +81,27 @@ BOOST_AUTO_TEST_CASE(shm_forward_test) {
     check_equal(*ts, *view);
 
     const auto region = view->shm_region();
-    const auto block = view->data_block();
-    BOOST_CHECK(block.data() >= region.data());
-    BOOST_CHECK(block.data() + block.size() <= region.data() + region.size());
+    fles::tsb::StDescriptor desc = view->st_descriptor();
+    BOOST_REQUIRE_EQUAL(desc.components.size(), view->num_components());
 
-    const fles::tsb::StDescriptor desc = view->st_descriptor();
-    BOOST_CHECK_EQUAL(desc.ms_data_size(), block.size());
+    // Copy the components one by one, each into an allocation of its own
+    for (uint64_t c = 0; c < view->num_components(); ++c) {
+      const auto data = view->component_data(c);
+      BOOST_CHECK(data.data() >= region.data());
+      BOOST_CHECK(data.data() + data.size() <= region.data() + region.size());
+      BOOST_CHECK_EQUAL(desc.components[c].ms_data_offset,
+                        data.data() - region.data());
+      BOOST_CHECK_EQUAL(desc.components[c].ms_data_size, data.size());
 
-    std::byte* out_block = out_buffer.allocate(block.size());
-    BOOST_REQUIRE(out_block != nullptr);
-    std::memcpy(out_block, block.data(), block.size());
+      std::byte* out_data =
+          out_buffer.allocate(std::max<size_t>(data.size(), 1));
+      BOOST_REQUIRE(out_data != nullptr);
+      std::memcpy(out_data, data.data(), data.size());
+      desc.components[c].ms_data_offset = out_buffer.offset_of(out_data);
+    }
 
-    auto forwarded = receive_one(out_receiver, [&] {
-      out_buffer.send_work_item(out_block, view->index(), desc);
-    });
+    auto forwarded = receive_one(
+        out_receiver, [&] { out_buffer.send_work_item(view->index(), desc); });
     BOOST_REQUIRE(forwarded);
     check_equal(*ts, *forwarded);
     BOOST_CHECK(forwarded->shm_uuid() != view->shm_uuid());
