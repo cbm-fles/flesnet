@@ -5,6 +5,7 @@
 
 #include "TimesliceComponentDescriptor.hpp"
 #include "TimesliceDescriptor.hpp"
+#include <boost/archive/archive_exception.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/string.hpp>
@@ -23,6 +24,9 @@ namespace fles {
 
 /**
  * \brief %Timeslice shared memory work item struct.
+ *
+ * This is the payload of the work items published to the item workers. It is
+ * never stored, so only the current version is accepted.
  */
 struct TimesliceShmWorkItem {
   /// The UUID of the containing managed shared memory
@@ -34,10 +38,6 @@ struct TimesliceShmWorkItem {
   /// A vector of handles to the data blocks
   std::vector<std::ptrdiff_t> data;
 
-  /// Unused, always empty. Formerly a vector of handles to the tsc descriptor
-  /// blocks, still serialized to keep the format unchanged.
-  std::vector<std::ptrdiff_t> desc;
-
   /// A vector of timeslice component descriptors
   std::vector<TimesliceComponentDescriptor> tsc_desc;
 
@@ -45,14 +45,16 @@ struct TimesliceShmWorkItem {
   /// Provide boost serialization access.
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version) {
+    if (version != 2) {
+      throw boost::archive::archive_exception(
+          boost::archive::archive_exception::unsupported_class_version,
+          "fles::TimesliceShmWorkItem");
+    }
     ar & shm_uuid;
     ar & shm_identifier;
     ar & ts_desc;
     ar & data;
-    ar & desc;
-    if (version > 0) {
-      ar & tsc_desc;
-    }
+    ar & tsc_desc;
   }
 
   /// Dump contents (for debugging).
@@ -70,5 +72,5 @@ struct TimesliceShmWorkItem {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-BOOST_CLASS_VERSION(fles::TimesliceShmWorkItem, 1)
+BOOST_CLASS_VERSION(fles::TimesliceShmWorkItem, 2)
 #pragma GCC diagnostic pop
