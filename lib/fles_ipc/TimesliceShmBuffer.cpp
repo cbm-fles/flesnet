@@ -92,19 +92,25 @@ void TimesliceShmBuffer::send_work_item(std::byte* buffer,
   std::vector<std::byte> bytes = tsb::to_bytes(item);
   std::string bytes_str(reinterpret_cast<const char*>(bytes.data()),
                         bytes.size());
-  m_producer.send_work_item(id, bytes_str);
-  m_outstanding.insert(id);
+  const ItemID item_id = m_next_item_id++;
+  m_producer.send_work_item(item_id, bytes_str);
+  m_outstanding.emplace(item_id, Completion{id, buffer});
 }
 
-std::optional<ItemID> TimesliceShmBuffer::try_receive_completion() {
-  ItemID id{};
-  if (!m_producer.try_receive_completion(&id)) {
-    return std::nullopt;
+std::optional<TimesliceShmBuffer::Completion>
+TimesliceShmBuffer::try_receive_completion() {
+  ItemID item_id{};
+  while (m_producer.try_receive_completion(&item_id)) {
+    auto it = m_outstanding.find(item_id);
+    if (it == m_outstanding.end()) {
+      ERROR("Invalid item with id {}", item_id);
+      continue;
+    }
+    Completion completion = it->second;
+    m_outstanding.erase(it);
+    return completion;
   }
-  if (m_outstanding.erase(id) != 1) {
-    ERROR("Invalid item with id {}", id);
-  }
-  return id;
+  return std::nullopt;
 }
 
 } // namespace fles

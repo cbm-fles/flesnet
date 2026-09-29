@@ -75,8 +75,8 @@ void TsBuilder::run() {
     if (ucp_worker_progress(m_worker) != 0) {
       continue;
     }
-    if (auto id = m_timeslice_buffer.try_receive_completion()) {
-      process_completion(*id);
+    if (auto completion = m_timeslice_buffer.try_receive_completion()) {
+      process_completion(completion->id);
       continue;
     }
     m_tasks.timer();

@@ -11,10 +11,10 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <cstddef>
+#include <map>
 #include <memory>
 #include <new>
 #include <optional>
-#include <set>
 #include <span>
 #include <string>
 #include <thread>
@@ -32,7 +32,13 @@ namespace fles {
  * Each timeslice occupies one allocation in the segment, holding the data of
  * all its components. Once a timeslice is written, send_work_item() announces
  * it. When all workers are done with it, try_receive_completion() returns its
- * id, and the allocation can be released.
+ * id and location, and the allocation can be released.
+ *
+ * The work items are numbered consecutively, independent of the timeslice
+ * index. The workers select items by this number (stride and offset), so the
+ * selection applies to the sequence of timeslices published here, whatever
+ * subset of the global timeslice stream that is. Timeslice indices may also
+ * repeat, e.g., when an archive is replayed.
  */
 class TimesliceShmBuffer {
 public:
@@ -65,6 +71,12 @@ public:
 
   void deallocate(std::byte* ptr) { m_managed_shm->deallocate(ptr); }
 
+  /// A published timeslice that is no longer in use
+  struct Completion {
+    tsb::TsId id;      ///< timeslice index
+    std::byte* buffer; ///< buffer location given to send_work_item()
+  };
+
   /// Announce a timeslice stored at the given buffer location. The component
   /// offsets in the descriptor are relative to this location.
   void send_work_item(std::byte* buffer,
@@ -74,13 +86,8 @@ public:
   /// Announce that no more timeslices will follow.
   void send_end_of_stream() { m_producer.send_end_of_stream(); }
 
-  /// Receive the id of a timeslice that is no longer in use, if any.
-  [[nodiscard]] std::optional<ItemID> try_receive_completion();
-
-  /// Check whether a timeslice with the given id is still in use.
-  [[nodiscard]] bool is_outstanding(ItemID id) const {
-    return m_outstanding.contains(id);
-  }
+  /// Receive a timeslice that is no longer in use, if any.
+  [[nodiscard]] std::optional<Completion> try_receive_completion();
 
   /// Check whether no timeslice is in use.
   [[nodiscard]] bool empty() const { return m_outstanding.empty(); }
@@ -101,7 +108,11 @@ private:
   ItemProducer m_producer;
 
   std::thread m_distributor_thread; ///< runs the item distributor
-  std::set<ItemID> m_outstanding;   ///< set of outstanding work items
+
+  ItemID m_next_item_id = 0; ///< number of the next work item
+
+  /// The timeslices of the outstanding work items
+  std::map<ItemID, Completion> m_outstanding;
 };
 
 } // namespace fles

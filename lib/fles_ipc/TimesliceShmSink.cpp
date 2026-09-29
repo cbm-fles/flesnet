@@ -26,10 +26,6 @@ void TimesliceShmSink::put(std::shared_ptr<const Timeslice> timeslice) {
   handle_completions();
 
   const uint64_t id = timeslice->index();
-  if (m_buffer.is_outstanding(id)) {
-    throw std::runtime_error(
-        std::format("timeslice {} is still in use in shared memory", id));
-  }
 
   tsb::StDescriptor desc;
   desc.start_time_ns = timeslice->start_time();
@@ -71,16 +67,11 @@ void TimesliceShmSink::put(std::shared_ptr<const Timeslice> timeslice) {
   }
 
   m_buffer.send_work_item(buffer, id, desc);
-  m_allocations.emplace(id, buffer);
 }
 
 void TimesliceShmSink::handle_completions() {
-  while (auto id = m_buffer.try_receive_completion()) {
-    auto it = m_allocations.find(*id);
-    if (it != m_allocations.end()) {
-      m_buffer.deallocate(it->second);
-      m_allocations.erase(it);
-    }
+  while (auto completion = m_buffer.try_receive_completion()) {
+    m_buffer.deallocate(completion->buffer);
   }
 }
 
