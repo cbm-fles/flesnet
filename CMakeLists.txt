@@ -71,7 +71,7 @@ if(CPPZMQ STREQUAL "CPPZMQ-NOTFOUND" OR CPPZMQ_ADDON STREQUAL "CPPZMQ_ADDON-NOTF
   ExternalProject_Add(
     cppzmq
     GIT_REPOSITORY "https://github.com/zeromq/cppzmq.git"
-    GIT_TAG "dd663fafd830466d34cba278c2cfd0f92eb67614" # v4.8.1
+    GIT_TAG "3bcbd9dad2f57180aacd4b4aea292a74f0de7ef4" # v4.11.0
     GIT_CONFIG advice.detachedHead=false
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
