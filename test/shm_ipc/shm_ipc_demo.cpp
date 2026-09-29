@@ -69,6 +69,9 @@ int main() {
   distributor_thread.join();
   producer = nullptr;
   distributor = nullptr;
+  // Terminating the context waits until the sockets are fully closed and the
+  // addresses are released, as they are when a distributor process exits.
+  zmq_context.close();
 
   // Elasticity test: add a worker
   const WorkerParameters param6{1, 0, WorkerQueuePolicy::PrebufferOne, 0,
@@ -77,11 +80,12 @@ int main() {
   std::thread worker6_thread(std::ref(worker6));
 
   // Elasticity test: restart producer and distributor
-  distributor = std::make_unique<ItemDistributor>(zmq_context, producer_address,
-                                                  worker_address);
+  zmq::context_t zmq_context2{1};
+  distributor = std::make_unique<ItemDistributor>(
+      zmq_context2, producer_address, worker_address);
   std::thread distributor2_thread(std::ref(*distributor));
 
-  producer = std::make_unique<ExampleProducer>(zmq_context, producer_address,
+  producer = std::make_unique<ExampleProducer>(zmq_context2, producer_address,
                                                d0, 0ms, item_count);
   std::thread producer2_thread(std::ref(*producer));
 
@@ -89,6 +93,8 @@ int main() {
   producer2_thread.join();
   distributor->stop();
   distributor2_thread.join();
+  producer = nullptr;
+  distributor = nullptr;
 
   worker1.stop();
   worker2.stop();
