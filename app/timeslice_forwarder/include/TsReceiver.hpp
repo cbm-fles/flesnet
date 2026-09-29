@@ -62,7 +62,6 @@ public:
         uint64_t node_id,
         std::string listen_address,
         std::string output_uri,
-        uint32_t timeslice_size,
         std::string central_manager_address,
         uint64_t data_buffer_map_size,
         uint64_t wi_buffer_size,

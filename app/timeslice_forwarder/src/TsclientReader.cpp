@@ -7,7 +7,6 @@
 #include "Timeslice.hpp"
 #include "Utility.hpp"
 #include "df/WorkerThread.hpp"
-#include <TsfTimesliceView.hpp>
 
 using namespace std;
 using namespace std::chrono;
@@ -23,17 +22,21 @@ TsclientReader::TsclientReader(std::string shm_uri) {
     };
     UriComponents uri{shm_uri};
     const auto shm_identifier = uri.path;
-    source_ = make_unique<tsforwarder::Receiver>(shm_identifier, param);
-    //source_orig_ = make_unique<fles::Receiver<fles::Timeslice, fles::TimesliceView>>(shm_identifier, param);
+    // The SHM is mapped writable, as needed for the RDMA memory registration
+    source_ = make_unique<fles::Receiver<fles::Timeslice, fles::TimesliceView>>(shm_identifier, param, fles::ShmAccess::ReadWrite);
     new_timeslice_callbacks_.set_worker(make_shared<WorkerThread>());
 
-    // We have to read out one timeslice so the fles::Receiver class initializes the SHM and we can get the
-    // necessary SHM pointer to register it for RDMA transmissions
-    unique_ptr<fles::Timeslice> timeslice = source_->get();
-    num_components_ = timeslice->num_components();
-    buffer_size_ = source_->get_managed_shm()->get_size();
-    buffer_ = reinterpret_cast<char*>(source_->get_managed_shm()->get_address());
-    timeslice.reset();
+    // We have to read out one timeslice to get the SHM region to register it for RDMA transmissions.
+    // It is kept and sent first.
+    first_timeslice_ = source_->get();
+    if (!first_timeslice_) {
+        throw runtime_error("(TimesliceReader) no timeslice received from " + shm_uri);
+    }
+    const auto region = first_timeslice_->shm_region();
+    shm_uuid_ = first_timeslice_->shm_uuid();
+    buffer_size_ = region.size();
+    // The region is const because timeslices are read-only, but the mapping is writable (see above)
+    buffer_ = const_cast<char*>(reinterpret_cast<const char*>(region.data()));
 }
 
 uint64_t TsclientReader::get_buffer_size() const {
@@ -78,9 +81,6 @@ void TsclientReader::start_timeslice_reading() {
         }
 
         unique_ptr<fles::TimesliceView> ts = nullptr;
-        auto addresses = shared_ptr<uint64_t>(new uint64_t[num_components_ * 2], default_delete<uint64_t[]>());
-        auto sizes = shared_ptr<uint64_t>(new uint64_t[num_components_ * 2], default_delete<uint64_t[]>());
-        auto tags = shared_ptr<uint32_t>(new uint32_t[num_components_ * 2], default_delete<uint32_t[]>());
         time_point<high_resolution_clock> start;
         time_point<high_resolution_clock> stop;
         while (!stop_)  {
@@ -91,7 +91,7 @@ void TsclientReader::start_timeslice_reading() {
             //sleep(6);
             L_(trace) << "Getting new";
 
-            ts = source_->get();
+            ts = first_timeslice_ ? std::move(first_timeslice_) : source_->get();
 
             stop = high_resolution_clock::now();
             L_(trace) << "TS reader - got ts after: " <<  duration_cast<milliseconds>(stop-start).count();
@@ -99,13 +99,10 @@ void TsclientReader::start_timeslice_reading() {
                 L_(debug) << "ts is null";
                 break;
             }
-            // TODO: This does not make an sense
-            auto *tsf_timeslice = dynamic_cast<tsforwarder::TimesliceView*>(ts.get());
 
-            L_(debug) << "TS index: " << tsf_timeslice->index();
-            if (buffer_ != reinterpret_cast<char*>(source_->get_managed_shm()->get_address())) {
-                buffer_ = reinterpret_cast<char*>(source_->get_managed_shm()->get_address());
-                L_(fatal) << "(TimesliceReader) SHM base memory address changed";
+            L_(debug) << "TS index: " << ts->index();
+            if (ts->shm_uuid() != shm_uuid_) {
+                L_(fatal) << "(TimesliceReader) SHM segment changed";
                 exit(-EXIT_FAILURE);
             }
 
@@ -119,25 +116,17 @@ void TsclientReader::start_timeslice_reading() {
                     return true;
                 }
             );
-            const auto num_components = tsf_timeslice->num_components();
-
-            // tag layout:
-            // [<is_descriptor or data> (uint16_t)] [data and descriptor have the same int here (uint16_t)]
-            // in more detail:
-            // ['1' is descriptor, '2' is data] [idx (set by loop variable)]
-            // e.g.:
-            // tag: [1][8] is a descriptor that belongs to the corrosponding data element with tag [2][8]
+            // One element per component, in component order. The tag holds the component flags,
+            // the receiver derives the other descriptor fields from the data.
+            const auto desc = ts->st_descriptor();
+            const auto num_components = desc.components.size();
+            vector<uint64_t> sizes(num_components);
+            vector<uint64_t> addresses(num_components);
+            vector<uint32_t> tags(num_components);
             for (uint64_t i = 0; i < num_components; i++) {
-                auto *component_desc_ptr = tsf_timeslice->get_desc().at(i);
-                auto *component_data_ptr = tsf_timeslice->get_data().at(i);
-                sizes.get()[i] = sizeof(fles::TimesliceComponentDescriptor);
-                sizes.get()[num_components + i] = tsf_timeslice->size_component(i);
-
-                tags.get()[i] = static_cast<uint32_t>(1) << (sizeof(uint16_t) * 8) | static_cast<uint16_t>(i); // descriptor has tag
-                tags.get()[num_components + i] = static_cast<uint32_t>(2) << (sizeof(uint16_t) * 8) | static_cast<uint16_t>(i);
-
-                addresses.get()[i] = reinterpret_cast<char*>(component_desc_ptr) - buffer_;
-                addresses.get()[num_components + i] = reinterpret_cast<char*>(component_data_ptr) - buffer_;
+                sizes[i] = desc.components[i].ms_data_size;
+                addresses[i] = desc.components[i].ms_data_offset; // relative to the SHM region
+                tags[i] = desc.components[i].flags;
             }
 
             // waiting to get the lock
@@ -148,12 +137,12 @@ void TsclientReader::start_timeslice_reading() {
 
             // reperesent new data in the buffer map
             auto *const buffer_map_ret = buffer_map_->insert(
-                num_components * 2,
-                sizes.get(),
-                addresses.get(),
+                num_components,
+                sizes.data(),
+                addresses.data(),
                 0,
                 0,
-                tags.get(),
+                tags.data(),
                 BufferMap::ListElement::IO::RX
             );
 
@@ -163,7 +152,7 @@ void TsclientReader::start_timeslice_reading() {
             }
 
             // first element of the insertion will contain the TS index
-            buffer_map_ret->user_0 = tsf_timeslice->index();
+            buffer_map_ret->user_0 = ts->index();
             node_connector_->unlock_buffer_map(buffer_map_);
             last_timeslice_ = std::move(ts);
             start_clock_ = high_resolution_clock::now();
