@@ -13,6 +13,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <boost/uuid/uuid.hpp>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
