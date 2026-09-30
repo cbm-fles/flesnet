@@ -1,6 +1,6 @@
 # Copyright 2013-2014, 2016 Jan de Cuveland <cmail@cuveland.de>
 
-add_library(logging BoostHelper.cpp BoostHelper.hpp log.cpp log.hpp)
+add_library(logging log.cpp log.hpp)
 
 target_compile_definitions(logging
   PUBLIC BOOST_LOG_DYN_LINK
@@ -18,6 +18,6 @@ target_link_libraries(logging
 )
 
 install(TARGETS logging DESTINATION lib COMPONENT dev)
-install(FILES BoostHelper.hpp log.hpp DESTINATION include COMPONENT dev)
+install(FILES log.hpp DESTINATION include COMPONENT dev)
 
 add_library(fles::logging ALIAS logging)
