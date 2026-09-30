@@ -44,18 +44,18 @@ set_directory_properties(PROPERTIES EP_PREFIX ${PROJECT_BINARY_DIR})
 # find ZeroMQ
 if(DEFINED SIMPATH)
   find_package(ExternalZMQ REQUIRED)
-  add_library(zmq::libzmq IMPORTED GLOBAL)
+  add_library(zmq::libzmq UNKNOWN IMPORTED GLOBAL)
   set_target_properties(zmq::libzmq PROPERTIES
     IMPORTED_LOCATION ${ZMQ_LIBRARY_SHARED}
-    INTERFACE_INCLUDE_DIRECTORIES ${ZMQ_INCLUDE_DIRS}
+    INTERFACE_INCLUDE_DIRECTORIES "${ZMQ_INCLUDE_DIRS}"
   )
 elseif(APPLE)
   find_package(cppzmq REQUIRED)
   set(ZMQ_INCLUDE_DIRS ${PC_LIBZMQ_INCLUDE_DIRS} /usr/local/include)
-  add_library(zmq::libzmq IMPORTED GLOBAL)
+  add_library(zmq::libzmq UNKNOWN IMPORTED GLOBAL)
   set_target_properties(zmq::libzmq PROPERTIES
     IMPORTED_LOCATION ${ZeroMQ_LIBRARY}
-    INTERFACE_INCLUDE_DIRECTORIES ${ZMQ_INCLUDE_DIRS}
+    INTERFACE_INCLUDE_DIRECTORIES "${ZMQ_INCLUDE_DIRS}"
   )
 else()
   find_package(PkgConfig)
