@@ -62,7 +62,6 @@ int start_receiver(string hostname = "") {
         par.node_id,
         par.listen_addr,
         par.output_uri,
-        par.timeslice_size,
         par.central_manager_listen_addr,
         par.data_buffer_map_size,
         par.wi_buffer_size,

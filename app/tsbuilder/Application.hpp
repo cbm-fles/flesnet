@@ -3,10 +3,9 @@
    Author: Jan de Cuveland */
 #pragma once
 
-#include "ItemDistributor.hpp"
 #include "Monitor.hpp"
 #include "Parameters.hpp"
-#include "TsBuffer.hpp"
+#include "TimesliceShmBuffer.hpp"
 #include "TsBuilder.hpp"
 #include <csignal>
 #include <memory>
@@ -31,21 +30,8 @@ private:
 
   std::unique_ptr<cbm::Monitor> m_monitor;
 
-  /// Address that is used for communication between the TimesliceBuffer and the
-  /// ItemDistributor.
-  const std::string m_producer_address;
-
-  /// Address that is used by Workers to connect to the ItemDistributor.
-  const std::string m_worker_address;
-
-  /// The ItemDistributor object.
-  ItemDistributor m_item_distributor;
-
   /// Shared memory buffer to store received timeslices.
-  TsBuffer m_timeslice_buffer;
-
-  /// Thread for the ItemDistributor.
-  std::thread m_distributor_thread;
+  fles::TimesliceShmBuffer m_timeslice_buffer;
 
   /// TsBuilder instance
   std::unique_ptr<TsBuilder> m_ts_builder;

@@ -62,16 +62,11 @@ void Parameters::parse_options(int argc, char** argv) {
                   ->implicit_value(log_syslog)
                   ->value_name("<n>"),
               "enable logging to syslog at given log level");
-    general_add("timeslice-size",
-             po::value<uint32_t>(&timeslice_size)
-                 ->default_value(timeslice_size)
-                 ->value_name("<n>"),
-             "set the global timeslice size in number of microslices");
 
     advanced_add("data-buffer-map-size",
         po::value<uint64_t>(&data_buffer_map_size)
             ->default_value(data_buffer_map_size),
-        "Sets how many data references the data buffer map can contain. One timeslice currently needs `<component cnt> * 2` references."
+        "Sets how many data references the data buffer map can contain. One timeslice currently needs `<component cnt>` references."
     );
 
     advanced_add("wi-buffer-size",
@@ -109,7 +104,7 @@ void Parameters::parse_options(int argc, char** argv) {
         << "Node A: Central Manager (CM)" << endl
         << "Node B: TS Receiver and output tsclient" << endl
         << "Node C: TS Sender and input tsclient" << endl
-        << "For the following example we assume that the timeslices have 29 components. This example uses IP addresses, alternatively use the hostname which resolves to the IB IP." << endl
+        << "This example uses IP addresses, alternatively use the hostname which resolves to the IB IP." << endl
         << "" << endl
         << "On Node A:" << endl
         << "Start the Central Manager: " << endl
@@ -117,7 +112,7 @@ void Parameters::parse_options(int argc, char** argv) {
         << "" << endl
         << "On Node B:" << endl
         << "Start the TS Receiver in one process (increment N with each receiver):" << endl
-        << "\t./timeslice_forwarder -c 10.253.31.143:8080 -A 10.253.30.67:8080 -o shm:ts_out?n=29 -N 1" << endl
+        << "\t./timeslice_forwarder -c 10.253.31.143:8080 -A 10.253.30.67:8080 -o shm:ts_out?size=4GiB -N 1" << endl
         << "Start the tsclient which will take out the received timeslices in another process:" << endl
         << "\t./tsclient -i shm:ts_out -o your_output_archive.tsa" << endl
         << "" << endl
@@ -125,7 +120,7 @@ void Parameters::parse_options(int argc, char** argv) {
         << "Start the TS Sender in one process (increment N with each sender):" << endl
         << "\t./timeslice_forwarder -c 10.253.31.143:8080 -A 10.253.31.135:8080 -i shm:ts_in -N 1" << endl
         << "Start the tsclient which will provide timeslices to the TS Sender via SHM:" << endl
-        << "\t./tsclient -i your_input_archive.tsa -o shm:/ts_in?n=29 -l 0" << endl;
+        << "\t./tsclient -i your_input_archive.tsa -o shm:/ts_in?size=4GiB -l 0" << endl;
 
     po::variables_map vm;
     po::options_description desc(desc_sstr.str());

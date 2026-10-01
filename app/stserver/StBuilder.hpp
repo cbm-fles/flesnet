@@ -7,6 +7,7 @@
 #include "Monitor.hpp"
 #include "Parameters.hpp"
 #include "Scheduler.hpp"
+#include "StHandle.hpp"
 #include "StSender.hpp"
 #include "SubTimeslice.hpp"
 #include "cri_device.hpp"
@@ -20,6 +21,8 @@
 #include <span>
 #include <sys/types.h>
 #include <vector>
+
+using fles::tsb::SenderInfo;
 
 /// %StBuilder base class.
 class StBuilder {

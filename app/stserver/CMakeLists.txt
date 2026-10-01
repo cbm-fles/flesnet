@@ -19,8 +19,8 @@ target_include_directories(stserver
 target_link_libraries(stserver
   pda
   cri
-  fles_core
-  tsb
+  fles_tools
+  tsb_ucx
   logging
   ucx::ucp
   ucx::uct

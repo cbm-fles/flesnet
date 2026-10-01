@@ -15,7 +15,7 @@ target_include_directories(archive_validator PRIVATE "${PROJECT_SOURCE_DIR}/conf
 target_include_directories(archive_validator SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(archive_validator
-  fles_ipc fles_core logging crcutil
+  fles_ipc fles_tools logging crcutil
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
 )
 

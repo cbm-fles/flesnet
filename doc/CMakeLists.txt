@@ -109,7 +109,7 @@ doxygen_add_docs(doc-mstool
   ${MARKDOWN_DOCS_FOR_DOXYGEN}
   app/mstool
   lib/logging
-  lib/fles_core
+  lib/fles_tools
   lib/fles_ipc
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Generating documentation with doxygen")
@@ -119,7 +119,7 @@ doxygen_add_docs(doc-tsclient
   ${MARKDOWN_DOCS_FOR_DOXYGEN}
   app/tsclient
   lib/logging
-  lib/fles_core
+  lib/fles_tools
   lib/fles_ipc
   lib/monitoring
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}

@@ -24,8 +24,12 @@
 #include <ucp/api/ucp_compat.h>
 #include <ucs/type/status.h>
 
+using fles::tsb::parse_collection;
+using fles::tsb::to_bytes;
+using fles::tsb::TsFlag;
+
 TsBuilder::TsBuilder(volatile sig_atomic_t* signal_status,
-                     TsBuffer& timeslice_buffer,
+                     fles::TimesliceShmBuffer& timeslice_buffer,
                      std::string_view manager_address,
                      int64_t timeout_ns,
                      cbm::Monitor* monitor)
@@ -71,8 +75,8 @@ void TsBuilder::run() {
     if (ucp_worker_progress(m_worker) != 0) {
       continue;
     }
-    if (auto id = m_timeslice_buffer.try_receive_completion()) {
-      process_completion(*id);
+    if (auto completion = m_timeslice_buffer.try_receive_completion()) {
+      process_completion(completion->id);
       continue;
     }
     m_tasks.timer();
@@ -586,7 +590,7 @@ void TsBuilder::update_st_state(TsHandle& tsh,
       if (!tsh.is_published) {
         send_status_to_manager(BUILDER_EVENT_RECEIVED, tsh.id);
         StDescriptor ts_desc = build_published_descriptor(tsh);
-        m_timeslice_buffer.send_work_item(tsh.buffer, tsh.id, ts_desc);
+        m_timeslice_buffer.send_work_item(tsh.id, ts_desc);
         tsh.is_published = true;
         tsh.published_at_ns = fles::system::current_time_ns();
         if (ts_desc.has_flag(TsFlag::MissingSubtimeslices)) {
@@ -602,11 +606,15 @@ void TsBuilder::update_st_state(TsHandle& tsh,
   }
 }
 
-StDescriptor TsBuilder::build_published_descriptor(TsHandle& tsh) {
+StDescriptor TsBuilder::build_published_descriptor(TsHandle& tsh) const {
   // The manager has already merged per-sender descriptors into
-  // tsh.merged_descriptor with absolute offsets. Here we only have to mark the
-  // timeslice as incomplete if any contribution did not arrive.
+  // tsh.merged_descriptor with offsets relative to the timeslice buffer. Here
+  // we only have to make them relative to the shared memory segment and mark
+  // the timeslice as incomplete if any contribution did not arrive.
   StDescriptor d = tsh.merged_descriptor;
+  for (auto& component : d.components) {
+    component.ms_data_offset += m_timeslice_buffer.offset_of(tsh.buffer);
+  }
   if (std::any_of(tsh.states.begin(), tsh.states.end(),
                   [](StState s) { return s != StState::Complete; })) {
     d.set_flag(TsFlag::MissingSubtimeslices);

@@ -26,7 +26,7 @@ def parse_size(value: str | int) -> int:
 
 
 # Durations are passed through to the flesnet binaries verbatim. Their parser
-# (Nanoseconds::parse in lib/tsb/OptionValues.cpp) requires a unit suffix and
+# (Nanoseconds::parse in lib/fles_ipc/OptionValues.cpp) requires a unit suffix and
 # rejects a bare number, so validate the format here rather than converting.
 DURATION_RE = re.compile(r"^-?[0-9]+(ns|us|µs|ms|s)$")
 

@@ -4,10 +4,14 @@
 #pragma once
 
 #include "ItemWorkerProtocol.hpp"
+#include "SubTimeslice.hpp"
 #include "Timeslice.hpp"
 #include "TimesliceShmWorkItem.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <cstddef>
 #include <memory>
+#include <span>
 
 namespace fles {
 
@@ -26,7 +30,34 @@ public:
 
   ~TimesliceView() override = default;
 
-protected:
+  /// The UUID of the shared memory segment containing the timeslice. It
+  /// changes when the producer creates a new segment.
+  [[nodiscard]] const boost::uuids::uuid& shm_uuid() const {
+    return timeslice_item_.shm_uuid;
+  }
+
+  /// The complete mapped shared memory segment, e.g., for registering it with
+  /// an RDMA device. It stays mapped as long as a view into it exists.
+  [[nodiscard]] std::span<const std::byte> shm_region() const {
+    return {static_cast<const std::byte*>(managed_shm_->get_address()),
+            managed_shm_->get_size()};
+  }
+
+  /// The contiguous memory range within the segment that holds the data of a
+  /// component (microslice descriptors followed by the contents). The
+  /// components of a timeslice may be placed anywhere in the segment.
+  [[nodiscard]] std::span<const std::byte>
+  component_data(uint64_t component) const {
+    return {reinterpret_cast<const std::byte*>(data_ptr_[component]),
+            size_component(component)};
+  }
+
+  /// The timeslice descriptor, with component offsets relative to
+  /// shm_region(). This is the form TimesliceShmBuffer::send_work_item()
+  /// expects, after replacing the offsets with those in the target segment.
+  [[nodiscard]] tsb::StDescriptor st_descriptor() const;
+
+private:
   friend class Receiver<Timeslice, TimesliceView>;
   friend class StorableTimeslice;
 

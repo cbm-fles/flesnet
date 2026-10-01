@@ -6,7 +6,6 @@ add_executable(tsbuilder
   main.cpp
   Application.cpp
   Parameters.cpp
-  TsBuffer.cpp
   TsBuilder.cpp
 )
 
@@ -20,8 +19,8 @@ target_include_directories(tsbuilder
 
 target_link_libraries(tsbuilder
   fles_ipc
-  fles_core
-  tsb
+  fles_tools
+  tsb_ucx
   logging
   monitoring
   ucx::ucp

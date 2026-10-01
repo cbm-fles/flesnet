@@ -29,13 +29,7 @@ TimesliceView::TimesliceView(
   desc_ptr_.resize(num_components());
 
   for (size_t c = 0; c < num_components(); ++c) {
-    if (timeslice_item_.tsc_desc.size() == num_components()) {
-      desc_ptr_.at(c) = &timeslice_item_.tsc_desc.at(c);
-    } else {
-      // Legacy handling, kept for backward compatibility
-      desc_ptr_.at(c) = reinterpret_cast<fles::TimesliceComponentDescriptor*>(
-          managed_shm_->get_address_from_handle(timeslice_item_.desc.at(c)));
-    }
+    desc_ptr_.at(c) = &timeslice_item_.tsc_desc.at(c);
     data_ptr_.at(c) = static_cast<uint8_t*>(
         managed_shm_->get_address_from_handle(timeslice_item_.data.at(c)));
   }
@@ -48,6 +42,23 @@ TimesliceView::TimesliceView(
                 << "]=" << desc_ptr_.at(c)->ts_num << std::endl;
     }
   }
+}
+
+tsb::StDescriptor TimesliceView::st_descriptor() const {
+  const auto* base = static_cast<const uint8_t*>(managed_shm_->get_address());
+
+  tsb::StDescriptor desc;
+  desc.start_time_ns = start_time();
+  desc.duration_ns = duration();
+  desc.flags = flags();
+  for (size_t c = 0; c < num_components(); ++c) {
+    tsb::StComponentDescriptor& component = desc.components.emplace_back();
+    component.ms_data_offset = data_ptr_[c] - base;
+    component.ms_data_size = size_component(c);
+    component.num_microslices = num_microslices(c);
+    component.flags = desc_ptr_[c]->flags;
+  }
+  return desc;
 }
 
 } // namespace fles

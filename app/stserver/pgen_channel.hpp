@@ -3,8 +3,8 @@
    Author: Jan de Cuveland */
 #pragma once
 
+#include "RingBufferView.hpp"
 #include "dma_channel.hpp"
-#include "fles_core/RingBufferView.hpp"
 #include "fles_ipc/MicrosliceDescriptor.hpp"
 #include <atomic>
 #include <random>

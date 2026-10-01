@@ -23,7 +23,7 @@ import time
 FLESCTLDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local.yaml")
 
-# default ports of tsmanager and stserver, see lib/tsb/TsbProtocol.hpp, plus
+# default ports of tsmanager and stserver, see lib/tsb_ucx/TsbProtocol.hpp, plus
 # the publisher port used by local.yaml
 PORTS = (13373, 13374, 15560)
 

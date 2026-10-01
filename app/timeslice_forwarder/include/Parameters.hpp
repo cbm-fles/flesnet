@@ -27,7 +27,6 @@ public:
     std::string output_uri;
     std::string input_uri;
 
-    uint32_t timeslice_size = 100;
     uint64_t data_buffer_map_size = 4096;
     uint64_t wi_buffer_size{wi_buffer_size_in_mb * 1000};
     uint64_t wi_buffer_map_size = 4096;

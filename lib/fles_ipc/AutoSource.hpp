@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace fles {
 
@@ -118,6 +119,29 @@ public:
    */
   [[nodiscard]] bool eos() const override { return source_->eos(); }
 
+  /**
+   * \brief Install a callback invoked on every connection state change of an
+   * underlying shared memory source.
+   *
+   * Must be called before the first call to get(). Sources that do not
+   * maintain a connection, such as file archives, ignore this.
+   */
+  void set_state_callback(ItemWorker::StateCallback callback) {
+    for (auto* receiver : item_receivers_) {
+      receiver->set_state_callback(callback);
+    }
+  }
+
+  /// Connection states of the underlying shared memory sources, if any.
+  [[nodiscard]] std::vector<ConnectionState> connection_states() const {
+    std::vector<ConnectionState> states;
+    states.reserve(item_receivers_.size());
+    for (const auto* receiver : item_receivers_) {
+      states.push_back(receiver->connection_state());
+    }
+    return states;
+  }
+
   ~AutoSource() override = default;
 
 private:
@@ -127,6 +151,9 @@ private:
       InputArchiveSequence<Base, Storable, archive_type>;
 
   std::unique_ptr<Source<Base>> source_;
+
+  /// Non-owning pointers to the sources created for the "shm" scheme
+  std::vector<Receiver<Base, View>*> item_receivers_;
 
   void init(const std::vector<std::string>& locators) {
     std::vector<std::unique_ptr<Source<Base>>> sources;
@@ -203,6 +230,10 @@ private:
         for (auto& [key, value] : uri.query_components) {
           if (key == "stride") {
             param.stride = std::stoull(value);
+            if (param.stride == 0) {
+              throw std::runtime_error(
+                  "invalid value for query parameter stride: " + value);
+            }
           } else if (key == "offset") {
             param.offset = std::stoull(value);
           } else if (key == "queue") {
@@ -213,6 +244,12 @@ private:
             param.queue_policy = queue_map.at(value);
           } else if (key == "group") {
             param.group_id = std::stoull(value);
+          } else if (key == "window") {
+            param.window = std::stoull(value);
+            if (param.window == 0) {
+              throw std::runtime_error(
+                  "invalid value for query parameter window: " + value);
+            }
           } else {
             throw std::runtime_error(
                 "query parameter not implemented for scheme " + uri.scheme +
@@ -220,8 +257,10 @@ private:
           }
         }
         const auto ipc_identifier = uri.authority + uri.path;
-        std::unique_ptr<Source<Base>> source =
+        auto receiver =
             std::make_unique<Receiver<Base, View>>(ipc_identifier, param);
+        item_receivers_.push_back(receiver.get());
+        std::unique_ptr<Source<Base>> source = std::move(receiver);
         sources.emplace_back(std::move(source));
 
       } else {

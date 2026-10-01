@@ -13,7 +13,6 @@ using namespace std::chrono;
 TsReceiver::TsReceiver(uint64_t node_id,
     std::string listen_address,
     std::string output_uri,
-    uint32_t timeslice_size,
     std::string central_manager_address,
     uint64_t data_buffer_map_size,
     uint64_t wi_buffer_size,
@@ -52,7 +51,7 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
         }
     });
     wi_work_done_ = make_shared<WiWorkDone>();
-    ts_sink_ = make_shared<TsclientWriter>(output_uri, timeslice_size);
+    ts_sink_ = make_shared<TsclientWriter>(output_uri);
     data_buffer_ = ts_sink_->get_buffer();
     data_buffer_size_ = ts_sink_->get_buffer_size();
     data_buffer_map_ = make_shared<BufferMap>(data_buffer_map_size, data_buffer_size_);
@@ -82,16 +81,6 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
             return true;
         });
     });
-
-    /**
-    * The shared memory is represented by boost::managed_shared_memory.
-    * Boost seems to store some metadata for its management in the SHM too.
-    * It seems to be constant 336 byte. Therefore this needs to be represented in the buffer map too.
-    */
-    auto boost_management_offset = ts_sink_->get_boost_shm_offset();
-    L_(debug) << "Boost offset: " << boost_management_offset;
-    // 336 before
-    data_buffer_map_->insert(0, boost_management_offset, node_id_, group_id_, BufferMap::TAG_UNSET);
 
     wi_buffer_map_ = make_shared<BufferMap>(wi_buffer_map_size, wi_buffer_size);
     wi_buffer_ = std::shared_ptr<char>(new char[wi_buffer_size], std::default_delete<char[]>());
