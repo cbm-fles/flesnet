@@ -8,6 +8,9 @@ list(APPEND APP_HEADERS "${PROJECT_SOURCE_DIR}/config/GitRevision.hpp")
 
 add_executable(tsclient ${APP_SOURCES} ${APP_HEADERS})
 
+# For OptionValues.hpp and TimesliceShmSink.hpp
+target_compile_features(tsclient PRIVATE cxx_std_23)
+
 target_compile_definitions(tsclient PUBLIC BOOST_ALL_DYN_LINK)
 
 target_include_directories(tsclient PRIVATE "${PROJECT_SOURCE_DIR}/config")

@@ -40,7 +40,9 @@ set(CMAKE_REQUIRED_LIBRARIES ${OLD_CMAKE_REQUIRED_LIBRARIES})
 
 add_library(fles_ipc ${LIB_SOURCES} ${LIB_HEADERS})
 
-target_compile_features(fles_ipc PUBLIC cxx_std_23)
+# The headers used outside flesnet stay C++17; SubTimeslice.hpp,
+# OptionValues.hpp and TimesliceShm*.hpp need C++23
+target_compile_features(fles_ipc PUBLIC cxx_std_17 PRIVATE cxx_std_23)
 
 target_compile_definitions(fles_ipc PUBLIC BOOST_ALL_DYN_LINK)
 if(BOOST_IOS_HAS_ZSTD)
