@@ -3,7 +3,6 @@
 #include "TimesliceView.hpp"
 
 #include "ItemWorkerProtocol.hpp"
-#include "SubTimeslice.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "TimesliceShmWorkItem.hpp"
 
@@ -43,23 +42,6 @@ TimesliceView::TimesliceView(
                 << "]=" << desc_ptr_.at(c)->ts_num << std::endl;
     }
   }
-}
-
-tsb::StDescriptor TimesliceView::st_descriptor() const {
-  const auto* base = static_cast<const uint8_t*>(managed_shm_->get_address());
-
-  tsb::StDescriptor desc;
-  desc.start_time_ns = start_time();
-  desc.duration_ns = duration();
-  desc.flags = flags();
-  for (size_t c = 0; c < num_components(); ++c) {
-    tsb::StComponentDescriptor& component = desc.components.emplace_back();
-    component.ms_data_offset = data_ptr_[c] - base;
-    component.ms_data_size = size_component(c);
-    component.num_microslices = num_microslices(c);
-    component.flags = desc_ptr_[c]->flags;
-  }
-  return desc;
 }
 
 } // namespace fles
