@@ -47,6 +47,11 @@ target_link_libraries(test_Microslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_logging logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(test_ItemProtocol shm_ipc logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
+# For TimesliceShmBuffer.hpp
+target_compile_features(test_TimesliceShm PRIVATE cxx_std_23)
+# Projects like cbmroot use these headers from C++17
+set_target_properties(test_TimesliceAutoSource PROPERTIES CXX_STANDARD 17)
+
 if(APPLE)
   target_link_directories(test_System PRIVATE ${ZSTD_LIB_DIR})
   target_link_directories(test_Utility PRIVATE ${ZSTD_LIB_DIR})

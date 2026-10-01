@@ -4,16 +4,23 @@
 #pragma once
 
 #include "ItemWorkerProtocol.hpp"
-#include "SubTimeslice.hpp"
 #include "Timeslice.hpp"
 #include "TimesliceShmWorkItem.hpp"
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <cstddef>
 #include <memory>
+// The accessors using std::span need C++20. This header is also used by C++17
+// projects.
+#if __has_include(<span>)
 #include <span>
+#endif
 
 namespace fles {
+
+namespace tsb {
+struct StDescriptor;
+} // namespace tsb
 
 template <class Base, class View> class Receiver;
 
@@ -36,6 +43,7 @@ public:
     return timeslice_item_.shm_uuid;
   }
 
+#ifdef __cpp_lib_span
   /// The complete mapped shared memory segment, e.g., for registering it with
   /// an RDMA device. It stays mapped as long as a view into it exists.
   [[nodiscard]] std::span<const std::byte> shm_region() const {
@@ -51,6 +59,7 @@ public:
     return {reinterpret_cast<const std::byte*>(data_ptr_[component]),
             size_component(component)};
   }
+#endif
 
   /// The timeslice descriptor, with component offsets relative to
   /// shm_region(). This is the form TimesliceShmBuffer::send_work_item()

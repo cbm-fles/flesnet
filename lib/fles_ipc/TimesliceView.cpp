@@ -3,6 +3,7 @@
 #include "TimesliceView.hpp"
 
 #include "ItemWorkerProtocol.hpp"
+#include "SubTimeslice.hpp"
 #include "TimesliceComponentDescriptor.hpp"
 #include "TimesliceShmWorkItem.hpp"
 
