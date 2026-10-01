@@ -7,6 +7,7 @@
 #include "TimesliceComponentDescriptor.hpp"
 #include "TimesliceDescriptor.hpp"
 #include "TimesliceShmWorkItem.hpp"
+#include "TimesliceView.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
 #include <boost/interprocess/creation_tags.hpp>
@@ -124,6 +125,23 @@ TimesliceShmBuffer::try_receive_completion() {
     return completion;
   }
   return std::nullopt;
+}
+
+tsb::StDescriptor TimesliceView::st_descriptor() const {
+  const auto* base = static_cast<const uint8_t*>(managed_shm_->get_address());
+
+  tsb::StDescriptor desc;
+  desc.start_time_ns = start_time();
+  desc.duration_ns = duration();
+  desc.flags = flags();
+  for (size_t c = 0; c < num_components(); ++c) {
+    tsb::StComponentDescriptor& component = desc.components.emplace_back();
+    component.ms_data_offset = data_ptr_[c] - base;
+    component.ms_data_size = size_component(c);
+    component.num_microslices = num_microslices(c);
+    component.flags = desc_ptr_[c]->flags;
+  }
+  return desc;
 }
 
 } // namespace fles
