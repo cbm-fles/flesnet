@@ -39,6 +39,7 @@ jobs:
         sudo apt-get update -y
         sudo apt-get install -yq libboost-dev libboost-iostreams-dev libboost-log-dev libboost-program-options-dev libboost-serialization-dev libboost-system-dev libboost-test-dev libboost-thread-dev libnuma-dev libzmq3-dev libfmt-dev ninja-build
         sudo apt-get install -yq libkmod-dev libpci-dev libtool-bin libucx-dev
+        sudo apt-get install -yq libibverbs-dev libibverbs1 librdmacm-dev librdmacm1
 
     - name: Install additional dependencies
       run: |
