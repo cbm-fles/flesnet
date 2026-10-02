@@ -23,9 +23,9 @@ uint32_t Microslice::compute_crc() const {
 
 bool Microslice::check_crc() const { return compute_crc() == desc_ptr_->crc; }
 
-
 bool Microslice::operator==(const Microslice& other) const {
-  // compare the descriptors. this also ensures both microslices have the same size
+  // compare the descriptors. this also ensures both microslices have the same
+  // size
   if (*desc_ptr_ != *other.desc_ptr_) {
     return false;
   }
@@ -37,7 +37,7 @@ bool Microslice::operator==(const Microslice& other) const {
       return false;
     }
   }
-  
+
   return true;
 }
 
@@ -45,5 +45,3 @@ bool Microslice::operator!=(const Microslice& other) const {
   return !(*this == other);
 }
 } // namespace fles
-
-
