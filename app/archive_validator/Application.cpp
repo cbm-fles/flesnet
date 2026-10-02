@@ -16,7 +16,6 @@ void Application::run() {
   uint64_t components_cnt = par_.input_archives.size();
   uint64_t timeslice_cnt = par_.timeslice_cnt;
 
-
   if (par_.tsa_archives.size() == 2) {
     if (val.find_tsa_b_in_a(par_.tsa_archives[0], par_.tsa_archives[1])) {
       L_(info) << "Archives valid" << endl;
@@ -25,8 +24,8 @@ void Application::run() {
     }
   } else if (par_.check_tsa_forwarding) {
     if (!val.verify_ts_forwarding(par_.input_archives, par_.output_archives)) {
-          throw runtime_error("Archives NOT VALID!");
-    };
+      throw runtime_error("Archives NOT VALID!");
+    }
     L_(info) << "Archives valid" << endl;
     return;
   } else {
