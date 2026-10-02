@@ -4,8 +4,8 @@
 #pragma once
 
 #include "MicrosliceDescriptor.hpp"
-#include <cstdint>
 #include <boost/serialization/access.hpp>
+#include <cstdint>
 
 namespace fles {
 
@@ -33,7 +33,7 @@ public:
 
   bool operator==(const Microslice& other) const;
   bool operator!=(const Microslice& other) const;
-  
+
 protected:
   Microslice() = default;
 
