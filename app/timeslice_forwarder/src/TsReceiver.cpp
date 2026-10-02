@@ -3,6 +3,7 @@
 #include <TsclientWriter.hpp>
 #include <chrono>
 #include <cstdint>
+#include <df/Connectors/ConnectorInterface.hpp>
 #include <thread>
 
 using namespace std;
@@ -86,8 +87,8 @@ Node(node_id, 2), cm_address_(central_manager_address), node_listen_addr_(listen
     wi_buffer_ = std::shared_ptr<char>(new char[wi_buffer_size], std::default_delete<char[]>());
     node_connector_ = make_shared<ConnectorInfiniband>();
 
-    Node::set_wi_buffer(wi_buffer_, wi_buffer_map_, wi_buffer_size);
-    Node::set_data_buffer(data_buffer_, data_buffer_map_, data_buffer_size_);
+    Node::set_wi_buffer(wi_buffer_, wi_buffer_map_, wi_buffer_size, ConnectorInterface::BUFFER_ACS_READ | ConnectorInterface::BUFFER_ACS_WRITE);
+    Node::set_data_buffer(data_buffer_, data_buffer_map_, data_buffer_size_, ConnectorInterface::BUFFER_ACS_READ | ConnectorInterface::BUFFER_ACS_WRITE);
     Node::add_connector(node_connector_, node_listen_addr_);
     Node::on_new_data(std::bind(&TsReceiver::on_new_data, this, _1, _2, _3));
     Node::on_new_work_item(std::bind(&TsReceiver::on_new_work_item, this, _1, _2, _3, _4, _5));

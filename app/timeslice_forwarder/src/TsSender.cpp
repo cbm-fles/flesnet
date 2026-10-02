@@ -280,8 +280,8 @@ Node(node_id, 1), cm_address_(central_manager_address), node_listen_addr_(listen
     node_connector_ = make_shared<ConnectorInfiniband>();
 
     Node::add_connector(node_connector_, node_listen_addr_);
-    Node::set_wi_buffer(wi_buffer_, wi_buffer_map_, wi_buffer_size);
-    Node::set_data_buffer(data_buffer_, data_buffer_map_, data_buffer_size_);
+    Node::set_wi_buffer(wi_buffer_, wi_buffer_map_, wi_buffer_size, ConnectorInterface::BUFFER_ACS_READ | ConnectorInterface::BUFFER_ACS_WRITE);
+    Node::set_data_buffer(data_buffer_, data_buffer_map_, data_buffer_size_, ConnectorInterface::BUFFER_ACS_READ);
 
     Node::on_new_work_item(std::bind(&TsSender::on_new_work_item, this, _1, _2, _3, _4, _5));
     Node::on_node_connected(std::bind(&TsSender::on_node_connected, this, _1, _2, _3));
