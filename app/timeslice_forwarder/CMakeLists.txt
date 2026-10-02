@@ -54,12 +54,15 @@ set(DATA_FORWARDER_LIB_DIR     "${DATA_FORWARDER_INSTALL_DIR}/lib")
 set(DATA_FORWARDER_LIBRARY "${DATA_FORWARDER_LIB_DIR}/libdata_forwarder.a")
 
 target_compile_definitions(timeslice_forwarder PUBLIC BOOST_ALL_DYN_LINK)
-target_include_directories(timeslice_forwarder PRIVATE
-    ./include
+target_include_directories(timeslice_forwarder SYSTEM PRIVATE
     ${LIBFABRIC_INCLUDE_DIR}
-    ${PROJECT_SOURCE_DIR}/config
     ${DATA_FORWARDER_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
+)
+
+target_include_directories(timeslice_forwarder PRIVATE
+    ./include
+    ${PROJECT_SOURCE_DIR}/config
 )
 
 target_link_libraries(timeslice_forwarder PRIVATE

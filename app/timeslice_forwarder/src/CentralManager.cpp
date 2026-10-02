@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <df/Connectors/ConnectorInterface.hpp>
 #include <memory>
 #include <future>
 #include <string>
@@ -43,8 +44,10 @@ CentralManager::CentralManager(
     const auto data_buffer = shared_ptr<char>(new char[data_buffer_size], default_delete<char[]>());
     const auto data_buffer_map = make_shared<BufferMap>(data_buffer_map_elements, data_buffer_size);
 
-    Node::set_wi_buffer(wi_buffer, wi_buffer_map, wi_buffer_size);
-    Node::set_data_buffer(data_buffer, data_buffer_map, data_buffer_size);
+    uint64_t wi_buffer_access = ConnectorInterface::BUFFER_ACS_READ | ConnectorInterface::BUFFER_ACS_WRITE;
+    uint64_t data_buffer_access = ConnectorInterface::BUFFER_ACS_READ | ConnectorInterface::BUFFER_ACS_WRITE;
+    Node::set_wi_buffer(wi_buffer, wi_buffer_map, wi_buffer_size, wi_buffer_access);
+    Node::set_data_buffer(data_buffer, data_buffer_map, data_buffer_size, data_buffer_access);
     Node::add_connector(node_connector, listen_address_);
 
     Node::start();
