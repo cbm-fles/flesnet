@@ -23,3 +23,6 @@ target_compile_options(monitoring PRIVATE -Wall -Wextra -Wpedantic)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_compile_definitions(monitoring PUBLIC HAVE_PTHREAD_SETNAME_NP)
 endif()
+
+install(TARGETS monitoring DESTINATION lib)
+install(FILES ${LIB_HEADERS} ${LIB_IPP} DESTINATION include)

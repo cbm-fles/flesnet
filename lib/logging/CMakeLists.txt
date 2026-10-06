@@ -16,3 +16,6 @@ target_link_libraries(logging
   PUBLIC ${Boost_THREAD_LIBRARY}
   PUBLIC ${Boost_SYSTEM_LIBRARY}
 )
+
+install(TARGETS logging DESTINATION lib)
+install(FILES BoostHelper.hpp log.hpp DESTINATION include)
