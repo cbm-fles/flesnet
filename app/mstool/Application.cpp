@@ -19,7 +19,7 @@ Application::Application(Parameters const& par) : par_(par) {
 
   // Source setup
   if (par_.use_pattern_generator) {
-    L_(info) << "using pattern generator as data source";
+    INFO("using pattern generator as data source");
 
     constexpr uint32_t typical_content_size = 10000;
 
@@ -47,9 +47,7 @@ Application::Application(Parameters const& par) : par_(par) {
   }
 }
 
-Application::~Application() {
-  L_(info) << "total microslices processed: " << count_;
-}
+Application::~Application() { INFO("total microslices processed: {}", count_); }
 
 void Application::run() {
   uint64_t limit = par_.maximum_number;

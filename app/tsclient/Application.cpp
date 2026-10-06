@@ -160,13 +160,12 @@ Application::Application(Parameters const& par,
   }
 
   if (par_.rate_limit() != 0.0) {
-    L_(info) << output_prefix_ << "rate limit active: " << par_.rate_limit()
-             << " Hz";
+    INFO("{}rate limit active: {} Hz", output_prefix_, par_.rate_limit());
   }
 }
 
 Application::~Application() {
-  L_(info) << output_prefix_ << "total timeslices processed: " << count_;
+  INFO("{}total timeslices processed: {}", output_prefix_, count_);
 
   // delay to allow monitor to process pending messages
   constexpr auto destruct_delay = std::chrono::milliseconds(200);
@@ -196,20 +195,16 @@ void Application::native_speed_delay(uint64_t ts_start_time) {
 
 void Application::try_delay(std::chrono::nanoseconds sleep_duration) const {
   if (sleep_duration.count() > 0) {
-    L_(debug) << output_prefix_ << "maintaining replay rate, sleeping for "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(
-                     sleep_duration)
-                         .count() /
-                     1000.
-              << " s";
+    DEBUG("{}maintaining replay rate, sleeping for {} s", output_prefix_,
+          std::chrono::duration_cast<std::chrono::milliseconds>(sleep_duration)
+                  .count() /
+              1000.);
     std::this_thread::sleep_for(sleep_duration);
   } else {
-    L_(warning) << output_prefix_ << "replay rate not maintained, lacking by "
-                << std::chrono::duration_cast<std::chrono::milliseconds>(
-                       sleep_duration)
-                           .count() /
-                       1000.
-                << " s";
+    WARN("{}replay rate not maintained, lacking by {} s", output_prefix_,
+         std::chrono::duration_cast<std::chrono::milliseconds>(sleep_duration)
+                 .count() /
+             1000.);
   }
 }
 
@@ -277,8 +272,8 @@ void Application::run() {
         if (!shm_sink->empty()) {
           all_empty = false;
           if (first) {
-            L_(info) << output_prefix_ << "waiting for shm buffer to empty";
-            L_(info) << output_prefix_ << "press Ctrl-C to abort";
+            INFO("{}waiting for shm buffer to empty", output_prefix_);
+            INFO("{}press Ctrl-C to abort", output_prefix_);
             first = false;
           }
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
