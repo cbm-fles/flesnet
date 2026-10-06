@@ -84,3 +84,5 @@ target_link_libraries(fles_ipc
 
 install(TARGETS fles_ipc DESTINATION lib)
 install(FILES ${LIB_HEADERS} DESTINATION include)
+
+add_library(fles::fles_ipc ALIAS fles_ipc)

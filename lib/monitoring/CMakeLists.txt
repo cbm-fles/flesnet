@@ -26,3 +26,5 @@ endif()
 
 install(TARGETS monitoring DESTINATION lib)
 install(FILES ${LIB_HEADERS} ${LIB_IPP} DESTINATION include)
+
+add_library(fles::monitoring ALIAS monitoring)
