@@ -76,13 +76,11 @@ target_link_libraries(fles_ipc
   PUBLIC shm_ipc
   PUBLIC zmq::cppzmq
   PUBLIC logging
-  PUBLIC ${Boost_FILESYSTEM_LIBRARY}
-  PUBLIC ${Boost_REGEX_LIBRARY}
-  PUBLIC ${Boost_SERIALIZATION_LIBRARY}
-  PUBLIC ${Boost_IOSTREAMS_LIBRARY}
+  PUBLIC Boost::serialization
+  PUBLIC Boost::iostreams
 )
 
-install(TARGETS fles_ipc DESTINATION lib)
-install(FILES ${LIB_HEADERS} DESTINATION include)
+install(TARGETS fles_ipc DESTINATION lib) COMPONENT dev
+install(FILES ${LIB_HEADERS} DESTINATION include COMPONENT dev)
 
 add_library(fles::fles_ipc ALIAS fles_ipc)

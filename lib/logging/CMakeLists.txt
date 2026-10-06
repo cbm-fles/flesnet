@@ -17,7 +17,7 @@ target_link_libraries(logging
   PUBLIC ${Boost_SYSTEM_LIBRARY}
 )
 
-install(TARGETS logging DESTINATION lib)
-install(FILES BoostHelper.hpp log.hpp DESTINATION include)
+install(TARGETS logging DESTINATION lib COMPONENT dev)
+install(FILES BoostHelper.hpp log.hpp DESTINATION include COMPONENT dev)
 
 add_library(fles::logging ALIAS logging)
