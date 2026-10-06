@@ -278,8 +278,12 @@ if (COVERALLS)
   coveralls_setup("${LIB_SRC}" ${COVERALLS_UPLOAD})
 endif()
 
-enable_testing()
-add_subdirectory(test)
+option(FLES_BUILD_TESTS "Build the test suite" ON)
+
+if(FLES_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(test)
+endif()
 
 if (UNIX)
   set(CPACK_GENERATOR DEB)
