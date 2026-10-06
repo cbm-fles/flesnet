@@ -81,3 +81,6 @@ target_link_libraries(fles_ipc
   PUBLIC ${Boost_SERIALIZATION_LIBRARY}
   PUBLIC ${Boost_IOSTREAMS_LIBRARY}
 )
+
+install(TARGETS fles_ipc DESTINATION lib)
+install(FILES ${LIB_HEADERS} DESTINATION include)

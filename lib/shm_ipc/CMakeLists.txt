@@ -23,3 +23,6 @@ target_link_libraries(shm_ipc
   PUBLIC logging
   PUBLIC zmq::cppzmq
 )
+
+install(TARGETS shm_ipc DESTINATION lib)
+install(FILES ${LIB_HEADERS} DESTINATION include)
