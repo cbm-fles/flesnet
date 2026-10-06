@@ -64,31 +64,36 @@ else()
 endif()
 
 # find or fetch CppZmq
-find_file(CPPZMQ zmq.hpp)
-find_file(CPPZMQ_ADDON zmq_addon.hpp)
-if(CPPZMQ STREQUAL "CPPZMQ-NOTFOUND" OR CPPZMQ_ADDON STREQUAL "CPPZMQ_ADDON-NOTFOUND")
-  message(STATUS "Downloading CppZmq header-only library.")
-  ExternalProject_Add(
-    cppzmq
-    GIT_REPOSITORY "https://github.com/zeromq/cppzmq.git"
-    GIT_TAG "3bcbd9dad2f57180aacd4b4aea292a74f0de7ef4" # v4.11.0
-    GIT_CONFIG advice.detachedHead=false
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-  )
-
-  add_library(zmq::cppzmq INTERFACE IMPORTED GLOBAL)
-  add_dependencies(zmq::cppzmq cppzmq)
-  set_target_properties(zmq::cppzmq PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/src/cppzmq
-    INTERFACE_LINK_LIBRARIES zmq::libzmq
-  )
+find_package(cppzmq CONFIG)
+if(cppzmq_FOUND)
+  add_library(zmq::cppzmq ALIAS cppzmq)
 else()
-  add_library(zmq::cppzmq INTERFACE IMPORTED GLOBAL)
-  set_target_properties(zmq::cppzmq PROPERTIES
-    INTERFACE_LINK_LIBRARIES zmq::libzmq
-  )
+  find_file(CPPZMQ zmq.hpp)
+  find_file(CPPZMQ_ADDON zmq_addon.hpp)
+  if(CPPZMQ STREQUAL "CPPZMQ-NOTFOUND" OR CPPZMQ_ADDON STREQUAL "CPPZMQ_ADDON-NOTFOUND")
+    message(STATUS "Downloading CppZmq header-only library.")
+    ExternalProject_Add(
+      cppzmq
+      GIT_REPOSITORY "https://github.com/zeromq/cppzmq.git"
+      GIT_TAG "3bcbd9dad2f57180aacd4b4aea292a74f0de7ef4" # v4.11.0
+      GIT_CONFIG advice.detachedHead=false
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
+    )
+
+    add_library(zmq::cppzmq INTERFACE IMPORTED GLOBAL)
+    add_dependencies(zmq::cppzmq cppzmq)
+    set_target_properties(zmq::cppzmq PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/src/cppzmq
+      INTERFACE_LINK_LIBRARIES zmq::libzmq
+    )
+  else()
+    add_library(zmq::cppzmq INTERFACE IMPORTED GLOBAL)
+    set_target_properties(zmq::cppzmq PROPERTIES
+      INTERFACE_LINK_LIBRARIES zmq::libzmq
+    )
+  endif()
 endif()
 
 # fetch libfmt formatting library, used by lib/monitoring. Should be already included in FairSoft.
