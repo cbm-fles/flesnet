@@ -20,7 +20,7 @@ find_path(ZMQ_INCLUDE_1 NAMES ${ZMQ_H} ${ZMQ_UTILS_H}
 )
 
 find_path(ZMQ_INCLUDE_2 NAMES ${ZMQ_HPP}
-  PATHS $ENV{CPPZMQPATH} ${SIMPATH}/include
+  PATHS $ENV{CPPZMQPATH} ${CPPZMQPATH} ${SIMPATH}/include
   NO_DEFAULT_PATH
   DOC   "Path to ZeroMQ CPP header files."
 )
