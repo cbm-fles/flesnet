@@ -80,7 +80,7 @@ target_link_libraries(fles_ipc
   PUBLIC Boost::iostreams
 )
 
-install(TARGETS fles_ipc DESTINATION lib) COMPONENT dev
+install(TARGETS fles_ipc DESTINATION lib COMPONENT dev)
 install(FILES ${LIB_HEADERS} DESTINATION include COMPONENT dev)
 
 add_library(fles::fles_ipc ALIAS fles_ipc)
