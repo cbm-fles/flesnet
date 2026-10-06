@@ -24,5 +24,5 @@ target_link_libraries(shm_ipc
   PUBLIC zmq::cppzmq
 )
 
-install(TARGETS shm_ipc DESTINATION lib)
-install(FILES ${LIB_HEADERS} DESTINATION include)
+install(TARGETS shm_ipc DESTINATION lib COMPONENT dev)
+install(FILES ${LIB_HEADERS} DESTINATION include COMPONENT dev)
