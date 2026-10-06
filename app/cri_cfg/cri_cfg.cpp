@@ -24,18 +24,18 @@ int main(int argc, char* argv[]) {
     }
     std::vector<cri::cri_channel*> channels = cri->channels();
 
-    L_(debug) << "Configuring CRI " << cri->print_devinfo();
+    DEBUG("Configuring CRI {}", cri->print_devinfo());
 
     // CRI global configuration
     // set even if unused
     cri->id_led(par.identify());
     cri->set_pgen_mc_size(par.mc_size());
 
-    L_(debug) << "Tatal CRI channels: " << cri->number_of_channels();
+    DEBUG("Total CRI channels: {}", cri->number_of_channels());
 
     // CRI per channel configuration
     for (size_t i = 0; i < cri->number_of_channels(); ++i) {
-      L_(debug) << "Initializing channel " << i;
+      DEBUG("Initializing channel {}", i);
 
       channels.at(i)->set_mc_size_limit(par.mc_size_limit());
 
@@ -54,10 +54,10 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    L_(info) << "CRI " << cri->print_devinfo() << " configured";
+    INFO("CRI {} configured", cri->print_devinfo());
 
   } catch (std::exception const& e) {
-    L_(fatal) << "exception: " << e.what();
+    FATAL("exception: {}", e.what());
     return EXIT_FAILURE;
   }
 

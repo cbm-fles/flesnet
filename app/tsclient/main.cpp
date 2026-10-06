@@ -24,10 +24,10 @@ int main(int argc, char* argv[]) {
     std::cerr << "Parameter error: " << e.what() << std::endl;
     return EXIT_FAILURE;
   } catch (std::exception const& e) {
-    L_(fatal) << "Unknown exception: " << e.what();
+    FATAL("Unknown exception: {}", e.what());
     std::abort();
   }
 
-  L_(info) << "exiting";
+  INFO("exiting");
   return EXIT_SUCCESS;
 }
