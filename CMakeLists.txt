@@ -238,7 +238,22 @@ if(CLANG_TIDY)
 endif()
 
 add_subdirectory(app/mstool)
-add_subdirectory(app/tsclient)
+
+# tsclient needs std::format, which is missing e.g. in GCC 12
+include(CheckCXXSourceCompiles)
+set(OLD_CMAKE_CXX_STANDARD ${CMAKE_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD 23)
+check_cxx_source_compiles("
+#include <format>
+int main() { return static_cast<int>(std::format(\"{}\", 1).size()); }"
+  FLESNET_HAS_STD_FORMAT)
+set(CMAKE_CXX_STANDARD ${OLD_CMAKE_CXX_STANDARD})
+if(FLESNET_HAS_STD_FORMAT)
+  add_subdirectory(app/tsclient)
+else()
+  message(STATUS "No std::format, building flesnet without tsclient")
+endif()
+
 if (USE_PDA AND PDA_FOUND)
   add_subdirectory(app/cri_tools)
   add_subdirectory(app/cri_cfg)
