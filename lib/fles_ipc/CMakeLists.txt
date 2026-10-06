@@ -76,4 +76,8 @@ target_link_libraries(fles_ipc
   PUBLIC shm_ipc
   PUBLIC zmq::cppzmq
   PUBLIC logging
+  PUBLIC ${Boost_FILESYSTEM_LIBRARY}
+  PUBLIC ${Boost_REGEX_LIBRARY}
+  PUBLIC ${Boost_SERIALIZATION_LIBRARY}
+  PUBLIC ${Boost_IOSTREAMS_LIBRARY}
 )
