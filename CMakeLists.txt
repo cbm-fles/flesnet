@@ -245,6 +245,8 @@ if(FLES_IPC_HAS_STD_FORMAT)
 else()
   message(STATUS "No std::format, building flesnet without tsclient")
 endif()
+add_subdirectory(app/timeslice_forwarder)
+add_subdirectory(app/archive_validator)
 
 if (USE_PDA AND PDA_FOUND)
   add_subdirectory(app/cri_tools)
