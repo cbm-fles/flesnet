@@ -64,6 +64,9 @@ ENDIF()
 #set(DATA_FORWARDER_LIB_DIR     "${DATA_FORWARDER_INSTALL_DIR}/lib")
 #set(DATA_FORWARDER_LIBRARY "${DATA_FORWARDER_LIB_DIR}/libdata_forwarder.a")
 
+# For OptionValues.hpp and TimesliceShmBuffer.hpp
+target_compile_features(timeslice_forwarder PRIVATE cxx_std_23)
+
 target_compile_definitions(timeslice_forwarder PUBLIC BOOST_ALL_DYN_LINK)
 target_include_directories(timeslice_forwarder SYSTEM PRIVATE
     ${LIBFABRIC_INCLUDE_DIR}
