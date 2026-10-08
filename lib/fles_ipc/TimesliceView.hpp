@@ -66,7 +66,7 @@ public:
   /// expects, after replacing the offsets with those in the target segment.
   [[nodiscard]] tsb::StDescriptor st_descriptor() const;
 
-protected:
+private:
   friend class Receiver<Timeslice, TimesliceView>;
   friend class StorableTimeslice;
 

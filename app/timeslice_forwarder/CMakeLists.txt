@@ -33,7 +33,7 @@ ELSE ()
     IF (DEFINED ENV{SIMPATH})
         ExternalProject_Add(data_forwarder_lib
             GIT_REPOSITORY https://git.zib.de/ngreve/data_forwarder.git
-            GIT_TAG dev
+            GIT_TAG a2e6b3b5448f38c5cabdfb8b7c431d2ea11a9040 # dev, 2026-10-02
             CMAKE_ARGS
                 -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
                 -DCMAKE_INSTALL_PREFIX=${DATA_FORWARDER_INSTALL_DIR}
@@ -47,7 +47,7 @@ ELSE ()
     ELSE()
         ExternalProject_Add(data_forwarder_lib
             GIT_REPOSITORY https://git.zib.de/ngreve/data_forwarder.git
-            GIT_TAG dev
+            GIT_TAG a2e6b3b5448f38c5cabdfb8b7c431d2ea11a9040 # dev, 2026-10-02
             CMAKE_ARGS
                 -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
                 -DCMAKE_INSTALL_PREFIX=${DATA_FORWARDER_INSTALL_DIR}
@@ -63,6 +63,9 @@ ENDIF()
 #set(DATA_FORWARDER_INCLUDE_DIR "${DATA_FORWARDER_INSTALL_DIR}/include")
 #set(DATA_FORWARDER_LIB_DIR     "${DATA_FORWARDER_INSTALL_DIR}/lib")
 #set(DATA_FORWARDER_LIBRARY "${DATA_FORWARDER_LIB_DIR}/libdata_forwarder.a")
+
+# For OptionValues.hpp and TimesliceShmBuffer.hpp
+target_compile_features(timeslice_forwarder PRIVATE cxx_std_23)
 
 target_compile_definitions(timeslice_forwarder PUBLIC BOOST_ALL_DYN_LINK)
 target_include_directories(timeslice_forwarder SYSTEM PRIVATE
