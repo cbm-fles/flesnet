@@ -126,6 +126,8 @@ if (UCX_FOUND)
 endif()
 find_package(PDA)
 find_package(NUMA)
+find_library(IBVERBS_LIBRARY ibverbs)
+find_library(RDMACM_LIBRARY rdmacm)
 find_package(Doxygen)
 
 # Workaround for https://bugs.launchpad.net/ubuntu/+source/ucx/+bug/2076529
@@ -168,6 +170,11 @@ endif()
 set(USE_NUMA TRUE CACHE BOOL "Use libnuma to schedule on specific NUMA nodes.")
 if(USE_NUMA AND NOT NUMA_FOUND)
   message(STATUS "Library not found: libnuma. Building without.")
+endif()
+
+set(USE_LIBFABRIC TRUE CACHE BOOL "Fetch libfabric and build the timeslice forwarder.")
+if(USE_LIBFABRIC AND NOT (IBVERBS_LIBRARY AND RDMACM_LIBRARY))
+  message(STATUS "Libraries not found: libibverbs, librdmacm. Building without timeslice forwarder.")
 endif()
 
 set(USE_DOXYGEN TRUE CACHE BOOL "Generate documentation using doxygen.")
@@ -239,12 +246,17 @@ endif()
 
 add_subdirectory(app/mstool)
 
-# tsclient needs std::format, which is missing e.g. in GCC 12
+# tsclient and timeslice_forwarder need std::format, which is missing e.g. in
+# GCC 12
 if(FLES_IPC_HAS_STD_FORMAT)
   add_subdirectory(app/tsclient)
+  if(USE_LIBFABRIC AND IBVERBS_LIBRARY AND RDMACM_LIBRARY)
+    add_subdirectory(app/timeslice_forwarder)
+  endif()
 else()
-  message(STATUS "No std::format, building flesnet without tsclient")
+  message(STATUS "No std::format, building flesnet without tsclient and timeslice_forwarder")
 endif()
+add_subdirectory(app/archive_validator)
 
 if (USE_PDA AND PDA_FOUND)
   add_subdirectory(app/cri_tools)
