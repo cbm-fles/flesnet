@@ -12,7 +12,7 @@
 
 class TsclientReader {
 private:
-  CallbackContainer<void()> new_timeslice_callbacks_;
+  CallbackContainer<void(uint64_t /*ts_idx*/, uint64_t /*ts_size*/, float /*current_buffer_level*/, uint64_t /*ts_fetchtime*/, uint64_t /*mem_management_time*/, std::chrono::time_point<std::chrono::high_resolution_clock> /*time_of_calling*/)> new_timeslice_callbacks_;
   std::shared_ptr<BufferMap> buffer_map_ = nullptr;
   std::future<int> ts_reading_thread_;
   std::unique_ptr<fles::Receiver<fles::Timeslice, fles::TimesliceView>> source_ = nullptr;
@@ -56,7 +56,7 @@ public:
   /**
    * @brief Register a callback which gets called when a new timeslice is available.
    */
-  void on_new_timeslice(std::function<void()> cb);
+  void on_new_timeslice(std::function<void(uint64_t /*ts_idx*/, uint64_t /*ts_size*/, float /*current_buffer_level*/, uint64_t /*ts_fetchtime*/, uint64_t /*mem_management_time*/, std::chrono::time_point<std::chrono::high_resolution_clock> /*time_of_calling*/)> cb);
 
   /**
    * @brief Destroys the last read timeslice. Needs to be called so a new timeslice can be received.

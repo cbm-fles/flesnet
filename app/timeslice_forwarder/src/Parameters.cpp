@@ -22,7 +22,6 @@ void Parameters::parse_options(int argc, char** argv) {
   po::options_description advanced("Advanced options");
   auto general_add = general.add_options();
   auto advanced_add = advanced.add_options();
-  string connectors_option;
 
   fles::add_general_options(general);
   logging::add_program_options(general);
@@ -51,6 +50,12 @@ void Parameters::parse_options(int argc, char** argv) {
   general_add("input-uri,i",
               po::value<string>(&input_uri),
               "If defined this node will start as the a sender. !Currently only SHM supported");
+
+  general_add("distribution",
+              po::value<string>(&distribution_algorithm)
+                  ->default_value("performance")
+                  ->value_name("<performance|unfair>"),
+              "If started as Central Manager, changes the distribution algorithm used for distributing timeslices.");
 
   advanced_add("data-buffer-map-size",
                po::value<uint64_t>(&data_buffer_map_size)
@@ -127,7 +132,7 @@ void Parameters::parse_options(int argc, char** argv) {
   }
   fles::handle_general_options(vm, "timeslice_forwarder", desc);
 
-  wi_buffer_size_in_mb = wi_buffer_size_in_mb * 1000;
+  wi_buffer_size = wi_buffer_size_in_mb * 1000 * 1000;
   logging::setup(fles::log_options(vm));
 
   if (vm.count("input-uri") != 0u && vm.count("output-uri") != 0u) {

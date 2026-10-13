@@ -108,6 +108,7 @@ void TsclientWriter::write_timeslice(std::vector<BufferMap::ListElement*>& eleme
     component.num_microslices = count_microslices(data, el->len);
     component.flags = el->tag;
   }
+
   // the first element contains the TS index
   const uint64_t ts_index = elements.at(0)->user_0;
   {

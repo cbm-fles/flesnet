@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
+#include <ratio>
 #include <thread>
 
 using namespace std;
@@ -59,7 +60,7 @@ void TsclientReader::clear_last_timeslice() {
   L_(trace) << "TS reader - last_timeslice_ resetted after: " << duration_cast<milliseconds>(stop_clock_ - start_clock_).count();
 }
 
-void TsclientReader::on_new_timeslice(std::function<void()> cb) {
+void TsclientReader::on_new_timeslice(std::function<void(uint64_t /*ts_idx*/, uint64_t /*ts_size*/, float /*current_buffer_level*/, uint64_t /*ts_fetchtime*/, uint64_t /*mem_management_time*/, time_point<high_resolution_clock> /*time_of_calling*/)> cb) {
   new_timeslice_callbacks_.add(cb);
 }
 
@@ -83,17 +84,17 @@ void TsclientReader::start_timeslice_reading() {
     time_point<high_resolution_clock> start;
     time_point<high_resolution_clock> stop;
     while (!stop_) {
-      start = high_resolution_clock::now();
       std::unique_lock lk(m);
       L_(trace) << "waiting for consumption";
       cv.wait(lk, [this] { return !timeslice_available; });
       // sleep(6);
       L_(trace) << "Getting new";
-
+      start = high_resolution_clock::now();
       ts = first_timeslice_ ? std::move(first_timeslice_) : source_->get();
-
       stop = high_resolution_clock::now();
-      L_(trace) << "TS reader - got ts after: " << duration_cast<milliseconds>(stop - start).count();
+      uint64_t ts_fetch_time_ns = duration_cast<nanoseconds>(stop - start).count();
+      start = high_resolution_clock::now();
+      // L_(trace) << "TS reader - tgot ts afer: " << duration_cast<nanoseconds>(stop - start).count();
       if (!ts) {
         L_(debug) << "ts is null";
         break;
@@ -108,15 +109,19 @@ void TsclientReader::start_timeslice_reading() {
       // Proactively request lock and start preparing data in the meantime
       atomic_bool is_locked = false;
       node_connector_->lock_buffer_map(buffer_map_, [&is_locked]() { is_locked = true; }, []() { return true; });
+
       // One element per component, in component order. The tag holds the component flags,
       // the receiver derives the other descriptor fields from the data.
       const auto desc = ts->st_descriptor();
       const auto num_components = desc.components.size();
+      uint64_t combined_size = 0;
       vector<uint64_t> sizes(num_components);
       vector<uint64_t> addresses(num_components);
       vector<uint32_t> tags(num_components);
       for (uint64_t i = 0; i < num_components; i++) {
         sizes[i] = desc.components[i].ms_data_size;
+        combined_size += sizes[i];
+
         addresses[i] = desc.components[i].ms_data_offset; // relative to the SHM region
         tags[i] = desc.components[i].flags;
       }
@@ -144,13 +149,20 @@ void TsclientReader::start_timeslice_reading() {
       }
 
       // first element of the insertion will contain the TS index
-      buffer_map_ret->user_0 = ts->index();
+      auto ts_index = ts->index();
+      auto buffer_size = buffer_map_->get_list_metadata()->buffer_size;
+      auto used_mem = buffer_map_->get_list_metadata()->used_mem;
+      float fill_level = (static_cast<float>(used_mem) / static_cast<float>(buffer_size)) * 100.0;
+      buffer_map_ret->user_0 = ts_index;
       node_connector_->unlock_buffer_map(buffer_map_);
       last_timeslice_ = std::move(ts);
       start_clock_ = high_resolution_clock::now();
       timeslice_available = true;
+      stop = high_resolution_clock::now();
+      uint64_t mem_management_time_ns = duration_cast<nanoseconds>(stop - start).count();
+
       // tell everyone about the new data
-      new_timeslice_callbacks_.call();
+      new_timeslice_callbacks_.call(ts_index, combined_size, fill_level, ts_fetch_time_ns, mem_management_time_ns, high_resolution_clock::now());
     }
     return int(!stop_);
   });

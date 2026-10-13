@@ -6,6 +6,7 @@
 enum WiType : uint64_t {
   WI_TYPES,
   wi_work_done,
+  wi_timeslice_status,
   wi_buffer_full_report
 };
 
@@ -13,8 +14,9 @@ class WiBufferFullReport : public WorkItem {
 public:
   uint64_t node_id = 0;  //!> node_id of which the buffer is full
   uint64_t group_id = 0; //!> group_id of which the buffer is full
+
   WiBufferFullReport() {
-    type = static_cast<WorkItem::Type>(wi_buffer_full_report);
+    type = static_cast<WorkItem::Type>(buffer_status);
   }
 
   // Boost
@@ -48,18 +50,34 @@ public:
   }
 };
 
-class WiWorkDone : public WorkItem {
+// Sent by a TS sender. Means a new timeslice is available
+class WiTimesliceStatus : public WorkItem {
 public:
-  uint64_t cnt = 0;
-  WiWorkDone() {
-    type = static_cast<WorkItem::Type>(wi_work_done);
+  std::vector<uint64_t> ts_sizes;
+  std::vector<uint64_t> ts_indexes;
+  std::vector<uint64_t> node_uids;
+  float buffer_level = 0;     // in percent
+  float rem_buffer_level = 0; // in percent
+  uint64_t vector_clock = 0;
+
+  WiType sub_type;
+  WiTimesliceStatus() {
+    type = WorkItem::Type::buffer_status;
+    sub_type = WiType::none;
   }
 
   // Boost
   template <typename Archive>
   void serialize(Archive& ar, const unsigned /*version*/) {
     WI_SERIALIZE(ar);
-    ar & cnt;
+    ar &
+        ts_sizes &
+        ts_indexes &
+        node_uids &
+        buffer_level &
+        rem_buffer_level &
+        vector_clock &
+        sub_type;
   }
 
   std::shared_ptr<char> serialize(uint64_t* size) override {
