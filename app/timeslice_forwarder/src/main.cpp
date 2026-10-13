@@ -1,5 +1,7 @@
 
 #include "CentralManager.hpp"
+#include "CmFair.hpp"
+#include "CmUnfair.hpp"
 #include "Parameters.hpp"
 #include "TsReceiver.hpp"
 #include "TsSender.hpp"
@@ -20,12 +22,31 @@ Parameters par;
 
 int start_cm(string hostname = "") {
   L_(info) << "Starting Central Manager ...";
-  auto node = make_shared<CentralManager>(
-      par.central_manager_listen_addr,
-      par.wi_buffer_size,
-      par.wi_buffer_map_size,
-      par.monitoring_uri,
-      hostname);
+  // auto node = make_shared<CentralManager>(
+  //     par.central_manager_listen_addr,
+  //     par.wi_buffer_size,
+  //     par.wi_buffer_map_size,
+  //     par.monitoring_uri,
+  //     hostname);
+  shared_ptr<CentralManager> cm_node;
+  if (par.distribution_algorithm == "unfair") {
+    L_(info) << "Using \"unfair\" algorithm";
+    cm_node = make_shared<CmUnfair>(
+        par.central_manager_listen_addr,
+        par.wi_buffer_size,
+        par.wi_buffer_map_size,
+        par.monitoring_uri,
+        hostname);
+  } else { // "fair"
+    L_(info) << "Using \"performance\" algorithm";
+    cm_node = make_shared<CmFair>(
+        par.central_manager_listen_addr,
+        par.wi_buffer_size,
+        par.wi_buffer_map_size,
+        par.monitoring_uri,
+        hostname);
+  }
+
   L_(info) << "Started Central Manager - waiting for incoming connections on: " << par.central_manager_listen_addr;
 
   while (true) {

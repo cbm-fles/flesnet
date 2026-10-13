@@ -41,10 +41,14 @@ TsReceiver::TsReceiver(uint64_t node_id,
                              {"rx_timeslices_cnt", received_timeslices_cnt_},
                              {"rx_mb_received_cumulative", mb_received_cumulative_},
                              {"rx_cnt", recv_cnt_},
+                             {"rx_timeslices_per_second", *ts_received_.per_seconds()},
                              {"rx_failed_self_locks", failed_self_locks_}});
     }
   });
-  wi_work_done_ = make_shared<WiWorkDone>();
+  wi_work_done_ = make_shared<WiTimesliceStatus>();
+  wi_work_done_->sub_type = WiType::wi_timeslice_status;
+  wi_work_done_->origin_node_id = node_id_;
+  wi_work_done_->origin_group_id = group_id_;
   ts_sink_ = make_shared<TsclientWriter>(output_uri);
   data_buffer_ = ts_sink_->get_buffer();
   data_buffer_size_ = ts_sink_->get_buffer_size();
@@ -60,16 +64,30 @@ TsReceiver::TsReceiver(uint64_t node_id,
             while (ts_sink_->pop_finished_component_id(component_id)) {
                 uint64_t combined_size;
                 auto component = data_buffer_map_->get_elements_of_component(component_id, combined_size);
+                wi_work_done_->ts_indexes.push_back(component[0]->user_0);
+                wi_work_done_->ts_sizes.push_back(combined_size);
+                L_(debug) << "Processed TS: " << component[0]->user_0;
+
                 data_buffer_map_->remove_elements(component);
                 work_done_cnt++;
             }
-
-            buffer_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
-            buffer_map_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
+            auto const* const metadata = data_buffer_map_->get_list_metadata();
+            buffer_fill_state_ = (static_cast<double>(metadata->used_mem) / static_cast<double>(metadata->buffer_size)) * 100.0;
+            buffer_map_fill_state_ = (static_cast<double>(metadata->element_cnt - metadata->available_element_cnt) / static_cast<double>(metadata->element_cnt)) * 100.0;
+            wi_work_done_->buffer_level = buffer_fill_state_;
+            wi_work_done_->vector_clock = metadata->vector_clock_lock_cnt;
             available_timeslices_cnt_ -= work_done_cnt;
-
-            wi_work_done_->cnt =  work_done_cnt;
+            monitor_->QueueMetric("timeslice_forwarder_state",
+                                  {{"host", hostname_},
+                                   {"receiver", to_string(node_id_)}},
+                                  {{"rx_available_timeslices_cnt", available_timeslices_cnt_},
+                                   {"rx_buffer_fill", buffer_fill_state_},
+                                   {"rx_buffer_map_fill", buffer_map_fill_state_}});
+            // wi_work_done_->cnt =  work_done_cnt;
+            L_(debug) << "Sending status";
             Node::send_work_item(cm_address_, wi_work_done_);
+            wi_work_done_->ts_indexes.clear();
+            wi_work_done_->ts_sizes.clear();
             node_connector_->unlock_buffer_map(data_buffer_map_); }, []() { return true; });
   });
 
@@ -128,7 +146,8 @@ void TsReceiver::on_node_connected(string address, uint64_t rem_group_id, uint64
 
 void TsReceiver::on_connection_refused(std::string address) {
   if (address == cm_address_) { // connection refused
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    L_(info) << "Connection refused to Central Manager on: " << address;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     Node::connect_to_node(cm_address_);
   } else {
     L_(fatal) << "Connection refused: Node with address '" << address << "' not available";
@@ -138,6 +157,7 @@ void TsReceiver::on_connection_refused(std::string address) {
 void TsReceiver::on_new_data(const std::string& /*address*/, uint64_t /*group_id*/, uint64_t /*node_id*/) {
   // New data has arrived - check buffer map
   node_connector_->lock_buffer_map(data_buffer_map_, [this]() {
+        auto start = high_resolution_clock::now();
         auto *el = data_buffer_map_->get_oldest_linked_list_element(nullptr, BufferMap::ListElement::IO::RX);
         if (el == nullptr) { // not expected to happen in the current implementation
             node_connector_->unlock_buffer_map(data_buffer_map_);
@@ -151,29 +171,36 @@ void TsReceiver::on_new_data(const std::string& /*address*/, uint64_t /*group_id
         }
 
         *(bytes_received_.value) = *(bytes_received_.value) + component_size;
-        L_(debug)  << "New data from Node ID: " << component[0]->node_id << " - Group ID: " << component[0]->group_id;
+        L_(debug) << "New data from Node ID: " << component[0]->node_id << " - Group ID: " << component[0]->group_id << " - ts_idx: " << component[0]->user_0;
         ts_sink_->write_timeslice(component);
         buffer_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->used_mem) / static_cast<double>(data_buffer_map_->get_list_metadata()->buffer_size)) * 100.0;
         buffer_map_fill_state_ = (static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt - data_buffer_map_->get_list_metadata()->available_element_cnt) / static_cast<double>(data_buffer_map_->get_list_metadata()->element_cnt)) * 100.0;
+        auto sender_node_id = el->node_id;
+        auto timeslice_idx = el->user_0;
+        node_connector_->unlock_buffer_map(data_buffer_map_);
         available_timeslices_cnt_++;
         received_timeslices_cnt_++;
-        monitor_->QueueMetric("timeslice_forwarder_state",
-            {
-                {"host", hostname_},
-                {"receiver", to_string(node_id_)}
-            },
-            {
-                {"rx_bytes_received", component_size},
-                {"rx_timeslice_from", el->node_id},
-                {"rx_timeslice_to", node_id_},
-                {"rx_timeslice_idx", el->user_0}
-            }
-        );
-        node_connector_->unlock_buffer_map(data_buffer_map_);
         recv_cnt_++;
+        ts_received_.value->fetch_add(1);
         mb_received_cumulative_ += (component_size / 1000000);
-    }, [this] () {
+        uint64_t mem_management_time_ns = duration_cast<nanoseconds>(high_resolution_clock::now() - start).count();
+        monitor_->QueueMetric("timeslice_forwarder_state",
+                      {
+                       {"host", hostname_},
+                       {"receiver", to_string(node_id_)}
+                      }, {
+                       {"rx_available_timeslices_cnt", available_timeslices_cnt_},
+                       {"rx_buffer_fill", buffer_fill_state_},
+                       {"rx_buffer_map_fill", buffer_map_fill_state_},
+                       {"rx_timeslices_cnt", received_timeslices_cnt_},
+                       {"rx_bytes_received", component_size},
+                       {"rx_timeslice_from", sender_node_id},
+                       {"rx_timeslice_to", node_id_},
+                       {"rx_timeslice_idx", timeslice_idx},
+                       {"rx_cnt", recv_cnt_},
+                       {"rx_mem_management_time_ns", mem_management_time_ns},
+                       {"rx_mb_received_cumulative", mb_received_cumulative_},
+                      }); }, [this]() {
         failed_self_locks_++;
-        return true;
-    });
+        return true; });
 }

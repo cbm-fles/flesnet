@@ -10,4 +10,5 @@ cd "$DIR"
 clang-format-22 -style=file -fallback-style=none -i \
   lib/{cri,fles_ipc,fles_tools,logging,monitoring,pda,shm_ipc,tsb_ucx}/*.[hc]pp \
   app/*/*.[hc]pp \
+  app/*/*/*.[hc]pp \
   test/*.[hc]pp

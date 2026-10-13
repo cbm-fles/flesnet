@@ -9,6 +9,7 @@
 #include "LogVar.hpp"
 #include "Monitor.hpp"
 #include "TsclientReader.hpp"
+#include "WorkItems.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -38,8 +39,8 @@ private:
   std::shared_ptr<BufferMap> wi_buffer_map_ = nullptr;
   std::shared_ptr<ConnectorInterface> node_connector_ = nullptr;
   std::string node_listen_addr_;
-  std::shared_ptr<WorkItem> wi_buffer_status_ = nullptr;
-
+  std::shared_ptr<WiTimesliceStatus> wi_buffer_status_ = nullptr;
+  std::chrono::time_point<std::chrono::high_resolution_clock> requested_instruction_start_;
   std::future<void> log_thread_;
 
   /**
@@ -47,6 +48,7 @@ private:
    */
   std::string hostname_; // own hostname
   Avg<std::atomic<double>> bytes_sent_;
+  Avg<std::atomic<double>> ts_sent_;
   std::atomic_uint64_t failed_remote_lock_cnt_ = 0; // couts how many time remote buffer map lock failed
   std::atomic_uint64_t rem_buffer_full_cnt_ = 0;    // counts how many times the remote buffer was full when trying to transmit data
   std::atomic<double> buffer_fill_state_ = 0.0;

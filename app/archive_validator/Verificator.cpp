@@ -7,6 +7,7 @@
 #include "StorableMicroslice.hpp"
 #include "StorableTimeslice.hpp"
 #include "Timeslice.hpp"
+#include "TimesliceAutoSource.hpp"
 #include "TimesliceDebugger.hpp"
 #include "TimesliceInputArchive.hpp"
 #include "TimesliceSource.hpp"
@@ -61,10 +62,24 @@ int compare_ts(fles::Timeslice& ts_a, fles::Timeslice& ts_b) {
     return -2;
   }
 
+  if (ts_a.duration() != ts_b.duration()) {
+    L_(error) << "Timeslices have different durations:" << endl
+              << "A TS: " << ts_a.duration() << endl
+              << "B TS: " << ts_b.duration();
+    return -3;
+  }
+
+  if (ts_b.flags() != ts_a.flags()) {
+    L_(error) << "Timeslices have different flags:" << endl
+              << "A TS: " << ts_a.flags() << endl
+              << "B TS: " << ts_b.flags();
+    return -4;
+  }
+
   for (uint64_t c = 0; c < ts_a.num_components(); c++) {
     if (ts_b.num_microslices(c) != ts_a.num_microslices(c)) {
       L_(error) << "Timeslice components " << c << " have different amount of microslices: " << "A TS" << ts_a.num_microslices(c) << "B TS: " << ts_b.num_microslices(c);
-      return -3;
+      return -5;
     }
     uint64_t n = 0;
     for (n = 0; n < ts_a.num_microslices(c); n++) {
@@ -76,17 +91,17 @@ int compare_ts(fles::Timeslice& ts_a, fles::Timeslice& ts_b) {
       for (m = 0; m < b_desc.size; m++) {
         if (b_ms.content()[m] != a_ms.content()[m]) {
           L_(error) << "Microslice content different (" << m << ")";
-          return -4;
+          return -6;
         }
       }
       if (m == 0) {
         L_(error) << "Did not check the microslices in component " << c;
-        return -5;
+        return -7;
       }
     }
     if (n == 0) {
       L_(error) << "Did not check component: " << c;
-      return -6;
+      return -8;
     }
   }
   return 0;
@@ -97,8 +112,10 @@ uint64_t Verificator::find_tsa_b_in_a(const std::string& archive_a, const std::s
   L_(info) << "Archive A: " << archive_a;
   L_(info) << "Archive B: " << archive_b;
 
-  unique_ptr<fles::TimesliceSource> source_a = make_unique<fles::TimesliceInputArchive>(archive_a);
-  unique_ptr<fles::TimesliceSource> source_b = make_unique<fles::TimesliceInputArchive>(archive_b);
+  // unique_ptr<fles::TimesliceSource> source_a = make_unique<fles::TimesliceInputArchive>(archive_a);
+  unique_ptr<fles::TimesliceAutoSource> source_a = make_unique<fles::TimesliceAutoSource>(archive_a);
+  // unique_ptr<fles::TimesliceSource> source_b = make_unique<fles::TimesliceInputArchive>(archive_b);
+  unique_ptr<fles::TimesliceAutoSource> source_b = make_unique<fles::TimesliceAutoSource>(archive_b);
 
   std::unique_ptr<fles::Timeslice> b_ts = nullptr;
   std::unique_ptr<fles::Timeslice> a_ts = nullptr;
@@ -167,8 +184,9 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
   };
 
   std::vector<archive_bundle> input_sources;
+  uint64_t found_timeslices_count = 0;
   for (auto const& input_path : input_archives) {
-    auto input_archive = make_unique<fles::TimesliceInputArchive>(input_path);
+    auto input_archive = make_unique<fles::TimesliceAutoSource>(input_path);
 
     auto in_archive = archive_bundle({input_path,
                                       std::move(input_archive),
@@ -178,7 +196,7 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
 
     std::vector<archive_bundle> output_sinks;
     for (auto const& output_path : output_archives) {
-      auto output_archive = make_unique<fles::TimesliceInputArchive>(output_path);
+      auto output_archive = make_unique<fles::TimesliceAutoSource>(output_path);
       // auto ts = output_archive->get();
       output_sinks.push_back({output_path,
                               std::move(output_archive),
@@ -189,10 +207,10 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
 
     // it is allowed that at the start of the archive, some TS may be skipped so we
     // consume in_archive.source until in_archive.curr_ts contains the first transmitted timeslice
-    L_(info) << "Searching for first transmitted timeslice of: " << in_archive.source_path << " ...";
+    L_(info) << "Searching for first transmitted timeslice of: " << input_path << " ...";
     bool found_beginning = false;
     while (!found_beginning && (in_archive.curr_ts = in_archive.source->get()) != nullptr) {
-      L_(info) << "search for in TS idx: " << in_archive.curr_ts->index();
+      L_(info) << "Search for in TS idx: " << in_archive.curr_ts->index();
       for (auto& out : output_sinks) {
         L_(info) << "in " << out.source_path;
         while (!found_beginning && (out.curr_ts = out.source->get()) != nullptr) {
@@ -209,17 +227,19 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
       L_(error) << "None of " << in_archive.source_path << " was transmitted";
       return false;
     }
-    L_(info) << "found first transmitted timeslice: " << in_archive.curr_ts->index();
+    L_(info) << "Found first transmitted timeslice: " << in_archive.curr_ts->index();
 
     // from now on, all TS of in_archive.source have to be found in one of the output archives
     do {
-      L_(info) << "searching and checking TS idx: " << in_archive.curr_ts->index();
+      L_(info) << "Searching and checking TS idx: " << in_archive.curr_ts->index();
       bool found_ts = false;
       for (auto& out : output_sinks) {
         uint64_t tmp_idx = out.curr_ts_idx;
         while (!found_ts && (out.curr_ts = out.source->get()) != nullptr) {
           if (out.curr_ts->index() == in_archive.curr_ts->index()) {
+            found_timeslices_count++;
             L_(info) << "found in: " << out.source_path;
+            L_(info) << "Timeslices found: " << found_timeslices_count;
             if (compare_ts(*out.curr_ts, *in_archive.curr_ts) != 0) {
               L_(error) << "TS not identical";
               return false;
@@ -242,7 +262,7 @@ bool Verificator::verify_ts_forwarding(const std::vector<std::string>& input_arc
       }
 
       if (!found_ts) {
-        L_(error) << "unable to find ts";
+        L_(warning) << "Unable to find TS IDX: " << in_archive.curr_ts->index();
         return false;
       }
     } while ((in_archive.curr_ts = in_archive.source->get()) != nullptr);
