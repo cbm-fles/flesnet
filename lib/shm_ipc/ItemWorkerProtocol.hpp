@@ -160,7 +160,7 @@ public:
     try {
       sink_->complete(id_);
     } catch (...) {
-      L_(info) << "Exception in Item::~Item() occurred";
+      LF(info, "Exception in Item::~Item() occurred");
     }
   }
 

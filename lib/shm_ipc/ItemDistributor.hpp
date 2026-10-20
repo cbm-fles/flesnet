@@ -118,7 +118,7 @@ private:
     std::vector<std::string> dead_workers;
     for (auto& [identity, worker] : workers_) {
       if (worker->is_expired(now)) {
-        L_(warning) << "worker timed out: " << worker->description();
+        LF(warning, "worker timed out: {}", worker->description());
         dead_workers.push_back(identity);
       }
     }
@@ -135,8 +135,8 @@ private:
           send_worker_heartbeat(identity);
         }
       } catch (std::exception& e) {
-        L_(warning) << "cannot reach worker " << worker->description() << ": "
-                    << e.what();
+        LF(warning, "cannot reach worker {}: {}", worker->description(),
+           e.what());
         dead_workers.push_back(identity);
       }
     }
@@ -157,8 +157,8 @@ private:
         send_worker_end_of_stream(identity);
         worker->set_eos_sent();
       } catch (std::exception& e) {
-        L_(warning) << "cannot reach worker " << worker->description() << ": "
-                    << e.what();
+        LF(warning, "cannot reach worker {}: {}", worker->description(),
+           e.what());
         dead_workers.push_back(identity);
       }
     }
@@ -233,7 +233,7 @@ private:
 
     // Send the message
     if (!message.send(worker_socket_)) {
-      L_(error) << "message send failed";
+      LF(error, "message send failed");
     }
     auto it = workers_.find(identity);
     if (it != workers_.end()) {

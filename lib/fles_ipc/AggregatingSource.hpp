@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 #if __cplusplus >= 202002L
@@ -111,10 +112,11 @@ private:
     void thread_loop() {
       auto stop = [this] { return stop_requested.load(); };
 #endif
+      logging::set_thread_name("prefetch-" + std::to_string(index));
       while (!stop()) {
         // Fetch the next item (this may block)
-        L_(debug) << "AsyncSource " << index << ": fetching item "
-                  << items_fetched << " from source";
+        LF(debug, "AsyncSource {}: fetching item {} from source", index,
+           items_fetched);
         auto item = source->get();
 
         // All state changes that the main thread waits for happen under
@@ -122,7 +124,7 @@ private:
         std::unique_lock<std::mutex> lock(parent.mutex_);
 
         if (item == nullptr) {
-          L_(debug) << "AsyncSource " << index << ": source exhausted";
+          LF(debug, "AsyncSource {}: source exhausted", index);
           source_exhausted = true;
           parent.cv_any_available_.notify_one();
           break;
@@ -130,8 +132,7 @@ private:
 
         // Store the prefetched item and signal readiness
         prefetched_item = std::move(item);
-        L_(debug) << "AsyncSource " << index << ": item " << items_fetched
-                  << " prefetched";
+        LF(debug, "AsyncSource {}: item {} prefetched", index, items_fetched);
         items_fetched++;
         parent.cv_any_available_.notify_one();
 
@@ -160,7 +161,7 @@ private:
 
     std::unique_lock<std::mutex> lock(mutex_);
 
-    L_(debug) << "AggregatingSource: do_get() called";
+    LF(debug, "AggregatingSource: do_get() called");
     while (true) {
       // Loop over all sources, starting from next_source_index_, to find the
       // next available item
@@ -171,15 +172,15 @@ private:
         auto& async_source = async_sources_.at(source_index);
 
         if (async_source->prefetched_item != nullptr) {
-          L_(debug) << "AggregatingSource: item available from source "
-                    << source_index;
+          LF(debug, "AggregatingSource: item available from source {}",
+             source_index);
           auto item = std::move(async_source->prefetched_item);
           async_source->cv_consumed.notify_one();
           next_source_index_ = (source_index + 1) % async_sources_.size();
           return item.release();
         }
-        L_(debug) << "AggregatingSource: no item available from source "
-                  << source_index;
+        LF(debug, "AggregatingSource: no item available from source {}",
+           source_index);
         if (!async_source->source_exhausted) {
           has_active_sources = true;
         }
@@ -190,7 +191,7 @@ private:
         eos_ = true;
         return nullptr;
       }
-      L_(debug) << "AggregatingSource: no items available yet, waiting...";
+      LF(debug, "AggregatingSource: no items available yet, waiting...");
 
       // Wait for an item to become available or a source to be exhausted
       cv_any_available_.wait(lock);

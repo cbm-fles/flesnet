@@ -1,6 +1,6 @@
 #include "ItemDistributor.hpp"
 #include "ItemWorkerProtocol.hpp"
-#include "log.hpp"
+#include "log_short.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -69,8 +69,7 @@ void ItemDistributor::on_generator_pollin() {
     try {
       offer_item(identity, *worker, new_item, served_groups);
     } catch (std::exception& e) {
-      L_(warning) << "dropping worker " << worker->description() << ": "
-                  << e.what();
+      WARN("dropping worker {}: {}", worker->description(), e.what());
       try {
         send_worker_disconnect(identity, e.what());
       } catch (std::exception&) {
@@ -151,7 +150,7 @@ void ItemDistributor::on_worker_pollin() {
   const std::string identity = message.peekstr(0);
 
   if (message.size() < 3) {
-    L_(error) << "malformed message from a worker";
+    ERROR("malformed message from a worker");
     return;
   }
 
@@ -168,7 +167,7 @@ void ItemDistributor::on_worker_pollin() {
       // replaced, which releases the items outstanding for it.
       auto worker =
           std::make_unique<ItemDistributorWorker>(args, max_queued_items_);
-      L_(info) << "worker connected: " << worker->description();
+      INFO("worker connected: {}", worker->description());
       workers_[identity] = std::move(worker);
       send_worker_welcome(identity);
       workers_.at(identity)->reset_recv_time();
@@ -193,15 +192,15 @@ void ItemDistributor::on_worker_pollin() {
       } else if (verb == heartbeat_verb) {
         // Nothing to do, the receive time has been updated already
       } else if (verb == disconnect_verb) {
-        L_(info) << "worker disconnected: " << worker.description()
-                 << (args.empty() ? "" : " (" + args.at(0) + ")");
+        INFO("worker disconnected: {}{}", worker.description(),
+             args.empty() ? "" : " (" + args.at(0) + ")");
         remove_workers({identity});
       } else {
         throw WorkerProtocolError("unknown message type: " + verb);
       }
     }
   } catch (std::exception& e) {
-    L_(error) << "protocol violation, disconnecting worker: " << e.what();
+    ERROR("protocol violation, disconnecting worker: {}", e.what());
     try {
       send_worker_disconnect(identity, e.what());
     } catch (std::exception&) {

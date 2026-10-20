@@ -204,6 +204,7 @@ private:
   }
 
   void run() {
+    logging::set_thread_name("item-worker");
     while (!stopped_) {
       try {
         const auto now = std::chrono::steady_clock::now();
@@ -230,14 +231,14 @@ private:
         check_liveness();
         send_heartbeat_if_due();
       } catch (const WorkerProtocolError& protocol_error) {
-        L_(error) << "worker protocol violation: " << protocol_error.what();
+        LF(error, "worker protocol violation: {}", protocol_error.what());
         handle_connection_loss(protocol_error.what());
       } catch (const zmq::error_t& zmq_error) {
         if (zmq_error.num() == EINTR) {
           stopped_ = true;
           break;
         }
-        L_(error) << "ZMQ: " << zmq_error.what();
+        LF(error, "ZMQ: {}", zmq_error.what());
         handle_connection_loss(zmq_error.what());
       }
     }
@@ -389,9 +390,9 @@ private:
     {
       const std::lock_guard<std::mutex> lock(mutex_);
       if (!instance_id_.empty() && instance_id_ != instance_id) {
-        L_(warning) << "distributor restarted, item ids start over "
-                    << "(instance " << instance_id_ << " -> " << instance_id
-                    << ")";
+        LF(warning,
+           "distributor restarted, item ids start over (instance {} -> {})",
+           instance_id_, instance_id);
       }
       instance_id_ = instance_id;
     }
@@ -483,19 +484,18 @@ private:
     state_ = state;
     switch (state) {
     case ConnectionState::Connected:
-      L_(info) << "connected to item distributor " << distributor_address_
-               << (reconnect_count_ > 0 ? " (reconnected)" : "");
+      LF(info, "connected to item distributor {}{}", distributor_address_,
+         reconnect_count_ > 0 ? " (reconnected)" : "");
       break;
     case ConnectionState::Degraded:
-      L_(warning) << "item distributor " << distributor_address_
-                  << " missed a heartbeat";
+      LF(warning, "item distributor {} missed a heartbeat",
+         distributor_address_);
       break;
     case ConnectionState::Disconnected:
-      L_(warning) << "lost item distributor " << distributor_address_ << ": "
-                  << reason;
+      LF(warning, "lost item distributor {}: {}", distributor_address_, reason);
       break;
     case ConnectionState::Registering:
-      L_(debug) << "registering with item distributor " << distributor_address_;
+      LF(debug, "registering with item distributor {}", distributor_address_);
       break;
     }
     StateCallback callback;
