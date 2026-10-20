@@ -97,6 +97,7 @@ set(MARKDOWN_DOCS_FOR_DOXYGEN
   doc/INSTALL.md
   doc/FAQ.md
   doc/TS_Source_Identifier.md
+  doc/logging.md
   doc/structure.md)
 
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mstool-doc)
