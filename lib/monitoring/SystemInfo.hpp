@@ -81,7 +81,7 @@ std::string current_thread_name();
  * them via `/proc`, like `top`. This allows for example to identify the threads
  * in a threads view display of `top` (`H` mode).
  *
- * \note The Linux kernel limits the thread name length to 16 characters.
+ * \note The Linux kernel limits the thread name length to 15 characters.
  * `tname` will be truncated if longer.
  *
  * @param tname  thread name
