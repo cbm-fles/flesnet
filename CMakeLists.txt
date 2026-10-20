@@ -96,16 +96,17 @@ else()
   endif()
 endif()
 
-# fetch libfmt formatting library, used by lib/monitoring. Should be already included in FairSoft.
+include(FetchContent)
+if(CMAKE_VERSION VERSION_GREATER "3.26.0")
+  set(FetchContent_Declare_SYSTEM "SYSTEM")
+else()
+  set(FetchContent_Declare_SYSTEM "")
+endif()
+
+# fetch libfmt formatting library, used by lib/monitoring and, in code without std::format, by lib/logging. Should be already included in FairSoft.
 find_package(fmt CONFIG)
 if(NOT fmt_FOUND)
-  if(CMAKE_VERSION VERSION_GREATER "3.26.0")
-    set(FetchContent_Declare_SYSTEM "SYSTEM")
-  else()
-    set(FetchContent_Declare_SYSTEM "")
-  endif()
   message(STATUS "Downloading and building fmtlib.")
-  include(FetchContent)
   FetchContent_Declare(
     fmtlib
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
@@ -117,7 +118,7 @@ endif()
 if(APPLE)
   set(Boost_USE_MULTITHREADED TRUE)
 endif()
-find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS log program_options serialization thread unit_test_framework iostreams)
+find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS program_options serialization thread unit_test_framework iostreams)
 find_package(Threads REQUIRED)
 
 find_package(UCX CONFIG 1.16.0)
@@ -215,6 +216,25 @@ if (COVERALLS)
   include(Coveralls)
   coveralls_turn_on_coverage()
 endif()
+
+# Executables find libfles_logging both in the build tree (next to lib/) and
+# when installed (bin/ next to lib/).
+if(APPLE)
+  set(CMAKE_BUILD_RPATH "@executable_path/lib;@executable_path/../lib")
+  set(CMAKE_INSTALL_RPATH "@executable_path/../lib")
+else()
+  set(CMAKE_BUILD_RPATH "$ORIGIN/lib;$ORIGIN/../lib")
+  set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+endif()
+
+# The software version, for the applications
+add_library(git_revision STATIC
+  "${CMAKE_BINARY_DIR}/config/GitRevision.cpp"
+  config/GitRevision.hpp
+  config/CommonOptions.hpp
+)
+target_include_directories(git_revision PUBLIC config)
+target_link_libraries(git_revision INTERFACE logging)
 
 add_subdirectory(lib/logging)
 add_subdirectory(lib/monitoring)

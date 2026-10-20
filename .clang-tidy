@@ -148,6 +148,10 @@ Checks: >
   readability-redundant-string-init,
   readability-simplify-boolean-expr
 
+CheckOptions:
+  # Boost.Test macros come from internal headers via boost/test/unit_test.hpp
+  misc-include-cleaner.IgnoreHeaders: 'boost/test/.*'
+
 HeaderFilterRegex: '(lib/(cri|fles_ipc|fles_tools|logging|monitoring|pda|shm_ipc|tsb_ucx)/.*\.hpp)|(app/[^/]+/[^/]+.hpp)'
 
 FormatStyle: file

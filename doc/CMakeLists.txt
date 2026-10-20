@@ -61,11 +61,6 @@ set(DOXYGEN_ALIASES "glos{1}=\\1")
 # https://github.com/doxygen/doxygen/issues/10165
 # i.e. duplicate class names in different files. Possibly introducing
 # appropriate namespaces would fix this.
-#
-# 3) 	warning: documented symbol 'logging::LogBuffer::LogBuffer' was not
-# 		declared or defined. (and similar)
-#
-# Unclear issue.
 
 ## Extended documentation:
 # Since the documentation currently is not complete or up-to-date,

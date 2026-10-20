@@ -128,7 +128,7 @@ def main(config_file: str, run_id: str):
     # manager node
     mn_spm = [
         f"{manager['name']}: {env_prefix(manager)}{FLESNETDIR}tsmanager"
-        f" -c {TSMANAGER_CFG} -L {LOGDIR}{manager['name']}_tsmanager.log --log-syslog"
+        f" -c {TSMANAGER_CFG} --log-file {LOGDIR}{manager['name']}_tsmanager.json"
     ]
 
     # entry nodes
@@ -145,13 +145,13 @@ def main(config_file: str, run_id: str):
     for node, nodeinfo in build_nodes.items():
         bn_spm.append(
             f"{node}: {env_prefix(nodeinfo)}{FLESNETDIR}tsbuilder"
-            f" -c {TSBUILDER_CFG} -L {LOGDIR}{node}_tsbuilder.log --log-syslog"
+            f" -c {TSBUILDER_CFG} --log-file {LOGDIR}{node}_tsbuilder.json"
         )
         for client, param in enumerate(consumers(common, nodeinfo)):
             param = substitute(param, run_id, node, TS_SHM_ID, client)
             bn_spm.append(
                 f"{node}: {FLESNETDIR}tsclient -c{client}"
-                f" -L {LOGDIR}{node}_{client}_tsclient.log --log-syslog {param}"
+                f" --log-file {LOGDIR}{node}_{client}_tsclient.json {param}"
             )
         for cmd in common["extra_cmd"] + nodeinfo.get("extra_cmd", []):
             bn_spm.append(f"{node}: {substitute(cmd, run_id, node, TS_SHM_ID, 0)}")

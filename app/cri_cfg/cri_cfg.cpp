@@ -6,7 +6,7 @@
 
 #include <memory>
 
-#include "log.hpp"
+#include "log_short.hpp"
 #include "parameters.hpp"
 
 int main(int argc, char* argv[]) {

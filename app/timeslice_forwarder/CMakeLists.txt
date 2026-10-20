@@ -1,3 +1,10 @@
+# The data_forwarder library uses Boost.Log
+find_package(Boost CONFIG QUIET COMPONENTS log)
+if(NOT TARGET Boost::log)
+  message(STATUS "Library not found: Boost.Log. Building without timeslice forwarder.")
+  return()
+endif()
+
 add_executable(timeslice_forwarder)
 
 set(LIBFABRIC_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/libfabric_build/install_dir")
@@ -88,7 +95,11 @@ target_link_libraries(timeslice_forwarder PRIVATE
     monitoring
     logging
     crcutil
-    ${Boost_LIBRARIES}
+    git_revision
+    Boost::log
+    Boost::program_options
+    Boost::serialization
+    Boost::thread
 )
 
 file(GLOB timeslice_forwarder_SRC

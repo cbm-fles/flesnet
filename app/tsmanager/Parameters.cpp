@@ -3,8 +3,10 @@
    Author: Jan de Cuveland */
 
 #include "Parameters.hpp"
+#include "CommonOptions.hpp"
 #include "System.hpp"
 #include "log.hpp"
+#include "log_program_options.hpp"
 #include <boost/program_options.hpp>
 #include <fstream>
 #include <iostream>
@@ -14,16 +16,13 @@ namespace po = boost::program_options;
 void Parameters::parse_options(int argc, char* argv[]) {
 
   std::string config_file;
-  unsigned log_level = 2;
-  unsigned log_syslog = 2;
-  std::string log_file;
 
   auto terminal_width = fles::system::current_terminal_width();
 
   po::options_description generic("Generic options", terminal_width,
                                   terminal_width / 2);
   auto generic_add = generic.add_options();
-  generic_add("help,h", "produce help message");
+  fles::add_general_options(generic);
   generic_add(
       "config-file,c",
       po::value<std::string>(&config_file)->default_value("tsmanager.cfg"),
@@ -32,18 +31,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
   po::options_description config("Configuration (tsmanager.cfg or cmd line)",
                                  terminal_width, terminal_width / 2);
   auto config_add = config.add_options();
-  config_add("log-level,l",
-             po::value<unsigned>(&log_level)
-                 ->default_value(log_level)
-                 ->value_name("<n>"),
-             "set the file log level (all:0)");
-  config_add("log-file,L", po::value<std::string>(&log_file),
-             "name of target log file");
-  config_add("log-syslog,S",
-             po::value<unsigned>(&log_syslog)
-                 ->implicit_value(log_syslog)
-                 ->value_name("<n>"),
-             "enable logging to syslog at given log level");
+  logging::add_program_options(config);
   config_add("monitor,m",
              po::value<std::string>(&m_monitor_uri)
                  ->value_name("URI")
@@ -76,6 +64,8 @@ void Parameters::parse_options(int argc, char* argv[]) {
   po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
   po::notify(vm);
 
+  fles::handle_general_options(vm, "tsmanager", cmdline_options);
+
   std::ifstream ifs(config_file.c_str());
   if (!ifs) {
     if (config_file != "tsmanager.cfg") {
@@ -87,21 +77,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
     notify(vm);
   }
 
-  if (vm.count("help") != 0u) {
-    std::cout << cmdline_options << "\n";
-    exit(EXIT_SUCCESS);
-  }
-
-  logging::add_console(static_cast<severity_level>(log_level));
-  if (vm.count("log-file") != 0u) {
-    INFO("Logging output to {}", log_file);
-    logging::add_file(log_file, static_cast<severity_level>(log_level));
-  }
-
-  if (vm.count("log-syslog") != 0u) {
-    logging::add_syslog(logging::syslog::local0,
-                        static_cast<severity_level>(log_syslog));
-  }
+  logging::setup(fles::log_options(vm));
 
   if (timeslice_duration_ns() <= 0) {
     throw ParametersException("timeslice duration must be greater than 0");

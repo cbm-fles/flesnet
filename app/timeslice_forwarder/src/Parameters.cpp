@@ -1,5 +1,6 @@
 #include "Parameters.hpp"
 
+#include <CommonOptions.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/program_options.hpp>
 #include <cstdint>
@@ -9,6 +10,7 @@
 #include <df/WorkItems/WorkItem.hpp>
 #include <iostream>
 #include <log.hpp>
+#include <log_program_options.hpp>
 #include <ostream>
 #include <string>
 
@@ -16,20 +18,14 @@ using namespace std;
 namespace po = boost::program_options;
 
 void Parameters::parse_options(int argc, char** argv) {
-  unsigned log_syslog = 2;
-  unsigned log_level = 2;
   po::options_description general("General options");
   po::options_description advanced("Advanced options");
   auto general_add = general.add_options();
   auto advanced_add = advanced.add_options();
   string connectors_option;
 
-  general_add("help,h", "Print this help");
-  general_add("log-level,l",
-              po::value<unsigned>(&log_level)
-                  ->default_value(log_level)
-                  ->value_name("<n>"),
-              "set the file log level (all:0)");
+  fles::add_general_options(general);
+  logging::add_program_options(general);
 
   general_add("listen-address,A",
               po::value<string>(&listen_addr),
@@ -55,12 +51,6 @@ void Parameters::parse_options(int argc, char** argv) {
   general_add("input-uri,i",
               po::value<string>(&input_uri),
               "If defined this node will start as the a sender. !Currently only SHM supported");
-
-  general_add("log-syslog,S",
-              po::value<unsigned>(&log_syslog)
-                  ->implicit_value(log_syslog)
-                  ->value_name("<n>"),
-              "enable logging to syslog at given log level");
 
   advanced_add("data-buffer-map-size",
                po::value<uint64_t>(&data_buffer_map_size)
@@ -135,13 +125,10 @@ void Parameters::parse_options(int argc, char** argv) {
     cout << minimal_example.str() << endl;
     exit(EXIT_SUCCESS);
   }
+  fles::handle_general_options(vm, "timeslice_forwarder", desc);
 
   wi_buffer_size_in_mb = wi_buffer_size_in_mb * 1000;
-  logging::add_console(static_cast<severity_level>(log_level));
-  if (vm.count("log-syslog") != 0u) {
-    logging::add_syslog(logging::syslog::local0,
-                        static_cast<severity_level>(log_syslog));
-  }
+  logging::setup(fles::log_options(vm));
 
   if (vm.count("input-uri") != 0u && vm.count("output-uri") != 0u) {
     cout << "! input-uri AND output-uri are defined - only set one of them" << endl

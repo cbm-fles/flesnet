@@ -1,10 +1,10 @@
 // Copyright 2012-2013 Jan de Cuveland <cmail@cuveland.de>
 
 #include "Parameters.hpp"
-#include "GitRevision.hpp"
+#include "CommonOptions.hpp"
 #include "log.hpp"
+#include "log_program_options.hpp"
 // #include <boost/program_options.hpp>
-#include <boost/log/sinks/syslog_constants.hpp>
 // #include <boost/program_options.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
@@ -18,26 +18,11 @@
 namespace po = boost::program_options;
 
 void Parameters::parse_options(int argc, char* argv[]) {
-  unsigned log_level = 2;
-  unsigned log_syslog = 2;
-  std::string log_file;
 
   po::options_description general("General options");
   auto general_add = general.add_options();
-  general_add("version,V", "print version string");
-  general_add("help,h", "produce help message");
-  general_add("log-level,l",
-              po::value<unsigned>(&log_level)
-                  ->default_value(log_level)
-                  ->value_name("<n>"),
-              "set the file log level (all:0)");
-  general_add("log-file,L", po::value<std::string>(&log_file),
-              "name of target log file");
-  general_add("log-syslog,S",
-              po::value<unsigned>(&log_syslog)
-                  ->implicit_value(log_syslog)
-                  ->value_name("<n>"),
-              "enable logging to syslog at given log level");
+  fles::add_general_options(general);
+  logging::add_program_options(general);
   general_add("maximum-number,n", po::value<uint64_t>(&maximum_number),
               "set the maximum number of microslices to process (default: "
               "unlimited)");
@@ -67,27 +52,9 @@ void Parameters::parse_options(int argc, char* argv[]) {
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
 
-  if (vm.count("help") != 0u) {
-    std::cout << "mstool, git revision " << g_GIT_REVISION << std::endl;
-    std::cout << desc << std::endl;
-    exit(EXIT_SUCCESS);
-  }
+  fles::handle_general_options(vm, "mstool", desc);
 
-  if (vm.count("version") != 0u) {
-    std::cout << "mstool " << g_PROJECT_VERSION_GIT << ", git revision "
-              << g_GIT_REVISION << std::endl;
-    exit(EXIT_SUCCESS);
-  }
-
-  logging::add_console(static_cast<severity_level>(log_level));
-  if (vm.count("log-file") != 0u) {
-    INFO("Logging output to {}", log_file);
-    logging::add_file(log_file, static_cast<severity_level>(log_level));
-  }
-  if (vm.count("log-syslog") != 0u) {
-    logging::add_syslog(logging::syslog::local0,
-                        static_cast<severity_level>(log_syslog));
-  }
+  logging::setup(fles::log_options(vm));
 
   use_pattern_generator = vm.count("pattern-generator") != 0;
 

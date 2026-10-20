@@ -4,7 +4,7 @@
 
 #include "ucxutil.hpp"
 #include "Utility.hpp"
-#include "log.hpp"
+#include "log_short.hpp"
 #include <cerrno>
 #include <charconv>
 #include <chrono>

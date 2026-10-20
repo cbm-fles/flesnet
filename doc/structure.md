@@ -23,6 +23,9 @@ Libraries with internal dependencies
 
 Roles:
 
+- logging: process-wide logging. Built as the shared library
+  libfles_logging, so that each process has exactly one instance, also
+  when several shared libraries use it
 - fles_ipc: the microslice/timeslice API used by consumers (data structures,
   archives, sources and sinks, shared memory reader and writer)
 - fles_tools: analysis and debugging tools on top of fles_ipc (pattern

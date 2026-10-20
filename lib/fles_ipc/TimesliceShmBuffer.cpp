@@ -9,7 +9,7 @@
 #include "TimesliceShmWorkItem.hpp"
 #include "TimesliceView.hpp"
 #include "Utility.hpp"
-#include "log.hpp"
+#include "log_short.hpp"
 #include <boost/interprocess/creation_tags.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -51,7 +51,10 @@ TimesliceShmBuffer::TimesliceShmBuffer(zmq::context_t& context,
                          "ipc://@" + m_shm_identifier),
       m_managed_shm(create_managed_shm(m_shm_identifier, m_buffer_size)),
       m_producer(context, "inproc://" + m_shm_identifier),
-      m_distributor_thread(std::ref(m_item_distributor)) {
+      m_distributor_thread([this] {
+        logging::set_thread_name("item-distrib");
+        m_item_distributor();
+      }) {
   boost::uuids::random_generator uuid_gen;
   m_shm_uuid = uuid_gen();
   m_managed_shm->construct<boost::uuids::uuid>(
