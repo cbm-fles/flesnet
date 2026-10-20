@@ -6,8 +6,11 @@
 
 #pragma once
 
+#include "CommonOptions.hpp"
 #include "cri.hpp"
 #include "log.hpp"
+#include "log_program_options.hpp"
+#include "log_short.hpp"
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/program_options.hpp>
 #include <fstream>
@@ -125,20 +128,14 @@ private:
   void parse_options(int argc, char* argv[]) {
 
     std::string config_file;
-    unsigned log_level;
-    std::string log_file;
 
     po::options_description generic("Generic options");
     auto generic_add = generic.add_options();
-    generic_add("help,h", "produce help message");
+    fles::add_general_options(generic);
     generic_add("config-file,c",
                 po::value<std::string>(&config_file)->implicit_value("cri.cfg"),
                 "name of a configuration file");
-    generic_add("log-level,l",
-                po::value<unsigned>(&log_level)->default_value(2),
-                "set the log level (all:0)");
-    generic_add("log-file,L", po::value<std::string>(&log_file),
-                "name of target log file");
+    logging::add_program_options(generic);
 
     po::options_description config("Configuration (cri.cfg or cmd line)");
     auto config_add = config.add_options();
@@ -197,11 +194,9 @@ private:
     po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
     po::notify(vm);
 
-    logging::add_console(static_cast<severity_level>(log_level));
-    if (vm.count("log-file") != 0u) {
-      INFO("Logging output to {}", log_file);
-      logging::add_file(log_file, static_cast<severity_level>(log_level));
-    }
+    fles::handle_general_options(vm, "cri_cfg", cmdline_options);
+
+    logging::setup(fles::log_options(vm));
 
     if (!config_file.empty()) {
       std::ifstream ifs(config_file.c_str());
@@ -212,11 +207,6 @@ private:
       notify(vm);
     } else {
       INFO("No config file provided.");
-    }
-
-    if (vm.count("help") != 0u) {
-      std::cout << cmdline_options << "\n";
-      exit(EXIT_SUCCESS);
     }
 
     INFO("Device config:");

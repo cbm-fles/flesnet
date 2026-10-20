@@ -16,7 +16,7 @@
 #include "TimeslicePublisher.hpp"
 #include "TimesliceShmSink.hpp"
 #include "Utility.hpp"
-#include "log.hpp"
+#include "log_short.hpp"
 #include <chrono>
 #include <csignal>
 #include <cstdint>

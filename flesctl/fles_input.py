@@ -98,10 +98,8 @@ def main(config_file: str, hostname: str):
     for card, cardinfo in cards.items():
         cmd = [
             os.path.join(FLESNETDIR, "cri_cfg"),
-            "-l",
-            "2",
-            "-L",
-            f"{LOGDIR}{card}_cfg.log",
+            "--log-file",
+            f"{LOGDIR}{card}_cfg.json",
             "-i",
             f"{cardinfo['pci_address']}",
             "-t",
@@ -140,9 +138,8 @@ def main(config_file: str, hostname: str):
         os.path.join(FLESNETDIR, "stserver"),
         "-c",
         STSERVER_CFG,
-        "-L",
-        f"{LOGDIR}stserver.log",
-        "--log-syslog",
+        "--log-file",
+        f"{LOGDIR}stserver.json",
         "--advertise-host",
         f"{nodeinfo['address']}",
     ]

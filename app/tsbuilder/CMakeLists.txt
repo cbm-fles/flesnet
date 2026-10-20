@@ -22,6 +22,7 @@ target_link_libraries(tsbuilder
   fles_tools
   tsb_ucx
   logging
+  git_revision
   monitoring
   ucx::ucp
   ucx::uct

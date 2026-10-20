@@ -8,7 +8,7 @@
 #include "Utility.hpp"
 #include "device_operator.hpp"
 #include "dma_channel.hpp"
-#include "log.hpp"
+#include "log_short.hpp"
 #include <algorithm>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <chrono>

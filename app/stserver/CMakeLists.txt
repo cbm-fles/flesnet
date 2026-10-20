@@ -22,6 +22,7 @@ target_link_libraries(stserver
   fles_tools
   tsb_ucx
   logging
+  git_revision
   ucx::ucp
   ucx::uct
   ucx::ucs

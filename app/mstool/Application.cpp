@@ -8,7 +8,7 @@
 #include "Parameters.hpp"
 #include "Sink.hpp" // MicrosliceSink
 #include "TimesliceDebugger.hpp"
-#include "log.hpp"
+#include "log_short.hpp"
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>

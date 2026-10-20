@@ -4,7 +4,7 @@
 
 #include "Application.hpp"
 #include "Parameters.hpp"
-#include "log.hpp"
+#include "log_short.hpp"
 #include <csignal>
 
 namespace {

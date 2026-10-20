@@ -90,7 +90,7 @@ def verify(rundir: str, build_dir: str) -> bool:
     ok = True
     logdir = os.path.join(rundir, "log")
     for name in sorted(os.listdir(logdir)):
-        if not name.endswith("_tsclient.log"):
+        if not name.endswith("_tsclient.json"):
             continue
         with open(os.path.join(logdir, name), "r", encoding="utf-8") as f:
             text = f.read()

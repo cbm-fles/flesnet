@@ -7,7 +7,7 @@ target_compile_definitions(cri_cfg PUBLIC BOOST_ALL_DYN_LINK)
 target_include_directories(cri_cfg SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(cri_cfg
-  cri logging
+  cri logging git_revision
   ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} rt
 )
 

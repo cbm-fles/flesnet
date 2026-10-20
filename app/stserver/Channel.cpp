@@ -4,7 +4,7 @@
 
 #include "Channel.hpp"
 #include "MicrosliceDescriptor.hpp"
-#include "log.hpp"
+#include "log_short.hpp"
 #include <chrono>
 #include <sstream>
 

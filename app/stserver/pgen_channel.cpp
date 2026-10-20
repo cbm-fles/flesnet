@@ -4,7 +4,7 @@
 
 #include "pgen_channel.hpp"
 #include "MicrosliceDescriptor.hpp"
-#include "monitoring/SystemInfo.hpp"
+#include "log.hpp"
 #include <chrono>
 #include <sys/types.h>
 
@@ -62,7 +62,7 @@ uint64_t pgen_channel::get_desc_index() { return m_desc_write_index; }
 
 void pgen_channel::thread_work(std::stop_token stop_token) {
   std::string thread_name = "pgen-" + std::to_string(m_channel_index);
-  ::cbm::system::set_thread_name(thread_name);
+  logging::set_thread_name(thread_name);
 
   uint64_t ms_time =
       chrono_to_timestamp(std::chrono::high_resolution_clock::now()) /

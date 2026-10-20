@@ -7,7 +7,7 @@
 #include "System.hpp"
 #include "TsbProtocol.hpp"
 #include "Utility.hpp"
-#include "log.hpp"
+#include "log_short.hpp"
 #include <arpa/inet.h>
 #include <array>
 #include <cstddef>
