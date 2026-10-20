@@ -338,11 +338,11 @@ void StSender::disconnect_from_manager(bool force) {
   while (it != m_announced.end()) {
     const auto& [id, ah] = *it;
     if (ah->active_send_requests > 0) {
-      DEBUG("{}| Marking for release (currently sending)", id);
+      TS_DEBUG(id, "Marking for release (currently sending)");
       ah->pending_release = true;
       ++it;
     } else {
-      DEBUG("{}| Releasing", id);
+      TS_DEBUG(id, "Releasing");
       {
         std::lock_guard<std::mutex> lock(m_completions_mutex);
         m_completed.push(id);
@@ -403,9 +403,9 @@ void StSender::do_announce_subtimeslice(TsId id, const StHandle& sth) {
               id, std::move(st_descriptor_bytes), std::move(blocks)));
   auto& ah = *m_announced.at(id);
 
-  DEBUG("{}| Announcing ({}c, {}m, {}, flags={:04x})", id,
-        st_descriptor.components.size(), num_microslices,
-        human_readable_count(ms_data_size, true), st_descriptor.flags);
+  TS_DEBUG(id, "Announcing ({}c, {}m, {}, flags={:04x})",
+           st_descriptor.components.size(), num_microslices,
+           human_readable_count(ms_data_size, true), st_descriptor.flags);
 
   // Send announcement to manager
   std::array<uint64_t, 2> hdr{id, ms_data_size};
@@ -422,7 +422,7 @@ void StSender::do_retract_subtimeslice(TsId id) {
   if (it != m_announced.end()) {
     auto& ah = *it->second;
     if (!ah.pending_release) {
-      DEBUG("{}| Retracting subtimeslice", id);
+      TS_DEBUG(id, "Retracting subtimeslice");
 
       // Send retraction to manager
       std::array<uint64_t, 1> hdr{id};
@@ -433,7 +433,7 @@ void StSender::do_retract_subtimeslice(TsId id) {
           UCP_AM_SEND_FLAG_COPY_HEADER | UCP_AM_SEND_FLAG_REPLY);
 
       if (ah.active_send_requests > 0) {
-        DEBUG("{}| Marking for release (currently sending)", id);
+        TS_DEBUG(id, "Marking for release (currently sending)");
         ah.pending_release = true;
       } else {
         {
@@ -443,11 +443,11 @@ void StSender::do_retract_subtimeslice(TsId id) {
         m_announced.erase(it);
       }
     } else {
-      WARN("{}| Attempted to retract subtimeslice already marked for release",
-           id);
+      TS_WARN(id,
+              "Attempted to retract subtimeslice already marked for release");
     }
   } else {
-    WARN("{}| Attempted to retract unknown subtimeslice", id);
+    TS_WARN(id, "Attempted to retract unknown subtimeslice");
   }
 }
 
@@ -467,10 +467,10 @@ ucs_status_t StSender::handle_manager_release(
   if (it != m_announced.end()) {
     auto& ah = *it->second;
     if (ah.active_send_requests > 0) {
-      DEBUG("{}| Marking for release (currently sending)", id);
+      TS_DEBUG(id, "Marking for release (currently sending)");
       ah.pending_release = true;
     } else {
-      DEBUG("{}| Releasing", id);
+      TS_DEBUG(id, "Releasing");
       {
         std::lock_guard<std::mutex> lock(m_completions_mutex);
         m_completed.push(id);
@@ -478,7 +478,7 @@ ucs_status_t StSender::handle_manager_release(
       m_announced.erase(it);
     }
   } else {
-    WARN("{}| Received release for unknown subtimeslice", id);
+    TS_WARN(id, "Received release for unknown subtimeslice");
   }
   return UCS_OK;
 }
@@ -545,7 +545,7 @@ void StSender::send_subtimeslice_to_builder(TsId id,
     // builder's first pre-posted recv completes (with a length of 0 it will
     // be marked as Failed there and the remaining pre-posted recvs of this
     // contribution are canceled). This keeps the protocol synchronous.
-    WARN("{}| Subtimeslice not found", id);
+    TS_WARN(id, "Subtimeslice not found");
     ucp_request_param_t req_param{};
     req_param.op_attr_mask =
         UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
@@ -568,8 +568,8 @@ void StSender::send_subtimeslice_to_builder(TsId id,
   // single-RDMA-read rendezvous protocol and falls back to fragmented sends
   // at roughly half the achievable bandwidth. Only blocks split by a ring
   // buffer wrap-around still use the iov datatype.
-  DEBUG("{}| Sending {} blocks to builder '{}'", id, ah.blocks.size(),
-        m_builders[ep]);
+  TS_DEBUG(id, "Sending {} blocks to builder '{}'", ah.blocks.size(),
+           m_builders[ep]);
   for (const auto& block : ah.blocks) {
     ucp_request_param_t req_param{};
     req_param.op_attr_mask =
@@ -625,12 +625,12 @@ void StSender::handle_builder_send_complete(void* request,
   } else {
     TsId id = m_active_send_requests.at(request);
     if (!m_announced.contains(id)) {
-      ERROR("{}| Sent subtimeslice not found in announced list", id);
+      TS_ERROR(id, "Sent subtimeslice not found in announced list");
     } else {
       auto& ah = *m_announced.at(id);
       ah.active_send_requests--;
       if (ah.pending_release && ah.active_send_requests == 0) {
-        DEBUG("{}| Releasing after send completion", id);
+        TS_DEBUG(id, "Releasing after send completion");
         {
           std::lock_guard<std::mutex> lock(m_completions_mutex);
           m_completed.push(id);
@@ -709,7 +709,7 @@ std::size_t StSender::process_queues() {
 
 void StSender::flush_announced() {
   for (const auto& [id, st] : m_announced) {
-    DEBUG("{}| Flushing announced subtimeslice", id);
+    TS_DEBUG(id, "Flushing announced subtimeslice");
     std::lock_guard<std::mutex> lock(m_completions_mutex);
     m_completed.push(id);
   }

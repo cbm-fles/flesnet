@@ -243,7 +243,7 @@ TsManager::handle_sender_announce(const void* header,
 
   auto it = m_senders.find(param->reply_ep);
   if (it == m_senders.end()) {
-    ERROR("{}| Received announcement from unknown sender", id);
+    TS_ERROR(id, "Received announcement from unknown sender");
     return UCS_OK;
   }
   auto& sender_conn = it->second;
@@ -252,23 +252,24 @@ TsManager::handle_sender_announce(const void* header,
       std::span(static_cast<const std::byte*>(data), length);
   auto st_descriptor = parse_descriptor(st_descriptor_bytes);
   if (!st_descriptor) {
-    ERROR("{}| Failed to deserialize announcement from sender '{}'", id,
-          sender_conn.info.id());
+    TS_ERROR(id, "Failed to deserialize announcement from sender '{}'",
+             sender_conn.info.id());
     return UCS_OK;
   }
 
   if (st_descriptor->duration_ns !=
       static_cast<uint64_t>(m_timeslice_duration_ns)) {
-    ERROR("{}| Invalid timeslice duration from sender '{}'", id,
-          sender_conn.info.id());
+    TS_ERROR(id, "Invalid timeslice duration from sender '{}'",
+             sender_conn.info.id());
     return UCS_OK;
   }
 
   if (id < m_id) {
     auto late_ts = m_id - id;
     auto late_ns = late_ts * m_timeslice_duration_ns;
-    DEBUG("{}| Late announcement from '{}' by {} ts ({} ms), sending release",
-          id, sender_conn.info.id(), late_ts, (late_ns + 500000) / 1000000);
+    TS_DEBUG(id,
+             "Late announcement from '{}' by {} ts ({} ms), sending release",
+             sender_conn.info.id(), late_ts, (late_ns + 500000) / 1000000);
     std::array<uint64_t, 1> hdr{id};
     auto header = std::as_bytes(std::span(hdr));
     ucx::util::send_active_message(param->reply_ep, AM_MANAGER_RELEASE_ST,
@@ -285,8 +286,8 @@ TsManager::handle_sender_announce(const void* header,
     sender_conn.state = SenderState::active;
     INFO("Sender '{}' is now active", sender_conn.info.id());
   }
-  DEBUG("{}| Announcement from '{}' ({})", id, sender_conn.info.id(),
-        human_readable_count(ms_data_size, true));
+  TS_DEBUG(id, "Announcement from '{}' ({})", sender_conn.info.id(),
+           human_readable_count(ms_data_size, true));
 
   return UCS_OK;
 }
@@ -309,7 +310,7 @@ TsManager::handle_sender_retract(const void* header,
 
   auto it = m_senders.find(param->reply_ep);
   if (it == m_senders.end()) {
-    ERROR("{}| Received retraction from unknown sender", id);
+    TS_ERROR(id, "Received retraction from unknown sender");
     return UCS_OK;
   }
   auto& conn = it->second;
@@ -317,11 +318,11 @@ TsManager::handle_sender_retract(const void* header,
   auto st_it = std::find_if(conn.announced_st.begin(), conn.announced_st.end(),
                             [id](const auto& st) { return st.id == id; });
   if (st_it == conn.announced_st.end()) {
-    WARN("{}| Retraction for unannounced subtimeslice from sender '{}'", id,
-         conn.info.id());
+    TS_WARN(id, "Retraction for unannounced subtimeslice from sender '{}'",
+            conn.info.id());
     return UCS_OK;
   }
-  DEBUG("{}| Retraction for subtimeslice from sender '{}'", id, conn.info.id());
+  TS_DEBUG(id, "Retraction for subtimeslice from sender '{}'", conn.info.id());
   conn.announced_st.erase(st_it);
 
   return UCS_OK;
@@ -411,24 +412,24 @@ TsManager::handle_builder_status(const void* header,
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_ALLOCATED:
-    DEBUG("{}| Builder '{}' has allocated timeslice, now free: {}", id,
-          it->info.id(), human_readable_count(new_bytes_free, true));
+    TS_DEBUG(id, "Builder '{}' has allocated timeslice, now free: {}",
+             it->info.id(), human_readable_count(new_bytes_free, true));
     it->bytes_available = new_bytes_free;
     break;
   case BUILDER_EVENT_OUT_OF_MEMORY:
-    INFO("{}| Builder '{}' has reported out of memory", id, it->info.id());
+    TS_INFO(id, "Builder '{}' has reported out of memory", it->info.id());
     it->is_out_of_memory = true;
     it->assigned_ts.erase(id);
     assign_timeslice(id);
     break;
   case BUILDER_EVENT_RECEIVED:
-    DEBUG("{}| Builder '{}' has received timeslice", id, it->info.id());
+    TS_DEBUG(id, "Builder '{}' has received timeslice", it->info.id());
     it->assigned_ts.erase(id);
     send_release_to_senders(id);
     break;
   case BUILDER_EVENT_RELEASED:
-    DEBUG("{}| Builder '{}' has released timeslice, now free: {}", id,
-          it->info.id(), human_readable_count(new_bytes_free, true));
+    TS_DEBUG(id, "Builder '{}' has released timeslice, now free: {}",
+             it->info.id(), human_readable_count(new_bytes_free, true));
     if (new_bytes_free > it->bytes_available) {
       it->is_out_of_memory = false;
     }
@@ -447,7 +448,8 @@ void TsManager::assign_timeslice(TsId id) {
           return s.second.state == SenderState::active;
         });
     if (active_count > 0) {
-      WARN("{}| Sender(s) active ({}), but no contributions", id, active_count);
+      TS_WARN(id, "Sender(s) active ({}), but no contributions",
+              logging::field("active_senders", active_count));
     }
     return;
   }
@@ -459,14 +461,14 @@ void TsManager::assign_timeslice(TsId id) {
         !builder.is_out_of_memory) {
       builder.assigned_ts.insert(id);
       send_assignment_to_builder(coll, builder);
-      DEBUG("{}| Assigned to '{}' ({}s, {})", id, builder.info.id(),
-            coll.sender_ids.size(),
-            human_readable_count(coll.ms_data_size(), true));
+      TS_DEBUG(id, "Assigned to '{}' ({}s, {})", builder.info.id(),
+               coll.sender_ids.size(),
+               human_readable_count(coll.ms_data_size(), true));
       return;
     }
   }
-  WARN("{}| No builder available ({}s, {})", id, coll.sender_ids.size(),
-       human_readable_count(coll.ms_data_size(), true));
+  TS_WARN(id, "No builder available ({}s, {})", coll.sender_ids.size(),
+          human_readable_count(coll.ms_data_size(), true));
   m_status_info.timeslice_discarded_count++;
   send_release_to_senders(id);
 }
@@ -506,7 +508,7 @@ StCollection TsManager::create_collection_descriptor(TsId id) {
       coll.ms_data_sizes.push_back(it->ms_data_size);
       contributions.push_back(&*it);
     } else if (sender.state == SenderState::active) {
-      DEBUG("{}| No contribution found from sender '{}'", id, sender.info.id());
+      TS_DEBUG(id, "No contribution found from sender '{}'", sender.info.id());
     }
   }
 
@@ -522,7 +524,7 @@ StCollection TsManager::create_collection_descriptor(TsId id) {
       coll.merged_descriptor.duration_ns = contrib.duration_ns;
     } else if (coll.merged_descriptor.start_time_ns != contrib.start_time_ns ||
                coll.merged_descriptor.duration_ns != contrib.duration_ns) {
-      ERROR("{}| Inconsistent start time or duration in contributions", id);
+      TS_ERROR(id, "Inconsistent start time or duration in contributions");
     }
     coll.merged_descriptor.flags |= contrib.flags;
     for (const auto& c : contrib.components) {
