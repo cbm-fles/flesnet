@@ -6,6 +6,7 @@ This folder contains documentation for the Flesnet project. Part of the document
 
 - [`doc/INSTALL.md`](./INSTALL.md) — installation and setup instructions for Flesnet.
 - [`doc/FAQ.md`](./FAQ.md) — common issues and frequently asked questions.
+- [`doc/logging.md`](./logging.md) — logging options, output formats and use in code.
 
 
 ## Doxygen documentation
