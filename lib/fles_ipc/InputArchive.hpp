@@ -45,17 +45,14 @@ public:
     } catch (boost::archive::archive_exception const& e) {
       switch (e.code) {
       case boost::archive::archive_exception::unsupported_version: {
-        L_(warning) << "This executable has support up to archive version "
-                    << boost::archive::BOOST_ARCHIVE_VERSION() << "."
-                    << std::endl;
+        LF(warning, "This executable has support up to archive version {}.",
+           static_cast<unsigned>(boost::archive::BOOST_ARCHIVE_VERSION()));
         // try to figure out the archive's version
         auto vers = boost_peek_for_archive_version(*ifstream_);
-        L_(warning) << "Found archive version " << vers << " in file \""
-                    << filename << "\"." << std::endl;
-        L_(warning) << "Consider recompiling with BOOST library >="
-                    << boostlib_for_archive_version(vers)
-                    << " (this uses boost " << BOOST_LIB_VERSION << ")."
-                    << std::endl;
+        LF(warning, "Found archive version {} in file \"{}\".", vers, filename);
+        LF(warning,
+           "Consider recompiling with BOOST library >={} (this uses boost {}).",
+           boostlib_for_archive_version(vers), BOOST_LIB_VERSION);
         throw e;
         break;
       }
