@@ -315,7 +315,7 @@ void StBuilder::handle_completions() {
   while (auto id = m_st_sender.try_receive_completion()) {
     auto it = m_subtimeslices.find(*id);
     if (it == m_subtimeslices.end()) {
-      ERROR("{}| Received completion for unknown timeslice", *id);
+      TS_ERROR(*id, "Received completion for unknown timeslice");
       continue;
     }
     it->second.completed = true;
@@ -495,7 +495,8 @@ void StBuilder::report_status() {
 
   if (m_aggregation_allocation_failures > m_reported_aggregation_failures) {
     WARN("Aggregation buffer full: dropped {} subtimeslice(s) so far",
-         m_aggregation_allocation_failures);
+         logging::field("aggregation_allocation_failures",
+                        m_aggregation_allocation_failures));
     m_reported_aggregation_failures = m_aggregation_allocation_failures;
   }
 

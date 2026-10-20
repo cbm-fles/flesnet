@@ -246,15 +246,16 @@ void TsBuilder::check_for_timeout(TsId id) {
     if (tsh.is_published) {
       return;
     }
-    WARN("{}| Build timeout (after {} ms)", id,
-         (fles::system::current_time_ns() - tsh.allocated_at_ns + 500000) /
-             1000000);
+    TS_WARN(id, "Build timeout (after {} ms)",
+            logging::field("build_time_ms", (fles::system::current_time_ns() -
+                                             tsh.allocated_at_ns + 500000) /
+                                                1000000));
     for (std::size_t i = 0; i < tsh.states.size(); ++i) {
       if (tsh.states[i] == StState::Requested ||
           tsh.states[i] == StState::Receiving) {
         // Cancel potential ongoing receive operations
-        DEBUG("{}|s{}/{}| Canceling receive operations", id, i,
-              tsh.sender_ids.size());
+        TS_DEBUG(id, "s{}/{}| Canceling receive operations", i,
+                 tsh.sender_ids.size());
         cancel_data_recvs(id, i);
       }
     }
@@ -278,24 +279,24 @@ ucs_status_t TsBuilder::handle_manager_assign_ts(
   const uint64_t ms_data_size = hdr[1];
 
   if (m_ts_handles.contains(id)) {
-    ERROR("{}| Received duplicate subtimeslice collection", id);
+    TS_ERROR(id, "Received duplicate subtimeslice collection");
     return UCS_OK;
   }
 
   auto desc =
       parse_collection(std::span(static_cast<const std::byte*>(data), length));
   if (!desc) {
-    ERROR("{}| Failed to deserialize subtimeslice collection", id);
+    TS_ERROR(id, "Failed to deserialize subtimeslice collection");
     return UCS_OK;
   }
 
   // Try to allocate memory for the content
   auto* buffer = m_timeslice_buffer.allocate(ms_data_size);
   if (buffer == nullptr) {
-    INFO("{}| Failed to allocate {} of contiguous memory (free: {} of {})", id,
-         human_readable_count(ms_data_size, true),
-         human_readable_count(m_timeslice_buffer.get_free_memory(), true),
-         human_readable_count(m_timeslice_buffer.get_size(), true));
+    TS_INFO(id, "Failed to allocate {} of contiguous memory (free: {} of {})",
+            human_readable_count(ms_data_size, true),
+            human_readable_count(m_timeslice_buffer.get_free_memory(), true),
+            human_readable_count(m_timeslice_buffer.get_size(), true));
     send_status_to_manager(BUILDER_EVENT_OUT_OF_MEMORY, id);
     return UCS_OK;
   }
@@ -306,8 +307,8 @@ ucs_status_t TsBuilder::handle_manager_assign_ts(
   m_timeslice_count++;
   send_status_to_manager(BUILDER_EVENT_ALLOCATED, id);
 
-  DEBUG("{}| Received assignment ({}s, {})", id, tsh.sender_ids.size(),
-        human_readable_count(ms_data_size, true));
+  TS_DEBUG(id, "Received assignment ({}s, {})", tsh.sender_ids.size(),
+           human_readable_count(ms_data_size, true));
 
   // Pre-post the tag-matched receives into the registered timeslice buffer
   // BEFORE asking senders for the contributions, so the recvs are "expected"
@@ -415,8 +416,8 @@ void TsBuilder::post_tag_recvs(TsHandle& tsh, std::size_t ci) {
 
     if (UCS_PTR_IS_ERR(request)) {
       ucs_status_t status = UCS_PTR_STATUS(request);
-      ERROR("{}|s{}/{}| Failed to post tag recv: {}", tsh.id, ci,
-            tsh.sender_ids.size(), status);
+      TS_ERROR(tsh.id, "s{}/{}| Failed to post tag recv: {}", ci,
+               tsh.sender_ids.size(), status);
       update_st_state(tsh, ci, StState::Failed);
       cancel_data_recvs(tsh.id, ci);
       return;
@@ -507,7 +508,7 @@ void TsBuilder::handle_sender_data_recv_complete(
     m_active_data_recv_requests.erase(request);
 
     if (!m_ts_handles.contains(id)) {
-      ERROR("{}| Received completion for unknown timeslice", id);
+      TS_ERROR(id, "Received completion for unknown timeslice");
       if (request != nullptr) {
         ucp_request_free(request);
       }
@@ -515,8 +516,7 @@ void TsBuilder::handle_sender_data_recv_complete(
     }
     auto& tsh = *m_ts_handles.at(id);
     if (ci >= tsh.ms_data_sizes.size()) {
-      ERROR("{}| Received completion for unknown contribution index {}", id,
-            ci);
+      TS_ERROR(id, "Received completion for unknown contribution index {}", ci);
       if (request != nullptr) {
         ucp_request_free(request);
       }
@@ -524,9 +524,10 @@ void TsBuilder::handle_sender_data_recv_complete(
     }
     if (status != UCS_OK || length != expected_size) {
       if (status == UCS_OK) {
-        ERROR("{}|s{}/{}| Unexpected received block length: expected {}, "
-              "got {}",
-              id, ci, tsh.sender_ids.size(), expected_size, length);
+        TS_ERROR(id,
+                 "s{}/{}| Unexpected received block length: expected {}, "
+                 "got {}",
+                 ci, tsh.sender_ids.size(), expected_size, length);
       }
       update_st_state(tsh, ci, StState::Failed);
       // Cancel the remaining pre-posted receives of this contribution (e.g.,
@@ -547,7 +548,7 @@ void TsBuilder::handle_sender_data_recv_complete(
 
 void TsBuilder::process_completion(TsId id) {
   if (!m_ts_handles.contains(id)) {
-    ERROR("{}| Received completion for unknown timeslice", id);
+    TS_ERROR(id, "Received completion for unknown timeslice");
     return;
   }
   const uint64_t published_at_ns = m_ts_handles.at(id)->published_at_ns;
@@ -555,8 +556,8 @@ void TsBuilder::process_completion(TsId id) {
   m_timeslice_buffer.deallocate(m_ts_handles.at(id)->buffer);
   m_ts_handles.erase(id);
   send_status_to_manager(BUILDER_EVENT_RELEASED, id);
-  DEBUG("{}| Released (after {} ms)", id,
-        (now_ns - published_at_ns + 500000) / 1000000);
+  TS_DEBUG(id, "Released (after {} ms)",
+           (now_ns - published_at_ns + 500000) / 1000000);
 }
 
 // Helper methods
@@ -570,15 +571,15 @@ void TsBuilder::update_st_state(TsHandle& tsh,
   }
   const uint64_t now_ns = fles::system::current_time_ns();
   if (now_ns - tsh.state_change_at_ns[contribution_index] < 1000000) {
-    DEBUG("{}|s{}/{}| State: {} -> {}", tsh.id, contribution_index,
-          tsh.sender_ids.size(), to_string(tsh.states[contribution_index]),
-          to_string(new_state));
+    TS_DEBUG(tsh.id, "s{}/{}| State: {} -> {}", contribution_index,
+             tsh.sender_ids.size(), to_string(tsh.states[contribution_index]),
+             to_string(new_state));
   } else {
-    DEBUG("{}|s{}/{}| State: {} -> {} (after {} ms)", tsh.id,
-          contribution_index, tsh.sender_ids.size(),
-          to_string(tsh.states[contribution_index]), to_string(new_state),
-          (now_ns - tsh.state_change_at_ns[contribution_index] + 500000) /
-              1000000);
+    TS_DEBUG(tsh.id, "s{}/{}| State: {} -> {} (after {} ms)",
+             contribution_index, tsh.sender_ids.size(),
+             to_string(tsh.states[contribution_index]), to_string(new_state),
+             (now_ns - tsh.state_change_at_ns[contribution_index] + 500000) /
+                 1000000);
   }
   tsh.states[contribution_index] = new_state;
   tsh.state_change_at_ns[contribution_index] = now_ns;
@@ -594,12 +595,18 @@ void TsBuilder::update_st_state(TsHandle& tsh,
         tsh.is_published = true;
         tsh.published_at_ns = fles::system::current_time_ns();
         if (ts_desc.has_flag(TsFlag::MissingSubtimeslices)) {
-          INFO("{}| Published incomplete timeslice (after {} ms)", tsh.id,
-               (tsh.published_at_ns - tsh.allocated_at_ns + 500000) / 1000000);
+          TS_INFO(tsh.id, "Published incomplete timeslice (after {} ms)",
+                  logging::field(
+                      "build_time_ms",
+                      (tsh.published_at_ns - tsh.allocated_at_ns + 500000) /
+                          1000000));
           m_timeslice_incomplete_count++;
         } else {
-          DEBUG("{}| Published (after {} ms)", tsh.id,
-                (tsh.published_at_ns - tsh.allocated_at_ns + 500000) / 1000000);
+          TS_DEBUG(tsh.id, "Published (after {} ms)",
+                   logging::field(
+                       "build_time_ms",
+                       (tsh.published_at_ns - tsh.allocated_at_ns + 500000) /
+                           1000000));
         }
       }
     }
