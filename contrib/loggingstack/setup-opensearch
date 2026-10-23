@@ -1,0 +1,189 @@
+#!/bin/bash
+#
+# Sets up OpenSearch for flesnet logs: ingest pipeline, index template,
+# index state management and the users for Fluent Bit and Grafana.
+#
+# Run it once after the first start, before any logs arrive, and again after
+# changing it; it overwrites what it creates. Settings come from .env.
+#
+# Adapted from the DCA setup in walters-test-environment/loggingstack-test.
+
+set -euo pipefail
+
+cd "$(dirname "$0")"
+set -a
+. ./.env
+set +a
+
+: "${OPENSEARCH_URL:=https://localhost:9200}"
+: "${OPENSEARCH_OPER_RETENTION:=90d}"
+: "${OPENSEARCH_DEBUG_RETENTION:=7d}"
+
+put() {
+  local path=$1
+  echo "PUT $path"
+  curl -sSk --fail-with-body -u "admin:$OPENSEARCH_ADMIN_PASSWORD" \
+    -H 'Content-Type: application/json' -X PUT "$OPENSEARCH_URL/$path" \
+    --data-binary @-
+  echo
+}
+
+# Index state management policies are versioned, an update needs the current
+# sequence number and primary term.
+put_policy() {
+  local name=$1 body query=""
+  body=$(cat)
+  local current
+  if current=$(curl -sSk --fail -u "admin:$OPENSEARCH_ADMIN_PASSWORD" \
+    "$OPENSEARCH_URL/_plugins/_ism/policies/$name" 2>/dev/null); then
+    query=$(python3 -I -c 'import json, sys; p = json.load(sys.stdin)
+print("?if_seq_no=%d&if_primary_term=%d" % (p["_seq_no"], p["_primary_term"]))' \
+      <<<"$current")
+  fi
+  put "_plugins/_ism/policies/$name$query" <<<"$body"
+}
+
+# A readable copy of the data object, e.g. for log lines in Grafana
+put _ingest/pipeline/logs-flesnet <<'EOF'
+{
+  "description": "add data_text, a readable copy of data",
+  "processors": [
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.containsKey('data') && ctx['data'] != null) { ctx['data_text'] = ctx['data'].toString(); }"
+      }
+    }
+  ]
+}
+EOF
+
+# Strings are keywords unless named here. data is a flat_object, so its keys do
+# not become fields of the index; its values are kept as strings.
+put _index_template/logs-flesnet <<'EOF'
+{
+  "index_patterns": ["logs-flesnet-*"],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "default_pipeline": "logs-flesnet"
+    },
+    "mappings": {
+      "dynamic_templates": [
+        {
+          "strings_as_keywords": {
+            "match_mapping_type": "string",
+            "mapping": { "type": "keyword" }
+          }
+        }
+      ],
+      "properties": {
+        "@timestamp": { "type": "date_nanos" },
+        "message": { "type": "text", "norms": false },
+        "message_template": { "type": "keyword" },
+        "data": { "type": "flat_object" },
+        "data_text": { "type": "text", "norms": false },
+        "severity_code": { "type": "integer" },
+        "severity_text": { "type": "keyword" },
+        "timeslice": { "type": "long" },
+        "host": { "type": "keyword" },
+        "service": { "type": "keyword" },
+        "thread": { "type": "keyword" },
+        "tid": { "type": "long" },
+        "pid": { "type": "long" },
+        "file_name": { "type": "keyword" },
+        "line": { "type": "integer" },
+        "function": { "type": "keyword" },
+        "version": { "type": "keyword" },
+        "log_file": { "type": "keyword" }
+      }
+    }
+  }
+}
+EOF
+
+# Fluent Bit writes messages from status level up to monthly indices
+# logs-flesnet-oper-YYYY.MM and debug and trace messages to daily indices
+# logs-flesnet-debug-YYYY.MM.DD.
+put_policy logs-flesnet-oper <<EOF
+{
+  "policy": {
+    "description": "logs-flesnet-oper: delete after $OPENSEARCH_OPER_RETENTION",
+    "default_state": "hot",
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          { "state_name": "delete", "conditions": { "min_index_age": "$OPENSEARCH_OPER_RETENTION" } }
+        ]
+      },
+      { "name": "delete", "actions": [ { "delete": {} } ], "transitions": [] }
+    ],
+    "ism_template": { "index_patterns": ["logs-flesnet-oper-*"], "priority": 100 }
+  }
+}
+EOF
+
+put_policy logs-flesnet-debug <<EOF
+{
+  "policy": {
+    "description": "logs-flesnet-debug: delete after $OPENSEARCH_DEBUG_RETENTION",
+    "default_state": "hot",
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          { "state_name": "delete", "conditions": { "min_index_age": "$OPENSEARCH_DEBUG_RETENTION" } }
+        ]
+      },
+      { "name": "delete", "actions": [ { "delete": {} } ], "transitions": [] }
+    ],
+    "ism_template": { "index_patterns": ["logs-flesnet-debug-*"], "priority": 100 }
+  }
+}
+EOF
+
+# Fluent Bit may only write logs, Grafana may only read them
+put _plugins/_security/api/roles/logs_flesnet_writer <<'EOF'
+{
+  "cluster_permissions": ["cluster_monitor", "indices:data/write/bulk"],
+  "index_permissions": [
+    {
+      "index_patterns": ["logs-flesnet-*"],
+      "allowed_actions": ["create_index", "index", "indices:admin/mapping/put"]
+    }
+  ]
+}
+EOF
+
+put _plugins/_security/api/roles/logs_flesnet_reader <<'EOF'
+{
+  "cluster_permissions": ["cluster_monitor", "cluster_composite_ops_ro"],
+  "index_permissions": [
+    {
+      "index_patterns": ["logs-flesnet-*"],
+      "allowed_actions": ["read", "indices:admin/get", "indices:admin/mappings/get", "indices:monitor/settings/get"]
+    }
+  ]
+}
+EOF
+
+put _plugins/_security/api/internalusers/fluentbit <<EOF
+{ "password": "$OPENSEARCH_FLUENTBIT_PASSWORD", "description": "Fluent Bit on the nodes" }
+EOF
+
+put _plugins/_security/api/internalusers/grafana <<EOF
+{ "password": "$OPENSEARCH_GRAFANA_PASSWORD", "description": "Grafana data source" }
+EOF
+
+put _plugins/_security/api/rolesmapping/logs_flesnet_writer <<'EOF'
+{ "users": ["fluentbit"] }
+EOF
+
+put _plugins/_security/api/rolesmapping/logs_flesnet_reader <<'EOF'
+{ "users": ["grafana"] }
+EOF
