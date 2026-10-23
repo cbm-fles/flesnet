@@ -34,12 +34,6 @@ private:
   Derived* do_get() override { return nullptr; };
 };
 
-/// Access mode for the shared memory segment opened by a timeslice receiver.
-enum class ShmAccess {
-  ReadOnly, ///< Map the segment read-only (default)
-  ReadWrite ///< Map the segment writable, e.g., for RDMA memory registration
-};
-
 /**
  * \brief The TimesliceReceiver class implements the IPC mechanisms to receive a
  * timeslice.
@@ -48,11 +42,8 @@ template <>
 class Receiver<Timeslice, TimesliceView> : public Source<Timeslice> {
 public:
   /// Construct timeslice receiver connected to a given shared memory.
-  Receiver(const std::string& ipc_identifier,
-           WorkerParameters parameters,
-           ShmAccess access = ShmAccess::ReadOnly)
-      : worker_("ipc://@" + ipc_identifier, std::move(parameters)),
-        access_(access) {
+  Receiver(const std::string& ipc_identifier, WorkerParameters parameters)
+      : worker_("ipc://@" + ipc_identifier, std::move(parameters)) {
     worker_.set_disconnect_callback([this] { managed_shm_ = nullptr; });
   }
 
@@ -125,17 +116,10 @@ private:
 
       // connect to matching shared memory if not already connected
       if (managed_shm_uuid() != timeslice_item.shm_uuid) {
-        if (access_ == ShmAccess::ReadWrite) {
-          managed_shm_ =
-              std::make_unique<boost::interprocess::managed_shared_memory>(
-                  boost::interprocess::open_only,
-                  timeslice_item.shm_identifier.c_str());
-        } else {
-          managed_shm_ =
-              std::make_unique<boost::interprocess::managed_shared_memory>(
-                  boost::interprocess::open_read_only,
-                  timeslice_item.shm_identifier.c_str());
-        }
+        managed_shm_ =
+            std::make_unique<boost::interprocess::managed_shared_memory>(
+                boost::interprocess::open_read_only,
+                timeslice_item.shm_identifier.c_str());
         std::cout << "TimesliceReceiver: opened shared memory "
                   << timeslice_item.shm_identifier << " {" << managed_shm_uuid()
                   << "}" << std::endl;
@@ -182,9 +166,6 @@ private:
 
   // The respective item worker object
   ItemWorker worker_;
-
-  /// The access mode for the shared memory segment
-  ShmAccess access_;
 };
 
 } // namespace fles

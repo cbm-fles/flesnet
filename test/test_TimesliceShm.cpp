@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(shm_forward_test) {
   fles::TimesliceShmBuffer out_buffer(context, out_id, UINT64_C(1) << 24);
 
   fles::Receiver<fles::Timeslice, fles::TimesliceView> in_receiver(
-      in_id, worker_parameters(), fles::ShmAccess::ReadWrite);
+      in_id, worker_parameters());
   fles::Receiver<fles::Timeslice, fles::TimesliceView> out_receiver(
       out_id, worker_parameters());
 
