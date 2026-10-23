@@ -1,0 +1,466 @@
+{
+  "title": "flesnet logs",
+  "uid": "flesnet-logs",
+  "tags": [
+    "flesnet",
+    "logs"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "editable": true,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Messages by severity",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 8
+      },
+      "datasource": {
+        "type": "grafana-opensearch-datasource",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-opensearch-datasource",
+            "uid": "${datasource}"
+          },
+          "queryType": "lucene",
+          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene}",
+          "timeField": "@timestamp",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "count"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "3",
+              "type": "terms",
+              "field": "severity_text",
+              "settings": {
+                "size": "10",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
+              }
+            },
+            {
+              "id": "2",
+              "type": "date_histogram",
+              "field": "@timestamp",
+              "settings": {
+                "interval": "auto",
+                "min_doc_count": "0",
+                "trimEdges": "0"
+              }
+            }
+          ],
+          "luceneQueryType": "Metric"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "lineWidth": 1
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "FATAL"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "dark-purple"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ERROR"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "WARN"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "NOTICE"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "INFO"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DEBUG"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8e8e8e"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TRACE"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5a5a5a"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Messages by host and service",
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "grafana-opensearch-datasource",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-opensearch-datasource",
+            "uid": "${datasource}"
+          },
+          "queryType": "lucene",
+          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene}",
+          "timeField": "@timestamp",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "count"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "3",
+              "type": "terms",
+              "field": "host",
+              "settings": {
+                "size": "50",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
+              }
+            },
+            {
+              "id": "4",
+              "type": "terms",
+              "field": "service",
+              "settings": {
+                "size": "20",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
+              }
+            }
+          ],
+          "luceneQueryType": "Metric"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Count",
+            "desc": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Most frequent kinds of messages (warnings and above)",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 7
+      },
+      "datasource": {
+        "type": "grafana-opensearch-datasource",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-opensearch-datasource",
+            "uid": "${datasource}"
+          },
+          "queryType": "lucene",
+          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene} AND severity_code:>=13",
+          "timeField": "@timestamp",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "count"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "3",
+              "type": "terms",
+              "field": "message_template",
+              "settings": {
+                "size": "20",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
+              }
+            },
+            {
+              "id": "4",
+              "type": "terms",
+              "field": "severity_text",
+              "settings": {
+                "size": "10",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
+              }
+            }
+          ],
+          "luceneQueryType": "Metric"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Count",
+            "desc": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "logs",
+      "title": "Messages",
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 14
+      },
+      "datasource": {
+        "type": "grafana-opensearch-datasource",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-opensearch-datasource",
+            "uid": "${datasource}"
+          },
+          "queryType": "lucene",
+          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene}",
+          "timeField": "@timestamp",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "logs"
+            }
+          ],
+          "bucketAggs": [],
+          "luceneQueryType": "Logs"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "prettifyLogMessage": false
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "Data source",
+        "type": "datasource",
+        "query": "grafana-opensearch-datasource",
+        "regex": "/flesnet/",
+        "current": {
+          "text": "OpenSearch flesnet logs",
+          "value": "opensearch-flesnet-all"
+        }
+      },
+      {
+        "name": "host",
+        "label": "Host",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-opensearch-datasource",
+          "uid": "${datasource}"
+        },
+        "query": "{\"find\": \"terms\", \"field\": \"host\", \"size\": 500}",
+        "definition": "{\"find\": \"terms\", \"field\": \"host\"}",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": "*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      },
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-opensearch-datasource",
+          "uid": "${datasource}"
+        },
+        "query": "{\"find\": \"terms\", \"field\": \"service\", \"size\": 500}",
+        "definition": "{\"find\": \"terms\", \"field\": \"service\"}",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": "*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      },
+      {
+        "name": "query",
+        "label": "Query (Lucene)",
+        "type": "textbox",
+        "query": "*",
+        "current": {
+          "text": "*",
+          "value": "*"
+        },
+        "description": "e.g. timeslice:17900000123 or severity_code:>=13"
+      }
+    ]
+  }
+}

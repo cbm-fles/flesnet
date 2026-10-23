@@ -1,0 +1,58 @@
+# OpenSearch and OpenSearch Dashboards for collecting flesnet logs
+#
+# Fluent Bit on the nodes writes to OpenSearch on the cluster network, see
+# fluent-bit/. Dashboards only listens on localhost, use an SSH tunnel.
+# Settings and passwords are in .env, see README.md.
+
+name: loggingstack
+
+services:
+  opensearch:
+    image: docker.io/opensearchproject/opensearch:3.9.0
+    container_name: loggingstack-opensearch
+    environment:
+      - cluster.name=flesnet-logging
+      - node.name=opensearch
+      - discovery.type=single-node
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_ADMIN_PASSWORD:?}
+      - OPENSEARCH_JAVA_OPTS=-Xms${OPENSEARCH_HEAP:-4g} -Xmx${OPENSEARCH_HEAP:-4g}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    # the heap plus off-heap memory and the page cache of the container
+    mem_limit: ${OPENSEARCH_MEM_LIMIT:-8g}
+    cpus: ${OPENSEARCH_CPUS:-8}
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - "127.0.0.1:9200:9200"
+      - "${OPENSEARCH_CLUSTER_ADDRESS:?}:9200:9200"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk -u \"admin:$$OPENSEARCH_INITIAL_ADMIN_PASSWORD\" --fail 'https://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 2m
+      start_interval: 5s
+
+  dashboards:
+    image: docker.io/opensearchproject/opensearch-dashboards:3.9.0
+    container_name: loggingstack-dashboards
+    environment:
+      - 'OPENSEARCH_HOSTS=["https://opensearch:9200"]'
+    mem_limit: ${DASHBOARDS_MEM_LIMIT:-2g}
+    cpus: ${DASHBOARDS_CPUS:-2}
+    volumes:
+      - dashboards-data:/usr/share/opensearch-dashboards/data
+    ports:
+      - "127.0.0.1:5601:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  opensearch-data:
+  dashboards-data:

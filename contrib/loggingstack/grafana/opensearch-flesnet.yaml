@@ -1,0 +1,46 @@
+# Grafana data sources for the flesnet logs in OpenSearch, needs the plugin
+# grafana-opensearch-datasource. Install to /etc/grafana/provisioning/
+# datasources/ with the password of the OpenSearch user grafana, see README.md.
+apiVersion: 1
+
+datasources:
+  - name: OpenSearch flesnet logs
+    uid: opensearch-flesnet-all
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: https://localhost:9200
+    basicAuth: true
+    basicAuthUser: grafana
+    jsonData:
+      # the index pattern
+      database: "logs-flesnet-*"
+      flavor: opensearch
+      version: "3.9.0"
+      timeField: "@timestamp"
+      logMessageField: message
+      logLevelField: severity_text
+      maxConcurrentShardRequests: 5
+      # the demo certificate of the test setup
+      tlsSkipVerify: true
+    secureJsonData:
+      basicAuthPassword: "${OPENSEARCH_GRAFANA_PASSWORD}"
+
+  - name: OpenSearch flesnet logs (oper)
+    uid: opensearch-flesnet-oper
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: https://localhost:9200
+    basicAuth: true
+    basicAuthUser: grafana
+    jsonData:
+      # the index pattern
+      database: "logs-flesnet-oper-*"
+      flavor: opensearch
+      version: "3.9.0"
+      timeField: "@timestamp"
+      logMessageField: message
+      logLevelField: severity_text
+      maxConcurrentShardRequests: 5
+      tlsSkipVerify: true
+    secureJsonData:
+      basicAuthPassword: "${OPENSEARCH_GRAFANA_PASSWORD}"
