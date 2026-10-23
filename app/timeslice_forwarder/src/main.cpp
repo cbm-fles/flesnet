@@ -5,6 +5,7 @@
 #include "TsSender.hpp"
 
 #include <chrono>
+#include <cstdlib>
 #include <getopt.h>
 #include <memory>
 #include <rdma/fabric.h>
@@ -83,6 +84,9 @@ void signalHandler(int sig) {
 
 int main(int argc, char** argv) {
   signal(SIGINT, signalHandler);
+  // The libfabric MR cache registers all memory with write access, which fails for the read-only
+  // timeslice SHM. Only a few large buffers are registered, so the cache does not help here.
+  setenv("FI_MR_CACHE_MONITOR", "disabled", 0);
 
   par.parse_options(argc, argv);
   if (FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION) != fi_version()) {

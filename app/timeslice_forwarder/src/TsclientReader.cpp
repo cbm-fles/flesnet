@@ -22,8 +22,7 @@ TsclientReader::TsclientReader(std::string shm_uri) {
           to_string(fles::system::current_pid())};
   UriComponents uri{shm_uri};
   const auto shm_identifier = uri.path;
-  // The SHM is mapped writable, as needed for the RDMA memory registration
-  source_ = make_unique<fles::Receiver<fles::Timeslice, fles::TimesliceView>>(shm_identifier, param, fles::ShmAccess::ReadWrite);
+  source_ = make_unique<fles::Receiver<fles::Timeslice, fles::TimesliceView>>(shm_identifier, param);
   new_timeslice_callbacks_.set_worker(make_shared<WorkerThread>());
 
   // We have to read out one timeslice to get the SHM region to register it for RDMA transmissions.
@@ -35,7 +34,8 @@ TsclientReader::TsclientReader(std::string shm_uri) {
   const auto region = first_timeslice_->shm_region();
   shm_uuid_ = first_timeslice_->shm_uuid();
   buffer_size_ = region.size();
-  // The region is const because timeslices are read-only, but the mapping is writable (see above)
+  // The SHM is mapped read-only. The data forwarder API takes a non-const pointer, but the buffer
+  // is only read, as the source of RDMA writes (see TsSender).
   buffer_ = const_cast<char*>(reinterpret_cast<const char*>(region.data()));
 }
 
