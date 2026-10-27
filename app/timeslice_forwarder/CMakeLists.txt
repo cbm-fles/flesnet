@@ -36,11 +36,11 @@ ELSE ()
     set(DATA_FORWARDER_INCLUDE_DIR "${DATA_FORWARDER_INSTALL_DIR}/include")
     set(DATA_FORWARDER_LIB_DIR     "${DATA_FORWARDER_INSTALL_DIR}/lib")
     set(DATA_FORWARDER_LIBRARY "${DATA_FORWARDER_LIB_DIR}/libdata_forwarder.a")
-
+    set(DATA_FORWARDER_COMMIT "1040728822e88e2c330f4617d6e2064eed157b56")
     IF (DEFINED ENV{SIMPATH})
         ExternalProject_Add(data_forwarder_lib
             GIT_REPOSITORY https://git.zib.de/ngreve/data_forwarder.git
-            GIT_TAG a2e6b3b5448f38c5cabdfb8b7c431d2ea11a9040 # dev, 2026-10-02
+            GIT_TAG ${DATA_FORWARDER_COMMIT} # dev, 2026-10-27
             CMAKE_ARGS
                 -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
                 -DCMAKE_INSTALL_PREFIX=${DATA_FORWARDER_INSTALL_DIR}
@@ -54,7 +54,7 @@ ELSE ()
     ELSE()
         ExternalProject_Add(data_forwarder_lib
             GIT_REPOSITORY https://git.zib.de/ngreve/data_forwarder.git
-            GIT_TAG a2e6b3b5448f38c5cabdfb8b7c431d2ea11a9040 # dev, 2026-10-02
+            GIT_TAG ${DATA_FORWARDER_COMMIT} # dev, 2026-10-27
             CMAKE_ARGS
                 -DLIBFABRIC_INSTALL_PATH=${LIBFABRIC_INSTALL_DIR}
                 -DCMAKE_INSTALL_PREFIX=${DATA_FORWARDER_INSTALL_DIR}
