@@ -1,0 +1,38 @@
+name: Container cleanup
+
+# Delete the image of a closed pull request and the untagged images left
+# behind by rebuilds
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    if: github.repository == 'cbm-fles/flesnet' && github.event.pull_request.head.repo.full_name == github.repository
+
+    runs-on: ubuntu-24.04
+
+    permissions:
+      packages: write
+
+    steps:
+    - name: Delete pull request image
+      env:
+        GH_TOKEN: ${{github.token}}
+        TAG: pr-${{github.event.pull_request.number}}
+      run: |
+        versions=/orgs/cbm-fles/packages/container/flesnet/versions
+        gh api --paginate "$versions" \
+          --jq ".[] | select(.metadata.container.tags | index(\"$TAG\")) | .id" |
+        while read -r id; do
+          gh api -X DELETE "$versions/$id"
+        done
+
+    - name: Delete untagged images
+      uses: actions/delete-package-versions@v5
+      with:
+        package-name: flesnet
+        package-type: container
+        min-versions-to-keep: 0
+        delete-only-untagged-versions: true
