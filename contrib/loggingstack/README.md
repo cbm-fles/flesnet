@@ -31,7 +31,9 @@ the DCA logger.
 `message` as text, `@timestamp` with full precision and `data` as a
 `flat_object`: its keys do not become fields, and its values are strings that
 can be searched, e.g. `data.build_time_ms:1001`. `data_text` is a readable copy
-of `data`. Fluent Bit adds `log_file`, the path of the file a message comes from.
+of `data`. `instance`, which of several processes of a program on a host
+sent a message (e.g. tsclient's `-c` index), is a keyword as well. Fluent Bit
+adds `log_file`, the path of the file a message comes from.
 
 ## OpenSearch on the login node
 
@@ -95,7 +97,8 @@ systemctl enable fluent-bit
 The programs write their log files to `FLESNET_LOG_DIR` or a subdirectory of
 it, e.g. one per run, with `--log-file DIR/NAME.log` (or `CBM_LOG_FILE`). The
 name should tell the program and its instance apart, e.g.
-`node10_tsclient_0.log`; `host`, `service` and `pid` are in each message anyway.
+`node10_tsclient_0.log`; `host`, `service`, `instance` (where set) and `pid` are
+in each message anyway.
 Fluent Bit keeps its read positions and buffered messages in
 `FLUENT_BIT_STATE_DIR`. On nodes without a disk, both directories are in memory
 and lost at a reboot, and their size limits the amount of logs.
