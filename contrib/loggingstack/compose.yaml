@@ -1,7 +1,9 @@
-# OpenSearch and OpenSearch Dashboards for collecting flesnet logs
+# OpenSearch, OpenSearch Dashboards and the log viewer for collecting flesnet
+# logs
 #
 # Fluent Bit on the nodes writes to OpenSearch on the cluster network, see
-# fluent-bit/. Dashboards only listens on localhost, use an SSH tunnel.
+# fluent-bit/. Dashboards and the log viewer only listen on localhost, use an
+# SSH tunnel.
 # Settings and passwords are in .env, see README.md.
 
 name: loggingstack
@@ -50,6 +52,23 @@ services:
       - ./dashboards/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml:ro
     ports:
       - "127.0.0.1:5601:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # https://github.com/cbm-fles/cbm-logviewer
+  logviewer:
+    image: ghcr.io/cbm-fles/cbm-logviewer:latest
+    container_name: loggingstack-logviewer
+    environment:
+      - OPENSEARCH_URL=https://opensearch:9200
+      - OPENSEARCH_USER=logviewer
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_LOGVIEWER_PASSWORD:?}
+    mem_limit: ${LOGVIEWER_MEM_LIMIT:-1g}
+    cpus: ${LOGVIEWER_CPUS:-2}
+    ports:
+      - "127.0.0.1:5602:5602"
     depends_on:
       opensearch:
         condition: service_healthy

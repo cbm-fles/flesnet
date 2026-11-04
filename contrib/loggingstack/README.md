@@ -4,12 +4,13 @@ A test setup that collects the JSON log files of the flesnet programs (see
 [doc/logging.md](../../doc/logging.md)) in OpenSearch:
 
 ```
-flesnet programs --> local log files --> Fluent Bit --> OpenSearch --> Dashboards
-   (each node)        (each node)        (each node)   (login node)    Grafana
+flesnet programs --> local log files --> Fluent Bit --> OpenSearch --> log viewer
+   (each node)        (each node)        (each node)   (login node)    Dashboards
+                                                                       Grafana
 ```
 
-- OpenSearch and OpenSearch Dashboards run on the login node in Docker,
-  see [compose.yaml](compose.yaml).
+- OpenSearch, OpenSearch Dashboards and the log viewer run on the login node
+  in Docker, see [compose.yaml](compose.yaml).
 - Fluent Bit runs natively on each node and sends the log files to OpenSearch,
   see [fluent-bit/](fluent-bit/).
 - Grafana on the login node reads OpenSearch, see [grafana/](grafana/).
@@ -55,6 +56,20 @@ and in the global tenant.
 The data is in the Docker volumes `loggingstack_opensearch-data` and
 `loggingstack_dashboards-data`. Note that OpenSearch stops writing when its
 disk is more than 95 % full. `docker compose down -v` removes everything.
+
+## Log viewer
+
+The log viewer ([cbm-logviewer](https://github.com/cbm-fles/cbm-logviewer))
+shows the messages in a table, with filters per column, in query mode for a
+time range and in live mode as they arrive. It reads OpenSearch as the user
+`logviewer`, which may only read the logs, and listens on localhost:
+
+```bash
+ssh -L 5602:localhost:5602 login     # then http://localhost:5602
+```
+
+`docker compose pull logviewer && docker compose up -d logviewer` updates it
+to the latest version; the image of each commit is also tagged with its hash.
 
 ## Fluent Bit on the nodes
 
