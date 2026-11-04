@@ -11,7 +11,6 @@
 #include <boost/program_options/variables_map.hpp>
 #include <cstdint>
 #include <cstdlib>
-#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -102,7 +101,11 @@ void Parameters::parse_options(int argc, char* argv[]) {
   fles::handle_general_options(vm, "tsclient", desc);
 
   try {
-    logging::setup(fles::log_options(vm));
+    auto options = fles::log_options(vm);
+    if (client_index_ != -1) {
+      options.context.push_back(logging::field("client_index", client_index_));
+    }
+    logging::setup(options);
   } catch (std::runtime_error const& e) {
     throw ParametersException(e.what());
   }

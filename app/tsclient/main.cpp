@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
     Application app(par, &signal_status);
     app.run();
   } catch (ParametersException const& e) {
-    std::cerr << "Parameter error: " << e.what() << std::endl;
+    ERROR("Parameter error: {}", e.what());
     return EXIT_FAILURE;
   } catch (std::exception const& e) {
     FATAL("Unknown exception: {}", e.what());

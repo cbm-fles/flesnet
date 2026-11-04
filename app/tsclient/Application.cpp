@@ -57,19 +57,19 @@ Application::Application(Parameters const& par,
 
   if (par_.analyze()) {
     if (par_.histograms()) {
-      sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-          new TimesliceAnalyzer(1000, status_log_.stream, output_prefix_,
-                                &std::cout, monitor_.get())));
+      sinks_.push_back(
+          std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(
+              1000, output_prefix_, &std::cout, monitor_.get())));
     } else {
-      sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-          new TimesliceAnalyzer(1000, status_log_.stream, output_prefix_,
-                                nullptr, monitor_.get())));
+      sinks_.push_back(
+          std::unique_ptr<fles::TimesliceSink>(new TimesliceAnalyzer(
+              1000, output_prefix_, nullptr, monitor_.get())));
     }
   }
 
   if (par_.verbosity() > 0) {
     sinks_.push_back(std::unique_ptr<fles::TimesliceSink>(
-        new TimesliceDumper(debug_log_.stream, par_.verbosity())));
+        new TimesliceDumper(par_.verbosity())));
   }
 
   bool has_shm_output = false;

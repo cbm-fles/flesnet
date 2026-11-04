@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include <vector>
 
 /// %Benchmark class.
@@ -24,7 +25,7 @@ public:
     CrcUtil_I
   };
   uint32_t compute_crc32(Algorithm algorithm);
-  void run_single(Algorithm algorithm);
+  void run_single(Algorithm algorithm, std::string_view name);
 
   const size_t size_ = 1048576;
   const size_t cycles_ = 500;

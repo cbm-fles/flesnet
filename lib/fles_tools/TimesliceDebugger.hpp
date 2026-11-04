@@ -88,14 +88,12 @@ inline std::ostream& operator<<(std::ostream& s, const TimesliceDump& dump) {
 
 class TimesliceDumper : public fles::TimesliceSink {
 public:
-  TimesliceDumper(std::ostream& arg_out, std::size_t arg_verbosity)
-      : out(arg_out), verbosity(arg_verbosity) {};
+  explicit TimesliceDumper(std::size_t arg_verbosity)
+      : verbosity(arg_verbosity) {};
 
-  void put(std::shared_ptr<const fles::Timeslice> timeslice) override {
-    out << TimesliceDump(*timeslice, verbosity) << "\n";
-  }
+  /// Logs the dump of the timeslice as a debug message
+  void put(std::shared_ptr<const fles::Timeslice> timeslice) override;
 
 private:
-  std::ostream& out;
   std::size_t verbosity;
 };
