@@ -103,7 +103,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
   try {
     auto options = fles::log_options(vm);
     if (client_index_ != -1) {
-      options.context.push_back(logging::field("client_index", client_index_));
+      options.instance = std::to_string(client_index_);
     }
     logging::setup(options);
   } catch (std::runtime_error const& e) {
