@@ -83,21 +83,11 @@ constexpr std::chrono::seconds fatal_timeout{2};
 
 // The members that every JSON line has, or can have. The context of setup()
 // must not repeat them.
-constexpr std::array<std::string_view, 15> json_keys{"@timestamp",
-                                                     "host",
-                                                     "service",
-                                                     "thread",
-                                                     "tid",
-                                                     "severity_code",
-                                                     "severity_text",
-                                                     "timeslice",
-                                                     "message",
-                                                     "message_template",
-                                                     "data",
-                                                     "file_name",
-                                                     "line",
-                                                     "function",
-                                                     "pid"};
+constexpr std::array<std::string_view, 16> json_keys{
+    "@timestamp", "host",    "service",          "instance",
+    "thread",     "tid",     "severity_code",    "severity_text",
+    "timeslice",  "message", "message_template", "data",
+    "file_name",  "line",    "function",         "pid"};
 
 char const* process_name() {
 #ifdef __APPLE__
@@ -286,6 +276,7 @@ struct Outputs {
   bool interactive = false;
   severity_level file_level = status;
   std::unique_ptr<File> file;
+  std::string instance;
   std::vector<logging::Field> context;
 
   [[nodiscard]] severity_level minimum() const {
@@ -315,6 +306,7 @@ Outputs make_outputs(logging::Options const& options) {
   if (!options.file.empty()) {
     outputs.file = std::make_unique<File>(options.file);
   }
+  outputs.instance = options.instance;
   outputs.context = options.context;
   return outputs;
 }
@@ -499,9 +491,9 @@ public:
 
   // One JSON object per line with the field names of the DCA logger:
   // @timestamp, host, service, thread, severity_code/_text, message and the
-  // fields as data. In addition the thread id as tid, the timeslice id as
-  // timeslice, the format string as message_template, the source location,
-  // pid and the context from setup().
+  // fields as data. In addition the instance of the service, the thread id
+  // as tid, the timeslice id as timeslice, the format string as
+  // message_template, the source location, pid and the context from setup().
   void append_json(std::string& out, Outputs const& outputs, Record const& r) {
     auto const level = level_index(r.level);
     out += R"({"@timestamp":")";
@@ -509,6 +501,9 @@ public:
     out += '"';
     append_json_member(out, "host", host_);
     append_json_member(out, "service", service_);
+    if (!outputs.instance.empty()) {
+      append_json_member(out, "instance", outputs.instance);
+    }
     append_json_member(out, "thread", r.thread.name);
     out += R"(,"tid":)";
     append_number(out, r.thread.id);
@@ -960,6 +955,7 @@ Options options_from_environment(Options options) {
   apply("CBM_LOG_FILE", [&](char const* v) { options.file = v; });
   apply("CBM_LOG_FILE_LEVEL",
         [&](char const* v) { options.file_level = parse_level(v); });
+  apply("CBM_LOG_INSTANCE", [&](char const* v) { options.instance = v; });
   return options;
 }
 

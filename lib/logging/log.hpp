@@ -80,13 +80,17 @@ struct Options {
   Format format = Format::text;  ///< on stderr; text is coloured on a tty
   std::string file;              ///< JSON lines, appended; empty: none
   std::optional<severity_level> file_level; ///< default: level
+  /// Which of several processes of the service on a host this is, e.g. "3",
+  /// as "instance" in every JSON line; empty: none
+  std::string instance;
   /// Extra fields in every JSON line, e.g. field("run", 1234). Their keys
   /// must differ from those that every line has, e.g. "host" or "message".
   std::vector<Field> context;
 };
 
 /// The given options, overridden by the environment variables CBM_LOG_LEVEL,
-/// CBM_LOG_FORMAT, CBM_LOG_FILE and CBM_LOG_FILE_LEVEL where set. Invalid
+/// CBM_LOG_FORMAT, CBM_LOG_FILE, CBM_LOG_FILE_LEVEL and CBM_LOG_INSTANCE
+/// where set. Invalid
 /// values are reported on stderr and ignored.
 FLES_LOGGING_EXPORT Options options_from_environment(Options options = {});
 
