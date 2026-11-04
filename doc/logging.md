@@ -19,6 +19,11 @@ A level is one of `trace`, `debug`, `status`, `info`, `warning` (or `warn`),
 precedence over the environment variable. The file is appended to, never
 truncated; flesctl gives each process a file of its own.
 
+Where several processes of one program run on a host, each can name its
+instance, e.g. tsclient with its `-c` index. An application sets
+`logging::Options::instance`; `CBM_LOG_INSTANCE` sets it for any program
+that does not. Only JSON output shows it.
+
 ## Text output
 
 ```
@@ -42,6 +47,7 @@ The field names follow the DCA logger, so that both can share one log store.
 |---|---|
 | `@timestamp` | UTC, with microseconds |
 | `host`, `service`, `pid` | the host, the program name and its process id |
+| `instance` | which of several processes of the program on the host it is, if set |
 | `thread`, `tid` | the thread's name and its system id |
 | `severity_code`, `severity_text` | the level, as in OpenTelemetry (see below) |
 | `timeslice` | the id of the timeslice the message is about, if any |

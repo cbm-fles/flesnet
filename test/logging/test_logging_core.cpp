@@ -74,6 +74,7 @@ logging::Options test_options() {
   options.level = status;
   options.file = json_file;
   options.file_level = debug;
+  options.instance = "7";
   options.context = {logging::field("run", 1234)};
   return options;
 }
@@ -236,7 +237,8 @@ BOOST_AUTO_TEST_CASE(json_legacy_message) {
   BOOST_CHECK(contains(line, R"("message":"legacy \"quoted\" message")"));
   BOOST_CHECK(contains(line, R"("file_name":"test_logging_core.cpp")"));
   BOOST_CHECK(contains(line, R"("function":"test_method")"));
-  BOOST_CHECK(contains(line, R"("service":"test_logging_core")"));
+  BOOST_CHECK(
+      contains(line, R"("service":"test_logging_core","instance":"7")"));
   BOOST_CHECK(contains(line, R"("thread":")"));
   BOOST_CHECK(!number(line, "tid").empty());
   BOOST_CHECK(contains(line, R"("line":)"));
@@ -521,6 +523,8 @@ BOOST_AUTO_TEST_CASE(taken_context_key) {
   logging::Options options = test_options();
   options.context.push_back(logging::field("pid", 1));
   BOOST_CHECK_THROW(logging::setup(options), std::invalid_argument);
+  options.context.back() = logging::field("instance", "x");
+  BOOST_CHECK_THROW(logging::setup(options), std::invalid_argument);
   // The outputs are as before
   L_(debug) << "after the refused context";
   BOOST_CHECK_EQUAL(grep(json_file, "after the refused context").size(), 1);
@@ -600,15 +604,18 @@ BOOST_AUTO_TEST_CASE(environment) {
   set_env("CBM_LOG_FORMAT", "json");
   set_env("CBM_LOG_FILE", "env.json");
   set_env("CBM_LOG_FILE_LEVEL", "bogus"); // reported and ignored
+  set_env("CBM_LOG_INSTANCE", "3");
   auto const options = logging::options_from_environment();
   unset_env("CBM_LOG_LEVEL");
   unset_env("CBM_LOG_FORMAT");
   unset_env("CBM_LOG_FILE");
   unset_env("CBM_LOG_FILE_LEVEL");
+  unset_env("CBM_LOG_INSTANCE");
   BOOST_CHECK_EQUAL(options.level, debug);
   BOOST_CHECK(options.format == logging::Format::json);
   BOOST_CHECK_EQUAL(options.file, "env.json");
   BOOST_CHECK(!options.file_level.has_value());
+  BOOST_CHECK_EQUAL(options.instance, "3");
 }
 
 BOOST_AUTO_TEST_CASE(command_line) {
