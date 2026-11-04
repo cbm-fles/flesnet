@@ -2,14 +2,15 @@
 
 #include "Benchmark.hpp"
 #include "interface.h" // crcutil_interface
+#include "log_short.hpp"
 #include <algorithm>   // std::generate_n
 #include <boost/crc.hpp>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
-#include <iostream>
 #include <iterator>
 #include <random>
+#include <string_view>
 
 #if defined(__x86_64)
 #include <smmintrin.h>
@@ -137,31 +138,27 @@ uint32_t Benchmark::compute_crc32(Algorithm algorithm) {
 }
 
 void Benchmark::run() {
-  std::cout << "CRC32 Benchmark: Boost (Castagnoli)" << std::endl;
-  run_single(Algorithm::Boost_C);
-  std::cout << "CRC32 Benchmark: Boost (IEEE)" << std::endl;
-  run_single(Algorithm::Boost_I);
-  std::cout << "CRC32 Benchmark: Intrinsic32 (Castagnoli)" << std::endl;
-  run_single(Algorithm::Intrinsic32);
+  run_single(Algorithm::Boost_C, "Boost (Castagnoli)");
+  run_single(Algorithm::Boost_I, "Boost (IEEE)");
+  run_single(Algorithm::Intrinsic32, "Intrinsic32 (Castagnoli)");
 #if defined(__x86_64)
-  std::cout << "CRC32 Benchmark: Intrinsic64 (Castagnoli)" << std::endl;
-  run_single(Algorithm::Intrinsic64);
+  run_single(Algorithm::Intrinsic64, "Intrinsic64 (Castagnoli)");
 #endif
-  std::cout << "CRC32 Benchmark: CrcUtil (Castagnoli)" << std::endl;
-  run_single(Algorithm::CrcUtil_C);
-  std::cout << "CRC32 Benchmark: CrcUtil (IEEE)" << std::endl;
-  run_single(Algorithm::CrcUtil_I);
+  run_single(Algorithm::CrcUtil_C, "CrcUtil (Castagnoli)");
+  run_single(Algorithm::CrcUtil_I, "CrcUtil (IEEE)");
 }
 
-void Benchmark::run_single(Algorithm algorithm) {
+void Benchmark::run_single(Algorithm algorithm, std::string_view name) {
   const size_t bytes_ = size_ * cycles_;
 
   auto start = std::chrono::system_clock::now();
   uint32_t crc32 = compute_crc32(algorithm);
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
       std::chrono::system_clock::now() - start);
-  const float rate =
-      static_cast<float>(bytes_) / static_cast<float>(duration.count());
-  std::cout << "crc32=" << std::hex << crc32 << "  " << rate << " MiB/s"
-            << std::endl;
+  // bytes per microsecond
+  const double rate =
+      static_cast<double>(bytes_) / static_cast<double>(duration.count());
+  STATUS("CRC32 benchmark {}: crc32={:x}, {:.1f} MB/s",
+         logging::field("algorithm", std::string(name)), crc32, rate,
+         logging::field("rate_mb_s", rate));
 }

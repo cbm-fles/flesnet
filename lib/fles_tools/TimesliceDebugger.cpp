@@ -1,10 +1,13 @@
 // Copyright 2013-2015 Jan de Cuveland <cmail@cuveland.de>
 
 #include "TimesliceDebugger.hpp"
+#include "log_short.hpp"
 #include <algorithm>
 #include <boost/format.hpp>
 #include <cstdint>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 std::ostream& TimesliceDump::write_to_stream(std::ostream& s) const {
   uint64_t min_num_microslices = UINT64_MAX;
@@ -92,4 +95,15 @@ std::ostream& BufferDump::write_to_stream(std::ostream& s) const {
   }
 
   return s;
+}
+
+void TimesliceDumper::put(std::shared_ptr<const fles::Timeslice> timeslice) {
+  std::stringstream ss;
+  ss << TimesliceDump(*timeslice, verbosity);
+  std::string text = ss.str();
+  // each message ends a line anyway
+  while (!text.empty() && text.back() == '\n') {
+    text.pop_back();
+  }
+  TS_DEBUG(timeslice->index(), "{}", text);
 }

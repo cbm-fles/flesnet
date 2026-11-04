@@ -6,7 +6,6 @@
 #include "Parameters.hpp"
 #include "Sink.hpp"
 #include "TimesliceAutoSource.hpp"
-#include "log.hpp"
 #include <chrono>
 #include <csignal>
 #include <memory>
@@ -41,8 +40,6 @@ private:
 
   uint64_t count_ = 0;
 
-  logging::OstreamLog status_log_{status};
-  logging::OstreamLog debug_log_{debug};
   std::string output_prefix_;
 
   std::chrono::high_resolution_clock::time_point time_begin_;

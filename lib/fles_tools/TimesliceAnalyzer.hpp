@@ -9,7 +9,6 @@
 #include "interface.h" // crcutil_interface
 #include <chrono>
 #include <memory>
-#include <optional>
 #include <ostream>
 #include <string>
 
@@ -18,7 +17,6 @@ class PatternChecker;
 class TimesliceAnalyzer : public fles::TimesliceSink {
 public:
   TimesliceAnalyzer(uint64_t arg_output_interval,
-                    std::ostream& arg_out,
                     std::string arg_output_prefix,
                     std::ostream* arg_hist,
                     cbm::Monitor* monitor);
@@ -41,18 +39,11 @@ private:
   [[nodiscard]] uint32_t compute_crc(const fles::MicrosliceView& m) const;
   [[nodiscard]] bool check_crc(const fles::MicrosliceView& m) const;
 
-  void print(std::string text, const std::string& prefix = "");
-  void print_reference();
-  void
-  print_microslice_descriptor(const fles::Timeslice& ts, size_t c, size_t m);
-  void print_microslice_content(const fles::Timeslice& ts, size_t c, size_t m);
+  void log_reference();
+  void log_microslice_descriptor(const fles::Timeslice& ts, size_t c, size_t m);
+  void log_microslice_content(const fles::Timeslice& ts, size_t c, size_t m);
 
-  [[nodiscard]] std::string statistics() const;
-
-  [[nodiscard]] std::string
-  location_string(size_t ts,
-                  std::optional<size_t> c = std::nullopt,
-                  std::optional<size_t> m = std::nullopt) const;
+  void log_statistics() const;
 
   [[nodiscard]] bool output_active() const;
 
@@ -63,7 +54,6 @@ private:
   std::vector<std::unique_ptr<PatternChecker>> pattern_checkers_;
 
   uint64_t output_interval_ = UINT64_MAX;
-  std::ostream& out_;
   std::string output_prefix_;
   std::ostream* hist_;
   std::chrono::system_clock::time_point previous_output_time_;
