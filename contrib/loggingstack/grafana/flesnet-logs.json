@@ -36,7 +36,7 @@
             "uid": "${datasource}"
           },
           "queryType": "lucene",
-          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene}",
+          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene} AND (instance:${instance:lucene})",
           "timeField": "@timestamp",
           "metrics": [
             {
@@ -225,7 +225,7 @@
             "uid": "${datasource}"
           },
           "queryType": "lucene",
-          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene}",
+          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene} AND (instance:${instance:lucene})",
           "timeField": "@timestamp",
           "metrics": [
             {
@@ -296,7 +296,7 @@
             "uid": "${datasource}"
           },
           "queryType": "lucene",
-          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene} AND severity_code:>=13",
+          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene} AND (instance:${instance:lucene}) AND severity_code:>=13",
           "timeField": "@timestamp",
           "metrics": [
             {
@@ -367,7 +367,7 @@
             "uid": "${datasource}"
           },
           "queryType": "lucene",
-          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene}",
+          "query": "${query:raw} AND host:${host:lucene} AND service:${service:lucene} AND (instance:${instance:lucene})",
           "timeField": "@timestamp",
           "metrics": [
             {
@@ -449,6 +449,31 @@
             "$__all"
           ]
         }
+      },
+      {
+        "name": "instance",
+        "label": "Instance",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-opensearch-datasource",
+          "uid": "${datasource}"
+        },
+        "query": "{\"find\": \"terms\", \"field\": \"instance\", \"size\": 500}",
+        "definition": "{\"find\": \"terms\", \"field\": \"instance\"}",
+        "refresh": 2,
+        "sort": 3,
+        "multi": true,
+        "includeAll": true,
+        "allValue": "* OR (*:* -_exists_:instance)",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "description": "which of several processes of a service on a host, e.g. tsclient -c; All includes messages without one"
       },
       {
         "name": "query",
