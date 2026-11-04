@@ -1,0 +1,22 @@
+# OpenSearch Dashboards configuration, replaces the one in the image
+#
+# The same as the default of the image, but without multitenancy: all saved
+# objects (index patterns, searches, dashboards) are in the global tenant, and
+# Dashboards does not ask for a tenant at the login.
+
+server.host: '0.0.0.0'
+
+opensearch.hosts: [https://localhost:9200]
+opensearch.ssl.verificationMode: none
+opensearch.username: kibanaserver
+opensearch.password: kibanaserver
+opensearch.requestHeadersWhitelist: [authorization, securitytenant]
+
+opensearch_security.multitenancy.enabled: false
+opensearch_security.readonly_mode.roles: [kibana_read_only]
+# Dashboards is served over http through an SSH tunnel
+opensearch_security.cookie.secure: false
+
+# no welcome screen and no notice about the new Discover in a new browser
+home.disableWelcomeScreen: true
+home.disableExperienceModal: true

@@ -48,6 +48,10 @@ OpenSearch listens on localhost and on the cluster network address
 ssh -L 5601:localhost:5601 login     # then http://localhost:5601, user admin
 ```
 
+Dashboards has no tenants ([dashboards/opensearch_dashboards.yml](dashboards/opensearch_dashboards.yml)
+and `setup-opensearch`): all index patterns, searches and dashboards are shared
+and in the global tenant.
+
 The data is in the Docker volumes `loggingstack_opensearch-data` and
 `loggingstack_dashboards-data`. Note that OpenSearch stops writing when its
 disk is more than 95 % full. `docker compose down -v` removes everything.

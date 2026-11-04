@@ -46,6 +46,8 @@ services:
     cpus: ${DASHBOARDS_CPUS:-2}
     volumes:
       - dashboards-data:/usr/share/opensearch-dashboards/data
+      # without multitenancy, everything is in the global tenant
+      - ./dashboards/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml:ro
     ports:
       - "127.0.0.1:5601:5601"
     depends_on:
