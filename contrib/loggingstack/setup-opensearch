@@ -1,7 +1,8 @@
 #!/bin/bash
 #
 # Sets up OpenSearch for flesnet logs: ingest pipeline, index template,
-# index state management and the users for Fluent Bit and Grafana.
+# index state management, the users for Fluent Bit and Grafana, and no
+# tenants in Dashboards.
 #
 # Run it once after the first start, before any logs arrive, and again after
 # changing it; it overwrites what it creates. Settings come from .env.
@@ -186,4 +187,10 @@ EOF
 
 put _plugins/_security/api/rolesmapping/logs_flesnet_reader <<'EOF'
 { "users": ["grafana"] }
+EOF
+
+# No tenants in Dashboards: everything is in the global tenant, see also
+# dashboards/opensearch_dashboards.yml
+put _plugins/_security/api/tenancy/config <<'EOF'
+{ "multitenancy_enabled": false, "private_tenant_enabled": false, "default_tenant": "Global" }
 EOF
