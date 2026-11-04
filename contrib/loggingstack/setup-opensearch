@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # Sets up OpenSearch for flesnet logs: ingest pipeline, index template,
-# index state management, the users for Fluent Bit and Grafana, and no
-# tenants in Dashboards.
+# index state management, the users for Fluent Bit, Grafana and the log
+# viewer, and no tenants in Dashboards.
 #
 # Run it once after the first start, before any logs arrive, and again after
 # changing it; it overwrites what it creates. Settings come from .env.
@@ -148,7 +148,7 @@ put_policy logs-flesnet-debug <<EOF
 }
 EOF
 
-# Fluent Bit may only write logs, Grafana may only read them
+# Fluent Bit may only write logs, Grafana and the log viewer may only read them
 put _plugins/_security/api/roles/logs_flesnet_writer <<'EOF'
 {
   "cluster_permissions": ["cluster_monitor", "indices:data/write/bulk"],
@@ -181,12 +181,16 @@ put _plugins/_security/api/internalusers/grafana <<EOF
 { "password": "$OPENSEARCH_GRAFANA_PASSWORD", "description": "Grafana data source" }
 EOF
 
+put _plugins/_security/api/internalusers/logviewer <<EOF
+{ "password": "$OPENSEARCH_LOGVIEWER_PASSWORD", "description": "log viewer" }
+EOF
+
 put _plugins/_security/api/rolesmapping/logs_flesnet_writer <<'EOF'
 { "users": ["fluentbit"] }
 EOF
 
 put _plugins/_security/api/rolesmapping/logs_flesnet_reader <<'EOF'
-{ "users": ["grafana"] }
+{ "users": ["grafana", "logviewer"] }
 EOF
 
 # No tenants in Dashboards: everything is in the global tenant, see also
