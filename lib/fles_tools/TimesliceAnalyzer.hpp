@@ -54,7 +54,7 @@ private:
   std::vector<std::unique_ptr<PatternChecker>> pattern_checkers_;
 
   uint64_t output_interval_ = UINT64_MAX;
-  std::string output_prefix_;
+  std::string output_prefix_; ///< tags the monitoring metrics
   std::ostream* hist_;
   std::chrono::system_clock::time_point previous_output_time_;
   static constexpr std::chrono::seconds output_time_interval_{1};

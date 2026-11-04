@@ -144,20 +144,19 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
     if (ts.num_core_microslices() > 1 && ts.num_components() > 0) {
       uint64_t ms_length = ts.descriptor(0, 1).idx - ts.descriptor(0, 0).idx;
       uint64_t ts_length = ts.num_core_microslices() * ms_length;
-      STATUS("{}ts duration: {} ({} * {})", output_prefix_,
-             ns_to_string(ts_length),
+      STATUS("ts duration: {} ({} * {})", ns_to_string(ts_length),
              logging::field("core_microslices", ts.num_core_microslices()),
              ns_to_string(ms_length),
              logging::field("ts_duration_ns", ts_length),
              logging::field("ms_duration_ns", ms_length));
     }
     // log start time
-    STATUS("{}start time: {}", output_prefix_, ns_timestamp(ts.start_time()),
+    STATUS("start time: {}", ns_timestamp(ts.start_time()),
            logging::field("start_time_ns", ts.start_time()));
   } else if (timeslice_count_ == 1) {
     // log timeslice start index and stride
     uint64_t stride = ts.index() - start_index_;
-    STATUS("{}start index: {} (stride: {})", output_prefix_,
+    STATUS("start index: {} (stride: {})",
            logging::field("start_index", start_index_),
            logging::field("stride", stride));
   }
@@ -168,8 +167,7 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
   // timeslice global checks
   if (ts.num_components() == 0) {
     if (output_active()) {
-      TS_ERROR(ts.index(), "{}error: no component in timeslice",
-               output_prefix_);
+      TS_ERROR(ts.index(), "error: no component in timeslice");
     }
     return false;
   }
@@ -194,9 +192,9 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
   if (start_time_mismatch) {
     // dump start times for debugging
     if (output_active()) {
-      TS_ERROR(ts.index(), "{}error: start time mismatch", output_prefix_);
+      TS_ERROR(ts.index(), "error: start time mismatch");
       for (size_t c = 0; c < ts.num_components(); ++c) {
-        TS_STATUS(ts.index(), "{}  component {} start time: {}", output_prefix_,
+        TS_STATUS(ts.index(), "  component {} start time: {}",
                   logging::field("component", c),
                   logging::field("start_time_ns",
                                  ts.get_microslice(c, 0).desc().idx));
@@ -223,9 +221,8 @@ bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts, size_t c) {
 
   if (ts.num_microslices(c) == 0) {
     if (output_active()) {
-      TS_ERROR(ts.index(), "{}error in {}: no microslices in component",
-               output_prefix_, location_string(c),
-               logging::field("component", c));
+      TS_ERROR(ts.index(), "error in {}: no microslices in component",
+               location_string(c), logging::field("component", c));
     }
     component_success = false;
   }
@@ -247,10 +244,9 @@ bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts, size_t c) {
     if (second <= first) {
       if (output_active()) {
         TS_ERROR(ts.index(),
-                 "{}error in {}: start time not increasing in first two "
+                 "error in {}: start time not increasing in first two "
                  "microslices",
-                 output_prefix_, location_string(c),
-                 logging::field("component", c));
+                 location_string(c), logging::field("component", c));
         log_microslice_descriptor(ts, c, 0);
         log_microslice_descriptor(ts, c, 1);
       }
@@ -263,9 +259,8 @@ bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts, size_t c) {
         if (this_start_time != expected_start_time) {
           if (output_active()) {
             TS_ERROR(ts.index(),
-                     "{}error in {}: unexpected microslice start time",
-                     output_prefix_, location_string(c, m),
-                     logging::field("component", c),
+                     "error in {}: unexpected microslice start time",
+                     location_string(c, m), logging::field("component", c),
                      logging::field("microslice", m));
             log_microslice_descriptor(ts, c, 0);
             log_microslice_descriptor(ts, c, 1);
@@ -295,9 +290,9 @@ bool TimesliceAnalyzer::check_microslice(const fles::Timeslice& ts,
     error = true;
     if (output_active()) {
       TS_ERROR(ts.index(),
-               "{}error in {}: unknown header format in microslice descriptor",
-               output_prefix_, location_string(c, m),
-               logging::field("component", c), logging::field("microslice", m));
+               "error in {}: unknown header format in microslice descriptor",
+               location_string(c, m), logging::field("component", c),
+               logging::field("microslice", m));
       log_microslice_descriptor(ts, c, m);
     }
   }
@@ -308,9 +303,9 @@ bool TimesliceAnalyzer::check_microslice(const fles::Timeslice& ts,
     error = true;
     if (output_active()) {
       TS_ERROR(ts.index(),
-               "{}error in {}: unexpected change in microslice descriptor",
-               output_prefix_, location_string(c, m),
-               logging::field("component", c), logging::field("microslice", m));
+               "error in {}: unexpected change in microslice descriptor",
+               location_string(c, m), logging::field("component", c),
+               logging::field("microslice", m));
       log_microslice_descriptor(ts, c, m);
     }
   }
@@ -319,18 +314,17 @@ bool TimesliceAnalyzer::check_microslice(const fles::Timeslice& ts,
       (d.flags & static_cast<uint16_t>(fles::MicrosliceFlags::OverflowFlim)) !=
       0;
   if (truncated && output_active()) {
-    TS_ERROR(ts.index(), "{}error in {}: microslice truncated by FLIM",
-             output_prefix_, location_string(c, m),
-             logging::field("component", c), logging::field("microslice", m));
+    TS_ERROR(ts.index(), "error in {}: microslice truncated by FLIM",
+             location_string(c, m), logging::field("component", c),
+             logging::field("microslice", m));
     log_microslice_descriptor(ts, c, m);
     log_microslice_content(ts, c, m);
   }
 
   bool pattern_error = !pattern_checkers_.at(c)->check(mv);
   if (pattern_error && output_active()) {
-    TS_ERROR(ts.index(), "{}error in {}: pattern error", output_prefix_,
-             location_string(c, m), logging::field("component", c),
-             logging::field("microslice", m));
+    TS_ERROR(ts.index(), "error in {}: pattern error", location_string(c, m),
+             logging::field("component", c), logging::field("microslice", m));
     log_microslice_descriptor(ts, c, m);
     log_microslice_content(ts, c, m);
   }
@@ -340,9 +334,8 @@ bool TimesliceAnalyzer::check_microslice(const fles::Timeslice& ts,
        0) &&
       !check_crc(mv);
   if (crc_error && output_active()) {
-    TS_ERROR(ts.index(), "{}error in {}: crc failure", output_prefix_,
-             location_string(c, m), logging::field("component", c),
-             logging::field("microslice", m));
+    TS_ERROR(ts.index(), "error in {}: crc failure", location_string(c, m),
+             logging::field("component", c), logging::field("microslice", m));
     log_microslice_descriptor(ts, c, m);
     log_microslice_content(ts, c, m);
   }
@@ -374,13 +367,13 @@ bool TimesliceAnalyzer::check_crc(const fles::MicrosliceView& m) const {
 }
 
 void TimesliceAnalyzer::log_reference() {
-  STATUS("{}timeslice analyzer initialized with {} components", output_prefix_,
+  STATUS("timeslice analyzer initialized with {} components",
          logging::field("components", reference_descriptors_.size()));
   for (size_t c = 0; c < reference_descriptors_.size(); ++c) {
     const fles::MicrosliceDescriptor& md = reference_descriptors_.at(c);
-    STATUS("{}  component {}: eq_id={:04x} sys={:02x}-{:02x} {}",
-           output_prefix_, logging::field("component", c), md.eq_id, md.sys_id,
-           md.sys_ver, fles::to_string(static_cast<fles::Subsystem>(md.sys_id)),
+    STATUS("  component {}: eq_id={:04x} sys={:02x}-{:02x} {}",
+           logging::field("component", c), md.eq_id, md.sys_id, md.sys_ver,
+           fles::to_string(static_cast<fles::Subsystem>(md.sys_id)),
            logging::field("eq_id", md.eq_id),
            logging::field("sys_id", md.sys_id),
            logging::field("sys_ver", md.sys_ver));
@@ -390,7 +383,7 @@ void TimesliceAnalyzer::log_reference() {
 void TimesliceAnalyzer::log_microslice_descriptor(const fles::Timeslice& ts,
                                                   size_t c,
                                                   size_t m) {
-  TS_STATUS(ts.index(), "{}microslice descriptor of {}:\n{}", output_prefix_,
+  TS_STATUS(ts.index(), "microslice descriptor of {}:\n{}",
             location_string(c, m),
             indented(MicrosliceDescriptorDump(ts.get_microslice(c, m).desc())),
             logging::field("component", c), logging::field("microslice", m));
@@ -399,8 +392,7 @@ void TimesliceAnalyzer::log_microslice_descriptor(const fles::Timeslice& ts,
 void TimesliceAnalyzer::log_microslice_content(const fles::Timeslice& ts,
                                                size_t c,
                                                size_t m) {
-  TS_STATUS(ts.index(), "{}microslice content of {}:\n{}", output_prefix_,
-            location_string(c, m),
+  TS_STATUS(ts.index(), "microslice content of {}:\n{}", location_string(c, m),
             indented(BufferDump(ts.get_microslice(c, m).content(),
                                 ts.get_microslice(c, m).desc().size)),
             logging::field("component", c), logging::field("microslice", m));
@@ -413,7 +405,7 @@ void TimesliceAnalyzer::log_statistics() const {
              "ts/" + std::to_string(component_error_count_) + "c/" +
              std::to_string(microslice_error_count_) + "m]";
   }
-  STATUS("{}* checked {} ts, {} c, {} m, {}{}", output_prefix_,
+  STATUS("* checked {} ts, {} c, {} m, {}{}",
          logging::field("timeslices", timeslice_count_),
          logging::field("components", component_count_),
          logging::field("microslices", microslice_count_),

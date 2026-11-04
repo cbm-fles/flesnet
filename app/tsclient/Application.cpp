@@ -160,12 +160,12 @@ Application::Application(Parameters const& par,
   }
 
   if (par_.rate_limit() != 0.0) {
-    INFO("{}rate limit active: {} Hz", output_prefix_, par_.rate_limit());
+    INFO("rate limit active: {} Hz", par_.rate_limit());
   }
 }
 
 Application::~Application() {
-  INFO("{}total timeslices processed: {}", output_prefix_, count_);
+  INFO("total timeslices processed: {}", count_);
 
   // delay to allow monitor to process pending messages
   constexpr auto destruct_delay = std::chrono::milliseconds(200);
@@ -195,13 +195,13 @@ void Application::native_speed_delay(uint64_t ts_start_time) {
 
 void Application::try_delay(std::chrono::nanoseconds sleep_duration) const {
   if (sleep_duration.count() > 0) {
-    DEBUG("{}maintaining replay rate, sleeping for {} s", output_prefix_,
+    DEBUG("maintaining replay rate, sleeping for {} s",
           std::chrono::duration_cast<std::chrono::milliseconds>(sleep_duration)
                   .count() /
               1000.);
     std::this_thread::sleep_for(sleep_duration);
   } else {
-    WARN("{}replay rate not maintained, lacking by {} s", output_prefix_,
+    WARN("replay rate not maintained, lacking by {} s",
          std::chrono::duration_cast<std::chrono::milliseconds>(sleep_duration)
                  .count() /
              1000.);
@@ -272,8 +272,8 @@ void Application::run() {
         if (!shm_sink->empty()) {
           all_empty = false;
           if (first) {
-            INFO("{}waiting for shm buffer to empty", output_prefix_);
-            INFO("{}press Ctrl-C to abort", output_prefix_);
+            INFO("waiting for shm buffer to empty");
+            INFO("press Ctrl-C to abort");
             first = false;
           }
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
