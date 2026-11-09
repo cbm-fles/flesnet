@@ -108,7 +108,7 @@ private:
 
   void report_status();
 
-  std::unique_ptr<cbm::Monitor> m_monitor;
+  cbm::Monitor* m_monitor = nullptr; ///< not owned
   SenderInfo m_sender_info;
 
   Scheduler m_tasks;
