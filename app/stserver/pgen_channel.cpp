@@ -95,6 +95,8 @@ void pgen_channel::generate_microslice(uint64_t time_ns) {
        m_data_buffer.bytes()) ||
       (m_desc_write_index - m_desc_read_index + 1 > m_desc_buffer.size())) {
     m_skipped_microslice = true;
+    m_skipped_microslice_count.fetch_add(1, std::memory_order_relaxed);
+    m_skipped_byte_count.fetch_add(content_bytes, std::memory_order_relaxed);
     return;
   }
 

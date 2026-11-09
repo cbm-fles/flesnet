@@ -423,6 +423,7 @@ void StSender::do_retract_subtimeslice(TsId id) {
     auto& ah = *it->second;
     if (!ah.pending_release) {
       TS_DEBUG(id, "Retracting subtimeslice");
+      m_retracted_count.fetch_add(1, std::memory_order_relaxed);
 
       // Send retraction to manager
       std::array<uint64_t, 1> hdr{id};

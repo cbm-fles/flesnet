@@ -105,6 +105,7 @@ private:
   size_t m_microslice_count = 0; ///< total number of processed microslices
   size_t m_data_bytes = 0;       ///< total number of processed content bytes
   size_t m_timeslice_incomplete_count = 0; ///< number of incomplete timeslices
+  uint64_t m_reported_pgen_skipped_microslices = 0;
 
   void report_status();
 

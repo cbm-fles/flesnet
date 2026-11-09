@@ -479,18 +479,37 @@ void StBuilder::report_status() {
     }
   }
 
+  uint64_t pgen_skipped_microslices = 0;
+  uint64_t pgen_skipped_bytes = 0;
+  for (const auto& pgen : m_pgen_channels) {
+    pgen_skipped_microslices += pgen->skipped_microslice_count();
+    pgen_skipped_bytes += pgen->skipped_byte_count();
+  }
+
   if (m_monitor != nullptr) {
-    m_monitor->QueueMetric(
-        "stserver_status",
-        {{"host", m_sender_info.address},
-         {"port", std::to_string(m_sender_info.port)}},
-        {{"timeslice_count", m_timeslice_count},
-         {"component_count", m_component_count},
-         {"microslice_count", m_microslice_count},
-         {"data_bytes", m_data_bytes},
-         {"timeslice_incomplete_count", m_timeslice_incomplete_count},
-         {"aggregation_allocation_failures", m_aggregation_allocation_failures},
-         {"buffer_utilization", max_buffer_utilization}});
+    cbm::MetricFieldSet fields{
+        {"timeslice_count", m_timeslice_count},
+        {"component_count", m_component_count},
+        {"microslice_count", m_microslice_count},
+        {"data_bytes", m_data_bytes},
+        {"timeslice_incomplete_count", m_timeslice_incomplete_count},
+        {"subtimeslice_retracted_count", m_st_sender.retracted_count()},
+        {"aggregation_allocation_failures", m_aggregation_allocation_failures},
+        {"buffer_utilization", max_buffer_utilization}};
+    if (!m_pgen_channels.empty()) {
+      fields.emplace_back("pgen_skipped_microslices", pgen_skipped_microslices);
+      fields.emplace_back("pgen_skipped_bytes", pgen_skipped_bytes);
+    }
+    m_monitor->QueueMetric("stserver_status",
+                           {{"host", m_sender_info.address},
+                            {"port", std::to_string(m_sender_info.port)}},
+                           std::move(fields));
+  }
+
+  if (pgen_skipped_microslices > m_reported_pgen_skipped_microslices) {
+    WARN("Pattern generator buffer full: skipped {} microslice(s) so far",
+         logging::field("pgen_skipped_microslices", pgen_skipped_microslices));
+    m_reported_pgen_skipped_microslices = pgen_skipped_microslices;
   }
 
   if (m_aggregation_allocation_failures > m_reported_aggregation_failures) {
