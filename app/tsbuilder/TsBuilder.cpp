@@ -603,6 +603,10 @@ void TsBuilder::update_st_state(TsHandle& tsh,
         m_timeslice_buffer.send_work_item(tsh.id, ts_desc);
         tsh.is_published = true;
         tsh.published_at_ns = fles::system::current_time_ns();
+        m_publish_stats.add(tsh.published_at_ns - tsh.allocated_at_ns,
+                            static_cast<int64_t>(tsh.published_at_ns) -
+                                static_cast<int64_t>(ts_desc.start_time_ns +
+                                                     ts_desc.duration_ns));
         if (ts_desc.has_flag(TsFlag::MissingSubtimeslices)) {
           TS_INFO(tsh.id, "Published incomplete timeslice (after {} ms)",
                   logging::field(
@@ -644,17 +648,34 @@ void TsBuilder::report_status() {
 
   if (m_monitor != nullptr) {
     size_t timeslices_allocated = m_ts_handles.size();
-    size_t bytes_allocated =
-        m_timeslice_buffer.get_size() - m_timeslice_buffer.get_free_memory();
-    m_monitor->QueueMetric(
-        "tsbuilder_status", {{"host", m_hostname}},
-        {{"timeslice_count", m_timeslice_count},
-         {"component_count", m_component_count},
-         {"byte_count", m_byte_count},
-         {"timeslice_incomplete_count", m_timeslice_incomplete_count},
-         {"timeslices_allocated", timeslices_allocated},
-         {"bytes_allocated", bytes_allocated}});
+    // The segment has some extra space for management overhead, so the free
+    // memory can exceed the nominal size
+    size_t bytes_free = m_timeslice_buffer.get_free_memory();
+    size_t bytes_allocated = m_timeslice_buffer.get_size() > bytes_free
+                                 ? m_timeslice_buffer.get_size() - bytes_free
+                                 : 0;
+    cbm::MetricFieldSet fields{
+        {"timeslice_count", m_timeslice_count},
+        {"component_count", m_component_count},
+        {"byte_count", m_byte_count},
+        {"timeslice_incomplete_count", m_timeslice_incomplete_count},
+        {"timeslices_allocated", timeslices_allocated},
+        {"bytes_allocated", bytes_allocated}};
+    const auto& ps = m_publish_stats;
+    if (ps.count > 0) {
+      auto count = static_cast<int64_t>(ps.count);
+      fields.emplace_back("published_count", ps.count);
+      fields.emplace_back("build_time_min_ns", ps.build_time_min_ns);
+      fields.emplace_back("build_time_mean_ns",
+                          ps.build_time_sum_ns / ps.count);
+      fields.emplace_back("build_time_max_ns", ps.build_time_max_ns);
+      fields.emplace_back("delay_mean_ns", ps.delay_sum_ns / count);
+      fields.emplace_back("delay_max_ns", ps.delay_max_ns);
+    }
+    m_monitor->QueueMetric("tsbuilder_status", {{"host", m_hostname}},
+                           std::move(fields));
   }
+  m_publish_stats = {};
 
   m_tasks.add([this] { report_status(); }, now + interval);
 }
