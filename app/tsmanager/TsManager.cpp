@@ -267,6 +267,7 @@ TsManager::handle_sender_announce(const void* header,
   if (id < m_id) {
     auto late_ts = m_id - id;
     auto late_ns = late_ts * m_timeslice_duration_ns;
+    m_status_info.late_announcement_count++;
     TS_DEBUG(id,
              "Late announcement from '{}' by {} ts ({} ms), sending release",
              sender_conn.info.id(), late_ts, (late_ns + 500000) / 1000000);
@@ -420,7 +421,8 @@ TsManager::handle_builder_status(const void* header,
     TS_INFO(id, "Builder '{}' has reported out of memory", it->info.id());
     it->is_out_of_memory = true;
     it->assigned_ts.erase(id);
-    assign_timeslice(id);
+    m_status_info.timeslice_reassigned_count++;
+    assign_timeslice(id, true);
     break;
   case BUILDER_EVENT_RECEIVED:
     TS_DEBUG(id, "Builder '{}' has received timeslice", it->info.id());
@@ -440,18 +442,27 @@ TsManager::handle_builder_status(const void* header,
   return UCS_OK;
 }
 
-void TsManager::assign_timeslice(TsId id) {
+void TsManager::assign_timeslice(TsId id, bool is_reassignment) {
   StCollection coll = create_collection_descriptor(id);
+  auto active_count = static_cast<std::size_t>(
+      std::count_if(m_senders.begin(), m_senders.end(), [](const auto& s) {
+        return s.second.state == SenderState::active;
+      }));
   if (coll.sender_ids.empty()) {
-    auto active_count =
-        std::count_if(m_senders.begin(), m_senders.end(), [](const auto& s) {
-          return s.second.state == SenderState::active;
-        });
     if (active_count > 0) {
       TS_WARN(id, "Sender(s) active ({}), but no contributions",
               logging::field("active_senders", active_count));
     }
     return;
+  }
+
+  if (!is_reassignment) {
+    m_status_info.timeslice_count++;
+    m_status_info.component_count += coll.sender_ids.size();
+    m_status_info.data_bytes += coll.ms_data_size();
+    if (coll.sender_ids.size() < active_count) {
+      m_status_info.timeslice_incomplete_count++;
+    }
   }
 
   for (std::size_t i = 0; i < m_builders.size(); ++i) {
@@ -535,10 +546,6 @@ StCollection TsManager::create_collection_descriptor(TsId id) {
     running_offset += coll.ms_data_sizes[i];
   }
 
-  // ... TODO: remove this code
-  m_status_info.timeslice_count++;
-  m_status_info.component_count += coll.sender_ids.size();
-  // ...
   return coll;
 }
 
@@ -547,10 +554,24 @@ void TsManager::report_status() {
   auto now = std::chrono::system_clock::now();
 
   if (m_monitor != nullptr) {
-    m_monitor->QueueMetric("tsmanager_status", {{"host", m_hostname}},
-                           {{"timeslice_count", 0}});
+    std::size_t in_flight = 0;
+    for (const auto& builder : m_builders) {
+      in_flight += builder.assigned_ts.size();
+    }
+    const auto& si = m_status_info;
+    m_monitor->QueueMetric(
+        "tsmanager_status", {{"host", m_hostname}},
+        {{"timeslice_count", si.timeslice_count},
+         {"component_count", si.component_count},
+         {"data_bytes", si.data_bytes},
+         {"timeslice_discarded_count", si.timeslice_discarded_count},
+         {"timeslice_incomplete_count", si.timeslice_incomplete_count},
+         {"timeslice_reassigned_count", si.timeslice_reassigned_count},
+         {"late_announcement_count", si.late_announcement_count},
+         {"sender_count", m_senders.size()},
+         {"builder_count", m_builders.size()},
+         {"timeslices_in_flight", in_flight}});
   }
-  // TODO: Add real metrics
 
   m_tasks.add([this] { report_status(); }, now + interval);
 }
@@ -572,10 +593,17 @@ void TsManager::log_status() {
 
   std::string additional;
   if (diff.timeslice_discarded_count > 0) {
-    additional =
+    additional +=
         std::format(" [discarded: {} ts]", diff.timeslice_discarded_count);
   }
-  STATUS("* {} s, {} b, {} ts, {} c, {}, {}{}", m_senders.size(),
+  if (diff.timeslice_incomplete_count > 0) {
+    additional +=
+        std::format(" [incomplete: {} ts]", diff.timeslice_incomplete_count);
+  }
+  if (diff.late_announcement_count > 0) {
+    additional += std::format(" [late: {} c]", diff.late_announcement_count);
+  }
+  STATUS("* {} s, {} b, {} ts, {} c, {}, {}/s{}", m_senders.size(),
          m_builders.size(), m_status_info.timeslice_count,
          m_status_info.component_count,
          human_readable_count(m_status_info.data_bytes, true),
@@ -585,5 +613,4 @@ void TsManager::log_status() {
   // STATUS: * checked 41 ts, 82 c, 41164 m, 4.116 GB
   // TODO: Keep better track of timeslices in various states
   // (including: only send release to contributing senders)
-  // TODO: Fill statistics
 }

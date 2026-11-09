@@ -54,7 +54,13 @@ struct StatusInfo {
   size_t timeslice_count = 0; ///< total number of processed timeslices
   size_t component_count = 0; ///< total number of processed components
   size_t data_bytes = 0;      ///< total number of processed data bytes
-  size_t timeslice_discarded_count = 0; ///< number of discarded timeslices
+  size_t timeslice_discarded_count = 0; ///< discarded, no builder available
+  /// timeslices lacking a contribution from an active sender
+  size_t timeslice_incomplete_count = 0;
+  /// timeslices reassigned after a builder ran out of memory
+  size_t timeslice_reassigned_count = 0;
+  /// contributions released because they were announced too late
+  size_t late_announcement_count = 0;
 
   StatusInfo operator-(const StatusInfo& other) const {
     StatusInfo result;
@@ -63,6 +69,12 @@ struct StatusInfo {
     result.data_bytes = data_bytes - other.data_bytes;
     result.timeslice_discarded_count =
         timeslice_discarded_count - other.timeslice_discarded_count;
+    result.timeslice_incomplete_count =
+        timeslice_incomplete_count - other.timeslice_incomplete_count;
+    result.timeslice_reassigned_count =
+        timeslice_reassigned_count - other.timeslice_reassigned_count;
+    result.late_announcement_count =
+        late_announcement_count - other.late_announcement_count;
     return result;
   }
 
@@ -146,7 +158,7 @@ private:
                                      void* data,
                                      size_t length,
                                      const ucp_am_recv_param_t* param);
-  void assign_timeslice(TsId id);
+  void assign_timeslice(TsId id, bool is_reassignment = false);
   void send_assignment_to_builder(const StCollection& coll,
                                   BuilderConnection& builder);
 
