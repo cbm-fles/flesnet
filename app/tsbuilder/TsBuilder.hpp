@@ -10,6 +10,7 @@
 #include "System.hpp"
 #include "TimesliceShmBuffer.hpp"
 #include "ucxutil.hpp"
+#include <algorithm>
 #include <csignal>
 #include <cstddef>
 #include <cstdint>
@@ -196,6 +197,27 @@ private:
   size_t m_component_count = 0; ///< total number of received components
   size_t m_byte_count = 0;      ///< total number of processed bytes
   size_t m_timeslice_incomplete_count = 0; ///< number of incomplete timeslices
+
+  /// Timing statistics of the timeslices published in the current reporting
+  /// interval
+  struct PublishStats {
+    uint64_t count = 0;
+    uint64_t build_time_sum_ns = 0; ///< assignment to publication
+    uint64_t build_time_min_ns = UINT64_MAX;
+    uint64_t build_time_max_ns = 0;
+    int64_t delay_sum_ns = 0; ///< end of timeslice data time to publication
+    int64_t delay_max_ns = INT64_MIN;
+
+    void add(uint64_t build_time_ns, int64_t delay_ns) {
+      ++count;
+      build_time_sum_ns += build_time_ns;
+      build_time_min_ns = std::min(build_time_min_ns, build_time_ns);
+      build_time_max_ns = std::max(build_time_max_ns, build_time_ns);
+      delay_sum_ns += delay_ns;
+      delay_max_ns = std::max(delay_max_ns, delay_ns);
+    }
+  };
+  PublishStats m_publish_stats;
 
   // Manager connection management
   void connect_to_manager_if_needed();
