@@ -37,6 +37,15 @@ public:
                             uint64_t desc_offset) override;
   uint64_t get_desc_index() override;
 
+  /// Number of microslices skipped because the buffers were full
+  [[nodiscard]] uint64_t skipped_microslice_count() const {
+    return m_skipped_microslice_count.load(std::memory_order_relaxed);
+  }
+  /// Content bytes of the microslices skipped because the buffers were full
+  [[nodiscard]] uint64_t skipped_byte_count() const {
+    return m_skipped_byte_count.load(std::memory_order_relaxed);
+  }
+
 private:
   RingBufferView<fles::MicrosliceDescriptor, false> m_desc_buffer;
   RingBufferView<uint8_t, false> m_data_buffer;
@@ -64,6 +73,9 @@ private:
   void generate_microslice(uint64_t time_ns);
 
   bool m_skipped_microslice = false;
+  // Written by the internal thread only, read by the external thread
+  std::atomic<uint64_t> m_skipped_microslice_count = 0;
+  std::atomic<uint64_t> m_skipped_byte_count = 0;
 };
 
 } // namespace cri

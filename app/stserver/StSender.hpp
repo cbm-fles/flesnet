@@ -7,6 +7,7 @@
 #include "StHandle.hpp"
 #include "SubTimeslice.hpp"
 #include "ucxutil.hpp"
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
@@ -70,6 +71,10 @@ public:
   void retract_subtimeslice(TsId id);
   std::optional<TsId> try_receive_completion();
   bool has_stopped() const { return m_thread_stopped; }
+  /// Number of announced subtimeslices that were retracted
+  [[nodiscard]] uint64_t retracted_count() const {
+    return m_retracted_count.load(std::memory_order_relaxed);
+  }
 
 private:
   Scheduler m_tasks;
@@ -108,6 +113,7 @@ private:
 
   std::jthread m_worker_thread;
   std::atomic_bool m_thread_stopped = false;
+  std::atomic<uint64_t> m_retracted_count = 0;
 
   // Main operation loop
   void operator()(std::stop_token stop_token);
