@@ -367,9 +367,18 @@ void TsBuilder::handle_sender_error(ucp_ep_h ep, ucs_status_t status) {
 }
 
 void TsBuilder::disconnect_from_senders() {
-  // Cancel all in-flight receive operations first
+  // Cancel all in-flight receive operations first. Cancellation may complete
+  // a request synchronously, and the completion callback erases it from the
+  // map, so do not iterate the map while canceling.
+  std::vector<ucs_status_ptr_t> to_cancel;
+  to_cancel.reserve(m_active_data_recv_requests.size());
   for (const auto& [request, req_id] : m_active_data_recv_requests) {
-    ucp_request_cancel(m_worker, request);
+    to_cancel.push_back(request);
+  }
+  for (auto* request : to_cancel) {
+    if (m_active_data_recv_requests.contains(request)) {
+      ucp_request_cancel(m_worker, request);
+    }
   }
   // Progress worker to process cancellations
   while (ucp_worker_progress(m_worker) != 0) {
