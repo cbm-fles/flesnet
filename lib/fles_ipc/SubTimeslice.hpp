@@ -129,12 +129,14 @@ struct SenderInfo {
 struct BuilderInfo {
   std::string hostname;
   int pid = 0;
+  uint64_t bytes_free = 0; ///< free timeslice buffer memory at registration
 
   friend class boost::serialization::access;
   template <class Archive>
   void serialize(Archive& ar, [[maybe_unused]] const unsigned int version) {
     ar & hostname;
     ar & pid;
+    ar & bytes_free;
   }
 
   [[nodiscard]] std::string id() const {

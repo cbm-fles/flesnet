@@ -37,7 +37,7 @@ TsBuilder::TsBuilder(volatile sig_atomic_t* signal_status,
       m_manager_address(manager_address), m_timeout_ns(timeout_ns),
       m_hostname(fles::system::current_hostname()),
       m_builder_info(m_hostname, fles::system::current_pid()),
-      m_builder_info_bytes(to_bytes(m_builder_info)), m_monitor(monitor) {
+      m_monitor(monitor) {
   // Initialize event handling
   m_epoll_fd = epoll_create1(EPOLL_CLOEXEC);
   if (m_epoll_fd == -1) {
@@ -138,6 +138,10 @@ void TsBuilder::connect_to_manager() {
 
   m_manager_ep = *ep_result;
 
+  // Report the free memory with the registration, so that the manager can
+  // assign timeslices right away instead of waiting for the first status
+  m_builder_info.bytes_free = m_timeslice_buffer.get_free_memory();
+  m_builder_info_bytes = to_bytes(m_builder_info);
   auto header = std::as_bytes(std::span(m_builder_info_bytes));
   bool send_am_ok = ucx::util::send_active_message(
       m_manager_ep, AM_BUILDER_REGISTER, header, {},

@@ -368,8 +368,9 @@ TsManager::handle_builder_register(const void* header,
   }
 
   ucp_ep_h ep = param->reply_ep;
-  m_builders.emplace_back(*builder_info, ep, 0, false);
-  INFO("Accepted builder registration from '{}'", builder_info->id());
+  m_builders.emplace_back(*builder_info, ep, builder_info->bytes_free, false);
+  INFO("Accepted builder registration from '{}' (free: {})", builder_info->id(),
+       human_readable_count(builder_info->bytes_free, true));
 
   return UCS_OK;
 }
