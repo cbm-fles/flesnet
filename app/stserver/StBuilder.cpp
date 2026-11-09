@@ -524,9 +524,13 @@ void StBuilder::report_status() {
         std::count_if(m_subtimeslices.begin(), m_subtimeslices.end(),
                       [](auto const& pair) { return pair.second.completed; });
     std::size_t pending_count = m_subtimeslices.size() - completed_count;
-    WARN("High buffer utilization ({:.1f}%), retracting {} pending "
-         "subtimeslices",
-         max_buffer_utilization * 100.0, pending_count);
+    if (pending_count > 0) {
+      WARN("High buffer utilization ({:.1f}%), retracting {} pending "
+           "subtimeslices",
+           max_buffer_utilization * 100.0, pending_count);
+    } else {
+      WARN("High buffer utilization ({:.1f}%)", max_buffer_utilization * 100.0);
+    }
     for (auto& [ts_id, state] : m_subtimeslices) {
       if (!state.completed) {
         m_st_sender.retract_subtimeslice(ts_id);
