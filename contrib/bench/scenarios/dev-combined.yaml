@@ -1,0 +1,43 @@
+# Combined mode on the dev cluster: stserver + tsbuilder on every node.
+# Offered load per node = pgen-channels * microslice-size / microslice-duration
+# (here 4 MB / 400 us = 10 GB/s); contribution = 400 MB at 40 ms timeslices.
+name: dev-combined
+binaries: ../../../build
+manager: shared
+control_iface: ib0
+timeslice_duration: 40ms
+# startup transients last up to ~15 s on node8-11
+warmup: 30s
+duration: 60s
+repetitions: 1
+
+env:
+  UCX_TLS: rc_x,sm,self
+
+stserver:
+  args:
+    log-level: info
+    pgen-channels: 1
+    pgen-microslice-size: 4MB
+    pgen-microslice-duration: 400us
+    pgen-flags: 0
+    data-buffer-size: 4GiB
+    # scatter-gather; the single-threaded aggregation copy caps the input
+    # at about 2.5-5 GB/s per node
+    aggregation-buffer-size: 0
+
+tsbuilder:
+  args:
+    log-level: info
+    buffer-size: 8GiB
+    timeout: 2s
+
+tsmanager:
+  args:
+    log-level: info
+    timeout: 200ms
+    max-in-flight: 2
+
+# sweep:
+#   stserver.args.pgen-microslice-size: [3MB, 4MB, 5MB]
+#   tsmanager.args.max-in-flight: [1, 2, 4]
