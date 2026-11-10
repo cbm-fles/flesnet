@@ -7,7 +7,12 @@
 2. osu_bibw for the first pair over the size range.
 3. osu_alltoall with one rank per node over the size range. Network
    throughput per node = (N-1)*m/t, built equivalent = N*m/t, comparable with
-   net_per_node and built_per_node from analyze.py.
+   net_per_node and built_per_node from analyze.py. NB: MPI_Alltoall copies
+   the self block serially; beyond the cache size that copy dominates, so
+   this underestimates the network.
+4. a2a_stream (built from a2a_stream.c with mpicc): continuous non-blocking
+   all-to-all without self block, w rounds in flight. This is the reference
+   for the network part of timeslice building.
 
 Usage (inside salloc/sbatch):
   reference.py --osu DIR [--out DIR] [--nodes N] [--env UCX_X=y ...]
@@ -49,7 +54,7 @@ def find_osu(osu_dir, name):
     return str(hits[0])
 
 
-def run_osu(opts, hosts, binary, args, raw_file):
+def run_osu(opts, hosts, binary, args, raw_file, columns=2):
     argv = ["mpirun", "-np", str(len(hosts)), "-H", ",".join(hosts), "--map-by", "node"]
     argv += ["--bind-to", "none", "--mca", "pml", "ucx"]
     for e in opts.env:
@@ -62,8 +67,8 @@ def run_osu(opts, hosts, binary, args, raw_file):
     rows = []
     for line in res.stdout.splitlines():
         parts = line.split()
-        if len(parts) == 2 and not line.startswith("#"):
-            rows.append((int(parts[0]), float(parts[1])))
+        if len(parts) == columns and not line.startswith("#"):
+            rows.append((int(parts[0]), *map(float, parts[1:])))
     return rows
 
 
@@ -77,6 +82,8 @@ def main():
     ap.add_argument("--health-size", type=size_arg, default=size_arg("64M"))
     ap.add_argument("--iterations", type=int, default=20)
     ap.add_argument("--warmup", type=int, default=5)
+    ap.add_argument("--stream-window", type=int, default=2)
+    ap.add_argument("--stream-seconds", type=float, default=4)
     ap.add_argument("--env", action="append", default=[], help="VAR=value for all ranks")
     ap.add_argument("--mpirun-args", nargs=argparse.REMAINDER, default=[])
     ap.add_argument("--name", default="reference")
@@ -136,13 +143,31 @@ def main():
         for s, t in rows
     ]
 
-    print(f"\n{'size':>10} {'bibw total':>11} {'a2a net/node':>13} {'a2a built/node':>15}  (GB/s, n={n})")
+    # 4. streaming all-to-all without self block
+    exe = outdir / "a2a_stream"
+    src = Path(__file__).resolve().parent / "a2a_stream.c"
+    subprocess.run(["mpicc", "-O2", "-o", str(exe), str(src)], check=True)
+    rows = run_osu(
+        opts,
+        nodes,
+        str(exe),
+        ["-m", f"{opts.min_size}:{opts.max_size}", "-w", str(opts.stream_window), "-t", str(opts.stream_seconds)],
+        outdir / "raw" / "a2a_stream.txt",
+        columns=5,
+    )
+    result["a2a_stream"] = [
+        {"size": r[0], "net_per_node_GBps": r[3], "net_min_node_GBps": r[2]} for r in rows
+    ]
+    result["a2a_stream_window"] = opts.stream_window
+
+    nan = float("nan")
     bibw = {r["size"]: r["total_GBps"] for r in result["bibw"]}
+    stream = {r["size"]: r["net_per_node_GBps"] for r in result["a2a_stream"]}
+    print(f"\n{'size':>10} {'bibw total':>11} {'osu a2a net':>12} {'stream net':>11}  (GB/s per node, n={n})")
     for r in result["alltoall"]:
-        b = bibw.get(r["size"])
         print(
-            f"{r['size'] / 2**20:8.0f}Mi {b if b is not None else float('nan'):11.2f}"
-            f" {r['net_per_node_GBps']:13.2f} {r['built_per_node_GBps']:15.2f}"
+            f"{r['size'] / 2**20:8.0f}Mi {bibw.get(r['size'], nan):11.2f}"
+            f" {r['net_per_node_GBps']:12.2f} {stream.get(r['size'], nan):11.2f}"
         )
     (outdir / "reference.json").write_text(json.dumps(result, indent=2))
     print(f"\nwritten: {outdir}")
