@@ -471,6 +471,41 @@ BOOST_AUTO_TEST_CASE(timeslice_level_filter) {
       1);
 }
 
+BOOST_AUTO_TEST_CASE(timeslice_scope) {
+  BOOST_CHECK(!logging::current_timeslice());
+  {
+    logging::TimesliceScope const scope(17900000456);
+    BOOST_CHECK_EQUAL(logging::current_timeslice().value_or(0), 17900000456);
+    INFO("in the scope");
+    TS_INFO(42, "about another timeslice");
+    std::thread([] { L_(info) << "other thread in the scope"; }).join();
+    {
+      logging::TimesliceScope const inner(43);
+      INFO("in the inner scope");
+    }
+    INFO("back in the outer scope");
+  }
+  BOOST_CHECK(!logging::current_timeslice());
+  INFO("after the scope");
+
+  BOOST_CHECK_EQUAL(grep(text_file, "INFO: ts..456|in the scope").size(), 1);
+  BOOST_CHECK_EQUAL(
+      grep(text_file, "INFO: ts42|about another timeslice").size(), 1);
+  BOOST_CHECK_EQUAL(
+      grep(text_file, "INFO: ts..456|other thread in the scope").size(), 1);
+  BOOST_CHECK_EQUAL(grep(text_file, "INFO: ts43|in the inner scope").size(), 1);
+  BOOST_CHECK_EQUAL(
+      grep(text_file, "INFO: ts..456|back in the outer scope").size(), 1);
+  BOOST_CHECK_EQUAL(grep(text_file, "INFO: after the scope").size(), 1);
+  BOOST_CHECK_EQUAL(
+      grep(json_file, R"("timeslice":17900000456,"message":"in the scope")")
+          .size(),
+      1);
+  auto const lines = grep(json_file, "after the scope");
+  BOOST_REQUIRE_EQUAL(lines.size(), 1);
+  BOOST_CHECK(!contains(lines[0], R"("timeslice")"));
+}
+
 // For adapters: a message with attributes, but without a format string
 BOOST_AUTO_TEST_CASE(write_with_attributes) {
   logging::Attributes attributes;

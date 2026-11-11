@@ -600,6 +600,10 @@ private:
 // the core exists.
 std::atomic<int> g_minimum{-1};
 
+// The timeslice from set_timeslice(); no_timeslice if none
+constexpr std::uint64_t no_timeslice = UINT64_MAX;
+std::atomic<std::uint64_t> g_timeslice{no_timeslice};
+
 class Core;
 Core& core();
 void on_exit();
@@ -984,12 +988,27 @@ bool enabled(severity_level level) noexcept {
   return static_cast<int>(level) >= minimum;
 }
 
+void set_timeslice(std::optional<std::uint64_t> id) noexcept {
+  g_timeslice.store(id.value_or(no_timeslice), std::memory_order_relaxed);
+}
+
+std::optional<std::uint64_t> current_timeslice() noexcept {
+  std::uint64_t const id = g_timeslice.load(std::memory_order_relaxed);
+  if (id == no_timeslice) {
+    return std::nullopt;
+  }
+  return id;
+}
+
 void write(severity_level level,
            std::string message,
            Attributes attributes) noexcept {
   try {
     if (!enabled(level)) {
       return;
+    }
+    if (!attributes.timeslice) {
+      attributes.timeslice = current_timeslice();
     }
     core().submit(Record(level, std::move(message), std::move(attributes)));
   } catch (...) { // NOLINT(bugprone-empty-catch): logging must not throw
