@@ -111,6 +111,30 @@ FLES_LOGGING_EXPORT void setup(Options const& options);
 /// pthread_setname_np(), reaches the messages only before the first one.
 FLES_LOGGING_EXPORT void set_thread_name(std::string_view name) noexcept;
 
+/// The timeslice that the process works on, for the messages that name none
+/// themselves, from all threads; std::nullopt: none. For processes that work
+/// on one timeslice at a time.
+FLES_LOGGING_EXPORT void
+set_timeslice(std::optional<std::uint64_t> id) noexcept;
+
+/// The timeslice given by set_timeslice()
+FLES_LOGGING_EXPORT std::optional<std::uint64_t> current_timeslice() noexcept;
+
+/// Sets the timeslice while it exists, then restores the previous one.
+class TimesliceScope {
+public:
+  explicit TimesliceScope(std::uint64_t id) noexcept
+      : previous_(current_timeslice()) {
+    set_timeslice(id);
+  }
+  TimesliceScope(TimesliceScope const&) = delete;
+  TimesliceScope& operator=(TimesliceScope const&) = delete;
+  ~TimesliceScope() { set_timeslice(previous_); }
+
+private:
+  std::optional<std::uint64_t> previous_;
+};
+
 /// Wait until all messages logged so far are written.
 FLES_LOGGING_EXPORT void flush() noexcept;
 
