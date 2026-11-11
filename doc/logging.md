@@ -92,6 +92,11 @@ STATUS("Done", logging::field("n_timeslices", n_ts));
 - `L_(level) << ...` is the stream interface.
 - The arguments are only evaluated if the message is logged.
   `logging::enabled(level)` tells whether it would be.
+- A program that works on one timeslice at a time can set it once, with
+  `logging::set_timeslice(id)` or for a scope with
+  `logging::TimesliceScope scope(id)`. Messages from all threads that name no
+  timeslice of their own then carry this one, also messages from bridged
+  logging systems.
 - `logging::set_thread_name()` names the calling thread for its messages and
   for tools like `top`.
 
