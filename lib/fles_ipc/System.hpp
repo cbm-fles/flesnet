@@ -108,14 +108,81 @@ std::vector<std::string> glob(const std::string& pattern,
 uint16_t current_terminal_width();
 
 /**
- * @brief Get the current time in nanoseconds since the epoch
+ * \brief The clock that timestamps the data.
  *
- * @return current time in nanoseconds
+ * Timeslice building is keyed on the start times of microslices and
+ * timeslices. These are read from the data clock, which by default is the
+ * system clock. To replay recorded or simulated data with its original
+ * timestamps, the data clock can be offset from the system clock and run at a
+ * different rate:
+ *
+ *     data_time = data_origin + (system_time - real_origin) * rate
+ *
+ * Every process of a timeslice building setup has to use the same data clock.
+ * The data time never goes below zero: before the data clock reaches zero, it
+ * reads zero and the chain idles.
  */
-inline uint64_t current_time_ns() {
+struct DataClock {
+  int64_t data_origin_ns = 0; ///< data time at the reference instant
+  int64_t real_origin_ns = 0; ///< the reference instant in system time
+  double rate = 1.0;          ///< data seconds per real second
+
+  /// Whether the data clock is the system clock.
+  [[nodiscard]] bool is_system_clock() const {
+    return data_origin_ns == real_origin_ns && rate == 1.0;
+  }
+  /// The data time at a given system time.
+  [[nodiscard]] int64_t to_data_time_ns(int64_t real_ns) const;
+  /// The system time at which the data clock reads a given data time.
+  [[nodiscard]] int64_t to_real_time_ns(int64_t data_ns) const;
+  /// The system time that passes while the data clock advances by `data_ns`.
+  [[nodiscard]] std::chrono::nanoseconds real_duration(int64_t data_ns) const;
+  /// Human-readable description of the clock.
+  [[nodiscard]] std::string to_string() const;
+};
+
+/**
+ * \brief Set the data clock of this process. Call it once at startup, before
+ * any thread reads the data time.
+ */
+void set_data_clock(const DataClock& clock);
+
+/// The data clock of this process.
+const DataClock& data_clock();
+
+/**
+ * \brief Get the current system time in nanoseconds since the epoch
+ *
+ * @return current system time in nanoseconds
+ */
+inline uint64_t current_real_time_ns() {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
-             std::chrono::high_resolution_clock::now().time_since_epoch())
+             std::chrono::system_clock::now().time_since_epoch())
       .count();
 }
+
+/**
+ * \brief Get the current data time in nanoseconds, see DataClock
+ *
+ * @return current data time in nanoseconds
+ */
+uint64_t current_time_ns();
+
+/**
+ * \brief Parse a point in time.
+ *
+ * Accepted are an integer number of nanoseconds since the Unix epoch, and ISO
+ * 8601 date-times like `2026-11-16T12:00:00`, optionally with a fraction of a
+ * second and a zone designator (`Z` or `+01:00`). Without a zone, the local
+ * time zone applies.
+ *
+ * @return nanoseconds since the Unix epoch
+ */
+int64_t parse_time_point_ns(const std::string& str);
+
+/**
+ * \brief Format a point in time as ISO 8601 in UTC with nanoseconds.
+ */
+std::string format_time_point_ns(int64_t time_ns);
 
 } // namespace fles::system

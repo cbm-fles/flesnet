@@ -31,11 +31,12 @@ struct ComponentWindow {
 };
 
 /// The component window of the timeslice [start_ns, start_ns + duration_ns).
+/// The window cannot begin before time zero.
 constexpr ComponentWindow component_window(uint64_t start_ns,
                                            uint64_t duration_ns,
                                            uint64_t overlap_before_ns,
                                            uint64_t overlap_after_ns) {
-  return {start_ns - overlap_before_ns,
+  return {start_ns > overlap_before_ns ? start_ns - overlap_before_ns : 0,
           start_ns + duration_ns + overlap_after_ns};
 }
 
