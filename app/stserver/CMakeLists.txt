@@ -9,7 +9,9 @@ add_executable(stserver
   Channel.cpp
   StBuilder.cpp
   StSender.cpp
+  sw_dma_channel.cpp
   pgen_channel.cpp
+  replay_channel.cpp
 )
 
 target_include_directories(stserver

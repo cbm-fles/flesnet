@@ -3,6 +3,7 @@
    Authors: Dirk Hutter, Jan de Cuveland */
 
 #include "StBuilder.hpp"
+#include "MicrosliceAutoSource.hpp"
 #include "SubTimeslice.hpp"
 #include "System.hpp"
 #include "Utility.hpp"
@@ -45,6 +46,7 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
                      int64_t pgen_microslice_duration_ns,
                      size_t pgen_microslice_size,
                      uint32_t pgen_flags,
+                     cri::ReplayParameters replay,
                      int64_t timeslice_duration_ns,
                      int64_t timeout_ns,
                      size_t data_buffer_size,
@@ -104,11 +106,12 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
 
   // create shared memory segment with enough space for page aligned buffers
   // TODO parameters: replace with explicit size for each channel
-  size_t shm_size = (data_buffer_size * sizeof(uint8_t) +
-                     desc_buffer_size * sizeof(fles::MicrosliceDescriptor) +
-                     2 * sysconf(_SC_PAGESIZE)) *
-                        (m_cri_channels.size() + pgen_channels) +
-                    4096;
+  size_t shm_size =
+      (data_buffer_size * sizeof(uint8_t) +
+       desc_buffer_size * sizeof(fles::MicrosliceDescriptor) +
+       2 * sysconf(_SC_PAGESIZE)) *
+          (m_cri_channels.size() + pgen_channels + replay.inputs.size()) +
+      4096;
 
   // remove a segment left behind by a previous process that did not shut down
   // cleanly, as create_only would fail on it
@@ -165,8 +168,44 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
         desc_buffer, data_buffer, i, pgen_microslice_duration_ns,
         pgen_microslice_size, pgen_flags));
 
+    m_sw_channels.push_back(m_pgen_channels.back().get());
+
     m_channels.push_back(std::make_unique<Channel>(
         m_pgen_channels.back().get(), desc_buffer, data_buffer,
+        overlap_before_ns, overlap_after_ns, channel_name));
+  }
+
+  // Create Channel objects for replayed microslice streams if requested
+  std::optional<uint64_t> replay_start_time;
+  if (replay.shift) {
+    // the first timeslice boundary at least one second of data time ahead,
+    // the same for all channels of this stserver
+    constexpr uint64_t margin_ns = 1000000000;
+    replay_start_time = (fles::system::current_time_ns() + margin_ns) /
+                            timeslice_duration_ns * timeslice_duration_ns +
+                        timeslice_duration_ns;
+  }
+  for (size_t i = 0; i < replay.inputs.size(); ++i) {
+    const std::string& locator = replay.inputs[i];
+    // set channel name, used for monitoring
+    std::string channel_name = "replay-" + std::to_string(i);
+    INFO("{}: {}", channel_name, locator);
+
+    // allocate buffers in shm
+    std::span desc_buffer =
+        shm_allocate<fles::MicrosliceDescriptor>(m_shm.get(), desc_buffer_size);
+    std::span data_buffer =
+        shm_allocate<uint8_t>(m_shm.get(), data_buffer_size);
+
+    m_replay_channels.push_back(std::make_unique<cri::replay_channel>(
+        desc_buffer, data_buffer,
+        std::make_unique<fles::MicrosliceAutoSource>(locator),
+        timeslice_duration_ns, replay_start_time, replay.loop_bytes,
+        channel_name));
+    m_sw_channels.push_back(m_replay_channels.back().get());
+
+    m_channels.push_back(std::make_unique<Channel>(
+        m_replay_channels.back().get(), desc_buffer, data_buffer,
         overlap_before_ns, overlap_after_ns, channel_name));
   }
 }
@@ -293,7 +332,51 @@ void StBuilder::run() {
     ts_start_time += m_timeslice_duration_ns;
     ask_again.resize(m_channels.size());
     std::iota(ask_again.begin(), ask_again.end(), 0);
+
+    if (replay_finished(ts_start_time)) {
+      INFO("Replay finished, all microslices have been provided");
+      wait_for_completions();
+      break;
+    }
   }
+}
+
+// Whether all input is replayed streams that have been provided completely,
+// i.e., the timeslice starting at ts_start_time cannot contain their data
+bool StBuilder::replay_finished(uint64_t ts_start_time) const {
+  if (m_replay_channels.empty() ||
+      m_replay_channels.size() != m_channels.size()) {
+    return false;
+  }
+  if (!std::all_of(m_replay_channels.begin(), m_replay_channels.end(),
+                   [](const auto& channel) { return channel->finished(); })) {
+    return false;
+  }
+  return std::all_of(
+      m_channels.begin(), m_channels.end(),
+      [ts_start_time](const auto& channel) {
+        auto latest = channel->get_monitoring().latest_microslice_time_ns;
+        return !latest || static_cast<uint64_t>(*latest) < ts_start_time;
+      });
+}
+
+// Give the builders a moment to fetch the announced subtimeslices
+void StBuilder::wait_for_completions() {
+  constexpr auto max_wait = std::chrono::seconds(10);
+  const auto deadline = std::chrono::steady_clock::now() + max_wait;
+  while (*m_signal_status == 0 && !m_st_sender.has_stopped() &&
+         std::chrono::steady_clock::now() < deadline) {
+    handle_completions();
+    m_tasks.timer();
+    const bool pending =
+        std::any_of(m_subtimeslices.begin(), m_subtimeslices.end(),
+                    [](const auto& st) { return !st.second.completed; });
+    if (!pending) {
+      return;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  WARN("Giving up waiting for the completion of pending subtimeslices");
 }
 
 StBuilder::~StBuilder() {
@@ -301,7 +384,9 @@ StBuilder::~StBuilder() {
     cri_channel->disable_readout();
   }
   m_channels.clear();
+  m_sw_channels.clear();
   m_pgen_channels.clear();
+  m_replay_channels.clear();
   m_cri_channels.clear();
 
   // cleanup
@@ -479,11 +564,11 @@ void StBuilder::report_status() {
     }
   }
 
-  uint64_t pgen_skipped_microslices = 0;
-  uint64_t pgen_skipped_bytes = 0;
-  for (const auto& pgen : m_pgen_channels) {
-    pgen_skipped_microslices += pgen->skipped_microslice_count();
-    pgen_skipped_bytes += pgen->skipped_byte_count();
+  uint64_t skipped_microslices = 0;
+  uint64_t skipped_bytes = 0;
+  for (const auto* channel : m_sw_channels) {
+    skipped_microslices += channel->skipped_microslice_count();
+    skipped_bytes += channel->skipped_byte_count();
   }
 
   if (m_monitor != nullptr) {
@@ -496,9 +581,9 @@ void StBuilder::report_status() {
         {"subtimeslice_retracted_count", m_st_sender.retracted_count()},
         {"aggregation_allocation_failures", m_aggregation_allocation_failures},
         {"buffer_utilization", max_buffer_utilization}};
-    if (!m_pgen_channels.empty()) {
-      fields.emplace_back("pgen_skipped_microslices", pgen_skipped_microslices);
-      fields.emplace_back("pgen_skipped_bytes", pgen_skipped_bytes);
+    if (!m_sw_channels.empty()) {
+      fields.emplace_back("skipped_microslices", skipped_microslices);
+      fields.emplace_back("skipped_bytes", skipped_bytes);
     }
     m_monitor->QueueMetric("stserver_status",
                            {{"host", m_sender_info.address},
@@ -506,10 +591,10 @@ void StBuilder::report_status() {
                            std::move(fields));
   }
 
-  if (pgen_skipped_microslices > m_reported_pgen_skipped_microslices) {
-    WARN("Pattern generator buffer full: skipped {} microslice(s) so far",
-         logging::field("pgen_skipped_microslices", pgen_skipped_microslices));
-    m_reported_pgen_skipped_microslices = pgen_skipped_microslices;
+  if (skipped_microslices > m_reported_skipped_microslices) {
+    WARN("Input buffer full: skipped {} microslice(s) so far",
+         logging::field("skipped_microslices", skipped_microslices));
+    m_reported_skipped_microslices = skipped_microslices;
   }
 
   if (m_aggregation_allocation_failures > m_reported_aggregation_failures) {

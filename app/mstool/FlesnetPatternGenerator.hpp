@@ -8,13 +8,16 @@
 
 /// Simple software pattern generator.
 /** Produces an endless stream of microslices containing the FLES basic ramp
-    pattern. */
+    pattern. The microslice start times begin at `start_idx` and advance by
+    `idx_step`, so that by default the microslices are numbered. */
 class FlesnetPatternGenerator : public fles::MicrosliceSource {
 public:
   /// The FlesnetPatternGenerator constructor.
   FlesnetPatternGenerator(uint64_t input_index,
                           uint32_t typical_content_size,
-                          bool randomize_sizes = false);
+                          bool randomize_sizes = false,
+                          int64_t start_idx = 0,
+                          int64_t idx_step = 1);
 
   [[nodiscard]] bool eos() const override { return false; }
 
@@ -32,6 +35,12 @@ private:
 
   /// Distribution to use in determining data content sizes.
   std::poisson_distribution<unsigned int> random_distribution_;
+
+  /// Start time of the next microslice
+  uint64_t idx_;
+
+  /// Increment of the start time per microslice
+  uint64_t idx_step_;
 
   /// Number of generated microslices
   uint64_t microslice_count_ = 0;
