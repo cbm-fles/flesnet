@@ -55,6 +55,9 @@ double calculate_ber(size_t n_bytes, size_t n_errors);
 /// Missing library function
 unsigned stou(std::string const& str, size_t* idx = nullptr, int base = 10);
 
+/// Parse a duration with a unit suffix (ns, us, ms, s) into nanoseconds.
+int64_t parse_nanoseconds(const std::string& str);
+
 /// Replace all instances of the specified pattern in the input string
 [[nodiscard]] std::string replace_all_copy(const std::string& str,
                                            const std::string& from,

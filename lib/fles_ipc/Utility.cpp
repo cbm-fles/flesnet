@@ -1,5 +1,6 @@
 // Copyright 2012-2015 Jan de Cuveland <cmail@cuveland.de>
 #include "Utility.hpp"
+#include "OptionValues.hpp"
 
 #include <array>
 #include <cmath>
@@ -132,4 +133,8 @@ UriComponents::UriComponents(const std::string& uri) {
       }
     }
   }
+}
+
+int64_t parse_nanoseconds(const std::string& str) {
+  return fles::Nanoseconds::parse(str).count();
 }

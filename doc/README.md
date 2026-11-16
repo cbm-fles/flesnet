@@ -7,6 +7,8 @@ This folder contains documentation for the Flesnet project. Part of the document
 - [`doc/INSTALL.md`](./INSTALL.md) — installation and setup instructions for Flesnet.
 - [`doc/FAQ.md`](./FAQ.md) — common issues and frequently asked questions.
 - [`doc/logging.md`](./logging.md) — logging options, output formats and use in code.
+- [`doc/TS_Source_Identifier.md`](./TS_Source_Identifier.md) — the timeslice source locators (`shm`, `file`, `tcp`, `msa`).
+- [`doc/simulated_data.md`](./simulated_data.md) — building timeslices from simulated or recorded microslice streams, offline and through the chain; the data clock.
 
 
 ## Doxygen documentation

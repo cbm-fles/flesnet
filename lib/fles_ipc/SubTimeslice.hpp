@@ -3,6 +3,7 @@
    Authors: Jan de Cuveland, Dirk Hutter */
 #pragma once
 
+#include "TimesliceFlags.hpp"
 #include <algorithm>
 #include <bit>
 #include <boost/archive/binary_iarchive.hpp>
@@ -67,39 +68,6 @@ template <> struct std::formatter<fles::tsb::TsId> {
 };
 
 namespace fles::tsb {
-
-// Flags
-
-enum class TsComponentFlag : uint32_t {
-  None = 0,
-
-  // Microslices are missing in this component
-  MissingMicroslices = 1 << 0,
-
-  // One or more microslices in this component have their "OverflowFlim" flag
-  // set
-  OverflowFlim = 1 << 1
-};
-
-enum class TsFlag : uint32_t {
-  None = 0,
-
-  // One or more components are missing microslices
-  // (i.e., at least one component has
-  // StComponentFlag::IsMissingMicroslices set)
-  MissingMicroslices = 1 << 0,
-
-  // One or more components in this subtimeslice have
-  // StComponentFlag::OverflowFlim set, i.e., at least one microslice has its
-  // "OverflowFlim" flag set
-  OverflowFlim = 1 << 1,
-
-  // Subtimeslice is incomplete due to missing components
-  MissingComponents = 1 << 2,
-
-  // Timeslice is incomplete due to missing subtimeslices
-  MissingSubtimeslices = 1 << 3,
-};
 
 // Sender and builder information for registration with the manager
 
