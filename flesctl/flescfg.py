@@ -48,6 +48,13 @@ CONFIG_SCHEMA = Schema(
         "common": {
             # shared by tsmanager and stserver, must be identical for both
             "timeslice_duration": And(str, Use(parse_duration)),
+            # the data clock, shared by tsmanager, stserver and tsbuilder (see
+            # doc/simulated_data.md); a time is given in ns or ISO 8601
+            Optional("data_clock"): {
+                Optional("data_time_origin"): Use(str),
+                Optional("data_time_reference"): Use(str),
+                Optional("data_clock_rate"): And(Use(float), lambda x: 0 < x),
+            },
             "tsmanager": {
                 "timeout": And(str, Use(parse_duration)),
                 "max_in_flight": And(Use(int), lambda n: 0 < n),
@@ -66,6 +73,10 @@ CONFIG_SCHEMA = Schema(
                 "pgen_microslice_duration": And(str, Use(parse_duration)),
                 "pgen_microslice_size": And(Use(parse_size), lambda n: 0 < n),
                 "pgen_flags": And(Use(int), lambda n: 0 <= n),
+                # replayed microslice streams (see doc/simulated_data.md)
+                Optional("replay_input"): [str],
+                Optional("replay_shift"): bool,
+                Optional("replay_loop"): And(Use(parse_size), lambda n: 0 <= n),
             },
             "tsbuilder": {
                 "timeout": And(str, Use(parse_duration)),
