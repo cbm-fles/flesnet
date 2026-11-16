@@ -52,13 +52,29 @@ public:
     timeslice_descriptor_.num_components = 0;
   }
 
+  /// Construct and initialize an empty timeslice with the given identifier,
+  /// start time, duration and flags (see TimesliceFlags.hpp), to fill using
+  /// append_component.
+  StorableTimeslice(uint64_t index,
+                    uint64_t start_time,
+                    uint64_t duration,
+                    uint32_t flags) {
+    timeslice_descriptor_.index = index;
+    timeslice_descriptor_.start_time = start_time;
+    timeslice_descriptor_.duration = duration;
+    timeslice_descriptor_.flags = flags;
+    timeslice_descriptor_.num_components = 0;
+  }
+
   /// Append a single component to fill using append_microslice.
   uint32_t append_component(uint64_t num_microslices,
-                            uint64_t /* dummy */ = 0) {
+                            uint64_t /* dummy */ = 0,
+                            uint32_t flags = 0) {
     TimesliceComponentDescriptor ts_desc = TimesliceComponentDescriptor();
     ts_desc.ts_num = timeslice_descriptor_.index;
     ts_desc.offset = 0;
     ts_desc.num_microslices = num_microslices;
+    ts_desc.flags = flags;
 
     std::vector<uint8_t> data;
     for (uint64_t m = 0; m < num_microslices; ++m) {

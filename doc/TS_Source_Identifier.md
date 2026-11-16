@@ -17,6 +17,9 @@ Currently implemented schemes:
 `tcp`
 : Receive timeslices via tcp network connection
 
+`msa`
+: Build timeslices from microslice archive (.msa) files
+
 Some Flesnet tools/classes support additional (legacy) adressing schemes.
 
 ## The `shm` scheme
@@ -86,6 +89,48 @@ If the filename contains the string `%n`, a sequence of archive files is read. T
 `cycles`
 : Repeat reading the input archive in a loop for the given number of times (default: 1).  
 This option is meant for performance testing.
+
+
+## The `msa` scheme
+Build timeslices from microslice streams stored in .msa files, one file (or
+file sequence) per input channel, in a single process.
+```
+Syntax:  msa://path?duration=40ms
+Example: msa:///data/sim/run1/link_*.msa?duration=40ms&overlap=100us
+```
+
+Every file matching the path is one input channel and provides one component
+of every timeslice. The path may contain wildcards (`*`, `[...]`, `{a,b}`) and
+the `%n` placeholder of a file sequence (see the `file` scheme).
+
+The timeslices are cut by time exactly like the online timeslice building in
+stserver does: a timeslice [start, start + duration) gets every microslice
+that starts within the overlaps around it, and a component is complete once a
+microslice beyond that window has been read. Components a stream cannot
+provide (its data starts later or ends earlier) are left out and the
+timeslice is flagged with `MissingComponents`; the stream ends when no file
+can contribute to any further timeslice. Since the last timeslice needs a
+microslice beyond its end to be complete, streams should extend at least one
+microslice beyond the last timeslice to be built.
+
+This is a deterministic, single-process reconstruction of the online
+timeslice building, meant for simulation chains and tests. For the online
+chain on recorded or simulated streams, see the replay channels of stserver in
+[`simulated_data.md`](./simulated_data.md).
+
+### Parameters of the `msa` scheme
+
+`duration`
+: The duration of a timeslice (with suffix ns, us, ms, s; default: 40ms).
+
+`overlap_before`, `overlap_after`
+: The overlap before the start and after the end of a timeslice (default:
+100us each). `overlap` sets both.
+
+`start`
+: The start time of the first timeslice, as nanoseconds or ISO 8601 (default:
+the first timeslice every stream can provide completely). Timeslices before
+the data are skipped.
 
 
 ## The `tcp` scheme

@@ -46,6 +46,10 @@ public:
     return timeslice_descriptor_.num_components;
   }
 
+  /// Retrieve the flags of a given component (see TimesliceFlags.hpp).
+  [[nodiscard]] uint32_t component_flags(uint64_t component) const {
+    return desc_ptr_[component]->flags;
+  }
   /// Retrieve the size (in bytes) of the microslice contents for a given
   /// component.
   [[nodiscard]] uint64_t size_component(uint64_t component) const {
