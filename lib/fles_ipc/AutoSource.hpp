@@ -18,9 +18,30 @@
 
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace fles {
+
+/**
+ * \brief Find the files matching a path with wildcards and the sequence
+ * placeholder.
+ *
+ * The placeholder "%n" of a file sequence (see OutputArchiveSequence) is
+ * expanded to its first value "0000" before glob'ing and restored in the
+ * results. This will not work if the path contains both the placeholder and
+ * the string "0000". Nonexistent files are caught at this stage by glob()
+ * throwing a runtime_error.
+ */
+inline std::vector<std::string> glob_file_paths(const std::string& file_path) {
+  auto paths = system::glob(replace_all_copy(file_path, "%n", "0000"));
+  if (file_path.find("%n") != std::string::npos) {
+    for (auto& path : paths) {
+      replace_all(path, "0000", "%n");
+    }
+  }
+  return paths;
+}
 
 /**
  * \brief The AutoSource base class implements the generic
@@ -224,6 +245,10 @@ private:
         sources.emplace_back(std::move(source));
 
       } else if (uri.scheme == "shm") {
+        if constexpr (!std::is_same<View, TimesliceView>::value) {
+          throw std::runtime_error(
+              "scheme shm is only available for timeslices");
+        }
         WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll, 0,
                                "AutoSource at PID " +
                                    std::to_string(system::current_pid())};

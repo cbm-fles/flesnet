@@ -10,10 +10,14 @@
 
 FlesnetPatternGenerator::FlesnetPatternGenerator(uint64_t input_index,
                                                  uint32_t typical_content_size,
-                                                 bool randomize_sizes)
+                                                 bool randomize_sizes,
+                                                 int64_t start_idx,
+                                                 int64_t idx_step)
     : input_index_(input_index), typical_content_size_(typical_content_size),
       randomize_sizes_(randomize_sizes),
-      random_distribution_(typical_content_size) {}
+      random_distribution_(typical_content_size),
+      idx_(static_cast<uint64_t>(start_idx)),
+      idx_step_(static_cast<uint64_t>(idx_step)) {}
 
 fles::Microslice* FlesnetPatternGenerator::do_get() {
   unsigned int content_bytes = typical_content_size_;
@@ -40,9 +44,10 @@ fles::Microslice* FlesnetPatternGenerator::do_get() {
   const auto sys_ver =
       static_cast<uint8_t>(fles::SubsystemFormatFLES::BasicRampPattern);
   const fles::MicrosliceDescriptor desc{
-      hdr_id,  hdr_ver,           eq_id, flags,         sys_id,
-      sys_ver, microslice_count_, crc,   content_bytes, content_bytes_count_};
+      hdr_id,  hdr_ver, eq_id, flags,         sys_id,
+      sys_ver, idx_,    crc,   content_bytes, content_bytes_count_};
 
+  idx_ += idx_step_;
   ++microslice_count_;
   content_bytes_count_ += content_bytes;
 

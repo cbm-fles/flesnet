@@ -21,10 +21,9 @@ Application::Application(Parameters const& par) : par_(par) {
   if (par_.use_pattern_generator) {
     INFO("using pattern generator as data source");
 
-    constexpr uint32_t typical_content_size = 10000;
-
     source_ = std::make_unique<FlesnetPatternGenerator>(
-        par_.channel_idx, typical_content_size, true);
+        par_.channel_idx, par_.microslice_size, true, par_.start_time,
+        par_.microslice_duration);
   } else if (!par_.input_archive.empty()) {
     source_ =
         std::make_unique<fles::MicrosliceInputArchive>(par_.input_archive);

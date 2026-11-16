@@ -5,6 +5,7 @@
 #include "Parameters.hpp"
 #include "CommonOptions.hpp"
 #include "DataClockOptions.hpp"
+#include "MicrosliceAutoSource.hpp"
 #include "System.hpp"
 #include "Utility.hpp"
 #include "log.hpp"
@@ -107,6 +108,26 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "1: generate pattern, 2: randomize sizes, "
              "3: generate pattern + randomize sizes, ...)");
 
+  config_add("replay-input",
+             po::value<std::vector<std::string>>(&m_replay_inputs)
+                 ->composing()
+                 ->value_name("URI"),
+             "replay a microslice stream as an input channel: a .msa file, a "
+             "file sequence with the %n placeholder, or a glob pattern "
+             "(one channel per matching file); may be given several times");
+  config_add("replay-shift", po::bool_switch(&m_replay.shift),
+             "shift the timestamps of the replayed microslices so that the "
+             "streams start at the current data time, instead of configuring "
+             "the data clock to match the streams");
+  config_add(
+      "replay-loop",
+      po::value<SizeValue>(&m_replay_loop)->default_value(m_replay_loop),
+      "load up to this many bytes of microslice content per replay channel "
+      "into memory and replay them in a loop, with the timestamps advancing "
+      "by whole timeslices every cycle; implies --replay-shift (0: replay "
+      "each stream once; supports SI units: kB, MB, GB, etc. or binary: KiB, "
+      "MiB, GiB, etc.)");
+
   config_add("timeslice-duration",
              po::value<Nanoseconds>(&m_timeslice_duration)
                  ->default_value(m_timeslice_duration),
@@ -193,6 +214,29 @@ void Parameters::parse_options(int argc, char* argv[]) {
 
   if (timeslice_duration_ns() <= 0) {
     throw ParametersException("timeslice duration must be greater than 0");
+  }
+
+  // One replay channel per matching file
+  for (const auto& locator : m_replay_inputs) {
+    UriComponents uri{locator};
+    if (uri.scheme == "file" || uri.scheme.empty()) {
+      if (!uri.query.empty()) {
+        throw ParametersException("replay input must not have parameters: " +
+                                  locator);
+      }
+      for (const auto& path : fles::glob_file_paths(uri.authority + uri.path)) {
+        m_replay.inputs.push_back(path);
+      }
+    } else {
+      m_replay.inputs.push_back(locator);
+    }
+  }
+  m_replay.loop_bytes = m_replay_loop.value();
+  if (m_replay.loop_bytes > 0) {
+    m_replay.shift = true;
+  }
+  if (m_replay.inputs.empty() && (m_replay.shift || m_replay.loop_bytes > 0)) {
+    throw ParametersException("replay options given without replay inputs");
   }
   if ((overlap_before_ns() + overlap_after_ns()) < 0) {
     throw ParametersException("negative total overlap cuts into timeslice");
