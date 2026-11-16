@@ -8,6 +8,7 @@ add_executable(test_TimesliceAutoSource test_TimesliceAutoSource.cpp)
 add_executable(test_TimesliceShm test_TimesliceShm.cpp)
 add_executable(test_Microslice test_Microslice.cpp)
 add_executable(test_ItemProtocol test_ItemProtocol.cpp)
+add_executable(test_ComponentWindow test_ComponentWindow.cpp)
 
 target_compile_definitions(test_System PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_Utility PUBLIC BOOST_TEST_DYN_LINK)
@@ -17,6 +18,7 @@ target_compile_definitions(test_TimesliceAutoSource PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_TimesliceShm PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_Microslice PUBLIC BOOST_TEST_DYN_LINK)
 target_compile_definitions(test_ItemProtocol PUBLIC BOOST_TEST_DYN_LINK)
+target_compile_definitions(test_ComponentWindow PUBLIC BOOST_TEST_DYN_LINK)
 
 target_include_directories(test_System SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_Utility SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
@@ -26,6 +28,7 @@ target_include_directories(test_TimesliceAutoSource SYSTEM PUBLIC ${Boost_INCLUD
 target_include_directories(test_TimesliceShm SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_Microslice SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(test_ItemProtocol SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(test_ComponentWindow SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(test_System fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_Utility fles_ipc ${Boost_LIBRARIES})
@@ -38,11 +41,12 @@ endif()
 target_link_libraries(test_TimesliceShm fles_ipc logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(test_Microslice fles_ipc ${Boost_LIBRARIES})
 target_link_libraries(test_ItemProtocol shm_ipc logging ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_ComponentWindow fles_ipc ${Boost_LIBRARIES})
 
 # For TimesliceShmBuffer.hpp
 target_compile_features(test_TimesliceShm PRIVATE cxx_std_23)
 # Projects like cbmroot use these headers from C++17
-set_target_properties(test_TimesliceAutoSource PROPERTIES CXX_STANDARD 17)
+set_target_properties(test_TimesliceAutoSource test_ComponentWindow PROPERTIES CXX_STANDARD 17)
 
 if(APPLE)
   target_link_directories(test_System PRIVATE ${ZSTD_LIB_DIR})
@@ -53,6 +57,7 @@ if(APPLE)
   target_link_directories(test_TimesliceShm PRIVATE ${ZSTD_LIB_DIR})
   target_link_directories(test_Microslice PRIVATE ${ZSTD_LIB_DIR})
   target_link_directories(test_ItemProtocol PRIVATE ${ZSTD_LIB_DIR})
+  target_link_directories(test_ComponentWindow PRIVATE ${ZSTD_LIB_DIR})
 endif()
 
 add_custom_command(TARGET test_Timeslice POST_BUILD
@@ -80,6 +85,7 @@ add_test(NAME test_TimesliceAutoSource COMMAND test_TimesliceAutoSource)
 add_test(NAME test_TimesliceShm COMMAND test_TimesliceShm)
 add_test(NAME test_Microslice COMMAND test_Microslice)
 add_test(NAME test_ItemProtocol COMMAND test_ItemProtocol)
+add_test(NAME test_ComponentWindow COMMAND test_ComponentWindow)
 set_tests_properties(test_ItemProtocol PROPERTIES TIMEOUT 120)
 
 find_program(BASH_PROGRAM bash)
