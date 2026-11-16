@@ -56,16 +56,17 @@ void Channel::ack_before(uint64_t time) {
   // the requested time, so that the component starting there can still be
   // built. The element the read index points to is kept. If nothing can be
   // released, the hardware is left alone.
-  auto keep = fles::component_release_point(desc_begin, desc_end,
-                                            time - m_overlap_before_ns);
+  const uint64_t keep_time =
+      time > m_overlap_before_ns ? time - m_overlap_before_ns : 0;
+  auto keep = fles::component_release_point(desc_begin, desc_end, keep_time);
   if (keep != desc_begin) {
     set_read_index(keep.get_index());
   }
 
   TRACE("{}: ack before: searching for time {} in range {} - {}. Setting read "
         "index to {}",
-        m_name, pt(time - m_overlap_before_ns), desc_begin.get_index(),
-        desc_end.get_index(), keep.get_index());
+        m_name, pt(keep_time), desc_begin.get_index(), desc_end.get_index(),
+        keep.get_index());
 }
 
 Channel::State Channel::check_availability(uint64_t start_time,

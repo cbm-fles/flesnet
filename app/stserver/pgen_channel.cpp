@@ -4,19 +4,13 @@
 
 #include "pgen_channel.hpp"
 #include "MicrosliceDescriptor.hpp"
+#include "System.hpp"
 #include "log.hpp"
+#include <algorithm>
 #include <chrono>
 #include <sys/types.h>
 
-namespace {
-[[maybe_unused]] inline uint64_t
-chrono_to_timestamp(std::chrono::time_point<std::chrono::high_resolution_clock,
-                                            std::chrono::nanoseconds> time) {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(
-             time.time_since_epoch())
-      .count();
-}
-} // namespace
+using namespace std::chrono_literals;
 
 namespace cri {
 
@@ -64,21 +58,25 @@ void pgen_channel::thread_work(std::stop_token stop_token) {
   std::string thread_name = "pgen-" + std::to_string(m_channel_index);
   logging::set_thread_name(thread_name);
 
+  // Microslices are stamped with the data clock, so that they match the
+  // timeslices of the chain also when the data clock is not the system clock
+  const auto& clock = fles::system::data_clock();
   uint64_t ms_time =
-      chrono_to_timestamp(std::chrono::high_resolution_clock::now()) /
-      m_duration_ns * m_duration_ns;
+      fles::system::current_time_ns() / m_duration_ns * m_duration_ns;
 
   while (!stop_token.stop_requested()) {
-    uint64_t current_time =
-        chrono_to_timestamp(std::chrono::high_resolution_clock::now());
+    uint64_t current_time = fles::system::current_time_ns();
     if (current_time >= ms_time) {
       while (current_time >= ms_time) {
         generate_microslice(ms_time);
         ms_time += m_duration_ns;
       }
     } else {
+      // bounded, so that a stop request is seen in time also when the data
+      // clock runs slowly or has not started yet
       std::this_thread::sleep_for(
-          std::chrono::nanoseconds(ms_time - current_time));
+          std::min(clock.real_duration(ms_time - current_time),
+                   std::chrono::nanoseconds(100ms)));
     }
   }
 }
