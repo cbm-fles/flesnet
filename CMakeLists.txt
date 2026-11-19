@@ -1,6 +1,6 @@
 # Copyright 2013-2025 Jan de Cuveland <cmail@cuveland.de>
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.25)
 project(flesnet DESCRIPTION "CBM FLES Timeslice Building" VERSION 0.0 LANGUAGES CXX)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "bin")
 
@@ -97,11 +97,6 @@ else()
 endif()
 
 include(FetchContent)
-if(CMAKE_VERSION VERSION_GREATER "3.26.0")
-  set(FetchContent_Declare_SYSTEM "SYSTEM")
-else()
-  set(FetchContent_Declare_SYSTEM "")
-endif()
 
 # fetch libfmt formatting library, used by lib/monitoring and, in code without std::format, by lib/logging. Should be already included in FairSoft.
 find_package(fmt CONFIG)
@@ -111,7 +106,7 @@ if(NOT fmt_FOUND)
     fmtlib
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
     GIT_TAG 9.1.0
-    ${FetchContent_Declare_SYSTEM})
+    SYSTEM)
   FetchContent_MakeAvailable(fmtlib) # Adds fmt::fmt
 endif()
 
