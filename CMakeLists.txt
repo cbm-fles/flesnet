@@ -4,7 +4,10 @@ cmake_minimum_required(VERSION 3.25)
 project(flesnet DESCRIPTION "CBM FLES Timeslice Building" VERSION 0.0 LANGUAGES CXX)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "bin")
 
-if(NOT CMAKE_BUILD_TYPE)
+# Embedded in another project (e.g., cbmroot via FetchContent), flesnet builds
+# its libraries and the basic applications. It leaves the build type, output
+# directories and packaging to the parent and enables no optional features.
+if(PROJECT_IS_TOP_LEVEL AND NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
@@ -27,7 +30,7 @@ git_describe(GIT_REVISION "--all" "--tags" "--long" "--always")
 git_log(GIT_COMMIT "--date=format:%Y%m%d.%H%M" "--format=git%cd.%h" "-n1")
 set(PROJECT_VERSION_GIT ${PROJECT_VERSION}~${GIT_COMMIT})
 configure_file("${PROJECT_SOURCE_DIR}/config/GitRevision.cpp.in"
-               "${CMAKE_BINARY_DIR}/config/GitRevision.cpp" @ONLY)
+               "${PROJECT_BINARY_DIR}/config/GitRevision.cpp" @ONLY)
 
 if(DEFINED ENV{SIMPATH})
   message(WARNING "SIMPATH set, using Fairroot external packages in build.")
@@ -116,15 +119,45 @@ endif()
 find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS program_options serialization thread unit_test_framework iostreams)
 find_package(Threads REQUIRED)
 
-find_package(UCX CONFIG 1.16.0)
-if (UCX_FOUND)
-  message(STATUS "UCX found: ${UCX_VERSION}")
+option(USE_UCX "Use UCX libraries and build UCX transport." ${PROJECT_IS_TOP_LEVEL})
+option(USE_PDA "Use libpda and build CRI interface." ${PROJECT_IS_TOP_LEVEL})
+option(USE_NUMA "Use libnuma to schedule on specific NUMA nodes." ${PROJECT_IS_TOP_LEVEL})
+option(USE_LIBFABRIC "Fetch libfabric and build the timeslice forwarder." ${PROJECT_IS_TOP_LEVEL})
+option(USE_DOXYGEN "Generate documentation using doxygen." ${PROJECT_IS_TOP_LEVEL})
+
+if(USE_UCX)
+  find_package(UCX CONFIG 1.16.0)
+  if (UCX_FOUND)
+    message(STATUS "UCX found: ${UCX_VERSION}")
+  else()
+    message(STATUS "Libraries not found: ucx. Building without UCX transport.")
+  endif()
 endif()
-find_package(PDA)
-find_package(NUMA)
-find_library(IBVERBS_LIBRARY ibverbs)
-find_library(RDMACM_LIBRARY rdmacm)
-find_package(Doxygen)
+if(USE_PDA)
+  find_package(PDA)
+  if(NOT PDA_FOUND)
+    message(STATUS "Library not found: libpda. Building without CRI interface.")
+  endif()
+endif()
+if(USE_NUMA)
+  find_package(NUMA)
+  if(NOT NUMA_FOUND)
+    message(STATUS "Library not found: libnuma. Building without.")
+  endif()
+endif()
+if(USE_LIBFABRIC)
+  find_library(IBVERBS_LIBRARY ibverbs)
+  find_library(RDMACM_LIBRARY rdmacm)
+  if(NOT (IBVERBS_LIBRARY AND RDMACM_LIBRARY))
+    message(STATUS "Libraries not found: libibverbs, librdmacm. Building without timeslice forwarder.")
+  endif()
+endif()
+if(USE_DOXYGEN)
+  find_package(Doxygen)
+  if(NOT DOXYGEN_FOUND)
+    message(STATUS "Binary not found: Doxygen. Not building documentation.")
+  endif()
+endif()
 
 # Workaround for https://bugs.launchpad.net/ubuntu/+source/ucx/+bug/2076529
 # If UCX is found and the prefix variable is equal to "/usr/lib", change
@@ -151,31 +184,6 @@ find_package(OpenSSL REQUIRED)
 if(APPLE)
   find_package(ZSTD)
   get_filename_component(ZSTD_LIB_DIR ${ZSTD_LIBRARY} DIRECTORY)
-endif()
-
-set(USE_UCX TRUE CACHE BOOL "Use UCX libraries and build UCX transport.")
-if(USE_UCX AND NOT UCX_FOUND)
-  message(STATUS "Libraries not found: ucx. Building without UCX transport.")
-endif()
-
-set(USE_PDA TRUE CACHE BOOL "Use libpda and build CRI interface.")
-if(USE_PDA AND NOT PDA_FOUND)
-  message(STATUS "Library not found: libpda. Building without CRI interface.")
-endif()
-
-set(USE_NUMA TRUE CACHE BOOL "Use libnuma to schedule on specific NUMA nodes.")
-if(USE_NUMA AND NOT NUMA_FOUND)
-  message(STATUS "Library not found: libnuma. Building without.")
-endif()
-
-set(USE_LIBFABRIC TRUE CACHE BOOL "Fetch libfabric and build the timeslice forwarder.")
-if(USE_LIBFABRIC AND NOT (IBVERBS_LIBRARY AND RDMACM_LIBRARY))
-  message(STATUS "Libraries not found: libibverbs, librdmacm. Building without timeslice forwarder.")
-endif()
-
-set(USE_DOXYGEN TRUE CACHE BOOL "Generate documentation using doxygen.")
-if(USE_DOXYGEN AND NOT DOXYGEN_FOUND)
-	message(STATUS "Binary not found: Doxygen. Not building documentation.")
 endif()
 
 set(USE_CLANG_TIDY FALSE CACHE BOOL "Run clang-tidy during build.")
@@ -224,7 +232,7 @@ endif()
 
 # The software version, for the applications
 add_library(git_revision STATIC
-  "${CMAKE_BINARY_DIR}/config/GitRevision.cpp"
+  "${PROJECT_BINARY_DIR}/config/GitRevision.cpp"
   config/GitRevision.hpp
   config/CommonOptions.hpp
 )
@@ -254,7 +262,9 @@ set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
      GROUP_READ GROUP_EXECUTE
      WORLD_READ WORLD_EXECUTE)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+if(PROJECT_IS_TOP_LEVEL)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+endif()
 if(CLANG_TIDY)
   set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
 endif()
@@ -285,9 +295,11 @@ endif()
 unset(CMAKE_CXX_CLANG_TIDY)
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
-add_subdirectory(contrib)
-add_subdirectory(contrib/flesctl)
-add_subdirectory(flesctl)
+if(PROJECT_IS_TOP_LEVEL)
+  add_subdirectory(contrib)
+  add_subdirectory(contrib/flesctl)
+  add_subdirectory(flesctl)
+endif()
 if (USE_DOXYGEN AND DOXYGEN_FOUND)
   add_subdirectory(doc)
 endif()
@@ -297,14 +309,14 @@ if (COVERALLS)
   coveralls_setup("${LIB_SRC}" ${COVERALLS_UPLOAD})
 endif()
 
-option(FLES_BUILD_TESTS "Build the test suite" ON)
+option(FLES_BUILD_TESTS "Build the test suite" ${PROJECT_IS_TOP_LEVEL})
 
 if(FLES_BUILD_TESTS)
   enable_testing()
   add_subdirectory(test)
 endif()
 
-if (UNIX)
+if (PROJECT_IS_TOP_LEVEL AND UNIX)
   set(CPACK_GENERATOR DEB)
   set(CPACK_DEB_COMPONENT_INSTALL ON)
   # No package for the dev component (libraries and headers for other projects)
