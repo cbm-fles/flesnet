@@ -10,9 +10,15 @@ add_library(logging SHARED
 set_target_properties(logging PROPERTIES
   OUTPUT_NAME fles_logging
   SOVERSION 1
-  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
   CXX_VISIBILITY_PRESET hidden
 )
+# Next to the applications (see CMAKE_BUILD_RPATH), unless a parent project
+# has its own library directory
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+  set_target_properties(logging PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
+  )
+endif()
 
 target_compile_features(logging PUBLIC cxx_std_17)
 
