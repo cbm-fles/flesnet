@@ -1,0 +1,32 @@
+name: Format
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# A new push to a pull request supersedes its running jobs
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: ${{github.event_name == 'pull_request'}}
+
+jobs:
+  clang-format:
+    runs-on: ubuntu-26.04
+
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v7
+
+    - name: Install clang-format
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -yq clang-format-22
+
+    - name: Check formatting
+      run: |
+        contrib/beautify
+        if ! git diff --exit-code; then
+          echo "::error::Code is not formatted. Run contrib/beautify, or use contrib/local-setup to install the pre-commit hook."
+          exit 1
+        fi
