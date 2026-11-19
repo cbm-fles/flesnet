@@ -3,7 +3,7 @@
 #include "Benchmark.hpp"
 #include "interface.h" // crcutil_interface
 #include "log_short.hpp"
-#include <algorithm>   // std::generate_n
+#include <algorithm> // std::generate_n
 #include <boost/crc.hpp>
 #include <chrono>
 #include <cstdint>

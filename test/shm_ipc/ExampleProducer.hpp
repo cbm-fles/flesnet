@@ -20,7 +20,7 @@ public:
                   std::size_t item_count)
       : ItemProducer(context, distributor_address),
         constant_delay_(constant_delay), random_delay_(random_delay),
-        item_count_limit_(item_count){};
+        item_count_limit_(item_count) {};
 
   void operator()() {
     while (i_ < item_count_limit_ || !outstanding_.empty()) {
