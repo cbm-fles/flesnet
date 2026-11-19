@@ -7,13 +7,13 @@ file(GLOB LIB_HEADERS *.hpp)
 # The shared memory producer classes need std::format. Projects building
 # fles_ipc with an older standard library (e.g., GCC 12) get it without them.
 include(CheckCXXSourceCompiles)
-set(OLD_CMAKE_CXX_STANDARD ${CMAKE_CXX_STANDARD})
-set(CMAKE_CXX_STANDARD 23)
-check_cxx_source_compiles("
+block()
+  set(CMAKE_CXX_STANDARD 23)
+  check_cxx_source_compiles("
 #include <format>
 int main() { return static_cast<int>(std::format(\"{}\", 1).size()); }"
-  FLES_IPC_HAS_STD_FORMAT)
-set(CMAKE_CXX_STANDARD ${OLD_CMAKE_CXX_STANDARD})
+    FLES_IPC_HAS_STD_FORMAT)
+endblock()
 if(NOT FLES_IPC_HAS_STD_FORMAT)
   message(STATUS "=> No std::format, building fles_ipc without TimesliceShmBuffer and TimesliceShmSink.")
   list(REMOVE_ITEM LIB_SOURCES
@@ -21,17 +21,11 @@ if(NOT FLES_IPC_HAS_STD_FORMAT)
        ${CMAKE_CURRENT_SOURCE_DIR}/TimesliceShmSink.cpp)
 endif()
 
-#------------------------------------------------------------------------------#
-set(OLD_CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS})
-set(OLD_CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
-set(OLD_CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
-
-#set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS} BOOST_ALL_DYN_LINK)
-set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${Boost_INCLUDE_DIRS})
-set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${Boost_IOSTREAMS_LIBRARY})
-
 # Check if the Boost iostream was compiled with ZSTD (un)compression support
-CHECK_CXX_SOURCE_COMPILES("
+block()
+  list(APPEND CMAKE_REQUIRED_INCLUDES ${Boost_INCLUDE_DIRS})
+  list(APPEND CMAKE_REQUIRED_LIBRARIES ${Boost_IOSTREAMS_LIBRARY})
+  check_cxx_source_compiles("
 #include <boost/iostreams/filter/zstd.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 
@@ -43,17 +37,13 @@ int main(int argc, char *argv[])
 
   return 0;
 }" BOOST_IOS_HAS_ZSTD)
+endblock()
 
 if(BOOST_IOS_HAS_ZSTD)
   message(STATUS "=> Boost::iostream with ZSTD filter found.")
 else()
   message(STATUS "=> Boost::iostream does not support ZSTD filter.")
 endif()
-
-set(CMAKE_REQUIRED_DEFINITIONS ${OLD_CMAKE_REQUIRED_DEFINITIONS})
-set(CMAKE_REQUIRED_INCLUDES ${OLD_CMAKE_REQUIRED_INCLUDES})
-set(CMAKE_REQUIRED_LIBRARIES ${OLD_CMAKE_REQUIRED_LIBRARIES})
-#------------------------------------------------------------------------------#
 
 add_library(fles_ipc ${LIB_SOURCES} ${LIB_HEADERS})
 
