@@ -4,14 +4,23 @@
 file(GLOB LIB_SOURCES *.cpp)
 file(GLOB LIB_HEADERS *.hpp)
 
-# The shared memory producer classes need std::format. Projects building
-# fles_ipc with an older standard library (e.g., GCC 12) get it without them.
+# The shared memory producer classes need std::format, including formatters
+# that take std::format_context, which libc++ before version 19 rejects.
+# Projects building fles_ipc with an older standard library (e.g., GCC 12)
+# get it without them.
 include(CheckCXXSourceCompiles)
 block()
   set(CMAKE_CXX_STANDARD 23)
   check_cxx_source_compiles("
 #include <format>
-int main() { return static_cast<int>(std::format(\"{}\", 1).size()); }"
+struct S {};
+template <> struct std::formatter<S> {
+  constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+  auto format(const S&, std::format_context& ctx) const {
+    return std::format_to(ctx.out(), \"s\");
+  }
+};
+int main() { return static_cast<int>(std::format(\"{}{}\", 1, S{}).size()); }"
     FLES_IPC_HAS_STD_FORMAT)
 
   # libc++ before version 20 has std::jthread only with -fexperimental-library
