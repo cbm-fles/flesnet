@@ -1,14 +1,8 @@
 #!/bin/bash
 
 set -e
-shopt -u nocaseglob
-LANG=C
 
 DIR="$(git rev-parse --show-toplevel)"
 cd "$DIR"
 
-clang-format-22 -style=file -fallback-style=none -i \
-  lib/{cri,fles_ipc,fles_tools,logging,monitoring,pda,shm_ipc,tsb_ucx}/*.[hc]pp \
-  app/*/*.[hc]pp \
-  app/*/*/*.[hc]pp \
-  test/*.[hc]pp
+git ls-files -z '*.[ch]' '*.[ch]pp' '*.cc' | xargs -0 clang-format-22 -i

@@ -19,7 +19,7 @@ public:
                 std::chrono::milliseconds constant_delay,
                 std::chrono::milliseconds random_delay)
       : ItemWorker(distributor_address, std::move(parameters)),
-        constant_delay_(constant_delay), random_delay_(random_delay){};
+        constant_delay_(constant_delay), random_delay_(random_delay) {};
 
   void do_work(std::shared_ptr<const Item> item) {
     item_history_.push_back(item->id());
