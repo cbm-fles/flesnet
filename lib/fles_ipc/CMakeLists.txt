@@ -13,6 +13,17 @@ block()
 #include <format>
 int main() { return static_cast<int>(std::format(\"{}\", 1).size()); }"
     FLES_IPC_HAS_STD_FORMAT)
+
+  # libc++ before version 20 has std::jthread only with -fexperimental-library
+  set(jthread_test_source "
+#include <thread>
+int main() { std::jthread t([] {}); }")
+  check_cxx_source_compiles("${jthread_test_source}" FLES_IPC_HAS_JTHREAD)
+  if(NOT FLES_IPC_HAS_JTHREAD)
+    string(APPEND CMAKE_REQUIRED_FLAGS " -fexperimental-library")
+    check_cxx_source_compiles("${jthread_test_source}"
+      FLES_IPC_JTHREAD_NEEDS_EXPERIMENTAL_LIBRARY)
+  endif()
 endblock()
 if(NOT FLES_IPC_HAS_STD_FORMAT)
   message(STATUS "=> No std::format, building fles_ipc without TimesliceShmBuffer and TimesliceShmSink.")
@@ -54,6 +65,11 @@ target_compile_features(fles_ipc PUBLIC cxx_std_17 PRIVATE cxx_std_23)
 target_compile_definitions(fles_ipc PUBLIC BOOST_ALL_DYN_LINK)
 if(BOOST_IOS_HAS_ZSTD)
   target_compile_definitions(fles_ipc PUBLIC BOOST_IOS_HAS_ZSTD)
+endif()
+
+# Public, as AggregatingSource.hpp uses std::jthread in C++20 and later
+if(FLES_IPC_JTHREAD_NEEDS_EXPERIMENTAL_LIBRARY)
+  target_compile_options(fles_ipc PUBLIC -fexperimental-library)
 endif()
 
 target_include_directories(fles_ipc PUBLIC .)
