@@ -31,11 +31,14 @@ namespace {
 Channel::Channel(cri::basic_dma_channel* dma_channel,
                  std::span<fles::MicrosliceDescriptor> desc_buffer,
                  std::span<uint8_t> data_buffer,
+                 fles::MicrosliceDescriptor* desc_mirror,
+                 uint8_t* data_mirror,
                  uint64_t overlap_before_ns,
                  uint64_t overlap_after_ns,
                  std::string name)
     : m_dma_channel(dma_channel), m_overlap_before_ns(overlap_before_ns),
-      m_overlap_after_ns(overlap_after_ns), m_name(std::move(name)) {
+      m_overlap_after_ns(overlap_after_ns), m_name(std::move(name)),
+      m_desc_mirror(desc_mirror), m_data_mirror(data_mirror) {
 
   // initialize buffer interface
   m_desc_buffer =
@@ -132,7 +135,12 @@ StComponentHandle Channel::get_descriptor(uint64_t start_time,
   // generate one or two i/o vectors for the microslice descriptors
   auto* desc_begin = &m_desc_buffer->at(desc_begin_idx);
   auto* desc_end = &m_desc_buffer->at(desc_end_idx);
-  if (desc_begin < desc_end) {
+  if (m_desc_mirror != nullptr) {
+    // the mirror maps the buffer twice in a row, so the descriptors are
+    // contiguous there even if they wrap around the end of the buffer
+    iovs.push_back({m_desc_mirror + (desc_begin - m_desc_buffer->ptr()),
+                    num_microslices * sizeof(fles::MicrosliceDescriptor)});
+  } else if (desc_begin < desc_end) {
     // the descriptors are contiguous in memory, so we only create one iovec
     iovs.push_back({desc_begin, (desc_end - desc_begin) *
                                     sizeof(fles::MicrosliceDescriptor)});
@@ -153,7 +161,12 @@ StComponentHandle Channel::get_descriptor(uint64_t start_time,
   // generate one or two i/o vectors for the microslice contents
   auto* data_begin = &m_data_buffer->at(data_begin_idx);
   auto* data_end = &m_data_buffer->at(data_end_idx);
-  if (data_begin < data_end) {
+  if (m_data_mirror != nullptr) {
+    if (data_end_idx > data_begin_idx) {
+      iovs.push_back({m_data_mirror + (data_begin - m_data_buffer->ptr()),
+                      data_end_idx - data_begin_idx});
+    }
+  } else if (data_begin < data_end) {
     // the data blocks are contiguous in memory, so we only create one iovec
     iovs.push_back({data_begin, (data_end - data_begin) * sizeof(uint8_t)});
   } else if (data_begin > data_end) {

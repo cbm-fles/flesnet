@@ -11,6 +11,7 @@
 #include "log_short.hpp"
 #include <algorithm>
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
 #include <chrono>
 #include <cstring>
 #include <numeric>
@@ -119,17 +120,44 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
   m_shm = std::make_unique<boost::interprocess::managed_shared_memory>(
       boost::interprocess::create_only, m_shm_id.c_str(), shm_size);
 
+  // allocate the buffers of all channels in shm
+  struct Buffers {
+    std::span<fles::MicrosliceDescriptor> desc;
+    std::span<uint8_t> data;
+  };
+  std::vector<Buffers> buffers;
+  for (size_t i = 0; i < m_cri_channels.size() + pgen_channels; ++i) {
+    auto desc_buffer =
+        shm_allocate<fles::MicrosliceDescriptor>(m_shm.get(), desc_buffer_size);
+    auto data_buffer = shm_allocate<uint8_t>(m_shm.get(), data_buffer_size);
+    buffers.push_back({desc_buffer, data_buffer});
+  }
+  std::vector<std::span<const std::byte>> rings;
+  for (const auto& b : buffers) {
+    rings.push_back(std::as_bytes(b.desc));
+    rings.push_back(std::as_bytes(b.data));
+  }
+  create_mirror(rings);
+
+  // the buffers mapped twice in a row, or nullptr
+  auto desc_mirror = [&](size_t i) {
+    return m_mirror ? reinterpret_cast<fles::MicrosliceDescriptor*>(
+                          m_mirror->ring(2 * i))
+                    : nullptr;
+  };
+  auto data_mirror = [&](size_t i) {
+    return m_mirror ? reinterpret_cast<uint8_t*>(m_mirror->ring(2 * i + 1))
+                    : nullptr;
+  };
+
   // Create Channel objects for each CRI channel
-  for (auto* cri_channel : m_cri_channels) {
+  for (size_t i = 0; i < m_cri_channels.size(); ++i) {
+    auto* cri_channel = m_cri_channels[i];
+    auto [desc_buffer, data_buffer] = buffers[i];
+
     // set channel name, used for monitoring
     std::string channel_name = cri_channel->device_address() + "-" +
                                std::to_string(cri_channel->channel_index());
-
-    // allocate buffers in shm
-    std::span desc_buffer =
-        shm_allocate<fles::MicrosliceDescriptor>(m_shm.get(), desc_buffer_size);
-    std::span data_buffer =
-        shm_allocate<uint8_t>(m_shm.get(), data_buffer_size);
 
     // initialize cri DMA engine
     cri_channel->init_dma(data_buffer.data(), data_buffer.size_bytes(),
@@ -138,8 +166,8 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
     cri::basic_dma_channel* dma_channel = cri_channel->dma();
 
     m_channels.push_back(std::make_unique<Channel>(
-        dma_channel, desc_buffer, data_buffer, overlap_before_ns,
-        overlap_after_ns, channel_name));
+        dma_channel, desc_buffer, data_buffer, desc_mirror(i), data_mirror(i),
+        overlap_before_ns, overlap_after_ns, channel_name));
   }
 
   if (aggregation_buffer_size > 0) {
@@ -151,14 +179,11 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
 
   // Create Channel objects for pattern generator channels if requested
   for (uint32_t i = 0; i < pgen_channels; ++i) {
+    const size_t ci = m_cri_channels.size() + i;
+    auto [desc_buffer, data_buffer] = buffers[ci];
+
     // set channel name, used for monitoring
     std::string channel_name = "pgen-" + std::to_string(i);
-
-    // allocate buffers in shm
-    std::span desc_buffer =
-        shm_allocate<fles::MicrosliceDescriptor>(m_shm.get(), desc_buffer_size);
-    std::span data_buffer =
-        shm_allocate<uint8_t>(m_shm.get(), data_buffer_size);
 
     // initialize pgen
     m_pgen_channels.push_back(std::make_unique<cri::pgen_channel>(
@@ -166,8 +191,39 @@ StBuilder::StBuilder(volatile sig_atomic_t* signal_status,
         pgen_microslice_size, pgen_flags));
 
     m_channels.push_back(std::make_unique<Channel>(
-        m_pgen_channels.back().get(), desc_buffer, data_buffer,
-        overlap_before_ns, overlap_after_ns, channel_name));
+        m_pgen_channels.back().get(), desc_buffer, data_buffer, desc_mirror(ci),
+        data_mirror(ci), overlap_before_ns, overlap_after_ns, channel_name));
+  }
+}
+
+void StBuilder::create_mirror(
+    std::span<const std::span<const std::byte>> rings) {
+  // Map the ring buffers a second time, each twice in a row, so that a
+  // component is contiguous in memory even where it wraps around the end of
+  // a buffer and can be sent without a scatter-gather list. Without the
+  // mirror, these components fall back to a much slower transfer path.
+  if (rings.empty()) {
+    return;
+  }
+  try {
+    boost::interprocess::shared_memory_object shm_object(
+        boost::interprocess::open_only, m_shm_id.c_str(),
+        boost::interprocess::read_write);
+    const auto* base = static_cast<const std::byte*>(m_shm->get_address());
+    std::vector<RingMirror::Ring> file_rings;
+    for (auto ring : rings) {
+      file_rings.push_back(
+          {static_cast<size_t>(ring.data() - base), ring.size()});
+    }
+    m_mirror = std::make_unique<RingMirror>(
+        shm_object.get_mapping_handle().handle, file_rings);
+    INFO("Mapped ring buffers twice for contiguous sends ({} of address "
+         "space)",
+         human_readable_count(m_mirror->region().size(), true));
+  } catch (std::exception const& e) {
+    WARN("Could not map ring buffers twice, wrapped components will be "
+         "sent as scatter-gather lists: {}",
+         e.what());
   }
 }
 
@@ -175,6 +231,9 @@ std::span<std::byte> StBuilder::get_memory_region() const {
   if (!m_aggregation_buffer.empty()) {
     return {const_cast<std::byte*>(m_aggregation_buffer.data()),
             m_aggregation_buffer.size()};
+  }
+  if (m_mirror) {
+    return m_mirror->region();
   }
   return {static_cast<std::byte*>(m_shm->get_address()), m_shm->get_size()};
 }
