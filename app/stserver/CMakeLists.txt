@@ -9,6 +9,7 @@ add_executable(stserver
   Channel.cpp
   StBuilder.cpp
   StSender.cpp
+  RingMirror.cpp
   pgen_channel.cpp
 )
 

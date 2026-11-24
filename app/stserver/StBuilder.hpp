@@ -6,6 +6,7 @@
 #include "Channel.hpp"
 #include "Monitor.hpp"
 #include "Parameters.hpp"
+#include "RingMirror.hpp"
 #include "Scheduler.hpp"
 #include "StHandle.hpp"
 #include "StSender.hpp"
@@ -70,6 +71,7 @@ private:
     AggregationAllocation allocation;
   };
 
+  void create_mirror(std::span<const std::span<const std::byte>> rings);
   void handle_completions();
   void provide_subtimeslice(std::vector<Channel::State> const& states,
                             uint64_t start_time,
@@ -91,6 +93,7 @@ private:
   std::vector<cri::cri_channel*> m_cri_channels;
   std::vector<std::unique_ptr<cri::pgen_channel>> m_pgen_channels;
   std::unique_ptr<boost::interprocess::managed_shared_memory> m_shm;
+  std::unique_ptr<RingMirror> m_mirror; ///< ring buffers mapped twice
   std::vector<std::unique_ptr<Channel>> m_channels;
 
   std::vector<std::byte> m_aggregation_buffer;

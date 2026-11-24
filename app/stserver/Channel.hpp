@@ -18,6 +18,8 @@ public:
   Channel(cri::basic_dma_channel* dma_channel,
           std::span<fles::MicrosliceDescriptor> desc_buffer,
           std::span<uint8_t> data_buffer,
+          fles::MicrosliceDescriptor* desc_mirror,
+          uint8_t* data_mirror,
           uint64_t overlap_before_ns,
           uint64_t overlap_after_ns,
           std::string name);
@@ -54,6 +56,10 @@ private:
   std::unique_ptr<RingBufferView<fles::MicrosliceDescriptor, false>>
       m_desc_buffer;
   std::unique_ptr<RingBufferView<uint8_t, false>> m_data_buffer;
+
+  // The buffers mapped twice in a row (see RingMirror), or nullptr
+  fles::MicrosliceDescriptor* m_desc_mirror;
+  uint8_t* m_data_mirror;
 
   uint64_t m_read_index = 0; // hardware value is also initialized to 0
 
