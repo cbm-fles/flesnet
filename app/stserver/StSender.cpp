@@ -583,6 +583,16 @@ void StSender::send_subtimeslice_to_builder(TsId id,
     if (block.size() == 1) {
       send_buffer = block[0].buffer;
       send_count = block[0].length;
+      // Hand UCX the registration of the whole memory region. Without it,
+      // UCX registers each new address range on its own and re-registers
+      // the growing union of all ranges until the region is covered once.
+      const auto* begin = static_cast<const std::byte*>(block[0].buffer);
+      if (m_buffer_memh != nullptr && begin >= m_memory_region.data() &&
+          begin + block[0].length <=
+              m_memory_region.data() + m_memory_region.size()) {
+        req_param.op_attr_mask |= UCP_OP_ATTR_FIELD_MEMH;
+        req_param.memh = m_buffer_memh;
+      }
     } else if (block.size() > 1) {
       req_param.op_attr_mask |= UCP_OP_ATTR_FIELD_DATATYPE;
       req_param.datatype = ucp_dt_make_iov();
