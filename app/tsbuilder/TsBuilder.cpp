@@ -257,10 +257,12 @@ void TsBuilder::check_for_timeout(TsId id) {
     for (std::size_t i = 0; i < tsh.states.size(); ++i) {
       if (tsh.states[i] == StState::Requested ||
           tsh.states[i] == StState::Receiving) {
-        // Cancel potential ongoing receive operations
+        // Cancel potential ongoing receive operations. The sender has been
+        // asked for the data and will send the remaining blocks, so drain
+        // them.
         TS_DEBUG(id, "s{}/{}| Canceling receive operations", i,
                  tsh.sender_ids.size());
-        cancel_data_recvs(id, i);
+        cancel_data_recvs(id, i, true);
       }
     }
   }
@@ -374,13 +376,24 @@ void TsBuilder::disconnect_from_senders() {
   // Cancel all in-flight receive operations first. Cancellation may complete
   // a request synchronously, and the completion callback erases it from the
   // map, so do not iterate the map while canceling.
+  // No sinks are posted for these, and the existing sinks are canceled too.
   std::vector<ucs_status_ptr_t> to_cancel;
   to_cancel.reserve(m_active_data_recv_requests.size());
-  for (const auto& [request, req_id] : m_active_data_recv_requests) {
+  for (auto& [request, info] : m_active_data_recv_requests) {
+    info.drain_if_canceled = false;
     to_cancel.push_back(request);
   }
   for (auto* request : to_cancel) {
     if (m_active_data_recv_requests.contains(request)) {
+      ucp_request_cancel(m_worker, request);
+    }
+  }
+  to_cancel.clear();
+  for (const auto& [request, serial] : m_sink_requests) {
+    to_cancel.push_back(request);
+  }
+  for (auto* request : to_cancel) {
+    if (m_sink_requests.contains(request)) {
       ucp_request_cancel(m_worker, request);
     }
   }
@@ -453,10 +466,14 @@ void TsBuilder::post_tag_recvs(TsHandle& tsh, std::size_t ci) {
 // That callback can also re-enter this function and cancel (and free) the
 // remaining requests of the contribution, so re-check every request against
 // the map before cancelling it.
-void TsBuilder::cancel_data_recvs(TsId id, std::size_t ci) {
+//
+// With `drain`, each receive that is actually canceled (i.e., not already
+// matched) is replaced by a sink receive, see m_sink_requests.
+void TsBuilder::cancel_data_recvs(TsId id, std::size_t ci, bool drain) {
   std::vector<ucs_status_ptr_t> to_cancel;
-  for (const auto& [request, info] : m_active_data_recv_requests) {
+  for (auto& [request, info] : m_active_data_recv_requests) {
     if (info.id == id && info.ci == ci) {
+      info.drain_if_canceled = info.drain_if_canceled || drain;
       to_cancel.push_back(request);
     }
   }
@@ -465,6 +482,52 @@ void TsBuilder::cancel_data_recvs(TsId id, std::size_t ci) {
       ucp_request_cancel(m_worker, request);
     }
   }
+}
+
+void TsBuilder::post_sink_recv(TsId id, std::size_t ci) {
+  const ucp_tag_t tag = make_st_data_tag(id, static_cast<uint32_t>(ci));
+  const ucp_tag_t tag_mask = ~ucp_tag_t{0}; // exact match
+  static std::byte sink{};
+
+  ucp_request_param_t req_param{};
+  req_param.op_attr_mask =
+      UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
+  req_param.cb.recv = on_sink_recv_complete;
+  req_param.user_data = this;
+
+  ucs_status_ptr_t request =
+      ucp_tag_recv_nbx(m_worker, &sink, 0, tag, tag_mask, &req_param);
+  if (UCS_PTR_IS_ERR(request)) {
+    TS_ERROR(id, "s{}| Failed to post sink recv: {}", ci,
+             UCS_PTR_STATUS(request));
+    return;
+  }
+  if (request == nullptr) {
+    m_late_block_count++;
+    return;
+  }
+
+  const uint64_t serial = ++m_sink_serial;
+  m_sink_requests[request] = serial;
+  m_tasks.add(
+      [this, request, serial] {
+        auto it = m_sink_requests.find(request);
+        if (it != m_sink_requests.end() && it->second == serial) {
+          ucp_request_cancel(m_worker, request);
+        }
+      },
+      std::chrono::system_clock::now() + m_sink_lifetime);
+}
+
+void TsBuilder::handle_sink_recv_complete(void* request, ucs_status_t status) {
+  m_sink_requests.erase(request);
+  if (status == UCS_OK || status == UCS_ERR_MESSAGE_TRUNCATED) {
+    // A late block (truncated to size 0) or a zero-size message
+    m_late_block_count++;
+  } else if (status != UCS_ERR_CANCELED) {
+    ERROR("Sink recv operation completed with status: {}", status);
+  }
+  ucp_request_free(request);
 }
 
 // Account for a completed transfer block; the contribution is complete when
@@ -510,15 +573,22 @@ void TsBuilder::handle_sender_data_recv_complete(
     void* request, ucs_status_t status, [[maybe_unused]] size_t length) {
   if (UCS_PTR_IS_ERR(request)) {
     ERROR("Data recv operation failed: {}", status);
-  } else if (status != UCS_OK) {
+  } else if (status != UCS_OK && status != UCS_ERR_CANCELED) {
+    // canceled receives are expected after a build timeout
     ERROR("Data recv operation completed with status: {}", status);
   }
 
   if (!m_active_data_recv_requests.contains(request)) {
     ERROR("Received completion for unknown data recv request");
   } else {
-    auto [id, ci, expected_size] = m_active_data_recv_requests.at(request);
+    auto [id, ci, expected_size, drain] =
+        m_active_data_recv_requests.at(request);
     m_active_data_recv_requests.erase(request);
+
+    if (status == UCS_ERR_CANCELED && drain) {
+      // The sender will still send this block
+      post_sink_recv(id, ci);
+    }
 
     if (!m_ts_handles.contains(id)) {
       TS_ERROR(id, "Received completion for unknown timeslice");
@@ -543,9 +613,10 @@ void TsBuilder::handle_sender_data_recv_complete(
                  ci, tsh.sender_ids.size(), expected_size, length);
       }
       update_st_state(tsh, ci, StState::Failed);
-      // Cancel the remaining pre-posted receives of this contribution (e.g.,
-      // after the zero-size "not found" reply from the sender)
-      cancel_data_recvs(id, ci);
+      // Cancel the remaining pre-posted receives of this contribution. After
+      // the zero-size "not found" reply from the sender no more blocks
+      // follow; otherwise the sender still sends them, so drain them.
+      cancel_data_recvs(id, ci, status != UCS_ERR_CANCELED && length > 0);
     } else {
       m_byte_count += length;
       complete_block(tsh, ci);
@@ -663,6 +734,7 @@ void TsBuilder::report_status() {
         {"component_count", m_component_count},
         {"byte_count", m_byte_count},
         {"timeslice_incomplete_count", m_timeslice_incomplete_count},
+        {"late_block_count", m_late_block_count},
         {"timeslices_allocated", timeslices_allocated},
         {"bytes_allocated", bytes_allocated}};
     const auto& ps = m_publish_stats;
