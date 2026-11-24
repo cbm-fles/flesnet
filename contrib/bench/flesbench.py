@@ -42,11 +42,22 @@ DEFAULTS = {
     "warmup": "20s",
     "duration": "60s",
     "stop_timeout": "30s",
+    # Start the stservers only after all tsbuilders have registered, so that
+    # the first timeslices find their builders ready. The warmup starts when
+    # all stservers have registered (large buffers take long to set up).
+    "ready_timeout": "180s",
+    "ready_patterns": {
+        "tsbuilder": "Accepted builder registration",
+        "stserver": "Accepted sender registration",
+    },
     "repetitions": 1,
     "pause": "5s",  # between points
     "ports": {"tsmanager": 23373, "stserver": 23374},
     "srun_args": ["--overlap", "--cpu-bind=none"],
     "env": {},
+    # shell snippet run on each node before a process starts, e.g. to set
+    # environment variables that depend on the node's hardware
+    "node_setup": "",
     "stserver": {"env": {}, "prefix": "", "args": {}},
     "tsbuilder": {"env": {}, "prefix": "", "args": {}},
     "tsmanager": {"env": {}, "prefix": "", "args": {}},
@@ -269,6 +280,7 @@ while read -r n a; do [ "$n" = "$h" ] && NODE_ADDR=$a; done <<'EOF'
 {addrs}
 EOF
 export NODE_ADDR
+{setup}
 {cmd}
 """
 
@@ -279,7 +291,11 @@ def start_role(cfg, role, nodes, args, rundir, addrs, extra_cmd_args=""):
     env.update({k: str(v) for k, v in cfg[role].get("env", {}).items()})
     cmd = role_command(cfg, role, args, rundir) + extra_cmd_args
     table = "\n".join(f"{n} {a}" for n, a in addrs.items())
-    script = NODE_WRAPPER.replace("{addrs}", table).replace("{cmd}", cmd)
+    script = (
+        NODE_WRAPPER.replace("{addrs}", table)
+        .replace("{setup}", cfg.get("node_setup") or "")
+        .replace("{cmd}", cmd)
+    )
     argv = srun_base(cfg, nodes) + [
         f"--job-name={role}",
         f"--output={rundir}/logs/{role}-%N.log",
@@ -323,6 +339,54 @@ def stop_steps(procs, timeout):
             log(f"{p.role} did not stop within {timeout:.0f} s, canceling")
             subprocess.run(["scancel", *step_ids({p.role})])
             p.wait()
+
+
+COUNTER_SCRIPT = r"""
+for d in /sys/class/infiniband/*; do
+  [ -e "$d" ] || continue
+  for p in "$d"/ports/*; do
+    echo "$(hostname -s) $(basename "$d") $(basename "$p") $(date +%s%N)" \
+         "$(cat "$p/counters/port_xmit_data") $(cat "$p/counters/port_rcv_data")"
+  done
+done
+"""
+
+
+def snapshot_counters(cfg, nodes, path):
+    """Record the IB port data counters (units of 4 bytes) of all nodes."""
+    res = subprocess.run(
+        srun_base(cfg, nodes) + ["bash", "-c", COUNTER_SCRIPT],
+        capture_output=True,
+        text=True,
+        stdin=subprocess.DEVNULL,
+    )
+    path.write_text(res.stdout)
+
+
+def wait_for_ready(cfg, rundir, manager, role, count):
+    """Wait until the tsmanager has accepted the registrations of a role.
+
+    The manager log is read on the manager node itself: over a shared file
+    system, new log content can take tens of seconds to become visible here.
+    """
+    pattern = cfg["ready_patterns"][role]
+    logfile = rundir / "logs" / f"tsmanager-{manager}.log"
+    start = time.time()
+    deadline = start + parse_duration(cfg["ready_timeout"])
+    ready = 0
+    while time.time() < deadline:
+        res = subprocess.run(
+            srun_base(cfg, [manager]) + ["grep", "-c", "-e", pattern, str(logfile)],
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+        )
+        ready = int(res.stdout.strip() or 0) if res.stdout.strip().isdigit() else 0
+        if ready >= count:
+            return time.time() - start
+        time.sleep(1)
+    log(f"warning: only {ready}/{count} {role} processes registered, continuing anyway")
+    return time.time() - start
 
 
 def tool_output(argv):
@@ -399,18 +463,26 @@ def run_point(cfg, label, outdir, manager, data_nodes, addrs, rep):
         procs.append(start_role(cfg, "tsmanager", [manager], args["tsmanager"], rundir, addrs))
         time.sleep(1)
         procs.append(start_role(cfg, "tsbuilder", data_nodes, args["tsbuilder"], rundir, addrs))
+        startup = {"tsbuilder": wait_for_ready(cfg, rundir, manager, "tsbuilder", len(data_nodes))}
         procs.append(
             start_role(cfg, "stserver", data_nodes, args["stserver"], rundir, addrs, stserver_extra)
         )
+        startup["stserver"] = wait_for_ready(cfg, rundir, manager, "stserver", len(data_nodes))
+        meta["startup_s"] = {k: round(v, 1) for k, v in startup.items()}
         t_start = time.time_ns()
         warmup, duration = parse_duration(cfg["warmup"]), parse_duration(cfg["duration"])
         end = time.time() + warmup + duration
+        snapshot_done = False
         while time.time() < end:
             dead = [p for p in procs if p.poll() is not None]
             if dead:
                 log(f"a step exited early (rc={dead[0].returncode}), aborting point")
                 break
+            if not snapshot_done and time.time() >= end - duration:
+                snapshot_counters(cfg, data_nodes, rundir / "counters-begin.txt")
+                snapshot_done = True
             time.sleep(0.5)
+        snapshot_counters(cfg, data_nodes, rundir / "counters-end.txt")
         t_stop = time.time_ns()
     finally:
         # data nodes first, then the manager

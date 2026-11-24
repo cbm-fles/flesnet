@@ -25,6 +25,7 @@ GB = 1e9
 LOSS_FIELDS = {
     "stserver_status": [
         "pgen_skipped_microslices",
+        "skipped_microslices",  # name after the replay channels were added
         "subtimeslice_retracted_count",
         "aggregation_allocation_failures",
         "timeslice_incomplete_count",
@@ -162,11 +163,13 @@ def analyze_run(rundir):
         res["ts_per_s"] = sum(r for r in ts_rates if r is not None)
     if sent:
         res["input_per_node_GBps"] = sum(sent) / len(sent) / GB
+        res["input_min_node_GBps"] = min(sent) / GB
     if build_time_mean:
         res["build_time_mean_ms"] = sum(build_time_mean) / len(build_time_mean) / 1e6
         res["build_time_max_ms"] = max(build_time_max) / 1e6
         res["delay_mean_ms"] = sum(delay_mean) / len(delay_mean) / 1e6
         res["delay_max_ms"] = max(delay_max) / 1e6
+    res["ports"] = port_rates(rundir)
     res["losses"] = losses
     # losses only early in the window point to a too short warmup
     res["last_loss_s"] = round((last_loss - t0) / 1e9, 1) if last_loss else None
@@ -174,6 +177,30 @@ def analyze_run(rundir):
     res["sustainable"] = bool(res["completed"] and not losses and not missing and built)
     (rundir / "summary.json").write_text(json.dumps(res, indent=2))
     return res
+
+
+def port_rates(rundir):
+    """Per-port tx/rx rates in GB/s from the counter snapshots, or {}."""
+    snaps = []
+    for tag in ("begin", "end"):
+        f = rundir / f"counters-{tag}.txt"
+        if not f.exists():
+            return {}
+        snap = {}
+        for line in f.read_text().splitlines():
+            host, dev, port, t, tx, rx = line.split()
+            snap[f"{host}/{dev}"] = (int(t), int(tx), int(rx))
+        snaps.append(snap)
+    rates = {}
+    for key, (t0, tx0, rx0) in snaps[0].items():
+        if key in snaps[1]:
+            t1, tx1, rx1 = snaps[1][key]
+            dt = (t1 - t0) / 1e9
+            rates[key] = {
+                "tx_GBps": round((tx1 - tx0) * 4 / dt / GB, 2),
+                "rx_GBps": round((rx1 - rx0) * 4 / dt / GB, 2),
+            }
+    return rates
 
 
 def find_runs(paths):
@@ -196,6 +223,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("paths", nargs="+")
     ap.add_argument("--csv", help="write all rows to this CSV file")
+    ap.add_argument("--ports", action="store_true", help="print per-port tx/rx rates")
     opts = ap.parse_args()
 
     rows = [r for r in map(analyze_run, find_runs(opts.paths)) if r]
@@ -221,6 +249,13 @@ def main():
             + " ".join(fmt(r.get(k), 10) for _, k in cols)
             + f"  {ok}"
         )
+        if opts.ports and r.get("ports"):
+            hosts = {}
+            for key, v in sorted(r["ports"].items()):
+                host, dev = key.split("/")
+                hosts.setdefault(host, []).append(f"{dev} {v['tx_GBps']:.1f}/{v['rx_GBps']:.1f}")
+            for host, devs in hosts.items():
+                print(f"    {host:8} tx/rx GB/s: " + "  ".join(devs))
 
     if opts.csv:
         keys = []

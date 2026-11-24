@@ -1,0 +1,46 @@
+# Combined mode on the dev cluster with the UCX settings that use all HCA
+# functions of node8-11 (two fabrics, Socket Direct cards on node8/9):
+# - relaxed ordering lets one PCIe function send and receive at the same time
+# - 4 rails and 2 paths per device use both functions of a Socket Direct card
+# - the HCA functions sit on NUMA node 0 (all but one on node8/9)
+# Offered load per node = 7 MB / 400 us = 17.5 GB/s.
+name: dev-tuned
+binaries: ../../../build
+manager: shared
+control_iface: ib0
+timeslice_duration: 40ms
+warmup: 20s
+duration: 60s
+
+env:
+  UCX_TLS: rc_x,sm,self
+  UCX_IB_PCI_RELAXED_ORDERING: "on"
+  UCX_MAX_RNDV_RAILS: 4
+  UCX_IB_NUM_PATHS: 2
+
+stserver:
+  prefix: numactl -N0 --preferred=0
+  args:
+    log-level: info
+    pgen-channels: 1
+    pgen-microslice-size: 7MB
+    pgen-microslice-duration: 400us
+    pgen-flags: 0
+    data-buffer-size: 16GiB
+    aggregation-buffer-size: 0
+
+tsbuilder:
+  prefix: numactl -N0 --preferred=0
+  args:
+    log-level: info
+    buffer-size: 16GiB
+    timeout: 10s
+
+tsmanager:
+  args:
+    log-level: info
+    timeout: 200ms
+    max-in-flight: 2
+
+# sweep:
+#   stserver.args.pgen-microslice-size: [6MB, 7MB, 8MB, 9MB]

@@ -6,15 +6,27 @@ Scripts to measure stserver → tsbuilder throughput under Slurm.
   point of the scenario's sweep (times `repetitions`) and creates one run
   directory per point with `meta.json`, `sysinfo/`, `logs/` and `metrics/`
   (one influx line file per process).
-- `analyze.py DIR... [--csv FILE]`: per-run steady-state rates and loss
+- `analyze.py DIR... [--csv FILE] [--ports]`: per-run steady-state rates and loss
   counters over the measurement window (warmup discarded); writes
   `summary.json` per run. A point is *sustainable* only if no skip, retract,
   discard, incomplete or late counter increases inside the window.
 - `reference.py --osu DIR`: MPI/UCX reference in the same allocation
   (OSU micro-benchmarks): `osu_bw` health check around the node ring,
-  `osu_bibw` for one pair, `osu_alltoall` with one rank per node, reported as
-  network and built throughput per node.
+  `osu_bibw` for one pair, `osu_alltoall` with one rank per node, and
+  `a2a_stream` (continuous non-blocking all-to-all without self block; `-r`
+  takes the send blocks from a ring, `-H` asks for huge pages). Use `--env`
+  and `--prefix` to give the reference the same UCX settings and NUMA binding
+  as flesnet.
 - `campaign.sbatch`: `sbatch -N 4 campaign.sbatch scenarios/dev-combined.yaml`.
+
+Startup order: tsmanager, then the tsbuilders, then (once all builders have
+registered) the stservers. The warmup starts when all stservers have
+registered; this is read from the tsmanager log on the manager node. Each run
+also records the InfiniBand port counters at the start and end of the
+measurement window (`analyze.py --ports` prints the rate per port).
+
+`scenarios/dev-tuned.yaml` has the UCX settings that use all HCA functions of
+node8-11; `scenarios/dev-combined.yaml` runs with UCX defaults.
 
 Combined mode: every data node runs one stserver and one tsbuilder; the
 tsmanager runs on the first data node (`manager: shared`) or on an extra node

@@ -22,6 +22,7 @@ import argparse
 import datetime
 import json
 import os
+import shlex
 import statistics
 import subprocess
 import sys
@@ -59,7 +60,7 @@ def run_osu(opts, hosts, binary, args, raw_file, columns=2):
     argv += ["--bind-to", "none", "--mca", "pml", "ucx"]
     for e in opts.env:
         argv += ["-x", e]
-    argv += opts.mpirun_args + [binary] + args
+    argv += opts.mpirun_args + shlex.split(opts.prefix) + [binary] + args
     res = subprocess.run(argv, capture_output=True, text=True)
     raw_file.write_text(" ".join(argv) + "\n" + res.stdout + res.stderr)
     if res.returncode != 0:
@@ -85,6 +86,8 @@ def main():
     ap.add_argument("--stream-window", type=int, default=2)
     ap.add_argument("--stream-seconds", type=float, default=4)
     ap.add_argument("--env", action="append", default=[], help="VAR=value for all ranks")
+    ap.add_argument("--prefix", default="", help='command prefix per rank, e.g. "numactl -N0 --preferred=0"')
+    ap.add_argument("--stream-args", default="", help='extra a2a_stream options, e.g. "-r 16G -H"')
     ap.add_argument("--mpirun-args", nargs=argparse.REMAINDER, default=[])
     ap.add_argument("--name", default="reference")
     opts = ap.parse_args()
@@ -110,6 +113,8 @@ def main():
         "n": n,
         "slurm_job_id": jobid,
         "env": {k: os.environ.get(k) for k in opts.env},
+        "prefix": opts.prefix,
+        "stream_args": opts.stream_args,
         "ucx_info": subprocess.run(["ucx_info", "-v"], capture_output=True, text=True).stdout.strip(),
     }
 
@@ -151,7 +156,8 @@ def main():
         opts,
         nodes,
         str(exe),
-        ["-m", f"{opts.min_size}:{opts.max_size}", "-w", str(opts.stream_window), "-t", str(opts.stream_seconds)],
+        ["-m", f"{opts.min_size}:{opts.max_size}", "-w", str(opts.stream_window), "-t", str(opts.stream_seconds)]
+        + shlex.split(opts.stream_args),
         outdir / "raw" / "a2a_stream.txt",
         columns=5,
     )
