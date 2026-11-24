@@ -40,7 +40,7 @@ tsmanager:
   args:
     log-level: info
     timeout: 200ms
-    max-in-flight: 2
+    max-in-flight: 4  # with 2, timeslices are discarded near the limit
 
 # sweep:
 #   stserver.args.pgen-microslice-size: [6MB, 7MB, 8MB, 9MB]
