@@ -583,13 +583,11 @@ void StSender::send_subtimeslice_to_builder(TsId id,
     if (block.size() == 1) {
       send_buffer = block[0].buffer;
       send_count = block[0].length;
-      // Hand UCX the registration of the whole memory region. Without it,
-      // UCX registers each new address range on its own and re-registers
-      // the growing union of all ranges until the region is covered once.
-      const auto* begin = static_cast<const std::byte*>(block[0].buffer);
-      if (m_buffer_memh != nullptr && begin >= m_memory_region.data() &&
-          begin + block[0].length <=
-              m_memory_region.data() + m_memory_region.size()) {
+      // All blocks lie in the registered memory region (the ring buffers or
+      // the aggregation buffer). Hand UCX that registration; without it, UCX
+      // registers each new address range on its own and re-registers the
+      // growing union of all ranges until the region is covered once.
+      if (m_buffer_memh != nullptr) {
         req_param.op_attr_mask |= UCP_OP_ATTR_FIELD_MEMH;
         req_param.memh = m_buffer_memh;
       }
