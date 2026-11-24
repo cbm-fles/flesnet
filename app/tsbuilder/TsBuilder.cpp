@@ -422,6 +422,12 @@ void TsBuilder::post_tag_recvs(TsHandle& tsh, std::size_t ci) {
         UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA;
     req_param.cb.recv = on_sender_data_recv_complete;
     req_param.user_data = this;
+    if (m_buffer_memh != nullptr && block.size > 0) {
+      // The timeslice buffer is registered as a whole; hand that
+      // registration to UCX so it does not register each receive range
+      req_param.op_attr_mask |= UCP_OP_ATTR_FIELD_MEMH;
+      req_param.memh = m_buffer_memh;
+    }
 
     ucs_status_ptr_t request =
         ucp_tag_recv_nbx(m_worker, tsh.buffer + block.offset, block.size, tag,
