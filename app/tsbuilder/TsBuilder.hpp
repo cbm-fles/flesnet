@@ -182,9 +182,19 @@ private:
     TsId id = 0;
     std::size_t ci = 0;
     uint64_t expected_size = 0;
+    bool drain_if_canceled = false; ///< replace by a sink receive on cancel
   };
   std::unordered_map<ucs_status_ptr_t, RecvRequestInfo>
       m_active_data_recv_requests;
+
+  // Zero-size receives that take the place of canceled receives of a
+  // contribution the sender will still send. A send that finds no matching
+  // receive never completes, and the sender could never free its buffer. A
+  // sink completes the send without transferring the data. Sinks that are
+  // not matched (e.g., the sender had retracted the subtimeslice) expire.
+  std::unordered_map<ucs_status_ptr_t, uint64_t> m_sink_requests; ///< serial
+  uint64_t m_sink_serial = 0;
+  static constexpr auto m_sink_lifetime = 60s;
 
   static constexpr auto m_manager_retry_interval = 2s;
   bool m_mute_manager_reconnect = false;
@@ -197,6 +207,7 @@ private:
   size_t m_component_count = 0; ///< total number of received components
   size_t m_byte_count = 0;      ///< total number of processed bytes
   size_t m_timeslice_incomplete_count = 0; ///< number of incomplete timeslices
+  size_t m_late_block_count = 0; ///< transfer blocks consumed by sinks
 
   /// Timing statistics of the timeslices published in the current reporting
   /// interval
@@ -244,7 +255,9 @@ private:
 
   // Sender message handling
   void post_tag_recvs(TsHandle& tsh, std::size_t ci);
-  void cancel_data_recvs(TsId id, std::size_t ci);
+  void cancel_data_recvs(TsId id, std::size_t ci, bool drain = false);
+  void post_sink_recv(TsId id, std::size_t ci);
+  void handle_sink_recv_complete(void* request, ucs_status_t status);
   void complete_block(TsHandle& tsh, std::size_t ci);
   void
   send_request_to_sender(const std::string& sender_id, TsId id, std::size_t ci);
@@ -290,5 +303,13 @@ private:
                                            void* user_data) {
     static_cast<TsBuilder*>(user_data)->handle_sender_data_recv_complete(
         request, status, info != nullptr ? info->length : 0);
+  }
+  static void
+  on_sink_recv_complete(void* request,
+                        ucs_status_t status,
+                        [[maybe_unused]] const ucp_tag_recv_info_t* info,
+                        void* user_data) {
+    static_cast<TsBuilder*>(user_data)->handle_sink_recv_complete(request,
+                                                                  status);
   }
 };
