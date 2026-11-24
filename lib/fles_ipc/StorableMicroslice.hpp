@@ -18,6 +18,7 @@ template <class Base, class Storable, ArchiveType archive_type>
 class InputArchiveLoop;
 template <class Base, class Storable, ArchiveType archive_type>
 class InputArchiveSequence;
+template <class Base, class Storable> class Subscriber;
 
 /**
  * \brief The StorableMicroslice class contains the data of a single microslice.
@@ -80,6 +81,7 @@ private:
   friend class InputArchiveSequence<Microslice,
                                     StorableMicroslice,
                                     ArchiveType::MicrosliceArchive>;
+  friend class Subscriber<Microslice, StorableMicroslice>;
 
   StorableMicroslice();
 

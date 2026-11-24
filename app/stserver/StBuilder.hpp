@@ -12,6 +12,7 @@
 #include "SubTimeslice.hpp"
 #include "cri_device.hpp"
 #include "pgen_channel.hpp"
+#include "replay_channel.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <csignal>
 #include <cstddef>
@@ -38,6 +39,7 @@ public:
             int64_t pgen_microslice_duration_ns,
             size_t pgen_microslice_size,
             uint32_t pgen_flags,
+            cri::ReplayParameters replay,
             int64_t timeslice_duration_ns,
             int64_t timeout_ns,
             size_t data_buffer_size,
@@ -71,6 +73,8 @@ private:
   };
 
   void handle_completions();
+  [[nodiscard]] bool replay_finished(uint64_t ts_start_time) const;
+  void wait_for_completions();
   void provide_subtimeslice(std::vector<Channel::State> const& states,
                             uint64_t start_time,
                             uint64_t duration);
@@ -90,6 +94,9 @@ private:
   std::vector<std::unique_ptr<cri::cri_device>> m_cris;
   std::vector<cri::cri_channel*> m_cri_channels;
   std::vector<std::unique_ptr<cri::pgen_channel>> m_pgen_channels;
+  std::vector<std::unique_ptr<cri::replay_channel>> m_replay_channels;
+  /// The software channels (pattern generators and replays), for monitoring
+  std::vector<cri::sw_dma_channel*> m_sw_channels;
   std::unique_ptr<boost::interprocess::managed_shared_memory> m_shm;
   std::vector<std::unique_ptr<Channel>> m_channels;
 
@@ -105,7 +112,7 @@ private:
   size_t m_microslice_count = 0; ///< total number of processed microslices
   size_t m_data_bytes = 0;       ///< total number of processed content bytes
   size_t m_timeslice_incomplete_count = 0; ///< number of incomplete timeslices
-  uint64_t m_reported_pgen_skipped_microslices = 0;
+  uint64_t m_reported_skipped_microslices = 0;
 
   void report_status();
 

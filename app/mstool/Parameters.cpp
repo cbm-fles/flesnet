@@ -2,6 +2,8 @@
 
 #include "Parameters.hpp"
 #include "CommonOptions.hpp"
+#include "OptionValues.hpp"
+#include "System.hpp"
 #include "log.hpp"
 #include "log_program_options.hpp"
 // #include <boost/program_options.hpp>
@@ -33,6 +35,19 @@ void Parameters::parse_options(int argc, char* argv[]) {
              "use pattern generator to produce timeslices");
   source_add("channel,c", po::value<size_t>(&channel_idx),
              "use given channel/component index for source/sink");
+  source_add("microslice-size",
+             po::value<uint32_t>(&microslice_size)
+                 ->default_value(microslice_size)
+                 ->value_name("N"),
+             "typical content size in bytes of a pattern generator microslice");
+  source_add("microslice-duration",
+             po::value<fles::Nanoseconds>()->value_name("DURATION"),
+             "duration of a pattern generator microslice (with suffix ns, us, "
+             "ms, s); the start times of the microslices advance by it "
+             "(default: the microslices are numbered instead)");
+  source_add("start-time", po::value<std::string>()->value_name("TIME"),
+             "start time of the first pattern generator microslice, as "
+             "nanoseconds or ISO 8601 (default: 0)");
   source_add("input-archive,i", po::value<std::string>(&input_archive),
              "name of an input file archive to read");
 
@@ -57,6 +72,17 @@ void Parameters::parse_options(int argc, char* argv[]) {
   logging::setup(fles::log_options(vm));
 
   use_pattern_generator = vm.count("pattern-generator") != 0;
+  if (vm.count("microslice-duration") != 0) {
+    microslice_duration =
+        vm["microslice-duration"].as<fles::Nanoseconds>().count();
+    if (microslice_duration <= 0) {
+      throw ParametersException("microslice duration must be greater than 0");
+    }
+  }
+  if (vm.count("start-time") != 0) {
+    start_time =
+        fles::system::parse_time_point_ns(vm["start-time"].as<std::string>());
+  }
 
   size_t input_sources =
       vm.count("pattern-generator") + vm.count("input-archive");

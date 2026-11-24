@@ -3,6 +3,7 @@
    Authors: Dirk Hutter, Jan de Cuveland */
 #pragma once
 
+#include "ComponentWindow.hpp"
 #include "MicrosliceDescriptor.hpp"
 #include "RingBufferView.hpp"
 #include "StHandle.hpp"
@@ -22,11 +23,7 @@ public:
           uint64_t overlap_after_ns,
           std::string name);
 
-  enum class State {
-    Ok,       // component is available
-    TryLater, // component is not available yet
-    Failed    // component is too old and not available anymore
-  };
+  using State = fles::ComponentAvailability;
 
   void ack_before(uint64_t time);
 
@@ -57,8 +54,11 @@ private:
 
   uint64_t m_read_index = 0; // hardware value is also initialized to 0
 
-  std::pair<uint64_t, uint64_t> find_component(uint64_t start_time,
-                                               uint64_t duration);
+  [[nodiscard]] fles::ComponentWindow window(uint64_t start_time,
+                                             uint64_t duration) const {
+    return fles::component_window(start_time, duration, m_overlap_before_ns,
+                                  m_overlap_after_ns);
+  }
 
   void set_read_index(uint64_t desc_read_index);
 };

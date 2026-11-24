@@ -7,9 +7,11 @@
 #include "OptionValues.hpp"
 #include "SubTimeslice.hpp"
 #include "TsbProtocol.hpp"
+#include "replay_channel.hpp"
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 using fles::Nanoseconds;
 using fles::SizeValue;
@@ -63,6 +65,9 @@ public:
   }
   [[nodiscard]] uint32_t pgen_flags() const { return m_pgen_flags; }
 
+  // Replay parameters
+  [[nodiscard]] const cri::ReplayParameters& replay() const { return m_replay; }
+
   // Global parameters
   [[nodiscard]] int64_t timeslice_duration_ns() const {
     return m_timeslice_duration.count();
@@ -105,6 +110,11 @@ private:
   Nanoseconds m_pgen_microslice_duration = 400_us;
   SizeValue m_pgen_microslice_size = 100_kB;
   uint32_t m_pgen_flags = 3;
+
+  // Replay parameters
+  cri::ReplayParameters m_replay;
+  std::vector<std::string> m_replay_inputs;
+  SizeValue m_replay_loop = 0;
 
   // Global parameters
   Nanoseconds m_timeslice_duration = 40_ms;

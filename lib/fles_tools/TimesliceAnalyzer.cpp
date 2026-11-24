@@ -124,7 +124,6 @@ void TimesliceAnalyzer::put(std::shared_ptr<const fles::Timeslice> timeslice) {
 }
 
 void TimesliceAnalyzer::initialize(const fles::Timeslice& ts) {
-  start_index_ = ts.index();
   reference_descriptors_.clear();
   pattern_checkers_.clear();
   for (size_t c = 0; c < ts.num_components(); ++c) {
@@ -138,8 +137,7 @@ void TimesliceAnalyzer::initialize(const fles::Timeslice& ts) {
 
 bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
   if (timeslice_count_ == 0) {
-    initialize(ts);
-    log_reference();
+    start_index_ = ts.index();
     // log timeslice duration
     if (ts.num_core_microslices() > 1 && ts.num_components() > 0) {
       uint64_t ms_length = ts.descriptor(0, 1).idx - ts.descriptor(0, 0).idx;
@@ -159,6 +157,12 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
     STATUS("start index: {} (stride: {})",
            logging::field("start_index", start_index_),
            logging::field("stride", stride));
+  }
+  // The reference is taken from the first timeslice that has components; the
+  // first timeslices of a run may be empty
+  if (reference_descriptors_.empty() && ts.num_components() > 0) {
+    initialize(ts);
+    log_reference();
   }
 
   ++timeslice_count_;
@@ -217,6 +221,12 @@ bool TimesliceAnalyzer::check_timeslice(const fles::Timeslice& ts) {
 
 bool TimesliceAnalyzer::check_component(const fles::Timeslice& ts, size_t c) {
   ++component_count_;
+  if (c >= reference_descriptors_.size()) {
+    if (output_active()) {
+      TS_ERROR(ts.index(), "error: unexpected additional component {}", c);
+    }
+    return false;
+  }
   bool component_success = true;
 
   if (ts.num_microslices(c) == 0) {

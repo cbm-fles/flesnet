@@ -4,6 +4,7 @@
 
 #include "Parameters.hpp"
 #include "CommonOptions.hpp"
+#include "DataClockOptions.hpp"
 #include "System.hpp"
 #include "log.hpp"
 #include "log_program_options.hpp"
@@ -32,6 +33,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
                                  terminal_width, terminal_width / 2);
   auto config_add = config.add_options();
   logging::add_program_options(config);
+  fles::add_data_clock_options(config);
   config_add("monitor,m",
              po::value<std::string>(&m_monitor_uri)
                  ->value_name("URI")
@@ -78,6 +80,7 @@ void Parameters::parse_options(int argc, char* argv[]) {
   }
 
   logging::setup(fles::log_options(vm));
+  fles::setup_data_clock(vm);
 
   if (timeslice_duration_ns() <= 0) {
     throw ParametersException("timeslice duration must be greater than 0");

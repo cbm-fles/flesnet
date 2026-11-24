@@ -13,14 +13,36 @@
 #include "Source.hpp"
 #include "Subscriber.hpp"
 #include "System.hpp"
+#include "TimesliceBuilder.hpp"
 #include "TimesliceReceiver.hpp"
 #include "Utility.hpp"
 
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace fles {
+
+/**
+ * \brief Find the files matching a path with wildcards and the sequence
+ * placeholder.
+ *
+ * The placeholder "%n" of a file sequence (see OutputArchiveSequence) is
+ * expanded to its first value "0000" before glob'ing and restored in the
+ * results. This will not work if the path contains both the placeholder and
+ * the string "0000". Nonexistent files are caught at this stage by glob()
+ * throwing a runtime_error.
+ */
+inline std::vector<std::string> glob_file_paths(const std::string& file_path) {
+  auto paths = system::glob(replace_all_copy(file_path, "%n", "0000"));
+  if (file_path.find("%n") != std::string::npos) {
+    for (auto& path : paths) {
+      replace_all(path, "0000", "%n");
+    }
+  }
+  return paths;
+}
 
 /**
  * \brief The AutoSource base class implements the generic
@@ -45,6 +67,11 @@ namespace fles {
  * object.
  * - If the string starts with `tcp://`, it is considered an address string used
  * to initialize a Subscriber object.
+ * - If the string starts with `msa://` (timeslices only), the path names
+ * microslice archives, one per input channel, from which a TimesliceBuilder
+ * builds the timeslices. The query parameters `duration`, `overlap_before`,
+ * `overlap_after` or `overlap` (with suffix ns, us, ms, s) and `start`
+ * (nanoseconds or ISO 8601) set its parameters.
  * - If the string starts with `file://` or does not contain `://` at all, it is
  * considered a local filepath. The filepath may be relative or absolute, and it
  * may contain standard wildcard characters and patterns as understood by the
@@ -223,7 +250,18 @@ private:
             std::make_unique<Subscriber<Base, Storable>>(address, hwm);
         sources.emplace_back(std::move(source));
 
+      } else if (uri.scheme == "msa") {
+        if constexpr (!std::is_same<Base, Timeslice>::value) {
+          throw std::runtime_error(
+              "scheme msa is only available for timeslices");
+        } else {
+          sources.emplace_back(make_timeslice_builder(uri));
+        }
       } else if (uri.scheme == "shm") {
+        if constexpr (!std::is_same<View, TimesliceView>::value) {
+          throw std::runtime_error(
+              "scheme shm is only available for timeslices");
+        }
         WorkerParameters param{1, 0, WorkerQueuePolicy::QueueAll, 0,
                                "AutoSource at PID " +
                                    std::to_string(system::current_pid())};
@@ -274,6 +312,46 @@ private:
       source_ =
           std::make_unique<AggregatingSource<Source<Base>>>(std::move(sources));
     }
+  }
+
+  /// Build timeslices from the microslice archives named by an msa locator
+  static std::unique_ptr<Source<Base>>
+  make_timeslice_builder(const UriComponents& uri) {
+    TimesliceBuilderParameters parameters;
+    for (auto& [key, value] : uri.query_components) {
+      if (key == "duration") {
+        parameters.duration_ns = parse_nanoseconds(value);
+      } else if (key == "overlap_before") {
+        parameters.overlap_before_ns = parse_nanoseconds(value);
+      } else if (key == "overlap_after") {
+        parameters.overlap_after_ns = parse_nanoseconds(value);
+      } else if (key == "overlap") {
+        parameters.overlap_before_ns = parse_nanoseconds(value);
+        parameters.overlap_after_ns = parameters.overlap_before_ns;
+      } else if (key == "start") {
+        parameters.start_time_ns = system::parse_time_point_ns(value);
+      } else {
+        throw std::runtime_error(
+            "query parameter not implemented for scheme msa: " + key);
+      }
+    }
+    using TMicrosliceArchive = InputArchive<Microslice, StorableMicroslice,
+                                            ArchiveType::MicrosliceArchive>;
+    using TMicrosliceArchiveSequence =
+        InputArchiveSequence<Microslice, StorableMicroslice,
+                             ArchiveType::MicrosliceArchive>;
+    std::vector<std::unique_ptr<MicrosliceSource>> microslice_sources;
+    for (const auto& path : glob_file_paths(uri.authority + uri.path)) {
+      if (path.find("%n") != std::string::npos) {
+        microslice_sources.emplace_back(
+            std::make_unique<TMicrosliceArchiveSequence>(path));
+      } else {
+        microslice_sources.emplace_back(
+            std::make_unique<TMicrosliceArchive>(path));
+      }
+    }
+    return std::make_unique<TimesliceBuilder>(std::move(microslice_sources),
+                                              parameters);
   }
 
   Base* do_get() override { return source_->get().release(); }
